@@ -140,15 +140,26 @@ class OpalManager_C : public OpalManager
 };
 
 
+class PProcess_C : public PProcess
+{
+public:
+  PProcess_C()
+  {
+#if PTRACING && defined(_DEBUG)
+    PTrace::Initialise(4, "DEBUGSTREAM");
+#endif
+  }
+
+private:
+  virtual void Main()
+  {
+  }
+};
+
 struct OpalHandleStruct
 {
-  class Process : public PProcess
-  {
-    virtual void Main()
-    {
-    }
-  } process;
-  OpalManager_C manager;
+  PProcess_C     process;
+  OpalManager_C  manager;
 };
 
 
@@ -265,9 +276,9 @@ void SIPEndPoint_C::OnRegistrationStatus(const PString & aor,
 
 bool OpalManager_C::Initialise(const char * prefixes)
 {
-  PString epNames = IsNullString(prefixes) ? "pcss h323 sip iax2 pots pstn ivr" : prefixes;
+  PCaselessString epNames = IsNullString(prefixes) ? "pcss h323 sip iax2 pots pstn ivr" : prefixes;
 
-  if (epNames.Find("pcss") != P_MAX_INDEX)
+  if (epNames.Find("pc") != P_MAX_INDEX)
     pcssEP = new OpalPCSSEndPoint_C(*this);
 
 #if OPAL_H323
@@ -305,7 +316,7 @@ bool OpalManager_C::Initialise(const char * prefixes)
 void OpalManager_C::PostMessage(OpalMessageBuffer & message)
 {
   m_messageMutex.Wait();
-  m_messageQueue.push(&*message);
+  m_messageQueue.push(message.Detach());
   m_messageMutex.Signal();
   m_messageAvailable.Signal();
 }
@@ -796,19 +807,19 @@ extern "C" {
 
   void OPAL_EXPORT OpalShutDown(OpalHandle handle)
   {
-    delete (OpalManager_C *)handle;
+    delete handle;
   }
 
 
   OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle handle, unsigned timeout)
   {
-    return handle == NULL ? NULL : ((OpalManager_C *)handle)->GetMessage(timeout);
+    return handle == NULL ? NULL : handle->manager.GetMessage(timeout);
   }
 
 
   OpalMessage * OPAL_EXPORT OpalSendMessage(OpalHandle handle, const OpalMessage * message)
   {
-    return handle == NULL ? NULL : ((OpalManager_C *)handle)->SendMessage(message);
+    return handle == NULL ? NULL : handle->manager.SendMessage(message);
   }
 
 
