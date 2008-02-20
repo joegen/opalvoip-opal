@@ -897,7 +897,7 @@ PString OpalManager::ApplyRouteTable(const PString & source, const PString & add
   PWaitAndSignal mutex(routeTableMutex);
 
   if (routeTable.IsEmpty())
-    return addr;
+    return routeIndex++ == 0 ? addr : PString::Empty();
 
   PString search = source + '\t' + addr;
   PTRACE(4, "OpalMan\tSearching for route \"" << search << '"');
