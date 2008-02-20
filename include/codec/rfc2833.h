@@ -102,8 +102,8 @@ class OpalRFC2833Proto : public PObject {
 
     const PNotifier & GetReceiveHandler() const { return receiveHandler; }
 
-    static char ASCIIToRFC2833(char tone);
-    char RFC2833ToASCII(char rfc2833);
+    static PINDEX ASCIIToRFC2833(char tone);
+    static char RFC2833ToASCII(PINDEX rfc2833);
 
   protected:
     void SendAsyncFrame();

@@ -2252,7 +2252,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
         val = tokens[1].Trim();
       if (tokens.GetSize() > 0) {
         if (tokens[0] *= "signal")
-          tone = OpalRFC2833Proto::ASCIIToRFC2833(val[0]);
+          tone = OpalRFC2833Proto::RFC2833ToASCII(val.AsUnsigned());
         else if (tokens[0] *= "duration")
           duration = val.AsInteger();
       }
