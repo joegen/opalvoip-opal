@@ -549,8 +549,8 @@ PBoolean SIPConnection::SetConnected()
 
   // if media was previously set up, then move to Established
   if (!mediaStreams.IsEmpty()) {
-    OnEstablished();
     SetPhase(EstablishedPhase);
+    OnEstablished();
   }
   
   return PTrue;
