@@ -1655,6 +1655,8 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 
 PBoolean H323Connection::SetUpConnection()
 {
+  originating = true;
+
   ApplyStringOptions();
 
   signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), 0,

@@ -461,6 +461,7 @@ void OpalConnection::OnConnected()
 
 void OpalConnection::OnEstablished()
 {
+  StartMediaStreams();
   endpoint.OnEstablished(*this);
 }
 
@@ -1237,5 +1238,12 @@ void OpalConnection::SetSecurityData(void *data)
 {
   securityData = data;
 }
+
+void OpalConnection::OnMediaPatchStart(unsigned, bool)
+{ }
+
+void OpalConnection::OnMediaPatchStop(unsigned,  bool )
+{ }
+
 
 /////////////////////////////////////////////////////////////////////////////

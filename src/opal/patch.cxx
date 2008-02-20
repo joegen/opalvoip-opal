@@ -404,21 +404,26 @@ void OpalMediaPatch::Main()
 	
   while (source.IsOpen()) {
     sourceFrame.SetPayloadSize(0); 
-    sourceFrame[1] = RTP_DataFrame::IllegalPayloadType; // make sure "idle" packets don't get confused for real zero-payload packets
+    sourceFrame[1] = RTP_DataFrame::MaxPayloadType; // make sure "idle" packets don't get confused for real zero-payload packets
     if (!source.ReadPacket(sourceFrame))
       break;
  
-    inUse.Wait();
-    bool written = DispatchFrame(sourceFrame);
-    inUse.Signal();
-
-    if (!written)
-      break;
-
-    // Don't starve the CPU if we have idle frames
-    if (!isSynchronous || sourceFrame.GetPayloadType() == RTP_DataFrame::IllegalPayloadType)
-      PThread::Sleep(5);
+    // Don't starve the CPU if we have idle frames and the source is not synchronous.
+    // Note that performing a Yield is not good enough, as the media patch threads are
+    // high priority and will consume all available CPU if allowed to
+    if (sourceFrame.GetPayloadType() == RTP_DataFrame::MaxPayloadType) {
+      if (!isSynchronous)
+        PThread::Sleep(5);
+    } else {
+      inUse.Wait();
+      bool written = DispatchFrame(sourceFrame);
+      inUse.Signal();
+      if (!written)
+        break;
+    }
   }
+
+  source.OnPatchStop();
 
   PTRACE(4, "Patch\tThread ended for " << *this);
 }
