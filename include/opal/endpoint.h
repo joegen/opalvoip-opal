@@ -105,10 +105,7 @@ class OpalEndPoint : public PObject
   /**@name Listeners management */
   //@{
     /**Add a set of listeners to the endoint.
-       This allows for the automatic creating of incoming call connections. An
-       application should use OnConnectionEstablished() to monitor when calls
-       have arrived and been successfully negotiated.
-
+       This allows for the automatic creating of incoming call connections. 
        If the list is empty then GetDefaultListeners() is used.
       */
     PBoolean StartListeners(
@@ -116,10 +113,7 @@ class OpalEndPoint : public PObject
     );
 
     /**Add a listener to the endoint.
-       This allows for the automatic creating of incoming call connections. An
-       application should use OnConnectionEstablished() to monitor when calls
-       have arrived and been successfully negotiated.
-
+       This allows for the automatic creating of incoming call connections. /
        If the address is empty then the first entry of GetDefaultListeners() is used.
       */
     PBoolean StartListener(
