@@ -290,6 +290,8 @@ class OpalIVRConnection : public OpalConnection
       */
     virtual PBoolean StartVXML();
 
+    void OnMediaPatchStop(unsigned, bool);
+
     PTextToSpeech * SetTextToSpeech(PTextToSpeech * _tts, PBoolean autoDelete = PFalse)
     { return vxmlSession.SetTextToSpeech(_tts, autoDelete); }
 

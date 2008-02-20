@@ -544,6 +544,12 @@ PBoolean SIPConnection::SetConnected()
   // switch phase 
   SetPhase(ConnectedPhase);
   connectedTime = PTime ();
+
+  // if media was previously set up, then move to Established
+  if (!mediaStreams.IsEmpty()) {
+    OnEstablished();
+    SetPhase(EstablishedPhase);
+  }
   
   return PTrue;
 }

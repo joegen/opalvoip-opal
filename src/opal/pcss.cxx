@@ -280,6 +280,8 @@ OpalPCSSConnection::~OpalPCSSConnection()
 
 PBoolean OpalPCSSConnection::SetUpConnection()
 {
+  originating = true;
+
   // Check if we are A-Party in thsi call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     phase = SetUpPhase;

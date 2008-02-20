@@ -73,14 +73,12 @@ OpalIVREndPoint::~OpalIVREndPoint()
 
 
 PBoolean OpalIVREndPoint::MakeConnection(OpalCall & call,
-                                     const PString & /*remoteParty */,
+                                     const PString & remoteParty,
                                      void * userData,
                                unsigned int /*options*/,
                                OpalConnection::StringOptions * stringOptions)
 {
-  PString ivrString = call.GetPartyB();
-  if (ivrString.IsEmpty())
-    ivrString = call.GetPartyA();
+  PString ivrString = remoteParty;
 
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
@@ -165,8 +163,6 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
 #pragma warning(pop)
 #endif
 {
-  phase = SetUpPhase;
-
   PTRACE(4, "IVR\tConstructed");
 }
 
@@ -179,45 +175,27 @@ OpalIVRConnection::~OpalIVRConnection()
 
 PBoolean OpalIVRConnection::SetUpConnection()
 {
-  // Check if we are A-Party in thsi call, so need to do things differently
-  if (ownerCall.GetConnection(0) == this) {
-    phase = SetUpPhase;
-    if (!OnIncomingConnection(0, NULL)) {
-      Release(EndedByCallerAbort);
-      return PFalse;
-    }
+  originating = true;
 
-    PTRACE(3, "IVR\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
-    if (!ownerCall.OnSetUp(*this)) {
-      Release(EndedByNoAccept);
-      return PFalse;
-    }
-
-    return PTrue;
-  }
+  ApplyStringOptions();
 
   remotePartyName = ownerCall.GetOtherPartyConnection(*this)->GetRemotePartyName();
 
   PTRACE(3, "IVR\tSetUpConnection(" << remotePartyName << ')');
 
-  // load the vxml file before calling OnAlerting() in case of h323 is used with faststart,
-  // in this case, the media will be opened ealier and the vxml file needs to be already loaded 
-  //if (!StartVXML()) {
-  //  PTRACE(1, "IVR\tVXML session not loaded, aborting.");
-  //  Release(EndedByLocalUser);
-  //  return PFalse;
-  //}
-
   phase = AlertingPhase;
   OnAlerting();
 
   phase = ConnectedPhase;
+  connectedTime = PTime();
   OnConnected();
 
-  ownerCall.OpenSourceMediaStreams(*this, 1);
-  PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
-  if (otherParty != NULL)
-    ownerCall.OpenSourceMediaStreams(*otherParty, 1);
+  if (phase != EstablishedPhase) {
+    SetPhase(EstablishedPhase);
+    OnEstablished();
+  }
+
+  StartMediaStreams();
 
   return PTrue;
 }
@@ -354,26 +332,29 @@ PBoolean OpalIVRConnection::SetConnected()
 {
   PTRACE(3, "IVR\tSetConnected()");
 
-  {
-    PSafeLockReadWrite safeLock(*this);
-    if (!safeLock.IsLocked())
-      return PFalse;
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return PFalse;
 
-    phase = ConnectedPhase;
+  phase = ConnectedPhase;
 
-    if (!StartVXML()) {
-      PTRACE(1, "IVR\tVXML session not loaded, aborting.");
-      Release(EndedByLocalUser);
-      return PFalse;
-    }
-
-    if (mediaStreams.IsEmpty())
-      return PTrue;
-
-    phase = EstablishedPhase;
+  if (!StartVXML()) {
+    PTRACE(1, "IVR\tVXML session not loaded, aborting.");
+    Release(EndedByLocalUser);
+    return PFalse;
   }
 
-  OnEstablished();
+  // if no media streams, try and start them
+  // if we have media streams, move to Established straight away
+  if (mediaStreams.IsEmpty()) {
+    ownerCall.OpenSourceMediaStreams(*this, OpalMediaFormat::DefaultAudioSessionID);
+    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
+    if (otherParty != NULL)
+      ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaFormat::DefaultAudioSessionID);
+  } else {
+    OnEstablished();
+    SetPhase(EstablishedPhase);
+  }
 
   return PTrue;
 }
@@ -402,6 +383,14 @@ PBoolean OpalIVRConnection::SendUserInputString(const PString & value)
 
   return PTrue;
 }
+
+void OpalIVRConnection::OnMediaPatchStop(unsigned sessionId, bool isSource)
+{
+  // lose the audio patch, then lose the call
+  if (isSource && sessionId == OpalMediaFormat::DefaultAudioSessionID)
+    Release();
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////

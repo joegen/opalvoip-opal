@@ -1301,6 +1301,8 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
 
 PBoolean OpalFaxConnection::SetUpConnection()
 {
+  originating = true;
+
   // Check if we are A-Party in thsi call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     phase = SetUpPhase;

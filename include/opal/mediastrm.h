@@ -154,9 +154,14 @@ class OpalMediaStream : public PSafeObject
     virtual PBoolean Close();
 
     /**Callback that is called on the source stream once the media patch has started.
-       The default behaviour does nothing
+       The default behaviour calls OpalConnection::OnMediaPatchStart()
       */
-    virtual void OnPatchStart() { }
+    virtual void OnPatchStart();
+
+    /**Callback that is called on the source stream once the media patch has started.
+       The default behaviour calls OpalConnection::OnMediaPatchStop()
+      */
+    virtual void OnPatchStop();
 
     /**Write a list of RTP frames of data to the sink media stream.
        The default behaviour simply calls WritePacket() on each of the
