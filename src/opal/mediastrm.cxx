@@ -474,6 +474,17 @@ void OpalMediaStream::BitRateLimit (PINDEX byteCount, PBoolean mayDelay)
   }
 }
 
+void OpalMediaStream::OnPatchStart() 
+{ 
+  connection.OnMediaPatchStart(sessionID, isSource);
+}
+
+void OpalMediaStream::OnPatchStop() 
+{ 
+  connection.OnMediaPatchStop(sessionID, isSource);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalNullMediaStream::OpalNullMediaStream(OpalConnection & conn,
@@ -620,7 +631,7 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
   if (mediaFormat.NeedsJitterBuffer())
     rtpSession.SetJitterBufferSize(minAudioJitterDelay*mediaFormat.GetTimeUnits(),
                                    maxAudioJitterDelay*mediaFormat.GetTimeUnits(),
-				   mediaFormat.GetTimeUnits());
+				                   mediaFormat.GetTimeUnits());
 }
 
 #if OPAL_VIDEO

@@ -1241,6 +1241,15 @@ class OpalConnection : public PSafeObject
     virtual void EnableRecording();
     virtual void DisableRecording();
 
+    virtual void OnMediaPatchStart(
+      unsigned sessionId, 
+          bool isSource
+    );
+    virtual void OnMediaPatchStop(
+      unsigned sessionId, 
+          bool isSource
+    );
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineCiscoNSE);

@@ -892,14 +892,14 @@ void OpalManager::SetRouteTable(const RouteTable & table)
 }
 
 
-PString OpalManager::ApplyRouteTable(const PString & source, const PString & addr, PINDEX & routeIndex)
+PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_party, PINDEX & routeIndex)
 {
   PWaitAndSignal mutex(routeTableMutex);
 
   if (routeTable.IsEmpty())
-    return routeIndex++ == 0 ? addr : PString::Empty();
+    return routeIndex++ == 0 ? b_party : PString::Empty();
 
-  PString search = source + '\t' + addr;
+  PString search = a_party + '\t' + b_party;
   PTRACE(4, "OpalMan\tSearching for route \"" << search << '"');
 
   /* Examples:
@@ -944,25 +944,26 @@ PString OpalManager::ApplyRouteTable(const PString & source, const PString & add
     return PString::Empty();
 
   // We are backward compatibility mode and the supplied address can be called
-  PINDEX colon = addr.Find(':');
-  if (colon == P_MAX_INDEX || FindEndPoint(addr.Left(colon)) == NULL)
+  PINDEX colon = b_party.Find(':');
+  if (colon == P_MAX_INDEX || FindEndPoint(b_party.Left(colon)) == NULL)
     colon = 0;
   else {
     if (destination.Find("<da>") != P_MAX_INDEX)
-      return addr;
+      return b_party;
     colon++;
   }
 
-  PINDEX nonDigitPos = addr.FindSpan("0123456789*#", colon);
-  PString digits = addr(colon, nonDigitPos-1);
+  PINDEX nonDigitPos = b_party.FindSpan("0123456789*#", colon);
+  PString digits = b_party(colon, nonDigitPos-1);
 
-  PINDEX at = addr.Find('@', colon);
+  PINDEX at = b_party.Find('@', colon);
 
-  destination.Replace("<da>", addr, true);
-  destination.Replace("<du>", addr(colon, at-1), true);
-  destination.Replace("<!du>", addr.Mid(at), true);
+  destination.Replace("<da>", b_party, true);
+  destination.Replace("<du>", b_party(colon, at-1), true);
+  destination.Replace("<!du>", b_party.Mid(at), true);
   destination.Replace("<dn>", digits, true);
-  destination.Replace("<!dn>", addr.Mid(nonDigitPos), true);
+  destination.Replace("<!dn>", b_party.Mid(nonDigitPos), true);
+  destination.Replace("<db>",  b_party.Mid(colon), true);
 
   PINDEX pos;
   while ((pos = destination.FindRegEx("<dn[1-9]>")) != P_MAX_INDEX)
