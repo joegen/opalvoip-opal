@@ -541,6 +541,8 @@ PBoolean SIPConnection::SetConnected()
   // send the 200 OK response
   SendInviteOK(sdpOut);
 
+  releaseMethod = ReleaseWithBYE;
+
   // switch phase 
   SetPhase(ConnectedPhase);
   connectedTime = PTime ();
@@ -1762,7 +1764,6 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
     return;
   }
   
-  releaseMethod = ReleaseWithBYE;
   if (phase != ConnectedPhase)  
     return;
   
@@ -2038,7 +2039,6 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   if (phase == EstablishedPhase)
     return;
 
-  releaseMethod = ReleaseWithBYE;
   SetPhase(EstablishedPhase);
 
   connectedTime = PTime();
@@ -2189,7 +2189,7 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
   response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
 
   if (response.GetStatusCode()/100 != 1) {
-    if (response.GetStatusCode() > 200) {
+    if (response.GetStatusCode() > 299) {
       PTRACE(3, "SIP\tACK sent for error");
     }
     ackPacket = response;
