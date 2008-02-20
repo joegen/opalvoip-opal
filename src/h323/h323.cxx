@@ -748,7 +748,7 @@ static PBoolean BuildFastStartList(const H323Channel & channel,
 void H323Connection::OnEstablished()
 {
   endpoint.OnConnectionEstablished(*this, callToken);
-  endpoint.OnEstablished(*this);
+  OpalConnection::OnEstablished();
 }
 
 void H323Connection::OnSendARQ(H225_AdmissionRequest & arq)
