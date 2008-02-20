@@ -2039,12 +2039,14 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   if (phase == EstablishedPhase)
     return;
 
-  SetPhase(EstablishedPhase);
-
   connectedTime = PTime();
+  SetPhase(ConnectedPhase);
   OnConnected();
 
-  OnEstablished();
+  if (!mediaStreams.IsEmpty() && phase < EstablishedPhase) {
+    phase = EstablishedPhase;
+    OnEstablished();
+  }
 }
 
 
