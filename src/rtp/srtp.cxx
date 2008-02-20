@@ -168,7 +168,7 @@ RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(
 #endif
                                          unsigned id,
                                          PBoolean remoteIsNAT,
-                                 OpalConnection & connection)
+                                 OpalConnection & /*connection*/)
 {
   LibSRTP_UDP * session = new LibSRTP_UDP(
 #if OPAL_RTP_AGGREGATE
