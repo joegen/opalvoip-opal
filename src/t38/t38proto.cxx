@@ -1335,7 +1335,7 @@ PBoolean OpalFaxConnection::SetUpConnection()
   //endpoint.OnShowIncoming(*this);
   OnAlerting();
 
-  phase = ConnectedPhase;
+  SetPhase(ConnectedPhase);
   OnConnected();
 
   if (!mediaStreams.IsEmpty()) {
