@@ -795,9 +795,10 @@ OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(PluginCodec_Def
                          _isEncoder ? _codec->parm.audio.bytesPerFrame     : _codec->parm.audio.samplesPerFrame*2)
   , OpalPluginTranscoder(_codec, _isEncoder)
 { 
-  inputIsRTP  = (codecDef->flags & PluginCodec_InputTypeMask)  == PluginCodec_InputTypeRTP;
-  outputIsRTP = (codecDef->flags & PluginCodec_OutputTypeMask) == PluginCodec_OutputTypeRTP;
-  comfortNoise = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_ComfortNoise;
+  inputIsRTP         = (codecDef->flags & PluginCodec_InputTypeMask)  == PluginCodec_InputTypeRTP;
+  outputIsRTP        = (codecDef->flags & PluginCodec_OutputTypeMask) == PluginCodec_OutputTypeRTP;
+  comfortNoise       = (codecDef->flags & PluginCodec_EmptyPayloadMask) == PluginCodec_ComfortNoise;
+  acceptEmptyPayload = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_EmptyPayload;
 }
 
 PBoolean OpalPluginFramedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
@@ -869,7 +870,8 @@ OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(PluginCodec
                            inputBits, outputBits, optimalBits)
   , OpalPluginTranscoder(_codec, _isEncoder)
 { 
-  comfortNoise = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_ComfortNoise;
+  comfortNoise       = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_ComfortNoise;
+  acceptEmptyPayload = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_EmptyPayload;
 }
 
 PBoolean OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
@@ -928,6 +930,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   , consecutiveIntraFrames(0)
 #endif
 { 
+  acceptEmptyPayload = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_EmptyPayload;
 }
 
 OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()

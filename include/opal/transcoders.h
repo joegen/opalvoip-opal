@@ -325,6 +325,8 @@ class OpalTranscoder : public OpalMediaFormatPair
     ) const;
 
     virtual bool AcceptComfortNoise() const { return false; }
+    virtual bool AcceptEmptyPayload() const { return acceptEmptyPayload; }
+
   //@}
 
   protected:
@@ -335,6 +337,7 @@ class OpalTranscoder : public OpalMediaFormatPair
     RTP_DataFrame::PayloadMapType payloadTypeMap;
 
     PBoolean outputIsRTP, inputIsRTP;
+    bool acceptEmptyPayload;
 };
 
 
