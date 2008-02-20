@@ -391,6 +391,9 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\opal\opal_c.cxx">
+				</File>
+				<File
 					RelativePath="..\opal\opalglobalstatics.cxx">
 				</File>
 				<File
@@ -1848,6 +1851,9 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\mediastrm.h">
+				</File>
+				<File
+					RelativePath="..\..\include\opal.h">
 				</File>
 				<File
 					RelativePath="..\..\include\opal\opalmixer.h">
