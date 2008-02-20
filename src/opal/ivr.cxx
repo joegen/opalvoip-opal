@@ -238,6 +238,9 @@ PBoolean OpalIVRConnection::StartVXML()
   PINDEX delay = 0;
   PString voice;
 
+  // always start with 500ms of silence
+  vxmlSession.PlaySilence(500);
+
   PINDEX i;
   PStringArray tokens = vxmlToLoad.Tokenise(';', PFalse);
   for (i = 0; i < tokens.GetSize(); ++i) {
