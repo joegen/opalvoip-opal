@@ -152,7 +152,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
     payload[2] = (BYTE)(duration>>8);
     payload[3] = (BYTE) duration    ;
 
-    PTRACE(4, "RFC2833\tSending packet with duration " << duration << " for code " << (int)transmitCode << " type " << ((transmitState == TransmitIdle) ? "end" : "cont"));
+    PTRACE(4, "RFC2833\tSending packet with duration " << duration << " for code " << (unsigned)transmitCode << " type " << ((transmitState == TransmitIdle) ? "end" : "cont"));
   }
 
   if (rtpSession != NULL) {
@@ -166,22 +166,23 @@ void OpalRFC2833Proto::SendAsyncFrame()
   }
 }
 
-char OpalRFC2833Proto::ASCIIToRFC2833(char tone)
+PINDEX OpalRFC2833Proto::ASCIIToRFC2833(char tone)
 {
   const char * theChar = strchr(RFC2833Table1Events, tone);
   if (theChar == NULL) {
     PTRACE(1, "RFC2833\tInvalid tone character.");
-    return -1;
+    return P_MAX_INDEX;
   }
 
-  return (BYTE)(theChar-RFC2833Table1Events);
+  return (PINDEX)(theChar-RFC2833Table1Events);
 }
 
-char OpalRFC2833Proto::RFC2833ToASCII(char rfc2833)
+char OpalRFC2833Proto::RFC2833ToASCII(PINDEX rfc2833)
 {
-  if (rfc2833 < 0 || rfc2833 > sizeof(RFC2833Table1Events)-1)
-    return -1;
-  return RFC2833Table1Events[rfc2833];
+  PASSERTINDEX(rfc2833);
+  if (rfc2833 < (PINDEX)sizeof(RFC2833Table1Events)-1)
+    return RFC2833Table1Events[rfc2833];
+  return '\0';
 }
 
 
@@ -194,12 +195,13 @@ PBoolean OpalRFC2833Proto::BeginTransmit(char tone)
     return PFalse;
   }
 
-  char transmitCode = ASCIIToRFC2833(tone);
-  if (transmitCode < 0) {
+  PINDEX code = ASCIIToRFC2833(tone);
+  if (code == P_MAX_INDEX) {
     PTRACE(1, "RFC2833\tInvalid tone character.");
     return PFalse;
   }
 
+  transmitCode = (BYTE)code;
   transmitState = TransmitActive;
   transmitTimestampSet = PFalse;
   asyncStart    = 0;
@@ -240,7 +242,7 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
   const BYTE * payload = frame.GetPayloadPtr();
 
   receivedTone = RFC2833ToASCII(payload[0]);
-  if (receivedTone < 0) {
+  if (receivedTone == '\0') {
     PTRACE(2, "RFC2833\tIgnoring packet " << payload[0] << " - unsupported event.");
     return;
   }
