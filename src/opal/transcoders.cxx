@@ -76,6 +76,7 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
 {
   maxOutputSize = P_MAX_INDEX; // Just something, usually changed by OpalMediaPatch
   outputIsRTP = inputIsRTP = PFalse;
+  acceptEmptyPayload = false;
 }
 
 
@@ -123,8 +124,7 @@ RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(PBoolean input) const
 }
 
 
-PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
-                                   RTP_DataFrameList & output)
+PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output)
 {
   // make sure there is at least one output frame available
   if (output.IsEmpty())

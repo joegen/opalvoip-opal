@@ -404,23 +404,21 @@ void OpalMediaPatch::Main()
 	
   while (source.IsOpen()) {
     sourceFrame.SetPayloadSize(0); 
-    sourceFrame[1] = RTP_DataFrame::MaxPayloadType; // make sure "idle" packets don't get confused for real zero-payload packets
     if (!source.ReadPacket(sourceFrame))
       break;
  
-    // Don't starve the CPU if we have idle frames and the source is not synchronous.
+    inUse.Wait();
+    bool written = DispatchFrame(sourceFrame);
+    inUse.Signal();
+
+    if (!written)
+      break;
+ 
+    // Don't starve the CPU if we have idle frames and the no source or destination is synchronous.
     // Note that performing a Yield is not good enough, as the media patch threads are
-    // high priority and will consume all available CPU if allowed to
-    if (sourceFrame.GetPayloadType() == RTP_DataFrame::MaxPayloadType) {
-      if (!isSynchronous)
-        PThread::Sleep(5);
-    } else {
-      inUse.Wait();
-      bool written = DispatchFrame(sourceFrame);
-      inUse.Signal();
-      if (!written)
-        break;
-    }
+    // high priority and will consume all available CPU if allowed.
+    if (!isSynchronous)
+      PThread::Sleep(5);
   }
 
   source.OnPatchStop();
@@ -501,6 +499,8 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN)
       return true;
   }
+  if (!primaryCodec->AcceptEmptyPayload() && sourceFrame.GetPayloadSize() == 0) 
+    return true;
 
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
     PTRACE(1, "Patch\tMedia conversion (primary) failed");
@@ -533,6 +533,8 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
         if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN)
           return true;
       }
+      if (!secondaryCodec->AcceptEmptyPayload() && sourceFrame.GetPayloadSize() == 0) 
+        return true;
       if (!secondaryCodec->ConvertFrames(*interFrame, finalFrames)) {
         PTRACE(1, "Patch\tMedia conversion (secondary) failed");
         return false;

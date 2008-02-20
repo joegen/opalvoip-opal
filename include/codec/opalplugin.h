@@ -153,6 +153,9 @@ enum PluginCodec_Flags {
   PluginCodec_ComfortNoiseMask       = 0x0800,
   PluginCodec_ComfortNoise           = 0x0800,
 
+  PluginCodec_EmptyPayloadMask       = 0x1000,
+  PluginCodec_EmptyPayload           = 0x1000,
+
   PluginCodec_BitsPerSamplePos       = 12,
   PluginCodec_BitsPerSampleMask      = 0xf000,
 };
