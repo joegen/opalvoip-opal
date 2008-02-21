@@ -233,6 +233,8 @@ PList<OpalEndPoint> OpalManager::GetEndPoints(bool unique) const
   PList<OpalEndPoint> list;
   list.AllowDeleteObjects(false);
 
+  PReadWaitAndSignal mutex(endpointsMutex);
+
   OpalEndpointFactory::KeyList_T prefixes = OpalEndpointFactory::GetKeyList();
   for (OpalEndpointFactory::KeyList_T::iterator r = prefixes.begin(); r != prefixes.end(); ++r) {
     OpalEndPoint * ep = OpalEndpointFactory::CreateInstance(*r);
@@ -250,6 +252,8 @@ void OpalManager::ShutDownEndpoints()
   clearingAllCalls = true;
   ClearAllCalls();
 
+  PWriteWaitAndSignal mutex(endpointsMutex);
+
   // Deregister the endpoints
   OpalEndpointFactory::KeyList_T prefixes = OpalEndpointFactory::GetKeyList();
   while (prefixes.size() > 0) {
@@ -266,7 +270,7 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix
   if (PAssertNULL(endpoint) == NULL)
     return;
 
-  PReadWaitAndSignal mutex(endpointsMutex);
+  PWriteWaitAndSignal mutex(endpointsMutex);
 
   std::string stdstrPrefix((const char *)prefix);
   if (stdstrPrefix.empty())
@@ -292,7 +296,7 @@ void OpalManager::DetachEndPoint(OpalEndPoint * endpoint)
 
 void OpalManager::DetachEndPoint(const PString & _prefix)
 {
-  PReadWaitAndSignal mutex(endpointsMutex);
+  PWriteWaitAndSignal mutex(endpointsMutex);
   std::string prefix((const char *)_prefix);
   OpalEndpointFactory::Unregister(prefix);
 }
