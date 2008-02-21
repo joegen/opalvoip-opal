@@ -663,6 +663,10 @@ class RTP_Session : public PObject
       */
     DWORD GetPacketsTooLate() const;
 
+    /**Get total number received packets that could not fit into the jitter buffer.
+      */
+    DWORD GetPacketOverruns() const;
+
     /**Get average time between sent packets.
        This is averaged over the last txStatisticsInterval packets and is in
        milliseconds.
