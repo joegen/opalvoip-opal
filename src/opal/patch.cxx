@@ -432,8 +432,13 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
   FilterFrame(frame, source.GetMediaFormat());    
 
   bool written = false;
-  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
-    written = written || s->WriteFrame(frame);
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
+    if (s->WriteFrame(frame))
+      written = true;
+    else {
+      PTRACE(2, "Patch\tWritePacket failed");
+    }
+  }
 
   return written;
 }
@@ -478,6 +483,21 @@ void OpalMediaPatch::Sink::SetCommandNotifier(const PNotifier & notifier)
 }
 
 
+static bool CannotTranscodeFrame(const OpalTranscoder & codec, const RTP_DataFrame & frame)
+{
+  if (!codec.AcceptComfortNoise()) {
+    RTP_DataFrame::PayloadTypes pt = frame.GetPayloadType();
+    if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN)
+      return true;
+  }
+
+  if (!codec.AcceptEmptyPayload() && frame.GetPayloadSize() == 0) 
+    return true;
+
+  return false;
+}
+
+
 bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
 {
   if (!writeSuccessful)
@@ -487,75 +507,49 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(sourceFrame.GetPayloadType());
     if (r != payloadTypeMap.end())
       sourceFrame.SetPayloadType(r->second);
-    writeSuccessful = stream->WritePacket(sourceFrame);
-    if (!writeSuccessful) {
-      PTRACE(2, "Patch\tWritePacket failed");
-    }
-    return writeSuccessful;
+    return (writeSuccessful = stream->WritePacket(sourceFrame));
   }
 
-  if (!primaryCodec->AcceptComfortNoise()) {
-    RTP_DataFrame::PayloadTypes pt = sourceFrame.GetPayloadType();
-    if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN)
-      return true;
-  }
-  if (!primaryCodec->AcceptEmptyPayload() && sourceFrame.GetPayloadSize() == 0) 
-    return true;
+  if (CannotTranscodeFrame(*primaryCodec, sourceFrame))
+    return (writeSuccessful = stream->WritePacket(sourceFrame));
 
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
     PTRACE(1, "Patch\tMedia conversion (primary) failed");
     return false;
   }
 
-  if (sourceFrame.GetPayloadSize() == 0) {
-    writeSuccessful = stream->WritePacket(sourceFrame);
-    if (!writeSuccessful) {
-      PTRACE(2, "Patch\tWritePacket failed");
-    }
-    return writeSuccessful;
-  }
-
   for (RTP_DataFrameList::iterator interFrame = intermediateFrames.begin(); interFrame != intermediateFrames.end(); ++interFrame) {
     patch.FilterFrame(*interFrame, primaryCodec->GetOutputFormat());
-    if (secondaryCodec == NULL) {
-      if (!stream->WritePacket(*interFrame)) {
-        writeSuccessful = false;
-        if (!writeSuccessful) {
-          PTRACE(2, "Patch\tWritePacket failed");
-        }
-        return writeSuccessful;
-      }
-      sourceFrame.SetTimestamp(interFrame->GetTimestamp());
-    }
-    else {
-      if (!secondaryCodec->AcceptComfortNoise()) {
-        RTP_DataFrame::PayloadTypes pt = sourceFrame.GetPayloadType();
-        if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN)
-          return true;
-      }
-      if (!secondaryCodec->AcceptEmptyPayload() && sourceFrame.GetPayloadSize() == 0) 
-        return true;
-      if (!secondaryCodec->ConvertFrames(*interFrame, finalFrames)) {
-        PTRACE(1, "Patch\tMedia conversion (secondary) failed");
-        return false;
-      }
 
-      for (RTP_DataFrameList::iterator finalFrame = finalFrames.begin(); finalFrame != finalFrames.end(); ++finalFrame) {
-        patch.FilterFrame(*finalFrame, secondaryCodec->GetOutputFormat());
-        if (!stream->WritePacket(*finalFrame)) {
-          writeSuccessful = false;
-          if (!writeSuccessful) {
-            PTRACE(2, "Patch\tWritePacket failed");
-          }
-          return writeSuccessful;
-        }
-        sourceFrame.SetTimestamp(finalFrame->GetTimestamp());
-      }
+    if (secondaryCodec == NULL) {
+      if (!stream->WritePacket(*interFrame))
+        return (writeSuccessful = false);
+      sourceFrame.SetTimestamp(interFrame->GetTimestamp());
+      continue;
+    }
+
+    if (CannotTranscodeFrame(*secondaryCodec, *interFrame)) {
+      if (!stream->WritePacket(*interFrame))
+        return (writeSuccessful = false);
+      continue;
+    }
+
+    if (!secondaryCodec->ConvertFrames(*interFrame, finalFrames)) {
+      PTRACE(1, "Patch\tMedia conversion (secondary) failed");
+      return false;
+    }
+
+    for (RTP_DataFrameList::iterator finalFrame = finalFrames.begin(); finalFrame != finalFrames.end(); ++finalFrame) {
+      patch.FilterFrame(*finalFrame, secondaryCodec->GetOutputFormat());
+      if (!stream->WritePacket(*finalFrame))
+        return (writeSuccessful = false);
+      sourceFrame.SetTimestamp(finalFrame->GetTimestamp());
     }
   }
 
   return true;
 }
+
 
 OpalMediaPatch::Thread::Thread(OpalMediaPatch & p)
 : PThread(65536,  //16*4kpage size
