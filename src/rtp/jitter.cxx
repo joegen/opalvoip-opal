@@ -423,7 +423,7 @@ PBoolean OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, 
 }
 
 
-PBoolean OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
+PBoolean OpalJitterBuffer::ReadData(DWORD requestedTimestamp, RTP_DataFrame & frame)
 {
   if (shuttingDown)
     return PFalse;
@@ -461,7 +461,6 @@ PBoolean OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
      */
     preBuffering = PTrue;
     currentJitterTime = targetJitterTime;
-    
 
 #if PTRACING && !defined(NO_ANALYSER)
     analyser->Out(0, currentDepth, "Empty");
@@ -498,16 +497,8 @@ PBoolean OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
     lastWriteTimestamp = 0;
     lastWriteTick = 0;
 
-    /*
-    // Check for requesting something that already exceeds the maximum time,
-    // or have filled the jitter buffer, not filling if this is so
-    if ((timestamp - oldestTimestamp) < currentJitterTime &&
-        (newestTimestamp - oldestTimestamp) < currentJitterTime/2) {
-    */
-
     // If oldest frame has not been in the buffer long enough, don't return anything yet
-    if ((PTimer::Tick() - oldestFrame->tick).GetInterval() * timeUnits
-         < currentJitterTime / 2) {
+    if ((PTimer::Tick() - oldestFrame->tick).GetInterval() * timeUnits < currentJitterTime/2) {
 #if PTRACING && !defined(NO_ANALYSER)
       analyser->Out(oldestTimestamp, currentDepth, "PreBuf");
 #endif
@@ -522,11 +513,10 @@ PBoolean OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
   // - if we think we're getting marker bit information, use that
   PBoolean shortSilence = PFalse;
   if (consecutiveMarkerBits < maxConsecutiveMarkerBits) {
-      if (oldestFrame->GetMarker() &&
-          (PTimer::Tick() - oldestFrame->tick).GetInterval()* timeUnits < currentJitterTime / 2)
-        shortSilence = PTrue;
+    if (oldestFrame->GetMarker() && (PTimer::Tick() - oldestFrame->tick).GetInterval()* timeUnits < currentJitterTime/2)
+      shortSilence = PTrue;
   }
-  else if (timestamp < oldestTimestamp && timestamp > (newestTimestamp - currentJitterTime))
+  else if (requestedTimestamp < oldestTimestamp && requestedTimestamp > (newestTimestamp - currentJitterTime))
     shortSilence = PTrue;
   
   if (shortSilence) {
@@ -539,15 +529,15 @@ PBoolean OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
     return PTrue;
   }
 
-  // Detatch oldest packet from the list, put into parking space
+  // Detach oldest packet from the list, put into parking space
   currentDepth--;
 #if PTRACING && !defined(NO_ANALYSER)
-  analyser->Out(oldestTimestamp, currentDepth, timestamp >= oldestTimestamp ? "" : "Late");
+  analyser->Out(oldestTimestamp, currentDepth, requestedTimestamp >= oldestTimestamp ? "" : "Late");
 #endif
   currentWriteFrame = oldestFrame;
   oldestFrame = currentWriteFrame->next;
   currentWriteFrame->next = NULL;
- 
+
   // Calculate the jitter contribution of this frame
   // - don't count if start of a talk burst
   if (currentWriteFrame->GetMarker()) {
@@ -555,7 +545,7 @@ PBoolean OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
     lastWriteTick = 0;
   }
 
-  if (lastWriteTimestamp != 0 && lastWriteTick !=0) {
+  if (lastWriteTimestamp != 0 && lastWriteTick != 0) {
     int thisJitter = 0;
 
     if (currentWriteFrame->GetTimestamp() < lastWriteTimestamp) {
@@ -655,26 +645,27 @@ PBoolean OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
                << (newestTimestamp - maxJitterTime)
                << ") too late, throwing away");
 
-          currentJitterTime = maxJitterTime;
+        packetsTooLate++;
+
+        currentJitterTime = maxJitterTime;
+      
+        //Throw away the oldest frame and move everything up
+        Entry * wastedFrame = currentWriteFrame;
+        currentWriteFrame = oldestFrame;
+        oldestFrame = oldestFrame->next;
+        currentDepth--;
+
+        currentWriteFrame->next = NULL; //currentWriteFrame should never be able to be NULL
         
-          //Throw away the oldest frame and move everything up
-          Entry * wastedFrame = currentWriteFrame;
-          currentWriteFrame = oldestFrame;
-          oldestFrame = oldestFrame->next;
-          currentDepth--;
+        wastedFrame->next = freeFrames;
+        if (freeFrames != NULL)
+          freeFrames->prev = wastedFrame;
+        freeFrames = wastedFrame;
 
-          currentWriteFrame->next = NULL; //currentWriteFrame should never be able to be NULL
-          
-          wastedFrame->next = freeFrames;
-          if (freeFrames != NULL)
-            freeFrames->prev = wastedFrame;
-          freeFrames = wastedFrame;
-
-          if (oldestFrame == NULL) {
-            newestFrame = NULL;
-            break;
-          }
-
+        if (oldestFrame == NULL) {
+          newestFrame = NULL;
+          break;
+        }
       }
 
 	// Now change the jitter time to cope with the new size

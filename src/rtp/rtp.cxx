@@ -538,6 +538,7 @@ RTP_Session::~RTP_Session()
       "    octetsReceived    = " << octetsReceived << "\n"
       "    packetsLost       = " << packetsLost << "\n"
       "    packetsTooLate    = " << GetPacketsTooLate() << "\n"
+      "    packetOverruns    = " << GetPacketOverruns() << "\n"
       "    packetsOutOfOrder = " << packetsOutOfOrder << "\n"
       "    averageReceiveTime= " << averageReceiveTime << "\n"
       "    maximumReceiveTime= " << maximumReceiveTime << "\n"
@@ -1346,6 +1347,13 @@ DWORD RTP_Session::GetPacketsTooLate() const
 {
   return jitter != NULL ? jitter->GetPacketsTooLate() : 0;
 }
+
+
+DWORD RTP_Session::GetPacketOverruns() const
+{
+  return jitter != NULL ? jitter->GetBufferOverruns() : 0;
+}
+
 
 PBoolean RTP_Session::WriteOOBData(RTP_DataFrame &)
 {
