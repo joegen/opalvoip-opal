@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="OPAL Static"
 	ProjectGUID="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
 	RootNamespace="OPAL_lib"
@@ -1542,6 +1542,10 @@
 							PreprocessorDefinitions=""
 						/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\opal\opal_c.cxx"
+					>
 				</File>
 				<File
 					RelativePath="..\opal\opalglobalstatics.cxx"
@@ -6300,6 +6304,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\mediastrm.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\opal.h"
 					>
 				</File>
 				<File
