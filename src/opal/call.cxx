@@ -128,10 +128,10 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 
 void OpalCall::OnCleared()
 {
+  manager.OnClearedCall(*this);
+
   if (!LockReadWrite())
     return;
-
-  manager.OnClearedCall(*this);
 
   if (endCallSyncPoint != NULL) {
     endCallSyncPoint->Signal();
