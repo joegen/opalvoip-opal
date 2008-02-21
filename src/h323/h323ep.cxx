@@ -749,73 +749,46 @@ void H323EndPoint::OnReceivedInitiateReturnError()
 {
 }
 
-PBoolean H323EndPoint::ParsePartyName(const PString & _remoteParty,
+PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
                                   PString & alias,
                                   H323TransportAddress & address)
 {
-  PString remoteParty = _remoteParty;
-
-  PURL url(remoteParty, GetPrefixName());
+  PURL url(remoteParty, GetPrefixName()); // Parses as per RFC3508
 
 #if P_DNS
+
   // if there is no gatekeeper, try altarnate address lookup methods
-
   if (gatekeeper == NULL) {
+    PString hostname = url.GetHostName();
 
-    bool found = false;
-
-    // if there is no gatekeeper, and there is no '@', and there is no URL scheme, then attempt to use ENUM
-    if ((remoteParty.Find('@') == P_MAX_INDEX)) {
-
-      // make sure the number has only digits
-      PString e164 = remoteParty;
-      if (e164.Left(4) *= "h323:")
-        e164 = e164.Mid(4);
-      PINDEX i;
-      for (i = 0; i < e164.GetLength(); ++i)
-        if (!isdigit(e164[i]) && (i != 0 || e164[0] != '+'))
-      	  break;
-      if (i >= e164.GetLength()) {
-        PString str;
-        if (PDNS::ENUMLookup(e164, "E2U+h323", str)) {
-          PTRACE(4, "H323\tENUM converted remote party " << _remoteParty << " to " << str);
-          remoteParty = str;
-          found = true;
-          url = PURL(remoteParty, GetPrefixName());
+    // No host, so lets try ENUM on the username part
+    if (hostname.IsEmpty()) {
+      PString username = url.GetUserName();
+      // make sure the number has only digits and +
+      if (username.FindSpan("+0123456789") == P_MAX_INDEX) {
+        PString newName;
+        if (PDNS::ENUMLookup(username, "E2U+h323", newName)) {
+          PTRACE(4, "H323\tENUM converted remote party " << username << " to " << newName);
+          url.Parse(newName, GetPrefixName());
         }
-        else
-          return PFalse;
       }
     }
 
-    // try SRV records
-    if (!found) {
-
-      // if it is a valid IP address, do not lookup
-      PIPSocket::Address ip = url.GetHostName();
+    // If it is a valid IP address then can't be a domain so do not try SRV record lookup
+    if (!hostname.IsEmpty()) {
+      PIPSocket::Address ip = hostname;
       if (!ip.IsValid()) {
-
-        // Do the SRV lookup - only use first entry
-        PIPSocketAddressAndPortVector addrs;
-        if (PDNS::LookupSRV(url.GetHostName(), "_h323._tcp", url.GetPort(), addrs) && (addrs.size() > 0)) {
-          url.SetHostName(addrs[0].address.AsString());
-          url.SetPort(addrs[0].port);
-          found = true;
+        PIPSocketAddressAndPortVector addresses;
+        if (PDNS::LookupSRV(hostname, "_h323._tcp", url.GetPort(), addresses) && !addresses.empty()) {
+          // Only use first entry
+          url.SetHostName(addresses[0].address.AsString());
+          url.SetPort(addresses[0].port);
         }
       }
     }
   }
 
 #endif
-
-  // Special adjustment if 
-  if (remoteParty.Find('@') == P_MAX_INDEX &&
-      remoteParty.NumCompare(url.GetScheme()) != EqualTo) {
-    if (gatekeeper == NULL)
-      url.Parse(GetPrefixName() + ":@" + remoteParty);
-    else
-      url.Parse(GetPrefixName() + ":" + remoteParty);
-  }
 
   alias = url.GetUserName();
 
@@ -933,10 +906,13 @@ PBoolean H323EndPoint::ParsePartyName(const PString & _remoteParty,
 
   // User explicitly said to use a gw, or we do not have a gk to do look up
   if (gatekeeper == NULL || gatewaySpecified) {
-    // If URL did not have a host, but user said to use gw, or we do not have
-    // a gk to do a lookup so we MUST have a host, use alias must be host
+    /* If URL did not have an '@' as per RFC3508 we get an alias but no
+       address, but user said to use gw, or we do not have a gk to do a lookup
+       so we MUST have a host. So, we swap the alias into the address field
+       and blank out the alias. */
     if (address.IsEmpty()) {
-      address = H323TransportAddress(alias, GetDefaultSignalPort(), GetDefaultTransport());
+      PStringArray transports = GetDefaultTransport().Tokenise(',');
+      address = H323TransportAddress(alias, GetDefaultSignalPort(), transports[0]);
       alias = PString::Empty();
     }
     return PTrue;
