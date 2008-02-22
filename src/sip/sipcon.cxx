@@ -82,7 +82,7 @@ ReasonToSIPCode[] = {
   { SIP_PDU::Failure_NotFound                   , OpalConnection::EndedByNoUser            ,   2 }, // no route to network
   { SIP_PDU::Failure_NotFound                   , OpalConnection::EndedByNoUser            ,   3 }, // no route to destination
   { SIP_PDU::Failure_BusyHere                   , OpalConnection::EndedByLocalBusy         ,  17 }, // user busy                            
-  { SIP_PDU::Failure_RequestTimeout             , OpalConnection::EndedByNoUser            ,  18 }, // no user responding                   
+  { SIP_PDU::Failure_RequestTimeout             , OpalConnection::EndedByNoAnswer          ,  18 }, // no user responding                   
   { SIP_PDU::Failure_TemporarilyUnavailable     , OpalConnection::EndedByNoAnswer          ,  19 }, // no answer from the user              
   { SIP_PDU::Failure_TemporarilyUnavailable     , OpalConnection::EndedByNoUser            ,  20 }, // subscriber absent                    
   { SIP_PDU::Failure_Forbidden                  , OpalConnection::EndedByNoUser            ,  21 }, // call rejected                        
@@ -114,6 +114,11 @@ ReasonToSIPCode[] = {
   { SIP_PDU::Failure_UnsupportedMediaType       , OpalConnection::EndedByCapabilityExchange      },
   { SIP_PDU::Redirection_MovedTemporarily       , OpalConnection::EndedByCallForwarded           },
   { SIP_PDU::GlobalFailure_Decline              , OpalConnection::EndedByAnswerDenied            },
+  { SIP_PDU::GlobalFailure_Decline              , OpalConnection::EndedByRefusal                 }, // TODO - SGW - add for call reject from H323 side.
+  { SIP_PDU::Failure_NotFound                   , OpalConnection::EndedByHostOffline             }, // TODO - SGW - add for no ip from H323 side.
+  { SIP_PDU::Failure_NotFound                   , OpalConnection::EndedByNoEndPoint              }, // TODO - SGW - add for endpoints not running on a ip from H323 side.
+  { SIP_PDU::Failure_Forbidden                  , OpalConnection::EndedByUnreachable             }, // TODO - SGW - add for avoid sip calls to SGW IP.
+  { SIP_PDU::GlobalFailure_NotAcceptable        , OpalConnection::EndedByNoBandwidth             }, // TODO - SGW - added to reject call when no bandwidth 
 },
 
 //
@@ -1453,6 +1458,11 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   }
 
   // We don't always release the connection, eg not till all forked invites have completed
+  if (transaction.GetMethod() != SIP_PDU::Method_INVITE &&
+      response.GetStatusCode()!= SIP_PDU::Failure_RequestTimeout && 
+      response.GetStatusCode()!= SIP_PDU::Failure_TransactionDoesNotExist)
+    ignoreErrorResponse = true;
+
   if (ignoreErrorResponse)
     return;
 
@@ -1605,13 +1615,13 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
   // get the remote media formats, if any
   if (originalInvite->HasSDP()) {
-
     SDPSessionDescription & sdpIn = originalInvite->GetSDP();
+
     // The Re-INVITE can be sent to change the RTP Session parameters,
     // the current codecs, or to put the call on hold
-    if ((sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID)&SDPMediaDescription::RecvOnly) == 0 &&
-        (sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID)&SDPMediaDescription::RecvOnly) == 0) {
-
+    if (((sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID)&SDPMediaDescription::RecvOnly) == 0 &&
+         (sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID)&SDPMediaDescription::RecvOnly) == 0) ||
+          sdpIn.GetBandwidth(SDPSessionDescription::ApplicationSpecificBandwidthType()) == 0) {
       PTRACE(3, "SIP\tRemote hold detected");
       remote_hold = PTrue;
       PauseMediaStreams(PTrue);

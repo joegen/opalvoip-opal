@@ -627,6 +627,7 @@ class SIP_PDU : public PSafeObject
           SIPMIMEInfo & GetMIME()            { return mime; }
     PBoolean HasSDP() const                      { return sdp != NULL; }
     SDPSessionDescription & GetSDP() const   { return *PAssertNULL(sdp); }
+    void SetURI(const SIPURL & newuri)       { uri = newuri; }
     void SetSDP(SDPSessionDescription * s)   { sdp = s; }
     void SetSDP(const SDPSessionDescription & s) { sdp = new SDPSessionDescription(s); }
 

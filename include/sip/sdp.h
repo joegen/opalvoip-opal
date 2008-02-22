@@ -133,6 +133,18 @@ PLIST(SDPMediaFormatList, SDPMediaFormat);
 
 /////////////////////////////////////////////////////////
 
+class SDPBandwidth : public std::map<PString, unsigned>
+{
+  public:
+    unsigned & operator[](const PString & type);
+    unsigned operator[](const PString & type) const;
+    friend ostream & operator<<(ostream & out, const SDPBandwidth & bw);
+    bool Parse(const PString & param);
+};
+
+
+/////////////////////////////////////////////////////////
+
 class SDPMediaDescription : public PObject
 {
   PCLASSINFO(SDPMediaDescription, PObject);
@@ -167,7 +179,8 @@ class SDPMediaDescription : public PObject
     void PrintOn(ostream & strm) const;
     void PrintOn(const OpalTransportAddress & commonAddr, ostream & str) const;
 
-    PBoolean Decode(const PString & str);
+    bool Decode(const PString & value);
+    bool Decode(char key, const PString & value);
 
     MediaType GetMediaType() const { return mediaType; }
 
@@ -195,6 +208,14 @@ class SDPMediaDescription : public PObject
 
     WORD GetPort() const { return port; }
 
+    PCaselessString GetMedia() const { return media; }
+    void SetMedia(const PCaselessString & mediaStr) { media = mediaStr;}
+
+    unsigned GetBandwidth(const PString & type) const { return bandwidth[type]; }
+    void SetBandwidth(const PString & type, unsigned value) { bandwidth[type] = value; }
+
+    void RemoveSDPMediaFormat(const SDPMediaFormat & sdpMediaFormat);
+
   protected:
     void PrintOn(ostream & strm, const PString & str) const;
     SDPMediaFormat * FindFormat(PString & str) const;
@@ -210,6 +231,7 @@ class SDPMediaDescription : public PObject
     Direction direction;
 
     SDPMediaFormatList formats;
+    SDPBandwidth       bandwidth;
 
 #if OPAL_T38FAX
     PStringToString t38Attributes;
@@ -254,14 +276,20 @@ class SDPSessionDescription : public PObject
       const OpalTransportAddress & address
     );
 	
-    const PString & GetBandwidthModifier() const { return bandwidthModifier; }
-    void SetBandwidthModifier(const PString & modifier) { bandwidthModifier = modifier; }
+    PINDEX GetOwnerSessionId() const { return ownerSessionId; }
+    void SetOwnerSessionId(PINDEX value) { ownerSessionId = value; }
 
-    PINDEX GetBandwidthValue() const { return bandwidthValue; }
-    void SetBandwidthValue(PINDEX value) { bandwidthValue = value; }
+    PINDEX GetOwnerVersion() const { return ownerVersion; }
+    void SetOwnerVersion(PINDEX value) { ownerVersion = value; }
 
-    static const PString & ConferenceTotalBandwidthModifier();
-    static const PString & ApplicationSpecificBandwidthModifier();
+    OpalTransportAddress GetOwnerAddress() const { return ownerAddress; }
+    void SetOwnerAddress(OpalTransportAddress addr) { ownerAddress = addr; }
+
+    unsigned GetBandwidth(const PString & type) const { return bandwidth[type]; }
+    void SetBandwidth(const PString & type, unsigned value) { bandwidth[type] = value; }
+
+    static const PString & ConferenceTotalBandwidthType();
+    static const PString & ApplicationSpecificBandwidthType();
 
   protected:
     void ParseOwner(const PString & str);
@@ -277,10 +305,8 @@ class SDPSessionDescription : public PObject
     unsigned ownerVersion;
     OpalTransportAddress ownerAddress;
     OpalTransportAddress defaultConnectAddress;
-    WORD defaultConnectPort;
-	
-    PString bandwidthModifier;
-    PINDEX bandwidthValue;
+
+    SDPBandwidth bandwidth;	
 };
 
 /////////////////////////////////////////////////////////
