@@ -689,11 +689,11 @@ OpalTransport * OpalListenerTCP::CreateTransport(const OpalTransportAddress & lo
                                                  const OpalTransportAddress & remoteAddress) const
 {
   OpalTransportAddress myLocalAddress = GetLocalAddress();
-  if (myLocalAddress.IsCompatible(remoteAddress) && myLocalAddress.IsCompatible(remoteAddress)) {
+  if (myLocalAddress.IsCompatible(remoteAddress)) {
     if (!localAddress.IsEmpty())
       return localAddress.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
 #ifdef P_SSL
-    if (remoteAddress.NumCompare("tcps:"))
+    if (remoteAddress.NumCompare(TcpsPrefix) == EqualTo)
       return new OpalTransportTCPS(endpoint);
 #endif
     return new OpalTransportTCP(endpoint);
