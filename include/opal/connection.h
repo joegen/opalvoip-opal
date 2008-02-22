@@ -1207,17 +1207,13 @@ class OpalConnection : public PSafeObject
       PBoolean incoming                       ///< Incoming/outgoing connection
     );
 
-    virtual void SetSecurityMode(const PString & v)
-    { securityMode = v; }
+    virtual void SetSecurityMode(const PString & v);
 
-    virtual PString GetSecurityMode() const 
-    { return securityMode; }
+    virtual PString GetSecurityMode() const;
 
-    virtual void * GetSecurityData();         
-    virtual void SetSecurityData(void *data); 
+    virtual OpalSecurityMode * GetSecurityData();         
 
-    StringOptions * GetStringOptions() const
-    { return stringOptions; }
+    StringOptions * GetStringOptions() const;
 
     void SetStringOptions(StringOptions * options);
 
@@ -1323,8 +1319,8 @@ class OpalConnection : public PSafeObject
     PDTMFDecoder        dtmfDecoder;
 #endif
 
-    PString securityMode;
-    void * securityData;
+    PString securityModeName;
+    OpalSecurityMode * securityModeData;
 
     /**Set the phase of the connection.
        @param phaseToSet the phase to set
@@ -1347,6 +1343,8 @@ class OpalSecurityMode : public PObject
 {
   PCLASSINFO(OpalSecurityMode, PObject);
   public:
+    virtual ~OpalSecurityMode();
+
     virtual RTP_UDP * CreateRTPSession(
 #if OPAL_RTP_AGGREGATE
       PHandleAggregator * _aggregator,   ///< handle aggregator
@@ -1356,6 +1354,32 @@ class OpalSecurityMode : public PObject
       OpalConnection & connection	 ///< Connection creating session (may be needed by secure connections)
     ) = 0;
     virtual PBoolean Open() = 0;
+};
+
+/*
+ * this class exists simply to test the security mode functions
+ */
+class OpalTestSecurityMode : public OpalSecurityMode
+{
+  PCLASSINFO(OpalTestSecurityMode, OpalSecurityMode);
+  public:
+    OpalTestSecurityMode();
+    ~OpalTestSecurityMode();
+
+    virtual RTP_UDP * CreateRTPSession(
+#if OPAL_RTP_AGGREGATE
+      PHandleAggregator * _aggregator,   ///< handle aggregator
+#endif
+      unsigned id,                       ///< Session ID for RTP channel
+      PBoolean remoteIsNAT,              ///< PTrue is remote is behind NAT
+      OpalConnection & connection	 ///< Connection creating session (may be needed by secure connections)
+    );
+
+
+    virtual PBoolean Open();
+
+  protected:
+    void * opaqueSecurityData;
 };
 
 

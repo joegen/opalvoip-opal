@@ -190,7 +190,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_H224
     h224Handler(NULL),
 #endif
-    securityData(NULL),
+    securityModeData(NULL),
     stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
@@ -229,7 +229,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
 #endif
 
-  securityMode = ep.GetDefaultSecurityMode();
+  securityModeName = ep.GetDefaultSecurityMode();
 
 #if OPAL_RTP_AGGREGATE
   switch (options & RTPAggregationMask) {
@@ -255,6 +255,7 @@ OpalConnection::~OpalConnection()
 {
   mediaStreams.RemoveAll();
 
+  delete securityModeData;
   delete silenceDetector;
   delete echoCanceler;
   delete rfc2833Handler;
@@ -868,10 +869,20 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   else
 #endif
 
-  if (!securityMode.IsEmpty()) {
-    OpalSecurityMode * parms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
+  if (securityModeName.IsEmpty())  {
+    rtpSession = new RTP_UDP(
+#if OPAL_RTP_AGGREGATE
+                   useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+#endif
+                   sessionID, remoteIsNAT);
+  }
+  else
+  {
+    if (securityModeName.Find("|") == P_MAX_INDEX)
+      securityModeName += "DEFAULT";
+    OpalSecurityMode * parms = PFactory<OpalSecurityMode>::CreateInstance(securityModeName);
     if (parms == NULL) {
-      PTRACE(1, "OpalCon\tSecurity mode " << securityMode << " unknown");
+      PTRACE(1, "OpalCon\tSecurity mode " << securityModeName << " unknown");
       return NULL;
     }
     rtpSession = parms->CreateRTPSession(
@@ -880,18 +891,11 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
 #endif
                   sessionID, remoteIsNAT, *this);
     if (rtpSession == NULL) {
-      PTRACE(1, "OpalCon\tCannot create RTP session for security mode " << securityMode);
+      PTRACE(1, "OpalCon\tCannot create RTP session for security mode " << securityModeName);
       delete parms;
       return NULL;
     }
-  }
-  else
-  {
-    rtpSession = new RTP_UDP(
-#if OPAL_RTP_AGGREGATE
-                   useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
-#endif
-                   sessionID, remoteIsNAT);
+    securityModeData = parms;
   }
 
   WORD firstPort = manager.GetRtpIpPortPair();
@@ -1229,14 +1233,24 @@ OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
   return localMediaFormats;
 }
 
-void * OpalConnection::GetSecurityData()
+void OpalConnection::SetSecurityMode(const PString & v)
+{ 
+  securityModeName = v; 
+}
+
+PString OpalConnection::GetSecurityMode() const 
+{ 
+  return securityModeName; 
+}
+
+OpalSecurityMode * OpalConnection::GetSecurityData()
 {
-  return securityData;
+  return securityModeData;
 }
  
-void OpalConnection::SetSecurityData(void *data)
-{
-  securityData = data;
+OpalConnection::StringOptions * OpalConnection::GetStringOptions() const
+{ 
+  return stringOptions; 
 }
 
 void OpalConnection::OnMediaPatchStart(unsigned, bool)
@@ -1245,5 +1259,47 @@ void OpalConnection::OnMediaPatchStart(unsigned, bool)
 void OpalConnection::OnMediaPatchStop(unsigned,  bool )
 { }
 
+/////////////////////////////////////////////////////////////////////////////
+
+OpalSecurityMode::~OpalSecurityMode() 
+{ }
+
+/////////////////////////////////////////////////////////////////////////////
+
+static PFactory<OpalSecurityMode>::Worker<OpalTestSecurityMode> worker_OpalTestSecurityMode("TEST");
+
+OpalTestSecurityMode::OpalTestSecurityMode()
+{
+  PTRACE(1, "OpalTestSecurityMode\tCreated security mode handler");
+  opaqueSecurityData = NULL;
+}
+
+OpalTestSecurityMode::~OpalTestSecurityMode()
+{
+  PTRACE(1, "OpalTestSecurityMode\tDestroyed security mode handler");
+  opaqueSecurityData = NULL;
+}
+
+RTP_UDP * OpalTestSecurityMode::CreateRTPSession(
+#if OPAL_RTP_AGGREGATE
+      PHandleAggregator * _aggregator,   ///< handle aggregator
+#endif
+      unsigned sessionID,                       ///< Session ID for RTP channel
+      PBoolean remoteIsNAT,              ///< PTrue is remote is behind NAT
+      OpalConnection & /*connection*/	 ///< Connection creating session (may be needed by secure connections)
+)
+{
+    return new RTP_UDP(
+#if OPAL_RTP_AGGREGATE
+                   useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+#endif
+                   sessionID, remoteIsNAT);
+}
+
+
+PBoolean OpalTestSecurityMode::Open()
+{
+  return true;
+}
 
 /////////////////////////////////////////////////////////////////////////////
