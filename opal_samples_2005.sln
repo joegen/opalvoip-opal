@@ -96,15 +96,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PlayRTP", "samples\playrtp\
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "epconntest", "samples\epconntest\epconntest.vcproj", "{114768E2-D8CD-4152-B7F9-6A74E547B387}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-	ProjectSection(ProjectDependencies) = postProject
-		{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8} = {ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -193,12 +184,6 @@ Global
 		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.No Trace|Win32.Build.0 = Debug|Win32
 		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.Release|Win32.ActiveCfg = Release|Win32
 		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.Release|Win32.Build.0 = Release|Win32
-		{114768E2-D8CD-4152-B7F9-6A74E547B387}.Debug|Win32.ActiveCfg = Debug|Win32
-		{114768E2-D8CD-4152-B7F9-6A74E547B387}.Debug|Win32.Build.0 = Debug|Win32
-		{114768E2-D8CD-4152-B7F9-6A74E547B387}.No Trace|Win32.ActiveCfg = Release|Win32
-		{114768E2-D8CD-4152-B7F9-6A74E547B387}.No Trace|Win32.Build.0 = Release|Win32
-		{114768E2-D8CD-4152-B7F9-6A74E547B387}.Release|Win32.ActiveCfg = Release|Win32
-		{114768E2-D8CD-4152-B7F9-6A74E547B387}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
