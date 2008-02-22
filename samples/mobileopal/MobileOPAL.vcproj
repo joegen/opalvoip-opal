@@ -1044,10 +1044,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\MyDialog.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\OptionsGeneral.cpp"
 				>
 			</File>
@@ -1171,10 +1167,6 @@
 			</File>
 			<File
 				RelativePath=".\MobileOpalDlg.h"
-				>
-			</File>
-			<File
-				RelativePath=".\MyDialog.h"
 				>
 			</File>
 			<File
