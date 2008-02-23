@@ -204,8 +204,8 @@ dnl
 dnl ffmpeg for H.263
 dnl 
 
-HAS_H263=1
-AC_SUBST(HAS_H263)
+HAS_FFMPEG_H263=1
+AC_SUBST(HAS_FFMPEG_H263)
 
 
 dnl ########################################################################
@@ -639,7 +639,7 @@ echo "================ Codec Plugin configuration ==================="
 echo "          Installing into prefix  :  $INSTALLPREFIX"
 echo ""
 echo "                           H.261  :  enabled"
-if test "x${HAS_H263}" = "x1" ; then
+if test "x${HAS_FFMPEG_H263}" = "x1" ; then
 echo "                           H.263  :  enabled"
 else
 echo "                           H.263  :  disabled"
