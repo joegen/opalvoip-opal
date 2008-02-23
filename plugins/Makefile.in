@@ -7,7 +7,7 @@ SUBDIRS = audio/GSM0610 \
 	  audio/gsm-amr \
 	  video/H.261-vic
 
-HAS_H263=@HAS_H263@
+HAS_FFMPEG_H263=@HAS_FFMPEG_H263@
 ifeq ($(HAS_FFMPEG_H263),1)
 SUBDIRS += video/H.263-ffmpeg
 endif

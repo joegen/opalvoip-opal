@@ -686,7 +686,7 @@ H323_SYSTEM_GSM
 SIZE16
 SIZE32
 H323_SYSTEM_SPEEX
-HAS_H263
+HAS_FFMPEG_H263
 HAS_IXJ
 HAS_VPB
 HAS_CAPI
@@ -5964,7 +5964,7 @@ _ACEOF
 fi
 
 
-HAS_H263=1
+HAS_FFMPEG_H263=1
 
 
 
@@ -8684,7 +8684,7 @@ H323_SYSTEM_GSM!$H323_SYSTEM_GSM$ac_delim
 SIZE16!$SIZE16$ac_delim
 SIZE32!$SIZE32$ac_delim
 H323_SYSTEM_SPEEX!$H323_SYSTEM_SPEEX$ac_delim
-HAS_H263!$HAS_H263$ac_delim
+HAS_FFMPEG_H263!$HAS_FFMPEG_H263$ac_delim
 HAS_IXJ!$HAS_IXJ$ac_delim
 HAS_VPB!$HAS_VPB$ac_delim
 HAS_CAPI!$HAS_CAPI$ac_delim
@@ -9752,7 +9752,7 @@ H323_SYSTEM_GSM!$H323_SYSTEM_GSM$ac_delim
 SIZE16!$SIZE16$ac_delim
 SIZE32!$SIZE32$ac_delim
 H323_SYSTEM_SPEEX!$H323_SYSTEM_SPEEX$ac_delim
-HAS_H263!$HAS_H263$ac_delim
+HAS_FFMPEG_H263!$HAS_FFMPEG_H263$ac_delim
 HAS_IXJ!$HAS_IXJ$ac_delim
 HAS_VPB!$HAS_VPB$ac_delim
 HAS_CAPI!$HAS_CAPI$ac_delim
@@ -10106,7 +10106,7 @@ echo "================ Codec Plugin configuration ==================="
 echo "          Installing into prefix  :  $INSTALLPREFIX"
 echo ""
 echo "                           H.261  :  enabled"
-if test "x${HAS_H263}" = "x1" ; then
+if test "x${HAS_FFMPEG_H263}" = "x1" ; then
 echo "                           H.263  :  enabled"
 else
 echo "                           H.263  :  disabled"
