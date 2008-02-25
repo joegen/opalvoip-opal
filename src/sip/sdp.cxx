@@ -1117,6 +1117,7 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
               delete currentMedia;
               currentMedia = NULL;
             }
+            break;
 
           default:
             PTRACE(1, "SDP\tUnknown session information key " << line[0]);
