@@ -271,6 +271,8 @@ void CMobileOpalDlg::InitialiseOPAL()
     CStringA strRealm = GetOptionStringA(RegistrarRealmKey);
     command.m_param.m_registrationInfo.m_adminEntity = strRealm;
 
+    command.m_param.m_registrationInfo.m_timeToLive = 300;
+
     if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
       ErrorBox(IDS_REGISTRATION_FAIL);
     OpalFreeMessage(response);
@@ -327,6 +329,13 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
     if (message != NULL) {
       switch (message->m_type) {
         case OpalIndRegistration :
+          if (message->m_param.m_registrationStatus.m_error == NULL ||
+              message->m_param.m_registrationStatus.m_error[0] == '\0')
+            SetStatusText(IDS_REGISTERED);
+          else {
+            CString text(message->m_param.m_registrationStatus.m_error);
+            m_ctrlStatus.SetWindowText(text);
+          }
           break;
 
         case OpalIndIncomingCall :

@@ -130,7 +130,7 @@ BEGIN
     RTEXT           "User Name:",IDC_STATIC,7,80,48,8
     EDITTEXT        IDC_AUTH_USER,60,78,73,12,ES_AUTOHSCROLL
     RTEXT           "Password:",IDC_STATIC,7,94,48,8
-    EDITTEXT        IDC_PASSWORD,60,92,73,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PASSWORD,60,92,73,12,ES_PASSWORD | ES_AUTOHSCROLL
 END
 
 
@@ -270,6 +270,7 @@ STRINGTABLE
 BEGIN
     IDS_ACCEPT              "Accept"
     IDS_CANCEL              "Cancel"
+    IDS_REGISTERED          "Registered and ready for calls."
 END
 
 #endif    // English (Australia) resources
