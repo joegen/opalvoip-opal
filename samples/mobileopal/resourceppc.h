@@ -48,6 +48,7 @@
 #define IDS_REGISTRATION_FAIL           10015
 #define IDS_ACCEPT                      10016
 #define IDS_CANCEL                      10017
+#define IDS_REGISTERED                  10018
 #define IDM_OPTIONS_GENERAL             32776
 #define IDM_OPTIONS_H323                32777
 #define IDM_OPTIONS_SIP                 32778

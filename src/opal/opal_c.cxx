@@ -601,7 +601,9 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
 #if OPAL_SIP
   SIPEndPoint * sip = dynamic_cast<SIPEndPoint *>(ep);
   if (sip != NULL) {
-    if (IsNullString(command.m_param.m_registrationInfo.m_hostName)) {
+    if (IsNullString(command.m_param.m_registrationInfo.m_hostName) &&
+          (IsNullString(command.m_param.m_registrationInfo.m_identifier) ||
+                 strchr(command.m_param.m_registrationInfo.m_identifier, '@') == NULL)) {
       response.SetError("No domain specified for SIP registration.");
       return;
     }
@@ -627,6 +629,8 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
       params.m_addressOfRecord = aor;
       params.m_contactAddress = host;
       params.m_authID = command.m_param.m_registrationInfo.m_authUserName;
+      if (params.m_authID.IsEmpty())
+        params.m_authID = params.m_addressOfRecord.Left(params.m_addressOfRecord.Find('@'));
       params.m_password = command.m_param.m_registrationInfo.m_password;
       params.m_realm = command.m_param.m_registrationInfo.m_adminEntity;
       params.m_expire = command.m_param.m_registrationInfo.m_timeToLive;
