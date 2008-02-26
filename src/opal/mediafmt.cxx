@@ -1204,7 +1204,6 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
       if (!genericInfo.excludeReqMode)
         strm << " RM";
     }
-#endif // OPAL_H323
 
     // Show the type of the option: Boolean, Unsigned, String, etc.
     if (PIsDescendant(&option, OpalMediaOptionBoolean))
@@ -1226,6 +1225,8 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
       strm << " OctetString";
     else
       strm << " String";
+#endif // OPAL_H323
+
     strm << '\n';
   }
   strm << endl;
