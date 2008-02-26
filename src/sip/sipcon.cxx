@@ -2042,6 +2042,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   }
 
   PTRACE(3, "SIP\tReceived INVITE OK response");
+  releaseMethod = ReleaseWithBYE;
 
   OnReceivedSDP(response);
 
