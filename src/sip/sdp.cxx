@@ -1062,7 +1062,7 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
       //
       /////////////////////////////////
   
-      if (currentMedia != NULL)
+      if (currentMedia != NULL && line[0] != 'm')
         currentMedia->Decode(line[0], value);
       else {
         switch (line[0]) {
