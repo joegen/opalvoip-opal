@@ -488,10 +488,8 @@ void OpalCall::OnUserInputTone(OpalConnection & connection,
                                int duration)
 {
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection)
-      conn->SendUserInputTone(tone, duration);
-    else {
-      if (duration > 0 && tone != ' ')
+    if (conn != &connection) {
+      if (!conn->SendUserInputTone(tone, duration) && duration > 0 && tone != ' ')
         connection.OnUserInputString(tone);
     }
   }
