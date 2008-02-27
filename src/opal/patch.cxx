@@ -407,15 +407,20 @@ void OpalMediaPatch::Main()
 	
   while (source.IsOpen()) {
     sourceFrame.SetPayloadSize(0); 
-    if (!source.ReadPacket(sourceFrame))
+    if (!source.ReadPacket(sourceFrame)) {
+      PTRACE(4, "Patch\tThread ended because source read failed");
+      source.ReadPacket(sourceFrame);
       break;
+    }
  
     inUse.Wait();
     bool written = DispatchFrame(sourceFrame);
     inUse.Signal();
 
-    if (!written)
+    if (!written) {
+      PTRACE(4, "Patch\tThread ended because all sink writes failed failed");
       break;
+    }
  
     // Don't starve the CPU if we have idle frames and the no source or destination is synchronous.
     // Note that performing a Yield is not good enough, as the media patch threads are
