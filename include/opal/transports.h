@@ -783,6 +783,10 @@ class OpalTransport : public PIndirectChannel
 
     virtual void SetReadsPerPDU(int) {}
 
+    /**Get the prefix for this transports protocol type.
+      */
+    virtual const char * GetProtoPrefix() const = 0;
+
   protected:
     OpalEndPoint & endpoint;
     PThread      * thread;      ///<  Thread handling the transport
