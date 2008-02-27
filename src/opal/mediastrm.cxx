@@ -533,6 +533,9 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalConnection & conn,
     minAudioJitterDelay(minJitter),
     maxAudioJitterDelay(maxJitter)
 {
+  if (!mediaFormat.NeedsJitterBuffer())
+    minAudioJitterDelay = maxAudioJitterDelay = 0;
+
   defaultDataSize = conn.GetMaxRtpPayloadSize();
 }
 
@@ -622,7 +625,7 @@ PBoolean OpalRTPMediaStream::SetDataSize(PINDEX dataSize)
 
 PBoolean OpalRTPMediaStream::IsSynchronous() const
 {
-  return false;
+  return IsSource() && !mediaFormat.NeedsJitterBuffer();
 }
 
 
