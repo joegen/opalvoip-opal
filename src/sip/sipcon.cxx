@@ -960,7 +960,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       sendStream = GetMediaStream(rtpSessionId, false);
     if (sendStream != NULL) {
       localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
-      localMedia->SetDirection(recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
+      localMedia->SetDirection(sendStream->IsPaused() ? SDPMediaDescription::Inactive : recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
     }
   }
   else if (recving) {
@@ -968,7 +968,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       recvStream = GetMediaStream(rtpSessionId, true);
     if (recvStream != NULL) {
       localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
-      localMedia->SetDirection(SDPMediaDescription::RecvOnly);
+      localMedia->SetDirection(recvStream->IsPaused() ? SDPMediaDescription::Inactive : SDPMediaDescription::RecvOnly);
     }
   }
   else {
