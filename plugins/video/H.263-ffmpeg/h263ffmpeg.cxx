@@ -1803,211 +1803,210 @@ static struct PluginCodec_Option const * const xcifOptionTable[] = {
 
 /////////////////////////////////////////////////////////////////////////////
 
-static struct PluginCodec_Definition h263CodecDefn[6] = {
+static struct PluginCodec_Definition h263CodecDefn[6] =
+{
+  { 
+    // CIF only encoder
+    PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
+    &licenseInfo,                       // license information
 
-{ 
-  // CIF only encoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
+    PluginCodec_MediaTypeVideo |        // video codec
+    PluginCodec_RTPTypeExplicit,        // specified RTP type
 
-  PluginCodec_MediaTypeVideo |        // video codec
-  PluginCodec_RTPTypeExplicit,        // specified RTP type
+    h263CIFDesc,                        // text decription
+    YUV420PDesc,                        // source format
+    h263CIFDesc,                        // destination format
 
-  h263CIFDesc,                        // text decription
-  YUV420PDesc,                        // source format
-  h263CIFDesc,                        // destination format
+    cifOptionTable,                     // user data 
 
-  cifOptionTable,                     // user data 
+    H263_CLOCKRATE,                     // samples per second
+    H263_BITRATE,                       // raw bits per second
+    20000,                              // nanoseconds per frame
 
-  H263_CLOCKRATE,                     // samples per second
-  H263_BITRATE,                       // raw bits per second
-  20000,                              // nanoseconds per frame
+    CIF_WIDTH,                          // frame width
+    CIF_HEIGHT,                         // frame height
+    10,                                 // recommended frame rate
+    60,                                 // maximum frame rate
+    RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
+    sdpH263,                            // RTP payload name
 
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
-  sdpH263,                            // RTP payload name
+    create_encoder,                     // create codec function
+    destroy_encoder,                    // destroy codec
+    codec_encoder,                      // encode/decode
+    h323EncoderControls,                // codec controls
 
-  create_encoder,                     // create codec function
-  destroy_encoder,                    // destroy codec
-  codec_encoder,                      // encode/decode
-  h323EncoderControls,                // codec controls
+    PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+  { 
+    // CIF only decoder
+    PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
+    &licenseInfo,                       // license information
 
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-{ 
-  // CIF only decoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
+    PluginCodec_MediaTypeVideo |        // video codec
+    PluginCodec_RTPTypeExplicit,        // specified RTP type
 
-  PluginCodec_MediaTypeVideo |        // video codec
-  PluginCodec_RTPTypeExplicit,        // specified RTP type
+    h263CIFDesc,                        // text decription
+    h263CIFDesc,                        // source format
+    YUV420PDesc,                        // destination format
 
-  h263CIFDesc,                        // text decription
-  h263CIFDesc,                        // source format
-  YUV420PDesc,                        // destination format
+    cifOptionTable,                     // user data 
 
-  cifOptionTable,                     // user data 
+    H263_CLOCKRATE,                     // samples per second
+    H263_BITRATE,                       // raw bits per second
+    20000,                              // nanoseconds per frame
 
-  H263_CLOCKRATE,                     // samples per second
-  H263_BITRATE,                       // raw bits per second
-  20000,                              // nanoseconds per frame
+    CIF_WIDTH,                          // frame width
+    CIF_HEIGHT,                         // frame height
+    10,                                 // recommended frame rate
+    60,                                 // maximum frame rate
+    RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
+    sdpH263,                            // RTP payload name
 
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
-  sdpH263,                            // RTP payload name
+    create_decoder,                     // create codec function
+    destroy_decoder,                    // destroy codec
+    codec_decoder,                      // encode/decode
+    h323DecoderControls,                // codec controls
 
-  create_decoder,                     // create codec function
-  destroy_decoder,                    // destroy codec
-  codec_decoder,                      // encode/decode
-  h323DecoderControls,                // codec controls
+    PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
 
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
+  { 
+    // QCIF only encoder
+    PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
+    &licenseInfo,                       // license information
 
-{ 
-  // QCIF only encoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
+    PluginCodec_MediaTypeVideo |        // audio codec
+    PluginCodec_RTPTypeExplicit,        // specified RTP type
 
-  PluginCodec_MediaTypeVideo |        // audio codec
-  PluginCodec_RTPTypeExplicit,        // specified RTP type
+    h263QCIFDesc,                       // text decription
+    YUV420PDesc,                        // source format
+    h263QCIFDesc,                       // destination format
 
-  h263QCIFDesc,                       // text decription
-  YUV420PDesc,                        // source format
-  h263QCIFDesc,                       // destination format
+    qcifOptionTable,                    // user data 
 
-  qcifOptionTable,                    // user data 
+    H263_CLOCKRATE,                     // samples per second
+    H263_BITRATE,                       // raw bits per second
+    20000,                              // nanoseconds per frame
 
-  H263_CLOCKRATE,                     // samples per second
-  H263_BITRATE,                       // raw bits per second
-  20000,                              // nanoseconds per frame
+    QCIF_WIDTH,                         // frame width
+    QCIF_HEIGHT,                        // frame height
+    10,                                 // recommended frame rate
+    60,                                 // maximum frame rate
+    RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
+    sdpH263,                            // RTP payload name
 
-  QCIF_WIDTH,                         // frame width
-  QCIF_HEIGHT,                        // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
-  sdpH263,                            // RTP payload name
+    create_encoder,                     // create codec function
+    destroy_encoder,                    // destroy codec
+    codec_encoder,                      // encode/decode
+    h323EncoderControls,                // codec controls
 
-  create_encoder,                     // create codec function
-  destroy_encoder,                    // destroy codec
-  codec_encoder,                      // encode/decode
-  h323EncoderControls,                // codec controls
+    PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+  { 
+    // QCIF only decoder
+    PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
+    &licenseInfo,                       // license information
 
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-{ 
-  // QCIF only decoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
+    PluginCodec_MediaTypeVideo |        // audio codec
+    PluginCodec_RTPTypeExplicit,        // specified RTP type
 
-  PluginCodec_MediaTypeVideo |        // audio codec
-  PluginCodec_RTPTypeExplicit,        // specified RTP type
+    h263QCIFDesc,                       // text decription
+    h263QCIFDesc,                       // source format
+    YUV420PDesc,                        // destination format
 
-  h263QCIFDesc,                       // text decription
-  h263QCIFDesc,                       // source format
-  YUV420PDesc,                        // destination format
+    qcifOptionTable,                    // user data 
 
-  qcifOptionTable,                    // user data 
+    H263_CLOCKRATE,                     // samples per second
+    H263_BITRATE,                       // raw bits per second
+    20000,                              // nanoseconds per frame
 
-  H263_CLOCKRATE,                     // samples per second
-  H263_BITRATE,                       // raw bits per second
-  20000,                              // nanoseconds per frame
+    QCIF_WIDTH,                         // frame width
+    QCIF_HEIGHT,                        // frame height
+    10,                                 // recommended frame rate
+    60,                                 // maximum frame rate
+    RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
+    sdpH263,                            // RTP payload name
 
-  QCIF_WIDTH,                         // frame width
-  QCIF_HEIGHT,                        // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
-  sdpH263,                            // RTP payload name
+    create_decoder,                     // create codec function
+    destroy_decoder,                    // destroy codec
+    codec_decoder,                      // encode/decode
+    h323DecoderControls,                // codec controls
 
-  create_decoder,                     // create codec function
-  destroy_decoder,                    // destroy codec
-  codec_decoder,                      // encode/decode
-  h323DecoderControls,                // codec controls
+    PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
 
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
+  { 
+    // All frame sizes (dynamic) encoder
+    PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
+    &licenseInfo,                       // license information
 
-{ 
-  // All frame sizes (dynamic) encoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
+    PluginCodec_MediaTypeVideo |        // video codec
+    PluginCodec_MediaTypeExtVideo |     // Extended video codec
+    PluginCodec_RTPTypeExplicit,        // specified RTP type
 
-  PluginCodec_MediaTypeVideo |        // video codec
-  PluginCodec_MediaTypeExtVideo |     // Extended video codec
-  PluginCodec_RTPTypeExplicit,        // specified RTP type
+    h263Desc,                           // text decription
+    YUV420PDesc,                        // source format
+    h263Desc,                           // destination format
 
-  h263Desc,                           // text decription
-  YUV420PDesc,                        // source format
-  h263Desc,                           // destination format
+    xcifOptionTable,                    // user data 
 
-  xcifOptionTable,                    // user data 
+    H263_CLOCKRATE,                     // samples per second
+    H263_BITRATE,                       // raw bits per second
+    20000,                              // nanoseconds per frame
 
-  H263_CLOCKRATE,                     // samples per second
-  H263_BITRATE,                       // raw bits per second
-  20000,                              // nanoseconds per frame
+    CIF16_WIDTH,                        // frame width
+    CIF16_HEIGHT,                       // frame height
+    10,                                 // recommended frame rate
+    60,                                 // maximum frame rate
+    RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
+    sdpH263,                            // RTP payload name
 
-  CIF16_WIDTH,                        // frame width
-  CIF16_HEIGHT,                       // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
-  sdpH263,                            // RTP payload name
+    create_encoder,                     // create codec function
+    destroy_encoder,                    // destroy codec
+    codec_encoder,                      // encode/decode
+    EncoderControls,                    // codec controls
 
-  create_encoder,                     // create codec function
-  destroy_encoder,                    // destroy codec
-  codec_encoder,                      // encode/decode
-  EncoderControls,                    // codec controls
+    PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+  { 
+    // All frame sizes (dynamic) decoder
+    PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
+    &licenseInfo,                       // license information
 
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-{ 
-  // All frame sizes (dynamic) decoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
+    PluginCodec_MediaTypeVideo |        // video codec
+    PluginCodec_MediaTypeExtVideo |     // Extended video codec
+    PluginCodec_RTPTypeExplicit,        // specified RTP type
 
-  PluginCodec_MediaTypeVideo |        // video codec
-  PluginCodec_MediaTypeExtVideo |     // Extended video codec
-  PluginCodec_RTPTypeExplicit,        // specified RTP type
+    h263Desc,                           // text decription
+    h263Desc,                           // source format
+    YUV420PDesc,                        // destination format
 
-  h263Desc,                           // text decription
-  h263Desc,                           // source format
-  YUV420PDesc,                        // destination format
+    xcifOptionTable,                    // user data 
 
-  xcifOptionTable,                    // user data 
+    H263_CLOCKRATE,                     // samples per second
+    H263_BITRATE,                       // raw bits per second
+    20000,                              // nanoseconds per frame
 
-  H263_CLOCKRATE,                     // samples per second
-  H263_BITRATE,                       // raw bits per second
-  20000,                              // nanoseconds per frame
+    CIF16_WIDTH,                        // frame width
+    CIF16_HEIGHT,                       // frame height
+    10,                                 // recommended frame rate
+    60,                                 // maximum frame rate
+    RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
+    sdpH263,                            // RTP payload name
 
-  CIF16_WIDTH,                        // frame width
-  CIF16_HEIGHT,                       // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
-  sdpH263,                            // RTP payload name
+    create_decoder,                     // create codec function
+    destroy_decoder,                    // destroy codec
+    codec_decoder,                      // encode/decode
+    DecoderControls,                    // codec controls
 
-  create_decoder,                     // create codec function
-  destroy_decoder,                    // destroy codec
-  codec_decoder,                      // encode/decode
-  DecoderControls,                    // codec controls
-
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-
+    PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  }
 };
 
 

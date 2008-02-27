@@ -611,6 +611,6 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
 };
 
 
-/////////////////////////////////////////////////////////////////////////////
+PLUGIN_CODEC_IMPLEMENT_ALL(iLBC, iLBCCodecDefn, PLUGIN_CODEC_VERSION_OPTIONS)
 
-PLUGIN_CODEC_IMPLEMENT_ALL("iLBC", iLBCCodecDefn, PLUGIN_CODEC_VERSION_OPTIONS)
+/////////////////////////////////////////////////////////////////////////////
