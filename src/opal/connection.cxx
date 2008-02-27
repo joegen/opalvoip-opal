@@ -298,13 +298,11 @@ PBoolean OpalConnection::OnSetUpConnection()
 
 void OpalConnection::HoldConnection()
 {
-  
 }
 
 
 void OpalConnection::RetrieveConnection()
 {
-  
 }
 
 
