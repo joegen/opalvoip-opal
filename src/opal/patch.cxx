@@ -385,13 +385,16 @@ void OpalMediaPatch::Main()
 {
   PTRACE(4, "Patch\tThread started for " << *this);
 	
+  bool isAudio = source.GetMediaFormat().GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID;
+
   inUse.Wait();
   source.OnPatchStart();
   PBoolean isSynchronous = source.IsSynchronous();
   if (!source.IsSynchronous()) {
     for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
       if (s->stream->IsSynchronous()) {
-        source.EnableJitterBuffer();
+        if (isAudio) 
+          source.EnableJitterBuffer();
         isSynchronous = PTrue;
         break;
       }
