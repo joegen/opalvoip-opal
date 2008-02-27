@@ -1060,7 +1060,8 @@ SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & 
     if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
       GetManager().TranslateIPAddress(localIP, remoteIP);    
       contactPort = localPort;
-      contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
+      PString proto = transport.GetProtoPrefix();
+      contactAddress = OpalTransportAddress(localIP, contactPort, proto.Left(proto.GetLength()-1)); //xxxxxx
     }
   }
 
