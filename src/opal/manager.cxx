@@ -516,18 +516,21 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   PINDEX tableEntry = 0;
   for (;;) {
     PString destination = OnRouteConnection(connection);
-    if (destination.IsEmpty())
+    if (destination.IsEmpty()) {
+      PTRACE(3, "OpalMan\tCould not find destination for " << connection);
       break;
+    }
 
     destination = ApplyRouteTable(connection.GetLocalPartyURL(), destination, tableEntry);
-    if (destination.IsEmpty())
+    if (destination.IsEmpty()) {
+      PTRACE(3, "OpalMan\tCould not route " << connection);
       break;
+    }
 
     if (MakeConnection(call, destination, NULL, options, stringOptions))
       return true;
   }
 
-  PTRACE(3, "OpalMan\tCould not route connection " << connection);
   return false;
 }
 
