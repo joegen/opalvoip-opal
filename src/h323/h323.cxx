@@ -693,7 +693,7 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
   if (h245TunnelRxPDU->m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_setup) {
     H225_Setup_UUIE & setup = h245TunnelRxPDU->m_h323_uu_pdu.m_h323_message_body;
 
-    if (setup.HasOptionalField(H225_Setup_UUIE::e_parallelH245Control)) {
+    if (doH245inSETUP && setup.HasOptionalField(H225_Setup_UUIE::e_parallelH245Control)) {
       for (i = 0; i < setup.m_parallelH245Control.GetSize(); i++) {
         PPER_Stream strm = setup.m_parallelH245Control[i].GetValue();
         HandleControlData(strm);
