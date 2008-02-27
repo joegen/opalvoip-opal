@@ -1074,17 +1074,13 @@ PBoolean H323Connection::OnOpenIncomingMediaChannels()
     else {
       if (isConsultationTransfer)
         AnsweringCall(AnswerCallNow);
-      else {
-#endif
-        // call the application callback to determine if to answer the call or not
-        connectionState = AwaitingLocalAnswer;
-        SetPhase(AlertingPhase);
-        AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
-#if OPAL_H450
-      }
     }
 #endif
   }
+
+  // call the application callback to determine if to answer the call or not
+  connectionState = AwaitingLocalAnswer;
+  AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
 
   return connectionState != ShuttingDownConnection;
 }
