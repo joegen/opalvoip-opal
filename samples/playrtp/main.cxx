@@ -89,6 +89,7 @@ void PlayRTP::Main()
              "a-audio-device:"
              "V-video-driver:"
              "v-video-device:"
+             "p-singlestep."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -115,6 +116,7 @@ void PlayRTP::Main()
               "  -a or --audio-device dev : Audio player device.\n"
               "  -V or --video-driver drv : Video display driver to use.\n"
               "  -v or --video-device dev : Video display device to use.\n"
+              "  -p or --singlestep       : Single step through input data.\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
               "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -155,6 +157,8 @@ void PlayRTP::Main()
 
   m_srcPort = PIPSocket::GetPortByService("udp", args.GetOptionString('s'));
   m_dstPort = PIPSocket::GetPortByService("udp", args.GetOptionString('d', "5000"));
+
+  m_singleStep = args.HasOption('p');
 
   // Audio player
   PString driverName = args.GetOptionString('A');
@@ -211,7 +215,6 @@ void PlayRTP::Main()
     cout << "driver \"" << driverName << "\" and ";
   cout << "device \"" << m_display->GetDeviceName() << "\" opened." << endl;
 
-
   for (PINDEX i = 0; i < args.GetCount(); i++)
     Play(args[i]);
 }
@@ -224,7 +227,6 @@ void PlayRTP::Play(const PFilePath & filename)
     cout << "Could not open file \"" << filename << '"' << endl;
     return;
   }
-
 
   struct pcap_hdr_s { 
     DWORD magic_number;   /* magic number */
@@ -389,13 +391,22 @@ void PlayRTP::Play(const PFilePath & filename)
       lastTimeStamp = rtp.GetTimestamp();
     }
 
+    if (m_singleStep) 
+      cout << "Input packet of length " << rtp.GetPayloadSize() << (rtp.GetMarker() ? " with MARKER" : "") << " -> ";
+
     RTP_DataFrameList output;
     if (!m_transcoder->ConvertFrames(rtp, output)) {
       cout << "Error decoding file \"" << filename << '"' << endl;
       return;
     }
 
-    for (PINDEX i = 0; i < output.GetSize(); i++) {
+    if (output.GetSize() == 0) {
+      if (m_singleStep) 
+        cout << "no frame" << endl;
+    }
+    else for (PINDEX i = 0; i < output.GetSize(); i++) {
+      if (m_singleStep)
+        cout << output.GetSize() << " packets" << endl;
       const RTP_DataFrame & data = output[i];
       if (inputFmt.GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID)
         m_player->Write(data.GetPayloadPtr(), data.GetPayloadSize());
@@ -407,6 +418,11 @@ void PlayRTP::Play(const PFilePath & filename)
                                 OPAL_VIDEO_FRAME_DATA_PTR(frame), data.GetMarker());
       }
     }
+    if (m_singleStep) {
+      char ch;
+      cin >> ch;
+    }
+
   }
 
   delete m_transcoder;
