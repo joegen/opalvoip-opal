@@ -238,6 +238,18 @@ class OpalCall : public PSafeObject
       PINDEX idx,
       PSafetyMode mode = PSafeReference
     ) { return connectionsActive.GetAt(idx, mode); }
+
+    /**Put call on hold.
+      */
+    void Hold();
+
+    /**Retrieve call from hold.
+      */
+    void Retrieve();
+
+    /**Indicate if call is in hold.
+      */
+    bool IsOnHold() const;
   //@}
 
   /**@name Media management */

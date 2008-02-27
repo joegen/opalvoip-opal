@@ -275,6 +275,35 @@ PSafePtr<OpalConnection> OpalCall::GetOtherPartyConnection(const OpalConnection 
 }
 
 
+void OpalCall::Hold()
+{
+  PTRACE(3, "Call\tSetting to On Hold");
+
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn)
+    conn->HoldConnection();
+}
+
+
+void OpalCall::Retrieve()
+{
+  PTRACE(3, "Call\tRetrieve from On Hold");
+
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn)
+    conn->RetrieveConnection();
+}
+
+
+bool OpalCall::IsOnHold() const
+{
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn->IsConnectionOnHold())
+      return true;
+  }
+
+  return false;
+}
+
+
 OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
                                               PBoolean includeSpecifiedConnection)
 {
