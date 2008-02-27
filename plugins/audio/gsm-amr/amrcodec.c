@@ -446,6 +446,7 @@ static struct PluginCodec_Definition amrCodecDefn[] = {
   }
 };
 
-PLUGIN_CODEC_IMPLEMENT_ALL("AMR", amrCodecDefn, PLUGIN_CODEC_VERSION_OPTIONS)
+
+PLUGIN_CODEC_IMPLEMENT_ALL(AMR, amrCodecDefn, PLUGIN_CODEC_VERSION_OPTIONS)
 
 /////////////////////////////////////////////////////////////////////////////

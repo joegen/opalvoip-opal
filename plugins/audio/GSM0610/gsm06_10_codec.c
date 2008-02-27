@@ -26,7 +26,6 @@
 
 #include <codec/opalplugin.h>
 
-PLUGIN_CODEC_IMPLEMENT(GSM_0610)
 
 #include <stdlib.h>
 #ifdef _WIN32
@@ -343,160 +342,153 @@ static struct PluginCodec_ControlDefn h323CoderControls[] = {
 /////////////////////////////////////////////////////////////////////////////
 
 
-static struct PluginCodec_Definition gsmCodecDefn[4] = {
+static struct PluginCodec_Definition gsmCodecDefn[4] =
+{
+  { 
+    // encoder
+    PLUGIN_CODEC_VERSION,               // codec API version
+    &licenseInfo,                       // license information
 
-{ 
-  // encoder
-  PLUGIN_CODEC_VERSION,               // codec API version
-  &licenseInfo,                       // license information
+    PluginCodec_MediaTypeAudio |        // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeExplicit,        // specified RTP type
 
-  PluginCodec_MediaTypeAudio |        // audio codec
-  PluginCodec_InputTypeRaw |          // raw input data
-  PluginCodec_OutputTypeRaw |         // raw output data
-  PluginCodec_RTPTypeExplicit,        // specified RTP type
+    gsm0610,                            // text decription
+    L16Desc,                            // source format
+    gsm0610,                            // destination format
 
-  gsm0610,                            // text decription
-  L16Desc,                            // source format
-  gsm0610,                            // destination format
+    0,                                  // user data (no WAV49)
 
-  0,                                  // user data (no WAV49)
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    20000,                              // nanoseconds per frame
+    SAMPLES_PER_FRAME,                  // samples per frame
+    BYTES_PER_FRAME,                    // bytes per frame
+    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    PAYLOAD_CODE,                       // IANA RTP payload code
+    sdpGSM,                             // RTP payload name
 
-  8000,                               // samples per second
-  BITS_PER_SECOND,                    // raw bits per second
-  20000,                              // nanoseconds per frame
-  SAMPLES_PER_FRAME,                  // samples per frame
-  BYTES_PER_FRAME,                    // bytes per frame
-  PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-  MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-  PAYLOAD_CODE,                       // IANA RTP payload code
-  sdpGSM,                             // RTP payload name
+    create_codec,                       // create codec function
+    destroy_codec,                      // destroy codec
+    codec_encoder,                      // encode/decode
+    NULL,                               // codec controls
 
-  create_codec,                       // create codec function
-  destroy_codec,                      // destroy codec
-  codec_encoder,                      // encode/decode
-  NULL,                               // codec controls
-
-  PluginCodec_H323AudioCodec_gsmFullRate,  // h323CapabilityType 
-  &gsmCaps                             // h323CapabilityData
-},
-
-{ 
-  // decoder
-  PLUGIN_CODEC_VERSION,               // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeAudio |        // audio codec
-  PluginCodec_InputTypeRaw |          // raw input data
-  PluginCodec_OutputTypeRaw |         // raw output data
-  PluginCodec_RTPTypeExplicit,        // dynamic RTP type
-
-  gsm0610,                            // text decription
-  gsm0610,                            // source format
-  L16Desc,                            // destination format
-
-  0,                                  // user data (no WAV49)
-
-  8000,                               // samples per second
-  BITS_PER_SECOND,                    // raw bits per second
-  20000,                              // nanoseconds per frame
-  SAMPLES_PER_FRAME,                  // samples per frame
-  BYTES_PER_FRAME,                    // bytes per frame
-  PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-  MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-  PAYLOAD_CODE,                       // IANA RTP payload code
-  sdpGSM,                             // RTP payload name
-
-  create_codec,                       // create codec function
-  destroy_codec,                      // destroy codec
-  codec_decoder,                      // encode/decode
-  NULL,                               // codec controls
-
-  PluginCodec_H323AudioCodec_gsmFullRate,  // h323CapabilityType 
-  &gsmCaps                             // h323CapabilityData
-},
-
-
-// MS-GSM
+    PluginCodec_H323AudioCodec_gsmFullRate,  // h323CapabilityType 
+    &gsmCaps                             // h323CapabilityData
+  },
 
   { 
-  // encoder
-  PLUGIN_CODEC_VERSION,               // codec API version
-  &licenseInfo,                       // license information
+    // decoder
+    PLUGIN_CODEC_VERSION,               // codec API version
+    &licenseInfo,                       // license information
 
-  PluginCodec_MediaTypeAudio |        // audio codec
-  PluginCodec_InputTypeRaw |          // raw input data
-  PluginCodec_OutputTypeRaw |         // raw output data
-  PluginCodec_RTPTypeDynamic,         // specified RTP type
+    PluginCodec_MediaTypeAudio |        // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeExplicit,        // dynamic RTP type
 
-  msGSM,                              // text decription
-  L16Desc,                            // source format
-  msGSM,                              // destination format
+    gsm0610,                            // text decription
+    gsm0610,                            // source format
+    L16Desc,                            // destination format
 
-  (const void *)1,                    // user data (enable WAV49)
+    0,                                  // user data (no WAV49)
 
-  8000,                               // samples per second
-  BITS_PER_SECOND,                    // raw bits per second
-  40000,                              // nanoseconds per frame
-  MSGSM_SAMPLES_PER_FRAME,            // samples per frame
-  MSGSM_BYTES_PER_FRAME,              // bytes per frame
-  1,                                  // recommended number of frames per packet
-  1,                                  // maximum number of frames per packe
-  0,                                  // IANA RTP payload code
-  sdpMSGSM,                           // RTP payload name
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    20000,                              // nanoseconds per frame
+    SAMPLES_PER_FRAME,                  // samples per frame
+    BYTES_PER_FRAME,                    // bytes per frame
+    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    PAYLOAD_CODE,                       // IANA RTP payload code
+    sdpGSM,                             // RTP payload name
 
-  create_codec,                       // create codec function
-  destroy_codec,                      // destroy codec
-  codec_msgsm_encoder,                // encode/decode
-  h323CoderControls,                  // codec controls
+    create_codec,                       // create codec function
+    destroy_codec,                      // destroy codec
+    codec_decoder,                      // encode/decode
+    NULL,                               // codec controls
 
-  PluginCodec_H323Codec_nonStandard,  // h323CapabilityType 
-  &msgsmCap                           // h323CapabilityData
-},
-
-{ 
-  // decoder
-  PLUGIN_CODEC_VERSION,               // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeAudio |        // audio codec
-  PluginCodec_InputTypeRaw |          // raw input data
-  PluginCodec_OutputTypeRaw |         // raw output data
-  PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-  msGSM,                              // text decription
-  msGSM,                              // source format
-  L16Desc,                            // destination format
-
-  (const void *)1,                    // user data (enable WAV49)
-
-  8000,                               // samples per second
-  BITS_PER_SECOND,                    // raw bits per second
-  40000,                              // nanoseconds per frame
-  MSGSM_SAMPLES_PER_FRAME,            // samples per frame
-  MSGSM_BYTES_PER_FRAME,              // bytes per frame
-  1,                                  // recommended number of frames per packet
-  1,                                  // maximum number of frames per packe
-  0,                                  // IANA RTP payload code
-  sdpMSGSM,                           // RTP payload name
-
-  create_codec,                       // create codec function
-  destroy_codec,                      // destroy codec
-  codec_msgsm_decoder,                // encode/decode
-  h323CoderControls,                  // codec controls
-
-  PluginCodec_H323Codec_nonStandard,  // h323CapabilityType 
-  &msgsmCap                           // h323CapabilityData
-},
+    PluginCodec_H323AudioCodec_gsmFullRate,  // h323CapabilityType 
+    &gsmCaps                             // h323CapabilityData
+  },
 
 
+  // MS-GSM
+
+    { 
+    // encoder
+    PLUGIN_CODEC_VERSION,               // codec API version
+    &licenseInfo,                       // license information
+
+    PluginCodec_MediaTypeAudio |        // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeDynamic,         // specified RTP type
+
+    msGSM,                              // text decription
+    L16Desc,                            // source format
+    msGSM,                              // destination format
+
+    (const void *)1,                    // user data (enable WAV49)
+
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    40000,                              // nanoseconds per frame
+    MSGSM_SAMPLES_PER_FRAME,            // samples per frame
+    MSGSM_BYTES_PER_FRAME,              // bytes per frame
+    1,                                  // recommended number of frames per packet
+    1,                                  // maximum number of frames per packe
+    0,                                  // IANA RTP payload code
+    sdpMSGSM,                           // RTP payload name
+
+    create_codec,                       // create codec function
+    destroy_codec,                      // destroy codec
+    codec_msgsm_encoder,                // encode/decode
+    h323CoderControls,                  // codec controls
+
+    PluginCodec_H323Codec_nonStandard,  // h323CapabilityType 
+    &msgsmCap                           // h323CapabilityData
+  },
+
+  { 
+    // decoder
+    PLUGIN_CODEC_VERSION,               // codec API version
+    &licenseInfo,                       // license information
+
+    PluginCodec_MediaTypeAudio |        // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+
+    msGSM,                              // text decription
+    msGSM,                              // source format
+    L16Desc,                            // destination format
+
+    (const void *)1,                    // user data (enable WAV49)
+
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    40000,                              // nanoseconds per frame
+    MSGSM_SAMPLES_PER_FRAME,            // samples per frame
+    MSGSM_BYTES_PER_FRAME,              // bytes per frame
+    1,                                  // recommended number of frames per packet
+    1,                                  // maximum number of frames per packe
+    0,                                  // IANA RTP payload code
+    sdpMSGSM,                           // RTP payload name
+
+    create_codec,                       // create codec function
+    destroy_codec,                      // destroy codec
+    codec_msgsm_decoder,                // encode/decode
+    h323CoderControls,                  // codec controls
+
+    PluginCodec_H323Codec_nonStandard,  // h323CapabilityType 
+    &msgsmCap                           // h323CapabilityData
+  }
 };
 
-#define NUM_DEFNS   (sizeof(gsmCodecDefn) / sizeof(struct PluginCodec_Definition))
+
+PLUGIN_CODEC_IMPLEMENT_ALL(GSM_0610, gsmCodecDefn, PLUGIN_CODEC_VERSION)
 
 /////////////////////////////////////////////////////////////////////////////
-
-PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-{
-  *count = NUM_DEFNS;
-  return gsmCodecDefn;
-}

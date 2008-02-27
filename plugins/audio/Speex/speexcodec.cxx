@@ -26,9 +26,6 @@
 
 #include <codec/opalplugin.h>
 
-extern "C" {
-PLUGIN_CODEC_IMPLEMENT("Speex")
-};
 
 #include <stdlib.h>
 #ifdef _WIN32
@@ -830,29 +827,30 @@ static struct PluginCodec_Definition ver2SpeexCodecDefn[] = {
 
 extern "C" {
 
-void OutputInfo(int mode, int rate)
-{
-  int bps = Speex_Bits_Per_Second(mode, rate);
-  //printf("mode = %i, rate = %i, bps = %i\n", mode, rate, bps);
-}
+  PLUGIN_CODEC_IMPLEMENT(Speex)
 
-PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-{
-  OutputInfo(2, 8000);
-  OutputInfo(3, 8000);
-  OutputInfo(4, 8000);
-  OutputInfo(6, 16000);
-
-  if (version == 1) {
-    *count = NUM_VER1_DEFNS;
-    return ver1SpeexCodecDefn;
-  }
-  else
+  void OutputInfo(int mode, int rate)
   {
-    *count = NUM_VER2_DEFNS;
-    return ver2SpeexCodecDefn;
+    int bps = Speex_Bits_Per_Second(mode, rate);
+    //printf("mode = %i, rate = %i, bps = %i\n", mode, rate, bps);
   }
-}
+
+  PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
+  {
+    OutputInfo(2, 8000);
+    OutputInfo(3, 8000);
+    OutputInfo(4, 8000);
+    OutputInfo(6, 16000);
+
+    if (version == 1) {
+      *count = NUM_VER1_DEFNS;
+      return ver1SpeexCodecDefn;
+    }
+    else {
+      *count = NUM_VER2_DEFNS;
+      return ver2SpeexCodecDefn;
+    }
+  }
 
 };
 
