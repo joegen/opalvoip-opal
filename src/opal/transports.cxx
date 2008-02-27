@@ -774,7 +774,7 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
       return new OpalTransportUDP(endpoint, pdu, listenerBundle, iface, remoteAddr, remotePort);
 
     case PChannel::Interrupted :
-      PTRACE(4, "Listen\tDropped interface " << iface);
+      PTRACE(4, "Listen\tInterfaces changed");
       break;
 
     default :
@@ -862,14 +862,19 @@ void OpalTransport::CloseWait()
 
   Close();
 
+  channelPointerMutex.StartWrite();
+
   if (thread != NULL) {
-    PAssert(thread->WaitForTermination(10000), "Transport thread did not terminate");
     if (thread == PThread::Current())
       thread->SetAutoDelete();
-    else
+    else {
+      PAssert(thread->WaitForTermination(10000), "Transport thread did not terminate");
       delete thread;
+    }
     thread = NULL;
   }
+
+  channelPointerMutex.EndWrite();
 }
 
 
