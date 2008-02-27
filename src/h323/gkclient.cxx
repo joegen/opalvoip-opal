@@ -417,14 +417,14 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg)
   WORD localPort;
   
   if(rasAddress.GetIpAndPort(localAddress, localPort) &&
-	 transport->GetRemoteAddress().GetIpAddress(remoteAddress))
+     transport->GetRemoteAddress().GetIpAddress(remoteAddress))
   {
-	  OpalManager & manager = transport->GetEndPoint().GetManager();
-	  
-	  if(manager.TranslateIPAddress(localAddress, remoteAddress))
-	  {
-		  rasAddress = H323TransportAddress(localAddress, localPort);
-	  }
+      OpalManager & manager = transport->GetEndPoint().GetManager();
+      
+      if(manager.TranslateIPAddress(localAddress, remoteAddress))
+      {
+          rasAddress = H323TransportAddress(localAddress, localPort);
+      }
   }
   
   rasAddress.SetPDU(rrq.m_rasAddress[0]);
@@ -1095,7 +1095,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     if (!MakeRequest(request)) {
       response.rejectReason = request.responseResult == Request::RejectReceived
                                                 ? request.rejectReason : UINT_MAX;
-	 
+     
       return PFalse;
     }
   }
@@ -1428,15 +1428,12 @@ H225_InfoRequestResponse & H323Gatekeeper::BuildInfoRequestResponse(H323RasPDU &
   PIPSocket::Address localAddress, remoteAddress;
   WORD localPort;
   
-  if(address.GetIpAndPort(localAddress, localPort) &&
-	 transport->GetRemoteAddress().GetIpAddress(remoteAddress)) {
-	  
+  if (address.GetIpAndPort(localAddress, localPort) &&
+      transport->GetRemoteAddress().GetIpAddress(remoteAddress)) {
+
     OpalManager & manager = transport->GetEndPoint().GetManager();
-	  
-	if(manager.TranslateIPAddress(localAddress, remoteAddress))
-	{
-	  address = H323TransportAddress(localAddress, localPort);
-	}
+    if (manager.TranslateIPAddress(localAddress, remoteAddress))
+      address = H323TransportAddress(localAddress, localPort);
   }
   address.SetPDU(irr.m_rasAddress);
 
@@ -1883,9 +1880,9 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
           altInfo->registrationState = AlternateInfo::IsRegistered;
           // The wanted registration is done, we can return
           if (request.requestPDU.GetChoice().GetTag() == H225_RasMessage::e_registrationRequest) {
-	    if (!alternatePermanent)
-	      Connect(tempAddr,tempIdentifier);
-	    return PTrue;
+        if (!alternatePermanent)
+          Connect(tempAddr,tempIdentifier);
+        return PTrue;
           }
         }
         requestMutex.Wait();
@@ -1897,12 +1894,12 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
 
 void H323Gatekeeper::OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority)
 {
-  if (priority == HighPriority) {
+  if (priority == HighPriority)
     return;
-  }
   
   UpdateConnectionStatus();
 }
+
 
 void H323Gatekeeper::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority)
 {
@@ -1911,48 +1908,42 @@ void H323Gatekeeper::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, 
     return;
   }
   
-  if (transport == NULL) {
+  if (transport == NULL)
     return;
-  }
   
   PString iface = transport->GetInterface();
-  if (iface.IsEmpty()) { // not connected.
+  if (iface.IsEmpty()) // not connected.
     return;
-  }
   
   if (PInterfaceMonitor::IsMatchingInterface(iface, entry)) {
     // currently used interface went down. make transport listen
     // on all available interfaces.
     transport->SetInterface(PString::Empty());
-    PTRACE(1, "Kicked out interface binding");
+    PTRACE(3, "RAS\tInterface gatekeeper is bound to has gone down, restarting discovery");
   }
 }
+
 
 void H323Gatekeeper::UpdateConnectionStatus()
 {
   // sanity check
-  if (transport == NULL) {
+  if (transport == NULL)
     return;
-  }
   
   PString iface = transport->GetInterface();
-  if (!iface.IsEmpty()) { // still connected
+  if (!iface.IsEmpty()) // still connected
     return;
-  }
   
   // not connected anymore. so see if there is an interface available
   // for connecting to the remote address.
   PIPSocket::Address addr;
-  if (!transport->GetRemoteAddress().GetIpAddress(addr)) {
+  if (!transport->GetRemoteAddress().GetIpAddress(addr))
     return;
-  }
   
   if (lowPriorityMonitor.GetInterfaces(FALSE, addr).GetSize() > 0) {
     // at least one interface available, locate gatekeper
-    
-    if (DiscoverGatekeeper(transport->GetRemoteAddress())) {
+    if (DiscoverGatekeeper(transport->GetRemoteAddress()))
       RegistrationRequest();
-    }
   }
 }
 
@@ -1965,6 +1956,7 @@ PBoolean H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & me
   return endpoint.OnSendFeatureSet(pduType, message);
 #endif
 }
+
 
 void H323Gatekeeper::OnReceiveFeatureSet(unsigned pduType, const H225_FeatureSet & message) const
 {
