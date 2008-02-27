@@ -1170,7 +1170,7 @@ void SIPConnection::HoldConnection()
   if (invite->Start()) {
     // Pause the media streams
     PauseMediaStreams(PTrue);
-    
+
     // Signal the manager that there is a hold
     endpoint.OnHold(*this);
   }
@@ -1619,7 +1619,9 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
     // The Re-INVITE can be sent to change the RTP Session parameters,
     // the current codecs, or to put the call on hold
-    if (((sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID)&SDPMediaDescription::RecvOnly) == 0 &&
+    SDPMediaDescription * audioSDP = sdpIn.GetMediaDescription(SDPMediaDescription::Audio);
+    if ((audioSDP != NULL && audioSDP->GetTransportAddress().IsEmpty()) || // Old style "hold"
+        ((sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID)&SDPMediaDescription::RecvOnly) == 0 &&
          (sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID)&SDPMediaDescription::RecvOnly) == 0) ||
           sdpIn.GetBandwidth(SDPSessionDescription::ApplicationSpecificBandwidthType()) == 0) {
       PTRACE(3, "SIP\tRemote hold detected");
