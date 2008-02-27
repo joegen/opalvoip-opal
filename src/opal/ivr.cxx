@@ -179,7 +179,11 @@ PBoolean OpalIVRConnection::SetUpConnection()
 
   ApplyStringOptions();
 
-  remotePartyName = ownerCall.GetOtherPartyConnection(*this)->GetRemotePartyName();
+  PSafePtr<OpalConnection> otherConnection = ownerCall.GetOtherPartyConnection(*this);
+  if (otherConnection != NULL)
+    remotePartyName = otherConnection->GetRemotePartyName();
+  else
+    remotePartyName = ownerCall.GetPartyB();
 
   PTRACE(3, "IVR\tSetUpConnection(" << remotePartyName << ')');
 
