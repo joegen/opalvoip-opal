@@ -53,9 +53,6 @@
 
 #define Ecodec EasyCodecs
 
-extern "C" {
-   PLUGIN_CODEC_IMPLEMENT(Ecodec)
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -221,16 +218,7 @@ static struct PluginCodec_Definition EasyCodecDefn[] = {
 #endif
 };
 
-#define NUM_EASY_DEFNS   (sizeof(EasyCodecDefn) / sizeof(struct PluginCodec_Definition))
-
-
 extern "C" {
-
-  PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-  {
-    *count = NUM_EASY_DEFNS;
-    return EasyCodecDefn;    
-  }
-
+  PLUGIN_CODEC_IMPLEMENT_ALL(EasyCodec, EasyCodecDefn, PLUGIN_CODEC_VERSION)
 };
 

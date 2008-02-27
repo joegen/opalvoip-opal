@@ -34,7 +34,6 @@
 
 #include "lpc10.h"
 
-PLUGIN_CODEC_IMPLEMENT("LPC 10")
 
 enum {
   SamplesPerFrame = 180,    // 22.5 milliseconds
@@ -190,86 +189,80 @@ static const char lpc10[]    = { "LPC-10" };
 
 static const char sdpLPC10[] = { "lpc10" };
 
-static struct PluginCodec_Definition lpc10CodecDefn[2] = {
+static struct PluginCodec_Definition lpc10CodecDefn[2] =
+{
+  { 
+    // encoder
+    PLUGIN_CODEC_VERSION,               // codec API version
+    &licenseInfo,                       // license information
 
-{ 
-  // encoder
-  PLUGIN_CODEC_VERSION,               // codec API version
-  &licenseInfo,                       // license information
+    PluginCodec_MediaTypeAudio |        // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-  PluginCodec_MediaTypeAudio |        // audio codec
-  PluginCodec_InputTypeRaw |          // raw input data
-  PluginCodec_OutputTypeRaw |         // raw output data
-  PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+    lpc10,                              // text decription
+    L16Desc,                            // source format
+    lpc10,                              // destination format
 
-  lpc10,                              // text decription
-  L16Desc,                            // source format
-  lpc10,                              // destination format
+    (void *)NULL,                       // user data
 
-  (void *)NULL,                       // user data
+    8000,                               // samples per second
+    BitsPerSecond,                      // raw bits per second
+    22500,                              // nanoseconds per frame
+    SamplesPerFrame,                    // samples per frame
+    BytesPerFrame,                      // bytes per frame
+    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    0,                                  // IANA RTP payload code
+    sdpLPC10,                           // RTP payload name
 
-  8000,                               // samples per second
-  BitsPerSecond,                      // raw bits per second
-  22500,                              // nanoseconds per frame
-  SamplesPerFrame,                    // samples per frame
-  BytesPerFrame,                      // bytes per frame
-  PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-  MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-  0,                                  // IANA RTP payload code
-  sdpLPC10,                           // RTP payload name
+    create_encoder,                     // create codec function
+    destroy_encoder,                    // destroy codec
+    codec_encoder,                      // encode/decode
+    NULL,                               // codec controls
 
-  create_encoder,                     // create codec function
-  destroy_encoder,                    // destroy codec
-  codec_encoder,                      // encode/decode
-  NULL,                               // codec controls
+    PluginCodec_H323Codec_nonStandard,  // h323CapabilityType 
+    &lpc10Cap                           // h323CapabilityData
+  },
 
-  PluginCodec_H323Codec_nonStandard,  // h323CapabilityType 
-  &lpc10Cap                           // h323CapabilityData
-},
+  { 
+    // decoder
+    PLUGIN_CODEC_VERSION,               // codec API version
+    &licenseInfo,                       // license information
 
-{ 
-  // decoder
-  PLUGIN_CODEC_VERSION,               // codec API version
-  &licenseInfo,                       // license information
+    PluginCodec_MediaTypeAudio |        // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-  PluginCodec_MediaTypeAudio |        // audio codec
-  PluginCodec_InputTypeRaw |          // raw input data
-  PluginCodec_OutputTypeRaw |         // raw output data
-  PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+    lpc10,                              // text decription
+    lpc10,                              // source format
+    L16Desc,                            // destination format
 
-  lpc10,                              // text decription
-  lpc10,                              // source format
-  L16Desc,                            // destination format
+    (const void *)NULL,                 // user data
 
-  (const void *)NULL,                 // user data
+    8000,                               // samples per second
+    BitsPerSecond,                      // raw bits per second
+    22500,                              // nanoseconds per frame
+    SamplesPerFrame,                    // samples per frame
+    BytesPerFrame,                      // bytes per frame
+    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    0,                                  // IANA RTP payload code
+    sdpLPC10,                           // RTP payload name
 
-  8000,                               // samples per second
-  BitsPerSecond,                      // raw bits per second
-  22500,                              // nanoseconds per frame
-  SamplesPerFrame,                    // samples per frame
-  BytesPerFrame,                      // bytes per frame
-  PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-  MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-  0,                                  // IANA RTP payload code
-  sdpLPC10,                           // RTP payload name
+    create_decoder,                     // create codec function
+    destroy_decoder,                    // destroy codec
+    codec_decoder,                      // encode/decode
+    NULL,                               // codec controls
 
-  create_decoder,                     // create codec function
-  destroy_decoder,                    // destroy codec
-  codec_decoder,                      // encode/decode
-  NULL,                               // codec controls
-
-  PluginCodec_H323Codec_nonStandard,  // h323CapabilityType 
-  &lpc10Cap                           // h323CapabilityData
-},
-
+    PluginCodec_H323Codec_nonStandard,  // h323CapabilityType 
+    &lpc10Cap                           // h323CapabilityData
+  }
 };
 
-#define NUM_DEFNS   (sizeof(lpc10CodecDefn) / sizeof(struct PluginCodec_Definition))
+
+PLUGIN_CODEC_IMPLEMENT_ALL(LPC 10, lpc10CodecDefn, PLUGIN_CODEC_VERSION)
 
 /////////////////////////////////////////////////////////////////////////////
-
-PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-{
-  *count = NUM_DEFNS;
-  return lpc10CodecDefn;
-}

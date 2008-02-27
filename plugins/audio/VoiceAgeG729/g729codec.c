@@ -26,7 +26,6 @@
 
 #include <codec/opalplugin.h>
 
-PLUGIN_CODEC_IMPLEMENT("VoiceAgeG729")
 
 // All of PWLib/OpenH323 use MSVCRT.LIB or MSVCRTD.LIB, but vag729a.lib uses
 // libcmt.lib, so we need to tell the linker to ignore it, can't have two
@@ -159,156 +158,150 @@ static const char g729AMediaFmt[] = { "G.729A" };
 static const char ianaName[]   = { "G729" };
 #define IANACODE  18
 
-static struct PluginCodec_Definition g729CodecDefn[4] = {
+static struct PluginCodec_Definition g729CodecDefn[4] =
+{
+  { 
+    // encoder
+    PLUGIN_CODEC_VERSION,               // codec API version
+    &licenseInfo,                       // license information
 
-{ 
-  // encoder
-  PLUGIN_CODEC_VERSION,               // codec API version
-  &licenseInfo,                       // license information
+    PluginCodec_MediaTypeAudio |        // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeExplicit,        // explicit RTP type
 
-  PluginCodec_MediaTypeAudio |        // audio codec
-  PluginCodec_InputTypeRaw |          // raw input data
-  PluginCodec_OutputTypeRaw |         // raw output data
-  PluginCodec_RTPTypeExplicit,        // explicit RTP type
+    g729Descr,                          // text decription
+    L16Desc,
+    g729MediaFmt,
 
-  g729Descr,                          // text decription
-  L16Desc,
-  g729MediaFmt,
+    NULL,                               // user data
 
-  NULL,                               // user data
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    MICROSECONDSPERFRAME,               // microseconds per frame
+    SAMPLES_PER_FRAME,                  // samples per frame
+    10,                                 // bytes per frame
+    6,                                  // recommended number of frames per packet
+    24,                                 // maximum number of frames per packet
+    IANACODE,                           // IANA RTP payload code
+    ianaName,                           // RTP Payload name
 
-  8000,                               // samples per second
-  BITS_PER_SECOND,                    // raw bits per second
-  MICROSECONDSPERFRAME,               // microseconds per frame
-  SAMPLES_PER_FRAME,                  // samples per frame
-  10,                                 // bytes per frame
-  6,                                  // recommended number of frames per packet
-  24,                                 // maximum number of frames per packet
-  IANACODE,                           // IANA RTP payload code
-  ianaName,                           // RTP Payload name
+    create_encoder,                     // create codec function
+    destroy_encoder,                    // destroy codec
+    codec_encoder,                      // encode/decode
+    NULL,                                // codec controls
 
-  create_encoder,                     // create codec function
-  destroy_encoder,                    // destroy codec
-  codec_encoder,                      // encode/decode
-  NULL,                                // codec controls
+    PluginCodec_H323AudioCodec_g729,    // h323CapabilityType
+    NULL                                // h323CapabilityData
+  },
 
-  PluginCodec_H323AudioCodec_g729,    // h323CapabilityType
-  NULL                                // h323CapabilityData
-},
+  { 
+    // decoder
+    PLUGIN_CODEC_VERSION,               // codec API version
+    &licenseInfo,                       // license information
 
-{ 
-  // decoder
-  PLUGIN_CODEC_VERSION,               // codec API version
-  &licenseInfo,                       // license information
+    PluginCodec_MediaTypeAudio |        // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeExplicit,        // explicit RTP type
 
-  PluginCodec_MediaTypeAudio |        // audio codec
-  PluginCodec_InputTypeRaw |          // raw input data
-  PluginCodec_OutputTypeRaw |         // raw output data
-  PluginCodec_RTPTypeExplicit,        // explicit RTP type
+    g729Descr,                          // text decription
+    g729MediaFmt,
+    L16Desc,
 
-  g729Descr,                          // text decription
-  g729MediaFmt,
-  L16Desc,
+    NULL,                               // user data
 
-  NULL,                               // user data
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    MICROSECONDSPERFRAME,               // microseconds per frame
+    SAMPLES_PER_FRAME,                  // samples per frame
+    BYTES_PER_FRAME,                    // bytes per frame
+    6,                                  // recommended number of frames per packet
+    24,                                 // maximum number of frames per packet
+    IANACODE,                           // IANA RTP payload code
+    ianaName,                           // RTP Payload name
 
-  8000,                               // samples per second
-  BITS_PER_SECOND,                    // raw bits per second
-  MICROSECONDSPERFRAME,               // microseconds per frame
-  SAMPLES_PER_FRAME,                  // samples per frame
-  BYTES_PER_FRAME,                    // bytes per frame
-  6,                                  // recommended number of frames per packet
-  24,                                 // maximum number of frames per packet
-  IANACODE,                           // IANA RTP payload code
-  ianaName,                           // RTP Payload name
+    create_decoder,                     // create codec function
+    destroy_decoder,                    // destroy codec
+    codec_decoder,                      // encode/decode
+    NULL,                                // codec controls
 
-  create_decoder,                     // create codec function
-  destroy_decoder,                    // destroy codec
-  codec_decoder,                      // encode/decode
-  NULL,                                // codec controls
+    PluginCodec_H323AudioCodec_g729,    // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
 
-  PluginCodec_H323AudioCodec_g729,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
+  { 
+    // encoder
+    PLUGIN_CODEC_VERSION,                   // codec API version
+    &licenseInfo,                           // license information
 
-{ 
-  // encoder
-  PLUGIN_CODEC_VERSION,                   // codec API version
-  &licenseInfo,                           // license information
+    PluginCodec_MediaTypeAudio |        // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeExplicit,        // explicit RTP type
 
-  PluginCodec_MediaTypeAudio |        // audio codec
-  PluginCodec_InputTypeRaw |          // raw input data
-  PluginCodec_OutputTypeRaw |         // raw output data
-  PluginCodec_RTPTypeExplicit,        // explicit RTP type
+    g729ADescr,                          // text decription
+    L16Desc,
+    g729AMediaFmt,
 
-  g729ADescr,                          // text decription
-  L16Desc,
-  g729AMediaFmt,
+    NULL,                               // user data
 
-  NULL,                               // user data
+    8000,                                   // samples per second
+    BITS_PER_SECOND,                        // raw bits per second
+    MICROSECONDSPERFRAME,                   // microseconds per frame
+    SAMPLES_PER_FRAME,                      // samples per frame
+    BYTES_PER_FRAME,                        // bytes per frame
+    6,                                      // recommended number of frames per packet
+    24,                                     // maximum number of frames per packet
+    IANACODE,                           // IANA RTP payload code
+    ianaName,                           // RTP Payload name
 
-  8000,                                   // samples per second
-  BITS_PER_SECOND,                        // raw bits per second
-  MICROSECONDSPERFRAME,                   // microseconds per frame
-  SAMPLES_PER_FRAME,                      // samples per frame
-  BYTES_PER_FRAME,                        // bytes per frame
-  6,                                      // recommended number of frames per packet
-  24,                                     // maximum number of frames per packet
-  IANACODE,                           // IANA RTP payload code
-  ianaName,                           // RTP Payload name
+    create_encoder,                         // create codec function
+    destroy_encoder,                        // destroy codec
+    codec_encoder,                          // encode/decode
+    NULL,                                // codec controls
 
-  create_encoder,                         // create codec function
-  destroy_encoder,                        // destroy codec
-  codec_encoder,                          // encode/decode
-  NULL,                                // codec controls
+    PluginCodec_H323AudioCodec_g729AnnexA,  // h323CapabilityType
+    NULL                                    // h323CapabilityData
+  },
 
-  PluginCodec_H323AudioCodec_g729AnnexA,  // h323CapabilityType
-  NULL                                    // h323CapabilityData
-},
+  { 
+    // decoder
+    PLUGIN_CODEC_VERSION,                   // codec API version
+    &licenseInfo,                           // license information
 
-{ 
-  // decoder
-  PLUGIN_CODEC_VERSION,                   // codec API version
-  &licenseInfo,                           // license information
+    PluginCodec_MediaTypeAudio |        // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeExplicit,        // explicit RTP type
 
-  PluginCodec_MediaTypeAudio |        // audio codec
-  PluginCodec_InputTypeRaw |          // raw input data
-  PluginCodec_OutputTypeRaw |         // raw output data
-  PluginCodec_RTPTypeExplicit,        // explicit RTP type
+    g729ADescr,                          // text decription
+    g729AMediaFmt,
+    L16Desc,
 
-  g729ADescr,                          // text decription
-  g729AMediaFmt,
-  L16Desc,
+    NULL,                               // user data
 
-  NULL,                               // user data
+    8000,                                   // samples per second
+    BITS_PER_SECOND,                        // raw bits per second
+    MICROSECONDSPERFRAME,                   // microseconds per frame
+    SAMPLES_PER_FRAME,                      // samples per frame
+    BYTES_PER_FRAME,                        // bytes per frame
+    6,                                      // recommended number of frames per packet
+    24,                                     // maximum number of frames per packet
+    IANACODE,                           // IANA RTP payload code
+    ianaName,                           // RTP Payload name
 
-  8000,                                   // samples per second
-  BITS_PER_SECOND,                        // raw bits per second
-  MICROSECONDSPERFRAME,                   // microseconds per frame
-  SAMPLES_PER_FRAME,                      // samples per frame
-  BYTES_PER_FRAME,                        // bytes per frame
-  6,                                      // recommended number of frames per packet
-  24,                                     // maximum number of frames per packet
-  IANACODE,                           // IANA RTP payload code
-  ianaName,                           // RTP Payload name
+    create_decoder,                         // create codec function
+    destroy_decoder,                        // destroy codec
+    codec_decoder,                          // encode/decode
+    NULL,                                // codec controls
 
-  create_decoder,                         // create codec function
-  destroy_decoder,                        // destroy codec
-  codec_decoder,                          // encode/decode
-  NULL,                                // codec controls
-
-  PluginCodec_H323AudioCodec_g729AnnexA,  // h323CapabilityType 
-  NULL                                    // h323CapabilityData
-}
-
+    PluginCodec_H323AudioCodec_g729AnnexA,  // h323CapabilityType 
+    NULL                                    // h323CapabilityData
+  }
 };
 
-#define NUM_DEFNS   (sizeof(g729CodecDefn) / sizeof(struct PluginCodec_Definition))
+
+PLUGIN_CODEC_IMPLEMENT_ALL(VoiceAgeG729, g729CodecDefn, PLUGIN_CODEC_VERSION)
 
 /////////////////////////////////////////////////////////////////////////////
-
-PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-{
-  *count = NUM_DEFNS;
-  return g729CodecDefn;
-}

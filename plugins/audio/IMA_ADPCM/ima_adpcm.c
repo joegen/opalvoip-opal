@@ -26,7 +26,6 @@
 
 #include <codec/opalplugin.h>
 
-PLUGIN_CODEC_IMPLEMENT("IMA-ADPCM")
 
 #include <stdlib.h>
 #ifdef _WIN32
@@ -412,87 +411,80 @@ static struct PluginCodec_H323NonStandardCodecData imaADPCM_Cap =
   imaCompareFunc
 };
 
-static struct PluginCodec_Definition imaADPCMCodecDefn[] = {
+static struct PluginCodec_Definition imaADPCMCodecDefn[] =
+{
+  { 
+    // encoder
+    PLUGIN_CODEC_VERSION,                 // codec API version
+    &licenseInfo,                         // license information
 
-{ 
-  // encoder
-  PLUGIN_CODEC_VERSION,                 // codec API version
-  &licenseInfo,                         // license information
+    PluginCodec_MediaTypeAudio |          // audio codec
+    PluginCodec_InputTypeRaw |            // raw input data
+    PluginCodec_OutputTypeRaw |           // raw output data
+    PluginCodec_RTPTypeExplicit,          // specified RTP type
 
-  PluginCodec_MediaTypeAudio |          // audio codec
-  PluginCodec_InputTypeRaw |            // raw input data
-  PluginCodec_OutputTypeRaw |           // raw output data
-  PluginCodec_RTPTypeExplicit,          // specified RTP type
+    imaADPCM,                             // text decription
+    L16Desc,                              // source format
+    imaADPCM,                             // destination format
 
-  imaADPCM,                             // text decription
-  L16Desc,                              // source format
-  imaADPCM,                             // destination format
+    0,                                    // user data
 
-  0,                                    // user data
+    8000,                                 // samples per second
+    IMA_BITS_SECOND,                      // raw bits per second
+    IMA_NS_PER_FRAME,                     // nanoseconds per frame
+    IMA_SAMPLES_PER_FRAME,                // samples per frame
+    IMA_BYTES_PER_FRAME,                  // bytes per frame
+    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    0,                                    // no IANA RTP payload code
+    NULL,                                 // RTP payload name
 
-  8000,                                 // samples per second
-  IMA_BITS_SECOND,                      // raw bits per second
-  IMA_NS_PER_FRAME,                     // nanoseconds per frame
-  IMA_SAMPLES_PER_FRAME,                // samples per frame
-  IMA_BYTES_PER_FRAME,                  // bytes per frame
-  PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-  MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
-  0,                                    // no IANA RTP payload code
-  NULL,                                 // RTP payload name
+    create_codec,                         // create codec function
+    destroy_codec,                        // destroy codec
+    codec_encoder,                        // encode/decode
+    NULL,                                 // codec controls
 
-  create_codec,                         // create codec function
-  destroy_codec,                        // destroy codec
-  codec_encoder,                        // encode/decode
-  NULL,                                 // codec controls
+    PluginCodec_H323Codec_nonStandard,    // h323CapabilityType 
+    &imaADPCM_Cap                         // h323CapabilityData
+  },
 
-  PluginCodec_H323Codec_nonStandard,    // h323CapabilityType 
-  &imaADPCM_Cap                         // h323CapabilityData
-},
+  { 
+    // decoder
+    PLUGIN_CODEC_VERSION,                 // codec API version
+    &licenseInfo,                         // license information
 
-{ 
-  // decoder
-  PLUGIN_CODEC_VERSION,                 // codec API version
-  &licenseInfo,                         // license information
+    PluginCodec_MediaTypeAudio |          // audio codec
+    PluginCodec_InputTypeRaw |            // raw input data
+    PluginCodec_OutputTypeRaw |           // raw output data
+    PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
-  PluginCodec_MediaTypeAudio |          // audio codec
-  PluginCodec_InputTypeRaw |            // raw input data
-  PluginCodec_OutputTypeRaw |           // raw output data
-  PluginCodec_RTPTypeDynamic,           // dynamic RTP type
+    imaADPCM,                             // text decription
+    imaADPCM,                             // source format
+    L16Desc,                              // destination format
 
-  imaADPCM,                             // text decription
-  imaADPCM,                             // source format
-  L16Desc,                              // destination format
+    0,                                    // user data
 
-  0,                                    // user data
+    8000,                                 // samples per second
+    IMA_BITS_SECOND,                      // raw bits per second
+    IMA_NS_PER_FRAME,                     // nanoseconds per frame
+    IMA_SAMPLES_PER_FRAME,                // samples per frame
+    IMA_BYTES_PER_FRAME,                  // bytes per frame
+    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    0,                                    // no IANA RTP payload code
+    NULL,                                 // RTP payload name
 
-  8000,                                 // samples per second
-  IMA_BITS_SECOND,                      // raw bits per second
-  IMA_NS_PER_FRAME,                     // nanoseconds per frame
-  IMA_SAMPLES_PER_FRAME,                // samples per frame
-  IMA_BYTES_PER_FRAME,                  // bytes per frame
-  PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-  MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
-  0,                                    // no IANA RTP payload code
-  NULL,                                 // RTP payload name
+    create_codec,                         // create codec function
+    destroy_codec,                        // destroy codec
+    codec_decoder,                        // encode/decode
+    NULL,                                 // codec controls
 
-  create_codec,                         // create codec function
-  destroy_codec,                        // destroy codec
-  codec_decoder,                        // encode/decode
-  NULL,                                 // codec controls
-
-  PluginCodec_H323Codec_nonStandard,    // h323CapabilityType 
-  &imaADPCM_Cap                         // h323CapabilityData
-},
-
-
+    PluginCodec_H323Codec_nonStandard,    // h323CapabilityType 
+    &imaADPCM_Cap                         // h323CapabilityData
+  }
 };
 
-#define NUM_DEFNS   (sizeof(imaADPCMCodecDefn) / sizeof(struct PluginCodec_Definition))
+
+PLUGIN_CODEC_IMPLEMENT_ALL(IMA_ADPCM, imaADPCMCodecDefn, PLUGIN_CODEC_VERSION)
 
 /////////////////////////////////////////////////////////////////////////////
-
-PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-{
-  *count = NUM_DEFNS;
-  return imaADPCMCodecDefn;
-}
