@@ -52,7 +52,7 @@
 
 /////////////////////////////////////////////////////////
 
-static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PINDEX offset)
+static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PINDEX offset, WORD port = 0)
 {
   if (tokens.GetSize() == offset+3) {
     if (tokens[offset] *= "IN") {
@@ -61,8 +61,10 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
 #if P_HAS_IPV6
         || (tokens[offset+1] *= "IP6")
 #endif
-        )
-        return OpalTransportAddress(tokens[offset+2], 0, "udp");
+        ) {
+        if (tokens[offset+2] != "0.0.0.0")
+          return OpalTransportAddress(tokens[offset+2], port, "udp");
+      }
       else
       {
         PTRACE(1, "SDP\tConnect address has invalid address type \"" << tokens[offset+1] << '"');
@@ -80,10 +82,10 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
 }
 
 
-static OpalTransportAddress ParseConnectAddress(const PString & str)
+static OpalTransportAddress ParseConnectAddress(const PString & str, WORD port = 0)
 {
   PStringArray tokens = str.Tokenise(' ');
-  return ParseConnectAddress(tokens, 0);
+  return ParseConnectAddress(tokens, 0, port);
 }
 
 
@@ -557,7 +559,7 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
       break;
       
     case 'c' : // connection information - optional if included at session-level
-      SetTransportAddress(OpalTransportAddress(ParseConnectAddress(value), port));
+      SetTransportAddress(ParseConnectAddress(value, port));
       break;
 
     case 'a' : // zero or more media attribute lines
