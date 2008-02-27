@@ -198,6 +198,7 @@ class InCallPanel : public wxPanel
 
   private:
     void OnHangUp(wxCommandEvent & event);
+    void OnHold(wxCommandEvent & event);
     void OnStartStopVideo(wxCommandEvent & event);
     void OnSpeakerMute(wxCommandEvent & event);
     void OnMicrophoneMute(wxCommandEvent & event);
@@ -221,6 +222,7 @@ class InCallPanel : public wxPanel
     void SetVolume(bool microphone, int value, bool muted);
 
     MyManager & m_manager;
+    wxButton  * m_Hold;
     wxButton  * m_StartStopVideo;
     wxButton  * m_SpeakerHandset;
     wxCheckBox* m_SpeakerMute;

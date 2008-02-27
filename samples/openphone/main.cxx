@@ -3485,6 +3485,7 @@ const int VU_UPDATE_TIMER_ID = 1000;
 
 BEGIN_EVENT_TABLE(InCallPanel, wxPanel)
   EVT_BUTTON(XRCID("HangUp"), InCallPanel::OnHangUp)
+  EVT_BUTTON(XRCID("Hold"), InCallPanel::OnHold)
   EVT_BUTTON(XRCID("StartStopVideo"), InCallPanel::OnStartStopVideo)
   EVT_CHECKBOX(XRCID("SpeakerMute"), InCallPanel::OnSpeakerMute)
   EVT_CHECKBOX(XRCID("MicrophoneMute"), InCallPanel::OnMicrophoneMute)
@@ -3508,12 +3509,14 @@ BEGIN_EVENT_TABLE(InCallPanel, wxPanel)
   EVT_TIMER(VU_UPDATE_TIMER_ID, InCallPanel::OnUpdateVU)
 END_EVENT_TABLE()
 
+
 InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
   : m_manager(manager)
   , m_vuTimer(this, VU_UPDATE_TIMER_ID)
 {
   wxXmlResource::Get()->LoadPanel(this, parent, "InCallPanel");
 
+  m_Hold = FindWindowByNameAs<wxButton>(this, "Hold");
   m_StartStopVideo = FindWindowByNameAs<wxButton>(this, "StartStopVideo");
   m_SpeakerHandset = FindWindowByNameAs<wxButton>(this, "SpeakerHandset");
   m_SpeakerMute = FindWindowByNameAs<wxCheckBox>(this, "SpeakerMute");
@@ -3586,6 +3589,22 @@ void InCallPanel::UpdateButtons(OpalPOTSEndPoint * potsEP)
 void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 {
   m_manager.HangUpCall();
+}
+
+
+void InCallPanel::OnHold(wxCommandEvent & /*event*/)
+{
+  PSafePtr<OpalCall> call = m_manager.GetCall();
+  if (call != NULL) {
+    if (call->IsOnHold()) {
+      call->Retrieve();
+      m_Hold->SetLabel("Hold");
+    }
+    else {
+      call->Hold();
+      m_Hold->SetLabel("Retrieve");
+    }
+  }
 }
 
 
