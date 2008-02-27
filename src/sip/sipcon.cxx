@@ -1215,7 +1215,12 @@ void SIPConnection::SetLocalPartyAddress()
   // preserve tag to be re-added to explicitFrom below, if there are
   // stringOptions
   PString tag = ";tag=" + OpalGloballyUniqueID().AsString();
+  SIPURL remotePartyURL(remotePartyAddress);
   SIPURL registeredPartyName = endpoint.GetRegisteredPartyName(remotePartyAddress);
+
+  PString transport = remotePartyURL.GetParamVars()("transport");
+  if (!transport.IsEmpty())
+    registeredPartyName.SetParamVar("transport", transport);
   localPartyAddress = registeredPartyName.AsQuotedString() + tag; 
 
   // allow callers to override the From field
