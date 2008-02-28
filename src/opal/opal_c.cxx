@@ -131,6 +131,9 @@ class OpalManager_C : public OpalManager
     void HandleSetUpCall    (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleAnswerCall   (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleClearCall    (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleHoldCall     (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleRetrieveCall (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleTransferCall (const OpalMessage & message, OpalMessageBuffer & response);
 
     OpalPCSSEndPoint_C * pcssEP;
 
@@ -694,10 +697,98 @@ void OpalManager_C::HandleClearCall(const OpalMessage & command, OpalMessageBuff
 }
 
 
+void OpalManager_C::HandleHoldCall(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  if (IsNullString(command.m_param.m_callToken)) {
+    response.SetError("No call token provided.");
+    return;
+  }
+
+  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_callToken);
+  if (call == NULL) {
+    response.SetError("No call by the token provided.");
+    return;
+  }
+
+  if (call->IsOnHold()) {
+    response.SetError("Call is already on hold.");
+    return;
+  }
+
+  call->Hold();
+}
+
+
+void OpalManager_C::HandleRetrieveCall(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  if (IsNullString(command.m_param.m_callToken)) {
+    response.SetError("No call token provided.");
+    return;
+  }
+
+  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_callToken);
+  if (call == NULL) {
+    response.SetError("No call by the token provided.");
+    return;
+  }
+
+  if (!call->IsOnHold()) {
+    response.SetError("Call is not on hold.");
+    return;
+  }
+
+  call->Retrieve();
+}
+
+
+void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  if (IsNullString(command.m_param.m_callSetUp.m_callToken)) {
+    response.SetError("No call token provided.");
+    return;
+  }
+
+  if (IsNullString(command.m_param.m_callSetUp.m_partyA)) {
+    response.SetError("No destination address provided.");
+    return;
+  }
+
+  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_callSetUp.m_callToken);
+  if (call == NULL) {
+    response.SetError("No call available by the token provided.");
+    return;
+  }
+
+  PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
+  if (IsNullString(command.m_param.m_callSetUp.m_partyA)) {
+    PString url = connection->GetLocalPartyURL();
+    if (url.NumCompare("pc") == EqualTo || url.NumCompare("pots") == EqualTo)
+      ++connection;
+  }
+  else {
+    do {
+      if (connection->GetLocalPartyURL() == command.m_param.m_callSetUp.m_partyA)
+        break;
+      ++connection;
+    } while (connection != NULL);
+  }
+
+  if (connection == NULL) {
+    response.SetError("Call does not have suitable connection to transfer.");
+    return;
+  }
+
+  connection->TransferConnection(command.m_param.m_callSetUp.m_partyB);
+}
+
+
 void OpalManager_C::OnAlerting(OpalConnection & connection)
 {
+  const OpalCall & call = connection.GetCall();
   OpalMessageBuffer message(OpalIndAlerting);
-  SET_MESSAGE_STRING(message, m_param.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
   PostMessage(message);
 }
 
@@ -705,7 +796,9 @@ void OpalManager_C::OnAlerting(OpalConnection & connection)
 void OpalManager_C::OnEstablishedCall(OpalCall & call)
 {
   OpalMessageBuffer message(OpalIndEstablished);
-  SET_MESSAGE_STRING(message, m_param.m_callToken, call.GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
   PostMessage(message);
 }
 
