@@ -468,7 +468,6 @@ RTP_Session::RTP_Session(
   autoDeleteUserData = autoDelete;
   jitter = NULL;
 
-  ignoreOtherSources = PTrue;
   ignoreOutOfOrderPackets = PTrue;
   ignorePayloadTypeChanges = PTrue;
   syncSourceOut = PRandom::Number();
@@ -480,7 +479,8 @@ RTP_Session::RTP_Session(
   lastSentPacketTime = PTimer::Tick();
 
   syncSourceIn = 0;
-  allowSyncSourceInChange = PFalse;
+  allowAnySyncSource = true;
+  allowOneSyncSourceChange = false;
   allowRemoteTransmitAddressChange = PFalse;
   allowSequenceChange = PFalse;
   txStatisticsInterval = 100;  // Number of data packets between tx reports
@@ -871,12 +871,12 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
   }
   else {
     if (frame.GetSyncSource() != syncSourceIn) {
-      if (!ignoreOtherSources)
+      if (allowAnySyncSource)
         syncSourceIn = frame.GetSyncSource();
-      else if (allowSyncSourceInChange) {
+      else if (allowOneSyncSourceChange) {
         PTRACE(2, "RTP\tSession " << sessionID << ", allowed one SSRC change from SSRC=" << syncSourceIn << " to =" << frame.GetSyncSource());
         syncSourceIn = frame.GetSyncSource();
-        allowSyncSourceInChange = PFalse;
+        allowOneSyncSourceChange = false;
       }
       else {
         PTRACE(2, "RTP\tSession " << sessionID << ", packet from SSRC=" << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn);
@@ -1706,7 +1706,7 @@ PBoolean RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBo
   
   remoteAddress = address;
   
-  allowSyncSourceInChange = PTrue;
+  allowOneSyncSourceChange = true;
   allowRemoteTransmitAddressChange = PTrue;
   allowSequenceChange = PTrue;
 
@@ -1823,36 +1823,35 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
   WORD port;
 
   if (socket.ReadFrom(frame.GetPointer(), frame.GetSize(), addr, port)) {
-    if (ignoreOtherSources) {
-      // If remote address never set from higher levels, then try and figure
-      // it out from the first packet received.
-      if (!remoteAddress.IsValid()) {
-        remoteAddress = addr;
-        PTRACE(4, "RTP\tSession " << sessionID << ", set remote address from first "
-               << channelName << " PDU from " << addr << ':' << port);
-      }
-      if (fromDataChannel) {
-        if (remoteDataPort == 0)
-          remoteDataPort = port;
-      }
-      else {
-        if (remoteControlPort == 0)
-          remoteControlPort = port;
-      }
-
-      if (!remoteTransmitAddress.IsValid())
-        remoteTransmitAddress = addr;
-      else if (allowRemoteTransmitAddressChange && remoteAddress == addr) {
-        remoteTransmitAddress = addr;
-        allowRemoteTransmitAddressChange = PFalse;
-      }
-      else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange && !ignoreOtherSources) {
-        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", "
-               << channelName << " PDU from incorrect host, "
-                  " is " << addr << " should be " << remoteTransmitAddress);
-        return RTP_Session::e_IgnorePacket;
-      }
+    // If remote address never set from higher levels, then try and figure
+    // it out from the first packet received.
+    if (!remoteAddress.IsValid()) {
+      remoteAddress = addr;
+      PTRACE(4, "RTP\tSession " << sessionID << ", set remote address from first "
+             << channelName << " PDU from " << addr << ':' << port);
     }
+    if (fromDataChannel) {
+      if (remoteDataPort == 0)
+        remoteDataPort = port;
+    }
+    else {
+      if (remoteControlPort == 0)
+        remoteControlPort = port;
+    }
+
+    if (!remoteTransmitAddress.IsValid())
+      remoteTransmitAddress = addr;
+    else if (allowRemoteTransmitAddressChange && remoteAddress == addr) {
+      remoteTransmitAddress = addr;
+      allowRemoteTransmitAddressChange = PFalse;
+    }
+    else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange) {
+      PTRACE(2, "RTP_UDP\tSession " << sessionID << ", "
+             << channelName << " PDU from incorrect host, "
+                " is " << addr << " should be " << remoteTransmitAddress);
+      return RTP_Session::e_IgnorePacket;
+    }
+
     if (remoteAddress.IsValid() && !appliedQOS) 
       ApplyQOS(remoteAddress);
 
