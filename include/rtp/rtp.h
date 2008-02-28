@@ -576,13 +576,13 @@ class RTP_Session : public PObject
 
     /**Indicate if will ignore all but first received SSRC value.
       */
-    PBoolean WillIgnoreOtherSources() const { return ignoreOtherSources; }
+    bool AllowAnySyncSource() const { return allowAnySyncSource; }
 
     /**Indicate if will ignore all but first received SSRC value.
       */
-    void SetIgnoreOtherSources(
-      PBoolean ignore   ///<  Flag for ignore other SSRC values
-    ) { ignoreOtherSources = ignore; }
+    void SetAnySyncSource(
+      bool allow    ///<  Flag for allow any SSRC values
+    ) { allowAnySyncSource = allow; }
 
     /**Indicate if will ignore out of order packets.
       */
@@ -759,12 +759,12 @@ class RTP_Session : public PObject
     PBoolean               autoDeleteUserData;
     RTP_JitterBuffer * jitter;
 
-    PBoolean          ignoreOtherSources;
     PBoolean          ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
     DWORD         lastSentTimestamp;
-    PBoolean	        allowSyncSourceInChange;
+    bool          allowAnySyncSource;
+    bool          allowOneSyncSourceChange;
     PBoolean	        allowRemoteTransmitAddressChange;
     PBoolean	        allowSequenceChange;
     PTimeInterval reportTimeInterval;
