@@ -391,11 +391,9 @@ void H323Connection::CleanUpOnCallEnd()
     // Wait a while for the remote to send an endSession
     PTRACE(4, "H323\tAwaiting end session from remote for " << waitTime << " seconds");
     if (!endSessionReceived.Wait(waitTime)) {
-      PTRACE(2, "H323\tDid not receive an end session from remote.");
+      PTRACE(2, "H323\tTimed out waiting for end session from remote.");
     }
   }
-
-  SetPhase(ReleasedPhase);
 
   // Wait for control channel to be cleaned up (thread ended).
   if (controlChannel != NULL)
@@ -404,6 +402,8 @@ void H323Connection::CleanUpOnCallEnd()
   // Wait for signalling channel to be cleaned up (thread ended).
   if (signallingChannel != NULL)
     signallingChannel->CloseWait();
+
+  SetPhase(ReleasedPhase);
 
   PTRACE(3, "H323\tConnection " << callToken << " terminated.");
 }
@@ -2581,11 +2581,10 @@ void H323Connection::HandleControlChannel()
     }
   }
 
-  // If we are the only link to the far end then indicate that we have
-  // received endSession even if we hadn't, because we are now never going
-  // to get one so there is no point in having CleanUpOnCallEnd wait.
-  if (signallingChannel == NULL)
-    endSessionReceived.Signal();
+  // Indicate that we have received endSession even if we hadn't,
+  // because we are now never going to get one so there is no point
+  // in having CleanUpOnCallEnd wait.
+  endSessionReceived.Signal();
 
   PTRACE(3, "H245\tControl channel closed.");
 }
