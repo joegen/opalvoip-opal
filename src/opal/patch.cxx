@@ -409,7 +409,6 @@ void OpalMediaPatch::Main()
     sourceFrame.SetPayloadSize(0); 
     if (!source.ReadPacket(sourceFrame)) {
       PTRACE(4, "Patch\tThread ended because source read failed");
-      source.ReadPacket(sourceFrame);
       break;
     }
  
