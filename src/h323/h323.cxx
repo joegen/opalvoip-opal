@@ -3460,11 +3460,9 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
   OpalMediaFormatList list;
 
   if (fastStartMediaStream != NULL)
-    list += fastStartMediaStream->GetMediaFormat();
-  else {
+    list = fastStartMediaStream->GetMediaFormat();
+  else
     list = remoteCapabilities.GetMediaFormats();
-    AdjustMediaFormats(list);
-  }
 
   return list;
 }
@@ -3692,20 +3690,16 @@ void H323Connection::OnSelectLogicalChannels()
 void H323Connection::SelectDefaultLogicalChannel(unsigned sessionID)
 {
   if (FindChannel(sessionID, PFalse))
-    return; 
+    return;
 
-  for (PINDEX i = 0; i < localCapabilities.GetSize(); i++) {
-    H323Capability & localCapability = localCapabilities[i];
-    if (localCapability.GetDefaultSessionID() == sessionID) {
-      H323Capability * remoteCapability = remoteCapabilities.FindCapability(localCapability);
-      if (remoteCapability != NULL) {
-        PTRACE(3, "H323\tSelecting " << *remoteCapability);
-        if (OpenLogicalChannel(*remoteCapability, sessionID, H323Channel::IsTransmitter))
-          break;
-        PTRACE(2, "H323\tOnSelectLogicalChannels, OpenLogicalChannel failed: "
-               << *remoteCapability);
-      }
-    }
+  PSafePtr<OpalConnection> otherConnection = ownerCall.GetOtherPartyConnection(*this);
+  if (otherConnection == NULL) {
+    PTRACE(2, "H323\tSelectLogicalChannel(" << sessionID << ") cannot start channel without second connection in call.");
+    return;
+  }
+
+  if (!ownerCall.OpenSourceMediaStreams(*otherConnection, sessionID)) {
+    PTRACE(2, "H323\tSelectLogicalChannel(" << sessionID << ") could not start media stream.");
   }
 }
 

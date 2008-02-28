@@ -338,7 +338,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   return commonFormats;
 }
 
-PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned sessionID)
+PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned sessionID, const OpalMediaFormatList & preselectedFormats)
 {
   PSafeLockReadOnly lock(*this);
   if (isClearing || !lock.IsLocked())
@@ -376,8 +376,10 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
       OpalMediaFormatList sourceMediaFormats;
       if (sourceFormat.IsValid())
         sourceMediaFormats = sourceFormat; // Use the source format already established
-      else
+      else if (preselectedFormats.IsEmpty())
         sourceMediaFormats = connection.GetMediaFormats();
+      else
+        sourceMediaFormats = preselectedFormats;
 
       if (!SelectMediaFormats(sessionID,
                               sourceMediaFormats,
