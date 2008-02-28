@@ -406,11 +406,16 @@ void OpalListener::CloseWait()
   PTRACE(3, "Listen\tStopping listening thread on " << GetLocalAddress());
   Close();
 
-  PAssert(PThread::Current() != thread, PLogicError);
-  if (thread != NULL) {
-    PAssert(thread->WaitForTermination(10000), "Listener thread did not terminate");
-    delete thread;
-    thread = NULL;
+  PThread * exitingThread = thread;
+  thread = NULL;
+
+  if (exitingThread != NULL) {
+    if (exitingThread == PThread::Current())
+      exitingThread->SetAutoDelete();
+    else {
+      PAssert(exitingThread->WaitForTermination(10000), "Listener thread did not terminate");
+      delete exitingThread;
+    }
   }
 }
 
@@ -436,6 +441,7 @@ void OpalListener::ListenForConnections(PThread & thread, INT)
 
         case HandOffThreadMode :
           transport->AttachThread(&thread);
+          this->thread = NULL;
           // Then do next case
 
         case SingleThreadMode :
