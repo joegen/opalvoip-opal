@@ -240,18 +240,25 @@ typedef enum OpalMessageType {
                                     completed its hang up operation. */
   OpalIndAlerting,              /**<Remote is alerting indication. This message is returned in the
                                     OpalGetMessage() function when the underlying protocol states the remote
-                                    telephone is "ringing". The OpalMessage m_callToken field indicates
-                                    which call is alerting. */
+                                    telephone is "ringing". See the  OpalParamSetUpCall structure for more
+                                    information. */
   OpalIndEstablished,           /**<Call is established indication. This message is returned in the
                                     OpalGetMessage() function when the remote or local endpont has "answered"
-                                    the call and there is media flowing. The OpalMessage m_callToken field
-                                    indicates which call has been established. */
+                                    the call and there is media flowing. See the  OpalParamSetUpCall
+                                    structure for more information. */
   OpalIndUserInput,             /**<User input indication. This message is returned in the OpalGetMessage()
                                     function when, during a call, user indications (aka DTMF tones) are
                                     received. See the OpalStatusUserInput structure for more information. */
   OpalIndCallCleared,           /**<Call is cleared indication. This message is returned in the
                                     OpalGetMessage() function when the call has completed. The OpalMessage
                                     m_callToken field indicates which call cleared. */
+  OpalCmdHoldCall,              /**<Place call in a hold state. The OpalMessage m_callToken field is set to
+                                    the token returned in OpalIndIncomingCall. */
+  OpalCmdRetrieveCall,          /**<Retrieve call from hold state. The OpalMessage m_callToken field is set
+                                    to the token returned in OpalIndIncomingCall. */
+  OpalCmdTransferCall,          /**<Transfer a call to another party. This starts the outgoing call process
+                                    for the other party. See the  OpalParamSetUpCall structure for more
+                                    information.*/
   OpalMessageTypeCount
 } OpalMessageType;
 
@@ -391,19 +398,45 @@ typedef struct OpalStatusRegistration {
 } OpalStatusRegistration;
 
 
-/**Set up call parameters for the OpalCmdSetUpCall command.
-   This is only passed to and returned from the OpalSendMessage() function.
+/**Set up call parameters for several command and indication messages.
+
+   When establishing a new call via the OpalCmdSetUpCall command, the m_partyA and
+   m_partyB fields indicate the parties to connect.
+
+   For OpalCmdTransferCall, m_partyA indicates the connection to be transferred and
+   m_partyB is the party to be transferred to. If the call transfer is successful then
+   a OpalIndCallCleared message will be received clearing the local call.
+
+   For OpalIndAlerting and OpalIndEstablished indications the three fields are set
+   to the data for the call in progress.
   */
 typedef struct OpalParamSetUpCall {
-  const char * m_partyA;      /**< A-Party for call. This indicates what subsystem will
-                                   be starting the system, e.g. "pots:Handset One". If NULL
+  const char * m_partyA;      /**< A-Party for call.
+
+                                   For OpalCmdSetUpCall, this indicates what subsystem will
+                                   be starting the call, e.g. "pots:Handset One". If NULL
                                    or empty string then "pc:*" is used indication that the
-                                  standard PC sound system ans screen is to be used. */
-  const char * m_partyB;      /**< B-Party for call. This is typically a remote host address
-                                   and protocol, e.g. "h323:simple.com" or "sip:fred@nurk.com" */
+                                   standard PC sound system ans screen is to be used.
+
+                                   For OpalCmdTransferCall this indicates the party to be
+                                   transferred, e.g. "sip:fred@nurk.com". If NULL then
+                                   it is assumed that the party that is not the pc or pots
+                                   connection is to be transferred.
+
+                                   For OpalIndAlerting and OpalIndEstablished this indicates
+                                   the A-party of the call in progress. */
+  const char * m_partyB;      /**< B-Party for call. This is typically a remote host URL
+                                   address with protocol, e.g. "h323:simple.com" or
+                                   "sip:fred@nurk.com".
+
+                                   This must be provided in the OpalCmdSetUpCall and
+                                   OpalCmdTransferCall commands, and is set by the system
+                                   in the OpalIndAlerting and OpalIndEstablished indications. */
   const char * m_callToken;   /**< Value of call token for new call. The user would pass NULL
-                                   for this string, it is only returned by the OpalSendMessage()
-                                   function. */
+                                   for this string in OpalCmdSetUpCall, a new value is
+                                   returned by the OpalSendMessage() function. The user would
+                                   provide the call token for the call being transferred when
+                                   OpalCmdTransferCall is being called. */
 } OpalParamSetUpCall;
 
 
