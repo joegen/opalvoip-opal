@@ -863,18 +863,18 @@ void OpalTransport::CloseWait()
   Close();
 
   channelPointerMutex.StartWrite();
-
-  if (thread != NULL) {
-    if (thread == PThread::Current())
-      thread->SetAutoDelete();
-    else {
-      PAssert(thread->WaitForTermination(10000), "Transport thread did not terminate");
-      delete thread;
-    }
-    thread = NULL;
-  }
-
+  PThread * exitingThread = thread;
+  thread = NULL;
   channelPointerMutex.EndWrite();
+
+  if (exitingThread != NULL) {
+    if (exitingThread == PThread::Current())
+      exitingThread->SetAutoDelete();
+    else {
+      PAssert(exitingThread->WaitForTermination(10000), "Transport thread did not terminate");
+      delete exitingThread;
+    }
+  }
 }
 
 
