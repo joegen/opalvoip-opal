@@ -348,13 +348,12 @@ PBoolean H323UnidirectionalChannel::Open()
 
   OpalCall & call = connection.GetCall();
 
-  PSafePtr<OpalConnection> otherConnection;
   if (GetDirection() == IsReceiver) {
-    if (call.OpenSourceMediaStreams(connection, GetSessionID()))
+    if (call.OpenSourceMediaStreams(connection, GetSessionID(), mediaStream->GetMediaFormat()))
       return true;
   }
   else {
-    otherConnection = call.GetOtherPartyConnection(connection);
+    PSafePtr<OpalConnection> otherConnection = call.GetOtherPartyConnection(connection);
     if (otherConnection != NULL && call.OpenSourceMediaStreams(*otherConnection, GetSessionID()))
       return true;
   }
