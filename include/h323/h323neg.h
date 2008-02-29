@@ -131,13 +131,14 @@ class H245NegTerminalCapabilitySet : public H245Negotiator
     PBoolean HandleRelease(const H245_TerminalCapabilitySetRelease & pdu);
     void HandleTimeout(PTimer &, INT);
 
-    PBoolean HasSentCapabilities() const { return state == e_Sent; }
-    PBoolean IsSendingCapabilities() const { return state == e_InProgress; }       // TODO - SGW
-    PBoolean HasReceivedCapabilities() const { return receivedCapabilites; }
+    bool HasSentCapabilities() const { return state >= e_InProgress; }
+    bool IsSendingCapabilities() const { return state == e_InProgress; }
+    bool ConfrimedCapabilitiesSent() const { return state == e_Confirmed; }
+    bool HasReceivedCapabilities() const { return receivedCapabilites; }
 
   protected:
     enum States {
-      e_Idle, e_InProgress, e_Sent,
+      e_Idle, e_InProgress, e_Confirmed,
       e_NumStates
     } state;
 #if PTRACING

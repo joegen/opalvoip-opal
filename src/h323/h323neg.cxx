@@ -325,7 +325,7 @@ PBoolean H245NegTerminalCapabilitySet::Start(PBoolean renegotiate, PBoolean empt
     return PTrue;
   }
 
-  if (!renegotiate && state == e_Sent) {
+  if (!renegotiate && state == e_Confirmed) {
     PTRACE(2, "H245\tTerminalCapabilitySet already sent.");
     return PTrue;
   }
@@ -422,7 +422,7 @@ PBoolean H245NegTerminalCapabilitySet::HandleAck(const H245_TerminalCapabilitySe
     return PTrue;
 
   replyTimer.Stop();
-  state = e_Sent;
+  state = e_Confirmed;
   PTRACE(3, "H245\tTerminalCapabilitySet Sent.");
   return PTrue;
 }
