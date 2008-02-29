@@ -1341,7 +1341,7 @@ void OpalManager::GarbageCollection()
   OpalEndpointFactory::KeyList_T keys = OpalEndpointFactory::GetKeyList();
   for (OpalEndpointFactory::KeyList_T::iterator r = keys.begin(); r != keys.end(); ++r) {
     OpalEndPoint * ep = OpalEndpointFactory::CreateInstance(*r);
-    if (!ep->GarbageCollection())
+    if (ep != NULL && !ep->GarbageCollection())
       allCleared = PFalse;
   }
 
