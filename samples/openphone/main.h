@@ -599,6 +599,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnPasteSpeedDial(wxCommandEvent& event);
     void OnDeleteSpeedDial(wxCommandEvent& event);
     void OnOptions(wxCommandEvent& event);
+    void OnVFU(wxCommandEvent& event);
     void OnSashPositioned(wxSplitterEvent& event);
     void OnSpeedDialActivated(wxListEvent& event);
     void OnSpeedDialColumnResize(wxListEvent& event);
