@@ -2444,7 +2444,7 @@ class QDXML
       state = 0;
       std::string str;
       while ((state >= 0) && ExtractNextElement(str)) {
-        cout << state << "  " << str << endl;
+        //cout << state << "  " << str << endl;
         unsigned i;
         for (i = 0; i < numStates; ++i) {
           //cout << "comparing '" << str << "' to '" << states[i].str << "'" << endl;
