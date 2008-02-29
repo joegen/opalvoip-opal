@@ -317,6 +317,8 @@ class H323Channel : public PObject
     ) { paused = pause; }
   //@}
 
+    virtual void OnMediaCommand(OpalMediaCommand &) { }
+
   protected:
     H323EndPoint         & endpoint;
     H323Connection       & connection;
@@ -409,9 +411,9 @@ class H323UnidirectionalChannel : public H323Channel
     virtual OpalMediaStreamPtr GetMediaStream() const;
   //@}
 
-  protected:
-    PDECLARE_NOTIFIER(OpalMediaCommand, H323UnidirectionalChannel, OnMediaCommand);
+    void OnMediaCommand(OpalMediaCommand & command);
 
+  protected:
     bool               receiver;
     OpalMediaStreamPtr mediaStream;
 };
