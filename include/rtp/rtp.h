@@ -427,7 +427,8 @@ class RTP_Session : public PObject
       * Used for RFC2833 packets
       */
     virtual PBoolean WriteOOBData(
-      RTP_DataFrame & frame
+      RTP_DataFrame & frame,
+      bool rewriteTimeStamp = true
     );
 
     /**Write a control frame from the RTP channel.
@@ -778,10 +779,10 @@ class RTP_Session : public PObject
     PINDEX        consecutiveOutOfOrderPackets;
 
     PMutex        sendDataMutex;
-    DWORD         timeStampOut;               // current timestamp for this session
-    DWORD         timeStampOffs;              // offset between incoming media timestamp and timeStampOut
-    PBoolean          timeStampOffsetEstablished; // PTrue if timeStampOffs has been established by media
-    PBoolean          timeStampIsPremedia;        // PTrue if timeStampOutTick has been initialised
+    DWORD         timeStampOffs;               // offset between incoming media timestamp and timeStampOut
+    PBoolean      oobTimeStampBaseEstablished; // PTrue if timeStampOffs has been established by media
+    DWORD         oobTimeStampOutBase;         // base timestamp value for oob data
+    PTimeInterval oobTimeStampBase;            // base time for oob timestamp
 
     // Statistics
     DWORD packetsSent;
@@ -975,7 +976,7 @@ class RTP_UDP : public RTP_Session
     /** Write data frame to the RTP channel outside the normal stream of media
       * Used for RFC2833 packets
       */
-    virtual PBoolean WriteOOBData(RTP_DataFrame & frame);
+    virtual PBoolean WriteOOBData(RTP_DataFrame & frame, bool setTimeStamp = true);
 
     /**Write a control frame from the RTP channel.
       */
