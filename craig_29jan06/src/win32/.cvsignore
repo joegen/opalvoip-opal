@@ -1,0 +1,7 @@
+*.dep *.opt *.plg *.ncb *.Tags.WW *.vcproj.*.user
+opald_2003.sym
+opal_2003.sym
+opaln_2003.sym
+opald_2005.sym
+opal_2005.sym
+opaln_2005.sym

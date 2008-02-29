@@ -1,0 +1,131 @@
+/**@name OPAL  -  Open Phone Abstraction Library 
+
+	This is a Open Source class library for the development of applications
+	that wish to use multiple protocols, eg H.323 or SIP, for multi-media
+	communications.
+
+@memo	A Class Libarary implementing several telephony protocols.
+@version 1.1beta2
+@author	Equivalence Pty. Ltd.
+*/
+
+// $Log: opal.dxx,v $
+// Revision 1.2005  2006/04/08 01:07:08  rjongbloed
+// Add some documentation
+//
+// Revision 2.3  2002/02/11 03:24:17  dereks
+// Add SIP to list of include files.
+//
+// Revision 2.2  2002/02/11 02:27:54  dereks
+// Adjust format of CVS logging command.
+//
+// Revision 2.1  2002/02/11 02:17:21  dereks
+// Adjust include file list.
+//
+
+//@{
+
+/**@name Introduction
+\begin{center}
+ 	{\Large{\bf Open Phone Abstraction Library}}
+\end{center}
+
+OPAL is an Open Source class library for the development of applications that
+wish to use multiple protocols, eg H.323 or SIP, for multi-media
+communications.
+
+*/
+ 
+/**@name Architecture
+<A REF=docs/overview.html>Overview
+*/
+
+
+/**@name	Using OPAL
+Detailed tutorials will be forthcoming.
+
+@memo	Brief examples.
+*/
+
+/**@name	Class Reference
+
+@memo	Documentation on all classes.
+  */
+    //@{
+	//@Include: include/h323/h323.h
+	//@Include: include/h323/h323ep.h
+	//@Include: include/h323/h323con.h
+	//@Include: include/h323/channels.h
+	//@Include: include/h323/gkclient.h
+	//@Include: include/h323/gkserver.h
+	//@Include: include/h323/h225ras.h
+	//@Include: include/h323/h235auth.h
+	//@Include: include/h323/h323caps.h
+	//@Include: include/h323/h323neg.h
+	//@Include: include/h323/h323pdu.h
+	//@Include: include/h323/h323rtp.h
+	//@Include: include/h323/h450pdu.h
+	//@Include: include/h323/q931.h
+	//@Include: include/h323/transaddr.h
+	//@Include: include/codec/allcodecs.h
+	//@Include: include/codec/g711codec.h
+	//@Include: include/codec/gsmcodec.h
+	//@Include: include/codec/h261codec.h
+	//@Include: include/codec/lpc10codec.h
+	//@Include: include/codec/mscodecs.h
+	//@Include: include/codec/rfc2833.h
+	//@Include: include/lids/QTIoctl.h
+	//@Include: include/lids/ixjDefs.h
+	//@Include: include/lids/ixjlid.h
+	//@Include: include/lids/lid.h
+	//@Include: include/lids/lidep.h
+	//@Include: include/lids/vblasterlid.h
+	//@Include: include/lids/vpbapi.h
+	//@Include: include/lids/vpblid.h
+	//@Include: include/opal/connection.h
+	//@Include: include/opal/call.h
+	//@Include: include/opal/endpoint.h
+	//@Include: include/opal/guid.h
+	//@Include: include/opal/manager.h
+	//@Include: include/opal/mediafmt.h
+	//@Include: include/opal/mediastrm.h
+	//@Include: include/opal/patch.h
+	//@Include: include/opal/pcss.h
+	//@Include: include/opal/transcoders.h
+	//@Include: include/opal/transports.h
+	//@Include: include/rtp/jitter.h
+	//@Include: include/rtp/rtp.h
+	//@Include: include/t120/h323t120.h
+	//@Include: include/t120/t120proto.h
+	//@Include: include/t120/x224.h
+	//@Include: include/t38/h323t38.h
+	//@Include: include/t38/t38proto.h
+	//@Include: src/codec/gsm/inc/config.h
+	//@Include: src/codec/gsm/inc/gsm.h
+	//@Include: src/codec/gsm/inc/private.h
+	//@Include: src/codec/gsm/inc/proto.h
+	//@Include: src/codec/gsm/inc/unproto.h
+	//@Include: src/codec/vic/bsd-endian.h
+	//@Include: src/codec/vic/config.h
+	//@Include: src/codec/vic/crdef.h
+	//@Include: src/codec/vic/dct.h
+	//@Include: src/codec/vic/encoder-h261.h
+	//@Include: src/codec/vic/encoder.h
+	//@Include: src/codec/vic/grabber.h
+	//@Include: src/codec/vic/p64-huff.h
+	//@Include: src/codec/vic/p64.h
+	//@Include: src/codec/vic/p64encoder.h
+	//@Include: src/codec/vic/transmitter.h
+	//@Include: src/codec/vic/vid_coder.h
+	//@Include: src/codec/vic/videoframe.h
+	//@Include: src/codec/lpc10/src/f2c.h
+	//@Include: src/codec/lpc10/bitio.h
+	//@Include: src/codec/lpc10/lpc10.h
+	//@Include: include/sip/sdp.h
+	//@Include: include/sip/sip.h
+	//@Include: include/sip/sipcon.h
+	//@Include: include/sip/sipep.h
+	//@Include: include/sip/sippdu.h
+    //@}
+
+//@}
