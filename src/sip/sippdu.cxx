@@ -1908,6 +1908,9 @@ SIPTransaction::~SIPTransaction()
 
 PBoolean SIPTransaction::Start()
 {
+  if (state == Completed)
+    return PTrue;
+
   endpoint.AddTransaction(this);
 
   if (state != NotStarted) {
@@ -1948,12 +1951,7 @@ PBoolean SIPTransaction::Start()
 
 void SIPTransaction::WaitForCompletion()
 {
-  if (state >= Completed)
-    return;
-
-  if (state == NotStarted)
-    Start();
-
+  Start();
   completed.Wait();
 }
 

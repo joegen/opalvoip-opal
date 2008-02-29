@@ -338,6 +338,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuPaste"),    MyManager::OnPasteSpeedDial)
   EVT_MENU(XRCID("MenuDelete"),   MyManager::OnDeleteSpeedDial)
   EVT_MENU(XRCID("MenuOptions"),  MyManager::OnOptions)
+  EVT_MENU(XRCID("MenuSendVFU"),  MyManager::OnVFU)
 
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyManager::OnSashPositioned)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyManager::OnSpeedDialActivated)
@@ -1696,6 +1697,25 @@ void MyManager::OnUserInputString(OpalConnection & connection, const PString & v
 }
 
 
+void MyManager::OnVFU(wxCommandEvent& /*event*/)
+{
+  PSafePtr<OpalCall> call = GetCall();
+  if (call == NULL)
+    return;
+
+  for (int i = 0; ; i++) {
+    PSafePtr<OpalConnection> connection = call->GetConnection(i, PSafeReadOnly);
+    if (connection == NULL) 
+      break;
+    if (!PIsDescendant(&(*connection), OpalPCSSConnection) && !PIsDescendant(&(*connection), OpalLineConnection)) {
+      OpalVideoUpdatePicture cmd;
+      connection->OnMediaCommand(cmd, 0);
+      break;
+    }
+  }
+}
+
+
 PString MyManager::ReadUserInput(OpalConnection & connection,
                                  const char * terminators,
                                  unsigned,
@@ -2034,6 +2054,7 @@ void MyManager::OnOptions(wxCommandEvent& /*event*/)
   OptionsDialog dlg(this);
   dlg.ShowModal();
 }
+
 
 BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   ////////////////////////////////////////

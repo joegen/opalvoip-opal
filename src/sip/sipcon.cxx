@@ -1330,6 +1330,9 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
         PSafePtr<SIPTransaction> transaction = endpoint.GetTransaction(pdu.GetTransactionID(), PSafeReference);
         if (transaction != NULL)
           transaction->OnReceivedResponse(pdu);
+        else {
+          PTRACE(3, "SIP\tCannot find transaction for response");
+        }
       }
       return;
   }
@@ -2359,8 +2362,11 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
           str << tone;
         }
         infoTransaction->GetEntityBody() = str;
-        infoTransaction->WaitForCompletion();
-        return !infoTransaction->IsFailed();
+
+        // cannot wait for completion as this keeps the SIPConnection locks, thus preventing the response from being processed
+        //infoTransaction->WaitForCompletion();
+        //return !infoTransaction->IsFailed();
+        return infoTransaction->Start();
       }
 
     // anything else - send as RFC 2833
@@ -2392,8 +2398,10 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
  "</vc_primitive>"
 "</media_control>"
 ;
-    infoTransaction->WaitForCompletion();
-    if (infoTransaction->IsFailed()) { }
+    // cannot wait for completion as this keeps the SIPConnection locks, thus preventing the response from being processed
+    //infoTransaction->WaitForCompletion();
+    //if (infoTransaction->IsFailed()) { }
+    infoTransaction->Start();
   }
 #endif
 }
