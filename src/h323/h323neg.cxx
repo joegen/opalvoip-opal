@@ -159,7 +159,7 @@ PBoolean H245NegMasterSlaveDetermination::HandleIncoming(const H245_MasterSlaveD
     PTRACE(3, "H245\tMasterSlaveDetermination: local is "
                   << (newStatus == e_DeterminedMaster ? "master" : "slave"));
     reply.BuildMasterSlaveDeterminationAck(newStatus == e_DeterminedMaster);
-    state = e_Incoming;
+    state = state == e_Outgoing ? e_Incoming : e_Idle;
     status = newStatus;
   }
   else if (state == e_Outgoing) {
