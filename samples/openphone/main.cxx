@@ -300,9 +300,16 @@ void OpenPhoneApp::Main()
   // Dummy function
 }
 
+//////////////////////////////////
 
 bool OpenPhoneApp::OnInit()
 {
+  // make sure various URL types are registered to this application
+  {
+    PString urlTypes("sip\nh323\nsips\nh323s");
+    PProcess::HostSystemURLHandlerInfo::RegisterTypes(urlTypes, true);
+  }
+
   // Create the main frame window
   MyManager * main = new MyManager();
   SetTopWindow(main);
