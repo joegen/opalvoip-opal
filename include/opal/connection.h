@@ -1250,6 +1250,11 @@ class OpalConnection : public PSafeObject
           bool isSource
     );
 
+    /** Notifier function for OpalVideoUpdatePicture.
+        Calls the SendIntraFrameRequest on the rtp session
+      */
+    PDECLARE_NOTIFIER(OpalMediaCommand, OpalConnection, OnMediaCommand);
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineCiscoNSE);

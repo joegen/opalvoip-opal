@@ -52,6 +52,10 @@
 #include <t38/t38proto.h>
 #include <h224/h224handler.h>
 
+#if OPAL_VIDEO
+#include <codec/vidcodec.h>
+#endif
+
 #if OPAL_T38FAX
 #include <t38/t38proto.h>
 #endif
@@ -1242,6 +1246,18 @@ void OpalConnection::OnMediaPatchStart(unsigned, bool)
 
 void OpalConnection::OnMediaPatchStop(unsigned,  bool )
 { }
+
+void OpalConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
+{
+#if OPAL_VIDEO
+  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    RTP_Session * session = rtpSessions.GetSession(OpalMediaFormat::DefaultVideoSessionID);
+    if (session != NULL)
+      session->SendIntraFrameRequest();
+  }
+#endif
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////

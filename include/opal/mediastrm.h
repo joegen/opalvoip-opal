@@ -480,19 +480,6 @@ class OpalRTPMediaStream : public OpalMediaStream
     virtual RTP_Session & GetRtpSession() const
     { return rtpSession; }
 
-#if OPAL_VIDEO
-    /** Sets the media patch for the RTP stream.
-        Default behaviour calls OpalMediaStream::Start, and adds the
-        OnMediaCommand sets the command notifier, updating the patch as well
-      */
-    virtual void OnPatchStart();
-
-    /** Notifier function for OpalVideoUpdatePicture.
-        Calls the SendIntraFrameRequest on the rtp session
-      */
-    PDECLARE_NOTIFIER(OpalMediaCommand, OpalRTPMediaStream, OnMediaCommand);
-#endif
-
   //@}
 
   protected:

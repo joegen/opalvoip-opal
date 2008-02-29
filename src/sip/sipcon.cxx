@@ -1088,6 +1088,8 @@ void SIPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch
   if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
     AttachRFC2833HandlerToPatch(isSource, patch);
   }
+
+  patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
 }
 
 
@@ -2370,6 +2372,31 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
   return OpalConnection::SendUserInputTone(tone, duration);
 }
 
+void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
+{
+#if OPAL_VIDEO
+  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    PTRACE(3, "SIP\tSending PictureFastUpdate");
+    PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_INFO);
+    SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
+    mimeInfo.SetContentType(ApplicationMediaControlXMLKey);
+    PStringStream str;
+    infoTransaction->GetEntityBody() = 
+"<?xml version=\"1.0\" encoding=\"utf-8\" ?>"\
+"<media_control>"
+" <vc_primitive>"
+"  <to_encoder>"
+"   <picture_fast_update>"
+"   </picture_fast_update>"
+"  </to_encoder>"
+" </vc_primitive>"
+"</media_control>"
+;
+    infoTransaction->WaitForCompletion();
+    //if (infoTransaction->IsFailed()) { }
+  }
+#endif
+}
 
 #if OPAL_VIDEO
 class QDXML 
@@ -2412,14 +2439,14 @@ class QDXML
         cout << state << "  " << str << endl;
         unsigned i;
         for (i = 0; i < numStates; ++i) {
-          cout << "comparing '" << str << "' to '" << states[i].str << "'" << endl;
+          //cout << "comparing '" << str << "' to '" << states[i].str << "'" << endl;
           if ((state == states[i].currState) && (str.compare(0, strlen(states[i].str), states[i].str) == 0)) {
             state = states[i].newState;
             break;
           }
         }
         if (i == numStates) {
-          cout << "unknown string " << str << " in state " << state << endl;
+          //cout << "unknown string " << str << " in state " << state << endl;
           state = -1;
           break;
         }
@@ -2450,14 +2477,15 @@ class VFUXML : public QDXML
     PBoolean Parse(const std::string & xml)
     {
       static const struct statedef states[] = {
-        { 0, "?xml",                1 },
-        { 1, "media_control",       2 },
-        { 2, "vc_primitive",        3 },
-        { 3, "to_encoder",          4 },
-        { 4, "picture_fast_update", 5 },
-        { 5, "/to_encoder",         6 },
-        { 6, "/vc_primitive",       7 },
-        { 7, "/media_control",      255 },
+        { 0, "?xml",                 1 },
+        { 1, "media_control",        2 },
+        { 2, "vc_primitive",         3 },
+        { 3, "to_encoder",           4 },
+        { 4, "picture_fast_update",  5 },
+        { 5, "/picture_fast_update", 6 },
+        { 6, "/to_encoder",          7 },
+        { 7, "/vc_primitive",        8 },
+        { 8, "/media_control",       255 },
       };
       const int numStates = sizeof(states)/sizeof(states[0]);
       return QDXML::Parse(xml, states, numStates) == 255;
@@ -2475,6 +2503,7 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
 {
   VFUXML vfu;
   if (!vfu.Parse(pdu.GetEntityBody())) {
+    PTRACE(3, "SIP\tUnable to parse received PictureFastUpdate");
     SIP_PDU response(pdu, SIP_PDU::Failure_Undecipherable);
     response.GetEntityBody() = 
       "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
@@ -2486,6 +2515,7 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
     SendPDU(response, pdu.GetViaAddress(endpoint));
   }
   else if (vfu.vfu) {
+    PTRACE(3, "SIP\tPictureFastUpdate received");
     if (!LockReadWrite())
       return PFalse;
 
