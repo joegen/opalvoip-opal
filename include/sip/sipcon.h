@@ -436,6 +436,8 @@ class SIPConnection : public OpalConnection
     virtual PBoolean OnMediaControlXML(SIP_PDU & pdu);
 #endif
 
+    PDECLARE_NOTIFIER(OpalMediaCommand, SIPConnection, OnMediaCommand);
+
   protected:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);

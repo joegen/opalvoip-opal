@@ -55,6 +55,10 @@
 #include <opal/patch.h>
 #include <codec/rfc2833.h>
 
+#if OPAL_VIDEO
+#include <codec/vidcodec.h>
+#endif
+
 #if OPAL_H224
 #include <h224/h323h224.h>
 #endif
@@ -3569,7 +3573,7 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
 void H323Connection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
   OpalConnection::OnPatchMediaStream(isSource, patch);
-  if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+  if (patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
     AttachRFC2833HandlerToPatch(isSource, patch);
 #if P_DTMF
     if (detectInBandDTMF && isSource) {
@@ -3577,8 +3581,20 @@ void H323Connection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
     }
 #endif
   }
+
+  patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
 }
 
+void H323Connection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
+{
+#if OPAL_VIDEO
+  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    H323Channel * video = FindChannel(OpalMediaFormat::DefaultVideoSessionID, true);
+    if (video != NULL)
+      video->OnMediaCommand(command);
+  }
+#endif
+}
 
 PBoolean H323Connection::IsMediaBypassPossible(unsigned sessionID) const
 {

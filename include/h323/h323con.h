@@ -1864,6 +1864,8 @@ class H323Connection : public OpalConnection
 
     virtual PBoolean OnOpenIncomingMediaChannels();
 
+    PDECLARE_NOTIFIER(OpalMediaCommand, H323Connection, OnMediaCommand);
+
   protected:
     /**Internal function to check if call established.
        This checks all the criteria for establishing a call an initiating the
