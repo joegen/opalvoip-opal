@@ -2382,18 +2382,18 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
     mimeInfo.SetContentType(ApplicationMediaControlXMLKey);
     PStringStream str;
     infoTransaction->GetEntityBody() = 
-"<?xml version=\"1.0\" encoding=\"utf-8\" ?>"\
+"<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
 "<media_control>"
-" <vc_primitive>"
-"  <to_encoder>"
-"   <picture_fast_update>"
-"   </picture_fast_update>"
-"  </to_encoder>"
-" </vc_primitive>"
+ "<vc_primitive>"
+  "<to_encoder>"
+   "<picture_fast_update>"
+   "</picture_fast_update>"
+  "</to_encoder>"
+ "</vc_primitive>"
 "</media_control>"
 ;
     infoTransaction->WaitForCompletion();
-    //if (infoTransaction->IsFailed()) { }
+    if (infoTransaction->IsFailed()) { }
   }
 #endif
 }
@@ -2461,8 +2461,9 @@ class QDXML
     virtual bool OnMatch(const std::string & )
     { return true; }
 
-  protected:
     int state;
+
+  protected:
     const char * ptr;
 };
 
@@ -2502,7 +2503,7 @@ class VFUXML : public QDXML
 PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
 {
   VFUXML vfu;
-  if (!vfu.Parse(pdu.GetEntityBody())) {
+  if (!vfu.Parse(pdu.GetEntityBody() || !vfu.vfu) {
     PTRACE(3, "SIP\tUnable to parse received PictureFastUpdate");
     SIP_PDU response(pdu, SIP_PDU::Failure_Undecipherable);
     response.GetEntityBody() = 
@@ -2514,22 +2515,22 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
       "</media_control>\n";
     SendPDU(response, pdu.GetViaAddress(endpoint));
   }
-  else if (vfu.vfu) {
+  else {
     PTRACE(3, "SIP\tPictureFastUpdate received");
-    if (!LockReadWrite())
-      return PFalse;
-
-    OpalMediaStreamPtr encodingStream = GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, PTrue);
-
-    if (!encodingStream){
-      OpalVideoUpdatePicture updatePictureCommand;
-      encodingStream->ExecuteCommand(updatePictureCommand);
+    if (LockReadWrite()) {
+      OpalMediaStreamPtr encodingStream = GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, PTrue);
+      if (encodingStream == NULL){
+        PTRACE(3, "SIP\tNo video stream to update");
+      } else {
+        OpalVideoUpdatePicture updatePictureCommand;
+        encodingStream->ExecuteCommand(updatePictureCommand);
+        PTRACE(3, "SIP\tI-frame requested in video stream");
+      }
+      UnlockReadWrite();
     }
 
     SIP_PDU response(pdu, SIP_PDU::Successful_OK);
     SendPDU(response, pdu.GetViaAddress(endpoint));
-    
-    UnlockReadWrite();
   }
 
   return PTrue;
