@@ -2129,12 +2129,8 @@ PBoolean H323Connection::SetProgressed()
   if (connectionState == ShuttingDownConnection)
     return PFalse;
 
-  // Set flag that we are up to CONNECT stage
-  //connectionState = HasExecutedSignalConnect;
-  //phase = ConnectedPhase;
-  /* TODO*/
   //h450dispatcher->AttachToProgress(*progress);
-  if(endpoint.IsH245Disabled() == PFalse){
+  if (!endpoint.IsH245Disabled()){
     if (h245Tunneling) {
       HandleTunnelPDU(progressPDU);
   
@@ -2154,16 +2150,8 @@ PBoolean H323Connection::SetProgressed()
     }
   }
   
-  if (!WriteSignalPDU(*progressPDU)) // Send H323 Connect PDU
+  if (!WriteSignalPDU(*progressPDU)) // Send H323 Progress PDU
     return PFalse;
-
-  delete progressPDU;
-  progressPDU = NULL;
-
-  delete alertingPDU;
-  alertingPDU = NULL;
-
-  connectedTime = PTime();
 
   InternalEstablishedConnectionCheck();
   return PTrue;
@@ -3380,13 +3368,14 @@ PTimeInterval H323Connection::GetRoundTripDelay() const
 
 void H323Connection::InternalEstablishedConnectionCheck()
 {
-  PTRACE(3, "H323\tInternalEstablishedConnectionCheck: "
-            "connectionState=" << connectionState << " "
-            "fastStartState=" << fastStartState);
-
-  PBoolean h245_available = masterSlaveDeterminationProcedure->IsDetermined() &&
+  bool h245_available = masterSlaveDeterminationProcedure->IsDetermined() &&
                         capabilityExchangeProcedure->HasSentCapabilities() &&
                         capabilityExchangeProcedure->HasReceivedCapabilities();
+
+  PTRACE(3, "H323\tInternalEstablishedConnectionCheck: "
+            "connectionState=" << connectionState << " "
+            "fastStartState=" << fastStartState << " "
+            "H.245 is " << (h245_available ? "ready" : "unavailable"));
 
   if (h245_available)
     endSessionNeeded = PTrue;
@@ -3491,6 +3480,13 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
       // Logical channel not open, if receiver that is an error
       if (isSource) {
         PTRACE(2, "H323\tOpenMediaStream has no logical channel for session " << sessionID);
+        return NULL;
+      }
+
+      if (!masterSlaveDeterminationProcedure->IsDetermined() ||
+          !capabilityExchangeProcedure->HasSentCapabilities() ||
+          !capabilityExchangeProcedure->HasReceivedCapabilities()) {
+        PTRACE(2, "H323\tOpenMediaStream cannot (H.245 unavailable) open logical channel for " << mediaFormat);
         return NULL;
       }
 
@@ -3641,10 +3637,16 @@ void H323Connection::OnSelectLogicalChannels()
 #if OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
         SelectDefaultLogicalChannel(OpalMediaFormat::DefaultVideoSessionID);
+      else {
+        PTRACE(4, "H245\tOnSelectLogicalChannels, video not auto-started");
+      }
 #endif
 #if OPAL_T38FAX
       if (endpoint.CanAutoStartTransmitFax())
         SelectDefaultLogicalChannel(OpalMediaFormat::DefaultDataSessionID);
+      else {
+        PTRACE(4, "H245\tOnSelectLogicalChannels, fax not auto-started");
+      }
 #endif
       break;
 
