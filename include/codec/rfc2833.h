@@ -86,6 +86,10 @@ class OpalRFC2833Proto : public PObject {
     );
 
     virtual void OnStartReceive(
+      char tone,
+      unsigned timestamp
+    );
+    virtual void OnStartReceive(
       char tone
     );
     virtual void OnEndReceive(
@@ -118,27 +122,38 @@ class OpalRFC2833Proto : public PObject {
 
     PMutex mutex;
 
-    PNotifier receiveNotifier;
-    PBoolean      receiveComplete;
+    enum {
+      ReceiveIdle,
+      ReceiveActive,
+      ReceiveEnding
+    } receiveState;
+
     BYTE      receivedTone;
-    unsigned  receivedDuration;
-    unsigned  receiveTimestamp;
+
+    //PBoolean  receiveComplete;
+    //unsigned  receivedDuration;
+    //unsigned  receiveTimestamp;
+
+    PNotifier receiveNotifier;
     PTimer    receiveTimer;
     PNotifier receiveHandler;
 
     enum {
       TransmitIdle,
       TransmitActive,
-      TransmitEnding
-    }         transmitState;
+      TransmitEnding1,
+      TransmitEnding2,
+      TransmitEnding3,
+    } transmitState;
     BYTE      transmitCode;
 
     RTP_Session * rtpSession;
     PTimer        asyncTransmitTimer;
     PTimer        asyncDurationTimer;
     DWORD         transmitTimestamp;
-    PBoolean          transmitTimestampSet;
+    PBoolean      rewriteTransmitTimestamp;
     PTimeInterval asyncStart;
+    unsigned      transmitDuration;
 };
 
 

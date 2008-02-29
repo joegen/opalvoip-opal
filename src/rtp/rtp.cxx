@@ -472,10 +472,8 @@ RTP_Session::RTP_Session(
   ignorePayloadTypeChanges = PTrue;
   syncSourceOut = PRandom::Number();
 
-  timeStampOut = PRandom::Number();
   timeStampOffs = 0;
-  timeStampOffsetEstablished = PFalse;
-  timeStampIsPremedia = PFalse;
+  oobTimeStampBaseEstablished = PFalse;
   lastSentPacketTime = PTimer::Tick();
 
   syncSourceIn = 0;
@@ -743,12 +741,20 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
 
   // special handling for first packet
   if (packetsSent == 0) {
-    if (!timeStampIsPremedia) {
-      timeStampOffs = frame.GetTimestamp() - timeStampOut;
-      timeStampOffsetEstablished = PTrue;
-    }
-    frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
 
+    // establish timestamp offset
+    if (oobTimeStampBaseEstablished)  {
+      timeStampOffs = oobTimeStampOutBase - frame.GetTimestamp() + ((PTimer::Tick() - oobTimeStampBase).GetInterval() * 8);
+      frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
+    }
+    else {
+      oobTimeStampBaseEstablished = PTrue;
+      timeStampOffs               = 0;
+      oobTimeStampOutBase         = frame.GetTimestamp();
+      oobTimeStampBase            = PTimer::Tick();
+    }
+    
+    // display stuff
     PTRACE(3, "RTP\tSession " << sessionID << ", first sent data:"
               " ver=" << frame.GetVersion()
            << " pt=" << frame.GetPayloadType()
@@ -760,8 +766,17 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
            << " src=" << frame.GetSyncSource()
            << " ccnt=" << frame.GetContribSrcCount());
   }
+
   else {
-    frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
+    // set timestamp
+    DWORD ts = frame.GetTimestamp() + timeStampOffs;
+    frame.SetTimestamp(ts);
+
+    // reset OOB timestamp every marker bit
+    if (frame.GetMarker()) {
+      oobTimeStampOutBase = ts;
+      oobTimeStampBase    = PTimer::Tick();
+    }
 
     // Only do statistics on subsequent packets
     if ( ! (isAudio && frame.GetMarker()) ) {
@@ -1355,7 +1370,7 @@ DWORD RTP_Session::GetPacketOverruns() const
 }
 
 
-PBoolean RTP_Session::WriteOOBData(RTP_DataFrame &)
+PBoolean RTP_Session::WriteOOBData(RTP_DataFrame &, bool)
 {
   return PTrue;
 }
@@ -1921,23 +1936,27 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
   return OnReceiveControl(frame);
 }
 
-PBoolean RTP_UDP::WriteOOBData(RTP_DataFrame & frame)
+PBoolean RTP_UDP::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
 {
   PWaitAndSignal m(sendDataMutex);
 
-  // if media has not already established a timestamp, ensure that OnSendData does not use this one
-  if (!timeStampOffsetEstablished) {
-    timeStampOffs = 0;
-    timeStampIsPremedia = PTrue;
+  // set timestamp offset if not already set
+  // otherwise offset timestamp
+  if (!oobTimeStampBaseEstablished) {
+    oobTimeStampBaseEstablished = true;
+    oobTimeStampBase            = PTimer::Tick();
+    if (rewriteTimeStamp)
+      oobTimeStampOutBase = PRandom::Number();
+    else
+      oobTimeStampOutBase = frame.GetTimestamp();
   }
 
-  // set the timestamp
-  frame.SetTimestamp(timeStampOffs + timeStampOut + (PTimer::Tick() - lastSentPacketTime).GetInterval() * 8);
+  // set new timestamp
+  if (rewriteTimeStamp) 
+    frame.SetTimestamp(oobTimeStampOutBase + ((PTimer::Tick() - oobTimeStampBase).GetInterval() * 8));
 
   // write the data
-  PBoolean stat = WriteData(frame);
-  timeStampIsPremedia = PFalse;
-  return stat;
+  return WriteData(frame);
 }
 
 PBoolean RTP_UDP::WriteData(RTP_DataFrame & frame)

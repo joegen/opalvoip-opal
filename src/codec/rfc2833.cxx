@@ -72,10 +72,9 @@ OpalRFC2833Proto::OpalRFC2833Proto(OpalConnection & _conn, const PNotifier & rx)
   PTRACE(4, "RFC2833\tHandler created");
 
   payloadType = RTP_DataFrame::IllegalPayloadType;
-  receiveComplete = PTrue;
-  receiveTimestamp = 0;
   receiveTimer.SetNotifier(PCREATE_NOTIFIER(ReceiveTimeout));
 
+  receiveState  = ReceiveIdle;
   transmitState = TransmitIdle;
 
   asyncTransmitTimer.SetNotifier(PCREATE_NOTIFIER(AsyncTimeout));
@@ -92,21 +91,27 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 {
   PWaitAndSignal m(mutex);
 
+  // find an audio session in the current connection to send the packet on
   if (rtpSession == NULL) {
-    rtpSession = conn.UseSession(1);
+    rtpSession = conn.UseSession(OpalMediaFormat::DefaultAudioSessionID);
     if (rtpSession == NULL) {
       PTRACE(4, "RFC2833\tNo RTP session suitable for RFC2833");
       return PFalse;
     }
   }
 
+  // if not ' ', then start a new tone
+  // if ' ', then update last tone sent
   if (tone != ' ') {
     if (!BeginTransmit(tone))
       return PFalse;
   }
 
+  // reset the duration and retransmit timers
   asyncDurationTimer = duration;
   asyncTransmitTimer.RunContinuous(30);
+
+  // send the current frame
   SendAsyncFrame();
 
   return PTrue;
@@ -114,56 +119,73 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 
 void OpalRFC2833Proto::SendAsyncFrame()
 {
+  // be thread safe
   PWaitAndSignal m(mutex);
 
+  // if transmittter is ever in this state, then stop the duration timer
   if (transmitState == TransmitIdle) {
     asyncDurationTimer.Stop();
     return;
-  }
-
-  if (!asyncDurationTimer.IsRunning()) {
-    transmitState = TransmitEnding;
-    asyncTransmitTimer.Stop();
   }
 
   RTP_DataFrame frame;
   frame.SetPayloadType(payloadType);
   frame.SetPayloadSize(4);
 
-  {
-    BYTE * payload = frame.GetPayloadPtr();
-    payload[0] = transmitCode;
+  BYTE * payload = frame.GetPayloadPtr();
+  payload[0] = transmitCode; // tone
+  payload[1] = 7;            // Volume
 
-    payload[1] = 7;  // Volume
-    if (transmitState == TransmitEnding) {
+  // set end bit if sending last three packets
+  switch (transmitState) {
+    case TransmitActive:
+      // if the duration has ended, then go into ending state
+      if (!asyncDurationTimer.IsRunning()) 
+        transmitState = TransmitEnding1;
+
+      // set duration to time since start of time
+      if (asyncStart != PTimeInterval(0)) 
+        transmitDuration = (PTimer::Tick() - asyncStart).GetInterval();
+      else {
+        transmitDuration = 0;
+        frame.SetMarker(PTrue);
+        asyncStart = PTimer::Tick();
+      }
+      break;
+    case TransmitEnding1:
+      transmitDuration = (PTimer::Tick() - asyncStart).GetInterval();
+      payload[1] |= 0x80;
+      transmitState = TransmitEnding2;
+      break;
+    case TransmitEnding2:
+      payload[1] |= 0x80;
+      transmitState = TransmitEnding3;
+      break;
+    case TransmitEnding3:
       payload[1] |= 0x80;
       transmitState = TransmitIdle;
-    }
-
-    unsigned duration;
-    if (asyncStart != PTimeInterval(0)) 
-      duration = (PTimer::Tick() - asyncStart).GetInterval();
-    else {
-      duration = 0;
-	    frame.SetMarker(PTrue);
-      asyncStart = PTimer::Tick();
-    }
-
-    payload[2] = (BYTE)(duration>>8);
-    payload[3] = (BYTE) duration    ;
-
-    PTRACE(4, "RFC2833\tSending packet with duration " << duration << " for code " << (unsigned)transmitCode << " type " << ((transmitState == TransmitIdle) ? "end" : "cont"));
+      asyncTransmitTimer.Stop();
+      break;
+    default:
+      PAssertAlways("RFC2833\tunknown transmit state");
+      return;
   }
+
+  // set tone duration
+  payload[2] = (BYTE)(transmitDuration >> 8);
+  payload[3] = (BYTE) transmitDuration;
 
   if (rtpSession != NULL) {
-    if (transmitTimestampSet)
+    if (!rewriteTransmitTimestamp)
       frame.SetTimestamp(transmitTimestamp);
-    rtpSession->WriteOOBData(frame);
-    if (!transmitTimestampSet) {
-      transmitTimestamp    = frame.GetTimestamp();
-      transmitTimestampSet = PTrue;
+    rtpSession->WriteOOBData(frame, rewriteTransmitTimestamp);
+    if (rewriteTransmitTimestamp) {
+      transmitTimestamp        = frame.GetTimestamp();
+      rewriteTransmitTimestamp = false;
     } 
   }
+
+  PTRACE(4, "RFC2833\tSending " << ((payload[1] & 0x80) ? "end" : "tone") << ":tone=" << (unsigned)transmitCode << ",dur=" << transmitDuration << ",ts=" << frame.GetTimestamp() << ",mkr=" << frame.GetMarker());
 }
 
 PINDEX OpalRFC2833Proto::ASCIIToRFC2833(char tone)
@@ -201,10 +223,10 @@ PBoolean OpalRFC2833Proto::BeginTransmit(char tone)
     return PFalse;
   }
 
-  transmitCode = (BYTE)code;
-  transmitState = TransmitActive;
-  transmitTimestampSet = PFalse;
-  asyncStart    = 0;
+  transmitCode             = (BYTE)code;
+  transmitState            = TransmitActive;
+  rewriteTransmitTimestamp = true;
+  asyncStart               = 0;
   return PTrue;
 }
 
@@ -213,23 +235,28 @@ void OpalRFC2833Proto::AsyncTimeout(PTimer &, INT)
   SendAsyncFrame();
 }
 
-void OpalRFC2833Proto::OnStartReceive(char tone)
+void OpalRFC2833Proto::OnStartReceive(char tone, unsigned timestamp)
 {
-  OpalRFC2833Info info(tone);
+  OnStartReceive(tone);
+  OpalRFC2833Info info(tone, timestamp);
   receiveNotifier(info, 0);
+}
+
+void OpalRFC2833Proto::OnStartReceive(char)
+{
 }
 
 
 void OpalRFC2833Proto::OnEndReceive(char tone, unsigned duration, unsigned timestamp)
 {
   OpalRFC2833Info info(tone, duration, timestamp);
-  receiveNotifier(info, 0);
+  receiveNotifier(info, 1);
 }
 
 
 void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
 {
-  if (frame.GetPayloadType() != payloadType)
+  if (frame.GetPayloadType() != payloadType || frame.GetPayloadSize() == 0)
     return;
 
   PWaitAndSignal m(mutex);
@@ -241,54 +268,62 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
 
   const BYTE * payload = frame.GetPayloadPtr();
 
-  receivedTone = RFC2833ToASCII(payload[0]);
-  if (receivedTone == '\0') {
+  BYTE tone = RFC2833ToASCII(payload[0]);
+  if (tone == '\0') {
     PTRACE(2, "RFC2833\tIgnoring packet " << payload[0] << " - unsupported event.");
     return;
   }
-  receivedDuration = (payload[2]<<8) + payload[3];
+  unsigned duration = (payload[2] <<8) + payload[3];
+  unsigned timeStamp = frame.GetTimestamp();
 
-  unsigned timestamp = frame.GetTimestamp();
-  if (receiveTimestamp != timestamp) {
-    PTRACE(3, "RFC2833\tReceived start tone=" << receivedTone);
-    OnStartReceive(receivedTone);
+  PTRACE(4, "RFC2833\tReceived " << ((payload[1] & 0x80) ? "end" : "tone") << ":tone=" << (unsigned)tone << ",dur=" << duration << ",ts=" << timeStamp << ",mkr=" << frame.GetMarker());
 
-    // Starting a new event.
-    receiveTimestamp = timestamp;
-    receiveComplete = PFalse;
-    receiveTimer = 150;
+  switch (receiveState) {
+    case ReceiveIdle:
+
+      // ignore extra end packets
+      if ((payload[1]&0x80) != 0) 
+        break;
+
+        // start tone
+      OnStartReceive(tone, timeStamp);
+      receivedTone = tone;
+      receiveTimer = 150;
+      receiveState = ReceiveActive;
+      break;
+
+    case ReceiveActive:
+      // if tone has changed, then switch to new tone
+      if ((tone != receivedTone) || frame.GetMarker()) {
+        OnEndReceive(receivedTone, duration, timeStamp);
+        OnStartReceive(tone, timeStamp);
+        receivedTone     = tone;
+        receiveTimer     = 150;
+      }
+
+      // if this is end packet, do callabck and change state
+      if ((payload[1]&0x80) != 0) {
+        receiveTimer.Stop();
+        receiveState = ReceiveIdle;
+        OnEndReceive(receivedTone, duration, timeStamp);
+      }
+      break;
+
+    default:
+      PAssertAlways("RFC2833\tunknown receive state");
   }
-  else {
-    receiveTimer = 150;
-    if (receiveComplete) {
-      PTRACE(3, "RFC2833\tIgnoring duplicate packet.");
-      return;
-    }
-  }
-
-  if ((payload[1]&0x80) == 0) {
-    PTRACE(2, "RFC2833\tIgnoring packet, not end of event.");
-    return;
-  }
-
-  receiveComplete = PTrue;
-  receiveTimer.Stop();
-
-  PTRACE(3, "RFC2833\tReceived end tone=" << receivedTone << " duration=" << receivedDuration);
-  OnEndReceive(receivedTone, receivedDuration, receiveTimestamp);
 }
 
 
 void OpalRFC2833Proto::ReceiveTimeout(PTimer &, INT)
 {
+  PTRACE(3, "RFC2833\tTimeout occurred while receiving " << (unsigned)receivedTone);
+
   PWaitAndSignal m(mutex);
 
-  if (receiveComplete)
-    return;
-
-  receiveComplete = PTrue;
-  PTRACE(3, "RFC2833\tTimeout tone=" << receivedTone << " duration=" << receivedDuration);
-  OnEndReceive(receivedTone, receivedDuration, receiveTimestamp);
+  receiveTimer.Stop();
+  receiveState = ReceiveIdle;
+  OnEndReceive(receivedTone, 0, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////
