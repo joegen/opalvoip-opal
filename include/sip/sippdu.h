@@ -489,7 +489,7 @@ class SIP_PDU : public PSafeObject
       Failure_BusyHere                    = 486,
       Failure_RequestTerminated           = 487,
       Failure_NotAcceptableHere           = 488,
-      Failure_BadEvent			          = 489,
+      Failure_BadEvent			              = 489,
       Failure_RequestPending              = 491,
       Failure_Undecipherable              = 493,
 
