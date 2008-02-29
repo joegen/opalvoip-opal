@@ -2503,7 +2503,7 @@ class VFUXML : public QDXML
 PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
 {
   VFUXML vfu;
-  if (!vfu.Parse(pdu.GetEntityBody() || !vfu.vfu) {
+  if (!vfu.Parse(pdu.GetEntityBody()) || !vfu.vfu) {
     PTRACE(3, "SIP\tUnable to parse received PictureFastUpdate");
     SIP_PDU response(pdu, SIP_PDU::Failure_Undecipherable);
     response.GetEntityBody() = 
