@@ -161,6 +161,7 @@ void theoraFrame::assembleRTPFrame(RTPFrame & frame, data_t & frameData, bool se
 
 void theoraFrame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
 {
+  flags = 0;
   flags |= IsIFrame() ?  isIFrame : 0;
 
   TRACE(4, "THEORA\tEncap\tConfig Data in queue for RTP frame:  " << _packedConfigData.len << ", position: "<< _packedConfigData.pos);

@@ -208,6 +208,7 @@ void H263PFrame::GetRTPFrame (RTPFrame & frame, unsigned int & flags)
     else
      frame.SetMarker(0);
 
+  flags = 0;
   flags |= frame.GetMarker() ? isLastFrame : 0;
   flags |= IsIFrame() ? isIFrame : 0;
 }

@@ -233,7 +233,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
 
   if (!_rxH264Frame->SetFromRTPFrame(srcRTP, flags)) {
     _rxH264Frame->BeginNewFrame();
-    flags |= requestIFrame;
+    flags = requestIFrame;
     return 0;
   }
 
@@ -247,7 +247,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
     _rxH264Frame->BeginNewFrame();
     TRACE(4, "H264\tDecoder\tGot an empty frame - skipping");
     _skippedFrameCounter++;
-    flags |= requestIFrame;
+    flags = requestIFrame;
     return 0;
   }
 
@@ -260,7 +260,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
     {
       TRACE(1, "H264\tDecoder\tWaiting for an I-Frame");
       _rxH264Frame->BeginNewFrame();
-      flags |= requestIFrame;
+      flags = requestIFrame;
       return 0;
     }
     _gotIFrame = 1;
@@ -275,7 +275,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
   {
     TRACE(1, "H264\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture..."); 
     _skippedFrameCounter++;
-    flags |= requestIFrame;
+    flags = requestIFrame;
     return 0;
   }
 

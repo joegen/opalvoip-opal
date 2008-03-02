@@ -910,6 +910,8 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 
     }
 
+    flags = 0;
+
     if (_isIFrame)
       flags |= PluginCodec_ReturnCoderIFrame;
 
@@ -1536,6 +1538,7 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
     RTPFrame srcRTP(src, srcLen);
     RTPFrame dstRTP(dst, dstLen, RTP_DYNAMIC_PAYLOAD);
     dstLen = 0;
+    flags = 0;
     
     int srcPayloadSize = srcRTP.GetPayloadSize();
     SetDynamicDecodingParams(true); // Adjust dynamic settings, restart allowed
