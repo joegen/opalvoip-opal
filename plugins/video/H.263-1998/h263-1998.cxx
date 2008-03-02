@@ -494,7 +494,7 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
 
   if (!_rxH263PFrame->SetFromRTPFrame(srcRTP, flags)) {
     _rxH263PFrame->BeginNewFrame();
-    flags |= PluginCodec_ReturnCoderRequestIFrame;
+    flags = PluginCodec_ReturnCoderRequestIFrame;
     return 0;
   }
   
@@ -524,7 +524,7 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
     {
       TRACE(1, "H263+\tDecoder\tWaiting for an I-Frame");
       _rxH263PFrame->BeginNewFrame();
-      flags |= PluginCodec_ReturnCoderRequestIFrame;
+      flags = PluginCodec_ReturnCoderRequestIFrame;
       return 0;
     }
     _gotIFrame = true;
@@ -541,7 +541,7 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
   {
     TRACE(1, "H263+\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture, requesting I frame"); 
     _skippedFrameCounter++;
-    flags |= PluginCodec_ReturnCoderRequestIFrame;
+    flags = PluginCodec_ReturnCoderRequestIFrame;
     return 0;
   }
 
@@ -550,14 +550,14 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
   if (bytesDecoded < 0) {
     TRACE(1, "H263+\tDecoder\tDecoded 0 bytes, requesting I frame");
-    flags |= PluginCodec_ReturnCoderRequestIFrame;
+    flags = PluginCodec_ReturnCoderRequestIFrame;
     return 1;
   }
 
   // if decoded frame size is not legal, request an I-Frame
   if (_context->width == 0 || _context->height == 0) {
     TRACE(1, "H263+\tDecoder\tReceived frame with invalid size, requesting I frame");
-    flags |= PluginCodec_ReturnCoderRequestIFrame;
+    flags = PluginCodec_ReturnCoderRequestIFrame;
     return 1;
   }
 
@@ -597,7 +597,7 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
 
   dstLen = dstRTP.GetFrameLen();
 
-  flags |= PluginCodec_ReturnCoderLastFrame ;   // TODO: THIS NEEDS TO BE CHANGED TO DO CORRECT IFRAME DETECTION
+  flags = PluginCodec_ReturnCoderLastFrame ;
 
   _frameCount++;
 
