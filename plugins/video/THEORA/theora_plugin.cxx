@@ -275,7 +275,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
 
   if (!_rxTheoraFrame->SetFromRTPFrame(srcRTP, flags)) {
     _rxTheoraFrame->BeginNewFrame();
-    flags |= requestIFrame;
+    flags = requestIFrame;
     return 0;    
   };
 
@@ -315,7 +315,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
       ret = theora_decode_header( &_theoraInfo, &theoraComment, &oggPacket );
       if (ret != 0) {
         TRACE(1, "THEORA\tDecoder\tDecoding failed (header packet): " << theoraErrorMessage(ret));
-        flags |= requestIFrame;
+        flags = requestIFrame;
         return 0;
       }
 
@@ -338,7 +338,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
           ret = theora_decode_packetin( &_theoraState, &oggPacket );
           if (ret != 0) {
             TRACE(1, "THEORA\tDecoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
-            flags |= requestIFrame;
+            flags = requestIFrame;
             return 0;
           }
           theora_decode_YUVout( &_theoraState, &yuv);
@@ -353,7 +353,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
             ret = theora_decode_packetin( &_theoraState, &oggPacket );
             if (ret != 0) {
               TRACE(1, "THEORA\tDecoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
-              flags |= requestIFrame;
+              flags = requestIFrame;
               return 0;
             }
             theora_decode_YUVout( &_theoraState, &yuv);
@@ -362,7 +362,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
           else {
 
             TRACE(1, "THEORA\tDecoder\tGot OGG non-keyframe data Packet but still waiting for keyframe");
-            flags |= requestIFrame;
+            flags = requestIFrame;
             return 0;
           }
         }
@@ -423,14 +423,14 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
     dstRTP.SetTimestamp(srcRTP.GetTimestamp());
     dstRTP.SetMarker(1);
     dstLen = dstRTP.GetFrameLen();
-    flags |= PluginCodec_ReturnCoderLastFrame;
+    flags = PluginCodec_ReturnCoderLastFrame;
     _frameCounter++;
     return 1;
   } 
   else { /*gotFrame */
 
     TRACE(4, "THEORA\tDecoder\tDid not get a decoded frame");
-    flags |= requestIFrame;
+    flags = requestIFrame;
     return 0;
   }
 }
