@@ -759,19 +759,32 @@ class H263Packet
       hdr_size  = _hdr_size;
     }
 
-    bool Read(RTPFrame & frame)
+    int Read(RTPFrame & frame)
     {
       if (!frame.SetPayloadSize(hdr_size + data_size)) {
         //PTRACE(1, "H263Pck\tNot enough memory for packet of " << length << " bytes");
-        return false;
+        return -1;
       }
       memcpy(frame.GetPayloadPtr(), hdr, hdr_size);
       memcpy(frame.GetPayloadPtr() + hdr_size, data, data_size);
 
+      const unsigned char * packet = (const unsigned char *)data;
+
       data = NULL;
       hdr = NULL;
 
-      return true;
+      if (packet[0] != 0 || packet[1] != 0 || (packet[2]&0xfc) != 0x80)
+        return 0;
+
+      if ((packet[4]&0x1c) != 0x1c) // Baseline?
+        return (packet[4]&2) == 0 ? 1 : 0;
+
+      // PLUSPTYPE
+      if ((packet[5]&0x80) == 0)
+        return (packet[5]&0x70) == 0 ? 1 : 0;
+
+      // PLUSPTYPE with UFEP
+      return (packet[7]&0x1C) == 0 ? 1 : 0;
     }
 
   private:
@@ -979,16 +992,22 @@ unsigned int H263EncoderContext::GetNextEncodedPacket(RTPFrame & dstRTP, unsigne
   unusedPackets.push_back(p);
 
   // if the packet is too long, throw it away
-  if (!p->Read(dstRTP))
-    return 0;
+  switch (p->Read(dstRTP)) {
+    case -1:
+      return 0;
+    case 1 :
+      flags |= PluginCodec_ReturnCoderIFrame;
+  }
 
-  dstRTP.SetMarker(encodedPackets.size() == 0);
+  if (encodedPackets.size() > 0)
+    dstRTP.SetMarker(false);
+  else {
+    dstRTP.SetMarker(true); // marker bit on last frame of video
+    flags |= PluginCodec_ReturnCoderLastFrame;
+  }
+
   dstRTP.SetPayloadType(payloadCode);
   dstRTP.SetTimestamp(lastTimeStamp);
-
-  flags = 0;
-  flags |= (encodedPackets.size() == 0) ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
-  flags |= PluginCodec_ReturnCoderIFrame;                       // sadly, this encoder *always* returns I-frames :(
 
   return dstRTP.GetPacketLen();
 }
@@ -1362,7 +1381,9 @@ bool H263DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
 
   dstLen = dstRTP.GetPacketLen();
 
-  flags = PluginCodec_ReturnCoderLastFrame ;   // TODO: THIS NEEDS TO BE CHANGED TO DO CORRECT IFRAME DETECTION
+  flags = PluginCodec_ReturnCoderLastFrame;
+  if (picture->key_frame)
+    flags |= PluginCodec_ReturnCoderIFrame;
 
   frameNum++;
 
