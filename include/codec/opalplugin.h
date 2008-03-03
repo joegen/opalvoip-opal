@@ -591,6 +591,13 @@ static struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * coun
 struct PluginCodec_Definition * Opal_StaticCodec_##name##_GetCodecs(unsigned * p1, unsigned p2) \
 { return PLUGIN_CODEC_GET_CODEC_FN(p1,p2); } \
 
+#  define PLUGIN_CODEC_IMPLEMENT_ALL(name, table, ver) \
+unsigned int Opal_StaticCodec_##name##_GetAPIVersion() \
+{ return PWLIB_PLUGIN_API_VERSION; } \
+PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * Opal_StaticCodec_##name##_GetCodecs(unsigned * count, unsigned version) \
+{ *count = sizeof(table)/sizeof(struct PluginCodec_Definition); return version < ver ? NULL : table; }
+
+
 #else
 
 #  define PLUGIN_CODEC_IMPLEMENT(name) \
