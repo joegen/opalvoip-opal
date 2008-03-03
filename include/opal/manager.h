@@ -799,7 +799,7 @@ class OpalManager : public PObject
                  destination had a valid protocol, eg h323:fred.com, then
                  the entire string is replaced not just the <da> part.
 
-         <db>    Same as <db>, but without the special condtion.
+         <db>    Same as <da>, but without the special condtion.
 
          <du>    Copy the "user" part of the "b_party" string. This is
                  essentially the component after the : and before the '@', or
