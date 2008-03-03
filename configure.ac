@@ -620,6 +620,29 @@ AC_SUBST(OPAL_RFC4175)
 
 
 dnl ########################################################################
+dnl
+dnl Statistics
+
+dnl MSWIN_DISPLAY statistics,Statistics gathering support
+dnl MSWIN_DEFINE  statistics,OPAL_STATISTICS
+
+if test "$statistics" = "yes" ; then
+  AC_ARG_ENABLE(statistics,
+         [  --disable-statistics       disable statistics gathering support],
+         statistics=$enableval)
+  AC_MSG_CHECKING(Statistics gathering)
+  if test "$statistics" = "yes" ; then
+    AC_DEFINE(OPAL_STATISTICS, 1)
+    OPAL_STATISTICS=1
+    AC_MSG_RESULT(enabled)
+  else
+    AC_MSG_RESULT(disabled)
+  fi
+fi
+AC_SUBST(OPAL_STATISTICS)
+
+
+dnl ########################################################################
 
 dnl ZRTP from Phil Zimmermann
 dnl 

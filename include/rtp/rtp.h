@@ -287,6 +287,41 @@ class RTP_ControlFrame : public PBYTEArray
 
 class RTP_Session;
 
+///////////////////////////////////////////////////////////////////////////////
+
+#ifdef OPAL_STATISTICS
+
+/**This class carries statistics on the media stream.
+  */
+class OpalMediaStatistics : public PObject
+{
+    PCLASSINFO(OpalMediaStatistics, PObject);
+  public:
+    OpalMediaStatistics();
+
+    // General info (typicallly from RTP)
+    PUInt64  m_totalBytes;
+    unsigned m_totalPackets;
+    unsigned m_packetsLost;
+    unsigned m_packetsOutOfOrder;
+    unsigned m_packetsTooLate;
+    unsigned m_packetOverruns;
+    unsigned m_minimumPacketTime;
+    unsigned m_averagePacketTime;
+    unsigned m_maximumPacketTime;
+
+    // Audio
+    unsigned m_averageJitter;
+    unsigned m_maximumJitter;
+
+    // Video
+    unsigned m_totalFrames;
+    unsigned m_keyFrames;
+};
+
+#endif
+
+
 /**This class is the base for user data that may be attached to the RTP_session
    allowing callbacks for statistics and progress monitoring to be passed to an
    arbitrary object that an RTP consumer may require.
@@ -456,6 +491,10 @@ class RTP_Session : public PObject
     /**Get the local host name as used in SDES packes.
       */
     virtual PString GetLocalHostName() = 0;
+
+#ifdef OPAL_STATISTICS
+    virtual void GetStatistics(OpalMediaStatistics & statistics, bool receiver) const;
+#endif
   //@}
 
   /**@name Call back functions */

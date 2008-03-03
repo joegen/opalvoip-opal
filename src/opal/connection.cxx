@@ -167,35 +167,38 @@ OpalConnection::OpalConnection(OpalCall & call,
                                const PString & token,
                                unsigned int options,
                                OpalConnection::StringOptions * _stringOptions)
-  : PSafeObject(&call), // Share the lock flag from the call
-    ownerCall(call),
-    endpoint(ep),
-    phase(UninitialisedPhase),
-    callToken(token),
-    originating(PFalse),
-    alertingTime(0),
-    connectedTime(0),
-    callEndTime(0),
-    productInfo(ep.GetProductInfo()),
-    localPartyName(ep.GetDefaultLocalPartyName()),
-    displayName(ep.GetDefaultDisplayName()),
-    remotePartyName(token),
-    callEndReason(NumCallEndReasons),
-    remoteIsNAT(PFalse),
-    q931Cause(0x100),
-    silenceDetector(NULL),
-    echoCanceler(NULL),
+  : PSafeObject(&call)  // Share the lock flag from the call
+  , ownerCall(call)
+  , endpoint(ep)
+  , phase(UninitialisedPhase)
+  , callToken(token)
+  , originating(PFalse)
+  , alertingTime(0)
+  , connectedTime(0)
+  , callEndTime(0)
+  , productInfo(ep.GetProductInfo())
+  , localPartyName(ep.GetDefaultLocalPartyName())
+  , displayName(ep.GetDefaultDisplayName())
+  , remotePartyName(token)
+  , callEndReason(NumCallEndReasons)
+  , remoteIsNAT(false)
+  , q931Cause(0x100)
+  , silenceDetector(NULL)
+  , echoCanceler(NULL)
 #if OPAL_T120DATA
-    t120handler(NULL),
+  , t120handler(NULL)
 #endif
 #if OPAL_T38FAX
-    t38handler(NULL),
+  , t38handler(NULL)
 #endif
 #if OPAL_H224
-    h224Handler(NULL),
+  , h224Handler(NULL)
 #endif
-    securityData(NULL),
-    stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
+  , securityData(NULL)
+  , stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
+#ifdef OPAL_STATISTICS
+  , m_VideoUpdateRequestsSent(0)
+#endif
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
@@ -1247,6 +1250,7 @@ void OpalConnection::OnMediaPatchStart(unsigned, bool)
 void OpalConnection::OnMediaPatchStop(unsigned,  bool )
 { }
 
+
 void OpalConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
 {
 #if OPAL_VIDEO
@@ -1254,10 +1258,12 @@ void OpalConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
     RTP_Session * session = rtpSessions.GetSession(OpalMediaFormat::DefaultVideoSessionID);
     if (session != NULL)
       session->SendIntraFrameRequest();
+#ifdef OPAL_STATISTICS
+    m_VideoUpdateRequestsSent++;
+#endif
   }
 #endif
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////

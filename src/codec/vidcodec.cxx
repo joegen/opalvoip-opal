@@ -97,6 +97,10 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   , inDataSize(2048)
   , outDataSize(2048)
   , forceIFrame(true)
+#ifdef OPAL_STATISTICS
+  , m_totalFrames(0)
+  , m_keyFrames(0)
+#endif
 {
 }
 
@@ -153,6 +157,18 @@ PBoolean OpalVideoTranscoder::Convert(const RTP_DataFrame & /*input*/,
 {
   return PFalse;
 }
+
+
+#ifdef OPAL_STATISTICS
+void OpalVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  statistics.m_totalFrames = m_totalFrames;
+  statistics.m_keyFrames   = m_keyFrames;
+}
+#endif
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 PString OpalVideoUpdatePicture::GetName() const
 {

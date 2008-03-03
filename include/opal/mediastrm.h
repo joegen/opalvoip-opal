@@ -49,6 +49,7 @@ class RTP_Session;
 class OpalMediaPatch;
 class OpalLine;
 class OpalConnection;
+class OpalMediaStatistics;
 
 
 /**This class describes a media stream as used in the OPAL system. A media
@@ -328,6 +329,9 @@ class OpalMediaStream : public PSafeObject
       */
     bool RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage);
 
+#ifdef OPAL_STATISTICS
+    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+#endif
   //@}
 
   protected:
@@ -480,6 +484,9 @@ class OpalRTPMediaStream : public OpalMediaStream
     virtual RTP_Session & GetRtpSession() const
     { return rtpSession; }
 
+#ifdef OPAL_STATISTICS
+    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+#endif
   //@}
 
   protected:
