@@ -136,12 +136,21 @@ class OpalVideoTranscoder : public OpalTranscoder
       const RTP_DataFrame & input,  ///<  Input data
       RTP_DataFrame & output        ///<  Output data
     );
+
+#ifdef OPAL_STATISTICS
+    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+#endif
   //@}
 
   protected:
     PINDEX inDataSize;
     PINDEX outDataSize;
     bool   forceIFrame;
+
+#ifdef OPAL_STATISTICS
+    DWORD m_totalFrames;
+    DWORD m_keyFrames;
+#endif
 };
 
 

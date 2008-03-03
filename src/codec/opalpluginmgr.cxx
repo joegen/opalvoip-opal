@@ -988,10 +988,16 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
           }
 #endif
           forceIFrame = false;
+#ifdef OPAL_STATISTICS
+          m_keyFrames++;
+#endif
         }
 #if PTRACING
         else
           consecutiveIntraFrames = 0;
+#endif
+#ifdef OPAL_STATISTICS
+        m_totalFrames++;
 #endif
         firstPacketForFrame = false;
       }
@@ -1035,6 +1041,12 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
       bufferRTP->SetPayloadSize(toLen - bufferRTP->GetHeaderSize());
       dstList.Append(bufferRTP);
       bufferRTP = NULL;
+
+#ifdef OPAL_STATISTICS
+      m_totalFrames++;
+      if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
+        m_keyFrames++;
+#endif
     }
   }
 

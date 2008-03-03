@@ -124,6 +124,13 @@ RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(PBoolean input) const
 }
 
 
+#ifdef OPAL_STATISTICS
+void OpalTranscoder::GetStatistics(OpalMediaStatistics & /*statistics*/) const
+{
+}
+#endif
+
+
 PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output)
 {
   // make sure there is at least one output frame available

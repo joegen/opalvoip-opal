@@ -280,6 +280,31 @@ void OpalMediaPatch::UnLockSinkTranscoder() const
 }
 
 
+#ifdef OPAL_STATISTICS
+void OpalMediaPatch::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  inUse.Wait();
+
+  if (!sinks.IsEmpty())
+    sinks.front().GetStatistics(statistics);
+
+  inUse.Signal();
+}
+
+
+void OpalMediaPatch::Sink::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  if (primaryCodec == NULL)
+    return stream->GetStatistics(statistics);
+
+  if (secondaryCodec == NULL)
+    return primaryCodec->GetStatistics(statistics);
+
+  return secondaryCodec->GetStatistics(statistics);
+}
+#endif
+
+
 OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s, const RTP_DataFrame::PayloadMapType & m)
   : patch(p)
   , stream(s)

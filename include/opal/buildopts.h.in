@@ -61,6 +61,7 @@
 #undef  OPAL_H450
 #undef  OPAL_H460
 #undef  OPAL_RFC4175 
+#undef  OPAL_STATISTICS
 
 #ifdef OPAL_H450
 #define H323_H450   OPAL_H450

@@ -1173,6 +1173,11 @@ class OpalConnection : public PSafeObject
     MediaAddressesDict & GetMediaTransportAddresses()
     { return mediaTransportAddresses; }
 
+#ifdef OPAL_STATISTICS
+    /**Get Video Update requests statistic.
+      */
+    unsigned GetVideoUpdateRequestsSent() const { return m_VideoUpdateRequestsSent; }
+#endif
   //@}
 
     const RTP_DataFrame::PayloadMapType & GetRTPPayloadMap() const
@@ -1344,6 +1349,10 @@ class OpalConnection : public PSafeObject
 
     StringOptions * stringOptions;
     PString recordAudioFilename;
+
+#ifdef OPAL_STATISTICS
+    unsigned m_VideoUpdateRequestsSent;
+#endif
 };
 
 class RTP_UDP;

@@ -1864,7 +1864,7 @@ class H323Connection : public OpalConnection
 
     virtual PBoolean OnOpenIncomingMediaChannels();
 
-    PDECLARE_NOTIFIER(OpalMediaCommand, H323Connection, OnMediaCommand);
+    virtual void OnMediaCommand(OpalMediaCommand & note, INT extra);
 
   protected:
     /**Internal function to check if call established.
