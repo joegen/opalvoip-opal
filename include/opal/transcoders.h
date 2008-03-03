@@ -327,6 +327,9 @@ class OpalTranscoder : public OpalMediaFormatPair
     virtual bool AcceptComfortNoise() const { return false; }
     virtual bool AcceptEmptyPayload() const { return acceptEmptyPayload; }
 
+#ifdef OPAL_STATISTICS
+    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+#endif
   //@}
 
   protected:

@@ -441,10 +441,25 @@ PBoolean OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMedia
   return false;
 }
 
+
+#ifdef OPAL_STATISTICS
+void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  PSafeLockReadOnly safeLock(*this);
+  if (!safeLock.IsLocked())
+    return;
+
+  if (mediaPatch != NULL)
+    mediaPatch->GetStatistics(statistics);
+}
+#endif
+
+
 void OpalMediaStream::RemovePatch(OpalMediaPatch * /*patch*/ ) 
 { 
   SetPatch(NULL); 
 }
+
 
 void OpalMediaStream::BitRateLimit (PINDEX byteCount, PBoolean mayDelay) 
 {
@@ -634,8 +649,17 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
   if (mediaFormat.NeedsJitterBuffer())
     rtpSession.SetJitterBufferSize(minAudioJitterDelay*mediaFormat.GetTimeUnits(),
                                    maxAudioJitterDelay*mediaFormat.GetTimeUnits(),
-				                   mediaFormat.GetTimeUnits());
+				                       mediaFormat.GetTimeUnits());
 }
+
+
+#ifdef OPAL_STATISTICS
+void OpalRTPMediaStream::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  rtpSession.GetStatistics(statistics, IsSource());
+  OpalMediaStream::GetStatistics(statistics);
+}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 

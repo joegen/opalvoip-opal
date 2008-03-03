@@ -2378,7 +2378,8 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
   return OpalConnection::SendUserInputTone(tone, duration);
 }
 
-void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
+
+void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
 {
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
@@ -2388,23 +2389,29 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
     mimeInfo.SetContentType(ApplicationMediaControlXMLKey);
     PStringStream str;
     infoTransaction->GetEntityBody() = 
-"<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
-"<media_control>"
- "<vc_primitive>"
-  "<to_encoder>"
-   "<picture_fast_update>"
-   "</picture_fast_update>"
-  "</to_encoder>"
- "</vc_primitive>"
-"</media_control>"
-;
+                  "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
+                  "<media_control>"
+                   "<vc_primitive>"
+                    "<to_encoder>"
+                     "<picture_fast_update>"
+                     "</picture_fast_update>"
+                    "</to_encoder>"
+                   "</vc_primitive>"
+                  "</media_control>"
+                ;
     // cannot wait for completion as this keeps the SIPConnection locks, thus preventing the response from being processed
     //infoTransaction->WaitForCompletion();
     //if (infoTransaction->IsFailed()) { }
     infoTransaction->Start();
-  }
+#ifdef OPAL_STATISTICS
+    m_VideoUpdateRequestsSent++;
 #endif
+  }
+  else
+#endif
+    OpalConnection::OnMediaCommand(command, extra);
 }
+
 
 #if OPAL_VIDEO
 class QDXML 

@@ -69,6 +69,7 @@ class wxSplitterEvent;
 class wxSpinCtrl;
 class wxListCtrl;
 class wxListEvent;
+class wxNotebook;
 class wxGrid;
 
 
@@ -188,13 +189,75 @@ class AnswerPanel : public wxPanel
 };
 
 
+class InCallPanel;
+
+enum StatisticsPages {
+  RxAudio,
+  TxAudio,
+  RxVideo,
+  TxVideo,
+  NumPages
+};
+
+struct StatisticsField
+{
+  StatisticsField(const char * name, StatisticsPages page);
+  void Init(wxWindow * panel);
+  void Clear();
+  double CalculateBandwidth(DWORD bytes);
+  virtual StatisticsField * Clone() const = 0;
+  virtual void Update(const OpalConnection & connection, const OpalRTPMediaStream & stream);
+  virtual void GetValue(const OpalConnection & connection, const OpalRTPMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) = 0;
+
+  const char    * m_name;
+  StatisticsPages m_page;
+  wxStaticText  * m_staticText;
+  wxString        m_printFormat;
+
+  PTimeInterval   m_lastTick;
+  DWORD           m_lastBytes;
+};
+
+class StatisticsPage
+{
+  public:
+    StatisticsPage() { }
+    ~StatisticsPage();
+
+    void Init(
+      InCallPanel   * panel,
+      StatisticsPages page,
+      unsigned        sessionID,
+      bool            receiver
+    );
+
+    void OnStreamsChanged();
+    void UpdateSession();
+    bool IsActive() const { return m_isActive; }
+    void SetConnection(const PSafePtr<OpalConnection> & connection) { m_connection = connection; }
+
+  private:
+    InCallPanel     * m_panel;
+    StatisticsPages   m_page;
+    unsigned          m_sessionID;
+    bool              m_receiver;
+    bool              m_isActive;
+    wxWindow        * m_window;
+
+    PSafePtr<OpalConnection>  m_connection;
+    vector<StatisticsField *> m_fields;
+
+    StatisticsPage(const StatisticsPage &) { }
+    void operator=(const StatisticsPage &) { }
+};
+
 class InCallPanel : public wxPanel
 {
   public:
     InCallPanel(MyManager & manager, wxWindow * parent);
     virtual bool Show(bool show = true);
 
-    void UpdateButtons(OpalPOTSEndPoint * potsEP);
+    void OnStreamsChanged(OpalPOTSEndPoint * potsEP);
 
   private:
     void OnHangUp(wxCommandEvent & event);
@@ -232,7 +295,11 @@ class InCallPanel : public wxPanel
     wxGauge   * m_vuSpeaker;
     wxGauge   * m_vuMicrophone;
     wxTimer     m_vuTimer;
+    unsigned    m_updateStatistics;
     bool        m_FirstTime;
+
+    PSafePtr<OpalConnection> m_connection;
+    StatisticsPage           m_pages[NumPages];
 
     DECLARE_EVENT_TABLE()
 };
@@ -579,7 +646,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnLogMessage(wxCommandEvent & event);
     void OnAdjustMenus(wxMenuEvent& event);
     void OnStateChange(wxCommandEvent & event);
-    void UpdateStreams(wxCommandEvent &);
+    void OnStreamsChanged(wxCommandEvent &);
 
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);

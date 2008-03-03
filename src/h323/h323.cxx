@@ -3585,16 +3585,23 @@ void H323Connection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
   patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
 }
 
-void H323Connection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
+
+void H323Connection::OnMediaCommand(OpalMediaCommand & command, INT extra)
 {
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     H323Channel * video = FindChannel(OpalMediaFormat::DefaultVideoSessionID, true);
     if (video != NULL)
       video->OnMediaCommand(command);
-  }
+#ifdef OPAL_STATISTICS
+    m_VideoUpdateRequestsSent++;
 #endif
+  }
+  else
+#endif
+    OpalConnection::OnMediaCommand(command, extra);
 }
+
 
 PBoolean H323Connection::IsMediaBypassPossible(unsigned sessionID) const
 {

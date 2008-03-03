@@ -217,14 +217,14 @@ static const char H323only[] = " (H.323 only)";
 enum {
   ID_LOG_MESSAGE = 1001,
   ID_STATE_CHANGE,
-  ID_UPDATE_STREAMS
+  ID_STREAMS_CHANGED
 };
 
 DECLARE_EVENT_TYPE(wxEvtLogMessage, -1)
 DEFINE_EVENT_TYPE(wxEvtLogMessage)
 
-DECLARE_EVENT_TYPE(wxEvtUpdateStreams, -1)
-DEFINE_EVENT_TYPE(wxEvtUpdateStreams)
+DECLARE_EVENT_TYPE(wxEvtStreamsChanged, -1)
+DEFINE_EVENT_TYPE(wxEvtStreamsChanged)
 
 DECLARE_EVENT_TYPE(wxEvtStateChange, -1)
 DEFINE_EVENT_TYPE(wxEvtStateChange)
@@ -234,10 +234,13 @@ DEFINE_EVENT_TYPE(wxEvtStateChange)
 
 template <class cls> cls * FindWindowByNameAs(wxWindow * window, const char * name)
 {
-  cls * child = dynamic_cast<cls *>(window->FindWindowByName(name));
-  if (child != NULL)
-    return child;
-  PAssertAlways("Cannot cast window object to class");
+  wxWindow * baseChild = window->FindWindowByName(name);
+  if (PAssert(baseChild != NULL, "Windows control not found")) {
+    cls * derivedChild = dynamic_cast<cls *>(baseChild);
+    if (PAssert(derivedChild != NULL, "Cannot cast window object to selected class"))
+      return derivedChild;
+  }
+
   return NULL;
 }
 
@@ -354,7 +357,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
 
   EVT_COMMAND(ID_LOG_MESSAGE, wxEvtLogMessage, MyManager::OnLogMessage)
   EVT_COMMAND(ID_STATE_CHANGE, wxEvtStateChange, MyManager::OnStateChange)
-  EVT_COMMAND(ID_UPDATE_STREAMS, wxEvtUpdateStreams, MyManager::UpdateStreams)
+  EVT_COMMAND(ID_STREAMS_CHANGED, wxEvtStreamsChanged, MyManager::OnStreamsChanged)
 END_EVENT_TABLE()
 
 MyManager::MyManager()
@@ -1343,7 +1346,7 @@ void MyManager::OnSpeedDialColumnResize(wxListEvent& event)
 
 void MyManager::OnRightClick(wxListEvent& event)
 {
-  wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar("PopUpMenu");
+  wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar("SpeedDialMenu");
   PopupMenu(menuBar->GetMenu(0), event.GetPoint());
   delete menuBar;
 }
@@ -1626,7 +1629,7 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStre
 
   LogMediaStream("Started", stream, connection.GetEndPoint().GetPrefixName());
 
-  wxCommandEvent theEvent(wxEvtUpdateStreams, ID_UPDATE_STREAMS);
+  wxCommandEvent theEvent(wxEvtStreamsChanged, ID_STREAMS_CHANGED);
   theEvent.SetEventObject(this);
   GetEventHandler()->AddPendingEvent(theEvent);
 
@@ -1640,7 +1643,7 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
 
   LogMediaStream("Stopped", stream, stream.GetConnection().GetEndPoint().GetPrefixName());
 
-  wxCommandEvent theEvent(wxEvtUpdateStreams, ID_UPDATE_STREAMS);
+  wxCommandEvent theEvent(wxEvtStreamsChanged, ID_STREAMS_CHANGED);
   theEvent.SetEventObject(this);
   GetEventHandler()->AddPendingEvent(theEvent);
 
@@ -1872,9 +1875,9 @@ void MyManager::OnStateChange(wxCommandEvent & event)
 }
 
 
-void MyManager::UpdateStreams(wxCommandEvent &)
+void MyManager::OnStreamsChanged(wxCommandEvent &)
 {
-  m_inCallPanel->UpdateButtons(potsEP);
+  m_inCallPanel->OnStreamsChanged(potsEP);
 }
 
 
@@ -3541,6 +3544,7 @@ END_EVENT_TABLE()
 InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
   : m_manager(manager)
   , m_vuTimer(this, VU_UPDATE_TIMER_ID)
+  , m_updateStatistics(0)
 {
   wxXmlResource::Get()->LoadPanel(this, parent, "InCallPanel");
 
@@ -3556,6 +3560,11 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
 
   m_vuTimer.Start(250);
 
+  m_pages[RxAudio].Init(this, RxAudio, OpalMediaFormat::DefaultAudioSessionID, true );
+  m_pages[TxAudio].Init(this, TxAudio, OpalMediaFormat::DefaultAudioSessionID, false);
+  m_pages[RxVideo].Init(this, RxVideo, OpalMediaFormat::DefaultVideoSessionID, true );
+  m_pages[TxVideo].Init(this, TxVideo, OpalMediaFormat::DefaultVideoSessionID, false);
+
   m_FirstTime = true;
 }
 
@@ -3567,6 +3576,18 @@ bool InCallPanel::Show(bool show)
 
   if (show || m_FirstTime) {
     m_FirstTime = false;
+
+    PSafePtr<OpalCall> call = m_manager.GetCall();
+    if (call != NULL) {
+      for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
+        if (PIsDescendant(&*connection, OpalPCSSConnection) || PIsDescendant(&*connection, OpalLineConnection))
+          m_connection = connection;
+        else {
+          for (PINDEX i = 0; i < NumPages; i++)
+            m_pages[i].SetConnection(connection);
+        }
+      }
+    }
 
     int value = 50;
     config->Read(SpeakerVolumeKey, &value);
@@ -3581,36 +3602,39 @@ bool InCallPanel::Show(bool show)
   else {
     config->Write(SpeakerVolumeKey, m_SpeakerVolume->GetValue());
     config->Write(MicrophoneVolumeKey, m_MicrophoneVolume->GetValue());
+
+    m_connection.SetNULL();
+    for (PINDEX i = 0; i < NumPages; i++)
+      m_pages[i].SetConnection(m_connection);
   }
 
   return wxPanel::Show(show);
 }
 
 
-void InCallPanel::UpdateButtons(OpalPOTSEndPoint * potsEP)
+void InCallPanel::OnStreamsChanged(OpalPOTSEndPoint * potsEP)
 {
   // Must do this before getting lock on OpalCall to avoid deadlock
   m_SpeakerHandset->Enable(potsEP->GetLine("*") != NULL);
 
-  PSafePtr<OpalCall> call = m_manager.GetCall();
-  if (call != NULL) {
-    PSafePtr<OpalConnection> connection;
-    for (int connIdx = 0; (connection = call->GetConnection(connIdx)) != NULL; connIdx++) {
-      if (!PIsDescendant(&(*connection), OpalPCSSConnection) && !PIsDescendant(&(*connection), OpalLineConnection)) {
-        OpalMediaFormatList availableFormats = connection->GetMediaFormats();
-        for (PINDEX idx = 0; idx < availableFormats.GetSize(); idx++) {
-          if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
-            m_StartStopVideo->Enable();
-            OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
-            m_StartStopVideo->SetLabel(stream != NULL && stream->IsOpen() ? "Stop Video" : "Start Video");
-            return;
-          }
-        }
+  for (PINDEX i = 0; i < NumPages; i++)
+    m_pages[i].OnStreamsChanged();
+
+  int hasVideo = false;
+
+  if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
+    OpalMediaFormatList availableFormats = m_connection->GetMediaFormats();
+    for (PINDEX idx = 0; idx < availableFormats.GetSize(); idx++) {
+      if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+        hasVideo = true;
+        m_StartStopVideo->SetLabel(m_pages[TxVideo].IsActive() ? "Stop Video" : "Start Video");
+        break;
       }
     }
+    m_connection.SetSafetyMode(PSafeReference);
   }
 
-  m_StartStopVideo->Disable();
+  m_StartStopVideo->Enable(hasVideo);
 }
 
 
@@ -3638,16 +3662,17 @@ void InCallPanel::OnHold(wxCommandEvent & /*event*/)
 
 void InCallPanel::OnStartStopVideo(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
-  if (connection != NULL) {
-    m_StartStopVideo->Disable();
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
+  m_StartStopVideo->Disable();
+
+  if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
+    OpalMediaStreamPtr stream = m_connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
     if (stream != NULL)
-      connection->CloseMediaStream(*stream);
+      m_connection->CloseMediaStream(*stream);
     else {
-      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaFormat::DefaultVideoSessionID))
+      if (!m_connection->GetCall().OpenSourceMediaStreams(*m_connection, OpalMediaFormat::DefaultVideoSessionID))
         LogWindow << "Could not open video to remote!" << endl;
     }
+    m_connection.SetSafetyMode(PSafeReference);
   }
 }
 
@@ -3697,9 +3722,10 @@ void InCallPanel::MicrophoneVolume(wxScrollEvent & event)
 
 void InCallPanel::SetVolume(bool isMicrophone, int value, bool muted)
 {
-  PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
-  if (connection != NULL)
-    connection->SetAudioVolume(isMicrophone, muted ? 0 : value);
+  if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
+    m_connection->SetAudioVolume(isMicrophone, muted ? 0 : value);
+    m_connection.SetSafetyMode(PSafeReference);
+  }
 }
 
 
@@ -3717,16 +3743,304 @@ static void SetGauge(wxGauge * gauge, int level)
 void InCallPanel::OnUpdateVU(wxTimerEvent& WXUNUSED(event))
 {
   if (IsShown()) {
+    if (++m_updateStatistics > 8) {
+      for (PINDEX i = 0; i < NumPages; i++)
+        m_pages[i].UpdateSession();
+      m_updateStatistics = 0;
+    }
+
     int micLevel = -1;
     int spkLevel = -1;
-    PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
-    if (connection != NULL) {
-      spkLevel = connection->GetAudioSignalLevel(false);
-      micLevel = connection->GetAudioSignalLevel(true);
+    if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
+      spkLevel = m_connection->GetAudioSignalLevel(false);
+      micLevel = m_connection->GetAudioSignalLevel(true);
+      m_connection.SetSafetyMode(PSafeReference);
     }
 
     SetGauge(m_vuSpeaker, spkLevel);
     SetGauge(m_vuMicrophone, micLevel);
+  }
+}
+
+
+static vector<StatisticsField *> StatisticsFieldTemplates;
+
+StatisticsField::StatisticsField(const char * name, StatisticsPages page)
+  : m_name(name)
+  , m_page(page)
+  , m_staticText(NULL)
+{
+  StatisticsFieldTemplates.push_back(this);
+}
+
+
+void StatisticsField::Init(wxWindow * panel)
+{
+  m_staticText = FindWindowByNameAs<wxStaticText>(panel, m_name);
+  m_printFormat = m_staticText->GetLabel();
+  Clear();
+}
+
+
+void StatisticsField::Clear()
+{
+  m_staticText->SetLabel("N/A");
+  m_lastTick = 0;
+}
+
+
+double StatisticsField::CalculateBandwidth(DWORD bytes)
+{
+  PTimeInterval tick = PTimer::Tick();
+
+  double value;
+  if (m_lastTick != 0)
+    value = 8.0 * (bytes - m_lastBytes) / (tick - m_lastTick).GetMilliSeconds(); // Ends up as kilobits/second
+  else
+    value = 0;
+
+  m_lastTick = tick;
+  m_lastBytes = bytes;
+
+  return value;
+}
+
+
+void StatisticsField::Update(const OpalConnection & connection, const OpalRTPMediaStream & stream)
+{
+  wxString value;
+  OpalMediaStatistics statistics;
+  stream.GetStatistics(statistics);
+  GetValue(connection, stream, statistics, value);
+  m_staticText->SetLabel(value);
+}
+
+
+#define STATISTICS_FIELD_BEG(name, page) \
+  class name##StatisticsField : public StatisticsField { \
+    public: name##StatisticsField() : StatisticsField(#name, page) { } \
+    virtual StatisticsField * Clone() const { return new name##StatisticsField(*this); } \
+    virtual void GetValue(const OpalConnection & connection, const OpalRTPMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) {
+
+#define STATISTICS_FIELD_END(name) \
+    } } Static##name##StatisticsField;
+
+STATISTICS_FIELD_BEG(RxAudioBandwidth , RxAudio)
+  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
+STATISTICS_FIELD_END(RxAudioBandwidth)
+
+STATISTICS_FIELD_BEG(RxAudioMinTime   , RxAudio)
+  value.sprintf(m_printFormat, statistics.m_minimumPacketTime);
+STATISTICS_FIELD_END(RxAudioMinTime)
+
+STATISTICS_FIELD_BEG(RxAudioBytes     , RxAudio)
+  value.sprintf(m_printFormat, statistics.m_totalBytes);
+STATISTICS_FIELD_END(RxAudioBytes)
+
+STATISTICS_FIELD_BEG(RxAudioAvgTime   , RxAudio)
+  value.sprintf(m_printFormat, statistics.m_averagePacketTime);
+STATISTICS_FIELD_END(RxAudioAvgTime)
+
+STATISTICS_FIELD_BEG(RxAudioPackets   , RxAudio)
+  value.sprintf(m_printFormat, statistics.m_totalPackets);
+STATISTICS_FIELD_END(RxAudioPackets)
+
+STATISTICS_FIELD_BEG(RxAudioMaxTime   , RxAudio)
+  value.sprintf(m_printFormat, statistics.m_maximumPacketTime);
+STATISTICS_FIELD_END(RxAudioMaxTime)
+
+STATISTICS_FIELD_BEG(RxAudioLost      , RxAudio)
+  value.sprintf(m_printFormat, statistics.m_packetsLost);
+STATISTICS_FIELD_END(RxAudioLost)
+
+STATISTICS_FIELD_BEG(RxAudioAvgJitter , RxAudio)
+  value.sprintf(m_printFormat, statistics.m_averageJitter);
+STATISTICS_FIELD_END(RxAudioAvgJitter)
+
+STATISTICS_FIELD_BEG(RxAudioOutOfOrder, RxAudio)
+  value.sprintf(m_printFormat, statistics.m_packetsOutOfOrder);
+STATISTICS_FIELD_END(RxAudioOutOfOrder)
+
+STATISTICS_FIELD_BEG(RxAudioMaxJitter , RxAudio)
+  value.sprintf(m_printFormat, statistics.m_maximumJitter);
+STATISTICS_FIELD_END(RxAudioMaxJitter)
+
+STATISTICS_FIELD_BEG(RxAudioTooLate   , RxAudio)
+  value.sprintf(m_printFormat, statistics.m_packetsTooLate);
+STATISTICS_FIELD_END(RxAudioTooLate)
+
+STATISTICS_FIELD_BEG(RxAudioOverruns  , RxAudio)
+  value.sprintf(m_printFormat, statistics.m_packetOverruns);
+STATISTICS_FIELD_END(RxAudioOverruns)
+
+STATISTICS_FIELD_BEG(TxAudioBandwidth , TxAudio)
+  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
+STATISTICS_FIELD_END(TxAudioBandwidth)
+
+STATISTICS_FIELD_BEG(TxAudioMinTime   , TxAudio)
+  value.sprintf(m_printFormat, statistics.m_minimumPacketTime);
+STATISTICS_FIELD_END(TxAudioMinTime)
+
+STATISTICS_FIELD_BEG(TxAudioBytes     , TxAudio)
+  value.sprintf(m_printFormat, statistics.m_totalBytes);
+STATISTICS_FIELD_END(TxAudioBytes)
+
+STATISTICS_FIELD_BEG(TxAudioAvgTime   , TxAudio)
+  value.sprintf(m_printFormat, statistics.m_averagePacketTime);
+STATISTICS_FIELD_END(TxAudioAvgTime)
+
+STATISTICS_FIELD_BEG(TxAudioPackets   , TxAudio)
+  value.sprintf(m_printFormat, statistics.m_totalPackets);
+STATISTICS_FIELD_END(TxAudioPackets)
+
+STATISTICS_FIELD_BEG(TxAudioMaxTime   , TxAudio)
+  value.sprintf(m_printFormat, statistics.m_maximumPacketTime);
+STATISTICS_FIELD_END(TxAudioMaxTime)
+
+STATISTICS_FIELD_BEG(RxVideoBandwidth , RxVideo)
+  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
+STATISTICS_FIELD_END(RxVideoBandwidth)
+
+STATISTICS_FIELD_BEG(RxVideoMinTime   , RxVideo)
+  value.sprintf(m_printFormat, statistics.m_minimumPacketTime);
+STATISTICS_FIELD_END(RxVideoMinTime)
+
+STATISTICS_FIELD_BEG(RxVideoBytes     , RxVideo)
+  value.sprintf(m_printFormat, statistics.m_totalBytes);
+STATISTICS_FIELD_END(RxVideoBytes)
+
+STATISTICS_FIELD_BEG(RxVideoAvgTime   , RxVideo)
+  value.sprintf(m_printFormat, statistics.m_averagePacketTime);
+STATISTICS_FIELD_END(RxVideoAvgTime)
+
+STATISTICS_FIELD_BEG(RxVideoPackets   , RxVideo)
+  value.sprintf(m_printFormat, statistics.m_totalPackets);
+STATISTICS_FIELD_END(RxVideoPackets)
+
+STATISTICS_FIELD_BEG(RxVideoMaxTime   , RxVideo)
+  value.sprintf(m_printFormat, statistics.m_maximumPacketTime);
+STATISTICS_FIELD_END(RxVideoMaxTime)
+
+STATISTICS_FIELD_BEG(RxVideoLost      , RxVideo)
+  value.sprintf(m_printFormat, statistics.m_packetsLost);
+STATISTICS_FIELD_END(RxVideoLost)
+
+STATISTICS_FIELD_BEG(RxVideoAvgJitter , RxVideo)
+  value.sprintf(m_printFormat, statistics.m_averageJitter);
+STATISTICS_FIELD_END(RxVideoAvgJitter)
+
+STATISTICS_FIELD_BEG(RxVideoOutOfOrder, RxVideo)
+  value.sprintf(m_printFormat, statistics.m_packetsOutOfOrder);
+STATISTICS_FIELD_END(RxVideoOutOfOrder)
+
+STATISTICS_FIELD_BEG(RxVideoMaxJitter , RxVideo)
+  value.sprintf(m_printFormat, statistics.m_maximumJitter);
+STATISTICS_FIELD_END(RxVideoMaxJitter)
+
+STATISTICS_FIELD_BEG(RxVideoFrames    , RxVideo)
+  value.sprintf(m_printFormat, statistics.m_totalFrames);
+STATISTICS_FIELD_END(RxVideoFrames)
+
+STATISTICS_FIELD_BEG(RxVideoKeyFrames , RxVideo)
+  value.sprintf(m_printFormat, statistics.m_keyFrames);
+STATISTICS_FIELD_END(RxVideoKeyFrames)
+
+STATISTICS_FIELD_BEG(RxVideoVFU       , RxVideo)
+  value.sprintf(m_printFormat, connection.GetVideoUpdateRequestsSent());
+STATISTICS_FIELD_END(RxVideoVFU)
+
+STATISTICS_FIELD_BEG(TxVideoBandwidth , TxVideo)
+  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
+STATISTICS_FIELD_END(TxVideoBandwidth)
+
+STATISTICS_FIELD_BEG(TxVideoMinTime   , TxVideo)
+  value.sprintf(m_printFormat, statistics.m_minimumPacketTime);
+STATISTICS_FIELD_END(TxVideoMinTime)
+
+STATISTICS_FIELD_BEG(TxVideoBytes     , TxVideo)
+  value.sprintf(m_printFormat, statistics.m_totalBytes);
+STATISTICS_FIELD_END(TxVideoBytes)
+
+STATISTICS_FIELD_BEG(TxVideoAvgTime   , TxVideo)
+  value.sprintf(m_printFormat, statistics.m_averagePacketTime);
+STATISTICS_FIELD_END(TxVideoAvgTime)
+
+STATISTICS_FIELD_BEG(TxVideoPackets   , TxVideo)
+  value.sprintf(m_printFormat, statistics.m_totalPackets);
+STATISTICS_FIELD_END(TxVideoPackets)
+
+STATISTICS_FIELD_BEG(TxVideoMaxTime   , TxVideo)
+  value.sprintf(m_printFormat, statistics.m_maximumPacketTime);
+STATISTICS_FIELD_END(TxVideoMaxTime)
+
+STATISTICS_FIELD_BEG(TxVideoFrames    , TxVideo)
+  value.sprintf(m_printFormat, statistics.m_totalFrames);
+STATISTICS_FIELD_END(TxVideoFrames)
+
+STATISTICS_FIELD_BEG(TxVideoKeyFrames , TxVideo)
+  value.sprintf(m_printFormat, statistics.m_keyFrames);
+STATISTICS_FIELD_END(TxVideoKeyFrames)
+
+
+StatisticsPage::~StatisticsPage()
+{
+  for (size_t i = 0; i < m_fields.size(); i++)
+    delete m_fields[i];
+}
+
+
+void StatisticsPage::Init(InCallPanel * panel,
+                          StatisticsPages page,
+                          unsigned sessionID,
+                          bool receiver)
+{
+  m_panel = panel;
+  m_page = page;
+  m_sessionID = sessionID;
+  m_receiver = receiver;
+  m_isActive = false;
+
+  wxNotebook * book = FindWindowByNameAs<wxNotebook>(panel, "Statistics");
+  m_window = book->GetPage(page);
+
+  for (size_t i = 0; i < StatisticsFieldTemplates.size(); i++) {
+    if (StatisticsFieldTemplates[i]->m_page == page) {
+      StatisticsField * field = StatisticsFieldTemplates[i]->Clone();
+      field->Init(panel);
+      m_fields.push_back(field);
+    }
+  }
+}
+
+
+void StatisticsPage::OnStreamsChanged()
+{
+  m_isActive = false;
+
+  if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
+    OpalMediaStreamPtr stream = m_connection->GetMediaStream(m_sessionID, m_receiver);
+    m_isActive = stream != NULL && stream->Open();
+    m_connection.SetSafetyMode(PSafeReference);
+  }
+
+  m_window->Enable(m_isActive);
+
+  if (!m_isActive) {
+    for (size_t i = 0; i < m_fields.size(); i++)
+      m_fields[i]->Clear();
+  }
+}
+
+
+void StatisticsPage::UpdateSession()
+{
+  if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
+    PSafePtr<OpalRTPMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalRTPMediaStream>(m_connection->GetMediaStream(m_sessionID, m_receiver));
+    if (stream != NULL) {
+      for (size_t i = 0; i < m_fields.size(); i++)
+        m_fields[i]->Update(*m_connection, *stream);
+    }
+    m_connection.SetSafetyMode(PSafeReference);
   }
 }
 

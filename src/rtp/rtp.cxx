@@ -422,6 +422,33 @@ void RTP_ControlFrame::ReceiverReport::SetLostPackets(unsigned packets)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+#ifdef OPAL_STATISTICS
+
+OpalMediaStatistics::OpalMediaStatistics()
+  : m_totalBytes(0)
+  , m_totalPackets(0)
+  , m_packetsLost(0)
+  , m_packetsOutOfOrder(0)
+  , m_packetsTooLate(0)
+  , m_packetOverruns(0)
+  , m_minimumPacketTime(0)
+  , m_averagePacketTime(0)
+  , m_maximumPacketTime(0)
+
+    // Audio
+  , m_averageJitter(0)
+  , m_maximumJitter(0)
+
+    // Video
+  , m_totalFrames(0)
+  , m_keyFrames(0)
+{
+}
+
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 
 void RTP_UserData::OnTxStatistics(const RTP_Session & /*session*/) const
@@ -1068,6 +1095,7 @@ PBoolean RTP_Session::InsertReportPacket(RTP_ControlFrame & report)
   return PTrue;
 }
 
+
 PBoolean RTP_Session::SendReport()
 {
   PWaitAndSignal mutex(reportMutex);
@@ -1099,6 +1127,23 @@ PBoolean RTP_Session::SendReport()
 
   return stat;
 }
+
+
+#ifdef OPAL_STATISTICS
+void RTP_Session::GetStatistics(OpalMediaStatistics & statistics, bool receiver) const
+{
+  statistics.m_totalBytes        = receiver ? GetOctetsReceived()     : GetOctetsSent();
+  statistics.m_totalPackets      = receiver ? GetPacketsReceived()    : GetPacketsSent();
+  statistics.m_packetsLost       = receiver ? GetPacketsLost()        : 0;
+  statistics.m_packetsOutOfOrder = receiver ? GetPacketsOutOfOrder()  : 0;
+  statistics.m_packetOverruns    = receiver ? GetPacketOverruns()     : 0;
+  statistics.m_minimumPacketTime = receiver ? GetMinimumReceiveTime() : GetMinimumSendTime();
+  statistics.m_averagePacketTime = receiver ? GetAverageReceiveTime() : GetAverageSendTime();
+  statistics.m_maximumPacketTime = receiver ? GetMaximumReceiveTime() : GetMaximumSendTime();
+  statistics.m_averageJitter     = receiver ? GetAvgJitterTime()      : 0;
+  statistics.m_maximumJitter     = receiver ? GetMaxJitterTime()      : 0;
+}
+#endif
 
 
 static RTP_Session::ReceiverReportArray
