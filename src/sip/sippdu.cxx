@@ -1951,7 +1951,12 @@ PBoolean SIPTransaction::Start()
 
 void SIPTransaction::WaitForCompletion()
 {
-  Start();
+  if (state >= Completed)
+    return;
+
+  if (state == NotStarted)
+    Start();
+
   completed.Wait();
 }
 
