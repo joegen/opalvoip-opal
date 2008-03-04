@@ -49,7 +49,7 @@ extern "C" {
 ///////////////////////////////////////////////////////////////////////////////
 
 Opal_G711_uLaw_PCM::Opal_G711_uLaw_PCM()
-  : OpalStreamedTranscoder(OpalG711_ULAW_64K, OpalPCM16, 8, 16, 160)
+  : OpalStreamedTranscoder(OpalG711_ULAW_64K, OpalPCM16, 8, 16)
 {
   PTRACE(3, "Codec\tG711-uLaw-64k decoder created");
 }
@@ -70,7 +70,7 @@ int Opal_G711_uLaw_PCM::ConvertSample(int sample)
 ///////////////////////////////////////////////////////////////////////////////
 
 Opal_PCM_G711_uLaw::Opal_PCM_G711_uLaw()
-  : OpalStreamedTranscoder(OpalPCM16, OpalG711_ULAW_64K, 16, 8, 160)
+  : OpalStreamedTranscoder(OpalPCM16, OpalG711_ULAW_64K, 16, 8)
 {
   PTRACE(3, "Codec\tG711-uLaw-64k encoder created");
 }
@@ -91,7 +91,7 @@ int Opal_PCM_G711_uLaw::ConvertSample(int sample)
 ///////////////////////////////////////////////////////////////////////////////
 
 Opal_G711_ALaw_PCM::Opal_G711_ALaw_PCM()
-  : OpalStreamedTranscoder(OpalG711_ALAW_64K, OpalPCM16, 8, 16, 160)
+  : OpalStreamedTranscoder(OpalG711_ALAW_64K, OpalPCM16, 8, 16)
 {
   PTRACE(3, "Codec\tG711-ALaw-64k decoder created");
 }
@@ -112,7 +112,7 @@ int Opal_G711_ALaw_PCM::ConvertSample(int sample)
 ///////////////////////////////////////////////////////////////////////////////
 
 Opal_PCM_G711_ALaw::Opal_PCM_G711_ALaw()
-  : OpalStreamedTranscoder(OpalPCM16, OpalG711_ALAW_64K, 16, 8, 160)
+  : OpalStreamedTranscoder(OpalPCM16, OpalG711_ALAW_64K, 16, 8)
 {
   PTRACE(3, "Codec\tG711-ALaw-64k encoder created");
 }

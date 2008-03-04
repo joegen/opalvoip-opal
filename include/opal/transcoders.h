@@ -452,8 +452,7 @@ class OpalStreamedTranscoder : public OpalTranscoder
       const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
       const OpalMediaFormat & outputMediaFormat, ///<  Output media format
       unsigned inputBits,           ///<  Bits per sample in input data
-      unsigned outputBits,          ///<  Bits per sample in output data
-      PINDEX   optimalSamples       ///<  Optimal number of samples for read
+      unsigned outputBits           ///<  Bits per sample in output data
     );
   //@}
 
@@ -492,7 +491,6 @@ class OpalStreamedTranscoder : public OpalTranscoder
   protected:
     unsigned inputBitsPerSample;
     unsigned outputBitsPerSample;
-    PINDEX   optimalSamples;
 };
 
 

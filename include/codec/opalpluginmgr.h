@@ -288,7 +288,7 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
 {
   PCLASSINFO(OpalPluginStreamedAudioTranscoder, OpalStreamedTranscoder);
   public:
-    OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, unsigned inputBits, unsigned outputBits, PINDEX optimalBits);
+    OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, unsigned inputBits, unsigned outputBits);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
     virtual bool AcceptComfortNoise() const { return comfortNoise; }
   protected:
