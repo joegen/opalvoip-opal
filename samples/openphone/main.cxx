@@ -4036,7 +4036,9 @@ void StatisticsPage::UpdateSession()
 {
   if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
     PSafePtr<OpalRTPMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalRTPMediaStream>(m_connection->GetMediaStream(m_sessionID, m_receiver));
-    if (stream != NULL) {
+    m_isActive = stream != NULL && stream->Open();
+    m_window->Enable(m_isActive);
+    if (m_isActive) {
       for (size_t i = 0; i < m_fields.size(); i++)
         m_fields[i]->Update(*m_connection, *stream);
     }
