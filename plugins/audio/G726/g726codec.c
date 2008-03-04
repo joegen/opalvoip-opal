@@ -36,8 +36,8 @@
 
 #define SAMPLES_PER_FRAME       8
 
-#define MAX_FRAMES_PER_PACKET   240
-#define PREF_FRAMES_PER_PACKET  80
+#define MAX_FRAMES_PER_PACKET   240 // Really milliseconds
+#define PREF_FRAMES_PER_PACKET  30  // Really milliseconds
 
 #define PAYLOAD_CODE            0  // used to be 2, uses dynamic payload type (RFC 3551)
 
