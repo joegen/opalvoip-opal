@@ -56,6 +56,7 @@ void CodecTest::Main()
              "-play-driver:"
              "P-play-device:"
              "-play-buffers:"
+             "F-audio-frames:"
              "-grab-driver:"
              "G-grab-device:"
              "-grab-format:"
@@ -89,6 +90,7 @@ void CodecTest::Main()
               "  -R --record-device dev  : audio recorder device.\n"
               "  --play-driver drv       : audio player driver.\n"
               "  -P --play-device dev    : audio player device.\n"
+              "  -F --audio-frames n     : audio frames per packet, default 1.\n"
               "  --play-buffers n        : audio player buffers, default 8.\n"
               "  --grab-driver drv       : video grabber driver.\n"
               "  -G --grab-device dev    : video grabber device.\n"
@@ -197,8 +199,16 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
       }
       else {
         OpalMediaFormat adjustedRawFormat = rawFormat;
-        if (mediaFormat.GetClockRate() != rawFormat.GetClockRate())
-          adjustedRawFormat = OpalPCM16_16KHZ;
+        if (rawFormat == OpalPCM16) {
+          if (mediaFormat.GetClockRate() != rawFormat.GetClockRate())
+            adjustedRawFormat = OpalPCM16_16KHZ;
+          if (args.HasOption('F')) {
+            unsigned fpp = args.GetOptionString('F').AsUnsigned();
+            if (fpp > 0)
+              mediaFormat.SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), fpp);
+          }
+        }
+
         if ((encoder = OpalTranscoder::Create(adjustedRawFormat, mediaFormat)) == NULL) {
           cout << "Could not create encoder for media format \"" << mediaFormat << '"' << endl;
           return false;
@@ -253,10 +263,20 @@ bool AudioThread::Initialise(PArgList & args)
     return false;
   }
 
+  unsigned bufferCount = args.GetOptionString("record-buffers", "8").AsUnsigned();
+
   cout << "Audio Recorder ";
   if (!driverName.IsEmpty())
     cout << "driver \"" << driverName << "\" and ";
-  cout << "device \"" << recorder->GetName() << "\" opened." << endl;
+  cout << "device \"" << recorder->GetName() << "\" using "
+       << bufferCount << 'x' << readSize << " byte buffers ";
+
+  if (!recorder->SetBuffers(readSize, bufferCount)) {
+    cout << "could not be set." << endl;
+    return false;
+  }
+
+  cout << "opened and initialised." << endl;
 
 
   // Audio player
@@ -280,12 +300,20 @@ bool AudioThread::Initialise(PArgList & args)
     return false;
   }
 
-  player->SetBuffers(readSize, args.GetOptionString("play-buffers", "8").AsUnsigned());
+  bufferCount = args.GetOptionString("play-buffers", "8").AsUnsigned();
 
   cout << "Audio Player ";
   if (!driverName.IsEmpty())
     cout << "driver \"" << driverName << "\" and ";
-  cout << "device \"" << player->GetName() << "\" opened." << endl;
+  cout << "device \"" << player->GetName() << "\" using "
+       << bufferCount << 'x' << readSize << " byte buffers ";
+
+  if (!player->SetBuffers(readSize, bufferCount)) {
+    cout << "could not be set." << endl;
+    return false;
+  }
+
+  cout << "opened and initialised." << endl;
 
   return true;
 }
