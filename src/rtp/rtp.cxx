@@ -1136,6 +1136,7 @@ void RTP_Session::GetStatistics(OpalMediaStatistics & statistics, bool receiver)
   statistics.m_totalPackets      = receiver ? GetPacketsReceived()    : GetPacketsSent();
   statistics.m_packetsLost       = receiver ? GetPacketsLost()        : 0;
   statistics.m_packetsOutOfOrder = receiver ? GetPacketsOutOfOrder()  : 0;
+  statistics.m_packetsTooLate    = receiver ? GetPacketsTooLate()     : 0;
   statistics.m_packetOverruns    = receiver ? GetPacketOverruns()     : 0;
   statistics.m_minimumPacketTime = receiver ? GetMinimumReceiveTime() : GetMinimumSendTime();
   statistics.m_averagePacketTime = receiver ? GetAverageReceiveTime() : GetAverageSendTime();
