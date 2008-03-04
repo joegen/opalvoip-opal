@@ -1071,9 +1071,10 @@ PBoolean OpalConnection::PromptUserInput(PBoolean /*play*/)
 }
 
 
-void OpalConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT)
+void OpalConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT type)
 {
-  if (!info.IsToneStart())
+  // trigger on end of tone
+  if (type == 0)
     OnUserInputTone(info.GetTone(), info.GetDuration()/8);
 }
 
