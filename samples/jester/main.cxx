@@ -298,7 +298,8 @@ void JesterProcess::ConsumeUdpPackets(PThread &, INT)
 
   while(keepRunning) {
 
-      PBoolean success = jitterBuffer.ReadData(consumeTimestamp, readFrame);
+      readFrame.SetTimestamp(consumeTimestamp);
+      PBoolean success = jitterBuffer.ReadData(readFrame);
       PTime lastWriteTime;
       if (success && (readFrame.GetPayloadSize() > 0)) {
 	  consumeTimestamp = readFrame.GetTimestamp();
