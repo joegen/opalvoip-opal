@@ -67,18 +67,22 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
   strcat(path, name);
 
   // Load the Libary
-  WITH_ALIGNED_STACK({  // must be called before using avcodec lib
 #ifdef _WIN32
 # ifdef UNICODE
+  WITH_ALIGNED_STACK({  // must be called before using avcodec lib
      USES_CONVERSION;
     _hDLL = LoadLibrary(A2T(path));
+  });
 # else
+  WITH_ALIGNED_STACK({  // must be called before using avcodec lib
     _hDLL = LoadLibrary(name);
+  });
 # endif /* UNICODE */
 #else
+  WITH_ALIGNED_STACK({  // must be called before using avcodec lib
     _hDLL = dlopen((const char *)path, RTLD_NOW);
-#endif /* WIN32 */
   });
+#endif /* WIN32 */
   // Check for errors
   if (_hDLL == NULL) {
 #ifndef _WIN32
