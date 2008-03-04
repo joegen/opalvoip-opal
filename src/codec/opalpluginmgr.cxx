@@ -863,11 +863,10 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
 OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec,
                                                                      PBoolean _isEncoder,
                                                                      unsigned inputBits,
-                                                                     unsigned outputBits,
-                                                                     PINDEX optimalBits)
+                                                                     unsigned outputBits)
   : OpalStreamedTranscoder((strcmp(_codec->sourceFormat, "L16") == 0) ? OpalPCM16 : _codec->sourceFormat,
                            (strcmp(_codec->destFormat, "L16") == 0) ? OpalPCM16 : _codec->destFormat,
-                           inputBits, outputBits, optimalBits)
+                           inputBits, outputBits)
   , OpalPluginTranscoder(_codec, _isEncoder)
 { 
   comfortNoise       = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_ComfortNoise;
@@ -883,8 +882,7 @@ PBoolean OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFo
 OpalPluginStreamedAudioEncoder::OpalPluginStreamedAudioEncoder(PluginCodec_Definition * _codec, PBoolean)
   : OpalPluginStreamedAudioTranscoder(_codec, PTrue,
                                       16,
-                                      (_codec->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos,
-                                      _codec->parm.audio.recommendedFramesPerPacket)
+                                      (_codec->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos)
 {
 }
 
@@ -902,8 +900,7 @@ int OpalPluginStreamedAudioEncoder::ConvertOne(int _sample) const
 OpalPluginStreamedAudioDecoder::OpalPluginStreamedAudioDecoder(PluginCodec_Definition * _codec, PBoolean)
   : OpalPluginStreamedAudioTranscoder(_codec, PFalse,
                                       (_codec->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos,
-                                      16,
-                                      _codec->parm.audio.recommendedFramesPerPacket)
+                                      16)
 {
 }
 

@@ -517,26 +517,29 @@ PBoolean OpalFramedTranscoder::ConvertSilentFrame(BYTE *dst)
 OpalStreamedTranscoder::OpalStreamedTranscoder(const OpalMediaFormat & inputMediaFormat,
                                                const OpalMediaFormat & outputMediaFormat,
                                                unsigned inputBits,
-                                               unsigned outputBits,
-                                               PINDEX optimal)
+                                               unsigned outputBits)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
 {
   inputBitsPerSample = inputBits;
   outputBitsPerSample = outputBits;
-  optimalSamples = optimal;
 }
 
 
 PINDEX OpalStreamedTranscoder::GetOptimalDataFrameSize(PBoolean input) const
 {
-  return ((input ? inputBitsPerSample : outputBitsPerSample)+7)/8 * optimalSamples;
+  // For streamed codecs a "frame" is one milliseconds worth of data
+  PINDEX size = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
+  size *= outputMediaFormat.GetClockRate()/1000; // Convert to milliseconds
+  size *= input ? inputBitsPerSample : outputBitsPerSample; // Total bits
+  size /= 8; // Total bytes
+  return size > 0 ? size : 1;
 }
 
 
 PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
                                      RTP_DataFrame & output)
 {
-  PINDEX i;
+  PINDEX i, bit, mask;
 
   const BYTE * inputBytes = input.GetPayloadPtr();
   const short * inputWords = (const short *)inputBytes;
@@ -570,6 +573,24 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
           }
           break;
 
+        case 5 :
+        case 3 :
+        case 2 :
+          bit = 0;
+          outputBytes[0] = 0;
+          for (i = 0; i < samples; i++) {
+            int converted = ConvertOne(*inputWords++);
+            outputBytes[0] |= (BYTE)(converted << bit);
+            outputBytes[1] |= (BYTE)(converted >> (8-bit));
+            bit += outputBitsPerSample;
+            if (bit >= 8) {
+              outputBytes++;
+              outputBytes[1] = 0;
+              bit -= 8;
+            }
+          }
+          break;
+
         default :
           PAssertAlways("Unsupported bit size");
           return PFalse;
@@ -597,6 +618,24 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
           }
           break;
 
+        case 5 :
+        case 3 :
+        case 2 :
+          bit = 0;
+          outputBytes[0] = 0;
+          for (i = 0; i < samples; i++) {
+            int converted = ConvertOne(*inputBytes++);
+            outputBytes[0] |= (BYTE)(converted << bit);
+            outputBytes[1] |= (BYTE)(converted >> (8-bit));
+            bit += outputBitsPerSample;
+            if (bit >= 8) {
+              outputBytes++;
+              outputBytes[1] = 0;
+              bit -= 8;
+            }
+          }
+          break;
+
         default :
           PAssertAlways("Unsupported bit size");
           return PFalse;
@@ -607,18 +646,12 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
       switch (outputBitsPerSample) {
         case 16 :
           for (i = 0; i < samples; i++)
-            if ((i&1) == 0)
-              *outputWords++ = (short)ConvertOne(*inputBytes & 15);
-            else
-              *outputWords++ = (short)ConvertOne(*inputBytes++ >> 4);
+            *outputWords++ = (short)ConvertOne((i&1) == 0 ? (*inputBytes & 15) : (*inputBytes++ >> 4));
           break;
 
         case 8 :
           for (i = 0; i < samples; i++)
-            if ((i&1) == 0)
-              *outputBytes++ = (BYTE)ConvertOne(*inputBytes & 15);
-            else
-              *outputBytes++ = (BYTE)ConvertOne(*inputBytes++ >> 4);
+            *outputBytes++ = (BYTE)ConvertOne((i&1) == 0 ? (*inputBytes & 15) : (*inputBytes++ >> 4));
           break;
 
         case 4 :
@@ -627,6 +660,42 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
               *outputBytes = (BYTE)ConvertOne(*inputBytes & 15);
             else
               *outputBytes++ |= (BYTE)(ConvertOne(*inputBytes++ >> 4) << 4);
+          }
+          break;
+
+        default :
+          PAssertAlways("Unsupported bit size");
+          return PFalse;
+      }
+      break;
+
+    case 5 :
+    case 3 :
+    case 2 :
+      switch (outputBitsPerSample) {
+        case 16 :
+          bit = 0;
+          mask = 0xff>>(8-inputBitsPerSample);
+          for (i = 0; i < samples; i++) {
+            *outputWords++ = (short)ConvertOne(((inputBytes[0]>>bit)|(inputBytes[1]<<(8-bit)))&mask);
+            bit += inputBitsPerSample;
+            if (bit >= 8) {
+              ++inputBytes;
+              bit -= 8;
+            }
+          }
+          break;
+
+        case 8 :
+          bit = 0;
+          mask = 0xff>>(8-inputBitsPerSample);
+          for (i = 0; i < samples; i++) {
+            *outputBytes++ = (BYTE)ConvertOne(((inputBytes[0]>>bit)|(inputBytes[1]<<(8-bit)))&mask);
+            bit += outputBitsPerSample;
+            if (bit >= 8) {
+              ++inputBytes;
+              bit -= 8;
+            }
           }
           break;
 
@@ -648,7 +717,7 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
 /////////////////////////////////////////////////////////////////////////////
 
 Opal_Linear16Mono_PCM::Opal_Linear16Mono_PCM()
-  : OpalStreamedTranscoder(OpalL16_MONO_8KHZ, OpalPCM16, 16, 16, 320)
+  : OpalStreamedTranscoder(OpalL16_MONO_8KHZ, OpalPCM16, 16, 16)
 {
 }
 
@@ -667,7 +736,7 @@ int Opal_Linear16Mono_PCM::ConvertOne(int sample) const
 /////////////////////////////////////////////////////////////////////////////
 
 Opal_PCM_Linear16Mono::Opal_PCM_Linear16Mono()
-  : OpalStreamedTranscoder(OpalPCM16, OpalL16_MONO_8KHZ, 16, 16, 320)
+  : OpalStreamedTranscoder(OpalPCM16, OpalL16_MONO_8KHZ, 16, 16)
 {
 }
 
