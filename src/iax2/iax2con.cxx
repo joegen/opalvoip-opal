@@ -547,15 +547,13 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
     delete soundFrame;
 }
 
-PBoolean IAX2Connection::ReadSoundPacket(DWORD timestamp, RTP_DataFrame & packet)
+PBoolean IAX2Connection::ReadSoundPacket(RTP_DataFrame & packet)
 { 
-  PBoolean success = jitterBuffer.ReadData(timestamp, packet); 
-  if (success) {
-    packet.SetPayloadSize(packet.GetSize() - packet.GetHeaderSize());
-    return PTrue;
-  }
+  if (!jitterBuffer.ReadData(packet))
+    return false;
 
-  return PFalse;
+  packet.SetPayloadSize(packet.GetSize() - packet.GetHeaderSize());
+  return PTrue;
 }
 
 /* The comment below is magic for those who use emacs to edit this file. */

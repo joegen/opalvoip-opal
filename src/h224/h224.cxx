@@ -634,7 +634,7 @@ void OpalH224ReceiverThread::Main()
 	  
     inUse.Wait();
 		
-    if(!rtpSession.ReadBufferedData(timestamp, packet)) {
+    if(!rtpSession.ReadBufferedData(packet)) {
       inUse.Signal();
       return;
     }

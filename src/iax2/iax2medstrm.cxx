@@ -111,7 +111,7 @@ PBoolean OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
     return PFalse;
   }
     
-  PBoolean success = connection.ReadSoundPacket(timestamp, packet); 
+  PBoolean success = connection.ReadSoundPacket(packet); 
 
   return success;
 }

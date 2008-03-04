@@ -587,7 +587,7 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
   }
 
-  if (!rtpSession.ReadBufferedData(timestamp, packet))
+  if (!rtpSession.ReadBufferedData(packet))
     return false;
 
   timestamp = packet.GetTimestamp();
