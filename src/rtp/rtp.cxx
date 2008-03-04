@@ -698,12 +698,9 @@ unsigned RTP_Session::GetJitterTimeUnits() const
 }
 
 
-PBoolean RTP_Session::ReadBufferedData(DWORD timestamp, RTP_DataFrame & frame)
+PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
 {
-  if (jitter != NULL)
-    return jitter->ReadData(timestamp, frame);
-  else
-    return ReadData(frame, PTrue);
+  return jitter != NULL ? jitter->ReadData(frame) : ReadData(frame, PTrue);
 }
 
 

@@ -98,7 +98,6 @@ class OpalJitterBuffer : public PObject
        available or an error occurs.
       */
     virtual PBoolean ReadData(
-      DWORD timestamp,        ///<  Timestamp to read from buffer.
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
 
@@ -173,12 +172,12 @@ class OpalJitterBuffer : public PObject
     Entry * oldestFrame;
     Entry * newestFrame;
     Entry * freeFrames;
-    Entry * currentWriteFrame;
+    Entry * currentFrame;
 
     PMutex bufferMutex;
-    PBoolean   shuttingDown;
-    PBoolean   preBuffering;
-    PBoolean   doneFirstWrite;
+    bool   shuttingDown;
+    bool   preBuffering;
+    bool   firstReadData;
 
     RTP_JitterBufferAnalyser * analyser;
 

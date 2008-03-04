@@ -438,7 +438,6 @@ class RTP_Session : public PObject
        generally use this in preference to directly calling ReadData().
       */
     virtual PBoolean ReadBufferedData(
-      DWORD timestamp,        ///<  Timestamp to read from buffer.
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
 
