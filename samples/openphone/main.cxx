@@ -2773,12 +2773,12 @@ bool OptionsDialog::TransferDataFromWindow()
     item.m_itemId = i;
     item.m_mask = wxLIST_MASK_TEXT;
     m_Routes->GetItem(item);
-    spec += item.m_text;
+    spec += (item.m_text == "<ALL>") ? ".*" : item.m_text.c_str();
     spec += ':';
     item.m_col++;
     m_Routes->GetItem(item);
     spec += item.m_text.empty() ? ".*" : item.m_text;
-    spec += "\\t";
+    spec += '\t';
     item.m_col++;
     m_Routes->GetItem(item);
     spec += item.m_text;
