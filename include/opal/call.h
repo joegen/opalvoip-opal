@@ -96,7 +96,10 @@ class OpalCall : public PSafeObject
     PBoolean IsEstablished() const { return isEstablished; }
 
     /**Call back to indicate that the call has been established.
-       At this point in time there are no connections left in the call.
+       At this point in time every connection in the call is in the
+       "Established" state. This is a better function than using
+       OnEstablished() on a particular connection as it assures that
+       bi-direction media is flowing.
 
        The default behaviour is to call OpalManager::OnEstablishedCall().
       */
