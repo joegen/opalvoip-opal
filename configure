@@ -6859,6 +6859,7 @@ fi
 
 
 
+aec=yes
 if test "$aec" = "yes" ; then
   # Check whether --enable-aec was given.
 if test "${enable_aec+set}" = set; then

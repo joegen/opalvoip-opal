@@ -626,6 +626,7 @@ dnl AEC
 dnl MSWIN_DISPLAY aec,Accoustic Echo Cancellation
 dnl MSWIN_DEFINE  aec,OPAL_AEC
 
+aec=yes
 if test "$aec" = "yes" ; then
   AC_ARG_ENABLE(aec,
          [  --disable-aec       disable accoustic echo cancellation support],
