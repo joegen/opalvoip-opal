@@ -186,6 +186,10 @@ class H323Connection : public OpalConnection
     virtual PBoolean SetProgressed();
     
     /** Called when a connection is established.
+        This indicates that a connection to an endpoint was established. This
+        usually occurs after OnConnected() and indicates that the connection
+        is both connected and has media flowing.
+
         Default behaviour is to call H323EndPoint::OnConnectionEstablished
       */
     virtual void OnEstablished();
