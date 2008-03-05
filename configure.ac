@@ -621,6 +621,29 @@ AC_SUBST(OPAL_RFC4175)
 
 dnl ########################################################################
 dnl
+dnl AEC
+
+dnl MSWIN_DISPLAY aec,Accoustic Echo Cancellation
+dnl MSWIN_DEFINE  aec,OPAL_AEC
+
+if test "$aec" = "yes" ; then
+  AC_ARG_ENABLE(aec,
+         [  --disable-aec       disable accoustic echo cancellation support],
+         aec=$enableval)
+  AC_MSG_CHECKING(AEC)
+  if test "$aec" = "yes" ; then
+    AC_DEFINE(OPAL_AEC, 1)
+    OPAL_AEC=1
+    AC_MSG_RESULT(enabled)
+  else
+    AC_MSG_RESULT(disabled)
+  fi
+fi
+AC_SUBST(OPAL_AEC)
+
+
+dnl ########################################################################
+dnl
 dnl Statistics
 
 dnl MSWIN_DISPLAY statistics,Statistics gathering support
