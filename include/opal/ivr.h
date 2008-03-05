@@ -242,6 +242,11 @@ class OpalIVRConnection : public OpalConnection
       */
     virtual PBoolean SetConnected();
 
+    /**A call back function whenever a connection is "established".
+       This indicates that a connection to an endpoint was established. This
+       usually occurs after OnConnected() and indicates that the connection
+       is both connected and has media flowing.
+     */
     void OnEstablished();
 
     /**Get the data formats this connection is capable of operating.

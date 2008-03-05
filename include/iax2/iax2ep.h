@@ -327,8 +327,11 @@ class IAX2EndPoint : public OpalEndPoint
       IAX2Frame *f  /// Frame carrying the new request.
 		);
 
-    /**Call back for when a connections is established (we have received
-       the first media packet) */
+    /**A call back function whenever a connection is established.
+       This indicates that a connection to an endpoint was established. This
+       usually occurs after OnConnected() and indicates that the connection
+       is both connected and has media flowing.
+      */
     void OnEstablished(
        OpalConnection & con
     );
