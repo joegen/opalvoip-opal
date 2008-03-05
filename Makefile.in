@@ -331,6 +331,8 @@ ifeq ($(OPAL_RFC4175), 1)
 SOURCES += $(OPAL_SRCDIR)/codec/rfc4175.cxx
 endif
 
+ifeq ($(OPAL_AEC), 1)
+
 SPEEX_DIR       = $(OPAL_SRCDIR)/codec/speex
 
 #HEADER_FILES    += $(OPAL_INCDIR)/speexcodec.h
@@ -367,6 +369,9 @@ SOURCES         += $(SPEEX_SRCDIR)/speex_preprocess.c \
 
 endif # OPAL_SYSTEM_SPEEX
 
+endif # ifeq ($(OPAL_AEC), 1)
+
+
 #
 # Files to be cleaned during make clean
 #
@@ -389,6 +394,8 @@ include @PTLIBDIR@/make/lib.mak
 notrace::
 	$(MAKE) NOTRACE=1 opt
 
+ifeq ($(OPAL_AEC), 1)
+
 # Build rules for the Speex codec
 
 $(OPAL_OBJDIR)/%.o : $(SPEEX_SRCDIR)/%.c
@@ -399,6 +406,9 @@ $(DEPDIR)/%.dep : $(SPEEX_SRCDIR)/%.c
 	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
 	@printf %s $(OPAL_OBJDIR)/ > $@
 	$(CC) -I$(SPEEX_INCDIR) $(CFLAGS) -M $< >> $@
+
+endif
+
 
 ###############################################################################
 #### Subdirectories
