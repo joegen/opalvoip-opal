@@ -1213,7 +1213,14 @@ class OpalManager : public PObject
     // needs to be public for gcc 3.4
     void GarbageCollection();
 
-    virtual void OnNewConnection(OpalConnection & conn);
+    /**Call back for a new connection has been constructed.
+       This is called after CreateConnection has returned a new connection.
+       It allows an application to make any custom adjustments to the
+       connection before it begins to process the protocol. behind it.
+      */
+    virtual void OnNewConnection(
+      OpalConnection & connection   ///< New connection just created
+    );
 
     virtual void SetDefaultSecurityMode(const PString & v)
     { defaultSecurityMode = v; }

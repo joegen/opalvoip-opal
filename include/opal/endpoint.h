@@ -689,7 +689,15 @@ class OpalEndPoint : public PObject
 
     virtual PString GetDefaultTransport() const;
 
-    virtual void OnNewConnection(OpalCall & call, OpalConnection & conn);
+    /**Call back for a new connection has been constructed.
+       This is called after CreateConnection has returned a new connection.
+       It allows an application to make any custom adjustments to the
+       connection before it begins to process the protocol. behind it.
+      */
+    virtual void OnNewConnection(
+      OpalCall & call,              ///< Call that owns the newly created connection.
+      OpalConnection & connection   ///< New connection just created
+    );
 
 #if P_SSL
     PString GetSSLCertificate() const;
