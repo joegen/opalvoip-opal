@@ -789,8 +789,8 @@ bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
 
 #if OPAL_AUDIO
 OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, const char * rawFormat)
-  : OpalFramedTranscoder( (strcmp(_codec->sourceFormat, "L16") == 0) ? rawFormat : _codec->sourceFormat,
-                          (strcmp(_codec->destFormat, "L16") == 0)   ? rawFormat : _codec->destFormat,
+  : OpalFramedTranscoder( (strcmp(_codec->sourceFormat, "L16") == 0) ? (rawFormat != NULL ? rawFormat : ((_codec->sampleRate == 8000) ? OpalPCM16 : OpalPCM16_16KHZ)) : _codec->sourceFormat,
+                          (strcmp(_codec->destFormat, "L16") == 0)   ? (rawFormat != NULL ? rawFormat : ((_codec->sampleRate == 8000) ? OpalPCM16 : OpalPCM16_16KHZ)) : _codec->destFormat,
                          _isEncoder ? _codec->parm.audio.samplesPerFrame*2 : _codec->parm.audio.bytesPerFrame,
                          _isEncoder ? _codec->parm.audio.bytesPerFrame     : _codec->parm.audio.samplesPerFrame*2)
   , OpalPluginTranscoder(_codec, _isEncoder)
@@ -864,8 +864,8 @@ OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(PluginCodec
                                                                      PBoolean _isEncoder,
                                                                      unsigned inputBits,
                                                                      unsigned outputBits)
-  : OpalStreamedTranscoder((strcmp(_codec->sourceFormat, "L16") == 0) ? OpalPCM16 : _codec->sourceFormat,
-                           (strcmp(_codec->destFormat, "L16") == 0) ? OpalPCM16 : _codec->destFormat,
+  : OpalStreamedTranscoder((strcmp(_codec->sourceFormat, "L16") == 0) ? ((_codec->sampleRate == 8000) ? OpalPCM16 : OpalPCM16_16KHZ) : _codec->sourceFormat,
+                           (strcmp(_codec->destFormat, "L16") == 0)   ? ((_codec->sampleRate == 8000) ? OpalPCM16 : OpalPCM16_16KHZ) : _codec->destFormat,
                            inputBits, outputBits)
   , OpalPluginTranscoder(_codec, _isEncoder)
 { 

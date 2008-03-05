@@ -274,7 +274,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public Opal
 {
   PCLASSINFO(OpalPluginFramedAudioTranscoder, OpalFramedTranscoder);
   public:
-    OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, const char * rawFormat = OpalPCM16);
+    OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, const char * rawFormat = NULL);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
     PBoolean ConvertFrame(const BYTE * input, PINDEX & consumed, BYTE * output, PINDEX & created);
     virtual PBoolean ConvertSilentFrame(BYTE * buffer);
