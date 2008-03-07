@@ -53,6 +53,7 @@ protected:
   CStatic m_ctrlStatus;
   CEdit m_ctrlAddress;
   CString m_callAddress;
+  CStringA m_incomingCallToken;
   CStringA m_currentCallToken;
 
   // Generated message map functions
