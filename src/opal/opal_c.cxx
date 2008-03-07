@@ -118,7 +118,6 @@ class OpalManager_C : public OpalManager
     OpalMessage * GetMessage(unsigned timeout);
     OpalMessage * SendMessage(const OpalMessage * message);
 
-    virtual void OnAlerting(OpalConnection & connection);
     virtual void OnEstablishedCall(OpalCall & call);
     virtual void OnUserInputString(OpalConnection & connection, const PString & value);
     virtual void OnUserInputTone(OpalConnection & connection, char tone, int duration);
@@ -257,8 +256,14 @@ PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connectio
 }
 
 
-PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection &)
+PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
+  const OpalCall & call = connection.GetCall();
+  OpalMessageBuffer message(OpalIndAlerting);
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
+  manager.PostMessage(message);
   return true;
 }
 
@@ -296,36 +301,98 @@ void SIPEndPoint_C::OnRegistrationStatus(const PString & aor,
 
 bool OpalManager_C::Initialise(const PCaselessString & options)
 {
-  if (options.Find("pc") != P_MAX_INDEX)
-    pcssEP = new OpalPCSSEndPoint_C(*this);
+  PString defProto, defUser;
+  PINDEX  defProtoPos = P_MAX_INDEX, defUserPos = P_MAX_INDEX;
 
 #if OPAL_H323
-  if (options.Find("h323") != P_MAX_INDEX)
-    new H323EndPoint(*this);
+  PINDEX h323Pos = options.Find("h323");
+  if (h323Pos < defProtoPos) {
+    defProto = "h323";
+    defProtoPos = h323Pos;
+  }
 #endif
 
 #if OPAL_SIP
-  if (options.Find("sip") != P_MAX_INDEX)
-    new SIPEndPoint_C(*this);
+  PINDEX sipPos = options.Find("sip");
+  if (sipPos < defProtoPos) {
+    defProto = "sip";
+    defProtoPos = sipPos;
+  }
 #endif
 
 #if OPAL_IAX2
-  if (options.Find("iax2") != P_MAX_INDEX)
-    new IAX2EndPoint(*this);
+  PINDEX iaxPos = options.Find("iax2");
+  if (iaxPos < defProtoPos) {
+    defProto = "iax2:<da>";
+    defProtoPos = iaxPos;
+  }
 #endif
 
 #if OPAL_LID
-  if (options.Find("pots") != P_MAX_INDEX)
-    new OpalPOTSEndPoint(*this);
+  PINDEX potsPos = options.Find("pots");
+  if (potsPos < defUserPos) {
+    defUser = "pots:<dn>";
+    defUserPos = potsPos;
+  }
 
-  if (options.Find("pstn") != P_MAX_INDEX)
-    new OpalPSTNEndPoint(*this);
+  PINDEX pstnPos = options.Find("pstn");
+  if (iaxPos < defProtoPos) {
+    defProto = "pstn:<dn>";
+    defProtoPos = pstnPos;
+  }
 #endif
+
+  PINDEX pcPos = options.Find("pc");
+  if (pcPos < defUserPos) {
+    defUser = "pc:<du>";
+    defUserPos = pcPos;
+  }
+
 
 #if OPAL_IVR
-  if (options.Find("ivr") != P_MAX_INDEX)
+  if (options.Find("ivr") != P_MAX_INDEX) {
     new OpalIVREndPoint(*this);
+    AddRouteEntry(".*:#=ivr:"); // A hash from anywhere goes to IVR
+  }
 #endif
+
+#if OPAL_H323
+  if (h323Pos != P_MAX_INDEX) {
+    new H323EndPoint(*this);
+    AddRouteEntry("h323:.*=" + defUser);
+  }
+#endif
+
+#if OPAL_SIP
+  if (sipPos != P_MAX_INDEX) {
+    new SIPEndPoint_C(*this);
+    AddRouteEntry("sip:.*=" + defUser);
+  }
+#endif
+
+#if OPAL_IAX2
+  if (options.Find("iax2") != P_MAX_INDEX) {
+    new IAX2EndPoint(*this);
+    AddRouteEntry("iax2:.*=" + defUser);
+  }
+#endif
+
+#if OPAL_LID
+  if (potsPos != P_MAX_INDEX) {
+    new OpalPOTSEndPoint(*this);
+    AddRouteEntry("pots:.*=" + defProto + ":<da>");
+  }
+
+  if (pstnPos != P_MAX_INDEX) {
+    new OpalPSTNEndPoint(*this);
+    AddRouteEntry("pstn:.*=" + defUser + ":<da>");
+  }
+#endif
+
+  if (pcPos != P_MAX_INDEX) {
+    pcssEP = new OpalPCSSEndPoint_C(*this);
+    AddRouteEntry("pc:.*=" + defProto + ":<da>");
+  }
 
   return true;
 }
@@ -794,17 +861,6 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
   }
 
   connection->TransferConnection(command.m_param.m_callSetUp.m_partyB);
-}
-
-
-void OpalManager_C::OnAlerting(OpalConnection & connection)
-{
-  const OpalCall & call = connection.GetCall();
-  OpalMessageBuffer message(OpalIndAlerting);
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
-  PostMessage(message);
 }
 
 
