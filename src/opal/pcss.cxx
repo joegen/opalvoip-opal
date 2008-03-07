@@ -215,8 +215,17 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 PBoolean OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 {
   PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token, PSafeReadOnly);
-  if (connection == NULL)
-    return PFalse;
+  if (connection == NULL) {
+    PSafePtr<OpalCall> call = manager.FindCallWithLock(token, PSafeReadOnly);
+    if (call == NULL)
+      return false;
+    connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(call->GetConnection(0));
+    if (connection == NULL) {
+      connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(call->GetConnection(1));
+      if (connection == NULL)
+        return false;
+    }
+  }
 
   connection->AcceptIncoming();
   return PTrue;
