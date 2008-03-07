@@ -112,7 +112,7 @@ class OpalManager_C : public OpalManager
   public:
     OpalManager_C() : pcssEP(NULL) { }
 
-    bool Initialise(const char * prefixes);
+    bool Initialise(const PCaselessString & options);
 
     void PostMessage(OpalMessageBuffer & message);
     OpalMessage * GetMessage(unsigned timeout);
@@ -146,10 +146,22 @@ class OpalManager_C : public OpalManager
 class PProcess_C : public PProcess
 {
 public:
-  PProcess_C()
+  PProcess_C(const PCaselessString & options)
   {
-#if PTRACING && defined(_DEBUG)
-    PTrace::Initialise(4, "DEBUGSTREAM");
+#if PTRACING
+    unsigned level = 0;
+    static char const TraceLevelKey[] = "TraceLevel=";
+    PINDEX pos = options.Find(TraceLevelKey);
+    if (pos != P_MAX_INDEX)
+      level = options.Mid(pos+sizeof(TraceLevelKey)-1).AsUnsigned();
+
+    PString filename = "DEBUGSTREAM";
+    static char const TraceFileKey[] = "TraceFile=";
+    pos = options.Find(TraceFileKey);
+    if (pos != P_MAX_INDEX)
+      filename = options(pos+sizeof(TraceFileKey)-1, options.Find(' ', pos)-1);
+
+    PTrace::Initialise(level, filename);
 #endif
   }
 
@@ -161,6 +173,11 @@ private:
 
 struct OpalHandleStruct
 {
+  OpalHandleStruct(const PCaselessString & options)
+    : process(options)
+  {
+  }
+
   PProcess_C     process;
   OpalManager_C  manager;
 };
@@ -277,38 +294,36 @@ void SIPEndPoint_C::OnRegistrationStatus(const PString & aor,
 
 ///////////////////////////////////////
 
-bool OpalManager_C::Initialise(const char * prefixes)
+bool OpalManager_C::Initialise(const PCaselessString & options)
 {
-  PCaselessString epNames = IsNullString(prefixes) ? "pcss h323 sip iax2 pots pstn ivr" : prefixes;
-
-  if (epNames.Find("pc") != P_MAX_INDEX)
+  if (options.Find("pc") != P_MAX_INDEX)
     pcssEP = new OpalPCSSEndPoint_C(*this);
 
 #if OPAL_H323
-  if (epNames.Find("h323") != P_MAX_INDEX)
+  if (options.Find("h323") != P_MAX_INDEX)
     new H323EndPoint(*this);
 #endif
 
 #if OPAL_SIP
-  if (epNames.Find("sip") != P_MAX_INDEX)
+  if (options.Find("sip") != P_MAX_INDEX)
     new SIPEndPoint_C(*this);
 #endif
 
 #if OPAL_IAX2
-  if (epNames.Find("iax2") != P_MAX_INDEX)
+  if (options.Find("iax2") != P_MAX_INDEX)
     new IAX2EndPoint(*this);
 #endif
 
 #if OPAL_LID
-  if (epNames.Find("pots") != P_MAX_INDEX)
+  if (options.Find("pots") != P_MAX_INDEX)
     new OpalPOTSEndPoint(*this);
 
-  if (epNames.Find("pstn") != P_MAX_INDEX)
+  if (options.Find("pstn") != P_MAX_INDEX)
     new OpalPSTNEndPoint(*this);
 #endif
 
 #if OPAL_IVR
-  if (epNames.Find("ivr") != P_MAX_INDEX)
+  if (options.Find("ivr") != P_MAX_INDEX)
     new OpalIVREndPoint(*this);
 #endif
 
@@ -891,10 +906,11 @@ void OpalManager_C::OnClearedCall(OpalCall & call)
 
 extern "C" {
 
-  OpalHandle OPAL_EXPORT OpalInitialise(const char * prefixes)
+  OpalHandle OPAL_EXPORT OpalInitialise(const char * options)
   {
-    OpalHandle opal = new OpalHandleStruct();
-    if (opal->manager.Initialise(prefixes))
+    PCaselessString optionsString = IsNullString(options) ? "pcss h323 sip iax2 pots pstn ivr" : options;
+    OpalHandle opal = new OpalHandleStruct(optionsString);
+    if (opal->manager.Initialise(optionsString))
       return opal;
 
     delete opal;

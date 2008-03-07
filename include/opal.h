@@ -56,22 +56,33 @@ typedef OpalHandleStruct * OpalHandle;
 struct OpalMessage;
 
 
+#define OPAL_C_API_VERSION "1"
+
+
 ///////////////////////////////////////
 
 /** Initialise the OPAL system, returning a "handle" to the system that must
     be used in other calls to OPAL.
 
-    The C string prefixes are space separated tokens indicating the protocols
-    to be enabled. NULL or an empty string will load all available protocols
-    will be used. The current protocol tokens are:
+    The C string options are space separated tokens indicating various options
+    to be enabled, for example the protocols to be available. NULL or an empty
+    string will load all available protocols. The current protocol tokens are:
 
         pc sip sips h323 h323s iax2 pots pstn ivr
+
+    Additional options are:
+
+        Version=1      API version of caller, the stack will use structures
+                       based on this version of the API.
+        TraceLevel=1   Level for tracing. 
+        TraceFile=name Set the filename for trace output. Note "name" cannot
+                       contain any spaces.
 
     If NULL is returned then an initialisation error occurred. This can only
     really occur if the user specifies prefixes which are not supported by
     the library.
   */
-OpalHandle OPAL_EXPORT OpalInitialise(const char * prefixes);
+OpalHandle OPAL_EXPORT OpalInitialise(const char * options);
 
 /** String representation of the OpalIntialise() which may be used for late
     binding to the library.

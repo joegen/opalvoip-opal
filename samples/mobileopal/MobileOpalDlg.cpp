@@ -183,7 +183,7 @@ void CMobileOpalDlg::InitialiseOPAL()
   // Start up and initialise OPAL
 
   if (m_opal == NULL) {
-    m_opal = OpalInitialise("pc h323 sip");
+    m_opal = OpalInitialise("pc h323 sip TraceLevel=2");
     if (m_opal == NULL) {
       ErrorBox(IDS_INIT_FAIL);
       EndDialog(IDCANCEL);
