@@ -451,7 +451,7 @@ bool MyManager::Initialise()
 
   // Log window - gets informative text
   initialSize.y /= 2;
-  m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString, wxPoint(), initialSize, wxTE_MULTILINE | wxTE_DONTWRAP | wxSUNKEN_BORDER);
+  m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString, wxPoint(), wxSize(512, 128), wxTE_MULTILINE | wxTE_DONTWRAP | wxSUNKEN_BORDER);
   m_logWindow->SetForegroundColour(wxColour(0,255,0)); // Green
   m_logWindow->SetBackgroundColour(wxColour(0,0,0)); // Black
 
@@ -975,7 +975,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
   };
 
   m_speedDials = new wxListCtrl(m_splitter, SpeedDialsID,
-                               wxDefaultPosition, wxDefaultSize,
+                               wxDefaultPosition, wxSize(512, 128),
                                ListCtrlStyle[view] | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
 
   if (view != e_ViewDetails) {
