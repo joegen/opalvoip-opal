@@ -2374,6 +2374,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_codecOptions->InsertColumn(1, "Value", wxLIST_FORMAT_LEFT, columnWidth);
   m_codecOptionValue = FindWindowByNameAs<wxTextCtrl>(this, "CodecOptionValue");
   m_codecOptionValue->Disable();
+  m_CodecOptionValueLabel = FindWindowByNameAs<wxStaticText>(this, "CodecOptionValueLabel");
+  m_CodecOptionValueLabel->Disable();
 
   ////////////////////////////////////////
   // H.323 fields
@@ -3072,6 +3074,7 @@ void OptionsDialog::SelectedCodec(wxCommandEvent & /*event*/)
   m_codecOptions->DeleteAllItems();
   m_codecOptionValue->SetValue("");
   m_codecOptionValue->Disable();
+  m_CodecOptionValueLabel->Disable();
 
   if (count == 1) {
     MyMedia * media = (MyMedia *)m_selectedCodecs->GetClientData(selections[0]);
@@ -3098,6 +3101,7 @@ void OptionsDialog::SelectedCodecOption(wxListEvent & /*event*/)
   item.m_col = 1;
   m_codecOptions->GetItem(item);
   m_codecOptionValue->Enable(!item.m_data);
+  m_CodecOptionValueLabel->Enable(!item.m_data);
   if (!item.m_data)
     m_codecOptionValue->SetValue(item.m_text);
 }
@@ -3107,6 +3111,7 @@ void OptionsDialog::DeselectedCodecOption(wxListEvent & /*event*/)
 {
   m_codecOptionValue->SetValue("");
   m_codecOptionValue->Disable();
+  m_CodecOptionValueLabel->Disable();
 }
 
 
