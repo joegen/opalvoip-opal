@@ -452,14 +452,15 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // Codec fields
-    wxButton   * m_AddCodec;
-    wxButton   * m_RemoveCodec;
-    wxButton   * m_MoveUpCodec;
-    wxButton   * m_MoveDownCodec;
-    wxListBox  * m_allCodecs;
-    wxListBox  * m_selectedCodecs;
-    wxListCtrl * m_codecOptions;
-    wxTextCtrl * m_codecOptionValue;
+    wxButton     * m_AddCodec;
+    wxButton     * m_RemoveCodec;
+    wxButton     * m_MoveUpCodec;
+    wxButton     * m_MoveDownCodec;
+    wxListBox    * m_allCodecs;
+    wxListBox    * m_selectedCodecs;
+    wxListCtrl   * m_codecOptions;
+    wxTextCtrl   * m_codecOptionValue;
+    wxStaticText * m_CodecOptionValueLabel;
 
     void AddCodec(wxCommandEvent & event);
     void RemoveCodec(wxCommandEvent & event);
