@@ -519,9 +519,8 @@ bool MyManager::Initialise()
   ivrEP = new OpalIVREndPoint(*this);
 #endif
 
-#ifdef OPAL_LID
   potsEP = new OpalLineEndPoint(*this);
-#endif
+  pcssEP = new MyPCSSEndPoint(*this);
 
   PwxString str;
   bool onoff;
