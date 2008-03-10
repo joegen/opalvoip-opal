@@ -284,26 +284,41 @@ void OpalMediaOptionEnum::PrintOn(ostream & strm) const
 
 void OpalMediaOptionEnum::ReadFrom(istream & strm)
 {
+  m_value = m_enumerations.GetSize();
+
+  PINDEX longestMatch = 0;
+
   PCaselessString str;
-  while (strm.good()) {
-    char ch;
-    strm.get(ch);
-    str += ch;
-    for (PINDEX i = 0; i < m_enumerations.GetSize(); i++) {
-      if (str == m_enumerations[i]) {
-        m_value = i;
-        return;
+  int ch;
+  while ((ch = strm.get()) != EOF) {
+    str += (char)ch;
+
+    PINDEX i;
+    for (i = 0; i < m_enumerations.GetSize(); i++) {
+      if (str == m_enumerations[i].Left(str.GetLength())) {
+        longestMatch = i;
+        break;
       }
+    }
+    if (i >= m_enumerations.GetSize()) {
+      i = str.GetLength()-1;
+      strm.putback(str[i]);
+      str.Delete(i, 1);
+      break;
     }
   }
 
-  m_value = m_enumerations.GetSize();
+  // For some reason the get at eof sets the badbit, don't want that!
+  // But we do want the eofbit if it was set.
+  strm.clear(strm.rdstate()&ios::badbit);
 
-#ifdef __USE_STL__
-   strm.setstate(ios::badbit);
-#else
-   strm.setf(ios::badbit , ios::badbit);
-#endif
+  if (str == m_enumerations[longestMatch])
+    m_value = longestMatch;
+  else {
+    for (PINDEX i = str.GetLength(); i > 0; )
+      strm.putback(str[--i]);
+    strm.setstate(ios::failbit);
+  }
 }
 
 
