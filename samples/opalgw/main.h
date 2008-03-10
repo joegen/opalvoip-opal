@@ -155,8 +155,9 @@ class MyManager : public OpalManager
 #if OPAL_SIP
     SIPEndPoint      * sipEP;
 #endif
-    OpalPOTSEndPoint * potsEP;
-    OpalPSTNEndPoint * pstnEP;
+#if OPAL_LID
+    OpalLineEndPoint * potsEP;
+#endif
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif
