@@ -244,6 +244,7 @@ void CMobileOpalDlg::InitialiseOPAL()
     CStringA strGkPassword = GetOptionStringA(GkPasswordKey);
     command.m_param.m_registrationInfo.m_password = strGkPassword;
 
+    SetStatusText(IDS_REGISTERING);
     if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
       ErrorBox(IDS_REGISTRATION_FAIL);
     OpalFreeMessage(response);
@@ -273,6 +274,7 @@ void CMobileOpalDlg::InitialiseOPAL()
 
     command.m_param.m_registrationInfo.m_timeToLive = 300;
 
+    SetStatusText(IDS_REGISTERING);
     if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
       ErrorBox(IDS_REGISTRATION_FAIL);
     OpalFreeMessage(response);
