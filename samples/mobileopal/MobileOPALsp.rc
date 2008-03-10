@@ -271,6 +271,7 @@ BEGIN
     IDS_ACCEPT              "Accept"
     IDS_CANCEL              "Cancel"
     IDS_REGISTERED          "Registered and ready for calls."
+    IDS_REGISTERING         "Registering . . ."
 END
 
 #endif    // English (Australia) resources
