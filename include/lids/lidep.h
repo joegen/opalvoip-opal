@@ -51,23 +51,21 @@ class OpalLineConnection;
    This is the ancestor class to the LID endpoints that handle PSTN lines
    and POTS lines respectively.
  */
-class OpalLIDEndPoint : public OpalEndPoint
+class OpalLineEndPoint : public OpalEndPoint
 {
-  PCLASSINFO(OpalLIDEndPoint, OpalEndPoint);
+  PCLASSINFO(OpalLineEndPoint, OpalEndPoint);
 
   public:
   /**@name Construction */
   //@{
     /**Create a new endpoint.
      */
-    OpalLIDEndPoint(
-      OpalManager & manager,  ///<  Manager of all endpoints.
-      const PString & prefix, ///<  Prefix for URL style address strings
-      unsigned attributes     ///<  Bit mask of attributes endpoint has
+    OpalLineEndPoint(
+      OpalManager & manager   ///<  Manager of all endpoints.
     );
 
     /// Make sure thread has stopped before exiting.
-    ~OpalLIDEndPoint();
+    ~OpalLineEndPoint();
   //@}
 
   /**@name Overrides from OpalEndPoint */
@@ -261,8 +259,9 @@ class OpalLIDEndPoint : public OpalEndPoint
        effectively locks the line for exclusive use of the caller.
       */
     OpalLine * GetLine(
-      const PString & lineName,  ///<  Name of line to get.
-      PBoolean enableAudio = PFalse   ///<  Flag to enable audio on the line.
+      const PString & lineName,  ///< Name of line to get.
+      bool enableAudio = false,  ///< Flag to enable audio on the line.
+      bool terminating = true    ///< Flag to indicate should be a terminating line
     );
 
     /**Set the default line to be used on call.
@@ -275,7 +274,7 @@ class OpalLIDEndPoint : public OpalEndPoint
 
 
   protected:
-    PDECLARE_NOTIFIER(PThread, OpalLIDEndPoint, MonitorLines);
+    PDECLARE_NOTIFIER(PThread, OpalLineEndPoint, MonitorLines);
     virtual void MonitorLine(OpalLine & line);
 
     OpalLIDList  devices;
@@ -284,48 +283,6 @@ class OpalLIDEndPoint : public OpalEndPoint
     PMutex       linesMutex;
     PThread    * monitorThread;
     PSyncPoint   exitFlag;
-};
-
-
-/**This class describes an endpoint that handles PSTN lines.
-   This is the ancestor class to the LID endpoints that handle PSTN lines
-   and POTS lines respectively.
- */
-class OpalPSTNEndPoint : public OpalLIDEndPoint
-{
-  PCLASSINFO(OpalLIDEndPoint, OpalLIDEndPoint);
-
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new endpoint.
-     */
-    OpalPSTNEndPoint(
-      OpalManager & manager,  ///<  Manager of all endpoints.
-      const char * prefix = "pstn" ///<  Prefix for URL style address strings
-    ) : OpalLIDEndPoint(manager, prefix, HasLineInterface) { }
-  //@}
-};
-
-
-/**This class describes an endpoint that handles PSTN lines.
-   This is the ancestor class to the LID endpoints that handle PSTN lines
-   and POTS lines respectively.
- */
-class OpalPOTSEndPoint : public OpalLIDEndPoint
-{
-  PCLASSINFO(OpalPOTSEndPoint, OpalLIDEndPoint);
-
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new endpoint.
-     */
-    OpalPOTSEndPoint(
-      OpalManager & manager,  ///<  Manager of all endpoints.
-      const char * prefix = "pots" ///<  Prefix for URL style address strings
-    ) : OpalLIDEndPoint(manager, prefix, CanTerminateCall) { }
-  //@}
 };
 
 
@@ -342,7 +299,7 @@ class OpalLineConnection : public OpalConnection
      */
     OpalLineConnection(
       OpalCall & call,              ///<  Owner calll for connection
-      OpalLIDEndPoint & endpoint,   ///<  Endpoint for LID connection
+      OpalLineEndPoint & endpoint,   ///<  Endpoint for LID connection
       OpalLine & line,              ///<  Line to make connection on
       const PString & number        ///<  Number to call on line
     );
@@ -528,7 +485,7 @@ class OpalLineConnection : public OpalConnection
 
         
   protected:
-    OpalLIDEndPoint & endpoint;
+    OpalLineEndPoint & endpoint;
     OpalLine        & line;
     PBoolean              wasOffHook;
     unsigned          answerRingCount;
