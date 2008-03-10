@@ -154,14 +154,11 @@ OpalLineConnection * OpalLineEndPoint::CreateConnection(OpalCall & call,
 static bool InitialiseLine(OpalLine * line)
 {
   PTRACE(3, "LID EP\tInitialiseLine " << *line);
-  if (!line->Ring(0, NULL))
-    return false;
-  if (!line->StopTone())
-    return false;
-  if (!line->StopReading())
-    return false;
-  if (!line->StopWriting())
-    return false;
+  line->Ring(0, NULL);
+  line->StopTone();
+  line->StopReading();
+  line->StopWriting();
+
   if (!line->DisableAudio())
     return false;
 
@@ -238,16 +235,18 @@ PBoolean OpalLineEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
   bool atLeastOne = false;
 
   for (unsigned line = 0; line < lineCount; line++) {
-    PTRACE(3, "LID EP\tAddLinesFromDevice line  " << line << ", " << (device.IsLineTerminal(line) ? "terminal" : "network"));
     OpalLine * newLine = new OpalLine(device, line);
     if (InitialiseLine(newLine)) {
       atLeastOne = true;
       linesMutex.Wait();
       lines.Append(newLine);
       linesMutex.Signal();
+      PTRACE(3, "LID EP\tAddded line  " << line << ", " << (device.IsLineTerminal(line) ? "terminal" : "network"));
     }
-    else
+    else {
       delete newLine;
+      PTRACE(3, "LID EP\tCould not add line  " << line << ", " << (device.IsLineTerminal(line) ? "terminal" : "network"));
+    }
   }
 
   return atLeastOne;
