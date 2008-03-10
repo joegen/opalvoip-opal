@@ -61,7 +61,7 @@
 
 class MyManager;
 
-class OpalPOTSEndPoint;
+class OpalLineEndPoint;
 class OpalIVREndPoint;
 
 class wxSplitterWindow;
@@ -257,7 +257,7 @@ class InCallPanel : public wxPanel
     InCallPanel(MyManager & manager, wxWindow * parent);
     virtual bool Show(bool show = true);
 
-    void OnStreamsChanged(OpalPOTSEndPoint * potsEP);
+    void OnStreamsChanged(OpalLineEndPoint * potsEP);
 
   private:
     void OnHangUp(wxCommandEvent & event);
@@ -715,7 +715,7 @@ class MyManager : public wxFrame, public OpalManager
     wxDataFormat       m_ClipboardFormat;
 
     MyPCSSEndPoint   * pcssEP;
-    OpalPOTSEndPoint * potsEP;
+    OpalLineEndPoint * potsEP;
     void StartLID();
 
     int       m_NATHandling;

@@ -90,7 +90,7 @@ class MyManager : public OpalManager
     PString currentCallToken;
 
 #if OPAL_LID
-    OpalPOTSEndPoint * potsEP;
+    OpalLineEndPoint * potsEP;
 #endif
     MyPCSSEndPoint   * pcssEP;
 #if OPAL_H323
@@ -100,7 +100,7 @@ class MyManager : public OpalManager
     SIPEndPoint      * sipEP;
 #endif
 #if OPAL_IAX2
-    IAX2EndPoint      * iax2EP;
+    IAX2EndPoint     * iax2EP;
 #endif
 #if OPAL_IVR
     OpalIVREndPoint  * ivrEP;
