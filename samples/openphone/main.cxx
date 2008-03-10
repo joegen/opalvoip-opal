@@ -519,8 +519,9 @@ bool MyManager::Initialise()
   ivrEP = new OpalIVREndPoint(*this);
 #endif
 
-  potsEP = new OpalPOTSEndPoint(*this);
-  pcssEP = new MyPCSSEndPoint(*this);
+#ifdef OPAL_LID
+  potsEP = new OpalLineEndPoint(*this);
+#endif
 
   PwxString str;
   bool onoff;
@@ -3617,7 +3618,7 @@ bool InCallPanel::Show(bool show)
 }
 
 
-void InCallPanel::OnStreamsChanged(OpalPOTSEndPoint * potsEP)
+void InCallPanel::OnStreamsChanged(OpalLineEndPoint * potsEP)
 {
   // Must do this before getting lock on OpalCall to avoid deadlock
   m_SpeakerHandset->Enable(potsEP->GetLine("*") != NULL);

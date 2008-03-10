@@ -540,7 +540,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 
         // Create LID protocol handler, automatically adds to manager
         if (potsEP == NULL)
-          potsEP = new OpalPOTSEndPoint(*this);
+          potsEP = new OpalLineEndPoint(*this);
         if (potsEP->AddDevice(lid)) {
           cout << "Line interface device \"" << devices[d] << "\" added." << endl;
           allMediaFormats += potsEP->GetMediaFormats();

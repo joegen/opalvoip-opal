@@ -378,14 +378,13 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
 #endif
 
 #if OPAL_LID
-  if (potsPos != P_MAX_INDEX) {
-    new OpalPOTSEndPoint(*this);
-    AddRouteEntry("pots:.*=" + defProto + ":<da>");
-  }
+  if (potsPos != P_MAX_INDEX || pstnPos != P_MAX_INDEX) {
+    new OpalLineEndPoint(*this);
 
-  if (pstnPos != P_MAX_INDEX) {
-    new OpalPSTNEndPoint(*this);
-    AddRouteEntry("pstn:.*=" + defUser + ":<da>");
+    if (potsPos != P_MAX_INDEX)
+      AddRouteEntry("pots:.*=" + defProto + ":<da>");
+    if (pstnPos != P_MAX_INDEX)
+      AddRouteEntry("pstn:.*=" + defUser + ":<da>");
   }
 #endif
 

@@ -266,7 +266,6 @@ MyManager::MyManager()
   sipEP = NULL;
 #endif
   potsEP = NULL;
-  pstnEP = NULL;
 #if P_EXPAT
   ivrEP = NULL;
 #endif
@@ -307,11 +306,10 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     sipEP = new SIPEndPoint(*this);
 #endif
 
+#ifdef OPAL_LID
   if (potsEP == NULL)
-    potsEP = new OpalPOTSEndPoint(*this);
-
-  if (pstnEP == NULL)
-    pstnEP = new OpalPSTNEndPoint(*this);
+    potsEP = new OpalLineEndPoint(*this);
+#endif
 
 #if P_EXPAT
   if (ivrEP == NULL)
@@ -445,10 +443,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   rsrc->Add(fieldArray);
   PStringArray devices = fieldArray->GetStrings(cfg);
   if (!potsEP->AddDeviceNames(devices)) {
-    PSYSTEMLOG(Error, "No POTS devices!");
-  }
-  if (!pstnEP->AddDeviceNames(devices)) {
-    PSYSTEMLOG(Error, "No PSTN devices!");
+    PSYSTEMLOG(Error, "No LID devices!");
   }
 
 
