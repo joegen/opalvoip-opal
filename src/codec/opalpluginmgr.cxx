@@ -961,6 +961,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
       // RTP header size, so take that off as ctor adds it back.
       RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize - PluginCodec_RTP_MinHeaderSize);
       dst->SetPayloadType(GetPayloadType(PFalse));
+      dst->SetTimestamp(src.GetTimestamp());
 
       // call the codec function
       unsigned int fromLen = src.GetSize();
