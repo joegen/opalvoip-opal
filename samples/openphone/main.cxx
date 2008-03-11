@@ -1451,10 +1451,13 @@ void MyManager::MakeCall(const PwxString & address)
   config->SetPath(GeneralGroup);
   config->Write(LastDialedKey, m_LastDialed);
 
+  PString token;
   if (potsEP != NULL && potsEP->GetLine("*") != NULL)
-    SetUpCall("pots:*", address, m_currentCallToken);
+    SetUpCall("pots:*", address, token);
   else
-    SetUpCall("pc:*", address, m_currentCallToken);
+    SetUpCall("pc:*", address, token);
+
+  m_currentCall = FindCallWithLock(token, PSafeReference);
 }
 
 
@@ -1465,7 +1468,7 @@ void MyManager::AnswerCall()
 
   StopRingSound();
   SetState(AnsweringState);
-  pcssEP->AcceptIncomingConnection(m_ringingConnectionToken);
+  pcssEP->AcceptIncomingConnection(m_currentCall->GetToken());
 }
 
 
@@ -1474,7 +1477,7 @@ void MyManager::RejectCall()
   if (m_callState != RingingState)
     return;
 
-  ClearCall(m_currentCallToken);
+  ClearCall(m_currentCall->GetToken());
   SetState(IdleState);
 }
 
@@ -1484,16 +1487,15 @@ void MyManager::HangUpCall()
   if (m_callState == IdleState)
     return;
 
-  LogWindow << "Hanging up \"" << m_currentCallToken << '"' << endl;
-  ClearCall(m_currentCallToken);
+  LogWindow << "Hanging up \"" << *m_currentCall << '"' << endl;
+  ClearCall(m_currentCall->GetToken());
   SetState(IdleState);
 }
 
 
 void MyManager::OnRinging(const OpalPCSSConnection & connection)
 {
-  m_ringingConnectionToken = connection.GetToken();
-  m_currentCallToken = connection.GetCall().GetToken();
+  m_currentCall = FindCallWithLock(connection.GetCall().GetToken(), PSafeReference);
 
   PTime now;
   LogWindow << "\nIncoming call at " << now.AsString("w h:mma")
@@ -1538,7 +1540,6 @@ PBoolean MyManager::OnIncomingConnection(OpalConnection & connection)
 
 void MyManager::OnEstablishedCall(OpalCall & call)
 {
-  m_currentCallToken = call.GetToken();
   LogWindow << "Established call from " << call.GetPartyA() << " to " << call.GetPartyB() << endl;
   SetState(InCallState);
 }
@@ -1600,6 +1601,10 @@ void MyManager::OnClearedCall(OpalCall & call)
   LogWindow << ", on " << now.AsString("w h:mma") << ". Duration "
             << setprecision(0) << setw(5) << (now - call.GetStartTime())
             << "s." << endl;
+
+  m_currentCall.SetNULL();
+  m_userConnection.SetNULL();
+  m_protoConnection.SetNULL();
 
   SetState(IdleState);
 }
@@ -1673,28 +1678,45 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-PSafePtr<OpalConnection> MyManager::GetUserConnection()
+PSafePtr<OpalCall> MyManager::GetCall(PSafetyMode mode)
 {
-  PSafePtr<OpalCall> call = GetCall();
-  if (call == NULL)
+  if (m_currentCall == NULL)
     return NULL;
 
-  for (int i = 0; ; i++) {
-    PSafePtr<OpalConnection> connection = call->GetConnection(i);
-    if (connection == NULL)
-      return NULL;
+  PSafePtr<OpalCall> call = m_currentCall;
+  return call.SetSafetyMode(mode) ? call : NULL;
+}
 
-    if (PIsDescendant(&(*connection), OpalPCSSConnection) || PIsDescendant(&(*connection), OpalLineConnection))
-      return connection;
+
+PSafePtr<OpalConnection> MyManager::GetConnection(bool user, PSafetyMode mode)
+{
+  if (m_currentCall == NULL) {
+    m_userConnection.SetNULL();
+    m_protoConnection.SetNULL();
+    return NULL;
   }
 
-  return NULL;
+  if (m_userConnection == NULL || m_protoConnection == NULL) {
+    for (int i = 0; ; i++) {
+      PSafePtr<OpalConnection> connection = m_currentCall->GetConnection(i, PSafeReference);
+      if (connection == NULL)
+        break;
+
+      if (PIsDescendant(&(*connection), OpalPCSSConnection) || PIsDescendant(&(*connection), OpalLineConnection))
+        m_userConnection = connection;
+      else
+        m_protoConnection = connection;
+    }
+  }
+
+  PSafePtr<OpalConnection> connection = user ? m_userConnection : m_protoConnection;
+  return connection.SetSafetyMode(mode) ? connection : NULL;
 }
 
 
 void MyManager::SendUserInput(char tone)
 {
-  PSafePtr<OpalConnection> connection = GetUserConnection();
+  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
   if (connection != NULL)
     connection->OnUserInputTone(tone, 100);
 }
@@ -1709,19 +1731,10 @@ void MyManager::OnUserInputString(OpalConnection & connection, const PString & v
 
 void MyManager::OnVFU(wxCommandEvent& /*event*/)
 {
-  PSafePtr<OpalCall> call = GetCall();
-  if (call == NULL)
-    return;
-
-  for (int i = 0; ; i++) {
-    PSafePtr<OpalConnection> connection = call->GetConnection(i, PSafeReadOnly);
-    if (connection == NULL) 
-      break;
-    if (!PIsDescendant(&(*connection), OpalPCSSConnection) && !PIsDescendant(&(*connection), OpalLineConnection)) {
-      OpalVideoUpdatePicture cmd;
-      connection->OnMediaCommand(cmd, 0);
-      break;
-    }
+  PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReadOnly);
+  if (connection != NULL)  {
+    OpalVideoUpdatePicture cmd;
+    connection->OnMediaCommand(cmd, 0);
   }
 }
 
@@ -1848,7 +1861,7 @@ void MyManager::OnStateChange(wxCommandEvent & event)
       }
 
       m_callState = AnsweringState;
-      pcssEP->AcceptIncomingConnection(m_ringingConnectionToken);
+      pcssEP->AcceptIncomingConnection(m_currentCall->GetToken());
       // Do next state
 
     case AnsweringState :
@@ -3582,18 +3595,6 @@ bool InCallPanel::Show(bool show)
   if (show || m_FirstTime) {
     m_FirstTime = false;
 
-    PSafePtr<OpalCall> call = m_manager.GetCall();
-    if (call != NULL) {
-      for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
-        if (PIsDescendant(&*connection, OpalPCSSConnection) || PIsDescendant(&*connection, OpalLineConnection))
-          m_connection = connection;
-        else {
-          for (PINDEX i = 0; i < NumPages; i++)
-            m_pages[i].SetConnection(connection);
-        }
-      }
-    }
-
     int value = 50;
     config->Read(SpeakerVolumeKey, &value);
     m_SpeakerVolume->SetValue(value);
@@ -3607,10 +3608,6 @@ bool InCallPanel::Show(bool show)
   else {
     config->Write(SpeakerVolumeKey, m_SpeakerVolume->GetValue());
     config->Write(MicrophoneVolumeKey, m_MicrophoneVolume->GetValue());
-
-    m_connection.SetNULL();
-    for (PINDEX i = 0; i < NumPages; i++)
-      m_pages[i].SetConnection(m_connection);
   }
 
   return wxPanel::Show(show);
@@ -3622,13 +3619,11 @@ void InCallPanel::OnStreamsChanged(OpalLineEndPoint * potsEP)
   // Must do this before getting lock on OpalCall to avoid deadlock
   m_SpeakerHandset->Enable(potsEP->GetLine("*") != NULL);
 
-  for (PINDEX i = 0; i < NumPages; i++)
-    m_pages[i].OnStreamsChanged();
-
   int hasVideo = false;
 
-  if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
-    OpalMediaFormatList availableFormats = m_connection->GetMediaFormats();
+  PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
+  if (connection != NULL) {
+    OpalMediaFormatList availableFormats = connection->GetMediaFormats();
     for (PINDEX idx = 0; idx < availableFormats.GetSize(); idx++) {
       if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
         hasVideo = true;
@@ -3636,10 +3631,12 @@ void InCallPanel::OnStreamsChanged(OpalLineEndPoint * potsEP)
         break;
       }
     }
-    m_connection.SetSafetyMode(PSafeReference);
   }
 
   m_StartStopVideo->Enable(hasVideo);
+
+  for (PINDEX i = 0; i < NumPages; i++)
+    m_pages[i].UpdateSession(connection);
 }
 
 
@@ -3651,7 +3648,7 @@ void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 
 void InCallPanel::OnHold(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalCall> call = m_manager.GetCall();
+  PSafePtr<OpalCall> call = m_manager.GetCall(PSafeReadWrite);
   if (call != NULL) {
     if (call->IsOnHold()) {
       call->Retrieve();
@@ -3669,15 +3666,15 @@ void InCallPanel::OnStartStopVideo(wxCommandEvent & /*event*/)
 {
   m_StartStopVideo->Disable();
 
-  if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
-    OpalMediaStreamPtr stream = m_connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
+  PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadWrite);
+  if (connection != NULL) {
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
     if (stream != NULL)
-      m_connection->CloseMediaStream(*stream);
+      connection->CloseMediaStream(*stream);
     else {
-      if (!m_connection->GetCall().OpenSourceMediaStreams(*m_connection, OpalMediaFormat::DefaultVideoSessionID))
+      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaFormat::DefaultVideoSessionID))
         LogWindow << "Could not open video to remote!" << endl;
     }
-    m_connection.SetSafetyMode(PSafeReference);
   }
 }
 
@@ -3727,10 +3724,9 @@ void InCallPanel::MicrophoneVolume(wxScrollEvent & event)
 
 void InCallPanel::SetVolume(bool isMicrophone, int value, bool muted)
 {
-  if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
-    m_connection->SetAudioVolume(isMicrophone, muted ? 0 : value);
-    m_connection.SetSafetyMode(PSafeReference);
-  }
+  PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadOnly);
+  if (connection != NULL)
+    connection->SetAudioVolume(isMicrophone, muted ? 0 : value);
 }
 
 
@@ -3749,17 +3745,18 @@ void InCallPanel::OnUpdateVU(wxTimerEvent& WXUNUSED(event))
 {
   if (IsShown()) {
     if (++m_updateStatistics > 8) {
+      PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
       for (PINDEX i = 0; i < NumPages; i++)
-        m_pages[i].UpdateSession();
+        m_pages[i].UpdateSession(connection);
       m_updateStatistics = 0;
     }
 
     int micLevel = -1;
     int spkLevel = -1;
-    if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
-      spkLevel = m_connection->GetAudioSignalLevel(false);
-      micLevel = m_connection->GetAudioSignalLevel(true);
-      m_connection.SetSafetyMode(PSafeReference);
+    PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadOnly);
+    if (connection != NULL) {
+      spkLevel = connection->GetAudioSignalLevel(false);
+      micLevel = connection->GetAudioSignalLevel(true);
     }
 
     SetGauge(m_vuSpeaker, spkLevel);
@@ -3811,7 +3808,7 @@ double StatisticsField::CalculateBandwidth(DWORD bytes)
 }
 
 
-void StatisticsField::Update(const OpalConnection & connection, const OpalRTPMediaStream & stream)
+void StatisticsField::Update(const OpalConnection & connection, const OpalMediaStream & stream)
 {
   wxString value;
   OpalMediaStatistics statistics;
@@ -3825,7 +3822,7 @@ void StatisticsField::Update(const OpalConnection & connection, const OpalRTPMed
   class type##name##StatisticsField : public StatisticsField { \
   public: type##name##StatisticsField() : StatisticsField(#type #name, type) { } \
     virtual StatisticsField * Clone() const { return new type##name##StatisticsField(*this); } \
-    virtual void GetValue(const OpalConnection & connection, const OpalRTPMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) {
+    virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) {
 
 #define STATISTICS_FIELD_END(type, name) \
     } } Static##type##name##StatisticsField;
@@ -4018,14 +4015,17 @@ void StatisticsPage::Init(InCallPanel * panel,
 }
 
 
-void StatisticsPage::OnStreamsChanged()
+void StatisticsPage::UpdateSession(const OpalConnection * connection)
 {
-  m_isActive = false;
-
-  if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
-    OpalMediaStreamPtr stream = m_connection->GetMediaStream(m_sessionID, m_receiver);
+  if (connection == NULL)
+    m_isActive = false;
+  else {
+    PSafePtr<OpalMediaStream> stream = connection->GetMediaStream(m_sessionID, m_receiver);
     m_isActive = stream != NULL && stream->Open();
-    m_connection.SetSafetyMode(PSafeReference);
+    if (m_isActive) {
+      for (size_t i = 0; i < m_fields.size(); i++)
+        m_fields[i]->Update(*connection, *stream);
+    }
   }
 
   m_window->Enable(m_isActive);
@@ -4033,21 +4033,6 @@ void StatisticsPage::OnStreamsChanged()
   if (!m_isActive) {
     for (size_t i = 0; i < m_fields.size(); i++)
       m_fields[i]->Clear();
-  }
-}
-
-
-void StatisticsPage::UpdateSession()
-{
-  if (m_connection != NULL && m_connection.SetSafetyMode(PSafeReadOnly)) {
-    PSafePtr<OpalRTPMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalRTPMediaStream>(m_connection->GetMediaStream(m_sessionID, m_receiver));
-    m_isActive = stream != NULL && stream->Open();
-    m_window->Enable(m_isActive);
-    if (m_isActive) {
-      for (size_t i = 0; i < m_fields.size(); i++)
-        m_fields[i]->Update(*m_connection, *stream);
-    }
-    m_connection.SetSafetyMode(PSafeReference);
   }
 }
 
