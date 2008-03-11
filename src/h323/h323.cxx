@@ -4028,7 +4028,7 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
   }
 
   // Default error if returns PFalse
-  errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeALCombinationNotSupported;
+  errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
 
   // Check if in set at all
   if (dir != H323Channel::IsReceiver) {
