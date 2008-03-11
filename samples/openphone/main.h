@@ -206,8 +206,8 @@ struct StatisticsField
   void Clear();
   double CalculateBandwidth(DWORD bytes);
   virtual StatisticsField * Clone() const = 0;
-  virtual void Update(const OpalConnection & connection, const OpalRTPMediaStream & stream);
-  virtual void GetValue(const OpalConnection & connection, const OpalRTPMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) = 0;
+  virtual void Update(const OpalConnection & connection, const OpalMediaStream & stream);
+  virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) = 0;
 
   const char    * m_name;
   StatisticsPages m_page;
@@ -231,10 +231,8 @@ class StatisticsPage
       bool            receiver
     );
 
-    void OnStreamsChanged();
-    void UpdateSession();
+    void UpdateSession(const OpalConnection * connection);
     bool IsActive() const { return m_isActive; }
-    void SetConnection(const PSafePtr<OpalConnection> & connection) { m_connection = connection; }
 
   private:
     InCallPanel     * m_panel;
@@ -244,7 +242,6 @@ class StatisticsPage
     bool              m_isActive;
     wxWindow        * m_window;
 
-    PSafePtr<OpalConnection>  m_connection;
     vector<StatisticsField *> m_fields;
 
     StatisticsPage(const StatisticsPage &) { }
@@ -284,6 +281,8 @@ class InCallPanel : public wxPanel
     void MicrophoneVolume(wxScrollEvent & event);
     void SetVolume(bool microphone, int value, bool muted);
 
+    bool GetConnections(bool user);
+
     MyManager & m_manager;
     wxButton  * m_Hold;
     wxButton  * m_StartStopVideo;
@@ -298,7 +297,8 @@ class InCallPanel : public wxPanel
     unsigned    m_updateStatistics;
     bool        m_FirstTime;
 
-    PSafePtr<OpalConnection> m_connection;
+    PSafePtr<OpalConnection> m_userConnection;
+    PSafePtr<OpalConnection> m_protoConnection;
     StatisticsPage           m_pages[NumPages];
 
     DECLARE_EVENT_TABLE()
@@ -603,8 +603,8 @@ class MyManager : public wxFrame, public OpalManager
     void SendUserInput(char tone);
     void OnRinging(const OpalPCSSConnection & connection);
 
-    PSafePtr<OpalCall> GetCall() { return FindCallWithLock(m_currentCallToken); }
-    PSafePtr<OpalConnection> GetUserConnection();
+    PSafePtr<OpalCall>       GetCall(PSafetyMode mode);
+    PSafePtr<OpalConnection> GetConnection(bool user, PSafetyMode mode);
 
   private:
     // OpalManager overrides
@@ -775,8 +775,9 @@ class MyManager : public wxFrame, public OpalManager
     friend ostream & operator<<(ostream & strm, CallState state);
     void SetState(CallState newState);
 
-    PString m_ringingConnectionToken;
-    PString m_currentCallToken;
+    PSafePtr<OpalCall>       m_currentCall;
+    PSafePtr<OpalConnection> m_userConnection;
+    PSafePtr<OpalConnection> m_protoConnection;
 
     PwxString     m_RingSoundDeviceName;
     PwxString     m_RingSoundFileName;
