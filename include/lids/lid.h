@@ -567,12 +567,17 @@ class OpalLineInterfaceDevice : public PObject
       unsigned timeout = 3000 ///<  Milliseconds to wait for
     );
 
-    /**Set a tones filter information.
+    /**Set a calling tones description.
+       This sets the calling tone infromation for both wtah is emitted by PlayTone
+       and what is detected by IsToneDetected().
+
        The description string is of the form
-          frequence ':' cadence
+          frequency ':' cadence
       where frequency is either
-          frequency
-          low '-' high
+          frequency      play tone, detect +/- 5%
+          low '-' high   play tone halfway, but detect anything in range
+          low '+' high   play both tones, detect anything in range
+          low 'x' high   play tone1 modulated by tone2, detect twice modulation range
       and cadence is
           mintime
           ontime '-' offtime
@@ -584,19 +589,27 @@ class OpalLineInterfaceDevice : public PObject
           425:0.4-0.2-0.4-2    425Hz with cadence
                                 400ms on, 200ms off, 400ms on, 2 seconds off
       */
-    virtual PBoolean SetToneFilter(
+    virtual bool SetToneDescription(
       unsigned line,              ///<  Number of line
       CallProgressTones tone,     ///<  Tone filter to change
       const PString & description ///<  Description of filter parameters
     );
 
-    /**Set a tones filter information.
+    enum ToneMixingModes {
+      SimpleTone,
+      AddedTone,
+      ModulatedTone
+    };
+
+    /**Set calling tones filter parameters. Note this function is misnamed as it
+       can also set the calling tone to be output by PlayTone().
       */
-    virtual PBoolean SetToneFilterParameters(
+    virtual bool SetToneParameters(
       unsigned line,            ///<  Number of line
       CallProgressTones tone,   ///<  Tone filter to change
-      unsigned lowFrequency,    ///<  Low frequency
-      unsigned highFrequency,   ///<  High frequency
+      unsigned frequency1,      ///<  Usually low frequency
+      unsigned frequency2,      ///<  Usually high frequency
+      ToneMixingModes mode,     ///<  Mode for how freqencies are mixed, -1 is 
       PINDEX numCadences,       ///<  Number of cadence times
       const unsigned * onTimes, ///<  Cadence ON times
       const unsigned * offTimes ///<  Cadence OFF times

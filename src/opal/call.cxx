@@ -489,12 +489,15 @@ void OpalCall::OnUserInputTone(OpalConnection & connection,
                                char tone,
                                int duration)
 {
+  bool reprocess = duration > 0 && tone != ' ';
+
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection) {
-      if (!conn->SendUserInputTone(tone, duration) && duration > 0 && tone != ' ')
-        connection.OnUserInputString(tone);
-    }
+    if (conn != &connection && conn->SendUserInputTone(tone, duration))
+      reprocess = false;
   }
+
+  if (reprocess)
+    connection.OnUserInputString(tone);
 }
 
 
