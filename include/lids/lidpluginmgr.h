@@ -523,11 +523,12 @@ class OpalPluginLID : public OpalLineInterfaceDevice
 
     /**Set a tones filter information.
       */
-    virtual PBoolean SetToneFilterParameters(
+    virtual bool SetToneParameters(
       unsigned line,            ///<  Number of line
       CallProgressTones tone,   ///<  Tone filter to change
-      unsigned lowFrequency,    ///<  Low frequency
-      unsigned highFrequency,   ///<  High frequency
+      unsigned frequency1,      ///<  Usually low frequency
+      unsigned frequency2,      ///<  Usually high frequency
+      ToneMixingModes mode,     ///<  Mode for how freqencies are mixed, -1 is 
       PINDEX numCadences,       ///<  Number of cadence times
       const unsigned * onTimes, ///<  Cadence ON times
       const unsigned * offTimes ///<  Cadence OFF times
