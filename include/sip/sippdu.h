@@ -347,35 +347,68 @@ class SIPAuthentication : public PObject
 {
   PCLASSINFO(SIPAuthentication, PObject);
   public:
-    SIPAuthentication(
-      const PString & username = PString::Empty(),
-      const PString & password = PString::Empty()
+    SIPAuthentication();
+
+    virtual bool EquivalentTo(
+      const SIPAuthentication & _oldAuth
+    ) = 0;
+
+    virtual PBoolean Parse(
+      const PString & auth,
+      PBoolean proxy
+    ) = 0;
+
+    virtual PBoolean Authorise(
+      SIP_PDU & pdu
+    ) const =  0;
+
+    virtual PBoolean IsProxy() const               { return isProxy; }
+
+    virtual PString GetUsername() const   { return username; }
+    virtual PString GetPassword() const   { return password; }
+    virtual PString GetAuthRealm() const  { return authRealm; }
+
+    virtual void SetUsername(const PString & user) { username = user; }
+    virtual void SetPassword(const PString & pass) { password = pass; }
+    virtual void SetAuthRealm(const PString & r)   { authRealm = r; }
+
+    PString GetAuthParam(const PString & auth, const char * name) const;
+    PString AsHex(PMessageDigest5::Code & digest) const;
+
+    static SIPAuthentication * ParseAuthenticationRequired(bool isProxy,
+                                                const PString & line,
+                                                      PString & errorMsg);
+
+  protected:
+    PBoolean  isProxy;
+
+    PString   username;
+    PString   password;
+    PString   authRealm;
+};
+
+typedef PFactory<SIPAuthentication> SIPAuthenticationFactory;
+
+/////////////////////////////////////////////////////////////////////////
+
+class SIPDigestAuthentication : public SIPAuthentication
+{
+  PCLASSINFO(SIPDigestAuthentication, SIPAuthentication);
+  public:
+    SIPDigestAuthentication();
+
+    SIPDigestAuthentication & operator =(
+      const SIPDigestAuthentication & auth
     );
 
-    SIPAuthentication & operator =(const SIPAuthentication & auth)
-    {
-      isProxy   = auth.isProxy;
-      authRealm = auth.authRealm;
-      username  = auth.username;
-      password  = auth.password;
-      nonce     = auth.nonce;
-      algorithm = auth.algorithm;
-		  opaque    = auth.opaque;
-              
-		  qopAuth    = auth.qopAuth;
-		  qopAuthInt = auth.qopAuthInt;
-		  cnonce     = auth.cnonce;
-		  nonceCount.SetValue(auth.nonceCount);
-
-      return *this;
-    }
+    bool EquivalentTo(
+      const SIPAuthentication & _oldAuth
+    );
 
     PBoolean Parse(
-      const PCaselessString & auth,
+      const PString & auth,
       PBoolean proxy
     );
-
-    PBoolean IsValid() const;
 
     PBoolean Authorise(
       SIP_PDU & pdu
@@ -385,24 +418,11 @@ class SIPAuthentication : public PObject
       Algorithm_MD5,
       NumAlgorithms
     };
-
-    PBoolean IsProxy() const                   { return isProxy; }
-    const PString & GetAuthRealm() const   { return authRealm; }
-    const PString & GetUsername() const    { return username; }
-    const PString & GetPassword() const    { return password; }
     const PString & GetNonce() const       { return nonce; }
     Algorithm GetAlgorithm() const         { return algorithm; }
     const PString & GetOpaque() const      { return opaque; }
 
-    void SetUsername(const PString & user) { username = user; }
-    void SetPassword(const PString & pass) { password = pass; }
-    void SetAuthRealm(const PString & r)   { authRealm = r; }
-
   protected:
-    PBoolean      isProxy;
-    PString   authRealm;
-    PString   username;
-    PString   password;
     PString   nonce;
     Algorithm algorithm;
     PString   opaque;
@@ -412,7 +432,6 @@ class SIPAuthentication : public PObject
     PString cnonce;
     mutable PAtomicInteger nonceCount;
 };
-
 
 /////////////////////////////////////////////////////////////////////////
 // SIP_PDU

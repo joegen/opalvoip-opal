@@ -75,15 +75,13 @@ public:
   void SetState (SIPHandler::State s);
 
   inline SIPHandler::State GetState () 
-    {
-      return state;
-    }
+  { return state; }
 
   virtual OpalTransport &GetTransport()
     { return *transport; }
 
-  virtual const SIPAuthentication & GetAuthentication()
-    { return authentication; }
+  virtual SIPAuthentication * GetAuthentication()
+  { return authentication; }
 
   virtual const SIPURL & GetTargetAddress()
     { return targetAddress; }
@@ -120,6 +118,10 @@ public:
 
   const PStringList & GetRouteSet() const { return routeSet; }
 
+  PString                     authenticationUsername;
+  PString                     authenticationPassword;
+  PString                     authenticationAuthRealm;
+
 protected:
   void CollapseFork(SIPTransaction & transaction);
   PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
@@ -127,15 +129,17 @@ protected:
   bool WriteSIPHandler(OpalTransport & transport);
 
   SIPEndPoint               & endpoint;
-  SIPAuthentication           authentication;
+
+  SIPAuthentication           * authentication;
+
   PSafeList<SIPTransaction>   transactions;
   OpalTransport             * transport;
   SIPURL                      targetAddress;
   PString                     callID;
-  int	                      expire;
+  int	                        expire;
   int                         originalExpire;
   PStringList                 routeSet;
-  PString		      body;
+  PString		                  body;
   unsigned                    authenticationAttempts;
   State                       state;
   PTimer                      expireTimer; 

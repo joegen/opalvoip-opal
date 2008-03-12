@@ -985,17 +985,18 @@ PString SIPEndPoint::GetUserAgent() const
 }
 
 
-PBoolean SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &auth) 
+PBoolean SIPEndPoint::GetAuthentication(const PString & authRealm, PString & realm, PString & user, PString & password) 
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, PString::Empty(), PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(authRealm, PString::Empty(), PSafeReadOnly);
   if (handler == NULL)
     return PFalse;
 
-  auth = handler->GetAuthentication();
+  realm    = handler->authenticationAuthRealm;
+  user     = handler->authenticationUsername;
+  password = handler->authenticationPassword;
 
   return PTrue;
 }
-
 
 SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url)
 {
@@ -1125,12 +1126,8 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
 
     if (!work->callID.IsEmpty()) {
       PSafePtr<SIPConnection> connection = work->ep->GetSIPConnectionWithLock(work->callID, PSafeReadWrite);
-      if (connection != NULL) {
-        if (connection->LockReadWrite()) {
-          connection->OnReceivedPDU(*work->pdu);
-        }
-        connection->UnlockReadWrite();
-      }
+      if (connection != NULL) 
+        connection->OnReceivedPDU(*work->pdu);
     }
 
     delete work->pdu;

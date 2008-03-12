@@ -56,6 +56,7 @@
 
 #define new PNEW
 
+static SIPAuthenticationFactory::Worker<SIPDigestAuthentication> sip_md5Authenticator("digest");
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -164,7 +165,7 @@ const char * SIP_PDU::GetStatusCodeDescription (int code)
 }
 
 
-static const char * const AlgorithmNames[SIPAuthentication::NumAlgorithms] = {
+static const char * const AlgorithmNames[SIPDigestAuthentication::NumAlgorithms] = {
   "MD5"
 };
 
@@ -1029,18 +1030,15 @@ PString SIPMIMEInfo::GetFullOrCompact(const char * fullForm, char compactForm) c
   return (*this)(PCaselessString(compactForm));
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPAuthentication::SIPAuthentication(const PString & user, const PString & pwd)
-  : username(user), password(pwd)
+SIPAuthentication::SIPAuthentication()
 {
-  algorithm = NumAlgorithms;
   isProxy = PFalse;
 }
 
 
-static PString GetAuthParam(const PString & auth, const char * name)
+PString SIPAuthentication::GetAuthParam(const PString & auth, const char * name) const
 {
   PString value;
 
@@ -1069,9 +1067,76 @@ static PString GetAuthParam(const PString & auth, const char * name)
   return value;
 }
 
-
-PBoolean SIPAuthentication::Parse(const PCaselessString & auth, PBoolean proxy)
+PString SIPAuthentication::AsHex(PMessageDigest5::Code & digest) const
 {
+  PStringStream out;
+  out << hex << setfill('0');
+  for (PINDEX i = 0; i < 16; i++)
+    out << setw(2) << (unsigned)((BYTE *)&digest)[i];
+  return out;
+}
+
+SIPAuthentication * SIPAuthentication::ParseAuthenticationRequired(bool isProxy,
+                                                        const PString & line,
+                                                              PString & errorMsg)
+{
+  // determine the authentication scheme
+  PINDEX pos = line.Find(' ');
+  PString scheme = line.Left(pos).Trim().ToLower();
+  SIPAuthentication * newAuth = SIPAuthenticationFactory::CreateInstance(scheme);
+  if (newAuth == NULL) {
+    errorMsg = "Unknown authentication scheme " + scheme;
+    return NULL;
+  }
+
+  // parse the new authentication scheme
+  if (!newAuth->Parse(line, isProxy)) {
+    delete newAuth;
+    errorMsg = "Failed to parse authentication for scheme " + scheme;
+    return NULL;
+  }
+
+  // switch authentication schemes
+  return newAuth;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+SIPDigestAuthentication::SIPDigestAuthentication()
+{
+  algorithm = NumAlgorithms;
+}
+
+SIPDigestAuthentication & SIPDigestAuthentication::operator =(const SIPDigestAuthentication & auth)
+{
+  isProxy   = auth.isProxy;
+  authRealm = auth.authRealm;
+  username  = auth.username;
+  password  = auth.password;
+  nonce     = auth.nonce;
+  opaque    = auth.opaque;
+          
+  qopAuth    = auth.qopAuth;
+  qopAuthInt = auth.qopAuthInt;
+  cnonce     = auth.cnonce;
+  nonceCount.SetValue(auth.nonceCount);
+
+  return *this;
+}
+
+bool SIPDigestAuthentication::EquivalentTo(const SIPAuthentication & _oldAuth)
+{
+  const SIPDigestAuthentication * oldAuth = dynamic_cast<const SIPDigestAuthentication *>(&_oldAuth);
+  PAssert(oldAuth != NULL, "Cannot compare auths of different classes");
+
+  return GetUsername() == oldAuth->GetUsername() &&
+         GetNonce()    == oldAuth->GetNonce();
+}
+
+PBoolean SIPDigestAuthentication::Parse(const PString & _auth, PBoolean proxy)
+{
+  PCaselessString auth =_auth;
+
   authRealm.MakeEmpty();
   nonce.MakeEmpty();
   opaque.MakeEmpty();
@@ -1081,9 +1146,9 @@ PBoolean SIPAuthentication::Parse(const PCaselessString & auth, PBoolean proxy)
   cnonce.MakeEmpty();
   nonceCount.SetValue(1);
 
-  if (auth.Find("digest") != 0) {
-    PTRACE(1, "SIP\tUnknown authentication type");
-    return PFalse;
+  if (auth.Find("digest") == P_MAX_INDEX) {
+    PTRACE(1, "SIP\tDigest auth does not contian digest keyword");
+    return false;
   }
 
   PCaselessString str = GetAuthParam(auth, "algorithm");
@@ -1092,7 +1157,7 @@ PBoolean SIPAuthentication::Parse(const PCaselessString & auth, PBoolean proxy)
   else if (str == "md5")
     algorithm = Algorithm_MD5;
   else {
-    PTRACE(1, "SIP\tUnknown authentication algorithm");
+    PTRACE(1, "SIP\tUnknown digest algorithm " << str);
     return PFalse;
   }
 
@@ -1127,29 +1192,8 @@ PBoolean SIPAuthentication::Parse(const PCaselessString & auth, PBoolean proxy)
 }
 
 
-PBoolean SIPAuthentication::IsValid() const
+PBoolean SIPDigestAuthentication::Authorise(SIP_PDU & pdu) const
 {
-  return /*!authRealm && */ !username && !nonce && algorithm < NumAlgorithms;
-}
-
-
-static PString AsHex(PMessageDigest5::Code & digest)
-{
-  PStringStream out;
-  out << hex << setfill('0');
-  for (PINDEX i = 0; i < 16; i++)
-    out << setw(2) << (unsigned)((BYTE *)&digest)[i];
-  return out;
-}
-
-
-PBoolean SIPAuthentication::Authorise(SIP_PDU & pdu) const
-{
-  if (!IsValid()) {
-    PTRACE(3, "SIP\tNo authentication information present");
-    return PFalse;
-  }
-
   PTRACE(3, "SIP\tAdding authentication information");
 
   PMessageDigest5 digestor;
@@ -1233,6 +1277,88 @@ PBoolean SIPAuthentication::Authorise(SIP_PDU & pdu) const
   return PTrue;
 }
 
+////////////////////////////////////////////////////////////////////////////////////
+
+class SIPNTLMAuthentication : public SIPAuthentication
+{
+  public: 
+    SIPNTLMAuthentication();
+
+    bool EquivalentTo(
+      const SIPAuthentication & _oldAuth
+    );
+
+    PBoolean Parse(
+      const PString & auth,
+      PBoolean proxy
+    );
+
+    PBoolean Authorise(
+      SIP_PDU & pdu
+    ) const;
+
+    struct Type1MessageHdr {
+       BYTE     protocol[8];     // 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'
+       BYTE     type;            // 0x01
+       BYTE     _zero1[3];
+       WORD     flags;           // 0xb203
+       BYTE     _zero2[2];
+
+       PUInt16l dom_len;         // domain string length
+       PUInt16l dom_len2;        // domain string length
+       PUInt16l dom_off;         // domain string offset
+       BYTE     _zero3[2];
+
+       PUInt16l host_len;        // host string length
+       PUInt16l host_len2;       // host string length
+       PUInt16l host_off;        // host string offset (always 0x20)
+       BYTE     _zero4[2];
+
+       BYTE     hostAndDomain;   // host string and domain (ASCII)
+    };
+
+    void ConstructType1Message(PBYTEArray & message);
+
+  public:
+    PString domain;
+};
+
+SIPNTLMAuthentication::SIPNTLMAuthentication()
+{
+  domain = "My Domain";
+}
+
+bool SIPNTLMAuthentication::EquivalentTo(const SIPAuthentication & _oldAuth)
+{
+  return false;
+}
+
+PBoolean SIPNTLMAuthentication::Parse(const PString & auth, PBoolean proxy)
+{
+  return false;
+}
+
+PBoolean SIPNTLMAuthentication::Authorise(SIP_PDU & pdu) const
+{
+  return false;
+}
+
+void SIPNTLMAuthentication::ConstructType1Message(PBYTEArray & buffer)
+{
+  BYTE * ptr = buffer.GetPointer(sizeof(Type1MessageHdr) + username.GetLength() + domain.GetLength());
+
+  Type1MessageHdr * hdr = (Type1MessageHdr *)ptr;
+  memset(hdr, 0, sizeof(Type1MessageHdr));
+  memcpy(hdr->protocol, "NTLMSSP", 7);
+  hdr->flags = 0xb203;
+
+  hdr->host_off = &hdr->hostAndDomain - (BYTE *)hdr;
+  PAssert(hdr->host_off == 0x20, "NTLM auth cannot be constructed");
+  hdr->host_len = hdr->host_len2 = (PUInt16l)username.GetLength();
+
+  hdr->dom_off = hdr->host_off + hdr->host_len;
+  hdr->dom_len = hdr->dom_len2  = (PUInt16l)domain.GetLength();
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -1918,8 +2044,8 @@ PBoolean SIPTransaction::Start()
     return PFalse;
   }
 
-  if (connection != NULL)
-    connection->GetAuthenticator().Authorise(*this); 
+  if (connection != NULL && connection->GetAuthenticator() != NULL)
+    connection->GetAuthenticator()->Authorise(*this); 
 
   PSafeLockReadWrite lock(*this);
 
@@ -2539,8 +2665,8 @@ SIPAck::SIPAck(SIPTransaction & invite)
 void SIPAck::Construct()
 {
   // Add authentication if had any on INVITE
-  if (transaction.GetMIME().Contains("Proxy-Authorization") || transaction.GetMIME().Contains("Authorization"))
-    transaction.GetConnection()->GetAuthenticator().Authorise(*this);
+  //if (transaction.GetMIME().Contains("Proxy-Authorization") || transaction.GetMIME().Contains("Authorization"))
+  //  transaction.GetConnection()->GetAuthenticator()->Authorise(*this);
 }
 
 
