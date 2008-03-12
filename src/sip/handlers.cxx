@@ -86,6 +86,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
   remotePartyAddress = targetAddress.AsQuotedString();
 
   authenticationAttempts = 0;
+  authentication = NULL;
 
   // Look for a "proxy" parameter to override default proxy
   const PStringToString& params = targetAddress.GetParamVars();
@@ -118,6 +119,8 @@ SIPHandler::~SIPHandler()
     transport->CloseWait();
     delete transport;
   }
+  if (authentication != NULL)
+    delete authentication;
 }
 
 
@@ -162,7 +165,8 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
     if (state == Unsubscribing)
       transaction->GetMIME().SetExpires(0);
     callID = transaction->GetMIME().GetCallID();
-    authentication.Authorise(*transaction); // If already have info from last time, use it!
+    if (authentication != NULL)
+      authentication->Authorise(*transaction); // If already have info from last time, use it!
     if (transaction->Start()) {
       transactions.Append(transaction);
       return true;
@@ -213,52 +217,58 @@ PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
   bool isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+
 #if PTRACING
   const char * proxyTrace = isProxy ? "Proxy " : "";
 #endif
   PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response");
-
-  PString lastNonce;
-  PString lastUsername;
-  if (authentication.IsValid()) {
-    lastUsername = authentication.GetUsername();
-    lastNonce = authentication.GetNonce();
-  }
-
-  // Received authentication required response, parse it
-  if (!authentication.Parse(response.GetMIME()(isProxy ? "Proxy-Authenticate" : "WWW-Authenticate"), isProxy)) {
-    OnFailed(SIP_PDU::Failure_UnAuthorised);
-    return;
-  }
-
-  // Already sent handler for that callID. Check if params are different
-  // from the ones found for the given realm
-  if (authentication.IsValid() &&
-      authentication.GetUsername() == lastUsername &&
-      authentication.GetNonce() == lastNonce &&
-      GetState() == SIPHandler::Subscribing) {
-    PTRACE(2, "SIP\tAlready done REGISTER/SUBSCRIBE for " << proxyTrace << "Authentication Required");
-    OnFailed(SIP_PDU::Failure_UnAuthorised);
-    return;
-  }
   
   // Abort after some unsuccesful authentication attempts. This is required since
   // some implementations return "401 Unauthorized" with a different nonce at every
   // time.
-  if(authenticationAttempts >= 10) {
+  if (authenticationAttempts >= 10) {
     PTRACE(1, "SIP\tAborting after " << authenticationAttempts << " attempts to REGISTER/SUBSCRIBE");
     OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
   }
-
   ++authenticationAttempts;
+
+  // authenticate 
+  PString errorMsg;
+  SIPAuthentication * newAuth = SIPAuthentication::ParseAuthenticationRequired(isProxy, 
+                                                                               response.GetMIME()(isProxy ? "Proxy-Authenticate" : "WWW-Authenticate"),
+                                                                               errorMsg);
+  if (newAuth == NULL) {
+    PTRACE(2, "SIP\t" << errorMsg);
+    OnFailed(SIP_PDU::Failure_UnAuthorised);
+    return;
+  }
+
+  // check to see if this is a follow-on from the last authentication scheme used
+  if (authentication != NULL && 
+      (authentication->GetClass() == newAuth->GetClass()) && 
+      newAuth->EquivalentTo(*authentication) &&
+      GetState() == SIPHandler::Subscribing) {
+    delete newAuth;
+    PTRACE(1, "SIP\tAuthentication already performed for " << proxyTrace << "Authentication Required");
+    OnFailed(SIP_PDU::Failure_UnAuthorised);
+    return;
+  }
+
+  authenticationAuthRealm = newAuth->GetAuthRealm();
+  newAuth->SetUsername(authenticationUsername);
+  newAuth->SetPassword(authenticationPassword);
+
+  // switch authentication schemes
+  delete authentication;
+  authentication = newAuth;
 
   // And end connect mode on the transport
   CollapseFork(transaction);
 
   // Restart the transaction with new authentication handler
   SIPTransaction * newTransaction = CreateTransaction(GetTransport());
-  if (!authentication.Authorise(*newTransaction)) {
+  if (!authentication->Authorise(*newTransaction)) {
     // don't send again if no authentication handler available
     OnFailed(SIP_PDU::Failure_UnAuthorised);
     delete newTransaction; // Not started yet, we need to delete
@@ -372,9 +382,9 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
 {
   m_parameters.m_expire = expire; // Put possibly adjusted value back
 
-  authentication.SetUsername(params.m_authID);
-  authentication.SetPassword(params.m_password);
-  authentication.SetAuthRealm(params.m_realm);
+  authenticationUsername  = params.m_authID;
+  authenticationPassword  = params.m_password;
+  authenticationAuthRealm = params.m_realm;
 }
 
 
@@ -441,11 +451,12 @@ void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code)
 void SIPRegisterHandler::UpdateParameters(const SIPRegister::Params & params)
 {
   if (!params.m_authID.IsEmpty())
-    authentication.SetUsername(params.m_authID); // Adjust the authUser if required 
+    authenticationUsername = params.m_authID;   // Adjust the authUser if required 
   if (!params.m_realm.IsEmpty())
-    authentication.SetAuthRealm(params.m_realm);   // Adjust the realm if required 
+    authenticationAuthRealm = params.m_realm;   // Adjust the realm if required 
   if (!params.m_password.IsEmpty())
-    authentication.SetPassword(params.m_password); // Adjust the password if required 
+    authenticationPassword = params.m_password; // Adjust the password if required 
+
   SetExpire(params.m_expire);
 }
 
@@ -884,12 +895,13 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
 {
   PIPSocket::Address realmAddress;
 
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler)
-    if (authRealm == handler->GetAuthentication().GetAuthRealm() && (userName.IsEmpty() || userName == handler->GetAuthentication().GetUsername()))
-      return handler;
   for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (PIPSocket::GetHostAddress(handler->GetAuthentication().GetAuthRealm(), realmAddress))
-      if (realmAddress == PIPSocket::Address(authRealm) && (userName.IsEmpty() || userName == handler->GetAuthentication().GetUsername()))
+    if (authRealm == handler->authenticationAuthRealm && (userName.IsEmpty() || userName == handler->authenticationUsername))
+      return handler;
+  }
+  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
+    if (PIPSocket::GetHostAddress(handler->authenticationAuthRealm, realmAddress))
+      if (realmAddress == PIPSocket::Address(authRealm) && (userName.IsEmpty() || userName == handler->authenticationUsername))
         return handler;
   }
   return NULL;

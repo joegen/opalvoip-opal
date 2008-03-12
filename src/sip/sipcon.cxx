@@ -179,6 +179,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , originalInvite(NULL)
   , needReINVITE(false)
   , targetAddress(destination)
+  , authentication(NULL)
   , ackReceived(false)
   , releaseMethod(ReleaseWithNothing)
 {
@@ -212,6 +213,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   zrtpSession->ctx_usr_data = this;
 #endif
 
+  sessionTimer.SetNotifier(PCREATE_NOTIFIER(OnSessionTimeout));
+
   PTRACE(4, "SIP\tCreated connection.");
 }
 
@@ -232,9 +235,8 @@ SIPConnection::~SIPConnection()
   }
 #endif
 
+  delete authentication;
   delete originalInvite;
-  originalInvite = NULL;
-
   delete transport;
 
   PTRACE(4, "SIP\tDeleted connection.");
@@ -547,6 +549,7 @@ PBoolean SIPConnection::SetConnected()
   SendInviteOK(sdpOut);
 
   releaseMethod = ReleaseWithBYE;
+  sessionTimer = 10000;
 
   // switch phase 
   SetPhase(ConnectedPhase);
@@ -1964,14 +1967,9 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 }
 
 
-PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
-                                                     SIP_PDU & response)
+PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
   PBoolean isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
-  SIPURL proxy;
-  SIPAuthentication auth;
-  PString lastUsername;
-  PString lastNonce;
 
 #if PTRACING
   const char * proxyTrace = isProxy ? "Proxy " : "";
@@ -1984,47 +1982,46 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
   PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response");
 
-  PCaselessString authenticateTag = isProxy ? "Proxy-Authenticate" : "WWW-Authenticate";
-
-  // Received authentication required response, try to find authentication
-  // for the given realm if no proxy
-  if (!auth.Parse(response.GetMIME()(authenticateTag), isProxy)) {
-    return PFalse;
+  // determine the authentication type
+  PString errorMsg;
+  SIPAuthentication * newAuth = SIPAuthentication::ParseAuthenticationRequired(isProxy, 
+                                                                               response.GetMIME()(isProxy ? "Proxy-Authenticate" : "WWW-Authenticate"),
+                                                                               errorMsg);
+  if (newAuth == NULL) {
+    PTRACE(1, "SIP\t" << errorMsg);
+    return false;
   }
 
-  // Save the username, realm and nonce
-  lastUsername = auth.GetUsername();
-  lastNonce = auth.GetNonce();
+  SIPURL proxy = endpoint.GetProxy();
 
-  // Try to find authentication parameters for the given realm,
+   // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
-  if (!endpoint.GetAuthentication(auth.GetAuthRealm(), authentication)) {
-    PTRACE (3, "SIP\tCouldn't find authentication information for realm " << auth.GetAuthRealm()
-            << ", will use SIP Outbound Proxy authentication settings, if any");
-    if (endpoint.GetProxy().IsEmpty())
-      return PFalse;
-
-    authentication.SetUsername(endpoint.GetProxy().GetUserName());
-    authentication.SetPassword(endpoint.GetProxy().GetPassword());
+  PString realm, user, password;
+  if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), realm, user, password)) {
+    PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
+    newAuth->SetUsername(user);
+    newAuth->SetPassword(password);
   }
-
-  if (!authentication.Parse(response.GetMIME()(authenticateTag), isProxy))
-    return PFalse;
-  
-  if (!authentication.IsValid() || (lastUsername == authentication.GetUsername() && lastNonce == authentication.GetNonce())) {
-    PTRACE(2, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
+  else if (!proxy.IsEmpty()) {
+    PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
+    newAuth->SetUsername(proxy.GetUserName());
+    newAuth->SetPassword(proxy.GetPassword());
+  } 
+  else {
+    PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm());
+    delete newAuth;
     return PFalse;
   }
 
   // Restart the transaction with new authentication info
-  // and start with a fresh To tag
+  delete authentication;
+  authentication = newAuth;
+
+  // start with a fresh To tag
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.
   remotePartyAddress.Delete(remotePartyAddress.Find (';'), P_MAX_INDEX);
   
-  if (proxy.IsEmpty())
-    proxy = endpoint.GetProxy();
-
   // Default routeSet if there is a proxy
   if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
     routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
@@ -2033,14 +2030,13 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   RTP_SessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
   SIPTransaction * invite = new SIPInvite(*this, *transport, origRtpSessions);
   transport->SetInterface(transaction.GetInterface());
-  if (invite->Start())
-  {
-    forkedInvitations.Append(invite);
-    return PTrue;
+  if (!invite->Start()) {
+    PTRACE(2, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
+    return PFalse;
   }
 
-  PTRACE(2, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
-  return PFalse;
+  forkedInvitations.Append(invite);
+  return PTrue;
 }
 
 
@@ -2053,6 +2049,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   PTRACE(3, "SIP\tReceived INVITE OK response");
   releaseMethod = ReleaseWithBYE;
+  sessionTimer = 10000;
 
   OnReceivedSDP(response);
 
@@ -2600,8 +2597,15 @@ void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
 void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 {
 }
+
 #endif // OPAL_VIDEO
 
+void SIPConnection::OnSessionTimeout(PTimer &, INT)
+{
+  //SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);  
+  //invite->Start();  
+  //sessionTimer = 10000;
+}
 
 #endif // OPAL_SIP
 

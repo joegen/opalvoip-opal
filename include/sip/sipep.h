@@ -546,9 +546,8 @@ class SIPEndPoint : public OpalEndPoint
     
     /**Return the SIPAuthentication for a specific realm.
      */
-    PBoolean GetAuthentication(const PString & authRealm, SIPAuthentication &); 
+    PBoolean GetAuthentication(const PString & authRealm, PString & realm, PString & user, PString & password); 
     
-
     /**Return the registered party name URL for the given host.
      *
      * That URL can be used in the FORM field of the PDU's. 

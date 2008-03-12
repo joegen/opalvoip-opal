@@ -423,7 +423,7 @@ class SIPConnection : public OpalConnection
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     const SIPURL & GetTargetAddress() const { return targetAddress; }
     const PStringList & GetRouteSet() const { return routeSet; }
-    const SIPAuthentication & GetAuthenticator() const { return authentication; }
+    SIPAuthentication * GetAuthenticator() const { return authentication; }
 
     PBoolean OnOpenIncomingMediaChannels();
 
@@ -495,7 +495,7 @@ class SIPConnection : public OpalConnection
     bool                  needReINVITE;
     PStringList           routeSet;
     SIPURL                targetAddress;
-    SIPAuthentication     authentication;
+    SIPAuthentication     * authentication;
 
     PTimer                    ackTimer;
     PTimer                    ackRetry;
@@ -524,6 +524,11 @@ class SIPConnection : public OpalConnection
                                 PBoolean clearAll = PFalse  ///<  Clear all sessions
                                );
 #endif
+
+  protected:
+    PTimer sessionTimer;
+  public:
+    PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
 };
 
 
