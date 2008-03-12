@@ -303,7 +303,7 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
 
       // if this is end packet, do callabck and change state
       if ((payload[1]&0x80) != 0) {
-        receiveTimer.Stop();
+        receiveTimer.Stop(false);
         receiveState = ReceiveIdle;
         OnEndReceive(receivedTone, duration, timeStamp);
       }
@@ -321,9 +321,11 @@ void OpalRFC2833Proto::ReceiveTimeout(PTimer &, INT)
 
   PWaitAndSignal m(mutex);
 
-  receiveTimer.Stop();
-  receiveState = ReceiveIdle;
-  OnEndReceive(receivedTone, 0, 0);
+  if (receiveState != ReceiveIdle) {
+    receiveTimer.Stop();
+    receiveState = ReceiveIdle;
+    OnEndReceive(receivedTone, 0, 0);
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////
