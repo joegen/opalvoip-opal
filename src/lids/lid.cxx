@@ -470,8 +470,8 @@ bool OpalLineInterfaceDevice::SetToneDescription(unsigned line,
     }
   }
   if (low_freq  < 100 || low_freq  > 3000 ||
-      high_freq < 100 || high_freq > 3000 ||
-      low_freq > high_freq) {
+      (mode != ModulatedTone ? (high_freq < 100 || high_freq > 3000 || low_freq > high_freq)
+                             : (high_freq < 5 || high_freq > 100))) {
     PTRACE(1, "LID\tIllegal frequency specified: " << description);
     return PFalse;
   }
