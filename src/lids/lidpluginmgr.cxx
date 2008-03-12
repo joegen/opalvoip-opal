@@ -885,15 +885,16 @@ PBoolean OpalPluginLID::WaitForTone(unsigned line, CallProgressTones tone, unsig
 }
 
 
-PBoolean OpalPluginLID::SetToneFilterParameters(unsigned line,
-                                            CallProgressTones tone,
-                                            unsigned lowFrequency,
-                                            unsigned highFrequency,
-                                            PINDEX numCadences,
-                                            const unsigned * onTimes,
-                                            const unsigned * offTimes)
+bool OpalPluginLID::SetToneParameters(unsigned line,
+                                      CallProgressTones tone,
+                                      unsigned frequency1,
+                                      unsigned frequency2,
+                                      ToneMixingModes mode,
+                                      PINDEX numCadences,
+                                      const unsigned * onTimes,
+                                      const unsigned * offTimes)
 {
-  return CHECK_FN(SetToneFilterParameters, (m_context, line, tone, lowFrequency, highFrequency, numCadences, onTimes, offTimes)) == PluginLID_NoError;
+  return CHECK_FN(SetToneParameters, (m_context, line, tone, frequency1, frequency2, mode, numCadences, onTimes, offTimes)) == PluginLID_NoError;
 }
 
 
