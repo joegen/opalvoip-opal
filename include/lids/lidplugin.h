@@ -195,13 +195,14 @@ typedef struct PluginLID_Definition
   PluginLID_Errors (*WaitForToneDetect)(void * context, unsigned line, unsigned timeout, int * tone);
   PluginLID_Errors (*WaitForTone)(void * context, unsigned line, int tone, unsigned timeout);
 
-  PluginLID_Errors (*SetToneFilterParameters)(void * context, unsigned line,
-                                              unsigned tone,
-                                              unsigned lowFrequency,
-                                              unsigned highFrequency,
-                                              unsigned numCadences,
-                                              const unsigned * onTimes,
-                                              const unsigned * offTimes);
+  PluginLID_Errors (*SetToneParameters)(void * context, unsigned line,
+                                        unsigned tone,
+                                        unsigned lowFrequency,
+                                        unsigned highFrequency,
+                                        unsigned mixingMode,
+                                        unsigned numCadences,
+                                        const unsigned * onTimes,
+                                        const unsigned * offTimes);
   PluginLID_Errors (*PlayTone)(void * context, unsigned line, unsigned tone);
   PluginLID_Errors (*IsTonePlaying)(void * context, unsigned line, PluginLID_Boolean * playing);
   PluginLID_Errors (*StopTone)(void * context, unsigned line);

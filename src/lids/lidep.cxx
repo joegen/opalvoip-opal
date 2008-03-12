@@ -398,7 +398,7 @@ void OpalLineEndPoint::MonitorLines(PThread &, INT)
 
 void OpalLineEndPoint::MonitorLine(OpalLine & line)
 {
-  PSafePtr<OpalLineConnection> connection = GetLIDConnectionWithLock(line.GetToken());
+  PSafePtr<OpalLineConnection> connection = GetLIDConnectionWithLock(line.GetToken(), PSafeReference);
   if (connection != NULL) {
     // Are still in a call, pass hook state it to the connection object for handling
     connection->Monitor(!line.IsDisconnected());
@@ -448,13 +448,11 @@ void OpalLineEndPoint::MonitorLine(OpalLine & line)
 }
 
 
-#if 1
 PBoolean OpalLineEndPoint::OnSetUpConnection(OpalLineConnection & PTRACE_PARAM(connection))
 {
   PTRACE(3, "LID EP\tOnSetUpConnection" << connection);
   return PTrue;
 }
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -496,8 +494,10 @@ void OpalLineConnection::OnReleased()
   }
 
   if (line.IsOffHook()) {
-    PTRACE(3, "LID Con\tPlaying clear tone until handset onhook");
-    line.PlayTone(OpalLineInterfaceDevice::ClearTone);
+    if (line.PlayTone(OpalLineInterfaceDevice::ClearTone))
+      PTRACE(3, "LID Con\tPlaying clear tone until handset onhook");
+    else
+      PTRACE(2, "LID Con\tCould not play clear tone until handset onhook");
     line.SetOnHook();
   }
   line.Ring(0, NULL);
@@ -531,7 +531,13 @@ PBoolean OpalLineConnection::SetAlerting(const PString & calleeName, PBoolean)
   alertingTime = PTime();
 
   line.SetCallerID(calleeName);
-  return line.PlayTone(OpalLineInterfaceDevice::RingTone);
+
+  if (line.PlayTone(OpalLineInterfaceDevice::RingTone))
+    PTRACE(3, "LID Con\tPlaying ring tone");
+  else
+    PTRACE(2, "LID Con\tCould not play ring tone");
+
+  return true;
 }
 
 
@@ -629,10 +635,17 @@ PBoolean OpalLineConnection::PromptUserInput(PBoolean play)
 {
   PTRACE(3, "LID Con\tConnection " << callToken << " dial tone " << (play ? "started" : "stopped"));
 
-  if (play)
-    return line.PlayTone(OpalLineInterfaceDevice::DialTone);
-  else
-    return line.StopTone();
+  if (play) {
+    if (line.PlayTone(OpalLineInterfaceDevice::DialTone)) {
+      PTRACE(3, "LID Con\tPlaying dial tone");
+      return true;
+    }
+    PTRACE(2, "LID Con\tCould not dial ring tone");
+    return false;
+  }
+
+  line.StopTone();
+  return true;
 }
 
 
@@ -649,6 +662,8 @@ void OpalLineConnection::StartIncoming()
 void OpalLineConnection::Monitor(PBoolean offHook)
 {
   if (wasOffHook != offHook) {
+    PSafeLockReadWrite mutex(*this);
+
     wasOffHook = offHook;
     PTRACE(3, "LID Con\tConnection " << callToken << " " << (offHook ? "off" : "on") << " hook: phase=" << phase);
 
