@@ -461,6 +461,7 @@ class OptionsDialog : public wxDialog
     wxListCtrl   * m_codecOptions;
     wxTextCtrl   * m_codecOptionValue;
     wxStaticText * m_CodecOptionValueLabel;
+    wxStaticText * m_CodecOptionValueError;
 
     void AddCodec(wxCommandEvent & event);
     void RemoveCodec(wxCommandEvent & event);

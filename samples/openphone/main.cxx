@@ -2389,6 +2389,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_codecOptionValue->Disable();
   m_CodecOptionValueLabel = FindWindowByNameAs<wxStaticText>(this, "CodecOptionValueLabel");
   m_CodecOptionValueLabel->Disable();
+  m_CodecOptionValueError = FindWindowByNameAs<wxStaticText>(this, "CodecOptionValueError");
+  m_CodecOptionValueError->Show(false);
 
   ////////////////////////////////////////
   // H.323 fields
@@ -3130,8 +3132,6 @@ void OptionsDialog::DeselectedCodecOption(wxListEvent & /*event*/)
 
 void OptionsDialog::ChangedCodecOptionValue(wxCommandEvent & /*event*/)
 {
-  PwxString newValue = m_codecOptionValue->GetValue();
-
   wxListItem item;
   item.m_itemId = m_codecOptions->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
   if (item.m_itemId < 0)
@@ -3141,23 +3141,28 @@ void OptionsDialog::ChangedCodecOptionValue(wxCommandEvent & /*event*/)
   item.m_col = 1;
   m_codecOptions->GetItem(item);
 
+  PwxString newValue = m_codecOptionValue->GetValue();
   if (item.m_text == newValue)
     return;
-
-  item.m_text = newValue;
-  m_codecOptions->SetItem(item);
-
-  item.m_col = 0;
-  m_codecOptions->GetItem(item);
 
   wxArrayInt selections;
   PAssert(m_selectedCodecs->GetSelections(selections) == 1, PLogicError);
   MyMedia * media = (MyMedia *)m_selectedCodecs->GetClientData(selections[0]);
-  PAssert(media != NULL, PLogicError);
-  if (media->mediaFormat.SetOptionValue(PwxString(item.m_text), newValue))
+  if (!PAssert(media != NULL, PLogicError))
+    return;
+
+  item.m_col = 0;
+  m_codecOptions->GetItem(item);
+  bool ok = media->mediaFormat.SetOptionValue(item.m_text.c_str(), newValue);
+  if (ok) {
     media->dirty = true;
-  else
-    wxMessageBox("Could not set option to specified value!", "Error", wxCANCEL|wxICON_EXCLAMATION);
+
+    item.m_col = 1;
+    item.m_text = newValue;
+    m_codecOptions->SetItem(item);
+  }
+
+  m_CodecOptionValueError->Show(!ok);
 }
 
 
