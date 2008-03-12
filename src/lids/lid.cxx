@@ -46,18 +46,13 @@ static OpalLIDRegistration * RegisteredLIDsListHead;
 ///////////////////////////////////////////////////////////////////////////////
 
 #if PTRACING
-static const char * const CallProgressTonesNames[] = {
-  "DialTone", "RingTone", "BusyTone", "FastBusyTone", "ClearTone", "CNGTone", "MwiTone"
-};
-
 ostream & operator<<(ostream & o, OpalLineInterfaceDevice::CallProgressTones t)
 {
-  PINDEX i = 0;    
-  while ((1 << i) != t)
-    i++;
-
-  if (i < PARRAYSIZE(CallProgressTonesNames))
-    return o << CallProgressTonesNames[i];
+  static const char * const CallProgressTonesNames[OpalLineInterfaceDevice::NumTones+1] = {
+    "NoTone", "DialTone", "RingTone", "BusyTone", "CongestionTone", "ClearTone", "MwiTone", "CNGTone"
+  };
+  if (t+1 < PARRAYSIZE(CallProgressTonesNames))
+    return o << CallProgressTonesNames[t+1];
   else
     return o << "Unknown";
 }
@@ -441,10 +436,13 @@ PBoolean OpalLineInterfaceDevice::WaitForTone(unsigned line,
 }
 
 
-PBoolean OpalLineInterfaceDevice::SetToneFilter(unsigned line,
+bool OpalLineInterfaceDevice::SetToneDescription(unsigned line,
                                             CallProgressTones tone,
                                             const PString & description)
 {
+  if (description.IsEmpty())
+    return true;
+
   PString freqDesc, cadenceDesc;
   PINDEX colon = description.Find(':');
   if (colon == P_MAX_INDEX)
@@ -454,13 +452,22 @@ PBoolean OpalLineInterfaceDevice::SetToneFilter(unsigned line,
     cadenceDesc = description.Mid(colon+1);
   }
 
+  ToneMixingModes mode = SimpleTone;
   unsigned low_freq, high_freq;
-  PINDEX dash = freqDesc.Find('-');
+  PINDEX dash = freqDesc.FindOneOf("-+x");
   if (dash == P_MAX_INDEX)
     low_freq = high_freq = freqDesc.AsUnsigned();
   else {
     low_freq = freqDesc.Left(dash).AsUnsigned();
     high_freq = freqDesc.Mid(dash+1).AsUnsigned();
+    switch (freqDesc[dash]) {
+      case '+' :
+        mode = AddedTone;
+        break;
+      case 'x' :
+        mode = ModulatedTone;
+        break;
+    }
   }
   if (low_freq  < 100 || low_freq  > 3000 ||
       high_freq < 100 || high_freq > 3000 ||
@@ -486,18 +493,18 @@ PBoolean OpalLineInterfaceDevice::SetToneFilter(unsigned line,
       offTimes[i/2] = (unsigned)(time*1000);
   }
 
-  return SetToneFilterParameters(line, tone, low_freq, high_freq,
-                                 numCadences, onTimes, offTimes);
+  return SetToneParameters(line, tone, low_freq, high_freq, mode, numCadences, onTimes, offTimes);
 }
 
 
-PBoolean OpalLineInterfaceDevice::SetToneFilterParameters(unsigned /*line*/,
-                                                      CallProgressTones /*tone*/,
-                                                      unsigned /*lowFrequency*/,
-                                                      unsigned /*highFrequency*/,
-                                                      PINDEX /*numCadences*/,
-                                                      const unsigned * /*onTimes*/,
-                                                      const unsigned * /*offTimes*/)
+bool OpalLineInterfaceDevice::SetToneParameters(unsigned /*line*/,
+                                                CallProgressTones /*tone*/,
+                                                unsigned /*frequency1*/,
+                                                unsigned /*frequency2*/,
+                                                ToneMixingModes /*mode*/,
+                                                PINDEX /*numCadences*/,
+                                                const unsigned * /*onTimes*/,
+                                                const unsigned * /*offTimes*/)
 {
   return PFalse;
 }
@@ -858,7 +865,7 @@ PBoolean OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes country)
 
   unsigned line;
   for (line = 0; line < GetLineCount(); line++)
-    SetToneFilter(line, CNGTone, "1100:0.25");
+    SetToneDescription(line, CNGTone, "1100:0.25");
 
   for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++) {
     if (CountryInfo[i].t35Code == country) {
@@ -868,7 +875,7 @@ PBoolean OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes country)
           const char * toneStr = CountryInfo[i].tone[tone];
           if (toneStr == NULL)
             toneStr = CountryInfo[UnitedStates].tone[tone];
-          SetToneFilter(line, (CallProgressTones)tone, toneStr);
+          SetToneDescription(line, (CallProgressTones)tone, toneStr);
           m_callProgressTones[tone] = toneStr;
         }
       }
