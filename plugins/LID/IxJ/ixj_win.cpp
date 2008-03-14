@@ -1762,13 +1762,14 @@ class Context
     //PLUGIN_FUNCTION_ARG3(WaitForToneDetect, unsigned,line, unsigned,timeout, int *,tone)
     //PLUGIN_FUNCTION_ARG3(WaitForTone, unsigned,line, int,tone, unsigned,timeout)
 
-    PLUGIN_FUNCTION_ARG7(SetToneFilterParameters, unsigned        ,line,
-                                                  unsigned        ,tone,
-                                                  unsigned        ,lowFrequency,
-                                                  unsigned        ,highFrequency,
-                                                  unsigned        ,numCadences,
-                                                  const unsigned *,onTimes,
-                                                  const unsigned *,offTimes)
+    PLUGIN_FUNCTION_ARG8(SetToneParameters, unsigned        ,line,
+                                            unsigned        ,tone,
+                                            unsigned        ,frequency1,
+                                            unsigned        ,frequency2,
+                                            unsigned        ,mode,
+                                            unsigned        ,numCadences,
+                                            const unsigned *,onTimes,
+                                            const unsigned *,offTimes)
     {
       if (hDriver == INVALID_HANDLE_VALUE)
         return PluginLID_DeviceNotOpen;
@@ -1831,8 +1832,8 @@ class Context
       }
 
       static struct FilterTableEntry {
-        unsigned lowFrequency;
-        unsigned highFrequency;
+        unsigned frequency1;
+        unsigned frequency2;
         unsigned predefinedFilterSet;  // 0 = custom
         short    coefficients[19];
       } const FilterTable[] = {
@@ -1855,8 +1856,8 @@ class Context
 
       // Look for exact match
       for (i = 0; i < PARRAYSIZE(FilterTable); i++) {
-        if (lowFrequency  == FilterTable[i].lowFrequency &&
-            highFrequency == FilterTable[i].highFrequency) {
+        if (frequency1  == FilterTable[i].frequency1 &&
+            frequency2 == FilterTable[i].frequency2) {
           match = FilterTable[i];
           break;
         }
@@ -1864,18 +1865,18 @@ class Context
 
       if (match.predefinedFilterSet == UINT_MAX) {
         // If single frequency, make a band out of it, +/- 5%
-        if (lowFrequency == highFrequency) {
-          lowFrequency  -= lowFrequency/20;
-          highFrequency += highFrequency/20;
+        if (frequency1 == frequency2) {
+          frequency1  -= frequency1/20;
+          frequency2 += frequency2/20;
         }
 
         // Try again looking for a band that is just a bit larger than required, no
         // more than twice the size required.
         for (i = 0; i < PARRAYSIZE(FilterTable); i++) {
-          if (lowFrequency  > FilterTable[i].lowFrequency &&
-              highFrequency < FilterTable[i].highFrequency &&
-              2*(highFrequency - lowFrequency) >
-                      (FilterTable[i].highFrequency - FilterTable[i].lowFrequency)) {
+          if (frequency1  > FilterTable[i].frequency1 &&
+              frequency2 < FilterTable[i].frequency2 &&
+              2*(frequency2 - frequency1) >
+                      (FilterTable[i].frequency2 - FilterTable[i].frequency1)) {
             match = FilterTable[i];
             break;
           }
@@ -1884,7 +1885,7 @@ class Context
 
       if (match.predefinedFilterSet == UINT_MAX) {
         PTRACE(1, "xJack\tInvalid frequency for fixed filter sets: "
-                << lowFrequency << '-' << highFrequency);
+                << frequency1 << '-' << frequency2);
         return PluginLID_InvalidParameter;
       }
 
@@ -1909,7 +1910,7 @@ class Context
       filterSet.dwFilterNum = toneIndex;
 
       PTRACE(2, "xJack\tSetting filter for tone index " << toneIndex
-            << " freq: " << match.lowFrequency << '-' << match.highFrequency);
+            << " freq: " << match.frequency1 << '-' << match.frequency2);
 
       DWORD dwReturn = 0;
       DWORD dwBytesReturned;
@@ -2357,7 +2358,7 @@ static struct PluginLID_Definition definition[1] =
     Context::IsToneDetected,
     NULL,//Context::WaitForToneDetect,
     NULL,//Context::WaitForTone,
-    Context::SetToneFilterParameters,
+    Context::SetToneParameters,
     Context::PlayTone,
     Context::IsTonePlaying,
     Context::StopTone,
