@@ -504,11 +504,11 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
       PTRACE(3, "OpalCon\tOpened " << (isSource ? "source" : "sink") << " stream " << stream->GetID());
       return stream;
     }
-    PTRACE(2, "OpalCon\tOnOpenMediaStream failed for " << mediaFormat << " failed.");
+    PTRACE(2, "OpalCon\tOnOpenMediaStream failed for " << mediaFormat << ", closing " << *stream);
     stream->Close();
   }
   else {
-    PTRACE(2, "OpalCon\tSource media stream open of " << mediaFormat << " failed.");
+    PTRACE(2, "OpalCon\tSource media stream open failed for " << *stream << " (" << mediaFormat << ')');
   }
 
   mediaStreams.Remove(stream);
