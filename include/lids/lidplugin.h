@@ -253,9 +253,9 @@ typedef struct PluginLID_Definition
      static PluginLID_Errors fn(void * context, type1 var1, type2 var2, type3 var3, type4 var4) { return context == NULL ? PluginLID_BadContext : ((Context *)context)->fn(var1, var2, var3, var4); } \
             PluginLID_Errors fn(                type1 var1, type2 var2, type3 var3, type4 var4)
 
-#define PLUGIN_FUNCTION_ARG7(fn,                type1,var1, type2,var2, type3,var3, type4,var4, type5,var5, type6,var6, type7,var7) \
-     static PluginLID_Errors fn(void * context, type1 var1, type2 var2, type3 var3, type4 var4, type5 var5, type6 var6, type7 var7) { return context == NULL ? PluginLID_BadContext : ((Context *)context)->fn(var1, var2, var3, var4, var5, var6, var7); } \
-            PluginLID_Errors fn(                type1 var1, type2 var2, type3 var3, type4 var4, type5 var5, type6 var6, type7 var7)
+#define PLUGIN_FUNCTION_ARG8(fn,                type1,var1, type2,var2, type3,var3, type4,var4, type5,var5, type6,var6, type7,var7, type8,var8) \
+     static PluginLID_Errors fn(void * context, type1 var1, type2 var2, type3 var3, type4 var4, type5 var5, type6 var6, type7 var7, type8 var8) { return context == NULL ? PluginLID_BadContext : ((Context *)context)->fn(var1, var2, var3, var4, var5, var6, var7, var8); } \
+            PluginLID_Errors fn(                type1 var1, type2 var2, type3 var3, type4 var4, type5 var5, type6 var6, type7 var7, type8 var8)
 
 #endif // __cplusplus
 
