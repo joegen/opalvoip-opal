@@ -533,6 +533,24 @@ class OpalLineMediaStream : public OpalMediaStream
       */
     virtual PBoolean Close();
 
+    /**Read an RTP frame of data from the source media stream.
+       The default behaviour simply calls ReadData() on the data portion of the
+       RTP_DataFrame and sets the frames timestamp and marker from the internal
+       member variables of the media stream class.
+      */
+    virtual PBoolean ReadPacket(
+      RTP_DataFrame & packet
+    );
+
+    /**Write an RTP frame of data to the sink media stream.
+       The default behaviour simply calls WriteData() on the data portion of the
+       RTP_DataFrame and and sets the internal timestamp and marker from the
+       member variables of the media stream class.
+      */
+    virtual PBoolean WritePacket(
+      RTP_DataFrame & packet
+    );
+
     /**Read raw media data from the source media stream.
        The default behaviour reads from the OpalLine object.
       */
@@ -575,10 +593,11 @@ class OpalLineMediaStream : public OpalMediaStream
 
   protected:
     OpalLine & line;
-    PBoolean       useDeblocking;
+    bool       notUsingRTP;
+    bool       useDeblocking;
     unsigned   missedCount;
     BYTE       lastSID[4];
-    PBoolean       lastFrameWasSignal;
+    bool       lastFrameWasSignal;
 };
 
 
