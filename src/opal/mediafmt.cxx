@@ -78,16 +78,6 @@ AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",  16, 8,  240, 30, 256,  8000
 AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  32, 4,  120, 15, 256, 16000);
 AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256,  8000);
 AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 30, 256,  8000);
-AUDIO_FORMAT(G728,           G728,           "G728",  5, 20, 100, 10, 256,  8000);
-AUDIO_FORMAT(G729,           G729,           "G729", 10, 80,  24,  5, 256,  8000);
-AUDIO_FORMAT(G729A,          G729,           "G729", 10, 80,  24,  5, 256,  8000);
-AUDIO_FORMAT(G729B,          G729,           "G729", 10, 80,  24,  5, 256,  8000);
-AUDIO_FORMAT(G729AB,         G729,           "G729", 10, 80,  24,  5, 256,  8000);
-AUDIO_FORMAT(G7231_6k3,      G7231,          "G723", 24, 240,  8,  3, 256,  8000);
-AUDIO_FORMAT(G7231_5k3,      G7231,          "G723", 24, 240,  8,  3, 256,  8000);
-AUDIO_FORMAT(G7231A_6k3,     G7231,          "G723", 24, 240,  8,  3, 256,  8000);
-AUDIO_FORMAT(G7231A_5k3,     G7231,          "G723", 24, 240,  8,  3, 256,  8000);
-AUDIO_FORMAT(GSM0610,        GSM,            "GSM",  33, 160,  7,  4, 7  ,  8000);
 
 #endif
 

@@ -1148,6 +1148,30 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\codec\g7231mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\g728mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\g729mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\gsm0610mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\gsmamrmf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\iLBCmf.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\codec\rfc4175.cxx">
 				</File>
 				<File
