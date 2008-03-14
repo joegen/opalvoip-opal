@@ -480,9 +480,11 @@ PBoolean OpalManager::MakeConnection(OpalCall & call, const PString & remotePart
   if (ep != NULL) {
     if (ep->MakeConnection(call, remoteParty, userData, options, stringOptions))
       return PTrue;
+    PTRACE(1, "OpalMan\tCould not use endpoint for protocol \"" << epname << '"');
   }
-
-  PTRACE(1, "OpalMan\tCould not find endpoint to handle protocol \"" << epname << '"');
+  else {
+    PTRACE(1, "OpalMan\tCould not find endpoint to handle protocol \"" << epname << '"');
+  }
   return PFalse;
 }
 
