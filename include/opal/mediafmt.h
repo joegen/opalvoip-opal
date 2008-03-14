@@ -1159,6 +1159,8 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_G7231A_6k3     "G.723.1A(6.3k)"
 #define OPAL_G7231A_5k3     "G.723.1A(5.3k)"
 #define OPAL_GSM0610        "GSM-06.10"
+#define OPAL_GSMAMR         "GSM-AMR"
+#define OPAL_iLBC           "iLBC"
 #define OPAL_RFC2833        "UserInput/RFC2833"
 #define OPAL_CISCONSE       "NamedSignalEvent"
 
@@ -1179,6 +1181,8 @@ extern const OpalAudioFormat & GetOpalG7231_5k3();
 extern const OpalAudioFormat & GetOpalG7231A_6k3();
 extern const OpalAudioFormat & GetOpalG7231A_5k3();
 extern const OpalAudioFormat & GetOpalGSM0610();
+extern const OpalAudioFormat & GetOpalGSMAMR();
+extern const OpalAudioFormat & GetOpaliLBC();
 #endif
 
 extern const OpalMediaFormat & GetOpalRFC2833();
@@ -1200,6 +1204,8 @@ extern const OpalMediaFormat & GetOpalCiscoNSE();
 #define OpalG7231A_6k3     GetOpalG7231A_6k3()
 #define OpalG7231A_5k3     GetOpalG7231A_5k3()
 #define OpalGSM0610        GetOpalGSM0610()
+#define OpalGSMAMR         GetOpalGSMAMR()
+#define OpaliLBC           GetOpaliLBC()
 #define OpalRFC2833        GetOpalRFC2833()
 #define OpalCiscoNSE       GetOpalCiscoNSE()
 

@@ -317,6 +317,12 @@ endif
 
 SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/g711.c \
+           $(OPAL_SRCDIR)/codec/g7231mf.cxx \
+           $(OPAL_SRCDIR)/codec/g728mf.cxx \
+           $(OPAL_SRCDIR)/codec/g729mf.cxx \
+           $(OPAL_SRCDIR)/codec/gsm0610mf.cxx \
+           $(OPAL_SRCDIR)/codec/gsmamrmf.cxx \
+           $(OPAL_SRCDIR)/codec/iLBCmf.cxx \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx \
 	   $(OPAL_SRCDIR)/codec/silencedetect.cxx \
