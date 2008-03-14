@@ -756,13 +756,14 @@ class Context
     //PLUGIN_FUNCTION_ARG3(WaitForToneDetect, unsigned,line, unsigned,timeout, int *,tone)
     //PLUGIN_FUNCTION_ARG3(WaitForTone, unsigned,line, int,tone, unsigned,timeout)
 
-    PLUGIN_FUNCTION_ARG7(SetToneFilterParameters, unsigned        ,line,
-                                                  unsigned        ,tone,
-                                                  unsigned        ,lowFrequency,
-                                                  unsigned        ,highFrequency,
-                                                  unsigned        ,numCadences,
-                                                  const unsigned *,onTimes,
-                                                  const unsigned *,offTimes)
+    PLUGIN_FUNCTION_ARG8(SetToneParameters, unsigned        ,line,
+                                            unsigned        ,tone,
+                                            unsigned        ,frequency1,
+                                            unsigned        ,frequency2,
+                                            unsigned        ,mode,
+                                            unsigned        ,numCadences,
+                                            const unsigned *,onTimes,
+                                            const unsigned *,offTimes)
     {
       if (hDriver == -1)
         return PluginLID_DeviceNotOpen;
@@ -946,7 +947,7 @@ static struct PluginLID_Definition definition[1] =
     Context::IsToneDetected,
     NULL,//Context::WaitForToneDetect,
     NULL,//Context::WaitForTone,
-    Context::SetToneFilterParameters,
+    Context::SetToneParameters,
     Context::PlayTone,
     Context::IsTonePlaying,
     Context::StopTone,
