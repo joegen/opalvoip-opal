@@ -264,6 +264,12 @@ class OpalLineInterfaceDevice : public PObject
       unsigned line   ///<  Number of line
     );
 
+    /**Indicate that ReadFrame() & WriteFrame() take whole RTP packets.
+       Note that if this returns true, SetReadFrameSize(), SetWriteFrameSize(),
+       GetReadFrameSize() and GetWriteFrameSize() are no longer relevant.
+      */
+    virtual bool UsesRTP() const;
+
     /**Set the read frame size in bytes.
        Note that a LID may ignore this value so always use GetReadFrameSize()
        for I/O.
@@ -271,7 +277,7 @@ class OpalLineInterfaceDevice : public PObject
     virtual PBoolean SetReadFrameSize(
       unsigned line,    ///<  Number of line
       PINDEX frameSize  ///<  New frame size
-    ) = 0;
+    );
 
     /**Set the write frame size in bytes.
        Note that a LID may ignore this value so always use GetReadFrameSize()
@@ -280,21 +286,21 @@ class OpalLineInterfaceDevice : public PObject
     virtual PBoolean SetWriteFrameSize(
       unsigned line,    ///<  Number of line
       PINDEX frameSize  ///<  New frame size
-    ) = 0;
+    );
 
     /**Get the read frame size in bytes.
        All calls to ReadFrame() will return this number of bytes.
       */
     virtual PINDEX GetReadFrameSize(
       unsigned line   ///<  Number of line
-    ) = 0;
+    );
 
     /**Get the write frame size in bytes.
        All calls to WriteFrame() must be this number of bytes.
       */
     virtual PINDEX GetWriteFrameSize(
       unsigned line   ///<  Number of line
-    ) = 0;
+    );
 
     /**Low level read of a frame from the device.
      */
