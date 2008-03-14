@@ -169,8 +169,41 @@ PBoolean OpalLineInterfaceDevice::StopWriting(unsigned)
 }
 
 
+bool OpalLineInterfaceDevice::UsesRTP() const
+{
+  return false;
+}
+
+
+PBoolean OpalLineInterfaceDevice::SetReadFrameSize(unsigned /*line*/, PINDEX /*frameSize*/)
+{
+  return false;
+}
+
+
+PBoolean OpalLineInterfaceDevice::SetWriteFrameSize(unsigned /*line*/, PINDEX /*frameSize*/)
+{
+  return false;
+}
+
+
+PINDEX OpalLineInterfaceDevice::GetReadFrameSize(unsigned /*line*/)
+{
+  return 0;
+}
+
+
+PINDEX OpalLineInterfaceDevice::GetWriteFrameSize(unsigned /*line*/)
+{
+  return 0;
+}
+
+
 PBoolean OpalLineInterfaceDevice::ReadBlock(unsigned line, void * buffer, PINDEX length)
 {
+  if (UsesRTP())
+    return ReadFrame(line, buffer, length);
+
   // Are reblocking the hardware frame sizes to those expected by the RTP packets.
   PINDEX frameSize = GetReadFrameSize(line);
 
@@ -207,8 +240,11 @@ PBoolean OpalLineInterfaceDevice::ReadBlock(unsigned line, void * buffer, PINDEX
 
 PBoolean OpalLineInterfaceDevice::WriteBlock(unsigned line, const void * buffer, PINDEX length)
 {
-  PINDEX frameSize = GetWriteFrameSize(line);
   PINDEX written;
+  if (UsesRTP())
+    return WriteFrame(line, buffer, length, written);
+
+  PINDEX frameSize = GetWriteFrameSize(line);
 
   // If zero length then flush any remaining data
   if (length == 0 && m_writeDeblockingOffset != 0) {

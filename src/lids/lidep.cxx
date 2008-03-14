@@ -117,7 +117,7 @@ PBoolean OpalLineEndPoint::MakeConnection(OpalCall & call,
   }  
   if (line == NULL){
     PTRACE(1,"LID EP\tMakeConnection cannot find the default line " << defaultLine);
-    return PFalse;
+    return false;
 
   }
 
@@ -164,7 +164,7 @@ static bool InitialiseLine(OpalLine * line)
 
   for (unsigned lnum = 0; lnum < line->GetDevice().GetLineCount(); lnum++) {
     if (lnum != line->GetLineNumber())
-      line->GetDevice().SetLineToLineDirect(lnum, line->GetLineNumber(), PFalse);
+      line->GetDevice().SetLineToLineDirect(lnum, line->GetLineNumber(), false);
   }
 
   return true;
@@ -174,10 +174,10 @@ static bool InitialiseLine(OpalLine * line)
 PBoolean OpalLineEndPoint::AddLine(OpalLine * line)
 {
   if (PAssertNULL(line) == NULL)
-    return PFalse;
+    return false;
 
   if (!line->GetDevice().IsOpen())
-    return PFalse;
+    return false;
 
   if (!InitialiseLine(line))
     return false;
@@ -186,7 +186,7 @@ PBoolean OpalLineEndPoint::AddLine(OpalLine * line)
   lines.Append(line);
   linesMutex.Signal();
 
-  return PTrue;
+  return true;
 }
 
 
@@ -224,7 +224,7 @@ PBoolean OpalLineEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
 {
   if (!device.IsOpen()){
     PTRACE(1, "LID EP\tAddLinesFromDevice device " << device.GetDeviceName() << "is not opened");
-    return PFalse;
+    return false;
   }  
 
   unsigned lineCount = device.GetLineCount();
@@ -269,11 +269,11 @@ void OpalLineEndPoint::RemoveLinesFromDevice(OpalLineInterfaceDevice & device)
 
 PBoolean OpalLineEndPoint::AddDeviceNames(const PStringArray & descriptors)
 {
-  PBoolean ok = PFalse;
+  PBoolean ok = false;
 
   for (PINDEX i = 0; i < descriptors.GetSize(); i++) {
     if (AddDeviceName(descriptors[i]))
-      ok = PTrue;
+      ok = true;
   }
 
   return ok;
@@ -292,7 +292,7 @@ PBoolean OpalLineEndPoint::AddDeviceName(const PString & descriptor)
 
   if (deviceType.IsEmpty() || deviceName.IsEmpty()) {
     PTRACE(1, "LID EP\tInvalid device description \"" << descriptor << '"');
-    return PFalse;
+    return false;
   }
 
   // Make sure not already there.
@@ -301,7 +301,7 @@ PBoolean OpalLineEndPoint::AddDeviceName(const PString & descriptor)
     if (iterDev->GetDeviceType() == deviceType && iterDev->GetDeviceName() == deviceName) {
       linesMutex.Signal();
       PTRACE(3, "LID EP\tDevice " << deviceType << ':' << deviceName << " already loaded.");
-      return PTrue;
+      return true;
     }
   }
   linesMutex.Signal();
@@ -310,7 +310,7 @@ PBoolean OpalLineEndPoint::AddDeviceName(const PString & descriptor)
   OpalLineInterfaceDevice * device = OpalLineInterfaceDevice::Create(deviceType);
   if (device == NULL) {
     PTRACE(1, "LID EP\tDevice type " << deviceType << " could not be created.");
-    return PFalse;
+    return false;
   }
 
   if (device->Open(deviceName))
@@ -318,14 +318,14 @@ PBoolean OpalLineEndPoint::AddDeviceName(const PString & descriptor)
 
   delete device;
   PTRACE(1, "LID EP\tDevice " << deviceType << ':' << deviceName << " could not be opened.");
-  return PFalse;
+  return false;
 }
 
 
 PBoolean OpalLineEndPoint::AddDevice(OpalLineInterfaceDevice * device)
 {
   if (PAssertNULL(device) == NULL)
-    return PFalse;
+    return false;
 
   linesMutex.Wait();
   devices.Append(device);
@@ -451,7 +451,7 @@ void OpalLineEndPoint::MonitorLine(OpalLine & line)
 PBoolean OpalLineEndPoint::OnSetUpConnection(OpalLineConnection & PTRACE_PARAM(connection))
 {
   PTRACE(3, "LID EP\tOnSetUpConnection" << connection);
-  return PTrue;
+  return true;
 }
 
 
@@ -470,8 +470,8 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
   silenceDetector = new OpalLineSilenceDetector(line);
 
   answerRingCount = 3;
-  requireTonesForDial = PTrue;
-  wasOffHook = PFalse;
+  requireTonesForDial = true;
+  wasOffHook = false;
   handlerThread = NULL;
 
   m_uiDialDelay = 0;
@@ -524,7 +524,7 @@ PBoolean OpalLineConnection::SetAlerting(const PString & calleeName, PBoolean)
   PTRACE(3, "LID Con\tSetAlerting " << *this);
 
   if (GetPhase() != SetUpPhase) 
-    return PFalse;
+    return false;
 
   // switch phase 
   phase = AlertingPhase;
@@ -546,7 +546,7 @@ PBoolean OpalLineConnection::SetConnected()
   PTRACE(3, "LID Con\tSetConnected " << *this);
 
   if (GetPhase() >= ConnectedPhase)
-    return PFalse;
+    return false;
 
   // switch phase 
   phase = ConnectedPhase;
@@ -580,7 +580,7 @@ OpalMediaStream * OpalLineConnection::CreateMediaStream(const OpalMediaFormat & 
 PBoolean OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
 {
   if (!OpalConnection::OnOpenMediaStream(mediaStream))
-    return PFalse;
+    return false;
 
   if (mediaStream.IsSource()) {
     OpalMediaPatch * patch = mediaStream.GetPatch();
@@ -590,7 +590,7 @@ PBoolean OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
     }
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -598,7 +598,7 @@ PBoolean OpalLineConnection::SetAudioVolume(PBoolean source, unsigned percentage
 {
   PSafePtr<OpalLineMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalLineMediaStream>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
   if (stream == NULL)
-    return PFalse;
+    return false;
 
   OpalLine & line = stream->GetLine();
   return source ? line.SetRecordVolume(percentage) : line.SetPlayVolume(percentage);
@@ -731,8 +731,8 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 
     // Get caller ID
     PString callerId;
-    if (line.GetCallerID(callerId, PTrue)) {
-      PStringArray words = callerId.Tokenise('\t', PTrue);
+    if (line.GetCallerID(callerId, true)) {
+      PStringArray words = callerId.Tokenise('\t', true);
       if (words.GetSize() < 3) {
         PTRACE(2, "LID Con\tMalformed caller ID \"" << callerId << '"');
       }
@@ -747,7 +747,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
     line.SetOffHook();
   }
 
-  wasOffHook = PTrue;
+  wasOffHook = true;
 
   if (!OnIncomingConnection(0, NULL)) {
     Release(EndedByCallerAbort);
@@ -764,7 +764,7 @@ PBoolean OpalLineConnection::SetUpConnection()
   PTRACE(3, "LID Con\tSetUpConnection call on " << *this << " to \"" << remotePartyNumber << '"');
 
   phase = SetUpPhase;
-  originating = PTrue;
+  originating = true;
 
   if (line.IsTerminal()) {
     line.SetCallerID(remotePartyNumber);
@@ -779,7 +779,7 @@ PBoolean OpalLineConnection::SetUpConnection()
     switch (line.DialOut(remotePartyNumber, requireTonesForDial, getDialDelay())) {
       case OpalLineInterfaceDevice::DialTone :
         PTRACE(3, "LID Con\tdial tone on " << line);
-        return PFalse;
+        return false;
 
       case OpalLineInterfaceDevice::RingTone :
         PTRACE(3, "LID Con\tGot ringback on " << line);
@@ -789,11 +789,11 @@ PBoolean OpalLineConnection::SetUpConnection()
 
       default :
         PTRACE(1, "LID Con\tError dialling " << remotePartyNumber << " on " << line);
-        return PFalse;
+        return false;
     }
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -804,36 +804,34 @@ OpalLineMediaStream::OpalLineMediaStream(OpalLineConnection & conn,
                                                  unsigned sessionID,
                                                      PBoolean isSource,
                                                OpalLine & ln)
-  : OpalMediaStream(conn, mediaFormat, sessionID, isSource),
-    line(ln)
+  : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
+  , line(ln)
+  , notUsingRTP(!ln.GetDevice().UsesRTP())
+  , useDeblocking(false)
+  , missedCount(0)
+  , lastFrameWasSignal(true)
 {
-  useDeblocking = PFalse;
-  missedCount = 0;
   lastSID[0] = 2;
-  lastFrameWasSignal = PTrue;
 }
 
 
 PBoolean OpalLineMediaStream::Open()
 {
   if (isOpen)
-    return PTrue;
+    return true;
 
   if (IsSource()) {
     if (!line.SetReadFormat(mediaFormat))
-      return PFalse;
-    useDeblocking = !line.SetReadFrameSize(GetDataSize()) || line.GetReadFrameSize() != GetDataSize();
+      return false;
   }
   else {
     if (!line.SetWriteFormat(mediaFormat))
-      return PFalse;
-    useDeblocking = !line.SetWriteFrameSize(GetDataSize()) || line.GetWriteFrameSize() != GetDataSize();
+      return false;
   }
 
-  PTRACE(3, "LineMedia\tStream opened for " << mediaFormat << ", frame size: rd="
-         << line.GetReadFrameSize() << " wr="
-         << line.GetWriteFrameSize() << ", "
-         << (useDeblocking ? "needs" : "no") << " reblocking.");
+  SetDataSize(GetDataSize());
+  PTRACE(3, "LineMedia\tStream opened for " << mediaFormat << ", using "
+         << (notUsingRTP ? (useDeblocking ? "reblocked audio" : "audio frames") : "direct RTP"));
 
   return OpalMediaStream::Open();
 }
@@ -850,20 +848,46 @@ PBoolean OpalLineMediaStream::Close()
 }
 
 
+PBoolean OpalLineMediaStream::ReadPacket(RTP_DataFrame & packet)
+{
+  if (notUsingRTP)
+    return OpalMediaStream::ReadPacket(packet);
+
+  PINDEX count = packet.GetSize();
+  if (!line.ReadFrame(packet.GetPointer(), count))
+    return false;
+
+  packet.SetPayloadSize(count-packet.GetHeaderSize());
+  return true;
+}
+
+
+PBoolean OpalLineMediaStream::WritePacket(RTP_DataFrame & packet)
+{
+  if (notUsingRTP)
+    return OpalMediaStream::WritePacket(packet);
+
+  PINDEX written = 0;
+  return line.WriteFrame(packet.GetPointer(), packet.GetHeaderSize()+packet.GetPayloadSize(), written);
+}
+
+
 PBoolean OpalLineMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
 {
+  PAssert(notUsingRTP, PLogicError);
+
   length = 0;
 
   if (IsSink()) {
     PTRACE(1, "LineMedia\tTried to read from sink media stream");
-    return PFalse;
+    return false;
   }
 
   if (useDeblocking) {
     line.SetReadFrameSize(size);
     if (line.ReadBlock(buffer, size)) {
       length = size;
-      return PTrue;
+      return true;
     }
   }
   else {
@@ -875,35 +899,37 @@ PBoolean OpalLineMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & leng
           case 1 : // CNG frame
             memcpy(buffer, lastSID, 4);
             length = 4;
-            lastFrameWasSignal = PFalse;
+            lastFrameWasSignal = false;
             break;
           case 4 :
             if ((*(BYTE *)buffer&3) == 2)
               memcpy(lastSID, buffer, 4);
-            lastFrameWasSignal = PFalse;
+            lastFrameWasSignal = false;
             break;
           default :
-            lastFrameWasSignal = PTrue;
+            lastFrameWasSignal = true;
         }
       }
-      return PTrue;
+      return true;
     }
   }
 
   PTRACE_IF(1, line.GetDevice().GetErrorNumber() != 0,
             "LineMedia\tDevice read frame error: " << line.GetDevice().GetErrorText());
 
-  return PFalse;
+  return false;
 }
 
 
 PBoolean OpalLineMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
 {
+  PAssert(notUsingRTP, PLogicError);
+
   written = 0;
 
   if (IsSource()) {
     PTRACE(1, "LineMedia\tTried to write to source media stream");
-    return PFalse;
+    return false;
   }
 
   // Check for writing silence
@@ -952,32 +978,34 @@ PBoolean OpalLineMediaStream::WriteData(const BYTE * buffer, PINDEX length, PIND
     line.SetWriteFrameSize(length);
     if (line.WriteBlock(buffer, length)) {
       written = length;
-      return PTrue;
+      return true;
     }
   }
   else {
     if (line.WriteFrame(buffer, length, written))
-      return PTrue;
+      return true;
   }
 
   PTRACE_IF(1, line.GetDevice().GetErrorNumber() != 0,
             "LineMedia\tLID write frame error: " << line.GetDevice().GetErrorText());
 
-  return PFalse;
+  return false;
 }
 
 
 PBoolean OpalLineMediaStream::SetDataSize(PINDEX dataSize)
 {
-  if (IsSource())
-    useDeblocking = !line.SetReadFrameSize(dataSize) || line.GetReadFrameSize() != dataSize;
-  else
-    useDeblocking = !line.SetWriteFrameSize(dataSize) || line.GetWriteFrameSize() != dataSize;
+  if (notUsingRTP) {
+    if (IsSource())
+      useDeblocking = !line.SetReadFrameSize(dataSize) || line.GetReadFrameSize() != dataSize;
+    else
+      useDeblocking = !line.SetWriteFrameSize(dataSize) || line.GetWriteFrameSize() != dataSize;
 
-  PTRACE(3, "LineMedia\tStream frame size: rd="
-         << line.GetReadFrameSize() << " wr="
-         << line.GetWriteFrameSize() << ", "
-         << (useDeblocking ? "needs" : "no") << " reblocking.");
+    PTRACE(3, "LineMedia\tStream frame size: rd="
+           << line.GetReadFrameSize() << " wr="
+           << line.GetWriteFrameSize() << ", "
+           << (useDeblocking ? "needs" : "no") << " reblocking.");
+  }
 
   return OpalMediaStream::SetDataSize(dataSize);
 }
@@ -985,7 +1013,7 @@ PBoolean OpalLineMediaStream::SetDataSize(PINDEX dataSize)
 
 PBoolean OpalLineMediaStream::IsSynchronous() const
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -999,7 +1027,7 @@ OpalLineSilenceDetector::OpalLineSilenceDetector(OpalLine & l)
 
 unsigned OpalLineSilenceDetector::GetAverageSignalLevel(const BYTE *, PINDEX)
 {
-  return line.GetAverageSignalLevel(PTrue);
+  return line.GetAverageSignalLevel(true);
 }
 
 
