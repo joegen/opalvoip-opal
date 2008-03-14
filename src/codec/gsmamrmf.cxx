@@ -49,8 +49,39 @@ const OpalAudioFormat & GetOpalGSMAMR()
       OpalGSMAMRFormat()
         : OpalAudioFormat(OPAL_GSMAMR, RTP_DataFrame::DynamicBase, "AMR",  33, 160, 1, 1, 1, 8000)
       {
-        AddOption(new OpalMediaOptionInteger("Initial Mode", false, OpalMediaOption::MinMerge, 7));
-        AddOption(new OpalMediaOptionBoolean("VAD", false, OpalMediaOption::AndMerge, true));
+        OpalMediaOption * option = new OpalMediaOptionInteger("Initial Mode", false, OpalMediaOption::MinMerge, 7);
+#if OPAL_SIP
+        option->SetFMTPName("mode");
+        option->SetFMTPDefault("0");
+#endif
+#if OPAL_H323
+        OpalMediaOption::H245GenericInfo info;
+        info.ordinal = 1;
+        info.mode = OpalMediaOption::H245GenericInfo::NonCollapsing;
+        info.excludeTCS = info.excludeOLC = true;
+        option->SetH245Generic(info);
+#endif
+        AddOption(option);
+
+        option = new OpalMediaOptionBoolean("VAD", false, OpalMediaOption::AndMerge, true);
+#if OPAL_H323
+        info.ordinal = 2;
+        info.mode = OpalMediaOption::H245GenericInfo::Collapsing;
+        info.excludeOLC = false;
+        option->SetH245Generic(info);
+#endif
+        AddOption(option);
+
+#if OPAL_H323
+        option = FindOption(RxFramesPerPacketOption());
+        if (option != NULL) {
+          info.ordinal = 0; // All other fields the same as for the mode
+          info.excludeTCS = false;
+          info.excludeReqMode = true;
+          option->SetH245Generic(info);
+        }
+#endif
+
         AddOption(new OpalMediaOptionString("Media Packetization", true, "RFC3267"));
       }
   } const GSMAMR;
