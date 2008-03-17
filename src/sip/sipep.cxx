@@ -346,6 +346,8 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
                                               unsigned int options,
                                               OpalConnection::StringOptions * stringOptions)
 {
+  if (transport == NULL)
+    return NULL;
   return new SIPConnection(call, *this, token, destination, transport, options, stringOptions);
 }
 
