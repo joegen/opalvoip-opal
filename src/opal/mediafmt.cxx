@@ -891,6 +891,18 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 }
 
 
+bool OpalMediaFormatInternal::ToNormalisedOptions()
+{
+  return true;
+}
+
+
+bool OpalMediaFormatInternal::ToCustomisedOptions()
+{
+  return true;
+}
+
+
 PStringToString OpalMediaFormatInternal::GetOptions() const
 {
   PWaitAndSignal m1(media_format_mutex);
@@ -925,156 +937,119 @@ bool OpalMediaFormatInternal::SetOptionValue(const PString & name, const PString
 }
 
 
-bool OpalMediaFormatInternal::GetOptionBoolean(const PString & name, bool dflt) const
+template <class OptionType, typename ValueType>
+static ValueType GetOptionOfType(const OpalMediaFormatInternal & format, const PString & name, ValueType dflt)
 {
-  PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
+  OpalMediaOption * option = format.FindOption(name);
   if (option == NULL)
     return dflt;
 
-  return PDownCast(OpalMediaOptionBoolean, option)->GetValue();
+  OptionType * typedOption = dynamic_cast<OptionType *>(option);
+  if (typedOption != NULL)
+    return typedOption->GetValue();
+
+  PTRACE(1, "MediaFormat\tInvalid type for getting option " << name << " in " << format);
+  PAssertAlways(PInvalidCast);
+  return dflt;
+}
+
+
+template <class OptionType, typename ValueType>
+static bool SetOptionOfType(OpalMediaFormatInternal & format, const PString & name, ValueType value)
+{
+  OpalMediaOption * option = format.FindOption(name);
+  if (option == NULL)
+    return false;
+
+  OptionType * typedOption = dynamic_cast<OptionType *>(option);
+  if (typedOption != NULL) {
+    typedOption->SetValue(value);
+    return true;
+  }
+
+  PTRACE(1, "MediaFormat\tInvalid type for setting option " << name << " in " << format);
+  PAssertAlways(PInvalidCast);
+  return false;
+}
+
+
+bool OpalMediaFormatInternal::GetOptionBoolean(const PString & name, bool dflt) const
+{
+  PWaitAndSignal m(media_format_mutex);
+  return GetOptionOfType<OpalMediaOptionBoolean, bool>(*this, name, dflt);
 }
 
 
 bool OpalMediaFormatInternal::SetOptionBoolean(const PString & name, bool value)
 {
   PWaitAndSignal m(media_format_mutex);
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionBoolean, option)->SetValue(value);
-  return true;
+  return SetOptionOfType<OpalMediaOptionBoolean, bool>(*this, name, value);
 }
 
 
 int OpalMediaFormatInternal::GetOptionInteger(const PString & name, int dflt) const
 {
   PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return dflt;
-
-  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
+  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(FindOption(name));
   if (optUnsigned != NULL)
     return optUnsigned->GetValue();
 
-  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
-  if (optInteger != NULL)
-    return optInteger->GetValue();
-
-  PAssertAlways(PInvalidCast);
-  return dflt;
-}
-
-
-bool OpalMediaFormatInternal::ToNormalisedOptions()
-{
-  return true;
-}
-
-
-bool OpalMediaFormatInternal::ToCustomisedOptions()
-{
-  return true;
+  return GetOptionOfType<OpalMediaOptionInteger, int>(*this, name, dflt);
 }
 
 
 bool OpalMediaFormatInternal::SetOptionInteger(const PString & name, int value)
 {
   PWaitAndSignal m(media_format_mutex);
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
+  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(FindOption(name));
   if (optUnsigned != NULL) {
     optUnsigned->SetValue(value);
     return true;
   }
 
-  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
-  if (optInteger != NULL) {
-    optInteger->SetValue(value);
-    return true;
-  }
-
-  PAssertAlways(PInvalidCast);
-  return false;
+  return SetOptionOfType<OpalMediaOptionInteger, int>(*this, name, value);
 }
 
 
 double OpalMediaFormatInternal::GetOptionReal(const PString & name, double dflt) const
 {
   PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return dflt;
-
-  return PDownCast(OpalMediaOptionReal, option)->GetValue();
+  return GetOptionOfType<OpalMediaOptionReal, double>(*this, name, dflt);
 }
 
 
 bool OpalMediaFormatInternal::SetOptionReal(const PString & name, double value)
 {
   PWaitAndSignal m(media_format_mutex);
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionReal, option)->SetValue(value);
-  return true;
+  return SetOptionOfType<OpalMediaOptionReal, double>(*this, name, value);
 }
 
 
 PINDEX OpalMediaFormatInternal::GetOptionEnum(const PString & name, PINDEX dflt) const
 {
   PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return dflt;
-
-  return PDownCast(OpalMediaOptionEnum, option)->GetValue();
+  return GetOptionOfType<OpalMediaOptionEnum, PINDEX>(*this, name, dflt);
 }
 
 
 bool OpalMediaFormatInternal::SetOptionEnum(const PString & name, PINDEX value)
 {
   PWaitAndSignal m(media_format_mutex);
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionEnum, option)->SetValue(value);
-  return true;
+  return SetOptionOfType<OpalMediaOptionEnum, PINDEX>(*this, name, value);
 }
 
 
 PString OpalMediaFormatInternal::GetOptionString(const PString & name, const PString & dflt) const
 {
   PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return dflt;
-
-  return PDownCast(OpalMediaOptionString, option)->GetValue();
+  return GetOptionOfType<OpalMediaOptionString, PString>(*this, name, dflt);
 }
 
 
 bool OpalMediaFormatInternal::SetOptionString(const PString & name, const PString & value)
 {
   PWaitAndSignal m(media_format_mutex);
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionString, option)->SetValue(value);
-  return true;
+  return SetOptionOfType<OpalMediaOptionString, PString>(*this, name, value);
 }
 
 
@@ -1093,26 +1068,14 @@ bool OpalMediaFormatInternal::GetOptionOctets(const PString & name, PBYTEArray &
 bool OpalMediaFormatInternal::SetOptionOctets(const PString & name, const PBYTEArray & octets)
 {
   PWaitAndSignal m(media_format_mutex);
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionOctets, option)->SetValue(octets);
-  return true;
+  return SetOptionOfType<OpalMediaOptionOctets, const PBYTEArray &>(*this, name, octets);
 }
 
 
 bool OpalMediaFormatInternal::SetOptionOctets(const PString & name, const BYTE * data, PINDEX length)
 {
   PWaitAndSignal m(media_format_mutex);
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionOctets, option)->SetValue(data, length);
-  return true;
+  return SetOptionOfType<OpalMediaOptionOctets, const PBYTEArray &>(*this, name, PBYTEArray(data, length));
 }
 
 
