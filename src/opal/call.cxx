@@ -354,8 +354,15 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
 
   // handle RTP payload translation
   RTP_DataFrame::PayloadMapType map;
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn)
-    map.insert(conn->GetRTPPayloadMap().begin(), conn->GetRTPPayloadMap().end());
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    const RTP_DataFrame::PayloadMapType & connMap = conn->GetRTPPayloadMap();
+    if (conn != &connection)
+      map.insert(connMap.begin(), connMap.end());
+    else {
+      for (RTP_DataFrame::PayloadMapType::const_iterator it = connMap.begin(); it != connMap.end(); ++it)
+        map[it->second] = it->first;
+    }
+  }
 
   // Create the sinks and patch if needed
   bool startedOne = false;
