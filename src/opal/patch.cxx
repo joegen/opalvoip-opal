@@ -587,7 +587,7 @@ OpalMediaPatch::Thread::Thread(OpalMediaPatch & p)
 : PThread(65536,  //16*4kpage size
   NoAutoDeleteThread,
   HighestPriority,
-  "Media Patch:%x"),
+  "Media Patch:%u"),
   patch(p)
 {
 }

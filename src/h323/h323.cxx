@@ -1662,7 +1662,7 @@ PBoolean H323Connection::SetUpConnection()
   signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), 0,
                                   PThread::NoAutoDeleteThread,
                                   PThread::NormalPriority,
-                                  "H225 Caller:%x"));
+                                  "H225 Caller:%u"));
   return PTrue;
 }
 

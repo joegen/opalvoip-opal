@@ -113,7 +113,7 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   monitor = PThread::Create(PCREATE_NOTIFIER(MonitorMain), 0,
                             PThread::NoAutoDeleteThread,
                             PThread::NormalPriority,
-                            "GkMonitor:%x");
+                            "GkMonitor:%u");
   
 #ifdef H323_H460
   features.LoadFeatureSet(H460_Feature::FeatureRas);
