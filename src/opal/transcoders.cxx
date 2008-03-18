@@ -147,26 +147,18 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 
   // set the output payload type directly from the output media format
   // and the input payload directly from the input media format
-  output.front().SetPayloadType(outputMediaFormat.GetPayloadType());
-  RTP_DataFrame::PayloadTypes pt = inputMediaFormat.GetPayloadType();
+  output.front().SetPayloadType(GetPayloadType(false));
 
   // map payload using payload map
-  if (payloadTypeMap.size() > 0) {
-
-    // map output payload type
-    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(outputMediaFormat.GetPayloadType());
-    if (r != payloadTypeMap.end())
-      output.front().SetPayloadType(r->second);
-
-    // map input payload type
-    r = payloadTypeMap.find(inputMediaFormat.GetPayloadType());
-    if (r != payloadTypeMap.end()) 
-      pt = r->second;
-  }
+  RTP_DataFrame::PayloadTypes packetPayloadType = input.GetPayloadType();
+  RTP_DataFrame::PayloadMapType::iterator ptMapping = payloadTypeMap.find(packetPayloadType);
+  if (ptMapping != payloadTypeMap.end()) 
+    packetPayloadType = ptMapping->second;
 
   // do not transcode if no match
-  if (pt != RTP_DataFrame::MaxPayloadType && pt != input.GetPayloadType() && input.GetPayloadSize() > 0) {
-    PTRACE(2, "Opal\tExpected payload type " << pt << ", but received " << input.GetPayloadType() << ". Ignoring packet");
+  RTP_DataFrame::PayloadTypes formatPayloadType = inputMediaFormat.GetPayloadType();
+  if (formatPayloadType != RTP_DataFrame::MaxPayloadType && packetPayloadType != formatPayloadType && input.GetPayloadSize() > 0) {
+    PTRACE(2, "Opal\tExpected payload type " << formatPayloadType << ", but received " << packetPayloadType << ". Ignoring packet");
     output.RemoveAll();
     return PTrue;
   }
