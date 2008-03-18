@@ -414,10 +414,16 @@ class OpalPluginLID : public OpalLineInterfaceDevice
 
     /**Get Caller ID from the last incoming ring.
        The idString parameter is either simply the "number" field of the caller
-       ID data, or if full is PTrue, all of the fields in the caller ID data.
+       ID data, or if full is true, all of the fields in the caller ID data.
 
-       The full data of the caller ID string consists of the number field, the
-       time/date and the name field separated by tabs ('\t').
+       The full data of the caller ID string consists fields separated by tab
+       characters ('\t'), the first three are always the Calling Line Identity
+       (CLI or calling number), the date and the Calling Line Name field. Other
+       fields may follow and are the of the form name=value. The values are
+       LID dependent.
+
+       A false is returned if there is no Caller ID information available, e.g.
+       if no ring has occurred.
       */
     virtual PBoolean GetCallerID(
       unsigned line,      ///<  Number of line
@@ -425,28 +431,28 @@ class OpalPluginLID : public OpalLineInterfaceDevice
       PBoolean full = PFalse   ///<  Get full information in idString
     );
 
-    /**Set Caller ID for use in next RingLine() call.
-       The full data of the caller ID string consists of the number field, the
-       time/date and the name field separated by tabs ('\t').
+    /**Set Caller ID information.
+       The idString must be as a minimum a number fields for the Calling Line
+       Identity.
 
-       If the date field is missing (two consecutive tabs) then the current
+       The full data of the caller ID string consists fields separated by tab
+       characters ('\t'), the first three are always the Calling Line Identity
+       (CLI or calling number), the date and the Calling Line Name field. Other
+       fields may follow and are the of the form name=value. The values are
+       LID dependent.
+
+       If the date field is missing (e.g. two consecutive tabs) then the current
        time and date is used. Using an empty string will clear the caller ID
        so that no caller ID is sent on the next RingLine() call.
+
+       if the line is on hook then this information is sent when the next
+       RingLine() function is called to start a ring cycle. Note that if the
+       Ring cycle had already been started then this function may return false.
+
+       If the line is off hook, then a Caller ID on Message Waiting is sent, if
+       supported by the LID, otherwise false is returned.
       */
     virtual PBoolean SetCallerID(
-      unsigned line,            ///<  Number of line
-      const PString & idString  ///<  ID string to use
-    );
-
-    /**Send a Caller ID on call waiting command
-       The full data of the caller ID string consists of the number field, the
-       time/date and the name field separated by tabs ('\t').
-
-       If the date field is missing (two consecutive tabs) then the current
-       time and date is used. Using an empty string will clear the caller ID
-       so that no caller ID is sent on the next RingLine() call.
-      */
-    virtual PBoolean SendCallerIDOnCallWaiting(
       unsigned line,            ///<  Number of line
       const PString & idString  ///<  ID string to use
     );

@@ -183,7 +183,6 @@ typedef struct PluginLID_Definition
 
   PluginLID_Errors (*GetCallerID)(void * context, unsigned line, char * idString, unsigned size, PluginLID_Boolean full);
   PluginLID_Errors (*SetCallerID)(void * context, unsigned line, const char * idString);
-  PluginLID_Errors (*SendCallerIDOnCallWaiting)(void * context, unsigned line, const char * idString);
   PluginLID_Errors (*SendVisualMessageWaitingIndicator)(void * context, unsigned line, PluginLID_Boolean on);
 
   PluginLID_Errors (*PlayDTMF)(void * context, unsigned line, const char * digits, unsigned onTime, unsigned offTime);

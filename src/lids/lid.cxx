@@ -394,11 +394,6 @@ PBoolean OpalLineInterfaceDevice::SetCallerID(unsigned, const PString &)
   return PFalse;
 }
 
-PBoolean OpalLineInterfaceDevice::SendCallerIDOnCallWaiting(unsigned, const PString &)
-{
-  return PFalse;
-}
-
 
 PBoolean OpalLineInterfaceDevice::SendVisualMessageWaitingIndicator(unsigned, PBoolean)
 {
@@ -845,7 +840,7 @@ static struct {
   { "TO", 676,  OpalLineInterfaceDevice::Tonga,                 "Tonga" },
   { "TT", 1868, OpalLineInterfaceDevice::TrinidadAndTobago,     "Trinidad and Tobago" },
   { "TN", 216,  OpalLineInterfaceDevice::Tunisia,               "Tunisia" },
-  { "TR", 90,   OpalLineInterfaceDevice::Turkey,                "Turkey" },
+  { "TR", 90,   OpalLineInterfaceDevice::Turkey,                "Turkey",               { "450:0.2", "450:2.0-4.0", "450:0.5-0.5", "450:0.2-0.2", "450:0.2-0.2-0.2-0.2-0.2-0.2-0.6-0.2", "450:1.0-0.25" } },
   { "TC", 1649, OpalLineInterfaceDevice::TurksAndCaicosIslands, "Turks and Caicos Islands" },
   { "TV", 688,  OpalLineInterfaceDevice::Tuvalu,                "Tuvalu" },
   { "UG", 256,  OpalLineInterfaceDevice::Uganda,                "Uganda" },
