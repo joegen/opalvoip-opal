@@ -234,7 +234,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remote
                                             (INT)transport,
                                             PThread::NoAutoDeleteThread,
                                             PThread::NormalPriority,
-                                            "SIP Transport:%x"));
+                                            "SIP Transport:%u"));
   return transport;
 }
 
