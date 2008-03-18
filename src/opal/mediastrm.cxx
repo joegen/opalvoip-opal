@@ -68,7 +68,7 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   , paused(false)
   , isSource(isSourceStream)
   , isOpen(false)
-  , defaultDataSize(mediaFormat.GetFrameSize())
+  , defaultDataSize(mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1))
   , timestamp(0)
   , marker(true)
   , mismatchedPayloadTypes(0)
