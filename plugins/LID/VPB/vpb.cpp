@@ -602,7 +602,6 @@ class Context
     //PLUGIN_FUNCTION_ARG2(SetVAD, unsigned,line, PluginLID_Boolean,enable)
     //PLUGIN_FUNCTION_ARG4(GetCallerID, unsigned,line, char *,idString, unsigned,size, PluginLID_Boolean,full)
     //PLUGIN_FUNCTION_ARG2(SetCallerID, unsigned,line, const char *,idString)
-    //PLUGIN_FUNCTION_ARG2(SendCallerIDOnCallWaiting, unsigned,line, const char *,idString)
     //PLUGIN_FUNCTION_ARG2(SendVisualMessageWaitingIndicator, unsigned,line, PluginLID_Boolean,on)
 
     PLUGIN_FUNCTION_ARG4(PlayDTMF, unsigned,line, const char *,digits, unsigned,onTime, unsigned,offTime)
@@ -802,7 +801,6 @@ static struct PluginLID_Definition definition[1] =
     NULL,//Context::SetVAD,
     NULL,//Context::GetCallerID,
     NULL,//Context::SetCallerID,
-    NULL,//Context::SendCallerIDOnCallWaiting,
     NULL,//Context::SendVisualMessageWaitingIndicator,
     Context::PlayDTMF,
     Context::ReadDTMF,
