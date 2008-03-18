@@ -50,7 +50,7 @@ OpalLineEndPoint::OpalLineEndPoint(OpalManager & mgr)
     defaultLine("*")
 {
   PTRACE(4, "LID EP\tOpalLineEndPoint created");
-  manager.AttachEndPoint(this, "pstn", false);
+  manager.AttachEndPoint(this, "pstn");
   monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorLines), 0,
                                   PThread::NoAutoDeleteThread,
                                   PThread::LowPriority,

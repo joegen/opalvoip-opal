@@ -79,7 +79,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   GetOpalCiscoNSE();
 
 #ifdef P_SSL
-  manager.AttachEndPoint(this, "sips", false);
+  manager.AttachEndPoint(this, "sips");
 #endif
 
   PTRACE(4, "SIP\tCreated endpoint.");
