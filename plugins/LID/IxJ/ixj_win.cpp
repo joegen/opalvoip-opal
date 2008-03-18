@@ -1530,9 +1530,6 @@ class Context
     }
 
 
-    //PLUGIN_FUNCTION_ARG2(SendCallerIDOnCallWaiting, unsigned,line, const char *,idString)
-
-
     PLUGIN_FUNCTION_ARG2(SendVisualMessageWaitingIndicator, unsigned,line, PluginLID_Boolean,on)
     {
       if (hDriver == INVALID_HANDLE_VALUE)
@@ -2349,7 +2346,6 @@ static struct PluginLID_Definition definition[1] =
     Context::SetVAD,
     Context::GetCallerID,
     Context::SetCallerID,
-    NULL,//Context::SendCallerIDOnCallWaiting,
     Context::SendVisualMessageWaitingIndicator,
     Context::PlayDTMF,
     Context::ReadDTMF,
