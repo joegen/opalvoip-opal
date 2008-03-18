@@ -206,7 +206,7 @@ void H323PeerElement::Construct()
   monitor = PThread::Create(PCREATE_NOTIFIER(MonitorMain), 0,
                             PThread::NoAutoDeleteThread,
                             PThread::NormalPriority,
-                            "PeerElementMonitor:%x");
+                            "PeerElementMonitor:%u");
 }
 
 H323PeerElement::~H323PeerElement()
