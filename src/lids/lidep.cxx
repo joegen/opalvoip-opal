@@ -519,7 +519,7 @@ PBoolean OpalLineConnection::OnSetUpConnection()
   return endpoint.OnSetUpConnection(*this);
 }
 
-PBoolean OpalLineConnection::SetAlerting(const PString & calleeName, PBoolean)
+PBoolean OpalLineConnection::SetAlerting(const PString & /*calleeName*/, PBoolean /*withMedia*/)
 {
   PTRACE(3, "LID Con\tSetAlerting " << *this);
 
@@ -529,8 +529,6 @@ PBoolean OpalLineConnection::SetAlerting(const PString & calleeName, PBoolean)
   // switch phase 
   phase = AlertingPhase;
   alertingTime = PTime();
-
-  line.SetCallerID(calleeName);
 
   if (line.PlayTone(OpalLineInterfaceDevice::RingTone))
     PTRACE(3, "LID Con\tPlaying ring tone");
@@ -767,13 +765,14 @@ PBoolean OpalLineConnection::SetUpConnection()
   originating = true;
 
   if (line.IsTerminal()) {
-    line.SetCallerID(remotePartyNumber);
-    line.Ring(1, NULL);
-    if (ownerCall.GetConnection(0) != this) {
-      // Are B-Party, so move to alerting state
+    PSafePtr<OpalConnection> partyA = ownerCall.GetConnection(0);
+    if (partyA != this) {
+      // Are B-Party, so set caller ID and move to alerting state
+      line.SetCallerID(partyA->GetRemotePartyNumber() + "\t\t" + partyA->GetRemotePartyName());
       phase = AlertingPhase;
       OnAlerting();
     }
+    line.Ring(1, NULL);
   }
   else {
     switch (line.DialOut(remotePartyNumber, requireTonesForDial, getDialDelay())) {
