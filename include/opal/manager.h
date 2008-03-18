@@ -55,7 +55,6 @@ class OpalMediaPatch;
 class OpalH224Handler;
 class OpalH281Handler;
 
-typedef PFactory<OpalEndPoint> OpalEndpointFactory;
 
 /**This class is the central manager for OPAL.
    The OpalManager embodies the root of the tree of objects that constitute an
@@ -101,8 +100,7 @@ class OpalManager : public PObject
       */
     void AttachEndPoint(
       OpalEndPoint * endpoint,    ///< EndPoint to add to the manager
-      const PString & prefix = PString::Empty(),  ///< Prefix to use, if empty uses endpoint->GetProfixName()
-      bool autoDelete = true      ///< Indication the endpoint is to be deleted when detached
+      const PString & prefix = PString::Empty()  ///< Prefix to use, if empty uses endpoint->GetPrefixName()
     );
 
     /**Remove an endpoint from the manager.
@@ -123,9 +121,7 @@ class OpalManager : public PObject
 
     /**Get the endpoints attached to this manager.
       */
-    PList<OpalEndPoint> GetEndPoints(
-      bool unique = false             // if true, only one instance of each endpoint will be returned
-    ) const;
+    PList<OpalEndPoint> GetEndPoints() const;
 
     /**Shut down all of the endpoints, clearing all calls.
        This is synchonous and will wait till everything is shut down.
@@ -874,8 +870,9 @@ class OpalManager : public PObject
     /**Set the product info for all endpoints.
       */
     void SetProductInfo(
-      const OpalProductInfo & info
-    ) { productInfo = info; }
+      const OpalProductInfo & info, ///< New information
+      bool updateAll = true         ///< Update all registered endpoints
+    );
 
     /**Get the default username for all endpoints.
       */
@@ -884,8 +881,9 @@ class OpalManager : public PObject
     /**Set the default username for all endpoints.
       */
     void SetDefaultUserName(
-      const PString & name
-    ) { defaultUserName = name; }
+      const PString & name,   ///< New name
+      bool updateAll = true   ///< Update all registered endpoints
+    );
 
     /**Get the default display name for all endpoints.
       */
@@ -894,8 +892,9 @@ class OpalManager : public PObject
     /**Set the default display name for all endpoints.
       */
     void SetDefaultDisplayName(
-      const PString & name
-    ) { defaultDisplayName = name; }
+      const PString & name,   ///< New name
+      bool updateAll = true   ///< Update all registered endpoints
+    );
 
 #if OPAL_VIDEO
 
@@ -1312,6 +1311,8 @@ class OpalManager : public PObject
 
     // Dynamic variables
     PReadWriteMutex     endpointsMutex;
+    PList<OpalEndPoint> endpointList;
+    std::map<PString, OpalEndPoint *> endpointMap;
 
     PAtomicInteger lastCallTokenID;
 

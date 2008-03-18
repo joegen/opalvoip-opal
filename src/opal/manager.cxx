@@ -228,19 +228,15 @@ OpalManager::~OpalManager()
 }
 
 
-PList<OpalEndPoint> OpalManager::GetEndPoints(bool unique) const
+PList<OpalEndPoint> OpalManager::GetEndPoints() const
 {
   PList<OpalEndPoint> list;
   list.AllowDeleteObjects(false);
 
   PReadWaitAndSignal mutex(endpointsMutex);
 
-  OpalEndpointFactory::KeyList_T prefixes = OpalEndpointFactory::GetKeyList();
-  for (OpalEndpointFactory::KeyList_T::iterator r = prefixes.begin(); r != prefixes.end(); ++r) {
-    OpalEndPoint * ep = OpalEndpointFactory::CreateInstance(*r);
-    if (!unique || (list.GetObjectsIndex(ep) == P_MAX_INDEX))
-      list.Append(ep);
-  }
+  for (PList<OpalEndPoint>::const_iterator it = endpointList.begin(); it != endpointList.end(); ++it)
+    list.Append((OpalEndPoint *)&*it);
 
   return list;
 }
@@ -255,34 +251,31 @@ void OpalManager::ShutDownEndpoints()
   PWriteWaitAndSignal mutex(endpointsMutex);
 
   // Deregister the endpoints
-  OpalEndpointFactory::KeyList_T prefixes = OpalEndpointFactory::GetKeyList();
-  while (prefixes.size() > 0) {
-    OpalEndpointFactory::Unregister(prefixes.front());
-    prefixes.erase(prefixes.begin());
-  }
+  endpointMap.clear();
+  endpointList.RemoveAll();
 
   clearingAllCalls = false;
 }
 
 
-void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix, bool autoDelete)
+void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix)
 {
   if (PAssertNULL(endpoint) == NULL)
     return;
 
+  PString thePrefix = prefix.IsEmpty() ? endpoint->GetPrefixName() : prefix;
+
   PWriteWaitAndSignal mutex(endpointsMutex);
 
-  std::string stdstrPrefix((const char *)prefix);
-  if (stdstrPrefix.empty())
-    stdstrPrefix = (const char *)endpoint->GetPrefixName();
-
-  if (OpalEndpointFactory::CreateInstance(stdstrPrefix) != NULL) {
-    PTRACE(1, "OpalMan\tCannot re-register endpoint prefix " << stdstrPrefix);
+  if (endpointMap.find(thePrefix) != endpointMap.end()) {
+    PTRACE(1, "OpalMan\tCannot re-register endpoint prefix " << thePrefix);
     return;
   }
 
-  PTRACE(1, "OpalMan\tRegistering endpoint with prefix " << stdstrPrefix);
-  OpalEndpointFactory::Register(stdstrPrefix, endpoint, autoDelete);
+  if (endpointList.GetObjectsIndex(endpoint) != P_MAX_INDEX)
+    endpointList.Append(endpoint);
+  endpointMap[thePrefix] = endpoint;
+  PTRACE(1, "OpalMan\tRegistered endpoint with prefix " << thePrefix);
 }
 
 
@@ -294,19 +287,32 @@ void OpalManager::DetachEndPoint(OpalEndPoint * endpoint)
 }
 
 
-void OpalManager::DetachEndPoint(const PString & _prefix)
+void OpalManager::DetachEndPoint(const PString & prefix)
 {
   PWriteWaitAndSignal mutex(endpointsMutex);
-  std::string prefix((const char *)_prefix);
-  OpalEndpointFactory::Unregister(prefix);
+
+  std::map<PString, OpalEndPoint *>::iterator it = endpointMap.find(prefix);
+  if (it != endpointMap.end()) {
+    OpalEndPoint * endpoint = it->second;
+    endpointMap.erase(it);
+
+    // See if other references
+    for (it = endpointMap.begin(); it != endpointMap.end(); ++it) {
+      if (it->second == endpoint)
+        return; // Still a reference to it
+    }
+
+    // Last copy, delete it now
+    endpointList.Remove(endpoint);
+  }
 }
 
 
-OpalEndPoint * OpalManager::FindEndPoint(const PString & _prefix)
+OpalEndPoint * OpalManager::FindEndPoint(const PString & prefix)
 {
   PReadWaitAndSignal mutex(endpointsMutex);
-  std::string prefix((const char *)_prefix);
-  return OpalEndpointFactory::CreateInstance(prefix);
+  std::map<PString, OpalEndPoint *>::iterator it = endpointMap.find(prefix);
+  return it != endpointMap.end() ? it->second : NULL;
 }
 
 
@@ -469,14 +475,14 @@ PBoolean OpalManager::MakeConnection(OpalCall & call, const PString & remotePart
 
   PReadWaitAndSignal mutex(endpointsMutex);
 
+  OpalEndPoint * ep = NULL;
   if (epname.IsEmpty()) {
-    OpalEndpointFactory::KeyList_T keys = OpalEndpointFactory::GetKeyList();
-    if (keys.size() == 0)
-      return false;
-    epname = PString(keys[0].c_str());
+    if (endpointMap.size() > 0)
+      ep = endpointMap.begin()->second;
   }
+  else
+    ep = FindEndPoint(epname);
 
-  OpalEndPoint * ep = FindEndPoint(epname);
   if (ep != NULL) {
     if (ep->MakeConnection(call, remoteParty, userData, options, stringOptions))
       return PTrue;
@@ -1011,6 +1017,45 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
 }
 
 
+void OpalManager::SetProductInfo(const OpalProductInfo & info, bool updateAll)
+{
+  productInfo = info;
+
+  if (updateAll) {
+    endpointsMutex.StartWrite();
+    for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
+      ep->SetProductInfo(info);
+    endpointsMutex.EndWrite();
+  }
+}
+
+
+void OpalManager::SetDefaultUserName(const PString & name, bool updateAll)
+{
+  defaultUserName = name;
+
+  if (updateAll) {
+    endpointsMutex.StartWrite();
+    for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
+      ep->SetDefaultLocalPartyName(name);
+    endpointsMutex.EndWrite();
+  }
+}
+
+
+void OpalManager::SetDefaultDisplayName(const PString & name, bool updateAll)
+{
+  defaultDisplayName = name;
+
+  if (updateAll) {
+    endpointsMutex.StartWrite();
+    for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
+      ep->SetDefaultDisplayName(name);
+    endpointsMutex.EndWrite();
+  }
+}
+
+
 PBoolean OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
 {
   /* Check if the remote address is a private IP, broadcast, or us */
@@ -1339,10 +1384,8 @@ void OpalManager::GarbageCollection()
 
   endpointsMutex.StartRead();
 
-  OpalEndpointFactory::KeyList_T keys = OpalEndpointFactory::GetKeyList();
-  for (OpalEndpointFactory::KeyList_T::iterator r = keys.begin(); r != keys.end(); ++r) {
-    OpalEndPoint * ep = OpalEndpointFactory::CreateInstance(*r);
-    if (ep != NULL && !ep->GarbageCollection())
+  for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep) {
+    if (!ep->GarbageCollection())
       allCleared = PFalse;
   }
 
