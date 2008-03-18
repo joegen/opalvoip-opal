@@ -653,7 +653,7 @@ void OpalLineConnection::StartIncoming()
     handlerThread = PThread::Create(PCREATE_NOTIFIER(HandleIncoming), 0,
                                     PThread::NoAutoDeleteThread,
                                     PThread::LowPriority,
-                                    "Line Connection:%x");
+                                    "Line Connection:%u");
 }
 
 

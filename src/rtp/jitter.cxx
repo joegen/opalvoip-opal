@@ -260,7 +260,7 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
 void OpalJitterBuffer::Resume(PHandleAggregator * /*aggregator */)
 {
   // otherwise create a seperate thread as per the old design
-  jitterThread = PThread::Create(PCREATE_NOTIFIER(JitterThreadMain), 0, PThread::NoAutoDeleteThread, PThread::HighestPriority, "RTP Jitter:%x",  jitterStackSize);
+  jitterThread = PThread::Create(PCREATE_NOTIFIER(JitterThreadMain), 0, PThread::NoAutoDeleteThread, PThread::HighestPriority, "RTP Jitter:%u",  jitterStackSize);
   jitterThread->Resume();
 }
 
