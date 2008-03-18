@@ -808,15 +808,6 @@ PBoolean OpalPluginLID::SetCallerID(unsigned line, const PString & idString)
 }
 
 
-PBoolean OpalPluginLID::SendCallerIDOnCallWaiting(unsigned line, const PString & idString)
-{
-  if (idString.IsEmpty())
-    return PFalse;
-
-  return CHECK_FN(SendCallerIDOnCallWaiting, (m_context, line, idString)) == PluginLID_NoError;
-}
-
-
 PBoolean OpalPluginLID::SendVisualMessageWaitingIndicator(unsigned line, PBoolean on)
 {
   return CHECK_FN(SendVisualMessageWaitingIndicator, (m_context, line, on)) == PluginLID_NoError;
