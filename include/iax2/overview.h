@@ -31,7 +31,7 @@
  * $Date$
  */
 
-/*! \page pageIAX2Protocol IAX2 section of the OPAL library.
+/*! \page pageIAX2Protocol IAX2 section of the OPAL library
 
 \section secOverview Overview
 
