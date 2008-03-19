@@ -1035,22 +1035,17 @@ PStringList OpalLineInterfaceDevice::GetAllDevices()
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalLine::OpalLine(OpalLineInterfaceDevice & dev, unsigned num, const char * descript)
+OpalLine::OpalLine(OpalLineInterfaceDevice & dev, unsigned num, const char * userToken)
   : device(dev),
     lineNumber(num),
-    token(device.GetDeviceType() + ':' + device.GetDeviceName()),
+    token(userToken),
     ringStoppedTime(0, 10),     // 10 seconds
     ringInterCadenceTime(0, 4)  // 4 seconds
 {
-  token.sprintf(":%u", lineNumber);
-  if (descript == NULL)
-    description = token;
-  else
-    description = descript;
-
+  if (token.IsEmpty())
+    token.sprintf("%s:%s:%u", (const char *)device.GetDeviceType(), (const char *)device.GetDeviceName(), lineNumber);
   
-  PTRACE(4, "LID\tOpalLine constructed - device name " << dev.GetDeviceName() << " num = " << num << 
-            ", descript = " << description);
+  PTRACE(4, "LID\tOpalLine constructed: device=" << dev.GetDeviceName() << ", num=" << num << ", token=" << token);
   
   ringCount = 0;
 }
@@ -1058,7 +1053,7 @@ OpalLine::OpalLine(OpalLineInterfaceDevice & dev, unsigned num, const char * des
 
 void OpalLine::PrintOn(ostream & strm) const
 {
-  strm << description;
+  strm << token;
 }
 
 
