@@ -867,7 +867,7 @@ class OpalLine : public PObject
     OpalLine(
       OpalLineInterfaceDevice & device, ///<  Device to make connection with
       unsigned lineNumber,              ///<  number of line on LID
-      const char * description = NULL   ///<  DEscription string for line
+      const char * userToken = NULL     ///<  Unique token string for line
     );
   //@}
 
@@ -1300,16 +1300,15 @@ class OpalLine : public PObject
       */
     PString GetToken() const { return token; }
 
-    /**Get the description of this line.
+    /**Set the token to uniquely identify this line.
       */
-    PString GetDescription() const { return description; }
+    void SetToken(const PString & t) { token = t; }
   //@}
 
   protected:
     OpalLineInterfaceDevice & device;
     unsigned                  lineNumber;
     PString                   token;
-    PString                   description;
     unsigned                  ringCount;
     PTimeInterval             ringTick;
     PTimeInterval             ringStoppedTime;
