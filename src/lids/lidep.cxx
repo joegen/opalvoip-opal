@@ -241,7 +241,7 @@ PBoolean OpalLineEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
       linesMutex.Wait();
       lines.Append(newLine);
       linesMutex.Signal();
-      PTRACE(3, "LID EP\tAddded line  " << line << ", " << (device.IsLineTerminal(line) ? "terminal" : "network"));
+      PTRACE(3, "LID EP\tAdded line  " << line << ", " << (device.IsLineTerminal(line) ? "terminal" : "network"));
     }
     else {
       delete newLine;
@@ -352,17 +352,14 @@ OpalLine * OpalLineEndPoint::GetLine(const PString & lineName, bool enableAudio,
 
   PTRACE(3, "LID EP\tGetLine " << lineName << ", enableAudio=" << enableAudio << ", terminating=" << terminating);
   for (OpalLineList::iterator line = lines.begin(); line != lines.end(); ++line) {
-    PString lineDescription = line->GetDescription();
+    PString lineToken = line->GetToken();
 
-    PTRACE(3, "LID EP\tGetLine description = \"" << lineDescription << "\", enableAudio = " << line->IsAudioEnabled());
+    PTRACE(3, "LID EP\tGetLine name=\"" << lineToken << "\", enableAudio=" << line->IsAudioEnabled());
 
-    /* if the line description contains the endpoint prefix, strip it*/
-    if (lineDescription.Find(GetPrefixName()) == 0)
-      lineDescription.Delete(0, GetPrefixName().GetLength() + 1);
-
-    if ((lineName == defaultLine || lineDescription == lineName) &&
+    if ((lineName == defaultLine || lineToken == lineName) &&
         (line->IsTerminal() == terminating) &&
-        (!enableAudio || line->EnableAudio())){
+         line->IsPresent() &&
+        (!enableAudio || line->EnableAudio())) {
       PTRACE(3, "LID EP\tGetLine found the line \"" << lineName << '"');
       return &*line;
     }  
@@ -711,7 +708,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
   phase = SetUpPhase;
 
   if (line.IsTerminal())
-    remotePartyName = line.GetDescription();
+    remotePartyName = line.GetToken();
   else {
     // Count incoming rings
     unsigned count;
