@@ -272,7 +272,7 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix
     return;
   }
 
-  if (endpointList.GetObjectsIndex(endpoint) != P_MAX_INDEX)
+  if (endpointList.GetObjectsIndex(endpoint) == P_MAX_INDEX)
     endpointList.Append(endpoint);
   endpointMap[thePrefix] = endpoint;
   PTRACE(1, "OpalMan\tRegistered endpoint with prefix " << thePrefix);
