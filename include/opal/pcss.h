@@ -49,7 +49,7 @@
 class OpalPCSSConnection;
 
 
-/**PC Sound System endpoint.
+/** PC Sound System endpoint.
  */
 class OpalPCSSEndPoint : public OpalEndPoint
 {
@@ -251,7 +251,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
 };
 
 
-/**PC Sound System connection.
+/** PC Sound System connection.
  */
 class OpalPCSSConnection : public OpalConnection
 {

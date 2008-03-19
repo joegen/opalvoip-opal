@@ -11,7 +11,7 @@
 
 
 
-Last updated 10 May, 2005
+Last updated 20 March, 2008
 
 Copyright (C) 1999-2003 Equivalence Pty Ltd, All right reserved 
 
@@ -184,7 +184,11 @@ The remaining Opal classes are listed below.
 \li Opal_YUV420P_RGB24 
 \li Opal_YUV420P_RGB32 
 
-Additional information on the working of the IAX2 is \ref pageIAX2Protocol.
+Additional information on the working of OpalConnections is described in the
+documentation page \ref pageOpalConnections.
+
+Additional information on the working of the IAX2 component of this library is
+described in the documentation page \ref pageIAX2Protocol.
 
 \subsection history History
 
@@ -195,4 +199,7 @@ Additional information on the working of the IAX2 is \ref pageIAX2Protocol.
 \li 12 May 2005     - Changed main page to list only the Opal classes.
 
 \li 11 March 2006   - Add link to description of the IAX2 code.
+
+\li 20 March 2008 - Add documentation on the different phases of a call, which
+                     are driven by the OpalConnection class.
 */
