@@ -148,6 +148,7 @@ void PlayRTP::Main()
         continue;
       }
 
+      mf.SetPayloadType(pt);
       m_payloadType2mediaFormat[pt] = mf;
     }
   }
