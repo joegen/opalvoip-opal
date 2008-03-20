@@ -745,7 +745,7 @@ class OpalMediaFormat : public PContainer
        uniqueue amongst the registered media formats.
       */
     RTP_DataFrame::PayloadTypes GetPayloadType() const { PWaitAndSignal m(_mutex); return m_info == NULL ? RTP_DataFrame::IllegalPayloadType : m_info->rtpPayloadType; }
-    void SetPayloadType(RTP_DataFrame::PayloadTypes type) { PWaitAndSignal m(_mutex); if (m_info != NULL && MakeUnique()) m_info->rtpPayloadType = type; }
+    void SetPayloadType(RTP_DataFrame::PayloadTypes type) { PWaitAndSignal m(_mutex); MakeUnique(); if (m_info != NULL) m_info->rtpPayloadType = type; }
 
     /**Get the RTP encoding name that is to be used for this media format.
       */
