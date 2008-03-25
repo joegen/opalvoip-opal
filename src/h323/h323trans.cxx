@@ -234,10 +234,7 @@ PBoolean H323Transactor::StartChannel()
   if (transport == NULL)
     return PFalse;
 
-  transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(HandleTransactions), 0,
-                                          PThread::NoAutoDeleteThread,
-                                          PThread::NormalPriority,
-                                          "Transactor:%u"));
+  transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(HandleTransactions), "Transactor"));
   return PTrue;
 }
 
@@ -757,7 +754,7 @@ PBoolean H323Transaction::HandlePDU()
     PThread::Create(PCREATE_NOTIFIER(SlowHandler), 0,
                                      PThread::AutoDeleteThread,
                                      PThread::NormalPriority,
-                                     "Transaction:%u");
+                                     "Transaction");
   }
 
   return PTrue;
