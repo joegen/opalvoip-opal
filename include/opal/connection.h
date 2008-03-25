@@ -71,18 +71,6 @@ provided by the existing class structure.
 
 \section secNaming Naming
 
-\li endpoint - supervises the handling of all calls with the same
-    protocol. There is (typically) one H323EndPoint class instance that
-    handles all H323 calls.  
-
-    Note that OpalEndPoint is ancestor of all endoint classes. H323EndPoint,
-    SIPEndPoint, IAX2EndPoint are all extensions of the OpalEndPoint class.
-
-\li OpalCall - this contains references to the class instances associated with
-    one voip call. Consequently there is one instance of the OpalCall class
-    for every active voip call. Once a call has completed, this class (and
-    those with some part of running this call) are destroyed.
-
 \li manager - supervises the instances of endpoints in a running
     application. Typically, there is one manager instance in an application,
     which will maintain the H323EndPoint, SIPEndPoint and IAX2EndPoint
@@ -91,61 +79,81 @@ provided by the existing class structure.
     methods of Opal. The manager maintains a list of all active calls, with a
     list of instances of the OpalCall class.
 
-\li connection - supervises the conversion of media from one protocol to
-    another. Consequently, the H323Connection class will manage the conversion
-    of H323 media and control data to PCM. A second connection instance is
-    required for the conversion of the PCM data to audio data (PC Sound System
-    Connection, or OpalPCSSConnection). Consequently, there will be two (or
-    possibly more) connection instances to set up a voip call. When run as a
-    proxy for H323 to SIP, the OPAL library will have a SIPConnection and
-    H323Connection instance joined together.
+\li endpoint - supervises the handling of all calls with the same
+    protocol. There is (typically) one H323EndPoint class instance that
+    handles all H323 calls.  
 
+    Note that OpalEndPoint is ancestor of all endoint classes. H323EndPoint,
+    SIPEndPoint, IAX2EndPoint are all extensions of the OpalEndPoint class.
+
+\li connection - supervises the call signaling and media control for a protocol.
+    Consequently, the OpalConnection class will manage the "calling" of a peer
+    as well as the negotiation on what form of media is to flow between them.
+    
     Note that OpalConnection is ancestor of all connection
     classes. H323Connection, SIPConnection, IAX2Connection are all extensions
     of the OpalConnection class.
 
+\li OpalCall - this contains information for one voip call. Consequently there
+    is one instance of the OpalCall class for every active voip call. Once a
+    call has completed, this class (and those with some part of running this
+    call) are destroyed. A call always consists of one or more connections.
+
 \li partyA - the name given to the first connection instance created to handle
-    a call. Thus, if we are making a H323 call to a remote endoint, partyA
-    will be assigned to a H323Connection instance.
+    a call. Thus, if we receive an incoming H323 call from a remote endoint,
+    partyA will be assigned to a H323Connection instance.
 
 \li partyB - the name given to the second connection instance created to
     handle a call. For the example above where partyA is used to make a H323
     call, and assuming the sound goes to the computer's speaker, partyB will
     be an instance of the OpalPCSSConnection class.
 
-    It can get weird. Suppose all incoming phone calls are to be directed out
-    as a H323 call. In this case, partyA will be a OpalPhoneLineConnection
+    The association of party A and party B may be explicit through the
+    OpalManager::SetUpCall() function or implicitly through an internal
+    routing engine. Suppose all incoming phone calls are to be directed out
+    as a H323 call. In this case, partyA will be a OpalLineConnection
     instance as we needed something to handle the incoming call. The routing
     engine decides that since all phone calls go out as H323 calls, a
     H323Connection is created to handle the outgoing side. Consequently,
     partyB is (for this example) an instance of the  H323Connection class.
 
-\li local - describes the first side of an OpalConnection instance. As noted
+\li local - describes the first "inside" of an OpalConnection instance. As noted
    above, an OpalConnection instance is used to supervise/manage the
-   conversion of media from one format to another. Further, it was noted that
+   signaling and media selection of a protocol. Further, it was noted that
    a call consists of two or more OpalConnection instances. The local side of
    an OpalConnection refers to the side of the OpalConnection that is internal
    to Opal.
 
-\li remote - describes the second side of an OpalConnection instance. As noted
+\li remote - describes the "outside" of an OpalConnection instance. As noted
    above, an OpalConnection instance is used to supervise/manage the
-   conversion of media from one format to another. Further, it was noted that
+   signaling and media selection of a protocol. Further, it was noted that
    a call consists of two or more OpalConnection instances. The remote side of
-   a H323Connection instance will refer to the person who is at the far end of
-   the call, and may be on the other side of the world.
-      Consequently, remote and local can be described as
-   remote==OpalPCSSConnection==local||local==H323Connection==remote.
+   a H323Connection instance will refer to the person who is "over the wire",
+   and may be on the other side of the world.
+
+   Consequently, a call which has two connections has two each of the remote
+   and local "sides" and can be described as:
+
+   remote<=OpalPCSSConnection=>local|OPAL|local<=H323Connection=>remote.
+
+\li media streams - this abstracts the flow of media (e.g. audio or video) to
+    and from the protocol handled by a connection. The connection will negotiate
+    which media formats are being used and how many media streams are created.
+    The stream then handles how the media is transferred, for example in
+    H323Connection, a media stream would read/write to an RTP session. A second
+    example is the PC Sound System Connection (OpalPCSSConnection) reads/writes
+    to a sound card.
 
 \li OpalMediaPatch - the glue for linking media streams between the local
-    side of two connections.  This class does the necessary codec
-    operations. Further, this class takes in RTP packets, and then generates
+    sides of two connections.  This class does the necessary transcoding
+    operations to convert between the media formats that the media streams
+    support. Further, this class takes in RTP packets, and then generates
     RTP packets on the output side. The input side of this class is described
     in Opal as the "source". The output side of this class is described in
     Opal as the "sink". In the examples above of a H323 voip call to a sound
     card, two instances of the OpalMediaPatch will be required, to transfer
-    data between instances of the H323Connection and OpalPCSSConnection
+    data in each direction between the H323Connection and OpalPCSSConnection
     classes.
-    
 
 \section secCallPhases Call Phases
 
@@ -185,7 +193,7 @@ The two endpoints in the call are labelled L and R (left and right). L is making
 \li L (and R) switch to OpalConnection::ReleasedPhase when all media and control streams have been terminated.
 
 In the example above, if R had answered yes immediately, the call could not
-move immediately to OpalConnection::ConnectedPhase as the media types were
+move immediately to OpalConnection::EstablishedPhase as the media types were
 not agreed on.
 
 The different phases are. 
@@ -201,11 +209,13 @@ The different phases are.
   \li OpalConnection::AlertingPhase - the OpalConnection instance is aware the phone is ringing.
 
 
-  \li OpalConnection::ConnectedPhase - there is agreement on the media type,
-                            network ports, and both endpoints have accepted
-                            the call.
+  \li OpalConnection::ConnectedPhase - both endpoints have accepted the call, there may or may
+                            not be agreement on media atthis time. Note that in many systems
+                            this constitutes the start of charging for a call.
 
-  \li OpalConnection::EstablishedPhase - media can  flow, all have agreed to the call. 
+  \li OpalConnection::EstablishedPhase - we are "connected, there is agreement on the media
+                            type, network ports, media can flow. This is the condition that
+                            contitutes a call being "ready to use".
 
   \li OpalConnection::ReleasingPhase - Either side (L or R) has said
                         "hangup". The media streams are in the process of
@@ -220,10 +230,15 @@ The different phases are.
 
 \section secCallbacks OnEvent Callbacks in Opal
 
+An OnXXX fucntion is called when an external stimuli from the protocol occurs
+and a SetXXX function may be called by OPAL to perform the protocol command. For
+example OnAlerting is called when the H.323 ALERTING packet is received, and
+SetAlerting transmits the ALERTING packet.
+
 It is the OpalConnection class (or descendant) which is in charge of handling
-the control packets of a particular voip protocol. Consequently, it is only
+the control packets of a particular protocol. Consequently, it is only
 code in this class which sets the current call phase variable. Further, most
-events are generated in this class, which are usually passed back to the
+events are generated in the OpalConnection class, which are usually passed back to the
 OpalEndPoint, then to the OpalManager, and usually on to the OpalCall class.
 
 Consequently, if a descendant of the OpalManager has been created, the
@@ -271,9 +286,11 @@ Connection, OpalCall and Manager classes.
 \li The method for deciding on the appropriate media to use, and for deciding
     when the user at R actually picks up the remote phone to accept the call,
     is entirely protocol specific. This decision making process is handled
-    entirely by code in the descendant of the OpalConnection class.
+    by code in the descendant of the OpalConnection class. As much of the
+    common behaviour is abstracted to OpalConnection, OpalMediaFormat etc
+    as possible, but the details must reside in the OpalConnection.
 
-\li When the media is decided on, and the call is accepted at R, both L and R
+\li When the signaling is completed, and the call is accepted at R, both L and R
      will move to the OpalConnection::ConnectedPhase, and invoke
      OpalConnection::OnConnected.  which invokes OpalEndPoint::OnConnected,
      which invokes OpalManager::OnConnected, which invokes
