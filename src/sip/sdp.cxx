@@ -530,15 +530,14 @@ bool SDPMediaDescription::Decode(const PString & str)
     PIPSocket::Address ip;
     transportAddress.GetIpAddress(ip);
     transportAddress = OpalTransportAddress(ip, (WORD)port);
+  }
 
-    // create the format list
-    PINDEX i;
-    for (i = 3; i < tokens.GetSize(); i++) {
-      if (mediaType == Image || mediaType == Unknown)
-        formats.Append(new SDPMediaFormat(RTP_DataFrame::DynamicBase, tokens[i]));
-      else
-        formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)tokens[i].AsUnsigned()));
-    }
+  // create the format list
+  for (PINDEX i = 3; i < tokens.GetSize(); i++) {
+    if (mediaType == Image || mediaType == Unknown)
+      formats.Append(new SDPMediaFormat(RTP_DataFrame::DynamicBase, tokens[i]));
+    else
+      formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)tokens[i].AsUnsigned()));
   }
 
   return PTrue;
