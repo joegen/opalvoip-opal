@@ -69,7 +69,7 @@
 #define new PNEW
 
 IAX2Transmit::IAX2Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
-  : PThread(1000, NoAutoDeleteThread),
+  : PThread(1000, NoAutoDeleteThread, NormalPriority, "IAX Transmitter"),
      ep(_newEndpoint),
      sock(_newSocket)
 {

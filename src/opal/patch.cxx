@@ -584,11 +584,11 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
 
 
 OpalMediaPatch::Thread::Thread(OpalMediaPatch & p)
-: PThread(65536,  //16*4kpage size
-  NoAutoDeleteThread,
-  HighestPriority,
-  "Media Patch:%u"),
-  patch(p)
+  : PThread(65536,  //16*4kpage size
+            NoAutoDeleteThread,
+            HighestPriority,
+            "Media Patch"),
+    patch(p)
 {
 }
 
