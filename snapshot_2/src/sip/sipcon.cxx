@@ -31,7 +31,7 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#ifdef OPAL_SIP
+#if OPAL_SIP
 
 #ifdef __GNUC__
 #pragma implementation "sipcon.h"
@@ -58,6 +58,11 @@
 #endif
 
 #define new PNEW
+
+//
+//  uncomment this to force pause ReINVITES to have c=0.0.0.0
+//
+//#define PAUSE_WITH_EMPTY_ADDRESS  1
 
 typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 
@@ -790,6 +795,15 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
       localMedia->AddMediaFormats(formats, rtpSessionId, rtpPayloadMap);
       localMedia->SetDirection(SDPMediaDescription::Inactive);
     }
+#if PAUSE_WITH_EMPTY_ADDRESS
+    if (local_hold) {
+      PString addr = localMedia->GetTransportAddress();
+      PString prot = addr.Left(addr.Find('$')+1);
+      WORD port; { PIPSocket::Address dummy; localMedia->GetTransportAddress().GetIpAndPort(dummy, port); }
+      OpalTransportAddress newAddr = prot + "0.0.0.0:" + PString(PString::Unsigned, port);
+      localMedia->SetTransportAddress(newAddr);
+    }
+#endif
   }
   else {
     localMedia->AddMediaFormats(formats, rtpSessionId, rtpPayloadMap);
@@ -840,7 +854,8 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
     // Send back a m= line with port value zero and the first entry of the offer payload types as per RFC3264
     localMedia = new SDPMediaDescription(OpalTransportAddress(), rtpMediaType);
-    localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
+    if (!incomingMedia->GetSDPMediaFormats().IsEmpty())
+      localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
     sdpOut.AddMediaDescription(localMedia);
     return PFalse;
   }

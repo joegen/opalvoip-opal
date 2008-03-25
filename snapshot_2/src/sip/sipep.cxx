@@ -555,12 +555,20 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return false;
   }
 
+  // create and check transport
+  OpalTransport * newTransport = CreateTransport(transport.GetRemoteAddress(), transport.GetInterface());
+  if (newTransport == NULL) {
+    PTRACE(1, "SIP\tFailed to create transport for SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
+    SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
+    return PFalse;
+  }
+
   // ask the endpoint for a connection
   SIPConnection *connection = CreateConnection(*call,
                                                mime.GetCallID(),
                                                NULL,
                                                request->GetURI(),
-                                               CreateTransport(transport.GetRemoteAddress(), transport.GetInterface()),
+                                               newTransport,
                                                request);
   if (!AddConnection(connection)) {
     PTRACE(1, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
