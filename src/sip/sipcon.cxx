@@ -843,7 +843,8 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
     // Send back a m= line with port value zero and the first entry of the offer payload types as per RFC3264
     localMedia = new SDPMediaDescription(OpalTransportAddress(), rtpMediaType);
-    localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
+    if (!incomingMedia->GetSDPMediaFormats().IsEmpty())
+      localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
     sdpOut.AddMediaDescription(localMedia);
     return PFalse;
   }
