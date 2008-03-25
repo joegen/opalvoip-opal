@@ -1659,10 +1659,7 @@ PBoolean H323Connection::SetUpConnection()
 
   ApplyStringOptions();
 
-  signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), 0,
-                                  PThread::NoAutoDeleteThread,
-                                  PThread::NormalPriority,
-                                  "H225 Caller:%u"));
+  signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), "H225 Caller"));
   return PTrue;
 }
 
@@ -2374,10 +2371,7 @@ PBoolean H323Connection::CreateOutgoingControlChannel(const H225_TransportAddres
     return PFalse;
   }
 
-  controlChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(NewOutgoingControlChannel), 0,
-                                               PThread::NoAutoDeleteThread,
-                                               PThread::NormalPriority,
-                                               "H.245 Handler"));
+  controlChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(NewOutgoingControlChannel), "H.245 Handler"));
   return PTrue;
 }
 

@@ -51,10 +51,7 @@ OpalLineEndPoint::OpalLineEndPoint(OpalManager & mgr)
 {
   PTRACE(4, "LID EP\tOpalLineEndPoint created");
   manager.AttachEndPoint(this, "pstn");
-  monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorLines), 0,
-                                  PThread::NoAutoDeleteThread,
-                                  PThread::LowPriority,
-                                  "Line Monitor");
+  monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorLines), "Line Monitor");
 }
 
 
@@ -647,10 +644,7 @@ PBoolean OpalLineConnection::PromptUserInput(PBoolean play)
 void OpalLineConnection::StartIncoming()
 {
   if (handlerThread == NULL)
-    handlerThread = PThread::Create(PCREATE_NOTIFIER(HandleIncoming), 0,
-                                    PThread::NoAutoDeleteThread,
-                                    PThread::LowPriority,
-                                    "Line Connection:%u");
+    handlerThread = PThread::Create(PCREATE_NOTIFIER(HandleIncoming), "Line Connection");
 }
 
 
