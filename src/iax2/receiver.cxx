@@ -70,7 +70,7 @@
 #define new PNEW
 
 IAX2Receiver::IAX2Receiver(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
-  : PThread(1000, NoAutoDeleteThread),
+  : PThread(1000, NoAutoDeleteThread, NormalPriority, "IAX Receiver"),
      endpoint(_newEndpoint),
      sock(_newSocket)
 {

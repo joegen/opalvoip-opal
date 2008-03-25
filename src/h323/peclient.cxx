@@ -203,10 +203,7 @@ void H323PeerElement::Construct()
 
   StartChannel();
 
-  monitor = PThread::Create(PCREATE_NOTIFIER(MonitorMain), 0,
-                            PThread::NoAutoDeleteThread,
-                            PThread::NormalPriority,
-                            "PeerElementMonitor:%u");
+  monitor = PThread::Create(PCREATE_NOTIFIER(MonitorMain), "PeerElementMonitor");
 }
 
 H323PeerElement::~H323PeerElement()
@@ -307,7 +304,7 @@ void H323PeerElement::MonitorMain(PThread &, INT)
               !localServiceOrdinals.Contains(descriptor->creator)
              )
             ) {
-          PThread::Create(PCREATE_NOTIFIER(UpdateAllDescriptors), 0, PThread::AutoDeleteThread, PThread::NormalPriority);
+          PThread::Create(PCREATE_NOTIFIER(UpdateAllDescriptors), 0, PThread::AutoDeleteThread, PThread::NormalPriority, "UpdateDescriptors");
           break;
         }
       }

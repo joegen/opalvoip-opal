@@ -110,10 +110,7 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   willRespondToIRR = PFalse;
   monitorStop = PFalse;
 
-  monitor = PThread::Create(PCREATE_NOTIFIER(MonitorMain), 0,
-                            PThread::NoAutoDeleteThread,
-                            PThread::NormalPriority,
-                            "GkMonitor:%u");
+  monitor = PThread::Create(PCREATE_NOTIFIER(MonitorMain), "GkMonitor");
   
 #ifdef H323_H460
   features.LoadFeatureSet(H460_Feature::FeatureRas);

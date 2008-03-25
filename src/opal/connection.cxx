@@ -387,7 +387,7 @@ void OpalConnection::Release(CallEndReason reason)
   PThread::Create(PCREATE_NOTIFIER(OnReleaseThreadMain), 0,
                   PThread::AutoDeleteThread,
                   PThread::NormalPriority,
-                  "OnRelease:%u");
+                  "OnRelease");
 }
 
 
