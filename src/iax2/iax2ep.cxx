@@ -778,7 +778,7 @@ PBoolean IAX2EndPoint::OnIncomingCall(IAX2Connection & conn)
 ////////////////////////////////////////////////////////////////////////////////
 
 IAX2IncomingEthernetFrames::IAX2IncomingEthernetFrames() 
-  : PThread(1000, NoAutoDeleteThread)
+  : PThread(1000, NoAutoDeleteThread, NormalPriority, "IAX Incoming")
 {
   keepGoing = PTrue;
 }

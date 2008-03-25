@@ -436,7 +436,7 @@ void OpalListener::ListenForConnections(PThread & thread, INT)
                                                   (INT)transport,
                                                   PThread::NoAutoDeleteThread,
                                                   PThread::NormalPriority,
-                                                  "Opal Answer:%u"));
+                                                  "Opal Answer"));
           break;
 
         case HandOffThreadMode :
@@ -458,10 +458,7 @@ PBoolean OpalListener::StartThread(const PNotifier & theAcceptHandler, ThreadMod
   acceptHandler = theAcceptHandler;
   threadMode = mode;
 
-  thread = PThread::Create(PCREATE_NOTIFIER(ListenForConnections), 0,
-                           PThread::NoAutoDeleteThread,
-                           PThread::NormalPriority,
-                           "Opal Listener:%u");
+  thread = PThread::Create(PCREATE_NOTIFIER(ListenForConnections), "Opal Listener:%u");
 
   return thread != NULL;
 }

@@ -195,10 +195,7 @@ OpalManager::OpalManager()
     videoPreviewDevice = videoOutputDevice;
 #endif
 
-  garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), 0,
-                                     PThread::NoAutoDeleteThread,
-                                     PThread::LowPriority,
-                                     "OpalGarbage");
+  garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), "OpalGarbage");
 
   PTRACE(4, "OpalMan\tCreated manager.");
 }
