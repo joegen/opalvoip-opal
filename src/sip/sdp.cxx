@@ -31,7 +31,7 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#ifdef OPAL_SIP
+#if OPAL_SIP
 
 #ifdef __GNUC__
 #pragma implementation "sdp.h"
@@ -48,6 +48,11 @@
 #define  SDP_MEDIA_TRANSPORT_UDPTL "udptl"
 
 #define new PNEW
+
+//
+// uncommment this to output a=fmtp lines before a=rtpmap lines. Useful for testing
+//
+//#define FMTP_BEFORE_RTPMAP 1
 
 
 /////////////////////////////////////////////////////////
@@ -347,14 +352,31 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
 {
   PAssert(!encodingName.IsEmpty(), "SDPAudioMediaFormat encoding name is empty");
 
-  strm << "a=rtpmap:" << (int)payloadType << ' ' << encodingName << '/' << clockRate;
-  if (!parameters.IsEmpty())
-    strm << '/' << parameters;
-  strm << "\r\n";
-
-  PString fmtpString = GetFMTP();
-  if (!fmtpString.IsEmpty())
-    strm << "a=fmtp:" << (int)payloadType << ' ' << fmtpString << "\r\n";
+  PINDEX i;
+  for (i = 0; i < 2; ++i) {
+    switch (i) {
+#ifdef FMTP_BEFORE_RTPMAP
+      case 1:
+#else
+      case 0:
+#endif
+        strm << "a=rtpmap:" << (int)payloadType << ' ' << encodingName << '/' << clockRate;
+        if (!parameters.IsEmpty())
+          strm << '/' << parameters;
+        strm << "\r\n";
+        break;
+#ifdef FMTP_BEFORE_RTPMAP
+      case 0:
+#else
+      case 1:
+#endif
+        {
+          PString fmtpString = GetFMTP();
+          if (!fmtpString.IsEmpty())
+            strm << "a=fmtp:" << (int)payloadType << ' ' << fmtpString << "\r\n";
+        }
+    }
+  }
 }
 
 
@@ -1063,8 +1085,30 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
       //
       /////////////////////////////////
   
-      if (currentMedia != NULL && line[0] != 'm')
-        currentMedia->Decode(line[0], value);
+      if (currentMedia != NULL && line[0] != 'm') {
+
+        // process all of the "a=rtpmap" lines first so that the media formats are 
+        // created before any media description paramaters are processed
+        int y = i;
+        for (int pass = 0; pass < 2; ++pass) {
+          y = i;
+          for (y = i; y < lines.GetSize(); ++y) {
+            PString & line2 = lines[y];
+            PINDEX pos = line2.Find('=');
+            if (pos == 1) {
+              if (line2[0] == 'm')
+                break;
+              PString value = line2.Mid(pos+1).Trim();
+              bool isRtpMap = value.Left(6) *= "rtpmap";
+              if (pass == 0 && isRtpMap)
+                currentMedia->Decode(line2[0], value);
+              else if (pass == 1 && !isRtpMap)
+                currentMedia->Decode(line2[0], value);
+            }
+          }
+        }
+        i = y;
+      }
       else {
         switch (line[0]) {
           case 'v' : // protocol version (mandatory)
