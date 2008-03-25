@@ -2649,10 +2649,7 @@ H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
 
   peerElement = NULL;
 
-  monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorMain), 0,
-                                  PThread::NoAutoDeleteThread,
-                                  PThread::NormalPriority,
-                                  "GkSrv Monitor");
+  monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorMain), "GkSrv Monitor");
 }
 
 
