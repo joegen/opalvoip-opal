@@ -577,12 +577,14 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
       //If it's bigger than the target we're currently trying to set, adapt that target.
       //Note: this will never make targetJitterTime larger than currentJitterTime due to
       //previous if condition
-      if (thisJitter > (int) targetJitterTime * LOWER_JITTER_MAX_PCNT / 100) {
-        targetJitterTime = thisJitter * 100 / LOWER_JITTER_MAX_PCNT;
+      DWORD newJitterTime = thisJitter * 100 / LOWER_JITTER_MAX_PCNT;
+      if (newJitterTime > maxJitterTime)
+        newJitterTime = maxJitterTime;
+      if (newJitterTime > targetJitterTime) {
+        targetJitterTime = newJitterTime;
         PTRACE(3, "RTP\tJitter buffer target size increased to "
                    << targetJitterTime << " (" << (targetJitterTime/timeUnits) << "ms)");
       }
-
     }
   }
 
