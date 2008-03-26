@@ -374,6 +374,7 @@ class SIPAuthentication : public PObject
 
     PString GetAuthParam(const PString & auth, const char * name) const;
     PString AsHex(PMessageDigest5::Code & digest) const;
+    PString AsHex(const PBYTEArray & data) const;
 
     static SIPAuthentication * ParseAuthenticationRequired(bool isProxy,
                                                 const PString & line,
