@@ -1039,6 +1039,7 @@ void MyManager::Main(PArgList & args)
             "  M   : send text message to remote user\n"
             "  C   : connect to remote host\n"
             "  S   : Display statistics\n"
+            "  T   : transfer remote to new destination\n"
             "  H   : Hang up phone\n"
             "  L   : List speed dials\n"
             "  D   : Create new speed dial\n"
@@ -1131,6 +1132,16 @@ void MyManager::Main(PArgList & args)
         }
         break;
 
+      case 't' :
+        if (currentCallToken.IsEmpty())
+          cout << "Cannot do transfer while no call in progress\n";
+        else {
+          PString dest;
+          console >> dest;
+          TransferCall(dest);
+        }
+        break;
+
       case 'r':
         cout << " current call token is \"" << currentCallToken << "\" " << endl;
         break;
@@ -1174,6 +1185,29 @@ void MyManager::HangupCurrentCall()
   else
     cout << "Not in a call!\n";      
 }
+
+
+void MyManager::TransferCall(const PString & dest)
+{
+  if (dest.IsEmpty()) {
+    cout << "Must supply a destination for transfer!\n";
+    return;
+  }
+
+  PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
+  if (call == NULL) {
+    cout << "Current call disappeared!\n";
+    return;
+  }
+
+  for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
+    if (!PIsDescendant(&(*connection), OpalPCSSConnection) && !PIsDescendant(&(*connection), OpalLineConnection)) {
+      connection->TransferConnection(dest);
+      break;
+    }
+  }
+}
+
 
 void MyManager::SendMessageToRemoteNode(const PString & ostr)
 {
