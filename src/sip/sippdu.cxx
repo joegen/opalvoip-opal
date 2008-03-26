@@ -31,7 +31,7 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#ifdef OPAL_SIP
+#if OPAL_SIP
 
 #ifdef __GNUC__
 #pragma implementation "sippdu.h"
@@ -1076,6 +1076,15 @@ PString SIPAuthentication::AsHex(PMessageDigest5::Code & digest) const
   return out;
 }
 
+PString SIPAuthentication::AsHex(const PBYTEArray & data) const
+{
+  PStringStream out;
+  out << hex << setfill('0');
+  for (PINDEX i = 0; i < data.GetSize(); i++)
+    out << setw(2) << (unsigned)data[i];
+  return out;
+}
+
 SIPAuthentication * SIPAuthentication::ParseAuthenticationRequired(bool isProxy,
                                                         const PString & line,
                                                               PString & errorMsg)
@@ -1317,15 +1326,17 @@ class SIPNTLMAuthentication : public SIPAuthentication
        BYTE     hostAndDomain;   // host string and domain (ASCII)
     };
 
-    void ConstructType1Message(PBYTEArray & message);
+    void ConstructType1Message(PBYTEArray & message) const;
 
   public:
-    PString domain;
+    PString domainName;
+    PString hostName;
 };
 
 SIPNTLMAuthentication::SIPNTLMAuthentication()
 {
-  domain = "My Domain";
+  hostName   = "Hostname";
+  domainName = "Domain";
 }
 
 bool SIPNTLMAuthentication::EquivalentTo(const SIPAuthentication & _oldAuth)
@@ -1340,12 +1351,16 @@ PBoolean SIPNTLMAuthentication::Parse(const PString & auth, PBoolean proxy)
 
 PBoolean SIPNTLMAuthentication::Authorise(SIP_PDU & pdu) const
 {
+  PBYTEArray type1;
+  ConstructType1Message(type1);
+  pdu.GetMIME().SetAt(isProxy ? "Proxy-Authorization" : "Authorization", AsHex(type1));
+
   return false;
 }
 
-void SIPNTLMAuthentication::ConstructType1Message(PBYTEArray & buffer)
+void SIPNTLMAuthentication::ConstructType1Message(PBYTEArray & buffer) const
 {
-  BYTE * ptr = buffer.GetPointer(sizeof(Type1MessageHdr) + username.GetLength() + domain.GetLength());
+  BYTE * ptr = buffer.GetPointer(sizeof(Type1MessageHdr) + hostName.GetLength() + domainName.GetLength());
 
   Type1MessageHdr * hdr = (Type1MessageHdr *)ptr;
   memset(hdr, 0, sizeof(Type1MessageHdr));
@@ -1354,10 +1369,12 @@ void SIPNTLMAuthentication::ConstructType1Message(PBYTEArray & buffer)
 
   hdr->host_off = &hdr->hostAndDomain - (BYTE *)hdr;
   PAssert(hdr->host_off == 0x20, "NTLM auth cannot be constructed");
-  hdr->host_len = hdr->host_len2 = (PUInt16l)username.GetLength();
+  hdr->host_len = hdr->host_len2 = (PUInt16l)hostName.GetLength();
+  memcpy(&hdr->hostAndDomain, (const char *)hostName, hdr->host_len);
 
   hdr->dom_off = hdr->host_off + hdr->host_len;
-  hdr->dom_len = hdr->dom_len2  = (PUInt16l)domain.GetLength();
+  hdr->dom_len = hdr->dom_len2  = (PUInt16l)domainName.GetLength();
+  memcpy(&hdr->hostAndDomain + hdr->dom_len - hdr->host_len, (const char *)domainName, hdr->host_len2);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
