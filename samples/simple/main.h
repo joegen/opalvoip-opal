@@ -115,6 +115,7 @@ class MyManager : public OpalManager
 
     void HangupCurrentCall();
     void StartCall(const PString & ostr);
+    void TransferCall(const PString & dest);
 #if P_CONFIG_FILE
     void NewSpeedDial(const PString & ostr);
     void ListSpeedDials();
