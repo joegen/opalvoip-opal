@@ -103,6 +103,8 @@ DEF_FIELD(AutoAnswer);
 DEF_FIELD(IVRScript);
 DEF_FIELD(SpeakerVolume);
 DEF_FIELD(MicrophoneVolume);
+DEF_FIELD(SpeakerMute);
+DEF_FIELD(MicrophoneMute);
 DEF_FIELD(LastDialed);
 DEF_FIELD(LastReceived);
 
@@ -3603,16 +3605,24 @@ bool InCallPanel::Show(bool show)
     int value = 50;
     config->Read(SpeakerVolumeKey, &value);
     m_SpeakerVolume->SetValue(value);
-    SetVolume(false, value, false);
+    bool mute = false;
+    config->Read(SpeakerMuteKey, &mute);
+    m_SpeakerMute->SetValue(mute);
+    SetVolume(false, value, !mute);
 
     value = 50;
     config->Read(MicrophoneVolumeKey, &value);
     m_MicrophoneVolume->SetValue(value);
-    SetVolume(true, value, false);
+    mute = false;
+    config->Read(MicrophoneMuteKey, &mute);
+    m_MicrophoneMute->SetValue(mute);
+    SetVolume(true, value, !mute);
   }
   else {
     config->Write(SpeakerVolumeKey, m_SpeakerVolume->GetValue());
+    config->Write(SpeakerMuteKey, m_SpeakerMute->GetValue());
     config->Write(MicrophoneVolumeKey, m_MicrophoneVolume->GetValue());
+    config->Write(MicrophoneMuteKey, m_MicrophoneMute->GetValue());
   }
 
   return wxPanel::Show(show);
