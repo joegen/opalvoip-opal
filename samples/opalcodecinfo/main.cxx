@@ -175,8 +175,8 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
          << "  Frames/packet (max): " << defn.parm.audio.maxFramesPerPacket << endl;
   }
   else {
-    cout << "  Frame width:         " << defn.parm.video.maxFrameWidth << endl
-         << "  Frame height:        " << defn.parm.video.maxFrameHeight << endl
+    cout << "  Frame width (max):   " << defn.parm.video.maxFrameWidth << endl
+         << "  Frame height (max):  " << defn.parm.video.maxFrameHeight << endl
          << "  Frame rate:          " << defn.parm.video.recommendedFrameRate << endl
          << "  Frame rate (max):    " << defn.parm.video.maxFrameRate << endl;
   }
