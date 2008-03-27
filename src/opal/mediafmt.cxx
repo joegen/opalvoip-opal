@@ -1295,19 +1295,19 @@ const PString & OpalVideoFormat::TxKeyFramePeriodOption()       { static PString
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
                                  const char * encodingName,
-                                 unsigned frameWidth,
-                                 unsigned frameHeight,
-                                 unsigned frameRate,
-                                 unsigned bitRate,
+                                 unsigned maxFrameWidth,
+                                 unsigned maxFrameHeight,
+                                 unsigned maxFrameRate,
+                                 unsigned maxBitRate,
                                  time_t timeStamp)
 {
   Construct(new OpalVideoFormatInternal(fullName,
                                         rtpPayloadType,
                                         encodingName,
-                                        frameWidth,
-                                        frameHeight,
-                                        frameRate,
-                                        bitRate,
+                                        maxFrameWidth,
+                                        maxFrameHeight,
+                                        maxFrameRate,
+                                        maxBitRate,
                                         timeStamp));
 }
 
@@ -1315,29 +1315,29 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
 OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
                                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
                                                  const char * encodingName,
-                                                 unsigned frameWidth,
-                                                 unsigned frameHeight,
-                                                 unsigned frameRate,
-                                                 unsigned bitRate,
+                                                 unsigned maxFrameWidth,
+                                                 unsigned maxFrameHeight,
+                                                 unsigned maxFrameRate,
+                                                 unsigned maxBitRate,
                                                  time_t timeStamp)
   : OpalMediaFormatInternal(fullName,
                             OpalMediaFormat::DefaultVideoSessionID,
                             rtpPayloadType,
                             encodingName,
                             PFalse,
-                            bitRate,
+                            maxBitRate,
                             0,
-                            OpalMediaFormat::VideoClockRate/frameRate,
+                            OpalMediaFormat::VideoClockRate/maxFrameRate,
                             OpalMediaFormat::VideoClockRate,
                             timeStamp)
 {
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameWidthOption(),         false, OpalMediaOption::AlwaysMerge, frameWidth,  16, 32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameHeightOption(),        false, OpalMediaOption::AlwaysMerge, frameHeight, 16, 32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameWidthOption(),    false, OpalMediaOption::MaxMerge, PVideoFrameInfo::SQCIFWidth, 16, 32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameHeightOption(),   false, OpalMediaOption::MaxMerge, PVideoFrameInfo::SQCIFHeight,16, 32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameWidthOption(),    false, OpalMediaOption::MinMerge, PVideoFrameInfo::CIF16Width, 16, 32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameHeightOption(),   false, OpalMediaOption::MinMerge, PVideoFrameInfo::CIF16Height,16, 32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TargetBitRateOption(),      false, OpalMediaOption::MinMerge, 10000000, 100));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameWidthOption(),         false, OpalMediaOption::AlwaysMerge, PVideoFrameInfo::CIFWidth,   16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameHeightOption(),        false, OpalMediaOption::AlwaysMerge, PVideoFrameInfo::CIFHeight,  16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameWidthOption(),    false, OpalMediaOption::MaxMerge,    PVideoFrameInfo::SQCIFWidth, 16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameHeightOption(),   false, OpalMediaOption::MaxMerge,    PVideoFrameInfo::SQCIFHeight,16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameWidthOption(),    false, OpalMediaOption::MinMerge,    maxFrameWidth,               16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameHeightOption(),   false, OpalMediaOption::MinMerge,    maxFrameHeight,              16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TargetBitRateOption(),      false, OpalMediaOption::MinMerge,    maxBitRate,                  1000));
 
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
