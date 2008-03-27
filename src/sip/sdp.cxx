@@ -1096,8 +1096,10 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
             PString & line2 = lines[y];
             PINDEX pos = line2.Find('=');
             if (pos == 1) {
-              if (line2[0] == 'm')
+              if (line2[0] == 'm') {
+                --y;
                 break;
+              }
               PString value = line2.Mid(pos+1).Trim();
               bool isRtpMap = value.Left(6) *= "rtpmap";
               if (pass == 0 && isRtpMap)
