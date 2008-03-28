@@ -226,6 +226,8 @@ void SDPMediaFormat::SetFMTP(const PString & str)
 
     sep1prev = sep1next+1;
   } while (sep1prev != P_MAX_INDEX);
+
+  mediaFormat.ToNormalisedOptions();
 }
 
 
@@ -245,6 +247,8 @@ PString SDPMediaFormat::GetFMTP() const
   PString str = mediaFormat.GetOptionString("FMTP");
   if (!str.IsEmpty())
     return str;
+
+  mediaFormat.ToCustomisedOptions();
 
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     const OpalMediaOption & option = mediaFormat.GetOption(i);
