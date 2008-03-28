@@ -162,6 +162,12 @@ PBoolean H323Capability::IsMatch(const PASN_Choice & subTypePDU) const
 }
 
 
+PBoolean H323Capability::OnSendingPDU(H245_DataType & /*pdu*/) const
+{
+  return mediaFormat.ToCustomisedOptions();
+}
+
+
 PBoolean H323Capability::OnReceivedPDU(const H245_Capability & cap)
 {
   switch (cap.GetTag()) {
@@ -195,6 +201,12 @@ PBoolean H323Capability::OnReceivedPDU(const H245_Capability & cap)
   }
 
   return PTrue;
+}
+
+
+PBoolean H323Capability::OnReceivedPDU(const H245_DataType & /*pdu*/, PBoolean /*receiver*/)
+{
+  return mediaFormat.ToNormalisedOptions();
 }
 
 
@@ -752,7 +764,8 @@ PBoolean H323AudioCapability::OnSendingPDU(H245_Capability & cap) const
 PBoolean H323AudioCapability::OnSendingPDU(H245_DataType & dataType) const
 {
   dataType.SetTag(H245_DataType::e_audioData);
-  return OnSendingPDU((H245_AudioCapability &)dataType, GetTxFramesInPacket(), e_OLC);
+  return H323Capability::OnSendingPDU(dataType) &&
+         OnSendingPDU((H245_AudioCapability &)dataType, GetTxFramesInPacket(), e_OLC);
 }
 
 
@@ -869,7 +882,7 @@ PBoolean H323AudioCapability::OnReceivedPDU(const H245_DataType & dataType, PBoo
            << xFramesInPacket << " as remote allows " << packetSize);
   }
 
-  return PTrue;
+  return H323Capability::OnReceivedPDU(dataType, receiver);
 }
 
 
@@ -1050,7 +1063,8 @@ PBoolean H323VideoCapability::OnSendingPDU(H245_Capability & cap) const
 PBoolean H323VideoCapability::OnSendingPDU(H245_DataType & dataType) const
 {
   dataType.SetTag(H245_DataType::e_videoData);
-  return OnSendingPDU((H245_VideoCapability &)dataType, e_OLC);
+  return H323Capability::OnSendingPDU(dataType) &&
+         OnSendingPDU((H245_VideoCapability &)dataType, e_OLC);
 }
 
 
@@ -1085,12 +1099,13 @@ PBoolean H323VideoCapability::OnReceivedPDU(const H245_Capability & cap)
 }
 
 
-PBoolean H323VideoCapability::OnReceivedPDU(const H245_DataType & dataType, PBoolean)
+PBoolean H323VideoCapability::OnReceivedPDU(const H245_DataType & dataType, PBoolean receiver)
 {
   if (dataType.GetTag() != H245_DataType::e_videoData)
     return PFalse;
 
-  return OnReceivedPDU((const H245_VideoCapability &)dataType, e_OLC);
+  return OnReceivedPDU((const H245_VideoCapability &)dataType, e_OLC) &&
+         H323Capability::OnReceivedPDU(dataType, receiver);
 }
 
 
@@ -1278,7 +1293,8 @@ PBoolean H323DataCapability::OnSendingPDU(H245_DataType & dataType) const
   dataType.SetTag(H245_DataType::e_data);
   H245_DataApplicationCapability & app = dataType;
   app.m_maxBitRate = maxBitRate;
-  return OnSendingPDU(app, e_OLC);
+  return H323Capability::OnSendingPDU(dataType) &&
+         OnSendingPDU(app, e_OLC);
 }
 
 
@@ -1317,14 +1333,14 @@ PBoolean H323DataCapability::OnReceivedPDU(const H245_Capability & cap)
 }
 
 
-PBoolean H323DataCapability::OnReceivedPDU(const H245_DataType & dataType, PBoolean)
+PBoolean H323DataCapability::OnReceivedPDU(const H245_DataType & dataType, PBoolean receiver)
 {
   if (dataType.GetTag() != H245_DataType::e_data)
     return PFalse;
 
   const H245_DataApplicationCapability & app = dataType;
   maxBitRate = app.m_maxBitRate;
-  return OnReceivedPDU(app, e_OLC);
+  return OnReceivedPDU(app, e_OLC) && H323Capability::OnReceivedPDU(dataType, receiver);
 }
 
 
@@ -1901,7 +1917,8 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
         if (capability != NULL) {
           H323Capability * copy = (H323Capability *)capability->Clone();
           copy->SetCapabilityNumber(pdu.m_capabilityTable[i].m_capabilityTableEntryNumber);
-          if (copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability))
+          if (copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability) &&
+              copy->GetWritableMediaFormat().ToNormalisedOptions())
             table.Append(copy);
           else
             delete copy;
@@ -2518,6 +2535,7 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
       H245_CapabilityTableEntry & entry = pdu.m_capabilityTable[count++];
       entry.m_capabilityTableEntryNumber = capability.GetCapabilityNumber();
       entry.IncludeOptionalField(H245_CapabilityTableEntry::e_capability);
+      capability.GetWritableMediaFormat().ToCustomisedOptions();
       capability.OnSendingPDU(entry.m_capability);
 
       h225_0.m_mediaPacketizationCapability.m_rtpPayloadType.SetSize(rtpPacketizationCount+1);
