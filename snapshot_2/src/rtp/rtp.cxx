@@ -521,6 +521,8 @@ RTP_Session::RTP_Session(
 
   closeOnBye = PFalse;
   byeSent    = PFalse;
+
+  lastSentTimestamp = 0;  // should be calculated, but we'll settle for initialising it
 }
 
 RTP_Session::~RTP_Session()

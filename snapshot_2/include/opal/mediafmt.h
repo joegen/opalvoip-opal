@@ -749,7 +749,7 @@ class OpalMediaFormat : public PContainer
 
     /**Get the RTP encoding name that is to be used for this media format.
       */
-    const char * GetEncodingName() const { PWaitAndSignal m(_mutex); return m_info == NULL ? "" : m_info->rtpEncodingName; }
+    const char * GetEncodingName() const { PWaitAndSignal m(_mutex); return m_info == NULL ? "" : m_info->rtpEncodingName.GetPointer(); }
 
     enum {
       DefaultAudioSessionID = 1,
