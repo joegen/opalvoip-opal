@@ -193,11 +193,17 @@ bool OpalMediaOption::Merge(const OpalMediaOption & option)
       break;
 
     case EqualMerge :
-      return CompareValue(option) == EqualTo;
+      if (CompareValue(option) == EqualTo)
+        return true;
+      PTRACE(2, "MediaFormat\tMerge of media option \"" << m_name << "\" failed, required to be equal.");
+      return false;
 
     case NotEqualMerge :
-      return CompareValue(option) != EqualTo;
-      
+      if (CompareValue(option) != EqualTo)
+        return true;
+      PTRACE(2, "MediaFormat\tMerge of media option \"" << m_name << "\" failed, required to be not equal.");
+      return false;
+
     case AlwaysMerge :
       assign = CompareValue(option) != EqualTo;
       break;
@@ -868,8 +874,6 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
   PWaitAndSignal m1(media_format_mutex);
   PWaitAndSignal m2(mediaFormat.media_format_mutex);
 
-  ToNormalisedOptions();
-
   for (PINDEX i = 0; i < options.GetSize(); i++) {
     OpalMediaOption & opt = options[i];
     PString name = opt.GetName();
@@ -884,8 +888,6 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
         return false;
     }
   }
-
-  ToNormalisedOptions();
 
   return true;
 }

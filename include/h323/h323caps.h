@@ -224,7 +224,7 @@ class H323Capability : public PObject
      */
     virtual PBoolean OnSendingPDU(
       H245_DataType & pdu  ///<  PDU to set information on
-    ) const = 0;
+    ) const;
 
     /**This function is called whenever and outgoing RequestMode
        PDU is being constructed for the control channel. It allows the
@@ -263,7 +263,7 @@ class H323Capability : public PObject
     virtual PBoolean OnReceivedPDU(
       const H245_DataType & pdu,  ///<  PDU to get information from
       PBoolean receiver               ///<  Is receiver OLC
-    ) = 0;
+    );
 
     /**Compare the PDU part of the capability.
       */
@@ -343,7 +343,7 @@ class H323Capability : public PObject
     RTP_DataFrame::PayloadTypes rtpPayloadType;
 
   private:
-    OpalMediaFormat     mediaFormat;
+    mutable OpalMediaFormat mediaFormat;
 
   friend class H323Capabilities;
 };
