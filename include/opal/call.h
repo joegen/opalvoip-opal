@@ -385,6 +385,7 @@ class OpalCall : public PSafeObject
   //@}
 
     virtual PBoolean StartRecording(const PFilePath & fn);
+    virtual bool IsRecording() const;
     virtual void StopRecording();
     void OnStopRecordAudio(const PString & callToken);
 

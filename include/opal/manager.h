@@ -1233,6 +1233,7 @@ class OpalManager : public PObject
     { return recordManager; }
 
     virtual PBoolean StartRecording(const PString & callToken, const PFilePath & fn);
+    virtual bool IsRecording(const PString & callToken);
     virtual void StopRecording(const PString & callToken);
 
   protected:
