@@ -332,25 +332,31 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
 
   EVT_MENU_OPEN(MyManager::OnAdjustMenus)
 
-  EVT_MENU(XRCID("MenuQuit"),     MyManager::OnMenuQuit)
-  EVT_MENU(XRCID("MenuAbout"),    MyManager::OnMenuAbout)
-  EVT_MENU(XRCID("MenuCall"),     MyManager::OnMenuCall)
-  EVT_MENU(XRCID("MenuCallLastDialed"), MyManager::OnMenuCallLastDialed)
+  EVT_MENU(XRCID("MenuQuit"),            MyManager::OnMenuQuit)
+  EVT_MENU(XRCID("MenuAbout"),           MyManager::OnMenuAbout)
+  EVT_MENU(XRCID("MenuCall"),            MyManager::OnMenuCall)
+  EVT_MENU(XRCID("MenuCallLastDialed"),  MyManager::OnMenuCallLastDialed)
   EVT_MENU(XRCID("MenuCallLastReceived"),MyManager::OnMenuCallLastReceived)
-  EVT_MENU(XRCID("MenuAnswer"),   MyManager::OnMenuAnswer)
-  EVT_MENU(XRCID("MenuHangUp"),   MyManager::OnMenuHangUp)
-  EVT_MENU(XRCID("NewSpeedDial"), MyManager::OnNewSpeedDial)
-  EVT_MENU(XRCID("ViewLarge"),    MyManager::OnViewLarge)
-  EVT_MENU(XRCID("ViewSmall"),    MyManager::OnViewSmall)
-  EVT_MENU(XRCID("ViewList"),     MyManager::OnViewList)
-  EVT_MENU(XRCID("ViewDetails"),  MyManager::OnViewDetails)
-  EVT_MENU(XRCID("EditSpeedDial"),MyManager::OnEditSpeedDial)
-  EVT_MENU(XRCID("MenuCut"),      MyManager::OnCutSpeedDial)
-  EVT_MENU(XRCID("MenuCopy"),     MyManager::OnCopySpeedDial)
-  EVT_MENU(XRCID("MenuPaste"),    MyManager::OnPasteSpeedDial)
-  EVT_MENU(XRCID("MenuDelete"),   MyManager::OnDeleteSpeedDial)
-  EVT_MENU(XRCID("MenuOptions"),  MyManager::OnOptions)
-  EVT_MENU(XRCID("MenuSendVFU"),  MyManager::OnVFU)
+  EVT_MENU(XRCID("MenuAnswer"),          MyManager::OnMenuAnswer)
+  EVT_MENU(XRCID("MenuHangUp"),          MyManager::OnMenuHangUp)
+  EVT_MENU(XRCID("NewSpeedDial"),        MyManager::OnNewSpeedDial)
+  EVT_MENU(XRCID("ViewLarge"),           MyManager::OnViewLarge)
+  EVT_MENU(XRCID("ViewSmall"),           MyManager::OnViewSmall)
+  EVT_MENU(XRCID("ViewList"),            MyManager::OnViewList)
+  EVT_MENU(XRCID("ViewDetails"),         MyManager::OnViewDetails)
+  EVT_MENU(XRCID("EditSpeedDial"),       MyManager::OnEditSpeedDial)
+  EVT_MENU(XRCID("MenuCut"),             MyManager::OnCutSpeedDial)
+  EVT_MENU(XRCID("MenuCopy"),            MyManager::OnCopySpeedDial)
+  EVT_MENU(XRCID("MenuPaste"),           MyManager::OnPasteSpeedDial)
+  EVT_MENU(XRCID("MenuDelete"),          MyManager::OnDeleteSpeedDial)
+  EVT_MENU(XRCID("MenuOptions"),         MyManager::OnOptions)
+  EVT_MENU(XRCID("MenuHold"),            MyManager::OnHold)
+  EVT_MENU(XRCID("MenuTransfer"),        MyManager::OnTransfer)
+  EVT_MENU(XRCID("MenuStartRecording"),  MyManager::OnStartRecording)
+  EVT_MENU(XRCID("MenuStopRecording"),   MyManager::OnStopRecording)
+  EVT_MENU(XRCID("MenuStartVideo"),      MyManager::OnStartVideo)
+  EVT_MENU(XRCID("MenuStopVideo"),       MyManager::OnStopVideo)
+  EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnVFU)
 
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyManager::OnSashPositioned)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyManager::OnSpeedDialActivated)
@@ -1052,6 +1058,7 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
   config->Write(MainFrameWidthKey, w);
   config->Write(MainFrameHeightKey, h);
 
+  potsEP = NULL;
   ShutDownEndpoints();
 
   Destroy();
@@ -1067,11 +1074,15 @@ void MyManager::OnLogMessage(wxCommandEvent & theEvent)
 void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
 {
   wxMenuBar * menubar = GetMenuBar();
-  menubar->Enable(XRCID("MenuCall"),    m_callState == IdleState);
-  menubar->Enable(XRCID("MenuCallLastDialed"), m_callState == IdleState && !m_LastDialed.IsEmpty());
-  menubar->Enable(XRCID("MenuCallLastReceived"), m_callState == IdleState && !m_LastReceived.IsEmpty());
-  menubar->Enable(XRCID("MenuAnswer"),  m_callState == RingingState);
-  menubar->Enable(XRCID("MenuHangUp"),  m_callState == InCallState);
+  menubar->Enable(XRCID("MenuCall"),            m_callState == IdleState);
+  menubar->Enable(XRCID("MenuCallLastDialed"),  m_callState == IdleState && !m_LastDialed.IsEmpty());
+  menubar->Enable(XRCID("MenuCallLastReceived"),m_callState == IdleState && !m_LastReceived.IsEmpty());
+  menubar->Enable(XRCID("MenuAnswer"),          m_callState == RingingState);
+  menubar->Enable(XRCID("MenuHangUp"),          m_callState == InCallState);
+  menubar->Enable(XRCID("MenuHold"),            m_callState == InCallState);
+  menubar->Enable(XRCID("MenuTransfer"),        m_callState == InCallState);
+  menubar->Enable(XRCID("MenuStartRecording"),  m_callState == InCallState && !m_currentCall->IsRecording());
+  menubar->Enable(XRCID("MenuStopRecording"),   m_callState == InCallState &&  m_currentCall->IsRecording());
 
   int count = m_speedDials->GetSelectedItemCount();
   menubar->Enable(XRCID("MenuCut"),       count >= 1);
@@ -1085,6 +1096,30 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
     wxTheClipboard->Close();
   }
   menubar->Enable(XRCID("MenuPaste"), hasFormat);
+
+  bool hasStartVideo = false;
+  bool hasStopVideo = false;
+  bool hasRxVideo = false;
+
+  PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReadOnly);
+  if (connection != NULL) {
+    OpalMediaFormatList availableFormats = connection->GetMediaFormats();
+    for (PINDEX idx = 0; idx < availableFormats.GetSize(); idx++) {
+      if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+        PSafePtr<OpalMediaStream> stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
+        hasStopVideo = stream != NULL && stream->Open();
+        hasStartVideo = !hasStopVideo;
+
+        stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
+        hasRxVideo = stream != NULL && stream->Open();
+        break;
+      }
+    }
+  }
+
+  menubar->Enable(XRCID("MenuStartVideo"), hasStartVideo);
+  menubar->Enable(XRCID("MenuStopVideo"), hasStopVideo);
+  menubar->Enable(XRCID("MenuSendVFU"), hasRxVideo);
 }
 
 
@@ -1728,6 +1763,81 @@ void MyManager::OnUserInputString(OpalConnection & connection, const PString & v
 {
   LogWindow << "User input \"" << value << "\" received from \"" << connection.GetRemotePartyName() << '"' << endl;
   OpalManager::OnUserInputString(connection, value);
+}
+
+
+void MyManager::OnHold(wxCommandEvent& /*event*/)
+{
+  PSafePtr<OpalCall> call = GetCall(PSafeReadWrite);
+  if (call != NULL) {
+    wxMenuBar * menubar = GetMenuBar();
+    if (call->IsOnHold()) {
+      call->Retrieve();
+      menubar->SetLabel(XRCID("MenuHold"), "Hold");
+    }
+    else {
+      call->Hold();
+      menubar->SetLabel(XRCID("MenuHold"), "Retrieve");
+    }
+  }
+}
+
+
+void MyManager::OnTransfer(wxCommandEvent& /*event*/)
+{
+  CallDialog dlg(this);
+  dlg.SetTitle("Transfer Call");
+  if (dlg.ShowModal() == wxID_OK) {
+    PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReference);
+    if (connection != NULL)
+      connection->TransferConnection(dlg.m_Address);
+  }
+}
+
+
+void MyManager::OnStartRecording(wxCommandEvent & /*event*/)
+{
+  wxFileDialog dlg(this,
+                   "Save call to file",
+                   wxEmptyString,
+                   (const char *)m_lastRecordFile,
+                   "*.wav",
+                   wxFD_SAVE);
+  if (dlg.ShowModal() == wxID_OK && m_currentCall != NULL) {
+    m_lastRecordFile = (const char *)dlg.GetPath();
+    m_currentCall->StartRecording(m_lastRecordFile);
+  }
+}
+
+
+void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
+{
+  if (m_currentCall != NULL)
+    m_currentCall->StopRecording();
+}
+
+
+void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
+{
+  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
+  if (connection != NULL) {
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
+    if (stream != NULL) {
+      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaFormat::DefaultVideoSessionID))
+        LogWindow << "Could not open video to remote!" << endl;
+    }
+  }
+}
+
+
+void MyManager::OnStopVideo(wxCommandEvent & /*event*/)
+{
+  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
+  if (connection != NULL) {
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
+    if (stream != NULL)
+      connection->CloseMediaStream(*stream);
+  }
 }
 
 
@@ -3542,7 +3652,6 @@ const int VU_UPDATE_TIMER_ID = 1000;
 BEGIN_EVENT_TABLE(InCallPanel, wxPanel)
   EVT_BUTTON(XRCID("HangUp"), InCallPanel::OnHangUp)
   EVT_BUTTON(XRCID("Hold"), InCallPanel::OnHold)
-  EVT_BUTTON(XRCID("StartStopVideo"), InCallPanel::OnStartStopVideo)
   EVT_CHECKBOX(XRCID("SpeakerMute"), InCallPanel::OnSpeakerMute)
   EVT_CHECKBOX(XRCID("MicrophoneMute"), InCallPanel::OnMicrophoneMute)
   EVT_BUTTON(XRCID("Input1"), InCallPanel::OnUserInput1)
@@ -3574,7 +3683,6 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
   wxXmlResource::Get()->LoadPanel(this, parent, "InCallPanel");
 
   m_Hold = FindWindowByNameAs<wxButton>(this, "Hold");
-  m_StartStopVideo = FindWindowByNameAs<wxButton>(this, "StartStopVideo");
   m_SpeakerHandset = FindWindowByNameAs<wxButton>(this, "SpeakerHandset");
   m_SpeakerMute = FindWindowByNameAs<wxCheckBox>(this, "SpeakerMute");
   m_MicrophoneMute = FindWindowByNameAs<wxCheckBox>(this, "MicrophoneMute");
@@ -3632,23 +3740,9 @@ bool InCallPanel::Show(bool show)
 void InCallPanel::OnStreamsChanged(OpalLineEndPoint * potsEP)
 {
   // Must do this before getting lock on OpalCall to avoid deadlock
-  m_SpeakerHandset->Enable(potsEP->GetLine("*") != NULL);
-
-  int hasVideo = false;
+  m_SpeakerHandset->Enable(potsEP != NULL && potsEP->GetLine("*") != NULL);
 
   PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
-  if (connection != NULL) {
-    OpalMediaFormatList availableFormats = connection->GetMediaFormats();
-    for (PINDEX idx = 0; idx < availableFormats.GetSize(); idx++) {
-      if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
-        hasVideo = true;
-        m_StartStopVideo->SetLabel(m_pages[TxVideo].IsActive() ? "Stop Video" : "Start Video");
-        break;
-      }
-    }
-  }
-
-  m_StartStopVideo->Enable(hasVideo);
 
   for (PINDEX i = 0; i < NumPages; i++)
     m_pages[i].UpdateSession(connection);
@@ -3661,36 +3755,9 @@ void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 }
 
 
-void InCallPanel::OnHold(wxCommandEvent & /*event*/)
+void InCallPanel::OnHold(wxCommandEvent & cmdEvent)
 {
-  PSafePtr<OpalCall> call = m_manager.GetCall(PSafeReadWrite);
-  if (call != NULL) {
-    if (call->IsOnHold()) {
-      call->Retrieve();
-      m_Hold->SetLabel("Hold");
-    }
-    else {
-      call->Hold();
-      m_Hold->SetLabel("Retrieve");
-    }
-  }
-}
-
-
-void InCallPanel::OnStartStopVideo(wxCommandEvent & /*event*/)
-{
-  m_StartStopVideo->Disable();
-
-  PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadWrite);
-  if (connection != NULL) {
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
-    if (stream != NULL)
-      connection->CloseMediaStream(*stream);
-    else {
-      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaFormat::DefaultVideoSessionID))
-        LogWindow << "Could not open video to remote!" << endl;
-    }
-  }
+  m_manager.OnHold(cmdEvent);
 }
 
 
