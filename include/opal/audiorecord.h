@@ -53,6 +53,7 @@ class OpalRecordManager
       public:
         Mixer_T();
         PBoolean Open(const PFilePath & fn);
+        bool IsOpen() const { return file.IsOpen(); }
         PBoolean Close();
         PBoolean OnWriteAudio(const MixerFrame & mixerFrame);
     };
@@ -67,6 +68,7 @@ class OpalRecordManager
   public:
     OpalRecordManager();
     PBoolean Open(const PString & _callToken, const PFilePath & fn);
+    bool IsOpen() const { return mixer.IsOpen(); }
     PBoolean CloseStream(const PString & _callToken, const std::string & _strm);
     PBoolean Close(const PString & _callToken);
     PBoolean WriteAudio(const PString & _callToken, const std::string & strm, const RTP_DataFrame & rtp);
