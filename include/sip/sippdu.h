@@ -896,20 +896,20 @@ class SIPRefer : public SIPTransaction
     SIPRefer(
       SIPConnection & connection,
       OpalTransport & transport,
-      const PString & refer
+      const SIPURL & refer
     );
     SIPRefer(
       SIPConnection & connection,
       OpalTransport & transport,
-      const PString & refer,
-      const PString & referred_by
+      const SIPURL & refer,
+      const SIPURL & referred_by
     );
   protected:
     void Construct(
       SIPConnection & connection,
       OpalTransport & transport,
-      const PString & refer,
-      const PString & referred_by = PString::Empty()
+      const SIPURL & refer,
+      const SIPURL & referred_by
     );
 };
 
