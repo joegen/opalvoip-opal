@@ -2397,25 +2397,25 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const PString & refer, const PString & referred_by)
+SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const SIPURL & refer, const SIPURL & referred_by)
   : SIPTransaction(connection, transport, Method_REFER)
 {
   Construct(connection, transport, refer, referred_by);
 }
 
-SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const PString & refer)
+SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const SIPURL & refer)
   : SIPTransaction(connection, transport, Method_REFER)
 {
-  Construct(connection, transport, refer, PString::Empty());
+  Construct(connection, transport, refer, SIPURL());
 }
 
 
-void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport*/, const PString & refer, const PString & referred_by)
+void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport*/, const SIPURL & refer, const SIPURL & referred_by)
 {
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
-  mime.SetReferTo(refer);
+  mime.SetReferTo(refer.AsQuotedString());
   if(!referred_by.IsEmpty())
-    mime.SetReferredBy(referred_by);
+    mime.SetReferredBy(referred_by.AsQuotedString());
 }
 
 
