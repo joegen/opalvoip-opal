@@ -543,6 +543,13 @@ PBoolean OpalCall::StartRecording(const PFilePath & fn)
   return PTrue;
 }
 
+
+bool OpalCall::IsRecording() const
+{
+  return manager.GetRecordManager().IsOpen();
+}
+
+
 void OpalCall::StopRecording()
 {
   // tell each connection to stop sending data
