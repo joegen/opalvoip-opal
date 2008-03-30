@@ -1425,6 +1425,14 @@ PBoolean OpalManager::StartRecording(const PString & callToken, const PFilePath 
   return call->StartRecording(fn);
 }
 
+
+bool OpalManager::IsRecording(const PString & callToken)
+{
+  PSafePtr<OpalCall> call = FindCallWithLock(callToken, PSafeReadWrite);
+  return call != NULL && call->IsRecording();
+}
+
+
 void OpalManager::StopRecording(const PString & callToken)
 {
   PSafePtr<OpalCall> call = activeCalls.FindWithLock(callToken, PSafeReadWrite);
