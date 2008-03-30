@@ -259,7 +259,6 @@ class InCallPanel : public wxPanel
   private:
     void OnHangUp(wxCommandEvent & event);
     void OnHold(wxCommandEvent & event);
-    void OnStartStopVideo(wxCommandEvent & event);
     void OnSpeakerMute(wxCommandEvent & event);
     void OnMicrophoneMute(wxCommandEvent & event);
     void OnUserInput1(wxCommandEvent & event);
@@ -285,7 +284,6 @@ class InCallPanel : public wxPanel
 
     MyManager & m_manager;
     wxButton  * m_Hold;
-    wxButton  * m_StartStopVideo;
     wxButton  * m_SpeakerHandset;
     wxCheckBox* m_SpeakerMute;
     wxCheckBox* m_MicrophoneMute;
@@ -668,6 +666,12 @@ class MyManager : public wxFrame, public OpalManager
     void OnPasteSpeedDial(wxCommandEvent& event);
     void OnDeleteSpeedDial(wxCommandEvent& event);
     void OnOptions(wxCommandEvent& event);
+    void OnHold(wxCommandEvent& event);
+    void OnTransfer(wxCommandEvent& event);
+    void OnStartRecording(wxCommandEvent& event);
+    void OnStopRecording(wxCommandEvent& event);
+    void OnStartVideo(wxCommandEvent& event);
+    void OnStopVideo(wxCommandEvent& event);
     void OnVFU(wxCommandEvent& event);
     void OnSashPositioned(wxSplitterEvent& event);
     void OnSpeedDialActivated(wxListEvent& event);
@@ -766,6 +770,13 @@ class MyManager : public wxFrame, public OpalManager
     wxString  m_traceFileName;
 #endif
 
+    PwxString     m_RingSoundDeviceName;
+    PwxString     m_RingSoundFileName;
+    PSoundChannel m_RingSoundChannel;
+    PTimer        m_RingSoundTimer;
+    PDECLARE_NOTIFIER(PTimer, MyManager, OnRingSoundAgain);
+    void StopRingSound();
+
     enum CallState {
       IdleState,
       CallingState,
@@ -780,16 +791,12 @@ class MyManager : public wxFrame, public OpalManager
     PSafePtr<OpalConnection> m_userConnection;
     PSafePtr<OpalConnection> m_protoConnection;
 
-    PwxString     m_RingSoundDeviceName;
-    PwxString     m_RingSoundFileName;
-    PSoundChannel m_RingSoundChannel;
-    PTimer        m_RingSoundTimer;
-    PDECLARE_NOTIFIER(PTimer, MyManager, OnRingSoundAgain);
-    void StopRingSound();
+    PFilePath m_lastRecordFile;
 
     DECLARE_EVENT_TABLE()
 
   friend class OptionsDialog;
+  friend class InCallPanel;
 };
 
 
