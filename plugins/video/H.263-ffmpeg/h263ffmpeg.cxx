@@ -291,7 +291,7 @@ class DynaLink
       _hDLL = dlopen((const char *)path, RTLD_NOW);
       if (_hDLL == NULL) {
         fprintf(stderr, "error loading %s", path);
-        char * err = dlerror();
+        char * err = (char *)  dlerror();
         if (err != NULL)
           fprintf(stderr, " - %s", err);
         fprintf(stderr, "\n");
