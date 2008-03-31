@@ -64,7 +64,7 @@ STATIC	= ./lib$(BASENAME)_video_s.a
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CXX) $(THEORA_LIBS) $(LDSO) -o $@ $^
+	$(CXX) $(LDFLAGS) $(THEORA_LIBS) $(LDSO) -o $@ $^
 
 
 install:
