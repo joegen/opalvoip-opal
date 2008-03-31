@@ -102,6 +102,12 @@ class H323EndPoint : public OpalEndPoint
 
   /**@name Overrides from OpalEndPoint */
   //@{
+    /**Shut down the endpoint, this is called by the OpalManager just before
+       destroying the object and can be handy to make sure some things are
+       stopped before the vtable gets clobbered.
+      */
+    virtual void ShutDown();
+
     /**Set up a connection to a remote party.
        This is called from the OpalManager::SetUpConnection() function once
        it has determined that this is the endpoint for the protocol.
