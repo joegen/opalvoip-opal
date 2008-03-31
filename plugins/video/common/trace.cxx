@@ -35,6 +35,10 @@
 #include <libgen.h>
 #endif
 
+#ifdef P_FREEBSD
+#include <libgen.h>
+#endif
+
 unsigned TraceLevel = 0;
 
 void Trace::SetLevel (unsigned level)

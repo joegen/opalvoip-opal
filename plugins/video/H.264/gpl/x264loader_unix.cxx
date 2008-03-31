@@ -112,7 +112,7 @@ bool X264Library::Open(const char *name)
   _dynamicLibrary = dlopen(name, RTLD_NOW);
 
   if (_dynamicLibrary == NULL) {
-    char * error = dlerror();
+    char * error = (char *) dlerror();
     if (error != NULL)
         TRACE(1, "H264\tDYNA\tError loading " << name << " - " << error)
       else

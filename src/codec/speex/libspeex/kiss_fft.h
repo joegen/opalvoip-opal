@@ -5,7 +5,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
+
+#if !defined __STDC__
 #include <malloc.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
