@@ -604,8 +604,6 @@ void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
 {
   mediaFormats.Remove(mediaFormatMask);
   mediaFormats.Reorder(mediaFormatOrder);
-  for (OpalMediaFormatList::iterator format = mediaFormats.begin(); format != mediaFormats.end(); ++format)
-    format->ToCustomisedOptions();
 }
 
 

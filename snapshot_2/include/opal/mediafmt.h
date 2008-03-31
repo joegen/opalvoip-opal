@@ -1103,10 +1103,10 @@ class OpalVideoFormatInternal : public OpalMediaFormatInternal
       const char * fullName,
       RTP_DataFrame::PayloadTypes rtpPayloadType,
       const char * encodingName,
-      unsigned frameWidth,
-      unsigned frameHeight,
-      unsigned frameRate,
-      unsigned bitRate,
+      unsigned maxFrameWidth,
+      unsigned maxFrameHeight,
+      unsigned maxFrameRate,
+      unsigned maxBitRate,
       time_t timeStamp
     );
     virtual PObject * Clone() const;
@@ -1122,11 +1122,11 @@ class OpalVideoFormat : public OpalMediaFormat
       const char * fullName,    ///<  Full name of media format
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const char * encodingName,///<  RTP encoding name
-      unsigned frameWidth,      ///<  Width of video frame
-      unsigned frameHeight,     ///<  Height of video frame
-      unsigned frameRate,       ///<  Number of frames per second
-      unsigned bitRate,         ///<  Maximum bits per second
-      time_t timeStamp = 0        ///<  timestamp (for versioning)
+      unsigned maxFrameWidth,   ///<  Width of video frame
+      unsigned maxFrameHeight,  ///<  Height of video frame
+      unsigned maxFrameRate,    ///<  Number of frames per second
+      unsigned maxBitRate,      ///<  Maximum bits per second
+      time_t timeStamp = 0      ///<  timestamp (for versioning)
     );
 
     static const PString & FrameWidthOption();

@@ -160,6 +160,7 @@ class OpalPluginMediaOption : public base
       if (result != NULL && m_freeFunction != NULL)
         m_freeFunction(result);
 
+      PTRACE_IF(2, !ok, "OpalPlugin\tMerge of media option \"" << base::GetName() << "\" failed.");
       return ok;
     }
 
