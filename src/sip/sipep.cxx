@@ -88,29 +88,34 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
 SIPEndPoint::~SIPEndPoint()
 {
+}
+
+
+void SIPEndPoint::ShutDown()
+{
+  OpalEndPoint::ShutDown();
+
   while (activeSIPHandlers.GetSize() > 0) {
     PSafePtr<SIPHandler> handler = activeSIPHandlers;
     PString aor = handler->GetRemotePartyAddress();
-    if (handler->GetMethod() == SIP_PDU::Method_REGISTER && handler->GetState() == SIPHandler::Subscribed) {
-        Unregister(aor);
-      PThread::Sleep(500);
-      }
-    else
+    if (handler->GetMethod() != SIP_PDU::Method_REGISTER || handler->GetState() != SIPHandler::Subscribed)
       activeSIPHandlers.Remove(handler);
+    else {
+      Unregister(aor);
+      PThread::Sleep(500);
     }
+  }
 
   for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReference); transaction != NULL; ++transaction)
     transaction->WaitForCompletion();
 
   // Clean up
   transactions.RemoveAll();
-  listeners.RemoveAll();
 
   // Stop timers before compiler destroys member objects
   natBindingTimer.Stop();
-  
-  PTRACE(4, "SIP\tDeleted endpoint.");
 }
+
 
 PString SIPEndPoint::GetDefaultTransport() const 
 {  

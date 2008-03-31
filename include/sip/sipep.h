@@ -96,6 +96,12 @@ class SIPEndPoint : public OpalEndPoint
 
   /**@name Overrides from OpalEndPoint */
   //@{
+    /**Shut down the endpoint, this is called by the OpalManager just before
+       destroying the object and can be handy to make sure some things are
+       stopped before the vtable gets clobbered.
+      */
+    virtual void ShutDown();
+
     /**Get the default transports for the endpoint type.
        Overrides the default behaviour to return udp and tcp.
       */
