@@ -68,6 +68,8 @@ typedef unsigned char BYTE;
 
 #endif
 
+#include "trace.h"
+
 #ifdef _MSC_VER
 #pragma warning(disable:4800)
 #endif
@@ -290,11 +292,9 @@ class DynaLink
 #else
       _hDLL = dlopen((const char *)path, RTLD_NOW);
       if (_hDLL == NULL) {
-        fprintf(stderr, "error loading %s", path);
         char * err = (char *)  dlerror();
         if (err != NULL)
-          fprintf(stderr, " - %s", err);
-        fprintf(stderr, "\n");
+          TRACE(1, "DYNA\tError loading " << path << " - " << err);
       }
 #endif // _WIN32
       return _hDLL != NULL;
