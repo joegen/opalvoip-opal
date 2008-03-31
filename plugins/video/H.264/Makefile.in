@@ -98,8 +98,8 @@ vpath	%.o   $(OBJDIR)
 SRCS    += $(SHAREDDIR)/h264frame.cxx \
            h264-x264.cxx \
            h264pipe_unix.cxx \
-           $(COMONDIR)/dyna.cxx \
-           $(COMONDIR)/trace.cxx
+           $(COMMONDIR)/dyna.cxx \
+           $(COMMONDIR)/trace.cxx
 
 
 $(OBJDIR)/%.o : %.cxx
