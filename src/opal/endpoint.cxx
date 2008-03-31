@@ -86,6 +86,17 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
 
 OpalEndPoint::~OpalEndPoint()
 {
+  PTRACE(4, "OpalEP\t" << prefixName << " endpoint destroyed.");
+}
+
+
+void OpalEndPoint::ShutDown()
+{
+  PTRACE(3, "OpalEP\t" << prefixName << " endpoint shutting down.");
+
+  // Shut down the listeners as soon as possible to avoid race conditions
+  listeners.RemoveAll();
+
 #if OPAL_RTP_AGGREGATE
   // delete aggregators
   {
@@ -96,9 +107,8 @@ OpalEndPoint::~OpalEndPoint()
     }
   }
 #endif
-
-  PTRACE(4, "OpalEP\t" << prefixName << " endpoint destroyed.");
 }
+
 
 PBoolean OpalEndPoint::MakeConnection(OpalCall & /*call*/, const PString & /*party*/, void * /*userData*/, unsigned int /*options*/, OpalConnection::StringOptions * /*stringOptions*/)
 {

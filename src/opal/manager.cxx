@@ -245,13 +245,16 @@ void OpalManager::ShutDownEndpoints()
   clearingAllCalls = true;
   ClearAllCalls();
 
-  PWriteWaitAndSignal mutex(endpointsMutex);
-
   // Deregister the endpoints
+  endpointsMutex.StartRead();
+  for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
+    ep->ShutDown();
+  endpointsMutex.EndRead();
+
+  endpointsMutex.StartWrite();
   endpointMap.clear();
   endpointList.RemoveAll();
-
-  clearingAllCalls = false;
+  endpointsMutex.EndWrite();
 }
 
 
@@ -280,28 +283,50 @@ void OpalManager::DetachEndPoint(OpalEndPoint * endpoint)
 { 
   if (PAssertNULL(endpoint) == NULL)
     return;
-  DetachEndPoint(endpoint->GetPrefixName()); 
+
+  endpoint->ShutDown();
+
+  endpointsMutex.StartWrite();
+
+  if (endpointList.Remove(endpoint)) {
+    // Was in list, remove from map too
+    std::map<PString, OpalEndPoint *>::iterator it = endpointMap.begin();
+    while (it != endpointMap.end()) {
+      if (it->second != endpoint)
+        ++it;
+      else {
+        endpointMap.erase(it);
+        it = endpointMap.begin();
+      }
+    }
+  }
+
+  endpointsMutex.EndWrite();
 }
 
 
 void OpalManager::DetachEndPoint(const PString & prefix)
 {
-  PWriteWaitAndSignal mutex(endpointsMutex);
+  PReadWaitAndSignal mutex(endpointsMutex);
 
   std::map<PString, OpalEndPoint *>::iterator it = endpointMap.find(prefix);
-  if (it != endpointMap.end()) {
-    OpalEndPoint * endpoint = it->second;
-    endpointMap.erase(it);
+  if (it == endpointMap.end())
+    return;
 
-    // See if other references
-    for (it = endpointMap.begin(); it != endpointMap.end(); ++it) {
-      if (it->second == endpoint)
-        return; // Still a reference to it
-    }
+  OpalEndPoint * endpoint = it->second;
 
-    // Last copy, delete it now
-    endpointList.Remove(endpoint);
+  endpointsMutex.StartWrite();
+  endpointMap.erase(it);
+  endpointsMutex.EndWrite();
+
+  // See if other references
+  for (it = endpointMap.begin(); it != endpointMap.end(); ++it) {
+    if (it->second == endpoint)
+      return; // Still a reference to it
   }
+
+  // Last copy, delete it now
+  DetachEndPoint(endpoint);
 }
 
 
