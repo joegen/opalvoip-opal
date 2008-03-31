@@ -130,14 +130,17 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 
 H323EndPoint::~H323EndPoint()
 {
+}
+
+
+void H323EndPoint::ShutDown()
+{
+  OpalEndPoint::ShutDown();
+
   // And shut down the gatekeeper (if there was one)
   RemoveGatekeeper();
-
-  // Shut down the listeners as soon as possible to avoid race conditions
-  listeners.RemoveAll();
-
-  PTRACE(4, "H323\tDeleted endpoint.");
 }
+
 
 PString H323EndPoint::GetDefaultTransport() const
 {
