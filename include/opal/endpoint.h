@@ -89,6 +89,12 @@ class OpalEndPoint : public PObject
     /**Destroy the endpoint.
      */
     ~OpalEndPoint();
+
+    /**Shut down the endpoint, this is called by the OpalManager just before
+       destroying the object and can be handy to make sure some things are
+       stopped before the vtable gets clobbered.
+      */
+    virtual void ShutDown();
   //@}
 
   /**@name Overrides from PObject */
