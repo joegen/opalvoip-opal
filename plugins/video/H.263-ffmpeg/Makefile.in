@@ -72,7 +72,7 @@ STATIC	= ./lib$(BASENAME)_video_s.a
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CXX) $(LDSO) $(LDFLAGS) -o $@ $^
+	$(CXX) $(LDSO) -o $@ $^
 
 install:
 	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/

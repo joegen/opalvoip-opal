@@ -268,7 +268,7 @@ else
       printf("%s\n", header.speex_version);
     }
 C_FILE
-    cc -o t t.c -lspeex > /dev/null 2>&1
+    cc -o t t.c $LDFLAGS -lspeex > /dev/null 2>&1
     if test \! -x t ; then
       AC_MSG_RESULT(cannot determine - using OPAL version)
     else
@@ -374,7 +374,11 @@ if test "$HAS_DLFCN" = yes ; then
     AC_MSG_RESULT(no)
   else
     AC_MSG_RESULT(yes)
-    AC_CHECK_LIB([dl],[dlopen],[HAS_LIBDL=1], [HAS_LIBDL=0])
+    if test `uname -s` = FreeBSD; then
+      AC_CHECK_LIB([c],[dlopen],[HAS_LIBDL=1], [HAS_LIBDL=0])
+    else
+      AC_CHECK_LIB([dl],[dlopen],[HAS_LIBDL=1], [HAS_LIBDL=0])
+    fi
   fi
 fi
 AC_SUBST(HAS_LIBDL)
