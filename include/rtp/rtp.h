@@ -817,7 +817,7 @@ class RTP_Session : public PObject
     WORD          lastRRSequenceNumber;
     PINDEX        consecutiveOutOfOrderPackets;
 
-    PMutex        sendDataMutex;
+    PMutex        dataMutex;
     DWORD         timeStampOffs;               // offset between incoming media timestamp and timeStampOut
     PBoolean      oobTimeStampBaseEstablished; // PTrue if timeStampOffs has been established by media
     DWORD         oobTimeStampOutBase;         // base timestamp value for oob data
@@ -1136,7 +1136,6 @@ class RTP_UDP : public RTP_Session
 
     PIPSocket::Address remoteTransmitAddress;
 
-    PMutex   stateMutex;
     PBoolean shutdownRead;
     PBoolean shutdownWrite;
 
