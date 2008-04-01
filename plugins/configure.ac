@@ -151,7 +151,7 @@ else
       printf("%s\n", header.speex_version);
     }
 C_FILE
-    cc -o t t.c -lspeex > /dev/null 2>&1
+    cc -o t t.c $LDFLAGS -lspeex > /dev/null 2>&1
     if test \! -x t ; then
       AC_MSG_RESULT(cannot determine - using library version)
     else
@@ -303,7 +303,11 @@ if test "$HAS_DLFCN" = yes ; then
     AC_MSG_RESULT(no)
   else
     AC_MSG_RESULT(yes)
-    AC_CHECK_LIB([dl],[dlopen],[HAS_LIBDL=1], [HAS_LIBDL=0])
+    if test `uname -s` = FreeBSD; then
+        AC_CHECK_LIB([c],[dlopen],[HAS_LIBDL=1], [HAS_LIBDL=0])
+    else
+        AC_CHECK_LIB([dl],[dlopen],[HAS_LIBDL=1], [HAS_LIBDL=0])
+    fi
   fi
 fi
 AC_SUBST(HAS_LIBDL)
@@ -445,7 +449,11 @@ if test "x$enable_x264" = "xruntime"; then
         AC_CHECK_HEADERS([x264.h], [x264_headers=true], [x264_headers=false])
         if test "x${x264_headers}" = "xtrue"; then
           if test "x$HAS_LIBDL" != "x0" ; then
-	    X264_LIBS="-ldl"
+            if test `uname -s` = FreeBSD; then
+	      X264_LIBS="-lc"
+            else
+	      X264_LIBS="-ldl"
+            fi
           fi
 
           AC_MSG_CHECKING(for x264 version >= 48)
