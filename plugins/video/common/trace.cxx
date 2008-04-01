@@ -31,13 +31,7 @@
 
 #include "trace.h"
 
-#if defined(__MACOSX__) || defined(__GNUC__)
 #include <libgen.h>
-#endif
-
-#ifdef P_FREEBSD
-#include <libgen.h>
-#endif
 
 unsigned TraceLevel = 0;
 
