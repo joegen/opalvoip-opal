@@ -1822,7 +1822,7 @@ void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
   PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
   if (connection != NULL) {
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
-    if (stream != NULL) {
+    if (stream == NULL) {
       if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaFormat::DefaultVideoSessionID))
         LogWindow << "Could not open video to remote!" << endl;
     }
