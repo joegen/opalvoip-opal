@@ -176,7 +176,7 @@ SIPConnection::SIPConnection(OpalCall & call,
                              OpalTransport * newTransport,
                              unsigned int options,
                              OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, token, options, stringOptions)
+  : OpalRTPConnection(call, ep, token, options, stringOptions)
   , endpoint(ep)
   , transport(newTransport)
   , local_hold(false)
@@ -382,7 +382,7 @@ void SIPConnection::ReleaseSession(unsigned sessionID, PBoolean clearAll/* = PFa
 
   printf("release session %i\n", sessionID);
 
-  OpalConnection::ReleaseSession(sessionID, clearAll);
+  OpalRTPConnection::ReleaseSession(sessionID, clearAll);
 }
 #endif //HAS_LIBZRTP
 
@@ -454,7 +454,7 @@ void SIPConnection::OnReleased()
 
   SetPhase(ReleasedPhase);
 
-  OpalConnection::OnReleased();
+  OpalRTPConnection::OnReleased();
 
   if (transport != NULL)
     transport->CloseWait();
@@ -586,8 +586,9 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalT
   // if doing media bypass, we need to set the local address
   // otherwise create an RTP session
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
-    if (otherParty != NULL) {
+    OpalConnection * _otherParty = GetCall().GetOtherPartyConnection(*this);
+    OpalRTPConnection * otherParty;
+    if (_otherParty != NULL && ((otherParty = dynamic_cast<OpalRTPConnection *>(&*_otherParty)) != NULL)) {
       MediaInformation info;
       if (otherParty->GetMediaInformation(rtpSessionId, info)) {
         localAddress = info.data;
@@ -709,8 +710,9 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
   }
 
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
-    if (otherParty != NULL) {
+    PSafePtr<OpalConnection> _otherParty = GetCall().GetOtherPartyConnection(*this);
+    OpalRTPConnection * otherParty;
+    if (_otherParty != NULL && ((otherParty = dynamic_cast<OpalRTPConnection *>(&*_otherParty)) != NULL)) {
       MediaInformation info;
       if (otherParty->GetMediaInformation(rtpSessionId, info)) {
         localAddress = info.data;
@@ -1057,7 +1059,7 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 
 OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
-  OpalMediaStreamPtr stream = OpalConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
+  OpalMediaStreamPtr stream = OpalRTPConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
 
   if (stream != NULL && needReINVITE) {
     SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
@@ -1078,43 +1080,6 @@ bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
   }
 
   return ok;
-}
-
-
-OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                   unsigned sessionID,
-                                                   PBoolean isSource)
-{
-  // Use a NULL stream if media is bypassing us, 
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
-    PTRACE(3, "SIP\tBypassing media for session " << sessionID);
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
-  }
-
-  // if no RTP sessions matching this session ID, then nothing to do
-  if (rtpSessions.GetSession(sessionID) == NULL)
-    return NULL;
-
-  return new OpalRTPMediaStream(*this, mediaFormat, isSource, *rtpSessions.GetSession(sessionID),
-                                GetMinAudioJitterDelay(),
-                                GetMaxAudioJitterDelay());
-}
-
-void SIPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
-{
-  OpalConnection::OnPatchMediaStream(isSource, patch);
-  if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
-    AttachRFC2833HandlerToPatch(isSource, patch);
-  }
-
-  patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
-}
-
-
-PBoolean SIPConnection::IsMediaBypassPossible(unsigned sessionID) const
-{
-  return sessionID == OpalMediaFormat::DefaultAudioSessionID ||
-         sessionID == OpalMediaFormat::DefaultVideoSessionID;
 }
 
 
@@ -2387,7 +2352,7 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
       break;
   }
 
-  return OpalConnection::SendUserInputTone(tone, duration);
+  return OpalRTPConnection::SendUserInputTone(tone, duration);
 }
 
 
@@ -2421,7 +2386,7 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
   }
   else
 #endif
-    OpalConnection::OnMediaCommand(command, extra);
+    OpalRTPConnection::OnMediaCommand(command, extra);
 }
 
 

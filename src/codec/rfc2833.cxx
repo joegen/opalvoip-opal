@@ -34,7 +34,7 @@
 #endif
 
 #include <codec/rfc2833.h>
-#include <opal/connection.h>
+#include <opal/rtpconn.h>
 #include <rtp/rtp.h>
 
 static const char RFC2833Table1Events[] = "0123456789*#ABCD!";
@@ -59,7 +59,7 @@ OpalRFC2833Info::OpalRFC2833Info(char t, unsigned d, unsigned ts)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRFC2833Proto::OpalRFC2833Proto(OpalConnection & _conn, const PNotifier & rx)
+OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & _conn, const PNotifier & rx)
   : conn(_conn), receiveNotifier(rx),
 #ifdef _MSC_VER
 #pragma warning(disable:4355)

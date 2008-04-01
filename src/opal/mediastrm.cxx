@@ -48,7 +48,7 @@
 #include <lids/lid.h>
 #include <rtp/rtp.h>
 #include <opal/transports.h>
-#include <opal/connection.h>
+#include <opal/rtpconn.h>
 #include <opal/endpoint.h>
 #include <opal/call.h>
 
@@ -537,12 +537,12 @@ PBoolean OpalNullMediaStream::IsSynchronous() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRTPMediaStream::OpalRTPMediaStream(OpalConnection & conn,
-                                      const OpalMediaFormat & mediaFormat,
-                                       PBoolean isSource,
-                                       RTP_Session & rtp,
-                                       unsigned minJitter,
-                                       unsigned maxJitter)
+OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
+                                   const OpalMediaFormat & mediaFormat,
+                                                  PBoolean isSource,
+                                             RTP_Session & rtp,
+                                                  unsigned minJitter,
+                                                  unsigned maxJitter)
   : OpalMediaStream(conn, mediaFormat, rtp.GetSessionID(), isSource),
     rtpSession(rtp),
     minAudioJitterDelay(minJitter),

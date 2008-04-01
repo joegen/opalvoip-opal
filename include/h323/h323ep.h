@@ -39,7 +39,7 @@
 #endif
 
 
-#include <opal/endpoint.h>
+#include <opal/rtpep.h>
 #include <opal/manager.h>
 #include <opal/call.h>
 #include <opal/transports.h>
@@ -78,9 +78,9 @@ class H323ServiceControlSession;
    CreateConnection() function, if they require a descendent of H323Connection
    to be created. This would be quite likely in most applications.
  */
-class H323EndPoint : public OpalEndPoint
+class H323EndPoint : public OpalRTPEndPoint
 {
-  PCLASSINFO(H323EndPoint, OpalEndPoint);
+  PCLASSINFO(H323EndPoint, OpalRTPEndPoint);
 
   public:
     enum {
@@ -144,17 +144,6 @@ class H323EndPoint : public OpalEndPoint
       unsigned int options = NULL,      ///<  options to pass to conneciton
       OpalConnection::StringOptions * stringOptions = NULL
     );
-
-    /**Get the data formats this endpoint is capable of operating.
-       This provides a list of media data format names that may be used by an
-       OpalMediaStream may be created by a connection from this endpoint.
-
-       Note that a specific connection may not actually support all of the
-       media formats returned here, but should return no more.
-
-       The default behaviour is pure.
-      */
-    virtual OpalMediaFormatList GetMediaFormats() const;
   //@}
 
   /**@name Set up functions */

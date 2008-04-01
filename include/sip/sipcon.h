@@ -37,7 +37,7 @@
 #endif
 
 #include <opal/buildopts.h>
-#include <opal/connection.h>
+#include <opal/rtpconn.h>
 #include <sip/sippdu.h>
 #if OPAL_VIDEO
 #include <opal/pcss.h>                  // for OpalPCSSConnection
@@ -59,9 +59,9 @@ class SIPEndPoint;
 /**Session Initiation Protocol connection.
  */
 //class SIPConnection : public OpalConnection
-class SIPConnection : public OpalConnection
+class SIPConnection : public OpalRTPConnection
 {
-  PCLASSINFO(SIPConnection, OpalConnection);
+  PCLASSINFO(SIPConnection, OpalRTPConnection);
   public:
 
   /**@name Construction */
@@ -165,30 +165,6 @@ class SIPConnection : public OpalConnection
       OpalMediaStream & stream  ///< Stream to close
     );
 
-    /**Open a new media stream.
-       This will create a media stream of an appropriate subclass as required
-       by the underlying connection protocol. For instance H.323 would create
-       an OpalRTPStream.
-
-       The sessionID parameter may not be needed by a particular media stream
-       and may be ignored. In the case of an OpalRTPStream it us used.
-
-       Note that media streams may be created internally to the underlying
-       protocol. This function is not the only way a stream can come into
-       existance.
-
-       The default behaviour is pure.
-     */
-    virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource                        ///<  Is a source stream
-    );
-	
-    /**Overrides from OpalConnection
-      */
-    virtual void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
-
 
     /**Indicate the result of answering an incoming call.
        This should only be called if the OnAnswerCall() callback function has
@@ -204,15 +180,6 @@ class SIPConnection : public OpalConnection
       AnswerCallResponse response ///<  Answer response to incoming call
     );
 
-
-    /**See if the media can bypass the local host.
-
-       The default behaviour returns PFalse indicating that media bypass is not
-       possible.
-     */
-    virtual PBoolean IsMediaBypassPossible(
-      unsigned sessionID                  ///<  Session ID for media channel
-    ) const;
 
     /**Clean up the termination of the connection.
        This function can do any internal cleaning up and waiting on background
