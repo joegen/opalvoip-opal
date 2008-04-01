@@ -3933,18 +3933,18 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 {
   {
     PSafeLockReadOnly m(ownerCall);
-    PSafePtr<OpalConnection> _otherParty = GetCall().GetOtherPartyConnection(*this);
-    if (_otherParty == NULL) {
-      PTRACE(1, "H323\tCowardly refusing to create an RTP channel with only one connection");
-      return NULL;
-    }
-    OpalRTPConnection * otherParty = dynamic_cast<OpalRTPConnection *>(&*_otherParty);
-    if (otherParty == NULL) {
-      PTRACE(1, "H323\tCannot create RTP channel from non-RTP connection");
-      return NULL;
-    }
 
     if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
+      PSafePtr<OpalConnection> _otherParty = GetCall().GetOtherPartyConnection(*this);
+      if (_otherParty == NULL) {
+        PTRACE(1, "H323\tCowardly refusing to create an RTP channel with only one connection");
+        return NULL;
+      }
+      OpalRTPConnection * otherParty = dynamic_cast<OpalRTPConnection *>(&*_otherParty);
+      if (otherParty == NULL) {
+        PTRACE(1, "H323\tCannot create RTP channel from non-RTP connection");
+        return NULL;
+      }
       MediaInformation info;
       if (!otherParty->GetMediaInformation(sessionID, info))
         return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
