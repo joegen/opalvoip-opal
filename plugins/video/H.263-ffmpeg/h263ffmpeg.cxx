@@ -61,6 +61,8 @@
 #include <malloc.h>
 #define STRCMPI  _strcmpi
 #else
+#include <stdio.h>
+#include <limits.h>
 #include <semaphore.h>
 #include <dlfcn.h>
 #define STRCMPI  strcasecmp
