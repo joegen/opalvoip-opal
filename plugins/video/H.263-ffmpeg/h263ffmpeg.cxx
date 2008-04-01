@@ -68,7 +68,7 @@ typedef unsigned char BYTE;
 
 #endif
 
-#include "trace.h"
+#include "../common/trace.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4800)
