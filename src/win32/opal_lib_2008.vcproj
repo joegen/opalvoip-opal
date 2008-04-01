@@ -1908,92 +1908,12 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\opal\transcoders.cxx"
+					RelativePath="..\opal\rtpconn.cxx"
 					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Windows Mobile 6 Professional SDK (ARMV4I)"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Windows Mobile 6 Professional SDK (ARMV4I)"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\opal\rtpep.cxx"
+					>
 				</File>
 				<File
 					RelativePath="..\opal\transports.cxx"
@@ -4054,6 +3974,30 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\codec\g7231mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\g728mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\g729mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\gsm0610mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\gsmamrmf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\iLBCmf.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\codec\opalpluginmgr.cxx"
 					>
 				</File>
@@ -4146,36 +4090,100 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\codec\g7231mf.cxx"
-					>
-				</File>
-				<File
-					RelativePath="..\codec\g728mf.cxx"
-					>
-				</File>
-				<File
-					RelativePath="..\codec\g729mf.cxx"
-					>
-				</File>
-				<File
-					RelativePath="..\codec\gsm0610mf.cxx"
-					>
-				</File>
-				<File
-					RelativePath="..\codec\gsmamrmf.cxx"
-					>
-				</File>
-				<File
-					RelativePath="..\codec\iLBCmf.cxx"
-					>
-				</File>
-				<File
 					RelativePath="..\codec\rfc4175.cxx"
 					>
 				</File>
 				<File
 					RelativePath="..\codec\silencedetect.cxx"
 					>
+				</File>
+				<File
+					RelativePath="..\opal\transcoders.cxx"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="0"
+							PreprocessorDefinitions=""
+							BrowseInformation="1"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="0"
+							PreprocessorDefinitions=""
+							BrowseInformation="1"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="0"
+							PreprocessorDefinitions=""
+							BrowseInformation="1"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Windows Mobile 6 Professional SDK (ARMV4I)"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Windows Mobile 6 Professional SDK (ARMV4I)"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\codec\vidcodec.cxx"
@@ -6351,7 +6359,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\opal\transcoders.h"
+					RelativePath="..\..\include\opal\rtpconn.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\opal\rtpep.h"
 					>
 				</File>
 				<File
@@ -6488,6 +6500,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\codec\silencedetect.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\opal\transcoders.h"
 					>
 				</File>
 				<File
