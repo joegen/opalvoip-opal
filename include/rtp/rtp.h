@@ -795,17 +795,18 @@ class RTP_Session : public PObject
     PString            toolName;
     unsigned           referenceCount;
     RTP_UserData     * userData;
-    PBoolean               autoDeleteUserData;
+    PBoolean           autoDeleteUserData;
+    PMutex             jitterMutex;
     RTP_JitterBuffer * jitter;
 
-    PBoolean          ignoreOutOfOrderPackets;
+    PBoolean      ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
     DWORD         lastSentTimestamp;
     bool          allowAnySyncSource;
     bool          allowOneSyncSourceChange;
-    PBoolean	        allowRemoteTransmitAddressChange;
-    PBoolean	        allowSequenceChange;
+    PBoolean      allowRemoteTransmitAddressChange;
+    PBoolean      allowSequenceChange;
     PTimeInterval reportTimeInterval;
     unsigned      txStatisticsInterval;
     unsigned      rxStatisticsInterval;
@@ -816,7 +817,7 @@ class RTP_Session : public PObject
     WORD          lastRRSequenceNumber;
     PINDEX        consecutiveOutOfOrderPackets;
 
-    PMutex        sendDataMutex;
+    PMutex        dataMutex;
     DWORD         timeStampOffs;               // offset between incoming media timestamp and timeStampOut
     PBoolean      oobTimeStampBaseEstablished; // PTrue if timeStampOffs has been established by media
     DWORD         oobTimeStampOutBase;         // base timestamp value for oob data
