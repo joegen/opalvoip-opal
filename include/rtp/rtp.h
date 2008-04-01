@@ -795,17 +795,18 @@ class RTP_Session : public PObject
     PString            toolName;
     unsigned           referenceCount;
     RTP_UserData     * userData;
-    PBoolean               autoDeleteUserData;
+    PBoolean           autoDeleteUserData;
+    PMutex             jitterMutex;
     RTP_JitterBuffer * jitter;
 
-    PBoolean          ignoreOutOfOrderPackets;
+    PBoolean      ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
     DWORD         lastSentTimestamp;
     bool          allowAnySyncSource;
     bool          allowOneSyncSourceChange;
-    PBoolean	        allowRemoteTransmitAddressChange;
-    PBoolean	        allowSequenceChange;
+    PBoolean      allowRemoteTransmitAddressChange;
+    PBoolean      allowSequenceChange;
     PTimeInterval reportTimeInterval;
     unsigned      txStatisticsInterval;
     unsigned      rxStatisticsInterval;
@@ -1135,6 +1136,7 @@ class RTP_UDP : public RTP_Session
 
     PIPSocket::Address remoteTransmitAddress;
 
+    PMutex   stateMutex;
     PBoolean shutdownRead;
     PBoolean shutdownWrite;
 
