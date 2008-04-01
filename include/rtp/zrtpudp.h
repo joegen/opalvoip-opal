@@ -6,7 +6,7 @@
 #endif
 
 #include <ptlib.h>
-#include <opal/connection.h>
+#include <opal/rtpconn.h>
 
 class OpalZrtp_UDP : public SecureRTP_UDP {
 	PCLASSINFO(OpalZrtp_UDP, SecureRTP_UDP);
@@ -41,6 +41,7 @@ class LibZrtpSecurityMode_Base : public OpalZrtpSecurityMode {
 	PCLASSINFO(LibZrtpSecurityMode_Base, OpalZrtpSecurityMode);
   public:
 	LibZrtpSecurityMode_Base();
+  ~LibZrtpSecurityMode_Base();
  
 	RTP_UDP * CreateRTPSession(
 #if OPAL_RTP_AGGREGATE
@@ -54,6 +55,8 @@ class LibZrtpSecurityMode_Base : public OpalZrtpSecurityMode {
 	
 	zrtp_profile_t *GetZrtpProfile();
 	
+  zrtp_conn_ctx_t	* zrtpSession;
+
   protected:
 	// last element of each array mush be 0
 	void Init(int *sas, int *pk, int *auth, int *cipher, int *hash);

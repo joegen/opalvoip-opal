@@ -44,6 +44,12 @@
 #include <opal/connection.h>
 class OpalRTPEndPoint;
 
+//#ifdef HAS_LIBZRTP
+//#ifndef __ZRTP_TYPES_H__
+//struct zrtp_conn_ctx_t;
+//#endif
+//#endif
+
 /**This is the base class for OpalConnections that use RTP sessions, 
    such as H.323 and SIPconnections to an endpoint.
  */
@@ -275,7 +281,6 @@ class OpalRTPConnection : public OpalConnection
 #if OPAL_H224
     OpalH224Handler		  * h224Handler;
 #endif
-
 #if 0
 
 #if 0
