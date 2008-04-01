@@ -580,10 +580,13 @@ RTP_Session::~RTP_Session()
 
 void RTP_Session::SendBYE()
 {
-  if (byeSent)
-    return;
+  {
+    PWaitAndSignal mutex(stateMutex);
+    if (byeSent)
+      return;
 
-  byeSent = PTrue;
+    byeSent = PTrue;
+  }
 
   RTP_ControlFrame report;
 
@@ -671,6 +674,8 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
               unsigned timeUnits,
               PINDEX stackSize)
 {
+  PWaitAndSignal mutex(jitterMutex);
+
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
     delete jitter;
     jitter = NULL;
@@ -691,17 +696,20 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
 
 unsigned RTP_Session::GetJitterBufferSize() const
 {
+  PWaitAndSignal mutex(jitterMutex);
   return jitter != NULL ? jitter->GetJitterTime() : 0;
 }
 
 unsigned RTP_Session::GetJitterTimeUnits() const
 {
+  PWaitAndSignal mutex(jitterMutex);
   return jitter != NULL ? jitter->GetTimeUnits() : 0;
 }
 
 
 PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
 {
+  PWaitAndSignal mutex(jitterMutex);
   return jitter != NULL ? jitter->ReadData(frame) : ReadData(frame, PTrue);
 }
 
@@ -1405,12 +1413,14 @@ void RTP_Session::SourceDescription::PrintOn(ostream & strm) const
 
 DWORD RTP_Session::GetPacketsTooLate() const
 {
+  PWaitAndSignal mutex(jitterMutex);
   return jitter != NULL ? jitter->GetPacketsTooLate() : 0;
 }
 
 
 DWORD RTP_Session::GetPacketOverruns() const
 {
+  PWaitAndSignal mutex(jitterMutex);
   return jitter != NULL ? jitter->GetBufferOverruns() : 0;
 }
 
@@ -1581,7 +1591,7 @@ RTP_UDP::~RTP_UDP()
   // over them and exits the reading thread.
   if (jitter)
     PAssert(jitter->WaitForTermination(20000), "Jitter buffer thread did not terminate");
-  
+
   delete dataSocket;
   delete controlSocket;
 }
@@ -1620,6 +1630,8 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
                    PSTUNClient * stun,
                    RTP_QOS * rtpQos)
 {
+  PWaitAndSignal mutex(stateMutex);
+
   first = PTrue;
   // save local address 
   localAddress = _localAddress;
@@ -1709,6 +1721,8 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
 
 void RTP_UDP::Reopen(PBoolean reading)
 {
+  PWaitAndSignal mutex(stateMutex);
+
   if (reading)
     shutdownRead = PFalse;
   else
@@ -1718,8 +1732,9 @@ void RTP_UDP::Reopen(PBoolean reading)
 
 void RTP_UDP::Close(PBoolean reading)
 {
-  if (!shutdownRead && !shutdownWrite)
-    SendBYE();
+  SendBYE();
+
+  PWaitAndSignal mutex(stateMutex);
 
   if (reading) {
     if (!shutdownRead) {
@@ -1793,10 +1808,13 @@ PBoolean RTP_UDP::ReadData(RTP_DataFrame & frame, PBoolean loop)
   do {
     int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
 
-    if (shutdownRead) {
-      PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
-      shutdownRead = PFalse;
-      return PFalse;
+    {
+      PWaitAndSignal mutex(stateMutex);
+      if (shutdownRead) {
+        PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
+        shutdownRead = PFalse;
+        return PFalse;
+      }
     }
 
     switch (selectStatus) {
@@ -2006,10 +2024,13 @@ PBoolean RTP_UDP::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
 
 PBoolean RTP_UDP::WriteData(RTP_DataFrame & frame)
 {
-  if (shutdownWrite) {
-    PTRACE(3, "RTP_UDP\tSession " << sessionID << ", write shutdown.");
-    shutdownWrite = PFalse;
-    return PFalse;
+  {
+    PWaitAndSignal mutex(stateMutex);
+    if (shutdownWrite) {
+      PTRACE(3, "RTP_UDP\tSession " << sessionID << ", write shutdown.");
+      shutdownWrite = PFalse;
+      return PFalse;
+    }
   }
 
   // Trying to send a PDU before we are set up!
