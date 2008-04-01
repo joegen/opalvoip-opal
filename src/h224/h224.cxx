@@ -234,12 +234,10 @@ PBoolean H224_Frame::Decode(const BYTE *data,
 
 ////////////////////////////////////
 
-OpalH224Handler::OpalH224Handler(OpalConnection & connection,
-								 unsigned sessionID)
+OpalH224Handler::OpalH224Handler(OpalRTPConnection & connection, unsigned sessionID)
 : transmitMutex()
 {
-  session = connection.UseSession(connection.GetTransport(),
-							      sessionID);
+  session = connection.UseSession(connection.GetTransport(), sessionID);
 	
   h281Handler = connection.CreateH281ProtocolHandler(*this);
   receiverThread = NULL;

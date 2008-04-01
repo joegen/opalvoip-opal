@@ -49,6 +49,7 @@ class RTP_Session;
 class OpalMediaPatch;
 class OpalLine;
 class OpalConnection;
+class OpalRTPConnection;
 class OpalMediaStatistics;
 
 
@@ -425,7 +426,7 @@ class OpalRTPMediaStream : public OpalMediaStream
     /**Construct a new media stream for RTP sessions.
       */
     OpalRTPMediaStream(
-      OpalConnection & conn,
+      OpalRTPConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       bool isSource,                       ///<  Is a source stream
       RTP_Session & rtpSession,            ///<  RTP session to stream to/from

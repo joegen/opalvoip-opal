@@ -42,7 +42,7 @@
 #include <rtp/jitter.h>
 #include <ptclib/random.h>
 #include <ptclib/pstun.h>
-#include <opal/connection.h>
+#include <opal/rtpconn.h>
 
 #define new PNEW
 

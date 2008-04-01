@@ -57,7 +57,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 H323EndPoint::H323EndPoint(OpalManager & manager)
-  : OpalEndPoint(manager, "h323", CanTerminateCall),
+  : OpalRTPEndPoint(manager, "h323", CanTerminateCall),
     m_bH245Disabled(PFalse),
     signallingChannelCallTimeout(0, 0, 1),  // Minutes
     controlChannelStartTimeout(0, 0, 2),    // Minutes
@@ -488,12 +488,6 @@ PBoolean H323EndPoint::MakeConnection(OpalCall & call,
                           userData,
                           options,
                           stringOptions);
-}
-
-
-OpalMediaFormatList H323EndPoint::GetMediaFormats() const
-{
-  return OpalMediaFormat::GetAllRegisteredMediaFormats();
 }
 
 

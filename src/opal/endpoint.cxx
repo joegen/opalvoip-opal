@@ -62,11 +62,6 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
     productInfo(mgr.GetProductInfo()),
     defaultLocalPartyName(manager.GetDefaultUserName()),
     defaultDisplayName(manager.GetDefaultDisplayName())
-#if OPAL_RTP_AGGREGATE
-    ,useRTPAggregation(manager.UseRTPAggregation()),
-    rtpAggregationSize(10),
-    rtpAggregator(NULL)
-#endif
 {
   manager.AttachEndPoint(this);
 
@@ -79,8 +74,6 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
     defaultLocalPartyName = PProcess::Current().GetName() & "User";
 
   PTRACE(4, "OpalEP\tCreated endpoint: " << prefixName);
-
-  defaultSecurityMode = mgr.GetDefaultSecurityMode();
 }
 
 
@@ -517,7 +510,7 @@ OpalT38Protocol * OpalEndPoint::CreateT38ProtocolHandler(const OpalConnection & 
 
 #if OPAL_H224
 
-OpalH224Handler * OpalEndPoint::CreateH224ProtocolHandler(OpalConnection & connection, 
+OpalH224Handler * OpalEndPoint::CreateH224ProtocolHandler(OpalRTPConnection & connection, 
 														  unsigned sessionID) const
 {
   return manager.CreateH224ProtocolHandler(connection, sessionID);
@@ -541,53 +534,5 @@ PString OpalEndPoint::GetSSLCertificate() const
   return "server.pem";
 }
 #endif
-
-#if OPAL_RTP_AGGREGATE
-
-PHandleAggregator * OpalEndPoint::GetRTPAggregator()
-{
-  PWaitAndSignal m(rtpAggregationMutex);
-  if (rtpAggregationSize == 0)
-    return NULL;
-
-  if (rtpAggregator == NULL)
-    rtpAggregator = new PHandleAggregator(rtpAggregationSize);
-
-  return rtpAggregator;
-}
-
-PBoolean OpalEndPoint::UseRTPAggregation() const
-{ 
-  return useRTPAggregation; 
-}
-
-void OpalEndPoint::SetRTPAggregationSize(PINDEX size)
-{ 
-  rtpAggregationSize = size; 
-}
-
-PINDEX OpalEndPoint::GetRTPAggregationSize() const
-{ 
-  return rtpAggregationSize; 
-}
-
-#endif
-
-PBoolean OpalEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddress*/, 
-                                        PIPSocket::InterfaceTable & /*interfaceTable*/)
-{
-  return PTrue;
-}
-
-
-PBoolean OpalEndPoint::IsRTPNATEnabled(OpalConnection & conn, 
-                         const PIPSocket::Address & localAddr, 
-                         const PIPSocket::Address & peerAddr,
-                         const PIPSocket::Address & sigAddr,
-                                               PBoolean incoming)
-{
-  return GetManager().IsRTPNATEnabled(conn, localAddr, peerAddr, sigAddr, incoming);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////

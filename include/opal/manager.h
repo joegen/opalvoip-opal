@@ -686,7 +686,7 @@ class OpalManager : public PObject
         The default behaviour creates a standard OpalH224Handler instance
       */
 	virtual OpalH224Handler * CreateH224ProtocolHandler(
-      OpalConnection & connection, unsigned sessionID
+      OpalRTPConnection & connection, unsigned sessionID
     ) const;
 	
     /** Create an instance of the H.281 protocol handler.

@@ -39,7 +39,7 @@
 #endif
 
 
-#include <opal/connection.h>
+#include <opal/rtpconn.h>
 #include <opal/guid.h>
 #include <opal/buildopts.h>
 #include <h323/h323caps.h>
@@ -114,9 +114,9 @@ class H460_FeatureSet;
    would then be additional threads created for each data channel created by
    the control channel protocol thread.
  */
-class H323Connection : public OpalConnection
+class H323Connection : public OpalRTPConnection
 {
-  PCLASSINFO(H323Connection, OpalConnection);
+  PCLASSINFO(H323Connection, OpalRTPConnection);
 
   public:
   /**@name Construction */
@@ -243,38 +243,6 @@ class H323Connection : public OpalConnection
     virtual bool CloseMediaStream(
       OpalMediaStream & stream  ///< Stream to close
     );
-
-    /**Create a new media stream.
-       This will create a media stream of an appropriate subclass as required
-       by the underlying connection protocol. For instance H.323 would create
-       an OpalRTPStream.
-
-       The sessionID parameter may not be needed by a particular media stream
-       and may be ignored. In the case of an OpalRTPStream it us used.
-
-       Note that media streams may be created internally to the underlying
-       protocol. This function is not the only way a stream can come into
-       existance.
-
-       The default behaviour is pure.
-     */
-    virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource                        ///<  Is a source stream
-    );
-
-    /**Overrides from OpalConnection
-      */
-    void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
-
-    /**See if the media can bypass the local host.
-
-       The default behaviour returns PTrue if the session is audio or video.
-     */
-    virtual PBoolean IsMediaBypassPossible(
-      unsigned sessionID                  ///<  Session ID for media channel
-    ) const;
 
     /**Get information on the media channel for the connection.
        The default behaviour returns PTrue and fills the info structure if

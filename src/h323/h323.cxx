@@ -152,7 +152,7 @@ H323Connection::H323Connection(OpalCall & call,
                                const H323TransportAddress & address,
                                unsigned options,
                                OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, token, options, stringOptions),
+  : OpalRTPConnection(call, ep, token, options, stringOptions),
     endpoint(ep),
     gkAccessTokenOID(ep.GetGkAccessTokenOID())
 #ifdef H323_H460
@@ -322,7 +322,7 @@ H323Connection::~H323Connection()
 
 void H323Connection::OnReleased()
 {
-  OpalConnection::OnReleased();
+  OpalRTPConnection::OnReleased();
   CleanUpOnCallEnd();
   OnCleared();
 }
@@ -418,7 +418,7 @@ PString H323Connection::GetDestinationAddress()
   if (!localDestinationAddress)
     return localDestinationAddress;
 
-  return OpalConnection::GetDestinationAddress();
+  return OpalRTPConnection::GetDestinationAddress();
 }
 
 
@@ -752,7 +752,7 @@ static PBoolean BuildFastStartList(const H323Channel & channel,
 void H323Connection::OnEstablished()
 {
   endpoint.OnConnectionEstablished(*this, callToken);
-  OpalConnection::OnEstablished();
+  OpalRTPConnection::OnEstablished();
 }
 
 void H323Connection::OnSendARQ(H225_AdmissionRequest & arq)
@@ -1093,7 +1093,7 @@ PBoolean H323Connection::OnOpenIncomingMediaChannels()
 void H323Connection::SetLocalPartyName(const PString & name)
 {
   if (!name.IsEmpty()) {
-    OpalConnection::SetLocalPartyName(name);
+    OpalRTPConnection::SetLocalPartyName(name);
     localAliasNames.RemoveAll();
     localAliasNames.AppendString(name);
   }
@@ -1572,7 +1572,7 @@ H323Connection::AnswerCallResponse
 H323Connection::AnswerCallResponse
      H323Connection::OnAnswerCall(const PString & caller)
 {
-  return OpalConnection::OnAnswerCall(caller);
+  return OpalRTPConnection::OnAnswerCall(caller);
 }
 
 void H323Connection::AnsweringCall(AnswerCallResponse response)
@@ -3321,8 +3321,10 @@ void H323Connection::OnSetLocalCapabilities()
   H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
   if (capability != NULL) {
     MediaInformation info;
-    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
-    if (otherParty != NULL &&
+    PSafePtr<OpalConnection> _otherParty = GetCall().GetOtherPartyConnection(*this);
+    OpalRTPConnection * otherParty;
+    if (_otherParty != NULL && 
+        ((otherParty = dynamic_cast<OpalRTPConnection *>(&*_otherParty)) != NULL) &&
         otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
       capability->SetPayloadType(info.rfc2833);
     else
@@ -3543,42 +3545,7 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
       }
     }
   }
-  return OpalConnection::CloseMediaStream(stream);;
-}
-
-
-OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                    unsigned sessionID,
-                                                    PBoolean isSource)
-{
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID))
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
-
-  RTP_Session * session = GetSession(sessionID);
-  if (session == NULL) {
-    PTRACE(1, "H323\tCreateMediaStream could not find session " << sessionID);
-    return NULL;
-  }
-
-  return new OpalRTPMediaStream(*this, mediaFormat, isSource, *session,
-                                GetMinAudioJitterDelay(),
-                                GetMaxAudioJitterDelay());
-}
-
-
-void H323Connection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
-{
-  OpalConnection::OnPatchMediaStream(isSource, patch);
-  if (patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
-    AttachRFC2833HandlerToPatch(isSource, patch);
-#if P_DTMF
-    if (detectInBandDTMF && isSource) {
-      patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
-    }
-#endif
-  }
-
-  patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
+  return OpalRTPConnection::CloseMediaStream(stream);;
 }
 
 
@@ -3595,23 +3562,14 @@ void H323Connection::OnMediaCommand(OpalMediaCommand & command, INT extra)
   }
   else
 #endif
-    OpalConnection::OnMediaCommand(command, extra);
-}
-
-
-PBoolean H323Connection::IsMediaBypassPossible(unsigned sessionID) const
-{
-  //PTRACE(3, "H323\tIsMediaBypassPossible: session " << sessionID);
-
-  return sessionID == OpalMediaFormat::DefaultAudioSessionID ||
-         sessionID == OpalMediaFormat::DefaultVideoSessionID;
+    OpalRTPConnection::OnMediaCommand(command, extra);
 }
 
 
 PBoolean H323Connection::GetMediaInformation(unsigned sessionID,
                                          MediaInformation & info) const
 {
-  if (!OpalConnection::GetMediaInformation(sessionID, info))
+  if (!OpalRTPConnection::GetMediaInformation(sessionID, info))
     return PFalse;
 
   H323Capability * capability = remoteCapabilities.FindCapability(OpalRFC2833);
@@ -3975,9 +3933,14 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 {
   {
     PSafeLockReadOnly m(ownerCall);
-    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
-    if (otherParty == NULL) {
+    PSafePtr<OpalConnection> _otherParty = GetCall().GetOtherPartyConnection(*this);
+    if (_otherParty == NULL) {
       PTRACE(1, "H323\tCowardly refusing to create an RTP channel with only one connection");
+      return NULL;
+    }
+    OpalRTPConnection * otherParty = dynamic_cast<OpalRTPConnection *>(&*_otherParty);
+    if (otherParty == NULL) {
+      PTRACE(1, "H323\tCannot create RTP channel from non-RTP connection");
       return NULL;
     }
 
@@ -4228,7 +4191,7 @@ PBoolean H323Connection::SendUserInputString(const PString & value)
   if (mode == SendUserInputAsString || mode == SendUserInputAsProtocolDefault)
     return SendUserInputIndicationString(value);
 
-  return OpalConnection::SendUserInputString(value);
+  return OpalRTPConnection::SendUserInputString(value);
 }
 
 
@@ -4253,7 +4216,7 @@ PBoolean H323Connection::SendUserInputTone(char tone, unsigned duration)
       ;
   }
 
-  return OpalConnection::SendUserInputTone(tone, duration);
+  return OpalRTPConnection::SendUserInputTone(tone, duration);
 }
 
 
@@ -4354,7 +4317,7 @@ RTP_Session * H323Connection::UseSession(const OpalTransport & transport,
                                          unsigned sessionID,
                                          RTP_QOS * rtpqos)
 {
-  RTP_UDP * udp_session = (RTP_UDP *)OpalConnection::UseSession(transport, sessionID, rtpqos);
+  RTP_UDP * udp_session = (RTP_UDP *)OpalRTPConnection::UseSession(transport, sessionID, rtpqos);
   if (udp_session == NULL)
     return NULL;
 
