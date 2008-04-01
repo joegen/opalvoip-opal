@@ -1367,13 +1367,13 @@ void SIPNTLMAuthentication::ConstructType1Message(PBYTEArray & buffer) const
   memcpy(hdr->protocol, "NTLMSSP", 7);
   hdr->flags = 0xb203;
 
-  hdr->host_off = (PUInt16l)(&hdr->hostAndDomain - (BYTE *)hdr);
+  hdr->host_off = PUInt16l((WORD)(&hdr->hostAndDomain - (BYTE *)hdr));
   PAssert(hdr->host_off == 0x20, "NTLM auth cannot be constructed");
-  hdr->host_len = hdr->host_len2 = (PUInt16l)hostName.GetLength();
+  hdr->host_len = hdr->host_len2 = PUInt16l((WORD)hostName.GetLength());
   memcpy(&hdr->hostAndDomain, (const char *)hostName, hdr->host_len);
 
-  hdr->dom_off = (PUInt16l)(hdr->host_off + hdr->host_len);
-  hdr->dom_len = (PUInt16l)(hdr->dom_len2  = (PUInt16l)domainName.GetLength());
+  hdr->dom_off = PUInt16l((WORD)(hdr->host_off + hdr->host_len));
+  hdr->dom_len = PUInt16l((WORD)(hdr->dom_len2  = (PUInt16l)domainName.GetLength()));
   memcpy(&hdr->hostAndDomain + hdr->dom_len - hdr->host_len, (const char *)domainName, hdr->host_len2);
 }
 
