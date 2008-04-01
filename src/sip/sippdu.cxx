@@ -1373,7 +1373,7 @@ void SIPNTLMAuthentication::ConstructType1Message(PBYTEArray & buffer) const
   memcpy(&hdr->hostAndDomain, (const char *)hostName, hdr->host_len);
 
   hdr->dom_off = PUInt16l((WORD)(hdr->host_off + hdr->host_len));
-  hdr->dom_len = PUInt16l((WORD)(hdr->dom_len2  = (PUInt16l)domainName.GetLength()));
+  hdr->dom_len = hdr->dom_len2  = PUInt16l((WORD)domainName.GetLength());
   memcpy(&hdr->hostAndDomain + hdr->dom_len - hdr->host_len, (const char *)domainName, hdr->host_len2);
 }
 
