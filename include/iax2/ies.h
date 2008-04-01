@@ -1075,13 +1075,13 @@ class IAX2IeAuthMethods : public IAX2IeShort
  protected:
   
   /**Return true if the supplied value has the RSA key on*/
-  static PBoolean InternalIsRsa(short testValue) { return testValue  && 0x04; }
+  static PBoolean InternalIsRsa(short testValue) { return testValue  & 0x04; }
   
   /**Return true if the supplied value has the MD5 key on*/
-  static PBoolean InternalIsMd5(short testValue) { return testValue  && 0x02; }
+  static PBoolean InternalIsMd5(short testValue) { return testValue  & 0x02; }
   
   /**Return true if the supplied value has the plain text  key on*/
-  static PBoolean InternalIsPlainText(short testValue) { return testValue  && 0x01; }
+  static PBoolean InternalIsPlainText(short testValue) { return testValue  & 0x01; }
 };
 
 ///////////////////////////////////////////////////////////////////////
