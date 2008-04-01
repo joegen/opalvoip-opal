@@ -671,6 +671,9 @@ dnl ########################################################################
 
 dnl ZRTP from Phil Zimmermann
 dnl 
+dnl MSWIN_DISPLAY     libzrtp,libZRTP support
+dnl MSWIN_CHECK_FILE  libzrtp,include\zrtp.h,HAS_LIBZRTP=1
+dnl MSWIN_DIR_SYMBOL  libzrtp,LIBZRTP_DIR
 
 dnl check ZRTP enable flag
 AC_ARG_ENABLE(	zrtp, [ --enable-zrtp	enable ZRTP protocol support],

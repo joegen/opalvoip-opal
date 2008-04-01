@@ -47,6 +47,23 @@
 #include <codec/vidcodec.h>
 #endif
 
+#ifdef HAS_LIBZRTP
+
+#define BUILD_ZRTP_MUTEXES 1
+
+#ifdef _WIN32
+#define ZRTP_PLATFORM ZP_WIN32
+#endif
+
+#ifdef P_LINUX
+#define ZRTP_PLATFORM ZP_LINUX
+#endif
+
+#include <zrtp.h>
+#include <zrtp/opalzrtp.h>
+#include <rtp/zrtpudp.h>
+#endif
+
 
 OpalRTPConnection::OpalRTPConnection(OpalCall & call,
                              OpalRTPEndPoint  & ep,
@@ -123,31 +140,26 @@ RTP_Session * OpalRTPConnection::UseSession(const OpalTransport & transport,
 }
 
 
-void OpalRTPConnection::ReleaseSession(unsigned sessionID,
-                                    PBoolean clearAll)
-{
-  rtpSessions.ReleaseSession(sessionID, clearAll);
-}
-
-
 RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
-                                            unsigned sessionID,
-                                            RTP_QOS * rtpqos)
+                                           unsigned sessionID,
+                                           RTP_QOS * rtpqos)
 {
   // We only support RTP over UDP at this point in time ...
-  if (!transport.IsCompatibleTransport("ip$127.0.0.1"))
+  if (!transport.IsCompatibleTransport("ip$127.0.0.1")) 
     return NULL;
 
   // We support video, audio and T38 over IP
   if (sessionID != OpalMediaFormat::DefaultAudioSessionID && 
-      sessionID != OpalMediaFormat::DefaultVideoSessionID 
+      sessionID != OpalMediaFormat::DefaultVideoSessionID
 #if OPAL_T38FAX
       && sessionID != OpalMediaFormat::DefaultDataSessionID
 #endif
-      )
+      ) {
     return NULL;
+  }
 
   PIPSocket::Address localAddress;
+ 
   transport.GetLocalAddress().GetIpAddress(localAddress);
 
   OpalManager & manager = GetEndPoint().GetManager();
@@ -163,9 +175,9 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   if (sessionID == OpalMediaFormat::DefaultDataSessionID) {
     rtpSession = new T38PseudoRTP(
 #if OPAL_RTP_AGGREGATE
-      NULL, 
+                                        NULL,
 #endif
-      sessionID, remoteIsNAT);
+                                        sessionID, remoteIsNAT);
   }
   else
 #endif
@@ -176,33 +188,30 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
       PTRACE(1, "OpalCon\tSecurity mode " << securityMode << " unknown");
       return NULL;
     }
+    
+    PTRACE(1, "OpalCon\tCreating security mode " << securityMode);
     rtpSession = parms->CreateRTPSession(
 #if OPAL_RTP_AGGREGATE
                   useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
 #endif
                   sessionID, remoteIsNAT, *this);
+
     if (rtpSession == NULL) {
       PTRACE(1, "OpalCon\tCannot create RTP session for security mode " << securityMode);
       delete parms;
       return NULL;
     }
-  }
-  else
-  {
+  } else {
     rtpSession = new RTP_UDP(
 #if OPAL_RTP_AGGREGATE
-                   useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+                             useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
 #endif
-                   sessionID, remoteIsNAT);
+                             sessionID, remoteIsNAT);
   }
 
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;
-  while (!rtpSession->Open(localAddress,
-                           nextPort, nextPort,
-                           manager.GetRtpIpTypeofService(),
-                           stun,
-                           rtpqos)) {
+  while (!rtpSession->Open(localAddress, nextPort, nextPort, manager.GetRtpIpTypeofService(), stun, rtpqos)) {
     nextPort = manager.GetRtpIpPortPair();
     if (nextPort == firstPort) {
       PTRACE(1, "OpalCon\tNo ports available for RTP session " << sessionID << " for " << *this);
@@ -212,9 +221,32 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   }
 
   localAddress = rtpSession->GetLocalAddress();
-  if (manager.TranslateIPAddress(localAddress, remoteAddress))
+  if (manager.TranslateIPAddress(localAddress, remoteAddress)){
     rtpSession->SetLocalAddress(localAddress);
+  }
+  
   return rtpSession;
+}
+
+void OpalRTPConnection::ReleaseSession(unsigned sessionID, PBoolean clearAll/* = PFalse */)
+{
+#ifdef HAS_LIBZRTP
+  //check is security mode ZRTP
+  if (0 == securityMode.Find("ZRTP")) {
+    RTP_Session *session = GetSession(sessionID);
+    if (NULL != session){
+      OpalZrtp_UDP *zsession = (OpalZrtp_UDP*)session;
+      if (NULL != zsession->zrtpStream){
+        ::zrtp_stop_stream(zsession->zrtpStream);
+        zsession->zrtpStream = NULL;
+      }
+    }
+  }
+
+  printf("release session %i\n", sessionID);
+#endif
+
+  rtpSessions.ReleaseSession(sessionID, clearAll);
 }
 
 
