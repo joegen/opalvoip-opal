@@ -581,7 +581,7 @@ RTP_Session::~RTP_Session()
 void RTP_Session::SendBYE()
 {
   {
-    PWaitAndSignal mutex(stateMutex);
+    PWaitAndSignal mutex(dataMutex);
     if (byeSent)
       return;
 
@@ -766,7 +766,7 @@ void RTP_Session::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver)
 
 RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
 {
-  PWaitAndSignal m(sendDataMutex);
+  PWaitAndSignal mutex(dataMutex);
 
   PTimeInterval tick = PTimer::Tick();  // Timestamp set now
 
@@ -1630,7 +1630,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
                    PSTUNClient * stun,
                    RTP_QOS * rtpQos)
 {
-  PWaitAndSignal mutex(stateMutex);
+  PWaitAndSignal mutex(dataMutex);
 
   first = PTrue;
   // save local address 
@@ -1721,7 +1721,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
 
 void RTP_UDP::Reopen(PBoolean reading)
 {
-  PWaitAndSignal mutex(stateMutex);
+  PWaitAndSignal mutex(dataMutex);
 
   if (reading)
     shutdownRead = PFalse;
@@ -1734,7 +1734,7 @@ void RTP_UDP::Close(PBoolean reading)
 {
   SendBYE();
 
-  PWaitAndSignal mutex(stateMutex);
+  PWaitAndSignal mutex(dataMutex);
 
   if (reading) {
     if (!shutdownRead) {
@@ -1809,7 +1809,7 @@ PBoolean RTP_UDP::ReadData(RTP_DataFrame & frame, PBoolean loop)
     int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
 
     {
-      PWaitAndSignal mutex(stateMutex);
+      PWaitAndSignal mutex(dataMutex);
       if (shutdownRead) {
         PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
         shutdownRead = PFalse;
@@ -2001,7 +2001,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
 
 PBoolean RTP_UDP::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
 {
-  PWaitAndSignal m(sendDataMutex);
+  PWaitAndSignal mutex(dataMutex);
 
   // set timestamp offset if not already set
   // otherwise offset timestamp
@@ -2025,7 +2025,7 @@ PBoolean RTP_UDP::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
 PBoolean RTP_UDP::WriteData(RTP_DataFrame & frame)
 {
   {
-    PWaitAndSignal mutex(stateMutex);
+    PWaitAndSignal mutex(dataMutex);
     if (shutdownWrite) {
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", write shutdown.");
       shutdownWrite = PFalse;
