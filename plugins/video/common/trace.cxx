@@ -31,7 +31,7 @@
 
 #include "trace.h"
 
-#ifdef __MACOSX__
+#if defined(__MACOSX__) || defined(__GNUC__)
 #include <libgen.h>
 #endif
 
@@ -61,7 +61,7 @@ ostream & Trace::Start(const char* file, int line)
 #ifdef WIN32
   cerr << setw(16) << file << '(' << line << ")\t";
 #else
-  cerr << setw(16) << basename(file) << '(' << line << ")\t";
+  cerr << setw(16) << basename((char *)file) << '(' << line << ")\t";
 #endif
   return cerr;
 }
