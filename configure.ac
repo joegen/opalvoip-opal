@@ -21,6 +21,7 @@ iax=yes
 audio=yes
 video=yes
 rfc4175=yes
+statistics=yes
 plugins=yes
 #zrtp=yes
 
