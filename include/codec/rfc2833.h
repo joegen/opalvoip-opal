@@ -65,13 +65,13 @@ class OpalRFC2833Info : public PObject {
     unsigned timestamp;
 };
 
-class OpalConnection;
+class OpalRTPConnection;
 
 class OpalRFC2833Proto : public PObject {
     PCLASSINFO(OpalRFC2833Proto, PObject);
   public:
     OpalRFC2833Proto(
-      OpalConnection & conn,
+      OpalRTPConnection & conn,
       const PNotifier & receiveNotifier
     );
     ~OpalRFC2833Proto();
@@ -112,7 +112,7 @@ class OpalRFC2833Proto : public PObject {
   protected:
     void SendAsyncFrame();
 
-    OpalConnection & conn;
+    OpalRTPConnection & conn;
 
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalRFC2833Proto, ReceivedPacket);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, ReceiveTimeout);

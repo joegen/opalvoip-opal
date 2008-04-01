@@ -817,7 +817,7 @@ OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & )
 
 #ifdef OPAL_H224
 
-OpalH224Handler * OpalManager::CreateH224ProtocolHandler(OpalConnection & connection, unsigned sessionID) const
+OpalH224Handler * OpalManager::CreateH224ProtocolHandler(OpalRTPConnection & connection, unsigned sessionID) const
 {
   return new OpalH224Handler(connection, sessionID);
 }
