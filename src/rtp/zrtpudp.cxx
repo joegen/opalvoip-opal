@@ -8,6 +8,16 @@
 
 #ifdef OPAL_ZRTP
 
+#define BUILD_ZRTP_MUTEXES 1
+
+#ifdef _WIN32
+#define ZRTP_PLATFORM ZP_WIN32
+#endif
+
+#ifdef P_LINUX
+#define ZRTP_PLATFORM ZP_LINUX
+#endif
+
 #include <zrtp.h>
 #include "rtp/zrtpudp.h"
 
@@ -28,15 +38,29 @@ class OpalZrtpSecurityMode_##name : public LibZrtpSecurityMode_Base \
 static PFactory<OpalSecurityMode>::Worker<OpalZrtpSecurityMode_##name> factoryZrtpSecurityMode_##name("ZRTP|" #name);
 
 DECLARE_LIBZRTP_CRYPTO_ALG( DEFAULT, NULL, NULL, NULL, NULL, NULL);
+#if 0
 DECLARE_LIBZRTP_CRYPTO_ALG( STRONGHOLD, 
 						((int[]){ZRTP_SAS_BASE256, ZRTP_SAS_BASE32, 0}),
 				       		((int[]){ZRTP_PKTYPE_PRESH, ZRTP_PKTYPE_DH4096, ZRTP_PKTYPE_DH3072, 0}),
 				      	 	((int[]){ZRTP_ATL_HS80, ZRTP_ATL_HS32, 0}),
 				       		((int[]){ZRTP_CIPHER_AES256, ZRTP_CIPHER_AES128, 0}),
 				       		((int[]){ZRTP_HASH_SHA256, ZRTP_HASH_SHA128, 0}));
+#endif
 
-LibZrtpSecurityMode_Base::LibZrtpSecurityMode_Base() {
+LibZrtpSecurityMode_Base::LibZrtpSecurityMode_Base() 
+{
 	Init(NULL, NULL, NULL, NULL, NULL);
+  zrtpSession = new(zrtp_conn_ctx_t);
+  ::zrtp_init_session_ctx(zrtpSession, OpalZrtp::GetZrtpContext(), OpalZrtp::GetZID());
+  zrtpSession->ctx_usr_data = this;
+}
+
+LibZrtpSecurityMode_Base::~LibZrtpSecurityMode_Base() 
+{
+  if (zrtpSession){
+    ::zrtp_done_session_ctx(zrtpSession);
+    delete (zrtpSession);
+  }
 }
  
 zrtp_profile_t* LibZrtpSecurityMode_Base::GetZrtpProfile(){
@@ -80,7 +104,7 @@ void LibZrtpSecurityMode_Base::Init(int *sas, int *pk, int *auth, int *cipher, i
  
 RTP_UDP * LibZrtpSecurityMode_Base::CreateRTPSession(
 #if OPAL_RTP_AGGREGATE
-                                                      	PHandleAggregator * _aggregator, ///< handle aggregator
+              PHandleAggregator * _aggregator, ///< handle aggregator
 #endif
 							unsigned id,
 							PBoolean remoteIsNAT,            ///< TRUE is remote is behind NAT
@@ -93,10 +117,21 @@ RTP_UDP * LibZrtpSecurityMode_Base::CreateRTPSession(
 #endif
                                                  id, remoteIsNAT);
 	session->SetSecurityMode(this);
+
+  int ssrc = session->GetOutgoingSSRC();
+  session->zrtpStream = ::zrtp_attach_stream(zrtpSession, ssrc);
+
+  printf("attaching stream to sessionID %d\n", id);
+  if (session->zrtpStream) {
+    session->zrtpStream->stream_usr_data = session;
+    zrtp_start_stream(session->zrtpStream);
+  }
+
 	return session;
 }
  
-PBoolean LibZrtpSecurityMode_Base::Open() {
+PBoolean LibZrtpSecurityMode_Base::Open() 
+{
 	return PTrue;
 }
 

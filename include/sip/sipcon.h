@@ -44,12 +44,6 @@
 #include <codec/vidcodec.h>             // for OpalVideoUpdatePicture command
 #endif
 
-#ifdef HAS_LIBZRTP
-#ifndef __ZRTP_TYPES_H__
-struct zrtp_conn_ctx_t;
-#endif
-#endif
-
 class OpalCall;
 class SIPEndPoint;
 
@@ -482,15 +476,6 @@ class SIPConnection : public OpalRTPConnection
     OpalMediaFormatList remoteFormatList;
 
     PString explicitFrom;
-
-#ifdef HAS_LIBZRTP
-  public:
-    zrtp_conn_ctx_t	*zrtpSession;
-    virtual RTP_Session * CreateSession(const OpalTransport & transport, unsigned sessionID, RTP_QOS * rtpqos);
-    virtual void ReleaseSession(unsigned sessionID,    ///<  RTP session number
-                                PBoolean clearAll = PFalse  ///<  Clear all sessions
-                               );
-#endif
 
   protected:
     PTimer sessionTimer;

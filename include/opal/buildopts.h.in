@@ -126,6 +126,63 @@
 
 /////////////////////////////////////////////////
 //
+// libZRTP support
+//
+//#undef HAS_LIBZRTP
+
+#if HAS_LIBZRTP
+#if defined(_MSC_VER)
+
+#ifdef _DEBUG
+#define LIBZRTP_LIBRARY "@LIBZRTP_DIR@/Debug/libzrtp.lib"
+#else
+#define LIBZRTP_LIBRARY "@LIBZRTP_DIR@/Release/libzrtp.lib"
+#endif
+
+#pragma comment(lib, LIBZRTP_LIBRARY)
+
+#pragma include_alias("WINCONFIG/config.h",         "@LIBZRTP_DIR@/srtp_win32k/WINCONFIG/config.h")
+#pragma include_alias("WINCONFIG\config.h",         "@LIBZRTP_DIR@/srtp_win32k/WINCONFIG/config.h")
+
+#pragma include_alias(<zrtp.h>,                     <@LIBZRTP_DIR@/include/zrtp.h>)
+#pragma include_alias(<zrtp_log.h>,                 <@LIBZRTP_DIR@/include/zrtp_log.h>)
+#pragma include_alias(<zrtp_types.h>,               <@LIBZRTP_DIR@/include/zrtp_types.h>)   
+#pragma include_alias(<zrtp_crypto.h>,              <@LIBZRTP_DIR@/include/zrtp_crypto.h>)
+#pragma include_alias(<zrtp_protocol.h>,            <@LIBZRTP_DIR@/include/zrtp_protocol.h>)
+#pragma include_alias(<zrtp_string.h>,              <@LIBZRTP_DIR@/include/zrtp_string.h>)
+#pragma include_alias(<zrtp_iface.h>,               <@LIBZRTP_DIR@/include/zrtp_iface.h>)
+#pragma include_alias(<zrtp_error.h>,               <@LIBZRTP_DIR@/include/zrtp_error.h>)
+#pragma include_alias(<zrtp_net.h>,                 <@LIBZRTP_DIR@/include/zrtp_net.h>)
+#pragma include_alias(<zrtp_system.h>,              <@LIBZRTP_DIR@/include/zrtp_system.h>)
+#pragma include_alias("bn.h",                       "@LIBZRTP_DIR@/bnlib/bn.h")
+#pragma include_alias(<bn.h>,                       <@LIBZRTP_DIR@/bnlib/bn.h>)
+#pragma include_alias("bnsize00.h",                 "@LIBZRTP_DIR@/bnlib/bnsize00.h")
+#pragma include_alias(<bnsize00.h>,                 <@LIBZRTP_DIR@/bnlib/bnsize00.h>)
+
+#pragma include_alias("aes.h",                      "@LIBZRTP_DIR@/bgaes/aes.h")
+#pragma include_alias("sha2.h",                     "@LIBZRTP_DIR@/bgaes/sha2.h")
+
+#pragma include_alias("zrtp_win_config.h",          "@LIBZRTP_DIR@/config/zrtp_win_config.h")
+
+
+// ZRTP includes SRTP, so include SRTP headers
+
+#pragma include_alias("srtp.h",              "@LIBZRTP_DIR@/srtp_win32k/include/srtp.h")
+#pragma include_alias(<srtp.h>,              <@LIBZRTP_DIR@/srtp_win32k/include/srtp.h>)
+#pragma include_alias("srtp/srtp.h",         "@LIBZRTP_DIR@/srtp_win32k/include/srtp.h")
+#pragma include_alias(<srtp/include/srtp.h>, <@LIBZRTP_DIR@/srtp_win32k/include/srtp.h>)
+#pragma include_alias("crypto_kernel.h",     "@LIBZRTP_DIR@/srtp_win32k/crypto/include/crypto_kernel.h")
+#pragma include_alias("rdbx.h",              "@LIBZRTP_DIR@/srtp_win32k/crypto/include/rdbx.h")
+#pragma include_alias("rdb.h",               "@LIBZRTP_DIR@/srtp_win32k/crypto/include/rdb.h")
+#pragma include_alias("integers.h",          "@LIBZRTP_DIR@/srtp_win32k/crypto/include/integers.h")
+
+// end of SRTP headers
+
+#endif
+#endif
+
+/////////////////////////////////////////////////
+//
 // libSRTP support
 //
 #undef HAS_LIBSRTP
@@ -154,63 +211,8 @@
 #define OPAL_SRTP  1
 #endif
 
-/////////////////////////////////////////////////
-//
-// libZRTP support
-//
-#undef HAS_LIBZRTP
-
-#if HAS_LIBZRTP
-#if defined(_MSC_VER)
-
-#ifdef _DEBUG
-#define LIBZRTP_LIBRARY "@LIBZRTP_DIR@/Debug/libzrtp.lib"
-#else
-#define LIBZRTP_LIBRARY "@LIBZRTP_DIR@/Release/libzrtp.lib"
-#endif
-
-#pragma comment(lib, LIBZRTP_LIBRARY)
-
-#pragma include_alias("WINCONFIG/config.h",         "@LIBZRTP_DIR@/srtp_win32k/WINCONFIG/config.h")
-#pragma include_alias("WINCONFIG\config.h",         "@LIBZRTP_DIR@/srtp_win32k/WINCONFIG/config.h")
-
-#pragma include_alias(<ZRTP/zrtp.h>,                <@LIBZRTP_DIR@/include/zrtp.h>)
-#pragma include_alias(<ZRTP/zrtp_log.h>,            <@LIBZRTP_DIR@/include/zrtp_log.h>)
-
-#pragma include_alias(<zrtp_types.h>,               <@LIBZRTP_DIR@/include/zrtp_types.h>)   
-#pragma include_alias(<zrtp_crypto.h>,              <@LIBZRTP_DIR@/include/zrtp_crypto.h>)
-#pragma include_alias(<zrtp_protocol.h>,            <@LIBZRTP_DIR@/include/zrtp_protocol.h>)
-#pragma include_alias(<zrtp_string.h>,              <@LIBZRTP_DIR@/include/zrtp_string.h>)
-#pragma include_alias(<zrtp_iface.h>,               <@LIBZRTP_DIR@/include/zrtp_iface.h>)
-#pragma include_alias(<zrtp_error.h>,               <@LIBZRTP_DIR@/include/zrtp_error.h>)
-#pragma include_alias(<zrtp_net.h>,                 <@LIBZRTP_DIR@/include/zrtp_net.h>)
-#pragma include_alias(<zrtp_system.h>,              <@LIBZRTP_DIR@/include/zrtp_system.h>)
-#pragma include_alias("bn.h",                       "@LIBZRTP_DIR@/bnlib/bn.h")
-#pragma include_alias(<bn.h>,                       <@LIBZRTP_DIR@/bnlib/bn.h>)
-#pragma include_alias("bnsize00.h",                 "@LIBZRTP_DIR@/bnlib/bnsize00.h")
-#pragma include_alias(<bnsize00.h>,                 <@LIBZRTP_DIR@/bnlib/bnsize00.h>)
-#pragma include_alias("sha2.h",                     "@LIBZRTP_DIR@/include/sha/sha2.h")
-
-
-// ZRTP includes SRTP, so include SRTP headers
-
-#pragma include_alias("srtp.h",              "@LIBZRTP_DIR@/srtp_win32k/include/srtp.h")
-#pragma include_alias(<srtp.h>,              <@LIBZRTP_DIR@/srtp_win32k/include/srtp.h>)
-#pragma include_alias("srtp/srtp.h",         "@LIBZRTP_DIR@/srtp_win32k/include/srtp.h")
-#pragma include_alias(<srtp/include/srtp.h>, <@LIBZRTP_DIR@/srtp_win32k/include/srtp.h>)
-#pragma include_alias("crypto_kernel.h",     "@LIBZRTP_DIR@/srtp_win32k/crypto/include/crypto_kernel.h")
-#pragma include_alias("rdbx.h",              "@LIBZRTP_DIR@/srtp_win32k/crypto/include/rdbx.h")
-#pragma include_alias("rdb.h",               "@LIBZRTP_DIR@/srtp_win32k/crypto/include/rdb.h")
-#pragma include_alias("integers.h",          "@LIBZRTP_DIR@/srtp_win32k/crypto/include/integers.h")
-
-// end of SRTP headers
-
-#endif
-#endif
-
 #if HAS_LIBZRTP
 #define OPAL_ZRTP  1
-#define OPAL_SRTP  1
 #endif
 
 #endif // _OPAL_BUILDOPTS_H
