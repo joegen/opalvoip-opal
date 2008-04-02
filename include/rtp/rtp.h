@@ -796,7 +796,6 @@ class RTP_Session : public PObject
     unsigned           referenceCount;
     RTP_UserData     * userData;
     PBoolean           autoDeleteUserData;
-    PMutex             jitterMutex;
     RTP_JitterBuffer * jitter;
 
     PBoolean      ignoreOutOfOrderPackets;
