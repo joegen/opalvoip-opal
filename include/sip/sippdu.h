@@ -959,20 +959,10 @@ class SIPAck : public SIP_PDU
 {
     PCLASSINFO(SIPAck, SIP_PDU);
   public:
-    // This ACK is sent for non-2xx responses
     SIPAck(
-      SIPEndPoint & ep,
       SIPTransaction & invite,
-      SIP_PDU & response); 
-
-    // This ACK is sent for 2xx responses according to 17.1.1.3
-    SIPAck(
-      SIPTransaction & invite);
-
-  protected:
-    void Construct();
-
-    SIPTransaction & transaction;
+      SIP_PDU & response
+    );
 };
 
 
