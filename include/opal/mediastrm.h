@@ -423,6 +423,7 @@ class OpalRTPMediaStream : public OpalMediaStream
   /**@name Construction */
   //@{
     /**Construct a new media stream for RTP sessions.
+       This will add a reference to the rtpSession passed in.
       */
     OpalRTPMediaStream(
       OpalConnection & conn,
@@ -432,6 +433,11 @@ class OpalRTPMediaStream : public OpalMediaStream
       unsigned minAudioJitterDelay,        ///<  Minimum jitter buffer size (if applicable)
       unsigned maxAudioJitterDelay         ///<  Maximum jitter buffer size (if applicable)
     );
+
+    /**Destroy the media stream for RTP sessions.
+       This will release the reference to the rtpSession passed into the constructor.
+      */
+    ~OpalRTPMediaStream();
   //@}
 
   /**@name Overrides of OpalMediaStream class */
