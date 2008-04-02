@@ -674,8 +674,6 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
               unsigned timeUnits,
               PINDEX stackSize)
 {
-  PWaitAndSignal mutex(jitterMutex);
-
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
     delete jitter;
     jitter = NULL;
@@ -696,20 +694,17 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
 
 unsigned RTP_Session::GetJitterBufferSize() const
 {
-  PWaitAndSignal mutex(jitterMutex);
   return jitter != NULL ? jitter->GetJitterTime() : 0;
 }
 
 unsigned RTP_Session::GetJitterTimeUnits() const
 {
-  PWaitAndSignal mutex(jitterMutex);
   return jitter != NULL ? jitter->GetTimeUnits() : 0;
 }
 
 
 PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
 {
-  PWaitAndSignal mutex(jitterMutex);
   return jitter != NULL ? jitter->ReadData(frame) : ReadData(frame, PTrue);
 }
 
@@ -1413,14 +1408,12 @@ void RTP_Session::SourceDescription::PrintOn(ostream & strm) const
 
 DWORD RTP_Session::GetPacketsTooLate() const
 {
-  PWaitAndSignal mutex(jitterMutex);
   return jitter != NULL ? jitter->GetPacketsTooLate() : 0;
 }
 
 
 DWORD RTP_Session::GetPacketOverruns() const
 {
-  PWaitAndSignal mutex(jitterMutex);
   return jitter != NULL ? jitter->GetBufferOverruns() : 0;
 }
 
