@@ -1789,8 +1789,6 @@ BOOL SIPConnection::SetUpConnection()
 {
   PTRACE(3, "SIP\tSetUpConnection: " << remotePartyAddress);
 
-  SetPhase(SetUpPhase);
-
   ApplyStringOptions();
 
   SIPURL transportAddress;
@@ -1813,15 +1811,13 @@ BOOL SIPConnection::SetUpConnection()
     return FALSE;
   }
 
-  releaseMethod = ReleaseWithCANCEL;
-
   if (!transport->WriteConnect(WriteINVITE, this)) {
     PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
-    releaseMethod = ReleaseWithNothing;
     Release(EndedByTransportFail);
     return FALSE;
   }
 
+  releaseMethod = ReleaseWithCANCEL;
   return TRUE;
 }
 

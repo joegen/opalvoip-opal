@@ -2402,31 +2402,27 @@ BOOL SIPTransaction::Start()
 
   state = Trying;
   retry = 0;
+  retryTimer = retryTimeoutMin;
   localAddress = transport.GetLocalAddress();
 
-
-  bool stat = false;
-
-  PStringList routeSet = this->GetMIME().GetRoute(); // Get the route set from the PDU
-
-  // Use the connection transport to send the request
-  if (connection != NULL) 
-    stat = connection->SendPDU(*this, GetSendAddress(routeSet));
-  else 
-    stat = Write(transport, GetSendAddress(routeSet));
-
-  if (!stat) {
-    SetTerminated(Terminated_TransportError);
-    return PFalse;
-  }
-
-  retryTimer = retryTimeoutMin;
   if (method == Method_INVITE)
     completionTimer = endpoint.GetInviteTimeout();
   else
     completionTimer = endpoint.GetNonInviteTimeout();
 
-  return true;
+  PStringList routeSet = this->GetMIME().GetRoute(); // Get the route set from the PDU
+  if (connection != NULL) {
+    // Use the connection transport to send the request
+    if (connection->SendPDU(*this, GetSendAddress(routeSet)))
+      return TRUE;
+  }
+  else {
+    if (Write(transport, GetSendAddress(routeSet)))
+      return TRUE;
+  }
+
+  SetTerminated(Terminated_TransportError);
+  return FALSE;
 }
 
 
@@ -2496,8 +2492,8 @@ BOOL SIPTransaction::ResendCANCEL()
 BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
   // Stop the timers outside of the mutex to avoid deadlock
-  retryTimer.Stop(false);
-  completionTimer.Stop(false);
+  retryTimer.Stop();
+  completionTimer.Stop();
 
   PString cseq = response.GetMIME().GetCSeq();
 
