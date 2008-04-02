@@ -778,9 +778,8 @@ PBoolean H323_ExternalRTPChannel::GetMediaTransportAddress(OpalTransportAddress 
 
 PBoolean H323_ExternalRTPChannel::Start()
 {
-  PSafePtr<OpalConnection> _otherParty = connection.GetCall().GetOtherPartyConnection(connection);
-  OpalRTPConnection * otherParty;
-  if (_otherParty == NULL || ((otherParty = dynamic_cast<OpalRTPConnection *>(&*_otherParty)) != NULL))
+  PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(connection.GetCall().GetOtherPartyConnection(connection));
+  if (otherParty == NULL)
     return PFalse;
 
   OpalRTPConnection::MediaInformation info;

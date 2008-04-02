@@ -3321,11 +3321,8 @@ void H323Connection::OnSetLocalCapabilities()
   H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
   if (capability != NULL) {
     MediaInformation info;
-    PSafePtr<OpalConnection> _otherParty = GetCall().GetOtherPartyConnection(*this);
-    OpalRTPConnection * otherParty;
-    if (_otherParty != NULL && 
-        ((otherParty = dynamic_cast<OpalRTPConnection *>(&*_otherParty)) != NULL) &&
-        otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
+    PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
+    if (otherParty != NULL && otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
       capability->SetPayloadType(info.rfc2833);
     else
       localCapabilities.Remove(capability);
@@ -3935,14 +3932,9 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     PSafeLockReadOnly m(ownerCall);
 
     if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
-      PSafePtr<OpalConnection> _otherParty = GetCall().GetOtherPartyConnection(*this);
-      if (_otherParty == NULL) {
-        PTRACE(1, "H323\tCowardly refusing to create an RTP channel with only one connection");
-        return NULL;
-      }
-      OpalRTPConnection * otherParty = dynamic_cast<OpalRTPConnection *>(&*_otherParty);
+      PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
       if (otherParty == NULL) {
-        PTRACE(1, "H323\tCannot create RTP channel from non-RTP connection");
+        PTRACE(1, "H323\tCowardly refusing to create an RTP channel with only one connection");
         return NULL;
       }
       MediaInformation info;

@@ -429,9 +429,8 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalT
   // if doing media bypass, we need to set the local address
   // otherwise create an RTP session
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    OpalConnection * _otherParty = GetCall().GetOtherPartyConnection(*this);
-    OpalRTPConnection * otherParty;
-    if (_otherParty != NULL && ((otherParty = dynamic_cast<OpalRTPConnection *>(&*_otherParty)) != NULL)) {
+    PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
+    if (otherParty != NULL) {
       MediaInformation info;
       if (otherParty->GetMediaInformation(rtpSessionId, info)) {
         localAddress = info.data;
@@ -553,9 +552,8 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
   }
 
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    PSafePtr<OpalConnection> _otherParty = GetCall().GetOtherPartyConnection(*this);
-    OpalRTPConnection * otherParty;
-    if (_otherParty != NULL && ((otherParty = dynamic_cast<OpalRTPConnection *>(&*_otherParty)) != NULL)) {
+    PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
+    if (otherParty != NULL) {
       MediaInformation info;
       if (otherParty->GetMediaInformation(rtpSessionId, info)) {
         localAddress = info.data;
@@ -958,6 +956,8 @@ PBoolean SIPConnection::SetUpConnection()
 {
   PTRACE(3, "SIP\tSetUpConnection: " << remotePartyAddress);
 
+  SetPhase(SetUpPhase);
+
   ApplyStringOptions();
 
   SIPURL transportAddress;
@@ -980,13 +980,15 @@ PBoolean SIPConnection::SetUpConnection()
     return PFalse;
   }
 
+  releaseMethod = ReleaseWithCANCEL;
+
   if (!transport->WriteConnect(WriteINVITE, this)) {
     PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
+    releaseMethod = ReleaseWithNothing;
     Release(EndedByTransportFail);
     return PFalse;
   }
 
-  releaseMethod = ReleaseWithCANCEL;
   return PTrue;
 }
 
