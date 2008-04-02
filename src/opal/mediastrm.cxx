@@ -552,13 +552,13 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
     minAudioJitterDelay = maxAudioJitterDelay = 0;
 
   defaultDataSize = conn.GetMaxRtpPayloadSize();
-  connection.UseSession(rtpSession.GetSessionID());
+  conn.UseSession(rtpSession.GetSessionID());
 }
 
 
 OpalRTPMediaStream::~OpalRTPMediaStream()
 {
-  connection.ReleaseSession(rtpSession.GetSessionID());
+  dynamic_cast<OpalRTPConnection &>(connection).ReleaseSession(rtpSession.GetSessionID());
 }
 
 
