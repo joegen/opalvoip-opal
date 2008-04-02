@@ -2234,41 +2234,26 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
 
 PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
-  unsigned statusClass = response.GetStatusCode()/100;
-
-  {
-    PSafeLockReadWrite lock(*this);
-    if (!lock.IsLocked())
-      return false;
-
-    // ACK Constructed following 17.1.1.3
-    if (statusClass == 2) {
-      SIPAck ack(*this);
-      if (!SendPDU(ack))
-        return false;
-    }
-    else if (statusClass > 2) {
-      SIPAck ack(endpoint, *this, response);
-      if (!SendPDU(ack))
-        return false;
-    }
-  }
-
-  if (!SIPTransaction::OnReceivedResponse(response))
-    return false;
+  bool ok = SIPTransaction::OnReceivedResponse(response);
 
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return false;
 
-  if (statusClass == 1)
-    completionTimer = PTimeInterval(0, mime.GetExpires(180));
-
   /* Handle response to outgoing call cancellation */
   if (response.GetStatusCode() == Failure_RequestTerminated)
     SetTerminated(Terminated_Success);
 
-  return true;
+  if (response.GetStatusCode()/100 == 1)
+    completionTimer = PTimeInterval(0, mime.GetExpires(180));
+  else
+  {
+    // ACK constructed following 17.1.1.3
+    SIPAck ack(*this, response);
+    ok = SendPDU(ack);
+  }
+
+  return ok;
 }
 
 
@@ -2505,46 +2490,27 @@ SIPPing::SIPPing(SIPEndPoint & ep,
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPAck::SIPAck(SIPEndPoint & ep,
-               SIPTransaction & invite,
-               SIP_PDU & response)
-  : SIP_PDU (SIP_PDU::Method_ACK,
-             invite.GetURI(),
-             response.GetMIME().GetTo(),
-             invite.GetMIME().GetFrom(),
-             invite.GetMIME().GetCallID(),
-             invite.GetMIME().GetCSeqIndex(),
-             ep.GetLocalURL(invite.GetTransport()).GetHostAddress()),
-  transaction(invite)
-{
-  Construct();
-  // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
-  // as well as the initial Route
-  PStringList viaList = invite.GetMIME().GetViaList();
-  if (viaList.GetSize() > 0)
-    mime.SetVia(viaList.front());
-
-  if (transaction.GetMIME().GetRoute().GetSize() > 0)
-    mime.SetRoute(transaction.GetMIME().GetRoute());
-}
-
-
-SIPAck::SIPAck(SIPTransaction & invite)
+SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
   : SIP_PDU (SIP_PDU::Method_ACK,
              *invite.GetConnection(),
-             invite.GetTransport()),
-  transaction(invite)
+             invite.GetTransport())
 {
   mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
-  Construct();
-}
 
+  if (response.GetStatusCode()/100 > 2) {
+    // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
+    // as well as the initial Route
+    PStringList viaList = invite.GetMIME().GetViaList();
+    if (viaList.GetSize() > 0)
+      mime.SetVia(viaList.front());
 
-void SIPAck::Construct()
-{
+    if (invite.GetMIME().GetRoute().GetSize() > 0)
+      mime.SetRoute(invite.GetMIME().GetRoute());
+  }
+
   // Add authentication if had any on INVITE
-  if (transaction.GetMIME().Contains("Proxy-Authorization") || transaction.GetMIME().Contains("Authorization"))
-    transaction.GetConnection()->GetAuthenticator().Authorise(*this);
+  if (invite.GetMIME().Contains("Proxy-Authorization") || invite.GetMIME().Contains("Authorization"))
+    invite.GetConnection()->GetAuthenticator().Authorise(*this);
 }
 
 
