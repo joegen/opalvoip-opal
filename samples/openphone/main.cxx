@@ -3715,22 +3715,22 @@ bool InCallPanel::Show(bool show)
     m_SpeakerVolume->SetValue(value);
     bool mute = false;
     config->Read(SpeakerMuteKey, &mute);
-    m_SpeakerMute->SetValue(mute);
-    SetVolume(false, value, !mute);
+    m_SpeakerMute->SetValue(!mute);
+    SetVolume(false, value, mute);
 
     value = 50;
     config->Read(MicrophoneVolumeKey, &value);
     m_MicrophoneVolume->SetValue(value);
     mute = false;
     config->Read(MicrophoneMuteKey, &mute);
-    m_MicrophoneMute->SetValue(mute);
-    SetVolume(true, value, !mute);
+    m_MicrophoneMute->SetValue(!mute);
+    SetVolume(true, value, mute);
   }
   else {
     config->Write(SpeakerVolumeKey, m_SpeakerVolume->GetValue());
-    config->Write(SpeakerMuteKey, m_SpeakerMute->GetValue());
+    config->Write(SpeakerMuteKey, !m_SpeakerMute->GetValue());
     config->Write(MicrophoneVolumeKey, m_MicrophoneVolume->GetValue());
-    config->Write(MicrophoneMuteKey, m_MicrophoneMute->GetValue());
+    config->Write(MicrophoneMuteKey, !m_MicrophoneMute->GetValue());
   }
 
   return wxPanel::Show(show);
