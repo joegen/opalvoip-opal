@@ -1147,6 +1147,8 @@ PBoolean SIPConnection::SetUpConnection()
 {
   PTRACE(3, "SIP\tSetUpConnection: " << remotePartyAddress);
 
+  SetPhase(SetUpPhase);
+
   ApplyStringOptions();
 
   SIPURL transportAddress;
@@ -1169,13 +1171,15 @@ PBoolean SIPConnection::SetUpConnection()
     return PFalse;
   }
 
+  releaseMethod = ReleaseWithCANCEL;
+
   if (!transport->WriteConnect(WriteINVITE, this)) {
     PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
+    releaseMethod = ReleaseWithNothing;
     Release(EndedByTransportFail);
     return PFalse;
   }
 
-  releaseMethod = ReleaseWithCANCEL;
   return PTrue;
 }
 
