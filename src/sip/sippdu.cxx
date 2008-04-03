@@ -1410,13 +1410,10 @@ void SIP_PDU::Construct(Methods meth,
   SIPURL via = endpoint.GetLocalURL(transport, localPartyName);
   mime.SetContact(contact);
 
-  SIPURL targetAddress = connection.GetTargetAddress();
-  targetAddress.AdjustForRequestURI(),
-
   Construct(meth,
-            targetAddress,
-            connection.GetRemotePartyAddress(),
-            connection.GetExplicitFrom(),
+            connection.GetRequestURI(),
+            connection.GetDialogTo(),
+            connection.GetDialogFrom(),
             connection.GetToken(),
             connection.GetNextCSeq(),
             via.GetHostAddress());
@@ -1739,9 +1736,10 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
         trace << MethodNames[method] << ' ' << uri;
       else
         trace << (unsigned)statusCode << ' ' << info;
+      trace << ' ';
     }
 
-    trace << " received: rem=" << transport.GetLastReceivedAddress()
+    trace << "received: rem=" << transport.GetLastReceivedAddress()
           << ",local=" << transport.GetLocalAddress()
           << ",if=" << transport.GetLastReceivedInterface();
 
@@ -1803,11 +1801,13 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
         trace << MethodNames[method] << ' ' << uri;
       else
         trace << (unsigned)statusCode << ' ' << info;
+      trace << ' ';
     }
 
-    trace << " to: rem=" << transport.GetRemoteAddress()
-          << ",local=" << transport.GetLocalAddress()
-          << ",if=" << transport.GetInterface();
+    trace << '(' << strPDU.GetLength() << " bytes) to: "
+             "rem=" << transport.GetRemoteAddress() << ","
+             "local=" << transport.GetLocalAddress() << ","
+             "if=" << transport.GetInterface();
 
     if (PTrace::CanTrace(4))
       trace << '\n' << strPDU;
@@ -2035,7 +2035,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
   PString cseq = response.GetMIME().GetCSeq();
 
-  // If is the response to a CANCEl we sent, then just ignore it
+  // If is the response to a CANCEL we sent, then just ignore it
   if (cseq.Find(MethodNames[Method_CANCEL]) != P_MAX_INDEX) {
     // Lock only if we have not already locked it in SIPInvite::OnReceivedResponse
     if (LockReadWrite()) {
@@ -2234,10 +2234,23 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
 
 PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
-  bool ok = SIPTransaction::OnReceivedResponse(response);
+  connection->OnReceivedResponseToINVITE(*this, response);
 
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
+  if (response.GetStatusCode() >= 200) {
+    PSafeLockReadWrite lock(*this);
+    if (!lock.IsLocked())
+      return false;
+
+    // ACK constructed following 17.1.1.3
+    SIPAck ack(*this, response);
+    if (!SendPDU(ack))
+      return false;
+  }
+
+  if (!SIPTransaction::OnReceivedResponse(response))
+    return false;
+
+  if (!LockReadWrite())
     return false;
 
   /* Handle response to outgoing call cancellation */
@@ -2246,14 +2259,10 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 
   if (response.GetStatusCode()/100 == 1)
     completionTimer = PTimeInterval(0, mime.GetExpires(180));
-  else
-  {
-    // ACK constructed following 17.1.1.3
-    SIPAck ack(*this, response);
-    ok = SendPDU(ack);
-  }
+    
+  UnlockReadWrite();
 
-  return ok;
+  return true;
 }
 
 
@@ -2491,13 +2500,20 @@ SIPPing::SIPPing(SIPEndPoint & ep,
 /////////////////////////////////////////////////////////////////////////
 
 SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
-  : SIP_PDU (SIP_PDU::Method_ACK,
-             *invite.GetConnection(),
-             invite.GetTransport())
 {
-  mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
+  if (response.GetStatusCode() < 300) {
+    Construct(Method_ACK, *invite.GetConnection(), invite.GetTransport());
+    mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
+  }
+  else {
+    Construct(Method_ACK,
+              invite.GetURI(),
+              response.GetMIME().GetTo(),
+              invite.GetMIME().GetFrom(),
+              invite.GetMIME().GetCallID(),
+              invite.GetMIME().GetCSeqIndex(),
+              invite.GetConnection()->GetEndPoint().GetLocalURL(invite.GetTransport()).GetHostAddress());
 
-  if (response.GetStatusCode()/100 > 2) {
     // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
     // as well as the initial Route
     PStringList viaList = invite.GetMIME().GetViaList();
