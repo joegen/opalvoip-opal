@@ -93,8 +93,6 @@ SIPEndPoint::~SIPEndPoint()
 
 void SIPEndPoint::ShutDown()
 {
-  OpalEndPoint::ShutDown();
-
   while (activeSIPHandlers.GetSize() > 0) {
     PSafePtr<SIPHandler> handler = activeSIPHandlers;
     PString aor = handler->GetRemotePartyAddress();
@@ -114,6 +112,9 @@ void SIPEndPoint::ShutDown()
 
   // Stop timers before compiler destroys member objects
   natBindingTimer.Stop();
+
+  // Now shut down listeners and aggregators
+  OpalEndPoint::ShutDown();
 }
 
 
