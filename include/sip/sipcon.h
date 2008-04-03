@@ -247,6 +247,15 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual void OnReceivedCANCEL(SIP_PDU & pdu);
   
+    /**Handle an incoming response PDU to our INVITE.
+       Note this is called before th ACK is sent and thus should do as little as possible.
+       All the hard work (SDP processing etc) should be in the usual OnReceivedResponse().
+      */
+    virtual void OnReceivedResponseToINVITE(
+      SIPTransaction & transaction,
+      SIP_PDU & response
+    );
+
     /**Handle an incoming response PDU.
       */
     virtual void OnReceivedResponse(
@@ -365,15 +374,7 @@ class SIPConnection : public OpalRTPConnection
 
     OpalTransport & GetTransport() const { return *transport; }
 
-    virtual PString GetLocalPartyAddress() const { return localPartyAddress; }
-    virtual PString GetExplicitFrom() const;
-
-    /** Create full SIPURI - with display name, URL in <> and tag, suitable for From:
-      */
-    virtual void SetLocalPartyAddress();
-    void SetLocalPartyAddress(
-      const PString & addr
-    ) { localPartyAddress = addr; }
+    void AdjustOutgoingINVITE();
 
     /**Get the remote party address.
        This will return the "best guess" at an address to use in a
@@ -382,7 +383,9 @@ class SIPConnection : public OpalRTPConnection
     const PString GetRemotePartyCallbackURL() const;
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
-    const SIPURL & GetTargetAddress() const { return targetAddress; }
+    const SIPURL & GetRequestURI() const { return m_requestURI; }
+    const PString & GetDialogFrom() const { return m_dialogFrom; }
+    const PString & GetDialogTo() const { return m_dialogTo; }
     const PStringList & GetRouteSet() const { return routeSet; }
     SIPAuthentication * GetAuthenticator() const { return authentication; }
 
@@ -439,7 +442,7 @@ class SIPConnection : public OpalRTPConnection
 
     OpalTransport * CreateTransport(const OpalTransportAddress & address, PBoolean isLocalAddress = PFalse);
 
-    void UpdateRemotePartyNameAndNumber();
+    void UpdateRemoteAddresses(const PString & addr);
 
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
@@ -447,15 +450,16 @@ class SIPConnection : public OpalRTPConnection
     PMutex                transportMutex;
     bool                  local_hold;
     bool                  remote_hold;
-    PString               localPartyAddress;
     PString               forwardParty;
 
-    SIP_PDU               * originalInvite;
+    SIP_PDU             * originalInvite;
     PTime                 originalInviteTime;
 
     bool                  needReINVITE;
     PStringList           routeSet;
-    SIPURL                targetAddress;
+    SIPURL                m_requestURI;
+    PString               m_dialogFrom;
+    PString               m_dialogTo;
     SIPAuthentication     * authentication;
 
     PTimer                    ackTimer;
@@ -474,8 +478,6 @@ class SIPConnection : public OpalRTPConnection
     } releaseMethod;
 
     OpalMediaFormatList remoteFormatList;
-
-    PString explicitFrom;
 
   protected:
     PTimer sessionTimer;
