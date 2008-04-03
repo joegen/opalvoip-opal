@@ -178,17 +178,17 @@ SIPConnection::SIPConnection(OpalCall & call,
   , remote_hold(false)
   , originalInvite(NULL)
   , needReINVITE(false)
-  , targetAddress(destination)
+  , m_requestURI(destination)
   , authentication(NULL)
   , ackReceived(false)
   , releaseMethod(ReleaseWithNothing)
 {
   // Look for a "proxy" parameter to override default proxy
-  PStringToString params = targetAddress.GetParamVars();
+  PStringToString params = m_requestURI.GetParamVars();
   SIPURL proxy;
   if (params.Contains("proxy")) {
     proxy.Parse(params("proxy"));
-    targetAddress.SetParamVar("proxy", PString::Empty());
+    m_requestURI.SetParamVar("proxy", PString::Empty());
   }
 
   if (proxy.IsEmpty())
@@ -199,8 +199,9 @@ SIPConnection::SIPConnection(OpalCall & call,
     routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
   
   // Update remote party parameters
-  remotePartyAddress = targetAddress.AsQuotedString();
-  UpdateRemotePartyNameAndNumber();
+  UpdateRemoteAddresses(m_requestURI.AsQuotedString());
+
+  m_requestURI.AdjustForRequestURI(),
 
   forkedInvitations.DisallowDeleteObjects();
 
@@ -213,10 +214,18 @@ SIPConnection::SIPConnection(OpalCall & call,
 }
 
 
-void SIPConnection::UpdateRemotePartyNameAndNumber()
+void SIPConnection::UpdateRemoteAddresses(const PString & addr)
 {
-  SIPURL url(remotePartyAddress);
-  remotePartyName   = url.GetDisplayName ();
+  m_dialogTo = addr;
+
+  SIPURL url(addr);
+
+  remotePartyAddress = url.AsString();
+  PINDEX pos;
+  if ((pos = remotePartyAddress.Find(';')) != P_MAX_INDEX)
+    remotePartyAddress = remotePartyAddress.Left(pos);
+
+  remotePartyName   = url.GetDisplayName();
   remotePartyNumber = url.GetUserName();
 }
 
@@ -380,19 +389,6 @@ PBoolean SIPConnection::SetConnected()
     return PFalse;
   }
     
-  // update the route set and the target address according to 12.1.1
-  // requests in a dialog do not modify the route set according to 12.2
-  if (phase < ConnectedPhase) {
-    routeSet.RemoveAll();
-
-    if (originalInvite != NULL) {
-      routeSet = originalInvite->GetMIME().GetRecordRoute();
-      PString originalContact = originalInvite->GetMIME().GetContact();
-      if (!originalContact.IsEmpty()) 
-        targetAddress = originalContact;
-    }
-  }
-
   // send the 200 OK response
   SendInviteOK(sdpOut);
 
@@ -928,7 +924,7 @@ PBoolean SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 {
   SIPConnection & connection = *(SIPConnection *)param;
 
-  connection.SetLocalPartyAddress();
+  connection.AdjustOutgoingINVITE();
 
   SIPTransaction * invite = new SIPInvite(connection, transport);
   
@@ -954,7 +950,7 @@ PBoolean SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 
 PBoolean SIPConnection::SetUpConnection()
 {
-  PTRACE(3, "SIP\tSetUpConnection: " << remotePartyAddress);
+  PTRACE(3, "SIP\tSetUpConnection: " << m_requestURI);
 
   SetPhase(SetUpPhase);
 
@@ -962,13 +958,12 @@ PBoolean SIPConnection::SetUpConnection()
 
   SIPURL transportAddress;
 
-  PStringList routeSet = GetRouteSet();
   if (!routeSet.IsEmpty()) 
     transportAddress = routeSet.front();
   else {
-    transportAddress = targetAddress;
+    transportAddress = m_requestURI;
     transportAddress.AdjustToDNS(); // Do a DNS SRV lookup
-    PTRACE(4, "SIP\tConnecting to " << targetAddress << " via " << transportAddress);
+    PTRACE(4, "SIP\tConnecting to " << m_requestURI << " via " << transportAddress);
   }
 
   originating = PTrue;
@@ -1040,42 +1035,29 @@ PBoolean SIPConnection::IsConnectionOnHold()
 }
 
 
-void SIPConnection::SetLocalPartyAddress()
+void SIPConnection::AdjustOutgoingINVITE()
 {
-  // preserve tag to be re-added to explicitFrom below, if there are
-  // stringOptions
-  PString tag = ";tag=" + OpalGloballyUniqueID().AsString();
-  SIPURL remotePartyURL(remotePartyAddress);
-  SIPURL registeredPartyName = endpoint.GetRegisteredPartyName(remotePartyAddress);
+  SIPURL myAddress = endpoint.GetRegisteredPartyName(m_requestURI);
 
-  PString transport = remotePartyURL.GetParamVars()("transport");
+  PString transport = m_requestURI.GetParamVars()("transport");
   if (!transport.IsEmpty())
-    registeredPartyName.SetParamVar("transport", transport);
-  localPartyAddress = registeredPartyName.AsQuotedString() + tag; 
+    myAddress.SetParamVar("transport", transport);
 
   // allow callers to override the From field
   if (stringOptions != NULL) {
-    SIPURL newFrom(GetLocalPartyAddress());
-
     // only allow override of calling party number if the local party
     // name hasn't been first specified by a register handler. i.e a
     // register handler's target number is always used
-
-    // $$$ perhaps a register handler could have a configurable option
-    // to control this behavior
     PString number((*stringOptions)("Calling-Party-Number"));
-    if (!number.IsEmpty() && newFrom.GetUserName() == endpoint.GetDefaultLocalPartyName())
-      newFrom.SetUserName(number);
+    if (!number.IsEmpty() && myAddress.GetUserName() == endpoint.GetDefaultLocalPartyName())
+      myAddress.SetUserName(number);
 
     PString name((*stringOptions)("Calling-Party-Name"));
     if (!name.IsEmpty())
-      newFrom.SetDisplayName(name);
-
-    explicitFrom = newFrom.AsQuotedString() + tag;
-
-    PTRACE(1, "SIP\tChanging From from " << GetLocalPartyAddress()
-           << " to " << explicitFrom << " using " << name << " and " << number);
+      myAddress.SetDisplayName(name);
   }
+
+  m_dialogFrom = myAddress.AsQuotedString() + ";tag=" + OpalGloballyUniqueID().AsString();
 }
 
 
@@ -1169,85 +1151,72 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
 }
 
 
+void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP_PDU & response)
+{
+  unsigned statusClass = response.GetStatusCode()/100;
+  if (statusClass > 2)
+    return;
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
+  // See if this is an initial INVITE or a re-INVITE
+  bool reInvite = true;
+  for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+    if (invitation == &transaction) {
+      reInvite = false;
+      break;
+    }
+  }
+
+  // If we are in a dialog, then m_requestURI needs to be set
+  // to the contact field in the 2xx/1xx response for a target refresh 
+  // request
+  PString contact = response.GetMIME().GetContact();
+  if (statusClass == 2 && !contact.IsEmpty()) {
+    m_requestURI = contact;
+    m_requestURI.AdjustForRequestURI();
+    PTRACE(4, "SIP\tSet Request URI to " << m_requestURI);
+  }
+
+  if (reInvite)
+    return;
+
+  if (statusClass == 2) {
+    // Have a final response to the INVITE, so cancel all the other invitations sent.
+    for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+      if (invitation != &transaction)
+        invitation->Cancel();
+    }
+
+    // And end connect mode on the transport
+    transport->SetInterface(transaction.GetInterface());
+  }
+
+  // get the route set from the Record-Route response field (in reverse order)
+  // according to 12.1.2
+  // requests in a dialog do not modify the initial route set fo according 
+  // to 12.2
+  routeSet.RemoveAll();
+  PStringList recordRoute = response.GetMIME().GetRecordRoute();
+  for (PStringList::iterator route = recordRoute.rbegin(); route != recordRoute.rend(); --route)
+    routeSet.AppendString(*route);
+
+  // Save the sessions etc we are actually using of all the forked INVITES sent
+  rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
+  m_dialogFrom = transaction.GetMIME().GetFrom();
+  UpdateRemoteAddresses(response.GetMIME().GetTo());
+
+  response.GetMIME().GetProductInfo(remoteProductInfo);
+}
+
+
 void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return;
-
-  PINDEX i;
-  PBoolean ignoreErrorResponse = PFalse;
-  PBoolean reInvite = PFalse;
-
-  if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
-    // See if this is an initial INVITE or a re-INVITE
-    reInvite = PTrue;
-    for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
-      if (invitation == &transaction) {
-        reInvite = PFalse;
-        break;
-      }
-    }
-
-    if (!reInvite && response.GetStatusCode()/100 <= 2) {
-      if (response.GetStatusCode()/100 == 2) {
-        // Have a final response to the INVITE, so cancel all the other invitations sent.
-        for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
-          if (invitation != &transaction)
-            invitation->Cancel();
-        }
-
-        // And end connect mode on the transport
-        transport->SetInterface(transaction.GetInterface());
-      }
-
-      // Save the sessions etc we are actually using
-      // If we are in the EstablishedPhase, then the 
-      // sessions are kept identical because the response is the
-      // response to a hold/retrieve
-      rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
-      localPartyAddress = transaction.GetMIME().GetFrom();
-      remotePartyAddress = response.GetMIME().GetTo();
-      UpdateRemotePartyNameAndNumber();
-
-      response.GetMIME().GetProductInfo(remoteProductInfo);
-
-      // get the route set from the Record-Route response field (in reverse order)
-      // according to 12.1.2
-      // requests in a dialog do not modify the initial route set fo according 
-      // to 12.2
-      if (phase < ConnectedPhase) {
-        PStringList recordRoute = response.GetMIME().GetRecordRoute();
-        routeSet.RemoveAll();
-        for (PStringList::iterator route = recordRoute.rbegin(); route != recordRoute.rend(); --route)
-          routeSet.AppendString(*route);
-      }
-
-      // If we are in a dialog or create one, then targetAddress needs to be set
-      // to the contact field in the 2xx/1xx response for a target refresh 
-      // request
-      PString contact = response.GetMIME().GetContact();
-      if (!contact.IsEmpty()) {
-        targetAddress = contact;
-        PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
-      }
-    }
-
-    if (phase < ConnectedPhase) {
-      // Final check to see if we have forked INVITEs still running, don't
-      // release connection until all of them have failed.
-      for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
-        if (invitation->IsInProgress()) {
-          ignoreErrorResponse = PTrue;
-          break;
-        }
-      }
-    }
-    else {
-      // This INVITE is from a different "dialog", any errors do not cause a release
-      ignoreErrorResponse = localPartyAddress != response.GetMIME().GetFrom() || remotePartyAddress != response.GetMIME().GetTo();
-    }
-  }
 
   // Break out to virtual functions for some special cases.
   switch (response.GetStatusCode()) {
@@ -1281,7 +1250,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     case 1 : // Do nothing for Provisional responses
       return;
 
-    case 2 : // Successful esponse - there really is only 200 OK
+    case 2 : // Successful response - there really is only 200 OK
       OnReceivedOK(transaction, response);
       return;
 
@@ -1290,23 +1259,28 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   }
 
   // If we are doing a local hold, and it failed, we do not release the connection
-  if (reInvite && local_hold) {
+  if (local_hold) {
     local_hold = PFalse;      // Did not go into hold
     endpoint.OnHold(*this);   // Signal the manager that there is no more hold
     return;
   }
 
   // We don't always release the connection, eg not till all forked invites have completed
-  if (transaction.GetMethod() != SIP_PDU::Method_INVITE &&
-      response.GetStatusCode()!= SIP_PDU::Failure_RequestTimeout && 
-      response.GetStatusCode()!= SIP_PDU::Failure_TransactionDoesNotExist)
-    ignoreErrorResponse = true;
-
-  if (ignoreErrorResponse)
+  // This INVITE is from a different "dialog", any errors do not cause a release
+  if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
     return;
 
+  if (phase < ConnectedPhase) {
+    // Final check to see if we have forked INVITEs still running, don't
+    // release connection until all of them have failed.
+    for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+      if (invitation->IsInProgress())
+    return;
+    }
+  }
+
   // All other responses are errors, see if they should cause a Release()
-  for (i = 0; i < PARRAYSIZE(SIPCodeToReason); i++) {
+  for (PINDEX i = 0; i < PARRAYSIZE(SIPCodeToReason); i++) {
     if (response.GetStatusCode() == SIPCodeToReason[i].code) {
       releaseMethod = ReleaseWithNothing;
       SetQ931Cause(SIPCodeToReason[i].q931Cause);
@@ -1326,7 +1300,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PString requestFrom = requestMIME.GetFrom();
 
   if (IsOriginating()) {
-    if (remotePartyAddress != requestFrom || localPartyAddress != requestTo) {
+    if (m_dialogTo != requestFrom || m_dialogFrom != requestTo) {
       PTRACE(2, "SIP\tIgnoring INVITE from " << request.GetURI() << " when originated call.");
       SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
       SendPDU(response, request.GetViaAddress(endpoint));
@@ -1376,37 +1350,42 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   originalInvite     = new SIP_PDU(request);
   originalInviteTime = PTime();
 
+  SIPMIMEInfo & mime = originalInvite->GetMIME();
+
+  // update the target address
+  PString contact = mime.GetContact();
+  if (!contact.IsEmpty()) {
+    m_requestURI = contact;
+    m_requestURI.AdjustForRequestURI();
+    PTRACE(4, "SIP\tSet Request URI to " << m_requestURI);
+  }
+
   // We received a Re-INVITE for a current connection
   if (isReinvite) { 
     OnReceivedReINVITE(request);
     return;
   }
-  
+
   releaseMethod = ReleaseWithResponse;
 
-  // Fill in all the various connection info
-  SIPMIMEInfo & mime = originalInvite->GetMIME();
-  remotePartyAddress = mime.GetFrom(); 
-  UpdateRemotePartyNameAndNumber();
+  // Fill in all the various connection info, not our to/from is their from/to
+  UpdateRemoteAddresses(mime.GetFrom());
   mime.GetProductInfo(remoteProductInfo);
-  localPartyAddress  = mime.GetTo() + ";tag=" + OpalGloballyUniqueID().AsString(); // put a real random 
-  mime.SetTo(localPartyAddress);
+  m_dialogFrom = mime.GetTo() + ";tag=" + OpalGloballyUniqueID().AsString(); // put a real random 
+  mime.SetTo(m_dialogFrom);
+
+  // update the route set and the target address according to 12.1.1
+  // requests in a dialog do not modify the route set according to 12.2
+  routeSet = mime.GetRecordRoute();
 
   // get the called destination
   calledDestinationName   = originalInvite->GetURI().GetDisplayName(PFalse);   
   calledDestinationNumber = originalInvite->GetURI().GetUserName();
   calledDestinationURL    = originalInvite->GetURI().AsString();
 
-  // update the target address
-  PString contact = mime.GetContact();
-  if (!contact.IsEmpty()) 
-    targetAddress = contact;
-  targetAddress.AdjustForRequestURI();
-  PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
-
   // get the address that remote end *thinks* it is using from the Contact field
   PIPSocket::Address sigAddr;
-  PIPSocket::GetHostAddress(targetAddress.GetHostName(), sigAddr);  
+  PIPSocket::GetHostAddress(m_requestURI.GetHostName(), sigAddr);  
 
   // get the local and peer transport addresses
   PIPSocket::Address peerAddr, localAddr;
@@ -1706,8 +1685,7 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   }
   releaseMethod = ReleaseWithNothing;
   
-  remotePartyAddress = request.GetMIME().GetFrom();
-  UpdateRemotePartyNameAndNumber();
+  UpdateRemoteAddresses(request.GetMIME().GetFrom());
   response.GetMIME().GetProductInfo(remoteProductInfo);
 
   Release(EndedByRemoteUser);
@@ -1782,12 +1760,8 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
 void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
-  targetAddress = response.GetMIME().GetContact();
-  remotePartyAddress = targetAddress.AsQuotedString();
-  PINDEX j;
-  if ((j = remotePartyAddress.Find (';')) != P_MAX_INDEX)
-    remotePartyAddress = remotePartyAddress.Left(j);
-
+  m_requestURI = response.GetMIME().GetContact();
+  UpdateRemoteAddresses(m_requestURI.AsQuotedString());
   endpoint.ForwardConnection (*this, remotePartyAddress);
 }
 
@@ -1839,17 +1813,10 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   }
 
   // Restart the transaction with new authentication info
-  delete authentication;
-  authentication = newAuth;
-
-  // start with a fresh To tag
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.
-  remotePartyAddress.Delete(remotePartyAddress.Find (';'), P_MAX_INDEX);
-  
-  // Default routeSet if there is a proxy
-  if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
-    routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
+  // Except it needs a different tag field to indicate a different dialog.
+  AdjustOutgoingINVITE();
 
   needReINVITE = false; // Is not actually a re-INVITE though it looks a little bit like one.
   RTP_SessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
@@ -2017,7 +1984,7 @@ PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
 
 PBoolean SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
 {
-  SIPURL localPartyURL(GetLocalPartyAddress());
+  SIPURL localPartyURL(m_dialogFrom);
   PString userName = endpoint.GetRegisteredPartyName(localPartyURL).GetUserName();
   SIPURL contact = endpoint.GetContactURL(*transport, userName, localPartyURL.GetHostName());
 
@@ -2039,10 +2006,7 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
     response.SetSDP(*sdp);
   response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
 
-  if (response.GetStatusCode()/100 != 1) {
-    if (response.GetStatusCode() > 299) {
-      PTRACE(3, "SIP\tACK sent for error");
-    }
+  if (response.GetStatusCode() >= 200) {
     ackPacket = response;
     ackRetry = endpoint.GetRetryTimeoutMin();
     ackTimer = endpoint.GetAckTimeout();
@@ -2374,13 +2338,6 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
 }
 #endif
 
-
-PString SIPConnection::GetExplicitFrom() const
-{
-  if (!explicitFrom.IsEmpty())
-    return explicitFrom;
-  return GetLocalPartyAddress();
-}
 
 /////////////////////////////////////////////////////////////////////////////
 
