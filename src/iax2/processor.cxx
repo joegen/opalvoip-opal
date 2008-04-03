@@ -250,7 +250,7 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   
   //check the frame has not already been built
   if (!PIsDescendant(frame, IAX2MiniFrame) && !PIsDescendant(frame, IAX2FullFrame)) {
-    PTRACE(5, "IaxConnection\tUnknown  incoming frame " << frame->IdString());
+    PTRACE(5, "Iax2Connection\tUnknown  incoming frame " << frame->IdString());
     IAX2Frame *af = frame->BuildAppropriateFrameType(encryption);
     delete frame;
     
@@ -261,13 +261,13 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   }  
   
   if (PIsDescendant(frame, IAX2MiniFrame)) {
-    PTRACE(4, "IaxConnection\tIncoming mini frame" << frame->IdString());
+    PTRACE(5, "IaxConnection\tIncoming mini frame" << frame->IdString());
     ProcessNetworkFrame((IAX2MiniFrame *)frame);
     return PTrue;
   }
   
   IAX2FullFrame *f = (IAX2FullFrame *) frame;
-  PTRACE(4, "IaxConnection\tFullFrame incoming frame " << frame->IdString());
+  PTRACE(5, "IaxConnection\tFullFrame incoming frame " << frame->IdString());
 
   /*Check to see if this frame is legitimate - that sequence numbers match. If it is out of
     sequence, we have to drop it, and send a vnak frame */
@@ -288,7 +288,7 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
       }
   }
 
-  PTRACE(4, "sequence numbers are Ok");
+  // sequence numbers are Ok. Good.
 
   endpoint.transmitter->PurgeMatchingFullFrames(f);
   
@@ -325,16 +325,16 @@ void IAX2Processor::TransmitFrameToRemoteEndpoint(IAX2FullFrameProtocol *src)
 
 void IAX2Processor::TransmitFrameToRemoteEndpoint(IAX2Frame *src)
 {
-  PTRACE(4, "Send frame " << src->GetClass() << " " << src->IdString() << " to remote endpoint");
+  PTRACE(5, "Send frame " << src->GetClass() << " " << src->IdString() << " to remote endpoint");
   if (src->IsFullFrame()) {
-    PTRACE(4, "Send full frame " << src->GetClass() << " with seq increase");
     sequence.MassageSequenceForSending(*(IAX2FullFrame*)src);
     IncControlFramesSent();
   }
   TransmitFrameNow(src);
 }
 
-void IAX2Processor::TransmitFrameToRemoteEndpoint(IAX2FullFrame *src, IAX2WaitingForAck::ResponseToAck response)
+void IAX2Processor::TransmitFrameToRemoteEndpoint(IAX2FullFrame *src, 
+						  IAX2WaitingForAck::ResponseToAck response)
 {
   sequence.MassageSequenceForSending(*(IAX2FullFrame*)src);
   IncControlFramesSent();
@@ -377,16 +377,14 @@ PBoolean IAX2Processor::Authenticate(IAX2FullFrameProtocol *reply, PString & pas
 
 void IAX2Processor::SendAckFrame(IAX2FullFrame *inReplyTo)
 {
-  PTRACE(4, "Processor\tSend an ack frame in reply" );
-  PTRACE(4, "Processor\tIn reply to " << *inReplyTo);
+  PTRACE(5, "Processor\tSend an ack frame in reply" );
+  PTRACE(5, "Processor\tIn reply to " << *inReplyTo);
   
   //callIrrelevant is used because if a call ends we still want the remote
   //endpoint to get the acknowledgment of the call ending!
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdAck, inReplyTo, 
     IAX2FullFrame::callIrrelevant);
-  PTRACE(4, "Sequence for sending is (pre) " << sequence.AsString());
   TransmitFrameToRemoteEndpoint(f);
-  PTRACE(4, "Sequence for sending is (ppost) " << sequence.AsString());
 }
 
 void IAX2Processor::SendVnakFrame(IAX2FullFrame *inReplyTo)
@@ -398,9 +396,7 @@ void IAX2Processor::SendVnakFrame(IAX2FullFrame *inReplyTo)
   //endpoint to get the acknowledgment of the call ending!
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdVnak, inReplyTo, 
     IAX2FullFrame::callIrrelevant);
-  PTRACE(4, "Sequence for sending is (pre) " << sequence.AsString());
   TransmitFrameToRemoteEndpoint(f);
-  PTRACE(4, "Sequence for sending is (ppost) " << sequence.AsString());
 }
 
 

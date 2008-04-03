@@ -305,10 +305,8 @@ PBoolean IAX2SequenceNumbers::operator == (IAX2SequenceNumbers &other)
 void IAX2SequenceNumbers::MassageSequenceForSending(IAX2FullFrame &src)
 {
   PWaitAndSignal m(mutex);
-  PTRACE(5, "SeqNos\tsentreceivedoseqno is " << (inSeqNo & 0xff));
 
   if (src.IsAckFrame()) {
-    PTRACE(5, "SeqNos\tMassage - SequenceForSending(FullFrame &src) ACK Frame");
     src.ModifyFrameHeaderSequenceNumbers(inSeqNo, src.GetSequenceInfo().OutSeqNo());
     return;
   } 

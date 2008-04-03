@@ -142,12 +142,12 @@ IAX2Frame::IAX2Frame(IAX2EndPoint &_endpoint)
   
   frameIndex = NextIndex();
 
-  PTRACE(5, "Construct this IAX2Frame  " << IdString());
+  PTRACE(6, "Construct this IAX2Frame  " << IdString());
 }
 
 IAX2Frame::~IAX2Frame()
 {
-  PTRACE(5, "Delete this IAX2Frame  " << IdString());
+  PTRACE(6, "Delete this IAX2Frame  " << IdString());
 }
 
 void IAX2Frame::ZeroAllValues()
@@ -192,7 +192,6 @@ PBoolean IAX2Frame::ReadNetworkPacket(PUDPSocket &sock)
   WORD     portNo;
   PIPSocket::Address addr;
   sock.GetLocalAddress(addr);
-  PTRACE(5, "Read process:: wait for  network packet on " << IdString() << " prt:" << sock.GetPort());
   
   PBoolean res = sock.ReadFrom(data.GetPointer(), 4096, addr, portNo);
   remote.SetRemoteAddress(addr);
@@ -209,7 +208,6 @@ PBoolean IAX2Frame::ReadNetworkPacket(PUDPSocket &sock)
     PTRACE(3, "Read a very very small packet from the network - < 4 bytes");
     return PFalse;
   }
-  PTRACE(5, "Successfully read a " << data.GetSize() << " byte frame from the network. " << IdString());
   
   return PTrue;
 }
@@ -295,10 +293,9 @@ PBoolean IAX2Frame::ProcessNetworkPacket()
 {
   /*We are guaranteed to have a packet > 4 bytes in size */
   PINDEX a = 0;
-  PTRACE(5, "Process Network Packet of " << data.GetSize() << " bytes");
   Read2Bytes(a);
   remote.SetSourceCallNumber(a & 0x7fff);
-  PTRACE(6, "Source call number is " << (a & 0x7fff));
+
   if (a != 0)
     BuildConnectionTokenId();
 
@@ -306,12 +303,9 @@ PBoolean IAX2Frame::ProcessNetworkPacket()
     isFullFrame = PTrue;
     Read2Bytes(a);
     remote.SetDestCallNumber(a & 0x7fff);
-    PTRACE(6, "Dest call number is " << a);
-    PTRACE(6, "Have a full frame of (as yet) unknown type ");
     return PTrue;
   }
   if (a == 0) {    //We have a mini frame here, of video type.
-    PTRACE(6, "Have a mini video frame");
     isVideo = PTrue;
     PINDEX b = 0;
     Read2Bytes(b);
@@ -321,14 +315,12 @@ PBoolean IAX2Frame::ProcessNetworkPacket()
   }
 
   isAudio = PTrue;
-  PTRACE(6, "Have a mini audio frame");
   return PTrue;
 }
 
 void IAX2Frame::BuildConnectionTokenId()
 {
   connectionToken = PString("iax2:") + remote.RemoteAddress().AsString() + PString("-") + PString(remote.SourceCallNumber());
-  PTRACE(6, "This frame belongs to connection \"" << connectionToken << "\"");
 }
 
 void IAX2Frame::PrintOn(ostream & strm) const
@@ -713,7 +705,7 @@ PBoolean IAX2FullFrame::ProcessNetworkPacket()
   sequence.SetOutSeqNo(a);
   Read1Byte(a);
   sequence.SetInSeqNo(a);
-  PTRACE(5, "Sequence is " << sequence.AsString());
+  PTRACE(6, "Sequence is " << sequence.AsString());
   
   Read1Byte(a);
 
@@ -730,9 +722,6 @@ PBoolean IAX2FullFrame::ProcessNetworkPacket()
   Read1Byte(a);
   
   UnCompressSubClass(a);
-  PTRACE(5, "Process network frame");
-  PTRACE(5, "subClass is " << subClass);
-  PTRACE(5, "frameType is " << frameType);
   isAckFrame = (subClass == IAX2FullFrameProtocol::cmdAck) && (frameType == iax2ProtocolType);     
   return PTrue;
 }
@@ -1086,22 +1075,18 @@ PString IAX2FullFrameVoice::GetSubClassName(unsigned int testValue)
 unsigned short IAX2FullFrameVoice::OpalNameToIax2Value(const PString opalName)
 {
   if (opalName.Find("uLaw") != P_MAX_INDEX) {
-    PTRACE(5, "Codec supported "<< opalName);
     return g711ulaw;
   }
   
   if (opalName.Find("ALaw") != P_MAX_INDEX) {
-    PTRACE(5, "Codec supported " << opalName);
     return  g711alaw;
   }
   
   if (opalName.Find("GSM-06.10") != P_MAX_INDEX) {
-    PTRACE(5, "Codec supported " << opalName);
     return gsm;
   }
 
   if (opalName.Find("iLBC-13k3") != P_MAX_INDEX) {
-    PTRACE(5, "Codec supported " << opalName);
     return ilbc; 
     }
   PTRACE(6, "Codec " << opalName << " is not supported in IAX2");
@@ -1292,7 +1277,7 @@ IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2FullFrame & srcFrame)
 IAX2FullFrameProtocol::~IAX2FullFrameProtocol()
 {
   ieElements.AllowDeleteObjects(PTrue);
-  PTRACE(4, "Destroy this IAX2FullFrameProtocol(" << GetSubClassName() << ") " << IdString());
+  PTRACE(6, "Destroy this IAX2FullFrameProtocol(" << GetSubClassName() << ") " << IdString());
 }
 
 void IAX2FullFrameProtocol::SetRetransmissionRequired()
@@ -1635,7 +1620,7 @@ void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
       sent->MarkDeleteNow();
       return;
     } else {
-      PTRACE(4, "Non zero sequence nos in the sequence number - look for exact match");
+      PTRACE(5, "Non zero sequence nos in the sequence number - look for exact match");
     }
         
     if (sent->IsRegReqFrame() && 
@@ -1659,8 +1644,10 @@ void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
       PTRACE(4, "Time stamps are the same, so check in seqno vs oseqno " << sent->IdString());
     }
 
-    PTRACE(4, "SeqNos\tSent is " << sent->GetSequenceInfo().OutSeqNo() << " " << sent->GetSequenceInfo().InSeqNo());
-    PTRACE(4, "SeqNos\tRepl is " << reply->GetSequenceInfo().OutSeqNo() << " " << reply->GetSequenceInfo().InSeqNo());
+    PTRACE(5, "SeqNos\tSent is " << sent->GetSequenceInfo().OutSeqNo() 
+	   << " " << sent->GetSequenceInfo().InSeqNo());
+    PTRACE(5, "SeqNos\tRepl is " << reply->GetSequenceInfo().OutSeqNo() 
+	   << " " << reply->GetSequenceInfo().InSeqNo());
 
     if (reply->IsLagRpFrame() && sent->IsLagRqFrame()) {
       PTRACE(4, "have read a LagRp packet for a LagRq frame  we have sent, delete this LagRq " 
@@ -1679,7 +1666,7 @@ void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
     if (sent->GetSequenceInfo().InSeqNo() == reply->GetSequenceInfo().OutSeqNo()) {
       PTRACE(4, "Timestamp, and inseqno matches oseqno " << sent->IdString());
       if (reply->IsAckFrame()) {
-        PTRACE(3, "have read an ack packet for one we have sent, so delete this one " << sent->IdString());
+        PTRACE(5, "have read an ack packet for one we have sent, so delete this one " << sent->IdString());
         sent->MarkDeleteNow();
         return;
       }    
@@ -1694,7 +1681,7 @@ void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
 	   << " and " << reply->GetSequenceInfo().InSeqNo() << " are different");
     
   }
-  PTRACE(4, "No match found, so no sent frame will be deleted ");
+  // No match found, so no sent frame will be deleted 
   return;
 }  
 
