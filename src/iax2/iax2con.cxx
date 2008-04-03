@@ -107,35 +107,24 @@ IAX2Connection::~IAX2Connection()
   delete & iax2Processor;
 }
 
-void IAX2Connection::ClearCall(CallEndReason reason)
-{
-  PTRACE(3, "IAX2Con\tClearCall(reason);");
+void IAX2Connection::Release( CallEndReason reason)		        
+{ 
+  PTRACE(4, "IAX2Con\tRelease( CallEndReason " << reason);
+  iax2Processor.Hangup(reason); ///Send hangup frame
+
+  iax2Processor.Release(reason); 
 
   jitterBuffer.CloseDown();
 
-  callEndReason = reason;
-  iax2Processor.Hangup(reason);
-
-  OpalConnection::ClearCall(reason);
-}
-
-
-void IAX2Connection::Release( CallEndReason reason)		        
-{ 
-  PTRACE(3, "IAX2Con\tRelease( CallEndReason " << reason);
-  iax2Processor.Hangup(reason);
-
-  iax2Processor.Release(reason); 
   OpalConnection::Release(reason);
 }
 
 void IAX2Connection::OnReleased()
 {
-  PTRACE(3, "IAX2Con\tOnReleased()" << *this);
+  PTRACE(4, "IAX2Con\tOnReleased()" << *this);
 
   iax2Processor.OnReleased();
-  OpalConnection::OnReleased();
-  
+  OpalConnection::OnReleased();  
 }
 
 void IAX2Connection::IncomingEthernetFrame(IAX2Frame *frame)
@@ -169,34 +158,15 @@ void IAX2Connection::OnSetUp()
 PBoolean IAX2Connection::OnIncomingCall(unsigned int options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "IAX2Con\tOnIncomingCall()");
-  phase = SetUpPhase;
+
   originating = PFalse;
   PTRACE(3, "IAX2Con\tWe are receiving an incoming IAX2 call");
   PTRACE(3, "IAX2Con\tOnIncomingConnection  - we have received a cmdNew packet");
   return OnIncomingConnection(options, stringOptions);
 }
 
-void IAX2Connection::OnAlerting()
-{
-  PTRACE(3, "IAX2Con\tOnAlerting()");
-  PTRACE(3, "IAX2Con\t ON ALERTING " 
-	 << PString(IsOriginating() ? " Originating" : "Receiving"));
-  PTRACE(3, "IAX2Con\tOn Alerting. Phone is ringing at  " << GetRemotePartyName());
-  OpalConnection::OnAlerting();
-
-  
-  jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8,
-			endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
-  jitterBuffer.Resume(NULL);
-}
-
 PBoolean IAX2Connection::SetAlerting(const PString & PTRACE_PARAM(calleeName), PBoolean /*withMedia*/) 
 { 
-  if (IsOriginating()) {
-    PTRACE(2, "IAX2\tSetAlerting ignored on call we originated.");
-    return PTrue;
-  }
-
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
     return PFalse;
@@ -207,9 +177,10 @@ PBoolean IAX2Connection::SetAlerting(const PString & PTRACE_PARAM(calleeName), P
     return PFalse;
 
   alertingTime = PTime();
-  phase = AlertingPhase;
+  SetPhase(AlertingPhase);
 
-  OnAlerting();
+  OpalConnection::OnAlerting();
+//Which puts the other Connection in this call to AlertingPhase
 
   return PTrue;
 }
@@ -220,28 +191,32 @@ PBoolean IAX2Connection::SetConnected()
   PTRACE(3, "IAX2Con\tSETCONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
 
-  if (!originating) {
-    PTRACE(3, "IAX2Con\tGet the iax2 code to mark us as connected\n");
-    iax2Processor.SetConnected();
-  } else {
-    PTRACE(3, "IAX2Con\tNot originator, so don't Get the iax2 code to mark us as connected\n");    
-  }
+  PTRACE(3, "IAX2Con\tGet the iax2 code to mark us as connected\n");
 
   // Set flag that we are up to CONNECT stage
   connectedTime = PTime();
   SetPhase(ConnectedPhase);
   OnConnected();
+
+  jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8,
+			endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
+  jitterBuffer.Resume(NULL);
+
+ // if no media streams, try and start them
+  // if we have media streams, move to Established straight away
+  if (mediaStreams.IsEmpty()) {
+    ownerCall.OpenSourceMediaStreams(*this, 
+				     OpalMediaFormat::DefaultAudioSessionID);
+    PSafePtr<OpalConnection> otherParty = 
+      GetCall().GetOtherPartyConnection(*this);
+    if (otherParty != NULL) {
+      ownerCall.OpenSourceMediaStreams(*otherParty, 
+				       OpalMediaFormat::DefaultAudioSessionID);
+    }
+    OnEstablished();
+    SetPhase(EstablishedPhase);
+  }  
   return PTrue;
-}
-
-void IAX2Connection::OnConnected()
-{
-  PTRACE(3, "IAX2Con\tOnConnected()");
-  PTRACE(3, "IAX2Con\t ON CONNECTED " 
-	 << PString(IsOriginating() ? " Originating" : "Receiving"));
-  PTRACE(3, "IAX2Con\tThis call has been connected");
-
-  OpalConnection::OnConnected();
 }
 
 void IAX2Connection::SendDtmf(const PString & dtmf)
@@ -284,11 +259,11 @@ PBoolean IAX2Connection::SendUserInputTone(char tone, unsigned /*duration*/ )
 
 void IAX2Connection::OnEstablished()
 {
-  phase = EstablishedPhase;
-  PTRACE(3, "IAX2Con\t ON ESTABLISHED " 
+  PTRACE(4, "IAX2Con\t ON ESTABLISHED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
+
+  iax2Processor.StartStatusCheckTimer();
   OpalConnection::OnEstablished();
-  iax2Processor.SetEstablished(originating);
 }
 
 OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
@@ -505,10 +480,10 @@ void IAX2Connection::AnsweringCall(AnswerCallResponse response)
     case AnswerCallPending :
       SetAlerting(GetLocalPartyName(), PFalse);
       break;
-
-    case AnswerCallNow :
+      
+    case AnswerCallNow: 
       PTRACE(2, "IAX2\tApplication has Accepted answer incoming call");
-      SetConnected();
+      iax2Processor.AcceptIncomingCall();
 
     default : // AnswerCallDeferred
       PTRACE(2, "IAX2\tAnswering call: has been deferred");
@@ -525,7 +500,8 @@ PBoolean IAX2Connection::ForwardCall(const PString & PTRACE_PARAM(forwardParty))
 
 void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
 {
-    PTRACE(6, "RTP\tIAX2 Incoming Media frame of " << soundFrame->GetMediaDataSize() << " bytes and timetamp=" << (soundFrame->GetTimeStamp() * 8));
+    PTRACE(6, "RTP\tIAX2 Incoming Media frame of " << soundFrame->GetMediaDataSize() 
+	   << " bytes and timetamp=" << (soundFrame->GetTimeStamp() * 8));
 
     if (opalPayloadType == RTP_DataFrame::IllegalPayloadType) {
       //have not done a capability decision. (or capability failed).
@@ -541,8 +517,8 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
 
     mediaFrame->SetPayloadSize(soundFrame->GetMediaDataSize());
     mediaFrame->SetSize(mediaFrame->GetPayloadSize() + mediaFrame->GetHeaderSize());
-    memcpy(mediaFrame->GetPayloadPtr(), soundFrame->GetMediaDataPointer(), soundFrame->GetMediaDataSize());
-
+    memcpy(mediaFrame->GetPayloadPtr(), soundFrame->GetMediaDataPointer(), 
+	   soundFrame->GetMediaDataSize());
     jitterBuffer.NewFrameFromNetwork(mediaFrame);
     delete soundFrame;
 }

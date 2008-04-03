@@ -83,7 +83,7 @@ PBoolean OpalIAX2MediaStream::Open()
  
 PBoolean OpalIAX2MediaStream::Start()
 {
-  PTRACE(2, "Media\tOpalMediaStream is a " << PString(IsSink() ? "sink" : "source"));
+  PTRACE(2, "Media\tOpalIAX2MediaStream is a " << PString(IsSink() ? "sink" : "source"));
 
   return OpalMediaStream::Start();
 }
@@ -99,7 +99,7 @@ PBoolean OpalIAX2MediaStream::Close()
  
 PBoolean OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
 {
-  PTRACE(6, "Media\tRead media comppressed audio packet from the iax2 connection");
+  PTRACE(3, "Media\tRead media comppressed audio packet from the iax2 connection");
 
   if (IsSink()) {
     PTRACE(1, "Media\tTried to read from sink media stream");
@@ -120,11 +120,6 @@ PBoolean OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
 
 // This routine takes data from the source (eg mic) and sends the data to the remote host.
 PBoolean OpalIAX2MediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
@@ -134,7 +129,8 @@ PBoolean OpalIAX2MediaStream::WriteData(const BYTE * buffer, PINDEX length, PIND
     PTRACE(1, "Media\tTried to write to source media stream");
     return PFalse;
   }
-  PTRACE(6, "Media\tSend data to the network : have " << length << " bytes to send to remote host");
+  PTRACE(3, "Media\tSend data to the network : have " 
+	 << length << " bytes to send to remote host");
   PBYTEArray *sound = new PBYTEArray(buffer, length);
   written = length;
   connection.PutSoundPacketToNetwork(sound);
