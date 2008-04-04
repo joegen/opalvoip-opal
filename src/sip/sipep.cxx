@@ -1138,13 +1138,9 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
     mutex.Signal();
 
     if (!work->callID.IsEmpty()) {
-      PSafePtr<SIPConnection> connection = work->ep->GetSIPConnectionWithLock(work->callID, PSafeReadWrite);
-      if (connection != NULL) {
-        if (connection->LockReadWrite()) {
-          connection->OnReceivedPDU(*work->pdu);
-        }
-        connection->UnlockReadWrite();
-      }
+      PSafePtr<SIPConnection> connection = work->ep->GetSIPConnectionWithLock(work->callID, PSafeReference);
+      if (connection != NULL)
+        connection->OnReceivedPDU(*work->pdu);
     }
 
     delete work->pdu;
