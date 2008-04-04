@@ -1813,6 +1813,9 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   }
 
   // Restart the transaction with new authentication info
+  delete authentication;
+  authentication = newAuth;
+
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.
   // Except it needs a different tag field to indicate a different dialog.
