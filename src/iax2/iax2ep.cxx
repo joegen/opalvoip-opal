@@ -237,7 +237,7 @@ PBoolean IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
     return PTrue;
   }
 
-  PTRACE(4, "ERR Could not find matching connection for \"" << tokenTranslated 
+  PTRACE(6, "ERR Could not find matching connection for \"" << tokenTranslated 
 	 << "\" or \"" << frameToken << "\"");
   return PFalse;
 }
@@ -359,19 +359,18 @@ PBoolean IAX2EndPoint::MakeConnection(
      users desire to talk to someone else */
 
   PTRACE(3, "IaxEp\tTry to make iax2 call to " << rParty);
-  PTRACE(4, "IaxEp\tParty A=\"" << call.GetPartyA() << "\"  and party B=\"" <<  call.GetPartyB() << "\"");
-
-  
+  PTRACE(5, "IaxEp\tParty A=\"" << call.GetPartyA() 
+	 << "\"  and party B=\"" <<  call.GetPartyB() << "\"");  
   PStringArray remoteInfo = DissectRemoteParty(rParty);
   if(remoteInfo[protoIndex] != PString("iax2"))
     return PFalse;
 
   PString remotePartyName = rParty.Mid(5);    
 
-  PTRACE(5, "OpalMan\tNow do dns resolution of " << remoteInfo[addressIndex] << " for an iax2 call");
   PIPSocket::Address ip;
   if (!PIPSocket::GetHostAddress(remoteInfo[addressIndex], ip)) {
-    PTRACE(3, "Could not make a iax2 call to " << remoteInfo[addressIndex] << " as IP resolution failed");
+    PTRACE(3, "Could not make a iax2 call to " << remoteInfo[addressIndex] 
+	   << " as IP resolution failed");
     return PFalse;
   }
 

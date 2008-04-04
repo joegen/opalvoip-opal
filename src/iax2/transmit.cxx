@@ -97,8 +97,6 @@ void IAX2Transmit::Terminate()
 
 void IAX2Transmit::SendFrame(IAX2Frame *newFrame)
 {
-  PTRACE(5,"Process request to send frame " << newFrame->IdString());
-  
   sendNowFrames.AddNewFrame(newFrame);
   
   activate.Signal();
@@ -108,8 +106,7 @@ void IAX2Transmit::PurgeMatchingFullFrames(IAX2Frame *newFrame)
 {
   if (!PIsDescendant(newFrame, IAX2FullFrame))
     return;
-  
-  PTRACE(4, "Purge frames matching received " << newFrame->IdString());
+
   ackingFrames.DeleteMatchingSendFrame((IAX2FullFrame *)newFrame);
 }
 
@@ -128,12 +125,11 @@ void IAX2Transmit::Main()
     if (!keepGoing)
       break;
 
-    ReportLists();
     ProcessAckingList();
     
     ProcessSendList();
   }
-  PTRACE(3, " End of the Transmit thread.");  
+  PTRACE(6, "IAX2Transmit\tEnd of the Transmit thread.");  
 }
 
 void IAX2Transmit::ProcessAckingList()
