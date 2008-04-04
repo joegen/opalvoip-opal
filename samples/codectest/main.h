@@ -33,11 +33,12 @@
 class TranscoderThread : public PThread
 {
   public:
-    TranscoderThread(const char * name)
+    TranscoderThread(unsigned _num, const char * name)
       : PThread(5000, NoAutoDeleteThread, NormalPriority, name)
       , running(true)
       , encoder(NULL)
       , decoder(NULL)
+      , num(_num)
     {
     }
 
@@ -67,14 +68,15 @@ class TranscoderThread : public PThread
 
     OpalTranscoder * encoder;
     OpalTranscoder * decoder;
+    unsigned         num;
 };
 
 
 class AudioThread : public TranscoderThread
 {
   public:
-    AudioThread()
-      : TranscoderThread("Audio")
+    AudioThread(unsigned _num)
+      : TranscoderThread(_num, "Audio")
       , recorder(NULL)
       , player(NULL)
       , readSize(0)
@@ -102,8 +104,8 @@ class AudioThread : public TranscoderThread
 class VideoThread : public TranscoderThread
 {
   public:
-    VideoThread()
-      : TranscoderThread("Video")
+    VideoThread(unsigned _num)
+      : TranscoderThread(_num, "Video")
       , grabber(NULL)
       , display(NULL)
     {
@@ -136,9 +138,13 @@ class CodecTest : public PProcess
 
     virtual void Main();
 
-  protected:
-    AudioThread audio;
-    VideoThread video;
+    class TestThreadInfo {
+      public:
+        TestThreadInfo(unsigned _num)
+          : audio(_num), video(_num) { }
+        AudioThread audio;
+        VideoThread video;
+    };
 };
 
 
