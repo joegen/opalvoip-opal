@@ -34,7 +34,6 @@
 
 PCREATE_PROCESS(CodecTest);
 
-
 CodecTest::CodecTest()
   : PProcess("OPAL Audio/Video Codec Tester", "codectest", 1, 0, ReleaseCode, 0)
 {
@@ -67,6 +66,7 @@ void CodecTest::Main()
              "r-frame-rate:"
              "b-bit-rate:"
              "c-crop."
+             "H:"
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -110,6 +110,39 @@ void CodecTest::Main()
               "e.g. ./codectest --grab-device fake --grab-channel 2 GSM-AMR H.264\n\n";
     return;
   }
+
+  unsigned threadCount = args.GetOptionString('H').AsInteger();
+  if (threadCount > 0) {
+    unsigned i;
+    TestThreadInfo ** infos = (TestThreadInfo **)malloc(threadCount * sizeof(TestThreadInfo *));
+    for (i = 0; i < threadCount; ++i) {
+      cout << "------------------------------" << endl
+           << "Starting thread " << i+1 << endl;
+      TestThreadInfo * info = new TestThreadInfo(i+1);
+      if (!info->audio.Initialise(args) || !info->video.Initialise(args)) {
+        cout << "failed" << endl;
+        return;
+      }
+      info->audio.Resume();
+      info->video.Resume();
+      infos[i] = info;
+    }
+    cout << endl << "Tests running" << endl;
+
+    cout << "press return to stop" << endl;
+    PCaselessString cmd;
+    cin >> cmd;
+
+    for (i = 0; i < threadCount; ++i) {
+      infos[i]->audio.Stop();
+      infos[i]->video.Stop();
+    }
+   
+    return;
+  }
+
+  AudioThread audio(0);
+  VideoThread video(0);
 
   if (!audio.Initialise(args) || !video.Initialise(args))
     return;
@@ -518,8 +551,10 @@ bool VideoThread::Initialise(PArgList & args)
 
 void AudioThread::Main()
 {
-  if (recorder == NULL || player == NULL)
+  if (recorder == NULL || player == NULL) {
+    cerr << "Audio cannot open recorder or player" << endl;
     return;
+  }
 
   TranscoderThread::Main();
 }
@@ -527,8 +562,10 @@ void AudioThread::Main()
 
 void VideoThread::Main()
 {
-  if (grabber == NULL || display == NULL)
+  if (grabber == NULL || display == NULL) {
+    cerr << "Video cannot open grabber or display" << endl;
     return;
+  }
 
   grabber->Start();
   display->Start();
@@ -549,6 +586,7 @@ void TranscoderThread::Main()
 
   PTimeInterval startTick = PTimer::Tick();
   while (running) {
+
     RTP_DataFrame srcFrame;
     bool state = Read(srcFrame);
     if (oldSrcState != state) {
