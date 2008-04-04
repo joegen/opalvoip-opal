@@ -184,11 +184,10 @@ class IAX2CallProcessor : public IAX2Processor
   /**Get the bit pattern of the selected codec */
   unsigned short GetSelectedCodec() { return (unsigned short) selectedCodec; }
   
-  /**Indicate to remote endpoint we are connected.*/
-  void SetConnected(); 
-  
-  /**Send appropriate packets to the remote node to indicate we will accept this call.
-     Note that this method is called from the endpoint thread, (not this IAX2Connection's thread*/
+  /**Send appropriate packets to the remote node to indicate we will accept
+     this call.  Note that this method is called from the endpoint thread,
+     (not this IAX2Connection's thread). In other words, the application calls
+     this method.*/
   void AcceptIncomingCall();
 
   /**Indicate to remote endpoint an alert is in progress.  If this is
@@ -205,11 +204,6 @@ class IAX2CallProcessor : public IAX2Processor
          const PString & calleeName,   /// Name of endpoint being alerted.
          PBoolean withMedia                /// Open media with alerting
          ) ;
-
-  /**Advise the procesor that this call is totally setup, and answer accordingly
-   */
-  void SetEstablished(PBoolean originator        ///Flag to indicate if we created the call
-          );
 
   /**Cause this thread to hangup the current call, but not die. Death
      will come soon though. The argument is placed in the iax2 hangup
@@ -253,6 +247,11 @@ class IAX2CallProcessor : public IAX2Processor
   void SendTransfer(
     const PString & calledNumber,
     const PString & calledContext = PString::Empty());  
+
+  /**Set up the acceptable time (in milliseconds) to wait between
+     doing status checks. */
+  void StartStatusCheckTimer(PINDEX msToWait = 10000 /*!< time between 
+				      status checks, default = 10 seconds*/);
   
  protected:
   
@@ -265,53 +264,67 @@ class IAX2CallProcessor : public IAX2Processor
   /** Test the value supplied in the format Ie is compatible.*/
   PBoolean RemoteSelectedCodecOk();
  
-  /** Check to see if there is an outstanding request to send a hangup frame. This needs
-      to be done in two places, so we use a routine to see if need to send a hanup frame.*/
+  /** Check to see if there is an outstanding request to send a hangup
+      frame. This needs to be done in two places, so we use a routine to see
+      if need to send a hanup frame.*/
   void CheckForHangupMessages();
  
-  /**Internal method to process an incoming network frame of type  IAX2Frame */
+  /**Internal method to process an incoming network frame of type IAX2Frame */
   void ProcessNetworkFrame(IAX2Frame * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2MiniFrame */
+  /**Internal method to process an incoming network frame of type
+     IAX2MiniFrame */
   void ProcessNetworkFrame(IAX2MiniFrame * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2FullFrame */
+  /**Internal method to process an incoming network frame of type
+    IAX2FullFrame */
   void ProcessNetworkFrame(IAX2FullFrame * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2FullFrameDtmf */
+  /**Internal method to process an incoming network frame of type
+    IAX2FullFrameDtmf */
   void ProcessNetworkFrame(IAX2FullFrameDtmf * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2FullFrameVoice */
+  /**Internal method to process an incoming network frame of type
+     IAX2FullFrameVoice */
   void ProcessNetworkFrame(IAX2FullFrameVoice * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2FullFrameVideo */
+  /**Internal method to process an incoming network frame of type
+     IAX2FullFrameVideo */
   void ProcessNetworkFrame(IAX2FullFrameVideo * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2FullFrameSessionControl */
+  /**Internal method to process an incoming network frame of type
+    IAX2FullFrameSessionControl */
   void ProcessNetworkFrame(IAX2FullFrameSessionControl * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2FullFrameNull */
+  /**Internal method to process an incoming network frame of type
+    IAX2FullFrameNull */
   void ProcessNetworkFrame(IAX2FullFrameNull * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2FullFrameProtocol.
+  /**Internal method to process an incoming network frame of type
+     IAX2FullFrameProtocol.
      
   A frame of FullFrameProtocol type is labelled as AST_FRAME_IAX in the asterisk souces,
   It will contain 0, 1, 2 or more Information Elements (Ie) in the data section.*/
   virtual PBoolean ProcessNetworkFrame(IAX2FullFrameProtocol * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2FullFrameText */
+  /**Internal method to process an incoming network frame of type
+     IAX2FullFrameText */
   void ProcessNetworkFrame(IAX2FullFrameText * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2FullFrameImage */
+  /**Internal method to process an incoming network frame of type
+     IAX2FullFrameImage */
   void ProcessNetworkFrame(IAX2FullFrameImage * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2FullFrameHtml */
+  /**Internal method to process an incoming network frame of type
+     IAX2FullFrameHtml */
   void ProcessNetworkFrame(IAX2FullFrameHtml * src);
   
-  /**Internal method to process an incoming network frame of type  IAX2FullFrameCng */
+  /**Internal method to process an incoming network frame of type
+     IAX2FullFrameCng */
   void ProcessNetworkFrame(IAX2FullFrameCng * src);
   
-  /**Go through the three lists for incoming data (ethernet/sound/UI commands.  */
+  /**Go through the three lists for incoming data (ethernet/sound/UI
+     commands.  */
   virtual void ProcessLists();
     
   /**Make a call to a remote node*/
@@ -352,9 +365,9 @@ class IAX2CallProcessor : public IAX2Processor
      has accepted our call. Media can flow now*/
   void RemoteNodeHasAnswered();
   
-  /**A stop sounds packet has been received, which means we have moved from 
-     waiting for the remote person to answer, to they have answered and media can flow
-     in both directions*/
+  /**A stop sounds packet has been received, which means we have moved from
+     waiting for the remote person to answer, to they have answered and media
+     can flow in both directions*/
   void CallStopSounds();
   
   /**A callback which is used to indicate that the remote party has sent us
@@ -365,88 +378,116 @@ class IAX2CallProcessor : public IAX2Processor
      a message stating they are busy. */
   void RemoteNodeIsBusy();
   
-  /**Process the audio data portions of the Frame argument, which may be a MiniFrame or FullFrame */
+  /**Process the audio data portions of the Frame argument, which may be a
+     MiniFrame or FullFrame */
   void ProcessIncomingAudioFrame(IAX2Frame *newFrame);
   
-  /**Process the video data  portions of the Frame argument, which may be a MiniFrame or FullFrame */
+  /**Process the video data portions of the Frame argument, which may be a
+     MiniFrame or FullFrame */
   void ProcessIncomingVideoFrame(IAX2Frame *newFrame);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is   Create a new call    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Create a
+     new call  */
   void ProcessIaxCmdNew(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Acknowledge a Reliably sent full frame    */
+  /** Process a FullFrameProtocol class, where the sub Class value is
+     Acknowledge a Reliably sent full frame  */
   void ProcessIaxCmdAck(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Request to terminate this call    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Request
+     to terminate this call  */
   void ProcessIaxCmdHangup(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Refuse to accept this call. May happen if authentication faile    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Refuse
+     to accept this call. May happen if authentication faile  */
   void ProcessIaxCmdReject(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Allow this call to procee    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Allow
+     this call to procee  */
   void ProcessIaxCmdAccept(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Ask remote end to supply authentication    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Ask
+     remote end to supply authentication  */
   void ProcessIaxCmdAuthReq(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is A reply, that contains authentication    */
+  /** Process a FullFrameProtocol class, where the sub Class value is A reply,
+     that contains authentication  */
   void ProcessIaxCmdAuthRep(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Destroy this call immediately    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Destroy
+     this call immediately  */
   void ProcessIaxCmdInval(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Request status of a dialplan entry    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Request
+     status of a dialplan entry  */
   void ProcessIaxCmdDpReq(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Request status of a dialplan entry    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Request
+     status of a dialplan entry  */
   void ProcessIaxCmdDpRep(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Request a dial on channel brought up TBD    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Request
+     a dial on channel brought up TBD  */
   void ProcessIaxCmdDial(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Transfer Request    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Transfer
+     Request  */
   void ProcessIaxCmdTxreq(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Transfer Connect    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Transfer
+     Connect  */
   void ProcessIaxCmdTxcnt(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Transfer Accepted    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Transfer
+     Accepted  */
   void ProcessIaxCmdTxacc(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Transfer ready    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Transfer
+     ready  */
   void ProcessIaxCmdTxready(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Transfer release    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Transfer
+     release  */
   void ProcessIaxCmdTxrel(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Transfer reject    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Transfer
+     reject  */
   void ProcessIaxCmdTxrej(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Stop audio/video transmission    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Stop
+     audio/video transmission  */
   void ProcessIaxCmdQuelch(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Resume audio/video transmission    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Resume
+     audio/video transmission  */
   void ProcessIaxCmdUnquelch(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Paging description    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Paging
+     description  */
   void ProcessIaxCmdPage(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Stand-alone message waiting indicator    */
+  /** Process a FullFrameProtocol class, where the sub Class value is
+     Stand-alone message waiting indicator  */
   void ProcessIaxCmdMwi(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Unsupported message received    */
+  /** Process a FullFrameProtocol class, where the sub Class value is
+     Unsupported message received  */
   void ProcessIaxCmdUnsupport(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Request remote transfer    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Request
+     remote transfer  */
   void ProcessIaxCmdTransfer(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Provision device    */
+  /** Process a FullFrameProtocol class, where the sub Class value is
+     Provision device  */
   void ProcessIaxCmdProvision(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Download firmware    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Download
+     firmware  */
   void ProcessIaxCmdFwDownl(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Firmware Data    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Firmware
+     Data  */
   void ProcessIaxCmdFwData(IAX2FullFrameProtocol *src);
   
   /**Count of the number of sound frames sent */
@@ -500,20 +541,21 @@ class IAX2CallProcessor : public IAX2Processor
   enum SoundBufferState {
     BufferToSmall, ///We need more sound packets to come in
     Normal, ///Everything is functioning ok
-    BufferToBig ///We need the buffer size to be reduced there is to much latency
+    BufferToBig ///We need the buffer size to be reduced there is too much latency
   };
   
   /**This holds the current state for the sound recieving buffer*/
   SoundBufferState soundBufferState;
   
-  /**This is the timestamp of the last received full frame, which is used to reconstruct the timestamp
-     of received MiniFrames */
+  /**This is the timestamp of the last received full frame, which is used to
+     reconstruct the timestamp of received MiniFrames */
   PINDEX lastFullFrameTimeStamp;
     
   /**Flag to indicate we are ready for audio to flow */
   PBoolean audioCanFlow;
 
-  /** Bitmask of FullFrameVoice::AudioSc values to specify which codec is used*/
+  /** Bitmask of FullFrameVoice::AudioSc values to specify which codec is
+     used*/
   unsigned int selectedCodec;
   
   /** bit mask of the different flags to indicate call status*/
@@ -559,17 +601,19 @@ class IAX2CallProcessor : public IAX2Processor
   void SetCallAnswered(PBoolean newValue = PTrue) 
     { if (newValue) callStatus |= callAnswered; else callStatus &= ~callAnswered; }
 
-  /** Mark call status as terminated (is processing IAX2 hangup packets etc ) */
+  /** Mark call status as terminated (is processing IAX2 hangup packets etc)*/
   void SetCallTerminating(PBoolean newValue = PTrue) 
     { if (newValue) callStatus |= callTerminating; else callStatus &= ~callTerminating; }
   
   /** See if any of the flag bits are on, which indicate this call is actually active */
   PBoolean IsCallHappening() { return callStatus > 0; }
   
-  /** Get marker to indicate that some packets have flowed etc for this call  */
+  /** Get marker to indicate that some packets have flowed etc for this
+     call  */
   PBoolean IsCallNewed() { return callStatus & callNewed; }
   
-  /** Get marker to indicate that we are waiting on the ack for the iaxcommandringing packet we sent  */
+  /** Get marker to indicate that we are waiting on the ack for the
+      iaxcommandringing packet we sent  */
   PBoolean IsCallSentRinging() { return callStatus & callSentRinging; }
   
   /** Get the current value of the call status flag callRegistered */
@@ -590,10 +634,6 @@ class IAX2CallProcessor : public IAX2Processor
   /** Advise the other end that we have picked up the phone */
   void SendAnswerMessageToRemoteNode();
      
-  /**Set up the acceptable time (in milliseconds) to wait between
-     doing status checks. */
-  void StartStatusCheckTimer(PINDEX msToWait = 10000 /*!< time between status checks, default = 10 seconds*/);
-
 #ifdef DOC_PLUS_PLUS
   /**A pwlib callback function to invoke another status check on the
        other endpoint 
@@ -642,8 +682,8 @@ class IAX2CallProcessor : public IAX2Processor
   /** The timer which is used to do the status check */
   PTimer statusCheckTimer;
 
-  /**The time period, in ms, of each audio frame. It is used when determining the
-   * appropriate timestamp to go on a packet. */
+  /**The time period, in ms, of each audio frame. It is used when determining
+     the appropriate timestamp to go on a packet. */
   PINDEX audioFrameDuration;
 
   /**The number of bytes from compressing one frame of audio */
@@ -688,7 +728,7 @@ class IAX2CallProcessor : public IAX2Processor
   PString transferCalledContext;  
 };
 
-////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
 
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */

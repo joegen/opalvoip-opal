@@ -184,7 +184,9 @@ class IAX2Connection : public OpalConnection
      
      Note that this function will return quickly as the release and
      disposal of the connections is done by another thread.
-     
+  
+     This sends an IAX2 hangup frame to the remote endpoint.
+ 
      The ConnectionRun that manages packets going into/out of the
      IAX2Connection will continue to run, and will send the appropriate
      IAX@ hangup messages. Death of the Connection thread will happen when the 
@@ -192,14 +194,6 @@ class IAX2Connection : public OpalConnection
   void Release( CallEndReason reason = EndedByLocalUser /// Reason for call release
 		);
   
-    /**Clear a current call.
-       This sends a hangup frame to the remote endpoint, and then calls
-       OpalConnection::ClearCall();
-      */    
-  void ClearCall(
-      CallEndReason reason = EndedByLocalUser /// Reason for call clearing
-    );
-
   /**Cause the call to end now, but do not send any iax hangup frames etc */
   void EndCallNow(
       CallEndReason reason = EndedByLocalUser /// Reason for call clearing
@@ -242,16 +236,16 @@ class IAX2Connection : public OpalConnection
      the call (the B party) has received an OnAlerting() indicating
      that its remoteendpoint is "ringing".
 
-     The default behaviour is pure.
+     The OpalConnection has this method as pure, so it is defined for IAX2.
   */
-  PBoolean SetAlerting(
-			   const PString & calleeName,   /// Name of endpoint being alerted.
+  PBoolean SetAlerting(   const PString & calleeName,   /// Name of endpoint being alerted.
 			   PBoolean withMedia                /// Open media with alerting
 			   ); 
   
   /**Indicate to remote endpoint we are connected.
-     
-  The default behaviour is pure.
+     This method causes the media streams to start.
+
+     OpalConnection has this method as pure.
   */
   PBoolean SetConnected();       
   
@@ -259,17 +253,17 @@ class IAX2Connection : public OpalConnection
      This provides a list of media data format names that a
      OpalMediaStream may be created in within this connection.
      
-     The default behaviour is pure.
+     This method returns media formats that were decided through the initial
+     exchange of packets when setting up a call (the cmdAccept and cmdNew
+     packets). 
+
+     The OpalConnection has this method as pure, so it is defined for IAX2.
   */
   OpalMediaFormatList GetMediaFormats() const { return remoteMediaFormats; }
   
   
   /**Open a new media stream.  This will create a media stream of 
      subclass OpalIAXMediaStream.
-     
-     The sessionID parameter is (in this case) not needed by a
-     particular media stream and is ignored.
-     
      
      Note that media streams may be created internally to the
      underlying protocol. This function is not the only way a stream
@@ -330,39 +324,13 @@ class IAX2Connection : public OpalConnection
     This method is called after OnIncomingConnection().*/
     virtual void OnSetUp();
 
-    /**Call back for remote party being alerted.
-       This function is called after the connection is informed that the
-       remote endpoint is "ringing". Generally some time after the
-       SetUpConnection() function was called, this is function is called.
 
-       If PFalse is returned the connection is aborted.
-
-       If an application overrides this function, it should generally call the
-       ancestor version for correct operation. An application would typically
-       only intercept this function if it wishes to do some form of logging.
-       For this you can obtain the name of the caller by using the function
-       OpalConnection::GetRemotePartyName().
-
-       The default behaviour calls the OpalEndPoint function of the same name.
-     */
-  virtual void OnAlerting();
 
   virtual PBoolean OnIncomingCall(
     unsigned int options, 
     OpalConnection::StringOptions * stringOptions
   );
 
-  /**A call back function whenever a connection is "connected".  This
-     indicates that an iax link to an endpoint has been made &
-     verified. Now, the endpoint has to receive information on
-     this. Further, media has to start to flow.
-     
-     In the context of IAX, this means that the accept and
-     verification packets have been procesed, and or that we have
-     received the first media from the remote end.
-  */
-  virtual void OnConnected();
-  
   /**A call back function whenever a connection is established.
        This indicates that a connection to an endpoint was established. This
        usually occurs after OnConnected() and indicates that the connection
@@ -371,8 +339,11 @@ class IAX2Connection : public OpalConnection
        In the context of IAX2 this means we have received the first
        full frame of media from the remote endpoint
 
-       The default behaviour calls the OpalEndPoint function of the
-       same name.
+       This method runs when a media stream in OpalConnection is opened.  This
+       callback is used to indicate we need to start the "every 10 second do
+       an iax2 lagrq/lagrp+ping/pong exhange process".  
+
+       This exchange proces is invoked in the IAX2CallProcessor.
       */
   virtual void OnEstablished();
 
@@ -403,7 +374,8 @@ class IAX2Connection : public OpalConnection
   /**Start an outgoing connection.
      This function will initiate the connection to the remote entity, for
      example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
-     
+     In IAX2, it sends a New packet..
+
      The behaviour at the opal level is pure. Here, the method is defined.
   */
   PBoolean SetUpConnection();
