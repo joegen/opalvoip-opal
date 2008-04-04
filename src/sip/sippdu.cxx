@@ -1736,34 +1736,30 @@ void SIP_PDU::PrintOn(ostream & strm) const
 
 PBoolean SIP_PDU::Read(OpalTransport & transport)
 {
-  if (!transport.IsReliable())
-    transport.SetReadsPerPDU(1);
+  PStringStream datagram;
 
-  // Do this to force a Read() by the PChannelBuffer outside of the
-  // ios::lock() mutex which would prevent simultaneous reads and writes.
-  transport.SetReadTimeout(PMaxTimeInterval);
-#if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300) || defined(SOLARIS)
-  if (transport.rdbuf()->pubseekoff(0, ios_base::cur) == streampos(-1))
-#else
-  if (transport.rdbuf()->seekoff(0, ios::cur, ios::in) == EOF)
-#endif                  
-    transport.clear(ios::badbit);
+  istream * stream;
+  if (transport.IsReliable()) {
+    stream = &transport;
+    transport.SetReadTimeout(3000);
+  }
+  else {
+    stream = &datagram;
+    transport.SetReadsPerPDU(1);
+    transport.SetReadTimeout(PMaxTimeInterval);
+    datagram = transport.ReadString(P_MAX_INDEX);
+  }
 
   if (!transport.IsOpen()) {
     PTRACE(1, "SIP\tAttempt to read PDU from closed tansport " << transport);
     return PFalse;
   }
 
-  // get the message from transport into cmd and parse MIME
-  transport.clear();
-  PString cmd(512);
-  if (!transport.bad() && !transport.eof()) {
-    if (transport.IsReliable())
-      transport.SetReadTimeout(3000);
-    transport >> cmd >> mime;
-  }
+  // get the message from transport/datagram into cmd and parse MIME
+  PString cmd;
+  *stream >> cmd >> mime;
 
-  if (transport.bad()) {
+  if (!stream->good()) {
     PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::NoError,
               "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
     return PFalse;
@@ -1820,48 +1816,32 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   // get the SDP content body
   // if a content length is specified, read that length
   // if no content length is specified (which is not the same as zero length)
-  // then read until plausible end of header marker
+  // then read until end of datagram or stream
   PINDEX contentLength = mime.GetContentLength();
+  bool contentLengthPresent = mime.IsContentLengthPresent();
 
-  // assume entity bodies can't be longer than a UDP packet
-  if (contentLength > 1500) {
-    PTRACE(2, "SIP\tImplausibly long Content-Length " << contentLength << " received on " << transport);
-    return PFalse;
+  if (!contentLengthPresent) {
+    PTRACE(2, "SIP\tNo Content-Length present from " << transport << ", reading till end of datagram/stream.");
   }
   else if (contentLength < 0) {
-    PTRACE(2, "SIP\tImpossible negative Content-Length on " << transport);
-    return PFalse;
+    PTRACE(2, "SIP\tImpossible negative Content-Length from " << transport << ", reading till end of datagram/stream.");
+    contentLengthPresent = false;
+  }
+  else if (contentLength > (transport.IsReliable() ? 1000000 : datagram.GetLength())) {
+    PTRACE(2, "SIP\tImplausibly long Content-Length " << contentLength << " received from " << transport << ", reading to end of datagram/stream.");
+    contentLengthPresent = false;
   }
 
-  if (contentLength > 0)
-    transport.read(entityBody.GetPointer(contentLength+1), contentLength);
-  else if (!mime.IsContentLengthPresent()) {
-    PBYTEArray pp;
-
-#if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300) || defined(SOLARIS)
-    transport.rdbuf()->pubseekoff(0, ios_base::cur);
-#else
-    transport.rdbuf()->seekoff(0, ios::cur, ios::in);
-#endif 
-
-    PINDEX lrc = transport.GetLastReadCount();
-    if (lrc == 0) 
-      contentLength = 0;
-    else {
-
-      //store in pp ALL the PDU (from beginning)
-      transport.read((char*)pp.GetPointer(lrc), lrc);
-      PINDEX pos = 3;
-      while (++pos < pp.GetSize() && !(pp[pos]=='\n' && pp[pos-1]=='\r' && pp[pos-2]=='\n' && pp[pos-3]=='\r'))
-        ; //end of header is marked by "\r\n\r\n"
-
-      if (pos<pp.GetSize())
-        pos++;
-      contentLength = PMAX(0,pp.GetSize() - pos);
-      if (contentLength > 0)
-        memcpy(entityBody.GetPointer(contentLength+1),pp.GetPointer()+pos,  contentLength);
-      else
-        contentLength = 0;
+  if (contentLengthPresent) {
+    if (contentLength > 0)
+      stream->read(entityBody.GetPointer(contentLength+1), contentLength);
+  }
+  else {
+    contentLength = 0;
+    int c;
+    while ((c = stream->get()) != EOF) {
+      entityBody.SetMinSize((++contentLength/1000+1)*1000);
+      entityBody += (char)c;
     }
   }
 
@@ -1932,6 +1912,8 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
 
 
   PString strPDU = Build();
+  PTRACE_IF(2, !transport.IsReliable() && strPDU.GetLength() > 1500,
+            "SIP\tPDU is likely too large (" << strPDU.GetLength() << " bytes) for UDP datagram.");
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
