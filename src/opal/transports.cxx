@@ -458,7 +458,7 @@ PBoolean OpalListener::StartThread(const PNotifier & theAcceptHandler, ThreadMod
   acceptHandler = theAcceptHandler;
   threadMode = mode;
 
-  thread = PThread::Create(PCREATE_NOTIFIER(ListenForConnections), "Opal Listener:%u");
+  thread = PThread::Create(PCREATE_NOTIFIER(ListenForConnections), "Opal Listener");
 
   return thread != NULL;
 }
