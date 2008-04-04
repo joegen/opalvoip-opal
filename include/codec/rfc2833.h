@@ -154,6 +154,8 @@ class OpalRFC2833Proto : public PObject {
     PBoolean      rewriteTransmitTimestamp;
     PTimeInterval asyncStart;
     unsigned      transmitDuration;
+    unsigned      tonesReceived;
+    DWORD         previousReceivedTimestamp;
 };
 
 
