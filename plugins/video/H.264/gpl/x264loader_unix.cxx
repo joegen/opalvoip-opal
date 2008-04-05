@@ -109,18 +109,21 @@ bool X264Library::Load()
 
 bool X264Library::Open(const char *name)
 {
+  if ( strlen(name) == 0 )
+    return false;
+
   _dynamicLibrary = dlopen(name, RTLD_NOW);
 
   if (_dynamicLibrary == NULL) {
     char * error = (char *) dlerror();
     if (error != NULL)
-        TRACE(1, "H264\tDYNA\tError loading " << name << " - " << error)
+        TRACE(4, "H264\tDYNA\tCould not load " << name << " - " << error)
       else
-        TRACE(1, "H264\tDYNA\tError loading " << name);
-      return false;
+        TRACE(4, "H264\tDYNA\tCould not load " << name);
+    return false;
     } 
     else {
-      TRACE(1, "H264\tDYNA\tSuccessfully loaded " << name);
+      TRACE(4, "H264\tDYNA\tSuccessfully loaded " << name);
       return true;
     }
 }
