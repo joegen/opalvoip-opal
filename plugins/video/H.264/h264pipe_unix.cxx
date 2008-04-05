@@ -34,7 +34,6 @@
 
 #define HAS_MKFIFO 1
 #define GPL_PROCESS_FILENAME "ptlib/codecs/video/h264_video_pwplugin_helper"
-#define P_DEFAULT_PLUGIN_DIR "/usr/lib/ptlib"
 #define DIR_SEPERATOR "/"
 #define DIR_TOKENISER ":"
 
@@ -282,11 +281,11 @@ bool H264EncCtx::checkGplProcessExists (const char * dir)
 
   if (stat(gplProcess, &buffer ) ) { 
 
-    TRACE(1, "H264\tIPC\tPP: Couldn't find GPL process executable in " << gplProcess);
+    TRACE(4, "H264\tIPC\tPP: Couldn't find GPL process executable in " << gplProcess);
     return false;
   }
 
-  TRACE(1, "H264\tIPC\tPP: Found GPL process executable in  " << gplProcess);
+  TRACE(4, "H264\tIPC\tPP: Found GPL process executable in  " << gplProcess);
 
   return true;
 }
