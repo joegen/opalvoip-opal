@@ -60,7 +60,7 @@ typedef unsigned char BYTE;
 #include "trace.h"
 
 extern "C" {
-#include "ffmpeg/avcodec.h"
+#include "libavcodec/avcodec.h"
 };
 
 #include <vector>

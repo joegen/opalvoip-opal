@@ -6849,7 +6849,7 @@ fi
     LIBS=$saved_LIBS
     if test "x${ffmpeg_libs}" != "xno"; then
 
-for ac_header in ffmpeg/avcodec.h
+for ac_header in libavcodec/avcodec.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -7000,7 +7000,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <ffmpeg/avcodec.h>
+#include <libavcodec/avcodec.h>
   	     #ifdef LIBAVCODEC_VERSION_INT
                #if LIBAVCODEC_VERSION_INT >= ((51<<16)+(11<<8)+0)
                  yes

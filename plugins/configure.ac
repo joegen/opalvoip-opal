@@ -373,12 +373,12 @@ if test "x${enable_ffmpeg}" != "xno" ; then
     AC_CHECK_LIB(avcodec, avcodec_init, [ffmpeg_libs=true], [ffmpeg_libs=false])
     LIBS=$saved_LIBS
     if test "x${ffmpeg_libs}" != "xno"; then
-        AC_CHECK_HEADERS([ffmpeg/avcodec.h], [ffmpeg_headers=true], [ffmpeg_headers=false])
+        AC_CHECK_HEADERS([libavcodec/avcodec.h], [ffmpeg_headers=true], [ffmpeg_headers=false])
         if test "x${ffmpeg_headers}" = "xtrue"; then
 
             AC_MSG_CHECKING(for libavcodec version >= 51.11.0)
             AC_EGREP_CPP([yes],
-            [#include <ffmpeg/avcodec.h>
+            [#include <libavcodec/avcodec.h>
   	     #ifdef LIBAVCODEC_VERSION_INT
                #if LIBAVCODEC_VERSION_INT >= ((51<<16)+(11<<8)+0)
                  yes
