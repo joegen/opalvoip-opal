@@ -182,6 +182,13 @@ class OpalManager : public PObject
       const PString & token  ///<  Token for identifying call
     ) { return activeCalls.FindWithLock(token, PSafeReference) != NULL; }
 
+    /**Determine if a call is active.
+       Return the number of active calls.
+      */
+    virtual const unsigned GetCallsNumber()
+    { return activeCalls.GetSize(); }
+
+
     /**Determine if a call is established.
        Return PTrue if there is an active call with the specified token and
        that call has at least two parties with media flowing between them.
