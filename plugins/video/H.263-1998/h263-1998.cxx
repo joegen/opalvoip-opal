@@ -55,7 +55,7 @@
 #include "mpi.h"
 
 extern "C" {
-#include "ffmpeg/avcodec.h"
+#include "libavcodec/avcodec.h"
 };
 
 static FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H263P);

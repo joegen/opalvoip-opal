@@ -99,7 +99,7 @@ extern "C" {
 #include <libavcodec/mpegvideo.h>
 
 #else /* WITH_FFMPEG_SRC */
-#include <ffmpeg/avcodec.h>
+#include <libavcodec/avcodec.h>
 #endif /* WITH_FFMPEG_SRC */
 }
 

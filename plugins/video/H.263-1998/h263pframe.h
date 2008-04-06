@@ -28,7 +28,7 @@
 #include "rtpframe.h"
 
 extern "C" {
-#include "ffmpeg/avcodec.h"
+#include "libavcodec/avcodec.h"
 };
 
 enum codecInFlags {
