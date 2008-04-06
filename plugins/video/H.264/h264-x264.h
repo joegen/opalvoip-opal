@@ -56,9 +56,9 @@
 
 extern "C" {
 #ifdef _MSC_VER
-  #include "ffmpeg/avcodec.h"
+  #include "libavcodec/avcodec.h"
 #else
-  #include <ffmpeg/avcodec.h>
+  #include <libavcodec/avcodec.h>
 #endif
 };
 
