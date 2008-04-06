@@ -627,7 +627,7 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
       localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
-      localMedia->SetDirection(local_hold ? SDPMediaDescription::Inactive : recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
+      localMedia->SetDirection(local_hold ? recving ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive : recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
     }
     else if (recving) {
       localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
