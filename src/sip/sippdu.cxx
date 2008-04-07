@@ -1596,15 +1596,14 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   PStringStream datagram;
 
   istream * stream;
-  if (transport.IsReliable()) {
+  if (transport.IsReliable())
     stream = &transport;
-    transport.SetReadTimeout(3000);
-  }
   else {
     stream = &datagram;
-    transport.SetReadsPerPDU(1);
-    transport.SetReadTimeout(PMaxTimeInterval);
-    datagram = transport.ReadString(P_MAX_INDEX);
+
+    PBYTEArray pdu;
+    if (transport.ReadPDU(pdu))
+      datagram = PString((char *)pdu.GetPointer(), pdu.GetSize());
   }
 
   if (!transport.IsOpen()) {

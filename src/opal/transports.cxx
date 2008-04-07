@@ -1180,7 +1180,6 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    PBoolean reuseAddr)
   : OpalTransportIP(ep, binding, localPort)
   , manager(ep.GetManager())
-  , readsPerPdu(-1)
 {
   PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr);
   if (sockets->Open(localPort)) {
@@ -1202,7 +1201,6 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   : OpalTransportIP(ep, PIPSocket::GetDefaultIpAny(), 0)
   , manager(ep.GetManager())
   , preReadPacket(packet)
-  , readsPerPdu(-1)
 {
   remoteAddress = remAddr;
   remotePort = remPort;
@@ -1386,24 +1384,14 @@ PString OpalTransportUDP::GetLastReceivedInterface() const
 
 PBoolean OpalTransportUDP::Read(void * buffer, PINDEX length)
 {
-  if (readsPerPdu == 0)
-    return PFalse;
+  if (preReadPacket.IsEmpty())
+    return OpalTransportIP::Read(buffer, length);
 
-  if (preReadPacket.GetSize() > 0) {
-    lastReadCount = PMIN(length, preReadPacket.GetSize());
-    memcpy(buffer, preReadPacket, lastReadCount);
-    preReadPacket.SetSize(0);
+  lastReadCount = PMIN(length, preReadPacket.GetSize());
+  memcpy(buffer, preReadPacket, lastReadCount);
+  preReadPacket.SetSize(0);
 
-    if (readsPerPdu > 0)
-      --readsPerPdu;
-
-    return PTrue;
-  }
-
-  if (readsPerPdu > 0)
-    --readsPerPdu;
-
-  return OpalTransportIP::Read(buffer, length);
+  return PTrue;
 }
 
 
