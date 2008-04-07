@@ -330,7 +330,10 @@ void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, u
       PString wildcard = IAX2FullFrameVoice::GetSubClassName(1 << i);
       if (!remoteMediaFormats.HasFormat(wildcard)) {
 	PTRACE(4, "Connection\tRemote capability says add codec " << wildcard);
-	remoteMediaFormats += OpalMediaFormat(wildcard);
+	OpalMediaFormat  fmt(wildcard);
+	if (fmt.GetName().Find("711") != P_MAX_INDEX)
+	  fmt.SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 20);
+	remoteMediaFormats += fmt;
       }
     }
   }
