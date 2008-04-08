@@ -72,8 +72,8 @@ static class InstantiateMe
     return name; \
   }
 
-AUDIO_FORMAT(PCM16,          MaxPayloadType, "",     16, 8,  240,  1, 256,  8000);
-AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",     32, 8,  240,  1, 256, 16000);
+AUDIO_FORMAT(PCM16,          MaxPayloadType, "",     16, 8,  240,  0, 256,  8000);
+AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",     32, 8,  240,  0, 256, 16000);
 AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",  16, 8,  240, 30, 256,  8000);
 AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  32, 4,  120, 15, 256, 16000);
 AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256,  8000);
@@ -137,8 +137,10 @@ static PMutex & GetMediaFormatsListMutex()
 
 static void Clamp(OpalMediaFormatInternal & fmt1, const OpalMediaFormatInternal & fmt2, const PString & variableOption, const PString & minOption, const PString & maxOption)
 {
-  unsigned value    = fmt1.GetOptionInteger(variableOption, 0);
+  if (fmt1.FindOption(variableOption) == NULL)
+    return;
 
+  unsigned value    = fmt1.GetOptionInteger(variableOption, 0);
   unsigned minValue = fmt2.GetOptionInteger(minOption, 0);
   unsigned maxValue = fmt2.GetOptionInteger(maxOption, UINT_MAX);
   if (value < minValue) {
@@ -1254,8 +1256,10 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
                             clockRate,
                             timeStamp)
 {
-  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::NoMerge,  rxFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::NoMerge, txFrames, 1, maxFrames));
+  if (rxFrames > 0)
+    AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::NoMerge,  rxFrames, 1, maxFrames));
+  if (txFrames > 0)
+    AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::NoMerge, txFrames, 1, maxFrames));
 }
 
 
