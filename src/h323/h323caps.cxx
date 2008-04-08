@@ -841,7 +841,7 @@ PBoolean H323AudioCapability::OnReceivedPDU(const H245_Capability & cap)
     return PFalse;
 
   unsigned txFramesInPacket = GetTxFramesInPacket();
-  unsigned packetSize = txFramesInPacket;
+  unsigned packetSize = GetRxFramesInPacket();
   if (!OnReceivedPDU((const H245_AudioCapability &)cap, packetSize, e_TCS))
     return PFalse;
 
@@ -943,11 +943,15 @@ PBoolean H323GenericAudioCapability::OnSendingPDU(H245_AudioMode & pdu) const
   return OnSendingGenericPDU(pdu, GetMediaFormat(), e_ReqMode);
 }
 
-PBoolean H323GenericAudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu, unsigned &, CommandType type)
+PBoolean H323GenericAudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu, unsigned & packetSize, CommandType type)
 {
   if( pdu.GetTag() != H245_AudioCapability::e_genericAudioCapability)
     return PFalse;
-  return OnReceivedGenericPDU(GetWritableMediaFormat(), pdu, type);
+  if (!OnReceivedGenericPDU(GetWritableMediaFormat(), pdu, type))
+    return PFalse;
+
+  packetSize = GetRxFramesInPacket();
+  return PTrue;
 }
 
 PBoolean H323GenericAudioCapability::IsMatch(const PASN_Choice & subTypePDU) const
