@@ -2023,32 +2023,38 @@ unsigned H323VideoPluginCapability::GetSubType() const
   return pluginSubType;
 }
 
+#define SET_OR_CREATE_PARM(option, val, op) \
+  if (mediaFormat.GetOptionInteger(OpalVideoFormat::option()) op val) { \
+    if (mediaFormat.FindOption(OpalVideoFormat::option()) == NULL) \
+      mediaFormat.AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::option(), false)); \
+    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::option(), val)) { \
+      PTRACE(5, "H263\t" #option " failed"); \
+      return false; \
+    } \
+  } \
+
+
 PBoolean H323VideoPluginCapability::SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
 {
-  if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption()) < frameWidth)
-    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(),   frameWidth))
-      return false;
-
-  if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption()) > frameWidth)
-    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption(),   frameWidth))
-      return PFalse;
-
-  if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption()) < frameWidth)
-    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(),   frameHeight))
-      return false;
-
-  if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption()) > frameWidth)
-    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption(),   frameHeight))
-      return false;
-
-  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption())))
+  SET_OR_CREATE_PARM(MaxRxFrameWidthOption, frameWidth, <);
+  SET_OR_CREATE_PARM(MinRxFrameWidthOption, frameWidth, >);
+  SET_OR_CREATE_PARM(MaxRxFrameHeightOption, frameHeight, <);
+  SET_OR_CREATE_PARM(MinRxFrameHeightOption, frameHeight, >);
+  
+  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption()))) {
+    PTRACE(5, "H263\tFrameWidthOption failed");
     return false;
+  }
 
-  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption())))
+  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption()))) {
+    PTRACE(5, "H263\tFrameHeightOption failed");
     return false;
+  }
 
-  if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997))
+  if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997)) {
+    PTRACE(5, "H263\tFrameTimeOption failed");
     return false;
+  }
 
   return true;
 }
@@ -2209,12 +2215,16 @@ H323H263PluginCapability::H323H263PluginCapability(const PluginCodec_Definition 
 
 PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
 {
-  if (!PIsDescendant(&obj, H323H263PluginCapability))
+  if (!PIsDescendant(&obj, H323H263PluginCapability)) {
+    PTRACE(5, "H.263\t" << *this << " != " << obj);
     return LessThan;
+  }
 
   Comparison result = H323Capability::Compare(obj);
-  if (result != EqualTo)
+  if (result != EqualTo) {
+    PTRACE(5, "H.263\t" << *this << " != " << obj);
     return result;
+  }
 
   const H323H263PluginCapability & other = (const H323H263PluginCapability &)obj;
 
@@ -2251,7 +2261,7 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
     return LessThan;
   }
 
-  PTRACE(5, "H.263\t" << *this << " > " << other << " are equal");
+  PTRACE(5, "H.263\t" << *this << " > " << other);
   return GreaterThan;
 }
 
@@ -2415,27 +2425,41 @@ PBoolean H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & ca
 
   const H245_H263VideoCapability & h263 = cap;
 
-  if (!SetReceivedH263Cap(mediaFormat, cap, sqcifMPI_tag, H245_H263VideoCapability::e_sqcifMPI, h263.m_sqcifMPI, PVideoFrameInfo::SQCIFWidth, PVideoFrameInfo::SQCIFHeight, formatDefined))
+  if (!SetReceivedH263Cap(mediaFormat, cap, sqcifMPI_tag, H245_H263VideoCapability::e_sqcifMPI, h263.m_sqcifMPI, PVideoFrameInfo::SQCIFWidth, PVideoFrameInfo::SQCIFHeight, formatDefined)) {
+    PTRACE(5, "H263\tSetReceivedH263Cap SQCIF failed");
     return PFalse;
+  }
 
-  if (!SetReceivedH263Cap(mediaFormat, cap, qcifMPI_tag,  H245_H263VideoCapability::e_qcifMPI,  h263.m_qcifMPI,  PVideoFrameInfo::QCIFWidth, PVideoFrameInfo::QCIFHeight,  formatDefined))
+  if (!SetReceivedH263Cap(mediaFormat, cap, qcifMPI_tag,  H245_H263VideoCapability::e_qcifMPI,  h263.m_qcifMPI,  PVideoFrameInfo::QCIFWidth, PVideoFrameInfo::QCIFHeight,  formatDefined)) {
+    PTRACE(5, "H263\tSetReceivedH263Cap QCIF failed");
     return PFalse;
+  }
 
-  if (!SetReceivedH263Cap(mediaFormat, cap, cifMPI_tag,   H245_H263VideoCapability::e_cifMPI,   h263.m_cifMPI,   PVideoFrameInfo::CIFWidth, PVideoFrameInfo::CIFHeight,   formatDefined))
+  if (!SetReceivedH263Cap(mediaFormat, cap, cifMPI_tag,   H245_H263VideoCapability::e_cifMPI,   h263.m_cifMPI,   PVideoFrameInfo::CIFWidth, PVideoFrameInfo::CIFHeight,   formatDefined)) {
+    PTRACE(5, "H263\tSetReceivedH263Cap CIF failed");
     return PFalse;
+  }
 
-  if (!SetReceivedH263Cap(mediaFormat, cap, cif4MPI_tag,  H245_H263VideoCapability::e_cif4MPI,  h263.m_cif4MPI,  PVideoFrameInfo::CIF4Width, PVideoFrameInfo::CIF4Height,  formatDefined))
+  if (!SetReceivedH263Cap(mediaFormat, cap, cif4MPI_tag,  H245_H263VideoCapability::e_cif4MPI,  h263.m_cif4MPI,  PVideoFrameInfo::CIF4Width, PVideoFrameInfo::CIF4Height,  formatDefined)) {
+    PTRACE(5, "H263\tSetReceivedH263Cap CIF4 failed");
     return PFalse;
+  }
 
-  if (!SetReceivedH263Cap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, PVideoFrameInfo::CIF16Width, PVideoFrameInfo::CIF16Height, formatDefined))
+  if (!SetReceivedH263Cap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, PVideoFrameInfo::CIF16Width, PVideoFrameInfo::CIF16Height, formatDefined)) {
+    PTRACE(5, "H263\tSetReceivedH263Cap CIF16 failed");
     return PFalse;
+  }
 
-  if (!formatDefined)
+  if (!formatDefined) {
+    PTRACE(5, "H263\tFormat !defined");
     return PFalse;
+  }
 
   unsigned maxBitRate = h263.m_maxBitRate*100;
-  if (!mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), maxBitRate))
+  if (!mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), maxBitRate)) {
+    PTRACE(5, "H263\tCannot set MaxBitRateOption");
     return PFalse;
+  }
   unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   if (targetBitRate > maxBitRate)
     mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(),     maxBitRate);
