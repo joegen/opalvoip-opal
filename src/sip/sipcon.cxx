@@ -1819,11 +1819,12 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   needReINVITE = false; // Is not actually a re-INVITE though it looks a little bit like one.
   RTP_SessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
   SIPTransaction * invite = new SIPInvite(*this, *transport, origRtpSessions);
+
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.
-  // Except it needs a different to tag field to indicate a different dialog.
+  // For Asterisk this is not merely SHOULD, but SHALL ....
   invite->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
-  invite->GetMIME().SetCallID(transaction.GetMIME().GetCallID());
+
   transport->SetInterface(transaction.GetInterface());
   if (!invite->Start()) {
     PTRACE(2, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
