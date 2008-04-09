@@ -1996,14 +1996,16 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   }
 
   // Restart the transaction with new authentication info
-  // Section 8.1.3.5 of RFC3261 tells that the authenticated
-  // request SHOULD have the same value of the Call-ID, To and From.
-  // Except it needs a different tag field to indicate a different dialog.
-  AdjustOutgoingINVITE();
 
   needReINVITE = false; // Is not actually a re-INVITE though it looks a little bit like one.
   RTP_SessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
   SIPTransaction * invite = new SIPInvite(*this, *transport, origRtpSessions);
+
+  // Section 8.1.3.5 of RFC3261 tells that the authenticated
+  // request SHOULD have the same value of the Call-ID, To and From.
+  // For Asterisk this is not merely SHOULD, but SHALL ....
+  invite->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
+
   transport->SetInterface(transaction.GetInterface());
   if (invite->Start())
   {
