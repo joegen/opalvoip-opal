@@ -183,7 +183,7 @@ void CMobileOpalDlg::InitialiseOPAL()
   // Start up and initialise OPAL
 
   if (m_opal == NULL) {
-    m_opal = OpalInitialise("pc h323 sip TraceLevel=3");
+    m_opal = OpalInitialise("pc h323 sip TraceLevel=3 TraceFile=\\Trace.log");
     if (m_opal == NULL) {
       ErrorBox(IDS_INIT_FAIL);
       EndDialog(IDCANCEL);
@@ -341,12 +341,23 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
           break;
 
         case OpalIndIncomingCall :
-          m_incomingCallToken = message->m_param.m_incomingCall.m_callToken;
-          SetStatusText(IDS_INCOMING_CALL);
-          SetCallButton(true, IDS_ANSWER);
-          m_ctrlAddress.EnableWindow(false);
-          ShowWindow(true);
-          BringWindowToTop();
+          if (m_incomingCallToken.IsEmpty() && m_currentCallToken.IsEmpty()) {
+            m_incomingCallToken = message->m_param.m_incomingCall.m_callToken;
+            SetStatusText(IDS_INCOMING_CALL);
+            SetCallButton(true, IDS_ANSWER);
+            m_ctrlAddress.EnableWindow(false);
+            ShowWindow(true);
+            BringWindowToTop();
+          }
+          else {
+            OpalMessage command;
+            memset(&command, 0, sizeof(command));
+            command.m_type = OpalCmdClearCall;
+            command.m_param.m_callToken = m_incomingCallToken;
+            OpalMessage * response = OpalSendMessage(m_opal, &command);
+            if (response != NULL)
+              OpalFreeMessage(response);
+          }
           break;
 
         case OpalIndAlerting :
@@ -423,31 +434,38 @@ void CMobileOpalDlg::OnExit()
 
 void CMobileOpalDlg::OnCallAnswer()
 {
-  if (!UpdateData())
-    return;
+  UpdateData();
 
   OpalMessage * response = NULL;
   OpalMessage command;
   memset(&command, 0, sizeof(command));
 
   if (!m_incomingCallToken.IsEmpty()) {
+    SetStatusText(IDS_ANSWERING);
+    SetCallButton(true, IDS_HANGUP);
     command.m_type = OpalCmdAnswerCall;
     command.m_param.m_callToken = m_incomingCallToken;
     response = OpalSendMessage(m_opal, &command);
   }
   else if (!m_currentCallToken.IsEmpty()) {
+    SetStatusText(IDS_HANGINGUP);
+    SetCallButton(false, IDS_HANGUP);
     command.m_type = OpalCmdClearCall;
     command.m_param.m_callToken = m_currentCallToken;
     response = OpalSendMessage(m_opal, &command);
   }
   else if (!m_callAddress.IsEmpty()) {
+    SetStatusText(IDS_CALLING);
+    SetCallButton(true, IDS_HANGUP);
     CStringA utfAddress((const TCHAR *)m_callAddress);
     command.m_type = OpalCmdSetUpCall;
     command.m_param.m_callSetUp.m_partyB = utfAddress;
     response = OpalSendMessage(m_opal, &command);
   }
 
-  if (response != NULL) {
+  if (response == NULL)
+    ErrorBox(IDS_CALL_START_FAIL);
+  else {
     if (response->m_type == OpalIndCommandError) {
       if (response->m_param.m_commandError == NULL || *response->m_param.m_commandError == '\0')
         ErrorBox(IDS_CALL_START_FAIL);
@@ -455,18 +473,14 @@ void CMobileOpalDlg::OnCallAnswer()
         CString text(response->m_param.m_commandError);
         MessageBox(text, NULL, MB_OK|MB_ICONEXCLAMATION);
       }
+      SetCallButton(true, IDS_CALL);
     }
-    else if (command.m_type == OpalCmdSetUpCall) {
+    else if (command.m_type == OpalCmdSetUpCall)
       m_currentCallToken = response->m_param.m_callSetUp.m_callToken;
-      SetStatusText(IDS_CALLING);
-      SetCallButton(true, IDS_HANGUP);
-    }
     else if (command.m_type == OpalCmdAnswerCall) {
       m_currentCallToken = m_incomingCallToken;
       m_incomingCallToken.Empty();
-      SetCallButton(true, IDS_HANGUP);
     }
-    
 
     OpalFreeMessage(response);
   }
