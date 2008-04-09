@@ -272,6 +272,8 @@ BEGIN
     IDS_CANCEL              "Cancel"
     IDS_REGISTERED          "Registered and ready for calls."
     IDS_REGISTERING         "Registering . . ."
+    IDS_ANSWERING           "Answering . . ."
+    IDS_HANGINGUP           "Hanging up . . ."
 END
 
 #endif    // English (Australia) resources
