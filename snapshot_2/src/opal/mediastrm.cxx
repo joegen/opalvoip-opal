@@ -981,7 +981,7 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   }
 
   if (size < inputDevice->GetMaxFrameBytes()) {
-    PTRACE(1, "Media\tTried to read with insufficient buffer size");
+    PTRACE(1, "Media\tTried to read with insufficient buffer size - " << size << " < " << inputDevice->GetMaxFrameBytes());
     return false;
   }
 

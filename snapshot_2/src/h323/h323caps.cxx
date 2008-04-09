@@ -1101,8 +1101,10 @@ PBoolean H323VideoCapability::OnReceivedPDU(const H245_Capability & cap)
 
 PBoolean H323VideoCapability::OnReceivedPDU(const H245_DataType & dataType, PBoolean receiver)
 {
-  if (dataType.GetTag() != H245_DataType::e_videoData)
+  if (dataType.GetTag() != H245_DataType::e_videoData) {
+    PTRACE(5, "dataType.GetTag() " << dataType.GetTag() << " != H245_DataType::e_videoData");
     return PFalse;
+  }
 
   return OnReceivedPDU((const H245_VideoCapability &)dataType, e_OLC) &&
          H323Capability::OnReceivedPDU(dataType, receiver);
@@ -2394,9 +2396,14 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
 
     if (checkExact) {
       H323Capability * compare = (H323Capability *)capability.Clone();
-      if (compare->OnReceivedPDU(dataType, PFalse) && *compare == capability) {
+      if (!compare->OnReceivedPDU(dataType, PFalse)) {
         delete compare;
-        PTRACE(3, "H323\tFound capability: " << capability);
+        PTRACE(3, "H323\tOnReceived failed");
+        return &capability;
+      }
+      if (*compare == capability) {
+        delete compare;
+        PTRACE(3, "H323\tCompare failed");
         return &capability;
       }
       delete compare;
