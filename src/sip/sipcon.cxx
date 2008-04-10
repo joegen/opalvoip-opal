@@ -1998,6 +1998,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   // Restart the transaction with new authentication info
 
   needReINVITE = false; // Is not actually a re-INVITE though it looks a little bit like one.
+  transport->SetInterface(transaction.GetInterface());
   RTP_SessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
   SIPTransaction * invite = new SIPInvite(*this, *transport, origRtpSessions);
 
@@ -2006,7 +2007,6 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   // For Asterisk this is not merely SHOULD, but SHALL ....
   invite->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
 
-  transport->SetInterface(transaction.GetInterface());
   if (invite->Start())
   {
     forkedInvitations.Append(invite);
