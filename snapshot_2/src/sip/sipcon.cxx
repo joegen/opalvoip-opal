@@ -2306,7 +2306,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
         val = tokens[1].Trim();
       if (tokens.GetSize() > 0) {
         if (tokens[0] *= "signal")
-          tone = OpalRFC2833Proto::RFC2833ToASCII(val.AsUnsigned());
+          tone = val[0];   // DTMF relay does not use RFC2833 encoding
         else if (tokens[0] *= "duration")
           duration = val.AsInteger();
       }
@@ -2374,7 +2374,7 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
         PStringStream str;
         if (mode == SendUserInputAsTone) {
           mimeInfo.SetContentType(ApplicationDTMFRelayKey);
-          str << "Signal=" << tone << "\r\n" << "Duration=" << duration << "\r\n";
+          str << "Signal= " << tone << "\r\n" << "Duration= " << duration << "\r\n";  // spaces are important. Who can guess why?
         }
         else {
           mimeInfo.SetContentType(ApplicationDTMFKey);
