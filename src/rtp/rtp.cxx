@@ -1657,6 +1657,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
   if ((portBase != 0) || (portMax != 0)) {
     if (stun != NULL && stun->IsAvailable(localAddress) && stun->GetRTPSupport() == PSTUNClient::RTPSupported) {
       if (stun->CreateSocketPair(dataSocket, controlSocket, localAddress)) {
+        PTRACE(4, "RTP\tSession " << sessionID << ", STUN created RTP/RTCP socket pair.");
         dataSocket->GetLocalAddress(localAddress, localDataPort);
         controlSocket->GetLocalAddress(localAddress, localControlPort);
       }
