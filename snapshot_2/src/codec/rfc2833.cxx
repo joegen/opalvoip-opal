@@ -288,10 +288,10 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
 
   PTRACE(4, "RFC2833\tReceived " << ((payload[1] & 0x80) ? "end" : "tone") << ":tone=" << (unsigned)tone << ",dur=" << duration << ",vol=" << volume << ",ts=" << timeStamp << ",mkr=" << frame.GetMarker());
 
-  // decide if this is a new tone, or an old one
-  bool newTone = frame.GetMarker() || (
-                    (tonesReceived > 0) && ((tone != receivedTone) || (timeStamp != previousReceivedTimestamp))
-                 );
+  // the only safe way to detect a new tone is the timestamp
+  // because the packet with the marker bit could go missing and 
+  // because some endpoints (*cough* Kapanga *cough*) send multiple marker bits
+  bool newTone = (tonesReceived == 0) || (timeStamp != previousReceivedTimestamp);
 
   // if new tone, end any current tone and start new one
   if (newTone) {
