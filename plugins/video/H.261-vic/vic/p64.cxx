@@ -237,6 +237,10 @@ void P64Decoder::init()
 	maxy_ = 0;
 
 	allocate();
+
+	// invalidate the just-changed-block table (marks_ buffer)
+	// to avoid buffer overruns
+	marks_ = 0;
 }
 
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -1038,9 +1042,9 @@ void P64Decoder::decode_block(u_int tc, u_int x, u_int y, u_int stride,
 			mvblka(in, out, stride);
 		return;
 	}
-	u_int sx = x + (mvdh_ / sf);
-	u_int sy = y + (mvdv_ / sf);
-	u_char* in = back + sy * stride + sx;
+	int sx = x + (mvdh_ / sf);
+	int sy = y + (mvdv_ / sf);
+	u_char* in = (u_char*)((intptr_t)back + sy * stride + sx);
 	if (mt_ & MT_FILTER) {
 		filter(in, out, stride);
 		if (tc != 0) {
