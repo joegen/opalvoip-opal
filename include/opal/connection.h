@@ -501,25 +501,35 @@ class OpalConnection : public PSafeObject
 
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
+
+       If remoteParty is a valid call token, then the remote party is transferred
+       to that party (consultation transfer) and both calls are cleared.
      */
-    virtual void TransferConnection(
-      const PString & remoteParty,   ///<  Remote party to transfer the existing call to
-      const PString & callIdentity = PString::Empty()
-                                    ///<  Call Identity of secondary call if present
+    virtual bool TransferConnection(
+      const PString & remoteParty   ///<  Remote party to transfer the existing call to
     );
     
     /**Put the current connection on hold, suspending all media streams.
      */
-    virtual void HoldConnection();
+    virtual bool HoldConnection();
 
     /**Retrieve the current connection from hold, activating all media 
      * streams.
      */
-    virtual void RetrieveConnection();
+    virtual bool RetrieveConnection();
 
     /**Return PTrue if the current connection is on hold.
      */
     virtual PBoolean IsConnectionOnHold();
+
+    /**Call back indicating result of last hold/retrieve operation.
+       This also indicates if the local connection has been put on hold by the
+       remote connection.
+     */
+    virtual void OnHold(
+      bool fromRemote,               ///<  Indicates remote has held local connection
+      bool onHold                    ///<  Indicates have just been held/retrieved.
+    );
   //@}
 
   /**@name Call progress functions */
