@@ -126,7 +126,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
 
   // if transmittter is ever in this state, then stop the duration timer
   if (transmitState == TransmitIdle) {
-    asyncDurationTimer.Stop();
+    asyncDurationTimer.Stop(false);
     return;
   }
 
@@ -250,8 +250,8 @@ void OpalRFC2833Proto::OnStartReceive(char)
 
 void OpalRFC2833Proto::OnEndReceive(char tone, unsigned duration, unsigned timestamp)
 {
-  receiveTimer.Stop(false);
   receiveState = ReceiveIdle;
+  receiveTimer.Stop(false);
   OpalRFC2833Info info(tone, duration, timestamp);
   receiveNotifier(info, 1);
 }
@@ -294,11 +294,18 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
   bool newTone = (tonesReceived == 0) || (timeStamp != previousReceivedTimestamp);
 
   // if new tone, end any current tone and start new one
-  if (newTone) {
+  if (!newTone) {
+    if (receiveState == ReceiveActive)
+      receiveTimer = 200;
+    else
+      receiveTimer.Stop();
+  }
+  else {
+    receiveTimer.Stop();
 
     // finish any existing tone
     if (receiveState == ReceiveActive) 
-      OnEndReceive(receivedTone, duration, timeStamp);
+      OnEndReceive(receivedTone, duration, previousReceivedTimestamp);
 
     // do callback for new tone
     OnStartReceive(tone, timeStamp);
@@ -323,10 +330,11 @@ void OpalRFC2833Proto::ReceiveTimeout(PTimer &, INT)
   PWaitAndSignal m(mutex);
 
   if (receiveState != ReceiveIdle) {
-    receiveTimer.Stop();
     receiveState = ReceiveIdle;
     //OnEndReceive(receivedTone, 0, 0);
   }
+
+  receiveTimer.Stop(false);
 }
 
 /////////////////////////////////////////////////////////////////////////////
