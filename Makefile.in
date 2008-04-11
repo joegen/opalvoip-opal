@@ -452,12 +452,12 @@ install ::
 		     $(DESTDIR)$(PREFIX)/include/opal/t120 \
 		     $(DESTDIR)$(PREFIX)/include/opal/t38 \
 		     $(DESTDIR)$(PREFIX)/include/opal/zrtp \
-		     $(DESTDIR)$(PREFIX)/lib/pkgconfig \
+		     $(DESTDIR)@LIBDIR@/pkgconfig \
 		     $(DESTDIR)$(PREFIX)/share/opal ;\
 		do mkdir -p $$dir ; chmod 755 $$dir ; \
 	done)
 	$(INSTALL) -m 755 lib/$(LIBNAME_PAT) $(DESTDIR)@LIBDIR@
-	$(INSTALL) -m 444 opal.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig
+	$(INSTALL) -m 444 opal.pc $(DESTDIR)@LIBDIR@/pkgconfig
 	ln -snf $(LIBNAME_PAT) \
 		$(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION)
 	ln -snf $(LIBNAME_PAT) \
@@ -510,7 +510,7 @@ uninstall:
 	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
 	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION) \
 	      $(DESTDIR)@LIBDIR@/$(LIBNAME_PAT) \
-	      $(DESTDIR)$(PREFIX)/lib/pkgconfig/opal.pc 
+	      $(DESTDIR)@LIBDIR@/pkgconfig/opal.pc 
 	$(MAKE) -C plugins uninstall
  
 docs: FORCE
