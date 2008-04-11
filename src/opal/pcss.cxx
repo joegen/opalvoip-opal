@@ -53,18 +53,6 @@
 #define new PNEW
 
 
-static PString MakeToken(const PString & playDevice, const PString & recordDevice)
-{
-  if (playDevice.IsEmpty() || recordDevice.IsEmpty())
-    return PGloballyUniqueID().AsString();
-
-  if (playDevice == recordDevice) 
-    return recordDevice;
-  else
-    return playDevice + '\\' + recordDevice;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
@@ -74,14 +62,16 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
 {
 #ifdef _WIN32
   // Windows MultMedia stuff seems to need greater depth due to enormous
-  // latencies in its operation, need to use DirectSound maybe?
-  soundChannelBuffers = 3;
+  // latencies in its operation
+  soundChannelBuffers = 6;
 #else
   // Should only need double buffering for Unix platforms
   soundChannelBuffers = 2;
 #endif
 
-  PTRACE(4, "PCSS\tCreated PC sound system endpoint.");
+  PTRACE(3, "PCSS\tCreated PC sound system endpoint.\n" << setfill('\n')
+         << "Players:\n"   << PSoundChannel::GetDeviceNames(PSoundChannel::Player)
+         << "Recorders:\n" << PSoundChannel::GetDeviceNames(PSoundChannel::Recorder));
 }
 
 
@@ -140,12 +130,22 @@ PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
   if (!SetDeviceName(recordDevice, PSoundChannel::Recorder, recordDevice))
     recordDevice = soundChannelRecordDevice;
 
-  PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(MakeToken(playDevice, recordDevice));
-  if (connection != NULL) {
-    PTRACE(2, "PCSS\tConnection already exists for " << *connection);
+  // Make sure sound devices are available.
+  PSoundChannel * soundChannel = PSoundChannel::CreateChannelByName(playDevice, PSoundChannel::Player);
+  if (soundChannel == NULL) {
+    PTRACE(2, "PCSS\tSound player device \"" << playDevice << "\" in use, call " << call << " aborted.");
     call.Clear(OpalConnection::EndedByLocalBusy);
-    return PFalse;
+    return false;
   }
+  delete soundChannel;
+
+  soundChannel = PSoundChannel::CreateChannelByName(recordDevice, PSoundChannel::Recorder);
+  if (soundChannel == NULL) {
+    PTRACE(2, "PCSS\tSound recording device \"" << recordDevice << "\" in use, call " << call << " aborted.");
+    call.Clear(OpalConnection::EndedByLocalBusy);
+    return false;
+  }
+  delete soundChannel;
 
   return AddConnection(CreateConnection(call, playDevice, recordDevice, userData));
 }
@@ -155,8 +155,10 @@ OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
 
-  formats += OpalPCM16;        // Sound card can only do 16 bit PCM
-  formats += OpalPCM16_16KHZ;  // and can do it at 16khz too
+  // Sound cards can only do 16 bit PCM, but at various sample rates
+  // The following will be in order of preference, so lets do wideband first
+  formats += OpalPCM16_16KHZ;
+  formats += OpalPCM16;
 
 #if OPAL_VIDEO
   AddVideoMediaFormats(formats);
@@ -212,23 +214,41 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 }
 
 
-PBoolean OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
+PSafePtr<OpalPCSSConnection> OpalPCSSEndPoint::GetPCSSConnectionWithLock(const PString & token, PSafetyMode mode)
 {
-  PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token, PSafeReadOnly);
+  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnectionWithLock(token, mode));
   if (connection == NULL) {
     PSafePtr<OpalCall> call = manager.FindCallWithLock(token, PSafeReadOnly);
-    if (call == NULL)
-      return false;
-    connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(call->GetConnection(0));
-    if (connection == NULL) {
-      connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(call->GetConnection(1));
+    if (call != NULL) {
+      connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(call->GetConnection(0));
       if (connection == NULL)
-        return false;
+        connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(call->GetConnection(1));
     }
   }
 
+  return connection;
+}
+
+
+PBoolean OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
+{
+  PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token, PSafeReadOnly);
+  if (connection == NULL)
+    return false;
+
   connection->AcceptIncoming();
-  return PTrue;
+  return true;
+}
+
+
+PBoolean OpalPCSSEndPoint::RejectIncomingConnection(const PString & token)
+{
+  PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token, PSafeReadOnly);
+  if (connection == NULL)
+    return false;
+
+  connection->Release(OpalConnection::EndedByAnswerDenied);
+  return true;
 }
 
 
@@ -264,11 +284,13 @@ void OpalPCSSEndPoint::SetSoundChannelBufferDepth(unsigned depth)
 
 /////////////////////////////////////////////////////////////////////////////
 
+static unsigned LastConnectionTokenID;
+
 OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
                                        OpalPCSSEndPoint & ep,
                                        const PString & playDevice,
                                        const PString & recordDevice)
-  : OpalConnection(call, ep, MakeToken(playDevice, recordDevice)),
+  : OpalConnection(call, ep, psprintf("%u", ++LastConnectionTokenID)),
     endpoint(ep),
     soundChannelPlayDevice(playDevice),
     soundChannelRecordDevice(recordDevice),
