@@ -1544,6 +1544,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\opal\mediatype.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\opal\opal_c.cxx"
 					>
 				</File>
@@ -6336,6 +6340,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\mediastrm.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\opal\mediatype.h"
 					>
 				</File>
 				<File
