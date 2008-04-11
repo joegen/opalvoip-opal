@@ -1,0 +1,3 @@
+obj_*_*_d Debug debug
+obj_*_*_r Release release
+*.plg *.opt *.ncb *.Tags.WW *.vcproj.*.user
