@@ -410,7 +410,7 @@ class H4502Handler : public H450xHandler
        using H.450.2.  This sends a Call Transfer Initiate Invoke message from the
        A-Party (transferring endpoint) to the B-Party (transferred endpoint).
      */
-    void TransferCall(
+    bool TransferCall(
       const PString & remoteParty,   ///<  Remote party to transfer the existing call to
       const PString & callIdentity   ///<  Call Identity of secondary call if present  
     );
@@ -561,14 +561,14 @@ class H4504Handler : public H450xHandler
     /**Place the call on hold, suspending all media channels (H.450.4)
     * NOTE: Only Local Hold is implemented so far. 
     */
-    void HoldCall(
+    bool HoldCall(
       PBoolean localHold   ///<  true for Local Hold, false for Remote Hold
     );
 
     /**Retrieve the call from hold, activating all media channels (H.450.4)
     * NOTE: Only Local Hold is implemented so far. 
     */
-    void RetrieveCall();
+    bool RetrieveCall();
 
     /**Sub-state for call hold.
       */
