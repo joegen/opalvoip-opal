@@ -380,6 +380,10 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
       OpalMediaFormatList sinkMediaFormats = conn->GetMediaFormats();
       sinkMediaFormats.Reorder(sinkFormat.GetName()); // Preferential treatment to format already in use
 
+      // Get other media directions format so we give preference to symmetric codecs
+      if ((otherDirection = conn->GetMediaStream(sessionID, true)) != NULL)
+        sinkMediaFormats.Reorder(otherDirection->GetMediaFormat().GetName());
+
       OpalMediaFormatList sourceMediaFormats;
       if (sourceFormat.IsValid())
         sourceMediaFormats = sourceFormat; // Use the source format already established
