@@ -379,9 +379,14 @@ void OpalEndPoint::OnReleased(OpalConnection & connection)
 }
 
 
+void OpalEndPoint::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
+{
+  manager.OnHold(connection, fromRemote, onHold);
+}
+
+
 void OpalEndPoint::OnHold(OpalConnection & connection)
 {
-  PTRACE(4, "OpalEP\tOnHold " << connection);
   manager.OnHold(connection);
 }
 

@@ -2922,23 +2922,35 @@ H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, PBoolean fromRe
   return logicalChannels->FindChannelBySession(rtpSessionId, fromRemote);
 }
 
-#if OPAL_H450
 
-void H323Connection::TransferConnection(const PString & remoteParty,
-                    const PString & callIdentity)
+bool H323Connection::TransferConnection(const PString & remoteParty)
 {
-  TransferCall(remoteParty, callIdentity);
+  PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
+  if (call == NULL)
+    return TransferCall(remoteParty);
+
+  for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
+    PSafePtr<H323Connection> h323 = PSafePtrCast<OpalConnection, H323Connection>(connection);
+    if (h323 != NULL)
+      return TransferCall(h323->GetRemotePartyCallbackURL(), h323->GetToken());
+  }
+
+  PTRACE(2, "H323\tConsultation transfer requires other party to be H.323.");
+  return false;
 }
 
 
-void H323Connection::TransferCall(const PString & remoteParty,
+#if OPAL_H450
+
+bool H323Connection::TransferCall(const PString & remoteParty,
                                   const PString & callIdentity)
 {
   // According to H.450.4, if prior to consultation the primary call has been put on hold, the 
   // transferring endpoint shall first retrieve the call before Call Transfer is invoked.
   if (!callIdentity.IsEmpty() && IsLocalHold())
     RetrieveCall();
-  h4502handler->TransferCall(remoteParty, callIdentity);
+
+  return h4502handler->TransferCall(remoteParty, callIdentity);
 }
 
 
@@ -3006,49 +3018,61 @@ void H323Connection::OnConsultationTransferSuccess(H323Connection& /*secondaryCa
    h4502handler->SetConsultationTransferSuccess();
 }
 
-void H323Connection::HoldConnection()
+bool H323Connection::HoldConnection()
 {
-  HoldCall(PTrue);
+  if (!h4504handler->HoldCall(true))
+    return false;
+
+  holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
   
   // Signal the manager that there is a hold
-  endpoint.OnHold(*this);
+  endpoint.OnHold(*this, false, true);
+  return true;
 }
 
 
-void H323Connection::RetrieveConnection()
+bool H323Connection::RetrieveConnection()
 {
-  RetrieveCall();
+  if (IsRemoteHold()) {
+    PTRACE(4, "H4504\tRemote-end Call Hold not implemented.");
+    return false;
+  }
+
+  // Is the current call on hold?
+  if (!IsLocalHold())
+    return true;
+
+  if (!h4504handler->RetrieveCall())
+    return false;
+
+  holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
   
   // Signal the manager that there is a retrieve 
-  endpoint.OnHold(*this);
+  endpoint.OnHold(*this, false, false);
+  return true;
 }
 
 
 PBoolean H323Connection::IsConnectionOnHold() 
 {
-  return IsCallOnHold ();
+  return IsLocalHold();
 }
+
 
 void H323Connection::HoldCall(PBoolean localHold)
 {
-  h4504handler->HoldCall(localHold);
-  holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
+  if (localHold)
+    HoldConnection();
+  else {
+    h4504handler->HoldCall(localHold);
+    holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
+  }
 }
 
 
 void H323Connection::RetrieveCall()
 {
-  // Is the current call on hold?
-  if (IsLocalHold()) {
-    h4504handler->RetrieveCall();
-    holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
-  }
-  else if (IsRemoteHold()) {
-    PTRACE(4, "H4504\tRemote-end Call Hold not implemented.");
-  }
-  else {
-    PTRACE(4, "H4504\tCall is not on Hold.");
-  }
+  RetrieveConnection();
 }
 
 

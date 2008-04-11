@@ -1293,7 +1293,7 @@ void H4502Handler::OnReceivedIdentifyReturnError(const bool timerExpiry)
   }
 }
 
-void H4502Handler::TransferCall(const PString & remoteParty,
+bool H4502Handler::TransferCall(const PString & remoteParty,
                                 const PString & callIdentity)
 {
   currentInvokeId = dispatcher.GetNextInvokeId();
@@ -1304,16 +1304,19 @@ void H4502Handler::TransferCall(const PString & remoteParty,
 
   PString alias;
   H323TransportAddress address;
-  endpoint.ParsePartyName(remoteParty, alias, address);
+  if (!endpoint.ParsePartyName(remoteParty, alias, address))
+    return false;
 
   serviceAPDU.BuildCallTransferInitiate(currentInvokeId, callIdentity, alias, address);
-  serviceAPDU.WriteFacilityPDU(connection);
+  if (!serviceAPDU.WriteFacilityPDU(connection))
+    return false;
 
   ctState = e_ctAwaitInitiateResponse;
 
   // start timer CT-T3
   PTRACE(4, "H4502\tStarting timer CT-T3");
   StartctTimer(connection.GetEndPoint().GetCallTransferT3());
+  return true;
 }
 
 
@@ -1523,12 +1526,12 @@ void H4504Handler::OnReceivedRemoteCallRetrieve(int /*linkedId*/)
 }
 
 
-void H4504Handler::HoldCall(PBoolean localHold)
+bool H4504Handler::HoldCall(PBoolean localHold)
 {
   // TBD: Implement Remote Hold. This implementation only does 
   // local hold. -- dcassel 4/01. 
   if (!localHold)
-    return;
+    return false;
   
   // Send a FACILITY message with a callNotific Invoke
   // Supplementary Service PDU to the held endpoint.
@@ -1538,14 +1541,16 @@ void H4504Handler::HoldCall(PBoolean localHold)
 
   currentInvokeId = dispatcher.GetNextInvokeId();
   serviceAPDU.BuildInvoke(currentInvokeId, H4504_CallHoldOperation::e_holdNotific);
-  serviceAPDU.WriteFacilityPDU(connection);
+  if (!serviceAPDU.WriteFacilityPDU(connection))
+    return false;
   
   // Update hold state
   holdState = e_ch_NE_Held;
+  return true;
 }
 
 
-void H4504Handler::RetrieveCall()
+bool H4504Handler::RetrieveCall()
 {
   // TBD: Implement Remote Hold. This implementation only does
 
@@ -1557,10 +1562,12 @@ void H4504Handler::RetrieveCall()
 
   currentInvokeId = dispatcher.GetNextInvokeId();
   serviceAPDU.BuildInvoke(currentInvokeId, H4504_CallHoldOperation::e_retrieveNotific);
-  serviceAPDU.WriteFacilityPDU(connection);
+  if (!serviceAPDU.WriteFacilityPDU(connection))
+    return false;
   
   // Update hold state
   holdState = e_ch_Idle;
+  return true;
 }
 
 
