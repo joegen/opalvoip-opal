@@ -174,8 +174,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   : OpalRTPConnection(call, ep, token, options, stringOptions)
   , endpoint(ep)
   , transport(newTransport)
-  , local_hold(false)
-  , remote_hold(false)
+  , m_holdToRemote(eHoldOff)
+  , m_holdFromRemote(false)
   , originalInvite(NULL)
   , needReINVITE(false)
   , m_requestURI(destination)
@@ -313,14 +313,45 @@ void SIPConnection::OnReleased()
 }
 
 
-void SIPConnection::TransferConnection(const PString & remoteParty, const PString & callIdentity)
+static PString ExtractTag(const PString & url)
+{
+  static const char tag[] = ";tag=";
+  PINDEX pos = url.Find(tag);
+  if (pos == P_MAX_INDEX)
+    return PString::Empty();
+
+  pos += sizeof(tag)-1;
+  return url(pos, url.FindOneOf(";?", pos)-1);
+}
+
+
+bool SIPConnection::TransferConnection(const PString & remoteParty)
 {
   // There is still an ongoing REFER transaction 
   if (referTransaction != NULL) 
-    return;
- 
-  referTransaction = new SIPRefer(*this, *transport, remoteParty, callIdentity);
-  referTransaction->Start ();
+    return false;
+
+  PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
+  if (call == NULL) {
+    referTransaction = new SIPRefer(*this, *transport, remoteParty, GetLocalPartyURL());
+    return referTransaction->Start();
+  }
+
+  for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
+    PSafePtr<SIPConnection> sip = PSafePtrCast<OpalConnection, SIPConnection>(connection);
+    if (sip != NULL) {
+      PStringStream referTo;
+      referTo << sip->GetRemotePartyCallbackURL()
+              << "?Replaces=" << sip->GetToken()
+              << "%3Bto-tag%3D" << ExtractTag(sip->GetDialogTo())
+              << "%3Bfrom-tag%3D" << ExtractTag(sip->GetDialogFrom());
+      referTransaction = new SIPRefer(*this, *transport, referTo, GetLocalPartyURL());
+      return referTransaction->Start();
+    }
+  }
+
+  PTRACE(2, "SIP\tConsultation transfer requires other party to be SIP.");
+  return false;
 }
 
 
@@ -623,11 +654,11 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
       localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
-      localMedia->SetDirection(local_hold ? recving ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive : recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
+      localMedia->SetDirection(m_holdToRemote >= eHoldOn ? recving ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive : recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
     }
     else if (recving) {
       localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
-      localMedia->SetDirection(local_hold ? SDPMediaDescription::Inactive : SDPMediaDescription::RecvOnly);
+      localMedia->SetDirection(m_holdToRemote >= eHoldOn ? SDPMediaDescription::Inactive : SDPMediaDescription::RecvOnly);
     }
     else {
       localMedia->AddMediaFormats(formats, rtpSessionId, rtpPayloadMap);
@@ -993,44 +1024,59 @@ PString SIPConnection::GetDestinationAddress()
 }
 
 
-void SIPConnection::HoldConnection()
+bool SIPConnection::HoldConnection()
 {
-  if (local_hold || transport == NULL)
-    return;
+  if (transport == NULL)
+    return false;
+
+  if (m_holdToRemote != eHoldOff)
+    return true;
 
   PTRACE(3, "SIP\tPutting connection on hold");
 
-  local_hold = true;
+  m_holdToRemote = eHoldInProgress;
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start())
-    endpoint.OnHold(*this); // Signal the manager that there is a hold
-  else
-    local_hold = false;
+    return true;
+
+  m_holdToRemote = eHoldOff;
+  return false;
 }
 
 
-void SIPConnection::RetrieveConnection()
+bool SIPConnection::RetrieveConnection()
 {
-  if (!local_hold)
-    return;
-
-  local_hold = false;
-
   if (transport == NULL)
-    return;
+    return false;
+
+  switch (m_holdToRemote) {
+    case eHoldOff :
+      return true;
+
+    case eHoldOn :
+      break;
+
+    default :
+      return false;
+  }
+
+  m_holdToRemote = eRetrieveInProgress;
 
   PTRACE(3, "SIP\tRetrieve connection from hold");
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start())
-    endpoint.OnHold(*this); // Signal the manager that there is a hold
+    return true;
+
+  m_holdToRemote = eHoldOn;
+  return false;
 }
 
 
 PBoolean SIPConnection::IsConnectionOnHold()
 {
-  return (local_hold || remote_hold);
+  return m_holdToRemote != eHoldOff;
 }
 
 
@@ -1257,17 +1303,26 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       return;
   }
 
-  // If we are doing a local hold, and it failed, we do not release the connection
-  if (local_hold) {
-    local_hold = PFalse;      // Did not go into hold
-    endpoint.OnHold(*this);   // Signal the manager that there is no more hold
-    return;
-  }
-
   // We don't always release the connection, eg not till all forked invites have completed
   // This INVITE is from a different "dialog", any errors do not cause a release
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
     return;
+
+  // If we are doing a local hold, and it failed, we do not release the connection
+  switch (m_holdToRemote) {
+    case eHoldInProgress :
+      m_holdToRemote = eHoldOff;  // Did not go into hold
+      OnHold(false, false);   // Signal the manager that there is no more hold
+      return;
+
+    case eRetrieveInProgress :
+      m_holdToRemote = eHoldOn;  // Did not go out of hold
+      OnHold(false, true);   // Signal the manager that hold is still active
+      return;
+
+    default :
+      break;
+  }
 
   if (phase < ConnectedPhase) {
     // Final check to see if we have forked INVITEs still running, don't
@@ -1442,24 +1497,24 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
          (sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID)&SDPMediaDescription::RecvOnly) == 0) ||
           sdpIn.GetBandwidth(SDPSessionDescription::ApplicationSpecificBandwidthType()) == 0) {
       PTRACE(3, "SIP\tRemote hold detected");
-      remote_hold = true;
-      endpoint.OnHold(*this);
+      m_holdFromRemote = true;
+      OnHold(true, true);
     }
     else {
       // If we receive a consecutive reinvite without the SendOnly
       // parameter, then we are not on hold anymore
-      if (remote_hold) {
+      if (m_holdFromRemote) {
         PTRACE(3, "SIP\tRemote retrieve from hold detected");
-        remote_hold = false;
-        endpoint.OnHold(*this);
+        m_holdFromRemote = false;
+        OnHold(true, false);
       }
     }
   }
   else {
-    if (remote_hold) {
+    if (m_holdFromRemote) {
       PTRACE(3, "SIP\tRemote retrieve from hold without SDP detected");
-      remote_hold = false;
-      endpoint.OnHold(*this);
+      m_holdFromRemote = false;
+      OnHold(true, false);
     }
   }
   
@@ -1848,6 +1903,21 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   OnReceivedSDP(response);
 
+  switch (m_holdToRemote) {
+    case eHoldInProgress :
+      m_holdToRemote = eHoldOn;
+      OnHold(false, true);   // Signal the manager that they are on hold
+      break;
+
+    case eRetrieveInProgress :
+      m_holdToRemote = eHoldOff;
+      OnHold(false, false);   // Signal the manager that there is no more hold
+      break;
+
+    default :
+      break;
+  }
+
   // Is an OK to our re-INVITE
   if (phase == EstablishedPhase)
     return;
@@ -2047,7 +2117,6 @@ void SIPConnection::OnAckTimeout(PTimer &, INT)
 
 PBoolean SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 {
-  PWaitAndSignal m(transportMutex); 
   return transport != NULL && pdu.Write(*transport, address);
 }
 
