@@ -245,11 +245,11 @@ class OpalCall : public PSafeObject
 
     /**Put call on hold.
       */
-    bool Hold();
+    void Hold();
 
     /**Retrieve call from hold.
       */
-    bool Retrieve();
+    void Retrieve();
 
     /**Indicate if call is in hold.
       */

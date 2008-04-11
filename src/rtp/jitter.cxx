@@ -564,7 +564,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
 
     if (thisJitter > (int) currentJitterTime * LOWER_JITTER_MAX_PCNT / 100) {
       targetJitterTime = currentJitterTime;
-      PTRACE(5, "RTP\tJitter buffer target realigned to current jitter buffer");
+      PTRACE(3, "RTP\tJitter buffer target realigned to current jitter buffer");
       consecutiveEarlyPacketStartTime = PTimer::Tick();
       jitterCalcPacketCount = 0;
       jitterCalc = 0;

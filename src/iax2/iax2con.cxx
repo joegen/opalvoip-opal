@@ -395,30 +395,28 @@ PBoolean IAX2Connection::IsConnectionOnHold()
   return (local_hold || remote_hold);
 }
 
-bool IAX2Connection::HoldConnection()
+void IAX2Connection::HoldConnection()
 {
   if (local_hold)
-    return true;
+    return;
     
   local_hold = PTrue;
   PauseMediaStreams(PTrue);
   endpoint.OnHold(*this);
   
   iax2Processor.SendHold();
-  return true;
 }
 
-bool IAX2Connection::RetrieveConnection()
+void IAX2Connection::RetrieveConnection()
 {
   if (!local_hold)
-    return true;
+    return;
   
   local_hold = PFalse;
   PauseMediaStreams(PFalse);  
   endpoint.OnHold(*this);
   
   iax2Processor.SendHoldRelease();
-  return true;
 }
 
 void IAX2Connection::RemoteHoldConnection()
@@ -439,7 +437,9 @@ void IAX2Connection::RemoteRetrieveConnection()
   endpoint.OnHold(*this);
 }
 
-bool IAX2Connection::TransferConnection(const PString & remoteParty)
+void IAX2Connection::TransferConnection(
+  const PString & remoteParty, 
+  const PString & /*callIdentity*/)
 {
   //The call identity is not used because we do not handle supervised transfers yet.  
   PTRACE(3, "Transfer call to " + remoteParty);
@@ -453,11 +453,9 @@ bool IAX2Connection::TransferConnection(const PString & remoteParty)
     iax2Processor.SendTransfer(
         rpList[IAX2EndPoint::extensionIndex],
         rpList[IAX2EndPoint::contextIndex]);
-    return true;
+  } else {
+    PTRACE(1, "Cannot transfer call, hosts do not match");
   }
-
-  PTRACE(1, "Cannot transfer call, hosts do not match");
-  return false;
 }
 
 void IAX2Connection::AnsweringCall(AnswerCallResponse response)
