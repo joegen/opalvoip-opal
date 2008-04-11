@@ -275,33 +275,21 @@ PSafePtr<OpalConnection> OpalCall::GetOtherPartyConnection(const OpalConnection 
 }
 
 
-bool OpalCall::Hold()
+void OpalCall::Hold()
 {
   PTRACE(3, "Call\tSetting to On Hold");
 
-  bool ok = false;
-
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn->HoldConnection())
-      ok = true;
-  }
-
-  return ok;
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn)
+    conn->HoldConnection();
 }
 
 
-bool OpalCall::Retrieve()
+void OpalCall::Retrieve()
 {
   PTRACE(3, "Call\tRetrieve from On Hold");
 
-  bool ok = false;
-
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn->RetrieveConnection())
-      ok = true;
-  }
-
-  return ok;
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn)
+    conn->RetrieveConnection();
 }
 
 

@@ -363,12 +363,9 @@ class OpalEndPoint : public PObject
 
        The default behaviour calls the OpalManager function of the same name.
       */
-    virtual void OnHold(
-      OpalConnection & connection,   ///<  Connection that was held/retrieved
-      bool fromRemote,               ///<  Indicates remote has held local connection
-      bool onHold                    ///<  Indicates have just been held/retrieved.
+    void OnHold(
+      OpalConnection & connection   ///<  Connection that was held
     );
-    virtual void OnHold(OpalConnection & connection); // For backward compatibility
 
     /**A call back function whenever a connection is forwarded.
 

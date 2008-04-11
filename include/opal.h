@@ -442,12 +442,7 @@ typedef struct OpalParamSetUpCall {
 
                                    This must be provided in the OpalCmdSetUpCall and
                                    OpalCmdTransferCall commands, and is set by the system
-                                   in the OpalIndAlerting and OpalIndEstablished indications.
-
-                                   If used in the OpalCmdTransferCall command, this may be
-                                   a valid call token for another call on hold. The remote
-                                   is transferred to the call on hold and both calls are
-                                   then cleared. */
+                                   in the OpalIndAlerting and OpalIndEstablished indications. */
   const char * m_callToken;   /**< Value of call token for new call. The user would pass NULL
                                    for this string in OpalCmdSetUpCall, a new value is
                                    returned by the OpalSendMessage() function. The user would

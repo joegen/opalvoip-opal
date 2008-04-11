@@ -255,11 +255,10 @@ class InCallPanel : public wxPanel
     virtual bool Show(bool show = true);
 
     void OnStreamsChanged(OpalLineEndPoint * potsEP);
-    void OnHoldChanged(bool onHold);
 
   private:
     void OnHangUp(wxCommandEvent & event);
-    void OnRequestHold(wxCommandEvent & event);
+    void OnHold(wxCommandEvent & event);
     void OnSpeakerMute(wxCommandEvent & event);
     void OnMicrophoneMute(wxCommandEvent & event);
     void OnUserInput1(wxCommandEvent & event);
@@ -296,7 +295,9 @@ class InCallPanel : public wxPanel
     unsigned    m_updateStatistics;
     bool        m_FirstTime;
 
-    StatisticsPage m_pages[NumPages];
+    PSafePtr<OpalConnection> m_userConnection;
+    PSafePtr<OpalConnection> m_protoConnection;
+    StatisticsPage           m_pages[NumPages];
 
     DECLARE_EVENT_TABLE()
 };
@@ -615,11 +616,6 @@ class MyManager : public wxFrame, public OpalManager
     virtual void OnClearedCall(
       OpalCall & call   /// Connection that was established
     );
-    virtual void OnHold(
-      OpalConnection & connection,   ///<  Connection that was held/retrieved
-      bool fromRemote,               ///<  Indicates remote has held local connection
-      bool onHold                    ///<  Indicates have just been held/retrieved.
-    );
     virtual PBoolean OnOpenMediaStream(
       OpalConnection & connection,  /// Connection that owns the media stream
       OpalMediaStream & stream    /// New media stream being opened
@@ -670,8 +666,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnPasteSpeedDial(wxCommandEvent& event);
     void OnDeleteSpeedDial(wxCommandEvent& event);
     void OnOptions(wxCommandEvent& event);
-    void OnRequestHold(wxCommandEvent& event);
-    void OnRetrieve(wxCommandEvent& event);
+    void OnHold(wxCommandEvent& event);
     void OnTransfer(wxCommandEvent& event);
     void OnStartRecording(wxCommandEvent& event);
     void OnStopRecording(wxCommandEvent& event);
@@ -790,36 +785,11 @@ class MyManager : public wxFrame, public OpalManager
       InCallState
     } m_callState;
     friend ostream & operator<<(ostream & strm, CallState state);
-    void SetState(
-      CallState newState,
-      const char * token = NULL
-    );
+    void SetState(CallState newState);
 
-    void SetActiveCall(
-      const char * token
-    );
-
-    PString                  m_incomingToken;
-    PSafePtr<OpalCall>       m_activeCall;
+    PSafePtr<OpalCall>       m_currentCall;
     PSafePtr<OpalConnection> m_userConnection;
     PSafePtr<OpalConnection> m_protoConnection;
-
-    void AddCallOnHold(
-      OpalCall & call
-    );
-    void RemoveCallOnHold(
-      OpalCall & call
-    );
-
-    struct CallsOnHold {
-      CallsOnHold() { }
-      CallsOnHold(OpalCall & call);
-
-      PSafePtr<OpalCall> m_call;
-      int                m_retrieveMenuId;
-      int                m_transferMenuId;
-    };
-    list<CallsOnHold>    m_callsOnHold;
 
     PFilePath m_lastRecordFile;
 

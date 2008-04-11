@@ -409,10 +409,10 @@ class IAX2Connection : public OpalConnection
   virtual PBoolean IsConnectionOnHold();
   
   /**Take the current connection off hold*/
-  virtual bool RetrieveConnection();
+  virtual void RetrieveConnection();
   
   /**Put the current connection on hold, suspending all media streams.*/
-  virtual bool HoldConnection();
+  virtual void HoldConnection();
   
   /**Signal that the remote side has put the connection on hold*/
   void RemoteHoldConnection();
@@ -442,14 +442,12 @@ class IAX2Connection : public OpalConnection
   /**Get the password*/
   PString GetPassword() const { return password; };
   
-    /**Initiate the transfer of an existing call (connection) to a new remote 
-       party.
-
-       If remoteParty is a valid call token, then the remote party is transferred
-       to that party (consultation transfer) and both calls are cleared.
-     */
-    virtual bool TransferConnection(
-      const PString & remoteParty   ///<  Remote party to transfer the existing call to
+  /**Initiate the transfer of an existing call (connection) to a new remote 
+     party.
+  */
+  virtual void TransferConnection(
+    const PString & remoteParty,   ///<  Remote party to transfer the existing call to
+    const PString & callIdentity = PString::Empty() ///<  Call Identity of secondary call if present
     );
     
     /**Forward incoming call to specified address.
