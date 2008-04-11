@@ -33,6 +33,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
+#include <opal/mediatype.h>
 #include <codec/opalwavfile.h>
 
 #include <codec/opalpluginmgr.h>
@@ -60,6 +61,7 @@ class PluginLoader : public PProcessStartup
     void OnStartup()
     { 
       OpalPluginCodecManager::Bootstrap(); 
+      PWLibStupidLinkerHacks::mediaTypeLoader = 1;
       PWLibStupidLinkerHacks::opalwavfileLoader =1;
 #if HAS_LIBSRTP
       PWLibStupidLinkerHacks::libSRTPLoader = 1;
