@@ -104,21 +104,22 @@ class SIPConnection : public OpalConnection
 
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
+
+       If remoteParty is a valid call token, then the remote party is transferred
+       to that party (consultation transfer) and both calls are cleared.
      */
-    virtual void TransferConnection(
-      const PString & remoteParty,   ///<  Remote party to transfer the existing call to
-      const PString & callIdentity = PString::Empty()
-                                    ///<  Call Identity of secondary call if present
+    virtual bool TransferConnection(
+      const PString & remoteParty   ///<  Remote party to transfer the existing call to
     );
 
     /**Put the current connection on hold, suspending all media streams.
      */
-    virtual void HoldConnection();
+    virtual bool HoldConnection();
 
     /**Retrieve the current connection from hold, activating all media 
      * streams.
      */
-    virtual void RetrieveConnection();
+    virtual bool RetrieveConnection();
 
     /**Return PTrue if the current connection is on hold.
      */
@@ -486,9 +487,16 @@ class SIPConnection : public OpalConnection
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
 
-    PMutex                transportMutex;
-    bool                  local_hold;
-    bool                  remote_hold;
+    enum HoldState {
+      eHoldOff,
+      eRetrieveInProgress,
+
+      // Order is important!
+      eHoldOn,
+      eHoldInProgress
+    };
+    HoldState             m_holdToRemote;
+    bool                  m_holdFromRemote;
     PString               forwardParty;
 
     SIP_PDU             * originalInvite;

@@ -303,19 +303,28 @@ PBoolean OpalConnection::OnSetUpConnection()
 }
 
 
-void OpalConnection::HoldConnection()
+bool OpalConnection::HoldConnection()
 {
+  return false;
 }
 
 
-void OpalConnection::RetrieveConnection()
+bool OpalConnection::RetrieveConnection()
 {
+  return false;
 }
 
 
 PBoolean OpalConnection::IsConnectionOnHold()
 {
   return PFalse;
+}
+
+
+void OpalConnection::OnHold(bool fromRemote, bool onHold)
+{
+  PTRACE(4, "OpalCon\tOnHold " << *this);
+  endpoint.OnHold(*this, fromRemote, onHold);
 }
 
 
@@ -350,10 +359,10 @@ void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, CallEndReason reaso
 }
 
 
-void OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty),
-                                        const PString & /*callIdentity*/)
+bool OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty))
 {
   PTRACE(2, "OpalCon\tCan not transfer connection to " << remoteParty);
+  return false;
 }
 
 
