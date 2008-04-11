@@ -49,8 +49,6 @@
 #include <h224/h224handler.h>
 #include <h224/h281handler.h>
 
-#include <ptclib/random.h>
-
 #include "../../version.h"
 
 
@@ -485,7 +483,7 @@ void OpalManager::DestroyCall(OpalCall * call)
 
 PString OpalManager::GetNextCallToken()
 {
-  return psprintf("%c%08x%u", PRandom::Number('a', 'z'), PRandom::Number(), ++lastCallTokenID);
+  return psprintf("%u", ++lastCallTokenID);
 }
 
 PBoolean OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData, unsigned int options, OpalConnection::StringOptions * stringOptions)
@@ -617,16 +615,9 @@ void OpalManager::OnReleased(OpalConnection & connection)
 }
 
 
-void OpalManager::OnHold(OpalConnection & connection, bool PTRACE_PARAM(fromRemote), bool PTRACE_PARAM(onHold))
+void OpalManager::OnHold(OpalConnection & PTRACE_PARAM(connection))
 {
-  PTRACE(3, "OpalMan\t" << (onHold ? "On" : "Off") << " Hold "
-         << (fromRemote ? "from remote" : "request succeeded") << " on " << connection);
-  connection.GetEndPoint().OnHold(connection);
-}
-
-
-void OpalManager::OnHold(OpalConnection & /*connection*/)
-{
+  PTRACE(3, "OpalMan\tOnHold " << connection);
 }
 
 

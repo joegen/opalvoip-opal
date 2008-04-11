@@ -150,7 +150,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
     PSafePtr<OpalPCSSConnection> GetPCSSConnectionWithLock(
       const PString & token,     ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite
-    );
+    ) { return PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnectionWithLock(token, mode)); }
 
     /**Call back to indicate that remote is ringing.
        If PFalse is returned the call is aborted.
@@ -166,14 +166,6 @@ class OpalPCSSEndPoint : public OpalEndPoint
        connection.
       */
     virtual PBoolean AcceptIncomingConnection(
-      const PString & connectionToken ///<  Token of connection to accept call
-    );
-
-    /**Reject the incoming connection.
-       Returns PFalse if the connection token does not correspond to a valid
-       connection.
-      */
-    virtual PBoolean RejectIncomingConnection(
       const PString & connectionToken ///<  Token of connection to accept call
     );
 
