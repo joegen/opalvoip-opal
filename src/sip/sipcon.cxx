@@ -377,6 +377,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
     SDPSessionDescription sdpOut(GetLocalAddress());
     if (!OnSendSDP(true, rtpSessions, sdpOut)) {
       SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
+      releaseMethod = ReleaseWithNothing;
       Release(EndedByCapabilityExchange);
       return PFalse;
     }
@@ -416,6 +417,7 @@ PBoolean SIPConnection::SetConnected()
   SDPSessionDescription sdpOut(GetLocalAddress());
   if (!OnSendSDP(true, rtpSessions, sdpOut)) {
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
+    releaseMethod = ReleaseWithNothing;
     Release(EndedByCapabilityExchange);
     return PFalse;
   }
