@@ -1,5 +1,5 @@
-/*
- * sipcon.cxx
+
+/* sipcon.cxx
  *
  * Session Initiation Protocol connection.
  *
@@ -637,13 +637,13 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
 
 #if OPAL_T38FAX
     case OpalMediaFormat::DefaultDataSessionID:
-#endif
       if (localAddress.IsEmpty()) {
         PTRACE(2, "SIP\tRefusing to add SDP media description for session id " << rtpSessionId << " with no transport address");
         return false;
       }
       localMedia = new SDPFaxMediaDescription(localAddress);
       break;
+#endif
 
     default:
       return false;
@@ -693,7 +693,9 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
   // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
   if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) {
     SetNXEPayloadCode(localMedia, ntePayloadCode, rfc2833Handler,  OpalRFC2833, OpalDefaultNTEString, "NTE"); // RFC 2833
+#if OPAL_T38FAX
     SetNXEPayloadCode(localMedia, nsePayloadCode, ciscoNSEHandler, OpalCiscoNSE, OpalDefaultNSEString, "NSE"); // Cisco NSE
+#endif
   }
 
   sdp.AddMediaDescription(localMedia);
@@ -892,8 +894,11 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   // Add in the RFC2833 handler, if used
   if (hasTelephoneEvent)
     localMedia->AddSDPMediaFormat(new SDPMediaFormat(OpalRFC2833, rfc2833Handler->GetPayloadType(), OpalDefaultNTEString));
+
+#if OPAL_T38FAX
   if (hasNSE)
     localMedia->AddSDPMediaFormat(new SDPMediaFormat(OpalCiscoNSE, ciscoNSEHandler->GetPayloadType(), OpalDefaultNSEString));
+#endif
 
   sdpOut.AddMediaDescription(localMedia);
 

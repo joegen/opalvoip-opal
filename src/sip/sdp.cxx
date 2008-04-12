@@ -1000,6 +1000,7 @@ PString SDPVideoMediaDescription::GetSDPMediaType() const
 
 //////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_T38FAX
 SDPFaxMediaDescription::SDPFaxMediaDescription(const OpalTransportAddress & address)
   : SDPMediaDescription(address)
 {
@@ -1066,7 +1067,7 @@ void SDPFaxMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/,
     }
   }
 }
-
+#endif // OPAL_T38FAX
 //////////////////////////////////////////////////////////////////////////////
 
 SDPApplicationMediaDescription::SDPApplicationMediaDescription(const OpalTransportAddress & address)
