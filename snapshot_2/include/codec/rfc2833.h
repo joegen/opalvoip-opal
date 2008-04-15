@@ -156,6 +156,7 @@ class OpalRFC2833Proto : public PObject {
     unsigned      transmitDuration;
     unsigned      tonesReceived;
     DWORD         previousReceivedTimestamp;
+    WORD          previousSequenceNumber;
 };
 
 

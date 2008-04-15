@@ -187,7 +187,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
     } 
   }
 
-  PTRACE(4, "RFC2833\tSending " << ((payload[1] & 0x80) ? "end" : "tone") << ":tone=" << (unsigned)transmitCode << ",dur=" << transmitDuration << ",ts=" << frame.GetTimestamp() << ",mkr=" << frame.GetMarker());
+  PTRACE(4, "RFC2833\tSending " << ((payload[1] & 0x80) ? "end" : "tone") << ":tone=" << (unsigned)transmitCode << ",dur=" << (transmitDuration / 8) << ",ts=" << frame.GetTimestamp() << ",mkr=" << frame.GetMarker());
 }
 
 PINDEX OpalRFC2833Proto::ASCIIToRFC2833(char tone)
@@ -264,62 +264,75 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
 
   PWaitAndSignal m(mutex);
 
+  int seqDiff = frame.GetSequenceNumber() - previousSequenceNumber;
+
   if (frame.GetPayloadSize() < 4) {
     PTRACE(2, "RFC2833\tIgnoring packet size " << frame.GetPayloadSize() << " - too small.");
-    return;
   }
-
-  const BYTE * payload = frame.GetPayloadPtr();
-
-  BYTE tone = RFC2833ToASCII(payload[0]);
-  if (tone == '\0') {
-    PTRACE(2, "RFC2833\tIgnoring packet " << payload[0] << " - unsupported event.");
-    return;
-  }
-  unsigned duration  = ((payload[2] <<8) + payload[3]) / 8;
-  unsigned timeStamp = frame.GetTimestamp();
-  unsigned volume    = (payload[1] & 0x3f);
-
-  // RFC 2833 says to ignore below -55db
-  if (volume > 55) {
-    PTRACE(2, "RFC2833\tIgnoring packet " << payload[0] << " with volume -" << volume << "db");
-    return;
-  }
-
-  PTRACE(4, "RFC2833\tReceived " << ((payload[1] & 0x80) ? "end" : "tone") << ":tone=" << (unsigned)tone << ",dur=" << duration << ",vol=" << volume << ",ts=" << timeStamp << ",mkr=" << frame.GetMarker());
-
-  // the only safe way to detect a new tone is the timestamp
-  // because the packet with the marker bit could go missing and 
-  // because some endpoints (*cough* Kapanga *cough*) send multiple marker bits
-  bool newTone = (tonesReceived == 0) || (timeStamp != previousReceivedTimestamp);
-
-  // if new tone, end any current tone and start new one
-  if (!newTone) {
-    if (receiveState == ReceiveActive)
-      receiveTimer = 200;
-    else
-      receiveTimer.Stop();
+  else if ((tonesReceived > 1) && (seqDiff <= 0) && (seqDiff > -1000)) {
+    PTRACE(2, "RFC2833\tIgnoring packet with backwards sequence number");
   }
   else {
-    receiveTimer.Stop();
+    previousSequenceNumber = frame.GetSequenceNumber();
+    const BYTE * payload = frame.GetPayloadPtr();
 
-    // finish any existing tone
-    if (receiveState == ReceiveActive) 
-      OnEndReceive(receivedTone, duration, previousReceivedTimestamp);
+    BYTE tone = RFC2833ToASCII(payload[0]);
+    if (tone == '\0') {
+      PTRACE(2, "RFC2833\tIgnoring packet " << payload[0] << " - unsupported event.");
+    }
+    else {
+      unsigned duration  = ((payload[2] <<8) + payload[3]) / 8;
+      unsigned timeStamp = frame.GetTimestamp();
+      unsigned volume    = (payload[1] & 0x3f);
 
-    // do callback for new tone
-    OnStartReceive(tone, timeStamp);
+      // RFC 2833 says to ignore below -55db
+      if (volume > 55) {
+        PTRACE(2, "RFC2833\tIgnoring packet " << payload[0] << " with volume -" << volume << "db");
+      }
+      else {
 
-    // setup for new tone
-    receivedTone = tone;
-    receiveTimer = 200;
-    receiveState = ReceiveActive;
+        PTRACE(4, "RFC2833\tReceived " << ((payload[1] & 0x80) ? "end" : "tone") << ":tone=" << (unsigned)payload[0] << ",dur=" << duration << ",vol=" << volume << ",ts=" << timeStamp << ",mkr=" << frame.GetMarker());
+
+        // the only safe way to detect a new tone is the timestamp
+        // because the packet with the marker bit could go missing and 
+        // because some endpoints (*cough* Kapanga *cough*) send multiple marker bits
+        bool newTone = (tonesReceived == 1) || (timeStamp != previousReceivedTimestamp);
+
+        // if new tone, end any current tone and start new one
+        if (!newTone) {
+          if (receiveState == ReceiveActive)
+            receiveTimer = 200;
+          else
+            receiveTimer.Stop();
+        }
+        else {
+          receiveTimer.Stop();
+
+          // finish any existing tone
+          if (receiveState == ReceiveActive) 
+            OnEndReceive(receivedTone, duration, previousReceivedTimestamp);
+
+          if (duration > 0) {
+            PTRACE(4, "RFC2833\tPossible spurious tone!");
+          }
+
+          // do callback for new tone
+          OnStartReceive(tone, timeStamp);
+
+          // setup for new tone
+          receivedTone = tone;
+          receiveTimer = 200;
+          receiveState = ReceiveActive;
+        }
+
+        // if end of active tone, do callback and change to idle 
+        // no else, so this works for single packet tones too
+        if ((receiveState == ReceiveActive) && ((payload[1]&0x80) != 0)) 
+          OnEndReceive(receivedTone, duration, timeStamp);
+      }
+    }
   }
-
-  // if end of active tone, do callback and change to idle 
-  // no else, so this works for single packet tones too
-  if ((receiveState == ReceiveActive) && ((payload[1]&0x80) != 0)) 
-    OnEndReceive(receivedTone, duration, timeStamp);
+  frame.SetPayloadSize(0);
 }
 
 

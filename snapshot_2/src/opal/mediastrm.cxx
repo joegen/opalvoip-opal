@@ -266,7 +266,7 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
 
   // If the ReadData() function did not change the timestamp then use the default
   // method or fixed frame times and sizes.
-  if (oldTimestamp == timestamp)
+  if (oldTimestamp == timestamp) 
     timestamp += CalculateTimestamp(lastReadCount, mediaFormat);
 
   packet.SetPayloadType(mediaFormat.GetPayloadType());
@@ -388,6 +388,8 @@ PBoolean OpalMediaStream::SetDataSize(PINDEX dataSize)
 {
   if (dataSize <= 0)
     return false;
+
+  PTRACE(3, "Opal\tMedia stream data size set to " << dataSize);
 
   defaultDataSize = dataSize;
   return true;
