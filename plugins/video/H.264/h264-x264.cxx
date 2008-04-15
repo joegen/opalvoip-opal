@@ -80,6 +80,8 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
     }
     sprintf(buffer, "H264\tFFMPEG\t");
     vsprintf(buffer + strlen(buffer), fmt, arg);
+    if (strlen(buffer) > 0)
+      buffer[strlen(buffer)-1] = 0;
     TRACE (severity, buffer);
   }
 }
@@ -170,9 +172,6 @@ H264DecoderContext::H264DecoderContext()
   _frameCounter=0; 
   _skippedFrameCounter=0;
   _rxH264Frame = new H264Frame();
-
-  FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
-  FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
 
   if ((_codec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_H264)) == NULL) {
     TRACE(1, "H264\tDecoder\tCodec not found for decoder");
@@ -706,8 +705,9 @@ static int merge_profile_level_h264(char ** result, const char * dest, const cha
 
   if (dstProfile > srcProfile) {
     dstProfile = srcProfile;
-    dstConstraints = srcConstraints;
   }
+
+  dstConstraints |= srcConstraints;
 
   if (dstLevel > srcLevel)
     dstLevel = srcLevel;
@@ -765,9 +765,12 @@ PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(u
     }
   }
 
+  FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
+  FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
+
   if (version < PLUGIN_CODEC_VERSION_OPTIONS) {
     *count = 0;
-    TRACE(1, "H264\tCodec\tDisabled");
+    TRACE(1, "H264\tCodec\tDisabled - plugin version mismatch");
     return NULL;
   }
   else {
