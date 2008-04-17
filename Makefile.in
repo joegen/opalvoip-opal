@@ -78,12 +78,6 @@ TARGET	=	$(OPAL_LIBDIR)/$(OPAL_FILE)
 
 STDCCFLAGS += @STDCCFLAGS@
 
-ifdef NOTRACE
-STDCCFLAGS += -DPASN_NOPRINTON
-else
-STDCCFLAGS += -DPTRACING
-endif
-
 VPATH_CXX := $(OPAL_SRCDIR)/opal \
 	     $(OPAL_SRCDIR)/rtp \
 	     $(OPAL_SRCDIR)/lids \
@@ -396,9 +390,6 @@ include @PTLIBDIR@/make/lib.mak
 
 
 ####################################################
-
-notrace::
-	$(MAKE) NOTRACE=1 opt
 
 ifeq ($(OPAL_AEC), 1)
 
