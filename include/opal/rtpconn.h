@@ -370,3 +370,4 @@ class OpalSecurityMode : public PObject
 };
 
 #endif 
+
