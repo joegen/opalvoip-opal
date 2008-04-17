@@ -43,6 +43,10 @@
 #include <opal/mediastrm.h>
 #include <opal/endpoint.h>
 
+#if OPAL_SIP
+#include <sip/sdp.h>
+#endif
+
 class OpalTransport;
 class T38_IFPPacket;
 class PASN_OctetString;
@@ -52,6 +56,30 @@ namespace PWLibStupidLinkerHacks {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+//
+//  declare a media type for T.38
+//
+
+class OpalFaxMediaType : public OpalMediaTypeDefinition 
+{
+  public:
+    OpalFaxMediaType();
+
+    PString GetRTPEncoding(void) const;
+    RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
+#if OPAL_RTP_AGGREGATE
+                               PHandleAggregator * agg,
+#endif
+                               unsigned sessionID, bool remoteIsNAT);
+
+#if OPAL_SIP
+    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
+#endif
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if 0 // disabled
 
 /**This class handles the processing of the T.38 protocol.
   */
@@ -194,6 +222,7 @@ class OpalT38Protocol : public PObject
     PList<PBYTEArray> redundantIFPs;
 };
 
+#endif  // disabled
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -224,58 +253,6 @@ class OpalFaxAudioFormat : public OpalMediaFormat
 };
 
 #endif
-
-///////////////////////////////////////////////////////////////////////////////
-
-/**
-  *  This defines a pseudo RTP session used for T.38 channels
-  */
-/**This class is for the IETF Real Time Protocol interface on UDP/IP.
- */
-class T38PseudoRTP : public RTP_UDP
-{
-  PCLASSINFO(T38PseudoRTP, RTP_UDP);
-
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new RTP channel.
-     */
-    T38PseudoRTP(
-#if OPAL_RTP_AGGREGATE
-      PHandleAggregator * aggregator, ///< RTP aggregator
-#endif
-      unsigned id,                    ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
-    );
-
-    /// Destroy the RTP
-    ~T38PseudoRTP();
-
-    PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
-    PBoolean WriteData(RTP_DataFrame & frame);
-    RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
-    RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/);
-
-    RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
-    RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
-
-    PBoolean SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBoolean isDataPort);
-
-  protected:
-    int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout);
-    PBoolean OnTimeout(RTP_DataFrame & frame);
-    PBoolean corrigendumASN;
-    int consecutiveBadPackets;
-
-    PBYTEArray lastIFP;
-
-#if 0
-    PList<PBYTEArray> redundantIFPs;
-#endif
-
-  //@}
-};
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -609,7 +586,31 @@ class OpalT38Connection : public OpalFaxConnection
     OpalMediaFormatList GetMediaFormats() const;
 };
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+//
+//  SDP media description for fax media
+//
+
+#if OPAL_SIP
+
+class SDPFaxMediaDescription : public SDPMediaDescription
+{
+  PCLASSINFO(SDPFaxMediaDescription, SDPMediaDescription);
+  public:
+    SDPFaxMediaDescription(const OpalTransportAddress & address);
+    virtual PCaselessString GetSDPTransportType() const;
+    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
+    virtual PString GetSDPMediaType() const;
+    virtual PString GetSDPPortList() const;
+    virtual bool PrintOn(ostream & str, const PString & connectString) const;
+    virtual void SetAttribute(const PString & attr, const PString & value);
+    virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
+
+  protected:
+    PStringToString t38Attributes;
+};
+
+#endif // OPAL_SIP
 
 #define OPAL_T38            "T.38"
 #define OPAL_PCM16_FAX      "PCM-16-Fax"

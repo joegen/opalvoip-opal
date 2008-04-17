@@ -553,6 +553,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
 
   defaultDataSize = conn.GetMaxRtpPayloadSize();
   conn.UseSession(rtpSession.GetSessionID());
+  rtp.SetFormat(mediaFormat.GetMediaType().GetDefinition()->GetRTPEncoding());
 }
 
 
@@ -681,6 +682,7 @@ OpalRawMediaStream::OpalRawMediaStream(OpalConnection & conn,
   autoDelete = autoDel;
   averageSignalSum = 0;
   averageSignalSamples = 0;
+  isAudio = mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID;
 }
 
 
@@ -1169,6 +1171,60 @@ PBoolean OpalUDPMediaStream::Close()
   udpTransport.Close();
   return OpalMediaStream::Close();
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+OpalSinkMediaStream::OpalSinkMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
+  : OpalRawMediaStream(conn, mediaFormat, sessionID, isSource, NULL, false)
+{
+}
+
+PBoolean OpalSinkMediaStream::ReadData(
+      BYTE * buffer,      ///<  Data buffer to read to
+      PINDEX size,        ///<  Size of buffer
+      PINDEX & length     ///<  Length of data actually read
+)
+{
+  memset(buffer, 0, size);
+  length = size;
+
+  if (isAudio) {
+    CollectAverage(buffer, length);
+    delay.Delay(size/16);
+  }
+
+  return true;
+}
+
+PBoolean OpalSinkMediaStream::WriteData(
+      const BYTE * buffer,   ///<  Data to write
+      PINDEX length,         ///<  Length of data to read.
+      PINDEX & written       ///<  Length of data actually written
+)
+{
+  if (isAudio) {
+    if (buffer != NULL && length != 0) {
+      written = length;
+      CollectAverage(buffer, written);
+    }
+    else {
+      PBYTEArray silence(defaultDataSize);
+      memset(silence.GetPointer(), 0, defaultDataSize);
+      CollectAverage(silence, written);
+      written = defaultDataSize;
+      delay.Delay(written / 16);
+    }
+  }
+
+  return true;
+}
+
+PBoolean OpalSinkMediaStream::RequiresPatch() const
+{
+  return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 
 // End of file ////////////////////////////////////////////////////////////////

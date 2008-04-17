@@ -48,16 +48,6 @@
 
 namespace PWLibStupidLinkerHacks {
 extern int opalLoader;
-
-static class InstantiateMe
-{
-  public:
-    InstantiateMe()
-    { 
-      opalLoader = 1; 
-    }
-} instance;
-
 }; // namespace PWLibStupidLinkerHacks
 
 /////////////////////////////////////////////////////////////////////////////
@@ -85,7 +75,7 @@ const OpalMediaFormat & GetOpalRFC2833()
 {
   static const OpalMediaFormat RFC2833(
     OPAL_RFC2833,
-    0,
+    "userinput",
     (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
     "telephone-event",
     true,   // Needs jitter
@@ -101,7 +91,7 @@ const OpalMediaFormat & GetOpalCiscoNSE()
 {
   static const OpalMediaFormat CiscoNSE(
     OPAL_CISCONSE,
-    0,
+    "userinput",
     (RTP_DataFrame::PayloadTypes)100,  // Set to this for Cisco compatibility
     "NSE",
     true,   // Needs jitter
@@ -602,7 +592,7 @@ OpalMediaFormat::OpalMediaFormat(const PString & wildcard)
 
 
 OpalMediaFormat::OpalMediaFormat(const char * fullName,
-                                 unsigned dsid,
+                                 const OpalMediaType & mediaType,
                                  RTP_DataFrame::PayloadTypes pt,
                                  const char * en,
                                  PBoolean     nj,
@@ -612,7 +602,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
                                  unsigned cr,
                                  time_t ts)
 {
-  Construct(new OpalMediaFormatInternal(fullName, dsid, pt, en, nj, bw, fs, ft,cr, ts));
+  Construct(new OpalMediaFormatInternal(fullName, mediaType, pt, en, nj, bw, fs, ft,cr, ts));
 }
 
 
@@ -801,7 +791,7 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
-                                                 unsigned dsid,
+                                                 const OpalMediaType & _mediaType,
                                                  RTP_DataFrame::PayloadTypes pt,
                                                  const char * en,
                                                  PBoolean     nj,
@@ -810,12 +800,13 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
                                                  unsigned ft,
                                                  unsigned cr,
                                                  time_t ts)
-  : formatName(fullName)
+  : formatName(fullName), mediaType(_mediaType)
 {
   codecVersionTime = ts;
   rtpPayloadType = pt;
   rtpEncodingName = en;
-  defaultSessionID = dsid;
+
+  defaultSessionID = OpalMediaTypeDefinition::GetDefaultSessionId(mediaType);
 
   if (nj)
     AddOption(new OpalMediaOptionBoolean(OpalMediaFormat::NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));
@@ -1246,7 +1237,7 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
                                                  unsigned clockRate,
                                                  time_t timeStamp)
   : OpalMediaFormatInternal(fullName,
-                            OpalMediaFormat::DefaultAudioSessionID,
+                            "audio",
                             rtpPayloadType,
                             encodingName,
                             true,
@@ -1327,7 +1318,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
                                                  unsigned maxBitRate,
                                                  time_t timeStamp)
   : OpalMediaFormatInternal(fullName,
-                            OpalMediaFormat::DefaultVideoSessionID,
+                            "video",
                             rtpPayloadType,
                             encodingName,
                             PFalse,

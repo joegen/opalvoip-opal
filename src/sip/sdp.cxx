@@ -45,7 +45,6 @@
 
 #define SIP_DEFAULT_SESSION_NAME    "Opal SIP Session"
 #define SDP_MEDIA_TRANSPORT_RTPAVP  "RTP/AVP"
-#define SDP_MEDIA_TRANSPORT_UDPTL   "udptl"
 
 #define new PNEW
 
@@ -1000,76 +999,6 @@ PString SDPVideoMediaDescription::GetSDPMediaType() const
 
 //////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_T38FAX
-SDPFaxMediaDescription::SDPFaxMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address)
-{
-}
-
-PCaselessString SDPFaxMediaDescription::GetSDPTransportType() const
-{ 
-  return SDP_MEDIA_TRANSPORT_UDPTL; 
-}
-
-PString SDPFaxMediaDescription::GetSDPMediaType() const 
-{ 
-  return "image"; 
-}
-
-SDPMediaFormat * SDPFaxMediaDescription::CreateSDPMediaFormat(const PString & portString)
-{
-  return new SDPMediaFormat(RTP_DataFrame::DynamicBase, portString);
-}
-
-
-PString SDPFaxMediaDescription::GetSDPPortList() const
-{
-  PStringStream str;
-
-  // output encoding names for non RTP
-  SDPMediaFormatList::const_iterator format;
-  for (format = formats.begin(); format != formats.end(); ++format)
-    str << ' ' << format->GetEncodingName();
-
-  return str;
-}
-
-bool SDPFaxMediaDescription::PrintOn(ostream & str, const PString & connectString) const
-{
-  // call ancestor
-  if (!SDPMediaDescription::PrintOn(str, connectString))
-    return false;
-
-  // output options
-  for (PINDEX i = 0; i < t38Attributes.GetSize(); i++) 
-    str << "a=" << t38Attributes.GetKeyAt(i) << ":" << t38Attributes.GetDataAt(i) << "\r\n";
-
-  return true;
-}
-
-void SDPFaxMediaDescription::SetAttribute(const PString & attr, const PString & value)
-{
-  if (attr.Left(3) *= "t38") {
-    t38Attributes.SetAt(attr, value);
-    return;
-  }
-
-  return SDPMediaDescription::SetAttribute(attr, value);
-}
-
-void SDPFaxMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & mediaFormat)
-{
-  if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID) {
-    for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
-      const OpalMediaOption & option = mediaFormat.GetOption(i);
-      if (option.GetName().Left(3) *= "t38") 
-        t38Attributes.SetAt(option.GetName(), option.AsString());
-    }
-  }
-}
-#endif // OPAL_T38FAX
-//////////////////////////////////////////////////////////////////////////////
-
 SDPApplicationMediaDescription::SDPApplicationMediaDescription(const OpalTransportAddress & address)
   : SDPMediaDescription(address)
 {
@@ -1077,7 +1006,7 @@ SDPApplicationMediaDescription::SDPApplicationMediaDescription(const OpalTranspo
 
 PCaselessString SDPApplicationMediaDescription::GetSDPTransportType() const
 { 
-  return SDP_MEDIA_TRANSPORT_UDPTL; 
+  return "rtp/avp"; 
 }
 
 

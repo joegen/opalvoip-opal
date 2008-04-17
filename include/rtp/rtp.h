@@ -372,6 +372,8 @@ class RTP_UserData : public PObject
 #endif
 };
 
+class RTP_FormatHandler;
+
 
 /**This class is for encpsulating the IETF Real Time Protocol interface.
  */
@@ -385,11 +387,12 @@ class RTP_Session : public PObject
     /**Create a new RTP session.
      */
     RTP_Session(
+      const PString & _rtpFormat,          ///<  identifies initial RTP format (RTP/AVP, UDPTL etc)
 #if OPAL_RTP_AGGREGATE
-      PHandleAggregator * aggregator, ///<  RTP aggregator
+      PHandleAggregator * aggregator,      ///<  RTP aggregator
 #endif
-      unsigned id,                    ///<  Session ID for RTP channel
-      RTP_UserData * userData = NULL, ///<  Optional data for session.
+      unsigned id,                         ///<  Session ID for RTP channel
+      RTP_UserData * userData = NULL,      ///<  Optional data for session.
       PBoolean autoDeleteUserData = PTrue  ///<  Delete optional data with session.
     );
 
@@ -504,8 +507,14 @@ class RTP_Session : public PObject
       e_AbortTransport
     };
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus Internal_OnSendData(RTP_DataFrame & frame);
+
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
+    virtual SendReceiveStatus Internal_OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
+
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus Internal_OnReceiveData(RTP_DataFrame & frame);
+
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
     class ReceiverReport : public PObject  {
@@ -774,20 +783,41 @@ class RTP_Session : public PObject
     { return -1; }
   //@}
 
-    virtual void SendBYE();
     virtual void SetCloseOnBYE(PBoolean v)  { closeOnBye = v; }
 
-#if OPAL_VIDEO
     /** Tell the rtp session to send out an intra frame request control packet.
         This is called when the media stream receives an OpalVideoUpdatePicture
         media command.
       */
     virtual void SendIntraFrameRequest();
-#endif
+
+    virtual PString GetFormat() const                 { return rtpFormat; }
+    virtual void SetFormat(const PString & newFormat);
+
+    DWORD GetSyncSourceIn() const { return syncSourceIn; }
+
+    class HandlerLock
+    {
+      public:
+        HandlerLock(RTP_Session & _session);
+        ~HandlerLock();
+        RTP_FormatHandler * operator->();
+
+      protected:
+        RTP_Session & session;
+        RTP_FormatHandler * myHandler;
+    };
+
+    friend class HandlerLock; 
 
   protected:
+    virtual void SendBYE();
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     PBoolean InsertReportPacket(RTP_ControlFrame & report);
+
+    PString             rtpFormat;
+    PMutex              handlerMutex;
+    RTP_FormatHandler * rtpHandler;
 
     unsigned           sessionID;
     bool               isAudio;
@@ -868,113 +898,6 @@ class RTP_Session : public PObject
     PBoolean byeSent;
 };
 
-
-/**This class is for encpsulating the IETF Real Time Protocol interface.
- */
-class RTP_SessionManager : public PObject
-{
-  PCLASSINFO(RTP_SessionManager, PObject);
-
-  public:
-  /**@name Construction */
-  //@{
-    /**Construct new session manager database.
-      */
-    RTP_SessionManager();
-    RTP_SessionManager(const RTP_SessionManager & sm);
-    RTP_SessionManager & operator=(const RTP_SessionManager & sm);
-  //@}
-
-
-  /**@name Operations */
-  //@{
-    /**Use an RTP session for the specified ID.
-
-       If this function returns a non-null value, then the ReleaseSession()
-       function MUST be called or the session is never deleted for the
-       lifetime of the session manager.
-
-       If there is no session of the specified ID, then you MUST call the
-       AddSession() function with a new RTP_Session. The mutex flag is left
-       locked in this case. The AddSession() expects the mutex to be locked
-       and unlocks it automatically.
-      */
-    RTP_Session * UseSession(
-      unsigned sessionID    ///<  Session ID to use.
-    );
-
-    /**Add an RTP session for the specified ID.
-
-       This function MUST be called only after the UseSession() function has
-       returned NULL. The mutex flag is left locked in that case. This
-       function expects the mutex to be locked and unlocks it automatically.
-      */
-    void AddSession(
-      RTP_Session * session    ///<  Session to add.
-    );
-
-    /**Release the session. If the session ID is not being used any more any
-       clients via the UseSession() function, then the session is deleted.
-     */
-    void ReleaseSession(
-      unsigned sessionID,    ///<  Session ID to release.
-      PBoolean clearAll = PFalse  ///<  Clear all sessions with that ID
-    );
-
-    /**Get a session for the specified ID.
-       Unlike UseSession, this does not increment the usage count on the
-       session so may be used to just gain a pointer to an RTP session.
-     */
-    RTP_Session * GetSession(
-      unsigned sessionID    ///<  Session ID to get.
-    ) const;
-
-    /**Begin an enumeration of the RTP sessions.
-       This function acquires the mutex for the sessions database and returns
-       the first element in it.
-
-         eg:
-         RTP_Session * session;
-         for (session = rtpSessions.First(); session != NULL; session = rtpSessions.Next()) {
-           if (session->Something()) {
-             rtpSessions.Exit();
-             break;
-           }
-         }
-
-       Note that the Exit() function must be called if the enumeration is
-       stopped prior to Next() returning NULL.
-      */
-    RTP_Session * First();
-
-    /**Get the next session in the enumeration.
-       The session database remains locked until this function returns NULL.
-
-       Note that the Exit() function must be called if the enumeration is
-       stopped prior to Next() returning NULL.
-      */
-    RTP_Session * Next();
-
-    /**Exit the enumeration of RTP sessions.
-       If the enumeration is desired to be exited before Next() returns NULL
-       this this must be called to unlock the session database.
-
-       Note that you should NOT call Exit() if Next() HAS returned NULL, or
-       race conditions can result.
-      */
-    void Exit();
-  //@}
-
-
-  protected:
-    PDICTIONARY(SessionDict, POrdinalKey, RTP_Session);
-    SessionDict sessions;
-    PMutex      mutex;
-    PINDEX      enumerationIndex;
-};
-
-
-
 /**This class is for the IETF Real Time Protocol interface on UDP/IP.
  */
 class RTP_UDP : public RTP_Session
@@ -987,6 +910,7 @@ class RTP_UDP : public RTP_Session
     /**Create a new RTP channel.
      */
     RTP_UDP(
+      const PString & _format,
 #if OPAL_RTP_AGGREGATE
       PHandleAggregator * aggregator, ///< RTP aggregator
 #endif
@@ -1006,10 +930,12 @@ class RTP_UDP : public RTP_Session
        available or an error occurs.
       */
     virtual PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
+    virtual PBoolean Internal_ReadData(RTP_DataFrame & frame, PBoolean loop);
 
     /** Write a data frame to the RTP channel.
       */
     virtual PBoolean WriteData(RTP_DataFrame & frame);
+    virtual PBoolean Internal_WriteData(RTP_DataFrame & frame);
 
     /** Write data frame to the RTP channel outside the normal stream of media
       * Used for RFC2833 packets
@@ -1115,9 +1041,14 @@ class RTP_UDP : public RTP_Session
     virtual int GetControlSocketHandle() const
     { return controlSocket != NULL ? controlSocket->GetHandle() : -1; }
 
-  protected:
+    friend class RTP_FormatHandler;
+
     virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
+    virtual int Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
+
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
+    virtual SendReceiveStatus Internal_ReadDataPDU(RTP_DataFrame & frame);
+
     virtual SendReceiveStatus ReadControlPDU();
     virtual SendReceiveStatus ReadDataOrControlPDU(
       PUDPSocket & socket,
@@ -1125,6 +1056,11 @@ class RTP_UDP : public RTP_Session
       PBoolean fromDataChannel
     );
 
+    // following must be public to allow T38PseudoRTP_Handler to shutdown correctly
+    PBoolean shutdownRead;
+    PBoolean shutdownWrite;
+
+  protected:
     PIPSocket::Address localAddress;
     WORD               localDataPort;
     WORD               localControlPort;
@@ -1135,15 +1071,38 @@ class RTP_UDP : public RTP_Session
 
     PIPSocket::Address remoteTransmitAddress;
 
-    PBoolean shutdownRead;
-    PBoolean shutdownWrite;
-
     PUDPSocket * dataSocket;
     PUDPSocket * controlSocket;
 
     PBoolean appliedQOS;
     PBoolean remoteIsNAT;
     PBoolean first;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+class RTP_UDP;
+
+class RTP_FormatHandler 
+{
+  public:
+    RTP_FormatHandler();
+    virtual ~RTP_FormatHandler();
+    virtual void OnStart(RTP_Session & _rtpSession);
+    virtual void OnFinish();
+    virtual RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
+    virtual PBoolean WriteData(RTP_DataFrame & frame);
+    virtual RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
+    virtual RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
+    virtual RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
+    virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &);
+
+    PMutex      mutex;
+    unsigned    refCount;
+
+  protected:
+    RTP_UDP     * rtpUDP;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1157,7 +1116,7 @@ class SecureRTP_UDP : public RTP_UDP
   //@{
     /**Create a new RTP channel.
      */
-    SecureRTP_UDP(
+    SecureRTP_UDP(const PString & format,
 #if OPAL_RTP_AGGREGATE
       PHandleAggregator * aggregator, ///< RTP aggregator
 #endif
