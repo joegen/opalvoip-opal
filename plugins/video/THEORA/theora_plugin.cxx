@@ -215,7 +215,7 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
   switch (ret) {
     case  0: TRACE(1, "THEORA\tEncoder\tEncoding failed (packet): No internal storage exists OR no packet is ready"); return 0; break;
     case -1: TRACE(1, "THEORA\tEncoder\tEncoding failed (packet): The encoding process has completed but something is not ready yet"); return 0; break;
-    case  1: TRACE(4, "THEORA\tEncoder\tSuccessfully encoded OGG packet of " << framePacket.bytes << " bytes"); break;
+    case  1: TRACE_UP(4, "THEORA\tEncoder\tSuccessfully encoded OGG packet of " << framePacket.bytes << " bytes"); break;
     default: TRACE(1, "THEORA\tEncoder\tEncoding failed (packet): " << theoraErrorMessage(ret)); return 0; break;
   }
 
@@ -296,7 +296,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
     _rxTheoraFrame->GetOggPacket (&oggPacket);
     if (theora_packet_isheader(&oggPacket)) {
 
-      TRACE(4, "THEORA\tDecoder\tGot OGG header packet with size " << oggPacket.bytes);
+      TRACE_UP(4, "THEORA\tDecoder\tGot OGG header packet with size " << oggPacket.bytes);
 
       // In case we receive new header packets when the stream is already established
       // we have to wait to get both table and header packet until reopening the decoder
@@ -334,7 +334,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
 
         if (theora_packet_iskeyframe(&oggPacket)) {
 
-          TRACE(4, "THEORA\tDecoder\tGot OGG keyframe data packet with size " << oggPacket.bytes);
+          TRACE_UP(4, "THEORA\tDecoder\tGot OGG keyframe data packet with size " << oggPacket.bytes);
           ret = theora_decode_packetin( &_theoraState, &oggPacket );
           if (ret != 0) {
             TRACE(1, "THEORA\tDecoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
@@ -349,7 +349,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
 
           if  (_gotIFrame) {
 
-            TRACE(4, "THEORA\tDecoder\tGot OGG non-keyframe data packet with size " << oggPacket.bytes);
+            TRACE_UP(4, "THEORA\tDecoder\tGot OGG non-keyframe data packet with size " << oggPacket.bytes);
             ret = theora_decode_packetin( &_theoraState, &oggPacket );
             if (ret != 0) {
               TRACE(1, "THEORA\tDecoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
@@ -375,7 +375,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
     }
   }
 
-  TRACE(4, "THEORA\tDecoder\tNo more OGG packets to decode");
+  TRACE_UP(4, "THEORA\tDecoder\tNo more OGG packets to decode");
 
   if (gotFrame) {
 
@@ -383,7 +383,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
     int frameBytes = (int) (size * 3 / 2);
     PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)dstRTP.GetPayloadPtr();
 
-    TRACE(4, "THEORA\tDecoder\tDecoded Frame with resolution: " << _theoraInfo.width << "x" << _theoraInfo.height);
+    TRACE_UP(4, "THEORA\tDecoder\tDecoded Frame with resolution: " << _theoraInfo.width << "x" << _theoraInfo.height);
 
     header->x = header->y = 0;
     header->width = _theoraInfo.width;
@@ -429,7 +429,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
   } 
   else { /*gotFrame */
 
-    TRACE(4, "THEORA\tDecoder\tDid not get a decoded frame");
+    TRACE(1, "THEORA\tDecoder\tDid not get a decoded frame");
     flags = requestIFrame;
     return 0;
   }
@@ -717,12 +717,20 @@ PLUGIN_CODEC_IMPLEMENT(THEORA)
 
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
-  char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+  char * debug_level = getenv ("PTLIB_TRACE_CODECS");
   if (debug_level!=NULL) {
     Trace::SetLevel(atoi(debug_level));
   } 
   else {
     Trace::SetLevel(0);
+  }
+
+  debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
+  if (debug_level!=NULL) {
+    Trace::SetLevelUserPlane(atoi(debug_level));
+  } 
+  else {
+    Trace::SetLevelUserPlane(0);
   }
 
   if (version < PLUGIN_CODEC_VERSION_VIDEO) {

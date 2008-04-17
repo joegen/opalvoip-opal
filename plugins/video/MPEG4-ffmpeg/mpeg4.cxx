@@ -215,8 +215,12 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
     }
     snprintf(buffer, sizeof(buffer), "MPEG4\tFFMPEG\t");
     vsprintf(buffer + strlen(buffer), fmt, arg);
-    buffer[strlen(buffer)-1] = 0;
-    TRACE (severity, buffer);
+    if (strlen(buffer) > 0)
+      buffer[strlen(buffer)-1] = 0;
+    if (severity = 4) 
+      { TRACE_UP (severity, buffer); }
+    else
+      { TRACE (severity, buffer); }
   }
 }
     
@@ -229,12 +233,14 @@ static bool mpeg4IsIframe (BYTE * frameBuffer, unsigned int frameLen )
   while ((i+4)<= frameLen) {
     if ((frameBuffer[i] == 0) && (frameBuffer[i+1] == 0) && (frameBuffer[i+2] == 1)) {
       if (frameBuffer[i+3] == 0xb0)
-        TRACE(4, "Found visual_object_sequence_start_code, Profile/Level is " << (unsigned) frameBuffer[i+4]);
+        TRACE_UP(4, "Found visual_object_sequence_start_code, Profile/Level is " << (unsigned) frameBuffer[i+4]);
       if (frameBuffer[i+3] == 0xb6) {
         unsigned vop_coding_type = (unsigned) ((frameBuffer[i+4] & 0xC0) >> 6);
-        TRACE(4, "Found vop_start_code, is vop_coding_type is " << vop_coding_type );
+        TRACE_UP(4, "Found vop_start_code, is vop_coding_type is " << vop_coding_type );
         if (vop_coding_type == 0)
           isIFrame = true;
+        if (!Trace::CanTraceUserPlane(4))
+	  return isIFrame;
       }
     }
     i++;	
@@ -782,7 +788,7 @@ bool MPEG4EncoderContext::OpenCodec()
   }
 
   // debugging flags
-  if (Trace::CanTrace(4)) {
+  if (Trace::CanTraceUserPlane(4)) {
     _avcontext->debug |= FF_DEBUG_RC;
     _avcontext->debug |= FF_DEBUG_PICT_INFO;
     _avcontext->debug |= FF_DEBUG_MV;
@@ -905,7 +911,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
             ResetBitCounter(8); // Fix ffmpeg rate control
 #endif
             _throttle->record(total); // record frames for throttler
-	    _isIFrame = mpeg4IsIframe(_encFrameBuffer, _encFrameLen );
+	    _isIFrame = mpeg4IsIframe(_encFrameBuffer, total );
         }
 
     }
@@ -1469,9 +1475,6 @@ void MPEG4DecoderContext::ResizeDecodingFrame(bool restartCodec) {
 
 bool MPEG4DecoderContext::OpenCodec()
 {
-    FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
-    FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
-
     if ((_avcodec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_MPEG4)) == NULL) {
         TRACE(1, "MPEG4\tDecoder\tCodec not found for encoder");
         return false;
@@ -1584,7 +1587,7 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
                 flags |= PluginCodec_ReturnCoderRequestIFrame;
             }
 #endif
-            TRACE(4, "MPEG4\tDecoder\tDecoded " << len << " bytes" << ", Resolution: " << _avcontext->width << "x" << _avcontext->height);
+            TRACE_UP(4, "MPEG4\tDecoder\tDecoded " << len << " bytes" << ", Resolution: " << _avcontext->width << "x" << _avcontext->height);
             // If the decoding size changes on us, we can catch it and resize
             if (!_disableResize
                 && (_frameWidth != (unsigned)_avcontext->width
@@ -2003,12 +2006,20 @@ extern "C" {
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition *
 PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
-  char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+  char * debug_level = getenv ("PTLIB_TRACE_CODECS");
   if (debug_level!=NULL) {
     Trace::SetLevel(atoi(debug_level));
   } 
   else {
     Trace::SetLevel(0);
+  }
+
+  debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
+  if (debug_level!=NULL) {
+    Trace::SetLevelUserPlane(atoi(debug_level));
+  } 
+  else {
+    Trace::SetLevelUserPlane(0);
   }
 
   if (!FFMPEGLibraryInstance.Load()) {
@@ -2017,10 +2028,13 @@ PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
     return NULL;
   }
 
+  FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
+  FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
+
   // check version numbers etc
   if (version < PLUGIN_CODEC_VERSION_OPTIONS) {
     *count = 0;
-    TRACE(1, "MPEG4\tCodec\tDisabled");
+    TRACE(1, "MPEG4\tCodec\tDisabled - plugin version mismatch");
     return NULL;
   }
   else {

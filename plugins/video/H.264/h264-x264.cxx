@@ -82,7 +82,10 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
     vsprintf(buffer + strlen(buffer), fmt, arg);
     if (strlen(buffer) > 0)
       buffer[strlen(buffer)-1] = 0;
-    TRACE (severity, buffer);
+    if (severity == 4)
+      { TRACE_UP (severity, buffer); }
+    else
+      { TRACE (severity, buffer); }
   }
 }
 
@@ -250,7 +253,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
     return 0;
   }
 
-  TRACE(4, "H264\tDecoder\tDecoding " << _rxH264Frame->GetFrameSize()  << " bytes");
+  TRACE_UP(4, "H264\tDecoder\tDecoding " << _rxH264Frame->GetFrameSize()  << " bytes");
 
   // look and see if we have read an I frame.
   if (_gotIFrame == 0)
@@ -278,7 +281,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
     return 0;
   }
 
-  TRACE(4, "H264\tDecoder\tDecoded " << bytesDecoded << " bytes"<< ", Resolution: " << _context->width << "x" << _context->height);
+  TRACE_UP(4, "H264\tDecoder\tDecoded " << bytesDecoded << " bytes"<< ", Resolution: " << _context->width << "x" << _context->height);
   int frameBytes = (_context->width * _context->height * 3) / 2;
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)dstRTP.GetPayloadPtr();
   header->x = header->y = 0;
@@ -743,12 +746,20 @@ PLUGIN_CODEC_IMPLEMENT(H264)
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
 
-  char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+  char * debug_level = getenv ("PTLIB_TRACE_CODECS");
   if (debug_level!=NULL) {
     Trace::SetLevel(atoi(debug_level));
   } 
   else {
     Trace::SetLevel(0);
+  }
+
+  debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
+  if (debug_level!=NULL) {
+    Trace::SetLevelUserPlane(atoi(debug_level));
+  } 
+  else {
+    Trace::SetLevelUserPlane(0);
   }
 
   if (!FFMPEGLibraryInstance.Load()) {
