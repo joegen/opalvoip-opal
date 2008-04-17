@@ -429,7 +429,8 @@ void OpalMediaPatch::Main()
   inUse.EndRead();
 
   RTP_DataFrame sourceFrame(source.GetDataSize());
-	
+  sourceFrame.SetPayloadType(source.GetMediaFormat().GetPayloadType());
+
   while (source.IsOpen()) {
     sourceFrame.SetPayloadSize(0); 
     if (!source.ReadPacket(sourceFrame)) {
