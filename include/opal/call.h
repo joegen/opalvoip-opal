@@ -390,6 +390,12 @@ class OpalCall : public PSafeObject
     void OnStopRecordAudio(const PString & callToken);
 
   protected:
+    bool EnumerateConnections(
+      PSafePtr<OpalConnection> & connection,
+      PSafetyMode mode,
+      const OpalConnection * skipConnection = NULL
+    ) const;
+
     OpalManager & manager;
 
     PString myToken;
@@ -397,8 +403,8 @@ class OpalCall : public PSafeObject
     PString partyA;
     PString partyB;
     PTime   startTime;
-    PBoolean    isEstablished;
-    PBoolean    isClearing;
+    bool    isEstablished;
+    bool    isClearing;
 
     OpalConnection::CallEndReason callEndReason;
 

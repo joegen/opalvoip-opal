@@ -223,7 +223,7 @@ enum {
   ID_RETRIEVE_MENU_BASE = wxID_HIGHEST+1,
   ID_RETRIEVE_MENU_TOP = ID_RETRIEVE_MENU_BASE+999,
   ID_TRANSFER_MENU_BASE,
-  ID_TRANSFER_MENU_TOP = ID_RETRIEVE_MENU_BASE+999,
+  ID_TRANSFER_MENU_TOP = ID_TRANSFER_MENU_BASE+999,
 };
 
 DECLARE_EVENT_TYPE(wxEvtLogMessage, -1)
@@ -1065,6 +1065,8 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
   config->Write(MainFrameHeightKey, h);
 
   potsEP = NULL;
+  m_activeCall.SetNULL();
+  m_callsOnHold.clear();
   ShutDownEndpoints();
 
   Destroy();
@@ -1490,8 +1492,6 @@ void MyManager::MakeCall(const PwxString & address)
   if (address.IsEmpty())
     return;
 
-  SetState(CallingState);
-
   m_LastDialed = address;
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(GeneralGroup);
@@ -1500,10 +1500,11 @@ void MyManager::MakeCall(const PwxString & address)
   PString token;
   if (SetUpCall(potsEP != NULL && potsEP->GetLine("*") != NULL ? "pots:*" : "pc:*", address, token)) {
     LogWindow << "Calling \"" << address << '"' << endl;
-    SetActiveCall(token);
+    m_activeCall = FindCallWithLock(token, PSafeReference);
+    SetState(CallingState);
   }
   else {
-    LogWindow << "Calling \"" << address << '"' << endl;
+    LogWindow << "Could not call \"" << address << '"' << endl;
     SetState(IdleState);
   }
 }
@@ -1653,12 +1654,7 @@ void MyManager::OnClearedCall(OpalCall & call)
             << setprecision(0) << setw(5) << (now - call.GetStartTime())
             << "s." << endl;
 
-  if (&call != m_activeCall)
-    RemoveCallOnHold(call);
-  else {
-    SetActiveCall(NULL);
-    SetState(IdleState);
-  }
+  SetState(ClearingCallState, call.GetToken());
 }
 
 
@@ -1672,6 +1668,8 @@ void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold
     return;
   }
 
+  LogWindow << "Remote " << connection.GetRemotePartyName() << " has been "
+            << (onHold ? "put on" : "released from") << " hold." << endl;
   SetState(onHold ? IdleState : InCallState, connection.GetCall().GetToken());
 }
 
@@ -1744,18 +1742,6 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-void MyManager::SetActiveCall(const char * token)
-{
-  m_userConnection.SetNULL();
-  m_protoConnection.SetNULL();
-
-  if (token != NULL)
-    m_activeCall = FindCallWithLock(token, PSafeReference);
-  else
-    m_activeCall.SetNULL();
-}
-
-
 PSafePtr<OpalCall> MyManager::GetCall(PSafetyMode mode)
 {
   if (m_activeCall == NULL)
@@ -1768,26 +1754,25 @@ PSafePtr<OpalCall> MyManager::GetCall(PSafetyMode mode)
 
 PSafePtr<OpalConnection> MyManager::GetConnection(bool user, PSafetyMode mode)
 {
-  if (m_activeCall == NULL) {
-    m_userConnection.SetNULL();
-    m_protoConnection.SetNULL();
+  if (m_activeCall == NULL)
     return NULL;
-  }
 
-  if (m_userConnection == NULL || m_protoConnection == NULL) {
-    for (int i = 0; ; i++) {
-      PSafePtr<OpalConnection> connection = m_activeCall->GetConnection(i, PSafeReference);
-      if (connection == NULL)
+  PSafePtr<OpalConnection> connection;
+  for (int i = 0; ; i++) {
+    connection = m_activeCall->GetConnection(i, PSafeReference);
+    if (connection == NULL)
+      break;
+
+    if (PIsDescendant(&(*connection), OpalPCSSConnection) || PIsDescendant(&(*connection), OpalLineConnection)) {
+      if (user)
         break;
-
-      if (PIsDescendant(&(*connection), OpalPCSSConnection) || PIsDescendant(&(*connection), OpalLineConnection))
-        m_userConnection = connection;
-      else
-        m_protoConnection = connection;
+    }
+    else {
+      if (!user)
+        break;
     }
   }
 
-  PSafePtr<OpalConnection> connection = user ? m_userConnection : m_protoConnection;
   return connection.SetSafetyMode(mode) ? connection : NULL;
 }
 
@@ -1821,13 +1806,13 @@ void MyManager::AddCallOnHold(OpalCall & call)
 }
 
 
-void MyManager::RemoveCallOnHold(OpalCall & call)
+void MyManager::RemoveCallOnHold(const PString & token)
 {
   list<CallsOnHold>::iterator it = m_callsOnHold.begin();
   for (;;) {
     if (it == m_callsOnHold.end())
       return;
-    if (&call == it->m_call)
+    if (it->m_call->GetToken() == token)
       break;
     ++it;
   }
@@ -1846,6 +1831,8 @@ void MyManager::RemoveCallOnHold(OpalCall & call)
     menu->Remove(item);
 
   m_callsOnHold.erase(it);
+
+  m_inCallPanel->OnHoldChanged(false);
 }
 
 
@@ -2048,7 +2035,7 @@ PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
 ostream & operator<<(ostream & strm, MyManager::CallState state)
 {
   static const char * const names[] = {
-    "Idle", "Calling", "Ringing", "Answering", "In Call"
+    "Idle", "Calling", "Ringing", "Answering", "InCall", "ClearingCall"
   };
   return strm << names[state];
 }
@@ -2073,10 +2060,9 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
     return;
 
   PTRACE(3, "OpenPhone\tGUI state changed from " << m_callState << " to " << newState);
-  m_callState = newState;
 
   wxWindow * newWindow;
-  switch (m_callState) {
+  switch (newState) {
     case RingingState :
       if (!IsActive())
         RequestUserAttention();
@@ -2087,9 +2073,10 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
         break;
       }
 
-      m_callState = AnsweringState;
       pcssEP->AcceptIncomingConnection(m_incomingToken);
       m_incomingToken.MakeEmpty();
+
+      newState = AnsweringState;
       // Do next state
 
     case AnsweringState :
@@ -2097,14 +2084,23 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
       newWindow = m_callingPanel;
       break;
 
+    case ClearingCallState :
+      if (m_activeCall == NULL || m_activeCall->GetToken() != theEvent.GetString().c_str()) {
+        // A call on hold got cleared
+        RemoveCallOnHold(theEvent.GetString().c_str());
+        return;
+      }
+
+      m_activeCall.SetNULL();
+      newState = IdleState;
+      newWindow = m_speedDials;
+      break;
+
     case InCallState :
       if (m_activeCall == NULL) {
-        // Restore from hold
-        SetActiveCall(theEvent.GetString());
-        if (PAssert(m_activeCall != NULL, PLogicError)) {
-          RemoveCallOnHold(*m_activeCall);
-          m_inCallPanel->OnHoldChanged(false);
-        }
+        // Retrieve call from hold
+        RemoveCallOnHold(theEvent.GetString().c_str());
+        m_activeCall = FindCallWithLock(theEvent.GetString().c_str(), PSafeReference);
       }
       newWindow = m_inCallPanel;
       break;
@@ -2112,8 +2108,8 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
     case IdleState :
       if (m_activeCall != NULL) {
         AddCallOnHold(*m_activeCall);
-        SetActiveCall(NULL);
-        m_inCallPanel->OnHoldChanged(potsEP);
+        m_activeCall.SetNULL();
+        m_inCallPanel->OnHoldChanged(true);
       }
       newWindow = m_speedDials;
       break;
@@ -2122,6 +2118,8 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
       PAssertAlways(PLogicError);
       return;
   }
+
+  m_callState = newState;
 
   m_speedDials->Hide();
   m_answerPanel->Hide();
@@ -3812,6 +3810,7 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
   : m_manager(manager)
   , m_vuTimer(this, VU_UPDATE_TIMER_ID)
   , m_updateStatistics(0)
+  , m_SwitchingHold(false)
 {
   wxXmlResource::Get()->LoadPanel(this, parent, "InCallPanel");
 
@@ -3890,7 +3889,12 @@ void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 
 void InCallPanel::OnHoldChanged(bool onHold)
 {
-  m_Hold->SetLabel(onHold ? "Retrieve" : "Hold");
+  bool anyCallsOnHols = !m_manager.m_callsOnHold.empty();
+  if (onHold && m_SwitchingHold && anyCallsOnHols)
+    m_manager.m_callsOnHold.front().m_call->Retrieve();
+  m_SwitchingHold = false;
+
+  m_Hold->SetLabel(anyCallsOnHols ? "Switch" : "Hold");
   m_Hold->Enable(true);
 }
 
@@ -3901,13 +3905,8 @@ void InCallPanel::OnRequestHold(wxCommandEvent & /*event*/)
   if (call != NULL) {
     if (!call->Hold())
       return;
-  }
-  else {
-    if (!PAssert(!m_manager.m_callsOnHold.empty(), PLogicError))
-      return;
 
-    if (!m_manager.m_callsOnHold.back().m_call->Retrieve())
-      return;
+    m_SwitchingHold = !m_manager.m_callsOnHold.empty();
   }
 
   m_Hold->SetLabel("In Progress");
