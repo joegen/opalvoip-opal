@@ -1327,6 +1327,12 @@ WORD OpalManager::GetRtpIpPortPair()
 
 void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
+  if (minDelay == 0) {
+    // Disable jitter buffer completely if minimum is zero.
+    minAudioJitterDelay = maxAudioJitterDelay = 0;
+    return;
+  }
+
   PAssert(minDelay <= 10000 && maxDelay <= 10000, PInvalidParameter);
 
   if (minDelay < 10)
