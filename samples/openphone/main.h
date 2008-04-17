@@ -295,6 +295,7 @@ class InCallPanel : public wxPanel
     wxTimer     m_vuTimer;
     unsigned    m_updateStatistics;
     bool        m_FirstTime;
+    bool        m_SwitchingHold;
 
     StatisticsPage m_pages[NumPages];
 
@@ -787,7 +788,8 @@ class MyManager : public wxFrame, public OpalManager
       CallingState,
       RingingState,
       AnsweringState,
-      InCallState
+      InCallState,
+      ClearingCallState
     } m_callState;
     friend ostream & operator<<(ostream & strm, CallState state);
     void SetState(
@@ -795,20 +797,14 @@ class MyManager : public wxFrame, public OpalManager
       const char * token = NULL
     );
 
-    void SetActiveCall(
-      const char * token
-    );
-
-    PString                  m_incomingToken;
-    PSafePtr<OpalCall>       m_activeCall;
-    PSafePtr<OpalConnection> m_userConnection;
-    PSafePtr<OpalConnection> m_protoConnection;
+    PString            m_incomingToken;
+    PSafePtr<OpalCall> m_activeCall;
 
     void AddCallOnHold(
       OpalCall & call
     );
     void RemoveCallOnHold(
-      OpalCall & call
+      const PString & token
     );
 
     struct CallsOnHold {
