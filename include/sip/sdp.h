@@ -286,32 +286,6 @@ class SDPApplicationMediaDescription : public SDPMediaDescription
 };
 
 /////////////////////////////////////////////////////////
-//
-//  SDP media description for fax media
-//
-
-#if OPAL_T38FAX
-
-class SDPFaxMediaDescription : public SDPMediaDescription
-{
-  PCLASSINFO(SDPFaxMediaDescription, SDPMediaDescription);
-  public:
-    SDPFaxMediaDescription(const OpalTransportAddress & address);
-    virtual PCaselessString GetSDPTransportType() const;
-    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
-    virtual PString GetSDPMediaType() const;
-    virtual PString GetSDPPortList() const;
-    virtual bool PrintOn(ostream & str, const PString & connectString) const;
-    virtual void SetAttribute(const PString & attr, const PString & value);
-    virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
-
-  protected:
-    PStringToString t38Attributes;
-};
-
-#endif // OPAL_T38FAX
-
-/////////////////////////////////////////////////////////
 
 class SDPSessionDescription : public PObject
 {

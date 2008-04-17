@@ -662,7 +662,7 @@ OpalPluginFaxFormatInternal::OpalPluginFaxFormatInternal(const PluginCodec_Defin
                                                                    unsigned /*timeUnits*/,
                                                                    time_t timeStamp)
   : OpalMediaFormatInternal(CreateCodecName(_encoderCodec),
-                            OpalMediaFormat::DefaultDataSessionID,
+                            "fax",
                             (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
                             rtpEncodingName,
                             false,                                // need jitter

@@ -43,6 +43,7 @@
 #include <t38/t38proto.h>
 
 #include <opal/mediastrm.h>
+#include <opal/mediatype.h>
 #include <opal/patch.h>
 
 #include <h323/transaddr.h>
@@ -62,18 +63,20 @@ static PAtomicInteger faxCallIndex;
 
 const OpalMediaFormat & GetOpalT38()
 {
-  static const OpalMediaFormat opalT38(
+  static const OpalMediaFormat fmt(
     OPAL_T38,
-    OpalMediaFormat::DefaultDataSessionID,
-    RTP_DataFrame::IllegalPayloadType,
+    "fax",
+    RTP_DataFrame::DynamicBase,
     "t38",
     PFalse, // No jitter for data
     1440, // 100's bits/sec
     0,
     0,
     0);
-  return opalT38;
+  return fmt;
 }
+
+OPAL_INSTANTIATE_MEDIATYPE(fax, OpalFaxMediaType);
 
 #if OPAL_AUDIO
 
@@ -86,7 +89,7 @@ const OpalFaxAudioFormat & GetOpalPCM16Fax()
 
 OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
-                                 const char * encodingName,
+                                 const char * encodingName, ///<  RTP encoding name
                                  PINDEX   frameSize,
                                  unsigned frameTime,
                                  unsigned rxFrames,
@@ -95,7 +98,7 @@ OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
 				                         unsigned clockRate,
                                    time_t timeStamp)
   : OpalMediaFormat(fullName,
-                    OpalMediaFormat::DefaultDataSessionID,
+                    "audio",
                     rtpPayloadType,
                     encodingName,
                     PTrue,
@@ -112,6 +115,8 @@ OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
+
+#if 0 // disabled
 
 OpalT38Protocol::OpalT38Protocol()
 {
@@ -537,44 +542,44 @@ PBoolean OpalT38Protocol::HandlePacketLost(unsigned PTRACE_nLost)
   return PTrue;
 }
 
+#endif // disabled
+
 /////////////////////////////////////////////////////////////////////////////
 
-T38PseudoRTP::T38PseudoRTP(
-#if OPAL_RTP_AGGREGATE
-                           PHandleAggregator * _aggregator, 
-#endif
-                           unsigned _id, PBoolean _remoteIsNAT)
-  : RTP_UDP(
-#if OPAL_RTP_AGGREGATE
-  _aggregator, 
-#endif
-  _id, _remoteIsNAT)
+class T38PseudoRTP_Handler : public RTP_FormatHandler
 {
-  PTRACE(4, "RTP_T38\tPseudoRTP session created with NAT flag set to " << remoteIsNAT);
+  public:
+    void OnStart(RTP_Session & _rtpUDP)
+    {  
+      RTP_FormatHandler::OnStart(_rtpUDP);
+      corrigendumASN        = PTrue;
+      consecutiveBadPackets = 0;
 
-  corrigendumASN = PTrue;
-  consecutiveBadPackets = 0;
+      lastIFP.SetSize(0);
+      rtpUDP->SetReportTimeInterval(20);
+    }
 
-  reportTimer = 20;
+    PBoolean WriteData(RTP_DataFrame & frame);
+    PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
 
-  lastIFP.SetSize(0);
-}
+    RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
+    RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/);
+    RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
+    RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &);
 
-T38PseudoRTP::~T38PseudoRTP()
-{
-  PTRACE(4, "RTP_T38\tPseudoRTP session destroyed");
-}
+  protected:
+    PBoolean corrigendumASN;
+    int consecutiveBadPackets;
+    PBYTEArray lastIFP;
+};
 
-PBoolean T38PseudoRTP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBoolean isDataPort)
-{
-  return RTP_UDP::SetRemoteSocketInfo(address, port, isDataPort);
-}
+static PFactory<RTP_FormatHandler>::Worker<T38PseudoRTP_Handler> t38PseudoRTPHandler("udptl");
 
-
-RTP_Session::SendReceiveStatus T38PseudoRTP::OnSendData(RTP_DataFrame & frame)
+RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendData(RTP_DataFrame & frame)
 {
   if (frame.GetPayloadSize() == 0)
-    return e_IgnorePacket;
+    return RTP_UDP::e_IgnorePacket;
 
   PINDEX plLen = frame.GetPayloadSize();
 
@@ -633,44 +638,46 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnSendData(RTP_DataFrame & frame)
 
 PTRACE(1, "T38_RTP\tWriting RTP T.38 seq " << udptl.m_seq_number << " of size " << plLen << " as T.38 UDPTL size " << frame.GetSize());
 
-  return e_ProcessPacket;
+  return RTP_Session::e_ProcessPacket;
 }
 
-PBoolean T38PseudoRTP::WriteData(RTP_DataFrame & frame)
+PBoolean T38PseudoRTP_Handler::WriteData(RTP_DataFrame & frame)
 {
-  if (shutdownWrite) {
-    PTRACE(3, "RTP_T38\tSession " << sessionID << ", Write shutdown.");
-    shutdownWrite = PFalse;
+  if (rtpUDP->shutdownWrite) {
+    PTRACE(3, "RTP_T38\tSession " << rtpUDP->GetSessionID() << ", Write shutdown.");
+    rtpUDP->shutdownWrite = PFalse;
     return PFalse;
   }
 
   // Trying to send a PDU before we are set up!
-  if (!remoteAddress.IsValid() || remoteDataPort == 0)
+  if (!rtpUDP->GetRemoteAddress().IsValid() || rtpUDP->GetRemoteDataPort() == 0)
     return PTrue;
 
   switch (OnSendData(frame)) {
-    case e_ProcessPacket :
+    case RTP_Session::e_ProcessPacket :
       break;
-    case e_IgnorePacket :
+    case RTP_Session::e_IgnorePacket :
       return PTrue;
-    case e_AbortTransport :
+    case RTP_Session::e_AbortTransport :
       return PFalse;
   }
 
-  while (!dataSocket->WriteTo(frame.GetPointer(),
-                             frame.GetSize(),
-                             remoteAddress, remoteDataPort)) {
-    switch (dataSocket->GetErrorNumber()) {
+  PUDPSocket & dataSocket = rtpUDP->GetDataSocket();
+
+  while (!dataSocket.WriteTo(frame.GetPointer(),
+                                  frame.GetSize(),
+                                  rtpUDP->GetRemoteAddress(), rtpUDP->GetRemoteDataPort())) {
+    switch (dataSocket.GetErrorNumber()) {
       case ECONNRESET :
       case ECONNREFUSED :
-        PTRACE(2, "RTP_T38\tSession " << sessionID << ", data port on remote not ready.");
+        PTRACE(2, "RTP_T38\tSession " << rtpUDP->GetSessionID() << ", data port on remote not ready.");
         break;
 
       default:
-        PTRACE(1, "RTP_T38\tSession " << sessionID
+        PTRACE(1, "RTP_T38\tSession " << rtpUDP->GetSessionID()
                << ", Write error on data port ("
-               << dataSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
-               << dataSocket->GetErrorText(PChannel::LastWriteError));
+               << dataSocket.GetErrorNumber(PChannel::LastWriteError) << "): "
+               << dataSocket.GetErrorText(PChannel::LastWriteError));
         return PFalse;
     }
   }
@@ -679,25 +686,26 @@ PBoolean T38PseudoRTP::WriteData(RTP_DataFrame & frame)
 }
 
 
-RTP_Session::SendReceiveStatus T38PseudoRTP::OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/)
+RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/)
 {
-  return e_IgnorePacket; // Non fatal error, just ignore
+  return RTP_Session::e_IgnorePacket; // Non fatal error, just ignore
 }
 
-RTP_Session::SendReceiveStatus T38PseudoRTP::ReadDataPDU(RTP_DataFrame & frame)
+RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::ReadDataPDU(RTP_DataFrame & frame)
 {
-  SendReceiveStatus status = ReadDataOrControlPDU(*dataSocket, frame, PTrue);
-  if (status != e_ProcessPacket)
+  frame.SetPayloadSize(500);
+  RTP_Session::SendReceiveStatus status = rtpUDP->ReadDataOrControlPDU(rtpUDP->GetDataSocket(), frame, PTrue);
+  if (status != RTP_Session::e_ProcessPacket)
     return status;
 
   // Check received PDU is big enough
-  PINDEX pduSize = dataSocket->GetLastReadCount();
+  PINDEX pduSize = rtpUDP->GetDataSocket().GetLastReadCount();
   frame.SetSize(pduSize);
 
   return OnReceiveData(frame);
 }
 
-RTP_Session::SendReceiveStatus T38PseudoRTP::OnReceiveData(RTP_DataFrame & frame)
+RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnReceiveData(RTP_DataFrame & frame)
 {
   PTRACE(4, "T38_RTP\tReading raw T.38 of size " << frame.GetSize());
 
@@ -718,9 +726,9 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnReceiveData(RTP_DataFrame & frame
              << setprecision(2) << udptl);
       if (consecutiveBadPackets > 100) {
         PTRACE(1, "RTP_T38\tRaw data decode failed multiple times, aborting!");
-        return e_AbortTransport;
+        return RTP_Session::e_AbortTransport;
       }
-      return e_IgnorePacket;
+      return RTP_Session::e_IgnorePacket;
     }
 
     PASN_OctetString & ifp = udptl.m_primary_ifp_packet;
@@ -733,43 +741,46 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnReceiveData(RTP_DataFrame & frame
 
   frame[0] = 0x80;
   frame.SetPayloadType((RTP_DataFrame::PayloadTypes)96);
-  frame.SetSyncSource(syncSourceIn);
+  frame.SetSyncSource(rtpUDP->GetSyncSourceIn());
 
   PTRACE(3, "T38_RTP\tReading RTP payload size " << frame.GetPayloadSize());
 
-  return RTP_UDP::OnReceiveData(frame);
+  return RTP_FormatHandler::OnReceiveData(frame);
 }
 
-PBoolean T38PseudoRTP::ReadData(RTP_DataFrame & frame, PBoolean loop)
+PBoolean T38PseudoRTP_Handler::ReadData(RTP_DataFrame & frame, PBoolean loop)
 {
-  do {
-    int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
+  PUDPSocket * dataSocket    = &rtpUDP->GetDataSocket();
+  PUDPSocket * controlSocket = &rtpUDP->GetControlSocket();
 
-    if (shutdownRead) {
-      PTRACE(3, "T38_RTP\tSession " << sessionID << ", Read shutdown.");
-      shutdownRead = PFalse;
+  do {
+    int selectStatus = WaitForPDU(*dataSocket, *controlSocket, rtpUDP->GetReportTimer());
+
+    if (rtpUDP->shutdownRead) {
+      PTRACE(3, "T38_RTP\tSession " << rtpUDP->GetSessionID() << ", Read shutdown.");
+      rtpUDP->shutdownRead = PFalse;
       return PFalse;
     }
 
     switch (selectStatus) {
       case -2 :
-        if (ReadControlPDU() == e_AbortTransport)
+        if (rtpUDP->ReadControlPDU() == RTP_Session::e_AbortTransport)
           return PFalse;
         break;
 
       case -3 :
-        if (ReadControlPDU() == e_AbortTransport)
+        if (rtpUDP->ReadControlPDU() == RTP_Session::e_AbortTransport)
           return PFalse;
         // Then do -1 case
 
       case -1 :
-        switch (ReadDataPDU(frame)) {
-          case e_ProcessPacket :
-            if (!shutdownRead)
+        switch (rtpUDP->ReadDataPDU(frame)) {
+          case RTP_Session::e_ProcessPacket :
+            if (!rtpUDP->shutdownRead)
               return PTrue;
-          case e_IgnorePacket :
+          case RTP_Session::e_IgnorePacket :
             break;
-          case e_AbortTransport :
+          case RTP_Session::e_AbortTransport :
             return PFalse;
         }
         break;
@@ -781,11 +792,11 @@ PBoolean T38PseudoRTP::ReadData(RTP_DataFrame & frame, PBoolean loop)
         return PTrue;
 
       case PSocket::Interrupted:
-        PTRACE(3, "T38_RTP\tSession " << sessionID << ", Interrupted.");
+        PTRACE(3, "T38_RTP\tSession " << rtpUDP->GetSessionID() << ", Interrupted.");
         return PFalse;
 
       default :
-        PTRACE(1, "T38_RTP\tSession " << sessionID << ", Select error: "
+        PTRACE(1, "T38_RTP\tSession " << rtpUDP->GetSessionID() << ", Select error: "
                 << PChannel::GetErrorText((PChannel::Errors)selectStatus));
         return PFalse;
     }
@@ -795,7 +806,7 @@ PBoolean T38PseudoRTP::ReadData(RTP_DataFrame & frame, PBoolean loop)
   return PTrue;
 }
 
-int T38PseudoRTP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &)
+int T38PseudoRTP_Handler::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &)
 {
   // wait for no longer than 20ms so audio gets correctly processed
   return PSocket::Select(dataSocket, controlSocket, 20);
@@ -821,7 +832,7 @@ OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn, const OpalMediaFor
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource), sessionToken(_token), filename(_filename), receive(_receive)
 {
   faxCallInfo = NULL;
-  SetDataSize(300);
+  SetDataSize(RTP_DataFrame::MaxMtuPayloadSize);
 }
 
 PBoolean OpalFaxMediaStream::Open()
@@ -850,21 +861,10 @@ PBoolean OpalFaxMediaStream::Open()
     }
   }
 
-  return OpalMediaStream::Open();
-}
-
-PBoolean OpalFaxMediaStream::Start()
-{
-  PWaitAndSignal m(infoMutex);
-  if (faxCallInfo == NULL) {
-    PTRACE(1, "Fax\tCannot start unknown media stream");
-    return PFalse;
-  }
-
   // reset the output buffer
   writeBufferLen = 0;
 
-  // only open pipe channel once
+  // start the spandsp process
   if (!faxCallInfo->spanDSP.IsOpen()) {
 
     // create the command line for spandsp_util
@@ -883,7 +883,12 @@ PBoolean OpalFaxMediaStream::Start()
     }
   }
 
-  return PTrue;
+  return OpalMediaStream::Open();
+}
+
+PBoolean OpalFaxMediaStream::Start()
+{
+  return OpalMediaStream::Start();
 }
 
 PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
@@ -1052,12 +1057,12 @@ PBoolean OpalFaxMediaStream::Close()
   faxCallInfoMap.erase(sessionToken);
 
   // delete the object
+  OpalFaxCallInfo * oldFaxCallInfo = faxCallInfo;
   {
     PWaitAndSignal m(infoMutex);
     faxCallInfo = NULL;
   }
-
-  delete faxCallInfo;
+  delete oldFaxCallInfo;
 
   return stat;
 }
@@ -1110,9 +1115,13 @@ PString OpalT38MediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
 
   cmdline << "spandsp_util -V 0 -m ";
   if (receive)
-    cmdline << "fax_to_tiff";
-  else
-    cmdline << "tiff_to_fax";
+    cmdline << "t38_to_tiff";
+  else {
+    cmdline << "tiff_to_t38";
+    PString stationId("HELLOWORLD");
+    if (!stationId.IsEmpty())
+      cmdline << " -s " << stationId;
+  }
   cmdline << " -n '" << filename << "' -t 127.0.0.1:" << port;
 
   return cmdline;
@@ -1130,12 +1139,19 @@ PBoolean OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
 
   packet.SetSize(2048);
 
-  if (faxCallInfo->spanDSPPort > 0) {
-    if (!faxCallInfo->socket.Read(packet.GetPointer(), packet.GetSize()))
-      return PFalse;
-  } else{ 
-    if (!faxCallInfo->socket.ReadFrom(packet.GetPointer(), packet.GetSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort))
-      return PFalse;
+  bool stat;
+
+  if (faxCallInfo->spanDSPPort > 0) 
+    stat = faxCallInfo->socket.Read(packet.GetPointer(), packet.GetSize());
+  else
+    stat = faxCallInfo->socket.ReadFrom(packet.GetPointer(), packet.GetSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort);
+
+  if (!stat) {
+    if (faxCallInfo->socket.GetErrorCode(PChannel::LastReadError) == PChannel::Timeout) {
+      packet.SetPayloadSize(0);
+      return true;
+    }
+    return false;
   }
 
   PINDEX len = faxCallInfo->socket.GetLastReadCount();
@@ -1160,12 +1176,10 @@ PBoolean OpalT38MediaStream::WritePacket(RTP_DataFrame & packet)
     return PFalse;
   }
 
-//PTRACE(1, "Fax\tT.38 Write RTP payload size = " << packet.GetPayloadSize());
-
   if (faxCallInfo->spanDSPPort > 0) {
-    PTRACE(1, "Fax\tT.38 Write RTP packet size = " << packet.GetHeaderSize() + packet.GetPayloadSize() <<" to " << faxCallInfo->spanDSPAddr << ":" << faxCallInfo->spanDSPPort);
+    PTRACE(5, "Fax\tT.38 Write RTP packet size = " << packet.GetHeaderSize() + packet.GetPayloadSize() <<" to " << faxCallInfo->spanDSPAddr << ":" << faxCallInfo->spanDSPPort);
     if (!faxCallInfo->socket.WriteTo(packet.GetPointer(), packet.GetHeaderSize() + packet.GetPayloadSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
-      PTRACE(1, "T38_UDP\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
+      PTRACE(2, "T38_UDP\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
       return PFalse;
     }
   }
@@ -1235,28 +1249,21 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
   }
 
   if (!receive && !PFile::Exists(filename)) {
+    PTRACE(2, "Fax\tCannot find filename '" << filename << "'");
     return PFalse;
   }
 
-/*
-  PString playDevice;
-  PString recordDevice;
-  PINDEX separator = remoteParty.FindOneOf("\n\t\\", prefixLength);
-  if (separator == P_MAX_INDEX)
-    playDevice = recordDevice = remoteParty.Mid(prefixLength);
-  else {
-    playDevice = remoteParty(prefixLength+1, separator-1);
-    recordDevice = remoteParty.Mid(separator+1);
-  }
+  PSafePtr<OpalFaxConnection> connection = PSafePtrCast<OpalConnection, OpalFaxConnection>(GetConnectionWithLock(MakeToken()));
+  if (connection != NULL)
+    return PFalse;
 
-  if (!SetDeviceName(playDevice, PSoundChannel::Player, playDevice))
-    playDevice = soundChannelPlayDevice;
-  if (!SetDeviceName(recordDevice, PSoundChannel::Recorder, recordDevice))
-    recordDevice = soundChannelRecordDevice;
+  connection = CreateConnection(call, filename, receive, userData, stringOptions);
+  if (connection == NULL)
+    return PFalse;
 
-*/
+  connectionsActive.SetAt(connection->GetToken(), connection);
 
-  return AddConnection(CreateConnection(call, filename, receive, userData, stringOptions));
+  return PTrue;
 }
 
 void OpalFaxEndPoint::OnPatchMediaStream(const OpalFaxConnection & /*connection*/, PBoolean /*isSource*/, OpalMediaPatch & /*patch*/)
@@ -1265,13 +1272,14 @@ void OpalFaxEndPoint::OnPatchMediaStream(const OpalFaxConnection & /*connection*
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, const PString & _filename, PBoolean _receive, const PString & _token, OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, _token), endpoint(ep), filename(_filename), receive(_receive)
+OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, const PString & _filename, PBoolean _receive, const PString & _token, OpalConnection::StringOptions * _stringOptions)
+  : OpalConnection(call, ep, _token, 0, _stringOptions), endpoint(ep), filename(_filename), receive(_receive)
 {
   PTRACE(3, "FAX\tCreated FAX connection with token '" << callToken << "'");
   phase = SetUpPhase;
 
   forceFaxAudio = (stringOptions == NULL) || stringOptions->Contains("Force-Fax-Audio");
+  detectInBandDTMF = true;
 }
 
 OpalFaxConnection::~OpalFaxConnection()
@@ -1301,14 +1309,18 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
 
 PBoolean OpalFaxConnection::SetUpConnection()
 {
-  originating = true;
-
   // Check if we are A-Party in thsi call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     phase = SetUpPhase;
-    if (!OnIncomingConnection(0, NULL)) {
-      Release(EndedByCallerAbort);
-      return PFalse;
+
+    {
+      StringOptions * otherStringOptions = new StringOptions;
+      otherStringOptions->SetAt("enableinbanddtmf", "true");
+      otherStringOptions->SetAt("dtmfmult",         "4");
+      if (!OnIncomingConnection(0, otherStringOptions)) {
+        Release(EndedByCallerAbort);
+        return PFalse;
+      }
     }
 
     PTRACE(2, "FAX\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
@@ -1475,8 +1487,14 @@ OpalT38Connection::OpalT38Connection(OpalCall & call, OpalT38EndPoint & ep, cons
 OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
   // if creating an audio session, use a NULL stream
-  if (sessionID == OpalMediaFormat::DefaultAudioSessionID) 
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
+  if (sessionID == OpalMediaFormat::DefaultAudioSessionID) {
+    if (isSource)
+      return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
+    else {
+      OpalSinkMediaStream * strm = new OpalSinkMediaStream(*this, mediaFormat, sessionID, isSource);
+      return strm;
+    }
+  }
 
   // if creating a data stream, see what type it is
   else if ((sessionID == OpalMediaFormat::DefaultDataSessionID) && (mediaFormat == OpalT38))
@@ -1501,9 +1519,108 @@ OpalMediaFormatList OpalT38Connection::GetMediaFormats() const
   return formats;
 }
 
+#if OPAL_SIP
 
 /////////////////////////////////////////////////////////////////////////////
 
-#endif // OPAL_T38FAX
+OpalFaxMediaType::OpalFaxMediaType()
+  : OpalMediaTypeDefinition("fax", "image", 3)
+{ }
 
+PString OpalFaxMediaType::GetRTPEncoding() const
+{ return "udptl"; }
+
+RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &,
+#if OPAL_RTP_AGGREGATE
+                                             PHandleAggregator * agg,
+#endif
+                                             unsigned sessionID, bool remoteIsNAT)
+{
+  return new RTP_UDP(GetRTPEncoding(),
+#if OPAL_RTP_AGGREGATE
+                     agg,
+#endif
+                     sessionID, remoteIsNAT);
+}
+
+SDPMediaDescription * OpalFaxMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+{
+  return new SDPFaxMediaDescription(localAddress);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+SDPFaxMediaDescription::SDPFaxMediaDescription(const OpalTransportAddress & address)
+  : SDPMediaDescription(address)
+{
+}
+
+PCaselessString SDPFaxMediaDescription::GetSDPTransportType() const
+{ 
+  return "udptl";
+; 
+}
+
+PString SDPFaxMediaDescription::GetSDPMediaType() const 
+{ 
+  return "image"; 
+}
+
+SDPMediaFormat * SDPFaxMediaDescription::CreateSDPMediaFormat(const PString & portString)
+{
+  return new SDPMediaFormat(RTP_DataFrame::DynamicBase, portString);
+}
+
+
+PString SDPFaxMediaDescription::GetSDPPortList() const
+{
+  PStringStream str;
+
+  // output encoding names for non RTP
+  SDPMediaFormatList::const_iterator format;
+  for (format = formats.begin(); format != formats.end(); ++format)
+    str << ' ' << format->GetEncodingName();
+
+  return str;
+}
+
+bool SDPFaxMediaDescription::PrintOn(ostream & str, const PString & connectString) const
+{
+  // call ancestor
+  if (!SDPMediaDescription::PrintOn(str, connectString))
+    return false;
+
+  // output options
+  for (PINDEX i = 0; i < t38Attributes.GetSize(); i++) 
+    str << "a=" << t38Attributes.GetKeyAt(i) << ":" << t38Attributes.GetDataAt(i) << "\r\n";
+
+  return true;
+}
+
+void SDPFaxMediaDescription::SetAttribute(const PString & attr, const PString & value)
+{
+  if (attr.Left(3) *= "t38") {
+    t38Attributes.SetAt(attr, value);
+    return;
+  }
+
+  return SDPMediaDescription::SetAttribute(attr, value);
+}
+
+void SDPFaxMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & mediaFormat)
+{
+  if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID) {
+    for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
+      const OpalMediaOption & option = mediaFormat.GetOption(i);
+      if (option.GetName().Left(3) *= "t38") 
+        t38Attributes.SetAt(option.GetName(), option.AsString());
+    }
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+#endif // OPAL_SIP
+
+#endif // OPAL_T38FAX
 
