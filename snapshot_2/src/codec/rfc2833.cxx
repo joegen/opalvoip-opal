@@ -278,7 +278,7 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
     PTRACE(2, "RFC2833\tIgnoring packet with backwards sequence number");
   }
 
-  else if ((tonesReceived > 0) && (timeStamp < (previousReceivedTimestamp + duration))) {
+  else if ((tonesReceived > 0) && (timeStamp != previousReceivedTimestamp) && (timeStamp < (previousReceivedTimestamp + PMAX(duration, 50)))) {
     PTRACE(2, "RFC2833\tIgnoring packet within tone time with different timestamp");
   }
 
@@ -315,10 +315,6 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
         // finish any existing tone
         if (receiveState == ReceiveActive) 
           OnEndReceive(receivedTone, duration, previousReceivedTimestamp);
-
-        if (duration > 0) {
-          PTRACE(4, "RFC2833\tPossible spurious tone!");
-        }
 
         // do callback for new tone
         OnStartReceive(tone, timeStamp);
