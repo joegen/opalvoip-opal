@@ -45,6 +45,9 @@ public:
   static bool CanTrace(unsigned level);
   static unsigned GetLevel();
   static void SetLevel(unsigned level);
+  static bool CanTraceUserPlane(unsigned level);
+  static unsigned GetLevelUserPlane();
+  static void SetLevelUserPlane(unsigned level);
 };
 
 #if !TRACING
@@ -55,6 +58,10 @@ public:
 
 #define TRACE(level, text) \
     if (Trace::CanTrace(level)) Trace::Start( __FILE__, __LINE__) << text << endl;
+
+#define TRACE_UP(level, text) \
+    if (Trace::CanTraceUserPlane(level)) Trace::Start( __FILE__, __LINE__) << text << endl;
+
 #endif /* TRACING */
 
 #endif /* __TRACE_H__ */

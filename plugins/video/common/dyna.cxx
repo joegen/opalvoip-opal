@@ -388,7 +388,7 @@ int FFMPEGLibrary::AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_si
   WITH_ALIGNED_STACK({
     int res = Favcodec_encode_video(ctx, buf, buf_size, pict);
 
-    TRACE(4, _codecString << "\tDYNA\tEncoded " << buf_size << " bytes of YUV420P data into " << res << " bytes");
+    TRACE_UP(4, _codecString << "\tDYNA\tEncoded " << buf_size << " bytes of YUV420P data into " << res << " bytes");
     return res;
   });
 }
@@ -400,7 +400,7 @@ int FFMPEGLibrary::AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *g
   WITH_ALIGNED_STACK({
     int res = Favcodec_decode_video(ctx, pict, got_picture_ptr, buf, buf_size);
 
-    TRACE(4, _codecString << "\tDYNA\tDecoded video of " << res << " bytes, got_picture=" << *got_picture_ptr);
+    TRACE_UP(4, _codecString << "\tDYNA\tDecoded video of " << res << " bytes, got_picture=" << *got_picture_ptr);
     return res;
   });
 }

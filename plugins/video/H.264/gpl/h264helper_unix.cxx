@@ -82,12 +82,20 @@ int main(int argc, char *argv[])
   unsigned status;
   if (argc != 3) { fprintf(stderr, "Not to be executed directly - exiting\n"); exit (1); }
 
-  char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+  char * debug_level = getenv ("PTLIB_TRACE_CODECS");
   if (debug_level!=NULL) {
       Trace::SetLevel(atoi(debug_level));
   } 
   else {
     Trace::SetLevel(0);
+  }
+
+  debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
+  if (debug_level!=NULL) {
+      Trace::SetLevelUserPlane(atoi(debug_level));
+  } 
+  else {
+    Trace::SetLevelUserPlane(0);
   }
 
   x264 = NULL;

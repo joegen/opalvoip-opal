@@ -50,8 +50,12 @@ static void logCallbackX264 (void *priv, int level, const char *fmt, va_list arg
   }
   sprintf(buffer, "H264\tx264\t"); 
   vsprintf(buffer + strlen (buffer), fmt, arg);
-  buffer[strlen(buffer) - 1] = 0;
-  TRACE(severity, buffer);
+  if (strlen(buffer) > 0)
+    buffer[strlen(buffer)-1] = 0;
+  if (severity == 4)
+    { TRACE_UP (severity, buffer); }
+  else
+    { TRACE (severity, buffer); }
 }
 
 X264EncoderContext::X264EncoderContext()
