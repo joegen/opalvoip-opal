@@ -47,15 +47,15 @@ namespace PWLibStupidLinkerHacks {
   int mediaTypeLoader;
 }; // namespace PWLibStupidLinkerHacks
 
-//OPAL_DEFINE_MEDIA_TYPE_NO_SDP(userinput); 
-
 #if OPAL_AUDIO
-OPAL_DECLARE_MEDIA_TYPE(audio, OpalAudioMediaType);
+OPAL_INSTANTIATE_MEDIATYPE(audio, OpalAudioMediaType);
 #endif
 
 #if OPAL_VIDEO
-OPAL_DECLARE_MEDIA_TYPE(video, OpalVideoMediaType);
+OPAL_INSTANTIATE_MEDIATYPE(video, OpalVideoMediaType);
 #endif
+
+OPAL_INSTANTIATE_SIMPLE_MEDIATYPE_NO_SDP(userinput); 
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -80,107 +80,118 @@ OpalMediaTypeDefinition * OpalMediaType::GetDefinition(const OpalMediaType & key
   return OpalMediaTypeFactory::CreateInstance(key);
 }
 
-#if 0 // disabled
-
-OpalMediaType::SessionIDToMediaTypeMap_T & OpalMediaType::GetSessionIDToMediaTypeMap()
-{
-  static SessionIDToMediaTypeMap_T sessionIDToMediaTypeMap;
-  return sessionIDToMediaTypeMap;
-}
-
-#endif  // disabled
-
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * _sdpType, unsigned /*_defaultSessionId*/)
+OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * _mediaType, const char * _sdpType, unsigned preferredSessionId)
 #if OPAL_SIP
   : sdpType(_sdpType != NULL ? _sdpType : "")
 #endif
-  //, defaultSessionId(_defaultSessionId),
 {
-#if 0 // disabled
-  // always deconflict the default session ID
-  if (OpalMediaType::GetSessionIDToMediaTypeMap().find(defaultSessionId) != OpalMediaType::GetSessionIDToMediaTypeMap().end())
-    defaultSessionId = 0;
-  if (defaultSessionId == 0) {
-    defaultSessionId = 100;
-    while (OpalMediaType::GetSessionIDToMediaTypeMap().find(defaultSessionId) != OpalMediaType::GetSessionIDToMediaTypeMap().end())
-      ++defaultSessionId;
+  PWaitAndSignal m(GetMapMutex());
+
+  SessionIDToMediaTypeMap_T & typeMap = GetSessionIDToMediaTypeMap();
+
+  // if the preferred session ID is already taken, then find a new one
+  if (typeMap.find(preferredSessionId) != typeMap.end())
+    preferredSessionId = 0;
+
+  // if no preferred session Id 
+  if (preferredSessionId == 0) {
+    preferredSessionId = 1;
+    while (typeMap.find(preferredSessionId) != typeMap.end())
+      ++preferredSessionId;
   }
-  OpalMediaType::GetSessionIDToMediaTypeMap().insert(OpalMediaType::SessionIDToMediaTypeMap_T::value_type(defaultSessionId, mediaType));
-#endif // disabled
+
+  PTRACE(1, "Opal\tMedia type " << _mediaType << " assigned session ID " << preferredSessionId);
+
+  typeMap.insert(SessionIDToMediaTypeMap_T::value_type(preferredSessionId, _mediaType));
+  GetMediaTypeToSessionIDMap().insert(MediaTypeToSessionIDMap_T::value_type(_mediaType, preferredSessionId));
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * sdpType, unsigned sessionID)
-  : OpalMediaTypeDefinition(sdpType, sessionID)
+unsigned OpalMediaTypeDefinition::GetDefaultSessionId(const OpalMediaType & mediaType)
 {
+  PWaitAndSignal m(GetMapMutex());
+
+
+
+  MediaTypeToSessionIDMap_T::iterator r = GetMediaTypeToSessionIDMap().find(mediaType);
+  if (r != GetMediaTypeToSessionIDMap().end())
+    return r->second;
+
+  return 0;
 }
 
-#if 0 // disabled
 
-RTP_UDP * OpalRTPAVPMediaType::CreateRTPSession(OpalRTPConnection & conn,
+OpalMediaType OpalMediaTypeDefinition::GetMediaTypeForSessionId(unsigned sessionId)
+{
+  PWaitAndSignal m(GetMapMutex());
+
+  SessionIDToMediaTypeMap_T::iterator r = GetSessionIDToMediaTypeMap().find(sessionId);
+  if (r != GetSessionIDToMediaTypeMap().end())
+    return r->second;
+
+  return OpalMediaType();
+}
+
+
+OpalMediaTypeDefinition::SessionIDToMediaTypeMap_T & OpalMediaTypeDefinition::GetSessionIDToMediaTypeMap()
+{
+  PWaitAndSignal m(GetMapMutex());
+  static SessionIDToMediaTypeMap_T map;
+  return map;
+}
+
+OpalMediaTypeDefinition::MediaTypeToSessionIDMap_T & OpalMediaTypeDefinition::GetMediaTypeToSessionIDMap()
+{
+  PWaitAndSignal m(GetMapMutex());
+  static MediaTypeToSessionIDMap_T map;
+  return map;
+}
+
+
+PMutex & OpalMediaTypeDefinition::GetMapMutex()
+{
+  static PMutex mutex;
+  return mutex;
+}
+
+
+RTP_UDP * OpalMediaTypeDefinition::CreateRTPSession(OpalRTPConnection & /*conn*/,
 #if OPAL_RTP_AGGREGATE
                                                 PHandleAggregator * agg,
 #endif
-                                                unsigned sessionID, bool remoteIsNAT)
+                                                OpalSecurityMode * securityMode, unsigned sessionID, bool remoteIsNAT)
 {
-  RTP_UDP * rtpSession = NULL;
+  if (securityMode != NULL) 
+    return NULL;
 
-  PString securityMode = conn.GetSecurityMode();
-
-  if (!securityMode.IsEmpty()) {
-    OpalSecurityMode * parms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
-    if (parms == NULL) {
-      PTRACE(1, "RTPCon\tSecurity mode " << securityMode << " unknown");
-      return NULL;
-    }
-    rtpSession = parms->CreateRTPSession(conn,
-#if OPAL_RTP_AGGREGATE
-                                              agg,
-#endif
-                                         sessionID, remoteIsNAT);
-    if (rtpSession == NULL) {
-      PTRACE(1, "RTPCon\tCannot create RTP session for security mode " << securityMode);
-      delete parms;
-      return NULL;
-    }
-  }
-  else
-  {
-    rtpSession = new RTP_UDP(GetRTPEncoding(),
+  return new RTP_UDP(GetRTPEncoding(),
 #if OPAL_RTP_AGGREGATE
         agg,
 #endif
         sessionID, remoteIsNAT);
-  }
-
-  return rtpSession;
 }
 
-bool OpalRTPAVPMediaType::UseDirectMediaPatch() const
+///////////////////////////////////////////////////////////////////////////////
+
+OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType, const char * sdpType, unsigned preferredSessionId)
+  : OpalMediaTypeDefinition(mediaType, sdpType, preferredSessionId)
 {
-  return false;
 }
 
-#endif // disabled
+PString OpalRTPAVPMediaType::GetRTPEncoding() const
+{
+  return "rtp/avp";
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_AUDIO
 
 OpalAudioMediaType::OpalAudioMediaType()
-  : OpalRTPAVPMediaType("audio", 1)
+  : OpalRTPAVPMediaType("audio", "audio", 1)
 {
 }
-
-#if 0 // disabled
-
-bool OpalAudioMediaType::IsMediaAutoStart(bool) const 
-{ return true; }
-
-#endif // disabled
 
 #endif // OPAL_AUDIO
 
@@ -189,32 +200,10 @@ bool OpalAudioMediaType::IsMediaAutoStart(bool) const
 #if OPAL_VIDEO
 
 OpalVideoMediaType::OpalVideoMediaType()
-  : OpalRTPAVPMediaType("video", 2)
+  : OpalRTPAVPMediaType("video", "video", 2)
 { }
-
-#if 0 // disabled
-
-bool OpalVideoMediaType::IsMediaAutoStart(bool) const 
-{ return true; }
-
-#endif // disabled
 
 #endif // OPAL_VIDEO
 
 ///////////////////////////////////////////////////////////////////////////////
-
-#if 0
-
-OpalMediaSessionId::OpalMediaSessionId(const OpalMediaType & _mediaType, unsigned _sessionId)
-  : mediaType(_mediaType), sessionId(_sessionId)
-{
-  if (sessionId == 0) {
-    OpalMediaTypeDefinition * def = OpalMediaTypeFactory::CreateInstance(mediaType);
-    if (def != NULL)
-      sessionId = def->GetPreferredSessionId();
-  }
-}
-
-#endif // disabled
-
 

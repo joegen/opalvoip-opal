@@ -141,8 +141,8 @@ RTP_Session * OpalRTPConnection::UseSession(const OpalTransport & transport,
 
 
 RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
-                                           unsigned sessionID,
-                                           RTP_QOS * rtpqos)
+                                                            unsigned sessionID,
+                                                           RTP_QOS * rtpqos)
 {
   // We only support RTP over UDP at this point in time ...
   if (!transport.IsCompatibleTransport("ip$127.0.0.1")) 
@@ -168,45 +168,39 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   transport.GetRemoteAddress().GetIpAddress(remoteAddress);
   PSTUNClient * stun = manager.GetSTUN(remoteAddress);
 
-  // create an (S)RTP session or T38 pseudo-session as appropriate
-  RTP_UDP * rtpSession = NULL;
-
-#if OPAL_T38FAX
-  if (sessionID == OpalMediaFormat::DefaultDataSessionID) {
-    rtpSession = new T38PseudoRTP(
-#if OPAL_RTP_AGGREGATE
-                                        NULL,
-#endif
-                                        sessionID, remoteIsNAT);
+  OpalMediaType mediaType = OpalMediaTypeDefinition::GetMediaTypeForSessionId(sessionID);
+  OpalMediaTypeDefinition * def = mediaType.GetDefinition();
+  if (def == NULL) {
+    PTRACE(1, "OpalCon\tNo definition for media type " << mediaType);
+    return NULL;
   }
-  else
-#endif
+
+  // create an RTP session
+  RTP_UDP          * rtpSession    = NULL;
+  OpalSecurityMode * securityParms = NULL;
 
   if (!securityMode.IsEmpty()) {
-    OpalSecurityMode * parms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
-    if (parms == NULL) {
+    securityParms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
+    if (securityParms == NULL) {
       PTRACE(1, "OpalCon\tSecurity mode " << securityMode << " unknown");
       return NULL;
     }
-    
     PTRACE(1, "OpalCon\tCreating security mode " << securityMode);
-    rtpSession = parms->CreateRTPSession(
-#if OPAL_RTP_AGGREGATE
-                  useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
-#endif
-                  sessionID, remoteIsNAT, *this);
+  }
 
-    if (rtpSession == NULL) {
-      PTRACE(1, "OpalCon\tCannot create RTP session for security mode " << securityMode);
-      delete parms;
-      return NULL;
-    }
-  } else {
-    rtpSession = new RTP_UDP(
+  rtpSession = def->CreateRTPSession(*this,
 #if OPAL_RTP_AGGREGATE
                              useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
 #endif
-                             sessionID, remoteIsNAT);
+                             securityParms, sessionID, remoteIsNAT);  
+  if (rtpSession == NULL) {
+    if (securityParms == NULL) {
+      PTRACE(1, "OpalCon\tCannot create RTP session " << sessionID);
+    } else {
+      PTRACE(1, "OpalCon\tCannot create RTP session " << sessionID << " with security mode " << securityMode);
+      delete securityParms;
+    }
+    return NULL;
   }
 
   WORD firstPort = manager.GetRtpIpPortPair();
@@ -391,234 +385,85 @@ OpalH281Handler * OpalRTPConnection::CreateH281ProtocolHandler(OpalH224Handler &
 
 #endif
 
-#if 0
-
-bool OpalRTPConnection::CanAutoStartMedia(const OpalMediaType & mediaType, bool rx)
-{
-  return channelInfoMap.CanAutoStartMedia(mediaType, rx);
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 
-OpalRTPConnection::ChannelInfo::ChannelInfo(const OpalMediaType & _mediaType)
-  : mediaType(_mediaType)
+RTP_SessionManager::RTP_SessionManager()
 {
-  autoStartReceive = autoStartTransmit = false;
-  assigned                     = false;
-  protocolSpecificSessionId    = 0;
-  channelId                    = 0;
 }
 
-/////////////////////////////////////////////////////////////////////////////
 
-OpalRTPConnection::ChannelInfoMap::ChannelInfoMap()
+RTP_SessionManager::RTP_SessionManager(const RTP_SessionManager & sm)
+: sessions(sm.sessions)
 {
-  initialised = false;
 }
 
-unsigned OpalRTPConnection::ChannelInfoMap::AddChannel(OpalRTPConnection::ChannelInfo & info)
+
+RTP_SessionManager & RTP_SessionManager::operator=(const RTP_SessionManager & sm)
 {
-  PWaitAndSignal m(mutex);
-  initialised = true;
-
-  if ((info.channelId == 0) || (find(info.channelId) != end())) {
-    unsigned i = 10;
-    while (find(info.channelId) != end())
-      ++i;
-    info.channelId = i;
-  }
-
-  insert(value_type(info.channelId, info));
-
-  return info.channelId;
+  PWaitAndSignal m1(mutex);
+  PWaitAndSignal m2(sm.mutex);
+  sessions = sm.sessions;
+  return *this;
 }
 
-bool OpalRTPConnection::ChannelInfoMap::CanAutoStartMedia(const OpalMediaType & mediaType, bool rx)
+
+RTP_Session * RTP_SessionManager::UseSession(unsigned sessionID)
 {
   PWaitAndSignal m(mutex);
 
-  iterator r;
-  for (r = begin(); r != end(); ++r) {
-    if (r->second.mediaType == mediaType) {
-      if (rx)
-        return r->second.autoStartReceive;
-      else
-        return r->second.autoStartTransmit;
-    }
-  }
+  RTP_Session * session = sessions.GetAt(sessionID);
+  if (session == NULL) 
+    return NULL; 
+  
+  PTRACE(3, "RTP\tFound existing session " << sessionID);
+  session->IncrementReference();
 
-  return false;
+  return session;
 }
 
-OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::FindAndLockChannel(unsigned channelId, bool assigned)
+
+void RTP_SessionManager::AddSession(RTP_Session * session)
 {
-  OpalRTPConnection::ChannelInfo * info = FindAndLockChannel(channelId);
-  if (info == NULL)
-    return NULL;
-  if (info->assigned != assigned) {
-    Unlock();
-    return NULL;
+  PWaitAndSignal m(mutex);
+  
+  if (session != NULL) {
+    PTRACE(3, "RTP\tAdding session " << *session);
+    sessions.SetAt(session->GetSessionID(), session);
   }
-  return info;
 }
 
-OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::FindAndLockChannel(unsigned channelId)
+
+void RTP_SessionManager::ReleaseSession(unsigned sessionID,
+                                        PBoolean clearAll)
 {
+  PTRACE(3, "RTP\tReleasing session " << sessionID);
+
   mutex.Wait();
 
-  iterator r;
-  for (r = begin(); r != end(); ++r) {
-    ChannelInfo & info = r->second;
-    if (info.channelId == channelId)
-      return &r->second;
-  }
-
-  mutex.Signal();
-  return NULL;
-}
-
-OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::FindAndLockChannelByProtocolId(unsigned protocolSpecificSessionId)
-{
-  mutex.Wait();
-
-  iterator r;
-  for (r = begin(); r != end(); ++r) {
-    ChannelInfo & info = r->second;
-    if (info.protocolSpecificSessionId == protocolSpecificSessionId)
-      return &r->second;
-  }
-
-  mutex.Signal();
-  return NULL;
-}
-
-OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::FindAndLockChannel(const OpalMediaType & mediaType, bool assigned)
-{
-  mutex.Wait();
-
-  iterator r;
-  for (r = begin(); r != end(); ++r) {
-    ChannelInfo & info = r->second;
-    if ((info.assigned == assigned) && (info.mediaType == mediaType)) 
-      return &r->second;
-  }
-
-  mutex.Signal();
-  return NULL;
-}
-
-unsigned OpalRTPConnection::ChannelInfoMap::GetSessionOfType(const OpalMediaType & mediaType) const
-{
-  PWaitAndSignal m(mutex);
-
-  unsigned id = 1;
-  bool found;
-  do {
-    found = false;
-    const_iterator r;
-    unsigned nextId = 65535;
-    for (r = begin(); r != end(); ++r) {
-      if (r->second.mediaType == mediaType) {
-        unsigned thisId = r->second.channelId;
-        if (thisId > id) {
-          if (thisId < nextId)
-            nextId = thisId; 
-          found = true;
-        } else {
-          return thisId;
-        }
-      }
+  while (sessions.Contains(sessionID)) {
+    RTP_Session * session = &sessions[sessionID];
+    if (session->DecrementReference()) {
+      PTRACE(3, "RTP\tDeleting session " << sessionID);
+      session->Close(PTrue);
+      session->SetJitterBufferSize(0, 0);
+      sessions.SetAt(sessionID, NULL);
     }
-    id = nextId;
-  } while (found);
-
-  return 0;
-}
-
-
-OpalMediaType OpalRTPConnection::ChannelInfoMap::GetTypeOfSession(unsigned sessionId) const
-{
-  PWaitAndSignal m(mutex);
-
-  const_iterator r;
-  for (r = begin(); r != end(); ++r) 
-    if (r->second.channelId == sessionId) 
-      return r->second.mediaType;
-
-  return OpalMediaType();
-}
-
-void OpalRTPConnection::ChannelInfoMap::Initialise(OpalRTPConnection & conn, OpalConnection::StringOptions * stringOptions)
-{
-  PWaitAndSignal m(mutex);
-
-  // make function idempotent
-  if (initialised)
-    return;
-  initialised = true;
-
-  // see if stringoptions contains AutoStart option
-  if (stringOptions != NULL && stringOptions->Contains("autostart")) {
-
-    // get autostart option as lines
-    PStringArray lines = (*stringOptions)("autostart").Lines();
-    PINDEX i;
-    for (i = 0; i < lines.GetSize(); ++i) {
-      PString line = lines[i];
-      PINDEX colon = line.Find(':');
-      OpalMediaType mediaType = line.Left(colon);
-
-      // see if media type is known, and if it is, enable it
-      OpalMediaTypeDefinition * def = mediaType.GetDefinition();
-      if (def != NULL) {
-        ChannelInfo info(mediaType);
-        info.autoStartReceive  = true;
-        info.autoStartTransmit = true;
-        info.channelId         = def->GetPreferredSessionId();
-        if (colon != P_MAX_INDEX) {
-          PStringArray tokens = line.Mid(colon+1).Tokenise(";", FALSE);
-          PINDEX j;
-          for (j = 0; j < tokens.GetSize(); ++j) {
-            if (tokens[i] *= "no") {
-              info.autoStartReceive  = false;
-              info.autoStartTransmit = false;
-            }
-          }
-        }
-        AddChannel(info);
-      }
-    }
-  }
-
-  // set old video and audio auto start if not already set
-  OpalManager & mgr = conn.GetCall().GetManager();
-#if OPAL_AUDIO
-  SetOldOptions(1, OpalMediaType::Audio(), true, true);
-#endif
-#if OPAL_VIDEO
-  SetOldOptions(2, OpalMediaType::Video(), mgr.CanAutoStartReceiveVideo(), mgr.CanAutoStartTransmitVideo());
-#endif
-}
-
-
-void OpalRTPConnection::ChannelInfoMap::SetOldOptions(unsigned channelId, const OpalMediaType & mediaType, bool rx, bool tx)
-{
-  iterator r;
-  for (r = begin(); r != end(); ++r) {
-    if (r->second.mediaType == mediaType)
+    if (!clearAll)
       break;
   }
-  if (r == end()) {
-    ChannelInfo info(mediaType);
-    info.channelId         = channelId;
-    info.autoStartReceive  = rx;
-    info.autoStartTransmit = tx;
-    AddChannel(info);
-  }
+
+  mutex.Signal();
 }
 
-#endif
 
+RTP_Session * RTP_SessionManager::GetSession(unsigned sessionID) const
+{
+  PWaitAndSignal wait(mutex);
+  if (!sessions.Contains(sessionID))
+    return NULL;
+
+  PTRACE(3, "RTP\tFound existing session " << sessionID);
+  return &sessions[sessionID];
+}
 
 /////////////////////////////////////////////////////////////////////////////

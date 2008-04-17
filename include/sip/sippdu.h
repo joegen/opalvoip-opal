@@ -40,6 +40,7 @@
 #include <ptclib/mime.h>
 #include <ptclib/url.h>
 #include <sip/sdp.h>
+#include <opal/rtpconn.h>
 
  
 class OpalTransport;

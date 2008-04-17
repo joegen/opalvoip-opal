@@ -42,6 +42,7 @@
 #endif
 
 #include <opal/connection.h>
+#include <opal/mediatype.h>
 class OpalRTPEndPoint;
 
 //#ifdef HAS_LIBZRTP
@@ -49,6 +50,73 @@ class OpalRTPEndPoint;
 //struct zrtp_conn_ctx_t;
 //#endif
 //#endif
+
+/**This class is for encpsulating the IETF Real Time Protocol interface.
+ */
+class RTP_SessionManager : public PObject
+{
+  PCLASSINFO(RTP_SessionManager, PObject);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Construct new session manager database.
+      */
+    RTP_SessionManager();
+    RTP_SessionManager(const RTP_SessionManager & sm);
+    RTP_SessionManager & operator=(const RTP_SessionManager & sm);
+  //@}
+
+
+  /**@name Operations */
+  //@{
+    /**Use an RTP session for the specified ID.
+
+       If this function returns a non-null value, then the ReleaseSession()
+       function MUST be called or the session is never deleted for the
+       lifetime of the session manager.
+
+       If there is no session of the specified ID, then you MUST call the
+       AddSession() function with a new RTP_Session. The mutex flag is left
+       locked in this case. The AddSession() expects the mutex to be locked
+       and unlocks it automatically.
+      */
+    RTP_Session * UseSession(
+      unsigned sessionID    ///<  Session ID to use.
+    );
+
+    /**Add an RTP session for the specified ID.
+
+       This function MUST be called only after the UseSession() function has
+       returned NULL. The mutex flag is left locked in that case. This
+       function expects the mutex to be locked and unlocks it automatically.
+      */
+    void AddSession(
+      RTP_Session * session    ///<  Session to add.
+    );
+
+    /**Release the session. If the session ID is not being used any more any
+       clients via the UseSession() function, then the session is deleted.
+     */
+    void ReleaseSession(
+      unsigned sessionID,    ///<  Session ID to release.
+      PBoolean clearAll = PFalse  ///<  Clear all sessions with that ID
+    );
+
+    /**Get a session for the specified ID.
+       Unlike UseSession, this does not increment the usage count on the
+       session so may be used to just gain a pointer to an RTP session.
+     */
+    RTP_Session * GetSession(
+      unsigned sessionID    ///<  Session ID to get.
+    ) const;
+
+  //@}
+  protected:
+    PDICTIONARY(SessionDict, POrdinalKey, RTP_Session);
+    SessionDict sessions;
+    PMutex      mutex;
+};
 
 /**This is the base class for OpalConnections that use RTP sessions, 
    such as H.323 and SIPconnections to an endpoint.
@@ -281,63 +349,6 @@ class OpalRTPConnection : public OpalConnection
 #if OPAL_H224
     OpalH224Handler		  * h224Handler;
 #endif
-#if 0
-
-#if 0
-  public:
-    /** Class for storing media channel start information
-      */
-    struct ChannelInfo {
-      public:
-        ChannelInfo(const OpalMediaType & _mediaType);
-
-        OpalMediaType mediaType;
-        bool autoStartReceive;
-        bool autoStartTransmit;
-        bool assigned;
-
-        unsigned protocolSpecificSessionId;
-        unsigned channelId;
-
-        PString channelName;
-    };
-
-    class ChannelInfoMap : public std::map<unsigned, ChannelInfo> 
-    {
-      public:
-        ChannelInfoMap();
-        void Initialise(OpalRTPConnection & conn, OpalConnection::StringOptions * stringOptions);
-        unsigned AddChannel(ChannelInfo & info);
-
-        //ChannelInfo * AssignAndLockChannel(const OpalMediaSessionId & id, bool assigned);
-        ChannelInfo * FindAndLockChannel(unsigned channelId);
-        ChannelInfo * FindAndLockChannelByProtocolId(unsigned protocolSpecificSessionId);
-
-        ChannelInfo * FindAndLockChannel(unsigned channelId,              bool assigned);
-        ChannelInfo * FindAndLockChannel(const OpalMediaType & mediaType, bool assigned);
-
-        bool CanAutoStartMedia(const OpalMediaType & mediaType, bool rx);
-
-        unsigned GetSessionOfType(const OpalMediaType & type) const;
-        OpalMediaType GetTypeOfSession(unsigned sessionId) const;
-
-        void Lock()   { mutex.Wait(); }
-        void Unlock() { mutex.Signal(); }
-
-        mutable PMutex mutex;
-
-      protected:
-        void SetOldOptions(unsigned channelID, const OpalMediaType & mediaType, bool rx, bool tx);
-        mutable bool initialised;
-    };
-
-    const ChannelInfoMap & GetChannelInfoMap() const { return channelInfoMap; }
-
-  protected:
-    ChannelInfoMap channelInfoMap; 
-#endif
-
-#endif
 };
 
 
@@ -358,4 +369,4 @@ class OpalSecurityMode : public PObject
     virtual PBoolean Open() = 0;
 };
 
-#endif // __OPAL_RTPCONN_H
+#endif 
