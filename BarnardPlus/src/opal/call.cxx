@@ -121,7 +121,8 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 
   UnlockReadWrite();
 
-  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadOnly); connection != NULL; ++connection)
+  PSafePtr<OpalConnection> connection;
+  while (EnumerateConnections(connection, PSafeReadWrite))
     connection->Release(reason);
 }
 
@@ -146,21 +147,19 @@ PBoolean OpalCall::OnSetUp(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnSetUp " << connection);
 
-  PBoolean ok = PFalse;
-
   if (isClearing || !LockReadWrite())
-    return PFalse;
+    return false;
 
   partyA = connection.GetRemotePartyName();
 
   UnlockReadWrite();
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection) {
-      if (conn->SetUpConnection()) {
-        ok = conn->OnSetUpConnection();
-      }
-    }
+  bool ok = false;
+
+  PSafePtr<OpalConnection> otherConnection;
+  while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
+    if (otherConnection->SetUpConnection() && otherConnection->OnSetUpConnection())
+      ok = true;
   }
 
   return ok;
@@ -172,7 +171,7 @@ PBoolean OpalCall::OnAlerting(OpalConnection & connection)
   PTRACE(3, "Call\tOnAlerting " << connection);
 
   if (isClearing || !LockReadWrite())
-    return PFalse;
+    return false;
 
   partyB = connection.GetRemotePartyName();
 
@@ -181,13 +180,12 @@ PBoolean OpalCall::OnAlerting(OpalConnection & connection)
 
   PBoolean hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, PTrue) != NULL;
 
-  PBoolean ok = PFalse;
+  bool ok = false;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection) {
-      if (conn->SetAlerting(connection.GetRemotePartyName(), hasMedia))
-        ok = PTrue;
-    }
+  PSafePtr<OpalConnection> otherConnection;
+  while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
+    if (otherConnection->SetAlerting(connection.GetRemotePartyName(), hasMedia))
+      ok = true;
   }
 
   return ok;
@@ -221,11 +219,10 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
   if (!LockReadOnly())
     return false;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection) {
-      if (conn->SetConnected())
-        ok = true;
-    }
+  PSafePtr<OpalConnection> otherConnection;
+  while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
+    if (otherConnection->SetConnected())
+      ok = true;
   }
 
   UnlockReadOnly();
@@ -266,12 +263,9 @@ PSafePtr<OpalConnection> OpalCall::GetOtherPartyConnection(const OpalConnection 
 {
   PTRACE(3, "Call\tGetOtherPartyConnection " << connection);
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection)
-      return conn;
-  }
-
-  return NULL;
+  PSafePtr<OpalConnection> otherConnection;
+  EnumerateConnections(otherConnection, PSafeReference, &connection);
+  return otherConnection;
 }
 
 
@@ -281,8 +275,9 @@ bool OpalCall::Hold()
 
   bool ok = false;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn->HoldConnection())
+  PSafePtr<OpalConnection> connection;
+  while (EnumerateConnections(connection, PSafeReadWrite)) {
+    if (connection->HoldConnection())
       ok = true;
   }
 
@@ -296,8 +291,9 @@ bool OpalCall::Retrieve()
 
   bool ok = false;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn->RetrieveConnection())
+  PSafePtr<OpalConnection> connection;
+  while (EnumerateConnections(connection, PSafeReadWrite)) {
+    if (connection->RetrieveConnection())
       ok = true;
   }
 
@@ -307,8 +303,9 @@ bool OpalCall::Retrieve()
 
 bool OpalCall::IsOnHold() const
 {
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn->IsConnectionOnHold())
+  PSafePtr<OpalConnection> connection;
+  while (EnumerateConnections(connection, PSafeReadOnly)) {
+    if (connection->IsConnectionOnHold())
       return true;
   }
 
@@ -323,21 +320,20 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
 
   PBoolean first = PTrue;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (includeSpecifiedConnection || conn != &connection) {
-      OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(conn->GetMediaFormats());
-      if (first) {
-        commonFormats = possibleFormats;
-        first = PFalse;
-      }
-      else {
-        // Want intersection of the possible formats for all connections.
-        for (OpalMediaFormatList::iterator format = commonFormats.begin(); format != commonFormats.end(); ) {
-          if (possibleFormats.HasFormat(*format))
-            ++format;
-          else
-            commonFormats.erase(format++);
-        }
+  PSafePtr<OpalConnection> otherConnection;
+  while (EnumerateConnections(otherConnection, PSafeReadOnly, includeSpecifiedConnection ? NULL : &connection)) {
+    OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(otherConnection->GetMediaFormats());
+    if (first) {
+      commonFormats = possibleFormats;
+      first = PFalse;
+    }
+    else {
+      // Want intersection of the possible formats for all connections.
+      for (OpalMediaFormatList::iterator format = commonFormats.begin(); format != commonFormats.end(); ) {
+        if (possibleFormats.HasFormat(*format))
+          ++format;
+        else
+          commonFormats.erase(format++);
       }
     }
   }
@@ -349,6 +345,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
 
   return commonFormats;
 }
+
 
 PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned sessionID, const OpalMediaFormatList & preselectedFormats)
 {
@@ -366,9 +363,10 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
 
   // handle RTP payload translation
   RTP_DataFrame::PayloadMapType map;
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    const RTP_DataFrame::PayloadMapType & connMap = conn->GetRTPPayloadMap();
-    if (conn != &connection)
+  PSafePtr<OpalConnection> otherConnection;
+  while (EnumerateConnections(otherConnection, PSafeReadOnly)) {
+    const RTP_DataFrame::PayloadMapType & connMap = otherConnection->GetRTPPayloadMap();
+    if (otherConnection != &connection)
       map.insert(connMap.begin(), connMap.end());
     else {
       for (RTP_DataFrame::PayloadMapType::const_iterator it = connMap.begin(); it != connMap.end(); ++it)
@@ -387,48 +385,46 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
   if (otherDirection != NULL)
     sinkFormat = otherDirection->GetMediaFormat();
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection) {
-      OpalMediaFormatList sinkMediaFormats = conn->GetMediaFormats();
-      sinkMediaFormats.Reorder(sinkFormat.GetName()); // Preferential treatment to format already in use
+  while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
+    OpalMediaFormatList sinkMediaFormats = otherConnection->GetMediaFormats();
+    sinkMediaFormats.Reorder(sinkFormat.GetName()); // Preferential treatment to format already in use
 
-      // Get other media directions format so we give preference to symmetric codecs
-      if ((otherDirection = conn->GetMediaStream(sessionID, true)) != NULL)
-        sinkMediaFormats.Reorder(otherDirection->GetMediaFormat().GetName());
+    // Get other media directions format so we give preference to symmetric codecs
+    if ((otherDirection = otherConnection->GetMediaStream(sessionID, true)) != NULL)
+      sinkMediaFormats.Reorder(otherDirection->GetMediaFormat().GetName());
 
-      OpalMediaFormatList sourceMediaFormats;
-      if (sourceFormat.IsValid())
-        sourceMediaFormats = sourceFormat; // Use the source format already established
-      else if (preselectedFormats.IsEmpty())
-        sourceMediaFormats = connection.GetMediaFormats();
-      else
-        sourceMediaFormats = preselectedFormats;
+    OpalMediaFormatList sourceMediaFormats;
+    if (sourceFormat.IsValid())
+      sourceMediaFormats = sourceFormat; // Use the source format already established
+    else if (preselectedFormats.IsEmpty())
+      sourceMediaFormats = connection.GetMediaFormats();
+    else
+      sourceMediaFormats = preselectedFormats;
 
-      if (!SelectMediaFormats(sessionID,
-                              sourceMediaFormats,
-                              sinkMediaFormats,
-                              conn->GetLocalMediaFormats(),
-                              sourceFormat,
-                              sinkFormat))
+    if (!SelectMediaFormats(sessionID,
+                            sourceMediaFormats,
+                            sinkMediaFormats,
+                            otherConnection->GetLocalMediaFormats(),
+                            sourceFormat,
+                            sinkFormat))
+      return false;
+
+    // Finally have the negotiated formats, open the streams
+    if (source == NULL) {
+      source = connection.OpenMediaStream(sourceFormat, sessionID, true);
+      if (source == NULL)
         return false;
+    }
 
-      // Finally have the negotiated formats, open the streams
-      if (source == NULL) {
-        source = connection.OpenMediaStream(sourceFormat, sessionID, true);
-        if (source == NULL)
+    OpalMediaStreamPtr sink = otherConnection->OpenMediaStream(sinkFormat, sessionID, false);
+    if (sink != NULL) {
+      startedOne = true;
+      if (patch == NULL) {
+        patch = manager.CreateMediaPatch(*source, source->RequiresPatchThread());
+        if (patch == NULL)
           return false;
       }
-
-      OpalMediaStreamPtr sink = conn->OpenMediaStream(sinkFormat, sessionID, false);
-      if (sink != NULL) {
-        startedOne = true;
-        if (patch == NULL) {
-          patch = manager.CreateMediaPatch(*source, source->RequiresPatchThread());
-          if (patch == NULL)
-            return false;
-        }
-        patch->AddSink(sink, map);
-      }
+      patch->AddSink(sink, map);
     }
   }
 
@@ -439,8 +435,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
 
   if (patch != NULL) {
     // if a patch was created, make sure the callback is called, just once per connection
-    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn)
-      conn->OnPatchMediaStream(conn == &connection, *patch);
+    while (EnumerateConnections(otherConnection, PSafeReadWrite))
+      otherConnection->OnPatchMediaStream(otherConnection == &connection, *patch);
   }
 
   return true;
@@ -469,8 +465,9 @@ bool OpalCall::SelectMediaFormats(unsigned sessionID,
 
 void OpalCall::CloseMediaStreams()
 {
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
-    conn->CloseMediaStreams();
+  PSafePtr<OpalConnection> connection;
+  while (EnumerateConnections(connection, PSafeReadWrite))
+    connection->CloseMediaStreams();
 }
 
 
@@ -484,24 +481,18 @@ PBoolean OpalCall::IsMediaBypassPossible(const OpalConnection & connection,
 {
   PTRACE(3, "Call\tIsMediaBypassPossible " << connection << " session " << sessionID);
 
-  PBoolean ok = PFalse;
-
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection) {
-      ok = manager.IsMediaBypassPossible(connection, *conn, sessionID);
-      break;
-    }
-  }
-
-  return ok;
+  PSafePtr<OpalConnection> otherConnection;
+  return EnumerateConnections(otherConnection, PSafeReadOnly, &connection) &&
+         manager.IsMediaBypassPossible(connection, *otherConnection, sessionID);
 }
 
 
 void OpalCall::OnUserInputString(OpalConnection & connection, const PString & value)
 {
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection)
-      conn->SendUserInputString(value);
+  PSafePtr<OpalConnection> otherConnection;
+  while (EnumerateConnections(otherConnection, PSafeReadWrite)) {
+    if (otherConnection != &connection)
+      otherConnection->SendUserInputString(value);
     else
       connection.SetUserInput(value);
   }
@@ -514,8 +505,9 @@ void OpalCall::OnUserInputTone(OpalConnection & connection,
 {
   bool reprocess = duration > 0 && tone != ' ';
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection && conn->SendUserInputTone(tone, duration))
+  PSafePtr<OpalConnection> otherConnection;
+  while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
+    if (otherConnection->SendUserInputTone(tone, duration))
       reprocess = false;
   }
 
@@ -553,7 +545,8 @@ PBoolean OpalCall::StartRecording(const PFilePath & fn)
     return PFalse;
 
   // tell each connection to start sending data
-  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadWrite); connection != NULL; ++connection)
+  PSafePtr<OpalConnection> connection;
+  while (EnumerateConnections(connection, PSafeReadWrite))
     connection->EnableRecording();
 
   return PTrue;
@@ -569,15 +562,41 @@ bool OpalCall::IsRecording() const
 void OpalCall::StopRecording()
 {
   // tell each connection to stop sending data
-  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadWrite); connection != NULL; ++connection)
+  PSafePtr<OpalConnection> connection;
+  while (EnumerateConnections(connection, PSafeReadWrite))
     connection->DisableRecording();
 
   manager.GetRecordManager().Close(myToken);
 }
 
+
 void OpalCall::OnStopRecordAudio(const PString & callToken)
 {
   manager.GetRecordManager().CloseStream(myToken, callToken);
 }
+
+
+bool OpalCall::EnumerateConnections(PSafePtr<OpalConnection> & connection,
+                                    PSafetyMode mode,
+                                    const OpalConnection * skipConnection) const
+{
+  if (connection == NULL)
+    connection = PSafePtr<OpalConnection>(connectionsActive, PSafeReference);
+  else {
+    connection.SetSafetyMode(PSafeReference);
+    ++connection;
+  }
+
+  while (connection != NULL) {
+    if (connection != skipConnection &&
+        connection->GetPhase() < OpalConnection::ReleasingPhase &&
+        connection.SetSafetyMode(mode))
+      return true;
+    ++connection;
+  }
+
+  return false;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////

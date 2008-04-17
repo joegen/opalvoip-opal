@@ -446,13 +446,20 @@ void SIPConnection::OnReleased()
   CloseMediaStreams();
 
   // Sent a BYE, wait for it to complete
-  if (byeTransaction != NULL)
+  if (byeTransaction != NULL) {
     byeTransaction->WaitForCompletion();
+    byeTransaction.SetNULL();
+  }
 
   // Wait until all INVITEs have completed
   for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation)
     invitation->WaitForCompletion();
   forkedInvitations.RemoveAll();
+
+  if (referTransaction != NULL) {
+    referTransaction->WaitForCompletion();
+    referTransaction.SetNULL();
+  }
 
   SetPhase(ReleasedPhase);
 
@@ -493,9 +500,10 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
       PStringStream referTo;
       referTo << sip->GetRemotePartyCallbackURL()
               << "?Replaces=" << sip->GetToken()
-              << "%3Bto-tag%3D" << ExtractTag(sip->GetDialogTo())
-              << "%3Bfrom-tag%3D" << ExtractTag(sip->GetDialogFrom());
+              << "%3Bto-tag%3D" << ExtractTag(sip->GetDialogFrom()) // "to/from" is from the other sides perspective
+              << "%3Bfrom-tag%3D" << ExtractTag(sip->GetDialogTo());
       referTransaction = new SIPRefer(*this, *transport, referTo, GetLocalPartyURL());
+      referTransaction->GetMIME().SetAt("Refer-Sub", "false"); // Use RFC4488 to indicate we are NOT doing NOTIFYs
       return referTransaction->Start();
     }
   }
@@ -951,56 +959,60 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     }
 #endif
 
+  SDPMediaDescription::Direction newDirection = SDPMediaDescription::Inactive;
+
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
   PSafePtr<OpalMediaStream> sendStream = GetMediaStream(rtpSessionId, false);
-  bool sending = sendStream != NULL && sendStream->IsOpen();
-  if (sending) {
-    if (sdpFormats.HasFormat(sendStream->GetMediaFormat()))
-      sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
+  if (sendStream != NULL && sendStream->IsOpen()) {
+    if (sdpFormats.HasFormat(sendStream->GetMediaFormat())) {
+      bool paused = (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
+      sendStream->SetPaused(paused);
+      if (!paused)
+        newDirection = SDPMediaDescription::SendOnly;
+    }
     else {
       sendStream->Close();
-      sending = false;
+      sendStream.SetNULL();
     }
   }
 
   PSafePtr<OpalMediaStream> recvStream = GetMediaStream(rtpSessionId, true);
-  bool recving = recvStream != NULL && recvStream->IsOpen();
-  if (recving) {
-    if (sdpFormats.HasFormat(recvStream->GetMediaFormat()))
-      recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+  if (recvStream != NULL && recvStream->IsOpen()) {
+    if (sdpFormats.HasFormat(recvStream->GetMediaFormat())) {
+      bool paused = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
+      recvStream->SetPaused(paused);
+      if (!paused)
+        newDirection = newDirection == SDPMediaDescription::SendOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
+    }
     else {
       recvStream->Close();
-      recving = false;
+      recvStream.SetNULL();
     }
   }
 
   // After (possibly) closing streams, we now open them again if necessary
   // OpenSourceMediaStreams will just return true if they are already open
-  if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0)
-    recving = ownerCall.OpenSourceMediaStreams(*this, rtpSessionId);
+  if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0 &&
+      recvStream == NULL &&
+      ownerCall.OpenSourceMediaStreams(*this, rtpSessionId) &&
+      (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
+    newDirection = SDPMediaDescription::RecvOnly;
 
   PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
-  if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 && otherParty != NULL)
-    sending = ownerCall.OpenSourceMediaStreams(*otherParty, rtpSessionId);
+  if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 &&
+       otherParty != NULL &&
+       sendStream == NULL &&
+       ownerCall.OpenSourceMediaStreams(*otherParty, rtpSessionId) &&
+       (sendStream = GetMediaStream(rtpSessionId, false)) != NULL)
+    newDirection = newDirection == SDPMediaDescription::RecvOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
 
   // Now we build the reply, setting "direction" as appropriate for what we opened.
-  if (sending) {
-    if (sendStream == NULL)
-      sendStream = GetMediaStream(rtpSessionId, false);
-    if (sendStream != NULL) {
+  localMedia->SetDirection(newDirection);
+  if (sendStream != NULL)
       localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
-      localMedia->SetDirection(sendStream->IsPaused() ? SDPMediaDescription::Inactive : recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
-    }
-  }
-  else if (recving) {
-    if (recvStream == NULL)
-      recvStream = GetMediaStream(rtpSessionId, true);
-    if (recvStream != NULL) {
+  else if (recvStream != NULL)
       localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
-      localMedia->SetDirection(recvStream->IsPaused() ? SDPMediaDescription::Inactive : SDPMediaDescription::RecvOnly);
-    }
-  }
   else {
     // Add all possible formats
     bool empty = true;
@@ -1185,14 +1197,13 @@ PBoolean SIPConnection::SetUpConnection()
     return PFalse;
   }
 
-  releaseMethod = ReleaseWithCANCEL;
-
   if (!transport->WriteConnect(WriteINVITE, this)) {
     PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
-    releaseMethod = ReleaseWithNothing;
     Release(EndedByTransportFail);
     return PFalse;
   }
+
+  releaseMethod = ReleaseWithCANCEL;
 
   return PTrue;
 }
@@ -1296,8 +1307,17 @@ const PString SIPConnection::GetRemotePartyCallbackURL() const
 
 void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 {
-  if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
+  switch (transaction.GetMethod()) {
+    case SIP_PDU::Method_INVITE :
+      break;
+
+    case SIP_PDU::Method_REFER :
+      referTransaction.SetNULL();
+      // Do next case
+
+    default :
     return;
+  }
 
   // If we are releasing then I can safely ignore failed
   // transactions - otherwise I'll deadlock.
@@ -1320,12 +1340,34 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 
 void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
 {
-  PTRACE(4, "SIP\tHandling PDU " << pdu);
+  SIP_PDU::Methods method = pdu.GetMethod();
 
-  if (!LockReadWrite())
+  if (method == SIP_PDU::NumMethods) {
+    // Handle a response to one of our transactions
+    PSafePtr<SIPTransaction> transaction = endpoint.GetTransaction(pdu.GetTransactionID(), PSafeReference);
+    if (transaction != NULL)
+      transaction->OnReceivedResponse(pdu);
+    else {
+      PTRACE(3, "SIP\tCannot find transaction for response");
+    }
+    return;
+  }
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
     return;
 
-  switch (pdu.GetMethod()) {
+  // Prevent retries from getting through to processing
+  unsigned sequenceNumber = pdu.GetMIME().GetCSeqIndex();
+  if (m_lastRxCSeq.find(method) != m_lastRxCSeq.end() && sequenceNumber <= m_lastRxCSeq[method]) {
+    PTRACE(3, "SIP\tIgnoring duplicate PDU " << pdu);
+    return;
+  }
+  m_lastRxCSeq[method] = sequenceNumber;
+
+  PTRACE(4, "SIP\tHandling PDU " << pdu);
+
+  switch (method) {
     case SIP_PDU::Method_INVITE :
       OnReceivedINVITE(pdu);
       break;
@@ -1353,26 +1395,11 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     case SIP_PDU::Method_PING :
       OnReceivedPING(pdu);
       break;
-    case SIP_PDU::Method_MESSAGE :
-    case SIP_PDU::Method_SUBSCRIBE :
-    case SIP_PDU::Method_REGISTER :
-    case SIP_PDU::Method_PUBLISH :
+    default :
       // Shouldn't have got this!
+      PTRACE(2, "SIP\tUnhandled PDU " << pdu);
       break;
-    case SIP_PDU::NumMethods :  // if no method, must be response
-      {
-        UnlockReadWrite(); // Need to avoid deadlocks with transaction mutex
-        PSafePtr<SIPTransaction> transaction = endpoint.GetTransaction(pdu.GetTransactionID(), PSafeReference);
-        if (transaction != NULL)
-          transaction->OnReceivedResponse(pdu);
-        else {
-          PTRACE(3, "SIP\tCannot find transaction for response");
         }
-      }
-      return;
-  }
-
-  UnlockReadWrite();
 }
 
 
@@ -1600,8 +1627,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     return;
   }
 
-  releaseMethod = ReleaseWithResponse;
-
   // Fill in all the various connection info, not our to/from is their from/to
   UpdateRemoteAddresses(mime.GetFrom());
   mime.GetProductInfo(remoteProductInfo);
@@ -1629,6 +1654,29 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // allow the application to determine if RTP NAT is enabled or not
   remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, PTrue);
 
+  releaseMethod = ReleaseWithResponse;
+
+  PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
+  SetPhase(SetUpPhase);
+
+  // Replaces header has already been validated in SIPEndPoint::OnReceivedINVITE
+  PString replaces = mime("Replaces");
+  PSafePtr<SIPConnection> replacedConnection = endpoint.GetSIPConnectionWithLock(replaces.Left(replaces.Find(';')).Trim(), PSafeReadOnly);
+  if (replacedConnection != NULL) {
+    PTRACE(3, "SIP\tConnection " << *replacedConnection << " replaced by " << *this);
+
+    replacedConnection->Release(OpalConnection::EndedByCallForwarded);
+    replacedConnection->CloseMediaStreams();
+
+    if (!OnOpenIncomingMediaChannels()) {
+      PTRACE(1, "SIP\tOnOpenIncomingMediaChannels failed for INVITE from " << request.GetURI() << " for " << *this);
+      Release();
+    }
+
+    SetConnected();
+    return;
+  }
+
   // indicate the other is to start ringing (but look out for clear calls)
   if (!OnIncomingConnection(0, NULL)) {
     PTRACE(1, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
@@ -1636,14 +1684,19 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     return;
   }
 
-  PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
-  SetPhase(SetUpPhase);
-
   if (!OnOpenIncomingMediaChannels()) {
     PTRACE(1, "SIP\tOnOpenIncomingMediaChannels failed for INVITE from " << request.GetURI() << " for " << *this);
     Release();
     return;
   }
+
+  if (!ownerCall.OnSetUp(*this)) {
+    PTRACE(1, "SIP\tOnSetUp failed for INVITE from " << request.GetURI() << " for " << *this);
+    Release();
+    return;
+  }
+
+  AnsweringCall(OnAnswerCall(remotePartyAddress));
 }
 
 
@@ -1671,11 +1724,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
     // The Re-INVITE can be sent to change the RTP Session parameters,
     // the current codecs, or to put the call on hold
-    SDPMediaDescription * audioSDP = sdpIn.GetMediaDescription(SDPMediaDescription::Audio);
-    if ((audioSDP != NULL && audioSDP->GetTransportAddress().IsEmpty()) || // Old style "hold"
-        ((sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID)&SDPMediaDescription::RecvOnly) == 0 &&
-         (sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID)&SDPMediaDescription::RecvOnly) == 0) ||
-          sdpIn.GetBandwidth(SDPSessionDescription::ApplicationSpecificBandwidthType()) == 0) {
+    if (sdpIn.IsHold()) {
       PTRACE(3, "SIP\tRemote hold detected");
       m_holdFromRemote = true;
       OnHold(true, true);
@@ -1744,9 +1793,6 @@ PBoolean SIPConnection::OnOpenIncomingMediaChannels()
       ownerCall.GetOtherPartyConnection(*this)->PreviewPeerMediaFormats(previewFormats);
   }
 
-  ownerCall.OnSetUp(*this);
-
-  AnsweringCall(OnAnswerCall(remotePartyAddress));
   return PTrue;
 }
 
@@ -1867,7 +1913,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
   // The REFER is over
   if (state.Find("terminated") != P_MAX_INDEX) {
     referTransaction->WaitForCompletion();
-    referTransaction = (SIPTransaction *)NULL;
+    referTransaction.SetNULL();
 
     // Release the connection
     if (phase < ReleasingPhase) 
@@ -1881,29 +1927,37 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
 }
 
 
-void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
+void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 {
-  SIPTransaction *notifyTransaction = NULL;
-  PString referto = pdu.GetMIME().GetReferTo();
-  
-  if (referto.IsEmpty()) {
-    SIP_PDU response(pdu, SIP_PDU::Failure_BadEvent);
-    SendPDU(response, pdu.GetViaAddress(endpoint));
+  PString referTo = request.GetMIME().GetReferTo();
+  if (referTo.IsEmpty()) {
+    SIP_PDU response(request, SIP_PDU::Failure_BadRequest, NULL, "Missing refer-to header");
+    SendPDU(response, request.GetViaAddress(endpoint));
     return;
   }    
 
-  SIP_PDU response(pdu, SIP_PDU::Successful_Accepted);
-  SendPDU(response, pdu.GetViaAddress(endpoint));
-  releaseMethod = ReleaseWithNothing;
+  SIPURL to = referTo;
+  PString replaces = PURL::UntranslateString(to.GetQueryVars()("Replaces"), PURL::QueryTranslation);
+  to.SetQuery(PString::Empty());
 
-  endpoint.SetupTransfer(GetToken(),  
-                         PString (), 
-                         referto,  
-                         NULL);
-  
-  // Send a Final NOTIFY,
-  notifyTransaction = new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
-  notifyTransaction->WaitForCompletion();
+  if (!endpoint.SetupTransfer(GetToken(), replaces, to.AsString(), NULL)) {
+    SIP_PDU response(request, SIP_PDU::Failure_TransactionDoesNotExist);
+    SendPDU(response, request.GetViaAddress(endpoint));
+    return;
+  }    
+
+  SIP_PDU response(request, SIP_PDU::Successful_Accepted);
+
+  if (request.GetMIME()("Refer-Sub") *= "false") {
+    // Use RFC4488 to indicate we are NOT doing NOTIFYs
+    response.GetMIME().SetAt("Refer-Sub", "false");
+  }
+  else {
+    // Send a NOTIFY for done, even though strictly speaking we aren't yet
+    new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
+  }
+
+  SendPDU(response, request.GetViaAddress(endpoint));
 }
 
 
@@ -2077,8 +2131,18 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
 void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
-    PTRACE(2, "SIP\tReceived OK response for non INVITE");
+  PTRACE(3, "SIP\tHandling " << response.GetStatusCode() << " response for " << transaction.GetMethod());
+
+  switch (transaction.GetMethod()) {
+    case SIP_PDU::Method_INVITE :
+      break;
+
+    case SIP_PDU::Method_REFER :
+      if (response.GetMIME()("Refer-Sub") == "false")
+        referTransaction.SetNULL(); // Used RFC4488 to indicate we are NOT doing NOTIFYs
+      // Do next case
+
+    default :
     return;
   }
 
@@ -2221,9 +2285,18 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
 }
 
 
-void SIPConnection::OnCreatingINVITE(SIP_PDU & /*request*/)
+void SIPConnection::OnCreatingINVITE(SIP_PDU & request)
 {
   PTRACE(3, "SIP\tCreating INVITE request");
+
+  if (stringOptions != NULL) {
+    PString replaces((*stringOptions)("Replaces"));
+    if (!replaces.IsEmpty()) {
+      SIPMIMEInfo & mime = request.GetMIME();
+      mime.SetAt("Require", "replaces");
+      mime.SetAt("Replaces", replaces);
+    }
+  }
 }
 
 PBoolean SIPConnection::ForwardCall (const PString & fwdParty)

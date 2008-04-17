@@ -356,33 +356,35 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
 }
 
 
-PBoolean SIPEndPoint::SetupTransfer(const PString & token,  
-        const PString & /*callIdentity*/, 
-        const PString & remoteParty,  
-        void * userData)
+PBoolean SIPEndPoint::SetupTransfer(const PString & token,
+                                    const PString & callId,
+                                    const PString & remoteParty,
+                                    void * userData)
 {
   // Make a new connection
   PSafePtr<OpalConnection> otherConnection = GetConnectionWithLock(token, PSafeReference);
   if (otherConnection == NULL)
     return false;
-  
+
   OpalCall & call = otherConnection->GetCall();
-  
-  call.CloseMediaStreams();
-  
+
+  PTRACE(3, "SIP\tTransferring " << *otherConnection << " to " << remoteParty << " in call " << call);
+
+  OpalConnection::StringOptions options;
+  if (!callId.IsEmpty())
+    options.SetAt("Replaces", callId);
+
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = CreateConnection(call, callID, userData, TranslateENUM(remoteParty), NULL, NULL);
+  SIPConnection * connection = CreateConnection(call, callID, userData, TranslateENUM(remoteParty), NULL, NULL, 0, &options);
   if (!AddConnection(connection))
     return false;
 
-  call.OnReleased(*otherConnection);
-  
-  connection->SetUpConnection();
   otherConnection->Release(OpalConnection::EndedByCallForwarded);
+  otherConnection->CloseMediaStreams();
 
-  return true;
+  return connection->SetUpConnection();
 }
 
 
@@ -553,12 +555,48 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
     return PFalse;
   }
-  
-  // Get new instance of a call, abort if none created
-  OpalCall * call = manager.InternalCreateCall();
-  if (call == NULL) {
-    SendResponse(SIP_PDU::Failure_TemporarilyUnavailable, transport, *request);
-    return false;
+
+  // See if we are replacing an existing call.
+  OpalCall * call = NULL;
+  if (mime.Contains("Replaces")) {
+    PString replaces = mime("Replaces");
+
+    PString to;
+    static const char toTag[] = ";to-tag=";
+    PINDEX pos = replaces.Find(toTag);
+    if (pos != P_MAX_INDEX) {
+      pos += sizeof(toTag)-1;
+      to = replaces(pos, replaces.Find(';', pos)-1).Trim();
+    }
+
+    PString from;
+    static const char fromTag[] = ";from-tag=";
+    pos = replaces.Find(fromTag);
+    if (pos != P_MAX_INDEX) {
+      pos += sizeof(fromTag)-1;
+      from = replaces(pos, replaces.Find(';', pos)-1).Trim();
+    }
+
+    PString callid = replaces.Left(replaces.Find(';')).Trim();
+    if (callid.IsEmpty() || to.IsEmpty() || from.IsEmpty()) {
+      PTRACE(2, "SIP\tBad Replaces header in INVITE from " << request->GetURI());
+      SendResponse(SIP_PDU::Failure_BadRequest, transport, *request);
+      return false;
+    }
+
+    PSafePtr<SIPConnection> replacedConnection = GetSIPConnectionWithLock(callid, PSafeReadOnly);
+    if (replacedConnection == NULL ||
+        replacedConnection->GetDialogTo().Find(to) == P_MAX_INDEX ||
+        replacedConnection->GetDialogFrom().Find(from) == P_MAX_INDEX) {
+      PTRACE(2, "SIP\tUnknown " << (replacedConnection != NULL ? "to/from" : "call-id")
+             << " in Replaces header of INVITE from " << request->GetURI());
+      SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, *request);
+      return false;
+    }
+
+    // Use the existing call instance when replacing the SIP side of it.
+    call = &replacedConnection->GetCall();
+    PTRACE(3, "SIP\tIncoming INVITE replaces connection " << *replacedConnection);
   }
 
   // create and check transport
@@ -567,6 +605,15 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     PTRACE(1, "SIP\tFailed to create transport for SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
     SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
     return PFalse;
+  }
+
+  if (call == NULL) {
+    // Get new instance of a call, abort if none created
+    call = manager.InternalCreateCall();
+    if (call == NULL) {
+      SendResponse(SIP_PDU::Failure_TemporarilyUnavailable, transport, *request);
+      return false;
+    }
   }
 
   // ask the endpoint for a connection
@@ -582,10 +629,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return PFalse;
   }
 
-  // Get the connection to handle the rest of the INVITE
-  //connection->QueuePDU(request);
-
-  // pass message off to thread pool
+  // Get the connection to handle the rest of the INVITE in the thread pool
   SIP_PDU_Work * work = new SIP_PDU_Work;
   work->ep        = this;
   work->pdu       = request;
