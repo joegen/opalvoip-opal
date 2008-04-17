@@ -54,7 +54,7 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
     PBoolean SetSoundDevice(PArgList & args, const char * optionName, PSoundChannel::Directions dir);
 
     PString incomingConnectionToken;
-    PBoolean    autoAnswer;
+    bool    autoAnswer;
 };
 
 
@@ -85,9 +85,10 @@ class MyManager : public OpalManager
     );
 
   protected:
-    PBoolean InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPoint * h323EP);
+    bool InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPoint * h323EP);
 
     PString currentCallToken;
+    PString heldCallToken;
 
 #if OPAL_LID
     OpalLineEndPoint * potsEP;
@@ -110,11 +111,12 @@ class MyManager : public OpalManager
     OpalFaxEndPoint  * t38EP;
 #endif
 
-    PBoolean pauseBeforeDialing;
+    bool    pauseBeforeDialing;
     PString srcEP;
 
     void HangupCurrentCall();
     void StartCall(const PString & ostr);
+    void HoldRetrieveCall();
     void TransferCall(const PString & dest);
 #if P_CONFIG_FILE
     void NewSpeedDial(const PString & ostr);

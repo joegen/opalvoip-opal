@@ -422,8 +422,8 @@ PBoolean MyManager::Initialise(PArgList & args)
     video.driverName = args.GetOptionString("grabdriver");
     video.channelNumber = args.GetOptionString("grabchannel").AsInteger();
     if (!SetVideoInputDevice(video)) {
-      cerr << "Unknown grabber device " << video.deviceName << endl
-           << "options are:" << setfill(',') << PVideoInputDevice::GetDriversDeviceNames("") << endl;
+      cerr << "Unknown grabber device " << video.deviceName << "\n"
+              "Available devices are:" << setfill(',') << PVideoInputDevice::GetDriversDeviceNames("") << endl;
       return PFalse;
     }
   }
@@ -433,8 +433,8 @@ PBoolean MyManager::Initialise(PArgList & args)
     video.deviceName = args.GetOptionString("display");
     video.driverName = args.GetOptionString("displaydriver");
     if (!SetVideoOutputDevice(video)) {
-      cerr << "Unknown display device " << video.deviceName << endl
-           << "options are:" << setfill(',') << PVideoOutputDevice::GetDriversDeviceNames("") << endl;
+      cerr << "Unknown display device " << video.deviceName << "\n"
+              "Available devices are:" << setfill(',') << PVideoOutputDevice::GetDriversDeviceNames("") << endl;
       return PFalse;
     }
   }
@@ -455,7 +455,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     if (minJitter >= 20 && minJitter <= maxJitter && maxJitter <= 1000)
       SetAudioJitterDelay(minJitter, maxJitter);
     else {
-      cerr << "Jitter should be between 20 and 1000 milliseconds." << endl;
+      cerr << "Jitter should be between 20 and 1000 milliseconds.\n";
       return PFalse;
     }
   }
@@ -498,7 +498,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   if (args.HasOption("rtp-tos")) {
     unsigned tos = args.GetOptionString("rtp-tos").AsUnsigned();
     if (tos > 255) {
-      cerr << "IP Type Of Service bits must be 0 to 255." << endl;
+      cerr << "IP Type Of Service bits must be 0 to 255.\n";
       return PFalse;
     }
     SetRtpIpTypeofService(tos);
@@ -1037,9 +1037,10 @@ void MyManager::Main(PArgList & args)
             "  0-9 : send user indication message\n"
             "  *,# : send user indication message\n"
             "  M   : send text message to remote user\n"
-            "  C   : connect to remote host\n"
+            "  C   : Connect to remote host\n"
             "  S   : Display statistics\n"
-            "  T   : transfer remote to new destination\n"
+            "  O   : Put call on hold\n"
+            "  T   : Transfer remote to new destination or held call\n"
             "  H   : Hang up phone\n"
             "  L   : List speed dials\n"
             "  D   : Create new speed dial\n"
@@ -1060,61 +1061,56 @@ void MyManager::Main(PArgList & args)
         goto endSimpleOPAL;
       }
        
-      console >> ch;
+      PString line;
+      console >> line;
+      line = line.LeftTrim();
+      ch = line[0];
+      line = line.Mid(1).Trim();
+
       PTRACE(3, "console in audio test is " << ch);
       switch (tolower(ch)) {
       case 'x' :
       case 'q' :
         goto endSimpleOPAL;
-        break;
+
       case '?' :       
         cout << help ;
         break;
 
       case 'z':
         if (currentCallToken.IsEmpty())
-         cout << "Cannot stop or start record whilst no call in progress\n";
+         cout << "Cannot stop or start record whilst no call in progress.\n";
         else if (ch == 'z') {
           StartRecording(currentCallToken, "record.wav");
-          cout << "Record started" << endl;
+          cout << "Recording started.\n";
         }
-        else
-        {
+        else {
           StopRecording(currentCallToken);
-          cout << "Record stopped" << endl;
+          cout << "Recording stopped.\n";
         }
         break;
         
       case 'y' :
-        if (pcssEP != NULL && !pcssEP->incomingConnectionToken) {
-          if (!pcssEP->AcceptIncomingConnection(pcssEP->incomingConnectionToken))
-            cout << "Could not answer connection " << pcssEP->incomingConnectionToken << endl;
-        }
-        console.ignore(INT_MAX, '\n');
+        if ( pcssEP != NULL &&
+            !pcssEP->incomingConnectionToken &&
+            !pcssEP->AcceptIncomingConnection(pcssEP->incomingConnectionToken))
+          cout << "Could not answer connection " << pcssEP->incomingConnectionToken << endl;
         break;
 
       case 'n' :
-        if (pcssEP != NULL && !pcssEP->incomingConnectionToken) {
-          PSafePtr<OpalConnection> connection = pcssEP->GetConnectionWithLock(pcssEP->incomingConnectionToken);
-          if (connection != NULL) {
-            cout << "Clearing connection " << *connection << endl;
-            connection->Release(OpalConnection::EndedByAnswerDenied);
-          }
-        }
-        console.ignore(INT_MAX, '\n');
+        if ( pcssEP != NULL &&
+            !pcssEP->incomingConnectionToken &&
+            !pcssEP->RejectIncomingConnection(pcssEP->incomingConnectionToken))
+          cout << "Could not reject connection " << pcssEP->incomingConnectionToken << endl;
         break;
 
 #if P_CONFIG_FILE
       case 'l' :
         ListSpeedDials();
         break;
-        
+ 
       case 'd' :
-        {
-	        PString str;
-	        console >> str;
-	        NewSpeedDial(str.Trim());
-        }
+        NewSpeedDial(line);
         break;
 #endif // P_CONFIG_FILE
         
@@ -1123,46 +1119,30 @@ void MyManager::Main(PArgList & args)
         break;
 
       case 'c' :
-        if (!currentCallToken.IsEmpty())
-	        cout << "Cannot make call whilst call in progress\n";
-        else {
-      	  PString str;
-	        console >> str;
-	        StartCall(str.Trim());
-        }
+        StartCall(line);
+        break;
+
+      case 'o' :
+        HoldRetrieveCall();
         break;
 
       case 't' :
-        if (currentCallToken.IsEmpty())
-          cout << "Cannot do transfer while no call in progress\n";
-        else {
-          PString dest;
-          console >> dest;
-          TransferCall(dest);
-        }
+        TransferCall(line);
         break;
 
       case 'r':
-        cout << " current call token is \"" << currentCallToken << "\" " << endl;
+        cout << "Current call token is \"" << currentCallToken << "\"\n";
+        if (!heldCallToken.IsEmpty())
+          cout << "Held call token is \"" << heldCallToken << "\"\n";
         break;
 
       case 'm' :
-        if (currentCallToken.IsEmpty())
-	        cout << "Cannot send a message while no call in progress\n";
-        else {
-	        PString str;
-	        console >> str;
-	        SendMessageToRemoteNode(str);
-        }
+        SendMessageToRemoteNode(line);
         break;
 
       default:
-        if (ch >= '0' || ch <= '9' || ch == '*' || ch == '#') {
-          if (currentCallToken.IsEmpty())
-            cout << "Cannot send a digit while no call in progress\n";
-          else
-            SendTone(ch);
-        }
+        if (isdigit(ch) || ch == '*' || ch == '#')
+          SendTone(ch);
         break;
       }
     }
@@ -1171,26 +1151,63 @@ void MyManager::Main(PArgList & args)
       HangupCurrentCall();
   }
 
-   cout << "Console finished " << endl;
+  cout << "Console finished " << endl;
 }
 
 void MyManager::HangupCurrentCall()
 {
-  PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
-  if (call != NULL) {
+  PString & token = currentCallToken.IsEmpty() ? heldCallToken : currentCallToken;
+
+  PSafePtr<OpalCall> call = FindCallWithLock(token);
+  if (call == NULL)
+    cout << "No call to hang up!\n";
+  else {
     cout << "Clearing call " << *call << endl;
     call->Clear();
-    currentCallToken = PString();
+    token.MakeEmpty();
   }
-  else
-    cout << "Not in a call!\n";      
+}
+
+
+void MyManager::HoldRetrieveCall()
+{
+  if (currentCallToken.IsEmpty() && heldCallToken.IsEmpty()) {
+    cout << "Cannot do hold while no call in progress\n";
+    return;
+  }
+
+  if (heldCallToken.IsEmpty()) {
+    PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
+    if (call == NULL)
+      cout << "Current call disappeared!\n";
+    else if (call->Hold()) {
+      cout << "Call held.\n";
+      heldCallToken = currentCallToken;
+      currentCallToken.MakeEmpty();
+    }
+  }
+  else {
+    PSafePtr<OpalCall> call = FindCallWithLock(heldCallToken);
+    if (call == NULL)
+      cout << "Held call disappeared!\n";
+    else if (call->Retrieve()) {
+      cout << "Call retrieved.\n";
+      currentCallToken = heldCallToken;
+      heldCallToken.MakeEmpty();
+    }
+  }
 }
 
 
 void MyManager::TransferCall(const PString & dest)
 {
-  if (dest.IsEmpty()) {
-    cout << "Must supply a destination for transfer!\n";
+  if (currentCallToken.IsEmpty()) {
+    cout << "Cannot do transfer while no call in progress\n";
+    return;
+  }
+
+  if (dest.IsEmpty() && heldCallToken.IsEmpty()) {
+    cout << "Must supply a destination for transfer, or have a call on hold!\n";
     return;
   }
 
@@ -1202,64 +1219,69 @@ void MyManager::TransferCall(const PString & dest)
 
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
     if (!PIsDescendant(&(*connection), OpalPCSSConnection) && !PIsDescendant(&(*connection), OpalLineConnection)) {
-      connection->TransferConnection(dest);
+      connection->TransferConnection(dest.IsEmpty() ? heldCallToken : dest);
       break;
     }
   }
 }
 
 
-void MyManager::SendMessageToRemoteNode(const PString & ostr)
+void MyManager::SendMessageToRemoteNode(const PString & str)
 {
-  PString str = ostr.Trim();
   if (str.IsEmpty()) {
     cout << "Must supply a message to send!\n";
-    return ;
+    return;
   }
 
-  PList<OpalEndPoint> endpoints = GetEndPoints();
-  for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
-    PStringList res = endpoints[i].GetAllConnections();
-    if (res.GetSize() == 0)
-      continue;
-
-    for(PINDEX j  = 0; j < res.GetSize(); j++) {
-      PSafePtr< OpalConnection >  conn = endpoints[i].GetConnectionWithLock (res[j]);
-      if (conn != NULL) {
-	conn->SendUserInputString(str);
-	cout << "Send \"" << str << "\" to " << res[j] << endl;
-      }
-    }
+  PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
+  if (call == NULL) {
+    cout << "Cannot send a message while no call in progress\n";
+    return;
   }
-  return;
+
+  PSafePtr<OpalConnection> conn = call->GetConnection(0);
+  while (conn != NULL) {
+    conn->SendUserInputString(str);
+    cout << "Sent \"" << str << "\" to " << conn->GetRemotePartyName() << endl;
+    ++conn;
+  }
 }
 
 void MyManager::SendTone(const char tone)
 {
-  PList<OpalEndPoint> endpoints = GetEndPoints();
-  for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
-    PStringList res = endpoints[i].GetAllConnections();
-    if (res.GetSize() == 0)
-      continue;
-
-    for(PINDEX j  = 0; j < res.GetSize(); j++) {
-      PSafePtr< OpalConnection >  conn = endpoints[i].GetConnectionWithLock (res[j]);
-      if (conn != NULL) {
-	conn->SendUserInputTone(tone, 180);
-	cout << "Send \"" << tone << "\" to " << res[j] << endl;
-      }
-    }
+  if (currentCallToken.IsEmpty()) {
+    cout << "Cannot send a digit while no call in progress\n";
+    return;
   }
-  return;
+
+  PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
+  if (call == NULL) {
+    cout << "Cannot send a message while no call in progress\n";
+    return;
+  }
+
+  PSafePtr<OpalConnection> conn = call->GetConnection(0);
+  while (conn != NULL) {
+    conn->SendUserInputTone(tone, 180);
+    cout << "Sent \"" << tone << "\" to " << conn->GetRemotePartyName() << endl;
+    ++conn;
+  }
 }
 
-void MyManager::StartCall(const PString & ostr)
+
+void MyManager::StartCall(const PString & dest)
 {
-  PString str = ostr.Trim();
-  if (str.IsEmpty()) {
+  if (!currentCallToken.IsEmpty()) {
+    cout << "Cannot make call whilst call in progress\n";
+    return;
+  }
+
+  if (dest.IsEmpty()) {
     cout << "Must supply hostname to connect to!\n";
     return ;
   }
+
+  PString str = dest;
 
 #if P_CONFIG_FILE
   // check for speed dials, and match wild cards as we go
@@ -1288,10 +1310,8 @@ void MyManager::StartCall(const PString & ostr)
       if (!str.IsEmpty())
         break;
     }
-    if (str.IsEmpty()) {
-      cout << "Speed dial \"" << key << "\" not defined";
-      cout << endl;
-    }
+    if (str.IsEmpty())
+      cout << "Speed dial \"" << key << "\" not defined\n";
   }
 #endif // P_CONFIG_FILE
 
@@ -1307,7 +1327,7 @@ void MyManager::ListSpeedDials()
   PConfig config("Speeddial");
   PStringList keys = config.GetKeys();
   if (keys.GetSize() == 0) {
-    cout << "No speed dials defined" << endl;
+    cout << "No speed dials defined\n";
     return;
   }
  
@@ -1326,7 +1346,9 @@ void MyManager::OnEstablishedCall(OpalCall & call)
 void MyManager::OnClearedCall(OpalCall & call)
 {
   if (currentCallToken == call.GetToken())
-    currentCallToken = PString();
+    currentCallToken.MakeEmpty();
+  else if (heldCallToken == call.GetToken())
+    heldCallToken.MakeEmpty();
 
   PString remoteName = '"' + call.GetPartyB() + '"';
   switch (call.GetCallEndReason()) {
