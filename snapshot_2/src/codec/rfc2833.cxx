@@ -269,7 +269,7 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
   if (frame.GetPayloadSize() < 4) {
     PTRACE(2, "RFC2833\tIgnoring packet size " << frame.GetPayloadSize() << " - too small.");
   }
-  else if ((tonesReceived > 1) && (seqDiff <= 0) && (seqDiff > -1000)) {
+  else if ((tonesReceived > 0) && (seqDiff <= 0) && (seqDiff > -1000)) {
     PTRACE(2, "RFC2833\tIgnoring packet with backwards sequence number");
   }
   else {
@@ -296,7 +296,7 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
         // the only safe way to detect a new tone is the timestamp
         // because the packet with the marker bit could go missing and 
         // because some endpoints (*cough* Kapanga *cough*) send multiple marker bits
-        bool newTone = (tonesReceived == 1) || (timeStamp != previousReceivedTimestamp);
+        bool newTone = (tonesReceived == 0) || (timeStamp != previousReceivedTimestamp);
 
         // if new tone, end any current tone and start new one
         if (!newTone) {
