@@ -1095,6 +1095,13 @@ class OpalManager : public PObject
     unsigned GetMaxAudioJitterDelay() const { return maxAudioJitterDelay; }
 
     /**Set the maximum audio jitter delay parameter.
+
+       If minDelay is set to zero then both the minimum and maximum will be
+       set to zero which will disable the jitter buffer entirely.
+
+       If maxDelay is zero, or just less that minDelay, then the maximum
+       jitter is set to the minimum and this disables the adaptive jitter, a
+       fixed value is used.
      */
     void SetAudioJitterDelay(
       unsigned minDelay,   ///<  New minimum jitter buffer delay in milliseconds
