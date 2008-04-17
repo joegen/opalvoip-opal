@@ -1388,6 +1388,26 @@ SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sess
 }
 
 
+bool SDPSessionDescription::IsHold() const
+{
+  SDPMediaDescription * audioSDP = GetMediaDescription(OpalMediaType::Audio());
+  if (audioSDP != NULL && audioSDP->GetTransportAddress().IsEmpty()) // Old style "hold"
+    return true;
+
+  if (GetBandwidth(SDPSessionDescription::ApplicationSpecificBandwidthType()) == 0)
+    return true;
+
+  PINDEX i;
+  for (i = 0; i < mediaDescriptions.GetSize(); i++) {
+    SDPMediaDescription::Direction dir = mediaDescriptions[i].GetDirection();
+    if (dir != SDPMediaDescription::Undefined && (dir&SDPMediaDescription::SendOnly) != 0)
+      return false;
+  }
+
+  return true;
+}
+
+
 void SDPSessionDescription::SetDefaultConnectAddress(const OpalTransportAddress & address)
 {
    defaultConnectAddress = address;

@@ -468,7 +468,9 @@ class SIPConnection : public OpalRTPConnection
     SIPURL                m_requestURI;
     PString               m_dialogFrom;
     PString               m_dialogTo;
-    SIPAuthentication     * authentication;
+    SIPAuthentication   * authentication;
+
+    std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
 
     PTimer                    ackTimer;
     PTimer                    ackRetry;
