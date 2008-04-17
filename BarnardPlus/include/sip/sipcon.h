@@ -509,6 +509,8 @@ class SIPConnection : public OpalConnection
     PString               m_dialogTo;
     SIPAuthentication     authentication;
 
+    std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
+
     PTimer                    ackTimer;
     PTimer                    ackRetry;
     SIP_PDU                   ackPacket;

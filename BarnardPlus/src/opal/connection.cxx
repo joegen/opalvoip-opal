@@ -336,7 +336,7 @@ void OpalConnection::SetCallEndReason(CallEndReason reason)
       SetQ931Cause((int)reason >> 24);
       reason = (CallEndReason)(reason & 0xff);
     }
-    PTRACE(3, "OpalCon\tCall end reason for " << GetToken() << " set to " << reason);
+    PTRACE(3, "OpalCon\tCall end reason for " << *this << " set to " << reason);
     callEndReason = reason;
     ownerCall.SetCallEndReason(reason);
   }
@@ -404,7 +404,7 @@ void OpalConnection::OnReleaseThreadMain(PThread &, INT)
 {
   OnReleased();
 
-  PTRACE(4, "OpalCon\tOnRelease thread completed for " << GetToken());
+  PTRACE(4, "OpalCon\tOnRelease thread completed for " << *this);
 
   // Dereference on the way out of the thread
   SafeDereference();
@@ -578,7 +578,7 @@ void OpalConnection::CloseMediaStreams()
   bool someOpen = true;
   while (someOpen) {
     someOpen = false;
-    for (PSafePtr<OpalMediaStream> mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream) {
+    for (PSafePtr<OpalMediaStream> mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
       if (mediaStream->IsOpen()) {
         someOpen = true;
         CloseMediaStream(*mediaStream);
@@ -586,10 +586,7 @@ void OpalConnection::CloseMediaStreams()
     }
   }
 
-  for (PSafePtr<OpalMediaStream> mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream)
-    
-
-  PTRACE(3, "OpalCon\tMedia stream threads closed.");
+  PTRACE(3, "OpalCon\tMedia streams closed.");
 }
 
 

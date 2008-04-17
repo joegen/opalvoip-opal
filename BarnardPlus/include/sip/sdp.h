@@ -270,6 +270,7 @@ class SDPSessionDescription : public PObject
     
     void SetDirection(const SDPMediaDescription::Direction & d) { direction = d; }
     SDPMediaDescription::Direction GetDirection(unsigned) const;
+    bool IsHold() const;
 
     const OpalTransportAddress & GetDefaultConnectAddress() const { return defaultConnectAddress; }
     void SetDefaultConnectAddress(
