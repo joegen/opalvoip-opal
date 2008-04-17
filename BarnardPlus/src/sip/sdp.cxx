@@ -1183,7 +1183,7 @@ SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sess
 
 bool SDPSessionDescription::IsHold() const
 {
-  SDPMediaDescription * audioSDP = GetMediaDescription(OpalMediaType::Audio());
+  SDPMediaDescription * audioSDP = GetMediaDescription(SDPMediaDescription::Audio);
   if (audioSDP != NULL && audioSDP->GetTransportAddress().IsEmpty()) // Old style "hold"
     return true;
 
