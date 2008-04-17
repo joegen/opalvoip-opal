@@ -34,6 +34,7 @@
 #include <libgen.h>
 
 unsigned TraceLevel = 0;
+unsigned TraceLevelUserPlane = 0;
 
 void Trace::SetLevel (unsigned level)
 {
@@ -48,6 +49,21 @@ unsigned Trace::GetLevel ()
 bool Trace::CanTrace (unsigned level)
 {
   return level <= TraceLevel;
+}
+
+void Trace::SetLevelUserPlane (unsigned level)
+{
+  TraceLevelUserPlane = level;
+}
+
+unsigned Trace::GetLevelUserPlane ()
+{
+  return (TraceLevelUserPlane);
+}
+
+bool Trace::CanTraceUserPlane (unsigned level)
+{
+  return level <= TraceLevelUserPlane;
 }
 
 ostream & Trace::Start(const char* file, int line)

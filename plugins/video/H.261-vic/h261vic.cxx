@@ -1195,16 +1195,25 @@ extern "C" {
   PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned /*version*/)
   {
 #ifndef _WIN32_WCE
-	char * debug_level = getenv ("PWLIB_TRACE_CODECS");
-#else
-	char * debug_level = "0"; // Set in any level you want
-#endif
+    char * debug_level = getenv ("PTLIB_TRACE_CODECS");
     if (debug_level!=NULL) {
       Trace::SetLevel(atoi(debug_level));
     }
     else {
       Trace::SetLevel(0);
     }
+
+    debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
+    if (debug_level!=NULL) {
+      Trace::SetLevelUserPlane(atoi(debug_level));
+    }
+    else {
+      Trace::SetLevelUserPlane(0);
+    }
+#else
+    Trace::SetLevel(0);
+    Trace::SetLevelUserPlane(0);
+#endif
 
     *count = sizeof(h261CodecDefn) / sizeof(struct PluginCodec_Definition);
     return h261CodecDefn;

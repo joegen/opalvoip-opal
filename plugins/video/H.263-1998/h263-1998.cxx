@@ -60,6 +60,27 @@ extern "C" {
 
 static FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H263P);
 
+static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg) {
+  char buffer[512];
+  int severity = 0;
+  if (v) {
+    switch (level)
+    {
+      case AV_LOG_QUIET: severity = 0; break;
+      case AV_LOG_ERROR: severity = 1; break;
+      case AV_LOG_INFO:  severity = 4; break;
+      case AV_LOG_DEBUG: severity = 4; break;
+    }
+    sprintf(buffer, "H263+\tFFMPEG\t");
+    vsprintf(buffer + strlen(buffer), fmt, arg);
+    if (strlen(buffer) > 0)
+      buffer[strlen(buffer)-1] = 0;
+    if (severity = 4) 
+      { TRACE_UP (severity, buffer); }
+    else
+      { TRACE (severity, buffer); }
+  }
+}
 /////////////////////////////////////////////////////////////////////////////
 static char * num2str(int num)
 {
@@ -147,6 +168,14 @@ void H263PEncoderContext::InitContext()
   _context->flags |= CODEC_FLAG_INPUT_PRESERVED; // we guarantee to preserve input for max_b_frames+1 frames
   _context->flags |= CODEC_FLAG_EMU_EDGE;        // don't draw edges
   _context->flags |= CODEC_FLAG_PASS1;
+
+  // debugging flags
+  if (Trace::CanTraceUserPlane(4)) {
+    _context->debug |= FF_DEBUG_RC;
+    _context->debug |= FF_DEBUG_PICT_INFO;
+    _context->debug |= FF_DEBUG_MV;
+    _context->debug |= FF_DEBUG_QP;
+  }
 }
 
 void H263PEncoderContext::SetMaxRTPFrameSize (unsigned size)
@@ -167,7 +196,7 @@ void H263PEncoderContext::SetMaxKeyFramePeriod (unsigned period)
 void H263PEncoderContext::SetTargetBitrate (unsigned rate)
 {
   _context->bit_rate = (rate * 3) >> 2;        // average bit rate
-  _context->bit_rate_tolerance = rate << 3;
+  _context->bit_rate_tolerance = rate >> 1;
   _context->rc_min_rate = 0;                   // minimum bitrate
   _context->rc_max_rate = rate;                // maximum bitrate
 
@@ -176,7 +205,7 @@ void H263PEncoderContext::SetTargetBitrate (unsigned rate)
   */
   
   _context->rc_qsquish = 0;                    // limit q by clipping 
-  _context->rc_eq = (char*) "tex^qComp";       // rate control equation
+  _context->rc_eq = (char*) "1";       // rate control equation
   _context->rc_buffer_size = rate * 64;
 }
 
@@ -197,7 +226,7 @@ void H263PEncoderContext::SetFrameHeight (unsigned height)
 
 void H263PEncoderContext::SetTSTO (unsigned tsto)
 {
-  _inputFrame->quality = 10;
+  _inputFrame->quality = H263P_MIN_QUANT;
 
   _context->max_qdiff = 3; // max q difference between frames
   _context->qcompress = 0.5; // qscale factor between easy & hard scenes (0.0-1.0)
@@ -440,6 +469,13 @@ H263PDecoderContext::H263PDecoderContext()
   _skippedFrameCounter = 0;
   _gotIFrame = false;
 
+  // debugging flags
+  if (Trace::CanTrace(4)) {
+    _context->debug |= FF_DEBUG_RC;
+    _context->debug |= FF_DEBUG_PICT_INFO;
+    _context->debug |= FF_DEBUG_MV;
+  }
+
   TRACE(4,  "H263+\tDecoder\tH263 decoder created");
 }
 
@@ -532,7 +568,7 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
 
   int gotPicture = 0;
 
-  TRACE(4, "H263+\tDecoder\tDecoding " << _rxH263PFrame->GetFrameSize()  << " bytes");
+  TRACE_UP(4, "H263+\tDecoder\tDecoding " << _rxH263PFrame->GetFrameSize()  << " bytes");
   int bytesDecoded = FFMPEGLibraryInstance.AvcodecDecodeVideo(_context, _outputFrame, &gotPicture, _rxH263PFrame->GetFramePtr(), _rxH263PFrame->GetFrameSize());
 
   _rxH263PFrame->BeginNewFrame();
@@ -545,7 +581,7 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
     return 0;
   }
 
-  TRACE(4, "H263+\tDecoder\tDecoded " << bytesDecoded << " bytes"<< ", Resolution: " << _context->width << "x" << _context->height);
+  TRACE_UP(4, "H263+\tDecoder\tDecoded " << bytesDecoded << " bytes"<< ", Resolution: " << _context->width << "x" << _context->height);
 
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
   if (bytesDecoded < 0) {
@@ -889,7 +925,7 @@ extern "C" {
 
   PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
   {
-    char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+    char * debug_level = getenv ("PTLIB_TRACE_CODECS");
     if (debug_level!=NULL) {
       Trace::SetLevel(atoi(debug_level));
     } 
@@ -897,15 +933,33 @@ extern "C" {
       Trace::SetLevel(0);
     }
 
+    debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
+    if (debug_level!=NULL) {
+      Trace::SetLevelUserPlane(atoi(debug_level));
+    } 
+    else {
+      Trace::SetLevelUserPlane(0);
+    }
+
     if (!FFMPEGLibraryInstance.Load()) {
       *count = 0;
       TRACE(1, "H263+\tCodec\tDisabled");
       return NULL;
     }
-  
-    *count = sizeof(h263PCodecDefn) / sizeof(struct PluginCodec_Definition);
-    TRACE(1, "H263+\tCodec\tEnabled");
-    return h263PCodecDefn;
+
+    FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
+    FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
+
+    if (version < PLUGIN_CODEC_VERSION_OPTIONS) {
+      *count = 0;
+      TRACE(1, "H263+\tCodec\tDisabled - plugin version mismatch");
+      return NULL;
+    }
+    else {
+      *count = sizeof(h263PCodecDefn) / sizeof(struct PluginCodec_Definition);
+      TRACE(1, "H263+\tCodec\tEnabled");
+      return h263PCodecDefn;
+    }
   }
 
 };

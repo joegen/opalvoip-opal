@@ -160,7 +160,7 @@ void H263PFrame::GetRTPFrame (RTPFrame & frame, unsigned int & flags)
       _minPayloadSize = (uint32_t)(_encodedFrame.len / ceil((float)_encodedFrame.len / (float)_maxPayloadSize));
     else
       _minPayloadSize = _encodedFrame.len;
-    TRACE(4, "H263+\tEncap\tSetting minimal packet size to " << _minPayloadSize
+    TRACE_UP(4, "H263+\tEncap\tSetting minimal packet size to " << _minPayloadSize
           << " considering " << ceil((float)_encodedFrame.len / (float)_maxPayloadSize) << " packets for this frame");
   }
 
@@ -198,7 +198,7 @@ void H263PFrame::GetRTPFrame (RTPFrame & frame, unsigned int & flags)
      else
       frame.SetPayloadSize(_encodedFrame.len - _encodedFrame.pos + 2 );
   }
-  TRACE(4, "H263+\tEncap\tSending "<< (frame.GetPayloadSize() - 2) <<" bytes at position " << _encodedFrame.pos);
+  TRACE_UP(4, "H263+\tEncap\tSending "<< (frame.GetPayloadSize() - 2) <<" bytes at position " << _encodedFrame.pos);
   memcpy(frame.GetPayloadPtr() + 2, _encodedFrame.ptr + _encodedFrame.pos, frame.GetPayloadSize() - 2);
   _encodedFrame.pos += frame.GetPayloadSize() - 2;
 
@@ -229,10 +229,10 @@ bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
   uint32_t remBytes;
   dataPtr += 2;
 
-  TRACE(4, "H263+\tDeencap\tRFC 2429 Header: P: "     << (headerP ? 1 : 0)
-                                        << " V: "     << (headerV ? 1 : 0)
-                                        << " PLEN: "  << (uint32_t) headerPLEN
-                                        << " PBITS: " << (uint32_t) headerPEBITS);
+  TRACE_UP(4, "H263+\tDeencap\tRFC 2429 Header: P: "     << (headerP ? 1 : 0)
+                                           << " V: "     << (headerV ? 1 : 0)
+                                           << " PLEN: "  << (uint32_t) headerPLEN
+                                           << " PBITS: " << (uint32_t) headerPEBITS);
 
   if (headerV) dataPtr++; // We ignore the VRC
   if (headerPLEN > 0) {
@@ -258,13 +258,13 @@ bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
 
 
   if (headerP) {
-    TRACE(4, "H263+\tDeencap\tAdding startcode of 2 bytes to frame of " << remBytes << " bytes");
+    TRACE_UP(4, "H263+\tDeencap\tAdding startcode of 2 bytes to frame of " << remBytes << " bytes");
     memset (_encodedFrame.ptr + _encodedFrame.pos, 0, 2);
     _encodedFrame.pos +=2;
     _encodedFrame.len +=2;
   }
 
-  TRACE(4, "H263+\tDeencap\tAdding " << remBytes << " bytes to frame of " << _encodedFrame.pos << " bytes");
+  TRACE_UP(4, "H263+\tDeencap\tAdding " << remBytes << " bytes to frame of " << _encodedFrame.pos << " bytes");
   memcpy(_encodedFrame.ptr + _encodedFrame.pos, dataPtr, remBytes);
   _encodedFrame.pos += remBytes;
   _encodedFrame.len += remBytes;
@@ -272,7 +272,7 @@ bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
   if (frame.GetMarker())  { 
     if ((headerP) && ((dataPtr[(headerP ? 0 : 2)] & 0xfc) == 0x80)) {
       uint32_t hdrLen = parseHeader(dataPtr + (headerP ? 0 : 2), frame.GetPayloadSize()- 2 - (headerP ? 0 : 2));
-      TRACE(4, "H263+\tDeencap\tFrame includes a picture header of " << hdrLen << " bits");
+      TRACE_UP(4, "H263+\tDeencap\tFrame includes a picture header of " << hdrLen << " bits");
     }
     else {
       TRACE(1, "H263+\tDeencap\tFrame does not seem to include a picture header");
@@ -331,29 +331,29 @@ uint32_t H263PFrame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen)
   bool UMV = false;
 
   headerBits.SetPos(6);
-  TRACE(4, "H263+\tHeader\tTR:" << headerBits.GetBits(8));                        // TR
+  TRACE_UP(4, "H263+\tHeader\tTR:" << headerBits.GetBits(8));                        // TR
   headerBits.GetBits(2);                                                          // PTYPE, skip 1 0 bits
-  TRACE(4, "H263+\tHeader\tSplit Screen: " << headerBits.GetBits(1) 
-                      << " Document Camera: " << headerBits.GetBits(1)
-                      << " Picture Freeze: "  << headerBits.GetBits(1));
+  TRACE_UP(4, "H263+\tHeader\tSplit Screen: "    << headerBits.GetBits(1) 
+                         << " Document Camera: " << headerBits.GetBits(1)
+                         << " Picture Freeze: "  << headerBits.GetBits(1));
   PTYPEFormat = headerBits.GetBits(3); 
   if (PTYPEFormat == 7) { // This is the plustype
     UFEP = headerBits.GetBits(3);                                                 // PLUSPTYPE
     if (UFEP==1) {                                                                // OPPTYPE
       PLUSPTYPEFormat = headerBits.GetBits(3);
-      TRACE(4, "H263+\tHeader\tPicture: " << formats[PTYPEFormat] << ", "<< (plusFormats [PLUSPTYPEFormat]));
+      TRACE_UP(4, "H263+\tHeader\tPicture: " << formats[PTYPEFormat] << ", "<< (plusFormats [PLUSPTYPEFormat]));
       PCF = headerBits.GetBits(1);
       UMV = headerBits.GetBits(1);
       _customClock = PCF;
-      TRACE(4, "H263+\tHeader\tPCF: " << PCF 
-                          << " UMV: " << UMV 
-                          << " SAC: " << headerBits.GetBits(1) 
-                          << " AP: "  << headerBits.GetBits(1) 
-                          << " AIC: " << headerBits.GetBits(1)
-                          << " DF: "  << headerBits.GetBits(1));
+      TRACE_UP(4, "H263+\tHeader\tPCF: " << PCF 
+                             << " UMV: " << UMV 
+                             << " SAC: " << headerBits.GetBits(1) 
+                             << " AP: "  << headerBits.GetBits(1) 
+                             << " AIC: " << headerBits.GetBits(1)
+                             << " DF: "  << headerBits.GetBits(1));
       SS = headerBits.GetBits(1);
       RPS = headerBits.GetBits(1);
-      TRACE(4, "H263+\tHeader\tSS: "  << SS
+      TRACE_UP(4, "H263+\tHeader\tSS: "  << SS
                           << " RPS: " << RPS
                           << " ISD: " << headerBits.GetBits(1)
                           << " AIV: " << headerBits.GetBits(1)
@@ -362,17 +362,17 @@ uint32_t H263PFrame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen)
     }
     PTCODE = headerBits.GetBits(3);
     if (PTCODE == 2) PB = true;
-    TRACE(4, "H263+\tHeader\tPicture: " << picTypeCodes [PTCODE]                  // MPPTYPE
-                        << " RPR: " << headerBits.GetBits(1) 
-                        << " RRU: " << headerBits.GetBits(1) 
+    TRACE_UP(4, "H263+\tHeader\tPicture: " << picTypeCodes [PTCODE]                  // MPPTYPE
+                           << " RPR: " << headerBits.GetBits(1) 
+                           << " RRU: " << headerBits.GetBits(1) 
                         << " RTYPE: " << headerBits.GetBits(1));
     headerBits.GetBits(3);                                                        // skip 0 0 1
 
     CPM = headerBits.GetBits(1);                                                  // CPM + PSBI
     if (CPM) {
-      TRACE(4, "H263+\tHeader\tCPM: " << CPM << " PSBI: " << headerBits.GetBits(2));
+      TRACE_UP(4, "H263+\tHeader\tCPM: " << CPM << " PSBI: " << headerBits.GetBits(2));
     } else {
-      TRACE(4, "H263+\tHeader\tCPM: " << CPM );
+      TRACE_UP(4, "H263+\tHeader\tCPM: " << CPM );
     }
     if (UFEP == 1) {
       if (PLUSPTYPEFormat == 6) {
@@ -383,11 +383,11 @@ uint32_t H263PFrame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen)
         width = (headerBits.GetBits(9) + 1) * 4;                                  // PWI
         headerBits.GetBits(1);                                                    // skip 1
         height = (headerBits.GetBits(9) + 1) * 4;                                 // PHI
-        TRACE(4, "H263+\tHeader\tAspect Ratio: " << (PARs [PAR]) << 
+        TRACE_UP(4, "H263+\tHeader\tAspect Ratio: " << (PARs [PAR]) << 
                                   " Resolution: " << width << "x" <<  height);
 
         if (PAR == 15) {                                                          // EPAR
-          TRACE(4, "H263+\tHeader\tExtended Aspect Ratio: " 
+          TRACE_UP(4, "H263+\tHeader\tExtended Aspect Ratio: " 
                  << headerBits.GetBits(8) << "x" <<  headerBits.GetBits(8));
         } 
       }
@@ -399,61 +399,61 @@ uint32_t H263PFrame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen)
         divisor = headerBits.GetBits(7);
         freq = 1800000 / (divisor * factor);
 
-        TRACE(4, "H263+\tHeader\tCustom Picture Clock Frequency " << freq);
+        TRACE_UP(4, "H263+\tHeader\tCustom Picture Clock Frequency " << freq);
       }
     }
 
     if (_customClock) {
-      TRACE(4, "H263+\tHeader\tETR: " << headerBits.GetBits(2))
+      TRACE_UP(4, "H263+\tHeader\tETR: " << headerBits.GetBits(2))
     }
 
     if (UFEP == 1) {
       if (UMV)  {
          if (headerBits.GetBits(1) == 1)
-           TRACE(4, "H263+\tHeader\tUUI: 1")
+           TRACE_UP(4, "H263+\tHeader\tUUI: 1")
           else
-           TRACE(4, "H263+\tHeader\tUUI: 0" << headerBits.GetBits(1));
+           TRACE_UP(4, "H263+\tHeader\tUUI: 0" << headerBits.GetBits(1));
       }
       if (SS) {
-        TRACE(4, "H263+\tHeader\tSSS:" << headerBits.GetBits(2));
+        TRACE_UP(4, "H263+\tHeader\tSSS:" << headerBits.GetBits(2));
       }
     }
 
     if ((PTCODE==3) || (PTCODE==4) || (PTCODE==5)) {
-      TRACE(4, "H263+\tHeader\tELNUM: " << headerBits.GetBits(4));
+      TRACE_UP(4, "H263+\tHeader\tELNUM: " << headerBits.GetBits(4));
       if (UFEP==1)
-        TRACE(4, "H263+\tHeader\tRLNUM: " << headerBits.GetBits(4));
+        TRACE_UP(4, "H263+\tHeader\tRLNUM: " << headerBits.GetBits(4));
     }
 
     if (RPS) {
-        TRACE(1, "H263+\tHeader\tDecoding of RPS parameters not supported");
+        TRACE_UP(1, "H263+\tHeader\tDecoding of RPS parameters not supported");
         return 0;
     }  
-    TRACE(4, "H263+\tHeader\tPQUANT: " << headerBits.GetBits(5));                    // PQUANT
+    TRACE_UP(4, "H263+\tHeader\tPQUANT: " << headerBits.GetBits(5));                    // PQUANT
   } else {
-    TRACE(4, "H263+\tHeader\tPicture: " << formats[PTYPEFormat] 
-                                << ", " << (headerBits.GetBits(1) ? "P-Picture" : "I-Picture")  // still PTYPE
-                            << " UMV: " << headerBits.GetBits(1) 
-                            << " SAC: " << headerBits.GetBits(1) 
-                            << " APC: " << headerBits.GetBits(1));
+    TRACE_UP(4, "H263+\tHeader\tPicture: " << formats[PTYPEFormat] 
+                                   << ", " << (headerBits.GetBits(1) ? "P-Picture" : "I-Picture")  // still PTYPE
+                               << " UMV: " << headerBits.GetBits(1) 
+                               << " SAC: " << headerBits.GetBits(1) 
+                               << " APC: " << headerBits.GetBits(1));
     PB = headerBits.GetBits(1);                                                      // PB
-    TRACE(4, "H263+\tHeader\tPB-Frames: " << PB);
-    TRACE(4, "H263+\tHeader\tPQUANT: " << headerBits.GetBits(5));                    // PQUANT
+    TRACE_UP(4, "H263+\tHeader\tPB-Frames: " << PB);
+    TRACE_UP(4, "H263+\tHeader\tPQUANT: " << headerBits.GetBits(5));                    // PQUANT
 
     CPM = headerBits.GetBits(1);
     if (CPM) {
-      TRACE(4, "H263+\tHeader\tCPM: " << CPM << " PSBI: " << headerBits.GetBits(2)); // CPM + PSBI
+      TRACE_UP(4, "H263+\tHeader\tCPM: " << CPM << " PSBI: " << headerBits.GetBits(2)); // CPM + PSBI
     } else {
-      TRACE(4, "H263+\tHeader\tCPM: " << CPM ); 
+      TRACE_UP(4, "H263+\tHeader\tCPM: " << CPM ); 
     }
   }	
 
   if (PB)
-    TRACE(4, "H263+\tHeader\tTRB: " << headerBits.GetBits (3)                     // TRB
+    TRACE_UP(4, "H263+\tHeader\tTRB: " << headerBits.GetBits (3)                     // TRB
                     << " DBQUANT: " << headerBits.GetBits (2));                   // DQUANT
 
   while (headerBits.GetBits (1)) {                                                // PEI bit
-    TRACE(4, "H263+\tHeader\tPSUPP: " << headerBits.GetBits (8));                 // PSPARE bits 
+    TRACE_UP(4, "H263+\tHeader\tPSUPP: " << headerBits.GetBits (8));                 // PSPARE bits 
   }
 
   return headerBits.GetPos();
