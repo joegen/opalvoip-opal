@@ -257,9 +257,9 @@ class Context
       return PluginLID_InternalError;
     }
 
-    PLUGIN_FUNCTION_ARG3(IsLineConnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,connected)
+    PLUGIN_FUNCTION_ARG3(IsLineDisconnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,disconnected)
     {
-      if (connected == NULL)
+      if (disconnected == NULL)
         return PluginLID_InvalidParameter;
 
       if (hDriver == -1)
@@ -271,7 +271,7 @@ class Context
       if (line != PSTNLine)
         return PluginLID_OperationNotAllowed;
 
-     // *connected = (tone & PluginLID_BusyTone) != 0;
+     // *disconnected = (tone & PluginLID_BusyTone) != 0;
       return PluginLID_NoError;
     }
 
@@ -906,7 +906,7 @@ static struct PluginLID_Definition definition[1] =
     NULL,//Context::HasHookFlash,
     Context::IsLineRinging,
     Context::RingLine,
-    Context::IsLineConnected,
+    Context::IsLineDisconnected,
     Context::SetLineToLineDirect,
     Context::IsLineToLineDirect,
     Context::GetSupportedFormat,
