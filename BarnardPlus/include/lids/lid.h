@@ -194,9 +194,43 @@ class OpalLineInterfaceDevice : public PObject
     );
 
 
+    /**Indicate to the POTS handset that the call is connected.
+       This uses the hardware (and country) dependent means to indicate to
+       the remote end of a POTS connection that we have answerd. Typically
+       this is a "polarity reversal" but other techniques may be used.
+
+       The "connected" state remains in force till the remote disconnects
+       the call, though hanging up.
+
+       Returns true if successful, always returns false for PSTN lines.
+      */
+    virtual PBoolean SetLineConnected(
+      unsigned line   ///<  Number of line
+    );
+
+    /**Determine if remote has answered call on line.
+       This uses the hardware (and country) dependent means for determining
+       if the remote end of a PSTN connection has answered. Typically this
+       is a "polarity reversal" but other techniques may be used.
+
+       It should be noted that IsLineConnected() is not exactly the same
+       thing as !IsLineDisconnected().
+
+       For a POTS port this is equivalent to IsLineOffHook().
+      */
+    virtual PBoolean IsLineConnected(
+      unsigned line   ///<  Number of line
+    );
+
+
     /**Determine if line has been disconnected from a call.
        This uses the hardware (and country) dependent means for determining
-       if the remote end of a PSTN connection has hung up.
+       if the remote end of a PSTN connection has hung up. For example a
+       "wink" or "K break" which is a short drop in line voltage similar to
+       (though opposite in sense) toa hook flash.
+
+       It should be noted that IsLineDisconnected() is not exactly the same
+       thing as !IsLineConnected().
 
        For a POTS port this is equivalent to !IsLineOffHook().
       */
@@ -974,6 +1008,28 @@ class OpalLine : public PObject
       const unsigned * pattern = NULL, ///< Ring pattern times
       unsigned frequency = 400         ///< Frequency of ring (if relevant)
     ) { return device.RingLine(lineNumber, nCadence, pattern, frequency); }
+
+
+    /**Indicate to the POTS handset that the call is connected.
+       This uses the hardware (and country) dependent means to indicate to
+       the remote end of a POTS connection that we have answerd. Typically
+       this is a "polarity reversal" but other techniques may be used.
+
+       The "connected" state remains in force till the remote disconnects
+       the call, though hanging up.
+
+       Returns true if successful, always returns false for PSTN lines.
+      */
+    virtual PBoolean SetConnected() { return device.IsLineConnected(lineNumber); }
+
+    /**Determine if remote has answered call on line.
+       This uses the hardware (and country) dependent means for determining
+       if the remote end of a PSTN connection has answered. Typically this
+       is a "polarity reversal" but other techniques may be used.
+
+       For a POTS port this is equivalent to IsLineOffHook().
+      */
+    virtual PBoolean IsLineConnected() { return device.IsLineConnected(lineNumber); }
 
 
     /**Determine if line has been disconnected from a call.

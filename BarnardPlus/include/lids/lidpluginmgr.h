@@ -202,6 +202,32 @@ class OpalPluginLID : public OpalLineInterfaceDevice
     );
 
 
+    /**Indicate to the POTS handset that the call is connected.
+       This uses the hardware (and country) dependent means to indicate to
+       the remote end of a POTS connection that we have answerd. Typically
+       this is a "polarity reversal" but other techniques may be used.
+
+       The "connected" state remains in force till the remote disconnects
+       the call, though hanging up.
+
+       Returns true if successful, always returns false for PSTN lines.
+      */
+    virtual PBoolean SetLineConnected(
+      unsigned line   ///<  Number of line
+    );
+
+    /**Determine if remote has answered call on line.
+       This uses the hardware (and country) dependent means for determining
+       if the remote end of a PSTN connection has answered. Typically this
+       is a "polarity reversal" but other techniques may be used.
+
+       For a POTS port this is equivalent to IsLineOffHook().
+      */
+    virtual PBoolean IsLineConnected(
+      unsigned line   ///<  Number of line
+    );
+
+
     /**Determine if line has been disconnected from a call.
        This uses the hardware (and country) dependent means for determining
        if the remote end of a PSTN connection has hung up.
