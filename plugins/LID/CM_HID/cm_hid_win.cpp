@@ -241,7 +241,7 @@ class Context
         StopBuzzer();
     }
 
-    //PLUGIN_FUNCTION_ARG3(IsLineConnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,connected)
+    //PLUGIN_FUNCTION_ARG3(IsLineDisconnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,disconnected)
     //PLUGIN_FUNCTION_ARG3(SetLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean,connect)
     //PLUGIN_FUNCTION_ARG3(IsLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean *,connected)
     //PLUGIN_FUNCTION_ARG3(GetSupportedFormat, unsigned,index, char *,mediaFormat, unsigned,size)
@@ -549,7 +549,7 @@ static struct PluginLID_Definition definition[1] =
     NULL,//Context::HasHookFlash,
     NULL,//Context::IsLineRinging,
     NULL,//Context::RingLine,
-    NULL,//Context::IsLineConnected,
+    NULL,//Context::IsLineDisconnected,
     NULL,//Context::SetLineToLineDirect,
     NULL,//Context::IsLineToLineDirect,
     NULL,//Context::GetSupportedFormat,
