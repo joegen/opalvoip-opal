@@ -402,10 +402,41 @@ PBoolean OpalPluginLID::RingLine(unsigned line, PINDEX nCadence, const unsigned 
 }
 
 
+PBoolean OpalPluginLID::SetLineConnected(unsigned line)
+{
+  switch (CHECK_FN(SetLineConnected, (m_context, line))) {
+    case PluginLID_UnimplementedFunction :
+      return OpalLineInterfaceDevice::SetLineConnected(line);
+
+    case PluginLID_NoError :
+      return true;
+
+    default : ;
+  }
+  return PFalse;
+}
+
+
+PBoolean OpalPluginLID::IsLineConnected(unsigned line)
+{
+  PluginLID_Boolean connected = FALSE;
+  switch (CHECK_FN(IsLineConnected, (m_context, line, &connected))) {
+    case PluginLID_UnimplementedFunction :
+      return OpalLineInterfaceDevice::IsLineConnected(line);
+
+    case PluginLID_NoError :
+      return connected != FALSE;
+
+    default : ;
+  }
+  return PFalse;
+}
+
+
 PBoolean OpalPluginLID::IsLineDisconnected(unsigned line, PBoolean checkForWink)
 {
   PluginLID_Boolean disconnected = FALSE;
-  switch (CHECK_FN(IsLineConnected, (m_context, line, checkForWink, &disconnected))) {
+  switch (CHECK_FN(IsLineDisconnected, (m_context, line, checkForWink, &disconnected))) {
     case PluginLID_UnimplementedFunction :
       return OpalLineInterfaceDevice::IsLineDisconnected(line, checkForWink);
 

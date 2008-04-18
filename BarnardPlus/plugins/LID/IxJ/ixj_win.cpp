@@ -550,9 +550,9 @@ class Context
                       &dwReturn, sizeof(dwReturn), &dwSize) ? PluginLID_NoError : PluginLID_InternalError;
     }
 
-    PLUGIN_FUNCTION_ARG3(IsLineConnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,connected)
+    PLUGIN_FUNCTION_ARG3(IsLineDisconnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,disconnected)
     {
-      if (connected == NULL)
+      if (disconnected == NULL)
         return PluginLID_InvalidParameter;
 
       if (hDriver == INVALID_HANDLE_VALUE)
@@ -568,7 +568,7 @@ class Context
         DWORD dwResult = 0;
         if (IoControl(IOCTL_DevCtrl_GetLineCallerOnHook, 0, &dwResult) && dwResult != 0) {
           PTRACE(3, "xJack\tDetected wink, line disconnected.");
-          *connected = true;
+          *disconnected = true;
           return PluginLID_NoError;
         }
       }
@@ -577,7 +577,7 @@ class Context
       if (IsToneDetected(line, &tone) != PluginLID_NoError)
         return PluginLID_InternalError;
 
-      *connected = (tone & PluginLID_BusyTone) != 0;
+      *disconnected = (tone & PluginLID_BusyTone) != 0;
       return PluginLID_NoError;
     }
 
@@ -2317,7 +2317,7 @@ static struct PluginLID_Definition definition[1] =
     NULL,//Context::HasHookFlash,
     Context::IsLineRinging,
     Context::RingLine,
-    Context::IsLineConnected,
+    Context::IsLineDisconnected,
     Context::SetLineToLineDirect,
     Context::IsLineToLineDirect,
     Context::GetSupportedFormat,

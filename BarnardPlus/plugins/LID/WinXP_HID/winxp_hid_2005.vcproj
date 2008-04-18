@@ -162,7 +162,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="CM_HID.lib winmm.lib"
+				AdditionalDependencies="winmm.lib"
 				OutputFile="$(OutDir)/winxp_hid_lid_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
