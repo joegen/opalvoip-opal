@@ -6515,6 +6515,9 @@
 					>
 				</File>
 				<File
+					RelativePath="..\codec\g726mf.cxx">
+				</File>
+				<File
 					RelativePath="..\codec\g728mf.cxx"
 					>
 				</File>

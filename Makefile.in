@@ -315,6 +315,7 @@ endif
 SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/g711.c \
            $(OPAL_SRCDIR)/codec/g7231mf.cxx \
+           $(OPAL_SRCDIR)/codec/g726mf.cxx \
            $(OPAL_SRCDIR)/codec/g728mf.cxx \
            $(OPAL_SRCDIR)/codec/g729mf.cxx \
            $(OPAL_SRCDIR)/codec/gsm0610mf.cxx \
