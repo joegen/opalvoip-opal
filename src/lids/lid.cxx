@@ -134,6 +134,18 @@ PBoolean OpalLineInterfaceDevice::RingLine(unsigned, PINDEX, const unsigned *, u
 }
 
 
+PBoolean OpalLineInterfaceDevice::SetLineConnected(unsigned line)
+{
+  return IsLineTerminal(line);
+}
+
+
+PBoolean OpalLineInterfaceDevice::IsLineConnected(unsigned line)
+{
+  return !IsLineTerminal(line) || IsLineOffHook(line);
+}
+
+
 PBoolean OpalLineInterfaceDevice::IsLineDisconnected(unsigned line, PBoolean)
 {
   if (IsLineTerminal(line))

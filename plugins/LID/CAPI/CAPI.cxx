@@ -723,9 +723,9 @@ class Context
 
     //PLUGIN_FUNCTION_ARG4(RingLine, unsigned,line, unsigned,nCadence, const unsigned *,pattern, unsigned,frequency)
     
-    PLUGIN_FUNCTION_ARG3(IsLineConnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,connected)
+    PLUGIN_FUNCTION_ARG3(IsLineDisconnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,disconnected)
     {
-      if (connected == NULL)
+      if (disconnected == NULL)
         return PluginLID_InvalidParameter;
 
       if (m_ControllerNumber == 0)
@@ -735,7 +735,7 @@ class Context
         return PluginLID_NoSuchLine;
 
       m_Mutex.Lock();
-      *connected = m_Line[line].m_State == Line::e_BearerUp;
+      *disconnected = m_Line[line].m_State != Line::e_BearerUp;
       m_Mutex.Unlock();
 
       return PluginLID_NoError;
@@ -1088,7 +1088,7 @@ static struct PluginLID_Definition definition[1] =
     NULL, //Context::HasHookFlash,
     Context::IsLineRinging,
     NULL, //Context::RingLine,
-    NULL, //Context::IsLineConnected,
+    Context::IsLineDisconnected,
     NULL, //Context::SetLineToLineDirect,
     NULL, //Context::IsLineToLineDirect,
     Context::GetSupportedFormat,

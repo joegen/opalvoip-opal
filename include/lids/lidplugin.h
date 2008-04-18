@@ -148,7 +148,7 @@ typedef struct PluginLID_Definition
   PluginLID_Errors (*HasHookFlash)(void * context, unsigned line, PluginLID_Boolean * flashed);
   PluginLID_Errors (*IsLineRinging)(void * context, unsigned line, unsigned long * cadence);
   PluginLID_Errors (*RingLine)(void * context, unsigned line, unsigned nCadence, const unsigned * pattern, unsigned frequency);
-  PluginLID_Errors (*IsLineConnected)(void * context, unsigned line, PluginLID_Boolean checkForWink, PluginLID_Boolean * connected);
+  PluginLID_Errors (*IsLineDisconnected)(void * context, unsigned line, PluginLID_Boolean checkForWink, PluginLID_Boolean * disconnected);
   PluginLID_Errors (*SetLineToLineDirect)(void * context, unsigned line1, unsigned line2, PluginLID_Boolean connect);
   PluginLID_Errors (*IsLineToLineDirect)(void * context, unsigned line1, unsigned line2, PluginLID_Boolean * connected);
 
@@ -215,6 +215,10 @@ typedef struct PluginLID_Definition
 
   PluginLID_Errors (*GetSupportedCountry)(void * context, unsigned index, unsigned * countryCode);
   // end of version 1 fields
+
+  PluginLID_Errors (*SetLineConnected)(void * context, unsigned line);
+  PluginLID_Errors (*IsLineConnected)(void * context, unsigned line, PluginLID_Boolean * connected);
+
 } PluginLID_Definition;
 
 

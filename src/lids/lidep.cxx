@@ -544,7 +544,7 @@ PBoolean OpalLineConnection::SetConnected()
   phase = ConnectedPhase;
   connectedTime = PTime();
 
-  return line.StopTone();
+  return line.StopTone() && line.SetConnected();
 }
 
 
