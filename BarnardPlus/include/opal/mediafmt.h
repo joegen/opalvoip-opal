@@ -1148,6 +1148,10 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_L16_MONO_16KHZ "Linear-16-Mono-16kHz"
 #define OPAL_G711_ULAW_64K  "G.711-uLaw-64k"
 #define OPAL_G711_ALAW_64K  "G.711-ALaw-64k"
+#define OPAL_G726_40K       "G.726-40K"
+#define OPAL_G726_32K       "G.726-32K"
+#define OPAL_G726_24K       "G.726-24K"
+#define OPAL_G726_16K       "G.726-16K"
 #define OPAL_G728           "G.728"
 #define OPAL_G729           "G.729"
 #define OPAL_G729A          "G.729A"
@@ -1171,6 +1175,10 @@ extern const OpalAudioFormat & GetOpalL16_MONO_8KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_16KHZ();
 extern const OpalAudioFormat & GetOpalG711_ULAW_64K();
 extern const OpalAudioFormat & GetOpalG711_ALAW_64K();
+extern const OpalAudioFormat & GetOpalG726_40K();
+extern const OpalAudioFormat & GetOpalG726_32K();
+extern const OpalAudioFormat & GetOpalG726_24K();
+extern const OpalAudioFormat & GetOpalG726_16K();
 extern const OpalAudioFormat & GetOpalG728();
 extern const OpalAudioFormat & GetOpalG729();
 extern const OpalAudioFormat & GetOpalG729A();
@@ -1194,6 +1202,10 @@ extern const OpalMediaFormat & GetOpalCiscoNSE();
 #define OpalL16_MONO_16KHZ GetOpalL16_MONO_16KHZ()
 #define OpalG711_ULAW_64K  GetOpalG711_ULAW_64K()
 #define OpalG711_ALAW_64K  GetOpalG711_ALAW_64K()
+#define OpalG726_40K       GetOpalG726_40K()
+#define OpalG726_32K       GetOpalG726_32K()
+#define OpalG726_24K       GetOpalG726_24K()
+#define OpalG726_16K       GetOpalG726_16K()
 #define OpalG728           GetOpalG728()
 #define OpalG729           GetOpalG729()
 #define OpalG729A          GetOpalG729A()
