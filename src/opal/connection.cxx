@@ -471,8 +471,13 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
   // See if already opened
   OpalMediaStreamPtr stream = GetMediaStream(sessionID, isSource);
   if (stream != NULL && stream->IsOpen()) {
-    PTRACE(3, "OpalCon\tOpenMediaStream (already opened) for session " << sessionID << " on " << *this);
-    return stream;
+    if (stream->GetMediaFormat() == mediaFormat) {
+      PTRACE(3, "OpalCon\tOpenMediaStream (already opened) for session " << sessionID << " on " << *this);
+      return stream;
+    }
+    // Changing the media format, needs to close and re-open the stream
+    stream->Close();
+    stream.SetNULL();
   }
 
   if (stream == NULL) {
@@ -538,7 +543,7 @@ PBoolean OpalConnection::RemoveMediaStream(OpalMediaStream & stream)
 
 void OpalConnection::StartMediaStreams()
 {
-  for (PSafePtr<OpalMediaStream> mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream)
+  for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream)
     mediaStream->Start();
 
   PTRACE(3, "OpalCon\tMedia stream threads started.");
@@ -554,7 +559,7 @@ void OpalConnection::CloseMediaStreams()
   bool someOpen = true;
   while (someOpen) {
     someOpen = false;
-    for (PSafePtr<OpalMediaStream> mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+    for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
       if (mediaStream->IsOpen()) {
         someOpen = true;
         CloseMediaStream(*mediaStream);
@@ -568,7 +573,7 @@ void OpalConnection::CloseMediaStreams()
 
 void OpalConnection::PauseMediaStreams(PBoolean paused)
 {
-  for (PSafePtr<OpalMediaStream> mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream)
+  for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream)
     mediaStream->SetPaused(paused);
 }
 
@@ -686,7 +691,7 @@ void OpalConnection::AttachRFC2833HandlerToPatch(PBoolean /*isSource*/, OpalMedi
 
 OpalMediaStreamPtr OpalConnection::GetMediaStream(unsigned sessionId, bool source) const
 {
-  for (PSafePtr<OpalMediaStream> mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
     if (mediaStream->GetSessionID() == sessionId && mediaStream->IsSource() == source)
       return mediaStream;
   }

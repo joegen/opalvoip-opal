@@ -658,9 +658,9 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
   }
 
   if (needReINVITE) {
-    PSafePtr<OpalMediaStream> sendStream = GetMediaStream(rtpSessionId, false);
+    OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
     bool sending = sendStream != NULL && sendStream->IsOpen();
-    PSafePtr<OpalMediaStream> recvStream = GetMediaStream(rtpSessionId, true);
+    OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
       localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
@@ -826,7 +826,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
-  PSafePtr<OpalMediaStream> sendStream = GetMediaStream(rtpSessionId, false);
+  OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
   if (sendStream != NULL && sendStream->IsOpen()) {
     if (sdpFormats.HasFormat(sendStream->GetMediaFormat())) {
       bool paused = (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
@@ -840,7 +840,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     }
   }
 
-  PSafePtr<OpalMediaStream> recvStream = GetMediaStream(rtpSessionId, true);
+  OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
   if (recvStream != NULL && recvStream->IsOpen()) {
     if (sdpFormats.HasFormat(recvStream->GetMediaFormat())) {
       bool paused = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
@@ -945,14 +945,32 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 
 OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
-  OpalMediaStreamPtr stream = OpalRTPConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
+  // Disable send of re-INVITE if the ancestor OpenMediaStream has to close
+  // the media stream, so don't get two re-INVITEs in quick succession.
+  bool oldReINVITE = needReINVITE;
+  needReINVITE = false;
 
-  if (stream != NULL && needReINVITE) {
+  OpalMediaStreamPtr newStream = OpalRTPConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
+  if (newStream == NULL) {
+    needReINVITE = oldReINVITE;
+    return newStream;
+  }
+
+  // Make sure stream is symmetrical, if codec changed, close and re-open it
+  OpalMediaStreamPtr otherStream = GetMediaStream(sessionID, !isSource);
+  if (otherStream != NULL && otherStream->IsOpen() && otherStream->GetMediaFormat() != mediaFormat) {
+    otherStream->GetPatch()->GetSource().Close();
+    GetCall().OpenSourceMediaStreams(isSource ? *GetCall().GetOtherPartyConnection(*this) : *this, sessionID);
+  }
+
+  needReINVITE = oldReINVITE;
+
+  if (needReINVITE) {
     SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
     invite->Start();
   }
 
-  return stream;
+  return newStream;
 }
 
 
@@ -2093,16 +2111,20 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   if (sendStream != NULL && sendStream->IsOpen()) {
     if (mediaFormatList.HasFormat(sendStream->GetMediaFormat()))
       sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
-    else
-      sendStream->Close(); // Was removed from list so close channel
+    else {
+      sendStream->GetPatch()->GetSource().Close(); // Was removed from list so close channel
+      sendStream.SetNULL();
+    }
   }
 
   OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
   if (recvStream != NULL && recvStream->IsOpen()) {
     if (mediaFormatList.HasFormat(recvStream->GetMediaFormat()))
       recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
-    else
+    else {
       recvStream->Close(); // Was removed from list so close channel
+      recvStream.SetNULL();
+    }
   }
 
   // Then open the streams if the direction allows
