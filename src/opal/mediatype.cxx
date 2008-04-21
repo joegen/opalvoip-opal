@@ -102,8 +102,6 @@ OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * _mediaType, const 
       ++preferredSessionId;
   }
 
-  PTRACE(1, "Opal\tMedia type " << _mediaType << " assigned session ID " << preferredSessionId);
-
   typeMap.insert(SessionIDToMediaTypeMap_T::value_type(preferredSessionId, _mediaType));
   GetMediaTypeToSessionIDMap().insert(MediaTypeToSessionIDMap_T::value_type(_mediaType, preferredSessionId));
 }
