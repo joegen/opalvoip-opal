@@ -2039,8 +2039,17 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   RTP_UDP *rtpSession = NULL;
   SDPMediaDescription * mediaDescription = sdp.GetMediaDescription(mediaType);
   
-  if (mediaDescription == NULL) {
-    PTRACE(2, "SIP\tCould not find SDP media description for " << mediaType);
+  if (mediaDescription == NULL || mediaDescription->GetPort() == 0) {
+    PTRACE(2, "SIP\tDisabled/missing SDP media description for " << mediaType);
+
+    OpalMediaStreamPtr stream = GetMediaStream(rtpSessionId, false);
+    if (stream != NULL)
+      stream->Close();
+
+    stream = GetMediaStream(rtpSessionId, true);
+    if (stream != NULL)
+      stream->Close();
+
     return false;
   }
 
