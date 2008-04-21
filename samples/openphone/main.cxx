@@ -217,13 +217,15 @@ static const char H323only[] = " (H.323 only)";
 
 
 enum {
-  ID_LOG_MESSAGE = 1001,
-  ID_STATE_CHANGE,
-  ID_STREAMS_CHANGED,
   ID_RETRIEVE_MENU_BASE = wxID_HIGHEST+1,
   ID_RETRIEVE_MENU_TOP = ID_RETRIEVE_MENU_BASE+999,
   ID_TRANSFER_MENU_BASE,
   ID_TRANSFER_MENU_TOP = ID_TRANSFER_MENU_BASE+999,
+  ID_AUDIO_CODEC_MENU_BASE,
+  ID_AUDIO_CODEC_MENU_TOP = ID_AUDIO_CODEC_MENU_BASE+99,
+  ID_LOG_MESSAGE,
+  ID_STATE_CHANGE,
+  ID_STREAMS_CHANGED,
 };
 
 DECLARE_EVENT_TYPE(wxEvtLogMessage, -1)
@@ -360,6 +362,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,ID_TRANSFER_MENU_TOP, MyManager::OnTransfer)
   EVT_MENU(XRCID("MenuStartRecording"),  MyManager::OnStartRecording)
   EVT_MENU(XRCID("MenuStopRecording"),   MyManager::OnStopRecording)
+  EVT_MENU_RANGE(ID_AUDIO_CODEC_MENU_BASE, ID_AUDIO_CODEC_MENU_TOP, MyManager::OnAudioCodec)
   EVT_MENU(XRCID("MenuStartVideo"),      MyManager::OnStartVideo)
   EVT_MENU(XRCID("MenuStopVideo"),       MyManager::OnStopVideo)
   EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnVFU)
@@ -1092,6 +1095,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuStartRecording"),  m_callState == InCallState && !m_activeCall->IsRecording());
   menubar->Enable(XRCID("MenuStopRecording"),   m_callState == InCallState &&  m_activeCall->IsRecording());
 
+
   for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
     menubar->Enable(it->m_retrieveMenuId, m_callState != InCallState);
     menubar->Enable(it->m_transferMenuId, m_callState == InCallState);
@@ -1113,13 +1117,20 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   bool hasStartVideo = false;
   bool hasStopVideo = false;
   bool hasRxVideo = false;
+  wxString audioFormat;
 
   PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReadOnly);
   if (connection != NULL) {
+    // Get ID of open audio to check the menu item
+    OpalMediaStreamPtr audioStream = connection->GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, true);
+    if (audioStream != NULL)
+      audioFormat = (const char *)audioStream->GetMediaFormat();
+
+    // Determine if video is startable, or is already started
     OpalMediaFormatList availableFormats = connection->GetMediaFormats();
     for (PINDEX idx = 0; idx < availableFormats.GetSize(); idx++) {
       if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
-        PSafePtr<OpalMediaStream> stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
+        OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
         hasStopVideo = stream != NULL && stream->Open();
         hasStartVideo = !hasStopVideo;
 
@@ -1128,6 +1139,13 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
         break;
       }
     }
+  }
+
+  menubar->Enable(XRCID("SubMenuAudio"), m_callState == InCallState);
+  for (int id = ID_AUDIO_CODEC_MENU_BASE; id <= ID_AUDIO_CODEC_MENU_TOP; id++) {
+    wxMenuItem * item = menubar->FindItem(id);
+    if (item != NULL)
+      item->Check(item->GetLabel() == audioFormat);
   }
 
   menubar->Enable(XRCID("MenuStartVideo"), hasStartVideo);
@@ -1916,6 +1934,19 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 }
 
 
+void MyManager::OnAudioCodec(wxCommandEvent& theEvent)
+{
+  OpalMediaFormat mediaFormat = GetMenuBar()->FindItem(theEvent.GetId())->GetLabel().c_str();
+  if (mediaFormat.IsValid()) {
+    PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReadWrite);
+    if (connection != NULL) {
+      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaFormat::DefaultAudioSessionID, mediaFormat))
+        LogWindow << "Could not change audio codec!" << endl;
+    }
+  }
+}
+
+
 void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
 {
   PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
@@ -2243,11 +2274,20 @@ void MyManager::ApplyMediaInfo()
 
   m_mediaInfo.sort();
 
+  wxMenuBar * menubar = GetMenuBar();
+  wxMenuItem * item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuAudio"));
+  wxMenu * menu = PAssertNULL(item)->GetSubMenu();
+  while (menu->GetMenuItemCount() > 0)
+    menu->Remove(menu->FindItemByPosition(0));
+
   for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
     if (mm->preferenceOrder < 0)
       mediaFormatMask.AppendString(mm->mediaFormat);
-    else
+    else {
       mediaFormatOrder.AppendString(mm->mediaFormat);
+      if (mm->mediaFormat.GetMediaType() == OpalMediaType::Audio())
+        menu->Append(mm->preferenceOrder+ID_AUDIO_CODEC_MENU_BASE, (const char *)mm->mediaFormat.GetName(), wxEmptyString, true);
+    }
   }
 
   if (!mediaFormatOrder.IsEmpty()) {
@@ -4255,8 +4295,8 @@ void StatisticsPage::UpdateSession(const OpalConnection * connection)
   if (connection == NULL)
     m_isActive = false;
   else {
-    PSafePtr<OpalMediaStream> stream = connection->GetMediaStream(m_sessionID, m_receiver);
-    m_isActive = stream != NULL && stream->Open();
+    OpalMediaStreamPtr stream = connection->GetMediaStream(m_sessionID, m_receiver);
+    m_isActive = false; //stream != NULL && stream->Open();
     if (m_isActive) {
       for (size_t i = 0; i < m_fields.size(); i++)
         m_fields[i]->Update(*connection, *stream);
