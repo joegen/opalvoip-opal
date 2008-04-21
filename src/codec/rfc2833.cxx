@@ -41,6 +41,7 @@ static const char RFC2833Table1Events[] = "0123456789*#ABCD!";
 const char * OpalDefaultNTEString = "0-15,32-49";
 
 #if OPAL_T38FAX
+static const char NSEEvents[] = "xy";
 const char * OpalDefaultNSEString = "192,193";
 #endif
 
@@ -193,19 +194,27 @@ void OpalRFC2833Proto::SendAsyncFrame()
 PINDEX OpalRFC2833Proto::ASCIIToRFC2833(char tone)
 {
   const char * theChar = strchr(RFC2833Table1Events, tone);
-  if (theChar == NULL) {
-    PTRACE(1, "RFC2833\tInvalid tone character.");
-    return P_MAX_INDEX;
-  }
+  if (theChar != NULL) 
+    return (PINDEX)(theChar-RFC2833Table1Events);
+  
+  theChar = strchr(NSEEvents, tone);
+  if (theChar != NULL) 
+    return (PINDEX)(192+theChar-NSEEvents);
 
-  return (PINDEX)(theChar-RFC2833Table1Events);
+  PTRACE(1, "RFC2833\tInvalid tone character.");
+  return P_MAX_INDEX;
 }
 
 char OpalRFC2833Proto::RFC2833ToASCII(PINDEX rfc2833)
 {
   PASSERTINDEX(rfc2833);
-  if (rfc2833 < (PINDEX)sizeof(RFC2833Table1Events)-1)
+
+  if (rfc2833 >= 0 && rfc2833 < (PINDEX)sizeof(RFC2833Table1Events)-1)
     return RFC2833Table1Events[rfc2833];
+
+  if (rfc2833 > 192 && rfc2833 < 194)
+    return NSEEvents[rfc2833];
+
   return '\0';
 }
 
