@@ -46,10 +46,6 @@
 #define new PNEW
 
 
-namespace PWLibStupidLinkerHacks {
-extern int opalLoader;
-}; // namespace PWLibStupidLinkerHacks
-
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_AUDIO
