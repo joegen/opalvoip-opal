@@ -285,7 +285,8 @@ class OpalFaxMediaStream : public OpalMediaStream
       PBoolean isSource ,                      ///<  Is a source stream
       const PString & token,               ///<  token used to match incoming/outgoing streams
       const PString & filename,
-      PBoolean receive
+      PBoolean receive,
+      const PString & stationId
     );
   //@}
 
@@ -341,6 +342,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     PBoolean receive;
     BYTE writeBuffer[320];
     PINDEX writeBufferLen;
+    PString stationId;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -358,7 +360,8 @@ class OpalT38MediaStream : public OpalFaxMediaStream
       PBoolean isSource ,                      ///<  Is a source stream
       const PString & token,               ///<  token used to match incoming/outgoing streams
       const PString & filename,            ///<  filename
-      PBoolean receive
+      PBoolean receive,
+      const PString & stationId
     );
 
     PString GetSpanDSPCommandLine(OpalFaxCallInfo &);
@@ -536,6 +539,7 @@ class OpalFaxConnection : public OpalConnection
     PString filename;
     PBoolean receive;
     PBoolean forceFaxAudio;
+    PString stationId;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
