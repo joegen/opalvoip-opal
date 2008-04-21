@@ -43,6 +43,10 @@
 #include <h323/gkclient.h>
 #endif
 
+#if OPAL_T38FAX
+#include <t38/t38proto.h>
+#endif
+
 #include <t38/t38proto.h>
 
 #include <opal/transcoders.h>
@@ -697,6 +701,9 @@ PBoolean MyManager::Initialise(PArgList & args)
     OpalMediaFormat fmt(OpalT38); // Force instantiation of T.38 media format
     faxEP = new OpalFaxEndPoint(*this);
     t38EP = new OpalT38EndPoint(*this);
+
+    allMediaFormats += t38EP->GetMediaFormats();
+    allMediaFormats += faxEP->GetMediaFormats();
   }
 #endif
 
@@ -723,6 +730,9 @@ PBoolean MyManager::Initialise(PArgList & args)
       AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
       AddRouteEntry("pots:.*           = sip:<da>");
       AddRouteEntry("pc:.*             = sip:<da>");
+#if OPAL_T38FAX
+      AddRouteEntry("t38:.*            = sip:<da>");
+#endif
     }
 #endif
 
@@ -774,6 +784,12 @@ PBoolean MyManager::Initialise(PArgList & args)
   if (pcssEP != NULL) {
     AddRouteEntry("iax2:.*  = pc:<du>");
     AddRouteEntry("pc:.*   = iax2:<da>");
+  }
+#endif
+
+#if OPAL_T38FAX
+  if (t38EP != NULL) {
+      AddRouteEntry("sip:.*  = t38:<da>");
   }
 #endif
 
@@ -1020,7 +1036,7 @@ void MyManager::Main(PArgList & args)
         cout << "done" << endl;
       }
       cout << "Initiating call from \"" << args[0] << "\"to \"" << args[1] << "\"\n";
-      SetUpCall(args[0], args[1], currentCallToken);
+      SetUpCall(args[0], args[1], currentCallToken, 0, 0, &stringOptions);
       break;
   }
 
@@ -1138,6 +1154,10 @@ void MyManager::Main(PArgList & args)
 
       case 'm' :
         SendMessageToRemoteNode(line);
+        break;
+
+      case 'f' :
+        SendTone('x');
         break;
 
       default:
