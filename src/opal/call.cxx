@@ -354,12 +354,14 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
     return false;
 
   // Check if already done
-  if (connection.GetMediaStream(sessionID, true) != NULL) {
+  OpalMediaStreamPtr source = connection.GetMediaStream(sessionID, true);
+  if (source != NULL && (preselectedFormats.IsEmpty() || preselectedFormats.HasFormat(source->GetMediaFormat()))) {
     PTRACE(3, "Call\tOpenSourceMediaStreams (already opened) for session " << sessionID << " on " << connection);
     return true;
   }
 
-  PTRACE(3, "Call\tOpenSourceMediaStreams for session " << sessionID << " on " << connection);
+  PTRACE(3, "Call\tOpenSourceMediaStreams " << (source != NULL ? "replacing" : "opening") << " session " << sessionID << " on " << connection);
+  source.SetNULL();
 
   // handle RTP payload translation
   RTP_DataFrame::PayloadMapType map;
@@ -377,7 +379,6 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
   // Create the sinks and patch if needed
   bool startedOne = false;
   OpalMediaPatch * patch = NULL;
-  OpalMediaStreamPtr source;
   OpalMediaFormat sourceFormat, sinkFormat;
 
   // Reorder destinations so we give preference to symmetric codecs
