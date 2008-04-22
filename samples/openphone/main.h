@@ -669,6 +669,9 @@ class MyManager : public wxFrame, public OpalManager
     void OnMenuCall(wxCommandEvent& event);
     void OnMenuCallLastDialed(wxCommandEvent& event);
     void OnMenuCallLastReceived(wxCommandEvent& event);
+    void OnCallSpeedDial(wxCommandEvent& event);
+    void OnSendFax(wxCommandEvent& event);
+    void OnSendFaxSpeedDial(wxCommandEvent& event);
     void OnMenuAnswer(wxCommandEvent& event);
     void OnMenuHangUp(wxCommandEvent& event);
     void OnNewSpeedDial(wxCommandEvent& event);
@@ -685,7 +688,6 @@ class MyManager : public wxFrame, public OpalManager
     void OnRequestHold(wxCommandEvent& event);
     void OnRetrieve(wxCommandEvent& event);
     void OnTransfer(wxCommandEvent& event);
-    void OnSendFax(wxCommandEvent& event);
     void OnStartRecording(wxCommandEvent& event);
     void OnStopRecording(wxCommandEvent& event);
     void OnAudioCodec(wxCommandEvent& event);

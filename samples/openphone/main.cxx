@@ -388,6 +388,9 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuCall"),            MyManager::OnMenuCall)
   EVT_MENU(XRCID("MenuCallLastDialed"),  MyManager::OnMenuCallLastDialed)
   EVT_MENU(XRCID("MenuCallLastReceived"),MyManager::OnMenuCallLastReceived)
+  EVT_MENU(XRCID("CallSpeedDial"),       MyManager::OnCallSpeedDial)
+  EVT_MENU(XRCID("MenuSendFax"),         MyManager::OnSendFax)
+  EVT_MENU(XRCID("SendFaxSpeedDial"),    MyManager::OnSendFaxSpeedDial)
   EVT_MENU(XRCID("MenuAnswer"),          MyManager::OnMenuAnswer)
   EVT_MENU(XRCID("MenuHangUp"),          MyManager::OnMenuHangUp)
   EVT_MENU(XRCID("NewSpeedDial"),        MyManager::OnNewSpeedDial)
@@ -405,7 +408,6 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU_RANGE(ID_RETRIEVE_MENU_BASE,ID_RETRIEVE_MENU_TOP, MyManager::OnRetrieve)
   EVT_MENU(XRCID("MenuTransfer"),        MyManager::OnTransfer)
   EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,ID_TRANSFER_MENU_TOP, MyManager::OnTransfer)
-  EVT_MENU(XRCID("MenuSendFax"),         MyManager::OnSendFax)
   EVT_MENU(XRCID("MenuStartRecording"),  MyManager::OnStartRecording)
   EVT_MENU(XRCID("MenuStopRecording"),   MyManager::OnStopRecording)
   EVT_MENU_RANGE(ID_AUDIO_CODEC_MENU_BASE, ID_AUDIO_CODEC_MENU_TOP, MyManager::OnAudioCodec)
@@ -727,7 +729,7 @@ bool MyManager::Initialise()
   // Fax fields
 #if OPAL_T38FAX
   config->SetPath(FaxGroup);
-  if (!config->Read(FaxStationIdentifierKey, &str))
+  if (config->Read(FaxStationIdentifierKey, &str))
     m_faxEP->SetDefaultDisplayName(str);
   if (config->Read(FaxReceiveDirectoryKey, &str))
     m_faxEP->SetDefaultDirectory(str.c_str());
@@ -748,6 +750,9 @@ bool MyManager::Initialise()
   mediaFormats += potsEP->GetMediaFormats();
 #if OPAL_IVR
   mediaFormats += ivrEP->GetMediaFormats();
+#endif
+#if OPAL_T38FAX
+  mediaFormats += m_faxEP->GetMediaFormats();
 #endif
   InitMediaInfo("sw", OpalTranscoder::GetPossibleFormats(mediaFormats));
 
@@ -1230,6 +1235,56 @@ void MyManager::OnMenuCallLastDialed(wxCommandEvent& WXUNUSED(event))
 void MyManager::OnMenuCallLastReceived(wxCommandEvent& WXUNUSED(event))
 {
   MakeCall(m_LastReceived);
+}
+
+
+void MyManager::OnCallSpeedDial(wxCommandEvent & /*event*/)
+{
+  wxListItem item;
+  item.m_itemId = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  if (item.m_itemId < 0)
+    return;
+
+  item.m_col = e_AddressColumn;
+  item.m_mask = wxLIST_MASK_TEXT;
+  if (m_speedDials->GetItem(item))
+    MakeCall(item.m_text);
+}
+
+
+void MyManager::OnSendFax(wxCommandEvent & /*event*/)
+{
+  wxFileDialog faxDlg(this,
+                      "Send FAX file",
+                      wxEmptyString,
+                      wxEmptyString,
+                      "*.tif");
+  if (faxDlg.ShowModal() == wxID_OK) {
+    CallDialog callDlg(this);
+    if (callDlg.ShowModal() == wxID_OK)
+      MakeCall(callDlg.m_Address, "t38:"+faxDlg.GetPath());
+  }
+}
+
+
+void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
+{
+  wxListItem item;
+  item.m_itemId = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  if (item.m_itemId < 0)
+    return;
+
+  item.m_col = e_AddressColumn;
+  item.m_mask = wxLIST_MASK_TEXT;
+  if (m_speedDials->GetItem(item)) {
+    wxFileDialog faxDlg(this,
+                        "Send FAX file",
+                        wxEmptyString,
+                        wxEmptyString,
+                        "*.tif");
+    if (faxDlg.ShowModal() == wxID_OK)
+      MakeCall(item.m_text, "t38:"+faxDlg.GetPath());
+  }
 }
 
 
@@ -1955,21 +2010,6 @@ void MyManager::OnTransfer(wxCommandEvent& theEvent)
       if (connection != NULL)
         connection->TransferConnection(dlg.m_Address);
     }
-  }
-}
-
-
-void MyManager::OnSendFax(wxCommandEvent & /*event*/)
-{
-  wxFileDialog faxDlg(this,
-                      "Send FAX file",
-                      wxEmptyString,
-                      wxEmptyString,
-                      "*.tif");
-  if (faxDlg.ShowModal() == wxID_OK) {
-    CallDialog callDlg(this);
-    if (callDlg.ShowModal() == wxID_OK)
-      MakeCall(callDlg.m_Address, "t38:"+faxDlg.GetPath());
   }
 }
 
