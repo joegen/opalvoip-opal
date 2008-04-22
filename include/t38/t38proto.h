@@ -446,6 +446,32 @@ class OpalFaxEndPoint : public OpalEndPoint
       OpalMediaPatch & patch                 ///<  New patch
     );
   //@}
+
+  /**@name Member variable access */
+    /**Get the location of the spandsp executable.
+      */
+    const PFilePath & GetSpanDSP() const { return m_spanDSP; }
+
+    /**Set the location of the spandsp executable.
+      */
+    void SetSpanDSP(
+      const PString & path    ///< New path for SpanDSP executable
+    ) { m_spanDSP = path; }
+
+    /**Get the default directory for received faxes.
+      */
+    const PString & GetDefaultDirectory() const { return m_defaultDirectory; }
+
+    /**Set the default directory for received faxes.
+      */
+    void SetDefaultDirectory(
+      const PString & dir    /// New directory for fax reception
+    ) { m_defaultDirectory = dir; }
+  //@}
+
+  protected:
+    PFilePath  m_spanDSP;
+    PDirectory m_defaultDirectory;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

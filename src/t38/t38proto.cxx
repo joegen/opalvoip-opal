@@ -681,7 +681,7 @@ PString OpalFaxMediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
   PIPSocket::Address dummy; WORD port;
   info.socket.GetLocalAddress(dummy, port);
 
-  cmdline << "./spandsp_util -m ";
+  cmdline << ((OpalFaxEndPoint &)connection.GetEndPoint()).GetSpanDSP() << " -m ";
   if (receive)
     cmdline << "fax_to_tiff";
   else
@@ -716,7 +716,7 @@ PString OpalT38MediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
   PIPSocket::Address dummy; WORD port;
   info.socket.GetLocalAddress(dummy, port);
 
-  cmdline << "./spandsp_util -V 0 -m ";
+  cmdline << ((OpalFaxEndPoint &)connection.GetEndPoint()).GetSpanDSP() << " -V 0 -m ";
   if (receive)
     cmdline << "t38_to_tiff";
   else {
@@ -792,6 +792,12 @@ PBoolean OpalT38MediaStream::WritePacket(RTP_DataFrame & packet)
 
 OpalFaxEndPoint::OpalFaxEndPoint(OpalManager & mgr, const char * prefix)
   : OpalEndPoint(mgr, prefix, CanTerminateCall)
+#ifdef _WIN32
+  , m_spanDSP("./spandsp_util.exe")
+#else
+  , m_spanDSP("./spandsp_util")
+#endif
+  , m_defaultDirectory(".")
 {
   PTRACE(3, "Fax\tCreated Fax endpoint");
 }
@@ -838,31 +844,32 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
   if (remoteParty.Find(GetPrefixName()+":") == 0)
     prefixLength = GetPrefixName().GetLength()+1;
 
-  PString filename = remoteParty.Mid(prefixLength);
-
-  PBoolean receive = PFalse;
-  PString stationId;
-
-  PINDEX options = filename.Find(";");
-  if (options != P_MAX_INDEX) {
-    PStringArray tokens = filename.Mid(options+1).Tokenise(";", true);
-    for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
-      if (tokens[i] *= "receive")
-        receive = true;
-      else if (tokens[i].Left(10) *= "stationid=") {
-        if (stringOptions == NULL)
-          stringOptions = new OpalConnection::StringOptions;
-        if ((*stringOptions)("stationid").IsEmpty())
-          stringOptions->SetAt("stationid", tokens[i].Mid(10));
-      }
-    }
+  PStringArray tokens = remoteParty.Mid(prefixLength).Tokenise(";", true);
+  if (tokens.IsEmpty()) {
+    PTRACE(2, "Fax\tNo filename specified!");
+    return false;
   }
-  filename = filename.Left(options);
 
+  bool receive = false;
+  PString stationId = GetDefaultDisplayName();
+
+  for (PINDEX i = 1; i < tokens.GetSize(); ++i) {
+    if (tokens[i] *= "receive")
+      receive = true;
+    else if (tokens[i].Left(10) *= "stationid=")
+      stationId = tokens[i].Mid(10);
+  }
+
+  PString filename = tokens[0];
   if (!receive && !PFile::Exists(filename)) {
     PTRACE(2, "Fax\tCannot find filename '" << filename << "'");
     return PFalse;
   }
+
+  if (stringOptions == NULL)
+    stringOptions = new OpalConnection::StringOptions;
+  if ((*stringOptions)("stationid").IsEmpty())
+    stringOptions->SetAt("stationid", stationId);
 
   PSafePtr<OpalFaxConnection> connection = PSafePtrCast<OpalConnection, OpalFaxConnection>(GetConnectionWithLock(MakeToken()));
   if (connection != NULL)
