@@ -41,6 +41,8 @@
 #include <opal/mediastrm.h>
 #include <opal/mediacmd.h>
 
+#include <list>
+
 
 class OpalTranscoder;
 
@@ -197,11 +199,11 @@ class OpalMediaPatch : public PObject
   //@}
 
   protected:
-		
+                
     /**Called from the associated patch thread */
     virtual void Main();
     bool DispatchFrame(RTP_DataFrame & frame);
-	
+        
     OpalMediaStream & source;
 
     class Sink : public PObject {
@@ -225,6 +227,22 @@ class OpalMediaPatch : public PObject
         RTP_DataFrameList intermediateFrames;
         RTP_DataFrameList finalFrames;
         bool              writeSuccessful;
+
+        bool RateControlExceeded(const PTimeInterval & currentTime);
+
+        bool          rcEnabled;
+        unsigned      rcByteRate;
+        unsigned      rcWindowSize;
+        unsigned      rcMaxConsecutiveFramesSkip;
+        unsigned      rcConsecutiveFramesSkipped;
+        PTimeInterval rcLastTime;
+        PINDEX        rcTotalSize;
+        
+        struct FrameInfo {
+          PTimeInterval time;
+          PINDEX        size;
+        };
+        std::list<FrameInfo> frameInfoList;
     };
     PList<Sink> sinks;
 
@@ -236,7 +254,7 @@ class OpalMediaPatch : public PObject
         OpalMediaFormat stage;
     };
     PList<Filter> filters;
-	
+        
     class Thread : public PThread {
         PCLASSINFO(Thread, PThread);
       public:
