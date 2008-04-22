@@ -291,13 +291,10 @@ void OpalMediaPatch::GetStatistics(OpalMediaStatistics & statistics) const
 
 void OpalMediaPatch::Sink::GetStatistics(OpalMediaStatistics & statistics) const
 {
-  if (primaryCodec == NULL)
-    return stream->GetStatistics(statistics);
-
-  if (secondaryCodec == NULL)
-    return primaryCodec->GetStatistics(statistics);
-
-  return secondaryCodec->GetStatistics(statistics);
+  if (primaryCodec != NULL)
+    primaryCodec->GetStatistics(statistics);
+  if (secondaryCodec != NULL)
+    secondaryCodec->GetStatistics(statistics);
 }
 #endif
 
