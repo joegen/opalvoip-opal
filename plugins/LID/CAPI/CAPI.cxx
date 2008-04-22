@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _WINDOWS
+#ifdef _WIN32
 
 #include <process.h>
 #include <windows.h>
@@ -351,7 +351,7 @@ class Context
     Semaphore    m_ListenCompleted;
 
     // This is damned annoying, but I don't want to include the entire PWLib just for one thread!
-#ifdef _WINDOWS
+#ifdef _WIN32
     HANDLE m_hThread;
     static void ThreadMainStatic(void * arg)
     {

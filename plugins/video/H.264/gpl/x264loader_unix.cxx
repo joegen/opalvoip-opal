@@ -42,8 +42,8 @@ bool X264Library::Load()
     return true;
 
   if (  
-#ifdef LIBX264_LIB_NAME
-      !Open(LIBX264_LIB_NAME) &&
+#ifdef X264_LIB_NAME
+      !Open(X264_LIB_NAME) &&
 #endif
       !Open("libx264.so")
       && !Open("libx264"))  {

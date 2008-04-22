@@ -87,7 +87,7 @@ extern "C" {
 // We'll pull them in from their locations in the ffmpeg source tree,
 // but it would be possible to get them all from /usr/include/ffmpeg
 // with #include <ffmpeg/...h>.
-#ifdef WITH_FFMPEG_SRC
+#ifdef LIBAVCODEC_HAVE_SOURCE_DIR
 #include <libavutil/common.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
@@ -98,9 +98,9 @@ extern "C" {
 #include <libavutil/bswap.h>
 #include <libavcodec/mpegvideo.h>
 
-#else /* WITH_FFMPEG_SRC */
+#else /* LIBAVCODEC_HAVE_SOURCE_DIR */
 #include <libavcodec/avcodec.h>
-#endif /* WITH_FFMPEG_SRC */
+#endif /* LIBAVCODEC_HAVE_SOURCE_DIR */
 }
 
 #define RTP_DYNAMIC_PAYLOAD  96
@@ -604,7 +604,7 @@ void MPEG4EncoderContext::SetProfileLevel (unsigned profileLevel) {
 //  affect quantization - rc_buffer_size/2.
 //
 
-#ifdef WITH_FFMPEG_SRC
+#ifdef LIBAVCODEC_HAVE_SOURCE_DIR
 void MPEG4EncoderContext::ResetBitCounter(int spread) {
     MpegEncContext *s = (MpegEncContext *) _avcontext->priv_data;
     int64_t wanted_bits
@@ -907,7 +907,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 
         if (total > 0) {
             _frameNum++; // increment the number of frames encoded
-#ifdef WITH_FFMPEG_SRC
+#ifdef LIBAVCODEC_HAVE_SOURCE_DIR
             ResetBitCounter(8); // Fix ffmpeg rate control
 #endif
             _throttle->record(total); // record frames for throttler
@@ -1415,7 +1415,7 @@ void MPEG4DecoderContext::SetStaticDecodingParams() {
 //
 // Check for errors on I-Frames.  If we found one, ask for another.
 //
-#ifdef WITH_FFMPEG_SRC
+#ifdef LIBAVCODEC_HAVE_SOURCE_DIR
 bool MPEG4DecoderContext::DecoderError(int threshold) {
     if (_doError) {
         int errors = 0;
@@ -1581,7 +1581,7 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
                          _encFrameBuffer, _lastPktOffset);
 
         if (len >= 0 && got_picture) {
-#ifdef WITH_FFMPEG_SRC
+#ifdef LIBAVCODEC_HAVE_SOURCE_DIR
             if (DecoderError(_keyRefreshThresh)) {
                 // ask for an IFrame update, but still show what we've got
                 flags |= PluginCodec_ReturnCoderRequestIFrame;

@@ -37,7 +37,7 @@
 #ifndef __VPBAPI__
 #define __VPBAPI__
 
-#ifdef WIN32
+#ifdef _WIN32
 #define	WINAPI	__stdcall
 #else
 #define	WINAPI

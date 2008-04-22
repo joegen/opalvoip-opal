@@ -427,14 +427,14 @@ bool FFMPEGLibrary::Load()
     return true;
 
   if (!DynaLink::Open("avcodec")
-#if defined(WIN32)
+#if defined(_WIN32)
       && !DynaLink::Open("libavcodec")
 #else
       && !DynaLink::Open("libavcodec.so")
 #endif
     ) {
     //cerr << "FFLINK\tFailed to load a library, some codecs won't operate correctly;" << endl;
-#if !defined(WIN32)
+#if !defined(_WIN32)
     //cerr << "put libavcodec.so in the current directory (together with this program) and try again" << endl;
 #else
     //cerr << "put avcodec.dll in the current directory (together with this program) and try again" << endl;

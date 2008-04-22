@@ -34,7 +34,7 @@
 #endif
 #include <string.h>
 
-#ifndef LIBX264_LINKED
+#ifndef X264_LINK_STATIC
 X264Library X264Lib;
 #endif
 

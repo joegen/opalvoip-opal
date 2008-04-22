@@ -62,10 +62,6 @@
  *
  ********/
 
-#if defined(_WIN32) && !defined(WIN32)
-#define WIN32
-#endif
-
 //#include <ptlib.h>
 #include <string.h>
 
@@ -75,7 +71,7 @@ typedef unsigned int  u_int;
 typedef unsigned char BYTE;
 typedef unsigned long u_long;
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <netinet/in.h>
 #endif
 

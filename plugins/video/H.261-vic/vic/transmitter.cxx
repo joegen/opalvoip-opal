@@ -77,12 +77,12 @@
 #include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 #include <errno.h>
 #include <string.h>
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock.h>
 #include <io.h>
 #include <sys/stat.h>
