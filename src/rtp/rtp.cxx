@@ -1641,7 +1641,7 @@ void RTP_UDP::Reopen(PBoolean reading)
 
 void RTP_UDP::Close(PBoolean reading)
 {
-  SendBYE();
+  //SendBYE();
 
   PWaitAndSignal mutex(dataMutex);
 

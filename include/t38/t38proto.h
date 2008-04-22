@@ -35,6 +35,8 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
 #if OPAL_T38FAX
 
 #include <ptlib/pipechan.h>
@@ -42,10 +44,6 @@
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
 #include <opal/endpoint.h>
-
-#if OPAL_SIP
-#include <sip/sdp.h>
-#endif
 
 class OpalTransport;
 class T38_IFPPacket;
@@ -589,32 +587,6 @@ class OpalT38Connection : public OpalFaxConnection
     OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
     OpalMediaFormatList GetMediaFormats() const;
 };
-
-/////////////////////////////////////////////////////////
-//
-//  SDP media description for fax media
-//
-
-#if OPAL_SIP
-
-class SDPFaxMediaDescription : public SDPMediaDescription
-{
-  PCLASSINFO(SDPFaxMediaDescription, SDPMediaDescription);
-  public:
-    SDPFaxMediaDescription(const OpalTransportAddress & address);
-    virtual PCaselessString GetSDPTransportType() const;
-    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
-    virtual PString GetSDPMediaType() const;
-    virtual PString GetSDPPortList() const;
-    virtual bool PrintOn(ostream & str, const PString & connectString) const;
-    virtual void SetAttribute(const PString & attr, const PString & value);
-    virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
-
-  protected:
-    PStringToString t38Attributes;
-};
-
-#endif // OPAL_SIP
 
 #define OPAL_T38            "T.38"
 #define OPAL_PCM16_FAX      "PCM-16-Fax"

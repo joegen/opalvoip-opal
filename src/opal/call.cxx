@@ -402,8 +402,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
     else
       sourceMediaFormats = preselectedFormats;
 
-    if (!SelectMediaFormats(sessionID,
-                            sourceMediaFormats,
+    if (!SelectMediaFormats(sourceMediaFormats,
                             sinkMediaFormats,
                             otherConnection->GetLocalMediaFormats(),
                             sourceFormat,
@@ -444,20 +443,18 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
 }
 
 
-bool OpalCall::SelectMediaFormats(unsigned sessionID,
-                                  const OpalMediaFormatList & srcFormats,
+bool OpalCall::SelectMediaFormats(const OpalMediaFormatList & srcFormats,
                                   const OpalMediaFormatList & dstFormats,
                                   const OpalMediaFormatList & allFormats,
                                   OpalMediaFormat & srcFormat,
                                   OpalMediaFormat & dstFormat) const
 {
-  if (OpalTranscoder::SelectFormats(sessionID, srcFormats, dstFormats, allFormats, srcFormat, dstFormat)) {
+  if (OpalTranscoder::SelectFormats(srcFormats, dstFormats, allFormats, srcFormat, dstFormat)) {
     PTRACE(3, "Call\tSelected media formats " << srcFormat << " -> " << dstFormat);
     return true;
   }
 
-  PTRACE(2, "Call\tSelectMediaFormats session " << sessionID
-        << ", could not find compatible media format:\n"
+  PTRACE(2, "Call\tSelectMediaFormats could not find compatible media format:\n"
             "  source formats=" << setfill(',') << srcFormats << "\n"
             "   sink  formats=" << dstFormats << setfill(' '));
   return false;
