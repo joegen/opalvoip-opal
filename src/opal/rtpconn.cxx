@@ -355,7 +355,7 @@ OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & m
 void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
   OpalConnection::OnPatchMediaStream(isSource, patch);
-  if (patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+  if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
     AttachRFC2833HandlerToPatch(isSource, patch);
 #if P_DTMF
     if (detectInBandDTMF && isSource) {
@@ -367,6 +367,19 @@ void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
   patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
 }
 
+void OpalRTPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT type)
+{
+  // trigger on end of tone
+  if (type == 0)
+    OnUserInputTone(info.GetTone(), info.GetDuration()/8);
+}
+
+void OpalRTPConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & /*info*/, INT)
+{
+  cout << "Received NSE event" << endl;
+  //if (!info.IsToneStart())
+  //  OnUserInputTone(info.GetTone(), info.GetDuration()/8);
+}
 
 #if OPAL_H224
 

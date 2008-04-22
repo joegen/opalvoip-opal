@@ -338,6 +338,9 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
 
 PBoolean OpalMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
 {
+  if (!isOpen)
+    return false;
+
   RTP_DataFrame packet(size);
   if (!ReadPacket(packet))
     return false;
@@ -354,6 +357,9 @@ PBoolean OpalMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
 
 PBoolean OpalMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
 {
+  if (!isOpen)
+    return false;
+
   written = length;
   RTP_DataFrame packet(length);
   memcpy(packet.GetPayloadPtr(), buffer, length);
@@ -657,6 +663,9 @@ OpalRawMediaStream::~OpalRawMediaStream()
 
 PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
 {
+  if (!isOpen)
+    return false;
+
   length = 0;
 
   if (IsSink()) {
@@ -678,6 +687,9 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
 
 PBoolean OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
 {
+  if (!isOpen)
+    return false;
+
   written = 0;
 
   if (IsSource()) {
@@ -962,6 +974,9 @@ PBoolean OpalVideoMediaStream::Close()
 
 PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
 {
+  if (!isOpen)
+    return false;
+
   if (IsSink()) {
     PTRACE(1, "Media\tTried to read from sink media stream");
     return false;
@@ -1015,6 +1030,9 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
 
 PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX & written)
 {
+  if (!isOpen)
+    return false;
+
   if (IsSource()) {
     PTRACE(1, "Media\tTried to write to source media stream");
     return false;
@@ -1144,6 +1162,9 @@ PBoolean OpalSinkMediaStream::ReadData(
       PINDEX & length     ///<  Length of data actually read
 )
 {
+  if (!isOpen)
+    return false;
+
   memset(buffer, 0, size);
   length = size;
 
@@ -1161,6 +1182,9 @@ PBoolean OpalSinkMediaStream::WriteData(
       PINDEX & written       ///<  Length of data actually written
 )
 {
+  if (!isOpen)
+    return false;
+
   written = defaultDataSize;
 
   if (isAudio) {
