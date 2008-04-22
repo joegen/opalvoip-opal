@@ -43,13 +43,20 @@ namespace PWLibStupidLinkerHacks {
 extern int mediaTypeLoader;
 }; // namespace PWLibStupidLinkerHacks
 
+class OpalMediaTypeDefinition;
+class OpalSecurityMode;
+
+////////////////////////////////////////////////////////////////////////////
+//
+//  define the factory used for keeping track of OpalMediaTypeDefintions
+//
+typedef PFactory<OpalMediaTypeDefinition> OpalMediaTypeFactory;
+typedef OpalMediaTypeFactory::KeyList_T OpalMediaTypeList;
+
 ////////////////////////////////////////////////////////////////////////////
 //
 //  define the type used to hold the media type identifiers, i.e. "audio", "video", "h.224", "fax" etc
 //
-
-class OpalMediaTypeDefinition;
-class OpalSecurityMode;
 
 class OpalMediaType : public std::string     // do not make this PCaselessString as that type does not work as index for std::map etc
 {
@@ -78,6 +85,8 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
 
     OpalMediaTypeDefinition * GetDefinition() const;
     static OpalMediaTypeDefinition * GetDefinition(const OpalMediaType & key);
+
+    static OpalMediaTypeFactory::KeyList_T GetList() { return OpalMediaTypeFactory::GetKeyList(); }
 
 #if OPAL_SIP
   public:
@@ -192,11 +201,6 @@ class OpalMediaTypeDefinition  {
 #endif
 };
 
-////////////////////////////////////////////////////////////////////////////
-//
-//  define the factory used for keeping track of OpalMediaTypeDefintions
-//
-typedef PFactory<OpalMediaTypeDefinition> OpalMediaTypeFactory;
 
 ////////////////////////////////////////////////////////////////////////////
 //

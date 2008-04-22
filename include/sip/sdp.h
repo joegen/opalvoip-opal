@@ -176,7 +176,7 @@ class SDPMediaDescription : public PObject
     virtual const SDPMediaFormatList & GetSDPMediaFormats() const
       { return formats; }
 
-    virtual OpalMediaFormatList GetMediaFormats(unsigned) const;
+    virtual OpalMediaFormatList GetMediaFormats(const OpalMediaType & mediaType) const;
     virtual void CreateRTPMap(unsigned sessionID, RTP_DataFrame::PayloadMapType & map) const;
 
     virtual void AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat);
@@ -307,7 +307,8 @@ class SDPSessionDescription : public PObject
 
     const SDPMediaDescriptionArray & GetMediaDescriptions() const { return mediaDescriptions; }
 
-    SDPMediaDescription * GetMediaDescription(const OpalMediaType & rtpMediaType) const;
+    SDPMediaDescription * GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const;
+    SDPMediaDescription * GetMediaDescriptionByIndex(PINDEX i) const;
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(md); }
     
     void SetDirection(const SDPMediaDescription::Direction & d) { direction = d; }
