@@ -4296,7 +4296,7 @@ void StatisticsPage::UpdateSession(const OpalConnection * connection)
     m_isActive = false;
   else {
     OpalMediaStreamPtr stream = connection->GetMediaStream(m_sessionID, m_receiver);
-    m_isActive = false; //stream != NULL && stream->Open();
+    m_isActive = stream != NULL && stream->Open();
     if (m_isActive) {
       for (size_t i = 0; i < m_fields.size(); i++)
         m_fields[i]->Update(*connection, *stream);
