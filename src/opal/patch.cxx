@@ -312,6 +312,21 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s, con
   intermediateFrames.Append(new RTP_DataFrame);
   finalFrames.Append(new RTP_DataFrame);
   writeSuccessful = true;
+
+  OpalMediaFormat mediaFormat = stream->GetMediaFormat();
+  unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
+  rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
+  rcWindowSize = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption());
+  rcByteRate = (unsigned) (targetBitRate / 8);
+  rcMaxConsecutiveFramesSkip = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlMaxFramesSkipOption());
+  rcConsecutiveFramesSkipped = 0;
+  rcTotalSize  = 0;
+  rcLastTime = PTimer::Tick();
+
+  PTRACE(3, "Patch\tCreated Sink: format=" << mediaFormat
+         << ", bitrate=" << targetBitRate
+         << ", rate control=" << rcEnabled
+         << ", window=" << rcWindowSize);
 }
 
 
@@ -479,6 +494,17 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
 bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
+  unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
+  rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
+  rcWindowSize = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption());
+  rcByteRate = (unsigned) (targetBitRate / 8);
+  rcMaxConsecutiveFramesSkip = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlMaxFramesSkipOption());
+
+  PTRACE(3, "Patch\tUpdated Sink: format=" << mediaFormat
+         << ", bitrate=" << targetBitRate
+         << ", rate control=" << rcEnabled
+         << ", window=" << rcWindowSize);
+
   if (primaryCodec == NULL)
     return stream->UpdateMediaFormat(mediaFormat);
 
@@ -532,11 +558,50 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
   return false;
 }
 
+bool OpalMediaPatch::Sink::RateControlExceeded(const PTimeInterval & currentTime)
+{
+  if (!rcEnabled)
+    return false;
+
+  std::list<FrameInfo>::iterator iter = frameInfoList.begin();
+  while (iter != frameInfoList.end()) {
+    if ((currentTime - iter->time) < rcWindowSize) {
+      rcLastTime = iter->time;
+      break;
+    }
+
+    rcTotalSize -= iter->size;
+    frameInfoList.erase(iter);
+    iter = frameInfoList.begin();
+  }
+
+  unsigned passedTime = (unsigned)(currentTime - rcLastTime).GetMilliSeconds();
+  PTRACE(5, "Patch\tRTP packets,  accumulated: " << rcTotalSize
+         << " list: " << frameInfoList.size()
+         << "over Time " << passedTime
+         << " byterate " << rcTotalSize * 1000 / passedTime
+         << " <= " << rcByteRate);
+  if (rcTotalSize * 1000 / passedTime < rcByteRate || rcConsecutiveFramesSkipped >= rcMaxConsecutiveFramesSkip) {
+    rcConsecutiveFramesSkipped = 0;
+    return false;
+  }
+
+  PTRACE(4, "Patch\tRate controller skipping frame.");
+  ++rcConsecutiveFramesSkipped;
+  return true;
+}
+
 
 bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
 {
   if (!writeSuccessful)
     return false;
+  
+  FrameInfo frameInfo;
+  frameInfo.time = PTimer::Tick();
+  frameInfo.size = 0;
+  if (RateControlExceeded(frameInfo.time))
+    return true;
 
   if (primaryCodec == NULL) {
     RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(sourceFrame.GetPayloadType());
@@ -559,6 +624,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     if (secondaryCodec == NULL) {
       if (!stream->WritePacket(*interFrame))
         return (writeSuccessful = false);
+      frameInfo.size += interFrame->GetPayloadSize() + interFrame->GetHeaderSize();
       sourceFrame.SetTimestamp(interFrame->GetTimestamp());
       continue;
     }
@@ -578,8 +644,14 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       patch.FilterFrame(*finalFrame, secondaryCodec->GetOutputFormat());
       if (!stream->WritePacket(*finalFrame))
         return (writeSuccessful = false);
+      frameInfo.size += finalFrame->GetPayloadSize() + finalFrame->GetHeaderSize();
       sourceFrame.SetTimestamp(finalFrame->GetTimestamp());
     }
+  }
+
+  if (rcEnabled && frameInfo.size > 0) {
+    frameInfoList.push_back(frameInfo);
+    rcTotalSize += frameInfo.size;
   }
 
   return true;
