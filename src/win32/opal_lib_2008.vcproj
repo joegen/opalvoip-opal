@@ -3982,7 +3982,8 @@
 					>
 				</File>
 				<File
-					RelativePath="..\codec\g726mf.cxx">
+					RelativePath="..\codec\g726mf.cxx"
+					>
 				</File>
 				<File
 					RelativePath="..\codec\g728mf.cxx"
@@ -5654,6 +5655,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\t38\sipt38.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\t38\t38proto.cxx"
 					>
 					<FileConfiguration
@@ -6583,6 +6588,10 @@
 				>
 				<File
 					RelativePath="..\..\include\t38\h323t38.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\t38\sipt38.h"
 					>
 				</File>
 				<File
