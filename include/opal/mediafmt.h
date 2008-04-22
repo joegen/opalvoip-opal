@@ -1144,6 +1144,9 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & MaxRxFrameHeightOption();
     static const PString & TemporalSpatialTradeOffOption();
     static const PString & TxKeyFramePeriodOption();
+    static const PString & RateControlEnableOption();
+    static const PString & RateControlWindowSizeOption();
+    static const PString & RateControlMaxFramesSkipOption();
 };
 #endif
 

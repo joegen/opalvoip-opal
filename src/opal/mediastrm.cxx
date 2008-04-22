@@ -73,12 +73,7 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   , marker(true)
   , mismatchedPayloadTypes(0)
   , mediaPatch(NULL)
-  , totalLength(0)
 {
-  if (mediaFormat.FindOption(OpalMediaFormat::TargetBitRateOption()) != NULL)
-    targetBitRateKbit = (unsigned) (mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), 0) / 1000);
-  else
-    targetBitRateKbit = 0;
   connection.SafeReference();
 }
 
@@ -122,11 +117,6 @@ PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaForm
   }
 
   mediaFormat = newMediaFormat;
-
-  if (mediaFormat.FindOption(OpalMediaFormat::TargetBitRateOption()) != NULL)
-    targetBitRateKbit = (unsigned) (mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), 0) / 1000);
-  else
-    targetBitRateKbit = 0;
 
   PTRACE(4, "Media\tMedia format updated on " << *this);
 
@@ -461,34 +451,6 @@ void OpalMediaStream::RemovePatch(OpalMediaPatch * /*patch*/ )
 }
 
 
-void OpalMediaStream::BitRateLimit (PINDEX byteCount, PBoolean mayDelay) 
-{
-  if (targetBitRateKbit == 0)
-    return;
-
-  totalLength += byteCount;
-
-  if (mayDelay) {
-    PTimeInterval waitBeforeSending;
-    PTimeInterval currentTime;
-
-    if (newTime != 0) { // calculate delay and wait
-      currentTime = PTimer::Tick();
-      waitBeforeSending = newTime - currentTime;
-      if (waitBeforeSending > 0) {
-        PTRACE(4, "OpalPlugin\tSleeping for " << waitBeforeSending << " s in order to keep bitrate limit of " << targetBitRateKbit << " kbit/s");
-        PThread::Current()->Sleep(waitBeforeSending);
-      }
-    }
-    currentTime = PTimer::Tick(); 
-    if (targetBitRateKbit > 0)
-      newTime = currentTime + totalLength * 8 / targetBitRateKbit;
-    else
-      newTime = currentTime + totalLength * 8;
-    totalLength = 0;
-  }
-}
-
 void OpalMediaStream::OnPatchStart() 
 { 
   connection.OnMediaPatchStart(sessionID, isSource);
@@ -620,9 +582,6 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 
   PBoolean ret;
   ret = rtpSession.WriteData(packet);
-
-  if (targetBitRateKbit > 0)
-    BitRateLimit (packet.GetPayloadSize(), packet.GetMarker());
 
   return ret;
 
@@ -1224,8 +1183,5 @@ PBoolean OpalSinkMediaStream::RequiresPatch() const
   return true;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
 
 // End of file ////////////////////////////////////////////////////////////////
-
