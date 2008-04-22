@@ -471,6 +471,11 @@ PBoolean OpalFaxMediaStream::Open()
 
     // create the command line for spandsp_util
     PString cmdLine = GetSpanDSPCommandLine(*faxCallInfo);
+
+#if _WIN32
+    cmdLine.Replace("\\", "\\\\", true);
+#endif
+    
     PTRACE(1, "Fax\tExecuting '" << cmdLine << "'");
 
     // open connection to spandsp
@@ -1195,6 +1200,7 @@ static void ReinviteFunction(OpalManager & manager, const PString & callToken, c
 
 void OpalT38Connection::SwitchToT38()
 {
+#if 0
   if (!inT38Mode) {
     PTRACE(1, "T38\tTriggering ReInvite into fax mode");
     OpalCall & call = GetCall();
@@ -1202,6 +1208,7 @@ void OpalT38Connection::SwitchToT38()
     faxTimer.Stop();
     new PThread3Arg<OpalManager &, const PString &, const PString &>(call.GetManager(), call.GetToken(), GetToken(), &ReinviteFunction, true);
   }
+#endif
 }
 
 #endif // OPAL_T38FAX
