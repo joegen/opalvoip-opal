@@ -947,8 +947,14 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
   // Make sure stream is symmetrical, if codec changed, close and re-open it
   OpalMediaStreamPtr otherStream = GetMediaStream(sessionID, !isSource);
   if (otherStream != NULL && otherStream->IsOpen() && otherStream->GetMediaFormat() != mediaFormat) {
-    otherStream->GetPatch()->GetSource().Close();
-    GetCall().OpenSourceMediaStreams(isSource ? *GetCall().GetOtherPartyConnection(*this) : *this, sessionID);
+    if (isSource) {
+      otherStream->GetPatch()->GetSource().Close();
+      GetCall().OpenSourceMediaStreams(*GetCall().GetOtherPartyConnection(*this), sessionID);
+    }
+    else {
+      otherStream->Close();
+      GetCall().OpenSourceMediaStreams(*this, sessionID);
+    }
   }
 
   needReINVITE = oldReINVITE;
