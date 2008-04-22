@@ -279,6 +279,7 @@ class OpalCall : public PSafeObject
       */
     virtual bool OpenSourceMediaStreams(
       OpalConnection & connection,              ///<  Connection requesting open
+      const OpalMediaType & mediaType,          ///<  Media type of channel to open
       unsigned sessionID,                       ///<  Session to start streams on
       const OpalMediaFormatList & preselectedFormats = OpalMediaFormatList()  ///< Format for source stream to choose from
     );

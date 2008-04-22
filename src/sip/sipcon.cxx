@@ -855,7 +855,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   // OpenSourceMediaStreams will just return true if they are already open
   if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0 &&
       recvStream == NULL &&
-      ownerCall.OpenSourceMediaStreams(*this, rtpSessionId) &&
+      ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId) &&
       (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
     newDirection = SDPMediaDescription::RecvOnly;
 
@@ -863,7 +863,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 &&
        otherParty != NULL &&
        sendStream == NULL &&
-       ownerCall.OpenSourceMediaStreams(*otherParty, rtpSessionId) &&
+       ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId) &&
        (sendStream = GetMediaStream(rtpSessionId, false)) != NULL)
     newDirection = newDirection == SDPMediaDescription::RecvOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
 
@@ -958,11 +958,11 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
   if (otherStream != NULL && otherStream->IsOpen() && otherStream->GetMediaFormat() != mediaFormat) {
     if (isSource) {
       otherStream->GetPatch()->GetSource().Close();
-      GetCall().OpenSourceMediaStreams(*GetCall().GetOtherPartyConnection(*this), sessionID);
+      GetCall().OpenSourceMediaStreams(*GetCall().GetOtherPartyConnection(*this), mediaFormat.GetMediaType(), sessionID);
     }
     else {
       otherStream->Close();
-      GetCall().OpenSourceMediaStreams(*this, sessionID);
+      GetCall().OpenSourceMediaStreams(*this, mediaFormat.GetMediaType(), sessionID);
     }
   }
 
@@ -2133,11 +2133,11 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
 
   // Then open the streams if the direction allows
   if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0)
-    ownerCall.OpenSourceMediaStreams(*this, rtpSessionId);
+    ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId);
 
   PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
   if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 && otherParty != NULL)
-    ownerCall.OpenSourceMediaStreams(*otherParty, rtpSessionId);
+    ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId);
 
   return true;
 }
