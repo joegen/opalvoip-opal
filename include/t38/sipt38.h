@@ -70,3 +70,4 @@ class SDPFaxMediaDescription : public SDPMediaDescription
 #endif // OPAL_SIP
 
 #endif // __OPAL_SIPT38_H
+

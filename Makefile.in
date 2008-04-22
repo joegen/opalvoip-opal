@@ -271,7 +271,8 @@ SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
            $(OPAL_SRCDIR)/sip/sipcon.cxx \
            $(OPAL_SRCDIR)/sip/sippdu.cxx \
            $(OPAL_SRCDIR)/sip/sdp.cxx \
-           $(OPAL_SRCDIR)/sip/handlers.cxx 
+           $(OPAL_SRCDIR)/sip/handlers.cxx \
+           $(OPAL_SRCDIR)/t38/sipt38.cxx
 
 endif
 endif
