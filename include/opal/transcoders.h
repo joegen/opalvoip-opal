@@ -236,7 +236,6 @@ class OpalTranscoder : public OpalMediaFormatPair
        between the two named formats.
       */
     static bool SelectFormats(
-      unsigned sessionID,                     ///<  Session ID for media formats
       const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
       const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
       const OpalMediaFormatList & allFormats, ///<  Master list of formats for merging options

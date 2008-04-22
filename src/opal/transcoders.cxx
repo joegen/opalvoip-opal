@@ -222,8 +222,7 @@ static bool MergeFormats(const OpalMediaFormatList & allFormats,
 }
 
 
-bool OpalTranscoder::SelectFormats(unsigned sessionID,
-                                   const OpalMediaFormatList & srcFormats,
+bool OpalTranscoder::SelectFormats(const OpalMediaFormatList & srcFormats,
                                    const OpalMediaFormatList & dstFormats,
                                    const OpalMediaFormatList & allFormats,
                                    OpalMediaFormat & srcFormat,
@@ -235,29 +234,23 @@ bool OpalTranscoder::SelectFormats(unsigned sessionID,
   // directly from the given format to a possible one with no transcoders.
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
     dstFormat = *d;
-    if (dstFormat.GetDefaultSessionID() == sessionID) {
-      for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
-        srcFormat = *s;
-        if (srcFormat == dstFormat && MergeFormats(allFormats, srcFormat, dstFormat))
-          return true;
-      }
+    for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
+      srcFormat = *s;
+      if (srcFormat == dstFormat && MergeFormats(allFormats, srcFormat, dstFormat))
+        return true;
     }
   }
 
   // Search for a single transcoder to get from a to b
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
     dstFormat = *d;
-    if (dstFormat.GetDefaultSessionID() == sessionID) {
-      for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
-        srcFormat = *s;
-        if (srcFormat.GetDefaultSessionID() == sessionID) {
-          OpalTranscoderKey search(srcFormat, dstFormat);
-          OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
-          for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-            if (search == *i && MergeFormats(allFormats, srcFormat, dstFormat))
-              return true;
-          }
-        }
+    for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
+      srcFormat = *s;
+      OpalTranscoderKey search(srcFormat, dstFormat);
+      OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
+      for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
+        if (search == *i && MergeFormats(allFormats, srcFormat, dstFormat))
+          return true;
       }
     }
   }
@@ -265,15 +258,11 @@ bool OpalTranscoder::SelectFormats(unsigned sessionID,
   // Last gasp search for a double transcoder to get from a to b
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
     dstFormat = *d;
-    if (dstFormat.GetDefaultSessionID() == sessionID) {
-      for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
-        srcFormat = *s;
-        if (srcFormat.GetDefaultSessionID() == sessionID) {
-          OpalMediaFormat intermediateFormat;
-          if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat) && MergeFormats(allFormats, srcFormat, dstFormat))
-            return true;
-        }
-      }
+    for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
+      srcFormat = *s;
+      OpalMediaFormat intermediateFormat;
+      if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat) && MergeFormats(allFormats, srcFormat, dstFormat))
+        return true;
     }
   }
 

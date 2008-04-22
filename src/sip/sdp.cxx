@@ -740,7 +740,7 @@ bool SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
   return true;
 }
 
-OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) const
+OpalMediaFormatList SDPMediaDescription::GetMediaFormats(const OpalMediaType & mediaType) const
 {
   OpalMediaFormatList list;
 
@@ -750,7 +750,7 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
       PTRACE(2, "SIP\tRTP payload type " << format->GetPayloadType() 
              << ", name=" << format->GetEncodingName() << ", not matched to supported codecs");
     else {
-      if (opalFormat.GetDefaultSessionID() == sessionID && 
+      if (opalFormat.GetMediaType() == mediaType && 
           opalFormat.IsValidForProtocol("sip") &&
           opalFormat.GetEncodingName() != NULL) {
         PTRACE(3, "SIP\tRTP payload type " << format->GetPayloadType() << " matched to codec " << opalFormat);
@@ -1287,7 +1287,7 @@ void SDPSessionDescription::ParseOwner(const PString & str)
 }
 
 
-SDPMediaDescription * SDPSessionDescription::GetMediaDescription(const OpalMediaType & rtpMediaType) const
+SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const
 {
   // look for matching media type
   PINDEX i;
@@ -1299,6 +1299,13 @@ SDPMediaDescription * SDPSessionDescription::GetMediaDescription(const OpalMedia
   return NULL;
 }
 
+SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByIndex(PINDEX index) const
+{
+  if (index > mediaDescriptions.GetSize())
+    return NULL;
+
+  return &mediaDescriptions[index-1];
+}
 
 SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sessionID) const
 {
@@ -1319,7 +1326,7 @@ SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sess
 
 bool SDPSessionDescription::IsHold() const
 {
-  SDPMediaDescription * audioSDP = GetMediaDescription(OpalMediaType::Audio());
+  SDPMediaDescription * audioSDP = GetMediaDescriptionByType(OpalMediaType::Audio());
   if (audioSDP != NULL && audioSDP->GetTransportAddress().IsEmpty()) // Old style "hold"
     return true;
 
@@ -1329,7 +1336,7 @@ bool SDPSessionDescription::IsHold() const
   PINDEX i;
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
     SDPMediaDescription::Direction dir = mediaDescriptions[i].GetDirection();
-    if (dir != SDPMediaDescription::Undefined && (dir&SDPMediaDescription::SendOnly) != 0)
+    if ((dir == SDPMediaDescription::Undefined) || ((dir & SDPMediaDescription::SendOnly) != 0))
       return false;
   }
 
