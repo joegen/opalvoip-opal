@@ -932,7 +932,7 @@ PBoolean OpalFaxConnection::SetUpConnection()
       otherStringOptions->SetAt("enableinbanddtmf", "true");
       otherStringOptions->SetAt("dtmfmult",         "4");
       bool stat = OnIncomingConnection(0, otherStringOptions);
-      delete stringOptions;
+      delete otherStringOptions;
       if (!stat) {
         Release(EndedByCallerAbort);
         return PFalse;
