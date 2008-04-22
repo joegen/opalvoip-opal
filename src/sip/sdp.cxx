@@ -803,8 +803,10 @@ void SDPMediaDescription::RemoveSDPMediaFormat(const SDPMediaFormat & sdpMediaFo
 
 void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadMapType & map)
 {
-  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip"))
+  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip")) {
+    PTRACE(4, "SDP\tSDP not including " << mediaFormat << " as it is not a SIP transportable format");
     return;
+  }
 
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
   if (map.size() != 0) {
@@ -818,8 +820,10 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
   for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
     if (format->GetPayloadType() == payloadType ||
         ((format->GetEncodingName() *= mediaFormat.GetEncodingName()) && format->GetClockRate() == clockRate)
-        )
+        ) {
+      PTRACE(4, "SDP\tSDP not including " << mediaFormat << " as it is already included");
       return;
+    }
   }
 
   SDPMediaFormat * sdpFormat = new SDPMediaFormat(mediaFormat, payloadType);
@@ -834,11 +838,10 @@ void SDPMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, co
 }
 
 
-void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session, const RTP_DataFrame::PayloadMapType & map)
+void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType, const RTP_DataFrame::PayloadMapType & map)
 {
   for (OpalMediaFormatList::const_iterator format = mediaFormats.begin(); format != mediaFormats.end(); ++format) {
-    if (format->GetDefaultSessionID() == session &&
-            (session == OpalMediaFormat::DefaultDataSessionID || format->IsTransportable()))
+    if (format->GetMediaType() == mediaType && (format->IsTransportable()))
       AddMediaFormat(*format, map);
   }
 }

@@ -45,6 +45,19 @@
 
 #define new PNEW
 
+namespace PWLibStupidLinkerHacks {
+extern int opalLoader;
+
+static class InstantiateMe
+{
+  public:
+    InstantiateMe()
+    {
+      opalLoader = 1;
+    }
+} instance;
+
+}; // namespace PWLibStupidLinkerHacks
 
 /////////////////////////////////////////////////////////////////////////////
 
