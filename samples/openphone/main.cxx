@@ -2042,7 +2042,7 @@ void MyManager::OnAudioCodec(wxCommandEvent& theEvent)
   if (mediaFormat.IsValid()) {
     PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReadWrite);
     if (connection != NULL) {
-      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaFormat::DefaultAudioSessionID, mediaFormat))
+      if (!connection->GetCall().OpenSourceMediaStreams(*connection, mediaFormat.GetMediaType(), OpalMediaFormat::DefaultAudioSessionID, mediaFormat))
         LogWindow << "Could not change audio codec!" << endl;
     }
   }
@@ -2055,7 +2055,7 @@ void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
   if (connection != NULL) {
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
     if (stream == NULL) {
-      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaFormat::DefaultVideoSessionID))
+      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaType::Video(), OpalMediaFormat::DefaultVideoSessionID))
         LogWindow << "Could not open video to remote!" << endl;
     }
   }
