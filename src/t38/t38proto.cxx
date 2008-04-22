@@ -1200,7 +1200,6 @@ static void ReinviteFunction(OpalManager & manager, const PString & callToken, c
 
 void OpalT38Connection::SwitchToT38()
 {
-#if 0
   if (!inT38Mode) {
     PTRACE(1, "T38\tTriggering ReInvite into fax mode");
     OpalCall & call = GetCall();
@@ -1208,7 +1207,6 @@ void OpalT38Connection::SwitchToT38()
     faxTimer.Stop();
     new PThread3Arg<OpalManager &, const PString &, const PString &>(call.GetManager(), call.GetToken(), GetToken(), &ReinviteFunction, true);
   }
-#endif
 }
 
 #endif // OPAL_T38FAX

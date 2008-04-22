@@ -2035,6 +2035,7 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
 
 #if OPAL_T38FAX
   ok |= OnReceivedSDPMediaDescription(pdu.GetSDP(), OpalMediaType::Fax(), OpalMediaFormat::DefaultDataSessionID);
+  remoteFormatList += OpalT38;
 #endif
 
   needReINVITE = true;
