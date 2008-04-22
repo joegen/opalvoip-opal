@@ -63,6 +63,7 @@ class MyManager;
 
 class OpalLineEndPoint;
 class OpalIVREndPoint;
+class OpalT38EndPoint;
 
 class wxSplitterWindow;
 class wxSplitterEvent;
@@ -376,7 +377,7 @@ class OptionsDialog : public wxDialog
     PwxString m_RingSoundDeviceName;
     PwxString m_RingSoundFileName;
     bool      m_AutoAnswer;
-#if P_EXPAT
+#if OPAL_IVR
     PwxString m_IVRScript;
 #endif
 
@@ -447,6 +448,14 @@ class OptionsDialog : public wxDialog
     bool      m_VideoFlipRemote;
     PwxString m_VideoMinFrameSize;
     PwxString m_VideoMaxFrameSize;
+
+    ////////////////////////////////////////
+    // Fax fields
+    PwxString m_FaxStationIdentifier;
+    PwxString m_FaxReceiveDirectory;
+    PwxString m_FaxSpanDSP;
+    void BrowseFaxDirectory(wxCommandEvent & event);
+    void BrowseFaxSpanDSP(wxCommandEvent & event);
 
     ////////////////////////////////////////
     // Codec fields
@@ -541,6 +550,8 @@ class OptionsDialog : public wxDialog
     void SelectedRoute(wxListEvent & event);
     void DeselectedRoute(wxListEvent & event);
     void ChangedRouteInfo(wxCommandEvent & event);
+    void RestoreDefaultRoutes(wxCommandEvent & event);
+    void AddRouteTableEntry(OpalManager::RouteEntry entry);
 
 #if PTRACING
     ////////////////////////////////////////
@@ -595,7 +606,7 @@ class MyManager : public wxFrame, public OpalManager
     bool HasSpeedDialName(const wxString & name) const;
     int  GetSpeedDialIndex(const char * number, const char * ignore) const;
 
-    void MakeCall(const PwxString & address);
+    void MakeCall(const PwxString & address, const PwxString & local = wxEmptyString);
     void AnswerCall();
     void RejectCall();
     void HangUpCall();
@@ -674,6 +685,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnRequestHold(wxCommandEvent& event);
     void OnRetrieve(wxCommandEvent& event);
     void OnTransfer(wxCommandEvent& event);
+    void OnSendFax(wxCommandEvent& event);
     void OnStartRecording(wxCommandEvent& event);
     void OnStopRecording(wxCommandEvent& event);
     void OnAudioCodec(wxCommandEvent& event);
@@ -750,8 +762,12 @@ class MyManager : public wxFrame, public OpalManager
     void StartRegistrars();
     void StopRegistrars();
 
-#if P_EXPAT
+#if OPAL_IVR
     OpalIVREndPoint  * ivrEP;
+#endif
+
+#if OPAL_T38FAX
+    OpalT38EndPoint  * m_faxEP;
 #endif
 
     bool      m_autoAnswer;
@@ -819,6 +835,7 @@ class MyManager : public wxFrame, public OpalManager
     list<CallsOnHold>    m_callsOnHold;
 
     PFilePath m_lastRecordFile;
+    PFilePath m_faxReceiveDirectory;
 
     DECLARE_EVENT_TABLE()
 
