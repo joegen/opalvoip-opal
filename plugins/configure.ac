@@ -14,6 +14,11 @@ fi
 
 AC_SUBST(INSTALLPREFIX)
 
+if test \! -e ./aclocal.m4 ; then
+  echo "ERROR: you must run 'aclocal' before 'autoconf'"
+  exit
+fi
+
 
 dnl ########################################################################
 dnl set LIBDIR accordingly
@@ -495,12 +500,7 @@ if test "x$enable_x264" = "xstatic"; then
   have_x264_48="no"
   saved_LIBS="$LIBS"
 
-  echo ""
-  echo "--- WARNING: the call to PKG_CHECK_MODULES has been commented out due to compatibility problems"
-  echo "             with non-bleeding-edge systems. If you know how to fix this, please do!"
-  echo "             Until this happens, x264 probably won't work"
-  echo ""
-  #PKG_CHECK_MODULES([x264], [x264 >= 0.48], [ have_x264_48="yes" ], [  have_x264_48="no" ])
+  PKG_CHECK_MODULES([x264], [x264 >= 0.48], [ have_x264_48="yes" ], [  have_x264_48="no" ])
 
   dnl For people who don't have pkg-config or x264.pc 
   if test $have_x264_48 = "no"; then
