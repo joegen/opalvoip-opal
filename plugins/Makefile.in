@@ -51,6 +51,7 @@ SUBDIRS += LID/CAPI
 endif
 
 HAS_SPANDSP=@HAS_SPANDSP@
+ifeq ($(HAS_SPANDSP),1)
 ifneq (,$(wildcard fax/fax_spandsp))
 ifneq (,$(wildcard fax/fax_spandsp/spandsp_util))
 SUBDIRS += fax/fax_spandsp
