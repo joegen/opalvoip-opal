@@ -595,9 +595,35 @@ class OpalT38Connection : public OpalFaxConnection
       const PString & _token,           ///<  token for connection
       OpalConnection::StringOptions * stringOptions = NULL
     );
+
+    ~OpalT38Connection();
+
+    void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
     void AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const;
     OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
     OpalMediaFormatList GetMediaFormats() const;
+
+    // triggers into fax mode
+    enum {
+      T38Mode_Wait         = 0,   // wait for the other end to send a reinvite
+      T38Mode_InBandCED    = 1,   // if the other end sends CED in-band, send a ReINVITE/ModeChange
+      T38Mode_NSECED       = 2,   // if the other end send CED as RFC2833, send a ReINVITE/ModeChange
+      T38Mode_Timeout      = 4,   // send ReINVITE/ModeChange after timeout
+      T38Mode_Auto         = 7    // whichever of the above happens first!
+    };
+
+    virtual PBoolean SendUserInputTone(
+      char tone,
+      unsigned duration
+    );
+
+    PDECLARE_NOTIFIER(PTimer, OpalT38Connection, OnFaxChangeTimeout);
+
+    void SwitchToT38();
+
+    unsigned t38WaitMode;
+    bool inT38Mode;
+    PTimer faxTimer;
 };
 
 #define OPAL_T38            "T.38"
