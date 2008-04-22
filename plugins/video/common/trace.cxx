@@ -68,10 +68,10 @@ bool Trace::CanTraceUserPlane (unsigned level)
 
 ostream & Trace::Start(const char* file, int line)
 {
-#ifdef WIN32
+#ifdef _WIN32
   cerr << setw(16) << file << '(' << line << ")\t";
 #else
   cerr << setw(16) << basename((char *)file) << '(' << line << ")\t";
-#endif
+#endif /* _WIN32 */
   return cerr;
 }

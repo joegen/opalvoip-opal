@@ -77,12 +77,8 @@
 
 #include "config.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock.h>
-#else
-#ifndef P_VXWORKS
-#include <sys/param.h>
-#endif
 #endif
 #ifdef __linux__
 #include <endian.h>

@@ -700,7 +700,7 @@ x264_LIBS
 HAS_X264
 X264_CFLAGS
 X264_LIBS
-LIBX264_LINKED
+X264_LINK_STATIC
 HAS_THEORA
 THEORA_LIBS
 LIBOBJS
@@ -6754,7 +6754,7 @@ elif test "$with_ffmpeg_src_dir" != "" ; then
     { echo "$as_me:$LINENO: result: enabled" >&5
 echo "${ECHO_T}enabled" >&6; }
     FFMPEG_SOURCE=$with_ffmpeg_src_dir
-    FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DWITH_FFMPEG_SRC"
+    FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DLIBAVCODEC_HAVE_SOURCE_DIR"
   else
     { { echo "$as_me:$LINENO: error: $with_ffmpeg_src_dir doesn't contain an ffmpeg source tree" >&5
 echo "$as_me: error: $with_ffmpeg_src_dir doesn't contain an ffmpeg source tree" >&2;}
@@ -7052,7 +7052,7 @@ fi
 if test "${ffmpeg_stackalign_hack}" = "yes" ; then
   { echo "$as_me:$LINENO: FFMPEG stack align hack enabled" >&5
 echo "$as_me: FFMPEG stack align hack enabled" >&6;}
-  FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DWITH_STACKALIGN_HACK"
+  FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DLIBAVCODEC_STACKALIGN_HACK"
 else
   { echo "$as_me:$LINENO: FFMPEG stack align hack disabled" >&5
 echo "$as_me: FFMPEG stack align hack disabled" >&6;}
@@ -7065,7 +7065,7 @@ fi
 
 HAS_X264=0
 X264_LIBS=
-LIBX264_LINKED=0
+X264_LINK_STATIC=0
 
 
 # Check whether --enable-x264 was given.
@@ -7344,9 +7344,9 @@ echo "${ECHO_T}cannot determine - using defaults" >&6; }
                   rm -f t t.c
                   { echo "$as_me:$LINENO: result: $x264_lib_name" >&5
 echo "${ECHO_T}$x264_lib_name" >&6; }
-                  X264_CFLAGS="-DLIBX264_LIB_NAME='\"${x264_lib_name}\"'"
+                  X264_CFLAGS="-DX264_LIB_NAME='\"${x264_lib_name}\"'"
               fi
-              X264_CFLAGS="-DLIBX264_LIB_NAME='\"${x264_lib_name}\"'"
+              X264_CFLAGS="-DX264_LIB_NAME='\"${x264_lib_name}\"'"
 	    else
               { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
@@ -7712,8 +7712,8 @@ done
   if test $have_x264_48 = "yes"; then
       X264_LIBS="-lx264 -lm -lpthread"
       HAS_X264=1
-      X264_CFLAGS="${X264_CFLAGS} -DLIBX264_LINKED=1"
-      LIBX264_LINKED=1
+      X264_CFLAGS="${X264_CFLAGS} -DX264_LINK_STATIC=1"
+      X264_LINK_STATIC=1
   fi
 
 fi
@@ -8772,7 +8772,7 @@ x264_LIBS!$x264_LIBS$ac_delim
 HAS_X264!$HAS_X264$ac_delim
 X264_CFLAGS!$X264_CFLAGS$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
-LIBX264_LINKED!$LIBX264_LINKED$ac_delim
+X264_LINK_STATIC!$X264_LINK_STATIC$ac_delim
 HAS_THEORA!$HAS_THEORA$ac_delim
 THEORA_LIBS!$THEORA_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
@@ -9840,7 +9840,7 @@ x264_LIBS!$x264_LIBS$ac_delim
 HAS_X264!$HAS_X264$ac_delim
 X264_CFLAGS!$X264_CFLAGS$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
-LIBX264_LINKED!$LIBX264_LINKED$ac_delim
+X264_LINK_STATIC!$X264_LINK_STATIC$ac_delim
 HAS_THEORA!$HAS_THEORA$ac_delim
 THEORA_LIBS!$THEORA_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim

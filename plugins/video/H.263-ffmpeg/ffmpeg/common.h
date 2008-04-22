@@ -6,7 +6,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#if defined(WIN32) && !defined(__MINGW32__) && !defined(__CYGWIN__)
+#if defined(_WIN32) && !defined(__MINGW32__) && !defined(__CYGWIN__)
 #    define CONFIG_WIN32
 #endif
 

@@ -32,7 +32,7 @@
 #include "rtpframe.h"
 #include "h264pipe_unix.h"
 
-#define HAS_MKFIFO 1
+#define HAVE_MKFIFO 1
 #define GPL_PROCESS_FILENAME "ptlib/codecs/video/h264_video_pwplugin_helper"
 #define DIR_SEPERATOR "/"
 #define DIR_TOKENISER ":"
@@ -183,7 +183,7 @@ void H264EncCtx::call(unsigned msg , const u_char * src, unsigned & srcLen, u_ch
 bool H264EncCtx::createPipes()
 {
   umask(0);
-#ifdef HAS_MKFIFO
+#ifdef HAVE_MKFIFO
   if (mkfifo((const char*) &dlName, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) {
 
     TRACE(1, "H264\tIPC\tPP: Error when trying to create DL named pipe");
@@ -205,7 +205,7 @@ bool H264EncCtx::createPipes()
     TRACE(1, "H264\tIPC\tPP: Error when trying to create named pipe");
     return false;
   }
-#endif
+#endif /* HAVE_MKFIFO */
   return true;
 }
 

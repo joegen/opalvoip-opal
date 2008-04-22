@@ -71,7 +71,7 @@ extern "C" {
 #endif
 
 
-#ifdef WITH_STACKALIGN_HACK
+#ifdef LIBAVCODEC_STACKALIGN_HACK
 /*
 * Some combination of gcc 3.3.5, glibc 2.3.5 and PWLib 1.11.3 is throwing
 * off stack alignment for ffmpeg when it is dynamically loaded by PWLib.
