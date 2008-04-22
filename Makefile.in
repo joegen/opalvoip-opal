@@ -102,8 +102,11 @@ ifneq (,$(wildcard src/h323))
 H323_AVAIL = 1
 VPATH_CXX += $(OPAL_SRCDIR)/h323 \
 	     $(OPAL_SRCDIR)/t120 \
-	     $(OPAL_SRCDIR)/t38 \
 	     $(OPAL_SRCDIR)/asn 
+endif
+
+ifneq (,$(wildcard src/h323))
+VPATH_CXX += $(OPAL_SRCDIR)/t38 
 endif
 
 ifneq (,$(wildcard src/h224))
@@ -142,6 +145,10 @@ endif
 ifeq ($(OPAL_IVR), 1)
 SOURCES += $(OPAL_SRCDIR)/opal/ivr.cxx \
            $(OPAL_SRCDIR)/opal/opalvxml.cxx 
+endif
+
+ifeq ($(OPAL_T38FAX), 1)
+SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx 
 endif
 
 ########################################
@@ -209,9 +216,11 @@ endif
 
 SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
            $(OPAL_SRCDIR)/t120/h323t120.cxx \
-           $(OPAL_SRCDIR)/t120/x224.cxx \
-           $(OPAL_SRCDIR)/t38/t38proto.cxx \
-           $(OPAL_SRCDIR)/t38/h323t38.cxx
+           $(OPAL_SRCDIR)/t120/x224.cxx 
+
+ifdef OPAL_T38FAX
+SOURCES += $(OPAL_SRCDIR)/t38/h323t38.cxx
+endif
 
 ifeq ($(OPAL_H224), 1)
 ifdef H224_AVAIL
@@ -272,7 +281,10 @@ SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
            $(OPAL_SRCDIR)/sip/sippdu.cxx \
            $(OPAL_SRCDIR)/sip/sdp.cxx \
            $(OPAL_SRCDIR)/sip/handlers.cxx \
-           $(OPAL_SRCDIR)/t38/sipt38.cxx
+
+ifdef OPAL_T38FAX
+SOURCES += $(OPAL_SRCDIR)/t38/sipt38.cxx
+endif
 
 endif
 endif
