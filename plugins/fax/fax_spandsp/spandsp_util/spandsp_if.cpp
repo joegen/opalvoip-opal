@@ -65,8 +65,6 @@ static bool firstT38Write = true;
 static bool firstAudioRead = true;
 static bool firstAudioWrite = true;
 
-#define SPANDSP_VER3 1
-
 #define SAMPLES_PER_CHUNK 160
 
 struct RTPHeader {
