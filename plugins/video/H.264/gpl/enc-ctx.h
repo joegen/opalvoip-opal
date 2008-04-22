@@ -40,7 +40,7 @@ extern "C" {
 
 #ifdef _WIN32
 /* to keep compatibility with old build */
-#define LIBX264_LINKED 1
+#define X264_LINK_STATIC 1
 #endif
 
 #define CIF_WIDTH 352
@@ -59,7 +59,7 @@ extern "C" {
 #define H264_MIN_QUANT           10
 
 
-#if LIBX264_LINKED
+#if X264_LINK_STATIC
   #define X264_ENCODER_OPEN x264_encoder_open 
   #define X264_PARAM_DEFAULT x264_param_default
   #define X264_ENCODER_ENCODE x264_encoder_encode

@@ -82,7 +82,7 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
   WITH_ALIGNED_STACK({  // must be called before using avcodec lib
     _hDLL = dlopen((const char *)path, RTLD_NOW);
   });
-#endif /* WIN32 */
+#endif /* _WIN32 */
   // Check for errors
   if (_hDLL == NULL) {
 #ifndef _WIN32
@@ -90,7 +90,7 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
   if (err != NULL)
     TRACE(1, _codecString << "\tDYNA\tError loading " << path << " - " << err)
     else
-#endif /* WIN32 */
+#endif /* _WIN32 */
     TRACE(1, _codecString << "\tDYNA\tError loading " << path);
     return false;
   } 
@@ -107,7 +107,7 @@ void DynaLink::Close()
     FreeLibrary(_hDLL);
 #else
     dlclose(_hDLL);
-#endif /* WIN32 */
+#endif /* _WIN32 */
     _hDLL = NULL;
   }
 }
@@ -156,14 +156,14 @@ bool FFMPEGLibrary::Load()
   if (IsLoaded())
     return true;
   if (
-#if defined(WIN32)
+#if defined(_WIN32)
       !DynaLink::Open("libavcodec")
 #else
 #ifdef LIBAVCODEC_LIB_NAME
       !DynaLink::Open(LIBAVCODEC_LIB_NAME) &&
-#endif
+#endif /* LIBAVCODEC_LIB_NAME */
       !DynaLink::Open("libavcodec.so")
-#endif
+#endif /* _WIN32 */
       && !DynaLink::Open("avcodec"))
     {
     TRACE (1, _codecString << "\tDYNA\tFailed to load libavcodec library");

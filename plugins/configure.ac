@@ -349,7 +349,7 @@ elif test "$with_ffmpeg_src_dir" != "" ; then
   then
     AC_MSG_RESULT(enabled)
     FFMPEG_SOURCE=$with_ffmpeg_src_dir
-    FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DWITH_FFMPEG_SRC"
+    FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DLIBAVCODEC_HAVE_SOURCE_DIR"
   else
     AC_MSG_ERROR([$with_ffmpeg_src_dir doesn't contain an ffmpeg source tree])
   fi
@@ -413,7 +413,7 @@ AC_ARG_ENABLE(ffmpeg-stackalign-hack,
             AC_HELP_STRING([--enable-ffmpeg-stackalign-hack],[Enable FFMPEG stack align hack for MPEG 4]), ffmpeg_stackalign_hack=$enableval)
 if test "${ffmpeg_stackalign_hack}" = "yes" ; then
   AC_MSG_NOTICE(FFMPEG stack align hack enabled)
-  FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DWITH_STACKALIGN_HACK"
+  FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DLIBAVCODEC_STACKALIGN_HACK"
 else
   AC_MSG_NOTICE(FFMPEG stack align hack disabled)
 fi
@@ -428,7 +428,7 @@ dnl ###########################################################################
 
 HAS_X264=0
 X264_LIBS=
-LIBX264_LINKED=0
+X264_LINK_STATIC=0
 m4_define([x264_default], [runtime])
 
 dnl declare --enable-* args and collect ac_help strings
@@ -480,9 +480,9 @@ C_FILE
                   x264_lib_name=`ldd ./t  | grep libx264 | awk '{ print $1; }'`
                   rm -f t t.c
                   AC_MSG_RESULT($x264_lib_name)
-                  X264_CFLAGS="-DLIBX264_LIB_NAME='\"${x264_lib_name}\"'"
+                  X264_CFLAGS="-DX264_LIB_NAME='\"${x264_lib_name}\"'"
               fi
-              X264_CFLAGS="-DLIBX264_LIB_NAME='\"${x264_lib_name}\"'"
+              X264_CFLAGS="-DX264_LIB_NAME='\"${x264_lib_name}\"'"
 	    else
               AC_MSG_RESULT([no])
 	    fi
@@ -534,8 +534,8 @@ if test "x$enable_x264" = "xstatic"; then
   if test $have_x264_48 = "yes"; then
       X264_LIBS="-lx264 -lm -lpthread"
       HAS_X264=1
-      X264_CFLAGS="${X264_CFLAGS} -DLIBX264_LINKED=1"
-      LIBX264_LINKED=1
+      X264_CFLAGS="${X264_CFLAGS} -DX264_LINK_STATIC=1"
+      X264_LINK_STATIC=1
   fi
 
 fi
@@ -543,7 +543,7 @@ fi
 AC_SUBST(HAS_X264)
 AC_SUBST(X264_CFLAGS)
 AC_SUBST(X264_LIBS)
-AC_SUBST(LIBX264_LINKED)
+AC_SUBST(X264_LINK_STATIC)
 
 dnl ###########################################################################
 dnl Checks for libtheora

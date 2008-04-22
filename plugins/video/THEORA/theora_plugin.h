@@ -35,8 +35,8 @@
 
  */
 
-#ifndef __THEORA_H__
-#define __THEORA_H__ 1
+#ifndef __THEORA_PLUGIN_H__
+#define __THEORA_PLUGIN_H__ 1
 
 #include <stdarg.h>
 #include <stdint.h>
