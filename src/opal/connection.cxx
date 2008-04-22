@@ -886,20 +886,6 @@ PBoolean OpalConnection::PromptUserInput(PBoolean /*play*/)
 }
 
 
-void OpalConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT type)
-{
-  // trigger on end of tone
-  if (type == 0)
-    OnUserInputTone(info.GetTone(), info.GetDuration()/8);
-}
-
-void OpalConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & /*info*/, INT)
-{
-  cout << "Received NSE event" << endl;
-  //if (!info.IsToneStart())
-  //  OnUserInputTone(info.GetTone(), info.GetDuration()/8);
-}
-
 #if P_DTMF
 void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
 {

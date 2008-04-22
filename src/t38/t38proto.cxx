@@ -41,6 +41,7 @@
 #include <ptlib/pipechan.h>
 
 #include <t38/t38proto.h>
+#include <codec/rfc2833.h>
 
 #include <opal/mediastrm.h>
 #include <opal/mediatype.h>
@@ -1094,20 +1095,31 @@ PString OpalT38EndPoint::MakeToken()
 /////////////////////////////////////////////////////////////////////////////
 
 OpalT38Connection::OpalT38Connection(OpalCall & call, OpalT38EndPoint & ep, const PString & _filename, PBoolean _receive, const PString & _token, OpalConnection::StringOptions * stringOptions)
-  : OpalFaxConnection(call, ep, _filename, _receive, _token, stringOptions)
+  : OpalFaxConnection(call, ep, _filename, _receive, _token, stringOptions), t38WaitMode(T38Mode_Auto)
 {
   PTRACE(3, "FAX\tCreated T.38 connection with token '" << callToken << "'");
-  forceFaxAudio = PFalse;
+  forceFaxAudio = false;
+  inT38Mode     = false;
+
+  faxTimer.SetNotifier(PCREATE_NOTIFIER(OnFaxChangeTimeout));
+}
+
+OpalT38Connection::~OpalT38Connection()
+{
 }
 
 OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
+
   // if creating an audio session, use a NULL stream
-  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) 
+  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
+    if (isSource && !inT38Mode && ((t38WaitMode & T38Mode_Timeout) != 0))
+      faxTimer = 5000;
     return new OpalSinkMediaStream(*this, mediaFormat, sessionID, isSource);
+  }
 
   // if creating a T.38 stream, see what type it is
-  else if (mediaFormat.GetMediaType() == OpalMediaType::Fax())
+  else if (mediaFormat.GetMediaType() == OpalMediaType::Fax()) 
     return new OpalT38MediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive, stationId);
 
   return NULL;
@@ -1127,6 +1139,62 @@ OpalMediaFormatList OpalT38Connection::GetMediaFormats() const
   formats += OpalT38;        
 
   return formats;
+}
+
+
+void OpalT38Connection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
+{
+  OpalConnection::OnPatchMediaStream(isSource, patch);
+}
+
+PBoolean OpalT38Connection::SendUserInputTone(char tone, unsigned /*duration*/)
+{
+  if (((t38WaitMode & T38Mode_NSECED) != 0) && (tolower(tone) == 'y'))
+    SwitchToT38();
+
+  return true;
+}
+
+void OpalT38Connection::OnFaxChangeTimeout(PTimer &, INT)
+{
+  SwitchToT38();
+}
+
+static void ReinviteFunction(OpalManager & manager, const PString & callToken, const PString & connectionToken)
+{
+  PSafePtr<OpalCall> call = manager.FindCallWithLock(callToken);
+  unsigned otherIndex = (call->GetConnection(0)->GetToken() == connectionToken) ? 1 : 0;
+
+  PSafePtr<OpalConnection> otherParty = call->GetConnection(otherIndex, PSafeReadWrite);
+  if (otherParty == NULL) {
+    PTRACE(1, "T38\tCannot get other party for fax trigger");
+  }
+  else 
+  {
+    // for now, assume fax is always session 1
+    OpalMediaFormatList formats;
+    formats += OpalT38;
+
+    if (!call->OpenSourceMediaStreams(*otherParty, 1, formats)) {
+      PTRACE(1, "T38\tReInvite trigger failed");
+    }
+    else
+    {
+      PTRACE(3, "T38\tTriggered ReInvite into fax mode");
+    }
+  }
+}
+
+
+void OpalT38Connection::SwitchToT38()
+{
+  if (!inT38Mode) {
+    PTRACE(1, "T38\tTriggering ReInvite into fax mode");
+    OpalCall & call = GetCall();
+    inT38Mode = true;
+    faxTimer.Stop();
+    new PThread3Arg<OpalManager &, const PString &, const PString &>(call.GetManager(), call.GetToken(), GetToken(), &ReinviteFunction, true);
+  }
 }
 
 #endif // OPAL_T38FAX

@@ -1330,8 +1330,6 @@ class OpalConnection : public PSafeObject
     PDECLARE_NOTIFIER(OpalMediaCommand, OpalConnection, OnMediaCommand);
 
   protected:
-    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
-    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineCiscoNSE);
 #if P_DTMF
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
 #endif

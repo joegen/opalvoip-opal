@@ -336,6 +336,9 @@ class OpalRTPConnection : public OpalConnection
 	OpalH224Handler * GetH224Handler() const { return  h224Handler; }
 #endif
 
+    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
+    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
+
   protected:
     PString securityMode;
     void * securityData;
