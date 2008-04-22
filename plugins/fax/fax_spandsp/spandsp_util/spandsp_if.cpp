@@ -767,10 +767,8 @@ bool SpanDSP::T38Element::SendT38Packet(socket_t fd, const T38Packet & pkt, cons
   msg.msg_iov     = vectors;
   msg.msg_iovlen  = 2;
 
-#ifdef _WIN32
   msg.msg_name    = (void *)&address;
   msg.msg_namelen = sizeof(address);
-#endif
 
   if (__socket_sendmsg(fd, &msg, 0) <= 0) {
     cerr << progmode << ": sendmsg failed - " ; __socket_error(cerr) << endl;
