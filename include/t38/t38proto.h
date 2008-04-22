@@ -373,6 +373,12 @@ class OpalT38MediaStream : public OpalFaxMediaStream
 class OpalFaxConnection;
 
 /** Fax Endpoint.
+    This class represents connection that can take a standard group 3 fax
+    TIFF file and produce tones represented by a stream of PCM. This may be
+    directed to another endpoint such as OpalLineEndpoint which can send
+    the TIFF file to a physical fax machine.
+
+    Relies on the presence of spandsp to do the hard work.
  */
 class OpalFaxEndPoint : public OpalEndPoint
 {
@@ -545,6 +551,12 @@ class OpalFaxConnection : public OpalConnection
 class OpalT38Connection;
 
 /** T.38 Endpoint
+    This class represents connection that can take a standard group 3 fax
+    TIFF file and produce T.38 packets. This may be directed to another endpoint
+    such as OpalSIPEndpoint or OpalH323EndPoint which can send the TIFF file to
+    "network" fax.
+
+    Relies on the presence of spandsp to do the hard work.
  */
 class OpalT38EndPoint : public OpalFaxEndPoint
 {
