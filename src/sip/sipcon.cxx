@@ -497,7 +497,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalT
 
 PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, RTP_SessionManager & rtpSessions, SDPSessionDescription & sdpOut)
 {
-  bool sdpOK;
+  bool sdpOK = false;
 
   if (isAnswerSDP)
     needReINVITE = false;
@@ -505,21 +505,26 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, RTP_SessionManager & rtpSess
   // get the remote media formats, if any
   if (isAnswerSDP && originalInvite != NULL && originalInvite->HasSDP()) {
     const SDPMediaDescriptionArray & mediaDescriptions = originalInvite->GetSDP().GetMediaDescriptions();
-    sdpOK = false;
     for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) 
       sdpOK |= AnswerSDPMediaDescription(originalInvite->GetSDP(), i+1, sdpOut);
   }
-  
+  else if (needReINVITE && !mediaStreams.IsEmpty()) {
+    for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
+      if (stream->IsSource())
+        sdpOK |= OfferSDPMediaDescription(stream->GetMediaFormat().GetMediaType(), stream->GetSessionID(), rtpSessions, sdpOut);
+    }
+  }
+
   else {
 
     // construct offer as per RFC 3261, para 14.2
     // Use |= to avoid McCarthy boolean || from not calling video/fax
-    sdpOK  = OfferSDPMediaDescription(OpalMediaType::Audio(), rtpSessions, sdpOut);
+    sdpOK  |= OfferSDPMediaDescription(OpalMediaType::Audio(), 0, rtpSessions, sdpOut);
 #if OPAL_VIDEO
-    sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), rtpSessions, sdpOut);
+    sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut);
 #endif
 #if OPAL_T38FAX
-    sdpOK |= OfferSDPMediaDescription(OpalMediaType::Fax(), rtpSessions, sdpOut);
+    sdpOK |= OfferSDPMediaDescription(OpalMediaType::Fax(), 0, rtpSessions, sdpOut);
 #endif
   }
 
@@ -561,6 +566,7 @@ static void SetNXEPayloadCode(SDPMediaDescription * localMedia,
 
 
 bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
+                                             unsigned rtpSessionId,
                                              RTP_SessionManager & rtpSessions,
                                              SDPSessionDescription & sdp)
 {
@@ -583,7 +589,8 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
 
   PTRACE(3, "SIP\tOffering media type " << mediaType << " in SDP with formats\n" << setfill(',') << formats << setfill(' '));
 
-  unsigned rtpSessionId = sdp.GetMediaDescriptions().GetSize()+1;
+  if (rtpSessionId == 0)
+    rtpSessionId = sdp.GetMediaDescriptions().GetSize()+1;
 
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
     PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
@@ -689,7 +696,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
 
   // Set format if we have an RTP payload type for RFC2833 and/or NSE
   // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
-  if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) {
+  if (mediaType == OpalMediaType::Audio()) {
     SetNXEPayloadCode(localMedia, ntePayloadCode, rfc2833Handler,  OpalRFC2833, OpalDefaultNTEString, "NTE"); // RFC 2833
 #if OPAL_T38FAX
     SetNXEPayloadCode(localMedia, nsePayloadCode, ciscoNSEHandler, OpalCiscoNSE, OpalDefaultNSEString, "NSE"); // Cisco NSE
@@ -988,7 +995,7 @@ PBoolean SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
   SIPConnection & connection = *(SIPConnection *)param;
 
   connection.AdjustOutgoingINVITE();
-
+  connection.needReINVITE = false;
   SIPTransaction * invite = new SIPInvite(connection, transport);
   
   // It may happen that constructing the INVITE causes the connection
