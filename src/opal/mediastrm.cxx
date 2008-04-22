@@ -641,7 +641,7 @@ OpalRawMediaStream::OpalRawMediaStream(OpalConnection & conn,
   autoDelete = autoDel;
   averageSignalSum = 0;
   averageSignalSamples = 0;
-  isAudio = mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID;
+  isAudio = mediaFormat.GetMediaType() == OpalMediaType::Audio();
 }
 
 
@@ -1161,6 +1161,8 @@ PBoolean OpalSinkMediaStream::WriteData(
       PINDEX & written       ///<  Length of data actually written
 )
 {
+  written = defaultDataSize;
+
   if (isAudio) {
     if (buffer != NULL && length != 0) {
       written = length;
@@ -1170,7 +1172,6 @@ PBoolean OpalSinkMediaStream::WriteData(
       PBYTEArray silence(defaultDataSize);
       memset(silence.GetPointer(), 0, defaultDataSize);
       CollectAverage(silence, written);
-      written = defaultDataSize;
       delay.Delay(written / 16);
     }
   }
