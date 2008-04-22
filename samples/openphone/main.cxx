@@ -57,6 +57,7 @@
 #include <opal/ivr.h>
 #include <lids/lidep.h>
 #include <ptclib/pstun.h>
+#include <t38/t38proto.h>
 
 
 #if defined(__WXGTK__)   || \
@@ -155,6 +156,11 @@ DEF_FIELD(LocalVideoFrameY);
 DEF_FIELD(RemoteVideoFrameX);
 DEF_FIELD(RemoteVideoFrameY);
 
+static const char FaxGroup[] = "/Fax";
+DEF_FIELD(FaxStationIdentifier);
+DEF_FIELD(FaxReceiveDirectory);
+DEF_FIELD(FaxSpanDSP);
+
 static const char CodecsGroup[] = "/Codecs";
 static const char CodecNameKey[] = "Name";
 
@@ -216,6 +222,33 @@ static const char SIPonly[] = " (SIP only)";
 static const char H323only[] = " (H.323 only)";
 
 
+static char const AllRouteSources[] = "<ALL>";
+static const char * const DefaultRoutes[] = {
+#if OPAL_IVR
+    ".*:#  = ivr:", // A hash from anywhere goes to IVR
+#endif
+    "pots:.*\\*.*\\*.* = sip:<dn2ip>",
+    "pots:.*           = sip:<da>",
+    "pc:.*             = sip:<da>",
+
+#if OPAL_T38FAX
+    "t38:.*            = sip:<da>",
+#endif
+
+    "h323:.*           = pots:<dn>",
+    "h323:.*           = pc:<du>",
+
+    "h323s:.*          = pots:<dn>",
+    "h323s:.*          = pc:<du>",
+
+    "sip:.*            = pots:<dn>",
+    "sip:.*            = pc:<du>",
+
+    "sips:.*           = pots:<dn>",
+    "sips:.*           = pc:<du>"
+};
+
+
 enum {
   ID_RETRIEVE_MENU_BASE = wxID_HIGHEST+1,
   ID_RETRIEVE_MENU_TOP = ID_RETRIEVE_MENU_BASE+999,
@@ -250,6 +283,18 @@ template <class cls> cls * FindWindowByNameAs(wxWindow * window, const char * na
   }
 
   return NULL;
+}
+
+
+void RemoveNotebookPage(wxWindow * window, const char * name)
+{
+  wxNotebook * book = FindWindowByNameAs<wxNotebook>(window, "OptionsNotebook");
+  for (size_t i = 0; i < book->GetPageCount(); ++i) {
+    if (book->GetPageText(i) == name) {
+      book->DeletePage(i);
+      break;
+    }
+  }
 }
 
 
@@ -360,6 +405,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU_RANGE(ID_RETRIEVE_MENU_BASE,ID_RETRIEVE_MENU_TOP, MyManager::OnRetrieve)
   EVT_MENU(XRCID("MenuTransfer"),        MyManager::OnTransfer)
   EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,ID_TRANSFER_MENU_TOP, MyManager::OnTransfer)
+  EVT_MENU(XRCID("MenuSendFax"),         MyManager::OnSendFax)
   EVT_MENU(XRCID("MenuStartRecording"),  MyManager::OnStartRecording)
   EVT_MENU(XRCID("MenuStopRecording"),   MyManager::OnStopRecording)
   EVT_MENU_RANGE(ID_AUDIO_CODEC_MENU_BASE, ID_AUDIO_CODEC_MENU_TOP, MyManager::OnAudioCodec)
@@ -384,7 +430,7 @@ MyManager::MyManager()
   , potsEP(NULL)
   , h323EP(NULL)
   , sipEP(NULL)
-#if P_EXPAT
+#if OPAL_IVR
   , ivrEP(NULL)
 #endif
   , m_autoAnswer(false)
@@ -475,9 +521,7 @@ bool MyManager::Initialise()
   // Speed dial window - icons for each speed dial
   int i;
   if (!config->Read(ActiveViewKey, &i) || i < 0 || i >= e_NumViews)
-  {
     i = e_ViewList;
-  }
   static const char * const ViewMenuNames[e_NumViews] = {
     "ViewLarge", "ViewSmall", "ViewList", "ViewDetails"
   };
@@ -532,8 +576,12 @@ bool MyManager::Initialise()
 
   sipEP = new MySIPEndPoint(*this);
 
-#if P_EXPAT
+#if OPAL_IVR
   ivrEP = new OpalIVREndPoint(*this);
+#endif
+
+#if OPAL_T38FAX
+  m_faxEP = new OpalT38EndPoint(*this);
 #endif
 
   potsEP = new OpalLineEndPoint(*this);
@@ -556,7 +604,7 @@ bool MyManager::Initialise()
   config->Read(RingSoundFileNameKey, &m_RingSoundFileName);
 
   config->Read(AutoAnswerKey, &m_autoAnswer);
-#if P_EXPAT
+#if OPAL_IVR
   if (config->Read(IVRScriptKey, &str))
     ivrEP->SetDefaultVXML(str);
 #endif
@@ -676,17 +724,29 @@ bool MyManager::Initialise()
   config->Read(RemoteVideoFrameYKey, &m_remoteVideoFrameY);
 
   ////////////////////////////////////////
+  // Fax fields
+#if OPAL_T38FAX
+  config->SetPath(FaxGroup);
+  if (!config->Read(FaxStationIdentifierKey, &str))
+    m_faxEP->SetDefaultDisplayName(str);
+  if (config->Read(FaxReceiveDirectoryKey, &str))
+    m_faxEP->SetDefaultDirectory(str.c_str());
+  if (config->Read(FaxSpanDSPKey, &str))
+    m_faxEP->SetSpanDSP(str.c_str());
+#endif
+
+  ////////////////////////////////////////
   // Codec fields
   InitMediaInfo(pcssEP->GetPrefixName(), pcssEP->GetMediaFormats());
   InitMediaInfo(potsEP->GetPrefixName(), potsEP->GetMediaFormats());
-#if P_EXPAT
+#if OPAL_IVR
   InitMediaInfo(ivrEP->GetPrefixName(), ivrEP->GetMediaFormats());
 #endif
 
   OpalMediaFormatList mediaFormats;
   mediaFormats += pcssEP->GetMediaFormats();
   mediaFormats += potsEP->GetMediaFormats();
-#if P_EXPAT
+#if OPAL_IVR
   mediaFormats += ivrEP->GetMediaFormats();
 #endif
   InitMediaInfo("sw", OpalTranscoder::GetPossibleFormats(mediaFormats));
@@ -848,30 +908,8 @@ bool MyManager::Initialise()
     } while (config->GetNextEntry(entryName, entryIndex));
   }
   else {
-#if P_EXPAT
-    AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
-#endif
-    AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
-    AddRouteEntry("pots:.*\\*.*\\*.* = sips:<dn2ip>");
-    AddRouteEntry("pots:.*           = sip:<da>");
-    AddRouteEntry("pots:.*           = sips:<da>");
-
-    AddRouteEntry("pc:.*             = sip:<da>");
-    AddRouteEntry("pc:.*             = sips:<da>");
-    AddRouteEntry("pc:.*             = h323:<da>");
-    AddRouteEntry("pc:.*             = h323s:<da>");
-
-    AddRouteEntry("h323:.*           = pots:<dn>");
-    AddRouteEntry("h323:.*           = pc:<du>");
-
-    AddRouteEntry("h323s:.*          = pots:<dn>");
-    AddRouteEntry("h323s:.*          = pc:<du>");
-
-    AddRouteEntry("sip:.*            = pots:<dn>");
-    AddRouteEntry("sip:.*            = pc:<du>");
-
-    AddRouteEntry("sips:.*           = pots:<dn>");
-    AddRouteEntry("sips:.*           = pc:<du>");
+    for (PINDEX i = 0; i < PARRAYSIZE(DefaultRoutes); i++)
+      AddRouteEntry(DefaultRoutes[i]);
   }
 
   return true;
@@ -1095,6 +1133,11 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuStartRecording"),  m_callState == InCallState && !m_activeCall->IsRecording());
   menubar->Enable(XRCID("MenuStopRecording"),   m_callState == InCallState &&  m_activeCall->IsRecording());
 
+#if OPAL_T38FAX
+  menubar->Enable(XRCID("MenuSendFax"),         m_callState != InCallState);
+#else
+  menubar->Enable(XRCID("MenuSendFax"), false);
+#endif
 
   for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
     menubar->Enable(it->m_retrieveMenuId, m_callState != InCallState);
@@ -1505,7 +1548,7 @@ int MyManager::GetSpeedDialIndex(const char * number, const char * ignore) const
 }
 
 
-void MyManager::MakeCall(const PwxString & address)
+void MyManager::MakeCall(const PwxString & address, const PwxString & local)
 {
   if (address.IsEmpty())
     return;
@@ -1515,8 +1558,12 @@ void MyManager::MakeCall(const PwxString & address)
   config->SetPath(GeneralGroup);
   config->Write(LastDialedKey, m_LastDialed);
 
+  PwxString from = local;
+  if (from.empty())
+    from = potsEP != NULL && potsEP->GetLine("*") != NULL ? "pots:*" : "pc:*";
+
   PString token;
-  if (SetUpCall(potsEP != NULL && potsEP->GetLine("*") != NULL ? "pots:*" : "pc:*", address, token)) {
+  if (SetUpCall(from, address, token)) {
     LogWindow << "Calling \"" << address << '"' << endl;
     m_activeCall = FindCallWithLock(token, PSafeReference);
     SetState(CallingState);
@@ -1908,6 +1955,21 @@ void MyManager::OnTransfer(wxCommandEvent& theEvent)
       if (connection != NULL)
         connection->TransferConnection(dlg.m_Address);
     }
+  }
+}
+
+
+void MyManager::OnSendFax(wxCommandEvent & /*event*/)
+{
+  wxFileDialog faxDlg(this,
+                      "Send FAX file",
+                      wxEmptyString,
+                      wxEmptyString,
+                      "*.tif");
+  if (faxDlg.ShowModal() == wxID_OK) {
+    CallDialog callDlg(this);
+    if (callDlg.ShowModal() == wxID_OK)
+      MakeCall(callDlg.m_Address, "t38:"+faxDlg.GetPath());
   }
 }
 
@@ -2386,6 +2448,11 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_COMBOBOX(XRCID(LineInterfaceDeviceKey), OptionsDialog::SelectedLID)
 
   ////////////////////////////////////////
+  // Fax fields
+  EVT_BUTTON(XRCID("FaxBrowseReceiveDirectory"), OptionsDialog::BrowseFaxDirectory)
+  EVT_BUTTON(XRCID("FaxBrowseSpanDSP"), OptionsDialog::BrowseFaxSpanDSP)
+
+  ////////////////////////////////////////
   // Codec fields
   EVT_BUTTON(XRCID("AddCodec"), OptionsDialog::AddCodec)
   EVT_BUTTON(XRCID("RemoveCodec"), OptionsDialog::RemoveCodec)
@@ -2421,6 +2488,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_TEXT(XRCID("RouteDevice"), OptionsDialog::ChangedRouteInfo)
   EVT_TEXT(XRCID("RoutePattern"), OptionsDialog::ChangedRouteInfo)
   EVT_TEXT(XRCID("RouteDestination"), OptionsDialog::ChangedRouteInfo)
+  EVT_BUTTON(XRCID("RestoreDefaultRoutes"), OptionsDialog::RestoreDefaultRoutes)
 
   ////////////////////////////////////////
   // H.323 fields
@@ -2463,7 +2531,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName);
 
   INIT_FIELD(AutoAnswer, m_manager.m_autoAnswer);
-#if P_EXPAT
+#if OPAL_IVR
   INIT_FIELD(IVRScript, m_manager.ivrEP->GetDefaultVXML());
 #endif
 
@@ -2641,6 +2709,16 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     combo->Append((const char *)devices[i]);
 
   ////////////////////////////////////////
+  // Fax fields
+#if OPAL_T38FAX
+  INIT_FIELD(FaxStationIdentifier, (const char *)m_manager.m_faxEP->GetDefaultDisplayName());
+  INIT_FIELD(FaxReceiveDirectory, (const char *)m_manager.m_faxEP->GetDefaultDirectory());
+  INIT_FIELD(FaxSpanDSP, (const char *)m_manager.m_faxEP->GetSpanDSP());
+#else
+  RemoveNotebookPage(this, "Fax");
+#endif
+
+  ////////////////////////////////////////
   // Codec fields
   m_AddCodec = FindWindowByNameAs<wxButton>(this, "AddCodec");
   m_AddCodec->Disable();
@@ -2755,54 +2833,21 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_MoveDownRoute->Disable();
 
   // Fill list box with active routes
-  static char const AllSources[] = "<ALL>";
   m_Routes = FindWindowByNameAs<wxListCtrl>(this, "Routes");
   m_Routes->InsertColumn(0, _T("Source"));
   m_Routes->InsertColumn(1, _T("Dev/If"));
   m_Routes->InsertColumn(2, _T("Pattern"));
   m_Routes->InsertColumn(3, _T("Destination"));
   const OpalManager::RouteTable & routeTable = m_manager.GetRouteTable();
-  for (i = 0; i < routeTable.GetSize(); i++) {
-    PString expression = routeTable[i].pattern;
-
-    PINDEX tab = expression.Find('\t');
-    if (tab == P_MAX_INDEX)
-      tab = expression.Find("\\t");
-
-    PINDEX colon = expression.Find(':');
-
-    PwxString source, device, pattern;
-    if (colon >= tab) {
-      source = AllSources;
-      device = (const char *)expression(colon+1, tab-1);
-      pattern = expression.Mid(tab+1);
-    }
-    else {
-      source = expression.Left(colon);
-      if (source == ".*")
-        source = AllSources;
-      if (tab == P_MAX_INDEX)
-        pattern = expression.Mid(colon+1);
-      else {
-        device = expression(colon+1, tab-1);
-        if (device == ".*")
-          device = "";
-        pattern = expression.Mid(tab + (expression[tab] == '\t' ? 1 : 2));
-      }
-    }
-
-    int pos = m_Routes->InsertItem(INT_MAX, source);
-    m_Routes->SetItem(pos, 1, device);
-    m_Routes->SetItem(pos, 2, pattern);
-    m_Routes->SetItem(pos, 3, (const char *)routeTable[i].destination);
-  }
+  for (i = 0; i < routeTable.GetSize(); i++)
+    AddRouteTableEntry(routeTable[i]);
 
   for (i = 0; i < m_Routes->GetColumnCount(); i++)
     m_Routes->SetColumnWidth(i, wxLIST_AUTOSIZE_USEHEADER);
 
   // Fill combo box with possible protocols
   m_RouteSource = FindWindowByNameAs<wxComboBox>(this, "RouteSource");
-  m_RouteSource->Append(AllSources);
+  m_RouteSource->Append(AllRouteSources);
   PList<OpalEndPoint> endpoints = m_manager.GetEndPoints();
   for (i = 0; i < endpoints.GetSize(); i++)
     m_RouteSource->Append((const char *)endpoints[i].GetPrefixName());
@@ -2823,8 +2868,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(TraceThreadAddress, (PTrace::GetOptions()&PTrace::ThreadAddress) != 0);
   INIT_FIELD(TraceFileName, m_manager.m_traceFileName);
 #else
-  wxNotebook * book = FindWindowByNameAs<wxNotebook>(this, "OptionsNotebook");
-  book->DeletePage(book->GetPageCount()-1);
+  RemoveNotebookPage(this, "Tracing");
 #endif // PTRACING
 }
 
@@ -2866,7 +2910,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(RingSoundDeviceName, m_manager.m_RingSoundDeviceName = );
   SAVE_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName = );
   SAVE_FIELD(AutoAnswer, m_manager.m_autoAnswer = );
-#if P_EXPAT
+#if OPAL_IVR
   SAVE_FIELD(IVRScript, m_manager.ivrEP->SetDefaultVXML);
 #endif
 
@@ -2944,6 +2988,15 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoMinFrameSize, m_manager.m_VideoMinFrameSize = );
   SAVE_FIELD(VideoMaxFrameSize, m_manager.m_VideoMaxFrameSize = );
   m_manager.AdjustFrameSize();
+
+  ////////////////////////////////////////
+  // Fax fields
+#if OPAL_T38FAX
+  config->SetPath(FaxGroup);
+  SAVE_FIELD(FaxStationIdentifier, m_manager.m_faxEP->SetDefaultDisplayName);
+  SAVE_FIELD(FaxReceiveDirectory, m_manager.m_faxEP->SetDefaultDirectory);
+  SAVE_FIELD(FaxSpanDSP, m_manager.m_faxEP->SetSpanDSP);
+#endif
 
   ////////////////////////////////////////
   // Codec fields
@@ -3273,6 +3326,39 @@ void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
   bool enabled = m_selectedLID->GetSelection() > 0;
   m_selectedAEC->Enable(enabled);
   m_selectedCountry->Enable(enabled);
+}
+
+
+////////////////////////////////////////
+// Fax fields
+
+void OptionsDialog::BrowseFaxDirectory(wxCommandEvent & /*event*/)
+{
+  wxDirDialog dlg(this, "Select Receive Directory for Faxes", m_FaxReceiveDirectory);
+  if (dlg.ShowModal() == wxID_OK) {
+    m_FaxReceiveDirectory = dlg.GetPath();
+    FindWindowByNameAs<wxTextCtrl>(this, "FaxReceiveDirectory")->SetLabel(m_FaxReceiveDirectory);
+  }
+}
+
+
+void OptionsDialog::BrowseFaxSpanDSP(wxCommandEvent & event)
+{
+  wxString newFile = wxFileSelector("Select location of Span DSP Utility executable",
+                                    "",
+                                    m_FaxSpanDSP,
+#ifdef _WIN32
+                                    ".exe",
+                                    "EXE files (*.exe)|*.exe",
+#else
+                                    wxEmptyString,
+                                    wxEmptyString,
+#endif
+                                    wxOPEN|wxFILE_MUST_EXIST);
+  if (!newFile.empty()) {
+    m_FaxSpanDSP = newFile;
+    FindWindowByNameAs<wxTextCtrl>(this, "FaxSpanDSP")->SetLabel(newFile);
+  }
 }
 
 
@@ -3686,6 +3772,56 @@ void OptionsDialog::DeselectedRoute(wxListEvent & /*event*/)
 void OptionsDialog::ChangedRouteInfo(wxCommandEvent & /*event*/)
 {
   m_AddRoute->Enable(!m_RoutePattern->GetValue().IsEmpty() && !m_RouteDestination->GetValue().IsEmpty());
+}
+
+
+void OptionsDialog::RestoreDefaultRoutes(wxCommandEvent & event)
+{
+  m_Routes->DeleteAllItems();
+
+  for (PINDEX i = 0; i < PARRAYSIZE(DefaultRoutes); i++) {
+    PString spec = DefaultRoutes[i];
+    PINDEX equal = spec.Find('=');
+    if (equal != P_MAX_INDEX)
+      AddRouteTableEntry(OpalManager::RouteEntry(spec.Left(equal).Trim(), spec.Mid(equal+1).Trim()));
+  }
+}
+
+
+void OptionsDialog::AddRouteTableEntry(OpalManager::RouteEntry entry)
+{
+  PString expression = entry.pattern;
+
+  PINDEX tab = expression.Find('\t');
+  if (tab == P_MAX_INDEX)
+    tab = expression.Find("\\t");
+
+  PINDEX colon = expression.Find(':');
+
+  PwxString source, device, pattern;
+  if (colon >= tab) {
+    source = AllRouteSources;
+    device = (const char *)expression(colon+1, tab-1);
+    pattern = expression.Mid(tab+1);
+  }
+  else {
+    source = expression.Left(colon);
+    if (source == ".*")
+      source = AllRouteSources;
+    if (tab == P_MAX_INDEX)
+      pattern = expression.Mid(colon+1);
+    else {
+      device = expression(colon+1, tab-1);
+      if (device == ".*")
+        device = "";
+      pattern = expression.Mid(tab + (expression[tab] == '\t' ? 1 : 2));
+    }
+  }
+
+  int pos = m_Routes->InsertItem(INT_MAX, source);
+  m_Routes->SetItem(pos, 1, device);
+  m_Routes->SetItem(pos, 2, pattern);
+  m_Routes->SetItem(pos, 3, (const char *)entry.destination);
 }
 
 
