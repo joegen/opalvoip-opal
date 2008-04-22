@@ -680,7 +680,7 @@ PString OpalFaxMediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
   PIPSocket::Address dummy; WORD port;
   info.socket.GetLocalAddress(dummy, port);
 
-  cmdline << "spandsp_util -m ";
+  cmdline << "./spandsp_util -m ";
   if (receive)
     cmdline << "fax_to_tiff";
   else
@@ -715,7 +715,7 @@ PString OpalT38MediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
   PIPSocket::Address dummy; WORD port;
   info.socket.GetLocalAddress(dummy, port);
 
-  cmdline << "spandsp_util -V 0 -m ";
+  cmdline << "./spandsp_util -V 0 -m ";
   if (receive)
     cmdline << "t38_to_tiff";
   else {
