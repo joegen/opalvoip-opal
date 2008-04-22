@@ -3630,18 +3630,18 @@ void H323Connection::OnSelectLogicalChannels()
   switch (fastStartState) {
     default : //FastStartDisabled :
 #if OPAL_AUDIO
-      SelectDefaultLogicalChannel(OpalMediaFormat::DefaultAudioSessionID);
+      SelectDefaultLogicalChannel(OpalMediaType::Audio(), OpalMediaFormat::DefaultAudioSessionID);
 #endif
 #if OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
-        SelectDefaultLogicalChannel(OpalMediaFormat::DefaultVideoSessionID);
+        SelectDefaultLogicalChannel(OpalMediaType::Video(), OpalMediaFormat::DefaultVideoSessionID);
       else {
         PTRACE(4, "H245\tOnSelectLogicalChannels, video not auto-started");
       }
 #endif
 #if OPAL_T38FAX
       if (endpoint.CanAutoStartTransmitFax())
-        SelectDefaultLogicalChannel(OpalMediaFormat::DefaultDataSessionID);
+        SelectDefaultLogicalChannel(OpalMediaType::Fax(), OpalMediaFormat::DefaultDataSessionID);
       else {
         PTRACE(4, "H245\tOnSelectLogicalChannels, fax not auto-started");
       }
@@ -3686,7 +3686,7 @@ void H323Connection::OnSelectLogicalChannels()
 }
 
 
-void H323Connection::SelectDefaultLogicalChannel(unsigned sessionID)
+void H323Connection::SelectDefaultLogicalChannel(const OpalMediaType & mediaType, unsigned sessionID)
 {
   if (FindChannel(sessionID, PFalse))
     return;
@@ -3697,7 +3697,7 @@ void H323Connection::SelectDefaultLogicalChannel(unsigned sessionID)
     return;
   }
 
-  if (!ownerCall.OpenSourceMediaStreams(*otherConnection, sessionID)) {
+  if (!ownerCall.OpenSourceMediaStreams(*otherConnection, mediaType, sessionID)) {
     PTRACE(2, "H323\tSelectLogicalChannel(" << sessionID << ") could not start media stream.");
   }
 }

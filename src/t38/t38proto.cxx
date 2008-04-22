@@ -1187,7 +1187,7 @@ static void ReinviteFunction(OpalManager & manager, const PString & callToken, c
     OpalMediaFormatList formats;
     formats += OpalT38;
 
-    if (!call->OpenSourceMediaStreams(*otherParty, 1, formats)) {
+    if (!call->OpenSourceMediaStreams(*otherParty, OpalMediaType::Fax(), 1, formats)) {
       PTRACE(1, "T38\tReInvite trigger failed");
     }
     else
