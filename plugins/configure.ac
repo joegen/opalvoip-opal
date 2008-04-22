@@ -494,7 +494,13 @@ if test "x$enable_x264" = "xstatic"; then
 
   have_x264_48="no"
   saved_LIBS="$LIBS"
-  PKG_CHECK_MODULES([x264], [x264 >= 0.48], [ have_x264_48="yes" ], [  have_x264_48="no" ])
+
+  echo ""
+  echo "--- WARNING: the call to PKG_CHECK_MODULES has been commented out due to compatibility problems"
+  echo "             with non-bleeding-edge systems. If you know how to fix this, please do!"
+  echo "             Until this happens, x264 probably won't work"
+  echo ""
+  #PKG_CHECK_MODULES([x264], [x264 >= 0.48], [ have_x264_48="yes" ], [  have_x264_48="no" ])
 
   dnl For people who don't have pkg-config or x264.pc 
   if test $have_x264_48 = "no"; then
@@ -571,6 +577,29 @@ if test "x${enable_theora}" != "xno" ; then
 fi
 AC_SUBST(HAS_THEORA)
 AC_SUBST(THEORA_LIBS)
+dnl ########################################################################
+
+HAS_SPANDSP=0
+
+AC_ARG_ENABLE(spandsp, [  --disable-spandsp        Disable spandsp-based fax support],,)
+if test "x${enable_spandsp}" != "xno" ; then
+    enable_spandsp=yes
+
+    saved_LIBS="$LIBS"
+    LIBS="$LIBS -lspandsp"
+    AC_CHECK_LIB(spandsp, t38_indicator, [spandsp_libs=yes], [spandsp_libs=no])
+    LIBS=$saved_LIBS
+
+    if test "x${spandsp_libs}" != "xno"; then
+	SPANDSP_LIBS="-lspandsp"
+        AC_CHECK_HEADERS([spandsp.h], [spandsp_headers=true], [spandsp_headers=false])
+        if test "x${spandsp_headers}" = "xtrue"; then
+            HAS_SPANDSP=1
+        fi
+    fi
+fi
+AC_SUBST(HAS_SPANDSP)
+AC_SUBST(SPANDSP_LIBS)
 dnl ########################################################################
 
 if test -d audio/GSM0610 ; then
