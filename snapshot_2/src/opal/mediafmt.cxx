@@ -290,28 +290,42 @@ void OpalMediaOptionEnum::PrintOn(ostream & strm) const
 
 void OpalMediaOptionEnum::ReadFrom(istream & strm)
 {
+  m_value = m_enumerations.GetSize();
+
+  PINDEX longestMatch = 0;
+
   PCaselessString str;
-  while (strm.good()) {
-    char ch;
-    strm.get(ch);
-    str += ch;
-    for (PINDEX i = 0; i < m_enumerations.GetSize(); i++) {
-      if (str == m_enumerations[i]) {
-        m_value = i;
-        return;
+  int ch;
+  while ((ch = strm.get()) != EOF) {
+    str += (char)ch;
+
+    PINDEX i;
+    for (i = 0; i < m_enumerations.GetSize(); i++) {
+      if (str == m_enumerations[i].Left(str.GetLength())) {
+        longestMatch = i;
+        break;
       }
+    }
+    if (i >= m_enumerations.GetSize()) {
+      i = str.GetLength()-1;
+      strm.putback(str[i]);
+      str.Delete(i, 1);
+      break;
     }
   }
 
-  m_value = m_enumerations.GetSize();
-
-#ifdef __USE_STL__
-   strm.setstate(ios::badbit);
-#else
-   strm.setf(ios::badbit , ios::badbit);
-#endif
+  // For some reason the get at eof sets the badbit, don't want that!
+  // But we do want the eofbit if it was set.
+  strm.clear(strm.rdstate()&ios::badbit);
+ 
+  if (str == m_enumerations[longestMatch])
+    m_value = longestMatch;
+  else {
+    for (PINDEX i = str.GetLength(); i > 0; )
+      strm.putback(str[--i]);
+    strm.setstate(ios::failbit);
+  }
 }
-
 
 PObject::Comparison OpalMediaOptionEnum::CompareValue(const OpalMediaOption & option) const
 {
@@ -915,7 +929,7 @@ bool OpalMediaFormatInternal::SetOptionValue(const PString & name, const PString
   PWaitAndSignal m(media_format_mutex);
 
   OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
+  if (option == NULL) 
     return false;
 
   return option->FromString(value);
@@ -1206,6 +1220,7 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
       if (!genericInfo.excludeReqMode)
         strm << " RM";
     }
+#endif // OPAL_H323
 
     // Show the type of the option: Boolean, Unsigned, String, etc.
     if (PIsDescendant(&option, OpalMediaOptionBoolean))
@@ -1225,9 +1240,12 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
       }
     else if (PIsDescendant(&option, OpalMediaOptionOctets))
       strm << " OctetString";
-    else
+    else if (PIsDescendant(&option, OpalMediaOptionString))
       strm << " String";
-#endif // OPAL_H323
+    else if (PIsDescendant(&option, OpalMediaOptionEnum))
+      strm << " Enum";
+    else 
+      strm << " Unknown";
 
     strm << '\n';
   }
