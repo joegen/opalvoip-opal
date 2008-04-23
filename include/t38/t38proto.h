@@ -645,10 +645,15 @@ class OpalT38Connection : public OpalFaxConnection
 
     PDECLARE_NOTIFIER(PTimer, OpalT38Connection, OnFaxChangeTimeout);
 
-    void SwitchToT38();
+  protected:
+    void RequestFaxMode(bool fax);
+    void InFaxMode(bool fax);
 
     unsigned t38WaitMode;
-    bool inT38Mode;
+
+    PMutex modeMutex;
+    bool currentMode, newMode;  // false if audio, true if fax
+    bool modeChangeTriggered;
     PTimer faxTimer;
 };
 
