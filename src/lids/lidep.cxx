@@ -686,8 +686,21 @@ void OpalLineConnection::Monitor(PBoolean offHook)
     }
   }
 
-  // If we are off hook, we continually suck out DTMF tones and pass them up
+  // If we are off hook, we continually suck out DTMF tones plus various other tones and signals and pass them up
   if (offHook) {
+    switch (line.IsToneDetected()) {
+      case OpalLineInterfaceDevice::CNGTone :
+        OnUserInputTone('X', 100);
+        break;
+
+      case OpalLineInterfaceDevice::CEDTone :
+        OnUserInputTone('Y', 100);
+        break;
+    }
+
+    if (line.HasHookFlash())
+      OnUserInputTone('!', 100);
+
     char tone;
     while ((tone = line.ReadDTMF()) != '\0')
       OnUserInputTone(tone, 180);
@@ -883,10 +896,10 @@ PBoolean OpalLineMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & leng
   else {
     if (line.ReadFrame(buffer, length)) {
       // In the case of G.723.1 remember the last SID frame we sent and send
-      // it again if the hardware sends us a CNG frame.
+      // it again if the hardware sends us a DTX frame.
       if (mediaFormat.GetPayloadType() == RTP_DataFrame::G7231) {
         switch (length) {
-          case 1 : // CNG frame
+          case 1 : // DTX frame
             memcpy(buffer, lastSID, 4);
             length = 4;
             lastFrameWasSignal = false;
