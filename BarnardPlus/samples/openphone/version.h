@@ -38,10 +38,10 @@
 #define	COPYRIGHT_HOLDER	"Vox Lucida (Australia)"
 
 
-#define MAJOR_VERSION 2
-#define MINOR_VERSION 1
-#define BUILD_TYPE    AlphaCode
-#define BUILD_NUMBER 0
+#define MAJOR_VERSION 3
+#define MINOR_VERSION 3
+#define BUILD_TYPE    BetaCode
+#define BUILD_NUMBER 1
 
 
 #endif  // _OpenPhone_VERSION_H

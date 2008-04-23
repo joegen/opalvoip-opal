@@ -1167,6 +1167,7 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_iLBC           "iLBC"
 #define OPAL_RFC2833        "UserInput/RFC2833"
 #define OPAL_CISCONSE       "NamedSignalEvent"
+#define OPAL_T38            "T.38"
 
 #if OPAL_AUDIO
 extern const OpalAudioFormat & GetOpalPCM16();
@@ -1195,6 +1196,7 @@ extern const OpalAudioFormat & GetOpaliLBC();
 
 extern const OpalMediaFormat & GetOpalRFC2833();
 extern const OpalMediaFormat & GetOpalCiscoNSE();
+extern const OpalMediaFormat & GetOpalT38();
 
 #define OpalPCM16          GetOpalPCM16()
 #define OpalPCM16_16KHZ    GetOpalPCM16_16KHZ()
@@ -1220,6 +1222,7 @@ extern const OpalMediaFormat & GetOpalCiscoNSE();
 #define OpaliLBC           GetOpaliLBC()
 #define OpalRFC2833        GetOpalRFC2833()
 #define OpalCiscoNSE       GetOpalCiscoNSE()
+#define OpalT38            GetOpalT38()
 
 #define OpalL16Mono8kHz    OpalL16_MONO_8KHZ
 #define OpalL16Mono16kHz   OpalL16_MONO_16KHZ
