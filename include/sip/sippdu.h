@@ -306,8 +306,10 @@ class SIPMIMEInfo : public PMIMEInfo
 
     /** return the value of a header field parameter, empty if none
      */
-    PString GetFieldParameter(const PString &,
-			      const PString &);
+    static PString GetFieldParameter(
+      const PString & paramName,
+      const PString & fieldValue
+    );
     
     /** set the value for a header field parameter, replace the
      *  current value, or add the parameter and its
@@ -665,6 +667,8 @@ class SIP_PDU : public PSafeObject
 
     OpalTransportAddress    lastTransportAddress;
     SDPSessionDescription * sdp;
+
+    mutable PString transactionID;
 };
 
 

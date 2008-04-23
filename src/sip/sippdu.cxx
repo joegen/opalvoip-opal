@@ -1976,19 +1976,22 @@ PString SIP_PDU::Build()
 
 PString SIP_PDU::GetTransactionID() const
 {
-  // RFC3261 Sections 8.1.1.7 & 17.1.3 transactions are identified by the banch paranmeter in the top most Via
-  PStringList vias = mime.GetViaList();
-  if (!vias.IsEmpty()) {
-    PStringArray params = vias[0].Tokenise(';');
-    for (PINDEX i = 0; i < params.GetSize(); i++) {
-      PString param = params[i].Trim();
-      static const char branch[] = "branch=";
-      if (param.NumCompare(branch) == EqualTo)
-        return param.Mid(sizeof(branch)-1);
+  if (transactionID.IsEmpty()) {
+    /* RFC3261 Sections 8.1.1.7 & 17.1.3 transactions are identified by the
+       branch paranmeter in the top most Via and CSeq. We do NOT include the
+       CSeq in our id as we want the CANCEL messages directed at out
+       transaction structure.
+     */
+    PStringList vias = mime.GetViaList();
+    if (!vias.IsEmpty())
+      transactionID = SIPMIMEInfo::GetFieldParameter("branch", vias.front());
+    if (transactionID.IsEmpty()) {
+      PTRACE(2, "SIP\tTransaction " << mime.GetCSeq() << " has no branch parameter!");
+      transactionID = mime.GetCallID() + mime.GetCSeq(); // Fail safe ...
     }
   }
 
-  return mime.GetCallID() + mime.GetCSeq();
+  return transactionID;
 }
 
 
