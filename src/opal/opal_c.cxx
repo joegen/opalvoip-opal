@@ -446,6 +446,15 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
     case OpalCmdClearCall :
       HandleClearCall(*message, response);
       break;
+    case OpalCmdHoldCall :
+      HandleHoldCall(*message, response);
+      break;
+    case OpalCmdRetrieveCall :
+      HandleRetrieveCall(*message, response);
+      break;
+    case OpalCmdTransferCall :
+      HandleTransferCall(*message, response);
+      break;
     default :
       return NULL;
   }
