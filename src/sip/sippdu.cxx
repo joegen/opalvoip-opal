@@ -1833,9 +1833,19 @@ PString SIP_PDU::Build()
 
 PString SIP_PDU::GetTransactionID() const
 {
-  // sometimes peers put <> around address, use GetHostAddress on GetFrom to handle all cases
-  SIPURL fromURL(mime.GetFrom());
-  return mime.GetCallID() + fromURL.GetHostAddress().ToLower() + PString(mime.GetCSeq());
+  // RFC3261 Sections 8.1.1.7 & 17.1.3 transactions are identified by the banch paranmeter in the top most Via
+  PStringList vias = mime.GetViaList();
+  if (!vias.IsEmpty()) {
+    PStringArray params = vias[0].Tokenise(';');
+    for (PINDEX i = 0; i < params.GetSize(); i++) {
+      PString param = params[i].Trim();
+      static const char branch[] = "branch=";
+      if (param.NumCompare(branch) == EqualTo)
+        return param.Mid(sizeof(branch)-1);
+    }
+  }
+
+  return mime.GetCallID() + mime.GetCSeq();
 }
 
 
