@@ -324,6 +324,7 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/gsm0610mf.cxx \
            $(OPAL_SRCDIR)/codec/gsmamrmf.cxx \
            $(OPAL_SRCDIR)/codec/iLBCmf.cxx \
+           $(OPAL_SRCDIR)/codec/t38mf.cxx \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx \
 	   $(OPAL_SRCDIR)/codec/silencedetect.cxx \
