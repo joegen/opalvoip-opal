@@ -1176,6 +1176,7 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
       if (!genericInfo.excludeReqMode)
         strm << " RM";
     }
+#endif // OPAL_H323
 
     // Show the type of the option: Boolean, Unsigned, String, etc.
     if (PIsDescendant(&option, OpalMediaOptionBoolean))
@@ -1195,9 +1196,12 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
       }
     else if (PIsDescendant(&option, OpalMediaOptionOctets))
       strm << " OctetString";
-    else
+    else if (PIsDescendant(&option, OpalMediaOptionString))
       strm << " String";
-#endif // OPAL_H323
+    else if (PIsDescendant(&option, OpalMediaOptionEnum))
+      strm << " Enum";
+    else
+      strm << " Unknown";
 
     strm << '\n';
   }
