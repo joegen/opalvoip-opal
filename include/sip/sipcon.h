@@ -435,7 +435,6 @@ class SIPConnection : public OpalRTPConnection
     );
     virtual bool OnReceivedSDPMediaDescription(
       SDPSessionDescription & sdp,
-      const OpalMediaType & mediaType,
       unsigned sessionId
     );
     friend class SIPInvite;

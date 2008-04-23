@@ -1095,8 +1095,9 @@ OpalT38Connection::OpalT38Connection(OpalCall & call, OpalT38EndPoint & ep, cons
   : OpalFaxConnection(call, ep, _filename, _receive, _token, stringOptions), t38WaitMode(T38Mode_Auto)
 {
   PTRACE(3, "FAX\tCreated T.38 connection with token '" << callToken << "'");
-  forceFaxAudio = false;
-  inT38Mode     = false;
+  forceFaxAudio         = false;
+  currentMode = newMode = false;
+  modeChangeTriggered   = false;
 
   faxTimer.SetNotifier(PCREATE_NOTIFIER(OnFaxChangeTimeout));
 }
@@ -1107,17 +1108,19 @@ OpalT38Connection::~OpalT38Connection()
 
 OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
-
   // if creating an audio session, use a NULL stream
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
-    if (isSource && !inT38Mode && ((t38WaitMode & T38Mode_Timeout) != 0))
-      faxTimer = 5000;
+    if (isSource)
+      InFaxMode(false);
     return new OpalSinkMediaStream(*this, mediaFormat, sessionID, isSource);
   }
 
   // if creating a T.38 stream, see what type it is
-  else if (mediaFormat.GetMediaType() == OpalMediaType::Fax()) 
+  else if (mediaFormat.GetMediaType() == OpalMediaType::Fax()) {
+    if (isSource)
+      InFaxMode(true);
     return new OpalT38MediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive, stationId);
+  }
 
   return NULL;
 }
@@ -1147,51 +1150,122 @@ void OpalT38Connection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
 PBoolean OpalT38Connection::SendUserInputTone(char tone, unsigned /*duration*/)
 {
   if (((t38WaitMode & T38Mode_NSECED) != 0) && (tolower(tone) == 'y'))
-    SwitchToT38();
+    RequestFaxMode(true);
 
   return true;
 }
 
 void OpalT38Connection::OnFaxChangeTimeout(PTimer &, INT)
 {
-  SwitchToT38();
+  RequestFaxMode(true);
 }
 
-static void ReinviteFunction(OpalManager & manager, const PString & callToken, const PString & connectionToken)
+struct ModeChangeRequestStruct {
+  OpalManager * manager;
+  PString callToken;
+  PString connectionToken;
+  bool newMode;
+};
+
+static void ReinviteFunction(ModeChangeRequestStruct request)
 {
-  PSafePtr<OpalCall> call = manager.FindCallWithLock(callToken);
-  unsigned otherIndex = (call->GetConnection(0)->GetToken() == connectionToken) ? 1 : 0;
+  PSafePtr<OpalCall> call = request.manager->FindCallWithLock(request.callToken);
+  unsigned otherIndex = (call->GetConnection(0)->GetToken() == request.connectionToken) ? 1 : 0;
+
+  const char * modeStr = request.newMode ? "fax" : "audio";
 
   PSafePtr<OpalConnection> otherParty = call->GetConnection(otherIndex, PSafeReadWrite);
   if (otherParty == NULL) {
-    PTRACE(1, "T38\tCannot get other party for fax trigger");
+    PTRACE(1, "T38\tCannot get other party for " << modeStr << " trigger");
   }
   else 
   {
     // for now, assume fax is always session 1
     OpalMediaFormatList formats;
-    formats += OpalT38;
+    OpalMediaType newType;
 
-    if (!call->OpenSourceMediaStreams(*otherParty, OpalMediaType::Fax(), 1, formats)) {
-      PTRACE(1, "T38\tReInvite trigger failed");
+    if (request.newMode) {
+      formats += OpalT38;
+      newType = OpalMediaType::Fax();
+    } else {
+      formats += OpalG711uLaw;
+      newType = OpalMediaType::Audio();
     }
-    else
-    {
-      PTRACE(3, "T38\tTriggered ReInvite into fax mode");
+
+    if (!call->OpenSourceMediaStreams(*otherParty, newType, 1, formats)) {
+      PTRACE(1, "T38\tMode change request to " << modeStr << " failed");
+    } else {
+      PTRACE(1, "T38\tMode change request to " << modeStr << " succeeded");
     }
   }
 }
 
-
-void OpalT38Connection::SwitchToT38()
+void OpalT38Connection::RequestFaxMode(bool toFax)
 {
-  if (!inT38Mode) {
-    PTRACE(1, "T38\tTriggering ReInvite into fax mode");
-    OpalCall & call = GetCall();
-    inT38Mode = true;
-    faxTimer.Stop();
-    new PThread3Arg<OpalManager &, const PString &, const PString &>(call.GetManager(), call.GetToken(), GetToken(), &ReinviteFunction, true);
+  const char * modeStr = toFax ? "fax" : "audio";
+
+  PWaitAndSignal m(modeMutex);
+
+  if (!modeChangeTriggered) {
+    if (toFax == currentMode) {
+      PTRACE(1, "T38\tIgnoring request for mode " << modeStr);
+      return;
+    }
   }
+  else
+  {
+    if (toFax == newMode) {
+      PTRACE(1, "T38\tIgnoring duplicate request for mode " << modeStr);
+    } else {
+      PTRACE(1, "T38\tCan't change in-progress mode request for mode " << modeStr);
+    }
+    return;
+  }
+
+  // definitely changing mode
+  faxTimer.Stop();
+  modeChangeTriggered = true;
+  newMode = toFax;
+  PTRACE(1, "T38\tRequesting mode change to " << modeStr);
+
+  OpalCall & call = GetCall();
+  ModeChangeRequestStruct request;
+  request.manager         = &call.GetManager();
+  request.callToken       = call.GetToken();
+  request.connectionToken = GetToken();
+  request.newMode         = newMode;
+
+  new PThread1Arg<ModeChangeRequestStruct>(request, &ReinviteFunction, true);
+}
+
+void OpalT38Connection::InFaxMode(bool toFax)
+{
+  const char * modeStr = toFax ? "fax" : "audio";
+
+  PWaitAndSignal m(modeMutex);
+
+  modeChangeTriggered = false;
+  faxTimer.Stop();
+
+  if (!modeChangeTriggered) {
+    if (toFax == currentMode) {
+      PTRACE(1, "T38\tUntriggered mode to same mode " << modeStr);
+    }
+    else {
+      PTRACE(1, "T38\tMode changed to different mode " << modeStr);
+    }
+  }
+
+  else {
+    if (toFax == newMode) {
+      PTRACE(1, "T38\tMode changed to correct mode " << modeStr);
+    }
+    else {
+      PTRACE(1, "T38\tMode changed to wrong mode " << modeStr);
+    }
+  }
+
+  currentMode = toFax;
 }
 
 #endif // OPAL_T38FAX
