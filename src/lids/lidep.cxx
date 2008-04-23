@@ -696,6 +696,9 @@ void OpalLineConnection::Monitor(PBoolean offHook)
       case OpalLineInterfaceDevice::CEDTone :
         OnUserInputTone('Y', 100);
         break;
+
+      default :
+        break;
     }
 
     if (line.HasHookFlash())
