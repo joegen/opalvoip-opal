@@ -76,7 +76,8 @@ OpalLineInterfaceDevice::OpalLineInterfaceDevice()
   m_callProgressTones[CongestionTone] = "480+620:0.3-0.2";
   m_callProgressTones[ClearTone] = "350+440:0.5";
   m_callProgressTones[MwiTone] = "350+440:0.2";
-  m_callProgressTones[CNGTone] = "1100:0.25";
+  m_callProgressTones[CNGTone] = "1100:0.5";
+  m_callProgressTones[CEDTone] = "2100:0.5";
 }
 
 
@@ -916,8 +917,11 @@ PBoolean OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes country)
       for (line = 0; line < GetLineCount(); line++) {
         for (int tone = 0; tone < NumTones; tone++) {
           const char * toneStr = CountryInfo[i].tone[tone];
-          if (toneStr == NULL)
+          if (toneStr == NULL) {
             toneStr = CountryInfo[UnitedStates].tone[tone];
+            if (toneStr == NULL)
+              toneStr = m_callProgressTones[tone];
+          }
           SetToneDescription(line, (CallProgressTones)tone, toneStr);
           m_callProgressTones[tone] = toneStr;
         }
