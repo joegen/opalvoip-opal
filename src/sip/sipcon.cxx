@@ -2032,18 +2032,13 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
 
   needReINVITE = false;
 
-  bool ok = OnReceivedSDPMediaDescription(pdu.GetSDP(), OpalMediaType::Audio(), OpalMediaFormat::DefaultAudioSessionID);
+  SDPSessionDescription & sdp = pdu.GetSDP();
+
+  bool ok = false;
+  for (PINDEX i = 0; i < sdp.GetMediaDescriptions().GetSize(); ++i) 
+    ok |= OnReceivedSDPMediaDescription(sdp, i+1);
 
   remoteFormatList += OpalRFC2833;
-
-#if OPAL_VIDEO
-  ok |= OnReceivedSDPMediaDescription(pdu.GetSDP(), OpalMediaType::Video(), OpalMediaFormat::DefaultVideoSessionID);
-#endif
-
-#if OPAL_T38FAX
-  ok |= OnReceivedSDPMediaDescription(pdu.GetSDP(), OpalMediaType::Fax(), OpalMediaFormat::DefaultDataSessionID);
-  remoteFormatList += OpalT38;
-#endif
 
   needReINVITE = true;
 
@@ -2054,14 +2049,15 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
 }
 
 
-bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
-                                                    const OpalMediaType & mediaType,
-                                                                 unsigned rtpSessionId)
+bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, unsigned rtpSessionId)
 {
   RTP_UDP *rtpSession = NULL;
-  SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByType(mediaType);
+  SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByIndex(rtpSessionId);
+  PAssert(mediaDescription != NULL, "media description list changed");
+
+  OpalMediaType mediaType = mediaDescription->GetMediaType();
   
-  if (mediaDescription == NULL || mediaDescription->GetPort() == 0) {
+  if (mediaDescription->GetPort() == 0) {
     PTRACE(2, "SIP\tDisabled/missing SDP media description for " << mediaType);
 
     OpalMediaStreamPtr stream = GetMediaStream(rtpSessionId, false);
