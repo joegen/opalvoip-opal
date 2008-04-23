@@ -9198,6 +9198,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\t38\t38mf.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\t38\t38proto.cxx"
 					>
 					<FileConfiguration
