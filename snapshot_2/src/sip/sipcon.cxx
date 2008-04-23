@@ -949,7 +949,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
         newDirection = SDPMediaDescription::SendOnly;
     }
     else {
-      sendStream->Close();
+      sendStream->GetPatch()->GetSource().Close();
       sendStream.SetNULL();
     }
   }
