@@ -494,7 +494,10 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
   unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
   rcWindowSize = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption());
-  rcByteRate = (unsigned) (targetBitRate / 8);
+  if (((unsigned) (targetBitRate / 8)) != rcByteRate) {
+    rcByteRate = (unsigned) (targetBitRate / 8);
+    frameInfoList.clear();
+  }
   rcMaxConsecutiveFramesSkip = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlMaxFramesSkipOption());
 
   PTRACE(3, "Patch\tUpdated Sink: format=" << mediaFormat
