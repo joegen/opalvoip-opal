@@ -589,6 +589,7 @@ class OpalLineInterfaceDevice : public PObject
       ClearTone,   // Call failed/disconnected tone (often same as busy tone)
       MwiTone,     // Message Waiting Tone
       CNGTone,     // Fax CNG tone
+      CEDTone,     // Fax CED tone
       NumTones
     };
 
@@ -1290,7 +1291,7 @@ class OpalLine : public PObject
 
     /**See if any tone is detected.
       */
-    virtual unsigned IsToneDetected() { return device.IsToneDetected(lineNumber); }
+    virtual OpalLineInterfaceDevice::CallProgressTones IsToneDetected() { return device.IsToneDetected(lineNumber); }
 
     /**See if any tone is detected.
       */
