@@ -1,9 +1,0 @@
-obj_*_*_d Debug debug
-obj_*_*_r Release release
-NoTrace notrace
-*.plg *.opt *.ncb *.Tags.WW *.vcproj.*.user
-trace.txt
-welcome.wav
-SpeedDials.txt
-server.pem
-*.wav
