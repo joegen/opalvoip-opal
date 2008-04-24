@@ -838,7 +838,7 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
     return;
   }
 
-  if (IsNullString(command.m_param.m_callSetUp.m_partyA)) {
+  if (IsNullString(command.m_param.m_callSetUp.m_partyB)) {
     response.SetError("No destination address provided.");
     return;
   }
