@@ -1561,6 +1561,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
   }
 
   // allow for special case of portBase == 0 or portMax == 0, which indicates a shared RTP session
+  _localAddress = PIPSocket::Address ("192.168.0.100");
   if ((portBase != 0) || (portMax != 0)) {
     if (stun != NULL && stun->IsAvailable(localAddress) && stun->GetRTPSupport() == PSTUNClient::RTPSupported) {
       if (stun->CreateSocketPair(dataSocket, controlSocket, localAddress)) {
@@ -1570,7 +1571,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
       }
       else {
         PTRACE(2, "RTP\tSession " << sessionID << ", STUN could not create RTP/RTCP socket pair; trying to create RTP socket anyway.");
-        if (stun->CreateSocket(dataSocket, localAddress) && stun->CreateSocket(controlSocket)) {
+        if (stun->CreateSocket(dataSocket, localAddress) && stun->CreateSocket(controlSocket, localAddress)) {
           dataSocket->GetLocalAddress(localAddress, localDataPort);
           controlSocket->GetLocalAddress(localAddress, localControlPort);
         }
