@@ -1,5 +1,10 @@
 LIBRARY opaln
 EXPORTS
+    OpalInitialise @1
+    OpalShutDown @2
+    OpalGetMessage @3
+    OpalSendMessage @4
+    OpalFreeMessage @5
     ??$?0PAUOpalMessage@@@?$allocator@PAPAUOpalMessage@@@std@@QAA@ABV?$allocator@PAUOpalMessage@@@1@@Z @6 NONAME
     ??$?0PAUSIP_PDU_Work@SIPEndPoint@@@?$allocator@PAPAUSIP_PDU_Work@SIPEndPoint@@@std@@QAA@ABV?$allocator@PAUSIP_PDU_Work@SIPEndPoint@@@1@@Z @7 NONAME
     ??$?0U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@?$allocator@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@U?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@U?$less@U?$pair@VPString@@V1@@std@@@2@V?$allocator@U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@QAA@ABV?$allocator@U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@1@@Z @8 NONAME
