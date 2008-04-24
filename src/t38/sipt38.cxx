@@ -28,6 +28,27 @@
  * $Date: 2008-04-21 17:21:24 +1000 (Mon, 21 Apr 2008) $
  */
 
+/*
+
+There are two methods for signalling T.38 within a SIP session.
+See T.38 Annex D for more information
+
+UDPTL encapsulation (see T.38 section 9.1) over UDP is signalled as described in RFC 3362 as follows:
+
+  m=image 5000 udptl t38
+  a=T38FaxVersion=2
+  a=T38FaxRateManagement=transferredTCF
+
+RTP encapsulation (see T.38 section 9.2) is signalled as described in RFC 4612 as follows:
+
+  m=audio 5000 RTP/AVP 96
+  a=rtpmap:96 t38/8000
+  a=fmtp:98 T38FaxVersion=2;T38FaxRateManagement=transferredTCF
+
+Either, or both, can be used in a call
+
+*/
+
 #include <ptlib.h>
 
 #ifdef __GNUC__

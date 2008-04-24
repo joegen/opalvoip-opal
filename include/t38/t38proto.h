@@ -77,153 +77,6 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if 0 // disabled
-
-/**This class handles the processing of the T.38 protocol.
-  */
-class OpalT38Protocol : public PObject
-{
-    PCLASSINFO(OpalT38Protocol, PObject);
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new protocol handler.
-     */
-    OpalT38Protocol();
-
-    /**Destroy the protocol handler.
-     */
-    ~OpalT38Protocol();
-  //@}
-
-  /**@name Operations */
-  //@{
-    /**This is called to clean up any threads on connection termination.
-     */
-    virtual void Close();
-
-    /**Handle the origination of a T.38 connection.
-       An application would normally override this. The default just sends
-       "heartbeat" T.30 no signal indicator.
-      */
-    virtual PBoolean Originate();
-
-    /**Write packet to the T.38 connection.
-      */
-    virtual PBoolean WritePacket(
-      const T38_IFPPacket & pdu
-    );
-
-    /**Write T.30 indicator packet to the T.38 connection.
-      */
-    virtual PBoolean WriteIndicator(
-      unsigned indicator
-    );
-
-    /**Write data packet to the T.38 connection.
-      */
-    virtual PBoolean WriteMultipleData(
-      unsigned mode,
-      PINDEX count,
-      unsigned * type,
-      const PBYTEArray * data
-    );
-
-    /**Write data packet to the T.38 connection.
-      */
-    virtual PBoolean WriteData(
-      unsigned mode,
-      unsigned type,
-      const PBYTEArray & data
-    );
-
-    /**Handle the origination of a T.38 connection.
-      */
-    virtual PBoolean Answer();
-
-    /**Handle incoming T.38 packet.
-
-       If returns PFalse, then the reading loop should be terminated.
-      */
-    virtual PBoolean HandlePacket(
-      const T38_IFPPacket & pdu
-    );
-
-    /**Handle lost T.38 packets.
-
-       If returns PFalse, then the reading loop should be terminated.
-      */
-    virtual PBoolean HandlePacketLost(
-      unsigned nLost
-    );
-
-    /**Handle incoming T.38 indicator packet.
-       If returns PFalse, then the reading loop should be terminated.
-      */
-    virtual PBoolean OnIndicator(
-      unsigned indicator
-    );
-
-    /**Handle incoming T.38 CNG indicator.
-       If returns PFalse, then the reading loop should be terminated.
-      */
-    virtual PBoolean OnCNG();
-
-    /**Handle incoming T.38 CED indicator.
-       If returns PFalse, then the reading loop should be terminated.
-      */
-    virtual PBoolean OnCED();
-
-    /**Handle incoming T.38 V.21 preamble indicator.
-       If returns PFalse, then the reading loop should be terminated.
-      */
-    virtual PBoolean OnPreamble();
-
-    /**Handle incoming T.38 data mode training indicator.
-       If returns PFalse, then the reading loop should be terminated.
-      */
-    virtual PBoolean OnTraining(
-      unsigned indicator
-    );
-
-    /**Handle incoming T.38 data packet.
-
-       If returns PFalse, then the reading loop should be terminated.
-      */
-    virtual PBoolean OnData(
-      unsigned mode,
-      unsigned type,
-      const PBYTEArray & data
-    );
-  //@}
-
-    OpalTransport * GetTransport() const { return transport; }
-    void SetTransport(
-      OpalTransport * transport,
-      PBoolean autoDelete = PTrue
-    );
-
-  protected:
-    PBoolean HandleRawIFP(
-      const PASN_OctetString & pdu
-    );
-
-    OpalTransport * transport;
-    PBoolean            autoDeleteTransport;
-
-    PBoolean     corrigendumASN;
-    unsigned indicatorRedundancy;
-    unsigned lowSpeedRedundancy;
-    unsigned highSpeedRedundancy;
-
-    int               lastSentSequenceNumber;
-    PList<PBYTEArray> redundantIFPs;
-};
-
-#endif  // disabled
-
-///////////////////////////////////////////////////////////////////////////////
-
 #if OPAL_AUDIO
 
 /**
@@ -617,8 +470,8 @@ class OpalT38Connection : public OpalFaxConnection
       OpalCall & call,                 ///<  Owner calll for connection
       OpalT38EndPoint & endpoint,      ///<  Owner endpoint for connection
       const PString & filename,        ///<  filename to send/receive
-      PBoolean receive,
-      const PString & _token,           ///<  token for connection
+      PBoolean receive,                ///<  true if receiving fax
+      const PString & _token,          ///<  token for connection
       OpalConnection::StringOptions * stringOptions = NULL
     );
 
@@ -631,11 +484,11 @@ class OpalT38Connection : public OpalFaxConnection
 
     // triggers into fax mode
     enum {
-      T38Mode_Wait         = 0,   // wait for the other end to send a reinvite
-      T38Mode_InBandCED    = 1,   // if the other end sends CED in-band, send a ReINVITE/ModeChange
-      T38Mode_NSECED       = 2,   // if the other end send CED as RFC2833, send a ReINVITE/ModeChange
-      T38Mode_Timeout      = 4,   // send ReINVITE/ModeChange after timeout
-      T38Mode_Auto         = 7    // whichever of the above happens first!
+      T38Mode_Wait         = 0,   // Do nothing and wait for the other end to send a reinvite
+      T38Mode_InBandCED    = 1,   // If receiving, send CED tone in-band. If sending, trigger mode change if CED detected in-band
+      T38Mode_NSECED       = 2,   // If receiving, send CED as RFC2833. If sending, trigger mode change if RFC2833 CED received
+      T38Mode_Timeout      = 4,   // Trigger mode change if has not occurred after 5 seconds
+      T38Mode_Auto         = 7    // All of the above :)
     };
 
     virtual PBoolean SendUserInputTone(
@@ -655,6 +508,7 @@ class OpalT38Connection : public OpalFaxConnection
     bool currentMode, newMode;  // false if audio, true if fax
     bool modeChangeTriggered;
     PTimer faxTimer;
+    bool faxStartup;
 };
 
 #define OPAL_PCM16_FAX      "PCM-16-Fax"
