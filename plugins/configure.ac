@@ -463,7 +463,8 @@ if test "x$enable_x264" = "xruntime"; then
 
           AC_MSG_CHECKING(for x264 version >= 48)
           AC_EGREP_CPP([yes],
-          [#include <x264.h>
+          [#include <stdint.h>
+           #include <x264.h>
 	   #ifdef X264_BUILD
              #if X264_BUILD >= 48
                yes
@@ -472,7 +473,7 @@ if test "x$enable_x264" = "xruntime"; then
           ],
  	  [x264_version=true], [x264_version=false])
           if test "x${x264_version}" = "xtrue"; then
-              AC_MSG_RESULT([yes])
+              AC_MSG_RESULT([yess])
               HAS_X264=1
               AC_MSG_CHECKING(filename of x264 library)
               cat > t.c <<C_FILE

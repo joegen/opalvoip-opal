@@ -1,5 +1,0 @@
-obj_*_*_d Debug debug
-obj_*_*_r Release release
-*.plg *.ncb *.opt *.suo *.Tags.WW *.vcproj.*.user
-config.log config.status autom4te.cache
-Makefile

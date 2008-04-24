@@ -1,3 +1,0 @@
-Debug Release NoTrace
-*.opt *.ncb *.plg *.aps *.clw *.mak *.Tags.WW *.vcproj.*.user
-trace.txt

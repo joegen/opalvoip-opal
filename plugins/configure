@@ -7318,7 +7318,8 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <x264.h>
+#include <stdint.h>
+           #include <x264.h>
 	   #ifdef X264_BUILD
              #if X264_BUILD >= 48
                yes
@@ -7335,8 +7336,8 @@ fi
 rm -f conftest*
 
           if test "x${x264_version}" = "xtrue"; then
-              { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
+              { echo "$as_me:$LINENO: result: yess" >&5
+echo "${ECHO_T}yess" >&6; }
               HAS_X264=1
               { echo "$as_me:$LINENO: checking filename of x264 library" >&5
 echo $ECHO_N "checking filename of x264 library... $ECHO_C" >&6; }
