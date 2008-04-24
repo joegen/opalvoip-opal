@@ -161,6 +161,8 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendData(RTP_DataFrame & 
   if (frame.GetPayloadSize() == 0)
     return RTP_UDP::e_IgnorePacket;
 
+  PTRACE(3, "T38_RTP\tReceived RTP packet with payload size " << frame.GetPayloadSize());
+
   PINDEX plLen = frame.GetPayloadSize();
 
   // reformat the raw T.38 data as an UDPTL packet
@@ -181,17 +183,11 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendData(RTP_DataFrame & 
 
   lastIFP = udptl.m_primary_ifp_packet;
 
+  PTRACE(4, "T38_RTP\tEncoded transmitted UDPTL data :\n  " << setprecision(2) << udptl);
+
   PPER_Stream rawData;
   udptl.Encode(rawData);
   rawData.CompleteEncoding();
-
-#if PTRACING
-  if (PTrace::CanTrace(4)) {
-    PTRACE(4, "RTP_T38\tSending PDU:\n  "
-           << setprecision(2) << udptl << "\n "
-           << setprecision(2) << rawData);
-  }
-#endif
 
 #if 0
   // Calculate the level of redundency for this data phase
@@ -216,7 +212,7 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendData(RTP_DataFrame & 
   frame.SetSize(rawData.GetSize());
   memcpy(frame.GetPointer(), rawData.GetPointer(), rawData.GetSize());
 
-PTRACE(1, "T38_RTP\tWriting RTP T.38 seq " << udptl.m_seq_number << " of size " << plLen << " as T.38 UDPTL size " << frame.GetSize());
+  PTRACE(4, "T38_RTP\tSending UDPTL of size " << frame.GetSize());
 
   return RTP_Session::e_ProcessPacket;
 }
@@ -230,8 +226,10 @@ PBoolean T38PseudoRTP_Handler::WriteData(RTP_DataFrame & frame)
   }
 
   // Trying to send a PDU before we are set up!
-  if (!rtpUDP->GetRemoteAddress().IsValid() || rtpUDP->GetRemoteDataPort() == 0)
+  if (!rtpUDP->GetRemoteAddress().IsValid() || (rtpUDP->GetRemoteDataPort() == 0)) {
+    PTRACE(3, "RTP_T38\tTrying to send packet on session " << rtpUDP->GetSessionID() << " before it is setup");
     return PTrue;
+  }
 
   switch (OnSendData(frame)) {
     case RTP_Session::e_ProcessPacket :
@@ -287,7 +285,7 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::ReadDataPDU(RTP_DataFrame &
 
 RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnReceiveData(RTP_DataFrame & frame)
 {
-  PTRACE(4, "T38_RTP\tReading raw T.38 of size " << frame.GetSize());
+  PTRACE(4, "T38_RTP\tRead UDPTL of size " << frame.GetSize());
 
   if ((frame.GetPayloadSize() == 1) && (frame.GetPayloadPtr()[0] == 0xff)) {
     // allow fake timing frames to pass through
@@ -305,7 +303,7 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnReceiveData(RTP_DataFrame
              << setprecision(2) << rawData << "\n  UDPTL = "
              << setprecision(2) << udptl);
       if (consecutiveBadPackets > 100) {
-        PTRACE(1, "RTP_T38\tRaw data decode failed multiple times, aborting!");
+        PTRACE(1, "RTP_T38\tRaw data decode failed 100 times, aborting!");
         return RTP_Session::e_AbortTransport;
       }
       return RTP_Session::e_IgnorePacket;
@@ -316,14 +314,14 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnReceiveData(RTP_DataFrame
 
     memcpy(frame.GetPayloadPtr(), ifp.GetPointer(), ifp.GetDataLength());
     frame.SetSequenceNumber((WORD)(udptl.m_seq_number & 0xffff));
-    PTRACE(4, "T38_RTP\tT38 decode :\n  " << setprecision(2) << udptl);
+    PTRACE(4, "T38_RTP\tDecoded received UDPTL data :\n  " << setprecision(2) << udptl);
   }
 
   frame[0] = 0x80;
   frame.SetPayloadType((RTP_DataFrame::PayloadTypes)96);
   frame.SetSyncSource(rtpUDP->GetSyncSourceIn());
 
-  PTRACE(3, "T38_RTP\tReading RTP payload size " << frame.GetPayloadSize());
+  PTRACE(3, "T38_RTP\tSending RTP packet with payload size " << frame.GetPayloadSize());
 
   return RTP_FormatHandler::OnReceiveData(frame);
 }
@@ -442,6 +440,11 @@ PBoolean OpalFaxMediaStream::Open()
       if (!faxCallInfo->socket.Listen()) {
         PTRACE(1, "Fax\tCannot open listening socket for SpanDSP");
         return PFalse;
+      }
+      {
+        PIPSocket::Address addr; WORD port;
+        faxCallInfo->socket.GetLocalAddress(addr, port);
+        PTRACE(2, "Fax\tLocal spandsp address set to " << addr << ":" << port);
       }
       faxCallInfo->socket.SetReadTimeout(1000);
       faxCallInfoMap.insert(OpalFaxCallInfoMap_T::value_type((const char *)sessionToken, faxCallInfo));
@@ -714,7 +717,7 @@ PString OpalT38MediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
     if (!stationId.IsEmpty())
       cmdline << " -s '" << stationId << "'";
   }
-  cmdline << " -n '" << filename << "' -t 127.0.0.1:" << port;
+  cmdline << " -v -n '" << filename << "' -t 127.0.0.1:" << port;
 
   return cmdline;
 }
@@ -736,8 +739,10 @@ PBoolean OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
 
     if (faxCallInfo->spanDSPPort > 0) 
       stat = faxCallInfo->socket.Read(packet.GetPointer(), packet.GetSize());
-    else
+    else {
       stat = faxCallInfo->socket.ReadFrom(packet.GetPointer(), packet.GetSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort);
+      PTRACE(2, "Fax\tRemote spandsp address set to " << faxCallInfo->spanDSPAddr << ":" << faxCallInfo->spanDSPPort);
+    }
 
     if (!stat) {
       if (faxCallInfo->socket.GetErrorCode(PChannel::LastReadError) == PChannel::Timeout) {
@@ -902,7 +907,7 @@ OpalFaxConnection::~OpalFaxConnection()
 OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
   // if creating an audio session, use a NULL stream
-  if (sessionID == OpalMediaFormat::DefaultAudioSessionID) {
+  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
     if (forceFaxAudio && (mediaFormat == OpalPCM16))
       return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive, stationId);
     else
@@ -1098,6 +1103,7 @@ OpalT38Connection::OpalT38Connection(OpalCall & call, OpalT38EndPoint & ep, cons
   forceFaxAudio         = false;
   currentMode = newMode = false;
   modeChangeTriggered   = false;
+  faxStartup            = true;
 
   faxTimer.SetNotifier(PCREATE_NOTIFIER(OnFaxChangeTimeout));
 }
@@ -1249,7 +1255,15 @@ void OpalT38Connection::InFaxMode(bool toFax)
 
   if (!modeChangeTriggered) {
     if (toFax == currentMode) {
-      PTRACE(1, "T38\tUntriggered mode to same mode " << modeStr);
+      if (!faxStartup) {
+        PTRACE(1, "T38\tUntriggered mode to same mode " << modeStr);
+      }
+      else {
+        if (faxStartup && !currentMode && (t38WaitMode & T38Mode_Timeout) != 0) {
+          faxTimer = 5000;
+          PTRACE(1, "T38\tStarting timer for mode change");
+        }
+      }
     }
     else {
       PTRACE(1, "T38\tMode changed to different mode " << modeStr);
@@ -1265,6 +1279,7 @@ void OpalT38Connection::InFaxMode(bool toFax)
     }
   }
 
+  faxStartup = false;
   currentMode = toFax;
 }
 

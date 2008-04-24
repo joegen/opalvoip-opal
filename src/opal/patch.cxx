@@ -422,7 +422,7 @@ void OpalMediaPatch::Main()
 {
   PTRACE(4, "Patch\tThread started for " << *this);
 	
-  bool isAudio = source.GetMediaFormat().GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID;
+  bool isAudio = source.GetMediaFormat().GetMediaType() == OpalMediaType::Audio();
 
   inUse.StartRead();
   source.OnPatchStart();

@@ -1312,16 +1312,8 @@ SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByIndex(PINDEX i
 
 SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sessionID) const
 {
-  PINDEX i;
-  for (i = 0; i < mediaDescriptions.GetSize(); i++) {
-    if ((mediaDescriptions[i].GetMediaType() == OpalMediaType::Video() && sessionID == OpalMediaFormat::DefaultVideoSessionID) || 
-        (mediaDescriptions[i].GetMediaType() == OpalMediaType::Audio() && sessionID == OpalMediaFormat::DefaultAudioSessionID)) {
-      if (mediaDescriptions[i].GetDirection() != SDPMediaDescription::Undefined)
-        return mediaDescriptions[i].GetDirection();
-      else
-        return direction;
-    }
-  }
+  if (sessionID < (unsigned)mediaDescriptions.GetSize())
+    return mediaDescriptions[sessionID].GetDirection();
   
   return direction;
 }
