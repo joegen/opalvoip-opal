@@ -50,10 +50,9 @@ extern "C" {
   #define OPAL_EXPORT
 #endif
 
-struct OpalHandleStruct;
-typedef OpalHandleStruct * OpalHandle;
+typedef struct OpalHandleStruct * OpalHandle;
 
-struct OpalMessage;
+typedef struct OpalMessage OpalMessage;
 
 
 #define OPAL_C_API_VERSION "1"
