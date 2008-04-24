@@ -1,5 +1,10 @@
 LIBRARY opal
 EXPORTS
+    OpalInitialise @1
+    OpalShutDown @2
+    OpalGetMessage @3
+    OpalSendMessage @4
+    OpalFreeMessage @5
     ??$?0PAUOpalMessage@@@?$allocator@PAPAUOpalMessage@@@std@@QAE@ABV?$allocator@PAUOpalMessage@@@1@@Z @48500 NONAME
     ??$?0PAUSIP_PDU_Work@SIPEndPoint@@@?$allocator@PAPAUSIP_PDU_Work@SIPEndPoint@@@std@@QAE@ABV?$allocator@PAUSIP_PDU_Work@SIPEndPoint@@@1@@Z @48501 NONAME
     ??$?0U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@?$allocator@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@4@$0A@@std@@@std@@@std@@QAE@ABV?$allocator@U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@1@@Z @48502 NONAME

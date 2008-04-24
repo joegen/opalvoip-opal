@@ -1,5 +1,10 @@
 LIBRARY opaln
 EXPORTS
+    OpalInitialise @1
+    OpalShutDown @2
+    OpalGetMessage @3
+    OpalSendMessage @4
+    OpalFreeMessage @5
     ??$?0U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@?$allocator@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@U?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@U?$less@U?$pair@VPString@@V1@@std@@@2@V?$allocator@U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@QAE@ABV?$allocator@U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@1@@Z @40305 NONAME
     ??$?0U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@?$allocator@U_Node@?$_Tree_nod@V?$_Tmap_traits@U?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@U?$less@U?$pair@VPString@@V1@@std@@@2@V?$allocator@U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@QAE@ABV?$allocator@U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@1@@Z @40306 NONAME
     ??$?0U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVOpalAudioMixerStream@@@std@@@?$allocator@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVOpalAudioMixerStream@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVOpalAudioMixerStream@@@std@@@2@$0A@@std@@@std@@@std@@QAE@ABV?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVOpalAudioMixerStream@@@std@@@1@@Z @39271 NONAME
