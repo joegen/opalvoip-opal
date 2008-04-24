@@ -1064,14 +1064,22 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
 {
   SIPURL rpn;
 
+  WORD port = GetDefaultSignalPort();
+
+  OpalTransportAddressArray interfaces = GetInterfaceAddresses();
+  if (interfaces.GetSize() != 0) {
+    PIPSocket::Address dummy;
+    interfaces[0].GetIpAndPort(dummy, port);
+  }
+
   {
     PString hostName = PIPSocket::GetHostName();
     PIPSocket::Address dummy;
     if (!PIPSocket::GetHostAddress(hostName, dummy)) 
-      rpn = SIPURL(PString("sip:") + GetDefaultLocalPartyName() + "@" + hostName + PString(PString::Unsigned, GetDefaultSignalPort()) + ";transport=udp");
+      rpn = SIPURL(PString("sip:") + GetDefaultLocalPartyName() + "@" + hostName + PString(PString::Unsigned, port) + ";transport=udp");
     else {
-      OpalTransportAddress addr(hostName, GetDefaultSignalPort(), "udp");
-      rpn = SIPURL(GetDefaultLocalPartyName(), addr, GetDefaultSignalPort());
+      OpalTransportAddress addr(hostName, port, "udp");
+      rpn = SIPURL(GetDefaultLocalPartyName(), addr, port);
     }
   }
 
