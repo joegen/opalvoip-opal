@@ -1,5 +1,10 @@
 LIBRARY opal
 EXPORTS
+    OpalInitialise @1
+    OpalShutDown @2
+    OpalGetMessage @3
+    OpalSendMessage @4
+    OpalFreeMessage @5
     ??0?$H235_HASHED@VH235_EncodedGeneralToken@@@@QAE@IW4TagClass@PASN_Object@@@Z @23382 NONAME
     ??0?$H235_HASHED@VH235_EncodedPwdCertToken@@@@QAE@IW4TagClass@PASN_Object@@@Z @2 NONAME
     ??0?$H235_SIGNED@VH235_EncodedReturnSig@@@@QAE@ABV0@@Z @42969 NONAME
