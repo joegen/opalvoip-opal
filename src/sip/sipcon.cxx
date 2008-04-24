@@ -774,16 +774,12 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     WORD port = 0;
     if (!mediaAddress.GetIpAndPort(ip, port)) {
       PTRACE(1, "SIP\tCannot get remote ports for RTP session " << rtpSessionId);
-      //if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
-      //  Release(EndedByTransportFail);
       return PFalse;
     }
 
     // Create the RTPSession if required
     rtpSession = OnUseRTPSession(rtpSessionId, mediaAddress, localAddress);
     if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-      //if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
-      //  Release(EndedByTransportFail);
       return PFalse;
     }
 
@@ -792,8 +788,6 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     if (ip != 0) {
       if ((rtpSession != NULL)&& !rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
         PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-        //if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
-        //  Release(EndedByTransportFail);
         return PFalse;
       }
     }

@@ -727,12 +727,14 @@ PBoolean MyManager::Initialise(PArgList & args)
 
 #if OPAL_SIP
     if (sipEP != NULL) {
-      AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
-      AddRouteEntry("pots:.*           = sip:<da>");
-      AddRouteEntry("pc:.*             = sip:<da>");
 #if OPAL_T38FAX
-      AddRouteEntry("t38:.*            = sip:<da>");
+      AddRouteEntry("t38:.*             = sip:<da>");
+      AddRouteEntry("sip:.*\tfax@.*     = t38:received_fax_%s.tif;receive");
+      AddRouteEntry("sip:.*\tsip:329@.* = t38:received_fax_%s.tif;receive");
 #endif
+      AddRouteEntry("pots:.*\\*.*\\*.*  = sip:<dn2ip>");
+      AddRouteEntry("pots:.*            = sip:<da>");
+      AddRouteEntry("pc:.*              = sip:<da>");
     }
 #endif
 

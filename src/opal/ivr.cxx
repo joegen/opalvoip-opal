@@ -354,10 +354,10 @@ PBoolean OpalIVRConnection::SetConnected()
   // if no media streams, try and start them
   // if we have media streams, move to Established straight away
   if (mediaStreams.IsEmpty()) {
-    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), OpalMediaFormat::DefaultAudioSessionID);
+    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty != NULL)
-      ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), OpalMediaFormat::DefaultAudioSessionID);
+      ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
   } else {
     OnEstablished();
     SetPhase(EstablishedPhase);

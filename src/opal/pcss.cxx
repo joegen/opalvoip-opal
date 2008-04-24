@@ -382,7 +382,7 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
                                                         unsigned sessionID,
                                                         PBoolean isSource)
 {
-  if (sessionID != OpalMediaFormat::DefaultAudioSessionID)
+  if (mediaFormat.GetMediaType() != OpalMediaType::Audio())
     return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
   PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, isSource);
@@ -399,7 +399,7 @@ void OpalPCSSConnection::OnPatchMediaStream(PBoolean isSource,
   endpoint.OnPatchMediaStream(*this, isSource, patch);
 
   int clockRate;
-  if (patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+  if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
     PTRACE(3, "PCSS\tAdding filters to patch");
     if (isSource) {
       silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams());
