@@ -30,8 +30,8 @@
 
 #include <ptlib.h>
 
-#ifdef __GNUC__
-#pragma implementation "connection.h"
+#ifdef P_USE_PRAGMA
+#pragma implementation "rtpconn.h"
 #endif
 
 #include <opal/buildopts.h>
