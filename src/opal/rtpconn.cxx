@@ -262,9 +262,9 @@ void OpalRTPConnection::SetSecurityData(void *data)
   securityData = data;
 }
 
+#if OPAL_VIDEO
 void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
 {
-#if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     RTP_Session * session = rtpSessions.GetSession(OpalMediaFormat::DefaultVideoSessionID);
     if (session != NULL)
@@ -273,8 +273,12 @@ void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/
     m_VideoUpdateRequestsSent++;
 #endif
   }
-#endif
 }
+#else
+void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & /*command*/, INT /*extra*/)
+{
+}
+#endif
 
 void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMediaPatch & patch)
 {

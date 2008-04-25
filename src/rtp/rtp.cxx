@@ -879,15 +879,24 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendControl(RTP_ControlFrame & fra
   return HandlerLock(*this)->OnSendControl(frame, len);
 }
 
+#if OPAL_VIDEO
 RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendControl(RTP_ControlFrame & frame, PINDEX & /*len*/)
 {
   rtcpPacketsSent++;
-#if OPAL_VIDEO
+
   if(frame.GetPayloadType() == RTP_ControlFrame::e_IntraFrameRequest && userData != NULL)
     userData->OnTxIntraFrameRequest(*this);
-#endif 
+
   return e_ProcessPacket;
 }
+#else
+RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/)
+{
+  rtcpPacketsSent++;
+  return e_ProcessPacket;
+}
+#endif
+
 
 RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
 {
