@@ -2926,13 +2926,22 @@ H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, PBoolean fromRe
 bool H323Connection::TransferConnection(const PString & remoteParty)
 {
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
-  if (call == NULL)
+  if (call == NULL) {
+#if OPAL_H450
     return TransferCall(remoteParty);
+#else
+    return false;
+#endif
+  }
 
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
     PSafePtr<H323Connection> h323 = PSafePtrCast<OpalConnection, H323Connection>(connection);
     if (h323 != NULL)
+#if OPAL_H450
       return TransferCall(h323->GetRemotePartyCallbackURL(), h323->GetToken());
+#else
+      return false;
+#endif
   }
 
   PTRACE(2, "H323\tConsultation transfer requires other party to be H.323.");

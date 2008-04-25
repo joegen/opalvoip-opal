@@ -37,6 +37,7 @@
 #include <opal/buildopts.h>
 
 #if OPAL_T38FAX
+#if OPAL_H323
 
 #include <t38/h323t38.h>
 
@@ -397,6 +398,8 @@ PBoolean H323_T38Channel::CreateListener()
   return CreateTransport();
 }
 
+#endif // OPAL_H323
 #endif // OPAL_T38FAX
+
 
 /////////////////////////////////////////////////////////////////////////////

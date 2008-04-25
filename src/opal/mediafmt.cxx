@@ -1182,6 +1182,7 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
     if (PIsDescendant(&option, OpalMediaOptionBoolean))
       strm << " Boolean";
     else if (PIsDescendant(&option, OpalMediaOptionUnsigned))
+#if OPAL_H323
       switch (genericInfo.integerType) {
         default :
         case OpalMediaOption::H245GenericInfo::UnsignedInt :
@@ -1194,6 +1195,9 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
           strm << " BooleanArray";
           break;
       }
+#else
+      strm << " UnsignedInt";
+#endif // OPAL_H323
     else if (PIsDescendant(&option, OpalMediaOptionOctets))
       strm << " OctetString";
     else if (PIsDescendant(&option, OpalMediaOptionString))

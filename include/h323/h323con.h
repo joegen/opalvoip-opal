@@ -481,6 +481,32 @@ class H323Connection : public OpalRTPConnection
       const PString & forwardParty   ///<  Party to forward call to.
     );
 
+    /**Initiate the transfer of an existing call (connection) to a new remote 
+       party.
+
+       If remoteParty is a valid call token, then the remote party is transferred
+       to that party (consultation transfer) and both calls are cleared.
+     */
+    virtual bool TransferConnection(
+      const PString & remoteParty   ///<  Remote party to transfer the existing call to
+    );
+
+    /**Put the current connection on hold, suspending all media streams.
+     * Simply calls HoldCall() which is kept for backward compatibility.
+     */
+    virtual bool HoldConnection();
+
+    /**Retrieve the current connection from hold, activating all media 
+     * streams.
+     * Simply calls RetrieveCall() which is kept for backward compatibility.
+     */
+    virtual bool RetrieveConnection();
+
+    /**Return PTrue if the current connection is on hold.
+     * Simply calls IsCallOnHold() which is kept for backward compatibility.
+     */
+    virtual PBoolean IsConnectionOnHold();
+
 #if OPAL_H450
 
     /**Initiate the transfer of an existing call (connection) to a new remote party
@@ -562,32 +588,6 @@ class H323Connection : public OpalRTPConnection
     virtual void OnConsultationTransferSuccess(
       H323Connection & secondaryCall  ///<  Secondary call for consultation
     );
-
-    /**Initiate the transfer of an existing call (connection) to a new remote 
-       party.
-
-       If remoteParty is a valid call token, then the remote party is transferred
-       to that party (consultation transfer) and both calls are cleared.
-     */
-    virtual bool TransferConnection(
-      const PString & remoteParty   ///<  Remote party to transfer the existing call to
-    );
-
-    /**Put the current connection on hold, suspending all media streams.
-     * Simply calls HoldCall() which is kept for backward compatibility.
-     */
-    virtual bool HoldConnection();
-
-    /**Retrieve the current connection from hold, activating all media 
-     * streams.
-     * Simply calls RetrieveCall() which is kept for backward compatibility.
-     */
-    virtual bool RetrieveConnection();
-
-    /**Return PTrue if the current connection is on hold.
-     * Simply calls IsCallOnHold() which is kept for backward compatibility.
-     */
-    virtual PBoolean IsConnectionOnHold();
 
     /**Place the call on hold, suspending all media channels (H.450.4).  Note it is the responsibility 
        of the application layer to delete the MOH Channel if music on hold is provided to the remote

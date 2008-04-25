@@ -336,7 +336,7 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 
   PINDEX pstnPos = options.Find("pstn");
-  if (iaxPos < defProtoPos) {
+  if (pstnPos < defProtoPos) {
     defProto = "pstn:<dn>";
     defProtoPos = pstnPos;
   }
