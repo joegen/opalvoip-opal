@@ -50,6 +50,7 @@
 #include <rtp/rtp.h>
 #include <t120/t120proto.h>
 #include <t38/t38proto.h>
+#include <ptclib/url.h>
 
 #if OPAL_T38FAX
 #include <t38/t38proto.h>
@@ -935,7 +936,7 @@ void OpalConnection::SetLocalPartyName(const PString & name)
 
 PString OpalConnection::GetLocalPartyURL() const
 {
-  return endpoint.GetPrefixName() + ':' + GetLocalPartyName();
+  return endpoint.GetPrefixName() + ':' + PURL::TranslateString(GetLocalPartyName(), PURL::LoginTranslation);
 }
 
 
