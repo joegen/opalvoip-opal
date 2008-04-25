@@ -28,8 +28,8 @@
 
 #include <ptlib.h>
 
-#ifdef __GNUC__
-#pragma implementation "endpoint.h"
+#ifdef P_USE_PRAGMA
+#pragma implementation "rtpep.h"
 #endif
 
 #include <opal/buildopts.h>

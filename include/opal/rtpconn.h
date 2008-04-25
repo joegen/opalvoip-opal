@@ -37,12 +37,11 @@
 #pragma interface
 #endif
 
-#ifdef __GNUC__
-#pragma implementation "rtpconn.h"
-#endif
 
 #include <opal/connection.h>
 #include <opal/mediatype.h>
+
+
 class OpalRTPEndPoint;
 
 //#ifdef HAS_LIBZRTP
@@ -50,6 +49,7 @@ class OpalRTPEndPoint;
 //struct zrtp_conn_ctx_t;
 //#endif
 //#endif
+
 
 /**This class is for encpsulating the IETF Real Time Protocol interface.
  */
