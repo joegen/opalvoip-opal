@@ -161,7 +161,7 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendData(RTP_DataFrame & 
   if (frame.GetPayloadSize() == 0)
     return RTP_UDP::e_IgnorePacket;
 
-  PTRACE(3, "T38_RTP\tReceived RTP packet with payload size " << frame.GetPayloadSize());
+  PTRACE(3, "T38_RTP\tSending RTP packet with payload size " << frame.GetPayloadSize());
 
   PINDEX plLen = frame.GetPayloadSize();
 

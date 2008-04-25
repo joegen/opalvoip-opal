@@ -84,10 +84,13 @@ SDPMediaDescription * OpalAudioMediaType::CreateSDPMediaDescription(const OpalTr
   return new SDPAudioMediaDescription(localAddress);
 }
 
+#if OPAL_VIDEO
 SDPMediaDescription * OpalVideoMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
 {
   return new SDPVideoMediaDescription(localAddress);
 }
+#endif
+
 
 /////////////////////////////////////////////////////////
 

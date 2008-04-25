@@ -53,15 +53,15 @@
 #undef	OPAL_SIP
 #undef	OPAL_H323
 #undef  OPAL_LID
-#ifdef P_EXPAT
-#undef  OPAL_IVR
-#endif
 #undef  OPAL_H224
 #undef  OPAL_T120DATA
 #undef  OPAL_H450
 #undef  OPAL_H460
-#undef  OPAL_RFC4175 
 #undef  OPAL_STATISTICS
+
+#ifdef P_EXPAT
+#undef  OPAL_IVR
+#endif
 
 #ifdef OPAL_H450
 #define H323_H450   OPAL_H450
@@ -88,7 +88,9 @@
 #define NO_OPAL_AUDIO
 #endif
 
-#ifndef OPAL_VIDEO
+#ifdef OPAL_VIDEO
+#undef  OPAL_RFC4175 
+#else
 #define NO_OPAL_VIDEO
 #endif
 
@@ -105,6 +107,7 @@
 // VoiceTronic VPB Support
 //
 
+#if OPAL_LID
 #undef HAS_VPB
 
 #if HAS_VPB
@@ -116,6 +119,8 @@
 
 #endif
 #endif
+#endif
+
 
 /////////////////////////////////////////////////
 //

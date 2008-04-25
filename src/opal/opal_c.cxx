@@ -475,6 +475,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       pcssEP->SetSoundChannelPlayDevice(command.m_param.m_general.m_audioPlayerDevice);
   }
 
+#if OPAL_VIDEO
   PVideoDevice::OpenArgs video = GetVideoInputDevice();
   SET_MESSAGE_STRING(response, m_param.m_general.m_videoInputDevice, video.deviceName);
   if (!IsNullString(command.m_param.m_general.m_videoInputDevice)) {
@@ -495,6 +496,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     video.deviceName = command.m_param.m_general.m_videoPreviewDevice;
     SetVideoPreviewDevice(video);
   }
+#endif
 
   PStringStream strm;
   strm << setfill('\n') << GetMediaFormatOrder();
@@ -509,18 +511,22 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     SetMediaFormatMask(PString(command.m_param.m_general.m_mediaMask).Lines());
 
   strm = "audio";
+#if OPAL_VIDEO
   if (CanAutoStartReceiveVideo())
     strm << " video";
-  SET_MESSAGE_STRING(response, m_param.m_general.m_autoRxMedia, strm);
   if (!IsNullString(command.m_param.m_general.m_autoRxMedia))
     SetAutoStartReceiveVideo(strstr(command.m_param.m_general.m_autoRxMedia, "video") != NULL);
+#endif
+  SET_MESSAGE_STRING(response, m_param.m_general.m_autoRxMedia, strm);
 
   strm = "audio";
+#if OPAL_VIDEO
   if (CanAutoStartTransmitVideo())
     strm << " video";
-  SET_MESSAGE_STRING(response, m_param.m_general.m_autoTxMedia, strm);
   if (!IsNullString(command.m_param.m_general.m_autoTxMedia))
     SetAutoStartTransmitVideo(strstr(command.m_param.m_general.m_autoTxMedia, "video") != NULL);
+#endif
+  SET_MESSAGE_STRING(response, m_param.m_general.m_autoTxMedia, strm);
 
   SET_MESSAGE_STRING(response, m_param.m_general.m_natRouter, GetTranslationHost());
   if (!IsNullString(command.m_param.m_general.m_natRouter)) {

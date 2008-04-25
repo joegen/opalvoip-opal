@@ -38,6 +38,8 @@
 
 #include <opal/transcoders.h>
 
+#if OPAL_VIDEO
+
 #if OPAL_H323
 #include <h323/h323caps.h>
 #endif
@@ -210,7 +212,9 @@ class OpalLostPicture : public OpalMediaCommand
     virtual PString GetName() const;
 };
 
-#endif // __OPAL_VIDCODEC_H
 
+#endif // OPAL_VIDEO
+
+#endif // __OPAL_VIDCODEC_H
 
 /////////////////////////////////////////////////////////////////////////////
