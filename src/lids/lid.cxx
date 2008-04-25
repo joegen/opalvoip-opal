@@ -49,7 +49,7 @@ static OpalLIDRegistration * RegisteredLIDsListHead;
 ostream & operator<<(ostream & o, OpalLineInterfaceDevice::CallProgressTones t)
 {
   static const char * const CallProgressTonesNames[OpalLineInterfaceDevice::NumTones+1] = {
-    "NoTone", "DialTone", "RingTone", "BusyTone", "CongestionTone", "ClearTone", "MwiTone", "CNGTone"
+    "NoTone", "DialTone", "RingTone", "BusyTone", "CongestionTone", "ClearTone", "MwiTone", "CNGTone", "CEDTone"
   };
   if (t+1 < PARRAYSIZE(CallProgressTonesNames))
     return o << CallProgressTonesNames[t+1];
@@ -905,16 +905,10 @@ PString OpalLineInterfaceDevice::GetCountryCodeName() const
 
 PBoolean OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes country)
 {
-  countryCode = country;
-
-  unsigned line;
-  for (line = 0; line < GetLineCount(); line++)
-    SetToneDescription(line, CNGTone, "1100:0.25");
-
   for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++) {
     if (CountryInfo[i].t35Code == country) {
       PTRACE(3, "LID\tCountry set to \"" << CountryInfo[i].fullName << '"');
-      for (line = 0; line < GetLineCount(); line++) {
+      for (unsigned line = 0; line < GetLineCount(); line++) {
         for (int tone = 0; tone < NumTones; tone++) {
           const char * toneStr = CountryInfo[i].tone[tone];
           if (toneStr == NULL) {
@@ -926,12 +920,13 @@ PBoolean OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes country)
           m_callProgressTones[tone] = toneStr;
         }
       }
-      return PTrue;
+      countryCode = country;
+      return true;
     }
   }
 
   PTRACE(2, "LID\tCountry could not be set to \"" << GetCountryCodeName(country) <<"\", leaving as \"" << GetCountryCodeName() << '"');
-  return PTrue;
+  return false;
 }
 
 
