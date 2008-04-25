@@ -781,14 +781,14 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
                                   unsigned lastDigitTimeout,
                                   unsigned firstDigitTimeout)
 {
-  PTRACE(3, "OpalCon\tReadUserInput from " << connection);
+  PTRACE(3, "OpalMan\tReadUserInput from " << connection);
 
   connection.PromptUserInput(PTrue);
   PString digit = connection.GetUserInput(firstDigitTimeout);
   connection.PromptUserInput(PFalse);
 
   if (digit.IsEmpty()) {
-    PTRACE(2, "OpalCon\tReadUserInput first character timeout (" << firstDigitTimeout << "ms) on " << *this);
+    PTRACE(2, "OpalMan\tReadUserInput first character timeout (" << firstDigitTimeout << " seconds) on " << *this);
     return PString::Empty();
   }
 
@@ -798,7 +798,7 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
 
     digit = connection.GetUserInput(lastDigitTimeout);
     if (digit.IsEmpty()) {
-      PTRACE(2, "OpalCon\tReadUserInput last character timeout (" << lastDigitTimeout << "ms) on " << *this);
+      PTRACE(2, "OpalMan\tReadUserInput last character timeout (" << lastDigitTimeout << " seconds) on " << *this);
       return input; // Input so far will have to do
     }
   }
