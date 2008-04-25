@@ -310,6 +310,7 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s, con
   finalFrames.Append(new RTP_DataFrame);
   writeSuccessful = true;
 
+#if OPAL_VIDEO
   OpalMediaFormat mediaFormat = stream->GetMediaFormat();
   unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
@@ -324,6 +325,9 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s, con
          << ", bitrate=" << targetBitRate
          << ", rate control=" << rcEnabled
          << ", window=" << rcWindowSize);
+#else
+  PTRACE(3, "Patch\tCreated Sink: format=" << stream->GetMediaFormat());
+#endif
 }
 
 
@@ -491,6 +495,7 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
 bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
+#if OPAL_VIDEO
   unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
   rcWindowSize = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption());
@@ -504,6 +509,9 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
          << ", bitrate=" << targetBitRate
          << ", rate control=" << rcEnabled
          << ", window=" << rcWindowSize);
+#else
+  PTRACE(3, "Patch\tUpdated Sink: format=" << mediaFormat);
+#endif
 
   if (primaryCodec == NULL)
     return stream->UpdateMediaFormat(mediaFormat);
@@ -558,6 +566,8 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
   return false;
 }
 
+
+#if OPAL_VIDEO
 bool OpalMediaPatch::Sink::RateControlExceeded(const PTimeInterval & currentTime)
 {
   if (!rcEnabled)
@@ -590,6 +600,7 @@ bool OpalMediaPatch::Sink::RateControlExceeded(const PTimeInterval & currentTime
   ++rcConsecutiveFramesSkipped;
   return true;
 }
+#endif
 
 
 bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
@@ -597,11 +608,13 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   if (!writeSuccessful)
     return false;
   
+#if OPAL_VIDEO
   FrameInfo frameInfo;
   frameInfo.time = PTimer::Tick();
   frameInfo.size = 0;
   if (RateControlExceeded(frameInfo.time))
     return true;
+#endif
 
   if (primaryCodec == NULL) {
     RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(sourceFrame.GetPayloadType());
@@ -624,7 +637,9 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     if (secondaryCodec == NULL) {
       if (!stream->WritePacket(*interFrame))
         return (writeSuccessful = false);
+#if OPAL_VIDEO
       frameInfo.size += interFrame->GetPayloadSize() + interFrame->GetHeaderSize();
+#endif
       sourceFrame.SetTimestamp(interFrame->GetTimestamp());
       continue;
     }
@@ -644,15 +659,19 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       patch.FilterFrame(*finalFrame, secondaryCodec->GetOutputFormat());
       if (!stream->WritePacket(*finalFrame))
         return (writeSuccessful = false);
+#if OPAL_VIDEO
       frameInfo.size += finalFrame->GetPayloadSize() + finalFrame->GetHeaderSize();
+#endif
       sourceFrame.SetTimestamp(finalFrame->GetTimestamp());
     }
   }
 
+#if OPAL_VIDEO
   if (rcEnabled && frameInfo.size > 0) {
     frameInfoList.push_back(frameInfo);
     rcTotalSize += frameInfo.size;
   }
+#endif
 
   return true;
 }

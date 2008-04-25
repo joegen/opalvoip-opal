@@ -228,6 +228,7 @@ class OpalMediaPatch : public PObject
         RTP_DataFrameList finalFrames;
         bool              writeSuccessful;
 
+#if OPAL_VIDEO
         bool RateControlExceeded(const PTimeInterval & currentTime);
 
         bool          rcEnabled;
@@ -243,6 +244,7 @@ class OpalMediaPatch : public PObject
           PINDEX        size;
         };
         std::list<FrameInfo> frameInfoList;
+#endif
     };
     PList<Sink> sinks;
 
