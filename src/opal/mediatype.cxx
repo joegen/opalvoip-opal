@@ -82,9 +82,11 @@ OpalMediaTypeDefinition * OpalMediaType::GetDefinition(const OpalMediaType & key
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * _mediaType, const char * _sdpType, unsigned preferredSessionId)
 #if OPAL_SIP
+OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * _mediaType, const char * _sdpType, unsigned preferredSessionId)
   : sdpType(_sdpType != NULL ? _sdpType : "")
+#else
+OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * _mediaType, const char *         , unsigned preferredSessionId)
 #endif
 {
   PWaitAndSignal m(GetMapMutex());

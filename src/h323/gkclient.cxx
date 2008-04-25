@@ -1889,7 +1889,7 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
 }
 
 
-void H323Gatekeeper::OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority)
+void H323Gatekeeper::OnAddInterface(const PIPSocket::InterfaceEntry & /*entry*/, PINDEX priority)
 {
   if (priority == HighPriority)
     return;
