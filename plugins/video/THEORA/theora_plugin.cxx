@@ -197,10 +197,10 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
   yuv.uv_height = (int) (_theoraInfo.height / 2);
   yuv.y_stride  = header->width;
   yuv.uv_stride = (int) (header->width /2);
-  yuv.y         = (uint8_t *)(((unsigned char *)header) + sizeof(frameHeader));
-  yuv.u         = (uint8_t *)((((unsigned char *)header) + sizeof(frameHeader)) 
+  yuv.y         = (unsigned char *)(((unsigned char *)header) + sizeof(frameHeader));
+  yuv.u         = (unsigned char *)((((unsigned char *)header) + sizeof(frameHeader)) 
                            + (int)(yuv.y_stride*header->height)); 
-  yuv.v         = (uint8_t *)(yuv.u + (int)(yuv.uv_stride *header->height/2)); 
+  yuv.v         = (unsigned char *)(yuv.u + (int)(yuv.uv_stride *header->height/2)); 
 
   ret = theora_encode_YUVin( &_theoraState, &yuv );
   if (ret != 0) {
