@@ -550,6 +550,14 @@ void OpalCall::OnReleased(OpalConnection & connection)
   }
 }
 
+
+void OpalCall::OnHold(OpalConnection & /*connection*/,
+                      bool /*fromRemote*/, 
+                      bool /*onHold*/)
+{
+}
+
+
 PBoolean OpalCall::StartRecording(const PFilePath & fn)
 {
   // create the mixer entry
