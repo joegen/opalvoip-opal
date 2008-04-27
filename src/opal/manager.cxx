@@ -617,11 +617,12 @@ void OpalManager::OnReleased(OpalConnection & connection)
 }
 
 
-void OpalManager::OnHold(OpalConnection & connection, bool PTRACE_PARAM(fromRemote), bool PTRACE_PARAM(onHold))
+void OpalManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
 {
   PTRACE(3, "OpalMan\t" << (onHold ? "On" : "Off") << " Hold "
          << (fromRemote ? "from remote" : "request succeeded") << " on " << connection);
   connection.GetEndPoint().OnHold(connection);
+  connection.GetCall().OnHold(connection, fromRemote, onHold);
 }
 
 
