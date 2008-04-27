@@ -99,6 +99,8 @@ class SDPMediaFormat : public PObject
 
     const OpalMediaFormat & GetMediaFormat() const;
 
+    bool ToNormalisedOptions();
+
   protected:
     void AddNTEString(const PString & str);
     void AddNTEToken(const PString & ostr);
@@ -181,6 +183,7 @@ class SDPMediaDescription : public PObject
 
     bool Decode(const PString & value);
     bool Decode(char key, const PString & value);
+    virtual bool PostDecode();
 
     MediaType GetMediaType() const { return mediaType; }
 
