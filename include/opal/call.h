@@ -227,6 +227,18 @@ class OpalCall : public PSafeObject
       OpalConnection & connection   ///<  Connection that was established
     );
 
+    /**A call back function whenever a connection is "held" or "retrieved".
+       This indicates that a connection of a call was held, or
+       retrieved, either locally or by the remote endpoint.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnHold(
+      OpalConnection & connection,   ///<  Connection that was held/retrieved
+      bool fromRemote,               ///<  Indicates remote has held local connection
+      bool onHold                    ///<  Indicates have just been held/retrieved.
+    );
+
     /**Get the other party's connection object.
        This will return the other party in the call. It will return NULL if
        there is no other party yet, or there are more than two parties in the
