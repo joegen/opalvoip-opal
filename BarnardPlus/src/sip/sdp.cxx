@@ -221,8 +221,6 @@ void SDPMediaFormat::SetFMTP(const PString & str)
 
     sep1prev = sep1next+1;
   } while (sep1prev != P_MAX_INDEX);
-
-  mediaFormat.ToNormalisedOptions();
 }
 
 
@@ -242,8 +240,6 @@ PString SDPMediaFormat::GetFMTP() const
   PString str = mediaFormat.GetOptionString("FMTP");
   if (!str.IsEmpty())
     return str;
-
-  mediaFormat.ToCustomisedOptions();
 
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     const OpalMediaOption & option = mediaFormat.GetOption(i);
@@ -350,6 +346,7 @@ void SDPMediaFormat::AddNXEToken(POrdinalSet & nxeSet, const PString & ostr)
 void SDPMediaFormat::PrintOn(ostream & strm) const
 {
   PAssert(!encodingName.IsEmpty(), "SDPAudioMediaFormat encoding name is empty");
+  mediaFormat.ToCustomisedOptions();
 
   strm << "a=rtpmap:" << (int)payloadType << ' ' << encodingName << '/' << clockRate;
   if (!parameters.IsEmpty())
@@ -375,6 +372,13 @@ const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
     }
   }
   return mediaFormat;
+}
+
+
+bool SDPMediaFormat::ToNormalisedOptions()
+{
+  GetMediaFormat(); // Make sure its created;
+  return mediaFormat.ToNormalisedOptions();
 }
 
 
@@ -578,6 +582,19 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
 
     default:
       PTRACE(1, "SDP\tUnknown media information key " << key);
+  }
+
+  return true;
+}
+
+
+bool SDPMediaDescription::PostDecode()
+{
+  bool ok = true;
+
+  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+    if (!format->ToNormalisedOptions())
+      ok = false;
   }
 
   return true;
@@ -1049,6 +1066,8 @@ PString SDPSessionDescription::Encode() const
 
 PBoolean SDPSessionDescription::Decode(const PString & str)
 {
+  bool ok = true;
+
   // break string into lines
   PStringArray lines = str.Lines();
 
@@ -1112,6 +1131,11 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
             break;
 
           case 'm' : // media name and transport address (mandatory)
+            if (currentMedia != NULL) {
+              if (!currentMedia->PostDecode())
+                ok = false;
+            }
+
             currentMedia = new SDPMediaDescription(defaultConnectAddress);
             if (currentMedia->Decode(value)) {
               mediaDescriptions.Append(currentMedia);
@@ -1131,7 +1155,12 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
     }
   }
 
-  return true;
+  if (currentMedia != NULL) {
+    if (!currentMedia->PostDecode())
+      ok = false;
+  }
+
+  return ok;
 }
 
 
