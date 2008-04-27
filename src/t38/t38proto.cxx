@@ -1178,7 +1178,9 @@ static void ReinviteFunction(ModeChangeRequestStruct request)
   PSafePtr<OpalCall> call = request.manager->FindCallWithLock(request.callToken);
   unsigned otherIndex = (call->GetConnection(0)->GetToken() == request.connectionToken) ? 1 : 0;
 
+#if PTRACING
   const char * modeStr = request.newMode ? "fax" : "audio";
+#endif
 
   PSafePtr<OpalConnection> otherParty = call->GetConnection(otherIndex, PSafeReadWrite);
   if (otherParty == NULL) {
@@ -1208,7 +1210,9 @@ static void ReinviteFunction(ModeChangeRequestStruct request)
 
 void OpalT38Connection::RequestFaxMode(bool toFax)
 {
+#if PTRACING
   const char * modeStr = toFax ? "fax" : "audio";
+#endif
 
   PWaitAndSignal m(modeMutex);
 
@@ -1246,7 +1250,9 @@ void OpalT38Connection::RequestFaxMode(bool toFax)
 
 void OpalT38Connection::InFaxMode(bool toFax)
 {
+#if PTRACING
   const char * modeStr = toFax ? "fax" : "audio";
+#endif
 
   PWaitAndSignal m(modeMutex);
 
