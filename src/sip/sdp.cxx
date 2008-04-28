@@ -1344,8 +1344,8 @@ SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByIndex(PINDEX i
 
 SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sessionID) const
 {
-  if (sessionID < (unsigned)mediaDescriptions.GetSize())
-    return mediaDescriptions[sessionID].GetDirection();
+  if (sessionID > 0 && sessionID <= (unsigned)mediaDescriptions.GetSize())
+    return mediaDescriptions[sessionID-1].GetDirection();
   
   return direction;
 }
