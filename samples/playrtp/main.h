@@ -51,6 +51,7 @@ class PlayRTP : public PProcess
     WORD m_srcPort;
     WORD m_dstPort;
     bool m_singleStep;
+    bool m_info;
 
     OpalTranscoder     * m_transcoder;
     PSoundChannel      * m_player;
