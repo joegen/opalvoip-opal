@@ -1315,15 +1315,6 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
 
   // cause the plugin manager to load all dynamic plugins
   pluginMgr->AddNotifier(PCREATE_NOTIFIER(OnLoadModule), PTrue);
-
-#if OPAL_H323
-  // register the capabilities
-  while (capabilityCreateList.size() > 0) {
-    CapabilityCreateListType::iterator r = capabilityCreateList.begin();
-    RegisterCapability(r->encoderCodec, r->decoderCodec);
-    capabilityCreateList.erase(r);
-  }
-#endif
 }
 
 OpalPluginCodecManager::~OpalPluginCodecManager()
@@ -1651,7 +1642,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
 
 #if OPAL_H323
   PTRACE(4, "OpalPlugin\tDeferring creation of H.323 capability for plugin codec " << encoderCodec->destFormat);
-  capabilityCreateList.push_back(CapabilityListCreateEntry(encoderCodec, decoderCodec));
+  RegisterCapability(encoderCodec, decoderCodec);
 #endif
 }
 
