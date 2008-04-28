@@ -90,6 +90,7 @@ void PlayRTP::Main()
              "V-video-driver:"
              "v-video-device:"
              "p-singlestep."
+             "i-info."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -117,6 +118,7 @@ void PlayRTP::Main()
               "  -V or --video-driver drv : Video display driver to use.\n"
               "  -v or --video-device dev : Video display device to use.\n"
               "  -p or --singlestep       : Single step through input data.\n"
+              "  -i or --info             : Display per-frame information.\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
               "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -160,6 +162,7 @@ void PlayRTP::Main()
   m_dstPort = PIPSocket::GetPortByService("udp", args.GetOptionString('d', "5000"));
 
   m_singleStep = args.HasOption('p');
+  m_info       = args.HasOption('i');
 
   // Audio player
   PString driverName = args.GetOptionString('A');
@@ -388,12 +391,19 @@ void PlayRTP::Play(const PFilePath & filename)
     const OpalMediaFormat & inputFmt = m_transcoder->GetInputFormat();
 
     if (rtp.GetTimestamp() != lastTimeStamp) {
-      PThread::Sleep((rtp.GetTimestamp() - lastTimeStamp)/inputFmt.GetTimeUnits());
+      unsigned msecs = (rtp.GetTimestamp() - lastTimeStamp)/inputFmt.GetTimeUnits();
+      if (msecs < 3000) 
+        PThread::Sleep(msecs);
+      else 
+        cout << "ignoring timestamp jump > 3 seconds" << endl;
       lastTimeStamp = rtp.GetTimestamp();
     }
 
     if (m_singleStep) 
       cout << "Input packet of length " << rtp.GetPayloadSize() << (rtp.GetMarker() ? " with MARKER" : "") << " -> ";
+    else if (m_info)
+      cout << "ssrc=" << hex << rtp.GetSyncSource() << dec << ",ts=" << rtp.GetTimestamp() << ",seq = " << rtp.GetSequenceNumber() << endl;
+
 
     RTP_DataFrameList output;
     if (!m_transcoder->ConvertFrames(rtp, output)) {
