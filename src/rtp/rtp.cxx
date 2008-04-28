@@ -210,7 +210,7 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
        << " PT=" << GetPayloadType()
        << " SN=" << GetSequenceNumber()
        << " TS=" << GetTimestamp()
-       << " SSRC=" << GetSyncSource()
+       << " SSRC=" << hex << GetSyncSource() << dec
        << " size=" << GetPayloadSize()
        << '\n';
 
@@ -804,8 +804,8 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendData(RTP_DataFrame & 
            << " x=" << frame.GetExtension()
            << " seq=" << frame.GetSequenceNumber()
            << " ts=" << frame.GetTimestamp()
-           << " src=" << frame.GetSyncSource()
-           << " ccnt=" << frame.GetContribSrcCount());
+           << " src=" << hex << frame.GetSyncSource()
+           << " ccnt=" << frame.GetContribSrcCount() << dec);
   }
 
   else {
@@ -941,20 +941,22 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
            << " x=" << frame.GetExtension()
            << " seq=" << frame.GetSequenceNumber()
            << " ts=" << frame.GetTimestamp()
-           << " src=" << frame.GetSyncSource()
-           << " ccnt=" << frame.GetContribSrcCount());
+           << " src=" << hex << frame.GetSyncSource()
+           << " ccnt=" << frame.GetContribSrcCount() << dec);
   }
   else {
     if (frame.GetSyncSource() != syncSourceIn) {
-      if (allowAnySyncSource)
+      if (allowAnySyncSource) {
+        PTRACE(2, "RTP\tSession " << sessionID << ", SSRC changed from " << hex << frame.GetSyncSource() << " to " << syncSourceIn << dec);
         syncSourceIn = frame.GetSyncSource();
+      } 
       else if (allowOneSyncSourceChange) {
-        PTRACE(2, "RTP\tSession " << sessionID << ", allowed one SSRC change from SSRC=" << syncSourceIn << " to =" << frame.GetSyncSource());
+        PTRACE(2, "RTP\tSession " << sessionID << ", allowed one SSRC change from SSRC=" << hex << syncSourceIn << " to =" << dec << frame.GetSyncSource() << dec);
         syncSourceIn = frame.GetSyncSource();
         allowOneSyncSourceChange = false;
       }
       else {
-        PTRACE(2, "RTP\tSession " << sessionID << ", packet from SSRC=" << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn);
+        PTRACE(2, "RTP\tSession " << sessionID << ", packet from SSRC=" << hex << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn << dec);
         return e_IgnorePacket; // Non fatal error, just ignore
       }
     }
