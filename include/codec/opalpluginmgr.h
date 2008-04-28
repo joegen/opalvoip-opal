@@ -148,14 +148,6 @@ class OpalPluginCodecManager : public PPluginModuleManager
 
 #if OPAL_H323
     void RegisterCapability(PluginCodec_Definition * encoderCodec, PluginCodec_Definition * decoderCodec);
-    struct CapabilityListCreateEntry {
-      CapabilityListCreateEntry(PluginCodec_Definition * e, PluginCodec_Definition * d)
-        : encoderCodec(e), decoderCodec(d) { }
-      PluginCodec_Definition * encoderCodec;
-      PluginCodec_Definition * decoderCodec;
-    };
-    typedef vector<CapabilityListCreateEntry> CapabilityCreateListType;
-    CapabilityCreateListType capabilityCreateList;
 #endif
 };
 
