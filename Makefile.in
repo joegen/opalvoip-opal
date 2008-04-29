@@ -81,7 +81,8 @@ STDCCFLAGS += @STDCCFLAGS@
 VPATH_CXX := $(OPAL_SRCDIR)/opal \
 	     $(OPAL_SRCDIR)/rtp \
 	     $(OPAL_SRCDIR)/lids \
-	     $(OPAL_SRCDIR)/codec 
+	     $(OPAL_SRCDIR)/codec \
+             $(OPAL_SRCDIR)/t38
 
 ifneq (,$(wildcard src/iax2))
 IAX2_AVAIL = 1
@@ -103,10 +104,6 @@ H323_AVAIL = 1
 VPATH_CXX += $(OPAL_SRCDIR)/h323 \
 	     $(OPAL_SRCDIR)/t120 \
 	     $(OPAL_SRCDIR)/asn 
-endif
-
-ifneq (,$(wildcard src/h323))
-VPATH_CXX += $(OPAL_SRCDIR)/t38 
 endif
 
 ifneq (,$(wildcard src/h224))
