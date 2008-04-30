@@ -110,7 +110,11 @@ class SIPEndPoint_C : public SIPEndPoint
 class OpalManager_C : public OpalManager
 {
   public:
-    OpalManager_C() : pcssEP(NULL) { }
+    OpalManager_C(unsigned version)
+      : pcssEP(NULL)
+      , m_apiVersion(version)
+    {
+    }
 
     bool Initialise(const PCaselessString & options);
 
@@ -136,6 +140,7 @@ class OpalManager_C : public OpalManager
 
     OpalPCSSEndPoint_C * pcssEP;
 
+    unsigned                  m_apiVersion;
     std::queue<OpalMessage *> m_messageQueue;
     PMutex                    m_messageMutex;
     PSyncPoint                m_messageAvailable;
@@ -157,8 +162,15 @@ public:
     PString filename = "DEBUGSTREAM";
     static char const TraceFileKey[] = "TraceFile=";
     pos = options.Find(TraceFileKey);
-    if (pos != P_MAX_INDEX)
-      filename = options(pos+sizeof(TraceFileKey)-1, options.Find(' ', pos)-1);
+    if (pos != P_MAX_INDEX) {
+      pos += sizeof(TraceFileKey) - 1;
+      PINDEX end;
+      if (options[pos] == '"')
+        end = options.Find('"', ++pos);
+      else
+        end = options.Find(' ', pos);
+      filename = options(pos, end-1);
+    }
 
     PTrace::Initialise(level, filename);
 #endif
@@ -172,8 +184,9 @@ private:
 
 struct OpalHandleStruct
 {
-  OpalHandleStruct(const PCaselessString & options)
+  OpalHandleStruct(unsigned version, const PCaselessString & options)
     : process(options)
+    , manager(version)
   {
   }
 
@@ -565,6 +578,33 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   response->m_param.m_general.m_maxAudioJitter = GetMaxAudioJitterDelay();
   if (command.m_param.m_general.m_minAudioJitter != 0 && command.m_param.m_general.m_maxAudioJitter != 0)
     SetAudioJitterDelay(command.m_param.m_general.m_minAudioJitter, command.m_param.m_general.m_maxAudioJitter);
+
+  if (m_apiVersion < 2)
+    return;
+
+  OpalSilenceDetector::Params silenceDetectParams = GetSilenceDetectParams();
+  response->m_param.m_general.m_silenceDetectMode = silenceDetectParams.m_mode+1;
+  if (command.m_param.m_general.m_silenceDetectMode != 0)
+    silenceDetectParams.m_mode = (OpalSilenceDetector::Mode)(command.m_param.m_general.m_silenceDetectMode-1);
+  response->m_param.m_general.m_silenceThreshold = silenceDetectParams.m_threshold;
+  if (command.m_param.m_general.m_silenceThreshold != 0)
+    silenceDetectParams.m_threshold = command.m_param.m_general.m_silenceThreshold;
+  response->m_param.m_general.m_signalDeadband = silenceDetectParams.m_signalDeadband;
+  if (command.m_param.m_general.m_signalDeadband != 0)
+    silenceDetectParams.m_signalDeadband = command.m_param.m_general.m_signalDeadband;
+  response->m_param.m_general.m_silenceDeadband = silenceDetectParams.m_silenceDeadband;
+  if (command.m_param.m_general.m_silenceDeadband != 0)
+    silenceDetectParams.m_silenceDeadband = command.m_param.m_general.m_silenceDeadband;
+  response->m_param.m_general.m_silenceAdaptPeriod = silenceDetectParams.m_adaptivePeriod;
+  if (command.m_param.m_general.m_silenceAdaptPeriod != 0)
+    silenceDetectParams.m_adaptivePeriod = command.m_param.m_general.m_silenceAdaptPeriod;
+  SetSilenceDetectParams(silenceDetectParams);
+
+  OpalEchoCanceler::Params echoCancelParams = GetEchoCancelParams();
+  response->m_param.m_general.m_echoCancellation = echoCancelParams.m_mode+1;
+  if (command.m_param.m_general.m_echoCancellation != 0)
+    echoCancelParams.m_mode = (OpalEchoCanceler::Mode)(command.m_param.m_general.m_echoCancellation-1);
+  SetEchoCancelParams(echoCancelParams);
 }
 
 
@@ -970,10 +1010,18 @@ void OpalManager_C::OnClearedCall(OpalCall & call)
 
 extern "C" {
 
-  OpalHandle OPAL_EXPORT OpalInitialise(const char * options)
+  OpalHandle OPAL_EXPORT OpalInitialise(unsigned * version, const char * options)
   {
     PCaselessString optionsString = IsNullString(options) ? "pcss h323 sip iax2 pots pstn ivr" : options;
-    OpalHandle opal = new OpalHandleStruct(optionsString);
+
+    unsigned callerVersion = 1;
+    if (version != NULL) {
+      callerVersion = *version;
+      if (callerVersion > OPAL_C_API_VERSION)
+        *version = OPAL_C_API_VERSION;
+    }
+
+    OpalHandle opal = new OpalHandleStruct(callerVersion, optionsString);
     if (opal->manager.Initialise(optionsString))
       return opal;
 
