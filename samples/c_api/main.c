@@ -77,6 +77,8 @@ int InitialiseOPAL()
 {
   OpalMessage   command;
   OpalMessage * response;
+  unsigned      version;
+
 
   if ((hDLL = LoadLibrary(OPAL_DLL)) == NULL) {
     fprintf(stderr, "Could not file %s\n", OPAL_DLL);
@@ -102,7 +104,8 @@ int InitialiseOPAL()
   ///////////////////////////////////////////////
   // Initialisation
 
-  if ((hOPAL = InitialiseFunction("pc h323 sip TraceLevel=4")) == NULL) {
+  version = OPAL_C_API_VERSION;
+  if ((hOPAL = InitialiseFunction(&version, "pc h323 sip TraceLevel=4")) == NULL) {
     fputs("Could not initialise OPAL\n", stderr);
     return 0;
   }
