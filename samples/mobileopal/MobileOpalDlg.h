@@ -50,6 +50,7 @@ protected:
   HICON m_hIcon;
   CCommandBar m_dlgCommandBar;
   OpalHandle m_opal;
+  unsigned m_opalVersion;
   CStatic m_ctrlStatus;
   CEdit m_ctrlAddress;
   CString m_callAddress;
