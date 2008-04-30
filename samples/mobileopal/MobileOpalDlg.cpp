@@ -98,6 +98,7 @@ static void SetOptionInt(LPCTSTR szKey, UINT szValue)
 CMobileOpalDlg::CMobileOpalDlg(CWnd* pParent /*=NULL*/)
   : CDialog(CMobileOpalDlg::IDD, pParent)
   , m_opal(NULL)
+  , m_opalVersion(OPAL_C_API_VERSION)
 {
   m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -183,7 +184,7 @@ void CMobileOpalDlg::InitialiseOPAL()
   // Start up and initialise OPAL
 
   if (m_opal == NULL) {
-    m_opal = OpalInitialise("pc h323 sip TraceLevel=3 TraceFile=\\Trace.log");
+    m_opal = OpalInitialise(&m_opalVersion, "pc h323 sip TraceLevel=3 TraceFile=\\Trace.log");
     if (m_opal == NULL) {
       ErrorBox(IDS_INIT_FAIL);
       EndDialog(IDCANCEL);
