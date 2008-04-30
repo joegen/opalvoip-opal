@@ -55,13 +55,18 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION "1"
+#define OPAL_C_API_VERSION 2
 
 
 ///////////////////////////////////////
 
 /** Initialise the OPAL system, returning a "handle" to the system that must
     be used in other calls to OPAL.
+
+    The version parameter indicates the version of the API being used by the
+    caller. It should always be set to the constant OPAL_C_API_VERSION. On
+    return the library will indicate the API version it supports, if it is
+    lower than that provided by the application.
 
     The C string options are space separated tokens indicating various options
     to be enabled, for example the protocols to be available. NULL or an empty
@@ -71,17 +76,17 @@ typedef struct OpalMessage OpalMessage;
 
     Additional options are:
 
-        Version=1      API version of caller, the stack will use structures
-                       based on this version of the API.
-        TraceLevel=1   Level for tracing. 
-        TraceFile=name Set the filename for trace output. Note "name" cannot
-                       contain any spaces.
+        TraceLevel=1     Level for tracing. 
+        TraceFile="name" Set the filename for trace output. Note quotes are
+                         required if spaces are in filename.
+    It should also be noted that there must not be spaces around the '=' sign
+    in the above options.
 
     If NULL is returned then an initialisation error occurred. This can only
     really occur if the user specifies prefixes which are not supported by
     the library.
   */
-OpalHandle OPAL_EXPORT OpalInitialise(const char * options);
+OpalHandle OPAL_EXPORT OpalInitialise(unsigned * version, const char * options);
 
 /** String representation of the OpalIntialise() which may be used for late
     binding to the library.
@@ -91,7 +96,7 @@ OpalHandle OPAL_EXPORT OpalInitialise(const char * options);
 /** Typedef representation of the pointer to the OpalIntialise() function which
     may be used for late binding to the library.
  */
-typedef OpalHandle (OPAL_EXPORT *OpalInitialiseFunction)(const char * prefixes);
+typedef OpalHandle (OPAL_EXPORT *OpalInitialiseFunction)(unsigned * version, const char * options);
 
 
 ///////////////////////////////////////
@@ -320,6 +325,21 @@ typedef struct OpalParamGeneral {
                                            received this sets the maximum time of the adaptive jitter buffer
                                            which smooths out irregularities in the transmission of audio
                                            data over the Internet. */
+  unsigned     m_silenceDetectMode;   /**< Silence detection mode. This controls the silence detection
+                                           algorithm for audio transmission: 0=no change, 1=disabled,
+                                           2=fixed, 3=adaptive. */
+  unsigned     m_silenceThreshold;    /**< Silence detection threshold value. This applies if
+                                           m_silenceDetectMode is fixed (2) and is a PCM-16 value. */
+  unsigned     m_signalDeadband;      /**< Time signal is required before audio is transmitted. This is
+                                           is RTP timestamp units (8000Hz). */
+  unsigned     m_silenceDeadband;     /**< Time silence is required before audio is transmission is stopped.
+                                           This is is RTP timestamp units (8000Hz). */
+  unsigned     m_silenceAdaptPeriod;  /**< Window for adapting the silence threashold. This applies if
+                                           m_silenceDetectMode is adaptive (3). This is is RTP timestamp
+                                           units (8000Hz). */
+  unsigned     m_echoCancellation;    /**< Accoustic Echo Cancellation control. 0=no change, 1=disabled,
+                                           2=enabled. */
+
 } OpalParamGeneral;
 
 
