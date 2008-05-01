@@ -1012,9 +1012,7 @@ void OpalConnection::PreviewPeerMediaFormats(const OpalMediaFormatList & /*fmts*
 
 OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 {
-  if (localMediaFormats.IsEmpty())
-    localMediaFormats = ownerCall.GetMediaFormats(*this, FALSE);
-  return localMediaFormats;
+  return ownerCall.GetMediaFormats(*this, FALSE);
 }
 
 void OpalConnection::OnMediaPatchStart(unsigned, bool)

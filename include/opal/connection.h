@@ -1379,7 +1379,6 @@ class OpalConnection : public PSafeObject
     OpalT38Protocol     * t38handler;
 #endif
 
-    OpalMediaFormatList        localMediaFormats;
     MediaAddressesDict         mediaTransportAddresses;
     PSafeList<OpalMediaStream> mediaStreams;
 
