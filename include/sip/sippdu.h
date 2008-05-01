@@ -188,6 +188,9 @@ class SIPMIMEInfo : public PMIMEInfo
   public:
     SIPMIMEInfo(PBoolean compactForm = PFalse);
 
+    virtual void PrintOn(ostream & strm) const;
+    virtual void ReadFrom(istream & strm);
+
     void SetForm(PBoolean v) { compactForm = v; }
 
     PString GetContentType() const;
@@ -306,23 +309,39 @@ class SIPMIMEInfo : public PMIMEInfo
 
     /** return the value of a header field parameter, empty if none
      */
-    static PString GetFieldParameter(
-      const PString & paramName,
-      const PString & fieldValue
-    );
-    
+    PString GetFieldParameter(
+      const PString & fieldName,    ///< Field name in dictionary
+      const PString & paramName,    ///< Field parameter name
+      const PString & defaultValue = PString::Empty()  ///< Default value for parameter
+    ) const { return ExtractFieldParameter((*this)(fieldName), paramName, defaultValue); }
+
     /** set the value for a header field parameter, replace the
      *  current value, or add the parameter and its
      *  value if not already present.
      */
-    void SetFieldParameter(const PString &,
-			   PString &,
-			   const PString &);
-    
-    /** return PTrue if the header field parameter is present
+    void SetFieldParameter(
+      const PString & fieldName,    ///< Field name in dictionary
+      const PString & paramName,    ///< Field parameter name
+      const PString & newValue      ///< New value for parameter
+    ) { SetAt(fieldName, InsertFieldParameter((*this)(fieldName), paramName, newValue)); }
+
+    /** return the value of a header field parameter, empty if none
      */
-    PBoolean HasFieldParameter(const PString &,
-			   const PString &);
+    static PString ExtractFieldParameter(
+      const PString & fieldValue,   ///< Value of field string
+      const PString & paramName,    ///< Field parameter name
+      const PString & defaultValue = PString::Empty()  ///< Default value for parameter
+    );
+
+    /** set the value for a header field parameter, replace the
+     *  current value, or add the parameter and its
+     *  value if not already present.
+     */
+    static PString InsertFieldParameter(
+      const PString & fieldValue,   ///< Value of field string
+      const PString & paramName,    ///< Field parameter name
+      const PString & newValue      ///< New value for parameter
+    );
 
   protected:
     	/** return list of route values from internal comma-delimited list
@@ -333,10 +352,6 @@ class SIPMIMEInfo : public PMIMEInfo
 	    value formed as "<v[0]>,<v[1]>,<v[2]>" etc
 	 */
     void SetRouteList(const char * name, const PStringList & v);
-
-	/** return string keyed by full or compact header
-	 */
-    PString GetFullOrCompact(const char * fullForm, char compactForm) const;
 
     /// Encode using compact form
     PBoolean compactForm;

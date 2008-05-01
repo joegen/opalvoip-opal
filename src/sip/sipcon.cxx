@@ -320,18 +320,6 @@ void SIPConnection::OnReleased()
 }
 
 
-static PString ExtractTag(const PString & url)
-{
-  static const char tag[] = ";tag=";
-  PINDEX pos = url.Find(tag);
-  if (pos == P_MAX_INDEX)
-    return PString::Empty();
-
-  pos += sizeof(tag)-1;
-  return url(pos, url.FindOneOf(";?", pos)-1);
-}
-
-
 bool SIPConnection::TransferConnection(const PString & remoteParty)
 {
   // There is still an ongoing REFER transaction 
@@ -350,8 +338,8 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
       PStringStream referTo;
       referTo << sip->GetRemotePartyCallbackURL()
               << "?Replaces=" << sip->GetToken()
-              << "%3Bto-tag%3D" << ExtractTag(sip->GetDialogFrom()) // "to/from" is from the other sides perspective
-              << "%3Bfrom-tag%3D" << ExtractTag(sip->GetDialogTo());
+              << "%3Bto-tag%3D"   << SIPMIMEInfo::ExtractFieldParameter(sip->GetDialogFrom(), "tag") // "to/from" is from the other sides perspective
+              << "%3Bfrom-tag%3D" << SIPMIMEInfo::ExtractFieldParameter(sip->GetDialogTo(), "tag");
       referTransaction = new SIPRefer(*this, *transport, referTo, GetLocalPartyURL());
       referTransaction->GetMIME().SetAt("Refer-Sub", "false"); // Use RFC4488 to indicate we are NOT doing NOTIFYs
       return referTransaction->Start();
@@ -1399,11 +1387,13 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PBoolean isReinvite;
 
   const SIPMIMEInfo & requestMIME = request.GetMIME();
-  PString requestTo = requestMIME.GetTo();
-  PString requestFrom = requestMIME.GetFrom();
+  PString requestFromTag = requestMIME.GetFieldParameter("From", "tag");
+  PString requestToTag   = requestMIME.GetFieldParameter("To",   "tag");
 
   if (IsOriginating()) {
-    if (m_dialogTo != requestFrom || m_dialogFrom != requestTo) {
+    // Check for in the same dialog
+    if (SIPMIMEInfo::ExtractFieldParameter(m_dialogTo,   "tag") != requestFromTag ||
+        SIPMIMEInfo::ExtractFieldParameter(m_dialogFrom, "tag") != requestToTag) {
       PTRACE(2, "SIP\tIgnoring INVITE from " << request.GetURI() << " when originated call.");
       SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
       SendPDU(response, request.GetViaAddress(endpoint));
@@ -1430,11 +1420,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       }
 
       // #2 - Different "dialog" determined by the tags in the to and from fields indicate forking
-      PString origToTag   = originalInvite->GetMIME().GetFieldParameter("tag", originalMIME.GetTo());
-      PString origFromTag = originalInvite->GetMIME().GetFieldParameter("tag", originalMIME.GetFrom());
-      PString fromTag = request.GetMIME().GetFieldParameter("tag", requestFrom);
-      PString toTag   = request.GetMIME().GetFieldParameter("tag", requestTo);
-      if (fromTag != origFromTag || toTag != origToTag) {
+      if (requestMIME.GetFieldParameter("From", "tag") != requestFromTag ||
+          requestMIME.GetFieldParameter("To",   "tag") != requestToTag) {
         PTRACE(3, "SIP\tIgnoring forked INVITE from " << request.GetURI());
         SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
         response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
@@ -1690,10 +1677,10 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
   }
 
   // Forked request
-  PString origFromTag = originalInvite->GetMIME().GetFieldParameter("tag", originalInvite->GetMIME().GetFrom());
-  PString origToTag   = originalInvite->GetMIME().GetFieldParameter("tag", originalInvite->GetMIME().GetTo());
-  PString fromTag     = response.GetMIME().GetFieldParameter("tag", response.GetMIME().GetFrom());
-  PString toTag       = response.GetMIME().GetFieldParameter("tag", response.GetMIME().GetTo());
+  PString origFromTag = originalInvite->GetMIME().GetFieldParameter("From", "tag");
+  PString origToTag   = originalInvite->GetMIME().GetFieldParameter("To",   "tag");
+  PString fromTag     = response.GetMIME().GetFieldParameter("From", "tag");
+  PString toTag       = response.GetMIME().GetFieldParameter("To",   "tag");
   if (fromTag != origFromTag || (!toTag.IsEmpty() && (toTag != origToTag))) {
     PTRACE(3, "SIP\tACK received for forked INVITE from " << response.GetURI());
     return;
