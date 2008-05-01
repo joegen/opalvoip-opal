@@ -165,6 +165,26 @@ const char * SIP_PDU::GetStatusCodeDescription (int code)
 }
 
 
+static struct {
+  char         compact;
+  const char * full;
+} const CompactForms[] = {
+  { 'l', "Content-Length" },
+  { 'c', "Content-Type" },
+  { 'e', "Content-Encoding" },
+  { 'f', "From" },
+  { 'i', "Call-ID" },
+  { 'm', "Contact" },
+  { 's', "Subject" },
+  { 't', "To" },
+  { 'v', "Via" },
+  { 'r', "Refer-To" },
+  { 'b', "Referred-By" },
+  { 'k', "Supported" },
+  { 'o', "Event" }
+};
+
+
 static const char * const AlgorithmNames[SIPDigestAuthentication::NumAlgorithms] = {
   "MD5"
 };
@@ -403,9 +423,51 @@ SIPMIMEInfo::SIPMIMEInfo(PBoolean _compactForm)
 }
 
 
+void SIPMIMEInfo::PrintOn(ostream & strm) const
+{
+  for (PINDEX i = 0; i < GetSize(); i++) {
+    PCaselessString name = GetKeyAt(i);
+    PString value = GetDataAt(i);
+
+    if (compactForm) {
+      for (PINDEX i = 0; i < PARRAYSIZE(CompactForms); ++i) {
+        if (name == CompactForms[i].full) {
+          name = CompactForms[i].compact;
+          break;
+        }
+      }
+    }
+
+    if (value.FindOneOf("\r\n") == P_MAX_INDEX)
+      strm << name << ": " << value << "\r\n";
+    else {
+      PStringArray vals = value.Lines();
+      for (PINDEX j = 0; j < vals.GetSize(); j++)
+        strm << name << ": " << vals[j] << "\r\n";
+    }
+  }
+
+  strm << "\r\n";
+}
+
+
+void SIPMIMEInfo::ReadFrom(istream & strm)
+{
+  PMIMEInfo::ReadFrom(strm);
+
+  for (PINDEX i = 0; i < PARRAYSIZE(CompactForms); ++i) {
+    PCaselessString compact(CompactForms[i].compact);
+    if (Contains(compact)) {
+      SetAt(CompactForms[i].full, *GetAt(compact));
+      RemoveAt(compact);
+    }
+  }
+}
+
+
 PINDEX SIPMIMEInfo::GetContentLength() const
 {
-  PString len = GetFullOrCompact("Content-Length", 'l');
+  PString len = GetString("Content-Length");
   if (len.IsEmpty())
     return 0; //P_MAX_INDEX;
   return len.AsInteger();
@@ -413,43 +475,43 @@ PINDEX SIPMIMEInfo::GetContentLength() const
 
 PBoolean SIPMIMEInfo::IsContentLengthPresent() const
 {
-  return !GetFullOrCompact("Content-Length", 'l').IsEmpty();
+  return Contains("Content-Length");
 }
 
 
 PString SIPMIMEInfo::GetContentType() const
 {
-  return GetFullOrCompact("Content-Type", 'c');
+  return GetString("Content-Type");
 }
 
 
 void SIPMIMEInfo::SetContentType(const PString & v)
 {
-  SetAt(compactForm ? "c" : "Content-Type",  v);
+  SetAt("Content-Type",  v);
 }
 
 
 PString SIPMIMEInfo::GetContentEncoding() const
 {
-  return GetFullOrCompact("Content-Encoding", 'e');
+  return GetString("Content-Encoding");
 }
 
 
 void SIPMIMEInfo::SetContentEncoding(const PString & v)
 {
-  SetAt(compactForm ? "e" : "Content-Encoding",  v);
+  SetAt("Content-Encoding",  v);
 }
 
 
 PString SIPMIMEInfo::GetFrom() const
 {
-  return GetFullOrCompact("From", 'f');
+  return GetString("From");
 }
 
 
 void SIPMIMEInfo::SetFrom(const PString & v)
 {
-  SetAt(compactForm ? "f" : "From",  v);
+  SetAt("From",  v);
 }
 
 PString SIPMIMEInfo::GetPAssertedIdentity() const
@@ -474,25 +536,25 @@ void SIPMIMEInfo::SetPPreferredIdentity(const PString & v)
 
 PString SIPMIMEInfo::GetCallID() const
 {
-  return GetFullOrCompact("Call-ID", 'i');
+  return GetString("Call-ID");
 }
 
 
 void SIPMIMEInfo::SetCallID(const PString & v)
 {
-  SetAt(compactForm ? "i" : "Call-ID",  v);
+  SetAt("Call-ID",  v);
 }
 
 
 PString SIPMIMEInfo::GetContact() const
 {
-  return GetFullOrCompact("Contact", 'm');
+  return GetString("Contact");
 }
 
 
 void SIPMIMEInfo::SetContact(const PString & v)
 {
-  SetAt(compactForm ? "m" : "Contact",  v);
+  SetAt("Contact",  v);
 }
 
 
@@ -504,38 +566,38 @@ void SIPMIMEInfo::SetContact(const SIPURL & url)
 
 PString SIPMIMEInfo::GetSubject() const
 {
-  return GetFullOrCompact("Subject", 's');
+  return GetString("Subject");
 }
 
 
 void SIPMIMEInfo::SetSubject(const PString & v)
 {
-  SetAt(compactForm ? "s" : "Subject",  v);
+  SetAt("Subject",  v);
 }
 
 
 PString SIPMIMEInfo::GetTo() const
 {
-  return GetFullOrCompact("To", 't');
+  return GetString("To");
 }
 
 
 void SIPMIMEInfo::SetTo(const PString & v)
 {
-  SetAt(compactForm ? "t" : "To",  v);
+  SetAt("To",  v);
 }
 
 
 PString SIPMIMEInfo::GetVia() const
 {
-  return GetFullOrCompact("Via", 'v');
+  return GetString("Via");
 }
 
 
 void SIPMIMEInfo::SetVia(const PString & v)
 {
   if (!v.IsEmpty())
-    SetAt(compactForm ? "v" : "Via",  v);
+    SetAt("Via",  v);
 }
 
 
@@ -560,41 +622,41 @@ void SIPMIMEInfo::SetViaList(const PStringList & v)
       fieldValue << '\n';
     fieldValue << *via;
   }
-  SetAt(compactForm ? "v" : "Via", fieldValue);
+  SetAt("Via", fieldValue);
 }
 
 
 PString SIPMIMEInfo::GetReferTo() const
 {
-  return GetFullOrCompact("Refer-To", 'r');
+  return GetString("Refer-To");
 }
 
 
 void SIPMIMEInfo::SetReferTo(const PString & r)
 {
-  SetAt(compactForm ? "r" : "Refer-To",  r);
+  SetAt("Refer-To",  r);
 }
 
 PString SIPMIMEInfo::GetReferredBy() const
 {
-  return GetFullOrCompact("Referred-By", 'b');
+  return GetString("Referred-By");
 }
 
 
 void SIPMIMEInfo::SetReferredBy(const PString & r)
 {
-  SetAt(compactForm ? "b" : "Referred-By",  r);
+  SetAt("Referred-By",  r);
 }
 
 void SIPMIMEInfo::SetContentLength(PINDEX v)
 {
-  SetAt(compactForm ? "l" : "Content-Length", PString(PString::Unsigned, v));
+  SetAt("Content-Length", PString(PString::Unsigned, v));
 }
 
 
 PString SIPMIMEInfo::GetCSeq() const
 {
-  return (*this)("CSeq");       // no compact form
+  return GetString("CSeq");       // no compact form
 }
 
 
@@ -634,7 +696,7 @@ PStringList SIPMIMEInfo::GetRouteList(const char * name) const
 {
   PStringList routeSet;
 
-  PString s = (*this)(name);
+  PString s = GetString(name);
   PINDEX left;
   PINDEX right = 0;
   while ((left = s.Find('<', right)) != P_MAX_INDEX &&
@@ -662,7 +724,7 @@ void SIPMIMEInfo::SetRouteList(const char * name, const PStringList & v)
 
 PString SIPMIMEInfo::GetAccept() const
 {
-  return (*this)(PCaselessString("Accept"));    // no compact form
+  return GetString("Accept");    // no compact form
 }
 
 
@@ -674,7 +736,7 @@ void SIPMIMEInfo::SetAccept(const PString & v)
 
 PString SIPMIMEInfo::GetAcceptEncoding() const
 {
-  return (*this)(PCaselessString("Accept-Encoding"));   // no compact form
+  return GetString("Accept-Encoding");   // no compact form
 }
 
 
@@ -686,7 +748,7 @@ void SIPMIMEInfo::SetAcceptEncoding(const PString & v)
 
 PString SIPMIMEInfo::GetAcceptLanguage() const
 {
-  return (*this)(PCaselessString("Accept-Language"));   // no compact form
+  return GetString("Accept-Language");   // no compact form
 }
 
 
@@ -698,7 +760,7 @@ void SIPMIMEInfo::SetAcceptLanguage(const PString & v)
 
 PString SIPMIMEInfo::GetAllow() const
 {
-  return (*this)(PCaselessString("Allow"));     // no compact form
+  return GetString("Allow");     // no compact form
 }
 
 
@@ -711,7 +773,7 @@ void SIPMIMEInfo::SetAllow(const PString & v)
 
 PString SIPMIMEInfo::GetDate() const
 {
-  return (*this)(PCaselessString("Date"));      // no compact form
+  return GetString("Date");      // no compact form
 }
 
 
@@ -735,11 +797,7 @@ void SIPMIMEInfo::SetDate(void) // set to current date
         
 unsigned SIPMIMEInfo::GetExpires(unsigned dflt) const
 {
-  PString v = (*this)(PCaselessString("Expires"));      // no compact form
-  if (v.IsEmpty())
-    return dflt;
-
-  return v.AsUnsigned();
+  return GetInteger("Expires", dflt);      // no compact form
 }
 
 
@@ -751,10 +809,7 @@ void SIPMIMEInfo::SetExpires(unsigned v)
 
 PINDEX SIPMIMEInfo::GetMaxForwards() const
 {
-  PString len = (*this)(PCaselessString("Max-Forwards"));       // no compact form
-  if (len.IsEmpty())
-    return P_MAX_INDEX;
-  return len.AsInteger();
+  return GetInteger("Max-Forwards", P_MAX_INDEX);       // no compact form
 }
 
 
@@ -766,10 +821,7 @@ void SIPMIMEInfo::SetMaxForwards(PINDEX v)
 
 PINDEX SIPMIMEInfo::GetMinExpires() const
 {
-  PString len = (*this)(PCaselessString("Min-Expires"));        // no compact form
-  if (len.IsEmpty())
-    return P_MAX_INDEX;
-  return len.AsInteger();
+  return GetInteger("Min-Expires", P_MAX_INDEX);        // no compact form
 }
 
 
@@ -781,7 +833,7 @@ void SIPMIMEInfo::SetMinExpires(PINDEX v)
 
 PString SIPMIMEInfo::GetProxyAuthenticate() const
 {
-  return (*this)(PCaselessString("Proxy-Authenticate"));        // no compact form
+  return GetString("Proxy-Authenticate");        // no compact form
 }
 
 
@@ -793,18 +845,18 @@ void SIPMIMEInfo::SetProxyAuthenticate(const PString & v)
 
 PString SIPMIMEInfo::GetSupported() const
 {
-  return GetFullOrCompact("Supported", 'k');
+  return GetString("Supported");
 }
 
 void SIPMIMEInfo::SetSupported(const PString & v)
 {
-  SetAt(compactForm ? "k" : "Supported",  v);
+  SetAt("Supported",  v);
 }
 
 
 PString SIPMIMEInfo::GetUnsupported() const
 {
-  return (*this)(PCaselessString("Unsupported"));       // no compact form
+  return GetString("Unsupported");       // no compact form
 }
 
 
@@ -816,19 +868,19 @@ void SIPMIMEInfo::SetUnsupported(const PString & v)
 
 PString SIPMIMEInfo::GetEvent() const
 {
-  return GetFullOrCompact("Event", 'o');
+  return GetString("Event");
 }
 
 
 void SIPMIMEInfo::SetEvent(const PString & v)
 {
-  SetAt(compactForm ? "o" : "Event",  v);
+  SetAt("Event",  v);
 }
 
 
 PString SIPMIMEInfo::GetSubscriptionState() const
 {
-  return (*this)(PCaselessString("Subscription-State"));       // no compact form
+  return GetString("Subscription-State");       // no compact form
 }
 
 
@@ -840,7 +892,7 @@ void SIPMIMEInfo::SetSubscriptionState(const PString & v)
 
 PString SIPMIMEInfo::GetUserAgent() const
 {
-  return (*this)(PCaselessString("User-Agent"));        // no compact form
+  return GetString("User-Agent");        // no compact form
 }
 
 
@@ -852,7 +904,7 @@ void SIPMIMEInfo::SetUserAgent(const PString & v)
 
 PString SIPMIMEInfo::GetOrganization() const
 {
-  return (*this)(PCaselessString("Organization"));        // no compact form
+  return GetString("Organization");        // no compact form
 }
 
 
@@ -868,7 +920,7 @@ void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
 {
   PCaselessString str = GetUserAgent();
   if (str.IsEmpty()) {
-    str = (*this)("Server");
+    str = GetString("Server");
     if (str.IsEmpty())
       return; // Have nothing, change nothing
   }
@@ -928,7 +980,7 @@ void SIPMIMEInfo::SetProductInfo(const PString & ua, const OpalProductInfo & inf
 
 PString SIPMIMEInfo::GetWWWAuthenticate() const
 {
-  return (*this)(PCaselessString("WWW-Authenticate"));  // no compact form
+  return GetString("WWW-Authenticate");  // no compact form
 }
 
 
@@ -939,7 +991,7 @@ void SIPMIMEInfo::SetWWWAuthenticate(const PString & v)
 
 PString SIPMIMEInfo::GetSIPIfMatch() const
 {
-  return (*this)(PCaselessString("SIP-If-Match"));  // no compact form
+  return GetString("SIP-If-Match");  // no compact form
 }
 
 void SIPMIMEInfo::SetSIPIfMatch(const PString & v)
@@ -949,7 +1001,7 @@ void SIPMIMEInfo::SetSIPIfMatch(const PString & v)
 
 PString SIPMIMEInfo::GetSIPETag() const
 {
-  return (*this)(PCaselessString("SIP-ETag"));  // no compact form
+  return GetString("SIP-ETag");  // no compact form
 }
 
 void SIPMIMEInfo::SetSIPETag(const PString & v)
@@ -957,78 +1009,46 @@ void SIPMIMEInfo::SetSIPETag(const PString & v)
   SetAt("SIP-ETag",  v);        // no compact form
 }
 
-void SIPMIMEInfo::SetFieldParameter(const PString & param,
-                                          PString & field,
-                                    const PString & value)
-{
-  PStringStream s;
-  
-  PCaselessString val = field;
-  
-  if (HasFieldParameter(param, field)) {
 
-    val = GetFieldParameter(param, field);
-    
-    if (!val.IsEmpty()) // The parameter already has a value, replace it.
-      field.Replace(val, value);
-    else { // The parameter has no value
-     
-      s << param << "=" << value;
-      field.Replace(param, s);
+static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & end)
+{
+  PINDEX semicolon = 0;
+  while ((semicolon = fieldValue.Find(';', semicolon+1)) != P_MAX_INDEX) {
+    start = fieldValue.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.!%*_+`'~", semicolon+1);
+    if (start != P_MAX_INDEX && fieldValue[start] == '=' && (fieldValue(semicolon+1, start-1) *= paramName)) {
+      start++;
+      end = fieldValue.FindOneOf("()<>@,;:\\\"/[]?{}= \t", start)-1;
+      return true;
     }
   }
-  else { // There is no such parameter
 
-    s << field << ";" << param << "=" << value;
-    field = s;
-  }
+  return false;
 }
 
 
-PString SIPMIMEInfo::GetFieldParameter(const PString & param,
-                                       const PString & field)
+PString SIPMIMEInfo::ExtractFieldParameter(const PString & fieldValue,
+                                           const PString & paramName,
+                                           const PString & defaultValue)
 {
-  PINDEX j = 0;
-  
-  PCaselessString val = field;
-  if ((j = val.FindLast (param)) != P_MAX_INDEX) {
-
-    val = val.Mid(j+param.GetLength());
-    if ((j = val.Find (';')) != P_MAX_INDEX)
-      val = val.Left(j);
-
-    if ((j = val.Find (' ')) != P_MAX_INDEX)
-      val = val.Left(j);
-    
-    if ((j = val.Find (',')) != P_MAX_INDEX)
-      val = val.Left(j);
-    
-    if ((j = val.Find ('=')) != P_MAX_INDEX) 
-      val = val.Mid(j+1);
-    else
-      val = "";
-  }
-  else
-    val = "";
-
-  return val;
+  PINDEX start, end;
+  return LocateFieldParameter(fieldValue, paramName, start, end) ? fieldValue(start, end) : defaultValue;
 }
 
 
-PBoolean SIPMIMEInfo::HasFieldParameter(const PString & param, const PString & field)
+PString SIPMIMEInfo::InsertFieldParameter(const PString & fieldValue,
+                                          const PString & paramName,
+                                          const PString & newValue)
 {
-  PCaselessString val = field;
-  
-  return (val.Find(param) != P_MAX_INDEX);
+
+  PINDEX start, end;
+  if (LocateFieldParameter(fieldValue, paramName, start, end))
+    return fieldValue.Left(start) + newValue + fieldValue.Mid(end+1);
+
+  PStringStream newField;
+  newField << fieldValue << ';' << paramName << '=' << newValue;
+  return newField;
 }
 
-
-PString SIPMIMEInfo::GetFullOrCompact(const char * fullForm, char compactForm) const
-{
-  if (Contains(PCaselessString(fullForm)))
-    return (*this)[fullForm];
-  return (*this)(PCaselessString(compactForm));
-}
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -1631,8 +1651,8 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   PIPSocket::Address remoteIp;
   WORD remotePort;
   if (transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort)) {
-
-    if (mime.HasFieldParameter("rport", viaList.front()) && mime.GetFieldParameter("rport", viaList.front()).IsEmpty()) {
+    PString rport = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "rport");
+    if (rport.IsEmpty()) {
       // fill in empty rport and received for RFC 3581
       mime.SetFieldParameter("rport", viaList.front(), remotePort);
       mime.SetFieldParameter("received", viaList.front(), remoteIp);
@@ -1677,16 +1697,19 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
       proto = proto.Mid(j+1);
 
     // maddr is present, no support for multicast yet
-    if (mime.HasFieldParameter("maddr", viaList.front())) 
-      viaAddress = mime.GetFieldParameter("maddr", viaList.front());
-    // received and rport are present
-    else if (mime.HasFieldParameter("received", viaList.front()) && mime.HasFieldParameter("rport", viaList.front())) {
-      viaAddress = mime.GetFieldParameter("received", viaList.front());
-      viaPort = mime.GetFieldParameter("rport", viaList.front());
-    }
+    PString param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "maddr");
+    if (!param.IsEmpty()) 
+      viaAddress = param;
+
     // received is present
-    else if (mime.HasFieldParameter("received", viaList.front()))
-      viaAddress = mime.GetFieldParameter("received", viaList.front());
+    param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "received");
+    if (!param.IsEmpty()) 
+      viaAddress = param;
+
+    // rport is present
+    param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "rport");
+    if (!param.IsEmpty()) 
+      viaPort = param;
 
     OpalTransportAddress address(viaAddress+":"+viaPort, ep.GetDefaultSignalPort(), (proto *= "TCP") ? "$tcp" : "udp$");
     return address;
@@ -1967,9 +1990,7 @@ PString SIP_PDU::Build()
   if (method == NumMethods)
     str << ' ' << (unsigned)statusCode << ' ' << info;
 
-  str << "\r\n"
-      << setfill('\r') << mime << setfill(' ')
-      << entityBody;
+  str << "\r\n" << mime << entityBody;
   return str;
 }
 
@@ -1984,7 +2005,7 @@ PString SIP_PDU::GetTransactionID() const
      */
     PStringList vias = mime.GetViaList();
     if (!vias.IsEmpty())
-      transactionID = SIPMIMEInfo::GetFieldParameter("branch", vias.front());
+      transactionID = SIPMIMEInfo::ExtractFieldParameter(vias.front(), "branch");
     if (transactionID.IsEmpty()) {
       PTRACE(2, "SIP\tTransaction " << mime.GetCSeq() << " has no branch parameter!");
       transactionID = mime.GetCallID() + mime.GetCSeq(); // Fail safe ...
