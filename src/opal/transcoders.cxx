@@ -182,40 +182,92 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 }
 
 
-static bool MergeFormats(const OpalMediaFormatList & allFormats,
+static bool MergeFormats(const OpalMediaFormatList & masterFormats,
+                         const OpalMediaFormat & srcCapability,
+                         const OpalMediaFormat & dstCapability,
                          OpalMediaFormat & srcFormat,
                          OpalMediaFormat & dstFormat)
 {
-  /* The following is to make sure any media we send is subject to the users
-     local "desired" options. For example:
-       sourceMediaFormats = YUV420P[QCIF]                    (from PCSSEndPoint)
-       sinkMediaFormats   = H.261[QCIF,CIF],H.263[QCIF,CIF]  (from remotes capabilities)
-       localMediaFormats  = H.263[QCIF]                      (from local capabilities)
+  /* Do the required merges to get final media format.
 
-     SelectMediaFormats above will have merged sourceFormat and sinkFormat to:
-       sourceMediaFormat = YUV420P[CIF]
-       sinkMediaFormat   = H.263[CIF]
-     then we get the merge of localMediaFormats to:
-       sourceMediaFormat = YUV420P[QCIF]
-       sinkMediaFormat   = H.263[QCIF]           
+     We start with the media options from the master list (if present) as a
+     starting point. This represents the local users "desired" options. Then
+     we merge in the remote users capabilities, determined from the lists passed
+     to OpalTranscoder::SelectFormats(). We finally rmerge the two formats so
+     common attributes are agreed upon.
+  
+     Encoder example:
+         sourceMediaFormats = YUV420P[QCIF]                        (from PCSSEndPoint)
+         sinkMediaFormats   = H.261[QCIF,CIF],H.263[QCIF,CIF,D,E]  (from remotes capabilities)
+         masterMediaFormats = H.263[SQCIF,QCIF,CIF,D]              (from local capabilities)
+
+       OpalTranscoder::SelectFormats above will locate the pair of capabilities:
+         srcCapability = YUV420P[QCIF]
+         dstCapability = H.263[QCIF,CIF,D,E]
+
+       Then we get from the masterMediaFormats:
+         srcFormat = YUV420P[QCIF]
+         dstFormat = H.263[SQCIF,QCIF,CIF,D]
+
+       Then merging in the respective capability to the format we get:
+         srcFormat = YUV420P[QCIF]          <-- No change, srcCapability is identical
+         dstFormat = H.263[QCIF,CIF,D]      <-- Drop SQCIF as remote can't do it
+                                            <-- Do not add annex E as we can't do it
+
+       Then merging src into dst and dst into src we get:
+         srcFormat = YUV420P[QCIF]          <-- No change, dstFormat is superset
+         dstFormat = H.263[QCIF,D]          <-- Drop to CIF as YUV420P can't do it
+                                            <-- Annex D is left as YUV420P does not have
+                                                this option at all.
+
+
+     Decoder example:
+         sourceMediaFormats = H.261[QCIF,CIF],H.263[QCIF,CIF,D,E]  (from remotes capabilities)
+         sinkMediaFormats   = YUV420P[QCIF]                        (from PCSSEndPoint)
+         masterMediaFormats = H.263[SQCIF,QCIF,CIF,D]              (from local capabilities)
+
+       OpalTranscoder::SelectFormats above will locate the pair of capabilities:
+         srcCapability = H.263[QCIF,CIF,D,E]
+         dstCapability = YUV420P[QCIF]
+
+       Then we get from the masterMediaFormats:
+         dstFormat = H.263[SQCIF,QCIF,CIF,D]
+         srcFormat = YUV420P[QCIF]
+
+       Then merging in the respective capability to the format we get:
+         srcFormat = H.263[QCIF,CIF,D]      <-- Drop SQCIF as remote can't do it
+                                            <-- Do not add annex E as we can't do it
+         dstFormat = YUV420P[QCIF]          <-- No change, srcCapability is identical
+
+       Then merging in capabilities we get:
+         srcFormat = H.263[QCIF,D]          <-- Drop to CIF as YUV420P can't do it
+                                            <-- Annex D is left as YUV420P does not have
+                                                this option at all.
+         dstFormat = YUV420P[QCIF]          <-- No change, srcFormat is superset
    */
 
-  OpalMediaFormatList::const_iterator localFormat = allFormats.FindFormat(srcFormat);
-  if (localFormat != allFormats.end()) {
-    if (!srcFormat.Merge(*localFormat))
+  OpalMediaFormatList::const_iterator masterFormat = masterFormats.FindFormat(srcCapability);
+  if (masterFormat == masterFormats.end())
+    srcFormat = srcCapability;
+  else {
+    srcFormat = *masterFormat;
+    if (!srcFormat.Merge(srcCapability))
       return false;
   }
 
-  localFormat = allFormats.FindFormat(dstFormat);
-  if (localFormat != allFormats.end()) {
-    if (!dstFormat.Merge(*localFormat))
+  masterFormat = masterFormats.FindFormat(dstCapability);
+  if (masterFormat == masterFormats.end())
+    dstFormat = dstCapability;
+  else {
+    dstFormat = *masterFormat;
+    if (!dstFormat.Merge(dstCapability))
       return false;
   }
-
-  if (!dstFormat.Merge(srcFormat))
-    return false;
 
   if (!srcFormat.Merge(dstFormat))
+    return false;
+
+  if (!dstFormat.Merge(srcFormat))
     return false;
 
   return true;
@@ -233,23 +285,19 @@ bool OpalTranscoder::SelectFormats(const OpalMediaFormatList & srcFormats,
   // Search through the supported formats to see if can pass data
   // directly from the given format to a possible one with no transcoders.
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
-    dstFormat = *d;
     for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
-      srcFormat = *s;
-      if (srcFormat == dstFormat && MergeFormats(allFormats, srcFormat, dstFormat))
+      if (*s == *d && MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
         return true;
     }
   }
 
   // Search for a single transcoder to get from a to b
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
-    dstFormat = *d;
     for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
-      srcFormat = *s;
-      OpalTranscoderKey search(srcFormat, dstFormat);
+      OpalTranscoderKey search(*s, *d);
       OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
       for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-        if (search == *i && MergeFormats(allFormats, srcFormat, dstFormat))
+        if (search == *i && MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
           return true;
       }
     }
@@ -257,11 +305,9 @@ bool OpalTranscoder::SelectFormats(const OpalMediaFormatList & srcFormats,
 
   // Last gasp search for a double transcoder to get from a to b
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
-    dstFormat = *d;
     for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
-      srcFormat = *s;
       OpalMediaFormat intermediateFormat;
-      if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat) && MergeFormats(allFormats, srcFormat, dstFormat))
+      if (FindIntermediateFormat(*s, *d, intermediateFormat) && MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
         return true;
     }
   }
