@@ -406,10 +406,11 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   int newExpiryTime = SIPURL(contact).GetParamVars()("expires").AsUnsigned();
   if (newExpiryTime == 0) {
-    if (response.GetMIME().HasFieldParameter("expires", contact))
-      newExpiryTime = response.GetMIME().GetFieldParameter("expires", contact).AsUnsigned();
-    else
+    PString expires = SIPMIMEInfo::ExtractFieldParameter(contact, "expires");
+    if (expires.IsEmpty())
       newExpiryTime = response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds());
+    else
+      newExpiryTime = expires.AsUnsigned();
   }
 
   SetExpire(newExpiryTime);
@@ -578,12 +579,12 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   else if (state.Find("active") != P_MAX_INDEX || state.Find("pending") != P_MAX_INDEX) {
 
     PTRACE(3, "SIP\tSubscription is " << state);
-    if (request.GetMIME().HasFieldParameter("expire", state))
-      SetExpire(request.GetMIME().GetFieldParameter("expire", state).AsUnsigned());
+    PString expire = SIPMIMEInfo::ExtractFieldParameter(state, "expire");
+    if (!expire.IsEmpty())
+      SetExpire(expire.AsUnsigned());
   }
 
-  switch (event) 
-    {
+  switch (event) {
     case SIPSubscribe::MessageSummary:
       OnReceivedMWINOTIFY(request);
       break;
@@ -592,7 +593,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       break;
     default:
       break;
-    }
+  }
 
   return endpoint.SendResponse(SIP_PDU::Successful_OK, *transport, request);
 }
