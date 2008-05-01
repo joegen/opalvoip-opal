@@ -676,7 +676,7 @@ PBoolean IAX2FullFrame::TransmitPacket(PUDPSocket &sock)
     MarkAsResent();      /* Set Retry flag.*/
   }
   
-  if (retries < 0) {
+  if (retries == P_MAX_INDEX) {
     PTRACE(4, "Retries count is now negative on. " << IdString());
     return PFalse;    //Give up on this packet, it has exceeded the allowed number of retries.
   }
@@ -870,7 +870,6 @@ void IAX2FullFrame::MarkVnakSendNow()
 {
   transmissionTimer.Stop();
   sendFrameNow = PTrue;
-  retries = 3;
   deleteFrameNow = PFalse;    
   retryDelta = PTimeInterval(minRetryTime);
   retries = maxRetries;
@@ -880,7 +879,7 @@ void IAX2FullFrame::MarkDeleteNow()
 {
   transmissionTimer.Stop();
   deleteFrameNow = PTrue;
-  retries = -1;
+  retries = P_MAX_INDEX;
 }
 
 void IAX2FullFrame::OnTransmissionTimeout(PTimer &, INT)
@@ -891,11 +890,12 @@ void IAX2FullFrame::OnTransmissionTimeout(PTimer &, INT)
     retryDelta = maxRetryTime;
   
   packetResent = PTrue;
-  retries--;
-  if (retries < 0) {
+  if ((retries == P_MAX_INDEX) || (retries == 0)) {
+    retries = P_MAX_INDEX;
     deleteFrameNow = PTrue;
     PTRACE(4, "Mark as delete now " << IdString());
   } else {
+    retries--;
     sendFrameNow = PTrue;
     PTRACE(5, "Mark as Send now " << IdString() << " " << connectionToken);
   }

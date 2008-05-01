@@ -590,7 +590,7 @@ class IAX2FullFrame : public IAX2Frame
   enum RetryTime {
     minRetryTime = 500,    /*!< 500 milliseconds     */
     maxRetryTime = 010000, /*!< 10 seconds           */
-    maxRetries   = 10,     /*!< number of retries    */
+    maxRetries   = 3       /*!< number of retries    */
   };
   
   /**Class holding the sequence numbers, which is used by all classes which have a FullFrame ancestor. */
