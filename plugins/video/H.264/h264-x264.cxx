@@ -98,56 +98,67 @@ static char * num2str(int num)
 
 H264EncoderContext::H264EncoderContext()
 {
+  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(H264ENCODERCONTEXT_CREATE);
 }
 
 H264EncoderContext::~H264EncoderContext()
 {
+  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(H264ENCODERCONTEXT_DELETE);
 }
 
 void H264EncoderContext::ApplyOptions()
 {
+  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(APPLY_OPTIONS);
 }
 
 void H264EncoderContext::SetMaxRTPFrameSize(unsigned size)
 {
+  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_MAX_FRAME_SIZE, size);
 }
 
 void H264EncoderContext::SetMaxKeyFramePeriod (unsigned period)
 {
+  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_MAX_KEY_FRAME_PERIOD, period);
 }
 
 void H264EncoderContext::SetTargetBitrate(unsigned rate)
 {
+  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_TARGET_BITRATE, rate);
 }
 
 void H264EncoderContext::SetFrameWidth(unsigned width)
 {
+  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_FRAME_WIDTH, width);
 }
 
 void H264EncoderContext::SetFrameHeight(unsigned height)
 {
+  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_FRAME_HEIGHT, height);
 }
 
 void H264EncoderContext::SetFrameRate(unsigned rate)
 {
+  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_FRAME_RATE, rate);
 }
 
 void H264EncoderContext::SetTSTO (unsigned tsto)
 {
+  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_TSTO, tsto);
 }
 
 void H264EncoderContext::SetProfileLevel (unsigned profile, unsigned constraints, unsigned level)
 {
+  WaitAndSignal m(_mutex);
   unsigned profileLevel = (profile << 16) + (constraints << 8) + level;
   H264EncCtxInstance.call(SET_PROFILE_LEVEL, profileLevel);
 }
