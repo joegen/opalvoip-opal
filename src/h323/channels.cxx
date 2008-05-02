@@ -372,6 +372,7 @@ PBoolean H323UnidirectionalChannel::Start()
   if (!mediaStream->Start())
     return PFalse;
 
+  capability->SetMediaFormatOptions(mediaStream->GetMediaFormat());
   paused = PFalse;
   return PTrue;
 }
