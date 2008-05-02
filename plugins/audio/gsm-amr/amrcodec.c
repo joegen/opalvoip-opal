@@ -23,7 +23,11 @@
 #ifdef _WIN32
 #include <malloc.h>
 #include <string.h>
-#define STRCMPI  _strcmpi
+#ifndef _WIN32_WCE
+  #define STRCMPI  _strcmpi
+#else
+  #define STRCMPI  _stricmp
+#endif
 #else
 #define STRCMPI  strcasecmp
 #endif
