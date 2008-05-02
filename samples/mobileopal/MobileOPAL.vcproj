@@ -158,6 +158,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.01"
 				AdditionalDependencies="opald.lib"
+				OutputFile="$(OutDir)\$(ProjectName)d.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				StackReserveSize="65536"
@@ -403,6 +404,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.01"
+				AdditionalDependencies="opal.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				StackReserveSize="65536"
@@ -512,9 +514,9 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
 				RegisterOutput="0"
-				AdditionalFiles="msvcr80.dll|$(BINDIR)\$(INSTRUCTIONSET)\|%CSIDL_PROGRAM_FILES%\$(ProjectName)|0;atl80.dll|$(BINDIR)\$(INSTRUCTIONSET)\|%CSIDL_PROGRAM_FILES%\$(ProjectName)|0;MFC80U.dll|$(BINDIR)\$(INSTRUCTIONSET)\|%CSIDL_PROGRAM_FILES%\$(ProjectName)|0;"
+				AdditionalFiles="msvcr80.dll|$(BINDIR)\$(INSTRUCTIONSET)\|%CSIDL_PROGRAM_FILES%\OPAL|0;atl80.dll|$(BINDIR)\$(INSTRUCTIONSET)\|%CSIDL_PROGRAM_FILES%\OPAL|0;MFC80U.dll|$(BINDIR)\$(INSTRUCTIONSET)\|%CSIDL_PROGRAM_FILES%\OPAL|0"
 			/>
 			<DebuggerTool
 			/>
@@ -570,6 +572,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.02"
+				AdditionalDependencies="opal.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				StackReserveSize="65536"
@@ -653,6 +656,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.02"
+				AdditionalDependencies="opal.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				StackReserveSize="65536"
@@ -737,6 +741,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.01"
+				AdditionalDependencies="opaln.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				StackReserveSize="65536"
@@ -822,7 +827,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.01"
-				AdditionalDependencies="opal.lib"
+				AdditionalDependencies="opaln.lib"
+				OutputFile="$(OutDir)\$(ProjectName)n.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				StackReserveSize="65536"
@@ -849,9 +855,9 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
 				RegisterOutput="0"
-				AdditionalFiles=""
+				AdditionalFiles="msvcr80.dll|$(BINDIR)\$(INSTRUCTIONSET)\|%CSIDL_PROGRAM_FILES%\OPAL|0;atl80.dll|$(BINDIR)\$(INSTRUCTIONSET)\|%CSIDL_PROGRAM_FILES%\OPAL|0;MFC80U.dll|$(BINDIR)\$(INSTRUCTIONSET)\|%CSIDL_PROGRAM_FILES%\OPAL|0"
 			/>
 			<DebuggerTool
 			/>
@@ -908,6 +914,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.02"
+				AdditionalDependencies="opaln.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				StackReserveSize="65536"
@@ -993,6 +1000,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.02"
+				AdditionalDependencies="opaln.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				StackReserveSize="65536"
