@@ -124,6 +124,7 @@ void theoraEncoderContext::SetFrameHeight(unsigned height)
 
 void theoraEncoderContext::ApplyOptions()
 {
+  WaitAndSignal m(_mutex);
   ogg_packet headerPacket, tablePacket;
 
   theora_clear( &_theoraState );
@@ -138,6 +139,7 @@ void theoraEncoderContext::ApplyOptions()
 
 int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
 {
+  WaitAndSignal m(_mutex);
   int ret;
   yuv_buffer yuv;
   ogg_packet framePacket;
