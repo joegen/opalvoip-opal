@@ -501,7 +501,13 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
   rcWindowSize = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption());
   if (((unsigned) (targetBitRate / 8)) != rcByteRate) {
     rcByteRate = (unsigned) (targetBitRate / 8);
-    frameInfoList.clear();
+
+    std::list<FrameInfo>::iterator iter = frameInfoList.begin();
+    while (iter != frameInfoList.end()) {
+      rcTotalSize -= iter->size;
+      frameInfoList.erase(iter);
+      iter = frameInfoList.begin();
+    }
   }
   rcMaxConsecutiveFramesSkip = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlMaxFramesSkipOption());
 
