@@ -98,7 +98,6 @@ static char * num2str(int num)
 
 H264EncoderContext::H264EncoderContext()
 {
-  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(H264ENCODERCONTEXT_CREATE);
 }
 
@@ -110,55 +109,46 @@ H264EncoderContext::~H264EncoderContext()
 
 void H264EncoderContext::ApplyOptions()
 {
-  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(APPLY_OPTIONS);
 }
 
 void H264EncoderContext::SetMaxRTPFrameSize(unsigned size)
 {
-  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_MAX_FRAME_SIZE, size);
 }
 
 void H264EncoderContext::SetMaxKeyFramePeriod (unsigned period)
 {
-  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_MAX_KEY_FRAME_PERIOD, period);
 }
 
 void H264EncoderContext::SetTargetBitrate(unsigned rate)
 {
-  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_TARGET_BITRATE, rate);
 }
 
 void H264EncoderContext::SetFrameWidth(unsigned width)
 {
-  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_FRAME_WIDTH, width);
 }
 
 void H264EncoderContext::SetFrameHeight(unsigned height)
 {
-  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_FRAME_HEIGHT, height);
 }
 
 void H264EncoderContext::SetFrameRate(unsigned rate)
 {
-  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_FRAME_RATE, rate);
 }
 
 void H264EncoderContext::SetTSTO (unsigned tsto)
 {
-  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(SET_TSTO, tsto);
 }
 
 void H264EncoderContext::SetProfileLevel (unsigned profile, unsigned constraints, unsigned level)
 {
-  WaitAndSignal m(_mutex);
   unsigned profileLevel = (profile << 16) + (constraints << 8) + level;
   H264EncCtxInstance.call(SET_PROFILE_LEVEL, profileLevel);
 }
@@ -176,6 +166,16 @@ int H264EncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_ch
   H264EncCtxInstance.call(ENCODE_FRAMES, src, srcLen, dst, dstLen, headerLen, flags, ret);
 
   return ret;
+}
+
+void H264EncoderContext::Lock ()
+{
+  _mutex.Wait();
+}
+
+void H264EncoderContext::Unlock ()
+{
+  _mutex.Signal();
 }
 
 H264DecoderContext::H264DecoderContext()
@@ -596,6 +596,7 @@ static int encoder_set_options(
   if (parmLen == NULL || *parmLen != sizeof(const char **)) 
     return 0;
 
+  context->Lock();
   unsigned profile = 66;
   unsigned constraints = 0;
   unsigned level = 51;
@@ -639,13 +640,17 @@ static int encoder_set_options(
       constraints = 0xC0;
       level = 0x1E;
 #endif  
-  }
-    if (!adjust_bitrate_to_level (targetBitrate, level))
+    }
+
+    if (!adjust_bitrate_to_level (targetBitrate, level)) {
+      context->Unlock();
       return 0;
+    }
 
     context->SetTargetBitrate((unsigned) (targetBitrate / 1000) );
     context->SetProfileLevel(profile, constraints, level);
     context->ApplyOptions();
+    context->Unlock();
 
   }
   return 1;
