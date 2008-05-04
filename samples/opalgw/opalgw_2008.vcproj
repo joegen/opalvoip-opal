@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="opalgw"
 	ProjectGUID="{48A0E613-0A49-4C11-900D-FDBBCA2B0591}"
 	TargetFrameworkVersion="131072"
@@ -198,9 +198,11 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
+			RelativePathToProject=".\src\win32\opal_dll_2008.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
+			RelativePathToProject="..\ptlib\src\ptlib\msos\PTLib_2008.vcproj"
 		/>
 	</References>
 	<Files>
@@ -312,34 +314,18 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
+				RelativePath=".\messages.bin"
+				>
+			</File>
+			<File
 				RelativePath="opalgw.ico"
 				>
 			</File>
+			<File
+				RelativePath=".\svcproc.rc"
+				>
+			</File>
 		</Filter>
-		<File
-			RelativePath="messages.mc"
-			>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Building event log resources."
-					CommandLine="mc -h &quot;$(IntDir)&quot; -r &quot;$(IntDir)&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;echo 1 ICON &quot;$(InputDir)\$(TargetName).ico&quot; &gt;&gt; &quot;$(IntDir)\$(InputName).rc&quot;&#x0D;&#x0A;echo RCINCLUDE $(InputDir)\custom.cxx &gt;&gt; &quot;$(IntDir)\$(InputName).rc&quot;&#x0D;&#x0A;rc -i&quot;$(IntDir)&quot; -fo&quot;$(IntDir)\$(InputName).res&quot; &quot;$(IntDir)\$(InputName).rc&quot;&#x0D;&#x0A;"
-					Outputs="$(IntDir)\$(InputName).h;$(IntDir)\$(InputName).rc;$(IntDir)\MSG00001.bin;$(IntDir)\$(InputName).res"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Building event log resources."
-					CommandLine="mc -h &quot;$(IntDir)&quot; -r &quot;$(IntDir)&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;echo 1 ICON &quot;$(InputDir)\$(TargetName).ico&quot; &gt;&gt; &quot;$(IntDir)\$(InputName).rc&quot;&#x0D;&#x0A;echo RCINCLUDE $(InputDir)\custom.cxx &gt;&gt; &quot;$(IntDir)\$(InputName).rc&quot;&#x0D;&#x0A;rc -i&quot;$(IntDir)&quot; -fo&quot;$(IntDir)\$(InputName).res&quot; &quot;$(IntDir)\$(InputName).rc&quot;&#x0D;&#x0A;"
-					Outputs="$(IntDir)\$(InputName).h;$(IntDir)\$(InputName).rc;$(IntDir)\MSG00001.bin;$(IntDir)\$(InputName).res"
-				/>
-			</FileConfiguration>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
