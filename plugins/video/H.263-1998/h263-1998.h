@@ -110,6 +110,8 @@ class H263PEncoderContext
     bool OpenCodec();
     void CloseCodec();
 
+    void Lock();
+    void Unlock();
   protected:
     void InitContext();
 
@@ -144,6 +146,7 @@ class H263PDecoderContext
     int _frameCount;
     unsigned int _skippedFrameCounter;
     bool _gotIFrame;
+    CriticalSection _mutex;
 };
 
 static int valid_for_protocol    ( const struct PluginCodec_Definition *, void *, const char *,

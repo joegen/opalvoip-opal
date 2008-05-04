@@ -124,7 +124,6 @@ void theoraEncoderContext::SetFrameHeight(unsigned height)
 
 void theoraEncoderContext::ApplyOptions()
 {
-  WaitAndSignal m(_mutex);
   ogg_packet headerPacket, tablePacket;
 
   theora_clear( &_theoraState );
@@ -135,6 +134,15 @@ void theoraEncoderContext::ApplyOptions()
 
   theora_encode_tables( &_theoraState, &tablePacket );
   _txTheoraFrame->SetFromTableConfig(&tablePacket);
+}
+void theoraEncoderContext::Lock()
+{
+  _mutex.Wait();
+}
+
+void theoraEncoderContext::Unlock()
+{
+  _mutex.Signal();
 }
 
 int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
@@ -650,6 +658,7 @@ static int encoder_set_options(
 
   if (parmLen == NULL || *parmLen != sizeof(const char **)) return 0;
 
+  context->Lock();
   if (parm != NULL) {
     const char ** options = (const char **)parm;
     int i;
@@ -669,8 +678,9 @@ static int encoder_set_options(
       TRACE (4, "THEORA\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
     }
     context->ApplyOptions();
-
   }
+  context->Unlock();
+
   return 1;
 }
 

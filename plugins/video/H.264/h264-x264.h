@@ -96,6 +96,8 @@ class H264EncoderContext
     void SetTSTO (unsigned tsto);
     void SetProfileLevel (unsigned profile, unsigned constraints, unsigned level);
     void ApplyOptions ();
+    void Lock ();
+    void Unlock ();
 
   protected:
     CriticalSection _mutex;
