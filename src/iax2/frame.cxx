@@ -488,7 +488,7 @@ PINDEX IAX2Frame::GetEncryptionOffset()
 
 ////////////////////////////////////////////////////////////////////////////////  
 
-IAX2MiniFrame::IAX2MiniFrame(IAX2Frame & srcFrame)
+IAX2MiniFrame::IAX2MiniFrame(const IAX2Frame & srcFrame)
   : IAX2Frame(srcFrame)
 {
   ZeroAllValues();
@@ -616,7 +616,7 @@ IAX2FullFrame::IAX2FullFrame(IAX2EndPoint &_newEndpoint)
 }
 
 /*This is built from an incoming frame (from the network*/
-IAX2FullFrame::IAX2FullFrame(IAX2Frame & srcFrame)
+IAX2FullFrame::IAX2FullFrame(const IAX2Frame & srcFrame)
   : IAX2Frame(srcFrame)
 {
   PTRACE(5, "START Constructor for a full frame");
@@ -969,12 +969,12 @@ void IAX2FullFrame::ModifyFrameTimeStamp(PINDEX newTimeStamp)
 }
 ////////////////////////////////////////////////////////////////////////////////  
 
-IAX2FullFrameDtmf::IAX2FullFrameDtmf(IAX2Frame & srcFrame)
+IAX2FullFrameDtmf::IAX2FullFrameDtmf(const IAX2Frame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
 
-IAX2FullFrameDtmf::IAX2FullFrameDtmf(IAX2FullFrame & srcFrame)
+IAX2FullFrameDtmf::IAX2FullFrameDtmf(const IAX2FullFrame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
@@ -1016,13 +1016,13 @@ PString IAX2FullFrameDtmf::GetSubClassName() const {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-IAX2FullFrameVoice::IAX2FullFrameVoice(IAX2Frame & srcFrame)
+IAX2FullFrameVoice::IAX2FullFrameVoice(const IAX2Frame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
   PTRACE(6, "Construct a full frame voice from a Frame" << IdString());
 }
 
-IAX2FullFrameVoice::IAX2FullFrameVoice(IAX2FullFrame & srcFrame)
+IAX2FullFrameVoice::IAX2FullFrameVoice(const IAX2FullFrame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
   PTRACE(6, "Construct a full frame voice from a IAX2FullFrame" << IdString());
@@ -1122,12 +1122,12 @@ PString IAX2FullFrameVoice::GetOpalNameOfCodec(PINDEX testValue)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IAX2FullFrameVideo::IAX2FullFrameVideo(IAX2Frame & srcFrame)
+IAX2FullFrameVideo::IAX2FullFrameVideo(const IAX2Frame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
 
-IAX2FullFrameVideo::IAX2FullFrameVideo(IAX2FullFrame & srcFrame)
+IAX2FullFrameVideo::IAX2FullFrameVideo(const IAX2FullFrame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
@@ -1144,12 +1144,12 @@ PString IAX2FullFrameVideo::GetSubClassName() const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-IAX2FullFrameSessionControl::IAX2FullFrameSessionControl(IAX2Frame & srcFrame)
+IAX2FullFrameSessionControl::IAX2FullFrameSessionControl(const IAX2Frame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
 
-IAX2FullFrameSessionControl::IAX2FullFrameSessionControl(IAX2FullFrame & srcFrame)
+IAX2FullFrameSessionControl::IAX2FullFrameSessionControl(const IAX2FullFrame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
@@ -1198,12 +1198,12 @@ PString IAX2FullFrameSessionControl::GetSubClassName() const {
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-IAX2FullFrameNull::IAX2FullFrameNull(IAX2Frame & srcFrame)
+IAX2FullFrameNull::IAX2FullFrameNull(const IAX2Frame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
 
-IAX2FullFrameNull::IAX2FullFrameNull(IAX2FullFrame & srcFrame)
+IAX2FullFrameNull::IAX2FullFrameNull(const IAX2FullFrame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
@@ -1260,14 +1260,14 @@ IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2Processor *iax2Processor,  Prot
   PTRACE(5, "Construct a fullframeprotocol from a  processor, subclass value and a connection required" << IdString());
 }
 
-IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2Frame & srcFrame)
+IAX2FullFrameProtocol::IAX2FullFrameProtocol(const IAX2Frame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
   ReadInformationElements();
   PTRACE(5, "Construct a fullframeprotocol from a Frame" << IdString());
 }
 
-IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2FullFrame & srcFrame)
+IAX2FullFrameProtocol::IAX2FullFrameProtocol(const IAX2FullFrame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
   ReadInformationElements();
@@ -1449,7 +1449,7 @@ void IAX2FullFrameProtocol::PrintOn(ostream & strm) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-IAX2FullFrameText::IAX2FullFrameText(IAX2Frame & srcFrame)
+IAX2FullFrameText::IAX2FullFrameText(const IAX2Frame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
    if (GetMediaDataSize() > 0)
@@ -1458,7 +1458,7 @@ IAX2FullFrameText::IAX2FullFrameText(IAX2Frame & srcFrame)
 
 }
 
-IAX2FullFrameText::IAX2FullFrameText(IAX2FullFrame & srcFrame)
+IAX2FullFrameText::IAX2FullFrameText(const IAX2FullFrame & srcFrame)
   : IAX2FullFrame(srcFrame)
 { 
   if (GetMediaDataSize() > 0)
@@ -1495,12 +1495,12 @@ PString IAX2FullFrameText::GetTextString() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IAX2FullFrameImage::IAX2FullFrameImage(IAX2Frame & srcFrame)
+IAX2FullFrameImage::IAX2FullFrameImage(const IAX2Frame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
 
-IAX2FullFrameImage::IAX2FullFrameImage(IAX2FullFrame & srcFrame)
+IAX2FullFrameImage::IAX2FullFrameImage(const IAX2FullFrame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
@@ -1511,12 +1511,12 @@ PString IAX2FullFrameImage::GetSubClassName() const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-IAX2FullFrameHtml::IAX2FullFrameHtml(IAX2Frame & srcFrame)
+IAX2FullFrameHtml::IAX2FullFrameHtml(const IAX2Frame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
 
-IAX2FullFrameHtml::IAX2FullFrameHtml(IAX2FullFrame & srcFrame)
+IAX2FullFrameHtml::IAX2FullFrameHtml(const IAX2FullFrame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
@@ -1528,12 +1528,12 @@ PString IAX2FullFrameHtml::GetSubClassName() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IAX2FullFrameCng::IAX2FullFrameCng(IAX2Frame & srcFrame)
+IAX2FullFrameCng::IAX2FullFrameCng(const IAX2Frame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
 
-IAX2FullFrameCng::IAX2FullFrameCng(IAX2FullFrame & srcFrame)
+IAX2FullFrameCng::IAX2FullFrameCng(const IAX2FullFrame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
 }
