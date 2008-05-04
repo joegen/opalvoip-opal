@@ -139,8 +139,8 @@ void IAX2Connection::IncomingEthernetFrame(IAX2Frame *frame)
        endpoint.transmitter->PurgeMatchingFullFrames(af);
        delete af;
      }
-   }
-   else
+     delete frame;
+   } else
      iax2Processor.IncomingEthernetFrame(frame);
 } 
 
