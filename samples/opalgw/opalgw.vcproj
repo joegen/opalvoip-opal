@@ -314,48 +314,15 @@
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 			<File
+				RelativePath=".\messages.bin">
+			</File>
+			<File
 				RelativePath="opalgw.ico">
 			</File>
+			<File
+				RelativePath=".\svcproc.rc">
+			</File>
 		</Filter>
-		<File
-			RelativePath="messages.mc">
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Building event log resources."
-					CommandLine="mc -h &quot;$(IntDir)&quot; -r &quot;$(IntDir)&quot; &quot;$(InputPath)&quot;
-echo 1 ICON &quot;$(InputDir)\$(TargetName).ico&quot; &gt;&gt; &quot;$(IntDir)\$(InputName).rc&quot;
-echo RCINCLUDE $(InputDir)\custom.cxx &gt;&gt; &quot;$(IntDir)\$(InputName).rc&quot;
-rc -i&quot;$(IntDir)&quot; -fo&quot;$(IntDir)\$(InputName).res&quot; &quot;$(IntDir)\$(InputName).rc&quot;
-"
-					Outputs="$(IntDir)\$(InputName).h;$(IntDir)\$(InputName).rc;$(IntDir)\MSG00001.bin;$(IntDir)\$(InputName).res"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Building event log resources."
-					CommandLine="mc -h &quot;$(IntDir)&quot; -r &quot;$(IntDir)&quot; &quot;$(InputPath)&quot;
-echo 1 ICON &quot;$(InputDir)\$(TargetName).ico&quot; &gt;&gt; &quot;$(IntDir)\$(InputName).rc&quot;
-echo RCINCLUDE $(InputDir)\custom.cxx &gt;&gt; &quot;$(IntDir)\$(InputName).rc&quot;
-rc -i&quot;$(IntDir)&quot; -fo&quot;$(IntDir)\$(InputName).res&quot; &quot;$(IntDir)\$(InputName).rc&quot;
-"
-					Outputs="$(IntDir)\$(InputName).h;$(IntDir)\$(InputName).rc;$(IntDir)\MSG00001.bin;$(IntDir)\$(InputName).res"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="No Trace|Win32">
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Building event log resources."
-					CommandLine="mc -h &quot;$(IntDir)&quot; -r &quot;$(IntDir)&quot; &quot;$(InputPath)&quot;
-echo 1 ICON &quot;$(InputDir)\$(TargetName).ico&quot; &gt;&gt; &quot;$(IntDir)\$(InputName).rc&quot;
-echo RCINCLUDE $(InputDir)\custom.cxx &gt;&gt; &quot;$(IntDir)\$(InputName).rc&quot;
-rc -i&quot;$(IntDir)&quot; -fo&quot;$(IntDir)\$(InputName).res&quot; &quot;$(IntDir)\$(InputName).rc&quot;
-"
-					Outputs="$(IntDir)\$(InputName).h;$(IntDir)\$(InputName).rc;$(IntDir)\MSG00001.bin;$(IntDir)\$(InputName).res"/>
-			</FileConfiguration>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
