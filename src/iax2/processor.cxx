@@ -205,6 +205,7 @@ void IAX2Processor::IncomingEthernetFrame(IAX2Frame *frame)
       endpoint.transmitter->PurgeMatchingFullFrames(af);
       delete af;
     }
+    delete frame;
   } else {
     frameList.AddNewFrame(frame);  
     CleanPendingLists();    

@@ -337,7 +337,7 @@ class IAX2MiniFrame : public IAX2Frame
  public:
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2MiniFrame(IAX2Frame & srcFrame);
+  IAX2MiniFrame(const IAX2Frame & srcFrame);
   
   /** Construction from an endpoint, to create an empty frame. */
   IAX2MiniFrame(IAX2EndPoint & _endpoint); 
@@ -395,7 +395,7 @@ class IAX2FullFrame : public IAX2Frame
  public:
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrame(IAX2Frame & srcFrame);
+  IAX2FullFrame(const IAX2Frame & srcFrame);
   
   /** Construction from an endpoint, to create an empty frame. 
       In this case, the class is filled with the various methods*/
@@ -624,11 +624,11 @@ class IAX2FullFrameDtmf : public IAX2FullFrame
  public:
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameDtmf(IAX2Frame & srcFrame);
+  IAX2FullFrameDtmf(const IAX2Frame & srcFrame);
 
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameDtmf(IAX2FullFrame & srcFrame);
+  IAX2FullFrameDtmf(const IAX2FullFrame & srcFrame);
   
   /**Construction from a Connection class. 
      Classes generated from this are then on sent to a remote endpoint. */
@@ -687,11 +687,11 @@ class IAX2FullFrameVoice : public IAX2FullFrame
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameVoice(IAX2Frame & srcFrame);
+  IAX2FullFrameVoice(const IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameVoice(IAX2FullFrame & srcFrame);
+  IAX2FullFrameVoice(const IAX2FullFrame & srcFrame);
   
   /**Construction from an encoded audio array (stored in a
      PBYTEArray), in preparation to sending to remote node.  The
@@ -764,11 +764,11 @@ class IAX2FullFrameVideo : public IAX2FullFrame
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameVideo(IAX2Frame & srcFrame);
+  IAX2FullFrameVideo(const IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameVideo(IAX2FullFrame & srcFrame);
+  IAX2FullFrameVideo(const IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;
@@ -823,11 +823,11 @@ class IAX2FullFrameSessionControl : public IAX2FullFrame
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameSessionControl(IAX2Frame & srcFrame);
+  IAX2FullFrameSessionControl(const IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameSessionControl(IAX2FullFrame & srcFrame);
+  IAX2FullFrameSessionControl(const IAX2FullFrame & srcFrame);
   
   /**Construction from a Connection class. 
      Classes generated from this are then on sent to a remote endpoint. */
@@ -871,12 +871,12 @@ class IAX2FullFrameNull : public IAX2FullFrame
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet.
      Classes generated like this are used to handle received data. */
-  IAX2FullFrameNull(IAX2Frame & srcFrame);
+  IAX2FullFrameNull(const IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet.
      Classes generated like this are used to handle received data. */
-  IAX2FullFrameNull(IAX2FullFrame & srcFrame);
+  IAX2FullFrameNull(const IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const { return  PString(""); }
@@ -943,12 +943,12 @@ class IAX2FullFrameProtocol : public IAX2FullFrame
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet.
      Classes generated like this are used to handle received data. */
-  IAX2FullFrameProtocol(IAX2Frame & srcFrame);
+  IAX2FullFrameProtocol(const IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet.
      Classes generated like this are used to handle received data. */
-  IAX2FullFrameProtocol(IAX2FullFrame & srcFrame);
+  IAX2FullFrameProtocol(const IAX2FullFrame & srcFrame);
   
   /**Construction from a Connection class. 
      Classes generated from this are then on sent to a remote endpoint. */
@@ -1056,11 +1056,11 @@ class IAX2FullFrameText : public IAX2FullFrame
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameText(IAX2Frame & srcFrame);
+  IAX2FullFrameText(const IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameText(IAX2FullFrame & srcFrame);
+  IAX2FullFrameText(const IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;
@@ -1089,11 +1089,11 @@ class IAX2FullFrameImage : public IAX2FullFrame
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameImage(IAX2Frame & srcFrame);
+  IAX2FullFrameImage(const IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameImage(IAX2FullFrame & srcFrame);
+  IAX2FullFrameImage(const IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;
@@ -1116,11 +1116,11 @@ class IAX2FullFrameHtml : public IAX2FullFrame
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameHtml(IAX2Frame & srcFrame);
+  IAX2FullFrameHtml(const IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameHtml(IAX2FullFrame & srcFrame);
+  IAX2FullFrameHtml(const IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;
@@ -1142,11 +1142,11 @@ class IAX2FullFrameCng : public IAX2FullFrame
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameCng(IAX2Frame & srcFrame);
+  IAX2FullFrameCng(const IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  IAX2FullFrameCng(IAX2FullFrame & srcFrame);
+  IAX2FullFrameCng(const IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;

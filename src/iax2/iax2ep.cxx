@@ -555,9 +555,9 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
 
     /**These packets cannot be encrypted, as they are not going to a phone call */
     IAX2Frame *af = f->BuildAppropriateFrameType();
-    if (af == NULL)
-      continue;
     delete f;
+    if (af == NULL) 
+      continue;
     f = af;
 
     if (specialPacketHandler->IsStatusQueryEthernetFrame(f)) {
@@ -568,7 +568,7 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
 
     if (!PIsDescendant(f, IAX2FullFrame)) {
       PTRACE(3, "Distribution\tNO matching connection for incoming ethernet frame Sorry" << idString);
-      delete af;
+      delete f;
       continue;
     }
 
