@@ -137,6 +137,8 @@ H263PEncoderContext::H263PEncoderContext()
 
 H263PEncoderContext::~H263PEncoderContext()
 {
+  WaitAndSignal m(_mutex);
+
   if (_txH263PFrame)
     delete _txH263PFrame;
 
@@ -355,6 +357,8 @@ void H263PEncoderContext::CloseCodec()
 
 int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags)
 {
+  WaitAndSignal m(_mutex);
+
   if (!FFMPEGLibraryInstance.IsLoaded())
     return 0;
 
@@ -397,7 +401,7 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
     TRACE(4,  "H263+\tEncoder\tFirst frame received or resolution has changed - reopening codec");
     CloseCodec();
     SetFrameWidth(header->width);
-    SetFrameHeight(header->width);
+    SetFrameHeight(header->height);
     if (!OpenCodec()) {
       TRACE(1,  "H263+\tEncoder\tReopening codec failed");
       return false;
@@ -434,6 +438,16 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
     return true;
   }
   return 1;
+}
+
+void H263PEncoderContext::Lock()
+{
+  _mutex.Wait();
+}
+
+void H263PEncoderContext::Unlock()
+{
+  _mutex.Signal();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -829,6 +843,7 @@ static int encoder_set_options(const PluginCodec_Definition *,
   if (parmLen == NULL || *parmLen != sizeof(const char **) || parm == NULL)
     return 0;
 
+  context->Lock();
   context->CloseCodec();
 
   // get the "frame width" media format parameter to use as a hint for the encoder to start off
@@ -880,6 +895,7 @@ static int encoder_set_options(const PluginCodec_Definition *,
   }
 
   context->OpenCodec();
+  context->Unlock();
   return 1;
 }
 

@@ -72,10 +72,13 @@ class theoraEncoderContext
     void SetFrameWidth (unsigned width);
     void SetFrameHeight (unsigned height);
     void ApplyOptions ();
+    void Lock ();
+    void Unlock ();
 
     int EncodeFrames (const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags);
 
   protected:
+    void ApplyOptionsInternal ();
     CriticalSection _mutex;
 
     theora_info _theoraInfo;
