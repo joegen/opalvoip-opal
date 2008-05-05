@@ -95,15 +95,13 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
   }
 #endif
 
-#if 0
   // if this is the second connection in this call, then we are making an outgoing H.323/SIP call
   // so, get the autoStart info from the other connection
   PSafePtr<OpalConnection> conn  = call.GetConnection(0);
   if (conn != NULL) 
-    channelInfoMap.Initialise(*this, conn->GetStringOptions());
+    m_rtpSessions.Initialise(*this, conn->GetStringOptions());
   else
-    channelInfoMap.Initialise(*this, stringOptions);
-#endif
+    m_rtpSessions.Initialise(*this, stringOptions);
 }
 
 OpalRTPConnection::~OpalRTPConnection()
@@ -118,22 +116,20 @@ OpalRTPConnection::~OpalRTPConnection()
 
 RTP_Session * OpalRTPConnection::GetSession(unsigned sessionID) const
 {
-  return rtpSessions.GetSession(sessionID);
+  return m_rtpSessions.GetSession(sessionID);
 }
 
 RTP_Session * OpalRTPConnection::UseSession(unsigned sessionID)
 {
-  return rtpSessions.UseSession(sessionID);
+  return m_rtpSessions.UseSession(sessionID);
 }
 
-RTP_Session * OpalRTPConnection::UseSession(const OpalTransport & transport,
-                                         unsigned sessionID,
-                                         RTP_QOS * rtpqos)
+RTP_Session * OpalRTPConnection::UseSession(const OpalTransport & transport, unsigned sessionID, const OpalMediaType & mediaType, RTP_QOS * rtpqos)
 {
-  RTP_Session * rtpSession = rtpSessions.UseSession(sessionID);
+  RTP_Session * rtpSession = m_rtpSessions.UseSession(sessionID);
   if (rtpSession == NULL) {
     rtpSession = CreateSession(transport, sessionID, rtpqos);
-    rtpSessions.AddSession(rtpSession);
+    m_rtpSessions.AddSession(rtpSession, mediaType);
   }
 
   return rtpSession;
@@ -240,7 +236,7 @@ void OpalRTPConnection::ReleaseSession(unsigned sessionID, PBoolean clearAll/* =
   printf("release session %i\n", sessionID);
 #endif
 
-  rtpSessions.ReleaseSession(sessionID, clearAll);
+  m_rtpSessions.ReleaseSession(sessionID, clearAll);
 }
 
 
@@ -266,7 +262,7 @@ void OpalRTPConnection::SetSecurityData(void *data)
 void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    RTP_Session * session = rtpSessions.GetSession(OpalMediaFormat::DefaultVideoSessionID);
+    RTP_Session * session = m_rtpSessions.GetSession(OpalMediaFormat::DefaultVideoSessionID);
     if (session != NULL)
       session->SendIntraFrameRequest();
 #ifdef OPAL_STATISTICS
@@ -404,83 +400,193 @@ OpalH281Handler * OpalRTPConnection::CreateH281ProtocolHandler(OpalH224Handler &
 
 /////////////////////////////////////////////////////////////////////////////
 
-RTP_SessionManager::RTP_SessionManager()
+OpalMediaSession::OpalMediaSession(const OpalMediaType & _mediaType)
+  : mediaType(_mediaType)
+  , autoStartReceive(true)
+  , autoStartTransmit(true)
+  , rtpSession(NULL)
+  , sessionId(0)
 {
 }
 
+/////////////////////////////////////////////////////////////////////////////
 
-RTP_SessionManager::RTP_SessionManager(const RTP_SessionManager & sm)
-: sessions(sm.sessions)
+OpalRTPSessionManager::OpalRTPSessionManager()
 {
+  m_initialised = false;
 }
 
 
-RTP_SessionManager & RTP_SessionManager::operator=(const RTP_SessionManager & sm)
+OpalRTPSessionManager::OpalRTPSessionManager(const OpalRTPSessionManager & sm)
 {
-  PWaitAndSignal m1(mutex);
-  PWaitAndSignal m2(sm.mutex);
-  sessions = sm.sessions;
+  PWaitAndSignal m1(m_mutex);
+  PWaitAndSignal m2(sm.m_mutex);
+  *(AncestorListType_T *)this = sm;
+}
+
+
+OpalRTPSessionManager & OpalRTPSessionManager::operator=(const OpalRTPSessionManager & sm)
+{
+  PWaitAndSignal m1(m_mutex);
+  PWaitAndSignal m2(sm.m_mutex);
+  *(AncestorListType_T *)this = sm;
   return *this;
 }
 
 
-RTP_Session * RTP_SessionManager::UseSession(unsigned sessionID)
+RTP_Session * OpalRTPSessionManager::UseSession(unsigned sessionID)
 {
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal m(m_mutex);
 
-  RTP_Session * session = sessions.GetAt(sessionID);
-  if (session == NULL) 
-    return NULL; 
+  iterator r = find(sessionID);
+  if (r == end() || r->second.rtpSession == NULL)
+    return NULL;
   
   PTRACE(3, "RTP\tFound existing session " << sessionID);
-  session->IncrementReference();
+  r->second.rtpSession->IncrementReference();
 
-  return session;
+  return r->second.rtpSession;
 }
 
 
-void RTP_SessionManager::AddSession(RTP_Session * session)
+void OpalRTPSessionManager::AddSession(RTP_Session * session, const OpalMediaType & mediaType)
 {
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal m(m_mutex);
   
   if (session != NULL) {
-    PTRACE(3, "RTP\tAdding session " << *session);
-    sessions.SetAt(session->GetSessionID(), session);
+    iterator r = find(session->GetSessionID());
+    if (r == end()) {
+      OpalMediaSession s(mediaType);
+      s.rtpSession = session;
+      insert(value_type(session->GetSessionID(), s));
+      PTRACE(3, "RTP\tCreating new session " << *session);
+    }
+    else
+    {
+      PAssert(r->second.rtpSession == NULL, "Cannot add already existing session");
+      r->second.rtpSession = session;
+    }
   }
 }
 
 
-void RTP_SessionManager::ReleaseSession(unsigned sessionID,
-                                        PBoolean clearAll)
+void OpalRTPSessionManager::ReleaseSession(unsigned sessionID, PBoolean clearAll)
 {
   PTRACE(3, "RTP\tReleasing session " << sessionID);
 
-  mutex.Wait();
+  PWaitAndSignal m(m_mutex);
 
-  while (sessions.Contains(sessionID)) {
-    RTP_Session * session = &sessions[sessionID];
-    if (session->DecrementReference()) {
-      PTRACE(3, "RTP\tDeleting session " << sessionID);
-      session->Close(PTrue);
-      session->SetJitterBufferSize(0, 0);
-      sessions.SetAt(sessionID, NULL);
+  iterator r;
+  while ((r = find(sessionID)) != end()) {
+    RTP_Session * session = r->second.rtpSession;
+    if (session != NULL) {
+      if (session->DecrementReference()) {
+        PTRACE(3, "RTP\tDeleting session " << sessionID);
+        session->Close(PTrue);
+        session->SetJitterBufferSize(0, 0);
+      }
+      erase(r);
     }
     if (!clearAll)
       break;
   }
-
-  mutex.Signal();
 }
 
 
-RTP_Session * RTP_SessionManager::GetSession(unsigned sessionID) const
+RTP_Session * OpalRTPSessionManager::GetSession(unsigned sessionID) const
 {
-  PWaitAndSignal wait(mutex);
-  if (!sessions.Contains(sessionID))
+  PWaitAndSignal wait(m_mutex);
+
+  const_iterator r;
+  if (((r = find(sessionID)) == end()) || (r->second.rtpSession == NULL)) {
+    PTRACE(3, "RTP\tCannot find session " << sessionID);
     return NULL;
+  }
 
   PTRACE(3, "RTP\tFound existing session " << sessionID);
-  return &sessions[sessionID];
+  return r->second.rtpSession;
+}
+
+
+void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, OpalConnection::StringOptions * stringOptions)
+{
+  PWaitAndSignal m(m_mutex);
+
+  // make function idempotent
+  if (m_initialised)
+    return;
+
+  m_initialised = true;
+
+  // see if stringoptions contains AutoStart option
+  if (stringOptions != NULL && stringOptions->Contains("autostart")) {
+
+    // get autostart option as lines
+    PStringArray lines = (*stringOptions)("autostart").Lines();
+    PINDEX i;
+    for (i = 0; i < lines.GetSize(); ++i) {
+      PString line = lines[i];
+      PINDEX colon = line.Find(':');
+      OpalMediaType mediaType = line.Left(colon);
+
+      // see if media type is known, and if it is, enable it
+      OpalMediaTypeDefinition * def = mediaType.GetDefinition();
+      if (def != NULL) {
+        OpalMediaSession info(mediaType);
+        bool autoStartReceive  = true;
+        bool autoStartTransmit = true;
+        if (colon != P_MAX_INDEX) {
+          PStringArray tokens = line.Mid(colon+1).Tokenise(";", FALSE);
+          PINDEX j;
+          for (j = 0; j < tokens.GetSize(); ++j) {
+            if (tokens[i] *= "no") {
+              autoStartReceive  = false;
+              autoStartTransmit = false;
+            }
+          }
+        }
+        AutoStartSession(def->GetDefaultSessionId(), mediaType, autoStartReceive, autoStartTransmit);
+      }
+    }
+  }
+
+  // set old video and audio auto start if not already set
+  OpalManager & mgr = conn.GetCall().GetManager();
+  SetOldOptions(1, OpalMediaType::Audio(), true, true);
+  SetOldOptions(2, OpalMediaType::Video(), mgr.CanAutoStartReceiveVideo(), mgr.CanAutoStartTransmitVideo());
+}
+
+void OpalRTPSessionManager::SetOldOptions(unsigned preferredSessionIndex, const OpalMediaType & mediaType, bool rx, bool tx)
+{
+  iterator r;
+  for (r = begin(); r != end(); ++r) {
+    if (r->second.mediaType == mediaType)
+      break;
+  }
+  if (r == end()) 
+    AutoStartSession(preferredSessionIndex, mediaType, rx, tx);
+}
+
+
+unsigned OpalRTPSessionManager::AutoStartSession(unsigned sessionID, const OpalMediaType & mediaType, bool autoStartReceive, bool autoStartTransmit)
+{
+  PWaitAndSignal m(m_mutex);
+  m_initialised = true;
+
+  if ((sessionID == 0) || (find(sessionID) != end())) {
+    unsigned i = 1;
+    while (find(sessionID) != end())
+      ++i;
+    sessionID = i;
+  }
+
+  OpalMediaSession s(mediaType);
+  s.sessionId         = sessionID;
+  s.autoStartReceive  = autoStartReceive;
+  s.autoStartTransmit = autoStartTransmit;
+  insert(value_type(sessionID, s));
+
+  return sessionID;
 }
 
 /////////////////////////////////////////////////////////////////////////////

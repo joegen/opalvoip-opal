@@ -1656,7 +1656,7 @@ void MyManager::RejectCall()
 
 void MyManager::HangUpCall()
 {
-  if (PAssert(m_callState != IdleState && m_activeCall != NULL, PLogicError)) {
+  if (PAssert(m_callState != IdleState && m_callState != AnsweringState && m_activeCall != NULL, PLogicError)) {
     LogWindow << "Hanging up \"" << *m_activeCall << '"' << endl;
     m_activeCall->Clear();
   }

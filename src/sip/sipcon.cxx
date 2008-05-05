@@ -371,7 +371,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
     SendInviteResponse(SIP_PDU::Information_Ringing);
   else {
     SDPSessionDescription sdpOut(GetLocalAddress());
-    if (!OnSendSDP(true, rtpSessions, sdpOut)) {
+    if (!OnSendSDP(true, m_rtpSessions, sdpOut)) {
       SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
       releaseMethod = ReleaseWithNothing;
       Release(EndedByCapabilityExchange);
@@ -411,7 +411,7 @@ PBoolean SIPConnection::SetConnected()
   PTRACE(3, "SIP\tSetConnected");
 
   SDPSessionDescription sdpOut(GetLocalAddress());
-  if (!OnSendSDP(true, rtpSessions, sdpOut)) {
+  if (!OnSendSDP(true, m_rtpSessions, sdpOut)) {
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
     releaseMethod = ReleaseWithNothing;
     Release(EndedByCapabilityExchange);
@@ -438,7 +438,7 @@ PBoolean SIPConnection::SetConnected()
 }
 
 
-RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalTransportAddress & mediaAddress, OpalTransportAddress & localAddress)
+RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalMediaType & mediaType, const OpalTransportAddress & mediaAddress, OpalTransportAddress & localAddress)
 {
   RTP_UDP *rtpSession = NULL;
   RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
@@ -466,7 +466,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalT
   }
   else {
     // create an RTP session
-    rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
+    rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, mediaType);
     if (rtpSession == NULL) {
       return NULL;
     }
@@ -613,7 +613,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
       rtpSession->SetUserData(new SIP_RTP_Session(*this));
 
       // add the RTP session to the RTP session manager in INVITE
-      rtpSessions.AddSession(rtpSession);
+      rtpSessions.AddSession(rtpSession, mediaType);
     }
 
     if (rtpSession == NULL)
@@ -766,7 +766,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     }
 
     // Create the RTPSession if required
-    rtpSession = OnUseRTPSession(rtpSessionId, mediaAddress, localAddress);
+    rtpSession = OnUseRTPSession(rtpSessionId, mediaType, mediaAddress, localAddress);
     if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
       return PFalse;
     }
@@ -951,7 +951,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
   needReINVITE = oldReINVITE;
 
   if (needReINVITE) {
-    SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
+    SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
     invite->Start();
   }
 
@@ -964,7 +964,7 @@ bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
   bool ok = OpalConnection::CloseMediaStream(stream);
 
   if (GetPhase() == EstablishedPhase && needReINVITE) {
-    SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
+    SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
     invite->Start();
   }
 
@@ -1057,7 +1057,7 @@ bool SIPConnection::HoldConnection()
 
   m_holdToRemote = eHoldInProgress;
 
-  SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
+  SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
   if (invite->Start())
     return true;
 
@@ -1086,7 +1086,7 @@ bool SIPConnection::RetrieveConnection()
 
   PTRACE(3, "SIP\tRetrieve connection from hold");
 
-  SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
+  SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
   if (invite->Start())
     return true;
 
@@ -1286,7 +1286,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     routeSet.AppendString(*route);
 
   // Save the sessions etc we are actually using of all the forked INVITES sent
-  rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
+  m_rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
   m_dialogFrom = transaction.GetMIME().GetFrom();
   UpdateRemoteAddresses(response.GetMIME().GetTo());
 
@@ -1577,7 +1577,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   }
   
   // send the 200 OK response
-  if (OnSendSDP(true, rtpSessions, sdpOut))
+  if (OnSendSDP(true, m_rtpSessions, sdpOut))
     SendInviteOK(sdpOut);
   else
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
@@ -2071,7 +2071,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
   OpalTransportAddress localAddress;
   OpalTransportAddress address = mediaDescription->GetTransportAddress();
   if (!address.IsEmpty()) {
-    rtpSession = OnUseRTPSession(rtpSessionId, address, localAddress);
+    rtpSession = OnUseRTPSession(rtpSessionId, mediaType, address, localAddress);
     if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId))
       return false;
 

@@ -409,6 +409,7 @@ class SIPConnection : public OpalRTPConnection
 
     virtual RTP_UDP *OnUseRTPSession(
       const unsigned rtpSessionId,
+      const OpalMediaType & mediaType,
       const OpalTransportAddress & mediaAddress,
       OpalTransportAddress & localAddress
     );
