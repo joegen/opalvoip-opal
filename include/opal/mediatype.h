@@ -161,6 +161,8 @@ class OpalMediaTypeDefinition  {
     //
     // return the default session ID for a media type
     //
+    unsigned GetDefaultSessionId()   { return GetDefaultSessionId(mediaType); }
+
     static unsigned GetDefaultSessionId(
       const OpalMediaType & mediaType
     );
@@ -197,6 +199,7 @@ class OpalMediaTypeDefinition  {
     ) = 0;
 
   protected:
+    std::string mediaType;
     std::string sdpType;
 #endif
 };

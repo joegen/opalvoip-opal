@@ -84,7 +84,7 @@ OpalMediaTypeDefinition * OpalMediaType::GetDefinition(const OpalMediaType & key
 
 #if OPAL_SIP
 OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * _mediaType, const char * _sdpType, unsigned preferredSessionId)
-  : sdpType(_sdpType != NULL ? _sdpType : "")
+  : mediaType(_mediaType), sdpType(_sdpType != NULL ? _sdpType : "")
 #else
 OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * _mediaType, const char *         , unsigned preferredSessionId)
 #endif
@@ -111,8 +111,6 @@ OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * _mediaType, const 
 unsigned OpalMediaTypeDefinition::GetDefaultSessionId(const OpalMediaType & mediaType)
 {
   PWaitAndSignal m(GetMapMutex());
-
-
 
   MediaTypeToSessionIDMap_T::iterator r = GetMediaTypeToSessionIDMap().find(mediaType);
   if (r != GetMediaTypeToSessionIDMap().end())

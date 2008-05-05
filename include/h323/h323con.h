@@ -1545,8 +1545,9 @@ class H323Connection : public OpalRTPConnection
       */
     virtual RTP_Session * UseSession(
       const OpalTransport & transport,
-      unsigned sessionID,
-      RTP_QOS * rtpqos = NULL
+                   unsigned sessionID,
+      const OpalMediaType & mediatype,  ///<  media type
+                  RTP_QOS * rtpqos = NULL
     );
 
     /**Release the session. If the session ID is not being used any more any
