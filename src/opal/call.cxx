@@ -418,7 +418,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 
     if (!SelectMediaFormats(sourceMediaFormats,
                             sinkMediaFormats,
-                            otherConnection->GetLocalMediaFormats(),
+                            connection.GetLocalMediaFormats(),
                             sourceFormat,
                             sinkFormat))
       return false;

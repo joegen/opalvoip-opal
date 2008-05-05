@@ -247,19 +247,25 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
    */
 
   OpalMediaFormatList::const_iterator masterFormat = masterFormats.FindFormat(srcCapability);
-  if (masterFormat == masterFormats.end())
+  if (masterFormat == masterFormats.end()) {
     srcFormat = srcCapability;
+    PTRACE(5, "Opal\tInitial source format from capabilities:\n" << setw(-1) << srcFormat);
+  }
   else {
     srcFormat = *masterFormat;
+    PTRACE(5, "Opal\tInitial source format from master:\n" << setw(-1) << srcFormat);
     if (!srcFormat.Merge(srcCapability))
       return false;
   }
 
   masterFormat = masterFormats.FindFormat(dstCapability);
-  if (masterFormat == masterFormats.end())
+  if (masterFormat == masterFormats.end()) {
     dstFormat = dstCapability;
+    PTRACE(5, "Opal\tInitial destination format from capabilities:\n" << setw(-1) << dstFormat);
+  }
   else {
     dstFormat = *masterFormat;
+    PTRACE(5, "Opal\tInitial destination format from master:\n" << setw(-1) << dstFormat);
     if (!dstFormat.Merge(dstCapability))
       return false;
   }
