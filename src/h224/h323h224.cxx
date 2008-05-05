@@ -86,7 +86,7 @@ H323Channel * H323_H224Capability::CreateChannel(H323Connection & connection,
                                                  unsigned int sessionID,
                                                  const H245_H2250LogicalChannelParameters * /*params*/) const
 {
-  RTP_Session *session = connection.UseSession(connection.GetTransport(), sessionID);
+  RTP_Session *session = connection.UseSession(connection.GetTransport(), sessionID, "h224");
 	
   if(session == NULL) {
     return NULL;

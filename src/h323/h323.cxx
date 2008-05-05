@@ -3993,7 +3993,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   if (param != NULL)
     sessionID = param->m_sessionID;
 
-  session = UseSession(GetControlChannel(), sessionID, rtpqos);
+  session = UseSession(GetControlChannel(), sessionID, capability.GetMediaFormat().GetMediaType(), rtpqos);
   if (session == NULL)
     return NULL;
 
@@ -4327,7 +4327,7 @@ void H323Connection::OnUserInputIndication(const H245_UserInputIndication & ind)
 
 H323_RTP_Session * H323Connection::GetSessionCallbacks(unsigned sessionID) const
 {
-  RTP_Session * session = rtpSessions.GetSession(sessionID);
+  RTP_Session * session = m_rtpSessions.GetSession(sessionID);
   if (session == NULL)
     return NULL;
 
@@ -4339,10 +4339,11 @@ H323_RTP_Session * H323Connection::GetSessionCallbacks(unsigned sessionID) const
 
 
 RTP_Session * H323Connection::UseSession(const OpalTransport & transport,
-                                         unsigned sessionID,
-                                         RTP_QOS * rtpqos)
+                                                      unsigned sessionID,
+                                         const OpalMediaType & mediatype,  ///<  media type
+                                                     RTP_QOS * rtpqos)
 {
-  RTP_UDP * udp_session = (RTP_UDP *)OpalRTPConnection::UseSession(transport, sessionID, rtpqos);
+  RTP_UDP * udp_session = (RTP_UDP *)OpalRTPConnection::UseSession(transport, sessionID, mediatype, rtpqos);
   if (udp_session == NULL)
     return NULL;
 
@@ -4354,7 +4355,7 @@ RTP_Session * H323Connection::UseSession(const OpalTransport & transport,
 
 void H323Connection::ReleaseSession(unsigned sessionID)
 {
-  rtpSessions.ReleaseSession(sessionID);
+  m_rtpSessions.ReleaseSession(sessionID);
 }
 
 

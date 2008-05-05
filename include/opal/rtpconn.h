@@ -50,23 +50,55 @@ class OpalRTPEndPoint;
 //#endif
 //#endif
 
-
-/**This class is for encpsulating the IETF Real Time Protocol interface.
- */
-class RTP_SessionManager : public PObject
+/** Class for carrying media session information
+  */
+class OpalMediaSession
 {
-  PCLASSINFO(RTP_SessionManager, PObject);
+  public:
+    OpalMediaSession(const OpalMediaType & _mediaType);
+
+    OpalMediaType mediaType;     // media type for session
+    bool autoStartReceive;       // if true, this session should receive data when the call is started
+    bool autoStartTransmit;      // if true, this session  should transmit data when the call is started
+    unsigned sessionId;          // unique session ID
+
+    RTP_Session * rtpSession;    // RTP session
+};
+
+/**This class manages the RTP sessions for an OpalRTPConnection
+ */
+class OpalRTPSessionManager : public PObject, public std::map<unsigned, OpalMediaSession>
+{
+  PCLASSINFO(OpalRTPSessionManager , PObject);
 
   public:
+    typedef std::map<unsigned, OpalMediaSession> AncestorListType_T;
   /**@name Construction */
   //@{
     /**Construct new session manager database.
       */
-    RTP_SessionManager();
-    RTP_SessionManager(const RTP_SessionManager & sm);
-    RTP_SessionManager & operator=(const RTP_SessionManager & sm);
+    OpalRTPSessionManager ();
+    OpalRTPSessionManager (const OpalRTPSessionManager & sm);
+    OpalRTPSessionManager  & operator=(const OpalRTPSessionManager & sm);
   //@}
 
+    /**
+       Initialise the autostart options within the session
+      */
+    void Initialise(
+      OpalRTPConnection & conn, 
+      OpalConnection::StringOptions * stringOptions
+    );
+
+    /**
+       Initialise the autostart options for a session
+      */
+    unsigned AutoStartSession(
+      unsigned sessionID,        ///<  Session ID to use.
+      const OpalMediaType & mediaType,
+      bool autoStartReceive, 
+      bool autoStartTransmit
+    );
 
   /**@name Operations */
   //@{
@@ -92,7 +124,8 @@ class RTP_SessionManager : public PObject
        function expects the mutex to be locked and unlocks it automatically.
       */
     void AddSession(
-      RTP_Session * session    ///<  Session to add.
+      RTP_Session * session,          ///<  Session to add.
+      const OpalMediaType & mediaType ///< initial media type for this session
     );
 
     /**Release the session. If the session ID is not being used any more any
@@ -112,11 +145,16 @@ class RTP_SessionManager : public PObject
     ) const;
 
   //@}
+    PMutex & GetMutex() { return m_mutex; }
+
   protected:
-    PDICTIONARY(SessionDict, POrdinalKey, RTP_Session);
-    SessionDict sessions;
-    PMutex      mutex;
+    void SetOldOptions(unsigned channelId, const OpalMediaType & mediaType, bool rx, bool tx);
+
+    PMutex m_mutex;
+    bool m_initialised;
 };
+
+typedef OpalRTPSessionManager RTP_SessionManager;
 
 /**This is the base class for OpalConnections that use RTP sessions, 
    such as H.323 and SIPconnections to an endpoint.
@@ -170,6 +208,7 @@ class OpalRTPConnection : public OpalConnection
     virtual RTP_Session * UseSession(
       const OpalTransport & transport,  ///<  Transport of signalling
       unsigned sessionID,               ///<  RTP session number
+      const OpalMediaType & mediatype,  ///<  media type
       RTP_QOS * rtpqos = NULL           ///<  Quiality of Service information
     );
 
@@ -342,7 +381,7 @@ class OpalRTPConnection : public OpalConnection
   protected:
     PString securityMode;
     void * securityData;
-    RTP_SessionManager rtpSessions;
+    OpalRTPSessionManager m_rtpSessions;
     OpalRFC2833Proto * rfc2833Handler;
     OpalRFC2833Proto * ciscoNSEHandler;
 
