@@ -384,7 +384,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
       if (!SelectMediaFormats(sessionID,
                               sourceMediaFormats,
                               sinkMediaFormats,
-                              conn->GetLocalMediaFormats(),
+                              connection.GetLocalMediaFormats(),
                               sourceFormat,
                               sinkFormat))
         return false;

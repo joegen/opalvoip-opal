@@ -348,14 +348,17 @@ PBoolean H323UnidirectionalChannel::Open()
 
   OpalCall & call = connection.GetCall();
 
-  if (GetDirection() == IsReceiver) {
-    if (call.OpenSourceMediaStreams(connection, GetSessionID(), mediaStream->GetMediaFormat()))
-      return true;
-  }
+  bool ok;
+  if (GetDirection() == IsReceiver)
+    ok = call.OpenSourceMediaStreams(connection, GetSessionID(), mediaStream->GetMediaFormat());
   else {
     PSafePtr<OpalConnection> otherConnection = call.GetOtherPartyConnection(connection);
-    if (otherConnection != NULL && call.OpenSourceMediaStreams(*otherConnection, GetSessionID()))
-      return true;
+    ok = otherConnection != NULL && call.OpenSourceMediaStreams(*otherConnection, GetSessionID());
+  }
+
+  if (ok) {
+    capability->SetMediaFormatOptions(mediaStream->GetMediaFormat());
+    return true;
   }
 
   PTRACE(1, "LogChan\t" << (GetDirection() == IsReceiver ? "Receive" : "Transmit")

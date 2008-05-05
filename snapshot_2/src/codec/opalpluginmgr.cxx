@@ -2032,16 +2032,6 @@ PBoolean H323VideoPluginCapability::SetOptionsFromMPI(OpalMediaFormat & mediaFor
   SET_OR_CREATE_PARM(MaxRxFrameHeightOption, frameHeight, <);
   SET_OR_CREATE_PARM(MinRxFrameHeightOption, frameHeight, >);
 
-  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption()))) {
-    PTRACE(5, "H263\tFrameWidthOption failed");
-    return false;
-  }
-
-  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption()))) {
-    PTRACE(5, "H263\tFrameHeightOption failed");
-    return false;
-  }
-
   if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997)) {
     PTRACE(5, "H263\tFrameTimeOption failed");
     return false;

@@ -3453,8 +3453,10 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
 
   if (fastStartMediaStream != NULL)
     list = fastStartMediaStream->GetMediaFormat();
-  else
+  else {
     list = remoteCapabilities.GetMediaFormats();
+    list.Remove(endpoint.GetManager().GetMediaFormatMask());
+  }
 
   return list;
 }
