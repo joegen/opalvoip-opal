@@ -1007,14 +1007,6 @@ class H323EndPoint : public OpalRTPEndPoint
     PBoolean CanAutoStartTransmitFax() const { return autoStartTransmitFax; }
 #endif
 
-    /** Returns whether H.224 is enabled or not
-     */
-    PBoolean IsH224Enabled() const { return isH224Enabled; }
-	
-    /** Enables / disables H.224
-	 */
-    void SetIsH224Enabled(PBoolean flag) { isH224Enabled = flag; }
-
     /**See if should automatically do call forward of connection.
      */
     PBoolean CanAutoCallForward() const { return autoCallForward; }
