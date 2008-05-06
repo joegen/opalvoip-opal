@@ -37,21 +37,10 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_FAX
 
-#include <ptlib/pipechan.h>
+#if OPAL_T38_CAPABILITY
 
-#include <opal/mediafmt.h>
-#include <opal/mediastrm.h>
-#include <opal/endpoint.h>
-
-class OpalTransport;
-class T38_IFPPacket;
-class PASN_OctetString;
-
-namespace PWLibStupidLinkerHacks {
-  extern int t38Loader;
-};
+#include <opal/mediatype.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -73,6 +62,26 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 #if OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
 #endif
+};
+
+#endif // OPAL_T38_CAPABILITY
+
+#if OPAL_FAX
+
+#include <ptlib/pipechan.h>
+
+#include <opal/mediafmt.h>
+#include <opal/mediastrm.h>
+#include <opal/endpoint.h>
+
+
+class OpalTransport;
+class T38_IFPPacket;
+class PASN_OctetString;
+
+
+namespace PWLibStupidLinkerHacks {
+  extern int t38Loader;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -488,7 +497,6 @@ class OpalT38Connection : public OpalFaxConnection
     ~OpalT38Connection();
 
     void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
-    void AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const;
     OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
     OpalMediaFormatList GetMediaFormats() const;
 
@@ -520,12 +528,6 @@ class OpalT38Connection : public OpalFaxConnection
     PTimer faxTimer;
     bool faxStartup;
 };
-
-#define OPAL_PCM16_FAX      "PCM-16-Fax"
-
-extern const OpalFaxAudioFormat & GetOpalPCM16Fax();
-
-#define OpalPCM16Fax          GetOpalPCM16Fax()
 
 
 #endif // OPAL_FAX
