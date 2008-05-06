@@ -210,8 +210,8 @@ char OpalRFC2833Proto::RFC2833ToASCII(PINDEX rfc2833)
   if (rfc2833 >= 0 && rfc2833 < (PINDEX)sizeof(RFC2833Table1Events)-1)
     return RFC2833Table1Events[rfc2833];
 
-  if (rfc2833 > 192 && rfc2833 < 194)
-    return NSEEvents[rfc2833];
+  if (rfc2833 >= 192 && rfc2833 < 194)
+    return NSEEvents[rfc2833-192];
 
   return '\0';
 }
