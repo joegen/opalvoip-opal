@@ -113,7 +113,7 @@ class OpalManager_C : public OpalManager
     OpalManager_C(unsigned version)
       : pcssEP(NULL)
       , m_apiVersion(version)
-      , m_messagesAvailable(0, UINT_MAX)
+      , m_messagesAvailable(0, INT_MAX)
     {
     }
 
