@@ -508,9 +508,9 @@ PString OpalEndPoint::ReadUserInput(OpalConnection & connection,
   return manager.ReadUserInput(connection, terminators, lastDigitTimeout, firstDigitTimeout);
 }
 
-void OpalEndPoint::OnNewConnection(OpalCall & call, OpalConnection & conn)
+void OpalEndPoint::OnNewConnection(OpalCall & call, OpalConnection & connection)
 {
-  call.GetManager().OnNewConnection(conn);
+  call.OnNewConnection(connection);
 }
 
 #if P_SSL
