@@ -997,7 +997,7 @@ class H323EndPoint : public OpalRTPEndPoint
     PBoolean CanAutoStartTransmitVideo() const { return manager.CanAutoStartTransmitVideo(); }
 #endif
 
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
     /**See if should auto-start receive fax channels on connection.
      */
     PBoolean CanAutoStartReceiveFax() const { return autoStartReceiveFax; }

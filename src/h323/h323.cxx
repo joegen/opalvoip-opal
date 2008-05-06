@@ -3641,7 +3641,7 @@ void H323Connection::OnSelectLogicalChannels()
         PTRACE(4, "H245\tOnSelectLogicalChannels, video not auto-started");
       }
 #endif
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
       if (endpoint.CanAutoStartTransmitFax())
         SelectDefaultLogicalChannel(OpalMediaType::Fax(), OpalMediaFormat::DefaultDataSessionID);
       else {
@@ -3659,7 +3659,7 @@ void H323Connection::OnSelectLogicalChannels()
                               endpoint.CanAutoStartTransmitVideo(),
                               endpoint.CanAutoStartReceiveVideo());
 #endif
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
       SelectFastStartChannels(OpalMediaFormat::DefaultDataSessionID,
                               endpoint.CanAutoStartTransmitFax(),
                               endpoint.CanAutoStartReceiveFax());
@@ -3677,7 +3677,7 @@ void H323Connection::OnSelectLogicalChannels()
       if (endpoint.CanAutoStartReceiveVideo())
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsReceiver);
 #endif
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
       if (endpoint.CanAutoStartTransmitFax())
         StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsTransmitter);
       if (endpoint.CanAutoStartReceiveFax())

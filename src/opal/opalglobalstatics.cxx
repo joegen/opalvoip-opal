@@ -66,7 +66,7 @@ class PluginLoader : public PProcessStartup
 #if HAS_LIBSRTP
       PWLibStupidLinkerHacks::libSRTPLoader = 1;
 #endif
-#if OPAL_T38FAX
+#if OPAL_FAX
       PWLibStupidLinkerHacks::t38Loader = 1;
 #endif
 #if OPAL_RFC4175
