@@ -1286,7 +1286,9 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     routeSet.AppendString(*route);
 
   // Save the sessions etc we are actually using of all the forked INVITES sent
-  m_rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
+  if (response.HasSDP())
+    m_rtpSessions.CopyToMaster(((SIPInvite &)transaction).GetSessionManager());
+
   m_dialogFrom = transaction.GetMIME().GetFrom();
   UpdateRemoteAddresses(response.GetMIME().GetTo());
 

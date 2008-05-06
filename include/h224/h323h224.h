@@ -108,7 +108,7 @@ public:
   virtual PBoolean SetDynamicRTPPayloadType(int newType);
   RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
 	
-  OpalH224Handler * GetHandler() const { return h224Handler; }
+  //OpalH224Handler * GetHandler() const { return h224Handler; }
 	
 protected:
 		
@@ -120,7 +120,7 @@ protected:
   Directions direction;
   RTP_UDP & rtpSession;
   H323_RTP_Session & rtpCallbacks;
-  OpalH224Handler *h224Handler;
+  //OpalH224Handler *h224Handler;
   RTP_DataFrame::PayloadTypes rtpPayloadType;
   
 };

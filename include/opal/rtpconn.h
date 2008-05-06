@@ -77,10 +77,12 @@ class OpalRTPSessionManager : public PObject, public std::map<unsigned, OpalMedi
   //@{
     /**Construct new session manager database.
       */
-    OpalRTPSessionManager ();
-    OpalRTPSessionManager (const OpalRTPSessionManager & sm);
-    OpalRTPSessionManager  & operator=(const OpalRTPSessionManager & sm);
+    OpalRTPSessionManager();
+    ~OpalRTPSessionManager();
   //@}
+
+    void CopyFromMaster(const OpalRTPSessionManager & sm);
+    void CopyToMaster(OpalRTPSessionManager & sm);
 
     /**
        Initialise the autostart options within the session
@@ -152,6 +154,12 @@ class OpalRTPSessionManager : public PObject, public std::map<unsigned, OpalMedi
 
     PMutex m_mutex;
     bool m_initialised;
+    bool m_cleanupOnDelete;
+
+  private:
+    OpalRTPSessionManager (const OpalRTPSessionManager &) { }
+    OpalRTPSessionManager & operator=(const OpalRTPSessionManager &) { return *this; }
+
 };
 
 typedef OpalRTPSessionManager RTP_SessionManager;
@@ -178,6 +186,7 @@ class OpalRTPConnection : public OpalConnection
     /**Destroy connection.
      */
     ~OpalRTPConnection();
+
 
   /**@name RTP Session Management */
   //@{
@@ -343,38 +352,6 @@ class OpalRTPConnection : public OpalConnection
 
     void OnMediaCommand(OpalMediaCommand & command, INT extra);
 
-#if OPAL_H224
-	
-	/** Create an instance of the H.224 protocol handler.
-	    This is called when the subsystem requires that a H.224 channel be established.
-		
-	    Note that if the application overrides this it should return a pointer
-	    to a heap variable (using new) as it will be automatically deleted when
-	    the OpalConnection is deleted.
-	
-	    The default behaviour calls the OpalEndPoint function of the same name if
-        there is not already a H.224 handler associated with this connection. If there
-        is already such a H.224 handler associated, this instance is returned instead.
-	  */
-	virtual OpalH224Handler *CreateH224ProtocolHandler(unsigned sessionID);
-	
-	/** Create an instance of the H.281 protocol handler.
-		This is called when the subsystem requires that a H.224 channel be established.
-		
-		Note that if the application overrides this it should return a pointer
-		to a heap variable (using new) as it will be automatically deleted when
-		the associated H.224 handler is deleted.
-		
-		The default behaviour calls the OpalEndPoint function of the same name.
-	*/
-	virtual OpalH281Handler *CreateH281ProtocolHandler(OpalH224Handler & h224Handler);
-	
-    /** Returns the H.224 handler associated with this connection or NULL if no
-		handler was created
-	  */
-	OpalH224Handler * GetH224Handler() const { return  h224Handler; }
-#endif
-
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
 
@@ -387,10 +364,6 @@ class OpalRTPConnection : public OpalConnection
 
     PBoolean remoteIsNAT;
     PBoolean useRTPAggregation;
-
-#if OPAL_H224
-    OpalH224Handler		  * h224Handler;
-#endif
 };
 
 
