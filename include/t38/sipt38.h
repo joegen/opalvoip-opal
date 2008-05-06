@@ -41,7 +41,7 @@
 
 #include <sip/sdp.h>
 
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
 
 /////////////////////////////////////////////////////////
 //
@@ -65,7 +65,7 @@ class SDPFaxMediaDescription : public SDPMediaDescription
     PStringToString t38Attributes;
 };
 
-#endif // OPAL_FAX
+#endif // OPAL_T38_CAPABILITY
 
 #endif // OPAL_SIP
 

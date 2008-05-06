@@ -57,7 +57,6 @@ Either, or both, can be used in a call
 
 #include <opal/buildopts.h>
 
-#include <t38/t38proto.h>
 #include <t38/sipt38.h>
 
 #if OPAL_SIP
