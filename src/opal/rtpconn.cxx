@@ -38,6 +38,7 @@
 
 #include <opal/rtpconn.h>
 #include <opal/rtpep.h>
+#include <opal/manager.h>
 #include <codec/rfc2833.h>
 #include <t38/t38proto.h>
 #include <opal/patch.h>
@@ -404,8 +405,8 @@ OpalMediaSession::OpalMediaSession(const OpalMediaType & _mediaType)
   : mediaType(_mediaType)
   , autoStartReceive(true)
   , autoStartTransmit(true)
-  , rtpSession(NULL)
   , sessionId(0)
+  , rtpSession(NULL)
 {
 }
 
