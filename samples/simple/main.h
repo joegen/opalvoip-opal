@@ -106,7 +106,7 @@ class MyManager : public OpalManager
 #if OPAL_IVR
     OpalIVREndPoint  * ivrEP;
 #endif
-#if OPAL_T38FAX
+#if OPAL_FAX
     OpalFaxEndPoint  * faxEP;
     OpalFaxEndPoint  * t38EP;
 #endif

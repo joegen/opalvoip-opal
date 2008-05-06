@@ -61,6 +61,7 @@ Either, or both, can be used in a call
 #include <t38/sipt38.h>
 
 #if OPAL_SIP
+#if OPAL_FAX
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -143,5 +144,6 @@ void SDPFaxMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/,
 
 /////////////////////////////////////////////////////////////////////////////
 
+#endif // OPAL_FAX
 #endif // OPAL_SIP
 

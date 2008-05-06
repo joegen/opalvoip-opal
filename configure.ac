@@ -13,6 +13,7 @@ AC_PROG_CXX
 
 h323=yes
 t38=yes
+fax=yes
 h224=yes
 h450=yes
 h460=yes
@@ -486,17 +487,35 @@ dnl ########################################################################
 dnl
 dnl T.38
 
-dnl MSWIN_DISPLAY    t38,T.38
-dnl MSWIN_DEFINE     t38,OPAL_T38FAX
+dnl MSWIN_DISPLAY    t38,T.38 capability
+dnl MSWIN_DEFINE     t38,OPAL_T38_CAPABILITY
 
 if test "$t38" = "yes" ; then
   AC_ARG_ENABLE(t38,
-         [  --disable-t38           disable T.38 protocol support],
+         [  --disable-t38           disable T.38 capability support],
          t38=$enableval)
-  AC_MSG_CHECKING(T.38 protocol)
+  AC_MSG_CHECKING(T.38 capability)
   if test "$t38" = "yes" ; then
-    AC_SUBST(OPAL_T38FAX, 1)
-    AC_DEFINE(OPAL_T38FAX)
+    AC_SUBST(OPAL_T38_CAPABILITY, 1)
+    AC_DEFINE(OPAL_T38_CAPABILITY)
+    AC_MSG_RESULT(enabled)
+  else
+    AC_MSG_RESULT(disabled)
+  fi
+fi
+
+
+dnl MSWIN_DISPLAY    fax,T.38 FAX protocol
+dnl MSWIN_DEFINE     fax,OPAL_FAX
+
+if test "$fax" = "yes" ; then
+  AC_ARG_ENABLE(fax,
+         [  --disable-fax           disable T.38 FAX protocol support],
+         t38=$enableval)
+  AC_MSG_CHECKING(T.38 FAX protocol)
+  if test "$fax" = "yes" ; then
+    AC_SUBST(OPAL_FAX, 1)
+    AC_DEFINE(OPAL_FAX)
     AC_MSG_RESULT(enabled)
   else
     AC_MSG_RESULT(disabled)

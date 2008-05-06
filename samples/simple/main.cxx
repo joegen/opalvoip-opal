@@ -43,7 +43,7 @@
 #include <h323/gkclient.h>
 #endif
 
-#if OPAL_T38FAX
+#if OPAL_FAX
 #include <t38/t38proto.h>
 #endif
 
@@ -388,7 +388,7 @@ MyManager::MyManager()
 #if OPAL_IVR
   ivrEP  = NULL;
 #endif
-#if OPAL_T38FAX
+#if OPAL_FAX
   faxEP = NULL;
   t38EP = NULL;
 #endif
@@ -694,7 +694,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   }
 #endif
 
-#if OPAL_T38FAX
+#if OPAL_FAX
   ///////////////////////////////////////
   // Create T38 protocol handler
   {
@@ -727,7 +727,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 
 #if OPAL_SIP
     if (sipEP != NULL) {
-#if OPAL_T38FAX
+#if OPAL_FAX
       AddRouteEntry("t38:.*             = sip:<da>");
       AddRouteEntry("sip:.*\tfax@.*     = t38:received_fax_%s.tif;receive");
       AddRouteEntry("sip:.*\tsip:329@.* = t38:received_fax_%s.tif;receive");
@@ -789,7 +789,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   }
 #endif
 
-#if OPAL_T38FAX
+#if OPAL_FAX
   if (t38EP != NULL) {
       AddRouteEntry("sip:.*  = t38:<da>");
   }

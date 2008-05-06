@@ -48,10 +48,6 @@
 #include <codec/vidcodec.h>
 #endif
 
-#if OPAL_T38FAX
-#include <t38/t38proto.h>
-#endif
-
 
 #if OPAL_VIDEO
 
@@ -654,7 +650,7 @@ static H323Capability * CreateH263Cap(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
 
 OpalPluginFaxFormatInternal::OpalPluginFaxFormatInternal(const PluginCodec_Definition * _encoderCodec,
                                                                    const char * rtpEncodingName,
@@ -686,7 +682,7 @@ bool OpalPluginFaxFormatInternal::IsValidForProtocol(const PString & protocol) c
   return OpalPluginMediaFormatInternal::IsValidForProtocol(protocol);
 }
 
-#endif // OPAL_T38FAX
+#endif // OPAL_T38_CAPABILITY
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1062,14 +1058,14 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 // Fax transcoder classes
 //
 
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
 
 class OpalFaxAudioTranscoder : public OpalPluginFramedAudioTranscoder
 {
   PCLASSINFO(OpalFaxAudioTranscoder, OpalPluginFramedAudioTranscoder);
   public:
     OpalFaxAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder)
-      : OpalPluginFramedAudioTranscoder(_codec, _isEncoder, "PCM-16-Fax") 
+      : OpalPluginFramedAudioTranscoder(_codec, _isEncoder, OpalPCM16) 
     { 
       bufferRTP = NULL;
     }
@@ -1161,7 +1157,7 @@ PBoolean OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Da
   return PTrue;
 };
 
-#endif // OPAL_T38FAX
+#endif // OPAL_T38_CAPABILITY
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -1503,7 +1499,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       clockRate = encoderCodec->sampleRate;
       break;
 #endif
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
     case PluginCodec_MediaTypeFax:
       defaultSessionID = OpalMediaFormat::DefaultDataSessionID;
       frameTime = (8 * encoderCodec->usPerFrame) / 1000;
@@ -1540,7 +1536,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
           mediaFormatInternal = handler->OnCreateAudioFormat(*this, encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
           break;
 #endif
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
         case PluginCodec_MediaTypeFax:
           mediaFormatInternal = handler->OnCreateFaxFormat(*this, encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
           break;
@@ -1623,10 +1619,10 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
       break;
 #endif
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
     case PluginCodec_MediaTypeFax:
-      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(GetOpalPCM16Fax(),        encoderCodec->destFormat), encoderCodec, PTrue);
-      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, GetOpalPCM16Fax()),        decoderCodec, PFalse);
+      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, PTrue);
+      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16               ), decoderCodec, PFalse);
       break;
 #endif
     default:
@@ -1745,7 +1741,7 @@ void OpalPluginCodecHandler::RegisterVideoTranscoder(const PString & src, const 
 
 #endif
 
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
 OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateFaxFormat(OpalPluginCodecManager & /*mgr*/,
                                                    const PluginCodec_Definition * encoderCodec,
                                                                      const char * rtpEncodingName,

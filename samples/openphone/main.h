@@ -768,7 +768,7 @@ class MyManager : public wxFrame, public OpalManager
     OpalIVREndPoint  * ivrEP;
 #endif
 
-#if OPAL_T38FAX
+#if OPAL_FAX
     OpalT38EndPoint  * m_faxEP;
 #endif
 

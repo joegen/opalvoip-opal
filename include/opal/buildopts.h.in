@@ -82,7 +82,14 @@
 #undef  OPAL_VIDEO
 #endif
 
-#undef  OPAL_T38FAX
+#undef  OPAL_T38_CAPABILITY
+
+#if OPAL_T38_CAPABILITY
+#if P_ASN
+#undef  OPAL_FAX
+#endif
+#endif
+
 
 #ifndef OPAL_AUDIO
 #define NO_OPAL_AUDIO
