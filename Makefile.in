@@ -144,9 +144,6 @@ SOURCES += $(OPAL_SRCDIR)/opal/ivr.cxx \
            $(OPAL_SRCDIR)/opal/opalvxml.cxx 
 endif
 
-ifeq ($(OPAL_T38FAX), 1)
-SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx 
-endif
 
 ########################################
 
@@ -159,7 +156,7 @@ ASN_SRCDIR := $(OPAL_SRCDIR)/asn
 ASN_INCDIR := $(OPAL_INCDIR)/asn
 
 H450_ASN_FILES := h4501 h4502 h4503 h4504 h4505 h4506 h4507 h4508 h4509 h45010 h45011
-SIMPLE_ASN_FILES := x880 $(H450_ASN_FILES) mcs gcc t38 
+SIMPLE_ASN_FILES := x880 $(H450_ASN_FILES) mcs gcc
 
 ASN_H_FILES   := $(addprefix $(ASN_INCDIR)/,$(addsuffix .h,  $(SIMPLE_ASN_FILES)))
 ASN_CXX_FILES := $(addprefix $(ASN_SRCDIR)/,$(addsuffix .cxx,$(SIMPLE_ASN_FILES)))
@@ -215,7 +212,7 @@ SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
            $(OPAL_SRCDIR)/t120/h323t120.cxx \
            $(OPAL_SRCDIR)/t120/x224.cxx 
 
-ifdef OPAL_T38FAX
+ifdef OPAL_FAX
 SOURCES += $(OPAL_SRCDIR)/t38/h323t38.cxx
 endif
 
@@ -279,7 +276,7 @@ SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
            $(OPAL_SRCDIR)/sip/sdp.cxx \
            $(OPAL_SRCDIR)/sip/handlers.cxx \
 
-ifdef OPAL_T38FAX
+ifdef OPAL_FAX
 SOURCES += $(OPAL_SRCDIR)/t38/sipt38.cxx
 endif
 
@@ -315,6 +312,19 @@ endif
 ifeq ($(OPAL_SRTP), 1)
 SOURCES += $(OPAL_SRCDIR)/rtp/srtp.cxx \
 
+endif
+
+
+##################
+# T.38 and Fax
+
+ifeq ($(OPAL_T38_CAP), 1)
+SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx 
+endif
+
+ifeq ($(OPAL_FAX), 1)
+ASN_H_FILES   += $(ASN_INCDIR)/t38.h
+ASN_CXX_FILES += $(ASN_SRCDIR)/t38.cxx
 endif
 
 
