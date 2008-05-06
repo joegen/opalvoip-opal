@@ -330,16 +330,6 @@ PBoolean OpalPCSSConnection::SetUpConnection()
     return PTrue;
   }
 
-  {
-    PSafePtr<OpalConnection> otherConn = ownerCall.GetOtherPartyConnection(*this);
-    if (otherConn == NULL)
-      return PFalse;
-
-    remotePartyName    = otherConn->GetRemotePartyName();
-    remotePartyAddress = otherConn->GetRemotePartyAddress();
-    remoteProductInfo  = otherConn->GetRemoteProductInfo();
-  }
-
   PTRACE(3, "PCSS\tSetUpConnection(" << remotePartyName << ')');
   phase = AlertingPhase;
   OnAlerting();

@@ -433,6 +433,22 @@ class OpalConnection : public PSafeObject
 
   /**@name Basic operations */
   //@{
+    /**Get indication of connection being to a "network".
+       This indicates the if the connection may be regarded as a "network"
+       connection. The distinction is about if there is a concept of a "remote"
+       party being connected to and is best described by example: sip, h323,
+       iax and pstn are all "network" connections as they connect to something
+       "remote". While pc, pots and ivr are not as the entity being connected
+       to is intrinsically local.
+
+       As a rule a network connection would have different names returned by
+       GetLocalPartyName() and GetRemotePartyName() functions. A non-network
+       connection, for ease of use, has a unique value for GetLocalPartyName()
+       but, for convenience, uses the GetRemotePartyName() for the other
+       connection in the call for it's GetRemotePartyName().
+      */
+    virtual bool IsNetworkConnection() const = 0;
+
     /**Different phases of a call, which are used in all OpalConnection
        instances. These phases are fully described in the documentation page
        \ref pageOpalConnections.  */
@@ -1192,6 +1208,10 @@ class OpalConnection : public PSafeObject
       */
     const PString & GetRemotePartyName() const { return remotePartyName; }
 
+    /**Set the caller name/alias.
+      */
+    void SetRemotePartyName(const PString & name) { remotePartyName = name; }
+
     /**Get the remote application description. This is for backward
        compatibility and has been supercedded by GeREmoteProductInfo();
       */
@@ -1211,11 +1231,18 @@ class OpalConnection : public PSafeObject
       */
     const PString & GetRemotePartyAddress() const { return remotePartyAddress; }
 
+    /**Set the remote party address.
+      */
+    void SetRemotePartyAddress(const PString & addr) { remotePartyAddress = addr; }
+
     /**Get the remote party address.
        This will return the "best guess" at an address to use in a
        to call the user again later.
       */
-    virtual const PString GetRemotePartyCallbackURL() const { return remotePartyAddress; }
+    virtual PString GetRemotePartyURL() const;
+
+    // Deprecated - backward compatibility only
+    const PString GetRemotePartyCallbackURL() const { return GetRemotePartyURL(); }
 
 
     /**Get the called number (for incoming calls). This is useful for gateway

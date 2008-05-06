@@ -1877,21 +1877,9 @@ PSafePtr<OpalConnection> MyManager::GetConnection(bool user, PSafetyMode mode)
   if (m_activeCall == NULL)
     return NULL;
 
-  PSafePtr<OpalConnection> connection;
-  for (int i = 0; ; i++) {
-    connection = m_activeCall->GetConnection(i, PSafeReference);
-    if (connection == NULL)
-      break;
-
-    if (PIsDescendant(&(*connection), OpalPCSSConnection) || PIsDescendant(&(*connection), OpalLineConnection)) {
-      if (user)
-        break;
-    }
-    else {
-      if (!user)
-        break;
-    }
-  }
+  PSafePtr<OpalConnection> connection = m_activeCall->GetConnection(0, PSafeReference);
+  while (connection != NULL && connection->IsNetworkConnection() == user)
+    ++connection;
 
   return connection.SetSafetyMode(mode) ? connection : NULL;
 }
