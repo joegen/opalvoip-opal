@@ -42,7 +42,8 @@
 #define H281_CLIENT_ID 0x01
 
 class H224_Frame;
-class OpalH224Handler;
+
+#if 0
 
 class OpalH224ReceiverThread : public PThread
 {
@@ -126,6 +127,9 @@ private:
   void TransmitFrame(H224_Frame & frame);
 	
 };
+
+#endif //
+
 
 #endif // __OPAL_H224HANDLER_H
 

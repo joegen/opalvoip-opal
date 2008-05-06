@@ -52,9 +52,6 @@
 
 class OpalEndPoint;
 class OpalMediaPatch;
-class OpalH224Handler;
-class OpalH281Handler;
-
 
 /**This class is the central manager for OPAL.
    The OpalManager embodies the root of the tree of objects that constitute an
@@ -649,69 +646,6 @@ class OpalManager : public PObject
       unsigned firstDigitTimeout = 30     ///<  Timeout on receiving any digits
     );
   //@}
-
-  /**@name Other services */
-  //@{
-#if OPAL_T120DATA
-    /**Create an instance of the T.120 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.120 channel be established.
-
-       Note that if the application overrides this it should return a pointer
-       to a heap variable (using new) as it will be automatically deleted when
-       the H323Connection is deleted.
-
-       The default behavour returns NULL.
-      */
-    virtual OpalT120Protocol * CreateT120ProtocolHandler(
-      const OpalConnection & connection  ///<  Connection for which T.120 handler created
-    ) const;
-#endif
-
-#if OPAL_T38FAX
-    /**Create an instance of the T.38 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.38 fax channel be established.
-
-       Note that if the application overrides this it should return a pointer
-       to a heap variable (using new) as it will be automatically deleted when
-       the H323Connection is deleted.
-
-       The default behavour returns NULL.
-      */
-    virtual OpalT38Protocol * CreateT38ProtocolHandler(
-      const OpalConnection & connection  ///<  Connection for which T.38 handler created
-    ) const;
-	
-#endif
-
-#if OPAL_H224
-    /** Create an instance of the H.224 protocol handler.
-        This is called when the call subsystem requires that a H.224 channel be established.
-		
-        Note that if the application overrides this it should return a pointer
-        to a heap variable (using new) as it will be automatically deleted when
-        the OpalConnection is deleted.
-		
-        The default behaviour creates a standard OpalH224Handler instance
-      */
-	virtual OpalH224Handler * CreateH224ProtocolHandler(
-      OpalRTPConnection & connection, unsigned sessionID
-    ) const;
-	
-    /** Create an instance of the H.281 protocol handler.
-        This is called when a H.224 channel is established.
-		
-        Note that if the application overrides this it should return a pointer
-        to a heap variable (using new) as it will be automatically deleted when
-        the OpalConnection is deleted.
-		
-        The default behaviour creates a standard OpalH281Handler instance
-      */
-	virtual OpalH281Handler * CreateH281ProtocolHandler(
-      OpalH224Handler & h224Handler
-    ) const;
-#endif
 
     class RouteEntry : public PObject
     {

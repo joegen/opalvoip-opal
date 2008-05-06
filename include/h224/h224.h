@@ -34,11 +34,29 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/mediatype.h>
 #include <h224/q922.h>
 
 #define H224_HEADER_SIZE 6
 
 #define H224_BROADCAST 0x0000
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  declare a media type for H.224
+//
+
+class OpalH224MediaType : OpalRTPAVPMediaType 
+{
+  public:
+    OpalH224MediaType();
+
+#if OPAL_SIP
+    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
+#endif
+};
+
+///////////////////////////////////////////////////////////////////////////////
 
 class H224_Frame : public Q922_Frame
 {

@@ -59,7 +59,7 @@
 #include <codec/vidcodec.h>
 #endif
 
-#if OPAL_H224
+#if OPAL_H224FECC
 #include <h224/h323h224.h>
 #endif
 
@@ -235,12 +235,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   mustSendDRQ = PFalse;
   earlyStart = PFalse;
-#if OPAL_T120
-  startT120 = PTrue;
-#endif
-#if OPAL_H224
-  startH224 = ep.IsH224Enabled();
-#endif
+
   lastPDUWasH245inSETUP = PFalse;
   endSessionNeeded = PFalse;
 
@@ -3341,12 +3336,10 @@ void H323Connection::OnSetLocalCapabilities()
     }
   }
   
-#ifdef OPAL_H224
   // If H.224 is enabled, add the corresponding capabilities
   if(GetEndPoint().IsH224Enabled()) {
     localCapabilities.SetCapability(0, P_MAX_INDEX, new H323_H224Capability());
   }
-#endif
 
   H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX);
 
@@ -3422,7 +3415,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
       OnSelectLogicalChannels();
   }
 
-#if OPAL_T120
+#if 0
   if (h245_available && startT120) {
     if (remoteCapabilities.FindCapability("T.120") != NULL) {
       H323Capability * capability = localCapabilities.FindCapability("T.120");
@@ -3453,7 +3446,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
       break;
   }
 
-#if OPAL_H224
+#if 0
   if (h245_available && startH224) {
     if(remoteCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME) != NULL) {
       H323Capability * capability = localCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME);

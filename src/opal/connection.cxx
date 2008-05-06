@@ -180,12 +180,6 @@ OpalConnection::OpalConnection(OpalCall & call,
   , q931Cause(0x100)
   , silenceDetector(NULL)
   , echoCanceler(NULL)
-#if OPAL_T120DATA
-  , t120handler(NULL)
-#endif
-#if OPAL_T38FAX
-  , t38handler(NULL)
-#endif
   , stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
 #ifdef OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
@@ -900,28 +894,6 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
     }
   }
 }
-#endif
-
-#if OPAL_T120DATA
-
-OpalT120Protocol * OpalConnection::CreateT120ProtocolHandler()
-{
-  if (t120handler == NULL)
-    t120handler = endpoint.CreateT120ProtocolHandler(*this);
-  return t120handler;
-}
-
-#endif
-
-#if OPAL_T38FAX
-
-OpalT38Protocol * OpalConnection::CreateT38ProtocolHandler()
-{
-  if (t38handler == NULL)
-    t38handler = endpoint.CreateT38ProtocolHandler(*this);
-  return t38handler;
-}
-
 #endif
 
 void OpalConnection::SetLocalPartyName(const PString & name)

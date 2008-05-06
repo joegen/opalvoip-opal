@@ -23,6 +23,10 @@
  * $Date$
  */
 
+/*
+  This file implements H.224 as part of H.323, as well as RFC 4573 for H.224 over SIP 
+ */
+
 #include <ptlib.h>
 
 #ifdef __GNUC__
@@ -32,12 +36,29 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_H224
+#if OPAL_H224FECC
 
 #include <h224/h224.h>
 #include <h224/h224handler.h>
 #include <h323/h323con.h>
 
+/////////////////////////////////////////////////////////////////////////
+
+OpalH224MediaType::OpalH224MediaType()
+  : OpalRTPAVPMediaType("h224", "application", 5)
+{
+}
+
+#if OPAL_SIP
+
+SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+{
+  return NULL;
+}
+
+#endif
+
+/////////////////////////////////////////////////////////////////////////
 
 H224_Frame::H224_Frame(PINDEX size)
 : Q922_Frame(H224_HEADER_SIZE + size)
@@ -233,6 +254,8 @@ PBoolean H224_Frame::Decode(const BYTE *data,
 }
 
 ////////////////////////////////////
+
+#if 0
 
 OpalH224Handler::OpalH224Handler(OpalRTPConnection & connection, unsigned sessionID)
 : transmitMutex()
@@ -671,4 +694,6 @@ void OpalH224ReceiverThread::Close()
   PAssert(WaitForTermination(10000), "H224 receiver thread not terminated");
 }
 
-#endif // OPAL_H224
+#endif
+
+#endif // OPAL_H224FECC

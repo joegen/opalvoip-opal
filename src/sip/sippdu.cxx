@@ -2379,7 +2379,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
   mime.SetDate() ;                             // now
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
-  rtpSessions = sm;
+  rtpSessions.CopyFromMaster(sm);
   sdp = new SDPSessionDescription();
   if (!connection.OnSendSDP(false, rtpSessions, *sdp)) {
     delete sdp;

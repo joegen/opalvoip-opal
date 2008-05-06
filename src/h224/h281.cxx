@@ -32,7 +32,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_H224
+#if OPAL_H224FECC
 
 #include <h224/h281.h>
 #include <h224/h281handler.h>
@@ -446,8 +446,8 @@ PBoolean H281VideoSource::Decode(const BYTE *data)
 
 ///////////////////////////////
 
-OpalH281Handler::OpalH281Handler(OpalH224Handler & theH224Handler)
-: h224Handler(theH224Handler)
+OpalH281Handler::OpalH281Handler(/*OpalH224Handler & theH224Handler*/)
+  //: h224Handler(theH224Handler)
 {
   remoteHasH281 = PFalse;
   localNumberOfPresets = 0;
@@ -482,7 +482,7 @@ OpalH281Handler::OpalH281Handler(OpalH224Handler & theH224Handler)
 
 OpalH281Handler::~OpalH281Handler()
 {
-  PWaitAndSignal m(h224Handler.GetTransmitMutex());
+  //PWaitAndSignal m(h224Handler.GetTransmitMutex());
 	
   transmitTimer.Stop();
   receiveTimer.Stop();
@@ -503,7 +503,7 @@ void OpalH281Handler::StartAction(H281_Frame::PanDirection panDirection,
                                   H281_Frame::ZoomDirection zoomDirection,
                                   H281_Frame::FocusDirection focusDirection)
 {
-  PWaitAndSignal m(h224Handler.GetTransmitMutex());
+//  PWaitAndSignal m(h224Handler.GetTransmitMutex());
 
   if(transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
 
@@ -526,7 +526,7 @@ void OpalH281Handler::StartAction(H281_Frame::PanDirection panDirection,
   transmitFrame.SetFocusDirection(focusDirection);
   transmitFrame.SetTimeout(0); //800msec
 
-  h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
 
   // send a ContinueAction every 400msec
   transmitTimer.RunContinuous(400);
@@ -534,11 +534,11 @@ void OpalH281Handler::StartAction(H281_Frame::PanDirection panDirection,
 
 void OpalH281Handler::StopAction()
 {
-  PWaitAndSignal m(h224Handler.GetTransmitMutex());
+//  PWaitAndSignal m(h224Handler.GetTransmitMutex());
 	
   transmitFrame.SetRequestType(H281_Frame::StopAction);
 	
-  h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
 	
   transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
   transmitTimer.Stop();
@@ -546,7 +546,7 @@ void OpalH281Handler::StopAction()
 
 void OpalH281Handler::SelectVideoSource(BYTE videoSourceNumber, H281_Frame::VideoMode videoMode)
 {
-  PWaitAndSignal m(h224Handler.GetTransmitMutex());
+//  PWaitAndSignal m(h224Handler.GetTransmitMutex());
 	
   if(transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
     StopAction();
@@ -556,14 +556,14 @@ void OpalH281Handler::SelectVideoSource(BYTE videoSourceNumber, H281_Frame::Vide
   transmitFrame.SetVideoSourceNumber(videoSourceNumber);
   transmitFrame.SetVideoMode(videoMode);
 	
-  h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
 	
   transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
 }
 
 void OpalH281Handler::StoreAsPreset(BYTE presetNumber)
 {
-  PWaitAndSignal m(h224Handler.GetTransmitMutex());
+//  PWaitAndSignal m(h224Handler.GetTransmitMutex());
 	
   if(transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
     StopAction();
@@ -572,14 +572,14 @@ void OpalH281Handler::StoreAsPreset(BYTE presetNumber)
   transmitFrame.SetRequestType(H281_Frame::StoreAsPreset);
   transmitFrame.SetPresetNumber(presetNumber);
   
-  h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
 	
   transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
 }
 
 void OpalH281Handler::ActivatePreset(BYTE presetNumber)
 {
-  PWaitAndSignal m(h224Handler.GetTransmitMutex());
+//  PWaitAndSignal m(h224Handler.GetTransmitMutex());
 	
   if(transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
     StopAction();
@@ -588,7 +588,7 @@ void OpalH281Handler::ActivatePreset(BYTE presetNumber)
   transmitFrame.SetRequestType(H281_Frame::ActivatePreset);
   transmitFrame.SetPresetNumber(presetNumber);
 	
-  h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
 	
   transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
 }
@@ -610,7 +610,7 @@ void OpalH281Handler::SendExtraCapabilities() const
     }
   }
 	
-  h224Handler.SendExtraCapabilitiesMessage(H281_CLIENT_ID, capabilities, size);
+//  h224Handler.SendExtraCapabilitiesMessage(H281_CLIENT_ID, capabilities, size);
 }
 
 void OpalH281Handler::OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size)
@@ -764,11 +764,11 @@ void OpalH281Handler::OnActivatePreset(BYTE /*presetNumber*/)
 
 void OpalH281Handler::ContinueAction(PTimer &, INT)
 {
-  PWaitAndSignal(h224Handler.GetTransmitMutex());
+//  PWaitAndSignal(h224Handler.GetTransmitMutex());
 	
   transmitFrame.SetRequestType(H281_Frame::ContinueAction);
 	
-  h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
 }
 
 void OpalH281Handler::StopActionLocally(PTimer &, INT)
@@ -781,5 +781,5 @@ void OpalH281Handler::StopActionLocally(PTimer &, INT)
   OnStopAction();
 }
 
-#endif // OPAL_H224
+#endif // OPAL_H224FECC
 
