@@ -195,10 +195,6 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   PAssert(ownerCall.SafeReference(), PLogicError);
 
-  // Set an initial value for the A-Party name, if we are in fact the A-Party
-  if (ownerCall.connectionsActive.IsEmpty())
-    ownerCall.partyA = localPartyName;
-
   ownerCall.connectionsActive.Append(this);
 
   detectInBandDTMF = !endpoint.GetManager().DetectInBandDTMFDisabled();
@@ -937,6 +933,17 @@ void OpalConnection::SetLocalPartyName(const PString & name)
 PString OpalConnection::GetLocalPartyURL() const
 {
   return endpoint.GetPrefixName() + ':' + PURL::TranslateString(GetLocalPartyName(), PURL::LoginTranslation);
+}
+
+
+PString OpalConnection::GetRemotePartyURL() const
+{
+  PStringStream url;
+  url << endpoint.GetPrefixName() << ':' << PURL::TranslateString(remotePartyName, PURL::LoginTranslation);
+  if (!remotePartyName.IsEmpty() && !remotePartyAddress.IsEmpty())
+    url << '@';
+  url << remotePartyAddress;
+  return url;
 }
 
 

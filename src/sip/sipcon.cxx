@@ -336,7 +336,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     PSafePtr<SIPConnection> sip = PSafePtrCast<OpalConnection, SIPConnection>(connection);
     if (sip != NULL) {
       PStringStream referTo;
-      referTo << sip->GetRemotePartyCallbackURL()
+      referTo << sip->GetRemotePartyURL()
               << "?Replaces=" << sip->GetToken()
               << "%3Bto-tag%3D"   << SIPMIMEInfo::ExtractFieldParameter(sip->GetDialogFrom(), "tag") // "to/from" is from the other sides perspective
               << "%3Bfrom-tag%3D" << SIPMIMEInfo::ExtractFieldParameter(sip->GetDialogTo(), "tag");
@@ -1127,7 +1127,7 @@ void SIPConnection::AdjustOutgoingINVITE()
 }
 
 
-const PString SIPConnection::GetRemotePartyCallbackURL() const
+PString SIPConnection::GetRemotePartyURL() const
 {
   SIPURL url = GetRemotePartyAddress();
   url.AdjustForRequestURI();

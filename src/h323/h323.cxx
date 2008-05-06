@@ -1127,7 +1127,7 @@ void H323Connection::SetRemoteApplication(const H225_EndpointType & pdu)
 }
 
 
-const PString H323Connection::GetRemotePartyCallbackURL() const
+PString H323Connection::GetRemotePartyURL() const
 {
   PString remote;
   PINDEX j;
@@ -2938,7 +2938,7 @@ bool H323Connection::TransferConnection(const PString & remoteParty)
     PSafePtr<H323Connection> h323 = PSafePtrCast<OpalConnection, H323Connection>(connection);
     if (h323 != NULL)
 #if OPAL_H450
-      return TransferCall(h323->GetRemotePartyCallbackURL(), h323->GetToken());
+      return TransferCall(h323->GetRemotePartyURL(), h323->GetToken());
 #else
       return false;
 #endif
