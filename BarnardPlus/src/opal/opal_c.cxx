@@ -113,6 +113,7 @@ class OpalManager_C : public OpalManager
     OpalManager_C(unsigned version)
       : pcssEP(NULL)
       , m_apiVersion(version)
+      , m_messagesAvailable(0, UINT_MAX)
     {
     }
 
@@ -143,7 +144,7 @@ class OpalManager_C : public OpalManager
     unsigned                  m_apiVersion;
     std::queue<OpalMessage *> m_messageQueue;
     PMutex                    m_messageMutex;
-    PSyncPoint                m_messageAvailable;
+    PSemaphore                m_messagesAvailable;
 };
 
 
@@ -415,19 +416,24 @@ void OpalManager_C::PostMessage(OpalMessageBuffer & message)
   m_messageMutex.Wait();
   m_messageQueue.push(message.Detach());
   m_messageMutex.Signal();
-  m_messageAvailable.Signal();
+  m_messagesAvailable.Signal();
 }
 
 
 OpalMessage * OpalManager_C::GetMessage(unsigned timeout)
 {
-  if (!m_messageAvailable.Wait(timeout))
-    return NULL;
+  OpalMessage * msg = NULL;
 
-  m_messageMutex.Wait();
-  OpalMessage * msg = m_messageQueue.front();
-  m_messageQueue.pop();
-  m_messageMutex.Signal();
+  if (m_messagesAvailable.Wait(timeout)) {
+    m_messageMutex.Wait();
+
+    if (!m_messageQueue.empty()) {
+      msg = m_messageQueue.front();
+      m_messageQueue.pop();
+    }
+
+    m_messageMutex.Signal();
+  }
 
   return msg;
 }
