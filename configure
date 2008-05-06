@@ -681,8 +681,9 @@ OPAL_VIDEO
 OPAL_SIP
 OPAL_H323
 OPAL_IAX2
-OPAL_H224
-OPAL_T38FAX
+OPAL_H224FECC
+OPAL_T38_CAPABILITY
+OPAL_FAX
 OPAL_H450
 OPAL_H460
 OPAL_LID
@@ -1297,7 +1298,8 @@ Optional Features:
   --disable-h323          disable H.323 protocol support
   --disable-iax           disable IAX2 protocol support
   --disable-h224          disable H.224 protocol support
-  --disable-t38           disable T.38 protocol support
+  --disable-t38           disable T.38 capability support
+  --disable-fax           disable T.38 FAX protocol support
   --disable-h450          disable H.450
   --disable-h460          disable H.460
   --disable-lid           disable LID support
@@ -3044,6 +3046,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 h323=yes
 t38=yes
+fax=yes
 h224=yes
 h450=yes
 h460=yes
@@ -6754,10 +6757,10 @@ fi
 { echo "$as_me:$LINENO: checking H224 protocol" >&5
 echo $ECHO_N "checking H224 protocol... $ECHO_C" >&6; }
 if test "$h224" = "yes" ; then
-  OPAL_H224=1
+  OPAL_H224FECC=1
 
   cat >>confdefs.h <<\_ACEOF
-#define OPAL_H224 1
+#define OPAL_H224FECC 1
 _ACEOF
 
   { echo "$as_me:$LINENO: result: enabled" >&5
@@ -6775,13 +6778,38 @@ if test "${enable_t38+set}" = set; then
   enableval=$enable_t38; t38=$enableval
 fi
 
-  { echo "$as_me:$LINENO: checking T.38 protocol" >&5
-echo $ECHO_N "checking T.38 protocol... $ECHO_C" >&6; }
+  { echo "$as_me:$LINENO: checking T.38 capability" >&5
+echo $ECHO_N "checking T.38 capability... $ECHO_C" >&6; }
   if test "$t38" = "yes" ; then
-    OPAL_T38FAX=1
+    OPAL_T38_CAPABILITY=1
 
     cat >>confdefs.h <<\_ACEOF
-#define OPAL_T38FAX 1
+#define OPAL_T38_CAPABILITY 1
+_ACEOF
+
+    { echo "$as_me:$LINENO: result: enabled" >&5
+echo "${ECHO_T}enabled" >&6; }
+  else
+    { echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6; }
+  fi
+fi
+
+
+
+if test "$fax" = "yes" ; then
+  # Check whether --enable-fax was given.
+if test "${enable_fax+set}" = set; then
+  enableval=$enable_fax; t38=$enableval
+fi
+
+  { echo "$as_me:$LINENO: checking T.38 FAX protocol" >&5
+echo $ECHO_N "checking T.38 FAX protocol... $ECHO_C" >&6; }
+  if test "$fax" = "yes" ; then
+    OPAL_FAX=1
+
+    cat >>confdefs.h <<\_ACEOF
+#define OPAL_FAX 1
 _ACEOF
 
     { echo "$as_me:$LINENO: result: enabled" >&5
@@ -8017,8 +8045,9 @@ OPAL_VIDEO!$OPAL_VIDEO$ac_delim
 OPAL_SIP!$OPAL_SIP$ac_delim
 OPAL_H323!$OPAL_H323$ac_delim
 OPAL_IAX2!$OPAL_IAX2$ac_delim
-OPAL_H224!$OPAL_H224$ac_delim
-OPAL_T38FAX!$OPAL_T38FAX$ac_delim
+OPAL_H224FECC!$OPAL_H224FECC$ac_delim
+OPAL_T38_CAPABILITY!$OPAL_T38_CAPABILITY$ac_delim
+OPAL_FAX!$OPAL_FAX$ac_delim
 OPAL_H450!$OPAL_H450$ac_delim
 OPAL_H460!$OPAL_H460$ac_delim
 OPAL_LID!$OPAL_LID$ac_delim
@@ -8046,7 +8075,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 95; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 96; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -8065,7 +8094,7 @@ fi
 
 cat >>$CONFIG_STATUS <<_ACEOF
 cat >"\$tmp/subs-1.sed" <<\CEOF$ac_eof
-/@[a-zA-Z_][a-zA-Z_0-9]*@/!b end
+/@[a-zA-Z_][a-zA-Z_0-9]*@/!b
 _ACEOF
 sed '
 s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g
@@ -8078,8 +8107,6 @@ N; s/^.*\n//; s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g; b n
 ' >>$CONFIG_STATUS <conf$$subs.sed
 rm -f conf$$subs.sed
 cat >>$CONFIG_STATUS <<_ACEOF
-:end
-s/|#_!!_#|//g
 CEOF$ac_eof
 _ACEOF
 
@@ -8327,7 +8354,7 @@ s&@abs_builddir@&$ac_abs_builddir&;t t
 s&@abs_top_builddir@&$ac_abs_top_builddir&;t t
 s&@INSTALL@&$ac_INSTALL&;t t
 $ac_datarootdir_hack
-" $ac_file_inputs | sed -f "$tmp/subs-1.sed" >$tmp/out
+" $ac_file_inputs | sed -f "$tmp/subs-1.sed" | sed 's/|#_!!_#|//g' >$tmp/out
 
 test -z "$ac_datarootdir_hack$ac_datarootdir_seen" &&
   { ac_out=`sed -n '/\${datarootdir}/p' "$tmp/out"`; test -n "$ac_out"; } &&
