@@ -511,7 +511,7 @@ dnl MSWIN_DEFINE     fax,OPAL_FAX
 if test "$fax" = "yes" ; then
   AC_ARG_ENABLE(fax,
          [  --disable-fax           disable T.38 FAX protocol support],
-         t38=$enableval)
+         fax=$enableval)
   AC_MSG_CHECKING(T.38 FAX protocol)
   if test "$fax" = "yes" ; then
     AC_SUBST(OPAL_FAX, 1)
