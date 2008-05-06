@@ -38,34 +38,6 @@
 #include <opal/buildopts.h>
 
 
-#if OPAL_T38_CAPABILITY
-
-#include <opal/mediatype.h>
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  declare a media type for T.38
-//
-
-class OpalFaxMediaType : public OpalMediaTypeDefinition 
-{
-  public:
-    OpalFaxMediaType();
-
-    PString GetRTPEncoding(void) const;
-    RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
-#if OPAL_RTP_AGGREGATE
-                               PHandleAggregator * agg,
-#endif
-                               unsigned sessionID, bool remoteIsNAT);
-
-#if OPAL_SIP
-    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
-#endif
-};
-
-#endif // OPAL_T38_CAPABILITY
-
 #if OPAL_FAX
 
 #include <ptlib/pipechan.h>
