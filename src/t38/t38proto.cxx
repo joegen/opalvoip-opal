@@ -34,33 +34,10 @@
 #pragma implementation "t38proto.h"
 #endif
 
-#include <opal/buildopts.h>
-
-#if OPAL_FAX
-
-#include <ptlib/pipechan.h>
-
 #include <t38/t38proto.h>
-#include <codec/rfc2833.h>
 
-#include <opal/mediastrm.h>
-#include <opal/mediatype.h>
-#include <opal/patch.h>
 
-#include <h323/transaddr.h>
-#include <asn/t38.h>
-
-//#define USE_SEQ
-
-#define new PNEW
-
-namespace PWLibStupidLinkerHacks {
-  int t38Loader;
-};
-
-#define SPANDSP_AUDIO_SIZE    320
-
-static PAtomicInteger faxCallIndex;
+#if OPAL_T38_CAPABILITY
 
 OPAL_INSTANTIATE_MEDIATYPE(fax, OpalFaxMediaType);
 
@@ -86,43 +63,24 @@ RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &,
                      sessionID, remoteIsNAT);
 }
 
+#endif // OPAL_T38_CAPABILITY
+
+
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
+#if OPAL_FAX
 
-const OpalFaxAudioFormat & GetOpalPCM16Fax() 
-{
-  static const OpalFaxAudioFormat opalPCM16Fax(OPAL_PCM16_FAX, RTP_DataFrame::MaxPayloadType, "", 16, 8,  240, 30, 256,  8000);
-  return opalPCM16Fax;
-}
+#include <asn/t38.h>
 
+#define new PNEW
 
-OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
-                                 RTP_DataFrame::PayloadTypes rtpPayloadType,
-                                 const char * encodingName, ///<  RTP encoding name
-                                 PINDEX   frameSize,
-                                 unsigned frameTime,
-                                 unsigned rxFrames,
-                                 unsigned txFrames,
-                                 unsigned maxFrames,
-				                         unsigned clockRate,
-                                   time_t timeStamp)
-  : OpalMediaFormat(fullName,
-                    "audio",
-                    rtpPayloadType,
-                    encodingName,
-                    PTrue,
-                    8*frameSize*AudioClockRate/frameTime,  // bits per second = 8*frameSize * framesPerSecond
-                    frameSize,
-                    frameTime,
-                    clockRate,
-                    timeStamp)
-{
-  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
-}
+namespace PWLibStupidLinkerHacks {
+  int t38Loader;
+};
 
-#endif
+#define SPANDSP_AUDIO_SIZE    320
+
+static PAtomicInteger faxCallIndex;
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -907,21 +865,10 @@ OpalFaxConnection::~OpalFaxConnection()
 OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
   // if creating an audio session, use a NULL stream
-  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
-    if (forceFaxAudio && (mediaFormat == OpalPCM16))
-      return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive, stationId);
-    else
-      return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
-  }
-
-  // if creating a data stream, see what type it is
-  else if (!forceFaxAudio && (sessionID == OpalMediaFormat::DefaultDataSessionID)) {
-    if (mediaFormat == OpalPCM16Fax)
-      return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive, stationId);
-  }
-
-  // else call ancestor
-  return NULL;
+  if (forceFaxAudio && (mediaFormat == OpalPCM16))
+    return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive, stationId);
+  else
+    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
 }
 
 PBoolean OpalFaxConnection::SetUpConnection()
@@ -1012,12 +959,7 @@ PBoolean OpalFaxConnection::SetConnected()
 OpalMediaFormatList OpalFaxConnection::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
-
-  if (forceFaxAudio)
-    formats += OpalPCM16;        
-  else
-    formats += OpalPCM16Fax;        
-
+  formats += OpalPCM16;       
   return formats;
 }
 
@@ -1131,11 +1073,6 @@ OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & m
   return NULL;
 }
 
-void OpalT38Connection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const
-{
-  endpoint.AdjustMediaFormats(*this, mediaFormats);
-  mediaFormats.Remove(PStringArray(OpalPCM16Fax));
-}
 
 OpalMediaFormatList OpalT38Connection::GetMediaFormats() const
 {
