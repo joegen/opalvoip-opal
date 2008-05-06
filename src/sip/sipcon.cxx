@@ -48,9 +48,6 @@
 #include <ptclib/random.h>              // for local dialog tag
 #include <ptclib/pdns.h>
 
-#if OPAL_T38FAX
-#include <t38/t38proto.h>
-#endif
 
 #define new PNEW
 
@@ -511,7 +508,7 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, RTP_SessionManager & rtpSess
 #if OPAL_VIDEO
     sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut);
 #endif
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
     sdpOK |= OfferSDPMediaDescription(OpalMediaType::Fax(), 0, rtpSessions, sdpOut);
 #endif
   }
@@ -686,7 +683,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
   if (mediaType == OpalMediaType::Audio()) {
     SetNXEPayloadCode(localMedia, ntePayloadCode, rfc2833Handler,  OpalRFC2833, OpalDefaultNTEString, "NTE"); // RFC 2833
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
     SetNXEPayloadCode(localMedia, nsePayloadCode, ciscoNSEHandler, OpalCiscoNSE, OpalDefaultNSEString, "NSE"); // Cisco NSE
 #endif
   }
@@ -886,7 +883,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   if (hasTelephoneEvent)
     localMedia->AddSDPMediaFormat(new SDPMediaFormat(OpalRFC2833, rfc2833Handler->GetPayloadType(), OpalDefaultNTEString));
 
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
   if (hasNSE)
     localMedia->AddSDPMediaFormat(new SDPMediaFormat(OpalCiscoNSE, ciscoNSEHandler->GetPayloadType(), OpalDefaultNSEString));
 #endif
@@ -1606,7 +1603,7 @@ PBoolean SIPConnection::OnOpenIncomingMediaChannels()
 #if OPAL_VIDEO
       { "video", OpalMediaFormat::DefaultVideoSessionID },
 #endif
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
       { "image", OpalMediaFormat::DefaultDataSessionID },
 #endif
     };

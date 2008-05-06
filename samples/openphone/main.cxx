@@ -231,7 +231,7 @@ static const char * const DefaultRoutes[] = {
     "pots:.*           = sip:<da>",
     "pc:.*             = sip:<da>",
 
-#if OPAL_T38FAX
+#if OPAL_FAX
     "t38:.*            = sip:<da>",
 #endif
 
@@ -582,7 +582,7 @@ bool MyManager::Initialise()
   ivrEP = new OpalIVREndPoint(*this);
 #endif
 
-#if OPAL_T38FAX
+#if OPAL_FAX
   m_faxEP = new OpalT38EndPoint(*this);
 #endif
 
@@ -727,7 +727,7 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Fax fields
-#if OPAL_T38FAX
+#if OPAL_FAX
   config->SetPath(FaxGroup);
   if (config->Read(FaxStationIdentifierKey, &str))
     m_faxEP->SetDefaultDisplayName(str);
@@ -751,7 +751,7 @@ bool MyManager::Initialise()
 #if OPAL_IVR
   mediaFormats += ivrEP->GetMediaFormats();
 #endif
-#if OPAL_T38FAX
+#if OPAL_FAX
   mediaFormats += m_faxEP->GetMediaFormats();
 #endif
   InitMediaInfo("sw", OpalTranscoder::GetPossibleFormats(mediaFormats));
@@ -1138,7 +1138,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuStartRecording"),  m_callState == InCallState && !m_activeCall->IsRecording());
   menubar->Enable(XRCID("MenuStopRecording"),   m_callState == InCallState &&  m_activeCall->IsRecording());
 
-#if OPAL_T38FAX
+#if OPAL_FAX
   menubar->Enable(XRCID("MenuSendFax"),         m_callState != InCallState);
 #else
   menubar->Enable(XRCID("MenuSendFax"), false);
@@ -2738,7 +2738,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Fax fields
-#if OPAL_T38FAX
+#if OPAL_FAX
   INIT_FIELD(FaxStationIdentifier, (const char *)m_manager.m_faxEP->GetDefaultDisplayName());
   INIT_FIELD(FaxReceiveDirectory, (const char *)m_manager.m_faxEP->GetDefaultDirectory());
   INIT_FIELD(FaxSpanDSP, (const char *)m_manager.m_faxEP->GetSpanDSP());
@@ -3019,7 +3019,7 @@ bool OptionsDialog::TransferDataFromWindow()
 
   ////////////////////////////////////////
   // Fax fields
-#if OPAL_T38FAX
+#if OPAL_FAX
   config->SetPath(FaxGroup);
   SAVE_FIELD(FaxStationIdentifier, m_manager.m_faxEP->SetDefaultDisplayName);
   SAVE_FIELD(FaxReceiveDirectory, m_manager.m_faxEP->SetDefaultDirectory);

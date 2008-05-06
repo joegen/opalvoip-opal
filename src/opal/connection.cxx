@@ -52,9 +52,6 @@
 #include <t38/t38proto.h>
 #include <ptclib/url.h>
 
-#if OPAL_T38FAX
-#include <t38/t38proto.h>
-#endif
 
 #define new PNEW
 

@@ -139,16 +139,6 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   if (!transport.IsCompatibleTransport("ip$127.0.0.1")) 
     return NULL;
 
-  // We support video, audio and T38 over IP
-  if (sessionID != OpalMediaFormat::DefaultAudioSessionID && 
-      sessionID != OpalMediaFormat::DefaultVideoSessionID
-#if OPAL_T38FAX
-      && sessionID != OpalMediaFormat::DefaultDataSessionID
-#endif
-      ) {
-    return NULL;
-  }
-
   PIPSocket::Address localAddress;
  
   transport.GetLocalAddress().GetIpAddress(localAddress);

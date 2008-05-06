@@ -96,7 +96,7 @@ class OpalPluginCodecHandler : public PObject
     virtual void RegisterVideoTranscoder(const PString & src, const PString & dst, PluginCodec_Definition * codec, PBoolean v);
 #endif
 
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
     virtual OpalMediaFormatInternal * OnCreateFaxFormat(OpalPluginCodecManager & mgr,
                                           const PluginCodec_Definition * encoderCodec,
                                                             const char * rtpEncodingName,
@@ -347,7 +347,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
 
 class OpalPluginFaxFormatInternal : public OpalMediaFormatInternal, public OpalPluginMediaFormatInternal
 {
@@ -363,7 +363,7 @@ class OpalPluginFaxFormatInternal : public OpalMediaFormatInternal, public OpalP
     virtual bool IsValidForProtocol(const PString & protocol) const;
 };
 
-#endif // OPAL_T38FAX
+#endif // OPAL_T38_CAPABILITY
 
 
 //////////////////////////////////////////////////////

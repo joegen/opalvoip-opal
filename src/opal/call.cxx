@@ -399,13 +399,12 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     OpalMediaFormatList sourceMediaFormats;
     if (sourceFormat.IsValid())
       sourceMediaFormats = sourceFormat; // Use the source format already established
-    else if (preselectedFormats.IsEmpty())
-      sourceMediaFormats = connection.GetMediaFormats();
-    else 
+    else if (!preselectedFormats.IsEmpty())
       sourceMediaFormats = preselectedFormats;
+    else {
+      sourceMediaFormats = connection.GetMediaFormats();
 
-    // remove any media formats that do not match the media type
-    {
+      // remove any media formats that do not match the media type
       PINDEX i = 0;
       while (i < sourceMediaFormats.GetSize()) {
         if (sourceMediaFormats[i].GetMediaType() != mediaType)

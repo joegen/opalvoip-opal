@@ -36,7 +36,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_T38FAX
+#if OPAL_FAX
 
 #include <ptlib/pipechan.h>
 
@@ -1289,5 +1289,5 @@ void OpalT38Connection::InFaxMode(bool toFax)
   currentMode = toFax;
 }
 
-#endif // OPAL_T38FAX
+#endif // OPAL_FAX
 

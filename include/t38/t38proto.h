@@ -37,7 +37,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_T38FAX
+#if OPAL_FAX
 
 #include <ptlib/pipechan.h>
 
@@ -528,6 +528,6 @@ extern const OpalFaxAudioFormat & GetOpalPCM16Fax();
 #define OpalPCM16Fax          GetOpalPCM16Fax()
 
 
-#endif // OPAL_T38FAX
+#endif // OPAL_FAX
 
 #endif // __OPAL_T38PROTO_H

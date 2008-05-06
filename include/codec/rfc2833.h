@@ -39,7 +39,7 @@
 
 extern const char * OpalDefaultNTEString;
 
-#if OPAL_T38FAX
+#if OPAL_T38_CAPABILITY
 extern const char * OpalDefaultNSEString;
 #endif
 
