@@ -52,7 +52,7 @@ Either, or both, can be used in a call
 #include <ptlib.h>
 
 #ifdef __GNUC__
-#pragma implementation "t38proto.h"
+#pragma implementation "sipt38.h"
 #endif
 
 #include <opal/buildopts.h>
