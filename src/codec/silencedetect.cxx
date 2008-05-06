@@ -63,7 +63,7 @@ ostream & operator<<(ostream & strm, OpalSilenceDetector::Mode mode)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalSilenceDetector::OpalSilenceDetector()
+OpalSilenceDetector::OpalSilenceDetector(const Params & theParam)
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
@@ -72,11 +72,8 @@ OpalSilenceDetector::OpalSilenceDetector()
 #pragma warning(default:4355)
 #endif
 {
-  // Start off in silent mode
-  inTalkBurst = PFalse;
-
   // Initialise the adaptive threshold variables.
-  SetParameters(param);
+  SetParameters(theParam);
 
   PTRACE(4, "Silence\tHandler created");
 }
@@ -86,6 +83,12 @@ void OpalSilenceDetector::SetParameters(const Params & newParam)
 {
   param = newParam;
 
+  PTRACE(4, "Silence\tParameters set: "
+            "mode=" << param.m_mode << ", "
+            "threshold=" << param.m_threshold << ", "
+            "silencedb=" << param.m_silenceDeadband << ", "
+            "signaldb=" << param.m_signalDeadband << ", "
+            "period=" << param.m_adaptivePeriod);
   if (param.m_mode != AdaptiveSilenceDetection) {
     levelThreshold = param.m_threshold;
     return;
@@ -101,7 +104,7 @@ void OpalSilenceDetector::SetParameters(const Params & newParam)
   silenceReceivedTime = 0;
 
   // Restart in silent mode
-  inTalkBurst = PFalse;
+  inTalkBurst = false;
   lastTimestamp = 0;
   receivedTime = 0;
 }
@@ -171,7 +174,7 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
 
       // If we just have moved to sending a talk burst, set the RTP marker
       if (inTalkBurst)
-        frame.SetMarker(PTrue);
+        frame.SetMarker(true);
     }
   }
 
