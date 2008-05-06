@@ -143,6 +143,13 @@ void OpalCall::OnCleared()
 }
 
 
+void OpalCall::OnNewConnection(OpalConnection & connection)
+{
+  manager.OnNewConnection(connection);
+  SetPartyNames();
+}
+
+
 PBoolean OpalCall::OnSetUp(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnSetUp " << connection);

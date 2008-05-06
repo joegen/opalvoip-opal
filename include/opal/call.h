@@ -146,6 +146,15 @@ class OpalCall : public PSafeObject
 
   /**@name Connection management */
   //@{
+    /**Call back for a new connection has been constructed.
+       This is called after CreateConnection has returned a new connection.
+       It allows an application to make any custom adjustments to the
+       connection before it begins to process the protocol. behind it.
+      */
+    virtual void OnNewConnection(
+      OpalConnection & connection   ///< New connection just created
+    );
+
     /**Call back for SetUp conenction.
 
        The default behaviour is to call SetUpConnection() on all the other
