@@ -77,7 +77,9 @@ class OpalSilenceDetector : public PObject
   //@{
     /**Create a new connection.
      */
-    OpalSilenceDetector();
+    OpalSilenceDetector(
+      const Params & newParam ///<  New parameters for silence detector
+    );
   //@}
 
   /**@name Basic operations */
@@ -125,7 +127,7 @@ class OpalSilenceDetector : public PObject
 
     Params param;
 
-    PBoolean     inTalkBurst;           // Currently sending RTP data
+    bool     inTalkBurst;           // Currently sending RTP data
     unsigned lastTimestamp;         // Last timestamp received
     unsigned receivedTime;          // Signal/Silence duration received so far.
     unsigned levelThreshold;        // Threshold level for silence/signal
@@ -140,6 +142,12 @@ class OpalPCM16SilenceDetector : public OpalSilenceDetector
 {
     PCLASSINFO(OpalPCM16SilenceDetector, OpalSilenceDetector);
   public:
+    /** Construct new silence detector for PCM-16
+      */
+    OpalPCM16SilenceDetector(
+      const Params & newParam ///<  New parameters for silence detector
+    ) : OpalSilenceDetector(newParam) { }
+
   /**@name Overrides from OpalSilenceDetector */
   //@{
     /**Get the average signal level in the stream.
