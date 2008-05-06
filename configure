@@ -6800,7 +6800,7 @@ fi
 if test "$fax" = "yes" ; then
   # Check whether --enable-fax was given.
 if test "${enable_fax+set}" = set; then
-  enableval=$enable_fax; t38=$enableval
+  enableval=$enable_fax; fax=$enableval
 fi
 
   { echo "$as_me:$LINENO: checking T.38 FAX protocol" >&5
