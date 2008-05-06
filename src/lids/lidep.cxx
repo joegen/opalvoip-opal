@@ -717,9 +717,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 
   phase = SetUpPhase;
 
-  if (line.IsTerminal())
-    remotePartyName = line.GetToken();
-  else {
+  if (!line.IsTerminal()) {
     // Count incoming rings
     unsigned count;
     do {
