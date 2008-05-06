@@ -212,7 +212,7 @@ SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
            $(OPAL_SRCDIR)/t120/h323t120.cxx \
            $(OPAL_SRCDIR)/t120/x224.cxx 
 
-ifdef OPAL_FAX
+ifeq ($(OPAL_T38_CAP), 1)
 SOURCES += $(OPAL_SRCDIR)/t38/h323t38.cxx
 endif
 
@@ -276,7 +276,7 @@ SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
            $(OPAL_SRCDIR)/sip/sdp.cxx \
            $(OPAL_SRCDIR)/sip/handlers.cxx \
 
-ifdef OPAL_FAX
+ifeq ($(OPAL_T38_CAP), 1)
 SOURCES += $(OPAL_SRCDIR)/t38/sipt38.cxx
 endif
 
@@ -316,13 +316,10 @@ endif
 
 
 ##################
-# T.38 and Fax
-
-ifeq ($(OPAL_T38_CAP), 1)
-SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx 
-endif
+# T.38 Fax
 
 ifeq ($(OPAL_FAX), 1)
+SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx 
 ASN_H_FILES   += $(ASN_INCDIR)/t38.h
 ASN_CXX_FILES += $(ASN_SRCDIR)/t38.cxx
 endif
