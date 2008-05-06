@@ -37,6 +37,13 @@
 #define new PNEW
 
 
+#if OPAL_T38_CAPABILITY
+
+#include <rtp/rtp.h>
+
+OPAL_INSTANTIATE_MEDIATYPE(fax, OpalFaxMediaType);
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 const OpalMediaFormat & GetOpalT38()
@@ -52,6 +59,32 @@ const OpalMediaFormat & GetOpalT38()
                                    0);
   return T38;
 }
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalFaxMediaType::OpalFaxMediaType()
+  : OpalMediaTypeDefinition("fax", "image", 3)
+{ }
+
+PString OpalFaxMediaType::GetRTPEncoding() const
+{ return "udptl"; }
+
+RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &,
+#if OPAL_RTP_AGGREGATE
+                                             PHandleAggregator * agg,
+#endif
+                                             unsigned sessionID, bool remoteIsNAT)
+{
+  return new RTP_UDP(GetRTPEncoding(),
+#if OPAL_RTP_AGGREGATE
+                     agg,
+#endif
+                     sessionID, remoteIsNAT);
+}
+
+#endif // OPAL_T38_CAPABILITY
 
 
 // End of File ///////////////////////////////////////////////////////////////

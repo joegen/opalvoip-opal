@@ -280,6 +280,7 @@ class OpalAudioMediaType : public OpalRTPAVPMediaType {
 
 #endif  // OPAL_AUDIO
 
+
 #if OPAL_VIDEO
 
 class OpalVideoMediaType : public OpalRTPAVPMediaType {
@@ -292,5 +293,30 @@ class OpalVideoMediaType : public OpalRTPAVPMediaType {
 };
 
 #endif // OPAL_VIDEO
+
+
+#if OPAL_T38_CAPABILITY
+
+#include <opal/mediatype.h>
+
+class OpalFaxMediaType : public OpalMediaTypeDefinition 
+{
+  public:
+    OpalFaxMediaType();
+
+    PString GetRTPEncoding(void) const;
+    RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
+#if OPAL_RTP_AGGREGATE
+                               PHandleAggregator * agg,
+#endif
+                               unsigned sessionID, bool remoteIsNAT);
+
+#if OPAL_SIP
+    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
+#endif
+};
+
+#endif // OPAL_T38_CAPABILITY
+
 
 #endif // __OPAL_MEDIATYPE_H

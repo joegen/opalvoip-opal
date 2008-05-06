@@ -1206,8 +1206,10 @@ extern const OpalAudioFormat & GetOpaliLBC();
 #endif
 
 extern const OpalMediaFormat & GetOpalRFC2833();
+#if OPAL_T38_CAPABILITY
 extern const OpalMediaFormat & GetOpalCiscoNSE();
 extern const OpalMediaFormat & GetOpalT38();
+#endif
 
 #define OpalPCM16          GetOpalPCM16()
 #define OpalPCM16_16KHZ    GetOpalPCM16_16KHZ()
