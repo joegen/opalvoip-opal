@@ -3337,9 +3337,9 @@ void H323Connection::OnSetLocalCapabilities()
   }
   
   // If H.224 is enabled, add the corresponding capabilities
-  if(GetEndPoint().IsH224Enabled()) {
-    localCapabilities.SetCapability(0, P_MAX_INDEX, new H323_H224Capability());
-  }
+  //if(GetEndPoint().IsH224Enabled()) {
+  //  localCapabilities.SetCapability(0, P_MAX_INDEX, new H323_H224Capability());
+  //}
 
   H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX);
 
