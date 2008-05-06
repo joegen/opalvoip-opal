@@ -461,7 +461,7 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
 {
   localPartyName = ln.GetToken();
   remotePartyNumber = number.Right(number.Find(':'));
-  silenceDetector = new OpalLineSilenceDetector(line);
+  silenceDetector = new OpalLineSilenceDetector(line, (endpoint.GetManager().GetSilenceDetectParams()));
 
   answerRingCount = 3;
   requireTonesForDial = true;
@@ -576,10 +576,8 @@ PBoolean OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
 
   if (mediaStream.IsSource()) {
     OpalMediaPatch * patch = mediaStream.GetPatch();
-    if (patch != NULL) {
-      silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams());
+    if (patch != NULL)
       patch->AddFilter(silenceDetector->GetReceiveHandler(), line.GetReadFormat());
-    }
   }
 
   return true;
@@ -1023,8 +1021,9 @@ PBoolean OpalLineMediaStream::IsSynchronous() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalLineSilenceDetector::OpalLineSilenceDetector(OpalLine & l)
-  : line(l)
+OpalLineSilenceDetector::OpalLineSilenceDetector(OpalLine & theLine, const Params & theParam)
+  : OpalSilenceDetector(theParam)
+  , line(theLine)
 {
 }
 

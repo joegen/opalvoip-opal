@@ -620,7 +620,8 @@ class OpalLineSilenceDetector : public OpalSilenceDetector
     /**Create a new silence detector for a LID.
      */
     OpalLineSilenceDetector(
-      OpalLine & line
+      OpalLine & line,        ///<  Line to detect silence on
+      const Params & newParam ///<  New parameters for silence detector
     );
   //@}
 
