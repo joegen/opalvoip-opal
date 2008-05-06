@@ -263,7 +263,7 @@ PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connectio
   OpalMessageBuffer message(OpalIndIncomingCall);
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, connection.GetLocalPartyURL());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, connection.GetRemotePartyCallbackURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, connection.GetRemotePartyURL());
   manager.PostMessage(message);
   return true;
 }

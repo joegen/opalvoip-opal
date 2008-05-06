@@ -213,6 +213,16 @@ class OpalIVRConnection : public OpalConnection
 
   /**@name Overrides from OpalConnection */
   //@{
+    /**Get indication of connection being to a "network".
+       This indicates the if the connection may be regarded as a "network"
+       connection. The distinction is about if there is a concept of a "remote"
+       party being connected to and is best described by example: sip, h323,
+       iax and pstn are all "network" connections as they connect to something
+       "remote". While pc, pots and ivr are not as the entity being connected
+       to is intrinsically local.
+      */
+    virtual bool IsNetworkConnection() const { return false; }
+
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
        example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.

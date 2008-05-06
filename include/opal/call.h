@@ -373,14 +373,14 @@ class OpalCall : public PSafeObject
        Note this will be available even after the A party connection has been
        released from the call.
      */
-    const PString & GetPartyA() const { return partyA; }
+    const PString & GetPartyA() const { return m_partyA; }
 
     /**Get the B party for the call.
        Note this will be available even after the B party connection has been
        released from the call. Also this will only be the first B party if the
        object represents a conference call with more that 2 parties.
      */
-    const PString & GetPartyB() const { return partyB; }
+    const PString & GetPartyB() const { return m_partyB; }
 
     /**Set the B party for a call.
        This is used when we wish to make two outgoing calls and bridge them.
@@ -389,7 +389,13 @@ class OpalCall : public PSafeObject
       */
     void SetPartyB(
       const PString & b
-    ) { partyB = b; }
+    ) { m_partyB = b; }
+
+    /**Get indication that A-Party is the network.
+       This will indicate if the call is "incoming" or "outgoing" by looking at
+       the type of the A-party connection.
+      */
+    bool IsNetworkOriginated();
 
     /**Get the time the call started.
      */
@@ -402,6 +408,8 @@ class OpalCall : public PSafeObject
     void OnStopRecordAudio(const PString & callToken);
 
   protected:
+    void SetPartyNames();
+
     bool EnumerateConnections(
       PSafePtr<OpalConnection> & connection,
       PSafetyMode mode,
@@ -412,8 +420,8 @@ class OpalCall : public PSafeObject
 
     PString myToken;
 
-    PString partyA;
-    PString partyB;
+    PString m_partyA;
+    PString m_partyB;
     PTime   startTime;
     bool    isEstablished;
     bool    isClearing;

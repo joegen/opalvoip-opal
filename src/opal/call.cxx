@@ -147,12 +147,8 @@ PBoolean OpalCall::OnSetUp(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnSetUp " << connection);
 
-  if (isClearing || !LockReadWrite())
+  if (isClearing)
     return false;
-
-  partyA = connection.GetRemotePartyName();
-
-  UnlockReadWrite();
 
   bool ok = false;
 
@@ -162,6 +158,8 @@ PBoolean OpalCall::OnSetUp(OpalConnection & connection)
       ok = true;
   }
 
+  SetPartyNames();
+
   return ok;
 }
 
@@ -170,13 +168,8 @@ PBoolean OpalCall::OnAlerting(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnAlerting " << connection);
 
-  if (isClearing || !LockReadWrite())
+  if (isClearing)
     return false;
-
-  partyB = connection.GetRemotePartyName();
-
-  UnlockReadWrite();
-
 
   PBoolean hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, PTrue) != NULL;
 
@@ -187,6 +180,8 @@ PBoolean OpalCall::OnAlerting(OpalConnection & connection)
     if (otherConnection->SetAlerting(connection.GetRemotePartyName(), hasMedia))
       ok = true;
   }
+
+  SetPartyNames();
 
   return ok;
 }
@@ -206,18 +201,15 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
   if (isClearing || !LockReadOnly())
     return false;
 
-  bool ok = connectionsActive.GetSize() == 1 && !partyB.IsEmpty();
+  bool ok = connectionsActive.GetSize() == 1 && !m_partyB.IsEmpty();
 
   UnlockReadOnly();
 
   if (ok) {
-    if (!manager.MakeConnection(*this, partyB, NULL, 0, connection.GetStringOptions()))
+    if (!manager.MakeConnection(*this, m_partyB, NULL, 0, connection.GetStringOptions()))
       connection.Release(OpalConnection::EndedByNoUser);
     return OnSetUp(connection);
   }
-
-  if (!LockReadOnly())
-    return false;
 
   PSafePtr<OpalConnection> otherConnection;
   while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
@@ -225,8 +217,8 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
       ok = true;
   }
 
-  UnlockReadOnly();
-  
+  SetPartyNames();
+
   return ok;
 }
 
@@ -593,6 +585,48 @@ void OpalCall::StopRecording()
 void OpalCall::OnStopRecordAudio(const PString & callToken)
 {
   manager.GetRecordManager().CloseStream(myToken, callToken);
+}
+
+
+bool OpalCall::IsNetworkOriginated()
+{
+  PSafePtr<OpalConnection> connection = connectionsActive.GetAt(0, PSafeReadOnly);
+  return connection == NULL || connection->IsNetworkConnection();
+}
+
+
+void OpalCall::SetPartyNames()
+{
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
+  PSafePtr<OpalConnection> connectionA = connectionsActive.GetAt(0, PSafeReadOnly);
+  if (connectionA == NULL)
+    return;
+
+  m_partyA = connectionA->IsNetworkConnection() ? connectionA->GetRemotePartyURL() : connectionA->GetLocalPartyURL();
+
+  PSafePtr<OpalConnection> connectionB = connectionsActive.GetAt(1, PSafeReadOnly);
+  if (connectionB == NULL)
+    return;
+
+  if (connectionB->IsNetworkConnection()) {
+    m_partyB = connectionB->GetRemotePartyURL();
+    if (!connectionA->IsNetworkConnection()) {
+      connectionA->SetRemotePartyName(connectionB->GetRemotePartyName());
+      connectionA->SetRemotePartyAddress(connectionB->GetRemotePartyAddress());
+      connectionA->SetProductInfo(connectionB->GetRemoteProductInfo());
+    }
+  }
+  else {
+    m_partyB = connectionB->GetLocalPartyURL();
+    if (connectionA->IsNetworkConnection()) {
+      connectionB->SetRemotePartyName(connectionA->GetRemotePartyName());
+      connectionB->SetRemotePartyAddress(connectionA->GetRemotePartyAddress());
+      connectionB->SetProductInfo(connectionA->GetRemoteProductInfo());
+    }
+  }
 }
 
 
