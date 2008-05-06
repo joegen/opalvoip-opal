@@ -1938,12 +1938,6 @@ class H323Connection : public OpalRTPConnection
     PBoolean mediaWaitForConnect;
     PBoolean transmitterSidePaused;
     PBoolean earlyStart;
-#if OPAL_T120
-    PBoolean startT120;
-#endif
-#if OPAL_H224
-    PBoolean startH224;
-#endif
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
     PBoolean       endSessionNeeded;

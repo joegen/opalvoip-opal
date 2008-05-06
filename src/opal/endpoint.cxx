@@ -508,40 +508,6 @@ PString OpalEndPoint::ReadUserInput(OpalConnection & connection,
   return manager.ReadUserInput(connection, terminators, lastDigitTimeout, firstDigitTimeout);
 }
 
-
-#if OPAL_T120DATA
-
-OpalT120Protocol * OpalEndPoint::CreateT120ProtocolHandler(const OpalConnection & connection) const
-{
-  return manager.CreateT120ProtocolHandler(connection);
-}
-
-#endif
-
-#if OPAL_T38FAX
-
-OpalT38Protocol * OpalEndPoint::CreateT38ProtocolHandler(const OpalConnection & connection) const
-{
-  return manager.CreateT38ProtocolHandler(connection);
-}
-
-#endif
-
-#if OPAL_H224
-
-OpalH224Handler * OpalEndPoint::CreateH224ProtocolHandler(OpalRTPConnection & connection, 
-														  unsigned sessionID) const
-{
-  return manager.CreateH224ProtocolHandler(connection, sessionID);
-}
-
-OpalH281Handler * OpalEndPoint::CreateH281ProtocolHandler(OpalH224Handler & h224Handler) const
-{
-  return manager.CreateH281ProtocolHandler(h224Handler);
-}
-
-#endif
-
 void OpalEndPoint::OnNewConnection(OpalCall & call, OpalConnection & conn)
 {
   call.GetManager().OnNewConnection(conn);

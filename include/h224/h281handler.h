@@ -34,10 +34,10 @@
 #include <ptlib.h>
 #endif
 
-#include <h224/h224handler.h>
+//#include <h224/h224handler.h>
 #include <h224/h281.h>
 
-class OpalH224Handler;
+//class OpalH224Handler;
 
 /** This class implements a storage for which cameras are
     available at both the local or remote side
@@ -97,7 +97,7 @@ class OpalH281Handler : public PObject
 	
 public:
 	
-  OpalH281Handler(OpalH224Handler & h224Handler);
+  OpalH281Handler(/*OpalH224Handler & h224Handler*/);
   ~OpalH281Handler();
 	
   enum VideoSource {
@@ -197,7 +197,7 @@ protected:
   PDECLARE_NOTIFIER(PTimer, OpalH281Handler, ContinueAction);
   PDECLARE_NOTIFIER(PTimer, OpalH281Handler, StopActionLocally);
 	
-  OpalH224Handler & h224Handler;
+  //OpalH224Handler & h224Handler;
   PBoolean remoteHasH281;
   BYTE localNumberOfPresets;
   BYTE remoteNumberOfPresets;

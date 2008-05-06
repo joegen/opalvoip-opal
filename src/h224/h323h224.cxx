@@ -32,7 +32,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_H224
+#if OPAL_H224FECC
 
 #include <h224/h323h224.h>
 
@@ -42,6 +42,8 @@
 #include <h323/h323rtp.h>
 
 #include <asn/h245.h>
+
+//////////////////////////////////////////////////////////////////////
 
 H323_H224Capability::H323_H224Capability()
 : H323DataCapability(640)
@@ -92,7 +94,8 @@ H323Channel * H323_H224Capability::CreateChannel(H323Connection & connection,
     return NULL;
   }
   
-  return new H323_H224Channel(connection, *this, direction, (RTP_UDP &)*session, sessionID);
+  return NULL;
+  //return new H323_H224Channel(connection, *this, direction, (RTP_UDP &)*session, sessionID);
 }
 
 PBoolean H323_H224Capability::OnSendingPDU(H245_DataApplicationCapability & pdu) const
@@ -118,6 +121,10 @@ PBoolean H323_H224Capability::OnReceivedPDU(const H245_DataApplicationCapability
 {
   return PTrue;
 }
+
+//////////////////////////////////////////////////////////////////////
+
+#if 0
 
 H323_H224Channel::H323_H224Channel(H323Connection & connection,
                                    const H323Capability & capability,
@@ -460,5 +467,7 @@ PBoolean H323_H224Channel::ExtractTransport(const H245_TransportAddress & pdu,
   return PFalse;
 }
 
-#endif // OPAL_H224
+#endif
+
+#endif // OPAL_H224FECC
 

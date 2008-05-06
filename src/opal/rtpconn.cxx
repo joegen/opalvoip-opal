@@ -74,9 +74,6 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
   : OpalConnection(call, ep, token, options, _stringOptions)
   , securityData(NULL)
   , remoteIsNAT(false)
-#if OPAL_H224
-  , h224Handler(NULL)
-#endif
 {
   rfc2833Handler  = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
   ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
@@ -109,9 +106,6 @@ OpalRTPConnection::~OpalRTPConnection()
 {
   delete rfc2833Handler;
   delete ciscoNSEHandler;
-#if OPAL_H224
-  delete h224Handler;
-#endif
 }
 
 
@@ -382,23 +376,6 @@ void OpalRTPConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & /*info*/, IN
   //  OnUserInputTone(info.GetTone(), info.GetDuration()/8);
 }
 
-#if OPAL_H224
-
-OpalH224Handler * OpalRTPConnection::CreateH224ProtocolHandler(unsigned sessionID)
-{
-  if(h224Handler == NULL)
-    h224Handler = endpoint.CreateH224ProtocolHandler(*this, sessionID);
-	
-  return h224Handler;
-}
-
-OpalH281Handler * OpalRTPConnection::CreateH281ProtocolHandler(OpalH224Handler & h224Handler)
-{
-  return endpoint.CreateH281ProtocolHandler(h224Handler);
-}
-
-#endif
-
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaSession::OpalMediaSession(const OpalMediaType & _mediaType)
@@ -415,25 +392,60 @@ OpalMediaSession::OpalMediaSession(const OpalMediaType & _mediaType)
 OpalRTPSessionManager::OpalRTPSessionManager()
 {
   m_initialised = false;
+  m_cleanupOnDelete = true;
 }
 
+OpalRTPSessionManager::~OpalRTPSessionManager()
+{
+  if (m_cleanupOnDelete) {
+    // empty the master list
+    while (size() > 0) {
+      RTP_Session * session = begin()->second.rtpSession;
+      if (session != NULL) {
+        PTRACE(3, "RTP\tDeleting session " << session->GetSessionID());
+        session->Close(PTrue);
+        session->SetJitterBufferSize(0, 0);
+        delete session;
+      }
+      erase(begin());
+    }
+  }
+}
 
-OpalRTPSessionManager::OpalRTPSessionManager(const OpalRTPSessionManager & sm)
+void OpalRTPSessionManager::CopyFromMaster(const OpalRTPSessionManager & from)
 {
   PWaitAndSignal m1(m_mutex);
-  PWaitAndSignal m2(sm.m_mutex);
-  *(AncestorListType_T *)this = sm;
+  PWaitAndSignal m2(from.m_mutex);
+
+  PAssert(size() == 0, "Cannot copy from master RTP session list to non-empty list");
+
+  for (iterator r = begin(); r != end(); ++r) {
+    PAssert(r->second.rtpSession == NULL, "Cannot copy from master RTP session list after sockets have been created");
+    insert(value_type(r->first, r->second));
+  }
 }
 
-
-OpalRTPSessionManager & OpalRTPSessionManager::operator=(const OpalRTPSessionManager & sm)
+void OpalRTPSessionManager::CopyToMaster(OpalRTPSessionManager & from)
 {
   PWaitAndSignal m1(m_mutex);
-  PWaitAndSignal m2(sm.m_mutex);
-  *(AncestorListType_T *)this = sm;
-  return *this;
-}
+  PWaitAndSignal m2(from.m_mutex);
 
+  PAssert(from.size() != 0, "Cannot copy from empty list to master RTP session list");
+
+  // empty the master list
+  while (size() > 0) {
+    PAssert(begin()->second.rtpSession == NULL, "Cannot copy to master RTP session list after sockets have been created");
+    erase(begin());
+  }
+
+  // copy from the new list
+  for (const_iterator r = from.begin(); r != from.end(); ++r) {
+    insert(value_type(r->first, r->second));
+  }
+
+  // avoid double delete when INVITE list is deleted
+  from.m_cleanupOnDelete = false;
+}
 
 RTP_Session * OpalRTPSessionManager::UseSession(unsigned sessionID)
 {
@@ -444,7 +456,6 @@ RTP_Session * OpalRTPSessionManager::UseSession(unsigned sessionID)
     return NULL;
   
   PTRACE(3, "RTP\tFound existing session " << sessionID);
-  r->second.rtpSession->IncrementReference();
 
   return r->second.rtpSession;
 }
@@ -471,25 +482,22 @@ void OpalRTPSessionManager::AddSession(RTP_Session * session, const OpalMediaTyp
 }
 
 
-void OpalRTPSessionManager::ReleaseSession(unsigned sessionID, PBoolean clearAll)
+void OpalRTPSessionManager::ReleaseSession(unsigned sessionID, PBoolean /*clearAll*/)
 {
   PTRACE(3, "RTP\tReleasing session " << sessionID);
 
   PWaitAndSignal m(m_mutex);
 
   iterator r;
-  while ((r = find(sessionID)) != end()) {
+  if ((r = find(sessionID)) != end()) {
     RTP_Session * session = r->second.rtpSession;
     if (session != NULL) {
-      if (session->DecrementReference()) {
-        PTRACE(3, "RTP\tDeleting session " << sessionID);
-        session->Close(PTrue);
-        session->SetJitterBufferSize(0, 0);
-      }
+      PTRACE(3, "RTP\tDeleting session " << sessionID);
+      session->Close(PTrue);
+      session->SetJitterBufferSize(0, 0);
+      delete session;
       erase(r);
     }
-    if (!clearAll)
-      break;
   }
 }
 

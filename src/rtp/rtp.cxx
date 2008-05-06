@@ -493,7 +493,6 @@ RTP_Session::RTP_Session(
   sessionID = (BYTE)id;
   isAudio = sessionID == 1;  // MAJOR ASSUMPTION!!!
 
-  referenceCount = 1;
   userData = data;
   autoDeleteUserData = autoDelete;
   jitter = NULL;

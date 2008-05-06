@@ -614,14 +614,6 @@ class RTP_Session : public PObject
       */
     DWORD GetSyncSourceOut() const { return syncSourceOut; }
 
-    /**Increment reference count for RTP session.
-      */
-    void IncrementReference() { referenceCount++; }
-
-    /**Decrement reference count for RTP session.
-      */
-    PBoolean DecrementReference() { return --referenceCount == 0; }
-
     /**Indicate if will ignore all but first received SSRC value.
       */
     bool AllowAnySyncSource() const { return allowAnySyncSource; }
@@ -823,7 +815,6 @@ class RTP_Session : public PObject
     bool               isAudio;
     PString            canonicalName;
     PString            toolName;
-    unsigned           referenceCount;
     RTP_UserData     * userData;
     PBoolean           autoDeleteUserData;
     RTP_JitterBuffer * jitter;

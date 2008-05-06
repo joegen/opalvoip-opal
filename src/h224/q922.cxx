@@ -31,7 +31,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_H224
+#if OPAL_H224FECC
 
 #include <h224/h323h224.h>
 
@@ -501,4 +501,4 @@ WORD Q922_Frame::CalculateFCS(const BYTE *data, PINDEX length) const
   return fcs;
 }
 
-#endif // OPAL_H224
+#endif // OPAL_H224FECC
