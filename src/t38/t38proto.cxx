@@ -39,6 +39,8 @@
 
 #if OPAL_T38_CAPABILITY
 
+#include <rtp/rtp.h>
+
 OPAL_INSTANTIATE_MEDIATYPE(fax, OpalFaxMediaType);
 
 /////////////////////////////////////////////////////////////////////////////
