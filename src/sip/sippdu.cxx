@@ -2373,7 +2373,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
 }
 
 
-SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_SessionManager & sm)
+SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, OpalRTPSessionManager & sm)
   : SIPTransaction(connection, transport, Method_INVITE)
 {
   mime.SetDate() ;                             // now

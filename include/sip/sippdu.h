@@ -808,15 +808,15 @@ class SIPInvite : public SIPTransaction
     SIPInvite(
       SIPConnection & connection,
       OpalTransport & transport,
-      RTP_SessionManager & sm
+      OpalRTPSessionManager & sm
     );
 
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
 
-    RTP_SessionManager & GetSessionManager() { return rtpSessions; }
+    OpalRTPSessionManager & GetSessionManager() { return rtpSessions; }
 
   protected:
-    RTP_SessionManager rtpSessions;
+    OpalRTPSessionManager rtpSessions;
 };
 
 

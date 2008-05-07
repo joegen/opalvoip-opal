@@ -480,7 +480,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalM
 }
 
 
-PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, RTP_SessionManager & rtpSessions, SDPSessionDescription & sdpOut)
+PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpSessions, SDPSessionDescription & sdpOut)
 {
   bool sdpOK = false;
 
@@ -552,7 +552,7 @@ static void SetNXEPayloadCode(SDPMediaDescription * localMedia,
 
 bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
                                              unsigned rtpSessionId,
-                                             RTP_SessionManager & rtpSessions,
+                                             OpalRTPSessionManager & rtpSessions,
                                              SDPSessionDescription & sdp)
 {
   OpalTransportAddress localAddress;
@@ -1259,8 +1259,10 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     PTRACE(4, "SIP\tSet Request URI to " << m_requestURI);
   }
 
-  if (reInvite)
+  if (reInvite) {
+    (((SIPInvite &)transaction).GetSessionManager()).SetCleanup(false);
     return;
+  }
 
   if (statusClass == 2) {
     // Have a final response to the INVITE, so cancel all the other invitations sent.
@@ -1934,7 +1936,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
   needReINVITE = false; // Is not actually a re-INVITE though it looks a little bit like one.
   transport->SetInterface(transaction.GetInterface());
-  RTP_SessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
+  OpalRTPSessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
   SIPTransaction * invite = new SIPInvite(*this, *transport, origRtpSessions);
 
   // Section 8.1.3.5 of RFC3261 tells that the authenticated

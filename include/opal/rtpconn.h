@@ -52,10 +52,14 @@ class OpalRTPEndPoint;
 
 /** Class for carrying media session information
   */
-class OpalMediaSession
+class OpalMediaSession : public PObject
 {
+  PCLASSINFO(OpalMediaSession, PObject);
   public:
     OpalMediaSession(const OpalMediaType & _mediaType);
+    OpalMediaSession(const OpalMediaSession & _obj);
+
+    PObject * Clone() const { return new OpalMediaSession(*this); }
 
     OpalMediaType mediaType;     // media type for session
     bool autoStartReceive;       // if true, this session should receive data when the call is started
@@ -67,12 +71,11 @@ class OpalMediaSession
 
 /**This class manages the RTP sessions for an OpalRTPConnection
  */
-class OpalRTPSessionManager : public PObject, public std::map<unsigned, OpalMediaSession>
+class OpalRTPSessionManager : public PObject
 {
   PCLASSINFO(OpalRTPSessionManager , PObject);
 
   public:
-    typedef std::map<unsigned, OpalMediaSession> AncestorListType_T;
   /**@name Construction */
   //@{
     /**Construct new session manager database.
@@ -146,6 +149,8 @@ class OpalRTPSessionManager : public PObject, public std::map<unsigned, OpalMedi
       unsigned sessionID    ///<  Session ID to get.
     ) const;
 
+    void SetCleanup(bool v) { m_cleanupOnDelete = v; }
+
   //@}
     PMutex & GetMutex() { return m_mutex; }
 
@@ -155,6 +160,8 @@ class OpalRTPSessionManager : public PObject, public std::map<unsigned, OpalMedi
     PMutex m_mutex;
     bool m_initialised;
     bool m_cleanupOnDelete;
+    PDICTIONARY(SessionDict, POrdinalKey, OpalMediaSession);
+    SessionDict sessions;
 
   private:
     OpalRTPSessionManager (const OpalRTPSessionManager &) { }
