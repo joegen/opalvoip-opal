@@ -1040,6 +1040,9 @@ class RTP_UDP : public RTP_Session
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual SendReceiveStatus Internal_ReadDataPDU(RTP_DataFrame & frame);
 
+    virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
+    virtual SendReceiveStatus Internal_OnReadTimeout(RTP_DataFrame & frame);
+
     virtual SendReceiveStatus ReadControlPDU();
     virtual SendReceiveStatus ReadDataOrControlPDU(
       PUDPSocket & socket,
@@ -1086,6 +1089,7 @@ class RTP_FormatHandler
     virtual RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
     virtual RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual RTP_Session::SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     virtual PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
     virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &);
 
