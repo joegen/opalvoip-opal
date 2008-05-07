@@ -637,7 +637,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
 
 
       // See if exceeded maximum jitter buffer time delay, waste them if so
-      while (currentFrame->GetTimestamp() < (newestTimestamp - maxJitterTime)) {
+      while ((newestTimestamp - currentFrame->GetTimestamp()) > maxJitterTime) {
         PTRACE(4, "RTP\tJitter buffer oldest packet ("
                << currentFrame->GetTimestamp() << " < "
                << (newestTimestamp - maxJitterTime)
