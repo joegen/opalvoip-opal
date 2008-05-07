@@ -426,13 +426,13 @@ class SIPConnection : public OpalRTPConnection
 
     virtual bool OnSendSDP(
       bool isAnswerSDP,
-      RTP_SessionManager & rtpSessions,
+      OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut
     );
     virtual bool OfferSDPMediaDescription(
       const OpalMediaType & mediaType,
       unsigned sessionID,
-      RTP_SessionManager & rtpSessions,
+      OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut
     );
     virtual bool AnswerSDPMediaDescription(
