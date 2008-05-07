@@ -584,7 +584,7 @@ unsigned OpalRTPSessionManager::AutoStartSession(unsigned sessionID, const OpalM
 
   if ((sessionID == 0) || (sessions.Contains(sessionID))) {
     unsigned i = 1;
-    while (sessions.Contains(i) != NULL)
+    while (sessions.Contains(i))
       ++i;
     sessionID = i;
   }
