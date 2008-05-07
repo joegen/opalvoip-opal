@@ -1,10 +1,5 @@
 LIBRARY opald
 EXPORTS
-    OpalInitialise @1
-    OpalShutDown @2
-    OpalGetMessage @3
-    OpalSendMessage @4
-    OpalFreeMessage @5
     ??$?0PAUOpalMessage@@@?$allocator@PAPAUOpalMessage@@@std@@QAA@ABV?$allocator@PAUOpalMessage@@@1@@Z @6 NONAME
     ??$?0PAUSIP_PDU_Work@SIPEndPoint@@@?$allocator@PAPAUSIP_PDU_Work@SIPEndPoint@@@std@@QAA@ABV?$allocator@PAUSIP_PDU_Work@SIPEndPoint@@@1@@Z @7 NONAME
     ??$?0U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@?$allocator@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@U?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@U?$less@U?$pair@VPString@@V1@@std@@@2@V?$allocator@U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@QAA@ABV?$allocator@U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@1@@Z @8 NONAME
@@ -4521,7 +4516,7 @@ EXPORTS
     ??0OpalH224Handler@@QAA@AAVOpalConnection@@I@Z @4489 NONAME
     ??0OpalH224ReceiverThread@@QAA@PAVOpalH224Handler@@AAVRTP_Session@@@Z @4490 NONAME
     ??0OpalH281Handler@@QAA@AAVOpalH224Handler@@@Z @4491 NONAME
-    ??0OpalHandleStruct@@QAA@ABVPCaselessString@@@Z @42320 NONAME
+    ??0OpalHandleStruct@@QAA@IABVPCaselessString@@@Z @42696 NONAME
     ??0OpalIAX2MediaStream@@QAA@AAVIAX2Connection@@ABVOpalMediaFormat@@I_N@Z @4493 NONAME
     ??0OpaliLBCFormat@?1??GetOpaliLBC@@YAABVOpalAudioFormat@@XZ@QAA@XZ @42321 NONAME
     ??0OpalInternalIPTransport@@QAA@XZ @4494 NONAME
@@ -4545,7 +4540,7 @@ EXPORTS
     ??0OpalListenerUDP@@QAA@AAVOpalEndPoint@@ABVOpalTransportAddress@@W4BindOptions@2@@Z @4512 NONAME
     ??0OpalListenerUDP@@QAA@AAVOpalEndPoint@@VAddress@PIPSocket@@G_N@Z @4513 NONAME
     ??0OpalManager@@QAA@XZ @4514 NONAME
-    ??0OpalManager_C@@QAA@XZ @4515 NONAME
+    ??0OpalManager_C@@QAA@I@Z @42697 NONAME
     ??0OpalMediaCommand@@QAA@XZ @4516 NONAME
     ??0OpalMediaFormat@@QAA@ABV0@@Z @4517 NONAME
     ??0OpalMediaFormat@@QAA@ABVPString@@@Z @4518 NONAME
@@ -31444,6 +31439,7 @@ EXPORTS
     ?empty@?$deque@PAUOpalMessage@@V?$allocator@PAUOpalMessage@@@std@@@std@@QBA_NXZ @31372 NONAME
     ?empty@?$deque@PAUSIP_PDU_Work@SIPEndPoint@@V?$allocator@PAUSIP_PDU_Work@SIPEndPoint@@@std@@@std@@QBA_NXZ @31373 NONAME
     ?empty@?$deque@VStreamFrame@OpalAudioMixerStream@@V?$allocator@VStreamFrame@OpalAudioMixerStream@@@std@@@std@@QBA_NXZ @31374 NONAME
+    ?empty@?$queue@PAUOpalMessage@@V?$deque@PAUOpalMessage@@V?$allocator@PAUOpalMessage@@@std@@@std@@@std@@QBA_NXZ @42698 NONAME
     ?empty@?$vector@VPIPSocketAddressAndPort@@V?$allocator@VPIPSocketAddressAndPort@@@std@@@std@@QBA_NXZ @42495 NONAME
     ?Enable@H235Authenticator@@QAAX_N@Z @31375 NONAME
     ?EnableAudio@OpalLine@@UAA_N_N@Z @31376 NONAME
@@ -39795,6 +39791,7 @@ EXPORTS
     ?pop_front@?$deque@PAUOpalMessage@@V?$allocator@PAUOpalMessage@@@std@@@std@@QAAXXZ @39659 NONAME
     ?pop_front@?$deque@PAUSIP_PDU_Work@SIPEndPoint@@V?$allocator@PAUSIP_PDU_Work@SIPEndPoint@@@std@@@std@@QAAXXZ @39660 NONAME
     ?pop_front@?$deque@VStreamFrame@OpalAudioMixerStream@@V?$allocator@VStreamFrame@OpalAudioMixerStream@@@std@@@std@@QAAXXZ @39661 NONAME
+    ?PostDecode@SDPMediaDescription@@UAA_NXZ @42699 NONAME
     ?PostMessageW@OpalManager_C@@QAAXAAVOpalMessageBuffer@@@Z @39662 NONAME
     ?Prepare@H323TransactionPDU@@QAAXAAVPASN_Array@@I0I@Z @39663 NONAME
     ?PreparePDU@H235Authenticators@@QAAXAAVH323TransactionPDU@@AAVPASN_Array@@I1I@Z @39664 NONAME
@@ -41811,6 +41808,7 @@ EXPORTS
     ?ToNormalisedOptions@OpalMediaFormatInternal@@UAA_NXZ @41672 NONAME
     ?ToNormalisedOptions@OpalPluginAudioFormatInternal@@UAA_NXZ @41673 NONAME
     ?ToNormalisedOptions@OpalPluginVideoFormatInternal@@UAA_NXZ @41674 NONAME
+    ?ToNormalisedOptions@SDPMediaFormat@@QAA_NXZ @42700 NONAME
     ?TraceFileKey@?3???0PProcess_C@@QAA@ABVPCaselessString@@@Z@4QBDB @42635 NONAME
     ?TraceLevelKey@?1???0PProcess_C@@QAA@ABVPCaselessString@@@Z@4QBDB @42636 NONAME
     ?Transcode@OpalPluginTranscoder@@QBA_NPBXPAIPAX11@Z @41675 NONAME
@@ -42418,5 +42416,10 @@ EXPORTS
     alaw2ulaw @42249 NONAME
     linear2alaw @42250 NONAME
     linear2ulaw @42251 NONAME
+    OpalFreeMessage @5
+    OpalGetMessage @3
+    OpalInitialise @1
+    OpalSendMessage @4
+    OpalShutDown @2
     ulaw2alaw @42253 NONAME
     ulaw2linear @42254 NONAME
