@@ -2181,7 +2181,7 @@ RTP_Session::SendReceiveStatus RTP_FormatHandler::OnReceiveData(RTP_DataFrame & 
 
 RTP_Session::SendReceiveStatus RTP_FormatHandler::OnReadTimeout(RTP_DataFrame & frame)
 {
-  return rtpUDP->OnReadTimeout(frame);
+  return rtpUDP->Internal_OnReadTimeout(frame);
 }
 
 PBoolean RTP_FormatHandler::ReadData(RTP_DataFrame & frame, PBoolean loop)
