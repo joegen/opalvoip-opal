@@ -377,6 +377,16 @@ OpalMediaSession::OpalMediaSession(const OpalMediaType & _mediaType)
 {
 }
 
+
+OpalMediaSession::OpalMediaSession(const OpalMediaSession & _obj)
+  : mediaType(_obj.mediaType)
+  , autoStartReceive(_obj.autoStartReceive)
+  , autoStartTransmit(_obj.autoStartTransmit)
+  , sessionId(_obj.sessionId)
+  , rtpSession(_obj.rtpSession)
+{
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalRTPSessionManager::OpalRTPSessionManager()
@@ -388,16 +398,15 @@ OpalRTPSessionManager::OpalRTPSessionManager()
 OpalRTPSessionManager::~OpalRTPSessionManager()
 {
   if (m_cleanupOnDelete) {
-    // empty the master list
-    while (size() > 0) {
-      RTP_Session * session = begin()->second.rtpSession;
+    while (sessions.GetSize() > 0) {
+      RTP_Session * session = sessions.GetDataAt(0).rtpSession;
       if (session != NULL) {
         PTRACE(3, "RTP\tDeleting session " << session->GetSessionID());
         session->Close(PTrue);
         session->SetJitterBufferSize(0, 0);
         delete session;
       }
-      erase(begin());
+      sessions.RemoveAt(sessions.GetKeyAt(0));
     }
   }
 }
@@ -407,12 +416,14 @@ void OpalRTPSessionManager::CopyFromMaster(const OpalRTPSessionManager & from)
   PWaitAndSignal m1(m_mutex);
   PWaitAndSignal m2(from.m_mutex);
 
-  PAssert(size() == 0, "Cannot copy from master RTP session list to non-empty list");
+  PAssert(sessions.GetSize() == 0, "Cannot copy from master RTP session list to non-empty list");
 
-  for (iterator r = begin(); r != end(); ++r) {
-    PAssert(r->second.rtpSession == NULL, "Cannot copy from master RTP session list after sockets have been created");
-    insert(value_type(r->first, r->second));
+  for (PINDEX i = 0; i < sessions.GetSize(); ++i) {
+    PAssert(sessions.GetDataAt(i).rtpSession == NULL, "Cannot copy from master RTP session list after sockets have been created");
   }
+
+  sessions = from.sessions;
+  sessions.MakeUnique();
 }
 
 void OpalRTPSessionManager::CopyToMaster(OpalRTPSessionManager & from)
@@ -420,20 +431,16 @@ void OpalRTPSessionManager::CopyToMaster(OpalRTPSessionManager & from)
   PWaitAndSignal m1(m_mutex);
   PWaitAndSignal m2(from.m_mutex);
 
-  PAssert(from.size() != 0, "Cannot copy from empty list to master RTP session list");
+  PAssert(from.sessions.GetSize() != 0, "Cannot copy from empty list to master RTP session list");
 
-  // empty the master list
-  while (size() > 0) {
-    PAssert(begin()->second.rtpSession == NULL, "Cannot copy to master RTP session list after sockets have been created");
-    erase(begin());
+  for (PINDEX i = 0; i < sessions.GetSize(); ++i) {
+    if (sessions.GetDataAt(i).rtpSession != NULL) {
+      PTRACE(2, "RTP\tCannot copy to master RTP session list after sockets have been created");
+      return;
+    }
   }
 
-  // copy from the new list
-  for (const_iterator r = from.begin(); r != from.end(); ++r) {
-    insert(value_type(r->first, r->second));
-  }
-
-  // avoid double delete when INVITE list is deleted
+  sessions = from.sessions;
   from.m_cleanupOnDelete = false;
 }
 
@@ -441,32 +448,32 @@ RTP_Session * OpalRTPSessionManager::UseSession(unsigned sessionID)
 {
   PWaitAndSignal m(m_mutex);
 
-  iterator r = find(sessionID);
-  if (r == end() || r->second.rtpSession == NULL)
+  OpalMediaSession * session = sessions.GetAt(sessionID);
+  if (session == NULL || session->rtpSession == NULL)
     return NULL;
   
   PTRACE(3, "RTP\tFound existing session " << sessionID);
 
-  return r->second.rtpSession;
+  return session->rtpSession;
 }
 
 
-void OpalRTPSessionManager::AddSession(RTP_Session * session, const OpalMediaType & mediaType)
+void OpalRTPSessionManager::AddSession(RTP_Session * rtpSession, const OpalMediaType & mediaType)
 {
   PWaitAndSignal m(m_mutex);
   
-  if (session != NULL) {
-    iterator r = find(session->GetSessionID());
-    if (r == end()) {
-      OpalMediaSession s(mediaType);
-      s.rtpSession = session;
-      insert(value_type(session->GetSessionID(), s));
-      PTRACE(3, "RTP\tCreating new session " << *session);
+  if (rtpSession != NULL) {
+    OpalMediaSession * session = sessions.GetAt(rtpSession->GetSessionID());
+    if (session == NULL) {
+      OpalMediaSession * s = new OpalMediaSession(mediaType);
+      s->rtpSession = rtpSession;
+      sessions.Insert(POrdinalKey(rtpSession->GetSessionID()), s);
+      PTRACE(3, "RTP\tCreating new session " << *rtpSession);
     }
     else
     {
-      PAssert(r->second.rtpSession == NULL, "Cannot add already existing session");
-      r->second.rtpSession = session;
+      PAssert(session->rtpSession == NULL, "Cannot add already existing session");
+      session->rtpSession = rtpSession;
     }
   }
 }
@@ -475,20 +482,19 @@ void OpalRTPSessionManager::AddSession(RTP_Session * session, const OpalMediaTyp
 void OpalRTPSessionManager::ReleaseSession(unsigned sessionID, PBoolean /*clearAll*/)
 {
   PTRACE(3, "RTP\tReleasing session " << sessionID);
-
+#if 0
   PWaitAndSignal m(m_mutex);
 
   iterator r;
   if ((r = find(sessionID)) != end()) {
     RTP_Session * session = r->second.rtpSession;
     if (session != NULL) {
-      PTRACE(3, "RTP\tDeleting session " << sessionID);
+      PTRACE(3, "RTP\tStopping session " << sessionID);
       session->Close(PTrue);
       session->SetJitterBufferSize(0, 0);
-      delete session;
-      erase(r);
     }
   }
+#endif
 }
 
 
@@ -496,14 +502,14 @@ RTP_Session * OpalRTPSessionManager::GetSession(unsigned sessionID) const
 {
   PWaitAndSignal wait(m_mutex);
 
-  const_iterator r;
-  if (((r = find(sessionID)) == end()) || (r->second.rtpSession == NULL)) {
+  OpalMediaSession * session;
+  if (((session = sessions.GetAt(sessionID)) == NULL) || (session->rtpSession == NULL)) {
     PTRACE(3, "RTP\tCannot find session " << sessionID);
     return NULL;
   }
 
   PTRACE(3, "RTP\tFound existing session " << sessionID);
-  return r->second.rtpSession;
+  return session->rtpSession;
 }
 
 
@@ -561,12 +567,12 @@ void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, OpalConnection:
 
 void OpalRTPSessionManager::SetOldOptions(unsigned preferredSessionIndex, const OpalMediaType & mediaType, bool rx, bool tx)
 {
-  iterator r;
-  for (r = begin(); r != end(); ++r) {
-    if (r->second.mediaType == mediaType)
+  PINDEX i;
+  for (i = 0; i < sessions.GetSize(); ++i) {
+    if (sessions.GetDataAt(i).mediaType == mediaType)
       break;
   }
-  if (r == end()) 
+  if (i == sessions.GetSize()) 
     AutoStartSession(preferredSessionIndex, mediaType, rx, tx);
 }
 
@@ -576,18 +582,18 @@ unsigned OpalRTPSessionManager::AutoStartSession(unsigned sessionID, const OpalM
   PWaitAndSignal m(m_mutex);
   m_initialised = true;
 
-  if ((sessionID == 0) || (find(sessionID) != end())) {
+  if ((sessionID == 0) || (sessions.Contains(sessionID))) {
     unsigned i = 1;
-    while (find(sessionID) != end())
+    while (sessions.Contains(i) != NULL)
       ++i;
     sessionID = i;
   }
 
-  OpalMediaSession s(mediaType);
-  s.sessionId         = sessionID;
-  s.autoStartReceive  = autoStartReceive;
-  s.autoStartTransmit = autoStartTransmit;
-  insert(value_type(sessionID, s));
+  OpalMediaSession * s = new OpalMediaSession(mediaType);
+  s->sessionId         = sessionID;
+  s->autoStartReceive  = autoStartReceive;
+  s->autoStartTransmit = autoStartTransmit;
+  sessions.Insert(POrdinalKey(sessionID), s);
 
   return sessionID;
 }
