@@ -1766,8 +1766,15 @@ PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame, PBoolean loop)
         break;
 
       case 0 :
-        if (!SendReport())
-          return PFalse;
+        switch (OnReadTimeout(frame)) {
+          case e_ProcessPacket :
+            if (!shutdownRead)
+              return PTrue;
+          case e_IgnorePacket :
+            break;
+          case e_AbortTransport :
+            return PFalse;
+        }
         break;
 
       case PSocket::Interrupted:
@@ -1912,6 +1919,17 @@ RTP_Session::SendReceiveStatus RTP_UDP::Internal_ReadDataPDU(RTP_DataFrame & fra
 
   frame.SetPayloadSize(pduSize - frame.GetHeaderSize());
   return OnReceiveData(frame);
+}
+
+
+RTP_Session::SendReceiveStatus RTP_UDP::OnReadTimeout(RTP_DataFrame & frame)
+{
+  return HandlerLock(*this)->OnReadTimeout(frame);
+}
+
+RTP_Session::SendReceiveStatus RTP_UDP::Internal_OnReadTimeout(RTP_DataFrame & /*frame*/)
+{
+  return SendReport() ? e_IgnorePacket : e_AbortTransport;
 }
 
 
@@ -2159,6 +2177,11 @@ RTP_Session::SendReceiveStatus RTP_FormatHandler::ReadDataPDU(RTP_DataFrame & fr
 RTP_Session::SendReceiveStatus RTP_FormatHandler::OnReceiveData(RTP_DataFrame & frame)
 {
   return rtpUDP->Internal_OnReceiveData(frame);
+}
+
+RTP_Session::SendReceiveStatus RTP_FormatHandler::OnReadTimeout(RTP_DataFrame & frame)
+{
+  return rtpUDP->OnReadTimeout(frame);
 }
 
 PBoolean RTP_FormatHandler::ReadData(RTP_DataFrame & frame, PBoolean loop)
