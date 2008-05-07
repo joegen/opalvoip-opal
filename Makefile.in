@@ -76,6 +76,9 @@ OBJDIR	=	$(OPAL_OBJDIR)
 LIBDIR  =	$(OPAL_LIBDIR)
 TARGET	=	$(OPAL_LIBDIR)/$(OPAL_FILE)
 
+ASN_SRCDIR := $(OPAL_SRCDIR)/asn
+ASN_INCDIR := $(OPAL_INCDIR)/asn
+
 STDCCFLAGS += @STDCCFLAGS@
 
 VPATH_CXX := $(OPAL_SRCDIR)/opal \
@@ -151,9 +154,6 @@ endif
 
 ifeq ($(OPAL_H323),1)
 ifdef H323_AVAIL
-
-ASN_SRCDIR := $(OPAL_SRCDIR)/asn
-ASN_INCDIR := $(OPAL_INCDIR)/asn
 
 H450_ASN_FILES := h4501 h4502 h4503 h4504 h4505 h4506 h4507 h4508 h4509 h45010 h45011
 SIMPLE_ASN_FILES := x880 $(H450_ASN_FILES) mcs gcc
@@ -319,9 +319,8 @@ endif
 # T.38 Fax
 
 ifeq ($(OPAL_FAX), 1)
-SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx 
-ASN_H_FILES   += $(ASN_INCDIR)/t38.h
-ASN_CXX_FILES += $(ASN_SRCDIR)/t38.cxx
+SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx \
+           $(ASN_SRCDIR)/t38.cxx
 endif
 
 
@@ -444,8 +443,6 @@ Makefile: Makefile.in configure
 	@echo "*******************************************************"
 	@false
 
-test:
-	@echo $(ASN_CXX_FILES)
 
 #### Install targets
 install ::
