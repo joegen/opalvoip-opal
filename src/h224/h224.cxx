@@ -51,7 +51,7 @@ OpalH224MediaType::OpalH224MediaType()
 
 #if OPAL_SIP
 
-SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTransportAddress & /*localAddress*/)
 {
   return NULL;
 }
