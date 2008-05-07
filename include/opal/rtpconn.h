@@ -164,7 +164,7 @@ class OpalRTPSessionManager : public PObject
     SessionDict sessions;
 
   private:
-    OpalRTPSessionManager (const OpalRTPSessionManager &) { }
+    OpalRTPSessionManager (const OpalRTPSessionManager & other): PObject (other) { }
     OpalRTPSessionManager & operator=(const OpalRTPSessionManager &) { return *this; }
 
 };
