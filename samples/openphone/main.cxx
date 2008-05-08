@@ -427,6 +427,7 @@ END_EVENT_TABLE()
 
 MyManager::MyManager()
   : wxFrame(NULL, -1, wxT("OpenPhone"), wxDefaultPosition, wxSize(640, 480))
+  , m_AnswerMode(AnswerDetect)
   , m_speedDials(NULL)
   , pcssEP(NULL)
   , potsEP(NULL)
@@ -1714,6 +1715,9 @@ void MyManager::OnEstablishedCall(OpalCall & call)
 
   LogWindow << "Established call from " << call.GetPartyA() << " to " << call.GetPartyB() << endl;
   SetState(InCallState);
+
+  if (m_AnswerMode == AnswerFax)
+    SwitchToFax();
 }
 
 
@@ -1914,12 +1918,12 @@ void MyManager::AddCallOnHold(OpalCall & call)
 }
 
 
-void MyManager::RemoveCallOnHold(const PString & token)
+bool MyManager::RemoveCallOnHold(const PString & token)
 {
   list<CallsOnHold>::iterator it = m_callsOnHold.begin();
   for (;;) {
     if (it == m_callsOnHold.end())
-      return;
+      return false;
     if (it->m_call->GetToken() == token)
       break;
     ++it;
@@ -1941,6 +1945,7 @@ void MyManager::RemoveCallOnHold(const PString & token)
   m_callsOnHold.erase(it);
 
   m_inCallPanel->OnHoldChanged(false);
+  return true;
 }
 
 
@@ -1956,6 +1961,37 @@ void MyManager::OnUserInputString(OpalConnection & connection, const PString & v
 {
   LogWindow << "User input \"" << value << "\" received from \"" << connection.GetRemotePartyName() << '"' << endl;
   OpalManager::OnUserInputString(connection, value);
+}
+
+
+void MyManager::OnUserInputTone(OpalConnection & connection, char tone, int duration)
+{
+  if (toupper(tone) == 'X' && m_AnswerMode == AnswerDetect)
+    SwitchToFax();
+
+  OpalManager::OnUserInputTone(connection, tone, duration);
+}
+
+
+void MyManager::SwitchToFax()
+{
+  if (m_activeCall == NULL)
+    return; // Huh?
+
+  if (!m_activeCall->IsNetworkOriginated())
+    return; // We originated call
+
+  if (m_activeCall->GetPartyB().NumCompare("t38") == EqualTo)
+    return; // Already switched
+
+  PSafePtr<OpalConnection> connection = m_activeCall->GetConnection(1);
+  if (connection == NULL)
+    return; // Huh? again!
+
+  if (m_activeCall->Transfer(*connection, "t38:*;receive"))
+    LogWindow << "Switching to T.38 fax mode." << endl;
+  else
+    LogWindow << "Could not switch to T.38 fax mode." << endl;
 }
 
 
@@ -1986,7 +2022,8 @@ void MyManager::OnTransfer(wxCommandEvent& theEvent)
     for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
       if (theEvent.GetId() == it->m_transferMenuId) {
         PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReference);
-        connection->TransferConnection(it->m_call->GetToken());
+        if (connection != NULL)
+          m_activeCall->Transfer(*connection, it->m_call->GetToken());
         return;
       }
     }
@@ -1996,7 +2033,7 @@ void MyManager::OnTransfer(wxCommandEvent& theEvent)
     if (dlg.ShowModal() == wxID_OK) {
       PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReference);
       if (connection != NULL)
-        connection->TransferConnection(dlg.m_Address);
+        m_activeCall->Transfer(*connection, dlg.m_Address);
     }
   }
 }
@@ -2190,6 +2227,13 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
       Raise();
 
       if (!m_autoAnswer) {
+        // Want the network side connection to get calling and called party names.
+        PSafePtr<OpalConnection> connection = pcssEP->GetConnectionWithLock(m_incomingToken, PSafeReadOnly);
+        if (connection != NULL) {
+          connection = connection->GetCall().GetConnection(0, PSafeReadOnly);
+          if (connection != NULL)
+            m_answerPanel->SetPartyNames(connection->GetRemotePartyURL(), connection->GetDestinationAddress());
+        }
         newWindow = m_answerPanel;
         break;
       }
@@ -2208,8 +2252,8 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
     case ClearingCallState :
       if (m_activeCall == NULL || m_activeCall->GetToken() != theEvent.GetString().c_str()) {
         // A call on hold got cleared
-        RemoveCallOnHold(theEvent.GetString().c_str());
-        return;
+        if (RemoveCallOnHold(theEvent.GetString().c_str()))
+          return;
       }
 
       m_activeCall.SetNULL();
@@ -3940,12 +3984,21 @@ void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 BEGIN_EVENT_TABLE(AnswerPanel, wxPanel)
   EVT_BUTTON(XRCID("AnswerCall"), AnswerPanel::OnAnswer)
   EVT_BUTTON(XRCID("RejectCall"), AnswerPanel::OnReject)
+  EVT_RADIOBOX(XRCID("AnswerAs"), AnswerPanel::OnChangeAnswerMode)
 END_EVENT_TABLE()
 
 AnswerPanel::AnswerPanel(MyManager & manager, wxWindow * parent)
   : m_manager(manager)
 {
   wxXmlResource::Get()->LoadPanel(this, parent, "AnswerPanel");
+}
+
+
+void AnswerPanel::SetPartyNames(const PwxString & calling, const PwxString & called)
+{
+  FindWindowByNameAs<wxStaticText>(this, "CallingParty")->SetLabel(calling);
+  FindWindowByNameAs<wxStaticText>(this, "CalledParty")->SetLabel(called);
+  FindWindowByNameAs<wxStaticText>(this, "CalledParty")->SetLabel(called);
 }
 
 
@@ -3958,6 +4011,12 @@ void AnswerPanel::OnAnswer(wxCommandEvent & /*event*/)
 void AnswerPanel::OnReject(wxCommandEvent & /*event*/)
 {
   m_manager.RejectCall();
+}
+
+
+void AnswerPanel::OnChangeAnswerMode(wxCommandEvent & theEvent)
+{
+  m_manager.m_AnswerMode = (MyManager::AnswerModes)theEvent.GetSelection();
 }
 
 
