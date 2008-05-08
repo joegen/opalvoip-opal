@@ -190,7 +190,7 @@ class SDPMediaDescription : public PObject
     virtual void SetAttribute(const PString & attr, const PString & value);
 
     virtual void SetDirection(const Direction & d) { direction = d; }
-    virtual Direction GetDirection() const { return direction; }
+    virtual Direction GetDirection() const { return transportAddress.IsEmpty() ? Inactive : direction; }
 
     virtual const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
     virtual PBoolean SetTransportAddress(const OpalTransportAddress &t);
