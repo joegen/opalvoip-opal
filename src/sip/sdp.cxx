@@ -136,7 +136,7 @@ static PString GetConnectAddressString(const OpalTransportAddress & address)
   PStringStream str;
 
   PIPSocket::Address ip;
-  if (address.GetIpAddress(ip))
+  if (!address.IsEmpty() && address.GetIpAddress(ip) && ip.IsValid())
     str << "IN IP" << ip.GetVersion() << ' ' << ip;
   else
     str << "IN IP4 0.0.0.0";
