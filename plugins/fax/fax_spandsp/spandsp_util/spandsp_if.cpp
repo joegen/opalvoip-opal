@@ -878,6 +878,8 @@ bool SpanDSP::T38Terminal::Start(const std::string & filename)
     cout << "starting T.38 terminal with version " << version << endl;
 
   ::t38_set_t38_version(&t38TerminalState.t38, version);
+  ::t38_terminal_set_config(&t38TerminalState, 0);      // enable "pacing"
+
 #if 0
   ::span_log_set_level(&t38TerminalState.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
   ::span_log_set_tag  (&t38TerminalState.logging, "T.38-A");
@@ -892,7 +894,7 @@ bool SpanDSP::T38Terminal::Start(const std::string & filename)
   else
     ::t30_set_local_ident(&t38TerminalState.t30_state, " ");
 
-  //::t30_set_ecm_capability(&t38TerminalState.t30_state, useECM ? 1 : 0);
+  ::t30_set_ecm_capability(&t38TerminalState.t30_state, useECM ? 1 : 0);
 
   ::t30_set_phase_b_handler(&t38TerminalState.t30_state, FaxElement::phase_b_handler, this);
   ::t30_set_phase_d_handler(&t38TerminalState.t30_state, FaxElement::phase_d_handler, this);
@@ -937,31 +939,43 @@ bool SpanDSP::T38Terminal::Serve(socket_t fd, sockaddr_in & address, bool listen
   }
 
   // set socket into non-blocking mode
-  int cmd = 1;
-  if (__socket_ioctl(fd, FIONBIO, &cmd) != 0) {
-     cerr << progmode << ": cannot set socket into non-blocking mode" << endl;
-     return false;
-  }
+  //int cmd = 1;
+  //if (__socket_ioctl(fd, FIONBIO, &cmd) != 0) {
+  //   cerr << progmode << ": cannot set socket into non-blocking mode" << endl;
+  //   return false;
+  //}
 
   int done = 0;
 
-  AdaptiveDelay delay;
+  //AdaptiveDelay delay;
 
   while (!finished) {
 
-    delay.Delay(20);
+    //delay.Delay(20);
 
     done = ::t38_terminal_send_timeout(&t38TerminalState, SAMPLES_PER_CHUNK);
 
     SpanDSP::T38Terminal::T38Packet pkt;
 
-    // read incoming packets
-    if (!ReceiveT38Packet(fd, pkt, address, listen)) {
-      finished = true;
-      break;
+    int ret;
+    {
+      fd_set rfds;
+      FD_ZERO(&rfds);
+      FD_SET(fd, &rfds);
+      timeval t;
+      t.tv_sec  = 0;
+      t.tv_usec = 30000;
+      ret = select(fd+1, &rfds, NULL, NULL, &t);
     }
-    if (pkt.size() != 0) 
-      QueuePacket(pkt);
+
+    // read incoming packets
+    if (ret != 0) {
+      if (ret < 0 || !ReceiveT38Packet(fd, pkt, address, listen)) {
+        finished = true;
+        break;
+      } else if (pkt.size() != 0) 
+        QueuePacket(pkt);
+    }
 
     if (finished || done)
       break;
