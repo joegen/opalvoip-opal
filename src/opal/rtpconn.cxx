@@ -114,14 +114,10 @@ RTP_Session * OpalRTPConnection::GetSession(unsigned sessionID) const
   return m_rtpSessions.GetSession(sessionID);
 }
 
-RTP_Session * OpalRTPConnection::UseSession(unsigned sessionID)
-{
-  return m_rtpSessions.UseSession(sessionID);
-}
 
 RTP_Session * OpalRTPConnection::UseSession(const OpalTransport & transport, unsigned sessionID, const OpalMediaType & mediaType, RTP_QOS * rtpqos)
 {
-  RTP_Session * rtpSession = m_rtpSessions.UseSession(sessionID);
+  RTP_Session * rtpSession = m_rtpSessions.GetSession(sessionID);
   if (rtpSession == NULL) {
     rtpSession = CreateSession(transport, sessionID, rtpqos);
     m_rtpSessions.AddSession(rtpSession, mediaType);
@@ -442,19 +438,6 @@ void OpalRTPSessionManager::CopyToMaster(OpalRTPSessionManager & from)
 
   sessions = from.sessions;
   from.m_cleanupOnDelete = false;
-}
-
-RTP_Session * OpalRTPSessionManager::UseSession(unsigned sessionID)
-{
-  PWaitAndSignal m(m_mutex);
-
-  OpalMediaSession * session = sessions.GetAt(sessionID);
-  if (session == NULL || session->rtpSession == NULL)
-    return NULL;
-  
-  PTRACE(3, "RTP\tFound existing session " << sessionID);
-
-  return session->rtpSession;
 }
 
 
