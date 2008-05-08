@@ -107,21 +107,6 @@ class OpalRTPSessionManager : public PObject
 
   /**@name Operations */
   //@{
-    /**Use an RTP session for the specified ID.
-
-       If this function returns a non-null value, then the ReleaseSession()
-       function MUST be called or the session is never deleted for the
-       lifetime of the session manager.
-
-       If there is no session of the specified ID, then you MUST call the
-       AddSession() function with a new RTP_Session. The mutex flag is left
-       locked in this case. The AddSession() expects the mutex to be locked
-       and unlocks it automatically.
-      */
-    RTP_Session * UseSession(
-      unsigned sessionID    ///<  Session ID to use.
-    );
-
     /**Add an RTP session for the specified ID.
 
        This function MUST be called only after the UseSession() function has
@@ -133,8 +118,7 @@ class OpalRTPSessionManager : public PObject
       const OpalMediaType & mediaType ///< initial media type for this session
     );
 
-    /**Release the session. If the session ID is not being used any more any
-       clients via the UseSession() function, then the session is deleted.
+    /**Release the session.
      */
     void ReleaseSession(
       unsigned sessionID,    ///<  Session ID to release.
@@ -142,8 +126,6 @@ class OpalRTPSessionManager : public PObject
     );
 
     /**Get a session for the specified ID.
-       Unlike UseSession, this does not increment the usage count on the
-       session so may be used to just gain a pointer to an RTP session.
      */
     RTP_Session * GetSession(
       unsigned sessionID    ///<  Session ID to get.
@@ -205,22 +187,13 @@ class OpalRTPConnection : public OpalConnection
     ) const;
 
     /**Use an RTP session for the specified ID.
-       This will find a session of the specified ID and increment its
-       reference count. Multiple OpalRTPStreams use this to indicate their
-       usage of the RTP session.
-
-       If this function is used, then the ReleaseSession() function MUST be
-       called or the session is never deleted for the lifetime of the Opal
-       connection.
+       This will find a session of the specified ID and uses it if available.
 
        If there is no session of the specified ID one is created.
 
        The type of RTP session that is created will be compatible with the
-       transport. At this time only IP (RTp over UDP) is supported.
+       transport. At this time only IP (RTP over UDP) is supported.
       */
-    virtual RTP_Session * UseSession(
-      unsigned sessionID
-    );
     virtual RTP_Session * UseSession(
       const OpalTransport & transport,  ///<  Transport of signalling
       unsigned sessionID,               ///<  RTP session number
@@ -229,8 +202,6 @@ class OpalRTPConnection : public OpalConnection
     );
 
     /**Release the session.
-       If the session ID is not being used any more any clients via the
-       UseSession() function, then the session is deleted.
      */
     virtual void ReleaseSession(
       unsigned sessionID,    ///<  RTP session number
@@ -239,7 +210,7 @@ class OpalRTPConnection : public OpalConnection
 
     /**Create and open a new RTP session.
        The type of RTP session that is created will be compatible with the
-       transport. At this time only IP (RTp over UDP) is supported.
+       transport. At this time only IP (RTP over UDP) is supported.
       */
     virtual RTP_Session * CreateSession(
       const OpalTransport & transport,

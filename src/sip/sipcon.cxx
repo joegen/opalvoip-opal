@@ -596,7 +596,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
        transport requirements, we actually need to use an rtpSession dictionary
        for each INVITE and not the one for the connection. Once an INVITE is
        accepted the rtpSessions for that INVITE is put into the connection. */
-    RTP_Session * rtpSession = rtpSessions.UseSession(rtpSessionId);
+    RTP_Session * rtpSession = rtpSessions.GetSession(rtpSessionId);
     if (rtpSession == NULL) {
 
       // Not already there, so create one
