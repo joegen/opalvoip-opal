@@ -657,12 +657,13 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
       localMedia->SetDirection(SDPMediaDescription::Inactive);
     }
 #if PAUSE_WITH_EMPTY_ADDRESS
-    if (local_hold) {
+    if (m_holdToRemote >= eHoldOn) {
       PString addr = localMedia->GetTransportAddress();
       PString prot = addr.Left(addr.Find('$')+1);
       WORD port; { PIPSocket::Address dummy; localMedia->GetTransportAddress().GetIpAndPort(dummy, port); }
       OpalTransportAddress newAddr = prot + "0.0.0.0:" + PString(PString::Unsigned, port);
       localMedia->SetTransportAddress(newAddr);
+      localMedia->SetDirection(SDPMediaDescription::Undefined);
     }
 #endif
   }
