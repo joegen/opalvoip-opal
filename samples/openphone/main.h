@@ -180,9 +180,12 @@ class AnswerPanel : public wxPanel
   public:
     AnswerPanel(MyManager & manager, wxWindow * parent);
 
+    void SetPartyNames(const PwxString & calling, const PwxString & called);
+
   private:
     void OnAnswer(wxCommandEvent & event);
     void OnReject(wxCommandEvent & event);
+    void OnChangeAnswerMode(wxCommandEvent & event);
 
     MyManager & m_manager;
 
@@ -616,6 +619,13 @@ class MyManager : public wxFrame, public OpalManager
     PSafePtr<OpalCall>       GetCall(PSafetyMode mode);
     PSafePtr<OpalConnection> GetConnection(bool user, PSafetyMode mode);
 
+    enum AnswerModes {
+      AnswerVoice,
+      AnswerFax,
+      AnswerDetect
+    } m_AnswerMode;
+    void SwitchToFax();
+
   private:
     // OpalManager overrides
     virtual PBoolean OnIncomingConnection(
@@ -642,6 +652,11 @@ class MyManager : public wxFrame, public OpalManager
     virtual void OnUserInputString(
       OpalConnection & connection,  /// Connection input has come from
       const PString & value         /// String value of indication
+    );
+    virtual void OnUserInputTone(
+      OpalConnection & connection,  ///<  Connection input has come from
+      char tone,                    ///<  Tone received
+      int duration                  ///<  Duration of tone
     );
     virtual PString ReadUserInput(
       OpalConnection & connection,        ///<  Connection to read input from
@@ -822,7 +837,7 @@ class MyManager : public wxFrame, public OpalManager
     void AddCallOnHold(
       OpalCall & call
     );
-    void RemoveCallOnHold(
+    bool RemoveCallOnHold(
       const PString & token
     );
 
