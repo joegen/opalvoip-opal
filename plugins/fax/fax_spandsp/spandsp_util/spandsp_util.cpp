@@ -110,10 +110,6 @@ static bool ParseAddressAndPort(const char * _str, sockaddr_in & addr)
 
 int main(int argc, char* argv[])
 {
-  {
-    char * str = _strdup("fred");
-    free(str);
-  }
   SpanDSP::progname = strrchr(argv[0], '/');
   if (SpanDSP::progname != NULL)
     ++SpanDSP::progname;
