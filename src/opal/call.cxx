@@ -38,6 +38,7 @@
 #include <opal/call.h>
 
 #include <opal/manager.h>
+#include <opal/endpoint.h>
 #include <opal/patch.h>
 #include <opal/transcoders.h>
 
@@ -309,6 +310,27 @@ bool OpalCall::IsOnHold() const
   }
 
   return false;
+}
+
+
+bool OpalCall::Transfer(OpalConnection & connection, const PString & newAddress)
+{
+  if (newAddress.NumCompare(connection.GetEndPoint().GetPrefixName()+':') == EqualTo)
+    return connection.TransferConnection(newAddress);
+
+  PSafePtr<OpalConnection> connectionToKeep;
+  EnumerateConnections(connectionToKeep, PSafeReference, &connection);
+
+  if (!manager.MakeConnection(*this, newAddress))
+    return false;
+
+  connection.Release(OpalConnection::EndedByCallForwarded);
+
+  // Close streams, but as we Released above should not do re-INVITE/OLC
+  connection.CloseMediaStreams();
+
+  // Restart with new connection
+  return OnSetUp(*connectionToKeep);
 }
 
 

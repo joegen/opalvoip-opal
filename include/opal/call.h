@@ -275,6 +275,20 @@ class OpalCall : public PSafeObject
     /**Indicate if call is in hold.
       */
     bool IsOnHold() const;
+
+    /**Transfer connection.
+       If the newAddress indicates a protocol type and it is the same as
+       connection then this simply calls TransferConnection on the
+       connection variable.
+
+       If there is a protocol change, e.g. "pc" to "t38", then the connection
+       is completely closed, all links to the second conection in the call (if
+       any) severed and a new connection establshed and new streams started.
+      */
+    bool Transfer(
+      OpalConnection & connection, ///< Connection to transfer
+      const PString & newAddress   ///< New address to transfer to
+    );
   //@}
 
   /**@name Media management */
