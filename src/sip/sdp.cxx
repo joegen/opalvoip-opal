@@ -537,8 +537,8 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
   else {
     PTRACE(4, "SDP\tMedia session port=" << port);
     PIPSocket::Address ip;
-    transportAddress.GetIpAddress(ip);
-    transportAddress = OpalTransportAddress(ip, (WORD)port);
+    if (transportAddress.GetIpAddress(ip))
+      transportAddress = OpalTransportAddress(ip, (WORD)port);
   }
 
   // create the format list
@@ -1347,14 +1347,13 @@ SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sess
   if (sessionID > 0 && sessionID <= (unsigned)mediaDescriptions.GetSize())
     return mediaDescriptions[sessionID-1].GetDirection();
   
-  return direction;
+  return defaultConnectAddress.IsEmpty() ? SDPMediaDescription::Inactive : direction;
 }
 
 
 bool SDPSessionDescription::IsHold() const
 {
-  SDPMediaDescription * audioSDP = GetMediaDescriptionByType(OpalMediaType::Audio());
-  if (audioSDP != NULL && audioSDP->GetTransportAddress().IsEmpty()) // Old style "hold"
+  if (defaultConnectAddress.IsEmpty()) // Old style "hold"
     return true;
 
   if (GetBandwidth(SDPSessionDescription::ApplicationSpecificBandwidthType()) == 0)

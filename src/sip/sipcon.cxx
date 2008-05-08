@@ -712,7 +712,6 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     return false;
   }
 
-  RTP_UDP * rtpSession = NULL;
   SDPMediaDescription * localMedia = NULL;
 
   OpalMediaFormatList sdpFormats = incomingMedia->GetMediaFormats(mediaType);
@@ -754,8 +753,14 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   OpalTransportAddress localAddress;
   OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
-  if (!mediaAddress.IsEmpty()) {
-
+  if (mediaAddress.IsEmpty()) {
+    // Hold aka pause media, should only occur on a re-INVITE.
+    RTP_UDP * rtpSession = dynamic_cast<RTP_UDP *>(GetSession(rtpSessionId));
+    if (rtpSession == NULL)
+      return false;
+    localAddress = OpalTransportAddress(rtpSession->GetLocalAddress(), rtpSession->GetLocalDataPort());
+  }
+  else {
     PIPSocket::Address ip;
     WORD port = 0;
     if (!mediaAddress.GetIpAndPort(ip, port)) {
@@ -764,17 +769,17 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     }
 
     // Create the RTPSession if required
-    rtpSession = OnUseRTPSession(rtpSessionId, mediaType, mediaAddress, localAddress);
-    if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-      return PFalse;
+    RTP_UDP * rtpSession = OnUseRTPSession(rtpSessionId, mediaType, mediaAddress, localAddress);
+    if (rtpSession == NULL) {
+      if (!ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
+        PTRACE(1, "SIP\tCannot create RTP session on non-bypassed connection");
+        return false;
+      }
     }
-
-    // set the remote address, but note that endpoints send IP address 
-    // of 0.0.0.0 when pausing media
-    if (ip != 0) {
-      if ((rtpSession != NULL)&& !rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
+    else {
+      if (!rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
         PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-        return PFalse;
+        return false;
       }
     }
   }
