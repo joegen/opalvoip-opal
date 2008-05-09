@@ -617,6 +617,13 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (command.m_param.m_general.m_echoCancellation != 0)
     echoCancelParams.m_mode = (OpalEchoCanceler::Mode)(command.m_param.m_general.m_echoCancellation-1);
   SetEchoCancelParams(echoCancelParams);
+
+  if (m_apiVersion < 3)
+    return;
+
+  response->m_param.m_general.m_audioBuffers = pcssEP->GetSoundChannelBufferDepth();
+  if (command.m_param.m_general.m_audioBuffers != 0)
+    pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
 }
 
 
