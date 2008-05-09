@@ -75,6 +75,8 @@ struct RTPHeader {
   unsigned int ssrc:32;
 };
 
+//#define USE_PACING
+
 //////////////////////////////////////////////////////////////////////////////////
 // 
 //  Windows specific network functions
@@ -141,7 +143,7 @@ int __socket_recvmsg(socket_t fd, struct msghdr *msg, int flags)
   char buffer[2000];
   int bufferLen = 0;
 
-  bufferLen = __socket_recvfrom(fd, buffer, sizeof(buffer), flags, NULL, NULL); //(sockaddr *)msg->msg_name, (int *)&msg->msg_namelen);
+  bufferLen = __socket_recvfrom(fd, buffer, sizeof(buffer), flags, (sockaddr *)msg->msg_name, (msg->msg_name == NULL) ? NULL : (int *)&msg->msg_namelen);
   if (bufferLen <= 0)
     return -1;
 
@@ -735,7 +737,7 @@ int SpanDSP::T38Element::tx_packet_handler(t38_core_state_t *s, void *user_data,
 int SpanDSP::T38Element::TXPacketHandler(const uint8_t * buf, int len, int sequence)
 { 
   if (txFd >= 0) 
-    SendT38Packet(txFd, T38Packet(buf, len, sequence), txAddr);
+    SendT38Packet(txFd, T38Packet(buf, len, sequence), (const sockaddr *)&txAddr);
 
   return 0;
 }
@@ -744,7 +746,7 @@ int SpanDSP::T38Element::TXPacketHandler(const uint8_t * buf, int len, int seque
 //  Send a T.38 packet on a UDP port
 //
 
-bool SpanDSP::T38Element::SendT38Packet(socket_t fd, const T38Packet & pkt, const sockaddr_in & address)
+bool SpanDSP::T38Element::SendT38Packet(socket_t fd, const T38Packet & pkt, const sockaddr * address)
 {
   RTPHeader rtpHeader;
   rtpHeader.flags         = 0x80;
@@ -767,8 +769,13 @@ bool SpanDSP::T38Element::SendT38Packet(socket_t fd, const T38Packet & pkt, cons
   msg.msg_iov     = vectors;
   msg.msg_iovlen  = 2;
 
-  msg.msg_name    = (void *)&address;
-  msg.msg_namelen = sizeof(address);
+  msg.msg_name    = (void *)address;
+  msg.msg_namelen = sizeof(sockaddr);
+
+  static int counter = 0;
+  if (verbose && (++counter % 25 == 0)) {
+    cout << progmode << " " << counter << "t38 writes" << endl;
+  }
 
   if (__socket_sendmsg(fd, &msg, 0) <= 0) {
     cerr << progmode << ": sendmsg failed - " ; __socket_error(cerr) << endl;
@@ -776,7 +783,7 @@ bool SpanDSP::T38Element::SendT38Packet(socket_t fd, const T38Packet & pkt, cons
   }
 
   if (verbose && firstT38Write) {
-    cout << progmode << " first write from t38 socket" << endl;
+    cout << progmode << " first write from t38 socket to port " << htons(((sockaddr_in *)address)->sin_port) << endl;
     firstT38Write = false;
   }
 
@@ -825,6 +832,11 @@ bool SpanDSP::T38Element::ReceiveT38Packet(socket_t fd, SpanDSP::T38Terminal::T3
       cerr << progmode << ": malformed T.38 packet received via UDP" << endl;
     pkt.resize(0);
     return true;
+  }
+
+  static int counter = 0;
+  if (verbose && (++counter % 25 == 0)) {
+    cout << progmode << " " << counter << "t38 reads" << endl;
   }
 
   pkt.sequence = ntohs(rtpHeader.sequence);
@@ -878,10 +890,12 @@ bool SpanDSP::T38Terminal::Start(const std::string & filename)
     cout << "starting T.38 terminal with version " << version << endl;
 
   ::t38_set_t38_version(&t38TerminalState.t38, version);
+#ifdef USE_PACING
   ::t38_terminal_set_config(&t38TerminalState, 0);      // enable "pacing"
+#endif
 
+  ::span_log_set_level(&t38TerminalState.logging, SPAN_LOG_DEBUG);
 #if 0
-  ::span_log_set_level(&t38TerminalState.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
   ::span_log_set_tag  (&t38TerminalState.logging, "T.38-A");
   ::span_log_set_level(&t38TerminalState.t38.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
   ::span_log_set_tag  (&t38TerminalState.t38.logging, "T.38-A");
@@ -939,46 +953,72 @@ bool SpanDSP::T38Terminal::Serve(socket_t fd, sockaddr_in & address, bool listen
   }
 
   // set socket into non-blocking mode
-  //int cmd = 1;
-  //if (__socket_ioctl(fd, FIONBIO, &cmd) != 0) {
-  //   cerr << progmode << ": cannot set socket into non-blocking mode" << endl;
-  //   return false;
-  //}
+  int cmd = 1;
+  if (__socket_ioctl(fd, FIONBIO, &cmd) != 0) {
+    cerr << progmode << ": cannot set socket into non-blocking mode" << endl;
+    return false;
+  }
 
   int done = 0;
+  int started = 0;
 
-  //AdaptiveDelay delay;
+#ifndef USE_PACING
+  AdaptiveDelay delay;
+#endif
 
   while (!finished) {
 
-    //delay.Delay(20);
-
-    done = ::t38_terminal_send_timeout(&t38TerminalState, SAMPLES_PER_CHUNK);
+    //if (started)
+      done = ::t38_terminal_send_timeout(&t38TerminalState, SAMPLES_PER_CHUNK);
 
     SpanDSP::T38Terminal::T38Packet pkt;
 
+#ifndef USE_PACING
+    delay.Delay(20);
+
+    if (!ReceiveT38Packet(fd, pkt, address, listen)) {
+      finished = true;
+      break;
+    } else if (pkt.size() != 0) 
+      QueuePacket(pkt);
+
+    if (finished || done)
+      break;
+#else
     int ret;
     {
       fd_set rfds;
       FD_ZERO(&rfds);
       FD_SET(fd, &rfds);
       timeval t;
-      t.tv_sec  = 0;
-      t.tv_usec = 30000;
+
+      if (!started) {
+        t.tv_sec  = 60;
+        t.tv_usec = 0;
+      }
+      else
+      {
+        t.tv_sec  = 0;
+        t.tv_usec = 30000;
+      }
+
       ret = select(fd+1, &rfds, NULL, NULL, &t);
     }
 
     // read incoming packets
-    if (ret != 0) {
+    if (!started) {
+      if (ret <= 0 || !ReceiveT38Packet(fd, pkt, address, listen))
+        finished = true;
+      started = 1;
+    }
+    else if (ret != 0) {
       if (ret < 0 || !ReceiveT38Packet(fd, pkt, address, listen)) {
         finished = true;
         break;
       } else if (pkt.size() != 0) 
         QueuePacket(pkt);
     }
-
-    if (finished || done)
-      break;
+#endif
   }
 
   cout << "finished" << endl;
@@ -1020,7 +1060,7 @@ void SpanDSP::T38TerminalSender::PhaseEHandler(int result)
     cout << "fax transmission was not successful " << t30_completion_code_to_str(result) << endl;
     // fax was not successfuE
   }
-  finished = true;
+  //finished = true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -1058,7 +1098,7 @@ void SpanDSP::T38TerminalReceiver::PhaseEHandler(int result)
   {
     cout << "fax receive not successful " <<  t30_completion_code_to_str(result) << endl;
   }
-  finished = true;
+  //finished = true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
