@@ -822,7 +822,7 @@ OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
 
   adjustedPattern += '$';
 
-  if (!regex.Compile(adjustedPattern)) {
+  if (!regex.Compile(adjustedPattern, PRegularExpression::IgnoreCase|PRegularExpression::Extended)) {
     PTRACE(1, "OpalMan\tCould not compile route regular expression \"" << adjustedPattern << '"');
   }
 }
