@@ -406,6 +406,7 @@ const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 {
   if (mediaFormat.IsEmpty()) {
     mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+    mediaFormat.MakeUnique();
 
     // Fill in the default values for (possibly) missing FMTP options
     for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
