@@ -223,7 +223,7 @@ class T38Element : public FaxElement
 
     virtual int TXPacketHandler(const uint8_t * buf, int len, int sequence);
 
-    bool SendT38Packet(socket_t fd, const T38Packet & pkt, const sockaddr_in & address);
+    bool SendT38Packet(socket_t fd, const T38Packet & pkt, const sockaddr * address);
     bool ReceiveT38Packet(socket_t fd, T38Packet & pkt, sockaddr_in & address, bool & listen);
 
     virtual void SetVersion(unsigned v);
