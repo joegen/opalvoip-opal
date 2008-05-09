@@ -27,6 +27,7 @@
 using namespace std;
 
 #include "spandsp_if.h"
+#include <tiff.h>
 
 //////////////////////////////////////////////////////////////////////////////////
 // 
@@ -41,18 +42,16 @@ static socket_t CreateLocalUDPPort(unsigned short port)
     exit (-1);
   }  
 
-  //if (port != 0) {
-    sockaddr_in sockAddr;
-    memset(&sockAddr, 0, sizeof(sockAddr));
-    sockAddr.sin_family        = AF_INET;
-    sockAddr.sin_addr.s_addr   = INADDR_ANY;
-    sockAddr.sin_port = htons(port);
+  sockaddr_in sockAddr;
+  memset(&sockAddr, 0, sizeof(sockAddr));
+  sockAddr.sin_family        = AF_INET;
+  sockAddr.sin_addr.s_addr   = INADDR_ANY;
+  sockAddr.sin_port = htons(port);
 
-    if (bind(fd, (sockaddr *)&sockAddr, sizeof(sockAddr)) != 0) {
-      cerr << SpanDSP::progname << ": cannot bind socket on " << port << " - " ; __socket_error(cerr) << endl;
-      exit(-1);
-    }
-  //}
+  if (bind(fd, (sockaddr *)&sockAddr, sizeof(sockAddr)) != 0) {
+    cerr << SpanDSP::progname << ": cannot bind socket on " << port << " - " ; __socket_error(cerr) << endl;
+    exit(-1);
+  }
 
   return fd;
 }
@@ -103,6 +102,10 @@ static bool ParseAddressAndPort(const char * _str, sockaddr_in & addr)
   return stat;
 }
 
+void tiffWarningHandler(const char* module, const char* fmt, va_list ap)
+{
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // 
 //  main function argument parsing etc
@@ -126,6 +129,8 @@ int main(int argc, char* argv[])
     }
   }
 #endif
+
+  TIFFSetWarningHandler(&tiffWarningHandler);
 
   int argIndex = 1;
   unsigned short faxPort = 0;
