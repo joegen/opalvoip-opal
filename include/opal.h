@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 2
+#define OPAL_C_API_VERSION 3
 
 
 ///////////////////////////////////////
@@ -339,6 +339,7 @@ typedef struct OpalParamGeneral {
                                            units (8000Hz). */
   unsigned     m_echoCancellation;    /**< Accoustic Echo Cancellation control. 0=no change, 1=disabled,
                                            2=enabled. */
+  unsigned     m_audioBuffers;        /**< Set the number of hardware sound buffers to use. */
 
 } OpalParamGeneral;
 
