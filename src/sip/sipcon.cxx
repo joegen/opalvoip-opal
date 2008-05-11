@@ -492,6 +492,7 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
     const SDPMediaDescriptionArray & mediaDescriptions = originalInvite->GetSDP().GetMediaDescriptions();
     for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) 
       sdpOK |= AnswerSDPMediaDescription(originalInvite->GetSDP(), i+1, sdpOut);
+     remoteFormatList += OpalT38;
   }
   else if (needReINVITE && !mediaStreams.IsEmpty()) {
     for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {

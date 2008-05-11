@@ -846,6 +846,8 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendData(RTP_DataFrame & 
   if (!SendReport())
     return e_AbortTransport;
 
+  frame.SetSize(frame.GetHeaderSize()+frame.GetPayloadSize());
+
   if (txStatisticsCount < txStatisticsInterval)
     return e_ProcessPacket;
 
@@ -2005,9 +2007,7 @@ PBoolean RTP_UDP::Internal_WriteData(RTP_DataFrame & frame)
       return PFalse;
   }
 
-  while (!dataSocket->WriteTo(frame.GetPointer(),
-                             frame.GetHeaderSize()+frame.GetPayloadSize(),
-                             remoteAddress, remoteDataPort)) {
+  while (!dataSocket->WriteTo(frame.GetPointer(), frame.GetSize(), remoteAddress, remoteDataPort)) {
     switch (dataSocket->GetErrorNumber()) {
       case ECONNRESET :
       case ECONNREFUSED :

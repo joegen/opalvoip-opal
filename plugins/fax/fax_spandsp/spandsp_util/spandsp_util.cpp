@@ -29,6 +29,10 @@ using namespace std;
 #include "spandsp_if.h"
 #include <tiff.h>
 
+#ifdef _WIN32
+#include <fcntl.h>
+#endif
+
 //////////////////////////////////////////////////////////////////////////////////
 // 
 //  create a UDP socket on the local host
@@ -120,6 +124,7 @@ int main(int argc, char* argv[])
     SpanDSP::progname = argv[0];
 
 #if _WIN32
+  _set_fmode(_O_BINARY);
   {
     WORD wVersionRequested = MAKEWORD( 2, 2 );
     WSADATA wsaData;
