@@ -200,6 +200,8 @@ class OpalT38MediaStream : public OpalFaxMediaStream
 
     PBoolean ReadPacket(RTP_DataFrame & packet);
     PBoolean WritePacket(RTP_DataFrame & packet);
+
+    RTP_DataFrameList queuedFrames;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

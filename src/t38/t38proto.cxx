@@ -73,6 +73,7 @@ class T38PseudoRTP_Handler : public RTP_FormatHandler
     RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &);
     RTP_Session::SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
+    PBoolean WriteData(RTP_DataFrame & frame);
 
   protected:
     PBoolean corrigendumASN;
@@ -161,7 +162,7 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::ReadDataPDU(RTP_DataFrame &
   PTRACE(4, "T38_RTP\tRead UDPTL of size " << pduSize);
 
   if ((pduSize == 1) && (thisUDPTL[0] == 0xff)) {
-    // allow fake timing frames to pass through
+    // ignore T.38 timing frames 
     frame.SetPayloadSize(0);
   }
   else {
@@ -192,6 +193,11 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::ReadDataPDU(RTP_DataFrame &
   }
 
   return RTP_FormatHandler::OnReceiveData(frame);
+}
+
+PBoolean T38PseudoRTP_Handler::WriteData(RTP_DataFrame & frame)
+{
+  return RTP_FormatHandler::WriteData(frame);
 }
 
 int T38PseudoRTP_Handler::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &)
@@ -497,7 +503,7 @@ PString OpalFaxMediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
     cmdline << "fax_to_tiff";
   else
     cmdline << "tiff_to_fax";
-  cmdline << " -n '" << filename << "' -f 127.0.0.1:" << port;
+  cmdline << "-V 0 -n '" << filename << "' -f 127.0.0.1:" << port;
 
   return cmdline;
 }
@@ -584,14 +590,23 @@ PBoolean OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
 PBoolean OpalT38MediaStream::WritePacket(RTP_DataFrame & packet)
 {
   PWaitAndSignal m(infoMutex);
-  if ((faxCallInfo == NULL) || !faxCallInfo->spanDSP.IsRunning() || faxCallInfo->spanDSPPort == 0) {
-   
-    // return silence
-    packet.SetPayloadSize(0);
-
+  if ((packet.GetPayloadSize() == 1) && (packet.GetPayloadPtr()[0] == 0xff)) {
+    // ignore T.38 timing frames
+  } else if ((faxCallInfo == NULL) || !faxCallInfo->spanDSP.IsRunning() || faxCallInfo->spanDSPPort == 0) {
+    // queue frames before we know where to send them
+    queuedFrames.Append(new RTP_DataFrame(packet));
   } else {
-
     PTRACE(5, "Fax\tT.38 Write RTP packet size = " << packet.GetHeaderSize() + packet.GetPayloadSize() <<" to " << faxCallInfo->spanDSPAddr << ":" << faxCallInfo->spanDSPPort);
+    if (queuedFrames.GetSize() > 0) {
+      for (PINDEX i = 0; i < queuedFrames.GetSize(); ++i) {
+        RTP_DataFrame & frame = queuedFrames[i];
+        if (!faxCallInfo->socket.WriteTo(frame.GetPointer(), frame.GetHeaderSize() + frame.GetPayloadSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
+          PTRACE(2, "T38_UDP\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
+          return PFalse;
+        }
+      }
+      queuedFrames.RemoveAll();
+    }
     if (!faxCallInfo->socket.WriteTo(packet.GetPointer(), packet.GetHeaderSize() + packet.GetPayloadSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
       PTRACE(2, "T38_UDP\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
       return PFalse;
