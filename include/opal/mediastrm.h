@@ -369,7 +369,8 @@ class OpalNullMediaStream : public OpalMediaStream
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      bool isSource                        ///<  Is a source stream
+      bool isSource,                       ///<  Is a source stream
+      bool isSynchronous = false           ///<  Can accept data and block accordingly
     );
   //@}
 
@@ -404,6 +405,10 @@ class OpalNullMediaStream : public OpalMediaStream
     virtual PBoolean IsSynchronous() const;
   //@}
 
+  protected:
+    bool           m_isSynchronous;
+    bool           m_isAudio;
+    PAdaptiveDelay m_delay;
 };
 
 
@@ -564,7 +569,6 @@ class OpalRawMediaStream : public OpalMediaStream
     PUInt64    averageSignalSum;
     unsigned   averageSignalSamples;
     PMutex     averagingMutex;
-    bool       isAudio;
 
     void CollectAverage(const BYTE * buffer, PINDEX size);
 };
@@ -847,56 +851,6 @@ class OpalUDPMediaStream : public OpalMediaStream
     OpalTransportUDP & udpTransport;
 };
 
-/**This class describes a media stream that creates no data and will silently accept anything provided
-  */
-class OpalSinkMediaStream : public OpalRawMediaStream
-{
-    PCLASSINFO(OpalNullMediaStream, OpalRawMediaStream);
-  public:
-  /**@name Construction */
-  //@{
-    /**Construct a new media stream for RTP sessions.
-      */
-    OpalSinkMediaStream(
-      OpalConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      bool isSource                        ///<  Is a source stream
-    );
-  //@}
-
-  /**@name Overrides of OpalMediaStream class */
-  //@{
-    /**Read raw media data from the source media stream.
-       The default behaviour does nothing and returns false.
-      */
-    virtual PBoolean ReadData(
-      BYTE * data,      ///<  Data buffer to read to
-      PINDEX size,      ///<  Size of buffer
-      PINDEX & length   ///<  Length of data actually read
-    );
-
-    /**Write raw media data to the sink media stream.
-       The default behaviour does nothing and returns false.
-      */
-    virtual PBoolean WriteData(
-      const BYTE * data,   ///<  Data to write
-      PINDEX length,       ///<  Length of data to read.
-      PINDEX & written     ///<  Length of data actually written
-    );
-	
-    /**Indicate if the media stream requires a OpalMediaPatch instance
-       The default behaviour returns false.
-    */
-    virtual PBoolean RequiresPatch() const;
-
-    PBoolean IsSynchronous() const { return false; }
-
-  protected:
-    PAdaptiveDelay delay;
-
-  //@}
-};
 
 #endif //__OPAL_MEDIASTRM_H
 
