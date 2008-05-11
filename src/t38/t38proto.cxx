@@ -748,7 +748,7 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
   if (forceFaxAudio && (mediaFormat == OpalPCM16))
     return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive, stationId);
   else
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
+    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource, true);
 }
 
 PBoolean OpalFaxConnection::SetUpConnection()
@@ -930,7 +930,7 @@ OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & m
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
     if (isSource)
       InFaxMode(false);
-    return new OpalSinkMediaStream(*this, mediaFormat, sessionID, isSource);
+    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource, true);
   }
 
   // if creating a T.38 stream, see what type it is
