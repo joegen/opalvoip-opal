@@ -705,7 +705,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnTransfer(wxCommandEvent& event);
     void OnStartRecording(wxCommandEvent& event);
     void OnStopRecording(wxCommandEvent& event);
-    void OnAudioCodec(wxCommandEvent& event);
+    void OnNewCodec(wxCommandEvent& event);
     void OnStartVideo(wxCommandEvent& event);
     void OnStopVideo(wxCommandEvent& event);
     void OnVFU(wxCommandEvent& event);

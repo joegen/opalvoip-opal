@@ -256,6 +256,8 @@ enum {
   ID_TRANSFER_MENU_TOP = ID_TRANSFER_MENU_BASE+999,
   ID_AUDIO_CODEC_MENU_BASE,
   ID_AUDIO_CODEC_MENU_TOP = ID_AUDIO_CODEC_MENU_BASE+99,
+  ID_VIDEO_CODEC_MENU_BASE,
+  ID_VIDEO_CODEC_MENU_TOP = ID_VIDEO_CODEC_MENU_BASE+99,
   ID_LOG_MESSAGE,
   ID_STATE_CHANGE,
   ID_STREAMS_CHANGED,
@@ -410,7 +412,8 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,ID_TRANSFER_MENU_TOP, MyManager::OnTransfer)
   EVT_MENU(XRCID("MenuStartRecording"),  MyManager::OnStartRecording)
   EVT_MENU(XRCID("MenuStopRecording"),   MyManager::OnStopRecording)
-  EVT_MENU_RANGE(ID_AUDIO_CODEC_MENU_BASE, ID_AUDIO_CODEC_MENU_TOP, MyManager::OnAudioCodec)
+  EVT_MENU_RANGE(ID_AUDIO_CODEC_MENU_BASE, ID_AUDIO_CODEC_MENU_TOP, MyManager::OnNewCodec)
+  EVT_MENU_RANGE(ID_VIDEO_CODEC_MENU_BASE, ID_VIDEO_CODEC_MENU_TOP, MyManager::OnNewCodec)
   EVT_MENU(XRCID("MenuStartVideo"),      MyManager::OnStartVideo)
   EVT_MENU(XRCID("MenuStopVideo"),       MyManager::OnStopVideo)
   EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnVFU)
@@ -1166,25 +1169,29 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   bool hasStartVideo = false;
   bool hasStopVideo = false;
   bool hasRxVideo = false;
-  wxString audioFormat;
+  wxString audioFormat, videoFormat;
 
   PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReadOnly);
   if (connection != NULL) {
     // Get ID of open audio to check the menu item
-    OpalMediaStreamPtr audioStream = connection->GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, true);
-    if (audioStream != NULL)
-      audioFormat = (const char *)audioStream->GetMediaFormat();
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, true);
+    if (stream != NULL)
+      audioFormat = (const char *)stream->GetMediaFormat();
+
+    stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
+    hasStopVideo = stream != NULL && stream->Open();
+
+    stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
+    if (stream != NULL) {
+      videoFormat = (const char *)stream->GetMediaFormat();
+      hasRxVideo = stream->Open();
+    }
 
     // Determine if video is startable, or is already started
     OpalMediaFormatList availableFormats = connection->GetMediaFormats();
     for (PINDEX idx = 0; idx < availableFormats.GetSize(); idx++) {
       if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
-        OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
-        hasStopVideo = stream != NULL && stream->Open();
         hasStartVideo = !hasStopVideo;
-
-        stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
-        hasRxVideo = stream != NULL && stream->Open();
         break;
       }
     }
@@ -1197,9 +1204,18 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
       item->Check(item->GetLabel() == audioFormat);
   }
 
+  menubar->Enable(XRCID("SubMenuVideo"), !videoFormat.IsEmpty() && m_callState == InCallState);
+  for (int id = ID_VIDEO_CODEC_MENU_BASE; id <= ID_VIDEO_CODEC_MENU_TOP; id++) {
+    wxMenuItem * item = menubar->FindItem(id);
+    if (item != NULL)
+      item->Check(item->GetLabel() == videoFormat);
+  }
+
   menubar->Enable(XRCID("MenuStartVideo"), hasStartVideo);
   menubar->Enable(XRCID("MenuStopVideo"), hasStopVideo);
   menubar->Enable(XRCID("MenuSendVFU"), hasRxVideo);
+
+  menubar->Enable(XRCID("SubMenuRetrieve"), !m_callsOnHold.empty());
 }
 
 
@@ -2061,14 +2077,17 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 }
 
 
-void MyManager::OnAudioCodec(wxCommandEvent& theEvent)
+void MyManager::OnNewCodec(wxCommandEvent& theEvent)
 {
   OpalMediaFormat mediaFormat = GetMenuBar()->FindItem(theEvent.GetId())->GetLabel().c_str();
   if (mediaFormat.IsValid()) {
     PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReadWrite);
     if (connection != NULL) {
-      if (!connection->GetCall().OpenSourceMediaStreams(*connection, mediaFormat.GetMediaType(), OpalMediaFormat::DefaultAudioSessionID, mediaFormat))
-        LogWindow << "Could not change audio codec!" << endl;
+      if (!connection->GetCall().OpenSourceMediaStreams(*connection,
+                                                        mediaFormat.GetMediaType(),
+                                                        mediaFormat.GetDefaultSessionID(),
+                                                        mediaFormat))
+        LogWindow << "Could not change codec to " << mediaFormat << endl;
     }
   }
 }
@@ -2410,9 +2429,14 @@ void MyManager::ApplyMediaInfo()
 
   wxMenuBar * menubar = GetMenuBar();
   wxMenuItem * item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuAudio"));
-  wxMenu * menu = PAssertNULL(item)->GetSubMenu();
-  while (menu->GetMenuItemCount() > 0)
-    menu->Remove(menu->FindItemByPosition(0));
+  wxMenu * audioMenu = PAssertNULL(item)->GetSubMenu();
+  while (audioMenu->GetMenuItemCount() > 0)
+    audioMenu->Remove(audioMenu->FindItemByPosition(0));
+
+  item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuVideo"));
+  wxMenu * videoMenu = PAssertNULL(item)->GetSubMenu();
+  while (videoMenu->GetMenuItemCount() > 0)
+    videoMenu->Remove(videoMenu->FindItemByPosition(0));
 
   for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
     if (mm->preferenceOrder < 0)
@@ -2420,7 +2444,15 @@ void MyManager::ApplyMediaInfo()
     else {
       mediaFormatOrder.AppendString(mm->mediaFormat);
       if (mm->mediaFormat.GetMediaType() == OpalMediaType::Audio())
-        menu->Append(mm->preferenceOrder+ID_AUDIO_CODEC_MENU_BASE, (const char *)mm->mediaFormat.GetName(), wxEmptyString, true);
+        audioMenu->Append(mm->preferenceOrder+ID_AUDIO_CODEC_MENU_BASE,
+                          (const char *)mm->mediaFormat.GetName(),
+                          wxEmptyString,
+                          true);
+      else if (mm->mediaFormat.GetMediaType() == OpalMediaType::Video())
+        videoMenu->Append(mm->preferenceOrder+ID_VIDEO_CODEC_MENU_BASE,
+                          (const char *)mm->mediaFormat.GetName(),
+                          wxEmptyString,
+                          true);
     }
   }
 
