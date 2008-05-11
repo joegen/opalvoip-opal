@@ -462,7 +462,7 @@ void OpalRTPSessionManager::AddSession(RTP_Session * rtpSession, const OpalMedia
 }
 
 
-void OpalRTPSessionManager::ReleaseSession(unsigned sessionID, PBoolean /*clearAll*/)
+void OpalRTPSessionManager::ReleaseSession(unsigned PTRACE_PARAM(sessionID), PBoolean /*clearAll*/)
 {
   PTRACE(3, "RTP\tReleasing session " << sessionID);
 }
