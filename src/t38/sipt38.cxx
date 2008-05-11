@@ -76,6 +76,7 @@ SDPFaxMediaDescription::SDPFaxMediaDescription(const OpalTransportAddress & addr
 {
   t38Attributes.SetAt("T38FaxRateManagement", "transferredTCF");
   t38Attributes.SetAt("T38FaxVersion",        "0");
+  //t38Attributes.SetAt("T38MaxBitRate",        "9600");  //t38Attributes.SetAt("T38FaxMaxBuffer",      "200");
 }
 
 PCaselessString SDPFaxMediaDescription::GetSDPTransportType() const

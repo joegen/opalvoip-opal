@@ -465,19 +465,6 @@ void OpalRTPSessionManager::AddSession(RTP_Session * rtpSession, const OpalMedia
 void OpalRTPSessionManager::ReleaseSession(unsigned sessionID, PBoolean /*clearAll*/)
 {
   PTRACE(3, "RTP\tReleasing session " << sessionID);
-#if 0
-  PWaitAndSignal m(m_mutex);
-
-  iterator r;
-  if ((r = find(sessionID)) != end()) {
-    RTP_Session * session = r->second.rtpSession;
-    if (session != NULL) {
-      PTRACE(3, "RTP\tStopping session " << sessionID);
-      session->Close(PTrue);
-      session->SetJitterBufferSize(0, 0);
-    }
-  }
-#endif
 }
 
 
