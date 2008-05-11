@@ -278,12 +278,6 @@ class OpalMediaOption : public PObject
 #endif // OPAL_H323
 };
 
-#ifndef __USE_STL__
-__inline istream & operator>>(istream & strm, bool& b)
-{
-   int i;strm >> i;b = i; return strm;
-}
-#endif
 
 template <typename T>
 class OpalMediaOptionValue : public OpalMediaOption
@@ -319,13 +313,8 @@ class OpalMediaOptionValue : public OpalMediaOption
       strm >> temp;
       if (temp >= m_minimum && temp <= m_maximum)
         m_value = temp;
-      else {
-#ifdef __USE_STL__
-	   strm.setstate(ios::badbit);
-#else
-	   strm.setf(ios::badbit , ios::badbit);
-#endif
-       }
+      else
+        strm.setstate(ios::badbit);
     }
 
     virtual Comparison CompareValue(const OpalMediaOption & option) const
