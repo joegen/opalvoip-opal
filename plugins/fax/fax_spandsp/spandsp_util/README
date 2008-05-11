@@ -14,11 +14,13 @@ to load and save fax image files, which are in TIFF format.
 On most Linux systems, this library will be preinstalled. If not, it 
 will almost certainly be available to install via yum/yast etc. 
 
-A pre-compiled Windows version is availale from the following URL:
+A pre-compiled Windows version is available from the following URL:
 
-   http://gnuwin32.sourceforge.net/packages/tiff-win32.htm
-   
+   http://gnuwin32.sourceforge.net/packages/tiff.htm
+
 Downloading and installing the complete package is recommended. 
+
+Don't be tempted to use the Win32 of libtiff. It won't work 
 
 Once installed, add "C:\Program Files\GnuWin32\include" to the Include directory
 list, and "C:\Program Files\GnuWin32\lib" to the Library directory list. The path 
@@ -38,7 +40,8 @@ can be downloaded from the site below, then compiled and installed as usual.
 You will need to add "C:\Program Files\GnuWin32\include" to the Include directory
 list, and "C:\Program Files\GnuWin32\lib" to the Library directory list
 
-Windows users will need to download and compile the library.
+Windows users will need to download and compile the library. A link to a suitably modified 
+version of the library will be included here at a later date.
 
 =========================================================================================
 
