@@ -3483,6 +3483,17 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
 
 OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
+  // See if already opened
+  OpalMediaStreamPtr stream = GetMediaStream(sessionID, isSource);
+  if (stream != NULL && stream->IsOpen()) {
+    if (stream->GetMediaFormat() == mediaFormat) {
+      PTRACE(3, "H323\tOpenMediaStream (already opened) for session " << sessionID << " on " << *this);
+      return stream;
+    }
+    // Changing the media format, needs to close and re-open the stream
+    stream->Close();
+  }
+
 #if OPAL_VIDEO
   if ( isSource &&
        sessionID == OpalMediaFormat::DefaultVideoSessionID &&
@@ -3493,7 +3504,6 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
   }
 #endif
 
-  OpalMediaStreamPtr stream;
   if (fastStartMediaStream != NULL) {
     stream = fastStartMediaStream;
     fastStartMediaStream.SetNULL();
