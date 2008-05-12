@@ -54,15 +54,6 @@
 #include "../../version.h"
 
 
-#ifndef IPTOS_PREC_CRITIC_ECP
-#define IPTOS_PREC_CRITIC_ECP (5 << 5)
-#endif
-
-#ifndef IPTOS_LOWDELAY
-#define IPTOS_LOWDELAY 0x10
-#endif
-
-
 static const char * const DefaultMediaFormatOrder[] = {
   OPAL_G7231_6k3,
   OPAL_G729B,
@@ -147,11 +138,7 @@ PCaselessString OpalProductInfo::AsString() const
 OpalManager::OpalManager()
   : defaultUserName(PProcess::Current().GetUserName())
   , defaultDisplayName(defaultUserName)
-#ifdef _WIN32
-  , rtpIpTypeofService(IPTOS_PREC_CRITIC_ECP|IPTOS_LOWDELAY)
-#else
-  , rtpIpTypeofService(IPTOS_LOWDELAY) // Don't use IPTOS_PREC_CRITIC_ECP on Unix platforms as then need to be root
-#endif
+  , rtpIpTypeofService(0xb8)  // New DiffServ value for Expidited Forwarding as per RFC3246
   , rtpPayloadSizeMax(576-20-16-12) // Max safe MTU size (576 bytes as per RFC879) minus IP, UDP an RTP headers
   , minAudioJitterDelay(50)  // milliseconds
   , maxAudioJitterDelay(250) // milliseconds
