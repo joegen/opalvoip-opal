@@ -430,8 +430,10 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
 
   PWaitAndSignal mutex(bufferMutex);
 
-  if (shuttingDown)
+  if (shuttingDown) {
+    PTRACE(2, "Jitter\tBuffer shutting down.");
     return false;
+  }
 
   /*Free the frame just written to codec, putting it back into
     the free list and clearing the parking spot for it.
