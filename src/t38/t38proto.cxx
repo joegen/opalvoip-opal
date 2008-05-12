@@ -61,6 +61,7 @@ class T38PseudoRTP_Handler : public RTP_FormatHandler
     void OnStart(RTP_Session & _rtpUDP)
     {  
       RTP_FormatHandler::OnStart(_rtpUDP);
+      rtpUDP->SetJitterBufferSize(0, 0);
       corrigendumASN        = PTrue;
       consecutiveBadPackets = 0;
       oneGoodPacket         = false;
