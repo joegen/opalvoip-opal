@@ -2080,30 +2080,32 @@ void RTP_Session::SendIntraFrameRequest(){
 
 void RTP_Session::SetFormat(const PString & newFormat)
 {
-  PWaitAndSignal m(handlerMutex);
+  {
+    PWaitAndSignal m(handlerMutex);
 
-  if (newFormat == rtpFormat)
-    return;
+    if (newFormat == rtpFormat)
+      return;
 
-  RTP_FormatHandler * newHandler = PFactory<RTP_FormatHandler>::CreateInstance(newFormat);
-  if (newHandler == NULL) {
-    PTRACE(2, "RTP\tUnable to identify new RTP format '" << newFormat << "' - retaining old format '" << rtpFormat << "'");
-    return;
+    RTP_FormatHandler * newHandler = PFactory<RTP_FormatHandler>::CreateInstance(newFormat);
+    if (newHandler == NULL) {
+      PTRACE(2, "RTP\tUnable to identify new RTP format '" << newFormat << "' - retaining old format '" << rtpFormat << "'");
+      return;
+    }
+
+    if (rtpHandler != NULL) {
+      --rtpHandler->refCount;
+      if (rtpHandler->refCount == 0)
+        delete rtpHandler;
+      rtpHandler = NULL;
+    }
+
+    PTRACE_IF(2, !rtpFormat.IsEmpty(), "RTP\tChanged RTP session format from '" << rtpFormat << "' to '" << newFormat << "'");
+
+    rtpFormat  = newFormat;
+    rtpHandler = newHandler;
   }
 
-  if (rtpHandler != NULL) {
-    --rtpHandler->refCount;
-    if (rtpHandler->refCount == 0)
-      delete rtpHandler;
-    rtpHandler = NULL;
-  }
-
-  PTRACE_IF(2, !rtpFormat.IsEmpty(), "RTP\tChanged RTP session format from '" << rtpFormat << "' to '" << newFormat << "'");
-
-  rtpFormat  = newFormat;
-  rtpHandler = newHandler;
-
-  rtpHandler->OnStart(*this);
+  HandlerLock(*this)->OnStart(*this);
 }
 
 /////////////////////////////////////////////////////////////////////////////
