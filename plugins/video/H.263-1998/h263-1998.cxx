@@ -545,7 +545,7 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
   if (!_rxH263PFrame->SetFromRTPFrame(srcRTP, flags)) {
     _rxH263PFrame->BeginNewFrame();
     flags = PluginCodec_ReturnCoderRequestIFrame;
-    return 0;
+    return 1;
   }
   
   if (srcRTP.GetMarker()==0)
@@ -558,13 +558,14 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
     _rxH263PFrame->BeginNewFrame();
     TRACE(4, "H263+\tDecoder\tGot an empty frame - skipping");
     _skippedFrameCounter++;
-    return 0;
+    return 1;
   }
 
   if (!_rxH263PFrame->hasPicHeader()) {
     TRACE(1, "H263+\tDecoder\tReceived frame has no picture header - dropping");
     _rxH263PFrame->BeginNewFrame();
-    return 0;
+    flags = PluginCodec_ReturnCoderRequestIFrame;
+    return 1;
   }
 
   // look and see if we have read an I frame.
@@ -575,7 +576,7 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
       TRACE(1, "H263+\tDecoder\tWaiting for an I-Frame");
       _rxH263PFrame->BeginNewFrame();
       flags = PluginCodec_ReturnCoderRequestIFrame;
-      return 0;
+      return 1;
     }
     _gotIFrame = true;
   }
@@ -592,7 +593,7 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
     TRACE(1, "H263+\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture, requesting I frame"); 
     _skippedFrameCounter++;
     flags = PluginCodec_ReturnCoderRequestIFrame;
-    return 0;
+    return 1;
   }
 
   TRACE_UP(4, "H263+\tDecoder\tDecoded " << bytesDecoded << " bytes"<< ", Resolution: " << _context->width << "x" << _context->height);
