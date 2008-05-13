@@ -477,7 +477,7 @@ void OpalMediaOptionOctets::PrintOn(ostream & strm) const
   if (m_base64)
     strm << PBase64::Encode(m_value);
   else {
-    _Ios_Fmtflags flags = strm.flags();
+    ios::fmtflags flags = strm.flags();
     char fill = strm.fill();
 
     strm << hex << setfill('0');
