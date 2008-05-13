@@ -142,8 +142,8 @@ OpalManager::OpalManager()
   , rtpPayloadSizeMax(576-20-16-12) // Max safe MTU size (576 bytes as per RFC879) minus IP, UDP an RTP headers
   , minAudioJitterDelay(50)  // milliseconds
   , maxAudioJitterDelay(250) // milliseconds
-  , disableDetectInBandDTMF(false)
   , mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
+  , disableDetectInBandDTMF(false)
   , noMediaTimeout(0, 0, 5)     // Minutes
   , translationAddress(0)       // Invalid address to disable
   , stun(NULL)
