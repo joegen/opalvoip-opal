@@ -92,8 +92,6 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendData(RTP_DataFrame & 
   if (frame.GetPayloadSize() == 0)
     return RTP_UDP::e_IgnorePacket;
 
-  PTRACE(3, "T38_RTP\tSending RTP packet with payload size " << frame.GetPayloadSize());
-
   PINDEX plLen = frame.GetPayloadSize();
 
   // reformat the raw T.38 data as an UDPTL packet
@@ -143,7 +141,7 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendData(RTP_DataFrame & 
   frame.SetSize(rawData.GetSize());
   memcpy(frame.GetPointer(), rawData.GetPointer(), rawData.GetSize());
 
-  PTRACE(5, "T38_RTP\tSending UDPTL of size " << frame.GetSize());
+  PTRACE(4, "T38_RTP\tSending UDPTL of size " << frame.GetSize());
 
   return RTP_Session::e_ProcessPacket;
 }
@@ -162,7 +160,7 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::ReadDataPDU(RTP_DataFrame &
 
   PINDEX pduSize = rtpUDP->GetDataSocket().GetLastReadCount();
   
-  PTRACE(5, "T38_RTP\tRead UDPTL of size " << pduSize);
+  PTRACE(4, "T38_RTP\tRead UDPTL of size " << pduSize);
 
   if ((pduSize == 1) && (thisUDPTL[0] == 0xff)) {
     // ignore T.38 timing frames 
@@ -174,9 +172,14 @@ RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::ReadDataPDU(RTP_DataFrame &
     // Decode the PDU
     T38_UDPTLPacket udptl;
     if (!udptl.Decode(rawData)) {
-      PTRACE_IF(2, oneGoodPacket, "RTP_T38\tRaw data decode failure:\n  "
-                << setprecision(2) << rawData << "\n  UDPTL = "
-                << setprecision(2) << udptl);
+#if PTRACING
+      if (oneGoodPacket)
+        PTRACE(2, "RTP_T38\tRaw data decode failure:\n  "
+               << setprecision(2) << rawData << "\n  UDPTL = "
+               << setprecision(2) << udptl);
+      else
+        PTRACE(2, "RTP_T38\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
+#endif
 
       consecutiveBadPackets++;
       if (consecutiveBadPackets < 100)
@@ -1074,7 +1077,7 @@ void OpalT38Connection::InFaxMode(bool toFax)
       }
       else {
         if (faxStartup && !currentMode && (t38WaitMode & T38Mode_Timeout) != 0) {
-          faxTimer = originating ? 8000 : 2000;
+          faxTimer = receive ? 2000 : 8000;
           PTRACE(1, "T38\tStarting timer for mode change");
         }
       }
