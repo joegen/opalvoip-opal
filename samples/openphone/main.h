@@ -431,6 +431,7 @@ class OptionsDialog : public wxDialog
     int       m_SilenceThreshold;
     int       m_SignalDeadband;
     int       m_SilenceDeadband;
+    bool      m_DisableDetectInBandDTMF;
 
     wxComboBox * m_selectedLID;
     wxChoice   * m_selectedAEC;

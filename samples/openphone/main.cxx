@@ -137,6 +137,7 @@ DEF_FIELD(SilenceSuppression);
 DEF_FIELD(SilenceThreshold);
 DEF_FIELD(SignalDeadband);
 DEF_FIELD(SilenceDeadband);
+DEF_FIELD(DisableDetectInBandDTMF);
 
 static const char VideoGroup[] = "/Video";
 DEF_FIELD(VideoGrabber);
@@ -678,6 +679,9 @@ bool MyManager::Initialise()
   if (config->Read(SilenceDeadbandKey, &value1))
     silenceParams.m_silenceDeadband = value1*8;
   SetSilenceDetectParams(silenceParams);
+
+  if (config->Read(DisableDetectInBandDTMFKey, &onoff))
+    DisableDetectInBandDTMF(onoff);
 
   StartLID();
 
@@ -2723,6 +2727,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(SilenceThreshold, m_manager.GetSilenceDetectParams().m_threshold);
   INIT_FIELD(SignalDeadband, m_manager.GetSilenceDetectParams().m_signalDeadband/8);
   INIT_FIELD(SilenceDeadband, m_manager.GetSilenceDetectParams().m_silenceDeadband/8);
+  INIT_FIELD(DisableDetectInBandDTMF, m_manager.DetectInBandDTMFDisabled());
 
   // Fill sound player combo box with available devices and set selection
   wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, SoundPlayerKey);
@@ -3066,6 +3071,8 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(SignalDeadband, silenceParams.m_signalDeadband=8*);
   SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=8*);
   m_manager.SetSilenceDetectParams(silenceParams);
+
+  SAVE_FIELD(DisableDetectInBandDTMF, m_manager.DisableDetectInBandDTMF);
 
   if (m_LineInterfaceDevice.StartsWith("<<") && m_LineInterfaceDevice.EndsWith(">>"))
     m_LineInterfaceDevice.Empty();
