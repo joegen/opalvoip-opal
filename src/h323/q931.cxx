@@ -410,7 +410,7 @@ PBoolean Q931::Encode(PBYTEArray & data) const
 void Q931::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
-  _Ios_Fmtflags flags = strm.flags();
+  ios::fmtflags flags = strm.flags();
 
   strm << "{\n"
        << setw(indent+24) << "protocolDiscriminator = " << protocolDiscriminator << '\n'
