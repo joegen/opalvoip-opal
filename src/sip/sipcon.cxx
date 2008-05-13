@@ -509,9 +509,6 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
 #if OPAL_VIDEO
     sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut);
 #endif
-#if OPAL_T38_CAPABILITY
-    sdpOK |= OfferSDPMediaDescription(OpalMediaType::Fax(), 0, rtpSessions, sdpOut);
-#endif
   }
 
   needReINVITE = true;
