@@ -563,6 +563,7 @@ PBoolean OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
 
     // return silence
     packet.SetPayloadSize(0);
+    PThread::Sleep(20);
 
   } else {
 
