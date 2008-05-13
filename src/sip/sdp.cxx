@@ -593,11 +593,14 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
 
 bool SDPMediaDescription::PostDecode()
 {
-  bool ok = true;
-
-  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
-    if (!format->ToNormalisedOptions())
-      ok = false;
+  SDPMediaFormatList::iterator format = formats.begin();
+  while (format != formats.end()) {
+    if (format->ToNormalisedOptions())
+      ++format;
+    else {
+      PTRACE(2, "SDP\tCould not normalise format " << *format << ", removing.");
+      formats.erase(format++);
+    }
   }
 
   return true;
