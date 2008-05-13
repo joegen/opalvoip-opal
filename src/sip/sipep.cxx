@@ -728,10 +728,9 @@ PBoolean SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu
       }
     }
   }
-  if (!handler->OnReceivedNOTIFY(pdu))
-    return PFalse;
-
-  return PTrue;
+  
+  handler->OnReceivedNOTIFY(pdu);
+  return false;
 }
 
 
