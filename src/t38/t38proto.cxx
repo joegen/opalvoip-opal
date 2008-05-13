@@ -300,13 +300,19 @@ PBoolean OpalFaxMediaStream::Open()
     PTRACE(1, "Fax\tExecuting '" << cmdLine << "'");
 
     // open connection to spandsp
-    if (!faxCallInfo->spanDSP.Open(cmdLine, PPipeChannel::ReadWriteStd)) {
-      PTRACE(1, "Fax\tCannot open SpanDSP");
+    if (!faxCallInfo->spanDSP.Open(cmdLine, PPipeChannel::ReadOnly, false, true)) {
+      PTRACE(1, "Fax\tCannot open SpanDSP: " << faxCallInfo->spanDSP.GetErrorText());
       return PFalse;
     }
 
+#if PTRACING
+    PString errmsg;
+    while (faxCallInfo->spanDSP.ReadStandardError(errmsg, false))
+      PTRACE(1, "Fax\tspandsp_util: " << errmsg);
+#endif
+
     if (!faxCallInfo->spanDSP.Execute()) {
-      PTRACE(1, "Fax\tCannot execute SpanDSP");
+      PTRACE(1, "Fax\tCannot execute SpanDSP: return code=" << faxCallInfo->spanDSP.GetReturnCode());
       return PFalse;
     }
   }
@@ -321,6 +327,12 @@ PBoolean OpalFaxMediaStream::Start()
 
 PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
+#if PTRACING
+    PString errmsg;
+    while (faxCallInfo->spanDSP.ReadStandardError(errmsg, false))
+      PTRACE(1, "Fax\tspandsp_util: " << errmsg);
+#endif
+
   // it is possible for ReadPacket to be called before the media stream has been opened, so deal with that case
   PWaitAndSignal m(infoMutex);
   if ((faxCallInfo == NULL) || !faxCallInfo->spanDSP.IsRunning()) {
