@@ -770,20 +770,13 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
 
 PBoolean OpalFaxConnection::SetUpConnection()
 {
-  // Check if we are A-Party in thsi call, so need to do things differently
+  // Check if we are A-Party in this call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     phase = SetUpPhase;
 
-    {
-      StringOptions * otherStringOptions = new StringOptions;
-      otherStringOptions->SetAt("enableinbanddtmf", "true");
-      otherStringOptions->SetAt("dtmfmult",         "4");
-      bool stat = OnIncomingConnection(0, otherStringOptions);
-      delete otherStringOptions;
-      if (!stat) {
-        Release(EndedByCallerAbort);
-        return PFalse;
-      }
+    if (!OnIncomingConnection(0, stringOptions)) {
+      Release(EndedByCallerAbort);
+      return PFalse;
     }
 
     PTRACE(2, "FAX\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
