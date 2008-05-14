@@ -48,15 +48,24 @@ OPAL_INSTANTIATE_MEDIATYPE(fax, OpalFaxMediaType);
 
 const OpalMediaFormat & GetOpalT38()
 {
-  static const OpalMediaFormat T38(OPAL_T38,
-                                   "fax",
-                                   RTP_DataFrame::DynamicBase,
-                                   "t38",
-                                   false, // No jitter for data
-                                   1440, // 100's bits/sec
-                                   512,
-                                   0,
-                                   0);
+  static class T38MediaFormat : public OpalMediaFormat {
+    public:
+      T38MediaFormat()
+        : OpalMediaFormat(OPAL_T38,
+                          "fax",
+                          RTP_DataFrame::DynamicBase,
+                          "t38",
+                          false, // No jitter for data
+                          1440, // 100's bits/sec
+                          512,
+                          0,
+                          0)
+      {
+        static const char * const RateMan[] = { "localTCF", "transferredTCF" };
+        AddOption(new OpalMediaOptionEnum("T38FaxRateManagement", false, RateMan, PARRAYSIZE(RateMan), OpalMediaOption::EqualMerge, 1));
+        AddOption(new OpalMediaOptionInteger("T38FaxVersion", false, OpalMediaOption::MinMerge, 0, 0, 1));
+      }
+  } const T38;
   return T38;
 }
 
