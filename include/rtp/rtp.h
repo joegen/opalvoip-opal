@@ -1045,9 +1045,16 @@ class RTP_UDP : public RTP_Session
 
     virtual SendReceiveStatus ReadControlPDU();
     virtual SendReceiveStatus ReadDataOrControlPDU(
-      PUDPSocket & socket,
-      PBYTEArray & frame,
+      BYTE * framePtr,
+      PINDEX frameSize,
       PBoolean fromDataChannel
+    );
+    
+    virtual bool WriteDataPDU(RTP_DataFrame & frame);
+    virtual bool WriteDataOrControlPDU(
+      BYTE * framePtr,
+      PINDEX frameSize,
+      bool toDataChannel
     );
 
     // following must be public to allow T38PseudoRTP_Handler to shutdown correctly
@@ -1086,6 +1093,7 @@ class RTP_FormatHandler
     virtual void OnFinish();
     virtual RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
     virtual PBoolean WriteData(RTP_DataFrame & frame);
+    virtual PBoolean WriteDataPDU(RTP_DataFrame & frame);
     virtual RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
     virtual RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);

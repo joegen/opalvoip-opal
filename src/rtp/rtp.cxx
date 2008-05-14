@@ -1758,8 +1758,16 @@ PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame, PBoolean loop)
       case -1 :
         switch (ReadDataPDU(frame)) {
           case e_ProcessPacket :
-            if (!shutdownRead)
-              return PTrue;
+            if (!shutdownRead) {
+              switch (OnReceiveData(frame)) {
+                case e_ProcessPacket :
+                  return PTrue;
+                case e_IgnorePacket :
+                  break;
+                case e_AbortTransport :
+                  return PFalse;
+              }
+            }
           case e_IgnorePacket :
             break;
           case e_AbortTransport :
@@ -1829,17 +1837,18 @@ int RTP_UDP::Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSo
   return PSocket::Select(dataSocket, controlSocket, timeout);
 }
 
-RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket,
-                                                             PBYTEArray & frame,
+RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(BYTE * framePtr,
+                                                             PINDEX frameSize,
                                                              PBoolean fromDataChannel)
 {
 #if PTRACING
   const char * channelName = fromDataChannel ? "Data" : "Control";
 #endif
+  PUDPSocket & socket = *(fromDataChannel ? dataSocket : controlSocket);
   PIPSocket::Address addr;
   WORD port;
 
-  if (socket.ReadFrom(frame.GetPointer(), frame.GetSize(), addr, port)) {
+  if (socket.ReadFrom(framePtr, frameSize, addr, port)) {
     // If remote address never set from higher levels, then try and figure
     // it out from the first packet received.
     if (!remoteAddress.IsValid()) {
@@ -1884,7 +1893,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
 
     case EMSGSIZE :
       PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName
-             << " read packet too large for buffer of " << frame.GetSize() << " bytes.");
+             << " read packet too large for buffer of " << frameSize << " bytes.");
       return RTP_Session::e_IgnorePacket;
 
     case EAGAIN :
@@ -1907,7 +1916,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataPDU(RTP_DataFrame & frame)
 
 RTP_Session::SendReceiveStatus RTP_UDP::Internal_ReadDataPDU(RTP_DataFrame & frame)
 {
-  SendReceiveStatus status = ReadDataOrControlPDU(*dataSocket, frame, PTrue);
+  SendReceiveStatus status = ReadDataOrControlPDU(frame.GetPointer(), frame.GetSize(), true);
   if (status != e_ProcessPacket)
     return status;
 
@@ -1920,7 +1929,13 @@ RTP_Session::SendReceiveStatus RTP_UDP::Internal_ReadDataPDU(RTP_DataFrame & fra
   }
 
   frame.SetPayloadSize(pduSize - frame.GetHeaderSize());
-  return OnReceiveData(frame);
+  return e_ProcessPacket;
+}
+
+
+bool RTP_UDP::WriteDataPDU(RTP_DataFrame & frame)
+{
+  return HandlerLock(*this)->WriteDataPDU(frame);
 }
 
 
@@ -1939,7 +1954,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
 {
   RTP_ControlFrame frame(2048);
 
-  SendReceiveStatus status = ReadDataOrControlPDU(*controlSocket, frame, PFalse);
+  SendReceiveStatus status = ReadDataOrControlPDU(frame.GetPointer(), frame.GetSize(), false);
   if (status != e_ProcessPacket)
     return status;
 
@@ -2007,23 +2022,7 @@ PBoolean RTP_UDP::Internal_WriteData(RTP_DataFrame & frame)
       return PFalse;
   }
 
-  while (!dataSocket->WriteTo(frame.GetPointer(), frame.GetSize(), remoteAddress, remoteDataPort)) {
-    switch (dataSocket->GetErrorNumber()) {
-      case ECONNRESET :
-      case ECONNREFUSED :
-        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", data port on remote not ready.");
-        break;
-
-      default:
-        PTRACE(1, "RTP_UDP\tSession " << sessionID
-               << ", write error on data port ("
-               << dataSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
-               << dataSocket->GetErrorText(PChannel::LastWriteError));
-        return PFalse;
-    }
-  }
-
-  return PTrue;
+  return WriteDataPDU(frame);
 }
 
 
@@ -2043,25 +2042,34 @@ PBoolean RTP_UDP::WriteControl(RTP_ControlFrame & frame)
       return PFalse;
   }
 
-  while (!controlSocket->WriteTo(frame.GetPointer(), len,
-                                remoteAddress, remoteControlPort)) {
-    switch (controlSocket->GetErrorNumber()) {
+  return WriteDataOrControlPDU(frame.GetPointer(), len, false);
+}
+
+
+bool RTP_UDP::WriteDataOrControlPDU(BYTE * framePtr, PINDEX frameSize, bool toDataChannel)
+{
+  PUDPSocket & socket = *(toDataChannel ? dataSocket : controlSocket);
+  WORD port = toDataChannel ? remoteDataPort : remoteControlPort;
+
+  while (!socket.WriteTo(framePtr, frameSize, remoteAddress, port)) {
+    switch (socket.GetErrorNumber()) {
       case ECONNRESET :
       case ECONNREFUSED :
-        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", control port on remote not ready.");
+        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << (toDataChannel ? "data" : "control") << " port on remote not ready.");
         break;
 
       default:
         PTRACE(1, "RTP_UDP\tSession " << sessionID
-               << ", write error on control port ("
-               << controlSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
-               << controlSocket->GetErrorText(PChannel::LastWriteError));
-        return PFalse;
+               << ", write error on " << (toDataChannel ? "data" : "control") << " port ("
+               << socket.GetErrorNumber(PChannel::LastWriteError) << "): "
+               << socket.GetErrorText(PChannel::LastWriteError));
+        return false;
     }
   }
 
-  return PTrue;
+  return true;
 }
+
 
 void RTP_Session::SendIntraFrameRequest(){
     // Create packet
@@ -2169,6 +2177,11 @@ PBoolean RTP_FormatHandler::WriteData(RTP_DataFrame & frame)
 RTP_Session::SendReceiveStatus RTP_FormatHandler::OnSendControl(RTP_ControlFrame & frame, PINDEX & len)
 {
   return rtpUDP->Internal_OnSendControl(frame, len);
+}
+
+bool RTP_FormatHandler::WriteDataPDU(RTP_DataFrame & frame)
+{
+  return rtpUDP->WriteDataOrControlPDU(frame.GetPointer(), frame.GetSize(), true);
 }
 
 RTP_Session::SendReceiveStatus RTP_FormatHandler::ReadDataPDU(RTP_DataFrame & frame)
