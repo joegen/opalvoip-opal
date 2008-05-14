@@ -701,6 +701,9 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
   }
 
   PString filename = tokens[0];
+  if (!PFilePath::IsAbsolutePath(filename))
+    filename.Splice(m_defaultDirectory, 0);
+
   if (!receive && !PFile::Exists(filename)) {
     PTRACE(2, "Fax\tCannot find filename '" << filename << "'");
     return PFalse;
