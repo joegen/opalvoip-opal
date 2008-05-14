@@ -406,6 +406,8 @@ const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 {
   if (mediaFormat.IsEmpty()) {
     mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+    PTRACE_IF(2, mediaFormat.IsEmpty(), "SDP\tCould not find media format for \""
+              << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
     mediaFormat.MakeUnique();
 
     // Fill in the default values for (possibly) missing FMTP options
@@ -421,8 +423,14 @@ const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 
 bool SDPMediaFormat::ToNormalisedOptions()
 {
-  GetMediaFormat(); // Make sure its created;
-  return mediaFormat.ToNormalisedOptions();
+  if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
+    return false;
+
+  if (mediaFormat.ToNormalisedOptions())
+    return true;
+
+  PTRACE(2, "SDP\tCould not normalise format \"" << GetEncodingName() << "\", pt=" << GetPayloadType() << ", removing.");
+  return false;
 }
 
 
@@ -597,10 +605,8 @@ bool SDPMediaDescription::PostDecode()
   while (format != formats.end()) {
     if (format->ToNormalisedOptions())
       ++format;
-    else {
-      PTRACE(2, "SDP\tCould not normalise format " << *format << ", removing.");
+    else
       formats.erase(format++);
-    }
   }
 
   return true;
