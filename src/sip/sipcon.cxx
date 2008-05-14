@@ -951,7 +951,8 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
   needReINVITE = oldReINVITE;
 
-  if (needReINVITE) {
+  if (GetPhase() == EstablishedPhase && needReINVITE) {
+    PTRACE(3, "SIP\tStarting re-INVITE to open channel.");
     SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
     invite->Start();
   }
@@ -965,6 +966,7 @@ bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
   bool ok = OpalConnection::CloseMediaStream(stream);
 
   if (GetPhase() == EstablishedPhase && needReINVITE) {
+    PTRACE(3, "SIP\tStarting re-INVITE to close channel.");
     SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
     invite->Start();
   }
@@ -1054,7 +1056,7 @@ bool SIPConnection::HoldConnection()
   if (m_holdToRemote != eHoldOff)
     return true;
 
-  PTRACE(3, "SIP\tPutting connection on hold");
+  PTRACE(3, "SIP\tStarting re-INVITE to put connection on hold");
 
   m_holdToRemote = eHoldInProgress;
 
@@ -1085,7 +1087,7 @@ bool SIPConnection::RetrieveConnection()
 
   m_holdToRemote = eRetrieveInProgress;
 
-  PTRACE(3, "SIP\tRetrieve connection from hold");
+  PTRACE(3, "SIP\tStarting re-INVITE to retrieve connection from hold");
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
   if (invite->Start())
