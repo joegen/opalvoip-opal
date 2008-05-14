@@ -70,158 +70,148 @@ class T38PseudoRTP_Handler : public RTP_FormatHandler
       rtpUDP->SetReportTimeInterval(20);
     }
 
-    RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
-    RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/);
-    RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
-    int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &);
-    RTP_Session::SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
-    PBoolean WriteData(RTP_DataFrame & frame);
+
+    bool WriteDataPDU(RTP_DataFrame & frame)
+    {
+      if (frame.GetPayloadSize() == 0)
+        return RTP_UDP::e_IgnorePacket;
+
+      PINDEX plLen = frame.GetPayloadSize();
+
+      // reformat the raw T.38 data as an UDPTL packet
+      T38_UDPTLPacket udptl;
+      udptl.m_seq_number = frame.GetSequenceNumber();
+      udptl.m_primary_ifp_packet.SetValue(frame.GetPayloadPtr(), plLen);
+
+      udptl.m_error_recovery.SetTag(T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets);
+      T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondary = udptl.m_error_recovery;
+      T38_UDPTLPacket_error_recovery_secondary_ifp_packets & redundantPackets = secondary;
+      if (lastIFP.GetSize() == 0)
+        redundantPackets.SetSize(0);
+      else {
+        redundantPackets.SetSize(1);
+        T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype & redundantPacket = redundantPackets[0];
+        redundantPacket.SetValue(lastIFP, lastIFP.GetSize());
+      }
+
+      lastIFP = udptl.m_primary_ifp_packet;
+
+      PTRACE(5, "T38_RTP\tEncoded transmitted UDPTL data :\n  " << setprecision(2) << udptl);
+
+      PPER_Stream rawData;
+      udptl.Encode(rawData);
+      rawData.CompleteEncoding();
+
+    #if 0
+      // Calculate the level of redundency for this data phase
+      PINDEX maxRedundancy;
+      if (ifp.m_type_of_msg.GetTag() == T38_Type_of_msg::e_t30_indicator)
+        maxRedundancy = indicatorRedundancy;
+      else if ((T38_Type_of_msg_data)ifp.m_type_of_msg  == T38_Type_of_msg_data::e_v21)
+        maxRedundancy = lowSpeedRedundancy;
+      else
+        maxRedundancy = highSpeedRedundancy;
+
+      // Push down the current ifp into redundant data
+      if (maxRedundancy > 0)
+        redundantIFPs.InsertAt(0, new PBYTEArray(udptl.m_primary_ifp_packet.GetValue()));
+
+      // Remove redundant data that are surplus to requirements
+      while (redundantIFPs.GetSize() > maxRedundancy)
+        redundantIFPs.RemoveAt(maxRedundancy);
+    #endif
+
+      PTRACE(4, "T38_RTP\tSending UDPTL of size " << rawData.GetSize());
+
+      return rtpUDP->WriteDataOrControlPDU(rawData.GetPointer(), rawData.GetSize(), true);
+    }
+
+
+    RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/)
+    {
+      return RTP_Session::e_IgnorePacket; // Non fatal error, just ignore
+    }
+
+
+    int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &)
+    {
+      // wait for no longer than 20ms so audio gets correctly processed
+      return PSocket::Select(dataSocket, controlSocket, 20);
+    }
+
+
+    RTP_Session::SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame)
+    {
+      // for timeouts, send a "fake" payload of one byte of 0xff to keep the T.38 engine emitting PCM
+      frame.SetPayloadSize(1);
+      frame.GetPayloadPtr()[0] = 0xff;
+      return RTP_Session::e_ProcessPacket;
+    }
+
+
+    RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame)
+    {
+      BYTE thisUDPTL[500];
+      RTP_Session::SendReceiveStatus status = rtpUDP->ReadDataOrControlPDU(thisUDPTL, sizeof(thisUDPTL), true);
+      if (status != RTP_Session::e_ProcessPacket)
+        return status;
+
+      PINDEX pduSize = rtpUDP->GetDataSocket().GetLastReadCount();
+      
+      PTRACE(4, "T38_RTP\tRead UDPTL of size " << pduSize);
+
+      if ((pduSize == 1) && (thisUDPTL[0] == 0xff)) {
+        // ignore T.38 timing frames 
+        frame.SetPayloadSize(0);
+      }
+      else {
+        PPER_Stream rawData(thisUDPTL, pduSize);
+
+        // Decode the PDU
+        T38_UDPTLPacket udptl;
+        if (!udptl.Decode(rawData)) {
+    #if PTRACING
+          if (oneGoodPacket)
+            PTRACE(2, "RTP_T38\tRaw data decode failure:\n  "
+                   << setprecision(2) << rawData << "\n  UDPTL = "
+                   << setprecision(2) << udptl);
+          else
+            PTRACE(2, "RTP_T38\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
+    #endif
+
+          consecutiveBadPackets++;
+          if (consecutiveBadPackets < 100)
+            return RTP_Session::e_IgnorePacket;
+
+          PTRACE(1, "RTP_T38\tRaw data decode failed 100 times, remote probably not switched from audio, aborting!");
+          return RTP_Session::e_AbortTransport;
+        }
+
+        consecutiveBadPackets = 0;
+        PTRACE_IF(3, !oneGoodPacket, "T38_RTP\tFirst decoded UDPTL packet");
+        oneGoodPacket = true;
+
+        PASN_OctetString & ifp = udptl.m_primary_ifp_packet;
+        frame.SetPayloadSize(ifp.GetDataLength());
+
+        memcpy(frame.GetPayloadPtr(), ifp.GetPointer(), ifp.GetDataLength());
+        frame.SetSequenceNumber((WORD)(udptl.m_seq_number & 0xffff));
+        PTRACE(5, "T38_RTP\tDecoded UDPTL packet:\n  " << setprecision(2) << udptl);
+      }
+
+      return RTP_Session::e_ProcessPacket;
+    }
+
 
   protected:
     PBoolean corrigendumASN;
     int consecutiveBadPackets;
     bool oneGoodPacket;
     PBYTEArray lastIFP;
-    PBYTEArray thisUDPTL;
 };
 
+
 static PFactory<RTP_FormatHandler>::Worker<T38PseudoRTP_Handler> t38PseudoRTPHandler("udptl");
-
-RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendData(RTP_DataFrame & frame)
-{
-  if (frame.GetPayloadSize() == 0)
-    return RTP_UDP::e_IgnorePacket;
-
-  PINDEX plLen = frame.GetPayloadSize();
-
-  // reformat the raw T.38 data as an UDPTL packet
-  T38_UDPTLPacket udptl;
-  udptl.m_seq_number = frame.GetSequenceNumber();
-  udptl.m_primary_ifp_packet.SetValue(frame.GetPayloadPtr(), plLen);
-
-  udptl.m_error_recovery.SetTag(T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets);
-  T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondary = udptl.m_error_recovery;
-  T38_UDPTLPacket_error_recovery_secondary_ifp_packets & redundantPackets = secondary;
-  if (lastIFP.GetSize() == 0)
-    redundantPackets.SetSize(0);
-  else {
-    redundantPackets.SetSize(1);
-    T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype & redundantPacket = redundantPackets[0];
-    redundantPacket.SetValue(lastIFP, lastIFP.GetSize());
-  }
-
-  lastIFP = udptl.m_primary_ifp_packet;
-
-  PTRACE(5, "T38_RTP\tEncoded transmitted UDPTL data :\n  " << setprecision(2) << udptl);
-
-  PPER_Stream rawData;
-  udptl.Encode(rawData);
-  rawData.CompleteEncoding();
-
-#if 0
-  // Calculate the level of redundency for this data phase
-  PINDEX maxRedundancy;
-  if (ifp.m_type_of_msg.GetTag() == T38_Type_of_msg::e_t30_indicator)
-    maxRedundancy = indicatorRedundancy;
-  else if ((T38_Type_of_msg_data)ifp.m_type_of_msg  == T38_Type_of_msg_data::e_v21)
-    maxRedundancy = lowSpeedRedundancy;
-  else
-    maxRedundancy = highSpeedRedundancy;
-
-  // Push down the current ifp into redundant data
-  if (maxRedundancy > 0)
-    redundantIFPs.InsertAt(0, new PBYTEArray(udptl.m_primary_ifp_packet.GetValue()));
-
-  // Remove redundant data that are surplus to requirements
-  while (redundantIFPs.GetSize() > maxRedundancy)
-    redundantIFPs.RemoveAt(maxRedundancy);
-#endif
-
-  // copy the UDPTL into the RTP packet
-  frame.SetSize(rawData.GetSize());
-  memcpy(frame.GetPointer(), rawData.GetPointer(), rawData.GetSize());
-
-  PTRACE(4, "T38_RTP\tSending UDPTL of size " << frame.GetSize());
-
-  return RTP_Session::e_ProcessPacket;
-}
-
-RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/)
-{
-  return RTP_Session::e_IgnorePacket; // Non fatal error, just ignore
-}
-
-RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::ReadDataPDU(RTP_DataFrame & frame)
-{
-  thisUDPTL.SetMinSize(500);
-  RTP_Session::SendReceiveStatus status = rtpUDP->ReadDataOrControlPDU(rtpUDP->GetDataSocket(), thisUDPTL, PTrue);
-  if (status != RTP_Session::e_ProcessPacket)
-    return status;
-
-  PINDEX pduSize = rtpUDP->GetDataSocket().GetLastReadCount();
-  
-  PTRACE(4, "T38_RTP\tRead UDPTL of size " << pduSize);
-
-  if ((pduSize == 1) && (thisUDPTL[0] == 0xff)) {
-    // ignore T.38 timing frames 
-    frame.SetPayloadSize(0);
-  }
-  else {
-    PPER_Stream rawData(thisUDPTL.GetPointer(), pduSize);
-
-    // Decode the PDU
-    T38_UDPTLPacket udptl;
-    if (!udptl.Decode(rawData)) {
-#if PTRACING
-      if (oneGoodPacket)
-        PTRACE(2, "RTP_T38\tRaw data decode failure:\n  "
-               << setprecision(2) << rawData << "\n  UDPTL = "
-               << setprecision(2) << udptl);
-      else
-        PTRACE(2, "RTP_T38\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
-#endif
-
-      consecutiveBadPackets++;
-      if (consecutiveBadPackets < 100)
-        return RTP_Session::e_IgnorePacket;
-
-      PTRACE(1, "RTP_T38\tRaw data decode failed 100 times, remote probably not switched from audio, aborting!");
-      return RTP_Session::e_AbortTransport;
-    }
-
-    consecutiveBadPackets = 0;
-    PTRACE_IF(3, !oneGoodPacket, "T38_RTP\tFirst decoded UDPTL packet");
-    oneGoodPacket = true;
-
-    PASN_OctetString & ifp = udptl.m_primary_ifp_packet;
-    frame.SetPayloadSize(ifp.GetDataLength());
-
-    memcpy(frame.GetPayloadPtr(), ifp.GetPointer(), ifp.GetDataLength());
-    frame.SetSequenceNumber((WORD)(udptl.m_seq_number & 0xffff));
-    PTRACE(5, "T38_RTP\tDecoded UDPTL packet:\n  " << setprecision(2) << udptl);
-  }
-
-  return RTP_FormatHandler::OnReceiveData(frame);
-}
-
-PBoolean T38PseudoRTP_Handler::WriteData(RTP_DataFrame & frame)
-{
-  return RTP_FormatHandler::WriteData(frame);
-}
-
-int T38PseudoRTP_Handler::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &)
-{
-  // wait for no longer than 20ms so audio gets correctly processed
-  return PSocket::Select(dataSocket, controlSocket, 20);
-}
-
-RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnReadTimeout(RTP_DataFrame & frame)
-{
-  // for timeouts, send a "fake" payload of one byte of 0xff to keep the T.38 engine emitting PCM
-  frame.SetPayloadSize(1);
-  frame.GetPayloadPtr()[0] = 0xff;
-  return RTP_Session::e_ProcessPacket;
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
