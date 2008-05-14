@@ -54,7 +54,7 @@ const OpalMediaFormat & GetOpalT38()
                                    "t38",
                                    false, // No jitter for data
                                    1440, // 100's bits/sec
-                                   0,
+                                   512,
                                    0,
                                    0);
   return T38;
