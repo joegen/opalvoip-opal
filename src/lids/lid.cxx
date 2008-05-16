@@ -525,7 +525,7 @@ bool OpalLineInterfaceDevice::SetToneDescription(unsigned line,
   
   PUnsignedArray onTimes(numCadences), offTimes(numCadences);
   for (PINDEX i = 0; i < times.GetSize(); i++) {
-    double time = atof(times[i]);
+    double time = times[i].AsReal();
     if (time <= 0.01 || time > 10) {
       PTRACE(1, "LID\tIllegal cadence time specified: " << description);
       return PFalse;
