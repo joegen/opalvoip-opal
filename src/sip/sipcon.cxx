@@ -1943,6 +1943,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   needReINVITE = false; // Is not actually a re-INVITE though it looks a little bit like one.
   transport->SetInterface(transaction.GetInterface());
   OpalRTPSessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
+  (((SIPInvite &)transaction).GetSessionManager()).SetCleanup(false);
   SIPTransaction * invite = new SIPInvite(*this, *transport, origRtpSessions);
 
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
