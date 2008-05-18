@@ -31,7 +31,9 @@
 
 #include "trace.h"
 
+#ifndef _WIN32
 #include <libgen.h>
+#endif
 
 unsigned TraceLevel = 0;
 unsigned TraceLevelUserPlane = 0;
