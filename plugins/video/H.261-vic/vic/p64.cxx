@@ -154,11 +154,11 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 
 #include "config.h"
 
 #if !(defined(WIN32) || defined(_WIN32_WCE))
+#include <stdint.h>
 #include <sys/file.h>
 #endif
 #include <sys/stat.h>
