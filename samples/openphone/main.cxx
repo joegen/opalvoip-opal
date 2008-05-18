@@ -1607,6 +1607,27 @@ bool MyManager::HasSpeedDialName(const wxString & name) const
 }
 
 
+static bool SpeedDialMatch(const char * number, const char * ignore, const wxString & speed)
+{
+  if (number == NULL || *number == '\0')
+    return false;
+
+  if (ignore != NULL) {
+    if (speed == ignore)
+      return false;
+  }
+
+  size_t special = speed.find_first_of("-+");
+  if (special == wxString::npos)
+    return speed == number;
+
+  if (number[strlen(number)-1] != '#')
+    return false;
+
+  return strncmp(number, speed.c_str(), special) == 0;
+}
+
+
 int MyManager::GetSpeedDialIndex(const char * number, const char * ignore) const
 {
   int count = m_speedDials->GetItemCount();
@@ -1614,11 +1635,8 @@ int MyManager::GetSpeedDialIndex(const char * number, const char * ignore) const
   item.m_mask = wxLIST_MASK_TEXT;
   item.m_col = e_NumberColumn;
   for (item.m_itemId = 0; item.m_itemId < count; item.m_itemId++) {
-    if (m_speedDials->GetItem(item)) {
-      int len = item.m_text.Length();
-      if (len > 0 && (ignore == NULL || strcmp(ignore, item.m_text) != 0) && strncmp(number, item.m_text, len) == 0)
-        return item.m_itemId;
-    }
+    if (m_speedDials->GetItem(item) && SpeedDialMatch(number, ignore, item.m_text))
+      return item.m_itemId;
   }
   return -1;
 }
@@ -2147,6 +2165,9 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
   PString digit = connection.GetUserInput(firstDigitTimeout);
   connection.PromptUserInput(PFalse);
 
+  if (digit == '#')
+    return digit;
+
   PString input;
   while (!digit.IsEmpty()) {
     input += digit;
@@ -2160,8 +2181,11 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
       wxListItem addressItem = nameItem;
       addressItem.m_col = e_AddressColumn;
       if (m_speedDials->GetItem(nameItem) && m_speedDials->GetItem(addressItem)) {
-        LogWindow << "Calling \"" << nameItem.m_text << "\" using \"" << addressItem.m_text << '"' << endl;
-        return addressItem.m_text.c_str();
+        PString address = addressItem.m_text.c_str();
+        input.Replace('#', "");
+        address.Replace("<dn>", input);
+        LogWindow << "Calling \"" << nameItem.m_text << "\" using \"" << address << '"' << endl;
+        return address;
       }
     }
 
@@ -2782,8 +2806,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
       INIT_FIELD(AEC, line->GetAEC());
 
       PStringList countries = line->GetDevice().GetCountryCodeNameList();
-      for (i = 0; i < countries.GetSize(); i++)
-        m_selectedCountry->Append((const char *)countries[i]);
+      for (PStringList::iterator country = countries.begin(); country != countries.end(); ++country)
+        m_selectedCountry->Append((const char *)*country);
       INIT_FIELD(Country, line->GetDevice().GetCountryCodeName());
     }
     else {
@@ -3437,6 +3461,24 @@ void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
   bool enabled = m_selectedLID->GetSelection() > 0;
   m_selectedAEC->Enable(enabled);
   m_selectedCountry->Enable(enabled);
+
+  if (enabled) {
+    PwxString devName = m_selectedLID->GetValue();
+    OpalLineInterfaceDevice * lidToDelete = NULL; 
+    const OpalLineInterfaceDevice * lid = m_manager.potsEP->GetDeviceByName(devName);
+    if (lid == NULL)
+      lid = lidToDelete = OpalLineInterfaceDevice::CreateAndOpen(devName);
+    if (lid != NULL) {
+      m_selectedAEC->SetSelection(lid->GetAEC(0));
+
+      m_selectedCountry->Clear();
+      PStringList countries = lid->GetCountryCodeNameList();
+      for (PStringList::iterator country = countries.begin(); country != countries.end(); ++country)
+        m_selectedCountry->Append((const char *)*country);
+      m_selectedCountry->SetValue((const char *)lid->GetCountryCodeName());
+    }
+    delete lidToDelete;
+  }
 }
 
 
