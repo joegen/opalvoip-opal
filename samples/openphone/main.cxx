@@ -391,7 +391,8 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuCall"),            MyManager::OnMenuCall)
   EVT_MENU(XRCID("MenuCallLastDialed"),  MyManager::OnMenuCallLastDialed)
   EVT_MENU(XRCID("MenuCallLastReceived"),MyManager::OnMenuCallLastReceived)
-  EVT_MENU(XRCID("CallSpeedDial"),       MyManager::OnCallSpeedDial)
+  EVT_MENU(XRCID("CallSpeedDialAudio"),  MyManager::OnCallSpeedDialAudio)
+  EVT_MENU(XRCID("CallSpeedDialHandset"),MyManager::OnCallSpeedDialHandset)
   EVT_MENU(XRCID("MenuSendFax"),         MyManager::OnSendFax)
   EVT_MENU(XRCID("SendFaxSpeedDial"),    MyManager::OnSendFaxSpeedDial)
   EVT_MENU(XRCID("MenuAnswer"),          MyManager::OnMenuAnswer)
@@ -1241,9 +1242,9 @@ void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 
 void MyManager::OnMenuCall(wxCommandEvent& WXUNUSED(event))
 {
-  CallDialog dlg(this);
+  CallDialog dlg(this, false);
   if (dlg.ShowModal() == wxID_OK)
-    MakeCall(dlg.m_Address);
+    MakeCall(dlg.m_Address, dlg.m_UseHandset ? "pots:*" : "pc:*");
 }
 
 
@@ -1259,7 +1260,7 @@ void MyManager::OnMenuCallLastReceived(wxCommandEvent& WXUNUSED(event))
 }
 
 
-void MyManager::OnCallSpeedDial(wxCommandEvent & /*event*/)
+void MyManager::OnCallSpeedDialAudio(wxCommandEvent & /*event*/)
 {
   wxListItem item;
   item.m_itemId = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
@@ -1273,6 +1274,20 @@ void MyManager::OnCallSpeedDial(wxCommandEvent & /*event*/)
 }
 
 
+void MyManager::OnCallSpeedDialHandset(wxCommandEvent & /*event*/)
+{
+  wxListItem item;
+  item.m_itemId = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  if (item.m_itemId < 0)
+    return;
+
+  item.m_col = e_AddressColumn;
+  item.m_mask = wxLIST_MASK_TEXT;
+  if (m_speedDials->GetItem(item))
+    MakeCall(item.m_text, "pots:*");
+}
+
+
 void MyManager::OnSendFax(wxCommandEvent & /*event*/)
 {
   wxFileDialog faxDlg(this,
@@ -1281,7 +1296,7 @@ void MyManager::OnSendFax(wxCommandEvent & /*event*/)
                       wxEmptyString,
                       "*.tif");
   if (faxDlg.ShowModal() == wxID_OK) {
-    CallDialog callDlg(this);
+    CallDialog callDlg(this, true);
     if (callDlg.ShowModal() == wxID_OK)
       MakeCall(callDlg.m_Address, "t38:"+faxDlg.GetPath());
   }
@@ -1534,6 +1549,7 @@ void MyManager::OnSpeedDialColumnResize(wxListEvent& event)
 void MyManager::OnRightClick(wxListEvent& event)
 {
   wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar("SpeedDialMenu");
+  menuBar->Enable(XRCID("CallSpeedDialHandset"), HasHandset());
   PopupMenu(menuBar->GetMenu(0), event.GetPoint());
   delete menuBar;
 }
@@ -1654,7 +1670,7 @@ void MyManager::MakeCall(const PwxString & address, const PwxString & local)
 
   PwxString from = local;
   if (from.empty())
-    from = potsEP != NULL && potsEP->GetLine("*") != NULL ? "pots:*" : "pc:*";
+    from = "pc:*";
 
   PString token;
   if (SetUpCall(from, address, token)) {
@@ -1927,6 +1943,12 @@ PSafePtr<OpalConnection> MyManager::GetConnection(bool user, PSafetyMode mode)
 }
 
 
+bool MyManager::HasHandset() const
+{
+  return potsEP != NULL && potsEP->GetLine("*") != NULL;
+}
+
+
 MyManager::CallsOnHold::CallsOnHold(OpalCall & call)
   : m_call(&call, PSafeReference)
 {
@@ -2066,7 +2088,7 @@ void MyManager::OnTransfer(wxCommandEvent& theEvent)
       }
     }
 
-    CallDialog dlg(this);
+    CallDialog dlg(this, true);
     dlg.SetTitle("Transfer Call");
     if (dlg.ShowModal() == wxID_OK) {
       PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReference);
@@ -2345,7 +2367,7 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
 
 void MyManager::OnStreamsChanged(wxCommandEvent &)
 {
-  m_inCallPanel->OnStreamsChanged(potsEP);
+  m_inCallPanel->OnStreamsChanged();
 }
 
 
@@ -4006,12 +4028,20 @@ BEGIN_EVENT_TABLE(CallDialog, wxDialog)
   EVT_TEXT(XRCID("Address"), CallDialog::OnAddressChange)
 END_EVENT_TABLE()
 
-CallDialog::CallDialog(wxFrame * parent)
+CallDialog::CallDialog(MyManager * manager, bool hideHandset)
+  : m_UseHandset(true)
 {
-  wxXmlResource::Get()->LoadDialog(this, parent, "CallDialog");
+  wxXmlResource::Get()->LoadDialog(this, manager, "CallDialog");
 
   m_ok = FindWindowByNameAs<wxButton>(this, "wxID_OK");
   m_ok->Disable();
+
+  wxCheckBox * useHandset = FindWindowByNameAs<wxCheckBox>(this, "UseHandset");
+  useHandset->SetValidator(wxGenericValidator(&m_UseHandset));
+  if (hideHandset)
+    useHandset->Hide();
+  else
+    useHandset->Enable(manager->HasHandset());
 
   m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, "Address");
   m_AddressCtrl->SetValidator(wxGenericValidator(&m_Address));
@@ -4213,10 +4243,10 @@ bool InCallPanel::Show(bool show)
 }
 
 
-void InCallPanel::OnStreamsChanged(OpalLineEndPoint * potsEP)
+void InCallPanel::OnStreamsChanged()
 {
   // Must do this before getting lock on OpalCall to avoid deadlock
-  m_SpeakerHandset->Enable(potsEP != NULL && potsEP->GetLine("*") != NULL);
+  m_SpeakerHandset->Enable(m_manager.HasHandset());
 
   PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
 
