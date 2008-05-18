@@ -796,7 +796,7 @@ PBoolean OpalPluginLID::GetPlayVolume(unsigned line, unsigned & volume)
 }
 
 
-OpalLineInterfaceDevice::AECLevels OpalPluginLID::GetAEC(unsigned line)
+OpalLineInterfaceDevice::AECLevels OpalPluginLID::GetAEC(unsigned line) const
 {
   unsigned level = AECError;
   CHECK_FN(GetAEC, (m_context, line, &level));
@@ -810,7 +810,7 @@ PBoolean OpalPluginLID::SetAEC(unsigned line, AECLevels level)
 }
 
 
-PBoolean OpalPluginLID::GetVAD(unsigned line)
+PBoolean OpalPluginLID::GetVAD(unsigned line) const
 {
   PluginLID_Boolean vad = FALSE;
   CHECK_FN(GetVAD, (m_context, line, &vad));

@@ -225,6 +225,12 @@ class OpalLineEndPoint : public OpalEndPoint
       const PString & descriptor  ///<  Device descritption to add
     );
 
+    /**Indicate if the line interface device is in use by the endpoint.
+      */
+    const OpalLineInterfaceDevice * GetDeviceByName(
+      const PString & descriptor  ///<  Device descritption to add
+    );
+
     /**Add a line interface device to the endpoint.
        This will add the OpalLineInterfaceDevice descendent and all of the
        lines that it has to the endpoint.
