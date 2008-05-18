@@ -455,7 +455,7 @@ class OpalLineInterfaceDevice : public PObject
       */
     virtual AECLevels GetAEC(
       unsigned line    ///<  Number of line
-    );
+    ) const;
 
     /**Set acoustic echo cancellation.
        Note, not all devices may support this function.
@@ -470,7 +470,7 @@ class OpalLineInterfaceDevice : public PObject
       */
     virtual PBoolean GetVAD(
       unsigned line    ///<  Number of line
-    );
+    ) const;
 
     /**Set voice activity detection.
        Note, not all devices, or selected codecs, may support this function.
@@ -842,6 +842,15 @@ class OpalLineInterfaceDevice : public PObject
       void * parameters = NULL  ///<  Arbitrary parameters for the LID
     );
 
+    /**Create a new device and open it given the descriptor string.
+       The descriptor consists of the device type, a ':' character and then
+       the specific device name.
+      */
+    static OpalLineInterfaceDevice * CreateAndOpen(
+      const PString & descriptor,     ///<  Type of device to create
+      void * parameters = NULL  ///<  Arbitrary parameters for the LID
+    );
+
     /**Return an array of all the LID types registered.
       */
     static PStringList GetAllTypes();
@@ -1181,7 +1190,7 @@ class OpalLine : public PObject
     /**Get acoustic echo cancellation.
        Note, not all devices may support this function.
       */
-    virtual OpalLineInterfaceDevice::AECLevels GetAEC() { return device.GetAEC(lineNumber); }
+    virtual OpalLineInterfaceDevice::AECLevels GetAEC() const { return device.GetAEC(lineNumber); }
 
     /**Set acoustic echo cancellation.
        Note, not all devices may support this function.
@@ -1194,7 +1203,7 @@ class OpalLine : public PObject
     /**Get voice activity detection.
        Note, not all devices, or selected codecs, may support this function.
       */
-    virtual PBoolean GetVAD() { return device.GetVAD(lineNumber); }
+    virtual PBoolean GetVAD() const { return device.GetVAD(lineNumber); }
 
     /**Set voice activity detection.
        Note, not all devices, or selected codecs, may support this function.
