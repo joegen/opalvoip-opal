@@ -146,9 +146,10 @@ class MySIPEndPoint : public SIPEndPoint
 class CallDialog : public wxDialog
 {
   public:
-    CallDialog(wxFrame * parent);
+    CallDialog(MyManager * manager, bool hideHandset);
 
     PwxString m_Address;
+    bool      m_UseHandset;
 
   private:
     void OnOK(wxCommandEvent & event);
@@ -258,7 +259,7 @@ class InCallPanel : public wxPanel
     InCallPanel(MyManager & manager, wxWindow * parent);
     virtual bool Show(bool show = true);
 
-    void OnStreamsChanged(OpalLineEndPoint * potsEP);
+    void OnStreamsChanged();
     void OnHoldChanged(bool onHold);
 
   private:
@@ -620,6 +621,8 @@ class MyManager : public wxFrame, public OpalManager
     PSafePtr<OpalCall>       GetCall(PSafetyMode mode);
     PSafePtr<OpalConnection> GetConnection(bool user, PSafetyMode mode);
 
+    bool HasHandset() const;
+
     enum AnswerModes {
       AnswerVoice,
       AnswerFax,
@@ -685,7 +688,8 @@ class MyManager : public wxFrame, public OpalManager
     void OnMenuCall(wxCommandEvent& event);
     void OnMenuCallLastDialed(wxCommandEvent& event);
     void OnMenuCallLastReceived(wxCommandEvent& event);
-    void OnCallSpeedDial(wxCommandEvent& event);
+    void OnCallSpeedDialAudio(wxCommandEvent& event);
+    void OnCallSpeedDialHandset(wxCommandEvent& event);
     void OnSendFax(wxCommandEvent& event);
     void OnSendFaxSpeedDial(wxCommandEvent& event);
     void OnMenuAnswer(wxCommandEvent& event);
