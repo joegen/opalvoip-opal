@@ -360,7 +360,7 @@ PBoolean OpalLineInterfaceDevice::GetPlayVolume(unsigned, unsigned &)
 }
 
 
-OpalLineInterfaceDevice::AECLevels OpalLineInterfaceDevice::GetAEC(unsigned)
+OpalLineInterfaceDevice::AECLevels OpalLineInterfaceDevice::GetAEC(unsigned) const
 {
   return AECError;
 }
@@ -383,7 +383,7 @@ PBoolean OpalLineInterfaceDevice::SetWinkDuration(unsigned, unsigned)
 }
 
 
-PBoolean OpalLineInterfaceDevice::GetVAD(unsigned)
+PBoolean OpalLineInterfaceDevice::GetVAD(unsigned) const
 {
   return PFalse;
 }
@@ -1008,6 +1008,34 @@ OpalLineInterfaceDevice * OpalLineInterfaceDevice::Create(const PString & newTyp
     type = type->link;
   }
 
+  return NULL;
+}
+
+
+OpalLineInterfaceDevice * OpalLineInterfaceDevice::CreateAndOpen(const PString & descriptor,
+                                                                 void * parameters)
+{
+  PString deviceType, deviceName;
+
+  PINDEX colon = descriptor.Find(':');
+  if (colon != P_MAX_INDEX) {
+    deviceType = descriptor.Left(colon).Trim();
+    deviceName = descriptor.Mid(colon+1).Trim();
+  }
+
+  if (deviceType.IsEmpty() || deviceName.IsEmpty()) {
+    PTRACE(1, "LID\tInvalid device description \"" << descriptor << '"');
+    return NULL;
+  }
+
+  OpalLineInterfaceDevice * device = Create(deviceType, parameters);
+  if (device == NULL)
+    return NULL;
+
+  if (device->Open(deviceName))
+    return device;
+
+  delete device;
   return NULL;
 }
 

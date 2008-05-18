@@ -277,7 +277,7 @@ PBoolean OpalLineEndPoint::AddDeviceNames(const PStringArray & descriptors)
 }
 
 
-PBoolean OpalLineEndPoint::AddDeviceName(const PString & descriptor)
+const OpalLineInterfaceDevice * OpalLineEndPoint::GetDeviceByName(const PString & descriptor)
 {
   PString deviceType, deviceName;
 
@@ -289,32 +289,33 @@ PBoolean OpalLineEndPoint::AddDeviceName(const PString & descriptor)
 
   if (deviceType.IsEmpty() || deviceName.IsEmpty()) {
     PTRACE(1, "LID EP\tInvalid device description \"" << descriptor << '"');
-    return false;
+    return NULL;
   }
 
   // Make sure not already there.
-  linesMutex.Wait();
+  PWaitAndSignal mutex(linesMutex);
   for (OpalLIDList::iterator iterDev = devices.begin(); iterDev != devices.end(); ++iterDev) {
     if (iterDev->GetDeviceType() == deviceType && iterDev->GetDeviceName() == deviceName) {
-      linesMutex.Signal();
-      PTRACE(3, "LID EP\tDevice " << deviceType << ':' << deviceName << " already loaded.");
-      return true;
+      PTRACE(3, "LID EP\tDevice " << deviceType << ':' << deviceName << " is loaded.");
+      return &*iterDev;
     }
   }
-  linesMutex.Signal();
+
+  return NULL;
+}
+
+
+PBoolean OpalLineEndPoint::AddDeviceName(const PString & descriptor)
+{
+  if (GetDeviceByName(descriptor) != NULL)
+    return true;
 
   // Not there so add it.
-  OpalLineInterfaceDevice * device = OpalLineInterfaceDevice::Create(deviceType);
-  if (device == NULL) {
-    PTRACE(1, "LID EP\tDevice type " << deviceType << " could not be created.");
-    return false;
-  }
-
-  if (device->Open(deviceName))
+  OpalLineInterfaceDevice * device = OpalLineInterfaceDevice::CreateAndOpen(descriptor);
+  if (device != NULL)
     return AddDevice(device);
 
-  delete device;
-  PTRACE(1, "LID EP\tDevice " << deviceType << ':' << deviceName << " could not be opened.");
+  PTRACE(1, "LID EP\tDevice " << descriptor << " could not be created or opened.");
   return false;
 }
 

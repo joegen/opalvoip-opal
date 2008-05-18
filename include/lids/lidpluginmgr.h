@@ -412,7 +412,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
       */
     virtual AECLevels GetAEC(
       unsigned line    ///<  Number of line
-    );
+    ) const;
 
     /**Set acoustic echo cancellation.
        Note, not all devices may support this function.
@@ -427,7 +427,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
       */
     virtual PBoolean GetVAD(
       unsigned line    ///<  Number of line
-    );
+    ) const;
 
     /**Set voice activity detection.
        Note, not all devices, or selected codecs, may support this function.
