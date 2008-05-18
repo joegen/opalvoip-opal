@@ -2205,6 +2205,13 @@
             </object>
             <object class="sizeritem">
                 <flag>wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+                <object class="wxCheckBox" name="UseHandset">
+                    <checked>1</checked>
+                    <label>Use Handset</label>
+                </object>
+            </object>
+            <object class="sizeritem">
+                <flag>wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
                 <object class="wxBoxSizer">
                     <orient>wxHORIZONTAL</orient>
                     <object class="sizeritem">
@@ -2229,8 +2236,11 @@
     <object class="wxMenuBar" name="SpeedDialMenu">
         <object class="wxMenu" name="SpeedDialMenu">
             <label>SpeedDialMenu</label>
-            <object class="wxMenuItem" name="CallSpeedDial">
-                <label>C_all</label>
+            <object class="wxMenuItem" name="CallSpeedDialAudio">
+                <label>Call using Audio</label>
+            </object>
+            <object class="wxMenuItem" name="CallSpeedDialHandset">
+                <label>Call using Handset</label>
             </object>
             <object class="wxMenuItem" name="SendFaxSpeedDial">
                 <label>Send _FAX ...</label>

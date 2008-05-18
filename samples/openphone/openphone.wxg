@@ -196,8 +196,12 @@
         <menus>
             <menu name="SpeedDialMenu" label="SpeedDialMenu">
                 <item>
-                    <label>C&amp;all</label>
-                    <name>CallSpeedDial</name>
+                    <label>Call using Audio</label>
+                    <name>CallSpeedDialAudio</name>
+                </item>
+                <item>
+                    <label>Call using Handset</label>
+                    <name>CallSpeedDialHandset</name>
                 </item>
                 <item>
                     <label>Send &amp;FAX ...</label>
@@ -267,6 +271,11 @@
                             <size>160, 12d</size>
                         </object>
                     </object>
+                </object>
+            </object>
+            <object class="sizeritem">
+                <flag>wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+                <object class="wxCheckBox" name="UseHandset" base="EditCheckBox">
                 </object>
             </object>
             <object class="sizeritem">
