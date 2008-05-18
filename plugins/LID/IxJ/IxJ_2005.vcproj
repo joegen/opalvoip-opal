@@ -71,7 +71,6 @@
 				IgnoreImportLibrary="false"
 				AdditionalDependencies="ptlibsd.lib winmm.lib"
 				OutputFile="$(OutDir)/$(ProjectName)_ptplugin.dll"
-				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
