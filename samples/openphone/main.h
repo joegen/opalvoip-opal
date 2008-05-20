@@ -609,7 +609,7 @@ class MyManager : public wxFrame, public OpalManager
     bool Initialise();
 
     bool HasSpeedDialName(const wxString & name) const;
-    int  GetSpeedDialIndex(const char * number, const char * ignore) const;
+    bool HasSpeedDialNumber(const wxString & number, const wxString & ignore) const;
 
     void MakeCall(const PwxString & address, const PwxString & local = wxEmptyString);
     void AnswerCall();
