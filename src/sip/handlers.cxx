@@ -255,6 +255,25 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
     return;
   }
 
+  // Try to find authentication parameters for the given realm,
+  // if not, use the proxy authentication parameters (if any)
+  if (authenticationUsername.IsEmpty () && authenticationPassword.IsEmpty ()) {
+    SIPURL proxy = endpoint.GetProxy();
+    if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), authenticationAuthRealm, authenticationUsername, authenticationPassword)) {
+      PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
+    }
+    else if (!proxy.IsEmpty()) {
+      PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
+      authenticationUsername = proxy.GetUserName ();
+      authenticationPassword = proxy.GetPassword ();
+    } 
+    else {
+      PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm());
+      delete newAuth;
+      OnFailed(SIP_PDU::Failure_UnAuthorised);
+      return;
+    }
+  }
   authenticationAuthRealm = newAuth->GetAuthRealm();
   newAuth->SetUsername(authenticationUsername);
   newAuth->SetPassword(authenticationPassword);
