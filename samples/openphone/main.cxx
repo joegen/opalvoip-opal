@@ -1623,38 +1623,18 @@ bool MyManager::HasSpeedDialName(const wxString & name) const
 }
 
 
-static bool SpeedDialMatch(const char * number, const char * ignore, const wxString & speed)
-{
-  if (number == NULL || *number == '\0')
-    return false;
-
-  if (ignore != NULL) {
-    if (speed == ignore)
-      return false;
-  }
-
-  size_t special = speed.find_first_of("-+");
-  if (special == wxString::npos)
-    return speed == number;
-
-  if (number[strlen(number)-1] != '#')
-    return false;
-
-  return strncmp(number, speed.c_str(), special) == 0;
-}
-
-
-int MyManager::GetSpeedDialIndex(const char * number, const char * ignore) const
+bool MyManager::HasSpeedDialNumber(const wxString & number, const wxString & ignore) const
 {
   int count = m_speedDials->GetItemCount();
   wxListItem item;
   item.m_mask = wxLIST_MASK_TEXT;
   item.m_col = e_NumberColumn;
   for (item.m_itemId = 0; item.m_itemId < count; item.m_itemId++) {
-    if (m_speedDials->GetItem(item) && SpeedDialMatch(number, ignore, item.m_text))
-      return item.m_itemId;
+    if (m_speedDials->GetItem(item) && item.m_text == number && item.m_text != ignore)
+      return true;
   }
-  return -1;
+
+  return false;
 }
 
 
@@ -2194,21 +2174,39 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
   while (!digit.IsEmpty()) {
     input += digit;
 
-    int index = GetSpeedDialIndex(input, NULL);
-    if (index >= 0) {
-      wxListItem nameItem;
-      nameItem.m_itemId = index;
-      nameItem.m_mask = wxLIST_MASK_TEXT;
-      nameItem.m_col = e_NameColumn;
-      wxListItem addressItem = nameItem;
-      addressItem.m_col = e_AddressColumn;
-      if (m_speedDials->GetItem(nameItem) && m_speedDials->GetItem(addressItem)) {
-        PString address = addressItem.m_text.c_str();
-        input.Replace('#', "");
-        address.Replace("<dn>", input);
-        LogWindow << "Calling \"" << nameItem.m_text << "\" using \"" << address << '"' << endl;
-        return address;
+    int count = m_speedDials->GetItemCount();
+    wxListItem item;
+    item.m_mask = wxLIST_MASK_TEXT;
+    item.m_col = e_NumberColumn;
+    for (item.m_itemId = 0; item.m_itemId < count; item.m_itemId++) {
+      if (!m_speedDials->GetItem(item))
+        continue;
+
+      size_t specialCharPos = item.m_text.find_first_of("-+");
+      if (specialCharPos == wxString::npos) {
+        if (input != item.m_text.c_str())
+          continue;
       }
+      else {
+        if (digit != '#' || strncmp(item.m_text, input, specialCharPos) != 0)
+          continue;
+        if (item.m_text[specialCharPos] == '-')
+          input.Delete(0, specialCharPos);    // Using '-' so strip the prefix off
+        input.Delete(input.GetLength()-1, 1); // Also get rid of the '#' at the end
+      }
+
+      item.m_col = e_AddressColumn;
+      if (!m_speedDials->GetItem(item))
+        continue;
+
+      PString address = item.m_text.c_str();
+      address.Replace("<dn>", input);
+
+      item.m_col = e_NameColumn;
+      m_speedDials->GetItem(item);
+
+      LogWindow << "Calling \"" << item.m_text << "\" using \"" << address << '"' << endl;
+      return address;
     }
 
     digit = connection.GetUserInput(firstDigitTimeout);
@@ -4685,7 +4683,7 @@ void SpeedDialDialog::OnChange(wxCommandEvent & WXUNUSED(event))
 
   m_ok->Enable(!inUse && !newName.IsEmpty() && !m_addressCtrl->GetValue().IsEmpty());
 
-  m_ambiguous->Show(m_manager.GetSpeedDialIndex(m_numberCtrl->GetValue(), m_Number) >= 0);
+  m_ambiguous->Show(m_manager.HasSpeedDialNumber(m_numberCtrl->GetValue(), m_Number));
 }
 
 
