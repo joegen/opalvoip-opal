@@ -1052,14 +1052,11 @@ class RTP_UDP : public RTP_Session
     
     virtual bool WriteDataPDU(RTP_DataFrame & frame);
     virtual bool WriteDataOrControlPDU(
-      BYTE * framePtr,
+      const BYTE * framePtr,
       PINDEX frameSize,
       bool toDataChannel
     );
 
-    // following must be public to allow T38PseudoRTP_Handler to shutdown correctly
-    PBoolean shutdownRead;
-    PBoolean shutdownWrite;
 
   protected:
     PIPSocket::Address localAddress;
@@ -1075,9 +1072,12 @@ class RTP_UDP : public RTP_Session
     PUDPSocket * dataSocket;
     PUDPSocket * controlSocket;
 
-    PBoolean appliedQOS;
-    PBoolean remoteIsNAT;
-    PBoolean first;
+    bool shutdownRead;
+    bool shutdownWrite;
+    bool appliedQOS;
+    bool remoteIsNAT;
+    bool localHasNAT;
+    bool first;
 };
 
 /////////////////////////////////////////////////////////////////////////////
