@@ -49,6 +49,105 @@ AC_SUBST(PLUGINEXT, ${PLUGINEXT})
 AC_SUBST(STDCCFLAGS, ${STDCCFLAGS})
 
 dnl ########################################################################
+dnl Macro Definition Section
+dnl ########################################################################
+
+AC_DEFUN([OPAL_GET_LIBNAME],
+         [
+dnl check macro arguments
+          AC_MSG_CHECKING(filename of $2 library)
+          AC_LANG_CONFTEST([int main () {}])
+          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $3>&AS_MESSAGE_LOG_FD
+          if test \! -x conftest$ac_exeext ; then
+            AC_MSG_RESULT(cannot determine - using defaults)
+          else
+            $1_LIB_NAME=`ldd ./conftest | grep $2 | awk '{print @S|@1; }'`
+            AC_MSG_RESULT($$1_LIB_NAME)
+            AC_DEFINE_UNQUOTED([$1_LIB_NAME], ["$$1_LIB_NAME"], [Filename of the $2 library])
+            AC_SUBST([$1_LIB_NAME], ["$$1_LIB_NAME"])
+          fi
+         ])
+
+dnl     ########################
+dnl     LIBAVCODEC
+dnl     ########################
+AC_DEFUN([OPAL_LIBAVCODEC_HACK],
+         [
+          AC_ARG_ENABLE([libavcodec-stackalign-hack],
+                        [AC_HELP_STRING([--enable-libavcodec-stackalign-hack], [Stack alignment hack for libavcodec library])],
+                        [LIBAVCODEC_STACKALIGN_HACK=$enableval],
+                        [LIBAVCODEC_STACKALIGN_HACK=no])
+          if test x$LIBAVCODEC_STACKALIGN_HACK = xyes; then
+            AC_MSG_NOTICE(libavcodec stack align hack enabled)
+            AC_DEFINE([LIBAVCODEC_STACKALIGN_HACK], [1], [Stack alignment hack for libavcodec library])
+          else
+            AC_MSG_NOTICE(libavcodec stack align hack disabled)
+          fi
+         ])
+
+AC_DEFUN([OPAL_LIBAVCODEC_SOURCE],
+         [
+          AC_MSG_CHECKING(libavcodec source)
+          AC_ARG_WITH([libavcodec-source-dir],
+                      [AC_HELP_STRING([--with-libavcodec-source-dir],[Directory with libavcodec source code, for MPEG4 rate control correction])])
+          if test -f "$with_libavcodec_source_dir/libavcodec/avcodec.h"
+          then
+            AC_MSG_RESULT(enabled)
+            LIBAVCODEC_SOURCE_DIR="$with_libavcodec_source_dir"
+            AC_DEFINE([LIBAVCODEC_HAVE_SOURCE_DIR], [1], [Directory with libavcodec source code, for MPEG4 rate control correction])
+          else
+            LIBAVCODEC_SOURCE_DIR=
+            AC_MSG_RESULT(disabled)
+          fi
+          AC_SUBST(LIBAVCODEC_SOURCE_DIR)
+         ])
+
+AC_DEFUN([OPAL_LIBAVCODEC_HEADER],
+         [
+          AC_CHECK_HEADER([libavcodec/avcodec.h], 
+                          [
+                           AC_DEFINE([LIBAVCODEC_HEADER], 
+                                     ["libavcodec/avcodec.h"],
+                                     [The libavcodec header file])
+                                     LIBAVCODEC_HEADER="libavcodec/avcodec.h"
+                          ],
+                          [
+                           AC_CHECK_HEADER([ffmpeg/avcodec.h], 
+                                           [
+                                            AC_DEFINE([LIBAVCODEC_HEADER], 
+                                                      ["ffmpeg/avcodec.h"],
+                                                      [The libavcodec header file])
+                                            LIBAVCODEC_HEADER="ffmpeg/avcodec.h"
+                                           ],
+                                           [
+                                            AC_MSG_ERROR([Cannot find libavcodec header file])
+                                           ])
+                          ])
+         ])
+
+dnl     ########################
+dnl     x264
+dnl     ########################
+AC_DEFUN([OPAL_X264_LINKAGE],
+         [
+          AC_ARG_ENABLE([x264-link-static],
+                        [AC_HELP_STRING([--enable-x264-link-static], [Statically link x264 to the plugin. Default for win32.])],
+                        [X264_LINK_STATIC=$enableval],
+                        [X264_LINK_STATIC=no])
+          if test x$X264_LINK_STATIC = xyes; then
+            AC_MSG_NOTICE(x264 static linking enabled)
+            AC_DEFINE([X264_LINK_STATIC], 
+                      [1],
+                      [Statically link x264 to the plugin. Default for win32.])
+          else
+            AC_MSG_NOTICE(x264 static linking enabled)
+          fi
+          AM_CONDITIONAL([X264_LINK_STATIC], [test x$X264_LINK_STATIC = xyes])
+         ])
+
+
+
+dnl ########################################################################
 dnl look for amr-nb_float
 
 H323_GSMAMR_NB_FLOAT=0
@@ -317,267 +416,76 @@ if test "$HAS_DLFCN" = yes ; then
 fi
 AC_SUBST(HAS_LIBDL)
 
-PLUGIN_CFLAGS=
-
-AC_ARG_ENABLE(rfc-compliant-defaults,
-            AC_HELP_STRING([--disable-rfc-compliant-defaults],[Enable FFMPEG stack align hack for MPEG 4]), rfc_compliant_defaults=$enableval)
-if test "x${rfc_compliant_defaults}" != "xno" ; then
-    rfc_compliant_defaults=yes
-    PLUGIN_CFLAGS="${PLUGIN_CFLAGS} -DWITH_RFC_COMPLIANT_DEFAULTS"
-fi
-
-
-AC_ARG_ENABLE(ffmpeg-stackalign-hack,
-            AC_HELP_STRING([--enable-ffmpeg-stackalign-hack],[Enable FFMPEG stack align hack for MPEG 4]), ffmpeg_stackalign_hack=$enableval)
-
-
-AC_SUBST(PLUGIN_CFLAGS)
-
-dnl ########################################################################
-dnl
-dnl MPEG4 plugin - needs ffmpeg source tree
-dnl 
-
-FFMPEG_SOURCE=
-FFMPEG_CFLAGS=
-
-AC_MSG_CHECKING(MPEG4 plugin)
-AC_ARG_WITH(ffmpeg-src-dir,
-            AC_HELP_STRING([--with-ffmpeg-src-dir],[Directory with ffmpeg source code, needed for MPEG 4 plugin]))
-
-if test "$with_mpeg4_ffmpeg" = "yes" ; then
-  AC_MSG_ERROR([--with-ffmpeg-src-dir requires an argument])
-elif test "$with_mpeg4_ffmpeg" = "no" ; then
-  AC_MSG_RESULT(disabled)
-elif test "$with_ffmpeg_src_dir" != "" ; then
-  if test -f "$with_ffmpeg_src_dir/libavcodec/avcodec.h"
-  then
-    AC_MSG_RESULT(enabled)
-    FFMPEG_SOURCE=$with_ffmpeg_src_dir
-    FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DLIBAVCODEC_HAVE_SOURCE_DIR"
-  else
-    AC_MSG_ERROR([$with_ffmpeg_src_dir doesn't contain an ffmpeg source tree])
-  fi
+AC_MSG_CHECKING(RFC compliant defaults)
+AC_ARG_ENABLE([rfc-compliant-defaults],
+              [AC_HELP_STRING([--disable-rfc-compliant-defaults],[Use RFC-compliant defaults for empty fmtp lines])],
+              [WITH_RFC_COMPLIANT_DEFAULTS=$enableval],
+              [WITH_RFC_COMPLIANT_DEFAULTS=yes])
+if test x$WITH_RFC_COMPLIANT_DEFAULTS = xyes; then
+  AC_DEFINE([WITH_RFC_COMPLIANT_DEFAULTS], [1], [Use RFC-compliant defaults for empty fmtp lines])
+  AC_MSG_RESULT(enabled)
 else
   AC_MSG_RESULT(disabled)
 fi
 
+dnl     ########################
+dnl     libavcodec (ffmpeg)
+dnl     ########################
+PKG_CHECK_MODULES([LIBAVCODEC],
+                  [libavcodec >= 51.11.0],
+                  [
+                   AC_SUBST(LIBAVCODEC_CFLAGS)
+                   AC_SUBST(LIBAVCODEC_LIBS)
+		   AC_DEFINE([HAVE_LIBAVCODEC], [1], [ffmpeg])
+     	           HAVE_LIBAVCODEC=yes
+                   OPAL_LIBAVCODEC_HACK
+                   OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [-lavcodec])
+                   OPAL_LIBAVCODEC_HEADER
+                  ],
+                  [
+                   HAVE_LIBAVCODEC=no
+                  ]
+                 )
+AC_SUBST(HAVE_LIBAVCODEC)
+
+OPAL_LIBAVCODEC_SOURCE
 
 
-dnl ###########################################################################
-dnl Checks for ffmpeg
-dnl ###########################################################################
-
-HAS_FFMPEG=0
-
-AC_ARG_ENABLE(ffmpeg, [  --disable-ffmpeg        Disable ffmpeg],,)
-if test "x${enable_ffmpeg}" != "xno" ; then
-    enable_ffmpeg=yes
-    saved_LIBS="$LIBS"
-    LIBS="$LIBS -lm -lz"
-    AC_CHECK_LIB(avcodec, avcodec_init, [ffmpeg_libs=true], [ffmpeg_libs=false])
-    LIBS=$saved_LIBS
-    if test "x${ffmpeg_libs}" != "xno"; then
-        AC_CHECK_HEADERS([libavcodec/avcodec.h], [ffmpeg_headers=true], [ffmpeg_headers=false])
-        if test "x${ffmpeg_headers}" = "xtrue"; then
-
-            AC_MSG_CHECKING(for libavcodec version >= 51.11.0)
-            AC_EGREP_CPP([yes],
-            [#include <libavcodec/avcodec.h>
-  	     #ifdef LIBAVCODEC_VERSION_INT
-               #if LIBAVCODEC_VERSION_INT >= ((51<<16)+(11<<8)+0)
-                 yes
-               #endif
-             #endif
-            ],
-   	    [ffmpeg_version=true], [ffmpeg_version=false])
-            if test "x${ffmpeg_version}" = "xtrue"; then
-                AC_MSG_RESULT([yes])
-                HAS_FFMPEG=1
-                AC_MSG_CHECKING(filename of libavcodec library)
-                cat > t.c <<C_FILE
-                  int main () {}
-C_FILE
-                cc -o t t.c -lavcodec > /dev/null 2>&1
-                if test \! -x t ; then
-                    AC_MSG_RESULT(cannot determine - using defaults)
-                 else
-                    ffmpeg_lib_name=`ldd ./t  | grep libavcodec | awk '{ print $1; }'`
-                    rm -f t t.c
-                    AC_MSG_RESULT($ffmpeg_lib_name)
-                    FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DLIBAVCODEC_LIB_NAME='\"$ffmpeg_lib_name\"'"
-                fi
-             else
-              AC_MSG_RESULT([no])
-    	    fi
-        fi
-    fi
-fi
-
-AC_ARG_ENABLE(ffmpeg-stackalign-hack,
-            AC_HELP_STRING([--enable-ffmpeg-stackalign-hack],[Enable FFMPEG stack align hack for MPEG 4]), ffmpeg_stackalign_hack=$enableval)
-if test "${ffmpeg_stackalign_hack}" = "yes" ; then
-  AC_MSG_NOTICE(FFMPEG stack align hack enabled)
-  FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DLIBAVCODEC_STACKALIGN_HACK"
-else
-  AC_MSG_NOTICE(FFMPEG stack align hack disabled)
-fi
-
-AC_SUBST(HAS_FFMPEG)
-AC_SUBST(FFMPEG_SOURCE)
-AC_SUBST(FFMPEG_CFLAGS)
-
-dnl ###########################################################################
-dnl Checks for x264
-dnl ###########################################################################
-
-HAS_X264=0
-X264_LIBS=
-X264_LINK_STATIC=0
-m4_define([x264_default], [runtime])
-
-dnl declare --enable-* args and collect ac_help strings
-AC_ARG_ENABLE(x264,
-              AC_HELP_STRING([--enable-x264=@<:@no/static/runtime@:>@],
-			     [enable x264 plugin @<:@default=x264_default@:>@]),,
-	      enable_x264=x264_default)
-
-if test "x$enable_x264" = "xruntime"; then
-    enable_x264=yes
-
-    saved_LIBS="$LIBS"
-    LIBS="$LIBS -lm -lz -lpthread"
-    AC_CHECK_LIB(x264, x264_encoder_open, [x264_libs=yes], [x264_libs=no])
-    LIBS=$saved_LIBS
-
-    if test "x${x264_libs}" != "xno"; then
-        AC_CHECK_HEADERS([x264.h], [x264_headers=true], [x264_headers=false])
-        if test "x${x264_headers}" = "xtrue"; then
-          if test "x$HAS_LIBDL" != "x0" ; then
-            if test `uname -s` = FreeBSD; then
-	      X264_LIBS="-lc"
-            else
-	      X264_LIBS="-ldl"
-            fi
-          fi
-
-          AC_MSG_CHECKING(for x264 version >= 48)
-          AC_EGREP_CPP([yes],
-          [#include <stdint.h>
-           #include <x264.h>
-	   #ifdef X264_BUILD
-             #if X264_BUILD >= 48
-               yes
-             #endif
-           #endif
-          ],
- 	  [x264_version=true], [x264_version=false])
-          if test "x${x264_version}" = "xtrue"; then
-              AC_MSG_RESULT([yess])
-              HAS_X264=1
-              AC_MSG_CHECKING(filename of x264 library)
-              cat > t.c <<C_FILE
-                int main () {}
-C_FILE
-              cc -o t t.c -lx264 > /dev/null 2>&1
-              if test \! -x t ; then
-                  AC_MSG_RESULT(cannot determine - using defaults)
-                else
-                  x264_lib_name=`ldd ./t  | grep libx264 | awk '{ print $1; }'`
-                  rm -f t t.c
-                  AC_MSG_RESULT($x264_lib_name)
-                  X264_CFLAGS="-DX264_LIB_NAME='\"${x264_lib_name}\"'"
-              fi
-              X264_CFLAGS="-DX264_LIB_NAME='\"${x264_lib_name}\"'"
-	    else
-              AC_MSG_RESULT([no])
-	    fi
-        fi
-    fi
-fi
-
-if test "x$enable_x264" = "xstatic"; then
-
-  have_x264_48="no"
-  saved_LIBS="$LIBS"
-
-  PKG_CHECK_MODULES([x264], [x264 >= 0.48], [ have_x264_48="yes" ], [  have_x264_48="no" ])
-
-  dnl For people who don't have pkg-config or x264.pc 
-  if test $have_x264_48 = "no"; then
-	   AC_CHECK_HEADERS(x264.h,
-	   [
-	     LIBS="$LIBS -lm -lz -lpthread"
-	     AC_CHECK_LIB(x264, x264_encoder_open,
-	     [
-	       AC_MSG_CHECKING(x264 version >= 48)
-	       AC_TRY_COMPILE([
-			         #include <stdint.h>
-			         #include <x264.h>
-			       ],
-			       [
-				 #if X264_BUILD < 48
-				 #error x264 older than 48
-				 #endif
-			       ],
-			       [ 
-				 have_x264_48="yes" 
-			       ],
-			       [
-				 have_x264_48="no"
-			       ])
-	       AC_MSG_RESULT($have_x264_48)
-	       if test $have_x264_48 = "no" ; then
-		 AC_MSG_WARN([Your libx264 is too old - version 48 or newer strongly recommended])
-	       fi
-	     ])
-	   ],
-           [
-             AC_MSG_ERROR([Could not find libx264 on your system: you may get it from http://www.videolan.org/x264.html])
-	   ])
-  fi
-  LIBS="$saved_LIBS"
-
-  if test $have_x264_48 = "yes"; then
-      X264_LIBS="-lx264 -lm -lpthread"
-      HAS_X264=1
-      X264_CFLAGS="${X264_CFLAGS} -DX264_LINK_STATIC=1"
-      X264_LINK_STATIC=1
-  fi
-
-fi
-
-AC_SUBST(HAS_X264)
-AC_SUBST(X264_CFLAGS)
-AC_SUBST(X264_LIBS)
+dnl     ########################
+dnl     x264
+dnl     ########################
+PKG_CHECK_MODULES([X264],
+                  [x264 >= 0.48],
+                  [
+                   AC_SUBST(X264_CFLAGS)
+                   AC_SUBST(X264_LIBS)
+                   HAVE_X264=yes
+                   OPAL_GET_LIBNAME([X264], [libx264], [-lx264])
+                   OPAL_X264_LINKAGE
+                  ],
+                  [
+                   HAVE_X264=no
+                  ]
+                 )
 AC_SUBST(X264_LINK_STATIC)
+AC_SUBST(HAVE_X264)
 
-dnl ###########################################################################
-dnl Checks for libtheora
-dnl ###########################################################################
+dnl     ########################
+dnl     theora
+dnl     ########################
+PKG_CHECK_MODULES([THEORA],
+                  [theora],
+                  [
+                   AC_SUBST(THEORA_CFLAGS)
+                   AC_SUBST(THEORA_LIBS)
+                   AC_DEFINE([HAVE_THEORA], [1], [theora])
+                   HAVE_THEORA=yes
+                  ],
+                  [
+                   HAVE_THEORA=no
+                  ])
+AC_SUBST(HAVE_THEORA)
 
-HAS_THEORA=0
-THEORA_LIBS=
-
-AC_ARG_ENABLE(theora, [  --disable-theora        Disable theora],,)
-if test "x${enable_theora}" != "xno" ; then
-    enable_theora=yes
-
-    saved_LIBS="$LIBS"
-    LIBS="$LIBS -lm -lz -lpthread"
-    AC_CHECK_LIB(theora, theora_encode_init, [theora_libs=yes], [theora_libs=no])
-    LIBS=$saved_LIBS
-
-    if test "x${theora_libs}" != "xno"; then
-	THEORA_LIBS="-ltheora"
-        AC_CHECK_HEADERS([theora/theora.h], [theora_headers=true], [theora_headers=false])
-        if test "x${theora_headers}" = "xtrue"; then
-            HAS_THEORA=1
-        fi
-    fi
-fi
-AC_SUBST(HAS_THEORA)
-AC_SUBST(THEORA_LIBS)
 dnl ########################################################################
 
 HAS_SPANDSP=0
@@ -660,6 +568,7 @@ fi
 
 AC_CONFIG_FILES(Makefile)
 
+
 dnl ########################################################################
 dnl Header file
 
@@ -667,6 +576,7 @@ dnl ########################################################################
 dnl Output configured files
 
 AC_OUTPUT(audio/Speex/libspeex/speex_config_types.h)
+AC_CONFIG_HEADERS(plugin-config.h)
 AC_OUTPUT()
 
 dnl ########################################################################
@@ -682,14 +592,14 @@ echo "                           H.263  :  enabled"
 else
 echo "                           H.263  :  disabled"
 fi
-if test "x${HAS_FFMPEG}" = "x1" ; then
+if test "x${HAVE_LIBAVCODEC}" = "xyes" ; then
 echo "                           H.263+ :  enabled"
 else
 echo "                           H.263+ :  disabled (needs libavcodec)"
 fi
 if test "x${HAS_LIBDL}" = "x1" ; then
-if test "x${HAS_X264}" = "x1" ; then
-if test "x${HAS_FFMPEG}" = "x1" ; then
+if test "x${HAVE_X264}" = "xyes" ; then
+if test "x${HAVE_LIBAVCODEC}" = "xyes" ; then
 echo "                           H.264  :  enabled"
 else
 echo "                           H.264  :  disabled (needs libavcodec)"
@@ -700,14 +610,14 @@ fi
 else
 echo "                           H.264  :  disabled (needs libdl)"
 fi
-if test "x${HAS_THEORA}" = "x1" ; then
+if test "x${HAVE_THEORA}" = "xyes" ; then
 echo "                          THEORA  :  enabled"
 else
 echo "                          THEORA  :  disabled"
 fi
-if test "x${HAS_FFMPEG}" = "x1" ; then
+if test "x${HAVE_LIBAVCODEC}" = "xyes" ; then
 
-if test "x${FFMPEG_SOURCE}" = "x" ; then
+if test "x${LIBAVCODEC_SOURCE_DIR}" = "x" ; then
 echo "                    MPEG4 Part 2  :  enabled (no rate control correction)"
 else
 echo "                    MPEG4 Part 2  :  enabled"

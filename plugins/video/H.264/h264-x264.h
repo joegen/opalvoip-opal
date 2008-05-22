@@ -39,6 +39,8 @@
 #ifndef __H264_X264_H__
 #define __H264_X264_H__ 1
 
+#include "plugin-config.h"
+
 #include <stdarg.h>
 #include <codec/opalplugin.h>
 
@@ -58,7 +60,7 @@ extern "C" {
 #ifdef _MSC_VER
   #include "libavcodec/avcodec.h"
 #else
-  #include <libavcodec/avcodec.h>
+  #include LIBAVCODEC_HEADER
 #endif
 };
 

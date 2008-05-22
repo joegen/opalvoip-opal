@@ -19,6 +19,8 @@
  *
  */
 
+#include "plugin-config.h"
+
 #include "enc-ctx.h"
 #include "trace.h"
 #include "rtpframe.h"

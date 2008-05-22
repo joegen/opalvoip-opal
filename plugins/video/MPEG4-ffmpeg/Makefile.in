@@ -51,6 +51,7 @@ LIBDIR=@LIBDIR@
 BASENAME= mpeg4-ffmpeg
 SONAME	=$(BASENAME)
 COMMONDIR=../common
+PLUGINDIR=../../
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
@@ -67,16 +68,15 @@ SRCS	+= mpeg4.cxx \
 	   $(COMMONDIR)/dyna.cxx \
 	   $(COMMONDIR)/trace.cxx
 
-PLUGIN_CFLAGS   =@PLUGIN_CFLAGS@
-FFMPEG_CFLAGS   =@FFMPEG_CFLAGS@
-FFMPEG_SOURCE := @FFMPEG_SOURCE@
+LIBAVCODEC_CFLAGS     = @LIBAVCODEC_CFLAGS@
+LIBAVCODEC_SOURCE_DIR = @LIBAVCODEC_SOURCE_DIR@
 
-# Add FFMPEG_SOURCE to the include path so we can #include <libavcodec/...h>
+# Add LIBAVCODEC_SOURCE_DIR to the include path so we can #include <libavcodec/...h>
 # Also add libavutil, so ffmpeg headers can #include "log.h".
-EXTRACCFLAGS    +=$(PLUGIN_CFLAGS) $(FFMPEG_CFLAGS) -I$(COMMONDIR)
+EXTRACCFLAGS    += $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -I$(PLUGINDIR)
 
-ifneq (,$(FFMPEG_SOURCE))
-EXTRACCFLAGS    += -I$(FFMPEG_SOURCE) -I$(FFMPEG_SOURCE)/libavutil
+ifneq (,$(LIBAVCODEC_SOURCE_DIR))
+EXTRACCFLAGS    += -I$(LIBAVCODEC_SOURCE_DIR) -I$(LIBAVCODEC_SOURCE_DIR)/libavutil
 endif
 
 OBJDIR = ./obj

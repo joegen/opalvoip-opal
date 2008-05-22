@@ -55,6 +55,9 @@
 
 // Plugin specific
 #define _CRT_SECURE_NO_DEPRECATE
+
+#include "plugin-config.h"
+
 #include <codec/opalplugin.h>
 
 extern "C" {
@@ -99,7 +102,7 @@ extern "C" {
 #include <libavcodec/mpegvideo.h>
 
 #else /* LIBAVCODEC_HAVE_SOURCE_DIR */
-#include <libavcodec/avcodec.h>
+#include LIBAVCODEC_HEADER
 #endif /* LIBAVCODEC_HAVE_SOURCE_DIR */
 }
 

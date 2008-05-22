@@ -37,6 +37,8 @@
 
 #include "h264-x264.h"
 
+#include "plugin-config.h"
+
 #ifdef WIN32
 #include "h264pipe_win32.h"
 #else
