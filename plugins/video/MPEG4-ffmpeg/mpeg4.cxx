@@ -269,7 +269,6 @@ class MPEG4EncoderContext
                             int num_mb);
     
     void SetIQuantFactor(float newFactor);
-    void SetThrottle(bool enable);
     void SetKeyframeUpdatePeriod(int interval);
     void SetMaxBitrate(int max);
     void SetFPS(int frameTime);
@@ -301,9 +300,6 @@ class MPEG4EncoderContext
     // Interval in seconds between forced IFrame updates if enabled
     int _keyframeUpdatePeriod;
 
-
-    // Bandwidth throttling.  Defaults to false.
-    bool _doThrottle;
 
     // Modifiable upper limit for bits/s transferred
     int _bitRateHighLimit;
@@ -347,51 +343,6 @@ class MPEG4EncoderContext
       UnknownStdSize = NumStdSizes
     };
 
-    // simple bandwidth throttler
-    class Throttle {
-        public:
-            Throttle(int slots) : _slots(NULL) {
-                reset(slots);
-            }
-            ~Throttle(){
-                delete[] _slots;
-            }
-            bool throttle(int maxbytes) {
-                if(_total > maxbytes) {
-                    // Don't drop two in a row
-                    if (_numSlots == 1 || _slots[(_index - 1) % _numSlots] != 0)
-                    {
-                        record(0);
-                        return true;
-                    }
-                }
-                return false;
-            }
-            void record(int bytes){
-                _total -= _slots[_index];
-                _slots[_index] = bytes;
-                _total += bytes;
-                _index = (_index + 1) % _numSlots;
-            }
-            void reset(int slots){
-                _total = _index = 0;
-                if(slots < 1)
-                    slots = 1;
-                _numSlots = slots;
-                if(_slots){
-                    delete _slots;
-                }
-                _slots = new int[slots];
-                for(int i = 0; i < slots; ++i)
-                    _slots[i] = 0;
-            }
-        private:
-            int _total;
-            int _numSlots;
-            int _index;
-            int * _slots;    
-    } * _throttle; 
-
     static int GetStdSize(int width, int height)
     {
       static struct { 
@@ -421,13 +372,11 @@ class MPEG4EncoderContext
 //
 
 MPEG4EncoderContext::MPEG4EncoderContext() 
-:   _doThrottle(false),
-    _encFrameBuffer(NULL),
+:   _encFrameBuffer(NULL),
     _rawFrameBuffer(NULL), 
     _avcodec(NULL),
     _avcontext(NULL),
-    _avpicture(NULL),
-    _throttle(new Throttle(1))
+    _avpicture(NULL)
 { 
 
   // Some sane default video settings
@@ -472,10 +421,6 @@ MPEG4EncoderContext::~MPEG4EncoderContext()
     delete[] _encFrameBuffer;
     _encFrameBuffer = NULL;
   }
-  if (_throttle) {
-    delete _throttle;
-    _throttle = NULL;
-  }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -497,15 +442,6 @@ int MPEG4EncoderContext::GetFrameBytes() {
 
 void MPEG4EncoderContext::SetIQuantFactor(float newFactor) {
     _iQuantFactor = newFactor;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Setter function for _doThrottle. This is called from encoder_set_options
-// if the "Bandwidth Throttling" boolean option is passed 
-
-void MPEG4EncoderContext::SetThrottle(bool throttle) {
-    _doThrottle = throttle;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -676,9 +612,6 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     else
       _avcontext->gop_size = _keyframeUpdatePeriod;
     
-    _throttle->reset(_avcontext->time_base.den / 2);
-
-    // Set the initial frame quality to something sane
     _avpicture->quality = _videoQMin;
 
     _avcontext->flags |= CODEC_FLAG_PART;   // data partitioning
@@ -872,13 +805,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
     _frameHeight = header->height;
     dstLen = 0;
 
-    // Check if we're throttling bandwidth.  Throttle over bitrate/8 (bytes)
-    // then divide by 2 for a half second period
-    if (_doThrottle && _throttle->throttle(_bitRateHighLimit >> 4)) {
-        // Throttled, don't generate packets
-        TRACE(1, "MPEG4\tEncoder\tThrottling frame");
-    }
-    else if (_packetSizes.empty()) {
+    if (_packetSizes.empty()) {
         if (_avcontext == NULL) {
             OpenCodec();
         }
@@ -913,7 +840,6 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 #ifdef LIBAVCODEC_HAVE_SOURCE_DIR
             ResetBitCounter(8); // Fix ffmpeg rate control
 #endif
-            _throttle->record(total); // record frames for throttler
 	    _isIFrame = mpeg4IsIframe(_encFrameBuffer, total );
         }
 
@@ -924,37 +850,27 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
     if (_isIFrame)
       flags |= PluginCodec_ReturnCoderIFrame;
 
-    // _packetSizes should not be empty unless we've been throttled
-    if(_packetSizes.empty() == false)
-    {
-        // Grab the next payload size and store it in dstLen
-        dstLen = _packetSizes.front();
-        _packetSizes.pop_front();
-        dstRTP.SetPayloadSize(dstLen); 
+    // Grab the next payload size and store it in dstLen
+    dstLen = _packetSizes.front();
+    _packetSizes.pop_front();
+    dstRTP.SetPayloadSize(dstLen); 
 
-        // Copy the encoded data from the buffer into the outgoign RTP 
-        memcpy(dstRTP.GetPayloadPtr(), &_encFrameBuffer[_lastPktOffset],
-               dstLen);
-        _lastPktOffset += dstLen;
+    // Copy the encoded data from the buffer into the outgoign RTP 
+    memcpy(dstRTP.GetPayloadPtr(), &_encFrameBuffer[_lastPktOffset],
+           dstLen);
+    _lastPktOffset += dstLen;
 
-        // If there are no more packet sizes left, we've reached the last packet
-        // for the frame, set the marker bit and flags
-        if (_packetSizes.empty()) {
-            dstRTP.SetMarker(true);
-            flags |= PluginCodec_ReturnCoderLastFrame;
-        }
-
-        // set timestamp and adjust dstLen to include header size
-        dstRTP.SetTimestamp(_lastTimeStamp);
-        dstLen+= dstRTP.GetHeaderSize();
-    }
-    else
-    {
-        // throttled, tell OPAL to send a 0 length packet
-        dstLen = 0;
-        dstRTP.SetPayloadSize(0);
+    // If there are no more packet sizes left, we've reached the last packet
+    // for the frame, set the marker bit and flags
+    if (_packetSizes.empty()) {
         dstRTP.SetMarker(true);
+        flags |= PluginCodec_ReturnCoderLastFrame;
     }
+
+    // set timestamp and adjust dstLen to include header size
+    dstRTP.SetTimestamp(_lastTimeStamp);
+    dstLen+= dstRTP.GetHeaderSize();
+    
     return 1;
 }
 
@@ -1158,7 +1074,6 @@ static int encoder_set_options(
   // 1) "Frame Width" sets the encoding frame width
   // 2) "Frame Height" sets the encoding frame height
   // 3) "Target Bit Rate" sets the bitrate upper limit
-  // 4) "Frame Time" lets the encoder and throttler know target frames per second 
   // 5) "Tx Keyframe Period" interval in frames before an IFrame is sent
   // 6) "Minimum Quality" sets the minimum encoding quality
   // 7) "Maximum Quality" sets the maximum encoding quality
@@ -1188,8 +1103,6 @@ static int encoder_set_options(
         context->SetTSTO(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Minimum Quality") == 0)
         context->SetQMin(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Bandwidth Throttling") == 0)
-        context->SetThrottle(atoi(options[i+1]));
       else if(STRCMPI(options[i], "IQuantFactor") == 0)
         context->SetIQuantFactor(atof(options[i+1]));
     }
