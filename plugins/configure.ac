@@ -408,13 +408,20 @@ if test "$HAS_DLFCN" = yes ; then
   else
     AC_MSG_RESULT(yes)
     if test `uname -s` = FreeBSD; then
-        AC_CHECK_LIB([c],[dlopen],[HAS_LIBDL=1], [HAS_LIBDL=0])
+        AC_CHECK_LIB([c],[dlopen],
+                     [HAS_LIBDL=1
+                      DL_LIBS="-lc"
+                     ], [HAS_LIBDL=0])
     else
-        AC_CHECK_LIB([dl],[dlopen],[HAS_LIBDL=1], [HAS_LIBDL=0])
+        AC_CHECK_LIB([dl],[dlopen],
+                     [HAS_LIBDL=1
+                      DL_LIBS="-ldl"
+                     ], [HAS_LIBDL=0])
     fi
   fi
 fi
 AC_SUBST(HAS_LIBDL)
+AC_SUBST(DL_LIBS)
 
 AC_MSG_CHECKING(RFC compliant defaults)
 AC_ARG_ENABLE([rfc-compliant-defaults],
