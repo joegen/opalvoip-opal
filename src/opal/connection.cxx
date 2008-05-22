@@ -379,9 +379,9 @@ void OpalConnection::OnReleased()
 {
   PTRACE(3, "OpalCon\tOnReleased " << *this);
 
-  CloseMediaStreams();
-
   endpoint.OnReleased(*this);
+
+  CloseMediaStreams();
 }
 
 
