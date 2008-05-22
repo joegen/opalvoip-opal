@@ -86,7 +86,7 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
   // Check for errors
   if (_hDLL == NULL) {
 #ifndef _WIN32
-  char * err = dlerror();
+  const char * err = dlerror();
   if (err != NULL)
     TRACE(1, _codecString << "\tDYNA\tError loading " << path << " - " << err)
     else
