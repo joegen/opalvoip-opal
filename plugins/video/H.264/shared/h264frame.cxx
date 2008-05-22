@@ -29,6 +29,8 @@
 /* The Original Code was written by Matthias Schneider <ma30002000@yahoo.de> */
 /*****************************************************************************/
 
+#include "plugin-config.h"
+
 #include "h264frame.h"
 #ifdef _MSC_VER
  #include "../../common/trace.h"

@@ -13,25 +13,25 @@ SUBDIRS += video/H.263-ffmpeg
 endif
 
 HAS_LIBDL=@HAS_LIBDL@
-HAS_X264=@HAS_X264@
-HAS_FFMPEG=@HAS_FFMPEG@
+HAVE_X264=@HAVE_X264@
+HAVE_LIBAVCODEC=@HAVE_LIBAVCODEC@
 
 ifeq ($(HAS_LIBDL),1)
-ifeq ($(HAS_X264),1)
-ifeq ($(HAS_FFMPEG),1)
+ifeq ($(HAVE_X264),yes)
+ifeq ($(HAVE_LIBAVCODEC),yes)
 SUBDIRS += video/H.264 \
 	   video/H.264/gpl
 endif
 endif
 endif
 
-ifeq ($(HAS_FFMPEG),1)
+ifeq ($(HAVE_LIBAVCODEC),yes)
 SUBDIRS += video/H.263-1998
 SUBDIRS += video/MPEG4-ffmpeg
 endif
 
-HAS_THEORA=@HAS_THEORA@
-ifeq ($(HAS_THEORA),1)
+HAVE_THEORA=@HAVE_THEORA@
+ifeq ($(HAVE_THEORA),yes)
 SUBDIRS += video/THEORA
 endif
 

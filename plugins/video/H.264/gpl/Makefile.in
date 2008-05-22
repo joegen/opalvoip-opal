@@ -74,6 +74,7 @@ LIBDIR=@LIBDIR@
 
 SHAREDDIR	= ../shared
 COMMONDIR       = ../../common
+PLUGINDIR       = ../../../
 OBJDIR	= ./obj
 
 BASENAME=h264
@@ -90,7 +91,7 @@ X264_CFLAGS     =@X264_CFLAGS@
 X264_LIBS	=@X264_LIBS@
 X264_LINK_STATIC=@X264_LINK_STATIC@
 
-EXTRACCFLAGS	+= $(X264_CFLAGS) -I$(COMMONDIR) 
+EXTRACCFLAGS	+= $(X264_CFLAGS) -I$(COMMONDIR) -I$(PLUGINDIR) 
 
 vpath	%.cxx $(SHAREDDIR)
 vpath	%.cxx $(COMMONDIR)
@@ -101,8 +102,9 @@ SRCS   += $(SHAREDDIR)/h264frame.cxx \
 	  enc-ctx.cxx  \
 	  h264helper_unix.cxx
 
-ifneq ($(X264_LINK_STATIC),1)
+ifneq ($(X264_LINK_STATIC),yes)
 SRCS   += x264loader_unix.cxx
+X264_LIBS	+= -ldl
 endif
 
 

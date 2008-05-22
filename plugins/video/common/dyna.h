@@ -40,6 +40,9 @@
 
 #ifndef __DYNA_H__
 #define __DYNA_H__ 1
+
+#include "plugin-config.h"
+
 #include <codec/opalplugin.h>
 
 #include <stdlib.h>
@@ -59,8 +62,9 @@ typedef unsigned char BYTE;
 #include "critsect.h"
 #include "trace.h"
 
+
 extern "C" {
-#include "libavcodec/avcodec.h"
+#include LIBAVCODEC_HEADER
 };
 
 #include <vector>

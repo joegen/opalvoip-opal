@@ -19,6 +19,8 @@
  *
  */
 
+#include "plugin-config.h"
+
 #include "shared/pipes.h"
 #include "enc-ctx.h"
 #include <sys/stat.h>
