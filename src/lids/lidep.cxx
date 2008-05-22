@@ -757,9 +757,9 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
   }
 
   PTRACE(3, "LID\tIncoming call routed for " << *this);
-  if (!ownerCall.OnSetUp(*this))
-    Release(EndedByNoAccept);
+  ownerCall.OnSetUp(*this);
 }
+
 
 PBoolean OpalLineConnection::SetUpConnection()
 {
