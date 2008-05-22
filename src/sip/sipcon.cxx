@@ -180,6 +180,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   , ackReceived(false)
   , releaseMethod(ReleaseWithNothing)
 {
+  synchronousOnRelease = false;
+
   // Look for a "proxy" parameter to override default proxy
   PStringToString params = m_requestURI.GetParamVars();
   SIPURL proxy;

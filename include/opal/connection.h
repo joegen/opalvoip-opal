@@ -1347,6 +1347,7 @@ class OpalConnection : public PSafeObject
     PString              remotePartyNumber;
     PString              remotePartyAddress;
     CallEndReason        callEndReason;
+    bool                 synchronousOnRelease;
     PString              calledDestinationNumber;
     PString              calledDestinationName;
     PString              calledDestinationURL;
