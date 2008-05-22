@@ -174,6 +174,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   , displayName(ep.GetDefaultDisplayName())
   , remotePartyName(token)
   , callEndReason(NumCallEndReasons)
+  , synchronousOnRelease(true)
   , q931Cause(0x100)
   , silenceDetector(NULL)
   , echoCanceler(NULL)
@@ -352,6 +353,11 @@ void OpalConnection::Release(CallEndReason reason)
 
     // Now set reason for the connection close
     SetCallEndReason(reason);
+
+    if (synchronousOnRelease) {
+      OnReleased();
+      return;
+    }
 
     // Add a reference for the thread we are about to start
     SafeReference();
