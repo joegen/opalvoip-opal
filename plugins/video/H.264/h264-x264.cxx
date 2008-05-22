@@ -699,15 +699,24 @@ static int merge_profile_level_h264(char ** result, const char * dest, const cha
   // c1: obbeys A.2.2 Main
   // c2: obbeys A.2.3, Extended
   // c3: if profile_idc profile = 66, 77, 88, and level =11 and c3: obbeys annexA for level 1b
+  std::string srcString = src;
+  std::string dstString = dest;
 
-  unsigned srcProfile     = (strtoul(src, NULL, 16) & 0xFF0000) >> 16;
-  unsigned srcConstraints = (strtoul(src, NULL, 16) & 0x00FF00) >> 8;
-  unsigned srcLevel       = (strtoul(src, NULL, 16) & 0x0000FF);
+  if (srcString.find_first_of("\"") != string::npos)
+    srcString = srcString.substr(1, srcString.length()-2);
 
-  unsigned dstProfile     = (strtoul(dest, NULL, 16) & 0xFF0000) >> 16;
-  unsigned dstConstraints = (strtoul(dest, NULL, 16) & 0x00FF00) >> 8;
-  unsigned dstLevel       = (strtoul(dest, NULL, 16) & 0x0000FF);
-  
+  if ( (dstString.find_first_of("\"") != string::npos))
+    dstString = dstString.substr(1, dstString.length()-2);
+
+
+  unsigned srcProfile     = (strtoul(srcString.c_str(), NULL, 16) & 0xFF0000) >> 16;
+  unsigned srcConstraints = (strtoul(srcString.c_str(), NULL, 16) & 0x00FF00) >> 8;
+  unsigned srcLevel       = (strtoul(srcString.c_str(), NULL, 16) & 0x0000FF);
+
+  unsigned dstProfile     = (strtoul(dstString.c_str(), NULL, 16) & 0xFF0000) >> 16;
+  unsigned dstConstraints = (strtoul(dstString.c_str(), NULL, 16) & 0x00FF00) >> 8;
+  unsigned dstLevel       = (strtoul(dstString.c_str(), NULL, 16) & 0x0000FF);
+
   switch (srcLevel) {
     case 10:
       srcLevel = 8;
@@ -746,6 +755,8 @@ static int merge_profile_level_h264(char ** result, const char * dest, const cha
   sprintf(buffer, "%x", (dstProfile<<16)|(dstConstraints<<8)|(dstLevel));
   
   *result = strdup(buffer);
+
+  TRACE(4, "H264\tCustom Merge ProfileLevel " << srcString << " and " << dstString << " to " << *result);
 
   return true;
 }
