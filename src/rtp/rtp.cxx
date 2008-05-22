@@ -157,7 +157,7 @@ int RTP_DataFrame::GetExtensionType() const
 void RTP_DataFrame::SetExtensionType(int type)
 {
   if (type < 0)
-    SetExtension(PFalse);
+    SetExtension(false);
   else {
     if (!GetExtension())
       SetExtensionSize(0);
@@ -178,11 +178,11 @@ PINDEX RTP_DataFrame::GetExtensionSize() const
 PBoolean RTP_DataFrame::SetExtensionSize(PINDEX sz)
 {
   if (!SetMinSize(MinHeaderSize + 4*GetContribSrcCount() + 4+4*sz + payloadSize))
-    return PFalse;
+    return false;
 
-  SetExtension(PTrue);
+  SetExtension(true);
   *(PUInt16b *)&theArray[MinHeaderSize + 4*GetContribSrcCount() + 2] = (WORD)sz;
-  return PTrue;
+  return true;
 }
 
 
@@ -344,7 +344,7 @@ PBoolean RTP_ControlFrame::ReadNextPacket()
 
   // see if another packet is feasible
   if (compoundOffset + 4 > GetSize())
-    return PFalse;
+    return false;
 
   // check if payload size for new packet is legal
   return compoundOffset + GetPayloadSize() + 4 <= GetSize();
@@ -355,7 +355,7 @@ PBoolean RTP_ControlFrame::StartNewPacket()
 {
   // allocate storage for new packet header
   if (!SetMinSize(compoundOffset + 4))
-    return PFalse;
+    return false;
 
   theArray[compoundOffset] = '\x80'; // Set version 2
   theArray[compoundOffset+1] = 0;    // Set payload type to illegal
@@ -366,7 +366,7 @@ PBoolean RTP_ControlFrame::StartNewPacket()
   payloadSize = 0;
   SetPayloadSize(payloadSize);
 
-  return PTrue;
+  return true;
 }
 
 void RTP_ControlFrame::EndPacket()
@@ -497,19 +497,19 @@ RTP_Session::RTP_Session(
   autoDeleteUserData = autoDelete;
   jitter = NULL;
 
-  ignoreOutOfOrderPackets = PTrue;
-  ignorePayloadTypeChanges = PTrue;
+  ignoreOutOfOrderPackets = true;
+  ignorePayloadTypeChanges = true;
   syncSourceOut = PRandom::Number();
 
   timeStampOffs = 0;
-  oobTimeStampBaseEstablished = PFalse;
+  oobTimeStampBaseEstablished = false;
   lastSentPacketTime = PTimer::Tick();
 
   syncSourceIn = 0;
   allowAnySyncSource = true;
   allowOneSyncSourceChange = false;
-  allowRemoteTransmitAddressChange = PFalse;
-  allowSequenceChange = PFalse;
+  allowRemoteTransmitAddressChange = false;
+  allowSequenceChange = false;
   txStatisticsInterval = 100;  // Number of data packets between tx reports
   rxStatisticsInterval = 100;  // Number of data packets between rx reports
   lastSentSequenceNumber = (WORD)PRandom::Number();
@@ -548,8 +548,8 @@ RTP_Session::RTP_Session(
 
   lastReceivedPayloadType = RTP_DataFrame::IllegalPayloadType;
 
-  closeOnBye = PFalse;
-  byeSent    = PFalse;
+  closeOnBye = false;
+  byeSent    = false;
 
   lastSentTimestamp = 0;  // should be calculated, but we'll settle for initialising it
 
@@ -590,7 +590,7 @@ void RTP_Session::SendBYE()
     if (byeSent)
       return;
 
-    byeSent = PTrue;
+    byeSent = true;
   }
 
   RTP_ControlFrame report;
@@ -686,7 +686,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
   else if (jitter != NULL)
     jitter->SetDelay(minJitterDelay, maxJitterDelay);
   else {
-    SetIgnoreOutOfOrderPackets(PFalse);
+    SetIgnoreOutOfOrderPackets(false);
     jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
     jitter->Resume(
 #if OPAL_RTP_AGGREGATE
@@ -710,7 +710,7 @@ unsigned RTP_Session::GetJitterTimeUnits() const
 
 PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
 {
-  return jitter != NULL ? jitter->ReadData(frame) : ReadData(frame, PTrue);
+  return jitter != NULL ? jitter->ReadData(frame) : ReadData(frame, true);
 }
 
 
@@ -788,7 +788,7 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendData(RTP_DataFrame & 
       frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
     }
     else {
-      oobTimeStampBaseEstablished = PTrue;
+      oobTimeStampBaseEstablished = true;
       timeStampOffs               = 0;
       oobTimeStampOutBase         = frame.GetTimestamp();
       oobTimeStampBase            = PTimer::Tick();
@@ -994,7 +994,7 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
     }
     else if (allowSequenceChange) {
       expectedSequenceNumber = (WORD) (sequenceNumber + 1);
-      allowSequenceChange = PFalse;
+      allowSequenceChange = false;
     }
     else if (sequenceNumber < expectedSequenceNumber) {
       PTRACE(2, "RTP\tSession " << sessionID << ", out of order packet, received "
@@ -1128,7 +1128,7 @@ PBoolean RTP_Session::InsertReportPacket(RTP_ControlFrame & report)
   interval -= third;
   reportTimer = interval;
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1137,12 +1137,12 @@ PBoolean RTP_Session::SendReport()
   PWaitAndSignal mutex(reportMutex);
 
   if (reportTimer.IsRunning())
-    return PTrue;
+    return true;
 
   // Have not got anything yet, do nothing
   if (packetsSent == 0 && packetsReceived == 0) {
     reportTimer = reportTimeInterval;
-    return PTrue;
+    return true;
   }
 
   RTP_ControlFrame report;
@@ -1454,7 +1454,7 @@ DWORD RTP_Session::GetPacketOverruns() const
 
 PBoolean RTP_Session::WriteOOBData(RTP_DataFrame &, bool)
 {
-  return PTrue;
+  return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1492,18 +1492,19 @@ RTP_UDP::RTP_UDP(
   PTRACE(4, "RTP_UDP\tSession " << sessionID << ", created with NAT flag set to " << remoteIsNAT);
   remoteDataPort = 0;
   remoteControlPort = 0;
-  shutdownRead = PFalse;
-  shutdownWrite = PFalse;
+  shutdownRead = false;
+  shutdownWrite = false;
   dataSocket = NULL;
   controlSocket = NULL;
-  appliedQOS = PFalse;
+  appliedQOS = false;
+  localHasNAT = false;
 }
 
 
 RTP_UDP::~RTP_UDP()
 {
-  Close(PTrue);
-  Close(PFalse);
+  Close(true);
+  Close(false);
 
   // We need to do this to make sure that the sockets are not
   // deleted before select decides there is no more data coming
@@ -1522,13 +1523,13 @@ void RTP_UDP::ApplyQOS(const PIPSocket::Address & addr)
     controlSocket->SetSendAddress(addr,GetRemoteControlPort());
   if (dataSocket != NULL)
     dataSocket->SetSendAddress(addr,GetRemoteDataPort());
-  appliedQOS = PTrue;
+  appliedQOS = true;
 }
 
 
 PBoolean RTP_UDP::ModifyQOS(RTP_QOS * rtpqos)
 {
-  PBoolean retval = PFalse;
+  PBoolean retval = false;
 
   if (rtpqos == NULL)
     return retval;
@@ -1539,7 +1540,7 @@ PBoolean RTP_UDP::ModifyQOS(RTP_QOS * rtpqos)
   if (dataSocket != NULL)
     retval &= dataSocket->ModifyQoSSpec(&(rtpqos->dataQoS));
 
-  appliedQOS = PFalse;
+  appliedQOS = false;
   return retval;
 }
 
@@ -1551,7 +1552,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
 {
   PWaitAndSignal mutex(dataMutex);
 
-  first = PTrue;
+  first = true;
   // save local address 
   localAddress = _localAddress;
 
@@ -1563,7 +1564,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
   dataSocket = NULL;
   controlSocket = NULL;
 
-  byeSent = PFalse;
+  byeSent = false;
 
   PQoS * dataQos = NULL;
   PQoS * ctrlQos = NULL;
@@ -1606,6 +1607,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
           // external address of the NATrouter, and hope the remote is tolerant
           // enough of things like non adjacent RTP/RTCP ports etc.
           bindingAddress = stun->GetInterfaceAddress();
+          localHasNAT = true;
           break;
 
         default :
@@ -1621,7 +1623,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
         dataSocket->Close();
         controlSocket->Close();
         if ((localDataPort > portMax) || (localDataPort > 0xfffd))
-          return PFalse; // If it ever gets to here the OS has some SERIOUS problems!
+          return false; // If it ever gets to here the OS has some SERIOUS problems!
         localDataPort    += 2;
         localControlPort += 2;
       }
@@ -1642,8 +1644,8 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
 #   endif
   }
 
-  shutdownRead = PFalse;
-  shutdownWrite = PFalse;
+  shutdownRead = false;
+  shutdownWrite = false;
 
   if (canonicalName.Find('@') == P_MAX_INDEX)
     canonicalName += '@' + GetLocalHostName();
@@ -1653,7 +1655,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
          << " ssrc=" << syncSourceOut);
   
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1662,9 +1664,9 @@ void RTP_UDP::Reopen(PBoolean reading)
   PWaitAndSignal mutex(dataMutex);
 
   if (reading)
-    shutdownRead = PFalse;
+    shutdownRead = false;
   else
-    shutdownWrite = PFalse;
+    shutdownWrite = false;
 }
 
 
@@ -1678,7 +1680,7 @@ void RTP_UDP::Close(PBoolean reading)
     if (!shutdownRead) {
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down read.");
       syncSourceIn = 0;
-      shutdownRead = PTrue;
+      shutdownRead = true;
       if (dataSocket != NULL && controlSocket != NULL) {
         PIPSocket::Address addr;
         controlSocket->GetLocalAddress(addr);
@@ -1690,7 +1692,7 @@ void RTP_UDP::Close(PBoolean reading)
   }
   else {
     PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down write.");
-    shutdownWrite = PTrue;
+    shutdownWrite = true;
   }
 }
 
@@ -1705,8 +1707,11 @@ PBoolean RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBo
 {
   if (remoteIsNAT) {
     PTRACE(2, "RTP_UDP\tSession " << sessionID << ", ignoring remote socket info as remote is behind NAT");
-    return PTrue;
+    return true;
   }
+
+  if (!PAssert(address.IsValid() && port != 0,PInvalidParameter))
+    return false;
 
   PTRACE(3, "RTP_UDP\tSession " << sessionID << ", SetRemoteSocketInfo: "
          << (isDataPort ? "data" : "control") << " channel, "
@@ -1715,13 +1720,13 @@ PBoolean RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBo
             "remote=" << remoteAddress << ':' << remoteDataPort << '-' << remoteControlPort);
 
   if (localAddress == address && remoteAddress == address && (isDataPort ? localDataPort : localControlPort) == port)
-    return PTrue;
+    return true;
   
   remoteAddress = address;
   
   allowOneSyncSourceChange = true;
-  allowRemoteTransmitAddressChange = PTrue;
-  allowSequenceChange = PTrue;
+  allowRemoteTransmitAddressChange = true;
+  allowSequenceChange = true;
 
   if (isDataPort) {
     remoteDataPort = port;
@@ -1736,8 +1741,16 @@ PBoolean RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBo
 
   if (!appliedQOS)
       ApplyQOS(remoteAddress);
-  
-  return remoteAddress != 0 && port != 0;
+
+  if (localHasNAT) {
+    // If have Port Restricted NAT on local host then send a datagram
+    // to remote to open up the port in the firewall for return data.
+    static const BYTE dummy[1] = { 0 };
+    WriteDataOrControlPDU(dummy, sizeof(dummy), true);
+    WriteDataOrControlPDU(dummy, sizeof(dummy), false);
+  }
+
+  return true;
 }
 
 
@@ -1755,20 +1768,20 @@ PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame, PBoolean loop)
       PWaitAndSignal mutex(dataMutex);
       if (shutdownRead) {
         PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
-        shutdownRead = PFalse;
-        return PFalse;
+        shutdownRead = false;
+        return false;
       }
     }
 
     switch (selectStatus) {
       case -2 :
         if (ReadControlPDU() == e_AbortTransport)
-          return PFalse;
+          return false;
         break;
 
       case -3 :
         if (ReadControlPDU() == e_AbortTransport)
-          return PFalse;
+          return false;
         // Then do -1 case
 
       case -1 :
@@ -1777,17 +1790,17 @@ PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame, PBoolean loop)
             if (!shutdownRead) {
               switch (OnReceiveData(frame)) {
                 case e_ProcessPacket :
-                  return PTrue;
+                  return true;
                 case e_IgnorePacket :
                   break;
                 case e_AbortTransport :
-                  return PFalse;
+                  return false;
               }
             }
           case e_IgnorePacket :
             break;
           case e_AbortTransport :
-            return PFalse;
+            return false;
         }
         break;
 
@@ -1795,27 +1808,27 @@ PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame, PBoolean loop)
         switch (OnReadTimeout(frame)) {
           case e_ProcessPacket :
             if (!shutdownRead)
-              return PTrue;
+              return true;
           case e_IgnorePacket :
             break;
           case e_AbortTransport :
-            return PFalse;
+            return false;
         }
         break;
 
       case PSocket::Interrupted:
         PTRACE(2, "RTP_UDP\tSession " << sessionID << ", Interrupted.");
-        return PFalse;
+        return false;
 
       default :
         PTRACE(1, "RTP_UDP\tSession " << sessionID << ", Select error: "
                 << PChannel::GetErrorText((PChannel::Errors)selectStatus));
-        return PFalse;
+        return false;
     }
   } while (loop);
 
   frame.SetSize(0);
-  return PTrue;
+  return true;
 }
 
 int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
@@ -1843,7 +1856,7 @@ int RTP_UDP::Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSo
           ++count;
           break;
         case 0:
-          first = PFalse;
+          first = false;
           break;
       }
     } while (first);
@@ -1885,7 +1898,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(BYTE * framePtr,
       remoteTransmitAddress = addr;
     else if (allowRemoteTransmitAddressChange && remoteAddress == addr) {
       remoteTransmitAddress = addr;
-      allowRemoteTransmitAddressChange = PFalse;
+      allowRemoteTransmitAddressChange = false;
     }
     else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange) {
       PTRACE(2, "RTP_UDP\tSession " << sessionID << ", "
@@ -2020,22 +2033,22 @@ PBoolean RTP_UDP::Internal_WriteData(RTP_DataFrame & frame)
     PWaitAndSignal mutex(dataMutex);
     if (shutdownWrite) {
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", write shutdown.");
-      shutdownWrite = PFalse;
-      return PFalse;
+      shutdownWrite = false;
+      return false;
     }
   }
 
   // Trying to send a PDU before we are set up!
   if (!remoteAddress.IsValid() || remoteDataPort == 0)
-    return PTrue;
+    return true;
 
   switch (OnSendData(frame)) {
     case e_ProcessPacket :
       break;
     case e_IgnorePacket :
-      return PTrue;
+      return true;
     case e_AbortTransport :
-      return PFalse;
+      return false;
   }
 
   return WriteDataPDU(frame);
@@ -2046,23 +2059,23 @@ PBoolean RTP_UDP::WriteControl(RTP_ControlFrame & frame)
 {
   // Trying to send a PDU before we are set up!
   if (!remoteAddress.IsValid() || remoteControlPort == 0 || controlSocket == NULL)
-    return PTrue;
+    return true;
 
   PINDEX len = frame.GetCompoundSize();
   switch (OnSendControl(frame, len)) {
     case e_ProcessPacket :
       break;
     case e_IgnorePacket :
-      return PTrue;
+      return true;
     case e_AbortTransport :
-      return PFalse;
+      return false;
   }
 
   return WriteDataOrControlPDU(frame.GetPointer(), len, false);
 }
 
 
-bool RTP_UDP::WriteDataOrControlPDU(BYTE * framePtr, PINDEX frameSize, bool toDataChannel)
+bool RTP_UDP::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSize, bool toDataChannel)
 {
   PUDPSocket & socket = *(toDataChannel ? dataSocket : controlSocket);
   WORD port = toDataChannel ? remoteDataPort : remoteControlPort;
