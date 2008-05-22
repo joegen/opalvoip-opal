@@ -48,6 +48,9 @@
 
 
 #define _CRT_SECURE_NO_DEPRECATE
+
+#include "plugin-config.h"
+
 #include "h263-1998.h"
 #include <math.h>
 #include "trace.h"
@@ -55,7 +58,7 @@
 #include "mpi.h"
 
 extern "C" {
-#include "libavcodec/avcodec.h"
+#include LIBAVCODEC_HEADER
 };
 
 static FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H263P);

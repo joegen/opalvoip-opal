@@ -23,12 +23,14 @@
 #ifndef __H263PFrame_H__
 #define __H263PFrame_H__ 1
 
+#include "plugin-config.h"
+
 #include <stdint.h>
 #include <vector>
 #include "rtpframe.h"
 
 extern "C" {
-#include "libavcodec/avcodec.h"
+#include LIBAVCODEC_HEADER
 };
 
 enum codecInFlags {

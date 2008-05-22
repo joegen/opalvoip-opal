@@ -52,8 +52,9 @@
 #define _CRT_NONSTDC_NO_DEPRECATE 1
 #define _CRT_SECURE_NO_WARNINGS 1
 
-#include <codec/opalplugin.h>
+#include "plugin-config.h"
 
+#include <codec/opalplugin.h>
 
 #include <stdlib.h>
 #if defined (_WIN32) || defined (_WIN32_WCE)
