@@ -4027,7 +4027,7 @@ BEGIN_EVENT_TABLE(CallDialog, wxDialog)
 END_EVENT_TABLE()
 
 CallDialog::CallDialog(MyManager * manager, bool hideHandset)
-  : m_UseHandset(true)
+  : m_UseHandset(manager->HasHandset())
 {
   wxXmlResource::Get()->LoadDialog(this, manager, "CallDialog");
 
@@ -4039,7 +4039,7 @@ CallDialog::CallDialog(MyManager * manager, bool hideHandset)
   if (hideHandset)
     useHandset->Hide();
   else
-    useHandset->Enable(manager->HasHandset());
+    useHandset->Enable(m_UseHandset);
 
   m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, "Address");
   m_AddressCtrl->SetValidator(wxGenericValidator(&m_Address));
