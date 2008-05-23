@@ -3948,7 +3948,7 @@ STDCCFLAGS=${STDCCFLAGS}
 
 
 
-
+X264_LINK_STATIC_FALSE='#'
 
 
 
@@ -7333,10 +7333,10 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
           else
-            { echo "$as_me:$LINENO: x264 static linking enabled" >&5
-echo "$as_me: x264 static linking enabled" >&6;}
+            { echo "$as_me:$LINENO: x264 static linking disabled" >&5
+echo "$as_me: x264 static linking disabled" >&6;}
           fi
-           if test x$X264_LINK_STATIC = xyes; then
+           if test x$X264_LINK_STATIC = x1; then
   X264_LINK_STATIC_TRUE=
   X264_LINK_STATIC_FALSE='#'
 else
@@ -7743,9 +7743,12 @@ if test -d fax/fax_spandsp -a -d fax/fax_spandsp/spandsp_util ; then
 
 fi
 
+echo "hello"
+
 ac_config_files="$ac_config_files Makefile"
 
 
+echo "hello"
 
 
 
@@ -8873,8 +8876,10 @@ if test "$no_create" != yes; then
   $ac_cs_success || { (exit 1); exit 1; }
 fi
 
+echo "hello"
 ac_config_headers="$ac_config_headers plugin-config.h"
 
+echo "hello"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
