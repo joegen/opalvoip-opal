@@ -128,7 +128,6 @@ AC_DEFUN([OPAL_LIBAVCODEC_HEADER],
 dnl     ########################
 dnl     x264
 dnl     ########################
-X264_LINK_STATIC_FALSE='#'
 AC_DEFUN([OPAL_X264_LINKAGE],
          [
           AC_ARG_ENABLE([x264-link-static],
@@ -143,7 +142,6 @@ AC_DEFUN([OPAL_X264_LINKAGE],
           else
             AC_MSG_NOTICE(x264 static linking disabled)
           fi
-          AM_CONDITIONAL([X264_LINK_STATIC], [test x$X264_LINK_STATIC = x1])
          ])
 
 
