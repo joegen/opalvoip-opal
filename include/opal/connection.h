@@ -669,9 +669,12 @@ class OpalConnection : public PSafeObject
 
     /**Indicate to remote endpoint we are connected.
 
-       The default behaviour is pure.
+       The default behaviour sets the phase to ConnectedPhase, sets the
+       connection start time and then checks if there is any media channels
+       opened and if so, moves on to the established phase, calling
+       OnEstablished().
       */
-    virtual PBoolean SetConnected() = 0;
+    virtual PBoolean SetConnected();
 
     /**A call back function whenever a connection is established.
        This indicates that a connection to an endpoint was established. This
@@ -1319,6 +1322,8 @@ class OpalConnection : public PSafeObject
     PDECLARE_NOTIFIER(OpalMediaCommand, OpalConnection, OnMediaCommand);
 
   protected:
+    void OnConnectedInternal();
+
 #if P_DTMF
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
 #endif
@@ -1329,9 +1334,11 @@ class OpalConnection : public PSafeObject
     OpalCall             & ownerCall;
     OpalEndPoint         & endpoint;
 
+  private:
     PMutex               phaseMutex;
     Phases               phase;
 
+  protected:
     PString              callToken;
     OpalGloballyUniqueID callIdentifier;
     PBoolean             originating;

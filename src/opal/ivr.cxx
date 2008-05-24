@@ -187,17 +187,10 @@ PBoolean OpalIVRConnection::SetUpConnection()
 
   PTRACE(3, "IVR\tSetUpConnection(" << remotePartyName << ')');
 
-  phase = AlertingPhase;
+  SetPhase(AlertingPhase);
   OnAlerting();
 
-  phase = ConnectedPhase;
-  connectedTime = PTime();
-  OnConnected();
-
-  if (phase != EstablishedPhase) {
-    SetPhase(EstablishedPhase);
-    OnEstablished();
-  }
+  OnConnectedInternal();
 
   StartMediaStreams();
 
@@ -327,7 +320,7 @@ PBoolean OpalIVRConnection::SetAlerting(const PString & calleeName, PBoolean)
   if (!LockReadWrite())
     return PFalse;
 
-  phase = AlertingPhase;
+  SetPhase(AlertingPhase);
   remotePartyName = calleeName;
   UnlockReadWrite();
 
@@ -343,8 +336,6 @@ PBoolean OpalIVRConnection::SetConnected()
   if (!safeLock.IsLocked())
     return PFalse;
 
-  phase = ConnectedPhase;
-
   if (!StartVXML()) {
     PTRACE(1, "IVR\tVXML session not loaded, aborting.");
     Release(EndedByLocalUser);
@@ -352,18 +343,15 @@ PBoolean OpalIVRConnection::SetConnected()
   }
 
   // if no media streams, try and start them
-  // if we have media streams, move to Established straight away
   if (mediaStreams.IsEmpty()) {
     ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty != NULL)
       ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
-  } else {
-    OnEstablished();
-    SetPhase(EstablishedPhase);
   }
 
-  return PTrue;
+  // if we have media streams, move to Established straight away
+  return OpalConnection::SetConnected();
 }
 
 

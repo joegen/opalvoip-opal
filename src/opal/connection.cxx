@@ -437,6 +437,40 @@ void OpalConnection::AnsweringCall(AnswerCallResponse /*response*/)
 {
 }
 
+
+PBoolean OpalConnection::SetConnected()
+{
+  PTRACE(3, "OpalCon\tSetConnected for " << *this);
+
+  if (GetPhase() < ConnectedPhase) {
+    SetPhase(ConnectedPhase);
+    connectedTime = PTime();
+  }
+
+  if (!mediaStreams.IsEmpty() && GetPhase() < EstablishedPhase) {
+    SetPhase(EstablishedPhase);
+    OnEstablished();
+  }
+
+  return true;
+}
+
+
+void OpalConnection::OnConnectedInternal()
+{
+  if (GetPhase() < ConnectedPhase) {
+    connectedTime = PTime();
+    SetPhase(ConnectedPhase);
+    OnConnected();
+  }
+
+  if (!mediaStreams.IsEmpty() && GetPhase() < EstablishedPhase) {
+    SetPhase(EstablishedPhase);
+    OnEstablished();
+  }
+}
+
+
 void OpalConnection::OnConnected()
 {
   endpoint.OnConnected(*this);

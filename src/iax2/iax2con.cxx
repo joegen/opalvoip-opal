@@ -90,7 +90,7 @@ iax2Processor(*new IAX2CallProcessor(ep))
   local_hold = PFalse;
   remote_hold = PFalse;
 
-  phase = SetUpPhase;
+  SetPhase(SetUpPhase);
 
   PTRACE(6, "IAX2Connection class has been initialised, and is ready to run");
 }
@@ -173,7 +173,7 @@ PBoolean IAX2Connection::SetAlerting(const PString & PTRACE_PARAM(calleeName), P
 
   PTRACE(3, "IAX2Con\tSetAlerting  from " << calleeName << " " << *this); 
 
-  if (phase == AlertingPhase)
+  if (GetPhase() == AlertingPhase)
     return PFalse;
 
   alertingTime = PTime();
@@ -191,30 +191,21 @@ PBoolean IAX2Connection::SetConnected()
   PTRACE(3, "IAX2Con\tSETCONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
 
-  PTRACE(3, "IAX2Con\tGet the iax2 code to mark us as connected\n");
-
-  // Set flag that we are up to CONNECT stage
-  connectedTime = PTime();
-  SetPhase(ConnectedPhase);
-  OnConnected();
 
   jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8,
 			endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
   jitterBuffer.Resume(NULL);
 
- // if no media streams, try and start them
-  // if we have media streams, move to Established straight away
+  // if no media streams, try and start them
   if (mediaStreams.IsEmpty()) {
     ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
-    PSafePtr<OpalConnection> otherParty = 
-      GetCall().GetOtherPartyConnection(*this);
-    if (otherParty != NULL) {
+    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
+    if (otherParty != NULL)
       ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
-    }
-    OnEstablished();
-    SetPhase(EstablishedPhase);
-  }  
-  return PTrue;
+  }
+
+  // Set Connected or Established phase if have media
+  return OpalConnection::SetConnected();
 }
 
 void IAX2Connection::SendDtmf(const PString & dtmf)
