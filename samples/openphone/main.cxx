@@ -1734,12 +1734,21 @@ void MyManager::StopRingSound()
 }
 
 
-PBoolean MyManager::OnIncomingConnection(OpalConnection & connection)
+PBoolean MyManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  if (connection.GetEndPoint().GetPrefixName() == "pots")
+  bool usingHandset = connection.GetEndPoint().GetPrefixName() == "pots";
+  if (usingHandset)
     LogWindow << "Line interface device \"" << connection.GetRemotePartyName() << "\" has gone off hook." << endl;
 
-  return OpalManager::OnIncomingConnection(connection);
+  if (!OpalManager::OnIncomingConnection(connection, options, stringOptions))
+    return false;
+
+  if (usingHandset) {
+    m_activeCall = &connection.GetCall();
+    SetState(CallingState);
+  }
+
+  return true;
 }
 
 

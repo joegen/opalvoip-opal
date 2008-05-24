@@ -633,7 +633,9 @@ class MyManager : public wxFrame, public OpalManager
   private:
     // OpalManager overrides
     virtual PBoolean OnIncomingConnection(
-      OpalConnection & connection
+      OpalConnection & connection,   ///<  Connection that is calling
+      unsigned options,              ///<  options for new connection (can't use default as overrides will fail)
+      OpalConnection::StringOptions * stringOptions
     );
     virtual void OnEstablishedCall(
       OpalCall & call   /// Call that was completed
