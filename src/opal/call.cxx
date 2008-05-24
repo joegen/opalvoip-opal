@@ -221,7 +221,8 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
 
   PSafePtr<OpalConnection> otherConnection;
   while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
-    if (otherConnection->SetConnected())
+    if (otherConnection->GetPhase() >= OpalConnection::ConnectedPhase ||
+        otherConnection->SetConnected())
       ok = true;
   }
 
@@ -564,7 +565,7 @@ void OpalCall::OnReleased(OpalConnection & connection)
     if (last != NULL)
       last->Release(connection.GetCallEndReason());
   }
-  if (connectionsActive.IsEmpty()) {
+  if (connectionsActive.IsEmpty() && manager.activeCalls.Contains(GetToken())) {
     OnCleared();
     manager.activeCalls.RemoveAt(GetToken());
   }
