@@ -911,7 +911,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
       PTRACE(2, "H225\tApplication not accepting calls");
       return PFalse;
     }
-    if ((phase == ReleasingPhase) || (phase == ReleasedPhase)) {
+    if (GetPhase() >= ReleasingPhase) {
       PTRACE(1, "H225\tApplication called ClearCall during OnIncomingCall");
       return PFalse;
     }
@@ -1262,7 +1262,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   if (connectionState == ShuttingDownConnection)
     return PFalse;
   connectionState = HasExecutedSignalConnect;
-  SetPhase(ConnectedPhase);
+  OnConnectedInternal();
 
   if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_connect)
     return PFalse;
@@ -1318,8 +1318,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
       channel->Start();
   }
 
-  connectedTime = PTime();
-  OnConnected();
+
   InternalEstablishedConnectionCheck();
 
   /* do not start h245 negotiation if it is disabled */
@@ -3428,7 +3427,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
   }
 #endif
   
-  switch (phase) {
+  switch (GetPhase()) {
     case ConnectedPhase :
       // Check if we have already got a transmitter running, select one if not
       if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, PFalse) == NULL)

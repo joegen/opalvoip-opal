@@ -737,7 +737,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, cons
   : OpalConnection(call, ep, _token, 0, _stringOptions), endpoint(ep), filename(_filename), receive(_receive)
 {
   PTRACE(3, "FAX\tCreated FAX connection with token '" << callToken << "'");
-  phase = SetUpPhase;
+  SetPhase(SetUpPhase);
 
   if (stringOptions != NULL) {
     forceFaxAudio = stringOptions->Contains("Force-Fax-Audio");
@@ -765,7 +765,7 @@ PBoolean OpalFaxConnection::SetUpConnection()
 {
   // Check if we are A-Party in this call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
-    phase = SetUpPhase;
+    SetPhase(SetUpPhase);
 
     if (!OnIncomingConnection(0, stringOptions)) {
       Release(EndedByCallerAbort);
@@ -782,17 +782,11 @@ PBoolean OpalFaxConnection::SetUpConnection()
   }
 
   PTRACE(3, "FAX\tSetUpConnection(" << remotePartyName << ')');
-  phase = AlertingPhase;
+  SetPhase(AlertingPhase);
   //endpoint.OnShowIncoming(*this);
   OnAlerting();
 
-  SetPhase(ConnectedPhase);
-  OnConnected();
-
-  if (!mediaStreams.IsEmpty()) {
-    phase = EstablishedPhase;
-    OnEstablished();
-  }
+  OnConnectedInternal();
 
   return PTrue;
 }
@@ -801,30 +795,9 @@ PBoolean OpalFaxConnection::SetUpConnection()
 PBoolean OpalFaxConnection::SetAlerting(const PString & calleeName, PBoolean)
 {
   PTRACE(3, "Fax\tSetAlerting(" << calleeName << ')');
-  phase = AlertingPhase;
+  SetPhase(AlertingPhase);
   remotePartyName = calleeName;
   //return endpoint.OnShowOutgoing(*this);
-  return PTrue;
-}
-
-
-PBoolean OpalFaxConnection::SetConnected()
-{
-  PTRACE(3, "Fax\tSetConnected()");
-
-  {
-    PSafeLockReadWrite safeLock(*this);
-    if (!safeLock.IsLocked())
-      return PFalse;
-
-    if (mediaStreams.IsEmpty())
-      return PTrue;
-
-    phase = EstablishedPhase;
-  }
-
-  OnEstablished();
-
   return PTrue;
 }
 
@@ -851,35 +824,10 @@ void OpalFaxConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
 
 void OpalFaxConnection::AcceptIncoming()
 {
-  if (!LockReadOnly())
-    return;
-
-  if (phase != AlertingPhase) {
-    UnlockReadOnly();
-    return;
+  if (LockReadWrite()) {
+    OnConnectedInternal();
+    UnlockReadWrite();
   }
-
-  LockReadWrite();
-  phase = ConnectedPhase;
-  UnlockReadWrite();
-  UnlockReadOnly();
-
-  OnConnected();
-
-  if (!LockReadOnly())
-    return;
-
-  if (mediaStreams.IsEmpty()) {
-    UnlockReadOnly();
-    return;
-  }
-
-  LockReadWrite();
-  phase = EstablishedPhase;
-  UnlockReadWrite();
-  UnlockReadOnly();
-
-  OnEstablished();
 }
 
 /////////////////////////////////////////////////////////////////////////////

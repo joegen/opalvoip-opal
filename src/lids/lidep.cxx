@@ -497,7 +497,7 @@ void OpalLineConnection::OnReleased()
   }
   line.Ring(0, NULL);
 
-  phase = ReleasedPhase;
+  SetPhase(ReleasedPhase);
 
   OpalConnection::OnReleased();
 }
@@ -522,7 +522,7 @@ PBoolean OpalLineConnection::SetAlerting(const PString & /*calleeName*/, PBoolea
     return false;
 
   // switch phase 
-  phase = AlertingPhase;
+  SetPhase(AlertingPhase);
   alertingTime = PTime();
 
   if (line.PlayTone(OpalLineInterfaceDevice::RingTone))
@@ -538,14 +538,9 @@ PBoolean OpalLineConnection::SetConnected()
 {
   PTRACE(3, "LID Con\tSetConnected " << *this);
 
-  if (GetPhase() >= ConnectedPhase)
-    return false;
-
-  // switch phase 
-  phase = ConnectedPhase;
-  connectedTime = PTime();
-
-  return line.StopTone() && line.SetConnected();
+  return line.StopTone() &&
+         line.SetConnected() &&
+         OpalConnection::SetConnected();
 }
 
 
@@ -653,7 +648,7 @@ void OpalLineConnection::Monitor(PBoolean offHook)
     PSafeLockReadWrite mutex(*this);
 
     wasOffHook = offHook;
-    PTRACE(3, "LID Con\tConnection " << callToken << " " << (offHook ? "off" : "on") << " hook: phase=" << phase);
+    PTRACE(3, "LID Con\tConnection " << callToken << " " << (offHook ? "off" : "on") << " hook: phase=" << GetPhase());
 
     if (!offHook) {
       Release(EndedByRemoteUser);
@@ -665,10 +660,8 @@ void OpalLineConnection::Monitor(PBoolean offHook)
       line.Ring(0, NULL);
 
       // If we are in alerting state then we are B-Party
-      if (phase == AlertingPhase) {
-        phase = ConnectedPhase;
-        OnConnected();
-      }
+      if (GetPhase() == AlertingPhase)
+        OnConnectedInternal();
       else {
         // Otherwise we are A-Party
         if (!OnIncomingConnection(0, NULL)) {
@@ -714,7 +707,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 {
   PTRACE(3, "LID Con\tHandling incoming call on " << *this);
 
-  phase = SetUpPhase;
+  SetPhase(SetUpPhase);
 
   if (!line.IsTerminal()) {
     // Count incoming rings
@@ -727,7 +720,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
         return;
       }
       PThread::Sleep(100);
-      if (phase >= ReleasingPhase)
+      if (GetPhase() >= ReleasingPhase)
         return;
     } while (count < answerRingCount);
 
@@ -765,7 +758,7 @@ PBoolean OpalLineConnection::SetUpConnection()
 {
   PTRACE(3, "LID Con\tSetUpConnection call on " << *this << " to \"" << remotePartyNumber << '"');
 
-  phase = SetUpPhase;
+  SetPhase(SetUpPhase);
   originating = true;
 
   if (line.IsTerminal()) {
@@ -773,7 +766,7 @@ PBoolean OpalLineConnection::SetUpConnection()
     if (partyA != this) {
       // Are B-Party, so set caller ID and move to alerting state
       line.SetCallerID(partyA->GetRemotePartyNumber() + "\t\t" + partyA->GetRemotePartyName());
-      phase = AlertingPhase;
+      SetPhase(AlertingPhase);
       OnAlerting();
     }
     line.Ring(1, NULL);
@@ -786,7 +779,7 @@ PBoolean OpalLineConnection::SetUpConnection()
 
       case OpalLineInterfaceDevice::RingTone :
         PTRACE(3, "LID Con\tGot ringback on " << line);
-        phase = AlertingPhase;
+        SetPhase(AlertingPhase);
         OnAlerting();
         break;
 
