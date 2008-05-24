@@ -316,12 +316,6 @@ class OpalPCSSConnection : public OpalConnection
       PBoolean withMedia                ///<  Open media with alerting
     );
 
-    /**Indicate to remote endpoint we are connected.
-
-       The default behaviour does nothing.
-      */
-    virtual PBoolean SetConnected();
-
     /**Get the data formats this connection is capable of operating.
        This provides a list of media data format names that an
        OpalMediaStream may be created in within this connection.

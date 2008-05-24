@@ -240,7 +240,7 @@ SIPConnection::~SIPConnection()
 
 void SIPConnection::OnReleased()
 {
-  PTRACE(3, "SIP\tOnReleased: " << *this << ", phase = " << phase);
+  PTRACE(3, "SIP\tOnReleased: " << *this << ", phase = " << GetPhase());
   
   // OpalConnection::Release sets the phase to Releasing in the SIP Handler 
   // thread
@@ -363,7 +363,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   
   PTRACE(3, "SIP\tSetAlerting");
 
-  if (phase != SetUpPhase) 
+  if (GetPhase() != SetUpPhase) 
     return PFalse;
 
   if (!withMedia) 
@@ -423,17 +423,8 @@ PBoolean SIPConnection::SetConnected()
   releaseMethod = ReleaseWithBYE;
   sessionTimer = 10000;
 
-  // switch phase 
-  SetPhase(ConnectedPhase);
-  connectedTime = PTime ();
-
-  // if media was previously set up, then move to Established
-  if (!mediaStreams.IsEmpty()) {
-    SetPhase(EstablishedPhase);
-    OnEstablished();
-  }
-  
-  return PTrue;
+  // switch phase and if media was previously set up, then move to Established
+  return OpalConnection::SetConnected();
 }
 
 
@@ -1156,7 +1147,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 
   // If we are releasing then I can safely ignore failed
   // transactions - otherwise I'll deadlock.
-  if (phase >= ReleasingPhase)
+  if (GetPhase() >= ReleasingPhase)
     return;
 
   {
@@ -1370,7 +1361,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       break;
   }
 
-  if (phase < ConnectedPhase) {
+  if (GetPhase() < ConnectedPhase) {
     // Final check to see if we have forked INVITEs still running, don't
     // release connection until all of them have failed.
     for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
@@ -1540,7 +1531,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
 void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 {
-  if (phase != EstablishedPhase) {
+  if (GetPhase() != EstablishedPhase) {
     PTRACE(2, "SIP\tRe-INVITE from " << request.GetURI() << " received before initial INVITE completed on " << *this);
     SIP_PDU response(request, SIP_PDU::Failure_NotAcceptableHere);
     SendPDU(response, request.GetViaAddress(endpoint));
@@ -1637,7 +1628,7 @@ PBoolean SIPConnection::OnOpenIncomingMediaChannels()
 
 void SIPConnection::AnsweringCall(AnswerCallResponse response)
 {
-  switch (phase) {
+  switch (GetPhase()) {
     case SetUpPhase:
     case AlertingPhase:
       switch (response) {
@@ -1695,7 +1686,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
     return;
   }
 
-  PTRACE(3, "SIP\tACK received: " << phase);
+  PTRACE(3, "SIP\tACK received: " << GetPhase());
 
   ackReceived = true;
   ackTimer.Stop(false); // Asynchornous stop to avoid deadlock
@@ -1704,12 +1695,12 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
   OnReceivedSDP(response);
 
   // If we receive an ACK in established phase, it is a re-INVITE
-  if (phase == EstablishedPhase) {
+  if (GetPhase() == EstablishedPhase) {
     StartMediaStreams();
     return;
   }
   
-  if (phase != ConnectedPhase)  
+  if (GetPhase() != ConnectedPhase)  
     return;
   
   SetPhase(EstablishedPhase);
@@ -1754,8 +1745,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
     referTransaction.SetNULL();
 
     // Release the connection
-    if (phase < ReleasingPhase) 
-    {
+    if (GetPhase() < ReleasingPhase) {
       releaseMethod = ReleaseWithBYE;
       Release(OpalConnection::EndedByCallForwarded);
     }
@@ -1805,7 +1795,7 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   SIP_PDU response(request, SIP_PDU::Successful_OK);
   SendPDU(response, request.GetViaAddress(endpoint));
   
-  if (phase >= ReleasingPhase) {
+  if (GetPhase() >= ReleasingPhase) {
     PTRACE(2, "SIP\tAlready released " << *this);
     return;
   }
@@ -1859,8 +1849,7 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & /*response*/)
 {
   PTRACE(3, "SIP\tReceived Ringing response");
 
-  if (phase < AlertingPhase)
-  {
+  if (GetPhase() < AlertingPhase) {
     SetPhase(AlertingPhase);
     OnAlerting();
   }
@@ -1873,8 +1862,7 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
   OnReceivedSDP(response);
 
-  if (phase < AlertingPhase)
-  {
+  if (GetPhase() < AlertingPhase) {
     SetPhase(AlertingPhase);
     OnAlerting();
   }
@@ -2001,18 +1989,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
       break;
   }
 
-  // Is an OK to our re-INVITE
-  if (phase == EstablishedPhase)
-    return;
-
-  connectedTime = PTime();
-  SetPhase(ConnectedPhase);
-  OnConnected();
-
-  if (!mediaStreams.IsEmpty() && phase < EstablishedPhase) {
-    phase = EstablishedPhase;
-    OnEstablished();
-  }
+  OnConnectedInternal();
 }
 
 

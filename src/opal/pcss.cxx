@@ -315,7 +315,7 @@ PBoolean OpalPCSSConnection::SetUpConnection()
 
   // Check if we are A-Party in thsi call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
-    phase = SetUpPhase;
+    SetPhase(SetUpPhase);
     if (!OnIncomingConnection(0, NULL)) {
       Release(EndedByCallerAbort);
       return PFalse;
@@ -331,7 +331,7 @@ PBoolean OpalPCSSConnection::SetUpConnection()
   }
 
   PTRACE(3, "PCSS\tSetUpConnection(" << remotePartyName << ')');
-  phase = AlertingPhase;
+  SetPhase(AlertingPhase);
   OnAlerting();
 
   return endpoint.OnShowIncoming(*this);
@@ -341,24 +341,9 @@ PBoolean OpalPCSSConnection::SetUpConnection()
 PBoolean OpalPCSSConnection::SetAlerting(const PString & calleeName, PBoolean)
 {
   PTRACE(3, "PCSS\tSetAlerting(" << calleeName << ')');
-  phase = AlertingPhase;
+  SetPhase(AlertingPhase);
   remotePartyName = calleeName;
   return endpoint.OnShowOutgoing(*this);
-}
-
-
-PBoolean OpalPCSSConnection::SetConnected()
-{
-  PTRACE(3, "PCSS\tSetConnected()");
-
-  if (mediaStreams.IsEmpty())
-    phase = ConnectedPhase;
-  else {
-    phase = EstablishedPhase;
-    OnEstablished();
-  }
-
-  return PTrue;
 }
 
 
@@ -456,35 +441,11 @@ PBoolean OpalPCSSConnection::SendUserInputString(const PString & value)
 
 void OpalPCSSConnection::AcceptIncoming()
 {
-  if (!LockReadOnly())
-    return;
-
-  if (phase != AlertingPhase) {
-    UnlockReadOnly();
-    return;
+  if (LockReadWrite()) {
+    OnConnectedInternal();
+    UnlockReadWrite();
   }
-
-  LockReadWrite();
-  phase = ConnectedPhase;
-  UnlockReadWrite();
-  UnlockReadOnly();
-
-  OnConnected();
-
-  if (!LockReadOnly())
-    return;
-
-  if (mediaStreams.IsEmpty()) {
-    UnlockReadOnly();
-    return;
-  }
-
-  LockReadWrite();
-  phase = EstablishedPhase;
-  UnlockReadWrite();
-  UnlockReadOnly();
-
-  OnEstablished();
 }
+
 
 /////////////////////////////////////////////////////////////////////////////
