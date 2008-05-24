@@ -1748,6 +1748,7 @@ PBoolean RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBo
     static const BYTE dummy[1] = { 0 };
     WriteDataOrControlPDU(dummy, sizeof(dummy), true);
     WriteDataOrControlPDU(dummy, sizeof(dummy), false);
+    PTRACE(2, "RTP_UDP\tSession " << sessionID << ", sending empty datagrams to open local Port Restricted NAT");
   }
 
   return true;
