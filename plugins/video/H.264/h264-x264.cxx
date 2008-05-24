@@ -372,6 +372,29 @@ static int free_codec_options ( const struct PluginCodec_Definition *, void *, c
   return 1;
 }
 
+static void profile_level_from_string  (std::string profileLevelString, unsigned & profile, unsigned & constraints, unsigned & level)
+{
+
+  if (profileLevelString.find_first_of("\"") != std::string::npos)
+    profileLevelString = profileLevelString.substr(1, profileLevelString.length()-2);
+
+  unsigned profileLevelInt = strtoul(profileLevelString.c_str(), NULL, 16);
+
+  if (profileLevelInt == 0) {
+#ifdef WITH_RFC_COMPLIANT_DEFAULTS
+    // Baseline, Level 1
+    profileLevelInt = 0x42C00A;
+#else
+    // Baseline, Level 3
+    profileLevelInt = 0x42C01E;
+#endif  
+  }
+
+  profile     = (profileLevelInt & 0xFF0000) >> 16;
+  constraints = (profileLevelInt & 0x00FF00) >> 8;
+  level       = (profileLevelInt & 0x0000FF);
+}
+
 static int valid_for_protocol (const struct PluginCodec_Definition * codec,
                                                   void *,
                                                   const char *,
@@ -503,9 +526,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
 
   for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
       if (STRCMPI(option[0], "CAP RFC3894 Profile Level") == 0) {
-        profile     = (strtoul(option[1]+1, NULL, 16) & 0xFF0000) >> 16;
-        constraints = (strtoul(option[1]+1, NULL, 16) & 0x00FF00) >> 8;
-        level       = (strtoul(option[1]+1, NULL, 16) & 0x0000FF);
+        profile_level_from_string(option[1], profile, constraints, level);
       }
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
         width = atoi(option[1]);
@@ -524,21 +545,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   width -= width % 16;
   height -= height % 16;
 
-  if ((profile==0) && (constraints == 0) && (level == 0)) {
-#ifdef WITH_RFC_COMPLIANT_DEFAULTS
-    // Baseline, Level 1
-    profile = 0x42;
-    constraints = 0xC0;
-    level = 0x0A;
-#else
-    // Baseline, Level 3
-    profile = 0x42;
-    constraints = 0xC0;
-    level = 0x1E;
-#endif  
-  }
-
-  if (!adjust_to_level (width, height, frameTime, targetBitrate,level))
+  if (!adjust_to_level (width, height, frameTime, targetBitrate, level))
     return 0;
 
   char ** options = (char **)calloc(9, sizeof(char *));
@@ -557,6 +564,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
 
   return 1;
 }
+
 
 static int to_customised_options(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
 {
@@ -608,9 +616,7 @@ static int encoder_set_options(
     unsigned targetBitrate = 64000;
     for (i = 0; options[i] != NULL; i += 2) {
       if (STRCMPI(options[i], "CAP RFC3894 Profile Level") == 0) {
-        profile     = (strtoul(options[i+1]+1, NULL, 16) & 0xFF0000) >> 16;
-        constraints = (strtoul(options[i+1]+1, NULL, 16) & 0x00FF00) >> 8;
-        level       = (strtoul(options[i+1]+1, NULL, 16) & 0x0000FF);
+        profile_level_from_string (options[i+1], profile, constraints, level);
       }
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
          targetBitrate = atoi(options[i+1]);
@@ -629,20 +635,6 @@ static int encoder_set_options(
 
     }
     TRACE(4, "H264\tCap\tProfile and Level: " << profile << ";" << constraints << ";" << level);
-
-    if ((profile==0) && (constraints == 0) && (level == 0)) {
-#ifdef WITH_RFC_COMPLIANT_DEFAULTS
-      // Baseline, Level 1
-      profile = 0x42;
-      constraints = 0xC0;
-      level = 0x0A;
-#else
-      // Baseline, Level 3
-      profile = 0x42;
-      constraints = 0xC0;
-      level = 0x1E;
-#endif  
-    }
 
     if (!adjust_bitrate_to_level (targetBitrate, level)) {
       context->Unlock();
@@ -693,29 +685,17 @@ static int decoder_get_output_data_size(const PluginCodec_Definition * codec, vo
 }
 
 /////////////////////////////////////////////////////////////////////////////
-static int merge_profile_level_h264(char ** result, const char * dest, const char * src)
+static int merge_profile_level_h264(char ** result, const char * dst, const char * src)
 {
-  // c0: obbeys A.2.1 Baseline
-  // c1: obbeys A.2.2 Main
-  // c2: obbeys A.2.3, Extended
+  // c0: obeys A.2.1 Baseline
+  // c1: obeys A.2.2 Main
+  // c2: obeys A.2.3, Extended
   // c3: if profile_idc profile = 66, 77, 88, and level =11 and c3: obbeys annexA for level 1b
-  std::string srcString = src;
-  std::string dstString = dest;
 
-  if (srcString.find_first_of("\"") != string::npos)
-    srcString = srcString.substr(1, srcString.length()-2);
-
-  if ( (dstString.find_first_of("\"") != string::npos))
-    dstString = dstString.substr(1, dstString.length()-2);
-
-
-  unsigned srcProfile     = (strtoul(srcString.c_str(), NULL, 16) & 0xFF0000) >> 16;
-  unsigned srcConstraints = (strtoul(srcString.c_str(), NULL, 16) & 0x00FF00) >> 8;
-  unsigned srcLevel       = (strtoul(srcString.c_str(), NULL, 16) & 0x0000FF);
-
-  unsigned dstProfile     = (strtoul(dstString.c_str(), NULL, 16) & 0xFF0000) >> 16;
-  unsigned dstConstraints = (strtoul(dstString.c_str(), NULL, 16) & 0x00FF00) >> 8;
-  unsigned dstLevel       = (strtoul(dstString.c_str(), NULL, 16) & 0x0000FF);
+  unsigned srcProfile, srcConstraints, srcLevel;
+  unsigned dstProfile, dstConstraints, dstLevel;
+  profile_level_from_string(src, srcProfile, srcConstraints, srcLevel);
+  profile_level_from_string(dst, dstProfile, dstConstraints, dstLevel);
 
   switch (srcLevel) {
     case 10:
@@ -756,7 +736,7 @@ static int merge_profile_level_h264(char ** result, const char * dest, const cha
   
   *result = strdup(buffer);
 
-  TRACE(4, "H264\tCustom Merge ProfileLevel " << srcString << " and " << dstString << " to " << *result);
+  TRACE(4, "H264\tCap\tCustom Merge ProfileLevel " << src << " and " << dst << " to " << *result);
 
   return true;
 }
