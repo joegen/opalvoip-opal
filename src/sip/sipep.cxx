@@ -594,7 +594,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   }
 
   // create and check transport
-  OpalTransport * newTransport = CreateTransport(transport.GetRemoteAddress(), transport.GetLastReceivedInterface());
+  OpalTransport * newTransport = CreateTransport(transport.GetRemoteAddress(), transport.GetInterface());
   if (newTransport == NULL) {
     PTRACE(1, "SIP\tFailed to create transport for SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
     SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
