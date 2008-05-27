@@ -269,25 +269,32 @@ PBoolean OpalInternalTransport::GetIpAndPort(const OpalTransportAddress &,
 
 static PBoolean SplitAddress(const PString & addr, PString & host, PString & service)
 {
+  PString saddr = addr;
   // skip transport identifier
   PINDEX dollar = addr.Find('$');
   if (dollar == P_MAX_INDEX)
     return PFalse;
   
-  PINDEX lastChar = addr.GetLength()-1;
-  if (addr[lastChar] == '+')
+  PINDEX percent = addr.FindLast('%');
+  if (percent == P_MAX_INDEX)
+    saddr = addr;
+  else
+    saddr = addr.Left(percent);
+
+  PINDEX lastChar = saddr.GetLength()-1;
+  if (saddr[lastChar] == '+')
     lastChar--;
 
-  PINDEX bracket = addr.FindLast(']');
+  PINDEX bracket = saddr.FindLast(']');
   if (bracket == P_MAX_INDEX)
     bracket = 0;
 
-  PINDEX colon = addr.Find(':', bracket);
+  PINDEX colon = saddr.Find(':', bracket);
   if (colon == P_MAX_INDEX)
-    host = addr(dollar+1, lastChar);
+    host = saddr(dollar+1, lastChar);
   else {
-    host = addr(dollar+1, colon-1);
-    service = addr(colon+1, lastChar);
+    host = saddr(dollar+1, colon-1);
+    service = saddr(colon+1, lastChar);
   }
 
   return PTrue;
@@ -801,6 +808,7 @@ OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & lo
   PString iface;
   if (localAddress.GetIpAddress(addr))
     iface = addr.AsString();
+
   return new OpalTransportUDP(endpoint, PBYTEArray(), listenerBundle, iface, PIPSocket::GetDefaultIpAny(), 0);
 }
 
