@@ -237,6 +237,8 @@ void OpalMessageBuffer::SetString(const char * * variable, const char * value)
 void OpalMessageBuffer::SetError(const char * errorText)
 {
   OpalMessage * message = (OpalMessage *)m_data;
+  PTRACE(2, "OpalC\tCommand " << message->m_type << " error: " << errorText);
+
   message->m_type = OpalIndCommandError;
   SetString(&message->m_param.m_commandError, errorText);
 }
@@ -261,6 +263,7 @@ OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
 
 PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connection)
 {
+  PTRACE(4, "OpalC\tOnShowIncoming " << connection);
   OpalMessageBuffer message(OpalIndIncomingCall);
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, connection.GetLocalPartyURL());
@@ -272,6 +275,7 @@ PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connectio
 
 PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
+  PTRACE(4, "OpalC\tOnShowOutgoing " << connection);
   const OpalCall & call = connection.GetCall();
   OpalMessageBuffer message(OpalIndAlerting);
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());

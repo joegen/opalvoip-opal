@@ -233,8 +233,10 @@ PSafePtr<OpalPCSSConnection> OpalPCSSEndPoint::GetPCSSConnectionWithLock(const P
 PBoolean OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 {
   PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token, PSafeReadOnly);
-  if (connection == NULL)
+  if (connection == NULL) {
+    PTRACE(2, "PCSS\tCould not find connection using token \"" << token << '"');
     return false;
+  }
 
   connection->AcceptIncoming();
   return true;
