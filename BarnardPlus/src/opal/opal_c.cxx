@@ -237,7 +237,7 @@ void OpalMessageBuffer::SetString(const char * * variable, const char * value)
 void OpalMessageBuffer::SetError(const char * errorText)
 {
   OpalMessage * message = (OpalMessage *)m_data;
-  PTRACE(2, "OpalC\tCommand " << message->m_type << " error: " << errorText);
+  PTRACE(2, "OpalC API\tCommand " << message->m_type << " error: " << errorText);
 
   message->m_type = OpalIndCommandError;
   SetString(&message->m_param.m_commandError, errorText);
@@ -263,11 +263,11 @@ OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
 
 PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connection)
 {
-  PTRACE(4, "OpalC\tOnShowIncoming " << connection);
   OpalMessageBuffer message(OpalIndIncomingCall);
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, connection.GetLocalPartyURL());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, connection.GetRemotePartyCallbackURL());
+  PTRACE(4, "OpalC API\tOnShowIncoming: token=\"" << message->m_param.m_incomingCall.m_callToken << '"');
   manager.PostMessage(message);
   return true;
 }
@@ -275,12 +275,12 @@ PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connectio
 
 PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
-  PTRACE(4, "OpalC\tOnShowOutgoing " << connection);
   const OpalCall & call = connection.GetCall();
   OpalMessageBuffer message(OpalIndAlerting);
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
+  PTRACE(4, "OpalC API\tOnShowOutgoing: token=\"" << message->m_param.m_callSetUp.m_callToken << '"');
   manager.PostMessage(message);
   return true;
 }
@@ -829,7 +829,8 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
     return;
   }
 
-  pcssEP->AcceptIncomingConnection(command.m_param.m_callToken);
+  if (!pcssEP->AcceptIncomingConnection(command.m_param.m_callToken))
+    response.SetError("No call by the token provided.");
 }
 
 
