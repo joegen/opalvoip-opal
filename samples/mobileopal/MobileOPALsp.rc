@@ -274,6 +274,7 @@ BEGIN
     IDS_REGISTERING         "Registering . . ."
     IDS_ANSWERING           "Answering . . ."
     IDS_HANGINGUP           "Hanging up . . ."
+    IDS_BUSY                "Incoming call while busy!"
 END
 
 #endif    // English (Australia) resources
