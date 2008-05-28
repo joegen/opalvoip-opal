@@ -301,17 +301,17 @@ typedef struct OpalParamGeneral {
                                            router which may be between the endpoint and the Internet. */
   const char * m_stunServer;          /**< The host name or IP address of the STUN server which may be
                                            used to determine the NAT router characteristics automatically. */
-  WORD         m_tcpPortBase;         /**< Base of range of ports to use for TCP communications. This may
+  unsigned     m_tcpPortBase;         /**< Base of range of ports to use for TCP communications. This may
                                            be required by some firewalls. */
-  WORD         m_tcpPortMax;          /**< Max of range of ports to use for TCP communications. This may
+  unsigned     m_tcpPortMax;          /**< Max of range of ports to use for TCP communications. This may
                                            be required by some firewalls. */
-  WORD         m_udpPortBase;         /**< Base of range of ports to use for UDP communications. This may
+  unsigned     m_udpPortBase;         /**< Base of range of ports to use for UDP communications. This may
                                            be required by some firewalls. */
-  WORD         m_udpPortMax;          /**< Max of range of ports to use for UDP communications. This may
+  unsigned     m_udpPortMax;          /**< Max of range of ports to use for UDP communications. This may
                                            be required by some firewalls. */
-  WORD         m_rtpPortBase;         /**< Base of range of ports to use for RTP/UDP communications. This may
+  unsigned     m_rtpPortBase;         /**< Base of range of ports to use for RTP/UDP communications. This may
                                            be required by some firewalls. */
-  WORD         m_rtpPortMax;          /**< Max of range of ports to use for RTP/UDP communications. This may
+  unsigned     m_rtpPortMax;          /**< Max of range of ports to use for RTP/UDP communications. This may
                                            be required by some firewalls. */
   unsigned     m_rtpTypeOfService;    /**< Value for the Type Of Service byte with UDP/IP packets which may
                                            be used by some routers for simple Quality of Service control. */
@@ -365,17 +365,17 @@ typedef struct OpalParamProtocol {
   const char * m_version;             /**< Version of the product within the vendor/product name space. This
                                            is used to identify the software which can be very useful for
                                            solving interoperability issues. e.g. "2.1.4". */
-  BYTE         m_t35CountryCode;      /**< T.35 country code for the name space in which the vendor or
+  unsigned     m_t35CountryCode;      /**< T.35 country code for the name space in which the vendor or
                                            manufacturer is identified. This is the part of the H.221
                                            equivalent of the m_vendor string above and  used to identify the
                                            software which can be very useful for solving interoperability
                                            issues. e.g. 9 is for Australia. */
-  BYTE         m_t35Extension;        /**< T.35 country extension code for the name space in which the vendor or
+  unsigned     m_t35Extension;        /**< T.35 country extension code for the name space in which the vendor or
                                            manufacturer is identified. This is the part of the H.221
                                            equivalent of the m_vendor string above and  used to identify the
                                            software which can be very useful for solving interoperability
                                            issues. Very rarely used. */
-  WORD         m_manufacturerCode;    /**< Manuacturer code for the name space in which the vendor or
+  unsigned     m_manufacturerCode;    /**< Manuacturer code for the name space in which the vendor or
                                            manufacturer is identified. This is the part of the H.221
                                            equivalent of the m_vendor string above and  used to identify the
                                            software which can be very useful for solving interoperability
