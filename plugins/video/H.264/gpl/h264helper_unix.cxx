@@ -26,6 +26,8 @@
 #include <sys/stat.h>
 #include <fstream>
 #include "trace.h"
+#include <stdlib.h> 
+
 #ifndef X264_LINK_STATIC
 #include "x264loader_unix.h"
 #endif

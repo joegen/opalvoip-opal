@@ -31,6 +31,7 @@
 #include "trace.h"
 #include "rtpframe.h"
 #include "h264pipe_unix.h"
+#include <string.h>
 
 #define HAVE_MKFIFO 1
 #define GPL_PROCESS_FILENAME "ptlib/codecs/video/h264_video_pwplugin_helper"
