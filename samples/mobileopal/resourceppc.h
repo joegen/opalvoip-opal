@@ -52,6 +52,7 @@
 #define IDS_REGISTERING                 10019
 #define IDS_ANSWERING                   10020
 #define IDS_HANGINGUP                   10021
+#define IDS_BUSY                        10022
 #define IDM_OPTIONS_GENERAL             32776
 #define IDM_OPTIONS_H323                32777
 #define IDM_OPTIONS_SIP                 32778
