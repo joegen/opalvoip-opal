@@ -184,7 +184,7 @@ void CMobileOpalDlg::InitialiseOPAL()
   // Start up and initialise OPAL
 
   if (m_opal == NULL) {
-    m_opal = OpalInitialise(&m_opalVersion, "pc h323 sip TraceLevel=3 TraceFile=\\Trace.log");
+    m_opal = OpalInitialise(&m_opalVersion, "pc h323 sip TraceLevel=4 TraceFile=\\Trace.log");
     if (m_opal == NULL) {
       ErrorBox(IDS_INIT_FAIL);
       EndDialog(IDCANCEL);
@@ -290,9 +290,17 @@ void CMobileOpalDlg::ErrorBox(UINT strId)
 }
 
 
-void CMobileOpalDlg::SetStatusText(UINT ids)
+void CMobileOpalDlg::SetStatusText(UINT ids, const char * str)
 {
-  CString text(MAKEINTRESOURCE(ids));
+  CString text;
+  if (str != NULL && str[0] != '\0')
+    text = str;
+  else {
+    if (ids == 0)
+      return;
+    text.LoadString(ids);
+  }
+
   m_ctrlStatus.SetWindowText(text);
   m_ctrlStatus.UpdateWindow();
 }
@@ -332,13 +340,7 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
     if (message != NULL) {
       switch (message->m_type) {
         case OpalIndRegistration :
-          if (message->m_param.m_registrationStatus.m_error == NULL ||
-              message->m_param.m_registrationStatus.m_error[0] == '\0')
-            SetStatusText(IDS_REGISTERED);
-          else {
-            CString text(message->m_param.m_registrationStatus.m_error);
-            m_ctrlStatus.SetWindowText(text);
-          }
+          SetStatusText(IDS_REGISTERED, message->m_param.m_registrationStatus.m_error);
           break;
 
         case OpalIndIncomingCall :
@@ -354,10 +356,11 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
             OpalMessage command;
             memset(&command, 0, sizeof(command));
             command.m_type = OpalCmdClearCall;
-            command.m_param.m_callToken = m_incomingCallToken;
+            command.m_param.m_callToken = message->m_param.m_incomingCall.m_callToken;
             OpalMessage * response = OpalSendMessage(m_opal, &command);
             if (response != NULL)
               OpalFreeMessage(response);
+            SetStatusText(IDS_BUSY);
           }
           break;
 
@@ -370,23 +373,19 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
           break;
 
         case OpalIndUserInput :
-          if (message->m_param.m_userInput.m_userInput != NULL) {
-            CString text(message->m_param.m_callCleared.m_reason);
-            m_ctrlStatus.SetWindowText(text);
-          }
+          SetStatusText(0, message->m_param.m_userInput.m_userInput);
           break;
 
         case OpalIndCallCleared :
-          SetCallButton(true, IDS_CALL);
-          m_ctrlAddress.EnableWindow(true);
-          m_incomingCallToken.Empty();
-          m_currentCallToken.Empty();
+          if (m_currentCallToken  == message->m_param.m_callCleared.m_callToken ||
+              m_incomingCallToken == message->m_param.m_callCleared.m_callToken) {
+            m_incomingCallToken.Empty();
+            m_currentCallToken.Empty();
 
-          if (message->m_param.m_callCleared.m_reason == NULL)
-            SetStatusText(IDS_READY);
-          else {
-            CString text(message->m_param.m_callCleared.m_reason);
-            m_ctrlStatus.SetWindowText(text);
+            SetCallButton(true, IDS_CALL);
+            m_ctrlAddress.EnableWindow(true);
+
+            SetStatusText(IDS_READY, message->m_param.m_callCleared.m_reason);
           }
       }
       OpalFreeMessage(message);

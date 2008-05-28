@@ -70,6 +70,7 @@ class OpalMessageBuffer
   private:
     size_t m_size;
     char * m_data;
+    std::vector<size_t> m_strPtrOffset;
 };
 
 #define SET_MESSAGE_STRING(msg, member, str) (msg).SetString(&(msg)->member, str)
@@ -216,13 +217,21 @@ OpalMessageBuffer::~OpalMessageBuffer()
 
 void OpalMessageBuffer::SetString(const char * * variable, const char * value)
 {
+  PAssert((char *)variable >= m_data && (char *)variable < m_data+m_size, PInvalidParameter);
+
   size_t length = strlen(value)+1;
 
   char * newData = (char *)realloc(m_data, m_size + length);
   if (PAssertNULL(newData) != m_data) {
-    // Memory has moved, this probably invalidates "variable" is now invalid
-    if ((void *)variable >= m_data && (void *)variable < m_data+m_size)
-      variable = (const char **)(newData + ((char *)variable - m_data));
+    // Memory has moved, this invalidates pointer variables so recalculate them
+    int delta = newData - m_data;
+    char * endData = m_data + m_size;
+    for (size_t i = 0; i < m_strPtrOffset.size(); ++i) {
+      const char ** ptr = (const char **)(newData + m_strPtrOffset[i]);
+      if (*ptr >= m_data && *ptr < endData)
+        *ptr += delta;
+    }
+    variable += delta/sizeof(char *);
     m_data = newData;
   }
 
@@ -231,6 +240,8 @@ void OpalMessageBuffer::SetString(const char * * variable, const char * value)
   m_size += length;
 
   *variable = stringData;
+
+  m_strPtrOffset.push_back((char *)variable - m_data);
 }
 
 
@@ -240,6 +251,7 @@ void OpalMessageBuffer::SetError(const char * errorText)
   PTRACE(2, "OpalC API\tCommand " << message->m_type << " error: " << errorText);
 
   message->m_type = OpalIndCommandError;
+  m_strPtrOffset.clear();
   SetString(&message->m_param.m_commandError, errorText);
 }
 
@@ -267,7 +279,10 @@ PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connectio
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, connection.GetLocalPartyURL());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, connection.GetRemotePartyCallbackURL());
-  PTRACE(4, "OpalC API\tOnShowIncoming: token=\"" << message->m_param.m_incomingCall.m_callToken << '"');
+  PTRACE(4, "OpalC API\tOnShowIncoming:"
+            " token=\"" << message->m_param.m_incomingCall.m_callToken << "\""
+            " local=\"" << message->m_param.m_incomingCall.m_localAddress << "\""
+            " remote=\""<< message->m_param.m_incomingCall.m_remoteAddress << '"');
   manager.PostMessage(message);
   return true;
 }
@@ -280,7 +295,10 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
-  PTRACE(4, "OpalC API\tOnShowOutgoing: token=\"" << message->m_param.m_callSetUp.m_callToken << '"');
+  PTRACE(4, "OpalC API\tOnShowOutgoing:"
+            " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
+            " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
+            " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
   manager.PostMessage(message);
   return true;
 }
@@ -645,9 +663,9 @@ void FillOpalProductInfo(const OpalMessage & command, OpalMessageBuffer & respon
     info.version = command.m_param.m_protocol.m_version;
 
   if (command.m_param.m_protocol.m_t35CountryCode != 0 && command.m_param.m_protocol.m_manufacturerCode != 0) {
-    info.t35CountryCode   = command.m_param.m_protocol.m_t35CountryCode;
-    info.t35Extension     = command.m_param.m_protocol.m_t35Extension;
-    info.manufacturerCode = command.m_param.m_protocol.m_manufacturerCode;
+    info.t35CountryCode   = (BYTE)command.m_param.m_protocol.m_t35CountryCode;
+    info.t35Extension     = (BYTE)command.m_param.m_protocol.m_t35Extension;
+    info.manufacturerCode = (WORD)command.m_param.m_protocol.m_manufacturerCode;
   }
 }
 
@@ -936,6 +954,10 @@ void OpalManager_C::OnEstablishedCall(OpalCall & call)
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
+  PTRACE(4, "OpalC API\tOnEstablishedCall:"
+            " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
+            " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
+            " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
   PostMessage(message);
 }
 
@@ -946,6 +968,9 @@ void OpalManager_C::OnUserInputString(OpalConnection & connection, const PString
   SET_MESSAGE_STRING(message, m_param.m_userInput.m_callToken, connection.GetCall().GetToken());
   SET_MESSAGE_STRING(message, m_param.m_userInput.m_userInput, value);
   message->m_param.m_userInput.m_duration = 0;
+  PTRACE(4, "OpalC API\tOnUserInputString:"
+            " token=\"" << message->m_param.m_userInput.m_callToken << "\""
+            " input=\"" << message->m_param.m_userInput.m_userInput << '"');
   PostMessage(message);
 
   OpalManager::OnUserInputString(connection, value);
@@ -962,6 +987,9 @@ void OpalManager_C::OnUserInputTone(OpalConnection & connection, char tone, int 
   SET_MESSAGE_STRING(message, m_param.m_userInput.m_callToken, connection.GetCall().GetToken());
   SET_MESSAGE_STRING(message, m_param.m_userInput.m_userInput, input);
   message->m_param.m_userInput.m_duration = duration;
+  PTRACE(4, "OpalC API\tOnUserInputTone:"
+            " token=\"" << message->m_param.m_userInput.m_callToken << "\""
+            " input=\"" << message->m_param.m_userInput.m_userInput << '"');
   PostMessage(message);
 
   OpalManager::OnUserInputTone(connection, tone, duration);
@@ -1018,6 +1046,9 @@ void OpalManager_C::OnClearedCall(OpalCall & call)
     default :
       SET_MESSAGE_STRING(message, m_param.m_callCleared.m_reason, "Call completed");
   }
+  PTRACE(4, "OpalC API\tOnClearedCall:"
+            " token=\""  << message->m_param.m_callCleared.m_callToken << "\""
+            " reason=\"" << message->m_param.m_callCleared.m_reason << '"');
   PostMessage(message);
 
   OpalManager::OnClearedCall(call);
