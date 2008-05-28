@@ -21,6 +21,7 @@
 #include "x264loader_unix.h"
 #include "trace.h"
 #include <dlfcn.h>
+#include <string.h>
 
 X264Library::X264Library()
 {

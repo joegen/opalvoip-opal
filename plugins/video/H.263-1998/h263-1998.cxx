@@ -54,6 +54,7 @@
 #include "h263-1998.h"
 #include <math.h>
 #include "trace.h"
+#include <string.h>
 #include "dyna.h"
 #include "mpi.h"
 

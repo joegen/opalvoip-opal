@@ -32,6 +32,8 @@
 #include "mpi.h"
 #include <math.h>
 #include <iostream>
+#include <stdlib.h>
+
 MPIList::MPIList()
 {
   desiredWidth = 176;
