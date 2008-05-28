@@ -66,7 +66,7 @@ protected:
 
   void InitialiseOPAL();
   void ErrorBox(UINT strId);
-  void SetStatusText(UINT ids);
+  void SetStatusText(UINT ids, const char * str = NULL);
   void SetCallButton(bool enabled, UINT strId = 0);
 
 public:
