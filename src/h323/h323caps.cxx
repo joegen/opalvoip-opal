@@ -2400,15 +2400,15 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
 
     if (checkExact) {
       H323Capability * compare = (H323Capability *)capability.Clone();
-      if (!compare->OnReceivedPDU(dataType, PFalse)) {
-        delete compare;
-        PTRACE(3, "H323\tOnReceived failed");
-        return &capability;
+      if (compare->OnReceivedPDU(dataType, PFalse)) {
+        if (*compare == capability) {
+          delete compare;
+          return &capability;
+        }
+        PTRACE(3, "H323\tCapability compare failed");
       }
-      if (*compare == capability) {
-        delete compare;
-        PTRACE(3, "H323\tCompare failed");
-        return &capability;
+      else {
+        PTRACE(3, "H323\tOnReceived failed");
       }
       delete compare;
     }
