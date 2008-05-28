@@ -269,32 +269,29 @@ PBoolean OpalInternalTransport::GetIpAndPort(const OpalTransportAddress &,
 
 static PBoolean SplitAddress(const PString & addr, PString & host, PString & service)
 {
-  PString saddr = addr;
   // skip transport identifier
   PINDEX dollar = addr.Find('$');
   if (dollar == P_MAX_INDEX)
     return PFalse;
   
-  PINDEX percent = addr.FindLast('%');
-  if (percent == P_MAX_INDEX)
-    saddr = addr;
-  else
-    saddr = addr.Left(percent);
-
-  PINDEX lastChar = saddr.GetLength()-1;
-  if (saddr[lastChar] == '+')
+  PINDEX lastChar = addr.GetLength()-1;
+  if (addr[lastChar] == '+')
     lastChar--;
 
-  PINDEX bracket = saddr.FindLast(']');
+  PINDEX percent = addr.FindLast('%');
+  if (percent != P_MAX_INDEX)
+    lastChar = percent-1;
+    
+  PINDEX bracket = addr.FindLast(']', lastChar);
   if (bracket == P_MAX_INDEX)
     bracket = 0;
 
-  PINDEX colon = saddr.Find(':', bracket);
-  if (colon == P_MAX_INDEX)
-    host = saddr(dollar+1, lastChar);
+  PINDEX colon = addr.Find(':', bracket);
+  if (colon >= lastChar)
+    host = addr(dollar+1, lastChar);
   else {
-    host = saddr(dollar+1, colon-1);
-    service = saddr(colon+1, lastChar);
+    host = addr(dollar+1, colon-1);
+    service = addr(colon+1, lastChar);
   }
 
   return PTrue;
