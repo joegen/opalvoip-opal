@@ -27,6 +27,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include <string.h>
 #include "rtpframe.h"
 
 extern "C" {
