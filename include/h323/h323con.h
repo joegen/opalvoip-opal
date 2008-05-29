@@ -501,6 +501,8 @@ class H323Connection : public OpalRTPConnection
       const PString & remoteParty   ///<  Remote party to transfer the existing call to
     );
 
+#if OPAL_H450
+
     /**Put the current connection on hold, suspending all media streams.
      * Simply calls HoldCall() which is kept for backward compatibility.
      */
@@ -516,8 +518,6 @@ class H323Connection : public OpalRTPConnection
      * Simply calls IsCallOnHold() which is kept for backward compatibility.
      */
     virtual PBoolean IsConnectionOnHold();
-
-#if OPAL_H450
 
     /**Initiate the transfer of an existing call (connection) to a new remote party
        using H.450.2.  This sends a Call Transfer Initiate Invoke message from the
