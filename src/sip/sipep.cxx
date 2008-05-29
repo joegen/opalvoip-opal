@@ -526,8 +526,8 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
 
         default :
           // Failure for a SUBSCRIBE/REGISTER/PUBLISH/MESSAGE 
-    if (handler != NULL)
-      handler->OnFailed(response.GetStatusCode());
+          if (handler != NULL)
+            handler->OnFailed(response.GetStatusCode());
           break;
       }
   }
@@ -922,7 +922,7 @@ PBoolean SIPEndPoint::Unsubscribe(SIPSubscribe::SubscribeType & type,
 
 
 PBoolean SIPEndPoint::Message (const PString & to, 
-                           const PString & body)
+                               const PString & body)
 {
   // Create the SIPHandler structure
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_MESSAGE, PSafeReadOnly);
