@@ -874,8 +874,8 @@ H263EncoderContext::H263EncoderContext()
 
   // set some reasonable values for quality as default
   videoQuality = 10; 
-  videoQMin = 4;
-  videoQMax = 24;
+  videoQMin = 2;
+  videoQMax = 31;
   frameNum = 0;
   bitRate = 256000;
   frameRate = 15;
@@ -917,14 +917,18 @@ bool H263EncoderContext::OpenCodec()
   avpicture->quality = (float)videoQuality;
 
   avcontext->bit_rate = (bitRate * 3) >> 2; // average bit rate
-  avcontext->bit_rate_tolerance = bitRate << 3;
-  avcontext->rc_min_rate = 0; // minimum bitrate
-  avcontext->rc_max_rate = bitRate; // maximum bitrate
+  avcontext->bit_rate_tolerance = bitRate >> 1;
+  avcontext->rc_min_rate = 0;               // minimum bitrate
+  avcontext->rc_max_rate = bitRate;         // maximum bitrate
   avcontext->mb_qmin = avcontext->qmin = videoQMin;
   avcontext->mb_qmax = avcontext->qmax = videoQMax;
-  avcontext->max_qdiff = 3; // max q difference between frames
   avcontext->rc_qsquish = 0; // limit q by clipping
-  avcontext->rc_eq = (char*) "tex^qComp"; // rate control equation
+
+  //avcontext->rc_eq = (char*) "tex^qComp"; // rate control equation
+  avcontext->rc_eq = (char*) "1";       // rate control equation
+  avcontext->rc_buffer_size = bitRate * 64;
+
+  avcontext->max_qdiff = 3; // max q difference between frames
   avcontext->qcompress = 0.5; // qscale factor between easy & hard scenes (0.0-1.0)
   avcontext->i_quant_factor = (float)-0.6; // qscale factor between p and i frames
   avcontext->i_quant_offset = (float)0.0; // qscale offset between p and i frames
@@ -937,10 +941,10 @@ bool H263EncoderContext::OpenCodec()
   avcontext->me_method = ME_EPZS;
   avcontext->me_subpel_quality = 8;
 
-  avcontext->frame_rate_base = 1;
-  avcontext->frame_rate = frameRate;
+  //avcontext->frame_rate_base = 1;
+  //avcontext->frame_rate = frameRate;
 
-  avcontext->gop_size = 64;
+  avcontext->gop_size = 125;
 
   avcontext->flags &= ~CODEC_FLAG_H263P_UMV;
   avcontext->flags &= ~CODEC_FLAG_4MV;
@@ -1089,6 +1093,7 @@ int H263EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE *
   avpicture->data[0] = payload;
   avpicture->data[1] = avpicture->data[0] + size;
   avpicture->data[2] = avpicture->data[1] + (size / 4);
+  avpicture->pict_type = (flags && PluginCodec_CoderForceIFrame) ? FF_I_TYPE : 0;
 
   FFMPEGLibraryInstance.AvcodecEncodeVideo(avcontext, encFrameBuffer, encFrameLen, avpicture);
   frameNum++; // increment the number of frames encoded
@@ -1122,15 +1127,15 @@ static int encoder_set_options(const PluginCodec_Definition *,
 
   // get the "frame width" media format parameter to use as a hint for the encoder to start off
   for (const char * const * option = (const char * const *)parm; *option != NULL; option += 2) {
-    if (STRCMPI(option[0], "Frame Width") == 0)
+    if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
       context->frameWidth = atoi(option[1]);
-    if (STRCMPI(option[0], "Frame Height") == 0)
+    if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
       context->frameHeight = atoi(option[1]);
     if (STRCMPI(option[0], "Encoding Quality") == 0) 
       context->videoQuality = MIN(context->videoQMax, MAX(atoi(option[1]), context->videoQMin));
-    if (STRCMPI(option[0], "Target Bit Rate") == 0)
+    if (STRCMPI(option[0], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
       context->bitRate = atoi(option[1]);
-	  if (STRCMPI(option[0], "Frame Time") == 0)
+	  if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
 		  context->frameRate = 90000/atoi(option[1]);
     if (STRCMPI(option[0], "set_min_quality") == 0) 
       context->videoQMin = atoi(option[1]);
@@ -1445,17 +1450,134 @@ static char * num2str(int num)
   return strdup(buf);
 }
 
+#define PMAX(a,b) ((a)>=(b)?(a):(b))
+#define PMIN(a,b) ((a)<=(b)?(a):(b))
 
-static int ClampSize(int pixels, bool byWidth)
-{
-  for (int i = 0; i < 5; i++) {
-    int step = byWidth ? StandardVideoSizes[i].width : StandardVideoSizes[i].height;
-    if (pixels <= step)
-      return step;
+static void FindBoundingBox(const char * const * * parm, 
+                                             int * mpi,
+                                             int & minWidth,
+                                             int & minHeight,
+                                             int & maxWidth,
+                                             int & maxHeight,
+                                             int & frameTime,
+                                             int & bitRate)
+{ 
+  // initialise the MPI values to disabled
+  int i;
+  for (i = 0; i < 5; i++)
+    mpi[i] = PLUGINCODEC_MPI_DISABLED;
+
+  // following values will be set while scanning for options
+  minWidth      = INT_MAX;
+  minHeight     = INT_MAX;
+  maxWidth      = 0;
+  maxHeight     = 0;
+  int rxMinWidth    = QCIF_WIDTH;
+  int rxMinHeight   = QCIF_HEIGHT;
+  int rxMaxWidth    = QCIF_WIDTH;
+  int rxMaxHeight   = QCIF_HEIGHT;
+  int frameRate     = 10;      // 10 fps
+  int origFrameTime = 900;     // 10 fps in video RTP timestamps
+  int maxBR = 0;
+  int maxBitRate = 0;
+  int targetBitRate = 0;
+
+  // extract the MPI values set in the custom options, and find the min/max of them
+  frameTime = 0;
+
+  for (const char * const * option = *parm; *option != NULL; option += 2) {
+    if (STRCMPI(option[0], "MaxBR") == 0)
+      maxBR = atoi(option[1]) * 100;
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_BIT_RATE) == 0)
+      maxBitRate = atoi(option[1]);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
+      targetBitRate = atoi(option[1]);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH) == 0)
+      rxMinWidth  = atoi(option[1]);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT) == 0)
+      rxMinHeight = atoi(option[1]);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH) == 0)
+      rxMaxWidth  = atoi(option[1]);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT) == 0)
+      rxMaxHeight = atoi(option[1]);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
+      origFrameTime = atoi(option[1]);
+    else {
+      for (i = 0; i < 5; i++) {
+        if (STRCMPI(option[0], StandardVideoSizes[i].optionName) == 0) {
+          mpi[i] = atoi(option[1]);
+          if (mpi[i] != PLUGINCODEC_MPI_DISABLED) {
+            int thisTime = 3003*mpi[i];
+            if (minWidth > StandardVideoSizes[i].width)
+              minWidth = StandardVideoSizes[i].width;
+            if (minHeight > StandardVideoSizes[i].height)
+              minHeight = StandardVideoSizes[i].height;
+            if (maxWidth < StandardVideoSizes[i].width)
+              maxWidth = StandardVideoSizes[i].width;
+            if (maxHeight < StandardVideoSizes[i].height)
+              maxHeight = StandardVideoSizes[i].height;
+            if (thisTime > frameTime)
+              frameTime = thisTime;
+          }
+        }
+      }
+    }
   }
-  return byWidth ? CIF16_WIDTH : CIF16_HEIGHT;
-}
 
+  // if no MPIs specified, then the spec says to use QCIF
+  if (frameTime == 0) {
+    int ft;
+    if (frameRate != 0) 
+      ft = 90000 / frameRate;
+    else 
+      ft = origFrameTime;
+    mpi[1] = (ft + 1502) / 3003;
+    minWidth  = maxWidth  = QCIF_WIDTH;
+    minHeight = maxHeight = QCIF_HEIGHT;
+  }
+
+  // find the smallest MPI size that is larger than the min frame size
+  for (i = 0; i < 5; i++) {
+    if (StandardVideoSizes[i].width >= rxMinWidth && StandardVideoSizes[i].height >= rxMinHeight) {
+      rxMinWidth = StandardVideoSizes[i].width;
+      rxMinHeight = StandardVideoSizes[i].height;
+      break;
+    }
+  }
+
+  // find the largest MPI size that is smaller than the max frame size
+  for (i = 4; i >= 0; i--) {
+    if (StandardVideoSizes[i].width <= rxMaxWidth && StandardVideoSizes[i].height <= rxMaxHeight) {
+      rxMaxWidth  = StandardVideoSizes[i].width;
+      rxMaxHeight = StandardVideoSizes[i].height;
+      break;
+    }
+  }
+
+  // the final min/max is the smallest bounding box that will enclose both the MPI information and the min/max information
+  minWidth  = PMAX(rxMinWidth, minWidth);
+  maxWidth  = PMIN(rxMaxWidth, maxWidth);
+  minHeight = PMAX(rxMinHeight, minHeight);
+  maxHeight = PMIN(rxMaxHeight, maxHeight);
+
+  // turn off any MPI that are outside the final bounding box
+  for (i = 0; i < 5; i++) {
+    if (StandardVideoSizes[i].width < minWidth || 
+        StandardVideoSizes[i].width > maxWidth ||
+        StandardVideoSizes[i].height < minHeight || 
+        StandardVideoSizes[i].height > maxHeight)
+     mpi[i] = PLUGINCODEC_MPI_DISABLED;
+  }
+
+  // find an appropriate max bit rate
+  bitRate = 0;
+  if (maxBR == 0)
+    bitRate = maxBitRate;
+  else if (maxBitRate == 0)
+    bitRate = maxBR * 100;
+  else
+    bitRate = PMIN(maxBR * 100, maxBitRate);
+}
 
 /* Convert the custom options for the codec to normalised options.
    For H.261 the custom options are "QCIF MPI" and "CIF MPI" which will
@@ -1466,69 +1588,30 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
     return 0;
 
-  int i;
+  // find bounding box enclosing all MPI values
   int mpi[5];
-  for (i = 0; i < 5; i++)
-    mpi[i] = PLUGINCODEC_MPI_DISABLED;
+  int minWidth, minHeight, maxHeight, maxWidth, frameTime, bitRate;
+  FindBoundingBox((const char * const * *)parm, mpi, minWidth, minHeight, maxWidth, maxHeight, frameTime, bitRate);
 
-  int frameWidth = CIF_WIDTH;
-  int frameHeight = CIF_HEIGHT;
-  for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
-    if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
-      frameWidth = ClampSize(atoi(option[1]), true);
-    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
-      frameHeight = ClampSize(atoi(option[1]), false);
-    else {
-      for (i = 0; i < 5; i++) {
-        if (STRCMPI(option[0], StandardVideoSizes[i].optionName) == 0)
-          mpi[i] = atoi(option[1]);
-      }
-    }
-  }
-
-  int minWidth = INT_MAX;
-  int minHeight = INT_MAX;
-  int maxWidth = 0;
-  int maxHeight = 0;
-  int frameTime = 0;
-  for (i = 0; i < 5; i++) {
-    if (mpi[i] != PLUGINCODEC_MPI_DISABLED) {
-      if (minWidth > StandardVideoSizes[i].width)
-        minWidth = StandardVideoSizes[i].width;
-      if (minHeight > StandardVideoSizes[i].height)
-        minHeight = StandardVideoSizes[i].height;
-      if (maxWidth < StandardVideoSizes[i].width)
-        maxWidth = StandardVideoSizes[i].width;
-      if (maxHeight < StandardVideoSizes[i].height)
-        maxHeight = StandardVideoSizes[i].height;
-      int thisTime = 3003*mpi[i];
-      if (frameTime < thisTime)
-        frameTime = thisTime;
-    }
-  }
-
-  if (frameTime == 0)
-    return 0; // Illegal!
-
-  char ** options = (char **)calloc(15, sizeof(char *));
+  char ** options = (char **)calloc(14+2, sizeof(char *));
   *(char ***)parm = options;
   if (options == NULL)
     return 0;
 
-  options[ 0] = strdup(PLUGINCODEC_OPTION_FRAME_WIDTH);
-  options[ 1] = num2str(frameWidth);
-  options[ 2] = strdup(PLUGINCODEC_OPTION_FRAME_HEIGHT);
-  options[ 3] = num2str(frameHeight);
-  options[ 4] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
-  options[ 5] = num2str(minWidth);
-  options[ 6] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
-  options[ 7] = num2str(minHeight);
-  options[ 8] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
-  options[ 9] = num2str(maxWidth);
-  options[10] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
-  options[11] = num2str(maxHeight);
-  options[12] = strdup(PLUGINCODEC_OPTION_FRAME_TIME);
-  options[13] = num2str(frameTime);
+  options[ 0] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
+  options[ 1] = num2str(minWidth);
+  options[ 2] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
+  options[ 3] = num2str(minHeight);
+  options[ 4] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+  options[ 5] = num2str(maxWidth);
+  options[ 6] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+  options[ 7] = num2str(maxHeight);
+  options[ 8] = strdup(PLUGINCODEC_OPTION_FRAME_TIME);
+  options[ 9] = num2str(frameTime);
+  options[10] = strdup(PLUGINCODEC_OPTION_MAX_BIT_RATE);
+  options[11] = num2str(bitRate);
+  options[12] = strdup("MaxBR");
+  options[13] = num2str((bitRate+50)/100);
 
   return 1;
 }
@@ -1543,60 +1626,31 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
     return 0;
 
-  int frameWidth = CIF_WIDTH;
-  int frameHeight = CIF_HEIGHT;
-  int minWidth = SQCIF_WIDTH;
-  int minHeight = SQCIF_HEIGHT;
-  int maxWidth = CIF16_WIDTH;
-  int maxHeight = CIF16_HEIGHT;
-  int frameTimeMPI = 1;
-  for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
-    if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
-      frameWidth = ClampSize(atoi(option[1]), true);
-    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
-      frameHeight = ClampSize(atoi(option[1]), false);
-    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH) == 0)
-      minWidth = ClampSize(atoi(option[1]), true);
-    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT) == 0)
-      minHeight = ClampSize(atoi(option[1]), false);
-    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH) == 0)
-      maxWidth = ClampSize(atoi(option[1]), true);
-    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT) == 0)
-      maxHeight = ClampSize(atoi(option[1]), false);
-    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
-      frameTimeMPI = (atoi(option[1])+3002)/3003;
-  }
-
-  int i;
+  // find bounding box enclosing all MPI values
   int mpi[5];
-  for (i = 0; i < 5; i++) {
-    if (minWidth <= StandardVideoSizes[i].width && minHeight <= StandardVideoSizes[i].height &&
-        maxWidth >= StandardVideoSizes[i].width && maxHeight >= StandardVideoSizes[i].height)
-      mpi[i] = frameTimeMPI;
-    else
-      mpi[i] = PLUGINCODEC_MPI_DISABLED;
-  }
+  int minWidth, minHeight, maxHeight, maxWidth, frameTime, bitRate;
+  FindBoundingBox((const char * const * *)parm, mpi, minWidth, minHeight, maxWidth, maxHeight, frameTime, bitRate);
 
-  char ** options = (char **)calloc(23, sizeof(char *));
+  char ** options = (char **)calloc(12+5*2+2, sizeof(char *));
   *(char ***)parm = options;
   if (options == NULL)
     return 0;
 
-  options[ 0] = strdup(PLUGINCODEC_OPTION_FRAME_WIDTH);
-  options[ 1] = num2str(frameWidth);
-  options[ 2] = strdup(PLUGINCODEC_OPTION_FRAME_HEIGHT);
-  options[ 3] = num2str(frameHeight);
-  options[ 4] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
-  options[ 5] = num2str(minWidth);
-  options[ 6] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
-  options[ 7] = num2str(minHeight);
-  options[ 8] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
-  options[ 9] = num2str(maxWidth);
-  options[10] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
-  options[11] = num2str(maxHeight);
-  for (i = 0; i < 5; i++) {
+  options[ 0] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
+  options[ 1] = num2str(minWidth);
+  options[ 2] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
+  options[ 3] = num2str(minHeight);
+  options[ 4] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+  options[ 5] = num2str(maxWidth);
+  options[ 6] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+  options[ 7] = num2str(maxHeight);
+  options[ 8] = strdup(PLUGINCODEC_OPTION_MAX_BIT_RATE);
+  options[ 9] = num2str(bitRate);
+  options[10] = strdup("MaxBR");
+  options[11] = num2str((bitRate+50)/100);
+  for (int i = 0; i < 5; i++) {
     options[12+i*2] = strdup(StandardVideoSizes[i].optionName);
-    options[13+i*2] = num2str(mpi[i]);
+    options[12+i*2] = num2str(mpi[i]);
   }
 
   return 1;
@@ -1771,6 +1825,62 @@ static struct PluginCodec_Option const cif16MPI =
   STRINGIZE(PLUGINCODEC_MPI_DISABLED) // Maximum value
 };
 
+static struct PluginCodec_Option const maxBR =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "MaxBR",                            // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "0",                                // Initial value
+  "maxbr",                            // FMTP option name
+  "0",                                // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "32767"                             // Maximum value
+};
+
+static struct PluginCodec_Option const videoQuality =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "Encoding Quality",                 // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "10",                               // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "1",                                // Minimum value
+  "31"                                // Maximum value
+};
+
+static struct PluginCodec_Option const minVideoQuality =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "set_min_quality",                  // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "1",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "1",                                // Minimum value
+  "31"                                // Maximum value
+};
+
+static struct PluginCodec_Option const maxVideoQuality =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "set_max_quality",                  // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "31",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "1",                                // Minimum value
+  "31"                                // Maximum value
+};
+
 static struct PluginCodec_Option const mediaPacketization =
 {
   PluginCodec_StringOption,           // Option type
@@ -1796,18 +1906,30 @@ static struct PluginCodec_Option const annexT = { PluginCodec_BoolOption,   "Ann
 
 static struct PluginCodec_Option const * const qcifOptionTable[] = {
   &mediaPacketization,
+  &maxBR,
+  &videoQuality,
+  &minVideoQuality,
+  &maxVideoQuality,
   &qcifMPI,
   NULL
 };
 
 static struct PluginCodec_Option const * const cifOptionTable[] = {
   &mediaPacketization,
+  &maxBR,
+  &videoQuality,
+  &minVideoQuality,
+  &maxVideoQuality,
   &cifMPI,
   NULL
 };
 
 static struct PluginCodec_Option const * const xcifOptionTable[] = {
   &mediaPacketization,
+  &maxBR,
+  &videoQuality,
+  &minVideoQuality,
+  &maxVideoQuality,
   &qcifMPI,
   &cifMPI,
   &sqcifMPI,
