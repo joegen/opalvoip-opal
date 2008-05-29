@@ -255,6 +255,7 @@ public:
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_MESSAGE; }
   virtual void OnFailed (SIP_PDU::StatusCodes);
+  virtual void SetBody(const PString & b);
 
 private:
   virtual void OnExpireTimeout(PTimer &, INT);
