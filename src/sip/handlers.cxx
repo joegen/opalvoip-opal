@@ -306,7 +306,6 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
 
 void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response*/)
 {
-  std::cout << "Received OK for " << transaction << std::endl << std::flush;
   switch (GetState()) {
     case Unsubscribing :
       SetState(Unsubscribed);
