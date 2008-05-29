@@ -1487,7 +1487,7 @@ static void FindBoundingBox(const char * const * * parm,
 
   for (const char * const * option = *parm; *option != NULL; option += 2) {
     if (STRCMPI(option[0], "MaxBR") == 0)
-      maxBR = atoi(option[1]) * 100;
+      maxBR = atoi(option[1]);
     else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_BIT_RATE) == 0)
       maxBitRate = atoi(option[1]);
     else if (STRCMPI(option[0], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
