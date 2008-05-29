@@ -2517,14 +2517,13 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
                        OpalTransport & trans,
                        const PStringList & /*routeSet*/,
                        const SIPURL & targetAddress,
+                       const PString & id,
                        const PString & sipIfMatch,
                        const PString & body,
                        unsigned expires)
   : SIPTransaction(ep, trans)
 {
   PString addrStr = targetAddress.AsQuotedString();
-  PString id = OpalGloballyUniqueID().AsString();
-  id += "@" + PIPSocket::GetHostName();
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
 
   SIP_PDU::Construct(Method_PUBLISH,
@@ -2599,10 +2598,10 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
                        OpalTransport & trans,
                        const SIPURL & address,
                        const PStringList & routeSet,
+                       const PString & id,
                        const PString & body)
   : SIPTransaction(ep, trans)
 {
-  PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
     
   // Build the correct From field

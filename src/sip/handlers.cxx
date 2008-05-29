@@ -329,6 +329,7 @@ void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response
 
 void SIPHandler::CollapseFork(SIPTransaction & transaction)
 {
+  //
   // Take this transaction out and kill all the rest
   transactions.Remove(&transaction);
   while (transactions.GetSize() > 0) {
@@ -752,6 +753,7 @@ SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
                         t, 
                         GetRouteSet(), 
                         targetAddress, 
+                        callID,
                         sipETag, 
                         (GetState() == Refreshing)?PString::Empty():body, 
                         expire);
@@ -852,7 +854,7 @@ SIPMessageHandler::~SIPMessageHandler ()
 SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport &t)
 { 
   SetExpire(originalExpire);
-  return new SIPMessage(endpoint, t, targetAddress, routeSet, body);
+  return new SIPMessage(endpoint, t, targetAddress, routeSet, callID, body);
 }
 
 
