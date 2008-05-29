@@ -900,6 +900,7 @@ class SIPPublish : public SIPTransaction
       OpalTransport & trans,
       const PStringList & routeSet,
       const SIPURL & targetAddress,
+      const PString & id,
       const PString & sipIfMatch,
       const PString & body,
       unsigned expires
@@ -965,6 +966,7 @@ class SIPMessage : public SIPTransaction
 	       OpalTransport & trans,
 	       const SIPURL & to,
                const PStringList & routeSet,
+               const PString & id,
 	       const PString & body
     );
 };
