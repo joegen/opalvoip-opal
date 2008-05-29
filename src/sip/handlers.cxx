@@ -306,6 +306,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
 
 void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response*/)
 {
+  std::cout << "Received OK for " << transaction << std::endl << std::flush;
   switch (GetState()) {
     case Unsubscribing :
       SetState(Unsubscribed);
@@ -786,7 +787,8 @@ void SIPPublishHandler::OnPublishTimeout(PTimer &, INT)
 void SIPPublishHandler::SetBody(const PString & b)
 {
   stateChanged = PTrue;
-  body = b;
+
+  SIPHandler::SetBody (b);
 }
 
 
@@ -870,6 +872,13 @@ void SIPMessageHandler::OnExpireTimeout(PTimer &, INT)
   SetState(Unsubscribed);
 }
 
+
+void SIPMessageHandler::SetBody(const PString & b)
+{
+  callID = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
+  
+  SIPHandler::SetBody (b);
+}
 
 /////////////////////////////////////////////////////////////////////////
 
