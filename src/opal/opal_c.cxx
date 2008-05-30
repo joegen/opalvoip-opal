@@ -127,6 +127,7 @@ class OpalManager_C : public OpalManager
     virtual void OnEstablishedCall(OpalCall & call);
     virtual void OnUserInputString(OpalConnection & connection, const PString & value);
     virtual void OnUserInputTone(OpalConnection & connection, char tone, int duration);
+    virtual void OnMWIReceived(const PString & party, MessageWaitingType type, const PString & extraInfo);
     virtual void OnClearedCall(OpalCall & call);
 
   private:
@@ -135,6 +136,7 @@ class OpalManager_C : public OpalManager
     void HandleRegistration (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleSetUpCall    (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleAnswerCall   (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleUserInput    (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleClearCall    (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleHoldCall     (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleRetrieveCall (const OpalMessage & message, OpalMessageBuffer & response);
@@ -486,6 +488,9 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
     case OpalCmdAnswerCall :
       HandleAnswerCall(*message, response);
       break;
+    case OpalCmdUserInput :
+      HandleUserInput(*message, response);
+      break;
     case OpalCmdClearCall :
       HandleClearCall(*message, response);
       break;
@@ -830,7 +835,7 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
 
   PString partyA = command.m_param.m_callSetUp.m_partyA;
   if (partyA.IsEmpty())
-    partyA = "pc:*";
+    partyA = pcssEP != NULL ? "pc:*" : "pots:*";
 
   PString token;
   if (SetUpCall(partyA, command.m_param.m_callSetUp.m_partyB, token)) {
@@ -855,7 +860,42 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
     return;
   }
 
-  pcssEP->AcceptIncomingConnection(command.m_param.m_callToken);
+  if (!pcssEP->AcceptIncomingConnection(command.m_param.m_callToken))
+    response.SetError("No call found by the token provided.");
+}
+
+
+void OpalManager_C::HandleUserInput(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  if (IsNullString(command.m_param.m_userInput.m_userInput)) {
+    response.SetError("No user input provided.");
+    return;
+  }
+
+  if (IsNullString(command.m_param.m_userInput.m_callToken)) {
+    response.SetError("No call token provided.");
+    return;
+  }
+
+  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_userInput.m_callToken);
+  if (call == NULL) {
+    response.SetError("No call found by the token provided.");
+    return;
+  }
+
+  PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
+  PString url = connection->GetLocalPartyURL();
+  if (url.NumCompare("pc") != EqualTo && url.NumCompare("pots") != EqualTo)
+    ++connection;
+  if (connection == NULL) {
+    response.SetError("No suitable connection for user input.");
+    return;
+  }
+
+  if (command.m_param.m_userInput.m_duration == 0)
+    connection->OnUserInputString(command.m_param.m_userInput.m_userInput);
+  else
+    connection->OnUserInputTone(command.m_param.m_userInput.m_userInput[0], command.m_param.m_userInput.m_duration);
 }
 
 
@@ -866,7 +906,8 @@ void OpalManager_C::HandleClearCall(const OpalMessage & command, OpalMessageBuff
     return;
   }
 
-  ClearCall(command.m_param.m_callToken);
+  if (!ClearCall(command.m_param.m_callToken))
+    response.SetError("No call found by the token provided.");
 }
 
 
@@ -879,7 +920,7 @@ void OpalManager_C::HandleHoldCall(const OpalMessage & command, OpalMessageBuffe
 
   PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_callToken);
   if (call == NULL) {
-    response.SetError("No call by the token provided.");
+    response.SetError("No call found by the token provided.");
     return;
   }
 
@@ -901,7 +942,7 @@ void OpalManager_C::HandleRetrieveCall(const OpalMessage & command, OpalMessageB
 
   PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_callToken);
   if (call == NULL) {
-    response.SetError("No call by the token provided.");
+    response.SetError("No call found by the token provided.");
     return;
   }
 
@@ -1000,6 +1041,21 @@ void OpalManager_C::OnUserInputTone(OpalConnection & connection, char tone, int 
   PostMessage(message);
 
   OpalManager::OnUserInputTone(connection, tone, duration);
+}
+
+
+void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type, const PString & extraInfo)
+{
+  OpalMessageBuffer message(OpalIndMessageWaiting);
+  SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_party, party);
+  static const char * const TypeNames[] = { "Voice", "Fax", "Pager", "Multimedia", "Text", "None" };
+  if (type < sizeof(TypeNames)/sizeof(TypeNames[0]))
+    SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_type, TypeNames[type]);
+  SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, extraInfo);
+  PTRACE(4, "OpalC API\tOnMWIReceived: party=\"" << message->m_param.m_messageWaiting.m_party << '"');
+  PostMessage(message);
+
+  OpalManager::OnMWIReceived(party, type, extraInfo);
 }
 
 

@@ -508,10 +508,20 @@ PString OpalEndPoint::ReadUserInput(OpalConnection & connection,
   return manager.ReadUserInput(connection, terminators, lastDigitTimeout, firstDigitTimeout);
 }
 
+
 void OpalEndPoint::OnNewConnection(OpalCall & call, OpalConnection & connection)
 {
   call.OnNewConnection(connection);
 }
+
+
+void OpalEndPoint::OnMWIReceived(const PString & party,
+                                 OpalManager::MessageWaitingType type,
+                                 const PString & extraInfo)
+{
+  manager.OnMWIReceived(party, type, extraInfo);
+}
+
 
 #if P_SSL
 PString OpalEndPoint::GetSSLCertificate() const

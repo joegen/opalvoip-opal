@@ -405,22 +405,14 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PString & to
     );
 
-    /**Callback called when MWI is received
-     */
-    virtual void OnMWIReceived (
-      const PString & to,
-      SIPSubscribe::MWIType type,
-      const PString & msgs);
-    
-    
-    /**Callback called when MWI is received
+    /**Callback called when presence is received
      */
     virtual void OnPresenceInfoReceived (
       const PString & user,
       const PString & basic,
-      const PString & note);
+      const PString & note
+    );
 
-    
     /**Callback called when a registration to a SIP registrar status.
      * The PBoolean indicates if the operation that failed was a REGISTER or 
      * an (UN)REGISTER.
