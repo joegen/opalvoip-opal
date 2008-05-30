@@ -502,6 +502,14 @@ PString OpalEndPoint::ReadUserInput(OpalConnection & connection,
 }
 
 
+void OpalEndPoint::OnMWIReceived(const PString & party,
+                                 OpalManager::MessageWaitingType type,
+                                 const PString & extraInfo)
+{
+  manager.OnMWIReceived(party, type, extraInfo);
+}
+
+
 #if OPAL_T120DATA
 
 OpalT120Protocol * OpalEndPoint::CreateT120ProtocolHandler(const OpalConnection & connection) const

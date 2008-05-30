@@ -655,15 +655,6 @@ class H4507Handler : public H450xHandler
     );
     
     
-    /**Handle an incoming Message Waiting Interrogate PDU
-    */
-    virtual void OnReceivedMwiInterrogate(
-      int linkedId,
-      int invokeId,
-      PASN_OctetString *argument
-    );
-    
-    
     /**Attach a message waiting APDU to the passed in Setup PDU. 
       */
 
