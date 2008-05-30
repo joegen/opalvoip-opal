@@ -560,6 +560,14 @@ class OpalEndPoint : public PObject
 
   /**@name Other services */
   //@{
+    /**Callback called when Message Waiting Indication (MWI) is received
+     */
+    virtual void OnMWIReceived (
+      const PString & party,                ///< Name of party MWI is for
+      OpalManager::MessageWaitingType type, ///< Type of message that is waiting
+      const PString & extraInfo             ///< Addition information on the MWI
+    );
+
 #if OPAL_T120DATA
     /**Create an instance of the T.120 protocol handler.
        This is called when the OpenLogicalChannel subsystem requires that

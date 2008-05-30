@@ -992,13 +992,6 @@ void SIPEndPoint::OnMessageReceived (const SIPURL & /*from*/,
 }
 
 
-void SIPEndPoint::OnMWIReceived (const PString & /*to*/,
-         SIPSubscribe::MWIType /*type*/,
-         const PString & /*msgs*/)
-{
-}
-
-
 void SIPEndPoint::OnPresenceInfoReceived (const PString & /*user*/,
                                           const PString & /*basic*/,
                                           const PString & /*note*/)

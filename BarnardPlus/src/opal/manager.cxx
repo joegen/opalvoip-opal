@@ -806,6 +806,15 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
   return input.IsEmpty() ? digit : input;
 }
 
+
+void OpalManager::OnMWIReceived(const PString & PTRACE_PARAM(party),
+                                MessageWaitingType PTRACE_PARAM(type),
+                                const PString & PTRACE_PARAM(extraInfo))
+{
+  PTRACE(3, "OpalMan\tOnMWIReceived(" << party << ',' << type << ',' << extraInfo << ')');
+}
+
+
 #if OPAL_T120DATA
 
 OpalT120Protocol * OpalManager::CreateT120ProtocolHandler(const OpalConnection & ) const
