@@ -275,7 +275,7 @@ void OpalMediaOptionEnum::PrintOn(ostream & strm) const
   if (m_value < m_enumerations.GetSize())
     strm << m_enumerations[m_value];
   else
-    strm << m_value;
+    strm << '#' << m_value;
 }
 
 
@@ -347,8 +347,10 @@ void OpalMediaOptionEnum::SetValue(PINDEX value)
 {
   if (value < m_enumerations.GetSize())
     m_value = value;
-  else
+  else {
     m_value = m_enumerations.GetSize();
+    PTRACE(1, "MediaFormat\tIllegal value (" << value << ") for OpalMediaOptionEnum");
+  }
 }
 
 
@@ -1140,6 +1142,7 @@ bool OpalMediaFormatInternal::IsValidForProtocol(const PString & protocol) const
 
 void OpalMediaFormatInternal::PrintOn(ostream & strm) const
 {
+  PINDEX i;
   PWaitAndSignal m(media_format_mutex);
 
   if (strm.width() != -1) {
@@ -1148,16 +1151,22 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
   }
 
   static const char * const SessionNames[] = { "", " Audio", " Video", " Data", " H.224" };
-  static const int TitleWidth = 25;
+
+  PINDEX TitleWidth = 20;
+  for (i = 0; i < options.GetSize(); i++) {
+    PINDEX width =options[i].GetName().GetLength();
+    if (width > TitleWidth)
+      TitleWidth = width;
+  }
 
   strm << right << setw(TitleWidth) <<   "Format Name" << left << "       = " << formatName << '\n'
        << right << setw(TitleWidth) <<    "Session ID" << left << "       = " << defaultSessionID << (defaultSessionID < PARRAYSIZE(SessionNames) ? SessionNames[defaultSessionID] : "") << '\n'
        << right << setw(TitleWidth) <<  "Payload Type" << left << "       = " << rtpPayloadType << '\n'
        << right << setw(TitleWidth) << "Encoding Name" << left << "       = " << rtpEncodingName << '\n';
-  for (PINDEX i = 0; i < options.GetSize(); i++) {
+  for (i = 0; i < options.GetSize(); i++) {
     const OpalMediaOption & option = options[i];
     strm << right << setw(TitleWidth) << option.GetName() << " (R/" << (option.IsReadOnly() ? 'O' : 'W')
-         << ") = " << left << setw(10) << option.AsString();
+         << ") = " << left << setw(10) << option;
 
 #if OPAL_SIP
     if (!option.GetFMTPName().IsEmpty())
