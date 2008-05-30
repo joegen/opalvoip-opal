@@ -647,6 +647,27 @@ class OpalManager : public PObject
     );
   //@}
 
+  /**@name Other services */
+  //@{
+    enum MessageWaitingType { 
+      NoMessageWaiting,
+      VoiceMessageWaiting, 
+      FaxMessageWaiting,
+      PagerMessageWaiting,
+      MultimediaMessageWaiting,
+      TextMessageWaiting,
+      NumMessageWaitingTypes
+    };
+
+    /**Callback called when Message Waiting Indication (MWI) is received
+     */
+    virtual void OnMWIReceived(
+      const PString & party,    ///< Name of party MWI is for
+      MessageWaitingType type,  ///< Type of message that is waiting
+      const PString & extraInfo ///< Addition information on the MWI
+    );
+    
+    
     class RouteEntry : public PObject
     {
         PCLASSINFO(RouteEntry, PObject);

@@ -1643,14 +1643,6 @@ H4507Handler::H4507Handler(H323Connection & conn, H450xDispatcher & disp)
   dispatcher.AddOpCode(H4507_H323_MWI_Operations::e_mwiInterrogate, this);
 }
 
-void H4507Handler::OnReceivedMwiInterrogate(int /*linkedId*/,
-                                            int /*invokeId*/,
-                                            PASN_OctetString *argument)
-{
-  PTRACE(3, "H450.7\tOnReceivedMwiInterrogate" << *argument); 
-  //endpoint.OnMwiInterrogate(connection);
-
-}
 
 PBoolean H4507Handler::OnReceivedInvoke(int opcode,
                                     int invokeId,
@@ -1661,8 +1653,15 @@ PBoolean H4507Handler::OnReceivedInvoke(int opcode,
   PTRACE(3, "H450.7\tOnReceivedInvoke: invokeId = " << invokeId); 
 
   switch (opcode) {
+    case H4507_H323_MWI_Operations::e_mwiActivate:
+      endpoint.OnMWIReceived(connection.GetLocalPartyURL(), OpalManager::VoiceMessageWaiting, PString::Empty());
+      break;
+
+    case H4507_H323_MWI_Operations::e_mwiDeactivate:
+      endpoint.OnMWIReceived(connection.GetLocalPartyURL(), OpalManager::NoMessageWaiting, PString::Empty());
+      break;
+
     case H4507_H323_MWI_Operations::e_mwiInterrogate:
-      OnReceivedMwiInterrogate(linkedId, invokeId, argument);
       break;
 
     default:

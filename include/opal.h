@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 3
+#define OPAL_C_API_VERSION 4
 
 
 ///////////////////////////////////////
@@ -274,6 +274,12 @@ typedef enum OpalMessageType {
   OpalCmdTransferCall,          /**<Transfer a call to another party. This starts the outgoing call process
                                     for the other party. See the  OpalParamSetUpCall structure for more
                                     information.*/
+  OpalCmdUserInput,             /**<User input command. This sends specified user input to the remote
+                                    connection. See the OpalStatusUserInput structure for more information. */
+  OpalIndMessageWaiting,        /**<Message Waiting indication. This message is returned in the
+                                    OpalGetMessage() function when an MWI is received on any of the supported
+                                    protocols.
+                                */
   OpalMessageTypeCount
 } OpalMessageType;
 
@@ -494,8 +500,20 @@ typedef struct OpalStatusUserInput {
   const char * m_userInput;   ///< User input string, e.g. "#".
   unsigned     m_duration;    /**< Duration in milliseconds for tone. For DTMF style user input
                                    the time the tone was detected may be placed in this field.
-                                   Generally zero is passed which means duration unknown. */
+                                   Generally zero is passed which means the m_userInput is a
+                                   single "string" input. If non-zero then m_userInput must
+                                   be a single character. */
 } OpalStatusUserInput;
+
+
+/**Message Waiting information for the OpalIndMessageWaiting indication.
+   This is only returned from the OpalGetMessage() function.
+  */
+typedef struct OpalStatusMessageWaiting {
+  const char * m_party;     ///< Party for which the MWI is directed
+  const char * m_type;      ///< Type for MWI
+  const char * m_extraInfo; ///< Extra information for the MWI
+} OpalStatusMessageWaiting;
 
 
 /**Call clearance information for the OpalIndCallCleared indication.
@@ -513,16 +531,17 @@ typedef struct OpalStatusCallCleared {
 typedef struct OpalMessage {
   OpalMessageType m_type;   ///< Type of message
   union {
-    const char *           m_commandError;       ///< Used by OpalIndCommandError
-    OpalParamGeneral       m_general;            ///< Used by OpalCmdSetGeneralParameters
-    OpalParamProtocol      m_protocol;           ///< Used by OpalCmdSetProtocolParameters
-    OpalParamRegistration  m_registrationInfo;   ///< Used by OpalCmdRegistration
-    OpalStatusRegistration m_registrationStatus; ///< Used by OpalIndRegistrationStatus
-    OpalParamSetUpCall     m_callSetUp;          ///< Used by OpalCmdSetUpCall
-    const char *           m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdRefuseCall/OpalCmdClearCall/OpalIndAlerting/OpalIndEstablished
-    OpalStatusIncomingCall m_incomingCall;       ///< Used by OpalIndIncomingCall
-    OpalStatusUserInput    m_userInput;          ///< Used by OpalIndUserInput
-    OpalStatusCallCleared  m_callCleared;        ///< Used by OpalIndCallCleared
+    const char *             m_commandError;       ///< Used by OpalIndCommandError
+    OpalParamGeneral         m_general;            ///< Used by OpalCmdSetGeneralParameters
+    OpalParamProtocol        m_protocol;           ///< Used by OpalCmdSetProtocolParameters
+    OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
+    OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistrationStatus
+    OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall
+    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdRefuseCall/OpalCmdClearCall/OpalIndAlerting/OpalIndEstablished
+    OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
+    OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
+    OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
+    OpalStatusCallCleared    m_callCleared;        ///< Used by OpalIndCallCleared
   } m_param;
 } OpalMessage;
 

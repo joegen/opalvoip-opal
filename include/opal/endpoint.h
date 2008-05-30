@@ -555,6 +555,16 @@ class OpalEndPoint : public PObject
     );
   //@}
 
+  /**@name Other services */
+  //@{
+    /**Callback called when Message Waiting Indication (MWI) is received
+     */
+    virtual void OnMWIReceived (
+      const PString & party,                ///< Name of party MWI is for
+      OpalManager::MessageWaitingType type, ///< Type of message that is waiting
+      const PString & extraInfo             ///< Addition information on the MWI
+    );
+
     /** Execute garbage collection for endpoint.
         Returns PTrue if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.

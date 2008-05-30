@@ -627,39 +627,36 @@ PBoolean SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
   // Extract the string describing the number of new messages
   if (!body.IsEmpty ()) {
 
-    const char * validMessageClasses [] = 
-      {
-        "voice-message", 
-        "fax-message", 
-        "pager-message", 
-        "multimedia-message", 
-        "text-message", 
-        "none", 
-        NULL
-      };
+    static struct {
+      const char * name;
+      OpalManager::MessageWaitingType type;
+    } const validMessageClasses[] = {
+      { "voice-message",      OpalManager::VoiceMessageWaiting      },
+      { "fax-message",        OpalManager::FaxMessageWaiting        },
+      { "pager-message",      OpalManager::PagerMessageWaiting      },
+      { "multimedia-message", OpalManager::MultimediaMessageWaiting },
+      { "text-message",       OpalManager::TextMessageWaiting       },
+      { "none",               OpalManager::NoMessageWaiting         }
+    };
     PStringArray bodylines = body.Lines ();
-    for (int z = 0 ; validMessageClasses [z] != NULL ; z++) {
+    for (PINDEX z = 0 ; z < PARRAYSIZE(validMessageClasses); z++) {
 
       for (int i = 0 ; i < bodylines.GetSize () ; i++) {
 
         PCaselessString line (bodylines [i]);
-        PINDEX j = line.FindLast(validMessageClasses [z]);
+        PINDEX j = line.FindLast(validMessageClasses[z].name);
         if (j != P_MAX_INDEX) {
-          line.Replace (validMessageClasses[z], "");
+          line.Replace(validMessageClasses[z].name, "");
           line.Replace (":", "");
           msgs = line.Trim ();
-          endpoint.OnMWIReceived (GetRemotePartyAddress(),
-                            (SIPSubscribe::MWIType) z, 
-                            msgs);
+          endpoint.OnMWIReceived(GetRemotePartyAddress(), validMessageClasses[z].type, msgs);
           return PTrue;
         }
       }
     }
 
     // Received MWI, unknown messages number
-    endpoint.OnMWIReceived (GetRemotePartyAddress(),
-                      (SIPSubscribe::MWIType) 0, 
-                      "1/0");
+    endpoint.OnMWIReceived(GetRemotePartyAddress(), OpalManager::NumMessageWaitingTypes, "1/0");
   } 
 
   return PTrue;
