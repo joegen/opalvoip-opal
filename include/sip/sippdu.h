@@ -865,15 +865,6 @@ class SIPSubscribe : public SIPTransaction
 
     /** Valid types for a MWI
     */
-    enum MWIType { 
-      
-      VoiceMessage, 
-      FaxMessage, 
-      PagerMessage, 
-      MultimediaMessage, 
-      TextMessage, 
-      None 
-    };
     SIPSubscribe(
         SIPEndPoint & ep,
         OpalTransport & trans,
