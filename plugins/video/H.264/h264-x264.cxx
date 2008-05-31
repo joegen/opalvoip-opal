@@ -381,12 +381,13 @@ static void profile_level_from_string  (std::string profileLevelString, unsigned
   unsigned profileLevelInt = strtoul(profileLevelString.c_str(), NULL, 16);
 
   if (profileLevelInt == 0) {
-#ifdef WITH_RFC_COMPLIANT_DEFAULTS
-    // Baseline, Level 1
-    profileLevelInt = 0x42C00A;
-#else
+#ifdef DEFAULT_TO_FULL_CAPABILITIES
     // Baseline, Level 3
     profileLevelInt = 0x42C01E;
+#else
+    // Default handling according to RFC 3984
+    // Baseline, Level 1
+    profileLevelInt = 0x42C00A;
 #endif  
   }
 

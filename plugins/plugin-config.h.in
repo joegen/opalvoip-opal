@@ -13,8 +13,8 @@
 /* Stack alignment hack for libavcodec library */
 #undef LIBAVCODEC_STACKALIGN_HACK
 
-/* Use RFC-compliant defaults for empty fmtp lines */
-#undef WITH_RFC_COMPLIANT_DEFAULTS
+/* Assume full capabilities at empty fmtp lines */
+#undef DEFAULT_TO_FULL_CAPABILITIES
 
 /* Filename of the libx264 library */
 #undef X264_LIB_NAME
