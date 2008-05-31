@@ -486,6 +486,7 @@ H263PDecoderContext::H263PDecoderContext()
   _rxH263PFrame = new H263PFrame(MAX_YUV420P_FRAME_SIZE);
   _skippedFrameCounter = 0;
   _gotIFrame = false;
+  _gotAGoodFrame = true;
 
   // debugging flags
   if (Trace::CanTrace(4)) {
@@ -548,7 +549,8 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
 
   if (!_rxH263PFrame->SetFromRTPFrame(srcRTP, flags)) {
     _rxH263PFrame->BeginNewFrame();
-    flags = PluginCodec_ReturnCoderRequestIFrame;
+    flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+    _gotAGoodFrame = false;
     return 1;
   }
   
@@ -568,7 +570,8 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
   if (!_rxH263PFrame->hasPicHeader()) {
     TRACE(1, "H263+\tDecoder\tReceived frame has no picture header - dropping");
     _rxH263PFrame->BeginNewFrame();
-    flags = PluginCodec_ReturnCoderRequestIFrame;
+    flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+    _gotAGoodFrame = false;
     return 1;
   }
 
@@ -579,7 +582,8 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
     {
       TRACE(1, "H263+\tDecoder\tWaiting for an I-Frame");
       _rxH263PFrame->BeginNewFrame();
-      flags = PluginCodec_ReturnCoderRequestIFrame;
+      flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+      _gotAGoodFrame = false;
       return 1;
     }
     _gotIFrame = true;
@@ -594,9 +598,10 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
 
   if (!gotPicture) 
   {
-    TRACE(1, "H263+\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture, requesting I frame"); 
+    TRACE(1, "H263+\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture"); 
     _skippedFrameCounter++;
-    flags = PluginCodec_ReturnCoderRequestIFrame;
+    flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+    _gotAGoodFrame = false;
     return 1;
   }
 
@@ -604,17 +609,20 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
 
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
   if (bytesDecoded < 0) {
-    TRACE(1, "H263+\tDecoder\tDecoded 0 bytes, requesting I frame");
-    flags = PluginCodec_ReturnCoderRequestIFrame;
+    TRACE(1, "H263+\tDecoder\tDecoded 0 bytes");
+    flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+    _gotAGoodFrame = false;
     return 1;
   }
 
   // if decoded frame size is not legal, request an I-Frame
   if (_context->width == 0 || _context->height == 0) {
-    TRACE(1, "H263+\tDecoder\tReceived frame with invalid size, requesting I frame");
-    flags = PluginCodec_ReturnCoderRequestIFrame;
+    TRACE(1, "H263+\tDecoder\tReceived frame with invalid size");
+    flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+    _gotAGoodFrame = false;
     return 1;
   }
+  _gotAGoodFrame = true;
 
   int frameBytes = (_context->width * _context->height * 12) / 8;
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)dstRTP.GetPayloadPtr();
