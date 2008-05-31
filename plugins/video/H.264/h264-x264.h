@@ -121,6 +121,7 @@ class H264DecoderContext
     H264Frame* _rxH264Frame;
 
     bool _gotIFrame;
+    bool _gotAGoodFrame;
     int _frameCounter;
     int _skippedFrameCounter;
 };

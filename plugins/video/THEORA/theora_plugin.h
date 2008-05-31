@@ -103,6 +103,7 @@ class theoraDecoderContext
     theoraFrame* _rxTheoraFrame;
 
     bool _gotIFrame;
+    bool _gotAGoodFrame;
     bool _gotHeader;
     bool _gotTable;
     int _frameCounter;

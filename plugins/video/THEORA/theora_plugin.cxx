@@ -260,6 +260,7 @@ theoraDecoderContext::theoraDecoderContext()
   _gotHeader = false;
   _gotTable  = false;
   _gotIFrame = false;
+  _gotAGoodFrame = true;
 
   _rxTheoraFrame = new theoraFrame();
   theora_info_init( &_theoraInfo );
@@ -284,9 +285,10 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
   dstLen = 0;
 
   if (!_rxTheoraFrame->SetFromRTPFrame(srcRTP, flags)) {
-    _rxTheoraFrame->BeginNewFrame();
-    flags = requestIFrame;
-    return 0;    
+    _rxTheoraFrame->BeginNewFrame();    
+    flags = (_gotAGoodFrame ? requestIFrame : 0);
+    _gotAGoodFrame = false;
+    return 1;
   };
 
 // linphone does not send markers so for now we ignore them (should be fixed)
@@ -325,8 +327,9 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
       ret = theora_decode_header( &_theoraInfo, &theoraComment, &oggPacket );
       if (ret != 0) {
         TRACE(1, "THEORA\tDecoder\tDecoding failed (header packet): " << theoraErrorMessage(ret));
-        flags = requestIFrame;
-        return 0;
+        flags = (_gotAGoodFrame ? requestIFrame : 0);
+        _gotAGoodFrame = false;
+        return 1;
       }
 
       if (oggPacket.bytes == THEORA_HEADER_PACKET_SIZE) 
@@ -348,8 +351,9 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
           ret = theora_decode_packetin( &_theoraState, &oggPacket );
           if (ret != 0) {
             TRACE(1, "THEORA\tDecoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
-            flags = requestIFrame;
-            return 0;
+            flags = (_gotAGoodFrame ? requestIFrame : 0);
+            _gotAGoodFrame = false;
+            return 1;
           }
           theora_decode_YUVout( &_theoraState, &yuv);
           _gotIFrame = true;
@@ -363,8 +367,9 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
             ret = theora_decode_packetin( &_theoraState, &oggPacket );
             if (ret != 0) {
               TRACE(1, "THEORA\tDecoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
-              flags = requestIFrame;
-              return 0;
+              flags = (_gotAGoodFrame ? requestIFrame : 0);
+              _gotAGoodFrame = false;
+              return 1;
             }
             theora_decode_YUVout( &_theoraState, &yuv);
             gotFrame = true;
@@ -372,8 +377,9 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
           else {
 
             TRACE(1, "THEORA\tDecoder\tGot OGG non-keyframe data Packet but still waiting for keyframe");
-            flags = requestIFrame;
-            return 0;
+            flags = (_gotAGoodFrame ? requestIFrame : 0);
+            _gotAGoodFrame = false;
+            return 1;
           }
         }
       } 
@@ -435,13 +441,15 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
     dstLen = dstRTP.GetFrameLen();
     flags = PluginCodec_ReturnCoderLastFrame;
     _frameCounter++;
+    _gotAGoodFrame = true;
     return 1;
   } 
   else { /*gotFrame */
 
     TRACE(1, "THEORA\tDecoder\tDid not get a decoded frame");
-    flags = requestIFrame;
-    return 0;
+    flags = (_gotAGoodFrame ? requestIFrame : 0);
+    _gotAGoodFrame = false;
+    return 1;
   }
 }
 

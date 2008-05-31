@@ -184,9 +184,10 @@ H264DecoderContext::H264DecoderContext()
 {
   if (!FFMPEGLibraryInstance.IsLoaded()) return;
 
-  _gotIFrame =0;
-  _frameCounter=0; 
-  _skippedFrameCounter=0;
+  _gotIFrame = false;
+  _gotAGoodFrame = false;
+  _frameCounter = 0; 
+  _skippedFrameCounter = 0;
   _rxH264Frame = new H264Frame();
 
   if ((_codec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_H264)) == NULL) {
@@ -248,8 +249,9 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
 
   if (!_rxH264Frame->SetFromRTPFrame(srcRTP, flags)) {
     _rxH264Frame->BeginNewFrame();
-    flags = requestIFrame;
-    return 0;
+    flags = (_gotAGoodFrame ? requestIFrame : 0);
+    _gotAGoodFrame = false;
+    return 1;
   }
 
   if (srcRTP.GetMarker()==0)
@@ -262,8 +264,9 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
     _rxH264Frame->BeginNewFrame();
     TRACE(4, "H264\tDecoder\tGot an empty frame - skipping");
     _skippedFrameCounter++;
-    flags = requestIFrame;
-    return 0;
+    flags = (_gotAGoodFrame ? requestIFrame : 0);
+    _gotAGoodFrame = false;
+    return 1;
   }
 
   TRACE_UP(4, "H264\tDecoder\tDecoding " << _rxH264Frame->GetFrameSize()  << " bytes");
@@ -275,8 +278,9 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
     {
       TRACE(1, "H264\tDecoder\tWaiting for an I-Frame");
       _rxH264Frame->BeginNewFrame();
-      flags = requestIFrame;
-      return 0;
+      flags = (_gotAGoodFrame ? requestIFrame : 0);
+      _gotAGoodFrame = false;
+      return 1;
     }
     _gotIFrame = 1;
   }
@@ -290,8 +294,9 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
   {
     TRACE(1, "H264\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture..."); 
     _skippedFrameCounter++;
-    flags = requestIFrame;
-    return 0;
+    flags = (_gotAGoodFrame ? requestIFrame : 0);
+    _gotAGoodFrame = false;
+    return 1;
   }
 
   TRACE_UP(4, "H264\tDecoder\tDecoded " << bytesDecoded << " bytes"<< ", Resolution: " << _context->width << "x" << _context->height);
@@ -341,6 +346,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
 
   flags = PluginCodec_ReturnCoderLastFrame;
   _frameCounter++;
+  _gotAGoodFrame = true;
   return 1;
 }
 

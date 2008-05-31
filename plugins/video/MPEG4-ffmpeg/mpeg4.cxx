@@ -1212,6 +1212,8 @@ class MPEG4DecoderContext
     unsigned _lastPktOffset;
     unsigned int _frameWidth;
     unsigned int _frameHeight;
+
+    bool _gotAGoodFrame;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1237,6 +1239,7 @@ MPEG4DecoderContext::MPEG4DecoderContext()
   // Default frame sizes.  These may change after decoder_set_options is called
   _frameWidth  = CIF_WIDTH;
   _frameHeight = CIF_HEIGHT;
+  _gotAGoodFrame = true;
 
   OpenCodec();
 }
@@ -1485,10 +1488,11 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
 
 
         // throw the data away and ask for an IFrame
-        flags |= PluginCodec_ReturnCoderRequestIFrame;
+        TRACE(1, "MPEG4\tDecoder\tWaiting for an I-Frame");
         _lastPktOffset = 0;
-        TRACE(1, "MPEG4\tDecoder\tWating for an I-Frame");
-        return 0;
+        flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+        _gotAGoodFrame = false;
+        return 1;
     }
 
     // decode the frame if we got the marker packet
@@ -1503,7 +1507,8 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
 #ifdef LIBAVCODEC_HAVE_SOURCE_DIR
             if (DecoderError(_keyRefreshThresh)) {
                 // ask for an IFrame update, but still show what we've got
-                flags |= PluginCodec_ReturnCoderRequestIFrame;
+                flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+                _gotAGoodFrame = false;
             }
 #endif
             TRACE_UP(4, "MPEG4\tDecoder\tDecoded " << len << " bytes" << ", Resolution: " << _avcontext->width << "x" << _avcontext->height);
@@ -1553,12 +1558,14 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
             dstRTP.SetTimestamp(srcRTP.GetTimestamp());
             dstRTP.SetMarker(true);
             dstLen = dstRTP.GetFrameLen();
-            flags |= PluginCodec_ReturnCoderLastFrame;
+            flags = PluginCodec_ReturnCoderLastFrame;
+            _gotAGoodFrame = true;
         }
         else {
-            // decoding error, ask for an IFrame update
-            flags |= PluginCodec_ReturnCoderRequestIFrame;
             TRACE(1, "MPEG4\tDecoder\tDecoded "<< len << " bytes without getting a Picture..."); 
+            // decoding error, ask for an IFrame update
+            flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+            _gotAGoodFrame = false;
         }
         _lastPktOffset = 0;
     }
