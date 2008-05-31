@@ -146,6 +146,7 @@ class H263PDecoderContext
     int _frameCount;
     unsigned int _skippedFrameCounter;
     bool _gotIFrame;
+    bool _gotAGoodFrame;
     CriticalSection _mutex;
 };
 
