@@ -31,7 +31,6 @@
 
 #include "mpi.h"
 #include <math.h>
-#include <iostream>
 #include <stdlib.h>
 
 MPIList::MPIList()
@@ -135,7 +134,6 @@ bool MPIList::getNegotiatedMPI( unsigned* width, unsigned* height, unsigned* _fr
     // we square the value in order to get absolute distances
     distance = ( abs(MPIs[i].width  - desiredWidth ) *
                  abs(MPIs[i].height - desiredHeight) );
-    std::cout << "Distance " << i << " - " << distance << "\n";
 
     if (distance < minDistance) {
       minDistance = distance;
