@@ -1306,8 +1306,8 @@ Optional Features:
   --enable-localspeex       use local version of Speex library rather than system version
   --enable-vpb            enable voicetronix vpb
   --enable-capi            enable CAPI
-  --disable-rfc-compliant-defaults
-                          Use RFC-compliant defaults for empty fmtp lines
+  --enable-default-to-full-capabilties
+                          Default to full capabilities at empty fmtp lines
   --enable-libavcodec-stackalign-hack
                           Stack alignment hack for libavcodec library
   --enable-x264-link-static
@@ -6744,26 +6744,26 @@ fi
 
 
 
-{ echo "$as_me:$LINENO: checking RFC compliant defaults" >&5
-echo $ECHO_N "checking RFC compliant defaults... $ECHO_C" >&6; }
-# Check whether --enable-rfc-compliant-defaults was given.
-if test "${enable_rfc_compliant_defaults+set}" = set; then
-  enableval=$enable_rfc_compliant_defaults; WITH_RFC_COMPLIANT_DEFAULTS=$enableval
+{ echo "$as_me:$LINENO: checking whether to default to full capabilities at empty fmtp lines" >&5
+echo $ECHO_N "checking whether to default to full capabilities at empty fmtp lines... $ECHO_C" >&6; }
+# Check whether --enable-default-to-full-capabilties was given.
+if test "${enable_default_to_full_capabilties+set}" = set; then
+  enableval=$enable_default_to_full_capabilties; DEFAULT_TO_FULL_CAPABILITIES=$enableval
 else
-  WITH_RFC_COMPLIANT_DEFAULTS=yes
+  DEFAULT_TO_FULL_CAPABILITIES=no
 fi
 
-if test x$WITH_RFC_COMPLIANT_DEFAULTS = xyes; then
+if test x$DEFAULT_TO_FULL_CAPABILITIES = xyes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define WITH_RFC_COMPLIANT_DEFAULTS 1
+#define DEFAULT_TO_FULL_CAPABILITIES 1
 _ACEOF
 
-  { echo "$as_me:$LINENO: result: enabled" >&5
-echo "${ECHO_T}enabled" >&6; }
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
 else
-  { echo "$as_me:$LINENO: result: disabled" >&5
-echo "${ECHO_T}disabled" >&6; }
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
 fi
 
 
