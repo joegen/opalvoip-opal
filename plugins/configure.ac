@@ -421,16 +421,16 @@ fi
 AC_SUBST(HAS_LIBDL)
 AC_SUBST(DL_LIBS)
 
-AC_MSG_CHECKING(RFC compliant defaults)
-AC_ARG_ENABLE([rfc-compliant-defaults],
-              [AC_HELP_STRING([--disable-rfc-compliant-defaults],[Use RFC-compliant defaults for empty fmtp lines])],
-              [WITH_RFC_COMPLIANT_DEFAULTS=$enableval],
-              [WITH_RFC_COMPLIANT_DEFAULTS=yes])
-if test x$WITH_RFC_COMPLIANT_DEFAULTS = xyes; then
-  AC_DEFINE([WITH_RFC_COMPLIANT_DEFAULTS], [1], [Use RFC-compliant defaults for empty fmtp lines])
-  AC_MSG_RESULT(enabled)
+AC_MSG_CHECKING(whether to default to full capabilities at empty fmtp lines)
+AC_ARG_ENABLE([default-to-full-capabilties],
+              [AC_HELP_STRING([--enable-default-to-full-capabilties],[Default to full capabilities at empty fmtp lines])],
+              [DEFAULT_TO_FULL_CAPABILITIES=$enableval],
+              [DEFAULT_TO_FULL_CAPABILITIES=no])
+if test x$DEFAULT_TO_FULL_CAPABILITIES = xyes; then
+  AC_DEFINE([DEFAULT_TO_FULL_CAPABILITIES], [1], [Use RFC-compliant defaults for empty fmtp lines])
+  AC_MSG_RESULT(yes)
 else
-  AC_MSG_RESULT(disabled)
+  AC_MSG_RESULT(no)
 fi
 
 dnl     ########################

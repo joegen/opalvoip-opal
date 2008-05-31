@@ -1031,10 +1031,13 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   height -= height % 16;
 
   if (profileLevel == 0) {
-#ifdef WITH_RFC_COMPLIANT_DEFAULTS
-    profileLevel = 1;
-#else
+#ifdef DEFAULT_TO_FULL_CAPABILITIES
+    // Simple Profile, Level 5
     profileLevel = 5;
+#else
+    // Default handling according to RFC 3016
+    // Simple Profile, Level 1
+    profileLevel = 1;
 #endif
   }
 

@@ -747,14 +747,15 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
 
   // Defaul value(s)
   if (h263MPIList.size() == 0) {
-#ifdef WITH_RFC_COMPLIANT_DEFAULTS
-    h263MPIList.addMPI(QCIF_WIDTH, QCIF_HEIGHT, 2 );
-#else
+#ifdef DEFAULT_TO_FULL_CAPABILITIES
     h263MPIList.addMPI(SQCIF_WIDTH, SQCIF_HEIGHT, 1);
     h263MPIList.addMPI(QCIF_WIDTH,  QCIF_HEIGHT,  1);
     h263MPIList.addMPI(CIF_WIDTH,   CIF_HEIGHT,   1);
-    h263MPIList.addMPI(CIF4_WIDTH,  CIF4_HEIGHT, 1);
+    h263MPIList.addMPI(CIF4_WIDTH,  CIF4_HEIGHT,  1);
     h263MPIList.addMPI(CIF16_WIDTH, CIF16_HEIGHT, 1);
+#else
+    // Default handling according to RFC 4629 (QCIF=2)
+    h263MPIList.addMPI(QCIF_WIDTH, QCIF_HEIGHT, 2 );
 #endif 
   }
   
