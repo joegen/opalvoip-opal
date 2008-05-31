@@ -372,6 +372,14 @@ static int free_codec_options ( const struct PluginCodec_Definition *, void *, c
   return 1;
 }
 
+static int int_from_string(std::string str)
+{
+  if (str.find_first_of("\"") != std::string::npos)
+    return (atoi( str.substr(1, str.length()-2).c_str()));
+
+  return (atoi( str.c_str()));
+}
+
 static void profile_level_from_string  (std::string profileLevelString, unsigned & profile, unsigned & constraints, unsigned & level)
 {
 
@@ -737,9 +745,48 @@ static int merge_profile_level_h264(char ** result, const char * dst, const char
   
   *result = strdup(buffer);
 
-  TRACE(4, "H264\tCap\tCustom Merge ProfileLevel " << src << " and " << dst << " to " << *result);
+  TRACE(4, "H264\tCap\tCustom merge profile-level: " << src << " and " << dst << " to " << *result);
 
   return true;
+}
+
+static int merge_packetization_mode(char ** result, const char * dst, const char * src)
+{
+  unsigned srcInt = int_from_string (src); 
+  unsigned dstInt = int_from_string (dst); 
+
+  if (srcInt == 5) {
+#ifdef DEFAULT_TO_FULL_CAPABILITIES
+    srcInt = 1;
+#else
+    // Default handling according to RFC 3984
+    srcInt = 0;
+#endif
+  }
+
+  if (dstInt == 5) {
+#ifdef DEFAULT_TO_FULL_CAPABILITIES
+    dstInt = 1;
+#else
+    // Default handling according to RFC 3984
+    dstInt = 0;
+#endif
+  }
+
+  if (dstInt > srcInt)
+    dstInt = srcInt;
+
+  char buffer[10];
+  sprintf(buffer, "%d", dstInt);
+  
+  *result = strdup(buffer);
+
+  TRACE(4, "H264\tCap\tCustom merge packetization-mode: " << src << " and " << dst << " to " << *result);
+
+  if (dstInt > 0)
+    return 1;
+
+  return 0;
 }
 
 static void free_string(char * str)

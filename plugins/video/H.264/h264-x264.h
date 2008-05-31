@@ -158,6 +158,7 @@ static int decoder_get_output_data_size ( const PluginCodec_Definition * codec, 
 
 ///////////////////////////////////////////////////////////////////////////////
 static int merge_profile_level_h264(char ** result, const char * dest, const char * src);
+static int merge_packetization_mode(char ** result, const char * dest, const char * src);
 static void free_string(char * str);
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -225,18 +226,20 @@ static const char sdpH264[]       = { "h264" };
 
 /////////////////////////////////////////////////////////////////////////////
 
-static struct PluginCodec_Option const packetizationMode =
+static struct PluginCodec_Option const RFC3984packetizationMode =
 {
-  PluginCodec_IntegerOption,            // Option type
-  "CAP Packetization Mode",             // User visible name
+  PluginCodec_StringOption,             // Option type
+  "CAP RFC3894 Packetization Mode",     // User visible name
   false,                                // User Read/Only flag
-  PluginCodec_EqualMerge,               // Merge mode
-  "1",                                  // Initial value
+  PluginCodec_CustomMerge,              // Merge mode
+  "1",                                  // Initial value (Baseline, Level 3)
   "packetization-mode",                 // FMTP option name 
-  "0",                                  // FMTP default value
+  "5",                                  // FMTP default value
   0,
   "1",
-  "2"
+  "5",
+  merge_packetization_mode,             // Function to do merge
+  free_string                           // Function to free memory in string
 };
 
 static struct PluginCodec_Option const RFC3984profileLevel =
@@ -256,7 +259,7 @@ static struct PluginCodec_Option const RFC3984profileLevel =
 };
 
 static struct PluginCodec_Option const * const optionTable[] = {
-  &packetizationMode,
+  &RFC3984packetizationMode,
   &RFC3984profileLevel,
   NULL
 };
