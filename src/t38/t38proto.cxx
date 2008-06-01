@@ -936,33 +936,14 @@ static void ReinviteFunction(ModeChangeRequestStruct request)
   PSafePtr<OpalCall> call = request.manager->FindCallWithLock(request.callToken);
   unsigned otherIndex = (call->GetConnection(0)->GetToken() == request.connectionToken) ? 1 : 0;
 
-#if PTRACING
-  const char * modeStr = request.newMode ? "fax" : "audio";
-#endif
+  OpalMediaType mediaType = request.newMode ? OpalMediaType::Fax() : OpalMediaType::Audio();
 
   PSafePtr<OpalConnection> otherParty = call->GetConnection(otherIndex, PSafeReadWrite);
   if (otherParty == NULL) {
-    PTRACE(1, "T38\tCannot get other party for " << modeStr << " trigger");
+    PTRACE(1, "T38\tCannot get other party for " << mediaType << " trigger");
   }
-  else 
-  {
-    // for now, assume fax is always session 1
-    OpalMediaFormatList formats;
-    OpalMediaType newType;
-
-    if (request.newMode) {
-      formats += OpalT38;
-      newType = OpalMediaType::Fax();
-    } else {
-      formats += OpalG711uLaw;
-      newType = OpalMediaType::Audio();
-    }
-
-    if (!call->OpenSourceMediaStreams(*otherParty, newType, 1, formats)) {
-      PTRACE(1, "T38\tMode change request to " << modeStr << " failed");
-    } else {
-      PTRACE(1, "T38\tMode change request to " << modeStr << " succeeded");
-    }
+  else if (!call->OpenSourceMediaStreams(*otherParty, mediaType, 1, request.newMode ? OpalT38 : OpalG711uLaw)) {
+    PTRACE(1, "T38\tMode change request to " << mediaType << " failed");
   }
 }
 

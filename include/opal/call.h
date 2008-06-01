@@ -311,12 +311,15 @@ class OpalCall : public PSafeObject
        sink media streams are created for every other connection in the call.
        If at least one sink is created then an OpalMediaPatch is created to
        transfer data from the source to the sinks.
+
+       If session ID is zero a new session is created. If session ID is non
+       zero then that existing session is replaced.
       */
     virtual bool OpenSourceMediaStreams(
       OpalConnection & connection,              ///<  Connection requesting open
       const OpalMediaType & mediaType,          ///<  Media type of channel to open
       unsigned sessionID,                       ///<  Session to start streams on
-      const OpalMediaFormatList & preselectedFormats = OpalMediaFormatList()  ///< Format for source stream to choose from
+      const OpalMediaFormat & preselectedFormat = OpalMediaFormat()  ///< Format for source stream to choose from
     );
 
     /**Select media format pair from the source/destination list.

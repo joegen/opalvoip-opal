@@ -235,6 +235,13 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
 }
 
 
+OpalMediaStreamPtr OpalMediaPatch::GetSink(PINDEX i) const
+{
+  PReadWaitAndSignal mutex(inUse);
+  return i < sinks.GetSize() ? sinks[i].stream : OpalMediaStreamPtr();
+}
+
+
 OpalMediaFormat OpalMediaPatch::GetSinkFormat(PINDEX i) const
 {
   OpalMediaFormat fmt;
