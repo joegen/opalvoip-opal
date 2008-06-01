@@ -888,9 +888,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\h323\h4601.cxx">
-				</File>
-				<File
 					RelativePath="..\h323\h501pdu.cxx">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -1609,8 +1606,7 @@
 					RelativePath="..\t38\sipt38.cxx">
 				</File>
 				<File
-					RelativePath="..\t38\t38mf.cxx"
-					>
+					RelativePath="..\t38\t38mf.cxx">
 				</File>
 				<File
 					RelativePath="..\t38\t38proto.cxx">
@@ -1813,6 +1809,31 @@
 					RelativePath="..\h224\q922.cxx">
 				</File>
 			</Filter>
+			<Filter
+				Name="H.460 Sources"
+				Filter="">
+				<File
+					RelativePath="..\h460\h4601.cxx">
+				</File>
+				<File
+					RelativePath="..\h460\h46018.cxx">
+				</File>
+				<File
+					RelativePath="..\h460\h46019.cxx">
+				</File>
+				<File
+					RelativePath="..\h460\h4609.cxx">
+				</File>
+				<File
+					RelativePath="..\h460\h460p.cxx">
+				</File>
+				<File
+					RelativePath="..\h460\h460pres.cxx">
+				</File>
+				<File
+					RelativePath="..\h460\h460tm.cxx">
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -1961,12 +1982,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\h323\h450pdu.h">
-				</File>
-				<File
-					RelativePath="..\..\include\h323\h460.h">
-				</File>
-				<File
-					RelativePath="..\..\include\h323\h4601.h">
 				</File>
 				<File
 					RelativePath="..\..\include\h323\h501pdu.h">
@@ -2182,6 +2197,34 @@
 				</File>
 				<File
 					RelativePath="..\..\include\h224\q922.h">
+				</File>
+			</Filter>
+			<Filter
+				Name="H.460 Headers"
+				Filter="">
+				<File
+					RelativePath="..\..\include\h460\h460.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h4601.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h46018.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h46019.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h4609.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h460p.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h460pres.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h460tm.h">
 				</File>
 			</Filter>
 		</Filter>
