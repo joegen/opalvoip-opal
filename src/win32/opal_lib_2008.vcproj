@@ -3332,10 +3332,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\h323\h4601.cxx"
-					>
-				</File>
-				<File
 					RelativePath="..\h323\h501pdu.cxx"
 					>
 					<FileConfiguration
@@ -6199,6 +6195,38 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="H.460 Sources"
+				>
+				<File
+					RelativePath="..\h460\h4601.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\h460\h46018.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\h460\h46019.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\h460\h4609.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\h460\h460p.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\h460\h460pres.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\h460\h460tm.cxx"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -6448,14 +6476,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\h323\h450pdu.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\h323\h460.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\h323\h4601.h"
 					>
 				</File>
 				<File
@@ -6740,6 +6760,42 @@
 				</File>
 				<File
 					RelativePath="..\..\include\h224\q922.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="H.460 Headers"
+				>
+				<File
+					RelativePath="..\..\include\h460\h460.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h4601.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h46018.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h46019.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h4609.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h460p.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h460pres.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h460tm.h"
 					>
 				</File>
 			</Filter>
