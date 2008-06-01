@@ -115,6 +115,11 @@ VPATH_CXX += $(OPAL_SRCDIR)/h224
 
 endif
 
+ifneq (,$(wildcard src/h460))
+H460_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/h460
+endif
+
 VPATH_C := $(OPAL_SRCDIR)/codec
 
 ########################################
@@ -200,8 +205,16 @@ SOURCES += $(ASN_CXX_FILES) \
            $(OPAL_SRCDIR)/h323/h323annexg.cxx \
            $(OPAL_SRCDIR)/h323/peclient.cxx \
            
-ifdef H323_H460
-SOURCES += $(OPAL_SRCDIR)/h323/h4601.cxx
+ifeq ($(OPAL_H460), 1)
+ifdef H460_AVAIL
+SOURCES += $(OPAL_SRCDIR)/h460/h4601.cxx \
+	   $(OPAL_SRCDIR)/h460/h46019.cxx \
+	   $(OPAL_SRCDIR)/h460/h4601.cxx \
+	   $(OPAL_SRCDIR)/h460/h4609.cxx \
+	   $(OPAL_SRCDIR)/h460/h460p.cxx \
+	   $(OPAL_SRCDIR)/h460/h460pres.cxx \
+	   $(OPAL_SRCDIR)/h460/h460tm.cxx
+endif
 endif
 
 ifdef HAS_OPENSSL
