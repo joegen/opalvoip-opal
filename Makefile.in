@@ -210,7 +210,6 @@ ifdef H460_AVAIL
 SOURCES += $(OPAL_SRCDIR)/h460/h4601.cxx \
 	   $(OPAL_SRCDIR)/h460/h46018.cxx \
 	   $(OPAL_SRCDIR)/h460/h46019.cxx \
-	   $(OPAL_SRCDIR)/h460/h4601.cxx \
 	   $(OPAL_SRCDIR)/h460/h4609.cxx \
 	   $(OPAL_SRCDIR)/h460/h460p.cxx \
 	   $(OPAL_SRCDIR)/h460/h460pres.cxx \
