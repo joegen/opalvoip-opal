@@ -1,15 +1,26 @@
 // H460.h:
 /*
- * Virteos H.460 Implementation for the OpenH323 Project.
+ * Virteos H.460 Implementation for the h323plus Library.
  *
  * Virteos is a Trade Mark of ISVO (Asia) Pte Ltd.
  *
  * Copyright (c) 2004 ISVO (Asia) Pte Ltd. All Rights Reserved.
  *
  * The contents of this file are subject to the Mozilla Public License
- * Version 1.0 (the "License"); you may not use this file except in
+ * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.mozilla.org/MPL/
+ *
+ * Alternatively, the contents of this file may be used under the terms
+ * of the General Public License (the  "GNU License"), in which case the
+ * provisions of GNU License are applicable instead of those
+ * above. If you wish to allow use of your version of this file only
+ * under the terms of the GNU License and not to allow others to use
+ * your version of this file under the MPL, indicate your decision by
+ * deleting the provisions above and replace them with the notice and
+ * other provisions required by the GNU License. If you do not delete
+ * the provisions above, a recipient may use your version of this file
+ * under either the MPL or the GNU License."
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -22,7 +33,7 @@
  * The Initial Developer of the Original Code is ISVO (Asia) Pte Ltd.
  *
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Many thanks to Simon Horne.
  *
  * $Revision$
  * $Author$
@@ -53,13 +64,18 @@ class H460_MessageType
       e_nonStandardMessage          = 0xfc,
       e_serviceControlIndication    = 0xfd,
       e_serviceControlResponse      = 0xfe,
-	  e_setup						= 0x05,   // Match Q931 message id
-      e_callProceeding				= 0x02,   // Match Q931 message id
-      e_connect						= 0x07,   // Match Q931 message id
-      e_alerting					= 0x01,   // Match Q931 message id
-      e_facility					= 0x62,   // Match Q931 message id
-	  e_releaseComplete				= 0x5a,   // Match Q931 message id
-	  e_unallocated					= 0xff
+      e_unregistrationRequest       = 0xe0,
+      e_inforequest                 = 0xe1,
+      e_inforequestresponse         = 0xe2,
+      e_disengagerequest            = 0xe3,
+      e_disengageconfirm            = 0xe4,
+      e_setup			            = 0x05,   // Match Q931 message id
+      e_callProceeding	            = 0x02,   // Match Q931 message id
+      e_connect	                    = 0x07,   // Match Q931 message id
+      e_alerting                    = 0x01,   // Match Q931 message id
+      e_facility                    = 0x62,   // Match Q931 message id
+      e_releaseComplete	            = 0x5a,   // Match Q931 message id
+      e_unallocated                 = 0xff
     };
 };
 

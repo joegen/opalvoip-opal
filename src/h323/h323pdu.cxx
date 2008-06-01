@@ -48,8 +48,8 @@
 #include <h323/h225ras.h>
 #include <h323/h235auth.h>
 
-#ifdef H323_H460
-#include <h323/h460.h>
+#ifdef OPAL_H460
+#include <h460/h460.h>
 #endif
 
 #define new PNEW
@@ -433,7 +433,7 @@ bool H323GetRTPPacketization(OpalMediaFormat & mediaFormat, const H245_RTPPayloa
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef H323_H460
+#ifdef OPAL_H460
 static void SendSetupFeatureSet(const H323Connection * connection, H225_Setup_UUIE & pdu)
 {
   H225_FeatureSet fs;
@@ -460,17 +460,37 @@ static void SendSetupFeatureSet(const H323Connection * connection, H225_Setup_UU
     fsn = fs.m_supportedFeatures;
   }
 }
-#endif
+
 
 template <typename PDUType>
-static void SendFeatureSet(const H323Connection * connection, unsigned code, PDUType & pdu)
+static void SendFeatureSet(const H323Connection * connection, unsigned code, H225_H323_UU_PDU & msg, PDUType & pdu)
 {
-  if(connection->OnSendFeatureSet(code, pdu.m_featureSet)) {
+  H225_FeatureSet fs;
+  if (!connection->OnSendFeatureSet(code,fs))
+    return;
+
+  if (code == H460_MessageType::e_callProceeding) {
     pdu.IncludeOptionalField(PDUType::e_featureSet);
-  } else {
-    pdu.RemoveOptionalField(PDUType::e_featureSet);
+    pdu.m_featureSet = fs;
+    return;
+  }
+
+  if (!fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures))
+    return;
+
+  msg.IncludeOptionalField(H225_H323_UU_PDU::e_genericData);
+
+  H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+  H225_ArrayOf_GenericData & data = msg.m_genericData;
+
+  for (PINDEX i=0; i < fsn.GetSize(); i++) {
+    PINDEX lastPos = data.GetSize();
+    data.SetSize(lastPos+1);
+    data[lastPos] = fsn[i];
   }
 }
+#endif
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -542,12 +562,20 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
 
   endpoint.SetEndpointTypeInfo(setup.m_sourceInfo);
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendSetupFeatureSet(&connection, setup);
 #endif
 
   return setup;
 }
+
+
+#ifdef H323_H460
+void H323SignalPDU::InsertH460Setup(const H323Connection & connection, H225_Setup_UUIE & setup)
+{
+   SendSetupFeatureSet(&connection, setup);
+}
+#endif
 
 
 H225_CallProceeding_UUIE &
@@ -567,8 +595,8 @@ H225_CallProceeding_UUIE &
   proceeding.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   connection.GetEndPoint().SetEndpointTypeInfo(proceeding.m_destinationInfo);
   
-#ifdef H323_H460
-  SendFeatureSet<H225_CallProceeding_UUIE>(&connection, H460_MessageType::e_callProceeding, proceeding);
+#ifdef OPAL_H460
+  SendFeatureSet<H225_CallProceeding_UUIE>(&connection, H460_MessageType::e_callProceeding, m_h323_uu_pdu, proceeding);
 #endif
 
   return proceeding;
@@ -592,8 +620,8 @@ H225_Connect_UUIE & H323SignalPDU::BuildConnect(const H323Connection & connectio
 
   connection.GetEndPoint().SetEndpointTypeInfo(connect.m_destinationInfo);
   
-#ifdef H323_H460
-  SendFeatureSet<H225_Connect_UUIE>(&connection, H460_MessageType::e_connect, connect);
+#ifdef OPAL_H460
+  SendFeatureSet<H225_Connect_UUIE>(&connection, H460_MessageType::e_connect, m_h323_uu_pdu, connect);
 #endif
 
   return connect;
@@ -633,8 +661,8 @@ H225_Alerting_UUIE & H323SignalPDU::BuildAlerting(const H323Connection & connect
   alerting.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   connection.GetEndPoint().SetEndpointTypeInfo(alerting.m_destinationInfo);
   
-#ifdef H323_H460
-  SendFeatureSet<H225_Alerting_UUIE>(&connection, H460_MessageType::e_alerting, alerting);
+#ifdef OPAL_H460
+  SendFeatureSet<H225_Alerting_UUIE>(&connection, H460_MessageType::e_alerting, m_h323_uu_pdu, alerting);
 #endif
 
   return alerting;
@@ -792,16 +820,15 @@ H225_ReleaseComplete_UUIE &
   else
     release.IncludeOptionalField(H225_ReleaseComplete_UUIE::e_reason);
   
-#ifdef H323_H460
-  SendFeatureSet<H225_ReleaseComplete_UUIE>(&connection, H460_MessageType::e_releaseComplete, release);
+#ifdef OPAL_H460
+  SendFeatureSet<H225_ReleaseComplete_UUIE>(&connection, H460_MessageType::e_releaseComplete, m_h323_uu_pdu, release);
 #endif
 
   return release;
 }
 
 
-H225_Facility_UUIE * H323SignalPDU::BuildFacility(const H323Connection & connection,
-                                                  PBoolean empty)
+H225_Facility_UUIE * H323SignalPDU::BuildFacility(const H323Connection & connection, bool empty, unsigned reason)
 {
   q931pdu.BuildFacility(connection.GetCallReference(), connection.HadAnsweredCall());
   if (empty) {
@@ -816,8 +843,9 @@ H225_Facility_UUIE * H323SignalPDU::BuildFacility(const H323Connection & connect
   fac.IncludeOptionalField(H225_Facility_UUIE::e_callIdentifier);
   fac.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   
-#ifdef H323_H460
-  SendFeatureSet<H225_Facility_UUIE>(&connection, H460_MessageType::e_facility, fac);
+#ifdef OPAL_H460
+  if (reason == H225_FacilityReason::e_featureSetUpdate)
+    SendFeatureSet<H225_Facility_UUIE>(&connection, H460_MessageType::e_facility, m_h323_uu_pdu, fac);
 #endif
 
   return &fac;

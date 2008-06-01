@@ -64,8 +64,8 @@
 #endif
 
 #ifdef OPAL_H460
-#include <h323/h460.h>
-#include <h323/h4601.h>
+#include <h460/h460.h>
+#include <h460/h4601.h>
 #endif
 
 const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
@@ -104,7 +104,7 @@ const char * H323Connection::GetFastStartStateName(FastStartStates s)
 }
 #endif
 
-#ifdef H323_H460
+#ifdef OPAL_H460
 static void ReceiveSetupFeatureSet(const H323Connection * connection, const H225_Setup_UUIE & pdu)
 {
   H225_FeatureSet fs;
@@ -135,15 +135,34 @@ static void ReceiveSetupFeatureSet(const H323Connection * connection, const H225
       connection->OnReceiveFeatureSet(H460_MessageType::e_setup, fs);
   }
 }
-#endif
+
+
+template <typename PDUType>
+static void ReceiveFeatureData(const H323Connection * connection, unsigned code, const PDUType & pdu)
+{
+  if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_genericData)) {
+    H225_FeatureSet fs;
+    fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
+    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+    const H225_ArrayOf_GenericData & data = pdu.m_h323_uu_pdu.m_genericData;
+    for (PINDEX i=0; i < data.GetSize(); i++) {
+      PINDEX lastPos = fsn.GetSize();
+      fsn.SetSize(lastPos+1);
+      fsn[lastPos] = (H225_FeatureDescriptor &)data[i];
+    }
+    connection->OnReceiveFeatureSet(code, fs);
+  }
+}
+
 
 template <typename PDUType>
 static void ReceiveFeatureSet(const H323Connection * connection, unsigned code, const PDUType & pdu)
 {
-  if(pdu.HasOptionalField(PDUType::e_featureSet)) {
-    connection->OnReceiveFeatureSet(code, pdu.m_featureSet);
-  }
+    if (pdu.HasOptionalField(PDUType::e_featureSet))
+      connection->OnReceiveFeatureSet(code, pdu.m_featureSet);
 }
+#endif
+
 
 H323Connection::H323Connection(OpalCall & call,
                                H323EndPoint & ep,
@@ -152,11 +171,11 @@ H323Connection::H323Connection(OpalCall & call,
                                const H323TransportAddress & address,
                                unsigned options,
                                OpalConnection::StringOptions * stringOptions)
-  : OpalRTPConnection(call, ep, token, options, stringOptions),
-    endpoint(ep),
-    gkAccessTokenOID(ep.GetGkAccessTokenOID())
-#ifdef H323_H460
-    ,features(ep.GetFeatureSet())
+  : OpalRTPConnection(call, ep, token, options, stringOptions)
+  , endpoint(ep)
+  , gkAccessTokenOID(ep.GetGkAccessTokenOID())
+#ifdef OPAL_H460
+  , features(ep.GetFeatureSet())
 #endif
 {
   synchronousOnRelease = false;
@@ -288,10 +307,9 @@ H323Connection::H323Connection(OpalCall & call,
 
   alertDone   = PFalse;
   
-#ifdef H323_H460
-  features.LoadFeatureSet(H460_Feature::FeatureSignal, this);
+#ifdef OPAL_H460
+  features->LoadFeatureSet(H460_Feature::FeatureSignal, this);
 #endif
-  
 }
 
 
@@ -312,6 +330,9 @@ H323Connection::~H323Connection()
   delete connectPDU;
   delete progressPDU;
   delete holdMediaChannel;
+#ifdef H323_H460
+  delete features;
+#endif
   delete controlListener;
 
   PTRACE(4, "H323\tConnection " << callToken << " deleted.");
@@ -556,6 +577,10 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   }
 #endif
 
+#ifdef H323_H460
+   ReceiveFeatureData<H323SignalPDU>(this, q931.GetMessageType(), pdu);
+#endif
+
   // Add special code to detect if call is from a Cisco and remoteApplication needs setting
   if (GetRemoteApplication().IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
     for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_nonStandardControl.GetSize(); i++) {
@@ -754,8 +779,113 @@ void H323Connection::OnEstablished()
 
 void H323Connection::OnSendARQ(H225_AdmissionRequest & arq)
 {
+#ifdef H323_H460
+  H225_FeatureSet fs;
+  if (OnSendFeatureSet(H460_MessageType::e_admissionRequest, fs)) {
+    if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
+      arq.IncludeOptionalField(H225_AdmissionRequest::e_genericData);
+
+      H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+      H225_ArrayOf_GenericData & data = arq.m_genericData;
+
+      for (PINDEX i=0; i < fsn.GetSize(); i++) {
+        PINDEX lastPos = data.GetSize();
+        data.SetSize(lastPos+1);
+        data[lastPos] = fsn[i];
+      }
+    }
+  }
+#endif
+
   endpoint.OnSendARQ(*this, arq);
 }
+
+
+void H323Connection::OnReceivedACF(const H225_AdmissionConfirm & acf)
+{
+#ifdef H323_H460
+  if (acf.HasOptionalField(H225_AdmissionConfirm::e_genericData)) {
+    const H225_ArrayOf_GenericData & data = acf.m_genericData;
+
+    if (data.GetSize() > 0) {
+      H225_FeatureSet fs;
+      fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
+      H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+      fsn.SetSize(data.GetSize());
+      for (PINDEX i=0; i < data.GetSize(); i++) 
+        fsn[i] = (H225_FeatureDescriptor &)data[i];
+
+      OnReceiveFeatureSet(H460_MessageType::e_admissionConfirm, fs);
+    }
+  }
+#endif
+}
+
+
+void H323Connection::OnReceivedARJ(const H225_AdmissionReject & arj)
+{
+#ifdef H323_H460
+  if (arj.HasOptionalField(H225_AdmissionReject::e_genericData)) {
+    const H225_ArrayOf_GenericData & data = arj.m_genericData;
+
+    if (data.GetSize() > 0) {
+      H225_FeatureSet fs;
+      fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
+      H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+      fsn.SetSize(data.GetSize());
+      for (PINDEX i=0; i < data.GetSize(); i++) 
+        fsn[i] = (H225_FeatureDescriptor &)data[i];
+
+      OnReceiveFeatureSet(H460_MessageType::e_admissionReject, fs);
+    }
+  }
+#endif
+}
+
+
+void H323Connection::OnSendIRR(H225_InfoRequestResponse & irr) const
+{
+#ifdef H323_H460
+  H225_FeatureSet fs;
+  if (OnSendFeatureSet(H460_MessageType::e_inforequestresponse, fs)) {
+    if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
+      irr.IncludeOptionalField(H225_InfoRequestResponse::e_genericData);
+
+      H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+      H225_ArrayOf_GenericData & data = irr.m_genericData;
+
+      for (PINDEX i=0; i < fsn.GetSize(); i++) {
+        PINDEX lastPos = data.GetSize();
+        data.SetSize(lastPos+1);
+        data[lastPos] = fsn[i];
+      }
+    }
+  }
+#endif
+}
+
+
+void H323Connection::OnSendDRQ(H225_DisengageRequest & drq) const
+{
+#ifdef H323_H460
+  H225_FeatureSet fs;
+  if (OnSendFeatureSet(H460_MessageType::e_disengagerequest, fs)) {
+    if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
+      drq.IncludeOptionalField(H225_DisengageRequest::e_genericData);
+
+      H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+      H225_ArrayOf_GenericData & data = drq.m_genericData;
+
+      for (PINDEX i=0; i < fsn.GetSize(); i++) {
+        PINDEX lastPos = data.GetSize();
+        data.SetSize(lastPos+1);
+        data[lastPos] = fsn[i];
+      }
+    }
+  }
+#endif
+}
+
 
 void H323Connection::OnCleared()
 {
@@ -878,7 +1008,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
       localDestinationAddress = '*';
   }
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveSetupFeatureSet(this, setup);
 #endif
 
@@ -1179,7 +1309,7 @@ PBoolean H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(call.m_destinationInfo);
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_CallProceeding_UUIE>(this, H460_MessageType::e_callProceeding, call);
 #endif
 
@@ -1230,7 +1360,7 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(alert.m_destinationInfo);
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_Alerting_UUIE>(this, H460_MessageType::e_alerting, alert);
 #endif
 
@@ -1272,7 +1402,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(connect.m_destinationInfo);
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_Connect_UUIE>(this, H460_MessageType::e_connect, connect);
 #endif
 
@@ -1357,8 +1487,10 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
     return PFalse;
   const H225_Facility_UUIE & fac = pdu.m_h323_uu_pdu.m_h323_message_body;
   
-#ifdef H323_H460
-  ReceiveFeatureSet<H225_Facility_UUIE>(this, H460_MessageType::e_facility, fac);
+#ifdef OPAL_H460
+  // Do not process H.245 Control PDU's
+  if (!pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h245Control))
+    ReceiveFeatureSet<H225_Facility_UUIE>(this, H460_MessageType::e_facility, fac);
 #endif
 
   SetRemoteVersions(fac.m_protocolIdentifier);
@@ -1474,9 +1606,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
   if (q931Cause == Q931::ErrorInCauseIE)
     q931Cause = pdu.GetQ931().GetCause();
   
-#ifdef H323_H460
   const H225_ReleaseComplete_UUIE & rc = pdu.m_h323_uu_pdu.m_h323_message_body;
-#endif
 
   switch (connectionState) {
     case EstablishedConnection :
@@ -1501,14 +1631,13 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
       }
 #endif
           
-#ifdef H323_H460
+#ifdef OPAL_H460
       ReceiveFeatureSet<H225_ReleaseComplete_UUIE>(this, H460_MessageType::e_releaseComplete, rc);
 #endif
 
       if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_releaseComplete)
         Release(EndedByRefusal);
       else {
-        const H225_ReleaseComplete_UUIE & rc = pdu.m_h323_uu_pdu.m_h323_message_body;
         SetRemoteVersions(rc.m_protocolIdentifier);
         Release(H323TranslateToCallEndReason(pdu.GetQ931().GetCause(), rc.m_reason));
       }
@@ -1812,6 +1941,10 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     connectionState = AwaitingTransportConnect;
     return EndedByConnectFail;
   }
+
+#ifdef H323_H460
+  setupPDU.InsertH460Setup(*this, setup);
+#endif
 
   // Do the transport connect
   connectionState = AwaitingTransportConnect;
@@ -4575,20 +4708,30 @@ void H323Connection::MonitorCallStatus()
     ClearCall(EndedByDurationLimit);
 }
 
-PBoolean H323Connection::OnSendFeatureSet(unsigned code, H225_FeatureSet & features) const
+PBoolean H323Connection::OnSendFeatureSet(unsigned code, H225_FeatureSet & featureSet) const
 {
-  return endpoint.OnSendFeatureSet(code, features);
-}
-
-void H323Connection::OnReceiveFeatureSet(unsigned code, const H225_FeatureSet & features) const
-{
-  endpoint.OnReceiveFeatureSet(code, features);
-}
-
 #ifdef H323_H460
+  return features->SendFeature(code, featureSet);
+#else
+  return endpoint.OnSendFeatureSet(code, featureSet);
+#endif
+}
+
+
+void H323Connection::OnReceiveFeatureSet(unsigned code, const H225_FeatureSet & featureSet) const
+{
+#ifdef H323_H460
+  features->ReceiveFeature(code, featureSet);
+#else
+  endpoint.OnReceiveFeatureSet(code, featureSet);
+#endif
+}
+
+
+#ifdef OPAL_H460
 H460_FeatureSet * H323Connection::GetFeatureSet()
 {
-    return &features;
+  return features;
 }
 #endif
 
