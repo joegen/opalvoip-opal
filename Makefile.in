@@ -208,6 +208,7 @@ SOURCES += $(ASN_CXX_FILES) \
 ifeq ($(OPAL_H460), 1)
 ifdef H460_AVAIL
 SOURCES += $(OPAL_SRCDIR)/h460/h4601.cxx \
+	   $(OPAL_SRCDIR)/h460/h46018.cxx \
 	   $(OPAL_SRCDIR)/h460/h46019.cxx \
 	   $(OPAL_SRCDIR)/h460/h4601.cxx \
 	   $(OPAL_SRCDIR)/h460/h4609.cxx \
@@ -464,6 +465,7 @@ install ::
 		     $(DESTDIR)$(PREFIX)/include/opal/asn \
 		     $(DESTDIR)$(PREFIX)/include/opal/codec \
 		     $(DESTDIR)$(PREFIX)/include/opal/h323 \
+		     $(DESTDIR)$(PREFIX)/include/opal/h460 \
 		     $(DESTDIR)$(PREFIX)/include/opal/iax2 \
 		     $(DESTDIR)$(PREFIX)/include/opal/lids \
 		     $(DESTDIR)$(PREFIX)/include/opal/opal \
@@ -494,6 +496,9 @@ install ::
 	done)
 	( for fn in include/h323/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/h323 ; \
+	done)
+	( for fn in include/h460/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/h460 ; \
 	done)
 	( for fn in include/iax2/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/iax2 ; \
