@@ -88,19 +88,16 @@ protected:
 
 class OpalOID : public PASN_ObjectId
 {
-public:
-
-	OpalOID();
-
-	OpalOID(
+  public:
+    OpalOID();
+    OpalOID(
       const char * str  ///< New string to assign.
     );
 
-	OpalOID & operator+(const char *);
+    OpalOID & operator+(const char *);
 
-	unsigned GetLastIdentifier() {
-         return (*this)[GetSize()-1];
-	}
+    unsigned GetLastIdentifier()
+    { return (*this)[GetSize()-1]; }
 };
 
 
