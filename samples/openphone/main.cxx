@@ -2114,11 +2114,12 @@ void MyManager::OnNewCodec(wxCommandEvent& theEvent)
 {
   OpalMediaFormat mediaFormat = GetMenuBar()->FindItem(theEvent.GetId())->GetLabel().c_str();
   if (mediaFormat.IsValid()) {
-    PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReadWrite);
+    PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
     if (connection != NULL) {
+      OpalMediaStreamPtr stream = connection->GetMediaStream(mediaFormat.GetMediaType(), true);
       if (!connection->GetCall().OpenSourceMediaStreams(*connection,
                                                         mediaFormat.GetMediaType(),
-                                                        mediaFormat.GetDefaultSessionID(),
+                                                        stream != NULL ? stream->GetSessionID() : 0,
                                                         mediaFormat))
         LogWindow << "Could not change codec to " << mediaFormat << endl;
     }

@@ -933,12 +933,15 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
   OpalMediaStreamPtr otherStream = GetMediaStream(sessionID, !isSource);
   if (otherStream != NULL && otherStream->IsOpen() && otherStream->GetMediaFormat() != mediaFormat) {
     if (isSource) {
-      otherStream->GetPatch()->GetSource().Close();
-      GetCall().OpenSourceMediaStreams(*GetCall().GetOtherPartyConnection(*this), mediaFormat.GetMediaType(), sessionID);
+      OpalMediaPatch * patch = otherStream->GetPatch();
+      if (patch != NULL)
+        patch->GetSource().Close();
+      GetCall().OpenSourceMediaStreams(*GetCall().GetOtherPartyConnection(*this),
+                                       mediaFormat.GetMediaType(), sessionID, mediaFormat);
     }
     else {
       otherStream->Close();
-      GetCall().OpenSourceMediaStreams(*this, mediaFormat.GetMediaType(), sessionID);
+      GetCall().OpenSourceMediaStreams(*this, mediaFormat.GetMediaType(), sessionID, mediaFormat);
     }
   }
 
