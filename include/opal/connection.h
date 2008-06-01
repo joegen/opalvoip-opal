@@ -850,6 +850,16 @@ class OpalConnection : public PSafeObject
       bool source          ///<  Indicates the direction of stream.
     ) const;
 
+    /**Get a media stream.
+       Locates a stream given a media type. Each session would usually
+       have two media streams associated with it, so the source flag
+       may be used to distinguish which channel to return.
+      */
+    OpalMediaStreamPtr GetMediaStream(
+      const OpalMediaType & mediaType,  ///<  Media type to search for.
+      bool source          ///<  Indicates the direction of stream.
+    ) const;
+
     /**Call back when opening a media stream.
        This function is called when a connection has created a new media
        stream according to the logic of its underlying protocol.

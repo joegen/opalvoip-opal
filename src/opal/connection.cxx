@@ -728,6 +728,16 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(unsigned sessionId, bool sourc
 }
 
 
+OpalMediaStreamPtr OpalConnection::GetMediaStream(const OpalMediaType & mediaType, bool source) const
+{
+  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+    if (mediaStream->GetMediaFormat().GetMediaType() == mediaType && mediaStream->IsSource() == source)
+      return mediaStream;
+  }
+
+  return NULL;
+}
+
 
 PBoolean OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
 {

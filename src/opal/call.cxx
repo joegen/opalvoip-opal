@@ -372,21 +372,30 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
 PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, 
                                      const OpalMediaType & mediaType,
                                                   unsigned sessionID, 
-                               const OpalMediaFormatList & preselectedFormats)
+                                   const OpalMediaFormat & preselectedFormat)
 {
   PSafeLockReadOnly lock(*this);
   if (isClearing || !lock.IsLocked())
     return false;
 
   // Check if already done
-  OpalMediaStreamPtr source = connection.GetMediaStream(sessionID, true);
-  if (source != NULL && (preselectedFormats.IsEmpty() || preselectedFormats.HasFormat(source->GetMediaFormat()))) {
-    PTRACE(3, "Call\tOpenSourceMediaStreams (already opened) for session " << sessionID << " on " << connection);
-    return true;
+  OpalMediaStreamPtr sinkStream;
+  OpalMediaStreamPtr sourceStream = connection.GetMediaStream(sessionID, true);
+  if (sourceStream != NULL) {
+    OpalMediaPatch * patch = sourceStream->GetPatch();
+    if (patch != NULL)
+      sinkStream = patch->GetSink();
+    if (!preselectedFormat.IsValid() ||
+         preselectedFormat == sourceStream->GetMediaFormat() ||
+         (sinkStream != NULL && sinkStream->GetMediaFormat() == preselectedFormat)) {
+      PTRACE(3, "Call\tOpenSourceMediaStreams (already opened) for session " << sessionID << " on " << connection);
+      return true;
+    }
   }
 
-  PTRACE(3, "Call\tOpenSourceMediaStreams " << (source != NULL ? "replacing" : "opening") << " session " << sessionID << " on " << connection);
-  source.SetNULL();
+  PTRACE(3, "Call\tOpenSourceMediaStreams " << (sourceStream != NULL ? "replacing" : "opening")
+         << ' ' << mediaType << " session " << sessionID << " on " << connection);
+  sourceStream.SetNULL();
 
   // handle RTP payload translation
   RTP_DataFrame::PayloadMapType map;
@@ -407,34 +416,42 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   OpalMediaFormat sourceFormat, sinkFormat;
 
   // Reorder destinations so we give preference to symmetric codecs
-  OpalMediaStreamPtr otherDirection = connection.GetMediaStream(sessionID, false);
-  if (otherDirection != NULL)
-    sinkFormat = otherDirection->GetMediaFormat();
+  if (sinkStream != NULL)
+    sinkFormat = sinkStream->GetMediaFormat();
 
   while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
     OpalMediaFormatList sinkMediaFormats = otherConnection->GetMediaFormats();
-    sinkMediaFormats.Reorder(sinkFormat.GetName()); // Preferential treatment to format already in use
-
-    // Get other media directions format so we give preference to symmetric codecs
-    if ((otherDirection = otherConnection->GetMediaStream(sessionID, true)) != NULL)
-      sinkMediaFormats.Reorder(otherDirection->GetMediaFormat().GetName());
+    if (preselectedFormat.IsValid()  && sinkMediaFormats.HasFormat(preselectedFormat))
+      sinkMediaFormats = preselectedFormat;
+    else
+      sinkMediaFormats.Reorder(sinkFormat.GetName()); // Preferential treatment to format already in use
 
     OpalMediaFormatList sourceMediaFormats;
     if (sourceFormat.IsValid())
       sourceMediaFormats = sourceFormat; // Use the source format already established
-    else if (!preselectedFormats.IsEmpty())
-      sourceMediaFormats = preselectedFormats;
     else {
       sourceMediaFormats = connection.GetMediaFormats();
 
-      // remove any media formats that do not match the media type
-      PINDEX i = 0;
-      while (i < sourceMediaFormats.GetSize()) {
-        if (sourceMediaFormats[i].GetMediaType() != mediaType)
-          sourceMediaFormats.RemoveAt(i);
-        else
-          i++;
+      if (preselectedFormat.IsValid()  && sourceMediaFormats.HasFormat(preselectedFormat))
+        sourceMediaFormats = preselectedFormat;
+      else {
+        // remove any media formats that do not match the media type
+        PINDEX i = 0;
+        while (i < sourceMediaFormats.GetSize()) {
+          if (sourceMediaFormats[i].GetMediaType() != mediaType)
+            sourceMediaFormats.RemoveAt(i);
+          else
+            i++;
+        }
       }
+    }
+
+    // Get other media directions format so we give preference to symmetric codecs
+    OpalMediaStreamPtr otherDirection = otherConnection->GetMediaStream(sessionID, true);
+    if (otherDirection != NULL) {
+      PString priorityFormat = otherDirection->GetMediaFormat().GetName();
+      sourceMediaFormats.Reorder(priorityFormat);
+      sinkMediaFormats.Reorder(priorityFormat);
     }
 
     if (!SelectMediaFormats(sourceMediaFormats,
@@ -444,27 +461,30 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
                             sinkFormat))
       return false;
 
+    if (sessionID == 0)
+      sessionID = mediaType.GetDefinition()->GetDefaultSessionId();
+
     // Finally have the negotiated formats, open the streams
-    if (source == NULL) {
-      source = connection.OpenMediaStream(sourceFormat, sessionID, true);
-      if (source == NULL)
+    if (sourceStream == NULL) {
+      sourceStream = connection.OpenMediaStream(sourceFormat, sessionID, true);
+      if (sourceStream == NULL)
         return false;
     }
 
-    OpalMediaStreamPtr sink = otherConnection->OpenMediaStream(sinkFormat, sessionID, false);
-    if (sink != NULL) {
+    sinkStream = otherConnection->OpenMediaStream(sinkFormat, sessionID, false);
+    if (sinkStream != NULL) {
       startedOne = true;
       if (patch == NULL) {
-        patch = manager.CreateMediaPatch(*source, source->RequiresPatchThread());
+        patch = manager.CreateMediaPatch(*sourceStream, sourceStream->RequiresPatchThread());
         if (patch == NULL)
           return false;
       }
-      patch->AddSink(sink, map);
+      patch->AddSink(sinkStream, map);
     }
   }
 
   if (!startedOne) {
-    connection.RemoveMediaStream(*source);
+    connection.RemoveMediaStream(*sourceStream);
     return false;
   }
 

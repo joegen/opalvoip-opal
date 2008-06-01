@@ -122,7 +122,11 @@ class OpalMediaPatch : public PObject
       */
     OpalMediaStream & GetSource() const { return source; }
 
-    /**Get the mediaformat for a sink stream
+    /**Get the media stream for a sink stream
+      */
+    OpalMediaStreamPtr GetSink(PINDEX i = 0) const;
+
+    /**Get the media format for a sink stream
       */
     OpalMediaFormat GetSinkFormat(PINDEX i = 0) const;
 
