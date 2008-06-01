@@ -47,8 +47,8 @@
 #include <h323/h323pdu.h>
 #include <h323/h323rtp.h>
 
-#ifdef H323_H460
-#include <h323/h4601.h>
+#ifdef OPAL_H460
+#include <h460/h4601.h>
 #endif
 
 #define new PNEW
@@ -79,19 +79,19 @@ static PTimeInterval AdjustTimeout(unsigned seconds)
 /////////////////////////////////////////////////////////////////////////////
 
 H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
-  : H225_RAS(ep, trans),
+  : H225_RAS(ep, trans)
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
-    highPriorityMonitor(*this, HighPriority),
-    lowPriorityMonitor(*this, LowPriority),
+  , highPriorityMonitor(*this, HighPriority)
+  , lowPriorityMonitor(*this, LowPriority)
 #ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
-    requestMutex(1, 1),
-    authenticators(ep.CreateAuthenticators())
-#ifdef H323_H460
-    ,features(ep.GetFeatureSet())
+  , requestMutex(1, 1)
+  , authenticators(ep.CreateAuthenticators())
+#ifdef OPAL_H460
+  , features(ep.GetFeatureSet())
 #endif
 {
   alternatePermanent = PFalse;
@@ -112,8 +112,9 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
 
   monitor = PThread::Create(PCREATE_NOTIFIER(MonitorMain), "GkMonitor");
   
-#ifdef H323_H460
-  features.LoadFeatureSet(H460_Feature::FeatureRas);
+#ifdef OPAL_H460
+  features->AttachEndPoint(&ep);
+  features->LoadFeatureSet(H460_Feature::FeatureRas);
 #endif
 }
 
@@ -129,6 +130,10 @@ H323Gatekeeper::~H323Gatekeeper()
   }
 
   StopChannel();
+
+#ifdef H323_H460
+  delete features;
+#endif
 }
 
 
@@ -1947,8 +1952,8 @@ void H323Gatekeeper::UpdateConnectionStatus()
 
 PBoolean H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & message) const
 {
-#ifdef H323_H460
-  return features.SendFeature(pduType, message);
+#ifdef OPAL_H460
+  return features->SendFeature(pduType, message);
 #else
   return endpoint.OnSendFeatureSet(pduType, message);
 #endif
@@ -1957,8 +1962,8 @@ PBoolean H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & me
 
 void H323Gatekeeper::OnReceiveFeatureSet(unsigned pduType, const H225_FeatureSet & message) const
 {
-#ifdef H323_H460
-  features.ReceiveFeature(pduType, message);
+#ifdef OPAL_H460
+  features->ReceiveFeature(pduType, message);
 #else
   endpoint.OnReceiveFeatureSet(pduType, message);
 #endif

@@ -42,7 +42,7 @@
 #include <h323/h225ras.h>
 #include <h323/h235auth.h>
 
-#ifdef H323_H460
+#ifdef OPAL_H460
 class H460_FeatureSet;
 #endif
 
@@ -391,8 +391,8 @@ class H323Gatekeeper : public H225_RAS
 
     PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;
 	
-#ifdef H323_H460
-    H460_FeatureSet & features;
+#ifdef OPAL_H460
+    H460_FeatureSet * features;
 #endif
 	
 };
