@@ -1,15 +1,24 @@
-// H4601.cpp: implementation of the H460 class.
+// H4601.cxx: implementation of the H460 class.
 /*
- * Virteos H.460 Implementation for the OpenH323 Project.
- *
- * Virteos is a Trade Mark of ISVO (Asia) Pte Ltd.
+ * H.460 Implementation for the h323plus Library.
  *
  * Copyright (c) 2004 ISVO (Asia) Pte Ltd. All Rights Reserved.
  *
  * The contents of this file are subject to the Mozilla Public License
- * Version 1.0 (the "License"); you may not use this file except in
+ * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.mozilla.org/MPL/
+ *
+ * Alternatively, the contents of this file may be used under the terms
+ * of the General Public License (the  "GNU License"), in which case the
+ * provisions of GNU License are applicable instead of those
+ * above. If you wish to allow use of your version of this file only
+ * under the terms of the GNU License and not to allow others to use
+ * your version of this file under the MPL, indicate your decision by
+ * deleting the provisions above and replace them with the notice and
+ * other provisions required by the GNU License. If you do not delete
+ * the provisions above, a recipient may use your version of this file
+ * under either the MPL or the GNU License."
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -22,7 +31,7 @@
  * The Initial Developer of the Original Code is ISVO (Asia) Pte Ltd.
  *
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Many thanks to Simon Horne.
  *
  * $Revision$
  * $Author$
@@ -31,18 +40,16 @@
 
 #include <ptlib.h>
 
-#include <opal/buildopts.h>
-#if OPAL_H323
-
 #ifdef __GNUC__
 #pragma implementation "h4601.h"
 #endif
 
-#include <h323/h460.h>
+#include <ptlib/pluginmgr.h>
+#include "h460/h460.h"
+#include "h460/h4601.h"
 
-#include <h323/h4601.h>
+#include <h323/h323ep.h>
 
-#include <h323/h323.h>
 
 OpalOID::OpalOID()
 {
@@ -52,6 +59,11 @@ OpalOID::OpalOID()
 OpalOID::OpalOID(const char * str )
 {
 	SetValue(str);	
+}
+
+OpalOID & OpalOID::operator+(const char * str)
+{ 
+	return *(new OpalOID(AsString() + "." + str)); 
 }
 
 H460_FeatureID::H460_FeatureID()
@@ -232,15 +244,14 @@ H460_FeatureContent::H460_FeatureContent(const H225_AliasAddress & add)
 H460_FeatureContent::H460_FeatureContent(const PURL & add)
 {
 
-	H225_AliasAddress * alias = new H225_AliasAddress();
-
-	alias->SetTag(H225_AliasAddress::e_url_ID);
-	PASN_IA5String & url = *alias;
+	H225_AliasAddress alias;
+	alias.SetTag(H225_AliasAddress::e_url_ID);
+	PASN_IA5String & url = alias;
 	url = add.AsString();
 
 	SetTag(H225_Content::e_alias); 
 	H225_AliasAddress & val = *this;
-	val = *alias;
+	val = alias;
 }
 
 H460_FeatureContent::H460_FeatureContent(const H323TransportAddress & add) 
@@ -250,11 +261,20 @@ H460_FeatureContent::H460_FeatureContent(const H323TransportAddress & add)
 	add.SetPDU(val);
 }
 
+H460_FeatureContent::H460_FeatureContent(const OpalGloballyUniqueID & guid)
+{
+	SetTag(H225_Content::e_id); 
+	H225_GenericIdentifier & val = *this;
+	val.SetTag(H225_GenericIdentifier::e_nonStandard);
+	H225_GloballyUniqueID & id = val;
+	id.SetValue(guid.AsString());
+}
+
 H460_FeatureContent::H460_FeatureContent(const H460_FeatureTable & table) 
 {
 	SetTag(H225_Content::e_compound);
 	H225_ArrayOf_EnumeratedParameter & val = *this;
-	val.SetConstraints(PASN_Object::FixedConstraint, 1, 512);
+	//val.SetConstraints(PASN_Object::FixedConstraint, 1, 512);
 	val = table;
 }
 
@@ -262,7 +282,7 @@ H460_FeatureContent::H460_FeatureContent(H460_Feature * add)
 {
 	SetTag(H225_Content::e_nested); 
 	H225_ArrayOf_GenericData & val = *this;
-	val.SetConstraints(PASN_Object::FixedConstraint, 1, 16);
+	//val.SetConstraints(PASN_Object::FixedConstraint, 1, 16);
 	val.Append(add);
 	val.SetSize(val.GetSize()+1);
 }
@@ -321,7 +341,7 @@ H460_FeatureContent H460_FeatureParameter::operator=( const PString & value )
 		
 
 	if (value.Find(":") != P_MAX_INDEX) {  
-		PStringArray Cmd = value.Tokenise(":", PFalse);	
+		PStringArray Cmd = value.Tokenise(":", FALSE);	
 
 		if (Cmd.GetSize() == 2) {	// Parameter is an Address
 			H323TransportAddress * add = new H323TransportAddress(Cmd[0],(short)Cmd[1].AsUnsigned());
@@ -442,10 +462,10 @@ H460_FeatureParameter::operator H225_AliasAddress &()
 	return content;
 };
 
-H460_FeatureParameter::operator H323TransportAddress &() 
-{ 
+H460_FeatureParameter::operator H323TransportAddress () 
+{
 	H225_TransportAddress & content = m_content;
-	return (H323TransportAddress &)content;
+	return *(new H323TransportAddress(content));
 
 };
 
@@ -468,6 +488,16 @@ H460_FeatureParameter::operator PURL &()
 	return *(new PURL()); 
 };
 
+H460_FeatureParameter::operator OpalGloballyUniqueID ()
+{
+	H225_GenericIdentifier & content = m_content;
+	if (content.GetTag() == H225_GenericIdentifier::e_nonStandard) {
+       H225_GloballyUniqueID & id = content;
+       return OpalGloballyUniqueID((PASN_OctetString &)id);
+	}
+	return OpalGloballyUniqueID();
+};
+
 /////////////////////////////////////////////////////////////////////
 
 H460_FeatureTable::H460_FeatureTable()
@@ -479,7 +509,17 @@ H460_FeatureTable::H460_FeatureTable(const H225_ArrayOf_EnumeratedParameter & Xp
 	OnReceivedPDU(Xparams);
 }
 
-H460_FeatureParameter & H460_FeatureTable::AddParameter(H460_FeatureID & id, H460_FeatureContent & con)
+H460_FeatureParameter & H460_FeatureTable::AddParameter(const H460_FeatureID & id)
+{	
+PTRACE(6, "H460\tAdd ID: " << id );
+
+      H460_FeatureParameter * Nparam = new H460_FeatureParameter(id);
+	  AddParameter(*Nparam);
+
+	  return *Nparam;
+}
+
+H460_FeatureParameter & H460_FeatureTable::AddParameter(const H460_FeatureID & id, const H460_FeatureContent & con)
 {	
 PTRACE(6, "H460\tAdd ID: " << id  << " content " << con);
 
@@ -541,9 +581,9 @@ PBoolean H460_FeatureTable::HasParameter(const H460_FeatureID & id) {
 PTRACE(6, "H460\tCheck has Parameter " << id);
 
 	if (GetParameterIndex(id) < GetSize())
-		return PTrue;
+		return TRUE;
 
-	return PFalse;
+	return FALSE;
 	
 }
 
@@ -561,7 +601,7 @@ void H460_FeatureTable::RemoveParameter(const H460_FeatureID & id)
 
 }
 
-void H460_FeatureTable::ReplaceParameter(const H460_FeatureID & id, H460_FeatureContent & con)
+void H460_FeatureTable::ReplaceParameter(const H460_FeatureID & id, const H460_FeatureContent & con)
 {
     
 PTRACE(6, "H460\tReplace ID: " << id  << " content " << con);
@@ -593,9 +633,9 @@ PBoolean H460_FeatureTable::ParameterIsUnique(const H460_FeatureID & id)
 		}
 	}
 	if (j <= 1)
-	   return PTrue;
+	   return TRUE;
 	else
-	   return PFalse;
+	   return FALSE;
 }
 
 H460_FeatureParameter & H460_FeatureTable::operator[](PINDEX id)
@@ -662,13 +702,22 @@ PString H460_Feature::GetFeatureIDAsString()
    return  ((H460_FeatureID)m_id).IDString();
 }
 
-H460_FeatureParameter & H460_Feature::AddParameter(H460_FeatureID * id, H460_FeatureContent & con)
+H460_FeatureParameter & H460_Feature::AddParameter(H460_FeatureID * id, const H460_FeatureContent & con)
 {
 	if (!HasOptionalField(e_parameters)) {	
 	    IncludeOptionalField(e_parameters);
 	    CurrentTable = (H460_FeatureTable*)&m_parameters;
 	}
 	return CurrentTable->AddParameter(*id, con);
+}
+
+H460_FeatureParameter & H460_Feature::AddParameter(H460_FeatureID * id)
+{
+	if (!HasOptionalField(e_parameters)) {	
+	    IncludeOptionalField(e_parameters);
+	    CurrentTable = (H460_FeatureTable*)&m_parameters;
+	}
+	return CurrentTable->AddParameter(*id);
 }
 
 void H460_Feature::AddParameter(H460_FeatureParameter * param)
@@ -690,7 +739,7 @@ void H460_Feature::RemoveParameter(PINDEX id)
 	}
 }
 
-void H460_Feature::ReplaceParameter(H460_FeatureID id, H460_FeatureContent & con)
+void H460_Feature::ReplaceParameter(const H460_FeatureID id, const H460_FeatureContent & con)
 {
 	CurrentTable->ReplaceParameter(id,con);
 }
@@ -717,10 +766,10 @@ PBoolean H460_Feature::Contains(const H460_FeatureID & id)
 	if (HasOptionalField(e_parameters)) {	
 	    H460_FeatureTable & Table = (H460_FeatureTable &)m_parameters;
 		if (Table.HasParameter(id))
-			return PTrue;
+			return TRUE;
 	}
 
-    return PFalse;
+    return FALSE;
 }
 
 H460_FeatureParameter & H460_Feature::Value(const H460_FeatureID & id)
@@ -816,7 +865,7 @@ H460_FeatureStd::H460_FeatureStd(unsigned Identifier)
 {
 }
 
-H460_FeatureParameter & H460_FeatureStd::Add(unsigned id, H460_FeatureContent & con)
+H460_FeatureParameter & H460_FeatureStd::Add(unsigned id, const H460_FeatureContent & con)
 {
     return AddParameter(new H460_FeatureID(id),con);
 }
@@ -826,7 +875,7 @@ void H460_FeatureStd::Remove(unsigned id)
 	RemoveParameter(H460_FeatureID(id));
 }
 
-void H460_FeatureStd::Replace(unsigned id, H460_FeatureContent & con)
+void H460_FeatureStd::Replace(unsigned id, const H460_FeatureContent & con)
 {
 	ReplaceParameter(H460_FeatureID(id),con);
 }
@@ -849,17 +898,17 @@ H460_FeatureNonStd::H460_FeatureNonStd(PString Identifier)
 {
 }
 	
-H460_FeatureParameter & H460_FeatureNonStd::Add(PString id, H460_FeatureContent & con)
+H460_FeatureParameter & H460_FeatureNonStd::Add(const PString id, const H460_FeatureContent & con)
 {
 	return AddParameter(new H460_FeatureID(id),con);
 }
 
-void H460_FeatureNonStd::Remove(PString id)
+void H460_FeatureNonStd::Remove(const PString & id)
 {
 	RemoveParameter(H460_FeatureID(id));
 }
 
-void H460_FeatureNonStd::Replace(PString id, H460_FeatureContent & con)
+void H460_FeatureNonStd::Replace(const PString & id, const H460_FeatureContent & con)
 {
 	ReplaceParameter(H460_FeatureID(id),con);
 }
@@ -881,7 +930,7 @@ H460_FeatureOID::H460_FeatureOID(OpalOID Identifier)
 {
 }
 
-H460_FeatureParameter & H460_FeatureOID::Add(const PString & id, H460_FeatureContent & con)
+H460_FeatureParameter & H460_FeatureOID::Add(const PString & id, const H460_FeatureContent & con)
 {
 	PString val = GetBase() + "." + id;
 	return AddParameter(new H460_FeatureID(OpalOID(val)),con);
@@ -893,7 +942,7 @@ void H460_FeatureOID::Remove(const PString & id)
 	RemoveParameter(H460_FeatureID(OpalOID(val)));
 }
 
-void H460_FeatureOID::Replace(const PString & id, H460_FeatureContent & con)
+void H460_FeatureOID::Replace(const PString & id, const H460_FeatureContent & con)
 {
 	PString val = GetBase() + "." + id;
 	ReplaceParameter(H460_FeatureID(OpalOID(val)),con);
@@ -981,7 +1030,7 @@ PTRACE(6,"H460\tCreate Common FeatureSet");
 	}
 
 
-	return PTrue;
+	return TRUE;
 }
 
 PBoolean H460_FeatureSet::CreateFeatureSet(const H225_FeatureSet & fs)
@@ -1008,38 +1057,45 @@ PBoolean H460_FeatureSet::CreateFeatureSet(const H225_FeatureSet & fs)
 			  AddFeature((H460_Feature *)&fss[i]);
 		  }
 	  }
-	  return PTrue;
+	  return TRUE;
 }
 
 
 PBoolean H460_FeatureSet::LoadFeatureSet(int inst, H323Connection * con)
 {
+
+  if ((ep) && (ep->FeatureSetDisabled()))
+	 return FALSE;
+
   PStringList features = H460_Feature::GetFeatureNames();
 
-  for (PStringList::iterator it = features.begin(); it != features.end(); ++it) {
+      for (PINDEX i = 0; i < features.GetSize(); i++) {
+  	    if ((ep) && (!ep->OnFeatureInstance(inst,features[i]))) {
+			PTRACE(4,"H460\tFeature " << features[i] << " disabled due to policy.");
+			continue;
+		} 
+        H460_FeatureID id;
+        H460_Feature * feat = NULL;
+        if (baseSet && baseSet->HasFeature(features[i])) {
+            H460_Feature * tempfeat = baseSet->GetFeature(features[i]);
+		      if ((tempfeat->GetPurpose() >= inst) && (tempfeat->GetPurpose() < inst*2)) 
+				  feat = tempfeat;
+		} else {
+	        feat = H460_Feature::CreateFeature(features[i],inst);
+			if ((feat) && (ep)) 
+		        feat->AttachEndPoint(ep);
+		}
+		
+		if (feat) {
+		    if (con)
+		        feat->AttachConnection(con);
 
-    H460_FeatureID id;
-    H460_Feature * feat = NULL;
-    if (baseSet && baseSet->HasFeature(*it)) {
-      H460_Feature * tempfeat = baseSet->GetFeature(*it);
-      if ((tempfeat->GetPurpose() >= inst) && (tempfeat->GetPurpose() < inst*2)) 
-        feat = tempfeat;
-    } else {
-      feat = H460_Feature::CreateFeature(*it,inst);
-      if ((feat) && (ep))
-        feat->AttachEndPoint(ep);
-    }
+	       AddFeature(feat);
+		   PTRACE(4,"H460\tLoaded Feature " << features[i]);
+		}
+	  }
 
-    if (feat) {
-      if (con)
-        feat->AttachConnection(con);
-
-      AddFeature(feat);
-      PTRACE(4,"H460\tLoaded Feature " << *it);
-    }
-  }
-
-  return PTrue;
+  return TRUE;
 }
 
 PBoolean H460_FeatureSet::LoadFeature(const PString & featid)
@@ -1050,13 +1106,12 @@ PBoolean H460_FeatureSet::LoadFeature(const PString & featid)
 	if (newfeat != NULL)
 		return AddFeature(newfeat);
 	else
-		return PFalse;
+		return FALSE;
 }
 
-H460_FeatureSet & H460_FeatureSet::DeriveNewFeatureSet()
+H460_FeatureSet * H460_FeatureSet::DeriveNewFeatureSet()
 {
-	H460_FeatureSet * feat = new H460_FeatureSet(this) ;
-	return *feat;
+	return new H460_FeatureSet(this);
 }
 
 
@@ -1106,7 +1161,7 @@ PBoolean H460_FeatureSet::CreateFeatureSetPDU(H225_FeatureSet & fs, unsigned Mes
 {
 	PTRACE(6,"H460\tCreate FeatureSet " << PTracePDU(MessageID) << " PDU");
 	
-	PBoolean buildPDU = PFalse;
+	PBoolean buildPDU = FALSE;
 
 	for (PINDEX i = 0; i < Features.GetSize(); i++) {    // Iterate thro the features
 	   H460_Feature & feat = Features.GetDataAt(i);
@@ -1144,7 +1199,7 @@ PBoolean H460_FeatureSet::CreateFeatureSetPDU(H225_FeatureSet & fs, unsigned Mes
             cat = H460_Feature::FeatureSupported;
 	 }
 
-          buildPDU = PTrue;
+          buildPDU = TRUE;
 		   switch (cat) {			// Add it to the correct feature list
 			   case H460_Feature::FeatureNeeded:
 
@@ -1188,7 +1243,9 @@ PBoolean H460_FeatureSet::CreateFeatureSetPDU(H225_FeatureSet & fs, unsigned Mes
 		}
 	}
 
-	PTRACE(4,"H460\tFeatureSet for " << PTracePDU(MessageID) << " PDU\n" << fs);
+#if PTRACING
+	PTRACE(6,"H460\tFeatureSet for " << PTracePDU(MessageID) << " PDU\n" << fs);
+#endif
 
 	return buildPDU;
 }
@@ -1326,6 +1383,23 @@ PTRACE(6,"H460\tEncoding " << PTracePDU(MessageID) << " PDU for " << Feat.GetFea
 
       case H460_MessageType::e_serviceControlResponse:
 			return Feat.OnSendServiceControlResponse(pdu);
+
+	  case H460_MessageType::e_unregistrationRequest:
+		       Feat.OnSendUnregistrationRequest(pdu);
+               break;
+
+	  case H460_MessageType::e_inforequest:
+		   return Feat.OnSendInfoRequestMessage(pdu);
+
+	  case H460_MessageType::e_inforequestresponse:
+		   return Feat.OnSendInfoRequestResponseMessage(pdu);
+
+	  case H460_MessageType::e_disengagerequest:
+		   return Feat.OnSendDisengagementRequestMessage(pdu);
+
+	  case H460_MessageType::e_disengageconfirm:
+           return Feat.OnSendDisengagementConfirmMessage(pdu);
+
 /*
 	  case H460_MessageType::e_Endpoint:
 	        return Feat.OnSendEndpoint(pdu);
@@ -1352,7 +1426,7 @@ PTRACE(6,"H460\tEncoding " << PTracePDU(MessageID) << " PDU for " << Feat.GetFea
 		    return Feat.OnSendUnAllocatedPDU(pdu);
 	}
 
-	return PFalse;
+	return FALSE;
 }
 
 void H460_FeatureSet::ReadFeaturePDU(H460_Feature & Feat, const H225_FeatureDescriptor & pdu,unsigned MessageID)
@@ -1407,6 +1481,27 @@ PTRACE(6,"H460\tDecoding " << PTracePDU(MessageID) << " PDU for " << Feat.GetFea
       case H460_MessageType::e_serviceControlResponse:
 		       Feat.OnReceiveServiceControlResponse(pdu);
                break;
+
+	  case H460_MessageType::e_unregistrationRequest:
+		       Feat.OnReceiveUnregistrationRequest(pdu);
+               break;
+
+	  case H460_MessageType::e_inforequest:
+		       Feat.OnReceiveInfoRequestMessage(pdu);
+               break;
+
+	  case H460_MessageType::e_inforequestresponse:
+		       Feat.OnReceiveInfoRequestResponseMessage(pdu);
+		       break;
+
+	  case H460_MessageType::e_disengagerequest:
+		       Feat.OnReceiveDisengagementRequestMessage(pdu);
+		       break;
+
+	  case H460_MessageType::e_disengageconfirm:
+               Feat.OnReceiveDisengagementConfirmMessage(pdu);
+		       break;
+
 //	  case H460_MessageType::e_Endpoint:
 //		return Feat.OnReceiveEndpoint(pdu);
 
@@ -1451,6 +1546,11 @@ PString H460_FeatureSet::PTracePDU(PINDEX id) const
 		case H460_MessageType::e_nonStandardMessage : return  "NonStd";
 		case H460_MessageType::e_serviceControlIndication :return "Ctrl Indication";
 		case H460_MessageType::e_serviceControlResponse :return "Ctrl Response";
+		case H460_MessageType::e_unregistrationRequest:return "Unreg Request";
+		case H460_MessageType::e_inforequest:return "Info Request";
+	    case H460_MessageType::e_inforequestresponse:return "Info Response";
+	    case H460_MessageType::e_disengagerequest:return "Dis Request";
+	    case H460_MessageType::e_disengageconfirm:return "Dis Confirm";
 //		case H460_MessageType::e_Endpoint :return "Endpoint";
 		case H460_MessageType::e_setup :return "Setup";
 		case H460_MessageType::e_alerting :return "Alerting";
@@ -1490,16 +1590,13 @@ PBoolean H460_FeatureSet::HasFeature(const H460_FeatureID & id)
 	for (PINDEX i =0; i < Features.GetSize(); i++) {
 	   H460_Feature & feat = Features.GetDataAt(i);
 		if (feat.GetFeatureID() == id) {
-			return PTrue;
+			return TRUE;
 		}
 	}
-	return PFalse;
+	return FALSE;
 }
 
 H460_Feature * H460_FeatureSet::GetFeature(const H460_FeatureID & id)
 {
 	return &Features[id];
 }
-
-
-#endif // OPAL_H323

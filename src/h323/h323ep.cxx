@@ -24,7 +24,7 @@
  * Portions of this code were written with the assisance of funding from
  * Vovida Networks, Inc. http://www.vovida.com.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Many thanks to Simon Horne.
  *
  * $Revision$
  * $Author$
@@ -117,9 +117,8 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 
   secondaryConnectionsActive.DisallowDeleteObjects();
   
-#ifdef H323_H460
-  features.AttachEndPoint(this);
-  features.LoadFeatureSet(H460_Feature::FeatureBase);
+#ifdef OPAL_H460
+  disableH460 = FALSE;
 #endif
 
   manager.AttachEndPoint(this, "h323s");
@@ -1303,13 +1302,37 @@ void H323EndPoint::TranslateTCPAddress(PIPSocket::Address & localAddr,
   manager.TranslateIPAddress(localAddr, remoteAddr);
 }
 
-PBoolean H323EndPoint::OnSendFeatureSet(unsigned, H225_FeatureSet & /*features*/)
+
+PBoolean H323EndPoint::OnSendFeatureSet(unsigned id, H225_FeatureSet & featureSet)
 {
-	return PFalse;
+#ifdef H323_H460
+  return features.SendFeature(id, featureSet);
+#else
+  return false;
+#endif
 }
 
-void H323EndPoint::OnReceiveFeatureSet(unsigned, const H225_FeatureSet & /*features*/)
+
+void H323EndPoint::OnReceiveFeatureSet(unsigned id, const H225_FeatureSet & featureSet)
 {
+#ifdef H323_H460
+  features.ReceiveFeature(id, featureSet);
+#endif
+}
+
+
+void H323EndPoint::LoadBaseFeatureSet()
+{
+#ifdef H323_H460
+  features.AttachEndPoint(this);
+  features.LoadFeatureSet(H460_Feature::FeatureBase);
+#endif
+}
+
+
+bool H323EndPoint::OnFeatureInstance(int instType, const PString & identifer)
+{
+  return true;
 }
 
 

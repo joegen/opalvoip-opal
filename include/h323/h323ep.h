@@ -47,8 +47,8 @@
 #include <h323/h323caps.h>
 #include <h323/h235auth.h>
 
-#ifdef H323_H460
-#include <h323/h4601.h>
+#ifdef OPAL_H460
+#include <h460/h4601.h>
 #endif
 
 
@@ -1088,10 +1088,33 @@ class H323EndPoint : public OpalRTPEndPoint
      */
     virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &);
 	
-#ifdef H323_H460
-    /** Get the Endpoing FeatureSet
-     */
-    H460_FeatureSet & GetFeatureSet() { return features; };
+    /**Load the Base FeatureSet usually called when you initialise the endpoint prior to 
+       registering with a gatekeeper.
+      */
+    virtual void LoadBaseFeatureSet();
+
+    /**Callback when creating Feature Instance. This can be used to disable features on
+       a case by case basis by returning FALSE
+       Default returns TRUE
+      */
+    virtual bool OnFeatureInstance(
+      int instType,
+      const PString & identifer
+    );
+
+#ifdef OPAL_H460
+    /** Is the FeatureSet disabled
+      */
+    bool FeatureSetDisabled() const { return disableH460; }
+
+    /** Disable all FeatureSets. Use this for pre H323v4 interoperability
+      */
+    void FeatureSetDisable() { disableH460 = true; }
+
+    /** Get the Endpoint FeatureSet
+        This creates a new instance of the featureSet
+      */
+    H460_FeatureSet * GetFeatureSet() { return features.DeriveNewFeatureSet(); };
 #endif
 
     /**Determine if the address is "local", ie does not need STUN
@@ -1387,6 +1410,7 @@ class H323EndPoint : public OpalRTPEndPoint
 #endif
 
 #if OPAL_H460
+    bool            disableH460;
     H460_FeatureSet features;
 #endif
 

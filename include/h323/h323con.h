@@ -59,6 +59,10 @@ class H225_TransportAddress;
 class H225_ArrayOf_PASN_OctetString;
 class H225_ProtocolIdentifier;
 class H225_AdmissionRequest;
+class H225_AdmissionConfirm;
+class H225_AdmissionReject;
+class H225_InfoRequestResponse;
+class H225_DisengageRequest;
 class H225_FeatureSet;
 
 class H245_TerminalCapabilitySet;
@@ -101,7 +105,7 @@ class H45011Handler;
 
 class OpalCall;
 
-#ifdef H323_H460
+#ifdef OPAL_H460
 class H460_FeatureSet;
 #endif
 
@@ -178,17 +182,6 @@ class H323Connection : public OpalRTPConnection
       */
     virtual PBoolean SetConnected();
 
-    /**
-      * called when an ARQ needs to be sent to a gatekeeper. This allows the connection
-      * to change or check fields in the ARQ before it is sent.
-      *
-      * By default, this calls the matching function on the endpoint
-      */
-    virtual void OnSendARQ(
-      H225_AdmissionRequest & arq
-    );
-
-    
     /**Indicate to remote endpoint we are sending a progress.
 
       The default behaviour sends a PROGRESS pdu.
@@ -461,6 +454,54 @@ class H323Connection : public OpalRTPConnection
     virtual PBoolean OnUnknownSignalPDU(
       const H323SignalPDU & pdu  ///<  Received PDU
     );
+
+    /**
+      * called when an ARQ needs to be sent to a gatekeeper. This allows the connection
+      * to change or check fields in the ARQ before it is sent.
+      *
+      * By default, this calls the matching function on the endpoint
+      */
+    virtual void OnSendARQ(
+      H225_AdmissionRequest & arq
+    );
+
+    /**
+      * called when an ACF is received from a gatekeeper. 
+      *
+      * By default, this calls the matching function on the endpoint
+      */
+    virtual void OnReceivedACF(
+      const H225_AdmissionConfirm & acf
+    );
+
+    /**
+      * called when an ARJ is received from a gatekeeper. 
+      *
+      * By default, this calls the matching function on the endpoint
+      */
+    virtual void OnReceivedARJ(
+      const H225_AdmissionReject & arj
+    );
+
+    /**
+      * called when an IRR needs to be sent to a gatekeeper. This allows the connection
+      * to change or check fields in the IRR before it is sent.
+      *
+      * By default, this does nothing
+      */
+    virtual void OnSendIRR(
+      H225_InfoRequestResponse & irr
+    ) const;
+
+    /**
+      * called when an DRQ needs to be sent to a gatekeeper. This allows the connection
+      * to change or check fields in the DRQ before it is sent.
+      *
+      * By default, this does nothing
+      */
+    virtual void OnSendDRQ(
+      H225_DisengageRequest & drq
+    ) const;
 
     /**Call back for incoming call.
        This function is called from the OnReceivedSignalSetup() function
@@ -1833,7 +1874,7 @@ class H323Connection : public OpalRTPConnection
 	
 	virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const;
 
-#if H323_H460
+#if OPAL_H460
     /** Get the connection FeatureSet
      */
     virtual H460_FeatureSet * GetFeatureSet();
@@ -1988,8 +2029,8 @@ class H323Connection : public OpalRTPConnection
     H45011Handler                    * h45011handler;
 #endif
 
-#ifdef H323_H460
-	H460_FeatureSet & features;
+#ifdef OPAL_H460
+    H460_FeatureSet * features;
 #endif
 
   private:

@@ -124,7 +124,8 @@ class H323SignalPDU : public H225_H323_UserInformation
       */
     H225_Facility_UUIE * BuildFacility(
       const H323Connection & connection,  ///<  Connection PDU is generated for
-      PBoolean empty                          ///<  Flag for empty facility message
+      bool empty,                         ///<  Flag for empty facility message
+      unsigned reason = H225_FacilityReason::e_undefinedReason ///< Reason for Facility
     );
 
     /**Build a PROGRESS message.
@@ -246,6 +247,17 @@ class H323SignalPDU : public H225_H323_UserInformation
       int presentation = -1,
       int screening = -1
     );
+
+#ifdef H323_H460
+    /** When sending the H460 message in the Setup PDU you have to ensure
+        the ARQ is received first then add the Fields to the Setup PDU
+    	so we require a call back
+      */
+    void InsertH460Setup(
+      const H323Connection & connection,
+      H225_Setup_UUIE & setup
+    );
+#endif
 
   protected:
     // Even though we generally deal with the H323 protocol (H225) it is

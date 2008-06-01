@@ -50,8 +50,8 @@
 
 #include <ptclib/random.h>
 
-#ifdef H323_H460
-#include <h323/h460.h>
+#ifdef OPAL_H460
+#include <h460/h460.h>
 #endif
 
 #define new PNEW
@@ -384,10 +384,38 @@ PBoolean H225_RAS::OnReceiveRequestInProgress(const H225_RequestInProgress & /*r
 template <typename PDUType>
 static void SendFeatureSet(const H225_RAS * ras, unsigned code, PDUType & pdu)
 {
-  if(ras->OnSendFeatureSet(code, pdu.m_featureSet)) {
-    pdu.IncludeOptionalField(PDUType::e_featureSet);
-  } else {
-    pdu.RemoveOptionalField(PDUType::e_featureSet);
+  H225_FeatureSet fs;
+  if (!ras->OnSendFeatureSet(code, fs))
+    return;
+
+#ifdef H323_H460
+  switch (code) {
+    case H460_MessageType::e_gatekeeperRequest:
+    case H460_MessageType::e_gatekeeperConfirm:
+    case H460_MessageType::e_gatekeeperReject:
+    case H460_MessageType::e_registrationRequest:
+    case H460_MessageType::e_registrationConfirm: 
+    case H460_MessageType::e_registrationReject:
+    case H460_MessageType::e_setup:					
+    case H460_MessageType::e_callProceeding:
+      pdu.IncludeOptionalField(PDUType::e_featureSet);
+      pdu.m_featureSet = fs;
+      return;
+  }
+#endif
+
+  if (!fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures))
+    return;
+
+  pdu.IncludeOptionalField(PDUType::e_genericData);
+
+  H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+  H225_ArrayOf_GenericData & data = pdu.m_genericData;
+
+  for (PINDEX i = 0; i < fsn.GetSize(); i++) {
+    PINDEX lastPos = data.GetSize();
+    data.SetSize(lastPos+1);
+    data[lastPos] = fsn[i];
   }
 }
 
@@ -399,7 +427,7 @@ void H225_RAS::OnSendGatekeeperRequest(H323RasPDU &, H225_GatekeeperRequest & gr
     grq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_GatekeeperRequest>(this, H460_MessageType::e_gatekeeperRequest, grq);
 #endif
 
@@ -419,7 +447,7 @@ void H225_RAS::OnSendGatekeeperConfirm(H323RasPDU &, H225_GatekeeperConfirm & gc
     gcf.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_GatekeeperConfirm>(this, H460_MessageType::e_gatekeeperConfirm, gcf);
 #endif
 
@@ -439,7 +467,7 @@ void H225_RAS::OnSendGatekeeperReject(H323RasPDU &, H225_GatekeeperReject & grj)
     grj.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_GatekeeperReject>(this, H460_MessageType::e_gatekeeperReject, grj);
 #endif
 
@@ -461,7 +489,7 @@ static void ReceiveFeatureSet(const H225_RAS * ras, unsigned code, const PDUType
 
 PBoolean H225_RAS::OnReceiveGatekeeperRequest(const H323RasPDU &, const H225_GatekeeperRequest & grq)
 {
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_GatekeeperRequest>(this, H460_MessageType::e_gatekeeperRequest, grq);
 #endif
 
@@ -493,7 +521,7 @@ PBoolean H225_RAS::OnReceiveGatekeeperConfirm(const H323RasPDU &, const H225_Gat
     }
   }
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_GatekeeperConfirm>(this, H460_MessageType::e_gatekeeperConfirm, gcf);
 #endif
 
@@ -512,7 +540,7 @@ PBoolean H225_RAS::OnReceiveGatekeeperReject(const H323RasPDU &, const H225_Gate
   if (!CheckForResponse(H225_RasMessage::e_gatekeeperRequest, grj.m_requestSeqNum, &grj.m_rejectReason))
     return PFalse;
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_GatekeeperReject>(this, H460_MessageType::e_gatekeeperReject, grj);
 #endif
 
@@ -530,7 +558,7 @@ void H225_RAS::OnSendRegistrationRequest(H323RasPDU & pdu, H225_RegistrationRequ
 {
   OnSendRegistrationRequest(rrq);
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_RegistrationRequest>(this, H460_MessageType::e_registrationRequest, rrq);
 #endif
 	
@@ -551,7 +579,7 @@ void H225_RAS::OnSendRegistrationConfirm(H323RasPDU & pdu, H225_RegistrationConf
     rcf.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_RegistrationConfirm>(this, H460_MessageType::e_registrationConfirm, rcf);
 #endif
 
@@ -576,7 +604,7 @@ void H225_RAS::OnSendRegistrationReject(H323RasPDU & pdu, H225_RegistrationRejec
 
   OnSendRegistrationReject(rrj);
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_RegistrationReject>(this, H460_MessageType::e_registrationReject, rrj);
 #endif
 
@@ -592,7 +620,7 @@ void H225_RAS::OnSendRegistrationReject(H225_RegistrationReject & /*rrj*/)
 
 PBoolean H225_RAS::OnReceiveRegistrationRequest(const H323RasPDU &, const H225_RegistrationRequest & rrq)
 {
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_RegistrationRequest>(this, H460_MessageType::e_registrationRequest, rrq);
 #endif
 	
@@ -625,7 +653,7 @@ PBoolean H225_RAS::OnReceiveRegistrationConfirm(const H323RasPDU & pdu, const H2
                          rcf.m_cryptoTokens, H225_RegistrationConfirm::e_cryptoTokens))
     return PFalse;
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_RegistrationConfirm>(this, H460_MessageType::e_registrationConfirm, rcf);
 #endif
 
@@ -649,7 +677,7 @@ PBoolean H225_RAS::OnReceiveRegistrationReject(const H323RasPDU & pdu, const H22
                          rrj.m_cryptoTokens, H225_RegistrationReject::e_cryptoTokens))
     return PFalse;
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_RegistrationReject>(this, H460_MessageType::e_registrationReject, rrj);
 #endif
 
@@ -763,7 +791,7 @@ void H225_RAS::OnSendAdmissionRequest(H323RasPDU & pdu, H225_AdmissionRequest & 
 {
   OnSendAdmissionRequest(arq);
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_AdmissionRequest>(this, H460_MessageType::e_admissionRequest, arq);
 #endif
 	
@@ -781,7 +809,7 @@ void H225_RAS::OnSendAdmissionConfirm(H323RasPDU & pdu, H225_AdmissionConfirm & 
 {
   OnSendAdmissionConfirm(acf);
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_AdmissionConfirm>(this, H460_MessageType::e_admissionConfirm, acf);
 #endif
 	
@@ -799,7 +827,7 @@ void H225_RAS::OnSendAdmissionReject(H323RasPDU & pdu, H225_AdmissionReject & ar
 {
   OnSendAdmissionReject(arj);
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
 	SendFeatureSet<H225_AdmissionReject>(this, H460_MessageType::e_admissionReject, arj);
 #endif
 	
@@ -820,7 +848,7 @@ PBoolean H225_RAS::OnReceiveAdmissionRequest(const H323RasPDU & pdu, const H225_
                          arq.m_cryptoTokens, H225_AdmissionRequest::e_cryptoTokens))
     return PFalse;
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_AdmissionRequest>(this, H460_MessageType::e_admissionRequest, arq);
 #endif
 
@@ -844,7 +872,7 @@ PBoolean H225_RAS::OnReceiveAdmissionConfirm(const H323RasPDU & pdu, const H225_
                          acf.m_cryptoTokens, H225_AdmissionConfirm::e_cryptoTokens))
     return PFalse;
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_AdmissionConfirm>(this, H460_MessageType::e_admissionConfirm, acf);
 #endif
 
@@ -868,7 +896,7 @@ PBoolean H225_RAS::OnReceiveAdmissionReject(const H323RasPDU & pdu, const H225_A
                          arj.m_cryptoTokens, H225_AdmissionReject::e_cryptoTokens))
     return PFalse;
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_AdmissionReject>(this, H460_MessageType::e_admissionReject, arj);
 #endif
 
@@ -1078,7 +1106,7 @@ void H225_RAS::OnSendLocationRequest(H323RasPDU & pdu, H225_LocationRequest & lr
 {
   OnSendLocationRequest(lrq);
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_LocationRequest>(this, H460_MessageType::e_locationRequest, lrq);
 #endif
 	
@@ -1099,7 +1127,7 @@ PBoolean H225_RAS::OnReceiveLocationRequest(const H323RasPDU & pdu, const H225_L
                          lrq.m_cryptoTokens, H225_LocationRequest::e_cryptoTokens))
     return PFalse;
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_LocationRequest>(this, H460_MessageType::e_locationRequest, lrq);
 #endif
 
@@ -1117,7 +1145,7 @@ void H225_RAS::OnSendLocationConfirm(H323RasPDU & pdu, H225_LocationConfirm & lc
 {
   OnSendLocationConfirm(lcf);
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_LocationConfirm>(this, H460_MessageType::e_locationConfirm, lcf);
 #endif
 	
@@ -1141,7 +1169,7 @@ PBoolean H225_RAS::OnReceiveLocationConfirm(const H323RasPDU &, const H225_Locat
     locatedAddress = lcf.m_callSignalAddress;
   }
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_LocationConfirm>(this, H460_MessageType::e_locationConfirm, lcf);
 #endif
 
@@ -1159,7 +1187,7 @@ void H225_RAS::OnSendLocationReject(H323RasPDU & pdu, H225_LocationReject & lrj)
 {
   OnSendLocationReject(lrj);
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_LocationReject>(this, H460_MessageType::e_locationReject, lrj);
 #endif
 	
@@ -1183,7 +1211,7 @@ PBoolean H225_RAS::OnReceiveLocationReject(const H323RasPDU & pdu, const H225_Lo
                          lrj.m_cryptoTokens, H225_LocationReject::e_cryptoTokens))
     return PFalse;
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_LocationReject>(this, H460_MessageType::e_locationReject, lrj);
 #endif
 
@@ -1264,7 +1292,7 @@ void H225_RAS::OnSendNonStandardMessage(H323RasPDU & pdu, H225_NonStandardMessag
 {
   OnSendNonStandardMessage(nsm);
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_NonStandardMessage>(this, H460_MessageType::e_nonStandardMessage, nsm);
 #endif
 	
@@ -1285,7 +1313,7 @@ PBoolean H225_RAS::OnReceiveNonStandardMessage(const H323RasPDU & pdu, const H22
                          nsm.m_cryptoTokens, H225_NonStandardMessage::e_cryptoTokens))
     return PFalse;
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_NonStandardMessage>(this, H460_MessageType::e_nonStandardMessage, nsm);
 #endif
 
@@ -1409,7 +1437,7 @@ void H225_RAS::OnSendServiceControlIndication(H323RasPDU & pdu, H225_ServiceCont
 {
   OnSendServiceControlIndication(sci);
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_ServiceControlIndication>(this, H460_MessageType::e_serviceControlIndication, sci);
 #endif
 	
@@ -1430,7 +1458,7 @@ PBoolean H225_RAS::OnReceiveServiceControlIndication(const H323RasPDU & pdu, con
                          sci.m_cryptoTokens, H225_ServiceControlIndication::e_cryptoTokens))
     return PFalse;
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_ServiceControlIndication>(this, H460_MessageType::e_serviceControlIndication, sci);
 #endif
 
@@ -1448,7 +1476,7 @@ void H225_RAS::OnSendServiceControlResponse(H323RasPDU & pdu, H225_ServiceContro
 {
   OnSendServiceControlResponse(scr);
 	
-#ifdef H323_H460
+#ifdef OPAL_H460
   SendFeatureSet<H225_ServiceControlResponse>(this, H460_MessageType::e_serviceControlResponse, scr);
 #endif
 	
@@ -1472,7 +1500,7 @@ PBoolean H225_RAS::OnReceiveServiceControlResponse(const H323RasPDU & pdu, const
                          scr.m_cryptoTokens, H225_ServiceControlResponse::e_cryptoTokens))
     return PFalse;
   
-#ifdef H323_H460
+#ifdef OPAL_H460
   ReceiveFeatureSet<H225_ServiceControlResponse>(this, H460_MessageType::e_serviceControlResponse, scr);
 #endif
 
