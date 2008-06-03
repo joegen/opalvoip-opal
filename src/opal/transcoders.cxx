@@ -77,6 +77,7 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
   maxOutputSize = P_MAX_INDEX; // Just something, usually changed by OpalMediaPatch
   outputIsRTP = inputIsRTP = PFalse;
   acceptEmptyPayload = false;
+  acceptOtherPayloads = false;
 }
 
 

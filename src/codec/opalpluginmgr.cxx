@@ -792,10 +792,11 @@ OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(PluginCodec_Def
                          _isEncoder ? _codec->parm.audio.bytesPerFrame     : _codec->parm.audio.samplesPerFrame*2)
   , OpalPluginTranscoder(_codec, _isEncoder)
 { 
-  inputIsRTP         = (codecDef->flags & PluginCodec_InputTypeMask)  == PluginCodec_InputTypeRTP;
-  outputIsRTP        = (codecDef->flags & PluginCodec_OutputTypeMask) == PluginCodec_OutputTypeRTP;
-  comfortNoise       = (codecDef->flags & PluginCodec_EmptyPayloadMask) == PluginCodec_ComfortNoise;
-  acceptEmptyPayload = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_EmptyPayload;
+  inputIsRTP          = (codecDef->flags & PluginCodec_InputTypeMask)  == PluginCodec_InputTypeRTP;
+  outputIsRTP         = (codecDef->flags & PluginCodec_OutputTypeMask) == PluginCodec_OutputTypeRTP;
+  comfortNoise        = (codecDef->flags & PluginCodec_EmptyPayloadMask) == PluginCodec_ComfortNoise;
+  acceptEmptyPayload  = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_EmptyPayload;
+  acceptOtherPayloads = (codecDef->flags & PluginCodec_OtherPayloadMask) == PluginCodec_OtherPayload;
 }
 
 PBoolean OpalPluginFramedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
@@ -868,6 +869,7 @@ OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(PluginCodec
 { 
   comfortNoise       = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_ComfortNoise;
   acceptEmptyPayload = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_EmptyPayload;
+  acceptOtherPayloads = (codecDef->flags & PluginCodec_OtherPayloadMask) == PluginCodec_OtherPayload;
 }
 
 PBoolean OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
@@ -925,6 +927,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
 #endif
 { 
   acceptEmptyPayload = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_EmptyPayload;
+  acceptOtherPayloads = (codecDef->flags & PluginCodec_OtherPayloadMask) == PluginCodec_OtherPayload;
 }
 
 OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
