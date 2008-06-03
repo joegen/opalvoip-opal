@@ -1547,7 +1547,7 @@ PBoolean RTP_UDP::ModifyQOS(RTP_QOS * rtpqos)
 PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
                    WORD portBase, WORD portMax,
                    BYTE tos,
-                   PSTUNClient * stun,
+                   PNatMethod * natMethod,
                    RTP_QOS * rtpQos)
 {
   PWaitAndSignal mutex(dataMutex);
@@ -1576,17 +1576,18 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
   // allow for special case of portBase == 0 or portMax == 0, which indicates a shared RTP session
   if ((portBase != 0) || (portMax != 0)) {
     PIPSocket::Address bindingAddress = localAddress;
-    if (stun != NULL && stun->IsAvailable(localAddress)) {
-      switch (stun->GetRTPSupport()) {
-        case PSTUNClient::RTPSupported :
-          if (stun->CreateSocketPair(dataSocket, controlSocket, localAddress)) {
-            PTRACE(4, "RTP\tSession " << sessionID << ", STUN created RTP/RTCP socket pair.");
+    if (natMethod != NULL && natMethod->IsAvailable(localAddress)) {
+      switch (natMethod->GetRTPSupport()) {
+        case PNatMethod::RTPSupported :
+          if (natMethod->CreateSocketPair(dataSocket, controlSocket, localAddress)) {
+            PTRACE(4, "RTP\tSession " << sessionID << ", " << natMethod->GetName() << " created RTP/RTCP socket pair.");
             dataSocket->GetLocalAddress(localAddress, localDataPort);
             controlSocket->GetLocalAddress(localAddress, localControlPort);
           }
           else {
-            PTRACE(2, "RTP\tSession " << sessionID << ", STUN could not create RTP/RTCP socket pair; trying to create RTP socket anyway.");
-            if (stun->CreateSocket(dataSocket, localAddress) && stun->CreateSocket(controlSocket, localAddress)) {
+            PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
+                   << " could not create RTP/RTCP socket pair; trying to create RTP socket anyway.");
+            if (natMethod->CreateSocket(dataSocket, localAddress) && natMethod->CreateSocket(controlSocket, localAddress)) {
               dataSocket->GetLocalAddress(localAddress, localDataPort);
               controlSocket->GetLocalAddress(localAddress, localControlPort);
             }
@@ -1595,19 +1596,20 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
               delete controlSocket;
               dataSocket = NULL;
               controlSocket = NULL;
-              PTRACE(2, "RTP\tSession " << sessionID << ", STUN could not create RTP sockets individually either.");
+              PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
+                     << " could not create RTP sockets individually either, using normal sockets.");
             }
           }
           break;
 
-        case PSTUNClient::RTPIfSendMedia :
-          // We canot use STUN to create sockets as the NAT router will then
-          // not let us talk to the real RTP destination. All we can so is bind
-          // to the local interface, which telling the remote our address is the
-          // external address of the NATrouter, and hope the remote is tolerant
-          // enough of things like non adjacent RTP/RTCP ports etc.
-          bindingAddress = stun->GetInterfaceAddress();
-          localHasNAT = true;
+        case PNatMethod::RTPIfSendMedia :
+          /* We canot use NAT traversal method (e.g. STUN) to create sockets
+             as the NAT router will then not let us talk to the real RTP
+             destination. All we can so is bind to the local interface, which
+             telling the remote our address is the external address of the
+             NATrouter, and hope the remote is tolerant enough of things like
+             non adjacent RTP/RTCP ports etc. */
+          localHasNAT = natMethod->GetInterfaceAddress(bindingAddress);
           break;
 
         default :

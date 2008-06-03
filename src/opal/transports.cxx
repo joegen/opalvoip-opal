@@ -1262,7 +1262,7 @@ PBoolean OpalTransportUDP::Connect()
 
   OpalManager & manager = endpoint.GetManager();
 
-  bundle->SetSTUN(manager.GetSTUN(remoteAddress));
+  bundle->SetNatMethod(manager.GetSTUN(remoteAddress));
 
   localPort = manager.GetNextUDPPort();
   WORD firstPort = localPort;
