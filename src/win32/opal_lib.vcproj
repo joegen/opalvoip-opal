@@ -1020,60 +1020,14 @@
 					RelativePath="..\codec\echocancel.cxx">
 				</File>
 				<File
+					RelativePath="..\codec\g711a1_plc.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\codec\g711.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions="_DEBUG;$(NoInherit)"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="NDEBUG;$(NoInherit)"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\codec\g711codec.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\codec\g7231mf.cxx">
@@ -2004,6 +1958,10 @@
 				Filter="">
 				<File
 					RelativePath="..\..\include\codec\echocancel.h">
+				</File>
+				<File
+					RelativePath="..\..\include\codec\g711a1_plc.h"
+					>
 				</File>
 				<File
 					RelativePath="..\..\include\codec\g711codec.h">

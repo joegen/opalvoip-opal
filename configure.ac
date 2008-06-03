@@ -6,7 +6,8 @@ dnl $Author$
 dnl $Date$
 dnl
 
-AC_INIT(include/opal/manager.h)
+AC_INIT
+AC_CONFIG_SRCDIR([include/opal/manager.h])
 
 AC_PROG_CC
 AC_PROG_CXX
@@ -22,6 +23,7 @@ iax=yes
 audio=yes
 video=yes
 rfc4175=yes
+g711plc=yes
 statistics=yes
 plugins=yes
 #zrtp=yes
@@ -189,7 +191,7 @@ int main(int argc, char* argv[]) {
 #endif
 	exit(1);
 }"
-AC_TRY_RUN($BSR_TEST_SRC, GCC_HAS_CLZ=1, GCC_HAS_CLZ=0, GCC_HAS_CLZ=1)
+AC_RUN_IFELSE([AC_LANG_SOURCE([[$BSR_TEST_SRC]])],[GCC_HAS_CLZ=1],[GCC_HAS_CLZ=0],[GCC_HAS_CLZ=1])
 if test "${GCC_HAS_CLZ}" = "1" ; then
 	AC_MSG_RESULT(yes)
 	AC_DEFINE(GCC_HAS_CLZ, 1)
@@ -360,6 +362,7 @@ if test "$audio" = "yes" ; then
   AC_MSG_RESULT(enabled)
 else
   AC_MSG_RESULT(disabled)
+  g711plc=no
 fi
 
 dnl ########################################################################
@@ -369,8 +372,7 @@ HAS_LIBDL=0
 AC_CHECK_HEADERS([dlfcn.h], [HAS_DLFCN=yes], [HAS_DLFCN=no])
 if test "$HAS_DLFCN" = yes ; then
   AC_MSG_CHECKING(if dlopen is available)
-  AC_TRY_COMPILE([#include <dlfcn.h>],
-                  [void * p = dlopen("lib", 0);], [HAS_DLOPEN=yes], [HAS_DLOPEN=no])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <dlfcn.h>]], [[void * p = dlopen("lib", 0);]])],[HAS_DLOPEN=yes],[HAS_DLOPEN=no])
   if test "$HAS_DLOPEN" = no ; then
     AC_MSG_RESULT(no)
   else
@@ -666,6 +668,24 @@ if test "$aec" = "yes" ; then
 fi
 AC_SUBST(OPAL_AEC)
 
+dnl ########################################################################
+dnl MSWIN_DISPLAY g711plc,Packet Loss Concealment for G.711
+dnl MSWIN_DEFINE  g711plc,OPAL_G711PLC
+
+if test "$g711plc" = "yes" ; then
+  AC_ARG_ENABLE(g711plc,
+         [  --disable-g711plc       disable accoustic echo cancellation support],
+         g711plc=$enableval)
+  AC_MSG_CHECKING(G711PLC)
+  if test "$g711plc" = "yes" ; then
+    AC_DEFINE(OPAL_G711PLC, 1)
+    OPAL_G711PLC=1
+    AC_MSG_RESULT(enabled)
+  else
+    AC_MSG_RESULT(disabled)
+  fi
+fi
+AC_SUBST(OPAL_G711PLC)
 
 dnl ########################################################################
 dnl
@@ -775,9 +795,7 @@ AC_MSG_CHECKING(for libSRTP)
 if test "x$OPAL_ZRTP" = "x1" ; then
   AC_MSG_RESULT(disabled due to presence of ZRTP)
 else
-  AC_TRY_COMPILE([#include "srtp/srtp.h"],
-   [int main(int argc, char *argv[]) { crypto_policy_t p; p.cipher_key_len = SRTP_MASTER_KEY_LEN; return 0; }],
-   HAS_LIBSRTP=1)
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include "srtp/srtp.h"]], [[int main(int argc, char *argv[]) { crypto_policy_t p; p.cipher_key_len = SRTP_MASTER_KEY_LEN; return 0; }]])],[HAS_LIBSRTP=1],[])
   if test "${HAS_LIBSRTP}" = "1" ; then
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAS_LIBSRTP, 1)
@@ -845,4 +863,5 @@ AC_CONFIG_FILES(opal.pc)
 AC_CONFIG_FILES(opal.spec)
 AC_CONFIG_FILES(opal_cfg.dxy)
 
-AC_OUTPUT(src/codec/speex/libspeex/speex_config_types.h)
+AC_CONFIG_FILES([src/codec/speex/libspeex/speex_config_types.h])
+AC_OUTPUT

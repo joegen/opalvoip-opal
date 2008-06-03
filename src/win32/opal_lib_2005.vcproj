@@ -6363,6 +6363,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\codec\g711a1_plc.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\codec\g711codec.cxx"
 					>
 					<FileConfiguration
@@ -10532,6 +10536,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\codec\echocancel.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\codec\g711a1_plc.h"
 					>
 				</File>
 				<File
