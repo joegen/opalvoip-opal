@@ -365,6 +365,10 @@ ifeq ($(OPAL_RFC4175), 1)
 SOURCES += $(OPAL_SRCDIR)/codec/rfc4175.cxx
 endif
 
+ifeq ($(OPAL_G711PLC), 1)
+SOURCES += $(OPAL_SRCDIR)/codec/g711a1_plc.cxx
+endif
+
 ifeq ($(OPAL_AEC), 1)
 
 SPEEX_DIR       = $(OPAL_SRCDIR)/codec/speex

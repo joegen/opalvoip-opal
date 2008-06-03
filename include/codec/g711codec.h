@@ -36,6 +36,7 @@
 
 
 #include <opal/transcoders.h>
+#include <codec/g711a1_plc.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -45,6 +46,17 @@ class Opal_G711_uLaw_PCM : public OpalStreamedTranscoder {
     Opal_G711_uLaw_PCM();
     virtual int ConvertOne(int sample) const;
     static int ConvertSample(int sample);
+
+#if OPAL_G711PLC 
+   virtual PBoolean Convert(
+      const RTP_DataFrame & input,  ///<  Input data
+      RTP_DataFrame & output        ///<  Output data
+    );
+
+  protected:
+    OpalG711_PLC plc;
+    PINDEX       lastPayloadSize;
+#endif
 };
 
 
@@ -65,6 +77,17 @@ class Opal_G711_ALaw_PCM : public OpalStreamedTranscoder {
     Opal_G711_ALaw_PCM();
     virtual int ConvertOne(int sample) const;
     static int ConvertSample(int sample);
+
+#if OPAL_G711PLC 
+   virtual PBoolean Convert(
+      const RTP_DataFrame & input,  ///<  Input data
+      RTP_DataFrame & output        ///<  Output data
+    );
+
+  protected:
+    OpalG711_PLC plc;
+    PINDEX       lastPayloadSize;
+#endif
 };
 
 
