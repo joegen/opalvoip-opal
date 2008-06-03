@@ -156,6 +156,9 @@ enum PluginCodec_Flags {
   PluginCodec_EmptyPayloadMask       = 0x1000,
   PluginCodec_EmptyPayload           = 0x1000,
 
+  PluginCodec_OtherPayloadMask       = 0x2000,
+  PluginCodec_OtherPayload           = 0x2000,
+
   PluginCodec_BitsPerSamplePos       = 12,
   PluginCodec_BitsPerSampleMask      = 0xf000,
 };

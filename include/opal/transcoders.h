@@ -323,8 +323,9 @@ class OpalTranscoder : public OpalMediaFormatPair
       PBoolean input      ///<  Flag for input or output data size
     ) const;
 
-    virtual bool AcceptComfortNoise() const { return false; }
-    virtual bool AcceptEmptyPayload() const { return acceptEmptyPayload; }
+    virtual bool AcceptComfortNoise() const  { return false; }
+    virtual bool AcceptEmptyPayload() const  { return acceptEmptyPayload; }
+    virtual bool AcceptOtherPayloads() const { return acceptOtherPayloads; }
 
 #ifdef OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics) const;
@@ -340,6 +341,7 @@ class OpalTranscoder : public OpalMediaFormatPair
 
     PBoolean outputIsRTP, inputIsRTP;
     bool acceptEmptyPayload;
+    bool acceptOtherPayloads;
 };
 
 

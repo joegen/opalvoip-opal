@@ -565,12 +565,20 @@ void OpalMediaPatch::Sink::SetCommandNotifier(const PNotifier & notifier)
 
 static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & frame)
 {
+  RTP_DataFrame::PayloadTypes pt = frame.GetPayloadType();
+
   if (!codec.AcceptComfortNoise()) {
-    RTP_DataFrame::PayloadTypes pt = frame.GetPayloadType();
     if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN) {
+      PTRACE(4, "Patch\tRemoving comfort noise frame with payload type " << pt);
       frame.SetPayloadSize(0);   // remove the payload because the transcoder has indicated it won't understand it
       return true;
     }
+  }
+
+  if ((pt != codec.GetPayloadType(true)) && !codec.AcceptOtherPayloads()) {
+    PTRACE(4, "Patch\tRemoving frame with mismatched payload type " << pt);
+    frame.SetPayloadSize(0);   // remove the payload because the transcoder has indicated it won't understand it
+    return true;
   }
 
   if (!codec.AcceptEmptyPayload() && frame.GetPayloadSize() == 0) 
