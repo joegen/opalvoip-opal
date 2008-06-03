@@ -103,28 +103,37 @@ AC_DEFUN([OPAL_LIBAVCODEC_SOURCE],
          ])
 
 AC_DEFUN([OPAL_LIBAVCODEC_HEADER],
-         [
+         [LIBAVCODEC_HEADER=
           AC_CHECK_HEADER([libavcodec/avcodec.h], 
                           [
                            AC_DEFINE([LIBAVCODEC_HEADER], 
                                      ["libavcodec/avcodec.h"],
                                      [The libavcodec header file])
-                                     LIBAVCODEC_HEADER="libavcodec/avcodec.h"
+                           LIBAVCODEC_HEADER="libavcodec/avcodec.h"
                           ],
-                          [
-                           AC_CHECK_HEADER([ffmpeg/avcodec.h], 
-                                           [
-                                            AC_DEFINE([LIBAVCODEC_HEADER], 
-                                                      ["ffmpeg/avcodec.h"],
-                                                      [The libavcodec header file])
-                                            LIBAVCODEC_HEADER="ffmpeg/avcodec.h"
-                                           ],
-                                           [
-                                            AC_MSG_ERROR([Cannot find libavcodec header file])
-                                           ])
-                          ])
+                          [])
+          if test x$LIBAVCODEC_HEADER = x; then
+            AC_CHECK_HEADER([ffmpeg/avcodec.h], 
+                            [
+                             AC_DEFINE([LIBAVCODEC_HEADER], 
+                                       ["ffmpeg/avcodec.h"],
+                                       [The libavcodec header file])
+                             LIBAVCODEC_HEADER="ffmpeg/avcodec.h"
+                            ])
+          fi
+          if test x$LIBAVCODEC_HEADER = x; then
+            AC_CHECK_HEADER([ffmpeg/libavcodec/avcodec.h], 
+                            [
+                             AC_DEFINE([LIBAVCODEC_HEADER], 
+                                       ["ffmpeg/libavcodec/avcodec.h"],
+                                       [The libavcodec header file])
+                             LIBAVCODEC_HEADER="ffmpeg/libavcodec/avcodec.h"
+                            ])
+          fi
+          if test x$LIBAVCODEC_HEADER = x; then
+            AC_MSG_ERROR([Cannot find libavcodec header file])
+          fi
          ])
-
 dnl     ########################
 dnl     x264
 dnl     ########################
