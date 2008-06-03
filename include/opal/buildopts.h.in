@@ -91,7 +91,9 @@
 #endif
 
 
-#ifndef OPAL_AUDIO
+#ifdef OPAL_AUDIO
+#undef OPAL_G711PLC
+#else
 #define NO_OPAL_AUDIO
 #endif
 

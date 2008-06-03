@@ -690,6 +690,7 @@ OPAL_LID
 OPAL_IVR
 OPAL_RFC4175
 OPAL_AEC
+OPAL_G711PLC
 OPAL_STATISTICS
 OPAL_ZRTP
 ZRTP_INCDIR
@@ -1306,6 +1307,7 @@ Optional Features:
   --disable-ivr           disable IVR support
   --disable-rfc4175       disable RFC4175 support
   --disable-aec       disable accoustic echo cancellation support
+  --disable-g711plc       disable accoustic echo cancellation support
   --disable-statistics       disable statistics gathering support
  --enable-zrtp	enable ZRTP protocol support
   --disable-plugins           disable Plug In support
@@ -1757,6 +1759,7 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 
 
@@ -3055,6 +3058,7 @@ iax=yes
 audio=yes
 video=yes
 rfc4175=yes
+g711plc=yes
 statistics=yes
 plugins=yes
 #zrtp=yes
@@ -6306,6 +6310,7 @@ echo "${ECHO_T}enabled" >&6; }
 else
   { echo "$as_me:$LINENO: result: disabled" >&5
 echo "${ECHO_T}disabled" >&6; }
+  g711plc=no
 fi
 
 
@@ -6981,6 +6986,30 @@ echo "${ECHO_T}disabled" >&6; }
   fi
 fi
 
+
+
+
+if test "$g711plc" = "yes" ; then
+  # Check whether --enable-g711plc was given.
+if test "${enable_g711plc+set}" = set; then
+  enableval=$enable_g711plc; g711plc=$enableval
+fi
+
+  { echo "$as_me:$LINENO: checking G711PLC" >&5
+echo $ECHO_N "checking G711PLC... $ECHO_C" >&6; }
+  if test "$g711plc" = "yes" ; then
+    cat >>confdefs.h <<\_ACEOF
+#define OPAL_G711PLC 1
+_ACEOF
+
+    OPAL_G711PLC=1
+    { echo "$as_me:$LINENO: result: enabled" >&5
+echo "${ECHO_T}enabled" >&6; }
+  else
+    { echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6; }
+  fi
+fi
 
 
 
@@ -8054,6 +8083,7 @@ OPAL_LID!$OPAL_LID$ac_delim
 OPAL_IVR!$OPAL_IVR$ac_delim
 OPAL_RFC4175!$OPAL_RFC4175$ac_delim
 OPAL_AEC!$OPAL_AEC$ac_delim
+OPAL_G711PLC!$OPAL_G711PLC$ac_delim
 OPAL_STATISTICS!$OPAL_STATISTICS$ac_delim
 OPAL_ZRTP!$OPAL_ZRTP$ac_delim
 ZRTP_INCDIR!$ZRTP_INCDIR$ac_delim
@@ -8075,7 +8105,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 96; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -8681,4 +8711,5 @@ echo "$as_me: error: $ac_sub_configure failed for $ac_dir" >&2;}
     cd "$ac_popdir"
   done
 fi
+
 
