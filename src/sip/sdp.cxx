@@ -216,10 +216,15 @@ void SDPMediaFormat::SetFMTP(const PString & str)
     return;
   }
 
+  // guess at the seperator
+  char sep = ';';
+  if (str.Find(sep) == P_MAX_INDEX)
+    sep = ' ';
+
   // Parse the string for option names and values OPT=VAL;OPT=VAL
   PINDEX sep1prev = 0;
   do {
-    PINDEX sep1next = str.Find(';', sep1prev);
+    PINDEX sep1next = str.Find(sep, sep1prev);
     if (sep1next == P_MAX_INDEX)
       sep1next--; // Implicit assumption string is not a couple of gigabytes long ...
 
