@@ -243,8 +243,8 @@ void SDPMediaFormat::SetFMTP(const PString & str)
       }
     }
     if (option != NULL) {
-      PString value = str(sep2pos+1, sep1next-1).Trim();
-      if (value.IsEmpty())
+      PString value = str(sep2pos+1, sep1next-1);
+      if (value.Trim().IsEmpty())
         value = "1"; // Assume it is a boolean
       if (!option->FromString(value)) {
         PTRACE(2, "SDP\tCould not set FMTP parameter \"" << key << "\" to value \"" << value << '"');
