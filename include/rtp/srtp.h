@@ -138,7 +138,7 @@ class LibSRTP_UDP : public OpalSRTP_UDP
       WORD portBase,                    ///<  Base of ports to search
       WORD portMax,                     ///<  end of ports to search (inclusive)
       BYTE ipTypeOfService,             ///<  Type of Service byte
-      PSTUNClient * stun = NULL,        ///<  STUN server to use createing sockets (or NULL if no STUN)
+      PNatMethod * natMethod = NULL,    ///<  NAT traversal method to use createing sockets
       RTP_QOS * rtpqos = NULL           ///<  QOS spec (or NULL if no QoS)
     );
 

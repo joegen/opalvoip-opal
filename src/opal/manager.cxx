@@ -1182,9 +1182,9 @@ PSTUNClient::NatTypes OpalManager::SetSTUNServer(const PString & server)
   stunServer = server;
 
   if (server.IsEmpty()) {
-    if (stun) {
-      PInterfaceMonitor::GetInstance().OnRemoveSTUNClient(stun);
-    }
+    if (stun)
+      PInterfaceMonitor::GetInstance().OnRemoveNatMethod(stun);
+
     delete stun;
     delete interfaceMonitor;
     stun = NULL;
