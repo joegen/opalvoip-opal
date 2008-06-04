@@ -685,6 +685,8 @@ H323_GSMAMR_NB_FLOAT
 H323_SYSTEM_GSM
 SIZE16
 SIZE32
+SPEEX_CFLAGS
+SPEEX_LIBS
 H323_SYSTEM_SPEEX
 HAS_FFMPEG_H263
 HAS_IXJ
@@ -723,6 +725,8 @@ CC
 CFLAGS
 CPP
 PKG_CONFIG
+SPEEX_CFLAGS
+SPEEX_LIBS
 LIBAVCODEC_CFLAGS
 LIBAVCODEC_LIBS
 X264_CFLAGS
@@ -1303,7 +1307,8 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-localgsm         use local version of GSM library rather than system version
-  --enable-localspeex       use local version of Speex library rather than system version
+  --enable-localspeex     Use local version of Speex library rather than
+                          system version
   --enable-vpb            enable voicetronix vpb
   --enable-capi            enable CAPI
   --enable-default-to-full-capabilties
@@ -1334,6 +1339,9 @@ Some influential environment variables:
   CFLAGS      C compiler flags
   CPP         C preprocessor
   PKG_CONFIG  path to pkg-config utility
+  SPEEX_CFLAGS
+              C compiler flags for SPEEX, overriding pkg-config
+  SPEEX_LIBS  linker flags for SPEEX, overriding pkg-config
   LIBAVCODEC_CFLAGS
               C compiler flags for LIBAVCODEC, overriding pkg-config
   LIBAVCODEC_LIBS
@@ -3974,10 +3982,12 @@ fi
 if test "${localgsm}" = "yes" ; then
   { echo "$as_me:$LINENO: Forcing use of local GSM sources" >&5
 echo "$as_me: Forcing use of local GSM sources" >&6;}
+
 elif test "${localgsm}" = "no" ; then
   { echo "$as_me:$LINENO: Forcing use of system GSM library" >&5
 echo "$as_me: Forcing use of system GSM library" >&6;}
   H323_SYSTEM_GSM=1
+
 else
   { echo "$as_me:$LINENO: checking for gsm_create in -lgsm" >&5
 echo $ECHO_N "checking for gsm_create in -lgsm... $ECHO_C" >&6; }
@@ -4198,7 +4208,8 @@ fi
 done
 
 
-{ echo "$as_me:$LINENO: checking for short" >&5
+
+          { echo "$as_me:$LINENO: checking for short" >&5
 echo $ECHO_N "checking for short... $ECHO_C" >&6; }
 if test "${ac_cv_type_short+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -4603,7 +4614,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-{ echo "$as_me:$LINENO: checking for int" >&5
+          { echo "$as_me:$LINENO: checking for int" >&5
 echo $ECHO_N "checking for int... $ECHO_C" >&6; }
 if test "${ac_cv_type_int+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -5008,7 +5019,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-{ echo "$as_me:$LINENO: checking for long" >&5
+          { echo "$as_me:$LINENO: checking for long" >&5
 echo $ECHO_N "checking for long... $ECHO_C" >&6; }
 if test "${ac_cv_type_long+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -5413,7 +5424,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-{ echo "$as_me:$LINENO: checking for long long" >&5
+          { echo "$as_me:$LINENO: checking for long long" >&5
 echo $ECHO_N "checking for long long... $ECHO_C" >&6; }
 if test "${ac_cv_type_long_long+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -5819,181 +5830,218 @@ _ACEOF
 
 
 
-case 2 in
-        $ac_cv_sizeof_short) SIZE16="short";;
-        $ac_cv_sizeof_int) SIZE16="int";;
-esac
+          case 2 in
+                  $ac_cv_sizeof_short) SIZE16="short";;
+                  $ac_cv_sizeof_int) SIZE16="int";;
+          esac
 
-case 4 in
-        $ac_cv_sizeof_int) SIZE32="int";;
-        $ac_cv_sizeof_long) SIZE32="long";;
-        $ac_cv_sizeof_short) SIZE32="short";;
-esac
-
-
+          case 4 in
+                  $ac_cv_sizeof_int) SIZE32="int";;
+                  $ac_cv_sizeof_long) SIZE32="long";;
+                  $ac_cv_sizeof_short) SIZE32="short";;
+          esac
 
 
 
-localspeex="xxx"
+
+
 # Check whether --enable-localspeex was given.
 if test "${enable_localspeex+set}" = set; then
   enableval=$enable_localspeex; localspeex=$enableval
+else
+  localspeex=
 fi
 
 
-if test "${localspeex}" = "yes" ; then
+{ echo "$as_me:$LINENO: checking Internal Speex version" >&5
+echo $ECHO_N "checking Internal Speex version... $ECHO_C" >&6; }
+SPEEX_INTERNAL_VERSION=`grep "#define SPEEX_VERSION" ./audio/Speex/libspeex/misc.h | sed -e 's/^.*speex\-//' -e 's/\".*//'`
+{ echo "$as_me:$LINENO: result: $SPEEX_INTERNAL_VERSION" >&5
+echo "${ECHO_T}$SPEEX_INTERNAL_VERSION" >&6; }
+
+if test "x${localspeex}" = "xyes" ; then
   { echo "$as_me:$LINENO: Forcing use of local Speex sources" >&5
 echo "$as_me: Forcing use of local Speex sources" >&6;}
-elif test "${localspeex}" = "no" ; then
+  H323_SYSTEM_SPEEX=
+
+elif test "x${localspeex}" = "xno" ; then
   { echo "$as_me:$LINENO: Forcing use of system Speex library" >&5
 echo "$as_me: Forcing use of system Speex library" >&6;}
-  cat >>confdefs.h <<\_ACEOF
-#define H323_SYSTEM_SPEEX 1
-_ACEOF
 
-  H323_SYSTEM_SPEEX=1
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for SPEEX" >&5
+echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
 
-else
-  { echo "$as_me:$LINENO: checking for speex_encoder_destroy in -lspeex" >&5
-echo $ECHO_N "checking for speex_encoder_destroy in -lspeex... $ECHO_C" >&6; }
-if test "${ac_cv_lib_speex_speex_encoder_destroy+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lspeex  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char speex_encoder_destroy ();
-int
-main ()
-{
-return speex_encoder_destroy ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  ac_cv_lib_speex_speex_encoder_destroy=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_cv_lib_speex_speex_encoder_destroy=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_lib_speex_speex_encoder_destroy" >&5
-echo "${ECHO_T}$ac_cv_lib_speex_speex_encoder_destroy" >&6; }
-if test $ac_cv_lib_speex_speex_encoder_destroy = yes; then
-  SPEEX=1
-fi
-
-  if test "x$SPEEX" = "x"; then
-    { echo "$as_me:$LINENO: Forcing use of local Speex library" >&5
-echo "$as_me: Forcing use of local Speex library" >&6;}
-  else
-    { echo "$as_me:$LINENO: checking system Speex version" >&5
-echo $ECHO_N "checking system Speex version... $ECHO_C" >&6; }
-    cat > t.c <<C_FILE
-    #include <speex.h>
-    #include <speex_header.h>
-    #include <stdio.h>
-    int main(int argc,char *argv)
-    {
-      SpeexHeader header;
-      speex_init_header(&header, 1, 1, &speex_nb_mode);
-      printf("%s\n", header.speex_version);
-    }
-C_FILE
-    cc -o t t.c $LDFLAGS -lspeex > /dev/null 2>&1
-    if test \! -x t ; then
-      { echo "$as_me:$LINENO: result: cannot determine - using library version" >&5
-echo "${ECHO_T}cannot determine - using library version" >&6; }
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_CFLAGS"; then
+        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
     else
-      SYSVER=`./t`
-      rm -f t t.c
-      { echo "$as_me:$LINENO: result: $SYSVER" >&5
-echo "${ECHO_T}$SYSVER" >&6; }
-      { echo "$as_me:$LINENO: checking library Speex version" >&5
-echo $ECHO_N "checking library Speex version... $ECHO_C" >&6; }
-      LIBVER=`grep "#define VERSION" ./audio/Speex/libspeex/misc.h | sed -e 's/^.*speex\-//' -e 's/\"//'`
-      { echo "$as_me:$LINENO: result: $LIBVER" >&5
-echo "${ECHO_T}$LIBVER" >&6; }
-      { echo "$as_me:$LINENO: checking Speex versions" >&5
-echo $ECHO_N "checking Speex versions... $ECHO_C" >&6; }
-      cat > t.pl <<P_FILE
-
-      \$sysver = @ARGV[0];
-      \$libver = @ARGV[1];
-      @lib = split /\./, \$libver;
-      while (@lib < 3) {
-        @lib[0+@lib] = "0";
-      }
-      @sys = split /\./, \$sysver;
-      while (@sys < 3) {
-        @sys[0+@sys] = "0";
-      }
-      \$i = 0;
-      while (\$i < 3) {
-        #print "comparing " . @sys[\$i] . " and " . @lib[\$i] . "\n";
-        if (\@sys[\$i] < @lib[\$i]) {
-          print "0";
-          die;
-        }
-        \$i++;
-      }
-      print "1";
-
-P_FILE
-      SPEEX=`perl t.pl $SYSVER $LIBVER`
-      rm t.pl
-      if test "x$SPEEX" = "x" ; then
-        { echo "$as_me:$LINENO: result: library version is more recent" >&5
-echo "${ECHO_T}library version is more recent" >&6; }
-      else
-        { echo "$as_me:$LINENO: result: system version is more recent" >&5
-echo "${ECHO_T}system version is more recent" >&6; }
-        cat >>confdefs.h <<\_ACEOF
-#define H323_SYSTEM_SPEEX 1
-_ACEOF
-
-        H323_SYSTEM_SPEEX=1
-
-      fi
-    fi
-  fi
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
+  ($PKG_CONFIG --exists --print-errors "speex") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_SPEEX_CFLAGS=`$PKG_CONFIG --cflags "speex" 2>/dev/null`
+else
+  pkg_failed=yes
 fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_LIBS"; then
+        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
+  ($PKG_CONFIG --exists --print-errors "speex") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_SPEEX_LIBS=`$PKG_CONFIG --libs "speex" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex"`
+        else
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$SPEEX_PKG_ERRORS" >&5
+
+	{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+
+                     { { echo "$as_me:$LINENO: error: cannot find system speex" >&5
+echo "$as_me: error: cannot find system speex" >&2;}
+   { (exit 1); exit 1; }; }
+
+elif test $pkg_failed = untried; then
+
+                     { { echo "$as_me:$LINENO: error: cannot find system speex" >&5
+echo "$as_me: error: cannot find system speex" >&2;}
+   { (exit 1); exit 1; }; }
+
+else
+	SPEEX_CFLAGS=$pkg_cv_SPEEX_CFLAGS
+	SPEEX_LIBS=$pkg_cv_SPEEX_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	H323_SYSTEM_SPEEX=1
+fi
+
+else
+
+  { echo "$as_me:$LINENO: checking whether system Speex or internal Speex is more recent" >&5
+echo "$as_me: checking whether system Speex or internal Speex is more recent" >&6;}
+
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for SPEEX" >&5
+echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_CFLAGS"; then
+        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
+  ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_SPEEX_CFLAGS=`$PKG_CONFIG --cflags "speex >= $SPEEX_INTERNAL_VERSION" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_LIBS"; then
+        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
+  ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_SPEEX_LIBS=`$PKG_CONFIG --libs "speex >= $SPEEX_INTERNAL_VERSION" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
+        else
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$SPEEX_PKG_ERRORS" >&5
+
+	{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+
+                     H323_SYSTEM_SPEEX=
+                     { echo "$as_me:$LINENO: result: internal Speex version is more recent than system Speex or system Speex not found" >&5
+echo "${ECHO_T}internal Speex version is more recent than system Speex or system Speex not found" >&6; }
+
+elif test $pkg_failed = untried; then
+
+                     H323_SYSTEM_SPEEX=
+                     { echo "$as_me:$LINENO: result: internal Speex version is more recent than system Speex or system Speex not found" >&5
+echo "${ECHO_T}internal Speex version is more recent than system Speex or system Speex not found" >&6; }
+
+else
+	SPEEX_CFLAGS=$pkg_cv_SPEEX_CFLAGS
+	SPEEX_LIBS=$pkg_cv_SPEEX_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	H323_SYSTEM_SPEEX=1
+fi
+fi
+
+if test "x${H323_SYSTEM_SPEEX}" = "x1" ; then
+
+
+  SPEEX_SYSTEM_VERSION=`$PKG_CONFIG speex --modversion`
+  { echo "$as_me:$LINENO: result: using system Speex version $SPEEX_SYSTEM_VERSION" >&5
+echo "${ECHO_T}using system Speex version $SPEEX_SYSTEM_VERSION" >&6; }
+fi
+
+
+
 
 
 HAS_FFMPEG_H263=1
@@ -6660,7 +6708,8 @@ fi
 { echo "$as_me:$LINENO: result: $ac_cv_lib_c_dlopen" >&5
 echo "${ECHO_T}$ac_cv_lib_c_dlopen" >&6; }
 if test $ac_cv_lib_c_dlopen = yes; then
-  HAS_LIBDL=1
+
+                      HAS_LIBDL=1
                       DL_LIBS="-lc"
 
 else
@@ -6730,7 +6779,8 @@ fi
 { echo "$as_me:$LINENO: result: $ac_cv_lib_dl_dlopen" >&5
 echo "${ECHO_T}$ac_cv_lib_dl_dlopen" >&6; }
 if test $ac_cv_lib_dl_dlopen = yes; then
-  HAS_LIBDL=1
+
+                      HAS_LIBDL=1
                       DL_LIBS="-ldl"
 
 else
@@ -8458,6 +8508,8 @@ H323_GSMAMR_NB_FLOAT!$H323_GSMAMR_NB_FLOAT$ac_delim
 H323_SYSTEM_GSM!$H323_SYSTEM_GSM$ac_delim
 SIZE16!$SIZE16$ac_delim
 SIZE32!$SIZE32$ac_delim
+SPEEX_CFLAGS!$SPEEX_CFLAGS$ac_delim
+SPEEX_LIBS!$SPEEX_LIBS$ac_delim
 H323_SYSTEM_SPEEX!$H323_SYSTEM_SPEEX$ac_delim
 HAS_FFMPEG_H263!$HAS_FFMPEG_H263$ac_delim
 HAS_IXJ!$HAS_IXJ$ac_delim
@@ -8481,10 +8533,9 @@ HAVE_THEORA!$HAVE_THEORA$ac_delim
 HAS_SPANDSP!$HAS_SPANDSP$ac_delim
 SPANDSP_LIBS!$SPANDSP_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
-LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 96; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -8516,6 +8567,50 @@ N; s/^.*\n//; s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g; b n
 ' >>$CONFIG_STATUS <conf$$subs.sed
 rm -f conf$$subs.sed
 cat >>$CONFIG_STATUS <<_ACEOF
+CEOF$ac_eof
+_ACEOF
+
+
+ac_delim='%!_!# '
+for ac_last_try in false false false false false :; do
+  cat >conf$$subs.sed <<_ACEOF
+LTLIBOBJS!$LTLIBOBJS$ac_delim
+_ACEOF
+
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 1; then
+    break
+  elif $ac_last_try; then
+    { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
+echo "$as_me: error: could not make $CONFIG_STATUS" >&2;}
+   { (exit 1); exit 1; }; }
+  else
+    ac_delim="$ac_delim!$ac_delim _$ac_delim!! "
+  fi
+done
+
+ac_eof=`sed -n '/^CEOF[0-9]*$/s/CEOF/0/p' conf$$subs.sed`
+if test -n "$ac_eof"; then
+  ac_eof=`echo "$ac_eof" | sort -nru | sed 1q`
+  ac_eof=`expr $ac_eof + 1`
+fi
+
+cat >>$CONFIG_STATUS <<_ACEOF
+cat >"\$tmp/subs-2.sed" <<\CEOF$ac_eof
+/@[a-zA-Z_][a-zA-Z_0-9]*@/!b end
+_ACEOF
+sed '
+s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g
+s/^/s,@/; s/!/@,|#_!!_#|/
+:n
+t n
+s/'"$ac_delim"'$/,g/; t
+s/$/\\/; p
+N; s/^.*\n//; s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g; b n
+' >>$CONFIG_STATUS <conf$$subs.sed
+rm -f conf$$subs.sed
+cat >>$CONFIG_STATUS <<_ACEOF
+:end
+s/|#_!!_#|//g
 CEOF$ac_eof
 _ACEOF
 
@@ -8758,7 +8853,7 @@ s&@builddir@&$ac_builddir&;t t
 s&@abs_builddir@&$ac_abs_builddir&;t t
 s&@abs_top_builddir@&$ac_abs_top_builddir&;t t
 $ac_datarootdir_hack
-" $ac_file_inputs | sed -f "$tmp/subs-1.sed" | sed 's/|#_!!_#|//g' >$tmp/out
+" $ac_file_inputs | sed -f "$tmp/subs-1.sed" | sed -f "$tmp/subs-2.sed" >$tmp/out
 
 test -z "$ac_datarootdir_hack$ac_datarootdir_seen" &&
   { ac_out=`sed -n '/\${datarootdir}/p' "$tmp/out"`; test -n "$ac_out"; } &&
@@ -9517,6 +9612,8 @@ H323_GSMAMR_NB_FLOAT!$H323_GSMAMR_NB_FLOAT$ac_delim
 H323_SYSTEM_GSM!$H323_SYSTEM_GSM$ac_delim
 SIZE16!$SIZE16$ac_delim
 SIZE32!$SIZE32$ac_delim
+SPEEX_CFLAGS!$SPEEX_CFLAGS$ac_delim
+SPEEX_LIBS!$SPEEX_LIBS$ac_delim
 H323_SYSTEM_SPEEX!$H323_SYSTEM_SPEEX$ac_delim
 HAS_FFMPEG_H263!$HAS_FFMPEG_H263$ac_delim
 HAS_IXJ!$HAS_IXJ$ac_delim
@@ -9540,10 +9637,9 @@ HAVE_THEORA!$HAVE_THEORA$ac_delim
 HAS_SPANDSP!$HAS_SPANDSP$ac_delim
 SPANDSP_LIBS!$SPANDSP_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
-LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 96; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -9575,6 +9671,50 @@ N; s/^.*\n//; s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g; b n
 ' >>$CONFIG_STATUS <conf$$subs.sed
 rm -f conf$$subs.sed
 cat >>$CONFIG_STATUS <<_ACEOF
+CEOF$ac_eof
+_ACEOF
+
+
+ac_delim='%!_!# '
+for ac_last_try in false false false false false :; do
+  cat >conf$$subs.sed <<_ACEOF
+LTLIBOBJS!$LTLIBOBJS$ac_delim
+_ACEOF
+
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 1; then
+    break
+  elif $ac_last_try; then
+    { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
+echo "$as_me: error: could not make $CONFIG_STATUS" >&2;}
+   { (exit 1); exit 1; }; }
+  else
+    ac_delim="$ac_delim!$ac_delim _$ac_delim!! "
+  fi
+done
+
+ac_eof=`sed -n '/^CEOF[0-9]*$/s/CEOF/0/p' conf$$subs.sed`
+if test -n "$ac_eof"; then
+  ac_eof=`echo "$ac_eof" | sort -nru | sed 1q`
+  ac_eof=`expr $ac_eof + 1`
+fi
+
+cat >>$CONFIG_STATUS <<_ACEOF
+cat >"\$tmp/subs-2.sed" <<\CEOF$ac_eof
+/@[a-zA-Z_][a-zA-Z_0-9]*@/!b end
+_ACEOF
+sed '
+s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g
+s/^/s,@/; s/!/@,|#_!!_#|/
+:n
+t n
+s/'"$ac_delim"'$/,g/; t
+s/$/\\/; p
+N; s/^.*\n//; s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g; b n
+' >>$CONFIG_STATUS <conf$$subs.sed
+rm -f conf$$subs.sed
+cat >>$CONFIG_STATUS <<_ACEOF
+:end
+s/|#_!!_#|//g
 CEOF$ac_eof
 _ACEOF
 
@@ -9817,7 +9957,7 @@ s&@builddir@&$ac_builddir&;t t
 s&@abs_builddir@&$ac_abs_builddir&;t t
 s&@abs_top_builddir@&$ac_abs_top_builddir&;t t
 $ac_datarootdir_hack
-" $ac_file_inputs | sed -f "$tmp/subs-1.sed" | sed 's/|#_!!_#|//g' >$tmp/out
+" $ac_file_inputs | sed -f "$tmp/subs-1.sed" | sed -f "$tmp/subs-2.sed" >$tmp/out
 
 test -z "$ac_datarootdir_hack$ac_datarootdir_seen" &&
   { ac_out=`sed -n '/\${datarootdir}/p' "$tmp/out"`; test -n "$ac_out"; } &&
