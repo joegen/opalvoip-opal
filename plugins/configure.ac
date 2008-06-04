@@ -104,6 +104,8 @@ AC_DEFUN([OPAL_LIBAVCODEC_SOURCE],
 
 AC_DEFUN([OPAL_LIBAVCODEC_HEADER],
          [LIBAVCODEC_HEADER=
+          old_CFLAGS="$CFLAGS"
+          CFLAGS="$CFLAGS $LIBAVCODEC_CFLAGS"
           AC_CHECK_HEADER([libavcodec/avcodec.h], 
                           [
                            AC_DEFINE([LIBAVCODEC_HEADER], 
@@ -122,17 +124,9 @@ AC_DEFUN([OPAL_LIBAVCODEC_HEADER],
                             ])
           fi
           if test x$LIBAVCODEC_HEADER = x; then
-            AC_CHECK_HEADER([ffmpeg/libavcodec/avcodec.h], 
-                            [
-                             AC_DEFINE([LIBAVCODEC_HEADER], 
-                                       ["ffmpeg/libavcodec/avcodec.h"],
-                                       [The libavcodec header file])
-                             LIBAVCODEC_HEADER="ffmpeg/libavcodec/avcodec.h"
-                            ])
-          fi
-          if test x$LIBAVCODEC_HEADER = x; then
             AC_MSG_ERROR([Cannot find libavcodec header file])
           fi
+          CFLAGS="$old_CFLAGS"
          ])
 dnl     ########################
 dnl     x264
@@ -453,7 +447,7 @@ PKG_CHECK_MODULES([LIBAVCODEC],
 		   AC_DEFINE([HAVE_LIBAVCODEC], [1], [ffmpeg])
      	           HAVE_LIBAVCODEC=yes
                    OPAL_LIBAVCODEC_HACK
-                   OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [-lavcodec])
+                   OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [$LIBAVCODEC_LIBS])
                    OPAL_LIBAVCODEC_HEADER
                   ],
                   [
@@ -474,7 +468,7 @@ PKG_CHECK_MODULES([X264],
                    AC_SUBST(X264_CFLAGS)
                    AC_SUBST(X264_LIBS)
                    HAVE_X264=yes
-                   OPAL_GET_LIBNAME([X264], [libx264], [-lx264])
+                   OPAL_GET_LIBNAME([X264], [libx264], [$X264_LIBS])
                    OPAL_X264_LINKAGE
                   ],
                   [
