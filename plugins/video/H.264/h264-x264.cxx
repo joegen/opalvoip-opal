@@ -111,6 +111,7 @@ H264EncoderContext::~H264EncoderContext()
 
 void H264EncoderContext::ApplyOptions()
 {
+  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(APPLY_OPTIONS);
 }
 
