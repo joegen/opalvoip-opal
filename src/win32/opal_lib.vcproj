@@ -1020,11 +1020,16 @@
 					RelativePath="..\codec\echocancel.cxx">
 				</File>
 				<File
-					RelativePath="..\codec\g711a1_plc.cxx"
-					>
+					RelativePath="..\codec\g711.c">
+					<FileConfiguration
+						Name="Debug|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\codec\g711.c">
+					RelativePath="..\codec\g711a1_plc.cxx">
 				</File>
 				<File
 					RelativePath="..\codec\g711codec.cxx">
@@ -1960,8 +1965,7 @@
 					RelativePath="..\..\include\codec\echocancel.h">
 				</File>
 				<File
-					RelativePath="..\..\include\codec\g711a1_plc.h"
-					>
+					RelativePath="..\..\include\codec\g711a1_plc.h">
 				</File>
 				<File
 					RelativePath="..\..\include\codec\g711codec.h">
