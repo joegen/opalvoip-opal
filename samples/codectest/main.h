@@ -39,6 +39,7 @@ class TranscoderThread : public PThread
       , encoder(NULL)
       , decoder(NULL)
       , num(_num)
+      , timestamp(0)
     {
     }
 
@@ -69,6 +70,7 @@ class TranscoderThread : public PThread
     OpalTranscoder * encoder;
     OpalTranscoder * decoder;
     unsigned         num;
+    DWORD            timestamp;
 };
 
 

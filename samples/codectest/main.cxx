@@ -594,6 +594,9 @@ void TranscoderThread::Main()
       cerr << "Source " << (state ? "restor" : "fail") << "ed at frame " << frameCount << endl;
     }
 
+    srcFrame.SetTimestamp(timestamp);
+    timestamp += encoder->GetOutputFormat().GetFrameTime();
+
     RTP_DataFrameList encFrames;
     if (encoder == NULL)
       encFrames.Append(new RTP_DataFrame(srcFrame)); 
