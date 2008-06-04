@@ -563,9 +563,12 @@ void OpalMediaPatch::Sink::SetCommandNotifier(const PNotifier & notifier)
 }
 
 
-static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & frame)
+static bool CannotTranscodeFrame(RTP_DataFrame::PayloadMapType & payloadTypeMap, const OpalTranscoder & codec, RTP_DataFrame & frame)
 {
   RTP_DataFrame::PayloadTypes pt = frame.GetPayloadType();
+  RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(frame.GetPayloadType());
+  if (r != payloadTypeMap.end())
+    pt = r->second;
 
   if (!codec.AcceptComfortNoise()) {
     if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN) {
@@ -576,7 +579,7 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
   }
 
   if ((pt != codec.GetPayloadType(true)) && !codec.AcceptOtherPayloads()) {
-    PTRACE(4, "Patch\tRemoving frame with mismatched payload type " << pt);
+    PTRACE(4, "Patch\tRemoving frame with mismatched payload type " << pt << " - should be " << codec.GetPayloadType(true));
     frame.SetPayloadSize(0);   // remove the payload because the transcoder has indicated it won't understand it
     return true;
   }
@@ -644,7 +647,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     return (writeSuccessful = stream->WritePacket(sourceFrame));
   }
 
-  if (CannotTranscodeFrame(*primaryCodec, sourceFrame))
+  if (CannotTranscodeFrame(payloadTypeMap, *primaryCodec, sourceFrame))
     return (writeSuccessful = stream->WritePacket(sourceFrame));
 
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
@@ -665,7 +668,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       continue;
     }
 
-    if (CannotTranscodeFrame(*secondaryCodec, *interFrame)) {
+    if (CannotTranscodeFrame(payloadTypeMap, *secondaryCodec, *interFrame)) {
       if (!stream->WritePacket(*interFrame))
         return (writeSuccessful = false);
       continue;
