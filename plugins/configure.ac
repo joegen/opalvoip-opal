@@ -128,6 +128,7 @@ AC_DEFUN([OPAL_LIBAVCODEC_HEADER],
           fi
           CFLAGS="$old_CFLAGS"
          ])
+
 dnl     ########################
 dnl     x264
 dnl     ########################
@@ -147,6 +148,30 @@ AC_DEFUN([OPAL_X264_LINKAGE],
           fi
          ])
 
+dnl     ########################
+dnl     speex
+dnl     ########################
+AC_DEFUN([OPAL_SPEEX_TYPES],
+         [
+          AC_CHECK_SIZEOF(short)
+          AC_CHECK_SIZEOF(int)
+          AC_CHECK_SIZEOF(long)
+          AC_CHECK_SIZEOF(long long)
+
+          case 2 in
+                  $ac_cv_sizeof_short) SIZE16="short";;
+                  $ac_cv_sizeof_int) SIZE16="int";;
+          esac
+
+          case 4 in
+                  $ac_cv_sizeof_int) SIZE32="int";;
+                  $ac_cv_sizeof_long) SIZE32="long";;
+                  $ac_cv_sizeof_short) SIZE32="short";;
+          esac
+
+          AC_SUBST(SIZE16)
+          AC_SUBST(SIZE32)
+         ])
 
 dnl ########################################################################
 dnl look for amr-nb_float
@@ -175,9 +200,11 @@ AC_ARG_ENABLE(localgsm,
 
 if test "${localgsm}" = "yes" ; then
   AC_MSG_NOTICE(Forcing use of local GSM sources)
+
 elif test "${localgsm}" = "no" ; then
   AC_MSG_NOTICE(Forcing use of system GSM library)
   H323_SYSTEM_GSM=1
+
 else
   AC_CHECK_LIB(gsm, gsm_create, GSM=1)
   if test "x$GSM" != "x"; then
@@ -205,104 +232,56 @@ fi
 AC_SUBST(H323_SYSTEM_GSM, $H323_SYSTEM_GSM)
 AC_DEFINE_UNQUOTED(H323_SYSTEM_GSM, $H323_SYSTEM_GSM)
 
-dnl ########################################################################
-dnl Look for system libspeex
+dnl     ########################
+dnl     speex (system/local)
+dnl     ########################
 
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(long long)
+OPAL_SPEEX_TYPES()
 
-case 2 in
-        $ac_cv_sizeof_short) SIZE16="short";;
-        $ac_cv_sizeof_int) SIZE16="int";;
-esac
+AC_ARG_ENABLE([localspeex],
+              [AC_HELP_STRING([--enable-localspeex],[Use local version of Speex library rather than system version])],
+              [localspeex=$enableval],
+              [localspeex=])
 
-case 4 in
-        $ac_cv_sizeof_int) SIZE32="int";;
-        $ac_cv_sizeof_long) SIZE32="long";;
-        $ac_cv_sizeof_short) SIZE32="short";;
-esac
+AC_MSG_CHECKING(internal Speex version)
+SPEEX_INTERNAL_VERSION=`grep "#define SPEEX_VERSION" ./audio/Speex/libspeex/misc.h | sed -e 's/^.*speex\-//' -e 's/\".*//'`
+AC_MSG_RESULT($SPEEX_INTERNAL_VERSION)
 
-AC_SUBST(SIZE16)
-AC_SUBST(SIZE32)
+if test "x${localspeex}" = "xyes" ; then
+  AC_MSG_NOTICE(forcing use of local Speex sources)
+  H323_SYSTEM_SPEEX=
 
+elif test "x${localspeex}" = "xno" ; then
+  AC_MSG_NOTICE(forcing use of system Speex library)
+  PKG_CHECK_MODULES([SPEEX],
+                    [speex],
+                    [H323_SYSTEM_SPEEX=1],
+                    [
+                     AC_MSG_ERROR([cannot find system speex])
+                    ])
 
-localspeex="xxx"
-AC_ARG_ENABLE(localspeex,
-       [  --enable-localspeex       use local version of Speex library rather than system version],
-       localspeex=$enableval)
-
-if test "${localspeex}" = "yes" ; then
-  AC_MSG_NOTICE(Forcing use of local Speex sources)
-elif test "${localspeex}" = "no" ; then
-  AC_MSG_NOTICE(Forcing use of system Speex library)
-  AC_DEFINE(H323_SYSTEM_SPEEX, 1)
-  AC_SUBST(H323_SYSTEM_SPEEX, 1)
 else
-  AC_CHECK_LIB(speex, speex_encoder_destroy, SPEEX=1)
-  if test "x$SPEEX" = "x"; then
-    AC_MSG_NOTICE(Forcing use of local Speex library)
-  else
-    AC_MSG_CHECKING(system Speex version)
-    cat > t.c <<C_FILE
-    #include <speex.h>
-    #include <speex_header.h>
-    #include <stdio.h>
-    int main(int argc,char *argv[])
-    {
-      SpeexHeader header;
-      speex_init_header(&header, 1, 1, &speex_nb_mode);
-      printf("%s\n", header.speex_version);
-    }
-C_FILE
-    cc -o t t.c $LDFLAGS -lspeex > /dev/null 2>&1
-    if test \! -x t ; then
-      AC_MSG_RESULT(cannot determine - using library version)
-    else
-      SYSVER=`./t`
-      rm -f t t.c
-      AC_MSG_RESULT($SYSVER)
-      AC_MSG_CHECKING(library Speex version)
-      LIBVER=`grep "#define VERSION" ./audio/Speex/libspeex/misc.h | sed -e 's/^.*speex\-//' -e 's/\"//'`
-      AC_MSG_RESULT($LIBVER)
-      AC_MSG_CHECKING(Speex versions)
-      cat > t.pl <<P_FILE
-      [
-      \$sysver = @ARGV[0];
-      \$libver = @ARGV[1];
-      @lib = split /\./, \$libver;
-      while (@lib < 3) {
-        @lib[0+@lib] = "0";
-      }
-      @sys = split /\./, \$sysver;
-      while (@sys < 3) {
-        @sys[0+@sys] = "0";
-      }
-      \$i = 0;
-      while (\$i < 3) {
-        #print "comparing " . @sys[\$i] . " and " . @lib[\$i] . "\n";
-        if (\@sys[\$i] < @lib[\$i]) {
-          print "0";
-          die;
-        }
-        \$i++;
-      }
-      print "1";
-      ]
-P_FILE
-      SPEEX=`perl t.pl $SYSVER $LIBVER`
-      rm t.pl
-      if test "x$SPEEX" = "x" ; then
-        AC_MSG_RESULT(library version is more recent)
-      else
-        AC_MSG_RESULT(system version is more recent)
-        AC_DEFINE(H323_SYSTEM_SPEEX, 1)
-        AC_SUBST(H323_SYSTEM_SPEEX, 1)
-      fi
-    fi
-  fi
+
+  AC_MSG_NOTICE(checking whether system Speex or internal Speex is more recent)
+  PKG_CHECK_MODULES([SPEEX],
+                    [speex >= $SPEEX_INTERNAL_VERSION],
+                    [H323_SYSTEM_SPEEX=1],
+                    [
+                     H323_SYSTEM_SPEEX=
+                     AC_MSG_RESULT(internal Speex version is more recent than system Speex or system Speex not found)
+                    ])
 fi
+
+if test "x${H323_SYSTEM_SPEEX}" = "x1" ; then
+  AC_SUBST(SPEEX_CFLAGS)
+  AC_SUBST(SPEEX_LIBS)
+  SPEEX_SYSTEM_VERSION=`$PKG_CONFIG speex --modversion`
+  AC_MSG_RESULT(using system Speex version $SPEEX_SYSTEM_VERSION)
+fi
+
+AC_SUBST(H323_SYSTEM_SPEEX)
+
+dnl H323_SYSTEM_SPEEX -> SPEEX_SYSTEM
 
 dnl ########################################################################
 dnl
@@ -410,14 +389,18 @@ if test "$HAS_DLFCN" = yes ; then
     AC_MSG_RESULT(yes)
     if test `uname -s` = FreeBSD; then
         AC_CHECK_LIB([c],[dlopen],
-                     [HAS_LIBDL=1
+                     [
+                      HAS_LIBDL=1
                       DL_LIBS="-lc"
-                     ], [HAS_LIBDL=0])
+                     ],
+                     [HAS_LIBDL=0])
     else
         AC_CHECK_LIB([dl],[dlopen],
-                     [HAS_LIBDL=1
+                     [
+                      HAS_LIBDL=1
                       DL_LIBS="-ldl"
-                     ], [HAS_LIBDL=0])
+                     ],
+                     [HAS_LIBDL=0])
     fi
   fi
 fi
