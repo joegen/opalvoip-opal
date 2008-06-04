@@ -23,9 +23,9 @@
  *
  * Contributor(s): Vyacheslav Frolov.
  *
- * $Revision: 20036 $
- * $Author: csoutheren $
- * $Date: 2008-04-21 17:21:24 +1000 (Mon, 21 Apr 2008) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 /*

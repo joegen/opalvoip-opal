@@ -23,9 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 19424 $
- * $Author: csoutheren $
- * $Date: 2008-02-08 17:24:10 +1100 (Fri, 08 Feb 2008) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_RTPCONN_H
