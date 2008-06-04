@@ -31,6 +31,9 @@
 
 #include <ptlib.h>
 #include <codec/g711a1_plc.h>
+
+#if OPAL_G711PLC
+
 #include <math.h>
 
 
@@ -609,3 +612,4 @@ void OpalG711_PLC::convertfs(double *f, short *t, int cnt) const
     t[i] = (short)f[i];
 }
 
+#endif // OPAL_G711PLC
