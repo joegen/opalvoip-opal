@@ -156,7 +156,7 @@ PBoolean Opal_G711_ALaw_PCM::Convert(const RTP_DataFrame & input, RTP_DataFrame 
   }
 
   bool result = OpalStreamedTranscoder::Convert(input, output);
-  plc.addtohistory((short*)output.GetPayloadSize(), output.GetPayloadSize()/sizeof(short));
+  plc.addtohistory((short*)output.GetPayloadPtr(), output.GetPayloadSize()/sizeof(short));
   lastPayloadSize = output.GetPayloadSize();
   PTRACE(8, "\tADD\t" << unsigned(input.GetPayloadPtr()) << '\t' << output.GetPayloadSize() << '\t'
          << output.GetSequenceNumber() << '\t' << output.GetTimestamp() << '\t' << result);
