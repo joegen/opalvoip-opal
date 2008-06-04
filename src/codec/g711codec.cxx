@@ -73,14 +73,14 @@ int Opal_G711_uLaw_PCM::ConvertSample(int sample)
 #if OPAL_G711PLC 
 PBoolean Opal_G711_uLaw_PCM::Convert(const RTP_DataFrame & input, RTP_DataFrame & output)
 {
-  PTRACE(8, "uLaw\t" << unsigned(input.GetPayloadPtr()) << '\t' << input.GetPayloadSize() << '\t'
+  PTRACE(8, "uLaw\t" << (void *)input.GetPayloadPtr() << '\t' << input.GetPayloadSize() << '\t'
          << input.GetSequenceNumber() << '\t' << input.GetTimestamp());
 
   if (input.GetPayloadSize() == 0) {
     if (output.GetPayloadSize() == 0)
       output.SetPayloadSize(lastPayloadSize);
     plc.dofe((short*)output.GetPayloadPtr(), output.GetPayloadSize()/sizeof(short));
-    PTRACE(8, "\tDOFE\t" << unsigned(input.GetPayloadPtr()) << '\t' << output.GetPayloadSize() << '\t'
+    PTRACE(8, "\tDOFE\t" << (void *)input.GetPayloadPtr() << '\t' << output.GetPayloadSize() << '\t'
            << output.GetSequenceNumber() << '\t' << output.GetTimestamp());
     return true;
   }
@@ -88,7 +88,7 @@ PBoolean Opal_G711_uLaw_PCM::Convert(const RTP_DataFrame & input, RTP_DataFrame 
   bool result = OpalStreamedTranscoder::Convert(input, output);
   plc.addtohistory((short*)output.GetPayloadPtr(), output.GetPayloadSize()/sizeof(short));
   lastPayloadSize = output.GetPayloadSize();
-  PTRACE(8, "\tADD\t" << unsigned(input.GetPayloadPtr()) << '\t' << output.GetPayloadSize() << '\t'
+  PTRACE(8, "\tADD\t" << (void *)input.GetPayloadPtr() << '\t' << output.GetPayloadSize() << '\t'
          << output.GetSequenceNumber() << '\t' << output.GetTimestamp() << '\t' << result);
   return result;
 }
@@ -143,14 +143,14 @@ int Opal_G711_ALaw_PCM::ConvertSample(int sample)
 #if OPAL_G711PLC 
 PBoolean Opal_G711_ALaw_PCM::Convert(const RTP_DataFrame & input, RTP_DataFrame & output)
 {
-  PTRACE(8, "ALaw\t" << unsigned(input.GetPayloadPtr()) << '\t' << input.GetPayloadSize() << '\t'
+  PTRACE(8, "ALaw\t" << (void *)input.GetPayloadPtr() << '\t' << input.GetPayloadSize() << '\t'
          << input.GetSequenceNumber() << '\t' << input.GetTimestamp());
 
   if (input.GetPayloadSize() == 0) {
     if (output.GetPayloadSize() == 0)
       output.SetPayloadSize(lastPayloadSize);
     plc.dofe((short*)output.GetPayloadPtr(), output.GetPayloadSize()/sizeof(short));
-    PTRACE(8, "\tDOFE\t" << unsigned(input.GetPayloadPtr()) << '\t' << output.GetPayloadSize() << '\t'
+    PTRACE(8, "\tDOFE\t" << (void *)input.GetPayloadPtr() << '\t' << output.GetPayloadSize() << '\t'
            << output.GetSequenceNumber() << '\t' << output.GetTimestamp());
     return true;
   }
@@ -158,7 +158,7 @@ PBoolean Opal_G711_ALaw_PCM::Convert(const RTP_DataFrame & input, RTP_DataFrame 
   bool result = OpalStreamedTranscoder::Convert(input, output);
   plc.addtohistory((short*)output.GetPayloadPtr(), output.GetPayloadSize()/sizeof(short));
   lastPayloadSize = output.GetPayloadSize();
-  PTRACE(8, "\tADD\t" << unsigned(input.GetPayloadPtr()) << '\t' << output.GetPayloadSize() << '\t'
+  PTRACE(8, "\tADD\t" << (void *)input.GetPayloadPtr() << '\t' << output.GetPayloadSize() << '\t'
          << output.GetSequenceNumber() << '\t' << output.GetTimestamp() << '\t' << result);
   return result;
 }
