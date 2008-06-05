@@ -372,7 +372,7 @@ class RTP_UserData : public PObject
 #endif
 };
 
-class RTP_Encapsulation;
+class RTP_FormatHandler;
 
 
 /**This class is for encpsulating the IETF Real Time Protocol interface.
@@ -387,7 +387,7 @@ class RTP_Session : public PObject
     /**Create a new RTP session.
      */
     RTP_Session(
-      const PString & encapsulation,       ///<  identifies initial RTP encapsulation (RTP/AVP, UDPTL etc)
+      const PString & _rtpFormat,          ///<  identifies initial RTP format (RTP/AVP, UDPTL etc)
 #if OPAL_RTP_AGGREGATE
       PHandleAggregator * aggregator,      ///<  RTP aggregator
 #endif
@@ -783,33 +783,33 @@ class RTP_Session : public PObject
       */
     virtual void SendIntraFrameRequest();
 
-    virtual PString GetEncapsulation() const { return m_encapsulation; }
-    virtual void SetEncapsulation(const PString & newEncapsulation);
+    virtual PString GetFormat() const                 { return rtpFormat; }
+    virtual void SetFormat(const PString & newFormat);
 
     DWORD GetSyncSourceIn() const { return syncSourceIn; }
 
-    class EncapLock
+    class HandlerLock
     {
       public:
-        EncapLock(RTP_Session & _session);
-        ~EncapLock();
-        __inline RTP_Encapsulation * operator->() const { return m_encapHandler; }
+        HandlerLock(RTP_Session & _session);
+        ~HandlerLock();
+        RTP_FormatHandler * operator->();
 
       protected:
-        RTP_Session       & session;
-        RTP_Encapsulation * m_encapHandler;
+        RTP_Session & session;
+        RTP_FormatHandler * myHandler;
     };
 
-    friend class EncapLock; 
+    friend class HandlerLock; 
 
   protected:
     virtual void SendBYE();
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     PBoolean InsertReportPacket(RTP_ControlFrame & report);
 
-    PString             m_encapsulation;
-    RTP_Encapsulation * m_encapHandler;
-    PMutex              m_encapMutex;
+    PString             rtpFormat;
+    PMutex              handlerMutex;
+    RTP_FormatHandler * rtpHandler;
 
     unsigned           sessionID;
     bool               isAudio;
@@ -1032,7 +1032,7 @@ class RTP_UDP : public RTP_Session
     virtual int GetControlSocketHandle() const
     { return controlSocket != NULL ? controlSocket->GetHandle() : -1; }
 
-    friend class RTP_Encapsulation;
+    friend class RTP_FormatHandler;
 
     virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
     virtual int Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
@@ -1084,11 +1084,11 @@ class RTP_UDP : public RTP_Session
 
 class RTP_UDP;
 
-class RTP_Encapsulation 
+class RTP_FormatHandler 
 {
   public:
-    RTP_Encapsulation();
-    virtual ~RTP_Encapsulation();
+    RTP_FormatHandler();
+    virtual ~RTP_FormatHandler();
     virtual void OnStart(RTP_Session & _rtpSession);
     virtual void OnFinish();
     virtual RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
@@ -1119,8 +1119,7 @@ class SecureRTP_UDP : public RTP_UDP
   //@{
     /**Create a new RTP channel.
      */
-    SecureRTP_UDP(
-      const PString & encapsulation,       ///<  identifies initial RTP encapsulation (RTP/AVP, UDPTL etc)
+    SecureRTP_UDP(const PString & format,
 #if OPAL_RTP_AGGREGATE
       PHandleAggregator * aggregator, ///< RTP aggregator
 #endif
