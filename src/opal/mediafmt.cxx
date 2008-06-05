@@ -505,13 +505,27 @@ void OpalMediaOptionOctets::ReadFrom(istream & strm)
 
     PINDEX count = 0;
 
-    while (isxdigit(strm.peek())) {
-      pair[0] = (char)strm.get();
-      if (!isxdigit(strm.peek())) {
-        strm.putback(pair[0]);
+    for (;;) {
+      char ch = (char)strm.peek();
+      if (isxdigit(ch))
+        pair[0] = ch;
+      else if (ch == ' ')
+        pair[0] = '0';
+      else {
+        strm.putback(ch);
         break;
       }
-      pair[1] = (char)strm.get();
+      strm.get();
+      ch = (char)strm.peek();
+      if (isxdigit(ch))
+        pair[1] = ch;
+      else if (ch == ' ')
+        pair[1] = '0';
+      else {
+        strm.putback(ch);
+        break;
+      }
+      strm.get();
       if (!m_value.SetMinSize((count+1+99)%100))
         break;
       m_value[count++] = (BYTE)strtoul(pair, NULL, 16);
