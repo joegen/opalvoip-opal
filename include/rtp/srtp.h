@@ -98,7 +98,6 @@ class OpalSRTP_UDP : public SecureRTP_UDP
   PCLASSINFO(OpalSRTP_UDP, SecureRTP_UDP);
   public:
     OpalSRTP_UDP(
-      const PString & encapsulation,       ///<  identifies initial RTP encapsulation (RTP/AVP, UDPTL etc)
 #if OPAL_RTP_AGGREGATE
       PHandleAggregator * _aggregator,   ///< handle aggregator
 #endif
