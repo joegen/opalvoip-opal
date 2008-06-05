@@ -55,12 +55,13 @@ class LibZrtpSecurityMode_Base : public OpalZrtpSecurityMode
     ~LibZrtpSecurityMode_Base();
 
     RTP_UDP * CreateRTPSession(
+      OpalRTPConnection & connection,    ///< Connection creating session (may be needed by secure connections)
+      const PString & encoding,          ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
 #if OPAL_RTP_AGGREGATE
-      PHandleAggregator *_aggregator,   ///< handle aggregator
+      PHandleAggregator * _aggregator,   ///< handle aggregator
 #endif
-      unsigned id,          ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT, ///<  TRUE is remote is behind NAT
-      OpalConnection & conn
+      unsigned id,                       ///< Session ID for RTP channel
+      PBoolean remoteIsNAT               ///< PTrue is remote is behind NAT
     );
 
     PBoolean Open();

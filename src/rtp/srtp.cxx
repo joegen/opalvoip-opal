@@ -46,6 +46,10 @@
 #include <h323/h323caps.h>
 #include <h323/h235auth.h>
 
+
+class PNatMethod;
+
+
 // default key = 2687012454
 
 
@@ -104,13 +108,13 @@ class LibSRTPSecurityMode_Base : public OpalSRTPSecurityMode
   PCLASSINFO(LibSRTPSecurityMode_Base, OpalSRTPSecurityMode);
   public:
     RTP_UDP * CreateRTPSession(
+      OpalRTPConnection & connection,    ///< Connection creating session (may be needed by secure connections)
+      const PString & encoding,          ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
 #if OPAL_RTP_AGGREGATE
-                               PHandleAggregator * _aggregator,         ///< handle aggregator
+      PHandleAggregator * _aggregator,   ///< handle aggregator
 #endif
-                                            unsigned id,                ///<  Session ID for RTP channel
-                                            PBoolean remoteIsNAT,       ///<  PTrue is remote is behind NAT
-                                            OpalConnection & connection	///< Connection creating session (may be needed by secure connections)
-
+      unsigned id,                       ///< Session ID for RTP channel
+      PBoolean remoteIsNAT               ///< PTrue is remote is behind NAT
     );
 
     PBoolean SetOutgoingKey(const KeySalt & key)  { outgoingKey = key; return PTrue; }
@@ -161,19 +165,20 @@ void LibSRTPSecurityMode_Base::Init()
 }
 
 
-RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(
+RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(OpalRTPConnection & connection,
+                                                     const PString & encoding,
 #if OPAL_RTP_AGGREGATE
-                              PHandleAggregator * _aggregator,   ///< handle aggregator
+                                                     PHandleAggregator * _aggregator,
 #endif
-                                         unsigned id,
-                                         PBoolean remoteIsNAT,
-                                 OpalConnection & /*connection*/)
+                                                     unsigned id,
+                                                     PBoolean remoteIsNAT)
 {
-  LibSRTP_UDP * session = new LibSRTP_UDP(
+  LibSRTP_UDP * session = new LibSRTP_UDP(encoding,
 #if OPAL_RTP_AGGREGATE
-                                           _aggregator,
+                                          _aggregator,
 #endif
-                                           id, remoteIsNAT);
+                                          id,
+                                          remoteIsNAT);
   session->SetSecurityMode(this);
   return session;
 }
@@ -250,13 +255,13 @@ DECLARE_LIBSRTP_CRYPTO_ALG(STRONGHOLD,               crypto_policy_set_aes_cm_12
 
 ///////////////////////////////////////////////////////
 
-LibSRTP_UDP::LibSRTP_UDP(
+LibSRTP_UDP::LibSRTP_UDP(const PString & encoding,
 #if OPAL_RTP_AGGREGATE
-                         PHandleAggregator * _aggregator,   ///< handle aggregator
+                         PHandleAggregator * _aggregator,
 #endif
-                                    unsigned _sessionId, 
-                                        PBoolean _remoteIsNAT)
-  : OpalSRTP_UDP(
+                         unsigned _sessionId, 
+                         PBoolean _remoteIsNAT)
+  : OpalSRTP_UDP(encoding,
 #if OPAL_RTP_AGGREGATE
                  _aggregator,
 #endif
@@ -273,7 +278,7 @@ PBoolean LibSRTP_UDP::Open(
       WORD portBase,                    ///<  Base of ports to search
       WORD portMax,                     ///<  end of ports to search (inclusive)
       BYTE ipTypeOfService,             ///<  Type of Service byte
-      PSTUNClient * stun,               ///<  STUN server to use createing sockets (or NULL if no STUN)
+      PNatMethod * nat,                 ///<  NAT method to use createing sockets (or NULL if no STUN)
       RTP_QOS * rtpqos                  ///<  QOS spec (or NULL if no QoS)
 )
 {
@@ -285,7 +290,7 @@ PBoolean LibSRTP_UDP::Open(
   srtp->GetOutgoingSSRC(syncSourceOut);
   srtp->GetIncomingSSRC(syncSourceIn);
 
-  return OpalSRTP_UDP::Open(localAddress, portBase, portMax, ipTypeOfService, stun, rtpqos);
+  return OpalSRTP_UDP::Open(localAddress, portBase, portMax, ipTypeOfService, nat, rtpqos);
 }
 
 

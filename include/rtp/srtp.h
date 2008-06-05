@@ -123,11 +123,12 @@ class LibSRTP_UDP : public OpalSRTP_UDP
   PCLASSINFO(LibSRTP_UDP, OpalSRTP_UDP);
   public:
     LibSRTP_UDP(
+      const PString & encoding,          ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
 #if OPAL_RTP_AGGREGATE
-                PHandleAggregator * _aggregator,   ///< handle aggregator
+      PHandleAggregator * _aggregator,   ///< handle aggregator
 #endif
-                  unsigned int id,                 ///<  Session ID for RTP channel
-                  PBoolean remoteIsNAT                 ///<  PTrue is remote is behind NAT
+      unsigned int id,                   ///<  Session ID for RTP channel
+      PBoolean remoteIsNAT               ///<  PTrue is remote is behind NAT
     );
 
     ~LibSRTP_UDP();
