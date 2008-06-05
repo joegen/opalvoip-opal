@@ -184,7 +184,7 @@ void CMobileOpalDlg::InitialiseOPAL()
   // Start up and initialise OPAL
 
   if (m_opal == NULL) {
-    m_opal = OpalInitialise(&m_opalVersion, "pc h323 sip TraceLevel=4 TraceFile=\\Trace.log");
+    m_opal = OpalInitialise(&m_opalVersion, "pc h323 sip TraceLevel=4 TraceFile=\\MobileOpalLog.txt");
     if (m_opal == NULL) {
       ErrorBox(IDS_INIT_FAIL);
       EndDialog(IDCANCEL);
@@ -203,7 +203,7 @@ void CMobileOpalDlg::InitialiseOPAL()
   command.m_param.m_general.m_stunServer = strStunServer;
 
   if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
-    ErrorBox(IDS_CONFIGURATION_FAIL);
+    ErrorBox(IDS_CONFIGURATION_FAIL, response);
   OpalFreeMessage(response);
 
   // Options across all protocols
@@ -219,7 +219,7 @@ void CMobileOpalDlg::InitialiseOPAL()
   command.m_param.m_protocol.m_interfaceAddresses = "*";
 
   if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
-    ErrorBox(IDS_LISTEN_FAIL);
+    ErrorBox(IDS_LISTEN_FAIL, response);
   OpalFreeMessage(response);
 
   // H.323 gatekeeper regisration
@@ -247,7 +247,7 @@ void CMobileOpalDlg::InitialiseOPAL()
 
     SetStatusText(IDS_REGISTERING);
     if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
-      ErrorBox(IDS_REGISTRATION_FAIL);
+      ErrorBox(IDS_REGISTRATION_FAIL, response);
     OpalFreeMessage(response);
   }
 
@@ -277,15 +277,24 @@ void CMobileOpalDlg::InitialiseOPAL()
 
     SetStatusText(IDS_REGISTERING);
     if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
-      ErrorBox(IDS_REGISTRATION_FAIL);
+      ErrorBox(IDS_REGISTRATION_FAIL, response);
     OpalFreeMessage(response);
   }
 }
 
 
-void CMobileOpalDlg::ErrorBox(UINT strId)
+void CMobileOpalDlg::ErrorBox(UINT ids, const OpalMessage * response)
 {
-  CString text(MAKEINTRESOURCE(strId));
+  CString text;
+  if (response != NULL && response->m_param.m_commandError != NULL || *response->m_param.m_commandError != '\0')
+    text = response->m_param.m_commandError;
+  else {
+    if (ids != 0)
+      text.LoadString(ids);
+    else
+      text = "Error!";
+  }
+
   MessageBox(text, NULL, MB_OK|MB_ICONEXCLAMATION);
 }
 
@@ -467,12 +476,7 @@ void CMobileOpalDlg::OnCallAnswer()
     ErrorBox(IDS_CALL_START_FAIL);
   else {
     if (response->m_type == OpalIndCommandError) {
-      if (response->m_param.m_commandError == NULL || *response->m_param.m_commandError == '\0')
-        ErrorBox(IDS_CALL_START_FAIL);
-      else {
-        CString text(response->m_param.m_commandError);
-        MessageBox(text, NULL, MB_OK|MB_ICONEXCLAMATION);
-      }
+      ErrorBox(IDS_CALL_START_FAIL, response);
       SetCallButton(true, IDS_CALL);
     }
     else if (command.m_type == OpalCmdSetUpCall)

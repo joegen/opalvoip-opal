@@ -65,7 +65,7 @@ protected:
   DECLARE_MESSAGE_MAP()
 
   void InitialiseOPAL();
-  void ErrorBox(UINT strId);
+  void ErrorBox(UINT strId, const OpalMessage * response = NULL);
   void SetStatusText(UINT ids, const char * str = NULL);
   void SetCallButton(bool enabled, UINT strId = 0);
 
