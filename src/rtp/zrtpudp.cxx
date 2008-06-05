@@ -222,21 +222,20 @@ void LibZrtpSecurityMode_Base::Init(int *sas, int *pk, int *auth, int *cipher, i
 	printf("init zrtp security mode\n");
 }
  
-RTP_UDP * LibZrtpSecurityMode_Base::CreateRTPSession(
+RTP_UDP * LibZrtpSecurityMode_Base::CreateRTPSession(OpalRTPConnection & connection,
+                                                     const PString & encoding,
 #if OPAL_RTP_AGGREGATE
-              PHandleAggregator * _aggregator, ///< handle aggregator
+                                                     PHandleAggregator * _aggregator,
 #endif
-							unsigned id,
-							PBoolean remoteIsNAT,            ///< TRUE is remote is behind NAT
-                                                        OpalConnection & conn
-					            )
+                                                     unsigned id,
+                                                     PBoolean remoteIsNAT)
 {
-	OpalZrtp_UDP * session = new OpalZrtp_UDP(
+  OpalZrtp_UDP * session = new OpalZrtp_UDP(encoding,
 #if OPAL_RTP_AGGREGATE
-                                                 _aggregator,
+    _aggregator,
 #endif
-                                                 id, remoteIsNAT);
-	session->SetSecurityMode(this);
+    id, remoteIsNAT);
+  session->SetSecurityMode(this);
 
   int ssrc = session->GetOutgoingSSRC();
   session->zrtpStream = ::zrtp_attach_stream(zrtpSession, ssrc);
@@ -247,7 +246,7 @@ RTP_UDP * LibZrtpSecurityMode_Base::CreateRTPSession(
     zrtp_start_stream(session->zrtpStream);
   }
 
-	return session;
+  return session;
 }
  
 PBoolean LibZrtpSecurityMode_Base::Open() 
