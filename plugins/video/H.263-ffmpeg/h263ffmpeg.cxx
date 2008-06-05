@@ -264,10 +264,15 @@ class DynaLink
 
       const char * token = strtok(env, DIR_TOKENISER);
       while (token != NULL) {
-        if (InternalOpen(token, name))
+        if (InternalOpen(token, name)) {
+          if (env)
+            free (env);
           return true;
+        }
         token = strtok(NULL, DIR_TOKENISER);
       }
+      if (env)
+        free (env);
       return InternalOpen(NULL, name); // Last ditch effort
     }
 
