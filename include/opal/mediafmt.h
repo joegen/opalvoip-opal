@@ -582,7 +582,7 @@ class OpalMediaFormat : public PContainer
        to use this constructor in any other way, especially local variables.
 
        If the rtpPayloadType is RTP_DataFrame::DynamicBase, then the RTP
-       payload type is actually set to teh first unused dynamic RTP payload
+       payload type is actually set to the first unused dynamic RTP payload
        type that is in the registers set of media formats.
 
        The frameSize parameter indicates that the media format has a maximum
