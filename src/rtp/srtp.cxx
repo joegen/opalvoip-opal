@@ -165,7 +165,7 @@ void LibSRTPSecurityMode_Base::Init()
 }
 
 
-RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(OpalRTPConnection & connection,
+RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(OpalRTPConnection & /*connection*/,
                                                      const PString & encoding,
 #if OPAL_RTP_AGGREGATE
                                                      PHandleAggregator * _aggregator,
