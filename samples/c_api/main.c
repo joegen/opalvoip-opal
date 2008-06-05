@@ -30,18 +30,39 @@
 
 #define _CRT_NONSTDC_NO_WARNINGS
 
-#include <windows.h>
 #include <stdio.h>
 #include <opal.h>
 
 
-#ifdef _DEBUG
-#define OPAL_DLL "OPALd.DLL"
-#else
-#define OPAL_DLL "OPAL.DLL"
-#endif
+#if defined(_WIN32)
 
-HANDLE                  hDLL;
+  #include <windows.h>
+
+  #ifdef _DEBUG
+    #define OPAL_DLL "OPALd.DLL"
+  #else
+    #define OPAL_DLL "OPAL.DLL"
+  #endif
+
+  #define OPEN_LIBRARY(name)             LoadLibrary(name)
+  #define GET_LIBRARY_FUNCTION(dll, fn)  GetProcAddress(dll, fn)
+
+  HINSTANCE hDLL;
+
+#else // _WIN32
+
+  #include <memory.h>
+  #include <dlfcn.h>
+
+  #define OPAL_DLL "libopal.so"
+
+  #define OPEN_LIBRARY(name)             dlopen(name, RTLD_NOW)
+  #define GET_LIBRARY_FUNCTION(dll, fn)  dlsym(dll, (const char *)(fn));
+
+  void * hDLL;
+
+#endif // _WIN32
+
 OpalInitialiseFunction  InitialiseFunction;
 OpalShutDownFunction    ShutDownFunction;
 OpalGetMessageFunction  GetMessageFunction;
@@ -80,16 +101,16 @@ int InitialiseOPAL()
   unsigned      version;
 
 
-  if ((hDLL = LoadLibrary(OPAL_DLL)) == NULL) {
+  if ((hDLL = OPEN_LIBRARY(OPAL_DLL)) == NULL) {
     fprintf(stderr, "Could not file %s\n", OPAL_DLL);
     return 0;
   }
 
-  InitialiseFunction  = (OpalInitialiseFunction )GetProcAddress(hDLL, OPAL_INITIALISE_FUNCTION  );
-  ShutDownFunction    = (OpalShutDownFunction   )GetProcAddress(hDLL, OPAL_SHUTDOWN_FUNCTION    );
-  GetMessageFunction  = (OpalGetMessageFunction )GetProcAddress(hDLL, OPAL_GET_MESSAGE_FUNCTION );
-  SendMessageFunction = (OpalSendMessageFunction)GetProcAddress(hDLL, OPAL_SEND_MESSAGE_FUNCTION);
-  FreeMessageFunction = (OpalFreeMessageFunction)GetProcAddress(hDLL, OPAL_FREE_MESSAGE_FUNCTION);
+  InitialiseFunction  = (OpalInitialiseFunction )GET_LIBRARY_FUNCTION(hDLL, OPAL_INITIALISE_FUNCTION  );
+  ShutDownFunction    = (OpalShutDownFunction   )GET_LIBRARY_FUNCTION(hDLL, OPAL_SHUTDOWN_FUNCTION    );
+  GetMessageFunction  = (OpalGetMessageFunction )GET_LIBRARY_FUNCTION(hDLL, OPAL_GET_MESSAGE_FUNCTION );
+  SendMessageFunction = (OpalSendMessageFunction)GET_LIBRARY_FUNCTION(hDLL, OPAL_SEND_MESSAGE_FUNCTION);
+  FreeMessageFunction = (OpalFreeMessageFunction)GET_LIBRARY_FUNCTION(hDLL, OPAL_FREE_MESSAGE_FUNCTION);
 
   if (InitialiseFunction  == NULL ||
       ShutDownFunction    == NULL ||
@@ -182,6 +203,10 @@ static void HandleMessages(unsigned timeout)
           puts("Call cleared.\n");
         else
           printf("Call cleared: %s\n", message->m_param.m_callCleared.m_reason);
+        break;
+
+      default :
+        break;
     }
 
     FreeMessageFunction(message);
@@ -339,6 +364,9 @@ int main(int argc, char * argv[])
       if (!DoTransfer(HeldCallToken))
         break;
       HandleMessages(15000);
+      break;
+
+    default :
       break;
   }
 
