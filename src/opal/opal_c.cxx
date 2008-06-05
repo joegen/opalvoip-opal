@@ -590,6 +590,8 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       response.SetError("Could not set STUN server address.");
       return;
     }
+    if (GetSTUN()->GetNatType() == PSTUNClient::BlockedNat)
+      response.SetError("STUN indicates Blocked NAT.");
   }
 
   response->m_param.m_general.m_tcpPortBase = GetTCPPortBase();
