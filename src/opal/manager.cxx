@@ -231,6 +231,8 @@ PList<OpalEndPoint> OpalManager::GetEndPoints() const
 
 void OpalManager::ShutDownEndpoints()
 {
+  PTRACE(4, "OpalMan\tShutting down endpoints.");
+
   // Clear any pending calls, set flag so no calls can be received before endpoints removed
   clearingAllCalls = true;
   ClearAllCalls();
@@ -423,6 +425,8 @@ PBoolean OpalManager::ClearCallSynchronous(const PString & token,
 
 void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, PBoolean wait)
 {
+  PTRACE(4, "OpalMan\tClearing all calls " << (wait ? " and waiting" : "asynchronously"));
+
   bool oldFlag = clearingAllCalls;
   clearingAllCalls = true;
 
@@ -430,8 +434,10 @@ void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, PBoolean w
   for (PSafePtr<OpalCall> call = activeCalls; call != NULL; ++call)
     call->Clear(reason);
 
-  if (wait)
+  if (wait) {
     allCallsCleared.Wait();
+    PTRACE(4, "OpalMan\tAll calls cleared.");
+  }
 
   clearingAllCalls = oldFlag;
 }
