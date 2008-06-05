@@ -54,19 +54,20 @@
 //  this class implements SRTP over UDP
 //
 
-OpalSRTP_UDP::OpalSRTP_UDP(
+OpalSRTP_UDP::OpalSRTP_UDP(const PString & encoding,
 #if OPAL_RTP_AGGREGATE
-                            PHandleAggregator * _aggregator,   ///<  RTP aggregator
+                           PHandleAggregator * _aggregator,
 #endif
-                                      unsigned id,            ///<  Session ID for RTP channel
-                                          PBoolean remoteIsNAT)   ///<  PTrue is remote is behind NAT
-  : SecureRTP_UDP(
+                           unsigned id,
+                           PBoolean remoteIsNAT)
+  : SecureRTP_UDP(encoding,
 #if OPAL_RTP_AGGREGATE
                   _aggregator,
 #endif
                   id, remoteIsNAT)
 {
 }
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
@@ -78,8 +79,6 @@ OpalSRTP_UDP::OpalSRTP_UDP(
 //
 //  implement SRTP via libSRTP
 //
-
-#if HAS_LIBSRTP || HAS_LIBZRTP
 
 namespace PWLibStupidLinkerHacks {
   int libSRTPLoader;
@@ -353,7 +352,5 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveControl(RTP_ControlFrame & fram
 }
 
 ///////////////////////////////////////////////////////
-
-#endif // OPAL_HAS_LIBSRTP
 
 #endif // OPAL_SRTP
