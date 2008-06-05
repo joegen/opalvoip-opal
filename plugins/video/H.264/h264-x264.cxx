@@ -111,7 +111,6 @@ H264EncoderContext::~H264EncoderContext()
 
 void H264EncoderContext::ApplyOptions()
 {
-  WaitAndSignal m(_mutex);
   H264EncCtxInstance.call(APPLY_OPTIONS);
 }
 
@@ -790,10 +789,10 @@ static int merge_packetization_mode(char ** result, const char * dst, const char
 
   TRACE(4, "H264\tCap\tCustom merge packetization-mode: " << src << " and " << dst << " to " << *result);
 
-  if (dstInt > 0)
+//  if (dstInt > 0)
     return 1;
 
-  return 0;
+//  return 0;
 }
 
 static void free_string(char * str)
