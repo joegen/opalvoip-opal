@@ -81,6 +81,9 @@ PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 
+SPEEX_CFLAGS	=@SPEEX_CFLAGS@
+SPEEX_LIBS	=@SPEEX_LIBS@
+
 H323_SYSTEM_SPEEX=@H323_SYSTEM_SPEEX@
 
 SRCS	= speexcodec.cxx 
@@ -126,9 +129,11 @@ SRCS   += $(SRCDIR)/bits.c \
           $(SRCDIR)/vorbis_psy.c \
           $(SRCDIR)/vq.c \
 
-EXTRALIBS =
+EXTRACCFLAGS	=
+EXTRALIBS 	=
 else
-EXTRALIBS = -lspeex
+EXTRACCFLAGS	= $(SPEEX_CFLAGS)
+EXTRALIBS	= $(SPEEX_LIBS)
 endif
 
 OBJDIR	= ./obj
@@ -139,11 +144,11 @@ vpath	%.cxx $(SRCDIR)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -g -O2 -c $(STDCCFLAGS) $(CCFLAGS) -o $@ $<
+	$(CC) -g -O2 -c $(STDCCFLAGS) $(CCFLAGS) $(EXTRACCFLAGS) -o $@ $<
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) -g -O2 -c -I../../../include $(STDCCFLAGS) $(CCFLAGS) -o $@ $<
+	$(CXX) -g -O2 -c -I../../../include $(STDCCFLAGS) $(CCFLAGS) $(EXTRACCFLAGS) -o $@ $<
 
 PLUGIN	= ./speex_audio_pwplugin.$(PLUGINEXT)
 
