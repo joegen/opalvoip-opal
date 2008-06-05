@@ -55,12 +55,12 @@ static PAtomicInteger faxCallIndex;
 
 /////////////////////////////////////////////////////////////////////////////
 
-class T38PseudoRTP_Handler : public RTP_FormatHandler
+class T38PseudoRTP_Handler : public RTP_Encoding
 {
   public:
     void OnStart(RTP_Session & _rtpUDP)
     {  
-      RTP_FormatHandler::OnStart(_rtpUDP);
+      RTP_Encoding::OnStart(_rtpUDP);
       rtpUDP->SetJitterBufferSize(0, 0);
       corrigendumASN        = PTrue;
       consecutiveBadPackets = 0;
@@ -211,7 +211,7 @@ class T38PseudoRTP_Handler : public RTP_FormatHandler
 };
 
 
-static PFactory<RTP_FormatHandler>::Worker<T38PseudoRTP_Handler> t38PseudoRTPHandler("udptl");
+static PFactory<RTP_Encoding>::Worker<T38PseudoRTP_Handler> t38PseudoRTPHandler("udptl");
 
 
 /////////////////////////////////////////////////////////////////////////////
