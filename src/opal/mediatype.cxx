@@ -154,20 +154,29 @@ PMutex & OpalMediaTypeDefinition::GetMapMutex()
 }
 
 
-RTP_UDP * OpalMediaTypeDefinition::CreateRTPSession(OpalRTPConnection & /*conn*/,
+RTP_UDP * OpalMediaTypeDefinition::CreateRTPSession(OpalRTPConnection & connection,
 #if OPAL_RTP_AGGREGATE
-                                                PHandleAggregator * agg,
+                                                    PHandleAggregator * agg,
 #endif
-                                                OpalSecurityMode * securityMode, unsigned sessionID, bool remoteIsNAT)
+                                                    OpalSecurityMode * securityMode,
+                                                    unsigned sessionID,
+                                                    bool remoteIsNAT)
 {
   if (securityMode != NULL) 
-    return NULL;
+    return securityMode->CreateRTPSession(connection,
+                                          GetRTPEncoding(),
+#if OPAL_RTP_AGGREGATE
+                                          agg,
+#endif
+                                          sessionID,
+                                          remoteIsNAT);
 
   return new RTP_UDP(GetRTPEncoding(),
 #if OPAL_RTP_AGGREGATE
-        agg,
+                     agg,
 #endif
-        sessionID, remoteIsNAT);
+                     sessionID,
+                     remoteIsNAT);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
