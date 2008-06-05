@@ -546,7 +546,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
     minAudioJitterDelay = maxAudioJitterDelay = 0;
 
   defaultDataSize = conn.GetMaxRtpPayloadSize();
-  rtp.SetFormat(mediaFormat.GetMediaType().GetDefinition()->GetRTPEncoding());
+  rtp.SetEncoding(mediaFormat.GetMediaType().GetDefinition()->GetRTPEncoding());
 }
 
 
