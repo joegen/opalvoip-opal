@@ -528,7 +528,7 @@ typedef struct OpalStatusCallCleared {
 /** Message to/from OPAL system.
     This is passed via the OpalGetMessage() or OpalSendMessage() functions.
   */
-typedef struct OpalMessage {
+struct OpalMessage {
   OpalMessageType m_type;   ///< Type of message
   union {
     const char *             m_commandError;       ///< Used by OpalIndCommandError
@@ -543,7 +543,7 @@ typedef struct OpalMessage {
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
     OpalStatusCallCleared    m_callCleared;        ///< Used by OpalIndCallCleared
   } m_param;
-} OpalMessage;
+};
 
 
 #ifdef __cplusplus
