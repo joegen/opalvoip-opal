@@ -51,6 +51,20 @@ static PTimeInterval ResponseRetirementAge(0, 30); // Seconds
 #define new PNEW
 
 
+static struct AuthenticatorString {
+  int code;
+  const char * desc;
+} authenticatorStrings[] = {
+  { H235Authenticator::e_OK,          "Security parameters and Msg are ok, no security attacks" },
+  { H235Authenticator::e_Absent,      "Security parameters are expected but absent" },
+  { H235Authenticator::e_Error,       "Security parameters are present but incorrect" },
+  { H235Authenticator::e_InvalidTime, "Security parameters indicate peer has bad real time clock" },
+  { H235Authenticator::e_BadPassword, "Security parameters indicate bad password in token" },
+  { H235Authenticator::e_ReplyAttack, "Security parameters indicate an attack was made" },
+  { H235Authenticator::e_Disabled,    "Security is disabled by local system" },
+  { -1, NULL }
+};
+
 /////////////////////////////////////////////////////////////////////////////////
 
 H323TransactionPDU::H323TransactionPDU()
@@ -792,7 +806,15 @@ PBoolean H323Transaction::CheckCryptoTokens(const H235Authenticators & auth)
   if (authenticatorResult == H235Authenticator::e_OK)
     return PTrue;
 
-  PTRACE(2, "Trans\t" << GetName() << " rejected, security tokens invalid.");
+  PINDEX i;
+  for (i = 0; (authenticatorStrings[i].code >= 0) && (authenticatorStrings[i].code != authenticatorResult); ++i) 
+    ;
+
+  const char * desc = "Unknown error";
+  if (authenticatorStrings[i].code >= 0)
+    desc = authenticatorStrings[i].desc;
+
+  PTRACE(2, "Trans\t" << GetName() << " rejected - " << desc);
   return PFalse;
 }
 
