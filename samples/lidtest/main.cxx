@@ -144,9 +144,9 @@ void TestRing(OpalLineInterfaceDevice * device)
     return;
 
   device->RingLine(0, 1);
-  Sleep(2000);
+  PThread::Sleep(2000);
   device->RingLine(0, 0);
-  Sleep(2000);
+  PThread::Sleep(2000);
 
   delete device;
 }
@@ -162,7 +162,7 @@ void TestButtons(OpalLineInterfaceDevice * device)
 
   char digit;
   do {
-    Sleep(100);
+    PThread::Sleep(100);
 
     bool newHook = device->IsLineOffHook(0);
     if (oldHook != newHook) {
