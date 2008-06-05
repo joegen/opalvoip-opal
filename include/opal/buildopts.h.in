@@ -145,6 +145,9 @@
 //#undef HAS_LIBZRTP
 
 #if HAS_LIBZRTP
+
+#define OPAL_ZRTP  1
+
 #if defined(_MSC_VER)
 
 #ifdef _DEBUG
@@ -201,7 +204,10 @@
 //
 #undef HAS_LIBSRTP
 
-#if HAS_LIBSRTP && !HAS_LIBZRTP
+#if HAS_LIBSRTP && !OPAL_ZRTP
+
+#define OPAL_SRTP  1
+
 #if defined(_MSC_VER)
 
 #pragma include_alias("srtp/srtp.h",         "@LIBSRTP_DIR@/include/srtp.h")
@@ -221,13 +227,6 @@
 #endif
 #endif
 
-#if HAS_LIBSRTP
-#define OPAL_SRTP  1
-#endif
-
-#if HAS_LIBZRTP
-#define OPAL_ZRTP  1
-#endif
 
 #endif // _OPAL_BUILDOPTS_H
 
