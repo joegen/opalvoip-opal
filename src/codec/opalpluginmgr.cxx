@@ -339,7 +339,10 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
         }
 
         newOption->SetMerge((OpalMediaOption::MergeType)option->m_merge);
-        newOption->FromString(option->m_value);
+        if (!newOption->FromString(option->m_value)) {
+          PTRACE(2, "OpalPlugin\tError converting default value \"" << option->m_value << "\""
+                    " in option \"" << option->m_name << "\" in format \"" << format << '"');
+        }
 
 #if OPAL_SIP
         newOption->SetFMTPName(option->m_FMTPName);

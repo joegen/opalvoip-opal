@@ -286,9 +286,8 @@ void OpalMediaOptionEnum::ReadFrom(istream & strm)
   PINDEX longestMatch = 0;
 
   PCaselessString str;
-  int ch;
-  while ((ch = strm.get()) != EOF) {
-    str += (char)ch;
+  while (strm.peek() != EOF) {
+    str += (char)strm.get();
 
     PINDEX i;
     for (i = 0; i < m_enumerations.GetSize(); i++) {
@@ -304,10 +303,6 @@ void OpalMediaOptionEnum::ReadFrom(istream & strm)
       break;
     }
   }
-
-  // For some reason the get at eof sets the badbit, don't want that!
-  // But we do want the eofbit if it was set.
-  strm.clear(strm.rdstate()&ios::badbit);
 
   if (str == m_enumerations[longestMatch])
     m_value = longestMatch;
@@ -385,21 +380,20 @@ void OpalMediaOptionString::PrintOn(ostream & strm) const
 
 void OpalMediaOptionString::ReadFrom(istream & strm)
 {
-  char c;
-  strm >> c; // Skip whitespace
+  while (isspace(strm.peek())) // Skip whitespace
+    strm.get();
 
-  if (c != '"') {
-    strm.putback(c);
-    strm >> m_value; // If no " then read to end of line.
-  }
+  if (strm.peek() != '"')
+    strm >> m_value; // If no '"' then read to end of line or eof.
   else {
     // If there was a '"' then assume it is a C style literal string with \ escapes etc
+    // The following will set the bad bit if eof occurs before
 
+    char c;
     PINDEX count = 0;
     PStringStream str;
-    str << '"';
-
-    while (strm.get(c).good()) {
+    while (strm.peek() != EOF) {
+      strm.get(c);
       str << c;
 
       // Keep reading till get a '"' that is not preceded by a '\' that is not itself preceded by a '\'
@@ -407,6 +401,12 @@ void OpalMediaOptionString::ReadFrom(istream & strm)
         break;
 
       count++;
+    }
+
+    if (c != '"') {
+      // No closing quote, add one and set fail bit.
+      strm.setstate(ios::failbit);
+      str << '"';
     }
 
     m_value = PString(PString::Literal, (const char *)str);
@@ -504,32 +504,28 @@ void OpalMediaOptionOctets::ReadFrom(istream & strm)
     pair[2] = '\0';
 
     PINDEX count = 0;
+    PINDEX nibble = 0;
 
-    for (;;) {
-      char ch = (char)strm.peek();
+    while (strm.peek() != EOF) {
+      char ch = (char)strm.get();
       if (isxdigit(ch))
-        pair[0] = ch;
+        pair[nibble++] = ch;
       else if (ch == ' ')
-        pair[0] = '0';
-      else {
-        strm.putback(ch);
+        pair[nibble++] = '0';
+      else
         break;
+
+      if (nibble == 2) {
+        if (!m_value.SetMinSize((count+1+99)%100))
+          break;
+        m_value[count++] = (BYTE)strtoul(pair, NULL, 16);
+        nibble = 0;
       }
-      strm.get();
-      ch = (char)strm.peek();
-      if (isxdigit(ch))
-        pair[1] = ch;
-      else if (ch == ' ')
-        pair[1] = '0';
-      else {
-        strm.putback(ch);
-        break;
-      }
-      strm.get();
-      if (!m_value.SetMinSize((count+1+99)%100))
-        break;
-      m_value[count++] = (BYTE)strtoul(pair, NULL, 16);
     }
+
+    // Report error if no legal hex, not empty is OK.
+    if (count == 0 && !strm.eof())
+      strm.setstate(ios::failbit);
 
     m_value.SetSize(count);
   }
