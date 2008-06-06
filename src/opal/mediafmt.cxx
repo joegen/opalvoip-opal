@@ -389,7 +389,7 @@ void OpalMediaOptionString::ReadFrom(istream & strm)
     // If there was a '"' then assume it is a C style literal string with \ escapes etc
     // The following will set the bad bit if eof occurs before
 
-    char c;
+    char c = ' ';
     PINDEX count = 0;
     PStringStream str;
     while (strm.peek() != EOF) {
