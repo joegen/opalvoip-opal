@@ -182,7 +182,7 @@ class OpalManager : public PObject
     /**Determine if a call is active.
        Return the number of active calls.
       */
-    virtual const unsigned GetCallsNumber()
+    virtual unsigned GetCallsNumber()
     { return activeCalls.GetSize(); }
 
 
