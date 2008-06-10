@@ -744,6 +744,8 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   OpalTransportAddress localAddress;
   OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
+  bool remoteChanged = false;
+
   if (mediaAddress.IsEmpty()) {
     // Hold aka pause media, should only occur on a re-INVITE.
     RTP_UDP * rtpSession = dynamic_cast<RTP_UDP *>(GetSession(rtpSessionId));
@@ -768,9 +770,14 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       }
     }
     else {
-      if (!rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
-        PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-        return false;
+      // see if remote socket information has changed
+      remoteChanged = (rtpSession->GetRemoteAddress() != ip) || (rtpSession->GetRemoteDataPort() != port);
+      if (remoteChanged) {
+        if (!rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
+          PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+          return false;
+        }
+        PTRACE(4, "SIP\tRemote changed IP address");
       }
     }
   }
@@ -801,7 +808,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
   if (sendStream != NULL && sendStream->IsOpen()) {
-    if (sdpFormats.HasFormat(sendStream->GetMediaFormat())) {
+    if (!remoteChanged && sdpFormats.HasFormat(sendStream->GetMediaFormat())) {
       bool paused = (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
       sendStream->SetPaused(paused);
       if (!paused)
@@ -815,7 +822,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
   if (recvStream != NULL && recvStream->IsOpen()) {
-    if (sdpFormats.HasFormat(recvStream->GetMediaFormat())) {
+    if (!remoteChanged && sdpFormats.HasFormat(recvStream->GetMediaFormat())) {
       bool paused = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
       recvStream->SetPaused(paused);
       if (!paused)
