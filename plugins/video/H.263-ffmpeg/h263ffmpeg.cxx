@@ -261,7 +261,7 @@ class DynaLink
       if ((env = ::getenv("PTLIBPLUGINDIR")) == NULL &&
           (env = ::getenv("PWLIBPLUGINDIR")) == NULL) {
         env = (char *)alloca(strlen(P_DEFAULT_PLUGIN_DIR)+1);
-        strcat(env, P_DEFAULT_PLUGIN_DIR);
+        strcpy(env, P_DEFAULT_PLUGIN_DIR);
       }
 
       const char * token = strtok(env, DIR_TOKENISER);
