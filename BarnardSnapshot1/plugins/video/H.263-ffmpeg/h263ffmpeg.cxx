@@ -259,12 +259,14 @@ class DynaLink
 
       char * env;
       if ((env = ::getenv("PTLIBPLUGINDIR")) == NULL &&
-          (env = ::getenv("PWLIBPLUGINDIR")) == NULL) 
-        env = strdup(P_DEFAULT_PLUGIN_DIR);
+          (env = ::getenv("PWLIBPLUGINDIR")) == NULL) {
+        env = (char *)alloca(strlen(P_DEFAULT_PLUGIN_DIR)+1);
+        strcat(env, P_DEFAULT_PLUGIN_DIR);
+      }
 
       const char * token = strtok(env, DIR_TOKENISER);
       while (token != NULL) {
-        if (InternalOpen(token, name))
+        if (InternalOpen(token, name)) 
           return true;
         token = strtok(NULL, DIR_TOKENISER);
       }
@@ -916,17 +918,19 @@ bool H263EncoderContext::OpenCodec()
   avpicture->linesize[2] = frameWidth / 2;
   avpicture->quality = (float)videoQuality;
 
-  avcontext->bit_rate = (bitRate * 3) >> 2; // average bit rate
-  avcontext->bit_rate_tolerance = bitRate >> 1;
+  int _bitRate = bitRate; // 10000000
+
+  avcontext->bit_rate = (_bitRate * 3) >> 2; // average bit rate
+  avcontext->bit_rate_tolerance = _bitRate >> 1;
   avcontext->rc_min_rate = 0;               // minimum bitrate
-  avcontext->rc_max_rate = bitRate;         // maximum bitrate
+  avcontext->rc_max_rate = _bitRate;         // maximum bitrate
   avcontext->mb_qmin = avcontext->qmin = videoQMin;
   avcontext->mb_qmax = avcontext->qmax = videoQMax;
   avcontext->rc_qsquish = 0; // limit q by clipping
 
   //avcontext->rc_eq = (char*) "tex^qComp"; // rate control equation
   avcontext->rc_eq = (char*) "1";       // rate control equation
-  avcontext->rc_buffer_size = bitRate * 64;
+  avcontext->rc_buffer_size = _bitRate * 64;
 
   avcontext->max_qdiff = 3; // max q difference between frames
   avcontext->qcompress = 0.5; // qscale factor between easy & hard scenes (0.0-1.0)
@@ -1593,7 +1597,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   int minWidth, minHeight, maxHeight, maxWidth, frameTime, bitRate;
   FindBoundingBox((const char * const * *)parm, mpi, minWidth, minHeight, maxWidth, maxHeight, frameTime, bitRate);
 
-  char ** options = (char **)calloc(14+2, sizeof(char *));
+  char ** options = (char **)calloc(16+(5*2)+2, sizeof(char *));
   *(char ***)parm = options;
   if (options == NULL)
     return 0;
@@ -1610,8 +1614,14 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   options[ 9] = num2str(frameTime);
   options[10] = strdup(PLUGINCODEC_OPTION_MAX_BIT_RATE);
   options[11] = num2str(bitRate);
-  options[12] = strdup("MaxBR");
-  options[13] = num2str((bitRate+50)/100);
+  options[12] = strdup(PLUGINCODEC_OPTION_TARGET_BIT_RATE);
+  options[13] = num2str(bitRate);
+  options[14] = strdup("MaxBR");
+  options[15] = num2str((bitRate+50)/100);
+  for (int i = 0; i < 5; i++) {
+    options[16+i*2] = strdup(StandardVideoSizes[i].optionName);
+    options[16+i*2+1] = num2str(mpi[i]);
+  }
 
   return 1;
 }
@@ -1631,7 +1641,7 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
   int minWidth, minHeight, maxHeight, maxWidth, frameTime, bitRate;
   FindBoundingBox((const char * const * *)parm, mpi, minWidth, minHeight, maxWidth, maxHeight, frameTime, bitRate);
 
-  char ** options = (char **)calloc(12+5*2+2, sizeof(char *));
+  char ** options = (char **)calloc(14+5*2+2, sizeof(char *));
   *(char ***)parm = options;
   if (options == NULL)
     return 0;
@@ -1646,11 +1656,13 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
   options[ 7] = num2str(maxHeight);
   options[ 8] = strdup(PLUGINCODEC_OPTION_MAX_BIT_RATE);
   options[ 9] = num2str(bitRate);
-  options[10] = strdup("MaxBR");
-  options[11] = num2str((bitRate+50)/100);
+  options[10] = strdup(PLUGINCODEC_OPTION_TARGET_BIT_RATE);
+  options[11] = num2str(bitRate);
+  options[12] = strdup("MaxBR");
+  options[13] = num2str((bitRate+50)/100);
   for (int i = 0; i < 5; i++) {
-    options[12+i*2] = strdup(StandardVideoSizes[i].optionName);
-    options[12+i*2] = num2str(mpi[i]);
+    options[14+i*2] = strdup(StandardVideoSizes[i].optionName);
+    options[14+i*2+1] = num2str(mpi[i]);
   }
 
   return 1;
