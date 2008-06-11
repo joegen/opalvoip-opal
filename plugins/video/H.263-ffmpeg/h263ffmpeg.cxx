@@ -259,14 +259,15 @@ class DynaLink
 
       char * env;
       if ((env = ::getenv("PTLIBPLUGINDIR")) == NULL &&
-          (env = ::getenv("PWLIBPLUGINDIR")) == NULL) 
-        env = strdup(P_DEFAULT_PLUGIN_DIR);
+          (env = ::getenv("PWLIBPLUGINDIR")) == NULL) {
+        env = (char *)alloca(strlen(P_DEFAULT_PLUGIN_DIR)+1);
+        strcat(env, P_DEFAULT_PLUGIN_DIR);
+      }
 
       const char * token = strtok(env, DIR_TOKENISER);
       while (token != NULL) {
-        if (InternalOpen(token, name)) {
+        if (InternalOpen(token, name)) 
           return true;
-        }
         token = strtok(NULL, DIR_TOKENISER);
       }
       return InternalOpen(NULL, name); // Last ditch effort
