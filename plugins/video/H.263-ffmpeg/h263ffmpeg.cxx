@@ -1596,7 +1596,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   int minWidth, minHeight, maxHeight, maxWidth, frameTime, bitRate;
   FindBoundingBox((const char * const * *)parm, mpi, minWidth, minHeight, maxWidth, maxHeight, frameTime, bitRate);
 
-  char ** options = (char **)calloc(14+(5*2)+2, sizeof(char *));
+  char ** options = (char **)calloc(16+(5*2)+2, sizeof(char *));
   *(char ***)parm = options;
   if (options == NULL)
     return 0;
@@ -1613,11 +1613,13 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   options[ 9] = num2str(frameTime);
   options[10] = strdup(PLUGINCODEC_OPTION_MAX_BIT_RATE);
   options[11] = num2str(bitRate);
-  options[12] = strdup("MaxBR");
-  options[13] = num2str((bitRate+50)/100);
+  options[12] = strdup(PLUGINCODEC_OPTION_TARGET_BIT_RATE);
+  options[13] = num2str(bitRate);
+  options[14] = strdup("MaxBR");
+  options[15] = num2str((bitRate+50)/100);
   for (int i = 0; i < 5; i++) {
-    options[14+i*2] = strdup(StandardVideoSizes[i].optionName);
-    options[14+i*2+1] = num2str(mpi[i]);
+    options[16+i*2] = strdup(StandardVideoSizes[i].optionName);
+    options[16+i*2+1] = num2str(mpi[i]);
   }
 
   return 1;
@@ -1638,7 +1640,7 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
   int minWidth, minHeight, maxHeight, maxWidth, frameTime, bitRate;
   FindBoundingBox((const char * const * *)parm, mpi, minWidth, minHeight, maxWidth, maxHeight, frameTime, bitRate);
 
-  char ** options = (char **)calloc(12+5*2+2, sizeof(char *));
+  char ** options = (char **)calloc(14+5*2+2, sizeof(char *));
   *(char ***)parm = options;
   if (options == NULL)
     return 0;
@@ -1653,11 +1655,13 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
   options[ 7] = num2str(maxHeight);
   options[ 8] = strdup(PLUGINCODEC_OPTION_MAX_BIT_RATE);
   options[ 9] = num2str(bitRate);
-  options[10] = strdup("MaxBR");
-  options[11] = num2str((bitRate+50)/100);
+  options[10] = strdup(PLUGINCODEC_OPTION_TARGET_BIT_RATE);
+  options[11] = num2str(bitRate);
+  options[12] = strdup("MaxBR");
+  options[13] = num2str((bitRate+50)/100);
   for (int i = 0; i < 5; i++) {
-    options[12+i*2] = strdup(StandardVideoSizes[i].optionName);
-    options[12+i*2+1] = num2str(mpi[i]);
+    options[14+i*2] = strdup(StandardVideoSizes[i].optionName);
+    options[14+i*2+1] = num2str(mpi[i]);
   }
 
   return 1;
