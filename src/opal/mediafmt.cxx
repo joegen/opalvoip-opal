@@ -529,7 +529,7 @@ void OpalMediaOptionOctets::ReadFrom(istream & strm)
         break;
 
       if (nibble == 2) {
-        if (!m_value.SetMinSize((count+1+99)%100))
+        if (!m_value.SetMinSize(100*((count+1+99)/100)))
           break;
         m_value[count++] = (BYTE)strtoul(pair, NULL, 16);
         nibble = 0;
