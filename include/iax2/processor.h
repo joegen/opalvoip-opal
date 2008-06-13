@@ -258,8 +258,18 @@ class IAX2Processor : public PThread
   void Terminate();
   
   /**Cause this thread to come to life, and process events that are
-   * pending at IAX2Connection */
+   * pending at IAX2Connection. This method does not start this
+   * thread. This method causes this thread to be joggled back into
+   * life, after waiting on a PSyncPoint. */
   void Activate();
+
+  /**Test the sequence number of the incoming frame. This is only
+     valid for handling a call. If the message is outof order, the
+     supplied fullframe is deleted.
+
+  @return true if the frame is out of order, which deletes the supplied frame
+  @return false, and does not destroy the supplied frame*/
+  virtual PBoolean IncomingMessageOutOfOrder(IAX2FullFrame *ff)= 0;
 
  protected:
  

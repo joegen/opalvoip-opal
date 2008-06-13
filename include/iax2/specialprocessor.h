@@ -90,6 +90,17 @@ class IAX2SpecialProcessor : public IAX2Processor
   
   /**Process a poke command*/
   void ProcessIaxCmdPoke(IAX2FullFrameProtocol * src);
+
+  /**Test the sequence number of the incoming frame. This is only
+     valid for handling a call. If the message is outof order, the
+     supplied fullframe is deleted.
+
+     @return false always, as the special packet handler never gets
+     frame ordered correctly - there will always be skipped frames. */
+  virtual PBoolean IncomingMessageOutOfOrder(IAX2FullFrame *ff) 
+  { return PFalse; }
+
+
 };
 
 #endif /*SPECIALPROCESSOR_H*/

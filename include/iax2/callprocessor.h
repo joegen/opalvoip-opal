@@ -149,8 +149,9 @@ class IAX2CallProcessor : public IAX2Processor
    packets */
   virtual void OnReleased();
   
-  /** Ask this IAX2CallProcessor to send dtmf to the remote endpoint. The dtmf is placed on a queue,
-      ready for transmission in fullframes of type dtmf. */
+  /** Ask this IAX2CallProcessor to send dtmf to the remote
+      endpoint. The dtmf is placed on a queue, ready for transmission
+      in fullframes of type dtmf. */
   void SendDtmf(const PString & dtmfs);
 
   /** Ask this IAX2CallProcessor to send text to the remote endpoint. The text
@@ -253,6 +254,14 @@ class IAX2CallProcessor : public IAX2Processor
   void StartStatusCheckTimer(PINDEX msToWait = 10000 /*!< time between 
 				      status checks, default = 10 seconds*/);
   
+  /**Test the sequence number of the incoming frame. This is only
+     valid for handling a call. If the message is outof order, the
+     supplied fullframe is deleted.
+
+  @return true if the frame is out of order, which deletes the supplied frame
+  @return false, and does not destroy the supplied frame*/
+  virtual PBoolean IncomingMessageOutOfOrder(IAX2FullFrame *ff);
+
  protected:
   
   /**The connection class we are charged with running. */
@@ -736,7 +745,6 @@ class IAX2CallProcessor : public IAX2Processor
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

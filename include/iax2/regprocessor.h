@@ -125,6 +125,16 @@ class IAX2RegProcessor : public IAX2Processor
      seperate call.
      */
    void ResetCall();
+
+  /**Test the sequence number of the incoming frame. This is only
+     valid for handling a call. If the message is outof order, the
+     supplied fullframe is deleted.
+
+  @return true if the frame is out of order, which deletes the supplied frame
+  @return false, and does not destroy the supplied frame*/
+  virtual PBoolean IncomingMessageOutOfOrder(IAX2FullFrame *ff)
+       { return PFalse; };
+
   
   /**A class that generates random values used for varying 
      the registration timer*/
