@@ -88,7 +88,7 @@ namespace PWLibStupidLinkerHacks {
   int libSRTPLoader;
 };
 
-#if HAS_LIBSRTP && _WIN32
+#ifdef LIBSRTP_LIBRARY
 #pragma comment(lib, LIBSRTP_LIBRARY)
 #endif
 
