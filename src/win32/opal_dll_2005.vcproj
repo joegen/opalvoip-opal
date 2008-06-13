@@ -221,7 +221,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -323,7 +323,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -425,7 +425,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -527,7 +527,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -719,7 +719,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -816,7 +816,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -914,7 +914,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -1011,7 +1011,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -1214,7 +1214,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -1316,7 +1316,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -1418,7 +1418,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -1520,7 +1520,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\MobileOPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
