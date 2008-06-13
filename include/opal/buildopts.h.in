@@ -144,7 +144,7 @@
 //
 //#undef HAS_LIBZRTP
 
-#if HAS_LIBZRTP
+#if defined(HAS_LIBZRTP) && !defined(_WIN32_WCE)
 
 #define OPAL_ZRTP  1
 
@@ -204,7 +204,7 @@
 //
 #undef HAS_LIBSRTP
 
-#if HAS_LIBSRTP && !OPAL_ZRTP
+#if HAS_LIBSRTP && !OPAL_ZRTP && !defined(_WIN32_WCE)
 
 #define OPAL_SRTP  1
 
