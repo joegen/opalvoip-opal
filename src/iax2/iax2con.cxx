@@ -533,7 +533,6 @@ PBoolean IAX2Connection::ReadSoundPacket(RTP_DataFrame & packet)
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */
