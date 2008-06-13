@@ -1264,17 +1264,40 @@ PString IAX2CallProcessor::GetUserName() const
     return "";
 }
 
+PBoolean IAX2CallProcessor::IncomingMessageOutOfOrder(IAX2FullFrame *f)
+{
+  /*Check to see if this frame is legitimate - that sequence numbers match. If it is out of
+    sequence, we have to drop it, and send a vnak frame */
+  switch(sequence.IncomingMessageInOrder(*f)) {
+      case IAX2SequenceNumbers::InSequence:
+	  break;
+      case IAX2SequenceNumbers::SkippedFrame: {
+	  PTRACE(4, "Skipped frame, received frame is " << f->GetSequenceInfo().AsString());
+	  SendVnakFrame(f);
+	  delete f;
+	  return PTrue;
+      } 
+	  break;
+      case IAX2SequenceNumbers::RepeatedFrame: {
+	  SendAckFrame(f);
+	  delete f;
+	  return PTrue;
+      }
+  }
+  
+  /*The frame is ok, and the order is "good". so leave it alone for later processing */
+  return PFalse;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 /* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
+/* With the comment below, the tab key does auto indent to 2 spaces.     */
 
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

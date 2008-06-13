@@ -270,27 +270,10 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   IAX2FullFrame *f = (IAX2FullFrame *) frame;
   PTRACE(5, "IaxConnection\tFullFrame incoming frame " << frame->IdString());
 
-  /*Check to see if this frame is legitimate - that sequence numbers match. If it is out of
-    sequence, we have to drop it, and send a vnak frame */
-  switch(sequence.IncomingMessageInOrder(*f)) {
-      case IAX2SequenceNumbers::InSequence:
-	  break;
-      case IAX2SequenceNumbers::SkippedFrame: {
-	  PTRACE(4, "Skipped frame, received frame is " << f->GetSequenceInfo().AsString());
-	  SendVnakFrame(f);
-	  delete f;
-	  return PTrue;
-      } 
-	  break;
-      case IAX2SequenceNumbers::RepeatedFrame: {
-	  SendAckFrame(f);
-	  delete f;
-	  return PTrue;
-      }
-  }
+  if (IncomingMessageOutOfOrder(f))
+    return PTrue;
 
   // sequence numbers are Ok. Good.
-
   endpoint.transmitter->PurgeMatchingFullFrames(f);
   
   IncControlFramesRcvd();
