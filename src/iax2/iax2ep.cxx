@@ -58,7 +58,7 @@ IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
   
   statusQueryCounter = 1;
   specialPacketHandler = new IAX2SpecialProcessor(*this);
-  
+
   transmitter = NULL;
   receiver = NULL;
   sock = NULL;
@@ -693,7 +693,6 @@ void IAX2EndPoint::Register(
   
   IAX2RegProcessor *regProcessor = 
           new IAX2RegProcessor(*this, host, username, password, requestedRefreshTime);
-  
   regProcessors.Append(regProcessor);
 }
 
@@ -818,7 +817,6 @@ void IAX2IncomingEthernetFrames::ProcessList()
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */
