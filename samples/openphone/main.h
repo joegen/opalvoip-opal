@@ -486,6 +486,13 @@ class OptionsDialog : public wxDialog
     void ChangedCodecOptionValue(wxCommandEvent & event);
 
     ////////////////////////////////////////
+    // Security fields
+    bool         m_SecureH323;
+    bool         m_SecureSIP;
+    PwxString    m_RTPSecurityModeH323;
+    PwxString    m_RTPSecurityModeSIP;
+
+    ////////////////////////////////////////
     // H.323 fields
     int          m_GatekeeperMode;
     PwxString    m_GatekeeperAddress;

@@ -165,6 +165,12 @@ DEF_FIELD(FaxSpanDSP);
 static const char CodecsGroup[] = "/Codecs";
 static const char CodecNameKey[] = "Name";
 
+static const char SecurityGroup[] = "/Security";
+DEF_FIELD(SecureH323);
+DEF_FIELD(SecureSIP);
+DEF_FIELD(RTPSecurityModeH323);
+DEF_FIELD(RTPSecurityModeSIP);
+
 static const char H323Group[] = "/H.323";
 DEF_FIELD(GatekeeperMode);
 DEF_FIELD(GatekeeperAddress);
@@ -829,6 +835,18 @@ bool MyManager::Initialise()
     mediaFormats[i].PrintOptions(traceStream);
   traceStream << PTrace::End;
 #endif
+
+  ////////////////////////////////////////
+  // Security fields
+  config->SetPath(SecurityGroup);
+  if (config->Read(SecureH323Key, &onoff) && !onoff)
+    DetachEndPoint("h323s");
+  if (config->Read(SecureSIPKey, &onoff) && !onoff)
+    DetachEndPoint("sips");
+  if (config->Read(RTPSecurityModeH323Key, &str) && !str.empty())
+    h323EP->SetDefaultSecurityMode(str);
+  if (config->Read(RTPSecurityModeSIPKey, &str) && !str.empty())
+    sipEP->SetDefaultSecurityMode(str);
 
   ////////////////////////////////////////
   // H.323 fields
@@ -2917,6 +2935,35 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_CodecOptionValueError->Show(false);
 
   ////////////////////////////////////////
+  // Security fields
+#if P_SSL
+  INIT_FIELD(SecureH323, m_manager.FindEndPoint("h323s") != NULL);
+  INIT_FIELD(SecureSIP, m_manager.FindEndPoint("sips") != NULL);
+#else
+  FindWindowByName(SecureH323Key)->Disable();
+  FindWindowByName(SecureSIPKey)->Disable();
+#endif
+#if OPAL_SRTP || OPAL_ZRTP
+  INIT_FIELD(RTPSecurityModeH323, m_manager.h323EP->GetDefaultSecurityMode());
+  INIT_FIELD(RTPSecurityModeSIP, m_manager.sipEP->GetDefaultSecurityMode());
+#if !OPAL_SRTP
+  choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeH323Key);
+  choice->Delete(choice->FindString("SRTP"));
+  choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeSIPKey);
+  choice->Delete(choice->FindString("SRTP"));
+#endif
+#if !OPAL_ZRTP
+  choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeH323Key);
+  choice->Delete(choice->FindString("ZRTP"));
+  choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeSIPKey);
+  choice->Delete(choice->FindString("ZRTP"));
+#endif
+#else
+  FindWindowByName(RTPSecurityModeH323Key)->Disable();
+  FindWindowByName(RTPSecurityModeSIPKey)->Disable();
+#endif // OPAL_SRTP || OPAL_ZRTP
+
+  ////////////////////////////////////////
   // H.323 fields
   m_AddAlias = FindWindowByNameAs<wxButton>(this, "AddAlias");
   m_AddAlias->Disable();
@@ -3200,6 +3247,25 @@ bool OptionsDialog::TransferDataFromWindow()
       }
     }
   }
+
+
+  ////////////////////////////////////////
+  // Security fields
+  config->SetPath(SecurityGroup);
+  if (m_SecureH323)
+    m_manager.AttachEndPoint(m_manager.FindEndPoint("h323"), "h323s");
+  else
+    m_manager.DetachEndPoint("h323s");
+  config->Write(SecureH323Key, m_SecureH323);
+
+  if (m_SecureSIP)
+    m_manager.AttachEndPoint(m_manager.FindEndPoint("sip"), "sips");
+  else
+    m_manager.DetachEndPoint("sips");
+  config->Write(SecureSIPKey, m_SecureSIP);
+
+  SAVE_FIELD(RTPSecurityModeH323, m_manager.h323EP->SetDefaultSecurityMode);
+  SAVE_FIELD(RTPSecurityModeSIP, m_manager.sipEP->SetDefaultSecurityMode);
 
 
   ////////////////////////////////////////
