@@ -891,7 +891,9 @@ void OpalConnection::OnUserInputTone(char tone, unsigned duration)
 PString OpalConnection::GetUserInput(unsigned timeout)
 {
   PString reply;
-  if (userInputAvailable.Wait(PTimeInterval(0, timeout)) && LockReadWrite()) {
+  if (userInputAvailable.Wait(PTimeInterval(0, timeout)) &&
+      GetPhase() < ReleasingPhase &&
+      LockReadWrite()) {
     reply = userInputString;
     userInputString = PString();
     UnlockReadWrite();
