@@ -479,7 +479,7 @@ void OpalLineConnection::OnReleased()
 {
   PTRACE(3, "LID Con\tOnReleased " << *this);
 
-  if (handlerThread != NULL) {
+  if (handlerThread != NULL && PThread::Current() != handlerThread) {
     PTRACE(4, "LID Con\tAwaiting handler thread termination " << *this);
     // Stop the signalling handler thread
     SetUserInput(PString()); // Break out of ReadUserInput
