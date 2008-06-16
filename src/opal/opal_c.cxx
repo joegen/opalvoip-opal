@@ -35,6 +35,7 @@
 #include <opal.h>
 #include <opal/manager.h>
 #include <opal/pcss.h>
+#include <opal/localep.h>
 #include <h323/h323ep.h>
 #include <sip/sipep.h>
 #include <iax2/iax2ep.h>
@@ -81,11 +82,32 @@ class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
   public:
     OpalPCSSEndPoint_C(OpalManager_C & manager);
 
-    PBoolean OpalPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection &);
-    PBoolean OpalPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection &);
+    virtual PBoolean OnShowIncoming(const OpalPCSSConnection &);
+    virtual PBoolean OnShowOutgoing(const OpalPCSSConnection &);
 
   private:
-    OpalManager_C & manager;
+    OpalManager_C & m_manager;
+};
+
+
+class OpalLocalEndPoint_C : public OpalLocalEndPoint
+{
+  public:
+    OpalLocalEndPoint_C(OpalManager_C & manager);
+
+    virtual bool OnOutgoingCall(const OpalLocalConnection &);
+    virtual bool OnIncomingCall(OpalLocalConnection &);
+    virtual bool OnReadMediaFrame(const OpalLocalConnection &, const OpalMediaStream & mediaStream, RTP_DataFrame &);
+    virtual bool OnWriteMediaFrame(const OpalLocalConnection &, const OpalMediaStream &, RTP_DataFrame & frame);
+    virtual bool OnReadMediaData(const OpalLocalConnection &, const OpalMediaStream &, void *, PINDEX, PINDEX &);
+    virtual bool OnWriteMediaData(const OpalLocalConnection &, const OpalMediaStream &, const void *, PINDEX, PINDEX &);
+
+    OpalMediaDataFunction m_mediaReadData;
+    OpalMediaDataFunction m_mediaWriteData;
+    OpalMediaDataType     m_mediaDataHeader;
+
+  private:
+    OpalManager_C & m_manager;
 };
 
 
@@ -103,7 +125,7 @@ class SIPEndPoint_C : public SIPEndPoint
     );
 
   private:
-    OpalManager_C & manager;
+    OpalManager_C & m_manager;
 };
 #endif
 
@@ -113,6 +135,7 @@ class OpalManager_C : public OpalManager
   public:
     OpalManager_C(unsigned version)
       : pcssEP(NULL)
+      , localEP(NULL)
       , m_apiVersion(version)
       , m_messagesAvailable(0, INT_MAX)
     {
@@ -125,6 +148,8 @@ class OpalManager_C : public OpalManager
     OpalMessage * SendMessage(const OpalMessage * message);
 
     virtual void OnEstablishedCall(OpalCall & call);
+    virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
+    virtual void OnClosedMediaStream(const OpalMediaStream & stream);
     virtual void OnUserInputString(OpalConnection & connection, const PString & value);
     virtual void OnUserInputTone(OpalConnection & connection, char tone, int duration);
     virtual void OnMWIReceived(const PString & party, MessageWaitingType type, const PString & extraInfo);
@@ -142,7 +167,8 @@ class OpalManager_C : public OpalManager
     void HandleRetrieveCall (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleTransferCall (const OpalMessage & message, OpalMessageBuffer & response);
 
-    OpalPCSSEndPoint_C * pcssEP;
+    OpalPCSSEndPoint_C  * pcssEP;
+    OpalLocalEndPoint_C * localEP;
 
     unsigned                  m_apiVersion;
     std::queue<OpalMessage *> m_messageQueue;
@@ -268,9 +294,146 @@ OpalMessage * OpalMessageBuffer::Detach()
 
 ///////////////////////////////////////
 
+OpalLocalEndPoint_C::OpalLocalEndPoint_C(OpalManager_C & mgr)
+  : OpalLocalEndPoint(mgr)
+  , m_manager(mgr)
+  , m_mediaReadData(NULL)
+  , m_mediaWriteData(NULL)
+  , m_mediaDataHeader(OpalMediaDataPayloadOnly)
+{
+}
+
+
+bool OpalLocalEndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
+{
+  PTRACE(4, "OpalC\tOnOutgoingCall " << connection);
+  const OpalCall & call = connection.GetCall();
+  OpalMessageBuffer message(OpalIndAlerting);
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
+  PTRACE(4, "OpalC API\tOnOutgoingCall:"
+            " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
+            " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
+            " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
+  m_manager.PostMessage(message);
+  return true;
+}
+
+
+bool OpalLocalEndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
+{
+  PTRACE(4, "OpalC\tOnIncomingCall " << connection);
+  OpalMessageBuffer message(OpalIndIncomingCall);
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, connection.GetLocalPartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, connection.GetRemotePartyURL());
+  PTRACE(4, "OpalC API\tOnIncomingCall:"
+            " token=\"" << message->m_param.m_incomingCall.m_callToken << "\""
+            " local=\"" << message->m_param.m_incomingCall.m_localAddress << "\""
+            " remote=\""<< message->m_param.m_incomingCall.m_remoteAddress << '"');
+  m_manager.PostMessage(message);
+  return true;
+}
+
+
+bool OpalLocalEndPoint_C::OnReadMediaFrame(const OpalLocalConnection & connection,
+                                           const OpalMediaStream & mediaStream,
+                                           RTP_DataFrame & frame)
+{
+  if (m_mediaDataHeader != OpalMediaDataWithHeader)
+    return false;
+
+  if (m_mediaReadData == NULL)
+    return false;
+
+  int result = m_mediaReadData(connection.GetCall().GetToken(),
+                               mediaStream.GetID(),
+                               mediaStream.GetMediaFormat().GetName(),
+                               frame.GetPointer(),
+                               frame.GetSize());
+  if (result < 0)
+    return false;
+
+  frame.SetPayloadSize(result-frame.GetHeaderSize());
+  return true;
+}
+
+
+bool OpalLocalEndPoint_C::OnWriteMediaFrame(const OpalLocalConnection & connection,
+                                            const OpalMediaStream & mediaStream,
+                                            RTP_DataFrame & frame)
+{
+  if (m_mediaDataHeader != OpalMediaDataWithHeader)
+    return false;
+
+  if (m_mediaWriteData == NULL)
+    return false;
+
+  int result = m_mediaWriteData(connection.GetCall().GetToken(),
+                                mediaStream.GetID(),
+                                mediaStream.GetMediaFormat().GetName(),
+                                frame.GetPointer(),
+                                frame.GetHeaderSize()+frame.GetPayloadSize());
+  return result >= 0;
+}
+
+
+bool OpalLocalEndPoint_C::OnReadMediaData(const OpalLocalConnection & connection,
+                                          const OpalMediaStream & mediaStream,
+                                          void * data,
+                                          PINDEX size,
+                                          PINDEX & length)
+{
+  if (m_mediaDataHeader != OpalMediaDataPayloadOnly)
+    return false;
+
+  if (m_mediaReadData == NULL)
+    return false;
+
+  int result = m_mediaReadData(connection.GetCall().GetToken(),
+                               mediaStream.GetID(),
+                               mediaStream.GetMediaFormat().GetName(),
+                               data,
+                               size);
+  if (result < 0)
+    return false;
+
+  length = result;
+  return true;
+}
+
+
+bool OpalLocalEndPoint_C::OnWriteMediaData(const OpalLocalConnection & connection,
+                                           const OpalMediaStream & mediaStream,
+                                           const void * data,
+                                           PINDEX length,
+                                           PINDEX & written)
+{
+  if (m_mediaDataHeader != OpalMediaDataPayloadOnly)
+    return false;
+
+  if (m_mediaWriteData == NULL)
+    return false;
+
+  int result = m_mediaWriteData(connection.GetCall().GetToken(),
+                                mediaStream.GetID(),
+                                mediaStream.GetMediaFormat().GetName(),
+                                (void *)data,
+                                length);
+  if (result < 0)
+    return false;
+
+  written = result;
+  return true;
+}
+
+
+///////////////////////////////////////
+
 OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
   : OpalPCSSEndPoint(mgr)
-  , manager(mgr)
+  , m_manager(mgr)
 {
 }
 
@@ -286,7 +449,7 @@ PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connectio
             " token=\"" << message->m_param.m_incomingCall.m_callToken << "\""
             " local=\"" << message->m_param.m_incomingCall.m_localAddress << "\""
             " remote=\""<< message->m_param.m_incomingCall.m_remoteAddress << '"');
-  manager.PostMessage(message);
+  m_manager.PostMessage(message);
   return true;
 }
 
@@ -303,7 +466,7 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
             " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
             " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
             " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
-  manager.PostMessage(message);
+  m_manager.PostMessage(message);
   return true;
 }
 
@@ -314,7 +477,7 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
 
 SIPEndPoint_C::SIPEndPoint_C(OpalManager_C & mgr)
   : SIPEndPoint(mgr)
-  , manager(mgr)
+  , m_manager(mgr)
 {
 }
 
@@ -332,7 +495,7 @@ void SIPEndPoint_C::OnRegistrationStatus(const PString & aor,
     strm << "Error " << reason << " in SIP registration.";
     SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_error, strm);
   }
-  manager.PostMessage(message);
+  m_manager.PostMessage(message);
 }
 
 #endif
@@ -388,6 +551,12 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
     defUserPos = pcPos;
   }
 
+  PINDEX localPos = options.Find("local");
+  if (localPos < defUserPos) {
+    defUser = "local:<du>";
+    defUserPos = localPos;
+  }
+
 
 #if OPAL_IVR
   if (options.Find("ivr") != P_MAX_INDEX) {
@@ -431,6 +600,11 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   if (pcPos != P_MAX_INDEX) {
     pcssEP = new OpalPCSSEndPoint_C(*this);
     AddRouteEntry("pc:.*=" + defProto + ":<da>");
+  }
+
+  if (localPos != P_MAX_INDEX) {
+    localEP = new OpalLocalEndPoint_C(*this);
+    AddRouteEntry("local:.*=" + defProto + ":<da>");
   }
 
   return true;
@@ -626,7 +800,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     return;
 
   OpalSilenceDetector::Params silenceDetectParams = GetSilenceDetectParams();
-  response->m_param.m_general.m_silenceDetectMode = silenceDetectParams.m_mode+1;
+  response->m_param.m_general.m_silenceDetectMode = (OpalSilenceDetectModes)(silenceDetectParams.m_mode+1);
   if (command.m_param.m_general.m_silenceDetectMode != 0)
     silenceDetectParams.m_mode = (OpalSilenceDetector::Mode)(command.m_param.m_general.m_silenceDetectMode-1);
   response->m_param.m_general.m_silenceThreshold = silenceDetectParams.m_threshold;
@@ -644,7 +818,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   SetSilenceDetectParams(silenceDetectParams);
 
   OpalEchoCanceler::Params echoCancelParams = GetEchoCancelParams();
-  response->m_param.m_general.m_echoCancellation = echoCancelParams.m_mode+1;
+  response->m_param.m_general.m_echoCancellation = (OpalEchoCancelMode)(echoCancelParams.m_mode+1);
   if (command.m_param.m_general.m_echoCancellation != 0)
     echoCancelParams.m_mode = (OpalEchoCanceler::Mode)(command.m_param.m_general.m_echoCancellation-1);
   SetEchoCancelParams(echoCancelParams);
@@ -655,6 +829,23 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   response->m_param.m_general.m_audioBuffers = pcssEP->GetSoundChannelBufferDepth();
   if (command.m_param.m_general.m_audioBuffers != 0)
     pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
+
+  if (m_apiVersion < 5)
+    return;
+
+  if (localEP != NULL) {
+    response->m_param.m_general.m_mediaReadData = localEP->m_mediaReadData;
+    if (command.m_param.m_general.m_mediaReadData != NULL)
+      localEP->m_mediaReadData = command.m_param.m_general.m_mediaReadData;
+
+    response->m_param.m_general.m_mediaWriteData = localEP->m_mediaWriteData;
+    if (command.m_param.m_general.m_mediaWriteData != NULL)
+      localEP->m_mediaWriteData = command.m_param.m_general.m_mediaWriteData;
+
+    response->m_param.m_general.m_mediaDataHeader = localEP->m_mediaDataHeader;
+    if (command.m_param.m_general.m_mediaDataHeader != 0)
+      localEP->m_mediaDataHeader = command.m_param.m_general.m_mediaDataHeader;
+  }
 }
 
 
@@ -1008,6 +1199,47 @@ void OpalManager_C::OnEstablishedCall(OpalCall & call)
             " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
             " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
             " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
+  PostMessage(message);
+}
+
+
+PBoolean OpalManager_C::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
+{
+  if (!OpalManager::OnOpenMediaStream(connection, stream))
+    return false;
+
+  if (connection.IsNetworkConnection())
+    return true;
+
+  OpalMessageBuffer message(OpalIndMediaStream);
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_identifier, stream.GetID());
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_format, stream.GetMediaFormat().GetName());
+  message->m_param.m_mediaStream.m_status = 1;
+  PTRACE(4, "OpalC API\tOnClosedMediaStream:"
+            " token=\"" << message->m_param.m_userInput.m_callToken << "\""
+            " id=\"" << message->m_param.m_mediaStream.m_identifier << '"');
+  PostMessage(message);
+
+  return true;
+}
+
+
+void OpalManager_C::OnClosedMediaStream(const OpalMediaStream & stream)
+{
+  OpalManager::OnClosedMediaStream(stream);
+
+  if (stream.GetConnection().IsNetworkConnection())
+    return;
+
+  OpalMessageBuffer message(OpalIndMediaStream);
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_callToken, stream.GetConnection().GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_identifier, stream.GetID());
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_format, stream.GetMediaFormat().GetName());
+  message->m_param.m_mediaStream.m_status = 2;
+  PTRACE(4, "OpalC API\tOnClosedMediaStream:"
+            " token=\"" << message->m_param.m_userInput.m_callToken << "\""
+            " id=\"" << message->m_param.m_mediaStream.m_identifier << '"');
   PostMessage(message);
 }
 

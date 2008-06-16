@@ -316,6 +316,9 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\opal\localep.cxx">
+				</File>
+				<File
 					RelativePath="..\opal\manager.cxx">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -1868,6 +1871,9 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\ivr.h">
+				</File>
+				<File
+					RelativePath="..\..\include\opal\localep.h">
 				</File>
 				<File
 					RelativePath="..\..\include\opal\manager.h">

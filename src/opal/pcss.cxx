@@ -151,23 +151,6 @@ PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
 }
 
 
-OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
-{
-  OpalMediaFormatList formats;
-
-  // Sound cards can only do 16 bit PCM, but at various sample rates
-  // The following will be in order of preference, so lets do wideband first
-  formats += OpalPCM16_16KHZ;
-  formats += OpalPCM16;
-
-#if OPAL_VIDEO
-  AddVideoMediaFormats(formats);
-#endif
-
-  return formats;
-}
-
-
 OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
                                                         const PString & playDevice,
                                                         const PString & recordDevice,
@@ -211,22 +194,6 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 
   delete soundChannel;
   return NULL;
-}
-
-
-PSafePtr<OpalPCSSConnection> OpalPCSSEndPoint::GetPCSSConnectionWithLock(const PString & token, PSafetyMode mode)
-{
-  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnectionWithLock(token, mode));
-  if (connection == NULL) {
-    PSafePtr<OpalCall> call = manager.FindCallWithLock(token, PSafeReadOnly);
-    if (call != NULL) {
-      connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(call->GetConnection(0));
-      if (connection == NULL)
-        connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(call->GetConnection(1));
-    }
-  }
-
-  return connection;
 }
 
 
@@ -346,12 +313,6 @@ PBoolean OpalPCSSConnection::SetAlerting(const PString & calleeName, PBoolean)
   SetPhase(AlertingPhase);
   remotePartyName = calleeName;
   return endpoint.OnShowOutgoing(*this);
-}
-
-
-OpalMediaFormatList OpalPCSSConnection::GetMediaFormats() const
-{
-  return endpoint.GetMediaFormats();
 }
 
 
