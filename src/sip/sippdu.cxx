@@ -1734,7 +1734,7 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
     if (!param.IsEmpty()) 
       viaPort = param;
 
-    OpalTransportAddress address(viaAddress+":"+viaPort, ep.GetDefaultSignalPort(), (proto *= "TCP") ? "$tcp" : "udp$");
+    OpalTransportAddress address(viaAddress+":"+viaPort, ep.GetDefaultSignalPort(), (proto *= "TCP") ? "tcp$" : "udp$");
     return address;
   }
 
