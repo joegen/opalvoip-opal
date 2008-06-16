@@ -843,9 +843,9 @@ bool MyManager::Initialise()
     DetachEndPoint("h323s");
   if (config->Read(SecureSIPKey, &onoff) && !onoff)
     DetachEndPoint("sips");
-  if (config->Read(RTPSecurityModeH323Key, &str) && !str.empty())
+  if (config->Read(RTPSecurityModeH323Key, &str) && str != "None")
     h323EP->SetDefaultSecurityMode(str);
-  if (config->Read(RTPSecurityModeSIPKey, &str) && !str.empty())
+  if (config->Read(RTPSecurityModeSIPKey, &str) && str != "None")
     sipEP->SetDefaultSecurityMode(str);
 
   ////////////////////////////////////////
