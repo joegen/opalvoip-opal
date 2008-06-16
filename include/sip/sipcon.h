@@ -457,6 +457,7 @@ class SIPConnection : public OpalRTPConnection
 
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
+    bool                  deleteTransport;
 
     enum HoldState {
       eHoldOff,
