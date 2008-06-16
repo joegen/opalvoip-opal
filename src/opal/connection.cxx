@@ -1038,6 +1038,13 @@ void OpalConnection::PreviewPeerMediaFormats(const OpalMediaFormatList & /*fmts*
 {
 }
 
+
+OpalMediaFormatList OpalConnection::GetMediaFormats() const
+{
+  return endpoint.GetMediaFormats();
+}
+
+
 OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 {
   return ownerCall.GetMediaFormats(*this, FALSE);

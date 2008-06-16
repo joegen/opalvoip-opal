@@ -439,6 +439,23 @@ void OpalEndPoint::ClearAllCalls(OpalConnection::CallEndReason reason, PBoolean 
 }
 
 
+OpalMediaFormatList OpalEndPoint::GetMediaFormats() const
+{
+  OpalMediaFormatList formats;
+
+  // Sound cards can only do 16 bit PCM, but at various sample rates
+  // The following will be in order of preference, so lets do wideband first
+  formats += OpalPCM16_16KHZ;
+  formats += OpalPCM16;
+
+#if OPAL_VIDEO
+  AddVideoMediaFormats(formats);
+#endif
+
+  return formats;
+}
+
+
 void OpalEndPoint::AdjustMediaFormats(const OpalConnection & connection,
                                       OpalMediaFormatList & mediaFormats) const
 {

@@ -752,13 +752,13 @@ class OpalConnection : public PSafeObject
        This provides a list of media data format names that a
        OpalMediaStream may be created in within this connection.
 
-       The default behaviour is pure.
+       The default behaviour calls GetMediaFormats() on the endpoint.
       */
-    virtual OpalMediaFormatList GetMediaFormats() const = 0;
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /**Get the list of data formats used for making calls
        
-       The default behaviour is to call call.GetMediaFormats();
+       The default behaviour is to call GetMediaFormats() on the owner call.
       */
     virtual OpalMediaFormatList GetLocalMediaFormats();
 
