@@ -171,6 +171,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   : OpalRTPConnection(call, ep, token, options, stringOptions)
   , endpoint(ep)
   , transport(newTransport)
+  , deleteTransport(newTransport == NULL || !newTransport->IsReliable())
   , m_holdToRemote(eHoldOff)
   , m_holdFromRemote(false)
   , originalInvite(NULL)
@@ -230,7 +231,9 @@ SIPConnection::~SIPConnection()
 {
   delete authentication;
   delete originalInvite;
-  delete transport;
+
+  if (deleteTransport)
+    delete transport;
 
   PTRACE(4, "SIP\tDeleted connection.");
 }
@@ -1024,7 +1027,8 @@ PBoolean SIPConnection::SetUpConnection()
 
   originating = PTrue;
 
-  delete transport;
+  if (deleteTransport)
+    delete transport;
   transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
   if (transport == NULL) {
     Release(EndedByUnreachable);
