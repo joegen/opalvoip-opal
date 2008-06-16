@@ -1,5 +1,5 @@
-
-/* sipcon.cxx
+/*
+ * sipcon.cxx
  *
  * Session Initiation Protocol connection.
  *
@@ -199,8 +199,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   
   // Update remote party parameters
   UpdateRemoteAddresses(m_requestURI.AsQuotedString());
-
-  m_requestURI.AdjustForRequestURI(),
 
   forkedInvitations.DisallowDeleteObjects();
 
@@ -1136,7 +1134,7 @@ void SIPConnection::AdjustOutgoingINVITE()
 PString SIPConnection::GetRemotePartyURL() const
 {
   SIPURL url = GetRemotePartyAddress();
-  url.AdjustForRequestURI();
+  url.Sanitise(SIPURL::ExternalURI);
   return url.AsString();
 }
 
@@ -1264,7 +1262,6 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   PString contact = response.GetMIME().GetContact();
   if (statusClass == 2 && !contact.IsEmpty()) {
     m_requestURI = contact;
-    m_requestURI.AdjustForRequestURI();
     PTRACE(4, "SIP\tSet Request URI to " << m_requestURI);
   }
 
@@ -1456,7 +1453,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PString contact = mime.GetContact();
   if (!contact.IsEmpty()) {
     m_requestURI = contact;
-    m_requestURI.AdjustForRequestURI();
     PTRACE(4, "SIP\tSet Request URI to " << m_requestURI);
   }
 

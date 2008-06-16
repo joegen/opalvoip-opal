@@ -107,10 +107,23 @@ class SIPURL : public PURL
     
     OpalTransportAddress GetHostAddress() const;
 
+    enum UsageContext {
+      ExternalURI,  ///< URI used anywhere outside of protocol
+      RequestURI,   ///< Request-URI (after the INVITE)
+      ToURI,        ///< To header field
+      FromURI,      ///< From header field
+      ContactURI,   ///< Registration or Redirection Contact header field
+      RouteURI      ///< Dialog Contact header field, or Record-Route header field
+    };
+
     /** Removes tag parm & query vars and recalculates urlString
         (scheme, user, password, host, port & URI parms (like transport))
+        which are not allowed in the context specified, e.g. Request-URI etc
+        According to RFC3261, 19.1.1 Table 1
       */
-    void AdjustForRequestURI();
+    void Sanitise(
+      UsageContext context  ///< Context for URI
+    );
 
     /** This will adjust the current URL according to RFC3263, using DNS SRV records.
 
@@ -138,7 +151,7 @@ class SIPURL : public PURL
         fragment
 
         Note that tag parameter outside of <> will be lost,
-        but tag in URL without <> will be kept until AdjustForRequestURI
+        but tag in URL without <> will be kept until Sanitise()
      */
     virtual PBoolean InternalParse(
       const char * cstr,

@@ -371,11 +371,32 @@ OpalTransportAddress SIPURL::GetHostAddress() const
 }
 
 
-void SIPURL::AdjustForRequestURI()
+void SIPURL::Sanitise(UsageContext context)
 {
-  paramVars.RemoveAt("tag");
-  paramVars.RemoveAt("transport");
-  queryVars.RemoveAll();
+  // RFC3261, 19.1.1 Table 1
+  static struct {
+    const char * name;
+    unsigned     contexts;
+  } const SanitaryFields[] = {
+    { "method",    (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|(1<<RouteURI) },
+    { "maddr",     (1<<ToURI)|(1<<FromURI) },
+    { "ttl",       (1<<ToURI)|(1<<FromURI)|(1<<RouteURI) },
+    { "transport", (1<<ToURI)|(1<<FromURI) },
+    { "lr",        (1<<ToURI)|(1<<FromURI)|(1<<ContactURI) },
+    { "tag",       (1<<RequestURI)|(1<<ContactURI)|(1<<RouteURI)|(1<<ExternalURI) }
+  };
+
+  for (PINDEX i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
+    if (SanitaryFields[i].contexts&(1<<context))
+      paramVars.RemoveAt(PCaselessString(SanitaryFields[i].name));
+  }
+
+  if (context != ContactURI && context != ExternalURI)
+    queryVars.RemoveAll();
+
+  if (context == ToURI || context == FromURI)
+    port = (scheme *= "sips") ? 5061 : 5060;
+
   Recalculate();
 }
 
@@ -1449,7 +1470,8 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
   /* Use extra parameter as redirection URL in case of 302 */
   if (code == SIP_PDU::Redirection_MovedTemporarily) {
     SIPURL contact(extra);
-    mime.SetContact(contact.AsQuotedString());
+    contact.Sanitise(SIPURL::ContactURI);
+    mime.SetContact(contact);
     extra = NULL;
   }
   else if (contact != NULL) {
@@ -1533,7 +1555,7 @@ void SIP_PDU::Construct(Methods meth,
   Construct(meth);
 
   uri = dest;
-  uri.AdjustForRequestURI();
+  uri.Sanitise(SIPURL::RequestURI);
 
   mime.SetTo(to);
   mime.SetFrom(from);
@@ -1571,6 +1593,7 @@ void SIP_PDU::Construct(Methods meth,
   PString localPartyName = connection.GetLocalPartyName();
   SIPURL contact = endpoint.GetContactURL(transport, localPartyName, SIPURL(connection.GetRemotePartyAddress()).GetHostName());
   SIPURL via = endpoint.GetLocalURL(transport, localPartyName);
+  contact.Sanitise(meth != Method_INVITE ? SIPURL::ContactURI : SIPURL::RouteURI);
   mime.SetContact(contact);
 
   Construct(meth,
@@ -1599,7 +1622,7 @@ PBoolean SIP_PDU::SetRoute(const PStringList & set)
     routeSet.RemoveAt(0);
     routeSet.AppendString(uri.AsString());
     uri = firstRoute;
-    uri.AdjustForRequestURI();
+    uri.Sanitise(SIPURL::RouteURI);
   }
 
   mime.SetRoute(routeSet);
@@ -2454,6 +2477,7 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   SIPURL contact = params.m_contactAddress;
   if (contact.IsEmpty())
     contact = endpoint.GetLocalURL(trans, aor.GetUserName());
+  contact.Sanitise(SIPURL::ContactURI);
   mime.SetContact(contact);
 
   mime.SetExpires(params.m_expire);
@@ -2491,7 +2515,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
   }
 
   SIPURL address = targetAddress;
-  address.AdjustForRequestURI();
+  address.Sanitise(SIPURL::RequestURI);
 
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
   SIP_PDU::Construct(Method_SUBSCRIBE,
@@ -2502,8 +2526,8 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                      cseq,
                      viaAddress);
 
-  SIPURL contact = 
-    endpoint.GetLocalURL(trans, SIPURL(localPartyAddress).GetUserName());
+  SIPURL contact = endpoint.GetLocalURL(trans, SIPURL(localPartyAddress).GetUserName());
+  contact.Sanitise(SIPURL::ContactURI);
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
   mime.SetContact(contact);
   mime.SetAccept(acceptField);
@@ -2536,6 +2560,7 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
 
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
   SIPURL contact = endpoint.GetLocalURL(trans, targetAddress.GetUserName());
+  contact.Sanitise(SIPURL::ContactURI);
   mime.SetContact(contact);
   mime.SetExpires(expires);
 
