@@ -419,6 +419,30 @@ class OpalEndPoint : public PObject
       PSafetyMode mode = PSafeReadWrite
     ) { return connectionsActive.FindWithLock(token, mode); }
 
+    /**Find a connection that uses the specified token.
+       This searches the endpoint for the connection that contains the token
+       as provided by functions such as MakeConnection(). If not then it
+       attempts to use the token as a OpalCall token and find a connection
+       of the same class.
+      */
+    template <class ConnClass>
+    PSafePtr<ConnClass> GetConnectionWithLockAs(
+      const PString & token,     ///<  Token to identify connection
+      PSafetyMode mode = PSafeReadWrite
+    )
+    {
+      PSafePtr<ConnClass> connection = PSafePtrCast<OpalConnection, ConnClass>(GetConnectionWithLock(token, mode));
+      if (connection == NULL) {
+        PSafePtr<OpalCall> call = manager.FindCallWithLock(token, PSafeReadOnly);
+        if (call != NULL) {
+          connection = PSafePtrCast<OpalConnection, ConnClass>(call->GetConnection(0, mode));
+          if (connection == NULL)
+            connection = PSafePtrCast<OpalConnection, ConnClass>(call->GetConnection(1, mode));
+        }
+      }
+      return connection;
+    }
+
     /**Get all calls current on the endpoint.
       */
     PStringList GetAllConnections();
@@ -449,9 +473,10 @@ class OpalEndPoint : public PObject
        Note that a specific connection may not actually support all of the
        media formats returned here, but should return no more.
 
-       The default behaviour is pure.
+       The default behaviour returns the most basic media formats, PCM audio
+       and YUV420P video.
       */
-    virtual OpalMediaFormatList GetMediaFormats() const = 0;
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /**Adjust media formats available on a connection.
        This is called by a connection after it has called

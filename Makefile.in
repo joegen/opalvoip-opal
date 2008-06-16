@@ -130,6 +130,7 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/opal/rtpep.cxx \
            $(OPAL_SRCDIR)/opal/connection.cxx \
            $(OPAL_SRCDIR)/opal/rtpconn.cxx \
+           $(OPAL_SRCDIR)/opal/localep.cxx \
            $(OPAL_SRCDIR)/opal/call.cxx \
            $(OPAL_SRCDIR)/opal/mediafmt.cxx \
            $(OPAL_SRCDIR)/opal/mediatype.cxx \

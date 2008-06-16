@@ -1280,6 +1280,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\opal\localep.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\opal\manager.cxx"
 					>
 					<FileConfiguration
@@ -6284,6 +6288,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\ivr.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\opal\localep.h"
 					>
 				</File>
 				<File

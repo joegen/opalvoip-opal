@@ -29,6 +29,7 @@
  */
 
 #define _CRT_NONSTDC_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <stdio.h>
 #include <opal.h>
@@ -94,6 +95,41 @@ OpalMessage * MySendCommand(OpalMessage * command, const char * errorMessage)
 }
 
 
+int MyReadMediaData(const char * token, const char * id, const char * format, void * data, int size)
+{
+  static FILE * file = NULL;
+  if (file == NULL) {
+    if (strcmp(format, "PCM-16") == 0)
+      file = fopen("ogm.wav", "rb");
+    printf("Reading %s media for stream %s on call %s\n", format, id, token);
+  }
+
+  if (file != NULL)
+    return fread(data, 1, size, file);
+
+  memset(data, 0, size);
+  return size;
+}
+
+
+int MyWriteMediaData(const char * token, const char * id, const char * format, void * data, int size)
+{
+  static FILE * file = NULL;
+  if (file == NULL) {
+    char name[100];
+    sprintf(name, "Media-%s-%s.%s", token, id, format);
+    file = fopen(name, "wb");
+    if (file == NULL) {
+      printf("Could not create media output file \"%s\"\n", name);
+      return -1;
+    }
+    printf("Writing %s media for stream %s on call %s\n", format, id, token);
+  }
+
+  return fwrite(data, 1, size, file);
+}
+
+
 int InitialiseOPAL()
 {
   OpalMessage   command;
@@ -126,7 +162,7 @@ int InitialiseOPAL()
   // Initialisation
 
   version = OPAL_C_API_VERSION;
-  if ((hOPAL = InitialiseFunction(&version, "pc h323 sip TraceLevel=4")) == NULL) {
+  if ((hOPAL = InitialiseFunction(&version, OPAL_PREFIX_ALL" TraceLevel=4")) == NULL) {
     fputs("Could not initialise OPAL\n", stderr);
     return 0;
   }
@@ -135,6 +171,10 @@ int InitialiseOPAL()
   // General options
   memset(&command, 0, sizeof(command));
   command.m_type = OpalCmdSetGeneralParameters;
+
+  command.m_param.m_general.m_mediaReadData = MyReadMediaData;
+  command.m_param.m_general.m_mediaWriteData = MyWriteMediaData;
+  command.m_param.m_general.m_mediaDataHeader = OpalMediaDataPayloadOnly;
 
   if ((response = MySendCommand(&command, "Could not set general options")) == NULL)
     return 0;
@@ -189,6 +229,13 @@ static void HandleMessages(unsigned timeout)
         puts("Ringing.\n");
         break;
 
+      case OpalIndMediaStream :
+        printf("Media stream %s %s using %s\n",
+               message->m_param.m_mediaStream.m_identifier,
+               message->m_param.m_mediaStream.m_status == 1 ? "started" : "ended",
+               message->m_param.m_mediaStream.m_format);
+        break;
+
       case OpalIndEstablished :
         puts("Established.\n");
         break;
@@ -214,7 +261,7 @@ static void HandleMessages(unsigned timeout)
 }
 
 
-int DoCall(const char * to)
+int DoCall(const char * from, const char * to)
 {
   OpalMessage command;
   OpalMessage * response;
@@ -224,6 +271,7 @@ int DoCall(const char * to)
 
   memset(&command, 0, sizeof(command));
   command.m_type = OpalCmdSetUpCall;
+  command.m_param.m_callSetUp.m_partyA = from;
   command.m_param.m_callSetUp.m_partyB = to;
   if ((response = MySendCommand(&command, "Could not make call")) == NULL)
     return 0;
@@ -328,13 +376,18 @@ int main(int argc, char * argv[])
       break;
 
     case OpCall :
-      if (!DoCall(argv[2]))
-        break;
+      if (argc > 3) {
+        if (!DoCall(argv[2], argv[3]))
+          break;
+      } else {
+        if (!DoCall(NULL, argv[2]))
+          break;
+      }
       HandleMessages(15000);
       break;
 
     case OpHold :
-      if (!DoCall(argv[2]))
+      if (!DoCall(NULL, argv[2]))
         break;
       HandleMessages(15000);
       if (!DoHold())
@@ -343,7 +396,7 @@ int main(int argc, char * argv[])
       break;
 
     case OpTransfer :
-      if (!DoCall(argv[2]))
+      if (!DoCall(NULL, argv[2]))
         break;
       HandleMessages(15000);
       if (!DoTransfer(argv[3]))
@@ -352,13 +405,13 @@ int main(int argc, char * argv[])
       break;
 
     case OpConsult :
-      if (!DoCall(argv[2]))
+      if (!DoCall(NULL, argv[2]))
         break;
       HandleMessages(15000);
       if (!DoHold())
         break;
       HandleMessages(15000);
-      if (!DoCall(argv[3]))
+      if (!DoCall(NULL, argv[3]))
         break;
       HandleMessages(15000);
       if (!DoTransfer(HeldCallToken))

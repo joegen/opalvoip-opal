@@ -107,17 +107,6 @@ class OpalPCSSEndPoint : public OpalEndPoint
       unsigned int options = 0,  ///<  options to pass to conneciton
       OpalConnection::StringOptions * stringOptions  = NULL
     );
-
-    /**Get the data formats this endpoint is capable of operating.
-       This provides a list of media data format names that may be used by an
-       OpalMediaStream may be created by a connection from this endpoint.
-
-       Note that a specific connection may not actually support all of the
-       media formats returned here, but should return no more.
-
-       The default behaviour is pure.
-      */
-    virtual OpalMediaFormatList GetMediaFormats() const;
   //@}
 
   /**@name Customisation call backs */
@@ -145,12 +134,14 @@ class OpalPCSSEndPoint : public OpalEndPoint
   //@{
     /**Find a connection that uses the specified token.
        This searches the endpoint for the connection that contains the token
-       as provided by functions such as MakeConnection().
+       as provided by functions such as MakeConnection(). If not then it
+       attempts to use the token as a OpalCall token and find a connection
+       of the same class.
       */
     PSafePtr<OpalPCSSConnection> GetPCSSConnectionWithLock(
       const PString & token,     ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite
-    );
+    ) { return GetConnectionWithLockAs<OpalPCSSConnection>(token, mode); }
 
     /**Call back to indicate that remote is ringing.
        If PFalse is returned the call is aborted.
@@ -315,15 +306,6 @@ class OpalPCSSConnection : public OpalConnection
       const PString & calleeName,   ///<  Name of endpoint being alerted.
       PBoolean withMedia                ///<  Open media with alerting
     );
-
-    /**Get the data formats this connection is capable of operating.
-       This provides a list of media data format names that an
-       OpalMediaStream may be created in within this connection.
-
-       The default behaviour returns the formats the PSoundChannel can do,
-       typically only PCM-16.
-      */
-    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /**Open a new media stream.
        This will create a media stream of an appropriate subclass as required
