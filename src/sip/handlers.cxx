@@ -135,7 +135,7 @@ void SIPHandler::SetState(SIPHandler::State newState)
 const PString SIPHandler::GetRemotePartyAddress ()
 {
   SIPURL cleanAddress = remotePartyAddress;
-  cleanAddress.AdjustForRequestURI();
+  cleanAddress.Sanitise(SIPURL::ExternalURI);
 
   return cleanAddress.AsString();
 }
@@ -708,7 +708,7 @@ PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
   if (noteElement)
     note = noteElement->GetData();
 
-  from.AdjustForRequestURI();
+  from.Sanitise(SIPURL::ExternalURI);
   endpoint.OnPresenceInfoReceived (from.AsQuotedString(), basic, note);
   return PTrue;
 }

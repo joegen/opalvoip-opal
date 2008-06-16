@@ -1128,7 +1128,9 @@ PBoolean SIPEndPoint::SendResponse(SIP_PDU::StatusCodes code, OpalTransport & tr
 {
   SIP_PDU response(pdu, code);
   PString username = SIPURL(response.GetMIME().GetTo()).GetUserName();
-  response.GetMIME().SetContact(GetLocalURL(transport, username));
+  SIPURL contact = GetLocalURL(transport, username);
+  contact.Sanitise(SIPURL::ContactURI);
+  response.GetMIME().SetContact(contact);
   return response.Write(transport, pdu.GetViaAddress(*this));
 }
 
