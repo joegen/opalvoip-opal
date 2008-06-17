@@ -415,6 +415,15 @@ OpalFramedTranscoder::OpalFramedTranscoder(const OpalMediaFormat & inputMediaFor
   PINDEX framesPerPacket = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
   inputBytesPerFrame = inputBytes*framesPerPacket;
   outputBytesPerFrame = outputBytes*framesPerPacket;
+
+  PINDEX inMaxTimePerFrame  = inputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption()) * 
+                              inputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption());
+  PINDEX outMaxTimePerFrame = outputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption()) * 
+                              outputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption());
+
+  PINDEX maxPacketTime = PMAX(inMaxTimePerFrame, outMaxTimePerFrame);
+
+  maxOutputDataSize = outputBytesPerFrame * (maxPacketTime / outputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption()));
 }
 
 
@@ -437,6 +446,16 @@ bool OpalFramedTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, con
   unsigned leastCommonMultiple = inFrameTime*outFrameTime/GreatestCommonDivisor(inFrameTime, outFrameTime);
   inputBytesPerFrame = leastCommonMultiple/inFrameTime*inFrameSize*framesPerPacket;
   outputBytesPerFrame = leastCommonMultiple/outFrameTime*outFrameSize*framesPerPacket;
+
+  PINDEX inMaxTimePerFrame  = inputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption()) * 
+                              inputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption());
+  PINDEX outMaxTimePerFrame = outputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption()) * 
+                              outputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption());
+
+  PINDEX maxPacketTime = PMAX(inMaxTimePerFrame, outMaxTimePerFrame);
+
+  maxOutputDataSize = outputBytesPerFrame * (maxPacketTime / outputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption()));
+
   return true;
 }
 
@@ -500,7 +519,7 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
   }
 
   // set maximum output payload size
-  if (!output.SetPayloadSize((inputLength + inputBytesPerFrame - 1)/inputBytesPerFrame*outputBytesPerFrame))
+  if (!output.SetPayloadSize(maxOutputDataSize))
     return PFalse;
 
   BYTE * outputPtr = output.GetPayloadPtr();
