@@ -3265,6 +3265,10 @@ bool OptionsDialog::TransferDataFromWindow()
     m_manager.DetachEndPoint("sips");
   config->Write(SecureSIPKey, m_SecureSIP);
 
+  if (m_RTPSecurityModeH323 == "None")
+    m_RTPSecurityModeH323.erase();
+  if (m_RTPSecurityModeSIP == "None")
+    m_RTPSecurityModeSIP.erase();
   SAVE_FIELD(RTPSecurityModeH323, m_manager.h323EP->SetDefaultSecurityMode);
   SAVE_FIELD(RTPSecurityModeSIP, m_manager.sipEP->SetDefaultSecurityMode);
 
