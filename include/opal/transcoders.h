@@ -429,8 +429,7 @@ class OpalFramedTranscoder : public OpalTranscoder
   protected:
     PINDEX     inputBytesPerFrame;
     PINDEX     outputBytesPerFrame;
-    //PBYTEArray partialFrame;
-    //PINDEX     partialBytes;
+    PINDEX     maxOutputDataSize;
 };
 
 
