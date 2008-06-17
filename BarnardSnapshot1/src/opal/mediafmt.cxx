@@ -275,7 +275,7 @@ void OpalMediaOptionEnum::PrintOn(ostream & strm) const
   if (m_value < m_enumerations.GetSize())
     strm << m_enumerations[m_value];
   else
-    strm << '#' << m_value;
+    strm << psprintf("<%u>", m_value); // Don't output direct to stream so width() works correctly
 }
 
 
@@ -286,9 +286,8 @@ void OpalMediaOptionEnum::ReadFrom(istream & strm)
   PINDEX longestMatch = 0;
 
   PCaselessString str;
-  int ch;
-  while ((ch = strm.get()) != EOF) {
-    str += (char)ch;
+  while (strm.peek() != EOF) {
+    str += (char)strm.get();
 
     PINDEX i;
     for (i = 0; i < m_enumerations.GetSize(); i++) {
@@ -304,10 +303,6 @@ void OpalMediaOptionEnum::ReadFrom(istream & strm)
       break;
     }
   }
-
-  // For some reason the get at eof sets the badbit, don't want that!
-  // But we do want the eofbit if it was set.
-  strm.clear(strm.rdstate()&ios::badbit);
 
   if (str == m_enumerations[longestMatch])
     m_value = longestMatch;
@@ -385,21 +380,20 @@ void OpalMediaOptionString::PrintOn(ostream & strm) const
 
 void OpalMediaOptionString::ReadFrom(istream & strm)
 {
-  char c;
-  strm >> c; // Skip whitespace
+  while (isspace(strm.peek())) // Skip whitespace
+    strm.get();
 
-  if (c != '"') {
-    strm.putback(c);
-    strm >> m_value; // If no " then read to end of line.
-  }
+  if (strm.peek() != '"')
+    strm >> m_value; // If no '"' then read to end of line or eof.
   else {
     // If there was a '"' then assume it is a C style literal string with \ escapes etc
+    // The following will set the bad bit if eof occurs before
 
+    char c = ' ';
     PINDEX count = 0;
     PStringStream str;
-    str << '"';
-
-    while (strm.get(c).good()) {
+    while (strm.peek() != EOF) {
+      strm.get(c);
       str << c;
 
       // Keep reading till get a '"' that is not preceded by a '\' that is not itself preceded by a '\'
@@ -407,6 +401,12 @@ void OpalMediaOptionString::ReadFrom(istream & strm)
         break;
 
       count++;
+    }
+
+    if (c != '"') {
+      // No closing quote, add one and set fail bit.
+      strm.setstate(ios::failbit);
+      str << '"';
     }
 
     m_value = PString(PString::Literal, (const char *)str);
@@ -479,12 +479,25 @@ void OpalMediaOptionOctets::PrintOn(ostream & strm) const
   if (m_base64)
     strm << PBase64::Encode(m_value);
   else {
+    streamsize width = strm.width();
     ios::fmtflags flags = strm.flags();
     char fill = strm.fill();
 
-    strm << hex << setfill('0');
+    int fillLength = width - m_value.GetSize()*2;
+    if (fillLength > 0 && (flags&ios_base::adjustfield) == ios::right) {
+      for (int i = 0; i < fillLength; i++)
+        strm << fill;
+    }
+
+    strm << right << hex << setfill('0');
     for (PINDEX i = 0; i < m_value.GetSize(); i++)
       strm << setw(2) << (unsigned)m_value[i];
+
+    if (fillLength > 0 && (flags&ios_base::adjustfield) == ios::left) {
+      strm << setw(1);
+      for (int i = 0; i < fillLength; i++)
+        strm << fill;
+    }
 
     strm.fill(fill);
     strm.flags(flags);
@@ -504,18 +517,28 @@ void OpalMediaOptionOctets::ReadFrom(istream & strm)
     pair[2] = '\0';
 
     PINDEX count = 0;
+    PINDEX nibble = 0;
 
-    while (isxdigit(strm.peek())) {
-      pair[0] = (char)strm.get();
-      if (!isxdigit(strm.peek())) {
-        strm.putback(pair[0]);
+    while (strm.peek() != EOF) {
+      char ch = (char)strm.get();
+      if (isxdigit(ch))
+        pair[nibble++] = ch;
+      else if (ch == ' ')
+        pair[nibble++] = '0';
+      else
         break;
+
+      if (nibble == 2) {
+        if (!m_value.SetMinSize(100*((count+1+99)/100)))
+          break;
+        m_value[count++] = (BYTE)strtoul(pair, NULL, 16);
+        nibble = 0;
       }
-      pair[1] = (char)strm.get();
-      if (!m_value.SetMinSize((count+1+99)%100))
-        break;
-      m_value[count++] = (BYTE)strtoul(pair, NULL, 16);
     }
+
+    // Report error if no legal hex, not empty is OK.
+    if (count == 0 && !strm.eof())
+      strm.setstate(ios::failbit);
 
     m_value.SetSize(count);
   }
@@ -1227,6 +1250,7 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
 
 const PString & OpalAudioFormat::RxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET; return s; }
 const PString & OpalAudioFormat::TxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET; return s; }
+const PString & OpalAudioFormat::MaxFramesPerPacketOption(){ static PString s = "Max Frames Per Packet"; return s; }
 
 OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1277,6 +1301,8 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
     AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::NoMerge,  rxFrames, 1, maxFrames));
   if (txFrames > 0)
     AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::NoMerge, txFrames, 1, maxFrames));
+
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::MaxFramesPerPacketOption(), true, OpalMediaOption::NoMerge,  maxFrames));
 }
 
 
