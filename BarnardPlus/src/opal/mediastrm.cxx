@@ -275,18 +275,21 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
   packet.SetMarker(marker);
   marker = false;
 
+  if (paused)
+    packet.SetPayloadSize(0);
+  
   return true;
 }
 
 
 PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
 {
-  timestamp = packet.GetTimestamp();
-  int size = paused?0:packet.GetPayloadSize();
-
   if (paused)
     packet.SetPayloadSize(0);
-  
+
+  timestamp = packet.GetTimestamp();
+
+  int size = packet.GetPayloadSize();
   if (size > 0 && mediaFormat.IsTransportable()) {
     if (packet.GetPayloadType() == mediaFormat.GetPayloadType()) {
       PTRACE_IF(2, mismatchedPayloadTypes > 0,
@@ -402,6 +405,13 @@ PBoolean OpalMediaStream::RequiresPatchThread() const
 
 void OpalMediaStream::EnableJitterBuffer() const
 {
+}
+
+
+void OpalMediaStream::SetPaused(bool p)
+{
+  paused = p;
+  PTRACE(3, "Media\t" << (p ? "Paused" : "Resumed") << " stream " << *this);
 }
 
 
