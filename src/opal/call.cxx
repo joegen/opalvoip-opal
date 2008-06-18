@@ -484,7 +484,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   }
 
   if (!startedOne) {
-    connection.RemoveMediaStream(*sourceStream);
+    if (sourceStream != NULL)
+      connection.RemoveMediaStream(*sourceStream);
     return false;
   }
 
