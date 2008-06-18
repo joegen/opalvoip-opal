@@ -171,6 +171,8 @@ int InitialiseOPAL()
   // General options
   memset(&command, 0, sizeof(command));
   command.m_type = OpalCmdSetGeneralParameters;
+  //command.m_param.m_general.m_audioRecordDevice = "Camera Microphone (2- Logitech";
+  command.m_param.m_general.m_autoRxMedia = command.m_param.m_general.m_autoTxMedia = "audio";
 
   command.m_param.m_general.m_mediaReadData = MyReadMediaData;
   command.m_param.m_general.m_mediaWriteData = MyWriteMediaData;
@@ -229,20 +231,19 @@ static void HandleMessages(unsigned timeout)
         puts("Ringing.\n");
         break;
 
-      case OpalIndMediaStream :
-        printf("Media stream %s %s using %s\n",
-               message->m_param.m_mediaStream.m_identifier,
-               message->m_param.m_mediaStream.m_status == 1 ? "started" : "ended",
-               message->m_param.m_mediaStream.m_format);
-        break;
-
       case OpalIndEstablished :
         puts("Established.\n");
         break;
 
+      case OpalIndMediaStream :
+        printf("Media stream %s %s using %s.\n",
+               message->m_param.m_mediaStream.m_type,
+               message->m_param.m_mediaStream.m_state == OpalMediaStateOpen ? "opened" : "closed",
+               message->m_param.m_mediaStream.m_format);
+        break;
+
       case OpalIndUserInput :
-        if (message->m_param.m_userInput.m_userInput != NULL)
-          printf("User Input: %s.\n", message->m_param.m_userInput.m_userInput);
+        printf("User Input: %s.\n", message->m_param.m_userInput.m_userInput);
         break;
 
       case OpalIndCallCleared :
@@ -277,6 +278,27 @@ int DoCall(const char * from, const char * to)
     return 0;
 
   CurrentCallToken = strdup(response->m_param.m_callSetUp.m_callToken);
+  FreeMessageFunction(response);
+  return 1;
+}
+
+
+int DoMute(int on)
+{
+  OpalMessage command;
+  OpalMessage * response;
+
+
+  printf("Mute %s\n", on ? "on" : "off");
+
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdMediaStream;
+  command.m_param.m_mediaStream.m_callToken = CurrentCallToken;
+  command.m_param.m_mediaStream.m_type = "audio out";
+  command.m_param.m_mediaStream.m_state = on ? OpalMediaStatePause : OpalMediaStateResume;
+  if ((response = MySendCommand(&command, "Could not mute call")) == NULL)
+    return 0;
+
   FreeMessageFunction(response);
   return 1;
 }
@@ -328,6 +350,7 @@ typedef enum
 {
   OpListen,
   OpCall,
+  OpMute,
   OpHold,
   OpTransfer,
   OpConsult,
@@ -335,10 +358,10 @@ typedef enum
 } Operations;
 
 static const char * const OperationNames[NumOperations] =
-  { "listen", "call", "hold", "transfer", "consult" };
+  { "listen", "call", "mute", "hold", "transfer", "consult" };
 
 static int const RequiredArgsForOperation[NumOperations] =
-  { 2, 3, 3, 4, 4 };
+  { 2, 3, 3, 3, 4, 4 };
 
 
 static Operations GetOperation(const char * name)
@@ -360,7 +383,14 @@ int main(int argc, char * argv[])
 
   
   if (argc < 2 || (operation = GetOperation(argv[1])) == NumOperations || argc < RequiredArgsForOperation[operation]) {
-    fputs("usage: c_api { listen | call | transfer } [ A-party [ B-party ] ]\n", stderr);
+    Operations op;
+    fputs("usage: c_api { ", stderr);
+    for (op = OpListen; op < NumOperations; op++) {
+      if (op > OpListen)
+        fputs(" | ", stderr);
+      fputs(OperationNames[op], stderr);
+    }
+    fputs(" } [ A-party [ B-party ] ]\n", stderr);
     return 1;
   }
 
@@ -383,6 +413,18 @@ int main(int argc, char * argv[])
         if (!DoCall(NULL, argv[2]))
           break;
       }
+      HandleMessages(15000);
+      break;
+
+    case OpMute :
+      if (!DoCall(NULL, argv[2]))
+        break;
+      HandleMessages(15000);
+      if (!DoMute(1))
+        break;
+      HandleMessages(15000);
+      if (!DoMute(0))
+        break;
       HandleMessages(15000);
       break;
 

@@ -166,6 +166,9 @@ class OpalManager_C : public OpalManager
     void HandleHoldCall     (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleRetrieveCall (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleTransferCall (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleMediaStream  (const OpalMessage & command, OpalMessageBuffer & response);
+
+    void OnIndMediaStream(const OpalMediaStream & stream, OpalMediaStates state);
 
     OpalPCSSEndPoint_C  * pcssEP;
     OpalLocalEndPoint_C * localEP;
@@ -677,6 +680,9 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
     case OpalCmdTransferCall :
       HandleTransferCall(*message, response);
       break;
+    case OpalCmdMediaStream :
+      HandleMediaStream(*message, response);
+      break;
     default :
       return NULL;
   }
@@ -1077,12 +1083,12 @@ void OpalManager_C::HandleUserInput(const OpalMessage & command, OpalMessageBuff
   }
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
-  PString url = connection->GetLocalPartyURL();
-  if (url.NumCompare("pc") != EqualTo && url.NumCompare("pots") != EqualTo)
+  while (connection->IsNetworkConnection()) {
     ++connection;
   if (connection == NULL) {
     response.SetError("No suitable connection for user input.");
     return;
+  }
   }
 
   if (command.m_param.m_userInput.m_duration == 0)
@@ -1168,8 +1174,7 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
   if (IsNullString(command.m_param.m_callSetUp.m_partyA)) {
-    PString url = connection->GetLocalPartyURL();
-    if (url.NumCompare("pc") == EqualTo || url.NumCompare("pots") == EqualTo)
+    if (!connection->IsNetworkConnection())
       ++connection;
   }
   else {
@@ -1189,6 +1194,83 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
 }
 
 
+void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  if (IsNullString(command.m_param.m_mediaStream.m_callToken)) {
+    response.SetError("No call token provided.");
+    return;
+  }
+
+  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_mediaStream.m_callToken);
+  if (call == NULL) {
+    response.SetError("No call found by the token provided.");
+    return;
+  }
+
+  PSafePtr<OpalConnection> localConnection, networkConnection;
+  PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
+  while (connection->IsNetworkConnection()) {
+    ++connection;
+    if (connection == NULL) {
+      response.SetError("No suitable connection for media stream control.");
+      return;
+    }
+  }
+
+  OpalMediaType mediaType;
+  bool source = false;
+  if (!IsNullString(command.m_param.m_mediaStream.m_type)) {
+    PString typeStr = command.m_param.m_mediaStream.m_type;
+    mediaType = typeStr.Left(typeStr.Find(' '));
+    source = typeStr.Find("out") != P_MAX_INDEX;
+  }
+
+  OpalMediaStreamPtr stream;
+  if (!IsNullString(command.m_param.m_mediaStream.m_identifier))
+    stream = connection->GetMediaStream(command.m_param.m_mediaStream.m_identifier);
+  else if (!IsNullString(command.m_param.m_mediaStream.m_type))
+    stream = connection->GetMediaStream(mediaType, source);
+  else {
+    response.SetError("No identifer or type provided to locate media stream.");
+    return;
+  }
+
+  if (stream == NULL && command.m_param.m_mediaStream.m_state != OpalMediaStateOpen) {
+    response.SetError("Could not locate media stream.");
+    return;
+  }
+
+  switch (command.m_param.m_mediaStream.m_state) {
+    case OpalMediaStateOpen :
+      if (mediaType.empty())
+        response.SetError("Must provide type and direction to open media stream.");
+      else {
+        OpalMediaFormat mediaFormat(command.m_param.m_mediaStream.m_format);
+        unsigned sessionID = 0;
+        if (stream != NULL)
+          sessionID = stream->GetSessionID();
+        if (source)
+          call->OpenSourceMediaStreams(*connection, mediaType, sessionID, mediaFormat);
+        else
+          call->OpenSourceMediaStreams(*call->GetOtherPartyConnection(*connection), mediaType, sessionID, mediaFormat);
+      }
+      break;
+
+    case OpalMediaStateClose :
+      connection->CloseMediaStream(*stream);
+      break;
+
+    case OpalMediaStatePause :
+      stream->SetPaused(true);
+      break;
+
+    case OpalMediaStateResume :
+      stream->SetPaused(false);
+      break;
+  }
+}
+
+
 void OpalManager_C::OnEstablishedCall(OpalCall & call)
 {
   OpalMessageBuffer message(OpalIndEstablished);
@@ -1203,44 +1285,52 @@ void OpalManager_C::OnEstablishedCall(OpalCall & call)
 }
 
 
+void OpalManager_C::OnIndMediaStream(const OpalMediaStream & stream, OpalMediaStates state)
+{
+  const OpalConnection & connection = stream.GetConnection();
+  if (!connection.IsNetworkConnection())
+    return;
+
+  OpalMessageBuffer message(OpalIndMediaStream);
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_identifier, stream.GetID());
+  PString type;
+  switch (stream.GetMediaFormat().GetDefaultSessionID()) {
+    case OpalMediaFormat::DefaultAudioSessionID :
+      type = "audio";
+      break;
+    case OpalMediaFormat::DefaultVideoSessionID :
+      type = "video";
+      break;
+    case OpalMediaFormat::DefaultDataSessionID :
+      type = "fax";
+      break;
+  }
+  type += stream.IsSource() ? " in" : " out";
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_type, type);
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_format, stream.GetMediaFormat().GetName());
+  message->m_param.m_mediaStream.m_state = state;
+  PTRACE(4, "OpalC API\tOnIndMediaStream:"
+            " token=\"" << message->m_param.m_userInput.m_callToken << "\""
+            " id=\"" << message->m_param.m_mediaStream.m_identifier << '"');
+  PostMessage(message);
+}
+
+
 PBoolean OpalManager_C::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
 {
   if (!OpalManager::OnOpenMediaStream(connection, stream))
     return false;
 
-  if (connection.IsNetworkConnection())
-    return true;
-
-  OpalMessageBuffer message(OpalIndMediaStream);
-  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_callToken, connection.GetCall().GetToken());
-  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_identifier, stream.GetID());
-  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_format, stream.GetMediaFormat().GetName());
-  message->m_param.m_mediaStream.m_status = 1;
-  PTRACE(4, "OpalC API\tOnClosedMediaStream:"
-            " token=\"" << message->m_param.m_userInput.m_callToken << "\""
-            " id=\"" << message->m_param.m_mediaStream.m_identifier << '"');
-  PostMessage(message);
-
+  OnIndMediaStream(stream, OpalMediaStateOpen);
   return true;
 }
 
 
 void OpalManager_C::OnClosedMediaStream(const OpalMediaStream & stream)
 {
+  OnIndMediaStream(stream, OpalMediaStateClose);
   OpalManager::OnClosedMediaStream(stream);
-
-  if (stream.GetConnection().IsNetworkConnection())
-    return;
-
-  OpalMessageBuffer message(OpalIndMediaStream);
-  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_callToken, stream.GetConnection().GetCall().GetToken());
-  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_identifier, stream.GetID());
-  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_format, stream.GetMediaFormat().GetName());
-  message->m_param.m_mediaStream.m_status = 2;
-  PTRACE(4, "OpalC API\tOnClosedMediaStream:"
-            " token=\"" << message->m_param.m_userInput.m_callToken << "\""
-            " id=\"" << message->m_param.m_mediaStream.m_identifier << '"');
-  PostMessage(message);
 }
 
 
