@@ -1452,6 +1452,12 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
+			UseInBuild="false"
+			UseDependenciesInBuild="false"
+			RelativePathToProject=".\src\win32\opal_dll_2005.vcproj"
+		/>
 	</References>
 	<Files>
 		<File
