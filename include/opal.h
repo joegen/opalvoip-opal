@@ -309,9 +309,6 @@ typedef enum OpalMessageType {
                                     OpalGetMessage() function when the underlying protocol states the remote
                                     telephone is "ringing". See the  OpalParamSetUpCall structure for more
                                     information. */
-  OpalIndMediaStream,           /**<A media stream has started/stopped. This message is returned in the
-                                    OpalGetMessage() function when a media stream is started or stopped. See the
-                                    OpalStatusMediaStream structure for more information. */
   OpalIndEstablished,           /**<Call is established indication. This message is returned in the
                                     OpalGetMessage() function when the remote or local endpont has "answered"
                                     the call and there is media flowing. See the  OpalParamSetUpCall
@@ -335,6 +332,9 @@ typedef enum OpalMessageType {
                                     OpalGetMessage() function when an MWI is received on any of the supported
                                     protocols.
                                 */
+  OpalIndMediaStream,           /**<A media stream has started/stopped. This message is returned in the
+                                    OpalGetMessage() function when a media stream is started or stopped. See the
+                                    OpalStatusMediaStream structure for more information. */
   OpalMessageTypeCount
 } OpalMessageType;
 
@@ -609,10 +609,10 @@ struct OpalMessage {
     OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall
     const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdRefuseCall/OpalCmdClearCall/OpalIndAlerting/OpalIndEstablished
     OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
-    OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
     OpalStatusCallCleared    m_callCleared;        ///< Used by OpalIndCallCleared
+    OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream
   } m_param;
 };
 
