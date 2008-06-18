@@ -299,7 +299,7 @@ class OpalProductInfo
    in respose to an explicit call to OpenMediaStream or implicitly due to
    requests in the underlying protocol.
 
-   When media streams are created they must makeinbanddtmf requests for bandwidth which
+   When media streams are created they must make requests for bandwidth which
    is managed by the connection.
  */
 class OpalConnection : public PSafeObject
