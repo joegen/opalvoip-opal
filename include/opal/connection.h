@@ -841,6 +841,13 @@ class OpalConnection : public PSafeObject
     );
 
     /**Get a media stream.
+       Locates a stream given an identifier string.
+      */
+    OpalMediaStreamPtr GetMediaStream(
+      const PString & streamID  ///<  Stream ID to search for.
+    ) const;
+
+    /**Get a media stream.
        Locates a stream given a RTP session ID. Each session would usually
        have two media streams associated with it, so the source flag
        may be used to distinguish which channel to return.

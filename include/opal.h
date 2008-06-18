@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 5
+#define OPAL_C_API_VERSION 6
 
 
 ///////////////////////////////////////
@@ -218,56 +218,6 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
                         OPAL_PREFIX_IVR
 
 
-/**Type code the silence detect algorithm modes.
-   This is used by the OpalCmdSetGeneralParameters command in the OpalParamGeneral structure.
-  */
-typedef enum OpalSilenceDetectModes {
-  OpalSilenceDetectNoChange,  /**< No change to the silence detect mode. */
-  OpalSilenceDetectDisabled,  /**< Indicate silence detect is disabled */
-  OpalSilenceDetectFixed,     /**< Indicate silence detect uses a fixed threshold */
-  OpalSilenceDetectAdaptive   /**< Indicate silence detect uses an adaptive threashold */
-} OpalSilenceDetectModes;
-
-
-/**Type code the echo cancellation algorithm modes.
-   This is used by the OpalCmdSetGeneralParameters command in the OpalParamGeneral structure.
-  */
-typedef enum OpalEchoCancelMode {
-  OpalEchoCancelNoChange,   /**< No change to the echo cancellation mode. */
-  OpalEchoCancelDisabled,   /**< Indicate the echo cancellation is disabled */
-  OpalEchoCancelEnabled     /**< Indicate the echo cancellation is enabled */
-} OpalEchoCancelMode;
-
-
-/** Function for reading/writing media data.
-    Returns size of data actually read or written, or -1 if there is an error
-    and the media stream should be shut down.
- */
-typedef int (*OpalMediaDataFunction)(
-  const char * token,   /**< Call token for media data as returned by OpalIndIncomingCall.
-                             This may be used to discriminate between individiual calls. */
-  const char * stream,  /**< Stream identifier for media data. This may be used to
-                             discriminate between media streams within a call, applicable
-                             if there can be more than one stream of a particular format,
-                             e.g. two H.263 video channels. */
-  const char * format,  /**< Format of media data, e.g. "PCM-16" */
-  void * data,          /**< Data to read/write */
-  int size              /**< Maximum size of data to read, or size of actual data to write */
-);
-
-
-/**Type code the media data call back functions data type.
-   This is used by the OpalCmdSetGeneralParameters command in the OpalParamGeneral structure.
-  */
-typedef enum OpalMediaDataType {
-  OpalMediaDataNoChange,      /**< No change to the media data type. */
-  OpalMediaDataPayloadOnly,   /**< Indicate only the RTP payload is passed to the
-                                   read/write function */
-  OpalMediaDataWithHeader     /**< Indicate the while RTP frame including header is
-                                   passed to the read/write function */
-} OpalMediaDataType;
-
-
 /**Type code for messages defined by OpalMessage.
   */
 typedef enum OpalMessageType {
@@ -335,8 +285,60 @@ typedef enum OpalMessageType {
   OpalIndMediaStream,           /**<A media stream has started/stopped. This message is returned in the
                                     OpalGetMessage() function when a media stream is started or stopped. See the
                                     OpalStatusMediaStream structure for more information. */
+  OpalCmdMediaStream,           /**<Execute control on a media stream. See the OpalStatusMediaStream structure
+                                    for more information. */
   OpalMessageTypeCount
 } OpalMessageType;
+
+
+/**Type code the silence detect algorithm modes.
+   This is used by the OpalCmdSetGeneralParameters command in the OpalParamGeneral structure.
+  */
+typedef enum OpalSilenceDetectModes {
+  OpalSilenceDetectNoChange,  /**< No change to the silence detect mode. */
+  OpalSilenceDetectDisabled,  /**< Indicate silence detect is disabled */
+  OpalSilenceDetectFixed,     /**< Indicate silence detect uses a fixed threshold */
+  OpalSilenceDetectAdaptive   /**< Indicate silence detect uses an adaptive threashold */
+} OpalSilenceDetectModes;
+
+
+/**Type code the echo cancellation algorithm modes.
+   This is used by the OpalCmdSetGeneralParameters command in the OpalParamGeneral structure.
+  */
+typedef enum OpalEchoCancelMode {
+  OpalEchoCancelNoChange,   /**< No change to the echo cancellation mode. */
+  OpalEchoCancelDisabled,   /**< Indicate the echo cancellation is disabled */
+  OpalEchoCancelEnabled     /**< Indicate the echo cancellation is enabled */
+} OpalEchoCancelMode;
+
+
+/** Function for reading/writing media data.
+    Returns size of data actually read or written, or -1 if there is an error
+    and the media stream should be shut down.
+ */
+typedef int (*OpalMediaDataFunction)(
+  const char * token,   /**< Call token for media data as returned by OpalIndIncomingCall.
+                             This may be used to discriminate between individiual calls. */
+  const char * stream,  /**< Stream identifier for media data. This may be used to
+                             discriminate between media streams within a call, applicable
+                             if there can be more than one stream of a particular format,
+                             e.g. two H.263 video channels. */
+  const char * format,  /**< Format of media data, e.g. "PCM-16" */
+  void * data,          /**< Data to read/write */
+  int size              /**< Maximum size of data to read, or size of actual data to write */
+);
+
+
+/**Type code the media data call back functions data type.
+   This is used by the OpalCmdSetGeneralParameters command in the OpalParamGeneral structure.
+  */
+typedef enum OpalMediaDataType {
+  OpalMediaDataNoChange,      /**< No change to the media data type. */
+  OpalMediaDataPayloadOnly,   /**< Indicate only the RTP payload is passed to the
+                                   read/write function */
+  OpalMediaDataWithHeader     /**< Indicate the while RTP frame including header is
+                                   passed to the read/write function */
+} OpalMediaDataType;
 
 
 /**General parameters for the OpalCmdSetGeneralParameters command.
@@ -551,19 +553,53 @@ typedef struct OpalStatusIncomingCall {
 } OpalStatusIncomingCall;
 
 
-/**Media stream information for the OpalIndMediaStream indication.
-   This is only returned from the OpalGetMessage() function.
+/**Type code for media stream status/control.
+   This is used by the OpalIndMediaStream indication and OpalCmdMediaStream command
+   in the OpalStatusMediaStream structure.
+  */
+typedef enum OpalMediaStates {
+  OpalMediaStateNoChange,   /**< No change to the media stream state. */
+  OpalMediaStateOpen,       /**< Media stream has been opened when indication,
+                                 or is to be opened when a command. */
+  OpalMediaStateClose,      /**< Media stream has been closed when indication,
+                                 or is to be closed when a command. */
+  OpalMediaStatePause,      /**< Media stream has been paused when indication,
+                                 or is to be paused when a command. */
+  OpalMediaStateResume      /**< Media stream has been paused when indication,
+                                 or is to be paused when a command. */
+} OpalMediaStates;
+
+
+/**Media stream information for the OpalIndMediaStream indication and
+   OpalCmdMediaStream command.
+
+   This is may be returned from the OpalGetMessage() function or
+   provided to the OpalSendMessage() function.
   */
 typedef struct OpalStatusMediaStream {
-  const char * m_callToken;   ///< Call token for the call the media stream is.
-  const char * m_identifier;  ///< Unique identifier for the media stream
-  const char * m_format;      ///< Media format for the stream.
-  unsigned     m_status;      ///< Status of stream, 1=started, 2=stopped
+  const char    * m_callToken;   ///< Call token for the call the media stream is.
+  const char    * m_identifier;  /**< Unique identifier for the media stream. For OpalCmdMediaStream
+                                      this may be left empty and the first stream of the type
+                                      indicated by m_mediaType is used. */
+  const char    * m_type;        /**< Media type and direction for the stream. This is a keyword such
+                                      as "audio" or "video" indicating the type of the stream, a space,
+                                      then either "in" or "out" indicating the direction. For
+                                      OpalCmdMediaStream this may be left empty if m_identifier is
+                                      used. */
+  const char    * m_format;      /**< Media format for the stream. For OpalIndMediaStream this
+                                      shows the format being used. For OpalCmdMediaStream this
+                                      is the format to use. In the latter case, if empty or
+                                      NULL, then a default is used. */
+  OpalMediaStates m_state;       /**< For OpalIndMediaStream this indicates the status of the stream.
+                                      For OpalCmdMediaStream this indicates the state to move to, see
+                                      OpalMediaStates for more information. */
 } OpalStatusMediaStream;
 
 
 /**User input information for the OpalIndUserInput indication.
-   This is only returned from the OpalGetMessage() function.
+
+   This is may be returned from the OpalGetMessage() function or
+   provided to the OpalSendMessage() function.
   */
 typedef struct OpalStatusUserInput {
   const char * m_callToken;   ///< Call token for the call the User Input was received on.
@@ -612,7 +648,7 @@ struct OpalMessage {
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
     OpalStatusCallCleared    m_callCleared;        ///< Used by OpalIndCallCleared
-    OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream
+    OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream/OpalCmdMediaStream
   } m_param;
 };
 
