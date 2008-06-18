@@ -60,8 +60,216 @@ class OpalT38Protocol;
 class OpalH224Handler;
 class OpalH281Handler;
 
+/*! \page pageOpalConnections Connection handling in the OPAL library
 
-/** Class for carying vendor/product information.
+\section secOverview Overview 
+This page of the documentation is designed to provide an understanding of the
+use of the OpalConnection class in the OPAL library. From the description, you
+will be able to add your own voip protocol to OPAL, and utilise the features
+provided by the existing class structure. 
+
+Key to understanding the OpalConnection class is that this class is
+responsible for supervising the call signaling and media control for one call.
+
+There will be one descendant of this OpalConnection class created for each
+protocol that is supported.
+
+
+\section secCallPhases Call Phases
+
+Defined in OpalConnection, there is an enum (OpalConnection::Phases) that describes the
+different stages of the call. Note that all OpalConnection instances go
+through these phases as a call progresses. Even the OpalPCSSConnection, which
+is the connection of PCM audio to/from the sound card, will (at some time) be
+in each of the available phases.
+
+To illustrate the meaning of the phases, we will descibe a very simple voip
+protocol. This example protocol will also be used to show when the different
+callbacks happen, and when the phases are changed at either endpoint of the
+call. 
+
+The two endpoints in the call are labelled L and R (left and right). L is making a call to R
+
+\li L goes to OpalConnection::SetUpPhase, and  sends invite packet to R
+\li R goes to OpalConnection::SetUpPhase, and starts ringing the phone
+\li R goes to OpalConnection::AlertingPhase
+\li R sends a message to L, "my phone is ringing"
+\li L goes to OpalConnection::AlertingPhase
+\li L sends a message to R, "I can only do G711 ALaw, RTP data to port 5400"
+\li R sends s message to L, "Ok, we talk with G711 ALaw, send RTP data to me on port 5401"
+\li R and L both wait for R's user to accept the ringing phone
+\li R's user accepts the call by picking up the phone
+\li R goes to OpalConnection::ConnectedPhase
+\li R tells L that the call is accepted
+\li L goes to OpalConnection::ConnectedPhase
+\li R notices that media type is agreed on, the call is accepted, so goes to OpalConnection::EstablishedPhase
+\li R realises that L knows everything is good for a call, so sends media to L
+\li L reads the accepted message from R, goes to OpalConnection::EstablishedPhase
+\li L sends media to R
+\li both L and R exchange G711 ALaw on RTP port s 5400 and 5401
+\li L (it could be R) sends a hangup message to R
+\li L goes to OpalConnection::ReleasingPhase, and then stops all media traffic.
+\li R receives the hangup message, goes to OpalConnection::ReleasingPhase, and stops all media traffic
+\li L (and R) switch to OpalConnection::ReleasedPhase when all media and control streams have been terminated.
+
+In the example above, if R had answered yes immediately, the call could not
+move immediately to OpalConnection::EstablishedPhase as the media types were
+not agreed on.
+
+In the example above, we have described the decision process as to the codec
+type, and the ports used. This decision process is not necessarily directly
+handled by the OpalConnection descendant. For IAX2, where media negotiation is
+an integral part of setting up the call, the IAX2Connection does media
+negotiation. However, for SIP, there are SDPBandwidth, SDPMediaDescription,
+SDPMediaFormat, SDPSessionDescription classes for handling media
+negotiation. For the case of a pstn gateway using ISDN, there is no media
+negotiation.  It always uses G.711 and the same "port" (the B channel).
+
+
+The different phases are. 
+
+  \li OpalConnection::UninitialisedPhase - there is no call active. An
+                           OpalConnection takes this phase when instantiated.
+
+  \li OpalConnection::SetUpPhase - the call is being created. This is around
+                           the time of the first packet, which announces the
+                           intent to create a call. At this point, there is no
+                           agreement on the media format etc.
+ 
+  \li OpalConnection::AlertingPhase - the OpalConnection instance is aware the phone is ringing.
+
+
+  \li OpalConnection::ConnectedPhase - both endpoints have accepted the call, there may or may
+                            not be agreement on media atthis time. Note that in many systems
+                            this constitutes the start of charging for a call.
+
+  \li OpalConnection::EstablishedPhase - we are "connected, there is agreement on the media
+                            type, network ports, media can flow. This is the condition that
+                            contitutes a call being "ready to use".
+
+  \li OpalConnection::ReleasingPhase - Either side (L or R) has said
+                        "hangup". The media streams are in the process of
+                        closing down.
+
+  \li OpalConnection::ReleasedPhase - Media and control streams have closed
+                      down.  When the call is in this phase, there is no
+                      possibility of additional messages between L and R.
+
+  \li OpalConnection::NumPhases - Used for internal accounting. This indicates
+                      that the phase is unknown.
+
+\section secCallbacks OnEvent Callbacks in Opal
+
+An OnXXX function is called when an external stimuli from the protocol occurs
+and a SetXXX function may be called by OPAL to perform the protocol command. For
+example OnAlerting is called when the H.323 ALERTING packet is received, and
+SetAlerting transmits the ALERTING packet.
+
+It is the OpalConnection class (or descendant) which is in charge of handling
+the control packets of a particular protocol. Consequently, it is only
+code in this class which sets the current call phase variable. Further, most
+events are generated in the OpalConnection class, which are usually passed back to the
+OpalEndPoint, then to the OpalManager, and usually on to the OpalCall class.
+
+Consequently, if a descendant of the OpalManager has been created, the
+application will have access to to notification on when the phase of a call
+has changed. Applications may create descendants of the H323Connection and
+SIPConnection to get protocol specific information about call progress.
+
+Whenever the application does override a method in OpalManager (or
+OpalEndPoint, or OpalConnection), the application should 
+\li spend the minimum of time in the overridden method, as this is holding up
+     call processing
+\li call the method that was overridden, to ensure the correct operation of
+    Opal
+
+
+The stages in a call, as applies to the methods provided by the OpalEndPoint,
+OpalConnection, OpalCall and Manager classes.  
+
+\li The OpalConnection derivative, on deciding that a call is ready to begin
+     negotiations as to media etc, sets the phase to
+     OpalConnection::SetUpPhase, and invoke OpalCall::OnSetUp(). Note that it
+     is only partyA which invokes OpalCall::OnSetUp(). Then, for the other
+     OpalConnection instance in this voip call, the methods
+     OpalConnection::SetUpConnection and OpalConnection::OnSetUpConnection are
+     invoked. The OpalConnection::OnSetUpConnection then invokes
+     OpalEndPoint::OnSetUpConnection(). 
+
+\li The recipient of an incoming voip call (R from example above) will go
+     straight from OpalConnection::UninitialisedPhase to
+     OpalConnection::AlertingPhase, on receipt of the INVITE/Hello packet. The
+     initiator of a voip call (L from example above) moves to
+     OpalConnection::AlertingPhase on receiving a notice the call has not been
+     immediately rejected.
+
+\li When an OpalConnection instance moves to OpalConnection::OnAlerting
+    phase, which invokes OpalConnection::OnAlerting, which invokes
+    OpalEndPoint::OnAlerting, which invokes OpalManager::OnAlerting, which
+    invokes OpalCall::OnAlerting. The OpalCall::OnAlerting method then invokes
+    the OpalConnection::SetAlerting method of the other OpalConnection
+    instance in this call (which is partyB). Consequently, when one
+    OpalConnection instance in a call does OpalConnection::OnAlerting, the
+    other OpalConnection instance in the call does a
+    OpalConnection::SetAlerting.
+
+\li The method for deciding on the appropriate media to use, and for deciding
+    when the user at R actually picks up the remote phone to accept the call,
+    is entirely protocol specific. This decision making process is handled
+    by code in the descendant of the OpalConnection class. As much of the
+    common behaviour is abstracted to OpalConnection, OpalMediaFormat etc
+    as possible, but the details must reside in the OpalConnection.
+
+\li When the signaling is completed, and the call is accepted at R, both L and R
+     will move to the OpalConnection::ConnectedPhase, and invoke
+     OpalConnection::OnConnected.  which invokes OpalEndPoint::OnConnected,
+     which invokes OpalManager::OnConnected, which invokes
+     OpalCall::OnConnected. The OpalCall::OnConnected method then invokes the
+     OpalConnection::SetConnected method of the other OpalConnection instance
+     in this call (which is partyB). Consequently, when one OpalConnection
+     instance in a call does OpalConnection::OnConnected, the other
+     OpalConnection instance in the call does a OpalConnection::SetConnected.
+     The operation of the OpalConnection::SetConnected method is currently
+     empty - it is a protocol dependant thing exactly how to respond.
+
+\li When the media is decided on, and the call has been accepted at R, media
+     can flow. At the point where the media threads are created and agreed on
+     at both ends, the call is marked as OpalConnection::OnEstablished. It is
+     the transition to the established phase that starts the media
+     streams. The descendant of OpalConnection decides to move to established
+     phase, and invokes OpalConnection::OnEstablished.  which starts the media
+     streams and invokes OpalEndPoint::OnEstablished, which invokes
+     OpalManager::OnEstablished., which invokes OpalCall::OnEstablished. The
+     OpalCall::OnEstablished method then checks that there are two
+     OpalConnection instances in the call, and starts the media streams on the
+     calling connection. The OpalCall::OnEstablished method then checks that
+     all OpalConnection instances in this call are marked as
+     Established. Fininally, the OpalCall::OnEstablishedCall method is
+     invoked, which then invokes OpalManager::OnEstablishedCall. The
+     OpalManager::OnEstablishedCall method is empty, but if an application
+     overrides this method, the application will get notification of when a
+     call has started sending media.
+
+\li Calls are terminated by the OpalManager::ClearCall method, which invokes
+    OpalCall::Clear. For each OpalConnection instance in the OpalCall class,
+    the OpalConnection::Release method is invoked. The call phase is switched
+    to OpalConnection::ReleasingPhase and a thread is created to close down
+    the OpalConnection instance. This thread invokes
+    OpalConnection::OnRelease, which then invokes OpalConnection::OnReleased,
+    closes the media streams, and then invokes OpalEndPoint::OnReleased. The
+    endpoint invokes OpalManager::OnReleased, which invokes
+    OpalCall::OnReleased. The OpalCall::OnReleased method will do
+    OpalConnection::Release() on the other OpalConnection instance managed by
+    the OpalCall (if the other OpalConnection is still there). Once all
+    OpalConnection instances have gone from the OpalCall, OpalCall::OnCleared
+    is invoked, which invokes OpalManager::OnClearedCall. The
+    OpalManager::OnClearedCall method is empty, but can be overridden by the
+    application to get notification when all components of a call (media,
+    control) have fully terminated.
+*/
+
+/** Class for carying vendor/product
+    information.
   */
 class OpalProductInfo
 {
@@ -215,7 +423,7 @@ class OpalConnection : public PSafeObject
   /**@name Overrides from PObject */
   //@{
     /**Standard stream print function.
-       The PObject class has a << operator defined that calls this function
+       The PObject class has a << operator defined that invokes this function
        polymorphically.
       */
     void PrintOn(
@@ -225,15 +433,34 @@ class OpalConnection : public PSafeObject
 
   /**@name Basic operations */
   //@{
+    /**Get indication of connection being to a "network".
+       This indicates the if the connection may be regarded as a "network"
+       connection. The distinction is about if there is a concept of a "remote"
+       party being connected to and is best described by example: sip, h323,
+       iax and pstn are all "network" connections as they connect to something
+       "remote". While pc, pots and ivr are not as the entity being connected
+       to is intrinsically local.
+
+       As a rule a network connection would have different names returned by
+       GetLocalPartyName() and GetRemotePartyName() functions. A non-network
+       connection, for ease of use, has a unique value for GetLocalPartyName()
+       but, for convenience, uses the GetRemotePartyName() for the other
+       connection in the call for it's GetRemotePartyName().
+      */
+    virtual bool IsNetworkConnection() const = 0;
+
+    /**Different phases of a call, which are used in all OpalConnection
+       instances. These phases are fully described in the documentation page
+       \ref pageOpalConnections.  */
     enum Phases {
-      UninitialisedPhase,
-      SetUpPhase,
-      AlertingPhase,
-      ConnectedPhase,
-      EstablishedPhase,
-      ReleasingPhase, // Note these must be the last two phases.
-      ReleasedPhase,
-      NumPhases
+	UninitialisedPhase,   /*!< Indicates the OpalConnection instance has just been constructed*/
+	SetUpPhase,           /*!< In the process of sending/receiving the initial INVITE packet */
+	AlertingPhase,        /*!< There is a phone ringing, somewhere                           */
+	ConnectedPhase,       /*!< There is agreement on having a call, media type etc            */
+	EstablishedPhase,     /*!< Media is flowing, control streams  are all operational         */
+	ReleasingPhase,       /*!< Hangup packet has been sent/received, media and control not yet stopped  */
+	ReleasedPhase,        /*!< Media and control streams have been terminated                           */
+	NumPhases             /*!< Number of available phases. Can be used to indicate an unknown phase     */
     };
 
     /**Get the phase of the connection.

@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 4
+#define OPAL_C_API_VERSION 5
 
 
 ///////////////////////////////////////
@@ -199,7 +199,8 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 
 ///////////////////////////////////////
 
-#define OPAL_PREFIX_PC   "pc"
+#define OPAL_PREFIX_PCSS  "pc"
+#define OPAL_PREFIX_LOCAL "local"
 #define OPAL_PREFIX_H323 "h323"
 #define OPAL_PREFIX_SIP  "sip"
 #define OPAL_PREFIX_IAX2 "iax2"
@@ -208,12 +209,63 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 #define OPAL_PREFIX_IVR  "ivr"
 
 #define OPAL_PREFIX_ALL OPAL_PREFIX_PCSS " " \
+                        OPAL_PREFIX_LOCAL " " \
                         OPAL_PREFIX_H323 " " \
                         OPAL_PREFIX_SIP  " " \
                         OPAL_PREFIX_IAX2 " " \
                         OPAL_PREFIX_POTS " " \
                         OPAL_PREFIX_PSTN " " \
                         OPAL_PREFIX_IVR
+
+
+/**Type code the silence detect algorithm modes.
+   This is used by the OpalCmdSetGeneralParameters command in the OpalParamGeneral structure.
+  */
+typedef enum OpalSilenceDetectModes {
+  OpalSilenceDetectNoChange,  /**< No change to the silence detect mode. */
+  OpalSilenceDetectDisabled,  /**< Indicate silence detect is disabled */
+  OpalSilenceDetectFixed,     /**< Indicate silence detect uses a fixed threshold */
+  OpalSilenceDetectAdaptive   /**< Indicate silence detect uses an adaptive threashold */
+} OpalSilenceDetectModes;
+
+
+/**Type code the echo cancellation algorithm modes.
+   This is used by the OpalCmdSetGeneralParameters command in the OpalParamGeneral structure.
+  */
+typedef enum OpalEchoCancelMode {
+  OpalEchoCancelNoChange,   /**< No change to the echo cancellation mode. */
+  OpalEchoCancelDisabled,   /**< Indicate the echo cancellation is disabled */
+  OpalEchoCancelEnabled     /**< Indicate the echo cancellation is enabled */
+} OpalEchoCancelMode;
+
+
+/** Function for reading/writing media data.
+    Returns size of data actually read or written, or -1 if there is an error
+    and the media stream should be shut down.
+ */
+typedef int (*OpalMediaDataFunction)(
+  const char * token,   /**< Call token for media data as returned by OpalIndIncomingCall.
+                             This may be used to discriminate between individiual calls. */
+  const char * stream,  /**< Stream identifier for media data. This may be used to
+                             discriminate between media streams within a call, applicable
+                             if there can be more than one stream of a particular format,
+                             e.g. two H.263 video channels. */
+  const char * format,  /**< Format of media data, e.g. "PCM-16" */
+  void * data,          /**< Data to read/write */
+  int size              /**< Maximum size of data to read, or size of actual data to write */
+);
+
+
+/**Type code the media data call back functions data type.
+   This is used by the OpalCmdSetGeneralParameters command in the OpalParamGeneral structure.
+  */
+typedef enum OpalMediaDataType {
+  OpalMediaDataNoChange,      /**< No change to the media data type. */
+  OpalMediaDataPayloadOnly,   /**< Indicate only the RTP payload is passed to the
+                                   read/write function */
+  OpalMediaDataWithHeader     /**< Indicate the while RTP frame including header is
+                                   passed to the read/write function */
+} OpalMediaDataType;
 
 
 /**Type code for messages defined by OpalMessage.
@@ -280,6 +332,9 @@ typedef enum OpalMessageType {
                                     OpalGetMessage() function when an MWI is received on any of the supported
                                     protocols.
                                 */
+  OpalIndMediaStream,           /**<A media stream has started/stopped. This message is returned in the
+                                    OpalGetMessage() function when a media stream is started or stopped. See the
+                                    OpalStatusMediaStream structure for more information. */
   OpalMessageTypeCount
 } OpalMessageType;
 
@@ -331,9 +386,9 @@ typedef struct OpalParamGeneral {
                                            received this sets the maximum time of the adaptive jitter buffer
                                            which smooths out irregularities in the transmission of audio
                                            data over the Internet. */
-  unsigned     m_silenceDetectMode;   /**< Silence detection mode. This controls the silence detection
-                                           algorithm for audio transmission: 0=no change, 1=disabled,
-                                           2=fixed, 3=adaptive. */
+  OpalSilenceDetectModes m_silenceDetectMode; /**< Silence detection mode. This controls the silence
+                                           detection algorithm for audio transmission: 0=no change,
+                                           1=disabled, 2=fixed, 3=adaptive. */
   unsigned     m_silenceThreshold;    /**< Silence detection threshold value. This applies if
                                            m_silenceDetectMode is fixed (2) and is a PCM-16 value. */
   unsigned     m_signalDeadband;      /**< Time signal is required before audio is transmitted. This is
@@ -343,10 +398,14 @@ typedef struct OpalParamGeneral {
   unsigned     m_silenceAdaptPeriod;  /**< Window for adapting the silence threashold. This applies if
                                            m_silenceDetectMode is adaptive (3). This is is RTP timestamp
                                            units (8000Hz). */
-  unsigned     m_echoCancellation;    /**< Accoustic Echo Cancellation control. 0=no change, 1=disabled,
+  OpalEchoCancelMode m_echoCancellation; /**< Accoustic Echo Cancellation control. 0=no change, 1=disabled,
                                            2=enabled. */
   unsigned     m_audioBuffers;        /**< Set the number of hardware sound buffers to use. */
-
+  OpalMediaDataFunction m_mediaReadData;   /**< Callback function for reading raw media data. */
+  OpalMediaDataFunction m_mediaWriteData;  /**< Callback function for writing raw media data. */
+  OpalMediaDataType     m_mediaDataHeader; /**< Indicate that the media read/write callback function
+                                           is passed the full RTP header or just the payload.
+                                           0=no change, 1=payload only, 2=with RTP header. */
 } OpalParamGeneral;
 
 
@@ -492,6 +551,17 @@ typedef struct OpalStatusIncomingCall {
 } OpalStatusIncomingCall;
 
 
+/**Media stream information for the OpalIndMediaStream indication.
+   This is only returned from the OpalGetMessage() function.
+  */
+typedef struct OpalStatusMediaStream {
+  const char * m_callToken;   ///< Call token for the call the media stream is.
+  const char * m_identifier;  ///< Unique identifier for the media stream
+  const char * m_format;      ///< Media format for the stream.
+  unsigned     m_status;      ///< Status of stream, 1=started, 2=stopped
+} OpalStatusMediaStream;
+
+
 /**User input information for the OpalIndUserInput indication.
    This is only returned from the OpalGetMessage() function.
   */
@@ -542,6 +612,7 @@ struct OpalMessage {
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
     OpalStatusCallCleared    m_callCleared;        ///< Used by OpalIndCallCleared
+    OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream
   } m_param;
 };
 
