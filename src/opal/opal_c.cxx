@@ -276,7 +276,7 @@ void OpalMessageBuffer::SetString(const char * * variable, const char * value)
 void OpalMessageBuffer::SetError(const char * errorText)
 {
   OpalMessage * message = (OpalMessage *)m_data;
-  PTRACE(2, "OpalC\tCommand " << message->m_type << " error: " << errorText);
+  PTRACE(2, "OpalC API\tCommand " << message->m_type << " error: " << errorText);
 
   message->m_type = OpalIndCommandError;
   m_strPtrOffset.clear();
