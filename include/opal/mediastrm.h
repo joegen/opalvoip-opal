@@ -292,13 +292,16 @@ class OpalMediaStream : public PSafeObject
       */
     void SetMarker(bool m) { marker = m; }
 
-    /**Get the paused state for writing.
+    /**Get the paused state for stream.
       */
     bool IsPaused() const { return paused; }
 
-    /**Set the paused state for writing.
+    /**Set the paused state for stream.
+       This will stop reading/writing data from the stream.
       */
-    void SetPaused(bool p) { paused = p; }
+    virtual void SetPaused(
+      bool pause    ///< Indicate that the stream should be paused
+    );
 
     /**Returns true if the media stream is open.
       */
