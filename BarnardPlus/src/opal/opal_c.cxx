@@ -85,7 +85,7 @@ class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
     PBoolean OpalPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection &);
 
   private:
-    OpalManager_C & manager;
+    OpalManager_C & m_manager;
 };
 
 
@@ -103,7 +103,7 @@ class SIPEndPoint_C : public SIPEndPoint
     );
 
   private:
-    OpalManager_C & manager;
+    OpalManager_C & m_manager;
 };
 #endif
 
@@ -125,6 +125,8 @@ class OpalManager_C : public OpalManager
     OpalMessage * SendMessage(const OpalMessage * message);
 
     virtual void OnEstablishedCall(OpalCall & call);
+    virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
+    virtual void OnClosedMediaStream(const OpalMediaStream & stream);
     virtual void OnUserInputString(OpalConnection & connection, const PString & value);
     virtual void OnUserInputTone(OpalConnection & connection, char tone, int duration);
     virtual void OnMWIReceived(const PString & party, MessageWaitingType type, const PString & extraInfo);
@@ -270,13 +272,14 @@ OpalMessage * OpalMessageBuffer::Detach()
 
 OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
   : OpalPCSSEndPoint(mgr)
-  , manager(mgr)
+  , m_manager(mgr)
 {
 }
 
 
 PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connection)
 {
+  PTRACE(4, "OpalC\tOnShowIncoming " << connection);
   OpalMessageBuffer message(OpalIndIncomingCall);
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, connection.GetLocalPartyURL());
@@ -285,13 +288,14 @@ PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connectio
             " token=\"" << message->m_param.m_incomingCall.m_callToken << "\""
             " local=\"" << message->m_param.m_incomingCall.m_localAddress << "\""
             " remote=\""<< message->m_param.m_incomingCall.m_remoteAddress << '"');
-  manager.PostMessage(message);
+  m_manager.PostMessage(message);
   return true;
 }
 
 
 PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
+  PTRACE(4, "OpalC\tOnShowOutgoing " << connection);
   const OpalCall & call = connection.GetCall();
   OpalMessageBuffer message(OpalIndAlerting);
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
@@ -301,7 +305,7 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
             " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
             " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
             " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
-  manager.PostMessage(message);
+  m_manager.PostMessage(message);
   return true;
 }
 
@@ -312,7 +316,7 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
 
 SIPEndPoint_C::SIPEndPoint_C(OpalManager_C & mgr)
   : SIPEndPoint(mgr)
-  , manager(mgr)
+  , m_manager(mgr)
 {
 }
 
@@ -330,7 +334,7 @@ void SIPEndPoint_C::OnRegistrationStatus(const PString & aor,
     strm << "Error " << reason << " in SIP registration.";
     SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_error, strm);
   }
-  manager.PostMessage(message);
+  m_manager.PostMessage(message);
 }
 
 #endif
@@ -374,7 +378,7 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 
   PINDEX pstnPos = options.Find("pstn");
-  if (iaxPos < defProtoPos) {
+  if (pstnPos < defProtoPos) {
     defProto = "pstn:<dn>";
     defProtoPos = pstnPos;
   }
@@ -521,6 +525,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       pcssEP->SetSoundChannelPlayDevice(command.m_param.m_general.m_audioPlayerDevice);
   }
 
+#if OPAL_VIDEO
   PVideoDevice::OpenArgs video = GetVideoInputDevice();
   SET_MESSAGE_STRING(response, m_param.m_general.m_videoInputDevice, video.deviceName);
   if (!IsNullString(command.m_param.m_general.m_videoInputDevice)) {
@@ -541,6 +546,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     video.deviceName = command.m_param.m_general.m_videoPreviewDevice;
     SetVideoPreviewDevice(video);
   }
+#endif
 
   PStringStream strm;
   strm << setfill('\n') << GetMediaFormatOrder();
@@ -555,18 +561,22 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     SetMediaFormatMask(PString(command.m_param.m_general.m_mediaMask).Lines());
 
   strm = "audio";
+#if OPAL_VIDEO
   if (CanAutoStartReceiveVideo())
     strm << " video";
-  SET_MESSAGE_STRING(response, m_param.m_general.m_autoRxMedia, strm);
   if (!IsNullString(command.m_param.m_general.m_autoRxMedia))
     SetAutoStartReceiveVideo(strstr(command.m_param.m_general.m_autoRxMedia, "video") != NULL);
+#endif
+  SET_MESSAGE_STRING(response, m_param.m_general.m_autoRxMedia, strm);
 
   strm = "audio";
+#if OPAL_VIDEO
   if (CanAutoStartTransmitVideo())
     strm << " video";
-  SET_MESSAGE_STRING(response, m_param.m_general.m_autoTxMedia, strm);
   if (!IsNullString(command.m_param.m_general.m_autoTxMedia))
     SetAutoStartTransmitVideo(strstr(command.m_param.m_general.m_autoTxMedia, "video") != NULL);
+#endif
+  SET_MESSAGE_STRING(response, m_param.m_general.m_autoTxMedia, strm);
 
   SET_MESSAGE_STRING(response, m_param.m_general.m_natRouter, GetTranslationHost());
   if (!IsNullString(command.m_param.m_general.m_natRouter)) {
@@ -618,7 +628,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     return;
 
   OpalSilenceDetector::Params silenceDetectParams = GetSilenceDetectParams();
-  response->m_param.m_general.m_silenceDetectMode = silenceDetectParams.m_mode+1;
+  response->m_param.m_general.m_silenceDetectMode = (OpalSilenceDetectModes)(silenceDetectParams.m_mode+1);
   if (command.m_param.m_general.m_silenceDetectMode != 0)
     silenceDetectParams.m_mode = (OpalSilenceDetector::Mode)(command.m_param.m_general.m_silenceDetectMode-1);
   response->m_param.m_general.m_silenceThreshold = silenceDetectParams.m_threshold;
@@ -636,7 +646,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   SetSilenceDetectParams(silenceDetectParams);
 
   OpalEchoCanceler::Params echoCancelParams = GetEchoCancelParams();
-  response->m_param.m_general.m_echoCancellation = echoCancelParams.m_mode+1;
+  response->m_param.m_general.m_echoCancellation = (OpalEchoCancelMode)(echoCancelParams.m_mode+1);
   if (command.m_param.m_general.m_echoCancellation != 0)
     echoCancelParams.m_mode = (OpalEchoCanceler::Mode)(command.m_param.m_general.m_echoCancellation-1);
   SetEchoCancelParams(echoCancelParams);
@@ -1000,6 +1010,47 @@ void OpalManager_C::OnEstablishedCall(OpalCall & call)
             " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
             " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
             " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
+  PostMessage(message);
+}
+
+
+PBoolean OpalManager_C::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
+{
+  if (!OpalManager::OnOpenMediaStream(connection, stream))
+    return false;
+
+  if (connection.IsNetworkConnection())
+    return true;
+
+  OpalMessageBuffer message(OpalIndMediaStream);
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_identifier, stream.GetID());
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_format, stream.GetMediaFormat().GetName());
+  message->m_param.m_mediaStream.m_status = 1;
+  PTRACE(4, "OpalC API\tOnClosedMediaStream:"
+            " token=\"" << message->m_param.m_userInput.m_callToken << "\""
+            " id=\"" << message->m_param.m_mediaStream.m_identifier << '"');
+  PostMessage(message);
+
+  return true;
+}
+
+
+void OpalManager_C::OnClosedMediaStream(const OpalMediaStream & stream)
+{
+  OpalManager::OnClosedMediaStream(stream);
+
+  if (stream.GetConnection().IsNetworkConnection())
+    return;
+
+  OpalMessageBuffer message(OpalIndMediaStream);
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_callToken, stream.GetConnection().GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_identifier, stream.GetID());
+  SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_format, stream.GetMediaFormat().GetName());
+  message->m_param.m_mediaStream.m_status = 2;
+  PTRACE(4, "OpalC API\tOnClosedMediaStream:"
+            " token=\"" << message->m_param.m_userInput.m_callToken << "\""
+            " id=\"" << message->m_param.m_mediaStream.m_identifier << '"');
   PostMessage(message);
 }
 
