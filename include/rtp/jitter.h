@@ -139,40 +139,44 @@ class OpalJitterBuffer : public PObject
       return jitterThread->WaitForTermination(t); 
     }
 
+    bool IsEmpty() { return jitterBuffer.size() == 0; }
+
   protected:
-    class Entry : public RTP_DataFrame
-    {
-      public:
-        Entry * next;
-        Entry * prev;
-        PTimeInterval tick;
-    };
+    void Start(unsigned _minJitterTime, unsigned _maxJitterTime);
 
     PINDEX        bufferSize;
     DWORD         minJitterTime;
     DWORD         maxJitterTime;
     DWORD         maxConsecutiveMarkerBits;
 
-    unsigned timeUnits;
-    unsigned currentDepth;
-    DWORD    currentJitterTime;
-    DWORD    packetsTooLate;
-    unsigned bufferOverruns;
-    unsigned consecutiveBufferOverruns;
-    DWORD    consecutiveMarkerBits;
-    PTimeInterval    consecutiveEarlyPacketStartTime;
-    DWORD    lastWriteTimestamp;
+    unsigned      timeUnits;
+    DWORD         currentJitterTime;
+    DWORD         packetsTooLate;
+    unsigned      bufferOverruns;
+    unsigned      consecutiveBufferOverruns;
+    DWORD         consecutiveMarkerBits;
+    PTimeInterval consecutiveEarlyPacketStartTime;
+    DWORD         lastWriteTimestamp;
     PTimeInterval lastWriteTick;
-    DWORD    jitterCalc;
-    DWORD    targetJitterTime;
-    unsigned jitterCalcPacketCount;
-    PBoolean     doJitterReductionImmediately;
-    PBoolean     doneFreeTrash;
+    DWORD         jitterCalc;
+    DWORD         targetJitterTime;
+    unsigned      jitterCalcPacketCount;
+    bool          doJitterReductionImmediately;
 
-    Entry * oldestFrame;
-    Entry * newestFrame;
-    Entry * freeFrames;
-    Entry * currentFrame;
+    class Entry : public RTP_DataFrame
+    {
+      public:
+        PTimeInterval tick;
+    };
+
+    typedef std::deque<Entry *> FrameQueue;
+
+    FrameQueue freeFrames;
+    FrameQueue jitterBuffer;
+    inline Entry * GetNewest(bool pop) { Entry * e = jitterBuffer.back(); if (pop) jitterBuffer.pop_back(); return e; }
+    inline Entry * GetOldest(bool pop) { Entry * e = jitterBuffer.front(); if (pop) jitterBuffer.pop_front(); return e; }
+
+    Entry * currentFrame;    // storage of current frame
 
     PMutex bufferMutex;
     bool   shuttingDown;
@@ -205,20 +209,15 @@ class RTP_JitterBuffer : public OpalJitterBuffer
 	    unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
 	    PINDEX stackSize = 30000 ///<  Stack size for jitter thread
 	    );
-        virtual ~RTP_JitterBuffer();
-	
+
     /**This class instance collects data from the outside world in this
        method.
 
     @return PTrue on successful read, PFalse on faulty read. */
     virtual PBoolean OnReadPacket    (
-	RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-	PBoolean loop               ///<  If PTrue, loop as long as data is available, if PFalse, only process once
+      RTP_DataFrame & frame,  ///<  Frame read from the RTP session
+      PBoolean loop           ///<  If PTrue, loop as long as data is available, if PFalse, only process once
 	) ;
-
-    /**Start jitter thread
-      */
-    virtual void Resume(PHandleAggregator * aggregator = NULL);
 
  protected:
 	/**This class extracts data from the outside world by reading from this session variable */
