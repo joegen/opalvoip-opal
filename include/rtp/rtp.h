@@ -783,6 +783,8 @@ class RTP_Session : public PObject
       */
     virtual void SendIntraFrameRequest();
 
+    void SetNextSentSequenceNumber(WORD num) { lastSentSequenceNumber = (WORD)(num-1); }
+
     virtual PString GetEncoding() const { return m_encoding; }
     virtual void SetEncoding(const PString & newEncoding);
 
