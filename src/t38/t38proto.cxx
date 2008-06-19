@@ -68,6 +68,7 @@ class T38PseudoRTP_Handler : public RTP_Encoding
 
       lastIFP.SetSize(0);
       rtpUDP->SetReportTimeInterval(20);
+      rtpUDP->SetNextSentSequenceNumber(0);
     }
 
 
