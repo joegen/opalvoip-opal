@@ -675,9 +675,9 @@ void RTP_Session::SetUserData(RTP_UserData * data, PBoolean autoDelete)
 
 
 void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
-              unsigned maxJitterDelay,
-              unsigned timeUnits,
-              PINDEX stackSize)
+                                      unsigned maxJitterDelay,
+                                      unsigned timeUnits,
+                                        PINDEX stackSize)
 {
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
     delete jitter;
@@ -692,7 +692,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
 #if OPAL_RTP_AGGREGATE
       aggregator
 #endif
-      );
+    );
   }
 }
 
@@ -1490,14 +1490,14 @@ RTP_UDP::RTP_UDP(
     remoteIsNAT(_remoteIsNAT)
 {
   PTRACE(4, "RTP_UDP\tSession " << sessionID << ", created with NAT flag set to " << remoteIsNAT);
-  remoteDataPort = 0;
+  remoteDataPort    = 0;
   remoteControlPort = 0;
-  shutdownRead = false;
-  shutdownWrite = false;
-  dataSocket = NULL;
-  controlSocket = NULL;
-  appliedQOS = false;
-  localHasNAT = false;
+  shutdownRead      = false;
+  shutdownWrite     = false;
+  dataSocket        = NULL;
+  controlSocket     = NULL;
+  appliedQOS        = false;
+  localHasNAT       = false;
 }
 
 
