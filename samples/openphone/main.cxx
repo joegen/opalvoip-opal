@@ -2706,9 +2706,13 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   PStringList devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
   wxChoice * choice = FindWindowByNameAs<wxChoice>(this, RingSoundDeviceNameKey);
   choice->SetValidator(wxGenericValidator(&m_RingSoundDeviceName));
-  for (i = 0; i < devices.GetSize(); i++)
-    choice->Append((const char *)devices[i]);
+  for (i = 0; i < devices.GetSize(); i++) {
+    PwxString str = devices[i];
+    str.Replace("\t", ": ");
+    choice->Append(str);
+  }
   m_RingSoundDeviceName = m_manager.m_RingSoundDeviceName;
+  m_RingSoundDeviceName.Replace("\t", ": ");
   INIT_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName);
 
   INIT_FIELD(AutoAnswer, m_manager.m_autoAnswer);
@@ -2805,17 +2809,25 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   // Fill sound player combo box with available devices and set selection
   wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, SoundPlayerKey);
   combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
-  for (i = 0; i < devices.GetSize(); i++)
-    combo->Append((const char *)devices[i]);
+  for (i = 0; i < devices.GetSize(); i++) {
+    PwxString str = devices[i];
+    str.Replace("\t", ": ");
+    combo->Append(str);
+  }
   m_SoundPlayer = m_manager.pcssEP->GetSoundChannelPlayDevice();
+  m_SoundPlayer.Replace("\t", ": ");
 
   // Fill sound recorder combo box with available devices and set selection
   combo = FindWindowByNameAs<wxComboBox>(this, SoundRecorderKey);
   combo->SetValidator(wxGenericValidator(&m_SoundRecorder));
   devices = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
-  for (i = 0; i < devices.GetSize(); i++)
-    combo->Append((const char *)devices[i]);
+  for (i = 0; i < devices.GetSize(); i++) {
+    PwxString str = devices[i];
+    str.Replace("\t", ": ");
+    combo->Append(str);
+  }
   m_SoundRecorder = m_manager.pcssEP->GetSoundChannelRecordDevice();
+  m_SoundRecorder.Replace("\t", ": ");
 
   // Fill line interface combo box with available devices and set selection
   m_selectedAEC = FindWindowByNameAs<wxChoice>(this, AECKey);
@@ -3118,6 +3130,7 @@ bool OptionsDialog::TransferDataFromWindow()
   config->SetPath(GeneralGroup);
   SAVE_FIELD(Username, m_manager.SetDefaultUserName);
   SAVE_FIELD(DisplayName, m_manager.SetDefaultDisplayName);
+  m_RingSoundDeviceName.Replace(": ", "\t");
   SAVE_FIELD(RingSoundDeviceName, m_manager.m_RingSoundDeviceName = );
   SAVE_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName = );
   SAVE_FIELD(AutoAnswer, m_manager.m_autoAnswer = );
@@ -3162,6 +3175,8 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // Sound fields
   config->SetPath(AudioGroup);
+  m_SoundPlayer.Replace(": ", "\t");
+  m_SoundRecorder.Replace(": ", "\t");
   SAVE_FIELD(SoundPlayer, m_manager.pcssEP->SetSoundChannelPlayDevice);
   SAVE_FIELD(SoundRecorder, m_manager.pcssEP->SetSoundChannelRecordDevice);
   SAVE_FIELD(SoundBuffers, m_manager.pcssEP->SetSoundChannelBufferDepth);
