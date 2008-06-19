@@ -192,8 +192,7 @@ PBoolean IAX2Connection::SetConnected()
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
 
 
-  jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8,
-			endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
+  jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8, endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
   jitterBuffer.Resume(NULL);
 
   // if no media streams, try and start them

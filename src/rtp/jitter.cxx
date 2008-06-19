@@ -86,59 +86,28 @@ class RTP_JitterBufferAnalyser : public PObject
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalJitterBuffer::OpalJitterBuffer(unsigned minJitterDelay,
-                                   unsigned maxJitterDelay,
-                                   unsigned time,
+OpalJitterBuffer::OpalJitterBuffer(unsigned _minJitterTime,
+                                   unsigned _maxJitterTime,
+                                   unsigned _time,
                                    PINDEX stackSize)
   : jitterThread(NULL), jitterStackSize(stackSize)
 {
-  // Jitter buffer is a queue of frames waiting for playback, a list of
-  // free frames, and a couple of place holders for the frame that is
-  // currently beeing read from the RTP transport or written to the codec.
-
-  oldestFrame = newestFrame = currentFrame = NULL;
-  // Calculate the maximum amount of timestamp units for the jitter buffer
-  minJitterTime = minJitterDelay;
-  maxJitterTime = maxJitterDelay;
-  currentJitterTime = minJitterDelay;
-  targetJitterTime = currentJitterTime;
-  timeUnits = time;
-
-  // Calculate number of frames to allocate, we make the assumption that the
-  // smallest packet we can possibly get is 5ms long.
-  bufferSize = maxJitterTime/(5*timeUnits)+1;
+  timeUnits        = _time;
 
   // Nothing in the buffer so far
-  currentDepth = 0;
-  packetsTooLate = 0;
-  bufferOverruns = 0;
-  consecutiveBufferOverruns = 0;
-  maxConsecutiveMarkerBits = 10;
-  consecutiveMarkerBits = 0;
-  consecutiveEarlyPacketStartTime = 0;
+  maxConsecutiveMarkerBits     = 10;
   doJitterReductionImmediately = false;
-  doneFreeTrash = false;
 
-  lastWriteTimestamp = 0;
-  lastWriteTick = 0;
-  jitterCalc = 0;
+  lastWriteTimestamp    = 0;
+  lastWriteTick         = 0;
+  jitterCalc            = 0;
   jitterCalcPacketCount = 0;
 
-  shuttingDown = false;
-  preBuffering = true;
-  firstReadData = true;
+  shuttingDown  = false;
+  currentFrame  = NULL;
+  bufferSize   = 0;
 
-  // Allocate the frames and put them all into the free list
-  freeFrames = new Entry;
-  freeFrames->next = freeFrames->prev = NULL;
-
-  for (PINDEX i = 0; i < bufferSize; i++) {
-    Entry * frame = new Entry;
-    frame->prev = NULL;
-    frame->next = freeFrames;
-    freeFrames->prev = frame;
-    freeFrames = frame;
-  }
+  Start(_minJitterTime, _maxJitterTime);
 
   PTRACE(4, "RTP\tOpal jitter buffer created:" << *this << " obj=" << this);
 
@@ -147,6 +116,52 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned minJitterDelay,
 #else
   analyser = NULL;
 #endif
+}
+
+
+void OpalJitterBuffer::Start(unsigned _minJitterTime, unsigned _maxJitterTime)
+{
+  PWaitAndSignal m(bufferMutex);
+
+  // retreive all of the frames in use
+  if (currentFrame != NULL) {
+    PAssertNULL(currentFrame);
+    freeFrames.push_back(currentFrame);
+    currentFrame = NULL;
+  }
+  while (jitterBuffer.size() > 0) {
+    PAssertNULL(GetNewest(false));
+    freeFrames.push_back(GetNewest(true));
+  }
+
+  // Calculate number of frames to allocate, we make the assumption that the
+  // smallest packet we can possibly get is 5ms long.
+  bufferSize = _maxJitterTime/(5*timeUnits)+1;
+
+  // must be able to handle at least the max number of overruns we accept
+  bufferSize = PMAX(MAX_BUFFER_OVERRUNS, bufferSize);
+
+  // resize the free queue for the new buffer size
+  while ((int)freeFrames.size() < bufferSize)
+    freeFrames.push_back(new Entry);
+  while ((int)freeFrames.size() > bufferSize) {
+    delete freeFrames.front();
+    freeFrames.pop_front();
+  }
+
+  minJitterTime     = _minJitterTime;
+  maxJitterTime     = _maxJitterTime;
+  currentJitterTime = _minJitterTime;
+  targetJitterTime  = _minJitterTime;
+
+  preBuffering  = true;
+  firstReadData = true;
+
+  packetsTooLate                  = 0;
+  bufferOverruns                  = 0;
+  consecutiveBufferOverruns       = 0;
+  consecutiveMarkerBits           = 0;
+  consecutiveEarlyPacketStartTime = 0;
 }
 
 
@@ -159,107 +174,41 @@ OpalJitterBuffer::~OpalJitterBuffer()
     PAssert(jitterThread->WaitForTermination(10000), "Jitter buffer thread did not terminate");
     delete jitterThread;
     jitterThread = NULL;
-  } else {
-    PTRACE(1, "RTP\tJitter buffer thread is null, when the OpalJitterBuffer destructor runs");
-  }
-  bufferMutex.Wait();
+  } 
 
   // Free up all the memory allocated
-  while (oldestFrame != NULL) {
-    Entry * frame = oldestFrame;
-    oldestFrame = oldestFrame->next;
-    delete frame;
-  }
-
-  while (freeFrames != NULL) {
-    Entry * frame = freeFrames;
-    freeFrames = freeFrames->next;
-    delete frame;
-  }
-
+  freeFrames.resize(0);
+  jitterBuffer.resize(0);
   delete currentFrame;
-
-  bufferMutex.Signal();
-
+  currentFrame = NULL;
 
 #if PTRACING && !defined(NO_ANALYSER)
   PTRACE(5, "RTP\tJitter buffer analysis: size=" << bufferSize
          << " time=" << currentJitterTime << '\n' << *analyser);
   delete analyser;
 #endif
-
-  PTRACE(6, "RTP\tFinished destruction of OpalJitterBuffer " << *this);
-
 }
 
 void OpalJitterBuffer::PrintOn(ostream & strm) const
 {
-    strm << " size=" << bufferSize 
-	 << " delay=" << (minJitterTime/timeUnits) << '-' << (maxJitterTime/timeUnits) << " ms  /" 
-	 << currentJitterTime << " (" << (currentJitterTime/timeUnits) << "ms)";
+  strm << " size=" << bufferSize 
+	     << " delay=" << (minJitterTime/timeUnits) << '-' << (maxJitterTime/timeUnits) << " ms  /" 
+       << currentJitterTime << " (" << (currentJitterTime/timeUnits) << "ms)";
 }
 
-void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay)
+void OpalJitterBuffer::SetDelay(unsigned _minJitterDelay, unsigned _maxJitterDelay)
 {
   if (shuttingDown)
-    PAssert(WaitForTermination(10000), "Jitter buffer thread did not terminate");
+    return;
 
-  bufferMutex.Wait();
-
-  minJitterTime = minJitterDelay;
-  maxJitterTime = maxJitterDelay;
-  currentJitterTime = minJitterDelay;
-  targetJitterTime = currentJitterTime;
-
-  // Calculate number of frames to allocate, we make the assumption that the
-  // smallest packet we can possibly get is 5ms long.
-  PINDEX newBufferSize = maxJitterTime/(5*timeUnits)+1;
-  while (bufferSize < newBufferSize) {
-    Entry * frame = new Entry;
-    frame->prev = NULL;
-    frame->next = freeFrames;
-    if (freeFrames != NULL)
-      freeFrames->prev = frame;
-    freeFrames = frame;
-    bufferSize++;
-  }
-
-  if (jitterThread != NULL) {
-    if (jitterThread->IsTerminated()) {
-      packetsTooLate = 0;
-      bufferOverruns = 0;
-      consecutiveBufferOverruns = 0;
-      consecutiveMarkerBits = 0;
-      consecutiveEarlyPacketStartTime = 0;
-
-      // return used frames to free list
-      while (oldestFrame != NULL) {
-        Entry * frame = oldestFrame;
-        oldestFrame = oldestFrame->next;
-
-        frame->prev = NULL;
-        frame->next = freeFrames;
-        if (freeFrames != NULL)
-          freeFrames->prev = frame;
-        freeFrames = frame;
-      }
-
-      oldestFrame = newestFrame = currentFrame = NULL;
-
-      shuttingDown = false;
-      preBuffering = true;
-
-      PTRACE(3, "RTP\tJitter buffer restarted:" << *this);
-      jitterThread->Restart();
-    }
-  }
-
-  bufferMutex.Signal();
+  PWaitAndSignal m(bufferMutex);
+  Start(_minJitterDelay, _maxJitterDelay);
+  PTRACE(3, "RTP\tJitter buffer restarted:" << *this);
 }
 
 void OpalJitterBuffer::Resume(PHandleAggregator * /*aggregator */)
 {
-  // otherwise create a seperate thread as per the old design
+  PAssert(jitterThread == NULL, "ovewriting jitter buffer thread");
   jitterThread = PThread::Create(PCREATE_NOTIFIER(JitterThreadMain), "RTP Jitter");
   jitterThread->Resume();
 }
@@ -287,7 +236,6 @@ void OpalJitterBuffer::JitterThreadMain(PThread &, INT)
   PTRACE(4, "RTP\tJitter RTP receive thread finished: " << this);
 }
 
-//void OpalJitterBuffer::Main()
 PBoolean OpalJitterBuffer::Init(Entry * & /*currentReadFrame*/, PBoolean & markerWarning)
 {
   bufferMutex.Wait();
@@ -303,12 +251,11 @@ PBoolean OpalJitterBuffer::PreRead(OpalJitterBuffer::Entry * & currentReadFrame,
 {
   // Get the next free frame available for use for reading from the RTP
   // transport. Place it into a parking spot.
-  if (freeFrames != NULL) {
+  if (freeFrames.size() > 0) {
+
     // Take the next free frame and make it the current for reading
-    currentReadFrame = freeFrames;
-    freeFrames = freeFrames->next;
-    if (freeFrames != NULL)
-      freeFrames->prev = NULL;
+    currentReadFrame = freeFrames.front();
+    freeFrames.pop_front();
     PTRACE_IF(2, consecutiveBufferOverruns > 1,
                 "RTP\tJitter buffer full, threw away "
                 << consecutiveBufferOverruns << " oldest frames");
@@ -316,29 +263,23 @@ PBoolean OpalJitterBuffer::PreRead(OpalJitterBuffer::Entry * & currentReadFrame,
   }
   else {
     // We have a full jitter buffer, need a new frame so take the oldest one
-    currentReadFrame = oldestFrame;
-    if (oldestFrame != NULL)
-	    oldestFrame = oldestFrame->next;
-    if (oldestFrame != NULL)
-      oldestFrame->prev = NULL;
-    currentDepth--;
+    PAssert(jitterBuffer.size() > 0, "Cannot find free frame in jitter buffer");
+    currentReadFrame = GetOldest(true);
+
     bufferOverruns++;
     consecutiveBufferOverruns++;
     if (consecutiveBufferOverruns > MAX_BUFFER_OVERRUNS) {
       PTRACE(2, "RTP\tJitter buffer continuously full, throwing away entire buffer.");
-      freeFrames = oldestFrame;
-      oldestFrame = newestFrame = NULL;
+      while (jitterBuffer.size() > 0) 
+        freeFrames.push_front(GetOldest(true));
       preBuffering = true;
     }
     else {
-      PTRACE_IF(2, consecutiveBufferOverruns == 1,
+      PTRACE_IF(2, (consecutiveBufferOverruns == 1) && (currentReadFrame != NULL),
                 "RTP\tJitter buffer full, throwing away oldest frame ("
                 << currentReadFrame->GetTimestamp() << ')');
     }
   }
-
-  if (currentReadFrame != NULL)
-    currentReadFrame->next = NULL;
 
   bufferMutex.Signal();
 
@@ -378,46 +319,35 @@ PBoolean OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, 
     }
   }
     
-    
 #if PTRACING && !defined(NO_ANALYSER)
-  analyser->In(currentReadFrame->GetTimestamp(), currentDepth, preBuffering ? "PreBuf" : "");
+  analyser->In(currentReadFrame->GetTimestamp(), jitterBuffer.size(), preBuffering ? "PreBuf" : "");
 #endif
 
   // Queue the frame for playing by the thread at other end of jitter buffer
   bufferMutex.Wait();
 
   // Have been reading a frame, put it into the queue now, at correct position
-  if (newestFrame == NULL || oldestFrame == NULL)
-    oldestFrame = newestFrame = currentReadFrame; // Was empty
+  if (jitterBuffer.size() == 0) {
+    PAssertNULL(currentReadFrame);
+    jitterBuffer.push_front(currentReadFrame);
+  }
   else {
     DWORD time = currentReadFrame->GetTimestamp();
 
-    if (time > newestFrame->GetTimestamp() || (time == newestFrame->GetTimestamp() && currentReadFrame->GetSequenceNumber() >= newestFrame->GetSequenceNumber())) {
-      // Is newer than newst, put at that end of queue
-      currentReadFrame->prev = newestFrame;
-      newestFrame->next = currentReadFrame;
-      newestFrame = currentReadFrame;
+    // add the entry to the jitter buffer
+    FrameQueue::iterator r;
+    for (r = jitterBuffer.begin(); r != jitterBuffer.end(); ++r) {
+      if (time < (*r)->GetTimestamp() || ((time == (*r)->GetTimestamp()) && (currentReadFrame->GetSequenceNumber() < (*r)->GetSequenceNumber()))) {
+        PAssertNULL(currentFrame);
+        jitterBuffer.insert(r, currentReadFrame);
+        break;
+      }
     }
-    else if (time < oldestFrame->GetTimestamp() || (time == oldestFrame->GetTimestamp() && currentReadFrame->GetSequenceNumber() < oldestFrame->GetSequenceNumber())) {
-      // Is older than the oldest, put at that end of queue
-      currentReadFrame->next = oldestFrame;
-      oldestFrame->prev = currentReadFrame;
-      oldestFrame = currentReadFrame;
-    }
-    else {
-      // Somewhere in between, locate its position
-      Entry * frame = newestFrame->prev;
-      while (time < frame->GetTimestamp() || (time == frame->GetTimestamp() && currentReadFrame->GetSequenceNumber() < frame->GetSequenceNumber()))
-        frame = frame->prev;
-
-      currentReadFrame->prev = frame;
-      currentReadFrame->next = frame->next;
-      frame->next->prev = currentReadFrame;
-      frame->next = currentReadFrame;
+    if (r == jitterBuffer.end()) {
+      PAssertNULL(currentReadFrame);
+      jitterBuffer.push_back(currentReadFrame);
     }
   }
-
-  currentDepth++;
 
   return true;
 }
@@ -439,23 +369,17 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
     the free list and clearing the parking spot for it.
    */
   if (currentFrame != NULL) {
-
-    // Move frame from current to free list
-    currentFrame->next = freeFrames;
-    if (freeFrames != NULL)
-      freeFrames->prev = currentFrame;
-    freeFrames = currentFrame;
-
+    PAssertNULL(currentFrame);
+    freeFrames.push_back(currentFrame);
     currentFrame = NULL;
   }
-
 
   /*Get the next frame to send to the codec. Takes it from the oldest
     position in the queue, if it is time to do so, and parks it in the
     special member so can unlock the mutex while the writer thread has its
     way with the buffer.
    */
-  if (oldestFrame == NULL) {
+  if (jitterBuffer.size() == 0) {
     /*No data to play! We ran the buffer down to empty, restart buffer by
       setting flag that will fill it again before returning any data.
      */
@@ -463,20 +387,19 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
     currentJitterTime = targetJitterTime;
 
 #if PTRACING && !defined(NO_ANALYSER)
-    analyser->Out(0, currentDepth, "Empty");
+    analyser->Out(0, jitterBuffer.size(), "Empty");
 #endif
     return true;
   }
 
   DWORD requestedTimestamp = frame.GetTimestamp();
-  DWORD oldestTimestamp = oldestFrame->GetTimestamp();
-  DWORD newestTimestamp = newestFrame->GetTimestamp();
+  DWORD oldestTimestamp    = GetOldest(false)->GetTimestamp();
+  DWORD newestTimestamp    = GetNewest(false)->GetTimestamp();
 
   /* If there is an opportunity (due to silence in the buffer) to implement a desired 
   reduction in the size of the jitter buffer, effect it */
 
-  if (targetJitterTime < currentJitterTime &&
-      (newestTimestamp - oldestTimestamp) < currentJitterTime) {
+  if ((targetJitterTime < currentJitterTime) && ((newestTimestamp - oldestTimestamp) < currentJitterTime)) {
     currentJitterTime = ( targetJitterTime > (newestTimestamp - oldestTimestamp)) ?
                           targetJitterTime : (newestTimestamp - oldestTimestamp);
 
@@ -493,14 +416,15 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
   */
 
   if (preBuffering) {
+
     // Reset jitter baseline (should be handled by GetMarker() condition, but just in case...)
     lastWriteTimestamp = 0;
     lastWriteTick = 0;
 
     // If oldest frame has not been in the buffer long enough, don't return anything yet
-    if ((PTimer::Tick() - oldestFrame->tick).GetInterval() * timeUnits < currentJitterTime/2) {
+    if ((PTimer::Tick() - GetOldest(false)->tick).GetInterval() * timeUnits < currentJitterTime/2) {
 #if PTRACING && !defined(NO_ANALYSER)
-      analyser->Out(oldestTimestamp, currentDepth, "PreBuf");
+      analyser->Out(oldestTimestamp, jitterBuffer.size(), "PreBuf");
 #endif
       return true;
     }
@@ -509,11 +433,11 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
   }
 
 
-  //Handle short silence bursts in the middle of the buffer
-  // - if we think we're getting marker bit information, use that
+  // Handle short silence bursts in the middle of the buffer
+  // If we think we're getting marker bit information, use that
   PBoolean shortSilence = false;
   if (consecutiveMarkerBits < maxConsecutiveMarkerBits) {
-    if (oldestFrame->GetMarker() && (PTimer::Tick() - oldestFrame->tick).GetInterval()* timeUnits < currentJitterTime/2)
+    if (GetOldest(false)->GetMarker() && (PTimer::Tick() - GetOldest(false)->tick).GetInterval()* timeUnits < currentJitterTime/2)
       shortSilence = true;
   }
   else if (requestedTimestamp < oldestTimestamp && requestedTimestamp > (newestTimestamp - currentJitterTime))
@@ -522,7 +446,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
   if (shortSilence) {
     // It is not yet time for something in the buffer
 #if PTRACING && !defined(NO_ANALYSER)
-    analyser->Out(oldestTimestamp, currentDepth, "Wait");
+    analyser->Out(oldestTimestamp, jitterBuffer.size(), "Wait");
 #endif
     lastWriteTimestamp = 0;
     lastWriteTick = 0;
@@ -530,21 +454,19 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
   }
 
   // Detach oldest packet from the list, put into parking space
-  currentDepth--;
 #if PTRACING && !defined(NO_ANALYSER)
-  analyser->Out(oldestTimestamp, currentDepth, requestedTimestamp >= oldestTimestamp ? "" : "Late");
+  analyser->Out(oldestTimestamp, jitterBuffer.size(), requestedTimestamp >= oldestTimestamp ? "" : "Late");
 #endif
-  currentFrame = oldestFrame;
-  oldestFrame = currentFrame->next;
-  currentFrame->next = NULL;
+  currentFrame = GetOldest(true);
 
   // Calculate the jitter contribution of this frame
-  // - don't count if start of a talk burst
+  // Don't count if start of a talk burst
   if (currentFrame->GetMarker()) {
     lastWriteTimestamp = 0;
     lastWriteTick = 0;
   }
 
+  // calculate jitter
   if (lastWriteTimestamp != 0 && lastWriteTick != 0) {
     int thisJitter = 0;
 
@@ -591,16 +513,13 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
   }
 
   lastWriteTimestamp = currentFrame->GetTimestamp();
-  lastWriteTick = currentFrame->tick;
+  lastWriteTick      = currentFrame->tick;
 
-
-  if (oldestFrame == NULL)
-    newestFrame = NULL;
-  else {
-    oldestFrame->prev = NULL;
+  if (jitterBuffer.size() != 0) {
 
     // If exceeded current jitter buffer time delay:
-    if ((newestTimestamp - currentFrame->GetTimestamp()) > currentJitterTime) {
+    DWORD currentJitterLen = newestTimestamp - currentFrame->GetTimestamp();
+    if (currentJitterLen > currentJitterTime) {
       PTRACE(4, "RTP\tJitter buffer length exceeded");
       consecutiveEarlyPacketStartTime = PTimer::Tick();
       jitterCalcPacketCount = 0;
@@ -612,24 +531,9 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
       if (firstReadData) {
         PTRACE(4, "RTP\tJitter buffer length exceed was prior to first write. Not increasing buffer size");
         while ((newestTimestamp - currentFrame->GetTimestamp()) > currentJitterTime) {
-          Entry * wastedFrame = currentFrame;
-          currentFrame = oldestFrame;
-          oldestFrame = oldestFrame->next;
-          currentDepth--;
-
-          currentFrame->next = NULL; //currentFrame should never be able to be NULL
-          
-          wastedFrame->next = freeFrames;
-          if (freeFrames != NULL)
-            freeFrames->prev = wastedFrame;
-          freeFrames = wastedFrame;
-
-          if (oldestFrame == NULL) {
-            newestFrame = NULL;
-            break;
-          }
-
-          oldestFrame->prev = NULL;
+          PAssertNULL(currentFrame);
+          freeFrames.push_back(currentFrame);
+          currentFrame = GetOldest(true);
         }
         
         firstReadData = false;
@@ -649,27 +553,15 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
 
         currentJitterTime = maxJitterTime;
       
-        //Throw away the oldest frame and move everything up
-        Entry * wastedFrame = currentFrame;
-        currentFrame = oldestFrame;
-        oldestFrame = oldestFrame->next;
-        currentDepth--;
-
-        currentFrame->next = NULL; //currentFrame should never be able to be NULL
-        
-        wastedFrame->next = freeFrames;
-        if (freeFrames != NULL)
-          freeFrames->prev = wastedFrame;
-        freeFrames = wastedFrame;
-
-        if (oldestFrame == NULL) {
-          newestFrame = NULL;
-          break;
-        }
+        // Throw away the oldest frame and move everything up
+        PAssertNULL(currentFrame);
+        freeFrames.push_back(currentFrame);
+        currentFrame = jitterBuffer.front();
+        jitterBuffer.pop_front();
       }
 
-	// Now change the jitter time to cope with the new size
-    // unless already set to maxJitterTime
+      // Now change the jitter time to cope with the new size
+      // unless already set to maxJitterTime
       if (newestTimestamp - currentFrame->GetTimestamp() > currentJitterTime) 
           currentJitterTime = newestTimestamp - currentFrame->GetTimestamp();
 
@@ -694,39 +586,21 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
 
   /* If using immediate jitter reduction (rather than waiting for silence opportunities)
   then trash oldest frames as necessary to reduce the size of the jitter buffer */
-  if (targetJitterTime < currentJitterTime &&
-      doJitterReductionImmediately &&
-      newestFrame != NULL) {
-    while ((newestFrame->GetTimestamp() - currentFrame->GetTimestamp()) > targetJitterTime){
-      // Throw away the newest entries
-      Entry * wastedFrame = newestFrame;
-      newestFrame = newestFrame->prev;
-      if (newestFrame != NULL)
-          newestFrame->next = NULL;
-      wastedFrame->prev = NULL;
+  if (targetJitterTime < currentJitterTime && doJitterReductionImmediately && jitterBuffer.size() != 0) {
+    while ((GetNewest(false)->GetTimestamp() - currentFrame->GetTimestamp()) > targetJitterTime){
 
-      // Put thrown away frame on free list
-      wastedFrame->next = freeFrames;
-      if (freeFrames != NULL)
-        freeFrames->prev = wastedFrame;
-      freeFrames = wastedFrame;
+      // Throw away the newest entries
+      PAssertNULL(GetNewest(false));
+      freeFrames.push_back(GetNewest(true));
 
       // Reset jitter calculation baseline
       lastWriteTimestamp = 0;
       lastWriteTick = 0;
-
-      currentDepth--;
-      if (newestFrame == NULL) 
-      {
-          oldestFrame = NULL;
-          break;
-      }
     }
 
     currentJitterTime = targetJitterTime;
     PTRACE(3, "RTP\tJitter buffer size decreased to "
         << currentJitterTime << " (" << (currentJitterTime/timeUnits) << "ms)");
-
   }
 
   firstReadData = false;
@@ -738,33 +612,22 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
 /////////////////////////////////////////////////////////////////////////////
 
 RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
-                                   unsigned minJitterDelay,
-                                   unsigned maxJitterDelay,
-                                   unsigned time,
-                                   PINDEX stackSize)
+                                        unsigned minJitterDelay,
+                                        unsigned maxJitterDelay,
+                                        unsigned time,
+                                          PINDEX stackSize)
   : OpalJitterBuffer(minJitterDelay, maxJitterDelay, time, stackSize),
     session(sess)
 {
     PTRACE(6, "RTP_JitterBuffer\tConstructor" << *this);
 }
 
-RTP_JitterBuffer::~RTP_JitterBuffer() 
-{
-}
-
-PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
-				    PBoolean loop)
+PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame, PBoolean loop)
 {
   PBoolean success = session.ReadData(frame, loop);
   PTRACE(8, "RTP\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
   return success;
 }
-
-void RTP_JitterBuffer::Resume(PHandleAggregator * aggregator)
-{
-  OpalJitterBuffer::Resume(aggregator);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -127,15 +127,6 @@ PBoolean IAX2JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
     return PTrue;
 }
 
-PBoolean IAX2JitterBuffer::IsEmpty()
-{
-    PWaitAndSignal m(bufferMutex);
-
-    return oldestFrame == NULL;
-}
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */

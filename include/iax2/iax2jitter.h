@@ -141,9 +141,6 @@ class IAX2JitterBuffer : public OpalJitterBuffer
        one main socket and close this stream. */
     void CloseDown() { receivedFrames.CloseDown(); }
 
-    /**Report if the jitter buffer is devoid of RTP_DataFrames*/
-    PBoolean IsEmpty();
-	
  protected:
 
     /**The list of frames just read from the network*/
