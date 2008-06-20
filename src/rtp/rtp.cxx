@@ -680,14 +680,17 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
                                         PINDEX stackSize)
 {
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
-    delete jitter;
-    jitter = NULL;
+    if (jitter != NULL) {
+      delete jitter;
+      jitter = NULL;
+    }
   }
-  else if (jitter != NULL)
-    jitter->SetDelay(minJitterDelay, maxJitterDelay);
   else {
     SetIgnoreOutOfOrderPackets(false);
-    jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
+    if (jitter != NULL) 
+      jitter->SetDelay(minJitterDelay, maxJitterDelay);
+    else
+      jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
     jitter->Resume(
 #if OPAL_RTP_AGGREGATE
       aggregator
