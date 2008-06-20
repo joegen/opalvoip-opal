@@ -103,7 +103,6 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned _minJitterTime,
   jitterCalc            = 0;
   jitterCalcPacketCount = 0;
 
-  shuttingDown  = false;
   currentFrame  = NULL;
   bufferSize   = 0;
 
@@ -198,9 +197,6 @@ void OpalJitterBuffer::PrintOn(ostream & strm) const
 
 void OpalJitterBuffer::SetDelay(unsigned _minJitterDelay, unsigned _maxJitterDelay)
 {
-  if (shuttingDown)
-    return;
-
   PWaitAndSignal m(bufferMutex);
   Start(_minJitterDelay, _maxJitterDelay);
   PTRACE(3, "RTP\tJitter buffer restarted:" << *this);
@@ -208,7 +204,15 @@ void OpalJitterBuffer::SetDelay(unsigned _minJitterDelay, unsigned _maxJitterDel
 
 void OpalJitterBuffer::Resume(PHandleAggregator * /*aggregator */)
 {
-  PAssert(jitterThread == NULL, "ovewriting jitter buffer thread");
+  PWaitAndSignal m(bufferMutex);
+  if (jitterThread != NULL) {
+    if (shuttingDown) {
+      jitterThread->WaitForTermination();
+      delete jitterThread;
+      jitterThread= NULL;
+    }
+  }
+  shuttingDown = false;
   jitterThread = PThread::Create(PCREATE_NOTIFIER(JitterThreadMain), "RTP Jitter");
   jitterThread->Resume();
 }
