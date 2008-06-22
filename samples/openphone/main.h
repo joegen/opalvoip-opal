@@ -730,6 +730,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnSpeedDialColumnResize(wxListEvent& event);
     void OnRightClick(wxListEvent& event);
 
+    bool CanDoFax() const;
 
     enum SpeedDialViews {
       e_ViewLarge,
