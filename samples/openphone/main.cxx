@@ -4293,10 +4293,12 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
 
   m_vuTimer.Start(250);
 
-  m_pages[RxAudio].Init(this, RxAudio, OpalMediaFormat::DefaultAudioSessionID, true );
-  m_pages[TxAudio].Init(this, TxAudio, OpalMediaFormat::DefaultAudioSessionID, false);
-  m_pages[RxVideo].Init(this, RxVideo, OpalMediaFormat::DefaultVideoSessionID, true );
-  m_pages[TxVideo].Init(this, TxVideo, OpalMediaFormat::DefaultVideoSessionID, false);
+  m_pages[RxAudio].Init(this, RxAudio, OpalMediaType::Audio(), true );
+  m_pages[TxAudio].Init(this, TxAudio, OpalMediaType::Audio(), false);
+  m_pages[RxVideo].Init(this, RxVideo, OpalMediaType::Audio(), true );
+  m_pages[TxVideo].Init(this, TxVideo, OpalMediaType::Audio(), false);
+  m_pages[RxFax  ].Init(this, RxFax  , OpalMediaType::Fax(),   true);
+  m_pages[TxFax  ].Init(this, TxFax  , OpalMediaType::Fax(),   false);
 
   m_FirstTime = true;
 }
@@ -4686,6 +4688,39 @@ STATISTICS_FIELD_BEG(TxVideo, KeyFrames)
   value.sprintf(m_printFormat, statistics.m_keyFrames);
 STATISTICS_FIELD_END(TxVideo, KeyFrames)
 
+STATISTICS_FIELD_BEG(RxFax, Bandwidth)
+  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
+STATISTICS_FIELD_END(RxFax, Bandwidth)
+
+STATISTICS_FIELD_BEG(RxFax, Bytes)
+  value.sprintf(m_printFormat, statistics.m_totalBytes);
+STATISTICS_FIELD_END(RxFax, Bytes)
+
+STATISTICS_FIELD_BEG(RxFax, Packets)
+  value.sprintf(m_printFormat, statistics.m_totalPackets);
+STATISTICS_FIELD_END(RxFax, Packets)
+
+STATISTICS_FIELD_BEG(TxFax, Bandwidth)
+  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
+STATISTICS_FIELD_END(TxFax, Bandwidth)
+
+STATISTICS_FIELD_BEG(TxFax, Bytes)
+  value.sprintf(m_printFormat, statistics.m_totalBytes);
+STATISTICS_FIELD_END(TxFax, Bytes)
+
+STATISTICS_FIELD_BEG(TxFax, Packets)
+  value.sprintf(m_printFormat, statistics.m_totalPackets);
+STATISTICS_FIELD_END(TxFax, Packets)
+
+
+StatisticsPage::StatisticsPage()
+  : m_page(NumPages)
+  , m_receiver(false)
+  , m_isActive(false)
+  , m_window(NULL)
+{
+}
+
 
 StatisticsPage::~StatisticsPage()
 {
@@ -4696,17 +4731,16 @@ StatisticsPage::~StatisticsPage()
 
 void StatisticsPage::Init(InCallPanel * panel,
                           StatisticsPages page,
-                          unsigned sessionID,
+                          const char * mediaType,
                           bool receiver)
 {
-  m_panel = panel;
   m_page = page;
-  m_sessionID = sessionID;
+  m_mediaType = mediaType;
   m_receiver = receiver;
   m_isActive = false;
 
   wxNotebook * book = FindWindowByNameAs<wxNotebook>(panel, "Statistics");
-  m_window = book->GetPage(page);
+  m_window = book->GetPage(page > RxTxFax ? RxTxFax : page);
 
   for (size_t i = 0; i < StatisticsFieldTemplates.size(); i++) {
     if (StatisticsFieldTemplates[i]->m_page == page) {
@@ -4723,7 +4757,7 @@ void StatisticsPage::UpdateSession(const OpalConnection * connection)
   if (connection == NULL)
     m_isActive = false;
   else {
-    OpalMediaStreamPtr stream = connection->GetMediaStream(m_sessionID, m_receiver);
+    OpalMediaStreamPtr stream = connection->GetMediaStream(m_mediaType, m_receiver);
     m_isActive = stream != NULL && stream->Open();
     if (m_isActive) {
       for (size_t i = 0; i < m_fields.size(); i++)
