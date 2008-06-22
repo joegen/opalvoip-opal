@@ -201,6 +201,9 @@ enum StatisticsPages {
   TxAudio,
   RxVideo,
   TxVideo,
+  RxTxFax,
+  RxFax = RxTxFax,
+  TxFax,
   NumPages
 };
 
@@ -226,13 +229,13 @@ struct StatisticsField
 class StatisticsPage
 {
   public:
-    StatisticsPage() { }
+    StatisticsPage();
     ~StatisticsPage();
 
     void Init(
       InCallPanel   * panel,
       StatisticsPages page,
-      unsigned        sessionID,
+      const char    * mediaType,
       bool            receiver
     );
 
@@ -240,9 +243,8 @@ class StatisticsPage
     bool IsActive() const { return m_isActive; }
 
   private:
-    InCallPanel     * m_panel;
     StatisticsPages   m_page;
-    unsigned          m_sessionID;
+    OpalMediaType     m_mediaType;
     bool              m_receiver;
     bool              m_isActive;
     wxWindow        * m_window;
