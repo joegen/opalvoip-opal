@@ -1152,6 +1152,18 @@ void MyManager::OnLogMessage(wxCommandEvent & theEvent)
 }
 
 
+bool MyManager::CanDoFax() const
+{
+#if OPAL_FAX
+  return m_callState != InCallState &&
+         GetMediaFormatMask().GetValuesIndex(OpalT38.GetName()) == P_MAX_INDEX &&
+         PFile::Exists(m_faxEP->GetSpanDSP());
+#else
+  return false;
+#endif
+}
+
+
 void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
 {
   wxMenuBar * menubar = GetMenuBar();
@@ -1165,11 +1177,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuStartRecording"),  m_callState == InCallState && !m_activeCall->IsRecording());
   menubar->Enable(XRCID("MenuStopRecording"),   m_callState == InCallState &&  m_activeCall->IsRecording());
 
-#if OPAL_FAX
-  menubar->Enable(XRCID("MenuSendFax"),         m_callState != InCallState && GetMediaFormatMask().GetValuesIndex(OpalT38.GetName()) == P_MAX_INDEX);
-#else
-  menubar->Enable(XRCID("MenuSendFax"), false);
-#endif
+  menubar->Enable(XRCID("MenuSendFax"),         CanDoFax());
 
   for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
     menubar->Enable(it->m_retrieveMenuId, m_callState != InCallState);
@@ -1568,7 +1576,7 @@ void MyManager::OnRightClick(wxListEvent& event)
 {
   wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar("SpeedDialMenu");
   menuBar->Enable(XRCID("CallSpeedDialHandset"), HasHandset());
-  menuBar->Enable(XRCID("SendFaxSpeedDial"),     m_callState != InCallState && GetMediaFormatMask().GetValuesIndex(OpalT38.GetName()) == P_MAX_INDEX);
+  menuBar->Enable(XRCID("SendFaxSpeedDial"),     CanDoFax());
   PopupMenu(menuBar->GetMenu(0), event.GetPoint());
   delete menuBar;
 }
