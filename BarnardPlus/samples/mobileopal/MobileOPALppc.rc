@@ -78,8 +78,10 @@ CAPTION "Mobile OPAL"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT           "Call address:",IDC_STATIC_1,7,7,58,10
-    EDITTEXT        IDC_ADDRESS,7,22,142,13,ES_AUTOHSCROLL
-    LTEXT           "Initialisaing . . .",IDC_STATUS,7,40,142,37
+    EDITTEXT        IDC_ADDRESS,7,17,142,13,ES_AUTOHSCROLL
+    LTEXT           "Initialisaing . . .",IDC_STATUS,6,46,142,37
+    LTEXT           "Local Address:",IDC_STATIC,7,33,51,8
+    LTEXT           "0.0.0.0",IDC_LOCAL_ADDRESS,64,33,83,7
 END
 
 IDD_MOBILEOPAL_DIALOG_WIDE DIALOG  0, 0, 210, 129
@@ -243,6 +245,8 @@ BEGIN
     MENUITEM "Call",                        ID_CALL_ANSWER
     POPUP "Options"
     BEGIN
+        MENUITEM "Speakerphone",                IDM_SPEAKERPHONE
+        MENUITEM SEPARATOR
         MENUITEM "General",                     IDM_OPTIONS_GENERAL
         MENUITEM "H.323",                       IDM_OPTIONS_H323
         MENUITEM "SIP",                         IDM_OPTIONS_SIP
