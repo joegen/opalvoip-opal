@@ -169,7 +169,22 @@ class OpalJitterBuffer : public PObject
         PTimeInterval tick;
     };
 
-    typedef std::deque<Entry *> FrameQueue;
+    class FrameQueue : public std::deque<Entry *>
+    {
+      public:
+        void resize(size_type _Newsize)
+        { 
+          while ((int)size() < _Newsize)
+            push_back(new Entry);
+          while ((int)size() > _Newsize) {
+            delete front();
+            pop_front();
+          }
+        }
+
+        ~FrameQueue()
+        { resize(0); }
+    };
 
     FrameQueue freeFrames;
     FrameQueue jitterBuffer;
