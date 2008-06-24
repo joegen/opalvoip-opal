@@ -1792,7 +1792,8 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   }
   else {
     // Send a NOTIFY for done, even though strictly speaking we aren't yet
-    new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
+    SIPReferNotify * notify = new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
+    notify->Start();
   }
 
   SendPDU(response, request.GetViaAddress(endpoint));
