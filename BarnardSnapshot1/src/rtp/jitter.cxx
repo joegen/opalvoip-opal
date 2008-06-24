@@ -141,12 +141,7 @@ void OpalJitterBuffer::Start(unsigned _minJitterTime, unsigned _maxJitterTime)
   bufferSize = PMAX(MAX_BUFFER_OVERRUNS, bufferSize);
 
   // resize the free queue for the new buffer size
-  while ((int)freeFrames.size() < bufferSize)
-    freeFrames.push_back(new Entry);
-  while ((int)freeFrames.size() > bufferSize) {
-    delete freeFrames.front();
-    freeFrames.pop_front();
-  }
+  freeFrames.resize(bufferSize);
 
   minJitterTime     = _minJitterTime;
   maxJitterTime     = _maxJitterTime;
@@ -175,9 +170,7 @@ OpalJitterBuffer::~OpalJitterBuffer()
     jitterThread = NULL;
   } 
 
-  // Free up all the memory allocated
-  freeFrames.resize(0);
-  jitterBuffer.resize(0);
+  // Free up all the memory allocated (jitterBuffer and freeFrames will self delete)
   delete currentFrame;
   currentFrame = NULL;
 
