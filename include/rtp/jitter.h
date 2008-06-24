@@ -174,9 +174,9 @@ class OpalJitterBuffer : public PObject
       public:
         void resize(size_type _Newsize)
         { 
-          while ((int)size() < _Newsize)
+          while (size() < (size_t)_Newsize)
             push_back(new Entry);
-          while ((int)size() > _Newsize) {
+          while (size() > (size_t)_Newsize) {
             delete front();
             pop_front();
           }
