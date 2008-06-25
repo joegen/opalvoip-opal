@@ -931,27 +931,35 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
   bool oldReINVITE = needReINVITE;
   needReINVITE = false;
 
+  // Make sure stream is symmetrical, if codec changed, close and re-open it
+  OpalMediaStreamPtr otherStream = GetMediaStream(sessionID, !isSource);
+  bool makesymmetrical = otherStream != NULL &&
+                          otherStream->IsOpen() &&
+                          otherStream->GetMediaFormat() != mediaFormat;
+  if (makesymmetrical) {
+    // We must make sure reverse stream is closed before opening the
+    // new forward one or can really confuse the RTP stack, especially
+    // if switching to udptl in fax mode
+    if (isSource) {
+      OpalMediaPatch * patch = otherStream->GetPatch();
+      if (patch != NULL)
+        patch->GetSource().Close();
+    }
+    else
+      otherStream->Close();
+  }
+
+  // Open forward side
   OpalMediaStreamPtr newStream = OpalRTPConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
   if (newStream == NULL) {
     needReINVITE = oldReINVITE;
     return newStream;
   }
 
-  // Make sure stream is symmetrical, if codec changed, close and re-open it
-  OpalMediaStreamPtr otherStream = GetMediaStream(sessionID, !isSource);
-  if (otherStream != NULL && otherStream->IsOpen() && otherStream->GetMediaFormat() != mediaFormat) {
-    if (isSource) {
-      OpalMediaPatch * patch = otherStream->GetPatch();
-      if (patch != NULL)
-        patch->GetSource().Close();
-      GetCall().OpenSourceMediaStreams(*GetCall().GetOtherPartyConnection(*this),
+  // Open other direction, if needed
+  if (makesymmetrical)
+    GetCall().OpenSourceMediaStreams(*(isSource ? GetCall().GetOtherPartyConnection(*this) : this),
                                        mediaFormat.GetMediaType(), sessionID, mediaFormat);
-    }
-    else {
-      otherStream->Close();
-      GetCall().OpenSourceMediaStreams(*this, mediaFormat.GetMediaType(), sessionID, mediaFormat);
-    }
-  }
 
   needReINVITE = oldReINVITE;
 
