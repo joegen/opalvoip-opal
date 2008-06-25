@@ -1955,10 +1955,15 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
     transport.SetRemoteAddress(actualRemoteAddress);
   }
 
-
+  mime.SetCompactForm(false);
   PString strPDU = Build();
-  PTRACE_IF(2, !transport.IsReliable() && strPDU.GetLength() > 1500,
-            "SIP\tPDU is likely too large (" << strPDU.GetLength() << " bytes) for UDP datagram.");
+  if (!transport.IsReliable() && strPDU.GetLength() > 1450) {
+    PTRACE(4, "SIP\tPDU is too large (" << strPDU.GetLength() << " bytes) trying compact form.");
+    mime.SetCompactForm(true);
+    strPDU = Build();
+    PTRACE_IF(2, strPDU.GetLength() > 1450,
+              "SIP\tPDU is likely too large (" << strPDU.GetLength() << " bytes) for UDP datagram.");
+  }
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
