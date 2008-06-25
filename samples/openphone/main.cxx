@@ -4303,8 +4303,8 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
 
   m_pages[RxAudio].Init(this, RxAudio, OpalMediaType::Audio(), true );
   m_pages[TxAudio].Init(this, TxAudio, OpalMediaType::Audio(), false);
-  m_pages[RxVideo].Init(this, RxVideo, OpalMediaType::Audio(), true );
-  m_pages[TxVideo].Init(this, TxVideo, OpalMediaType::Audio(), false);
+  m_pages[RxVideo].Init(this, RxVideo, OpalMediaType::Video(), true );
+  m_pages[TxVideo].Init(this, TxVideo, OpalMediaType::Video(), false);
   m_pages[RxFax  ].Init(this, RxFax  , OpalMediaType::Fax(),   true);
   m_pages[TxFax  ].Init(this, TxFax  , OpalMediaType::Fax(),   false);
 
