@@ -199,12 +199,12 @@ class SIPMIMEInfo : public PMIMEInfo
 {
   PCLASSINFO(SIPMIMEInfo, PMIMEInfo);
   public:
-    SIPMIMEInfo(PBoolean compactForm = PFalse);
+    SIPMIMEInfo(bool compactForm = false);
 
     virtual void PrintOn(ostream & strm) const;
     virtual void ReadFrom(istream & strm);
 
-    void SetForm(PBoolean v) { compactForm = v; }
+    void SetCompactForm(bool form) { compactForm = form; }
 
     PString GetContentType() const;
     void SetContentType(const PString & v);
@@ -367,7 +367,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetRouteList(const char * name, const PStringList & v);
 
     /// Encode using compact form
-    PBoolean compactForm;
+    bool compactForm;
 };
 
 
