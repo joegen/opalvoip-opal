@@ -27,6 +27,7 @@
 #define IDC_GK_ID_OR_HOST               1018
 #define IDC_GK_ID                       1018
 #define IDC_GK_HOST                     1019
+#define IDC_LOCAL_ADDRESS               1022
 #define IDS_CALL                        10000
 #define IDS_ANSWER                      10001
 #define IDS_READY                       10002
@@ -54,13 +55,15 @@
 #define IDM_OPTIONS_H323                32779
 #define IDM_OPTIONS_SIP                 32780
 #define IDM_EXIT                        32781
+#define ID_OPTIONS_SPEAKERPHONE         32782
+#define IDM_SPEAKERPHONE                32783
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        129
-#define _APS_NEXT_COMMAND_VALUE         32782
+#define _APS_NEXT_COMMAND_VALUE         32784
 #define _APS_NEXT_CONTROL_VALUE         1002
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
