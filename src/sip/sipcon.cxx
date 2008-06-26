@@ -47,6 +47,7 @@
 #include <opal/transcoders.h>
 #include <ptclib/random.h>              // for local dialog tag
 #include <ptclib/pdns.h>
+#include <h323/q931.h>
 
 
 #define new PNEW
@@ -1385,19 +1386,23 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     // release connection until all of them have failed.
     for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
       if (invitation->IsInProgress())
-    return;
+        return;
     }
   }
 
-  // All other responses are errors, see if they should cause a Release()
+  // All other responses are errors, set Q931 code if available
+  releaseMethod = ReleaseWithNothing;
+
   for (PINDEX i = 0; i < PARRAYSIZE(SIPCodeToReason); i++) {
     if (response.GetStatusCode() == SIPCodeToReason[i].code) {
-      releaseMethod = ReleaseWithNothing;
       SetQ931Cause(SIPCodeToReason[i].q931Cause);
       Release(SIPCodeToReason[i].reason);
-      break;
+      return;
     }
   }
+
+  // default Q.931 code is 31 Normal, unspecified
+  Release((CallEndReason)(EndedWithQ931Code | (Q931::NormalUnspecified << 24)));
 }
 
 
