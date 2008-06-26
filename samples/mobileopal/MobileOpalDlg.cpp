@@ -35,29 +35,35 @@
 #include "OptionsH323.h"
 #include "OptionsSIP.h"
 
+#include <winsock2.h>
+#include <iphlpapi.h>
+
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
+#define SPEAKERMODE_METHOD 3
+
 
 static UINT TimerID = 1;
 
-static TCHAR const OptionsSection[]   = { 'O','p','t','i','o','n','s',0 };
-static TCHAR const UserNameKey[]      = { 'U','s','e','r','N','a','m','e',0 };
-static TCHAR const DisplayNameKey[]   = { 'D','i','s','p','l','a','y','N','a','m','e',0 };
-static TCHAR const STUNServerKey[]    = { 'S','T','U','N','S','e','r','v','e','r',0 };
-static TCHAR const GkTypeKey[]        = { 'G','a','t','e','k','e','e','p','e','r','T','y','p','e',0 };
-static TCHAR const GkIdKey[]          = { 'G','a','t','e','k','e','e','p','e','r','I','d','e','n','t','i','f','e','r',0 };
-static TCHAR const GkHostKey[]        = { 'G','a','t','e','k','e','e','p','e','r','H','o','s','t',0 };
-static TCHAR const GkAliasKey[]       = { 'G','a','t','e','k','e','e','p','e','r','A','l','i','a','s',0 };
-static TCHAR const GkAuthUserKey[]    = { 'G','a','t','e','k','e','e','p','e','r','U','s','e','r',0 };
-static TCHAR const GkPasswordKey[]    = { 'G','a','t','e','k','e','e','p','e','r','P','a','s','s','w','o','r','d',0 };
-static TCHAR const RegistrarAorKey[]  = { 'R','e','g','i','s','t','r','a','r','A','O','R',0 };
-static TCHAR const RegistrarHostKey[] = { 'R','e','g','i','s','t','r','a','r','H','o','s','t',0 };
-static TCHAR const RegistrarUserKey[] = { 'R','e','g','i','s','t','r','a','r','U','s','e','r',0 };
-static TCHAR const RegistrarPassKey[] = { 'R','e','g','i','s','t','r','a','r','P','a','s','s','w','o','r','d',0 };
-static TCHAR const RegistrarRealmKey[]= { 'R','e','g','i','s','t','r','a','r','R','e','a','l','m',0 };
+static TCHAR const OptionsSection[]   = L"Options";
+static TCHAR const UserNameKey[]      = L"UserName";
+static TCHAR const DisplayNameKey[]   = L"DisplayName";
+static TCHAR const STUNServerKey[]    = L"STUNServer";
+static TCHAR const GkTypeKey[]        = L"GatekeeperType";
+static TCHAR const GkIdKey[]          = L"GatekeeperIdentifer";
+static TCHAR const GkHostKey[]        = L"GatekeeperHost";
+static TCHAR const GkAliasKey[]       = L"GatekeeperAlias";
+static TCHAR const GkAuthUserKey[]    = L"GatekeeperUser";
+static TCHAR const GkPasswordKey[]    = L"GatekeeperPassword";
+static TCHAR const RegistrarAorKey[]  = L"RegistrarAOR";
+static TCHAR const RegistrarHostKey[] = L"RegistrarHost";
+static TCHAR const RegistrarUserKey[] = L"RegistrarUser";
+static TCHAR const RegistrarPassKey[] = L"RegistrarPassword";
+static TCHAR const RegistrarRealmKey[]= L"RegistrarRealm";
+
 
 
 static CString GetOptionString(LPCTSTR szKey)
@@ -91,6 +97,154 @@ static void SetOptionInt(LPCTSTR szKey, UINT szValue)
 }
 
 
+#if SPEAKERMODE_METHOD==1
+
+  #define MM_WOM_FORCESPEAKER (WM_USER+2)
+
+  static void SetSpeakerMode(bool speakerphone)
+  {
+    MMRESULT result = waveOutMessage((HWAVEOUT)0, MM_WOM_FORCESPEAKER, speakerphone, 0);
+    if (result != MMSYSERR_NOERROR) {
+      wchar_t buffer[200];
+      wsprintf(buffer, L"Could not do speakerphone switch, error=%u", result);
+      AfxMessageBox(buffer);
+    }
+  }
+
+#elif SPEAKERMODE_METHOD==2
+
+  /* Stuff from Wavedev.h */
+  #define IOCTL_WAV_MESSAGE 0x001d000c
+  typedef struct {
+    UINT uDeviceId;
+    UINT uMsg;
+    DWORD dwUser;
+    DWORD dwParam1;
+    DWORD dwParam2;
+  } MMDRV_MESSAGE_PARAMS;
+  /* End of Wavedev.h extract */
+
+
+  class WavDevice
+  {
+    private:
+      HANDLE hWavDev;
+
+    public:
+      WavDevice()
+      {
+        hWavDev = CreateFile(TEXT("WAV1:"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+        if (hWavDev == INVALID_HANDLE_VALUE) {
+          wchar_t buffer[200];
+          wsprintf(buffer, L"Could not open device, error=%u", GetLastError());
+          AfxMessageBox(buffer);
+        }
+      }
+
+      ~WavDevice()
+      {
+        if (hWavDev != INVALID_HANDLE_VALUE)
+          CloseHandle(hWavDev);
+      }
+
+      bool SendMessage(UINT uMsg, DWORD dwParam1 = 0, DWORD dwParam2 = 0)
+      {
+        if (hWavDev == INVALID_HANDLE_VALUE)
+          return false;
+
+        DWORD dwRet, dwOut; 
+        MMDRV_MESSAGE_PARAMS mp; 
+        memset(&mp,0,sizeof(mp));
+        mp.uMsg = uMsg;
+        mp.dwParam1 = dwParam1;
+        mp.dwParam2 = dwParam1;
+        if (DeviceIoControl(hWavDev, IOCTL_WAV_MESSAGE, &mp, sizeof(mp), &dwOut, sizeof(dwOut), &dwRet, 0))
+          return true;
+
+        wchar_t buffer[200];
+        wsprintf(buffer, L"Could not do speakerphone switch, error=%u", GetLastError());
+        AfxMessageBox(buffer);
+        return false;
+      }
+  };
+
+
+  static void SetSpeakerMode(bool speakerphone)
+  {
+    WavDevice wd;
+    if (!wd.SendMessage(1002, speakerphone ? 0 : 2))
+      return;
+    if (!wd.SendMessage(1012, speakerphone ? 0 : 1))
+      return;
+    if (speakerphone && !wd.SendMessage(1013))
+      return;
+    wd.SendMessage(1000, speakerphone ? 2 : 4, speakerphone ? 0 : 7);
+  }
+
+#elif SPEAKERMODE_METHOD==3
+
+  class OsSvcsDll
+  {
+    private:
+      HMODULE hDLL;
+      typedef HRESULT (* SetSpeakerModeFn)(DWORD mode);
+      SetSpeakerModeFn pfnSetSpeakerMode;
+
+    public:
+      OsSvcsDll()
+      {
+        hDLL = LoadLibrary(L"\\windows\\ossvcs.dll");
+        if (hDLL == NULL) {
+          wchar_t buffer[200];
+          wsprintf(buffer, L"Could not open DLL, error=%u", GetLastError());
+          AfxMessageBox(buffer);
+        }
+        pfnSetSpeakerMode = (SetSpeakerModeFn)GetProcAddress(hDLL, (LPCTSTR)218);
+        if (pfnSetSpeakerMode == NULL) {
+          wchar_t buffer[200];
+          wsprintf(buffer, L"Could not open DLL, error=%u", GetLastError());
+          AfxMessageBox(buffer);
+        }
+      }
+
+      ~OsSvcsDll()
+      {
+        if (hDLL != NULL)
+          FreeLibrary(hDLL);
+      }
+
+      bool SetSpeakerMode(DWORD speakerphone)
+      {
+        if (pfnSetSpeakerMode == NULL)
+          return false;
+
+        HRESULT result = pfnSetSpeakerMode(speakerphone);
+        if (result == 0)
+          return true;
+
+        wchar_t buffer[200];
+        wsprintf(buffer, L"Could not do speakerphone switch, error=0x%x", result);
+        AfxMessageBox(buffer);
+        return false;
+      }
+  };
+
+
+  static void SetSpeakerMode(bool speakerphone)
+  {
+    OsSvcsDll dll;
+    dll.SetSpeakerMode(speakerphone ? 1 : 0);
+  }
+
+#else
+
+  static void SetSpeakerMode(bool /*speakerphone*/)
+  {
+  }
+
+#endif // SPEAKERMODE_METHOD
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // CMobileOpalDlg dialog
@@ -114,6 +268,7 @@ void CMobileOpalDlg::DoDataExchange(CDataExchange* pDX)
 {
   CDialog::DoDataExchange(pDX);
   DDX_Text(pDX, IDC_ADDRESS, m_callAddress);
+  DDX_Text(pDX, IDC_LOCAL_ADDRESS, m_localAddress);
   DDX_Control(pDX, IDC_ADDRESS, m_ctrlAddress);
   DDX_Control(pDX, IDC_STATUS, m_ctrlStatus);
 }
@@ -131,6 +286,7 @@ BEGIN_MESSAGE_MAP(CMobileOpalDlg, CDialog)
   ON_COMMAND(IDM_OPTIONS_H323, &CMobileOpalDlg::OnMenuOptionsH323)
   ON_COMMAND(IDM_OPTIONS_SIP, &CMobileOpalDlg::OnMenuOptionsSIP)
   ON_COMMAND(IDM_EXIT, &CMobileOpalDlg::OnExit)
+  ON_COMMAND(IDM_SPEAKERPHONE, &CMobileOpalDlg::OnSpeakerphone)
 END_MESSAGE_MAP()
 
 
@@ -151,12 +307,36 @@ BOOL CMobileOpalDlg::OnInitDialog()
     return FALSE;      // fail to create
   }
 
-  SetCallButton(false);
-
-  InitialiseOPAL();
-
   SetTimer(TimerID, 100, NULL);
 
+  m_speakerphone = false;
+  SetSpeakerMode(m_speakerphone);
+
+  // Get interfaces
+  BYTE * buffer = NULL;
+  ULONG size = 0;
+  DWORD error = GetIpAddrTable(NULL, &size, FALSE);
+  if (error == ERROR_INSUFFICIENT_BUFFER) {
+    buffer = new BYTE[size];
+    if (buffer != NULL)
+      error = GetIpAddrTable((MIB_IPADDRTABLE *)buffer, &size, FALSE);
+  }
+  if (error == ERROR_SUCCESS) {
+    const MIB_IPADDRTABLE * ipaddr = (const MIB_IPADDRTABLE *)buffer;
+    for (unsigned i = 0; i < ipaddr->dwNumEntries; ++i) {
+      in_addr ip;
+      ip.S_un.S_addr = ipaddr->table[i].dwAddr;
+      if (ip.S_un.S_addr != INADDR_ANY && ntohl(ip.S_un.S_addr) != INADDR_LOOPBACK) {
+        if (!m_localAddress.IsEmpty())
+          m_localAddress += ", ";
+        m_localAddress += inet_ntoa(ip);
+      }
+    }
+  }
+  delete [] buffer;
+  UpdateData(false);
+
+  SetCallButton(false);
   SetStatusText(IDS_READY);
 
   return TRUE;  // return TRUE  unless you set the focus to a control
@@ -317,15 +497,11 @@ void CMobileOpalDlg::SetStatusText(UINT ids, const char * str)
 
 void CMobileOpalDlg::SetCallButton(bool enabled, UINT strId)
 {
-  HWND hWndMB = SHFindMenuBar(GetSafeHwnd());
-  if (hWndMB == NULL)
-    return;
-
   TBBUTTONINFO tbi;
   memset (&tbi, 0, sizeof (tbi));
   tbi.cbSize = sizeof (tbi);
   tbi.dwMask = TBIF_STATE;
-  if (!::SendMessage(hWndMB, TB_GETBUTTONINFO, ID_CALL_ANSWER, (LPARAM)&tbi)) 
+  if (!::SendMessage(m_dlgCommandBar.m_hCommandBar, TB_GETBUTTONINFO, ID_CALL_ANSWER, (LPARAM)&tbi)) 
     return;
 
   if (enabled)
@@ -338,12 +514,15 @@ void CMobileOpalDlg::SetCallButton(bool enabled, UINT strId)
     tbi.dwMask |= TBIF_TEXT;
     tbi.pszText = (LPWSTR)(const TCHAR *)text;
   }
-  ::SendMessage(hWndMB, TB_SETBUTTONINFO, ID_CALL_ANSWER, (LPARAM)&tbi);
+  ::SendMessage(m_dlgCommandBar.m_hCommandBar, TB_SETBUTTONINFO, ID_CALL_ANSWER, (LPARAM)&tbi);
 }
 
 
 void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
 {
+  if (m_opal == NULL)
+    InitialiseOPAL();
+
   if (nIDEvent == TimerID && m_opal != NULL) {
     OpalMessage * message = OpalGetMessage(m_opal, 0);
     if (message != NULL) {
@@ -378,6 +557,7 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
           break;
 
         case OpalIndEstablished :
+          SetSpeakerMode(m_speakerphone);
           SetStatusText(IDS_ESTABLISHED);
           break;
 
@@ -435,6 +615,8 @@ void CMobileOpalDlg::OnExit()
 
     OpalShutDown(m_opal);
     m_opal = NULL;
+    SetStatusText(0, "Shut down completed.");
+    Sleep(2000);
   }
 
   CDialog::OnCancel();
@@ -549,4 +731,14 @@ void CMobileOpalDlg::OnMenuOptionsSIP()
     SetOptionString(RegistrarRealmKey, dlg.m_strRealm);
     InitialiseOPAL();
   }
+}
+
+
+void CMobileOpalDlg::OnSpeakerphone()
+{
+  m_speakerphone = !m_speakerphone;
+  SetSpeakerMode(m_speakerphone);
+
+  HMENU hMenu = (HMENU)::SendMessage(m_dlgCommandBar.m_hCommandBar, SHCMBM_GETSUBMENU, 0, IDS_OPTIONS);
+  CheckMenuItem(hMenu, IDM_SPEAKERPHONE, m_speakerphone ? MF_CHECKED : MF_UNCHECKED);
 }

@@ -54,8 +54,10 @@ protected:
   CStatic m_ctrlStatus;
   CEdit m_ctrlAddress;
   CString m_callAddress;
+  CString m_localAddress;
   CStringA m_incomingCallToken;
   CStringA m_currentCallToken;
+  bool m_speakerphone;
 
   // Generated message map functions
   virtual BOOL OnInitDialog();
@@ -75,6 +77,7 @@ public:
   afx_msg void OnCancel();
   afx_msg void OnCallAnswer();
   afx_msg void OnChangedAddress();
+  afx_msg void OnSpeakerphone();
   afx_msg void OnMenuOptionsGeneral();
   afx_msg void OnMenuOptionsH323();
   afx_msg void OnMenuOptionsSIP();
