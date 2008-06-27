@@ -483,9 +483,7 @@ class OpalLineConnection : public OpalConnection
 
     /**Check for line hook state, DTMF tone for user indication etc.
       */
-    virtual void Monitor(
-      PBoolean offHook
-    );
+    virtual void Monitor();
   //@}
 
 
