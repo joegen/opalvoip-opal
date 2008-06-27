@@ -1775,7 +1775,9 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   PString referTo = request.GetMIME().GetReferTo();
   if (referTo.IsEmpty()) {
     SIP_PDU response(request, SIP_PDU::Failure_BadRequest, NULL, "Missing refer-to header");
-    SendPDU(response, request.GetViaAddress(endpoint));
+    if (!SendPDU(response, request.GetViaAddress(endpoint))) {
+      PTRACE(1, "SIP\tCould not send response to REFER 1");
+    }
     return;
   }    
 
@@ -1783,25 +1785,33 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   PString replaces = PURL::UntranslateString(to.GetQueryVars()("Replaces"), PURL::QueryTranslation);
   to.SetQuery(PString::Empty());
 
+  SIP_PDU response(request, SIP_PDU::Successful_Accepted);
+
+  // Comply to RFC4488
+  if (request.GetMIME()("Refer-Sub") *= "false") 
+    response.GetMIME().SetAt("Refer-Sub", "false");
+
+  // send response before attempting the transfer
+  if (!SendPDU(response, request.GetViaAddress(endpoint))) {
+    PTRACE(1, "SIP\tCould not send response to REFER 3");
+    return;
+  }
+
   if (!endpoint.SetupTransfer(GetToken(), replaces, to.AsString(), NULL)) {
-    SIP_PDU response(request, SIP_PDU::Failure_TransactionDoesNotExist);
-    SendPDU(response, request.GetViaAddress(endpoint));
+    // send NOTIFY if transfer failed, but only if allowed by RFC4488
+    if (!(request.GetMIME()("Refer-Sub") *= "false")) {
+      SIPReferNotify * notify = new SIPReferNotify(*this, *transport, SIP_PDU::GlobalFailure_Decline);
+      notify->Start();
+    }
     return;
   }    
 
-  SIP_PDU response(request, SIP_PDU::Successful_Accepted);
-
-  if (request.GetMIME()("Refer-Sub") *= "false") {
-    // Use RFC4488 to indicate we are NOT doing NOTIFYs
-    response.GetMIME().SetAt("Refer-Sub", "false");
-  }
-  else {
-    // Send a NOTIFY for done, even though strictly speaking we aren't yet
+  // send NOTIFY if transfer succeeded, but only if allowed by RFC4488
+  // Strictly speaking, we shouldn't send this until the the 200 OK, but.....
+  if (!(request.GetMIME()("Refer-Sub") *= "false")) {
     SIPReferNotify * notify = new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
     notify->Start();
   }
-
-  SendPDU(response, request.GetViaAddress(endpoint));
 }
 
 
