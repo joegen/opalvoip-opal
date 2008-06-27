@@ -872,33 +872,34 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   OpalTransportAddress localAddress;
   OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
+  bool remoteChanged = false;
+
   if (!mediaAddress.IsEmpty()) {
 
     PIPSocket::Address ip;
     WORD port = 0;
     if (!mediaAddress.GetIpAndPort(ip, port)) {
       PTRACE(1, "SIP\tCannot get remote ports for RTP session " << rtpSessionId);
-      if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
-        Release(EndedByTransportFail);
       return PFalse;
     }
 
     // Create the RTPSession if required
     rtpSession = OnUseRTPSession(rtpSessionId, mediaAddress, localAddress);
-    if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-      if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
-        Release(EndedByTransportFail);
-      return PFalse;
+    if (rtpSession == NULL) {
+      if (!ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
+        PTRACE(1, "SIP\tCannot create RTP session on non-bypassed connection");
+        return false;
+      }
     }
-
-    // set the remote address, but note that endpoints send IP address 
-    // of 0.0.0.0 when pausing media
-    if (ip != 0) {
-      if ((rtpSession != NULL)&& !rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
-        PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-        if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
-          Release(EndedByTransportFail);
-        return PFalse;
+    else {
+      // see if remote socket information has changed
+      remoteChanged = (rtpSession->GetRemoteAddress() != ip) || (rtpSession->GetRemoteDataPort() != port);
+      if (remoteChanged) {
+        if (!rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
+          PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+          return false;
+        }
+        PTRACE(4, "SIP\tRemote changed IP address");
       }
     }
   }
@@ -911,65 +912,69 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(rtpSessionId);
 #if OPAL_VIDEO
-    if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID && GetPhase() < EstablishedPhase) {
-      // If processing initial INVITE and video, obey the auto-start flags
-      if (!endpoint.GetManager().CanAutoStartTransmitVideo())
-        otherSidesDir = (otherSidesDir&SDPMediaDescription::SendOnly) != 0 ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive;
-      if (!endpoint.GetManager().CanAutoStartReceiveVideo())
-        otherSidesDir = (otherSidesDir&SDPMediaDescription::RecvOnly) != 0 ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
-    }
+  if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID && GetPhase() < EstablishedPhase) {
+    // If processing initial INVITE and video, obey the auto-start flags
+    if (!endpoint.GetManager().CanAutoStartTransmitVideo())
+      otherSidesDir = (otherSidesDir&SDPMediaDescription::SendOnly) != 0 ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive;
+    if (!endpoint.GetManager().CanAutoStartReceiveVideo())
+      otherSidesDir = (otherSidesDir&SDPMediaDescription::RecvOnly) != 0 ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
+  }
 #endif
+
+  SDPMediaDescription::Direction newDirection = SDPMediaDescription::Inactive;
 
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
-  PSafePtr<OpalMediaStream> sendStream = GetMediaStream(rtpSessionId, false);
-  bool sending = sendStream != NULL && sendStream->IsOpen();
-  if (sending) {
-    if (sdpFormats.HasFormat(sendStream->GetMediaFormat()))
-      sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
+  OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
+  if (sendStream != NULL && sendStream->IsOpen()) {
+    if (!remoteChanged && sdpFormats.HasFormat(sendStream->GetMediaFormat())) {
+      bool paused = (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
+      sendStream->SetPaused(paused);
+      if (!paused)
+        newDirection = SDPMediaDescription::SendOnly;
+    }
     else {
-      sendStream->Close();
-      sending = false;
+      sendStream->GetPatch()->GetSource().Close();
+      sendStream.SetNULL();
     }
   }
 
-  PSafePtr<OpalMediaStream> recvStream = GetMediaStream(rtpSessionId, true);
-  bool recving = recvStream != NULL && recvStream->IsOpen();
-  if (recving) {
-    if (sdpFormats.HasFormat(recvStream->GetMediaFormat()))
-      recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+  OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
+  if (recvStream != NULL && recvStream->IsOpen()) {
+    if (!remoteChanged && sdpFormats.HasFormat(recvStream->GetMediaFormat())) {
+      bool paused = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
+      recvStream->SetPaused(paused);
+      if (!paused)
+        newDirection = newDirection == SDPMediaDescription::SendOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
+    }
     else {
       recvStream->Close();
-      recving = false;
+      recvStream.SetNULL();
     }
   }
 
   // After (possibly) closing streams, we now open them again if necessary
   // OpenSourceMediaStreams will just return true if they are already open
-  if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0)
-    recving = ownerCall.OpenSourceMediaStreams(*this, rtpSessionId);
+  if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0 &&
+      recvStream == NULL &&
+      ownerCall.OpenSourceMediaStreams(*this, rtpSessionId) &&
+      (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
+    newDirection = SDPMediaDescription::RecvOnly;
 
   PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
-  if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 && otherParty != NULL)
-    sending = ownerCall.OpenSourceMediaStreams(*otherParty, rtpSessionId);
+  if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 &&
+       otherParty != NULL &&
+       sendStream == NULL &&
+       ownerCall.OpenSourceMediaStreams(*otherParty, rtpSessionId) &&
+       (sendStream = GetMediaStream(rtpSessionId, false)) != NULL)
+    newDirection = newDirection == SDPMediaDescription::RecvOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
 
   // Now we build the reply, setting "direction" as appropriate for what we opened.
-  if (sending) {
-    if (sendStream == NULL)
-      sendStream = GetMediaStream(rtpSessionId, false);
-    if (sendStream != NULL) {
-      localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
-      localMedia->SetDirection(sendStream->IsPaused() ? SDPMediaDescription::Inactive : recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
-    }
-  }
-  else if (recving) {
-    if (recvStream == NULL)
-      recvStream = GetMediaStream(rtpSessionId, true);
-    if (recvStream != NULL) {
-      localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
-      localMedia->SetDirection(recvStream->IsPaused() ? SDPMediaDescription::Inactive : SDPMediaDescription::RecvOnly);
-    }
-  }
+  localMedia->SetDirection(newDirection);
+  if (sendStream != NULL)
+    localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
+  else if (recvStream != NULL)
+    localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
   else {
     // Add all possible formats
     bool empty = true;
@@ -1000,6 +1005,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   // Add in the RFC2833 handler, if used
   if (hasTelephoneEvent)
     localMedia->AddSDPMediaFormat(new SDPMediaFormat(OpalRFC2833, rfc2833Handler->GetPayloadType(), OpalDefaultNTEString));
+
 #if OPAL_T38FAX
   if (hasNSE)
     localMedia->AddSDPMediaFormat(new SDPMediaFormat(OpalCiscoNSE, ciscoNSEHandler->GetPayloadType(), OpalDefaultNSEString));
