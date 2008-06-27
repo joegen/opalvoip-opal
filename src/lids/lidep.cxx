@@ -396,7 +396,7 @@ void OpalLineEndPoint::MonitorLine(OpalLine & line)
   PSafePtr<OpalLineConnection> connection = GetLIDConnectionWithLock(line.GetToken(), PSafeReference);
   if (connection != NULL) {
     // Are still in a call, pass hook state it to the connection object for handling
-    connection->Monitor(!line.IsDisconnected());
+    connection->Monitor();
     return;
   }
 
@@ -505,14 +505,16 @@ void OpalLineConnection::OnReleased()
 
 PString OpalLineConnection::GetDestinationAddress()
 {
-  return ReadUserInput();
+  return line.IsTerminal() ? ReadUserInput() : "*";
 }
+
 
 PBoolean OpalLineConnection::OnSetUpConnection()
 {
   PTRACE(3, "LID Con\tOnSetUpConnection");
   return endpoint.OnSetUpConnection(*this);
 }
+
 
 PBoolean OpalLineConnection::SetAlerting(const PString & /*calleeName*/, PBoolean /*withMedia*/)
 {
@@ -642,8 +644,9 @@ void OpalLineConnection::StartIncoming()
 }
 
 
-void OpalLineConnection::Monitor(PBoolean offHook)
+void OpalLineConnection::Monitor()
 {
+  bool offHook = !line.IsDisconnected();
   if (wasOffHook != offHook) {
     PSafeLockReadWrite mutex(*this);
 
@@ -710,6 +713,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
   SetPhase(SetUpPhase);
 
   if (!line.IsTerminal()) {
+    PTRACE(4, "LID Con\tCounting rings.");
     // Count incoming rings
     unsigned count;
     do {
@@ -724,6 +728,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
         return;
     } while (count < answerRingCount);
 
+    PTRACE(4, "LID Con\tChecking for caller ID.");
     // Get caller ID
     PString callerId;
     if (line.GetCallerID(callerId, true)) {
@@ -739,6 +744,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
       }
     }
 
+    PTRACE(4, "LID Con\tAnswering call - going off hook.");
     line.SetOffHook();
   }
 
