@@ -1075,11 +1075,13 @@ PStringList OpalLineInterfaceDevice::GetAllDevices()
 /////////////////////////////////////////////////////////////////////////////
 
 OpalLine::OpalLine(OpalLineInterfaceDevice & dev, unsigned num, const char * userToken)
-  : device(dev),
-    lineNumber(num),
-    token(userToken),
-    ringStoppedTime(0, 10),     // 10 seconds
-    ringInterCadenceTime(0, 4)  // 4 seconds
+  : device(dev)
+  , lineNumber(num)
+  , token(userToken)
+  , ringStoppedTime(0, 6)      // 6 seconds
+  , ringInterCadenceTime(1500)  // 1.5 seconds
+  , ringCount(0)
+  , lastRingState(false)
 {
   if (token.IsEmpty())
     token.sprintf("%s:%s:%u", (const char *)device.GetDeviceType(), (const char *)device.GetDeviceName(), lineNumber);
@@ -1099,20 +1101,26 @@ void OpalLine::PrintOn(ostream & strm) const
 unsigned OpalLine::GetRingCount(DWORD * cadence)
 {
   PTimeInterval tick = PTimer::Tick();
-  PTimeInterval delta = ringTick - tick;
 
   if (IsRinging(cadence)) {
+    lastRingState = true;
     ringTick = tick;
-    if (ringCount == 0)
+    if (ringCount == 0) {
+      PTRACE(4, "LID\tRing start detected on line " << lineNumber);
       ringCount = 1;
+    }
   }
   else {
+    PTimeInterval delta = tick - ringTick;
     if (delta > ringStoppedTime) {
+      PTRACE(4, "LID\tRing count reset on line " << lineNumber);
       ringCount = 0;
-      ringTick = tick;
     }
-    else if (delta > ringInterCadenceTime)
+    else if (lastRingState && delta > ringInterCadenceTime) {
+      PTRACE(4, "LID\tRing cadence incremented on line " << lineNumber);
       ringCount++;
+      lastRingState = false;
+    }
   }
 
   return ringCount;

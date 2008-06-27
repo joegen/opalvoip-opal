@@ -1375,10 +1375,12 @@ class OpalLine : public PObject
     OpalLineInterfaceDevice & device;
     unsigned                  lineNumber;
     PString                   token;
-    unsigned                  ringCount;
-    PTimeInterval             ringTick;
     PTimeInterval             ringStoppedTime;
     PTimeInterval             ringInterCadenceTime;
+
+    PTimeInterval             ringTick;
+    unsigned                  ringCount;
+    bool                      lastRingState;
 };
 
 
