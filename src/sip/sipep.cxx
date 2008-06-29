@@ -1183,7 +1183,15 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
     pduQueue.pop();
     mutex.Signal();
 
-    if (!work->callID.IsEmpty()) {
+    if (work->pdu->GetMethod() == SIP_PDU::NumMethods) {
+      PSafePtr<SIPTransaction> transaction = work->ep->GetTransaction(work->pdu->GetTransactionID(), PSafeReference);
+      if (transaction != NULL)
+        transaction->OnReceivedResponse(*work->pdu);
+      else {
+        PTRACE(3, "SIP\tCannot find transaction for response");
+      }
+    }
+    else if (!work->callID.IsEmpty()) {
       PSafePtr<SIPConnection> connection = work->ep->GetSIPConnectionWithLock(work->callID, PSafeReference);
       if (connection != NULL) 
         connection->OnReceivedPDU(*work->pdu);
