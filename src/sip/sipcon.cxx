@@ -1189,17 +1189,6 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
 {
   SIP_PDU::Methods method = pdu.GetMethod();
 
-  if (method == SIP_PDU::NumMethods) {
-    // Handle a response to one of our transactions
-    PSafePtr<SIPTransaction> transaction = endpoint.GetTransaction(pdu.GetTransactionID(), PSafeReference);
-    if (transaction != NULL)
-      transaction->OnReceivedResponse(pdu);
-    else {
-      PTRACE(3, "SIP\tCannot find transaction for response");
-    }
-    return;
-  }
-
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return;
