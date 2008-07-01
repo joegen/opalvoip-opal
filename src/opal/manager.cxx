@@ -532,42 +532,37 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   if (!OnIncomingConnection(connection, options))
     return PFalse;
 
-  OpalCall & call = connection.GetCall();
-
   // See if we already have a B-Party in the call. If not, make one.
-  if (call.GetOtherPartyConnection(connection) != NULL)
-    return PTrue;
+  if (connection.GetCall().GetOtherPartyConnection(connection) != NULL)
+    return true;
 
   // Use a routing algorithm to figure out who the B-Party is, then make a connection
-  PINDEX tableEntry = 0;
-  for (;;) {
-    PString destination = OnRouteConnection(connection);
-    if (destination.IsEmpty()) {
-      PTRACE(3, "OpalMan\tCould not find destination for " << connection);
-      break;
-    }
-
-    destination = ApplyRouteTable(connection.GetLocalPartyURL(), destination, tableEntry);
-    if (destination.IsEmpty()) {
-      PTRACE(3, "OpalMan\tCould not route " << connection);
-      break;
-    }
-
-    if (MakeConnection(call, destination, NULL, options, stringOptions))
-      return true;
-  }
-
-  return false;
+  return OnRouteConnection(connection, options, stringOptions);
 }
 
 
-PString OpalManager::OnRouteConnection(OpalConnection & connection)
+bool OpalManager::OnRouteConnection(OpalConnection & connection,
+                                    unsigned options,
+                                    OpalConnection::StringOptions * stringOptions)
 {
+  OpalCall & call = connection.GetCall();
+
   // See if have pre-allocated B party address, otherwise use routing algorithm
-  PString addr = connection.GetCall().GetPartyB();
-  if (addr.IsEmpty())
-    addr = connection.GetDestinationAddress();
-  return addr;
+  PString destination = call.GetPartyB();
+  if (destination.IsEmpty())
+    destination = connection.GetDestinationAddress();
+
+  PString route;
+  PINDEX tableEntry = 0;
+  do {
+    route = ApplyRouteTable(connection.GetLocalPartyURL(), destination, tableEntry);
+    if (route.IsEmpty()) {
+      PTRACE(3, "OpalMan\tCould not route " << connection);
+      return false;
+    }
+  } while (!MakeConnection(call, route, NULL, options, stringOptions));
+
+  return true;
 }
 
 
