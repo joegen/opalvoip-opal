@@ -641,9 +641,9 @@ void FillOpalProductInfo(const OpalMessage & command, OpalMessageBuffer & respon
     info.version = command.m_param.m_protocol.m_version;
 
   if (command.m_param.m_protocol.m_t35CountryCode != 0 && command.m_param.m_protocol.m_manufacturerCode != 0) {
-    info.t35CountryCode   = command.m_param.m_protocol.m_t35CountryCode;
-    info.t35Extension     = command.m_param.m_protocol.m_t35Extension;
-    info.manufacturerCode = command.m_param.m_protocol.m_manufacturerCode;
+    info.t35CountryCode   = (BYTE)command.m_param.m_protocol.m_t35CountryCode;
+    info.t35Extension     = (BYTE)command.m_param.m_protocol.m_t35Extension;
+    info.manufacturerCode = (WORD)command.m_param.m_protocol.m_manufacturerCode;
   }
 }
 
@@ -653,15 +653,15 @@ static void StartStopListeners(OpalEndPoint * ep, const PString & interfaces, Op
   if (ep == NULL)
     return;
 
+  ep->RemoveListener(NULL);
   if (interfaces.IsEmpty())
-    ep->RemoveListener(NULL);
-  else {
-    PStringArray interfaceArray;
-    if (interfaces != "*")
-      interfaceArray = interfaces.Lines();
-    if (!ep->StartListeners(interfaceArray))
-      response.SetError("Could not start listener(s).");
-  }
+    return;
+
+  PStringArray interfaceArray;
+  if (interfaces != "*")
+    interfaceArray = interfaces.Lines();
+  if (!ep->StartListeners(interfaceArray))
+    response.SetError("Could not start listener(s).");
 }
 
 
