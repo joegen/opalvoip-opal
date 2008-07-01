@@ -380,10 +380,12 @@ class OpalManager : public PObject
 
        The default behaviour gets the destination address from the connection
        and translates it into an address by using the routeTable member
-       variable.
+       variable and uses MakeConnection() to start the B-party connection.
       */
-    virtual PString OnRouteConnection(
-      OpalConnection & connection  ///<  Connection being routed
+    virtual bool OnRouteConnection(
+      OpalConnection & connection,  ///<  Connection being routed
+      unsigned options,             ///<  options for new connection (can't use default as overrides will fail)
+      OpalConnection::StringOptions * stringOptions
     );
 
     /**Call back for remote party being alerted on outgoing call.
