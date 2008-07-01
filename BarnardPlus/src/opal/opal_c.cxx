@@ -698,15 +698,15 @@ static void StartStopListeners(OpalEndPoint * ep, const PString & interfaces, Op
   if (ep == NULL)
     return;
 
+  ep->RemoveListener(NULL);
   if (interfaces.IsEmpty())
-    ep->RemoveListener(NULL);
-  else {
-    PStringArray interfaceArray;
-    if (interfaces != "*")
-      interfaceArray = interfaces.Lines();
-    if (!ep->StartListeners(interfaceArray))
-      response.SetError("Could not start listener(s).");
-  }
+    return;
+
+  PStringArray interfaceArray;
+  if (interfaces != "*")
+    interfaceArray = interfaces.Lines();
+  if (!ep->StartListeners(interfaceArray))
+    response.SetError("Could not start listener(s).");
 }
 
 
