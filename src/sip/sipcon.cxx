@@ -1242,6 +1242,9 @@ void SIPConnection::AdjustOutgoingINVITE()
       myAddress.SetDisplayName(name);
   }
 
+  if (myAddress.GetDisplayName(false).IsEmpty())
+    myAddress.SetDisplayName(GetDisplayName());
+
   m_dialogFrom = myAddress.AsQuotedString() + ";tag=" + OpalGloballyUniqueID().AsString();
 }
 
