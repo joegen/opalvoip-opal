@@ -108,6 +108,16 @@ enum PluginLID_CallProgressTones {
 };
 
 
+typedef struct PluginLID_DialParams
+{
+  bool     m_requireTones;      ///< Require dial/ring tone to be detected
+  unsigned m_dialToneTimeout;   ///< Time in msec to wait for a dial tone to be detected
+  unsigned m_dialStartDelay;    ///< Time in msec to wait between the dial tone detection and dialing the dtmf
+  unsigned m_progressTimeout;   ///< Time in msec to wait for a progress tone (ring, busy or connected) to be detected
+  unsigned m_commaDelay;        ///< Time in msec to wait when a comma (',') is found in the dial string
+};
+
+
 typedef struct PluginLID_Definition
 {
   unsigned int apiVersion;  // structure version
@@ -206,7 +216,7 @@ typedef struct PluginLID_Definition
   PluginLID_Errors (*IsTonePlaying)(void * context, unsigned line, PluginLID_Boolean * playing);
   PluginLID_Errors (*StopTone)(void * context, unsigned line);
 
-  PluginLID_Errors (*DialOut)(void * context, unsigned line, const char * number, PluginLID_Boolean requireTones, unsigned uiDialDelay);
+  PluginLID_Errors (*DialOut)(void * context, unsigned line, const char * number, struct PluginLID_DialParams * params);
 
   PluginLID_Errors (*GetWinkDuration)(void * context, unsigned line, unsigned * winkDuration);
   PluginLID_Errors (*SetWinkDuration)(void * context, unsigned line, unsigned winkDuration);
