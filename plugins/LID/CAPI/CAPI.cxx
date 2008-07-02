@@ -990,7 +990,7 @@ class Context
     //PLUGIN_FUNCTION_ARG2(IsTonePlaying, unsigned,line, PluginLID_Boolean *,playing)
     //PLUGIN_FUNCTION_ARG1(StopTone, unsigned,line)
 
-    PLUGIN_FUNCTION_ARG4(DialOut, unsigned,line, const char *,number, PluginLID_Boolean,requireTones, unsigned,uiDialDelay)
+    PLUGIN_FUNCTION_ARG3(DialOut, unsigned,line, const char *,number, struct PluginLID_DialParams *,params)
     {
       if (number == NULL)
         return PluginLID_InvalidParameter;
@@ -1026,7 +1026,7 @@ class Context
         if (m_CAPI.PUT_MESSAGE(m_ApplicationId, &message) != CapiNoError)
           m_Line[line].m_State = Line::e_Idle;
         else {
-          m_Line[line].m_DialCompleted.Wait(uiDialDelay);
+          m_Line[line].m_DialCompleted.Wait(params->m_progressTimeout);
           ok = m_Line[line].m_State == Line::e_BearerUp;
           if (!ok)
             m_Line[line].Disconnect();

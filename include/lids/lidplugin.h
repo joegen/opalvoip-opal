@@ -115,7 +115,7 @@ typedef struct PluginLID_DialParams
   unsigned m_dialStartDelay;    ///< Time in msec to wait between the dial tone detection and dialing the dtmf
   unsigned m_progressTimeout;   ///< Time in msec to wait for a progress tone (ring, busy or connected) to be detected
   unsigned m_commaDelay;        ///< Time in msec to wait when a comma (',') is found in the dial string
-};
+} PluginLID_DialParams;
 
 
 typedef struct PluginLID_Definition
