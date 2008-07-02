@@ -48,33 +48,34 @@
 
 static UINT TimerID = 1;
 
-static TCHAR const OptionsSection[]   = L"Options";
-static TCHAR const UserNameKey[]      = L"UserName";
-static TCHAR const DisplayNameKey[]   = L"DisplayName";
-static TCHAR const STUNServerKey[]    = L"STUNServer";
-static TCHAR const GkTypeKey[]        = L"GatekeeperType";
-static TCHAR const GkIdKey[]          = L"GatekeeperIdentifer";
-static TCHAR const GkHostKey[]        = L"GatekeeperHost";
-static TCHAR const GkAliasKey[]       = L"GatekeeperAlias";
-static TCHAR const GkAuthUserKey[]    = L"GatekeeperUser";
-static TCHAR const GkPasswordKey[]    = L"GatekeeperPassword";
-static TCHAR const RegistrarAorKey[]  = L"RegistrarAOR";
-static TCHAR const RegistrarHostKey[] = L"RegistrarHost";
-static TCHAR const RegistrarUserKey[] = L"RegistrarUser";
-static TCHAR const RegistrarPassKey[] = L"RegistrarPassword";
-static TCHAR const RegistrarRealmKey[]= L"RegistrarRealm";
+static TCHAR const OptionsSection[]      = L"Options";
+static TCHAR const UserNameKey[]         = L"UserName";
+static TCHAR const DisplayNameKey[]      = L"DisplayName";
+static TCHAR const STUNServerKey[]       = L"STUNServer";
+static TCHAR const InterfaceAddressKey[] = L"InterfaceAddress";
+static TCHAR const GkTypeKey[]           = L"GatekeeperType";
+static TCHAR const GkIdKey[]             = L"GatekeeperIdentifer";
+static TCHAR const GkHostKey[]           = L"GatekeeperHost";
+static TCHAR const GkAliasKey[]          = L"GatekeeperAlias";
+static TCHAR const GkAuthUserKey[]       = L"GatekeeperUser";
+static TCHAR const GkPasswordKey[]       = L"GatekeeperPassword";
+static TCHAR const RegistrarAorKey[]     = L"RegistrarAOR";
+static TCHAR const RegistrarHostKey[]    = L"RegistrarHost";
+static TCHAR const RegistrarUserKey[]    = L"RegistrarUser";
+static TCHAR const RegistrarPassKey[]    = L"RegistrarPassword";
+static TCHAR const RegistrarRealmKey[]   = L"RegistrarRealm";
 
 
 
-static CString GetOptionString(LPCTSTR szKey)
+static CString GetOptionString(LPCTSTR szKey, LPCTSTR szDefault = NULL)
 {
-  return AfxGetApp()->GetProfileString(OptionsSection, szKey);
+  return AfxGetApp()->GetProfileString(OptionsSection, szKey, szDefault);
 }
 
 
-static CStringA GetOptionStringA(LPCTSTR szKey)
+static CStringA GetOptionStringA(LPCTSTR szKey, LPCTSTR szDefault = NULL)
 {
-  CStringA str((const TCHAR *)AfxGetApp()->GetProfileString(OptionsSection, szKey));
+  CStringA str((const TCHAR *)AfxGetApp()->GetProfileString(OptionsSection, szKey, szDefault));
   return str;
 }
 
@@ -94,6 +95,46 @@ static void SetOptionString(LPCTSTR szKey, LPCTSTR szValue)
 static void SetOptionInt(LPCTSTR szKey, UINT szValue)
 {
   AfxGetApp()->WriteProfileInt(OptionsSection, szKey, szValue);
+}
+
+
+void GetNetworkInterfaces(CStringArray & interfaces, bool includeNames)
+{
+  // Get interfaces
+  BYTE * buffer = NULL;
+  ULONG size = 0;
+  DWORD error = GetIpAddrTable(NULL, &size, FALSE);
+  if (error == ERROR_INSUFFICIENT_BUFFER) {
+    buffer = new BYTE[size];
+    if (buffer != NULL)
+      error = GetIpAddrTable((MIB_IPADDRTABLE *)buffer, &size, FALSE);
+  }
+
+  if (error == ERROR_SUCCESS) {
+    const MIB_IPADDRTABLE * ipaddr = (const MIB_IPADDRTABLE *)buffer;
+    for (unsigned i = 0; i < ipaddr->dwNumEntries; ++i) {
+      in_addr ip;
+      ip.S_un.S_addr = ipaddr->table[i].dwAddr;
+      if (ntohl(ip.S_un.S_addr) != INADDR_LOOPBACK) {
+        CStringA iface;
+        if (ip.S_un.S_addr != INADDR_ANY)
+          iface = inet_ntoa(ip);
+
+        if (includeNames) {
+          MIB_IFROW info;
+          info.dwIndex = ipaddr->table[i].dwIndex;
+          if (GetIfEntry(&info) == NO_ERROR && info.dwDescrLen > 0) {
+            iface += '%';
+            iface.Append((const char *)info.bDescr, info.dwDescrLen);
+          }
+        }
+
+        if (!iface.IsEmpty())
+          interfaces.Add(CString(iface));
+      }
+    }
+  }
+  delete [] buffer;
 }
 
 
@@ -313,27 +354,13 @@ BOOL CMobileOpalDlg::OnInitDialog()
   SetSpeakerMode(m_speakerphone);
 
   // Get interfaces
-  BYTE * buffer = NULL;
-  ULONG size = 0;
-  DWORD error = GetIpAddrTable(NULL, &size, FALSE);
-  if (error == ERROR_INSUFFICIENT_BUFFER) {
-    buffer = new BYTE[size];
-    if (buffer != NULL)
-      error = GetIpAddrTable((MIB_IPADDRTABLE *)buffer, &size, FALSE);
+  CStringArray interfaces;
+  GetNetworkInterfaces(interfaces, false);
+  for (int i = 0; i < interfaces.GetSize(); ++i) {
+    if (!m_localAddress.IsEmpty())
+      m_localAddress += ", ";
+    m_localAddress += interfaces[i];
   }
-  if (error == ERROR_SUCCESS) {
-    const MIB_IPADDRTABLE * ipaddr = (const MIB_IPADDRTABLE *)buffer;
-    for (unsigned i = 0; i < ipaddr->dwNumEntries; ++i) {
-      in_addr ip;
-      ip.S_un.S_addr = ipaddr->table[i].dwAddr;
-      if (ip.S_un.S_addr != INADDR_ANY && ntohl(ip.S_un.S_addr) != INADDR_LOOPBACK) {
-        if (!m_localAddress.IsEmpty())
-          m_localAddress += ", ";
-        m_localAddress += inet_ntoa(ip);
-      }
-    }
-  }
-  delete [] buffer;
   UpdateData(false);
 
   SetCallButton(false);
@@ -396,13 +423,14 @@ void CMobileOpalDlg::InitialiseOPAL()
   CStringA strDisplayName = GetOptionStringA(UserNameKey);
   command.m_param.m_protocol.m_displayName = strDisplayName;
 
-  command.m_param.m_protocol.m_interfaceAddresses = "*";
+  CStringA interfaceAddress = GetOptionStringA(InterfaceAddressKey, L"*");
+  command.m_param.m_protocol.m_interfaceAddresses = interfaceAddress;
 
   if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
     ErrorBox(IDS_LISTEN_FAIL, response);
   OpalFreeMessage(response);
 
-  // H.323 gatekeeper regisration
+  // H.323 gatekeeper registration
   memset(&command, 0, sizeof(command));
   command.m_type = OpalCmdRegistration;
 
@@ -685,10 +713,13 @@ void CMobileOpalDlg::OnMenuOptionsGeneral()
   dlg.m_strUsername = GetOptionString(UserNameKey);
   dlg.m_strDisplayName = GetOptionString(DisplayNameKey);
   dlg.m_strStunServer = GetOptionString(STUNServerKey);
+  dlg.m_interfaceAddress = GetOptionString(InterfaceAddressKey, L"*");
+
   if (dlg.DoModal() == IDOK) {
     SetOptionString(UserNameKey, dlg.m_strUsername);
     SetOptionString(DisplayNameKey, dlg.m_strDisplayName);
     SetOptionString(STUNServerKey, dlg.m_strStunServer);
+    SetOptionString(InterfaceAddressKey, dlg.m_interfaceAddress);
     InitialiseOPAL();
   }
 }

@@ -29,6 +29,7 @@
  */
 
 #pragma once
+#include "afxwin.h"
 
 
 // COptionsGeneral dialog
@@ -52,8 +53,12 @@ protected:
 
   DECLARE_MESSAGE_MAP()
 
+  void AddToCombo(const CString & str);
+
 public:
   CString m_strUsername;
   CString m_strDisplayName;
   CString m_strStunServer;
+  CString m_interfaceAddress;
+  CComboBox m_interfaceAddressCombo;
 };
