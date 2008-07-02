@@ -604,8 +604,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
     virtual CallProgressTones DialOut(
       unsigned line,                ///< Number of line
       const PString & number,       ///< Number to dial
-      PBoolean requireTones = PFalse,    ///< Require dial/ring tone to be detected
-      unsigned uiDialDelay = 0      ///< time in msec to wait between the dial tone detection and dialing the dtmf
+      const DialParams & params = DialParams() ///< Optional parameters for dial out.
     );
 
 

@@ -61,13 +61,11 @@ ostream & operator<<(ostream & o, OpalLineInterfaceDevice::CallProgressTones t)
 
 
 OpalLineInterfaceDevice::OpalLineInterfaceDevice()
+  : os_handle(-1)
+  , osError(0)
+  , m_readDeblockingOffset(P_MAX_INDEX)
+  , m_writeDeblockingOffset(0)
 {
-  setOsHandle(-1);
-  setOsError(0);
-  setReadDeblockingOffset(P_MAX_INDEX);
-  setWriteDeblockingOffset(0);
-  setDialToneTimeout(DIAL_TONE_TIMEOUT);
-
   // Unknown country, just use US tones
   countryCode = UnknownCountry;
   m_callProgressTones[DialTone] = "350+440:0.2";
@@ -598,12 +596,11 @@ PBoolean OpalLineInterfaceDevice::RecordAudioStop(unsigned /*line*/)
 }
 
 OpalLineInterfaceDevice::CallProgressTones
-                OpalLineInterfaceDevice::DialOut(unsigned line,
-                                                 const PString & number,
-                                                 PBoolean requireTone,
-                                                 unsigned uiDialDelay)
+        OpalLineInterfaceDevice::DialOut(unsigned line, const PString & number, const DialParams & params)
 {
-  PTRACE(3, "LID\tDialOut to " << number << ", line = " << line << ", requireTone = " << requireTone);
+  PAssert(!number.IsEmpty(), PInvalidParameter);
+
+  PTRACE(3, "LID\tDialOut to " << number << " on line " << line);
 
   if (IsLineTerminal(line)) {
     PTRACE(2, "LID\tDialOut line is a terminal, do nothing");
@@ -616,17 +613,21 @@ OpalLineInterfaceDevice::CallProgressTones
   }  
 
   /* Wait for dial tone or Message waiting tone */
-  CallProgressTones tone = WaitForToneDetect(line, m_uiDialToneTimeout);
+  CallProgressTones tone = WaitForToneDetect(line, params.m_dialToneTimeout);
   if (tone != DialTone  && tone != MwiTone) {
     PTRACE(2, "LID\tDialOut dial tone or mwi tone not detected");
-    if (requireTone)
-      return tone;
+    if (params.m_requireTones) {
+      SetLineOnHook(line);
+      return DialTone;
+    }
   }
 
-  /* wait before dialing*/
-  PTRACE(3, "LID\tDialOut wait " << uiDialDelay << "msec before dialing");
-  PThread::Current()->Sleep(uiDialDelay);
-  
+  if (params.m_dialStartDelay > 0) {
+    /* wait before dialing*/
+    PTRACE(3, "LID\tDialOut wait " << params.m_dialStartDelay << "msec before dialing");
+    PThread::Current()->Sleep(params.m_dialStartDelay);
+  }
+
   // Dial the string
   PINDEX lastPos = 0;
   PINDEX nextPos;
@@ -635,19 +636,20 @@ OpalLineInterfaceDevice::CallProgressTones
     lastPos = nextPos+1;
     switch (number[nextPos]) {
       case '!' :
-        if (!HookFlash(line))
-          return NoTone;
+        HookFlash(line);
         break;
 
       case '@' :
         if (!WaitForTone(line, DialTone, 3000)) {
-          if (requireTone)
+          if (params.m_requireTones) {
+            SetLineOnHook(line);
             return DialTone;
+          }
         }
         break;
 
       case ',' :
-        PThread::Current()->Sleep(2000);
+        PThread::Current()->Sleep(params.m_commaDelay);
         break;
     }
   }
@@ -655,21 +657,9 @@ OpalLineInterfaceDevice::CallProgressTones
   PlayDTMF(line, number.Mid(lastPos));
 
   // Wait for busy or ring back
-  while ((tone = WaitForToneDetect(line, 25000)) != NoTone) {
-    if (tone & BusyTone)
-      return BusyTone;
-    else if (tone & RingTone)
-      break;
-  }
-
-  /* TODO find out why this !!*/
-#if 0
-  if (requireTone)
-    return NoTone;
-
-#endif
-  return RingTone;
+  return WaitForToneDetect(line, params.m_progressTimeout);
 }
+
 
 static struct {
   const char * isoName;

@@ -102,13 +102,13 @@ PBoolean OpalLineEndPoint::MakeConnection(OpalCall & call,
   }
 
   if (lineName.IsEmpty())
-    lineName = '*';
+    lineName = defaultLine;
   
   PTRACE(3,"LID EP\tMakeConnection line = \"" << lineName << "\", number = \"" << number << '"');
   
   // Locate a line
   OpalLine * line = GetLine(lineName, true, terminating);
-  if (line == NULL){
+  if (line == NULL && lineName != defaultLine) {
     PTRACE(1,"LID EP\tMakeConnection cannot find the line \"" << lineName << '"');
     line = GetLine(defaultLine, true, terminating);
   }  
@@ -443,13 +443,6 @@ void OpalLineEndPoint::MonitorLine(OpalLine & line)
 }
 
 
-PBoolean OpalLineEndPoint::OnSetUpConnection(OpalLineConnection & PTRACE_PARAM(connection))
-{
-  PTRACE(3, "LID EP\tOnSetUpConnection" << connection);
-  return true;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 OpalLineConnection::OpalLineConnection(OpalCall & call,
@@ -465,11 +458,9 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
   silenceDetector = new OpalLineSilenceDetector(line, (endpoint.GetManager().GetSilenceDetectParams()));
 
   answerRingCount = 3;
-  requireTonesForDial = true;
   wasOffHook = false;
   handlerThread = NULL;
 
-  m_uiDialDelay = 0;
   PTRACE(3, "LID Con\tConnection " << callToken << " created to " << (number.IsEmpty() ? "local" : number));
   
 }
@@ -505,14 +496,7 @@ void OpalLineConnection::OnReleased()
 
 PString OpalLineConnection::GetDestinationAddress()
 {
-  return line.IsTerminal() ? ReadUserInput() : "*";
-}
-
-
-PBoolean OpalLineConnection::OnSetUpConnection()
-{
-  PTRACE(3, "LID Con\tOnSetUpConnection");
-  return endpoint.OnSetUpConnection(*this);
+  return line.IsTerminal() ? ReadUserInput() : GetLocalPartyName();
 }
 
 
@@ -540,9 +524,14 @@ PBoolean OpalLineConnection::SetConnected()
 {
   PTRACE(3, "LID Con\tSetConnected " << *this);
 
-  return line.StopTone() &&
-         line.SetConnected() &&
-         OpalConnection::SetConnected();
+  if (!line.StopTone())
+    return false;
+
+  if (!line.SetConnected())
+    return false;
+
+  ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
+  return OpalConnection::SetConnected();
 }
 
 
@@ -658,7 +647,7 @@ void OpalLineConnection::Monitor()
       return;
     }
 
-    if (IsOriginating()) {
+    if (IsOriginating() && line.IsTerminal()) {
       // Ok, they went off hook, stop ringing
       line.Ring(0, NULL);
 
@@ -744,8 +733,13 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
       }
     }
 
-    PTRACE(4, "LID Con\tAnswering call - going off hook.");
-    line.SetOffHook();
+    if (!line.SetOffHook()) {
+      PTRACE(1, "LID Con\tCould not go off hook to answer call.");
+      Release(EndedByCallerAbort);
+      return;
+    }
+
+    PTRACE(4, "LID Con\tAnswering call - gone off hook.");
   }
 
   wasOffHook = true;
@@ -777,8 +771,17 @@ PBoolean OpalLineConnection::SetUpConnection()
     }
     line.Ring(1, NULL);
   }
+  else if (remotePartyNumber.IsEmpty()) {
+    if (!line.SetOffHook()) {
+      PTRACE(1, "LID Con\tCould not go off hook");
+      return false;
+    }  
+    PTRACE(3, "LID Con\tNo remote party indicated, going off hook without dialing.");
+    OnConnectedInternal();
+    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
+  }
   else {
-    switch (line.DialOut(remotePartyNumber, requireTonesForDial, getDialDelay())) {
+    switch (line.DialOut(remotePartyNumber, m_dialParams)) {
       case OpalLineInterfaceDevice::DialTone :
         PTRACE(3, "LID Con\tdial tone on " << line);
         return false;
@@ -812,6 +815,7 @@ OpalLineMediaStream::OpalLineMediaStream(OpalLineConnection & conn,
   , useDeblocking(false)
   , missedCount(0)
   , lastFrameWasSignal(true)
+  , directLineNumber(UINT_MAX)
 {
   lastSID[0] = 2;
 }
@@ -841,7 +845,9 @@ PBoolean OpalLineMediaStream::Open()
 
 PBoolean OpalLineMediaStream::Close()
 {
-  if (IsSource())
+  if (directLineNumber != UINT_MAX)
+    line.GetDevice().SetLineToLineDirect(line.GetLineNumber(), directLineNumber, false);
+  else if (IsSource())
     line.StopReading();
   else
     line.StopWriting();
@@ -1019,6 +1025,26 @@ PBoolean OpalLineMediaStream::SetDataSize(PINDEX dataSize)
 PBoolean OpalLineMediaStream::IsSynchronous() const
 {
   return true;
+}
+
+
+PBoolean OpalLineMediaStream::RequiresPatchThread(OpalMediaStream * sinkStream) const
+{
+  OpalLineMediaStream * sinkLine = dynamic_cast<OpalLineMediaStream *>(sinkStream);
+  if (sinkLine != NULL && &line.GetDevice() == &sinkLine->line.GetDevice()) {
+    if (line.GetDevice().SetLineToLineDirect(line.GetLineNumber(), sinkLine->line.GetLineNumber(), true)) {
+      PTRACE(3, "LineMedia\tDirect line connection between "
+             << line.GetLineNumber() << " and " << sinkLine->line.GetLineNumber()
+             << " on device " << line.GetDevice());
+      const_cast<OpalLineMediaStream *>(this)->directLineNumber = sinkLine->line.GetLineNumber();
+      sinkLine->directLineNumber = line.GetLineNumber();
+      return false; // Do not start threads
+    }
+    PTRACE(2, "LineMedia\tCould not do direct line connection between "
+           << line.GetLineNumber() << " and " << sinkLine->line.GetLineNumber()
+           << " on device " << line.GetDevice());
+  }
+  return OpalMediaStream::RequiresPatchThread(sinkStream);
 }
 
 
