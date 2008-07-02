@@ -42,6 +42,7 @@ COptionsGeneral::COptionsGeneral(CWnd* pParent /*=NULL*/)
   , m_strUsername(_T(""))
   , m_strDisplayName(_T(""))
   , m_strStunServer(_T(""))
+  , m_interfaceAddress(_T(""))
 {
 
 }
@@ -56,6 +57,8 @@ void COptionsGeneral::DoDataExchange(CDataExchange* pDX)
   DDX_Text(pDX, IDC_USERNAME, m_strUsername);
   DDX_Text(pDX, IDC_DISPLAYNAME, m_strDisplayName);
   DDX_Text(pDX, IDC_STUN_SERVER, m_strStunServer);
+  DDX_CBString(pDX, IDC_INTERFACE_ADDRESS, m_interfaceAddress);
+  DDX_Control(pDX, IDC_INTERFACE_ADDRESS, m_interfaceAddressCombo);
 }
 
 
@@ -71,7 +74,31 @@ BOOL COptionsGeneral::OnInitDialog()
     TRACE0("Failed to create CommandBar\n");
   }
 
+  m_interfaceAddressCombo.AddString(L"*");
+
+  // Get interfaces
+  CStringArray interfaces;
+  GetNetworkInterfaces(interfaces, true);
+  for (int i = 0; i < interfaces.GetSize(); ++i) {
+    CString iface = interfaces[i];
+    int percent = iface.Find('%');
+    if (percent > 0) {
+      AddToCombo(iface.Left(percent));
+      AddToCombo(iface.Mid(percent));
+    }
+    AddToCombo(iface);
+  }
+
+  UpdateData(false);
+
   return TRUE;
+}
+
+
+void COptionsGeneral::AddToCombo(const CString & str)
+{
+  if (m_interfaceAddressCombo.FindStringExact(-1, str) < 0)
+    m_interfaceAddressCombo.AddString(str);
 }
 
 
