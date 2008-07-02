@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 6
+#define OPAL_C_API_VERSION 7
 
 
 ///////////////////////////////////////
@@ -476,7 +476,9 @@ typedef struct OpalParamRegistration {
   const char * m_adminEntity;   /**< Identification of the administrative entity. For H.323 this will
                                      by the gatekeeper identifier. For SIP this is the authentication
                                      realm. */
-  unsigned     m_timeToLive;    ///< Time between registration updates in secodns.
+  unsigned     m_timeToLive;    ///< Time in seconds between registration updates.
+  unsigned     m_restoreTime;   /**< Time in seconds between attempts to restore a registration after
+                                     registrar/gatekeeper has gone offline. */
 } OpalParamRegistration;
 
 
