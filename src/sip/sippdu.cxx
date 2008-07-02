@@ -2454,6 +2454,7 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 
 SIPRegister::Params::Params()
   : m_expire(0)
+  , m_restoreTime(30)
   , m_minRetryTime(PMaxTimeInterval)
   , m_maxRetryTime(PMaxTimeInterval)
 {
