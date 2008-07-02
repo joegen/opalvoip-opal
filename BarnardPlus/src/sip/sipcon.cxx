@@ -1150,6 +1150,7 @@ PBoolean SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 
   connection.AdjustOutgoingINVITE();
 
+  connection.needReINVITE = false; // This is initial INVITE not a re-INVITE
   SIPTransaction * invite = new SIPInvite(connection, transport);
   
   // It may happen that constructing the INVITE causes the connection
