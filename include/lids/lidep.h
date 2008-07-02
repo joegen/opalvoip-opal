@@ -107,11 +107,6 @@ class OpalLineEndPoint : public OpalEndPoint
       OpalConnection::StringOptions * stringOptions  = NULL
     );
 
-    /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
-       This function allows the application to set up some parameters or to log some messages
-      */
-    virtual PBoolean OnSetUpConnection(OpalLineConnection &connection);
-    
     /**Get the data formats this endpoint is capable of operating.
        This provides a list of media data format names that may be used by an
        OpalMediaStream may be created by a connection from this endpoint.
@@ -330,10 +325,6 @@ class OpalLineConnection : public OpalConnection
        The default behaviour does.
       */
     virtual PBoolean SetUpConnection();
-    /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
-       This function allows the application to set up some parameters or to log some messages
-      */
-    virtual PBoolean OnSetUpConnection();
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
@@ -490,22 +481,20 @@ class OpalLineConnection : public OpalConnection
     /** delay in msec to wait between the dial tone detection and dialing the dtmf 
       * @param uiDial the dial delay to set
      */
-    void setDialDelay(unsigned int uiDialDelay){ m_uiDialDelay = uiDialDelay;};
+    void setDialDelay(unsigned int uiDialDelay) { m_dialParams.m_dialStartDelay = uiDialDelay;}
     
     /** delay in msec to wait between the dial tone detection and dialing the dtmf 
      * @return uiDialDelay the dial delay to get
      */
-    unsigned int getDialDelay() const { return m_uiDialDelay;};
+    unsigned int getDialDelay() const { return m_dialParams.m_dialStartDelay; }
 
         
   protected:
     OpalLineEndPoint & endpoint;
     OpalLine        & line;
-    PBoolean              wasOffHook;
+    bool              wasOffHook;
     unsigned          answerRingCount;
-    PBoolean              requireTonesForDial;
-    /* time in msec to wait between the dial tone detection and dialing the dtmf */
-    unsigned          m_uiDialDelay; 
+    OpalLineInterfaceDevice::DialParams m_dialParams;
 
     PDECLARE_NOTIFIER(PThread, OpalLineConnection, HandleIncoming);
     PThread         * handlerThread;
@@ -596,6 +585,19 @@ class OpalLineMediaStream : public OpalMediaStream
        Returns PTrue for LID streams.
       */
     virtual PBoolean IsSynchronous() const;
+
+    /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
+       This is called on the source stream and is passed the sink stream that the
+       patch will initially be using. The function could conditionally require
+       the patch thread to execute a thread reading and writing data, or prevent
+       it from doing so as it can do so in hardware in some way, e.g. if both
+       streams where on the same OpalLineInterfaceDevice.
+
+       The default behaviour simply returns true.
+      */
+    virtual PBoolean RequiresPatchThread(
+      OpalMediaStream * sinkStream  ///< Sink stream for this source
+    ) const;
   //@}
 
   /**@name Member variable access */
@@ -612,6 +614,7 @@ class OpalLineMediaStream : public OpalMediaStream
     unsigned   missedCount;
     BYTE       lastSID[4];
     bool       lastFrameWasSignal;
+    unsigned   directLineNumber;
 };
 
 

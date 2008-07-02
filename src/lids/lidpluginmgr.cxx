@@ -1008,15 +1008,22 @@ PBoolean OpalPluginLID::StopTone(unsigned line)
 }
 
 
-OpalLineInterfaceDevice::CallProgressTones OpalPluginLID::DialOut(unsigned line, const PString & number, PBoolean requireTones, unsigned uiDialDelay)
+OpalLineInterfaceDevice::CallProgressTones OpalPluginLID::DialOut(unsigned line, const PString & number, const DialParams & params)
 {
   if (m_definition.DialOut == NULL)
-    return OpalLineInterfaceDevice::DialOut(line, number, requireTones, uiDialDelay);
+    return OpalLineInterfaceDevice::DialOut(line, number, params);
 
   if (BAD_FN(DialOut))
     return NoTone;
 
-  osError = m_definition.DialOut(m_context, line, number, requireTones, uiDialDelay);
+  struct PluginLID_DialParams pparams;
+  pparams.m_requireTones = params.m_requireTones;
+  pparams.m_dialToneTimeout = params.m_dialToneTimeout;
+  pparams.m_dialStartDelay = params.m_dialStartDelay;
+  pparams.m_progressTimeout = params.m_progressTimeout;
+  pparams.m_commaDelay = params.m_commaDelay;
+
+  osError = m_definition.DialOut(m_context, line, number, &pparams);
   switch (osError)
   {
     case PluginLID_NoError :

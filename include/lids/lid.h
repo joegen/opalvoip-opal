@@ -682,8 +682,23 @@ class OpalLineInterfaceDevice : public PObject
     );
 
 
-    enum { DIAL_TONE_TIMEOUT = 10000 };
+    /** Structure for dialling parameters */
+    struct DialParams {
+      DialParams()
+        : m_requireTones(false)
+        , m_dialToneTimeout(2500)
+        , m_dialStartDelay(500)
+        , m_progressTimeout(5000)
+        , m_commaDelay(2000)
+      { }
 
+      bool     m_requireTones;      ///< Require dial/ring tone to be detected
+      unsigned m_dialToneTimeout;   ///< Time in msec to wait for a dial tone to be detected
+      unsigned m_dialStartDelay;    ///< Time in msec to wait between the dial tone detection and dialing the dtmf
+      unsigned m_progressTimeout;   ///< Time in msec to wait for a progress tone (ring, busy or connected) to be detected
+      unsigned m_commaDelay;        ///< Time in msec to wait when a comma (',') is found in the dial string
+    };
+        
     /**Dial a number on network line.
        The takes the line off hook, waits for dial tone, and transmits the
        specified number as DTMF tones.
@@ -702,8 +717,7 @@ class OpalLineInterfaceDevice : public PObject
     virtual CallProgressTones DialOut(
       unsigned line,                ///< Number of line
       const PString & number,       ///< Number to dial
-      PBoolean requireTones = PFalse,    ///< Require dial/ring tone to be detected
-      unsigned uiDialDelay = 0      ///< time in msec to wait between the dial tone detection and dialing the dtmf
+      const DialParams & params = DialParams() ///< Optional parameters for dial out.
     );
 
 
@@ -863,29 +877,11 @@ class OpalLineInterfaceDevice : public PObject
 
         
   protected:
-    int    getOsHandle() const {return os_handle;};
-    void   setOsHandle(int os_handleToSet) {os_handle = os_handleToSet;};
-    
-    int    getOsError() const {return osError;};
-    void   setOsError(int osErrorToSet) {osError = osErrorToSet;};
-    
-    const PBYTEArray& getReadDeblockingBuffer(){return m_readDeblockingBuffer;};
-    const PBYTEArray& getWriteDeblockingBuffer(){return m_writeDeblockingBuffer;};
-    PINDEX getReadDeblockingOffset() const {return m_readDeblockingOffset;};
-    void   setReadDeblockingOffset(PINDEX readDeblockingOffset) {m_readDeblockingOffset = readDeblockingOffset;};
-    
-    PINDEX getWriteDeblockingOffset() const {return m_writeDeblockingOffset;};
-    void   setWriteDeblockingOffset(PINDEX writeDeblockingOffset) {m_writeDeblockingOffset = writeDeblockingOffset;};
-    
-    unsigned int getDialToneTimeout() const {return m_uiDialToneTimeout;};
-    void   setDialToneTimeout(unsigned int uiDialToneTimeout) {m_uiDialToneTimeout = uiDialToneTimeout;};
-        
     int               os_handle;
     mutable int       osError;
     T35CountryCodes   countryCode;
     PBYTEArray        m_readDeblockingBuffer, m_writeDeblockingBuffer;
     PINDEX            m_readDeblockingOffset, m_writeDeblockingOffset;
-    unsigned int      m_uiDialToneTimeout;
     std::vector<bool> m_LineAudioEnabled;
     PString           m_callProgressTones[NumTones];
 #if PTRACING
@@ -1347,9 +1343,8 @@ class OpalLine : public PObject
       */
     virtual OpalLineInterfaceDevice::CallProgressTones DialOut(
       const PString & number,       ///< Number to dial
-      PBoolean requireTones = PFalse,    ///< Require dial/ring tone to be detected
-      unsigned uiDialDelay = 0      ///< time in msec to wait between the dial tone detection and dialing the dtmf
-    ) { return device.DialOut(lineNumber, number, requireTones, uiDialDelay); }
+      const OpalLineInterfaceDevice::DialParams & params = OpalLineInterfaceDevice::DialParams() ///< Optional parameters for dial out.
+    ) { return device.DialOut(lineNumber, number, params); }
   //@}
 
   /**@name Member variable access */

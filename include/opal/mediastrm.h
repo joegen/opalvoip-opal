@@ -240,11 +240,20 @@ class OpalMediaStream : public PSafeObject
        take 30 milliseconds to complete.
       */
     virtual PBoolean IsSynchronous() const = 0;
-	
+
     /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
-       The default behaviour returns true.
+       This is called on the source stream and is passed the sink stream that the
+       patch will initially be using. The function could conditionally require
+       the patch thread to execute a thread reading and writing data, or prevent
+       it from doing so as it can do so in hardware in some way, e.g. if both
+       streams where on the same OpalLineInterfaceDevice.
+
+       The default behaviour simply returns true.
       */
-    virtual PBoolean RequiresPatchThread() const;
+    virtual PBoolean RequiresPatchThread(
+      OpalMediaStream * sinkStream  ///< Sink stream for this source
+    ) const;
+    virtual PBoolean RequiresPatchThread() const; // For backward compatibility
 
     /**Enable jitter buffer for the media stream.
 
