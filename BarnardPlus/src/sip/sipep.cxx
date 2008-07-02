@@ -163,31 +163,24 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
   if (natMethod != None) {
     for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
 
-      OpalTransport & transport = handler->GetTransport();
-      PBoolean stunTransport = PFalse;
-
-      if (!transport)
-        break;
-
-      stunTransport = (!transport.IsReliable() && GetManager().GetSTUN(transport.GetRemoteAddress().GetHostName()));
-
-      if (!stunTransport)
-        break;
+      OpalTransport * transport = handler->GetTransport();
+      if (transport == NULL || transport->IsReliable() || GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()) == NULL)
+        continue;
 
       switch (natMethod) {
 
         case Options: 
           {
             PStringList emptyRouteSet;
-            SIPOptions options(*this, transport, SIPURL(transport.GetRemoteAddress()).GetHostName());
-            options.Write(transport, options.GetSendAddress(emptyRouteSet));
+            SIPOptions options(*this, *transport, SIPURL(transport->GetRemoteAddress()).GetHostName());
+            options.Write(*transport, options.GetSendAddress(emptyRouteSet));
           }
           break;
+
         case EmptyRequest:
-          {
-            transport.Write("\r\n", 2);
-          }
+          transport->Write("\r\n", 2);
           break;
+
         default:
           break;
       }
@@ -1080,9 +1073,13 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
 SIPURL SIPEndPoint::GetContactURL(const OpalTransport &transport, const PString & userName, const PString & host)
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  if (handler == NULL)
+  if (handler != NULL) {
+    OpalTransport * handlerTransport = handler->GetTransport();
+    if (handlerTransport != NULL)
+      return GetLocalURL(*handlerTransport, handler->GetTargetAddress().GetUserName());
+  }
+
     return GetLocalURL(transport, userName);
-  return GetLocalURL(handler->GetTransport(), handler->GetTargetAddress().GetUserName());
 }
 
 

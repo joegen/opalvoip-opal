@@ -799,6 +799,7 @@ class SIPRegister : public SIPTransaction
       PString       m_password;
       PString       m_realm;
       unsigned      m_expire;
+      unsigned      m_restoreTime;
       PTimeInterval m_minRetryTime;
       PTimeInterval m_maxRetryTime;
     };

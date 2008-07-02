@@ -56,6 +56,7 @@ protected:
     SIPEndPoint & ep, 
     const PString & to,
     int expireTime,
+    int offlineExpire = 30,
     const PTimeInterval & retryMin = PMaxTimeInterval,
     const PTimeInterval & retryMax = PMaxTimeInterval
   );
@@ -68,6 +69,7 @@ public:
     Subscribed,       // The registration is active
     Subscribing,      // The registration is in process
     Refreshing,       // The registration is being refreshed
+    Restoring,        // The registration is trying to be restored after being offline
     Unsubscribing,    // The unregistration is in process
     Unsubscribed      // The registrating is inactive
   };
@@ -79,8 +81,7 @@ public:
       return state;
     }
 
-  virtual OpalTransport &GetTransport()
-    { return *transport; }
+  virtual OpalTransport * GetTransport();
 
   virtual const SIPAuthentication & GetAuthentication()
     { return authentication; }
@@ -134,6 +135,7 @@ protected:
   PString                     callID;
   int	                      expire;
   int                         originalExpire;
+  int                         offlineExpire;
   PStringList                 routeSet;
   PString		      body;
   unsigned                    authenticationAttempts;

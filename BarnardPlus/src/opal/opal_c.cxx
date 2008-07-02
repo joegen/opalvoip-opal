@@ -825,6 +825,9 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
       params.m_password = command.m_param.m_registrationInfo.m_password;
       params.m_realm = command.m_param.m_registrationInfo.m_adminEntity;
       params.m_expire = command.m_param.m_registrationInfo.m_timeToLive;
+      if (m_apiVersion >= 7)
+        params.m_restoreTime = command.m_param.m_registrationInfo.m_restoreTime;
+
       if (!sip->Register(params))
         response.SetError("Failed to initiate SIP registration.");
     }

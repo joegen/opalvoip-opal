@@ -55,7 +55,7 @@
 ostream & operator<<(ostream & strm, SIPHandler::State state)
 {
   static const char * const StateNames[] = {
-    "Subscribed", "Subscribing", "Refreshing", "Unsubscribing", "Unsubscribed"
+    "Subscribed", "Subscribing", "Refreshing", "Restoring", "Unsubscribing", "Unsubscribed"
   };
   if (state < PARRAYSIZE(StateNames))
     strm << StateNames[state];
@@ -71,11 +71,14 @@ ostream & operator<<(ostream & strm, SIPHandler::State state)
 SIPHandler::SIPHandler(SIPEndPoint & ep,
                        const PString & to,
                        int expireTime,
+                       int offlineExpireTime,
                        const PTimeInterval & retryMin,
                        const PTimeInterval & retryMax)
   : endpoint(ep)
+  , transport(NULL)
   , expire(expireTime)
   , originalExpire(expire)
+  , offlineExpire(offlineExpireTime)
   , state(Unsubscribed)
   , retryTimeoutMin(retryMin)
   , retryTimeoutMax(retryMax)
@@ -86,25 +89,6 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
   remotePartyAddress = targetAddress.AsQuotedString();
 
   authenticationAttempts = 0;
-
-  // Look for a "proxy" parameter to override default proxy
-  const PStringToString& params = targetAddress.GetParamVars();
-  if (params.Contains("proxy")) {
-    proxy.Parse(params("proxy"));
-    targetAddress.SetParamVar("proxy", PString::Empty());
-  }
-
-  if (proxy.IsEmpty())
-    proxy = endpoint.GetProxy();
-
-  if (!proxy.IsEmpty())
-    transport = endpoint.CreateTransport(proxy.GetHostAddress());
-  else
-    transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
-
-  // Default routeSet if there is a proxy
-  if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
-    routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
 
   callID = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
 
@@ -126,6 +110,39 @@ void SIPHandler::SetState(SIPHandler::State newState)
   PTRACE(4, "SIP\tChanging " << GetMethod() << " handler from " << state << " to " << newState
          << ", target=" << GetTargetAddress() << ", id=" << callID);
   state = newState;
+}
+
+
+OpalTransport * SIPHandler::GetTransport()
+{
+  if (transport != NULL) {
+    if (transport->IsOpen())
+      return transport;
+
+    transport->CloseWait();
+    delete transport;
+    transport = NULL;
+  }
+
+  // Look for a "proxy" parameter to override default proxy
+  const PStringToString& params = targetAddress.GetParamVars();
+  if (params.Contains("proxy")) {
+    proxy.Parse(params("proxy"));
+    targetAddress.SetParamVar("proxy", PString::Empty());
+  }
+
+  if (proxy.IsEmpty())
+    proxy = endpoint.GetProxy();
+
+  if (proxy.IsEmpty())
+    return (transport = endpoint.CreateTransport(targetAddress.GetHostAddress()));
+
+  // Default routeSet if there is a proxy
+  if (routeSet.IsEmpty()) 
+    routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
+
+  transport = endpoint.CreateTransport(proxy.GetHostAddress());
+  return transport;
 }
 
 
@@ -176,24 +193,27 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
 
 PBoolean SIPHandler::SendRequest(SIPHandler::State s)
 {
-  if (transport == NULL)
-    return PFalse;
+  switch (s) {
+    case Unsubscribing:
+      if (state != Subscribed)
+        return false;
+      break;
 
-  if (s == Unsubscribing && state != Subscribed)
-    return false;
+    case Subscribing :
+    case Restoring :
+      if (GetTransport() == NULL) {
+        PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
+        expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
+        return true;
+      }
+      break;
+
+    default :
+      if (GetTransport() == NULL)
+        return false;
+  }
 
   SetState(s);
-
-  if (!transport->IsOpen ()) {
-
-    transport->CloseWait();
-    delete transport;
-
-    if (!proxy.IsEmpty())
-      transport = endpoint.CreateTransport(proxy.GetHostAddress());
-    else
-      transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
-  }
 
   // First time, try every interface
   if (transport->GetInterface().IsEmpty())
@@ -257,7 +277,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   CollapseFork(transaction);
 
   // Restart the transaction with new authentication handler
-  SIPTransaction * newTransaction = CreateTransaction(GetTransport());
+  SIPTransaction * newTransaction = CreateTransaction(*transport);
   if (!authentication.Authorise(*newTransaction)) {
     // don't send again if no authentication handler available
     OnFailed(SIP_PDU::Failure_UnAuthorised);
@@ -284,6 +304,7 @@ void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response
 
     case Subscribing :
     case Refreshing :
+    case Restoring :
       SetState(Subscribed);
       break;
 
@@ -319,8 +340,8 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
     OnFailed(transaction.GetStatusCode());
 
     if (expire > 0 && !transaction.IsCanceled()) {
-      PTRACE(4, "SIP\tRetrying " << GetMethod() << " in 30 seconds.");
-      expireTimer.SetInterval(0, 30); // Keep trying to get it back
+      PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
+      expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
     }
   }
 }
@@ -350,7 +371,7 @@ void SIPHandler::OnExpireTimeout(PTimer &, INT)
 {
   PTRACE(2, "SIP\tStarting " << GetMethod() << " for binding refresh");
 
-  if (!SendRequest(Refreshing))
+  if (!SendRequest(GetState() == Subscribed ? Refreshing : Restoring))
     SetState(Unsubscribed);
 }
 
@@ -367,7 +388,7 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   : SIPHandler(endpoint,
                params.m_addressOfRecord,
                params.m_expire > 0 ? params.m_expire : endpoint.GetRegistrarTimeToLive().GetSeconds(),
-               params.m_minRetryTime, params.m_maxRetryTime)
+               params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
   , m_parameters(params)
 {
   m_parameters.m_expire = expire; // Put possibly adjusted value back
