@@ -60,3 +60,5 @@ public:
 };
 
 extern CMobileOpalApp theApp;
+
+void GetNetworkInterfaces(CStringArray & interfaces, bool includeNames);
