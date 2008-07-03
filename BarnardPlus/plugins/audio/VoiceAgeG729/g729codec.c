@@ -27,35 +27,63 @@
 #include <codec/opalplugin.h>
 
 
+#include <stdlib.h>
+#include <malloc.h>
+
+#ifdef _WIN32_WCE
+
+#include "va_g729_ARM/typedef.h"
+#include "va_g729_ARM/g729ab_if.h"
+
+#else // _WIN32_WCE
+
+#include "va_g729/va_g729.h"
+
 // All of PWLib/OpenH323 use MSVCRT.LIB or MSVCRTD.LIB, but vag729a.lib uses
 // libcmt.lib, so we need to tell the linker to ignore it, can't have two
 // Run Time libraries!
 #pragma comment(linker, "/NODEFAULTLIB:libcmt.lib")
 
-#include <stdlib.h>
-#include <malloc.h>
-#include "va_g729/va_g729.h"
-
-#define SAMPLES_PER_FRAME    L_FRAME
-#define BYTES_PER_FRAME      L_FRAME_COMPRESSED
-#define MICROSECONDSPERFRAME 10000
-#define BITS_PER_SECOND      8000
-
-/////////////////////////////////////////////////////////////////////////////
-
 static int encoderInUse = 0;
 static int decoderInUse = 0;
 
+#endif // _WIN32_WCE
+
+
+#define SAMPLES_PER_FRAME    80
+#define BYTES_PER_FRAME      10
+#define MICROSECONDSPERFRAME 10000
+#define BITS_PER_SECOND      8000
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 static void * create_encoder(const struct PluginCodec_Definition * codec)
 {
-  //if (encoderInUse)
-  //  return NULL;
+#ifdef _WIN32_WCE
+
+  void * context = malloc(E_IF_g729ab_queryBlockSize());
+  if (context != NULL)
+    return NULL;
+
+  if (E_IF_g729ab_init(context) == 0)
+    return context;
+
+  free(context);
+  return NULL;
+
+#else
+
+  if (encoderInUse)
+    return NULL;
 
   va_g729a_init_encoder();
   encoderInUse = 1;
-
   return (void *)1;
+
+#endif
 }
+
 
 static int codec_encoder(const struct PluginCodec_Definition * codec, 
                                            void * context,
@@ -65,35 +93,65 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
                                        unsigned * toLen,
                                    unsigned int * flag)
 {
-  //if (!encoderInUse)
-  //  return 0;
-
-  if (*fromLen < SAMPLES_PER_FRAME*2 || *toLen < L_FRAME_COMPRESSED)
+  if (*fromLen < SAMPLES_PER_FRAME*2 || *toLen < BYTES_PER_FRAME)
     return 0;
+
+#ifdef _WIN32_WCE
+  {
+    UWord8 buffer[BYTES_PER_FRAME+1];
+    if (E_IF_g729ab_encode(context, (Word16 *)from, buffer, toLen, 0) != 0)
+      return 0;
+    memcpy(to, &buffer[1], BYTES_PER_FRAME);
+  }
+#else
 
   va_g729a_encoder((short *)from, (unsigned char *)to);
 
+#endif
+
   *fromLen = SAMPLES_PER_FRAME*2;
-  *toLen   = L_FRAME_COMPRESSED;
+  *toLen   = BYTES_PER_FRAME;
 
   return 1; 
 }
 
+
 static void destroy_encoder(const struct PluginCodec_Definition * codec, void * context)
 {
+#ifdef _WIN32_WCE
+  free(context);
+#else
   encoderInUse = 0;
+#endif
 }
+
 
 static void * create_decoder(const struct PluginCodec_Definition * codec)
 {
-  //if (decoderInUse)
-  //  return NULL;
+#ifdef _WIN32_WCE
+
+  void * context = malloc(D_IF_g729ab_queryBlockSize());
+  if (context != NULL)
+    return NULL;
+
+  if (D_IF_g729ab_init(context) == 0)
+    return context;
+
+  free(context);
+  return NULL;
+
+#else
+
+  if (decoderInUse)
+    return NULL;
 
   decoderInUse = 1;
 
   va_g729a_init_decoder();
 
   return (void *)1;
+
+#endif
 }
 
 static int codec_decoder(const struct PluginCodec_Definition * codec, 
@@ -104,23 +162,36 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
                                        unsigned * toLen,
                                    unsigned int * flag)
 {
-  //if (!decoderInUse)
-  //  return 0;
-
-  if (*fromLen < L_FRAME_COMPRESSED || *toLen < SAMPLES_PER_FRAME*2)
+  if (*fromLen < BYTES_PER_FRAME || *toLen < SAMPLES_PER_FRAME*2)
     return 0;
+
+#ifdef _WIN32_WCE
+  {
+    UWord8 buffer[BYTES_PER_FRAME+1];
+    buffer[0] = 2;
+    memcpy(&buffer[1], from, BYTES_PER_FRAME);
+    if (D_IF_g729ab_decode(context, buffer, (Word16 *)to, 0) != 0)
+      return 0;
+  }
+#else
 
   va_g729a_decoder((unsigned char *)from, (short *)to, 0);
 
-  *fromLen = L_FRAME_COMPRESSED;
-  *toLen   = SAMPLES_PER_FRAME * 2;
+#endif
+
+  *fromLen = BYTES_PER_FRAME;
+  *toLen = SAMPLES_PER_FRAME*2;
 
   return 1;
 }
 
 static void destroy_decoder(const struct PluginCodec_Definition * codec, void * context)
 {
+#ifdef _WIN32_WCE
+  free(context);
+#else
   decoderInUse = 0;
+#endif
 }
 
 
