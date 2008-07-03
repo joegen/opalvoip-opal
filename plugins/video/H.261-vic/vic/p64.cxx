@@ -157,12 +157,6 @@
 
 #include "config.h"
 
-#if !(defined(WIN32) || defined(_WIN32_WCE))
-#include <stdint.h>
-#include <sys/file.h>
-#endif
-#include <sys/stat.h>
-
 #include "p64.h"
 #include "p64-huff.h"
 #include "dct.h"

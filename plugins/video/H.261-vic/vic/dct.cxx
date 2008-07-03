@@ -85,7 +85,6 @@
  *
  ********/
 
-#include <sys/types.h>
 #include "bsd-endian.h"
 #include "dct.h"
 
