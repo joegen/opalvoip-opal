@@ -21,8 +21,6 @@
  *
  ********/
 
-#include <sys/types.h>
-
 unsigned dct_basis[64][64/sizeof(unsigned)] = {
 {875836468,875836468,
 875836468,875836468,

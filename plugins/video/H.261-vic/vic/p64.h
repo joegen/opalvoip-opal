@@ -69,8 +69,6 @@
 #ifndef lib_p64_h
 #define lib_p64_h
 
-#include <sys/types.h>
-
 /*
  * H.261 encapsulation.in payload of h261 packet.
  * See Internet draft.

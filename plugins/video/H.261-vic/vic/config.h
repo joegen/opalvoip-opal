@@ -62,7 +62,6 @@
  *
  ********/
 
-//#include <ptlib.h>
 #include <string.h>
 
 typedef unsigned char u_char;
@@ -87,6 +86,10 @@ typedef unsigned long u_long;
   #define INT_64 __int64 // uncomment for 64 bit word machines
 #elif defined(__GNUC__) || defined (sun)
   #define INT_64 long long
+#endif
+
+#ifdef _WIN32_WCE
+typedef int intptr_t;
 #endif
 
 #if BYTE_ORDER == LITTLE_ENDIAN
