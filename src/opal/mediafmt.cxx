@@ -840,8 +840,6 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   rtpPayloadType = pt;
   rtpEncodingName = en;
 
-  defaultSessionID = OpalMediaTypeDefinition::GetDefaultSessionId(mediaType);
-
   if (nj)
     AddOption(new OpalMediaOptionBoolean(OpalMediaFormat::NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));
 
@@ -1173,8 +1171,6 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
     return;
   }
 
-  static const char * const SessionNames[] = { "", " Audio", " Video", " Data", " H.224" };
-
   PINDEX TitleWidth = 20;
   for (i = 0; i < options.GetSize(); i++) {
     PINDEX width =options[i].GetName().GetLength();
@@ -1183,7 +1179,7 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
   }
 
   strm << right << setw(TitleWidth) <<   "Format Name" << left << "       = " << formatName << '\n'
-       << right << setw(TitleWidth) <<    "Session ID" << left << "       = " << defaultSessionID << (defaultSessionID < PARRAYSIZE(SessionNames) ? SessionNames[defaultSessionID] : "") << '\n'
+       << right << setw(TitleWidth) <<    "Media Type" << left << "       = " << mediaType << '\n'
        << right << setw(TitleWidth) <<  "Payload Type" << left << "       = " << rtpPayloadType << '\n'
        << right << setw(TitleWidth) << "Encoding Name" << left << "       = " << rtpEncodingName << '\n';
   for (i = 0; i < options.GetSize(); i++) {
