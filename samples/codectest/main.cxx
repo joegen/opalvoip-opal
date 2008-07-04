@@ -147,6 +147,14 @@ void CodecTest::Main()
   if (!audio.Initialise(args) || !video.Initialise(args))
     return;
 
+  if (video.encoder == NULL && audio.encoder == NULL) {
+    cout << "Could not identify media formats ";
+    for (int i = 0; i < args.GetCount(); ++i)
+      cout << args[i] << ' ';
+    cout << endl;
+    return;
+  }
+
   audio.Resume();
   video.Resume();
 
@@ -222,10 +230,13 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
     OpalMediaFormat mediaFormat = args[i];
     if (mediaFormat.IsEmpty()) {
       cout << "Unknown media format name \"" << args[i] << '"' << endl;
-      return false;
+      return 0;
     }
 
+cout << mediaFormat << " created " << rawFormat << ' ' << mediaFormat.GetDefaultSessionID() << ' ' << rawFormat.GetDefaultSessionID() << endl;
+
     if (mediaFormat.GetDefaultSessionID() == rawFormat.GetDefaultSessionID()) {
+cout << "matched " << mediaFormat << " to " << rawFormat << endl;
       if (rawFormat == mediaFormat) {
         decoder = NULL;
         encoder = NULL;
@@ -373,7 +384,7 @@ bool VideoThread::Initialise(PArgList & args)
     cerr << "Cannot use ";
     if (driverName.IsEmpty() && deviceName.IsEmpty())
       cerr << "default ";
-    cerr << "video display";
+    cerr << "video grab";
     if (!driverName)
       cerr << ", driver \"" << driverName << '"';
     if (!deviceName)
@@ -421,7 +432,7 @@ bool VideoThread::Initialise(PArgList & args)
       return false;
     }
   }
-  cout << "Grabber grabber channel set to " << grabber->GetChannel() << endl;
+  cout << "Grabber channel set to " << grabber->GetChannel() << endl;
 
   
   unsigned frameRate;
