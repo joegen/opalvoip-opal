@@ -825,6 +825,12 @@ bool SIPEndPoint::Register(const PString & host,
 
 bool SIPEndPoint::Register(const SIPRegister::Params & params)
 {
+  PINDEX at = params.m_addressOfRecord.Find('@');
+  if (at == 0 || at >= params.m_addressOfRecord.GetLength()-1) {
+    PTRACE(2, "SIP\tInvalid address-of-record for registration.");
+    return false;
+  }
+
   PSafePtr<SIPRegisterHandler> handler = PSafePtrCast<SIPHandler, SIPRegisterHandler>(
           activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadOnly));
 
