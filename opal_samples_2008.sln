@@ -35,6 +35,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CallGen", "samples\callgen\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PlayRTP", "samples\playrtp\playrtp_2008.vcproj", "{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FaxOPAL", "samples\faxopal\FaxOPAL_2008.vcproj", "{64E1F88F-D374-457D-8703-33AAA566649B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -118,6 +120,12 @@ Global
 		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.No Trace|Win32.Build.0 = Debug|Win32
 		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.Release|Win32.ActiveCfg = Release|Win32
 		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.Release|Win32.Build.0 = Release|Win32
+		{64E1F88F-D374-457D-8703-33AAA566649B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{64E1F88F-D374-457D-8703-33AAA566649B}.Debug|Win32.Build.0 = Debug|Win32
+		{64E1F88F-D374-457D-8703-33AAA566649B}.No Trace|Win32.ActiveCfg = Debug|Win32
+		{64E1F88F-D374-457D-8703-33AAA566649B}.No Trace|Win32.Build.0 = Debug|Win32
+		{64E1F88F-D374-457D-8703-33AAA566649B}.Release|Win32.ActiveCfg = Release|Win32
+		{64E1F88F-D374-457D-8703-33AAA566649B}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
