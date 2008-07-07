@@ -535,8 +535,8 @@ class OpalLineInterfaceDevice : public PObject
 
 
     enum {
-      DefaultDTMFOnTime = 180,
-      DefaultDTMFOffTime = 120
+      DefaultDTMFOnTime = 150,
+      DefaultDTMFOffTime = 50
     };
 
     /**Play a DTMF digit.
@@ -688,17 +688,21 @@ class OpalLineInterfaceDevice : public PObject
         : m_requireTones(false)
         , m_dialToneTimeout(2500)
         , m_dialStartDelay(500)
+        , m_dialDigitTime(DefaultDTMFOnTime)
+        , m_dialInterDigitTime(DefaultDTMFOffTime)
         , m_progressTimeout(5000)
         , m_commaDelay(2000)
       { }
 
       bool     m_requireTones;      ///< Require dial/ring tone to be detected
       unsigned m_dialToneTimeout;   ///< Time in msec to wait for a dial tone to be detected
-      unsigned m_dialStartDelay;    ///< Time in msec to wait between the dial tone detection and dialing the dtmf
+      unsigned m_dialStartDelay;    ///< Time in msec to wait between the dial tone detection and dialing the DTMF
+      unsigned m_dialDigitTime;     ///< Time in msec to play DTMF digit
+      unsigned m_dialInterDigitTime;///< Time in msec of silence between each DTMF digit
       unsigned m_progressTimeout;   ///< Time in msec to wait for a progress tone (ring, busy or connected) to be detected
       unsigned m_commaDelay;        ///< Time in msec to wait when a comma (',') is found in the dial string
     };
-        
+
     /**Dial a number on network line.
        The takes the line off hook, waits for dial tone, and transmits the
        specified number as DTMF tones.

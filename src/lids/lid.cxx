@@ -632,7 +632,7 @@ OpalLineInterfaceDevice::CallProgressTones
   PINDEX lastPos = 0;
   PINDEX nextPos;
   while ((nextPos = number.FindOneOf("!@,")) != P_MAX_INDEX) {
-    PlayDTMF(line, number(lastPos, nextPos-1));
+    PlayDTMF(line, number(lastPos, nextPos-1), params.m_dialDigitTime, params.m_dialInterDigitTime);
     lastPos = nextPos+1;
     switch (number[nextPos]) {
       case '!' :
@@ -640,7 +640,7 @@ OpalLineInterfaceDevice::CallProgressTones
         break;
 
       case '@' :
-        if (!WaitForTone(line, DialTone, 3000)) {
+        if (!WaitForTone(line, DialTone, params.m_dialToneTimeout)) {
           if (params.m_requireTones) {
             SetLineOnHook(line);
             return DialTone;
@@ -654,7 +654,7 @@ OpalLineInterfaceDevice::CallProgressTones
     }
   }
 
-  PlayDTMF(line, number.Mid(lastPos));
+  PlayDTMF(line, number.Mid(lastPos), params.m_dialDigitTime, params.m_dialInterDigitTime);
 
   if (params.m_requireTones)
     return WaitForToneDetect(line, params.m_progressTimeout); // Wait for busy or ring back
