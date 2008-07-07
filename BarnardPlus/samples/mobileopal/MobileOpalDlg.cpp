@@ -48,6 +48,7 @@
 
 static UINT TimerID = 1;
 
+static TCHAR const RecentCallsSection[]  = L"RecentCalls";
 static TCHAR const OptionsSection[]      = L"Options";
 static TCHAR const UserNameKey[]         = L"UserName";
 static TCHAR const DisplayNameKey[]      = L"DisplayName";
@@ -322,7 +323,8 @@ BEGIN_MESSAGE_MAP(CMobileOpalDlg, CDialog)
   //}}AFX_MSG_MAP
   ON_WM_TIMER()
   ON_COMMAND(ID_CALL_ANSWER, &CMobileOpalDlg::OnCallAnswer)
-  ON_EN_CHANGE(IDC_ADDRESS, &CMobileOpalDlg::OnChangedAddress)
+  ON_CBN_EDITCHANGE(IDC_ADDRESS, &CMobileOpalDlg::OnChangedAddress)
+  ON_CBN_SELENDOK(IDC_ADDRESS, &CMobileOpalDlg::OnSelectedAddress)
   ON_COMMAND(IDM_OPTIONS_GENERAL, &CMobileOpalDlg::OnMenuOptionsGeneral)
   ON_COMMAND(IDM_OPTIONS_H323, &CMobileOpalDlg::OnMenuOptionsH323)
   ON_COMMAND(IDM_OPTIONS_SIP, &CMobileOpalDlg::OnMenuOptionsSIP)
@@ -350,6 +352,18 @@ BOOL CMobileOpalDlg::OnInitDialog()
 
   SetTimer(TimerID, 100, NULL);
 
+  // Recent calls list
+  unsigned index = 1;
+  for (;;) {
+    CString key;
+    key.Format(L"%04u", index++);
+    CString uri = AfxGetApp()->GetProfileString(RecentCallsSection, key);
+    if (uri.IsEmpty())
+      break;
+    m_ctrlAddress.AddString(uri);
+  }
+
+  // Speakerphone state
   m_speakerphone = false;
   SetSpeakerMode(m_speakerphone);
 
@@ -546,6 +560,30 @@ void CMobileOpalDlg::SetCallButton(bool enabled, UINT strId)
 }
 
 
+void CMobileOpalDlg::AddRecentCall(const CString & uri)
+{
+  int index = m_ctrlAddress.FindStringExact(-1, uri);
+  if (index == 0)
+    return;
+
+  if (index > 0)
+    m_ctrlAddress.DeleteString(index);
+
+  m_ctrlAddress.InsertString(0, uri);
+
+  index = 0;
+  for (;;) {
+    CString str;
+    m_ctrlAddress.GetLBText(index, str);
+    if (str.IsEmpty())
+      break;
+    CString key;
+    key.Format(L"%04u", ++index);
+    AfxGetApp()->WriteProfileString(RecentCallsSection, key, str);
+  }
+}
+
+
 void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
 {
   if (m_opal == NULL)
@@ -689,8 +727,10 @@ void CMobileOpalDlg::OnCallAnswer()
       ErrorBox(IDS_CALL_START_FAIL, response);
       SetCallButton(true, IDS_CALL);
     }
-    else if (command.m_type == OpalCmdSetUpCall)
+    else if (command.m_type == OpalCmdSetUpCall) {
       m_currentCallToken = response->m_param.m_callSetUp.m_callToken;
+      AddRecentCall(m_callAddress);
+    }
     else if (command.m_type == OpalCmdAnswerCall) {
       m_currentCallToken = m_incomingCallToken;
       m_incomingCallToken.Empty();
@@ -704,6 +744,12 @@ void CMobileOpalDlg::OnCallAnswer()
 void CMobileOpalDlg::OnChangedAddress()
 {
   SetCallButton(m_ctrlAddress.GetWindowTextLength() > 0);
+}
+
+
+void CMobileOpalDlg::OnSelectedAddress()
+{
+  SetCallButton(true);
 }
 
 
