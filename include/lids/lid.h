@@ -1035,7 +1035,7 @@ class OpalLine : public PObject
 
        For a POTS port this is equivalent to IsLineOffHook().
       */
-    virtual PBoolean IsLineConnected() { return device.IsLineConnected(lineNumber); }
+    virtual PBoolean IsConnected() { return device.IsLineConnected(lineNumber); }
 
 
     /**Determine if line has been disconnected from a call.
