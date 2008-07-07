@@ -545,8 +545,6 @@ class OpalMediaFormatInternal : public PObject
     PSortedList<OpalMediaOption> options;
     time_t                       codecVersionTime;
 
-    unsigned                     defaultSessionID;   // deprecated
-
   friend bool operator==(const char * other, const OpalMediaFormat & fmt);
   friend bool operator!=(const char * other, const OpalMediaFormat & fmt);
   friend bool operator==(const PString & other, const OpalMediaFormat & fmt);
@@ -752,11 +750,13 @@ class OpalMediaFormat : public PContainer
 
     /**DEPRECATED - Get the default session ID for media format.
       */
-    unsigned GetDefaultSessionID() const { PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : m_info->defaultSessionID; }
+    unsigned GetDefaultSessionID() const { 
+      PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : OpalMediaTypeDefinition::GetDefaultSessionId(m_info->mediaType); 
+    }
 
     /** Get the media type for this format
       */
-    OpalMediaType GetMediaType() const { PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : m_info->mediaType; }
+    OpalMediaType GetMediaType() const { PWaitAndSignal m(_mutex); return m_info == NULL ? OpalMediaType() : m_info->mediaType; }
 
     /**Determine if the media format requires a jitter buffer. As a rule an
        audio codec needs a jitter buffer and all others do not.
@@ -1037,17 +1037,6 @@ class OpalMediaFormat : public PContainer
   friend class OpalMediaFormatList;
 };
 
-
-// A pair of macros to simplify cration of OpalMediFormat instances.
-
-#define OPAL_MEDIA_FORMAT(name, fullName, defaultSessionID, rtpPayloadType, encodingName, needsJitter, bandwidth, frameSize, frameTime, timeUnits) \
-const class name##_Class : public OpalMediaFormat \
-{ \
-  public: \
-    name##_Class(); \
-} name; \
-name##_Class::name##_Class() \
-      : OpalMediaFormat(fullName, defaultSessionID, rtpPayloadType, encodingName, needsJitter, bandwidth, frameSize, frameTime, timeUnits) \
 
 #if OPAL_AUDIO
 class OpalAudioFormatInternal : public OpalMediaFormatInternal
