@@ -52,7 +52,7 @@ protected:
   OpalHandle m_opal;
   unsigned m_opalVersion;
   CStatic m_ctrlStatus;
-  CEdit m_ctrlAddress;
+  CComboBox m_ctrlAddress;
   CString m_callAddress;
   CString m_localAddress;
   CStringA m_incomingCallToken;
@@ -70,6 +70,7 @@ protected:
   void ErrorBox(UINT strId, const OpalMessage * response = NULL);
   void SetStatusText(UINT ids, const char * str = NULL);
   void SetCallButton(bool enabled, UINT strId = 0);
+  void AddRecentCall(const CString & uri);
 
 public:
   afx_msg void OnTimer(UINT_PTR nIDEvent);
@@ -77,6 +78,7 @@ public:
   afx_msg void OnCancel();
   afx_msg void OnCallAnswer();
   afx_msg void OnChangedAddress();
+  afx_msg void OnSelectedAddress();
   afx_msg void OnSpeakerphone();
   afx_msg void OnMenuOptionsGeneral();
   afx_msg void OnMenuOptionsH323();
