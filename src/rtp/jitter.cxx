@@ -335,7 +335,7 @@ PBoolean OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, 
     FrameQueue::iterator r;
     for (r = jitterBuffer.begin(); r != jitterBuffer.end(); ++r) {
       if (time < (*r)->GetTimestamp() || ((time == (*r)->GetTimestamp()) && (currentReadFrame->GetSequenceNumber() < (*r)->GetSequenceNumber()))) {
-        PAssertNULL(currentFrame);
+        PAssertNULL(currentReadFrame);
         jitterBuffer.insert(r, currentReadFrame);
         break;
       }
