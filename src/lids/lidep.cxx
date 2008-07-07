@@ -511,10 +511,13 @@ PBoolean OpalLineConnection::SetAlerting(const PString & /*calleeName*/, PBoolea
   SetPhase(AlertingPhase);
   alertingTime = PTime();
 
-  if (line.PlayTone(OpalLineInterfaceDevice::RingTone))
-    PTRACE(3, "LID Con\tPlaying ring tone");
-  else
-    PTRACE(2, "LID Con\tCould not play ring tone");
+  if (GetMediaStream(OpalMediaType::Audio(), false) == NULL) {
+    // Start ringing if we don't have an audio media stream
+    if (line.PlayTone(OpalLineInterfaceDevice::RingTone))
+      PTRACE(3, "LID Con\tPlaying ring tone");
+    else
+      PTRACE(2, "LID Con\tCould not play ring tone");
+  }
 
   return true;
 }
@@ -775,7 +778,8 @@ PBoolean OpalLineConnection::SetUpConnection()
     if (!line.SetOffHook()) {
       PTRACE(1, "LID Con\tCould not go off hook");
       return false;
-    }  
+    }
+
     PTRACE(3, "LID Con\tNo remote party indicated, going off hook without dialing.");
     OnConnectedInternal();
     ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
@@ -783,17 +787,48 @@ PBoolean OpalLineConnection::SetUpConnection()
   else {
     switch (line.DialOut(remotePartyNumber, m_dialParams)) {
       case OpalLineInterfaceDevice::DialTone :
-        PTRACE(3, "LID Con\tdial tone on " << line);
+        PTRACE(3, "LID Con\tNo dial tone on " << line);
+        return false;
+
+      case OpalLineInterfaceDevice::BusyTone :
+        PTRACE(3, "LID Con\tBusy tone on " << line);
+        Release(OpalConnection::EndedByRemoteBusy);
         return false;
 
       case OpalLineInterfaceDevice::RingTone :
         PTRACE(3, "LID Con\tGot ringback on " << line);
+        // Start media before the OnAlerting to get progress tones (e.g. SIP 183 response)
+        ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
         SetPhase(AlertingPhase);
         OnAlerting();
+
+        // Wait for connection
+        if (m_dialParams.m_progressTimeout == 0)
+          OnConnectedInternal();
+        else {
+          PTRACE(3, "LID Con\tWaiting " << m_dialParams.m_progressTimeout << "ms for connection on line " << line);
+          PTimer timeout(m_dialParams.m_progressTimeout);
+          while (GetPhase() == AlertingPhase) {
+            if (line.IsConnected())
+              OnConnectedInternal();
+            if (!timeout.IsRunning()) {
+              if (m_dialParams.m_requireTones) {
+                Release(OpalConnection::EndedByRemoteBusy);
+                return false;
+              }
+
+              PTRACE(2, "LID Con\tConnection not detected on line " << line);
+              break;
+            }
+
+            PThread::Sleep(100);
+          }
+        }
         break;
 
       default :
         PTRACE(1, "LID Con\tError dialling " << remotePartyNumber << " on " << line);
+        Release(OpalConnection::EndedByConnectFail);
         return false;
     }
   }

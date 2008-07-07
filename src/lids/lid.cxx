@@ -656,8 +656,10 @@ OpalLineInterfaceDevice::CallProgressTones
 
   PlayDTMF(line, number.Mid(lastPos));
 
-  // Wait for busy or ring back
-  return WaitForToneDetect(line, params.m_progressTimeout);
+  if (params.m_requireTones)
+    return WaitForToneDetect(line, params.m_progressTimeout); // Wait for busy or ring back
+
+  return RingTone;
 }
 
 
