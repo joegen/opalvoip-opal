@@ -753,6 +753,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     if (rtpSession == NULL)
       return false;
     localAddress = OpalTransportAddress(rtpSession->GetLocalAddress(), rtpSession->GetLocalDataPort());
+    remoteChanged = true;
   }
   else {
     PIPSocket::Address ip;
