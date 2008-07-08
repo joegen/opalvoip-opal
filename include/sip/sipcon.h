@@ -152,7 +152,7 @@ class SIPConnection : public OpalRTPConnection
 
     /**Get the data formats this endpoint is capable of operating in.
       */
-    virtual OpalMediaFormatList GetMediaFormats() const;
+    virtual OpalMediaFormatList GetMediaFormats();
     
     /**Open source or sink media stream for session.
       */
@@ -399,8 +399,6 @@ class SIPConnection : public OpalRTPConnection
     const PString & GetDialogTo() const { return m_dialogTo; }
     const PStringList & GetRouteSet() const { return routeSet; }
     SIPAuthentication * GetAuthenticator() const { return authentication; }
-
-    PBoolean OnOpenIncomingMediaChannels();
 
 #if OPAL_VIDEO
     /**Call when SIP INFO of type application/media_control+xml is received.
