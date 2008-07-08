@@ -775,7 +775,8 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
   WORD remotePort;
   PString iface;
   PINDEX readCount;
-  switch (listenerBundle->ReadFromBundle(pdu.GetPointer(2000), 2000, remoteAddr, remotePort, iface, readCount, timeout)) {
+  static const PINDEX SixtyFourK = 0x10000;
+  switch (listenerBundle->ReadFromBundle(pdu.GetPointer(SixtyFourK), SixtyFourK, remoteAddr, remotePort, iface, readCount, timeout)) {
     case PChannel::NoError :
       pdu.SetSize(readCount);
       return new OpalTransportUDP(endpoint, pdu, listenerBundle, iface, remoteAddr, remotePort);
