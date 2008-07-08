@@ -148,7 +148,7 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   OpalMediaType mediaType = OpalMediaTypeDefinition::GetMediaTypeForSessionId(sessionID);
   OpalMediaTypeDefinition * def = mediaType.GetDefinition();
   if (def == NULL) {
-    PTRACE(1, "OpalCon\tNo definition for media type " << mediaType);
+    PTRACE(1, "RTPCon\tNo definition for media type " << mediaType);
     return NULL;
   }
 
@@ -159,10 +159,10 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   if (!securityMode.IsEmpty()) {
     securityParms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
     if (securityParms == NULL) {
-      PTRACE(1, "OpalCon\tSecurity mode " << securityMode << " unknown");
+      PTRACE(1, "RTPCon\tSecurity mode " << securityMode << " unknown");
       return NULL;
     }
-    PTRACE(1, "OpalCon\tCreating security mode " << securityMode);
+    PTRACE(1, "RTPCon\tCreating security mode " << securityMode);
   }
 
   rtpSession = def->CreateRTPSession(*this,
@@ -172,9 +172,9 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
                              securityParms, sessionID, remoteIsNAT);  
   if (rtpSession == NULL) {
     if (securityParms == NULL) {
-      PTRACE(1, "OpalCon\tCannot create RTP session " << sessionID);
+      PTRACE(1, "RTPCon\tCannot create RTP session " << sessionID);
     } else {
-      PTRACE(1, "OpalCon\tCannot create RTP session " << sessionID << " with security mode " << securityMode);
+      PTRACE(1, "RTPCon\tCannot create RTP session " << sessionID << " with security mode " << securityMode);
       delete securityParms;
     }
     return NULL;
@@ -185,7 +185,7 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   while (!rtpSession->Open(localAddress, nextPort, nextPort, manager.GetRtpIpTypeofService(), stun, rtpqos)) {
     nextPort = manager.GetRtpIpPortPair();
     if (nextPort == firstPort) {
-      PTRACE(1, "OpalCon\tNo ports available for RTP session " << sessionID << " for " << *this);
+      PTRACE(1, "RTPCon\tNo ports available for RTP session " << sessionID << " for " << *this);
       delete rtpSession;
       return NULL;
     }
@@ -261,7 +261,7 @@ void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMedia
 {
   if (rfc2833Handler != NULL) {
     if(isSource) {
-      PTRACE(3, "OpalCon\tAdding RFC2833 receive handler");
+      PTRACE(3, "RTPCon\tAdding RFC2833 receive handler");
       OpalMediaStream & mediaStream = patch.GetSource();
       patch.AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
     } 
@@ -269,7 +269,7 @@ void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMedia
 
   if (ciscoNSEHandler != NULL) {
     if(isSource) {
-      PTRACE(3, "OpalCon\tAdding Cisco NSE receive handler");
+      PTRACE(3, "RTPCon\tAdding Cisco NSE receive handler");
       OpalMediaStream & mediaStream = patch.GetSource();
       patch.AddFilter(ciscoNSEHandler->GetReceiveHandler(), mediaStream.GetMediaFormat());
     } 
@@ -288,7 +288,7 @@ PBoolean OpalRTPConnection::GetMediaInformation(unsigned sessionID,
                                          MediaInformation & info) const
 {
   if (!mediaTransportAddresses.Contains(sessionID)) {
-    PTRACE(2, "OpalCon\tGetMediaInformation for session " << sessionID << " - no channel.");
+    PTRACE(2, "RTPCon\tGetMediaInformation for session " << sessionID << " - no channel.");
     return PFalse;
   }
 
@@ -304,7 +304,7 @@ PBoolean OpalRTPConnection::GetMediaInformation(unsigned sessionID,
     info.data = info.control = address;
 
   info.rfc2833 = rfc2833Handler->GetPayloadType();
-  PTRACE(3, "OpalCon\tGetMediaInformation for session " << sessionID
+  PTRACE(3, "RTPCon\tGetMediaInformation for session " << sessionID
          << " data=" << info.data << " rfc2833=" << info.rfc2833);
   return PTrue;
 }
@@ -324,7 +324,7 @@ OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & m
 
   RTP_Session * session = GetSession(sessionID);
   if (session == NULL) {
-    PTRACE(1, "H323\tCreateMediaStream could not find session " << sessionID);
+    PTRACE(1, "RTPCon\tCreateMediaStream could not find session " << sessionID);
     return NULL;
   }
 
