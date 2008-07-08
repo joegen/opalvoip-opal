@@ -152,7 +152,7 @@ class SIPConnection : public OpalRTPConnection
 
     /**Get the data formats this endpoint is capable of operating in.
       */
-    virtual OpalMediaFormatList GetMediaFormats();
+    virtual OpalMediaFormatList GetMediaFormats() const;
     
     /**Open source or sink media stream for session.
       */
