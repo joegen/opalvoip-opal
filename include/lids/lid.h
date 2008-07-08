@@ -1030,7 +1030,7 @@ class OpalLine : public PObject
 
        Returns true if successful, always returns false for PSTN lines.
       */
-    virtual PBoolean SetConnected() { return device.IsLineConnected(lineNumber); }
+    virtual PBoolean SetConnected() { return device.SetLineConnected(lineNumber); }
 
     /**Determine if remote has answered call on line.
        This uses the hardware (and country) dependent means for determining

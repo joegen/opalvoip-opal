@@ -527,11 +527,23 @@ PBoolean OpalLineConnection::SetConnected()
 {
   PTRACE(3, "LID Con\tSetConnected " << *this);
 
-  if (!line.StopTone())
+  if (!line.StopTone()) {
+    PTRACE(1, "LID Con\tCould not stop tone on " << *this);
     return false;
+  }
 
-  if (!line.SetConnected())
-    return false;
+  if (line.IsTerminal()) {
+    if (!line.SetConnected()) {
+      PTRACE(1, "LID Con\tCould set line to connected mode on " << *this);
+      return false;
+    }
+  }
+  else {
+    if (!line.SetOffHook()) {
+      PTRACE(1, "LID Con\tCould set line off hook on " << *this);
+      return false;
+    }
+  }
 
   ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
   return OpalConnection::SetConnected();
@@ -655,8 +667,10 @@ void OpalLineConnection::Monitor()
       line.Ring(0, NULL);
 
       // If we are in alerting state then we are B-Party
-      if (GetPhase() == AlertingPhase)
+      if (GetPhase() == AlertingPhase) {
         OnConnectedInternal();
+        ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
+      }
       else {
         // Otherwise we are A-Party
         if (!OnIncomingConnection(0, NULL)) {
