@@ -158,12 +158,6 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _nam
     AddNTEString("0-15,32-49");
   else if (encodingName == OpalCiscoNSE.GetEncodingName())
     AddNSEString("192,193");
-
-  GetMediaFormat(); // Initialise, if possible
-  
-  // try to init encodingName from global list, to avoid PAssert when media has not rtpmap
-  if (encodingName.IsEmpty())
-    encodingName= mediaFormat.GetEncodingName();
 }
 
 
@@ -422,6 +416,7 @@ const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
         option.FromString(option.GetFMTPDefault());
     }
   }
+
   return mediaFormat;
 }
 
@@ -430,6 +425,10 @@ bool SDPMediaFormat::ToNormalisedOptions()
 {
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
     return false;
+
+  // try to init encodingName from global list, to avoid PAssert when media has no rtpmap
+  if (encodingName.IsEmpty())
+    encodingName = mediaFormat.GetEncodingName();
 
   if (mediaFormat.ToNormalisedOptions())
     return true;
@@ -775,7 +774,7 @@ bool SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
   return true;
 }
 
-OpalMediaFormatList SDPMediaDescription::GetMediaFormats(const OpalMediaType & mediaType) const
+OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
 {
   OpalMediaFormatList list;
 
