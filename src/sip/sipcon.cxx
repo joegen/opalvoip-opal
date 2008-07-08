@@ -920,16 +920,17 @@ OpalTransportAddress SIPConnection::GetLocalAddress(WORD port) const
 }
 
 
-OpalMediaFormatList SIPConnection::GetMediaFormats()
+OpalMediaFormatList SIPConnection::GetMediaFormats() const
 {
   if (remoteFormatList.IsEmpty() && originalInvite != NULL) {
+    SIPConnection * writableThis = const_cast<SIPConnection *>(this);
     // Extract the media from SDP into our remote capabilities list
     SDPSessionDescription & sdp = originalInvite->GetSDP();
     for (PINDEX sessionID = 1; sessionID <= sdp.GetMediaDescriptions().GetSize(); ++sessionID) {
       SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByIndex(sessionID);
-      remoteFormatList += mediaDescription->GetMediaFormats();
+      writableThis->remoteFormatList += mediaDescription->GetMediaFormats();
       OpalTransportAddress dummy;
-      OnUseRTPSession(sessionID, mediaDescription->GetMediaType(), mediaDescription->GetTransportAddress(), dummy);
+      writableThis->OnUseRTPSession(sessionID, mediaDescription->GetMediaType(), mediaDescription->GetTransportAddress(), dummy);
     }
   }
 
