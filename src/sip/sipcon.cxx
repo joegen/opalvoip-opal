@@ -439,7 +439,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalM
 
   PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
   if (otherParty == NULL) {
-    PTRACE(2, "H323\tCowardly refusing to create an RTP channel with only one connection");
+    PTRACE(2, "SIP\tCowardly refusing to create an RTP channel with only one connection");
     return NULL;
    }
 
@@ -707,7 +707,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   SDPMediaDescription * localMedia = NULL;
 
-  OpalMediaFormatList sdpFormats = incomingMedia->GetMediaFormats(mediaType);
+  OpalMediaFormatList sdpFormats = incomingMedia->GetMediaFormats();
   sdpFormats.Remove(endpoint.GetManager().GetMediaFormatMask());
   if (sdpFormats.GetSize() == 0) {
     PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
@@ -920,8 +920,19 @@ OpalTransportAddress SIPConnection::GetLocalAddress(WORD port) const
 }
 
 
-OpalMediaFormatList SIPConnection::GetMediaFormats() const
+OpalMediaFormatList SIPConnection::GetMediaFormats()
 {
+  if (remoteFormatList.IsEmpty() && originalInvite != NULL) {
+    // Extract the media from SDP into our remote capabilities list
+    SDPSessionDescription & sdp = originalInvite->GetSDP();
+    for (PINDEX sessionID = 1; sessionID <= sdp.GetMediaDescriptions().GetSize(); ++sessionID) {
+      SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByIndex(sessionID);
+      remoteFormatList += mediaDescription->GetMediaFormats();
+      OpalTransportAddress dummy;
+      OnUseRTPSession(sessionID, mediaDescription->GetMediaType(), mediaDescription->GetTransportAddress(), dummy);
+    }
+  }
+
   return remoteFormatList;
 }
 
@@ -1513,10 +1524,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     replacedConnection->Release(OpalConnection::EndedByCallForwarded);
     replacedConnection->CloseMediaStreams();
 
-    if (!OnOpenIncomingMediaChannels()) {
-      PTRACE(1, "SIP\tOnOpenIncomingMediaChannels failed for INVITE from " << request.GetURI() << " for " << *this);
-      Release();
-    }
+    // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
+    // before it knows what what formats can support. 
+    ownerCall.GetOtherPartyConnection(*this)->PreviewPeerMediaFormats(GetMediaFormats());
 
     SetConnected();
     return;
@@ -1529,11 +1539,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     return;
   }
 
-  if (!OnOpenIncomingMediaChannels()) {
-    PTRACE(1, "SIP\tOnOpenIncomingMediaChannels failed for INVITE from " << request.GetURI() << " for " << *this);
-    Release();
-    return;
-  }
+  // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
+  // before it knows what what formats can support. 
+  ownerCall.GetOtherPartyConnection(*this)->PreviewPeerMediaFormats(GetMediaFormats());
 
   if (!ownerCall.OnSetUp(*this)) {
     PTRACE(1, "SIP\tOnSetUp failed for INVITE from " << request.GetURI() << " for " << *this);
@@ -1597,48 +1605,6 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
     SendInviteOK(sdpOut);
   else
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
-}
-
-
-PBoolean SIPConnection::OnOpenIncomingMediaChannels()
-{
-  ApplyStringOptions();
-
-  // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
-  // before it knows what what formats can support. 
-  if (originalInvite != NULL && originalInvite->HasSDP()) {
-
-    OpalMediaFormatList previewFormats;
-
-    SDPSessionDescription & sdp = originalInvite->GetSDP();
-    static struct PreviewType {
-      const char * mediaType;
-      unsigned sessionID;
-    } previewTypes[] = 
-    { 
-      { "audio", OpalMediaFormat::DefaultAudioSessionID },
-#if OPAL_VIDEO
-      { "video", OpalMediaFormat::DefaultVideoSessionID },
-#endif
-#if OPAL_T38_CAPABILITY
-      { "image", OpalMediaFormat::DefaultDataSessionID },
-#endif
-    };
-    PINDEX i;
-    for (i = 0; i < (PINDEX) (sizeof(previewTypes)/sizeof(previewTypes[0])); ++i) {
-      SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByType(previewTypes[i].mediaType);
-      if (mediaDescription != NULL) {
-        previewFormats += mediaDescription->GetMediaFormats(previewTypes[i].mediaType);
-        OpalTransportAddress mediaAddress = mediaDescription->GetTransportAddress();
-        mediaTransportAddresses.SetAt(previewTypes[i].sessionID, new OpalTransportAddress(mediaAddress));
-      }
-    }
-
-    if (previewFormats.GetSize() != 0) 
-      ownerCall.GetOtherPartyConnection(*this)->PreviewPeerMediaFormats(previewFormats);
-  }
-
-  return PTrue;
 }
 
 
@@ -2067,7 +2033,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
   }
 
   // see if the remote supports this media
-  OpalMediaFormatList mediaFormatList = mediaDescription->GetMediaFormats(mediaType);
+  OpalMediaFormatList mediaFormatList = mediaDescription->GetMediaFormats();
   if (mediaFormatList.GetSize() == 0) {
     PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
     return false;
