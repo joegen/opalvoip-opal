@@ -48,7 +48,7 @@ Building the plugin
 -------------------
 
 When you configure OPAL, pass the argument
-       --with-ffmpeg-src-dir=<path to your ffmpeg source directory>
+       --with-libavcodec-source-dir=<path to your ffmpeg source directory>
 
 
 Using the plugin
