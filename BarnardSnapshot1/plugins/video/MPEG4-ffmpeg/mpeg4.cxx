@@ -574,7 +574,7 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     _avcontext->qblur = 0.3;
     // default is tex^qComp; 1 is constant bitrate
     _avcontext->rc_eq = (char*) "1";
-    //avcontext->rc_eq = "tex^qComp";
+    _avcontext->rc_eq = "tex^qComp";
     // These ones technically could be dynamic, I think
     _avcontext->rc_min_rate = 0;
     // This is set to 0 in ffmpeg.c, the command-line utility.
@@ -614,8 +614,19 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     
     _avpicture->quality = _videoQMin;
 
+#ifdef USE_ORIG
     _avcontext->flags |= CODEC_FLAG_PART;   // data partitioning
     _avcontext->flags |= CODEC_FLAG_4MV;    // 4 motion vectors
+#else
+    _avcontext->max_b_frames=0; /*don't use b frames*/
+    _avcontext->flags|=CODEC_FLAG_AC_PRED;
+    _avcontext->flags|=CODEC_FLAG_H263P_UMV;
+    /*c->flags|=CODEC_FLAG_QPEL;*/ /*don't enable this one: this forces profile_level to advanced simple profile */
+    _avcontext->flags|=CODEC_FLAG_4MV;
+    _avcontext->flags|=CODEC_FLAG_GMC;
+    _avcontext->flags|=CODEC_FLAG_LOOP_FILTER;
+    _avcontext->flags|=CODEC_FLAG_H263P_SLICE_STRUCT;
+#endif
     _avcontext->opaque = this;              // for use in RTP callback
 }
 
@@ -766,17 +777,11 @@ void MPEG4EncoderContext::CloseCodec()
 // to create RTP packets.
 //
 
-void MPEG4EncoderContext::RtpCallback(AVCodecContext *priv_data, void *data,
-                                      int size, int num_mb)
+void MPEG4EncoderContext::RtpCallback(AVCodecContext *priv_data, void *data, int size, int num_mb)
 {
-    const int max_rtp = 1350;
-    while (size > 0)
-    {
-        MPEG4EncoderContext *c
-            = static_cast<MPEG4EncoderContext *>(priv_data->opaque);
-        c->_packetSizes.push_back((size < max_rtp ? size : max_rtp));
-        size -= max_rtp;
-    }
+  MPEG4EncoderContext *c = static_cast<MPEG4EncoderContext *>(priv_data->opaque);
+  c->_packetSizes.push_back(size);
+printf("size = %i\n", size);
 }
 		    
 /////////////////////////////////////////////////////////////////////////////
@@ -794,16 +799,17 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
         return 0;
     }
 
+    if (dstLen < 16)
+      return false;
+
     // create frames frame from their respective buffers
     RTPFrame srcRTP(src, srcLen);
-    RTPFrame dstRTP(dst, MAX_MPEG4_PACKET_SIZE);
+    RTPFrame dstRTP(dst, dstLen);
 
     // create the video frame header from the source and update video size
-    PluginCodec_Video_FrameHeader * header
-        = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
-    _frameWidth = header->width;
+    PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
+    _frameWidth  = header->width;
     _frameHeight = header->height;
-    dstLen = 0;
 
     if (_packetSizes.empty()) {
         if (_avcontext == NULL) {
@@ -817,8 +823,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
         _lastPktOffset = 0; 
 
         // generate the raw picture
-        memcpy(_rawFrameBuffer, OPAL_VIDEO_FRAME_DATA_PTR(header),
-              _rawFrameLen);
+        memcpy(_rawFrameBuffer, OPAL_VIDEO_FRAME_DATA_PTR(header), _rawFrameLen);
 
         // Should the next frame be an I-Frame?
         if ((flags & PluginCodec_CoderForceIFrame) || (_frameNum == 0))
@@ -830,10 +835,14 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
             _avpicture->pict_type = 0;
         }
 
+printf("--start frame\n");
+
         // Encode a frame
         int total = FFMPEGLibraryInstance.AvcodecEncodeVideo
                             (_avcontext, _encFrameBuffer, _encFrameLen,
                              _avpicture);
+
+printf("--end frame %i\n", total);
 
         if (total > 0) {
             _frameNum++; // increment the number of frames encoded
@@ -842,7 +851,6 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 #endif
 	    _isIFrame = mpeg4IsIframe(_encFrameBuffer, total );
         }
-
     }
 
     flags = 0;
@@ -850,26 +858,41 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
     if (_isIFrame)
       flags |= PluginCodec_ReturnCoderIFrame;
 
-    // Grab the next payload size and store it in dstLen
-    dstLen = _packetSizes.front();
-    _packetSizes.pop_front();
-    dstRTP.SetPayloadSize(dstLen); 
+    // get the next packet
+    unsigned pktLen;
+    if (_packetSizes.size() == 0) 
+      pktLen = 0;
 
-    // Copy the encoded data from the buffer into the outgoign RTP 
-    memcpy(dstRTP.GetPayloadPtr(), &_encFrameBuffer[_lastPktOffset],
-           dstLen);
-    _lastPktOffset += dstLen;
+    else {
 
-    // If there are no more packet sizes left, we've reached the last packet
-    // for the frame, set the marker bit and flags
-    if (_packetSizes.empty()) {
-        dstRTP.SetMarker(true);
-        flags |= PluginCodec_ReturnCoderLastFrame;
+      pktLen = _packetSizes.front();
+      _packetSizes.pop_front();
+
+      // if too large, split it
+      unsigned maxRtpSize = dstLen - dstRTP.GetHeaderSize() - 100;
+      if (pktLen > maxRtpSize) {
+          _packetSizes.push_front(pktLen - maxRtpSize);
+          pktLen = maxRtpSize;
+      }
+
+      dstRTP.SetPayloadSize(pktLen); 
+
+      // Copy the encoded data from the buffer into the outgoign RTP 
+      memcpy(dstRTP.GetPayloadPtr(), &_encFrameBuffer[_lastPktOffset], pktLen);
+      _lastPktOffset += pktLen;
+
+      // If there are no more packet sizes left, we've reached the last packet
+      // for the frame, set the marker bit and flags
+      if (_packetSizes.empty()) {
+          dstRTP.SetMarker(true);
+          flags |= PluginCodec_ReturnCoderLastFrame;
+      }
     }
 
     // set timestamp and adjust dstLen to include header size
     dstRTP.SetTimestamp(_lastTimeStamp);
-    dstLen+= dstRTP.GetHeaderSize();
+
+    dstLen = dstRTP.GetHeaderSize() + pktLen;
     
     return 1;
 }
