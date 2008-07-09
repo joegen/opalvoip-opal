@@ -846,6 +846,11 @@ PBoolean OpalLineConnection::SetUpConnection()
       return true;
     }
 
+    if (line.IsToneDetected() == OpalLineInterfaceDevice::BusyTone) {
+      Release(OpalConnection::EndedByRemoteBusy);
+      return false;
+    }
+
     PThread::Sleep(100);
   }
 
