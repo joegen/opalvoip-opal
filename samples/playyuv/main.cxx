@@ -31,23 +31,11 @@
 #include "precompile.h"
 #include "main.h"
 
+#include <ptclib/pvidfile.h>
+
 
 PCREATE_PROCESS(PlayYUV);
 
-
-void Reverse(char * ptr, size_t sz)
-{
-  char * top = ptr+sz-1;
-  while (ptr < top) {
-    char t = *ptr;
-    *ptr = *top;
-    *top = t;
-    ptr++;
-    top--;
-  }
-}
-
-#define REVERSE(p) Reverse((char *)p, sizeof(p))
 
 
 PlayYUV::PlayYUV()
