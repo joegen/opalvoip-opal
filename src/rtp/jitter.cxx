@@ -333,14 +333,16 @@ PBoolean OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, 
 
     // add the entry to the jitter buffer
     FrameQueue::iterator r;
+    bool inserted = false;
     for (r = jitterBuffer.begin(); r != jitterBuffer.end(); ++r) {
       if (time < (*r)->GetTimestamp() || ((time == (*r)->GetTimestamp()) && (currentReadFrame->GetSequenceNumber() < (*r)->GetSequenceNumber()))) {
         PAssertNULL(currentReadFrame);
         jitterBuffer.insert(r, currentReadFrame);
+        inserted = true;
         break;
       }
     }
-    if (r == jitterBuffer.end()) {
+    if (!inserted) {
       PAssertNULL(currentReadFrame);
       jitterBuffer.push_back(currentReadFrame);
     }
