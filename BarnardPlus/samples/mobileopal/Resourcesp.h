@@ -11,7 +11,6 @@
 #define IDD_OPTIONS_SIP                 132
 #define IDC_ADDRESS                     1000
 #define IDC_STATUS                      1001
-#define IDC_COMBO1                      1002
 #define ID_CALL_ANSWER                  1003
 #define IDC_USERNAME                    1005
 #define IDC_DISPLAYNAME                 1006
@@ -53,6 +52,7 @@
 #define IDS_ANSWERING                   10020
 #define IDS_HANGINGUP                   10021
 #define IDS_BUSY                        10022
+#define IDS_UNREGISTERED                10023
 #define IDM_OPTIONS_GENERAL             32776
 #define IDM_OPTIONS_H323                32779
 #define IDM_OPTIONS_SIP                 32780

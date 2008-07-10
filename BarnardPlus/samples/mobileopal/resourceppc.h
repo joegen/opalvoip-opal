@@ -4,7 +4,6 @@
 //
 #define VS_VERSION_INFO                 1
 #define IDD_MOBILEOPAL_DIALOG           102
-#define IDD_MOBILEOPAL_DIALOG_WIDE      103
 #define IDR_MAINFRAME                   128
 #define IDR_DIALOGS                     129
 #define IDD_OPTIONS_GENERAL             130
@@ -55,6 +54,7 @@
 #define IDS_ANSWERING                   10020
 #define IDS_HANGINGUP                   10021
 #define IDS_BUSY                        10022
+#define IDS_UNREGISTERED                10023
 #define IDM_OPTIONS_GENERAL             32776
 #define IDM_OPTIONS_H323                32777
 #define IDM_OPTIONS_SIP                 32778
