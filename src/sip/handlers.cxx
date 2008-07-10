@@ -191,33 +191,38 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
   }
 
   PTRACE(2, "SIP\tDid not start transaction on " << transport);
+  OnFailed(SIP_PDU::Local_TransportError);
   return false;
 }
 
 
 PBoolean SIPHandler::SendRequest(SIPHandler::State s)
 {
+  expireTimer.Stop(); // Stop automatic retry
+
   switch (s) {
     case Unsubscribing:
       if (state != Subscribed)
         return false;
+      SetState(s);
       break;
 
     case Subscribing :
     case Restoring :
+      SetState(s);
       if (GetTransport() == NULL) {
         PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
+        OnFailed(SIP_PDU::Local_BadTransportAddress);
         expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
+        SetState(Unsubscribed);
         return true;
       }
       break;
 
     default :
-      if (GetTransport() == NULL)
-        return false;
+      PAssertAlways(PInvalidParameter);
+      return false;
   }
-
-  SetState(s);
 
   // First time, try every interface
   if (transport->GetInterface().IsEmpty())
@@ -384,6 +389,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
       return;
 
+    case SIP_PDU::Local_TransportError :
     case SIP_PDU::Failure_RequestTimeout :
       break;
 
@@ -461,10 +467,17 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 }
 
 
-void SIPRegisterHandler::OnFailed (SIP_PDU::StatusCodes r)
-{ 
+void SIPRegisterHandler::OnFailed(SIP_PDU::StatusCodes r)
+{
   SendStatus(r);
   SIPHandler::OnFailed(r);
+}
+
+
+PBoolean SIPRegisterHandler::SendRequest(SIPHandler::State s)
+{
+  SendStatus(SIP_PDU::Information_Trying);
+  return SIPHandler::SendRequest(s);
 }
 
 
@@ -476,15 +489,18 @@ void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code)
       endpoint.OnRegistrationStatus(aor, true, false, code);
       break;
 
+    case Subscribed :
     case Refreshing :
       endpoint.OnRegistrationStatus(aor, true, true, code);
       break;
 
-    case Unsubscribing :
-      endpoint.OnRegistrationStatus(aor, false, false, code);
+    case Unsubscribed :
+    case Restoring :
+      endpoint.OnRegistrationStatus(aor, true, code/100 != 2, code);
       break;
 
-    default :
+    case Unsubscribing :
+      endpoint.OnRegistrationStatus(aor, false, false, code);
       break;
   }
 }

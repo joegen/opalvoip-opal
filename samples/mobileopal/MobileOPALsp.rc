@@ -71,17 +71,17 @@ IDR_MAINFRAME           ICON                    "res\\MobileOPAL.ico"
 // Dialog
 //
 
-IDD_MOBILEOPAL_DIALOG DIALOG  0, 0, 140, 116
+IDD_MOBILEOPAL_DIALOG DIALOG  0, 0, 144, 116
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION
 EXSTYLE WS_EX_APPWINDOW | 0x80000000L
 CAPTION "Mobile OPAL"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT           "Address to call:",IDC_STATIC,7,7,77,11
-    CTEXT           "Initialising ...",IDC_STATUS,7,46,126,15
-    LTEXT           "Local Address:",IDC_STATIC,7,34,51,8
-    LTEXT           "0.0.0.0",IDC_LOCAL_ADDRESS,62,34,67,7
-    COMBOBOX        IDC_ADDRESS,0,17,138,72,CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP,WS_EX_CLIENTEDGE
+    LTEXT           "Address to call:",IDC_STATIC,7,7,77,8
+    CTEXT           "Initialising . . .",IDC_STATUS,0,44,143,31
+    LTEXT           "Local Address:",IDC_STATIC,7,35,51,8
+    LTEXT           "0.0.0.0",IDC_LOCAL_ADDRESS,62,35,67,8
+    COMBOBOX        IDC_ADDRESS,7,17,130,72,CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP,WS_EX_CLIENTEDGE
 END
 
 IDD_OPTIONS_SIP DIALOG  0, 0, 140, 110
@@ -188,7 +188,7 @@ BEGIN
     IDD_MOBILEOPAL_DIALOG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 133
+        RIGHTMARGIN, 137
         TOPMARGIN, 7
         BOTTOMMARGIN, 109
     END
@@ -281,6 +281,7 @@ BEGIN
     IDS_ANSWERING           "Answering . . ."
     IDS_HANGINGUP           "Hanging up . . ."
     IDS_BUSY                "Incoming call while busy!"
+    IDS_UNREGISTERED        "Unregistered."
 END
 
 #endif    // English (Australia) resources
