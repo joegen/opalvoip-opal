@@ -48,6 +48,13 @@
 class OpalManager_C;
 
 
+ostream & operator<<(ostream & strm, OpalRegistrationStates state)
+{
+  static const char * States[] = { "Successful", "Removed", "Failed", "Retrying", "Restored" };
+  return strm << States[state];
+}
+
+
 inline bool IsNullString(const char * str)
 {
   return str == NULL || *str == '\0';
@@ -141,6 +148,11 @@ class OpalManager_C : public OpalManager
     {
     }
 
+    ~OpalManager_C()
+    {
+      ShutDownEndpoints();
+    }
+
     bool Initialise(const PCaselessString & options);
 
     void PostMessage(OpalMessageBuffer & message);
@@ -205,7 +217,20 @@ public:
       filename = options(pos, end-1);
     }
 
-    PTrace::Initialise(level, filename);
+    unsigned traceOpts = PTrace::Timestamp|PTrace::Thread|PTrace::Blocks;
+    if (options.Find("TraceAppend") != P_MAX_INDEX)
+      traceOpts |= PTrace::AppendToFile;
+
+    PTrace::Initialise(level, filename, traceOpts);
+    PTRACE(3, "OpalC\tStart Up.");
+#endif
+  }
+
+  ~PProcess_C()
+  {
+#if PTRACING
+    PTRACE(3, "OpalC\tShut Down.");
+    PTrace::SetStream(NULL);
 #endif
   }
 
@@ -493,11 +518,24 @@ void SIPEndPoint_C::OnRegistrationStatus(const PString & aor,
   OpalMessageBuffer message(OpalIndRegistration);
   SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_protocol, OPAL_PREFIX_SIP);
   SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_serverName, aor);
-  if (reason != SIP_PDU::Successful_OK) {
-    PStringStream strm;
-    strm << "Error " << reason << " in SIP registration.";
-    SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_error, strm);
+  if (reason == SIP_PDU::Information_Trying)
+    message->m_param.m_registrationStatus.m_status = OpalRegisterRetrying;
+  else if (reason/100 == 2) {
+    if (wasRegistering)
+      message->m_param.m_registrationStatus.m_status = reRegistering ? OpalRegisterRestored : OpalRegisterSuccessful;
+    else
+      message->m_param.m_registrationStatus.m_status = OpalRegisterRemoved;
   }
+  else {
+    PStringStream strm;
+    strm << "Error " << reason << " in SIP ";
+    if (!wasRegistering)
+      strm << "un";
+    strm << "registration.";
+    SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_error, strm);
+    message->m_param.m_registrationStatus.m_status = wasRegistering ? OpalRegisterFailed : OpalRegisterRemoved;
+  }
+  PTRACE(4, "OpalC\tOnRegistrationStatus " << aor << ", status=" << message->m_param.m_registrationStatus.m_status);
   m_manager.PostMessage(message);
 }
 
@@ -1014,7 +1052,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
       params.m_password = command.m_param.m_registrationInfo.m_password;
       params.m_realm = command.m_param.m_registrationInfo.m_adminEntity;
       params.m_expire = command.m_param.m_registrationInfo.m_timeToLive;
-      if (m_apiVersion >= 7)
+      if (m_apiVersion >= 7 && command.m_param.m_registrationInfo.m_restoreTime > 0)
         params.m_restoreTime = command.m_param.m_registrationInfo.m_restoreTime;
 
       if (!sip->Register(params))

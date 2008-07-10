@@ -831,6 +831,9 @@ bool SIPEndPoint::Register(const SIPRegister::Params & params)
     return false;
   }
 
+  if (params.m_expire == 0)
+    return Unregister(params.m_addressOfRecord);
+
   PSafePtr<SIPRegisterHandler> handler = PSafePtrCast<SIPHandler, SIPRegisterHandler>(
           activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadOnly));
 

@@ -88,7 +88,7 @@ ostream & operator<<(ostream & strm, SIP_PDU::Methods method)
 #endif
 
 
-const char * SIP_PDU::GetStatusCodeDescription (int code)
+const char * SIP_PDU::GetStatusCodeDescription(int code)
 {
   static struct {
     int code;
@@ -154,6 +154,9 @@ const char * SIP_PDU::GetStatusCodeDescription (int code)
     { SIP_PDU::GlobalFailure_DoesNotExistAnywhere,  "Does Not Exist Anywhere" },
     { SIP_PDU::GlobalFailure_NotAcceptable,         "Not Acceptable" },
 
+    { SIP_PDU::Local_TransportError,                "Transport Error" },
+    { SIP_PDU::Local_BadTransportAddress,           "Invalid Address/Hostname" },
+
     { 0 }
   };
 
@@ -162,6 +165,16 @@ const char * SIP_PDU::GetStatusCodeDescription (int code)
       return sipErrorDescriptions[i].desc;
   }
   return "";
+}
+
+
+ostream & operator<<(ostream & strm, SIP_PDU::StatusCodes status)
+{
+  strm << (unsigned)status;
+  const char * info = SIP_PDU::GetStatusCodeDescription(status);
+  if (info != NULL && *info != '\0')
+    strm << ' ' << info;
+  return strm;
 }
 
 

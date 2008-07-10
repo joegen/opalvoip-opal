@@ -174,6 +174,7 @@ public:
     { return SIP_PDU::Method_REGISTER; }
 
   virtual void OnFailed(SIP_PDU::StatusCodes r);
+  virtual PBoolean SendRequest(SIPHandler::State state);
 
   void UpdateParameters(const SIPRegister::Params & params);
 
