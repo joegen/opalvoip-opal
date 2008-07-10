@@ -78,19 +78,10 @@ CAPTION "Mobile OPAL"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT           "Call address:",IDC_STATIC_1,7,7,58,10
-    LTEXT           "Initialisaing . . .",IDC_STATUS,6,46,142,37
+    LTEXT           "Initialisaing . . .",IDC_STATUS,0,46,155,37
     LTEXT           "Local Address:",IDC_STATIC,7,33,51,8
     LTEXT           "0.0.0.0",IDC_LOCAL_ADDRESS,64,33,83,7
     COMBOBOX        IDC_ADDRESS,7,17,138,72,CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP,WS_EX_CLIENTEDGE
-END
-
-IDD_MOBILEOPAL_DIALOG_WIDE DIALOG  0, 0, 210, 129
-STYLE DS_SETFONT | WS_POPUP | WS_VISIBLE | WS_CAPTION
-EXSTYLE WS_EX_APPWINDOW | 0x80000000L
-CAPTION "Mobile OPAL"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    LTEXT           "TODO: Place dialog controls here.",IDC_STATIC_1,57,49,112,23
 END
 
 IDD_OPTIONS_GENERAL DIALOG  0, 0, 160, 160
@@ -161,14 +152,6 @@ BEGIN
         RIGHTMARGIN, 149
         TOPMARGIN, 7
         BOTTOMMARGIN, 91
-    END
-
-    IDD_MOBILEOPAL_DIALOG_WIDE, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 203
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 122
     END
 
     IDD_OPTIONS_GENERAL, DIALOG
@@ -298,6 +281,7 @@ BEGIN
     IDS_ANSWERING           "Answering . . ."
     IDS_HANGINGUP           "Hanging up . . ."
     IDS_BUSY                "Incoming call while busy!"
+    IDS_UNREGISTERED        "Unregistered."
 END
 
 #endif    // English (Australia) resources

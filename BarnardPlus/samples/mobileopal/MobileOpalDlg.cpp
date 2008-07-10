@@ -311,16 +311,14 @@ void CMobileOpalDlg::DoDataExchange(CDataExchange* pDX)
   CDialog::DoDataExchange(pDX);
   DDX_Text(pDX, IDC_ADDRESS, m_callAddress);
   DDX_Text(pDX, IDC_LOCAL_ADDRESS, m_localAddress);
-  DDX_Control(pDX, IDC_ADDRESS, m_ctrlAddress);
+  DDX_Control(pDX, IDC_ADDRESS, m_ctrlCallAddress);
   DDX_Control(pDX, IDC_STATUS, m_ctrlStatus);
+  DDX_Control(pDX, IDC_LOCAL_ADDRESS, m_ctrlLocalStatus);
 }
 
 
 BEGIN_MESSAGE_MAP(CMobileOpalDlg, CDialog)
-#if defined(_DEVICE_RESOLUTION_AWARE) && !defined(WIN32_PLATFORM_WFSP)
   ON_WM_SIZE()
-#endif
-  //}}AFX_MSG_MAP
   ON_WM_TIMER()
   ON_COMMAND(ID_CALL_ANSWER, &CMobileOpalDlg::OnCallAnswer)
   ON_CBN_EDITCHANGE(IDC_ADDRESS, &CMobileOpalDlg::OnChangedAddress)
@@ -350,6 +348,10 @@ BOOL CMobileOpalDlg::OnInitDialog()
     return FALSE;      // fail to create
   }
 
+  // Resize to screen width
+  ShowWindow(SW_SHOWMAXIMIZED);
+
+  // Start background check for OPAL messages
   SetTimer(TimerID, 100, NULL);
 
   // Recent calls list
@@ -360,7 +362,7 @@ BOOL CMobileOpalDlg::OnInitDialog()
     CString uri = AfxGetApp()->GetProfileString(RecentCallsSection, key);
     if (uri.IsEmpty())
       break;
-    m_ctrlAddress.AddString(uri);
+    m_ctrlCallAddress.AddString(uri);
   }
 
   // Speakerphone state
@@ -378,25 +380,22 @@ BOOL CMobileOpalDlg::OnInitDialog()
   UpdateData(false);
 
   SetCallButton(false);
-  SetStatusText(IDS_READY);
 
   return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
 
-#if defined(_DEVICE_RESOLUTION_AWARE) && !defined(WIN32_PLATFORM_WFSP)
-void CMobileOpalDlg::OnSize(UINT /*nType*/, int /*cx*/, int /*cy*/)
+void CMobileOpalDlg::OnSize(UINT /*nType*/, int cx, int cy)
 {
-  if (AfxIsDRAEnabled())
-  {
-    DRA::RelayoutDialog(AfxGetResourceHandle(),
-                        this->m_hWnd,
-                        DRA::GetDisplayMode() != DRA::Portrait
-                            ? MAKEINTRESOURCE(IDD_MOBILEOPAL_DIALOG_WIDE)
-                            : MAKEINTRESOURCE(IDD_MOBILEOPAL_DIALOG));
-  }
+  // Adjust some controls to be full width of screen
+  CRect box;
+  m_ctrlCallAddress.GetWindowRect(&box);
+  m_ctrlCallAddress.SetWindowPos(NULL, 0, 0, cx-box.left*2, box.Height(), SWP_NOMOVE|SWP_NOZORDER);
+  m_ctrlLocalStatus.GetWindowRect(&box);
+  m_ctrlLocalStatus.SetWindowPos(NULL, 0, 0, cx-box.left, box.Height(), SWP_NOMOVE|SWP_NOZORDER);
+  m_ctrlStatus.GetWindowRect(&box);
+  m_ctrlStatus.SetWindowPos(NULL, 0, 0, cx, box.Height(), SWP_NOMOVE|SWP_NOZORDER);
 }
-#endif
 
 
 void CMobileOpalDlg::InitialiseOPAL()
@@ -405,7 +404,7 @@ void CMobileOpalDlg::InitialiseOPAL()
   // Start up and initialise OPAL
 
   if (m_opal == NULL) {
-    m_opal = OpalInitialise(&m_opalVersion, "pc h323 sip TraceLevel=4 TraceFile=\\MobileOpalLog.txt");
+    m_opal = OpalInitialise(&m_opalVersion, "pc h323 sip TraceLevel=4 TraceAppend TraceFile=\\MobileOpalLog.txt");
     if (m_opal == NULL) {
       ErrorBox(IDS_INIT_FAIL);
       EndDialog(IDCANCEL);
@@ -475,7 +474,19 @@ void CMobileOpalDlg::InitialiseOPAL()
 
   // SIP registrar regisration
   CStringA strAor = GetOptionStringA(RegistrarAorKey);
-  if (!strAor.IsEmpty()) {
+  if (!m_currentRegistrar.IsEmpty() && m_currentRegistrar != strAor) {
+    // Registration changed, so unregister the previous name
+    memset(&command, 0, sizeof(command));
+    command.m_type = OpalCmdRegistration;
+    command.m_param.m_registrationInfo.m_protocol = "sip";
+    command.m_param.m_registrationInfo.m_identifier = m_currentRegistrar;
+    OpalFreeMessage(OpalSendMessage(m_opal, &command)); // Don't worry about errors.
+    m_currentRegistrar.Empty();
+  }
+
+  if (strAor.IsEmpty())
+    SetStatusText(IDS_READY);
+  else {
     memset(&command, 0, sizeof(command));
     command.m_type = OpalCmdRegistration;
 
@@ -498,8 +509,12 @@ void CMobileOpalDlg::InitialiseOPAL()
     command.m_param.m_registrationInfo.m_timeToLive = 300;
 
     SetStatusText(IDS_REGISTERING);
-    if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
+    if ((response = OpalSendMessage(m_opal, &command)) != NULL && response->m_type != OpalIndCommandError)
+      m_currentRegistrar = strAor;
+    else {
       ErrorBox(IDS_REGISTRATION_FAIL, response);
+      SetStatusText(IDS_READY);
+    }
     OpalFreeMessage(response);
   }
 }
@@ -562,19 +577,19 @@ void CMobileOpalDlg::SetCallButton(bool enabled, UINT strId)
 
 void CMobileOpalDlg::AddRecentCall(const CString & uri)
 {
-  int index = m_ctrlAddress.FindStringExact(-1, uri);
+  int index = m_ctrlCallAddress.FindStringExact(-1, uri);
   if (index == 0)
     return;
 
   if (index > 0)
-    m_ctrlAddress.DeleteString(index);
+    m_ctrlCallAddress.DeleteString(index);
 
-  m_ctrlAddress.InsertString(0, uri);
+  m_ctrlCallAddress.InsertString(0, uri);
 
   index = 0;
   for (;;) {
     CString str;
-    m_ctrlAddress.GetLBText(index, str);
+    m_ctrlCallAddress.GetLBText(index, str);
     if (str.IsEmpty())
       break;
     CString key;
@@ -594,7 +609,23 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
     if (message != NULL) {
       switch (message->m_type) {
         case OpalIndRegistration :
-          SetStatusText(IDS_REGISTERED, message->m_param.m_registrationStatus.m_error);
+          switch (message->m_param.m_registrationStatus.m_status) {
+            case OpalRegisterSuccessful :
+            case OpalRegisterRestored :
+              SetStatusText(IDS_REGISTERED);
+              break;
+
+            case OpalRegisterRemoved :
+              SetStatusText(IDS_UNREGISTERED, message->m_param.m_registrationStatus.m_error);
+              break;
+
+            case OpalRegisterRetrying :
+              SetStatusText(IDS_REGISTERING);
+              break;
+
+            case OpalRegisterFailed :
+              SetStatusText(0, message->m_param.m_registrationStatus.m_error);
+          }
           break;
 
         case OpalIndIncomingCall :
@@ -602,7 +633,7 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
             m_incomingCallToken = message->m_param.m_incomingCall.m_callToken;
             SetStatusText(IDS_INCOMING_CALL);
             SetCallButton(true, IDS_ANSWER);
-            m_ctrlAddress.EnableWindow(false);
+            m_ctrlCallAddress.EnableWindow(false);
             ShowWindow(true);
             BringWindowToTop();
           }
@@ -638,7 +669,7 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
             m_currentCallToken.Empty();
 
             SetCallButton(true, IDS_CALL);
-            m_ctrlAddress.EnableWindow(true);
+            m_ctrlCallAddress.EnableWindow(true);
 
             SetStatusText(IDS_READY, message->m_param.m_callCleared.m_reason);
           }
@@ -675,7 +706,7 @@ void CMobileOpalDlg::OnExit()
 {
   if (m_opal != NULL) {
     KillTimer(TimerID);
-    m_ctrlAddress.EnableWindow(false);
+    m_ctrlCallAddress.EnableWindow(false);
     SetStatusText(IDS_SHUTTING_DOWN);
     UpdateWindow();
 
@@ -743,7 +774,7 @@ void CMobileOpalDlg::OnCallAnswer()
 
 void CMobileOpalDlg::OnChangedAddress()
 {
-  SetCallButton(m_ctrlAddress.GetWindowTextLength() > 0);
+  SetCallButton(m_ctrlCallAddress.GetWindowTextLength() > 0);
 }
 
 
