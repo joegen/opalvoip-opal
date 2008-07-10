@@ -4880,10 +4880,20 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
                                          PBoolean reRegistering,
                                          SIP_PDU::StatusCodes reason)
 {
-  if (reason == SIP_PDU::Failure_UnAuthorised || (reRegistering && reason == SIP_PDU::Successful_OK))
-    return;
+  switch (reason) {
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Information_Trying :
+      return;
 
-  LogWindow << "SIP " << (wasRegistering ? "" : "un") << "registration of " << aor << ' ';
+    case SIP_PDU::Successful_OK :
+      if (reRegistering)
+        return;
+  }
+
+  LogWindow << "SIP ";
+  if (!wasRegistering)
+    LogWindow << "un";
+  LogWindow << "registration of " << aor << ' ';
   switch (reason) {
     case SIP_PDU::Successful_OK :
       LogWindow << "successful";
