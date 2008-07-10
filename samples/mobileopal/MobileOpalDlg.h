@@ -52,18 +52,18 @@ protected:
   OpalHandle m_opal;
   unsigned m_opalVersion;
   CStatic m_ctrlStatus;
-  CComboBox m_ctrlAddress;
+  CStatic m_ctrlLocalStatus;
+  CComboBox m_ctrlCallAddress;
   CString m_callAddress;
   CString m_localAddress;
   CStringA m_incomingCallToken;
   CStringA m_currentCallToken;
   bool m_speakerphone;
+  CStringA m_currentRegistrar;
 
   // Generated message map functions
   virtual BOOL OnInitDialog();
-#if defined(_DEVICE_RESOLUTION_AWARE) && !defined(WIN32_PLATFORM_WFSP)
-  afx_msg void OnSize(UINT /*nType*/, int /*cx*/, int /*cy*/);
-#endif
+  afx_msg void OnSize(UINT nType, int cx, int cy);
   DECLARE_MESSAGE_MAP()
 
   void InitialiseOPAL();

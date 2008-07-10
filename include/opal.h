@@ -476,10 +476,29 @@ typedef struct OpalParamRegistration {
   const char * m_adminEntity;   /**< Identification of the administrative entity. For H.323 this will
                                      by the gatekeeper identifier. For SIP this is the authentication
                                      realm. */
-  unsigned     m_timeToLive;    ///< Time in seconds between registration updates.
+  unsigned     m_timeToLive;    /**< Time in seconds between registration updates. If this is zero then
+                                     the identifier is unregistered from the server. */
   unsigned     m_restoreTime;   /**< Time in seconds between attempts to restore a registration after
-                                     registrar/gatekeeper has gone offline. */
+                                     registrar/gatekeeper has gone offline. If zero then a default
+                                     value is used. */
 } OpalParamRegistration;
+
+
+/**Type code for media stream status/control.
+   This is used by the OpalIndRegistration indication in the OpalStatusRegistration structure.
+  */
+typedef enum OpalRegistrationStates {
+  OpalRegisterSuccessful,   /**< Successfully registered. */
+  OpalRegisterRemoved,      /**< Successfully unregistered. Note that the m_error field may be
+                                 non-null if an error occurred during unregistration, however
+                                 the unregistration will "complete" as far as the local endpoint
+                                 is concerned and no more registration retries are made. */
+  OpalRegisterFailed,       /**< Registration has failed. The m_error field of the
+                                 OpalStatusRegistration structure will contain more details. */
+  OpalRegisterRetrying,     /**< Registrar/Gatekeeper has gone offline and a failed retry
+                                 has been executed. */
+  OpalRegisterRestored,     /**< Registration has been restored after a succesfull retry. */
+} OpalRegistrationStates;
 
 
 /**Registration status for the OpalIndRegistration indication.
@@ -495,6 +514,7 @@ typedef struct OpalStatusRegistration {
                                    registration or any subsequent registration update occurs, then
                                    this contains a string indicating the type of error. If no
                                    error occured then this will be NULL. */
+  OpalRegistrationStates m_status; /**< Status of registration, see enum for details. */
 } OpalStatusRegistration;
 
 

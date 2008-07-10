@@ -496,6 +496,8 @@ class SIP_PDU : public PSafeObject
 
     enum StatusCodes {
       IllegalStatusCode,
+      Local_TransportError,
+      Local_BadTransportAddress,
 
       Information_Trying                  = 100,
       Information_Ringing                 = 180,
@@ -540,7 +542,7 @@ class SIP_PDU : public PSafeObject
       Failure_BusyHere                    = 486,
       Failure_RequestTerminated           = 487,
       Failure_NotAcceptableHere           = 488,
-      Failure_BadEvent			              = 489,
+      Failure_BadEvent                    = 489,
       Failure_RequestPending              = 491,
       Failure_Undecipherable              = 493,
 
@@ -560,7 +562,8 @@ class SIP_PDU : public PSafeObject
       MaxStatusCode                       = 699
     };
 
-	static const char * GetStatusCodeDescription (int code);
+	static const char * GetStatusCodeDescription(int code);
+    friend ostream & operator<<(ostream & strm, StatusCodes status);
 
     enum {
       MaxSize = 65535
