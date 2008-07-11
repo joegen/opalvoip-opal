@@ -124,7 +124,7 @@ extern "C" {
 #define SQCIF_WIDTH     128
 #define SQCIF_HEIGHT    96
 
-#define MAX_H263_PACKET_SIZE     2048
+#define MAX_H263_PACKET_SIZE     10000
 #define MAX_YUV420P_PACKET_SIZE (((CIF16_WIDTH * CIF16_HEIGHT * 3) / 2) + FF_INPUT_BUFFER_PADDING_SIZE)
 
 #define MIN(v1, v2) ((v1) < (v2) ? (v1) : (v2))
