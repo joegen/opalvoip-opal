@@ -204,6 +204,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
       break;
 
     case Subscribing :
+    case Refreshing :
     case Restoring :
       SetState(s);
       if (GetTransport() == NULL) {
