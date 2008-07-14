@@ -156,8 +156,10 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _nam
 {
   if (encodingName == OpalRFC2833.GetEncodingName())
     AddNTEString("0-15,32-49");
+#if OPAL_T38_CAPABILITY
   else if (encodingName == OpalCiscoNSE.GetEncodingName())
     AddNSEString("192,193");
+#endif
 }
 
 
@@ -191,11 +193,13 @@ void SDPMediaFormat::SetFMTP(const PString & str)
     return;
   }
 
+#if OPAL_T38_CAPABILITY
   else if (encodingName == OpalCiscoNSE.GetEncodingName()) {
     nseSet.RemoveAll();
     AddNSEString(str);
     return;
   }
+#endif
 
   fmtp = str;
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
@@ -260,8 +264,10 @@ PString SDPMediaFormat::GetFMTP() const
   if (encodingName == OpalRFC2833.GetEncodingName())
     return GetNTEString();
 
+#if OPAL_T38_CAPABILITY
   if (encodingName == OpalCiscoNSE.GetEncodingName())
     return GetNSEString();
+#endif
 
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
     return fmtp;

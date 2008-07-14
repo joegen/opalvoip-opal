@@ -155,6 +155,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifndef _MSC_VER
+#include <stdint.h>
+#endif
+
 #include "config.h"
 
 #include "p64.h"
