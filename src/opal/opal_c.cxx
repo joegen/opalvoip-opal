@@ -69,6 +69,7 @@ class OpalMessageBuffer
 
     OpalMessage * operator->() const { return  (OpalMessage *)m_data; }
     OpalMessage & operator *() const { return *(OpalMessage *)m_data; }
+    operator OpalMessage *() const   { return  (OpalMessage *)m_data; }
 
     void SetString(const char * * variable, const char * value);
     void SetError(const char * errorText);
@@ -189,6 +190,7 @@ class OpalManager_C : public OpalManager
     std::queue<OpalMessage *> m_messageQueue;
     PMutex                    m_messageMutex;
     PSemaphore                m_messagesAvailable;
+    OpalMessageAvailableFunction m_messageAvailableCallback;
 };
 
 
@@ -655,8 +657,10 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
 void OpalManager_C::PostMessage(OpalMessageBuffer & message)
 {
   m_messageMutex.Wait();
-  m_messageQueue.push(message.Detach());
-  m_messageMutex.Signal();
+  if (m_messageAvailableCallback == NULL || m_messageAvailableCallback(message)) {
+    m_messageQueue.push(message.Detach());
+    m_messageMutex.Signal();
+  }
   m_messagesAvailable.Signal();
 }
 
@@ -890,6 +894,14 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     if (command.m_param.m_general.m_mediaDataHeader != 0)
       localEP->m_mediaDataHeader = command.m_param.m_general.m_mediaDataHeader;
   }
+
+  if (m_apiVersion < 8)
+    return;
+
+  m_messageMutex.Wait();
+  response->m_param.m_general.m_messageAvailable = m_messageAvailableCallback;
+  m_messageAvailableCallback = command.m_param.m_general.m_messageAvailable;
+  m_messageMutex.Signal();
 }
 
 
