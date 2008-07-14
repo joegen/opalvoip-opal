@@ -63,7 +63,7 @@ static void * create_encoder(const struct PluginCodec_Definition * codec)
 #ifdef _WIN32_WCE
 
   void * context = malloc(E_IF_g729ab_queryBlockSize());
-  if (context != NULL)
+  if (context == NULL)
     return NULL;
 
   if (E_IF_g729ab_init(context) == 0)
@@ -131,7 +131,7 @@ static void * create_decoder(const struct PluginCodec_Definition * codec)
 #ifdef _WIN32_WCE
 
   void * context = malloc(D_IF_g729ab_queryBlockSize());
-  if (context != NULL)
+  if (context == NULL)
     return NULL;
 
   if (D_IF_g729ab_init(context) == 0)
