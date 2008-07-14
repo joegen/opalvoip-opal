@@ -76,7 +76,10 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   // Make sure these have been contructed now to avoid
   // payload type disambiguation problems.
   GetOpalRFC2833();
+
+#if OPAL_T38_CAPABILITY
   GetOpalCiscoNSE();
+#endif
 
 #ifdef P_SSL
   manager.AttachEndPoint(this, "sips");
