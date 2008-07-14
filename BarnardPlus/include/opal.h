@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 9
+#define OPAL_C_API_VERSION 8
 
 
 ///////////////////////////////////////
