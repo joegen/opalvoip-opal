@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 7
+#define OPAL_C_API_VERSION 9
 
 
 ///////////////////////////////////////
@@ -72,11 +72,17 @@ typedef struct OpalMessage OpalMessage;
     to be enabled, for example the protocols to be available. NULL or an empty
     string will load all available protocols. The current protocol tokens are:
 
-        pc sip sips h323 h323s iax2 pots pstn ivr
+        sip sips h323 h323s iax2 pc local pots pstn ivr
+
+    The above protocols are in priority order, so if a protocol is not
+    explicitly in the address, then the first one of the opposite "category"
+    s used. There are two categories, network protocols (sip, h323, iax & pstn)
+    and non-network protocols (pc, local, pots & ivr).
 
     Additional options are:
 
-        TraceLevel=1     Level for tracing. 
+        TraceLevel=1     Level for tracing.
+        TraceAppend      Append to the trace file.
         TraceFile="name" Set the filename for trace output. Note quotes are
                          required if spaces are in filename.
     It should also be noted that there must not be spaces around the '=' sign
@@ -199,22 +205,22 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 
 ///////////////////////////////////////
 
+#define OPAL_PREFIX_H323  "h323"
+#define OPAL_PREFIX_SIP   "sip"
+#define OPAL_PREFIX_IAX2  "iax2"
 #define OPAL_PREFIX_PCSS  "pc"
 #define OPAL_PREFIX_LOCAL "local"
-#define OPAL_PREFIX_H323 "h323"
-#define OPAL_PREFIX_SIP  "sip"
-#define OPAL_PREFIX_IAX2 "iax2"
-#define OPAL_PREFIX_POTS "pots"
-#define OPAL_PREFIX_PSTN "pstn"
-#define OPAL_PREFIX_IVR  "ivr"
+#define OPAL_PREFIX_POTS  "pots"
+#define OPAL_PREFIX_PSTN  "pstn"
+#define OPAL_PREFIX_IVR   "ivr"
 
-#define OPAL_PREFIX_ALL OPAL_PREFIX_PCSS " " \
+#define OPAL_PREFIX_ALL OPAL_PREFIX_H323  " " \
+                        OPAL_PREFIX_SIP   " " \
+                        OPAL_PREFIX_IAX2  " " \
+                        OPAL_PREFIX_PCSS  " " \
                         OPAL_PREFIX_LOCAL " " \
-                        OPAL_PREFIX_H323 " " \
-                        OPAL_PREFIX_SIP  " " \
-                        OPAL_PREFIX_IAX2 " " \
-                        OPAL_PREFIX_POTS " " \
-                        OPAL_PREFIX_PSTN " " \
+                        OPAL_PREFIX_POTS  " " \
+                        OPAL_PREFIX_PSTN  " " \
                         OPAL_PREFIX_IVR
 
 
@@ -315,6 +321,9 @@ typedef enum OpalEchoCancelMode {
 /** Function for reading/writing media data.
     Returns size of data actually read or written, or -1 if there is an error
     and the media stream should be shut down.
+
+    Note that this function will be called in the context of different threads
+    so the user must take care of any mutex and synchonisation issues.
  */
 typedef int (*OpalMediaDataFunction)(
   const char * token,   /**< Call token for media data as returned by OpalIndIncomingCall.
@@ -326,6 +335,27 @@ typedef int (*OpalMediaDataFunction)(
   const char * format,  /**< Format of media data, e.g. "PCM-16" */
   void * data,          /**< Data to read/write */
   int size              /**< Maximum size of data to read, or size of actual data to write */
+);
+
+
+/** Function called when a message event becomes available.
+    This function is called before the message is queued for the GetMessage()
+    function.
+
+    A return value of zero indicates that the message is not to be passed on
+    to the GetMessage(). A non-zero value will pass the message on.
+
+    Note that this function will be called in the context of different threads
+    so the user must take care of any mutex and synchonisation issues. If the
+    user subsequently uses the GetMessage() then the message will have been
+    serialised so that there are no multi-threading issues.
+
+    A simple use case would be for this function to send a signal or message
+    to the applications main thread and then return a non-zero value. The
+    main thread would then wake up and get the message using GetMessage.
+ */
+typedef int (*OpalMessageAvailableFunction)(
+  const OpalMessage * message  /**< Message that has become available. */
 );
 
 
@@ -403,11 +433,17 @@ typedef struct OpalParamGeneral {
   OpalEchoCancelMode m_echoCancellation; /**< Accoustic Echo Cancellation control. 0=no change, 1=disabled,
                                            2=enabled. */
   unsigned     m_audioBuffers;        /**< Set the number of hardware sound buffers to use. */
-  OpalMediaDataFunction m_mediaReadData;   /**< Callback function for reading raw media data. */
-  OpalMediaDataFunction m_mediaWriteData;  /**< Callback function for writing raw media data. */
+  OpalMediaDataFunction m_mediaReadData;   /**< Callback function for reading raw media data. See
+                                                OpalMediaDataFunction for more information. */
+  OpalMediaDataFunction m_mediaWriteData;  /**< Callback function for writing raw media data. See
+                                                OpalMediaDataFunction for more information.  */
   OpalMediaDataType     m_mediaDataHeader; /**< Indicate that the media read/write callback function
-                                           is passed the full RTP header or just the payload.
-                                           0=no change, 1=payload only, 2=with RTP header. */
+                                                is passed the full RTP header or just the payload.
+                                                0=no change, 1=payload only, 2=with RTP header. */
+  OpalMessageAvailableFunction m_messageAvailable; /**< If non-null then this function is called before
+                                                        the message is queued for return in the
+                                                        GetMessage(). See the
+                                                        OpalMessageAvailableFunction for more details. */
 } OpalParamGeneral;
 
 
