@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 8
+#define OPAL_C_API_VERSION 9
 
 
 ///////////////////////////////////////
@@ -257,13 +257,12 @@ typedef enum OpalMessageType {
                                     set to the token returned in OpalIndIncomingCall. */
   OpalCmdClearCall,             /**<Hang Up call command. After a OpalCmdSetUpCall command is executed or a
                                     OpalIndIncomingCall indication is received then this may be used to
-                                    "hang up" the call. The OpalMessage m_callToken field is set to the
-                                    token returned in OpalCmdSetUpCall or OpalIndIncomingCall. The
-                                    OpalIndCallCleared is returned in the OpalGetMessage() when the call has
-                                    completed its hang up operation. */
+                                    "hang up" the call. The OpalIndCallCleared is subsequently returned in
+                                    the OpalGetMessage() when the call has completed its hang up operation.
+                                    See OpalParamCallCleared structure for more information.*/
   OpalIndAlerting,              /**<Remote is alerting indication. This message is returned in the
                                     OpalGetMessage() function when the underlying protocol states the remote
-                                    telephone is "ringing". See the  OpalParamSetUpCall structure for more
+                                    telephone is "ringing". See the OpalParamSetUpCall structure for more
                                     information. */
   OpalIndEstablished,           /**<Call is established indication. This message is returned in the
                                     OpalGetMessage() function when the remote or local endpont has "answered"
@@ -685,8 +684,56 @@ typedef struct OpalStatusMessageWaiting {
   */
 typedef struct OpalStatusCallCleared {
   const char * m_callToken;   ///< Call token for call being cleared.
-  const char * m_reason;      ///< String representing the reason for teh call completing.
+  const char * m_reason;      ///< String representing the reason for the call completing.
 } OpalStatusCallCleared;
+
+
+/**Type code for media stream status/control.
+   This is used by the OpalIndMediaStream indication and OpalCmdMediaStream command
+   in the OpalStatusMediaStream structure.
+  */
+typedef enum OpalCallEndReason {
+  OpalCallEndedByLocalUser,         /// Local endpoint application cleared call
+  OpalCallEndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=PFalse
+  OpalCallEndedByAnswerDenied,      /// Local endpoint declined to answer call
+  OpalCallEndedByRemoteUser,        /// Remote endpoint application cleared call
+  OpalCallEndedByRefusal,           /// Remote endpoint refused call
+  OpalCallEndedByNoAnswer,          /// Remote endpoint did not answer in required time
+  OpalCallEndedByCallerAbort,       /// Remote endpoint stopped calling
+  OpalCallEndedByTransportFail,     /// Transport error cleared call
+  OpalCallEndedByConnectFail,       /// Transport connection failed to establish call
+  OpalCallEndedByGatekeeper,        /// Gatekeeper has cleared call
+  OpalCallEndedByNoUser,            /// Call failed as could not find user (in GK)
+  OpalCallEndedByNoBandwidth,       /// Call failed as could not get enough bandwidth
+  OpalCallEndedByCapabilityExchange,/// Could not find common capabilities
+  OpalCallEndedByCallForwarded,     /// Call was forwarded using FACILITY message
+  OpalCallEndedBySecurityDenial,    /// Call failed a security check and was ended
+  OpalCallEndedByLocalBusy,         /// Local endpoint busy
+  OpalCallEndedByLocalCongestion,   /// Local endpoint congested
+  OpalCallEndedByRemoteBusy,        /// Remote endpoint busy
+  OpalCallEndedByRemoteCongestion,  /// Remote endpoint congested
+  OpalCallEndedByUnreachable,       /// Could not reach the remote party
+  OpalCallEndedByNoEndPoint,        /// The remote party is not running an endpoint
+  OpalCallEndedByHostOffline,       /// The remote party host off line
+  OpalCallEndedByTemporaryFailure,  /// The remote failed temporarily app may retry
+  OpalCallEndedByQ931Cause,         /// The remote ended the call with unmapped Q.931 cause code
+  OpalCallEndedByDurationLimit,     /// Call cleared due to an enforced duration limit
+  OpalCallEndedByInvalidConferenceID, /// Call cleared due to invalid conference ID
+  OpalCallEndedByNoDialTone,        /// Call cleared due to missing dial tone
+  OpalCallEndedByNoRingBackTone,    /// Call cleared due to missing ringback tone
+  OpalCallEndedByOutOfService,      /// Call cleared because the line is out of service, 
+  OpalCallEndedByAcceptingCallWaiting, /// Call cleared because another call is answered
+  OpalCallEndedWithQ931Code = 0x100  /// Q931 code specified in MS byte
+} OpalCallEndReason;
+
+
+/**Call clearance information for the OpalCmdClearCall command.
+  */
+typedef struct OpalParamCallCleared {
+  const char      * m_callToken;  ///< Call token for call being cleared.
+  OpalCallEndReason m_reason;     /**< Code for the call termination to be provided to the
+                                       remote system. */
+} OpalParamCallCleared;
 
 
 /** Message to/from OPAL system.
@@ -701,11 +748,12 @@ struct OpalMessage {
     OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
     OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistrationStatus
     OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndAlerting/OpalIndEstablished
-    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdClearCall
+    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall
     OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
     OpalStatusCallCleared    m_callCleared;        ///< Used by OpalIndCallCleared
+    OpalParamCallCleared     m_clearCall;          ///< Used by OpalCmdClearCall
     OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream/OpalCmdMediaStream
   } m_param;
 };
