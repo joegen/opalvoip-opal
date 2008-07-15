@@ -1155,12 +1155,24 @@ void OpalManager_C::HandleUserInput(const OpalMessage & command, OpalMessageBuff
 
 void OpalManager_C::HandleClearCall(const OpalMessage & command, OpalMessageBuffer & response)
 {
-  if (IsNullString(command.m_param.m_callToken)) {
+  const char * callToken;
+  OpalConnection::CallEndReason reason;
+
+  if (m_apiVersion < 9) {
+    callToken = command.m_param.m_callToken;
+    reason = OpalConnection::EndedByLocalUser;
+  }
+  else {
+    callToken = command.m_param.m_clearCall.m_callToken;
+    reason = (OpalConnection::CallEndReason)command.m_param.m_clearCall.m_reason;
+  }
+
+  if (IsNullString(callToken)) {
     response.SetError("No call token provided.");
     return;
   }
 
-  if (!ClearCall(command.m_param.m_callToken))
+  if (!ClearCall(callToken, reason))
     response.SetError("No call found by the token provided.");
 }
 

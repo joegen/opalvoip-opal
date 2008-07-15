@@ -587,11 +587,9 @@ void CMobileOpalDlg::AddRecentCall(const CString & uri)
   m_ctrlCallAddress.InsertString(0, uri);
 
   index = 0;
-  for (;;) {
+  while (index < m_ctrlCallAddress.GetCount()) {
     CString str;
     m_ctrlCallAddress.GetLBText(index, str);
-    if (str.IsEmpty())
-      break;
     CString key;
     key.Format(L"%04u", ++index);
     AfxGetApp()->WriteProfileString(RecentCallsSection, key, str);
@@ -641,7 +639,8 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
             OpalMessage command;
             memset(&command, 0, sizeof(command));
             command.m_type = OpalCmdClearCall;
-            command.m_param.m_callToken = message->m_param.m_incomingCall.m_callToken;
+            command.m_param.m_clearCall.m_callToken = message->m_param.m_incomingCall.m_callToken;
+            command.m_param.m_clearCall.m_reason = OpalCallEndedByAnswerDenied;
             OpalMessage * response = OpalSendMessage(m_opal, &command);
             if (response != NULL)
               OpalFreeMessage(response);
@@ -739,7 +738,7 @@ void CMobileOpalDlg::OnCallAnswer()
     SetStatusText(IDS_HANGINGUP);
     SetCallButton(false, IDS_HANGUP);
     command.m_type = OpalCmdClearCall;
-    command.m_param.m_callToken = m_currentCallToken;
+    command.m_param.m_callCleared.m_callToken = m_currentCallToken;
     response = OpalSendMessage(m_opal, &command);
   }
   else if (!m_callAddress.IsEmpty()) {
