@@ -874,9 +874,11 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion < 3)
     return;
 
-  response->m_param.m_general.m_audioBuffers = pcssEP->GetSoundChannelBufferDepth();
-  if (command.m_param.m_general.m_audioBuffers != 0)
-    pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
+  if (pcssEP != NULL) {
+    response->m_param.m_general.m_audioBuffers = pcssEP->GetSoundChannelBufferDepth();
+    if (command.m_param.m_general.m_audioBuffers != 0)
+      pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
+  }
 
   if (m_apiVersion < 5)
     return;
