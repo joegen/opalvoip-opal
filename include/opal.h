@@ -700,8 +700,8 @@ struct OpalMessage {
     OpalParamProtocol        m_protocol;           ///< Used by OpalCmdSetProtocolParameters
     OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
     OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistrationStatus
-    OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall
-    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdRefuseCall/OpalCmdClearCall/OpalIndAlerting/OpalIndEstablished
+    OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndAlerting/OpalIndEstablished
+    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdClearCall
     OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
