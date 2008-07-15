@@ -104,7 +104,13 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
         || (tokens[offset+1] *= "IP6")
 #endif
         ) {
-        if (tokens[offset+2] != "0.0.0.0")
+        if (tokens[offset+2] == "255.255.255.255") {
+          PTRACE(2, "SDP\tInvalid connection address 255.255.255.255 used, treating like HOLD request.");
+        }
+        else if (tokens[offset+2] == "0.0.0.0") {
+          PTRACE(3, "SDP\tConnection address of 0.0.0.0 specified for HOLD request.");
+        }
+        else
           return OpalTransportAddress(tokens[offset+2], port, "udp");
       }
       else
@@ -549,15 +555,24 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
   }
 
   // check everything
-  if (port == 0) {
-    PTRACE(4, "SDP\tIgnoring media session " << mediaType << " with port=0");
-    direction = Inactive;
-  }
-  else {
-    PTRACE(4, "SDP\tMedia session port=" << port);
-    PIPSocket::Address ip;
-    if (transportAddress.GetIpAddress(ip))
-      transportAddress = OpalTransportAddress(ip, (WORD)port);
+  switch (port) {
+    case 0 :
+      PTRACE(3, "SDP\tIgnoring media session " << mediaType << " with port=0");
+      direction = Inactive;
+      break;
+
+    case 65535 :
+      PTRACE(2, "SDP\tIgnoring media session " << mediaType << " due to illegal port=65535");
+      port = 0;
+      direction = Inactive;
+      break;
+
+    default :
+      PTRACE(4, "SDP\tMedia session port=" << port);
+
+      PIPSocket::Address ip;
+      if (transportAddress.GetIpAddress(ip))
+        transportAddress = OpalTransportAddress(ip, (WORD)port);
   }
 
   // create the format list
