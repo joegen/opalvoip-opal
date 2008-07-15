@@ -684,7 +684,11 @@ typedef struct OpalStatusMessageWaiting {
   */
 typedef struct OpalStatusCallCleared {
   const char * m_callToken;   ///< Call token for call being cleared.
-  const char * m_reason;      ///< String representing the reason for the call completing.
+  const char * m_reason;      /**< String representing the reason for the call
+                                   completing. This string begins with a numeric
+                                   code corresponding to values in the
+                                   OpalCallEndReason enum, followed by a colon and
+                                   an English description. */
 } OpalStatusCallCleared;
 
 

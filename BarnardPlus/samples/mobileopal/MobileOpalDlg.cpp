@@ -539,8 +539,21 @@ void CMobileOpalDlg::ErrorBox(UINT ids, const OpalMessage * response)
 void CMobileOpalDlg::SetStatusText(UINT ids, const char * str)
 {
   CString text;
-  if (str != NULL && str[0] != '\0')
-    text = str;
+  if (str != NULL && str[0] != '\0') {
+    if (isdigit(*str)) {
+      char * colon;
+      unsigned code = strtoul(str, &colon, 10);
+      if (*colon == ':') {
+        str = colon+1;
+        while (isspace(*str))
+          str++;
+        text.LoadString(ids+IDS_CUSTOM_MESSAGES);
+      }
+    }
+
+    if (text.IsEmpty())
+      text = str;
+  }
   else {
     if (ids == 0)
       return;
