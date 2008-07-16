@@ -755,6 +755,9 @@ void SIPEndPoint::OnRegistrationStatus(const PString & aor,
                                        PBoolean /*reRegistering*/,
                                        SIP_PDU::StatusCodes reason)
 {
+  if (reason == SIP_PDU::Information_Trying)
+    return;
+
   if (reason == SIP_PDU::Successful_OK)
     OnRegistered(aor, wasRegistering);
   else
