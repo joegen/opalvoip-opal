@@ -592,7 +592,7 @@ void OpalCodecInfo::Main()
              "i-info:"
              "m-mediaformats."
              "p-pluginlist."
-             "T-trancoders."
+             "T-transcoders."
 #if PTRACING
              "t-trace."
              "o-output:"
