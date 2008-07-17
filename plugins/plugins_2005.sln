@@ -174,6 +174,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinXP USB HID Trainer", "LI
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "G.722 Audio Codec", "audio\G722\g722_2005.vcproj", "{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -562,6 +568,18 @@ Global
 		{0AAD09A3-A2DF-4549-A685-04905F610992}.Release|Win32.Build.0 = Release|Win32
 		{0AAD09A3-A2DF-4549-A685-04905F610992}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
 		{0AAD09A3-A2DF-4549-A685-04905F610992}.Release|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Debug|Win32.Build.0 = Debug|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.No Trace|Win32.ActiveCfg = Release|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.No Trace|Win32.Build.0 = Release|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.No Trace|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Release|Win32.ActiveCfg = Release|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Release|Win32.Build.0 = Release|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
+		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Release|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
