@@ -562,10 +562,9 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
       break;
 
     case 65535 :
-      PTRACE(2, "SDP\tIgnoring media session " << mediaType << " due to illegal port=65535");
-      port = 0;
-      direction = Inactive;
-      break;
+      PTRACE(2, "SDP\tIllegal port=65535 in media session " << mediaType << ", trying to continue.");
+      port = 65534;
+      // Do next case
 
     default :
       PTRACE(4, "SDP\tMedia session port=" << port);
