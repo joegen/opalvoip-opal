@@ -894,6 +894,14 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
 
 PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize)
 {
+  /* For efficiency reasons we will not accept a packet size that is too small.
+     We move it up to the next even multiple, which has a danger of the remote not
+     sending an even number of our multiplier. */
+  const unsigned MinTime = 20;
+  PINDEX minSize = mediaFormat.GetClockRate()/(1000/MinTime)*sizeof(short);
+  if (dataSize < minSize)
+    dataSize = (minSize/dataSize + 1)*minSize;
+
   PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to  "
          << dataSize << " bytes and " << soundChannelBuffers << " buffers.");
   return OpalMediaStream::SetDataSize(dataSize) &&
