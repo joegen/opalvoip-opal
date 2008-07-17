@@ -1501,7 +1501,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
     case PluginCodec_MediaTypeAudio:
     case PluginCodec_MediaTypeAudioStreamed:
       defaultSessionID = OpalMediaFormat::DefaultAudioSessionID;
-      frameTime = (8 * encoderCodec->usPerFrame) / 1000;
+      frameTime = encoderCodec->parm.audio.samplesPerFrame;
       clockRate = encoderCodec->sampleRate;
       break;
 #endif
