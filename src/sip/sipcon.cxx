@@ -59,6 +59,7 @@
 
 typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 
+static const char TagParamName[] = ";tag=";
 static const char ApplicationDTMFRelayKey[]       = "application/dtmf-relay";
 static const char ApplicationDTMFKey[]            = "application/dtmf";
 
@@ -1160,7 +1161,7 @@ void SIPConnection::AdjustOutgoingINVITE()
   if (myAddress.GetDisplayName(false).IsEmpty())
     myAddress.SetDisplayName(GetDisplayName());
 
-  m_dialogFrom = myAddress.AsQuotedString() + ";tag=" + OpalGloballyUniqueID().AsString();
+  m_dialogFrom = myAddress.AsQuotedString() + TagParamName + OpalGloballyUniqueID().AsString();
 }
 
 
@@ -1491,7 +1492,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // Fill in all the various connection info, not our to/from is their from/to
   UpdateRemoteAddresses(mime.GetFrom());
   mime.GetProductInfo(remoteProductInfo);
-  m_dialogFrom = mime.GetTo() + ";tag=" + OpalGloballyUniqueID().AsString(); // put a real random 
+  m_dialogFrom = mime.GetTo() + TagParamName + OpalGloballyUniqueID().AsString(); // put a real random 
   mime.SetTo(m_dialogFrom);
 
   // update the route set and the target address according to 12.1.1
@@ -1808,17 +1809,24 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 
 void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 {
-  PString origTo;
+  PString origTo, reqTo;
 
   // Currently only handle CANCEL requests for the original INVITE that
   // created this connection, all else ignored
-  // Ignore the tag added by OPAL
+
+  // Ignore the tag added by OPAL or remote as they may not be there on
+  // both sides yet if the dialog has not yet been established.
   if (originalInvite != NULL) {
     origTo = originalInvite->GetMIME().GetTo();
-    origTo.Delete(origTo.Find(";tag="), P_MAX_INDEX);
+    PINDEX pos = origTo.Find(TagParamName);
+    origTo.Delete(pos, origTo.Find(';', pos+sizeof(TagParamName)));
+    reqTo = request.GetMIME().GetTo();
+    pos = reqTo.Find(TagParamName);
+    reqTo.Delete(pos, reqTo.Find(';', pos+sizeof(TagParamName)));
   }
+
   if (originalInvite == NULL || 
-      request.GetMIME().GetTo() != origTo || 
+      reqTo != origTo || 
       request.GetMIME().GetFrom() != originalInvite->GetMIME().GetFrom() || 
       request.GetMIME().GetCSeqIndex() != originalInvite->GetMIME().GetCSeqIndex()) {
     PTRACE(2, "SIP\tUnattached " << request << " received for " << *this);
