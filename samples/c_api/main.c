@@ -218,6 +218,9 @@ static void HandleMessages(unsigned timeout)
         break;
 
       case OpalIndIncomingCall :
+        printf("Incoming call from %s to %s.\n",
+               message->m_param.m_incomingCall.m_remoteAddress,
+               message->m_param.m_incomingCall.m_localAddress);
         if (CurrentCallToken == NULL) {
           memset(&command, 0, sizeof(command));
           command.m_type = OpalCmdClearCall;

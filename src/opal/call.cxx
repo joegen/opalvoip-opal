@@ -665,7 +665,7 @@ void OpalCall::SetPartyNames()
     m_partyB = connectionB->GetRemotePartyURL();
     if (!connectionA->IsNetworkConnection()) {
       connectionA->SetRemotePartyName(connectionB->GetRemotePartyName());
-      connectionA->SetRemotePartyAddress(connectionB->GetRemotePartyAddress());
+      connectionA->SetRemotePartyAddress(connectionB->GetRemotePartyURL());
       connectionA->SetProductInfo(connectionB->GetRemoteProductInfo());
     }
   }
@@ -673,7 +673,7 @@ void OpalCall::SetPartyNames()
     m_partyB = connectionB->GetLocalPartyURL();
     if (connectionA->IsNetworkConnection()) {
       connectionB->SetRemotePartyName(connectionA->GetRemotePartyName());
-      connectionB->SetRemotePartyAddress(connectionA->GetRemotePartyAddress());
+      connectionB->SetRemotePartyAddress(connectionA->GetRemotePartyURL());
       connectionB->SetProductInfo(connectionA->GetRemoteProductInfo());
     }
   }
