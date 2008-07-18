@@ -1186,13 +1186,41 @@ class OpalConnection : public PSafeObject
       */
     void SetDisplayName(const PString & name) { displayName = name; }
 
-    /**Get the caller name/alias.
+    /**Get the remote party display name.
       */
     const PString & GetRemotePartyName() const { return remotePartyName; }
 
-    /**Set the caller name/alias.
+    /**Set the remote party display name.
       */
     void SetRemotePartyName(const PString & name) { remotePartyName = name; }
+
+    /**Get the remote party number, if there was one one.
+       If the remote party has indicated an e164 number as one of its aliases
+       or as a field in the Q.931 PDU, then this function will return it.
+      */
+    const PString & GetRemotePartyNumber() const { return remotePartyNumber; }
+
+    /**Get the remote party address.
+       This is typically a URL like sip:user@hostname, though it may be just a host
+       address. It should not be used as a "call back" address, use the
+       GetRemotePartyURL() function for that purpose.
+      */
+    const PString & GetRemotePartyAddress() const { return remotePartyAddress; }
+
+    /**Set the remote party address.
+      */
+    void SetRemotePartyAddress(const PString & addr) { remotePartyAddress = addr; }
+
+    /**Get the remote party address as URL.
+       This will return the "best guess" at an address to use in a
+       to call the user again later. Note that under some circumstances this may be
+       different to the value GetRemotePartyAddress() value returns. In particular
+       if a gatekeeper is involved.
+      */
+    virtual PString GetRemotePartyURL() const;
+
+    // Deprecated - backward compatibility only
+    const PString GetRemotePartyCallbackURL() const { return GetRemotePartyURL(); }
 
     /**Get the remote application description. This is for backward
        compatibility and has been supercedded by GeREmoteProductInfo();
@@ -1202,29 +1230,6 @@ class OpalConnection : public PSafeObject
     /** Get the remote product info.
       */
     const OpalProductInfo & GetRemoteProductInfo() const { return remoteProductInfo; }
-    
-    /**Get the remote party number, if there was one one.
-       If the remote party has indicated an e164 number as one of its aliases
-       or as a field in the Q.931 PDU, then this function will return it.
-      */
-    const PString & GetRemotePartyNumber() const { return remotePartyNumber; }
-
-    /**Get the remote party address.
-      */
-    const PString & GetRemotePartyAddress() const { return remotePartyAddress; }
-
-    /**Set the remote party address.
-      */
-    void SetRemotePartyAddress(const PString & addr) { remotePartyAddress = addr; }
-
-    /**Get the remote party address.
-       This will return the "best guess" at an address to use in a
-       to call the user again later.
-      */
-    virtual PString GetRemotePartyURL() const;
-
-    // Deprecated - backward compatibility only
-    const PString GetRemotePartyCallbackURL() const { return GetRemotePartyURL(); }
 
 
     /**Get the called number (for incoming calls). This is useful for gateway
