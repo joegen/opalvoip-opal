@@ -1614,49 +1614,6 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 }
 
 
-void SIPConnection::AnsweringCall(AnswerCallResponse response)
-{
-  switch (GetPhase()) {
-    case SetUpPhase:
-    case AlertingPhase:
-      switch (response) {
-        case AnswerCallNow:
-        case AnswerCallProgress:
-          SetConnected();
-          break;
-
-        case AnswerCallDenied:
-          PTRACE(2, "SIP\tApplication has declined to answer incoming call");
-          Release(EndedByAnswerDenied);
-          break;
-
-        case AnswerCallPending:
-          SetAlerting(GetLocalPartyName(), PFalse);
-          break;
-
-        case AnswerCallAlertWithMedia:
-          SetAlerting(GetLocalPartyName(), PTrue);
-          break;
-
-        default:
-          break;
-      }
-      break;
-
-    // 
-    // cannot answer call in any of the following phases
-    //
-    case ConnectedPhase:
-    case UninitialisedPhase:
-    case EstablishedPhase:
-    case ReleasingPhase:
-    case ReleasedPhase:
-    default:
-      break;
-  }
-}
-
-
 void SIPConnection::OnReceivedACK(SIP_PDU & response)
 {
   if (originalInvite == NULL) {
