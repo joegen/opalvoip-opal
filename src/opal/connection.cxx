@@ -433,8 +433,41 @@ OpalConnection::AnswerCallResponse OpalConnection::OnAnswerCall(const PString & 
   return endpoint.OnAnswerCall(*this, callerName);
 }
 
-void OpalConnection::AnsweringCall(AnswerCallResponse /*response*/)
+
+void OpalConnection::AnsweringCall(AnswerCallResponse response)
 {
+  PTRACE(3, "OpalCon\tAnswering call: " << response);
+
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
+    return;
+
+  // Can only answer call in these two phases
+  if (GetPhase() != SetUpPhase && GetPhase() != AlertingPhase)
+    return;
+
+  switch (response) {
+    case AnswerCallDenied :
+      // If response is denied, abort the call
+      Release(EndedByAnswerDenied);
+      break;
+
+    case AnswerCallAlertWithMedia :
+      SetAlerting(GetLocalPartyName(), PTrue);
+      break;
+
+    case AnswerCallPending :
+      SetAlerting(GetLocalPartyName(), PFalse);
+      break;
+
+    case AnswerCallNow: 
+      PTRACE(3, "OpalCon\tApplication has answered incoming call");
+      GetCall().GetOtherPartyConnection(*this)->OnConnectedInternal();
+      break;
+
+    default : // AnswerCallDeferred etc
+      break;
+  }
 }
 
 

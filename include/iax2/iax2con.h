@@ -226,15 +226,6 @@ class IAX2Connection : public OpalConnection
   void AcceptIncomingCall();
   
 
-  /**Indicate the result of answering an incoming call.
-       This should only be called if the OnAnswerCall() callback function has
-       returned a AnswerCallPending or AnswerCallDeferred response.
-
-       Sending a AnswerCallDeferred response would have no effect.
-      */
-  virtual void AnsweringCall(AnswerCallResponse response);
-
-
   /**Report if this Connection is still active */
   PBoolean IsCallTerminating() { return iax2Processor.IsCallTerminating(); }
   

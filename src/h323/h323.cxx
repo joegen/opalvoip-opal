@@ -1708,72 +1708,13 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
   if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
     return;
 
-  switch (response) {
-    default : // AnswerCallDeferred
-      break;
-
-    case AnswerCallProgress:
-    {
-      H323SignalPDU want245PDU;
-      want245PDU.BuildProgress(*this);
-      WriteSignalPDU(want245PDU);
-      break;
-    }  
-    case AnswerCallDeferredWithMedia :
-      if (!mediaWaitForConnect) {
-        // create a new facility PDU if doing AnswerDeferredWithMedia
-        H323SignalPDU want245PDU;
-        H225_Progress_UUIE & prog = want245PDU.BuildProgress(*this);
-
-        PBoolean sendPDU = PTrue;
-
-        if (SendFastStartAcknowledge(prog.m_fastStart))
-          prog.IncludeOptionalField(H225_Progress_UUIE::e_fastStart);
-        else {
-          // See if aborted call
-          if (connectionState == ShuttingDownConnection)
-            break;
-
-          // Do early H.245 start
-          if (!endpoint.IsH245Disabled()) {
-            H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, PFalse);
-            fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
-            earlyStart = PTrue;
-            if (!h245Tunneling && (controlChannel == NULL)) {
-              if (!CreateIncomingControlChannel(fac.m_h245Address))
-                break;
-              fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
-            } 
-            else
-              sendPDU = PFalse;
-          }
-        }
-
-        if (sendPDU) {
-          HandleTunnelPDU(&want245PDU);
-          WriteSignalPDU(want245PDU);
-        }
-      }
-      break;
-
-    case AnswerCallAlertWithMedia :
-      SetAlerting(GetLocalPartyName(), PTrue);
-      break;
-
-    case AnswerCallPending :
-      SetAlerting(GetLocalPartyName(), PFalse);
-      break;
-
-    case AnswerCallDenied :
-      // If response is denied, abort the call
-      PTRACE(2, "H225\tApplication has declined to answer incoming call");
-      Release(EndedByAnswerDenied);
-      break;
-
-    case AnswerCallNow :
-      SetConnected();
+  if (response == AnswerCallProgress) {
+    H323SignalPDU want245PDU;
+    want245PDU.BuildProgress(*this);
+    WriteSignalPDU(want245PDU);
   }
 
+  OpalConnection::AnsweringCall(response);
   InternalEstablishedConnectionCheck();
 }
 

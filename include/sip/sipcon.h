@@ -171,21 +171,6 @@ class SIPConnection : public OpalRTPConnection
     );
 
 
-    /**Indicate the result of answering an incoming call.
-       This should only be called if the OnAnswerCall() callback function has
-       returned a AnswerCallPending or AnswerCallDeferred response.
-
-       Note sending further AnswerCallPending responses via this function will
-       have the result of an 180 PDU being sent to the remote endpoint.
-       In this way multiple Alerting PDUs may be sent.
-
-       Sending a AnswerCallDeferred response would have no effect.
-      */
-    void AnsweringCall(
-      AnswerCallResponse response ///<  Answer response to incoming call
-    );
-
-
     /**Clean up the termination of the connection.
        This function can do any internal cleaning up and waiting on background
        threads that may be using the connection object.
