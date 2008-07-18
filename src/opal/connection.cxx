@@ -1003,11 +1003,12 @@ PString OpalConnection::GetLocalPartyURL() const
 
 PString OpalConnection::GetRemotePartyURL() const
 {
+  PINDEX colon = remotePartyAddress.Find(':');
+  if (colon != P_MAX_INDEX && remotePartyAddress.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") == colon)
+    return remotePartyAddress;
+
   PStringStream url;
-  url << endpoint.GetPrefixName() << ':' << PURL::TranslateString(remotePartyName, PURL::LoginTranslation);
-  if (!remotePartyName.IsEmpty() && !remotePartyAddress.IsEmpty())
-    url << '@';
-  url << remotePartyAddress;
+  url << endpoint.GetPrefixName() << ':' << remotePartyAddress;
   return url;
 }
 
