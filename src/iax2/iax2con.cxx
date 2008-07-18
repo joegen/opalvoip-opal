@@ -451,38 +451,6 @@ bool IAX2Connection::TransferConnection(const PString & remoteParty)
   return false;
 }
 
-void IAX2Connection::AnsweringCall(AnswerCallResponse response)
-{
-  PTRACE(3, "IAX2\tAnswering call: " << response);
-
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
-    return;
-
-  switch (response) {
-    case AnswerCallDenied :
-      // If response is denied, abort the call
-      PTRACE(2, "IAX2\tApplication has declined to answer incoming call");
-      Release(EndedByAnswerDenied);
-      break;
-
-    case AnswerCallAlertWithMedia :
-      SetAlerting(GetLocalPartyName(), PTrue);
-      break;
-
-    case AnswerCallPending :
-      SetAlerting(GetLocalPartyName(), PFalse);
-      break;
-      
-    case AnswerCallNow: 
-      PTRACE(2, "IAX2\tApplication has Accepted answer incoming call");
-      iax2Processor.AcceptIncomingCall();
-
-    default : // AnswerCallDeferred
-      PTRACE(2, "IAX2\tAnswering call: has been deferred");
-      break;
-  }
-}
 
 PBoolean IAX2Connection::ForwardCall(const PString & PTRACE_PARAM(forwardParty))
 {
