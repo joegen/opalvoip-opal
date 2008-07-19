@@ -24,6 +24,7 @@
  * $Date$
  */
 
+#include "plugin-config.h"
 #include <codec/opalplugin.h>
 
 

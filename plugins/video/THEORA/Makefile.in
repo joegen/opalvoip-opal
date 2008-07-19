@@ -20,15 +20,17 @@
 # Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
 #
 
-PREFIX=@INSTALLPREFIX@
-exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
+VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
 
 OBJDIR	= ./obj
 
 BASENAME=theora
 SONAME	=$(BASENAME)
 COMMONDIR=../common
+PLUGINDIR=../..
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
@@ -39,7 +41,7 @@ STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 THEORA_LIBS     =@THEORA_LIBS@
 
-EXTRACCFLAGS    += -I$(COMMONDIR)
+EXTRACCFLAGS    += -I$(COMMONDIR) -I$(PLUGINDIR)
 
 vpath	%.cxx $(COMMONDIR)
 vpath	%.o   $(OBJDIR)
@@ -63,15 +65,14 @@ STATIC	= ./lib$(BASENAME)_video_s.a
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CXX) $(LDFLAGS) $(THEORA_LIBS) $(LDSO) -o $@ $^
-
+	$(CXX) $(LDFLAGS) $(LDSO)  -o $@ $^ $(THEORA_LIBS)
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/
+	mkdir -p $(libdir)/$(VC_PLUGIN_DIR)
+	install $(PLUGIN) $(libdir)/$(VC_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/$(PLUGIN)
+	rm -f $(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

@@ -15,12 +15,13 @@
 #pragma warning(disable : 4100)
 #endif
 
+#include "plugin-config.h"
 #include <codec/opalplugin.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN32_WCE)
 #include <malloc.h>
 #include <string.h>
 #ifndef _WIN32_WCE

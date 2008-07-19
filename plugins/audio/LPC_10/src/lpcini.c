@@ -46,15 +46,10 @@ extern int lpcini_(void);
 
 #include "f2c.h"
 
-/* malloc is now defined in stdlib.h in serveral systems */
-#ifdef  HAS_STDLIB_H
-#       include <stdlib.h>
-#else
-#       ifdef   HAS_MALLOC_H
-#               include         <malloc.h>
-#       else
-                extern char * malloc();
-#       endif
+#if defined(_WIN32) || defined(_WIN32_WCE)
+  #ifdef _MSC_VER
+    #include <malloc.h>
+  #endif
 #endif
 
 /* Common Block Declarations */

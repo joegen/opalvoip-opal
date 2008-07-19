@@ -72,28 +72,6 @@
  *
  ********/
 
-#if 0
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <stdlib.h>
-#ifndef _WIN32
-#include <unistd.h>
-#endif
-#include <errno.h>
-#include <string.h>
-#ifdef _WIN32
-#include <winsock.h>
-#include <io.h>
-#include <sys/stat.h>
-#else
-#include <sys/param.h>
-#include <sys/uio.h>
-#include <netinet/in.h>
-#include <sys/file.h>
-#include <sys/stat.h>
-#endif
-#endif
 #include "transmitter.h"
 
 

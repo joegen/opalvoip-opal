@@ -24,21 +24,21 @@
  * $Date$
  */
 
+#include "plugin-config.h"
+
 #include <codec/opalplugin.h>
 
-
 #include <stdlib.h>
-#ifdef _WIN32
-#include <malloc.h>
-#endif
 #include <string.h>
 
+extern "C" {
 #include "libspeex/speex.h" 
+}
 
 #ifdef _WIN32
   #define _CRT_SECURE_NO_DEPRECATE
-  #include <malloc.h>
   #define STRCMPI  _strcmpi
+  #include <malloc.h>
 #else
   #include <semaphore.h>
   #define STRCMPI  strcasecmp
@@ -462,10 +462,12 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 8000) \
   8000,                               /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
   NS_PER_FRAME,                       /* nanoseconds per frame */ \
-  NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
-  (bitsPerFrame + 7) / 8,             /* bytes per frame */ \
-  1,                                  /* recommended number of frames per packet */ \
-  1,                                  /* maximum number of frames per packet  */ \
+  {{ \
+    NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
+    (bitsPerFrame + 7) / 8,             /* bytes per frame */ \
+    1,                                  /* recommended number of frames per packet */ \
+    1,                                  /* maximum number of frames per packet  */ \
+  }}, \
   0,                                  /* IANA RTP payload code */ \
   sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_encoder,                     /* create codec function */ \
@@ -492,10 +494,12 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 8000) \
   8000,                               /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
   NS_PER_FRAME,                       /* nanoseconds per frame */ \
-  NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
-  (bitsPerFrame+7)/8,                 /* bytes per frame */ \
-  1,                                  /* recommended number of frames per packet */ \
-  1,                                  /* maximum number of frames per packet */ \
+  {{ \
+    NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
+    (bitsPerFrame+7)/8,                 /* bytes per frame */ \
+    1,                                  /* recommended number of frames per packet */ \
+    1,                                  /* maximum number of frames per packet */ \
+  }}, \
   0,                                  /* IANA RTP payload code */ \
   sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_decoder,                     /* create codec function */ \
@@ -546,10 +550,12 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 16000)
   16000,                              /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
   NS_PER_FRAME,                       /* nanoseconds per frame */ \
-  WIDE_SAMPLES_PER_FRAME,             /* samples per frame */ \
-  (bitsPerFrame+7)/8,                 /* bytes per frame */ \
-  1,                                  /* recommended number of frames per packet */ \
-  1,                                  /* maximum number of frames per packet  */ \
+  {{ \
+    WIDE_SAMPLES_PER_FRAME,             /* samples per frame */ \
+    (bitsPerFrame+7)/8,                 /* bytes per frame */ \
+    1,                                  /* recommended number of frames per packet */ \
+    1,                                  /* maximum number of frames per packet  */ \
+  }}, \
   0,                                  /* IANA RTP payload code */ \
   sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_encoder,                     /* create codec function */ \
@@ -576,10 +582,12 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 16000)
   16000,                              /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
   NS_PER_FRAME,                       /* nanoseconds per frame */ \
-  WIDE_SAMPLES_PER_FRAME,             /* samples per frame */ \
-  (bitsPerFrame+7)/8,                 /* bytes per frame */ \
-  1,                                  /* recommended number of frames per packet */ \
-  1,                                  /* maximum number of frames per packet */ \
+  {{ \
+    WIDE_SAMPLES_PER_FRAME,             /* samples per frame */ \
+    (bitsPerFrame+7)/8,                 /* bytes per frame */ \
+    1,                                  /* recommended number of frames per packet */ \
+    1,                                  /* maximum number of frames per packet */ \
+  }}, \
   0,                                  /* IANA RTP payload code */ \
   sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_decoder,                     /* create codec function */ \
@@ -626,10 +634,12 @@ static struct PluginCodec_H323NonStandardCodecData speexW##suffix##Cap = \
   8000,                               /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
   NS_PER_FRAME,                       /* nanoseconds per frame */ \
-  NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
-  (bitsPerFrame+7)/8,                 /* bytes per frame */ \
-  1,                                  /* recommended number of frames per packet */ \
-  1,                                  /* maximum number of frames per packet  */ \
+  {{ \
+    NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
+    (bitsPerFrame+7)/8,                 /* bytes per frame */ \
+    1,                                  /* recommended number of frames per packet */ \
+    1,                                  /* maximum number of frames per packet  */ \
+  }}, \
   0,                                  /* IANA RTP payload code */ \
   sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_encoder,                     /* create codec function */ \
@@ -655,10 +665,12 @@ static struct PluginCodec_H323NonStandardCodecData speexW##suffix##Cap = \
   8000,                               /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
   NS_PER_FRAME,                       /* nanoseconds per frame */ \
-  NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
-  (bitsPerFrame+7)/8,                 /* bytes per frame */ \
-  1,                                  /* recommended number of frames per packet */ \
-  1,                                  /* maximum number of frames per packet */ \
+  {{ \
+    NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
+    (bitsPerFrame+7)/8,                 /* bytes per frame */ \
+    1,                                  /* recommended number of frames per packet */ \
+    1,                                  /* maximum number of frames per packet */ \
+  }}, \
   0,                                  /* IANA RTP payload code */ \
   sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_decoder,                     /* create codec function */ \
@@ -691,10 +703,12 @@ CREATE_NARROW_SPEEXW_CAP_DATA(Narrow-8k,    Narrow8k,    3)
   clockRate,                          /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
   NS_PER_FRAME,                       /* nanoseconds per frame */ \
-  samplesPerFrame,                    /* samples per frame */ \
-  (bitsPerFrame + 7) / 8,             /* bytes per frame */ \
-  1,                                  /* recommended number of frames per packet */ \
-  1,                                  /* maximum number of frames per packet  */ \
+  {{ \
+    samplesPerFrame,                    /* samples per frame */ \
+    (bitsPerFrame + 7) / 8,             /* bytes per frame */ \
+    1,                                  /* recommended number of frames per packet */ \
+    1,                                  /* maximum number of frames per packet  */ \
+  }}, \
   0,                                  /* IANA RTP payload code */ \
   sdpSpeex,                           /* RTP payload name */ \
   create_encoder,                     /* create codec function */ \
@@ -721,10 +735,12 @@ CREATE_NARROW_SPEEXW_CAP_DATA(Narrow-8k,    Narrow8k,    3)
   clockRate,                          /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
   NS_PER_FRAME,                       /* nanoseconds per frame */ \
-  samplesPerFrame,                    /* samples per frame */ \
-  (bitsPerFrame+7)/8,                 /* bytes per frame */ \
-  1,                                  /* recommended number of frames per packet */ \
-  1,                                  /* maximum number of frames per packet */ \
+  {{ \
+    samplesPerFrame,                    /* samples per frame */ \
+    (bitsPerFrame+7)/8,                 /* bytes per frame */ \
+    1,                                  /* recommended number of frames per packet */ \
+    1,                                  /* maximum number of frames per packet */ \
+  }}, \
   0,                                  /* IANA RTP payload code */ \
   sdpSpeex,                           /* RTP payload name */ \
   create_decoder,                     /* create codec function */ \

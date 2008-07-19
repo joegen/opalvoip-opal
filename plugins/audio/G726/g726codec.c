@@ -24,12 +24,14 @@
  * $Date$
  */
 
+#include "plugin-config.h"
+
 #include <codec/opalplugin.h>
 
-
 #include <stdlib.h>
-#ifdef _WIN32
-#include <malloc.h>
+
+#if defined(_WIN32) || defined(_WIN32_WCE)
+  #include <malloc.h>
 #endif
 
 #include "g726/g72x.h"
@@ -204,10 +206,14 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     8000,                                 // samples per second
     40000,                                // raw bits per second
     1000,                                 // nanoseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
-    5,                                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+
+    {{
+      SAMPLES_PER_FRAME,                  // samples per frame
+      5,                                  // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
+
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG726_40,                           // RTP payload name
 
@@ -240,10 +246,14 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     8000,                                 // samples per second
     40000,                                // raw bits per second
     1000,                                 // nanoseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
-    5,                                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+
+    {{
+      SAMPLES_PER_FRAME,                  // samples per frame
+      5,                                  // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
+
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG726_40,                           // RTP payload name
 
