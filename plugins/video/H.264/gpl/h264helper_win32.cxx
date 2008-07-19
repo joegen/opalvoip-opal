@@ -19,11 +19,11 @@
  *
  */
 
-#ifdef _MSC_VER
 #include "../shared/pipes.h"
+
+#ifdef _MSC_VER
 #include "../../common/trace.h"
 #else
-#include "pipes.h"
 #include "trace.h"
 #endif
 

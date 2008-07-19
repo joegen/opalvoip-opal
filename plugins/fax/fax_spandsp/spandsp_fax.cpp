@@ -56,7 +56,7 @@ PLUGIN_CODEC_IMPLEMENT(SpanDSP_Fax)
 #include <iostream>
 using namespace std;
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN32_WCE)
   #define _CRT_SECURE_NO_DEPRECATE
   #include <windows.h>
   #include <process.h>

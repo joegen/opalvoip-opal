@@ -24,11 +24,12 @@
  * $Date$
  */
 
+#include "plugin-config.h"
 #include <codec/opalplugin.h>
 
 #include <stdlib.h>
-#ifdef _WIN32
-#include <malloc.h>
+#if defined(_WIN32) || defined(_WIN32_WCE)
+  #include <malloc.h>
 #endif
 #include <string.h>
 

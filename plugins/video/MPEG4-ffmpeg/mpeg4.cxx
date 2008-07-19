@@ -215,12 +215,13 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
       case AV_LOG_ERROR: severity = 1; break;
       case AV_LOG_INFO:  severity = 4; break;
       case AV_LOG_DEBUG: severity = 4; break;
+      default:           severity = 4; break;
     }
     snprintf(buffer, sizeof(buffer), "MPEG4\tFFMPEG\t");
     vsprintf(buffer + strlen(buffer), fmt, arg);
     if (strlen(buffer) > 0)
       buffer[strlen(buffer)-1] = 0;
-    if (severity = 4) 
+    if (severity == 4) 
       { TRACE_UP (severity, buffer); }
     else
       { TRACE (severity, buffer); }
@@ -777,7 +778,8 @@ void MPEG4EncoderContext::CloseCodec()
 // to create RTP packets.
 //
 
-void MPEG4EncoderContext::RtpCallback(AVCodecContext *priv_data, void *data, int size, int num_mb)
+void MPEG4EncoderContext::RtpCallback(AVCodecContext *priv_data, void * /*data*/,
+                                      int size, int /*num_mb*/)
 {
   MPEG4EncoderContext *c = static_cast<MPEG4EncoderContext *>(priv_data->opaque);
   c->_packetSizes.push_back(size);
@@ -859,17 +861,17 @@ printf("--end frame %i\n", total);
       flags |= PluginCodec_ReturnCoderIFrame;
 
     // get the next packet
-    unsigned pktLen;
     if (_packetSizes.size() == 0) 
-      pktLen = 0;
+
+      dstLen = 0;
 
     else {
 
-      pktLen = _packetSizes.front();
+      unsigned pktLen = _packetSizes.front();
       _packetSizes.pop_front();
 
       // if too large, split it
-      unsigned maxRtpSize = dstLen - dstRTP.GetHeaderSize() - 100;
+      unsigned maxRtpSize = dstLen - dstRTP.GetHeaderSize();
       if (pktLen > maxRtpSize) {
           _packetSizes.push_front(pktLen - maxRtpSize);
           pktLen = maxRtpSize;
@@ -887,12 +889,14 @@ printf("--end frame %i\n", total);
           dstRTP.SetMarker(true);
           flags |= PluginCodec_ReturnCoderLastFrame;
       }
+
+      // set timestamp and adjust dstLen to include header size
+      dstRTP.SetTimestamp(_lastTimeStamp);
+
+      dstLen = dstRTP.GetHeaderSize() + pktLen;
+
+      printf("--returning frame %i\n", pktLen);
     }
-
-    // set timestamp and adjust dstLen to include header size
-    dstRTP.SetTimestamp(_lastTimeStamp);
-
-    dstLen = dstRTP.GetHeaderSize() + pktLen;
     
     return 1;
 }
@@ -1169,7 +1173,7 @@ static int codec_encoder(const struct PluginCodec_Definition * ,
                                *flags);
 }
 
-static int encoder_get_output_data_size(const PluginCodec_Definition * codec, void *_context, const char *, void *, unsigned *)
+static int encoder_get_output_data_size(const PluginCodec_Definition * /*codec*/, void *_context, const char *, void *, unsigned *)
 {
   MPEG4EncoderContext * context = (MPEG4EncoderContext *)_context;
   return context->GetFrameBytes() * 3 / 2;
@@ -1555,22 +1559,22 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
             header->x = header->y = 0;
             header->width = _frameWidth;
             header->height = _frameHeight;
-            unsigned char *dst = OPAL_VIDEO_FRAME_DATA_PTR(header);
+            unsigned char *dstData = OPAL_VIDEO_FRAME_DATA_PTR(header);
             for (int i=0; i<3; i ++) {
-                unsigned char *src = _avpicture->data[i];
+                unsigned char *srcData = _avpicture->data[i];
                 int dst_stride = i ? _frameWidth >> 1 : _frameWidth;
                 int src_stride = _avpicture->linesize[i];
                 int h = i ? _frameHeight >> 1 : _frameHeight;
                 if (src_stride==dst_stride) {
-                    memcpy(dst, src, dst_stride*h);
-                    dst += dst_stride*h;
+                    memcpy(dstData, srcData, dst_stride*h);
+                    dstData += dst_stride*h;
                 } 
                 else 
                 {
                     while (h--) {
-                        memcpy(dst, src, dst_stride);
-                        dst += dst_stride;
-                        src += src_stride;
+                        memcpy(dstData, srcData, dst_stride);
+                        dstData += dst_stride;
+                        srcData += src_stride;
                     }
                 }
             }
@@ -1664,7 +1668,7 @@ static int codec_decoder(const struct PluginCodec_Definition *,
   return context->DecodeFrames((const BYTE *)from, *fromLen, (BYTE *)to, *toLen, *flag);
 }
 
-static int decoder_get_output_data_size(const PluginCodec_Definition * codec, void * _context, const char *, void *, unsigned *)
+static int decoder_get_output_data_size(const PluginCodec_Definition * /*codec*/, void * _context, const char *, void *, unsigned *)
 {
   MPEG4DecoderContext * context = (MPEG4DecoderContext *) _context;
   return sizeof(PluginCodec_Video_FrameHeader) + (context->GetFrameBytes() * 3 / 2);
@@ -1897,10 +1901,12 @@ static struct PluginCodec_Definition mpeg4CodecDefn[2] = {
   MPEG4_BITRATE,                      // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
+  {{
+    CIF_WIDTH,                        // frame width
+    CIF_HEIGHT,                       // frame height
+    10,                               // recommended frame rate
+    60,                               // maximum frame rate
+  }},
   0,                                  // IANA RTP payload code
   sdpMPEG4,                           // RTP payload name
 
@@ -1931,10 +1937,12 @@ static struct PluginCodec_Definition mpeg4CodecDefn[2] = {
   MPEG4_BITRATE,                      // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
+  {{
+    CIF_WIDTH,                        // frame width
+    CIF_HEIGHT,                       // frame height
+    10,                               // recommended frame rate
+    60,                               // maximum frame rate
+  }},
   0,                                  // IANA RTP payload code
   sdpMPEG4,                           // RTP payload name
 

@@ -24,7 +24,7 @@
  * $Date$
  */
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN32_WCE)
   #define _CRT_NONSTDC_NO_DEPRECATE 1
   #define _CRT_SECURE_NO_WARNINGS 1
   #include <malloc.h>
@@ -34,6 +34,8 @@
 #endif
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "plugin-config.h"
 
 #include <codec/opalplugin.h>
 

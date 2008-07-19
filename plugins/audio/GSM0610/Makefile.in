@@ -71,16 +71,21 @@
 #
 #
 #
-PREFIX=@INSTALLPREFIX@
-exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
 
-H323_SYSTEM_GSM=@H323_SYSTEM_GSM@
+AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+
+GSM_SYSTEM=@GSM_SYSTEM@
+GSM_LIBS=@GSM_LIBS@
+GSM_CFLAGS=@GSM_CFLAGS@
 SONAME	= gsm0610
 H323_EMBEDDED_GSM=@H323_EMBEDDED_GSM@
 
 SRCDIR		= ./src
 OBJDIR		= ./obj
+PLUGINDIR       =../..
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
@@ -89,11 +94,11 @@ LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
-
+EXTRACFLAGS     =-I$(PLUGINDIR)
 
 SRCS	+= gsm06_10_codec.c
 
-ifeq ($(H323_SYSTEM_GSM),0)
+ifeq ($(GSM_SYSTEM),no)
 
 SRCS	+= $(SRCDIR)/gsm_create.c \
            $(SRCDIR)/gsm_destroy.c \
@@ -111,10 +116,10 @@ SRCS	+= $(SRCDIR)/gsm_create.c \
            $(SRCDIR)/table.c
 
 EXTRALIBS = 
-
+GSM_CFLAGS = -I./inc -DWAV49 -DNeedFunctionPrototypes=1
 else
 
-EXTRALIBS = -lgsm
+EXTRALIBS = $(GSM_LIBS)
 
 endif
 
@@ -127,7 +132,7 @@ endif
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include -I./inc -DWAV49 -DNeedFunctionPrototypes=1 $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) -I../../../include  $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) $(GSM_CFLAGS) $(EXTRACFLAGS) -c $< -o $@
 
 PLUGIN	= ./gsm0610_audio_pwplugin.$(PLUGINEXT)
 STATIC	= ./libgsm0610_audio_s.a
@@ -150,11 +155,11 @@ $(PLUGIN): $(OBJECTS)
 endif
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
+	mkdir -p $(libdir)/$(AC_PLUGIN_DIR)
+	install $(PLUGIN) $(libdir)/$(AC_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/$(PLUGIN)
+	rm -f $(libdir)/$(AC_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

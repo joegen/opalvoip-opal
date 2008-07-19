@@ -57,7 +57,7 @@
 
 
 #include <stdlib.h>
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN32_WCE)
   #include <malloc.h>
   #define STRCMPI  _strcmpi
 #else
@@ -79,6 +79,7 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
       case AV_LOG_ERROR: severity = 1; break;
       case AV_LOG_INFO:  severity = 4; break;
       case AV_LOG_DEBUG: severity = 4; break;
+      default:           severity = 4; break;
     }
     sprintf(buffer, "H264\tFFMPEG\t");
     vsprintf(buffer + strlen(buffer), fmt, arg);
@@ -314,26 +315,26 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
   }
   else 
   {
-    unsigned char *dst = OPAL_VIDEO_FRAME_DATA_PTR(header);
+    unsigned char *dstData = OPAL_VIDEO_FRAME_DATA_PTR(header);
     for (int i=0; i<3; i ++)
     {
-      unsigned char *src = _outputFrame->data[i];
+      unsigned char *srcData = _outputFrame->data[i];
       int dst_stride = i ? _context->width >> 1 : _context->width;
       int src_stride = _outputFrame->linesize[i];
       int h = i ? _context->height >> 1 : _context->height;
 
       if (src_stride==dst_stride)
       {
-        memcpy(dst, src, dst_stride*h);
-        dst += dst_stride*h;
+        memcpy(dstData, srcData, dst_stride*h);
+        dstData += dst_stride*h;
       }
       else
       {
         while (h--)
         {
-          memcpy(dst, src, dst_stride);
-          dst += dst_stride;
-          src += src_stride;
+          memcpy(dstData, srcData, dst_stride);
+          dstData += dst_stride;
+          srcData += src_stride;
         }
       }
     }

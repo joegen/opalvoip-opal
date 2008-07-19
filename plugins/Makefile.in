@@ -7,24 +7,18 @@ SUBDIRS = audio/GSM0610 \
 	  audio/gsm-amr \
 	  video/H.261-vic
 
-HAS_FFMPEG_H263=@HAS_FFMPEG_H263@
-ifeq ($(HAS_FFMPEG_H263),1)
+HAVE_FFMPEG_H263=@HAVE_FFMPEG_H263@
+ifeq ($(HAVE_FFMPEG_H263),yes)
 SUBDIRS += video/H.263-ffmpeg
 endif
 
-HAS_LIBDL=@HAS_LIBDL@
-HAVE_X264=@HAVE_X264@
-HAVE_LIBAVCODEC=@HAVE_LIBAVCODEC@
-
-ifeq ($(HAS_LIBDL),1)
-ifeq ($(HAVE_X264),yes)
-ifeq ($(HAVE_LIBAVCODEC),yes)
+HAVE_H264=@HAVE_H264@
+ifeq ($(HAVE_H264),yes)
 SUBDIRS += video/H.264 \
 	   video/H.264/gpl
 endif
-endif
-endif
 
+HAVE_LIBAVCODEC=@HAVE_LIBAVCODEC@
 ifeq ($(HAVE_LIBAVCODEC),yes)
 SUBDIRS += video/H.263-1998
 SUBDIRS += video/MPEG4-ffmpeg
@@ -35,23 +29,23 @@ ifeq ($(HAVE_THEORA),yes)
 SUBDIRS += video/THEORA
 endif
 
-HAS_IXJ=@HAS_IXJ@
-ifeq ($(HAS_IXJ),1)
+HAVE_IXJ=@HAVE_IXJ@
+ifeq ($(HAVE_IXJ),yes)
 SUBDIRS += LID/IxJ
 endif
 
-HAS_VPB=@HAS_VPB@
-ifeq ($(HAS_VPB),1)
+HAVE_VPB=@HAVE_VPB@
+ifeq ($(HAVE_VPB),yes)
 SUBDIRS += LID/VPB
 endif
 
-HAS_CAPI=@HAS_CAPI@
-ifeq ($(HAS_CAPI),1)
+HAVE_CAPI=@HAVE_CAPI@
+ifeq ($(HAVE_CAPI),yes)
 SUBDIRS += LID/CAPI
 endif
 
-HAS_SPANDSP=@HAS_SPANDSP@
-ifeq ($(HAS_SPANDSP),1)
+HAVE_SPANDSP=@HAVE_SPANDSP@
+ifeq ($(HAVE_SPANDSP),yes)
 ifneq (,$(wildcard fax/fax_spandsp))
 ifneq (,$(wildcard fax/fax_spandsp/spandsp_util))
 SUBDIRS += fax/fax_spandsp
