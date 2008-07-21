@@ -84,8 +84,12 @@ IAX2Transmit::IAX2Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
 
 IAX2Transmit::~IAX2Transmit()
 {
+  Terminate();
+  WaitForTermination();
   sendNowFrames.AllowDeleteObjects();
-  ackingFrames.AllowDeleteObjects();
+  
+  IAX2FrameList notUsed; /* These frames will be destroyed at method end. */
+  ackingFrames.GrabContents(notUsed);
   PTRACE(5, "IAX2Transmit\tDestructor finished");
 }
 
@@ -107,11 +111,14 @@ void IAX2Transmit::PurgeMatchingFullFrames(IAX2Frame *newFrame)
   if (!PIsDescendant(newFrame, IAX2FullFrame))
     return;
 
+  PTRACE(5, "PurgeMatchingFullFrames to " << *newFrame);
+
   ackingFrames.DeleteMatchingSendFrame((IAX2FullFrame *)newFrame);
 }
 
 void IAX2Transmit::SendVnakRequestedFrames(IAX2FullFrameProtocol &src)
 {
+  PTRACE(4, "SendVnakRequestedFramees to " << src);
   ackingFrames.SendVnakRequestedFrames(src);
 }
 
@@ -134,9 +141,9 @@ void IAX2Transmit::Main()
 
 void IAX2Transmit::ProcessAckingList()
 {
-  IAX2FrameList framesToSend;
-  framesToSend.Initialise();
+  IAX2ActiveFrameList framesToSend;
   
+  PTRACE(5, "GetResendFramesDeleteOldFrames");
   ackingFrames.GetResendFramesDeleteOldFrames(framesToSend);
   
   framesToSend.MarkAllAsResent();
@@ -144,12 +151,23 @@ void IAX2Transmit::ProcessAckingList()
   sendNowFrames.GrabContents(framesToSend);
 }
 
-void IAX2Transmit::ReportLists()
+void IAX2Transmit::ReportLists(PString & answer, bool getFullReport)
 {
-  PTRACE(5, "IAX2Transmit\tSend now frames is: ");
-  sendNowFrames.ReportList();
-  PTRACE(5, "IAX2Transmit\tAckingFrames is:");
-  ackingFrames.ReportList();
+  PStringStream reply;
+  PString aList;
+
+  reply << "\n"
+	<< PString("   SendNowFrames = ") << sendNowFrames.GetSize() << "\n";
+  if (getFullReport) {
+    sendNowFrames.ReportList(aList);
+    reply << aList;
+  }
+  reply << PString("   AckingFrames  = ") << ackingFrames.GetSize() << "\n";
+  if (getFullReport) {
+    ackingFrames.ReportList(aList);
+    reply << aList;
+  }
+  answer = reply;
 }
 
 void IAX2Transmit::ProcessSendList()
@@ -193,6 +211,7 @@ void IAX2Transmit::ProcessSendList()
       continue;
     }
     
+    PTRACE(5, "Add frame " << *active << " to list of frames waiting on acks");
     ackingFrames.AddNewFrame(active);
   }
 }
@@ -203,7 +222,6 @@ void IAX2Transmit::ProcessSendList()
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

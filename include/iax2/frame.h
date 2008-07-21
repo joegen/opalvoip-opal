@@ -192,10 +192,10 @@ class IAX2Frame :  public PObject
   /**Return a reference to the endpoint structure */
   IAX2EndPoint & GetEndpoint() { return endpoint; }
   
-  /**Globally unique ID string for this frame, to help track frames */
-  PString IdString() const { return PString("FR-ID#") + PString(frameIndex); }
-  
-  
+  /**Globally unique ID string for this frame, to help track frames.
+   The value returned is a pretty printed address of this frame instance.*/
+  PString IdString() const;
+    
   /**Get the timestamp as used by this class*/
   DWORD  GetTimeStamp() { return timeStamp; }
   
@@ -227,14 +227,16 @@ class IAX2Frame :  public PObject
    Whenever a frame is transmitted, this method will be called.*/
   virtual void InitialiseHeader(IAX2Processor * /*processor*/) { }
   
-  /**Return true if this frame should be retransmitted. Acks are never retransmitted. cmdNew are retransmitted.*/
+  /**Return true if this frame should be retransmitted. Acks are never
+     retransmitted. cmdNew are retransmitted.*/
   PBoolean CanRetransmitFrame() const {return canRetransmitFrame; } 
   
-  /**Get the string which uniquely identifies the IAXConnection that sent this frame */
+  /**Get the string which uniquely identifies the IAXConnection that
+     sent this frame */
   PString GetConnectionToken() const { return connectionToken; }
 
-  /**Set the string which uniquely identifies the IAXConnection that is responsible for
-     this frame */
+  /**Set the string which uniquely identifies the IAXConnection that
+     is responsible for this frame */
   void SetConnectionToken(PString newToken) { connectionToken = newToken; } 
 
   /**Create the connection token id, which uniquely identifies the
@@ -255,34 +257,44 @@ class IAX2Frame :  public PObject
   Return False if the decryption fails, PTrue if the decryption works.*/
   PBoolean DecryptContents(IAX2Encryption & encryption);
 
-  /**Specification of the location (address, call number etc) of the far endpoint */
+  /**Specification of the location (address, call number etc) of the
+     far endpoint */
   IAX2Remote  remote;
   
-  /**Variable specifying the IAX type of frame that this is. Used only in reading from the network */
+  /**Variable specifying the IAX type of frame that this is. Used only
+     in reading from the network */
   IAX2FrameType frameType;
   
-  /** Read 1 byte from the internal area, (Internal area is filled when reading the packet in). Big Endian.*/
+  /** Read 1 byte from the internal area, (Internal area is filled
+      when reading the packet in). Big Endian.*/
   PBoolean          Read1Byte(BYTE & res);
   
-  /** Read 2 bytes from the internal area, (Internal area is filled when reading the packet in)  Big Endian.*/
+  /** Read 2 bytes from the internal area, (Internal area is filled
+      when reading the packet in) Big Endian.*/
   PBoolean          Read2Bytes(PINDEX & res);
   
-  /** Read 2 bytes from the internal area, (Internal area is filled when reading the packet in)  Big Endian.*/
+  /** Read 2 bytes from the internal area, (Internal area is filled
+      when reading the packet in) Big Endian.*/
   PBoolean          Read2Bytes(WORD & res);
   
-  /** Read 4 bytes from the internal area, (Internal area is filled when reading the packet in)  Big Endian.*/
+  /** Read 4 bytes from the internal area, (Internal area is filled
+      when reading the packet in) Big Endian.*/
   PBoolean          Read4Bytes(DWORD & res);
   
-  /** Write 1 byte to the internal area, as part of writing the header info */
+  /** Write 1 byte to the internal area, as part of writing the header
+      info */
   void          Write1Byte(BYTE newVal);
   
-  /** Write 1 byte to the internal area, as part of writing the header info. Send only the lowest 8 bits of source*/
+  /** Write 1 byte to the internal area, as part of writing the header
+      info. Send only the lowest 8 bits of source*/
   void          Write1Byte(PINDEX newVal);
   
-  /** Write 2 bytes to the internal area, as part of writing the header info  Big Endian.*/
+  /** Write 2 bytes to the internal area, as part of writing the
+      header info Big Endian.*/
   void          Write2Bytes(PINDEX newVal);
   
-  /** Write 4 bytes to the internal area, as part of writing the header info  Big Endian.*/
+  /** Write 4 bytes to the internal area, as part of writing the
+      header info Big Endian.*/
   void          Write4Bytes(unsigned int newVal);
   
   /** Initialise all internal storage in this structrue */
@@ -291,7 +303,8 @@ class IAX2Frame :  public PObject
   /**Reference to the global variable of this program */
   IAX2EndPoint      & endpoint;
   
-  /**Internal storage array, ready for sending to remote node, or ready for receiving from remote node*/
+  /**Internal storage array, ready for sending to remote node, or
+     ready for receiving from remote node*/
   PBYTEArray         data;
   
   /**Flag to indicate if this is a MiniFrame or FullFrame */
@@ -312,9 +325,6 @@ class IAX2Frame :  public PObject
   /**unsigned 32 bit representaiton of the time of this day */
   DWORD                timeStamp;  
   
-  /** Internal variable that uniquely identifies this frame */
-  int                frameIndex;
-  
   /**Indicate if this frame can be retransmitted*/
   PBoolean               canRetransmitFrame;
 
@@ -324,8 +334,8 @@ class IAX2Frame :  public PObject
      this incoming frame.  */
   PString            connectionToken;
 
-  /**The time stamp to use, for those cases when the user demands a particular
-   * timestamp on construction. */
+  /**The time stamp to use, for those cases when the user demands a
+   * particular timestamp on construction. */
   DWORD presetTimeStamp;
 };
 
@@ -346,15 +356,17 @@ class IAX2MiniFrame : public IAX2Frame
      PBYTEArray), in preparation to sending to remote node.  The
      constructor will not delete the supplied PBYTEArray structure.
 
-     TimeStamp will be calculated from time since call started, if the users timestamp is 0.
-     If the users timeStamp is non zero, the frames timestamp will be this.
+     TimeStamp will be calculated from time since call started, if the
+     users timestamp is 0.  If the users timeStamp is non zero, the
+     frames timestamp will be this.
   */
   IAX2MiniFrame(IAX2Processor * con, PBYTEArray &sound, PBoolean isAudio, DWORD usersTimeStamp = 0);
 
   /**Destructor*/
   virtual ~IAX2MiniFrame();
   
-  /** Process the incoming frame some more, but process it as this frame type demands*/
+  /** Process the incoming frame some more, but process it as this
+      frame type demands*/
   virtual PBoolean ProcessNetworkPacket();
   
   /**Write the header to the internal data area */
@@ -363,7 +375,8 @@ class IAX2MiniFrame : public IAX2Frame
   /**Pretty print this frame data to the designated stream*/
   virtual void PrintOn(ostream & strm) const;
   
-  /**Pointer to the beginning of the media (after the header) in this packet */
+  /**Pointer to the beginning of the media (after the header) in this
+     packet */
   virtual BYTE *GetMediaDataPointer();
   
   /**Number of bytes in the media section of this packet. */
@@ -387,6 +400,7 @@ class IAX2MiniFrame : public IAX2Frame
   void ZeroAllValues();
 };
 
+/////////////////////////////////////////////////////////////////////////////    
 /////////////////////////////////////////////////////////////////////////////    
 /**Class to handle a full frame, which is sent reliably to the remote endpoint */
 class IAX2FullFrame : public IAX2Frame
@@ -444,26 +458,28 @@ class IAX2FullFrame : public IAX2Frame
   /**Return True if this is a REGREJ frame */
   PBoolean IsRegRejFrame();
 
-  /**Return True if this FullFrame is of a type that increments the InSeqNo */
+  /**Return True if this FullFrame is of a type that increments the
+     InSeqNo */
   PBoolean FrameIncrementsInSeqNo();
 
-  /**True if this is a full frame - always returns true as this is a full
-     frame. */
+  /**True if this is a full frame - always returns true as this is a
+     full frame. */
   virtual PBoolean IsFullFrame() { return PTrue; }  
   
-  /**Report PTrue if this is a hangup frame. We need this information for
-     processing incoming frames, before fully dissection of the frame has
-     completed */
+  /**Report PTrue if this is a hangup frame. We need this information
+     for processing incoming frames, before fully dissection of the
+     frame has completed */
   PBoolean IsHangupFrame();
 
   /** Initialise to zero all the members of this particular class */
   void ZeroAllValues();
   
-  /** Process the incoming frame some more, but process it as a full frame */
+  /** Process the incoming frame some more, but process it as a full
+      frame */
   virtual PBoolean ProcessNetworkPacket();
   
-  /**Send this packet on the specified socket to the remote host. This method is only
-     called by the transmiter.*/
+  /**Send this packet on the specified socket to the remote host. This
+     method is only called by the transmiter.*/
   virtual PBoolean TransmitPacket(PUDPSocket &sock);
   
   /**Get text descrption of this frame type*/
@@ -473,16 +489,19 @@ class IAX2FullFrame : public IAX2Frame
   virtual PString GetSubClassName() const
     { return PString(" subclass=") + PString(subClass); }
   
-  /**Stop the timer, so this packet is not retransmitted. Mark packet as dead. This happens
-     when a packet has been received that matches one of the previously sent packets. */
+  /**Stop the timer, so this packet is not retransmitted. Mark packet
+     as dead. This happens when a packet has been received that
+     matches one of the previously sent packets. */
   void MarkDeleteNow();
   
-  /**A Vnak frame has been received. This Vnak frame is demanding that we
-     resend this particular frame. Given it is to be resent by vnak, we reset
-     the countdown variables. E.G. it gets the full amount of retries again. */
+  /**A Vnak frame has been received. This Vnak frame is demanding that
+     we resend this particular frame. Given it is to be resent by
+     vnak, we reset the countdown variables. E.G. it gets the full
+     amount of retries again. */
   void MarkVnakSendNow();
 
-  /**Pointer to the beginning of the media (after the header) in this packet */
+  /**Pointer to the beginning of the media (after the header) in this
+     packet */
   virtual BYTE *GetMediaDataPointer();
   
   /**Number of bytes in the media section of this packet. */
@@ -495,11 +514,12 @@ class IAX2FullFrame : public IAX2Frame
   void SetSubClass(PINDEX newValue) { subClass = newValue;}
   
   /**Write the header for this class to the internal data array. 12
-     bytes of data are writen.  The application developer must write the
-     remaining bytes, before transmiting this frame. */
+     bytes of data are writen.  The application developer must write
+     the remaining bytes, before transmiting this frame. */
   virtual PBoolean WriteHeader();
   
-  /**Alter the two bytes for in and out sequence values. (in the header)*/
+  /**Alter the two bytes for in and out sequence values. (in the
+     header)*/
   void ModifyFrameHeaderSequenceNumbers(PINDEX inNo, PINDEX outNo);
 
   /**Alter the four bytes for this frames timestamp. It is required,
@@ -511,10 +531,12 @@ class IAX2FullFrame : public IAX2Frame
   /**Mark this frame as having (or not having) information elements*/
   virtual PBoolean InformationElementsPresent() { return PFalse; }  
   
-  /**Get flag to see if this frame is ready to be sent (or resent). In other words, has the timer expired?*/
+  /**Get flag to see if this frame is ready to be sent (or resent). In
+     other words, has the timer expired?*/
   PBoolean  SendFrameNow() { return sendFrameNow; }
   
-  /**Get flag to see if this frame is ready for deletion. In other words. Has it been sent too many times? */
+  /**Get flag to see if this frame is ready for deletion. In other
+     words. Has it been sent too many times? */
   PBoolean  DeleteFrameNow() { return deleteFrameNow; }
   
   /**Get the sequence number info (inSeqNo and outSeqNo) */
@@ -1173,13 +1195,13 @@ class IAX2FrameList : public IAX2Frame *
   ~IAX2FrameList();
   
   /**Report the frames queued in this list*/
-  void ReportList();
+  void ReportList(PString & answer);
   
   /**Get pointer to last frame in the list. Remove this frame from the list */
   IAX2Frame *GetLastFrame();
   
   /**Removing item from list will not automatically delete it */
-  void Initialise() {  DisallowDeleteObjects(); }
+  void Initialise();
     
   /**True if this frame list is empty*/
   PBoolean Empty() { return GetSize() == 0; }
@@ -1216,7 +1238,17 @@ class IAX2FrameList : public IAX2Frame *
   PMutex mutex;
 };
 
-
+/////////////////////////////////////////////////////////////////////////////
+/**The class IAX2ActiveFrameList is essentially the same as
+   IAX2FrameList, except that it is initialised (by default) and the
+   user is not required to use the Initialise method. This class will
+   not ever automatically delete members when they are removed */
+class IAX2ActiveFrameList : public IAX2FrameList
+{
+  PCLASSINFO(IAX2ActiveFrameList, IAX2FrameList);
+ public:
+  IAX2ActiveFrameList() { Initialise(); }
+};
 /////////////////////////////////////////////////////////////////////////////    
 
 
@@ -1227,7 +1259,6 @@ class IAX2FrameList : public IAX2Frame *
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

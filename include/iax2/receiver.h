@@ -111,6 +111,10 @@ class IAX2Receiver : public PThread
      are the receiving thread, and must put all our time into reading
      from the socket, not processing the packets. */
   void AddNewReceivedFrame(IAX2Frame *newFrame);
+
+  /**Report how many frames are in the receive queue, waiting for extraction*/
+  PINDEX GetSize() { return fromNetworkFrames.GetSize(); }
+
   //@}
  protected:
   /**Global variable which holds the application specific data */
@@ -134,7 +138,6 @@ class IAX2Receiver : public PThread
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

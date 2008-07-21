@@ -114,8 +114,6 @@ IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
 {
   endThread = PFalse;
   
-  frameList.Initialise();
-  
   remote.SetDestCallNumber(0);
   remote.SetRemoteAddress(0);
   remote.SetRemotePort(endpoint.ListenPortNumber());
@@ -457,4 +455,10 @@ void IAX2Processor::ProcessIaxCmdVnak(IAX2FullFrameProtocol *src)
     PTRACE(4, "ProcessIaxCmdVnak\tFrames recieved out of order.");
     endpoint.transmitter->SendVnakRequestedFrames(*src);
     delete src;
+}
+
+
+void IAX2Processor::ReportLists(PString & answer)
+{
+  answer= PString(" Incoming size ") + PString(frameList.GetSize());
 }

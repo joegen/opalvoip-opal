@@ -97,6 +97,7 @@ iax2Processor(*new IAX2CallProcessor(ep))
 
 IAX2Connection::~IAX2Connection()
 {
+  endpoint.OnConnectionDestroyed(*this);
   iax2Processor.Terminate();
   iax2Processor.WaitForTermination(1000);
   if (!iax2Processor.IsTerminated()) {
@@ -486,8 +487,11 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
 
 PBoolean IAX2Connection::ReadSoundPacket(RTP_DataFrame & packet)
 { 
-  if (!jitterBuffer.ReadData(packet))
+  if (!jitterBuffer.ReadData(packet)) {
+    PINDEX zeroBytes = packet.GetSize() - packet.GetHeaderSize();
+    memset(packet.GetPayloadPtr() + packet.GetHeaderSize(), 0, zeroBytes);
     return false;
+  }
 
   packet.SetPayloadSize(packet.GetSize() - packet.GetHeaderSize());
   return PTrue;
