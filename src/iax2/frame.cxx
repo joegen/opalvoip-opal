@@ -1566,7 +1566,7 @@ void IAX2FrameList::AddNewFrame(IAX2Frame *newFrame)
 {
   if (newFrame == NULL)
     return;
-  PTRACE(5, "AddNewFrame " << frame->IdString());
+  PTRACE(5, "AddNewFrame " << newFrame->IdString());
   PWaitAndSignal m(mutex);
   PAbstractList::Append(newFrame);
 }
