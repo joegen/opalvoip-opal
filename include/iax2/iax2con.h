@@ -279,7 +279,7 @@ class IAX2Connection : public OpalConnection
   /**Give the call token a value. The call token is the ipaddress of
      the remote node concatented with the remote nodes src
      number. This is guaranteed to be unique.  Sadly, if this
-     connection is setting up the cal, the callToken is not known
+     connection is setting up the call, the callToken is not known
      until receipt of the first packet from the remote node.
 
      However, if this connection is created in response to a call,
@@ -526,7 +526,6 @@ class IAX2Connection : public OpalConnection
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

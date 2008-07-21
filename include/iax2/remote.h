@@ -112,6 +112,14 @@ class IAX2Remote : public PObject
   /** Return the current value of the ip address used by the other end of this call */
   PIPSocket::Address RemoteAddress() { return remoteAddress; }
   
+  /**the connection token can be derived from the information in this
+     class. Consequently, get this class to create the connection
+     token */
+  PString BuildConnectionTokenId();
+
+  /**Similar to BuildConnectionTokenId, but build it with our source call  number, not remote call number */
+  PString BuildOurConnectionTokenId();
+
   /** return the current value of the port at the other end of this call */
   PINDEX   RemotePort() { return remotePort; }
   
@@ -421,7 +429,6 @@ class IAX2Encryption : public PObject
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

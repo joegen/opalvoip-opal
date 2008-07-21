@@ -387,10 +387,9 @@ class IAX2EndPoint : public OpalEndPoint
      Repeat the process until no frames are left. */
   void ProcessReceivedEthernetFrames();
 
-
   /**Report on the frames in the current transmitter class, which are
      pending transmission*/
-  void ReportTransmitterLists();
+  void ReportTransmitterLists(PString & answer, bool getFullReport = false);
 
   /**Copy to the supplied OpalMediaList the media formats we support*/
   void CopyLocalMediaFormats(OpalMediaFormatList & list);
@@ -455,6 +454,12 @@ class IAX2EndPoint : public OpalEndPoint
     const PString & transport = PString::Empty()
   );
   
+  /**Called whenever a connection instance is about to be
+     destroyed. This call is used to ensure we remove every instance
+     of data (relating to the said connection) from this endpoint's
+     token table */
+  virtual void OnConnectionDestroyed(IAX2Connection & con);
+
   //@}
   
  protected:
@@ -556,12 +561,11 @@ class IAX2EndPoint : public OpalEndPoint
 
 #endif // IAX_ENDPOINT_H
 /* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
+/* With the comment below, the tab key does auto indent to 2 spaces.     */
 
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */
