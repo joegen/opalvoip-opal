@@ -129,6 +129,21 @@ void IAX2Remote::PrintOn(ostream & strm) const
        << "        Remote port" << remotePort ;
 }
 
+PString IAX2Remote::BuildConnectionTokenId()
+{
+  return PString("iax2:") 
+    + RemoteAddress().AsString() 
+    + PString("-") 
+    + PString(SourceCallNumber());  
+}
+
+PString IAX2Remote::BuildOurConnectionTokenId()
+{
+  return PString("iax2:") 
+    + RemoteAddress().AsString() 
+    + PString("-") 
+    + PString(DestCallNumber());  
+}
 
 ////////////////////////////////////////////////////////////////////////////////
  //paranoia here. Use brackets to guarantee the order of calculation.
@@ -495,12 +510,11 @@ void IAX2Encryption::CalculateAesKeys()
 ////////////////////////////////////////////////////////////////////////////////
 
 /* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
+/* With the comment below, the tab key does auto indent to 2 spaces.     */
 
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

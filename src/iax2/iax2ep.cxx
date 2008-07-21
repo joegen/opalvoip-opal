@@ -120,9 +120,9 @@ IAX2EndPoint::~IAX2EndPoint()
   PTRACE(6, "Endpoint\tDESTRUCTOR of IAX2 endpoint has Finished.");  
 }
 
-void IAX2EndPoint::ReportTransmitterLists()
+void IAX2EndPoint::ReportTransmitterLists(PString & answer, bool getFullReport)
 {
-  transmitter->ReportLists(); 
+  transmitter->ReportLists(answer, getFullReport); 
 }
 
 PBoolean IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
@@ -135,14 +135,15 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
   PTRACE(3, "IAX2\tWe have received a NEW request from " << f->GetConnectionToken());
   
   if (connectionsActive.Contains(f->GetConnectionToken())) {
-    PTRACE(3, "IAX2\thave received  a duplicate new packet from " << f->GetConnectionToken());
-    cerr << " Haave received  a duplicate new packet from " << f->GetConnectionToken() << endl;
+    /*Have received  a duplicate new packet */
+    PTRACE(3, "IAX2\thave received  a duplicate new packet from " 
+	   << f->GetConnectionToken());
     delete f;
     return;
   }
 
-/* We need to extract the username from the incoming frame. We have to do this now, before
-   establishing the connection. */
+/* We need to extract the username from the incoming frame. We have to
+   do this now, before establishing the connection. */
   IAX2FullFrameProtocol ffp(*f);
   
   PString userName;
@@ -347,6 +348,14 @@ PString IAX2EndPoint::BuildUrl(
   return url;
 }
 
+void IAX2EndPoint::OnConnectionDestroyed(IAX2Connection & con)
+{
+  PString token(con.GetRemoteInfo().BuildOurConnectionTokenId());
+  PWaitAndSignal m(mutexTokenTable);
+  
+  tokenTable.RemoveAt(token);
+}
+
 PBoolean IAX2EndPoint::MakeConnection(
 				 OpalCall & call,
 				 const PString & rParty, 
@@ -540,7 +549,7 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
     if (f == NULL) {
       continue;
     }
-
+    
     PString idString = f->IdString();
     PTRACE(5, "Distribution\tNow try to find a home for " << idString);
     if (ProcessInMatchingConnection(f)) {
