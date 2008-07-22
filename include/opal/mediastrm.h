@@ -367,9 +367,34 @@ class OpalMediaStream : public PSafeObject
 typedef PSafePtr<OpalMediaStream> OpalMediaStreamPtr;
 
 
+/**This is a helper class to delay the right time for non I/O bound streams.
+  */
+class OpalMediaStreamPacing
+{
+  public:
+    OpalMediaStreamPacing(
+      const OpalMediaFormat & mediaFormat ///<  Media format for stream
+    );
+
+    /// Delay appropriate time for the written bytes
+    void Pace(
+      bool reading,     ///< Are reading from medium
+      PINDEX bytes,     ///< Bytes read/written
+      bool & marker     ///< RTP Marker
+    );
+
+  protected:
+    bool           m_isAudio;
+    unsigned       m_frameTime;
+    PINDEX         m_frameSize;
+    unsigned       m_timeUnits;
+    PAdaptiveDelay m_delay;
+};
+
+
 /**This class describes a media stream that is used for media bypass.
   */
-class OpalNullMediaStream : public OpalMediaStream
+class OpalNullMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
 {
     PCLASSINFO(OpalNullMediaStream, OpalMediaStream);
   public:
@@ -419,8 +444,6 @@ class OpalNullMediaStream : public OpalMediaStream
 
   protected:
     bool           m_isSynchronous;
-    bool           m_isAudio;
-    PAdaptiveDelay m_delay;
 };
 
 
@@ -589,7 +612,7 @@ class OpalRawMediaStream : public OpalMediaStream
 
 /**This class describes a media stream that transfers data to/from a file.
   */
-class OpalFileMediaStream : public OpalRawMediaStream
+class OpalFileMediaStream : public OpalRawMediaStream, public OpalMediaStreamPacing
 {
     PCLASSINFO(OpalFileMediaStream, OpalRawMediaStream);
   public:
@@ -642,7 +665,6 @@ class OpalFileMediaStream : public OpalRawMediaStream
 
   protected:
     PFile file;
-    PAdaptiveDelay fileDelay;
 };
 
 #if OPAL_AUDIO
