@@ -438,7 +438,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalM
 
   PSafeLockReadOnly m(ownerCall);
 
-  PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
+  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
   if (otherParty == NULL) {
     PTRACE(2, "SIP\tCowardly refusing to create an RTP channel with only one connection");
     return NULL;
@@ -447,7 +447,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalM
   // if doing media bypass, we need to set the local address
   // otherwise create an RTP session
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
+    PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
     if (otherParty != NULL) {
       MediaInformation info;
       if (otherParty->GetMediaInformation(rtpSessionId, info)) {
@@ -574,7 +574,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
     rtpSessionId = sdp.GetMediaDescriptions().GetSize()+1;
 
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
+    PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
     if (otherParty != NULL) {
       MediaInformation info;
       if (otherParty->GetMediaInformation(rtpSessionId, info)) {
@@ -850,7 +850,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
     newDirection = SDPMediaDescription::RecvOnly;
 
-  PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
+  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
   if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 &&
        otherParty != NULL &&
        sendStream == NULL &&
@@ -1532,7 +1532,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
     // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
     // before it knows what what formats can support. 
-    ownerCall.GetOtherPartyConnection(*this)->PreviewPeerMediaFormats(GetMediaFormats());
+    GetOtherPartyConnection()->PreviewPeerMediaFormats(GetMediaFormats());
 
     SetConnected();
     return;
@@ -1547,7 +1547,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
   // before it knows what what formats can support. 
-  ownerCall.GetOtherPartyConnection(*this)->PreviewPeerMediaFormats(GetMediaFormats());
+  GetOtherPartyConnection()->PreviewPeerMediaFormats(GetMediaFormats());
 
   if (!ownerCall.OnSetUp(*this)) {
     PTRACE(1, "SIP\tOnSetUp failed for INVITE from " << request.GetURI() << " for " << *this);
@@ -2062,7 +2062,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
   if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0)
     ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId);
 
-  PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
+  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
   if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 && otherParty != NULL)
     ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId);
 
@@ -2478,7 +2478,7 @@ void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
   // We got an intra frame request control packet, alert the encoder.
   // We're going to grab the call, find the other connection, then grab the
   // encoding stream
-  PSafePtr<OpalConnection> otherConnection = connection.GetCall().GetOtherPartyConnection(connection);
+  PSafePtr<OpalConnection> otherConnection = connection.GetOtherPartyConnection();
   if (otherConnection == NULL)
     return; // No other connection.  Bail.
 
