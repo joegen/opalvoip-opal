@@ -354,14 +354,21 @@ bool OpalLocalEndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
 bool OpalLocalEndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
 {
   PTRACE(4, "OpalC\tOnIncomingCall " << connection);
+
+  PSafePtr<OpalConnection> network = connection.GetOtherPartyConnection();
+  PAssert(network != NULL, PLogicError); // Should not happen!
+
   OpalMessageBuffer message(OpalIndIncomingCall);
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, connection.GetLocalPartyURL());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, connection.GetRemotePartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, network->GetLocalPartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, network->GetRemotePartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_destination, network->GetDestinationAddress());
+
   PTRACE(4, "OpalC API\tOnIncomingCall:"
             " token=\"" << message->m_param.m_incomingCall.m_callToken << "\""
             " local=\"" << message->m_param.m_incomingCall.m_localAddress << "\""
             " remote=\""<< message->m_param.m_incomingCall.m_remoteAddress << '"');
+
   m_manager.PostMessage(message);
   return true;
 }
@@ -471,14 +478,21 @@ OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
 PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connection)
 {
   PTRACE(4, "OpalC\tOnShowIncoming " << connection);
+
+  PSafePtr<OpalConnection> network = connection.GetOtherPartyConnection();
+  PAssert(network != NULL, PLogicError); // Should not happen!
+
   OpalMessageBuffer message(OpalIndIncomingCall);
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, connection.GetLocalPartyURL());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, connection.GetRemotePartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, network->GetLocalPartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, network->GetRemotePartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_destination, network->GetDestinationAddress());
+
   PTRACE(4, "OpalC API\tOnShowIncoming:"
             " token=\"" << message->m_param.m_incomingCall.m_callToken << "\""
             " local=\"" << message->m_param.m_incomingCall.m_localAddress << "\""
             " remote=\""<< message->m_param.m_incomingCall.m_remoteAddress << '"');
+
   m_manager.PostMessage(message);
   return true;
 }
