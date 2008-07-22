@@ -1109,13 +1109,18 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
     return;
   }
 
-  if (pcssEP == NULL) {
+  if (pcssEP == NULL && localEP == NULL) {
     response.SetError("Can only answer calls to PC.");
     return;
   }
 
-  if (!pcssEP->AcceptIncomingConnection(command.m_param.m_callToken))
-    response.SetError("No call found by the token provided.");
+  if (pcssEP != NULL && pcssEP->AcceptIncomingConnection(command.m_param.m_callToken))
+    return;
+
+  if (localEP != NULL && localEP->AcceptIncomingCall(command.m_param.m_callToken))
+    return;
+
+  response.SetError("No call found by the token provided.");
 }
 
 
