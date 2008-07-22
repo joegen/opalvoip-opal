@@ -781,7 +781,7 @@ PBoolean H323_ExternalRTPChannel::GetMediaTransportAddress(OpalTransportAddress 
 
 PBoolean H323_ExternalRTPChannel::Start()
 {
-  PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(connection.GetCall().GetOtherPartyConnection(connection));
+  PSafePtr<OpalRTPConnection> otherParty = connection.GetOtherPartyConnectionAs<OpalRTPConnection>();
   if (otherParty == NULL)
     return PFalse;
 
