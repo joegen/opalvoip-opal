@@ -533,7 +533,7 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
     return PFalse;
 
   // See if we already have a B-Party in the call. If not, make one.
-  if (connection.GetCall().GetOtherPartyConnection(connection) != NULL)
+  if (connection.GetOtherPartyConnection() != NULL)
     return true;
 
   // Use a routing algorithm to figure out who the B-Party is, then make a connection

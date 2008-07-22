@@ -1139,7 +1139,7 @@ PBoolean H323Connection::OnOpenIncomingMediaChannels()
     }
 
     if (previewFormats.GetSize() != 0) 
-      ownerCall.GetOtherPartyConnection(*this)->PreviewPeerMediaFormats(previewFormats);
+      GetOtherPartyConnection()->PreviewPeerMediaFormats(previewFormats);
   }
 
   // Get the local capabilities before fast start or tunnelled TCS is handled
@@ -3422,7 +3422,7 @@ void H323Connection::OnSetLocalCapabilities()
   H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
   if (capability != NULL) {
     MediaInformation info;
-    PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
+    PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
     if (otherParty != NULL && otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
       capability->SetPayloadType(info.rfc2833);
     else
@@ -3778,7 +3778,7 @@ void H323Connection::SelectDefaultLogicalChannel(const OpalMediaType & mediaType
   if (FindChannel(sessionID, PFalse))
     return;
 
-  PSafePtr<OpalConnection> otherConnection = ownerCall.GetOtherPartyConnection(*this);
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
   if (otherConnection == NULL) {
     PTRACE(2, "H323\tSelectLogicalChannel(" << sessionID << ") cannot start channel without second connection in call.");
     return;
@@ -4043,7 +4043,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     PSafeLockReadOnly m(ownerCall);
 
     if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
-      PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
+      PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
       if (otherParty == NULL) {
         PTRACE(1, "H323\tCowardly refusing to create an RTP channel with only one connection");
         return NULL;

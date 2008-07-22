@@ -744,6 +744,14 @@ class OpalConnection : public PSafeObject
     virtual PBoolean ForwardCall(
       const PString & forwardParty   ///<  Party to forward call to.
     );
+
+    /**Get the other connection in the call, if there is one.
+      */
+    PSafePtr<OpalConnection> GetOtherPartyConnection() const;
+
+    /**Get the other connection in the call, if there is one.
+      */
+    template <class cls> PSafePtr<cls> GetOtherPartyConnectionAs() const { return PSafePtrCast<OpalConnection, cls>(GetOtherPartyConnection()); }
   //@}
 
   /**@name Media Stream Management */

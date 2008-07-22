@@ -179,7 +179,7 @@ PBoolean OpalIVRConnection::SetUpConnection()
 
   ApplyStringOptions();
 
-  PSafePtr<OpalConnection> otherConnection = ownerCall.GetOtherPartyConnection(*this);
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
   if (otherConnection != NULL)
     remotePartyName = otherConnection->GetRemotePartyName();
   else
@@ -345,7 +345,7 @@ PBoolean OpalIVRConnection::SetConnected()
   // if no media streams, try and start them
   if (mediaStreams.IsEmpty()) {
     ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
-    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
+    PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL)
       ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
   }

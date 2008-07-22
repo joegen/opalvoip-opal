@@ -423,6 +423,12 @@ PBoolean OpalConnection::ForwardCall(const PString & /*forwardParty*/)
 }
 
 
+PSafePtr<OpalConnection> OpalConnection::GetOtherPartyConnection() const
+{
+  return GetCall().GetOtherPartyConnection(*this);
+}
+
+
 void OpalConnection::OnAlerting()
 {
   endpoint.OnAlerting(*this);
@@ -462,7 +468,7 @@ void OpalConnection::AnsweringCall(AnswerCallResponse response)
 
     case AnswerCallNow: 
       PTRACE(3, "OpalCon\tApplication has answered incoming call");
-      GetCall().GetOtherPartyConnection(*this)->OnConnectedInternal();
+      GetOtherPartyConnection()->OnConnectedInternal();
       break;
 
     default : // AnswerCallDeferred etc
@@ -583,7 +589,7 @@ bool OpalConnection::CloseMediaStream(OpalMediaStream & stream)
   if (stream.IsSource())
     return true;
 
-  PSafePtr<OpalConnection> otherConnection = GetCall().GetOtherPartyConnection(*this);
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
   if (otherConnection == NULL)
     return true;
 
