@@ -35,6 +35,9 @@
 #include <opal.h>
 
 
+#define LOCAL_MEDIA 0
+
+
 #if defined(_WIN32)
 
   #include <windows.h>
@@ -95,6 +98,8 @@ OpalMessage * MySendCommand(OpalMessage * command, const char * errorMessage)
 }
 
 
+#if LOCAL_MEDIA
+
 int MyReadMediaData(const char * token, const char * id, const char * format, void * data, int size)
 {
   static FILE * file = NULL;
@@ -129,6 +134,8 @@ int MyWriteMediaData(const char * token, const char * id, const char * format, v
   return fwrite(data, 1, size, file);
 }
 
+#endif
+
 
 int InitialiseOPAL()
 {
@@ -161,8 +168,19 @@ int InitialiseOPAL()
   ///////////////////////////////////////////////
   // Initialisation
 
+#if LOCAL_MEDIA
+  #define LOCAL_PREFIX OPAL_PREFIX_LOCAL
+#else
+  #define LOCAL_PREFIX OPAL_PREFIX_PCSS
+#endif
+
   version = OPAL_C_API_VERSION;
-  if ((hOPAL = InitialiseFunction(&version, OPAL_PREFIX_ALL" TraceLevel=4")) == NULL) {
+  if ((hOPAL = InitialiseFunction(&version,
+                                  OPAL_PREFIX_H323  " "
+                                  OPAL_PREFIX_SIP   " "
+                                  OPAL_PREFIX_IAX2  " "
+                                  LOCAL_PREFIX
+                                  " TraceLevel=4")) == NULL) {
     fputs("Could not initialise OPAL\n", stderr);
     return 0;
   }
@@ -174,9 +192,11 @@ int InitialiseOPAL()
   //command.m_param.m_general.m_audioRecordDevice = "Camera Microphone (2- Logitech";
   command.m_param.m_general.m_autoRxMedia = command.m_param.m_general.m_autoTxMedia = "audio";
 
+#if LOCAL_MEDIA
   command.m_param.m_general.m_mediaReadData = MyReadMediaData;
   command.m_param.m_general.m_mediaWriteData = MyWriteMediaData;
   command.m_param.m_general.m_mediaDataHeader = OpalMediaDataPayloadOnly;
+#endif
 
   if ((response = MySendCommand(&command, "Could not set general options")) == NULL)
     return 0;
@@ -223,9 +243,17 @@ static void HandleMessages(unsigned timeout)
                message->m_param.m_incomingCall.m_localAddress);
         if (CurrentCallToken == NULL) {
           memset(&command, 0, sizeof(command));
-          command.m_type = OpalCmdClearCall;
+          command.m_type = OpalCmdAnswerCall;
           command.m_param.m_callToken = message->m_param.m_incomingCall.m_callToken;
           if ((response = MySendCommand(&command, "Could not answer call")) != NULL)
+            FreeMessageFunction(response);
+        }
+        else {
+          memset(&command, 0, sizeof(command));
+          command.m_type = OpalCmdClearCall;
+          command.m_param.m_clearCall.m_callToken = message->m_param.m_incomingCall.m_callToken;
+          command.m_param.m_clearCall.m_reason = OpalCallEndedByLocalBusy;
+          if ((response = MySendCommand(&command, "Could not refuse call")) != NULL)
             FreeMessageFunction(response);
         }
         break;
