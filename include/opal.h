@@ -607,6 +607,9 @@ typedef struct OpalStatusIncomingCall {
   const char * m_callToken;     ///< Call token for new call.
   const char * m_localAddress;  ///< Address of local interface. e.g. "sip:me@here.com"
   const char * m_remoteAddress; ///< Address of remote party. e.g. "sip:them@there.com"
+  const char * m_destination;   /**< Destination remote party is trying to contact. This
+                                     may be in a variety of formats from a simple number
+                                     to a full URL. */
 } OpalStatusIncomingCall;
 
 

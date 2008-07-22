@@ -35,7 +35,7 @@
 #include <opal.h>
 
 
-#define LOCAL_MEDIA 0
+#define LOCAL_MEDIA 1
 
 
 #if defined(_WIN32)
@@ -238,8 +238,9 @@ static void HandleMessages(unsigned timeout)
         break;
 
       case OpalIndIncomingCall :
-        printf("Incoming call from %s to %s.\n",
+        printf("Incoming call from \"%s\" to \"%s\", handled by \"%s\".\n",
                message->m_param.m_incomingCall.m_remoteAddress,
+               message->m_param.m_incomingCall.m_destination,
                message->m_param.m_incomingCall.m_localAddress);
         if (CurrentCallToken == NULL) {
           memset(&command, 0, sizeof(command));
