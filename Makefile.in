@@ -143,6 +143,7 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
 	   $(OPAL_SRCDIR)/opal/opalglobalstatics.cxx \
            $(OPAL_SRCDIR)/rtp/rtp.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
+           $(OPAL_SRCDIR)/opal/opal_c.cxx
 
 ifeq ($(HAS_AUDIO),1)
 SOURCES += $(OPAL_SRCDIR)/opal/pcss.cxx 
@@ -495,6 +496,7 @@ install ::
 	( for fn in include/asn/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/asn ; \
 	done)
+	$(INSTALL) -m 644 include/opal.h $(DESTDIR)$(PREFIX)/include ; \
 	( for fn in include/codec/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/codec ; \
 	done)
