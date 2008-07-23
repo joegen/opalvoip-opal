@@ -725,7 +725,8 @@ class OpalConnection : public PSafeObject
   //@{
     /**Get the destination address of an incoming connection.
        This will, for example, collect a phone number from a POTS line, or
-       get the fields from the H.225 SETUP pdu in a H.323 connection.
+       get the fields from the H.225 SETUP pdu in a H.323 connection, or
+       INVITE for SIP connection.
 
        The default behaviour returns "*", which by convention means any
        address the endpoint/connection can get to.
@@ -1203,8 +1204,12 @@ class OpalConnection : public PSafeObject
     void SetRemotePartyName(const PString & name) { remotePartyName = name; }
 
     /**Get the remote party number, if there was one one.
-       If the remote party has indicated an e164 number as one of its aliases
-       or as a field in the Q.931 PDU, then this function will return it.
+       If the remote party has indicated an E.1164 number as one of its aliases
+       or some other field such as Q.931 Calling-Party-Number, then this function
+       will return that number.
+
+       Note if none of the remote names are a legal E.164 number then an empty
+       string is returned.
       */
     const PString & GetRemotePartyNumber() const { return remotePartyNumber; }
 
@@ -1240,20 +1245,31 @@ class OpalConnection : public PSafeObject
     const OpalProductInfo & GetRemoteProductInfo() const { return remoteProductInfo; }
 
 
-    /**Get the called number (for incoming calls). This is useful for gateway
-       applications where the destination number may not be the same as the local number
-      */
-    virtual const PString & GetCalledDestinationNumber() const { return calledDestinationNumber; }
+    /**Get the called alias name (for incoming calls). This is useful for gateway
+       applications where the destination name may not be the same as the local name.
 
-    /**Get the called name (for incoming calls). This is useful for gateway
-       applications where the destination name may not be the same as the local username
+       Note that if the called party is anm E.164 address and there are no alternative
+       names, such as aliases in H.323, then this field will be empty.
       */
-    virtual const PString & GetCalledDestinationName() const { return calledDestinationName; }
+    const PString & GetCalledPartyName() const { return m_calledPartyName; }
 
-    /**Get the called URL (for incoming calls). This is useful for gateway
-       applications where the destination number may not be the same as the local number
+    /**Get the called E.164 number (for incoming calls). This is useful for gateway
+       applications where the destination number may not be the same as the local number.
+
+       Note that if the incoming call does not contain a legal E.164 number in it's
+       addressing then this will return an empty string.
       */
-    virtual const PString & GetCalledDestinationURL() const { return calledDestinationURL; }
+    const PString & GetCalledPartyNumber() const { return m_calledPartyNumber; }
+
+    /**Get the fulll URL being indicated by the remote for incoming calls. This may
+       not have any relation to the local name of the endpoint.
+
+       The default behaviour returns GetDestinationAddress() normalised to a URL.
+       The remote may provide a full URL, if it does not then the prefix for the
+       endpoint is prepended to the destination address.
+      */
+    virtual PString GetCalledPartyURL();
+
 
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
@@ -1385,9 +1401,8 @@ class OpalConnection : public PSafeObject
     PString              remotePartyAddress;
     CallEndReason        callEndReason;
     bool                 synchronousOnRelease;
-    PString              calledDestinationNumber;
-    PString              calledDestinationName;
-    PString              calledDestinationURL;
+    PString              m_calledPartyNumber;
+    PString              m_calledPartyName;
 
     SendUserInputModes    sendUserInputMode;
     PString               userInputString;

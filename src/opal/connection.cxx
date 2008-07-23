@@ -1007,15 +1007,30 @@ PString OpalConnection::GetLocalPartyURL() const
 }
 
 
-PString OpalConnection::GetRemotePartyURL() const
+static PString MakeURL(const PString & prefix, const PString & partyName)
 {
-  PINDEX colon = remotePartyAddress.Find(':');
-  if (colon != P_MAX_INDEX && remotePartyAddress.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") == colon)
-    return remotePartyAddress;
+  if (partyName.IsEmpty())
+    return PString::Empty();
+
+  PINDEX colon = partyName.Find(':');
+  if (colon != P_MAX_INDEX && partyName.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") == colon)
+    return partyName;
 
   PStringStream url;
-  url << endpoint.GetPrefixName() << ':' << remotePartyAddress;
+  url << prefix << ':' << partyName;
   return url;
+}
+
+
+PString OpalConnection::GetRemotePartyURL() const
+{
+  return MakeURL(endpoint.GetPrefixName(), GetRemotePartyAddress());
+}
+
+
+PString OpalConnection::GetCalledPartyURL()
+{
+  return MakeURL(endpoint.GetPrefixName(), GetDestinationAddress());
 }
 
 
