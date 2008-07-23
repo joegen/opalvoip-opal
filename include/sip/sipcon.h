@@ -89,6 +89,18 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual bool IsNetworkConnection() const { return true; }
 
+    /**Get the local name/alias.
+      */
+    virtual PString GetLocalPartyURL() const;
+
+    /**Get the remote party address as URL.
+       This will return the "best guess" at an address to use in a
+       to call the user again later. Note that under some circumstances this may be
+       different to the value GetRemotePartyAddress() value returns. In particular
+       if a gatekeeper is involved.
+      */
+    virtual PString GetRemotePartyURL() const;
+
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
        example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
@@ -101,8 +113,7 @@ class SIPConnection : public OpalRTPConnection
        This will, for example, collect a phone number from a POTS line, or
        get the fields from the H.225 SETUP pdu in a H.323 connection.
 
-       The default behaviour returns "*", which by convention means any
-       address the endpoint/connection can get to.
+       The default behaviour for sip returns the request URI in the INVITE.
       */
     virtual PString GetDestinationAddress();
 
@@ -371,12 +382,6 @@ class SIPConnection : public OpalRTPConnection
     OpalTransport & GetTransport() const { return *transport; }
 
     void AdjustOutgoingINVITE();
-
-    /**Get the remote party address.
-       This will return the "best guess" at an address to use in a
-       to call the user again later.
-      */
-    PString GetRemotePartyURL() const;
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     const SIPURL & GetRequestURI() const { return m_requestURI; }

@@ -972,9 +972,17 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   remotePartyName = setupPDU->GetSourceAliases(signallingChannel);
 
   // get the destination number and name, just in case we are a gateway
-  if (setup.m_destinationAddress.GetSize() != 0)
-    calledDestinationName = H323GetAliasAddressString(setup.m_destinationAddress[0]);
-  setupPDU->GetQ931().GetCalledPartyNumber(calledDestinationNumber);
+  setupPDU->GetQ931().GetCalledPartyNumber(m_calledPartyNumber);
+  if (m_calledPartyNumber.IsEmpty())
+    m_calledPartyNumber = H323GetAliasAddressE164(setup.m_destinationAddress);
+
+  for (PINDEX i = 0; i < setup.m_destinationAddress.GetSize(); ++i) {
+    PString addr = H323GetAliasAddressString(setup.m_destinationAddress[i]);
+    if (addr != m_calledPartyNumber) {
+      m_calledPartyName = addr;
+      break;
+    }
+  }
 
   // get the peer address
   remotePartyAddress = signallingChannel->GetRemoteAddress();
