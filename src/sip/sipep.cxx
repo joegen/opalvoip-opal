@@ -96,6 +96,8 @@ SIPEndPoint::~SIPEndPoint()
 
 void SIPEndPoint::ShutDown()
 {
+  PTRACE(4, "SIP\tShutting down.");
+
   while (activeSIPHandlers.GetSize() > 0) {
     PSafePtr<SIPHandler> handler = activeSIPHandlers;
     PString aor = handler->GetRemotePartyAddress();
@@ -107,8 +109,21 @@ void SIPEndPoint::ShutDown()
     }
   }
 
-  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReference); transaction != NULL; ++transaction)
-    transaction->WaitForCompletion();
+  /* This odd looking loop is due to the transaction being waited on, might be removed
+     from the transactions list by the garbage collection thread, then the for loop
+     is prematurely ended as ++transaction cannot find the next entry. So we keep
+     doing the for loop till there are no more transactions in progress. */
+  bool waiting = true;
+  while (waiting) {
+    waiting = false;
+    for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReference); transaction != NULL; ++transaction) {
+      if (transaction->IsInProgress()) {
+        PTRACE(5, "SIP\tWaiting for transaction to complete.");
+        transaction->WaitForCompletion();
+        waiting = true;
+      }
+    }
+  }
 
   // Clean up
   transactions.RemoveAll();
