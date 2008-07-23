@@ -214,21 +214,6 @@ SIPConnection::SIPConnection(OpalCall & call,
 }
 
 
-void SIPConnection::UpdateRemoteAddresses(const PString & addr)
-{
-  m_dialogTo = addr;
-
-  SIPURL url(addr);
-
-  remotePartyAddress = url.AsString();
-  PINDEX pos;
-  if ((pos = remotePartyAddress.Find(';')) != P_MAX_INDEX)
-    remotePartyAddress = remotePartyAddress.Left(pos);
-
-  remotePartyName   = url.GetDisplayName();
-  remotePartyNumber = url.GetUserName();
-}
-
 SIPConnection::~SIPConnection()
 {
   delete authentication;
@@ -1076,7 +1061,7 @@ PBoolean SIPConnection::SetUpConnection()
 
 PString SIPConnection::GetDestinationAddress()
 {
-  return calledDestinationURL;
+  return originalInvite != NULL ? originalInvite->GetURI().AsString() : OpalConnection::GetDestinationAddress();
 }
 
 
@@ -1162,6 +1147,13 @@ void SIPConnection::AdjustOutgoingINVITE()
     myAddress.SetDisplayName(GetDisplayName());
 
   m_dialogFrom = myAddress.AsQuotedString() + TagParamName + OpalGloballyUniqueID().AsString();
+}
+
+
+PString SIPConnection::GetLocalPartyURL() const
+{
+  SIPURL url(localPartyName, transport->GetLocalAddress());
+  return url.AsString();
 }
 
 
@@ -1321,6 +1313,25 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   UpdateRemoteAddresses(response.GetMIME().GetTo());
 
   response.GetMIME().GetProductInfo(remoteProductInfo);
+}
+
+
+void SIPConnection::UpdateRemoteAddresses(const PString & addr)
+{
+  m_dialogTo = addr;
+
+  SIPURL url(addr);
+  url.Sanitise(SIPURL::ExternalURI);
+
+  remotePartyAddress = url.AsString();
+
+  remotePartyNumber = url.GetUserName();
+  if (remotePartyNumber.FindSpan("0123456789*#") != P_MAX_INDEX)
+    remotePartyNumber.MakeEmpty();
+
+  remotePartyName = url.GetDisplayName();
+  if (remotePartyName.IsEmpty())
+    remotePartyName = remotePartyNumber.IsEmpty() ? url.GetUserName() : url.AsString();
 }
 
 
@@ -1499,10 +1510,12 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // requests in a dialog do not modify the route set according to 12.2
   routeSet = mime.GetRecordRoute();
 
-  // get the called destination
-  calledDestinationName   = originalInvite->GetURI().GetDisplayName(PFalse);   
-  calledDestinationNumber = originalInvite->GetURI().GetUserName();
-  calledDestinationURL    = originalInvite->GetURI().AsString();
+  // get the called destination number and name
+  m_calledPartyName = originalInvite->GetURI().GetUserName();
+  if (!m_calledPartyName.IsEmpty() && m_calledPartyName.FindSpan("0123456789*#") == P_MAX_INDEX) {
+    m_calledPartyNumber = m_calledPartyName;
+    m_calledPartyName = originalInvite->GetURI().GetDisplayName();
+  }
 
   // get the address that remote end *thinks* it is using from the Contact field
   PIPSocket::Address sigAddr;
