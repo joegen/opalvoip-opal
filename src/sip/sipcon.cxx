@@ -922,6 +922,7 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
       OpalTransportAddress dummy;
       writableThis->OnUseRTPSession(sessionID, mediaDescription->GetMediaType(), mediaDescription->GetTransportAddress(), dummy);
     }
+    writableThis->remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
   }
 
   return remoteFormatList;
