@@ -1321,6 +1321,20 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 }
 
 
+void OpalManager::SetMediaFormatOrder(const PStringArray & order)
+{
+  mediaFormatOrder = order;
+  PTRACE(3, "OPAL\tSetMediaFormatOrder(" << setfill(',') << order << ')');
+}
+
+
+void OpalManager::SetMediaFormatMask(const PStringArray & mask)
+{
+  mediaFormatMask = mask;
+  PTRACE(3, "OPAL\tSetMediaFormatMask(" << setfill(',') << mask << ')');
+}
+
+
 #if OPAL_VIDEO
 template<class PVideoXxxDevice>
 static PBoolean SetVideoDevice(const PVideoDevice::OpenArgs & args, PVideoDevice::OpenArgs & member)

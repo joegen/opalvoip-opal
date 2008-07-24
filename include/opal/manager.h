@@ -1071,7 +1071,9 @@ class OpalManager : public PObject
 
     /**Set the default media format order.
      */
-    void SetMediaFormatOrder(const PStringArray & order) { mediaFormatOrder = order; }
+    void SetMediaFormatOrder(
+      const PStringArray & order   ///< New order
+    );
 
     /**Get the default media format mask.
      */
@@ -1079,7 +1081,9 @@ class OpalManager : public PObject
 
     /**Set the default media format mask.
      */
-    void SetMediaFormatMask(const PStringArray & mask) { mediaFormatMask = mask; }
+    void SetMediaFormatMask(
+      const PStringArray & mask   //< New mask
+    );
 
     /**Set the default parameters for the silence detector.
      */
