@@ -1081,7 +1081,7 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
      If the remote endpoint is unaware of it's NAT status then there will be a
      discrepency between the physical address of the connection and the
      signaling adddress indicated in the protocol, the H.323 SETUP
-     sourceCallSignalAddress or SIP "To" or "Contact" fields.
+     sourceCallSignalAddress or SIP "Contact" field.
 
      So this is the first test to make: if those addresses the same, we will
      assume the other guy is public or LAN/VPN and either no NAT is involved,
@@ -1090,6 +1090,14 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
    */
 
   if (peerAddr == sigAddr)
+    return false;
+
+  /* Next test is to see if BOTH addresses are "public", non RFC1918. There are
+     some cases with proxies, particularly with SIP, where this is possible. We
+     will assume that NAT never occurs between two public addresses though it
+     could occur between two private addresses */
+
+  if (!peerAddr.IsRFC1918() && !sigAddr.IsRFC1918())
     return false;
 
   /* So now we have a remote that is confused in some way, so needs help. Our
