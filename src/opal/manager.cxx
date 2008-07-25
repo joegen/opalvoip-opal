@@ -247,6 +247,8 @@ void OpalManager::ShutDownEndpoints()
   endpointMap.clear();
   endpointList.RemoveAll();
   endpointsMutex.EndWrite();
+
+  clearingAllCalls = false; // Allow for endpoints to be added again.
 }
 
 
