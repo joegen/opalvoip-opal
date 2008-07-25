@@ -484,7 +484,7 @@ void OpalLineConnection::OnReleased()
       if (line.PlayTone(OpalLineInterfaceDevice::ClearTone))
         PTRACE(3, "LID Con\tPlaying clear tone until handset onhook");
       else
-        PTRACE(2, "LID Con\tCould not play clear tone until handset onhook");
+        PTRACE(2, "LID Con\tCould not play clear tone!");
     }
     line.Ring(0, NULL);
   }
