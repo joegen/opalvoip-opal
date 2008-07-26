@@ -497,7 +497,7 @@ class OpalLineConnection : public OpalConnection
     OpalLineEndPoint & endpoint;
     OpalLine        & line;
     bool              wasOffHook;
-    unsigned          answerRingCount;
+    unsigned          minimumRingCount;
     OpalLineInterfaceDevice::DialParams m_dialParams;
 
     PDECLARE_NOTIFIER(PThread, OpalLineConnection, HandleIncoming);
