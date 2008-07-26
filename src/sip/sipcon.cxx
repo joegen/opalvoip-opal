@@ -1151,6 +1151,12 @@ void SIPConnection::AdjustOutgoingINVITE()
 }
 
 
+PString SIPConnection::GetPrefixName() const
+{
+  return m_requestURI.GetScheme();
+}
+
+
 PString SIPConnection::GetLocalPartyURL() const
 {
   SIPURL url(localPartyName, transport->GetLocalAddress());

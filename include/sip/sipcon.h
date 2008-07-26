@@ -89,6 +89,10 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual bool IsNetworkConnection() const { return true; }
 
+    /**Get this connections protocol prefix for URLs.
+      */
+    virtual PString GetPrefixName() const;
+
     /**Get the local name/alias.
       */
     virtual PString GetLocalPartyURL() const;

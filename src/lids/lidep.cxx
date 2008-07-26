@@ -43,14 +43,18 @@
 
 #define new PNEW
 
+static const char PrefixPSTN[] = "pstn";
+static const char PrefixPOTS[] = "pots";
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalLineEndPoint::OpalLineEndPoint(OpalManager & mgr)
-  : OpalEndPoint(mgr, "pots", CanTerminateCall),
+  : OpalEndPoint(mgr, PrefixPOTS, CanTerminateCall),
     defaultLine("*")
 {
   PTRACE(4, "LID EP\tOpalLineEndPoint created");
-  manager.AttachEndPoint(this, "pstn");
+  manager.AttachEndPoint(this, PrefixPSTN);
   monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorLines), "Line Monitor");
 }
 
@@ -86,7 +90,7 @@ PBoolean OpalLineEndPoint::MakeConnection(OpalCall & call,
 
   // Then see if there is a specific line mentioned in the prefix, e.g 123456@vpb:1/2
   PINDEX prefixLength = GetPrefixName().GetLength();
-  bool terminating = (remoteParty.Left(prefixLength) *= "pots");
+  bool terminating = (remoteParty.Left(prefixLength) *= PrefixPOTS);
 
   PString number, lineName;
   PINDEX at = remoteParty.Find('@');
@@ -771,6 +775,12 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 
   PTRACE(3, "LID\tIncoming call routed for " << *this);
   ownerCall.OnSetUp(*this);
+}
+
+
+PString OpalLineConnection::GetPrefixName() const
+{
+  return line.IsTerminal() ? PrefixPOTS : PrefixPSTN;
 }
 
 

@@ -995,6 +995,13 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
 }
 #endif
 
+
+PString OpalConnection::GetPrefixName() const
+{
+  return endpoint.GetPrefixName();
+}
+
+
 void OpalConnection::SetLocalPartyName(const PString & name)
 {
   localPartyName = name;
@@ -1003,7 +1010,7 @@ void OpalConnection::SetLocalPartyName(const PString & name)
 
 PString OpalConnection::GetLocalPartyURL() const
 {
-  return endpoint.GetPrefixName() + ':' + PURL::TranslateString(GetLocalPartyName(), PURL::LoginTranslation);
+  return GetPrefixName() + ':' + PURL::TranslateString(GetLocalPartyName(), PURL::LoginTranslation);
 }
 
 
@@ -1024,13 +1031,13 @@ static PString MakeURL(const PString & prefix, const PString & partyName)
 
 PString OpalConnection::GetRemotePartyURL() const
 {
-  return MakeURL(endpoint.GetPrefixName(), GetRemotePartyAddress());
+  return MakeURL(GetPrefixName(), GetRemotePartyAddress());
 }
 
 
 PString OpalConnection::GetCalledPartyURL()
 {
-  return MakeURL(endpoint.GetPrefixName(), GetDestinationAddress());
+  return MakeURL(GetPrefixName(), GetDestinationAddress());
 }
 
 
