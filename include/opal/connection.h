@@ -1175,6 +1175,10 @@ class OpalConnection : public PSafeObject
       const OpalProductInfo & info
     ) { productInfo = info; }
 
+    /**Get this connections protocol prefix for URLs.
+      */
+    virtual PString GetPrefixName() const;
+
     /**Get the local name/alias.
       */
     const PString & GetLocalPartyName() const { return localPartyName; }

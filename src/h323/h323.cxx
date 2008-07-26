@@ -1288,7 +1288,7 @@ PString H323Connection::GetRemotePartyURL() const
       remote = GetRemotePartyNumber() + "@" + remote;
   }
 
-  remote = GetEndPoint().GetPrefixName() + ":" + remote;
+  remote = GetPrefixName() + ":" + remote;
 
   return remote;
 }
@@ -1724,6 +1724,12 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 
   OpalConnection::AnsweringCall(response);
   InternalEstablishedConnectionCheck();
+}
+
+
+PString H323Connection::GetPrefixName() const
+{
+  return OpalConnection::GetPrefixName();
 }
 
 
