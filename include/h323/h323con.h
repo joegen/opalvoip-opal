@@ -154,6 +154,10 @@ class H323Connection : public OpalRTPConnection
       */
     virtual bool IsNetworkConnection() const { return true; }
 
+    /**Get this connections protocol prefix for URLs.
+      */
+    virtual PString GetPrefixName() const;
+
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
        example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.

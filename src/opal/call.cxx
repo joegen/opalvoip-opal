@@ -316,7 +316,7 @@ bool OpalCall::IsOnHold() const
 
 bool OpalCall::Transfer(OpalConnection & connection, const PString & newAddress)
 {
-  if (newAddress.NumCompare(connection.GetEndPoint().GetPrefixName()+':') == EqualTo)
+  if (newAddress.NumCompare(connection.GetPrefixName()+':') == EqualTo)
     return connection.TransferConnection(newAddress);
 
   PSafePtr<OpalConnection> connectionToKeep;
