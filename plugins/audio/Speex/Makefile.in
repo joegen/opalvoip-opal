@@ -65,16 +65,19 @@
 # Updated Makefiles and fixed Linux problems
 #
 #
-PREFIX=@INSTALLPREFIX@
-exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
+
+AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
 
 SRCDIR	= ./libspeex
-
+PLUGINDIR=../..
 SONAME	= speexcodec
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
+CXXFLAGS 	=@CXXFLAGS@
 CXX	 	=@CXX@
 LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
@@ -84,11 +87,11 @@ LDFLAGS		=@LDFLAGS@
 SPEEX_CFLAGS	=@SPEEX_CFLAGS@
 SPEEX_LIBS	=@SPEEX_LIBS@
 
-H323_SYSTEM_SPEEX=@H323_SYSTEM_SPEEX@
+SPEEX_SYSTEM=@SPEEX_SYSTEM@
 
 SRCS	= speexcodec.cxx 
 
-ifndef H323_SYSTEM_SPEEX
+ifeq ($(SPEEX_SYSTEM),no)
 SRCS   += $(SRCDIR)/bits.c \
           $(SRCDIR)/cb_search.c \
           $(SRCDIR)/exc_10_16_table.c \
@@ -129,10 +132,10 @@ SRCS   += $(SRCDIR)/bits.c \
           $(SRCDIR)/vorbis_psy.c \
           $(SRCDIR)/vq.c \
 
-EXTRACCFLAGS	=
+EXTRACCFLAGS	= -I$(PLUGINDIR)
 EXTRALIBS 	=
 else
-EXTRACCFLAGS	= $(SPEEX_CFLAGS)
+EXTRACCFLAGS	= $(SPEEX_CFLAGS) -I$(PLUGINDIR)
 EXTRALIBS	= $(SPEEX_LIBS)
 endif
 
@@ -144,11 +147,11 @@ vpath	%.cxx $(SRCDIR)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -g -O2 -c $(STDCCFLAGS) $(CCFLAGS) $(EXTRACCFLAGS) -o $@ $<
+	$(CC) -c $(STDCCFLAGS) $(CFLAGS) $(EXTRACCFLAGS) -o $@ $<
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) -g -O2 -c -I../../../include $(STDCCFLAGS) $(CCFLAGS) $(EXTRACCFLAGS) -o $@ $<
+	$(CXX) -c -I../../../include $(STDCCFLAGS) $(CXXFLAGS) $(EXTRACCFLAGS) -o $@ $<
 
 PLUGIN	= ./speex_audio_pwplugin.$(PLUGINEXT)
 
@@ -158,11 +161,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
+	mkdir -p $(libdir)/$(AC_PLUGIN_DIR)
+	install $(PLUGIN) $(libdir)/$(AC_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/$(PLUGIN)
+	rm -f $(libdir)/$(AC_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

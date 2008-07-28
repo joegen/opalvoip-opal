@@ -82,15 +82,6 @@
 #define vic_transmitter_h
 
 #include "config.h"
-#if 0
-#ifdef _WIN32
-#include <winsock.h>
-#else
-#include <sys/param.h>
-#include <sys/socket.h>
-#include <sys/uio.h>
-#endif
-#endif
 
 #define MAXHDR 24
 

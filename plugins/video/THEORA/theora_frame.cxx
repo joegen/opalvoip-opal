@@ -287,11 +287,14 @@ bool theoraFrame::disassembleRTPFrame(RTPFrame & frame, data_t & frameData, bool
       }
       TRACE_UP(4, "THEORA\tDeencap\tAdded end fragment of size " << len << " to data block of " << frameData.len << ", pos: " << frameData.pos);
       return true;
+    default:
+      TRACE(1, "THEORA\tDeencap\tIgnoring unknown fragment type " << fragmentType);
+      return false;
   }
   return false;
 }
 
-bool theoraFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags) {
+bool theoraFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /*flags*/) {
 
   // packet too short
   if (frame.GetPayloadSize() < 6) {
@@ -322,6 +325,9 @@ bool theoraFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags) {
     case RESERVED:
       TRACE(1, "THEORA\tDeencap\tIgnored packet with reserved payload"); 
       return true;
+    default:
+      TRACE(1, "THEORA\tDeencap\tIgnored packet with unknown payload " << dataType); 
+      return false;
   }
   return false;
 }

@@ -41,7 +41,7 @@
 #include "rtpframe.h"
 
 #include <stdlib.h>
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN32_WCE)
   #include <malloc.h>
   #define STRCMPI  _strcmpi
 #else
@@ -214,10 +214,11 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
 
   ret = theora_encode_YUVin( &_theoraState, &yuv );
   if (ret != 0) {
-    if (ret == -1) 
+    if (ret == -1) {
       TRACE(1, "THEORA\tEncoder\tEncoding failed: The size of the given frame differs from those previously input (should not happen)")
-     else
+    } else {
       TRACE(1, "THEORA\tEncoder\tEncoding failed: " << theoraErrorMessage(ret));
+    }
     return 0;
   }
 

@@ -68,14 +68,16 @@
 # Added Linux build for H.261 plug-in.
 #
 
-PREFIX=@INSTALLPREFIX@
-exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
+VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
 
 SHAREDDIR	= ./shared
 COMMONDIR	= ../common
 PLUGINDIR	= ../../
 OBJDIR	= ./obj
+WIN32=@WIN32@
 
 BASENAME=h264
 SONAME	=$(BASENAME)
@@ -89,7 +91,7 @@ STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 LIBAVCODEC_CFLAGS=@LIBAVCODEC_CFLAGS@
 
-EXTRACCFLAGS    += -DLICENCE_MPL $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -I$(PLUGINDIR)
+EXTRACCFLAGS    +=  $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -I$(PLUGINDIR) -DLIB_DIR='"$(libdir)"' -DVC_PLUGIN_DIR='"$(VC_PLUGIN_DIR)"' -DLICENCE_MPL
 
 vpath	%.cxx $(SHAREDDIR)
 vpath	%.cxx $(COMMONDIR)
@@ -97,9 +99,14 @@ vpath	%.o   $(OBJDIR)
 
 SRCS    += $(SHAREDDIR)/h264frame.cxx \
            h264-x264.cxx \
-           h264pipe_unix.cxx \
            $(COMMONDIR)/dyna.cxx \
            $(COMMONDIR)/trace.cxx
+
+ifeq ($(WIN32),yes)
+SRCS    += h264pipe_win32.cxx
+else
+SRCS    += h264pipe_unix.cxx
+endif
 
 
 $(OBJDIR)/%.o : %.cxx
@@ -114,13 +121,12 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 $(PLUGIN): $(OBJECTS)
 	$(CXX) $(LDSO) -o $@ $^
 
-
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/
+	mkdir -p $(libdir)/$(VC_PLUGIN_DIR)
+	install $(PLUGIN) $(libdir)/$(VC_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/$(PLUGIN)
+	rm -f $(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

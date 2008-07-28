@@ -59,12 +59,13 @@
 # Updated Makefiles and fixed Linux problems
 #
 #
-PREFIX=@INSTALLPREFIX@
-SONAME	= ilbccodec
-exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
+AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
 
 SRCDIR	= ./iLBC
+PLUGINDIR = ../..
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
@@ -73,6 +74,7 @@ LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
+EXTRACFLAGS     =-I$(PLUGINDIR)
 
 SRCS	= ilbccodec.c $(SRCDIR)/anaFilter.c $(SRCDIR)/constants.c $(SRCDIR)/createCB.c $(SRCDIR)/doCPLC.c \
 	  $(SRCDIR)/enhancer.c $(SRCDIR)/filter.c $(SRCDIR)/FrameClassify.c $(SRCDIR)/gainquant.c \
@@ -88,7 +90,7 @@ vpath	%.c $(SRCDIR)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -g -c -I../../../include $(STDCCFLAGS) $(CCFLAGS) -o $@ $<
+	$(CC) -c -I../../../include $(STDCCFLAGS) $(CFLAGS) $(EXTRACFLAGS) -o $@ $<
 
 PLUGIN	= ./ilbc_audio_pwplugin.$(PLUGINEXT)
 
@@ -98,11 +100,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO) -o $@ $^
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
+	mkdir -p $(libdir)/$(AC_PLUGIN_DIR)
+	install $(PLUGIN) $(libdir)/$(AC_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/$(PLUGIN)
+	rm -f $(libdir)/$(AC_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

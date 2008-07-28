@@ -27,7 +27,7 @@
 
 #include <stdlib.h>
 #include <math.h>
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN32_WCE)
   #include <malloc.h>
   #define STRCMPI  _strcmpi
 #else
@@ -40,7 +40,7 @@
 X264Library X264Lib;
 #endif
 
-static void logCallbackX264 (void *priv, int level, const char *fmt, va_list arg) {
+static void logCallbackX264 (void * /*priv*/, int level, const char *fmt, va_list arg) {
   char buffer[512];
   int severity = 0;
   switch (level) {
@@ -49,6 +49,7 @@ static void logCallbackX264 (void *priv, int level, const char *fmt, va_list arg
     case X264_LOG_WARNING: severity = 3; break;
     case X264_LOG_INFO:    severity = 4; break;
     case X264_LOG_DEBUG:   severity = 4; break;
+    default:               severity = 4; break;
   }
   sprintf(buffer, "H264\tx264\t"); 
   vsprintf(buffer + strlen (buffer), fmt, arg);
@@ -167,11 +168,11 @@ void X264EncoderContext::SetTSTO (unsigned tsto)
 
 void X264EncoderContext::SetProfileLevel (unsigned profileLevel)
 {
-  unsigned profile = (profileLevel & 0xff0000) >> 16;
-  bool constraint0 = (profileLevel & 0x008000) ? true : false;
-  bool constraint1 = (profileLevel & 0x004000) ? true : false;
-  bool constraint2 = (profileLevel & 0x002000) ? true : false;
-  bool constraint3 = (profileLevel & 0x001000) ? true : false;
+//  unsigned profile = (profileLevel & 0xff0000) >> 16;
+//  bool constraint0 = (profileLevel & 0x008000) ? true : false;
+//  bool constraint1 = (profileLevel & 0x004000) ? true : false;
+//  bool constraint2 = (profileLevel & 0x002000) ? true : false;
+//  bool constraint3 = (profileLevel & 0x001000) ? true : false;
   unsigned level   = (profileLevel & 0x0000ff);
 
   int i = 0;

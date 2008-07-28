@@ -617,7 +617,7 @@ class Context
 
       try {
         vpb_dial_sync(lineState[line].handle, (char *)digits);
-        vpb_dial_sync(lineState[line].handle, ",");
+        vpb_dial_sync(lineState[line].handle, (char*)",");
       }
       catch(VpbException v) {
         std::cerr << "VPB\tPlayDTMF Error code = "  << v.code << ", s = " << v.s << " api func = " << v.api_function << std::endl;

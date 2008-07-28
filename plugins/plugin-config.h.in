@@ -1,6 +1,9 @@
 #ifndef _PLUGIN_CONFIG_H_
 #define _PLUGIN_CONFIG_H_
 
+/* For the win32 build */
+#undef PLUGIN_CODEC_DLL_EXPORTS
+
 /* Directory with libavcodec source code, for MPEG4 rate control correction */
 #undef LIBAVCODEC_HAVE_SOURCE_DIR
 

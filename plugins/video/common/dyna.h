@@ -46,16 +46,16 @@
 #include <codec/opalplugin.h>
 
 #include <stdlib.h>
-#ifdef _WIN32
-#include <windows.h>
-#include <malloc.h>
-#define STRCMPI  _strcmpi
-#else
-#include <semaphore.h>
-#include <dlfcn.h>
-#define STRCMPI  strcasecmp
-typedef unsigned char BYTE;
 
+#if defined(_WIN32) || defined(_WIN32_WCE)
+  #include <windows.h>
+  #include <malloc.h>
+  #define STRCMPI  _strcmpi
+#else
+  #include <semaphore.h>
+  #include <dlfcn.h>
+  #define STRCMPI  strcasecmp
+  typedef unsigned char BYTE;
 #endif
 
 #include <string.h>

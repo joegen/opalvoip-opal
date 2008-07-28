@@ -47,14 +47,17 @@
 # Include IMA ADPCM plugin
 #
 #
-PREFIX=@INSTALLPREFIX@
-exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
+
+AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
 
 SONAME	= ima_adpcm
 
 SRCDIR	= ./src
 OBJDIR	= ./obj
+PLUGINDIR=../..
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
@@ -63,7 +66,7 @@ LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
-
+EXTRACFLAGS     =-I$(PLUGINDIR)
 SRCS	+= ima_adpcm.c
 
 vpath	%.o $(OBJDIR)
@@ -71,7 +74,7 @@ vpath	%.c $(SRCDIR)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) $(EXTRACFLAGS) -c $< -o $@
 
 PLUGIN	= ./ima_adpcm_audio_pwplugin.$(PLUGINEXT)
 
@@ -81,11 +84,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
+	mkdir -p $(libdir)/$(AC_PLUGIN_DIR)
+	install $(PLUGIN) $(libdir)/$(AC_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/$(PLUGIN)
+	rm -f $(libdir)/$(AC_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

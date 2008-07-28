@@ -51,23 +51,28 @@
 
  */
 
-#define _CRT_NONSTDC_NO_WARNINGS
-#define _CRT_SECURE_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS 1
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
+#include "plugin-config.h"
+#endif
+
 #include <codec/opalplugin.h>
 
-#include <stdlib.h>
-#ifdef _WIN32
-#include <windows.h>
-#include <malloc.h>
-#define STRCMPI  _strcmpi
+#if defined(_WIN32) || defined(_WIN32_WCE)
+  #include <windows.h>
+  #define STRCMPI  _strcmpi
 #else
-#include <stdio.h>
-#include <limits.h>
-#include <semaphore.h>
-#include <dlfcn.h>
-#define STRCMPI  strcasecmp
-typedef unsigned char BYTE;
-
+  #include <limits.h>
+  #include <semaphore.h>
+  #include <dlfcn.h>
+  #define STRCMPI  strcasecmp
+  typedef unsigned char BYTE;
 #endif
 
 #include "../common/trace.h"
@@ -76,7 +81,6 @@ typedef unsigned char BYTE;
 #pragma warning(disable:4800)
 #endif
 
-#include <string.h>
 
 extern "C" {
 #include "ffmpeg/avcodec.h"
@@ -1007,6 +1011,7 @@ unsigned int H263EncoderContext::GetNextEncodedPacket(RTPFrame & dstRTP, unsigne
       return 0;
     case 1 :
       flags |= PluginCodec_ReturnCoderIFrame;
+    default:;
   }
 
   if (encodedPackets.size() > 0)
@@ -1365,21 +1370,21 @@ bool H263DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
       && picture->data[2] == picture->data[1] + (size >> 2))
     memcpy(OPAL_VIDEO_FRAME_DATA_PTR(header), picture->data[0], frameBytes);
   else {
-    unsigned char *dst = OPAL_VIDEO_FRAME_DATA_PTR(header);
+    unsigned char *dstData = OPAL_VIDEO_FRAME_DATA_PTR(header);
     for (int i=0; i<3; i ++) {
-      unsigned char *src = picture->data[i];
+      unsigned char *srcData = picture->data[i];
       int dst_stride = i ? frameWidth >> 1 : frameWidth;
       int src_stride = picture->linesize[i];
       int h = i ? frameHeight >> 1 : frameHeight;
 
       if (src_stride==dst_stride) {
-        memcpy(dst, src, dst_stride*h);
-        dst += dst_stride*h;
+        memcpy(dstData, srcData, dst_stride*h);
+        dstData += dst_stride*h;
       } else {
         while (h--) {
-          memcpy(dst, src, dst_stride);
-          dst += dst_stride;
-          src += src_stride;
+          memcpy(dstData, srcData, dst_stride);
+          dstData += dst_stride;
+          srcData += src_stride;
         }
       }
     }
@@ -1980,10 +1985,13 @@ static struct PluginCodec_Definition h263CodecDefn[6] =
     H263_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    CIF_WIDTH,                          // frame width
-    CIF_HEIGHT,                         // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      CIF_WIDTH,                        // frame width
+      CIF_HEIGHT,                       // frame height
+      10,                               // recommended frame rate
+      60,                               // maximum frame rate
+    }},
+
     RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
     sdpH263,                            // RTP payload name
 
@@ -2013,10 +2021,13 @@ static struct PluginCodec_Definition h263CodecDefn[6] =
     H263_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    CIF_WIDTH,                          // frame width
-    CIF_HEIGHT,                         // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      CIF_WIDTH,                          // frame width
+      CIF_HEIGHT,                         // frame height
+      10,                                 // recommended frame rate
+      60,                                 // maximum frame rate
+    }},
+
     RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
     sdpH263,                            // RTP payload name
 
@@ -2047,10 +2058,13 @@ static struct PluginCodec_Definition h263CodecDefn[6] =
     H263_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    QCIF_WIDTH,                         // frame width
-    QCIF_HEIGHT,                        // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      QCIF_WIDTH,                         // frame width
+      QCIF_HEIGHT,                        // frame height
+      10,                                 // recommended frame rate
+      60,                                 // maximum frame rate
+    }},
+
     RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
     sdpH263,                            // RTP payload name
 
@@ -2080,10 +2094,13 @@ static struct PluginCodec_Definition h263CodecDefn[6] =
     H263_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    QCIF_WIDTH,                         // frame width
-    QCIF_HEIGHT,                        // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      QCIF_WIDTH,                         // frame width
+      QCIF_HEIGHT,                        // frame height
+      10,                                 // recommended frame rate
+      60,                                 // maximum frame rate
+    }},
+
     RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
     sdpH263,                            // RTP payload name
 
@@ -2115,10 +2132,13 @@ static struct PluginCodec_Definition h263CodecDefn[6] =
     H263_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    CIF16_WIDTH,                        // frame width
-    CIF16_HEIGHT,                       // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      CIF16_WIDTH,                        // frame width
+      CIF16_HEIGHT,                       // frame height
+      10,                                 // recommended frame rate
+      60,                                 // maximum frame rate
+    }},
+
     RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
     sdpH263,                            // RTP payload name
 
@@ -2149,10 +2169,12 @@ static struct PluginCodec_Definition h263CodecDefn[6] =
     H263_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    CIF16_WIDTH,                        // frame width
-    CIF16_HEIGHT,                       // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      CIF16_WIDTH,                        // frame width
+      CIF16_HEIGHT,                       // frame height
+      10,                                 // recommended frame rate
+      60,                                 // maximum frame rate
+    }},
     RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
     sdpH263,                            // RTP payload name
 

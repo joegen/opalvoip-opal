@@ -28,10 +28,7 @@ using namespace std;
 
 #include "spandsp_if.h"
 #include <tiff.h>
-
-#ifdef _WIN32
 #include <fcntl.h>
-#endif
 
 //////////////////////////////////////////////////////////////////////////////////
 // 

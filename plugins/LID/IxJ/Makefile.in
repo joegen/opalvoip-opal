@@ -31,11 +31,14 @@
 #
 #
 
-STDCCFLAGS += -fPIC @STDCCFLAGS@
+STDCCFLAGS =@STDCCFLAGS@
+CXXFLAGS   =@CXXFLAGS@
 
-PREFIX=@INSTALLPREFIX@
-exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
+LID_PLUGIN_DIR=@LID_PLUGIN_DIR@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+
 
 CC=@CC@
 CXX=@CXX@
@@ -56,7 +59,7 @@ vpath	%.cxx $(SRCDIR)
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CXXFLAGS) -c $< -o $@
 
 PLUGIN	= ./ixj_lid_pwplugin.so
 
@@ -66,11 +69,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO)$(SONAME) -o $@ $^ $(EXTRALIBS)
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/lid/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/lid/
+	mkdir -p $(libdir)/$(LID_PLUGIN_DIR)
+	install  $(PLUGIN) $(libdir)/$(LID_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/ptlib/lid/$(PLUGIN)
+	rm -f $(libdir)/$(LID_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

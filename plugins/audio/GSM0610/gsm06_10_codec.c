@@ -24,18 +24,18 @@
  * $Date$
  */
 
-#include <codec/opalplugin.h>
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS 1
 
-
+#include <stdio.h>
 #include <stdlib.h>
-#ifdef _WIN32
-  #define _CRT_SECURE_NO_DEPRECATE
-  #include <malloc.h>
-  #define STRCMPI  _strcmpi
-#else
-  #define STRCMPI  strcasecmp
-#endif
 #include <string.h>
+
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
+#include "plugin-config.h"
+#endif
+
+#include <codec/opalplugin.h>
 
 #include "./inc/gsm.h"
 
@@ -53,6 +53,12 @@
 #define MIN(a,b)    (((a)<=(b))?(a):(b))
 
 #define PAYLOAD_CODE            3
+
+#if defined(_WIN32) || defined(_WIN32_WCE)
+  #define STRCMPI  _strcmpi
+#else
+  #define STRCMPI  strcasecmp
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

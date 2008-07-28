@@ -48,6 +48,7 @@
 
 #ifndef __H263P_1998_H__
 #define __H263P_1998_H__ 1
+#include "plugin-config.h"
 #include <codec/opalplugin.h>
 #include "h263pframe.h"
 #include "critsect.h"
@@ -378,10 +379,13 @@ static struct PluginCodec_Definition h263PCodecDefn[2] = {
   H263P_BITRATE,                      // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF4_WIDTH,                         // frame width
-  CIF4_HEIGHT,                        // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
+  {{
+    CIF4_WIDTH,                       // frame width
+    CIF4_HEIGHT,                      // frame height
+    10,                               // recommended frame rate
+    60,                               // maximum frame rate
+  }},
+
   0,                                  // IANA RTP payload code
   sdpH263,                            // RTP payload name
 
@@ -412,10 +416,12 @@ static struct PluginCodec_Definition h263PCodecDefn[2] = {
   H263P_BITRATE,                      // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF4_WIDTH,                         // frame width
-  CIF4_HEIGHT,                        // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
+  {{
+    CIF4_WIDTH,                       // frame width
+    CIF4_HEIGHT,                      // frame height
+    10,                               // recommended frame rate
+    60,                               // maximum frame rate
+  }},
   0,                                  // IANA RTP payload code
   sdpH263,                            // RTP payload name
 

@@ -34,7 +34,7 @@
 #include <string.h>
 
 #define HAVE_MKFIFO 1
-#define GPL_PROCESS_FILENAME "ptlib/codecs/video/h264_video_pwplugin_helper"
+#define GPL_PROCESS_FILENAME "h264_video_pwplugin_helper"
 #define DIR_SEPERATOR "/"
 #define DIR_TOKENISER ":"
 
@@ -134,6 +134,7 @@ void H264EncCtx::call(unsigned msg, unsigned value)
   switch (msg) {
     case SET_FRAME_WIDTH:  width  = value; size = (unsigned) (width * height * 1.5) + sizeof(frameHeader) + 40; break;
     case SET_FRAME_HEIGHT: height = value; size = (unsigned) (width * height * 1.5) + sizeof(frameHeader) + 40; break;
+    default: return;
    }
   
   writeStream((char*) &msg, sizeof(msg));
@@ -262,6 +263,11 @@ bool H264EncCtx::findGplProcess()
     }
   }
 
+#ifdef LIB_DIR
+  if (checkGplProcessExists(LIB_DIR)) 
+    return true;
+#endif
+
   if (checkGplProcessExists("/usr/lib")) 
     return true;
 
@@ -276,6 +282,11 @@ bool H264EncCtx::checkGplProcessExists (const char * dir)
   struct stat buffer;
   memset(gplProcess, 0, sizeof(gplProcess));
   strncpy(gplProcess, dir, sizeof(gplProcess));
+
+  if (gplProcess[strlen(gplProcess)-1] != DIR_SEPERATOR[0]) 
+    strcat(gplProcess, DIR_SEPERATOR);
+  strcat(gplProcess, VC_PLUGIN_DIR);
+
   if (gplProcess[strlen(gplProcess)-1] != DIR_SEPERATOR[0]) 
     strcat(gplProcess, DIR_SEPERATOR);
   strcat(gplProcess, GPL_PROCESS_FILENAME);

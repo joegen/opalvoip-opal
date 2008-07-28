@@ -31,33 +31,33 @@
 #include <ostream>
 #include <math.h>
 
-#ifdef _WIN32
+#if defined (_WIN32) || defined (_WIN32_WCE)
 
-#pragma warning(disable: 4996)
+  #pragma warning(disable: 4996)
 
-#ifndef FD_SETSIZE
-#include <winsock2.h>
-#include <Ws2tcpip.h>
-#endif
+  #ifndef FD_SETSIZE
+  #include <winsock2.h>
+  #include <Ws2tcpip.h>
+  #endif
 
-typedef SOCKET socket_t;
+  typedef SOCKET socket_t;
 
 #else
 
-typedef int socket_t;
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
+  typedef int socket_t;
+  #include <sys/socket.h>
+  #include <arpa/inet.h>
+  #include <netdb.h>
 
 #endif
 
 
 extern "C" {
-#ifdef _WIN32
-#include <tgmath.h>
+#if defined (_WIN32) || defined (_WIN32_WCE)
+  #include <tgmath.h>
 #else
-#define  INT16_MAX  SHRT_MAX
-#define  INT16_MIN  SHRT_MIN
+  #define  INT16_MAX  SHRT_MAX
+  #define  INT16_MIN  SHRT_MIN
 #endif
 
 #include "spandsp.h"
