@@ -47,9 +47,8 @@ namespace PWLibStupidLinkerHacks {
   int mediaTypeLoader;
 }; // namespace PWLibStupidLinkerHacks
 
-#if OPAL_AUDIO
+
 OPAL_INSTANTIATE_MEDIATYPE(audio, OpalAudioMediaType);
-#endif
 
 #if OPAL_VIDEO
 OPAL_INSTANTIATE_MEDIATYPE(video, OpalVideoMediaType);
@@ -193,14 +192,11 @@ PString OpalRTPAVPMediaType::GetRTPEncoding() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 OpalAudioMediaType::OpalAudioMediaType()
   : OpalRTPAVPMediaType("audio", "audio", 1)
 {
 }
 
-#endif // OPAL_AUDIO
 
 ///////////////////////////////////////////////////////////////////////////////
 

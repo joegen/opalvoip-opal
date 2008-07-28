@@ -85,6 +85,8 @@ class OpalMessageBuffer
 #define SET_MESSAGE_STRING(msg, member, str) (msg).SetString(&(msg)->member, str)
 
 
+#if P_AUDIO
+
 class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
 {
   public:
@@ -96,6 +98,8 @@ class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
   private:
     OpalManager_C & m_manager;
 };
+
+#endif // P_AUDIO
 
 
 class OpalLocalEndPoint_C : public OpalLocalEndPoint
@@ -142,8 +146,10 @@ class OpalManager_C : public OpalManager
 {
   public:
     OpalManager_C(unsigned version)
-      : pcssEP(NULL)
-      , localEP(NULL)
+      : localEP(NULL)
+#if P_AUDIO
+      , pcssEP(NULL)
+#endif
       , m_apiVersion(version)
       , m_messagesAvailable(0, INT_MAX)
     {
@@ -183,8 +189,10 @@ class OpalManager_C : public OpalManager
 
     void OnIndMediaStream(const OpalMediaStream & stream, OpalMediaStates state);
 
-    OpalPCSSEndPoint_C  * pcssEP;
     OpalLocalEndPoint_C * localEP;
+#if P_AUDIO
+    OpalPCSSEndPoint_C  * pcssEP;
+#endif
 
     unsigned                  m_apiVersion;
     std::queue<OpalMessage *> m_messageQueue;
@@ -478,6 +486,8 @@ bool OpalLocalEndPoint_C::OnWriteMediaData(const OpalLocalConnection & connectio
 
 ///////////////////////////////////////
 
+#if P_AUDIO
+
 OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
   : OpalPCSSEndPoint(mgr)
   , m_manager(mgr)
@@ -510,6 +520,8 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
   m_manager.PostMessage(message);
   return true;
 }
+
+#endif // P_AUDIO
 
 
 ///////////////////////////////////////
@@ -651,10 +663,12 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 #endif
 
+#if P_AUDIO
   if (pcPos != P_MAX_INDEX) {
     pcssEP = new OpalPCSSEndPoint_C(*this);
     AddRouteEntry("pc:.*=" + defProto + ":<da>");
   }
+#endif
 
   if (localPos != P_MAX_INDEX) {
     localEP = new OpalLocalEndPoint_C(*this);
@@ -746,6 +760,7 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
 
 void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuffer & response)
 {
+#if P_AUDIO
   if (pcssEP != NULL) {
     SET_MESSAGE_STRING(response, m_param.m_general.m_audioRecordDevice, pcssEP->GetSoundChannelRecordDevice());
     if (!IsNullString(command.m_param.m_general.m_audioRecordDevice))
@@ -755,6 +770,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     if (!IsNullString(command.m_param.m_general.m_audioPlayerDevice))
       pcssEP->SetSoundChannelPlayDevice(command.m_param.m_general.m_audioPlayerDevice);
   }
+#endif // P_AUDIO
 
 #if OPAL_VIDEO
   PVideoDevice::OpenArgs video = GetVideoInputDevice();
@@ -777,7 +793,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     video.deviceName = command.m_param.m_general.m_videoPreviewDevice;
     SetVideoPreviewDevice(video);
   }
-#endif
+#endif // OPAL_VIDEO
 
   PStringStream strm;
   strm << setfill('\n') << GetMediaFormatOrder();
@@ -885,11 +901,13 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion < 3)
     return;
 
+#if P_AUDIO
   if (pcssEP != NULL) {
     response->m_param.m_general.m_audioBuffers = pcssEP->GetSoundChannelBufferDepth();
     if (command.m_param.m_general.m_audioBuffers != 0)
       pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
   }
+#endif
 
   if (m_apiVersion < 5)
     return;
@@ -1099,8 +1117,17 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
   }
 
   PString partyA = command.m_param.m_callSetUp.m_partyA;
-  if (partyA.IsEmpty())
-    partyA = pcssEP != NULL ? "pc:*" : "pots:*";
+  if (partyA.IsEmpty()) {
+#if P_AUDIO
+    if (pcssEP != NULL)
+      partyA = "pc:*";
+    else
+#endif
+    if (localEP != NULL)
+      partyA = "local:*";
+    else
+      partyA = "pots:*";
+  }
 
   PString token;
   if (SetUpCall(partyA, command.m_param.m_callSetUp.m_partyB, token)) {
@@ -1120,13 +1147,19 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
     return;
   }
 
-  if (pcssEP == NULL && localEP == NULL) {
+  if (
+#if P_AUDIO
+      pcssEP == NULL &&
+#endif
+      localEP == NULL) {
     response.SetError("Can only answer calls to PC.");
     return;
   }
 
+#if P_AUDIO
   if (pcssEP != NULL && pcssEP->AcceptIncomingConnection(command.m_param.m_callToken))
     return;
+#endif
 
   if (localEP != NULL && localEP->AcceptIncomingCall(command.m_param.m_callToken))
     return;

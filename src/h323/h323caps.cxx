@@ -717,8 +717,6 @@ PObject::Comparison H323GenericCapabilityInfo::CompareInfo(const H323GenericCapa
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 H323AudioCapability::H323AudioCapability()
 {
 }
@@ -1045,7 +1043,6 @@ PBoolean H323NonStandardAudioCapability::IsMatch(const PASN_Choice & subTypePDU)
          H323NonStandardCapabilityInfo::IsMatch((const H245_NonStandardParameter &)subTypePDU.GetObject());
 }
 
-#endif // OPAL_AUDIO
 
 /////////////////////////////////////////////////////////////////////////////
 

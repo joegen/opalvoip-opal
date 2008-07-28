@@ -76,8 +76,6 @@
 // Media support
 //
 
-#undef  OPAL_AUDIO
-
 #if P_VIDEO
 #undef  OPAL_VIDEO
 #endif
@@ -91,11 +89,7 @@
 #endif
 
 
-#ifdef OPAL_AUDIO
 #undef OPAL_G711PLC
-#else
-#define NO_OPAL_AUDIO
-#endif
 
 #ifdef OPAL_VIDEO
 #undef  OPAL_RFC4175 

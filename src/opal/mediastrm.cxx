@@ -874,7 +874,6 @@ PBoolean OpalFileMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
 #if P_AUDIO
 
 OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
@@ -931,7 +930,6 @@ PBoolean OpalAudioMediaStream::IsSynchronous() const
 }
 
 #endif // P_AUDIO
-#endif // OPAL_AUDIO
 
 
 ///////////////////////////////////////////////////////////////////////////////

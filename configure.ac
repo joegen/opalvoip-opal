@@ -20,7 +20,6 @@ h450=yes
 h460=yes
 sip=yes
 iax=yes
-audio=yes
 video=yes
 rfc4175=yes
 g711plc=yes
@@ -347,23 +346,7 @@ fi
 AC_SUBST(OPAL_HAVE_SPEEX_SPEEX_H)
 
 dnl ########################################################################
-dnl enable audio, video, SIP, H.323 and IAX
-
-dnl MSWIN_DISPLAY audio,Audio
-dnl MSWIN_DEFINE  audio,OPAL_AUDIO
-
-AC_ARG_ENABLE(audio,
-       [  --disable-audio         disable audio codec support],
-       audio=$enableval)
-AC_MSG_CHECKING(audio codec support)
-if test "$audio" = "yes" ; then
-  AC_SUBST(OPAL_AUDIO, 1)
-  AC_DEFINE(OPAL_AUDIO)
-  AC_MSG_RESULT(enabled)
-else
-  AC_MSG_RESULT(disabled)
-  g711plc=no
-fi
+dnl enable video, SIP, H.323 and IAX
 
 dnl ########################################################################
 dnl check for dynamic library code (dlopen and friends)
