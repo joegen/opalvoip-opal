@@ -675,7 +675,6 @@ SIZE16
 SIZE32
 OPAL_SYSTEM_SPEEX
 OPAL_HAVE_SPEEX_SPEEX_H
-OPAL_AUDIO
 HAS_LIBDL
 OPAL_VIDEO
 OPAL_SIP
@@ -1293,7 +1292,6 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-versioncheck    disable PTLib version check
   --enable-localspeex     use local version of Speex library rather than system version
-  --disable-audio         disable audio codec support
   --disable-video         disable video codec support
   --disable-sip           disable SIP protocol support
   --disable-h323          disable H.323 protocol support
@@ -3055,7 +3053,6 @@ h450=yes
 h460=yes
 sip=yes
 iax=yes
-audio=yes
 video=yes
 rfc4175=yes
 g711plc=yes
@@ -6291,29 +6288,6 @@ fi
 
 
 
-# Check whether --enable-audio was given.
-if test "${enable_audio+set}" = set; then
-  enableval=$enable_audio; audio=$enableval
-fi
-
-{ echo "$as_me:$LINENO: checking audio codec support" >&5
-echo $ECHO_N "checking audio codec support... $ECHO_C" >&6; }
-if test "$audio" = "yes" ; then
-  OPAL_AUDIO=1
-
-  cat >>confdefs.h <<\_ACEOF
-#define OPAL_AUDIO 1
-_ACEOF
-
-  { echo "$as_me:$LINENO: result: enabled" >&5
-echo "${ECHO_T}enabled" >&6; }
-else
-  { echo "$as_me:$LINENO: result: disabled" >&5
-echo "${ECHO_T}disabled" >&6; }
-  g711plc=no
-fi
-
-
 HAS_LIBDL=0
 
 for ac_header in dlfcn.h
@@ -6985,7 +6959,6 @@ echo "${ECHO_T}enabled" >&6; }
 echo "${ECHO_T}disabled" >&6; }
   fi
 fi
-
 
 
 
@@ -8068,7 +8041,6 @@ SIZE16!$SIZE16$ac_delim
 SIZE32!$SIZE32$ac_delim
 OPAL_SYSTEM_SPEEX!$OPAL_SYSTEM_SPEEX$ac_delim
 OPAL_HAVE_SPEEX_SPEEX_H!$OPAL_HAVE_SPEEX_SPEEX_H$ac_delim
-OPAL_AUDIO!$OPAL_AUDIO$ac_delim
 HAS_LIBDL!$HAS_LIBDL$ac_delim
 OPAL_VIDEO!$OPAL_VIDEO$ac_delim
 OPAL_SIP!$OPAL_SIP$ac_delim
@@ -8105,7 +8077,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 96; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -8711,5 +8683,4 @@ echo "$as_me: error: $ac_sub_configure failed for $ac_dir" >&2;}
     cd "$ac_popdir"
   done
 fi
-
 
