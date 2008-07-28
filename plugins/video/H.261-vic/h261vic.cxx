@@ -52,27 +52,30 @@
 #define _CRT_NONSTDC_NO_DEPRECATE 1
 #define _CRT_SECURE_NO_WARNINGS 1
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
+#include "plugin-config.h"
+#endif
 
 #include <codec/opalplugin.h>
 
-#include <stdlib.h>
+
 #if defined (_WIN32) || defined (_WIN32_WCE)
-  #include <malloc.h>
-#ifndef _WIN32_WCE
-  #define STRCMPI  _strcmpi
+  #ifndef _WIN32_WCE
+    #define STRCMPI  _strcmpi
+  #else
+    #define STRCMPI  _stricmp
+    #define strdup _strdup
+  #endif
 #else
-  #define STRCMPI  _stricmp
-  #define strdup _strdup
-#endif
-#else
-  #include "plugin-config.h"
+  #define STRCMPI  strcasecmp
   #include <unistd.h>
   #include <semaphore.h>
-  #define STRCMPI  strcasecmp
 #endif
-#include <string.h>
 
-#include <stdio.h>
 #include <math.h>
 
 #include "critsect.h"
@@ -118,14 +121,13 @@ typedef unsigned int u_int;
 
 #ifdef _WIN32
 #include <io.h>
-#include <fcntl.h>
 #define CREAT(f) _open(f, _O_WRONLY | _O_TRUNC | _O_CREAT | _O_BINARY, 0600 )
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #define CREAT(f) ::creat(f, 0666)
 #endif
+#include <fcntl.h>
 
 static void debug_write_data(int & fd, const char * title, const char * filename, const void * buffer, size_t writeLen)
 {
@@ -1005,10 +1007,13 @@ static struct PluginCodec_Definition h261CodecDefn[] =
     H261_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    CIF_WIDTH,                          // frame width
-    CIF_HEIGHT,                         // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      CIF_WIDTH,                          // frame width
+      CIF_HEIGHT,                         // frame height
+      10,                                 // recommended frame rate
+      60,                                 // maximum frame rate
+    }},
+    
     RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
     sdpH261,                            // RTP payload name
 
@@ -1038,10 +1043,13 @@ static struct PluginCodec_Definition h261CodecDefn[] =
     H261_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    CIF_WIDTH,                          // frame width
-    CIF_HEIGHT,                         // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      CIF_WIDTH,                        // frame width
+      CIF_HEIGHT,                       // frame height
+      10,                               // recommended frame rate
+      60,                               // maximum frame rate
+    }},
+    
     RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
     sdpH261,                            // RTP payload name
 
@@ -1072,10 +1080,13 @@ static struct PluginCodec_Definition h261CodecDefn[] =
     H261_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    QCIF_WIDTH,                         // frame width
-    QCIF_HEIGHT,                        // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      QCIF_WIDTH,                         // frame width
+      QCIF_HEIGHT,                        // frame height
+      10,                                 // recommended frame rate
+      60,                                 // maximum frame rate
+    }},
+    
     RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
     sdpH261,                            // RTP payload name
 
@@ -1105,10 +1116,13 @@ static struct PluginCodec_Definition h261CodecDefn[] =
     H261_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    QCIF_WIDTH,                         // frame width
-    QCIF_HEIGHT,                        // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      QCIF_WIDTH,                       // frame width
+      QCIF_HEIGHT,                      // frame height
+      10,                               // recommended frame rate
+      60,                               // maximum frame rate
+    }},
+    
     RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
     sdpH261,                            // RTP payload name
 
@@ -1139,10 +1153,13 @@ static struct PluginCodec_Definition h261CodecDefn[] =
     H261_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    CIF_WIDTH,                          // frame width
-    CIF_HEIGHT,                         // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      CIF_WIDTH,                        // frame width
+      CIF_HEIGHT,                       // frame height
+      10,                               // recommended frame rate
+      60,                               // maximum frame rate
+    }},
+
     RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
     sdpH261,                            // RTP payload name
 
@@ -1172,10 +1189,13 @@ static struct PluginCodec_Definition h261CodecDefn[] =
     H261_BITRATE,                       // raw bits per second
     20000,                              // nanoseconds per frame
 
-    CIF_WIDTH,                          // frame width
-    CIF_HEIGHT,                         // frame height
-    10,                                 // recommended frame rate
-    60,                                 // maximum frame rate
+    {{
+      CIF_WIDTH,                        // frame width
+      CIF_HEIGHT,                       // frame height
+      10,                               // recommended frame rate
+      60,                               // maximum frame rate
+    }},
+    
     RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
     sdpH261,                            // RTP payload name
 

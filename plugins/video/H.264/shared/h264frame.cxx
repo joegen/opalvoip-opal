@@ -346,7 +346,7 @@ bool H264Frame::IsSync () {
   return false;
 }
 
-bool H264Frame::DeencapsulateSTAP (RTPFrame & frame, unsigned int & flags) {
+bool H264Frame::DeencapsulateSTAP (RTPFrame & frame, unsigned int & /*flags*/) {
   uint8_t* curSTAP = frame.GetPayloadPtr() + 1;
   uint32_t curSTAPLen = frame.GetPayloadSize() - 1; 
 
@@ -375,7 +375,7 @@ bool H264Frame::DeencapsulateSTAP (RTPFrame & frame, unsigned int & flags) {
   return true;
 }
 
-bool H264Frame::DeencapsulateFU (RTPFrame & frame, unsigned int & flags) {
+bool H264Frame::DeencapsulateFU (RTPFrame & frame, unsigned int & /*flags*/) {
   uint8_t* curFUPtr = frame.GetPayloadPtr();
   uint32_t curFULen = frame.GetPayloadSize(); 
   uint8_t header;

@@ -24,16 +24,16 @@
  * $Date$
  */
 
-#ifdef _WIN32
-  #define _CRT_NONSTDC_NO_DEPRECATE 1
-  #define _CRT_SECURE_NO_WARNINGS 1
-  #include <malloc.h>
-  #define STRCMPI  _strcmpi
-#else
-  #define STRCMPI  strcasecmp
-#endif
-#include <stdlib.h>
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS 1
+
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
+#include "plugin-config.h"
+#endif
 
 #include <codec/opalplugin.h>
 
@@ -43,6 +43,12 @@
 
 #define	BITRATE_30MS	NO_OF_BYTES_30MS*8*8000/BLOCKL_30MS
 #define	BITRATE_20MS	NO_OF_BYTES_20MS*8*8000/BLOCKL_20MS
+
+#if defined(_WIN32) || defined(_WIN32_WCE)
+  #define STRCMPI  _strcmpi
+#else
+  #define STRCMPI  strcasecmp
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

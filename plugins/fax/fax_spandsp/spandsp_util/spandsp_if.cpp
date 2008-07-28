@@ -25,20 +25,20 @@
 
 #include <iostream>
 
-#ifdef _WIN32
-#pragma warning(disable: 4996)
-#include <winsock2.h>
-#include <Ws2tcpip.h>
-#include <io.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#if defined (_WIN32) || defined (_WIN32_WCE)
+  #pragma warning(disable: 4996)
+  #include <winsock2.h>
+  #include <Ws2tcpip.h>
+  #include <io.h>
+  #include <sys/types.h>
+  #include <sys/stat.h>
 #else
-#include <unistd.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#include <stdint.h>
-#include <netinet/in.h>
-#include <sys/ioctl.h>
+  #include <unistd.h>
+  #include <sys/time.h>
+  #include <sys/socket.h>
+  #include <stdint.h>
+  #include <netinet/in.h>
+  #include <sys/ioctl.h>
 #endif
 
 #include <sys/types.h>

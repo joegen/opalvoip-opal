@@ -38,6 +38,7 @@
 #ifndef __THEORA_PLUGIN_H__
 #define __THEORA_PLUGIN_H__ 1
 
+#include "plugin-config.h"
 #include <stdarg.h>
 #include <stdint.h>
 #include <codec/opalplugin.h>
@@ -255,10 +256,13 @@ static struct PluginCodec_Definition theoraCodecDefn[2] = {
   THEORA_BITRATE,                     // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF4_WIDTH,                         // frame width
-  CIF4_HEIGHT,                        // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
+  {{
+    CIF4_WIDTH,                       // frame width
+    CIF4_HEIGHT,                      // frame height
+    10,                               // recommended frame rate
+    60,                               // maximum frame rate
+  }},
+
   0,                                  // IANA RTP payload code
   sdpTHEORA,                          // RTP payload name
 
@@ -289,10 +293,12 @@ static struct PluginCodec_Definition theoraCodecDefn[2] = {
   THEORA_BITRATE,                     // raw bits per second
   20000,                              // nanoseconds per frame
 
+{{
   CIF4_WIDTH,                         // frame width
   CIF4_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
+}},
   0,                                  // IANA RTP payload code
   sdpTHEORA,                          // RTP payload name
 

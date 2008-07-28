@@ -24,14 +24,18 @@
  * $Date$
  */
 
-#include <codec/opalplugin.h>
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS 1
 
-
+#include <stdio.h>
 #include <stdlib.h>
-#ifdef _WIN32
-#include <malloc.h>
-#endif
 #include <string.h>
+
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
+#include "plugin-config.h"
+#endif
+
+#include <codec/opalplugin.h>
 
 //By LH, Microsoft IMA ADPCM CODEC Capability
 #define IMA_MAX_PACKET_SIZE 		1

@@ -49,8 +49,6 @@
 
 #define _CRT_SECURE_NO_DEPRECATE
 
-#include "plugin-config.h"
-
 #include "h263-1998.h"
 #include <math.h>
 #include "trace.h"
@@ -74,12 +72,14 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
       case AV_LOG_ERROR: severity = 1; break;
       case AV_LOG_INFO:  severity = 4; break;
       case AV_LOG_DEBUG: severity = 4; break;
+      default:           severity = 4; break;
+      
     }
     sprintf(buffer, "H263+\tFFMPEG\t");
     vsprintf(buffer + strlen(buffer), fmt, arg);
     if (strlen(buffer) > 0)
       buffer[strlen(buffer)-1] = 0;
-    if (severity = 4) 
+    if (severity == 4) 
       { TRACE_UP (severity, buffer); }
     else
       { TRACE (severity, buffer); }
@@ -634,21 +634,21 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
       && _outputFrame->data[2] == _outputFrame->data[1] + (size >> 2)) {
     memcpy(OPAL_VIDEO_FRAME_DATA_PTR(header), _outputFrame->data[0], frameBytes);
   } else {
-    unsigned char *dst = OPAL_VIDEO_FRAME_DATA_PTR(header);
+    unsigned char *dstData = OPAL_VIDEO_FRAME_DATA_PTR(header);
     for (int i=0; i<3; i ++) {
-      unsigned char *src = _outputFrame->data[i];
+      unsigned char *srcData = _outputFrame->data[i];
       int dst_stride = i ? _context->width >> 1 : _context->width;
       int src_stride = _outputFrame->linesize[i];
       int h = i ? _context->height >> 1 : _context->height;
 
       if (src_stride==dst_stride) {
-        memcpy(dst, src, dst_stride*h);
-        dst += dst_stride*h;
+        memcpy(dstData, srcData, dst_stride*h);
+        dstData += dst_stride*h;
       } else {
         while (h--) {
-          memcpy(dst, src, dst_stride);
-          dst += dst_stride;
-          src += src_stride;
+          memcpy(dstData, srcData, dst_stride);
+          dstData += dst_stride;
+          srcData += src_stride;
         }
       }
     }
@@ -875,36 +875,42 @@ static int encoder_set_options(const PluginCodec_Definition *,
     if (STRCMPI(option[0], PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
        context->SetTSTO (atoi(option[1]));
 
-    if (STRCMPI(option[0], "Annex D") == 0)
+    if (STRCMPI(option[0], "Annex D") == 0) {
       if (atoi(option[1]) == 1)
         context->EnableAnnex (D);
        else
         context->DisableAnnex (D);
-    if (STRCMPI(option[0], "Annex F") == 0)
+    }
+    if (STRCMPI(option[0], "Annex F") == 0) {
       if (atoi(option[1]) == 1)
         context->EnableAnnex (F);
        else
         context->DisableAnnex (F);
-    if (STRCMPI(option[0], "Annex I") == 0)
+    }
+    if (STRCMPI(option[0], "Annex I") == 0) {
       if (atoi(option[1]) == 1)
         context->EnableAnnex (I);
        else
         context->DisableAnnex (I);
-    if (STRCMPI(option[0], "Annex K") == 0)
+    }
+    if (STRCMPI(option[0], "Annex K") == 0) {
       if (atoi(option[1]) == 1)
         context->EnableAnnex (K);
        else
         context->DisableAnnex (K);
-    if (STRCMPI(option[0], "Annex J") == 0)
+    }
+    if (STRCMPI(option[0], "Annex J") == 0) {
       if (atoi(option[1]) == 1)
         context->EnableAnnex (J);
        else
         context->DisableAnnex (J);
-    if (STRCMPI(option[0], "Annex S") == 0)
+    }
+    if (STRCMPI(option[0], "Annex S") == 0) {
       if (atoi(option[1]) == 1)
         context->EnableAnnex (S);
        else
         context->DisableAnnex (S);
+    }
   }
 
   context->OpenCodec();

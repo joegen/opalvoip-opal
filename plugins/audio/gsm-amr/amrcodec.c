@@ -8,29 +8,18 @@
  * $Date$
  */
 
-
-/*Disable some warnings on VC++*/
-#ifdef _MSC_VER
-#pragma warning(disable : 4018)
-#pragma warning(disable : 4100)
-#endif
-
-#include <codec/opalplugin.h>
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS 1
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifdef _WIN32
-#include <malloc.h>
 #include <string.h>
-#ifndef _WIN32_WCE
-  #define STRCMPI  _strcmpi
-#else
-  #define STRCMPI  _stricmp
+
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
+#include "plugin-config.h"
 #endif
-#else
-#define STRCMPI  strcasecmp
-#endif
+
+#include <codec/opalplugin.h>
 
 #include "src/interf_enc.h"
 #include "src/interf_dec.h"
@@ -43,6 +32,17 @@
 
 #ifndef TRUE
 #define TRUE (!FALSE)
+#endif
+
+#if defined(_WIN32) || defined(_WIN32_WCE)
+  #define STRCMPI  _strcmpi
+#else
+  #define STRCMPI  strcasecmp
+#endif
+
+/*Disable some warnings on VC++*/
+#ifdef _MSC_VER
+#pragma warning(disable : 4100)
 #endif
 
 
@@ -148,7 +148,7 @@ static int amr_codec_encoder(const struct PluginCodec_Definition * codec,
                                                     unsigned int * flag)
 {
   AmrEncoderContext * amr = (AmrEncoderContext *)context;
-  int byteCount;
+  unsigned byteCount;
   unsigned char buffer[100]; // Need this as encoder is very rude and can output more bytes than to pointer might be pointing to
 
   if (*fromLen < L_FRAME*sizeof(short))
