@@ -39,7 +39,11 @@
 #include <ptbuildopts.h>
 
 #ifndef P_AUDIO
+#ifdef _MSC_VER
+#pragma message("PTLib soundcard support not available")
+#else
 #warning "PTLib soundcard support not available"
+#endif
 #else
 
 #include <ptlib/sound.h>

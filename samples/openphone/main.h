@@ -36,6 +36,11 @@
 #include <ptlib.h>
 #endif
 
+#ifndef P_AUDIO
+#error Cannot compile without PTLib sound channel support!
+#endif
+
+
 #include <wx/wx.h>
 #include <wx/dataobj.h>
 

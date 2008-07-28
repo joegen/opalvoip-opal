@@ -61,8 +61,6 @@ static class InstantiateMe
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 #define AUDIO_FORMAT(name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock) \
   const OpalAudioFormat & GetOpal##name() \
   { \
@@ -78,7 +76,6 @@ AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  32,16,  240, 30, 256, 16000
 AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256,  8000);
 AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 30, 256,  8000);
 
-#endif
 
 const OpalMediaFormat & GetOpalRFC2833()
 {
@@ -1242,8 +1239,6 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 const PString & OpalAudioFormat::RxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET; return s; }
 const PString & OpalAudioFormat::TxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET; return s; }
 const PString & OpalAudioFormat::MaxFramesPerPacketOption(){ static PString s = "Max Frames Per Packet"; return s; }
@@ -1321,7 +1316,6 @@ bool OpalAudioFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
   return true;
 }
 
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 

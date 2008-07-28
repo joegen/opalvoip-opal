@@ -531,7 +531,6 @@ class H323RealTimeCapability : public H323Capability
   //@}
 };
 
-#if OPAL_AUDIO
 
 /**This class describes the interface to an audio codec used to transfer data
    via the logical channels opened and managed by the H323 control channel.
@@ -925,7 +924,6 @@ class H323GenericAudioCapability : public H323AudioCapability,
   //@}
 };
 
-#endif  // OPAL_AUDIO
 
 #if OPAL_VIDEO
 

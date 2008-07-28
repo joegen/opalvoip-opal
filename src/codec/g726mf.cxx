@@ -39,8 +39,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 const OpalAudioFormat & GetOpalG726_40K()
 {
   static const OpalAudioFormat G726_40K(OPAL_G726_40K, RTP_DataFrame::DynamicBase,  "G726-40", 5, 8, 240, 30, 256, 8000);
@@ -64,8 +62,6 @@ const OpalAudioFormat & GetOpalG726_16K()
   static const OpalAudioFormat G726_16K(OPAL_G726_16K, RTP_DataFrame::DynamicBase,  "G726-16", 2, 8, 240, 30, 256, 8000);
   return G726_16K;
 }
-
-#endif
 
 
 // End of File ///////////////////////////////////////////////////////////////
