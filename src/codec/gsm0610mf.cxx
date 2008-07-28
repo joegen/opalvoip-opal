@@ -39,15 +39,11 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 const OpalAudioFormat & GetOpalGSM0610()
 {
   static const OpalAudioFormat GSM0610(OPAL_GSM0610, RTP_DataFrame::GSM, "GSM",  33, 160, 7, 4, 7, 8000 );
   return GSM0610;
 }
-
-#endif
 
 
 // End of File ///////////////////////////////////////////////////////////////

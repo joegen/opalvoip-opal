@@ -267,7 +267,6 @@ class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
     virtual PString GetRTPEncoding() const;
 };
 
-#if OPAL_AUDIO
 
 class OpalAudioMediaType : public OpalRTPAVPMediaType {
   public:
@@ -277,8 +276,6 @@ class OpalAudioMediaType : public OpalRTPAVPMediaType {
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
 #endif
 };
-
-#endif  // OPAL_AUDIO
 
 
 #if OPAL_VIDEO

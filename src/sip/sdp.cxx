@@ -992,7 +992,7 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
   if (!SDPRTPAVPMediaDescription::PrintOn(str, connectString))
     return false;
 
-#if OPAL_AUDIO && defined(HAVE_PTIME)
+#ifdef HAVE_PTIME
   // Fill in the ptime  as maximum tx packets of all media formats
   // and maxptime as minimum rx packets of all media formats
   unsigned ptime = 0;
@@ -1020,14 +1020,14 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
 
   if (maxptime < UINT_MAX)
     str << "a=maxptime:" << maxptime << "\r\n";
-#endif // OPAL_AUDIO
+#endif // HAVE_PTIME
 
   return true;
 }
 
 void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
-#if OPAL_AUDIO && defined(HAVE_PTIME)
+#ifdef HAVE_PTIME
   if (attr *= "ptime") {
     SetPacketTime(OpalAudioFormat::TxFramesPerPacketOption(), value);
     return;
@@ -1037,7 +1037,7 @@ void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString 
     SetPacketTime(OpalAudioFormat::RxFramesPerPacketOption(), value);
     return;
   }
-#endif
+#endif // HAVE_PTIME
 
   return SDPRTPAVPMediaDescription::SetAttribute(attr, value);
 }

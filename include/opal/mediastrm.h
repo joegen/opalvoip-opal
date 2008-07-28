@@ -667,7 +667,7 @@ class OpalFileMediaStream : public OpalRawMediaStream, public OpalMediaStreamPac
     PFile file;
 };
 
-#if OPAL_AUDIO
+
 #if P_AUDIO
 
 /**This class describes a media stream that transfers data to/from a audio
@@ -726,9 +726,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
     PINDEX soundChannelBuffers;
 };
 
-#endif
-
-#endif // OPAL_AUDIO
+#endif // P_AUDIO
 
 #if OPAL_VIDEO
 

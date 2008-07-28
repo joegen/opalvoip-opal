@@ -526,9 +526,7 @@ void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, OpalConnection:
   }
 
   // set old video and audio auto start if not already set
-#if OPAL_AUDIO
   SetOldOptions(1, OpalMediaType::Audio(), true, true);
-#endif
 #if OPAL_VIDEO
   OpalManager & mgr = conn.GetCall().GetManager();
   SetOldOptions(2, OpalMediaType::Video(), mgr.CanAutoStartReceiveVideo(), mgr.CanAutoStartTransmitVideo());

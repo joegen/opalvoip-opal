@@ -79,14 +79,12 @@ class OpalPluginCodecHandler : public PObject
   public:
     OpalPluginCodecHandler();
 
-#if OPAL_AUDIO
     virtual OpalMediaFormatInternal * OnCreateAudioFormat(OpalPluginCodecManager & mgr,
                                             const PluginCodec_Definition * encoderCodec,
                                                               const char * rtpEncodingName,
                                                                   unsigned frameTime,
                                                                   unsigned timeUnits,
                                                                     time_t timeStamp);
-#endif
 
 #if OPAL_VIDEO
     virtual OpalMediaFormatInternal * OnCreateVideoFormat(OpalPluginCodecManager & mgr,
@@ -241,8 +239,6 @@ class OpalPluginTranscoder
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 class OpalPluginAudioFormatInternal : public OpalAudioFormatInternal, public OpalPluginMediaFormatInternal
 {
   public:
@@ -304,7 +300,6 @@ class OpalPluginStreamedAudioDecoder : public OpalPluginStreamedAudioTranscoder
     int ConvertOne(int codedSample) const;
 };
 
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -472,7 +467,6 @@ class H323PluginCapabilityInfo
 };
 
 #if OPAL_H323
-#if OPAL_AUDIO
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -590,7 +584,6 @@ class H323CodecPluginGenericAudioCapability : public H323GenericAudioCapability,
     virtual PString GetFormatName() const;
 };
 
-#endif
 
 #if OPAL_VIDEO
 

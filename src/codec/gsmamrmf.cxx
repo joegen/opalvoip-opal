@@ -39,8 +39,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 const OpalAudioFormat & GetOpalGSMAMR()
 {
   static class OpalGSMAMRFormat : public OpalAudioFormat
@@ -87,8 +85,6 @@ const OpalAudioFormat & GetOpalGSMAMR()
   } const GSMAMR;
   return GSMAMR;
 }
-
-#endif
 
 
 // End of File ///////////////////////////////////////////////////////////////

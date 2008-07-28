@@ -3730,9 +3730,7 @@ void H323Connection::OnSelectLogicalChannels()
   // Select the first codec that uses the "standard" audio session.
   switch (fastStartState) {
     default : //FastStartDisabled :
-#if OPAL_AUDIO
       SelectDefaultLogicalChannel(OpalMediaType::Audio(), OpalMediaFormat::DefaultAudioSessionID);
-#endif
 #if OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
         SelectDefaultLogicalChannel(OpalMediaType::Video(), OpalMediaFormat::DefaultVideoSessionID);
@@ -3750,9 +3748,7 @@ void H323Connection::OnSelectLogicalChannels()
       break;
 
     case FastStartInitiate :
-#if OPAL_AUDIO
       SelectFastStartChannels(OpalMediaFormat::DefaultAudioSessionID, PTrue, PTrue);
-#endif
 #if OPAL_VIDEO
       SelectFastStartChannels(OpalMediaFormat::DefaultVideoSessionID,
                               endpoint.CanAutoStartTransmitVideo(),
@@ -3766,10 +3762,8 @@ void H323Connection::OnSelectLogicalChannels()
       break;
 
     case FastStartResponse :
-#if OPAL_AUDIO
       StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsTransmitter);
       StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsReceiver);
-#endif
 #if OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsTransmitter);
