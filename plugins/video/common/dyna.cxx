@@ -83,21 +83,26 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
     _hDLL = dlopen((const char *)path, RTLD_NOW);
   });
 #endif /* _WIN32 */
+
   // Check for errors
   if (_hDLL == NULL) {
 #ifndef _WIN32
-  const char * err = dlerror();
-  if (err != NULL)
-    TRACE(1, _codecString << "\tDYNA\tError loading " << path << " - " << err)
-    else
-#endif /* _WIN32 */
+    const char * err = dlerror();
+    if (err != NULL) {
+      TRACE(1, _codecString << "\tDYNA\tError loading " << path << " - " << err)
+    }  
+    else {
+      TRACE(1, _codecString << "\tDYNA\tError loading " << path);
+      return false;
+    }
+#else /* _WIN32 */
     TRACE(1, _codecString << "\tDYNA\tError loading " << path);
     return false;
+#endif /* _WIN32 */
   } 
-  else {
-    TRACE(1, _codecString << "\tDYNA\tSuccessfully loaded " << path);
-    return true;
-  }
+
+  TRACE(1, _codecString << "\tDYNA\tSuccessfully loaded " << path);
+  return true;
 }
 
 void DynaLink::Close()

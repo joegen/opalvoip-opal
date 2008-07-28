@@ -55,9 +55,10 @@
 # Added Linux build for H.261 plug-in.
 #
 
-PREFIX=@INSTALLPREFIX@
-exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
+VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
 
 SRCDIR	= ./vic
 OBJDIR	= ./obj
@@ -109,13 +110,12 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 $(PLUGIN): $(OBJECTS)
 	$(CXX) $(LDSO) -o $@ $^
 
-
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/
+	mkdir -p $(libdir)/$(VC_PLUGIN_DIR)
+	install $(PLUGIN) $(libdir)/$(VC_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/$(PLUGIN)
+	rm -f $(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

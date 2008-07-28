@@ -457,10 +457,13 @@ static struct PluginCodec_Definition h264CodecDefn[] = {
   H264_BITRATE,                       // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF4_WIDTH,                         // frame width
-  CIF4_HEIGHT,                        // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
+  {{
+    CIF4_WIDTH,                       // frame width
+    CIF4_HEIGHT,                      // frame height
+    10,                               // recommended frame rate
+    60,                               // maximum frame rate
+  }},
+
   0,                                  // IANA RTP payload code
   sdpH264,                            // RTP payload name
 
@@ -491,10 +494,12 @@ static struct PluginCodec_Definition h264CodecDefn[] = {
   H264_BITRATE,                       // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF4_WIDTH,                         // frame width
-  CIF4_HEIGHT,                        // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
+  {{
+    CIF4_WIDTH,                       // frame width
+    CIF4_HEIGHT,                      // frame height
+    10,                               // recommended frame rate
+    60,                               // maximum frame rate
+  }},
   0,                                  // IANA RTP payload code
   sdpH264,                            // RTP payload name
 

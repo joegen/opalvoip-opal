@@ -33,9 +33,11 @@
 # Now working on Linux
 #
 
-PREFIX=@INSTALLPREFIX@
-exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
+FAX_PLUGIN_DIR=@FAX_PLUGIN_DIR@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+CXXFLAGS =@CXXFLAGS@
 
 SONAME	= spandsp
 STDCCFLAGS += -fPIC @STDCCFLAGS@
@@ -61,7 +63,7 @@ vpath	%.cpp spandsp_util
 
 $(OBJDIR)/%.o : %.cpp
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) -I ../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CXX) -I ../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CXXFLAGS) -c $< -o $@
 
 PLUGIN	= ./spandsp_fax_pwplugin.$(PLUGINEXT)
 
@@ -71,11 +73,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/fax/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/fax/
+	mkdir -p $(libdir)/$(FAX_PLUGIN_DIR)
+	install $(PLUGIN) $(libdir)/$(FAX_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/fax/$(PLUGIN)
+	rm -f $(libdir)/$(FAX_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

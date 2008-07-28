@@ -213,7 +213,7 @@ void H263PFrame::GetRTPFrame (RTPFrame & frame, unsigned int & flags)
   flags |= IsIFrame() ? isIFrame : 0;
 }
 
-bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
+bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /* flags */)
 {
 
   if (frame.GetPayloadSize()<3) {
@@ -324,7 +324,6 @@ uint32_t H263PFrame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen)
   
   bool PB  = false;
   bool CPM = false;
-  bool PEI = false;
   bool SS  = false;
   bool RPS = false;
   bool PCF = false;
@@ -409,10 +408,12 @@ uint32_t H263PFrame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen)
 
     if (UFEP == 1) {
       if (UMV)  {
-         if (headerBits.GetBits(1) == 1)
+         if (headerBits.GetBits(1) == 1) {
            TRACE_UP(4, "H263+\tHeader\tUUI: 1")
-          else
+         }
+         else {
            TRACE_UP(4, "H263+\tHeader\tUUI: 0" << headerBits.GetBits(1));
+         }
       }
       if (SS) {
         TRACE_UP(4, "H263+\tHeader\tSSS:" << headerBits.GetBits(2));

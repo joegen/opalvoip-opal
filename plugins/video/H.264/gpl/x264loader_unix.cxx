@@ -117,16 +117,16 @@ bool X264Library::Open(const char *name)
 
   if (_dynamicLibrary == NULL) {
     char * error = (char *) dlerror();
-    if (error != NULL)
+    if (error != NULL) {
         TRACE(4, "H264\tDYNA\tCould not load " << name << " - " << error)
-      else
-        TRACE(4, "H264\tDYNA\tCould not load " << name);
-    return false;
-    } 
-    else {
-      TRACE(4, "H264\tDYNA\tSuccessfully loaded " << name);
-      return true;
     }
+    else {
+        TRACE(4, "H264\tDYNA\tCould not load " << name);
+    }
+    return false;
+  } 
+  TRACE(4, "H264\tDYNA\tSuccessfully loaded " << name);
+  return true;
 }
 
 bool X264Library::GetFunction(const char * name, Function & func)
