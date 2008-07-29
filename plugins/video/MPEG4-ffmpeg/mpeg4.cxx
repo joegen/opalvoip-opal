@@ -575,7 +575,7 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     _avcontext->qblur = 0.3;
     // default is tex^qComp; 1 is constant bitrate
     _avcontext->rc_eq = (char*) "1";
-    _avcontext->rc_eq = "tex^qComp";
+    //avcontext->rc_eq = "tex^qComp";
     // These ones technically could be dynamic, I think
     _avcontext->rc_min_rate = 0;
     // This is set to 0 in ffmpeg.c, the command-line utility.
