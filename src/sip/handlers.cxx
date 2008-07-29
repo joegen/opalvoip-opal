@@ -784,6 +784,7 @@ SIPPublishHandler::~SIPPublishHandler()
 SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
 {
   SetExpire(originalExpire);
+  callID = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
   return new SIPPublish(endpoint,
                         t, 
                         GetRouteSet(), 
