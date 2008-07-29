@@ -161,6 +161,10 @@
 
 #include "config.h"
 
+#ifndef _MSC_VER
+  #include <stdint.h>
+#endif
+
 #include "p64.h"
 #include "p64-huff.h"
 #include "dct.h"
