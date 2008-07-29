@@ -239,6 +239,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   mediaWaitForConnect = PFalse;
   transmitterSidePaused = PFalse;
+  remoteTransmitPaused = false;
 
   switch (options&FastStartOptionMask) {
     case FastStartOptionDisable :
@@ -3007,6 +3008,48 @@ H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, PBoolean fromRe
 }
 
 
+bool H323Connection::HoldConnection()
+{
+#if OPAL_H450
+  if (!HoldCall(true))
+    return false;
+#endif
+
+  if (!SendCapabilitySet(true))
+    return false;
+
+  // Signal the manager that there is a hold
+  OnHold(false, true);
+  return true;
+}
+
+
+bool H323Connection::RetrieveConnection()
+{
+#if OPAL_H450
+  if (!RetrieveCall())
+    return false;
+#endif
+
+  if (!SendCapabilitySet(false))
+    return false;
+
+  // Signal the manager that there is a hold
+  OnHold(false, false);
+  return true;
+}
+
+
+PBoolean H323Connection::IsConnectionOnHold() 
+{
+  return 
+#if OPAL_H450
+         IsLocalHold() ||
+#endif
+         remoteTransmitPaused;
+}
+
+
 bool H323Connection::TransferConnection(const PString & remoteParty)
 {
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
@@ -3014,19 +3057,17 @@ bool H323Connection::TransferConnection(const PString & remoteParty)
 #if OPAL_H450
     return TransferCall(remoteParty);
 #else
-    return false;
+    return ForwardCall(remoteParty);
 #endif
   }
 
+#if OPAL_H450
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
     PSafePtr<H323Connection> h323 = PSafePtrCast<OpalConnection, H323Connection>(connection);
     if (h323 != NULL)
-#if OPAL_H450
       return TransferCall(h323->GetRemotePartyURL(), h323->GetToken());
-#else
-      return false;
-#endif
   }
+#endif
 
   PTRACE(2, "H323\tConsultation transfer requires other party to be H.323.");
   return false;
@@ -3111,20 +3152,18 @@ void H323Connection::OnConsultationTransferSuccess(H323Connection& /*secondaryCa
    h4502handler->SetConsultationTransferSuccess();
 }
 
-bool H323Connection::HoldConnection()
+
+bool H323Connection::HoldCall(PBoolean localHold)
 {
-  if (!h4504handler->HoldCall(true))
+  if (!h4504handler->HoldCall(localHold))
     return false;
 
   holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
-  
-  // Signal the manager that there is a hold
-  endpoint.OnHold(*this, false, true);
   return true;
 }
 
 
-bool H323Connection::RetrieveConnection()
+bool H323Connection::RetrieveCall()
 {
   if (IsRemoteHold()) {
     PTRACE(4, "H4504\tRemote-end Call Hold not implemented.");
@@ -3143,29 +3182,6 @@ bool H323Connection::RetrieveConnection()
   // Signal the manager that there is a retrieve 
   endpoint.OnHold(*this, false, false);
   return true;
-}
-
-
-PBoolean H323Connection::IsConnectionOnHold() 
-{
-  return IsLocalHold();
-}
-
-
-void H323Connection::HoldCall(PBoolean localHold)
-{
-  if (localHold)
-    HoldConnection();
-  else {
-    h4504handler->HoldCall(localHold);
-    holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
-  }
-}
-
-
-void H323Connection::RetrieveCall()
-{
-  RetrieveConnection();
 }
 
 
@@ -3213,13 +3229,13 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
         else {
           // Enable/mute the transmit channel depending on whether the remote end is held
           chan2->SetPause(IsLocalHold());
-            stream->SetPaused(IsLocalHold());
+          stream->SetPaused(IsLocalHold());
         }
       }
       else {
         // Enable/mute the receive channel depending on whether the remote endis held
         chan2->SetPause(IsLocalHold());
-    stream->SetPaused(IsLocalHold());
+        stream->SetPaused(IsLocalHold());
       }
     }
   }
@@ -3336,6 +3352,7 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
   }
 
   if (remoteCaps.GetSize() == 0) {
+    PTRACE(3, "H323\tReceived empty CapabilitySet, shutting down transmitters.");
     // Received empty TCS, so close all transmit channels
     for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
       H245NegLogicalChannel & negChannel = logicalChannels->GetNegLogicalChannelAt(i);
@@ -3343,7 +3360,6 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       if (channel != NULL && !channel->GetNumber().IsFromRemote())
         negChannel.Close();
     }
-    ownerCall.CloseMediaStreams();
     transmitterSidePaused = PTrue;
   }
   else {
@@ -3357,10 +3373,11 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       return PFalse;
 
     if (transmitterSidePaused) {
+      PTRACE(3, "H323\tReceived CapabilitySet while paused, re-starting transmitters.");
       transmitterSidePaused = PFalse;
       connectionState = HasExecutedSignalConnect;
-      SetPhase(ConnectedPhase);
       capabilityExchangeProcedure->Start(PTrue);
+      masterSlaveDeterminationProcedure->Start(PFalse);
     }
     else {
       if (localCapabilities.GetSize() > 0)
@@ -3377,7 +3394,11 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
 
 bool H323Connection::SendCapabilitySet(PBoolean empty)
 {
-  return capabilityExchangeProcedure->Start(PTrue, empty);
+  if (!capabilityExchangeProcedure->Start(PTrue, empty))
+    return false;
+
+  remoteTransmitPaused = empty;
+  return true;
 }
 
 
@@ -3514,18 +3535,17 @@ void H323Connection::InternalEstablishedConnectionCheck()
     startT120 = PFalse;
   }
 #endif
-  
+
+  // Check if we have just been connected, or have come out of a transmitter side
+  // paused, and have not already got an audio transmitter running via fast connect
+  if (connectionState == HasExecutedSignalConnect && FindChannel(OpalMediaFormat::DefaultAudioSessionID, PFalse) == NULL)
+    OnSelectLogicalChannels(); // Start some media
+
   switch (GetPhase()) {
     case ConnectedPhase :
-      // Check if we have already got a transmitter running, select one if not
-      if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, PFalse) == NULL)
-        OnSelectLogicalChannels();
-
-      connectionState = EstablishedConnection;
       SetPhase(EstablishedPhase);
-
       OnEstablished();
-      break;
+      // Set established in next case
 
     case EstablishedPhase :
       connectionState = EstablishedConnection; // Keep in sync
@@ -3667,7 +3687,7 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
       }
     }
   }
-  return OpalRTPConnection::CloseMediaStream(stream);;
+  return OpalRTPConnection::CloseMediaStream(stream);
 }
 
 
