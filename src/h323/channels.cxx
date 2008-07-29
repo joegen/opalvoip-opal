@@ -388,6 +388,7 @@ void H323UnidirectionalChannel::Close()
   PTRACE(4, "H323RTP\tCleaning up media stream on " << number);
 
   // If we have source media stream close it
+  connection.CloseMediaStream(*mediaStream);
   connection.RemoveMediaStream(*mediaStream);
   mediaStream.SetNULL();
 
