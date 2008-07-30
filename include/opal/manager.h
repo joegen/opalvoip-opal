@@ -771,6 +771,10 @@ class OpalManager : public PObject
 
          <!du>   The rest of the "b_party" string after the <du> section. The 
                  protocol is still omitted. This is usually the '@' and onward.
+                 Note if there is already an '@' in the destination before the
+                 <!du> and what is abour to replace it also has an '@' then
+                 everything between the @ and the <!du> (inclusive) is deleted,
+                 then the substitution is made so a legal URL can result.
 
          <dn>    Copy all valid consecutive E.164 digits from the "b_party" so
                  pots:0061298765@vpb:1/2 becomes sip:0061298765@carrier.com
