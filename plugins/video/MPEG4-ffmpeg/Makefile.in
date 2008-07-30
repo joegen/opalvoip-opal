@@ -96,7 +96,7 @@ $(PLUGIN): $(OBJECTS)
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-	install $(DESTDIR)$(PLUGIN) $(libdir)/$(VC_PLUGIN_DIR)
+	install $(PLUGIN) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
 
 uninstall:
 	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
