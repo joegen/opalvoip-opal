@@ -538,33 +538,41 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   if (connection.GetOtherPartyConnection() != NULL)
     return true;
 
-  // Use a routing algorithm to figure out who the B-Party is, then make a connection
-  return OnRouteConnection(connection, options, stringOptions);
-}
-
-
-bool OpalManager::OnRouteConnection(OpalConnection & connection,
-                                    unsigned options,
-                                    OpalConnection::StringOptions * stringOptions)
-{
   OpalCall & call = connection.GetCall();
 
-  // See if have pre-allocated B party address, otherwise use routing algorithm
+  // See if have pre-allocated B party address, otherwise
+  // get destination from incoming connection
   PString destination = call.GetPartyB();
   if (destination.IsEmpty())
     destination = connection.GetDestinationAddress();
 
-  PString route;
+  // Use a routing algorithm to figure out who the B-Party is, and make second connection
+  return OnRouteConnection(connection.GetLocalPartyURL(), destination, call, options, stringOptions);
+}
+
+
+bool OpalManager::OnRouteConnection(const PString & a_party,
+                                    const PString & b_party,
+                                    OpalCall & call,
+                                    unsigned options,
+                                    OpalConnection::StringOptions * stringOptions)
+{
   PINDEX tableEntry = 0;
-  do {
-    route = ApplyRouteTable(connection.GetLocalPartyURL(), destination, tableEntry);
+  for (;;) {
+    PString route = ApplyRouteTable(a_party, b_party, tableEntry);
     if (route.IsEmpty()) {
-      PTRACE(3, "OpalMan\tCould not route " << connection);
+      PTRACE(3, "OpalMan\tCould not route a=\"" << a_party << "\", b=\"" << b_party << ", call=" << call);
       return false;
     }
-  } while (!MakeConnection(call, route, NULL, options, stringOptions));
 
-  return true;
+    // See if this route can be connected
+    if (MakeConnection(call, route, NULL, options, stringOptions))
+      return true;
+
+    // Recursively call with translated route
+    if (OnRouteConnection(a_party, route, call, options, stringOptions))
+      return true;
+  }
 }
 
 
@@ -1013,7 +1021,7 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
   }
   else {
     destination.Replace("<du>", digits, true);
-    ReplaceNDU(destination, b_party);
+    ReplaceNDU(destination, b_party.Mid(nonDigitPos));
   }
 
   destination.Replace("<dn>", digits, true);
