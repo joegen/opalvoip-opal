@@ -957,7 +957,11 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
 
   // We are backward compatibility mode and the supplied address can be called
   PINDEX colon = b_party.Find(':');
-  if (colon == P_MAX_INDEX || FindEndPoint(b_party.Left(colon)) == NULL)
+  if (colon == P_MAX_INDEX)
+    colon = 0;
+  else if (b_party.NumCompare("tel", colon) == EqualTo) // Small cheat for tel: URI (RFC3966)
+    colon++;
+  else if (FindEndPoint(b_party.Left(colon)) == NULL)
     colon = 0;
   else {
     if (destination.Find("<da>") != P_MAX_INDEX)
@@ -965,19 +969,42 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
     colon++;
   }
 
-  PINDEX nonDigitPos = b_party.FindSpan("0123456789*#", colon);
+  PINDEX nonDigitPos = b_party.FindSpan("0123456789*#-.()", colon + (b_party[colon] == '+'));
   PString digits = b_party(colon, nonDigitPos-1);
 
   PINDEX at = b_party.Find('@', colon);
 
+  // Another tel: URI hack
+  PINDEX pos;
+  static const char PhoneContext[] = ";phone-context=";
+  if (at == P_MAX_INDEX && (pos = b_party.Find(PhoneContext)) != P_MAX_INDEX) {
+    pos += sizeof(PhoneContext)-1;
+    PINDEX end = b_party.Find(';', pos)-1;
+    if (b_party[pos] == '+') // Phone context is a prefix
+      digits.Splice(b_party(pos+1, end), 0);
+    else  // Phone context is a domain name
+      destination.Replace("<!du>", '@'+b_party(pos, end), true);
+  }
+
+  // Filter out the non E.164 digits, mainly for tel: URI support.
+  while ((pos = digits.FindOneOf("+-.()")) != P_MAX_INDEX)
+    digits.Delete(pos, 1);
+
   destination.Replace("<da>", b_party, true);
-  destination.Replace("<du>", b_party(colon, at-1), true);
-  destination.Replace("<!du>", b_party.Mid(at), true);
-  destination.Replace("<dn>", digits, true);
-  destination.Replace("<!dn>", b_party.Mid(nonDigitPos), true);
   destination.Replace("<db>",  b_party.Mid(colon), true);
 
-  PINDEX pos;
+  if (at != P_MAX_INDEX) {
+    destination.Replace("<du>", b_party(colon, at-1), true);
+    destination.Replace("<!du>", b_party.Mid(at), true);
+  }
+  else {
+    destination.Replace("<du>", digits, true);
+    destination.Replace("<!du>", b_party, true);
+  }
+
+  destination.Replace("<dn>", digits, true);
+  destination.Replace("<!dn>", b_party.Mid(nonDigitPos), true);
+
   while ((pos = destination.FindRegEx("<dn[1-9]>")) != P_MAX_INDEX)
     destination.Splice(digits.Mid(destination[pos+3]-'0'), pos, 5);
 
