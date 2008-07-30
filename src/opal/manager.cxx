@@ -904,6 +904,20 @@ void OpalManager::SetRouteTable(const RouteTable & table)
 }
 
 
+static void ReplaceNDU(PString & destination, const PString & subst)
+{
+  if (subst.Find('@') != P_MAX_INDEX) {
+    PINDEX at = destination.Find('@');
+    if (at != P_MAX_INDEX) {
+      PINDEX du = destination.Find("<!du>", at);
+      if (du != P_MAX_INDEX)
+        destination.Delete(at, du-at);
+    }
+  }
+  destination.Replace("<!du>", subst, true);
+}
+
+
 PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_party, PINDEX & routeIndex)
 {
   PWaitAndSignal mutex(routeTableMutex);
@@ -975,15 +989,15 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
   PINDEX at = b_party.Find('@', colon);
 
   // Another tel: URI hack
-  PINDEX pos;
   static const char PhoneContext[] = ";phone-context=";
-  if (at == P_MAX_INDEX && (pos = b_party.Find(PhoneContext)) != P_MAX_INDEX) {
+  PINDEX pos = b_party.Find(PhoneContext);
+  if (pos != P_MAX_INDEX) {
     pos += sizeof(PhoneContext)-1;
     PINDEX end = b_party.Find(';', pos)-1;
     if (b_party[pos] == '+') // Phone context is a prefix
       digits.Splice(b_party(pos+1, end), 0);
-    else  // Phone context is a domain name
-      destination.Replace("<!du>", '@'+b_party(pos, end), true);
+    else // Otherwise phone context is a domain name
+      ReplaceNDU(destination, '@'+b_party(pos, end));
   }
 
   // Filter out the non E.164 digits, mainly for tel: URI support.
@@ -995,11 +1009,11 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
 
   if (at != P_MAX_INDEX) {
     destination.Replace("<du>", b_party(colon, at-1), true);
-    destination.Replace("<!du>", b_party.Mid(at), true);
+    ReplaceNDU(destination, b_party.Mid(at));
   }
   else {
     destination.Replace("<du>", digits, true);
-    destination.Replace("<!du>", b_party, true);
+    ReplaceNDU(destination, b_party);
   }
 
   destination.Replace("<dn>", digits, true);
