@@ -383,8 +383,10 @@ class OpalManager : public PObject
        variable and uses MakeConnection() to start the B-party connection.
       */
     virtual bool OnRouteConnection(
-      OpalConnection & connection,  ///<  Connection being routed
-      unsigned options,             ///<  options for new connection (can't use default as overrides will fail)
+      const PString & a_party,      ///< Source local address
+      const PString & b_party,      ///< Destination indicated by source
+      OpalCall & call,              ///< Call for new connection
+      unsigned options,             ///< Options for new connection (can't use default as overrides will fail)
       OpalConnection::StringOptions * stringOptions
     );
 
