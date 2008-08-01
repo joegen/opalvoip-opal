@@ -2262,6 +2262,9 @@ OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() con
 
 PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 {
+  if (m_holdFromRemote || m_holdToRemote >= eHoldOn)
+    return false;
+
   SendUserInputModes mode = GetRealSendUserInputMode();
 
   PTRACE(3, "SIP\tSendUserInputTone('" << tone << "', " << duration << "), using mode " << mode);
