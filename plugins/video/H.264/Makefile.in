@@ -78,6 +78,7 @@ COMMONDIR	= ../common
 PLUGINDIR	= ../../
 OBJDIR	= ./obj
 WIN32=@WIN32@
+SUBDIRS		+= gpl
 
 BASENAME=h264
 SONAME	=$(BASENAME)
@@ -119,16 +120,21 @@ STATIC	= ./lib$(BASENAME)_video_s.a
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
 	$(CXX) $(LDSO) -o $@ $^
 
 install:
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) install; fi ; )
 	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
 	install $(PLUGIN) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
 
 uninstall:
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) uninstall; fi ; )
 	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
 
 ###########################################
+                        
