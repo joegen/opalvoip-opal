@@ -665,6 +665,7 @@ INSTALL_PROGRAM
 INSTALL_SCRIPT
 INSTALL_DATA
 RANLIB
+NM
 CPP
 GREP
 EGREP
@@ -696,10 +697,12 @@ SIZE32
 SPEEX_CFLAGS
 SPEEX_LIBS
 SPEEX_SYSTEM
-HAVE_FFMPEG_H263
+HAVE_H263
 DEFAULT_TO_FULL_CAPABILITIES
 LIBAVCODEC_CFLAGS
 LIBAVCODEC_LIBS
+HAVE_H263P
+HAVE_MPEG4
 LIBAVCODEC_LIB_NAME
 HAVE_LIBAVCODEC
 LIBAVCODEC_SOURCE_DIR
@@ -1915,6 +1918,10 @@ echo "${ECHO_T}no" >&6; }
 	fi
 
 fi
+
+
+
+
 
 
 
@@ -3479,6 +3486,103 @@ esac
 else
   RANLIB="$ac_cv_prog_RANLIB"
 fi
+
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}nm", so it can be a program name with args.
+set dummy ${ac_tool_prefix}nm; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_prog_NM+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$NM"; then
+  ac_cv_prog_NM="$NM" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_NM="${ac_tool_prefix}nm"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+NM=$ac_cv_prog_NM
+if test -n "$NM"; then
+  { echo "$as_me:$LINENO: result: $NM" >&5
+echo "${ECHO_T}$NM" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_NM"; then
+  ac_ct_NM=$NM
+  # Extract the first word of "nm", so it can be a program name with args.
+set dummy nm; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_prog_ac_ct_NM+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$ac_ct_NM"; then
+  ac_cv_prog_ac_ct_NM="$ac_ct_NM" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_ac_ct_NM="nm"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_NM=$ac_cv_prog_ac_ct_NM
+if test -n "$ac_ct_NM"; then
+  { echo "$as_me:$LINENO: result: $ac_ct_NM" >&5
+echo "${ECHO_T}$ac_ct_NM" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+  if test "x$ac_ct_NM" = x; then
+    NM=":"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ echo "$as_me:$LINENO: WARNING: In the future, Autoconf will not detect cross-tools
+whose name does not start with the host triplet.  If you think this
+configuration is useful to you, please write to autoconf@gnu.org." >&5
+echo "$as_me: WARNING: In the future, Autoconf will not detect cross-tools
+whose name does not start with the host triplet.  If you think this
+configuration is useful to you, please write to autoconf@gnu.org." >&2;}
+ac_tool_warned=yes ;;
+esac
+    NM=$ac_ct_NM
+  fi
+else
+  NM="$ac_cv_prog_NM"
+fi
+
 
 
 ac_ext=c
@@ -6536,7 +6640,7 @@ esac
 HAVE_VPB=yes
 HAVE_CAPI=yes
 HAVE_IXJ=no
-HAVE_FFMPEG_H263=yes
+HAVE_H263=yes
 HAVE_H264=yes
 HAVE_SPANDSP=yes
 DEFAULT_TO_FULL_CAPABILITIES=no
@@ -8747,27 +8851,44 @@ echo "${ECHO_T}using system Speex version $SPEEX_SYSTEM_VERSION" >&6; }
 
 
 
-          if test "x$HAVE_FFMPEG_H263" = "x"; then
-            { { echo "$as_me:$LINENO: error: No default specified for HAVE_FFMPEG_H263, please correct configure.ac" >&5
-echo "$as_me: error: No default specified for HAVE_FFMPEG_H263, please correct configure.ac" >&2;}
+          if test "x$HAVE_H263" = "x"; then
+            { { echo "$as_me:$LINENO: error: No default specified for HAVE_H263, please correct configure.ac" >&5
+echo "$as_me: error: No default specified for HAVE_H263, please correct configure.ac" >&2;}
    { (exit 1); exit 1; }; }
 	  fi
           # Check whether --enable-ffmpeg-h263 was given.
 if test "${enable_ffmpeg_h263+set}" = set; then
-  enableval=$enable_ffmpeg_h263; HAVE_FFMPEG_H263=$enableval
+  enableval=$enable_ffmpeg_h263; HAVE_H263=$enableval
 fi
+
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: ffmpeg-h263 support disabled due to disabled dependency " >&5
+echo "$as_me: ffmpeg-h263 support disabled due to disabled dependency " >&6;}
+	      HAVE_H263=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: ffmpeg-h263 support disabled due to disabled dependency " >&5
+echo "$as_me: ffmpeg-h263 support disabled due to disabled dependency " >&6;}
+	      HAVE_H263=no
+	    fi
+	  fi
 
 
           { echo "$as_me:$LINENO: checking enable plugin supporting H.263 via patched FFMPEG" >&5
 echo $ECHO_N "checking enable plugin supporting H.263 via patched FFMPEG... $ECHO_C" >&6; }
-          { echo "$as_me:$LINENO: result: $HAVE_FFMPEG_H263" >&5
-echo "${ECHO_T}$HAVE_FFMPEG_H263" >&6; }
+          { echo "$as_me:$LINENO: result: $HAVE_H263" >&5
+echo "${ECHO_T}$HAVE_H263" >&6; }
 
 
-          if test "x$HAVE_FFMPEG_H263" = "xyes"; then
+          if test "x$HAVE_H263" = "xyes"; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_FFMPEG_H263 1
+#define HAVE_H263 1
 _ACEOF
 
           fi
@@ -8783,6 +8904,23 @@ echo "$as_me: error: No default specified for DEFAULT_TO_FULL_CAPABILITIES, plea
 if test "${enable_default_to_full_capabilties+set}" = set; then
   enableval=$enable_default_to_full_capabilties; DEFAULT_TO_FULL_CAPABILITIES=$enableval
 fi
+
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: default-to-full-capabilties support disabled due to disabled dependency " >&5
+echo "$as_me: default-to-full-capabilties support disabled due to disabled dependency " >&6;}
+	      DEFAULT_TO_FULL_CAPABILITIES=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: default-to-full-capabilties support disabled due to disabled dependency " >&5
+echo "$as_me: default-to-full-capabilties support disabled due to disabled dependency " >&6;}
+	      DEFAULT_TO_FULL_CAPABILITIES=no
+	    fi
+	  fi
 
 
           { echo "$as_me:$LINENO: checking default to full capabilities at empty fmtp lines" >&5
@@ -8923,6 +9061,80 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
           fi
+
+
+          { echo "$as_me:$LINENO: checking if libavcodec has h263p_encoder" >&5
+echo $ECHO_N "checking if libavcodec has h263p_encoder... $ECHO_C" >&6; }
+  	  got_symbol=no
+          cat >conftest.$ac_ext <<_ACEOF
+int main () {}
+_ACEOF
+          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
+          if test -x conftest$ac_exeext ; then
+            libavcodec_libdir=`ldd ./conftest | grep libavcodec | awk '{print $3; }'`
+            symbol=`$NM -D $libavcodec_libdir | grep h263p_encoder`
+            if test "x$symbol" != "x"; then
+              got_symbol=yes
+	    fi
+          fi
+          { echo "$as_me:$LINENO: result: $got_symbol" >&5
+echo "${ECHO_T}$got_symbol" >&6; }
+          if test $got_symbol = yes; then
+  HAVE_H263P=yes
+else
+  HAVE_H263P=no
+fi
+
+
+
+          { echo "$as_me:$LINENO: checking if libavcodec has mpeg4_encoder" >&5
+echo $ECHO_N "checking if libavcodec has mpeg4_encoder... $ECHO_C" >&6; }
+  	  got_symbol=no
+          cat >conftest.$ac_ext <<_ACEOF
+int main () {}
+_ACEOF
+          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
+          if test -x conftest$ac_exeext ; then
+            libavcodec_libdir=`ldd ./conftest | grep libavcodec | awk '{print $3; }'`
+            symbol=`$NM -D $libavcodec_libdir | grep mpeg4_encoder`
+            if test "x$symbol" != "x"; then
+              got_symbol=yes
+	    fi
+          fi
+          { echo "$as_me:$LINENO: result: $got_symbol" >&5
+echo "${ECHO_T}$got_symbol" >&6; }
+          if test $got_symbol = yes; then
+  HAVE_MPEG4=yes
+else
+  HAVE_MPEG4=no
+fi
+
+
+
+          { echo "$as_me:$LINENO: checking if libavcodec has h264_decoder" >&5
+echo $ECHO_N "checking if libavcodec has h264_decoder... $ECHO_C" >&6; }
+  	  got_symbol=no
+          cat >conftest.$ac_ext <<_ACEOF
+int main () {}
+_ACEOF
+          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
+          if test -x conftest$ac_exeext ; then
+            libavcodec_libdir=`ldd ./conftest | grep libavcodec | awk '{print $3; }'`
+            symbol=`$NM -D $libavcodec_libdir | grep h264_decoder`
+            if test "x$symbol" != "x"; then
+              got_symbol=yes
+	    fi
+          fi
+          { echo "$as_me:$LINENO: result: $got_symbol" >&5
+echo "${ECHO_T}$got_symbol" >&6; }
+          if test $got_symbol = yes; then
+  HAVE_H264_DECODER=yes
+else
+  HAVE_H264_DECODER=no
+fi
+
+
+
 
 
                    LIBAVCODEC_HEADER=
@@ -9240,7 +9452,6 @@ _ACEOF
             { echo "$as_me:$LINENO: result: disabled" >&5
 echo "${ECHO_T}disabled" >&6; }
           fi
-
 
 
 
@@ -9804,24 +10015,55 @@ fi
 
 
 
-# Check whether --enable-h264 was given.
+if test "x$X264_LINK_STATIC" != "xyes"&& test "x$HAVE_LIBDL" != "xyes" ; then
+  { echo "$as_me:$LINENO: H.264 support disabled since static linking was disabled and libdl was not found" >&5
+echo "$as_me: H.264 support disabled since static linking was disabled and libdl was not found" >&6;}
+  HAVE_H264=no
+else
+
+          if test "x$HAVE_H264" = "x"; then
+            { { echo "$as_me:$LINENO: error: No default specified for HAVE_H264, please correct configure.ac" >&5
+echo "$as_me: error: No default specified for HAVE_H264, please correct configure.ac" >&2;}
+   { (exit 1); exit 1; }; }
+	  fi
+          # Check whether --enable-h264 was given.
 if test "${enable_h264+set}" = set; then
   enableval=$enable_h264; HAVE_H264=$enableval
 fi
 
 
-if test "x$HAVE_H264" = "xyes" ; then
-  if test "x$HAVE_X264" != "xyes" ; then
-    HAVE_H264=no
-  fi
-  if test "x$HAVE_LIBAVCODEC" != "xyes" ; then
-    HAVE_H264=no
-  fi
-  if test "x$X264_LINK_STATIC" != "xyes"&& test "x$HAVE_LIBDL" != "xyes" ; then
-    HAVE_H264=no
-  fi
-fi
+          if test "xHAVE_X264" != "x"; then
+            if test "x$HAVE_X264" != "xyes"; then
+              { echo "$as_me:$LINENO: h264 support disabled due to disabled dependency HAVE_X264" >&5
+echo "$as_me: h264 support disabled due to disabled dependency HAVE_X264" >&6;}
+	      HAVE_H264=no
+	    fi
+	  fi
 
+          if test "xHAVE_H264_DECODER" != "x"; then
+            if test "x$HAVE_H264_DECODER" != "xyes"; then
+              { echo "$as_me:$LINENO: h264 support disabled due to disabled dependency HAVE_H264_DECODER" >&5
+echo "$as_me: h264 support disabled due to disabled dependency HAVE_H264_DECODER" >&6;}
+	      HAVE_H264=no
+	    fi
+	  fi
+
+
+          { echo "$as_me:$LINENO: checking enable H.264 support" >&5
+echo $ECHO_N "checking enable H.264 support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: result: $HAVE_H264" >&5
+echo "${ECHO_T}$HAVE_H264" >&6; }
+
+
+          if test "x$HAVE_H264" = "xyes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_H264 1
+_ACEOF
+
+          fi
+
+fi
 
 
 # Check whether --enable-ixj was given.
@@ -10186,6 +10428,23 @@ echo "$as_me: error: No default specified for HAVE_VPB, please correct configure
 if test "${enable_vpb+set}" = set; then
   enableval=$enable_vpb; HAVE_VPB=$enableval
 fi
+
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: vpb support disabled due to disabled dependency " >&5
+echo "$as_me: vpb support disabled due to disabled dependency " >&6;}
+	      HAVE_VPB=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: vpb support disabled due to disabled dependency " >&5
+echo "$as_me: vpb support disabled due to disabled dependency " >&6;}
+	      HAVE_VPB=no
+	    fi
+	  fi
 
 
           { echo "$as_me:$LINENO: checking enable voicetronix vpb" >&5
@@ -11382,6 +11641,7 @@ INSTALL_PROGRAM!$INSTALL_PROGRAM$ac_delim
 INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
 RANLIB!$RANLIB$ac_delim
+NM!$NM$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
@@ -11413,10 +11673,12 @@ SIZE32!$SIZE32$ac_delim
 SPEEX_CFLAGS!$SPEEX_CFLAGS$ac_delim
 SPEEX_LIBS!$SPEEX_LIBS$ac_delim
 SPEEX_SYSTEM!$SPEEX_SYSTEM$ac_delim
-HAVE_FFMPEG_H263!$HAVE_FFMPEG_H263$ac_delim
+HAVE_H263!$HAVE_H263$ac_delim
 DEFAULT_TO_FULL_CAPABILITIES!$DEFAULT_TO_FULL_CAPABILITIES$ac_delim
 LIBAVCODEC_CFLAGS!$LIBAVCODEC_CFLAGS$ac_delim
 LIBAVCODEC_LIBS!$LIBAVCODEC_LIBS$ac_delim
+HAVE_H263P!$HAVE_H263P$ac_delim
+HAVE_MPEG4!$HAVE_MPEG4$ac_delim
 LIBAVCODEC_LIB_NAME!$LIBAVCODEC_LIB_NAME$ac_delim
 HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
 LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
@@ -11424,9 +11686,6 @@ X264_CFLAGS!$X264_CFLAGS$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
 X264_LIB_NAME!$X264_LIB_NAME$ac_delim
 X264_LINK_STATIC!$X264_LINK_STATIC$ac_delim
-HAVE_X264!$HAVE_X264$ac_delim
-THEORA_CFLAGS!$THEORA_CFLAGS$ac_delim
-THEORA_LIBS!$THEORA_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -11468,6 +11727,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+HAVE_X264!$HAVE_X264$ac_delim
+THEORA_CFLAGS!$THEORA_CFLAGS$ac_delim
+THEORA_LIBS!$THEORA_LIBS$ac_delim
 HAVE_THEORA!$HAVE_THEORA$ac_delim
 HAVE_LIBDL!$HAVE_LIBDL$ac_delim
 DL_LIBS!$DL_LIBS$ac_delim
@@ -11481,7 +11743,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 11; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 14; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -12502,6 +12764,7 @@ INSTALL_PROGRAM!$INSTALL_PROGRAM$ac_delim
 INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
 RANLIB!$RANLIB$ac_delim
+NM!$NM$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
@@ -12533,10 +12796,12 @@ SIZE32!$SIZE32$ac_delim
 SPEEX_CFLAGS!$SPEEX_CFLAGS$ac_delim
 SPEEX_LIBS!$SPEEX_LIBS$ac_delim
 SPEEX_SYSTEM!$SPEEX_SYSTEM$ac_delim
-HAVE_FFMPEG_H263!$HAVE_FFMPEG_H263$ac_delim
+HAVE_H263!$HAVE_H263$ac_delim
 DEFAULT_TO_FULL_CAPABILITIES!$DEFAULT_TO_FULL_CAPABILITIES$ac_delim
 LIBAVCODEC_CFLAGS!$LIBAVCODEC_CFLAGS$ac_delim
 LIBAVCODEC_LIBS!$LIBAVCODEC_LIBS$ac_delim
+HAVE_H263P!$HAVE_H263P$ac_delim
+HAVE_MPEG4!$HAVE_MPEG4$ac_delim
 LIBAVCODEC_LIB_NAME!$LIBAVCODEC_LIB_NAME$ac_delim
 HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
 LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
@@ -12544,9 +12809,6 @@ X264_CFLAGS!$X264_CFLAGS$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
 X264_LIB_NAME!$X264_LIB_NAME$ac_delim
 X264_LINK_STATIC!$X264_LINK_STATIC$ac_delim
-HAVE_X264!$HAVE_X264$ac_delim
-THEORA_CFLAGS!$THEORA_CFLAGS$ac_delim
-THEORA_LIBS!$THEORA_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -12588,6 +12850,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+HAVE_X264!$HAVE_X264$ac_delim
+THEORA_CFLAGS!$THEORA_CFLAGS$ac_delim
+THEORA_LIBS!$THEORA_LIBS$ac_delim
 HAVE_THEORA!$HAVE_THEORA$ac_delim
 HAVE_LIBDL!$HAVE_LIBDL$ac_delim
 DL_LIBS!$DL_LIBS$ac_delim
@@ -12601,7 +12866,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 11; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 14; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -13062,19 +13327,19 @@ echo "                        IMA_ADPCM :  yes"
 echo ""
 
 echo "                           H.261  :  yes"
-echo "                           H.263  :  ${HAVE_FFMPEG_H263}"
-echo "                           H.263+ :  ${HAVE_LIBAVCODEC}"
+echo "                           H.263  :  ${HAVE_H263}"
+echo "                           H.263+ :  ${HAVE_H263P}"
 echo "                           H.264  :  ${HAVE_H264}"
 echo "                          THEORA  :  ${HAVE_THEORA}"
 
-if test "x${HAVE_LIBAVCODEC}" = "xyes" ; then
+if test "x${HAVE_MPEG4}" = "xyes" ; then
 if test "x${LIBAVCODEC_SOURCE_DIR}" = "x" ; then
 echo "                    MPEG4 Part 2  :  yes (no rate control correction)"
 else
 echo "                    MPEG4 Part 2  :  yes"
 fi
 else
-echo "                    MPEG4 Part 2  :  no (needs libavcodec)"
+echo "                    MPEG4 Part 2  :  no"
 fi
 
 echo ""
