@@ -7,20 +7,23 @@ SUBDIRS = audio/GSM0610 \
 	  audio/gsm-amr \
 	  video/H.261-vic
 
-HAVE_FFMPEG_H263=@HAVE_FFMPEG_H263@
-ifeq ($(HAVE_FFMPEG_H263),yes)
+HAVE_H263=@HAVE_H263@
+ifeq ($(HAVE_H263),yes)
 SUBDIRS += video/H.263-ffmpeg
 endif
 
 HAVE_H264=@HAVE_H264@
 ifeq ($(HAVE_H264),yes)
-SUBDIRS += video/H.264 \
-	   video/H.264/gpl
+SUBDIRS += video/H.264 
 endif
 
-HAVE_LIBAVCODEC=@HAVE_LIBAVCODEC@
-ifeq ($(HAVE_LIBAVCODEC),yes)
+HAVE_H263P=@HAVE_H263P@
+ifeq ($(HAVE_H263P),yes)
 SUBDIRS += video/H.263-1998
+endif
+
+HAVE_MPEG4=@HAVE_MPEG4@
+ifeq ($(HAVE_MPEG4),yes)
 SUBDIRS += video/MPEG4-ffmpeg
 endif
 
