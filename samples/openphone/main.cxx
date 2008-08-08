@@ -2249,7 +2249,7 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
     digit = connection.GetUserInput(firstDigitTimeout);
   }
 
-  PTRACE(2, "OpalPhone\tReadUserInput timeout (" << firstDigitTimeout << "ms) on " << *this);
+  PTRACE(2, "OpalPhone\tReadUserInput timeout (" << firstDigitTimeout << " seconds) on " << *this);
   return PString::Empty();
 }
 
