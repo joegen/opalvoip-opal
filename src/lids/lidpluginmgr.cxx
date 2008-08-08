@@ -225,17 +225,19 @@ PBoolean OpalPluginLID::Open(const PString & device)
 
     case PluginLID_UsesSoundChannel :
       {
+        PString soundDevice;
         PINDEX backslash = device.Find('\\');
         if (backslash != P_MAX_INDEX)
-          backslash++;
+          soundDevice = device.Mid(backslash+1);
         else
-          backslash = 0;
-        if (!m_player.Open(device.Mid(backslash), PSoundChannel::Player)) {
+          soundDevice = device;
+
+        if (!m_player.Open(soundDevice, PSoundChannel::Player)) {
           PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open player for \"" << device << '"');
           return PFalse;
         }
 
-        if (!m_recorder.Open(device.Mid(backslash), PSoundChannel::Recorder)) {
+        if (!m_recorder.Open(soundDevice, PSoundChannel::Recorder)) {
           PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open recorder for \"" << device << '"');
           return PFalse;
         }
@@ -940,6 +942,7 @@ void OpalPluginLID::TonePlayer(PThread &, INT tone)
     PTRACE(2, "LID Plugin\tTone generation for \"" << m_callProgressTones[tone] << "\"failed.");
   }
 
+  m_player.Abort();
   PTRACE(4, "LID Plugin\tEnded manual tone generation for \"" << m_callProgressTones[tone] << '"');
 }
 
