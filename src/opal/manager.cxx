@@ -543,8 +543,13 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   // See if have pre-allocated B party address, otherwise
   // get destination from incoming connection
   PString destination = call.GetPartyB();
-  if (destination.IsEmpty())
+  if (destination.IsEmpty()) {
     destination = connection.GetDestinationAddress();
+    if (destination.IsEmpty()) {
+      PTRACE(3, "OpalMan\tCannot complete call, no destination address from connection " << connection);
+      return false;
+    }
+  }
 
   // Use a routing algorithm to figure out who the B-Party is, and make second connection
   return OnRouteConnection(connection.GetLocalPartyURL(), destination, call, options, stringOptions);
