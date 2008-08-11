@@ -816,7 +816,5 @@ bool H323PresenceSubscription::IsDecisionMade()
 	return HasOptionalField(H460P_PresenceSubscription::e_approved); 
 }
 
-#endif
 
-
-
+#endif // OPAL_H460

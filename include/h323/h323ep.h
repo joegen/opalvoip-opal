@@ -1102,7 +1102,7 @@ class H323EndPoint : public OpalRTPEndPoint
       const PString & identifer
     );
 
-#ifdef OPAL_H460
+#if OPAL_H460
     /** Is the FeatureSet disabled
       */
     bool FeatureSetDisabled() const { return disableH460; }
