@@ -44,10 +44,13 @@
 #pragma implementation "h4601.h"
 #endif
 
-#include <ptlib/pluginmgr.h>
 #include "h460/h460.h"
+
+#if OPAL_H460
+
 #include "h460/h4601.h"
 
+#include <ptlib/pluginmgr.h>
 #include <h323/h323ep.h>
 
 
@@ -1600,3 +1603,5 @@ H460_Feature * H460_FeatureSet::GetFeature(const H460_FeatureID & id)
 {
 	return &Features[id];
 }
+
+#endif // OPAL_H460

@@ -43,10 +43,13 @@
 #if !defined(_H460_H)
 #define _H460_H
 
-
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_H460
 
 #include <asn/h225.h>
 #include <h323/transaddr.h>
@@ -1141,5 +1144,6 @@ PCREATE_PLUGIN(H460_Feature##name##, H460_Feature, &H460_Feature##name##_descrip
 #pragma warning(disable:4100)
 #endif
 
-#endif // !defined(_H460_H)
+#endif // OPAL_H460
 
+#endif // !defined(_H460_H)
