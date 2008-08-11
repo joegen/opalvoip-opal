@@ -11,10 +11,10 @@
 #include <ptlib.h>
 #include "h460/h460tm.h"
 
+#ifdef OPAL_H460
+
 #define new PNEW
 
-
-#if ! H323_DISABLE_H460TM
 
 #ifndef PASN_NOPRINTON
 const static PASN_Names Names_H460TM_TMmode[]={
@@ -154,7 +154,7 @@ PObject * H460TM_MultipointTM::Clone() const
 }
 
 
-#endif // if ! H323_DISABLE_H460TM
+#endif // OPAL_H460
 
 
 // End of H460tm.cxx

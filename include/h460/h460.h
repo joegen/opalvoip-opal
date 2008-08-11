@@ -45,6 +45,11 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
+#if OPAL_H460
+
+
 class H460_MessageType
 {
   public:
@@ -79,3 +84,4 @@ class H460_MessageType
     };
 };
 
+#endif // OPAL_H460

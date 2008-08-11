@@ -11,12 +11,9 @@
 #include <ptlib.h>
 #include "h460/h460pres.h"
 
+#ifdef OPAL_H460
+
 #define new PNEW
-
-
-#if ! H323_DISABLE_H460P
-
-
 
 
 #ifndef PASN_NOPRINTON
@@ -1814,7 +1811,7 @@ PObject * H460P_PresenceNotification::Clone() const
 }
 
 
-#endif // if ! H323_DISABLE_H460P
+#endif // OPAL_H460
 
 
 // End of H460pres.cxx
