@@ -1214,14 +1214,16 @@ PBoolean SIPDigestAuthentication::Parse(const PString & _auth, PBoolean proxy)
     return false;
   }
 
+  algorithm = Algorithm_MD5;  // default
   PCaselessString str = GetAuthParam(auth, "algorithm");
-  if (str.IsEmpty())
-    algorithm = Algorithm_MD5;  // default
-  else if (str == "md5")
-    algorithm = Algorithm_MD5;
-  else {
-    PTRACE(1, "SIP\tUnknown digest algorithm " << str);
-    return PFalse;
+  if (!str.IsEmpty()) {
+    while (str != AlgorithmNames[algorithm]) {
+      algorithm = (Algorithm)(algorithm+1);
+      if (algorithm >= SIPDigestAuthentication::NumAlgorithms) {
+        PTRACE(1, "SIP\tUnknown digest algorithm " << str);
+        return PFalse;
+      }
+    }
   }
 
   authRealm = GetAuthParam(auth, "realm");
