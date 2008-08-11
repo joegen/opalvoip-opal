@@ -1357,6 +1357,9 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
   }
 
   switch (command.m_param.m_mediaStream.m_state) {
+    case OpalMediaStateNoChange :
+      break;
+
     case OpalMediaStateOpen :
       if (mediaType.empty())
         response.SetError("Must provide type and direction to open media stream.");
@@ -1489,7 +1492,7 @@ void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type
   OpalMessageBuffer message(OpalIndMessageWaiting);
   SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_party, party);
   static const char * const TypeNames[] = { "Voice", "Fax", "Pager", "Multimedia", "Text", "None" };
-  if (type < sizeof(TypeNames)/sizeof(TypeNames[0]))
+  if ((size_t)type < sizeof(TypeNames)/sizeof(TypeNames[0]))
     SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_type, TypeNames[type]);
   SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, extraInfo);
   PTRACE(4, "OpalC API\tOnMWIReceived: party=\"" << message->m_param.m_messageWaiting.m_party << '"');
