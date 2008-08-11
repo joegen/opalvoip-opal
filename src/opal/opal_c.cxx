@@ -334,10 +334,10 @@ OpalMessage * OpalMessageBuffer::Detach()
 
 OpalLocalEndPoint_C::OpalLocalEndPoint_C(OpalManager_C & mgr)
   : OpalLocalEndPoint(mgr)
-  , m_manager(mgr)
   , m_mediaReadData(NULL)
   , m_mediaWriteData(NULL)
   , m_mediaDataHeader(OpalMediaDataPayloadOnly)
+  , m_manager(mgr)
 {
 }
 
