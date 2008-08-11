@@ -2439,7 +2439,10 @@ void MyManager::StartRegistrars()
   for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
     if (iter->m_Active) {
       SIPRegister::Params param;
-      param.m_addressOfRecord = iter->m_User + '@' + iter->m_Domain;
+      if (iter->m_Domain.find('@') != wxString::npos)
+        param.m_addressOfRecord = iter->m_Domain.c_str();
+      else
+        param.m_addressOfRecord = iter->m_User + '@' + iter->m_Domain;
       param.m_authID = (const char *)iter->m_User;
       param.m_password = (const char *)iter->m_Password;
       param.m_expire = iter->m_TimeToLive;
