@@ -84,7 +84,7 @@ PString H323_H224Capability::GetFormatName() const
 }
 
 H323Channel * H323_H224Capability::CreateChannel(H323Connection & connection,
-                                                 H323Channel::Directions direction,
+                                                 H323Channel::Directions /*direction*/,
                                                  unsigned int sessionID,
                                                  const H245_H2250LogicalChannelParameters * /*params*/) const
 {
