@@ -2313,9 +2313,13 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
 }
 
 
+const PString SIPSubscribe::MessageSummary = "message-summary";
+const PString SIPSubscribe::Presence = "presence";
+
+
 SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                            OpalTransport & trans,
-                           SIPSubscribe::SubscribeType & type,
+                           const PString & eventPackage,
                            const PStringList & routeSet,
                            const SIPURL & targetAddress,
                            const PString & remotePartyAddress,
@@ -2326,20 +2330,10 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   PString acceptField;
-  PString eventField;
-  
-  switch (type) {
-  case MessageSummary:
-    eventField = "message-summary";
+  if (eventPackage == MessageSummary)
     acceptField = "application/simple-message-summary";
-    break;
-    
-  default:
-  case Presence:
-    eventField = "presence";
+  else if (eventPackage == Presence)
     acceptField = "application/pidf+xml";
-    break;
-  }
 
   SIPURL address = targetAddress;
   address.AdjustForRequestURI();
@@ -2358,7 +2352,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
   mime.SetContact(contact);
   mime.SetAccept(acceptField);
-  mime.SetEvent(eventField);
+  mime.SetEvent(eventPackage);
   mime.SetExpires(expires);
 
   SetRoute(routeSet);
