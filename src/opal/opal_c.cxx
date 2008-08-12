@@ -1100,6 +1100,9 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
 
       if (!sip->Register(params))
         response.SetError("Failed to initiate SIP registration.");
+
+      if (m_apiVersion >= 10)
+        sip->Subscribe(SIPSubscribe::MessageSummary, command.m_param.m_registrationInfo.m_messageWaiting, aor);
     }
     return;
   }

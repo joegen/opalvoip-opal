@@ -107,8 +107,8 @@ public:
   virtual SIPTransaction * CreateTransaction(OpalTransport & t) = 0;
 
   virtual SIP_PDU::Methods GetMethod() = 0;
-  virtual SIPSubscribe::SubscribeType GetSubscribeType() 
-    { return SIPSubscribe::Unknown; }
+  virtual PCaselessString GetEventPackage() const
+  { return PString::Empty(); }
 
   virtual void OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
@@ -190,7 +190,7 @@ class SIPSubscribeHandler : public SIPHandler
   PCLASSINFO(SIPSubscribeHandler, SIPHandler);
 public:
   SIPSubscribeHandler(SIPEndPoint & ep, 
-                      SIPSubscribe::SubscribeType type,
+                      const PString & eventPackage,
                       const PString & to,
                       int expire);
   ~SIPSubscribeHandler();
@@ -200,8 +200,8 @@ public:
   virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_SUBSCRIBE; }
-  virtual SIPSubscribe::SubscribeType GetSubscribeType() 
-    { return type; }
+  virtual PCaselessString GetEventPackage() const
+    { return m_eventPackage; }
 
   unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
@@ -209,7 +209,7 @@ private:
   PBoolean OnReceivedMWINOTIFY(SIP_PDU & response);
   PBoolean OnReceivedPresenceNOTIFY(SIP_PDU & response);
 
-  SIPSubscribe::SubscribeType type;
+  PCaselessString m_eventPackage;
   PBoolean dialogCreated;
   PString localPartyAddress;
   unsigned lastSentCSeq;
@@ -307,7 +307,7 @@ public:
      * sip.seconix.com
      */
     PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PString & url, SIP_PDU::Methods meth, PSafetyMode m);
-    PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PString & url, SIP_PDU::Methods meth, SIPSubscribe::SubscribeType type, PSafetyMode m);
+    PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PString & url, SIP_PDU::Methods meth, const PString & eventPackage, PSafetyMode m);
 
     /**
      * Find the SIPHandler object with the specified registration host.
