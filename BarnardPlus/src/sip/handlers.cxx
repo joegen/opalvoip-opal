@@ -491,14 +491,14 @@ void SIPRegisterHandler::UpdateParameters(const SIPRegister::Params & params)
 /////////////////////////////////////////////////////////////////////////
 
 SIPSubscribeHandler::SIPSubscribeHandler (SIPEndPoint & endpoint, 
-                                          SIPSubscribe::SubscribeType t,
+                                          const PString & eventPackage,
                                           const PString & to,
                                           int exp)
   : SIPHandler(endpoint, to, exp > 0 ? exp : endpoint.GetNotifierTimeToLive().GetSeconds())
+  , m_eventPackage(eventPackage)
 {
   lastSentCSeq = 0;
   lastReceivedCSeq = 0;
-  type = t;
   dialogCreated = PFalse;
 }
 
@@ -515,7 +515,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 
   if (localPartyAddress.IsEmpty()) {
 
-    if (type == SIPSubscribe::Presence)
+    if (m_eventPackage == SIPSubscribe::Presence)
       localPartyAddress = endpoint.GetRegisteredPartyName(targetAddress).AsQuotedString();
     else
       localPartyAddress = targetAddress.AsQuotedString();
@@ -526,7 +526,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
   SetExpire(originalExpire);
   return new SIPSubscribe(endpoint,
                           trans, 
-                          type,
+                          m_eventPackage,
                           GetRouteSet(),
                           targetAddress, 
                           remotePartyAddress,
@@ -565,26 +565,19 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
 
 PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 {
-  unsigned requestCSeq = request.GetMIME().GetCSeq().AsUnsigned();
-  SIPSubscribe::SubscribeType event = SIPSubscribe::MessageSummary;
-
-  if (request.GetMIME().GetEvent().Find("message-summary") != P_MAX_INDEX)
-    event = SIPSubscribe::MessageSummary;
-  else if (request.GetMIME().GetEvent().Find("presence") != P_MAX_INDEX)
-    event = SIPSubscribe::Presence;
-
-  if (lastReceivedCSeq == 0)
-    lastReceivedCSeq = requestCSeq;
-
   if (transport == NULL)
     return PFalse;
 
-  else if (requestCSeq < lastReceivedCSeq) {
+  unsigned requestCSeq = request.GetMIME().GetCSeq().AsUnsigned();
 
-    endpoint.SendResponse(SIP_PDU::Failure_InternalServerError, *transport, request);
-    return PFalse;
-  }
-  lastReceivedCSeq = requestCSeq;
+  if (lastReceivedCSeq == 0)
+    lastReceivedCSeq = requestCSeq;
+  else if (requestCSeq > lastReceivedCSeq)
+    lastReceivedCSeq = requestCSeq;
+  else if (requestCSeq == lastReceivedCSeq)
+    return endpoint.SendResponse(SIP_PDU::Successful_OK, *transport, request);
+  else
+    return endpoint.SendResponse(SIP_PDU::Failure_InternalServerError, *transport, request);
 
   PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY");
 
@@ -609,17 +602,11 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       SetExpire(request.GetMIME().GetFieldParameter("expire", state).AsUnsigned());
   }
 
-  switch (event) 
-    {
-    case SIPSubscribe::MessageSummary:
-      OnReceivedMWINOTIFY(request);
-      break;
-    case SIPSubscribe::Presence:
-      OnReceivedPresenceNOTIFY(request);
-      break;
-    default:
-      break;
-    }
+  PCaselessString eventPackage = request.GetMIME().GetEvent();
+  if (eventPackage == SIPSubscribe::MessageSummary)
+    OnReceivedMWINOTIFY(request);
+  else if (eventPackage == SIPSubscribe::Presence)
+    OnReceivedPresenceNOTIFY(request);
 
   return endpoint.SendResponse(SIP_PDU::Successful_OK, *transport, request);
 }
@@ -948,10 +935,10 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & url, S
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & url, SIP_PDU::Methods meth, SIPSubscribe::SubscribeType type, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & url, SIP_PDU::Methods meth, const PString & eventPackage, PSafetyMode m)
 {
   for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (SIPURL(url) == handler->GetTargetAddress() && meth == handler->GetMethod() && handler->GetSubscribeType() == type)
+    if (SIPURL(url) == handler->GetTargetAddress() && meth == handler->GetMethod() && handler->GetEventPackage() == eventPackage)
       return handler;
   }
   return NULL;

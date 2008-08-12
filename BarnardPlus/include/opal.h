@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 8
+#define OPAL_C_API_VERSION 10
 
 
 ///////////////////////////////////////
@@ -516,6 +516,11 @@ typedef struct OpalParamRegistration {
   unsigned     m_restoreTime;   /**< Time in seconds between attempts to restore a registration after
                                      registrar/gatekeeper has gone offline. If zero then a default
                                      value is used. */
+  unsigned     m_messageWaiting;/**< Time in seconds for Message Waiting subscription time to live. If
+                                     non-zero then a subscription is attempted with the same server we
+                                     are registering with. If the subscription is successful, then the
+                                     OpalIndMessageWaiting indication is sent whenever the message
+                                     waiting state changes. If zero then no subscription is made. */
 } OpalParamRegistration;
 
 

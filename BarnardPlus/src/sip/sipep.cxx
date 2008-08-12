@@ -687,46 +687,29 @@ void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
 PBoolean SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 {
   PCaselessString state;
-  SIPSubscribe::SubscribeType event;
   
   PTRACE(3, "SIP\tReceived NOTIFY");
   
-  if (pdu.GetMIME().GetEvent().Find("message-summary") != P_MAX_INDEX)
-    event = SIPSubscribe::MessageSummary;
-  else if (pdu.GetMIME().GetEvent().Find("presence") != P_MAX_INDEX)
-    event = SIPSubscribe::Presence;
-  else {
-
-    // Only support MWI and presence Subscribe for now, 
-    // other events are unrequested
-    SendResponse(SIP_PDU::Failure_BadEvent, transport, pdu);
-
-    return PFalse;
-  }
-
-    
-  // A NOTIFY will have the same CallID than the SUBSCRIBE request
-  // it corresponds to
+  // A NOTIFY will have the same CallID than the SUBSCRIBE request it corresponds to
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(pdu.GetMIME().GetCallID(), PSafeReadOnly);
-  if (handler == NULL) {
 
-    if (event == SIPSubscribe::Presence) {
-      PTRACE(3, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY");
-      SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, pdu);
-      return PFalse;
-    }
-    if (event == SIPSubscribe::MessageSummary) {
-      PTRACE(3, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY : Work around Asterisk bug");
+  if (handler == NULL) {
+    PCaselessString eventPackage = pdu.GetMIME().GetEvent();
+    if (eventPackage == SIPSubscribe::MessageSummary) {
+      PTRACE(4, "SIP\tWork around Asterisk bug in message-summary event package.");
       SIPURL url_from (pdu.GetMIME().GetFrom());
       SIPURL url_to (pdu.GetMIME().GetTo());
       PString to = url_to.GetUserName() + "@" + url_from.GetHostName();
-      handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, event, PSafeReadOnly);
-      if (handler == NULL) {
-        SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, pdu);
-        return PFalse;
-      }
+      handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);
     }
   }
+
+  if (handler == NULL) {
+    PTRACE(3, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY");
+    SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, pdu);
+    return PFalse;
+  }
+
   if (!handler->OnReceivedNOTIFY(pdu))
     return PFalse;
 
@@ -784,10 +767,9 @@ PBoolean SIPEndPoint::IsRegistered(const PString & url)
 }
 
 
-PBoolean SIPEndPoint::IsSubscribed(SIPSubscribe::SubscribeType type,
-                               const PString & to) 
+PBoolean SIPEndPoint::IsSubscribed(const PString & eventPackage, const PString & to) 
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, type, PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);
   if (handler == NULL)
     return PFalse;
 
@@ -884,24 +866,22 @@ bool SIPEndPoint::UnregisterAll()
 }
 
 
-PBoolean SIPEndPoint::Subscribe(SIPSubscribe::SubscribeType & type,
-                            unsigned expire,
-                            const PString & to)
+PBoolean SIPEndPoint::Subscribe(const PString & eventPackage, unsigned expire, const PString & to)
 {
+  // Zero is special case of unsubscribe
+  if (expire == 0)
+    return Unsubscribe(eventPackage, to);
+
   // Create the SIPHandler structure
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, type, PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);
   
   // If there is already a request with this URL and method, 
   // then update it with the new information
-  if (handler != NULL) {
+  if (handler != NULL)
     handler->SetExpire(expire);      // Adjust the expire field
-  } 
-  // Otherwise create a new request with this method type
   else {
-    handler = new SIPSubscribeHandler(*this, 
-                                      type,
-                                      to,
-                                      expire);
+    // Otherwise create a new request with this method type
+    handler = new SIPSubscribeHandler(*this, eventPackage, to, expire);
     activeSIPHandlers.Append(handler);
   }
 
@@ -909,11 +889,10 @@ PBoolean SIPEndPoint::Subscribe(SIPSubscribe::SubscribeType & type,
 }
 
 
-PBoolean SIPEndPoint::Unsubscribe(SIPSubscribe::SubscribeType & type,
-                              const PString & to)
+PBoolean SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & to)
 {
   // Create the SIPHandler structure
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, type, PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);
   if (handler == NULL) {
     PTRACE(1, "SIP\tCould not find active SUBSCRIBE for " << to);
     return PFalse;
