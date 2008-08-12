@@ -874,18 +874,15 @@ class SIPSubscribe : public SIPTransaction
   public:
     /** Valid types for a presence event
      */
-    enum SubscribeType {
-      Unknown,
-      MessageSummary,
-      Presence
-    };
+    static const PString MessageSummary;
+    static const PString Presence;
 
     /** Valid types for a MWI
     */
     SIPSubscribe(
         SIPEndPoint & ep,
         OpalTransport & trans,
-        SIPSubscribe::SubscribeType & type,
+        const PString & eventPackage,
         const PStringList & routeSet,
         const SIPURL & targetAddress,
         const PString & remotePartyAddress,
