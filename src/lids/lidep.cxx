@@ -676,23 +676,12 @@ void OpalLineConnection::Monitor()
       // Ok, they went off hook, stop ringing
       line.Ring(0, NULL);
 
-      // If we are in alerting state then we are B-Party
-      if (GetPhase() == AlertingPhase) {
+      if (GetPhase() != AlertingPhase)
+        StartIncoming(); // We are A-party
+      else {
+        // If we are in alerting state then we are B-Party
         OnConnectedInternal();
         ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
-      }
-      else {
-        // Otherwise we are A-Party
-        if (!OnIncomingConnection(0, NULL)) {
-          Release(EndedByCallerAbort);
-          return;
-        }
-
-        PTRACE(3, "LID Con\tOutgoing connection " << *this << " routed to \"" << ownerCall.GetPartyB() << '"');
-        if (!ownerCall.OnSetUp(*this)) {
-          Release(EndedByNoAccept);
-          return;
-        }
       }
     }
   }
@@ -780,7 +769,8 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
     return;
   }
 
-  PTRACE(3, "LID\tIncoming call routed for " << *this);
+  PTRACE(3, "LID\tRouted to \"" << ownerCall.GetPartyB() << "\" the "
+         << (IsOriginating() ? "outgo" : "incom") << "ing connection " << *this);
   ownerCall.OnSetUp(*this);
 }
 
