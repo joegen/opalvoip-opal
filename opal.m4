@@ -76,25 +76,20 @@ dnl OPAL_DETERMINE_DEBUG
 dnl Determine desired debug level, default is -g -O2
 dnl Arguments: 
 dnl Return:    $DEBUG_CFLAGS
-dnl            $DEBUG_LEVEL
+dnl            $DEBUG_BUILD
 AC_DEFUN([OPAL_DETERMINE_DEBUG],
          [
-          AC_ARG_WITH([with-debug],
-                      [AC_HELP_STRING([--with-debug], [ full, symbols or none (default: symbols)])])
+          AC_ARG_ENABLE([debug],
+                        [AC_HELP_STRING([--enable-debug],[Enable debug build])],
+                        [DEBUG_BUILD=$enableval],
+                        [DEBUG_BUILD=no])
 
-          if test "x$with_debug" = xfull; then
+          if test "x${DEBUG_BUILD}" = xyes; then
             DEBUG_CFLAGS="-g3 -ggdb -O0 -D_DEBUG"
-            OPAL_MSG_CHECK([debugging support], [full])
           else
-            if test "x$with_debug" = xnone; then
-              DEBUG_CFLAGS="-O2"
-              OPAL_MSG_CHECK([debugging support], [none])
-            else
-              DEBUG_CFLAGS="-g -O2"
-              OPAL_MSG_CHECK([debugging support], [symbols])
-            fi
+            DEBUG_CFLAGS="-g -O2"
           fi
-          DEBUG_LEVEL="$with_debug"
+          OPAL_MSG_CHECK([Debugging support], [$DEBUG_BUILD])
          ])
 
 dnl OPAL_DETERMINE_LIBNAMES
@@ -114,12 +109,13 @@ dnl            $LIB_FILENAME_SHARED_MIN
 dnl            $LIB_FILENAME_SHARED_PAT
 AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
          [
-          if test "x${DEBUG_LEVEL}" = "xfull" ; then
+          if test "x${DEBUG_BUILD}" = "xyes" ; then
             OBJ_SUFFIX="d"
           else
             OBJ_SUFFIX="r"
           fi
           OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
+          LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
           LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
 
@@ -143,6 +139,7 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
           esac
 
           AC_SUBST(OPAL_OBJDIR)
+          AC_SUBST(LIB_NAME)
           AC_SUBST(LIB_FILENAME_SHARED)
           AC_SUBST(LIB_FILENAME_STATIC)
           AC_SUBST(LIB_FILENAME_SHARED_MAJ)
