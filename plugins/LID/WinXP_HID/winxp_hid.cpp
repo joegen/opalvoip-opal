@@ -124,11 +124,11 @@ class Context
                 UINT numDevs = waveOutGetNumDevs();
                 for (UINT i = 0; i < numDevs; i++) {
                   WAVEOUTCAPS caps;
-	          waveOutGetDevCaps(i, &caps, sizeof(caps));
+                  waveOutGetDevCaps(i, &caps, sizeof(caps));
                   if (strstr(caps.szPname, audio) != NULL) {
                     free(rawDevices);
 
-                    strcat(name, DevSeperatorStr);
+                    strcat(name, DevSeperatorStr "WindowsMultimedia:");
                     strcat(name, caps.szPname);
 
                     if (bufsize <= strlen(name))
