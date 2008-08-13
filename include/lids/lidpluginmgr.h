@@ -640,6 +640,8 @@ class OpalPluginLID : public OpalLineInterfaceDevice
 
   protected:
     PDECLARE_NOTIFIER(PThread, OpalPluginLID, TonePlayer);
+    bool StartTonePlayerThread(int tone);
+    void StopTonePlayerThread();
 
 #if PTRACING
     bool BadContext() const;
