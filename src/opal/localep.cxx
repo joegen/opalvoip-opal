@@ -135,21 +135,30 @@ bool OpalLocalEndPoint::OnWriteMediaFrame(const OpalLocalConnection & /*connecti
 
 bool OpalLocalEndPoint::OnReadMediaData(const OpalLocalConnection & /*connection*/,
                                         const OpalMediaStream & /*mediaStream*/,
-                                        void * /*data*/,
-                                        PINDEX /*size*/,
-                                        PINDEX & /*length*/)
+                                        void * data,
+                                        PINDEX size,
+                                        PINDEX & length)
 {
-  return false;
+  memset(data, 0, size);
+  length = size;
+  return true;
 }
 
 
 bool OpalLocalEndPoint::OnWriteMediaData(const OpalLocalConnection & /*connection*/,
                                          const OpalMediaStream & /*mediaStream*/,
                                          const void * /*data*/,
-                                         PINDEX /*length*/,
-                                         PINDEX & /*written*/)
+                                         PINDEX length,
+                                         PINDEX & written)
 {
-  return false;
+  written = length;
+  return true;
+}
+
+
+bool OpalLocalEndPoint::IsSynchronous() const
+{
+  return true;
 }
 
 
@@ -213,7 +222,7 @@ OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat &
                                                          unsigned sessionID,
                                                          PBoolean isSource)
 {
-  return new OpalLocalMediaStream(*this, mediaFormat, sessionID, isSource);
+  return new OpalLocalMediaStream(*this, mediaFormat, sessionID, isSource, endpoint.IsSynchronous());
 }
 
 
@@ -228,6 +237,7 @@ void OpalLocalConnection::AcceptIncoming()
 {
   if (LockReadWrite()) {
     OnConnectedInternal();
+    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
     UnlockReadWrite();
   }
 }
@@ -238,14 +248,20 @@ void OpalLocalConnection::AcceptIncoming()
 OpalLocalMediaStream::OpalLocalMediaStream(OpalLocalConnection & connection,
                                            const OpalMediaFormat & mediaFormat,
                                            unsigned sessionID,
-                                           bool isSource)
+                                           bool isSource,
+                                           bool isSynchronous)
   : OpalMediaStream(connection, mediaFormat, sessionID, isSource)
+  , OpalMediaStreamPacing(mediaFormat)
+  , m_isSynchronous(isSynchronous)
 {
 }
 
 
 PBoolean OpalLocalMediaStream::ReadPacket(RTP_DataFrame & frame)
 {
+  if (!isOpen)
+    return false;
+
   OpalLocalEndPoint & ep = dynamic_cast<OpalLocalEndPoint &>(connection.GetEndPoint());
   OpalLocalConnection & conn = dynamic_cast<OpalLocalConnection &>(connection);
   if (ep.OnReadMediaFrame(conn, *this, frame))
@@ -257,6 +273,9 @@ PBoolean OpalLocalMediaStream::ReadPacket(RTP_DataFrame & frame)
 
 PBoolean OpalLocalMediaStream::WritePacket(RTP_DataFrame & frame)
 {
+  if (!isOpen)
+    return false;
+
   OpalLocalEndPoint & ep = dynamic_cast<OpalLocalEndPoint &>(connection.GetEndPoint());
   OpalLocalConnection & conn = dynamic_cast<OpalLocalConnection &>(connection);
   if (ep.OnWriteMediaFrame(conn, *this, frame))
@@ -270,7 +289,12 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
 {
   OpalLocalEndPoint & ep = dynamic_cast<OpalLocalEndPoint &>(connection.GetEndPoint());
   OpalLocalConnection & conn = dynamic_cast<OpalLocalConnection &>(connection);
-  return ep.OnReadMediaData(conn, *this, data, size, length);
+  if (!ep.OnReadMediaData(conn, *this, data, size, length))
+    return false;
+
+  if (!m_isSynchronous)
+    Pace(true, size, marker);
+  return true;
 }
 
 
@@ -278,13 +302,18 @@ PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
 {
   OpalLocalEndPoint & ep = dynamic_cast<OpalLocalEndPoint &>(connection.GetEndPoint());
   OpalLocalConnection & conn = dynamic_cast<OpalLocalConnection &>(connection);
-  return ep.OnWriteMediaData(conn, *this, data, length, written);
+  if (!ep.OnWriteMediaData(conn, *this, data, length, written))
+    return false;
+
+  if (!m_isSynchronous)
+    Pace(false, written, marker);
+  return true;
 }
 
 
 PBoolean OpalLocalMediaStream::IsSynchronous() const
 {
-  return false;
+  return m_isSynchronous;
 }
 
 
