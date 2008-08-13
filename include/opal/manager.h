@@ -179,11 +179,9 @@ class OpalManager : public PObject
       const PString & token  ///<  Token for identifying call
     ) { return activeCalls.FindWithLock(token, PSafeReference) != NULL; }
 
-    /**Determine if a call is active.
-       Return the number of active calls.
+    /**Return the number of active calls.
       */
-    virtual unsigned GetCallsNumber()
-    { return activeCalls.GetSize(); }
+    PINDEX GetCallCount() const { return activeCalls.GetSize(); }
 
 
     /**Determine if a call is established.
