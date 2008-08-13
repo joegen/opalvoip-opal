@@ -394,13 +394,27 @@ PBoolean OpalPluginLID::RingLine(unsigned line, PINDEX nCadence, const unsigned 
           cadence.SetSize(times.GetSize());
           for (PINDEX i = 0; i < cadence.GetSize(); i++)
             cadence[i] = (unsigned)(times[i].AsReal()*1000);
-          return CHECK_FN(RingLine, (m_context, line, cadence.GetSize(), cadence, newFrequency)) == PluginLID_NoError;
+          nCadence = cadence.GetSize();
+          pattern = cadence;
+          frequency = newFrequency;
         }
       }
     }
   }
 
-  return CHECK_FN(RingLine, (m_context, line, nCadence, pattern, frequency)) == PluginLID_NoError;
+  switch (CHECK_FN(RingLine, (m_context, line, nCadence, pattern, frequency))) {
+    case PluginLID_UnimplementedFunction :
+      if (nCadence > 0)
+        return StartTonePlayerThread(RingTone+NumTones);
+      StopTonePlayerThread();
+      return true;
+
+    case PluginLID_NoError :
+      return true;
+
+    default : ;
+  }
+  return PFalse;
 }
 
 
@@ -924,10 +938,25 @@ bool OpalPluginLID::SetToneParameters(unsigned line,
 
 void OpalPluginLID::TonePlayer(PThread &, INT tone)
 {
+  // CHeck if we have NumTones added to value which means high volume output
+  // typically if handset has no ringer, then just hammer the speaker.
+  bool highVolume = tone > NumTones;
+  if (highVolume)
+    tone -= NumTones;
+
   if (!PAssert(tone < NumTones, PInvalidParameter))
     return;
 
   PTRACE(4, "LID Plugin\tStarting manual tone generation for \"" << m_callProgressTones[tone] << '"');
+
+  // Get old volume level, if can't then do not do high volume
+  unsigned oldVolume;
+  if (!m_player.GetVolume(oldVolume))
+    highVolume = false;
+
+  // Max out the volume level for player
+  if (highVolume)
+    m_player.SetVolume(100);
 
   PTones toneData;
   if (toneData.Generate(m_callProgressTones[tone])) {
@@ -943,7 +972,38 @@ void OpalPluginLID::TonePlayer(PThread &, INT tone)
   }
 
   m_player.Abort();
+
+  // If we adjusted the volume, then put it back
+  if (highVolume)
+    m_player.SetVolume(oldVolume);
+
   PTRACE(4, "LID Plugin\tEnded manual tone generation for \"" << m_callProgressTones[tone] << '"');
+}
+
+
+bool OpalPluginLID::StartTonePlayerThread(int tone)
+{
+  StopTonePlayerThread();
+
+  // Clear out extraneous signals
+  while (m_stopTone.Wait(0))
+    ;
+
+  // Start new tone thread
+  m_tonePlayer = PThread::Create(PCREATE_NOTIFIER(TonePlayer), tone, PThread::NoAutoDeleteThread, PThread::NormalPriority, "TonePlayer");
+  return m_tonePlayer != NULL;
+}
+
+
+void OpalPluginLID::StopTonePlayerThread()
+{
+  // Stop previous tone, if running
+  if (m_tonePlayer != NULL) {
+    m_stopTone.Signal();
+    m_tonePlayer->WaitForTermination(1000);
+    delete m_tonePlayer;
+    m_tonePlayer = NULL;
+  }
 }
 
 
@@ -954,20 +1014,7 @@ PBoolean OpalPluginLID::PlayTone(unsigned line, CallProgressTones tone)
 
   switch (CHECK_FN(PlayTone, (m_context, line, tone))) {
     case PluginLID_UnimplementedFunction :
-      // Stop previous tone, if running
-      if (m_tonePlayer != NULL) {
-        m_stopTone.Signal();
-        m_tonePlayer->WaitForTermination(1000);
-        delete m_tonePlayer;
-      }
-
-      // Clear out extraneous signals
-      while (m_stopTone.Wait(0))
-        ;
-
-      // Start new tone thread
-      m_tonePlayer = PThread::Create(PCREATE_NOTIFIER(TonePlayer), tone, PThread::NoAutoDeleteThread, PThread::NormalPriority, "TonePlayer");
-      return m_tonePlayer != NULL;
+      return StartTonePlayerThread(tone);
 
     case PluginLID_NoError :
       return PTrue;
@@ -991,13 +1038,7 @@ PBoolean OpalPluginLID::IsTonePlaying(unsigned line)
 
 PBoolean OpalPluginLID::StopTone(unsigned line)
 {
-  if (m_tonePlayer != NULL) {
-    m_stopTone.Signal();
-    m_tonePlayer->WaitForTermination(1000);
-    delete m_tonePlayer;
-    m_tonePlayer = NULL;
-    return true;
-  }
+  StopTonePlayerThread();
 
   switch (CHECK_FN(StopTone, (m_context, line))) {
     case PluginLID_UnimplementedFunction :
