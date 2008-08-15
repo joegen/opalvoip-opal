@@ -501,7 +501,7 @@ void OpalMediaStreamPacing::Pace(bool reading, PINDEX bytes, bool & marker)
   unsigned timeToWait = m_frameTime;
 
   if (m_isAudio)
-    m_frameTime *= (bytes + m_frameSize - 1) / m_frameSize;
+    timeToWait *= (bytes + m_frameSize - 1) / m_frameSize;
   else {
     if (reading)
       marker = true;
