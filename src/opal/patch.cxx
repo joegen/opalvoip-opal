@@ -574,6 +574,7 @@ static bool CannotTranscodeFrame(RTP_DataFrame::PayloadMapType & payloadTypeMap,
     if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN) {
       PTRACE(4, "Patch\tRemoving comfort noise frame with payload type " << pt);
       frame.SetPayloadSize(0);   // remove the payload because the transcoder has indicated it won't understand it
+      frame.SetPayloadType(codec.GetPayloadType(true));
       return true;
     }
   }
