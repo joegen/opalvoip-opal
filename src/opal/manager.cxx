@@ -575,7 +575,7 @@ bool OpalManager::OnRouteConnection(const PString & a_party,
       return true;
 
     // Recursively call with translated route
-    if (OnRouteConnection(a_party, route, call, options, stringOptions))
+    if (route != b_party && OnRouteConnection(a_party, route, call, options, stringOptions))
       return true;
   }
 }
