@@ -680,12 +680,14 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
                                         PINDEX stackSize)
 {
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
+    PTRACE(4, "InfLID\tSwitching off jitter buffer.");
     if (jitter != NULL) {
       delete jitter;
       jitter = NULL;
     }
   }
   else {
+    PTRACE(4, "InfLID\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
     SetIgnoreOutOfOrderPackets(false);
     if (jitter != NULL) 
       jitter->SetDelay(minJitterDelay, maxJitterDelay);
