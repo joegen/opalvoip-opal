@@ -627,7 +627,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
       localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
-      localMedia->SetDirection(m_holdToRemote >= eHoldOn ? recving ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive : recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
+      localMedia->SetDirection(m_holdToRemote >= eHoldOn ? SDPMediaDescription::SendOnly : (recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly));
     }
     else if (recving) {
       localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
