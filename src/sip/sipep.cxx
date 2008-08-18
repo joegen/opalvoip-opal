@@ -431,6 +431,8 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     work->ep        = this;
     work->pdu       = pdu;
     threadPool.AddWork(work);
+    if (pdu->GetMethod () == SIP_PDU::Method_INVITE)
+      SendResponse(SIP_PDU::Information_Trying, transport, *pdu);
     return true;
   }
 
