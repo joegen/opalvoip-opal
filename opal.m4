@@ -510,22 +510,24 @@ AC_DEFUN([OPAL_FIND_LIBDL],
               AC_MSG_RESULT(no)
             else
               AC_MSG_RESULT(yes)
-              if test `uname -s` = FreeBSD; then
-dnl              if test "x${target_os}" = "xfreebsd"; then
+              case "$target_os" in
+                freebsd*|openbsd*|netbsd*|darwin*)  
                   AC_CHECK_LIB([c],[dlopen],
                               [
                                 opal_libdl=yes
                                 DL_LIBS="-lc"
                               ],
                               [opal_libdl=no])
-              else
+                ;;
+                *)
                   AC_CHECK_LIB([dl],[dlopen],
                               [
                                 opal_libdl=yes
                                 DL_LIBS="-ldl"
                               ],
                               [opal_libdl=no])
-              fi
+                ;;
+               esac
             fi
           fi
           AS_IF([test AS_VAR_GET([opal_libdl]) = yes], [$1], [$2])[]
