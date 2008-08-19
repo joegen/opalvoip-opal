@@ -6,7 +6,7 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package -I/home/robertj/opal/include;
+package org.opalvoip;
 
 public final class OpalEchoCancelMode {
   public final static OpalEchoCancelMode OpalEchoCancelNoChange = new OpalEchoCancelMode("OpalEchoCancelNoChange");

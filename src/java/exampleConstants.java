@@ -6,7 +6,7 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package -I/home/robertj/opal/include;
+package org.opalvoip;
 
 public interface exampleConstants {
   public final static int OPAL_C_API_VERSION = exampleJNI.OPAL_C_API_VERSION_get();

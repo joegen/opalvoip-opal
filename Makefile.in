@@ -480,7 +480,7 @@ Makefile: Makefile.in configure
 ifdef JAVA_WRAPPER
 
 $(JAVA_WRAPPER): $(JAVA_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
-	swig -java -package -w451 -I$(OPAL_INCDIR) -o $@ $<
+	swig -java -package org.opalvoip -w451 -I$(OPAL_INCDIR) -o $@ $<
 
 endif
 
