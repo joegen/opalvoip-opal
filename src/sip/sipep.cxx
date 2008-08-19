@@ -189,9 +189,8 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
         case Options: 
           {
-            PStringList emptyRouteSet;
             SIPOptions options(*this, *transport, SIPURL(transport->GetRemoteAddress()).GetHostName());
-            options.Write(*transport, options.GetSendAddress(emptyRouteSet));
+            options.Write(*transport, transport->GetRemoteAddress());
           }
           break;
 
@@ -1139,12 +1138,10 @@ SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & 
 
 PBoolean SIPEndPoint::SendResponse(SIP_PDU::StatusCodes code, OpalTransport & transport, SIP_PDU & pdu)
 {
-  SIP_PDU response(pdu, code);
-  PString username = SIPURL(response.GetMIME().GetTo()).GetUserName();
+  PString username = SIPURL(pdu.GetMIME().GetTo()).GetUserName();
   SIPURL contact = GetLocalURL(transport, username);
   contact.Sanitise(SIPURL::ContactURI);
-  response.GetMIME().SetContact(contact);
-  return response.Write(transport, pdu.GetViaAddress(*this));
+  return pdu.SendResponse(transport, code, contact.AsString());
 }
 
 
