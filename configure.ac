@@ -24,6 +24,7 @@ video=yes
 rfc4175=yes
 g711plc=yes
 statistics=yes
+java=yes
 plugins=yes
 #zrtp=yes
 
@@ -790,6 +791,41 @@ else
 fi
 AC_SUBST(OPAL_SRTP)
 AC_SUBST(HAS_LIBSRTP)
+
+
+dnl ########################################################################
+dnl
+dnl Java interface support
+dnl 
+
+dnl MSWIN_DISPLAY     java,Java interface
+dnl MSWIN_CHECK_FILE  java,include\jni.h,OPAL_JAVA=1
+dnl MSWIN_DIR_SYMBOL  java,JAVA_DIR
+dnl MSWIN_CHECK_DIR   libsrtp,c:\Program Files\java\jdk*
+
+AC_ARG_ENABLE(java,
+              [  --disable-java         disable Java JNI support],
+              java=$enableval)
+
+OPAL_JAVA=
+if test "$java" = "yes" ; then
+  AC_CHECK_HEADERS(jni.h, OPAL_JAVA=1)
+  if test "${OPAL_JAVA:-unset}" == "unset" ; then
+    if test "${JDK_ROOT}:-unset" != "unset" ; then
+      AC_CHECK_FILE(${JDK_ROOT}/include/jni.h, OPAL_JAVA=1)
+      if test "${OPAL_JAVA:-unset}" != "unset" ; then
+        STDCCFLAGS="$STDCCFLAGS -I${JDK_ROOT}/include -I${JDK_ROOT}/include/linux"
+      fi
+    fi
+  fi
+
+  if test "${OPAL_JAVA:-unset}" != "unset" ; then
+    AC_DEFINE(OPAL_JAVA, 1, "JDK/JNI found")
+  fi
+else
+  AC_MSG_NOTICE(Java JNI disabled)
+fi
+AC_SUBST(OPAL_JAVA)
 
 
 dnl ########################################################################
