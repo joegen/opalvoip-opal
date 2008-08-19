@@ -639,16 +639,6 @@ class SIP_PDU : public PSafeObject
       */
     void AdjustVia(OpalTransport & transport);
     
-    /**Return the address from the via field. That address
-     * should be used to send responses to incoming PDUs.
-     */
-    OpalTransportAddress GetViaAddress(OpalEndPoint &);
-    
-    /**Return the address to which the request PDU should be sent
-     * according to the RFC, for a request in a dialog.
-     */
-    OpalTransportAddress GetSendAddress(const PStringList & routeSet);
-    
     /**Read PDU from the specified transport.
       */
     PBoolean Read(
@@ -660,6 +650,19 @@ class SIP_PDU : public PSafeObject
     PBoolean Write(
       OpalTransport & transport,
       const OpalTransportAddress & remoteAddress = OpalTransportAddress()
+    );
+
+    /**Write PDU as a response to a request.
+    */
+    bool SendResponse(
+      OpalTransport & transport,
+      StatusCodes code,
+      const char * contact = NULL,
+      const char * extra = NULL
+    );
+    bool SendResponse(
+      OpalTransport & transport,
+      SIP_PDU & response
     );
 
     /** Construct the PDU string to output.
@@ -696,7 +699,6 @@ class SIP_PDU : public PSafeObject
     SIPMIMEInfo mime;
     PString     entityBody;
 
-    OpalTransportAddress    lastTransportAddress;
     SDPSessionDescription * sdp;
 
     mutable PString transactionID;
@@ -802,6 +804,7 @@ class SIPTransaction : public SIP_PDU
     PTimer     completionTimer;
     PSyncPoint completed;
     PString    localInterface;
+    OpalTransportAddress m_remoteAddress;
 };
 
 
