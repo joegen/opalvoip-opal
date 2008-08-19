@@ -1707,15 +1707,24 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
 }
 
 
-OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
+bool SIP_PDU::SendResponse(OpalTransport & transport, StatusCodes code, const char * contact, const char * extra)
 {
+  SIP_PDU response(*this, code, contact, extra);
+  return SendResponse(transport, response);
+}
+
+
+bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response)
+{
+  OpalTransportAddress newAddress;
+
+  WORD defaultPort = transport.GetEndPoint().GetDefaultSignalPort();
+
   PStringList viaList = mime.GetViaList();
-
   if (viaList.GetSize() > 0) {
-
     PString viaAddress = viaList.front();
     PString proto = viaList.front();
-    PString viaPort = ep.GetDefaultSignalPort();
+    PString viaPort = defaultPort;
 
     PINDEX j = 0;
     // get the address specified in the Via
@@ -1749,37 +1758,24 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
     if (!param.IsEmpty()) 
       viaPort = param;
 
-    OpalTransportAddress address(viaAddress+":"+viaPort, ep.GetDefaultSignalPort(), (proto *= "TCP") ? "tcp$" : "udp$");
-    return address;
+    newAddress = OpalTransportAddress(viaAddress+":"+viaPort, defaultPort, (proto *= "TCP") ? "tcp$" : "udp$");
+  }
+  else {
+    // get Via from From field
+    PString from = mime.GetFrom();
+    PINDEX j = from.Find (';');
+    if (j != P_MAX_INDEX)
+      from = from.Left(j); // Remove all parameters
+    j = from.Find ('<');
+    if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
+      from += '>';
+
+    SIPURL url(from);
+
+    newAddress = OpalTransportAddress(url.GetHostName()+ ":" + PString(PString::Unsigned, url.GetPort()), defaultPort, "udp$");
   }
 
-  // get Via from From field
-  PString from = mime.GetFrom();
-  PINDEX j = from.Find (';');
-  if (j != P_MAX_INDEX)
-    from = from.Left(j); // Remove all parameters
-  j = from.Find ('<');
-  if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
-    from += '>';
-
-  SIPURL url(from);
-
-  OpalTransportAddress address(url.GetHostName()+ ":" + PString(PString::Unsigned, url.GetPort()), ep.GetDefaultSignalPort(), "udp$");
-  return address;
-}
-
-
-OpalTransportAddress SIP_PDU::GetSendAddress(const PStringList & routeSet)
-{
-  if (!routeSet.IsEmpty()) {
-
-    SIPURL firstRoute = routeSet.front();
-    if (firstRoute.GetParamVars().Contains("lr")) {
-      return OpalTransportAddress(firstRoute.GetHostAddress());
-    }
-  }
-
-  return OpalTransportAddress();
+  return response.Write(transport, newAddress);
 }
 
 
@@ -1959,15 +1955,10 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
   }
 
   if (!remoteAddress.IsEmpty() && !transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
-    // skip transport identifier
-    SIPURL hosturl = remoteAddress.Mid(remoteAddress.Find('$')+1);
-
-    // Do a DNS SRV lookup
-    hosturl.AdjustToDNS();
-
-    OpalTransportAddress actualRemoteAddress = hosturl.GetHostAddress();
-    PTRACE(3, "SIP\tAdjusting transport remote address to " << actualRemoteAddress);
-    transport.SetRemoteAddress(actualRemoteAddress);
+    if (!transport.SetRemoteAddress(remoteAddress)) {
+      PTRACE(1, "SIP\tCannot use remote address " << remoteAddress << " for tansport " << transport);
+      return false;
+    }
   }
 
   mime.SetCompactForm(false);
@@ -2128,18 +2119,25 @@ PBoolean SIPTransaction::Start()
   retry = 0;
   localInterface = transport.GetInterface();
 
+  /* Get the address to which the request PDU should be sent, according to
+     the RFC, for a request in a dialog. */
+  SIPURL destination = uri;
 
-  bool stat = false;
+  PStringList routeSet = GetMIME().GetRoute();
+  if (!routeSet.IsEmpty()) {
+    SIPURL firstRoute = routeSet.front();
+    if (firstRoute.GetParamVars().Contains("lr"))
+      destination = firstRoute;
+  }
 
-  PStringList routeSet = this->GetMIME().GetRoute(); // Get the route set from the PDU
+  // Do a DNS SRV lookup
+  destination.AdjustToDNS();
+
+  m_remoteAddress = destination.GetHostAddress();
+  PTRACE(3, "SIP\tTransaction remote address is " << m_remoteAddress);
 
   // Use the connection transport to send the request
-  if (connection != NULL) 
-    stat = connection->SendPDU(*this, GetSendAddress(routeSet));
-  else 
-    stat = Write(transport, GetSendAddress(routeSet));
-
-  if (!stat) {
+  if (!Write(transport, m_remoteAddress)) {
     SetTerminated(Terminated_TransportError);
     return PFalse;
   }
@@ -2193,7 +2191,7 @@ bool SIPTransaction::SendPDU(SIP_PDU & pdu)
 {
   PString oldInterface = transport.GetInterface();
   if (transport.SetInterface(localInterface) &&
-      pdu.Write(transport) &&
+      pdu.Write(transport, m_remoteAddress) &&
       transport.SetInterface(oldInterface))
     return true;
 
@@ -2308,7 +2306,7 @@ void SIPTransaction::OnRetry(PTimer &, INT)
 {
   PSafeLockReadWrite lock(*this);
 
-  if (!lock.IsLocked() || state != Trying)
+  if (!lock.IsLocked() || (state != Trying && state != Cancelling))
     return;
 
   retry++;

@@ -374,11 +374,6 @@ class SIPConnection : public OpalRTPConnection
       const SDPSessionDescription * sdp = NULL
     );
 
-    /**Send a PDU using the connection transport.
-     * The PDU is sent to the address given as argument.
-     */
-    virtual PBoolean SendPDU(SIP_PDU &, const OpalTransportAddress &);
-
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
