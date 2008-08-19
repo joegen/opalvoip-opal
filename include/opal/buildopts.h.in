@@ -222,6 +222,23 @@
 #endif
 
 
+/////////////////////////////////////////////////
+//
+// Java JNI support
+//
+#undef OPAL_JAVA
+
+#if OPAL_JAVA
+#if defined(_MSC_VER)
+
+#pragma include_alias(<jni.h>,    <@JAVA_DIR@/include/jni.h>)
+#pragma include_alias("jni_md.h", "@JAVA_DIR@/include/win32/jni_md.h")
+
+
+#endif
+#endif
+
+
 #endif // _OPAL_BUILDOPTS_H
 
 

@@ -801,7 +801,7 @@ dnl
 dnl MSWIN_DISPLAY     java,Java interface
 dnl MSWIN_CHECK_FILE  java,include\jni.h,OPAL_JAVA=1
 dnl MSWIN_DIR_SYMBOL  java,JAVA_DIR
-dnl MSWIN_CHECK_DIR   libsrtp,c:\Program Files\java\jdk*
+dnl MSWIN_CHECK_DIR   java,c:\Program Files\java\jdk*
 
 AC_ARG_ENABLE(java,
               [  --disable-java         disable Java JNI support],

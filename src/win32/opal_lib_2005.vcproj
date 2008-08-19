@@ -17622,6 +17622,558 @@
 				</File>
 			</Filter>
 		</Filter>
+		<Filter
+			Name="Java Files"
+			Filter=".java"
+			>
+			<File
+				RelativePath="..\java\example.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\exampleConstants.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\exampleJNI.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\java_msvc_wrapper.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+						PrecompiledHeaderFile=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+						PrecompiledHeaderFile=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 6 Professional SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+						PrecompiledHeaderFile=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 6 Professional SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\java\java_swig_wrapper.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 6 Standard SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 6 Professional SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 6 Standard SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 6 Professional SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 6 Standard SDK (ARMV4I)"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\java\opal.i"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 6 Professional SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 6 Professional SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.c"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\java\OpalCallEndReason.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalEchoCancelMode.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalMediaDataType.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalMediaStates.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalMessage.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalMessage_m_param.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalMessageType.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalParamCallCleared.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalParamGeneral.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalParamProtocol.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalParamRegistration.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalParamSetUpCall.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalRegistrationStates.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalSilenceDetectModes.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalStatusCallCleared.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalStatusIncomingCall.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalStatusMediaStream.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalStatusMessageWaiting.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalStatusRegistration.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\OpalStatusUserInput.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_int__int.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\SWIGTYPE_p_f_p_q_const__struct_OpalMessage__int.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\SWIGTYPE_p_OpalHandleStruct.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\SWIGTYPE_p_OpalMessage.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\SWIGTYPE_p_unsigned_int.java"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath="..\..\configure.ac"
 			>
