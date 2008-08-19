@@ -204,7 +204,7 @@ typedef union {
 extern "C" {
 #endif
 
-SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1C_1API_1VERSION_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OPAL_1C_1API_1VERSION_1get(JNIEnv *jenv, jclass jcls) {
   jint jresult = 0 ;
   int result;
   
@@ -217,7 +217,7 @@ SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1C_1AP
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalInitialise___(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalInitialise(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
   jlong jresult = 0 ;
   unsigned int *arg1 = (unsigned int *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -238,7 +238,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalInitia
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1INITIALISE_1FUNCTION_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1INITIALISE_1FUNCTION_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -251,7 +251,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1IN
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalShutDown___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalShutDown(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalHandle arg1 = (OpalHandle) 0 ;
   
   (void)jenv;
@@ -261,7 +261,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalShutDow
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1SHUTDOWN_1FUNCTION_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1SHUTDOWN_1FUNCTION_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -274,7 +274,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1SH
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalGetMessage___(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalGetMessage(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2) {
   jlong jresult = 0 ;
   OpalHandle arg1 = (OpalHandle) 0 ;
   unsigned int arg2 ;
@@ -290,7 +290,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalGetMes
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1GET_1MESSAGE_1FUNCTION_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1GET_1MESSAGE_1FUNCTION_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -303,7 +303,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1GE
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalSendMessage___(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalSendMessage(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2) {
   jlong jresult = 0 ;
   OpalHandle arg1 = (OpalHandle) 0 ;
   OpalMessage *arg2 = (OpalMessage *) 0 ;
@@ -319,7 +319,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalSendMe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1SEND_1MESSAGE_1FUNCTION_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1SEND_1MESSAGE_1FUNCTION_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -332,7 +332,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1SE
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalFreeMessage___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalFreeMessage(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalMessage *arg1 = (OpalMessage *) 0 ;
   
   (void)jenv;
@@ -342,7 +342,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalFreeMes
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1FREE_1MESSAGE_1FUNCTION_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1FREE_1MESSAGE_1FUNCTION_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -355,7 +355,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1FR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PREFIX_1H323_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1H323_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -368,7 +368,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PREFIX_1SIP_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1SIP_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -381,7 +381,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PREFIX_1IAX2_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1IAX2_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -394,7 +394,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PREFIX_1PCSS_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1PCSS_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -407,7 +407,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PREFIX_1LOCAL_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1LOCAL_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -420,7 +420,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PREFIX_1POTS_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1POTS_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -433,7 +433,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PREFIX_1PSTN_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1PSTN_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -446,7 +446,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PREFIX_1IVR_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1IVR_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -459,7 +459,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PREFIX_1ALL_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1ALL_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
@@ -472,7 +472,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OPAL_1PR
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1audioRecordDevice_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioRecordDevice_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -497,7 +497,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1audioRecordDevice_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioRecordDevice_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -512,7 +512,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1audioPlayerDevice_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioPlayerDevice_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -537,7 +537,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1audioPlayerDevice_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioPlayerDevice_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -552,7 +552,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1videoInputDevice_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoInputDevice_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -577,7 +577,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1videoInputDevice_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoInputDevice_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -592,7 +592,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1videoOutputDevice_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoOutputDevice_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -617,7 +617,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1videoOutputDevice_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoOutputDevice_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -632,7 +632,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1videoPreviewDevice_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoPreviewDevice_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -657,7 +657,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1videoPreviewDevice_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoPreviewDevice_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -672,7 +672,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1mediaOrder_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaOrder_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -697,7 +697,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1mediaOrder_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaOrder_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -712,7 +712,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1mediaMask_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaMask_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -737,7 +737,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1mediaMask_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaMask_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -752,7 +752,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1autoRxMedia_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1autoRxMedia_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -777,7 +777,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1autoRxMedia_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1autoRxMedia_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -792,7 +792,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1autoTxMedia_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1autoTxMedia_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -817,7 +817,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1autoTxMedia_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1autoTxMedia_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -832,7 +832,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1natRouter_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1natRouter_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -857,7 +857,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1natRouter_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1natRouter_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -872,7 +872,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1stunServer_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1stunServer_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -897,7 +897,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1stunServer_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1stunServer_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -912,7 +912,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1tcpPortBase_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1tcpPortBase_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -926,7 +926,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1tcpPortBase_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1tcpPortBase_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -941,7 +941,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1tcpPortMax_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1tcpPortMax_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -955,7 +955,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1tcpPortMax_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1tcpPortMax_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -970,7 +970,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1udpPortBase_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1udpPortBase_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -984,7 +984,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1udpPortBase_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1udpPortBase_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -999,7 +999,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1udpPortMax_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1udpPortMax_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1013,7 +1013,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1udpPortMax_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1udpPortMax_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1028,7 +1028,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1rtpPortBase_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpPortBase_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1042,7 +1042,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1rtpPortBase_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpPortBase_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1057,7 +1057,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1rtpPortMax_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpPortMax_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1071,7 +1071,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1rtpPortMax_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpPortMax_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1086,7 +1086,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1rtpTypeOfService_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpTypeOfService_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1100,7 +1100,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1rtpTypeOfService_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpTypeOfService_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1115,7 +1115,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1rtpMaxPayloadSize_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpMaxPayloadSize_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1129,7 +1129,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1rtpMaxPayloadSize_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpMaxPayloadSize_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1144,7 +1144,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1minAudioJitter_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1minAudioJitter_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1158,7 +1158,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1minAudioJitter_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1minAudioJitter_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1173,7 +1173,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1maxAudioJitter_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1maxAudioJitter_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1187,7 +1187,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1maxAudioJitter_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1maxAudioJitter_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1202,7 +1202,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1silenceDetectMode_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceDetectMode_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalSilenceDetectModes arg2 ;
   
@@ -1216,7 +1216,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1silenceDetectMode_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceDetectMode_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalSilenceDetectModes result;
@@ -1231,7 +1231,7 @@ SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1silenceThreshold_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceThreshold_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1245,7 +1245,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1silenceThreshold_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceThreshold_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1260,7 +1260,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1signalDeadband_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1signalDeadband_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1274,7 +1274,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1signalDeadband_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1signalDeadband_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1289,7 +1289,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1silenceDeadband_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceDeadband_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1303,7 +1303,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1silenceDeadband_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceDeadband_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1318,7 +1318,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1silenceAdaptPeriod_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceAdaptPeriod_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1332,7 +1332,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1silenceAdaptPeriod_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceAdaptPeriod_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1347,7 +1347,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1echoCancellation_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1echoCancellation_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalEchoCancelMode arg2 ;
   
@@ -1361,7 +1361,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1echoCancellation_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1echoCancellation_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalEchoCancelMode result;
@@ -1376,7 +1376,7 @@ SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1audioBuffers_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioBuffers_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int arg2 ;
   
@@ -1390,7 +1390,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1audioBuffers_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioBuffers_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   unsigned int result;
@@ -1405,7 +1405,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1mediaReadData_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaReadData_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalMediaDataFunction arg2 = (OpalMediaDataFunction) 0 ;
   
@@ -1419,7 +1419,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1mediaReadData_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaReadData_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalMediaDataFunction result;
@@ -1434,7 +1434,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1mediaWriteData_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaWriteData_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalMediaDataFunction arg2 = (OpalMediaDataFunction) 0 ;
   
@@ -1448,7 +1448,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1mediaWriteData_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaWriteData_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalMediaDataFunction result;
@@ -1463,7 +1463,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1mediaDataHeader_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaDataHeader_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalMediaDataType arg2 ;
   
@@ -1477,7 +1477,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1mediaDataHeader_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaDataHeader_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalMediaDataType result;
@@ -1492,7 +1492,7 @@ SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1messageAvailable_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1messageAvailable_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalMessageAvailableFunction arg2 = (OpalMessageAvailableFunction) 0 ;
   
@@ -1506,7 +1506,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamGeneral_1m_1messageAvailable_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1messageAvailable_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   OpalMessageAvailableFunction result;
@@ -1521,7 +1521,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamG
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalParamGeneral___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalParamGeneral(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalParamGeneral *result = 0 ;
   
@@ -1533,7 +1533,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalP
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalParamGeneral___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalParamGeneral(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   
   (void)jenv;
@@ -1544,7 +1544,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1prefix_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1prefix_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -1569,7 +1569,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamPr
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1prefix_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1prefix_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *result = 0 ;
@@ -1584,7 +1584,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1userName_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1userName_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -1609,7 +1609,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamPr
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1userName_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1userName_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *result = 0 ;
@@ -1624,7 +1624,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1displayName_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1displayName_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -1649,7 +1649,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamPr
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1displayName_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1displayName_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *result = 0 ;
@@ -1664,7 +1664,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1vendor_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1vendor_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -1689,7 +1689,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamPr
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1vendor_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1vendor_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *result = 0 ;
@@ -1704,7 +1704,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1name_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1name_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -1729,7 +1729,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamPr
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1name_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1name_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *result = 0 ;
@@ -1744,7 +1744,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1version_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1version_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -1769,7 +1769,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamPr
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1version_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1version_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *result = 0 ;
@@ -1784,7 +1784,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1t35CountryCode_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1t35CountryCode_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   unsigned int arg2 ;
   
@@ -1798,7 +1798,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamPr
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1t35CountryCode_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1t35CountryCode_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   unsigned int result;
@@ -1813,7 +1813,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamP
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1t35Extension_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1t35Extension_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   unsigned int arg2 ;
   
@@ -1827,7 +1827,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamPr
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1t35Extension_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1t35Extension_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   unsigned int result;
@@ -1842,7 +1842,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamP
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1manufacturerCode_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1manufacturerCode_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   unsigned int arg2 ;
   
@@ -1856,7 +1856,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamPr
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1manufacturerCode_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1manufacturerCode_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   unsigned int result;
@@ -1871,7 +1871,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamP
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1interfaceAddresses_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1interfaceAddresses_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -1896,7 +1896,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamPr
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamProtocol_1m_1interfaceAddresses_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1interfaceAddresses_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   char *result = 0 ;
@@ -1911,7 +1911,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalParamProtocol___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalParamProtocol(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalParamProtocol *result = 0 ;
   
@@ -1923,7 +1923,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalP
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalParamProtocol___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalParamProtocol(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
   
   (void)jenv;
@@ -1934,7 +1934,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1protocol_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1protocol_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -1959,7 +1959,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1protocol_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1protocol_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *result = 0 ;
@@ -1974,7 +1974,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1identifier_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1identifier_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -1999,7 +1999,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1identifier_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1identifier_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *result = 0 ;
@@ -2014,7 +2014,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1hostName_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1hostName_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2039,7 +2039,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1hostName_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1hostName_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *result = 0 ;
@@ -2054,7 +2054,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1authUserName_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1authUserName_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2079,7 +2079,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1authUserName_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1authUserName_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *result = 0 ;
@@ -2094,7 +2094,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1password_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1password_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2119,7 +2119,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1password_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1password_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *result = 0 ;
@@ -2134,7 +2134,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1adminEntity_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1adminEntity_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2159,7 +2159,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1adminEntity_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1adminEntity_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *result = 0 ;
@@ -2174,7 +2174,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1timeToLive_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1timeToLive_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   unsigned int arg2 ;
   
@@ -2188,7 +2188,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1timeToLive_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1timeToLive_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   unsigned int result;
@@ -2203,7 +2203,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamR
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1restoreTime_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1restoreTime_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   unsigned int arg2 ;
   
@@ -2217,7 +2217,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1restoreTime_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1restoreTime_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   unsigned int result;
@@ -2232,7 +2232,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamR
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1messageWaiting_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1messageWaiting_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   unsigned int arg2 ;
   
@@ -2246,7 +2246,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRe
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamRegistration_1m_1messageWaiting_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1messageWaiting_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   unsigned int result;
@@ -2261,7 +2261,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamR
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalParamRegistration___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalParamRegistration(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalParamRegistration *result = 0 ;
   
@@ -2273,7 +2273,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalP
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalParamRegistration___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalParamRegistration(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   
   (void)jenv;
@@ -2284,7 +2284,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusRegistration_1m_1protocol_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1protocol_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusRegistration *arg1 = (OpalStatusRegistration *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2309,7 +2309,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusRegistration_1m_1protocol_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1protocol_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusRegistration *arg1 = (OpalStatusRegistration *) 0 ;
   char *result = 0 ;
@@ -2324,7 +2324,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusRegistration_1m_1serverName_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1serverName_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusRegistration *arg1 = (OpalStatusRegistration *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2349,7 +2349,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusRegistration_1m_1serverName_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1serverName_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusRegistration *arg1 = (OpalStatusRegistration *) 0 ;
   char *result = 0 ;
@@ -2364,7 +2364,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusRegistration_1m_1error_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1error_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusRegistration *arg1 = (OpalStatusRegistration *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2389,7 +2389,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusR
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusRegistration_1m_1error_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1error_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusRegistration *arg1 = (OpalStatusRegistration *) 0 ;
   char *result = 0 ;
@@ -2404,7 +2404,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusRegistration_1m_1status_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1status_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   OpalStatusRegistration *arg1 = (OpalStatusRegistration *) 0 ;
   OpalRegistrationStates arg2 ;
   
@@ -2418,7 +2418,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusR
 }
 
 
-SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusRegistration_1m_1status_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1status_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   OpalStatusRegistration *arg1 = (OpalStatusRegistration *) 0 ;
   OpalRegistrationStates result;
@@ -2433,7 +2433,7 @@ SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusR
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalStatusRegistration___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalStatusRegistration(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalStatusRegistration *result = 0 ;
   
@@ -2445,7 +2445,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalS
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalStatusRegistration___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalStatusRegistration(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalStatusRegistration *arg1 = (OpalStatusRegistration *) 0 ;
   
   (void)jenv;
@@ -2456,7 +2456,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamSetUpCall_1m_1partyA_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1partyA_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamSetUpCall *arg1 = (OpalParamSetUpCall *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2481,7 +2481,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamSe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamSetUpCall_1m_1partyA_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1partyA_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamSetUpCall *arg1 = (OpalParamSetUpCall *) 0 ;
   char *result = 0 ;
@@ -2496,7 +2496,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamSetUpCall_1m_1partyB_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1partyB_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamSetUpCall *arg1 = (OpalParamSetUpCall *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2521,7 +2521,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamSe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamSetUpCall_1m_1partyB_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1partyB_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamSetUpCall *arg1 = (OpalParamSetUpCall *) 0 ;
   char *result = 0 ;
@@ -2536,7 +2536,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamSetUpCall_1m_1callToken_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamSetUpCall *arg1 = (OpalParamSetUpCall *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2561,7 +2561,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamSe
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamSetUpCall_1m_1callToken_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1callToken_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamSetUpCall *arg1 = (OpalParamSetUpCall *) 0 ;
   char *result = 0 ;
@@ -2576,7 +2576,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalParamSetUpCall___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalParamSetUpCall(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalParamSetUpCall *result = 0 ;
   
@@ -2588,7 +2588,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalP
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalParamSetUpCall___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalParamSetUpCall(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalParamSetUpCall *arg1 = (OpalParamSetUpCall *) 0 ;
   
   (void)jenv;
@@ -2599,7 +2599,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1callToken_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2624,7 +2624,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusI
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1callToken_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1callToken_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *result = 0 ;
@@ -2639,7 +2639,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1localAddress_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1localAddress_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2664,7 +2664,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusI
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1localAddress_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1localAddress_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *result = 0 ;
@@ -2679,7 +2679,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1remoteAddress_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remoteAddress_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2704,7 +2704,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusI
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1remoteAddress_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remoteAddress_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *result = 0 ;
@@ -2719,7 +2719,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1remotePartyNumber_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remotePartyNumber_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2744,7 +2744,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusI
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1remotePartyNumber_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remotePartyNumber_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *result = 0 ;
@@ -2759,7 +2759,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1remoteDisplayName_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remoteDisplayName_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2784,7 +2784,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusI
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1remoteDisplayName_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remoteDisplayName_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *result = 0 ;
@@ -2799,7 +2799,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1calledAddress_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1calledAddress_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2824,7 +2824,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusI
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1calledAddress_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1calledAddress_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *result = 0 ;
@@ -2839,7 +2839,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1calledPartyNumber_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1calledPartyNumber_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2864,7 +2864,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusI
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusIncomingCall_1m_1calledPartyNumber_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1calledPartyNumber_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   char *result = 0 ;
@@ -2879,7 +2879,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalStatusIncomingCall___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalStatusIncomingCall(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalStatusIncomingCall *result = 0 ;
   
@@ -2891,7 +2891,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalS
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalStatusIncomingCall___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalStatusIncomingCall(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalStatusIncomingCall *arg1 = (OpalStatusIncomingCall *) 0 ;
   
   (void)jenv;
@@ -2902,7 +2902,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMediaStream_1m_1callToken_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2927,7 +2927,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusM
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMediaStream_1m_1callToken_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1callToken_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
   char *result = 0 ;
@@ -2942,7 +2942,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMediaStream_1m_1identifier_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1identifier_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -2967,7 +2967,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusM
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMediaStream_1m_1identifier_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1identifier_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
   char *result = 0 ;
@@ -2982,7 +2982,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMediaStream_1m_1type_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1type_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3007,7 +3007,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusM
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMediaStream_1m_1type_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1type_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
   char *result = 0 ;
@@ -3022,7 +3022,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMediaStream_1m_1format_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1format_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3047,7 +3047,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusM
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMediaStream_1m_1format_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1format_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
   char *result = 0 ;
@@ -3062,7 +3062,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMediaStream_1m_1state_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1state_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
   OpalMediaStates arg2 ;
   
@@ -3076,7 +3076,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusM
 }
 
 
-SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMediaStream_1m_1state_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1state_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
   OpalMediaStates result;
@@ -3091,7 +3091,7 @@ SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusM
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalStatusMediaStream___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalStatusMediaStream(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalStatusMediaStream *result = 0 ;
   
@@ -3103,7 +3103,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalS
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalStatusMediaStream___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalStatusMediaStream(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
   
   (void)jenv;
@@ -3114,7 +3114,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusUserInput_1m_1callToken_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusUserInput *arg1 = (OpalStatusUserInput *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3139,7 +3139,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusU
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusUserInput_1m_1callToken_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1callToken_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusUserInput *arg1 = (OpalStatusUserInput *) 0 ;
   char *result = 0 ;
@@ -3154,7 +3154,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusUserInput_1m_1userInput_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1userInput_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusUserInput *arg1 = (OpalStatusUserInput *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3179,7 +3179,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusU
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusUserInput_1m_1userInput_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1userInput_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusUserInput *arg1 = (OpalStatusUserInput *) 0 ;
   char *result = 0 ;
@@ -3194,7 +3194,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusUserInput_1m_1duration_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1duration_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   OpalStatusUserInput *arg1 = (OpalStatusUserInput *) 0 ;
   unsigned int arg2 ;
   
@@ -3208,7 +3208,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusU
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusUserInput_1m_1duration_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1duration_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalStatusUserInput *arg1 = (OpalStatusUserInput *) 0 ;
   unsigned int result;
@@ -3223,7 +3223,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatus
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalStatusUserInput___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalStatusUserInput(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalStatusUserInput *result = 0 ;
   
@@ -3235,7 +3235,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalS
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalStatusUserInput___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalStatusUserInput(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalStatusUserInput *arg1 = (OpalStatusUserInput *) 0 ;
   
   (void)jenv;
@@ -3246,7 +3246,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMessageWaiting_1m_1party_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1party_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusMessageWaiting *arg1 = (OpalStatusMessageWaiting *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3271,7 +3271,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusM
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMessageWaiting_1m_1party_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1party_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusMessageWaiting *arg1 = (OpalStatusMessageWaiting *) 0 ;
   char *result = 0 ;
@@ -3286,7 +3286,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMessageWaiting_1m_1type_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1type_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusMessageWaiting *arg1 = (OpalStatusMessageWaiting *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3311,7 +3311,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusM
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMessageWaiting_1m_1type_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1type_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusMessageWaiting *arg1 = (OpalStatusMessageWaiting *) 0 ;
   char *result = 0 ;
@@ -3326,7 +3326,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMessageWaiting_1m_1extraInfo_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1extraInfo_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusMessageWaiting *arg1 = (OpalStatusMessageWaiting *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3351,7 +3351,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusM
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusMessageWaiting_1m_1extraInfo_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1extraInfo_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusMessageWaiting *arg1 = (OpalStatusMessageWaiting *) 0 ;
   char *result = 0 ;
@@ -3366,7 +3366,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalStatusMessageWaiting___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalStatusMessageWaiting(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalStatusMessageWaiting *result = 0 ;
   
@@ -3378,7 +3378,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalS
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalStatusMessageWaiting___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalStatusMessageWaiting(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalStatusMessageWaiting *arg1 = (OpalStatusMessageWaiting *) 0 ;
   
   (void)jenv;
@@ -3389,7 +3389,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusCallCleared_1m_1callToken_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusCallCleared_1m_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusCallCleared *arg1 = (OpalStatusCallCleared *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3414,7 +3414,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusC
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusCallCleared_1m_1callToken_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusCallCleared_1m_1callToken_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusCallCleared *arg1 = (OpalStatusCallCleared *) 0 ;
   char *result = 0 ;
@@ -3429,7 +3429,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusCallCleared_1m_1reason_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusCallCleared_1m_1reason_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusCallCleared *arg1 = (OpalStatusCallCleared *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3454,7 +3454,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusC
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStatusCallCleared_1m_1reason_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalStatusCallCleared_1m_1reason_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalStatusCallCleared *arg1 = (OpalStatusCallCleared *) 0 ;
   char *result = 0 ;
@@ -3469,7 +3469,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalStat
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalStatusCallCleared___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalStatusCallCleared(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalStatusCallCleared *result = 0 ;
   
@@ -3481,7 +3481,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalS
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalStatusCallCleared___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalStatusCallCleared(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalStatusCallCleared *arg1 = (OpalStatusCallCleared *) 0 ;
   
   (void)jenv;
@@ -3492,7 +3492,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalCallEndedWithQ931Code_1get___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OpalCallEndedWithQ931Code_1get(JNIEnv *jenv, jclass jcls) {
   jint jresult = 0 ;
   enum OpalCallEndReason result;
   
@@ -3504,7 +3504,7 @@ SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalCallEnd
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamCallCleared_1m_1callToken_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamCallCleared_1m_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3529,7 +3529,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamCa
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamCallCleared_1m_1callToken_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamCallCleared_1m_1callToken_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
   char *result = 0 ;
@@ -3544,7 +3544,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalPara
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamCallCleared_1m_1reason_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamCallCleared_1m_1reason_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
   OpalCallEndReason arg2 ;
   
@@ -3558,7 +3558,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamCa
 }
 
 
-SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamCallCleared_1m_1reason_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OpalParamCallCleared_1m_1reason_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
   OpalCallEndReason result;
@@ -3573,7 +3573,7 @@ SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalParamCa
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalParamCallCleared___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalParamCallCleared(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalParamCallCleared *result = 0 ;
   
@@ -3585,7 +3585,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalP
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalParamCallCleared___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalParamCallCleared(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
   
   (void)jenv;
@@ -3596,7 +3596,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1type_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jint jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1type_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jint jarg2) {
   struct OpalMessage *arg1 = (struct OpalMessage *) 0 ;
   OpalMessageType arg2 ;
   
@@ -3609,7 +3609,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1type_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1type_1get(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   jint jresult = 0 ;
   struct OpalMessage *arg1 = (struct OpalMessage *) 0 ;
   OpalMessageType result;
@@ -3623,7 +3623,7 @@ SWIGEXPORT jint JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1get(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   jlong jresult = 0 ;
   struct OpalMessage *arg1 = (struct OpalMessage *) 0 ;
   OpalMessage_m_param *result = 0 ;
@@ -3637,7 +3637,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalMessage___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalMessage(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   struct OpalMessage *result = 0 ;
   
@@ -3649,7 +3649,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalM
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalMessage___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalMessage(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   struct OpalMessage *arg1 = (struct OpalMessage *) 0 ;
   
   (void)jenv;
@@ -3660,7 +3660,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1Opa
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1commandError_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1commandError_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3685,7 +3685,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1commandError_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1commandError_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   char *result = 0 ;
@@ -3700,7 +3700,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMess
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1general_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1general_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalParamGeneral *arg2 = (OpalParamGeneral *) 0 ;
   
@@ -3715,7 +3715,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1general_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1general_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalParamGeneral *result = 0 ;
@@ -3730,7 +3730,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1protocol_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1protocol_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalParamProtocol *arg2 = (OpalParamProtocol *) 0 ;
   
@@ -3745,7 +3745,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1protocol_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1protocol_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalParamProtocol *result = 0 ;
@@ -3760,7 +3760,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1registrationInfo_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1registrationInfo_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalParamRegistration *arg2 = (OpalParamRegistration *) 0 ;
   
@@ -3775,7 +3775,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1registrationInfo_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1registrationInfo_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalParamRegistration *result = 0 ;
@@ -3790,7 +3790,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1registrationStatus_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1registrationStatus_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusRegistration *arg2 = (OpalStatusRegistration *) 0 ;
   
@@ -3805,7 +3805,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1registrationStatus_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1registrationStatus_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusRegistration *result = 0 ;
@@ -3820,7 +3820,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1callSetUp_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callSetUp_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalParamSetUpCall *arg2 = (OpalParamSetUpCall *) 0 ;
   
@@ -3835,7 +3835,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1callSetUp_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callSetUp_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalParamSetUpCall *result = 0 ;
@@ -3850,7 +3850,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1callToken_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -3875,7 +3875,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1callToken_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callToken_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   char *result = 0 ;
@@ -3890,7 +3890,7 @@ SWIGEXPORT jstring JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMess
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1incomingCall_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1incomingCall_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusIncomingCall *arg2 = (OpalStatusIncomingCall *) 0 ;
   
@@ -3905,7 +3905,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1incomingCall_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1incomingCall_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusIncomingCall *result = 0 ;
@@ -3920,7 +3920,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1userInput_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1userInput_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusUserInput *arg2 = (OpalStatusUserInput *) 0 ;
   
@@ -3935,7 +3935,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1userInput_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1userInput_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusUserInput *result = 0 ;
@@ -3950,7 +3950,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1messageWaiting_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1messageWaiting_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusMessageWaiting *arg2 = (OpalStatusMessageWaiting *) 0 ;
   
@@ -3965,7 +3965,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1messageWaiting_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1messageWaiting_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusMessageWaiting *result = 0 ;
@@ -3980,7 +3980,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1callCleared_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callCleared_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusCallCleared *arg2 = (OpalStatusCallCleared *) 0 ;
   
@@ -3995,7 +3995,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1callCleared_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callCleared_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusCallCleared *result = 0 ;
@@ -4010,7 +4010,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1clearCall_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1clearCall_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalParamCallCleared *arg2 = (OpalParamCallCleared *) 0 ;
   
@@ -4025,7 +4025,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1clearCall_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1clearCall_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalParamCallCleared *result = 0 ;
@@ -4040,7 +4040,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1mediaStream_1set___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1mediaStream_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusMediaStream *arg2 = (OpalStatusMediaStream *) 0 ;
   
@@ -4055,7 +4055,7 @@ SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessage_1m_1param_1m_1mediaStream_1get___(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1mediaStream_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   OpalStatusMediaStream *result = 0 ;
@@ -4070,7 +4070,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_OpalMessag
 }
 
 
-SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalMessage_1m_1param___(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalMessage_1m_1param(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalMessage_m_param *result = 0 ;
   
@@ -4082,7 +4082,7 @@ SWIGEXPORT jlong JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_new_1OpalM
 }
 
 
-SWIGEXPORT void JNICALL Java_sIdhomedrobertjdopaldinclude_exampleJNI_delete_1OpalMessage_1m_1param___(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalMessage_1m_1param(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
   
   (void)jenv;
