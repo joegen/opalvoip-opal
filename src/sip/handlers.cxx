@@ -225,8 +225,8 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
       return false;
   }
 
-  // First time, try every interface
-  if (transport->GetInterface().IsEmpty())
+  // Restoring or first time, try every interface
+  if (s == Restoring || transport->GetInterface().IsEmpty())
     return transport->WriteConnect(WriteSIPHandler, this);
 
   // We contacted the server on an interface last time, assume it still works!
