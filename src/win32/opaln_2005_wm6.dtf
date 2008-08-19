@@ -35013,10 +35013,5 @@ EXPORTS
     alaw2ulaw @35011 NONAME
     linear2alaw @35012 NONAME
     linear2ulaw @35013 NONAME
-    OpalFreeMessage @5
-    OpalGetMessage @3
-    OpalInitialise @35014 NONAME
-    OpalSendMessage @4
-    OpalShutDown @2
     ulaw2alaw @35015 NONAME
     ulaw2linear @35016 NONAME

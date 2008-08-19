@@ -41867,10 +41867,5 @@ EXPORTS
     alaw2ulaw @41865 NONAME
     linear2alaw @41866 NONAME
     linear2ulaw @41867 NONAME
-    OpalFreeMessage @5
-    OpalGetMessage @3
-    OpalInitialise @41868 NONAME
-    OpalSendMessage @4
-    OpalShutDown @2
     ulaw2alaw @41869 NONAME
     ulaw2linear @41870 NONAME
