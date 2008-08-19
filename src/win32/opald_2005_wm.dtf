@@ -42251,10 +42251,5 @@ EXPORTS
     alaw2ulaw @42249 NONAME
     linear2alaw @42250 NONAME
     linear2ulaw @42251 NONAME
-    OpalFreeMessage @5
-    OpalGetMessage @3
-    OpalInitialise @42252 NONAME
-    OpalSendMessage @4
-    OpalShutDown @2
     ulaw2alaw @42253 NONAME
     ulaw2linear @42254 NONAME
