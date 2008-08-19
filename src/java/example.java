@@ -6,7 +6,7 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package -I/home/robertj/opal/include;
+package org.opalvoip;
 
 public class example implements exampleConstants {
   public static SWIGTYPE_p_OpalHandleStruct OpalInitialise(SWIGTYPE_p_unsigned_int version, String options) {

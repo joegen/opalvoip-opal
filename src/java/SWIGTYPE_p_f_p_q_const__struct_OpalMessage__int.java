@@ -6,7 +6,7 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package -I/home/robertj/opal/include;
+package org.opalvoip;
 
 public class SWIGTYPE_p_f_p_q_const__struct_OpalMessage__int {
   private long swigCPtr;
