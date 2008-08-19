@@ -330,6 +330,20 @@ SOURCES += $(OPAL_SRCDIR)/rtp/srtp.cxx \
 endif
 
 
+####################################################
+# Java interface
+
+ifeq ($(OPAL_JAVA), 1)
+
+JAVA_SRCDIR      = $(OPAL_SRCDIR)/java
+JAVA_WRAPPER     = $(JAVA_SRCDIR)/java_swig_wrapper.c
+
+VPATH_C         += $(JAVA_SRCDIR)
+SOURCES         += $(JAVA_WRAPPER)
+
+endif
+
+
 ##################
 # T.38 Fax
 
@@ -461,6 +475,14 @@ Makefile: Makefile.in configure
 	@echo Makefile is not up to date, is a ./configure necessary?
 	@echo "*******************************************************"
 	@false
+
+
+ifdef JAVA_WRAPPER
+
+$(JAVA_WRAPPER): $(JAVA_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
+	swig -java -package -w451 -I$(OPAL_INCDIR) -o $@ $<
+
+endif
 
 
 #### Install targets
