@@ -418,9 +418,20 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   if (PAssertNULL(pdu) == NULL)
     return PFalse;
 
-  // Adjust the Via list 
-  if (pdu->GetMethod() != SIP_PDU::NumMethods)
-    pdu->AdjustVia(transport);
+  // Adjust the Via list and send a trying in case it takes us a while to process request
+  switch (pdu->GetMethod()) {
+    default :
+      SendResponse(SIP_PDU::Information_Trying, transport, *pdu);
+      // Do next case
+
+    case SIP_PDU::Method_ACK :
+    case SIP_PDU::Method_CANCEL :
+      pdu->AdjustVia(transport);
+      // Do next case
+
+    case SIP_PDU::NumMethods :
+      break;
+  }
 
   // pass message off to thread pool
   PString callID = pdu->GetMIME().GetCallID();
@@ -430,8 +441,6 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     work->ep        = this;
     work->pdu       = pdu;
     threadPool.AddWork(work);
-    if (pdu->GetMethod () == SIP_PDU::Method_INVITE)
-      SendResponse(SIP_PDU::Information_Trying, transport, *pdu);
     return true;
   }
 
@@ -548,10 +557,6 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
 
 PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 {
-  // send provisional response here because creating the connection can take a long time
-  // on some systems
-  SendResponse(SIP_PDU::Information_Trying, transport, *request);
-
   SIPMIMEInfo & mime = request->GetMIME();
 
   // parse the incoming To field, and check if we accept incoming calls for this address

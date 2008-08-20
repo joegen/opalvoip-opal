@@ -1588,9 +1588,6 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
   PTRACE(3, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
 
-  // always send Trying for Re-INVITE
-  SendInviteResponse(SIP_PDU::Information_Trying);
-
   remoteFormatList.RemoveAll();
   SDPSessionDescription sdpOut(GetLocalAddress());
 
