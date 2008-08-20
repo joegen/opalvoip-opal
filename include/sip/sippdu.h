@@ -597,7 +597,8 @@ class SIP_PDU : public PSafeObject
       const SIP_PDU & request,
       StatusCodes code,
       const char * contact = NULL,
-      const char * extra = NULL
+      const char * extra = NULL,
+      const SDPSessionDescription * sdp = NULL
     );
     SIP_PDU(const SIP_PDU &);
     SIP_PDU & operator=(const SIP_PDU &);
@@ -682,14 +683,10 @@ class SIP_PDU : public PSafeObject
     const PString & GetInfo() const          { return info; }
     const SIPMIMEInfo & GetMIME() const      { return mime; }
           SIPMIMEInfo & GetMIME()            { return mime; }
-    PBoolean HasSDP() const                      { return sdp != NULL; }
-    SDPSessionDescription & GetSDP() const   { return *PAssertNULL(sdp); }
     void SetURI(const SIPURL & newuri)       { uri = newuri; }
-    void SetSDP(SDPSessionDescription * s)   { sdp = s; }
-    void SetSDP(const SDPSessionDescription & s) { sdp = new SDPSessionDescription(s); }
+    SDPSessionDescription * GetSDP();
 
   protected:
-    
     Methods     method;                 // Request type, ==NumMethods for Response
     StatusCodes statusCode;
     SIPURL      uri;                    // display name & URI, no tag
@@ -699,7 +696,7 @@ class SIP_PDU : public PSafeObject
     SIPMIMEInfo mime;
     PString     entityBody;
 
-    SDPSessionDescription * sdp;
+    SDPSessionDescription * m_SDP;
 
     mutable PString transactionID;
 };
