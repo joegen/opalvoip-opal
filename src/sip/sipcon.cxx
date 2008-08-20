@@ -469,10 +469,11 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
     needReINVITE = false;
 
   // get the remote media formats, if any
-  if (isAnswerSDP && originalInvite != NULL && originalInvite->HasSDP()) {
-    const SDPMediaDescriptionArray & mediaDescriptions = originalInvite->GetSDP().GetMediaDescriptions();
+  SDPSessionDescription * sdp;
+  if (isAnswerSDP && originalInvite != NULL && (sdp = originalInvite->GetSDP()) != NULL) {
+    const SDPMediaDescriptionArray & mediaDescriptions = sdp->GetMediaDescriptions();
     for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) 
-      sdpOK |= AnswerSDPMediaDescription(originalInvite->GetSDP(), i+1, sdpOut);
+      sdpOK |= AnswerSDPMediaDescription(*sdp, i+1, sdpOut);
 #if OPAL_T38_CAPABILITY
      remoteFormatList += OpalT38;
 #endif
@@ -912,12 +913,12 @@ OpalTransportAddress SIPConnection::GetLocalAddress(WORD port) const
 
 OpalMediaFormatList SIPConnection::GetMediaFormats() const
 {
-  if (remoteFormatList.IsEmpty() && originalInvite != NULL) {
+  SDPSessionDescription * sdp;
+  if (remoteFormatList.IsEmpty() && originalInvite != NULL && (sdp = originalInvite->GetSDP()) != NULL) {
     SIPConnection * writableThis = const_cast<SIPConnection *>(this);
     // Extract the media from SDP into our remote capabilities list
-    SDPSessionDescription & sdp = originalInvite->GetSDP();
-    for (PINDEX sessionID = 1; sessionID <= sdp.GetMediaDescriptions().GetSize(); ++sessionID) {
-      SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByIndex(sessionID);
+    for (PINDEX sessionID = 1; sessionID <= sdp->GetMediaDescriptions().GetSize(); ++sessionID) {
+      SDPMediaDescription * mediaDescription = sdp->GetMediaDescriptionByIndex(sessionID);
       writableThis->remoteFormatList += mediaDescription->GetMediaFormats();
       OpalTransportAddress dummy;
       writableThis->OnUseRTPSession(sessionID, mediaDescription->GetMediaType(), mediaDescription->GetTransportAddress(), dummy);
@@ -1313,7 +1314,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     routeSet.AppendString(*route);
 
   // Save the sessions etc we are actually using of all the forked INVITES sent
-  if (response.HasSDP())
+  if (response.GetSDP() != NULL)
     m_rtpSessions.CopyToMaster(((SIPInvite &)transaction).GetSessionManager());
 
   m_dialogFrom = transaction.GetMIME().GetFrom();
@@ -1593,12 +1594,11 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
 
   // get the remote media formats, if any
-  if (originalInvite->HasSDP()) {
-    SDPSessionDescription & sdpIn = originalInvite->GetSDP();
-
+  SDPSessionDescription * sdpIn = originalInvite->GetSDP();
+  if (sdpIn != NULL) {
     // The Re-INVITE can be sent to change the RTP Session parameters,
     // the current codecs, or to put the call on hold
-    if (sdpIn.IsHold()) {
+    if (sdpIn->IsHold()) {
       PTRACE(3, "SIP\tRemote hold detected");
       m_holdFromRemote = true;
       OnHold(true, true);
@@ -1967,16 +1967,15 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
 void SIPConnection::OnReceivedSDP(SIP_PDU & request)
 {
-  if (!request.HasSDP())
+  SDPSessionDescription * sdp = request.GetSDP();
+  if (sdp == NULL)
     return;
 
   needReINVITE = false;
 
-  SDPSessionDescription & sdp = request.GetSDP();
-
   bool ok = false;
-  for (PINDEX i = 0; i < sdp.GetMediaDescriptions().GetSize(); ++i) 
-    ok |= OnReceivedSDPMediaDescription(sdp, i+1);
+  for (PINDEX i = 0; i < sdp->GetMediaDescriptions().GetSize(); ++i) 
+    ok |= OnReceivedSDPMediaDescription(*sdp, i+1);
 
   remoteFormatList += OpalRFC2833;
 
@@ -2121,9 +2120,7 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
   if (originalInvite == NULL)
     return true;
 
-  SIP_PDU response(*originalInvite, code, contact, extra);
-  if (NULL != sdp)
-    response.SetSDP(*sdp);
+  SIP_PDU response(*originalInvite, code, contact, extra, sdp);
   response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
 
   if (response.GetStatusCode() >= 200) {

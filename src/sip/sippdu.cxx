@@ -1464,13 +1464,14 @@ SIP_PDU::SIP_PDU(Methods method,
 SIP_PDU::SIP_PDU(const SIP_PDU & request, 
                  StatusCodes code, 
                  const char * contact,
-                 const char * extra)
+                 const char * extra,
+                 const SDPSessionDescription * sdp)
 {
   method       = NumMethods;
   statusCode   = code;
   versionMajor = request.GetVersionMajor();
   versionMinor = request.GetVersionMinor();
-  sdp = NULL;
+  m_SDP = sdp != NULL ? new SDPSessionDescription(*sdp) : NULL;
 
   // add mandatory fields to response (RFC 2543, 11.2)
   const SIPMIMEInfo & requestMIME = request.GetMIME();
@@ -1502,19 +1503,16 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
 
 
 SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
-  : method(pdu.method),
-    statusCode(pdu.statusCode),
-    uri(pdu.uri),
-    versionMajor(pdu.versionMajor),
-    versionMinor(pdu.versionMinor),
-    info(pdu.info),
-    mime(pdu.mime),
-    entityBody(pdu.entityBody)
+  : method(pdu.method)
+  , statusCode(pdu.statusCode)
+  , uri(pdu.uri)
+  , versionMajor(pdu.versionMajor)
+  , versionMinor(pdu.versionMinor)
+  , info(pdu.info)
+  , mime(pdu.mime)
+  , entityBody(pdu.entityBody)
+  , m_SDP(pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL)
 {
-  if (pdu.sdp != NULL)
-    sdp = new SDPSessionDescription(*pdu.sdp);
-  else
-    sdp = NULL;
 }
 
 
@@ -1529,11 +1527,8 @@ SIP_PDU & SIP_PDU::operator=(const SIP_PDU & pdu)
   mime = pdu.mime;
   entityBody = pdu.entityBody;
 
-  delete sdp;
-  if (pdu.sdp != NULL)
-    sdp = new SDPSessionDescription(*pdu.sdp);
-  else
-    sdp = NULL;
+  delete m_SDP;
+  m_SDP = pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL;
 
   return *this;
 }
@@ -1541,7 +1536,7 @@ SIP_PDU & SIP_PDU::operator=(const SIP_PDU & pdu)
 
 SIP_PDU::~SIP_PDU()
 {
-  delete sdp;
+  delete m_SDP;
 }
 
 
@@ -1553,7 +1548,7 @@ void SIP_PDU::Construct(Methods meth)
   versionMajor = SIP_VER_MAJOR;
   versionMinor = SIP_VER_MINOR;
 
-  sdp = NULL;
+  m_SDP = NULL;
 }
 
 
@@ -1929,20 +1924,6 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   }
 #endif
 
-  PBoolean removeSDP = PTrue;
-
-  // 'application/' is case sensitive, 'sdp' is not
-  PString ContentType = mime.GetContentType();
-  if ((ContentType.Left(12) == "application/") && (ContentType.Mid(12) *= "sdp")) {
-    sdp = new SDPSessionDescription();
-    removeSDP = !sdp->Decode(entityBody);
-  }
-
-  if (removeSDP) {
-    delete sdp;
-    sdp = NULL;
-  }
-
   return PTrue;
 }
 
@@ -2009,8 +1990,8 @@ PString SIP_PDU::Build()
 {
   PStringStream str;
 
-  if (sdp != NULL) {
-    entityBody = sdp->Encode();
+  if (m_SDP != NULL) {
+    entityBody = m_SDP->Encode();
     mime.SetContentType("application/sdp");
   }
 
@@ -2050,16 +2031,29 @@ PString SIP_PDU::GetTransactionID() const
 }
 
 
+SDPSessionDescription * SIP_PDU::GetSDP()
+{
+  if (m_SDP == NULL && (mime.GetContentType() *= "application/sdp")) {
+    m_SDP = new SDPSessionDescription();
+    if (!m_SDP->Decode(entityBody)) {
+      delete m_SDP;
+      m_SDP = NULL;
+    }
+  }
+
+  return m_SDP;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 SIPTransaction::SIPTransaction(SIPEndPoint & ep,
                                OpalTransport & trans,
                                const PTimeInterval & minRetryTime,
                                const PTimeInterval & maxRetryTime)
-  : endpoint(ep),
-    transport(trans)
+  : endpoint(ep)
+  , transport(trans)
 {
-  connection = (SIPConnection *)NULL;
   Construct(minRetryTime, maxRetryTime);
   PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " created.");
 }
@@ -2404,10 +2398,10 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   mime.SetDate() ;                             // now
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
-  sdp = new SDPSessionDescription();
-  if (!connection.OnSendSDP(false, rtpSessions, *sdp)) {
-    delete sdp;
-    sdp = NULL;
+  m_SDP = new SDPSessionDescription();
+  if (!connection.OnSendSDP(false, rtpSessions, *m_SDP)) {
+    delete m_SDP;
+    m_SDP = NULL;
   }
 
   connection.OnCreatingINVITE(*this);
@@ -2421,10 +2415,10 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, Opal
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
   rtpSessions.CopyFromMaster(sm);
-  sdp = new SDPSessionDescription();
-  if (!connection.OnSendSDP(false, rtpSessions, *sdp)) {
-    delete sdp;
-    sdp = NULL;
+  m_SDP = new SDPSessionDescription();
+  if (!connection.OnSendSDP(false, rtpSessions, *m_SDP)) {
+    delete m_SDP;
+    m_SDP = NULL;
   }
 
   connection.OnCreatingINVITE(*this);
