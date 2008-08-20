@@ -17913,7 +17913,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -17924,7 +17924,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -17935,7 +17935,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -17946,7 +17946,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -17957,7 +17957,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -17968,7 +17968,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -17979,7 +17979,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -17990,7 +17990,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -18001,7 +18001,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -18012,7 +18012,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -18023,7 +18023,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -18034,7 +18034,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -18045,7 +18045,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -18056,7 +18056,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
@@ -18067,7 +18067,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 -I$(SolutionDir)/include -o $(InputDir)/java_swig_wrapper.c $(InputPath)"
+						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/java_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/java_swig_wrapper.c&quot;+nul &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/java_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/java_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.c"
 					/>
