@@ -127,11 +127,13 @@ OpalTransport * SIPHandler::GetTransport()
     transport = NULL;
   }
 
-  // Look for a "proxy" parameter to override default proxy
-  const PStringToString& params = targetAddress.GetParamVars();
-  if (params.Contains("proxy")) {
-    proxy.Parse(params("proxy"));
-    targetAddress.SetParamVar("proxy", PString::Empty());
+  if (proxy.IsEmpty()) {
+    // Look for a "proxy" parameter to override default proxy
+    const PStringToString& params = targetAddress.GetParamVars();
+    if (params.Contains("proxy")) {
+      proxy.Parse(params("proxy"));
+      targetAddress.SetParamVar("proxy", PString::Empty());
+    }
   }
 
   if (proxy.IsEmpty())
@@ -284,20 +286,21 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
   if (authenticationUsername.IsEmpty () && authenticationPassword.IsEmpty ()) {
-    SIPURL proxy = endpoint.GetProxy();
     if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), authenticationAuthRealm, authenticationUsername, authenticationPassword)) {
       PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
     }
-    else if (!proxy.IsEmpty()) {
-      PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
-      authenticationUsername = proxy.GetUserName ();
-      authenticationPassword = proxy.GetPassword ();
-    } 
     else {
-      PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm());
-      delete newAuth;
-      OnFailed(SIP_PDU::Failure_UnAuthorised);
-      return;
+      SIPURL proxy = endpoint.GetProxy();
+      if (proxy.IsEmpty()) {
+        PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm());
+        delete newAuth;
+        OnFailed(SIP_PDU::Failure_UnAuthorised);
+        return;
+      }
+
+      PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
+      authenticationUsername = proxy.GetUserName();
+      authenticationPassword = proxy.GetPassword();
     }
   }
   authenticationAuthRealm = newAuth->GetAuthRealm();
@@ -430,6 +433,7 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
 {
   m_parameters.m_expire = expire; // Put possibly adjusted value back
 
+  proxy                   = params.m_registrarAddress;
   authenticationUsername  = params.m_authID;
   authenticationPassword  = params.m_password;
   authenticationAuthRealm = params.m_realm;

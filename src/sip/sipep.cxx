@@ -843,6 +843,16 @@ bool SIPEndPoint::Register(const SIPRegister::Params & params)
   if (params.m_expire == 0)
     return Unregister(params.m_addressOfRecord);
 
+  PTRACE(4, "SIP\tStart REGISTER\n"
+            "        aor=" << params.m_addressOfRecord << "\n"
+            "  registrar=" << params.m_registrarAddress << "\n"
+            "    contact=" << params.m_contactAddress << "\n"
+            "     authID=" << params.m_authID << "\n"
+            "      realm=" << params.m_realm << "\n"
+            "     expire=" << params.m_expire << "\n"
+            "    restore=" << params.m_restoreTime << "\n"
+            "   minRetry=" << params.m_minRetryTime << "\n"
+            "   maxRetry=" << params.m_maxRetryTime);
   PSafePtr<SIPRegisterHandler> handler = PSafePtrCast<SIPHandler, SIPRegisterHandler>(
           activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadOnly));
 

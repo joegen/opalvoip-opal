@@ -846,6 +846,7 @@ class SIPRegister : public SIPTransaction
       Params();
 
       PString       m_addressOfRecord;
+      PString       m_registrarAddress;
       PString       m_contactAddress;
       PString       m_authID;
       PString       m_password;
