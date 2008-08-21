@@ -223,9 +223,9 @@ PBoolean IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
     return PTrue;
   }
 
-  mutexTokenTable.Wait();
+  mutexTokenTable.StartRead();
   PString tokenTranslated = tokenTable(frameToken);
-  mutexTokenTable.Signal();
+  mutexTokenTable.EndRead();
 
   if (tokenTranslated.IsEmpty()) {
     PTRACE(4, "No matching translation table entry token for \"" << frameToken << "\"");
@@ -252,11 +252,14 @@ void IAX2EndPoint::ReportStoredConnections()
     PTRACE(5, "    #" << (i + 1) << "                     \"" << cons[i] << "\"");
   }
 
-  PWaitAndSignal m(mutexTokenTable);
-  PTRACE(5, " There are " << tokenTable.GetSize() << " stored connections in the token translation table.");
+  mutexTokenTable.StartRead();
+  PTRACE(5, " There are " << tokenTable.GetSize() 
+	 << " stored connections in the token translation table.");
   for (i = 0; i < tokenTable.GetSize(); i++) {
-    PTRACE(5, " token table at " << i << " is " << tokenTable.GetKeyAt(i) << " " << tokenTable.GetDataAt(i));
+    PTRACE(5, " token table at " << i << " is " 
+	   << tokenTable.GetKeyAt(i) << " " << tokenTable.GetDataAt(i));
   }
+  mutexTokenTable.EndRead();
 }
 
 PStringArray IAX2EndPoint::DissectRemoteParty(const PString & other)
@@ -348,12 +351,15 @@ PString IAX2EndPoint::BuildUrl(
   return url;
 }
 
-void IAX2EndPoint::OnConnectionDestroyed(IAX2Connection & con)
+void IAX2EndPoint::OnReleased(OpalConnection & opalCon)
 {
+  IAX2Connection &con((IAX2Connection &)opalCon);
+
   PString token(con.GetRemoteInfo().BuildOurConnectionTokenId());
-  PWaitAndSignal m(mutexTokenTable);
-  
+  mutexTokenTable.StartWrite();
   tokenTable.RemoveAt(token);
+  mutexTokenTable.EndWrite();
+  OpalEndPoint::OnReleased(opalCon);
 }
 
 PBoolean IAX2EndPoint::MakeConnection(
@@ -494,8 +500,9 @@ PBoolean IAX2EndPoint::AddNewTranslationEntry(IAX2Frame *frame)
        connection != NULL; 
        ++connection) {
     if (connection->GetRemoteInfo().SourceCallNumber() == destCallNo) {
-      PWaitAndSignal m(mutexTokenTable);
+      mutexTokenTable.StartWrite();
       tokenTable.SetAt(frame->GetConnectionToken(), connection->GetCallToken());
+      mutexTokenTable.EndWrite();
       return PTrue;
     }
   }
@@ -509,9 +516,9 @@ PBoolean IAX2EndPoint::ProcessInMatchingConnection(IAX2Frame *f)
   ReportStoredConnections();
 
   PString tokenTranslated;
-  mutexTokenTable.Wait();
+  mutexTokenTable.StartRead();
   tokenTranslated = tokenTable(f->GetConnectionToken());
-  mutexTokenTable.Signal();
+  mutexTokenTable.EndRead();
 
   if (tokenTranslated.IsEmpty()) 
     tokenTranslated = f->GetConnectionToken();
@@ -532,11 +539,13 @@ PBoolean IAX2EndPoint::ProcessInMatchingConnection(IAX2Frame *f)
 
 
 //The receiving thread has finished reading a frame, and has droppped it here.
-//At this stage, we do not know the frame type. We just know if it is full or mini.
+//At this stage, we do not know the frame type. We just know the frame is
+// of type  full or mini.
 //The frame has not been acknowledged, or replied to.
 void IAX2EndPoint::IncomingEthernetFrame(IAX2Frame *frame)
 {
   PTRACE(5, "IAXEp\tEthernet Frame received from Receiver " << frame->IdString());
+
   packetsReadFromEthernet.AddNewFrame(frame);
   incomingFrameHandler.ProcessList();
 }
