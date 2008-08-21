@@ -162,8 +162,10 @@ const PString SIPHandler::GetRemotePartyAddress ()
 
 void SIPHandler::SetExpire(int e)
 {
-  expire = e > 0 && e < originalExpire ? e : originalExpire;
+  expire = e;
   PTRACE(3, "SIP\tExpiry time for " << GetMethod() << " set to " << expire << " seconds.");
+  if (originalExpire < e)
+    originalExpire = e;
 
   if (expire > 0 && state < Unsubscribing)
     expireTimer.SetInterval(0, (unsigned) (9*expire/10));
@@ -396,6 +398,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
 
     case SIP_PDU::Local_TransportError :
     case SIP_PDU::Failure_RequestTimeout :
+    case SIP_PDU::Local_BadTransportAddress :
       break;
 
     default :
@@ -449,6 +452,8 @@ SIPRegisterHandler::~SIPRegisterHandler()
 
 SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 {
+  m_parameters.m_expire = expire; 
+
   return new SIPRegister(endpoint, trans, GetRouteSet(), callID, m_parameters);
 }
 
