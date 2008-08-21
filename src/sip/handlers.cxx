@@ -164,6 +164,10 @@ void SIPHandler::SetExpire(int e)
 {
   expire = e;
   PTRACE(3, "SIP\tExpiry time for " << GetMethod() << " set to " << expire << " seconds.");
+  // Only modify the originalExpire for future requests if IntervalTooBrief gives
+  // a bigger expire time. expire itself will always reflect the proxy decision
+  // (bigger or lower), but originalExpire determines what is used in future 
+  // requests and is only modified if interval too brief
   if (originalExpire < e)
     originalExpire = e;
 
