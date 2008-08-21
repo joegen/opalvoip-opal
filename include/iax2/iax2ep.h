@@ -336,6 +336,15 @@ class IAX2EndPoint : public OpalEndPoint
        OpalConnection & con
     );
 
+    /**Called whenever a connection instance is finished being used to
+       manage a call. We trap this callback to remove the connection
+       from this endpoints token table. Once we are done the token
+       table, we then call the generic OpalEndpoint::OnReleased
+       method. */
+    virtual void OnReleased(
+      OpalConnection & connection   ///<  Connection that was established
+    );
+
    /**Get the data formats this endpoint is capable of operating.  This
        provides a list of media data format names that may be used by an
        OpalMediaStream may be created by a connection from this endpoint.
@@ -454,12 +463,6 @@ class IAX2EndPoint : public OpalEndPoint
     const PString & transport = PString::Empty()
   );
   
-  /**Called whenever a connection instance is about to be
-     destroyed. This call is used to ensure we remove every instance
-     of data (relating to the said connection) from this endpoint's
-     token table */
-  virtual void OnConnectionDestroyed(IAX2Connection & con);
-
   //@}
   
  protected:
@@ -538,8 +541,10 @@ class IAX2EndPoint : public OpalEndPoint
 
   PStringToString    tokenTable;
   
-  /**Threading mutex on the variable tokenTable   */
-  PMutex             mutexTokenTable;
+  /**Threading mutex on the variable tokenTable. We can now safely
+     read/write to this table, with the minimum of interference between
+     threads.  */
+  PReadWriteMutex    mutexTokenTable;
 
   /**Thread safe counter which keeps track of the calls created by this endpoint.
      This value is used when giving outgoing calls a unique ID */
