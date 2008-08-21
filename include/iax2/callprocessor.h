@@ -262,6 +262,11 @@ class IAX2CallProcessor : public IAX2Processor
   @return false, and does not destroy the supplied frame*/
   virtual PBoolean IncomingMessageOutOfOrder(IAX2FullFrame *ff);
 
+  /** Advise the other end that we have picked up the phone. This
+      method is public, as it is called by the IAX2Connection class,
+      in response to the user accepting an incoming call. */
+  void SendAnswerMessageToRemoteNode();
+
  protected:
   
   /**The connection class we are charged with running. */
@@ -639,10 +644,7 @@ class IAX2CallProcessor : public IAX2Processor
   
   /** Get the current value of the call status flag callAnswered */
   PBoolean IsCallAnswered() { return callStatus & callAnswered; }
-  
-  /** Advise the other end that we have picked up the phone */
-  void SendAnswerMessageToRemoteNode();
-     
+       
 #ifdef DOC_PLUS_PLUS
   /**A pwlib callback function to invoke another status check on the
        other endpoint 
@@ -734,7 +736,7 @@ class IAX2CallProcessor : public IAX2Processor
   PString transferCalledNumber;
   
   /**The context to call for a transfer -- this is optional*/
-  PString transferCalledContext;  
+  PString transferCalledContext;    
 };
 
 /////////////////////////////////////////////////////////////////////////
