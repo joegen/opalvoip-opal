@@ -664,6 +664,10 @@ class OpalConnection : public PSafeObject
        received.
 
        The default behaviour calls the OpalEndPoint function of the same name.
+
+       When this method is called, we are effectively being told that
+       the remote endpoint has accepted our call and is now sending
+       media to us.
       */
     virtual void OnConnected();
 
@@ -673,6 +677,9 @@ class OpalConnection : public PSafeObject
        connection start time and then checks if there is any media channels
        opened and if so, moves on to the established phase, calling
        OnEstablished().
+
+       In other words, this method is used to handle incoming calls,
+       and is an indication that we have accepted the incoming call.
       */
     virtual PBoolean SetConnected();
 
