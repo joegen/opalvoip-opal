@@ -187,7 +187,7 @@ void IAX2CallProcessor::RemoteNodeHasAnswered()
   
   SetCallAnswered();
   PTRACE(3, "Processor\tRemote node has answered");
-  con->SetConnected();
+  con->OnConnectedInternal();
 }
 
 void IAX2CallProcessor::Hangup(PString dieMessage)
@@ -211,6 +211,7 @@ void IAX2CallProcessor::CheckForHangupMessages()
     f->AppendIe(new IAX2IeCause(hangList.GetFirstDeleteAll()));
     f->AppendIe(new IAX2IeCauseCode(IAX2IeCauseCode::NormalClearing));
     TransmitFrameToRemoteEndpoint(f);  
+    PThread::Sleep(2);
   } else {
     PTRACE(3, "hangup message required. Not sending, cause already have a hangup message in queue");
   }

@@ -200,7 +200,7 @@ PBoolean IAX2Frame::ReadNetworkPacket(PUDPSocket &sock)
     PTRACE(3, "Read a very very small packet from the network - < 4 bytes");
     return PFalse;
   }
-  
+
   return PTrue;
 }
 

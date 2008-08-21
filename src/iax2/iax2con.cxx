@@ -97,7 +97,6 @@ iax2Processor(*new IAX2CallProcessor(ep))
 
 IAX2Connection::~IAX2Connection()
 {
-  endpoint.OnConnectionDestroyed(*this);
   iax2Processor.Terminate();
   iax2Processor.WaitForTermination(1000);
   if (!iax2Processor.IsTerminated()) {
@@ -111,6 +110,7 @@ IAX2Connection::~IAX2Connection()
 void IAX2Connection::Release( CallEndReason reason)		        
 { 
   PTRACE(4, "IAX2Con\tRelease( CallEndReason " << reason);
+
   iax2Processor.Hangup(reason); ///Send hangup frame
 
   iax2Processor.Release(reason); 
@@ -166,19 +166,58 @@ PBoolean IAX2Connection::OnIncomingCall(unsigned int options, OpalConnection::St
   return OnIncomingConnection(options, stringOptions);
 }
 
+
+void IAX2Connection::AnsweringCall(AnswerCallResponse response)
+{
+  PTRACE(3, "IAX2Con\tAnswering call: " << response);
+
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
+    return;
+
+  OpalConnection::AnsweringCall(response);
+}
+
+
+PBoolean IAX2Connection::SetConnected()
+{
+    PTRACE(3, "IAX2Con\t SET CONNECTED " 
+	 << PString(IsOriginating() ? " Originating" : "Receiving"));
+  ////if no media streams, try and start them
+
+  if (mediaStreams.IsEmpty()) {
+    if (!IsOriginating())
+      iax2Processor.SendAnswerMessageToRemoteNode();
+
+    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
+    PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
+    if (otherParty != NULL)
+      ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
+
+    
+    jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
+			  endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
+    jitterBuffer.Resume(NULL);
+  }
+
+  return OpalConnection::SetConnected();
+}
+
 PBoolean IAX2Connection::SetAlerting(const PString & PTRACE_PARAM(calleeName), PBoolean /*withMedia*/) 
 { 
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
-    return PFalse;
-
-  PTRACE(3, "IAX2Con\tSetAlerting  from " << calleeName << " " << *this); 
-
-  if (GetPhase() == AlertingPhase)
-    return PFalse;
-
-  alertingTime = PTime();
-  SetPhase(AlertingPhase);
+  {
+    PSafeLockReadWrite safeLock(*this);
+    if (!safeLock.IsLocked())
+      return PFalse;
+    
+    PTRACE(3, "IAX2Con\tSetAlerting  from " << calleeName << " " << *this); 
+    
+    if (GetPhase() == AlertingPhase)
+      return PFalse;
+    
+    alertingTime = PTime();
+    SetPhase(AlertingPhase);
+  }
 
   OpalConnection::OnAlerting();
 //Which puts the other Connection in this call to AlertingPhase
@@ -186,26 +225,25 @@ PBoolean IAX2Connection::SetAlerting(const PString & PTRACE_PARAM(calleeName), P
   return PTrue;
 }
 
-PBoolean IAX2Connection::SetConnected()
+void IAX2Connection::OnConnected()
 {
-  PTRACE(3, "IAX2Con\tSetConnected " << *this);
-  PTRACE(3, "IAX2Con\tSETCONNECTED " 
+  PTRACE(3, "IAX2Con\t ON CONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
 
-
-  jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8, endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
-  jitterBuffer.Resume(NULL);
-
-  // if no media streams, try and start them
   if (mediaStreams.IsEmpty()) {
     ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL)
       ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
+
+   
+    jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
+			  endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
+    jitterBuffer.Resume(NULL);
   }
 
-  // Set Connected or Established phase if have media
-  return OpalConnection::SetConnected();
+    // Let OPAL do it's thing with the OnConnected callback.
+  OpalConnection::OnConnected();
 }
 
 void IAX2Connection::SendDtmf(const PString & dtmf)
@@ -275,8 +313,7 @@ void IAX2Connection::PutSoundPacketToNetwork(PBYTEArray *sound)
 
 PBoolean IAX2Connection::SetUpConnection() 
 {
-  PTRACE(3, "IAX2Con\tSetUpConnection() ");
-  PTRACE(3, "IAX2Con\tWe are making a call");
+  PTRACE(3, "IAX2Con\tSetUpConnection() (Initiate call to remote box)");
   
   iax2Processor.SetUserName(userName);
   iax2Processor.SetPassword(password);
@@ -482,6 +519,7 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
     memcpy(mediaFrame->GetPayloadPtr(), soundFrame->GetMediaDataPointer(), 
 	   soundFrame->GetMediaDataSize());
     jitterBuffer.NewFrameFromNetwork(mediaFrame);
+    PTRACE(6, "RTP\tIAX2 frame now on jitter buffer (As a RTP frame)");
     delete soundFrame;
 }
 
