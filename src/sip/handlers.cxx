@@ -162,7 +162,7 @@ const PString SIPHandler::GetRemotePartyAddress ()
 
 void SIPHandler::SetExpire(int e)
 {
-  expire = e;
+  expire = e > 0 ? e : originalExpire;
   PTRACE(3, "SIP\tExpiry time for " << GetMethod() << " set to " << expire << " seconds.");
   // Only modify the originalExpire for future requests if IntervalTooBrief gives
   // a bigger expire time. expire itself will always reflect the proxy decision
