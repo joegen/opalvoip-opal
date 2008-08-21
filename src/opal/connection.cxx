@@ -512,12 +512,14 @@ void OpalConnection::OnConnectedInternal()
 
 void OpalConnection::OnConnected()
 {
+  PTRACE(3, "OpalCon\tOnConnected for " << *this);
   endpoint.OnConnected(*this);
 }
 
 
 void OpalConnection::OnEstablished()
 {
+  PTRACE(3, "OpalCon\tOnEstablished " << *this);
   StartMediaStreams();
   endpoint.OnEstablished(*this);
 }
