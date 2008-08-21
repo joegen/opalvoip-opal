@@ -359,16 +359,17 @@ void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response
 
 void SIPHandler::CollapseFork(SIPTransaction & transaction)
 {
-  //
-  // Take this transaction out and kill all the rest
+  // Take this transaction out
   transactions.Remove(&transaction);
-  while (transactions.GetSize() > 0) {
-    PSafePtr<SIPTransaction> transToGo = transactions.GetAt(0);
+
+  // And kill all the rest
+  PSafePtr<SIPTransaction> transToGo;
+  while ((transToGo = transactions.GetAt(0)) != NULL) {
     transactions.Remove(transToGo);
     transToGo->Abort();
   }
 
-  // And end connect mode on the transport
+  // Finally end connect mode on the transport
   transport->SetInterface(transaction.GetInterface());
 }
 
