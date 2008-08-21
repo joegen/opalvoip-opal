@@ -153,7 +153,7 @@ PString IAX2Processor::GetCallToken()
 
 void IAX2Processor::Main()
 {
-  PTRACE(3, "Start of iax processing");
+  PTRACE(3, "Start of iax2 processing thread");
   PString name = GetThreadName();
   if (IsHandlingSpecialPackets())
     SetThreadName("Special Iax packets");
@@ -187,9 +187,6 @@ PBoolean IAX2Processor::IsStatusQueryEthernetFrame(IAX2Frame *frame)
     PTRACE(4, "Special packet of Ping to process");
     return PTrue;
   }
-   
-  PTRACE(4, "This frame  is not a cmdPing or cmdLagRq");
-   
   return PFalse;
 }
 
