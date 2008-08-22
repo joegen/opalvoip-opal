@@ -265,6 +265,7 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * _defaultScheme)
     defaultScheme = "sip";
 
   displayName = PString::Empty();
+  fieldParameters = PString::Empty();
 
   PString str = cstr;
 
@@ -282,6 +283,8 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * _defaultScheme)
     // get the URI from between the angle brackets
     if (!PURL::InternalParse(str(start+1, end-1), defaultScheme))
       return PFalse;
+
+    fieldParameters = str.Mid(end+1).Trim();
 
     // extract the display address
     end = str.FindLast('"', start);
@@ -325,6 +328,38 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * _defaultScheme)
 
   Recalculate();
   return !IsEmpty();
+}
+
+
+PObject::Comparison SIPURL::Compare(const PObject & obj) const
+{
+  PAssert(PIsDescendant(&obj, SIPURL), PInvalidCast);
+  const SIPURL & other = (const SIPURL &)obj;
+
+  // RFC3261 Section 19.1.4 matching rules, hideously complicated!
+
+#define COMPARE_COMPONENT(component) \
+  if (component != other.component) \
+    return component < other.component ? LessThan : GreaterThan
+
+  COMPARE_COMPONENT(GetScheme());
+  COMPARE_COMPONENT(GetUserName());
+  COMPARE_COMPONENT(GetPassword());
+  COMPARE_COMPONENT(GetHostName());
+  COMPARE_COMPONENT(GetPort());
+  COMPARE_COMPONENT(GetPortSupplied());
+
+  // If URI parameter exists in both then must be equal
+  for (PINDEX i = 0; i < paramVars.GetSize(); i++) {
+    PString param = paramVars.GetKeyAt(i);
+    if (other.paramVars.Contains(param))
+      COMPARE_COMPONENT(paramVars[param]);
+  }
+  COMPARE_COMPONENT(paramVars("user"));
+  COMPARE_COMPONENT(paramVars("ttl"));
+  COMPARE_COMPONENT(paramVars("method"));
+
+  return EqualTo;
 }
 
 
@@ -583,6 +618,17 @@ void SIPMIMEInfo::SetCallID(const PString & v)
 PString SIPMIMEInfo::GetContact() const
 {
   return GetString("Contact");
+}
+
+
+bool SIPMIMEInfo::GetContacts(std::vector<SIPURL> & contacts) const
+{
+  PStringArray lines = GetString("Contact").Lines();
+  contacts.resize(lines.GetSize());
+  for (PINDEX i = 0; i < lines.GetSize(); i++)
+    contacts[i].Parse(lines[i]);
+
+  return !contacts.empty();
 }
 
 
@@ -1046,7 +1092,7 @@ void SIPMIMEInfo::SetSIPETag(const PString & v)
 
 static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & end)
 {
-  PINDEX semicolon = 0;
+  PINDEX semicolon = (PINDEX)-1;
   while ((semicolon = fieldValue.Find(';', semicolon+1)) != P_MAX_INDEX) {
     start = fieldValue.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.!%*_+`'~", semicolon+1);
     if (start != P_MAX_INDEX && fieldValue[start] == '=' && (fieldValue(semicolon+1, start-1) *= paramName)) {
