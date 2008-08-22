@@ -3654,7 +3654,9 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
   }
 
   if (stream->Open()) {
-    stream->UpdateMediaFormat(mediaFormat);
+    OpalMediaFormat adjustedMediaFormat = mediaFormat;
+    adjustedMediaFormat.SetPayloadType(stream->GetMediaFormat().GetPayloadType());
+    stream->UpdateMediaFormat(adjustedMediaFormat);
 
     if (OnOpenMediaStream(*stream)) {
       mediaStreams.Append(stream);
@@ -4161,16 +4163,6 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
 
 PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
-  H323_RealTimeChannel * rtpChannel = dynamic_cast<H323_RealTimeChannel *>(&channel);
-  if (rtpChannel != NULL) {
-    RTP_DataFrame::PayloadTypes internalPayloadType = rtpChannel->GetMediaStream()->GetMediaFormat().GetPayloadType();
-    RTP_DataFrame::PayloadTypes actualPayloadType   = rtpChannel->GetDynamicRTPPayloadType();
-    if (actualPayloadType != internalPayloadType &&
-        actualPayloadType   != RTP_DataFrame::IllegalPayloadType &&
-        internalPayloadType != RTP_DataFrame::IllegalPayloadType)
-      rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(internalPayloadType, actualPayloadType));
-  }
-
   return endpoint.OnStartLogicalChannel(*this, channel);
 }
 

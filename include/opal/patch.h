@@ -106,8 +106,7 @@ class OpalMediaPatch : public PObject
        able to write to it.
       */
     PBoolean AddSink(
-      const OpalMediaStreamPtr & stream,            ///< Media stream to add.
-      const RTP_DataFrame::PayloadMapType & rtpMap  ///< Outgoing RTP type map
+      const OpalMediaStreamPtr & stream            ///< Media stream to add.
     );
 
     /**Add existing "sink" OpalMediaStream to patch.
@@ -213,7 +212,7 @@ class OpalMediaPatch : public PObject
     class Sink : public PObject {
         PCLASSINFO(Sink, PObject);
       public:
-        Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s, const RTP_DataFrame::PayloadMapType & m);
+        Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s);
         ~Sink();
         bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
         bool ExecuteCommand(const OpalMediaCommand & command);
@@ -225,7 +224,6 @@ class OpalMediaPatch : public PObject
 
         OpalMediaPatch  &  patch;
         OpalMediaStreamPtr stream;
-        RTP_DataFrame::PayloadMapType payloadTypeMap;
         OpalTranscoder  * primaryCodec;
         OpalTranscoder  * secondaryCodec;
         RTP_DataFrameList intermediateFrames;

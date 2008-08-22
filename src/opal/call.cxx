@@ -397,19 +397,6 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
          << ' ' << mediaType << " session " << sessionID << " on " << connection);
   sourceStream.SetNULL();
 
-  // handle RTP payload translation
-  RTP_DataFrame::PayloadMapType map;
-  PSafePtr<OpalConnection> otherConnection;
-  while (EnumerateConnections(otherConnection, PSafeReadOnly)) {
-    const RTP_DataFrame::PayloadMapType & connMap = otherConnection->GetRTPPayloadMap();
-    if (otherConnection != &connection)
-      map.insert(connMap.begin(), connMap.end());
-    else {
-      for (RTP_DataFrame::PayloadMapType::const_iterator it = connMap.begin(); it != connMap.end(); ++it)
-        map[it->second] = it->first;
-    }
-  }
-
   // Create the sinks and patch if needed
   bool startedOne = false;
   OpalMediaPatch * patch = NULL;
@@ -419,6 +406,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   if (sinkStream != NULL)
     sinkFormat = sinkStream->GetMediaFormat();
 
+  PSafePtr<OpalConnection> otherConnection;
   while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
     OpalMediaFormatList sinkMediaFormats = otherConnection->GetMediaFormats();
     if (preselectedFormat.IsValid()  && sinkMediaFormats.HasFormat(preselectedFormat))
@@ -479,7 +467,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
         if (patch == NULL)
           return false;
       }
-      patch->AddSink(sinkStream, map);
+      patch->AddSink(sinkStream);
     }
   }
 

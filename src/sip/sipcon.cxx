@@ -627,15 +627,15 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
     OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
-      localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
+      localMedia->AddMediaFormat(sendStream->GetMediaFormat());
       localMedia->SetDirection(m_holdToRemote >= eHoldOn ? SDPMediaDescription::SendOnly : (recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly));
     }
     else if (recving) {
-      localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
+      localMedia->AddMediaFormat(recvStream->GetMediaFormat());
       localMedia->SetDirection(m_holdToRemote >= eHoldOn ? SDPMediaDescription::Inactive : SDPMediaDescription::RecvOnly);
     }
     else {
-      localMedia->AddMediaFormats(formats, mediaType, rtpPayloadMap);
+      localMedia->AddMediaFormats(formats, mediaType);
       localMedia->SetDirection(SDPMediaDescription::Inactive);
     }
 #if PAUSE_WITH_EMPTY_ADDRESS
@@ -650,7 +650,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
 #endif
   }
   else {
-    localMedia->AddMediaFormats(formats, mediaType, rtpPayloadMap);
+    localMedia->AddMediaFormats(formats, mediaType);
 
 #if OPAL_VIDEO
     if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID) {
@@ -782,9 +782,6 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     return false;
   }
 
-  // create map for RTP payloads
-  incomingMedia->CreateRTPMap(rtpSessionId, rtpPayloadMap);
-
   SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(rtpSessionId);
 #if OPAL_VIDEO
   if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID && GetPhase() < EstablishedPhase) {
@@ -844,12 +841,19 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
        (sendStream = GetMediaStream(rtpSessionId, false)) != NULL)
     newDirection = newDirection == SDPMediaDescription::RecvOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
 
+  if (newDirection == SDPMediaDescription::SendRecv) {
+    // If we are sendrecv we will receive the same payload type as we transmit.
+    OpalMediaFormat adjustedMediaFormat = recvStream->GetMediaFormat();
+    adjustedMediaFormat.SetPayloadType(sendStream->GetMediaFormat().GetPayloadType());
+    recvStream->UpdateMediaFormat(adjustedMediaFormat);
+  }
+
   // Now we build the reply, setting "direction" as appropriate for what we opened.
   localMedia->SetDirection(newDirection);
   if (sendStream != NULL)
-    localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
+    localMedia->AddMediaFormat(sendStream->GetMediaFormat());
   else if (recvStream != NULL)
-    localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
+    localMedia->AddMediaFormat(recvStream->GetMediaFormat());
   else {
     // Add all possible formats
     bool empty = true;
@@ -859,7 +863,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
         OpalMediaFormat intermediateFormat;
         if (remoteFormat->GetDefaultSessionID() == rtpSessionId &&
             OpalTranscoder::FindIntermediateFormat(*localFormat, *remoteFormat, intermediateFormat)) {
-          localMedia->AddMediaFormat(*remoteFormat, rtpPayloadMap);
+          localMedia->AddMediaFormat(*remoteFormat);
           empty = false;
           break;
         }
@@ -868,7 +872,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
     // RFC3264 says we MUST have an entry, but it should have port zero
     if (empty) {
-      localMedia->AddMediaFormat(sdpFormats.front(), rtpPayloadMap);
+      localMedia->AddMediaFormat(sdpFormats.front());
       localMedia->SetTransportAddress(OpalTransportAddress());
     }
     else {
@@ -2021,9 +2025,6 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
   // but remove the media formats we do not support.
   remoteFormatList += mediaFormatList;
   remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
-
-  // create map for RTP payloads
-  mediaDescription->CreateRTPMap(rtpSessionId, rtpPayloadMap);
 
   // create the RTPSession
   OpalTransportAddress localAddress;
