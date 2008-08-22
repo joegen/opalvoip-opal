@@ -93,6 +93,18 @@ class SIPURL : public PURL
       WORD listenerPort = 0
     );
 
+    /**Compare the two SIPURLs and return their relative rank.
+       Note that does an intelligent comparison according to the rules
+       in RFC3261 Section 19.1.4.
+
+     @return
+       #LessThan#, #EqualTo# or #GreaterThan#
+       according to the relative rank of the objects.
+     */
+    virtual Comparison Compare(
+      const PObject & obj   ///< Object to compare against.
+    ) const;
+
     /** Returns complete SIPURL as one string, including displayname (in
         quotes) and address in angle brackets.
       */
@@ -104,7 +116,13 @@ class SIPURL : public PURL
     
     void SetDisplayName(const PString & str) 
       { displayName = str; }
-    
+
+    /**Returns the field parameter (outside of <>)
+      */
+    PString GetFieldParameters() const { return fieldParameters; }
+
+    /**Get the host and port as a transpoprt address.
+      */
     OpalTransportAddress GetHostAddress() const;
 
     enum UsageContext {
@@ -159,6 +177,7 @@ class SIPURL : public PURL
     );
 
     PString displayName;
+    PString fieldParameters;
 };
 
 
@@ -237,6 +256,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetCallID(const PString & v);
 
     PString GetContact() const;
+    bool GetContacts(std::vector<SIPURL> & contacts) const;
     void SetContact(const PString & v);
     void SetContact(const SIPURL & url);
 
@@ -260,7 +280,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PINDEX  GetContentLength() const;
     void SetContentLength(PINDEX v);
-		PBoolean IsContentLengthPresent() const;
+    PBoolean IsContentLengthPresent() const;
 
     PString GetCSeq() const;
     void SetCSeq(const PString & v);

@@ -441,7 +441,10 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
 {
   m_parameters.m_expire = expire; // Put possibly adjusted value back
 
-  proxy                   = params.m_registrarAddress;
+  SIPURL registrar = params.m_registrarAddress;
+  if (!registrar.IsEmpty() && !registrar.GetHostAddress().IsEquivalent(targetAddress.GetHostAddress()))
+    proxy = registrar;
+
   authenticationUsername  = params.m_authID;
   authenticationPassword  = params.m_password;
   authenticationAuthRealm = params.m_realm;
@@ -464,18 +467,21 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 
 void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  PString contact = response.GetMIME().GetContact();
+  std::vector<SIPURL> requestContacts, replyContacts;
+  transaction.GetMIME().GetContacts(requestContacts);
+  response.GetMIME().GetContacts(replyContacts);
 
-  int newExpiryTime = SIPURL(contact).GetParamVars()("expires").AsUnsigned();
-  if (newExpiryTime == 0) {
-    PString expires = SIPMIMEInfo::ExtractFieldParameter(contact, "expires");
-    if (expires.IsEmpty())
-      newExpiryTime = response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds());
-    else
-      newExpiryTime = expires.AsUnsigned();
+  for (size_t request = 0; request < requestContacts.size(); request++) {
+    for (size_t reply = 0; reply < replyContacts.size(); reply++) {
+      if (requestContacts[request] == replyContacts[reply]) {
+        PString expires = SIPMIMEInfo::ExtractFieldParameter(replyContacts[reply].GetFieldParameters(), "expires");
+        if (expires.IsEmpty())
+          SetExpire(response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds()));
+        else
+          SetExpire(expires.AsUnsigned());
+      }
+    }
   }
-
-  SetExpire(newExpiryTime);
 
   SendStatus(SIP_PDU::Successful_OK);
   SIPHandler::OnReceivedOK(transaction, response);
