@@ -1336,9 +1336,6 @@ class OpalConnection : public PSafeObject
 #endif
   //@}
 
-    const RTP_DataFrame::PayloadMapType & GetRTPPayloadMap() const
-    { return rtpPayloadMap; }
-
     StringOptions * GetStringOptions() const
     { return stringOptions; }
 
@@ -1432,8 +1429,6 @@ class OpalConnection : public PSafeObject
     unsigned            minAudioJitterDelay;
     unsigned            maxAudioJitterDelay;
     unsigned            bandwidthAvailable;
-
-    RTP_DataFrame::PayloadMapType rtpPayloadMap;
 
     // The In-Band DTMF detector. This is used inside an audio filter which is
     // added to the audio channel.

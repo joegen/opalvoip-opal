@@ -344,8 +344,6 @@ PBoolean H323UnidirectionalChannel::Open()
   if (!H323Channel::Open())
     return false;
 
-  mediaStream->UpdateMediaFormat(capability->GetMediaFormat());
-
   OpalCall & call = connection.GetCall();
 
   bool ok;
@@ -640,6 +638,14 @@ PBoolean H323_RealTimeChannel::SetDynamicRTPPayloadType(int newType)
     return PFalse;
 
   rtpPayloadType = (RTP_DataFrame::PayloadTypes)newType;
+
+  OpalMediaStream * mediaStream = GetMediaStream();
+  if (mediaStream != NULL) {
+    OpalMediaFormat adjustedMediaFormat = mediaStream->GetMediaFormat();
+    adjustedMediaFormat.SetPayloadType(rtpPayloadType);
+    mediaStream->UpdateMediaFormat(adjustedMediaFormat);
+  }
+
   PTRACE(3, "H323RTP\tSet dynamic payload type to " << rtpPayloadType);
   return PTrue;
 }

@@ -138,7 +138,7 @@ void OpalMediaPatch::Close()
 }
 
 
-PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & stream, const RTP_DataFrame::PayloadMapType & rtpMap)
+PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & stream)
 {
   PWriteWaitAndSignal mutex(inUse);
 
@@ -152,7 +152,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & stream, const RTP_Da
     return PFalse;
   }
 
-  Sink * sink = new Sink(*this, stream, rtpMap);
+  Sink * sink = new Sink(*this, stream);
   sinks.Append(sink);
 
   // Find the media formats than can be used to get from source to sink
@@ -172,7 +172,6 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & stream, const RTP_Da
   sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat, (const BYTE *)id, id.GetLength());
   if (sink->primaryCodec != NULL) {
     PTRACE(4, "Patch\tCreated primary codec " << sourceFormat << "->" << destinationFormat << " with ID " << id);
-    sink->primaryCodec->SetRTPPayloadMap(rtpMap);
     sink->primaryCodec->SetMaxOutputSize(stream->GetDataSize());
 
     if (!stream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(PFalse))) {
@@ -306,11 +305,10 @@ void OpalMediaPatch::Sink::GetStatistics(OpalMediaStatistics & statistics) const
 #endif
 
 
-OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s, const RTP_DataFrame::PayloadMapType & m)
+OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   : patch(p)
   , stream(s)
 {
-  payloadTypeMap = m;
   primaryCodec = NULL;
   secondaryCodec = NULL;
   intermediateFrames.Append(new RTP_DataFrame);
@@ -563,12 +561,9 @@ void OpalMediaPatch::Sink::SetCommandNotifier(const PNotifier & notifier)
 }
 
 
-static bool CannotTranscodeFrame(RTP_DataFrame::PayloadMapType & payloadTypeMap, const OpalTranscoder & codec, RTP_DataFrame & frame)
+static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & frame)
 {
   RTP_DataFrame::PayloadTypes pt = frame.GetPayloadType();
-  RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(frame.GetPayloadType());
-  if (r != payloadTypeMap.end())
-    pt = r->second;
 
   if (!codec.AcceptComfortNoise()) {
     if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN) {
@@ -641,14 +636,10 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     return true;
 #endif
 
-  if (primaryCodec == NULL) {
-    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(sourceFrame.GetPayloadType());
-    if (r != payloadTypeMap.end())
-      sourceFrame.SetPayloadType(r->second);
+  if (primaryCodec == NULL)
     return (writeSuccessful = stream->WritePacket(sourceFrame));
-  }
 
-  if (CannotTranscodeFrame(payloadTypeMap, *primaryCodec, sourceFrame))
+  if (CannotTranscodeFrame(*primaryCodec, sourceFrame))
     return (writeSuccessful = stream->WritePacket(sourceFrame));
 
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
@@ -669,7 +660,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       continue;
     }
 
-    if (CannotTranscodeFrame(payloadTypeMap, *secondaryCodec, *interFrame)) {
+    if (CannotTranscodeFrame(*secondaryCodec, *interFrame)) {
       if (!stream->WritePacket(*interFrame))
         return (writeSuccessful = false);
       continue;
