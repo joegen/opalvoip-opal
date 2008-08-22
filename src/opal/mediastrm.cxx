@@ -108,6 +108,9 @@ PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaForm
   if (!safeLock.IsLocked())
     return false;
 
+  if (mediaFormat != newMediaFormat)
+    return false;
+
   // If we are source, then update the sink side, and vice versa
   if (mediaPatch != NULL) {
     if (!mediaPatch->UpdateMediaFormat(newMediaFormat, IsSink())) {
