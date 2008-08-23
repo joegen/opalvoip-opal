@@ -108,6 +108,9 @@ PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaForm
   if (!safeLock.IsLocked())
     return false;
 
+  if (mediaFormat != newMediaFormat)
+    return false;
+
   // If we are source, then update the sink side, and vice versa
   if (mediaPatch != NULL) {
     if (!mediaPatch->UpdateMediaFormat(newMediaFormat, IsSink())) {
@@ -486,14 +489,43 @@ void OpalMediaStream::OnPatchStop()
 
 ///////////////////////////////////////////////////////////////////////////////
 
+OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat)
+  : m_isAudio(mediaFormat.GetMediaType() == OpalMediaType::Audio())
+  , m_frameTime(mediaFormat.GetFrameTime())
+  , m_frameSize(mediaFormat.GetFrameSize())
+  , m_timeUnits(mediaFormat.GetTimeUnits())
+{
+  PAssert(!(m_isAudio && m_frameSize == 0), PInvalidParameter);
+}
+
+
+void OpalMediaStreamPacing::Pace(bool reading, PINDEX bytes, bool & marker)
+{
+  unsigned timeToWait = m_frameTime;
+
+  if (m_isAudio)
+    timeToWait *= (bytes + m_frameSize - 1) / m_frameSize;
+  else {
+    if (reading)
+      marker = true;
+    else if (!marker)
+      return;
+  }
+
+  m_delay.Delay(timeToWait/m_timeUnits);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 OpalNullMediaStream::OpalNullMediaStream(OpalConnection & conn,
                                          const OpalMediaFormat & mediaFormat,
                                          unsigned sessionID,
                                          bool isSource,
                                          bool isSyncronous)
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
+  , OpalMediaStreamPacing(mediaFormat)
   , m_isSynchronous(isSyncronous)
-  , m_isAudio(mediaFormat.GetMediaType() == OpalMediaType::Audio())
 {
 }
 
@@ -506,13 +538,7 @@ PBoolean OpalNullMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & leng
   memset(buffer, 0, size);
   length = size;
 
-  if (m_isAudio)
-    m_delay.Delay(CalculateTimestamp(size, mediaFormat)/mediaFormat.GetTimeUnits());
-  else {
-    m_delay.Delay(mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits());
-    marker = true;
-  }
-
+  Pace(true, size, marker);
   return true;
 }
 
@@ -524,11 +550,7 @@ PBoolean OpalNullMediaStream::WriteData(const BYTE * /*buffer*/, PINDEX length, 
 
   written = length != 0 ? length : defaultDataSize;
 
-  if (m_isAudio)
-    m_delay.Delay(CalculateTimestamp(written, mediaFormat)/mediaFormat.GetTimeUnits());
-  else if (marker)
-    m_delay.Delay(mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits());
-
+  Pace(false, written, marker);
   return true;
 }
 
@@ -806,6 +828,7 @@ OpalFileMediaStream::OpalFileMediaStream(OpalConnection & conn,
                                          PFile * file,
                                          PBoolean autoDel)
   : OpalRawMediaStream(conn, mediaFormat, sessionID, isSource, file, autoDel)
+  , OpalMediaStreamPacing(mediaFormat)
 {
 }
 
@@ -818,6 +841,7 @@ OpalFileMediaStream::OpalFileMediaStream(OpalConnection & conn,
   : OpalRawMediaStream(conn, mediaFormat, sessionID, isSource,
                        new PFile(path, isSource ? PFile::ReadOnly : PFile::WriteOnly),
                        true)
+  , OpalMediaStreamPacing(mediaFormat)
 {
 }
 
@@ -833,12 +857,10 @@ PBoolean OpalFileMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length
   if (!OpalRawMediaStream::ReadData(data, size, length))
     return false;
 
-  // only delay if audio
-  if (sessionID == 1)
-    fileDelay.Delay(length/16);
-
+  Pace(true, size, marker);
   return true;
 }
+
 
 /**Write raw media data to the sink media stream.
    The default behaviour writes to the PChannel object.
@@ -848,17 +870,13 @@ PBoolean OpalFileMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX
   if (!OpalRawMediaStream::WriteData(data, length, written))
     return false;
 
-  // only delay if audio
-  if (sessionID == 1)
-    fileDelay.Delay(written/16);
-
+  Pace(false, written, marker);
   return true;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
 #if P_AUDIO
 
 OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
@@ -915,7 +933,6 @@ PBoolean OpalAudioMediaStream::IsSynchronous() const
 }
 
 #endif // P_AUDIO
-#endif // OPAL_AUDIO
 
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -187,7 +187,7 @@ void IAX2CallProcessor::RemoteNodeHasAnswered()
   
   SetCallAnswered();
   PTRACE(3, "Processor\tRemote node has answered");
-  con->SetConnected();
+  con->OnConnectedInternal();
 }
 
 void IAX2CallProcessor::Hangup(PString dieMessage)
@@ -209,8 +209,9 @@ void IAX2CallProcessor::CheckForHangupMessages()
     PTRACE(3, "Send a hangup frame to the remote endpoint");
     
     f->AppendIe(new IAX2IeCause(hangList.GetFirstDeleteAll()));
-    //        f->AppendIe(new IeCauseCode(IAX2IeCauseCode::NormalClearing));
-    TransmitFrameToRemoteEndpoint(f);
+    f->AppendIe(new IAX2IeCauseCode(IAX2IeCauseCode::NormalClearing));
+    TransmitFrameToRemoteEndpoint(f);  
+    PThread::Sleep(2);
   } else {
     PTRACE(3, "hangup message required. Not sending, cause already have a hangup message in queue");
   }
@@ -875,7 +876,6 @@ PBoolean IAX2CallProcessor::RemoteSelectedCodecOk()
 
 void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
 { /*That we are here indicates this connection is already in place */
-  
   PTRACE(3, "ProcessIaxCmdNew(IAX2FullFrameProtocol *src)");
   remote.SetRemoteAddress(src->GetRemoteInfo().RemoteAddress());
   remote.SetRemotePort(src->GetRemoteInfo().RemotePort());

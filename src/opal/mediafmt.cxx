@@ -61,8 +61,6 @@ static class InstantiateMe
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 #define AUDIO_FORMAT(name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock) \
   const OpalAudioFormat & GetOpal##name() \
   { \
@@ -78,7 +76,6 @@ AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  32,16,  240, 30, 256, 16000
 AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256,  8000);
 AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 30, 256,  8000);
 
-#endif
 
 const OpalMediaFormat & GetOpalRFC2833()
 {
@@ -1242,8 +1239,6 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 const PString & OpalAudioFormat::RxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET; return s; }
 const PString & OpalAudioFormat::TxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET; return s; }
 const PString & OpalAudioFormat::MaxFramesPerPacketOption(){ static PString s = "Max Frames Per Packet"; return s; }
@@ -1321,7 +1316,6 @@ bool OpalAudioFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
   return true;
 }
 
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1479,31 +1473,31 @@ void OpalMediaFormatList::Remove(const PStringArray & mask)
 
 OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol) const
 {
-  for (OpalMediaFormatList::const_iterator format = begin(); format != end(); ++format) {
-    // clock rates must always match
-    if (clockRate != 0 && clockRate != format->GetClockRate())
-      continue;
+  OpalMediaFormatList::const_iterator format;
 
-    // if protocol is specified, must be valid for the protocol
-    if ((protocol != NULL) && !format->IsValidForProtocol(protocol))
-      continue;
-
-    // if an encoding name is specified, and it matches exactly, then use it
-    // regardless of payload code. This allows the payload code mapping in SIP to work
-    // if it doesn't match, then don't bother comparing payload codes
-    if (name != NULL && *name != '\0') {
+  // First look for a matching encoding name
+  if (name != NULL && *name != '\0') {
+    for (format = begin(); format != end(); ++format) {
+      // If encoding name matches exactly, then use it regardless of payload code.
       const char * otherName = format->GetEncodingName();
-      if (otherName != NULL && strcasecmp(otherName, name) == 0)
+      if (otherName != NULL && strcasecmp(otherName, name) == 0 &&
+          (clockRate == 0    || clockRate == format->GetClockRate()) && // if have clock rate, clock rate must match
+          (protocol  == NULL || format->IsValidForProtocol(protocol))) // if protocol is specified, must be valid for the protocol
         return format;
-      continue;
     }
+  }
 
-    // if the payload type is not dynamic, and matches, then this is a match
-    if (pt < RTP_DataFrame::DynamicBase && format->GetPayloadType() == pt)
-      return format;
-
-    //if (RTP_DataFrame::IllegalPayloadType == pt)
-    //  return idx;
+  // Can't match by encoding name, try by known payload type.
+  // Note we do two separate loops as it is possible (though discouraged) for
+  // someone to override a standard payload type with another encoding name, so
+  // have to search all formats by name before trying by number.
+  if (pt < RTP_DataFrame::DynamicBase) {
+    for (format = begin(); format != end(); ++format) {
+      if (format->GetPayloadType() == pt &&
+          (clockRate == 0    || clockRate == format->GetClockRate()) && // if have clock rate, clock rate must match
+          (protocol  == NULL || format->IsValidForProtocol(protocol))) // if protocol is specified, must be valid for the protocol
+        return format;
+    }
   }
 
   return end();

@@ -313,12 +313,6 @@ class OpalTranscoder : public OpalMediaFormatPair
       unsigned instanceLen                ///<  Length of instance identifier
     );
 
-    void SetRTPPayloadMap(const RTP_DataFrame::PayloadMapType & v)
-    { payloadTypeMap = v; }
-
-    void AddRTPPayloadMapping(RTP_DataFrame::PayloadTypes from, RTP_DataFrame::PayloadTypes to)
-    { payloadTypeMap.insert(RTP_DataFrame::PayloadMapType::value_type(from, to)); }
-
     RTP_DataFrame::PayloadTypes GetPayloadType(
       PBoolean input      ///<  Flag for input or output data size
     ) const;
@@ -336,8 +330,6 @@ class OpalTranscoder : public OpalMediaFormatPair
     PINDEX    maxOutputSize;
     PNotifier commandNotifier;
     PMutex    updateMutex;
-
-    RTP_DataFrame::PayloadMapType payloadTypeMap;
 
     PBoolean outputIsRTP, inputIsRTP;
     bool acceptEmptyPayload;

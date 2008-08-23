@@ -271,6 +271,9 @@ class IAX2Processor : public PThread
   @return false, and does not destroy the supplied frame*/
   virtual PBoolean IncomingMessageOutOfOrder(IAX2FullFrame *ff)= 0;
 
+  /** Report on the contents of the lists waiting for processing */
+  void ReportLists(PString & answer);
+
  protected:
  
   /**Reference to the global variable of this program */
@@ -314,7 +317,7 @@ class IAX2Processor : public PThread
   IAX2SequenceNumbers sequence;
   
   /**Array of frames read from the Receiver for this call */
-  IAX2FrameList frameList;
+  IAX2ActiveFrameList frameList;
   
   /**The call token, which uniquely identifies this IAX2CallProcessor, and the
      associated call */

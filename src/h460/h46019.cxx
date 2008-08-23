@@ -11,11 +11,9 @@
 #include <ptlib.h>
 #include "h460/h46019.h"
 
+#ifdef OPAL_H460
+
 #define new PNEW
-
-
-#if ! H323_DISABLE_H46019
-
 
 
 //
@@ -149,7 +147,7 @@ PObject * H46019_TraversalParameters::Clone() const
 }
 
 
-#endif // if ! H323_DISABLE_H46019
+#endif // OPAL_H460
 
 
 // End of h46019.cxx

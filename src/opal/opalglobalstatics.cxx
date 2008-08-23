@@ -53,7 +53,7 @@
 #include <codec/g711codec.h>
 OPAL_REGISTER_G711();
 
-#if defined(P_HAS_PLUGINS)
+#if defined(P_PLUGINS)
 class PluginLoader : public PProcessStartup
 {
   PCLASSINFO(PluginLoader, PProcessStartup);
@@ -81,7 +81,7 @@ static PFactory<PPluginModuleManager>::Worker<OpalPluginLIDManager> opalPluginLI
 #endif
 static PFactory<PProcessStartup>::Worker<PluginLoader> opalpluginStartupFactory("OpalPluginLoader", true);
 
-#endif // P_HAS_PLUGINS
+#endif // P_PLUGINS
 
 namespace PWLibStupidLinkerHacks {
 

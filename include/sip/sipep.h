@@ -369,14 +369,14 @@ class SIPEndPoint : public OpalRTPEndPoint
      * several subscriptions to occur at the same time.
      */
     PBoolean Subscribe(
-      SIPSubscribe::SubscribeType & type,
+      const PString & eventPackage,
       unsigned expire,
       const PString & to
     );
 
 
     PBoolean Unsubscribe(
-      SIPSubscribe::SubscribeType & type,
+      const PString & eventPackage,
       const PString & to
     );
 
@@ -453,8 +453,9 @@ class SIPEndPoint : public OpalRTPEndPoint
      * event for the given to address.
      */
     PBoolean IsSubscribed(
-      SIPSubscribe::SubscribeType type,
-      const PString & to); 
+      const PString & eventPackage,
+      const PString & to
+    );
 
 
     /** Returns the number of registered accounts.

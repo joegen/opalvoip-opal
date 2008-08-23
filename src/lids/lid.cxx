@@ -1094,6 +1094,12 @@ unsigned OpalLine::GetRingCount(DWORD * cadence)
 {
   PTimeInterval tick = PTimer::Tick();
 
+  PTimeInterval delta = tick - ringTick;
+  if (delta > ringStoppedTime) {
+    PTRACE(4, "LID\tRing count reset on line " << lineNumber);
+    ringCount = 0;
+  }
+
   if (IsRinging(cadence)) {
     lastRingState = true;
     ringTick = tick;
@@ -1102,17 +1108,10 @@ unsigned OpalLine::GetRingCount(DWORD * cadence)
       ringCount = 1;
     }
   }
-  else {
-    PTimeInterval delta = tick - ringTick;
-    if (delta > ringStoppedTime) {
-      PTRACE(4, "LID\tRing count reset on line " << lineNumber);
-      ringCount = 0;
-    }
-    else if (lastRingState && delta > ringInterCadenceTime) {
-      PTRACE(4, "LID\tRing cadence incremented on line " << lineNumber);
-      ringCount++;
-      lastRingState = false;
-    }
+  else if (lastRingState && delta > ringInterCadenceTime) {
+    PTRACE(4, "LID\tRing cadence incremented on line " << lineNumber);
+    ringCount++;
+    lastRingState = false;
   }
 
   return ringCount;

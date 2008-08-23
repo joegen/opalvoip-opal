@@ -7,11 +7,17 @@ fi
 
 PKG_PROG_PKG_CONFIG()
 m4_include(../opal.m4)
+
 OPAL_DETERMINE_DEBUG()
+CFLAGS="$CFLAGS $DEBUG_CFLAGS"
+CXXFLAGS="$CXXFLAGS $DEBUG_CFLAGS"
+
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_RANLIB
+AC_CHECK_TOOL([NM], [nm], [:])
+
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stddef.h limits.h float.h fcntl.h])
 
@@ -96,7 +102,7 @@ dnl ########################################################################
 HAVE_VPB=yes
 HAVE_CAPI=yes
 HAVE_IXJ=no
-HAVE_FFMPEG_H263=yes
+HAVE_H263=yes
 HAVE_H264=yes
 HAVE_SPANDSP=yes
 DEFAULT_TO_FULL_CAPABILITIES=no
@@ -174,7 +180,7 @@ dnl ########################################################################
 dnl     ########################
 dnl     ffmpeg for H.263
 dnl     #######################
-OPAL_SIMPLE_OPTION([ffmpeg-h263],[HAVE_FFMPEG_H263], [enable plugin supporting H.263 via patched FFMPEG])
+OPAL_SIMPLE_OPTION([ffmpeg-h263],[HAVE_H263], [enable plugin supporting H.263 via patched FFMPEG])
 
 dnl     ########################
 dnl     Capabilities option
@@ -193,6 +199,11 @@ PKG_CHECK_MODULES([LIBAVCODEC],
                    HAVE_LIBAVCODEC=yes
                    OPAL_LIBAVCODEC_HACK
                    OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [$LIBAVCODEC_LIBS])
+    		   OPAL_CHECK_LIBAVCODEC([h263p_encoder], [HAVE_H263P=yes], [HAVE_H263P=no])
+		   OPAL_CHECK_LIBAVCODEC([mpeg4_encoder], [HAVE_MPEG4=yes], [HAVE_MPEG4=no])
+		   OPAL_CHECK_LIBAVCODEC([h264_decoder], [HAVE_H264_DECODER=yes], [HAVE_H264_DECODER=no])
+                   AC_SUBST(HAVE_H263P)
+                   AC_SUBST(HAVE_MPEG4)
                    AC_SUBST(LIBAVCODEC_LIB_NAME)
                    OPAL_LIBAVCODEC_HEADER
                   ],
@@ -204,7 +215,6 @@ AC_SUBST(HAVE_LIBAVCODEC)
 
 OPAL_LIBAVCODEC_SOURCE()
 AC_SUBST(LIBAVCODEC_SOURCE_DIR)
-
 
 dnl     ########################
 dnl     x264
@@ -252,22 +262,12 @@ AC_SUBST(DL_LIBS)
 dnl     ########################
 dnl     H.264
 dnl     ########################
-AC_ARG_ENABLE([h264],
-              [AC_HELP_STRING([--enable-h264],[enable H.264 support])],
-              [HAVE_H264=$enableval])
-
-if test "x$HAVE_H264" = "xyes" ; then
-  if test "x$HAVE_X264" != "xyes" ; then
-    HAVE_H264=no
-  fi
-  if test "x$HAVE_LIBAVCODEC" != "xyes" ; then
-    HAVE_H264=no
-  fi
-  if test "x$X264_LINK_STATIC" != "xyes"&& test "x$HAVE_LIBDL" != "xyes" ; then
-    HAVE_H264=no
-  fi
+if test "x$X264_LINK_STATIC" != "xyes"&& test "x$HAVE_LIBDL" != "xyes" ; then
+  AC_MSG_NOTICE(H.264 support disabled since static linking was disabled and libdl was not found)
+  HAVE_H264=no
+else
+  OPAL_SIMPLE_OPTION([h264],[HAVE_H264], [enable H.264 support], [HAVE_X264], [HAVE_H264_DECODER])
 fi
-AC_SUBST(HAVE_H264)
 
 dnl ########################################################################
 dnl LID Devices
@@ -436,19 +436,19 @@ echo "                        IMA_ADPCM :  yes"
 echo ""
 
 echo "                           H.261  :  yes"
-echo "                           H.263  :  ${HAVE_FFMPEG_H263}"
-echo "                           H.263+ :  ${HAVE_LIBAVCODEC}"
+echo "                           H.263  :  ${HAVE_H263}"
+echo "                           H.263+ :  ${HAVE_H263P}"
 echo "                           H.264  :  ${HAVE_H264}"
 echo "                          THEORA  :  ${HAVE_THEORA}"
 
-if test "x${HAVE_LIBAVCODEC}" = "xyes" ; then
+if test "x${HAVE_MPEG4}" = "xyes" ; then
 if test "x${LIBAVCODEC_SOURCE_DIR}" = "x" ; then
 echo "                    MPEG4 Part 2  :  yes (no rate control correction)"
 else
 echo "                    MPEG4 Part 2  :  yes"
 fi
 else
-echo "                    MPEG4 Part 2  :  no (needs libavcodec)"
+echo "                    MPEG4 Part 2  :  no"
 fi
 
 echo ""

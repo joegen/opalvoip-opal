@@ -51,19 +51,23 @@
 
  */
 
-#define _CRT_NONSTDC_NO_WARNINGS
-#define _CRT_SECURE_NO_DEPRECATE
-#include "plugin-config.h"
-#include <codec/opalplugin.h>
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS 1
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
+#include "plugin-config.h"
+#endif
+
+#include <codec/opalplugin.h>
 
 #if defined(_WIN32) || defined(_WIN32_WCE)
   #include <windows.h>
-  #include <malloc.h>
   #define STRCMPI  _strcmpi
 #else
-  #include <stdio.h>
   #include <limits.h>
   #include <semaphore.h>
   #include <dlfcn.h>
@@ -77,7 +81,6 @@
 #pragma warning(disable:4800)
 #endif
 
-#include <string.h>
 
 extern "C" {
 #include "ffmpeg/avcodec.h"

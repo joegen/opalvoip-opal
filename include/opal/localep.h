@@ -216,6 +216,20 @@ class OpalLocalEndPoint : public OpalEndPoint
       PINDEX length,                          ///<  Amount of data available to write
       PINDEX & written                        ///<  Amount of data written
     );
+
+    /**Indicate that I/O is synchronous.
+       This indicates that the OnReadMediaXXX and OnWriteMediaXXX functions
+       will execute blocking to the correct real time synchonisation. So if
+       for example OnWriteMediaData() is sent 320 bytes of PCM data then it
+       will, on average, block for 20 milliseconds per call.
+
+       If the function returns false, then the system will try and simulate
+       the correct timing using the operating system sleep function. However
+       this is not desirable as this function is notoriously inaccurate.
+
+       Default returns true.
+      */
+    virtual bool IsSynchronous() const;
   //@}
 };
 
@@ -324,7 +338,7 @@ class OpalLocalConnection : public OpalConnection
 /**This class describes a media stream that transfers data to/from a Local
    EndPoint or Connection.
   */
-class OpalLocalMediaStream : public OpalMediaStream
+class OpalLocalMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
 {
     PCLASSINFO(OpalLocalMediaStream, OpalMediaStream);
   public:
@@ -336,7 +350,8 @@ class OpalLocalMediaStream : public OpalMediaStream
       OpalLocalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      bool isSource                        ///<  Is a source stream
+      bool isSource,                       ///<  Is a source stream
+      bool isSynchronous                   ///<  Can accept data and block accordingly
     );
   //@}
 
@@ -383,6 +398,9 @@ class OpalLocalMediaStream : public OpalMediaStream
       */
     virtual PBoolean IsSynchronous() const;
   //@}
+
+  protected:
+    bool m_isSynchronous;
 };
 
 

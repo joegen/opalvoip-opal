@@ -52,12 +52,18 @@
 #define _CRT_NONSTDC_NO_DEPRECATE 1
 #define _CRT_SECURE_NO_WARNINGS 1
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "plugin-config.h"
+#endif
+
 #include <codec/opalplugin.h>
 
-#include <stdlib.h>
+
 #if defined (_WIN32) || defined (_WIN32_WCE)
-  #include <malloc.h>
   #ifndef _WIN32_WCE
     #define STRCMPI  _strcmpi
   #else
@@ -65,14 +71,11 @@
     #define strdup _strdup
   #endif
 #else
-  #include "plugin-config.h"
+  #define STRCMPI  strcasecmp
   #include <unistd.h>
   #include <semaphore.h>
-  #define STRCMPI  strcasecmp
 #endif
-#include <string.h>
 
-#include <stdio.h>
 #include <math.h>
 
 #include "critsect.h"

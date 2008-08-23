@@ -76,8 +76,6 @@
 // Media support
 //
 
-#undef  OPAL_AUDIO
-
 #if P_VIDEO
 #undef  OPAL_VIDEO
 #endif
@@ -91,11 +89,7 @@
 #endif
 
 
-#ifdef OPAL_AUDIO
 #undef OPAL_G711PLC
-#else
-#define NO_OPAL_AUDIO
-#endif
 
 #ifdef OPAL_VIDEO
 #undef  OPAL_RFC4175 
@@ -223,6 +217,23 @@
 #else
 #define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Release/libsrtp.lib"
 #endif
+
+#endif
+#endif
+
+
+/////////////////////////////////////////////////
+//
+// Java JNI support
+//
+#undef OPAL_JAVA
+
+#if OPAL_JAVA
+#if defined(_MSC_VER)
+
+#pragma include_alias(<jni.h>,    <@JAVA_DIR@/include/jni.h>)
+#pragma include_alias("jni_md.h", "@JAVA_DIR@/include/win32/jni_md.h")
+
 
 #endif
 #endif

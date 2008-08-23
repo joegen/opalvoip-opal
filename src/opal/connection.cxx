@@ -423,6 +423,12 @@ PBoolean OpalConnection::ForwardCall(const PString & /*forwardParty*/)
 }
 
 
+PSafePtr<OpalConnection> OpalConnection::GetOtherPartyConnection() const
+{
+  return GetCall().GetOtherPartyConnection(*this);
+}
+
+
 void OpalConnection::OnAlerting()
 {
   endpoint.OnAlerting(*this);
@@ -462,7 +468,7 @@ void OpalConnection::AnsweringCall(AnswerCallResponse response)
 
     case AnswerCallNow: 
       PTRACE(3, "OpalCon\tApplication has answered incoming call");
-      GetCall().GetOtherPartyConnection(*this)->OnConnectedInternal();
+      GetOtherPartyConnection()->OnConnectedInternal();
       break;
 
     default : // AnswerCallDeferred etc
@@ -506,12 +512,14 @@ void OpalConnection::OnConnectedInternal()
 
 void OpalConnection::OnConnected()
 {
+  PTRACE(3, "OpalCon\tOnConnected for " << *this);
   endpoint.OnConnected(*this);
 }
 
 
 void OpalConnection::OnEstablished()
 {
+  PTRACE(3, "OpalCon\tOnEstablished " << *this);
   StartMediaStreams();
   endpoint.OnEstablished(*this);
 }
@@ -583,7 +591,7 @@ bool OpalConnection::CloseMediaStream(OpalMediaStream & stream)
   if (stream.IsSource())
     return true;
 
-  PSafePtr<OpalConnection> otherConnection = GetCall().GetOtherPartyConnection(*this);
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
   if (otherConnection == NULL)
     return true;
 
@@ -989,6 +997,13 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
 }
 #endif
 
+
+PString OpalConnection::GetPrefixName() const
+{
+  return endpoint.GetPrefixName();
+}
+
+
 void OpalConnection::SetLocalPartyName(const PString & name)
 {
   localPartyName = name;
@@ -997,19 +1012,34 @@ void OpalConnection::SetLocalPartyName(const PString & name)
 
 PString OpalConnection::GetLocalPartyURL() const
 {
-  return endpoint.GetPrefixName() + ':' + PURL::TranslateString(GetLocalPartyName(), PURL::LoginTranslation);
+  return GetPrefixName() + ':' + PURL::TranslateString(GetLocalPartyName(), PURL::LoginTranslation);
+}
+
+
+static PString MakeURL(const PString & prefix, const PString & partyName)
+{
+  if (partyName.IsEmpty())
+    return PString::Empty();
+
+  PINDEX colon = partyName.Find(':');
+  if (colon != P_MAX_INDEX && partyName.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") == colon)
+    return partyName;
+
+  PStringStream url;
+  url << prefix << ':' << partyName;
+  return url;
 }
 
 
 PString OpalConnection::GetRemotePartyURL() const
 {
-  PINDEX colon = remotePartyAddress.Find(':');
-  if (colon != P_MAX_INDEX && remotePartyAddress.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") == colon)
-    return remotePartyAddress;
+  return MakeURL(GetPrefixName(), GetRemotePartyAddress());
+}
 
-  PStringStream url;
-  url << endpoint.GetPrefixName() << ':' << remotePartyAddress;
-  return url;
+
+PString OpalConnection::GetCalledPartyURL()
+{
+  return MakeURL(GetPrefixName(), GetDestinationAddress());
 }
 
 

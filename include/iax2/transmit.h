@@ -133,7 +133,7 @@ class IAX2Transmit : public PThread
   void SendVnakRequestedFrames(IAX2FullFrameProtocol &src);
 
   /** Report on the contents of the lists waiting for transmission */
-  void ReportLists();
+  void ReportLists(PString & answer, bool getFullReport=false);
   //@}
   
  protected:
@@ -154,11 +154,14 @@ class IAX2Transmit : public PThread
   /**Flag to activate this thread*/
   PSyncPoint activate;
   
-  /**Frames in the acking list - These frames are waiting on an ack*/
-  IAX2FrameList  ackingFrames;   
+  /**Frames in the acking list - These frames are waiting on an
+     ack. Full frames in this list will be resent an additional 3
+     times if not replied to. There are no mini frames in this list -
+     mini frames are not acked.*/
+  IAX2ActiveFrameList  ackingFrames;   
   
   /**Send Now list of frames - These frames are to be sent now */
-  IAX2FrameList  sendNowFrames;  
+  IAX2ActiveFrameList  sendNowFrames;  
   
   /**Flag to indicate that this thread should keep working */
   PBoolean       keepGoing;
@@ -171,7 +174,6 @@ class IAX2Transmit : public PThread
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

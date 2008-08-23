@@ -43,14 +43,18 @@
 
 #define new PNEW
 
+static const char PrefixPSTN[] = "pstn";
+static const char PrefixPOTS[] = "pots";
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalLineEndPoint::OpalLineEndPoint(OpalManager & mgr)
-  : OpalEndPoint(mgr, "pots", CanTerminateCall),
+  : OpalEndPoint(mgr, PrefixPOTS, CanTerminateCall),
     defaultLine("*")
 {
   PTRACE(4, "LID EP\tOpalLineEndPoint created");
-  manager.AttachEndPoint(this, "pstn");
+  manager.AttachEndPoint(this, PrefixPSTN);
   monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorLines), "Line Monitor");
 }
 
@@ -86,7 +90,7 @@ PBoolean OpalLineEndPoint::MakeConnection(OpalCall & call,
 
   // Then see if there is a specific line mentioned in the prefix, e.g 123456@vpb:1/2
   PINDEX prefixLength = GetPrefixName().GetLength();
-  bool terminating = (remoteParty.Left(prefixLength) *= "pots");
+  bool terminating = (remoteParty.Left(prefixLength) *= PrefixPOTS);
 
   PString number, lineName;
   PINDEX at = remoteParty.Find('@');
@@ -457,7 +461,8 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
   remotePartyNumber = number.Right(number.Find(':'));
   silenceDetector = new OpalLineSilenceDetector(line, (endpoint.GetManager().GetSilenceDetectParams()));
 
-  answerRingCount = 3;
+  minimumRingCount = 2;
+
   wasOffHook = false;
   handlerThread = NULL;
 
@@ -484,7 +489,7 @@ void OpalLineConnection::OnReleased()
       if (line.PlayTone(OpalLineInterfaceDevice::ClearTone))
         PTRACE(3, "LID Con\tPlaying clear tone until handset onhook");
       else
-        PTRACE(2, "LID Con\tCould not play clear tone until handset onhook");
+        PTRACE(2, "LID Con\tCould not play clear tone!");
     }
     line.Ring(0, NULL);
   }
@@ -514,7 +519,7 @@ PBoolean OpalLineConnection::SetAlerting(const PString & /*calleeName*/, PBoolea
   SetPhase(AlertingPhase);
   alertingTime = PTime();
 
-  if (GetMediaStream(OpalMediaType::Audio(), false) == NULL) {
+  if (line.IsTerminal() && GetMediaStream(OpalMediaType::Audio(), false) == NULL) {
     // Start ringing if we don't have an audio media stream
     if (line.PlayTone(OpalLineInterfaceDevice::RingTone))
       PTRACE(3, "LID Con\tPlaying ring tone");
@@ -546,6 +551,8 @@ PBoolean OpalLineConnection::SetConnected()
       PTRACE(1, "LID Con\tCould set line off hook on " << *this);
       return false;
     }
+    PTRACE(4, "LID Con\tAnswered call - gone off hook.");
+    wasOffHook = true;
   }
 
   ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
@@ -669,23 +676,12 @@ void OpalLineConnection::Monitor()
       // Ok, they went off hook, stop ringing
       line.Ring(0, NULL);
 
-      // If we are in alerting state then we are B-Party
-      if (GetPhase() == AlertingPhase) {
+      if (GetPhase() != AlertingPhase)
+        StartIncoming(); // We are A-party
+      else {
+        // If we are in alerting state then we are B-Party
         OnConnectedInternal();
         ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
-      }
-      else {
-        // Otherwise we are A-Party
-        if (!OnIncomingConnection(0, NULL)) {
-          Release(EndedByCallerAbort);
-          return;
-        }
-
-        PTRACE(3, "LID Con\tOutgoing connection " << *this << " routed to \"" << ownerCall.GetPartyB() << '"');
-        if (!ownerCall.OnSetUp(*this)) {
-          Release(EndedByNoAccept);
-          return;
-        }
       }
     }
   }
@@ -712,6 +708,11 @@ void OpalLineConnection::Monitor()
     while ((tone = line.ReadDTMF()) != '\0')
       OnUserInputTone(tone, 180);
   }
+  else {
+    // Check for incoming PSTN ring stopping
+    if (GetPhase() == AlertingPhase && !line.IsTerminal() && line.GetRingCount() == 0)
+      Release(EndedByCallerAbort);
+  }
 }
 
 
@@ -721,7 +722,9 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 
   SetPhase(SetUpPhase);
 
-  if (!line.IsTerminal()) {
+  if (line.IsTerminal())
+    wasOffHook = true;
+  else {
     PTRACE(4, "LID Con\tCounting rings.");
     // Count incoming rings
     unsigned count;
@@ -735,9 +738,8 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
       PThread::Sleep(100);
       if (GetPhase() >= ReleasingPhase)
         return;
-    } while (count < answerRingCount);
+    } while (count < minimumRingCount); // Wait till we have CLID
 
-    PTRACE(4, "LID Con\tChecking for caller ID.");
     // Get caller ID
     PString callerId;
     if (line.GetCallerID(callerId, true)) {
@@ -746,31 +748,36 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
         PTRACE(2, "LID Con\tMalformed caller ID \"" << callerId << '"');
       }
       else {
+        PTRACE(3, "LID Con\tDetected Caller ID \"" << callerId << '"');
         remotePartyNumber = words[0].Trim();
         remotePartyName = words[1].Trim();
         if (remotePartyName.IsEmpty())
           remotePartyName = remotePartyNumber;
       }
     }
-
-    if (!line.SetOffHook()) {
-      PTRACE(1, "LID Con\tCould not go off hook to answer call.");
-      Release(EndedByCallerAbort);
-      return;
+    else {
+      PTRACE(3, "LID Con\tNo caller ID available.");
     }
 
-    PTRACE(4, "LID Con\tAnswering call - gone off hook.");
+    // switch phase 
+    SetPhase(AlertingPhase);
+    alertingTime = PTime();
   }
-
-  wasOffHook = true;
 
   if (!OnIncomingConnection(0, NULL)) {
     Release(EndedByCallerAbort);
     return;
   }
 
-  PTRACE(3, "LID\tIncoming call routed for " << *this);
+  PTRACE(3, "LID\tRouted to \"" << ownerCall.GetPartyB() << "\" the "
+         << (IsOriginating() ? "outgo" : "incom") << "ing connection " << *this);
   ownerCall.OnSetUp(*this);
+}
+
+
+PString OpalLineConnection::GetPrefixName() const
+{
+  return line.IsTerminal() ? PrefixPOTS : PrefixPSTN;
 }
 
 

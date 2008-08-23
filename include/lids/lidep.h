@@ -308,6 +308,10 @@ class OpalLineConnection : public OpalConnection
 
   /**@name Overrides from OpalConnection */
   //@{
+    /**Get this connections protocol prefix for URLs.
+      */
+    virtual PString GetPrefixName() const;
+
     /**Get indication of connection being to a "network".
        This indicates the if the connection may be regarded as a "network"
        connection. The distinction is about if there is a concept of a "remote"
@@ -493,7 +497,7 @@ class OpalLineConnection : public OpalConnection
     OpalLineEndPoint & endpoint;
     OpalLine        & line;
     bool              wasOffHook;
-    unsigned          answerRingCount;
+    unsigned          minimumRingCount;
     OpalLineInterfaceDevice::DialParams m_dialParams;
 
     PDECLARE_NOTIFIER(PThread, OpalLineConnection, HandleIncoming);

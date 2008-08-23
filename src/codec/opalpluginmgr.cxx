@@ -494,8 +494,6 @@ bool OpalPluginMediaFormatInternal::IsValidForProtocol(const PString & _protocol
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 OpalPluginAudioFormatInternal::OpalPluginAudioFormatInternal(const PluginCodec_Definition * _encoderCodec,
                                                                        const char * rtpEncodingName, /// rtp encoding name
                                                                        unsigned frameTime,           /// Time for frame in RTP units (if applicable)
@@ -574,7 +572,6 @@ static H323Capability * CreateGSMCap(
 
 #endif // OPAL_H323
 
-#endif // OPAL_AUDIO
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -699,8 +696,6 @@ class H323CodecPluginCapabilityMapEntry {
     H323Capability * (* createFunc)(const PluginCodec_Definition * encoderCodec, const PluginCodec_Definition * decoderCodec, int subType);
 };
 
-#if OPAL_AUDIO
-
 static H323CodecPluginCapabilityMapEntry audioMaps[] = {
   { PluginCodec_H323Codec_nonStandard,              H245_AudioCapability::e_nonStandard,         &CreateNonStandardAudioCap },
   { PluginCodec_H323AudioCodec_gsmFullRate,	    H245_AudioCapability::e_gsmFullRate,         &CreateGSMCap },
@@ -730,7 +725,6 @@ static H323CodecPluginCapabilityMapEntry audioMaps[] = {
   { -1 }
 };
 
-#endif // OPAL_AUDIO
 
 #if OPAL_VIDEO
 
@@ -787,7 +781,6 @@ bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
 // Plugin framed audio codec classes
 //
 
-#if OPAL_AUDIO
 OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, const char * rawFormat)
   : OpalFramedTranscoder( (strcmp(_codec->sourceFormat, "L16") == 0) ? (rawFormat != NULL ? rawFormat : ((_codec->sampleRate == 8000) ? OpalPCM16 : OpalPCM16_16KHZ)) : _codec->sourceFormat,
                           (strcmp(_codec->destFormat, "L16") == 0)   ? (rawFormat != NULL ? rawFormat : ((_codec->sampleRate == 8000) ? OpalPCM16 : OpalPCM16_16KHZ)) : _codec->destFormat,
@@ -915,7 +908,6 @@ int OpalPluginStreamedAudioDecoder::ConvertOne(int codedSample) const
   return Transcode(&codedSample, &fromLen, &to, &toLen, &flags) ? to : -1;
 }
 
-#endif //  OPAL_AUDIO
 
 #if OPAL_VIDEO
 
@@ -1169,8 +1161,6 @@ PBoolean OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Da
 
 #if OPAL_H323
 
-#if OPAL_AUDIO
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // Class for handling most audio plugin capabilities
@@ -1291,9 +1281,8 @@ class H323GSMPluginCapability : public H323AudioPluginCapability
     int scrambled;
 };
 
-#endif // OPAL_AUDIO
-
 #endif // OPAL_H323
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1497,14 +1486,14 @@ void OpalPluginCodecManager::RegisterPluginPair(
       defaultSessionID = OpalMediaFormat::DefaultVideoSessionID;
       break;
 #endif
-#if OPAL_AUDIO
+
     case PluginCodec_MediaTypeAudio:
     case PluginCodec_MediaTypeAudioStreamed:
       defaultSessionID = OpalMediaFormat::DefaultAudioSessionID;
       frameTime = encoderCodec->parm.audio.samplesPerFrame;
       clockRate = encoderCodec->sampleRate;
       break;
-#endif
+
 #if OPAL_T38_CAPABILITY
     case PluginCodec_MediaTypeFax:
       defaultSessionID = OpalMediaFormat::DefaultDataSessionID;
@@ -1536,12 +1525,12 @@ void OpalPluginCodecManager::RegisterPluginPair(
           mediaFormatInternal = handler->OnCreateVideoFormat(*this, encoderCodec, encoderCodec->sdpFormat, timeStamp);
           break;
 #endif
-#if OPAL_AUDIO
+
         case PluginCodec_MediaTypeAudio:
         case PluginCodec_MediaTypeAudioStreamed:
           mediaFormatInternal = handler->OnCreateAudioFormat(*this, encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
           break;
-#endif
+
 #if OPAL_T38_CAPABILITY
         case PluginCodec_MediaTypeFax:
           mediaFormatInternal = handler->OnCreateFaxFormat(*this, encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
@@ -1593,7 +1582,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       handler->RegisterVideoTranscoder(encoderCodec->destFormat, OpalYUV420P, decoderCodec, PFalse);
       break;
 #endif
-#if OPAL_AUDIO
+
     case PluginCodec_MediaTypeAudio:
       if (encoderCodec->sampleRate == 8000) {
         new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, PTrue);
@@ -1624,7 +1613,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
         PTRACE(1, "OpalPlugin\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
       }
       break;
-#endif
+
 #if OPAL_T38_CAPABILITY
     case PluginCodec_MediaTypeFax:
       new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, PTrue);
@@ -1656,12 +1645,10 @@ void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoder
   H323CodecPluginCapabilityMapEntry * map = NULL;
 
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
-#if OPAL_AUDIO
     case PluginCodec_MediaTypeAudio:
     case PluginCodec_MediaTypeAudioStreamed:
       map = audioMaps;
       break;
-#endif // OPAL_AUDIO
 
 #if OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
@@ -1684,12 +1671,10 @@ void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoder
           cap = (*map[i].createFunc)(encoderCodec, decoderCodec, map[i].h323SubType);
         else {
           switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
-#if OPAL_AUDIO
             case PluginCodec_MediaTypeAudio:
             case PluginCodec_MediaTypeAudioStreamed:
               cap = new H323AudioPluginCapability(encoderCodec, decoderCodec, map[i].h323SubType);
               break;
-#endif // OPAL_AUDIO
 
 #if OPAL_VIDEO
             case PluginCodec_MediaTypeVideo:
@@ -1719,7 +1704,7 @@ OpalPluginCodecHandler::OpalPluginCodecHandler()
 {
 }
 
-#if OPAL_AUDIO
+
 OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateAudioFormat(OpalPluginCodecManager & /*mgr*/,
                                                      const PluginCodec_Definition * encoderCodec,
                                                                        const char * rtpEncodingName,
@@ -1729,7 +1714,7 @@ OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateAudioFormat(OpalPlugin
 {
   return new OpalPluginAudioFormatInternal(encoderCodec, rtpEncodingName, frameTime, timeUnits, timeStamp);
 }
-#endif
+
 
 #if OPAL_VIDEO
 OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateVideoFormat(OpalPluginCodecManager & /*mgr*/,
@@ -1762,8 +1747,6 @@ OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateFaxFormat(OpalPluginCo
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_H323
-
-#if OPAL_AUDIO
 
 H323Capability * CreateNonStandardAudioCap(const PluginCodec_Definition * encoderCodec,
                                            const PluginCodec_Definition * decoderCodec,
@@ -1813,7 +1796,6 @@ H323Capability * CreateGSMCap(const PluginCodec_Definition * encoderCodec,
   return new H323GSMPluginCapability(encoderCodec, decoderCodec, subType, pluginData->comfortNoise, pluginData->scrambled);
 }
 
-#endif // OPAL_AUDIO
 
 #if OPAL_VIDEO
 
@@ -1882,7 +1864,6 @@ H323PluginCapabilityInfo::H323PluginCapabilityInfo(const PString & _baseName)
 {
 }
 
-#if OPAL_AUDIO
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1987,8 +1968,6 @@ PBoolean H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap
 }
 
 /////////////////////////////////////////////////////////////////////////////
-
-#endif   // OPAL_AUDIO
 
 #if OPAL_VIDEO
 

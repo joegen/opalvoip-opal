@@ -114,14 +114,7 @@ void OpalTranscoder::SetInstanceID(const BYTE * /*instance*/, unsigned /*instanc
 
 RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(PBoolean input) const
 {
-  RTP_DataFrame::PayloadTypes pt = (input ? inputMediaFormat : outputMediaFormat).GetPayloadType();
-  if (payloadTypeMap.size() > 0) {
-    RTP_DataFrame::PayloadMapType::const_iterator iter = payloadTypeMap.find(pt);
-    if (iter != payloadTypeMap.end())
-      pt = iter->second;
-  }
-
-  return pt;
+  return (input ? inputMediaFormat : outputMediaFormat).GetPayloadType();
 }
 
 
@@ -150,13 +143,8 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   // and the input payload directly from the input media format
   output.front().SetPayloadType(GetPayloadType(false));
 
-  // map payload using payload map
-  RTP_DataFrame::PayloadTypes packetPayloadType = input.GetPayloadType();
-  RTP_DataFrame::PayloadMapType::iterator ptMapping = payloadTypeMap.find(packetPayloadType);
-  if (ptMapping != payloadTypeMap.end()) 
-    packetPayloadType = ptMapping->second;
-
   // do not transcode if no match
+  RTP_DataFrame::PayloadTypes packetPayloadType = input.GetPayloadType();
   RTP_DataFrame::PayloadTypes formatPayloadType = inputMediaFormat.GetPayloadType();
   if (formatPayloadType != RTP_DataFrame::MaxPayloadType && packetPayloadType != formatPayloadType && input.GetPayloadSize() > 0) {
     PTRACE(2, "Opal\tExpected payload type " << formatPayloadType << ", but received " << packetPayloadType << ". Ignoring packet");

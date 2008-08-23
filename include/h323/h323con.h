@@ -154,6 +154,10 @@ class H323Connection : public OpalRTPConnection
       */
     virtual bool IsNetworkConnection() const { return true; }
 
+    /**Get this connections protocol prefix for URLs.
+      */
+    virtual PString GetPrefixName() const;
+
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
        example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
@@ -542,8 +546,6 @@ class H323Connection : public OpalRTPConnection
       const PString & remoteParty   ///<  Remote party to transfer the existing call to
     );
 
-#if OPAL_H450
-
     /**Put the current connection on hold, suspending all media streams.
      * Simply calls HoldCall() which is kept for backward compatibility.
      */
@@ -559,6 +561,8 @@ class H323Connection : public OpalRTPConnection
      * Simply calls IsCallOnHold() which is kept for backward compatibility.
      */
     virtual PBoolean IsConnectionOnHold();
+
+#if OPAL_H450
 
     /**Initiate the transfer of an existing call (connection) to a new remote party
        using H.450.2.  This sends a Call Transfer Initiate Invoke message from the
@@ -644,7 +648,7 @@ class H323Connection : public OpalRTPConnection
        of the application layer to delete the MOH Channel if music on hold is provided to the remote
        endpoint.  So far only Local Hold has been implemented. 
      */
-    void HoldCall(
+    bool HoldCall(
       PBoolean localHold   ///<  true for Local Hold, false for Remote Hold
     );
 
@@ -653,7 +657,7 @@ class H323Connection : public OpalRTPConnection
        actions required to retrieve a Near-end or Remote-end call on hold.
        NOTE: Only Local Hold is implemented so far. 
     */
-    void RetrieveCall();
+    bool RetrieveCall();
 
     /**Set the alternative media channel.  This channel can be used to provide
        Media On Hold (MOH) for a near end call hold operation or to provide
@@ -1978,6 +1982,7 @@ class H323Connection : public OpalRTPConnection
     PBoolean mustSendDRQ;
     PBoolean mediaWaitForConnect;
     PBoolean transmitterSidePaused;
+    bool     remoteTransmitPaused;
     PBoolean earlyStart;
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;

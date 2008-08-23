@@ -304,12 +304,14 @@ class Context
       }
 
       for (UINT id = 0; id < waveInGetNumDevs(); id++) {
+        static const char wmm[] = "WindowsMultimedia:";
         WAVEINCAPS caps;
         if (waveInGetDevCaps(id, &caps, sizeof(caps)) == 0 && strstr(caps.szPname, searchName) != NULL) {
-          if (bufsize <= strlen(caps.szPname))
+          if (bufsize <= strlen(caps.szPname)+sizeof(wmm))
             return PluginLID_BufferTooSmall;
 
-          strcpy(buffer, caps.szPname);
+          strcpy(buffer, wmm);
+          strcat(buffer, caps.szPname);
           return PluginLID_NoError;
         }
       }

@@ -122,8 +122,6 @@ class RTP_DataFrame : public PBYTEArray
       IllegalPayloadType
     };
 
-    typedef std::map<PayloadTypes, PayloadTypes> PayloadMapType;
-
     unsigned GetVersion() const { return (theArray[0]>>6)&3; }
 
     PBoolean GetExtension() const   { return (theArray[0]&0x10) != 0; }

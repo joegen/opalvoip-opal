@@ -39,15 +39,11 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 const OpalAudioFormat & GetOpalG728()
 {
   static const OpalAudioFormat G728(OPAL_G728, RTP_DataFrame::G728,  "G728", 5, 20, 100, 10, 256, 8000);
   return G728;
 }
-
-#endif
 
 
 // End of File ///////////////////////////////////////////////////////////////

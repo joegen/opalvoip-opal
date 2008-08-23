@@ -111,11 +111,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CXX) $(LDSO) -o $@ $^
 
 install:
-	mkdir -p $(libdir)/$(VC_PLUGIN_DIR)
-	install $(PLUGIN) $(libdir)/$(VC_PLUGIN_DIR)
+	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
+	install $(PLUGIN) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
+	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

@@ -37,6 +37,8 @@
 #include <opal/buildopts.h>
 #include <opal/pcss.h>
 
+#if P_AUDIO
+
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
 #include <codec/vidcodec.h>
@@ -409,6 +411,8 @@ void OpalPCSSConnection::AcceptIncoming()
     UnlockReadWrite();
   }
 }
+
+#endif // P_AUDIO
 
 
 /////////////////////////////////////////////////////////////////////////////

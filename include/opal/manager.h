@@ -179,11 +179,9 @@ class OpalManager : public PObject
       const PString & token  ///<  Token for identifying call
     ) { return activeCalls.FindWithLock(token, PSafeReference) != NULL; }
 
-    /**Determine if a call is active.
-       Return the number of active calls.
+    /**Return the number of active calls.
       */
-    virtual unsigned GetCallsNumber()
-    { return activeCalls.GetSize(); }
+    PINDEX GetCallCount() const { return activeCalls.GetSize(); }
 
 
     /**Determine if a call is established.
@@ -383,8 +381,10 @@ class OpalManager : public PObject
        variable and uses MakeConnection() to start the B-party connection.
       */
     virtual bool OnRouteConnection(
-      OpalConnection & connection,  ///<  Connection being routed
-      unsigned options,             ///<  options for new connection (can't use default as overrides will fail)
+      const PString & a_party,      ///< Source local address
+      const PString & b_party,      ///< Destination indicated by source
+      OpalCall & call,              ///< Call for new connection
+      unsigned options,             ///< Options for new connection (can't use default as overrides will fail)
       OpalConnection::StringOptions * stringOptions
     );
 
@@ -771,6 +771,10 @@ class OpalManager : public PObject
 
          <!du>   The rest of the "b_party" string after the <du> section. The 
                  protocol is still omitted. This is usually the '@' and onward.
+                 Note if there is already an '@' in the destination before the
+                 <!du> and what is abour to replace it also has an '@' then
+                 everything between the @ and the <!du> (inclusive) is deleted,
+                 then the substitution is made so a legal URL can result.
 
          <dn>    Copy all valid consecutive E.164 digits from the "b_party" so
                  pots:0061298765@vpb:1/2 becomes sip:0061298765@carrier.com
@@ -1071,7 +1075,9 @@ class OpalManager : public PObject
 
     /**Set the default media format order.
      */
-    void SetMediaFormatOrder(const PStringArray & order) { mediaFormatOrder = order; }
+    void SetMediaFormatOrder(
+      const PStringArray & order   ///< New order
+    );
 
     /**Get the default media format mask.
      */
@@ -1079,7 +1085,9 @@ class OpalManager : public PObject
 
     /**Set the default media format mask.
      */
-    void SetMediaFormatMask(const PStringArray & mask) { mediaFormatMask = mask; }
+    void SetMediaFormatMask(
+      const PStringArray & mask   //< New mask
+    );
 
     /**Set the default parameters for the silence detector.
      */

@@ -11,11 +11,9 @@
 #include <ptlib.h>
 #include "h460/h46018.h"
 
+#ifdef OPAL_H460
+
 #define new PNEW
-
-
-#if ! H323_DISABLE_H46018
-
 
 
 //
@@ -177,7 +175,7 @@ PObject * H46018_LRQKeepAliveData::Clone() const
 }
 
 
-#endif // if ! H323_DISABLE_H46018
+#endif // OPAL_H460
 
 
 // End of h46018.cxx

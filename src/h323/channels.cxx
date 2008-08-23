@@ -344,8 +344,6 @@ PBoolean H323UnidirectionalChannel::Open()
   if (!H323Channel::Open())
     return false;
 
-  mediaStream->UpdateMediaFormat(capability->GetMediaFormat());
-
   OpalCall & call = connection.GetCall();
 
   bool ok;
@@ -388,6 +386,7 @@ void H323UnidirectionalChannel::Close()
   PTRACE(4, "H323RTP\tCleaning up media stream on " << number);
 
   // If we have source media stream close it
+  connection.CloseMediaStream(*mediaStream);
   connection.RemoveMediaStream(*mediaStream);
   mediaStream.SetNULL();
 
@@ -639,6 +638,14 @@ PBoolean H323_RealTimeChannel::SetDynamicRTPPayloadType(int newType)
     return PFalse;
 
   rtpPayloadType = (RTP_DataFrame::PayloadTypes)newType;
+
+  OpalMediaStream * mediaStream = GetMediaStream();
+  if (mediaStream != NULL) {
+    OpalMediaFormat adjustedMediaFormat = mediaStream->GetMediaFormat();
+    adjustedMediaFormat.SetPayloadType(rtpPayloadType);
+    mediaStream->UpdateMediaFormat(adjustedMediaFormat);
+  }
+
   PTRACE(3, "H323RTP\tSet dynamic payload type to " << rtpPayloadType);
   return PTrue;
 }
@@ -781,7 +788,7 @@ PBoolean H323_ExternalRTPChannel::GetMediaTransportAddress(OpalTransportAddress 
 
 PBoolean H323_ExternalRTPChannel::Start()
 {
-  PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(connection.GetCall().GetOtherPartyConnection(connection));
+  PSafePtr<OpalRTPConnection> otherParty = connection.GetOtherPartyConnectionAs<OpalRTPConnection>();
   if (otherParty == NULL)
     return PFalse;
 

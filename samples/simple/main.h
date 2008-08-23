@@ -35,6 +35,11 @@
 #include <opal/ivr.h>
 
 
+#ifndef P_AUDIO
+#error Cannot compile without PTLib sound channel support!
+#endif
+
+
 class MyManager;
 class SIPEndPoint;
 class H323EndPoint;
