@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 9
+#define OPAL_C_API_VERSION 10
 
 
 ///////////////////////////////////////
@@ -516,6 +516,11 @@ typedef struct OpalParamRegistration {
   unsigned     m_restoreTime;   /**< Time in seconds between attempts to restore a registration after
                                      registrar/gatekeeper has gone offline. If zero then a default
                                      value is used. */
+  unsigned     m_messageWaiting;/**< Time in seconds for Message Waiting subscription time to live. If
+                                     non-zero then a subscription is attempted with the same server we
+                                     are registering with. If the subscription is successful, then the
+                                     OpalIndMessageWaiting indication is sent whenever the message
+                                     waiting state changes. If zero then no subscription is made. */
 } OpalParamRegistration;
 
 
@@ -604,9 +609,13 @@ typedef struct OpalParamSetUpCall {
    This is only returned from the OpalGetMessage() function.
   */
 typedef struct OpalStatusIncomingCall {
-  const char * m_callToken;     ///< Call token for new call.
-  const char * m_localAddress;  ///< Address of local interface. e.g. "sip:me@here.com"
-  const char * m_remoteAddress; ///< Address of remote party. e.g. "sip:them@there.com"
+  const char * m_callToken;         ///< Call token for new call.
+  const char * m_localAddress;      ///< URL of local interface. e.g. "sip:me@here.com"
+  const char * m_remoteAddress;     ///< URL of calling party. e.g. "sip:them@there.com"
+  const char * m_remotePartyNumber; ///< This is the E.164 number of the caller, if available.
+  const char * m_remoteDisplayName; ///< Display name calling party. e.g. "Fred Nurk"
+  const char * m_calledAddress;     ///< URL of called party the remote is trying to contact.
+  const char * m_calledPartyNumber; ///< This is the E.164 number of the called party, if available.
 } OpalStatusIncomingCall;
 
 

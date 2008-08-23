@@ -24,15 +24,18 @@
  * $Date$
  */
 
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS 1
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "plugin-config.h"
+#endif
 
 #include <codec/opalplugin.h>
-
-#include <stdlib.h>
-
-#if defined(_WIN32) || defined(_WIN32_WCE)
-  #include <malloc.h>
-#endif
 
 #include "g726/g72x.h"
 

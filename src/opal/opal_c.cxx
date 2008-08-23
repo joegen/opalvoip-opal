@@ -85,6 +85,8 @@ class OpalMessageBuffer
 #define SET_MESSAGE_STRING(msg, member, str) (msg).SetString(&(msg)->member, str)
 
 
+#if P_AUDIO
+
 class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
 {
   public:
@@ -96,6 +98,8 @@ class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
   private:
     OpalManager_C & m_manager;
 };
+
+#endif // P_AUDIO
 
 
 class OpalLocalEndPoint_C : public OpalLocalEndPoint
@@ -142,8 +146,10 @@ class OpalManager_C : public OpalManager
 {
   public:
     OpalManager_C(unsigned version)
-      : pcssEP(NULL)
-      , localEP(NULL)
+      : localEP(NULL)
+#if P_AUDIO
+      , pcssEP(NULL)
+#endif
       , m_apiVersion(version)
       , m_messagesAvailable(0, INT_MAX)
     {
@@ -183,8 +189,10 @@ class OpalManager_C : public OpalManager
 
     void OnIndMediaStream(const OpalMediaStream & stream, OpalMediaStates state);
 
-    OpalPCSSEndPoint_C  * pcssEP;
     OpalLocalEndPoint_C * localEP;
+#if P_AUDIO
+    OpalPCSSEndPoint_C  * pcssEP;
+#endif
 
     unsigned                  m_apiVersion;
     std::queue<OpalMessage *> m_messageQueue;
@@ -326,10 +334,10 @@ OpalMessage * OpalMessageBuffer::Detach()
 
 OpalLocalEndPoint_C::OpalLocalEndPoint_C(OpalManager_C & mgr)
   : OpalLocalEndPoint(mgr)
-  , m_manager(mgr)
   , m_mediaReadData(NULL)
   , m_mediaWriteData(NULL)
   , m_mediaDataHeader(OpalMediaDataPayloadOnly)
+  , m_manager(mgr)
 {
 }
 
@@ -351,17 +359,34 @@ bool OpalLocalEndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
 }
 
 
+static void SetIncomingCall(OpalMessageBuffer & message, const OpalConnection & connection)
+{
+  PSafePtr<OpalConnection> network = connection.GetOtherPartyConnection();
+  PAssert(network != NULL, PLogicError); // Should not happen!
+
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, network->GetLocalPartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, network->GetRemotePartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remotePartyNumber, network->GetRemotePartyNumber());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteDisplayName, network->GetRemotePartyName());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledAddress, network->GetCalledPartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledPartyNumber, network->GetCalledPartyNumber());
+
+  PTRACE(4, "OpalC API\tOpalIndIncomingCall: token=\""  << message->m_param.m_incomingCall.m_callToken << "\"\n"
+            "  Local  - URL=\"" << message->m_param.m_incomingCall.m_localAddress << "\"\n"
+            "  Remote - URL=\"" << message->m_param.m_incomingCall.m_remoteAddress << "\""
+                    " E.164=\"" << message->m_param.m_incomingCall.m_remotePartyNumber << "\""
+                  " Display=\"" << message->m_param.m_incomingCall.m_remoteDisplayName << "\"\n"
+            "  Dest.  - URL=\"" << message->m_param.m_incomingCall.m_calledAddress << "\""
+                    " E.164=\"" << message->m_param.m_incomingCall.m_calledPartyNumber << '"');
+}
+
+
 bool OpalLocalEndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
 {
   PTRACE(4, "OpalC\tOnIncomingCall " << connection);
   OpalMessageBuffer message(OpalIndIncomingCall);
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, connection.GetLocalPartyURL());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, connection.GetRemotePartyURL());
-  PTRACE(4, "OpalC API\tOnIncomingCall:"
-            " token=\"" << message->m_param.m_incomingCall.m_callToken << "\""
-            " local=\"" << message->m_param.m_incomingCall.m_localAddress << "\""
-            " remote=\""<< message->m_param.m_incomingCall.m_remoteAddress << '"');
+  SetIncomingCall(message, connection);
   m_manager.PostMessage(message);
   return true;
 }
@@ -461,6 +486,8 @@ bool OpalLocalEndPoint_C::OnWriteMediaData(const OpalLocalConnection & connectio
 
 ///////////////////////////////////////
 
+#if P_AUDIO
+
 OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
   : OpalPCSSEndPoint(mgr)
   , m_manager(mgr)
@@ -472,13 +499,7 @@ PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connectio
 {
   PTRACE(4, "OpalC\tOnShowIncoming " << connection);
   OpalMessageBuffer message(OpalIndIncomingCall);
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, connection.GetLocalPartyURL());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, connection.GetRemotePartyURL());
-  PTRACE(4, "OpalC API\tOnShowIncoming:"
-            " token=\"" << message->m_param.m_incomingCall.m_callToken << "\""
-            " local=\"" << message->m_param.m_incomingCall.m_localAddress << "\""
-            " remote=\""<< message->m_param.m_incomingCall.m_remoteAddress << '"');
+  SetIncomingCall(message, connection);
   m_manager.PostMessage(message);
   return true;
 }
@@ -499,6 +520,8 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
   m_manager.PostMessage(message);
   return true;
 }
+
+#endif // P_AUDIO
 
 
 ///////////////////////////////////////
@@ -640,10 +663,12 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 #endif
 
+#if P_AUDIO
   if (pcPos != P_MAX_INDEX) {
     pcssEP = new OpalPCSSEndPoint_C(*this);
     AddRouteEntry("pc:.*=" + defProto + ":<da>");
   }
+#endif
 
   if (localPos != P_MAX_INDEX) {
     localEP = new OpalLocalEndPoint_C(*this);
@@ -735,6 +760,7 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
 
 void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuffer & response)
 {
+#if P_AUDIO
   if (pcssEP != NULL) {
     SET_MESSAGE_STRING(response, m_param.m_general.m_audioRecordDevice, pcssEP->GetSoundChannelRecordDevice());
     if (!IsNullString(command.m_param.m_general.m_audioRecordDevice))
@@ -744,6 +770,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     if (!IsNullString(command.m_param.m_general.m_audioPlayerDevice))
       pcssEP->SetSoundChannelPlayDevice(command.m_param.m_general.m_audioPlayerDevice);
   }
+#endif // P_AUDIO
 
 #if OPAL_VIDEO
   PVideoDevice::OpenArgs video = GetVideoInputDevice();
@@ -766,7 +793,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     video.deviceName = command.m_param.m_general.m_videoPreviewDevice;
     SetVideoPreviewDevice(video);
   }
-#endif
+#endif // OPAL_VIDEO
 
   PStringStream strm;
   strm << setfill('\n') << GetMediaFormatOrder();
@@ -874,11 +901,13 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion < 3)
     return;
 
+#if P_AUDIO
   if (pcssEP != NULL) {
     response->m_param.m_general.m_audioBuffers = pcssEP->GetSoundChannelBufferDepth();
     if (command.m_param.m_general.m_audioBuffers != 0)
       pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
   }
+#endif
 
   if (m_apiVersion < 5)
     return;
@@ -1071,6 +1100,9 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
 
       if (!sip->Register(params))
         response.SetError("Failed to initiate SIP registration.");
+
+      if (m_apiVersion >= 10)
+        sip->Subscribe(SIPSubscribe::MessageSummary, command.m_param.m_registrationInfo.m_messageWaiting, aor);
     }
     return;
   }
@@ -1088,8 +1120,17 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
   }
 
   PString partyA = command.m_param.m_callSetUp.m_partyA;
-  if (partyA.IsEmpty())
-    partyA = pcssEP != NULL ? "pc:*" : "pots:*";
+  if (partyA.IsEmpty()) {
+#if P_AUDIO
+    if (pcssEP != NULL)
+      partyA = "pc:*";
+    else
+#endif
+    if (localEP != NULL)
+      partyA = "local:*";
+    else
+      partyA = "pots:*";
+  }
 
   PString token;
   if (SetUpCall(partyA, command.m_param.m_callSetUp.m_partyB, token)) {
@@ -1109,13 +1150,24 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
     return;
   }
 
-  if (pcssEP == NULL) {
+  if (
+#if P_AUDIO
+      pcssEP == NULL &&
+#endif
+      localEP == NULL) {
     response.SetError("Can only answer calls to PC.");
     return;
   }
 
-  if (!pcssEP->AcceptIncomingConnection(command.m_param.m_callToken))
-    response.SetError("No call found by the token provided.");
+#if P_AUDIO
+  if (pcssEP != NULL && pcssEP->AcceptIncomingConnection(command.m_param.m_callToken))
+    return;
+#endif
+
+  if (localEP != NULL && localEP->AcceptIncomingCall(command.m_param.m_callToken))
+    return;
+
+  response.SetError("No call found by the token provided.");
 }
 
 
@@ -1308,6 +1360,9 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
   }
 
   switch (command.m_param.m_mediaStream.m_state) {
+    case OpalMediaStateNoChange :
+      break;
+
     case OpalMediaStateOpen :
       if (mediaType.empty())
         response.SetError("Must provide type and direction to open media stream.");
@@ -1440,7 +1495,7 @@ void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type
   OpalMessageBuffer message(OpalIndMessageWaiting);
   SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_party, party);
   static const char * const TypeNames[] = { "Voice", "Fax", "Pager", "Multimedia", "Text", "None" };
-  if (type < sizeof(TypeNames)/sizeof(TypeNames[0]))
+  if ((size_t)type < sizeof(TypeNames)/sizeof(TypeNames[0]))
     SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_type, TypeNames[type]);
   SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, extraInfo);
   PTRACE(4, "OpalC API\tOnMWIReceived: party=\"" << message->m_param.m_messageWaiting.m_party << '"');

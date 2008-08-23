@@ -39,8 +39,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 #define AUDIO_FORMAT(name) \
   const OpalAudioFormat & GetOpal##name() \
   { \
@@ -52,8 +50,6 @@ AUDIO_FORMAT(G729);
 AUDIO_FORMAT(G729A);
 AUDIO_FORMAT(G729B);
 AUDIO_FORMAT(G729AB);
-
-#endif
 
 
 // End of File ///////////////////////////////////////////////////////////////

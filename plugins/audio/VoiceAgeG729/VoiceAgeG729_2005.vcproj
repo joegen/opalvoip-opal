@@ -82,7 +82,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
+				ProgramDatabaseFile="$(OutDir)/$(TargetName).pdb"
 				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>

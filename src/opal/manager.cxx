@@ -247,6 +247,8 @@ void OpalManager::ShutDownEndpoints()
   endpointMap.clear();
   endpointList.RemoveAll();
   endpointsMutex.EndWrite();
+
+  clearingAllCalls = false; // Allow for endpoints to be added again.
 }
 
 
@@ -533,36 +535,49 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
     return PFalse;
 
   // See if we already have a B-Party in the call. If not, make one.
-  if (connection.GetCall().GetOtherPartyConnection(connection) != NULL)
+  if (connection.GetOtherPartyConnection() != NULL)
     return true;
 
-  // Use a routing algorithm to figure out who the B-Party is, then make a connection
-  return OnRouteConnection(connection, options, stringOptions);
+  OpalCall & call = connection.GetCall();
+
+  // See if have pre-allocated B party address, otherwise
+  // get destination from incoming connection
+  PString destination = call.GetPartyB();
+  if (destination.IsEmpty()) {
+    destination = connection.GetDestinationAddress();
+    if (destination.IsEmpty()) {
+      PTRACE(3, "OpalMan\tCannot complete call, no destination address from connection " << connection);
+      return false;
+    }
+  }
+
+  // Use a routing algorithm to figure out who the B-Party is, and make second connection
+  return OnRouteConnection(connection.GetLocalPartyURL(), destination, call, options, stringOptions);
 }
 
 
-bool OpalManager::OnRouteConnection(OpalConnection & connection,
+bool OpalManager::OnRouteConnection(const PString & a_party,
+                                    const PString & b_party,
+                                    OpalCall & call,
                                     unsigned options,
                                     OpalConnection::StringOptions * stringOptions)
 {
-  OpalCall & call = connection.GetCall();
-
-  // See if have pre-allocated B party address, otherwise use routing algorithm
-  PString destination = call.GetPartyB();
-  if (destination.IsEmpty())
-    destination = connection.GetDestinationAddress();
-
-  PString route;
   PINDEX tableEntry = 0;
-  do {
-    route = ApplyRouteTable(connection.GetLocalPartyURL(), destination, tableEntry);
+  for (;;) {
+    PString route = ApplyRouteTable(a_party, b_party, tableEntry);
     if (route.IsEmpty()) {
-      PTRACE(3, "OpalMan\tCould not route " << connection);
+      PTRACE(3, "OpalMan\tCould not route a=\"" << a_party << "\", b=\"" << b_party << ", call=" << call);
       return false;
     }
-  } while (!MakeConnection(call, route, NULL, options, stringOptions));
 
-  return true;
+    // See if this route can be connected
+    if (MakeConnection(call, route, NULL, options, stringOptions))
+      return true;
+
+    // Recursively call with translated route
+    if (route != b_party && OnRouteConnection(a_party, route, call, options, stringOptions))
+      return true;
+  }
 }
 
 
@@ -902,6 +917,20 @@ void OpalManager::SetRouteTable(const RouteTable & table)
 }
 
 
+static void ReplaceNDU(PString & destination, const PString & subst)
+{
+  if (subst.Find('@') != P_MAX_INDEX) {
+    PINDEX at = destination.Find('@');
+    if (at != P_MAX_INDEX) {
+      PINDEX du = destination.Find("<!du>", at);
+      if (du != P_MAX_INDEX)
+        destination.Delete(at, du-at);
+    }
+  }
+  destination.Replace("<!du>", subst, true);
+}
+
+
 PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_party, PINDEX & routeIndex)
 {
   PWaitAndSignal mutex(routeTableMutex);
@@ -955,7 +984,11 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
 
   // We are backward compatibility mode and the supplied address can be called
   PINDEX colon = b_party.Find(':');
-  if (colon == P_MAX_INDEX || FindEndPoint(b_party.Left(colon)) == NULL)
+  if (colon == P_MAX_INDEX)
+    colon = 0;
+  else if (b_party.NumCompare("tel", colon) == EqualTo) // Small cheat for tel: URI (RFC3966)
+    colon++;
+  else if (FindEndPoint(b_party.Left(colon)) == NULL)
     colon = 0;
   else {
     if (destination.Find("<da>") != P_MAX_INDEX)
@@ -963,19 +996,42 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
     colon++;
   }
 
-  PINDEX nonDigitPos = b_party.FindSpan("0123456789*#", colon);
+  PINDEX nonDigitPos = b_party.FindSpan("0123456789*#-.()", colon + (b_party[colon] == '+'));
   PString digits = b_party(colon, nonDigitPos-1);
 
   PINDEX at = b_party.Find('@', colon);
 
+  // Another tel: URI hack
+  static const char PhoneContext[] = ";phone-context=";
+  PINDEX pos = b_party.Find(PhoneContext);
+  if (pos != P_MAX_INDEX) {
+    pos += sizeof(PhoneContext)-1;
+    PINDEX end = b_party.Find(';', pos)-1;
+    if (b_party[pos] == '+') // Phone context is a prefix
+      digits.Splice(b_party(pos+1, end), 0);
+    else // Otherwise phone context is a domain name
+      ReplaceNDU(destination, '@'+b_party(pos, end));
+  }
+
+  // Filter out the non E.164 digits, mainly for tel: URI support.
+  while ((pos = digits.FindOneOf("+-.()")) != P_MAX_INDEX)
+    digits.Delete(pos, 1);
+
   destination.Replace("<da>", b_party, true);
-  destination.Replace("<du>", b_party(colon, at-1), true);
-  destination.Replace("<!du>", b_party.Mid(at), true);
-  destination.Replace("<dn>", digits, true);
-  destination.Replace("<!dn>", b_party.Mid(nonDigitPos), true);
   destination.Replace("<db>",  b_party.Mid(colon), true);
 
-  PINDEX pos;
+  if (at != P_MAX_INDEX) {
+    destination.Replace("<du>", b_party(colon, at-1), true);
+    ReplaceNDU(destination, b_party.Mid(at));
+  }
+  else {
+    destination.Replace("<du>", digits, true);
+    ReplaceNDU(destination, b_party.Mid(nonDigitPos));
+  }
+
+  destination.Replace("<dn>", digits, true);
+  destination.Replace("<!dn>", b_party.Mid(nonDigitPos), true);
+
   while ((pos = destination.FindRegEx("<dn[1-9]>")) != P_MAX_INDEX)
     destination.Splice(digits.Mid(destination[pos+3]-'0'), pos, 5);
 
@@ -1081,7 +1137,7 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
      If the remote endpoint is unaware of it's NAT status then there will be a
      discrepency between the physical address of the connection and the
      signaling adddress indicated in the protocol, the H.323 SETUP
-     sourceCallSignalAddress or SIP "To" or "Contact" fields.
+     sourceCallSignalAddress or SIP "Contact" field.
 
      So this is the first test to make: if those addresses the same, we will
      assume the other guy is public or LAN/VPN and either no NAT is involved,
@@ -1090,6 +1146,14 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
    */
 
   if (peerAddr == sigAddr)
+    return false;
+
+  /* Next test is to see if BOTH addresses are "public", non RFC1918. There are
+     some cases with proxies, particularly with SIP, where this is possible. We
+     will assume that NAT never occurs between two public addresses though it
+     could occur between two private addresses */
+
+  if (!peerAddr.IsRFC1918() && !sigAddr.IsRFC1918())
     return false;
 
   /* So now we have a remote that is confused in some way, so needs help. Our
@@ -1318,6 +1382,20 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
   if (maxDelay < minDelay)
     maxDelay = minDelay;
   maxAudioJitterDelay = maxDelay;
+}
+
+
+void OpalManager::SetMediaFormatOrder(const PStringArray & order)
+{
+  mediaFormatOrder = order;
+  PTRACE(3, "OPAL\tSetMediaFormatOrder(" << setfill(',') << order << ')');
+}
+
+
+void OpalManager::SetMediaFormatMask(const PStringArray & mask)
+{
+  mediaFormatMask = mask;
+  PTRACE(3, "OPAL\tSetMediaFormatMask(" << setfill(',') << mask << ')');
 }
 
 

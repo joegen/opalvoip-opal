@@ -69,11 +69,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO)$(SONAME) -o $@ $^ $(EXTRALIBS)
 
 install:
-	mkdir -p $(libdir)/$(LID_PLUGIN_DIR)
-	install  $(PLUGIN) $(libdir)/$(LID_PLUGIN_DIR)
+	mkdir -p $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)
+	install  $(PLUGIN) $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(libdir)/$(LID_PLUGIN_DIR)/$(PLUGIN)
+	rm -f $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

@@ -73,11 +73,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 install:
-	mkdir -p $(libdir)/$(FAX_PLUGIN_DIR)
-	install $(PLUGIN) $(libdir)/$(FAX_PLUGIN_DIR)
+	mkdir -p $(DESTDIR)$(libdir)/$(FAX_PLUGIN_DIR)
+	install $(PLUGIN) $(DESTDIR)$(libdir)/$(FAX_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(libdir)/$(FAX_PLUGIN_DIR)/$(PLUGIN)
+	rm -f $(DESTDIR)$(libdir)/$(FAX_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

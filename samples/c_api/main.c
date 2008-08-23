@@ -35,6 +35,9 @@
 #include <opal.h>
 
 
+#define LOCAL_MEDIA 1
+
+
 #if defined(_WIN32)
 
   #include <windows.h>
@@ -95,6 +98,8 @@ OpalMessage * MySendCommand(OpalMessage * command, const char * errorMessage)
 }
 
 
+#if LOCAL_MEDIA
+
 int MyReadMediaData(const char * token, const char * id, const char * format, void * data, int size)
 {
   static FILE * file = NULL;
@@ -129,6 +134,8 @@ int MyWriteMediaData(const char * token, const char * id, const char * format, v
   return fwrite(data, 1, size, file);
 }
 
+#endif
+
 
 int InitialiseOPAL()
 {
@@ -161,8 +168,19 @@ int InitialiseOPAL()
   ///////////////////////////////////////////////
   // Initialisation
 
+#if LOCAL_MEDIA
+  #define LOCAL_PREFIX OPAL_PREFIX_LOCAL
+#else
+  #define LOCAL_PREFIX OPAL_PREFIX_PCSS
+#endif
+
   version = OPAL_C_API_VERSION;
-  if ((hOPAL = InitialiseFunction(&version, OPAL_PREFIX_ALL" TraceLevel=4")) == NULL) {
+  if ((hOPAL = InitialiseFunction(&version,
+                                  OPAL_PREFIX_H323  " "
+                                  OPAL_PREFIX_SIP   " "
+                                  OPAL_PREFIX_IAX2  " "
+                                  LOCAL_PREFIX
+                                  " TraceLevel=4")) == NULL) {
     fputs("Could not initialise OPAL\n", stderr);
     return 0;
   }
@@ -174,9 +192,11 @@ int InitialiseOPAL()
   //command.m_param.m_general.m_audioRecordDevice = "Camera Microphone (2- Logitech";
   command.m_param.m_general.m_autoRxMedia = command.m_param.m_general.m_autoTxMedia = "audio";
 
+#if LOCAL_MEDIA
   command.m_param.m_general.m_mediaReadData = MyReadMediaData;
   command.m_param.m_general.m_mediaWriteData = MyWriteMediaData;
   command.m_param.m_general.m_mediaDataHeader = OpalMediaDataPayloadOnly;
+#endif
 
   if ((response = MySendCommand(&command, "Could not set general options")) == NULL)
     return 0;
@@ -210,22 +230,47 @@ static void HandleMessages(unsigned timeout)
   while ((message = GetMessageFunction(hOPAL, timeout)) != NULL) {
     switch (message->m_type) {
       case OpalIndRegistration :
-        if (message->m_param.m_registrationStatus.m_error == NULL ||
-            message->m_param.m_registrationStatus.m_error[0] == '\0')
-          puts("Registered.\n");
-        else
-          printf("Registration error: %s\n", message->m_param.m_registrationStatus.m_error);
+        switch (message->m_param.m_registrationStatus.m_status) {
+          case OpalRegisterRetrying :
+            puts("Trying registration.\n");
+            break;
+          case OpalRegisterRestored :
+            puts("Registration restored.\n");
+            break;
+          case OpalRegisterSuccessful :
+            puts("Registration successful.\n");
+            break;
+          case OpalRegisterRemoved :
+            puts("Unregistered.\n");
+            break;
+          case OpalRegisterFailed :
+            if (message->m_param.m_registrationStatus.m_error == NULL ||
+                message->m_param.m_registrationStatus.m_error[0] == '\0')
+              puts("Registration failed.\n");
+            else
+              printf("Registration error: %s\n", message->m_param.m_registrationStatus.m_error);
+        }
         break;
 
       case OpalIndIncomingCall :
-        printf("Incoming call from %s to %s.\n",
+        printf("Incoming call from \"%s\", \"%s\" to \"%s\", handled by \"%s\".\n",
+               message->m_param.m_incomingCall.m_remoteDisplayName,
                message->m_param.m_incomingCall.m_remoteAddress,
+               message->m_param.m_incomingCall.m_calledAddress,
                message->m_param.m_incomingCall.m_localAddress);
         if (CurrentCallToken == NULL) {
           memset(&command, 0, sizeof(command));
-          command.m_type = OpalCmdClearCall;
+          command.m_type = OpalCmdAnswerCall;
           command.m_param.m_callToken = message->m_param.m_incomingCall.m_callToken;
           if ((response = MySendCommand(&command, "Could not answer call")) != NULL)
+            FreeMessageFunction(response);
+        }
+        else {
+          memset(&command, 0, sizeof(command));
+          command.m_type = OpalCmdClearCall;
+          command.m_param.m_clearCall.m_callToken = message->m_param.m_incomingCall.m_callToken;
+          command.m_param.m_clearCall.m_reason = OpalCallEndedByLocalBusy;
+          if ((response = MySendCommand(&command, "Could not refuse call")) != NULL)
             FreeMessageFunction(response);
         }
         break;
@@ -349,6 +394,39 @@ int DoTransfer(const char * to)
 }
 
 
+int DoRegister(const char * aor, const char * pwd)
+{
+  OpalMessage command;
+  OpalMessage * response;
+  char * colon;
+
+
+  printf("Registering %s\n", aor);
+
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdRegistration;
+
+  if ((colon = strchr(aor, ':')) == NULL) {
+    command.m_param.m_registrationInfo.m_protocol = "h323";
+    command.m_param.m_registrationInfo.m_identifier = aor;
+  }
+  else {
+    *colon = '\0';
+    command.m_param.m_registrationInfo.m_protocol = aor;
+    command.m_param.m_registrationInfo.m_identifier = colon+1;
+  }
+
+  command.m_param.m_registrationInfo.m_password = pwd;
+  command.m_param.m_registrationInfo.m_timeToLive = 300;
+  command.m_param.m_registrationInfo.m_messageWaiting = 120;
+  if ((response = MySendCommand(&command, "Could not register endpoint")) == NULL)
+    return 0;
+
+  FreeMessageFunction(response);
+  return 1;
+}
+
+
 typedef enum
 {
   OpListen,
@@ -357,14 +435,15 @@ typedef enum
   OpHold,
   OpTransfer,
   OpConsult,
+  OpRegister,
   NumOperations
 } Operations;
 
 static const char * const OperationNames[NumOperations] =
-  { "listen", "call", "mute", "hold", "transfer", "consult" };
+  { "listen", "call", "mute", "hold", "transfer", "consult", "register" };
 
 static int const RequiredArgsForOperation[NumOperations] =
-  { 2, 3, 3, 3, 4, 4 };
+  { 2, 3, 3, 3, 4, 4, 3 };
 
 
 static Operations GetOperation(const char * name)
@@ -460,6 +539,12 @@ int main(int argc, char * argv[])
         break;
       HandleMessages(15000);
       if (!DoTransfer(HeldCallToken))
+        break;
+      HandleMessages(15000);
+      break;
+
+    case OpRegister :
+      if (!DoRegister(argv[2], argv[3]))
         break;
       HandleMessages(15000);
       break;

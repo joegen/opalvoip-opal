@@ -122,32 +122,24 @@
 
 #define new PNEW
 
-/**This routine generates a unique index value, that is applied to
-   each frame constructed. It is used in debugging, as one can track
-   the frames index value (with IdString()) as it wanders between
-   classes. */
-int NextIndex();
-
-int NextIndex() 
-{
-  static PAtomicInteger counter;
-
-  return ++counter;
-}
-
 IAX2Frame::IAX2Frame(IAX2EndPoint &_endpoint)
   : endpoint(_endpoint)
 {
   ZeroAllValues();
-  
-  frameIndex = NextIndex();
 
-  PTRACE(6, "Construct this IAX2Frame  " << IdString());
+  PTRACE(6, "Construct IAX2Frame  " << IdString());
 }
 
 IAX2Frame::~IAX2Frame()
 {
-  PTRACE(6, "Delete this IAX2Frame  " << IdString());
+  PTRACE(6, "Destructor for IAX2Frame  " << *this);
+}
+
+PString IAX2Frame::IdString() const 
+{ 
+  PStringStream answer;
+  answer << PString("FR-ID#") << ::hex << this << ::dec;
+  return answer;
 }
 
 void IAX2Frame::ZeroAllValues()
@@ -208,7 +200,7 @@ PBoolean IAX2Frame::ReadNetworkPacket(PUDPSocket &sock)
     PTRACE(3, "Read a very very small packet from the network - < 4 bytes");
     return PFalse;
   }
-  
+
   return PTrue;
 }
 
@@ -320,13 +312,12 @@ PBoolean IAX2Frame::ProcessNetworkPacket()
 
 void IAX2Frame::BuildConnectionTokenId()
 {
-  connectionToken = PString("iax2:") + remote.RemoteAddress().AsString() + PString("-") + PString(remote.SourceCallNumber());
+  connectionToken = remote.BuildConnectionTokenId();
 }
 
 void IAX2Frame::PrintOn(ostream & strm) const
 {
-  strm << IdString() << "      " << data.GetSize() << " bytes in frame" << endl
-       << ::hex << data << ::dec;
+  strm << IdString() << "      " << data.GetSize() << " bytes " << endl;
 }
 
 void IAX2Frame::BuildTimeStamp(const PTimeInterval & callStartTick)
@@ -492,7 +483,6 @@ IAX2MiniFrame::IAX2MiniFrame(const IAX2Frame & srcFrame)
   : IAX2Frame(srcFrame)
 {
   ZeroAllValues();
-  frameIndex = NextIndex();
   isAudio = (data[0] != 0) || (data[1] != 0);
   isVideo = !isAudio;
   PTRACE(6, "Build this IAX2MiniFrame " << IdString());
@@ -621,14 +611,12 @@ IAX2FullFrame::IAX2FullFrame(const IAX2Frame & srcFrame)
 {
   PTRACE(5, "START Constructor for a full frame");
   ZeroAllValues();
-  frameIndex = NextIndex();
   PTRACE(5, "END Constructor for a full frame");
 }
 
 IAX2FullFrame::~IAX2FullFrame()
 {
-  PTRACE(6, "Delete this IAX2FullFrame  " << IdString());
-  MarkDeleteNow();
+  PTRACE(6, "Destructor IAX2FullFrame:: " << IdString());
 }
 
 PBoolean IAX2FullFrame::operator*=(IAX2FullFrame & /*other*/)
@@ -877,6 +865,7 @@ void IAX2FullFrame::MarkVnakSendNow()
 
 void IAX2FullFrame::MarkDeleteNow()
 {
+  PTRACE(5, "MarkDeleteNow() method on " << IdString());
   transmissionTimer.Stop();
   deleteFrameNow = PTrue;
   retries = P_MAX_INDEX;
@@ -884,7 +873,7 @@ void IAX2FullFrame::MarkDeleteNow()
 
 void IAX2FullFrame::OnTransmissionTimeout(PTimer &, INT)
 {
-  PTRACE(3, "Has had a timeout " << IdString() << " " << connectionToken);
+  PTRACE(4, "Has had a TX timeout " << IdString() << " " << connectionToken);
   retryDelta = 4 * retryDelta.GetMilliSeconds();
   if (retryDelta > maxRetryTime)
     retryDelta = maxRetryTime;
@@ -892,14 +881,15 @@ void IAX2FullFrame::OnTransmissionTimeout(PTimer &, INT)
   packetResent = PTrue;
   if ((retries == P_MAX_INDEX) || (retries == 0)) {
     retries = P_MAX_INDEX;
-    deleteFrameNow = PTrue;
-    PTRACE(4, "Mark as delete now " << IdString());
+    PTRACE(5, "Retries are " << PString(retries) 
+	   << " NowMarkDeleteNow " << IdString());
+    MarkDeleteNow();
   } else {
     retries--;
     sendFrameNow = PTrue;
-    PTRACE(5, "Mark as Send now " << IdString() << " " << connectionToken);
+    PTRACE(5, "Tx timeout, so Mark as Send now " << IdString() << " " << connectionToken);
   }
-  
+
   endpoint.transmitter->ProcessLists();
 }
 
@@ -1322,7 +1312,7 @@ PBoolean IAX2FullFrameProtocol::ReadInformationElements()
 	  //	  PTRACE(3, "Read information element " << *elem);
 	}
     } else {
-      PTRACE(3, "Unread bytes is " << GetUnReadBytes() << " This length is " << thisLength);
+      PTRACE(6, "Unread bytes is " << GetUnReadBytes() << " This length is " << thisLength);
       break;
     }	  
   }
@@ -1548,23 +1538,35 @@ PString IAX2FullFrameCng::GetSubClassName() const
 
 IAX2FrameList::~IAX2FrameList()
 {   
-  AllowDeleteObjects(); 
 }
 
-void IAX2FrameList::ReportList()
+void IAX2FrameList::ReportList(PString & answer)
 {
-  PWaitAndSignal m(mutex);
-
-  for(PINDEX i = 0; i < PAbstractList::GetSize(); i++){
-    PTRACE(5, "#" << (i + 1) << " of " << PAbstractList::GetSize() << "     " << ((IAX2Frame *)(GetAt(i)))->GetClass() << "  " << ((IAX2Frame *)(GetAt(i)))->IdString());
+  PStringStream reply;
+  {
+    PWaitAndSignal m(mutex);
+    
+    for(PINDEX i = 0; i < PAbstractList::GetSize(); i++) {
+       IAX2Frame *frame = (IAX2Frame *)GetAt(i);
+       reply << "     #" << (i + 1) << " of " 
+	     << PAbstractList::GetSize() << "   "
+	     << frame->GetConnectionToken() << " " 
+	     << frame->GetTimeStamp();
+       if (frame->IsFullFrame()) {
+	 IAX2FullFrame *ff = (IAX2FullFrame *)frame;
+	 reply << " " << ff->GetSequenceInfo().AsString() << " " 
+	       << ff->GetFullFrameName() << endl;
+       }
+    }
   }
+  answer = reply;
 }
 
 void IAX2FrameList::AddNewFrame(IAX2Frame *newFrame)
 {
   if (newFrame == NULL)
     return;
-
+  PTRACE(5, "AddNewFrame " << newFrame->IdString());
   PWaitAndSignal m(mutex);
   PAbstractList::Append(newFrame);
 }
@@ -1586,24 +1588,31 @@ IAX2Frame *IAX2FrameList::GetLastFrame()
     return NULL;
   }
   
-  PObject *p = PAbstractList::RemoveAt(0);
-  return (IAX2Frame *)p;
+  return (IAX2Frame *)PAbstractList::RemoveAt(0);
 }
 
 void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
 {
+  PINDEX currentIndex;
+  IAX2FullFrame *sent;
+
   PWaitAndSignal m(mutex);
   //Look for a frame that has been sent, which is waiting for a reply/ack.
+  PTRACE(5, "ID# Delete matchingSendFrame start, test on " 
+	 << reply->IdString());
 
   for (PINDEX i = 0; i < GetEntries(); i++) {
+    sent = NULL;
     IAX2Frame *frame = (IAX2Frame *)GetAt(i);
     if (frame == NULL)
       continue;
     
+    PTRACE(5, "ID#DeleteMatching " << frame->IdString());
     if (!frame->IsFullFrame())
       continue;
 
-    IAX2FullFrame *sent = (IAX2FullFrame *)frame;
+    sent = (IAX2FullFrame *)frame;
+    currentIndex = i; /* If a match is found, we delete this one */
 
     if (sent->DeleteFrameNow()) {
       // Skip this frame, as it is marked, delete now
@@ -1617,31 +1626,32 @@ void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
 
     if (sent->GetSequenceInfo().IsSequenceNosZero() && sent->IsNewFrame()) {
       //Outgoing frame has a zero sequence nos, - delete this one
-      sent->MarkDeleteNow();
-      return;
+      PTRACE(5, "MarkDeleteNow on the New frame " << sent->IdString());
+      PTRACE(5, "Have a reply of " << reply->IdString());
+      goto foundMatch;
     } else {
       PTRACE(5, "Non zero sequence nos in the sequence number - look for exact match");
     }
         
     if (sent->IsRegReqFrame() && 
         (reply->IsRegAckFrame() || reply->IsRegAuthFrame() || reply->IsRegRejFrame())) {
-      PTRACE(4, "have read a RegAck, RegAuth or RegRej packet for a RegReq frame we have sent, delete this RegReq");
-      sent->MarkDeleteNow();
-      return;
+      PTRACE(5, "have read a RegAck, RegAuth or RegRej packet for a RegReq frame we have sent, delete this RegReq");
+      PTRACE(5, "reg type frame, so MarkDeleteNow on " << sent->IdString());
+      goto foundMatch;
     }
     
     if (sent->IsRegRelFrame() && 
         (reply->IsRegAckFrame() || reply->IsRegAuthFrame() || reply->IsRegRejFrame())) {
-      PTRACE(4, "have read a RegAck, RegAuth or RegRej packet for a RegRel frame we have sent, delete this RegRel");
-      sent->MarkDeleteNow();
-      return;
+      PTRACE(5, "have read a RegAck, RegAuth or RegRej packet for a RegRel frame we have sent, delete this RegRel");
+      PTRACE(5, "reg rel/authoframe, so MarkDeleteNow on " << sent->IdString());
+      goto foundMatch;
     }
    
     if (sent->GetTimeStamp() != reply->GetTimeStamp()) {
-      PTRACE(4, "Time stamps differ, so give up on the test" << sent->IdString());
+      PTRACE(5, "Time stamps differ, so give up on the test" << sent->IdString());
       continue;
     } else {
-      PTRACE(4, "Time stamps are the same, so check in seqno vs oseqno " << sent->IdString());
+      PTRACE(5, "Time stamps are the same, so check in seqno vs oseqno " << sent->IdString());
     }
 
     PTRACE(5, "SeqNos\tSent is " << sent->GetSequenceInfo().OutSeqNo() 
@@ -1650,38 +1660,44 @@ void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
 	   << " " << reply->GetSequenceInfo().InSeqNo());
 
     if (reply->IsLagRpFrame() && sent->IsLagRqFrame()) {
-      PTRACE(4, "have read a LagRp packet for a LagRq frame  we have sent, delete this LagRq " 
+      PTRACE(5, "have read a LagRp packet for a LagRq frame  we have sent, delete this LagRq " 
 	     << sent->IdString());
-      sent->MarkDeleteNow();
-      return;
+      PTRACE(5, "LAG frame, so MarkDeleteNow on " << sent->IdString());
+      goto foundMatch;
     }
 
     if (reply->IsPongFrame() && sent->IsPingFrame()) {
-      PTRACE(4, "have read a Pong packet for a PING frame  we have sent: delete the Pong " 
+      PTRACE(5, "have read a Pong packet for a PING frame  we have sent: delete the Pong " 
 	     << sent->IdString());
-      sent->MarkDeleteNow();
-      return;
+      PTRACE(5, "PONG frame, so MarkDeleteNow on " << sent->IdString());
+      goto foundMatch;
     }
 
     if (sent->GetSequenceInfo().InSeqNo() == reply->GetSequenceInfo().OutSeqNo()) {
-      PTRACE(4, "Timestamp, and inseqno matches oseqno " << sent->IdString());
+      PTRACE(5, "Timestamp, and inseqno matches oseqno " << sent->IdString());
       if (reply->IsAckFrame()) {
         PTRACE(5, "have read an ack packet for one we have sent, so delete this one " << sent->IdString());
-        sent->MarkDeleteNow();
-        return;
+	PTRACE(5, "ack for existing frame, MarkDeleteNow " << sent->IdString());
+        goto foundMatch;
       }    
     } else {
-      PTRACE(4, "No match:: sent=" << sent->IdString() << " and reply=" << reply->IdString() 
+      PTRACE(5, "No match:: sent=" << sent->IdString() << " and reply=" << reply->IdString() 
 	     << PString(reply->IsAckFrame() ? "reply is ack frame " : "reply is not ack frame ")
 	     << PString("Sequence numbers are:: sentIn" ) 
 	     << sent->GetSequenceInfo().InSeqNo() << "  rcvdOut" << reply->GetSequenceInfo().OutSeqNo());
     }	
 	  
-    PTRACE(4, " sequence " << sent->GetSequenceInfo().OutSeqNo() 
+    PTRACE(5, " sequence " << sent->GetSequenceInfo().OutSeqNo() 
 	   << " and " << reply->GetSequenceInfo().InSeqNo() << " are different");
     
   }
   // No match found, so no sent frame will be deleted 
+  return;
+
+ foundMatch:
+
+  delete sent;
+  RemoveAt(currentIndex);
   return;
 }  
 
@@ -1707,7 +1723,7 @@ void IAX2FrameList::SendVnakRequestedFrames(IAX2FullFrameProtocol &src)
     }
     
     if (!(sent->GetRemoteInfo() *= src.GetRemoteInfo())) {
-      PTRACE(3, "mismatch in remote info");
+      PTRACE(5, "mismatch in remote info");
       continue;
     }
 
@@ -1717,12 +1733,20 @@ void IAX2FrameList::SendVnakRequestedFrames(IAX2FullFrameProtocol &src)
   }
 }
 
+void IAX2FrameList::Initialise() 
+{  
+  PWaitAndSignal m(mutex);
+  DisallowDeleteObjects(); 
+}
+
 void IAX2FrameList::GetResendFramesDeleteOldFrames(IAX2FrameList &framesToSend)
 {
   PWaitAndSignal m(mutex);
-  
+  PTRACE(5, "ID# GetResendFramesDeleteOldFrames start");
+
   if (GetSize() == 0) {
-    PTRACE(4, "No frames available on the resend list");
+    PTRACE(5, "No frames to be resent.");
+    PTRACE(5, "ID# GetResendFramesDeleteOldFrames end cause empty");
     return;
   }
   
@@ -1731,22 +1755,28 @@ void IAX2FrameList::GetResendFramesDeleteOldFrames(IAX2FrameList &framesToSend)
     if (active == NULL)
       continue;
     
-    if (active->DeleteFrameNow() || active->SendFrameNow()) {
-      if (active->DeleteFrameNow()) {
-	PAbstractList::RemoveAt(i - 1);
-	delete active;
-      } else {
-	PAbstractList::RemoveAt(i - 1);
-	framesToSend.AddNewFrame(active);
+    if (active->DeleteFrameNow()) { 
+      PTRACE(5, "marked as delete now, so delete" << *active);
+      delete active;
+      active = NULL;
+      PAbstractList::RemoveAt(i - 1);
+      continue;
       }
+    
+    if (active->SendFrameNow()) {
+      PAbstractList::RemoveAt(i - 1);
+      framesToSend.AddNewFrame(active);
     }
   }
   PTRACE(4, "Have collected " << framesToSend.GetSize() << " frames to onsend");
+  PTRACE(5, "ID# GetResendFramesDeleteOldFrames end ");
   return;
 }
 
 void IAX2FrameList::MarkAllAsResent()
 {
+  PWaitAndSignal m(mutex);
+
   for (PINDEX i = 0; i < GetEntries(); i++) {
     IAX2FullFrame *active = (IAX2FullFrame *)PAbstractList::GetAt(i);
     active->MarkAsResent();
@@ -1761,7 +1791,6 @@ void IAX2FrameList::MarkAllAsResent()
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

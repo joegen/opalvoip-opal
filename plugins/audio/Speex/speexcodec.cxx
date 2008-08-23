@@ -24,30 +24,34 @@
  * $Date$
  */
 
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS 1
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "plugin-config.h"
+#endif
 
 #include <codec/opalplugin.h>
 
-#include <stdlib.h>
-#include <string.h>
+#if defined(_WIN32) || defined(_WIN32_WCE)
+  #define STRCMPI  _strcmpi
+#else
+  #define STRCMPI  strcasecmp
+#endif
 
 extern "C" {
 #include "libspeex/speex.h" 
 }
 
-#ifdef _WIN32
-  #define _CRT_SECURE_NO_DEPRECATE
-  #define STRCMPI  _strcmpi
-  #include <malloc.h>
-#else
-  #include <semaphore.h>
-  #define STRCMPI  strcasecmp
-#endif
-
 #define NARROW_SAMPLES_PER_FRAME       160
 #define WIDE_SAMPLES_PER_FRAME         320
 
 #define NS_PER_FRAME                   20000
+
 
 const float MaxSampleValue   = 32767.0;
 const float MinSampleValue   = -32767.0;

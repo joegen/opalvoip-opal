@@ -239,6 +239,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   mediaWaitForConnect = PFalse;
   transmitterSidePaused = PFalse;
+  remoteTransmitPaused = false;
 
   switch (options&FastStartOptionMask) {
     case FastStartOptionDisable :
@@ -972,9 +973,17 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   remotePartyName = setupPDU->GetSourceAliases(signallingChannel);
 
   // get the destination number and name, just in case we are a gateway
-  if (setup.m_destinationAddress.GetSize() != 0)
-    calledDestinationName = H323GetAliasAddressString(setup.m_destinationAddress[0]);
-  setupPDU->GetQ931().GetCalledPartyNumber(calledDestinationNumber);
+  setupPDU->GetQ931().GetCalledPartyNumber(m_calledPartyNumber);
+  if (m_calledPartyNumber.IsEmpty())
+    m_calledPartyNumber = H323GetAliasAddressE164(setup.m_destinationAddress);
+
+  for (PINDEX i = 0; i < setup.m_destinationAddress.GetSize(); ++i) {
+    PString addr = H323GetAliasAddressString(setup.m_destinationAddress[i]);
+    if (addr != m_calledPartyNumber) {
+      m_calledPartyName = addr;
+      break;
+    }
+  }
 
   // get the peer address
   remotePartyAddress = signallingChannel->GetRemoteAddress();
@@ -1139,7 +1148,7 @@ PBoolean H323Connection::OnOpenIncomingMediaChannels()
     }
 
     if (previewFormats.GetSize() != 0) 
-      ownerCall.GetOtherPartyConnection(*this)->PreviewPeerMediaFormats(previewFormats);
+      GetOtherPartyConnection()->PreviewPeerMediaFormats(previewFormats);
   }
 
   // Get the local capabilities before fast start or tunnelled TCS is handled
@@ -1280,7 +1289,7 @@ PString H323Connection::GetRemotePartyURL() const
       remote = GetRemotePartyNumber() + "@" + remote;
   }
 
-  remote = GetEndPoint().GetPrefixName() + ":" + remote;
+  remote = GetPrefixName() + ":" + remote;
 
   return remote;
 }
@@ -1716,6 +1725,12 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 
   OpalConnection::AnsweringCall(response);
   InternalEstablishedConnectionCheck();
+}
+
+
+PString H323Connection::GetPrefixName() const
+{
+  return OpalConnection::GetPrefixName();
 }
 
 
@@ -2993,6 +3008,48 @@ H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, PBoolean fromRe
 }
 
 
+bool H323Connection::HoldConnection()
+{
+#if OPAL_H450
+  if (!HoldCall(true))
+    return false;
+#endif
+
+  if (!SendCapabilitySet(true))
+    return false;
+
+  // Signal the manager that there is a hold
+  OnHold(false, true);
+  return true;
+}
+
+
+bool H323Connection::RetrieveConnection()
+{
+#if OPAL_H450
+  if (!RetrieveCall())
+    return false;
+#endif
+
+  if (!SendCapabilitySet(false))
+    return false;
+
+  // Signal the manager that there is a hold
+  OnHold(false, false);
+  return true;
+}
+
+
+PBoolean H323Connection::IsConnectionOnHold() 
+{
+  return 
+#if OPAL_H450
+         IsLocalHold() ||
+#endif
+         remoteTransmitPaused;
+}
+
+
 bool H323Connection::TransferConnection(const PString & remoteParty)
 {
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
@@ -3000,19 +3057,17 @@ bool H323Connection::TransferConnection(const PString & remoteParty)
 #if OPAL_H450
     return TransferCall(remoteParty);
 #else
-    return false;
+    return ForwardCall(remoteParty);
 #endif
   }
 
+#if OPAL_H450
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
     PSafePtr<H323Connection> h323 = PSafePtrCast<OpalConnection, H323Connection>(connection);
     if (h323 != NULL)
-#if OPAL_H450
       return TransferCall(h323->GetRemotePartyURL(), h323->GetToken());
-#else
-      return false;
-#endif
   }
+#endif
 
   PTRACE(2, "H323\tConsultation transfer requires other party to be H.323.");
   return false;
@@ -3097,20 +3152,18 @@ void H323Connection::OnConsultationTransferSuccess(H323Connection& /*secondaryCa
    h4502handler->SetConsultationTransferSuccess();
 }
 
-bool H323Connection::HoldConnection()
+
+bool H323Connection::HoldCall(PBoolean localHold)
 {
-  if (!h4504handler->HoldCall(true))
+  if (!h4504handler->HoldCall(localHold))
     return false;
 
   holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
-  
-  // Signal the manager that there is a hold
-  endpoint.OnHold(*this, false, true);
   return true;
 }
 
 
-bool H323Connection::RetrieveConnection()
+bool H323Connection::RetrieveCall()
 {
   if (IsRemoteHold()) {
     PTRACE(4, "H4504\tRemote-end Call Hold not implemented.");
@@ -3129,29 +3182,6 @@ bool H323Connection::RetrieveConnection()
   // Signal the manager that there is a retrieve 
   endpoint.OnHold(*this, false, false);
   return true;
-}
-
-
-PBoolean H323Connection::IsConnectionOnHold() 
-{
-  return IsLocalHold();
-}
-
-
-void H323Connection::HoldCall(PBoolean localHold)
-{
-  if (localHold)
-    HoldConnection();
-  else {
-    h4504handler->HoldCall(localHold);
-    holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
-  }
-}
-
-
-void H323Connection::RetrieveCall()
-{
-  RetrieveConnection();
 }
 
 
@@ -3199,13 +3229,13 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
         else {
           // Enable/mute the transmit channel depending on whether the remote end is held
           chan2->SetPause(IsLocalHold());
-            stream->SetPaused(IsLocalHold());
+          stream->SetPaused(IsLocalHold());
         }
       }
       else {
         // Enable/mute the receive channel depending on whether the remote endis held
         chan2->SetPause(IsLocalHold());
-    stream->SetPaused(IsLocalHold());
+        stream->SetPaused(IsLocalHold());
       }
     }
   }
@@ -3322,6 +3352,7 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
   }
 
   if (remoteCaps.GetSize() == 0) {
+    PTRACE(3, "H323\tReceived empty CapabilitySet, shutting down transmitters.");
     // Received empty TCS, so close all transmit channels
     for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
       H245NegLogicalChannel & negChannel = logicalChannels->GetNegLogicalChannelAt(i);
@@ -3329,7 +3360,6 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       if (channel != NULL && !channel->GetNumber().IsFromRemote())
         negChannel.Close();
     }
-    ownerCall.CloseMediaStreams();
     transmitterSidePaused = PTrue;
   }
   else {
@@ -3343,10 +3373,11 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       return PFalse;
 
     if (transmitterSidePaused) {
+      PTRACE(3, "H323\tReceived CapabilitySet while paused, re-starting transmitters.");
       transmitterSidePaused = PFalse;
       connectionState = HasExecutedSignalConnect;
-      SetPhase(ConnectedPhase);
       capabilityExchangeProcedure->Start(PTrue);
+      masterSlaveDeterminationProcedure->Start(PFalse);
     }
     else {
       if (localCapabilities.GetSize() > 0)
@@ -3363,7 +3394,11 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
 
 bool H323Connection::SendCapabilitySet(PBoolean empty)
 {
-  return capabilityExchangeProcedure->Start(PTrue, empty);
+  if (!capabilityExchangeProcedure->Start(PTrue, empty))
+    return false;
+
+  remoteTransmitPaused = empty;
+  return true;
 }
 
 
@@ -3422,7 +3457,7 @@ void H323Connection::OnSetLocalCapabilities()
   H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
   if (capability != NULL) {
     MediaInformation info;
-    PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
+    PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
     if (otherParty != NULL && otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
       capability->SetPayloadType(info.rfc2833);
     else
@@ -3500,18 +3535,17 @@ void H323Connection::InternalEstablishedConnectionCheck()
     startT120 = PFalse;
   }
 #endif
-  
+
+  // Check if we have just been connected, or have come out of a transmitter side
+  // paused, and have not already got an audio transmitter running via fast connect
+  if (connectionState == HasExecutedSignalConnect && FindChannel(OpalMediaFormat::DefaultAudioSessionID, PFalse) == NULL)
+    OnSelectLogicalChannels(); // Start some media
+
   switch (GetPhase()) {
     case ConnectedPhase :
-      // Check if we have already got a transmitter running, select one if not
-      if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, PFalse) == NULL)
-        OnSelectLogicalChannels();
-
-      connectionState = EstablishedConnection;
       SetPhase(EstablishedPhase);
-
       OnEstablished();
-      break;
+      // Set established in next case
 
     case EstablishedPhase :
       connectionState = EstablishedConnection; // Keep in sync
@@ -3620,7 +3654,9 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
   }
 
   if (stream->Open()) {
-    stream->UpdateMediaFormat(mediaFormat);
+    OpalMediaFormat adjustedMediaFormat = mediaFormat;
+    adjustedMediaFormat.SetPayloadType(stream->GetMediaFormat().GetPayloadType());
+    stream->UpdateMediaFormat(adjustedMediaFormat);
 
     if (OnOpenMediaStream(*stream)) {
       mediaStreams.Append(stream);
@@ -3653,7 +3689,7 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
       }
     }
   }
-  return OpalRTPConnection::CloseMediaStream(stream);;
+  return OpalRTPConnection::CloseMediaStream(stream);
 }
 
 
@@ -3716,9 +3752,7 @@ void H323Connection::OnSelectLogicalChannels()
   // Select the first codec that uses the "standard" audio session.
   switch (fastStartState) {
     default : //FastStartDisabled :
-#if OPAL_AUDIO
       SelectDefaultLogicalChannel(OpalMediaType::Audio(), OpalMediaFormat::DefaultAudioSessionID);
-#endif
 #if OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
         SelectDefaultLogicalChannel(OpalMediaType::Video(), OpalMediaFormat::DefaultVideoSessionID);
@@ -3736,9 +3770,7 @@ void H323Connection::OnSelectLogicalChannels()
       break;
 
     case FastStartInitiate :
-#if OPAL_AUDIO
       SelectFastStartChannels(OpalMediaFormat::DefaultAudioSessionID, PTrue, PTrue);
-#endif
 #if OPAL_VIDEO
       SelectFastStartChannels(OpalMediaFormat::DefaultVideoSessionID,
                               endpoint.CanAutoStartTransmitVideo(),
@@ -3752,10 +3784,8 @@ void H323Connection::OnSelectLogicalChannels()
       break;
 
     case FastStartResponse :
-#if OPAL_AUDIO
       StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsTransmitter);
       StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsReceiver);
-#endif
 #if OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsTransmitter);
@@ -3778,7 +3808,7 @@ void H323Connection::SelectDefaultLogicalChannel(const OpalMediaType & mediaType
   if (FindChannel(sessionID, PFalse))
     return;
 
-  PSafePtr<OpalConnection> otherConnection = ownerCall.GetOtherPartyConnection(*this);
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
   if (otherConnection == NULL) {
     PTRACE(2, "H323\tSelectLogicalChannel(" << sessionID << ") cannot start channel without second connection in call.");
     return;
@@ -4043,7 +4073,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     PSafeLockReadOnly m(ownerCall);
 
     if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
-      PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
+      PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
       if (otherParty == NULL) {
         PTRACE(1, "H323\tCowardly refusing to create an RTP channel with only one connection");
         return NULL;
@@ -4133,16 +4163,6 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
 
 PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
-  H323_RealTimeChannel * rtpChannel = dynamic_cast<H323_RealTimeChannel *>(&channel);
-  if (rtpChannel != NULL) {
-    RTP_DataFrame::PayloadTypes internalPayloadType = rtpChannel->GetMediaStream()->GetMediaFormat().GetPayloadType();
-    RTP_DataFrame::PayloadTypes actualPayloadType   = rtpChannel->GetDynamicRTPPayloadType();
-    if (actualPayloadType != internalPayloadType &&
-        actualPayloadType   != RTP_DataFrame::IllegalPayloadType &&
-        internalPayloadType != RTP_DataFrame::IllegalPayloadType)
-      rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(internalPayloadType, actualPayloadType));
-  }
-
   return endpoint.OnStartLogicalChannel(*this, channel);
 }
 

@@ -93,6 +93,18 @@ class SIPURL : public PURL
       WORD listenerPort = 0
     );
 
+    /**Compare the two SIPURLs and return their relative rank.
+       Note that does an intelligent comparison according to the rules
+       in RFC3261 Section 19.1.4.
+
+     @return
+       #LessThan#, #EqualTo# or #GreaterThan#
+       according to the relative rank of the objects.
+     */
+    virtual Comparison Compare(
+      const PObject & obj   ///< Object to compare against.
+    ) const;
+
     /** Returns complete SIPURL as one string, including displayname (in
         quotes) and address in angle brackets.
       */
@@ -104,7 +116,13 @@ class SIPURL : public PURL
     
     void SetDisplayName(const PString & str) 
       { displayName = str; }
-    
+
+    /**Returns the field parameter (outside of <>)
+      */
+    PString GetFieldParameters() const { return fieldParameters; }
+
+    /**Get the host and port as a transpoprt address.
+      */
     OpalTransportAddress GetHostAddress() const;
 
     enum UsageContext {
@@ -159,6 +177,7 @@ class SIPURL : public PURL
     );
 
     PString displayName;
+    PString fieldParameters;
 };
 
 
@@ -237,6 +256,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetCallID(const PString & v);
 
     PString GetContact() const;
+    bool GetContacts(std::vector<SIPURL> & contacts) const;
     void SetContact(const PString & v);
     void SetContact(const SIPURL & url);
 
@@ -260,7 +280,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PINDEX  GetContentLength() const;
     void SetContentLength(PINDEX v);
-		PBoolean IsContentLengthPresent() const;
+    PBoolean IsContentLengthPresent() const;
 
     PString GetCSeq() const;
     void SetCSeq(const PString & v);
@@ -597,7 +617,8 @@ class SIP_PDU : public PSafeObject
       const SIP_PDU & request,
       StatusCodes code,
       const char * contact = NULL,
-      const char * extra = NULL
+      const char * extra = NULL,
+      const SDPSessionDescription * sdp = NULL
     );
     SIP_PDU(const SIP_PDU &);
     SIP_PDU & operator=(const SIP_PDU &);
@@ -639,16 +660,6 @@ class SIP_PDU : public PSafeObject
       */
     void AdjustVia(OpalTransport & transport);
     
-    /**Return the address from the via field. That address
-     * should be used to send responses to incoming PDUs.
-     */
-    OpalTransportAddress GetViaAddress(OpalEndPoint &);
-    
-    /**Return the address to which the request PDU should be sent
-     * according to the RFC, for a request in a dialog.
-     */
-    OpalTransportAddress GetSendAddress(const PStringList & routeSet);
-    
     /**Read PDU from the specified transport.
       */
     PBoolean Read(
@@ -660,6 +671,19 @@ class SIP_PDU : public PSafeObject
     PBoolean Write(
       OpalTransport & transport,
       const OpalTransportAddress & remoteAddress = OpalTransportAddress()
+    );
+
+    /**Write PDU as a response to a request.
+    */
+    bool SendResponse(
+      OpalTransport & transport,
+      StatusCodes code,
+      const char * contact = NULL,
+      const char * extra = NULL
+    );
+    bool SendResponse(
+      OpalTransport & transport,
+      SIP_PDU & response
     );
 
     /** Construct the PDU string to output.
@@ -679,14 +703,10 @@ class SIP_PDU : public PSafeObject
     const PString & GetInfo() const          { return info; }
     const SIPMIMEInfo & GetMIME() const      { return mime; }
           SIPMIMEInfo & GetMIME()            { return mime; }
-    PBoolean HasSDP() const                      { return sdp != NULL; }
-    SDPSessionDescription & GetSDP() const   { return *PAssertNULL(sdp); }
     void SetURI(const SIPURL & newuri)       { uri = newuri; }
-    void SetSDP(SDPSessionDescription * s)   { sdp = s; }
-    void SetSDP(const SDPSessionDescription & s) { sdp = new SDPSessionDescription(s); }
+    SDPSessionDescription * GetSDP();
 
   protected:
-    
     Methods     method;                 // Request type, ==NumMethods for Response
     StatusCodes statusCode;
     SIPURL      uri;                    // display name & URI, no tag
@@ -696,8 +716,7 @@ class SIP_PDU : public PSafeObject
     SIPMIMEInfo mime;
     PString     entityBody;
 
-    OpalTransportAddress    lastTransportAddress;
-    SDPSessionDescription * sdp;
+    SDPSessionDescription * m_SDP;
 
     mutable PString transactionID;
 };
@@ -802,6 +821,7 @@ class SIPTransaction : public SIP_PDU
     PTimer     completionTimer;
     PSyncPoint completed;
     PString    localInterface;
+    OpalTransportAddress m_remoteAddress;
 };
 
 
@@ -846,6 +866,7 @@ class SIPRegister : public SIPTransaction
       Params();
 
       PString       m_addressOfRecord;
+      PString       m_registrarAddress;
       PString       m_contactAddress;
       PString       m_authID;
       PString       m_password;
@@ -874,18 +895,15 @@ class SIPSubscribe : public SIPTransaction
   public:
     /** Valid types for a presence event
      */
-    enum SubscribeType {
-      Unknown,
-      MessageSummary,
-      Presence
-    };
+    static const PString MessageSummary;
+    static const PString Presence;
 
     /** Valid types for a MWI
     */
     SIPSubscribe(
         SIPEndPoint & ep,
         OpalTransport & trans,
-        SIPSubscribe::SubscribeType & type,
+        const PString & eventPackage,
         const PStringList & routeSet,
         const SIPURL & targetAddress,
         const PString & remotePartyAddress,

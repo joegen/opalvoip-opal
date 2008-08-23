@@ -58,8 +58,6 @@ namespace PWLibStupidLinkerHacks {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 /**
   *  This format is identical to the OpalPCM16 except that it uses a different
   *  sessionID in order to be compatible with T.38
@@ -84,7 +82,6 @@ class OpalFaxAudioFormat : public OpalMediaFormat
     );
 };
 
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 

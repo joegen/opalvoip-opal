@@ -11,11 +11,9 @@
 #include <ptlib.h>
 #include "h460/h4609.h"
 
+#ifdef OPAL_H460
+
 #define new PNEW
-
-
-#if ! H323_DISABLE_H4609
-
 
 
 //
@@ -1131,7 +1129,7 @@ PObject * H4609_InterGKQosMonReport::Clone() const
 }
 
 
-#endif // if ! H323_DISABLE_H4609
+#endif // OPAL_H460
 
 
 // End of h4609.cxx

@@ -419,7 +419,9 @@ const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
     mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
     PTRACE_IF(2, mediaFormat.IsEmpty(), "SDP\tCould not find media format for \""
               << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
+
     mediaFormat.MakeUnique();
+    mediaFormat.SetPayloadType(payloadType);
 
     // Fill in the default values for (possibly) missing FMTP options
     for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
@@ -816,18 +818,6 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
   return list;
 }
 
-void SDPMediaDescription::CreateRTPMap(unsigned sessionID, RTP_DataFrame::PayloadMapType & map) const
-{
-  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
-    OpalMediaFormat opalFormat = format->GetMediaFormat();
-    if (!opalFormat.IsEmpty() && 
-         opalFormat.GetDefaultSessionID() == sessionID &&
-         opalFormat.GetPayloadType() != format->GetPayloadType()) {
-      map.insert(RTP_DataFrame::PayloadMapType::value_type(opalFormat.GetPayloadType(), format->GetPayloadType()));
-      PTRACE(3, "SDP\tAdding RTP translation from " << opalFormat.GetPayloadType() << " to " << format->GetPayloadType());
-    }
-  }
-}
 
 void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 {
@@ -855,7 +845,7 @@ void SDPMediaDescription::RemoveSDPMediaFormat(const SDPMediaFormat & sdpMediaFo
 }
 
 
-void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadMapType & map)
+void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip")) {
     PTRACE(4, "SDP\tSDP not including " << mediaFormat << " as it is not a SIP transportable format");
@@ -863,12 +853,6 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
   }
 
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
-  if (map.size() != 0) {
-    RTP_DataFrame::PayloadMapType::const_iterator r = map.find(payloadType);
-    if (r != map.end())
-      payloadType = r->second;
-  }
-
   unsigned clockRate = mediaFormat.GetClockRate();
 
   for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
@@ -892,11 +876,11 @@ void SDPMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, co
 }
 
 
-void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType, const RTP_DataFrame::PayloadMapType & map)
+void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType)
 {
   for (OpalMediaFormatList::const_iterator format = mediaFormats.begin(); format != mediaFormats.end(); ++format) {
     if (format->GetMediaType() == mediaType && (format->IsTransportable()))
-      AddMediaFormat(*format, map);
+      AddMediaFormat(*format);
   }
 }
 
@@ -992,7 +976,7 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
   if (!SDPRTPAVPMediaDescription::PrintOn(str, connectString))
     return false;
 
-#if OPAL_AUDIO && defined(HAVE_PTIME)
+#ifdef HAVE_PTIME
   // Fill in the ptime  as maximum tx packets of all media formats
   // and maxptime as minimum rx packets of all media formats
   unsigned ptime = 0;
@@ -1020,14 +1004,14 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
 
   if (maxptime < UINT_MAX)
     str << "a=maxptime:" << maxptime << "\r\n";
-#endif // OPAL_AUDIO
+#endif // HAVE_PTIME
 
   return true;
 }
 
 void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
-#if OPAL_AUDIO && defined(HAVE_PTIME)
+#ifdef HAVE_PTIME
   if (attr *= "ptime") {
     SetPacketTime(OpalAudioFormat::TxFramesPerPacketOption(), value);
     return;
@@ -1037,7 +1021,7 @@ void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString 
     SetPacketTime(OpalAudioFormat::RxFramesPerPacketOption(), value);
     return;
   }
-#endif
+#endif // HAVE_PTIME
 
   return SDPRTPAVPMediaDescription::SetAttribute(attr, value);
 }

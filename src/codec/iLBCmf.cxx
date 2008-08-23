@@ -39,8 +39,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_AUDIO
-
 const OpalAudioFormat & GetOpaliLBC()
 {
   static class OpaliLBCFormat : public OpalAudioFormat
@@ -73,8 +71,6 @@ const OpalAudioFormat & GetOpaliLBC()
   } const iLBC;
   return iLBC;
 }
-
-#endif
 
 
 // End of File ///////////////////////////////////////////////////////////////

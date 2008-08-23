@@ -1038,7 +1038,6 @@ class OpalMediaFormat : public PContainer
 };
 
 
-#if OPAL_AUDIO
 class OpalAudioFormatInternal : public OpalMediaFormatInternal
 {
   public:
@@ -1079,7 +1078,6 @@ class OpalAudioFormat : public OpalMediaFormat
     static const PString & TxFramesPerPacketOption();
     static const PString & MaxFramesPerPacketOption();
 };
-#endif
 
 #if OPAL_VIDEO
 class OpalVideoFormatInternal : public OpalMediaFormatInternal
@@ -1159,7 +1157,6 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_T38            "T.38"
 #define OPAL_H224            "H.224"
 
-#if OPAL_AUDIO
 extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16_16KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_8KHZ();
@@ -1182,7 +1179,6 @@ extern const OpalAudioFormat & GetOpalG7231A_5k3();
 extern const OpalAudioFormat & GetOpalGSM0610();
 extern const OpalAudioFormat & GetOpalGSMAMR();
 extern const OpalAudioFormat & GetOpaliLBC();
-#endif
 
 extern const OpalMediaFormat & GetOpalRFC2833();
 #if OPAL_T38_CAPABILITY
