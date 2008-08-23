@@ -34,7 +34,7 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#if OPAL_H323
+#ifdef OPAL_H323
 
 #ifdef __GNUC__
 #pragma implementation "h323ep.h"
@@ -80,7 +80,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
     callIntrusionT4(0,30),                  // Seconds
     callIntrusionT5(0,10),                  // Seconds
     callIntrusionT6(0,10)                   // Seconds
-#if OPAL_H450
+#ifdef OPAL_H450
     ,nextH450CallIdentity(0)
 #endif
 {
@@ -101,7 +101,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   canDisplayAmountString = PFalse;
   canEnforceDurationLimit = PTrue;
 
-#if OPAL_H450
+#ifdef OPAL_H450
   callIntrusionProtectionLevel = 3; //H45011_CIProtectionLevel::e_fullProtection;
 #endif
 
@@ -144,7 +144,7 @@ void H323EndPoint::ShutDown()
 PString H323EndPoint::GetDefaultTransport() const
 {
   return "tcp$"
-#ifdef P_SSL
+#ifdef OPAL_PTLIB_SSL
          ",tcps$:1300"
 #endif
     ;
@@ -606,7 +606,7 @@ PBoolean H323EndPoint::SetupTransfer(const PString & oldToken,
 
 PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
                                     const PString & existingToken,
-#if OPAL_H450
+#ifdef OPAL_H450
                                     const PString & callIdentity,
                                            unsigned capabilityLevel,
 #else
@@ -658,7 +658,7 @@ PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
 
   connection->AttachSignalChannel(newToken, transport, PFalse);
 
-#if OPAL_H450
+#ifdef OPAL_H450
   if (!callIdentity) {
     if (capabilityLevel == UINT_MAX)
       connection->HandleTransferCall(existingToken, callIdentity);
@@ -679,7 +679,7 @@ PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
 }
 
 
-#if OPAL_H450
+#ifdef OPAL_H450
 
 void H323EndPoint::TransferCall(const PString & token, 
                                 const PString & remoteParty,
@@ -751,7 +751,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
 {
   PURL url(remoteParty, GetPrefixName()); // Parses as per RFC3508
 
-#if P_DNS
+#ifdef OPAL_PTLIB_DNS
 
   // if there is no gatekeeper, try altarnate address lookup methods
   if (gatekeeper == NULL) {
@@ -805,7 +805,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
   if (url.GetScheme() == "callto") {
     // Do not yet support ILS
     if (type == "directory") {
-#if P_LDAP
+#ifdef OPAL_PTLIB_LDAP
       PString server = url.GetHostName();
       if (server.IsEmpty())
         server = GetDefaultILSServer();

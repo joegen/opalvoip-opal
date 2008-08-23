@@ -39,8 +39,9 @@
 #pragma implementation "transports.h"
 #endif
 
-#include <opal/transports.h>
+#include <opal/buildopts.h>
 
+#include <opal/transports.h>
 #include <opal/manager.h>
 #include <opal/endpoint.h>
 #include <opal/call.h>
@@ -57,7 +58,7 @@ static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInt
 static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport>  opalInternalIPTransportFactory(IpPrefix, true);
 static PFactory<OpalInternalTransport>::Worker<OpalInternalUDPTransport> opalInternalUDPTransportFactory(UdpPrefix, true);
 
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
 #include <ptclib/pssl.h>
 static const char TcpsPrefix[] = "tcps$";
 static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPSTransport> opalInternalTCPSTransportFactory(TcpsPrefix, true);
@@ -135,12 +136,12 @@ PBoolean OpalTransportAddress::IsCompatible(const OpalTransportAddress & address
   PCaselessString theirPrefix = address.Left(address.Find('$'));
   return myPrefix == theirPrefix ||
         (myPrefix    == IpPrefix && (theirPrefix == TcpPrefix || theirPrefix == UdpPrefix 
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
                                      || theirPrefix == TcpsPrefix
 #endif
                                     )) ||
         (theirPrefix == IpPrefix && (myPrefix    == TcpPrefix || myPrefix    == UdpPrefix 
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
                                      || myPrefix    == TcpsPrefix
 #endif
                                     ));
@@ -699,7 +700,7 @@ OpalTransport * OpalListenerTCP::CreateTransport(const OpalTransportAddress & lo
   if (myLocalAddress.IsCompatible(remoteAddress)) {
     if (!localAddress.IsEmpty())
       return localAddress.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
-#ifdef P_SSL
+#ifdef OPAL_PTLIB_SSL
     if (remoteAddress.NumCompare(TcpsPrefix) == EqualTo)
       return new OpalTransportTCPS(endpoint);
 #endif
@@ -1456,7 +1457,7 @@ const char * OpalTransportUDP::GetProtoPrefix() const
 
 //////////////////////////////////////////////////////////////////////////
 
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
 
 static PBoolean SetSSLCertificate(PSSLContext & sslContext,
                              const PFilePath & certificateFile,

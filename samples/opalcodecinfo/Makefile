@@ -21,26 +21,37 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Log: Makefile,v $
-# Revision 1.2  2006/07/24 14:03:39  csoutheren
-# Merged in audio and video plugins from CVS branch PluginBranch
-#
-# Revision 1.1  2006/03/13 06:56:37  csoutheren
-# Initial version
-#
-# Revision 1.1  2004/05/11 01:19:37  csoutheren
-# Initial version
-#
 #
 
 PROG		= codecinfo
 SOURCES		:= main.cxx
+OBJDIR          = obj
 
-ifndef OPENH323DIR
-OPALDIR=$(CURDIR)/../..
+EXTRACXXFLAGS=-I$(OPAL_INCDIR)
+EXTRALDFLAGS =-L$(OPAL_LIBDIR) $(LIBS) -lopal 
+
+ifndef OPALDIR
+ifneq (,$(wildcard ../../../opal/opal_inc.mak))
+OPALDIR=../..
+endif
 endif
 
-VERSION_FILE := $(OPALDIR)/version.h
-
+ifndef OPALDIR
+default_target :
+	@echo Cannot find opal_inc.mak in standard locations, you must set the OPALDIR
+	@echo environment variable manually to build this application.
+else
 include $(OPALDIR)/opal_inc.mak
+endif
 
+$(OBJDIR)/%.o : %.cxx
+	@mkdir -p $(OBJDIR) >/dev/null 2>&1
+	$(CXX) $(EXTRACXXFLAGS) $(CXXFLAGS) -c $< -o $@
+
+OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SOURCES)))))
+
+$(PROG): $(OBJECTS)
+	$(CXX) $(LDSO) $(EXTRALDFLAGS) -o $@ $^
+
+clean:
+	rm -f $(OBJECTS) $(PROG)

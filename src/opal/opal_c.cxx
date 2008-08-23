@@ -32,6 +32,9 @@
  */
 
 #include <ptlib.h>
+
+#include <opal/buildopts.h>
+
 #include <opal.h>
 #include <opal/manager.h>
 #include <opal/pcss.h>
@@ -85,7 +88,7 @@ class OpalMessageBuffer
 #define SET_MESSAGE_STRING(msg, member, str) (msg).SetString(&(msg)->member, str)
 
 
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
 
 class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
 {
@@ -99,7 +102,7 @@ class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
     OpalManager_C & m_manager;
 };
 
-#endif // P_AUDIO
+#endif // OPAL_PTLIB_AUDIO
 
 
 class OpalLocalEndPoint_C : public OpalLocalEndPoint
@@ -123,7 +126,7 @@ class OpalLocalEndPoint_C : public OpalLocalEndPoint
 };
 
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
 class SIPEndPoint_C : public SIPEndPoint
 {
   public:
@@ -147,7 +150,7 @@ class OpalManager_C : public OpalManager
   public:
     OpalManager_C(unsigned version)
       : localEP(NULL)
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
       , pcssEP(NULL)
 #endif
       , m_apiVersion(version)
@@ -190,7 +193,7 @@ class OpalManager_C : public OpalManager
     void OnIndMediaStream(const OpalMediaStream & stream, OpalMediaStates state);
 
     OpalLocalEndPoint_C * localEP;
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
     OpalPCSSEndPoint_C  * pcssEP;
 #endif
 
@@ -486,7 +489,7 @@ bool OpalLocalEndPoint_C::OnWriteMediaData(const OpalLocalConnection & connectio
 
 ///////////////////////////////////////
 
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
 
 OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
   : OpalPCSSEndPoint(mgr)
@@ -521,12 +524,12 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
   return true;
 }
 
-#endif // P_AUDIO
+#endif // OPAL_PTLIB_AUDIO
 
 
 ///////////////////////////////////////
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
 
 SIPEndPoint_C::SIPEndPoint_C(OpalManager_C & mgr)
   : SIPEndPoint(mgr)
@@ -573,7 +576,7 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   PString defProto, defUser;
   PINDEX  defProtoPos = P_MAX_INDEX, defUserPos = P_MAX_INDEX;
 
-#if OPAL_H323
+#ifdef OPAL_H323
   PINDEX h323Pos = options.Find("h323");
   if (h323Pos < defProtoPos) {
     defProto = "h323";
@@ -581,7 +584,7 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
   PINDEX sipPos = options.Find("sip");
   if (sipPos < defProtoPos) {
     defProto = "sip";
@@ -589,7 +592,7 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 #endif
 
-#if OPAL_IAX2
+#ifdef OPAL_IAX2
   PINDEX iaxPos = options.Find("iax2");
   if (iaxPos < defProtoPos) {
     defProto = "iax2:<da>";
@@ -597,7 +600,7 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 #endif
 
-#if OPAL_LID
+#ifdef OPAL_LID
   PINDEX potsPos = options.Find("pots");
   if (potsPos < defUserPos) {
     defUser = "pots:<dn>";
@@ -624,35 +627,35 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 
 
-#if OPAL_IVR
+#ifdef OPAL_IVR
   if (options.Find("ivr") != P_MAX_INDEX) {
     new OpalIVREndPoint(*this);
     AddRouteEntry(".*:#=ivr:"); // A hash from anywhere goes to IVR
   }
 #endif
 
-#if OPAL_H323
+#ifdef OPAL_H323
   if (h323Pos != P_MAX_INDEX) {
     new H323EndPoint(*this);
     AddRouteEntry("h323:.*=" + defUser);
   }
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
   if (sipPos != P_MAX_INDEX) {
     new SIPEndPoint_C(*this);
     AddRouteEntry("sip:.*=" + defUser);
   }
 #endif
 
-#if OPAL_IAX2
+#ifdef OPAL_IAX2
   if (options.Find("iax2") != P_MAX_INDEX) {
     new IAX2EndPoint(*this);
     AddRouteEntry("iax2:.*=" + defUser);
   }
 #endif
 
-#if OPAL_LID
+#ifdef OPAL_LID
   if (potsPos != P_MAX_INDEX || pstnPos != P_MAX_INDEX) {
     new OpalLineEndPoint(*this);
 
@@ -663,7 +666,7 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 #endif
 
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
   if (pcPos != P_MAX_INDEX) {
     pcssEP = new OpalPCSSEndPoint_C(*this);
     AddRouteEntry("pc:.*=" + defProto + ":<da>");
@@ -760,7 +763,7 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
 
 void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuffer & response)
 {
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
   if (pcssEP != NULL) {
     SET_MESSAGE_STRING(response, m_param.m_general.m_audioRecordDevice, pcssEP->GetSoundChannelRecordDevice());
     if (!IsNullString(command.m_param.m_general.m_audioRecordDevice))
@@ -770,9 +773,9 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     if (!IsNullString(command.m_param.m_general.m_audioPlayerDevice))
       pcssEP->SetSoundChannelPlayDevice(command.m_param.m_general.m_audioPlayerDevice);
   }
-#endif // P_AUDIO
+#endif // OPAL_PTLIB_AUDIO
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   PVideoDevice::OpenArgs video = GetVideoInputDevice();
   SET_MESSAGE_STRING(response, m_param.m_general.m_videoInputDevice, video.deviceName);
   if (!IsNullString(command.m_param.m_general.m_videoInputDevice)) {
@@ -808,7 +811,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     SetMediaFormatMask(PString(command.m_param.m_general.m_mediaMask).Lines());
 
   strm = "audio";
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   if (CanAutoStartReceiveVideo())
     strm << " video";
   if (!IsNullString(command.m_param.m_general.m_autoRxMedia))
@@ -817,7 +820,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   SET_MESSAGE_STRING(response, m_param.m_general.m_autoRxMedia, strm);
 
   strm = "audio";
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   if (CanAutoStartTransmitVideo())
     strm << " video";
   if (!IsNullString(command.m_param.m_general.m_autoTxMedia))
@@ -901,7 +904,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion < 3)
     return;
 
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
   if (pcssEP != NULL) {
     response->m_param.m_general.m_audioBuffers = pcssEP->GetSoundChannelBufferDepth();
     if (command.m_param.m_general.m_audioBuffers != 0)
@@ -996,13 +999,13 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
     SetProductInfo(product);
 
     if (command.m_param.m_protocol.m_interfaceAddresses != NULL) {
-#if OPAL_H323
+#ifdef OPAL_H323
       StartStopListeners(FindEndPoint(OPAL_PREFIX_H323), command.m_param.m_protocol.m_interfaceAddresses, response);
 #endif
-#if OPAL_SIP
+#ifdef OPAL_SIP
       StartStopListeners(FindEndPoint(OPAL_PREFIX_SIP),  command.m_param.m_protocol.m_interfaceAddresses, response);
 #endif
-#if OPAL_IAX2
+#ifdef OPAL_IAX2
       StartStopListeners(FindEndPoint(OPAL_PREFIX_IAX2),  command.m_param.m_protocol.m_interfaceAddresses, response);
 #endif
     }
@@ -1041,7 +1044,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
     return;
   }
 
-#if OPAL_H323
+#ifdef OPAL_H323
   H323EndPoint * h323 = dynamic_cast<H323EndPoint *>(ep);
   if (h323 != NULL) {
     if (command.m_param.m_registrationInfo.m_timeToLive == 0) {
@@ -1059,7 +1062,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
   }
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
   SIPEndPoint * sip = dynamic_cast<SIPEndPoint *>(ep);
   if (sip != NULL) {
     if (IsNullString(command.m_param.m_registrationInfo.m_hostName) &&
@@ -1121,7 +1124,7 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
 
   PString partyA = command.m_param.m_callSetUp.m_partyA;
   if (partyA.IsEmpty()) {
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
     if (pcssEP != NULL)
       partyA = "pc:*";
     else
@@ -1151,7 +1154,7 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
   }
 
   if (
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
       pcssEP == NULL &&
 #endif
       localEP == NULL) {
@@ -1159,7 +1162,7 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
     return;
   }
 
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
   if (pcssEP != NULL && pcssEP->AcceptIncomingConnection(command.m_param.m_callToken))
     return;
 #endif

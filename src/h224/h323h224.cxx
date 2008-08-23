@@ -26,13 +26,13 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+
 #ifdef __GNUC__
 #pragma implementation "h323h224.h"
 #endif
 
-#include <opal/buildopts.h>
-
-#if OPAL_H224FECC
+#ifdef OPAL_H224FECC
 
 #include <h224/h323h224.h>
 

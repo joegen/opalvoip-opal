@@ -34,7 +34,7 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#if OPAL_H323
+#ifdef OPAL_H323
 
 #ifdef __GNUC__
 #pragma implementation "transaddr.h"
@@ -62,7 +62,7 @@ static PString BuildIP(const PIPSocket::Address & ip, unsigned port, const char 
   if (!ip.IsValid())
     str << '*';
   else
-#if P_HAS_IPV6
+#ifdef OPAL_PTLIB_IPV6
   if (ip.GetVersion() == 6)
     str << '[' << ip << ']';
   else
@@ -88,7 +88,7 @@ H323TransportAddress::H323TransportAddress(const H225_TransportAddress & transpo
       *this = BuildIP(PIPSocket::Address(ip.m_ip.GetSize(), ip.m_ip.GetValue()), ip.m_port, proto);
       break;
     }
-#if P_HAS_IPV6
+#ifdef OPAL_PTLIB_IPV6
     case H225_TransportAddress::e_ip6Address :
     {
       const H225_TransportAddress_ip6Address & ip = transport;
@@ -116,7 +116,7 @@ H323TransportAddress::H323TransportAddress(const H245_TransportAddress & transpo
           *this = BuildIP(PIPSocket::Address(ip.m_network.GetSize(), ip.m_network.GetValue()), ip.m_tsapIdentifier, proto);
           break;
         }
-#if P_HAS_IPV6
+#ifdef OPAL_PTLIB_IPV6
         case H245_UnicastAddress::e_iP6Address :
         {
           const H245_UnicastAddress_iP6Address & ip = unicast;
@@ -212,7 +212,7 @@ PBoolean H323TransportAddress::SetPDU(H225_TransportAddress & pdu, WORD defPort)
   PIPSocket::Address ip;
   WORD port = defPort;
   if (GetIpAndPort(ip, port)) {
-#if P_HAS_IPV6
+#ifdef OPAL_PTLIB_IPV6
     if (ip.GetVersion() == 6) {
       pdu.SetTag(H225_TransportAddress::e_ip6Address);
       H225_TransportAddress_ip6Address & addr = pdu;
@@ -249,7 +249,7 @@ PBoolean H323TransportAddress::SetPDU(H245_TransportAddress & pdu, WORD defPort)
 
     H245_UnicastAddress & unicast = pdu;
 
-#if P_HAS_IPV6
+#ifdef OPAL_PTLIB_IPV6
     if (ip.GetVersion() == 6) {
       unicast.SetTag(H245_UnicastAddress::e_iP6Address);
       H245_UnicastAddress_iP6Address & addr = unicast;

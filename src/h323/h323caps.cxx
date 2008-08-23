@@ -34,7 +34,7 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#if OPAL_H323
+#ifdef OPAL_H323
 
 #ifdef __GNUC__
 #pragma implementation "h323caps.h"
@@ -1046,7 +1046,7 @@ PBoolean H323NonStandardAudioCapability::IsMatch(const PASN_Choice & subTypePDU)
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 H323Capability::MainTypes H323VideoCapability::GetMainType() const
 {

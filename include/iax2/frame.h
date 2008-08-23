@@ -80,6 +80,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <iax2/ies.h>
 #include <iax2/remote.h>
 

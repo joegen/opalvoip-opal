@@ -35,11 +35,12 @@
 #endif
 
 #include <opal/buildopts.h>
+
 #include <opal/mediatype.h>
 #include <opal/rtpconn.h>
 #include <opal/call.h>
 
-#if OPAL_H323
+#ifdef OPAL_H323
 #include <h323/channels.h>
 #endif
 
@@ -47,10 +48,9 @@ namespace PWLibStupidLinkerHacks {
   int mediaTypeLoader;
 }; // namespace PWLibStupidLinkerHacks
 
-
 OPAL_INSTANTIATE_MEDIATYPE(audio, OpalAudioMediaType);
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 OPAL_INSTANTIATE_MEDIATYPE(video, OpalVideoMediaType);
 #endif
 
@@ -81,7 +81,7 @@ OpalMediaTypeDefinition * OpalMediaType::GetDefinition(const OpalMediaType & key
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
 OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * _mediaType, const char * _sdpType, unsigned preferredSessionId)
   : mediaType(_mediaType), sdpType(_sdpType != NULL ? _sdpType : "")
 #else
@@ -200,7 +200,7 @@ OpalAudioMediaType::OpalAudioMediaType()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 OpalVideoMediaType::OpalVideoMediaType()
   : OpalRTPAVPMediaType("video", "video", 2)

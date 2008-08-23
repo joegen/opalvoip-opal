@@ -36,7 +36,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 #include <codec/vidcodec.h>
 

@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /** This is the base class for a command to a media transcoder and/or media

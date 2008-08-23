@@ -39,6 +39,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <ptlib/safecoll.h>
 
 #include <sip/sippdu.h>

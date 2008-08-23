@@ -38,6 +38,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/rtpconn.h>
 #include <opal/guid.h>
@@ -562,7 +563,7 @@ class H323Connection : public OpalRTPConnection
      */
     virtual PBoolean IsConnectionOnHold();
 
-#if OPAL_H450
+#ifdef OPAL_H450
 
     /**Initiate the transfer of an existing call (connection) to a new remote party
        using H.450.2.  This sends a Call Transfer Initiate Invoke message from the
@@ -1878,14 +1879,14 @@ class H323Connection : public OpalRTPConnection
 	
 	virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const;
 
-#if OPAL_H460
+#ifdef OPAL_H460
     /** Get the connection FeatureSet
      */
     virtual H460_FeatureSet * GetFeatureSet();
 #endif
 
     
-#if OPAL_H450
+#ifdef OPAL_H450
     /**
      * get the H4507 handler
      * @return a reference to the  H4507 handler
@@ -2025,7 +2026,7 @@ class H323Connection : public OpalRTPConnection
     H245NegRequestMode               * requestModeProcedure;
     H245NegRoundTripDelay            * roundTripDelayProcedure;
 
-#if OPAL_H450
+#ifdef OPAL_H450
     H450xDispatcher                  * h450dispatcher;
     H4502Handler                     * h4502handler;
     H4504Handler                     * h4504handler;

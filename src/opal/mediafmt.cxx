@@ -35,6 +35,8 @@
 #pragma implementation "mediacmd.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
 #include <codec/opalplugin.h>
@@ -583,7 +585,7 @@ const PString & OpalMediaFormat::FrameTimeOption()    { static PString s = PLUGI
 const PString & OpalMediaFormat::ClockRateOption()    { static PString s = PLUGINCODEC_OPTION_CLOCK_RATE;     return s; }
 const PString & OpalMediaFormat::MaxBitRateOption()   { static PString s = PLUGINCODEC_OPTION_MAX_BIT_RATE;   return s; }
 const PString & OpalMediaFormat::TargetBitRateOption(){ static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE; return s; }
-#if OPAL_H323
+#ifdef OPAL_H323
 const PString & OpalMediaFormat::MediaPacketizationOption(){ static PString s = PLUGINCODEC_MEDIA_PACKETIZATION; return s; }
     static const PString & MediaPacketizationOption();
 #endif
@@ -1184,12 +1186,12 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
     strm << right << setw(TitleWidth) << option.GetName() << " (R/" << (option.IsReadOnly() ? 'O' : 'W')
          << ") = " << left << setw(10) << option;
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
     if (!option.GetFMTPName().IsEmpty())
       strm << "  FMTP name: " << option.GetFMTPName() << " (" << option.GetFMTPDefault() << ')';
 #endif // OPAL_SIP
 
-#if OPAL_H323
+#ifdef OPAL_H323
     const OpalMediaOption::H245GenericInfo & genericInfo = option.GetH245Generic();
     if (genericInfo.mode != OpalMediaOption::H245GenericInfo::None) {
       strm << "  H.245 Ordinal: " << genericInfo.ordinal
@@ -1207,7 +1209,7 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
     if (PIsDescendant(&option, OpalMediaOptionBoolean))
       strm << " Boolean";
     else if (PIsDescendant(&option, OpalMediaOptionUnsigned))
-#if OPAL_H323
+#ifdef OPAL_H323
       switch (genericInfo.integerType) {
         default :
         case OpalMediaOption::H245GenericInfo::UnsignedInt :
@@ -1319,7 +1321,7 @@ bool OpalAudioFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 const PString & OpalVideoFormat::FrameWidthOption()             { static PString s = PLUGINCODEC_OPTION_FRAME_WIDTH;               return s; }
 const PString & OpalVideoFormat::FrameHeightOption()            { static PString s = PLUGINCODEC_OPTION_FRAME_HEIGHT;              return s; }

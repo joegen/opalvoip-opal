@@ -103,9 +103,10 @@
  *
  */
 #include <ptlib.h>
+#include <opal/buildopts.h>
 #include <ptclib/cypher.h>
 
-#if P_SSL_AES
+#ifdef OPAL_PTLIB_SSL_AES
 #include <openssl/aes.h>
 #endif
 
@@ -389,7 +390,7 @@ PBoolean IAX2Frame::DecryptContents(IAX2Encryption &encryption)
   if (!encryption.IsEncrypted())
     return PTrue;
 
-#if P_SSL_AES
+#ifdef OPAL_PTLIB_SSL_AES
   PINDEX headerSize = GetEncryptionOffset();
   PTRACE(4, "Decryption\tUnEncrypted headerSize for " << IdString() << " is " << headerSize);
 
@@ -437,7 +438,7 @@ PBoolean IAX2Frame::EncryptContents(IAX2Encryption &encryption)
   if (!encryption.IsEncrypted())
     return PTrue;
 
-#if P_SSL_AES
+#ifdef OPAL_PTLIB_SSL_AES
   PINDEX headerSize = GetEncryptionOffset();
   PINDEX eDataSize = data.GetSize() - headerSize;
   PINDEX padding = 16 + ((16 - (eDataSize % 16)) & 0x0f);

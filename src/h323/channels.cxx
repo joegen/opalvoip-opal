@@ -34,7 +34,7 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#if OPAL_H323
+#ifdef OPAL_H323
 
 #ifdef __GNUC__
 #pragma implementation "channels.h"
@@ -44,7 +44,7 @@
 
 #include <opal/transports.h>
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 #include <codec/vidcodec.h>
 #endif
 
@@ -230,7 +230,7 @@ void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & 
   if (mediaStream == NULL)
     return;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   switch (type.GetTag()) {
     case H245_MiscellaneousCommand_type::e_videoFastUpdatePicture :
       mediaStream->ExecuteCommand(OpalVideoUpdatePicture());
@@ -401,7 +401,7 @@ void H323UnidirectionalChannel::OnMiscellaneousCommand(const H245_MiscellaneousC
   if (mediaStream == NULL)
     return;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   switch (type.GetTag())
   {
     case H245_MiscellaneousCommand_type::e_videoFreezePicture :
@@ -440,7 +440,7 @@ void H323UnidirectionalChannel::OnMiscellaneousCommand(const H245_MiscellaneousC
 
 void H323UnidirectionalChannel::OnMediaCommand(OpalMediaCommand & command)
 {
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     H323ControlPDU pdu;
     const OpalVideoUpdatePicture & updatePicture = (const OpalVideoUpdatePicture &)command;

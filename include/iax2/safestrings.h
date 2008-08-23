@@ -53,6 +53,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif

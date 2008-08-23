@@ -30,9 +30,10 @@
 
 
 #include <ptlib.h>
+#include <opal/buildopts.h>
 #include <codec/g711a1_plc.h>
 
-#if OPAL_G711PLC
+#ifdef OPAL_G711PLC
 
 #include <math.h>
 
@@ -57,7 +58,7 @@ static const double PITCH_LOW=66.6;/**< minimum allowed pitch. default 66 Hz [Hz
 static const double PITCH_HIGH=200;/**< maximum allowed pitch. default 200 Hz [Hz] */
 
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 __inline double round(const double & value)
 {
   return value < 0 ? floor(value-0.5) : ceil(value+0.5);

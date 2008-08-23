@@ -35,6 +35,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <asn/x880.h>
 #include <asn/h4501.h>

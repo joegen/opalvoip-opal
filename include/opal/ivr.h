@@ -38,11 +38,10 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_IVR
+#ifdef OPAL_IVR
 
 #include <opal/opalvxml.h>
 #include <opal/endpoint.h>
-
 
 class OpalIVRConnection;
 

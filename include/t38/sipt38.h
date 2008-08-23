@@ -37,11 +37,11 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
 
 #include <sip/sdp.h>
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
 
 /////////////////////////////////////////////////////////
 //

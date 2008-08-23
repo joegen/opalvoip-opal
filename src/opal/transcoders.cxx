@@ -34,6 +34,8 @@
 #pragma implementation "transcoders.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/transcoders.h>
 
 

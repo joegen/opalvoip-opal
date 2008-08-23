@@ -6,7 +6,7 @@ includedir=@includedir@
 Name: opal
 Description: open phone application library
 Version: @OPAL_VERSION@
-Requires: ptlib
-Libs: -L${libdir} -lopal
-Cflags: -I${includedir}/opal @STDCCFLAGS@
+Requires:@PKG_REQUIRES@
+Libs: -L${libdir} @PKG_LIBS@ -lopal
+Cflags: -I${includedir}/opal @PKG_CFLAGS@
 

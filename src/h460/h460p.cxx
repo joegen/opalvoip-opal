@@ -39,6 +39,9 @@
  */
 
 #include <ptlib.h>
+
+#include <opal/buildopts.h>
+
 #include <h323/h323pdu.h>
 #include <h460/h460p.h>
 

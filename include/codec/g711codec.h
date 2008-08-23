@@ -34,6 +34,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/transcoders.h>
 #include <codec/g711a1_plc.h>
@@ -47,7 +48,7 @@ class Opal_G711_uLaw_PCM : public OpalStreamedTranscoder {
     virtual int ConvertOne(int sample) const;
     static int ConvertSample(int sample);
 
-#if OPAL_G711PLC 
+#ifdef OPAL_G711PLC 
    virtual PBoolean Convert(
       const RTP_DataFrame & input,  ///<  Input data
       RTP_DataFrame & output        ///<  Output data
@@ -78,7 +79,7 @@ class Opal_G711_ALaw_PCM : public OpalStreamedTranscoder {
     virtual int ConvertOne(int sample) const;
     static int ConvertSample(int sample);
 
-#if OPAL_G711PLC 
+#ifdef OPAL_G711PLC 
    virtual PBoolean Convert(
       const RTP_DataFrame & input,  ///<  Input data
       RTP_DataFrame & output        ///<  Output data

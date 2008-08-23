@@ -34,6 +34,8 @@
 #pragma implementation "x224.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <t120/x224.h>
 
 #include <ptlib/sockets.h>

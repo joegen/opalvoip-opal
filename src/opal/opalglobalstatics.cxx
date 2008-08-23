@@ -41,7 +41,7 @@
 #include <rtp/srtp.h>
 #include <t38/t38proto.h>
 
-#if OPAL_RFC4175
+#ifdef OPAL_RFC4175
 #include <codec/rfc4175.h>
 #endif
 
@@ -63,20 +63,20 @@ class PluginLoader : public PProcessStartup
       OpalPluginCodecManager::Bootstrap(); 
       PWLibStupidLinkerHacks::mediaTypeLoader = 1;
       PWLibStupidLinkerHacks::opalwavfileLoader =1;
-#if OPAL_SRTP
+#ifdef OPAL_SRTP
       PWLibStupidLinkerHacks::libSRTPLoader = 1;
 #endif
-#if OPAL_FAX
+#ifdef OPAL_FAX
       PWLibStupidLinkerHacks::t38Loader = 1;
 #endif
-#if OPAL_RFC4175
+#ifdef OPAL_RFC4175
       PWLibStupidLinkerHacks::rfc4175Loader = 1;
 #endif
     }
 };
 
 static PFactory<PPluginModuleManager>::Worker<OpalPluginCodecManager> opalPluginCodecManagerFactory("OpalPluginCodecManager", true);
-#if OPAL_LID
+#ifdef OPAL_LID
 static PFactory<PPluginModuleManager>::Worker<OpalPluginLIDManager> opalPluginLIDManagerFactory("OpalPluginLIDManager", true);
 #endif
 static PFactory<PProcessStartup>::Worker<PluginLoader> opalpluginStartupFactory("OpalPluginLoader", true);
@@ -87,7 +87,7 @@ namespace PWLibStupidLinkerHacks {
 
 int opalLoader;
 
-#ifdef P_WAVFILE
+#ifdef OPAL_PTLIB_WAVFILE
 extern int opalwavfileLoader;
 #endif
 

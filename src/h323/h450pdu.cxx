@@ -31,8 +31,8 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#if OPAL_H323
-#if OPAL_H450
+#ifdef OPAL_H323
+#ifdef OPAL_H450
 
 #ifdef __GNUC__
 #pragma implementation "h450pdu.h"

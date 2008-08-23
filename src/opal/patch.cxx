@@ -35,8 +35,10 @@
 #pragma implementation "patch.h"
 #endif
 
-#include <opal/patch.h>
 
+#include <opal/buildopts.h>
+
+#include <opal/patch.h>
 #include <opal/mediastrm.h>
 #include <opal/transcoders.h>
 
@@ -315,7 +317,7 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   finalFrames.Append(new RTP_DataFrame);
   writeSuccessful = true;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   OpalMediaFormat mediaFormat = stream->GetMediaFormat();
   unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
@@ -500,7 +502,7 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
 bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
   rcWindowSize = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption());
@@ -587,7 +589,7 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
 }
 
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 bool OpalMediaPatch::Sink::RateControlExceeded(const PTimeInterval & currentTime)
 {
   if (!rcEnabled)
@@ -628,7 +630,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   if (!writeSuccessful)
     return false;
   
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   FrameInfo frameInfo;
   frameInfo.time = PTimer::Tick();
   frameInfo.size = 0;
@@ -653,7 +655,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     if (secondaryCodec == NULL) {
       if (!stream->WritePacket(*interFrame))
         return (writeSuccessful = false);
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
       frameInfo.size += interFrame->GetPayloadSize() + interFrame->GetHeaderSize();
 #endif
       sourceFrame.SetTimestamp(interFrame->GetTimestamp());
@@ -675,14 +677,14 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       patch.FilterFrame(*finalFrame, secondaryCodec->GetOutputFormat());
       if (!stream->WritePacket(*finalFrame))
         return (writeSuccessful = false);
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
       frameInfo.size += finalFrame->GetPayloadSize() + finalFrame->GetHeaderSize();
 #endif
       sourceFrame.SetTimestamp(finalFrame->GetTimestamp());
     }
   }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   if (rcEnabled && frameInfo.size > 0) {
     frameInfoList.push_back(frameInfo);
     rcTotalSize += frameInfo.size;

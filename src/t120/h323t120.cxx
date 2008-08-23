@@ -36,7 +36,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_T120DATA
+#ifdef OPAL_T120DATA
 
 #include <t120/h323t120.h>
 #include <h323/h323ep.h>

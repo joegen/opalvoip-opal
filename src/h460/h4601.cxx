@@ -44,9 +44,11 @@
 #pragma implementation "h4601.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include "h460/h460.h"
 
-#if OPAL_H460
+#ifdef OPAL_H460
 
 #include "h460/h4601.h"
 

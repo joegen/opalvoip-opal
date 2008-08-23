@@ -35,14 +35,15 @@
 #pragma implementation "manager.h"
 #endif
 
-#include <opal/manager.h>
+#include <opal/buildopts.h>
 
+#include <opal/manager.h>
 #include <opal/endpoint.h>
 #include <opal/call.h>
 #include <opal/patch.h>
 #include <opal/mediastrm.h>
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 #include <codec/vidcodec.h>
 #endif
 
@@ -681,7 +682,7 @@ void OpalManager::OnClosedMediaStream(const OpalMediaStream & /*channel*/)
 {
 }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 void OpalManager::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
                                        const OpalConnection * /*connection*/) const
@@ -1399,7 +1400,7 @@ void OpalManager::SetMediaFormatMask(const PStringArray & mask)
 }
 
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 template<class PVideoXxxDevice>
 static PBoolean SetVideoDevice(const PVideoDevice::OpenArgs & args, PVideoDevice::OpenArgs & member)
 {

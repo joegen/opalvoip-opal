@@ -230,7 +230,7 @@ class OpalMediaPatch : public PObject
         RTP_DataFrameList finalFrames;
         bool              writeSuccessful;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
         bool RateControlExceeded(const PTimeInterval & currentTime);
 
         bool          rcEnabled;

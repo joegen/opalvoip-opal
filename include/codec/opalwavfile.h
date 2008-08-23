@@ -33,6 +33,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <ptclib/pwavfile.h>
 

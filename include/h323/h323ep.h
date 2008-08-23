@@ -38,6 +38,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/rtpep.h>
 #include <opal/manager.h>
@@ -971,7 +972,7 @@ class H323EndPoint : public OpalRTPEndPoint
       PBoolean mode ///<  New default mode
     ) { canEnforceDurationLimit = mode; } 
 
-#if OPAL_H450
+#ifdef OPAL_H450
     /**Get Call Intrusion Protection Level of the end point.
       */
     unsigned GetCallIntrusionProtectionLevel() const { return callIntrusionProtectionLevel; }
@@ -987,7 +988,7 @@ class H323EndPoint : public OpalRTPEndPoint
       */
     virtual void OnReceivedInitiateReturnError();
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     /**See if should auto-start receive video channels on connection.
      */
     PBoolean CanAutoStartReceiveVideo() const { return manager.CanAutoStartReceiveVideo(); }
@@ -997,7 +998,7 @@ class H323EndPoint : public OpalRTPEndPoint
     PBoolean CanAutoStartTransmitVideo() const { return manager.CanAutoStartTransmitVideo(); }
 #endif
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
     /**See if should auto-start receive fax channels on connection.
      */
     PBoolean CanAutoStartReceiveFax() const { return autoStartReceiveFax; }
@@ -1102,7 +1103,7 @@ class H323EndPoint : public OpalRTPEndPoint
       const PString & identifer
     );
 
-#if OPAL_H460
+#ifdef OPAL_H460
     /** Is the FeatureSet disabled
       */
     bool FeatureSetDisabled() const { return disableH460; }
@@ -1314,7 +1315,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Get the next available invoke Id for H450 operations
       */
-#if OPAL_H450
+#ifdef OPAL_H450
     unsigned GetNextH450CallIdentityValue() const { return ++nextH450CallIdentity; }
 #endif
 
@@ -1348,7 +1349,7 @@ class H323EndPoint : public OpalRTPEndPoint
     PBoolean        m_bH245Disabled; /* enabled or disabled h245 */
     PBoolean        canDisplayAmountString;
     PBoolean        canEnforceDurationLimit;
-#if OPAL_H450
+#ifdef OPAL_H450
     unsigned    callIntrusionProtectionLevel;
 #endif
 
@@ -1404,12 +1405,12 @@ class H323EndPoint : public OpalRTPEndPoint
     PString              gatekeeperPassword;
     H323CallIdentityDict secondaryConnectionsActive;
 
-#if OPAL_H450
+#ifdef OPAL_H450
     mutable PAtomicInteger nextH450CallIdentity;
             /// Next available callIdentity for H450 Transfer operations via consultation.
 #endif
 
-#if OPAL_H460
+#ifdef OPAL_H460
     bool            disableH460;
     H460_FeatureSet features;
 #endif

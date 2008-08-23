@@ -61,6 +61,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <ptlib/sockets.h>
 
 #include <iax2/frame.h>

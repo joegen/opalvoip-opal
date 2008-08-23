@@ -38,6 +38,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <ptlib/safecoll.h>
 #include <opal/guid.h>

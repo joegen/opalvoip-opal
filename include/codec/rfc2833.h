@@ -34,12 +34,13 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <rtp/rtp.h>
 
 extern const char * OpalDefaultNTEString;
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
 extern const char * OpalDefaultNSEString;
 #endif
 

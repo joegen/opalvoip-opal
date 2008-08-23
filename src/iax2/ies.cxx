@@ -33,6 +33,7 @@
 
 
 #include <ptlib.h>
+#include <opal/buildopts.h>
 #include <ptclib/cypher.h>
 
 

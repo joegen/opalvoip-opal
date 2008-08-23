@@ -34,6 +34,8 @@
 #pragma implementation "lidep.cxx"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <lids/lidep.h>
 
 #include <opal/manager.h>
@@ -129,7 +131,7 @@ PBoolean OpalLineEndPoint::MakeConnection(OpalCall & call,
 OpalMediaFormatList OpalLineEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList mediaFormats;
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   AddVideoMediaFormats(mediaFormats);
 #endif
 
@@ -563,7 +565,7 @@ PBoolean OpalLineConnection::SetConnected()
 OpalMediaFormatList OpalLineConnection::GetMediaFormats() const
 {
   OpalMediaFormatList formats = line.GetDevice().GetMediaFormats();
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   AddVideoMediaFormats(formats);
 #endif
   return formats;

@@ -32,6 +32,7 @@
  */
 
 #include <ptlib.h>
+#include <opal/buildopts.h>
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "remote.h"
@@ -475,7 +476,7 @@ const PBoolean IAX2Encryption::IsEncrypted() const
   return encryptionEnabled;
 }
 
-#if P_SSL_AES
+#ifdef OPAL_PTLIB_SSL_AES
 AES_KEY *IAX2Encryption::AesEncryptKey()
 {
   return &aesEncryptKey; 
@@ -496,7 +497,7 @@ void IAX2Encryption::CalculateAesKeys()
     return;
 
 
-#if P_SSL_AES
+#ifdef OPAL_PTLIB_SSL_AES
   IAX2IeMd5Result ie(*this);
   PBYTEArray context = ie.GetDataBlock();
 

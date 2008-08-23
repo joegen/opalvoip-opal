@@ -45,11 +45,11 @@
 #include <opal/mediafmt.h>
 #include <opal/transcoders.h>
 
-#if OPAL_H323
+#ifdef OPAL_H323
 #include <h323/h323caps.h>
 #endif
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 #include <codec/vidcodec.h>
 #endif
 
@@ -86,7 +86,7 @@ class OpalPluginCodecHandler : public PObject
                                                                   unsigned timeUnits,
                                                                     time_t timeStamp);
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     virtual OpalMediaFormatInternal * OnCreateVideoFormat(OpalPluginCodecManager & mgr,
                                             const PluginCodec_Definition * encoderCodec,
                                                               const char * rtpEncodingName,
@@ -94,7 +94,7 @@ class OpalPluginCodecHandler : public PObject
     virtual void RegisterVideoTranscoder(const PString & src, const PString & dst, PluginCodec_Definition * codec, PBoolean v);
 #endif
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
     virtual OpalMediaFormatInternal * OnCreateFaxFormat(OpalPluginCodecManager & mgr,
                                           const PluginCodec_Definition * encoderCodec,
                                                             const char * rtpEncodingName,
@@ -122,7 +122,7 @@ class OpalPluginCodecManager : public PPluginModuleManager
 
     static void Bootstrap();
 
-#if OPAL_H323
+#ifdef OPAL_H323
     H323Capability * CreateCapability(
           const PString & _mediaFormat, 
           const PString & _baseName,
@@ -144,7 +144,7 @@ class OpalPluginCodecManager : public PPluginModuleManager
     void RegisterCodecPlugins  (unsigned int count, PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
     void UnregisterCodecPlugins(unsigned int count, PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
 
-#if OPAL_H323
+#ifdef OPAL_H323
     void RegisterCapability(PluginCodec_Definition * encoderCodec, PluginCodec_Definition * decoderCodec);
 #endif
 };
@@ -303,7 +303,7 @@ class OpalPluginStreamedAudioDecoder : public OpalPluginStreamedAudioTranscoder
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 class OpalPluginVideoFormatInternal : public OpalVideoFormatInternal, public OpalPluginMediaFormatInternal
 {
@@ -342,7 +342,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
 
 class OpalPluginFaxFormatInternal : public OpalMediaFormatInternal, public OpalPluginMediaFormatInternal
 {
@@ -466,7 +466,7 @@ class H323PluginCapabilityInfo
     PString                        capabilityFormatName;
 };
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -585,7 +585,7 @@ class H323CodecPluginGenericAudioCapability : public H323GenericAudioCapability,
 };
 
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 //////////////////////////////////////////////////////////////////////////////
 //

@@ -49,7 +49,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_H460
+#ifdef OPAL_H460
 
 #include <asn/h225.h>
 #include <h323/transaddr.h>

@@ -21,43 +21,37 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Log: Makefile,v $
-# Revision 2.2  2002/02/11 09:38:28  robertj
-# Moved version to root directory
-#
-# Revision 2.1  2001/07/30 03:07:15  robertj
-# Improved reporting of incorrect OPALDIR
-#
-# Revision 2.0  2001/07/27 15:48:24  robertj
-# Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
-#
-# Revision 1.2  2000/10/30 00:24:49  robertj
-# No longer need to include ptlib explicitly
-#
-# Revision 1.1  2000/05/11 04:05:57  robertj
-# Simple sample program.
 #
 
 PROG		= simpleopal
-SOURCES		:= main.cxx
+SOURCEs		:= main.cxx
+OBJDIR          = obj
 
-VERSION_FILE =  ../../version.h
+EXTRACXXFLAGS=-I$(OPAL_INCDIR)
+EXTRALDFLAGS =-L$(OPAL_LIBDIR) $(LIBS) -lopal 
 
 ifndef OPALDIR
-ifneq (,$(wildcard $(HOME)/opal))
-OPALDIR=$(HOME)/opal
-else
-ifneq (,$(wildcard /usr/local/opal))
-OPALDIR=/usr/local/opal
-else
-default_target :
-	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
-	@echo environment variable to build this application.
-endif
+ifneq (,$(wildcard ../../../opal/opal_inc.mak))
+OPALDIR=../..
 endif
 endif
 
-ifdef OPALDIR
+ifndef OPALDIR
+default_target :
+	@echo Cannot find opal_inc.mak in standard locations, you must set the OPALDIR
+	@echo environment variable manually to build this application.
+else
 include $(OPALDIR)/opal_inc.mak
 endif
 
+$(OBJDIR)/%.o : %.cxx
+	@mkdir -p $(OBJDIR) >/dev/null 2>&1
+	$(CXX) $(EXTRACXXFLAGS) $(CXXFLAGS) -c $< -o $@
+
+OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SOURCES)))))
+
+$(PROG): $(OBJECTS)
+	$(CXX) $(LDSO) $(EXTRALDFLAGS) -o $@ $^
+
+clean:
+	rm -f $(OBJECTS) $(PROG)

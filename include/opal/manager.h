@@ -46,7 +46,7 @@
 #include <codec/echocancel.h>
 #include <ptclib/pstun.h>
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 #include <ptlib/videoio.h>
 #endif
 
@@ -551,7 +551,7 @@ class OpalManager : public PObject
       const OpalMediaStream & stream     ///<  Stream being closed
     );
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
     /**Add video media formats available on a connection.
 
@@ -867,7 +867,7 @@ class OpalManager : public PObject
       bool updateAll = true   ///< Update all registered endpoints
     );
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
     /**See if should auto-start receive video channels on connection.
      */
@@ -1109,7 +1109,7 @@ class OpalManager : public PObject
      */
     const OpalEchoCanceler::Params & GetEchoCancelParams() const { return echoCancelParams; }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
     /**Set the parameters for the video device to be used for input.
        If the name is not suitable for use with the PVideoInputDevice class
@@ -1225,7 +1225,7 @@ class OpalManager : public PObject
     PString       defaultUserName;
     PString       defaultDisplayName;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     PBoolean          autoStartReceiveVideo;
     PBoolean          autoStartTransmitVideo;
 #endif
@@ -1243,7 +1243,7 @@ class OpalManager : public PObject
     OpalSilenceDetector::Params silenceDetectParams;
     OpalEchoCanceler::Params echoCancelParams;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     PVideoDevice::OpenArgs videoInputDevice;
     PVideoDevice::OpenArgs videoPreviewDevice;
     PVideoDevice::OpenArgs videoOutputDevice;

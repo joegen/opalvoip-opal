@@ -29,14 +29,14 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+
 #ifdef __GNUC__
 #pragma implementation "h224.h"
 #pragma implementation "h224handler.h"
 #endif
 
-#include <opal/buildopts.h>
-
-#if OPAL_H224FECC
+#ifdef OPAL_H224FECC
 
 #include <h224/h224.h>
 #include <h224/h224handler.h>
@@ -49,7 +49,7 @@ OpalH224MediaType::OpalH224MediaType()
 {
 }
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
 
 SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTransportAddress & /*localAddress*/)
 {

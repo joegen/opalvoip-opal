@@ -38,7 +38,7 @@
 #include <opal/buildopts.h>
 
 
-#if OPAL_FAX
+#ifdef OPAL_FAX
 
 #include <ptlib/pipechan.h>
 

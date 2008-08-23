@@ -34,7 +34,7 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#if OPAL_H323
+#ifdef OPAL_H323
 
 #ifdef __GNUC__
 #pragma implementation "gkclient.h"
@@ -59,7 +59,7 @@ static class PAuthInitialiseInstantiateMe
     PAuthInitialiseInstantiateMe()
     {
       PWLibStupidLinkerHacks::h235AuthLoader = 1;
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
       PWLibStupidLinkerHacks::h235AuthProcedure1Loader = 1;
 #endif
     }

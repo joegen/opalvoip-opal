@@ -43,25 +43,35 @@
 #undef OPAL_BUILD
 #undef OPAL_VERSION
 
+#undef  OPAL_PTLIB_SSL
+#undef  OPAL_PTLIB_SSL_AES
+#undef  OPAL_PTLIB_ASN
+#undef  OPAL_PTLIB_EXPAT
+#undef  OPAL_PTLIB_AUDIO
+#undef  OPAL_PTLIB_VIDEO
+#undef  OPAL_PTLIB_WAVFILE
+#undef  OPAL_PTLIB_DTMF
+#undef  OPAL_PTLIB_IPV6
+#undef  OPAL_PTLIB_DNS
+#undef  OPAL_PTLIB_LDAP
+#undef  OPAL_PTLIB_VXML
+#undef  OPAL_PTLIB_CONFIG_FILE
 
 /////////////////////////////////////////////////
 //
 // Protocol support
 //
 
-#undef  OPAL_IAX2
-#undef	OPAL_SIP
 #undef	OPAL_H323
+#undef	OPAL_SIP
+#undef  OPAL_IAX2
 #undef  OPAL_LID
 #undef  OPAL_H224FECC
 #undef  OPAL_T120DATA
 #undef  OPAL_H450
 #undef  OPAL_H460
 #undef  OPAL_STATISTICS
-
-#ifdef P_EXPAT
 #undef  OPAL_IVR
-#endif
 
 #ifdef OPAL_H450
 #define H323_H450   OPAL_H450
@@ -76,26 +86,15 @@
 // Media support
 //
 
-#if P_VIDEO
 #undef  OPAL_VIDEO
+#ifndef OPAL_VIDEO
+#define NO_OPAL_VIDEO
 #endif
 
 #undef  OPAL_T38_CAPABILITY
-
-#if OPAL_T38_CAPABILITY
-#if P_ASN
 #undef  OPAL_FAX
-#endif
-#endif
-
-
-#undef OPAL_G711PLC
-
-#ifdef OPAL_VIDEO
+#undef  OPAL_G711PLC
 #undef  OPAL_RFC4175 
-#else
-#define NO_OPAL_VIDEO
-#endif
 
 /////////////////////////////////////////////////
 //
@@ -104,26 +103,6 @@
 #undef	OPAL_SYSTEM_SPEEX
 #undef  OPAL_HAVE_SPEEX_SPEEX_H
 #undef  OPAL_SPEEX_FLOAT_NOISE
-
-/////////////////////////////////////////////////
-//
-// VoiceTronic VPB Support
-//
-
-#if OPAL_LID
-#undef HAS_VPB
-
-#if HAS_VPB
-#if defined(_MSC_VER)
-
-#pragma include_alias(<vpbapi.h>, <@VPB_DIR@/src/vpbapi.h>)
-
-#define VPB_LIBRARY "@VPB_DIR@/win32/libvpb/Debug/libvpb.lib"
-
-#endif
-#endif
-#endif
-
 
 /////////////////////////////////////////////////
 //

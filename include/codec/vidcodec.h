@@ -35,12 +35,13 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/transcoders.h>
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
-#if OPAL_H323
+#ifdef OPAL_H323
 #include <h323/h323caps.h>
 #endif
 

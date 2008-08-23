@@ -32,7 +32,7 @@
 
 #include <opal/manager.h>
 
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
 #include <ptclib/shttpsvc.h>
 typedef PSecureHTTPServiceProcess OpalGwProcessAncestor;
 #else
@@ -40,19 +40,19 @@ typedef PSecureHTTPServiceProcess OpalGwProcessAncestor;
 typedef PHTTPServiceProcess OpalGwProcessAncestor;
 #endif
 
-#if OPAL_H323
+#ifdef OPAL_H323
 #include <h323/h323.h>
 #include <h323/gkclient.h>
 #include <h323/gkserver.h>
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
 #include <sip/sip.h>
 #endif
 
 #include <lids/lidep.h>
 
-#if P_EXPAT
+#ifdef OPAL_PTLIB_EXPAT
 #include <opal/ivr.h>
 #endif
 

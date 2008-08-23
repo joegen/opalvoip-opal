@@ -5,6 +5,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <ptclib/random.h>
 #include <opal/connection.h>
 

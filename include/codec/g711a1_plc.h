@@ -33,7 +33,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_G711PLC
+#ifdef OPAL_G711PLC
 
 
 /** concealment state variables.

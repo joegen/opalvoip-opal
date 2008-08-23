@@ -34,6 +34,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <h224/h224.h>
 
 class H281_Frame : public H224_Frame
