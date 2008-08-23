@@ -421,7 +421,7 @@ class OpalCall : public PSafeObject
        This will indicate if the call is "incoming" or "outgoing" by looking at
        the type of the A-party connection.
       */
-    bool IsNetworkOriginated();
+    bool IsNetworkOriginated() const;
 
     /**Get the time the call started.
      */
