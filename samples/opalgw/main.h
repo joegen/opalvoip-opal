@@ -30,7 +30,7 @@
 #define _OpalGw_MAIN_H
 
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
 class MyGatekeeperServer;
 
@@ -141,24 +141,24 @@ class MyManager : public OpalManager
     ~MyManager();
 
     PBoolean Initialise(PConfig & cfg, PConfigPage * rsrc);
-#if OPAL_H323
+#ifdef OPAL_H323
     PBoolean OnPostControl(const PStringToString & data, PHTML & msg);
     PString OnLoadEndPointStatus(const PString & htmlBlock);
     PString OnLoadCallStatus(const PString & htmlBlock);
 #endif
 
   protected:
-#if OPAL_H323
+#ifdef OPAL_H323
     H323EndPoint       * h323EP;
     MyGatekeeperServer * gkServer;
 #endif
-#if OPAL_SIP
+#ifdef OPAL_SIP
     SIPEndPoint      * sipEP;
 #endif
-#if OPAL_LID
+#ifdef OPAL_LID
     OpalLineEndPoint * potsEP;
 #endif
-#if P_EXPAT
+#ifdef OPAL_PTLIB_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif
 

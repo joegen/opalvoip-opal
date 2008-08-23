@@ -30,6 +30,7 @@
  */
 
 #include <ptlib.h>
+#include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
 
@@ -38,6 +39,7 @@
 
 
 /////////////////////////////////////////////////////////////////////////////
+
 
 const OpalAudioFormat & GetOpalGSMAMR()
 {
@@ -48,11 +50,11 @@ const OpalAudioFormat & GetOpalGSMAMR()
         : OpalAudioFormat(OPAL_GSMAMR, RTP_DataFrame::DynamicBase, "AMR",  33, 160, 1, 1, 1, 8000)
       {
         OpalMediaOption * option = new OpalMediaOptionInteger("Initial Mode", false, OpalMediaOption::MinMerge, 7);
-#if OPAL_SIP
+#ifdef OPAL_SIP
         option->SetFMTPName("mode");
         option->SetFMTPDefault("0");
 #endif
-#if OPAL_H323
+#ifdef OPAL_H323
         OpalMediaOption::H245GenericInfo info;
         info.ordinal = 1;
         info.mode = OpalMediaOption::H245GenericInfo::NonCollapsing;
@@ -62,7 +64,7 @@ const OpalAudioFormat & GetOpalGSMAMR()
         AddOption(option);
 
         option = new OpalMediaOptionBoolean("VAD", false, OpalMediaOption::AndMerge, true);
-#if OPAL_H323
+#ifdef OPAL_H323
         info.ordinal = 2;
         info.mode = OpalMediaOption::H245GenericInfo::Collapsing;
         info.excludeOLC = false;
@@ -70,7 +72,7 @@ const OpalAudioFormat & GetOpalGSMAMR()
 #endif
         AddOption(option);
 
-#if OPAL_H323
+#ifdef OPAL_H323
         option = FindOption(RxFramesPerPacketOption());
         if (option != NULL) {
           info.ordinal = 0; // All other fields the same as for the mode

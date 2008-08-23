@@ -35,6 +35,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <h323/h323caps.h>
 
 #include <h224/h224.h>

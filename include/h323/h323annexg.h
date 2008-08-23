@@ -31,6 +31,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <h323/h323trans.h>
 #include <h323/h501pdu.h>

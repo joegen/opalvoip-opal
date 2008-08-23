@@ -30,6 +30,7 @@
  */
 
 #include <ptlib.h>
+#include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
 
@@ -37,7 +38,7 @@
 #define new PNEW
 
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
 
 #include <rtp/rtp.h>
 

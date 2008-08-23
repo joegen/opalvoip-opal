@@ -35,11 +35,12 @@
 #endif
 
 #include <opal/buildopts.h>
+
 #include <opal/pcss.h>
 
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 #include <ptlib/videoio.h>
 #include <codec/vidcodec.h>
 #endif
@@ -353,7 +354,7 @@ void OpalPCSSConnection::OnPatchMediaStream(PBoolean isSource,
 
 OpalMediaStreamPtr OpalPCSSConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   if ( isSource &&
        sessionID == OpalMediaFormat::DefaultVideoSessionID &&
       !ownerCall.IsEstablished() &&
@@ -412,7 +413,7 @@ void OpalPCSSConnection::AcceptIncoming()
   }
 }
 
-#endif // P_AUDIO
+#endif // OPAL_PTLIB_AUDIO
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -44,7 +44,7 @@
 #include <opal/patch.h>
 #include <h224/h224handler.h>
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 #include <codec/vidcodec.h>
 #endif
 
@@ -239,7 +239,7 @@ void OpalRTPConnection::SetSecurityData(void *data)
   securityData = data;
 }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
@@ -338,7 +338,7 @@ void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
   OpalConnection::OnPatchMediaStream(isSource, patch);
   if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
     AttachRFC2833HandlerToPatch(isSource, patch);
-#if P_DTMF
+#ifdef OPAL_PTLIB_DTMF
     if (detectInBandDTMF && isSource) {
       patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
     }
@@ -527,7 +527,7 @@ void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, OpalConnection:
 
   // set old video and audio auto start if not already set
   SetOldOptions(1, OpalMediaType::Audio(), true, true);
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   OpalManager & mgr = conn.GetCall().GetManager();
   SetOldOptions(2, OpalMediaType::Video(), mgr.CanAutoStartReceiveVideo(), mgr.CanAutoStartTransmitVideo());
 #endif

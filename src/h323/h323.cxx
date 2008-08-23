@@ -31,7 +31,7 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#if OPAL_H323
+#ifdef OPAL_H323
 
 #ifdef __GNUC__
 #pragma implementation "h323con.h"
@@ -46,7 +46,7 @@
 #include <h323/h323rtp.h>
 #include <h323/gkclient.h>
 
-#if OPAL_H450
+#ifdef OPAL_H450
 #include <h323/h450pdu.h>
 #endif
 
@@ -55,11 +55,11 @@
 #include <opal/patch.h>
 #include <codec/rfc2833.h>
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 #include <codec/vidcodec.h>
 #endif
 
-#if OPAL_H224FECC
+#ifdef OPAL_H224FECC
 #include <h224/h323h224.h>
 #endif
 
@@ -205,7 +205,7 @@ H323Connection::H323Connection(OpalCall & call,
   holdMediaChannel = NULL;
   isConsultationTransfer = PFalse;
   isCallIntrusion = PFalse;
-#if OPAL_H450
+#ifdef OPAL_H450
   callIntrusionProtectionLevel = endpoint.GetCallIntrusionProtectionLevel();
 #endif
 
@@ -297,7 +297,7 @@ H323Connection::H323Connection(OpalCall & call,
   requestModeProcedure = new H245NegRequestMode(endpoint, *this);
   roundTripDelayProcedure = new H245NegRoundTripDelay(endpoint, *this);
 
-#if OPAL_H450
+#ifdef OPAL_H450
   h450dispatcher = new H450xDispatcher(*this);
   h4502handler = new H4502Handler(*this, *h450dispatcher);
   h4504handler = new H4504Handler(*this, *h450dispatcher);
@@ -321,7 +321,7 @@ H323Connection::~H323Connection()
   delete logicalChannels;
   delete requestModeProcedure;
   delete roundTripDelayProcedure;
-#if OPAL_H450
+#ifdef OPAL_H450
   delete h450dispatcher;
 #endif
   delete signallingChannel;
@@ -359,7 +359,7 @@ void H323Connection::CleanUpOnCallEnd()
   PTRACE(3, "H225\tSending release complete PDU: callRef=" << callReference);
   H323SignalPDU rcPDU;
   rcPDU.BuildReleaseComplete(*this);
-#if OPAL_H450
+#ifdef OPAL_H450
   h450dispatcher->AttachToReleaseComplete(rcPDU);
 #endif
 
@@ -570,7 +570,7 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   h245TunnelRxPDU = &pdu;
 
   // Check for presence of supplementary services
-#if OPAL_H450
+#ifdef OPAL_H450
   if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h4501SupplementaryService)) {
     if (!h450dispatcher->HandlePDU(pdu)) { // Process H4501SupplementaryService APDU
       return PFalse;
@@ -1206,7 +1206,7 @@ PBoolean H323Connection::OnOpenIncomingMediaChannels()
   ownerCall.OnSetUp(*this);
 
   if (connectionState == NoConnectionActive) {
-#if OPAL_H450
+#ifdef OPAL_H450
     /** If Call Intrusion is allowed we must answer the call*/
     if (IsCallIntrusion()) {
       AnsweringCall(AnswerCallDeferred);
@@ -1420,7 +1420,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     return PFalse;
   }
 
-#if OPAL_H450
+#ifdef OPAL_H450
   // Are we involved in a transfer with a non H.450.2 compatible transferred-to endpoint?
   if (h4502handler->GetState() == H4502Handler::e_ctAwaitSetupResponse &&
       h4502handler->IsctTimerRunning())
@@ -1631,7 +1631,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
         callEndReason = NumCallEndReasons;
       
       // Are we involved in a transfer with a non H.450.2 compatible transferred-to endpoint?
-#if OPAL_H450
+#ifdef OPAL_H450
       if (h4502handler->GetState() == H4502Handler::e_ctAwaitSetupResponse &&
           h4502handler->IsctTimerRunning())
       {
@@ -1789,7 +1789,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   H323SignalPDU setupPDU;
   H225_Setup_UUIE & setup = setupPDU.BuildSetup(*this, address);
 
-#if OPAL_H450
+#ifdef OPAL_H450
   h450dispatcher->AttachToSetup(setupPDU);
 #endif
 
@@ -1820,7 +1820,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
              << (response.rejectReason == UINT_MAX
                   ? PString("Transport error")
                   : H225_AdmissionRejectReason(response.rejectReason).GetTagName()));
-#if OPAL_H450
+#ifdef OPAL_H450
       h4502handler->onReceivedAdmissionReject(H4501_GeneralErrorList::e_notAvailable);
 #endif
 
@@ -2093,7 +2093,7 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
 
   HandleTunnelPDU(alertingPDU);
 
-#if OPAL_H450
+#ifdef OPAL_H450
   h450dispatcher->AttachToAlerting(*alertingPDU);
 #endif
 
@@ -2150,7 +2150,7 @@ PBoolean H323Connection::SetConnected()
   connectionState = HasExecutedSignalConnect;
   SetPhase(ConnectedPhase);
 
-#if OPAL_H450
+#ifdef OPAL_H450
   h450dispatcher->AttachToConnect(*connectPDU);
 #endif
 
@@ -3010,7 +3010,7 @@ H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, PBoolean fromRe
 
 bool H323Connection::HoldConnection()
 {
-#if OPAL_H450
+#ifdef OPAL_H450
   if (!HoldCall(true))
     return false;
 #endif
@@ -3026,7 +3026,7 @@ bool H323Connection::HoldConnection()
 
 bool H323Connection::RetrieveConnection()
 {
-#if OPAL_H450
+#ifdef OPAL_H450
   if (!RetrieveCall())
     return false;
 #endif
@@ -3043,7 +3043,7 @@ bool H323Connection::RetrieveConnection()
 PBoolean H323Connection::IsConnectionOnHold() 
 {
   return 
-#if OPAL_H450
+#ifdef OPAL_H450
          IsLocalHold() ||
 #endif
          remoteTransmitPaused;
@@ -3054,14 +3054,14 @@ bool H323Connection::TransferConnection(const PString & remoteParty)
 {
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
   if (call == NULL) {
-#if OPAL_H450
+#ifdef OPAL_H450
     return TransferCall(remoteParty);
 #else
     return ForwardCall(remoteParty);
 #endif
   }
 
-#if OPAL_H450
+#ifdef OPAL_H450
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
     PSafePtr<H323Connection> h323 = PSafePtrCast<OpalConnection, H323Connection>(connection);
     if (h323 != NULL)
@@ -3074,7 +3074,7 @@ bool H323Connection::TransferConnection(const PString & remoteParty)
 }
 
 
-#if OPAL_H450
+#ifdef OPAL_H450
 
 bool H323Connection::TransferCall(const PString & remoteParty,
                                   const PString & callIdentity)
@@ -3603,7 +3603,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
     stream->Close();
   }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   if ( isSource &&
        sessionID == OpalMediaFormat::DefaultVideoSessionID &&
       !ownerCall.IsEstablished() &&
@@ -3695,7 +3695,7 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
 
 void H323Connection::OnMediaCommand(OpalMediaCommand & command, INT extra)
 {
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     H323Channel * video = FindChannel(OpalMediaFormat::DefaultVideoSessionID, true);
     if (video != NULL)
@@ -3753,14 +3753,14 @@ void H323Connection::OnSelectLogicalChannels()
   switch (fastStartState) {
     default : //FastStartDisabled :
       SelectDefaultLogicalChannel(OpalMediaType::Audio(), OpalMediaFormat::DefaultAudioSessionID);
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
         SelectDefaultLogicalChannel(OpalMediaType::Video(), OpalMediaFormat::DefaultVideoSessionID);
       else {
         PTRACE(4, "H245\tOnSelectLogicalChannels, video not auto-started");
       }
 #endif
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
       if (endpoint.CanAutoStartTransmitFax())
         SelectDefaultLogicalChannel(OpalMediaType::Fax(), OpalMediaFormat::DefaultDataSessionID);
       else {
@@ -3771,12 +3771,12 @@ void H323Connection::OnSelectLogicalChannels()
 
     case FastStartInitiate :
       SelectFastStartChannels(OpalMediaFormat::DefaultAudioSessionID, PTrue, PTrue);
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
       SelectFastStartChannels(OpalMediaFormat::DefaultVideoSessionID,
                               endpoint.CanAutoStartTransmitVideo(),
                               endpoint.CanAutoStartReceiveVideo());
 #endif
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
       SelectFastStartChannels(OpalMediaFormat::DefaultDataSessionID,
                               endpoint.CanAutoStartTransmitFax(),
                               endpoint.CanAutoStartReceiveFax());
@@ -3786,13 +3786,13 @@ void H323Connection::OnSelectLogicalChannels()
     case FastStartResponse :
       StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsTransmitter);
       StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsReceiver);
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsTransmitter);
       if (endpoint.CanAutoStartReceiveVideo())
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsReceiver);
 #endif
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
       if (endpoint.CanAutoStartTransmitFax())
         StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsTransmitter);
       if (endpoint.CanAutoStartReceiveFax())

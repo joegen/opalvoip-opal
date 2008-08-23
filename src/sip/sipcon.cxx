@@ -29,9 +29,9 @@
  */
 
 #include <ptlib.h>
-
 #include <opal/buildopts.h>
-#if OPAL_SIP
+
+#ifdef OPAL_SIP
 
 #ifdef __GNUC__
 #pragma implementation "sipcon.h"
@@ -63,7 +63,7 @@ static const char TagParamName[] = ";tag=";
 static const char ApplicationDTMFRelayKey[]       = "application/dtmf-relay";
 static const char ApplicationDTMFKey[]            = "application/dtmf";
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 static const char ApplicationMediaControlXMLKey[] = "application/media_control+xml";
 #endif
 
@@ -474,7 +474,7 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
     const SDPMediaDescriptionArray & mediaDescriptions = sdp->GetMediaDescriptions();
     for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) 
       sdpOK |= AnswerSDPMediaDescription(*sdp, i+1, sdpOut);
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
      remoteFormatList += OpalT38;
 #endif
   }
@@ -490,7 +490,7 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
     // construct offer as per RFC 3261, para 14.2
     // Use |= to avoid McCarthy boolean || from not calling video/fax
     sdpOK  |= OfferSDPMediaDescription(OpalMediaType::Audio(), 0, rtpSessions, sdpOut);
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut);
 #endif
   }
@@ -652,7 +652,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   else {
     localMedia->AddMediaFormats(formats, mediaType);
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID) {
       if (endpoint.GetManager().CanAutoStartTransmitVideo())
         localMedia->SetDirection(endpoint.GetManager().CanAutoStartReceiveVideo() ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
@@ -666,7 +666,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
   if (mediaType == OpalMediaType::Audio()) {
     SetNXEPayloadCode(localMedia, ntePayloadCode, rfc2833Handler,  OpalRFC2833, OpalDefaultNTEString, "NTE"); // RFC 2833
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
     SetNXEPayloadCode(localMedia, nsePayloadCode, ciscoNSEHandler, OpalCiscoNSE, OpalDefaultNSEString, "NSE"); // Cisco NSE
 #endif
   }
@@ -726,7 +726,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       remoteFormatList += OpalRFC2833;
       hasTelephoneEvent = PTrue;
     }
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
     if (format->GetEncodingName() == "nse") {
       ciscoNSEHandler->SetPayloadType(format->GetPayloadType());
       remoteFormatList += OpalCiscoNSE;
@@ -783,7 +783,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   }
 
   SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(rtpSessionId);
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID && GetPhase() < EstablishedPhase) {
     // If processing initial INVITE and video, obey the auto-start flags
     if (!endpoint.GetManager().CanAutoStartTransmitVideo())
@@ -885,7 +885,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   if (hasTelephoneEvent)
     localMedia->AddSDPMediaFormat(new SDPMediaFormat(OpalRFC2833, rfc2833Handler->GetPayloadType(), OpalDefaultNTEString));
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
   if (hasNSE)
     localMedia->AddSDPMediaFormat(new SDPMediaFormat(OpalCiscoNSE, ciscoNSEHandler->GetPayloadType(), OpalDefaultNSEString));
 #endif
@@ -2196,7 +2196,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
     status = SIP_PDU::Successful_OK;
   }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   else if (contentType *= ApplicationMediaControlXMLKey) {
     if (OnMediaControlXML(request))
       return;
@@ -2276,7 +2276,7 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 
 void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
 {
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     PTRACE(3, "SIP\tSending PictureFastUpdate");
     PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_INFO);
@@ -2308,7 +2308,7 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
 }
 
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 class QDXML 
 {
   public:

@@ -37,9 +37,11 @@
 #endif
 
 #include <opal/buildopts.h>
+
+#include <opal/buildopts.h>
 #include <opal/rtpconn.h>
 #include <sip/sippdu.h>
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 #include <opal/pcss.h>                  // for OpalPCSSConnection
 #include <codec/vidcodec.h>             // for OpalVideoUpdatePicture command
 #endif
@@ -389,7 +391,7 @@ class SIPConnection : public OpalRTPConnection
     const PStringList & GetRouteSet() const { return routeSet; }
     SIPAuthentication * GetAuthenticator() const { return authentication; }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     /**Call when SIP INFO of type application/media_control+xml is received.
 
        Return PFalse if default reponse of Failure_UnsupportedMediaType is to be returned
@@ -531,7 +533,7 @@ class SIP_RTP_Session : public RTP_UserData
       const RTP_Session & session   ///<  Session with statistics
     ) const;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     /**Callback from the RTP session after an IntraFrameRequest is receieved.
        The default behaviour executes an OpalVideoUpdatePicture command on the
        connection's source video stream if it exists.

@@ -35,6 +35,8 @@
 #ifndef __OPAL_IAX_H
 #define __OPAL_IAX_H
 
+#include <opal/buildopts.h>
+
 #include <iax2/iax2ep.h>
 #include <iax2/iax2con.h>
 

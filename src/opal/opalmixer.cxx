@@ -1,5 +1,7 @@
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+
 #include <opal/opalmixer.h>
 
 #define MS_TO_BYTES(ms)         (ms*16)

@@ -34,6 +34,8 @@
 #pragma implementation "t120proto.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <t120/t120proto.h>
 
 #include <h323/transaddr.h>

@@ -40,42 +40,42 @@
 
 PROG		:= openphone
 SOURCES		:= main.cxx openphone.cxx
+WX_CONFIG       = wx-config
+OBJDIR          = obj
 
-VERSION_FILE	= $(OPALDIR)/version.h
+EXTRACXXFLAGS   = -I$(OPAL_INCDIR)
+EXTRALDFLAGS    = -L$(OPAL_LIBDIR) $(LIBS) -lopal 
 
-WX_CONFIG	+= wx-config --unicode=no
-ifdef DEBUG
-WX_CONFIG+=--debug=yes
-else
-WX_CONFIG+=--debug=no
-endif
-
-CPPFLAGS	+= `$(WX_CONFIG) --cxxflags`
-OPTCCFLAGS	+= `$(WX_CONFIG) --cxxflags` -Wno-strict-aliasing
-LDFLAGS		+= `$(WX_CONFIG) --libs`
+EXTRACXXFLAGS	+= `$(WX_CONFIG) --cxxflags`
+EXTRALDFLAGS	+= `$(WX_CONFIG) --libs`
 
 ifndef OPALDIR
-ifneq (,$(wildcard ../../version.h))
-OPALDIR=$(wildcard ../..)
-else
-ifneq (,$(wildcard $(HOME)/opal))
-OPALDIR=$(HOME)/opal
-else
-ifneq (,$(wildcard /usr/local/opal))
-OPALDIR=/usr/local/opal
-else
-default_target :
-	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
-	@echo environment variable to build this application.
-endif
-endif
+ifneq (,$(wildcard ../../../opal/opal_inc.mak))
+OPALDIR=../..
 endif
 endif
 
-ifdef OPALDIR
+ifndef OPALDIR
+default_target :
+	@echo Cannot find opal_inc.mak in standard locations, you must set the OPALDIR
+	@echo environment variable manually to build this application.
+else
 include $(OPALDIR)/opal_inc.mak
 endif
 
+$(OBJDIR)/%.o : %.cxx
+	@mkdir -p $(OBJDIR) >/dev/null 2>&1
+	$(CXX) $(EXTRACXXFLAGS) $(CXXFLAGS) -c $< -o $@
+
+OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SOURCES)))))
+
+$(PROG): openphone.cxx $(OBJECTS)
+	$(CXX) $(LDSO) $(EXTRALDFLAGS) -o $@ $^
+
 openphone.cxx : openphone.xrc
 	wxrc openphone.xrc -c -o openphone.cxx
+
+
+clean:
+	rm -f openphone.cxx $(OBJECTS) $(PROG)
 

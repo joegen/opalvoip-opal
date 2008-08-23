@@ -34,12 +34,14 @@
 #pragma implementation "t38proto.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <t38/t38proto.h>
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_FAX
+#ifdef OPAL_FAX
 
 #include <asn/t38.h>
 

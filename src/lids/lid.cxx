@@ -34,6 +34,8 @@
 #pragma implementation "lid.cxx"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <lids/lid.h>
 
 

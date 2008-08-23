@@ -37,6 +37,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <queue>
 
 #include <ptlib/psync.h>

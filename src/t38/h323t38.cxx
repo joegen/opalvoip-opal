@@ -36,8 +36,8 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_FAX
-#if OPAL_H323
+#ifdef OPAL_FAX
+#ifdef OPAL_H323
 
 #include <t38/h323t38.h>
 

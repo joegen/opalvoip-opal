@@ -40,7 +40,7 @@ const WORD DefaultHTTPPort = 6725;
 static const char UsernameKey[] = "Username";
 static const char PasswordKey[] = "Password";
 static const char LogLevelKey[] = "Log Level";
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
 static const char HTTPCertificateFileKey[]  = "HTTP Certificate";
 #endif
 static const char HttpPortKey[] = "HTTP Port";
@@ -181,7 +181,7 @@ PBoolean OpalGw::Initialise(const char * initMsg)
                                   GetLogLevel(),
                                   "1=Fatal only, 2=Errors, 3=Warnings, 4=Info, 5=Debug"));
 
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
   // SSL certificate file.
   PString certificateFile = cfg.GetString(HTTPCertificateFileKey, "server.pem");
   rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 25, certificateFile));
@@ -258,19 +258,19 @@ void OpalGw::Main()
 
 MyManager::MyManager()
 {
-#if OPAL_H323
+#ifdef OPAL_H323
   h323EP = NULL;
   gkServer = NULL;
 #endif
-#if OPAL_SIP
+#ifdef OPAL_SIP
   sipEP = NULL;
 #endif
   potsEP = NULL;
-#if P_EXPAT
+#ifdef OPAL_PTLIB_EXPAT
   ivrEP = NULL;
 #endif
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   autoStartReceiveVideo = autoStartTransmitVideo = PFalse;
 #endif
 }
@@ -282,7 +282,7 @@ MyManager::~MyManager()
   if (potsEP != NULL)
     potsEP->RemoveAllLines();
 
-#if OPAL_H323
+#ifdef OPAL_H323
   delete gkServer;
 #endif
 }
@@ -294,14 +294,14 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   // Create all the endpoints
 
-#if OPAL_H323
+#ifdef OPAL_H323
   if (h323EP == NULL)
     h323EP = new H323EndPoint(*this);
   if (gkServer == NULL && h323EP != NULL)
     gkServer = new MyGatekeeperServer(*h323EP);
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
   if (sipEP == NULL)
     sipEP = new SIPEndPoint(*this);
 #endif
@@ -311,7 +311,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     potsEP = new OpalLineEndPoint(*this);
 #endif
 
-#if P_EXPAT
+#ifdef OPAL_PTLIB_EXPAT
   if (ivrEP == NULL)
     ivrEP = new OpalIVREndPoint(*this);
 #endif
@@ -352,7 +352,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   SetRtpIpTypeofService(cfg.GetInteger(RTPTOSKey, GetRtpIpTypeofService()));
   rsrc->Add(new PHTTPIntegerField(RTPTOSKey,  0, 255, GetRtpIpTypeofService()));
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
   // Add H.323 parameters
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323AliasesKey, 25), PTrue);
@@ -410,7 +410,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     return PFalse;
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
   // Add SIP parameters
   sipEP->SetDefaultLocalPartyName(cfg.GetString(SIPUsernameKey, sipEP->GetDefaultLocalPartyName()));
   rsrc->Add(new PHTTPStringField(SIPUsernameKey, 25, sipEP->GetDefaultLocalPartyName()));
@@ -447,7 +447,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
 
 
-#if P_EXPAT
+#ifdef OPAL_PTLIB_EXPAT
   // Create IVR protocol handler
   PString vxml = cfg.GetString(VXMLKey);
   rsrc->Add(new PHTTPStringField(VXMLKey, 25, vxml));
@@ -473,7 +473,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     pstnRoute = 0;
   rsrc->Add(new PHTTPRadioField(DefaultPSTNDialPeerKey, dialPeerDestination, pstnRoute));
   
-#if OPAL_H323
+#ifdef OPAL_H323
   static const PStringArray h323DialPeerDestination(
                  PARRAYSIZE(H323DialPeerDestination),
                             H323DialPeerDestination);
@@ -483,7 +483,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   rsrc->Add(new PHTTPRadioField(DefaultH323DialPeerKey, h323DialPeerDestination, h323Route));
 #endif
   
-#if OPAL_SIP
+#ifdef OPAL_SIP
   static const PStringArray sipDialPeerDestination(
                  PARRAYSIZE(SIPDialPeerDestination),
                             SIPDialPeerDestination);
@@ -501,13 +501,13 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     routes += ".*:" + ivrAlias + "  = ivr:";
 
   switch (potsRoute) {
-#if OPAL_H323
+#ifdef OPAL_H323
     case 1 :
       routes += "pots:.*\\*.*\\*.* = h323:<dn2ip>";
       routes += "pots:.*           = h323:<da>";
       break;
 #endif
-#if OPAL_SIP
+#ifdef OPAL_SIP
     case 2 :
       routes += "pots:.*\\*.*\\*.* = sip:<dn2ip>";
       routes += "pots:.*           = sip:<da>";
@@ -515,20 +515,20 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
 
   switch (pstnRoute) {
-#if OPAL_H323
+#ifdef OPAL_H323
     case 1 :
       routes += "pstn:.*\\*.*\\*.* = h323:<dn2ip>";
       routes += "pstn:.*           = h323:<da>";
       break;
 #endif
-#if OPAL_SIP
+#ifdef OPAL_SIP
     case 2 :
       routes += "pstn:.*\\*.*\\*.* = sip:<dn2ip>";
       routes += "pstn:.*           = sip:<da>";
 #endif
   }
 
-#if OPAL_H323
+#ifdef OPAL_H323
   switch (h323Route) {
     case 1 :
       routes += "h323:.*           = pots:<da>";
@@ -541,7 +541,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
   switch (sipRoute) {
     case 1 :
       routes += "sip:.*           = pots:<da>";

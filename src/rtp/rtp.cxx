@@ -37,6 +37,8 @@
 #pragma implementation "rtp.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <rtp/rtp.h>
 
 #include <rtp/jitter.h>
@@ -462,7 +464,7 @@ void RTP_UserData::OnRxStatistics(const RTP_Session & /*session*/) const
 {
 }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 void RTP_UserData::OnRxIntraFrameRequest(const RTP_Session & /*session*/) const
 {
 }
@@ -885,7 +887,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendControl(RTP_ControlFrame & fra
   return EncodingLock(*this)->OnSendControl(frame, len);
 }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendControl(RTP_ControlFrame & frame, PINDEX & /*len*/)
 {
   rtcpPacketsSent++;
@@ -1327,7 +1329,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
       }
       break;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
      case RTP_ControlFrame::e_IntraFrameRequest :
       if(userData != NULL)
         userData->OnRxIntraFrameRequest(*this);

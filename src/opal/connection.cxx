@@ -237,7 +237,7 @@ OpalConnection::~OpalConnection()
 
   delete silenceDetector;
   delete echoCanceler;
-#if OPAL_T120DATA
+#ifdef OPAL_T120DATA
   delete t120handler;
 #endif
   delete stringOptions;
@@ -648,7 +648,7 @@ void OpalConnection::PauseMediaStreams(PBoolean paused)
 
 
 OpalMediaStream * OpalConnection::CreateMediaStream(
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   const OpalMediaFormat & mediaFormat,
   unsigned sessionID,
   PBoolean isSource
@@ -659,7 +659,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(
 #endif
   )
 {
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID) {
     if (isSource) {
       PVideoInputDevice * videoDevice;
@@ -797,7 +797,7 @@ PBoolean OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
   return false;
 }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 void OpalConnection::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats) const
 {
@@ -978,7 +978,7 @@ PBoolean OpalConnection::PromptUserInput(PBoolean /*play*/)
 }
 
 
-#if P_DTMF
+#ifdef OPAL_PTLIB_DTMF
 void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
 {
   // This function is set up as an 'audio filter'.

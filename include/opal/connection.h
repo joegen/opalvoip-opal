@@ -930,7 +930,7 @@ class OpalConnection : public PSafeObject
       unsigned sessionID                  ///<  Session ID for media channel
     ) const;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
     /**Add video media formats available on a connection.
 
@@ -1378,7 +1378,7 @@ class OpalConnection : public PSafeObject
   protected:
     void OnConnectedInternal();
 
-#if P_DTMF
+#ifdef OPAL_PTLIB_DTMF
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
 #endif
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
@@ -1432,7 +1432,7 @@ class OpalConnection : public PSafeObject
 
     // The In-Band DTMF detector. This is used inside an audio filter which is
     // added to the audio channel.
-#if P_DTMF
+#ifdef OPAL_PTLIB_DTMF
     PDTMFDecoder        dtmfDecoder;
 #endif
 

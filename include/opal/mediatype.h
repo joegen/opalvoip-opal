@@ -88,7 +88,7 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
 
     static OpalMediaTypeFactory::KeyList_T GetList() { return OpalMediaTypeFactory::GetKeyList(); }
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
   public:
     static OpalMediaType GetMediaTypeFromSDP(const std::string & key);
     static PString       GetSDPFromFromMediaType(const OpalMediaType & type);
@@ -112,7 +112,7 @@ class PHandleAggregator;
 typedef void * PHandleAggregator;
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
 class SDPMediaDescription;
 class OpalTransportAddress;
 #endif
@@ -183,7 +183,7 @@ class OpalMediaTypeDefinition  {
     typedef std::map<unsigned, OpalMediaType> SessionIDToMediaTypeMap_T;
     static SessionIDToMediaTypeMap_T & GetSessionIDToMediaTypeMap();
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
   public:
     //
     //  return the SDP type for this media type
@@ -234,7 +234,7 @@ class SimpleMediaType : public OpalMediaTypeDefinition
 
   PString GetRTPEncoding() const { return PString::Empty(); } 
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
   public:
     virtual SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & ) { return NULL; }
 #endif
@@ -272,19 +272,19 @@ class OpalAudioMediaType : public OpalRTPAVPMediaType {
   public:
     OpalAudioMediaType();
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
 #endif
 };
 
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 class OpalVideoMediaType : public OpalRTPAVPMediaType {
   public:
     OpalVideoMediaType();
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
 #endif
 };
@@ -292,7 +292,7 @@ class OpalVideoMediaType : public OpalRTPAVPMediaType {
 #endif // OPAL_VIDEO
 
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
 
 #include <opal/mediatype.h>
 
@@ -308,7 +308,7 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 #endif
                                unsigned sessionID, bool remoteIsNAT);
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
 #endif
 };

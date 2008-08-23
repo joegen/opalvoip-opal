@@ -36,7 +36,7 @@
 #include <ptlib.h>
 #endif
 
-#ifndef P_AUDIO
+#ifndef OPAL_PTLIB_AUDIO
 #error Cannot compile without PTLib sound channel support!
 #endif
 
@@ -388,7 +388,7 @@ class OptionsDialog : public wxDialog
     PwxString m_RingSoundDeviceName;
     PwxString m_RingSoundFileName;
     bool      m_AutoAnswer;
-#if OPAL_IVR
+#ifdef OPAL_IVR
     PwxString m_IVRScript;
 #endif
 
@@ -801,11 +801,11 @@ class MyManager : public wxFrame, public OpalManager
     void StartRegistrars();
     void StopRegistrars();
 
-#if OPAL_IVR
+#ifdef OPAL_IVR
     OpalIVREndPoint  * ivrEP;
 #endif
 
-#if OPAL_FAX
+#ifdef OPAL_FAX
     OpalT38EndPoint  * m_faxEP;
 #endif
 

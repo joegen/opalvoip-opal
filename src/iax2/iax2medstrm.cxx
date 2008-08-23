@@ -32,12 +32,13 @@
  */
 
 #include <ptlib.h>
+#include <opal/buildopts.h>
 
 #ifdef __GNUC__
 #pragma implementation "iax2medstrm.h"
 #endif
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 #include <codec/vidcodec.h>
 #endif
 

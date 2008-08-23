@@ -36,7 +36,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_RFC4175
+#ifdef OPAL_RFC4175
 
 #include <ptclib/random.h>
 #include <opal/mediafmt.h>

@@ -38,7 +38,6 @@
 #include <opal/buildopts.h>
 
 #include <opal/endpoint.h>
-
 #include <opal/manager.h>
 #include <opal/call.h>
 #include <rtp/rtp.h>
@@ -448,7 +447,7 @@ OpalMediaFormatList OpalEndPoint::GetMediaFormats() const
   formats += OpalPCM16_16KHZ;
   formats += OpalPCM16;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   AddVideoMediaFormats(formats);
 #endif
 
@@ -475,7 +474,7 @@ void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
   manager.OnClosedMediaStream(stream);
 }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 void OpalEndPoint::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
                                         const OpalConnection * connection) const
 {
@@ -540,7 +539,7 @@ void OpalEndPoint::OnMWIReceived(const PString & party,
 }
 
 
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
 PString OpalEndPoint::GetSSLCertificate() const
 {
   return "server.pem";

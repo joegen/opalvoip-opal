@@ -59,8 +59,8 @@ Either, or both, can be used in a call
 
 #include <t38/sipt38.h>
 
-#if OPAL_SIP
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_SIP
+#ifdef OPAL_T38_CAPABILITY
 
 /////////////////////////////////////////////////////////////////////////////
 

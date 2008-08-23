@@ -1180,7 +1180,7 @@ class OpalInternalIPTransportTemplate : public OpalInternalIPTransport
 typedef OpalInternalIPTransportTemplate<OpalListenerTCP, OpalTransportTCP, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalTCPTransport;
 typedef OpalInternalIPTransportTemplate<OpalListenerUDP, OpalTransportUDP, OpalTransportAddress::Streamed, OpalTransportTCP> OpalInternalUDPTransport;
 
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
 
 class PSSLContext;
 
@@ -1243,7 +1243,7 @@ class OpalTransportTCPS : public OpalTransportTCP
 typedef OpalInternalIPTransportTemplate<OpalListenerTCPS, OpalTransportTCPS, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalTCPSTransport;
 
 
-#endif // P_SSL
+#endif // OPAL_PTLIB_SSL
 
 
 #endif  // __OPAL_TRANSPORT_H

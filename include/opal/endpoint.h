@@ -515,7 +515,7 @@ class OpalEndPoint : public PObject
       const OpalMediaStream & stream     ///<  Media stream being closed
     );
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     /**Add video media formats available on a connection.
 
        The default behaviour calls the OpalEndPoint function of the same name.
@@ -674,7 +674,7 @@ class OpalEndPoint : public PObject
       OpalConnection & connection   ///< New connection just created
     );
 
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
     PString GetSSLCertificate() const;
 #endif
 

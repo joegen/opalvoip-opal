@@ -43,10 +43,11 @@
 #endif
 
 #include <opal/buildopts.h>
+
 #include <rtp/rtp.h>
 #include <opal/rtpconn.h>
 
-#if OPAL_SRTP
+#ifdef OPAL_SRTP
 
 namespace PWLibStupidLinkerHacks {
   extern int libSRTPLoader;

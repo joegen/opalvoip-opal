@@ -231,14 +231,14 @@ static const char H323only[] = " (H.323 only)";
 
 static char const AllRouteSources[] = "<ALL>";
 static const char * const DefaultRoutes[] = {
-#if OPAL_IVR
+#ifdef OPAL_IVR
     ".*:#  = ivr:", // A hash from anywhere goes to IVR
 #endif
     "pots:.*\\*.*\\*.* = sip:<dn2ip>",
     "pots:.*           = sip:<da>",
     "pc:.*             = sip:<da>",
 
-#if OPAL_FAX
+#ifdef OPAL_FAX
     "t38:.*            = sip:<da>",
 #endif
 
@@ -444,7 +444,7 @@ MyManager::MyManager()
   , potsEP(NULL)
   , h323EP(NULL)
   , sipEP(NULL)
-#if OPAL_IVR
+#ifdef OPAL_IVR
   , ivrEP(NULL)
 #endif
   , m_autoAnswer(false)
@@ -590,11 +590,11 @@ bool MyManager::Initialise()
 
   sipEP = new MySIPEndPoint(*this);
 
-#if OPAL_IVR
+#ifdef OPAL_IVR
   ivrEP = new OpalIVREndPoint(*this);
 #endif
 
-#if OPAL_FAX
+#ifdef OPAL_FAX
   m_faxEP = new OpalT38EndPoint(*this);
 #endif
 
@@ -618,7 +618,7 @@ bool MyManager::Initialise()
   config->Read(RingSoundFileNameKey, &m_RingSoundFileName);
 
   config->Read(AutoAnswerKey, &m_autoAnswer);
-#if OPAL_IVR
+#ifdef OPAL_IVR
   if (config->Read(IVRScriptKey, &str))
     ivrEP->SetDefaultVXML(str);
 #endif
@@ -742,7 +742,7 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Fax fields
-#if OPAL_FAX
+#ifdef OPAL_FAX
   config->SetPath(FaxGroup);
   if (config->Read(FaxStationIdentifierKey, &str))
     m_faxEP->SetDefaultDisplayName(str);
@@ -756,17 +756,17 @@ bool MyManager::Initialise()
   // Codec fields
   InitMediaInfo(pcssEP->GetPrefixName(), pcssEP->GetMediaFormats());
   InitMediaInfo(potsEP->GetPrefixName(), potsEP->GetMediaFormats());
-#if OPAL_IVR
+#ifdef OPAL_IVR
   InitMediaInfo(ivrEP->GetPrefixName(), ivrEP->GetMediaFormats());
 #endif
 
   OpalMediaFormatList mediaFormats;
   mediaFormats += pcssEP->GetMediaFormats();
   mediaFormats += potsEP->GetMediaFormats();
-#if OPAL_IVR
+#ifdef OPAL_IVR
   mediaFormats += ivrEP->GetMediaFormats();
 #endif
-#if OPAL_FAX
+#ifdef OPAL_FAX
   mediaFormats += m_faxEP->GetMediaFormats();
 #endif
   InitMediaInfo("sw", OpalTranscoder::GetPossibleFormats(mediaFormats));
@@ -1154,7 +1154,7 @@ void MyManager::OnLogMessage(wxCommandEvent & theEvent)
 
 bool MyManager::CanDoFax() const
 {
-#if OPAL_FAX
+#ifdef OPAL_FAX
   return m_callState != InCallState &&
          GetMediaFormatMask().GetValuesIndex(OpalT38.GetName()) == P_MAX_INDEX &&
          PFile::Exists(m_faxEP->GetSpanDSP());
@@ -2727,7 +2727,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName);
 
   INIT_FIELD(AutoAnswer, m_manager.m_autoAnswer);
-#if OPAL_IVR
+#ifdef OPAL_IVR
   INIT_FIELD(IVRScript, m_manager.ivrEP->GetDefaultVXML());
 #endif
 
@@ -2915,7 +2915,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Fax fields
-#if OPAL_FAX
+#ifdef OPAL_FAX
   INIT_FIELD(FaxStationIdentifier, (const char *)m_manager.m_faxEP->GetDefaultDisplayName());
   INIT_FIELD(FaxReceiveDirectory, (const char *)m_manager.m_faxEP->GetDefaultDirectory());
   INIT_FIELD(FaxSpanDSP, (const char *)m_manager.m_faxEP->GetSpanDSP());
@@ -2960,23 +2960,23 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Security fields
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
   INIT_FIELD(SecureH323, m_manager.FindEndPoint("h323s") != NULL);
   INIT_FIELD(SecureSIP, m_manager.FindEndPoint("sips") != NULL);
 #else
   FindWindowByName(SecureH323Key)->Disable();
   FindWindowByName(SecureSIPKey)->Disable();
 #endif
-#if OPAL_SRTP || OPAL_ZRTP
+#if (defined OPAL_SRTP) || (defined OPAL_ZRTP)
   INIT_FIELD(RTPSecurityModeH323, m_manager.h323EP->GetDefaultSecurityMode());
   INIT_FIELD(RTPSecurityModeSIP, m_manager.sipEP->GetDefaultSecurityMode());
-#if !OPAL_SRTP
+#ifndef OPAL_SRTP
   choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeH323Key);
   choice->Delete(choice->FindString("SRTP"));
   choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeSIPKey);
   choice->Delete(choice->FindString("SRTP"));
 #endif
-#if !OPAL_ZRTP
+#ifndef OPAL_ZRTP
   choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeH323Key);
   choice->Delete(choice->FindString("ZRTP"));
   choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeSIPKey);
@@ -3145,7 +3145,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(RingSoundDeviceName, m_manager.m_RingSoundDeviceName = );
   SAVE_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName = );
   SAVE_FIELD(AutoAnswer, m_manager.m_autoAnswer = );
-#if OPAL_IVR
+#ifdef OPAL_IVR
   SAVE_FIELD(IVRScript, m_manager.ivrEP->SetDefaultVXML);
 #endif
 
@@ -3230,7 +3230,7 @@ bool OptionsDialog::TransferDataFromWindow()
 
   ////////////////////////////////////////
   // Fax fields
-#if OPAL_FAX
+#ifdef OPAL_FAX
   config->SetPath(FaxGroup);
   SAVE_FIELD(FaxStationIdentifier, m_manager.m_faxEP->SetDefaultDisplayName);
   SAVE_FIELD(FaxReceiveDirectory, m_manager.m_faxEP->SetDefaultDirectory);

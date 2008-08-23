@@ -47,7 +47,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_H460
+#ifdef OPAL_H460
 
 
 class H460_MessageType

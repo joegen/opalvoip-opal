@@ -32,6 +32,8 @@
  */
 
 #include <ptlib.h>
+#include <opal/buildopts.h>
+
 #include <typeinfo>
 
 #ifdef P_USE_PRAGMA
@@ -275,7 +277,7 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
   if (!res[IAX2EndPoint::contextIndex].IsEmpty())
     f->AppendIe(new IAX2IeCalledContext(res[IAX2EndPoint::contextIndex]));
 
-#if P_SSL_AES
+#ifdef OPAL_PTLIB_SSL_AES
   f->AppendIe(new IAX2IeEncryption());
 #endif
 

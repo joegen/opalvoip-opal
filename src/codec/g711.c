@@ -40,7 +40,8 @@
  * bli@cpk.auc.dk
  *
  */
- 
+#include <opal/buildopts.h>
+
 #define	SIGN_BIT	(0x80)		/* Sign bit for a A-law byte. */
 #define	QUANT_MASK	(0xf)		/* Quantization field mask. */
 #define	NSEGS		(8)		/* Number of A-law segments. */

@@ -35,6 +35,8 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
 #include <h323/transaddr.h>
 #include <h323/h235auth.h>
 

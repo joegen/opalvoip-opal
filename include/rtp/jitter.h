@@ -38,9 +38,9 @@
 #pragma interface
 #endif
 
-#include <rtp/rtp.h>
-
 #include <opal/buildopts.h>
+
+#include <rtp/rtp.h>
 
 
 class RTP_JitterBuffer;

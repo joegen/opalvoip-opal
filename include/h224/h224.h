@@ -34,6 +34,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/mediatype.h>
 #include <h224/q922.h>
 
@@ -51,7 +53,7 @@ class OpalH224MediaType : OpalRTPAVPMediaType
   public:
     OpalH224MediaType();
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
 #endif
 };

@@ -26,85 +26,96 @@
 # $Date$
 #
 
-OPALDIR=@OPALDIR@
-PTLIBDIR=@PTLIBDIR@
+# Tool names detected by configure
+CXX                     = @CXX@
+CC                      = @CC@
+INSTALL                 = @INSTALL@
+AR                      = @AR@
+RANLIB                  = @RANLIB@
+LD                      = @LD@
+ARCHIVE                 = @ARCHIVE@
 
-LIBDIRS += $(OPALDIR)
+# The install directories
+prefix                  = @prefix@
+exec_prefix             = @exec_prefix@
+libdir                  = @libdir@
+includedir              = @includedir@
+datarootdir             = @datarootdir@
 
-ifdef LIBRARY_MAKEFILE
-include $(PTLIBDIR)/make/unix.mak
-else
-include $(PTLIBDIR)/make/ptlib.mak
-endif
+# The opal source and destination dirs
+OPAL_DIR                = @OPAL_DIR@
+OPAL_SRCDIR             = $(OPAL_DIR)/src
+OPAL_INCDIR             = $(OPAL_DIR)/include
+OPAL_OBJDIR	        = @OPAL_OBJDIR@
+OPAL_DEPDIR	        = @OPAL_OBJDIR@
+OPAL_LIBDIR             = $(OPAL_DIR)/lib
 
-OPAL_SRCDIR = $(OPALDIR)/src
-OPAL_INCDIR = $(OPALDIR)/include
-OPAL_LIBDIR = $(OPALDIR)/lib
+# The library file names
+LIB_NAME                = @LIB_NAME@
+LIB_FILENAME_STATIC     = @LIB_FILENAME_STATIC@
+LIB_FILENAME_SHARED     = @LIB_FILENAME_SHARED@
+LIB_FILENAME_SHARED_MAJ = @LIB_FILENAME_SHARED_MAJ@
+LIB_FILENAME_SHARED_MIN = @LIB_FILENAME_SHARED_MIN@
+LIB_FILENAME_SHARED_PAT = @LIB_FILENAME_SHARED_PAT@
+OPAL_SHARED_LIB         = @OPAL_SHARED_LIB@
 
-OPAL_ZRTP         = @OPAL_ZRTP@
-OPAL_SIP          = @OPAL_SIP@
+# Compile and linker flags
+CFLAGS                  = @CFLAGS@
+CXXFLAGS                = @CXXFLAGS@
+LIBS                    = @LIBS@
+LDSOOPTS                = @LDSOOPTS@
+HAVE_RANLIB             = @HAVE_RANLIB@
+
+
 OPAL_H323         = @OPAL_H323@
+OPAL_SIP          = @OPAL_SIP@
 OPAL_IAX2         = @OPAL_IAX2@
+OPAL_VIDEO        = @OPAL_VIDEO@
+OPAL_ZRTP         = @OPAL_ZRTP@
 OPAL_LID	  = @OPAL_LID@
 OPAL_IVR	  = @OPAL_IVR@
-OPAL_H224         = @OPAL_H224@
+OPAL_H224FECC     = @OPAL_H224FECC@
 OPAL_H460         = @OPAL_H460@
-OPAL_SYSTEM_SPEEX = @OPAL_SYSTEM_SPEEX@
 OPAL_SRTP	  = @OPAL_SRTP@
 OPAL_RFC4175	  = @OPAL_RFC4175@
 OPAL_AEC          = @OPAL_AEC@
 OPAL_G711PLC      = @OPAL_G711PLC@
-HAS_LIBSRTP	  = @HAS_LIBSRTP@
 OPAL_T38_CAP	  = @OPAL_T38_CAPABILITY@
 OPAL_FAX          = @OPAL_FAX@
 OPAL_JAVA         = @OPAL_JAVA@
+SPEEX_SYSTEM      = @SPEEX_SYSTEM@
 
-H323_H460         = @H323_H460@
+OPAL_PLUGINS      = @OPAL_PLUGINS@
+OPAL_SAMPLES      = @OPAL_SAMPLES@
 
-OPAL_BASE  = opal_$(PLATFORM_TYPE)_$(OBJ_SUFFIX)
-OPAL_FILE  = lib$(OPAL_BASE)$(LIB_TYPE).$(LIB_SUFFIX)
+OPAL_PTLIB_SSL    = @OPAL_PTLIB_SSL@
+OPAL_PTLIB_SSL_AES= @OPAL_PTLIB_SSL_AES@
+OPAL_PTLIB_ASN    = @OPAL_PTLIB_ASN@
+OPAL_PTLIB_EXPAT  = @OPAL_PTLIB_EXPAT@
+OPAL_PTLIB_AUDIO  = @OPAL_PTLIB_AUDIO@
+OPAL_PTLIB_VIDEO  = @OPAL_PTLIB_VIDEO@
+OPAL_PTLIB_WAVFILE= @OPAL_PTLIB_WAVFILE@
+OPAL_PTLIB_DTMF   = @OPAL_PTLIB_DTMF@
+OPAL_PTLIB_IPV6   = @OPAL_PTLIB_IPV6@
+OPAL_PTLIB_DNS    = @OPAL_PTLIB_DNS@
+OPAL_PTLIB_LDAP   = @OPAL_PTLIB_LDAP@
+OPAL_PTLIB_VXML   = @OPAL_PTLIB_VXML@
+OPAL_PTLIB_CONFIG_FILE=@OPAL_PTLIB_CONFIG_FILE@
 
-LDFLAGS	    += -L$(OPAL_LIBDIR)
-LDLIBS	    := -l$(OPAL_BASE)$(LIB_TYPE) $(LDLIBS)
+# backward compatibility
+# If your project makes use of these variables, please switch to the ones listed above
 
-STDCCFLAGS  += -I$(OPAL_INCDIR)
+ENDLDFLAGS        = @LIBS@
+OPAL_SYSTEM_SPEEX = @SPEEX_SYSTEM@
+HAS_LIBSRTP       = @OPAL_SRTP@
+H323_H460         = @OPAL_H460@
+LIBDIRS          += $(OPAL_DIR)
 
-ifeq ($(OPAL_ZRTP), 1)
-#ENDLDLIBS      := -lzrtp $(ENDLDLIBS)
-#STDCCFLAGS	+= -DBUILD_ZRTP_MUTEXES -DOPAL_ZRTP -DHAS_LIBZRTP
-STDCCFLAGS	+= -DBUILD_ZRTP_MUTEXES -DHAS_LIBZRTP
-STDCCFLAGS  	+= -I@ZRTP_INCDIR@ -I@BN_INCDIR@
-endif
+PREFIX            = @prefix@/
+OPAL_BASE         = @LIB_NAME@
+OPAL_FILE         = @LIB_FILENAME_SHARED@
 
-ifeq ($(HAS_LIBSRTP), 1)
-ENDLDLIBS       := -lsrtp $(ENDLDLIBS)
-endif
-
-ifeq ($(OPAL_SYSTEM_SPEEX), 1)
-ENDLDLIBS       := -lspeex $(ENDLDLIBS)
-endif
-
-$(TARGET) :	$(OPAL_LIBDIR)/$(OPAL_FILE)
-
-ifndef LIBRARY_MAKEFILE
-
-ifdef DEBUG
-$(OPAL_LIBDIR)/$(OPAL_FILE):
-	$(MAKE) -C $(OPALDIR) debug
-else
-$(OPAL_LIBDIR)/$(OPAL_FILE):
-	$(MAKE) -C $(OPALDIR) opt
-endif
-
-libs :: $(OPAL_LIBDIR)/$(OPAL_FILE)
-
-ifeq ($(OPAL_ZRTP), 1)
-ENDLDLIBS	:= -lzrtp -lbn $(ENDLDLIBS)
-endif
-
-endif
-
+LDFLAGS	         += -L$(OPAL_LIBDIR)
+LDLIBS	         := -l@LIB_NAME@ $(LDLIBS)
 
 # End of file
-
-

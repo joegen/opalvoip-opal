@@ -35,6 +35,8 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
 #include <ptclib/guid.h>
 
 #define OpalGloballyUniqueID PGloballyUniqueID

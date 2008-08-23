@@ -30,10 +30,10 @@
 
 #include <ptlib.h>
 
-#if P_SSL
-
 #include <opal/buildopts.h>
-#if OPAL_H323
+#ifdef OPAL_PTLIB_SSL
+
+#ifdef OPAL_H323
 
 #include <openssl/sha.h>
 
@@ -502,7 +502,7 @@ PBoolean H235AuthProcedure1::UseGkAndEpIdentifiers() const
 
 #endif // OPAL_H323
 
-#endif // P_SSL
+#endif // #ifdef OPAL_PTLIB_SSL
 
 
 /////////////////////////////////////////////////////////////////////////////

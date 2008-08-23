@@ -30,6 +30,7 @@
  */
 
 #include <ptlib.h>
+#include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
 
@@ -38,6 +39,7 @@
 
 
 /////////////////////////////////////////////////////////////////////////////
+
 
 const OpalAudioFormat & GetOpaliLBC()
 {
@@ -48,11 +50,11 @@ const OpalAudioFormat & GetOpaliLBC()
         : OpalAudioFormat(OPAL_iLBC, RTP_DataFrame::DynamicBase, "iLBC",  50, 160, 1, 1, 1, 8000)
       {
         OpalMediaOption * option = new OpalMediaOptionInteger("Preferred Mode", false, OpalMediaOption::MaxMerge, 7);
-#if OPAL_SIP
+#ifdef OPAL_SIP
         option->SetFMTPName("mode");
         option->SetFMTPDefault("0");
 #endif
-#if OPAL_H323
+#ifdef OPAL_H323
         OpalMediaOption::H245GenericInfo info;
         info.ordinal = 1;
         info.mode = OpalMediaOption::H245GenericInfo::Collapsing;
@@ -60,7 +62,7 @@ const OpalAudioFormat & GetOpaliLBC()
 #endif
         AddOption(option);
 
-#if OPAL_H323
+#ifdef OPAL_H323
         option = FindOption(RxFramesPerPacketOption());
         if (option != NULL) {
           info.ordinal = 0; // All other fields the same as for the mode

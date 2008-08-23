@@ -38,6 +38,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
 #include <h323/channels.h>
@@ -925,7 +926,7 @@ class H323GenericAudioCapability : public H323AudioCapability,
 };
 
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 /**This class describes the interface to a video codec used to transfer data
    via the logical channels opened and managed by the H323 control channel.

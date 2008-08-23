@@ -39,8 +39,8 @@
 #endif
 
 #include <opal/buildopts.h>
-#include <ptlib/sockets.h>
 
+#include <ptlib/sockets.h>
 
 class RTP_JitterBuffer;
 class PNatMethod;
@@ -349,7 +349,7 @@ class RTP_UserData : public PObject
       const RTP_Session & session   ///<  Session with statistics
     ) const;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     /**Callback from the RTP session when an intra frame request control
        packet is sent.
 

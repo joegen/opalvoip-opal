@@ -43,15 +43,15 @@
 #include <h323/h323caps.h>
 #include <asn/h245.h>
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 #include <ptlib/videoio.h>
 #include <codec/vidcodec.h>
 #endif
 
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
 static const char * sqcifMPI_tag = PLUGINCODEC_SQCIF_MPI;
 static const char * qcifMPI_tag  = PLUGINCODEC_QCIF_MPI;
@@ -206,8 +206,8 @@ void OpalPluginMediaFormatInternal::SetOldStyleOption(OpalMediaFormatInternal & 
   PCaselessString key(_key);
   const char * val = _val;
 
-#if OPAL_VIDEO
-#if OPAL_H323
+#ifdef OPAL_VIDEO
+#ifdef OPAL_H323
   // Backward compatibility tests
   if (key == h323_qcifMPI_tag)
     key = qcifMPI_tag;
@@ -344,12 +344,12 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
                     " in option \"" << option->m_name << "\" in format \"" << format << '"');
         }
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
         newOption->SetFMTPName(option->m_FMTPName);
         newOption->SetFMTPDefault(option->m_FMTPDefault);
 #endif // OPAL_SIP
 
-#if OPAL_H323
+#ifdef OPAL_H323
         OpalMediaOption::H245GenericInfo genericInfo;
         genericInfo.ordinal = option->m_H245Generic&PluginCodec_H245_OrdinalMask;
         if (option->m_H245Generic&PluginCodec_H245_Collapsing)
@@ -376,7 +376,7 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
     freeOptionsControl.Call(rawOptions, &optionsLen);
   }
 
-#if OPAL_H323
+#ifdef OPAL_H323
   if (codecDef->h323CapabilityType == PluginCodec_H323Codec_generic && codecDef->h323CapabilityData != NULL) {
     const PluginCodec_H323GenericCodecData * genericData = (const PluginCodec_H323GenericCodecData *)codecDef->h323CapabilityData;
     const PluginCodec_H323GenericParameterDefinition *ptr = genericData->params;
@@ -544,7 +544,7 @@ bool OpalPluginAudioFormatInternal::ToCustomisedOptions()
 }
 
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
 static H323Capability * CreateG7231Cap(
   const PluginCodec_Definition * encoderCodec, 
@@ -575,7 +575,7 @@ static H323Capability * CreateGSMCap(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 OpalPluginVideoFormatInternal::OpalPluginVideoFormatInternal(const PluginCodec_Definition * _encoderCodec,
                                                                        const char * rtpEncodingName,
@@ -618,7 +618,7 @@ bool OpalPluginVideoFormatInternal::ToCustomisedOptions()
 }
 
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
 static H323Capability * CreateNonStandardVideoCap(
   const PluginCodec_Definition * encoderCodec, 
@@ -650,7 +650,7 @@ static H323Capability * CreateH263Cap(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
 
 OpalPluginFaxFormatInternal::OpalPluginFaxFormatInternal(const PluginCodec_Definition * _encoderCodec,
                                                                    const char * rtpEncodingName,
@@ -687,7 +687,7 @@ bool OpalPluginFaxFormatInternal::IsValidForProtocol(const PString & protocol) c
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
 class H323CodecPluginCapabilityMapEntry {
   public:
@@ -726,7 +726,7 @@ static H323CodecPluginCapabilityMapEntry audioMaps[] = {
 };
 
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 static H323CodecPluginCapabilityMapEntry videoMaps[] = {
   // video codecs
@@ -909,7 +909,7 @@ int OpalPluginStreamedAudioDecoder::ConvertOne(int codedSample) const
 }
 
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1056,7 +1056,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 // Fax transcoder classes
 //
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
 
 class OpalFaxAudioTranscoder : public OpalPluginFramedAudioTranscoder
 {
@@ -1159,7 +1159,7 @@ PBoolean OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Da
 
 //////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -1316,7 +1316,7 @@ void OpalPluginCodecManager::OnShutdown()
 {
   mediaFormatsOnHeap.RemoveAll();
 
-#if OPAL_H323
+#ifdef OPAL_H323
   // unregister the plugin capabilities
   H323CapabilityFactory::UnregisterAll();
 #endif
@@ -1481,12 +1481,11 @@ void OpalPluginCodecManager::RegisterPluginPair(
   unsigned frameTime = 0;
   unsigned clockRate = 0;
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
       defaultSessionID = OpalMediaFormat::DefaultVideoSessionID;
       break;
 #endif
-
     case PluginCodec_MediaTypeAudio:
     case PluginCodec_MediaTypeAudioStreamed:
       defaultSessionID = OpalMediaFormat::DefaultAudioSessionID;
@@ -1494,7 +1493,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       clockRate = encoderCodec->sampleRate;
       break;
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
     case PluginCodec_MediaTypeFax:
       defaultSessionID = OpalMediaFormat::DefaultDataSessionID;
       frameTime = (8 * encoderCodec->usPerFrame) / 1000;
@@ -1520,18 +1519,17 @@ void OpalPluginCodecManager::RegisterPluginPair(
 
       // manually register the new singleton type, as we do not have a concrete type
       switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
         case PluginCodec_MediaTypeVideo:
           mediaFormatInternal = handler->OnCreateVideoFormat(*this, encoderCodec, encoderCodec->sdpFormat, timeStamp);
           break;
 #endif
-
         case PluginCodec_MediaTypeAudio:
         case PluginCodec_MediaTypeAudioStreamed:
           mediaFormatInternal = handler->OnCreateAudioFormat(*this, encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
           break;
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
         case PluginCodec_MediaTypeFax:
           mediaFormatInternal = handler->OnCreateFaxFormat(*this, encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
           break;
@@ -1576,13 +1574,12 @@ void OpalPluginCodecManager::RegisterPluginPair(
 
   // Create transcoder factories for the codecs
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
       handler->RegisterVideoTranscoder(OpalYUV420P, encoderCodec->destFormat, encoderCodec, PTrue);
       handler->RegisterVideoTranscoder(encoderCodec->destFormat, OpalYUV420P, decoderCodec, PFalse);
       break;
 #endif
-
     case PluginCodec_MediaTypeAudio:
       if (encoderCodec->sampleRate == 8000) {
         new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, PTrue);
@@ -1614,7 +1611,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
       break;
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
     case PluginCodec_MediaTypeFax:
       new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, PTrue);
       new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16               ), decoderCodec, PFalse);
@@ -1631,13 +1628,13 @@ void OpalPluginCodecManager::RegisterPluginPair(
     return;
   }
 
-#if OPAL_H323
+#ifdef OPAL_H323
   PTRACE(4, "OpalPlugin\tDeferring creation of H.323 capability for plugin codec " << encoderCodec->destFormat);
   RegisterCapability(encoderCodec, decoderCodec);
 #endif
 }
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
 void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoderCodec, PluginCodec_Definition * decoderCodec)
 {
@@ -1650,7 +1647,7 @@ void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoder
       map = audioMaps;
       break;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
       map = videoMaps;
       break;
@@ -1676,7 +1673,7 @@ void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoder
               cap = new H323AudioPluginCapability(encoderCodec, decoderCodec, map[i].h323SubType);
               break;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
             case PluginCodec_MediaTypeVideo:
               PTRACE(4, "OpalPlugin\tWarning - no capability creation function for " << CreateCodecName(encoderCodec));
               // all video caps are created using the create functions
@@ -1715,8 +1712,8 @@ OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateAudioFormat(OpalPlugin
   return new OpalPluginAudioFormatInternal(encoderCodec, rtpEncodingName, frameTime, timeUnits, timeStamp);
 }
 
+#ifdef OPAL_VIDEO
 
-#if OPAL_VIDEO
 OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateVideoFormat(OpalPluginCodecManager & /*mgr*/,
                                                      const PluginCodec_Definition * encoderCodec,
                                                                        const char * rtpEncodingName,
@@ -1732,7 +1729,7 @@ void OpalPluginCodecHandler::RegisterVideoTranscoder(const PString & src, const 
 
 #endif
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
 OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateFaxFormat(OpalPluginCodecManager & /*mgr*/,
                                                    const PluginCodec_Definition * encoderCodec,
                                                                      const char * rtpEncodingName,
@@ -1746,7 +1743,7 @@ OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateFaxFormat(OpalPluginCo
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
 H323Capability * CreateNonStandardAudioCap(const PluginCodec_Definition * encoderCodec,
                                            const PluginCodec_Definition * decoderCodec,
@@ -1797,7 +1794,7 @@ H323Capability * CreateGSMCap(const PluginCodec_Definition * encoderCodec,
 }
 
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 H323Capability * CreateNonStandardVideoCap(const PluginCodec_Definition * encoderCodec,
                                            const PluginCodec_Definition * decoderCodec,
@@ -1969,7 +1966,7 @@ PBoolean H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 //////////////////////////////////////////////////////////////////////////////
 //

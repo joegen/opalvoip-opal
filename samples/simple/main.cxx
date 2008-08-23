@@ -30,20 +30,20 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_IAX2
+#ifdef OPAL_IAX2
 #include <iax2/iax2.h>
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
 #include <sip/sip.h>
 #endif
 
-#if OPAL_H323
+#ifdef OPAL_H323
 #include <h323/h323.h>
 #include <h323/gkclient.h>
 #endif
 
-#if OPAL_FAX
+#ifdef OPAL_FAX
 #include <t38/t38proto.h>
 #endif
 
@@ -97,7 +97,7 @@ void SimpleOpalProcess::Main()
              "-disable-grq."
              "h-help."
              "H-no-h323."
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
              "-no-h323s."
              "-h323s-listen:"
              "-h323s-gk:"
@@ -106,7 +106,7 @@ void SimpleOpalProcess::Main()
              "I-no-sip."
              "j-jitter:"
              "l-listen."
-#if OPAL_LID
+#ifdef OPAL_LID
              "L-no-lid."
              "-lid:"
              "-country:"
@@ -149,7 +149,7 @@ void SimpleOpalProcess::Main()
              "-udp-base:"
              "-udp-max:"
              "-use-long-mime."
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
              "-rx-video." "-no-rx-video."
              "-tx-video." "-no-tx-video."
              "-grabber:"
@@ -160,11 +160,11 @@ void SimpleOpalProcess::Main()
              "-video-size:"
              "-video-rate:"
 #endif
-#if OPAL_IVR
+#ifdef OPAL_IVR
              "V-no-ivr."
              "x-vxml:"
 #endif
-#if OPAL_IAX2
+#ifdef OPAL_IAX2
 	     "X-no-iax2."
 #endif
           , PFalse);
@@ -194,7 +194,7 @@ void SimpleOpalProcess::Main()
             "  -j --jitter [min-]max   : Set minimum (optional) and maximum jitter buffer (in milliseconds).\n"
             "  -e --silence            : Disable transmitter silence detection.\n"
             "\n"
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
             "Video options:\n"
             "     --rx-video           : Start receiving video immediately.\n"
             "     --tx-video           : Start transmitting video immediately.\n"
@@ -211,7 +211,7 @@ void SimpleOpalProcess::Main()
             "\n"
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
             "SIP options:\n"
             "  -I --no-sip             : Disable SIP protocol.\n"
             "  -r --register-sip host  : Register with SIP server.\n"
@@ -226,15 +226,15 @@ void SimpleOpalProcess::Main()
             "\n"
 #endif
 
-#if OPAL_H323
+#ifdef OPAL_H323
             "H.323 options:\n"
             "  -H --no-h323            : Disable H.323 protocol.\n"
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
             "     --no-h323s           : Do not create secure H.323 endpoint\n"
 #endif
             "  -g --gatekeeper host    : Specify gatekeeper host, '*' indicates broadcast discovery.\n"
             "  -G --gk-id name         : Specify gatekeeper identifier.\n"
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
             "     --h323s-gk host      : Specify gatekeeper host for secure H.323 endpoint\n"
 #endif
             "  -R --require-gatekeeper : Exit if gatekeeper discovery fails.\n"
@@ -244,14 +244,14 @@ void SimpleOpalProcess::Main()
             "  -f --fast-disable       : Disable fast start.\n"
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
             "     --h323-listen iface  : Interface/port(s) to listen for H.323 requests\n"
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
             "     --h323s-listen iface : Interface/port(s) to listen for secure H.323 requests\n"
 #endif
             "                          : '*' is all interfaces, (default tcp$:*:1720)\n"
 #endif
 
             "\n"
-#if OPAL_LID
+#ifdef OPAL_LID
             "Line Interface options:\n"
             "  -L --no-lid             : Do not use line interface device.\n"
             "     --lid device         : Select line interface device (eg Quicknet:013A17C2, default *:*).\n"
@@ -264,7 +264,7 @@ void SimpleOpalProcess::Main()
             "     --sound-in device    : Select sound input device.\n"
             "     --sound-out device   : Select sound output device.\n"
             "\n"
-#if OPAL_IVR
+#ifdef OPAL_IVR
             "IVR options:\n"
             "  -V --no-ivr             : Disable IVR.\n"
             "  -x --vxml file          : Set vxml file to use for IVR.\n"
@@ -289,7 +289,7 @@ void SimpleOpalProcess::Main()
             "  -t --trace              : Enable trace, use multiple times for more detail.\n"
             "  -o --output             : File for trace output, default is stderr.\n"
 #endif
-#if OPAL_IAX2
+#ifdef OPAL_IAX2
             "  -X --no-iax2            : Remove support for iax2\n"
 #endif
             "  -h --help               : This help message.\n"
@@ -336,12 +336,12 @@ void SimpleOpalProcess::Main()
 "      h323:.* = pc:<du>\n"
 "      sip:. * = pc:<du>\n"
 "\n"
-#if OPAL_IVR
+#ifdef OPAL_IVR
 "    If IVR is enabled then a # from any protocol will route it it, ie:\n"
 "      .*:#  = ivr:\n"
 "\n"
 #endif
-#if OPAL_IAX2
+#ifdef OPAL_IAX2
 "    If IAX2 is enabled then you can make a iax2 call with a command like:\n"
 "       simpleopal -IHn  iax2:guest@misery.digium.com/s\n"
 #endif
@@ -371,24 +371,24 @@ void SimpleOpalProcess::Main()
 
 MyManager::MyManager()
 {
-#if OPAL_LID
+#ifdef OPAL_LID
   potsEP = NULL;
 #endif
   pcssEP = NULL;
 
-#if OPAL_H323
+#ifdef OPAL_H323
   h323EP = NULL;
 #endif
-#if OPAL_SIP
+#ifdef OPAL_SIP
   sipEP  = NULL;
 #endif
-#if OPAL_IAX2
+#ifdef OPAL_IAX2
   iax2EP = NULL;
 #endif
-#if OPAL_IVR
+#ifdef OPAL_IVR
   ivrEP  = NULL;
 #endif
-#if OPAL_FAX
+#ifdef OPAL_FAX
   faxEP = NULL;
   t38EP = NULL;
 #endif
@@ -399,7 +399,7 @@ MyManager::MyManager()
 
 MyManager::~MyManager()
 {
-#if OPAL_LID
+#ifdef OPAL_LID
   // Must do this before we destroy the manager or a crash will result
   if (potsEP != NULL)
     potsEP->RemoveAllLines();
@@ -409,7 +409,7 @@ MyManager::~MyManager()
 
 PBoolean MyManager::Initialise(PArgList & args)
 {
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   // Set the various global options
   if (args.HasOption("rx-video"))
     autoStartReceiveVideo = PTrue;
@@ -527,7 +527,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 
   ///////////////////////////////////////
   // Open the LID if parameter provided, create LID based endpoint
-#if OPAL_LID
+#ifdef OPAL_LID
   if (!args.HasOption('L')) {
     PStringArray devices = args.GetOptionString("lid").Lines();
     if (devices.IsEmpty() || devices[0] == "*" || devices[0] == "*:*")
@@ -582,14 +582,14 @@ PBoolean MyManager::Initialise(PArgList & args)
 
     cout << "Sound output device: \"" << pcssEP->GetSoundChannelPlayDevice() << "\"\n"
             "Sound  input device: \"" << pcssEP->GetSoundChannelRecordDevice() << "\"\n"
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
             "Video output device: \"" << GetVideoOutputDevice().deviceName << "\"\n"
             "Video  input device: \"" << GetVideoInputDevice().deviceName << '"'
 #endif
          << endl;
   }
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
   ///////////////////////////////////////
   // Create H.323 protocol handler
@@ -601,7 +601,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 
 #endif
 
-#if OPAL_IAX2
+#ifdef OPAL_IAX2
   ///////////////////////////////////////
   // Create IAX2 protocol handler
 
@@ -618,7 +618,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   }
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
 
   ///////////////////////////////////////
   // Create SIP protocol handler
@@ -675,7 +675,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 #endif
 
 
-#if OPAL_IVR
+#ifdef OPAL_IVR
   ///////////////////////////////////////
   // Create IVR protocol handler
 
@@ -694,7 +694,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   }
 #endif
 
-#if OPAL_FAX
+#ifdef OPAL_FAX
   ///////////////////////////////////////
   // Create T38 protocol handler
   {
@@ -718,16 +718,16 @@ PBoolean MyManager::Initialise(PArgList & args)
   }
 
   if (!args.HasOption("no-std-dial-peer")) {
-#if OPAL_IVR
+#ifdef OPAL_IVR
     // Need to make sure wildcard on source ep type is first or it won't be
     // selected in preference to the specific entries below
     if (ivrEP != NULL)
       AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
 #endif
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
     if (sipEP != NULL) {
-#if OPAL_FAX
+#ifdef OPAL_FAX
       AddRouteEntry("t38:.*             = sip:<da>");
       AddRouteEntry("sip:.*\tfax@.*     = t38:received_fax_%s.tif;receive");
       AddRouteEntry("sip:.*\tsip:329@.* = t38:received_fax_%s.tif;receive");
@@ -738,12 +738,12 @@ PBoolean MyManager::Initialise(PArgList & args)
     }
 #endif
 
-#if OPAL_H323
+#ifdef OPAL_H323
     if (h323EP != NULL) {
       AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
       AddRouteEntry("pots:.*           = h323:<da>");
       AddRouteEntry("pc:.*             = h323:<da>");
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
       {
         AddRouteEntry("pots:.*\\*.*\\*.* = h323s:<dn2ip>");
         AddRouteEntry("pots:.*           = h323s:<da>");
@@ -753,59 +753,59 @@ PBoolean MyManager::Initialise(PArgList & args)
     }
 #endif
 
-#if OPAL_LID
+#ifdef OPAL_LID
     if (potsEP != NULL) {
-#if OPAL_H323
+#ifdef OPAL_H323
       AddRouteEntry("h323:.* = pots:<du>");
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
       //if (h323sEP != NULL) 
         AddRouteEntry("h323s:.* = pots:<du>");
 #endif
 #endif
-#if OPAL_SIP
+#ifdef OPAL_SIP
       AddRouteEntry("sip:.*  = pots:<du>");
 #endif
     }
     else
 #endif // OPAL_LID
     if (pcssEP != NULL) {
-#if OPAL_H323
+#ifdef OPAL_H323
       AddRouteEntry("h323:.* = pc:<du>");
-#if P_SSL
+#ifdef OPAL_PTLIB_SSL
       //if (h323sEP != NULL) 
         AddRouteEntry("h323s:.* = pc:<du>");
 #endif
 #endif
-#if OPAL_SIP
+#ifdef OPAL_SIP
       AddRouteEntry("sip:.*  = pc:<du>");
 #endif
     }
   }
                                                                                                                                             
-#if OPAL_IAX2
+#ifdef OPAL_IAX2
   if (pcssEP != NULL) {
     AddRouteEntry("iax2:.*  = pc:<du>");
     AddRouteEntry("pc:.*   = iax2:<da>");
   }
 #endif
 
-#if OPAL_FAX
+#ifdef OPAL_FAX
   if (t38EP != NULL) {
       AddRouteEntry("sip:.*  = t38:<da>");
   }
 #endif
 
   PString defaultSrcEP = pcssEP != NULL ? "pc:*"
-                                      #if OPAL_LID
+                                      #ifdef OPAL_LID
                                         : potsEP != NULL ? "pots:*"
                                       #endif
-                                      #if OPAL_IVR
+                                      #ifdef OPAL_IVR
                                         : ivrEP != NULL ? "ivr:#"
                                       #endif
-                                      #if OPAL_SIP
+                                      #ifdef OPAL_SIP
                                         : sipEP != NULL ? "sip:localhost"
                                       #endif
-                                      #if OPAL_H323
+                                      #ifdef OPAL_H323
                                         : h323EP != NULL ? "sip:localhost"
                                       #endif
                                         : "";
@@ -827,7 +827,7 @@ PBoolean MyManager::Initialise(PArgList & args)
           "Codec order: " << GetMediaFormatOrder() << "\n"
           "Available codecs: " << allMediaFormats << setfill(' ') << endl;
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
   OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = allMediaFormats[i];
@@ -892,7 +892,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   return PTrue;
 }
 
-#if OPAL_H323
+#ifdef OPAL_H323
 
 PBoolean MyManager::InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPoint * h323EP)
 {
@@ -989,7 +989,7 @@ PBoolean MyManager::InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPo
 #endif  //OPAL_H323
 
 
-#if P_CONFIG_FILE
+#ifdef OPAL_PTLIB_CONFIG_FILE
 void MyManager::NewSpeedDial(const PString & ostr)
 {
   PString str = ostr;
@@ -1007,7 +1007,7 @@ void MyManager::NewSpeedDial(const PString & ostr)
  
   cout << "Speedial " << key << " set to " << data << endl;
 }
-#endif // P_CONFIG_FILE
+#endif // OPAL_PTLIB_CONFIG_FILE
  
 
 void MyManager::Main(PArgList & args)
@@ -1122,7 +1122,7 @@ void MyManager::Main(PArgList & args)
           cout << "Could not reject connection " << pcssEP->incomingConnectionToken << endl;
         break;
 
-#if P_CONFIG_FILE
+#ifdef OPAL_PTLIB_CONFIG_FILE
       case 'l' :
         ListSpeedDials();
         break;
@@ -1130,7 +1130,7 @@ void MyManager::Main(PArgList & args)
       case 'd' :
         NewSpeedDial(line);
         break;
-#endif // P_CONFIG_FILE
+#endif // OPAL_PTLIB_CONFIG_FILE
         
       case 'h' :
         HangupCurrentCall();
@@ -1305,7 +1305,7 @@ void MyManager::StartCall(const PString & dest)
 
   PString str = dest;
 
-#if P_CONFIG_FILE
+#ifdef OPAL_PTLIB_CONFIG_FILE
   // check for speed dials, and match wild cards as we go
   PString key, prefix;
   if ((str.GetLength() > 1) && (str[str.GetLength()-1] == '#')) {
@@ -1335,7 +1335,7 @@ void MyManager::StartCall(const PString & dest)
     if (str.IsEmpty())
       cout << "Speed dial \"" << key << "\" not defined\n";
   }
-#endif // P_CONFIG_FILE
+#endif // OPAL_PTLIB_CONFIG_FILE
 
   if (!str.IsEmpty())
     SetUpCall(srcEP, str, currentCallToken);
@@ -1343,7 +1343,7 @@ void MyManager::StartCall(const PString & dest)
   return;
 }
 
-#if P_CONFIG_FILE
+#ifdef OPAL_PTLIB_CONFIG_FILE
 void MyManager::ListSpeedDials()
 {
   PConfig config("Speeddial");
@@ -1357,7 +1357,7 @@ void MyManager::ListSpeedDials()
   for (i = 0; i < keys.GetSize(); i++)
     cout << keys[i] << ":   " << config.GetString(keys[i]) << endl;
 }
-#endif // P_CONFIG_FILE
+#endif // OPAL_PTLIB_CONFIG_FILE
 
 void MyManager::OnEstablishedCall(OpalCall & call)
 {

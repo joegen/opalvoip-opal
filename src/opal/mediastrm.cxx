@@ -38,7 +38,7 @@
 
 #include <opal/mediastrm.h>
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 #include <ptlib/videoio.h>
 #include <codec/vidcodec.h>
 #endif
@@ -877,7 +877,7 @@ PBoolean OpalFileMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if P_AUDIO
+#ifdef OPAL_PTLIB_AUDIO
 
 OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
                                            const OpalMediaFormat & mediaFormat,
@@ -932,12 +932,12 @@ PBoolean OpalAudioMediaStream::IsSynchronous() const
   return true;
 }
 
-#endif // P_AUDIO
+#endif // OPAL_PTLIB_AUDIO
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 
 OpalVideoMediaStream::OpalVideoMediaStream(OpalConnection & conn,
                                           const OpalMediaFormat & mediaFormat,

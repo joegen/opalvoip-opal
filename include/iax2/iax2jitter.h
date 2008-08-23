@@ -46,6 +46,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <rtp/rtp.h>
 #include <rtp/jitter.h>
 

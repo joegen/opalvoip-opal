@@ -66,9 +66,11 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <ptlib/sockets.h>
 
-#if P_SSL_AES
+#ifdef OPAL_PTLIB_SSL_AES
 #include <openssl/aes.h>
 #endif
 
@@ -388,7 +390,7 @@ class IAX2Encryption : public PObject
   /**Report if the encryption is enabled  (or turned on) */
   const PBoolean IsEncrypted() const;
 
-#if P_SSL_AES
+#ifdef OPAL_PTLIB_SSL_AES
   /**Get a pointer to a filled AES_KEY encrypt structure */
   AES_KEY *AesEncryptKey();
 
@@ -410,7 +412,7 @@ class IAX2Encryption : public PObject
   /**Flag to specify if encryption is happening */
   PBoolean encryptionEnabled;
 
-#if P_SSL_AES
+#ifdef OPAL_PTLIB_SSL_AES
   /**key to be used for AES 128 encryption */
   AES_KEY aesEncryptKey;
 

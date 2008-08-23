@@ -43,6 +43,7 @@
 #endif
 
 #include <opal/buildopts.h>
+
 #include <opal/mediatype.h>
 
 #include <rtp/rtp.h>
@@ -232,7 +233,7 @@ class OpalMediaOption : public PObject
     MergeType GetMerge() const { return m_merge; }
     void SetMerge(MergeType merge) { m_merge = merge; }
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
     const PString & GetFMTPName() const { return m_FMTPName; }
     void SetFMTPName(const char * name) { m_FMTPName = name; }
 
@@ -240,7 +241,7 @@ class OpalMediaOption : public PObject
     void SetFMTPDefault(const char * value) { m_FMTPDefault = value; }
 #endif // OPAL_SIP
 
-#if OPAL_H323
+#ifdef OPAL_H323
     struct H245GenericInfo {
       H245GenericInfo() { memset(this, 0, sizeof(*this)); }
       unsigned ordinal:16;
@@ -268,12 +269,12 @@ class OpalMediaOption : public PObject
     bool            m_readOnly;
     MergeType       m_merge;
 
-#if OPAL_SIP
+#ifdef OPAL_SIP
     PCaselessString m_FMTPName;
     PString         m_FMTPDefault;
 #endif // OPAL_SIP
 
-#if OPAL_H323
+#ifdef OPAL_H323
     H245GenericInfo m_H245Generic;
 #endif // OPAL_H323
 };
@@ -1021,7 +1022,7 @@ class OpalMediaFormat : public PContainer
     friend bool operator==(const PString & other, const OpalMediaFormat & fmt) { return fmt.m_info != NULL && fmt.m_info->formatName == other; }
     friend bool operator!=(const PString & other, const OpalMediaFormat & fmt) { return fmt.m_info == NULL || fmt.m_info->formatName == other; }
 
-#if OPAL_H323
+#ifdef OPAL_H323
     static const PString & MediaPacketizationOption();
 #endif
 
@@ -1079,7 +1080,7 @@ class OpalAudioFormat : public OpalMediaFormat
     static const PString & MaxFramesPerPacketOption();
 };
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 class OpalVideoFormatInternal : public OpalMediaFormatInternal
 {
   public:
@@ -1181,7 +1182,7 @@ extern const OpalAudioFormat & GetOpalGSMAMR();
 extern const OpalAudioFormat & GetOpaliLBC();
 
 extern const OpalMediaFormat & GetOpalRFC2833();
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
 extern const OpalMediaFormat & GetOpalCiscoNSE();
 extern const OpalMediaFormat & GetOpalT38();
 #endif

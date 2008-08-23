@@ -29,9 +29,9 @@
  */
 
 #include <ptlib.h>
-
 #include <opal/buildopts.h>
-#if OPAL_SIP
+
+#ifdef OPAL_SIP
 
 #ifdef __GNUC__
 #pragma implementation "sdp.h"
@@ -84,7 +84,7 @@ SDPMediaDescription * OpalAudioMediaType::CreateSDPMediaDescription(const OpalTr
   return new SDPAudioMediaDescription(localAddress);
 }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 SDPMediaDescription * OpalVideoMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
 {
   return new SDPVideoMediaDescription(localAddress);
@@ -100,7 +100,7 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
     if (tokens[offset] *= "IN") {
       if (
         (tokens[offset+1] *= "IP4")
-#if P_HAS_IPV6
+#ifdef OPAL_PTLIB_IPV6
         || (tokens[offset+1] *= "IP6")
 #endif
         ) {
@@ -162,7 +162,7 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _nam
 {
   if (encodingName == OpalRFC2833.GetEncodingName())
     AddNTEString("0-15,32-49");
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
   else if (encodingName == OpalCiscoNSE.GetEncodingName())
     AddNSEString("192,193");
 #endif
@@ -199,7 +199,7 @@ void SDPMediaFormat::SetFMTP(const PString & str)
     return;
   }
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
   else if (encodingName == OpalCiscoNSE.GetEncodingName()) {
     nseSet.RemoveAll();
     AddNSEString(str);
@@ -270,7 +270,7 @@ PString SDPMediaFormat::GetFMTP() const
   if (encodingName == OpalRFC2833.GetEncodingName())
     return GetNTEString();
 
-#if OPAL_T38_CAPABILITY
+#ifdef OPAL_T38_CAPABILITY
   if (encodingName == OpalCiscoNSE.GetEncodingName())
     return GetNSEString();
 #endif

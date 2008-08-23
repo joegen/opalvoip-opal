@@ -31,12 +31,11 @@
 #ifndef __OPAL_RTPCONN_H
 #define __OPAL_RTPCONN_H
 
-#include <opal/buildopts.h>
-
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/connection.h>
 #include <opal/mediatype.h>
