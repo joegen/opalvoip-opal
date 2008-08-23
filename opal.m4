@@ -676,3 +676,30 @@ AC_DEFUN([OPAL_FIND_LIBSRTP],
           fi
            AS_IF([test AS_VAR_GET([opal_libsrtp]) = yes], [$1], [$2])[]
          ])
+
+dnl ########################################################################
+dnl JAVA
+dnl ########################################################################
+
+dnl OPAL_FIND_JAVA
+dnl Try to find java headers
+dnl Arguments: $1 action if-found
+dnl            $2 action if-not-found
+dnl Return:    $JAVA_CFLAGS The cflags for java
+AC_DEFUN([OPAL_FIND_JAVA],
+         [
+          opal_java=no
+          JAVA_CFLAGS=
+          AC_CHECK_HEADERS([jni.h], [opal_java=yes])
+
+          if test "x$opal_java" = "xno" ; then
+            if test "x${JDK_ROOT}" != "x" ; then
+              AC_CHECK_FILE([${JDK_ROOT}/include/jni.h], 
+                            [
+                             opal_java=yes
+                             JAVA_CFLAGS="-I${JDK_ROOT}/include -I${JDK_ROOT}/include/linux"
+                            ])
+             fi
+           fi
+           AS_IF([test AS_VAR_GET([opal_java]) = yes], [$1], [$2])[]
+          ])
