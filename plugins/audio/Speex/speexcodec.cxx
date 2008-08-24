@@ -116,12 +116,11 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
   // encode PCM data in sampleBuffer to buffer
   int i = 0;
   int frameLen = codec->parm.audio.samplesPerFrame*2;
-  while ((*fromLen >= frameLen) && (((i+1)*codec->parm.audio.bytesPerFrame) <= *toLen) ) {
+  while ((*fromLen >= ((i+1)*frameLen)) && (((i+1)*codec->parm.audio.bytesPerFrame) <= *toLen) ) {
     speex_encode_int(context->coderState, sampleBuffer + i*codec->parm.audio.samplesPerFrame, &context->speexBits); 
     ++i;
   }
   *fromLen = i*frameLen;
-
 
   // add in terminator
   speex_bits_insert_terminator(&context->speexBits);
