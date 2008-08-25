@@ -364,10 +364,6 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
   OpalConnection::CallEndReason endReason = connection != NULL ? connection->GetCallEndReason() : OpalConnection::NumCallEndReasons;
   call->Clear(endReason != OpalConnection::NumCallEndReasons ? endReason : OpalConnection::EndedByTemporaryFailure);
 
-  if (!activeCalls.RemoveAt(token)) {
-    PTRACE(2, "OpalMan\tSetUpCall could not remove call from active call list");
-  }
-
   token.MakeEmpty();
 
   return PFalse;
