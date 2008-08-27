@@ -181,8 +181,8 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
   if (natMethod != None) {
     for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
 
-      OpalTransport * transport = handler->GetTransport();
-      if (transport == NULL || transport->IsReliable() || GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()) == NULL)
+      OpalTransport * transport = NULL;
+      if (handler->GetState () != SIPHandler::Subscribed || (transport = handler->GetTransport()) == NULL || transport->IsReliable() || GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()) == NULL)
         continue;
 
       switch (natMethod) {
