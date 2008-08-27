@@ -95,7 +95,7 @@ RFC4175VideoFormat::RFC4175VideoFormat(
 {
   OpalMediaOption * option;
 
-#ifdef OPAL_SIP
+#if OPAL_SIP
   // add mandatory fields
   option = FindOption(ClockRateOption());
   if (option != NULL)
@@ -111,19 +111,19 @@ RFC4175VideoFormat::RFC4175VideoFormat(
 #endif // OPAL_SIP
 
   option = new OpalMediaOptionString("rfc4175_sampling", PTrue, samplingName);
-#ifdef OPAL_SIP
+#if OPAL_SIP
   option->SetFMTPName("sampling");
 #endif // OPAL_SIP
   AddOption(option, PTrue);
 
   option = new OpalMediaOptionInteger("rfc4175_depth", PTrue, OpalMediaOption::NoMerge, 8);
-#ifdef OPAL_SIP
+#if OPAL_SIP
   option->SetFMTPName("depth");
 #endif // OPAL_SIP
   AddOption(option, PTrue);
 
   option = new OpalMediaOptionString("rfc4175_colorimetry", PTrue, "BT601-5");
-#ifdef OPAL_SIP
+#if OPAL_SIP
   option->SetFMTPName("colorimetry");
 #endif // OPAL_SIP
   AddOption(option, PTrue);
