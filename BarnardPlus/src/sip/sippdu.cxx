@@ -2278,6 +2278,8 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////
+
 SIPRegister::Params::Params()
   : m_expire(0)
   , m_restoreTime(30)
@@ -2317,50 +2319,81 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
 }
 
 
-const PString SIPSubscribe::MessageSummary = "message-summary";
-const PString SIPSubscribe::Presence = "presence";
+////////////////////////////////////////////////////////////////////////////////////
+
+SIPSubscribe::Params::Params(PredefinedPackages pkg)
+  : m_eventPackage(SIPSubscribe::GetEventPackageName(pkg))
+  , m_expire(0)
+  , m_restoreTime(30)
+  , m_minRetryTime(PMaxTimeInterval)
+  , m_maxRetryTime(PMaxTimeInterval)
+{
+  switch (pkg) {
+    case SIPSubscribe::MessageSummary :
+      m_mimeType = "application/simple-message-summary";
+      break;
+
+    case SIPSubscribe::Presence :
+      m_mimeType = "application/pidf+xml";
+      break;
+
+    default :
+      break;
+  }
+}
+
+
+PString SIPSubscribe::GetEventPackageName(PredefinedPackages pkg)
+{
+  static const char * const names[NumPredefinedPackages] = {
+    "message-summary",
+    "presence"
+  };
+  if (pkg < NumPredefinedPackages)
+    return names[pkg];
+  return PString::Empty();
+}
 
 
 SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                            OpalTransport & trans,
-                           const PString & eventPackage,
                            const PStringList & routeSet,
-                           const SIPURL & targetAddress,
-                           const PString & remotePartyAddress,
-                           const PString & localPartyAddress,
                            const PString & id,
-                           const unsigned & cseq,
-                           unsigned expires)
+                           unsigned cseq,
+                           const Params & params)
   : SIPTransaction(ep, trans)
 {
-  PString acceptField;
-  if (eventPackage == MessageSummary)
-    acceptField = "application/simple-message-summary";
-  else if (eventPackage == Presence)
-    acceptField = "application/pidf+xml";
+  SIPURL targetAddress = params.m_targetAddress;
 
-  SIPURL address = targetAddress;
-  address.AdjustForRequestURI();
+  PString localPartyAddress;
+  if (params.m_eventPackage == GetEventPackageName(Presence))
+    localPartyAddress = endpoint.GetRegisteredPartyName(params.m_targetAddress).AsQuotedString();
+  else
+    localPartyAddress = targetAddress.AsQuotedString();
+  localPartyAddress += ";tag=" + OpalGloballyUniqueID().AsString();
+
+  targetAddress.AdjustForRequestURI();
 
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
   SIP_PDU::Construct(Method_SUBSCRIBE,
-                     address,
-                     remotePartyAddress,
+                     targetAddress,
+                     targetAddress.AsQuotedString(),
                      localPartyAddress,
                      id,
                      cseq,
                      viaAddress);
 
-  SIPURL contact = 
-    endpoint.GetLocalURL(trans, SIPURL(localPartyAddress).GetUserName());
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
-  mime.SetContact(contact);
-  mime.SetAccept(acceptField);
-  mime.SetEvent(eventPackage);
-  mime.SetExpires(expires);
+  mime.SetContact(endpoint.GetLocalURL(trans, SIPURL(localPartyAddress).GetUserName()));
+  mime.SetAccept(params.m_mimeType);
+  mime.SetEvent(params.m_eventPackage);
+  mime.SetExpires(params.m_expire);
 
   SetRoute(routeSet);
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////
 
 SIPPublish::SIPPublish(SIPEndPoint & ep,
                        OpalTransport & trans,

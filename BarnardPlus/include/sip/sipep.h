@@ -379,14 +379,21 @@ class SIPEndPoint : public OpalEndPoint
     /**Subscribe to a notifier. This function is asynchronous to permit
      * several subscriptions to occur at the same time.
      */
-    PBoolean Subscribe(
-      const PString & eventPackage,
+    bool Subscribe(
+      SIPSubscribe::PredefinedPackages eventPackage,
       unsigned expire,
       const PString & to
     );
+    bool Subscribe(
+      const SIPSubscribe::Params & params /// Registration paarameters
+    );
 
 
-    PBoolean Unsubscribe(
+    bool Unsubscribe(
+      SIPSubscribe::PredefinedPackages eventPackage,
+      const PString & to
+    );
+    bool Unsubscribe(
       const PString & eventPackage,
       const PString & to
     );

@@ -185,10 +185,7 @@ class SIPSubscribeHandler : public SIPHandler
 {
   PCLASSINFO(SIPSubscribeHandler, SIPHandler);
 public:
-  SIPSubscribeHandler(SIPEndPoint & ep, 
-                      const PString & eventPackage,
-                      const PString & to,
-                      int expire);
+  SIPSubscribeHandler(SIPEndPoint & ep, const SIPSubscribe::Params & params);
   ~SIPSubscribeHandler();
 
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
@@ -197,17 +194,17 @@ public:
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_SUBSCRIBE; }
   virtual PCaselessString GetEventPackage() const
-    { return m_eventPackage; }
+    { return m_parameters.m_eventPackage; }
 
-  unsigned GetNextCSeq() { return ++lastSentCSeq; }
+  void UpdateParameters(const SIPSubscribe::Params & params);
 
 private:
   PBoolean OnReceivedMWINOTIFY(SIP_PDU & response);
   PBoolean OnReceivedPresenceNOTIFY(SIP_PDU & response);
 
-  PCaselessString m_eventPackage;
+  SIPSubscribe::Params m_parameters;
+
   PBoolean dialogCreated;
-  PString localPartyAddress;
   unsigned lastSentCSeq;
   unsigned lastReceivedCSeq;
 };
