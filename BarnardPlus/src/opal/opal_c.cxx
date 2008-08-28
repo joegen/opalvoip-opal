@@ -866,23 +866,32 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
         response.SetError("Failed to initiate SIP unregistration.");
     }
     else {
-      SIPRegister::Params params;
-      params.m_addressOfRecord = aor;
-      params.m_contactAddress = host;
-      params.m_authID = command.m_param.m_registrationInfo.m_authUserName;
-      if (params.m_authID.IsEmpty())
-        params.m_authID = params.m_addressOfRecord.Left(params.m_addressOfRecord.Find('@'));
-      params.m_password = command.m_param.m_registrationInfo.m_password;
-      params.m_realm = command.m_param.m_registrationInfo.m_adminEntity;
-      params.m_expire = command.m_param.m_registrationInfo.m_timeToLive;
+      SIPRegister::Params regParams;
+      regParams.m_addressOfRecord = aor;
+      regParams.m_contactAddress = host;
+      regParams.m_authID = command.m_param.m_registrationInfo.m_authUserName;
+      if (regParams.m_authID.IsEmpty())
+        regParams.m_authID = regParams.m_addressOfRecord.Left(regParams.m_addressOfRecord.Find('@'));
+      regParams.m_password = command.m_param.m_registrationInfo.m_password;
+      regParams.m_realm = command.m_param.m_registrationInfo.m_adminEntity;
+      regParams.m_expire = command.m_param.m_registrationInfo.m_timeToLive;
       if (m_apiVersion >= 7 && command.m_param.m_registrationInfo.m_restoreTime > 0)
-        params.m_restoreTime = command.m_param.m_registrationInfo.m_restoreTime;
+        regParams.m_restoreTime = command.m_param.m_registrationInfo.m_restoreTime;
 
-      if (!sip->Register(params))
+      if (!sip->Register(regParams))
         response.SetError("Failed to initiate SIP registration.");
 
-      if (m_apiVersion >= 10)
-        sip->Subscribe(SIPSubscribe::MessageSummary, command.m_param.m_registrationInfo.m_messageWaiting, aor);
+      if (m_apiVersion >= 10) {
+        SIPSubscribe::Params mwiParams(SIPSubscribe::MessageSummary);
+        mwiParams.m_targetAddress = aor;
+        regParams.m_contactAddress = host;
+        mwiParams.m_authID = regParams.m_authID;
+        mwiParams.m_password = regParams.m_password;
+        mwiParams.m_realm = regParams.m_realm;
+        mwiParams.m_expire = command.m_param.m_registrationInfo.m_messageWaiting;
+        mwiParams.m_restoreTime = regParams.m_restoreTime;
+        sip->Subscribe(mwiParams);
+      }
     }
     return;
   }

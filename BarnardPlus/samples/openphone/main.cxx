@@ -2176,6 +2176,22 @@ void MyManager::StartRegistrars()
       param.m_expire = iter->m_TimeToLive;
       bool ok = sipEP->Register(param);
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+
+      SIPSubscribe::Params mwiParam(SIPSubscribe::MessageSummary);
+      mwiParam.m_targetAddress = param.m_addressOfRecord;
+      mwiParam.m_authID = param.m_authID;
+      mwiParam.m_password = param.m_password;
+      mwiParam.m_expire = iter->m_TimeToLive;
+      ok = sipEP->Subscribe(mwiParam);
+      LogWindow << "SIP MWI subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+
+      SIPSubscribe::Params presenceParam(SIPSubscribe::Presence);
+      presenceParam.m_targetAddress = param.m_addressOfRecord;
+      presenceParam.m_authID = param.m_authID;
+      presenceParam.m_password = param.m_password;
+      presenceParam.m_expire = iter->m_TimeToLive;
+      ok = sipEP->Subscribe(presenceParam);
+      LogWindow << "SIP Presence subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
     }
   }
 }
