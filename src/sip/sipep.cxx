@@ -98,8 +98,12 @@ void SIPEndPoint::ShutDown()
 {
   PTRACE(4, "SIP\tShutting down.");
 
-  while (activeSIPHandlers.GetSize() > 0) {
-    PSafePtr<SIPHandler> handler = activeSIPHandlers;
+  // Stop timers before compiler destroys member objects
+  natBindingTimer.Stop();
+
+  // Clean up the handlers, wait for them to finish before destruction.
+  PSafePtr<SIPHandler> handler;
+  while ((handler = activeSIPHandlers) != NULL) {
     PString aor = handler->GetRemotePartyAddress();
     if (handler->GetMethod() != SIP_PDU::Method_REGISTER || handler->GetState() != SIPHandler::Subscribed)
       activeSIPHandlers.Remove(handler);
@@ -109,27 +113,12 @@ void SIPEndPoint::ShutDown()
     }
   }
 
-  /* This odd looking loop is due to the transaction being waited on, might be removed
-     from the transactions list by the garbage collection thread, then the for loop
-     is prematurely ended as ++transaction cannot find the next entry. So we keep
-     doing the for loop till there are no more transactions in progress. */
-  bool waiting = true;
-  while (waiting) {
-    waiting = false;
-    for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReference); transaction != NULL; ++transaction) {
-      if (transaction->IsInProgress()) {
-        PTRACE(5, "SIP\tWaiting for transaction to complete.");
-        transaction->WaitForCompletion();
-        waiting = true;
-      }
-    }
+  // Clean up transactions still in progress, waiting for them to complete.
+  PSafePtr<SIPTransaction> transaction;
+  while ((transaction = transactions.GetAt(0, PSafeReference)) != NULL) {
+    transaction->WaitForCompletion();
+    transactions.RemoveAt(transaction->GetTransactionID());
   }
-
-  // Clean up
-  transactions.RemoveAll();
-
-  // Stop timers before compiler destroys member objects
-  natBindingTimer.Stop();
 
   // Now shut down listeners and aggregators
   OpalEndPoint::ShutDown();
