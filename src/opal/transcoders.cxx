@@ -85,19 +85,21 @@ bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const Opa
 {
   PWaitAndSignal mutex(updateMutex);
 
-  if (( input.IsValid() &&  input !=  inputMediaFormat) ||
-      (output.IsValid() && output != outputMediaFormat)) {
-    PAssertAlways(PInvalidParameter);
-    return PFalse;
+  if (input.IsValid()) {
+    if (inputMediaFormat == input)
+      inputMediaFormat = input;
+    else if (!inputMediaFormat.Merge(input))
+      return false;
   }
 
-  if (input.IsValid())
-    inputMediaFormat = input;
+  if (output.IsValid()) {
+    if (outputMediaFormat == output)
+      outputMediaFormat = output;
+    else if (!outputMediaFormat.Merge(output))
+      return false;
+  }
 
-  if (output.IsValid())
-    outputMediaFormat = output;
-
-  return PTrue;
+  return true;
 }
 
 
