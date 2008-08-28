@@ -153,7 +153,8 @@ class OpalTranscoder : public OpalMediaFormatPair
     /**Update the input and output media formats. This can be used to adjust
        the parameters of a codec at run time. Note you cannot change the basic
        media format, eg change GSM0610 to G.711, only options for that
-       format, eg 6k3 mode to 5k3 mode in G.723.1.
+       format, eg 6k3 mode to 5k3 mode in G.723.1. If the formats are
+       different then a OpalMediaFormat::Merge() is performed.
 
        If a format is empty (invalid) it is ignored and does not update the
        internal variable. In this way only the input or output side can be
@@ -365,7 +366,8 @@ class OpalFramedTranscoder : public OpalTranscoder
     /**Update the input and output media formats. This can be used to adjust
        the parameters of a codec at run time. Note you cannot change the basic
        media format, eg change GSM0610 to G.711, only options for that
-       format, eg 6k3 mode to 5k3 mode in G.723.1.
+       format, eg 6k3 mode to 5k3 mode in G.723.1. If the formats are
+       different then a OpalMediaFormat::Merge() is performed.
 
        If a format is empty (invalid) it is ignored and does not update the
        internal variable. In this way only the input or output side can be
