@@ -93,8 +93,12 @@ SIPEndPoint::~SIPEndPoint()
 
 void SIPEndPoint::ShutDown()
 {
-  while (activeSIPHandlers.GetSize() > 0) {
-    PSafePtr<SIPHandler> handler = activeSIPHandlers;
+  // Stop timers before compiler destroys member objects
+  natBindingTimer.Stop();
+
+  // Clean up the handlers, wait for them to finish before destruction.
+  PSafePtr<SIPHandler> handler;
+  while ((handler = activeSIPHandlers) != NULL) {
     PString aor = handler->GetRemotePartyAddress();
     if (handler->GetMethod() != SIP_PDU::Method_REGISTER || handler->GetState() != SIPHandler::Subscribed)
       activeSIPHandlers.Remove(handler);
@@ -104,14 +108,12 @@ void SIPEndPoint::ShutDown()
     }
   }
 
-  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReference); transaction != NULL; ++transaction)
+  // Clean up transactions still in progress, waiting for them to complete.
+  PSafePtr<SIPTransaction> transaction;
+  while ((transaction = transactions.GetAt(0, PSafeReference)) != NULL) {
     transaction->WaitForCompletion();
-
-  // Clean up
-  transactions.RemoveAll();
-
-  // Stop timers before compiler destroys member objects
-  natBindingTimer.Stop();
+    transactions.RemoveAt(transaction->GetTransactionID());
+  }
 
   // Now shut down listeners and aggregators
   OpalEndPoint::ShutDown();

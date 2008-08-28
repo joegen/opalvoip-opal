@@ -2064,6 +2064,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     return PFalse;
 
   PBoolean notCompletedFlag = state < Completed;
+  bool signalCompletionFlag = false;
 
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
@@ -2087,7 +2088,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       statusCode = response.GetStatusCode();
     }
 
-    completed.Signal();
+    signalCompletionFlag = true;
     completionTimer = endpoint.GetPduCleanUpTimeout();
   }
 
@@ -2098,8 +2099,11 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       endpoint.OnReceivedResponse(*this, response);
 
     if (state == Completed)
-      return OnCompleted(response);
+      OnCompleted(response);
   }
+
+  if (signalCompletionFlag)
+    completed.Signal();
 
   return PTrue;
 }
