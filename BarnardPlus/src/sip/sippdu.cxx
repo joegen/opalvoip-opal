@@ -2246,17 +2246,19 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
 
 PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
-  connection->OnReceivedResponseToINVITE(*this, response);
+  if (response.GetMIME().GetCSeq().Find(MethodNames[Method_INVITE]) != P_MAX_INDEX) {
+    connection->OnReceivedResponseToINVITE(*this, response);
 
-  if (response.GetStatusCode() >= 200) {
-    PSafeLockReadWrite lock(*this);
-    if (!lock.IsLocked())
-      return false;
+    if (response.GetStatusCode() >= 200) {
+      PSafeLockReadWrite lock(*this);
+      if (!lock.IsLocked())
+        return false;
 
-    // ACK constructed following 17.1.1.3
-    SIPAck ack(*this, response);
-    if (!SendPDU(ack))
-      return false;
+      // ACK constructed following 17.1.1.3
+      SIPAck ack(*this, response);
+      if (!SendPDU(ack))
+        return false;
+    }
   }
 
   if (!SIPTransaction::OnReceivedResponse(response))
