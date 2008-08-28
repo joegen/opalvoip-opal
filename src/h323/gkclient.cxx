@@ -1953,8 +1953,10 @@ void H323Gatekeeper::UpdateConnectionStatus()
   
   if (lowPriorityMonitor.GetInterfaces(FALSE, addr).GetSize() > 0) {
     // at least one interface available, locate gatekeper
-    if (DiscoverGatekeeper(transport->GetRemoteAddress()))
-      RegistrationRequest();
+    if (DiscoverGatekeeper(transport->GetRemoteAddress())) {
+      reregisterNow = PTrue;
+      monitorTickle.Signal();
+    }
   }
 }
 
