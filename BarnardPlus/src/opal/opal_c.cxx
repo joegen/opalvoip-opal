@@ -200,7 +200,7 @@ public:
       traceOpts |= PTrace::AppendToFile;
 
     PTrace::Initialise(level, filename, traceOpts);
-    PTRACE(3, "OpalC\tStart Up.");
+    PTRACE(3, "OpalC\tStart Up version " << OpalGetVersion());
 #endif
   }
 
@@ -878,18 +878,20 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
       if (m_apiVersion >= 7 && command.m_param.m_registrationInfo.m_restoreTime > 0)
         regParams.m_restoreTime = command.m_param.m_registrationInfo.m_restoreTime;
 
+      PTRACE(4, "OpalC API\tRegister " << regParams.m_addressOfRecord << ' ' << regParams.m_expire << " seconds.");
       if (!sip->Register(regParams))
         response.SetError("Failed to initiate SIP registration.");
 
       if (m_apiVersion >= 10) {
         SIPSubscribe::Params mwiParams(SIPSubscribe::MessageSummary);
         mwiParams.m_targetAddress = aor;
-        regParams.m_contactAddress = host;
+        mwiParams.m_contactAddress = regParams.m_contactAddress;
         mwiParams.m_authID = regParams.m_authID;
         mwiParams.m_password = regParams.m_password;
         mwiParams.m_realm = regParams.m_realm;
         mwiParams.m_expire = command.m_param.m_registrationInfo.m_messageWaiting;
         mwiParams.m_restoreTime = regParams.m_restoreTime;
+        PTRACE(4, "OpalC API\tSubscribe " << mwiParams.m_targetAddress << ' ' << mwiParams.m_expire << " seconds.");
         sip->Subscribe(mwiParams);
       }
     }
