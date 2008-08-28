@@ -572,6 +572,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
   return new SIPSubscribe(endpoint,
                           trans, 
                           GetRouteSet(),
+                          remotePartyAddress,
                           callID, 
                           ++lastSentCSeq,
                           m_parameters);
@@ -609,6 +610,10 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
       targetAddress = response.GetMIME().GetContact();
     dialogCreated = PTrue;
   }
+  
+  SIPURL address = targetAddress;
+  address.Sanitise(SIPURL::RequestURI);
+  m_parameters.m_targetAddress = address.AsString();
 
   /* Update the To */
   remotePartyAddress = response.GetMIME().GetTo();
