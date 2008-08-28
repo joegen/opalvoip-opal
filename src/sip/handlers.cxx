@@ -542,16 +542,21 @@ void SIPRegisterHandler::UpdateParameters(const SIPRegister::Params & params)
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPSubscribeHandler::SIPSubscribeHandler (SIPEndPoint & endpoint, 
-                                          const PString & eventPackage,
-                                          const PString & to,
-                                          int exp)
-  : SIPHandler(endpoint, to, exp > 0 ? exp : endpoint.GetNotifierTimeToLive().GetSeconds())
-  , m_eventPackage(eventPackage)
+SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscribe::Params & params)
+  : SIPHandler(endpoint,
+               params.m_targetAddress,
+               params.m_expire > 0 ? params.m_expire : endpoint.GetRegistrarTimeToLive().GetSeconds(),
+               params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
+  , m_parameters(params)
+  , dialogCreated(false)
+  , lastSentCSeq(0)
+  , lastReceivedCSeq(0)
 {
-  lastSentCSeq = 0;
-  lastReceivedCSeq = 0;
-  dialogCreated = PFalse;
+  m_parameters.m_expire = expire; // Put possibly adjusted value back
+
+  authenticationUsername  = params.m_authID;
+  authenticationPassword  = params.m_password;
+  authenticationAuthRealm = params.m_realm;
 }
 
 
@@ -563,29 +568,26 @@ SIPSubscribeHandler::~SIPSubscribeHandler()
 
 SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 { 
-  PString partyName;
-
-  if (localPartyAddress.IsEmpty()) {
-
-    if (m_eventPackage == SIPSubscribe::Presence)
-      localPartyAddress = endpoint.GetRegisteredPartyName(targetAddress).AsQuotedString();
-    else
-      localPartyAddress = targetAddress.AsQuotedString();
-
-    localPartyAddress += ";tag=" + OpalGloballyUniqueID().AsString();
-  }
-
   SetExpire(originalExpire);
   return new SIPSubscribe(endpoint,
                           trans, 
-                          m_eventPackage,
                           GetRouteSet(),
-                          targetAddress, 
-                          remotePartyAddress,
-                          localPartyAddress,
                           callID, 
-                          GetNextCSeq(),
-                          expire); 
+                          ++lastSentCSeq,
+                          m_parameters);
+}
+
+
+void SIPSubscribeHandler::UpdateParameters(const SIPSubscribe::Params & params)
+{
+  if (!params.m_authID.IsEmpty())
+    authenticationUsername = params.m_authID;   // Adjust the authUser if required 
+  if (!params.m_realm.IsEmpty())
+    authenticationAuthRealm = params.m_realm;   // Adjust the realm if required 
+  if (!params.m_password.IsEmpty())
+    authenticationPassword = params.m_password; // Adjust the password if required 
+
+  SetExpire(params.m_expire);
 }
 
 
@@ -656,9 +658,9 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   }
 
   PCaselessString eventPackage = request.GetMIME().GetEvent();
-  if (eventPackage == SIPSubscribe::MessageSummary)
+  if (eventPackage == SIPSubscribe::GetEventPackageName(SIPSubscribe::MessageSummary))
       OnReceivedMWINOTIFY(request);
-  else if (eventPackage == SIPSubscribe::Presence)
+  else if (eventPackage == SIPSubscribe::GetEventPackageName(SIPSubscribe::Presence))
       OnReceivedPresenceNOTIFY(request);
 
   return endpoint.SendResponse(SIP_PDU::Successful_OK, *transport, request);
