@@ -2604,7 +2604,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
     localPartyAddress = endpoint.GetRegisteredPartyName(params.m_targetAddress).AsQuotedString();
   else
     localPartyAddress = targetAddress.AsQuotedString();
-  localPartyAddress += ";tag=" + id;
+  localPartyAddress += ";tag=" + OpalGloballyUniqueID().AsString();
 
   targetAddress.Sanitise(SIPURL::RequestURI);
 
