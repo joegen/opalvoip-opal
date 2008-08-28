@@ -2592,6 +2592,7 @@ PString SIPSubscribe::GetEventPackageName(PredefinedPackages pkg)
 SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                            OpalTransport & trans,
                            const PStringList & routeSet,
+                           const PString & to,
                            const PString & id,
                            unsigned cseq,
                            const Params & params)
@@ -2611,7 +2612,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
   SIP_PDU::Construct(Method_SUBSCRIBE,
                      targetAddress,
-                     targetAddress.AsQuotedString(),
+                     to,
                      localPartyAddress,
                      id,
                      cseq,
