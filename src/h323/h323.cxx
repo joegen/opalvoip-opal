@@ -3226,7 +3226,6 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       if (channel != NULL && !channel->GetNumber().IsFromRemote())
         negChannel.Close();
     }
-    ownerCall.CloseMediaStreams();
     transmitterSidePaused = PTrue;
   }
   else {
