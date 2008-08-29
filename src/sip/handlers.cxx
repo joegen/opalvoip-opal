@@ -99,6 +99,12 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
 
 SIPHandler::~SIPHandler() 
 {
+  // before destroying the transport, abort all pending transactions that have the same transport
+  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly); transaction != NULL; ++transaction) {
+    if (&(transaction->GetTransport()) == transport)
+      transaction->Abort();
+  }
+  
   if (transport) {
     transport->CloseWait();
     delete transport;
