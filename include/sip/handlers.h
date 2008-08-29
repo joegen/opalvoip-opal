@@ -208,6 +208,7 @@ private:
 
   SIPSubscribe::Params m_parameters;
 
+  PString  localPartyAddress;
   PBoolean dialogCreated;
   unsigned lastSentCSeq;
   unsigned lastReceivedCSeq;
