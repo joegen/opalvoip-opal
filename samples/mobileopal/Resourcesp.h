@@ -53,6 +53,8 @@
 #define IDS_HANGINGUP                   10021
 #define IDS_BUSY                        10022
 #define IDS_UNREGISTERED                10023
+#define IDS_MESSAGE_WAITING             10024
+#define IDS_CUSTOM_MESSAGES             20000
 #define IDM_OPTIONS_GENERAL             32776
 #define IDM_OPTIONS_H323                32779
 #define IDM_OPTIONS_SIP                 32780
