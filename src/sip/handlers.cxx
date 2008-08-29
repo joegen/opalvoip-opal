@@ -554,6 +554,12 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
 {
   m_parameters.m_expire = expire; // Put possibly adjusted value back
 
+  if (params.m_eventPackage == SIPSubscribe::GetEventPackageName(SIPSubscribe::Presence))
+    localPartyAddress = endpoint.GetRegisteredPartyName(params.m_targetAddress).AsQuotedString();
+  else
+    localPartyAddress = targetAddress.AsQuotedString();
+  localPartyAddress += ";tag=" + OpalGloballyUniqueID().AsString();
+
   authenticationUsername  = params.m_authID;
   authenticationPassword  = params.m_password;
   authenticationAuthRealm = params.m_realm;
@@ -573,6 +579,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
                           trans, 
                           GetRouteSet(),
                           remotePartyAddress,
+                          localPartyAddress,
                           callID, 
                           ++lastSentCSeq,
                           m_parameters);
