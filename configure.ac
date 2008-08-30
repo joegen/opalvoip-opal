@@ -125,7 +125,8 @@ case "$target_os" in
 	solaris*)
           SHAREDLIBEXT=so
           SHARED_CFLAGS="-fPIC"
-          OPAL_DETERMINE_LIBNAMES()
+          OPAL_DETERMINE_LIBNAMES(DEBUG)
+          OPAL_DETERMINE_LIBNAMES(RELEASE)
           LDSOOPTS="-Bdynamic -G -h ${LIB_FILENAME_SHARED_PAT}"
 
           DEBUG_CFLAGS="-gstabs+ -D_DEBUG"
@@ -135,7 +136,8 @@ case "$target_os" in
         darwin*)  
 	  SHAREDLIBEXT=dylib 
           SHARED_CFLAGS="-fPIC"
-          OPAL_DETERMINE_LIBNAMES()
+          OPAL_DETERMINE_LIBNAMES(DEBUG)
+          OPAL_DETERMINE_LIBNAMES(RELEASE)
           LDSOOPTS="-dynamiclib"
 
 #	  CFLAGS="$CFLAGS -fno-common -dynamic"
@@ -152,7 +154,8 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
         cygwin*|mingw**)
 	  SHAREDLIBEXT=dll
           SHARED_CFLAGS=
-          OPAL_DETERMINE_LIBNAMES()
+          OPAL_DETERMINE_LIBNAMES(DEBUG)
+          OPAL_DETERMINE_LIBNAMES(RELEASE)
           LDSOOPTS="-Wl,--kill-at -shared"
 
 #	  LDSO="-module -avoid-version -shared"
@@ -162,7 +165,8 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
         freebsd*|openbsd*|netbsd*)
           SHAREDLIBEXT=so
           SHARED_CFLAGS="-fPIC"
-          OPAL_DETERMINE_LIBNAMES()
+          OPAL_DETERMINE_LIBNAMES(DEBUG)
+          OPAL_DETERMINE_LIBNAMES(RELEASE)
           LDSOOPTS="-shared -Wl,-soname,${LIB_FILENAME_SHARED_PAT}"
 
           HAVE_RANLIB=yes
@@ -171,7 +175,8 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
         *)
           SHAREDLIBEXT=so
           SHARED_CFLAGS="-fPIC"
-          OPAL_DETERMINE_LIBNAMES()
+          OPAL_DETERMINE_LIBNAMES(DEBUG)
+          OPAL_DETERMINE_LIBNAMES(RELEASE)
           LDSOOPTS="-shared -Wl,-soname,${LIB_FILENAME_SHARED_PAT}"
 
           HAVE_RANLIB=no
