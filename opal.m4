@@ -198,6 +198,87 @@ dnl ########################################################################
 dnl PTLIB
 dnl ########################################################################
 
+dnl OPAL_FIND_PTLIB
+dnl Find ptlib, either in PTLIBDIR or whereever on the system
+dnl Arguments: 
+dnl Return:    $PTLIB_VERSION
+dnl            $PTLIB_CFLAGS
+dnl            $PTLIB_CXXFLAGS
+dnl            $PTLIB_LIBS
+dnl            $PTLIB_MACHTYPE
+dnl            $PTLIB_OSTYPE
+dnl            $PTLIB_LIBS
+dnl            $PTLIB_DEBUG_LIB
+dnl            $PTLIB_RELEASE_LIB
+
+AC_DEFUN([OPAL_FIND_PTLIB],
+         [
+	  AC_ARG_VAR([PTLIBDIR], [path to ptlib directory if installed ptlib shall not be used])
+          AC_ARG_ENABLE([versioncheck],
+                        [AC_HELP_STRING([--enable-versioncheck], [enable ptlib versioncheck])],
+                        [PTLIB_VERSION_CHECK=$enableval],
+                        [PTLIB_VERSION_CHECK=yes])
+
+          dnl This segment looks for PTLIB in PTLIBDIR
+          if test "x${PTLIBDIR}" != "x" ; then
+
+            old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
+            export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
+
+            if ! AC_RUN_LOG([$PKG_CONFIG ptlib --exists]); then
+              AC_MSG_ERROR([No PTLIB library found in ${PTLIBDIR}])
+            fi
+
+            echo "Found PTLIB in PTLIBDIR ${PTLIBDIR}"
+
+            if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
+              if ! AC_RUN_LOG([$PKG_CONFIG ptlib --atleast-version=${PTLIB_REC_VERSION}]); then
+                AC_MSG_ERROR([PTLIB Version check failed, recommended version is at least ${PTLIB_REC_VERSION}])
+              fi
+            fi
+
+            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags --define-variable=prefix=${PTLIBDIR}` 
+            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR}` 
+            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype --define-variable=prefix=${PTLIBDIR}` 
+            PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt//g`
+            PTLIB_DEBUG_LIB="-lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_d"
+            PTLIB_RELEASE_LIB="-lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_r"
+
+            export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
+
+          dnl This segment looks for PTLIB on the system
+          else
+            if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
+              PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
+            else
+              PKG_CHECK_MODULES(PTLIB, ptlib)
+            fi
+
+            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
+            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
+            PTLIB_MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype` 
+            PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
+            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt//g`
+            PTLIB_DEBUG_LIB="-lpt"
+            PTLIB_RELEASE_LIB="-lpt"
+          fi
+
+          echo "Version:  ${PTLIB_VERSION}"
+          echo "CFLAGS:   ${PTLIB_CFLAGS}"
+          echo "CXXFLAGS: ${PTLIB_CXXFLAGS}"
+          echo "LIBS:     ${PTLIB_LIBS}"
+          echo "OSTYPE:   ${PTLIB_MACHTYPE}"
+          echo "MACHTYPE: ${PTLIB_OSTYPE}"
+          echo "DEBUG:    ${PTLIB_DEBUG_LIB}"
+          echo "RELEASE:  ${PTLIB_RELEASE_LIB}"
+
+          exit 1; 
+         ])
+
+
 dnl OPAL_CHECK_PTLIB
 dnl Check if ptlib was compiled with a specific optional feature
 dnl Arguments: $1 Name of feature
