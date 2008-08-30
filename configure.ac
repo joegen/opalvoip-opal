@@ -196,18 +196,7 @@ dnl ########################################################################
 dnl Check for PTLIB
 dnl ########################################################################
 
-AC_ARG_ENABLE([versioncheck],
-              [AC_HELP_STRING([--enable-versioncheck], [enable ptlib versioncheck])],
-              [PTLIB_VERSION_CHECK=$enableval],
-              [PTLIB_VERSION_CHECK=yes])
-
-if test "${PTLIB_VERSION_CHECK}x" = "yesx" ; then
-  PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
-else
-  PKG_CHECK_MODULES(PTLIB, ptlib)
-fi
-PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
-PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
+OPAL_FIND_PTLIB()
 
 CFLAGS="$CFLAGS $PTLIB_CFLAGS"
 CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"

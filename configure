@@ -694,6 +694,7 @@ LIB_FILENAME_STATIC
 LIB_FILENAME_SHARED_MAJ
 LIB_FILENAME_SHARED_MIN
 LIB_FILENAME_SHARED_PAT
+PTLIBDIR
 PTLIB_CFLAGS
 PTLIB_LIBS
 OPAL_PTLIB_SSL
@@ -763,6 +764,7 @@ CCC
 CC
 CFLAGS
 CPP
+PTLIBDIR
 PTLIB_CFLAGS
 PTLIB_LIBS
 CXXCPP
@@ -1392,6 +1394,7 @@ Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPP         C preprocessor
+  PTLIBDIR    path to ptlib directory if installed ptlib shall not be used
   PTLIB_CFLAGS
               C compiler flags for PTLIB, overriding pkg-config
   PTLIB_LIBS  linker flags for PTLIB, overriding pkg-config
@@ -1944,6 +1947,10 @@ echo "${ECHO_T}no" >&6; }
 	fi
 
 fi
+
+
+
+
 
 
 
@@ -4519,7 +4526,7 @@ fi
           if test "x${DEBUG_BUILD}" = xyes; then
             DEBUG_CFLAGS="-g3 -ggdb -O0 -D_DEBUG"
           else
-            DEBUG_CFLAGS="-g -O2"
+            DEBUG_CFLAGS="-Os"
           fi
 
           { echo "$as_me:$LINENO: checking Debugging support" >&5
@@ -4801,7 +4808,9 @@ CXXFLAGS="$CXXFLAGS $DEBUG_CFLAGS $SHARED_CFLAGS"
 
 
 
-# Check whether --enable-versioncheck was given.
+
+
+          # Check whether --enable-versioncheck was given.
 if test "${enable_versioncheck+set}" = set; then
   enableval=$enable_versioncheck; PTLIB_VERSION_CHECK=$enableval
 else
@@ -4809,7 +4818,49 @@ else
 fi
 
 
-if test "${PTLIB_VERSION_CHECK}x" = "yesx" ; then
+                    if test "x${PTLIBDIR}" != "x" ; then
+
+            old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
+            export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
+
+            if ! { (echo "$as_me:$LINENO: \$PKG_CONFIG ptlib --exists") >&5
+  ($PKG_CONFIG ptlib --exists) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+              { { echo "$as_me:$LINENO: error: No PTLIB library found in ${PTLIBDIR}" >&5
+echo "$as_me: error: No PTLIB library found in ${PTLIBDIR}" >&2;}
+   { (exit 1); exit 1; }; }
+            fi
+
+            echo "Found PTLIB in PTLIBDIR ${PTLIBDIR}"
+
+            if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
+              if ! { (echo "$as_me:$LINENO: \$PKG_CONFIG ptlib --atleast-version=\${PTLIB_REC_VERSION}") >&5
+  ($PKG_CONFIG ptlib --atleast-version=${PTLIB_REC_VERSION}) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+                { { echo "$as_me:$LINENO: error: PTLIB Version check failed, recommended version is at least ${PTLIB_REC_VERSION}" >&5
+echo "$as_me: error: PTLIB Version check failed, recommended version is at least ${PTLIB_REC_VERSION}" >&2;}
+   { (exit 1); exit 1; }; }
+              fi
+            fi
+
+            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt//g`
+            PTLIB_DEBUG_LIB="-lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_d"
+            PTLIB_RELEASE_LIB="-lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_r"
+
+            export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
+
+                    else
+            if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
 
 pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
@@ -4921,7 +4972,7 @@ else
 echo "${ECHO_T}yes" >&6; }
 	:
 fi
-else
+            else
 
 pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
@@ -5033,9 +5084,28 @@ else
 echo "${ECHO_T}yes" >&6; }
 	:
 fi
-fi
-PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
-PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags`
+            fi
+
+            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
+            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags`
+            PTLIB_MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype`
+            PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
+            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt//g`
+            PTLIB_DEBUG_LIB="-lpt"
+            PTLIB_RELEASE_LIB="-lpt"
+          fi
+
+          echo "Version:  ${PTLIB_VERSION}"
+          echo "CFLAGS:   ${PTLIB_CFLAGS}"
+          echo "CXXFLAGS: ${PTLIB_CXXFLAGS}"
+          echo "LIBS:     ${PTLIB_LIBS}"
+          echo "OSTYPE:   ${PTLIB_MACHTYPE}"
+          echo "MACHTYPE: ${PTLIB_OSTYPE}"
+          echo "DEBUG:    ${PTLIB_DEBUG_LIB}"
+          echo "RELEASE:  ${PTLIB_RELEASE_LIB}"
+
+          exit 1;
+
 
 CFLAGS="$CFLAGS $PTLIB_CFLAGS"
 CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -10485,6 +10555,7 @@ LIB_FILENAME_STATIC!$LIB_FILENAME_STATIC$ac_delim
 LIB_FILENAME_SHARED_MAJ!$LIB_FILENAME_SHARED_MAJ$ac_delim
 LIB_FILENAME_SHARED_MIN!$LIB_FILENAME_SHARED_MIN$ac_delim
 LIB_FILENAME_SHARED_PAT!$LIB_FILENAME_SHARED_PAT$ac_delim
+PTLIBDIR!$PTLIBDIR$ac_delim
 PTLIB_CFLAGS!$PTLIB_CFLAGS$ac_delim
 PTLIB_LIBS!$PTLIB_LIBS$ac_delim
 OPAL_PTLIB_SSL!$OPAL_PTLIB_SSL$ac_delim
@@ -10500,7 +10571,6 @@ OPAL_PTLIB_DNS!$OPAL_PTLIB_DNS$ac_delim
 OPAL_PTLIB_AUDIO!$OPAL_PTLIB_AUDIO$ac_delim
 OPAL_PTLIB_CONFIG_FILE!$OPAL_PTLIB_CONFIG_FILE$ac_delim
 OPAL_PTLIB_SSL_AES!$OPAL_PTLIB_SSL_AES$ac_delim
-CXXCPP!$CXXCPP$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -10542,6 +10612,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+CXXCPP!$CXXCPP$ac_delim
 SIZE16!$SIZE16$ac_delim
 SIZE32!$SIZE32$ac_delim
 SPEEX_CFLAGS!$SPEEX_CFLAGS$ac_delim
@@ -10583,7 +10654,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 39; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 40; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
