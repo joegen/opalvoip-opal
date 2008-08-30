@@ -216,6 +216,10 @@ class H323Gatekeeper : public H225_RAS
       const H225_ArrayOf_ServiceControlSession & serviceControl,
       H323Connection * connection
     );
+    
+    /** Handle terminal alias changes
+      */
+    virtual void OnTerminalAliasChanged();
   //@}
 
   /**@name Member variable access */

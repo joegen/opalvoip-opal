@@ -1688,6 +1688,15 @@ void H323Gatekeeper::OnServiceControlSessions(const H225_ArrayOf_ServiceControlS
 }
 
 
+void H323Gatekeeper::OnTerminalAliasChanged()
+{
+  // Do a non-lightweight RRQ. Treat the GK as unregistered and immediately send a RRQ
+  registrationFailReason = UnregisteredLocally;
+  reregisterNow = TRUE;
+  monitorTickle.Signal();
+}
+
+
 void H323Gatekeeper::SetPassword(const PString & password, 
                                  const PString & username)
 {
@@ -1944,8 +1953,10 @@ void H323Gatekeeper::UpdateConnectionStatus()
   
   if (lowPriorityMonitor.GetInterfaces(FALSE, addr).GetSize() > 0) {
     // at least one interface available, locate gatekeper
-    if (DiscoverGatekeeper(transport->GetRemoteAddress()))
-      RegistrationRequest();
+    if (DiscoverGatekeeper(transport->GetRemoteAddress())) {
+      reregisterNow = PTrue;
+      monitorTickle.Signal();
+    }
   }
 }
 

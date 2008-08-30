@@ -507,6 +507,7 @@ void CMobileOpalDlg::InitialiseOPAL()
     command.m_param.m_registrationInfo.m_adminEntity = strRealm;
 
     command.m_param.m_registrationInfo.m_timeToLive = 300;
+    command.m_param.m_registrationInfo.m_messageWaiting = 300;
 
     SetStatusText(IDS_REGISTERING);
     if ((response = OpalSendMessage(m_opal, &command)) != NULL && response->m_type != OpalIndCommandError)
@@ -539,8 +540,21 @@ void CMobileOpalDlg::ErrorBox(UINT ids, const OpalMessage * response)
 void CMobileOpalDlg::SetStatusText(UINT ids, const char * str)
 {
   CString text;
-  if (str != NULL && str[0] != '\0')
+  if (str != NULL && str[0] != '\0') {
+    if (isdigit(*str)) {
+      char * colon;
+      unsigned code = strtoul(str, &colon, 10);
+      if (*colon == ':') {
+        str = colon+1;
+        while (isspace(*str))
+          str++;
+        text.LoadString(ids+IDS_CUSTOM_MESSAGES);
+      }
+    }
+
+    if (text.IsEmpty())
     text = str;
+  }
   else {
     if (ids == 0)
       return;
@@ -623,6 +637,16 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
 
             case OpalRegisterFailed :
               SetStatusText(0, message->m_param.m_registrationStatus.m_error);
+          }
+          break;
+
+        case OpalIndMessageWaiting :
+          {
+            CStringA msg;
+            msg.Format(IDS_MESSAGE_WAITING,
+                       message->m_param.m_messageWaiting.m_type,
+                       message->m_param.m_messageWaiting.m_party);
+            SetStatusText(0, msg);
           }
           break;
 

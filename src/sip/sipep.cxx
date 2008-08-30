@@ -98,8 +98,12 @@ void SIPEndPoint::ShutDown()
 {
   PTRACE(4, "SIP\tShutting down.");
 
-  while (activeSIPHandlers.GetSize() > 0) {
-    PSafePtr<SIPHandler> handler = activeSIPHandlers;
+  // Stop timers before compiler destroys member objects
+  natBindingTimer.Stop();
+
+  // Clean up the handlers, wait for them to finish before destruction.
+  PSafePtr<SIPHandler> handler;
+  while ((handler = activeSIPHandlers) != NULL) {
     PString aor = handler->GetRemotePartyAddress();
     if (handler->GetMethod() != SIP_PDU::Method_REGISTER || handler->GetState() != SIPHandler::Subscribed)
       activeSIPHandlers.Remove(handler);
@@ -109,27 +113,12 @@ void SIPEndPoint::ShutDown()
     }
   }
 
-  /* This odd looking loop is due to the transaction being waited on, might be removed
-     from the transactions list by the garbage collection thread, then the for loop
-     is prematurely ended as ++transaction cannot find the next entry. So we keep
-     doing the for loop till there are no more transactions in progress. */
-  bool waiting = true;
-  while (waiting) {
-    waiting = false;
-    for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReference); transaction != NULL; ++transaction) {
-      if (transaction->IsInProgress()) {
-        PTRACE(5, "SIP\tWaiting for transaction to complete.");
-        transaction->WaitForCompletion();
-        waiting = true;
-      }
-    }
+  // Clean up transactions still in progress, waiting for them to complete.
+  PSafePtr<SIPTransaction> transaction;
+  while ((transaction = transactions.GetAt(0, PSafeReference)) != NULL) {
+    transaction->WaitForCompletion();
+    transactions.RemoveAt(transaction->GetTransactionID());
   }
-
-  // Clean up
-  transactions.RemoveAll();
-
-  // Stop timers before compiler destroys member objects
-  natBindingTimer.Stop();
 
   // Now shut down listeners and aggregators
   OpalEndPoint::ShutDown();
@@ -181,8 +170,8 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
   if (natMethod != None) {
     for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
 
-      OpalTransport * transport = handler->GetTransport();
-      if (transport == NULL || transport->IsReliable() || GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()) == NULL)
+      OpalTransport * transport = NULL;
+      if (handler->GetState () != SIPHandler::Subscribed || (transport = handler->GetTransport()) == NULL || transport->IsReliable() || GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()) == NULL)
         continue;
 
       switch (natMethod) {
@@ -707,7 +696,7 @@ void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
 }
 
 
-PBoolean SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
+PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
 {
   PCaselessString state;
   
@@ -718,7 +707,7 @@ PBoolean SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu
 
   if (handler == NULL) {
     PCaselessString eventPackage = pdu.GetMIME().GetEvent();
-    if (eventPackage == SIPSubscribe::MessageSummary) {
+    if (eventPackage == SIPSubscribe::GetEventPackageName(SIPSubscribe::MessageSummary)) {
       PTRACE(4, "SIP\tWork around Asterisk bug in message-summary event package.");
       SIPURL url_from (pdu.GetMIME().GetFrom());
       SIPURL url_to (pdu.GetMIME().GetTo());
@@ -907,22 +896,32 @@ bool SIPEndPoint::UnregisterAll()
 }
 
 
-PBoolean SIPEndPoint::Subscribe(const PString & eventPackage, unsigned expire, const PString & to)
+bool SIPEndPoint::Subscribe(SIPSubscribe::PredefinedPackages eventPackage, unsigned expire, const PString & to)
+{
+  SIPSubscribe::Params params(eventPackage);
+  params.m_targetAddress = to;
+  params.m_expire = expire;
+  return Subscribe(params);
+}
+
+
+bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & params)
 {
   // Zero is special case of unsubscribe
-  if (expire == 0)
-    return Unsubscribe(eventPackage, to);
+  if (params.m_expire == 0)
+    return Unsubscribe(params.m_eventPackage, params.m_targetAddress);
 
   // Create the SIPHandler structure
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);
+  PSafePtr<SIPSubscribeHandler> handler = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(
+          activeSIPHandlers.FindSIPHandlerByUrl(params.m_targetAddress, SIP_PDU::Method_SUBSCRIBE, params.m_eventPackage, PSafeReadOnly));
   
   // If there is already a request with this URL and method, 
   // then update it with the new information
   if (handler != NULL)
-    handler->SetExpire(expire);      // Adjust the expire field
+    handler->UpdateParameters(params);
   else {
     // Otherwise create a new request with this method type
-    handler = new SIPSubscribeHandler(*this, eventPackage, to, expire);
+    handler = new SIPSubscribeHandler(*this, params);
     activeSIPHandlers.Append(handler);
   }
 
@@ -930,7 +929,13 @@ PBoolean SIPEndPoint::Subscribe(const PString & eventPackage, unsigned expire, c
 }
 
 
-PBoolean SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & to)
+bool SIPEndPoint::Unsubscribe(SIPSubscribe::PredefinedPackages eventPackage, const PString & to)
+{
+  return Unsubscribe(SIPSubscribe::GetEventPackageName(eventPackage), to);
+}
+
+
+bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & to)
 {
   // Create the SIPHandler structure
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);

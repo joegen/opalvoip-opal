@@ -282,6 +282,7 @@ BEGIN
     IDS_HANGINGUP           "Hanging up . . ."
     IDS_BUSY                "Incoming call while busy!"
     IDS_UNREGISTERED        "Unregistered."
+    IDS_MESSAGE_WAITING     "%s Message Waiting for %s"
 END
 
 #endif    // English (Australia) resources

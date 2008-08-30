@@ -523,10 +523,10 @@ dnl Return:    SIZE16 short or int
 dnl            SIZE32 short, int or long
 AC_DEFUN([OPAL_SPEEX_TYPES],
          [
-dnl          AC_CHECK_SIZEOF(short)
-dnl          AC_CHECK_SIZEOF(int)
-dnl          AC_CHECK_SIZEOF(long)
-dnl          AC_CHECK_SIZEOF(long long)
+          AC_CHECK_SIZEOF(short)
+          AC_CHECK_SIZEOF(int)
+          AC_CHECK_SIZEOF(long)
+          AC_CHECK_SIZEOF(long long)
 
           case 2 in
                   $ac_cv_sizeof_short) SIZE16="short";;

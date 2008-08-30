@@ -896,22 +896,40 @@ class SIPSubscribe : public SIPTransaction
   public:
     /** Valid types for a presence event
      */
-    static const PString MessageSummary;
-    static const PString Presence;
+    enum PredefinedPackages {
+      MessageSummary,
+      Presence,
+      NumPredefinedPackages
+    };
+    static PString GetEventPackageName(PredefinedPackages pkg);
+
+    struct Params {
+      Params(PredefinedPackages pkg = NumPredefinedPackages);
+
+      PString       m_eventPackage;
+      PString       m_mimeType;
+      PString       m_targetAddress;
+      PString       m_contactAddress;
+      PString       m_authID;
+      PString       m_password;
+      PString       m_realm;
+      unsigned      m_expire;
+      unsigned      m_restoreTime;
+      PTimeInterval m_minRetryTime;
+      PTimeInterval m_maxRetryTime;
+    };
 
     /** Valid types for a MWI
     */
     SIPSubscribe(
         SIPEndPoint & ep,
         OpalTransport & trans,
-        const PString & eventPackage,
         const PStringList & routeSet,
-        const SIPURL & targetAddress,
-        const PString & remotePartyAddress,
-        const PString & localPartyAddress,
+        const PString & to,
+        const PString & from,
         const PString & id,
-        const unsigned & cseq,
-        unsigned expires
+        unsigned cseq,
+        const Params & params
     );
 };
 

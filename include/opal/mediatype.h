@@ -183,6 +183,8 @@ class OpalMediaTypeDefinition  {
     typedef std::map<unsigned, OpalMediaType> SessionIDToMediaTypeMap_T;
     static SessionIDToMediaTypeMap_T & GetSessionIDToMediaTypeMap();
 
+    std::string mediaType;
+
 #ifdef OPAL_SIP
   public:
     //
@@ -199,7 +201,6 @@ class OpalMediaTypeDefinition  {
     ) = 0;
 
   protected:
-    std::string mediaType;
     std::string sdpType;
 #endif
 };
