@@ -530,14 +530,9 @@ Makefile: Makefile.in configure
 	@echo Makefile is not up to date, is a ./configure necessary?
 	@echo "*******************************************************"
 	@false
-update:
-	svn update
-	$(MAKE) all
-
-CLEAN_FILES = $(OBJS) $(DEPS) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_MAJ) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_MIN) $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
 
 clean:
-	rm -rf $(CLEAN_FILES)
+	rm -rf $(OPAL_LIBDIR)
 
 ifdef JAVA_WRAPPER
 
