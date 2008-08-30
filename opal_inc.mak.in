@@ -46,8 +46,6 @@ datarootdir             = @datarootdir@
 OPAL_DIR                = @OPAL_DIR@
 OPAL_SRCDIR             = $(OPAL_DIR)/src
 OPAL_INCDIR             = $(OPAL_DIR)/include
-OPAL_OBJDIR	        = @OPAL_OBJDIR@
-OPAL_DEPDIR	        = @OPAL_OBJDIR@
 OPAL_LIBDIR             = $(OPAL_DIR)/lib
 
 # The library file names
@@ -59,6 +57,8 @@ RELEASE_LIB_FILENAME_SHARED_MIN = @RELEASE_LIB_FILENAME_SHARED_MIN@
 RELEASE_LIB_FILENAME_SHARED_PAT = @RELEASE_LIB_FILENAME_SHARED_PAT@
 RELEASE_CFLAGS                  = @RELEASE_CFLAGS@
 RELEASE_LIBS                    = @RELEASE_LIBS@
+RELEASE_OPAL_OBJDIR	        = @RELEASE_OPAL_OBJDIR@
+RELEASE_OPAL_DEPDIR	        = @RELEASE_OPAL_OBJDIR@
 
 # The library file names
 DEBUG_LIB_NAME                  = @DEBUG_LIB_NAME@
@@ -69,6 +69,8 @@ DEBUG_LIB_FILENAME_SHARED_MIN   = @DEBUG_LIB_FILENAME_SHARED_MIN@
 DEBUG_LIB_FILENAME_SHARED_PAT   = @DEBUG_LIB_FILENAME_SHARED_PAT@
 DEBUG_CFLAGS                    = @DEBUG_CFLAGS@
 DEBUG_LIBS                      = @DEBUG_LIBS@
+DEBUG_OPAL_OBJDIR	        = @DEBUG_OPAL_OBJDIR@
+DEBUG_OPAL_DEPDIR	        = @DEBUG_OPAL_OBJDIR@
 
 # Compile and linker flags
 CFLAGS                  = @CFLAGS@
