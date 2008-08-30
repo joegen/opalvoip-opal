@@ -87,7 +87,7 @@ AC_DEFUN([OPAL_DETERMINE_DEBUG],
           if test "x${DEBUG_BUILD}" = xyes; then
             DEBUG_CFLAGS="-g3 -ggdb -O0 -D_DEBUG"
           else
-            DEBUG_CFLAGS="-g -O2"
+            DEBUG_CFLAGS="-Os"
           fi
           OPAL_MSG_CHECK([Debugging support], [$DEBUG_BUILD])
          ])
