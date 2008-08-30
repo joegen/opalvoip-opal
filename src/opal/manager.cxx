@@ -365,10 +365,6 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
   OpalConnection::CallEndReason endReason = connection != NULL ? connection->GetCallEndReason() : OpalConnection::NumCallEndReasons;
   call->Clear(endReason != OpalConnection::NumCallEndReasons ? endReason : OpalConnection::EndedByTemporaryFailure);
 
-  if (!activeCalls.RemoveAt(token)) {
-    PTRACE(2, "OpalMan\tSetUpCall could not remove call from active call list");
-  }
-
   token.MakeEmpty();
 
   return PFalse;
@@ -1258,13 +1254,14 @@ PSTUNClient::NatTypes OpalManager::SetSTUNServer(const PString & server)
     return PSTUNClient::UnknownNat;
   }
 
-  if (stun == NULL) {
+  if (stun != NULL)
+    stun->SetServer(server);
+  else {
     stun = new PSTUNClient(server,
                            GetUDPPortBase(), GetUDPPortMax(),
                            GetRtpIpPortBase(), GetRtpIpPortMax());
-    interfaceMonitor = new InterfaceMonitor(stun);
-  } else
-    stun->SetServer(server);
+    interfaceMonitor = new InterfaceMonitor(*this);
+  }
 
   PSTUNClient::NatTypes type = stun->GetNatType();
   if (type != PSTUNClient::BlockedNat)
@@ -1529,20 +1526,23 @@ void OpalManager::StopRecording(const PString & callToken)
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalManager::InterfaceMonitor::InterfaceMonitor(PSTUNClient * _stun)
-: PInterfaceMonitorClient(OpalManagerInterfaceMonitorClientPriority),
-  stun(_stun)
+OpalManager::InterfaceMonitor::InterfaceMonitor(OpalManager & manager)
+  : PInterfaceMonitorClient(OpalManagerInterfaceMonitorClientPriority)
+  , m_manager(manager)
 {
 }
 
 void OpalManager::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & /*entry*/)
 {
-  stun->InvalidateExternalAddressCache();
+  m_manager.SetSTUNServer(m_manager.GetSTUNServer());
 }
 
-void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & /*entry*/)
+void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
 {
-  stun->InvalidateExternalAddressCache();
+  PSTUNClient * stun = m_manager.GetSTUN();
+  PIPSocket::Address addr;
+  if (stun != NULL && stun->GetInterfaceAddress(addr) && entry.GetAddress() == addr)
+    stun->InvalidateCache();
 }
 
 

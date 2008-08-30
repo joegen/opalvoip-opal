@@ -628,9 +628,9 @@ void OpalCall::OnStopRecordAudio(const PString & callToken)
 }
 
 
-bool OpalCall::IsNetworkOriginated()
+bool OpalCall::IsNetworkOriginated() const
 {
-  PSafePtr<OpalConnection> connection = connectionsActive.GetAt(0, PSafeReadOnly);
+  PSafePtr<OpalConnection> connection = PSafePtr<OpalConnection>(connectionsActive, PSafeReadOnly);
   return connection == NULL || connection->IsNetworkConnection();
 }
 

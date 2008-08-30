@@ -199,11 +199,22 @@ static struct PluginCodec_Option const PreferredMode =
   PluginCodec_MaxMerge,       // Merge mode
   "20",                       // Initial value
   "mode",                     // SIP/SDP FMTP name
-  "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "+30",                      // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   H245_iLBC_MODE,             // H.245 Generic Capability number and scope bits
   "20",                       // Minimum value
   "30"                        // Maximum value
 };
+
+/* NOTE: There is a small trick in the above. RFC3952 which control the SIP
+   FMTP parameters never mentions what the default value should be if the mode
+   parameter is missing. Asterisk (typically) does not include the parameter
+   AND assumes 30ms as well. So, on receipt we want to make sure a 30ms time
+   is used, but for transmission we ALWAYS want to include the parameter so
+   the "FMTP default value" must not match the current value. As the latter is
+   a string comparison, but the former is converted from a string to an
+   integer we take advatage of this by putting the explicit '+' in front of
+   the default value. Sneaky, but effective for now.
+ */
 
 
 static struct PluginCodec_Option const * const OptionTable[] = {

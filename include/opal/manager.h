@@ -1274,13 +1274,13 @@ class OpalManager : public PObject
         OpalManagerInterfaceMonitorClientPriority = 100,
       };
       public:
-        InterfaceMonitor(PSTUNClient * stun);
+        InterfaceMonitor(OpalManager & manager);
         
       protected:
         virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
         virtual void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
         
-        PSTUNClient * stun;
+        OpalManager & m_manager;
     };
 
     PString            translationHost;

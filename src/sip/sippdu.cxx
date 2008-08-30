@@ -2295,6 +2295,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     return PFalse;
 
   PBoolean notCompletedFlag = state < Completed;
+  bool signalCompletionFlag = false;
 
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
@@ -2318,7 +2319,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       statusCode = response.GetStatusCode();
     }
 
-    completed.Signal();
+    signalCompletionFlag = true;
     completionTimer = endpoint.GetPduCleanUpTimeout();
   }
 
@@ -2329,8 +2330,11 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       endpoint.OnReceivedResponse(*this, response);
 
     if (state == Completed)
-      return OnCompleted(response);
+      OnCompleted(response);
   }
+
+  if (signalCompletionFlag)
+    completed.Signal();
 
   return PTrue;
 }
@@ -2473,17 +2477,19 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, Opal
 
 PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
-  connection->OnReceivedResponseToINVITE(*this, response);
+  if (response.GetMIME().GetCSeq().Find(MethodNames[Method_INVITE]) != P_MAX_INDEX) {
+    connection->OnReceivedResponseToINVITE(*this, response);
 
-  if (response.GetStatusCode() >= 200) {
-    PSafeLockReadWrite lock(*this);
-    if (!lock.IsLocked())
-      return false;
+    if (response.GetStatusCode() >= 200) {
+      PSafeLockReadWrite lock(*this);
+      if (!lock.IsLocked())
+        return false;
 
-    // ACK constructed following 17.1.1.3
-    SIPAck ack(*this, response);
-    if (!SendPDU(ack))
-      return false;
+      // ACK constructed following 17.1.1.3
+      SIPAck ack(*this, response);
+      if (!SendPDU(ack))
+        return false;
+    }
   }
 
   if (!SIPTransaction::OnReceivedResponse(response))
@@ -2504,6 +2510,8 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
   return true;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////
 
 SIPRegister::Params::Params()
   : m_expire(0)
@@ -2545,50 +2553,77 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
 }
 
 
-const PString SIPSubscribe::MessageSummary = "message-summary";
-const PString SIPSubscribe::Presence = "presence";
+////////////////////////////////////////////////////////////////////////////////////
+
+SIPSubscribe::Params::Params(PredefinedPackages pkg)
+  : m_eventPackage(SIPSubscribe::GetEventPackageName(pkg))
+  , m_expire(0)
+  , m_restoreTime(30)
+  , m_minRetryTime(PMaxTimeInterval)
+  , m_maxRetryTime(PMaxTimeInterval)
+{
+  switch (pkg) {
+    case SIPSubscribe::MessageSummary :
+      m_mimeType = "application/simple-message-summary";
+      break;
+
+    case SIPSubscribe::Presence :
+      m_mimeType = "application/pidf+xml";
+      break;
+
+    default :
+      break;
+  }
+}
+
+
+PString SIPSubscribe::GetEventPackageName(PredefinedPackages pkg)
+{
+  static const char * const names[NumPredefinedPackages] = {
+    "message-summary",
+    "presence"
+  };
+  if (pkg < NumPredefinedPackages)
+    return names[pkg];
+  return PString::Empty();
+}
 
 
 SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                            OpalTransport & trans,
-                           const PString & eventPackage,
                            const PStringList & routeSet,
-                           const SIPURL & targetAddress,
-                           const PString & remotePartyAddress,
-                           const PString & localPartyAddress,
+                           const PString & to,
+                           const PString & from,
                            const PString & id,
-                           const unsigned & cseq,
-                           unsigned expires)
+                           unsigned cseq,
+                           const Params & params)
   : SIPTransaction(ep, trans)
 {
-  PString acceptField;
-  if (eventPackage == MessageSummary)
-    acceptField = "application/simple-message-summary";
-  else if (eventPackage == Presence)
-    acceptField = "application/pidf+xml";
-
-  SIPURL address = targetAddress;
-  address.Sanitise(SIPURL::RequestURI);
+  SIPURL targetAddress = params.m_targetAddress;
+  targetAddress.Sanitise(SIPURL::RequestURI);
 
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
   SIP_PDU::Construct(Method_SUBSCRIBE,
-                     address,
-                     remotePartyAddress,
-                     localPartyAddress,
+                     targetAddress,
+                     to,
+                     from,
                      id,
                      cseq,
                      viaAddress);
 
-  SIPURL contact = endpoint.GetLocalURL(trans, SIPURL(localPartyAddress).GetUserName());
-  contact.Sanitise(SIPURL::ContactURI);
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
+  SIPURL contact = endpoint.GetLocalURL(trans, SIPURL(from).GetUserName());
+  contact.Sanitise(SIPURL::ContactURI);
   mime.SetContact(contact);
-  mime.SetAccept(acceptField);
-  mime.SetEvent(eventPackage);
-  mime.SetExpires(expires);
+  mime.SetAccept(params.m_mimeType);
+  mime.SetEvent(params.m_eventPackage);
+  mime.SetExpires(params.m_expire);
 
   SetRoute(routeSet);
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////
 
 SIPPublish::SIPPublish(SIPEndPoint & ep,
                        OpalTransport & trans,
