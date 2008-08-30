@@ -104,7 +104,6 @@ dnl Architecture dependent stuff
 dnl ########################################################################
 
 AC_CANONICAL_TARGET()
-OPAL_DETERMINE_DEBUG()
 
 MACHTYPE=
 case "$target_cpu" in
@@ -184,9 +183,10 @@ if test x$HAVE_RANLIB = xyes ; then
 else
   ARCHIVE="${AR} rcs"
 fi
-CFLAGS="$CFLAGS $DEBUG_CFLAGS $SHARED_CFLAGS"
-CXXFLAGS="$CXXFLAGS $DEBUG_CFLAGS $SHARED_CFLAGS"
+CFLAGS="$CFLAGS $SHARED_CFLAGS"
+CXXFLAGS="$CXXFLAGS $SHARED_CFLAGS"
 
+OPAL_DETERMINE_DEBUG()
 
 #-fno-exceptions per configure option
 # mingw: -mms-bitfields
@@ -433,6 +433,14 @@ OPAL_SIMPLE_OPTION([samples],[OPAL_SAMPLES], [wether to enable samples build])
 dnl ########################################################################
 dnl Output make directives
 dnl ########################################################################
+
+AC_SUBST(RELEASE_CFLAGS)
+AC_SUBST(DEBUG_CFLAGS)
+
+AC_SUBST(RELEASE_LIBS)
+AC_SUBST(DEBUG_LIBS)
+
+AC_SUBST(DEBUG_BUILD)
 
 AC_SUBST(PKG_REQUIRES)
 AC_SUBST(PKG_LIBS)
