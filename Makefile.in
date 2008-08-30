@@ -535,6 +535,7 @@ update:
 	$(MAKE) all
 
 CLEAN_FILES = $(OBJS) $(DEPS) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_MAJ) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_MIN) $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
+
 clean:
 	rm -rf $(CLEAN_FILES)
 
@@ -597,13 +598,13 @@ graphdocs: FORCE
 	doxygen /tmp/docs.dxy
 
 opt:
-	make DEBUG_BUILD=no
+	$(MAKE) DEBUG_BUILD=no
 debug:
-	make DEBUG_BUILD=yes
+	$(MAKE) DEBUG_BUILD=yes
 
 both:
-	make DEBUG_BUILD=no
-	make DEBUG_BUILD=yes
+	$(MAKE) DEBUG_BUILD=no
+	$(MAKE) DEBUG_BUILD=yes
                                 
  
 
