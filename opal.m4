@@ -76,7 +76,10 @@ dnl OPAL_DETERMINE_DEBUG
 dnl Determine desired debug level, default is -g -O2
 dnl Arguments: 
 dnl Return:    $DEBUG_CFLAGS
+dnl            $RELEASE_CFLAGS
+dnl            $DEFAULT_CFLAGS
 dnl            $DEBUG_BUILD
+
 AC_DEFUN([OPAL_DETERMINE_DEBUG],
          [
           AC_ARG_ENABLE([debug],
@@ -84,11 +87,25 @@ AC_DEFUN([OPAL_DETERMINE_DEBUG],
                         [DEBUG_BUILD=$enableval],
                         [DEBUG_BUILD=no])
 
+         opal_release_flags="-Os"
+         case "$target_os" in
+                 solaris*)
+                   opal_debug_flags="-g3 -ggdb -gstabs+ -O0 -D_DEBUG "
+                 ;;
+                 *)
+                   opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
+                 ;;
+         esac
+
+          DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
+          RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
+
           if test "x${DEBUG_BUILD}" = xyes; then
-            DEBUG_CFLAGS="-g3 -ggdb -O0 -D_DEBUG"
+            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_debug_flags"
           else
-            DEBUG_CFLAGS="-Os"
+            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_release_flags"
           fi
+
           OPAL_MSG_CHECK([Debugging support], [$DEBUG_BUILD])
          ])
 
@@ -208,8 +225,9 @@ dnl            $PTLIB_LIBS
 dnl            $PTLIB_MACHTYPE
 dnl            $PTLIB_OSTYPE
 dnl            $PTLIB_LIBS
-dnl            $PTLIB_DEBUG_LIB
-dnl            $PTLIB_RELEASE_LIB
+dnl            $DEBUG_LIBS
+dnl            $RELEASE_LIBS
+dnl            $DEFAULT_LIBS
 
 AC_DEFUN([OPAL_FIND_PTLIB],
          [
@@ -242,11 +260,17 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR}` 
             PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR}`
             PTLIB_MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype --define-variable=prefix=${PTLIBDIR}` 
-            PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype --define-variable=prefix=${PTLIBDIR}`
-            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt//g`
-            PTLIB_DEBUG_LIB="-lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_d"
-            PTLIB_RELEASE_LIB="-lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_r"
 
+            PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt$//g`
+            DEBUG_LIBS="$DEBUG_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_d"
+            RELEASE_LIBS="$RELEASE_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_r"
+            if test "x${DEBUG_BUILD}" = xyes; then
+              DEFAULT_LIBS="$DEFAULT_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_d"
+            else
+              DEFAULT_LIBS="$DEFAULT_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_r"
+            fi
+	    
             export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
 
           dnl This segment looks for PTLIB on the system
@@ -262,8 +286,9 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             PTLIB_MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype` 
             PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
             PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt//g`
-            PTLIB_DEBUG_LIB="-lpt"
-            PTLIB_RELEASE_LIB="-lpt"
+            DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
+            DEBUG_LIBS="$DEBUG_LIBS -lpt"
+            RELEASE_LIBS="$DEBUG_LIBS -lpt"
           fi
 
           echo "Version:  ${PTLIB_VERSION}"
@@ -274,8 +299,6 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           echo "MACHTYPE: ${PTLIB_OSTYPE}"
           echo "DEBUG:    ${PTLIB_DEBUG_LIB}"
           echo "RELEASE:  ${PTLIB_RELEASE_LIB}"
-
-          exit 1; 
          ])
 
 
@@ -290,9 +313,15 @@ dnl Define:    $4
 AC_DEFUN([OPAL_CHECK_PTLIB],
          [
           old_CXXFLAGS="$CXXFLAGS"
-          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
-          LDFLAGS="$LDFLAGS $PTLIB_LIBS"
+
+          if test "x${DEBUG_BUILD}" = xyes; then
+            CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
+            LDFLAGS="$LDFLAGS $PTLIB_LIBS $DEBUG_LIBS"
+          else
+            CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS "
+            LDFLAGS="$LDFLAGS $PTLIB_LIBS $RELEASE_LIBS"
+          fi
 
           AC_LANG(C++)
           AC_LINK_IFELSE([
@@ -494,10 +523,10 @@ dnl Return:    SIZE16 short or int
 dnl            SIZE32 short, int or long
 AC_DEFUN([OPAL_SPEEX_TYPES],
          [
-          AC_CHECK_SIZEOF(short)
-          AC_CHECK_SIZEOF(int)
-          AC_CHECK_SIZEOF(long)
-          AC_CHECK_SIZEOF(long long)
+dnl          AC_CHECK_SIZEOF(short)
+dnl          AC_CHECK_SIZEOF(int)
+dnl          AC_CHECK_SIZEOF(long)
+dnl          AC_CHECK_SIZEOF(long long)
 
           case 2 in
                   $ac_cv_sizeof_short) SIZE16="short";;

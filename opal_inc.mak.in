@@ -62,10 +62,15 @@ OPAL_SHARED_LIB         = @OPAL_SHARED_LIB@
 # Compile and linker flags
 CFLAGS                  = @CFLAGS@
 CXXFLAGS                = @CXXFLAGS@
+RELEASE_CFLAGS          = @RELEASE_CFLAGS@
+DEBUG_CFLAGS            = @DEBUG_CFLAGS@
+CFLAGS                  = @CFLAGS@
 LIBS                    = @LIBS@
+RELEASE_LIBS            = @RELEASE_LIBS@
+DEBUG_LIBS              = @DEBUG_LIBS@
 LDSOOPTS                = @LDSOOPTS@
 HAVE_RANLIB             = @HAVE_RANLIB@
-
+DEBUG_BUILD             = @DEBUG_BUILD@
 
 OPAL_H323         = @OPAL_H323@
 OPAL_SIP          = @OPAL_SIP@
