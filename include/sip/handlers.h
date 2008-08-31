@@ -64,6 +64,8 @@ protected:
 public:
   ~SIPHandler();
 
+  virtual bool ShutDown();
+
   enum State {
 
     Subscribed,       // The registration is active
