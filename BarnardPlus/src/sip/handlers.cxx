@@ -572,23 +572,26 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   unsigned requestCSeq = request.GetMIME().GetCSeq().AsUnsigned();
 
-  if (lastReceivedCSeq == 0)
-    lastReceivedCSeq = requestCSeq;
-  else if (requestCSeq > lastReceivedCSeq)
-    lastReceivedCSeq = requestCSeq;
-  else if (requestCSeq == lastReceivedCSeq)
-    return endpoint.SendResponse(SIP_PDU::Successful_OK, *transport, request);
-  else
-    return endpoint.SendResponse(SIP_PDU::Failure_InternalServerError, *transport, request);
+  // If we received a NOTIFY before
+  if (lastReceivedCSeq != 0) {
+    /* And this NOTIFY is older than the last, with a check for server bugs were
+       the sequence number changes dramatically, then is a retransmission so
+       simply send teh OK again, but do not process it. */
+    if (requestCSeq < lastReceivedCSeq && (lastReceivedCSeq - requestCSeq) < 10) {
+      PTRACE(3, "SIP\tReceived duplicate NOTIFY");
+      return endpoint.SendResponse(SIP_PDU::Successful_OK, *transport, request);
+    }
+    PTRACE_IF(3, requestCSeq != lastReceivedCSeq+1,
+              "SIP\tReceived unexpected NOTIFY sequence number " << requestCSeq << ", expecting " << lastReceivedCSeq+1);
+  }
 
-  PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY");
+  lastReceivedCSeq = requestCSeq;
+
 
   // We received a NOTIFY corresponding to an active SUBSCRIBE
   // for which we have just unSUBSCRIBEd. That is the final NOTIFY.
   // We can remove the SUBSCRIBE from the list.
-  if (GetState() != SIPHandler::Subscribed && expire == 0) {
-    PTRACE(3, "SIP\tFinal NOTIFY received");
-  }
+  PTRACE_IF(3, GetState() != SIPHandler::Subscribed && expire == 0, "SIP\tFinal NOTIFY received");
 
   PString state = request.GetMIME().GetSubscriptionState();
 
