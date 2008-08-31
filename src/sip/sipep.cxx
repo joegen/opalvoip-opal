@@ -102,15 +102,16 @@ void SIPEndPoint::ShutDown()
   natBindingTimer.Stop();
 
   // Clean up the handlers, wait for them to finish before destruction.
-  PSafePtr<SIPHandler> handler;
-  while ((handler = activeSIPHandlers) != NULL) {
-    PString aor = handler->GetRemotePartyAddress();
-    if (handler->GetMethod() != SIP_PDU::Method_REGISTER || handler->GetState() != SIPHandler::Subscribed)
-      activeSIPHandlers.Remove(handler);
-    else {
-      Unregister(aor);
-      PThread::Sleep(500);
+  bool shuttingDown = true;
+  while (shuttingDown) {
+    shuttingDown = false;
+    for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetAt(0, PSafeReference); handler != NULL; ++handler) {
+      if (handler->ShutDown())
+        activeSIPHandlers.Remove(handler++);
+      else
+        shuttingDown = true;
     }
+    PThread::Sleep(100);
   }
 
   // Clean up transactions still in progress, waiting for them to complete.
