@@ -285,7 +285,7 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
             PTLIB_MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype` 
             PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
-            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt//g`
+            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt$//g`
             DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
             DEBUG_LIBS="$DEBUG_LIBS -lpt"
             RELEASE_LIBS="$DEBUG_LIBS -lpt"
