@@ -712,6 +712,7 @@ PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
     return PFalse;
   }
 
+  PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY");
   if (!handler->OnReceivedNOTIFY(pdu))
     return PFalse;
 
