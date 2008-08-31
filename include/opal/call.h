@@ -275,7 +275,7 @@ class OpalCall : public PSafeObject
     {
       PSafePtr<ConnClass> connection;
       for (PSafePtr<OpalConnection> iterConn = connectionsActive; iterConn != NULL; ++iterConn) {
-        if ((connection = PSafePtrCast<OpalConnection, ConnClass>(conn)) != NULL && count-- > 0)
+        if ((connection = PSafePtrCast<OpalConnection, ConnClass>(iterConn)) != NULL && count-- > 0)
           break;
       }
       return connection;
