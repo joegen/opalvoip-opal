@@ -105,6 +105,25 @@ SIPHandler::~SIPHandler()
 }
 
 
+bool SIPHandler::ShutDown()
+{
+  switch (state) {
+    case Subscribed :
+      SendRequest(Unsubscribing);
+    case Unsubscribing :
+      return false;
+
+    default :
+      break;
+  }
+
+  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly); transaction != NULL; ++transaction)
+    transaction->Abort();
+
+  return true;
+}
+
+
 void SIPHandler::SetState(SIPHandler::State newState) 
 {
   PTRACE(4, "SIP\tChanging " << GetMethod() << " handler from " << state << " to " << newState
@@ -376,6 +395,10 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
 
 void SIPHandler::OnExpireTimeout(PTimer &, INT)
 {
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   PTRACE(2, "SIP\tStarting " << GetMethod() << " for binding refresh");
 
   if (!SendRequest(GetState() == Subscribed ? Refreshing : Restoring))
