@@ -716,13 +716,13 @@ PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
     }
   }
 
-      if (handler == NULL) {
+  if (handler == NULL) {
     PTRACE(3, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY");
-        SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, pdu);
-        return PFalse;
-      }
+    SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, pdu);
+    return PFalse;
+  }
 
-  
+  PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY");
   handler->OnReceivedNOTIFY(pdu);
   return false;
 }
