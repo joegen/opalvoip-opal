@@ -246,6 +246,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
     );
   //@}
 
+    OpalMediaFormatList GetMediaFormats() const;
 
   protected:
     PString  soundChannelPlayDevice;

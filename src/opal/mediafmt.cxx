@@ -77,6 +77,40 @@ AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256,  8000
 AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 30, 256,  8000);
 
 
+class OpalStereoAudioFormat : public OpalAudioFormat
+{
+public:
+  OpalStereoAudioFormat(const char * fullName,
+                        RTP_DataFrame::PayloadTypes rtpPayloadType,
+                        const char * encodingName,
+                        PINDEX   frameSize,
+                        unsigned frameTime,
+                        unsigned rxFrames,
+                        unsigned txFrames,
+                        unsigned maxFrames,
+                        unsigned clockRate)
+    : OpalAudioFormat(fullName, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clockRate)
+  {
+    SetOptionInteger(OpalAudioFormat::ChannelsOption(), 2);
+  }
+};
+
+
+const OpalAudioFormat & GetOpalL16_STEREO_48KHZ()
+{
+  static OpalStereoAudioFormat stereo48k("Linear-16-Stereo-48kHz",    // name of the meda format
+                                         RTP_DataFrame::DynamicBase,  // RTP payload code
+                                         "L16",                       // encoding name
+                                         16,                          // frame size in bytes
+                                         48,                          // frame time (1 ms in clock units)
+                                         20,                          // recommended rx frames/packet
+                                         20,                          // recommended tx frames/packet
+                                         50,                          // max tx frame size
+                                         48000);                      // clock rate
+  return stereo48k;
+};
+
+
 const OpalMediaFormat & GetOpalRFC2833()
 {
   static const OpalMediaFormat RFC2833(
@@ -1242,6 +1276,7 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
 const PString & OpalAudioFormat::RxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET; return s; }
 const PString & OpalAudioFormat::TxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET; return s; }
 const PString & OpalAudioFormat::MaxFramesPerPacketOption(){ static PString s = "Max Frames Per Packet"; return s; }
+const PString & OpalAudioFormat::ChannelsOption()          { static PString s = "Channels"; return s; }
 
 OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1293,7 +1328,8 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
   if (txFrames > 0)
     AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::NoMerge, txFrames, 1, maxFrames));
 
-  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::MaxFramesPerPacketOption(), true, OpalMediaOption::NoMerge,  maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::MaxFramesPerPacketOption(), true,  OpalMediaOption::NoMerge,  maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::ChannelsOption(),           false, OpalMediaOption::NoMerge,  1, 1, 5));
 }
 
 
