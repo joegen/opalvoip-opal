@@ -32,8 +32,6 @@
 #ifndef __OPAL_LIDPLUGIN_H
 #define __OPAL_LIDPLUGIN_H
 
-#include <opal/buildopts.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
