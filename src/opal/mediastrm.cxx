@@ -322,7 +322,7 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
     unsigned oldTimestamp = timestamp;
 
     PINDEX written;
-    if (!WriteData(ptr, size, written))
+    if (!WriteData(ptr, size, written) || (written == 0))
       return false;
 
     // If the Write() function did not change the timestamp then use the default
