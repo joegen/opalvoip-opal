@@ -2827,7 +2827,7 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
                      id,
                      endpoint.GetNextCSeq(),
                      viaAddress);
-  mime.SetAccept("application/sdp");
+  mime.SetAccept("application/sdp, application/media_control+xml, application/dtmf, application/dtmf-relay");
 }
 
 
