@@ -99,18 +99,31 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
 
 SIPHandler::~SIPHandler() 
 {
-  // before destroying the transport, abort all pending transactions that have the same transport
-  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly); transaction != NULL; ++transaction) {
-    if (&(transaction->GetTransport()) == transport)
-      transaction->Abort();
-  }
-  
   if (transport) {
     transport->CloseWait();
     delete transport;
   }
-  if (authentication != NULL)
-    delete authentication;
+
+  delete authentication;
+}
+
+
+bool SIPHandler::ShutDown()
+{
+  switch (state) {
+    case Subscribed :
+      SendRequest(Unsubscribing);
+    case Unsubscribing :
+      return false;
+
+    default :
+      break;
+  }
+
+  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly); transaction != NULL; ++transaction)
+    transaction->Abort();
+
+  return true;
 }
 
 
@@ -423,6 +436,10 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
 
 void SIPHandler::OnExpireTimeout(PTimer &, INT)
 {
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   PTRACE(2, "SIP\tStarting " << GetMethod() << " for binding refresh");
 
   if (!SendRequest(GetState() == Subscribed ? Refreshing : Restoring))
