@@ -185,6 +185,8 @@ SDPMediaFormat::SDPMediaFormat(const OpalMediaFormat & fmt,
     else
       AddNTEString(nxeString);
   }
+  if (fmt.GetMediaType() == OpalMediaType::Audio()) 
+    parameters = PString(PString::Unsigned, fmt.GetOptionInteger(OpalAudioFormat::ChannelsOption()));
 }
 
 
@@ -422,6 +424,11 @@ const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 
     mediaFormat.MakeUnique();
     mediaFormat.SetPayloadType(payloadType);
+
+    if (!parameters.IsEmpty() && (mediaFormat.GetMediaType() == OpalMediaType::Audio())) 
+      mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), parameters.AsUnsigned());
+    else
+      mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), 1);
 
     // Fill in the default values for (possibly) missing FMTP options
     for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
