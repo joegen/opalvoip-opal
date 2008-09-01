@@ -73,8 +73,8 @@ AUDIO_FORMAT(PCM16,          MaxPayloadType, "",     16, 8,  240,  0, 256,  8000
 AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",     32,16,  240,  0, 256, 16000);
 AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",  16, 8,  240, 30, 256,  8000);
 AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  32,16,  240, 30, 256, 16000);
-AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256,  8000);
-AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 30, 256,  8000);
+AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 20, 256,  8000);
+AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 20, 256,  8000);
 
 
 class OpalStereoAudioFormat : public OpalAudioFormat
