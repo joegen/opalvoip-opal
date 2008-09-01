@@ -186,6 +186,7 @@ class OpalManager_C : public OpalManager
     void HandleRetrieveCall (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleTransferCall (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleMediaStream  (const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleSetUserData  (const OpalMessage & command, OpalMessageBuffer & response);
 
     void OnIndMediaStream(const OpalMediaStream & stream, OpalMediaStates state);
 
@@ -405,6 +406,7 @@ bool OpalLocalEndPoint_C::OnReadMediaFrame(const OpalLocalConnection & connectio
   int result = m_mediaReadData(connection.GetCall().GetToken(),
                                mediaStream.GetID(),
                                mediaStream.GetMediaFormat().GetName(),
+                               connection.GetUserData(),
                                frame.GetPointer(),
                                frame.GetSize());
   if (result < 0)
@@ -428,6 +430,7 @@ bool OpalLocalEndPoint_C::OnWriteMediaFrame(const OpalLocalConnection & connecti
   int result = m_mediaWriteData(connection.GetCall().GetToken(),
                                 mediaStream.GetID(),
                                 mediaStream.GetMediaFormat().GetName(),
+                                connection.GetUserData(),
                                 frame.GetPointer(),
                                 frame.GetHeaderSize()+frame.GetPayloadSize());
   return result >= 0;
@@ -449,6 +452,7 @@ bool OpalLocalEndPoint_C::OnReadMediaData(const OpalLocalConnection & connection
   int result = m_mediaReadData(connection.GetCall().GetToken(),
                                mediaStream.GetID(),
                                mediaStream.GetMediaFormat().GetName(),
+                               connection.GetUserData(),
                                data,
                                size);
   if (result < 0)
@@ -474,6 +478,7 @@ bool OpalLocalEndPoint_C::OnWriteMediaData(const OpalLocalConnection & connectio
   int result = m_mediaWriteData(connection.GetCall().GetToken(),
                                 mediaStream.GetID(),
                                 mediaStream.GetMediaFormat().GetName(),
+                                connection.GetUserData(),
                                 (void *)data,
                                 length);
   if (result < 0)
@@ -749,6 +754,9 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
       break;
     case OpalCmdMediaStream :
       HandleMediaStream(*message, response);
+      break;
+    case OpalCmdSetUserData :
+      HandleSetUserData(*message, response);
       break;
     default :
       return NULL;
@@ -1335,7 +1343,6 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
     return;
   }
 
-  PSafePtr<OpalConnection> localConnection, networkConnection;
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
   while (connection->IsNetworkConnection()) {
     ++connection;
@@ -1401,6 +1408,27 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
   }
 }
 
+void OpalManager_C::HandleSetUserData(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  if (IsNullString(command.m_param.m_setUserData.m_callToken)) {
+    response.SetError("No call token provided.");
+    return;
+  }
+
+  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_setUserData.m_callToken);
+  if (call == NULL) {
+    response.SetError("No call found by the token provided.");
+    return;
+  }
+
+  PSafePtr<OpalLocalConnection> connection = call->GetConnectionAs<OpalLocalConnection>();
+  if (connection == NULL) {
+    response.SetError("No suitable connection for media stream control.");
+    return;
+  }
+
+  connection->SetUserData(command.m_param.m_setUserData.m_userData);
+}
 
 void OpalManager_C::OnEstablishedCall(OpalCall & call)
 {

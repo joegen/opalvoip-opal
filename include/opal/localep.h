@@ -328,10 +328,12 @@ class OpalLocalConnection : public OpalConnection
       */
     virtual void AcceptIncoming();
   //@}
-
+    void * GetUserData() const  { return userData; }
+    void SetUserData(void * v)  { userData = v; }
 
   protected:
     OpalLocalEndPoint & endpoint;
+    void * userData;
 };
 
 
