@@ -619,7 +619,6 @@ const PString & OpalMediaFormat::MaxBitRateOption()   { static PString s = PLUGI
 const PString & OpalMediaFormat::TargetBitRateOption(){ static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE; return s; }
 #if OPAL_H323
 const PString & OpalMediaFormat::MediaPacketizationOption(){ static PString s = PLUGINCODEC_MEDIA_PACKETIZATION; return s; }
-    static const PString & MediaPacketizationOption();
 #endif
 
 

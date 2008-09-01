@@ -312,10 +312,13 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   , secondaryCodec(NULL)
   , writeSuccessful(true)
 #if OPAL_VIDEO
+  , rcEnabled(false)
   , rcByteRate(0)
+  , rcWindowSize(0)
+  , rcMaxConsecutiveFramesSkip(0)
   , rcConsecutiveFramesSkipped(0)
-  , rcTotalSize(0)
   , rcLastTime(PTimer::Tick())
+  , rcTotalSize(0)
 #endif
 {
   intermediateFrames.Append(new RTP_DataFrame);
