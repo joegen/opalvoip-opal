@@ -274,9 +274,12 @@ class OpalCall : public PSafeObject
     )
     {
       PSafePtr<ConnClass> connection;
-      for (PSafePtr<OpalConnection> iterConn = connectionsActive; iterConn != NULL; ++iterConn) {
-        if ((connection = PSafePtrCast<OpalConnection, ConnClass>(iterConn)) != NULL && count-- > 0)
+      for (PSafePtr<OpalConnection> iterConn(connectionsActive, PSafeReference); iterConn != NULL; ++iterConn) {
+        if ((connection = PSafePtrCast<OpalConnection, ConnClass>(iterConn)) != NULL && count-- == 0) {
+          if (!connection.SetSafetyMode(mode))
+            connection.SetNULL();
           break;
+        }
       }
       return connection;
     }
