@@ -41,6 +41,9 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
+#define TRACE_OPTIONS "TraceLevel=4"
+#else
+#define TRACE_OPTIONS "TraceLevel=4 TraceAppend TraceFile=\\MobileOpalLog.txt"
 #endif
 
 #define SPEAKERMODE_METHOD 3
@@ -404,7 +407,7 @@ void CMobileOpalDlg::InitialiseOPAL()
   // Start up and initialise OPAL
 
   if (m_opal == NULL) {
-    m_opal = OpalInitialise(&m_opalVersion, "pc h323 sip TraceLevel=4 TraceAppend TraceFile=\\MobileOpalLog.txt");
+    m_opal = OpalInitialise(&m_opalVersion, "pc h323 sip " TRACE_OPTIONS);
     if (m_opal == NULL) {
       ErrorBox(IDS_INIT_FAIL);
       EndDialog(IDCANCEL);
@@ -414,6 +417,21 @@ void CMobileOpalDlg::InitialiseOPAL()
 
   OpalMessage command;
   OpalMessage * response;
+
+  // SIP registrar un-regisration
+  CStringA strAOR = GetOptionStringA(RegistrarAorKey);
+  CStringA strHost = GetOptionStringA(RegistrarHostKey);
+  if (!m_currentAOR.IsEmpty() && (m_currentAOR != strAOR || m_currentHost != strHost)) {
+    // Registration changed, so unregister the previous name
+    memset(&command, 0, sizeof(command));
+    command.m_type = OpalCmdRegistration;
+    command.m_param.m_registrationInfo.m_protocol = "sip";
+    command.m_param.m_registrationInfo.m_identifier = m_currentAOR;
+    command.m_param.m_registrationInfo.m_hostName = m_currentHost;
+    OpalFreeMessage(OpalSendMessage(m_opal, &command)); // Don't worry about errors.
+    m_currentAOR.Empty();
+    m_currentHost.Empty();
+  }
 
   // General options
   memset(&command, 0, sizeof(command));
@@ -472,19 +490,8 @@ void CMobileOpalDlg::InitialiseOPAL()
     OpalFreeMessage(response);
   }
 
-  // SIP registrar regisration
-  CStringA strAor = GetOptionStringA(RegistrarAorKey);
-  if (!m_currentRegistrar.IsEmpty() && m_currentRegistrar != strAor) {
-    // Registration changed, so unregister the previous name
-    memset(&command, 0, sizeof(command));
-    command.m_type = OpalCmdRegistration;
-    command.m_param.m_registrationInfo.m_protocol = "sip";
-    command.m_param.m_registrationInfo.m_identifier = m_currentRegistrar;
-    OpalFreeMessage(OpalSendMessage(m_opal, &command)); // Don't worry about errors.
-    m_currentRegistrar.Empty();
-  }
-
-  if (strAor.IsEmpty())
+  // SIP registrar registration
+  if (strAOR.IsEmpty())
     SetStatusText(IDS_READY);
   else {
     memset(&command, 0, sizeof(command));
@@ -492,9 +499,7 @@ void CMobileOpalDlg::InitialiseOPAL()
 
     command.m_param.m_registrationInfo.m_protocol = "sip";
 
-    command.m_param.m_registrationInfo.m_identifier = strAor;
-
-    CStringA strHost = GetOptionStringA(RegistrarHostKey);
+    command.m_param.m_registrationInfo.m_identifier = strAOR;
     command.m_param.m_registrationInfo.m_hostName = strHost;
 
     CStringA strAuthUser = GetOptionStringA(RegistrarUserKey);
@@ -510,8 +515,10 @@ void CMobileOpalDlg::InitialiseOPAL()
     command.m_param.m_registrationInfo.m_messageWaiting = 300;
 
     SetStatusText(IDS_REGISTERING);
-    if ((response = OpalSendMessage(m_opal, &command)) != NULL && response->m_type != OpalIndCommandError)
-      m_currentRegistrar = strAor;
+    if ((response = OpalSendMessage(m_opal, &command)) != NULL && response->m_type != OpalIndCommandError) {
+      m_currentAOR = strAOR;
+      m_currentHost = strHost;
+    }
     else {
       ErrorBox(IDS_REGISTRATION_FAIL, response);
       SetStatusText(IDS_READY);

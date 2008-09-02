@@ -59,7 +59,8 @@ protected:
   CStringA m_incomingCallToken;
   CStringA m_currentCallToken;
   bool m_speakerphone;
-  CStringA m_currentRegistrar;
+  CStringA m_currentAOR;
+  CStringA m_currentHost;
 
   // Generated message map functions
   virtual BOOL OnInitDialog();

@@ -389,7 +389,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
       expireTimer.Stop();
   }
 
-  SetState(GetState() == Unsubscribing ? Subscribed : Unsubscribed);
+  SetState(Unsubscribed);
 }
 
 
