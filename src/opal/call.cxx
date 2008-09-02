@@ -463,7 +463,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     if (sinkStream != NULL) {
       startedOne = true;
       if (patch == NULL) {
-        patch = manager.CreateMediaPatch(*sourceStream, sourceStream->RequiresPatchThread(sinkStream));
+        patch = manager.CreateMediaPatch(*sourceStream, sinkStream->RequiresPatchThread(sourceStream) &&
+                                                        sourceStream->RequiresPatchThread(sinkStream));
         if (patch == NULL)
           return false;
       }
