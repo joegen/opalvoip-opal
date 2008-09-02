@@ -1565,6 +1565,9 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
 
   // get Via from From field
   PString from = mime.GetFrom();
+  if (from.IsEmpty())
+    return OpalTransportAddress();
+
   PINDEX j = from.Find (';');
   if (j != P_MAX_INDEX)
     from = from.Left(j); // Remove all parameters
@@ -1608,6 +1611,7 @@ void SIP_PDU::PrintOn(ostream & strm) const
 PBoolean SIP_PDU::Read(OpalTransport & transport)
 {
   PStringStream datagram;
+  PBYTEArray pdu;
 
   istream * stream;
   if (transport.IsReliable())
@@ -1615,7 +1619,6 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   else {
     stream = &datagram;
 
-    PBYTEArray pdu;
     if (transport.ReadPDU(pdu))
       datagram = PString((char *)pdu.GetPointer(), pdu.GetSize());
   }
@@ -1630,6 +1633,8 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   *stream >> cmd >> mime;
 
   if (!stream->good()) {
+    PTRACE_IF(1, stream == &datagram, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
+              << " - " << pdu.GetSize() << " bytes.\n" << hex << pdu << dec);
     PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::NoError,
               "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
     return PFalse;
