@@ -213,7 +213,7 @@ void SDPMediaFormat::SetFMTP(const PString & str)
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
     return;
 
-  mediaFormat.SetOptionString("RawFMTP", str); // Save the 'fmtp=' line so it is available at the application level.
+  mediaFormat.AddOption(new OpalMediaOptionString("RawFMTP", false, str), PTrue); // Save the 'fmtp=' line so it is available at the application level.
 
   // See if standard format OPT=VAL;OPT=VAL
   if (str.FindOneOf(";=") == P_MAX_INDEX) {
