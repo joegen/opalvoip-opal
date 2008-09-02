@@ -39,10 +39,29 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+class OpalG729Format : public OpalAudioFormat
+{
+  public:
+    OpalG729Format(const char * variant)
+      : OpalAudioFormat(variant, RTP_DataFrame::G729, "G729", 10, 80, 24, 5, 256, 8000)
+    {
+#if OPAL_SIP
+      // As per RFC3555
+      bool isAnnexB = variant[strlen(variant)-1] == 'B';
+      static const char * const yesno[] = { "no", "yes" };
+      OpalMediaOption * option = new OpalMediaOptionEnum("VAD", true, yesno, 2, OpalMediaOption::AndMerge, isAnnexB);
+      option->SetFMTPName("annexb");
+      option->SetFMTPDefault("yes");
+      AddOption(option);
+#endif
+    }
+};
+
+
 #define AUDIO_FORMAT(name) \
   const OpalAudioFormat & GetOpal##name() \
   { \
-    static const OpalAudioFormat name(OPAL_##name, RTP_DataFrame::G729, "G729", 10, 80, 24, 5, 256, 8000); \
+    static const OpalG729Format name(OPAL_##name); \
     return name; \
   }
 
