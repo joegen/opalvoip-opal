@@ -1058,6 +1058,9 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & nam
 {
   for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
 
+    if (handler->GetState() != SIPHandler::Subscribed)
+      continue;
+
     if (name *= handler->GetTargetAddress().GetHostName())
       return handler;
 
