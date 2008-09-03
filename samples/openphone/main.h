@@ -347,25 +347,33 @@ class RegistrarInfo
     RegistrarInfo()
       : m_Active(false)
       , m_TimeToLive(300)
+      , m_MWI(true)
+      , m_Presence(true)
     {
     }
 
     bool operator==(const RegistrarInfo & other) const
     {
       return m_Active     == other.m_Active &&
-             m_Domain     == other.m_Domain &&
              m_User       == other.m_User &&
+             m_Domain     == other.m_Domain &&
+             m_AuthID     == other.m_AuthID &&
              m_Password   == other.m_Password &&
              m_TimeToLive == other.m_TimeToLive &&
-             m_Proxy      == other.m_Proxy;
+             m_Proxy      == other.m_Proxy &&
+             m_MWI        == other.m_MWI &&
+             m_Presence   == other.m_Presence;
     }
 
     bool      m_Active;
-    PwxString m_Domain;
     PwxString m_User;
+    PwxString m_Domain;
+    PwxString m_AuthID;
     PwxString m_Password;
     int       m_TimeToLive;
     PwxString m_Proxy;
+    bool      m_MWI;
+    bool      m_Presence;
 };
 
 typedef list<RegistrarInfo> RegistrarList;
@@ -534,11 +542,14 @@ class OptionsDialog : public wxDialog
     wxButton   * m_AddRegistrar;
     wxButton   * m_ChangeRegistrar;
     wxButton   * m_RemoveRegistrar;
-    wxTextCtrl * m_RegistrarDomain;
     wxTextCtrl * m_RegistrarUser;
+    wxTextCtrl * m_RegistrarDomain;
+    wxTextCtrl * m_RegistrarAuthID;
     wxTextCtrl * m_RegistrarPassword;
     wxSpinCtrl * m_RegistrarTimeToLive;
     wxCheckBox * m_RegistrarActive;
+    wxCheckBox * m_SubscribeMWI;
+    wxCheckBox * m_SubscribePresence;
 
     void FieldsToRegistrar(RegistrarInfo & info);
     void RegistrarToList(bool overwrite, RegistrarInfo * registrar, int position);

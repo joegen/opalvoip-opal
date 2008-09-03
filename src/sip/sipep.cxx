@@ -949,6 +949,26 @@ bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & to)
 }
 
 
+bool SIPEndPoint::UnsubcribeAll(SIPSubscribe::PredefinedPackages eventPackage)
+{
+  return UnsubcribeAll(SIPSubscribe::GetEventPackageName(eventPackage));
+}
+
+
+bool SIPEndPoint::UnsubcribeAll(const PString & eventPackage)
+{
+  bool ok = true;
+
+  for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+    if (handler->GetMethod() == SIP_PDU::Method_SUBSCRIBE && handler->GetEventPackage() == eventPackage) {
+      if (!handler->SendRequest(SIPHandler::Unsubscribing))
+        ok = false;
+    }
+  }
+
+  return ok;
+}
+
 
 PBoolean SIPEndPoint::Message (const PString & to, 
                                const PString & body)
