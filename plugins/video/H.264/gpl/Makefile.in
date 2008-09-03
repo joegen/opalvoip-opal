@@ -115,8 +115,9 @@ PLUGIN	= ./$(BASENAME)_video_pwplugin_helper
 
 ifneq ($(X264_LINK_STATIC),yes)
 SRCS   += x264loader_unix.cxx
-X264_LIBS	+= $(DL_LIBS)
 endif
+
+X264_LIBS	+= $(DL_LIBS)
 
 endif
 

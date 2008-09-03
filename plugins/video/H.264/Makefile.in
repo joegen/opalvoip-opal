@@ -72,6 +72,7 @@ VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
+DL_LIBS =@DL_LIBS@
 
 SHAREDDIR	= ./shared
 COMMONDIR	= ../common
@@ -121,7 +122,7 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 
 $(PLUGIN): $(OBJECTS)
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
-	$(CXX) $(LDSO) -o $@ $^
+	$(CXX) $(LDSO) $(DL_LIBS) -o $@ $^
 
 install:
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) install; fi ; )
