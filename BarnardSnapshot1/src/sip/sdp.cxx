@@ -185,7 +185,6 @@ SDPMediaFormat::SDPMediaFormat(const OpalMediaFormat & fmt,
   }
 }
 
-
 void SDPMediaFormat::SetFMTP(const PString & str)
 {
   if (str.IsEmpty())
@@ -207,7 +206,7 @@ void SDPMediaFormat::SetFMTP(const PString & str)
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
     return;
 
-  mediaFormat.SetOptionString("RawFMTP", str); // Save the 'fmtp=' line so it is available at the application level.
+  mediaFormat.AddOption(new OpalMediaOptionString("RawFMTP", false, str), PTrue); // Save the 'fmtp=' line so it is available at the application level.
 
   // See if standard format OPT=VAL;OPT=VAL
   if (str.FindOneOf(";=") == P_MAX_INDEX) {
@@ -249,8 +248,14 @@ void SDPMediaFormat::SetFMTP(const PString & str)
     }
     if (option != NULL) {
       PString value = str(sep2pos+1, sep1next-1);
-      if (value.Trim().IsEmpty())
-        value = "1"; // Assume it is a boolean
+      if (dynamic_cast< OpalMediaOptionOctets * >(option) != NULL) {
+        if (str.GetLength() % 2 != 0)
+          value = value.Trim();
+      } else {
+        value = value.Trim();
+        if (value.IsEmpty())
+          value = "1"; // Assume it is a boolean
+      }
       if (!option->FromString(value)) {
         PTRACE(2, "SDP\tCould not set FMTP parameter \"" << key << "\" to value \"" << value << '"');
       }
