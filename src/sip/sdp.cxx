@@ -189,7 +189,6 @@ SDPMediaFormat::SDPMediaFormat(const OpalMediaFormat & fmt,
     parameters = PString(PString::Unsigned, fmt.GetOptionInteger(OpalAudioFormat::ChannelsOption()));
 }
 
-
 void SDPMediaFormat::SetFMTP(const PString & str)
 {
   if (str.IsEmpty())
@@ -255,8 +254,14 @@ void SDPMediaFormat::SetFMTP(const PString & str)
     }
     if (option != NULL) {
       PString value = str(sep2pos+1, sep1next-1);
-      if (value.Trim().IsEmpty())
-        value = "1"; // Assume it is a boolean
+      if (dynamic_cast< OpalMediaOptionOctets * >(option) != NULL) {
+        if (str.GetLength() % 2 != 0)
+          value = value.Trim();
+      } else {
+        value = value.Trim();
+        if (value.IsEmpty())
+          value = "1"; // Assume it is a boolean
+      }
       if (!option->FromString(value)) {
         PTRACE(2, "SDP\tCould not set FMTP parameter \"" << key << "\" to value \"" << value << '"');
       }
