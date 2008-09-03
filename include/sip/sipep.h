@@ -364,7 +364,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     /**Unregister all current registrations.
       */
     bool UnregisterAll();
-    
+
     /**Subscribe to a notifier. This function is asynchronous to permit
      * several subscriptions to occur at the same time.
      */
@@ -385,6 +385,15 @@ class SIPEndPoint : public OpalRTPEndPoint
     bool Unsubscribe(
       const PString & eventPackage,
       const PString & to
+    );
+
+    /**Unsubscribe all current subscriptions.
+      */
+    bool UnsubcribeAll(
+      SIPSubscribe::PredefinedPackages eventPackage
+    );
+    bool UnsubcribeAll(
+      const PString & eventPackage
     );
 
 
