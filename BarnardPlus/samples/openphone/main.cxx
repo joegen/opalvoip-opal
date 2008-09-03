@@ -183,9 +183,12 @@ static const char RegistrarGroup[] = "/SIP/Registrars";
 DEF_FIELD(RegistrarUsed);
 DEF_FIELD(RegistrarName);
 DEF_FIELD(RegistrarDomain);
+DEF_FIELD(RegistrarAuthID);
 DEF_FIELD(RegistrarUsername);
 DEF_FIELD(RegistrarPassword);
 DEF_FIELD(RegistrarTimeToLive);
+DEF_FIELD(SubscribeMWI);
+DEF_FIELD(SubscribePresence);
 
 static const char RoutingGroup[] = "/Routes";
 
@@ -822,11 +825,15 @@ bool MyManager::Initialise()
     do {
       config->SetPath(groupName);
       if (config->Read(RegistrarUsedKey, &registrar.m_Active, false) &&
-          config->Read(RegistrarDomainKey, &registrar.m_Domain) &&
           config->Read(RegistrarUsernameKey, &registrar.m_User) &&
-          config->Read(RegistrarPasswordKey, &registrar.m_Password) &&
-          config->Read(RegistrarTimeToLiveKey, &registrar.m_TimeToLive))
+          config->Read(RegistrarDomainKey, &registrar.m_Domain)) {
+        config->Read(RegistrarAuthIDKey, &registrar.m_AuthID);
+        config->Read(RegistrarPasswordKey, &registrar.m_Password);
+        config->Read(RegistrarTimeToLiveKey, &registrar.m_TimeToLive);
+        config->Read(SubscribeMWIKey, &registrar.m_MWI, true);
+        config->Read(SubscribePresenceKey, &registrar.m_Presence, true);
         m_registrars.push_back(registrar);
+      }
       config->SetPath("..");
     } while (config->GetNextGroup(groupName, groupIndex));
   }
@@ -2170,28 +2177,36 @@ void MyManager::StartRegistrars()
   for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
     if (iter->m_Active) {
       SIPRegister::Params param;
-      param.m_addressOfRecord = iter->m_User + '@' + iter->m_Domain;
-      param.m_authID = (const char *)iter->m_User;
+      param.m_addressOfRecord = (const char *)iter->m_User;
+      if (param.m_addressOfRecord.Find('@') == P_MAX_INDEX)
+        param.m_addressOfRecord += '@' + iter->m_Domain;
+      param.m_authID = (const char *)iter->m_AuthID;
+      if (param.m_authID.IsEmpty())
+        param.m_authID = (const char *)iter->m_User;
       param.m_password = (const char *)iter->m_Password;
       param.m_expire = iter->m_TimeToLive;
       bool ok = sipEP->Register(param);
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
 
-      SIPSubscribe::Params mwiParam(SIPSubscribe::MessageSummary);
-      mwiParam.m_targetAddress = param.m_addressOfRecord;
-      mwiParam.m_authID = param.m_authID;
-      mwiParam.m_password = param.m_password;
-      mwiParam.m_expire = iter->m_TimeToLive;
-      ok = sipEP->Subscribe(mwiParam);
-      LogWindow << "SIP MWI subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+      if (iter->m_MWI) {
+        SIPSubscribe::Params mwiParam(SIPSubscribe::MessageSummary);
+        mwiParam.m_targetAddress = param.m_addressOfRecord;
+        mwiParam.m_authID = param.m_authID;
+        mwiParam.m_password = param.m_password;
+        mwiParam.m_expire = iter->m_TimeToLive;
+        ok = sipEP->Subscribe(mwiParam);
+        LogWindow << "SIP MWI subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+      }
 
-      SIPSubscribe::Params presenceParam(SIPSubscribe::Presence);
-      presenceParam.m_targetAddress = param.m_addressOfRecord;
-      presenceParam.m_authID = param.m_authID;
-      presenceParam.m_password = param.m_password;
-      presenceParam.m_expire = iter->m_TimeToLive;
-      ok = sipEP->Subscribe(presenceParam);
-      LogWindow << "SIP Presence subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+      if (iter->m_Presence) {
+        SIPSubscribe::Params presenceParam(SIPSubscribe::Presence);
+        presenceParam.m_targetAddress = param.m_addressOfRecord;
+        presenceParam.m_authID = param.m_authID;
+        presenceParam.m_password = param.m_password;
+        presenceParam.m_expire = iter->m_TimeToLive;
+        ok = sipEP->Subscribe(presenceParam);
+        LogWindow << "SIP Presence subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+      }
     }
   }
 }
@@ -2199,8 +2214,11 @@ void MyManager::StartRegistrars()
 
 void MyManager::StopRegistrars()
 {
-  if (sipEP != NULL)
+  if (sipEP != NULL) {
     sipEP->UnregisterAll();
+    sipEP->UnsubcribeAll(SIPSubscribe::MessageSummary);
+    sipEP->UnsubcribeAll(SIPSubscribe::Presence);
+  }
 }
 
 
@@ -2703,12 +2721,16 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_Registrars->InsertColumn(1, _T("User"));
   m_Registrars->InsertColumn(2, _T("Refresh"));
   m_Registrars->InsertColumn(3, _T("Status"));
+  m_Registrars->InsertColumn(4, _T("MWI"));
+  m_Registrars->InsertColumn(5, _T("Presence"));
   for (RegistrarList::iterator registrar = m_manager.m_registrars.begin(); registrar != m_manager.m_registrars.end(); ++registrar)
     RegistrarToList(false, new RegistrarInfo(*registrar), INT_MAX);
-  m_Registrars->SetColumnWidth(0, 200);
-  m_Registrars->SetColumnWidth(1, 150);
-  m_Registrars->SetColumnWidth(2, 75);
-  m_Registrars->SetColumnWidth(3, 75);
+  m_Registrars->SetColumnWidth(0, 160);
+  m_Registrars->SetColumnWidth(1, 120);
+  m_Registrars->SetColumnWidth(2, 50);
+  m_Registrars->SetColumnWidth(3, 60);
+  m_Registrars->SetColumnWidth(4, 60);
+  m_Registrars->SetColumnWidth(5, 60);
 
   m_AddRegistrar = FindWindowByNameAs<wxButton>(this, "AddRegistrar");
   m_AddRegistrar->Disable();
@@ -2719,11 +2741,14 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_RemoveRegistrar = FindWindowByNameAs<wxButton>(this, "RemoveRegistrar");
   m_RemoveRegistrar->Disable();
 
-  m_RegistrarDomain = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarDomain");
-  m_RegistrarUser = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarUsername");
-  m_RegistrarPassword = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarPassword");
-  m_RegistrarTimeToLive = FindWindowByNameAs<wxSpinCtrl>(this, "RegistrarTimeToLive");
-  m_RegistrarActive = FindWindowByNameAs<wxCheckBox>(this, "RegistrarUsed");
+  m_RegistrarUser = FindWindowByNameAs<wxTextCtrl>(this, RegistrarUsernameKey);
+  m_RegistrarDomain = FindWindowByNameAs<wxTextCtrl>(this, RegistrarDomainKey);
+  m_RegistrarAuthID = FindWindowByNameAs<wxTextCtrl>(this, RegistrarAuthIDKey);
+  m_RegistrarPassword = FindWindowByNameAs<wxTextCtrl>(this, RegistrarPasswordKey);
+  m_RegistrarTimeToLive = FindWindowByNameAs<wxSpinCtrl>(this, RegistrarTimeToLiveKey);
+  m_RegistrarActive = FindWindowByNameAs<wxCheckBox>(this, RegistrarUsedKey);
+  m_SubscribeMWI = FindWindowByNameAs<wxCheckBox>(this, SubscribeMWIKey);
+  m_SubscribePresence = FindWindowByNameAs<wxCheckBox>(this, SubscribePresenceKey);
 
   ////////////////////////////////////////
   // Routing fields
@@ -3041,10 +3066,13 @@ bool OptionsDialog::TransferDataFromWindow()
       group.sprintf("%s/%04u", RegistrarGroup, registrarIndex++);
       config->SetPath(group);
       config->Write(RegistrarUsedKey, iterReg->m_Active);
-      config->Write(RegistrarDomainKey, iterReg->m_Domain);
       config->Write(RegistrarUsernameKey, iterReg->m_User);
+      config->Write(RegistrarDomainKey, iterReg->m_Domain);
+      config->Write(RegistrarAuthIDKey, iterReg->m_AuthID);
       config->Write(RegistrarPasswordKey, iterReg->m_Password);
       config->Write(RegistrarTimeToLiveKey, iterReg->m_TimeToLive);
+      config->Write(SubscribeMWIKey, iterReg->m_MWI);
+      config->Write(SubscribePresenceKey, iterReg->m_Presence);
     }
 
     m_manager.StopRegistrars();
@@ -3475,11 +3503,14 @@ void OptionsDialog::RemoveAlias(wxCommandEvent & /*event*/)
 
 void OptionsDialog::FieldsToRegistrar(RegistrarInfo & registrar)
 {
-  registrar.m_Domain = m_RegistrarDomain->GetValue();
   registrar.m_User = m_RegistrarUser->GetValue();
+  registrar.m_Domain = m_RegistrarDomain->GetValue();
+  registrar.m_AuthID = m_RegistrarAuthID->GetValue();
   registrar.m_Password = m_RegistrarPassword->GetValue();
   registrar.m_TimeToLive = m_RegistrarTimeToLive->GetValue();
   registrar.m_Active = m_RegistrarActive->GetValue();
+  registrar.m_MWI = m_SubscribeMWI->GetValue();
+  registrar.m_Presence = m_SubscribePresence->GetValue();
 }
 
 
@@ -3498,7 +3529,9 @@ void OptionsDialog::RegistrarToList(bool overwrite, RegistrarInfo * registrar, i
   str.sprintf("%u:%02u", registrar->m_TimeToLive/60, registrar->m_TimeToLive%60);
   m_Registrars->SetItem(position, 2, str);
 
-  m_Registrars->SetItem(position, 3, registrar->m_Active ? "ACTIVE" : "disabled");
+  m_Registrars->SetItem(position, 3, registrar->m_Active   ? "ACTIVE" : "disabled");
+  m_Registrars->SetItem(position, 4, registrar->m_MWI      ? "subcribe" : "disabled");
+  m_Registrars->SetItem(position, 5, registrar->m_Presence ? "subcribe" : "disabled");
 }
 
 
@@ -3539,11 +3572,14 @@ void OptionsDialog::SelectedRegistrar(wxListEvent & event)
   m_RemoveRegistrar->Enable(true);
 
   RegistrarInfo & registrar = *(RegistrarInfo *)m_Registrars->GetItemData(m_SelectedRegistrar);
-  m_RegistrarDomain->SetValue(registrar.m_Domain);
   m_RegistrarUser->SetValue(registrar.m_User);
+  m_RegistrarDomain->SetValue(registrar.m_Domain);
+  m_RegistrarAuthID->SetValue(registrar.m_AuthID);
   m_RegistrarPassword->SetValue(registrar.m_Password);
   m_RegistrarTimeToLive->SetValue(registrar.m_TimeToLive);
   m_RegistrarActive->SetValue(registrar.m_Active);
+  m_SubscribeMWI->SetValue(registrar.m_MWI);
+  m_SubscribePresence->SetValue(registrar.m_Presence);
 
   ChangedRegistrarInfo(event);
 }
