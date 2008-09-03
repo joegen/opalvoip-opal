@@ -1549,7 +1549,8 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
 
 
 SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
-  : method(pdu.method)
+  : PSafeObject(pdu)
+  , method(pdu.method)
   , statusCode(pdu.statusCode)
   , uri(pdu.uri)
   , versionMajor(pdu.versionMajor)
