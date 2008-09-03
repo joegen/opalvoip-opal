@@ -375,7 +375,8 @@ OpalMediaSession::OpalMediaSession(const OpalMediaType & _mediaType)
 
 
 OpalMediaSession::OpalMediaSession(const OpalMediaSession & _obj)
-  : mediaType(_obj.mediaType)
+  : PObject(_obj)
+  , mediaType(_obj.mediaType)
   , autoStartReceive(_obj.autoStartReceive)
   , autoStartTransmit(_obj.autoStartTransmit)
   , sessionId(_obj.sessionId)
