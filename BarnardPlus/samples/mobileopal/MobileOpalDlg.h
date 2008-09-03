@@ -72,6 +72,7 @@ protected:
   void SetStatusText(UINT ids, const char * str = NULL);
   void SetCallButton(bool enabled, UINT strId = 0);
   void AddRecentCall(const CString & uri);
+  void HandleMessage(OpalMessage & message);
 
 public:
   afx_msg void OnTimer(UINT_PTR nIDEvent);
