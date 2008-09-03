@@ -214,7 +214,7 @@ OPAL_CHECK_PTLIB([SSL],     [ptclib/pssl.h], [PSSLContext ctx;],          [OPAL_
 OPAL_CHECK_PTLIB([ASN.1],   [ptclib/pasn.h], [PASNInteger asnint(5);],    [OPAL_PTLIB_ASN])
 OPAL_CHECK_PTLIB([expat],   [ptclib/pxml.h], [PXMLParser parser;],        [OPAL_PTLIB_EXPAT])
 OPAL_CHECK_PTLIB([video],   [ptlib/video.h], [PVideoChannel chan;],       [OPAL_PTLIB_VIDEO])
-OPAL_CHECK_PTLIB([wavfile], [ptclib/pwavfiledev.h], [PAVFile wav;],       [OPAL_PTLIB_WAVFILE])
+OPAL_CHECK_PTLIB([wavfile], [ptclib/pwavfiledev.h], [PWAVFile wav;],       [OPAL_PTLIB_WAVFILE])
 OPAL_CHECK_PTLIB([vxml],    [ptclib/vxml.h], [PVXMLPlayableData data;],   [OPAL_PTLIB_VXML])
 OPAL_CHECK_PTLIB([ipv6],    [ptlib/sockets.h],[in6_addr ad; PIPSocket::Address address(ad);],    [OPAL_PTLIB_IPV6])
 OPAL_CHECK_PTLIB([dtmf],    [ptclib/dtmf.h], [PDTMFDecoder dtmf;],        [OPAL_PTLIB_DTMF])
