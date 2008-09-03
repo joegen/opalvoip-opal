@@ -313,6 +313,7 @@ class H323Gatekeeper : public H225_RAS
       unsigned unregisteredTag
     );
     
+    virtual H323Transport * CreateTransport(PIPSocket::Address bindng = PIPSocket::GetDefaultIpAny(), WORD port = 0, PBoolean reuseAddr = PFalse);
     
     // Handling interface changes
     void OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);

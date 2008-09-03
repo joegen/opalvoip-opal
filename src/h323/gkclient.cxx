@@ -1810,7 +1810,7 @@ void H323Gatekeeper::Connect(const H323TransportAddress & address,
                              const PString & gkid)
 {
   if (transport == NULL)
-    transport = new H323TransportUDP(endpoint, PIPSocket::GetDefaultIpAny());
+    transport = CreateTransport(PIPSocket::GetDefaultIpAny());
 
   transport->SetRemoteAddress(address);
   transport->Connect();
@@ -1871,7 +1871,7 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
       transport->CleanUpOnTermination();
       delete transport;
 
-      transport = new H323TransportUDP(endpoint,localAddress,localPort);
+      transport = CreateTransport(localAddress,localPort);
       transport->SetRemoteAddress (altInfo->rasAddress);
       transport->Connect();
       gatekeeperIdentifier = altInfo->gatekeeperIdentifier;
@@ -1900,6 +1900,12 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
       }
     }
   }
+}
+
+
+H323Transport * H323Gatekeeper::CreateTransport(PIPSocket::Address binding, WORD port, PBoolean reuseAddr)
+{
+  return new H323TransportUDP(endpoint, binding, port, reuseAddr);
 }
 
 
