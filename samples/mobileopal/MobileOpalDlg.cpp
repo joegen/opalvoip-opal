@@ -298,6 +298,7 @@ CMobileOpalDlg::CMobileOpalDlg(CWnd* pParent /*=NULL*/)
   : CDialog(CMobileOpalDlg::IDD, pParent)
   , m_opal(NULL)
   , m_opalVersion(OPAL_C_API_VERSION)
+  , m_speakerphone(false)
 {
   m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -428,7 +429,20 @@ void CMobileOpalDlg::InitialiseOPAL()
     command.m_param.m_registrationInfo.m_protocol = "sip";
     command.m_param.m_registrationInfo.m_identifier = m_currentAOR;
     command.m_param.m_registrationInfo.m_hostName = m_currentHost;
-    OpalFreeMessage(OpalSendMessage(m_opal, &command)); // Don't worry about errors.
+    response = OpalSendMessage(m_opal, &command);
+    if (response != NULL && response->m_type == OpalCmdRegistration) {
+      OpalFreeMessage(response);
+
+      UpdateWindow();
+
+      // Wait for unregister to complete.
+      while ((response = OpalGetMessage(m_opal, 30000)) != NULL) {
+        HandleMessage(*response);
+        if (response->m_type == OpalIndRegistration && response->m_param.m_registrationStatus.m_status == OpalRegisterRemoved)
+          break;
+      }
+    }
+    OpalFreeMessage(response);
     m_currentAOR.Empty();
     m_currentHost.Empty();
   }
@@ -626,84 +640,7 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
   if (nIDEvent == TimerID && m_opal != NULL) {
     OpalMessage * message = OpalGetMessage(m_opal, 0);
     if (message != NULL) {
-      switch (message->m_type) {
-        case OpalIndRegistration :
-          switch (message->m_param.m_registrationStatus.m_status) {
-            case OpalRegisterSuccessful :
-            case OpalRegisterRestored :
-              SetStatusText(IDS_REGISTERED);
-              break;
-
-            case OpalRegisterRemoved :
-              SetStatusText(IDS_UNREGISTERED, message->m_param.m_registrationStatus.m_error);
-              break;
-
-            case OpalRegisterRetrying :
-              SetStatusText(IDS_REGISTERING);
-              break;
-
-            case OpalRegisterFailed :
-              SetStatusText(0, message->m_param.m_registrationStatus.m_error);
-          }
-          break;
-
-        case OpalIndMessageWaiting :
-          {
-            CStringA msg;
-            msg.Format(IDS_MESSAGE_WAITING,
-                       message->m_param.m_messageWaiting.m_type,
-                       message->m_param.m_messageWaiting.m_party);
-            SetStatusText(0, msg);
-          }
-          break;
-
-        case OpalIndIncomingCall :
-          if (m_incomingCallToken.IsEmpty() && m_currentCallToken.IsEmpty()) {
-            m_incomingCallToken = message->m_param.m_incomingCall.m_callToken;
-            SetStatusText(IDS_INCOMING_CALL);
-            SetCallButton(true, IDS_ANSWER);
-            m_ctrlCallAddress.EnableWindow(false);
-            ShowWindow(true);
-            BringWindowToTop();
-          }
-          else {
-            OpalMessage command;
-            memset(&command, 0, sizeof(command));
-            command.m_type = OpalCmdClearCall;
-            command.m_param.m_clearCall.m_callToken = message->m_param.m_incomingCall.m_callToken;
-            command.m_param.m_clearCall.m_reason = OpalCallEndedByAnswerDenied;
-            OpalMessage * response = OpalSendMessage(m_opal, &command);
-            if (response != NULL)
-              OpalFreeMessage(response);
-            SetStatusText(IDS_BUSY);
-          }
-          break;
-
-        case OpalIndAlerting :
-          SetStatusText(IDS_RINGING);
-          break;
-
-        case OpalIndEstablished :
-          SetSpeakerMode(m_speakerphone);
-          SetStatusText(IDS_ESTABLISHED);
-          break;
-
-        case OpalIndUserInput :
-          SetStatusText(0, message->m_param.m_userInput.m_userInput);
-          break;
-
-        case OpalIndCallCleared :
-          if (m_currentCallToken  == message->m_param.m_callCleared.m_callToken ||
-              m_incomingCallToken == message->m_param.m_callCleared.m_callToken) {
-            m_incomingCallToken.Empty();
-            m_currentCallToken.Empty();
-
-            SetCallButton(true, IDS_CALL);
-            m_ctrlCallAddress.EnableWindow(true);
-
-            SetStatusText(IDS_READY, message->m_param.m_callCleared.m_reason);
-          }
-      }
+      HandleMessage(*message);
       OpalFreeMessage(message);
     }
   }
@@ -711,6 +648,88 @@ void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
   CDialog::OnTimer(nIDEvent);
 }
 
+
+void CMobileOpalDlg::HandleMessage(OpalMessage & message)
+{
+  switch (message.m_type) {
+    case OpalIndRegistration :
+      switch (message.m_param.m_registrationStatus.m_status) {
+        case OpalRegisterSuccessful :
+        case OpalRegisterRestored :
+          SetStatusText(IDS_REGISTERED);
+          break;
+
+        case OpalRegisterRemoved :
+          SetStatusText(IDS_UNREGISTERED, message.m_param.m_registrationStatus.m_error);
+          break;
+
+        case OpalRegisterRetrying :
+          SetStatusText(IDS_REGISTERING);
+          break;
+
+        case OpalRegisterFailed :
+          SetStatusText(0, message.m_param.m_registrationStatus.m_error);
+      }
+      break;
+
+    case OpalIndMessageWaiting :
+      {
+        CStringA msg;
+        msg.Format(IDS_MESSAGE_WAITING,
+                   message.m_param.m_messageWaiting.m_type,
+                   message.m_param.m_messageWaiting.m_party);
+        SetStatusText(0, msg);
+      }
+      break;
+
+    case OpalIndIncomingCall :
+      if (m_incomingCallToken.IsEmpty() && m_currentCallToken.IsEmpty()) {
+        m_incomingCallToken = message.m_param.m_incomingCall.m_callToken;
+        SetStatusText(IDS_INCOMING_CALL);
+        SetCallButton(true, IDS_ANSWER);
+        m_ctrlCallAddress.EnableWindow(false);
+        ShowWindow(true);
+        BringWindowToTop();
+      }
+      else {
+        OpalMessage command;
+        memset(&command, 0, sizeof(command));
+        command.m_type = OpalCmdClearCall;
+        command.m_param.m_clearCall.m_callToken = message.m_param.m_incomingCall.m_callToken;
+        command.m_param.m_clearCall.m_reason = OpalCallEndedByAnswerDenied;
+        OpalMessage * response = OpalSendMessage(m_opal, &command);
+        if (response != NULL)
+          OpalFreeMessage(response);
+        SetStatusText(IDS_BUSY);
+      }
+      break;
+
+    case OpalIndAlerting :
+      SetStatusText(IDS_RINGING);
+      break;
+
+    case OpalIndEstablished :
+      SetSpeakerMode(m_speakerphone);
+      SetStatusText(IDS_ESTABLISHED);
+      break;
+
+    case OpalIndUserInput :
+      SetStatusText(0, message.m_param.m_userInput.m_userInput);
+      break;
+
+    case OpalIndCallCleared :
+      if (m_currentCallToken  == message.m_param.m_callCleared.m_callToken ||
+          m_incomingCallToken == message.m_param.m_callCleared.m_callToken) {
+        m_incomingCallToken.Empty();
+        m_currentCallToken.Empty();
+
+        SetCallButton(true, IDS_CALL);
+        m_ctrlCallAddress.EnableWindow(true);
+
+        SetStatusText(IDS_READY, message.m_param.m_callCleared.m_reason);
+      }
+  }
+}
 
 void CMobileOpalDlg::OnOK()
 {
