@@ -55,7 +55,7 @@
 ostream & operator<<(ostream & strm, SIPHandler::State state)
 {
   static const char * const StateNames[] = {
-    "Subscribed", "Subscribing", "Refreshing", "Restoring", "Unsubscribing", "Unsubscribed"
+    "Subscribed", "Subscribing", "Unavailable", "Refreshing", "Restoring", "Unsubscribing", "Unsubscribed"
   };
   if (state < PARRAYSIZE(StateNames))
     strm << StateNames[state];
@@ -79,7 +79,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
   , expire(expireTime)
   , originalExpire(expire)
   , offlineExpire(offlineExpireTime)
-  , state(Unsubscribed)
+  , state(Unavailable)
   , retryTimeoutMin(retryMin)
   , retryTimeoutMax(retryMax)
 {
@@ -230,7 +230,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
         PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
         OnFailed(SIP_PDU::Local_BadTransportAddress);
         expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
-        SetState(Unsubscribed);
+        SetState(Unavailable);
         return true;
       }
       break;
@@ -402,13 +402,7 @@ void SIPHandler::OnExpireTimeout(PTimer &, INT)
   PTRACE(2, "SIP\tStarting " << GetMethod() << " for binding refresh");
 
   if (!SendRequest(GetState() == Subscribed ? Refreshing : Restoring))
-    SetState(Unsubscribed);
-}
-
-
-PBoolean SIPHandler::CanBeDeleted()
-{
-  return GetState() == Unsubscribed;
+    SetState(Unavailable);
 }
 
 
@@ -494,6 +488,9 @@ void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code)
 
     case Unsubscribing :
       endpoint.OnRegistrationStatus(aor, false, false, code);
+      break;
+
+    default :
       break;
   }
 }
@@ -793,7 +790,7 @@ void SIPPublishHandler::OnPublishTimeout(PTimer &, INT)
   if (GetState() == Subscribed) {
     if (stateChanged) {
       if (!SendRequest(Subscribing))
-        SetState(Unsubscribed);
+        SetState(Unavailable);
       stateChanged = PFalse;
     }
   }
@@ -884,7 +881,7 @@ void SIPMessageHandler::OnFailed(SIP_PDU::StatusCodes reason)
 
 void SIPMessageHandler::OnExpireTimeout(PTimer &, INT)
 {
-  SetState(Unsubscribed);
+  SetState(Unavailable);
 }
 
 
@@ -982,7 +979,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & nam
 {
   for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
 
-    if (handler->GetState() != SIPHandler::Subscribed)
+    if (handler->GetState() == SIPHandler::Unsubscribed)
       continue;
 
     if (name *= handler->GetTargetAddress().GetHostName())
