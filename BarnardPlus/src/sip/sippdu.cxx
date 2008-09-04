@@ -2365,27 +2365,21 @@ PString SIPSubscribe::GetEventPackageName(PredefinedPackages pkg)
 SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                            OpalTransport & trans,
                            const PStringList & routeSet,
+                           const PString & to,
+                           const PString & from,
                            const PString & id,
                            unsigned cseq,
                            const Params & params)
   : SIPTransaction(ep, trans)
 {
   SIPURL targetAddress = params.m_targetAddress;
-
-  PString localPartyAddress;
-  if (params.m_eventPackage == GetEventPackageName(Presence))
-    localPartyAddress = endpoint.GetRegisteredPartyName(params.m_targetAddress).AsQuotedString();
-  else
-    localPartyAddress = targetAddress.AsQuotedString();
-  localPartyAddress += ";tag=" + OpalGloballyUniqueID().AsString();
-
   targetAddress.AdjustForRequestURI();
 
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
   SIP_PDU::Construct(Method_SUBSCRIBE,
                      targetAddress,
-                     targetAddress.AsQuotedString(),
-                     localPartyAddress,
+                     to,
+                     from,
                      id,
                      cseq,
                      viaAddress);
