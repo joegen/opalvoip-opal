@@ -386,7 +386,7 @@ PBoolean OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat, 
   PReadWaitAndSignal mutex(inUse);
 
   if (fromSink)
-    return source.UpdateMediaFormat(mediaFormat);
+    return source.UpdateMediaFormat(mediaFormat, true);
 
   PBoolean atLeastOne = PFalse;
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
@@ -499,7 +499,7 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
   bool ok;
 
   if (primaryCodec == NULL) {
-    ok = stream->UpdateMediaFormat(mediaFormat);
+    ok = stream->UpdateMediaFormat(mediaFormat, true);
 #if OPAL_VIDEO
     SetRateControlParameters(stream->GetMediaFormat());
 #endif

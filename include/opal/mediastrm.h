@@ -112,8 +112,9 @@ class OpalMediaStream : public PSafeObject
        The default behaviour updates the mediaFormat member variable and
        pases the value on to the OpalMediaPatch.
       */
-    virtual PBoolean UpdateMediaFormat(
-      const OpalMediaFormat & mediaFormat  ///<  New media format
+    virtual bool UpdateMediaFormat(
+      const OpalMediaFormat & mediaFormat,  ///<  New media format
+      bool fromPatch = false                ///<  Is being called from OpalMediaPatch
     );
 
     /**Execute the command specified to the transcoder. The commands are
