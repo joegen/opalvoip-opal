@@ -4467,4 +4467,40 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
 }
 
 
+void MySIPEndPoint::OnSubscriptionStatus(const PString & eventPackage,
+                                         const SIPURL & uri,
+                                         bool wasSubscribing,
+                                         bool reSubscribing,
+                                         SIP_PDU::StatusCodes reason)
+{
+  switch (reason) {
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Information_Trying :
+      return;
+
+    case SIP_PDU::Successful_OK :
+      if (reSubscribing)
+        return;
+  }
+
+  LogWindow << "SIP ";
+  if (!wasSubscribing)
+    LogWindow << "un";
+  LogWindow << "subscription of " << uri << " to " << eventPackage << " events ";
+  switch (reason) {
+    case SIP_PDU::Successful_OK :
+      LogWindow << "successful";
+      break;
+
+    case SIP_PDU::Failure_RequestTimeout :
+      LogWindow << "timed out";
+      break;
+
+    default :
+      LogWindow << "failed (" << reason << ')';
+  }
+  LogWindow << '.' << endl;
+}
+
+
 // End of File ///////////////////////////////////////////////////////////////

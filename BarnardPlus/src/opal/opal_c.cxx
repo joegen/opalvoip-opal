@@ -109,6 +109,13 @@ class SIPEndPoint_C : public SIPEndPoint
       PBoolean reRegistering,
       SIP_PDU::StatusCodes reason
     );
+    virtual void OnSubscriptionStatus(
+      const PString & eventPackage, ///< Event package subscribed to
+      const SIPURL & uri,           ///< Target URI for the subscription.
+      bool wasSubscribing,          ///< Indication the subscribing or unsubscribing
+      bool reSubscribing,           ///< If subscribing then indication was refeshing subscription
+      SIP_PDU::StatusCodes reason   ///< Status of subscription
+    );
 
   private:
     OpalManager_C & m_manager;
@@ -379,6 +386,27 @@ void SIPEndPoint_C::OnRegistrationStatus(const PString & aor,
   PTRACE(4, "OpalC\tOnRegistrationStatus " << aor << ", status=" << message->m_param.m_registrationStatus.m_status);
   m_manager.PostMessage(message);
 }
+
+
+void SIPEndPoint_C::OnSubscriptionStatus(const PString & eventPackage,
+                                         const SIPURL & uri,
+                                         bool wasSubscribing,
+                                         bool reSubscribing,
+                                         SIP_PDU::StatusCodes reason)
+{
+  if (reason == SIP_PDU::Successful_OK && !reSubscribing &&
+      eventPackage == SIPSubscribe::GetEventPackageName(SIPSubscribe::MessageSummary)) {
+    OpalMessageBuffer message(OpalIndMessageWaiting);
+    SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_party, uri.AsString());
+    SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, wasSubscribing ? "SUBSCRIBED" : "UNSUBSCRIBED");
+    PTRACE(4, "OpalC API\tOnSubscriptionStatus: party=\"" << message->m_param.m_messageWaiting.m_party
+                                            << "\" info=" << message->m_param.m_messageWaiting.m_extraInfo);
+    m_manager.PostMessage(message);
+  }
+
+  SIPEndPoint::OnSubscriptionStatus(eventPackage, uri, wasSubscribing, reSubscribing, reason);
+}
+
 
 #endif
 
@@ -1267,7 +1295,9 @@ void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type
   if (type < sizeof(TypeNames)/sizeof(TypeNames[0]))
     SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_type, TypeNames[type]);
   SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, extraInfo);
-  PTRACE(4, "OpalC API\tOnMWIReceived: party=\"" << message->m_param.m_messageWaiting.m_party << '"');
+  PTRACE(4, "OpalC API\tOnMWIReceived: party=\"" << message->m_param.m_messageWaiting.m_party
+                                   << "\" type=" << message->m_param.m_messageWaiting.m_type
+                                   << "\" info=" << message->m_param.m_messageWaiting.m_extraInfo);
   PostMessage(message);
 
   OpalManager::OnMWIReceived(party, type, extraInfo);

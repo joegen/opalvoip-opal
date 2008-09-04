@@ -854,6 +854,8 @@ class SIPSubscribe : public SIPTransaction
         SIPEndPoint & ep,
         OpalTransport & trans,
         const PStringList & routeSet,
+        const PString & to,
+        const PString & from,
         const PString & id,
         unsigned cseq,
         const Params & params

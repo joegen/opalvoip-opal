@@ -679,8 +679,10 @@ typedef struct OpalStatusUserInput {
   */
 typedef struct OpalStatusMessageWaiting {
   const char * m_party;     ///< Party for which the MWI is directed
-  const char * m_type;      ///< Type for MWI
-  const char * m_extraInfo; ///< Extra information for the MWI
+  const char * m_type;      ///< Type for MWI, "Voice", "Fax", "Pager", "Multimedia", "Text", "None"
+  const char * m_extraInfo; /**< Extra information for the MWI, e.g. "SUBSCRIBED",
+                                 "UNSUBSCRIBED", "2/8 (0/2)"
+                             */
 } OpalStatusMessageWaiting;
 
 
