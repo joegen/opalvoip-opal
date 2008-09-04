@@ -274,17 +274,17 @@ static PBoolean SplitAddress(const PString & addr, PString & host, PString & dev
   if (dollar == P_MAX_INDEX)
     return false;
   
-  PINDEX lastChar = addr.GetLength()-1;
-  if (addr[lastChar] == '+')
-    lastChar--;
+  PINDEX length = addr.GetLength();
+  if (addr[length-1] == '+')
+    length--;
 
-  PINDEX bracket = addr.FindLast(']', lastChar);
+  PINDEX bracket = addr.FindLast(']');
   if (bracket == P_MAX_INDEX)
     bracket = 0;
 
-  PINDEX colon = addr.FindLast(':', lastChar);
+  PINDEX colon = addr.FindLast(':');
   if (colon == P_MAX_INDEX || colon < bracket)
-    colon = lastChar;
+    colon = length;
 
   PINDEX percent = addr.Find('%', dollar);
   if (percent == P_MAX_INDEX)
@@ -292,7 +292,7 @@ static PBoolean SplitAddress(const PString & addr, PString & host, PString & dev
 
   host = addr(dollar+1, percent-1);
   device = addr(percent, colon-1);
-  service = addr(colon+1, lastChar);
+  service = addr(colon+1, length-1);
 
   return true;
 }
