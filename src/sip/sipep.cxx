@@ -105,11 +105,14 @@ void SIPEndPoint::ShutDown()
   bool shuttingDown = true;
   while (shuttingDown) {
     shuttingDown = false;
-    for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetAt(0, PSafeReference); handler != NULL; ++handler) {
+    PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReference);
+    while (handler != NULL) {
       if (handler->ShutDown())
         activeSIPHandlers.Remove(handler++);
-      else
+      else {
         shuttingDown = true;
+        ++handler;
+      }
     }
     PThread::Sleep(100);
   }
@@ -325,6 +328,15 @@ PBoolean SIPEndPoint::GarbageCollection()
   }
 
   transactions.DeleteObjectsToBeRemoved();
+
+  PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReference);
+  while (handler != NULL) {
+    if (handler->CanBeDeleted())
+      activeSIPHandlers.Remove(handler++);
+    else
+      ++handler;
+  }
+
   activeSIPHandlers.DeleteObjectsToBeRemoved();
 
   return OpalEndPoint::GarbageCollection();
