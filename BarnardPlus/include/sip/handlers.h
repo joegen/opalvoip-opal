@@ -70,6 +70,7 @@ public:
 
     Subscribed,       // The registration is active
     Subscribing,      // The registration is in process
+    Unavailable,      // The registration is offline and still being attempted
     Refreshing,       // The registration is being refreshed
     Restoring,        // The registration is trying to be restored after being offline
     Unsubscribing,    // The unregistration is in process
@@ -103,7 +104,9 @@ public:
   virtual PString GetCallID()
     { return callID; }
 
-  virtual PBoolean CanBeDeleted();
+  bool CanBeDeleted()
+    { return GetState() == Unsubscribed; }
+
 
   virtual void SetBody(const PString & b)
     { body = b;}
