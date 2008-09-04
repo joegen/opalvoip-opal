@@ -267,45 +267,48 @@ PBoolean OpalInternalTransport::GetIpAndPort(const OpalTransportAddress &,
 
 //////////////////////////////////////////////////////////////////////////
 
-static PBoolean SplitAddress(const PString & addr, PString & host, PString & service)
+static PBoolean SplitAddress(const PString & addr, PString & host, PString & device, PString & service)
 {
   // skip transport identifier
   PINDEX dollar = addr.Find('$');
   if (dollar == P_MAX_INDEX)
-    return PFalse;
+    return false;
   
   PINDEX lastChar = addr.GetLength()-1;
   if (addr[lastChar] == '+')
     lastChar--;
 
-  PINDEX percent = addr.FindLast('%');
-  if (percent != P_MAX_INDEX)
-    lastChar = percent-1;
-    
   PINDEX bracket = addr.FindLast(']', lastChar);
   if (bracket == P_MAX_INDEX)
     bracket = 0;
 
-  PINDEX colon = addr.Find(':', bracket);
-  if (colon >= lastChar)
-    host = addr(dollar+1, lastChar);
-  else {
-    host = addr(dollar+1, colon-1);
-    service = addr(colon+1, lastChar);
-  }
+  PINDEX colon = addr.FindLast(':', lastChar);
+  if (colon == P_MAX_INDEX || colon < bracket)
+    colon = lastChar;
 
-  return PTrue;
+  PINDEX percent = addr.Find('%', dollar);
+  if (percent == P_MAX_INDEX)
+    percent = colon;
+
+  host = addr(dollar+1, percent-1);
+  device = addr(percent, colon-1);
+  service = addr(colon+1, lastChar);
+
+  return true;
 }
 
 
 PString OpalInternalIPTransport::GetHostName(const OpalTransportAddress & address) const
 {
-  PString host, service;
-  if (!SplitAddress(address, host, service))
+  PString host, device, service;
+  if (!SplitAddress(address, host, device, service))
     return address;
 
+  if (!device.IsEmpty())
+    return host+device;
+
   PIPSocket::Address ip;
-  if (PIPSocket::GetHostAddress(host, ip))
+  if (ip.FromString(host))
     return ip.AsString();
 
   return host;
@@ -316,11 +319,11 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
                                            PIPSocket::Address & ip,
                                            WORD & port) const
 {
-  PString host, service;
-  if (!SplitAddress(address, host, service))
+  PString host, device, service;
+  if (!SplitAddress(address, host, device, service))
     return PFalse;
 
-  if (host.IsEmpty()) {
+  if (host.IsEmpty() && device.IsEmpty()) {
     PTRACE(2, "Opal\tIllegal IP transport address: \"" << address << '"');
     return PFalse;
   }
@@ -345,10 +348,17 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
     return PTrue;
   }
 
-  if (PIPSocket::GetHostAddress(host, ip))
-    return PTrue;
+  if (device.IsEmpty()) {
+    if (PIPSocket::GetHostAddress(host, ip))
+      return true;
+    PTRACE(1, "Opal\tCould not find host \"" << host << '"');
+  }
+  else {
+    if (ip.FromString(device))
+      return true;
+    PTRACE(1, "Opal\tCould not find device \"" << device << '"');
+  }
 
-  PTRACE(1, "Opal\tCould not find host : \"" << host << '"');
   return PFalse;
 }
 
