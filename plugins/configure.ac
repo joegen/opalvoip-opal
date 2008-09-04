@@ -32,10 +32,13 @@ dnl ########################################################################
 dnl Directories
 dnl ########################################################################
 
-AC_PLUGIN_DIR=ptlib/plugins/codec/audio
-VC_PLUGIN_DIR=ptlib/plugins/codec/video
-LID_PLUGIN_DIR=ptlib/plugins/lid
-FAX_PLUGIN_DIR=ptlib/plugins/fax
+OPAL_DETERMINE_VERSION([..])
+OPAL_DETERMINE_PLUGIN_DIR()
+
+AC_PLUGIN_DIR="${PLUGIN_DIR}/codecs/audio"
+VC_PLUGIN_DIR="${PLUGIN_DIR}/codecs/video"
+LID_PLUGIN_DIR="${PLUGIN_DIR}/lid"
+FAX_PLUGIN_DIR="${PLUGIN_DIR}/fax"
 
 AC_SUBST(prefix)
 AC_SUBST(exec_prefix)
