@@ -82,6 +82,27 @@ AC_MSG_NOTICE(Opal version is ${OPAL_VERSION});
 AC_SUBST(OPAL_VERSION)
 AC_SUBST(BUILD_TYPE)
 
+AC_MSG_CHECKING(where plugins are being installed)
+AC_ARG_WITH([plugin-installdir],
+             AS_HELP_STRING([--with-plugin-installdir=DIR],[Location where plugins are installed, starting at the lib dir]),
+             [PLUGIN_DIR="$withval"],
+             [PLUGIN_DIR="opal-${OPAL_VERSION}"]
+           )
+
+EXPANDED_PLUGIN_DIR="${LIBDIR}/${PLUGIN_DIR}"
+if test "x${exec_prefix}" = "xNONE" ; then
+  if test "x${prefix}" = "xNONE" ; then
+    EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#/usr/local#`
+  else
+    EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${prefix}#`
+  fi
+else
+  EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${exec_prefix}#`
+fi
+
+AC_DEFINE_UNQUOTED([OPAL_PLUGIN_DIR], ["${EXPANDED_PLUGIN_DIR}"], [Default plugin dir])
+AC_MSG_RESULT([${EXPANDED_PLUGIN_DIR}])
+
 dnl ########################################################################
 dnl look for ptlib, use a preference order of explicit PTLIBDIR, directory
 dnl at same level, home directory, /usr/local or /usr.
@@ -861,7 +882,6 @@ else
   AC_MSG_RESULT(disabled)
 fi
 AC_SUBST(OPAL_SAMPLES)
-
 
 dnl ########################################################################
 dnl output make directives

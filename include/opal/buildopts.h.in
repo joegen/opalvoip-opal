@@ -43,6 +43,7 @@
 #undef OPAL_BUILD
 #undef OPAL_VERSION
 
+#undef  OPAL_PLUGIN_DIR
 
 /////////////////////////////////////////////////
 //
