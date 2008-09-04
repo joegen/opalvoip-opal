@@ -533,15 +533,13 @@ void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code)
       break;
 
     case Unsubscribed :
+    case Unavailable :
     case Restoring :
       endpoint.OnRegistrationStatus(aor, true, code/100 != 2, code);
       break;
 
     case Unsubscribing :
       endpoint.OnRegistrationStatus(aor, false, false, code);
-      break;
-
-    default :
       break;
   }
 }
@@ -606,6 +604,45 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 }
 
 
+void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes r)
+{
+  SendStatus(r);
+  SIPHandler::OnFailed(r);
+}
+
+
+PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
+{
+  SendStatus(SIP_PDU::Information_Trying);
+  return SIPHandler::SendRequest(s);
+}
+
+
+void SIPSubscribeHandler::SendStatus(SIP_PDU::StatusCodes code)
+{
+  switch (GetState()) {
+    case Subscribing :
+      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, targetAddress, true, false, code);
+      break;
+
+    case Subscribed :
+    case Refreshing :
+      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, targetAddress, true, true, code);
+      break;
+
+    case Unsubscribed :
+    case Unavailable :
+    case Restoring :
+      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, targetAddress, true, code/100 != 2, code);
+      break;
+
+    case Unsubscribing :
+      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, targetAddress, false, false, code);
+      break;
+  }
+}
+
+
 void SIPSubscribeHandler::UpdateParameters(const SIPSubscribe::Params & params)
 {
   if (!params.m_authID.IsEmpty())
@@ -634,7 +671,7 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
     for (PStringList::iterator route = recordRoute.rbegin(); route != recordRoute.rend(); --route)
       routeSet += *route;
     if (!response.GetMIME().GetContact().IsEmpty()) 
-      targetAddress = response.GetMIME().GetContact();
+      m_parameters.m_targetAddress = response.GetMIME().GetContact();
     dialogCreated = PTrue;
   }
   
@@ -645,6 +682,7 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
   /* Update the To */
   remotePartyAddress = response.GetMIME().GetTo();
 
+  SendStatus(SIP_PDU::Successful_OK);
   SIPHandler::OnReceivedOK(transaction, response);
 }
 
@@ -977,11 +1015,13 @@ SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 
 //////////////////////////////////////////////////////////////////
 
-unsigned SIPHandlersList::GetRegistrationsCount()
+unsigned SIPHandlersList::GetCount(SIP_PDU::Methods meth, const PString & eventPackage) const
 {
   unsigned count = 0;
   for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler)
-    if (handler->GetState () == SIPHandler::Subscribed && handler->GetMethod() == SIP_PDU::Method_REGISTER) 
+    if (handler->GetState () == SIPHandler::Subscribed &&
+        handler->GetMethod() == meth &&
+        (eventPackage.IsEmpty() || handler->GetEventPackage() == eventPackage))
       count++;
   return count;
 }

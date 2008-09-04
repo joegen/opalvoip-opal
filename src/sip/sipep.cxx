@@ -804,6 +804,15 @@ PBoolean SIPEndPoint::IsSubscribed(const PString & eventPackage, const PString &
 }
 
 
+void SIPEndPoint::OnSubscriptionStatus(const PString & /*eventPackage*/,
+                                       const SIPURL & /*aor*/,
+                                       bool /*wasSubscribing*/,
+                                       bool /*reSubscribing*/,
+                                       SIP_PDU::StatusCodes /*reason*/)
+{
+}
+
+
 bool SIPEndPoint::Register(const PString & host,
                            const PString & user,
                            const PString & authName,

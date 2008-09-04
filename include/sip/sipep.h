@@ -365,6 +365,44 @@ class SIPEndPoint : public OpalRTPEndPoint
       */
     bool UnregisterAll();
 
+    /**Returns PTrue if the given URL has been registered 
+     * (e.g.: 6001@seconix.com).
+     */
+    PBoolean IsRegistered(const PString & aor);
+
+    /** Returns the number of registered accounts.
+     */
+    unsigned GetRegistrationsCount() const { return activeSIPHandlers.GetCount(SIP_PDU::Method_REGISTER); }
+
+    /**Callback called when a registration to a SIP registrar status.
+     * The PBoolean indicates if the operation that failed was a REGISTER or 
+     * an (UN)REGISTER.
+     */
+    virtual void OnRegistrationStatus(
+      const PString & aor,
+      PBoolean wasRegistering,
+      PBoolean reRegistering,
+      SIP_PDU::StatusCodes reason
+    );
+
+    /**Callback called when a registration to a SIP registrars fails.
+       Deprecated, maintained for backward compatibility, use OnRegistrationStatus().
+     */
+    virtual void OnRegistrationFailed(
+      const PString & aor,
+      SIP_PDU::StatusCodes reason,
+      PBoolean wasRegistering
+    );
+
+    /**Callback called when a registration or an unregistration is successful.
+       Deprecated, maintained for backward compatibility, use OnRegistrationStatus().
+     */
+    virtual void OnRegistered(
+      const PString & aor,
+      PBoolean wasRegistering
+    );
+
+
     /**Subscribe to a notifier. This function is asynchronous to permit
      * several subscriptions to occur at the same time.
      */
@@ -394,6 +432,28 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
     bool UnsubcribeAll(
       const PString & eventPackage
+    );
+
+    /**Returns PTrue if the endpoint is subscribed to some
+     * event for the given to address.
+     */
+    PBoolean IsSubscribed(
+      const PString & eventPackage,
+      const PString & to
+    );
+
+    /** Returns the number of registered accounts.
+     */
+    unsigned GetSubscriptionCount(const PString & eventPackage) { return activeSIPHandlers.GetCount(SIP_PDU::Method_SUBSCRIBE, eventPackage); }
+
+    /**Callback called when a subscription to a SIP UA status changes.
+     */
+    virtual void OnSubscriptionStatus(
+      const PString & eventPackage, ///< Event package subscribed to
+      const SIPURL & uri,           ///< Target URI for the subscription.
+      bool wasSubscribing,          ///< Indication the subscribing or unsubscribing
+      bool reSubscribing,           ///< If subscribing then indication was refeshing subscription
+      SIP_PDU::StatusCodes reason   ///< Status of subscription
     );
 
 
@@ -428,56 +488,6 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PString & basic,
       const PString & note
     );
-
-    /**Callback called when a registration to a SIP registrar status.
-     * The PBoolean indicates if the operation that failed was a REGISTER or 
-     * an (UN)REGISTER.
-     */
-    virtual void OnRegistrationStatus(
-      const PString & aor,
-      PBoolean wasRegistering,
-      PBoolean reRegistering,
-      SIP_PDU::StatusCodes reason
-    );
-
-    /**Callback called when a registration to a SIP registrars fails.
-     * The PBoolean indicates if the operation that failed was a REGISTER or 
-     * an (UN)REGISTER.
-     */
-    virtual void OnRegistrationFailed(
-      const PString & aor,
-      SIP_PDU::StatusCodes reason,
-      PBoolean wasRegistering
-    );
-
-    /**Callback called when a registration or an unregistration is successful.
-     * The PBoolean indicates if the operation that failed was a registration or
-     * not.
-     */
-    virtual void OnRegistered(
-      const PString & aor,
-      PBoolean wasRegistering
-    );
-
-    
-    /**Returns PTrue if the given URL has been registered 
-     * (e.g.: 6001@seconix.com).
-     */
-    PBoolean IsRegistered(const PString & aor);
-
-    /**Returns PTrue if the endpoint is subscribed to some
-     * event for the given to address.
-     */
-    PBoolean IsSubscribed(
-      const PString & eventPackage,
-      const PString & to
-    );
-
-
-    /** Returns the number of registered accounts.
-     */
-    unsigned GetRegistrationsCount () { return activeSIPHandlers.GetRegistrationsCount (); }
-    
 
     /**Callback called when a message sent by the endpoint didn't reach
      * its destination or when the proxy or remote endpoint returns
