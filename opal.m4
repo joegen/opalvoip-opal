@@ -92,6 +92,51 @@ AC_DEFUN([OPAL_DETERMINE_DEBUG],
           OPAL_MSG_CHECK([Debugging support], [$DEBUG_BUILD])
          ])
 
+dnl OPAL_DETERMINE_VERSION
+dnl Determine OPAL's version number
+dnl Arguments: $OPAL_DIR
+dnl Return:    $MAJOR_VERSION
+dnl            $MINOR_VERSION
+dnl            $BUILD_NUMBER
+dnl            $OPAL_VERSION
+AC_DEFUN([OPAL_DETERMINE_VERSION],
+         [
+          MAJOR_VERSION=`cat $1/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
+          MINOR_VERSION=`cat $1/version.h | grep MINOR_VERSION | cut -f3 -d' '`
+          BUILD_NUMBER=`cat $1/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
+          OPAL_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${BUILD_NUMBER}"
+
+          OPAL_MSG_CHECK([OPAL Version], [$OPAL_VERSION])
+         ])
+
+dnl OPAL_DETERMINE_PLUGIN_DIR
+dnl Determine plugin install directory
+dnl Arguments: $OPAL_VERSION
+dnl Return:    $PLUGIN_DIR
+dnl            $EXPANDED_PLUGIN_DIR
+AC_DEFUN([OPAL_DETERMINE_PLUGIN_DIR],
+         [
+          AC_ARG_WITH([plugin-installdir],
+                      AS_HELP_STRING([--with-plugin-installdir=DIR],[Location where plugins are installed, starting at the lib dir]),
+                      [PLUGIN_DIR="$withval"],
+                      [PLUGIN_DIR="opal-${OPAL_VERSION}"]
+                     )
+
+          EXPANDED_PLUGIN_DIR="${libdir}/${PLUGIN_DIR}"
+          if test "x${exec_prefix}" = "xNONE" ; then
+            if test "x${prefix}" = "xNONE" ; then
+              EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#/usr/local#`
+            else
+              EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${prefix}#`
+            fi
+          else
+            EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${exec_prefix}#`
+          fi
+
+          OPAL_MSG_CHECK([Plugin install directory], [${EXPANDED_PLUGIN_DIR}])
+         ])
+
+
 dnl OPAL_DETERMINE_LIBNAMES
 dnl Determine opal library and symlink names
 dnl Arguments: $target_os
