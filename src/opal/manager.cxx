@@ -55,11 +55,13 @@
 
 
 static const char * const DefaultMediaFormatOrder[] = {
+  OPAL_GSMAMR,
   OPAL_G7231_6k3,
   OPAL_G729B,
   OPAL_G729AB,
   OPAL_G729,
   OPAL_G729A,
+  OPAL_iLBC,
   OPAL_GSM0610,
   OPAL_G728,
   OPAL_G711_ULAW_64K,
