@@ -104,10 +104,6 @@ public:
   virtual PString GetCallID()
     { return callID; }
 
-  bool CanBeDeleted()
-    { return GetState() == Unsubscribed; }
-
-
   virtual void SetBody(const PString & b)
     { body = b;}
 

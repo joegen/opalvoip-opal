@@ -335,7 +335,7 @@ PBoolean SIPEndPoint::GarbageCollection()
 
   PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReference);
   while (handler != NULL) {
-    if (handler->CanBeDeleted())
+    if (handler->GetState() == SIPHandler::Unsubscribed && handler->ShutDown())
       activeSIPHandlers.Remove(handler++);
     else
       ++handler;
