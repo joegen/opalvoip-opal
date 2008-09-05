@@ -32,11 +32,18 @@ fi
 AC_SUBST(GCC_HAS_CLZ)
 
 dnl Enable compiler warnings
+WFLAGS=
 if test "x$ac_cv_c_compiler_gnu" = xyes; then
-  CFLAGS="$CFLAGS -Wall -Wextra -Winit-self -Wstrict-aliasing=2 -Wfloat-equal -Wno-comment -Wno-missing-field-initializers -Wno-unused"
-  CXXFLAGS="$CXXFLAGS -Wall -Wextra -Winit-self -Wstrict-aliasing=2 -Wfloat-equal -Wno-comment -Wno-missing-field-initializers -Wno-unused"
-dnl switch-default switch-enum
+  if test ${GXX_MAJOR} -lt 4 ; then
+    WFLAGS="-Wall -Wextra -Wstrict-aliasing=2 -Wfloat-equal -Wno-comment -Wno-unused"
+  else
+    WFLAGS="-Wall -Wextra -Winit-self -Wstrict-aliasing=2 -Wfloat-equal -Wno-comment -Wno-missing-field-initializers -Wno-unused"
+
+  fi
 fi
+
+CFLAGS="$CFLAGS $WFLAGS"
+CXXFLAGS="$CXXFLAGS $WFLAGS"
 
 dnl ########################################################################
 dnl Defaults
