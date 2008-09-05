@@ -377,19 +377,20 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
   switch (code) {
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
-      return;
+      break;
 
     case SIP_PDU::Local_TransportError :
     case SIP_PDU::Failure_RequestTimeout :
+      SetState(Unavailable);
       break;
 
     default :
       PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response " << code);
       expire = 0; // OK, stop trying
       expireTimer.Stop();
+      SetState(Unsubscribed);
   }
 
-  SetState(Unsubscribed);
 }
 
 
