@@ -1281,6 +1281,12 @@ class OpalConnection : public PSafeObject
       */
     virtual PString GetCalledPartyURL();
 
+    /* Internal function to copy party names from "network" connection to
+       "non-network" connection such as OpalPCSSConnection. This allows
+       the non-network GetRemoteAddress() function and its ilk to return
+       the intuitive value, i.e. the value from the OTHER connection.
+     */
+    void CopyPartyNames(const OpalConnection & other);
 
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
