@@ -959,7 +959,7 @@ class OpalManager : public PObject
        Note, the pointer is NOT to be deleted by the user.
       */
     virtual PNatMethod * GetNatMethod(
-      const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny();
+      const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()
     ) const;
 
     /**Set the STUN server address, is of the form host[:port]
