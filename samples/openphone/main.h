@@ -48,7 +48,7 @@
 #include <opal/pcss.h>
 
 #ifndef OPAL_H323
-#error Must compile with H.323 enabled!
+//#error Must compile with H.323 enabled!
 #endif
 
 #include <h323/h323.h>
@@ -118,7 +118,7 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
     MyManager & m_manager;
 };
 
-
+#if OPAL_H323
 class MyH323EndPoint : public H323EndPoint
 {
   public:
@@ -129,7 +129,7 @@ class MyH323EndPoint : public H323EndPoint
 
     MyManager & m_manager;
 };
-
+#endif
 
 class MySIPEndPoint : public SIPEndPoint
 {
@@ -807,10 +807,12 @@ class MyManager : public wxFrame, public OpalManager
     PStringArray m_LocalInterfaces;
     void StartAllListeners();
 
+#if OPAL_H323
     MyH323EndPoint * h323EP;
     int              m_gatekeeperMode;
     PwxString        m_gatekeeperAddress;
     PwxString        m_gatekeeperIdentifier;
+#endif
     bool StartGatekeeper();
 
     MySIPEndPoint * sipEP;
