@@ -679,10 +679,6 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
     dialogCreated = PTrue;
   }
   
-  SIPURL address = targetAddress;
-  address.Sanitise(SIPURL::RequestURI);
-  m_parameters.m_targetAddress = address.AsString();
-
   /* Update the To */
   remotePartyAddress = response.GetMIME().GetTo();
 
