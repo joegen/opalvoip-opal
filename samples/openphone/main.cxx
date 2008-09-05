@@ -445,7 +445,9 @@ MyManager::MyManager()
   , m_speedDials(NULL)
   , pcssEP(NULL)
   , potsEP(NULL)
+#if OPAL_H323
   , h323EP(NULL)
+#endif
   , sipEP(NULL)
 #if OPAL_IVR
   , ivrEP(NULL)
@@ -589,7 +591,9 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Creating the endpoints
+#if OPAL_H323
   h323EP = new MyH323EndPoint(*this);
+#endif
 
   sipEP = new MySIPEndPoint(*this);
 
@@ -634,8 +638,10 @@ bool MyManager::Initialise()
               << setfill('\n') << interfaceTable << setfill(' ') << flush;
 
   config->SetPath(NetworkingGroup);
+#if OPAL_H323
   if (config->Read(BandwidthKey, &value1))
     h323EP->SetInitialBandwidth(value1);
+#endif
   if (config->Read(TCPPortBaseKey, &value1) && config->Read(TCPPortMaxKey, &value2))
     SetTCPPorts(value1, value2);
   if (config->Read(UDPPortBaseKey, &value1) && config->Read(UDPPortMaxKey, &value2))
@@ -846,11 +852,16 @@ bool MyManager::Initialise()
     DetachEndPoint("h323s");
   if (config->Read(SecureSIPKey, &onoff) && !onoff)
     DetachEndPoint("sips");
+#if OPAL_H323
   if (config->Read(RTPSecurityModeH323Key, &str) && str != "None")
     h323EP->SetDefaultSecurityMode(str);
+#endif
   if (config->Read(RTPSecurityModeSIPKey, &str) && str != "None")
     sipEP->SetDefaultSecurityMode(str);
 
+  PwxString username, password;
+
+#if OPAL_H323
   ////////////////////////////////////////
   // H.323 fields
   config->SetPath(H323AliasesGroup);
@@ -863,6 +874,7 @@ bool MyManager::Initialise()
   }
 
   config->SetPath(H323Group);
+
   if (config->Read(DTMFSendModeKey, &value1) && value1 >= 0 && value1 < H323Connection::NumSendUserInputModes)
     h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)value1);
   if (config->Read(CallIntrusionProtectionLevelKey, &value1))
@@ -874,7 +886,6 @@ bool MyManager::Initialise()
   if (config->Read(DisableH245inSETUPKey, &onoff))
     h323EP->DisableH245inSetup(onoff);
 
-  PwxString username, password;
   config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
   if (m_gatekeeperMode > 0) {
     if (config->Read(GatekeeperTTLKey, &value1))
@@ -889,7 +900,7 @@ bool MyManager::Initialise()
     if (!StartGatekeeper())
       return false;
   }
-
+#endif
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
@@ -1050,7 +1061,9 @@ static void StartListenerForEP(OpalEndPoint * ep, const PStringArray & allInterf
 
 void MyManager::StartAllListeners()
 {
+#if OPAL_H323
   StartListenerForEP(h323EP, m_LocalInterfaces);
+#endif
   StartListenerForEP(sipEP, m_LocalInterfaces);
 }
 
@@ -2415,6 +2428,7 @@ void MyManager::OnStreamsChanged(wxCommandEvent &)
 
 bool MyManager::StartGatekeeper()
 {
+#if OPAL_H323
   if (m_gatekeeperMode == 0)
     h323EP->RemoveGatekeeper();
   else {
@@ -2435,6 +2449,9 @@ bool MyManager::StartGatekeeper()
   }
 
   return m_gatekeeperMode < 2;
+#else
+   return false;
+#endif
 }
 
 
@@ -2764,6 +2781,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Networking fields
+#if OPAL_H323
   int bandwidth = m_manager.h323EP->GetInitialBandwidth();
   m_Bandwidth.sprintf(bandwidth%10 == 0 ? "%u" : "%u.%u", bandwidth/10, bandwidth%10);
   FindWindowByName(BandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_Bandwidth));
@@ -2781,6 +2799,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   else
     bandwidthClass = 5;
   FindWindowByNameAs<wxChoice>(this, "BandwidthClass")->SetSelection(bandwidthClass);
+#endif
 
   INIT_FIELD(TCPPortBase, m_manager.GetTCPPortBase());
   INIT_FIELD(TCPPortMax, m_manager.GetTCPPortMax());
@@ -3018,6 +3037,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   FindWindowByName(RTPSecurityModeSIPKey)->Disable();
 #endif // OPAL_SRTP || OPAL_ZRTP
 
+#if OPAL_H323
   ////////////////////////////////////////
   // H.323 fields
   m_AddAlias = FindWindowByNameAs<wxButton>(this, "AddAlias");
@@ -3043,6 +3063,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(GatekeeperTTL, m_manager.h323EP->GetGatekeeperTimeToLive().GetSeconds());
   INIT_FIELD(GatekeeperLogin, m_manager.h323EP->GetGatekeeperUsername());
   INIT_FIELD(GatekeeperPassword, m_manager.h323EP->GetGatekeeperPassword());
+#endif
 
   ////////////////////////////////////////
   // SIP fields
@@ -3191,7 +3212,9 @@ bool OptionsDialog::TransferDataFromWindow()
   // Networking fields
   config->SetPath(NetworkingGroup);
   int adjustedBandwidth = (int)(floatBandwidth*10);
+#if OPAL_H323
   m_manager.h323EP->SetInitialBandwidth(adjustedBandwidth);
+#endif
   config->Write(BandwidthKey, adjustedBandwidth);
   SAVE_FIELD2(TCPPortBase, TCPPortMax, m_manager.SetTCPPorts);
   SAVE_FIELD2(UDPPortBase, UDPPortMax, m_manager.SetUDPPorts);
@@ -3333,10 +3356,13 @@ bool OptionsDialog::TransferDataFromWindow()
     m_RTPSecurityModeH323.erase();
   if (m_RTPSecurityModeSIP == "None")
     m_RTPSecurityModeSIP.erase();
+#if OPAL_H323
   SAVE_FIELD(RTPSecurityModeH323, m_manager.h323EP->SetDefaultSecurityMode);
+#endif
   SAVE_FIELD(RTPSecurityModeSIP, m_manager.sipEP->SetDefaultSecurityMode);
 
 
+#if OPAL_H323
   ////////////////////////////////////////
   // H.323 fields
   config->DeleteGroup(H323AliasesGroup);
@@ -3375,7 +3401,7 @@ bool OptionsDialog::TransferDataFromWindow()
     if (!m_manager.StartGatekeeper())
       m_manager.Close();
   }
-
+#endif
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
@@ -4903,6 +4929,7 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 }
 
 
+#if OPAL_H323
 ///////////////////////////////////////////////////////////////////////////////
 
 MyH323EndPoint::MyH323EndPoint(MyManager & manager)
@@ -4917,7 +4944,7 @@ void MyH323EndPoint::OnRegistrationConfirm()
   LogWindow << "H.323 registration successful." << endl;
 }
 
-
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 
 MySIPEndPoint::MySIPEndPoint(MyManager & manager)
