@@ -158,6 +158,8 @@ PBoolean OpalCall::OnSetUp(OpalConnection & connection)
   if (isClearing)
     return false;
 
+  SetPartyNames();
+
   bool ok = false;
 
   PSafePtr<OpalConnection> otherConnection;
@@ -165,8 +167,6 @@ PBoolean OpalCall::OnSetUp(OpalConnection & connection)
     if (otherConnection->SetUpConnection() && otherConnection->OnSetUpConnection())
       ok = true;
   }
-
-  SetPartyNames();
 
   return ok;
 }
@@ -652,19 +652,13 @@ void OpalCall::SetPartyNames()
 
   if (connectionB->IsNetworkConnection()) {
     m_partyB = connectionB->GetRemotePartyURL();
-    if (!connectionA->IsNetworkConnection()) {
-      connectionA->SetRemotePartyName(connectionB->GetRemotePartyName());
-      connectionA->SetRemotePartyAddress(connectionB->GetRemotePartyURL());
-      connectionA->SetProductInfo(connectionB->GetRemoteProductInfo());
-    }
+    if (!connectionA->IsNetworkConnection())
+      connectionA->CopyPartyNames(*connectionB);
   }
   else {
     m_partyB = connectionB->GetLocalPartyURL();
-    if (connectionA->IsNetworkConnection()) {
-      connectionB->SetRemotePartyName(connectionA->GetRemotePartyName());
-      connectionB->SetRemotePartyAddress(connectionA->GetRemotePartyURL());
-      connectionB->SetProductInfo(connectionA->GetRemoteProductInfo());
-    }
+    if (connectionA->IsNetworkConnection())
+      connectionB->CopyPartyNames(*connectionA);
   }
 }
 
