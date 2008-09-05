@@ -102,6 +102,8 @@ SIPHandler::~SIPHandler()
     transport->CloseWait();
     delete transport;
   }
+
+  PTRACE(4, "SIP\tDeleted handler.");
 }
 
 
@@ -389,6 +391,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
       expire = 0; // OK, stop trying
       expireTimer.Stop();
       SetState(Unsubscribed);
+      ShutDown();
   }
 
 }
@@ -664,7 +667,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   // Check the susbscription state
   if (state.Find("terminated") != P_MAX_INDEX) {
     PTRACE(3, "SIP\tSubscription is terminated");
-    SetState(Unsubscribed);
+    ShutDown();
   }
   else if (state.Find("active") != P_MAX_INDEX || state.Find("pending") != P_MAX_INDEX) {
 
