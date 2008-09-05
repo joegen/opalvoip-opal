@@ -453,8 +453,10 @@ void SIPURL::Sanitise(UsageContext context)
 PBoolean SIPURL::AdjustToDNS(PINDEX entry)
 {
   // RFC3263 states we do not do lookup if explicit port mentioned
-  if (GetPortSupplied())
-    return PTrue;
+  if (GetPortSupplied()) {
+    PTRACE(4, "SIP\tNo SRV lookup as has explicit port number.");
+    return true;
+  }
 
   // Or it is a valid IP address, not a domain name
   PIPSocket::Address ip = GetHostName();
