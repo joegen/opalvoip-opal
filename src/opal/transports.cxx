@@ -1198,13 +1198,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   , manager(ep.GetManager())
 {
   PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr, manager.GetNatMethod());
-  if (sockets->Open(localPort)) {
-    Open(new PMonitoredSocketChannel(sockets, PFalse));
-    PTRACE(3, "OpalUDP\tBinding to interface: " << localAddress << ':' << localPort);
-  }
-  else {
-    PTRACE(1, "OpalUDP\tCould not bind to interface: " << localAddress << ':' << localPort);
-  }
+  Open(new PMonitoredSocketChannel(sockets, PFalse));
 }
 
 
@@ -1272,8 +1266,6 @@ PBoolean OpalTransportUDP::Connect()
     return PTrue;
 
   OpalManager & manager = endpoint.GetManager();
-
-  bundle->SetNatMethod(manager.GetNatMethod(remoteAddress));
 
   localPort = manager.GetNextUDPPort();
   WORD firstPort = localPort;
