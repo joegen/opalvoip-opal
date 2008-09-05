@@ -143,7 +143,7 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
 
   PIPSocket::Address remoteAddress;
   transport.GetRemoteAddress().GetIpAddress(remoteAddress);
-  PSTUNClient * stun = manager.GetSTUN(remoteAddress);
+  PNatMethod * natMethod = manager.GetNatMethod(remoteAddress);
 
   OpalMediaType mediaType = OpalMediaTypeDefinition::GetMediaTypeForSessionId(sessionID);
   OpalMediaTypeDefinition * def = mediaType.GetDefinition();
@@ -182,7 +182,7 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
 
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;
-  while (!rtpSession->Open(localAddress, nextPort, nextPort, manager.GetRtpIpTypeofService(), stun, rtpqos)) {
+  while (!rtpSession->Open(localAddress, nextPort, nextPort, manager.GetRtpIpTypeofService(), natMethod, rtpqos)) {
     nextPort = manager.GetRtpIpPortPair();
     if (nextPort == firstPort) {
       PTRACE(1, "RTPCon\tNo ports available for RTP session " << sessionID << " for " << *this);

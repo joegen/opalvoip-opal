@@ -324,9 +324,8 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
 
 PBoolean H323EndPoint::SetGatekeeper(const PString & address, H323Transport * transport)
 {
-  H323Gatekeeper * gk = InternalCreateGatekeeper(transport);
   H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, "udp");
-  return InternalRegisterGatekeeper(gk, gk->DiscoverByAddress(h323addr));
+  return InternalCreateGatekeeper(transport) && gatekeeper->DiscoverByAddress(h323addr);
 }
 
 
@@ -334,57 +333,36 @@ PBoolean H323EndPoint::SetGatekeeperZone(const PString & address,
                                      const PString & identifier,
                                      H323Transport * transport)
 {
-  H323Gatekeeper * gk = InternalCreateGatekeeper(transport);
   H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, "udp");
-  return InternalRegisterGatekeeper(gk, gk->DiscoverByNameAndAddress(identifier, h323addr));
+  return InternalCreateGatekeeper(transport) && gatekeeper->DiscoverByNameAndAddress(identifier, h323addr);
 }
 
 
 PBoolean H323EndPoint::LocateGatekeeper(const PString & identifier, H323Transport * transport)
 {
-  H323Gatekeeper * gk = InternalCreateGatekeeper(transport);
-  return InternalRegisterGatekeeper(gk, gk->DiscoverByName(identifier));
+  return InternalCreateGatekeeper(transport) && gatekeeper->DiscoverByName(identifier);
 }
 
 
 PBoolean H323EndPoint::DiscoverGatekeeper(H323Transport * transport)
 {
-  H323Gatekeeper * gk = InternalCreateGatekeeper(transport);
-  return InternalRegisterGatekeeper(gk, gk->DiscoverAny());
+  return InternalCreateGatekeeper(transport) && gatekeeper->DiscoverAny();
 }
 
 
-H323Gatekeeper * H323EndPoint::InternalCreateGatekeeper(H323Transport * transport)
+bool H323EndPoint::InternalCreateGatekeeper(H323Transport * transport)
 {
   RemoveGatekeeper(H225_UnregRequestReason::e_reregistrationRequired);
 
   if (transport == NULL)
     transport = new H323TransportUDP(*this);
 
+  gatekeeper = CreateGatekeeper(transport);
+  if (gatekeeper == NULL)
+    return false;
 
-  H323Gatekeeper * gk = CreateGatekeeper(transport);
-
-  gk->SetPassword(gatekeeperPassword, gatekeeperUsername);
-
-  return gk;
-}
-
-
-PBoolean H323EndPoint::InternalRegisterGatekeeper(H323Gatekeeper * gk, PBoolean discovered)
-{
-  if (discovered) {
-    if (gk->RegistrationRequest()) {
-      gatekeeper = gk;
-      return PTrue;
-    }
-
-    // RRQ was rejected continue trying
-    gatekeeper = gk;
-  }
-  else // Only stop listening if the GRQ was rejected
-    delete gk;
-
-  return PFalse;
+  gatekeeper->SetPassword(gatekeeperPassword, gatekeeperUsername);
+  return true;
 }
 
 
@@ -431,7 +409,7 @@ void H323EndPoint::SetGatekeeperPassword(const PString & password, const PString
     gatekeeper->SetPassword(gatekeeperPassword, gatekeeperUsername);
     if (gatekeeper->IsRegistered()) // If we are registered send a URQ
       gatekeeper->UnregistrationRequest(H225_UnregRequestReason::e_reregistrationRequired);
-    InternalRegisterGatekeeper(gatekeeper, PTrue);
+    gatekeeper->RegistrationRequest();
   }
 }
 

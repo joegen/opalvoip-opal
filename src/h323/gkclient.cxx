@@ -148,21 +148,21 @@ PString H323Gatekeeper::GetName() const
 PBoolean H323Gatekeeper::DiscoverAny()
 {
   gatekeeperIdentifier = PString();
-  return StartDiscovery(H323TransportAddress());
+  return StartGatekeeper(H323TransportAddress());
 }
 
 
 PBoolean H323Gatekeeper::DiscoverByName(const PString & identifier)
 {
   gatekeeperIdentifier = identifier;
-  return StartDiscovery(H323TransportAddress());
+  return StartGatekeeper(H323TransportAddress());
 }
 
 
 PBoolean H323Gatekeeper::DiscoverByAddress(const H323TransportAddress & address)
 {
   gatekeeperIdentifier = PString();
-  return StartDiscovery(address);
+  return StartGatekeeper(address);
 }
 
 
@@ -170,7 +170,7 @@ PBoolean H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
                                               const H323TransportAddress & address)
 {
   gatekeeperIdentifier = identifier;
-  return StartDiscovery(address);
+  return StartGatekeeper(address);
 }
 
 
@@ -196,76 +196,38 @@ static PBoolean WriteGRQ(H323Transport & transport, void * param)
 }
 
 
-PBoolean H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
+bool H323Gatekeeper::StartGatekeeper(const H323TransportAddress & initialAddress)
 {
   if (PAssertNULL(transport) == NULL)
-    return PFalse;
+    return false;
 
-  PAssert(!transport->IsRunning(), "Cannot do discovery on running RAS channel");
+  PAssert(!transport->IsRunning(), "Cannot do initial discovery on running RAS channel");
 
   H323TransportAddress address = initialAddress;
   if (address.IsEmpty())
     address = "udp$*:1719";
 
   if (!transport->ConnectTo(address))
-    return PFalse;
+    return false;
 
-  /// don't send GRQ if not requested
-  if (!endpoint.GetSendGRQ() && !initialAddress.IsEmpty()) {
-    StartChannel();
-    PTRACE(3, "RAS\tSkipping gatekeeper discovery for " << initialAddress);
-    return PTrue;
-  }
+  if (!StartChannel())
+    return false;
 
-  discoveryComplete = PFalse;
-
-  H323RasPDU pdu;
-  Request request(SetupGatekeeperRequest(pdu), pdu);
-
-  request.responseInfo = &address;
-
-  requestsMutex.Wait();
-  requests.SetAt(request.sequenceNumber, &request);
-  requestsMutex.Signal();
-
-  for (unsigned retry = 0; retry < endpoint.GetGatekeeperRequestRetries(); retry++) {
-    if (!transport->WriteConnect(WriteGRQ, &pdu)) {
-      PTRACE(1, "RAS\tError writing discovery PDU: " << transport->GetErrorText());
-      break;
-    }
-
-    H323RasPDU response;
-    transport->SetReadTimeout(endpoint.GetGatekeeperRequestTimeout ());
-    if (response.Read(*transport) && HandleTransaction(response) && discoveryComplete)
-      break;
-  }
-
-  transport->SetInterface(transport->GetLastReceivedInterface());
-
-  if (discoveryComplete) {
-    PTRACE(3, "RAS\tGatekeeper discovered at: "
-           << transport->GetRemoteAddress()
-           << " (if=" << transport->GetLocalAddress() << ')');
-    StartChannel();
-  }
-
-  requestsMutex.Wait();
-  requests.SetAt(request.sequenceNumber, NULL);
-  requestsMutex.Signal();
-
-  return discoveryComplete;
+  reregisterNow = true;
+  monitorTickle.Signal();
+  return true;
 }
 
 
-bool H323Gatekeeper::DiscoverGatekeeper(const H323TransportAddress & address)
+bool H323Gatekeeper::DiscoverGatekeeper()
 {
   discoveryComplete = false;
   
   H323RasPDU pdu;
   Request request(SetupGatekeeperRequest(pdu), pdu);
   
-  H323TransportAddress addr = address;
-  request.responseInfo = &addr;
+  H323TransportAddress address = transport->GetRemoteAddress();
+  request.responseInfo = &address;
   
   requestsMutex.Wait();
   requests.SetAt(request.sequenceNumber, &request);
@@ -360,12 +322,15 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
   }
 
   H323TransportAddress locatedAddress(gcf.m_rasAddress, "udp");
-  PTRACE(3, "RAS\tGatekeeper discovery found " << locatedAddress);
+  PTRACE(3, "RAS\tGatekeeper discovered at: "
+         << transport->GetRemoteAddress()
+         << " (if=" << transport->GetLocalAddress() << ')');
 
   if (!transport->SetRemoteAddress(locatedAddress)) {
     PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
     return PFalse;
   }
+  transport->SetInterface(transport->GetLastReceivedInterface());
 
   if (gcf.HasOptionalField(H225_GatekeeperConfirm::e_alternateGatekeeper))
     SetAlternates(gcf.m_alternateGatekeeper, PFalse);
@@ -689,6 +654,22 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReje
 void H323Gatekeeper::RegistrationTimeToLive()
 {
   PTRACE(3, "RAS\tTime To Live reregistration");
+
+  if (!discoveryComplete) {
+    if (endpoint.GetSendGRQ()) {
+      if (DiscoverGatekeeper())
+        requiresDiscovery = false;
+      else {
+        PTRACE_IF(2, !reregisterNow, "RAS\tDiscovery failed, retrying in 1 minute");
+        timeToLive = PTimeInterval(0, 0, 1);
+        return;
+      }
+    }
+    else {
+      PTRACE_IF(3, !requiresDiscovery, "RAS\tSkipping gatekeeper discovery for " << transport->GetRemoteAddress());
+      discoveryComplete = true;
+    }
+  }
 
   if (requiresDiscovery) {
     PTRACE(3, "RAS\tRepeating discovery on gatekeepers request.");
@@ -1911,10 +1892,8 @@ H323Transport * H323Gatekeeper::CreateTransport(PIPSocket::Address binding, WORD
 
 void H323Gatekeeper::OnAddInterface(const PIPSocket::InterfaceEntry & /*entry*/, PINDEX priority)
 {
-  if (priority == HighPriority)
-    return;
-  
-  UpdateConnectionStatus();
+  if (priority != HighPriority)
+    UpdateConnectionStatus();
 }
 
 
@@ -1959,10 +1938,8 @@ void H323Gatekeeper::UpdateConnectionStatus()
   
   if (lowPriorityMonitor.GetInterfaces(FALSE, addr).GetSize() > 0) {
     // at least one interface available, locate gatekeper
-    if (DiscoverGatekeeper(transport->GetRemoteAddress())) {
-      reregisterNow = PTrue;
-      monitorTickle.Signal();
-    }
+    reregisterNow = PTrue;
+    monitorTickle.Signal();
   }
 }
 

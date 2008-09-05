@@ -1231,7 +1231,7 @@ void OpalManager::SetTranslationAddress(const PIPSocket::Address & address)
 }
 
 
-PSTUNClient * OpalManager::GetSTUN(const PIPSocket::Address & ip) const
+PNatMethod * OpalManager::GetNatMethod(const PIPSocket::Address & ip) const
 {
   if (ip.IsValid() && IsLocalAddress(ip))
     return NULL;
@@ -1259,8 +1259,8 @@ PSTUNClient::NatTypes OpalManager::SetSTUNServer(const PString & server)
     stun->SetServer(server);
   else {
     stun = new PSTUNClient(server,
-                           GetUDPPortBase(), GetUDPPortMax(),
-                           GetRtpIpPortBase(), GetRtpIpPortMax());
+                                         GetUDPPortBase(), GetUDPPortMax(),
+                                         GetRtpIpPortBase(), GetRtpIpPortMax());
     interfaceMonitor = new InterfaceMonitor(*this);
   }
 
@@ -1540,7 +1540,7 @@ void OpalManager::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEnt
 
 void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
 {
-  PSTUNClient * stun = m_manager.GetSTUN();
+  PSTUNClient * stun = m_manager.GetSTUNClient();
   PIPSocket::Address addr;
   if (stun != NULL && stun->GetInterfaceAddress(addr) && entry.GetAddress() == addr)
     stun->InvalidateCache();
