@@ -279,7 +279,8 @@ class H323Gatekeeper : public H225_RAS
 
 
   protected:
-    PBoolean StartDiscovery(const H323TransportAddress & address);
+    bool StartGatekeeper(const H323TransportAddress & address);
+    bool DiscoverGatekeeper();
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
 	
     void Connect(const H323TransportAddress & address, const PString & gatekeeperIdentifier);
@@ -318,7 +319,6 @@ class H323Gatekeeper : public H225_RAS
     // Handling interface changes
     void OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
     void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
-    bool DiscoverGatekeeper(const H323TransportAddress & address);
     void UpdateConnectionStatus();
 
 

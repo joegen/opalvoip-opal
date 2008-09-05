@@ -1017,7 +1017,7 @@ void MyManager::SetNATHandling()
 
         LogWindow << "STUN server \"" << stun->GetServer() << "\" replies " << nat;
         PIPSocket::Address externalAddress;
-        if (nat != PSTUNClient::BlockedNat && GetSTUN()->GetExternalAddress(externalAddress))
+        if (nat != PSTUNClient::BlockedNat && GetSTUNClient()->GetExternalAddress(externalAddress))
           LogWindow << " with address " << externalAddress;
         LogWindow << endl;
       }
@@ -2436,12 +2436,9 @@ bool MyManager::StartGatekeeper()
     if (!m_gatekeeperIdentifier.IsEmpty() || !m_gatekeeperAddress.IsEmpty())
       gkDesc == '@';
     gkDesc += (const char *)m_gatekeeperAddress;
-    LogWindow << "H.323 registration started for " << gkDesc << endl;
-    GetEventHandler()->ProcessPendingEvents();
-    Update();
 
     if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
-      LogWindow << "H.323 registration successful to " << *h323EP->GetGatekeeper() << endl;
+      LogWindow << "H.323 registration started for " << *h323EP->GetGatekeeper() << endl;
       return true;
     }
 

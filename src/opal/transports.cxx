@@ -732,7 +732,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  WORD port,
                                  PBoolean exclusive)
   : OpalListenerIP(endpoint, binding, port, exclusive),
-    listenerBundle(PMonitoredSockets::Create(binding.AsString(), !exclusive, endpoint.GetManager().GetSTUN()))
+    listenerBundle(PMonitoredSockets::Create(binding.AsString(), !exclusive, endpoint.GetManager().GetNatMethod()))
 {
 }
 
@@ -741,7 +741,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  const OpalTransportAddress & binding,
                                  OpalTransportAddress::BindOptions option)
   : OpalListenerIP(endpoint, binding, option),
-    listenerBundle(PMonitoredSockets::Create(binding.GetHostName(), !exclusiveListener, endpoint.GetManager().GetSTUN()))
+    listenerBundle(PMonitoredSockets::Create(binding.GetHostName(), !exclusiveListener, endpoint.GetManager().GetNatMethod()))
 {
 }
 
@@ -1197,7 +1197,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   : OpalTransportIP(ep, binding, localPort)
   , manager(ep.GetManager())
 {
-  PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr);
+  PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr, manager.GetNatMethod());
   if (sockets->Open(localPort)) {
     Open(new PMonitoredSocketChannel(sockets, PFalse));
     PTRACE(3, "OpalUDP\tBinding to interface: " << localAddress << ':' << localPort);
@@ -1273,7 +1273,7 @@ PBoolean OpalTransportUDP::Connect()
 
   OpalManager & manager = endpoint.GetManager();
 
-  bundle->SetNatMethod(manager.GetSTUN(remoteAddress));
+  bundle->SetNatMethod(manager.GetNatMethod(remoteAddress));
 
   localPort = manager.GetNextUDPPort();
   WORD firstPort = localPort;
