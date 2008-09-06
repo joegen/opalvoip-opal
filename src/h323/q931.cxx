@@ -140,6 +140,7 @@ Q931::Q931()
 
 
 Q931::Q931(const Q931 & other)
+  : PObject(other)
 {
   operator=(other);
 }

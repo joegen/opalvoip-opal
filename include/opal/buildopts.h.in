@@ -56,6 +56,7 @@
 #undef  OPAL_PTLIB_LDAP
 #undef  OPAL_PTLIB_VXML
 #undef  OPAL_PTLIB_CONFIG_FILE
+#undef  OPAL_PLUGIN_DIR
 
 /////////////////////////////////////////////////
 //
@@ -207,7 +208,7 @@
 //
 #undef OPAL_JAVA
 
-#if OPAL_JAVA
+#ifdef OPAL_JAVA
 #if defined(_MSC_VER)
 
 #pragma include_alias(<jni.h>,    <@JAVA_DIR@/include/jni.h>)

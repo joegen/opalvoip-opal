@@ -1954,6 +1954,7 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
 
 
 H323Capabilities::H323Capabilities(const H323Capabilities & original)
+  : PObject(original)
 {
   operator=(original);
 }

@@ -292,6 +292,9 @@ typedef enum OpalMessageType {
                                     OpalStatusMediaStream structure for more information. */
   OpalCmdMediaStream,           /**<Execute control on a media stream. See the OpalStatusMediaStream structure
                                     for more information. */
+
+  OpalCmdSetUserData,           /**<Set the user data field associated with a call */
+
   OpalMessageTypeCount
 } OpalMessageType;
 
@@ -332,6 +335,7 @@ typedef int (*OpalMediaDataFunction)(
                              if there can be more than one stream of a particular format,
                              e.g. two H.263 video channels. */
   const char * format,  /**< Format of media data, e.g. "PCM-16" */
+  void * userData,      /**< user data associated with the call */
   void * data,          /**< Data to read/write */
   int size              /**< Maximum size of data to read, or size of actual data to write */
 );
@@ -662,6 +666,14 @@ typedef struct OpalStatusMediaStream {
 } OpalStatusMediaStream;
 
 
+/** Assign a user data field to a call
+*/
+typedef struct OpalParamSetUserData {
+  const char    * m_callToken;   ///< Call token for the call the media stream is.
+  void *        m_userData;      ///< user data value to associate with this call
+} OpalParamSetUserData;
+
+
 /**User input information for the OpalIndUserInput indication.
 
    This is may be returned from the OpalGetMessage() function or
@@ -683,8 +695,10 @@ typedef struct OpalStatusUserInput {
   */
 typedef struct OpalStatusMessageWaiting {
   const char * m_party;     ///< Party for which the MWI is directed
-  const char * m_type;      ///< Type for MWI
-  const char * m_extraInfo; ///< Extra information for the MWI
+  const char * m_type;      ///< Type for MWI, "Voice", "Fax", "Pager", "Multimedia", "Text", "None"
+  const char * m_extraInfo; /**< Extra information for the MWI, e.g. "SUBSCRIBED",
+                                 "UNSUBSCRIBED", "2/8 (0/2)"
+                             */
 } OpalStatusMessageWaiting;
 
 
@@ -761,13 +775,14 @@ struct OpalMessage {
     OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
     OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistrationStatus
     OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndAlerting/OpalIndEstablished
-    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall
+    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldcall/OpalCmdRetreiveCall
     OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
     OpalStatusCallCleared    m_callCleared;        ///< Used by OpalIndCallCleared
     OpalParamCallCleared     m_clearCall;          ///< Used by OpalCmdClearCall
     OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream/OpalCmdMediaStream
+    OpalParamSetUserData     m_setUserData;        ///< Used by OpalCmdSetUserData
   } m_param;
 };
 

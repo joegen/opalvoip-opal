@@ -232,6 +232,7 @@ class OpalMediaPatch : public PObject
         bool              writeSuccessful;
 
 #ifdef OPAL_VIDEO
+        void SetRateControlParameters(const OpalMediaFormat & mediaFormat);
         bool RateControlExceeded(const PTimeInterval & currentTime);
 
         bool          rcEnabled;

@@ -83,6 +83,12 @@ OpalPCSSEndPoint::~OpalPCSSEndPoint()
   PTRACE(4, "PCSS\tDeleted PC sound system endpoint.");
 }
 
+OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
+{
+  OpalMediaFormatList list = OpalEndPoint::GetMediaFormats();
+  list += OpalL16_STEREO_48KHZ;
+  return list;
+}
 
 static PBoolean SetDeviceName(const PString & name,
                           PSoundChannel::Directions dir,
@@ -164,8 +170,8 @@ OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
 
 
 PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
-						     const OpalMediaFormat & mediaFormat,
-                                                     PBoolean isSource)
+						                                            const OpalMediaFormat & mediaFormat,
+                                                                      PBoolean isSource)
 {
   PString deviceName;
   PSoundChannel::Directions dir;
@@ -185,9 +191,13 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
     return NULL;
   }
 
-  if (soundChannel->Open(deviceName, dir, 1, mediaFormat.GetClockRate(), 16)) {
-    PTRACE(3, "PCSS\tOpened sound channel \"" << deviceName
-           << "\" for " << (isSource ? "record" : "play") << "ing.");
+  unsigned channels = mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption());
+
+  if (soundChannel->Open(deviceName, dir, channels, mediaFormat.GetClockRate(), 16)) {
+    PTRACE(3, "PCSS\tOpened " 
+               << ((channels == 1) ? "mono" : ((channels == 2) ? "stereo" : "multi-channel")) 
+               << " sound channel \"" << deviceName
+               << "\" for " << (isSource ? "record" : "play") << "ing.");
     return soundChannel;
   }
 

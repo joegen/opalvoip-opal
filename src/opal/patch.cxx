@@ -310,31 +310,27 @@ void OpalMediaPatch::Sink::GetStatistics(OpalMediaStatistics & statistics) const
 OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   : patch(p)
   , stream(s)
+  , primaryCodec(NULL)
+  , secondaryCodec(NULL)
+  , writeSuccessful(true)
+#ifdef OPAL_VIDEO
+  , rcEnabled(false)
+  , rcByteRate(0)
+  , rcWindowSize(0)
+  , rcMaxConsecutiveFramesSkip(0)
+  , rcConsecutiveFramesSkipped(0)
+  , rcLastTime(PTimer::Tick())
+  , rcTotalSize(0)
+#endif
 {
-  primaryCodec = NULL;
-  secondaryCodec = NULL;
   intermediateFrames.Append(new RTP_DataFrame);
   finalFrames.Append(new RTP_DataFrame);
-  writeSuccessful = true;
 
 #ifdef OPAL_VIDEO
-  OpalMediaFormat mediaFormat = stream->GetMediaFormat();
-  unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
-  rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
-  rcWindowSize = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption());
-  rcByteRate = (unsigned) (targetBitRate / 8);
-  rcMaxConsecutiveFramesSkip = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlMaxFramesSkipOption());
-  rcConsecutiveFramesSkipped = 0;
-  rcTotalSize  = 0;
-  rcLastTime = PTimer::Tick();
-
-  PTRACE(3, "Patch\tCreated Sink: format=" << mediaFormat
-         << ", bitrate=" << targetBitRate
-         << ", rate control=" << rcEnabled
-         << ", window=" << rcWindowSize);
-#else
-  PTRACE(3, "Patch\tCreated Sink: format=" << stream->GetMediaFormat());
+  SetRateControlParameters(stream->GetMediaFormat());
 #endif
+
+  PTRACE(3, "Patch\tCreated Sink: format=" << stream->GetMediaFormat());
 }
 
 
@@ -392,7 +388,7 @@ PBoolean OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat, 
   PReadWaitAndSignal mutex(inUse);
 
   if (fromSink)
-    return source.UpdateMediaFormat(mediaFormat);
+    return source.UpdateMediaFormat(mediaFormat, true);
 
   PBoolean atLeastOne = PFalse;
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
@@ -502,40 +498,31 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
 bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
+  bool ok;
+
+  if (primaryCodec == NULL) {
+    ok = stream->UpdateMediaFormat(mediaFormat, true);
 #ifdef OPAL_VIDEO
-  unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
-  rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
-  rcWindowSize = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption());
-  if (((unsigned) (targetBitRate / 8)) != rcByteRate) {
-    rcByteRate = (unsigned) (targetBitRate / 8);
-
-    std::list<FrameInfo>::iterator iter = frameInfoList.begin();
-    while (iter != frameInfoList.end()) {
-      rcTotalSize -= iter->size;
-      frameInfoList.erase(iter);
-      iter = frameInfoList.begin();
-    }
-  }
-  rcMaxConsecutiveFramesSkip = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlMaxFramesSkipOption());
-
-  PTRACE(3, "Patch\tUpdated Sink: format=" << mediaFormat
-         << ", bitrate=" << targetBitRate
-         << ", rate control=" << rcEnabled
-         << ", window=" << rcWindowSize);
-#else
-  PTRACE(3, "Patch\tUpdated Sink: format=" << mediaFormat);
+    SetRateControlParameters(stream->GetMediaFormat());
 #endif
-
-  if (primaryCodec == NULL)
-    return stream->UpdateMediaFormat(mediaFormat);
-
-  if (secondaryCodec != NULL && secondaryCodec->GetOutputFormat() == mediaFormat)
-    return secondaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
-
-  if (primaryCodec->GetOutputFormat() == mediaFormat)
-    return primaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
+  }
+  else if (secondaryCodec != NULL && secondaryCodec->GetOutputFormat() == mediaFormat) {
+    ok = secondaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
+#ifdef OPAL_VIDEO
+    SetRateControlParameters(secondaryCodec->GetOutputFormat());
+#endif
+  }
+  else if (primaryCodec->GetOutputFormat() == mediaFormat) {
+    ok = primaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
+#ifdef OPAL_VIDEO
+    SetRateControlParameters(primaryCodec->GetOutputFormat());
+#endif
+  }
   else
-    return primaryCodec->UpdateMediaFormats(mediaFormat, OpalMediaFormat());
+    ok = primaryCodec->UpdateMediaFormats(mediaFormat, OpalMediaFormat());
+
+  PTRACE(3, "Patch\tUpdated Sink: format=" << mediaFormat << " ok=" << ok);
+  return ok;
 }
 
 
@@ -590,6 +577,31 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
 
 
 #ifdef OPAL_VIDEO
+void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & mediaFormat)
+{
+  unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
+  rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
+  rcWindowSize = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption());
+  rcMaxConsecutiveFramesSkip = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlMaxFramesSkipOption());
+
+  if (((unsigned) (targetBitRate / 8)) != rcByteRate) {
+    rcByteRate = (unsigned) (targetBitRate / 8);
+
+    std::list<FrameInfo>::iterator iter = frameInfoList.begin();
+    while (iter != frameInfoList.end()) {
+      rcTotalSize -= iter->size;
+      frameInfoList.erase(iter);
+      iter = frameInfoList.begin();
+    }
+  }
+
+  PTRACE(3, "Patch\tSet rate control from format " << mediaFormat
+         << ", bitrate=" << targetBitRate
+         << ", rate control=" << rcEnabled
+         << ", window=" << rcWindowSize);
+}
+
+
 bool OpalMediaPatch::Sink::RateControlExceeded(const PTimeInterval & currentTime)
 {
   if (!rcEnabled)

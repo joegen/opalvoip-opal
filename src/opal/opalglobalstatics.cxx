@@ -60,6 +60,9 @@ class PluginLoader : public PProcessStartup
   public:
     void OnStartup()
     { 
+#ifdef OPAL_PLUGIN_DIR
+      PPluginManager::AddPluginDirs(OPAL_PLUGIN_DIR);
+#endif
       OpalPluginCodecManager::Bootstrap(); 
       PWLibStupidLinkerHacks::mediaTypeLoader = 1;
       PWLibStupidLinkerHacks::opalwavfileLoader =1;

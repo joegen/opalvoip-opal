@@ -1511,7 +1511,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     return;
   }
 
-  // Fill in all the various connection info, not our to/from is their from/to
+  // Fill in all the various connection info, note our to/from is their from/to
   UpdateRemoteAddresses(mime.GetFrom());
   mime.GetProductInfo(remoteProductInfo);
   m_dialogFrom = mime.GetTo() + TagParamName + OpalGloballyUniqueID().AsString(); // put a real random 

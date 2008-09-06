@@ -55,7 +55,7 @@
 ostream & operator<<(ostream & strm, SIPHandler::State state)
 {
   static const char * const StateNames[] = {
-    "Subscribed", "Subscribing", "Refreshing", "Restoring", "Unsubscribing", "Unsubscribed"
+    "Subscribed", "Subscribing", "Unavailable", "Refreshing", "Restoring", "Unsubscribing", "Unsubscribed"
   };
   if (state < PARRAYSIZE(StateNames))
     strm << StateNames[state];
@@ -79,7 +79,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
   , expire(expireTime)
   , originalExpire(expire)
   , offlineExpire(offlineExpireTime)
-  , state(Unsubscribed)
+  , state(Unavailable)
   , retryTimeoutMin(retryMin)
   , retryTimeoutMax(retryMax)
 {
@@ -99,18 +99,33 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
 
 SIPHandler::~SIPHandler() 
 {
-  // before destroying the transport, abort all pending transactions that have the same transport
-  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly); transaction != NULL; ++transaction) {
-    if (&(transaction->GetTransport()) == transport)
-      transaction->Abort();
-  }
-  
   if (transport) {
     transport->CloseWait();
     delete transport;
   }
-  if (authentication != NULL)
-    delete authentication;
+
+  delete authentication;
+
+  PTRACE(4, "SIP\tDeleted handler.");
+}
+
+
+bool SIPHandler::ShutDown()
+{
+  switch (state) {
+    case Subscribed :
+      SendRequest(Unsubscribing);
+    case Unsubscribing :
+      return false;
+
+    default :
+      break;
+  }
+
+  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly); transaction != NULL; ++transaction)
+    transaction->Abort();
+
+  return true;
 }
 
 
@@ -229,7 +244,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
         PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
         OnFailed(SIP_PDU::Local_BadTransportAddress);
         expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
-        SetState(Unsubscribed);
+        SetState(Unavailable);
         return true;
       }
       break;
@@ -404,35 +419,35 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
   switch (code) {
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
-      return;
+      break;
 
     case SIP_PDU::Local_TransportError :
     case SIP_PDU::Failure_RequestTimeout :
     case SIP_PDU::Local_BadTransportAddress :
+      SetState(Unavailable);
       break;
 
     default :
       PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response " << code);
       expire = 0; // OK, stop trying
       expireTimer.Stop();
+      SetState(Unsubscribed);
+      ShutDown();
   }
 
-  SetState(GetState() == Unsubscribing ? Subscribed : Unsubscribed);
 }
 
 
 void SIPHandler::OnExpireTimeout(PTimer &, INT)
 {
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   PTRACE(2, "SIP\tStarting " << GetMethod() << " for binding refresh");
 
   if (!SendRequest(GetState() == Subscribed ? Refreshing : Restoring))
-    SetState(Unsubscribed);
-}
-
-
-PBoolean SIPHandler::CanBeDeleted()
-{
-  return GetState() == Unsubscribed;
+    SetState(Unavailable);
 }
 
 
@@ -522,6 +537,7 @@ void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code)
       break;
 
     case Unsubscribed :
+    case Unavailable :
     case Restoring :
       endpoint.OnRegistrationStatus(aor, true, code/100 != 2, code);
       break;
@@ -592,6 +608,45 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 }
 
 
+void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes r)
+{
+  SendStatus(r);
+  SIPHandler::OnFailed(r);
+}
+
+
+PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
+{
+  SendStatus(SIP_PDU::Information_Trying);
+  return SIPHandler::SendRequest(s);
+}
+
+
+void SIPSubscribeHandler::SendStatus(SIP_PDU::StatusCodes code)
+{
+  switch (GetState()) {
+    case Subscribing :
+      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, targetAddress, true, false, code);
+      break;
+
+    case Subscribed :
+    case Refreshing :
+      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, targetAddress, true, true, code);
+      break;
+
+    case Unsubscribed :
+    case Unavailable :
+    case Restoring :
+      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, targetAddress, true, code/100 != 2, code);
+      break;
+
+    case Unsubscribing :
+      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, targetAddress, false, false, code);
+      break;
+  }
+}
+
+
 void SIPSubscribeHandler::UpdateParameters(const SIPSubscribe::Params & params)
 {
   if (!params.m_authID.IsEmpty())
@@ -620,17 +675,14 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
     for (PStringList::iterator route = recordRoute.rbegin(); route != recordRoute.rend(); --route)
       routeSet += *route;
     if (!response.GetMIME().GetContact().IsEmpty()) 
-      targetAddress = response.GetMIME().GetContact();
+      m_parameters.m_targetAddress = response.GetMIME().GetContact();
     dialogCreated = PTrue;
   }
   
-  SIPURL address = targetAddress;
-  address.Sanitise(SIPURL::RequestURI);
-  m_parameters.m_targetAddress = address.AsString();
-
   /* Update the To */
   remotePartyAddress = response.GetMIME().GetTo();
 
+  SendStatus(SIP_PDU::Successful_OK);
   SIPHandler::OnReceivedOK(transaction, response);
 }
 
@@ -642,30 +694,33 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   unsigned requestCSeq = request.GetMIME().GetCSeq().AsUnsigned();
 
-  if (lastReceivedCSeq == 0)
-  lastReceivedCSeq = requestCSeq;
-  else if (requestCSeq > lastReceivedCSeq)
-    lastReceivedCSeq = requestCSeq;
-  else if (requestCSeq == lastReceivedCSeq)
+  // If we received a NOTIFY before
+  if (lastReceivedCSeq != 0) {
+    /* And this NOTIFY is older than the last, with a check for server bugs were
+       the sequence number changes dramatically, then is a retransmission so
+       simply send teh OK again, but do not process it. */
+    if (requestCSeq < lastReceivedCSeq && (lastReceivedCSeq - requestCSeq) < 10) {
+      PTRACE(3, "SIP\tReceived duplicate NOTIFY");
     return endpoint.SendResponse(SIP_PDU::Successful_OK, *transport, request);
-  else
-    return endpoint.SendResponse(SIP_PDU::Failure_InternalServerError, *transport, request);
+    }
+    PTRACE_IF(3, requestCSeq != lastReceivedCSeq+1,
+              "SIP\tReceived unexpected NOTIFY sequence number " << requestCSeq << ", expecting " << lastReceivedCSeq+1);
+  }
 
-  PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY");
+  lastReceivedCSeq = requestCSeq;
+
 
   // We received a NOTIFY corresponding to an active SUBSCRIBE
   // for which we have just unSUBSCRIBEd. That is the final NOTIFY.
   // We can remove the SUBSCRIBE from the list.
-  if (GetState() != SIPHandler::Subscribed && expire == 0) {
-    PTRACE(3, "SIP\tFinal NOTIFY received");
-  }
+  PTRACE_IF(3, GetState() != SIPHandler::Subscribed && expire == 0, "SIP\tFinal NOTIFY received");
 
   PString state = request.GetMIME().GetSubscriptionState();
 
   // Check the susbscription state
   if (state.Find("terminated") != P_MAX_INDEX) {
     PTRACE(3, "SIP\tSubscription is terminated");
-    SetState(Unsubscribed);
+    ShutDown();
   }
   else if (state.Find("active") != P_MAX_INDEX || state.Find("pending") != P_MAX_INDEX) {
 
@@ -840,7 +895,7 @@ void SIPPublishHandler::OnPublishTimeout(PTimer &, INT)
   if (GetState() == Subscribed) {
     if (stateChanged) {
       if (!SendRequest(Subscribing))
-        SetState(Unsubscribed);
+        SetState(Unavailable);
       stateChanged = PFalse;
     }
   }
@@ -932,7 +987,7 @@ void SIPMessageHandler::OnFailed(SIP_PDU::StatusCodes reason)
 
 void SIPMessageHandler::OnExpireTimeout(PTimer &, INT)
 {
-  SetState(Unsubscribed);
+  SetState(Unavailable);
 }
 
 
@@ -960,11 +1015,13 @@ SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 
 //////////////////////////////////////////////////////////////////
 
-unsigned SIPHandlersList::GetRegistrationsCount()
+unsigned SIPHandlersList::GetCount(SIP_PDU::Methods meth, const PString & eventPackage) const
 {
   unsigned count = 0;
   for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler)
-    if (handler->GetState () == SIPHandler::Subscribed && handler->GetMethod() == SIP_PDU::Method_REGISTER) 
+    if (handler->GetState () == SIPHandler::Subscribed &&
+        handler->GetMethod() == meth &&
+        (eventPackage.IsEmpty() || handler->GetEventPackage() == eventPackage))
       count++;
   return count;
 }
@@ -1037,6 +1094,9 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & url, S
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods /*meth*/, PSafetyMode m)
 {
   for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
+
+    if (handler->GetState() == SIPHandler::Unsubscribed)
+      continue;
 
     if (name *= handler->GetTargetAddress().GetHostName())
       return handler;

@@ -1341,6 +1341,9 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-plugin-installdir=DIR
+                          Location where plugins are installed, starting at
+                          the lib dir
   --with-libavcodec-source-dir
                           Directory with libavcodec source code, for MPEG4
                           rate control correction
@@ -1984,6 +1987,16 @@ fi
 
 
 
+
+
+
+
+
+
+
+
+
+
           # Check whether --enable-debug was given.
 if test "${enable_debug+set}" = set; then
   enableval=$enable_debug; DEBUG_BUILD=$enableval
@@ -1992,11 +2005,25 @@ else
 fi
 
 
+         opal_release_flags="-Os"
+         case "$target_os" in
+                 solaris*)
+                   opal_debug_flags="-g3 -ggdb -gstabs+ -O0 -D_DEBUG "
+                 ;;
+                 *)
+                   opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
+                 ;;
+         esac
+
+          DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
+          RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
+
           if test "x${DEBUG_BUILD}" = xyes; then
-            DEBUG_CFLAGS="-g3 -ggdb -O0 -D_DEBUG"
+            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_debug_flags"
           else
-            DEBUG_CFLAGS="-g -O2"
+            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_release_flags"
           fi
+
 
           { echo "$as_me:$LINENO: checking Debugging support" >&5
 echo $ECHO_N "checking Debugging support... $ECHO_C" >&6; }
@@ -4377,10 +4404,53 @@ done
 
 
 
-AC_PLUGIN_DIR=ptlib/plugins/codec/audio
-VC_PLUGIN_DIR=ptlib/plugins/codec/video
-LID_PLUGIN_DIR=ptlib/plugins/lid
-FAX_PLUGIN_DIR=ptlib/plugins/fax
+
+          MAJOR_VERSION=`cat ../version.h | grep MAJOR_VERSION | cut -f3 -d' '`
+          MINOR_VERSION=`cat ../version.h | grep MINOR_VERSION | cut -f3 -d' '`
+          BUILD_NUMBER=`cat ../version.h | grep BUILD_NUMBER | cut -f3 -d' '`
+          OPAL_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${BUILD_NUMBER}"
+
+
+          { echo "$as_me:$LINENO: checking OPAL Version" >&5
+echo $ECHO_N "checking OPAL Version... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: result: $OPAL_VERSION" >&5
+echo "${ECHO_T}$OPAL_VERSION" >&6; }
+
+
+
+
+# Check whether --with-plugin-installdir was given.
+if test "${with_plugin_installdir+set}" = set; then
+  withval=$with_plugin_installdir; PLUGIN_DIR="$withval"
+else
+  PLUGIN_DIR="opal-${OPAL_VERSION}"
+
+fi
+
+
+          EXPANDED_PLUGIN_DIR="${libdir}/${PLUGIN_DIR}"
+          if test "x${exec_prefix}" = "xNONE" ; then
+            if test "x${prefix}" = "xNONE" ; then
+              EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#/usr/local#`
+            else
+              EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${prefix}#`
+            fi
+          else
+            EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${exec_prefix}#`
+          fi
+
+
+          { echo "$as_me:$LINENO: checking Plugin install directory" >&5
+echo $ECHO_N "checking Plugin install directory... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: result: ${EXPANDED_PLUGIN_DIR}" >&5
+echo "${ECHO_T}${EXPANDED_PLUGIN_DIR}" >&6; }
+
+
+
+AC_PLUGIN_DIR="${PLUGIN_DIR}/codecs/audio"
+VC_PLUGIN_DIR="${PLUGIN_DIR}/codecs/video"
+LID_PLUGIN_DIR="${PLUGIN_DIR}/lid"
+FAX_PLUGIN_DIR="${PLUGIN_DIR}/fax"
 
 
 

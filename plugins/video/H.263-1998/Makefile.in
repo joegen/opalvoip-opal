@@ -24,6 +24,7 @@ VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
+DL_LIBS =@DL_LIBS@
 
 BASENAME	=h263-1998
 SONAME		=$(BASENAME)
@@ -61,7 +62,7 @@ STATIC	= ./lib$(BASENAME)_video_s.a
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CXX) $(LDSO) -o $@ $^
+	$(CXX) $(LDSO) $(DL_LIBS) -o $@ $^
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
