@@ -2742,7 +2742,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
   SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
 
   SIP_PDU::Construct(Method_MESSAGE,
-                     "sip:"+address.GetUserName()+"@"+address.GetHostName(),
+                     address.AsQuotedString(),
                      address.AsQuotedString(),
                      myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
                      id,
@@ -2772,7 +2772,7 @@ SIPPing::SIPPing(SIPEndPoint & ep,
   SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
   
   SIP_PDU::Construct(Method_PING,
-                     "sip:"+address.GetUserName()+"@"+address.GetHostName(),
+                     address.AsQuotedString(),
                      address.AsQuotedString(),
                      // myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
