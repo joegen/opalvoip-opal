@@ -532,6 +532,7 @@ Makefile: Makefile.in configure
 	@false
 
 clean:
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
 	rm -rf $(OPAL_LIBDIR)
 
 ifdef JAVA_WRAPPER
