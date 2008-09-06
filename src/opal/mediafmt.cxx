@@ -891,27 +891,32 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  // find the next unused dynamic number, and find anything with the new 
-  // rtp payload type if it is explicitly required
-  OpalMediaFormatList::iterator format;
-  OpalMediaFormat * match = NULL;
-  RTP_DataFrame::PayloadTypes nextUnused = RTP_DataFrame::DynamicBase;
-  do {
-    for (format = registeredFormats.begin(); format != registeredFormats.end(); ++format) {
-      if (format->GetPayloadType() == nextUnused) {
-        nextUnused = (RTP_DataFrame::PayloadTypes)(nextUnused + 1);
-        break;
-      }
-      if ((rtpPayloadType >= RTP_DataFrame::DynamicBase) && 
-          (format->GetPayloadType() == rtpPayloadType))
-        match = &*format;
-    }
-  } while (format != registeredFormats.end());
+  // Search for conflicting RTP Payload Type, collecting in use payload types along the way
+  bool inUse[RTP_DataFrame::MaxPayloadType+1];
+  memset(inUse, 0, sizeof(inUse));
 
-  // if new format requires a specific payload type in the dynamic range, 
-  // then move the old format to the next unused format
-  if (match != NULL)
-    match->SetPayloadType(nextUnused);
+  OpalMediaFormat * match = NULL;
+  for (OpalMediaFormatList::iterator format = registeredFormats.begin(); format != registeredFormats.end(); ++format) {
+    RTP_DataFrame::PayloadTypes thisPayloadType = format->GetPayloadType();
+    if (thisPayloadType == rtpPayloadType)
+      match = &*format;
+    inUse[thisPayloadType] = true;
+  }
+
+  if (match == NULL)
+    return; // No conflict
+
+  // Determine next unused payload type, if all the dynamic ones are allocated then
+  // we start downward toward the well known values.
+  int nextUnused = RTP_DataFrame::DynamicBase;
+  while (inUse[nextUnused]) {
+    if (nextUnused < RTP_DataFrame::DynamicBase)
+      --nextUnused;
+    else if (++nextUnused >= RTP_DataFrame::MaxPayloadType)
+      nextUnused = RTP_DataFrame::DynamicBase-1;
+  }
+
+  match->SetPayloadType((RTP_DataFrame::PayloadTypes)nextUnused);
 }
 
 
