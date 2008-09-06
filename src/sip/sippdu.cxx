@@ -2584,6 +2584,17 @@ SIPSubscribe::Params::Params(PredefinedPackages pkg)
 }
 
 
+SIPSubscribe::PredefinedPackages SIPSubscribe::GetEventPackage(const PString & name)
+{
+  if (name *= "message-summary")
+    return SIPSubscribe::MessageSummary;
+  else if (name *= "presence")
+    return SIPSubscribe::Presence;
+ 
+  return SIPSubscribe::NumPredefinedPackages;
+}
+
+
 PString SIPSubscribe::GetEventPackageName(PredefinedPackages pkg)
 {
   static const char * const names[NumPredefinedPackages] = {

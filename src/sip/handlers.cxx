@@ -625,6 +625,10 @@ void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes r)
 {
   SendStatus(r);
   SIPHandler::OnFailed(r);
+  
+  // Try a new subscription
+  if (r == SIP_PDU::Failure_TransactionDoesNotExist)
+    endpoint.Subscribe(SIPSubscribe::GetEventPackage(m_parameters.m_eventPackage), m_parameters.m_expire, targetAddress.AsString());
 }
 
 
