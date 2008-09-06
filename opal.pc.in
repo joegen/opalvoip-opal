@@ -10,6 +10,6 @@ Name: opal
 Description: open phone application library
 Version: @OPAL_VERSION@
 Requires:@PKG_REQUIRES@
-Libs: -L${libdir} @PKG_LIBS@ -lopal
+Libs: -L${libdir} -lopal @PKG_LIBS@ 
 Cflags: -I${includedir}/opal @PKG_CFLAGS@
 
