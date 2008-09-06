@@ -1078,6 +1078,7 @@ class OpalAudioFormat : public OpalMediaFormat
     static const PString & RxFramesPerPacketOption();
     static const PString & TxFramesPerPacketOption();
     static const PString & MaxFramesPerPacketOption();
+    static const PString & ChannelsOption();
 };
 
 #ifdef OPAL_VIDEO
@@ -1162,6 +1163,7 @@ extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16_16KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_8KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_16KHZ();
+extern const OpalAudioFormat & GetOpalL16_STEREO_48KHZ();
 extern const OpalAudioFormat & GetOpalG711_ULAW_64K();
 extern const OpalAudioFormat & GetOpalG711_ALAW_64K();
 extern const OpalAudioFormat & GetOpalG726_40K();
@@ -1191,6 +1193,7 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalPCM16_16KHZ    GetOpalPCM16_16KHZ()
 #define OpalL16_MONO_8KHZ  GetOpalL16_MONO_8KHZ()
 #define OpalL16_MONO_16KHZ GetOpalL16_MONO_16KHZ()
+#define OpalL16_STEREO_48KHZ GetOpalL16_STEREO_48KHZ()
 #define OpalG711_ULAW_64K  GetOpalG711_ULAW_64K()
 #define OpalG711_ALAW_64K  GetOpalG711_ALAW_64K()
 #define OpalG726_40K       GetOpalG726_40K()
@@ -1217,7 +1220,6 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalL16Mono16kHz   OpalL16_MONO_16KHZ
 #define OpalG711uLaw       OpalG711_ULAW_64K
 #define OpalG711ALaw       OpalG711_ALAW_64K
-
 
 #ifdef _MSC_VER
 #if _MSC_VER < 1300

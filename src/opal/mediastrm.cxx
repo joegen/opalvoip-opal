@@ -102,14 +102,14 @@ OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 }
 
 
-PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
+PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat, bool fromPatch)
 {
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
     return false;
 
   // If we are source, then update the sink side, and vice versa
-  if (mediaPatch != NULL) {
+  if (mediaPatch != NULL && !fromPatch) {
     if (!mediaPatch->UpdateMediaFormat(newMediaFormat, IsSink())) {
       PTRACE(2, "Media\tPatch did not allow media format update of " << *this);
       return false;
@@ -322,7 +322,7 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
     unsigned oldTimestamp = timestamp;
 
     PINDEX written;
-    if (!WriteData(ptr, size, written))
+    if (!WriteData(ptr, size, written) || (written == 0))
       return false;
 
     // If the Write() function did not change the timestamp then use the default

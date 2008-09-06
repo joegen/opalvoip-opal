@@ -183,7 +183,7 @@ class H323PeerElementDescriptor : public PSafeObject
     };
 
     static inline unsigned SetPriorityOption(unsigned pri)     { return Option_PrioritySet | ((pri & 0x7f) << 6); }
-    static inline unsigned GetPriorityOption(unsigned options) { return (options & Option_PrioritySet) ? ((options >> 6) & 0x7f) : DefaultPriority; }
+    static inline unsigned GetPriorityOption(unsigned options) { return (options & Option_PrioritySet) != 0 ? ((options >> 6) & 0x7f) : DefaultPriority; }
 
     void CopyTo(H501_Descriptor & descriptor);
     static PBoolean CopyToAddressTemplate(H501_AddressTemplate & addressTemplates, 

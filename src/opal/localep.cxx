@@ -168,7 +168,7 @@ static unsigned LastConnectionTokenID;
 
 OpalLocalConnection::OpalLocalConnection(OpalCall & call, OpalLocalEndPoint & ep, void * /*userData*/)
   : OpalConnection(call, ep, psprintf("%u", ++LastConnectionTokenID))
-  , endpoint(ep)
+  , endpoint(ep), userData(NULL)
 {
   PTRACE(4, "LocalCon\tCreated connection with token \"" << callToken << '"');
 }

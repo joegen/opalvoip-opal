@@ -196,9 +196,12 @@ static const char RegistrarGroup[] = "/SIP/Registrars";
 DEF_FIELD(RegistrarUsed);
 DEF_FIELD(RegistrarName);
 DEF_FIELD(RegistrarDomain);
+DEF_FIELD(RegistrarAuthID);
 DEF_FIELD(RegistrarUsername);
 DEF_FIELD(RegistrarPassword);
 DEF_FIELD(RegistrarTimeToLive);
+DEF_FIELD(SubscribeMWI);
+DEF_FIELD(SubscribePresence);
 
 static const char RoutingGroup[] = "/Routes";
 
@@ -442,7 +445,9 @@ MyManager::MyManager()
   , m_speedDials(NULL)
   , pcssEP(NULL)
   , potsEP(NULL)
+#ifdef OPAL_H323
   , h323EP(NULL)
+#endif
   , sipEP(NULL)
 #ifdef OPAL_IVR
   , ivrEP(NULL)
@@ -586,7 +591,9 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Creating the endpoints
+#ifdef OPAL_H323
   h323EP = new MyH323EndPoint(*this);
+#endif
 
   sipEP = new MySIPEndPoint(*this);
 
@@ -631,8 +638,10 @@ bool MyManager::Initialise()
               << setfill('\n') << interfaceTable << setfill(' ') << flush;
 
   config->SetPath(NetworkingGroup);
+#ifdef OPAL_H323
   if (config->Read(BandwidthKey, &value1))
     h323EP->SetInitialBandwidth(value1);
+#endif
   if (config->Read(TCPPortBaseKey, &value1) && config->Read(TCPPortMaxKey, &value2))
     SetTCPPorts(value1, value2);
   if (config->Read(UDPPortBaseKey, &value1) && config->Read(UDPPortMaxKey, &value2))
@@ -843,11 +852,16 @@ bool MyManager::Initialise()
     DetachEndPoint("h323s");
   if (config->Read(SecureSIPKey, &onoff) && !onoff)
     DetachEndPoint("sips");
+#ifdef OPAL_H323
   if (config->Read(RTPSecurityModeH323Key, &str) && str != "None")
     h323EP->SetDefaultSecurityMode(str);
+#endif
   if (config->Read(RTPSecurityModeSIPKey, &str) && str != "None")
     sipEP->SetDefaultSecurityMode(str);
 
+  PwxString username, password;
+
+#ifdef OPAL_H323
   ////////////////////////////////////////
   // H.323 fields
   config->SetPath(H323AliasesGroup);
@@ -860,6 +874,7 @@ bool MyManager::Initialise()
   }
 
   config->SetPath(H323Group);
+
   if (config->Read(DTMFSendModeKey, &value1) && value1 >= 0 && value1 < H323Connection::NumSendUserInputModes)
     h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)value1);
   if (config->Read(CallIntrusionProtectionLevelKey, &value1))
@@ -871,7 +886,6 @@ bool MyManager::Initialise()
   if (config->Read(DisableH245inSETUPKey, &onoff))
     h323EP->DisableH245inSetup(onoff);
 
-  PwxString username, password;
   config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
   if (m_gatekeeperMode > 0) {
     if (config->Read(GatekeeperTTLKey, &value1))
@@ -886,7 +900,7 @@ bool MyManager::Initialise()
     if (!StartGatekeeper())
       return false;
   }
-
+#endif
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
@@ -917,11 +931,15 @@ bool MyManager::Initialise()
     do {
       config->SetPath(groupName);
       if (config->Read(RegistrarUsedKey, &registrar.m_Active, false) &&
-          config->Read(RegistrarDomainKey, &registrar.m_Domain) &&
           config->Read(RegistrarUsernameKey, &registrar.m_User) &&
-          config->Read(RegistrarPasswordKey, &registrar.m_Password) &&
-          config->Read(RegistrarTimeToLiveKey, &registrar.m_TimeToLive))
+          config->Read(RegistrarDomainKey, &registrar.m_Domain)) {
+        config->Read(RegistrarAuthIDKey, &registrar.m_AuthID);
+        config->Read(RegistrarPasswordKey, &registrar.m_Password);
+        config->Read(RegistrarTimeToLiveKey, &registrar.m_TimeToLive);
+        config->Read(SubscribeMWIKey, &registrar.m_MWI, true);
+        config->Read(SubscribePresenceKey, &registrar.m_Presence, true);
         m_registrars.push_back(registrar);
+      }
       config->SetPath("..");
     } while (config->GetNextGroup(groupName, groupIndex));
   }
@@ -999,7 +1017,7 @@ void MyManager::SetNATHandling()
 
         LogWindow << "STUN server \"" << stun->GetServer() << "\" replies " << nat;
         PIPSocket::Address externalAddress;
-        if (nat != PSTUNClient::BlockedNat && GetSTUN()->GetExternalAddress(externalAddress))
+        if (nat != PSTUNClient::BlockedNat && GetSTUNClient()->GetExternalAddress(externalAddress))
           LogWindow << " with address " << externalAddress;
         LogWindow << endl;
       }
@@ -1043,7 +1061,9 @@ static void StartListenerForEP(OpalEndPoint * ep, const PStringArray & allInterf
 
 void MyManager::StartAllListeners()
 {
+#ifdef OPAL_H323
   StartListenerForEP(h323EP, m_LocalInterfaces);
+#endif
   StartListenerForEP(sipEP, m_LocalInterfaces);
 }
 
@@ -2408,6 +2428,7 @@ void MyManager::OnStreamsChanged(wxCommandEvent &)
 
 bool MyManager::StartGatekeeper()
 {
+#ifdef OPAL_H323
   if (m_gatekeeperMode == 0)
     h323EP->RemoveGatekeeper();
   else {
@@ -2415,12 +2436,9 @@ bool MyManager::StartGatekeeper()
     if (!m_gatekeeperIdentifier.IsEmpty() || !m_gatekeeperAddress.IsEmpty())
       gkDesc == '@';
     gkDesc += (const char *)m_gatekeeperAddress;
-    LogWindow << "H.323 registration started for " << gkDesc << endl;
-    GetEventHandler()->ProcessPendingEvents();
-    Update();
 
     if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
-      LogWindow << "H.323 registration successful to " << *h323EP->GetGatekeeper() << endl;
+      LogWindow << "H.323 registration started for " << *h323EP->GetGatekeeper() << endl;
       return true;
     }
 
@@ -2428,6 +2446,9 @@ bool MyManager::StartGatekeeper()
   }
 
   return m_gatekeeperMode < 2;
+#else
+   return false;
+#endif
 }
 
 
@@ -2439,16 +2460,18 @@ void MyManager::StartRegistrars()
   for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
     if (iter->m_Active) {
       SIPRegister::Params param;
-      if (iter->m_Domain.find('@') != wxString::npos)
-        param.m_addressOfRecord = iter->m_Domain.c_str();
-      else
-        param.m_addressOfRecord = iter->m_User + '@' + iter->m_Domain;
-      param.m_authID = (const char *)iter->m_User;
+      param.m_addressOfRecord = (const char *)iter->m_User;
+      if (param.m_addressOfRecord.Find('@') == P_MAX_INDEX)
+        param.m_addressOfRecord += '@' + iter->m_Domain;
+      param.m_authID = (const char *)iter->m_AuthID;
+      if (param.m_authID.IsEmpty())
+        param.m_authID = (const char *)iter->m_User;
       param.m_password = (const char *)iter->m_Password;
       param.m_expire = iter->m_TimeToLive;
       bool ok = sipEP->Register(param);
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
 
+      if (iter->m_MWI) {
       SIPSubscribe::Params mwiParam(SIPSubscribe::MessageSummary);
       mwiParam.m_targetAddress = param.m_addressOfRecord;
       mwiParam.m_authID = param.m_authID;
@@ -2456,7 +2479,9 @@ void MyManager::StartRegistrars()
       mwiParam.m_expire = iter->m_TimeToLive;
       ok = sipEP->Subscribe(mwiParam);
       LogWindow << "SIP MWI subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+      }
 
+      if (iter->m_Presence) {
       SIPSubscribe::Params presenceParam(SIPSubscribe::Presence);
       presenceParam.m_targetAddress = param.m_addressOfRecord;
       presenceParam.m_authID = param.m_authID;
@@ -2466,13 +2491,17 @@ void MyManager::StartRegistrars()
       LogWindow << "SIP Presence subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
     }
   }
+  }
 }
 
 
 void MyManager::StopRegistrars()
 {
-  if (sipEP != NULL)
+  if (sipEP != NULL) {
     sipEP->UnregisterAll();
+    sipEP->UnsubcribeAll(SIPSubscribe::MessageSummary);
+    sipEP->UnsubcribeAll(SIPSubscribe::Presence);
+  }
 }
 
 
@@ -2749,6 +2778,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Networking fields
+#ifdef OPAL_H323
   int bandwidth = m_manager.h323EP->GetInitialBandwidth();
   m_Bandwidth.sprintf(bandwidth%10 == 0 ? "%u" : "%u.%u", bandwidth/10, bandwidth%10);
   FindWindowByName(BandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_Bandwidth));
@@ -2766,6 +2796,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   else
     bandwidthClass = 5;
   FindWindowByNameAs<wxChoice>(this, "BandwidthClass")->SetSelection(bandwidthClass);
+#endif
 
   INIT_FIELD(TCPPortBase, m_manager.GetTCPPortBase());
   INIT_FIELD(TCPPortMax, m_manager.GetTCPPortMax());
@@ -3003,6 +3034,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   FindWindowByName(RTPSecurityModeSIPKey)->Disable();
 #endif // OPAL_SRTP || OPAL_ZRTP
 
+#ifdef OPAL_H323
   ////////////////////////////////////////
   // H.323 fields
   m_AddAlias = FindWindowByNameAs<wxButton>(this, "AddAlias");
@@ -3028,6 +3060,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(GatekeeperTTL, m_manager.h323EP->GetGatekeeperTimeToLive().GetSeconds());
   INIT_FIELD(GatekeeperLogin, m_manager.h323EP->GetGatekeeperUsername());
   INIT_FIELD(GatekeeperPassword, m_manager.h323EP->GetGatekeeperPassword());
+#endif
 
   ////////////////////////////////////////
   // SIP fields
@@ -3043,12 +3076,16 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_Registrars->InsertColumn(1, _T("User"));
   m_Registrars->InsertColumn(2, _T("Refresh"));
   m_Registrars->InsertColumn(3, _T("Status"));
+  m_Registrars->InsertColumn(4, _T("MWI"));
+  m_Registrars->InsertColumn(5, _T("Presence"));
   for (RegistrarList::iterator registrar = m_manager.m_registrars.begin(); registrar != m_manager.m_registrars.end(); ++registrar)
     RegistrarToList(false, new RegistrarInfo(*registrar), INT_MAX);
-  m_Registrars->SetColumnWidth(0, 200);
-  m_Registrars->SetColumnWidth(1, 150);
-  m_Registrars->SetColumnWidth(2, 75);
-  m_Registrars->SetColumnWidth(3, 75);
+  m_Registrars->SetColumnWidth(0, 160);
+  m_Registrars->SetColumnWidth(1, 120);
+  m_Registrars->SetColumnWidth(2, 50);
+  m_Registrars->SetColumnWidth(3, 60);
+  m_Registrars->SetColumnWidth(4, 60);
+  m_Registrars->SetColumnWidth(5, 60);
 
   m_AddRegistrar = FindWindowByNameAs<wxButton>(this, "AddRegistrar");
   m_AddRegistrar->Disable();
@@ -3059,11 +3096,14 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_RemoveRegistrar = FindWindowByNameAs<wxButton>(this, "RemoveRegistrar");
   m_RemoveRegistrar->Disable();
 
-  m_RegistrarDomain = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarDomain");
-  m_RegistrarUser = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarUsername");
-  m_RegistrarPassword = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarPassword");
-  m_RegistrarTimeToLive = FindWindowByNameAs<wxSpinCtrl>(this, "RegistrarTimeToLive");
-  m_RegistrarActive = FindWindowByNameAs<wxCheckBox>(this, "RegistrarUsed");
+  m_RegistrarUser = FindWindowByNameAs<wxTextCtrl>(this, RegistrarUsernameKey);
+  m_RegistrarDomain = FindWindowByNameAs<wxTextCtrl>(this, RegistrarDomainKey);
+  m_RegistrarAuthID = FindWindowByNameAs<wxTextCtrl>(this, RegistrarAuthIDKey);
+  m_RegistrarPassword = FindWindowByNameAs<wxTextCtrl>(this, RegistrarPasswordKey);
+  m_RegistrarTimeToLive = FindWindowByNameAs<wxSpinCtrl>(this, RegistrarTimeToLiveKey);
+  m_RegistrarActive = FindWindowByNameAs<wxCheckBox>(this, RegistrarUsedKey);
+  m_SubscribeMWI = FindWindowByNameAs<wxCheckBox>(this, SubscribeMWIKey);
+  m_SubscribePresence = FindWindowByNameAs<wxCheckBox>(this, SubscribePresenceKey);
 
   ////////////////////////////////////////
   // Routing fields
@@ -3169,7 +3209,9 @@ bool OptionsDialog::TransferDataFromWindow()
   // Networking fields
   config->SetPath(NetworkingGroup);
   int adjustedBandwidth = (int)(floatBandwidth*10);
+#ifdef OPAL_H323
   m_manager.h323EP->SetInitialBandwidth(adjustedBandwidth);
+#endif
   config->Write(BandwidthKey, adjustedBandwidth);
   SAVE_FIELD2(TCPPortBase, TCPPortMax, m_manager.SetTCPPorts);
   SAVE_FIELD2(UDPPortBase, UDPPortMax, m_manager.SetUDPPorts);
@@ -3311,10 +3353,13 @@ bool OptionsDialog::TransferDataFromWindow()
     m_RTPSecurityModeH323.erase();
   if (m_RTPSecurityModeSIP == "None")
     m_RTPSecurityModeSIP.erase();
+#ifdef OPAL_H323
   SAVE_FIELD(RTPSecurityModeH323, m_manager.h323EP->SetDefaultSecurityMode);
+#endif
   SAVE_FIELD(RTPSecurityModeSIP, m_manager.sipEP->SetDefaultSecurityMode);
 
 
+#ifdef OPAL_H323
   ////////////////////////////////////////
   // H.323 fields
   config->DeleteGroup(H323AliasesGroup);
@@ -3353,7 +3398,7 @@ bool OptionsDialog::TransferDataFromWindow()
     if (!m_manager.StartGatekeeper())
       m_manager.Close();
   }
-
+#endif
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
@@ -3381,10 +3426,13 @@ bool OptionsDialog::TransferDataFromWindow()
       group.sprintf("%s/%04u", RegistrarGroup, registrarIndex++);
       config->SetPath(group);
       config->Write(RegistrarUsedKey, iterReg->m_Active);
-      config->Write(RegistrarDomainKey, iterReg->m_Domain);
       config->Write(RegistrarUsernameKey, iterReg->m_User);
+      config->Write(RegistrarDomainKey, iterReg->m_Domain);
+      config->Write(RegistrarAuthIDKey, iterReg->m_AuthID);
       config->Write(RegistrarPasswordKey, iterReg->m_Password);
       config->Write(RegistrarTimeToLiveKey, iterReg->m_TimeToLive);
+      config->Write(SubscribeMWIKey, iterReg->m_MWI);
+      config->Write(SubscribePresenceKey, iterReg->m_Presence);
     }
 
     m_manager.StopRegistrars();
@@ -3866,11 +3914,14 @@ void OptionsDialog::RemoveAlias(wxCommandEvent & /*event*/)
 
 void OptionsDialog::FieldsToRegistrar(RegistrarInfo & registrar)
 {
-  registrar.m_Domain = m_RegistrarDomain->GetValue();
   registrar.m_User = m_RegistrarUser->GetValue();
+  registrar.m_Domain = m_RegistrarDomain->GetValue();
+  registrar.m_AuthID = m_RegistrarAuthID->GetValue();
   registrar.m_Password = m_RegistrarPassword->GetValue();
   registrar.m_TimeToLive = m_RegistrarTimeToLive->GetValue();
   registrar.m_Active = m_RegistrarActive->GetValue();
+  registrar.m_MWI = m_SubscribeMWI->GetValue();
+  registrar.m_Presence = m_SubscribePresence->GetValue();
 }
 
 
@@ -3890,6 +3941,8 @@ void OptionsDialog::RegistrarToList(bool overwrite, RegistrarInfo * registrar, i
   m_Registrars->SetItem(position, 2, str);
 
   m_Registrars->SetItem(position, 3, registrar->m_Active ? "ACTIVE" : "disabled");
+  m_Registrars->SetItem(position, 4, registrar->m_MWI      ? "subcribe" : "disabled");
+  m_Registrars->SetItem(position, 5, registrar->m_Presence ? "subcribe" : "disabled");
 }
 
 
@@ -3930,11 +3983,14 @@ void OptionsDialog::SelectedRegistrar(wxListEvent & event)
   m_RemoveRegistrar->Enable(true);
 
   RegistrarInfo & registrar = *(RegistrarInfo *)m_Registrars->GetItemData(m_SelectedRegistrar);
-  m_RegistrarDomain->SetValue(registrar.m_Domain);
   m_RegistrarUser->SetValue(registrar.m_User);
+  m_RegistrarDomain->SetValue(registrar.m_Domain);
+  m_RegistrarAuthID->SetValue(registrar.m_AuthID);
   m_RegistrarPassword->SetValue(registrar.m_Password);
   m_RegistrarTimeToLive->SetValue(registrar.m_TimeToLive);
   m_RegistrarActive->SetValue(registrar.m_Active);
+  m_SubscribeMWI->SetValue(registrar.m_MWI);
+  m_SubscribePresence->SetValue(registrar.m_Presence);
 
   ChangedRegistrarInfo(event);
 }
@@ -4870,6 +4926,7 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 }
 
 
+#ifdef OPAL_H323
 ///////////////////////////////////////////////////////////////////////////////
 
 MyH323EndPoint::MyH323EndPoint(MyManager & manager)
@@ -4884,7 +4941,7 @@ void MyH323EndPoint::OnRegistrationConfirm()
   LogWindow << "H.323 registration successful." << endl;
 }
 
-
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 
 MySIPEndPoint::MySIPEndPoint(MyManager & manager)
@@ -4913,6 +4970,42 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
   if (!wasRegistering)
     LogWindow << "un";
   LogWindow << "registration of " << aor << ' ';
+  switch (reason) {
+    case SIP_PDU::Successful_OK :
+      LogWindow << "successful";
+      break;
+
+    case SIP_PDU::Failure_RequestTimeout :
+      LogWindow << "timed out";
+      break;
+
+    default :
+      LogWindow << "failed (" << reason << ')';
+  }
+  LogWindow << '.' << endl;
+}
+
+
+void MySIPEndPoint::OnSubscriptionStatus(const PString & eventPackage,
+                                         const SIPURL & uri,
+                                         bool wasSubscribing,
+                                         bool reSubscribing,
+                                         SIP_PDU::StatusCodes reason)
+{
+  switch (reason) {
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Information_Trying :
+      return;
+
+    case SIP_PDU::Successful_OK :
+      if (reSubscribing)
+        return;
+  }
+
+  LogWindow << "SIP ";
+  if (!wasSubscribing)
+    LogWindow << "un";
+  LogWindow << "subscription of " << uri << " to " << eventPackage << " events ";
   switch (reason) {
     case SIP_PDU::Successful_OK :
       LogWindow << "successful";

@@ -138,6 +138,13 @@ class SIPEndPoint_C : public SIPEndPoint
       PBoolean reRegistering,
       SIP_PDU::StatusCodes reason
     );
+    virtual void OnSubscriptionStatus(
+      const PString & eventPackage, ///< Event package subscribed to
+      const SIPURL & uri,           ///< Target URI for the subscription.
+      bool wasSubscribing,          ///< Indication the subscribing or unsubscribing
+      bool reSubscribing,           ///< If subscribing then indication was refeshing subscription
+      SIP_PDU::StatusCodes reason   ///< Status of subscription
+    );
 
   private:
     OpalManager_C & m_manager;
@@ -189,6 +196,7 @@ class OpalManager_C : public OpalManager
     void HandleRetrieveCall (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleTransferCall (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleMediaStream  (const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleSetUserData  (const OpalMessage & command, OpalMessageBuffer & response);
 
     void OnIndMediaStream(const OpalMediaStream & stream, OpalMediaStates state);
 
@@ -408,6 +416,7 @@ bool OpalLocalEndPoint_C::OnReadMediaFrame(const OpalLocalConnection & connectio
   int result = m_mediaReadData(connection.GetCall().GetToken(),
                                mediaStream.GetID(),
                                mediaStream.GetMediaFormat().GetName(),
+                               connection.GetUserData(),
                                frame.GetPointer(),
                                frame.GetSize());
   if (result < 0)
@@ -431,6 +440,7 @@ bool OpalLocalEndPoint_C::OnWriteMediaFrame(const OpalLocalConnection & connecti
   int result = m_mediaWriteData(connection.GetCall().GetToken(),
                                 mediaStream.GetID(),
                                 mediaStream.GetMediaFormat().GetName(),
+                                connection.GetUserData(),
                                 frame.GetPointer(),
                                 frame.GetHeaderSize()+frame.GetPayloadSize());
   return result >= 0;
@@ -452,6 +462,7 @@ bool OpalLocalEndPoint_C::OnReadMediaData(const OpalLocalConnection & connection
   int result = m_mediaReadData(connection.GetCall().GetToken(),
                                mediaStream.GetID(),
                                mediaStream.GetMediaFormat().GetName(),
+                               connection.GetUserData(),
                                data,
                                size);
   if (result < 0)
@@ -477,6 +488,7 @@ bool OpalLocalEndPoint_C::OnWriteMediaData(const OpalLocalConnection & connectio
   int result = m_mediaWriteData(connection.GetCall().GetToken(),
                                 mediaStream.GetID(),
                                 mediaStream.GetMediaFormat().GetName(),
+                                connection.GetUserData(),
                                 (void *)data,
                                 length);
   if (result < 0)
@@ -566,6 +578,27 @@ void SIPEndPoint_C::OnRegistrationStatus(const PString & aor,
   PTRACE(4, "OpalC\tOnRegistrationStatus " << aor << ", status=" << message->m_param.m_registrationStatus.m_status);
   m_manager.PostMessage(message);
 }
+
+
+void SIPEndPoint_C::OnSubscriptionStatus(const PString & eventPackage,
+                                         const SIPURL & uri,
+                                         bool wasSubscribing,
+                                         bool reSubscribing,
+                                         SIP_PDU::StatusCodes reason)
+{
+  if (reason == SIP_PDU::Successful_OK && !reSubscribing &&
+      eventPackage == SIPSubscribe::GetEventPackageName(SIPSubscribe::MessageSummary)) {
+    OpalMessageBuffer message(OpalIndMessageWaiting);
+    SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_party, uri.AsString());
+    SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, wasSubscribing ? "SUBSCRIBED" : "UNSUBSCRIBED");
+    PTRACE(4, "OpalC API\tOnSubscriptionStatus: party=\"" << message->m_param.m_messageWaiting.m_party
+                                            << "\" info=" << message->m_param.m_messageWaiting.m_extraInfo);
+    m_manager.PostMessage(message);
+  }
+
+  SIPEndPoint::OnSubscriptionStatus(eventPackage, uri, wasSubscribing, reSubscribing, reason);
+}
+
 
 #endif
 
@@ -753,6 +786,9 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
     case OpalCmdMediaStream :
       HandleMediaStream(*message, response);
       break;
+    case OpalCmdSetUserData :
+      HandleSetUserData(*message, response);
+      break;
     default :
       return NULL;
   }
@@ -842,7 +878,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       response.SetError("Could not set STUN server address.");
       return;
     }
-    if (GetSTUN()->GetNatType() == PSTUNClient::BlockedNat)
+    if (GetSTUNClient()->GetNatType() == PSTUNClient::BlockedNat)
       response.SetError("STUN indicates Blocked NAT.");
   }
 
@@ -1338,7 +1374,6 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
     return;
   }
 
-  PSafePtr<OpalConnection> localConnection, networkConnection;
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
   while (connection->IsNetworkConnection()) {
     ++connection;
@@ -1404,6 +1439,27 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
   }
 }
 
+void OpalManager_C::HandleSetUserData(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  if (IsNullString(command.m_param.m_setUserData.m_callToken)) {
+    response.SetError("No call token provided.");
+    return;
+  }
+
+  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_setUserData.m_callToken);
+  if (call == NULL) {
+    response.SetError("No call found by the token provided.");
+    return;
+  }
+
+  PSafePtr<OpalLocalConnection> connection = call->GetConnectionAs<OpalLocalConnection>();
+  if (connection == NULL) {
+    response.SetError("No suitable connection for media stream control.");
+    return;
+  }
+
+  connection->SetUserData(command.m_param.m_setUserData.m_userData);
+}
 
 void OpalManager_C::OnEstablishedCall(OpalCall & call)
 {
@@ -1510,7 +1566,9 @@ void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type
   if ((size_t)type < sizeof(TypeNames)/sizeof(TypeNames[0]))
     SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_type, TypeNames[type]);
   SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, extraInfo);
-  PTRACE(4, "OpalC API\tOnMWIReceived: party=\"" << message->m_param.m_messageWaiting.m_party << '"');
+  PTRACE(4, "OpalC API\tOnMWIReceived: party=\"" << message->m_param.m_messageWaiting.m_party
+                                   << "\" type=" << message->m_param.m_messageWaiting.m_type
+                                   << "\" info=" << message->m_param.m_messageWaiting.m_extraInfo);
   PostMessage(message);
 
   OpalManager::OnMWIReceived(party, type, extraInfo);

@@ -75,8 +75,42 @@ AUDIO_FORMAT(PCM16,          MaxPayloadType, "",     16, 8,  240,  0, 256,  8000
 AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",     32,16,  240,  0, 256, 16000);
 AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",  16, 8,  240, 30, 256,  8000);
 AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  32,16,  240, 30, 256, 16000);
-AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256,  8000);
-AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 30, 256,  8000);
+AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 20, 256,  8000);
+AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 20, 256,  8000);
+
+
+class OpalStereoAudioFormat : public OpalAudioFormat
+{
+public:
+  OpalStereoAudioFormat(const char * fullName,
+                        RTP_DataFrame::PayloadTypes rtpPayloadType,
+                        const char * encodingName,
+                        PINDEX   frameSize,
+                        unsigned frameTime,
+                        unsigned rxFrames,
+                        unsigned txFrames,
+                        unsigned maxFrames,
+                        unsigned clockRate)
+    : OpalAudioFormat(fullName, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clockRate)
+  {
+    SetOptionInteger(OpalAudioFormat::ChannelsOption(), 2);
+  }
+};
+
+
+const OpalAudioFormat & GetOpalL16_STEREO_48KHZ()
+{
+  static OpalStereoAudioFormat stereo48k("Linear-16-Stereo-48kHz",    // name of the meda format
+                                         RTP_DataFrame::DynamicBase,  // RTP payload code
+                                         "L16",                       // encoding name
+                                         16,                          // frame size in bytes
+                                         48,                          // frame time (1 ms in clock units)
+                                         20,                          // recommended rx frames/packet
+                                         20,                          // recommended tx frames/packet
+                                         50,                          // max tx frame size
+                                         48000);                      // clock rate
+  return stereo48k;
+};
 
 
 const OpalMediaFormat & GetOpalRFC2833()
@@ -587,7 +621,6 @@ const PString & OpalMediaFormat::MaxBitRateOption()   { static PString s = PLUGI
 const PString & OpalMediaFormat::TargetBitRateOption(){ static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE; return s; }
 #ifdef OPAL_H323
 const PString & OpalMediaFormat::MediaPacketizationOption(){ static PString s = PLUGINCODEC_MEDIA_PACKETIZATION; return s; }
-    static const PString & MediaPacketizationOption();
 #endif
 
 
@@ -860,27 +893,32 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  // find the next unused dynamic number, and find anything with the new 
-  // rtp payload type if it is explicitly required
-  OpalMediaFormatList::iterator format;
-  OpalMediaFormat * match = NULL;
-  RTP_DataFrame::PayloadTypes nextUnused = RTP_DataFrame::DynamicBase;
-  do {
-    for (format = registeredFormats.begin(); format != registeredFormats.end(); ++format) {
-      if (format->GetPayloadType() == nextUnused) {
-        nextUnused = (RTP_DataFrame::PayloadTypes)(nextUnused + 1);
-        break;
-      }
-      if ((rtpPayloadType >= RTP_DataFrame::DynamicBase) && 
-          (format->GetPayloadType() == rtpPayloadType))
-        match = &*format;
-    }
-  } while (format != registeredFormats.end());
+  // Search for conflicting RTP Payload Type, collecting in use payload types along the way
+  bool inUse[RTP_DataFrame::MaxPayloadType+1];
+  memset(inUse, 0, sizeof(inUse));
 
-  // if new format requires a specific payload type in the dynamic range, 
-  // then move the old format to the next unused format
-  if (match != NULL)
-    match->SetPayloadType(nextUnused);
+  OpalMediaFormat * match = NULL;
+  for (OpalMediaFormatList::iterator format = registeredFormats.begin(); format != registeredFormats.end(); ++format) {
+    RTP_DataFrame::PayloadTypes thisPayloadType = format->GetPayloadType();
+    if (thisPayloadType == rtpPayloadType)
+      match = &*format;
+    inUse[thisPayloadType] = true;
+  }
+
+  if (match == NULL)
+    return; // No conflict
+
+  // Determine next unused payload type, if all the dynamic ones are allocated then
+  // we start downward toward the well known values.
+  int nextUnused = RTP_DataFrame::DynamicBase;
+  while (inUse[nextUnused]) {
+    if (nextUnused < RTP_DataFrame::DynamicBase)
+      --nextUnused;
+    else if (++nextUnused >= RTP_DataFrame::MaxPayloadType)
+      nextUnused = RTP_DataFrame::DynamicBase-1;
+  }
+
+  match->SetPayloadType((RTP_DataFrame::PayloadTypes)nextUnused);
 }
 
 
@@ -1244,6 +1282,7 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
 const PString & OpalAudioFormat::RxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET; return s; }
 const PString & OpalAudioFormat::TxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET; return s; }
 const PString & OpalAudioFormat::MaxFramesPerPacketOption(){ static PString s = "Max Frames Per Packet"; return s; }
+const PString & OpalAudioFormat::ChannelsOption()          { static PString s = "Channels"; return s; }
 
 OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1295,7 +1334,8 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
   if (txFrames > 0)
     AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::NoMerge, txFrames, 1, maxFrames));
 
-  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::MaxFramesPerPacketOption(), true, OpalMediaOption::NoMerge,  maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::MaxFramesPerPacketOption(), true,  OpalMediaOption::NoMerge,  maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::ChannelsOption(),           false, OpalMediaOption::NoMerge,  1, 1, 5));
 }
 
 
@@ -1323,17 +1363,17 @@ bool OpalAudioFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 
 #ifdef OPAL_VIDEO
 
-const PString & OpalVideoFormat::FrameWidthOption()             { static PString s = PLUGINCODEC_OPTION_FRAME_WIDTH;               return s; }
-const PString & OpalVideoFormat::FrameHeightOption()            { static PString s = PLUGINCODEC_OPTION_FRAME_HEIGHT;              return s; }
-const PString & OpalVideoFormat::MinRxFrameWidthOption()        { static PString s = PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH;        return s; }
-const PString & OpalVideoFormat::MinRxFrameHeightOption()       { static PString s = PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT;       return s; }
-const PString & OpalVideoFormat::MaxRxFrameWidthOption()        { static PString s = PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH;        return s; }
-const PString & OpalVideoFormat::MaxRxFrameHeightOption()       { static PString s = PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT;       return s; }
-const PString & OpalVideoFormat::TemporalSpatialTradeOffOption(){ static PString s = PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF;return s; }
-const PString & OpalVideoFormat::TxKeyFramePeriodOption()       { static PString s = PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD;       return s; }
-const PString & OpalVideoFormat::RateControlEnableOption()     { static PString s = "Rate Control Enable";                        return s; }
-const PString & OpalVideoFormat::RateControlWindowSizeOption() { static PString s = "Rate Control Window Size";                   return s; }
-const PString & OpalVideoFormat::RateControlMaxFramesSkipOption(){static PString s= "Rate Control Max Frames Skip";               return s; }
+const PString & OpalVideoFormat::FrameWidthOption()               { static PString s = PLUGINCODEC_OPTION_FRAME_WIDTH;               return s; }
+const PString & OpalVideoFormat::FrameHeightOption()              { static PString s = PLUGINCODEC_OPTION_FRAME_HEIGHT;              return s; }
+const PString & OpalVideoFormat::MinRxFrameWidthOption()          { static PString s = PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH;        return s; }
+const PString & OpalVideoFormat::MinRxFrameHeightOption()         { static PString s = PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT;       return s; }
+const PString & OpalVideoFormat::MaxRxFrameWidthOption()          { static PString s = PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH;        return s; }
+const PString & OpalVideoFormat::MaxRxFrameHeightOption()         { static PString s = PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT;       return s; }
+const PString & OpalVideoFormat::TemporalSpatialTradeOffOption()  { static PString s = PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF;return s; }
+const PString & OpalVideoFormat::TxKeyFramePeriodOption()         { static PString s = PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD;       return s; }
+const PString & OpalVideoFormat::RateControlEnableOption()        { static PString s = "Rate Control Enable";                        return s; }
+const PString & OpalVideoFormat::RateControlWindowSizeOption()    { static PString s = "Rate Control Window Size";                   return s; }
+const PString & OpalVideoFormat::RateControlMaxFramesSkipOption() { static PString s = "Rate Control Max Frames Skip";               return s; }
 
 
 OpalVideoFormat::OpalVideoFormat(const char * fullName,

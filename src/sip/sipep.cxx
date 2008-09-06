@@ -102,15 +102,19 @@ void SIPEndPoint::ShutDown()
   natBindingTimer.Stop();
 
   // Clean up the handlers, wait for them to finish before destruction.
-  PSafePtr<SIPHandler> handler;
-  while ((handler = activeSIPHandlers) != NULL) {
-    PString aor = handler->GetRemotePartyAddress();
-    if (handler->GetMethod() != SIP_PDU::Method_REGISTER || handler->GetState() != SIPHandler::Subscribed)
-      activeSIPHandlers.Remove(handler);
-    else {
-      Unregister(aor);
-      PThread::Sleep(500);
+  bool shuttingDown = true;
+  while (shuttingDown) {
+    shuttingDown = false;
+    PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReference);
+    while (handler != NULL) {
+      if (handler->ShutDown())
+        activeSIPHandlers.Remove(handler++);
+      else {
+        shuttingDown = true;
+        ++handler;
+      }
     }
+    PThread::Sleep(100);
   }
 
   // Clean up transactions still in progress, waiting for them to complete.
@@ -171,7 +175,10 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
     for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
 
       OpalTransport * transport = NULL;
-      if (handler->GetState () != SIPHandler::Subscribed || (transport = handler->GetTransport()) == NULL || transport->IsReliable() || GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()) == NULL)
+      if (handler->GetState () != SIPHandler::Subscribed ||
+           (transport = handler->GetTransport()) == NULL ||
+           transport->IsReliable() ||
+           GetManager().GetNatMethod(transport->GetRemoteAddress().GetHostName()) == NULL)
         continue;
 
       switch (natMethod) {
@@ -324,6 +331,15 @@ PBoolean SIPEndPoint::GarbageCollection()
   }
 
   transactions.DeleteObjectsToBeRemoved();
+
+  PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReference);
+  while (handler != NULL) {
+    if (handler->GetState() == SIPHandler::Unsubscribed && handler->ShutDown())
+      activeSIPHandlers.Remove(handler++);
+    else
+      ++handler;
+  }
+
   activeSIPHandlers.DeleteObjectsToBeRemoved();
 
   return OpalEndPoint::GarbageCollection();
@@ -716,13 +732,13 @@ PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
     }
   }
 
-      if (handler == NULL) {
+  if (handler == NULL) {
     PTRACE(3, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY");
-        SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, pdu);
-        return PFalse;
-      }
+    SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, pdu);
+    return PFalse;
+  }
 
-  
+  PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY");
   handler->OnReceivedNOTIFY(pdu);
   return false;
 }
@@ -788,6 +804,15 @@ PBoolean SIPEndPoint::IsSubscribed(const PString & eventPackage, const PString &
     return PFalse;
 
   return (handler->GetState() == SIPHandler::Subscribed);
+}
+
+
+void SIPEndPoint::OnSubscriptionStatus(const PString & /*eventPackage*/,
+                                       const SIPURL & /*aor*/,
+                                       bool /*wasSubscribing*/,
+                                       bool /*reSubscribing*/,
+                                       SIP_PDU::StatusCodes /*reason*/)
+{
 }
 
 
@@ -947,6 +972,26 @@ bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & to)
   return handler->SendRequest(SIPHandler::Unsubscribing);
 }
 
+
+bool SIPEndPoint::UnsubcribeAll(SIPSubscribe::PredefinedPackages eventPackage)
+{
+  return UnsubcribeAll(SIPSubscribe::GetEventPackageName(eventPackage));
+}
+
+
+bool SIPEndPoint::UnsubcribeAll(const PString & eventPackage)
+{
+  bool ok = true;
+
+  for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+    if (handler->GetMethod() == SIP_PDU::Method_SUBSCRIBE && handler->GetEventPackage() == eventPackage) {
+      if (!handler->SendRequest(SIPHandler::Unsubscribing))
+        ok = false;
+    }
+  }
+
+  return ok;
+}
 
 
 PBoolean SIPEndPoint::Message (const PString & to, 

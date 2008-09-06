@@ -264,6 +264,26 @@ class OpalCall : public PSafeObject
       PSafetyMode mode = PSafeReference
     ) { return connectionsActive.GetAt(idx, mode); }
 
+    /**Find a connection of the specified class.
+       This searches the call for the Nth connection of the specified class.
+      */
+    template <class ConnClass>
+    PSafePtr<ConnClass> GetConnectionAs(
+      PINDEX count = 0,
+      PSafetyMode mode = PSafeReadWrite
+    )
+    {
+      PSafePtr<ConnClass> connection;
+      for (PSafePtr<OpalConnection> iterConn(connectionsActive, PSafeReference); iterConn != NULL; ++iterConn) {
+        if ((connection = PSafePtrCast<OpalConnection, ConnClass>(iterConn)) != NULL && count-- == 0) {
+          if (!connection.SetSafetyMode(mode))
+            connection.SetNULL();
+          break;
+        }
+      }
+      return connection;
+    }
+
     /**Put call on hold.
       */
     bool Hold();

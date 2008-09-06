@@ -1043,6 +1043,17 @@ PString OpalConnection::GetCalledPartyURL()
 }
 
 
+void OpalConnection::CopyPartyNames(const OpalConnection & other)
+{
+  remotePartyName     = other.remotePartyName;
+  remotePartyNumber   = other.remotePartyNumber;
+  remotePartyAddress  = other.remotePartyAddress;
+  m_calledPartyName   = other.m_calledPartyName;
+  m_calledPartyNumber = other.m_calledPartyNumber;
+  productInfo         = other.productInfo;
+}
+
+
 void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
   maxDelay = PMAX(10, PMIN(maxDelay, 999));

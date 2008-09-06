@@ -109,11 +109,11 @@ static struct PluginCodec_Option const NoVADOption =
   VADStr,                     // Generic (human readable) option name
   0,                          // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
-  "off",                      // Initial value
+  "no",                       // Initial value
   "annexb",                   // SIP/SDP FMTP name
-  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "yes",                      // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 generic capability code and bit mask
-  "off:on"                    // Enum values
+  "no:yes"                    // Enum values
 };
 
 static struct PluginCodec_Option const * const NoVADOptionTable[] = {
@@ -129,11 +129,11 @@ static struct PluginCodec_Option const VADOption =
   VADStr,                     // Generic (human readable) option name
   0,                          // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
-  "on",                      // Initial value
+  "yes",                      // Initial value
   "annexb",                   // SIP/SDP FMTP name
-  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "yes",                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 generic capability code and bit mask
-  "off:on"                    // Enum values, single string of value separated by colons
+  "no:yes"                    // Enum values, single string of value separated by colons
 };
 
 static struct PluginCodec_Option const * const VADOptionTable[] = {

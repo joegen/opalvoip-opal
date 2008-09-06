@@ -66,10 +66,13 @@ protected:
 public:
   ~SIPHandler();
 
+  virtual bool ShutDown();
+
   enum State {
 
     Subscribed,       // The registration is active
     Subscribing,      // The registration is in process
+    Unavailable,      // The registration is offline and still being attempted
     Refreshing,       // The registration is being refreshed
     Restoring,        // The registration is trying to be restored after being offline
     Unsubscribing,    // The unregistration is in process
@@ -100,8 +103,6 @@ public:
 
   virtual PString GetCallID()
     { return callID; }
-
-  virtual PBoolean CanBeDeleted();
 
   virtual void SetBody(const PString & b)
     { body = b;}
@@ -197,6 +198,8 @@ public:
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
+  virtual void OnFailed(SIP_PDU::StatusCodes r);
+  virtual PBoolean SendRequest(SIPHandler::State state);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_SUBSCRIBE; }
   virtual PCaselessString GetEventPackage() const
@@ -205,6 +208,7 @@ public:
   void UpdateParameters(const SIPSubscribe::Params & params);
 
 private:
+  void SendStatus(SIP_PDU::StatusCodes code);
   PBoolean OnReceivedMWINOTIFY(SIP_PDU & response);
   PBoolean OnReceivedPresenceNOTIFY(SIP_PDU & response);
 
@@ -283,11 +287,11 @@ public:
  */
 class SIPHandlersList : public PSafeList<SIPHandler>
 {
-public:
+  public:
     /**
      * Return the number of registered accounts
      */
-    unsigned GetRegistrationsCount();
+    unsigned GetCount(SIP_PDU::Methods meth, const PString & eventPackage = PString::Empty()) const;
 
     /**
      * Find the SIPHandler object with the specified callID

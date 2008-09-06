@@ -1106,6 +1106,9 @@ PBoolean H323Connection::OnOpenIncomingMediaChannels()
 {
   ApplyStringOptions();
 
+  // Get the local capabilities before fast start or tunnelled TCS is handled
+  OnSetLocalCapabilities();
+
   H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
 
   // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
@@ -1150,9 +1153,6 @@ PBoolean H323Connection::OnOpenIncomingMediaChannels()
     if (previewFormats.GetSize() != 0) 
       GetOtherPartyConnection()->PreviewPeerMediaFormats(previewFormats);
   }
-
-  // Get the local capabilities before fast start or tunnelled TCS is handled
-  OnSetLocalCapabilities();
 
   // Check that it has the H.245 channel connection info
   if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address) && (!setupPDU->m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))

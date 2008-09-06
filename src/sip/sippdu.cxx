@@ -453,8 +453,10 @@ void SIPURL::Sanitise(UsageContext context)
 PBoolean SIPURL::AdjustToDNS(PINDEX entry)
 {
   // RFC3263 states we do not do lookup if explicit port mentioned
-  if (GetPortSupplied())
-    return PTrue;
+  if (GetPortSupplied()) {
+    PTRACE(4, "SIP\tNo SRV lookup as has explicit port number.");
+    return true;
+  }
 
   // Or it is a valid IP address, not a domain name
   PIPSocket::Address ip = GetHostName();
@@ -1549,7 +1551,8 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
 
 
 SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
-  : method(pdu.method)
+  : PSafeObject(pdu)
+  , method(pdu.method)
   , statusCode(pdu.statusCode)
   , uri(pdu.uri)
   , versionMajor(pdu.versionMajor)
@@ -1804,16 +1807,18 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response)
   else {
     // get Via from From field
     PString from = mime.GetFrom();
-    PINDEX j = from.Find (';');
-    if (j != P_MAX_INDEX)
-      from = from.Left(j); // Remove all parameters
-    j = from.Find ('<');
-    if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
-      from += '>';
+    if (!from.IsEmpty()) {
+      PINDEX j = from.Find (';');
+      if (j != P_MAX_INDEX)
+        from = from.Left(j); // Remove all parameters
+      j = from.Find ('<');
+      if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
+        from += '>';
 
-    SIPURL url(from);
+      SIPURL url(from);
 
-    newAddress = OpalTransportAddress(url.GetHostName()+ ":" + PString(PString::Unsigned, url.GetPort()), defaultPort, "udp$");
+      newAddress = OpalTransportAddress(url.GetHostName()+ ":" + PString(PString::Unsigned, url.GetPort()), defaultPort, "udp$");
+    }
   }
 
   return response.Write(transport, newAddress);
@@ -1835,6 +1840,7 @@ void SIP_PDU::PrintOn(ostream & strm) const
 PBoolean SIP_PDU::Read(OpalTransport & transport)
 {
   PStringStream datagram;
+  PBYTEArray pdu;
 
   istream * stream;
   if (transport.IsReliable())
@@ -1842,7 +1848,6 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   else {
     stream = &datagram;
 
-    PBYTEArray pdu;
     if (transport.ReadPDU(pdu))
       datagram = PString((char *)pdu.GetPointer(), pdu.GetSize());
   }
@@ -1857,6 +1862,8 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   *stream >> cmd >> mime;
 
   if (!stream->good()) {
+    PTRACE_IF(1, stream == &datagram, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
+              << " - " << pdu.GetSize() << " bytes.\n" << hex << pdu << dec);
     PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::NoError,
               "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
     return PFalse;
@@ -2827,7 +2834,7 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
                      id,
                      endpoint.GetNextCSeq(),
                      viaAddress);
-  mime.SetAccept("application/sdp");
+  mime.SetAccept("application/sdp, application/media_control+xml, application/dtmf, application/dtmf-relay");
 }
 
 

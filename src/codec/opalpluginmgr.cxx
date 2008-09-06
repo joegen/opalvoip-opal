@@ -494,6 +494,17 @@ bool OpalPluginMediaFormatInternal::IsValidForProtocol(const PString & _protocol
 
 ///////////////////////////////////////////////////////////////////////////////
 
+static RTP_DataFrame::PayloadTypes GetPluginPayloadType(const PluginCodec_Definition * encoderCodec)
+{
+  if ((encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic)
+    return RTP_DataFrame::DynamicBase;
+
+  return (RTP_DataFrame::PayloadTypes)encoderCodec->rtpPayload;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 OpalPluginAudioFormatInternal::OpalPluginAudioFormatInternal(const PluginCodec_Definition * _encoderCodec,
                                                                        const char * rtpEncodingName, /// rtp encoding name
                                                                        unsigned frameTime,           /// Time for frame in RTP units (if applicable)
@@ -501,15 +512,15 @@ OpalPluginAudioFormatInternal::OpalPluginAudioFormatInternal(const PluginCodec_D
                                                                        time_t timeStamp              /// timestamp (for versioning)
                                                                       )
   : OpalAudioFormatInternal(CreateCodecName(_encoderCodec),
-                           (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
-                           rtpEncodingName,
-                           _encoderCodec->parm.audio.bytesPerFrame,
-                           frameTime,
-                           _encoderCodec->parm.audio.maxFramesPerPacket,
-                           _encoderCodec->parm.audio.recommendedFramesPerPacket,
-                           _encoderCodec->parm.audio.maxFramesPerPacket,
-                           _encoderCodec->sampleRate,
-                           timeStamp)
+                            GetPluginPayloadType(_encoderCodec),
+                            rtpEncodingName,
+                            _encoderCodec->parm.audio.bytesPerFrame,
+                            frameTime,
+                            _encoderCodec->parm.audio.maxFramesPerPacket,
+                            _encoderCodec->parm.audio.recommendedFramesPerPacket,
+                            _encoderCodec->parm.audio.maxFramesPerPacket,
+                            _encoderCodec->sampleRate,
+                            timeStamp)
   , OpalPluginMediaFormatInternal(_encoderCodec)
 {
   PopulateOptions(*this);
@@ -581,7 +592,7 @@ OpalPluginVideoFormatInternal::OpalPluginVideoFormatInternal(const PluginCodec_D
                                                                        const char * rtpEncodingName,
                                                                        time_t timeStamp)
   : OpalVideoFormatInternal(CreateCodecName(_encoderCodec),
-                            (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
+                            GetPluginPayloadType(_encoderCodec),
                             rtpEncodingName,
                             _encoderCodec->parm.video.maxFrameWidth,
                             _encoderCodec->parm.video.maxFrameHeight,
@@ -659,7 +670,7 @@ OpalPluginFaxFormatInternal::OpalPluginFaxFormatInternal(const PluginCodec_Defin
                                                                    time_t timeStamp)
   : OpalMediaFormatInternal(CreateCodecName(_encoderCodec),
                             "fax",
-                            (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
+                            GetPluginPayloadType(_encoderCodec),
                             rtpEncodingName,
                             false,                                // need jitter
                             8*_encoderCodec->parm.audio.bytesPerFrame*OpalMediaFormat::AudioClockRate/frameTime, // bandwidth

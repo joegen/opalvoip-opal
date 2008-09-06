@@ -953,13 +953,13 @@ class OpalManager : public PObject
       const PIPSocket::Address & address
     );
 
-    /**Return the STUN server to use.
+    /**Return the NAT method to use.
        Returns NULL if address is a local address as per IsLocalAddress().
-       Always returns the STUN server if address is zero.
+       Always returns the NAT method if address is zero.
        Note, the pointer is NOT to be deleted by the user.
       */
-    PSTUNClient * GetSTUN(
-      const PIPSocket::Address & address = 0
+    virtual PNatMethod * GetNatMethod(
+      const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()
     ) const;
 
     /**Set the STUN server address, is of the form host[:port]
@@ -973,6 +973,10 @@ class OpalManager : public PObject
     /**Get the current host name and optional port for the STUN server.
       */
     const PString & GetSTUNServer() const { return stunServer; }
+
+    /**Return the STUN client instance in use.
+      */
+    PSTUNClient * GetSTUNClient() const { return stun; }
 
     /**Get the TCP port number base for H.245 channels
      */

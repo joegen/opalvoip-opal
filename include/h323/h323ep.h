@@ -1323,8 +1323,7 @@ class H323EndPoint : public OpalRTPEndPoint
   //@}
 
   protected:
-    H323Gatekeeper * InternalCreateGatekeeper(H323Transport * transport);
-    PBoolean InternalRegisterGatekeeper(H323Gatekeeper * gk, PBoolean discovered);
+    bool InternalCreateGatekeeper(H323Transport * transport);
     PBoolean InternalMakeCall(
       OpalCall & call,
       const PString & existingToken,           ///<  Existing connection to be transferred
