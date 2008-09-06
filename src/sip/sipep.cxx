@@ -942,8 +942,9 @@ bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & params)
   
   // If there is already a request with this URL and method, 
   // then update it with the new information
-  if (handler != NULL)
+  if (handler != NULL && handler->GetState() != SIPHandler::Unsubscribed) {
     handler->UpdateParameters(params);
+  }
   else {
     // Otherwise create a new request with this method type
     handler = new SIPSubscribeHandler(*this, params);
