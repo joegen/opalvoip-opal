@@ -313,9 +313,12 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   if (referTransaction != NULL) 
     return false;
 
+  SIPURL localPartyURL = endpoint.GetRegisteredPartyName(remoteParty);
+  localPartyURL.Sanitise(SIPURL::RequestURI);
+
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
   if (call == NULL) {
-    referTransaction = new SIPRefer(*this, *transport, remoteParty, GetLocalPartyURL());
+    referTransaction = new SIPRefer(*this, *transport, remoteParty, localPartyURL);
     return referTransaction->Start();
   }
 
@@ -327,7 +330,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
               << "?Replaces=" << sip->GetToken()
               << "%3Bto-tag%3D"   << SIPMIMEInfo::ExtractFieldParameter(sip->GetDialogFrom(), "tag") // "to/from" is from the other sides perspective
               << "%3Bfrom-tag%3D" << SIPMIMEInfo::ExtractFieldParameter(sip->GetDialogTo(), "tag");
-      referTransaction = new SIPRefer(*this, *transport, referTo, GetLocalPartyURL());
+      referTransaction = new SIPRefer(*this, *transport, referTo, localPartyURL);
       referTransaction->GetMIME().SetAt("Refer-Sub", "false"); // Use RFC4488 to indicate we are NOT doing NOTIFYs
       return referTransaction->Start();
     }
@@ -1159,13 +1162,6 @@ void SIPConnection::AdjustOutgoingINVITE()
 PString SIPConnection::GetPrefixName() const
 {
   return m_requestURI.GetScheme();
-}
-
-
-PString SIPConnection::GetLocalPartyURL() const
-{
-  SIPURL url(localPartyName, transport->GetLocalAddress());
-  return url.AsString();
 }
 
 

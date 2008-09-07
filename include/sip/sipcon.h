@@ -93,10 +93,6 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual PString GetPrefixName() const;
 
-    /**Get the local name/alias.
-      */
-    virtual PString GetLocalPartyURL() const;
-
     /**Get the remote party address as URL.
        This will return the "best guess" at an address to use in a
        to call the user again later. Note that under some circumstances this may be
