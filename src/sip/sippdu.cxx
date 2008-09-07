@@ -2696,12 +2696,16 @@ SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const 
 }
 
 
-void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport*/, const SIPURL & refer, const SIPURL & referred_by)
+void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport*/, const SIPURL & refer, const SIPURL & _referred_by)
 {
+  SIPURL referred_by = _referred_by;
+
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
   mime.SetReferTo(refer.AsQuotedString());
-  if(!referred_by.IsEmpty())
+  if(!referred_by.IsEmpty()) {
+    referred_by.SetDisplayName(PString::Empty());
     mime.SetReferredBy(referred_by.AsQuotedString());
+  }
 }
 
 
