@@ -33,8 +33,14 @@ PROG = codectest
 SOURCES := main.cxx
 OBJDIR          = obj
 
-EXTRACXXFLAGS=-I$(OPAL_INCDIR)
-EXTRALDFLAGS =-L$(OPAL_LIBDIR) $(LIBS) -lopal 
+include ../opal_samples.mak
+ifeq ($(SAMPLES_DEBUG),yes)
+EXTRACXXFLAGS=-I$(OPAL_INCDIR) $(DEBUG_CFLAGS)
+else
+EXTRACXXFLAGS=-I$(OPAL_INCDIR) $(RELEASE_CFLAGS)
+endif
+
+EXTRALDFLAGS =-L$(OPAL_LIBDIR) $(LIBS) 
 
 ifndef OPALDIR
 ifneq (,$(wildcard ../../../opal/opal_inc.mak))
@@ -57,7 +63,7 @@ $(OBJDIR)/%.o : %.cxx
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SOURCES)))))
 
 $(PROG): $(OBJECTS)
-	$(CXX) $(LDSO) $(EXTRALDFLAGS) -o $@ $^
+	$(CXX) -o $@ $^ $(LDSO) $(SAMPLES_LIBS) $(EXTRALDFLAGS) 
 
 clean:
 	rm -f $(OBJECTS) $(PROG)

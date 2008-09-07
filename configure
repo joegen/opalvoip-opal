@@ -783,7 +783,8 @@ PTLIB_LIBS
 CXXCPP
 SPEEX_CFLAGS
 SPEEX_LIBS'
-ac_subdirs_all='plugins'
+ac_subdirs_all='plugins
+samples'
 
 # Initialize some variables set by options.
 ac_init_help=
@@ -10197,6 +10198,10 @@ _ACEOF
 
           fi
 
+if test "x$OPAL_SAMPLES" = "xyes" ; then
+  subdirs="$subdirs samples"
+
+fi
 
 
 
