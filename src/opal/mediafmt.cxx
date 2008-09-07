@@ -892,7 +892,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
   // Search for conflicting RTP Payload Type, collecting in use payload types along the way
-  bool inUse[RTP_DataFrame::MaxPayloadType+1];
+  bool inUse[RTP_DataFrame::MaxPayloadType];
   memset(inUse, 0, sizeof(inUse));
 
   OpalMediaFormat * match = NULL;
@@ -900,7 +900,8 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
     RTP_DataFrame::PayloadTypes thisPayloadType = format->GetPayloadType();
     if (thisPayloadType == rtpPayloadType)
       match = &*format;
-    inUse[thisPayloadType] = true;
+    if (thisPayloadType < RTP_DataFrame::MaxPayloadType)
+      inUse[thisPayloadType] = true;
   }
 
   if (match == NULL)
