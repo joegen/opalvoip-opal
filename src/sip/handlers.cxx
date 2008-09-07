@@ -112,6 +112,10 @@ SIPHandler::~SIPHandler()
 
 bool SIPHandler::ShutDown()
 {
+  PSafeLockReadWrite mutex(*this);
+  if (!mutex.IsLocked())
+    return true;
+
   switch (state) {
     case Subscribed :
       SendRequest(Unsubscribing);
@@ -122,7 +126,7 @@ bool SIPHandler::ShutDown()
       break;
   }
 
-  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly); transaction != NULL; ++transaction)
+  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReference); transaction != NULL; ++transaction)
     transaction->Abort();
 
   return true;
