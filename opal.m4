@@ -180,7 +180,7 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
           OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
           $1_LIB_NAME="libopal${OBJ_SUFFIX}"
           $1_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          $1_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
+          $1_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -307,7 +307,7 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}` 
             PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
             
-            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt$//g`
+            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt\ //g`
             DEBUG_LIBS="$DEBUG_LIBS -lpt_d"
             RELEASE_LIBS="$RELEASE_LIBS -lpt"
             if test "x${DEBUG_BUILD}" = xyes; then
@@ -328,7 +328,7 @@ AC_DEFUN([OPAL_FIND_PTLIB],
 
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
-            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt$//g`
+            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt\ //g`
             DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
             DEBUG_LIBS="$DEBUG_LIBS -lpt"
             RELEASE_LIBS="$DEBUG_LIBS -lpt"
