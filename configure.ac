@@ -474,6 +474,9 @@ if test "x$OPAL_PLUGINS" = "xyes" ; then
 fi
 
 OPAL_SIMPLE_OPTION([samples],[OPAL_SAMPLES], [wether to enable samples build])
+if test "x$OPAL_SAMPLES" = "xyes" ; then
+  AC_CONFIG_SUBDIRS(samples)
+fi
 
 
 dnl ########################################################################
