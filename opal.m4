@@ -172,14 +172,15 @@ dnl            $LIB_FILENAME_SHARED_PAT
 AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
          [
           if test "x$1" = "xDEBUG" ; then
-            OBJ_SUFFIX="d"
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          $1_OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          $1_LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          $1_LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          $1_LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          $1_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          $1_LIB_NAME="libopal${OBJ_SUFFIX}"
+          $1_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          $1_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -189,17 +190,18 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)  
-                    $1_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    $1_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    $1_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}" 
+                    $1_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    $1_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    $1_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}" 
                     ;;
                   *)
-                    $1_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    $1_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    $1_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    $1_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    $1_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    $1_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
 
+          AC_SUBST(OPAL_LIBDIR)
           AC_SUBST($1_OPAL_OBJDIR)
           AC_SUBST($1_LIB_NAME)
           AC_SUBST($1_LIB_FILENAME_SHARED)
@@ -300,20 +302,18 @@ AC_DEFUN([OPAL_FIND_PTLIB],
               fi
             fi
 
-            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion --define-variable=prefix=${PTLIBDIR}`
-            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags --define-variable=prefix=${PTLIBDIR}` 
-            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR}` 
-            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR}`
-            PTLIB_MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype --define-variable=prefix=${PTLIBDIR}` 
-
-            PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}` 
+            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}` 
+            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            
             PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt$//g`
-            DEBUG_LIBS="$DEBUG_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_d"
-            RELEASE_LIBS="$RELEASE_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_r"
+            DEBUG_LIBS="$DEBUG_LIBS -lpt_d"
+            RELEASE_LIBS="$RELEASE_LIBS -lpt"
             if test "x${DEBUG_BUILD}" = xyes; then
-              DEFAULT_LIBS="$DEFAULT_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_d"
+              DEFAULT_LIBS="$DEFAULT_LIBS -lpt_d"
             else
-              DEFAULT_LIBS="$DEFAULT_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_r"
+              DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
             fi
 	    
             export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
@@ -328,8 +328,6 @@ AC_DEFUN([OPAL_FIND_PTLIB],
 
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
-            PTLIB_MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype` 
-            PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
             PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt$//g`
             DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
             DEBUG_LIBS="$DEBUG_LIBS -lpt"
@@ -340,10 +338,8 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           echo "CFLAGS:   ${PTLIB_CFLAGS}"
           echo "CXXFLAGS: ${PTLIB_CXXFLAGS}"
           echo "LIBS:     ${PTLIB_LIBS}"
-          echo "OSTYPE:   ${PTLIB_MACHTYPE}"
-          echo "MACHTYPE: ${PTLIB_OSTYPE}"
-          echo "DEBUG:    ${PTLIB_DEBUG_LIB}"
-          echo "RELEASE:  ${PTLIB_RELEASE_LIB}"
+          echo "DEBUG:    ${DEBUG_LIBS}"
+          echo "RELEASE:  ${RELEASE_LIBS}"
          ])
 
 
