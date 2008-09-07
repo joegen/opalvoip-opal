@@ -687,6 +687,7 @@ target
 target_cpu
 target_vendor
 target_os
+OPAL_LIBDIR
 DEBUG_OPAL_OBJDIR
 DEBUG_LIB_NAME
 DEBUG_LIB_FILENAME_SHARED
@@ -4591,6 +4592,18 @@ case "$target_cpu" in
         { echo "$as_me:$LINENO: WARNING: \"CPU $target_cpu not recognized - proceed with caution!\"" >&5
 echo "$as_me: WARNING: \"CPU $target_cpu not recognized - proceed with caution!\"" >&2;} ;;
 esac
+case "$target_os" in
+  linux*)             OSTYPE=linux;        ;;
+  freebsd* )          OSTYPE=FreeBSD;      ;;
+  openbsd* )          OSTYPE=OpenBSD;      ;;
+  netbsd* )           OSTYPE=NetBSD;       ;;
+  solaris* | sunos* ) OSTYPE=solaris;      ;;
+  darwin* )	      OSTYPE=Darwin;       ;;
+  beos*)              OSTYPE=beos;         ;;
+  cygwin*)            OSTYPE=cygwin;       ;;
+  mingw*)	      OSTYPE=mingw;        ;;
+  * )		      OSTYPE="$target_os"; ;;
+esac
 
 LDSOOPTS=
 case "$target_os" in
@@ -4599,14 +4612,15 @@ case "$target_os" in
           SHARED_CFLAGS="-fPIC"
 
           if test "xDEBUG" = "xDEBUG" ; then
-            OBJ_SUFFIX="d"
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          DEBUG_LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          DEBUG_LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          DEBUG_LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          DEBUG_LIB_NAME="libopal${OBJ_SUFFIX}"
+          DEBUG_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          DEBUG_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -4616,16 +4630,17 @@ case "$target_os" in
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
+
 
 
 
@@ -4637,14 +4652,15 @@ case "$target_os" in
 
 
           if test "xRELEASE" = "xDEBUG" ; then
-            OBJ_SUFFIX="d"
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          RELEASE_LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          RELEASE_LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          RELEASE_LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          RELEASE_LIB_NAME="libopal${OBJ_SUFFIX}"
+          RELEASE_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          RELEASE_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -4654,16 +4670,17 @@ case "$target_os" in
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
+
 
 
 
@@ -4684,14 +4701,15 @@ case "$target_os" in
           SHARED_CFLAGS="-fPIC"
 
           if test "xDEBUG" = "xDEBUG" ; then
-            OBJ_SUFFIX="d"
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          DEBUG_LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          DEBUG_LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          DEBUG_LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          DEBUG_LIB_NAME="libopal${OBJ_SUFFIX}"
+          DEBUG_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          DEBUG_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -4701,16 +4719,17 @@ case "$target_os" in
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
+
 
 
 
@@ -4722,14 +4741,15 @@ case "$target_os" in
 
 
           if test "xRELEASE" = "xDEBUG" ; then
-            OBJ_SUFFIX="d"
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          RELEASE_LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          RELEASE_LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          RELEASE_LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          RELEASE_LIB_NAME="libopal${OBJ_SUFFIX}"
+          RELEASE_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          RELEASE_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -4739,16 +4759,17 @@ case "$target_os" in
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
+
 
 
 
@@ -4775,14 +4796,15 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           SHARED_CFLAGS=
 
           if test "xDEBUG" = "xDEBUG" ; then
-            OBJ_SUFFIX="d"
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          DEBUG_LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          DEBUG_LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          DEBUG_LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          DEBUG_LIB_NAME="libopal${OBJ_SUFFIX}"
+          DEBUG_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          DEBUG_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -4792,16 +4814,17 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
+
 
 
 
@@ -4813,14 +4836,15 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
 
           if test "xRELEASE" = "xDEBUG" ; then
-            OBJ_SUFFIX="d"
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          RELEASE_LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          RELEASE_LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          RELEASE_LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          RELEASE_LIB_NAME="libopal${OBJ_SUFFIX}"
+          RELEASE_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          RELEASE_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -4830,16 +4854,17 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
+
 
 
 
@@ -4860,14 +4885,15 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           SHARED_CFLAGS="-fPIC"
 
           if test "xDEBUG" = "xDEBUG" ; then
-            OBJ_SUFFIX="d"
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          DEBUG_LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          DEBUG_LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          DEBUG_LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          DEBUG_LIB_NAME="libopal${OBJ_SUFFIX}"
+          DEBUG_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          DEBUG_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -4877,16 +4903,17 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
+
 
 
 
@@ -4898,14 +4925,15 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
 
           if test "xRELEASE" = "xDEBUG" ; then
-            OBJ_SUFFIX="d"
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          RELEASE_LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          RELEASE_LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          RELEASE_LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          RELEASE_LIB_NAME="libopal${OBJ_SUFFIX}"
+          RELEASE_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          RELEASE_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -4915,16 +4943,17 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
+
 
 
 
@@ -4944,14 +4973,15 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           SHARED_CFLAGS="-fPIC"
 
           if test "xDEBUG" = "xDEBUG" ; then
-            OBJ_SUFFIX="d"
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          DEBUG_LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          DEBUG_LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          DEBUG_LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          DEBUG_LIB_NAME="libopal${OBJ_SUFFIX}"
+          DEBUG_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          DEBUG_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -4961,16 +4991,17 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
+
 
 
 
@@ -4982,14 +5013,15 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
 
           if test "xRELEASE" = "xDEBUG" ; then
-            OBJ_SUFFIX="d"
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          RELEASE_LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          RELEASE_LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          RELEASE_LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          RELEASE_LIB_NAME="libopal${OBJ_SUFFIX}"
+          RELEASE_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          RELEASE_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -4999,16 +5031,17 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
+
 
 
 
@@ -5112,20 +5145,18 @@ echo "$as_me: error: PTLIB Version check failed, recommended version is at least
               fi
             fi
 
-            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion --define-variable=prefix=${PTLIBDIR}`
-            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags --define-variable=prefix=${PTLIBDIR}`
-            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR}`
-            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR}`
-            PTLIB_MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype --define-variable=prefix=${PTLIBDIR}`
+            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
 
-            PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype --define-variable=prefix=${PTLIBDIR}`
             PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt$//g`
-            DEBUG_LIBS="$DEBUG_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_d"
-            RELEASE_LIBS="$RELEASE_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_r"
+            DEBUG_LIBS="$DEBUG_LIBS -lpt_d"
+            RELEASE_LIBS="$RELEASE_LIBS -lpt"
             if test "x${DEBUG_BUILD}" = xyes; then
-              DEFAULT_LIBS="$DEFAULT_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_d"
+              DEFAULT_LIBS="$DEFAULT_LIBS -lpt_d"
             else
-              DEFAULT_LIBS="$DEFAULT_LIBS -lpt_${PTLIB_OSTYPE}_${PTLIB_MACHTYPE}_r"
+              DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
             fi
 
             export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
@@ -5359,8 +5390,6 @@ fi
 
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags`
-            PTLIB_MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype`
-            PTLIB_OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
             PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt$//g`
             DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
             DEBUG_LIBS="$DEBUG_LIBS -lpt"
@@ -5371,10 +5400,8 @@ fi
           echo "CFLAGS:   ${PTLIB_CFLAGS}"
           echo "CXXFLAGS: ${PTLIB_CXXFLAGS}"
           echo "LIBS:     ${PTLIB_LIBS}"
-          echo "OSTYPE:   ${PTLIB_MACHTYPE}"
-          echo "MACHTYPE: ${PTLIB_OSTYPE}"
-          echo "DEBUG:    ${PTLIB_DEBUG_LIB}"
-          echo "RELEASE:  ${PTLIB_RELEASE_LIB}"
+          echo "DEBUG:    ${DEBUG_LIBS}"
+          echo "RELEASE:  ${RELEASE_LIBS}"
 
 
 CFLAGS="$CFLAGS $PTLIB_CFLAGS"
@@ -7084,6 +7111,11 @@ fi
 
 
 
+          old_CFLAGS="$CFLAGS"
+          old_LIBS="$LIBS"
+          CFLAGS=
+          LIBS=
+
           { echo "$as_me:$LINENO: checking for short" >&5
 echo $ECHO_N "checking for short... $ECHO_C" >&6; }
 if test "${ac_cv_type_short+set}" = set; then
@@ -8715,6 +8747,9 @@ _ACEOF
                   $ac_cv_sizeof_long) SIZE32="long";;
                   $ac_cv_sizeof_short) SIZE32="short";;
           esac
+          CFLAGS="$old_CFLAGS"
+          LIBS="$old_LIBS"
+
 
 
 
@@ -10897,6 +10932,7 @@ target!$target$ac_delim
 target_cpu!$target_cpu$ac_delim
 target_vendor!$target_vendor$ac_delim
 target_os!$target_os$ac_delim
+OPAL_LIBDIR!$OPAL_LIBDIR$ac_delim
 DEBUG_OPAL_OBJDIR!$DEBUG_OPAL_OBJDIR$ac_delim
 DEBUG_LIB_NAME!$DEBUG_LIB_NAME$ac_delim
 DEBUG_LIB_FILENAME_SHARED!$DEBUG_LIB_FILENAME_SHARED$ac_delim
@@ -10919,7 +10955,6 @@ OPAL_PTLIB_ASN!$OPAL_PTLIB_ASN$ac_delim
 OPAL_PTLIB_EXPAT!$OPAL_PTLIB_EXPAT$ac_delim
 OPAL_PTLIB_VIDEO!$OPAL_PTLIB_VIDEO$ac_delim
 OPAL_PTLIB_WAVFILE!$OPAL_PTLIB_WAVFILE$ac_delim
-OPAL_PTLIB_VXML!$OPAL_PTLIB_VXML$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -10961,6 +10996,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+OPAL_PTLIB_VXML!$OPAL_PTLIB_VXML$ac_delim
 OPAL_PTLIB_IPV6!$OPAL_PTLIB_IPV6$ac_delim
 OPAL_PTLIB_DTMF!$OPAL_PTLIB_DTMF$ac_delim
 OPAL_PTLIB_LDAP!$OPAL_PTLIB_LDAP$ac_delim
@@ -11015,7 +11051,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 52; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 53; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

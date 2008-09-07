@@ -46,7 +46,7 @@ datarootdir             = @datarootdir@
 OPAL_DIR                = @OPAL_DIR@
 OPAL_SRCDIR             = $(OPAL_DIR)/src
 OPAL_INCDIR             = $(OPAL_DIR)/include
-OPAL_LIBDIR             = $(OPAL_DIR)/lib
+OPAL_LIBDIR             = @OPAL_LIBDIR@
 
 # The library file names
 RELEASE_LIB_NAME                = @RELEASE_LIB_NAME@

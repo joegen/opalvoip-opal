@@ -148,6 +148,18 @@ case "$target_cpu" in
    * )                                                  MACHTYPE=$target_cpu ;
         AC_MSG_WARN("CPU $target_cpu not recognized - proceed with caution!") ;;
 esac
+case "$target_os" in
+  linux*)             OSTYPE=linux;        ;;
+  freebsd* )          OSTYPE=FreeBSD;      ;;
+  openbsd* )          OSTYPE=OpenBSD;      ;;
+  netbsd* )           OSTYPE=NetBSD;       ;;
+  solaris* | sunos* ) OSTYPE=solaris;      ;;
+  darwin* )	      OSTYPE=Darwin;       ;;
+  beos*)              OSTYPE=beos;         ;;
+  cygwin*)            OSTYPE=cygwin;       ;;
+  mingw*)	      OSTYPE=mingw;        ;;
+  * )		      OSTYPE="$target_os"; ;;
+esac
 
 LDSOOPTS=
 case "$target_os" in
