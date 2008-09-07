@@ -568,6 +568,11 @@ dnl Return:    SIZE16 short or int
 dnl            SIZE32 short, int or long
 AC_DEFUN([OPAL_SPEEX_TYPES],
          [
+          old_CFLAGS="$CFLAGS"
+          old_LIBS="$LIBS"
+          CFLAGS=
+          LIBS=
+
           AC_CHECK_SIZEOF(short)
           AC_CHECK_SIZEOF(int)
           AC_CHECK_SIZEOF(long)
@@ -583,6 +588,9 @@ AC_DEFUN([OPAL_SPEEX_TYPES],
                   $ac_cv_sizeof_long) SIZE32="long";;
                   $ac_cv_sizeof_short) SIZE32="short";;
           esac
+          CFLAGS="$old_CFLAGS"
+          LIBS="$old_LIBS"
+
          ])
 
 
