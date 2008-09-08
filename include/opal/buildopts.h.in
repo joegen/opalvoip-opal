@@ -43,19 +43,64 @@
 #undef OPAL_BUILD
 #undef OPAL_VERSION
 
-#undef  OPAL_PTLIB_SSL
-#undef  OPAL_PTLIB_SSL_AES
-#undef  OPAL_PTLIB_ASN
-#undef  OPAL_PTLIB_EXPAT
-#undef  OPAL_PTLIB_AUDIO
-#undef  OPAL_PTLIB_VIDEO
-#undef  OPAL_PTLIB_WAVFILE
-#undef  OPAL_PTLIB_DTMF
-#undef  OPAL_PTLIB_IPV6
-#undef  OPAL_PTLIB_DNS
-#undef  OPAL_PTLIB_LDAP
-#undef  OPAL_PTLIB_VXML
-#undef  OPAL_PTLIB_CONFIG_FILE
+#ifdef(_MSC_VER)
+  #ifdef P_SSL
+    #define  OPAL_PTLIB_SSL
+  #endif /*P_SSL*/
+  #ifdef P_SSL_AES
+    #define  OPAL_PTLIB_SSL_AES
+  #endif /*P_SSL_AES*/
+  #ifdef P_ASN
+    #define  OPAL_PTLIB_ASN
+  #endif /*P_ASN*/
+  #ifdef P_EXPAT
+    #define  OPAL_PTLIB_EXPAT
+  #endif /*P_EXPAT*/
+  #ifdef P_AUDIO
+    #define  OPAL_PTLIB_AUDIO
+  #endif /*P_AUDIO*/
+  #ifdef P_VIDEO
+    #define  OPAL_PTLIB_VIDEO
+  #endif /*P_VIDEO*/
+  #ifdef P_WAVFILE
+    #define  OPAL_PTLIB_WAVFILE
+  #endif /*P_WAVFILE*/
+  #ifdef P_DTMF
+    #define  OPAL_PTLIB_DTMF
+  #endif /*P_DTMF*/
+  #ifdef P_HAS_IPV6
+    #define  OPAL_PTLIB_IPV6
+  #endif /*P_HAS_IPV6*/
+  #ifdef P_DNS 
+    #define  OPAL_PTLIB_DNS
+  #endif /*P_DNS*/
+  #ifdef P_LDAP
+    #define  OPAL_PTLIB_LDAP
+  #endif /*P_LDAP*/
+  #ifdef P_VXML
+    #define  OPAL_PTLIB_VXML
+  #endif /*P_VXML*/
+  #ifdef P_CONFIG_FILE
+    #define  OPAL_PTLIB_CONFIG_FILE
+  #endif /*P_CONFIG_FILE*/
+#endif
+
+#ifndef(_MSC_VER)
+  #undef  OPAL_PTLIB_SSL
+  #undef  OPAL_PTLIB_SSL_AES
+  #undef  OPAL_PTLIB_ASN
+  #undef  OPAL_PTLIB_EXPAT
+  #undef  OPAL_PTLIB_AUDIO
+  #undef  OPAL_PTLIB_VIDEO
+  #undef  OPAL_PTLIB_WAVFILE
+  #undef  OPAL_PTLIB_DTMF
+  #undef  OPAL_PTLIB_IPV6
+  #undef  OPAL_PTLIB_DNS
+  #undef  OPAL_PTLIB_LDAP
+  #undef  OPAL_PTLIB_VXML
+  #undef  OPAL_PTLIB_CONFIG_FILE
+#endif
+
 #undef  OPAL_PLUGIN_DIR
 
 /////////////////////////////////////////////////
