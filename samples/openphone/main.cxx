@@ -489,8 +489,14 @@ MyManager::~MyManager()
 
   ShutDownEndpoints();
 
+  wxMenuBar * menubar = GetMenuBar();
+  SetMenuBar(NULL);
+  delete menubar;
+
   delete m_imageListNormal;
   delete m_imageListSmall;
+
+  delete wxXmlResource::Set(NULL);
 }
 
 
@@ -501,11 +507,13 @@ bool MyManager::Initialise()
   InitXmlResource();
 
   // Make a menubar
-  wxMenuBar * menubar = wxXmlResource::Get()->LoadMenuBar("MenuBar");
-  if (menubar == NULL)
-    return false;
-
-  SetMenuBar(menubar);
+  wxMenuBar * menubar;
+  {
+    PMEMORY_IGNORE_ALLOCATIONS_FOR_SCOPE;
+    if ((menubar = wxXmlResource::Get()->LoadMenuBar("MenuBar")) == NULL)
+      return false;
+    SetMenuBar(menubar);
+  }
 
   wxAcceleratorEntry accelEntries[] = {
       wxAcceleratorEntry(wxACCEL_CTRL,  'E',         XRCID("EditSpeedDial")),
@@ -2472,25 +2480,25 @@ void MyManager::StartRegistrars()
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
 
       if (iter->m_MWI) {
-      SIPSubscribe::Params mwiParam(SIPSubscribe::MessageSummary);
-      mwiParam.m_targetAddress = param.m_addressOfRecord;
-      mwiParam.m_authID = param.m_authID;
-      mwiParam.m_password = param.m_password;
-      mwiParam.m_expire = iter->m_TimeToLive;
-      ok = sipEP->Subscribe(mwiParam);
-      LogWindow << "SIP MWI subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+        SIPSubscribe::Params mwiParam(SIPSubscribe::MessageSummary);
+        mwiParam.m_targetAddress = param.m_addressOfRecord;
+        mwiParam.m_authID = param.m_authID;
+        mwiParam.m_password = param.m_password;
+        mwiParam.m_expire = iter->m_TimeToLive;
+        ok = sipEP->Subscribe(mwiParam);
+        LogWindow << "SIP MWI subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
       }
 
       if (iter->m_Presence) {
-      SIPSubscribe::Params presenceParam(SIPSubscribe::Presence);
-      presenceParam.m_targetAddress = param.m_addressOfRecord;
-      presenceParam.m_authID = param.m_authID;
-      presenceParam.m_password = param.m_password;
-      presenceParam.m_expire = iter->m_TimeToLive;
-      ok = sipEP->Subscribe(presenceParam);
-      LogWindow << "SIP Presence subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+        SIPSubscribe::Params presenceParam(SIPSubscribe::Presence);
+        presenceParam.m_targetAddress = param.m_addressOfRecord;
+        presenceParam.m_authID = param.m_authID;
+        presenceParam.m_password = param.m_password;
+        presenceParam.m_expire = iter->m_TimeToLive;
+        ok = sipEP->Subscribe(presenceParam);
+        LogWindow << "SIP Presence subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+      }
     }
-  }
   }
 }
 
