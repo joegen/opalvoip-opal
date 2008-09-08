@@ -278,6 +278,7 @@ dnl            $DEFAULT_LIBS
 
 AC_DEFUN([OPAL_FIND_PTLIB],
          [
+          m4_pattern_allow([PKG_CONFIG_LIBDIR])
 	  AC_ARG_VAR([PTLIBDIR], [path to ptlib directory if installed ptlib shall not be used])
           AC_ARG_ENABLE([versioncheck],
                         [AC_HELP_STRING([--enable-versioncheck], [enable ptlib versioncheck])],

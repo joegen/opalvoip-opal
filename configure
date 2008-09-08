@@ -5109,6 +5109,7 @@ echo "${ECHO_T}$DEBUG_BUILD" >&6; }
 
 
 
+
           # Check whether --enable-versioncheck was given.
 if test "${enable_versioncheck+set}" = set; then
   enableval=$enable_versioncheck; PTLIB_VERSION_CHECK=$enableval
