@@ -585,6 +585,7 @@ RTP_Session::~RTP_Session()
   delete jitter;
   if (autoDeleteUserData)
     delete userData;
+  delete m_encodingHandler;
 }
 
 void RTP_Session::SendBYE()
