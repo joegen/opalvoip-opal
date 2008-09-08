@@ -261,9 +261,13 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
     if (OnReceivedPDU(transport, pdu)) 
       return;
   }
-  else if (transport.good()) {
-    PTRACE(2, "SIP\tMalformed request received on " << transport);
-    SendResponse(SIP_PDU::Failure_BadRequest, transport, *pdu);
+  else {
+    PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::NoError,
+              "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
+    if (transport.good()) {
+      PTRACE(2, "SIP\tMalformed request received on " << transport);
+      SendResponse(SIP_PDU::Failure_BadRequest, transport, *pdu);
+    }
   }
 
   delete pdu;
