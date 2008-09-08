@@ -2549,6 +2549,11 @@ void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & /*session*/) con
 
 #endif // OPAL_VIDEO
 
+void SIP_RTP_Session::OnClearCall(const RTP_Session & /*session*/)
+{
+  ((SIPConnection &)connection).ClearCall();
+}
+
 void SIPConnection::OnSessionTimeout(PTimer &, INT)
 {
   //SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);  

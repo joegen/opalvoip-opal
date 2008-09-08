@@ -561,6 +561,8 @@ class SIP_RTP_Session : public RTP_UserData
 #endif
   //@}
 
+    void OnClearCall(const RTP_Session & /*session*/);
+
   protected:
     const SIPConnection & connection; /// Owner of the RTP session
 };
