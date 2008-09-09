@@ -1867,7 +1867,7 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
     if (stream == &datagram) {
       transport.setstate(ios::failbit);
       PTRACE(1, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
-                << " - " << pdu.GetSize() << " bytes.\n" << hex << setw(2) << pdu << dec);
+                << " - " << pdu.GetSize() << " bytes.\n" << hex << setprecision(2) << pdu << dec);
     }
     return PFalse;
   }
