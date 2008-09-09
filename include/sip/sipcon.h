@@ -117,6 +117,15 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual PString GetDestinationAddress();
 
+    /**Get the fulll URL being indicated by the remote for incoming calls. This may
+       not have any relation to the local name of the endpoint.
+
+       The default behaviour returns GetDestinationAddress() normalised to a URL.
+       The remote may provide a full URL, if it does not then the prefix for the
+       endpoint is prepended to the destination address.
+      */
+    virtual PString GetCalledPartyURL();
+
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
 
@@ -181,7 +190,6 @@ class SIPConnection : public OpalRTPConnection
       OpalMediaStream & stream  ///< Stream to close
     );
 
-
     /**Clean up the termination of the connection.
        This function can do any internal cleaning up and waiting on background
        threads that may be using the connection object.
@@ -200,6 +208,55 @@ class SIPConnection : public OpalRTPConnection
        The default behaviour calls the OpalEndPoint function of the same name.
       */
     virtual void OnReleased();
+
+    /**Forward incoming connection to the specified address.
+       This would typically be called from within the OnIncomingConnection()
+       function when an application wishes to redirect an unwanted incoming
+       call.
+
+       The return value is PTrue if the call is to be forwarded, PFalse 
+       otherwise. Note that if the call is forwarded, the current connection
+       is cleared with the ended call code set to EndedByCallForwarded.
+      */
+    virtual PBoolean ForwardCall(
+      const PString & forwardParty   ///<  Party to forward call to.
+    );
+
+    /**Get the real user input indication transmission mode.
+       This will return the user input mode that will actually be used for
+       transmissions. It will be the value of GetSendUserInputMode() provided
+       the remote endpoint is capable of that mode.
+      */
+    virtual SendUserInputModes GetRealSendUserInputMode() const;
+
+    /**Send a user input indication to the remote endpoint.
+       This sends DTMF emulation user input. If something more sophisticated
+       than the simple tones that can be sent using the SendUserInput()
+       function.
+
+       A duration of zero indicates that no duration is to be indicated.
+       A non-zero logical channel indicates that the tone is to be syncronised
+       with the logical channel at the rtpTimestamp value specified.
+
+       The tone parameter must be one of "0123456789#*ABCD!" where '!'
+       indicates a hook flash. If tone is a ' ' character then a
+       signalUpdate PDU is sent that updates the last tone indication
+       sent. See the H.245 specifcation for more details on this.
+
+       The default behaviour sends the tone using RFC2833.
+      */
+    PBoolean SendUserInputTone(char tone, unsigned duration);
+
+    /**Callback from the RTP session for statistics monitoring.
+       This is called every so many packets on the transmitter and receiver
+       threads of the RTP session indicating that the statistics have been
+       updated.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnRTPStatistics(
+      const RTP_Session & session         ///<  Session with statistics
+    ) const;
   //@}
 
   /**@name Protocol handling functions */
@@ -306,57 +363,6 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual void OnCreatingINVITE(SIP_PDU & pdu);
 
-    /**Callback from the RTP session for statistics monitoring.
-       This is called every so many packets on the transmitter and receiver
-       threads of the RTP session indicating that the statistics have been
-       updated.
-
-       The default behaviour does nothing.
-      */
-    virtual void OnRTPStatistics(
-      const RTP_Session & session         ///<  Session with statistics
-    ) const;
-  //@}
-
-
-    /**Forward incoming connection to the specified address.
-       This would typically be called from within the OnIncomingConnection()
-       function when an application wishes to redirect an unwanted incoming
-       call.
-
-       The return value is PTrue if the call is to be forwarded, PFalse 
-       otherwise. Note that if the call is forwarded, the current connection
-       is cleared with the ended call code set to EndedByCallForwarded.
-      */
-    virtual PBoolean ForwardCall(
-      const PString & forwardParty   ///<  Party to forward call to.
-    );
-
-    /**Get the real user input indication transmission mode.
-       This will return the user input mode that will actually be used for
-       transmissions. It will be the value of GetSendUserInputMode() provided
-       the remote endpoint is capable of that mode.
-      */
-    virtual SendUserInputModes GetRealSendUserInputMode() const;
-
-    /**Send a user input indication to the remote endpoint.
-       This sends DTMF emulation user input. If something more sophisticated
-       than the simple tones that can be sent using the SendUserInput()
-       function.
-
-       A duration of zero indicates that no duration is to be indicated.
-       A non-zero logical channel indicates that the tone is to be syncronised
-       with the logical channel at the rtpTimestamp value specified.
-
-       The tone parameter must be one of "0123456789#*ABCD!" where '!'
-       indicates a hook flash. If tone is a ' ' character then a
-       signalUpdate PDU is sent that updates the last tone indication
-       sent. See the H.245 specifcation for more details on this.
-
-       The default behaviour sends the tone using RFC2833.
-      */
-    PBoolean SendUserInputTone(char tone, unsigned duration);
-    
     /**Send a "200 OK" response for the received INVITE message.
      */
     virtual PBoolean SendInviteOK(const SDPSessionDescription & sdp);
@@ -369,14 +375,13 @@ class SIPConnection : public OpalRTPConnection
       const char * extra = NULL,
       const SDPSessionDescription * sdp = NULL
     );
+  //@}
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
 
     OpalTransport & GetTransport() const { return *transport; }
-
-    void AdjustOutgoingINVITE();
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     const SIPURL & GetRequestURI() const { return m_requestURI; }
@@ -400,6 +405,7 @@ class SIPConnection : public OpalRTPConnection
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);
 
+    void AdjustOutgoingINVITE();
     virtual RTP_UDP *OnUseRTPSession(
       const unsigned rtpSessionId,
       const OpalMediaType & mediaType,
