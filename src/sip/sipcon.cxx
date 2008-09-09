@@ -2095,6 +2095,9 @@ void SIPConnection::OnCreatingINVITE(SIP_PDU & request)
       mime.SetAt("Replaces", replaces);
     }
   }
+
+  if (!request.GetSDP() || request.GetSDP()->GetMediaDescriptions().GetSize () == 0)
+    Release(EndedByCapabilityExchange);
 }
 
 PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
