@@ -666,9 +666,11 @@ PBoolean OpalRTPMediaStream::SetDataSize(PINDEX dataSize)
      practical UDP packet size. This means we have a buffer that can accept
      whatever the RTP sender throws at us. For sink, we just clamp it to the
      maximum size based on MTU (or other criteria). */
-  PINDEX maxSize = IsSource() ? 2048 : connection.GetMaxRtpPayloadSize();
-  if (defaultDataSize < maxSize)
-    defaultDataSize = maxSize;
+  PINDEX minSize = IsSource() ? 2048 : connection.GetMaxRtpPayloadSize();
+  if (defaultDataSize < minSize) {
+    PTRACE(1, "Media\tClamping RTP media stream data size from " << dataSize << " to minimum " << minSize);
+    defaultDataSize = minSize;
+  }
 
   return true;
 }
@@ -917,10 +919,12 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize)
      sending an even number of our multiplier. */
   const unsigned MinTime = 20;
   PINDEX minSize = mediaFormat.GetClockRate()/(1000/MinTime)*sizeof(short);
-  if (dataSize < minSize)
-    dataSize = (minSize/dataSize + 1)*minSize;
+  if (dataSize < minSize) {
+    PTRACE(1, "Media\tClamping audio stream data size from " << dataSize << " to minimum " << minSize);
+    dataSize = ((minSize+dataSize-1)/dataSize)*dataSize;
+  }
 
-  PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to  "
+  PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
          << dataSize << " bytes and " << soundChannelBuffers << " buffers.");
   return OpalMediaStream::SetDataSize(dataSize) &&
          ((PSoundChannel *)channel)->SetBuffers(dataSize, soundChannelBuffers);
