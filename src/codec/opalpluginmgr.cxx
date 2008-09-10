@@ -150,7 +150,7 @@ class OpalPluginMediaOption : public base
       bool ok = m_mergeFunction(&result, base::AsString(), option.AsString());
 
       if (ok && result != NULL && base::FromString(result)) {
-        PTRACE(4, "OpalPlugin\tChanged media option \"" << base::GetName() << "\" from " << *this << " to \"" << result << '"');
+        PTRACE(4, "OpalPlugin\tChanged media option \"" << base::GetName() << "\" from \"" << *this << "\" to \"" << result << '"');
       }
 
       if (result != NULL && m_freeFunction != NULL)

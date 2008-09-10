@@ -901,6 +901,7 @@ class SIPSubscribe : public SIPTransaction
       Presence,
       NumPredefinedPackages
     };
+    static PredefinedPackages GetEventPackage(const PString & name);
     static PString GetEventPackageName(PredefinedPackages pkg);
 
     struct Params {

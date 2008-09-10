@@ -1839,6 +1839,11 @@ void SIP_PDU::PrintOn(ostream & strm) const
 
 PBoolean SIP_PDU::Read(OpalTransport & transport)
 {
+  if (!transport.IsOpen()) {
+    PTRACE(1, "SIP\tAttempt to read PDU from closed tansport " << transport);
+    return PFalse;
+  }
+
   PStringStream datagram;
   PBYTEArray pdu;
 
@@ -1848,29 +1853,22 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   else {
     stream = &datagram;
 
-    if (transport.ReadPDU(pdu))
-      datagram = PString((char *)pdu.GetPointer(), pdu.GetSize());
-  }
+    if (!transport.ReadPDU(pdu))
+      return false;
 
-  if (!transport.IsOpen()) {
-    PTRACE(1, "SIP\tAttempt to read PDU from closed tansport " << transport);
-    return PFalse;
+    datagram = PString((char *)pdu.GetPointer(), pdu.GetSize());
   }
 
   // get the message from transport/datagram into cmd and parse MIME
   PString cmd;
-  *stream >> cmd >> mime;
+  *stream >> cmd;
 
-  if (!stream->good()) {
-    PTRACE_IF(1, stream == &datagram, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
-              << " - " << pdu.GetSize() << " bytes.\n" << hex << pdu << dec);
-    PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::NoError,
-              "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
-    return PFalse;
-  }
-
-  if (cmd.IsEmpty()) {
-    PTRACE(2, "SIP\tNo Request-Line or Status-Line received on " << transport);
+  if (!stream->good() || cmd.IsEmpty()) {
+    if (stream == &datagram) {
+      transport.setstate(ios::failbit);
+      PTRACE(1, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
+                << " - " << pdu.GetSize() << " bytes.\n" << hex << setprecision(2) << pdu << dec);
+    }
     return PFalse;
   }
 
@@ -1878,7 +1876,7 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
     // parse Response version, code & reason (ie: "SIP/2.0 200 OK")
     PINDEX space = cmd.Find(' ');
     if (space == P_MAX_INDEX) {
-      PTRACE(2, "SIP\tBad Status-Line received on " << transport);
+      PTRACE(2, "SIP\tBad Status-Line \"" << cmd << "\" received on " << transport);
       return PFalse;
     }
 
@@ -1892,7 +1890,7 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
     // parse the method, URI and version
     PStringArray cmds = cmd.Tokenise( ' ', PFalse);
     if (cmds.GetSize() < 3) {
-      PTRACE(2, "SIP\tBad Request-Line received on " << transport);
+      PTRACE(2, "SIP\tBad Request-Line \"" << cmd << "\" received on " << transport);
       return PFalse;
     }
 
@@ -1913,9 +1911,18 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   }
 
   if (versionMajor < 2) {
-    PTRACE(2, "SIP\tInvalid version received on " << transport);
+    PTRACE(2, "SIP\tInvalid version (" << versionMajor << ") received on " << transport);
     return PFalse;
   }
+
+  // Getthe MIME fields
+  *stream >> mime;
+  if (!stream->good() || mime.IsEmpty()) {
+    PTRACE(2, "SIP\tInvalid MIME received on " << transport);
+    transport.clear(); // Clear flags so BadRequest response is sent by caller
+    return PFalse;
+  }
+
 
   // get the SDP content body
   // if a content length is specified, read that length
@@ -2584,6 +2591,17 @@ SIPSubscribe::Params::Params(PredefinedPackages pkg)
 }
 
 
+SIPSubscribe::PredefinedPackages SIPSubscribe::GetEventPackage(const PString & name)
+{
+  if (name *= "message-summary")
+    return SIPSubscribe::MessageSummary;
+  else if (name *= "presence")
+    return SIPSubscribe::Presence;
+ 
+  return SIPSubscribe::NumPredefinedPackages;
+}
+
+
 PString SIPSubscribe::GetEventPackageName(PredefinedPackages pkg)
 {
   static const char * const names[NumPredefinedPackages] = {
@@ -2685,12 +2703,16 @@ SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const 
 }
 
 
-void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport*/, const SIPURL & refer, const SIPURL & referred_by)
+void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport*/, const SIPURL & refer, const SIPURL & _referred_by)
 {
+  SIPURL referred_by = _referred_by;
+
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
   mime.SetReferTo(refer.AsQuotedString());
-  if(!referred_by.IsEmpty())
+  if(!referred_by.IsEmpty()) {
+    referred_by.SetDisplayName(PString::Empty());
     mime.SetReferredBy(referred_by.AsQuotedString());
+  }
 }
 
 
@@ -2731,7 +2753,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
   SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
 
   SIP_PDU::Construct(Method_MESSAGE,
-                     "sip:"+address.GetUserName()+"@"+address.GetHostName(),
+                     address.AsQuotedString(),
                      address.AsQuotedString(),
                      myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
                      id,
@@ -2761,7 +2783,7 @@ SIPPing::SIPPing(SIPEndPoint & ep,
   SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
   
   SIP_PDU::Construct(Method_PING,
-                     "sip:"+address.GetUserName()+"@"+address.GetHostName(),
+                     address.AsQuotedString(),
                      address.AsQuotedString(),
                      // myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),

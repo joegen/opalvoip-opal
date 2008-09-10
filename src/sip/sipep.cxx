@@ -261,9 +261,13 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
     if (OnReceivedPDU(transport, pdu)) 
       return;
   }
-  else if (transport.good()) {
-    PTRACE(2, "SIP\tMalformed request received on " << transport);
-    SendResponse(SIP_PDU::Failure_BadRequest, transport, *pdu);
+  else {
+    PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::NoError,
+              "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
+    if (transport.good()) {
+      PTRACE(2, "SIP\tMalformed request received on " << transport);
+      SendResponse(SIP_PDU::Failure_BadRequest, transport, *pdu);
+    }
   }
 
   delete pdu;
@@ -942,8 +946,9 @@ bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & params)
   
   // If there is already a request with this URL and method, 
   // then update it with the new information
-  if (handler != NULL)
+  if (handler != NULL && handler->GetState() != SIPHandler::Unsubscribed) {
     handler->UpdateParameters(params);
+  }
   else {
     // Otherwise create a new request with this method type
     handler = new SIPSubscribeHandler(*this, params);
