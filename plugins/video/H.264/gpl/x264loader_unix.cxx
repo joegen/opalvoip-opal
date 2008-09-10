@@ -18,6 +18,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  *
  */
+#include "plugin-config.h"
 #include "x264loader_unix.h"
 #include "trace.h"
 #include <dlfcn.h>
@@ -110,6 +111,8 @@ bool X264Library::Load()
 
 bool X264Library::Open(const char *name)
 {
+  TRACE(4, "H264\tDYNA\tTrying to open x264 library " << name)
+
   if ( strlen(name) == 0 )
     return false;
 
