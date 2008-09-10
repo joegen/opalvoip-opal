@@ -43,7 +43,7 @@
 #undef OPAL_BUILD
 #undef OPAL_VERSION
 
-#ifdef(_MSC_VER)
+#ifdef _MSC_VER
   #ifdef P_SSL
     #define  OPAL_PTLIB_SSL
   #endif /*P_SSL*/
@@ -85,7 +85,7 @@
   #endif /*P_CONFIG_FILE*/
 #endif
 
-#ifndef(_MSC_VER)
+#ifndef _MSC_VER
   #undef  OPAL_PTLIB_SSL
   #undef  OPAL_PTLIB_SSL_AES
   #undef  OPAL_PTLIB_ASN
