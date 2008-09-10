@@ -2031,8 +2031,8 @@ echo $ECHO_N "checking Debugging support... $ECHO_C" >&6; }
 echo "${ECHO_T}$DEBUG_BUILD" >&6; }
 
 
-CFLAGS="$CFLAGS $DEBUG_CFLAGS"
-CXXFLAGS="$CXXFLAGS $DEBUG_CFLAGS"
+CFLAGS="$CFLAGS $DEFAULT_CFLAGS"
+CXXFLAGS="$CXXFLAGS $DEFAULT_CFLAGS"
 
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -7091,6 +7091,11 @@ fi
 
 
 
+          old_CFLAGS="$CFLAGS"
+          old_LIBS="$LIBS"
+          CFLAGS=
+          LIBS=
+
           { echo "$as_me:$LINENO: checking for short" >&5
 echo $ECHO_N "checking for short... $ECHO_C" >&6; }
 if test "${ac_cv_type_short+set}" = set; then
@@ -8722,6 +8727,9 @@ _ACEOF
                   $ac_cv_sizeof_long) SIZE32="long";;
                   $ac_cv_sizeof_short) SIZE32="short";;
           esac
+          CFLAGS="$old_CFLAGS"
+          LIBS="$old_LIBS"
+
 
 
 
