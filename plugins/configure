@@ -1992,6 +1992,11 @@ fi
 
 
 
+
+
+
+
+
           # Check whether --enable-debug was given.
 if test "${enable_debug+set}" = set; then
   enableval=$enable_debug; DEBUG_BUILD=$enableval
@@ -2000,11 +2005,25 @@ else
 fi
 
 
+         opal_release_flags="-Os"
+         case "$target_os" in
+                 solaris*)
+                   opal_debug_flags="-g3 -ggdb -gstabs+ -O0 -D_DEBUG "
+                 ;;
+                 *)
+                   opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
+                 ;;
+         esac
+
+          DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
+          RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
+
           if test "x${DEBUG_BUILD}" = xyes; then
-            DEBUG_CFLAGS="-g3 -ggdb -O0 -D_DEBUG"
+            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_debug_flags"
           else
-            DEBUG_CFLAGS="-g -O2"
+            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_release_flags"
           fi
+
 
           { echo "$as_me:$LINENO: checking Debugging support" >&5
 echo $ECHO_N "checking Debugging support... $ECHO_C" >&6; }
@@ -2012,8 +2031,8 @@ echo $ECHO_N "checking Debugging support... $ECHO_C" >&6; }
 echo "${ECHO_T}$DEBUG_BUILD" >&6; }
 
 
-CFLAGS="$CFLAGS $DEBUG_CFLAGS"
-CXXFLAGS="$CXXFLAGS $DEBUG_CFLAGS"
+CFLAGS="$CFLAGS $DEFAULT_CFLAGS"
+CXXFLAGS="$CXXFLAGS $DEFAULT_CFLAGS"
 
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -6704,7 +6723,7 @@ HAVE_IXJ=no
 HAVE_H263=yes
 HAVE_H264=yes
 HAVE_SPANDSP=yes
-DEFAULT_TO_FULL_CAPABILITIES=no
+DEFAULT_TO_FULL_CAPABILITIES=yes
 X264_LINK_STATIC=no
 LIBAVCODEC_STACKALIGN_HACK=no
 
@@ -7071,6 +7090,11 @@ echo "${ECHO_T}using system GSM" >&6; }
 fi
 
 
+
+          old_CFLAGS="$CFLAGS"
+          old_LIBS="$LIBS"
+          CFLAGS=
+          LIBS=
 
           { echo "$as_me:$LINENO: checking for short" >&5
 echo $ECHO_N "checking for short... $ECHO_C" >&6; }
@@ -8703,6 +8727,9 @@ _ACEOF
                   $ac_cv_sizeof_long) SIZE32="long";;
                   $ac_cv_sizeof_short) SIZE32="short";;
           esac
+          CFLAGS="$old_CFLAGS"
+          LIBS="$old_LIBS"
+
 
 
 

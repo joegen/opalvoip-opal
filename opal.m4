@@ -76,7 +76,10 @@ dnl OPAL_DETERMINE_DEBUG
 dnl Determine desired debug level, default is -g -O2
 dnl Arguments: 
 dnl Return:    $DEBUG_CFLAGS
+dnl            $RELEASE_CFLAGS
+dnl            $DEFAULT_CFLAGS
 dnl            $DEBUG_BUILD
+
 AC_DEFUN([OPAL_DETERMINE_DEBUG],
          [
           AC_ARG_ENABLE([debug],
@@ -84,11 +87,25 @@ AC_DEFUN([OPAL_DETERMINE_DEBUG],
                         [DEBUG_BUILD=$enableval],
                         [DEBUG_BUILD=no])
 
+         opal_release_flags="-Os"
+         case "$target_os" in
+                 solaris*)
+                   opal_debug_flags="-g3 -ggdb -gstabs+ -O0 -D_DEBUG "
+                 ;;
+                 *)
+                   opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
+                 ;;
+         esac
+
+          DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
+          RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
+
           if test "x${DEBUG_BUILD}" = xyes; then
-            DEBUG_CFLAGS="-g3 -ggdb -O0 -D_DEBUG"
+            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_debug_flags"
           else
-            DEBUG_CFLAGS="-g -O2"
+            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_release_flags"
           fi
+
           OPAL_MSG_CHECK([Debugging support], [$DEBUG_BUILD])
          ])
 
@@ -154,15 +171,16 @@ dnl            $LIB_FILENAME_SHARED_MIN
 dnl            $LIB_FILENAME_SHARED_PAT
 AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
          [
-          if test "x${DEBUG_BUILD}" = "xyes" ; then
-            OBJ_SUFFIX="d"
+          if test "x$1" = "xDEBUG" ; then
+            OBJ_SUFFIX="_d"
           else
-            OBJ_SUFFIX="r"
+            OBJ_SUFFIX=""
           fi
-          OPAL_OBJDIR="\${OPAL_DIR}/lib/obj_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          LIB_NAME="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}"
-          LIB_FILENAME_SHARED="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}"
-          LIB_FILENAME_STATIC="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}_s.a"
+          $1_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          $1_LIB_NAME="libopal${OBJ_SUFFIX}"
+          $1_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
+          $1_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
 
           if test "x${BUILD_TYPE}" = "x." ; then
             build_suffix=".${BUILD_NUMBER}"
@@ -172,24 +190,25 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)  
-                    LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
-                    LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}" 
+                    $1_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
+                    $1_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
+                    $1_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}" 
                     ;;
                   *)
-                    LIB_FILENAME_SHARED_MAJ="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    LIB_FILENAME_SHARED_MIN="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
-                    LIB_FILENAME_SHARED_PAT="libopal_${target_os}_${MACHTYPE}_${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
+                    $1_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
+                    $1_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
+                    $1_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
 
-          AC_SUBST(OPAL_OBJDIR)
-          AC_SUBST(LIB_NAME)
-          AC_SUBST(LIB_FILENAME_SHARED)
-          AC_SUBST(LIB_FILENAME_STATIC)
-          AC_SUBST(LIB_FILENAME_SHARED_MAJ)
-          AC_SUBST(LIB_FILENAME_SHARED_MIN)
-          AC_SUBST(LIB_FILENAME_SHARED_PAT)
+          AC_SUBST(OPAL_LIBDIR)
+          AC_SUBST($1_OPAL_OBJDIR)
+          AC_SUBST($1_LIB_NAME)
+          AC_SUBST($1_LIB_FILENAME_SHARED)
+          AC_SUBST($1_LIB_FILENAME_STATIC)
+          AC_SUBST($1_LIB_FILENAME_SHARED_MAJ)
+          AC_SUBST($1_LIB_FILENAME_SHARED_MIN)
+          AC_SUBST($1_LIB_FILENAME_SHARED_PAT)
          ])
 
 dnl OPAL_GCC_VERSION
@@ -243,6 +262,88 @@ dnl ########################################################################
 dnl PTLIB
 dnl ########################################################################
 
+dnl OPAL_FIND_PTLIB
+dnl Find ptlib, either in PTLIBDIR or whereever on the system
+dnl Arguments: 
+dnl Return:    $PTLIB_VERSION
+dnl            $PTLIB_CFLAGS
+dnl            $PTLIB_CXXFLAGS
+dnl            $PTLIB_LIBS
+dnl            $PTLIB_MACHTYPE
+dnl            $PTLIB_OSTYPE
+dnl            $PTLIB_LIBS
+dnl            $DEBUG_LIBS
+dnl            $RELEASE_LIBS
+dnl            $DEFAULT_LIBS
+
+AC_DEFUN([OPAL_FIND_PTLIB],
+         [
+          m4_pattern_allow([PKG_CONFIG_LIBDIR])
+	  AC_ARG_VAR([PTLIBDIR], [path to ptlib directory if installed ptlib shall not be used])
+          AC_ARG_ENABLE([versioncheck],
+                        [AC_HELP_STRING([--enable-versioncheck], [enable ptlib versioncheck])],
+                        [PTLIB_VERSION_CHECK=$enableval],
+                        [PTLIB_VERSION_CHECK=yes])
+
+          dnl This segment looks for PTLIB in PTLIBDIR
+          if test "x${PTLIBDIR}" != "x" ; then
+
+            old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
+            export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
+
+            if ! AC_RUN_LOG([$PKG_CONFIG ptlib --exists]); then
+              AC_MSG_ERROR([No PTLIB library found in ${PTLIBDIR}])
+            fi
+
+            echo "Found PTLIB in PTLIBDIR ${PTLIBDIR}"
+
+            if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
+              if ! AC_RUN_LOG([$PKG_CONFIG ptlib --atleast-version=${PTLIB_REC_VERSION}]); then
+                AC_MSG_ERROR([PTLIB Version check failed, recommended version is at least ${PTLIB_REC_VERSION}])
+              fi
+            fi
+
+            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}` 
+            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}` 
+            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            
+            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt\ //g`
+            DEBUG_LIBS="$DEBUG_LIBS -lpt_d"
+            RELEASE_LIBS="$RELEASE_LIBS -lpt"
+            if test "x${DEBUG_BUILD}" = xyes; then
+              DEFAULT_LIBS="$DEFAULT_LIBS -lpt_d"
+            else
+              DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
+            fi
+	    
+            export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
+
+          dnl This segment looks for PTLIB on the system
+          else
+            if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
+              PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
+            else
+              PKG_CHECK_MODULES(PTLIB, ptlib)
+            fi
+
+            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
+            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
+            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt\ //g`
+            DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
+            DEBUG_LIBS="$DEBUG_LIBS -lpt"
+            RELEASE_LIBS="$DEBUG_LIBS -lpt"
+          fi
+
+          echo "Version:  ${PTLIB_VERSION}"
+          echo "CFLAGS:   ${PTLIB_CFLAGS}"
+          echo "CXXFLAGS: ${PTLIB_CXXFLAGS}"
+          echo "LIBS:     ${PTLIB_LIBS}"
+          echo "DEBUG:    ${DEBUG_LIBS}"
+          echo "RELEASE:  ${RELEASE_LIBS}"
+         ])
+
+
 dnl OPAL_CHECK_PTLIB
 dnl Check if ptlib was compiled with a specific optional feature
 dnl Arguments: $1 Name of feature
@@ -254,9 +355,15 @@ dnl Define:    $4
 AC_DEFUN([OPAL_CHECK_PTLIB],
          [
           old_CXXFLAGS="$CXXFLAGS"
-          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
-          LDFLAGS="$LDFLAGS $PTLIB_LIBS"
+
+          if test "x${DEBUG_BUILD}" = xyes; then
+            CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
+            LDFLAGS="$LDFLAGS $PTLIB_LIBS $DEBUG_LIBS"
+          else
+            CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS "
+            LDFLAGS="$LDFLAGS $PTLIB_LIBS $RELEASE_LIBS"
+          fi
 
           AC_LANG(C++)
           AC_LINK_IFELSE([
@@ -458,6 +565,11 @@ dnl Return:    SIZE16 short or int
 dnl            SIZE32 short, int or long
 AC_DEFUN([OPAL_SPEEX_TYPES],
          [
+          old_CFLAGS="$CFLAGS"
+          old_LIBS="$LIBS"
+          CFLAGS=
+          LIBS=
+
           AC_CHECK_SIZEOF(short)
           AC_CHECK_SIZEOF(int)
           AC_CHECK_SIZEOF(long)
@@ -473,6 +585,9 @@ AC_DEFUN([OPAL_SPEEX_TYPES],
                   $ac_cv_sizeof_long) SIZE32="long";;
                   $ac_cv_sizeof_short) SIZE32="short";;
           esac
+          CFLAGS="$old_CFLAGS"
+          LIBS="$old_LIBS"
+
          ])
 
 
