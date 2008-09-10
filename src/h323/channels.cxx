@@ -341,9 +341,6 @@ PBoolean H323UnidirectionalChannel::Open()
   if (PAssertNULL(mediaStream) == NULL)
     return false;
 
-  if (!H323Channel::Open())
-    return false;
-
   OpalCall & call = connection.GetCall();
 
   bool ok;
@@ -356,7 +353,7 @@ PBoolean H323UnidirectionalChannel::Open()
 
   if (ok) {
     capability->SetMediaFormatOptions(mediaStream->GetMediaFormat());
-    return true;
+    return H323Channel::Open();
   }
 
   PTRACE(1, "LogChan\t" << (GetDirection() == IsReceiver ? "Receive" : "Transmit")

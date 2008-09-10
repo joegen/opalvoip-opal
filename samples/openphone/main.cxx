@@ -489,8 +489,14 @@ MyManager::~MyManager()
 
   ShutDownEndpoints();
 
+  wxMenuBar * menubar = GetMenuBar();
+  SetMenuBar(NULL);
+  delete menubar;
+
   delete m_imageListNormal;
   delete m_imageListSmall;
+
+  delete wxXmlResource::Set(NULL);
 }
 
 
@@ -501,11 +507,13 @@ bool MyManager::Initialise()
   InitXmlResource();
 
   // Make a menubar
-  wxMenuBar * menubar = wxXmlResource::Get()->LoadMenuBar("MenuBar");
-  if (menubar == NULL)
-    return false;
-
-  SetMenuBar(menubar);
+  wxMenuBar * menubar;
+  {
+    PMEMORY_IGNORE_ALLOCATIONS_FOR_SCOPE;
+    if ((menubar = wxXmlResource::Get()->LoadMenuBar("MenuBar")) == NULL)
+      return false;
+    SetMenuBar(menubar);
+  }
 
   wxAcceleratorEntry accelEntries[] = {
       wxAcceleratorEntry(wxACCEL_CTRL,  'E',         XRCID("EditSpeedDial")),
@@ -2006,7 +2014,7 @@ void MyManager::AddCallOnHold(OpalCall & call)
   PAssertNULL(menu)->Append(m_callsOnHold.back().m_retrieveMenuId, otherParty);
   item = menu->FindItemByPosition(0);
   if (item->IsSeparator())
-    menu->Remove(item);
+    menu->Delete(item);
 
   item = menubar->FindItem(XRCID("SubMenuTransfer"));
   menu = PAssertNULL(item)->GetSubMenu();
@@ -2031,12 +2039,12 @@ bool MyManager::RemoveCallOnHold(const PString & token)
   if (PAssert(menu != NULL && item != NULL, PLogicError)) {
     if (m_callsOnHold.size() == 1)
       menu->AppendSeparator();
-    menu->Remove(item);
+    menu->Delete(item);
   }
 
   item = menubar->FindItem(it->m_transferMenuId, &menu);
   if (PAssert(menu != NULL && item != NULL, PLogicError))
-    menu->Remove(item);
+    menu->Delete(item);
 
   m_callsOnHold.erase(it);
 
@@ -2472,25 +2480,25 @@ void MyManager::StartRegistrars()
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
 
       if (iter->m_MWI) {
-      SIPSubscribe::Params mwiParam(SIPSubscribe::MessageSummary);
-      mwiParam.m_targetAddress = param.m_addressOfRecord;
-      mwiParam.m_authID = param.m_authID;
-      mwiParam.m_password = param.m_password;
-      mwiParam.m_expire = iter->m_TimeToLive;
-      ok = sipEP->Subscribe(mwiParam);
-      LogWindow << "SIP MWI subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+        SIPSubscribe::Params mwiParam(SIPSubscribe::MessageSummary);
+        mwiParam.m_targetAddress = param.m_addressOfRecord;
+        mwiParam.m_authID = param.m_authID;
+        mwiParam.m_password = param.m_password;
+        mwiParam.m_expire = iter->m_TimeToLive;
+        ok = sipEP->Subscribe(mwiParam);
+        LogWindow << "SIP MWI subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
       }
 
       if (iter->m_Presence) {
-      SIPSubscribe::Params presenceParam(SIPSubscribe::Presence);
-      presenceParam.m_targetAddress = param.m_addressOfRecord;
-      presenceParam.m_authID = param.m_authID;
-      presenceParam.m_password = param.m_password;
-      presenceParam.m_expire = iter->m_TimeToLive;
-      ok = sipEP->Subscribe(presenceParam);
-      LogWindow << "SIP Presence subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+        SIPSubscribe::Params presenceParam(SIPSubscribe::Presence);
+        presenceParam.m_targetAddress = param.m_addressOfRecord;
+        presenceParam.m_authID = param.m_authID;
+        presenceParam.m_password = param.m_password;
+        presenceParam.m_expire = iter->m_TimeToLive;
+        ok = sipEP->Subscribe(presenceParam);
+        LogWindow << "SIP Presence subscribe " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+      }
     }
-  }
   }
 }
 
@@ -2564,12 +2572,12 @@ void MyManager::ApplyMediaInfo()
   wxMenuItem * item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuAudio"));
   wxMenu * audioMenu = PAssertNULL(item)->GetSubMenu();
   while (audioMenu->GetMenuItemCount() > 0)
-    audioMenu->Remove(audioMenu->FindItemByPosition(0));
+    audioMenu->Delete(audioMenu->FindItemByPosition(0));
 
   item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuVideo"));
   wxMenu * videoMenu = PAssertNULL(item)->GetSubMenu();
   while (videoMenu->GetMenuItemCount() > 0)
-    videoMenu->Remove(videoMenu->FindItemByPosition(0));
+    videoMenu->Delete(videoMenu->FindItemByPosition(0));
 
   for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
     if (mm->preferenceOrder < 0)

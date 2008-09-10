@@ -464,6 +464,10 @@ void RTP_UserData::OnRxStatistics(const RTP_Session & /*session*/) const
 {
 }
 
+void RTP_UserData::OnClearCall(const RTP_Session & /*session*/)
+{
+}
+
 #ifdef OPAL_VIDEO
 void RTP_UserData::OnRxIntraFrameRequest(const RTP_Session & /*session*/) const
 {
@@ -583,6 +587,7 @@ RTP_Session::~RTP_Session()
   delete jitter;
   if (autoDeleteUserData)
     delete userData;
+  delete m_encodingHandler;
 }
 
 void RTP_Session::SendBYE()
@@ -1505,6 +1510,7 @@ RTP_UDP::RTP_UDP(
   controlSocket     = NULL;
   appliedQOS        = false;
   localHasNAT       = false;
+  badTransmitCounter = 0;
 }
 
 
@@ -1920,15 +1926,23 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(BYTE * framePtr,
     if (remoteAddress.IsValid() && !appliedQOS) 
       ApplyQOS(remoteAddress);
 
+    badTransmitCounter = 0;
+
     return RTP_Session::e_ProcessPacket;
   }
 
   switch (socket.GetErrorNumber()) {
     case ECONNRESET :
     case ECONNREFUSED :
-      PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName
-             << " port on remote not ready.");
-      return RTP_Session::e_IgnorePacket;
+      if (++badTransmitCounter < 25) { 
+        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName << " port on remote not ready.");
+        return RTP_Session::e_IgnorePacket;
+      }
+      else {
+        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName << " too many transmit fails - killing call");
+        userData->OnClearCall(*this);
+        return RTP_Session::e_AbortTransport;
+      }
 
     case EMSGSIZE :
       PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName

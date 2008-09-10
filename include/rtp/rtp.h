@@ -368,6 +368,13 @@ class RTP_UserData : public PObject
       const RTP_Session & session   ///<  Session with statistics
     ) const;
 #endif
+
+    /**Callback from the RTP session when a call needs to be shut down.
+       The default behaviour does nothing.
+      */
+    virtual void OnClearCall(
+      const RTP_Session & session   ///<  Session with statistics
+    );
 };
 
 class RTP_Encoding;
@@ -1079,6 +1086,7 @@ class RTP_UDP : public RTP_Session
     bool remoteIsNAT;
     bool localHasNAT;
     bool first;
+    int  badTransmitCounter;
 };
 
 /////////////////////////////////////////////////////////////////////////////
