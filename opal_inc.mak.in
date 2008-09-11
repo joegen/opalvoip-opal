@@ -146,6 +146,6 @@ H323_H460         = @OPAL_H460@
 LIBDIRS          += $(OPAL_DIR)
 
 LDFLAGS	         += -L$(OPAL_LIBDIR)
-LDLIBS	         := -l$(subst lib,,$(LIB_NAME)) $(LDLIBS)
+LDLIBS	         := -l$(subst lib,,$(LIB_NAME))$(LIB_TYPE) $(LDLIBS)
 
 # End of file
