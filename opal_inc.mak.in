@@ -120,17 +120,32 @@ OPAL_PTLIB_CONFIG_FILE=@OPAL_PTLIB_CONFIG_FILE@
 # backward compatibility
 # If your project makes use of these variables, please switch to the ones listed above
 
+ifndef LIBRARY_MAKEFILE
+include @PTLIBDIR@/make/ptlib.mak
+endif
+
+ifeq ($(DEBUG_BUILD),yes)
+  CFLAGS   += $(DEBUG_CFLAGS)
+  CXXFLAGS += $(DEBUG_CFLAGS)
+  LIBS     += $(DEBUG__LIBS)
+  LIB_NAME  = $(DEBUG_LIB_NAME)
+else
+  CFLAGS   += $(RELEASE_CFLAGS)
+  CXXFLAGS += $(RELEASE_CFLAGS)
+  LIBS     += $(RELEASE_LIBS)
+  LIB_NAME  = $(RELEASE_LIB_NAME)
+endif
+
+CXXFLAGS   += -I$(OPAL_INCDIR)
+CFLAGS     += -I$(OPAL_INCDIR)
+
 ENDLDFLAGS        = @LIBS@
 OPAL_SYSTEM_SPEEX = @SPEEX_SYSTEM@
 HAS_LIBSRTP       = @OPAL_SRTP@
 H323_H460         = @OPAL_H460@
 LIBDIRS          += $(OPAL_DIR)
 
-PREFIX            = @prefix@/
-OPAL_BASE         = @LIB_NAME@
-OPAL_FILE         = @LIB_FILENAME_SHARED@
-
 LDFLAGS	         += -L$(OPAL_LIBDIR)
-LDLIBS	         := -l@LIB_NAME@ $(LDLIBS)
+LDLIBS	         := -l$(subst lib,,$(LIB_NAME)) $(LDLIBS)
 
 # End of file
