@@ -499,7 +499,7 @@ SIPRegisterHandler::~SIPRegisterHandler()
 
 SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 {
-  m_parameters.m_expire = expire; 
+  m_parameters.m_expire = state != Unsubscribing ? expire : 0;
 
   return new SIPRegister(endpoint, trans, GetRouteSet(), callID, m_parameters);
 }
@@ -627,7 +627,7 @@ SIPSubscribeHandler::~SIPSubscribeHandler()
 
 SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 { 
-  SetExpire(originalExpire);
+  m_parameters.m_expire = state != Unsubscribing ? expire : 0;
   return new SIPSubscribe(endpoint,
                           trans, 
                           GetRouteSet(),
