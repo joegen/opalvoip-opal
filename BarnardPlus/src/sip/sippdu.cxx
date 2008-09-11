@@ -915,30 +915,31 @@ void SIPMIMEInfo::SetProductInfo(const PString & ua, const OpalProductInfo & inf
 {
   PString userAgent = ua;
   if (userAgent.IsEmpty()) {
+    PString comments;
+
     PINDEX pos;
     PCaselessString temp = info.name;
-    temp.Replace(' ', '-', PTrue);
-    while ((pos = temp.FindSpan(UserAgentTokenChars)) != P_MAX_INDEX)
-      temp.Delete(pos, 1);
+    if ((pos = temp.FindSpan(UserAgentTokenChars)) != P_MAX_INDEX) {
+      comments += temp.Mid(pos);
+      temp.Delete(pos, P_MAX_INDEX);
+    }
+
     if (!temp.IsEmpty()) {
       userAgent = temp;
 
       temp = info.version;
-      temp.Replace(' ', '-', PTrue);
       while ((pos = temp.FindSpan(UserAgentTokenChars)) != P_MAX_INDEX)
         temp.Delete(pos, 1);
       if (!temp.IsEmpty())
         userAgent += '/' + temp;
     }
 
-    if (!info.comments.IsEmpty()) {
-      if (userAgent.IsEmpty())
-        userAgent += ' ';
-      if (info.comments[0] == '(')
-        userAgent += info.comments;
-      else
-        userAgent += '(' + info.comments + ')';
-    }
+    if (info.comments.IsEmpty() || info.comments[0] == '(')
+      comments += info.comments;
+    else
+      comments += '(' + info.comments + ')';
+
+    userAgent &= comments;
   }
 
   if (!userAgent.IsEmpty())
