@@ -463,7 +463,7 @@ void CMobileOpalDlg::InitialiseOPAL()
   command.m_type = OpalCmdSetProtocolParameters;
 
   CStringA strUserName = GetOptionStringA(UserNameKey);
-  command.m_param.m_protocol.m_name = strUserName;
+  command.m_param.m_protocol.m_userName = strUserName;
 
   CStringA strDisplayName = GetOptionStringA(UserNameKey);
   command.m_param.m_protocol.m_displayName = strDisplayName;
@@ -673,7 +673,7 @@ void CMobileOpalDlg::HandleMessage(OpalMessage & message)
       break;
 
     case OpalIndMessageWaiting :
-      {
+      if (message.m_param.m_messageWaiting.m_type != NULL && *message.m_param.m_messageWaiting.m_type != '\0') {
         CStringA msg;
         msg.Format(IDS_MESSAGE_WAITING,
                    message.m_param.m_messageWaiting.m_type,

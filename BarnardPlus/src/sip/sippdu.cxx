@@ -907,6 +907,7 @@ void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
   info.name = str.Left(endFirstToken);
   info.version = str(endFirstToken+1, endSecondToken);
   info.vendor = GetOrganization();
+  info.comments = str.Mid(endSecondToken+1).Trim();
 }
 
 
@@ -928,6 +929,15 @@ void SIPMIMEInfo::SetProductInfo(const PString & ua, const OpalProductInfo & inf
         temp.Delete(pos, 1);
       if (!temp.IsEmpty())
         userAgent += '/' + temp;
+    }
+
+    if (!info.comments.IsEmpty()) {
+      if (userAgent.IsEmpty())
+        userAgent += ' ';
+      if (info.comments[0] == '(')
+        userAgent += info.comments;
+      else
+        userAgent += '(' + info.comments + ')';
     }
   }
 
@@ -2385,7 +2395,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                      viaAddress);
 
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
-  mime.SetContact(endpoint.GetLocalURL(trans, SIPURL(localPartyAddress).GetUserName()));
+  mime.SetContact(endpoint.GetLocalURL(trans, SIPURL(from).GetUserName()));
   mime.SetAccept(params.m_mimeType);
   mime.SetEvent(params.m_eventPackage);
   mime.SetExpires(params.m_expire);

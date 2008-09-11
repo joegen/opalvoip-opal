@@ -322,8 +322,10 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
 }
 
 
-void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response*/)
+void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
+  response.GetMIME().GetProductInfo(m_productInfo);
+
   switch (GetState()) {
     case Unsubscribing :
       SetState(Unsubscribed);
@@ -453,6 +455,8 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   SetExpire(newExpiryTime);
 
+  response.GetMIME().GetProductInfo(m_productInfo);
+
   SendStatus(SIP_PDU::Successful_OK);
   SIPHandler::OnReceivedOK(transaction, response);
 }
@@ -474,27 +478,37 @@ PBoolean SIPRegisterHandler::SendRequest(SIPHandler::State s)
 
 void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code)
 {
-  PString aor = targetAddress.AsString().Mid(4);
+  SIPEndPoint::RegistrationStatus status;
+  status.m_addressofRecord = targetAddress.AsString().Mid(4);
+  status.m_productInfo = m_productInfo;
+  status.m_reason = code;
+
   switch (GetState()) {
     case Subscribing :
-      endpoint.OnRegistrationStatus(aor, true, false, code);
+      status.m_wasRegistering = true;
+      status.m_reRegistering = false;
       break;
 
     case Subscribed :
     case Refreshing :
-      endpoint.OnRegistrationStatus(aor, true, true, code);
+      status.m_wasRegistering = true;
+      status.m_reRegistering = true;
       break;
 
     case Unsubscribed :
     case Unavailable :
     case Restoring :
-      endpoint.OnRegistrationStatus(aor, true, code/100 != 2, code);
+      status.m_wasRegistering = true;
+      status.m_reRegistering = code/100 != 2;
       break;
 
     case Unsubscribing :
-      endpoint.OnRegistrationStatus(aor, false, false, code);
+      status.m_wasRegistering = false;
+      status.m_reRegistering = false;
       break;
   }
+
+  endpoint.OnRegistrationStatus(status);
 }
 
 
@@ -628,6 +642,8 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
 
   /* Update the To */
   remotePartyAddress = response.GetMIME().GetTo();
+
+  response.GetMIME().GetProductInfo(m_productInfo);
 
   SendStatus(SIP_PDU::Successful_OK);
   SIPHandler::OnReceivedOK(transaction, response);

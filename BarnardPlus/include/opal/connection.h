@@ -283,6 +283,7 @@ class OpalProductInfo
     PString vendor;
     PString name;
     PString version;
+    PString comments;
     BYTE    t35CountryCode;
     BYTE    t35Extension;
     WORD    manufacturerCode;
