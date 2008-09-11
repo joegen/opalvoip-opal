@@ -777,10 +777,10 @@ void FillOpalProductInfo(const OpalMessage & command, OpalMessageBuffer & respon
   response->m_param.m_protocol.m_product.m_t35Extension     = info.t35Extension;
   response->m_param.m_protocol.m_product.m_manufacturerCode = info.manufacturerCode;
 
-  if (!IsNullString(command.m_param.m_protocol.m_product.m_vendor))
+  if (command.m_param.m_protocol.m_product.m_vendor != NULL)
     info.vendor = command.m_param.m_protocol.m_product.m_vendor;
 
-  if (!IsNullString(command.m_param.m_protocol.m_product.m_name)) {
+  if (command.m_param.m_protocol.m_product.m_name != NULL) {
     PString str = command.m_param.m_protocol.m_product.m_name;
     PINDEX paren = str.Find('(');
     if (paren == P_MAX_INDEX)
@@ -791,7 +791,7 @@ void FillOpalProductInfo(const OpalMessage & command, OpalMessageBuffer & respon
     }
   }
 
-  if (!IsNullString(command.m_param.m_protocol.m_product.m_version))
+  if (command.m_param.m_protocol.m_product.m_version != NULL)
     info.version = command.m_param.m_protocol.m_product.m_version;
 
   if (command.m_param.m_protocol.m_product.m_t35CountryCode != 0 && command.m_param.m_protocol.m_product.m_manufacturerCode != 0) {
