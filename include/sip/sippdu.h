@@ -839,12 +839,8 @@ class SIPInvite : public SIPTransaction
   public:
     SIPInvite(
       SIPConnection & connection,
-      OpalTransport & transport
-    );
-    SIPInvite(
-      SIPConnection & connection,
       OpalTransport & transport,
-      OpalRTPSessionManager & sm
+      OpalRTPSessionManager * sm
     );
 
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
