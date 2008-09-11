@@ -207,7 +207,7 @@ int InitialiseOPAL()
   memset(&command, 0, sizeof(command));
   command.m_type = OpalCmdSetProtocolParameters;
 
-  command.m_param.m_protocol.m_name = "robertj";
+  command.m_param.m_protocol.m_userName = "robertj";
   command.m_param.m_protocol.m_displayName = "Robert Jongbloed";
   command.m_param.m_protocol.m_interfaceAddresses = "*";
 

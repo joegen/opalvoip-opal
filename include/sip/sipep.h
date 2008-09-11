@@ -285,7 +285,14 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /**Handle an incoming MESSAGE PDU.
       */
-    virtual void OnReceivedMESSAGE(
+    virtual bool OnReceivedMESSAGE(
+      OpalTransport & transport,
+      SIP_PDU & response
+    );
+
+    /**Handle an incoming OPTIONS PDU.
+      */
+    virtual bool OnReceivedOPTIONS(
       OpalTransport & transport,
       SIP_PDU & response
     );
@@ -376,10 +383,22 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     unsigned GetRegistrationsCount() const { return activeSIPHandlers.GetCount(SIP_PDU::Method_REGISTER); }
 
+    /** Information provided on the registration status. */
+    struct RegistrationStatus {
+      PString              m_addressofRecord;   ///< Address of record for registration
+      bool                 m_wasRegistering;    ///< Was registering or unregistering
+      bool                 m_reRegistering;     ///< Was a registration refresh
+      SIP_PDU::StatusCodes m_reason;            ///< Reason for status change
+      OpalProductInfo      m_productInfo;       ///< Server product info from registrar if available.
+    };
+
     /**Callback called when a registration to a SIP registrar status.
-     * The PBoolean indicates if the operation that failed was a REGISTER or 
-     * an (UN)REGISTER.
      */
+    virtual void OnRegistrationStatus(
+      const RegistrationStatus & status   ///< Status of registration request
+    );
+
+    // For backward compatibility
     virtual void OnRegistrationStatus(
       const PString & aor,
       PBoolean wasRegistering,
@@ -637,6 +656,10 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     void SetUserAgent(const PString & str) { userAgentString = str; }
 
+
+    /** Return a bit mask of the allowed SIP methods.
+      */
+    virtual unsigned GetAllowedMethods() const;
 
     PBoolean SendResponse(
       SIP_PDU::StatusCodes code, 

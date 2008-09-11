@@ -655,7 +655,7 @@ class SIP_PDU : public PSafeObject
 
     /**Set mime allow field to all supported methods.
       */
-    void SetAllow(void);
+    void SetAllow(unsigned bitmask);
 
     /**Update the VIA field following RFC3261, 18.2.1 and RFC3581.
       */
@@ -840,12 +840,8 @@ class SIPInvite : public SIPTransaction
   public:
     SIPInvite(
       SIPConnection & connection,
-      OpalTransport & transport
-    );
-    SIPInvite(
-      SIPConnection & connection,
       OpalTransport & transport,
-      OpalRTPSessionManager & sm
+      OpalRTPSessionManager * sm
     );
 
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
