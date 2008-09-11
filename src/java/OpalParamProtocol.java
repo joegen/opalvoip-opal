@@ -57,52 +57,13 @@ public class OpalParamProtocol {
     return exampleJNI.OpalParamProtocol_m_displayName_get(swigCPtr, this);
   }
 
-  public void setM_vendor(String value) {
-    exampleJNI.OpalParamProtocol_m_vendor_set(swigCPtr, this, value);
+  public void setM_product(OpalProductDescription value) {
+    exampleJNI.OpalParamProtocol_m_product_set(swigCPtr, this, OpalProductDescription.getCPtr(value), value);
   }
 
-  public String getM_vendor() {
-    return exampleJNI.OpalParamProtocol_m_vendor_get(swigCPtr, this);
-  }
-
-  public void setM_name(String value) {
-    exampleJNI.OpalParamProtocol_m_name_set(swigCPtr, this, value);
-  }
-
-  public String getM_name() {
-    return exampleJNI.OpalParamProtocol_m_name_get(swigCPtr, this);
-  }
-
-  public void setM_version(String value) {
-    exampleJNI.OpalParamProtocol_m_version_set(swigCPtr, this, value);
-  }
-
-  public String getM_version() {
-    return exampleJNI.OpalParamProtocol_m_version_get(swigCPtr, this);
-  }
-
-  public void setM_t35CountryCode(long value) {
-    exampleJNI.OpalParamProtocol_m_t35CountryCode_set(swigCPtr, this, value);
-  }
-
-  public long getM_t35CountryCode() {
-    return exampleJNI.OpalParamProtocol_m_t35CountryCode_get(swigCPtr, this);
-  }
-
-  public void setM_t35Extension(long value) {
-    exampleJNI.OpalParamProtocol_m_t35Extension_set(swigCPtr, this, value);
-  }
-
-  public long getM_t35Extension() {
-    return exampleJNI.OpalParamProtocol_m_t35Extension_get(swigCPtr, this);
-  }
-
-  public void setM_manufacturerCode(long value) {
-    exampleJNI.OpalParamProtocol_m_manufacturerCode_set(swigCPtr, this, value);
-  }
-
-  public long getM_manufacturerCode() {
-    return exampleJNI.OpalParamProtocol_m_manufacturerCode_get(swigCPtr, this);
+  public OpalProductDescription getM_product() {
+    long cPtr = exampleJNI.OpalParamProtocol_m_product_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalProductDescription(cPtr, false);
   }
 
   public void setM_interfaceAddresses(String value) {
