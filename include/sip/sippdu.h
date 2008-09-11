@@ -654,7 +654,7 @@ class SIP_PDU : public PSafeObject
 
     /**Set mime allow field to all supported methods.
       */
-    void SetAllow(void);
+    void SetAllow(unsigned bitmask);
 
     /**Update the VIA field following RFC3261, 18.2.1 and RFC3581.
       */

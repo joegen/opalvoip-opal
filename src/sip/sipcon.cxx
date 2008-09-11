@@ -2130,6 +2130,7 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
 
   SIP_PDU response(*originalInvite, code, contact, extra, sdp);
   response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
+  response.SetAllow(endpoint.GetAllowedMethods());
 
   if (response.GetStatusCode() >= 200) {
     ackPacket = response;
