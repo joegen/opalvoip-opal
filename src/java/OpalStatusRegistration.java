@@ -65,6 +65,15 @@ public class OpalStatusRegistration {
     return OpalRegistrationStates.swigToEnum(exampleJNI.OpalStatusRegistration_m_status_get(swigCPtr, this));
   }
 
+  public void setM_product(OpalProductDescription value) {
+    exampleJNI.OpalStatusRegistration_m_product_set(swigCPtr, this, OpalProductDescription.getCPtr(value), value);
+  }
+
+  public OpalProductDescription getM_product() {
+    long cPtr = exampleJNI.OpalStatusRegistration_m_product_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalProductDescription(cPtr, false);
+  }
+
   public OpalStatusRegistration() {
     this(exampleJNI.new_OpalStatusRegistration(), true);
   }
