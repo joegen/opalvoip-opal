@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 10
+#define OPAL_C_API_VERSION 11
 
 
 ///////////////////////////////////////
@@ -450,18 +450,9 @@ typedef struct OpalParamGeneral {
 } OpalParamGeneral;
 
 
-/**Protocol parameters for the OpalCmdSetProtocolParameters command.
-   This is only passed to and returned from the OpalSendMessage() function.
+/**Product description variables.
   */
-typedef struct OpalParamProtocol {
-  const char * m_prefix;              /**< Protocol prefix for parameters, e.g. "h323" or "sip". If this is
-                                           NULL or empty string, then the parameters are set for all protocols
-                                           where they maybe set. */
-  const char * m_userName;            /**< User name to identify the endpoint. This is usually the protocol
-                                           specific name and may interact with the OpalCmdRegistration
-                                           command. e.g. "robertj or 61295552148 */
-  const char * m_displayName;         /**< Display name to be used. This is the human readable form of the
-                                           users name, e.g. "Robert Jongbloed". */
+typedef struct OpalProductDescription {
   const char * m_vendor;              /**< Name of the vendor or manufacturer of the application. This is
                                            used to identify the software which can be very useful for
                                            solving interoperability issues. e.g. "Vox Lucida". */
@@ -487,6 +478,22 @@ typedef struct OpalParamProtocol {
                                            software which can be very useful for solving interoperability
                                            issues. e.g. 61 is for Equivalance and was allocated by the
                                            Australian Communications Authority, Oct 2000. */
+} OpalProductDescription;
+
+
+/**Protocol parameters for the OpalCmdSetProtocolParameters command.
+   This is only passed to and returned from the OpalSendMessage() function.
+  */
+typedef struct OpalParamProtocol {
+  const char * m_prefix;              /**< Protocol prefix for parameters, e.g. "h323" or "sip". If this is
+                                           NULL or empty string, then the parameters are set for all protocols
+                                           where they maybe set. */
+  const char * m_userName;            /**< User name to identify the endpoint. This is usually the protocol
+                                           specific name and may interact with the OpalCmdRegistration
+                                           command. e.g. "robertj or 61295552148 */
+  const char * m_displayName;         /**< Display name to be used. This is the human readable form of the
+                                           users name, e.g. "Robert Jongbloed". */
+  OpalProductDescription m_product;   /**< Product description data */
   const char * m_interfaceAddresses;  /**< A list of interfaces to start listening for incoming calls.
                                            This list is separated by the '\n' character. If NULL no
                                            listeners are started or stopped. If and empty string ("")
@@ -559,6 +566,7 @@ typedef struct OpalStatusRegistration {
                                    this contains a string indicating the type of error. If no
                                    error occured then this will be NULL. */
   OpalRegistrationStates m_status; /**< Status of registration, see enum for details. */
+  OpalProductDescription m_product; /**< Product description data */
 } OpalStatusRegistration;
 
 
@@ -620,6 +628,7 @@ typedef struct OpalStatusIncomingCall {
   const char * m_remoteDisplayName; ///< Display name calling party. e.g. "Fred Nurk"
   const char * m_calledAddress;     ///< URL of called party the remote is trying to contact.
   const char * m_calledPartyNumber; ///< This is the E.164 number of the called party, if available.
+  OpalProductDescription m_product; /**< Product description data */
 } OpalStatusIncomingCall;
 
 
