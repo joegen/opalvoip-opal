@@ -1028,6 +1028,7 @@ void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
   info.name = str.Left(endFirstToken);
   info.version = str(endFirstToken+1, endSecondToken);
   info.vendor = GetOrganization();
+  info.comments = str.Mid(endSecondToken+1).Trim();
 }
 
 
@@ -1049,6 +1050,15 @@ void SIPMIMEInfo::SetProductInfo(const PString & ua, const OpalProductInfo & inf
         temp.Delete(pos, 1);
       if (!temp.IsEmpty())
         userAgent += '/' + temp;
+    }
+
+    if (!info.comments.IsEmpty()) {
+      if (userAgent.IsEmpty())
+        userAgent += ' ';
+      if (info.comments[0] == '(')
+        userAgent += info.comments;
+      else
+        userAgent += '(' + info.comments + ')';
     }
   }
 
