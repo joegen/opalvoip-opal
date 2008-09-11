@@ -121,7 +121,9 @@ OPAL_PTLIB_CONFIG_FILE=@OPAL_PTLIB_CONFIG_FILE@
 # If your project makes use of these variables, please switch to the ones listed above
 
 ifndef LIBRARY_MAKEFILE
+ifneq (@PTLIBDIR@,)
 include @PTLIBDIR@/make/ptlib.mak
+endif
 endif
 
 ifeq ($(DEBUG_BUILD),yes)
