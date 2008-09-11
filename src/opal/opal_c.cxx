@@ -130,10 +130,7 @@ class SIPEndPoint_C : public SIPEndPoint
     SIPEndPoint_C(OpalManager_C & manager);
 
     virtual void OnRegistrationStatus(
-      const PString & aor,
-      PBoolean wasRegistering,
-      PBoolean reRegistering,
-      SIP_PDU::StatusCodes reason
+      const RegistrationStatus & status
     );
     virtual void OnSubscriptionStatus(
       const PString & eventPackage, ///< Event package subscribed to
@@ -338,6 +335,16 @@ OpalMessage * OpalMessageBuffer::Detach()
 }
 
 
+PString BuildProductName(const OpalProductInfo & info)
+{
+  if (info.comments.IsEmpty())
+    return info.name;
+  if (info.comments[0] == '(')
+    return info.name + ' ' + info.comments;
+  return info.name + " (" + info.comments + ')';
+}
+
+
 ///////////////////////////////////////
 
 OpalLocalEndPoint_C::OpalLocalEndPoint_C(OpalManager_C & mgr)
@@ -379,6 +386,15 @@ static void SetIncomingCall(OpalMessageBuffer & message, const OpalConnection & 
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteDisplayName, network->GetRemotePartyName());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledAddress, network->GetCalledPartyURL());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledPartyNumber, network->GetCalledPartyNumber());
+
+  const OpalProductInfo & info = connection.GetProductInfo();
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_vendor,  info.vendor);
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_name,    BuildProductName(info));
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_version, info.version);
+
+  message->m_param.m_incomingCall.m_product.m_t35CountryCode   = info.t35CountryCode;
+  message->m_param.m_incomingCall.m_product.m_t35Extension     = info.t35Extension;
+  message->m_param.m_incomingCall.m_product.m_manufacturerCode = info.manufacturerCode;
 
   PTRACE(4, "OpalC API\tOpalIndIncomingCall: token=\""  << message->m_param.m_incomingCall.m_callToken << "\"\n"
             "  Local  - URL=\"" << message->m_param.m_incomingCall.m_localAddress << "\"\n"
@@ -547,32 +563,38 @@ SIPEndPoint_C::SIPEndPoint_C(OpalManager_C & mgr)
 }
 
 
-void SIPEndPoint_C::OnRegistrationStatus(const PString & aor,
-                                         PBoolean wasRegistering,
-                                         PBoolean reRegistering,
-                                         SIP_PDU::StatusCodes reason)
+void SIPEndPoint_C::OnRegistrationStatus(const RegistrationStatus & status)
 {
   OpalMessageBuffer message(OpalIndRegistration);
   SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_protocol, OPAL_PREFIX_SIP);
-  SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_serverName, aor);
-  if (reason == SIP_PDU::Information_Trying)
+  SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_serverName, status.m_addressofRecord);
+
+  SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_product.m_vendor,  status.m_productInfo.vendor);
+  SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_product.m_name,    BuildProductName(status.m_productInfo));
+  SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_product.m_version, status.m_productInfo.version);
+
+  message->m_param.m_registrationStatus.m_product.m_t35CountryCode   = status.m_productInfo.t35CountryCode;
+  message->m_param.m_registrationStatus.m_product.m_t35Extension     = status.m_productInfo.t35Extension;
+  message->m_param.m_registrationStatus.m_product.m_manufacturerCode = status.m_productInfo.manufacturerCode;
+
+  if (status.m_reason == SIP_PDU::Information_Trying)
     message->m_param.m_registrationStatus.m_status = OpalRegisterRetrying;
-  else if (reason/100 == 2) {
-    if (wasRegistering)
-      message->m_param.m_registrationStatus.m_status = reRegistering ? OpalRegisterRestored : OpalRegisterSuccessful;
+  else if (status.m_reason/100 == 2) {
+    if (status.m_wasRegistering)
+      message->m_param.m_registrationStatus.m_status = status.m_reRegistering ? OpalRegisterRestored : OpalRegisterSuccessful;
     else
       message->m_param.m_registrationStatus.m_status = OpalRegisterRemoved;
   }
   else {
     PStringStream strm;
-    strm << "Error " << reason << " in SIP ";
-    if (!wasRegistering)
+    strm << "Error " << status.m_reason << " in SIP ";
+    if (!status.m_wasRegistering)
       strm << "un";
     strm << "registration.";
     SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_error, strm);
-    message->m_param.m_registrationStatus.m_status = wasRegistering ? OpalRegisterFailed : OpalRegisterRemoved;
+    message->m_param.m_registrationStatus.m_status = status.m_wasRegistering ? OpalRegisterFailed : OpalRegisterRemoved;
   }
-  PTRACE(4, "OpalC\tOnRegistrationStatus " << aor << ", status=" << message->m_param.m_registrationStatus.m_status);
+  PTRACE(4, "OpalC\tOnRegistrationStatus " << status.m_addressofRecord << ", status=" << message->m_param.m_registrationStatus.m_status);
   m_manager.PostMessage(message);
 }
 
@@ -974,27 +996,35 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
 
 void FillOpalProductInfo(const OpalMessage & command, OpalMessageBuffer & response, OpalProductInfo & info)
 {
-  SET_MESSAGE_STRING(response, m_param.m_protocol.m_vendor,  info.vendor);
-  SET_MESSAGE_STRING(response, m_param.m_protocol.m_name,    info.name);
-  SET_MESSAGE_STRING(response, m_param.m_protocol.m_version, info.version);
+  SET_MESSAGE_STRING(response, m_param.m_protocol.m_product.m_vendor,  info.vendor);
+  SET_MESSAGE_STRING(response, m_param.m_protocol.m_product.m_name,    BuildProductName(info));
+  SET_MESSAGE_STRING(response, m_param.m_protocol.m_product.m_version, info.version);
 
-  response->m_param.m_protocol.m_t35CountryCode   = info.t35CountryCode;
-  response->m_param.m_protocol.m_t35Extension     = info.t35Extension;
-  response->m_param.m_protocol.m_manufacturerCode = info.manufacturerCode;
+  response->m_param.m_protocol.m_product.m_t35CountryCode   = info.t35CountryCode;
+  response->m_param.m_protocol.m_product.m_t35Extension     = info.t35Extension;
+  response->m_param.m_protocol.m_product.m_manufacturerCode = info.manufacturerCode;
 
-  if (!IsNullString(command.m_param.m_protocol.m_vendor))
-    info.vendor = command.m_param.m_protocol.m_vendor;
+  if (!IsNullString(command.m_param.m_protocol.m_product.m_vendor))
+    info.vendor = command.m_param.m_protocol.m_product.m_vendor;
 
-  if (!IsNullString(command.m_param.m_protocol.m_name))
-    info.name = command.m_param.m_protocol.m_name;
+  if (!IsNullString(command.m_param.m_protocol.m_product.m_name)) {
+    PString str = command.m_param.m_protocol.m_product.m_name;
+    PINDEX paren = str.Find('(');
+    if (paren == P_MAX_INDEX)
+      info.name = str;
+    else {
+      info.name = str.Left(paren).Trim();
+      info.comments = str.Mid(paren);
+    }
+  }
 
-  if (!IsNullString(command.m_param.m_protocol.m_version))
-    info.version = command.m_param.m_protocol.m_version;
+  if (!IsNullString(command.m_param.m_protocol.m_product.m_version))
+    info.version = command.m_param.m_protocol.m_product.m_version;
 
-  if (command.m_param.m_protocol.m_t35CountryCode != 0 && command.m_param.m_protocol.m_manufacturerCode != 0) {
-    info.t35CountryCode   = (BYTE)command.m_param.m_protocol.m_t35CountryCode;
-    info.t35Extension     = (BYTE)command.m_param.m_protocol.m_t35Extension;
-    info.manufacturerCode = (WORD)command.m_param.m_protocol.m_manufacturerCode;
+  if (command.m_param.m_protocol.m_product.m_t35CountryCode != 0 && command.m_param.m_protocol.m_product.m_manufacturerCode != 0) {
+    info.t35CountryCode   = (BYTE)command.m_param.m_protocol.m_product.m_t35CountryCode;
+    info.t35Extension     = (BYTE)command.m_param.m_protocol.m_product.m_t35Extension;
+    info.manufacturerCode = (WORD)command.m_param.m_protocol.m_product.m_manufacturerCode;
   }
 }
 

@@ -763,6 +763,12 @@ void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & /*transport*/,
 }
 
 
+void SIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
+{
+  OnRegistrationStatus(status.m_addressofRecord, status.m_wasRegistering, status.m_reRegistering, status.m_reason);
+}
+
+
 void SIPEndPoint::OnRegistrationStatus(const PString & aor,
                                        PBoolean wasRegistering,
                                        PBoolean /*reRegistering*/,
