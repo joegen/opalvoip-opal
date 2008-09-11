@@ -89,6 +89,15 @@ public class OpalStatusIncomingCall {
     return exampleJNI.OpalStatusIncomingCall_m_calledPartyNumber_get(swigCPtr, this);
   }
 
+  public void setM_product(OpalProductDescription value) {
+    exampleJNI.OpalStatusIncomingCall_m_product_set(swigCPtr, this, OpalProductDescription.getCPtr(value), value);
+  }
+
+  public OpalProductDescription getM_product() {
+    long cPtr = exampleJNI.OpalStatusIncomingCall_m_product_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalProductDescription(cPtr, false);
+  }
+
   public OpalStatusIncomingCall() {
     this(exampleJNI.new_OpalStatusIncomingCall(), true);
   }
