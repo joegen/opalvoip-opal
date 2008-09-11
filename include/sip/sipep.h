@@ -283,7 +283,14 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /**Handle an incoming MESSAGE PDU.
       */
-    virtual void OnReceivedMESSAGE(
+    virtual bool OnReceivedMESSAGE(
+      OpalTransport & transport,
+      SIP_PDU & response
+    );
+
+    /**Handle an incoming OPTIONS PDU.
+      */
+    virtual bool OnReceivedOPTIONS(
       OpalTransport & transport,
       SIP_PDU & response
     );
@@ -647,6 +654,10 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     void SetUserAgent(const PString & str) { userAgentString = str; }
 
+
+    /** Return a bit mask of the allowed SIP methods.
+      */
+    virtual unsigned GetAllowedMethods() const;
 
     PBoolean SendResponse(
       SIP_PDU::StatusCodes code, 
