@@ -2463,30 +2463,16 @@ void SIPTransaction::SetTerminated(States newState)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
+SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, OpalRTPSessionManager * sm)
   : SIPTransaction(connection, transport, Method_INVITE)
 {
   mime.SetDate() ;                             // now
   SetAllow(connection.GetEndPoint().GetAllowedMethods());
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
-  m_SDP = new SDPSessionDescription();
-  if (!connection.OnSendSDP(false, rtpSessions, *m_SDP)) {
-    delete m_SDP;
-    m_SDP = NULL;
-  }
+  if (sm != NULL)
+    rtpSessions.CopyFromMaster(*sm);
 
-  connection.OnCreatingINVITE(*this);
-}
-
-
-SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, OpalRTPSessionManager & sm)
-  : SIPTransaction(connection, transport, Method_INVITE)
-{
-  mime.SetDate() ;                             // now
-  mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
-
-  rtpSessions.CopyFromMaster(sm);
   m_SDP = new SDPSessionDescription();
   if (!connection.OnSendSDP(false, rtpSessions, *m_SDP)) {
     delete m_SDP;
