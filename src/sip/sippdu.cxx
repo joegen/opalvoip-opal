@@ -1539,7 +1539,6 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
   mime.SetCSeq(requestMIME.GetCSeq());
   mime.SetVia(requestMIME.GetVia());
   mime.SetRecordRoute(requestMIME.GetRecordRoute());
-  SetAllow();
 
   /* Use extra parameter as redirection URL in case of 302 */
   if (code == SIP_PDU::Redirection_MovedTemporarily) {
@@ -1648,8 +1647,6 @@ void SIP_PDU::Construct(Methods meth,
   str << ";branch=z9hG4bK" << branch << ";rport";
 
   mime.SetVia(str);
-
-  SetAllow();
 }
 
 
@@ -1699,19 +1696,18 @@ PBoolean SIP_PDU::SetRoute(const PStringList & set)
 }
 
 
-void SIP_PDU::SetAllow(void)
+void SIP_PDU::SetAllow(unsigned bitmask)
 {
   PStringStream str;
-  PStringList methods;
   
-  for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
-    PString method(MethodNames[i]);
-    if (method.Find("SUBSCRIBE") == P_MAX_INDEX && method.Find("REGISTER") == P_MAX_INDEX)
-      methods += method;
+  for (Methods method = Method_INVITE ; method < SIP_PDU::NumMethods ; method = (Methods)(method+1)) {
+    if ((bitmask&(1<<method))) {
+      if (!str.IsEmpty())
+        str << ',';
+      str << method;
+    }
   }
   
-  str << setfill(',') << methods << setfill(' ');
-
   mime.SetAllow(str);
 }
 
@@ -2470,6 +2466,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   : SIPTransaction(connection, transport, Method_INVITE)
 {
   mime.SetDate() ;                             // now
+  SetAllow(connection.GetEndPoint().GetAllowedMethods());
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
   m_SDP = new SDPSessionDescription();
@@ -2574,6 +2571,7 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   mime.SetExpires(params.m_expire);
 
   SetRoute(routeSet);
+  SetAllow(ep.GetAllowedMethods());
 }
 
 
@@ -2655,6 +2653,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
   mime.SetExpires(params.m_expire);
 
   SetRoute(routeSet);
+  SetAllow(ep.GetAllowedMethods());
 }
 
 
@@ -2867,6 +2866,8 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
                      endpoint.GetNextCSeq(),
                      viaAddress);
   mime.SetAccept("application/sdp, application/media_control+xml, application/dtmf, application/dtmf-relay");
+
+  SetAllow(ep.GetAllowedMethods());
 }
 
 

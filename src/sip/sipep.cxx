@@ -466,50 +466,59 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
         if (transaction != NULL)
           transaction->OnReceivedResponse(*pdu);
       }
-      break;
+      return false;
 
     case SIP_PDU::Method_INVITE :
       return OnReceivedINVITE(transport, pdu);
 
     case SIP_PDU::Method_REGISTER :
-      return OnReceivedREGISTER(transport, *pdu);
+      if (OnReceivedREGISTER(transport, *pdu))
+        return false;
+      break;
 
     case SIP_PDU::Method_SUBSCRIBE :
-      return OnReceivedSUBSCRIBE(transport, *pdu);
+      if (OnReceivedSUBSCRIBE(transport, *pdu))
+        return false;
+      break;
 
     case SIP_PDU::Method_NOTIFY :
-       return OnReceivedNOTIFY(transport, *pdu);
+       if (OnReceivedNOTIFY(transport, *pdu))
+         return false;
+       break;
 
     case SIP_PDU::Method_MESSAGE :
-      OnReceivedMESSAGE(transport, *pdu);
-      SendResponse(SIP_PDU::Successful_OK, transport, *pdu);
+      if (OnReceivedMESSAGE(transport, *pdu))
+        return false;
       break;
    
     case SIP_PDU::Method_OPTIONS :
-      SendResponse(SIP_PDU::Successful_OK, transport, *pdu);
+      if (OnReceivedOPTIONS(transport, *pdu))
+        return false;
       break;
 
     case SIP_PDU::Method_ACK :
       // If we receive an ACK outside of the context of a connection, ignore it.
-      break;
+      SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, *pdu);
+      return false;
 
     default :
-      SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, *pdu);
+      break;
   }
 
+  SIP_PDU response(*pdu, SIP_PDU::Failure_MethodNotAllowed);
+  response.SetAllow(GetAllowedMethods()); // Required by spec
+  pdu->SendResponse(transport, response);
   return false;
 }
 
-PBoolean SIPEndPoint::OnReceivedREGISTER(OpalTransport & transport, SIP_PDU & pdu)
+PBoolean SIPEndPoint::OnReceivedREGISTER(OpalTransport & /*transport*/, SIP_PDU & /*pdu*/)
 {
-  SendResponse(SIP_PDU::Failure_MethodNotAllowed, transport, pdu);
-  return PFalse;
+  return false;
 }
 
-PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & pdu)
+PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & /*transport*/, SIP_PDU & /*pdu*/)
 {
-  SendResponse(SIP_PDU::Failure_MethodNotAllowed, transport, pdu);
-  return PFalse;
+  return false;
 }
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
@@ -739,17 +748,16 @@ PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
   if (handler == NULL) {
     PTRACE(3, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY");
     SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, pdu);
-    return PFalse;
+    return true;
   }
 
   PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY");
   handler->OnReceivedNOTIFY(pdu);
-  return false;
+  return true;
 }
 
 
-void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & /*transport*/, 
-            SIP_PDU & pdu)
+bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
 {
   PString from = pdu.GetMIME().GetFrom();
   PINDEX j = from.Find (';');
@@ -760,6 +768,15 @@ void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & /*transport*/,
     from += '>';
 
   OnMessageReceived(from, pdu.GetEntityBody());
+  SendResponse(SIP_PDU::Successful_OK, transport, pdu);
+  return true;
+}
+
+
+bool SIPEndPoint::OnReceivedOPTIONS(OpalTransport & transport, SIP_PDU & pdu)
+{
+  SendResponse(SIP_PDU::Successful_OK, transport, pdu);
+  return true;
 }
 
 
@@ -1110,6 +1127,22 @@ void SIPEndPoint::SetProxy(const SIPURL & url)
 PString SIPEndPoint::GetUserAgent() const 
 {
   return userAgentString;
+}
+
+
+unsigned SIPEndPoint::GetAllowedMethods() const
+{
+  return (1<<SIP_PDU::Method_INVITE   )|
+         (1<<SIP_PDU::Method_ACK      )|
+         (1<<SIP_PDU::Method_CANCEL   )|
+         (1<<SIP_PDU::Method_BYE      )|
+         (1<<SIP_PDU::Method_OPTIONS  )|
+         (1<<SIP_PDU::Method_NOTIFY   )|
+         (1<<SIP_PDU::Method_REFER    )|
+         (1<<SIP_PDU::Method_MESSAGE  )|
+         (1<<SIP_PDU::Method_INFO     )|
+         (1<<SIP_PDU::Method_PING     )|
+         (1<<SIP_PDU::Method_SUBSCRIBE);
 }
 
 
