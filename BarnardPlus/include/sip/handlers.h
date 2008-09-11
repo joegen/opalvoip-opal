@@ -41,6 +41,7 @@
 
 #include <ptlib/safecoll.h>
 
+#include <opal/connection.h>
 #include <sip/sippdu.h>
 
 
@@ -122,6 +123,8 @@ public:
 
   const PStringList & GetRouteSet() const { return routeSet; }
 
+  const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
+
 protected:
   void CollapseFork(SIPTransaction & transaction);
   PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
@@ -146,6 +149,7 @@ protected:
   PTimeInterval               retryTimeoutMax; 
   PString remotePartyAddress;
   SIPURL proxy;
+  OpalProductInfo             m_productInfo;
 };
 
 #if PTRACING
