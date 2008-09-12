@@ -6,6 +6,8 @@ if test \! -e ./aclocal.m4 ; then
 fi
 
 PKG_PROG_PKG_CONFIG()
+AC_CANONICAL_TARGET()
+
 m4_include(../opal.m4)
 
 OPAL_DETERMINE_DEBUG()
@@ -51,12 +53,11 @@ AC_SUBST(FAX_PLUGIN_DIR)
 dnl ########################################################################
 dnl Platform specific section
 dnl ########################################################################
-AC_CANONICAL_TARGET()
 WIN32=no
 LDSO=
 case "$target_os" in
 	solaris*)
-          STDCCFLAGS="$STDCCFLAGS -fPIC"
+          STDCCFLAGS="$STDCCFLAGS -KPIC"
 	  LDSO="-Bdynamic -G -h"
           PLUGINEXT=so
           AC_CHECK_HEADERS([sys/time.h sys/file.h netinet/in.h])

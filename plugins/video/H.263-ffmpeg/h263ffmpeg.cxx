@@ -57,6 +57,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef SOLARIS
+#include <alloca.h>
+#endif
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "plugin-config.h"

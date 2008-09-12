@@ -217,7 +217,11 @@ namespace OpalMediaTypeSpace { \
 }; \
 
 
-template <const char * Type, const char * sdp>
+#ifdef SOLARIS
+template <char * Type, char * sdp>
+#else
+template <char * Type, const char * sdp>
+#endif
 class SimpleMediaType : public OpalMediaTypeDefinition
 {
   public:

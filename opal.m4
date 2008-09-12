@@ -87,12 +87,13 @@ AC_DEFUN([OPAL_DETERMINE_DEBUG],
                         [DEBUG_BUILD=$enableval],
                         [DEBUG_BUILD=no])
 
-         opal_release_flags="-Os"
          case "$target_os" in
                  solaris*)
-                   opal_debug_flags="-g3 -ggdb -gstabs+ -O0 -D_DEBUG "
+                   opal_release_flags="-xO3 -DSOLARIS"
+                   opal_debug_flags="-g -D_DEBUG -DSOLARIS"
                  ;;
                  *)
+                   opal_release_flags="-Os"
                    opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
                  ;;
          esac
