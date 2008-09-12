@@ -147,7 +147,7 @@ OpalLineConnection * OpalLineEndPoint::CreateConnection(OpalCall & call,
                                                        void * /*userData*/,
                                                        const PString & number)
 {
-  PTRACE(3, "LID EP\tCreateConnection call = " << call << " line = " << line << " number = " << number);
+  PTRACE(3, "LID EP\tCreateConnection call = " << call << " line = \"" << line << "\", number = \"" << number << '"');
   return new OpalLineConnection(call, *this, line, number);
 }
 
@@ -361,7 +361,7 @@ OpalLine * OpalLineEndPoint::GetLine(const PString & lineName, bool enableAudio,
     if ((lineName == defaultLine || lineToken == lineName) &&
         (line->IsTerminal() == terminating) &&
          line->IsPresent() &&
-        (!enableAudio || line->EnableAudio())) {
+        (!enableAudio || (!line->IsAudioEnabled() && line->EnableAudio()))) {
       PTRACE(3, "LID EP\tGetLine found the line \"" << lineName << '"');
       return &*line;
     }  
@@ -441,7 +441,7 @@ void OpalLineEndPoint::MonitorLine(OpalLine & line)
   }
 
   // Have incoming ring, create a new LID connection and let it handle it
-  connection = CreateConnection(*call, line, NULL, PString::Empty());
+  connection = CreateConnection(*call, line, NULL, "Unknown");
   if (AddConnection(connection))
     connection->StartIncoming();
 }
@@ -458,7 +458,11 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
     line(ln)
 {
   localPartyName = ln.GetToken();
-  remotePartyNumber = number.Right(number.Find(':'));
+  remotePartyNumber = number.Right(number.FindSpan("0123456789*#,"));
+  remotePartyName = number;
+  if (remotePartyName.IsEmpty())
+    remotePartyName = "Unknown";
+
   silenceDetector = new OpalLineSilenceDetector(line, (endpoint.GetManager().GetSilenceDetectParams()));
 
   minimumRingCount = 2;
@@ -758,6 +762,8 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
     else {
       PTRACE(3, "LID Con\tNo caller ID available.");
     }
+    if (remotePartyName.IsEmpty())
+      remotePartyName = "Unknown";
 
     // switch phase 
     SetPhase(AlertingPhase);
@@ -765,6 +771,12 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
   }
 
   if (!OnIncomingConnection(0, NULL)) {
+    PTRACE(3, "LID\tWaiting for RING to stop on " << *this);
+    while (line.GetRingCount() > 0) {
+      if (GetPhase() >= ReleasingPhase)
+        return;
+      PThread::Sleep(100);
+    }
     Release(EndedByCallerAbort);
     return;
   }
