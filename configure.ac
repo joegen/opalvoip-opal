@@ -468,15 +468,12 @@ dnl ########################################################################
 dnl Compile plugins and sample directories
 dnl ########################################################################
 
-OPAL_SIMPLE_OPTION([plugins],[OPAL_PLUGINS], [wether to enable plugin support])
+OPAL_SIMPLE_OPTION([plugins],[OPAL_PLUGINS], [whether to enable plugin support])
 if test "x$OPAL_PLUGINS" = "xyes" ; then
   AC_CONFIG_SUBDIRS(plugins)
 fi
 
-OPAL_SIMPLE_OPTION([samples],[OPAL_SAMPLES], [wether to enable samples build])
-if test "x$OPAL_SAMPLES" = "xyes" ; then
-  AC_CONFIG_SUBDIRS(samples)
-fi
+OPAL_SIMPLE_OPTION([samples],[OPAL_SAMPLES], [whether to enable samples build])
 
 
 dnl ########################################################################
