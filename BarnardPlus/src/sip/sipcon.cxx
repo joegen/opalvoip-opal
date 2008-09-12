@@ -817,7 +817,7 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
       localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
-      localMedia->SetDirection(m_holdToRemote >= eHoldOn ? SDPMediaDescription::Inactive : recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
+      localMedia->SetDirection(m_holdToRemote >= eHoldOn ? SDPMediaDescription::SendOnly : (recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly));
     }
     else if (recving) {
       localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
@@ -951,13 +951,13 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(rtpSessionId);
 #if OPAL_VIDEO
-    if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID && GetPhase() < EstablishedPhase) {
-      // If processing initial INVITE and video, obey the auto-start flags
-      if (!endpoint.GetManager().CanAutoStartTransmitVideo())
-        otherSidesDir = (otherSidesDir&SDPMediaDescription::SendOnly) != 0 ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive;
-      if (!endpoint.GetManager().CanAutoStartReceiveVideo())
-        otherSidesDir = (otherSidesDir&SDPMediaDescription::RecvOnly) != 0 ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
-    }
+  if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID && GetPhase() < EstablishedPhase) {
+    // If processing initial INVITE and video, obey the auto-start flags
+    if (!endpoint.GetManager().CanAutoStartTransmitVideo())
+      otherSidesDir = (otherSidesDir&SDPMediaDescription::SendOnly) != 0 ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive;
+    if (!endpoint.GetManager().CanAutoStartReceiveVideo())
+      otherSidesDir = (otherSidesDir&SDPMediaDescription::RecvOnly) != 0 ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
+  }
 #endif
 
   SDPMediaDescription::Direction newDirection = SDPMediaDescription::Inactive;
@@ -1011,9 +1011,9 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   // Now we build the reply, setting "direction" as appropriate for what we opened.
   localMedia->SetDirection(newDirection);
   if (sendStream != NULL)
-      localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
+    localMedia->AddMediaFormat(sendStream->GetMediaFormat(), rtpPayloadMap);
   else if (recvStream != NULL)
-      localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
+    localMedia->AddMediaFormat(recvStream->GetMediaFormat(), rtpPayloadMap);
   else {
     // Add all possible formats
     bool empty = true;
