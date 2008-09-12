@@ -1090,23 +1090,23 @@ void OpalLine::PrintOn(ostream & strm) const
 }
 
 
-unsigned OpalLine::GetRingCount(DWORD * cadence)
+PBoolean OpalLine::IsRinging(DWORD * cadence)
 {
   PTimeInterval tick = PTimer::Tick();
-
   PTimeInterval delta = tick - ringTick;
-  if (delta > ringStoppedTime) {
+  if (ringCount > 0 && delta > ringStoppedTime) {
     PTRACE(4, "LID\tRing count reset on line " << lineNumber);
+    lastRingState = false;
     ringCount = 0;
   }
 
-  if (IsRinging(cadence)) {
-    lastRingState = true;
+  if (device.IsLineRinging(lineNumber, cadence)) {
     ringTick = tick;
     if (ringCount == 0) {
       PTRACE(4, "LID\tRing start detected on line " << lineNumber);
       ringCount = 1;
     }
+    lastRingState = true;
   }
   else if (lastRingState && delta > ringInterCadenceTime) {
     PTRACE(4, "LID\tRing cadence incremented on line " << lineNumber);
@@ -1114,6 +1114,13 @@ unsigned OpalLine::GetRingCount(DWORD * cadence)
     lastRingState = false;
   }
 
+  return lastRingState;
+}
+
+
+unsigned OpalLine::GetRingCount(DWORD * cadence)
+{
+  IsRinging(cadence);
   return ringCount;
 }
 
