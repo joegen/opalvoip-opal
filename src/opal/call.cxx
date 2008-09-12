@@ -646,7 +646,11 @@ void OpalCall::SetPartyNames()
   if (connectionA == NULL)
     return;
 
-  m_partyA = connectionA->IsNetworkConnection() ? connectionA->GetRemotePartyURL() : connectionA->GetLocalPartyURL();
+  bool networkA = connectionA->IsNetworkConnection();
+  if (networkA)
+    m_partyA = connectionA->GetRemotePartyURL();
+  if (!networkA || m_partyA.IsEmpty())
+    m_partyA = connectionA->GetLocalPartyURL();
 
   PSafePtr<OpalConnection> connectionB = connectionsActive.GetAt(1, PSafeReadOnly);
   if (connectionB == NULL)

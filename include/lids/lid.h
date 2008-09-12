@@ -988,7 +988,7 @@ class OpalLine : public PObject
       */
     virtual PBoolean IsRinging(
       DWORD * cadence = NULL  ///<  Cadence of incoming ring
-    ) { return device.IsLineRinging(lineNumber, cadence); }
+    );
 
     /**Get the number of rings.
        If the line is ringing then 
