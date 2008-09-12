@@ -110,10 +110,6 @@ extern "C" {
 #include "crdef.h"
 #include "videoframe.h"
 
-#if !defined(SOLARIS) && defined(sun) && !defined(__svr4__)
-extern "C" int gettimeofday(struct timeval*, struct timezone*);
-#endif
-
 #define HDRSIZE         4
 #define	CIF_WIDTH	352
 #define	CIF_HEIGHT	288
