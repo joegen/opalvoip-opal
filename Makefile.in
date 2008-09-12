@@ -26,6 +26,8 @@
 # $Date$
 #
 
+LIBRARY_MAKEFILE:=1
+
 include opal_inc.mak
 
 SHELL		:= /bin/sh
