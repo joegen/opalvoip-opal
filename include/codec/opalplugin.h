@@ -361,13 +361,17 @@ struct PluginCodec_H323GenericParameterDefinition
      zero and one (a good bet) and thus the below bit fields will be backward
      compatible, putting the parameter in all three PDU types.
    */ 
+#ifndef SOLARIS   
   struct {
+#endif  
     int collapsing:1; /* boolean */
     int excludeTCS:1;
     int excludeOLC:1;
     int excludeReqMode:1;
     int readOnly:1;
+#ifndef SOLARIS    
   };
+#endif  
 
   unsigned int id;
 

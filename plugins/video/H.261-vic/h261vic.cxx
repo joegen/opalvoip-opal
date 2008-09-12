@@ -55,6 +55,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "plugin-config.h"
