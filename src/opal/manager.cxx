@@ -107,6 +107,11 @@ OpalProductInfo::OpalProductInfo()
   , t35Extension(0)       // No extension code for Australia
   , manufacturerCode(61)  // Allocated by Australian Communications Authority, Oct 2000;
 {
+  // Sanitise the product name to be compatible with SIP User-Agent rules
+  name.Replace(' ', '-', true);
+  PINDEX pos;
+  while ((pos = name.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.!%*_+`'~")) != P_MAX_INDEX)
+    name.Delete(pos, 1);
 }
 
 OpalProductInfo & OpalProductInfo::Default()
