@@ -499,6 +499,8 @@ AC_SUBST(INSTALL)
 AC_SUBST(AR)
 AC_SUBST(ARCHIVE)
 AC_SUBST(HAVE_RANLIB)
+AC_SUBST(MACHTYPE)
+AC_SUBST(OSTYPE)
 
 
 dnl ########################################################################

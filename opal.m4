@@ -177,8 +177,8 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
           else
             OBJ_SUFFIX=""
           fi
-          $1_OPAL_OBJDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${target_os}_${MACHTYPE}"
+          $1_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
           $1_LIB_NAME="libopal${OBJ_SUFFIX}"
           $1_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           $1_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
