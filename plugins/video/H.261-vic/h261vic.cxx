@@ -381,7 +381,6 @@ static int encoder_set_options(const PluginCodec_Definition *,
         bitrate = atoi(options[i+1]);
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
         tsto = atoi(options[i+1]);
-      printf ("%s = %s \n", options[i], options[i+1]);
     }
   }
   context->SetFrameSize (width, height);

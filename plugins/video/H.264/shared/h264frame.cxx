@@ -132,7 +132,7 @@ void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
     } 
     else
     {
-      printf("[enc] Need to increase vop buffer size by %d\n", -currentNALLen);
+      TRACE_UP(4,"[enc] Need to increase vop buffer size by  " << -currentNALLen);
     }
   }
   TRACE_UP(4, "H264\tEncap\tLoaded an encoded frame of " << _encodedFrameLen << " bytes consisiting of " << numberOfNALs << " NAL units");
