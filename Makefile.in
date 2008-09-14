@@ -536,7 +536,7 @@ endif
 
 #### Install targets
 install:
-	$(INSTALL) -m 755 lib/$(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)
+	$(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)
 	( for filename in $(LIB_FILENAME_SHARED) \
 	                  $(LIB_FILENAME_SHARED_MAJ) \
 	                  $(LIB_FILENAME_SHARED_MIN) \

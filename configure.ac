@@ -407,61 +407,61 @@ OPAL_SIMPLE_OPTION([video],[OPAL_VIDEO], [wether to enable video codec support],
 
 dnl MSWIN_DISPLAY sip,SIP support
 dnl MSWIN_DEFINE  sip,OPAL_SIP
-OPAL_SIMPLE_OPTION([sip],[OPAL_SIP], [wether to enable SIP protocol support])
+OPAL_SIMPLE_OPTION([sip],[OPAL_SIP], [whether to enable SIP protocol support])
 
 dnl MSWIN_DISPLAY h323,H.323 support
 dnl MSWIN_DEFINE  h323,OPAL_H323
-OPAL_SIMPLE_OPTION([h323],[OPAL_H323], [wether to enable H.323 protocol support])
+OPAL_SIMPLE_OPTION([h323],[OPAL_H323], [whether to enable H.323 protocol support])
 
 dnl MSWIN_DISPLAY iax2,IAX2 support
 dnl MSWIN_DEFINE  iax2,OPAL_IAX2
-OPAL_SIMPLE_OPTION([iax],[OPAL_IAX2], [wether to enable IAX2 protocol support])
+OPAL_SIMPLE_OPTION([iax],[OPAL_IAX2], [whether to enable IAX2 protocol support])
 
 dnl MSWIN_DISPLAY h224,H.224 support
 dnl MSWIN_DEFINE  h224,OPAL_H224FECC
-OPAL_SIMPLE_OPTION([h224],[OPAL_H224FECC], [wether to enable H.224 protocol support], [OPAL_H323])
+OPAL_SIMPLE_OPTION([h224],[OPAL_H224FECC], [whether to enable H.224 protocol support], [OPAL_H323])
 
 dnl MSWIN_DISPLAY    t38,T.38 capability
 dnl MSWIN_DEFINE     t38,OPAL_T38_CAPABILITY
-OPAL_SIMPLE_OPTION([t38],[OPAL_T38_CAPABILITY], [wether to enable T.38 capability support])
+OPAL_SIMPLE_OPTION([t38],[OPAL_T38_CAPABILITY], [whether to enable T.38 capability support])
 
 dnl MSWIN_DISPLAY    fax,T.38 FAX protocol
 dnl MSWIN_DEFINE     fax,OPAL_FAX
-OPAL_SIMPLE_OPTION([fax],[OPAL_FAX], [wether to enable T.38 FAX protocol support],[OPAL_T38_CAPABILITY], [OPAL_PTLIB_ASN])
+OPAL_SIMPLE_OPTION([fax],[OPAL_FAX], [whether to enable T.38 FAX protocol support],[OPAL_T38_CAPABILITY], [OPAL_PTLIB_ASN])
 
 dnl MSWIN_DISPLAY    h450,H.450
 dnl MSWIN_DEFINE     h450,OPAL_H450
 dnl MSWIN_IF_FEATURE h450,h323
-OPAL_SIMPLE_OPTION([h450],[OPAL_H450], [wether to enable H.450], [OPAL_H323])
+OPAL_SIMPLE_OPTION([h450],[OPAL_H450], [whether to enable H.450], [OPAL_H323])
 
 dnl MSWIN_DISPLAY    h460,H.460
 dnl MSWIN_DEFINE     h460,OPAL_H460
 dnl MSWIN_IF_FEATURE h460,h323
-OPAL_SIMPLE_OPTION([h460],[OPAL_H460], [wether to enable H.460], [OPAL_H323])
+OPAL_SIMPLE_OPTION([h460],[OPAL_H460], [whether to enable H.460], [OPAL_H323])
 
 dnl MSWIN_DISPLAY lids,Line Interface Device
 dnl MSWIN_DEFINE  lids,OPAL_LID
-OPAL_SIMPLE_OPTION([lid],[OPAL_LID], [wether to enable LID support])
+OPAL_SIMPLE_OPTION([lid],[OPAL_LID], [whether to enable LID support])
 
 dnl MSWIN_DISPLAY ivr,IVR support
 dnl MSWIN_DEFINE  ivr,OPAL_IVR
-OPAL_SIMPLE_OPTION([ivr],[OPAL_IVR], [wether to enable IVR support], [OPAL_PTLIB_EXPAT], [OPAL_PTLIB_VXML])
+OPAL_SIMPLE_OPTION([ivr],[OPAL_IVR], [whether to enable IVR support], [OPAL_PTLIB_EXPAT], [OPAL_PTLIB_VXML])
 
 dnl MSWIN_DISPLAY rfc4175,RFC4175 Raw Video support
 dnl MSWIN_DEFINE  rfc4175,OPAL_RFC4175
-OPAL_SIMPLE_OPTION([rfc4175],[OPAL_RFC4175], [wether to enable RFC4175 support], [OPAL_VIDEO])
+OPAL_SIMPLE_OPTION([rfc4175],[OPAL_RFC4175], [whether to enable RFC4175 support], [OPAL_VIDEO])
 
 dnl MSWIN_DISPLAY aec,Accoustic Echo Cancellation
 dnl MSWIN_DEFINE  aec,OPAL_AEC
-OPAL_SIMPLE_OPTION([aec],[OPAL_AEC], [wether to enable accoustic echo cancellation support])
+OPAL_SIMPLE_OPTION([aec],[OPAL_AEC], [whether to enable accoustic echo cancellation support])
 
 dnl MSWIN_DISPLAY g711plc,Packet Loss Concealment for G.711
 dnl MSWIN_DEFINE  g711plc,OPAL_G711PLC
-OPAL_SIMPLE_OPTION([g711plc],[OPAL_G711PLC], [wether to enable Packet Loss Concealment for G.711])
+OPAL_SIMPLE_OPTION([g711plc],[OPAL_G711PLC], [whether to enable Packet Loss Concealment for G.711])
 
 dnl MSWIN_DISPLAY statistics,Statistics gathering support
 dnl MSWIN_DEFINE  statistics,OPAL_STATISTICS
-OPAL_SIMPLE_OPTION([statistics],[OPAL_STATISTICS], [wether to enable statistics gathering support])
+OPAL_SIMPLE_OPTION([statistics],[OPAL_STATISTICS], [whether to enable statistics gathering support])
 
 
 dnl ########################################################################

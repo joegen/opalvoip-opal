@@ -1364,20 +1364,21 @@ Optional Features:
   --enable-zrtp           enable ZRTP protocol support
   --enable-java           enable Java JNI support
   --enable-video          wether to enable video codec support
-  --enable-sip            wether to enable SIP protocol support
-  --enable-h323           wether to enable H.323 protocol support
-  --enable-iax            wether to enable IAX2 protocol support
-  --enable-h224           wether to enable H.224 protocol support
-  --enable-t38            wether to enable T.38 capability support
-  --enable-fax            wether to enable T.38 FAX protocol support
-  --enable-h450           wether to enable H.450
-  --enable-h460           wether to enable H.460
-  --enable-lid            wether to enable LID support
-  --enable-ivr            wether to enable IVR support
-  --enable-rfc4175        wether to enable RFC4175 support
-  --enable-aec            wether to enable accoustic echo cancellation support
-  --enable-g711plc        wether to enable Packet Loss Concealment for G.711
-  --enable-statistics     wether to enable statistics gathering support
+  --enable-sip            whether to enable SIP protocol support
+  --enable-h323           whether to enable H.323 protocol support
+  --enable-iax            whether to enable IAX2 protocol support
+  --enable-h224           whether to enable H.224 protocol support
+  --enable-t38            whether to enable T.38 capability support
+  --enable-fax            whether to enable T.38 FAX protocol support
+  --enable-h450           whether to enable H.450
+  --enable-h460           whether to enable H.460
+  --enable-lid            whether to enable LID support
+  --enable-ivr            whether to enable IVR support
+  --enable-rfc4175        whether to enable RFC4175 support
+  --enable-aec            whether to enable accoustic echo cancellation
+                          support
+  --enable-g711plc        whether to enable Packet Loss Concealment for G.711
+  --enable-statistics     whether to enable statistics gathering support
   --enable-plugins        whether to enable plugin support
   --enable-samples        whether to enable samples build
 
@@ -5074,12 +5075,13 @@ else
 fi
 
 
-         opal_release_flags="-Os"
          case "$target_os" in
                  solaris*)
-                   opal_debug_flags="-g3 -ggdb -gstabs+ -O0 -D_DEBUG "
+                   opal_release_flags="-xO3 -DSOLARIS"
+                   opal_debug_flags="-g -D_DEBUG -DSOLARIS"
                  ;;
                  *)
+                   opal_release_flags="-Os"
                    opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
                  ;;
          esac
@@ -5169,10 +5171,11 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
 echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
 
-if test -n "$PTLIB_CFLAGS"; then
-    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_CFLAGS"; then
+        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
   ac_status=$?
@@ -5182,13 +5185,15 @@ if test -n "$PTLIB_CFLAGS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
-if test -n "$PTLIB_LIBS"; then
-    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_LIBS"; then
+        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
   ac_status=$?
@@ -5198,8 +5203,9 @@ if test -n "$PTLIB_LIBS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
 
 
@@ -5212,9 +5218,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib >= ${PTLIB_REC_VERSION}"`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib >= ${PTLIB_REC_VERSION}"`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -5277,10 +5283,11 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
 echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
 
-if test -n "$PTLIB_CFLAGS"; then
-    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_CFLAGS"; then
+        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
   ac_status=$?
@@ -5290,13 +5297,15 @@ if test -n "$PTLIB_CFLAGS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
-if test -n "$PTLIB_LIBS"; then
-    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_LIBS"; then
+        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
   ac_status=$?
@@ -5306,8 +5315,9 @@ if test -n "$PTLIB_LIBS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
 
 
@@ -5320,9 +5330,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib"`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib"`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -8783,10 +8793,11 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for SPEEX" >&5
 echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
 
-if test -n "$SPEEX_CFLAGS"; then
-    pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_CFLAGS"; then
+        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex") 2>&5
   ac_status=$?
@@ -8796,13 +8807,15 @@ if test -n "$SPEEX_CFLAGS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
-if test -n "$SPEEX_LIBS"; then
-    pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_LIBS"; then
+        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex") 2>&5
   ac_status=$?
@@ -8812,8 +8825,9 @@ if test -n "$SPEEX_LIBS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
 
 
@@ -8826,9 +8840,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "speex" 2>&1`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex"`
         else
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --print-errors "speex" 2>&1`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex"`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SPEEX_PKG_ERRORS" >&5
@@ -8863,10 +8877,11 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for SPEEX" >&5
 echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
 
-if test -n "$SPEEX_CFLAGS"; then
-    pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_CFLAGS"; then
+        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
   ac_status=$?
@@ -8876,13 +8891,15 @@ if test -n "$SPEEX_CFLAGS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
-if test -n "$SPEEX_LIBS"; then
-    pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_LIBS"; then
+        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
   ac_status=$?
@@ -8892,8 +8909,9 @@ if test -n "$SPEEX_LIBS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
 
 
@@ -8906,9 +8924,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "speex >= $SPEEX_INTERNAL_VERSION" 2>&1`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
         else
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --print-errors "speex >= $SPEEX_INTERNAL_VERSION" 2>&1`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SPEEX_PKG_ERRORS" >&5
@@ -9502,8 +9520,8 @@ echo "$as_me: sip support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable SIP protocol support" >&5
-echo $ECHO_N "checking wether to enable SIP protocol support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable SIP protocol support" >&5
+echo $ECHO_N "checking whether to enable SIP protocol support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_SIP" >&5
 echo "${ECHO_T}$OPAL_SIP" >&6; }
 
@@ -9546,8 +9564,8 @@ echo "$as_me: h323 support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable H.323 protocol support" >&5
-echo $ECHO_N "checking wether to enable H.323 protocol support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable H.323 protocol support" >&5
+echo $ECHO_N "checking whether to enable H.323 protocol support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_H323" >&5
 echo "${ECHO_T}$OPAL_H323" >&6; }
 
@@ -9590,8 +9608,8 @@ echo "$as_me: iax support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable IAX2 protocol support" >&5
-echo $ECHO_N "checking wether to enable IAX2 protocol support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable IAX2 protocol support" >&5
+echo $ECHO_N "checking whether to enable IAX2 protocol support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_IAX2" >&5
 echo "${ECHO_T}$OPAL_IAX2" >&6; }
 
@@ -9634,8 +9652,8 @@ echo "$as_me: h224 support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable H.224 protocol support" >&5
-echo $ECHO_N "checking wether to enable H.224 protocol support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable H.224 protocol support" >&5
+echo $ECHO_N "checking whether to enable H.224 protocol support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_H224FECC" >&5
 echo "${ECHO_T}$OPAL_H224FECC" >&6; }
 
@@ -9678,8 +9696,8 @@ echo "$as_me: t38 support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable T.38 capability support" >&5
-echo $ECHO_N "checking wether to enable T.38 capability support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable T.38 capability support" >&5
+echo $ECHO_N "checking whether to enable T.38 capability support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_T38_CAPABILITY" >&5
 echo "${ECHO_T}$OPAL_T38_CAPABILITY" >&6; }
 
@@ -9722,8 +9740,8 @@ echo "$as_me: fax support disabled due to disabled dependency OPAL_PTLIB_ASN" >&
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable T.38 FAX protocol support" >&5
-echo $ECHO_N "checking wether to enable T.38 FAX protocol support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable T.38 FAX protocol support" >&5
+echo $ECHO_N "checking whether to enable T.38 FAX protocol support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_FAX" >&5
 echo "${ECHO_T}$OPAL_FAX" >&6; }
 
@@ -9766,8 +9784,8 @@ echo "$as_me: h450 support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable H.450" >&5
-echo $ECHO_N "checking wether to enable H.450... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable H.450" >&5
+echo $ECHO_N "checking whether to enable H.450... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_H450" >&5
 echo "${ECHO_T}$OPAL_H450" >&6; }
 
@@ -9810,8 +9828,8 @@ echo "$as_me: h460 support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable H.460" >&5
-echo $ECHO_N "checking wether to enable H.460... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable H.460" >&5
+echo $ECHO_N "checking whether to enable H.460... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_H460" >&5
 echo "${ECHO_T}$OPAL_H460" >&6; }
 
@@ -9854,8 +9872,8 @@ echo "$as_me: lid support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable LID support" >&5
-echo $ECHO_N "checking wether to enable LID support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable LID support" >&5
+echo $ECHO_N "checking whether to enable LID support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_LID" >&5
 echo "${ECHO_T}$OPAL_LID" >&6; }
 
@@ -9898,8 +9916,8 @@ echo "$as_me: ivr support disabled due to disabled dependency OPAL_PTLIB_VXML" >
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable IVR support" >&5
-echo $ECHO_N "checking wether to enable IVR support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable IVR support" >&5
+echo $ECHO_N "checking whether to enable IVR support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_IVR" >&5
 echo "${ECHO_T}$OPAL_IVR" >&6; }
 
@@ -9942,8 +9960,8 @@ echo "$as_me: rfc4175 support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable RFC4175 support" >&5
-echo $ECHO_N "checking wether to enable RFC4175 support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable RFC4175 support" >&5
+echo $ECHO_N "checking whether to enable RFC4175 support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_RFC4175" >&5
 echo "${ECHO_T}$OPAL_RFC4175" >&6; }
 
@@ -9986,8 +10004,8 @@ echo "$as_me: aec support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable accoustic echo cancellation support" >&5
-echo $ECHO_N "checking wether to enable accoustic echo cancellation support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable accoustic echo cancellation support" >&5
+echo $ECHO_N "checking whether to enable accoustic echo cancellation support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_AEC" >&5
 echo "${ECHO_T}$OPAL_AEC" >&6; }
 
@@ -10030,8 +10048,8 @@ echo "$as_me: g711plc support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable Packet Loss Concealment for G.711" >&5
-echo $ECHO_N "checking wether to enable Packet Loss Concealment for G.711... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable Packet Loss Concealment for G.711" >&5
+echo $ECHO_N "checking whether to enable Packet Loss Concealment for G.711... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_G711PLC" >&5
 echo "${ECHO_T}$OPAL_G711PLC" >&6; }
 
@@ -10074,8 +10092,8 @@ echo "$as_me: statistics support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable statistics gathering support" >&5
-echo $ECHO_N "checking wether to enable statistics gathering support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable statistics gathering support" >&5
+echo $ECHO_N "checking whether to enable statistics gathering support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_STATISTICS" >&5
 echo "${ECHO_T}$OPAL_STATISTICS" >&6; }
 
