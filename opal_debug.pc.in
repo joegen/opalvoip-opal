@@ -3,11 +3,11 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: opal
-Description: Open Phone Application Library
+Name: opal_debug
+Description: Open Phone Application Library - Debug version
 Version: @OPAL_VERSION@
 Requires:@PKG_REQUIRES@
-Libs: -L${libdir} -lopal @PKG_LIBS@ 
+Libs: -L${libdir} -lopal_d @PKG_LIBS@ 
 Cflags: -I${includedir}/opal @PKG_CFLAGS@
 
 #Optional OPAL features

@@ -126,10 +126,13 @@ include @PTLIBDIR@/make/ptlib.mak
 endif
 endif
 
+# Note that this should go into the Makefile.in
+# when deprecating the backward compatibilty
+
 ifeq ($(DEBUG_BUILD),yes)
   CFLAGS   += $(DEBUG_CFLAGS)
   CXXFLAGS += $(DEBUG_CFLAGS)
-  LIBS     += $(DEBUG__LIBS)
+  LIBS     += $(DEBUG_LIBS)
   LIB_NAME  = $(DEBUG_LIB_NAME)
 else
   CFLAGS   += $(RELEASE_CFLAGS)
@@ -141,7 +144,7 @@ endif
 CXXFLAGS   += -I$(OPAL_INCDIR)
 CFLAGS     += -I$(OPAL_INCDIR)
 
-ENDLDFLAGS        = @LIBS@
+ENDLDFLAGS        = $(LIBS)
 OPAL_SYSTEM_SPEEX = @SPEEX_SYSTEM@
 HAS_LIBSRTP       = @OPAL_SRTP@
 H323_H460         = @OPAL_H460@
