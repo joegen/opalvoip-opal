@@ -5153,19 +5153,246 @@ echo "$as_me: error: PTLIB Version check failed, recommended version is at least
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
             PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
 
-            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt\ //g`
-            DEBUG_LIBS="$DEBUG_LIBS -lpt_d"
-            RELEASE_LIBS="$RELEASE_LIBS -lpt"
+            RELEASE_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            DEBUG_LIBS=`$PKG_CONFIG ptlib_debug --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+
             if test "x${DEBUG_BUILD}" = xyes; then
-              DEFAULT_LIBS="$DEFAULT_LIBS -lpt_d"
+              DEFAULT_LIBS="$DEBUG_LIBS"
             else
-              DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
+              DEFAULT_LIBS="$RELEASE_LIBS"
             fi
 
             export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
 
                     else
-            if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
+            if test "x${DEBUG_BUILD}" = xyes; then
+              if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
+
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for PTLIB" >&5
+echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_CFLAGS"; then
+        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib_debug >= \${PTLIB_REC_VERSION}\"") >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib_debug >= ${PTLIB_REC_VERSION}") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_PTLIB_CFLAGS=`$PKG_CONFIG --cflags "ptlib_debug >= ${PTLIB_REC_VERSION}" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_LIBS"; then
+        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib_debug >= \${PTLIB_REC_VERSION}\"") >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib_debug >= ${PTLIB_REC_VERSION}") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_PTLIB_LIBS=`$PKG_CONFIG --libs "ptlib_debug >= ${PTLIB_REC_VERSION}" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib_debug >= ${PTLIB_REC_VERSION}"`
+        else
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib_debug >= ${PTLIB_REC_VERSION}"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PTLIB_PKG_ERRORS" >&5
+
+	{ { echo "$as_me:$LINENO: error: Package requirements (ptlib_debug >= ${PTLIB_REC_VERSION}) were not met:
+
+$PTLIB_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+echo "$as_me: error: Package requirements (ptlib_debug >= ${PTLIB_REC_VERSION}) were not met:
+
+$PTLIB_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&5
+echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
+	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	:
+fi
+              else
+
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for PTLIB" >&5
+echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_CFLAGS"; then
+        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib_debug\"") >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib_debug") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_PTLIB_CFLAGS=`$PKG_CONFIG --cflags "ptlib_debug" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_LIBS"; then
+        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib_debug\"") >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib_debug") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_PTLIB_LIBS=`$PKG_CONFIG --libs "ptlib_debug" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib_debug"`
+        else
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib_debug"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PTLIB_PKG_ERRORS" >&5
+
+	{ { echo "$as_me:$LINENO: error: Package requirements (ptlib_debug) were not met:
+
+$PTLIB_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+echo "$as_me: error: Package requirements (ptlib_debug) were not met:
+
+$PTLIB_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&5
+echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
+	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	:
+fi
+              fi
+            else
+              if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
 
 pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
@@ -5277,7 +5504,7 @@ else
 echo "${ECHO_T}yes" >&6; }
 	:
 fi
-            else
+              else
 
 pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
@@ -5389,27 +5616,25 @@ else
 echo "${ECHO_T}yes" >&6; }
 	:
 fi
+              fi
             fi
-
+            DEFAULT_LIBS="$PTLIB_LIBS"
+            DEBUG_LIBS="$PTLIB_LIBS"
+            RELEASE_LIBS="$PTLIB_LIBS"
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags`
-            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt\ //g`
-            DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
-            DEBUG_LIBS="$DEBUG_LIBS -lpt"
-            RELEASE_LIBS="$DEBUG_LIBS -lpt"
           fi
 
           echo "Version:  ${PTLIB_VERSION}"
           echo "CFLAGS:   ${PTLIB_CFLAGS}"
           echo "CXXFLAGS: ${PTLIB_CXXFLAGS}"
-          echo "LIBS:     ${PTLIB_LIBS}"
           echo "DEBUG:    ${DEBUG_LIBS}"
           echo "RELEASE:  ${RELEASE_LIBS}"
 
 
 CFLAGS="$CFLAGS $PTLIB_CFLAGS"
 CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-LIBS="$LIBS $PTLIB_LIBS"
+#LIBS="$LIBS $PTLIB_LIBS"
 PKG_REQUIRES="$PKG_REQUIRES ptlib"
 
 
@@ -10233,6 +10458,8 @@ ac_config_headers="$ac_config_headers include/opal/buildopts.h"
 
 ac_config_files="$ac_config_files opal.pc"
 
+ac_config_files="$ac_config_files opal_debug.pc"
+
 ac_config_files="$ac_config_files opal.spec"
 
 ac_config_files="$ac_config_files opal_cfg.dxy"
@@ -10797,6 +11024,7 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "include/opal/buildopts.h") CONFIG_HEADERS="$CONFIG_HEADERS include/opal/buildopts.h" ;;
     "opal.pc") CONFIG_FILES="$CONFIG_FILES opal.pc" ;;
+    "opal_debug.pc") CONFIG_FILES="$CONFIG_FILES opal_debug.pc" ;;
     "opal.spec") CONFIG_FILES="$CONFIG_FILES opal.spec" ;;
     "opal_cfg.dxy") CONFIG_FILES="$CONFIG_FILES opal_cfg.dxy" ;;
     "src/codec/speex/libspeex/speex_config_types.h") CONFIG_FILES="$CONFIG_FILES src/codec/speex/libspeex/speex_config_types.h" ;;

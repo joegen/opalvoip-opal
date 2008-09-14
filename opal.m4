@@ -308,38 +308,43 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}` 
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}` 
             PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+
+            RELEASE_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            DEBUG_LIBS=`$PKG_CONFIG ptlib_debug --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
             
-            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt\ //g`
-            DEBUG_LIBS="$DEBUG_LIBS -lpt_d"
-            RELEASE_LIBS="$RELEASE_LIBS -lpt"
             if test "x${DEBUG_BUILD}" = xyes; then
-              DEFAULT_LIBS="$DEFAULT_LIBS -lpt_d"
+              DEFAULT_LIBS="$DEBUG_LIBS"
             else
-              DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
+              DEFAULT_LIBS="$RELEASE_LIBS"
             fi
 	    
             export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
 
           dnl This segment looks for PTLIB on the system
           else
-            if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-              PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
+            if test "x${DEBUG_BUILD}" = xyes; then
+              if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
+                PKG_CHECK_MODULES(PTLIB, ptlib_debug >= ${PTLIB_REC_VERSION})
+              else
+                PKG_CHECK_MODULES(PTLIB, ptlib_debug)
+              fi
             else
-              PKG_CHECK_MODULES(PTLIB, ptlib)
+              if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
+                PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
+              else
+                PKG_CHECK_MODULES(PTLIB, ptlib)
+              fi            
             fi
-
+            DEFAULT_LIBS="$PTLIB_LIBS"
+            DEBUG_LIBS="$PTLIB_LIBS"
+            RELEASE_LIBS="$PTLIB_LIBS"
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
-            PTLIB_LIBS=`echo ${PTLIB_LIBS} | sed s/-lpt\ //g`
-            DEFAULT_LIBS="$DEFAULT_LIBS -lpt"
-            DEBUG_LIBS="$DEBUG_LIBS -lpt"
-            RELEASE_LIBS="$DEBUG_LIBS -lpt"
           fi
 
           echo "Version:  ${PTLIB_VERSION}"
           echo "CFLAGS:   ${PTLIB_CFLAGS}"
           echo "CXXFLAGS: ${PTLIB_CXXFLAGS}"
-          echo "LIBS:     ${PTLIB_LIBS}"
           echo "DEBUG:    ${DEBUG_LIBS}"
           echo "RELEASE:  ${RELEASE_LIBS}"
          ])
