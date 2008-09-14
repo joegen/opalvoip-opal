@@ -536,6 +536,7 @@ endif
 
 #### Install targets
 install:
+	mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir)
 	$(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)
 	( for filename in $(LIB_FILENAME_SHARED) \
 	                  $(LIB_FILENAME_SHARED_MAJ) \
@@ -544,7 +545,6 @@ install:
 	do ln -snf $(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)/$$filename ;\
 	done)
 
-	mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir)
 	mkdir -p $(DESTDIR)$(includedir)/opal; chmod 755 $(DESTDIR)$(includedir)/opal
 	$(INSTALL) -m 644 include/opal.h $(DESTDIR)$(includedir)/opal
 	( for dir in asn codec h323 h460 iax2 lids opal rtp sip t120 t38 zrtp; \
