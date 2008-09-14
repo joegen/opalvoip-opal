@@ -66,7 +66,7 @@ AC_DEFUN([OPAL_GET_LIBNAME],
           if test \! -x conftest$ac_exeext ; then
             AC_MSG_RESULT(cannot determine - using defaults)
           else
-            $1_LIB_NAME=`ldd ./conftest | grep $2 | awk '{print @S|@1; }'`
+            $1_LIB_NAME=`objdump -x ./conftest | grep 'NEEDED.*$2' | awk '{print @S|@2; }'`
             AC_MSG_RESULT($$1_LIB_NAME)
             AC_DEFINE_UNQUOTED([$1_LIB_NAME], ["$$1_LIB_NAME"], [Filename of the $2 library])
           fi
