@@ -147,7 +147,7 @@ bool MPIList::getNegotiatedMPI( unsigned* width, unsigned* height, unsigned* _fr
   // possibly the supported frame rate is lower than the desired one
   // however we prefer to stay at the desired resolution with a lower framerate
   // instead of selecting a different resolution where the framerate is supported
-  if ((MPIs[minIndex].interval * 3003) < frameTime) 
+  if ((MPIs[minIndex].interval * 3003) > frameTime) 
     *_frameTime  = MPIs[minIndex].interval * 3003;
    else
     *_frameTime  = frameTime;
