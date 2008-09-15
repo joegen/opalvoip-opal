@@ -75,9 +75,7 @@ AC_DEFUN([OPAL_GET_LIBNAME],
 dnl OPAL_DETERMINE_DEBUG
 dnl Determine desired debug level, default is -g -O2
 dnl Arguments: 
-dnl Return:    $DEBUG_CFLAGS
-dnl            $RELEASE_CFLAGS
-dnl            $DEFAULT_CFLAGS
+dnl Return:    $DEFAULT_CFLAGS
 dnl            $DEBUG_BUILD
 
 AC_DEFUN([OPAL_DETERMINE_DEBUG],
@@ -86,20 +84,6 @@ AC_DEFUN([OPAL_DETERMINE_DEBUG],
                         [AC_HELP_STRING([--enable-debug],[Enable debug build])],
                         [DEBUG_BUILD=$enableval],
                         [DEBUG_BUILD=no])
-
-         case "$target_os" in
-                 solaris*)
-                   opal_release_flags="-xO3 -DSOLARIS"
-                   opal_debug_flags="-g -D_DEBUG -DSOLARIS"
-                 ;;
-                 *)
-                   opal_release_flags="-Os"
-                   opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
-                 ;;
-         esac
-
-          DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
-          RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
 
           if test "x${DEBUG_BUILD}" = xyes; then
             DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_debug_flags"
@@ -112,7 +96,7 @@ AC_DEFUN([OPAL_DETERMINE_DEBUG],
 
 dnl OPAL_DETERMINE_VERSION
 dnl Determine OPAL's version number
-dnl Arguments: $OPAL_DIR
+dnl Arguments: $OPALDIR
 dnl Return:    $MAJOR_VERSION
 dnl            $MINOR_VERSION
 dnl            $BUILD_NUMBER
@@ -177,8 +161,8 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
           else
             OBJ_SUFFIX=""
           fi
-          $1_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
+          $1_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
           $1_LIB_NAME="libopal${OBJ_SUFFIX}"
           $1_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           $1_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -304,13 +288,13 @@ AC_DEFUN([OPAL_FIND_PTLIB],
               fi
             fi
 
-            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
-            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}` 
-            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}` 
-            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
+            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags`
+            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags`
+            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs`
 
-            RELEASE_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
-            DEBUG_LIBS=`$PKG_CONFIG ptlib_debug --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
+            DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
             
             if test "x${DEBUG_BUILD}" = xyes; then
               DEFAULT_LIBS="$DEBUG_LIBS"

@@ -26,9 +26,7 @@
 # $Date$
 #
 
-LIBRARY_MAKEFILE:=1
-
-include opal_inc.mak
+include opal_defs.mak
 
 SHELL		:= /bin/sh
 OS_NAME=$(shell uname -s)
@@ -64,7 +62,6 @@ else
   OPAL_OBJDIR=$(RELEASE_OPAL_OBJDIR)
   OPAL_DEPDIR=$(RELEASE_OPAL_DEPDIR)
 endif
-
 
 
 ASN_SRCDIR := $(OPAL_SRCDIR)/asn
@@ -523,8 +520,8 @@ Makefile: Makefile.in configure
 	@false
 
 clean:
-	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
 	rm -rf $(OPAL_LIBDIR)
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
 
 ifdef JAVA_WRAPPER
 
@@ -557,7 +554,6 @@ install:
 	mkdir -p $(DESTDIR)$(libdir)/pkgconfig ; chmod 755 $(DESTDIR)$(libdir)/pkgconfig
 	$(INSTALL) -m 444 opal.pc $(DESTDIR)$(libdir)/pkgconfig
 	mkdir -p $(DESTDIR)$(datarootdir)/opal ; chmod 755 $(DESTDIR)$(datarootdir)/opal
-	$(INSTALL) -m 644 opal_inc.mak $(DESTDIR)$(datarootdir)/opal
 
 	$(MAKE) -C plugins install
 
