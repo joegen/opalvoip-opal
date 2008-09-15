@@ -30,33 +30,21 @@
 PROG = callgen
 SOURCES := main.cxx
 
-OBJDIR          = obj
-
-EXTRACXXFLAGS=-I$(OPAL_INCDIR)
-EXTRALDFLAGS =-L$(OPAL_LIBDIR) $(LIBS) -lopal 
-
 ifndef OPALDIR
-ifneq (,$(wildcard ../../../opal/opal_inc.mak))
-OPALDIR=../..
-endif
-endif
-
-ifndef OPALDIR
-default_target :
-	@echo Cannot find opal_inc.mak in standard locations, you must set the OPALDIR
-	@echo environment variable manually to build this application.
+ifneq (,$(wildcard $(HOME)/opal))
+OPALDIR=$(HOME)/opal
 else
+ifneq (,$(wildcard /usr/local/opal))
+OPALDIR=/usr/local/opal
+else
+default_target :
+	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
+	@echo environment variable to build this application.
+endif
+endif
+endif
+
+ifdef OPALDIR
 include $(OPALDIR)/opal_inc.mak
 endif
 
-$(OBJDIR)/%.o : %.cxx
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) $(EXTRACXXFLAGS) $(CXXFLAGS) -c $< -o $@
-
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SOURCES)))))
-
-$(PROG): $(OBJECTS)
-	$(CXX) $(LDSO) $(EXTRALDFLAGS) -o $@ $^
-
-clean:
-	rm -f $(OBJECTS) $(PROG)

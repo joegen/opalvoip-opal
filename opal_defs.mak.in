@@ -43,9 +43,9 @@ includedir              = @includedir@
 datarootdir             = @datarootdir@
 
 # The opal source and destination dirs
-OPAL_DIR                = @OPAL_DIR@
-OPAL_SRCDIR             = $(OPAL_DIR)/src
-OPAL_INCDIR             = $(OPAL_DIR)/include
+OPALDIR                 = @OPALDIR@
+OPAL_SRCDIR             = $(OPALDIR)/src
+OPAL_INCDIR             = $(OPALDIR)/include
 OPAL_LIBDIR             = @OPAL_LIBDIR@
 
 # The library file names
@@ -117,17 +117,6 @@ OPAL_PTLIB_LDAP   = @OPAL_PTLIB_LDAP@
 OPAL_PTLIB_VXML   = @OPAL_PTLIB_VXML@
 OPAL_PTLIB_CONFIG_FILE=@OPAL_PTLIB_CONFIG_FILE@
 
-# backward compatibility
-# If your project makes use of these variables, please switch to the ones listed above
-
-ifndef LIBRARY_MAKEFILE
-ifneq (@PTLIBDIR@,)
-include @PTLIBDIR@/make/ptlib.mak
-endif
-endif
-
-# Note that this should go into the Makefile.in
-# when deprecating the backward compatibilty
 
 ifeq ($(DEBUG_BUILD),yes)
   CFLAGS   += $(DEBUG_CFLAGS)
@@ -144,13 +133,5 @@ endif
 CXXFLAGS   += -I$(OPAL_INCDIR)
 CFLAGS     += -I$(OPAL_INCDIR)
 
-ENDLDFLAGS        = $(LIBS)
-OPAL_SYSTEM_SPEEX = @SPEEX_SYSTEM@
-HAS_LIBSRTP       = @OPAL_SRTP@
-H323_H460         = @OPAL_H460@
-LIBDIRS          += $(OPAL_DIR)
-
-LDFLAGS	         += -L$(OPAL_LIBDIR)
-LDLIBS	         := -l$(subst lib,,$(LIB_NAME))$(LIB_TYPE) $(LDLIBS)
 
 # End of file

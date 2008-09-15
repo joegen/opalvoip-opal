@@ -45,6 +45,19 @@ fi
 CFLAGS="$CFLAGS $WFLAGS"
 CXXFLAGS="$CXXFLAGS $WFLAGS"
 
+
+dnl ########################################################################
+dnl set the PREFIX accordingly
+if test "x$prefix" = "xNONE"; then
+   if test "x$OPALDIR" = "x"; then
+      prefix="/usr/local"
+   else
+      prefix="$OPALDIR"
+      AC_MSG_NOTICE(OPALDIR detected - setting install prefix to ${OPALDIR})
+   fi
+fi
+
+
 dnl ########################################################################
 dnl Defaults
 dnl ########################################################################
@@ -74,8 +87,10 @@ PTLIB_REC_VERSION="2.0.0"
 dnl ########################################################################
 dnl set the OPAL directory to the current directory
 
-OPAL_DIR=`pwd`
-AC_SUBST(OPAL_DIR)
+if test "x$OPALDIR" = "x"; then
+   OPALDIR=`pwd`
+fi
+AC_SUBST(OPALDIR)
 
 dnl ########################################################################
 dnl Extract OPAL version number
@@ -87,11 +102,11 @@ dnl MSWIN_VERSION version,OPAL_MINOR=MINOR_VERSION
 dnl MSWIN_VERSION version,OPAL_BUILD=BUILD_NUMBER
 dnl MSWIN_VERSION version,OPAL_VERSION=VERSION
 
-MAJOR_VERSION=`cat ${OPAL_DIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
-MINOR_VERSION=`cat ${OPAL_DIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
-BUILD_NUMBER=`cat ${OPAL_DIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
+MAJOR_VERSION=`cat ${OPALDIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
+MINOR_VERSION=`cat ${OPALDIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
+BUILD_NUMBER=`cat ${OPALDIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
 OPAL_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${BUILD_NUMBER}"
-BUILD_TYPE=`cat ${OPAL_DIR}/version.h | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
+BUILD_TYPE=`cat ${OPALDIR}/version.h | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
 
 AC_DEFINE_UNQUOTED(OPAL_MAJOR,   ${MAJOR_VERSION})
 AC_DEFINE_UNQUOTED(OPAL_MINOR,   ${MINOR_VERSION})
@@ -224,6 +239,17 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
         ;;
 esac
 
+dnl ########################################################################
+dnl set LIBDIR accordingly
+if test "$prefix" = "$OPALDIR"; then
+   LIBDIR=${libdir}_${OSTYPE}_${MACHTYPE}
+else
+   LIBDIR=${libdir}
+fi
+AC_SUBST(LIBDIR)
+
+
+dnl ########################################################################
 if test x$HAVE_RANLIB = xyes ; then
   ARCHIVE="${AR} rc"
 else
@@ -231,6 +257,21 @@ else
 fi
 CFLAGS="$CFLAGS $SHARED_CFLAGS"
 CXXFLAGS="$CXXFLAGS $SHARED_CFLAGS"
+
+
+ case "$target_os" in
+     solaris*)
+       opal_release_flags="-xO3 -DSOLARIS"
+       opal_debug_flags="-g -D_DEBUG -DSOLARIS"
+     ;;
+     *)
+       opal_release_flags="-Os"
+       opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
+     ;;
+ esac
+
+DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
+RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
 
 OPAL_DETERMINE_DEBUG()
 
@@ -507,11 +548,10 @@ dnl ########################################################################
 dnl Output files
 dnl ########################################################################
 
-AC_CONFIG_FILES(opal_inc.mak)
+AC_CONFIG_FILES(opal_defs.mak)
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_HEADERS(include/opal/buildopts.h)
 AC_CONFIG_FILES(opal.pc)
-AC_CONFIG_FILES(opal_debug.pc)
 AC_CONFIG_FILES(opal.spec)
 AC_CONFIG_FILES(opal_cfg.dxy)
 

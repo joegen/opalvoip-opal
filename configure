@@ -671,7 +671,7 @@ EGREP
 AR
 LD
 GCC_HAS_CLZ
-OPAL_DIR
+OPALDIR
 OPAL_VERSION
 BUILD_TYPE
 OPAL_SHARED_LIB
@@ -702,6 +702,7 @@ RELEASE_LIB_FILENAME_STATIC
 RELEASE_LIB_FILENAME_SHARED_MAJ
 RELEASE_LIB_FILENAME_SHARED_MIN
 RELEASE_LIB_FILENAME_SHARED_PAT
+LIBDIR
 PTLIBDIR
 PTLIB_CFLAGS
 PTLIB_LIBS
@@ -4318,6 +4319,18 @@ CFLAGS="$CFLAGS $WFLAGS"
 CXXFLAGS="$CXXFLAGS $WFLAGS"
 
 
+if test "x$prefix" = "xNONE"; then
+   if test "x$OPALDIR" = "x"; then
+      prefix="/usr/local"
+   else
+      prefix="$OPALDIR"
+      { echo "$as_me:$LINENO: OPALDIR detected - setting install prefix to ${OPALDIR}" >&5
+echo "$as_me: OPALDIR detected - setting install prefix to ${OPALDIR}" >&6;}
+   fi
+fi
+
+
+
 OPAL_H323=yes
 OPAL_SIP=yes
 OPAL_IAX2=yes
@@ -4341,16 +4354,18 @@ OPAL_JAVA=yes
 PTLIB_REC_VERSION="2.0.0"
 
 
-OPAL_DIR=`pwd`
+if test "x$OPALDIR" = "x"; then
+   OPALDIR=`pwd`
+fi
 
 
 
 
-MAJOR_VERSION=`cat ${OPAL_DIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
-MINOR_VERSION=`cat ${OPAL_DIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
-BUILD_NUMBER=`cat ${OPAL_DIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
+MAJOR_VERSION=`cat ${OPALDIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
+MINOR_VERSION=`cat ${OPALDIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
+BUILD_NUMBER=`cat ${OPALDIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
 OPAL_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${BUILD_NUMBER}"
-BUILD_TYPE=`cat ${OPAL_DIR}/version.h | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
+BUILD_TYPE=`cat ${OPALDIR}/version.h | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
 
 cat >>confdefs.h <<_ACEOF
 #define OPAL_MAJOR ${MAJOR_VERSION}
@@ -4619,8 +4634,8 @@ case "$target_os" in
           else
             OBJ_SUFFIX=""
           fi
-          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
+          DEBUG_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
           DEBUG_LIB_NAME="libopal${OBJ_SUFFIX}"
           DEBUG_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           DEBUG_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -4659,8 +4674,8 @@ case "$target_os" in
           else
             OBJ_SUFFIX=""
           fi
-          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
+          RELEASE_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
           RELEASE_LIB_NAME="libopal${OBJ_SUFFIX}"
           RELEASE_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           RELEASE_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -4708,8 +4723,8 @@ case "$target_os" in
           else
             OBJ_SUFFIX=""
           fi
-          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
+          DEBUG_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
           DEBUG_LIB_NAME="libopal${OBJ_SUFFIX}"
           DEBUG_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           DEBUG_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -4748,8 +4763,8 @@ case "$target_os" in
           else
             OBJ_SUFFIX=""
           fi
-          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
+          RELEASE_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
           RELEASE_LIB_NAME="libopal${OBJ_SUFFIX}"
           RELEASE_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           RELEASE_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -4803,8 +4818,8 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           else
             OBJ_SUFFIX=""
           fi
-          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
+          DEBUG_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
           DEBUG_LIB_NAME="libopal${OBJ_SUFFIX}"
           DEBUG_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           DEBUG_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -4843,8 +4858,8 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           else
             OBJ_SUFFIX=""
           fi
-          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
+          RELEASE_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
           RELEASE_LIB_NAME="libopal${OBJ_SUFFIX}"
           RELEASE_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           RELEASE_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -4892,8 +4907,8 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           else
             OBJ_SUFFIX=""
           fi
-          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
+          DEBUG_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
           DEBUG_LIB_NAME="libopal${OBJ_SUFFIX}"
           DEBUG_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           DEBUG_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -4932,8 +4947,8 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           else
             OBJ_SUFFIX=""
           fi
-          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
+          RELEASE_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
           RELEASE_LIB_NAME="libopal${OBJ_SUFFIX}"
           RELEASE_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           RELEASE_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -4980,8 +4995,8 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           else
             OBJ_SUFFIX=""
           fi
-          DEBUG_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
+          DEBUG_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
           DEBUG_LIB_NAME="libopal${OBJ_SUFFIX}"
           DEBUG_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           DEBUG_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -5020,8 +5035,8 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           else
             OBJ_SUFFIX=""
           fi
-          RELEASE_OPAL_OBJDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPAL_DIR}/lib_${OSTYPE}_${MACHTYPE}"
+          RELEASE_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
           RELEASE_LIB_NAME="libopal${OBJ_SUFFIX}"
           RELEASE_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           RELEASE_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -5060,6 +5075,14 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
         ;;
 esac
 
+if test "$prefix" = "$OPALDIR"; then
+   LIBDIR=${libdir}_${OSTYPE}_${MACHTYPE}
+else
+   LIBDIR=${libdir}
+fi
+
+
+
 if test x$HAVE_RANLIB = xyes ; then
   ARCHIVE="${AR} rc"
 else
@@ -5069,6 +5092,21 @@ CFLAGS="$CFLAGS $SHARED_CFLAGS"
 CXXFLAGS="$CXXFLAGS $SHARED_CFLAGS"
 
 
+ case "$target_os" in
+     solaris*)
+       opal_release_flags="-xO3 -DSOLARIS"
+       opal_debug_flags="-g -D_DEBUG -DSOLARIS"
+     ;;
+     *)
+       opal_release_flags="-Os"
+       opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
+     ;;
+ esac
+
+DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
+RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
+
+
           # Check whether --enable-debug was given.
 if test "${enable_debug+set}" = set; then
   enableval=$enable_debug; DEBUG_BUILD=$enableval
@@ -5076,20 +5114,6 @@ else
   DEBUG_BUILD=no
 fi
 
-
-         case "$target_os" in
-                 solaris*)
-                   opal_release_flags="-xO3 -DSOLARIS"
-                   opal_debug_flags="-g -D_DEBUG -DSOLARIS"
-                 ;;
-                 *)
-                   opal_release_flags="-Os"
-                   opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
-                 ;;
-         esac
-
-          DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
-          RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
 
           if test "x${DEBUG_BUILD}" = xyes; then
             DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_debug_flags"
@@ -5150,13 +5174,13 @@ echo "$as_me: error: PTLIB Version check failed, recommended version is at least
               fi
             fi
 
-            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
-            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
-            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
-            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
+            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags`
+            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags`
+            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs`
 
-            RELEASE_LIBS=`$PKG_CONFIG ptlib --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
-            DEBUG_LIBS=`$PKG_CONFIG ptlib_debug --libs --define-variable=prefix=${PTLIBDIR} --define-variable=libdir=${PTLIBDIR}/lib_${OSTYPE}_${MACHTYPE}`
+            RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
+            DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
 
             if test "x${DEBUG_BUILD}" = xyes; then
               DEFAULT_LIBS="$DEBUG_LIBS"
@@ -5174,11 +5198,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
 echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_CFLAGS"; then
-        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_CFLAGS"; then
+    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib_debug >= \${PTLIB_REC_VERSION}\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib_debug >= ${PTLIB_REC_VERSION}") 2>&5
   ac_status=$?
@@ -5188,15 +5211,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_LIBS"; then
-        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_LIBS"; then
+    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib_debug >= \${PTLIB_REC_VERSION}\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib_debug >= ${PTLIB_REC_VERSION}") 2>&5
   ac_status=$?
@@ -5206,9 +5227,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -5221,9 +5241,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib_debug >= ${PTLIB_REC_VERSION}"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib_debug >= ${PTLIB_REC_VERSION}" 2>&1`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib_debug >= ${PTLIB_REC_VERSION}"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib_debug >= ${PTLIB_REC_VERSION}" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -5286,11 +5306,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
 echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_CFLAGS"; then
-        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_CFLAGS"; then
+    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib_debug\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib_debug") 2>&5
   ac_status=$?
@@ -5300,15 +5319,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_LIBS"; then
-        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_LIBS"; then
+    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib_debug\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib_debug") 2>&5
   ac_status=$?
@@ -5318,9 +5335,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -5333,9 +5349,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib_debug"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib_debug" 2>&1`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib_debug"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib_debug" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -5400,11 +5416,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
 echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_CFLAGS"; then
-        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_CFLAGS"; then
+    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
   ac_status=$?
@@ -5414,15 +5429,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_LIBS"; then
-        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_LIBS"; then
+    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
   ac_status=$?
@@ -5432,9 +5445,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -5447,9 +5459,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib >= ${PTLIB_REC_VERSION}"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib >= ${PTLIB_REC_VERSION}"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -5512,11 +5524,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
 echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_CFLAGS"; then
-        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_CFLAGS"; then
+    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
   ac_status=$?
@@ -5526,15 +5537,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_LIBS"; then
-        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_LIBS"; then
+    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
   ac_status=$?
@@ -5544,9 +5553,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -5559,9 +5567,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib" 2>&1`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -9020,11 +9028,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for SPEEX" >&5
 echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_CFLAGS"; then
-        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$SPEEX_CFLAGS"; then
+    pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex") 2>&5
   ac_status=$?
@@ -9034,15 +9041,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_LIBS"; then
-        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$SPEEX_LIBS"; then
+    pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex") 2>&5
   ac_status=$?
@@ -9052,9 +9057,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -9067,9 +9071,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex"`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "speex" 2>&1`
         else
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex"`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --print-errors "speex" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SPEEX_PKG_ERRORS" >&5
@@ -9104,11 +9108,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for SPEEX" >&5
 echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_CFLAGS"; then
-        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$SPEEX_CFLAGS"; then
+    pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
   ac_status=$?
@@ -9118,15 +9121,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_LIBS"; then
-        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$SPEEX_LIBS"; then
+    pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
   ac_status=$?
@@ -9136,9 +9137,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -9151,9 +9151,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "speex >= $SPEEX_INTERNAL_VERSION" 2>&1`
         else
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --print-errors "speex >= $SPEEX_INTERNAL_VERSION" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SPEEX_PKG_ERRORS" >&5
@@ -10454,15 +10454,13 @@ _ACEOF
 
 
 
-ac_config_files="$ac_config_files opal_inc.mak"
+ac_config_files="$ac_config_files opal_defs.mak"
 
 ac_config_files="$ac_config_files Makefile"
 
 ac_config_headers="$ac_config_headers include/opal/buildopts.h"
 
 ac_config_files="$ac_config_files opal.pc"
-
-ac_config_files="$ac_config_files opal_debug.pc"
 
 ac_config_files="$ac_config_files opal.spec"
 
@@ -11024,11 +11022,10 @@ cat >>$CONFIG_STATUS <<\_ACEOF
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "opal_inc.mak") CONFIG_FILES="$CONFIG_FILES opal_inc.mak" ;;
+    "opal_defs.mak") CONFIG_FILES="$CONFIG_FILES opal_defs.mak" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "include/opal/buildopts.h") CONFIG_HEADERS="$CONFIG_HEADERS include/opal/buildopts.h" ;;
     "opal.pc") CONFIG_FILES="$CONFIG_FILES opal.pc" ;;
-    "opal_debug.pc") CONFIG_FILES="$CONFIG_FILES opal_debug.pc" ;;
     "opal.spec") CONFIG_FILES="$CONFIG_FILES opal.spec" ;;
     "opal_cfg.dxy") CONFIG_FILES="$CONFIG_FILES opal_cfg.dxy" ;;
     "src/codec/speex/libspeex/speex_config_types.h") CONFIG_FILES="$CONFIG_FILES src/codec/speex/libspeex/speex_config_types.h" ;;
@@ -11151,7 +11148,7 @@ EGREP!$EGREP$ac_delim
 AR!$AR$ac_delim
 LD!$LD$ac_delim
 GCC_HAS_CLZ!$GCC_HAS_CLZ$ac_delim
-OPAL_DIR!$OPAL_DIR$ac_delim
+OPALDIR!$OPALDIR$ac_delim
 OPAL_VERSION!$OPAL_VERSION$ac_delim
 BUILD_TYPE!$BUILD_TYPE$ac_delim
 OPAL_SHARED_LIB!$OPAL_SHARED_LIB$ac_delim
@@ -11182,6 +11179,7 @@ RELEASE_LIB_FILENAME_STATIC!$RELEASE_LIB_FILENAME_STATIC$ac_delim
 RELEASE_LIB_FILENAME_SHARED_MAJ!$RELEASE_LIB_FILENAME_SHARED_MAJ$ac_delim
 RELEASE_LIB_FILENAME_SHARED_MIN!$RELEASE_LIB_FILENAME_SHARED_MIN$ac_delim
 RELEASE_LIB_FILENAME_SHARED_PAT!$RELEASE_LIB_FILENAME_SHARED_PAT$ac_delim
+LIBDIR!$LIBDIR$ac_delim
 PTLIBDIR!$PTLIBDIR$ac_delim
 PTLIB_CFLAGS!$PTLIB_CFLAGS$ac_delim
 PTLIB_LIBS!$PTLIB_LIBS$ac_delim
@@ -11189,7 +11187,6 @@ OPAL_PTLIB_SSL!$OPAL_PTLIB_SSL$ac_delim
 OPAL_PTLIB_ASN!$OPAL_PTLIB_ASN$ac_delim
 OPAL_PTLIB_EXPAT!$OPAL_PTLIB_EXPAT$ac_delim
 OPAL_PTLIB_VIDEO!$OPAL_PTLIB_VIDEO$ac_delim
-OPAL_PTLIB_WAVFILE!$OPAL_PTLIB_WAVFILE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -11231,6 +11228,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+OPAL_PTLIB_WAVFILE!$OPAL_PTLIB_WAVFILE$ac_delim
 OPAL_PTLIB_VXML!$OPAL_PTLIB_VXML$ac_delim
 OPAL_PTLIB_IPV6!$OPAL_PTLIB_IPV6$ac_delim
 OPAL_PTLIB_DTMF!$OPAL_PTLIB_DTMF$ac_delim
@@ -11288,7 +11286,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 55; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 56; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
