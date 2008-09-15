@@ -1186,13 +1186,13 @@ SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1maxAu
 
 SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceDetectMode_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
-  OpalSilenceDetectModes arg2 ;
+  OpalSilenceDetectMode arg2 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(OpalParamGeneral **)&jarg1; 
-  arg2 = (OpalSilenceDetectModes)jarg2; 
+  arg2 = (OpalSilenceDetectMode)jarg2; 
   if (arg1) (arg1)->m_silenceDetectMode = arg2;
 }
 
@@ -1200,13 +1200,13 @@ SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenc
 SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceDetectMode_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
-  OpalSilenceDetectModes result;
+  OpalSilenceDetectMode result;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(OpalParamGeneral **)&jarg1; 
-  result = (OpalSilenceDetectModes) ((arg1)->m_silenceDetectMode);
+  result = (OpalSilenceDetectMode) ((arg1)->m_silenceDetectMode);
   jresult = (jint)result; 
   return jresult;
 }

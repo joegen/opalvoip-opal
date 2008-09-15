@@ -933,7 +933,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     return;
 
   OpalSilenceDetector::Params silenceDetectParams = GetSilenceDetectParams();
-  response->m_param.m_general.m_silenceDetectMode = (OpalSilenceDetectModes)(silenceDetectParams.m_mode+1);
+  response->m_param.m_general.m_silenceDetectMode = (OpalSilenceDetectMode)(silenceDetectParams.m_mode+1);
   if (command.m_param.m_general.m_silenceDetectMode != 0)
     silenceDetectParams.m_mode = (OpalSilenceDetector::Mode)(command.m_param.m_general.m_silenceDetectMode-1);
   response->m_param.m_general.m_silenceThreshold = silenceDetectParams.m_threshold;
