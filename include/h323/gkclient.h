@@ -289,7 +289,7 @@ class H323Gatekeeper : public H225_RAS
 
   protected:
     bool StartGatekeeper(const H323TransportAddress & address);
-    bool DiscoverGatekeeper();
+    virtual bool DiscoverGatekeeper();
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
 	
     void Connect(const H323TransportAddress & address, const PString & gatekeeperIdentifier);
