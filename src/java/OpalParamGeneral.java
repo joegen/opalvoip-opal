@@ -201,12 +201,12 @@ public class OpalParamGeneral {
     return exampleJNI.OpalParamGeneral_m_maxAudioJitter_get(swigCPtr, this);
   }
 
-  public void setM_silenceDetectMode(OpalSilenceDetectModes value) {
+  public void setM_silenceDetectMode(OpalSilenceDetectMode value) {
     exampleJNI.OpalParamGeneral_m_silenceDetectMode_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalSilenceDetectModes getM_silenceDetectMode() {
-    return OpalSilenceDetectModes.swigToEnum(exampleJNI.OpalParamGeneral_m_silenceDetectMode_get(swigCPtr, this));
+  public OpalSilenceDetectMode getM_silenceDetectMode() {
+    return OpalSilenceDetectMode.swigToEnum(exampleJNI.OpalParamGeneral_m_silenceDetectMode_get(swigCPtr, this));
   }
 
   public void setM_silenceThreshold(long value) {
