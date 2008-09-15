@@ -367,7 +367,7 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperReject(const H225_GatekeeperReject &
 }
 
 
-PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg)
+PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDiscovery)
 {
   if (PAssertNULL(transport) == NULL)
     return PFalse;
@@ -377,8 +377,9 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg)
   H323RasPDU pdu;
   H225_RegistrationRequest & rrq = pdu.BuildRegistrationRequest(GetNextSequenceNumber());
 
-  // If discoveryComplete flag is PFalse then do lightweight reregister
-  rrq.m_discoveryComplete = discoveryComplete;
+  // the discoveryComplete flag of the RRQ is not to be confused with the
+  // discoveryComplete member variable of this instance...
+  rrq.m_discoveryComplete = didGkDiscovery;
 
   rrq.m_rasAddress.SetSize(1);
   H323TransportAddress rasAddress = transport->GetLocalAddress();
@@ -482,13 +483,10 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg)
     rrq.m_callCreditCapability.m_canEnforceDurationLimit = PTrue;
   }
 
-  if (IsRegistered()) {
+  if (IsRegistered()) { // send lightweight RRQ
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_keepAlive);
     rrq.m_keepAlive = PTrue;
   }
-
-  // After doing full register, do lightweight reregisters from now on
-  discoveryComplete = PFalse;
 
   Request request(rrq.m_requestSeqNum, pdu);
   if (MakeRequest(request))
@@ -658,12 +656,15 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReje
 void H323Gatekeeper::RegistrationTimeToLive()
 {
   PTRACE(3, "RAS\tTime To Live reregistration");
+  
+  PBoolean didGkDiscovery = false;
 
   if (!discoveryComplete) {
     if (endpoint.GetSendGRQ()) {
-      if (DiscoverGatekeeper())
+      if (DiscoverGatekeeper()) {
         requiresDiscovery = false;
-      else {
+        didGkDiscovery = true;
+      } else {
         PTRACE_IF(2, !reregisterNow, "RAS\tDiscovery failed, retrying in 1 minute");
         timeToLive = PTimeInterval(0, 0, 1);
         return;
@@ -687,9 +688,10 @@ void H323Gatekeeper::RegistrationTimeToLive()
     }
 
     requiresDiscovery = PFalse;
+    didGkDiscovery = true;
   }
 
-  if (!RegistrationRequest(autoReregister)) {
+  if (!RegistrationRequest(autoReregister, didGkDiscovery)) {
     PTRACE_IF(2, !reregisterNow, "RAS\tTime To Live reregistration failed, retrying in 1 minute");
     timeToLive = PTimeInterval(0, 0, 1);
   }
@@ -810,6 +812,7 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_Unregistratio
 
   if (autoReregister) {
     PTRACE(4, "RAS\tReregistering by setting timeToLive");
+    discoveryComplete = PFalse;
     reregisterNow = PTrue;
     monitorTickle.Signal();
   }
