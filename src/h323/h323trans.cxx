@@ -548,21 +548,27 @@ H323Transactor::Request::Request(unsigned seqNum,
 }
 
 
-PBoolean H323Transactor::Request::Poll(H323Transactor & rasChannel)
+PBoolean H323Transactor::Request::Poll(H323Transactor & rasChannel, unsigned numRetries, PTimeInterval timeout)
 {
   H323EndPoint & endpoint = rasChannel.GetEndPoint();
 
   responseResult = AwaitingResponse;
+  
+  if (numRetries == 0)
+    numRetries = endpoint.GetRasRequestRetries();
+  
+  if (timeout == 0)
+    timeout = endpoint.GetRasRequestTimeout();
 
-  for (unsigned retry = 1; retry <= endpoint.GetRasRequestRetries(); retry++) {
+  for (unsigned retry = 1; retry <= numRetries; retry++) {
     // To avoid race condition with RIP must set timeout before sending the packet
-    whenResponseExpected = PTimer::Tick() + endpoint.GetRasRequestTimeout();
+    whenResponseExpected = PTimer::Tick() + timeout;
 
     if (!rasChannel.WriteTo(requestPDU, requestAddresses, PFalse))
       break;
 
     PTRACE(3, "Trans\tWaiting on response to seqnum=" << requestPDU.GetSequenceNumber()
-           << " for " << setprecision(1) << endpoint.GetRasRequestTimeout() << " seconds");
+           << " for " << setprecision(1) << timeout << " seconds");
 
     do {
       // Wait for a response
@@ -597,7 +603,7 @@ PBoolean H323Transactor::Request::Poll(H323Transactor & rasChannel)
     } while (responseResult == AwaitingResponse);
 
     PTRACE(1, "Trans\tTimeout on request seqnum=" << requestPDU.GetSequenceNumber()
-           << ", try #" << retry << " of " << endpoint.GetRasRequestRetries());
+           << ", try #" << retry << " of " << numRetries);
   }
 
   return PFalse;

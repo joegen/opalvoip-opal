@@ -302,12 +302,12 @@ typedef enum OpalMessageType {
 /**Type code the silence detect algorithm modes.
    This is used by the OpalCmdSetGeneralParameters command in the OpalParamGeneral structure.
   */
-typedef enum OpalSilenceDetectModes {
+typedef enum OpalSilenceDetectMode {
   OpalSilenceDetectNoChange,  /**< No change to the silence detect mode. */
   OpalSilenceDetectDisabled,  /**< Indicate silence detect is disabled */
   OpalSilenceDetectFixed,     /**< Indicate silence detect uses a fixed threshold */
   OpalSilenceDetectAdaptive   /**< Indicate silence detect uses an adaptive threashold */
-} OpalSilenceDetectModes;
+} OpalSilenceDetectMode;
 
 
 /**Type code the echo cancellation algorithm modes.
@@ -421,7 +421,7 @@ typedef struct OpalParamGeneral {
                                            received this sets the maximum time of the adaptive jitter buffer
                                            which smooths out irregularities in the transmission of audio
                                            data over the Internet. */
-  OpalSilenceDetectModes m_silenceDetectMode; /**< Silence detection mode. This controls the silence
+  OpalSilenceDetectMode m_silenceDetectMode; /**< Silence detection mode. This controls the silence
                                            detection algorithm for audio transmission: 0=no change,
                                            1=disabled, 2=fixed, 3=adaptive. */
   unsigned     m_silenceThreshold;    /**< Silence detection threshold value. This applies if
