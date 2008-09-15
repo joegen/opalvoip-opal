@@ -142,7 +142,8 @@ class H323Gatekeeper : public H225_RAS
     /**Register with gatekeeper.
      */
     PBoolean RegistrationRequest(
-      PBoolean autoReregister = PTrue  ///<  Automatic register on unregister
+      PBoolean autoReregister = PTrue,  ///<  Automatic register on unregister
+      PBoolean didGkDiscovery = PFalse  ///<  discovery procedure was done right before
     );
 
     /**Unregister with gatekeeper.
