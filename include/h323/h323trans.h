@@ -232,7 +232,9 @@ class H323Transactor : public PObject
           const H323TransportAddressArray & addresses
         );
 
-        PBoolean Poll(H323Transactor &);
+        PBoolean Poll(H323Transactor &,
+                      unsigned numRetries = 0,
+                      PTimeInterval timeout = 0);
         void CheckResponse(unsigned, const PASN_Choice *);
         void OnReceiveRIP(unsigned milliseconds);
 
