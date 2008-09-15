@@ -295,35 +295,27 @@ AC_DEFUN([OPAL_FIND_PTLIB],
 
             RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
             DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
-            
-            if test "x${DEBUG_BUILD}" = xyes; then
-              DEFAULT_LIBS="$DEBUG_LIBS"
-            else
-              DEFAULT_LIBS="$RELEASE_LIBS"
-            fi
-	    
+            	    
             export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
 
           dnl This segment looks for PTLIB on the system
           else
-            if test "x${DEBUG_BUILD}" = xyes; then
-              if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-                PKG_CHECK_MODULES(PTLIB, ptlib_debug >= ${PTLIB_REC_VERSION})
-              else
-                PKG_CHECK_MODULES(PTLIB, ptlib_debug)
-              fi
+            if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
+              PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
             else
-              if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-                PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
-              else
-                PKG_CHECK_MODULES(PTLIB, ptlib)
-              fi            
-            fi
-            DEFAULT_LIBS="$PTLIB_LIBS"
-            DEBUG_LIBS="$PTLIB_LIBS"
-            RELEASE_LIBS="$PTLIB_LIBS"
+              PKG_CHECK_MODULES(PTLIB, ptlib)
+            fi            
+
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
+            DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
+            RELEASE_LIBS="$PTLIB_LIBS"
+          fi
+          
+          if test "x${DEBUG_BUILD}" = xyes; then
+            DEFAULT_LIBS="$DEBUG_LIBS"
+          else
+            DEFAULT_LIBS="$RELEASE_LIBS"
           fi
 
           echo "Version:  ${PTLIB_VERSION}"
