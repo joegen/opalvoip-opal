@@ -77,6 +77,15 @@ class H323Gatekeeper : public H225_RAS
      */
     ~H323Gatekeeper();
   //@}
+    
+  /**@name Overrides from H323Transactor */
+  //@{
+    virtual PBoolean WriteTo(
+      H323TransactionPDU & pdu,
+      const H323TransportAddressArray & addresses,
+      PBoolean callback = PTrue
+    );
+  //@}
 
   /**@name Overrides from H225_RAS */
   //@{
@@ -281,7 +290,7 @@ class H323Gatekeeper : public H225_RAS
 
   protected:
     bool StartGatekeeper(const H323TransportAddress & address);
-    bool DiscoverGatekeeper();
+    virtual bool DiscoverGatekeeper();
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
 	
     void Connect(const H323TransportAddress & address, const PString & gatekeeperIdentifier);

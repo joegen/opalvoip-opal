@@ -233,18 +233,7 @@ bool H323Gatekeeper::DiscoverGatekeeper()
   requests.SetAt(request.sequenceNumber, &request);
   requestsMutex.Signal();
   
-  bool ok = false;
-  
-  for (unsigned retry = 0; retry < endpoint.GetGatekeeperRequestRetries(); retry++) {
-    if (!transport->WriteConnect(WriteGRQ, &pdu)) {
-      PTRACE(1, "RAS\tError writing discovery PDU: " << transport->GetErrorText());
-      break;
-    }
-    
-    ok = request.Poll(*this);
-    if (ok)
-      break;
-  }
+  request.Poll(*this, endpoint.GetGatekeeperRequestRetries(), endpoint.GetGatekeeperRequestTimeout());
   
   transport->SetInterface(transport->GetLastReceivedInterface());
   
@@ -259,6 +248,21 @@ bool H323Gatekeeper::DiscoverGatekeeper()
   requestsMutex.Signal();
   
   return discoveryComplete;
+}
+
+
+PBoolean H323Gatekeeper::WriteTo(H323TransactionPDU & pdu, 
+                                 const H323TransportAddressArray & addresses, 
+                                 PBoolean callback)
+{
+  if (!discoveryComplete && pdu.GetPDU().GetTag() == H225_RasMessage::e_gatekeeperRequest) {
+    if (!transport->WriteConnect(WriteGRQ, &pdu.GetPDU())) {
+      PTRACE(1, "RAS\tError writing discovery PDU: " << transport->GetErrorText());
+      return PFalse;
+    }
+    return PTrue;
+  }
+  return H323Transactor::WriteTo(pdu, addresses, callback);
 }
 
 
