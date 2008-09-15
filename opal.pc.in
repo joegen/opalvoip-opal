@@ -12,7 +12,7 @@ Description: Open Phone Application Library
 Version: @OPAL_VERSION@
 Requires:@PKG_REQUIRES@
 Libs: -L${libdir} -lopal${suffix} @PKG_LIBS@ 
-Cflags: -I${includedir} @PKG_CFLAGS@
+Cflags: -I${includedir} -I${includedir}/opal @PKG_CFLAGS@
 
 #Optional OPAL features
 OPAL_H323=@OPAL_H323@
