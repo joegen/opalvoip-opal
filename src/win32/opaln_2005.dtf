@@ -33317,7 +33317,6 @@ EXPORTS
     ?IsOpen@OpalRecordManager@@QBE_NXZ @42882 NONAME
     ?IsOpen@PMonitoredSockets@@QBE_NXZ @44198 NONAME
     ?IsOriginating@OpalConnection@@QBE_NXZ @39064 NONAME
-    ?IsPaused@OpalMediaStream@@QBE_NXZ @42883 NONAME
     ?IsPingFrame@IAX2FullFrame@@QAE_NXZ @39065 NONAME
     ?IsPlainTextAuthentication@IAX2IeAuthMethods@@QAE_NXZ @39066 NONAME
     ?IsPongFrame@IAX2FullFrame@@QAE_NXZ @39067 NONAME
