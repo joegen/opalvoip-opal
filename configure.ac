@@ -258,21 +258,6 @@ fi
 CFLAGS="$CFLAGS $SHARED_CFLAGS"
 CXXFLAGS="$CXXFLAGS $SHARED_CFLAGS"
 
-
- case "$target_os" in
-     solaris*)
-       opal_release_flags="-xO3 -DSOLARIS"
-       opal_debug_flags="-g -D_DEBUG -DSOLARIS"
-     ;;
-     *)
-       opal_release_flags="-Os"
-       opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
-     ;;
- esac
-
-DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
-RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
-
 OPAL_DETERMINE_DEBUG()
 
 #-fno-exceptions per configure option

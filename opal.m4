@@ -84,6 +84,19 @@ AC_DEFUN([OPAL_DETERMINE_DEBUG],
                         [AC_HELP_STRING([--enable-debug],[Enable debug build])],
                         [DEBUG_BUILD=$enableval],
                         [DEBUG_BUILD=no])
+           case "$target_os" in
+               solaris*)
+                 opal_release_flags="-xO3 -DSOLARIS"
+                 opal_debug_flags="-g -D_DEBUG -DSOLARIS"
+               ;;
+               *)
+                 opal_release_flags="-Os"
+                 opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
+               ;;
+           esac
+
+          DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
+          RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
 
           if test "x${DEBUG_BUILD}" = xyes; then
             DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_debug_flags"
