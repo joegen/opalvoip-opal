@@ -393,12 +393,6 @@ endif # ifeq ($(OPAL_AEC), yes)
 
 ####################################################
 
-
-
-####################################################
-
-####################################################
- 
 ifeq ($(OSTYPE),Darwin)
 CFLAGS		+= -fno-common -dynamic
 ARCHIVE			:= libtool -static -o
@@ -411,14 +405,7 @@ LDFLAGS += -enable-auto-import -enable-runtime-pseudo-reloc -enable-stdcall-fixu
 endif # mingw
 
 ###############################################################################
-#
-# define some common stuff
-#
-# This target was intetionally put here since make dumbly executes the first it finds
-# when called without an explicit target.
-default:  Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED) subdirs
-subdirs:
-	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
+# Build rules
 
 .SUFFIXES:	.cxx .prc 
 
@@ -471,17 +458,43 @@ $(OPAL_DEPDIR)/%.dep : %.c
 	@printf %s $(OPAL_OBJDIR)/ > $@
 	$(CC) $(CFLAGS:-g=) -M $< >> $@
 
+
 #####################################################################
-#
-# Include all of the dependencies
-#
-######################################################################
+# Main targets
+
+# This target was intetionally put here since make dumbly executes the first it finds
+# when called without an explicit target.
+
+default:  Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED) subdirs
+
+subdirs:
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
+
+clean:
+	rm -rf $(OPAL_LIBDIR)
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
 
 depend:   Makefile $(DEPS) 
 
 ifneq ($(wildcard $(OPAL_DEPDIR)/*.dep),)
 include $(OPAL_DEPDIR)/*.dep
 endif
+
+Makefile: Makefile.in configure
+	@echo
+	@echo "*******************************************************"
+	@echo Makefile is not up to date, is a ./configure necessary?
+	@echo "*******************************************************"
+	@false
+
+ifdef JAVA_WRAPPER
+$(JAVA_WRAPPER): $(JAVA_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
+	swig -java -package org.opalvoip -w451 -I$(OPAL_INCDIR) -o $@ $<
+endif
+
+
+#####################################################################
+# Targets for the libraries
 
 $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC): $(OBJS) 
 	@if [ ! -d $(OPAL_LIBDIR) ] ; then mkdir $(OPAL_LIBDIR) ; fi
@@ -509,29 +522,10 @@ ifeq ($(OPAL_SHARED_LIB),yes)
 
 endif # OPAL_SHARED_LIB
 
-###############################################################################
-#### Subdirectories
 
-Makefile: Makefile.in configure
-	@echo
-	@echo "*******************************************************"
-	@echo Makefile is not up to date, is a ./configure necessary?
-	@echo "*******************************************************"
-	@false
+#####################################################################
+# Install targets
 
-clean:
-	rm -rf $(OPAL_LIBDIR)
-	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
-
-ifdef JAVA_WRAPPER
-
-$(JAVA_WRAPPER): $(JAVA_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
-	swig -java -package org.opalvoip -w451 -I$(OPAL_INCDIR) -o $@ $<
-
-endif
-
-
-#### Install targets
 install:
 	mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir)
 	$(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)
@@ -572,6 +566,11 @@ uninstall:
 	rm -rf $(DESTDIR)$(datarootdir)/opal
 
 	$(MAKE) -C plugins uninstall
+
+
+###############################################################################
+# A collection or random useful targets
+
 docs: FORCE
 	cat opal_cfg.dxy > /tmp/docs.dxy ; echo HAVE_DOT=NO >> /tmp/docs.dxy
 	doxygen /tmp/docs.dxy
@@ -582,13 +581,23 @@ graphdocs: FORCE
 
 opt:
 	$(MAKE) DEBUG_BUILD=no
+
+optdepend:
+	$(MAKE) DEBUG_BUILD=no depend
+
 debug:
 	$(MAKE) DEBUG_BUILD=yes
 
-both:
-	$(MAKE) DEBUG_BUILD=no
-	$(MAKE) DEBUG_BUILD=yes
-                                
- 
+debugdepend:
+	$(MAKE) DEBUG_BUILD=yes depend
+
+both: opt debug
+
+all: optdepend opt debugdepend debug
+
+update:
+	svn -q update
+	$(MAKE) all
+
 
 # End of file #################################################################
