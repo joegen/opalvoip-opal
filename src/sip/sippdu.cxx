@@ -2209,6 +2209,7 @@ PBoolean SIPTransaction::Start()
   else
     completionTimer = endpoint.GetNonInviteTimeout();
 
+  PTRACE(4, "SIP\tTransaction timers set: retry=" << retryTimer << ", completion=" << completionTimer);
   return true;
 }
 

@@ -75,6 +75,7 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   , mediaPatch(NULL)
 {
   connection.SafeReference();
+  PTRACE(5, "Media\tCreated " << (isSource ? "Source" : "Sink") << ' ' << this);
 }
 
 
@@ -82,6 +83,7 @@ OpalMediaStream::~OpalMediaStream()
 {
   Close();
   connection.SafeDereference();
+  PTRACE(5, "Media\tDestroyed " << (isSource ? "Source" : "Sink") << ' ' << this);
 }
 
 
@@ -415,8 +417,8 @@ void OpalMediaStream::EnableJitterBuffer() const
 
 void OpalMediaStream::SetPaused(bool p)
 {
+  PTRACE_IF(3, paused != p, "Media\t" << (p ? "Paused" : "Resumed") << " stream " << *this);
   paused = p;
-  PTRACE(3, "Media\t" << (p ? "Paused" : "Resumed") << " stream " << *this);
 }
 
 
