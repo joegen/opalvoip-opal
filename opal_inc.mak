@@ -52,11 +52,10 @@ default_target:
 endif
 
 
-#ENDLDFLAGS        = $(LIBS)
-#LIBDIRS          += $(OPALDIR)
-
 LDFLAGS	         += -L$(OPAL_LIBDIR)
 LDLIBS	         := -l$(subst lib,,$(LIB_NAME))$(LIB_TYPE) $(LDLIBS)
+
+$(TARGET) :	$(OPAL_LIBDIR)/$(OPAL_FILE)
 
 
 # End of file
