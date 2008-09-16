@@ -37,6 +37,8 @@
 #endif
 
 #include <opal/buildopts.h>
+
+#include <opal/buildopts.h>
 #include <opal/rtpconn.h>
 #include <sip/sippdu.h>
 #if OPAL_VIDEO

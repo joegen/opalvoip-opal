@@ -36,6 +36,8 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
 #include <ptlib/pluginmgr.h>
 #include <ptlib/sound.h>
 #include <lids/lidplugin.h>

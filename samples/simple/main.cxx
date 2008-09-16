@@ -97,7 +97,7 @@ void SimpleOpalProcess::Main()
              "-disable-grq."
              "h-help."
              "H-no-h323."
-#if P_SSL
+#if OPAL_PTLIB_SSL
              "-no-h323s."
              "-h323s-listen:"
              "-h323s-gk:"
@@ -229,12 +229,12 @@ void SimpleOpalProcess::Main()
 #if OPAL_H323
             "H.323 options:\n"
             "  -H --no-h323            : Disable H.323 protocol.\n"
-#if P_SSL
+#if OPAL_PTLIB_SSL
             "     --no-h323s           : Do not create secure H.323 endpoint\n"
 #endif
             "  -g --gatekeeper host    : Specify gatekeeper host, '*' indicates broadcast discovery.\n"
             "  -G --gk-id name         : Specify gatekeeper identifier.\n"
-#if P_SSL
+#if OPAL_PTLIB_SSL
             "     --h323s-gk host      : Specify gatekeeper host for secure H.323 endpoint\n"
 #endif
             "  -R --require-gatekeeper : Exit if gatekeeper discovery fails.\n"
@@ -244,7 +244,7 @@ void SimpleOpalProcess::Main()
             "  -f --fast-disable       : Disable fast start.\n"
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
             "     --h323-listen iface  : Interface/port(s) to listen for H.323 requests\n"
-#if P_SSL
+#if OPAL_PTLIB_SSL
             "     --h323s-listen iface : Interface/port(s) to listen for secure H.323 requests\n"
 #endif
             "                          : '*' is all interfaces, (default tcp$:*:1720)\n"
@@ -743,7 +743,7 @@ PBoolean MyManager::Initialise(PArgList & args)
       AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
       AddRouteEntry("pots:.*           = h323:<da>");
       AddRouteEntry("pc:.*             = h323:<da>");
-#if P_SSL
+#if OPAL_PTLIB_SSL
       {
         AddRouteEntry("pots:.*\\*.*\\*.* = h323s:<dn2ip>");
         AddRouteEntry("pots:.*           = h323s:<da>");
@@ -757,7 +757,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     if (potsEP != NULL) {
 #if OPAL_H323
       AddRouteEntry("h323:.* = pots:<du>");
-#if P_SSL
+#if OPAL_PTLIB_SSL
       //if (h323sEP != NULL) 
         AddRouteEntry("h323s:.* = pots:<du>");
 #endif
@@ -771,7 +771,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     if (pcssEP != NULL) {
 #if OPAL_H323
       AddRouteEntry("h323:.* = pc:<du>");
-#if P_SSL
+#if OPAL_PTLIB_SSL
       //if (h323sEP != NULL) 
         AddRouteEntry("h323s:.* = pc:<du>");
 #endif
@@ -989,7 +989,7 @@ PBoolean MyManager::InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPo
 #endif  //OPAL_H323
 
 
-#if P_CONFIG_FILE
+#if OPAL_PTLIB_CONFIG_FILE
 void MyManager::NewSpeedDial(const PString & ostr)
 {
   PString str = ostr;
@@ -1007,7 +1007,7 @@ void MyManager::NewSpeedDial(const PString & ostr)
  
   cout << "Speedial " << key << " set to " << data << endl;
 }
-#endif // P_CONFIG_FILE
+#endif // OPAL_PTLIB_CONFIG_FILE
  
 
 void MyManager::Main(PArgList & args)
@@ -1122,7 +1122,7 @@ void MyManager::Main(PArgList & args)
           cout << "Could not reject connection " << pcssEP->incomingConnectionToken << endl;
         break;
 
-#if P_CONFIG_FILE
+#if OPAL_PTLIB_CONFIG_FILE
       case 'l' :
         ListSpeedDials();
         break;
@@ -1130,7 +1130,7 @@ void MyManager::Main(PArgList & args)
       case 'd' :
         NewSpeedDial(line);
         break;
-#endif // P_CONFIG_FILE
+#endif // OPAL_PTLIB_CONFIG_FILE
         
       case 'h' :
         HangupCurrentCall();
@@ -1305,7 +1305,7 @@ void MyManager::StartCall(const PString & dest)
 
   PString str = dest;
 
-#if P_CONFIG_FILE
+#if OPAL_PTLIB_CONFIG_FILE
   // check for speed dials, and match wild cards as we go
   PString key, prefix;
   if ((str.GetLength() > 1) && (str[str.GetLength()-1] == '#')) {
@@ -1335,7 +1335,7 @@ void MyManager::StartCall(const PString & dest)
     if (str.IsEmpty())
       cout << "Speed dial \"" << key << "\" not defined\n";
   }
-#endif // P_CONFIG_FILE
+#endif // OPAL_PTLIB_CONFIG_FILE
 
   if (!str.IsEmpty())
     SetUpCall(srcEP, str, currentCallToken);
@@ -1343,7 +1343,7 @@ void MyManager::StartCall(const PString & dest)
   return;
 }
 
-#if P_CONFIG_FILE
+#if OPAL_PTLIB_CONFIG_FILE
 void MyManager::ListSpeedDials()
 {
   PConfig config("Speeddial");
@@ -1357,7 +1357,7 @@ void MyManager::ListSpeedDials()
   for (i = 0; i < keys.GetSize(); i++)
     cout << keys[i] << ":   " << config.GetString(keys[i]) << endl;
 }
-#endif // P_CONFIG_FILE
+#endif // OPAL_PTLIB_CONFIG_FILE
 
 void MyManager::OnEstablishedCall(OpalCall & call)
 {

@@ -36,19 +36,19 @@
 #include <ptlib.h>
 #endif
 
-#ifndef P_AUDIO
-#error Cannot compile without PTLib sound channel support!
-#endif
-
-
 #include <wx/wx.h>
 #include <wx/dataobj.h>
 
 #include <opal/manager.h>
+
+#ifndef OPAL_PTLIB_AUDIO
+#error Cannot compile without PTLib sound channel support!
+#endif
+
 #include <opal/pcss.h>
 
 #ifndef OPAL_H323
-//#error Must compile with H.323 enabled!
+#error Must compile with H.323 enabled!
 #endif
 
 #include <h323/h323.h>

@@ -34,6 +34,8 @@
 #pragma implementation "lidep.cxx"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <lids/lidep.h>
 
 #include <opal/manager.h>

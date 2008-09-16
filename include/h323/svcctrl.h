@@ -34,6 +34,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 class H225_ServiceControlDescriptor;
 class H225_ServiceControlIndication;

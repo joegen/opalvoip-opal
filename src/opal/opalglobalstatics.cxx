@@ -90,7 +90,7 @@ namespace PWLibStupidLinkerHacks {
 
 int opalLoader;
 
-#ifdef P_WAVFILE
+#if OPAL_PTLIB_WAVFILE
 extern int opalwavfileLoader;
 #endif
 

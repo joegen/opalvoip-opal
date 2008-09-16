@@ -35,7 +35,7 @@
 #include <opal/ivr.h>
 
 
-#ifndef P_AUDIO
+#ifndef OPAL_PTLIB_AUDIO
 #error Cannot compile without PTLib sound channel support!
 #endif
 
@@ -123,10 +123,10 @@ class MyManager : public OpalManager
     void StartCall(const PString & ostr);
     void HoldRetrieveCall();
     void TransferCall(const PString & dest);
-#if P_CONFIG_FILE
+#if OPAL_PTLIB_CONFIG_FILE
     void NewSpeedDial(const PString & ostr);
     void ListSpeedDials();
-#endif // P_CONFIG_FILE
+#endif // OPAL_PTLIB_CONFIG_FILE
     void SendMessageToRemoteNode(const PString & ostr);
     void SendTone(const char tone);
 };

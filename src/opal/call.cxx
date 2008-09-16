@@ -35,6 +35,8 @@
 #pragma implementation "call.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/call.h>
 
 #include <opal/manager.h>

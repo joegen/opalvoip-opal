@@ -29,8 +29,8 @@
  */
 
 #include <ptlib.h>
-
 #include <opal/buildopts.h>
+
 #if OPAL_SIP
 
 #ifdef __GNUC__
@@ -449,7 +449,7 @@ void SIPURL::Sanitise(UsageContext context)
 }
 
 
-#if P_DNS
+#if OPAL_PTLIB_DNS
 PBoolean SIPURL::AdjustToDNS(PINDEX entry)
 {
   // RFC3263 states we do not do lookup if explicit port mentioned

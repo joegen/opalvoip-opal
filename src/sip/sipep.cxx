@@ -29,9 +29,9 @@
  */
 
 #include <ptlib.h>
-
 #include <opal/buildopts.h>
-#ifdef OPAL_SIP
+
+#if OPAL_SIP
 
 #ifdef __GNUC__
 #pragma implementation "sipep.h"
@@ -81,7 +81,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   GetOpalCiscoNSE();
 #endif
 
-#ifdef P_SSL
+#if OPAL_PTLIB_SSL
   manager.AttachEndPoint(this, "sips");
 #endif
 
@@ -132,7 +132,7 @@ void SIPEndPoint::ShutDown()
 PString SIPEndPoint::GetDefaultTransport() const 
 {  
   return "udp$,tcp$"
-#ifdef P_SSL
+#if OPAL_PTLIB_SSL
          ",tcps$:5061"
 #endif
     ; 
@@ -276,7 +276,7 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
 
 static PString TranslateENUM(const PString & remoteParty)
 {
-#if P_DNS
+#if OPAL_PTLIB_DNS
   // if there is no '@', and then attempt to use ENUM
   if (remoteParty.Find('@') == P_MAX_INDEX) {
 

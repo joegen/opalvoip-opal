@@ -38,6 +38,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/rtpconn.h>
 #include <opal/guid.h>
@@ -105,7 +106,7 @@ class H45011Handler;
 
 class OpalCall;
 
-#ifdef OPAL_H460
+#if OPAL_H460
 class H460_FeatureSet;
 #endif
 
@@ -2034,7 +2035,7 @@ class H323Connection : public OpalRTPConnection
     H45011Handler                    * h45011handler;
 #endif
 
-#ifdef OPAL_H460
+#if OPAL_H460
     H460_FeatureSet * features;
 #endif
 

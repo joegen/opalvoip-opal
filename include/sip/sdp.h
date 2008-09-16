@@ -36,6 +36,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/transports.h>
 #include <opal/mediatype.h>

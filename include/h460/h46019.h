@@ -13,7 +13,7 @@
 
 #include <opal/buildopts.h>
 
-#ifdef OPAL_H460
+#if OPAL_H460
 
 #include <ptclib/asner.h>
 

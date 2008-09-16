@@ -117,7 +117,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 
   secondaryConnectionsActive.DisallowDeleteObjects();
   
-#ifdef OPAL_H460
+#if OPAL_H460
   disableH460 = FALSE;
 #endif
 
@@ -144,7 +144,7 @@ void H323EndPoint::ShutDown()
 PString H323EndPoint::GetDefaultTransport() const
 {
   return "tcp$"
-#ifdef P_SSL
+#if OPAL_PTLIB_SSL
          ",tcps$:1300"
 #endif
     ;
@@ -729,7 +729,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
 {
   PURL url(remoteParty, GetPrefixName()); // Parses as per RFC3508
 
-#if P_DNS
+#if OPAL_PTLIB_DNS
 
   // if there is no gatekeeper, try altarnate address lookup methods
   if (gatekeeper == NULL) {
@@ -783,7 +783,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
   if (url.GetScheme() == "callto") {
     // Do not yet support ILS
     if (type == "directory") {
-#if P_LDAP
+#if OPAL_PTLIB_LDAP
       PString server = url.GetHostName();
       if (server.IsEmpty())
         server = GetDefaultILSServer();
@@ -1283,7 +1283,7 @@ void H323EndPoint::TranslateTCPAddress(PIPSocket::Address & localAddr,
 
 PBoolean H323EndPoint::OnSendFeatureSet(unsigned id, H225_FeatureSet & featureSet)
 {
-#ifdef H323_H460
+#if OPAL_H460
   return features.SendFeature(id, featureSet);
 #else
   return false;
@@ -1293,7 +1293,7 @@ PBoolean H323EndPoint::OnSendFeatureSet(unsigned id, H225_FeatureSet & featureSe
 
 void H323EndPoint::OnReceiveFeatureSet(unsigned id, const H225_FeatureSet & featureSet)
 {
-#ifdef H323_H460
+#if OPAL_H460
   features.ReceiveFeature(id, featureSet);
 #endif
 }
@@ -1301,7 +1301,7 @@ void H323EndPoint::OnReceiveFeatureSet(unsigned id, const H225_FeatureSet & feat
 
 void H323EndPoint::LoadBaseFeatureSet()
 {
-#ifdef H323_H460
+#if OPAL_H460
   features.AttachEndPoint(this);
   features.LoadFeatureSet(H460_Feature::FeatureBase);
 #endif

@@ -35,6 +35,8 @@
 #pragma implementation "mediacmd.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
 #include <codec/opalplugin.h>

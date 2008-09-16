@@ -29,12 +29,12 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+
 #ifdef __GNUC__
 #pragma implementation "h224.h"
 #pragma implementation "h224handler.h"
 #endif
-
-#include <opal/buildopts.h>
 
 #if OPAL_H224FECC
 

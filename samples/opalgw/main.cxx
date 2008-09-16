@@ -40,7 +40,7 @@ const WORD DefaultHTTPPort = 6725;
 static const char UsernameKey[] = "Username";
 static const char PasswordKey[] = "Password";
 static const char LogLevelKey[] = "Log Level";
-#if P_SSL
+#if OPAL_PTLIB_SSL
 static const char HTTPCertificateFileKey[]  = "HTTP Certificate";
 #endif
 static const char HttpPortKey[] = "HTTP Port";
@@ -181,7 +181,7 @@ PBoolean OpalGw::Initialise(const char * initMsg)
                                   GetLogLevel(),
                                   "1=Fatal only, 2=Errors, 3=Warnings, 4=Info, 5=Debug"));
 
-#if P_SSL
+#if OPAL_PTLIB_SSL
   // SSL certificate file.
   PString certificateFile = cfg.GetString(HTTPCertificateFileKey, "server.pem");
   rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 25, certificateFile));
@@ -266,7 +266,7 @@ MyManager::MyManager()
   sipEP = NULL;
 #endif
   potsEP = NULL;
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
   ivrEP = NULL;
 #endif
 
@@ -306,12 +306,12 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     sipEP = new SIPEndPoint(*this);
 #endif
 
-#ifdef OPAL_LID
+#if OPAL_LID
   if (potsEP == NULL)
     potsEP = new OpalLineEndPoint(*this);
 #endif
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
   if (ivrEP == NULL)
     ivrEP = new OpalIVREndPoint(*this);
 #endif
@@ -447,7 +447,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
 
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
   // Create IVR protocol handler
   PString vxml = cfg.GetString(VXMLKey);
   rsrc->Add(new PHTTPStringField(VXMLKey, 25, vxml));

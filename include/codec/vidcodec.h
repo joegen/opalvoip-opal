@@ -35,6 +35,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/transcoders.h>
 
@@ -140,7 +141,7 @@ class OpalVideoTranscoder : public OpalTranscoder
       RTP_DataFrame & output        ///<  Output data
     );
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
   //@}
@@ -150,7 +151,7 @@ class OpalVideoTranscoder : public OpalTranscoder
     PINDEX outDataSize;
     bool   forceIFrame;
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
     DWORD m_totalFrames;
     DWORD m_keyFrames;
 #endif

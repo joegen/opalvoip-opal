@@ -38,6 +38,7 @@
  */
 
 #include <ptlib.h>
+#include <opal/buildopts.h>
 #include <typeinfo>
 
 #ifdef P_USE_PRAGMA

@@ -29,8 +29,8 @@
  */
 
 #include <ptlib.h>
-
 #include <opal/buildopts.h>
+
 #if OPAL_SIP
 
 #ifdef __GNUC__
@@ -100,7 +100,7 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
     if (tokens[offset] *= "IN") {
       if (
         (tokens[offset+1] *= "IP4")
-#if P_HAS_IPV6
+#if OPAL_PTLIB_IPV6
         || (tokens[offset+1] *= "IP6")
 #endif
         ) {

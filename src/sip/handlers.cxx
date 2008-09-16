@@ -29,8 +29,8 @@
  */
 
 #include <ptlib.h>
-
 #include <opal/buildopts.h>
+
 #if OPAL_SIP
 
 #ifdef __GNUC__
@@ -43,7 +43,7 @@
 #include <ptclib/enum.h>
 #include <sip/sipep.h>
 
-#ifdef P_EXPAT
+#if OPAL_PTLIB_EXPAT
 #include <ptclib/pxml.h>
 #endif
 
@@ -821,7 +821,7 @@ PBoolean SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
 }
 
 
-#ifdef P_EXPAT
+#if OPAL_PTLIB_EXPAT
 PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
 {
   PString body = request.GetEntityBody();

@@ -36,9 +36,10 @@
 #pragma interface
 #endif
 
-#include <ptbuildopts.h>
 
-#ifndef P_AUDIO
+#include <opal/buildopts.h>
+
+#ifndef OPAL_PTLIB_AUDIO
 #ifdef _MSC_VER
 #pragma message("PTLib soundcard support not available")
 #else
@@ -47,7 +48,6 @@
 #else
 
 #include <ptlib/sound.h>
-#include <opal/buildopts.h>
 #include <opal/endpoint.h>
 
 class OpalPCSSConnection;
@@ -419,7 +419,7 @@ class OpalPCSSConnection : public OpalConnection
     unsigned           soundChannelBuffers;
 };
 
-#endif // P_AUDIO
+#endif // OPAL_PTLIB_AUDIO
 
 #endif // __OPAL_PCSS_H
 

@@ -30,6 +30,7 @@
  * $Author$
  * $Date$
  */
+#include <opal/buildopts.h>
 
 #include <h323/h323ep.h>
 #include <h323/h323con.h>

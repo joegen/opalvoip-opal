@@ -38,6 +38,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <ptlib/sockets.h>
 #include <h323/h323con.h>

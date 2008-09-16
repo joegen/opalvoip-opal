@@ -37,6 +37,10 @@
  *
  *
  */
+#ifndef CAUSECODE_H
+#define CAUSECODE_H
+
+#include <opal/buildopts.h>
 
 #include <iax2/ies.h>
 
@@ -123,6 +127,8 @@ class IAX2IeCauseCode : public IAX2IeByte
 
 };
 
+#endif //CAUSECODE_H
+
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */
 
@@ -133,4 +139,3 @@ class IAX2IeCauseCode : public IAX2IeByte
  * c-basic-offset:2
  * End:
  */
-

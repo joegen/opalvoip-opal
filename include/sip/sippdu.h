@@ -36,6 +36,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <ptclib/mime.h>
 #include <ptclib/url.h>

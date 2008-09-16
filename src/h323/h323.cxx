@@ -63,7 +63,7 @@
 #include <h224/h323h224.h>
 #endif
 
-#ifdef OPAL_H460
+#if OPAL_H460
 #include <h460/h460.h>
 #include <h460/h4601.h>
 #endif
@@ -104,7 +104,7 @@ const char * H323Connection::GetFastStartStateName(FastStartStates s)
 }
 #endif
 
-#ifdef OPAL_H460
+#if OPAL_H460
 static void ReceiveSetupFeatureSet(const H323Connection * connection, const H225_Setup_UUIE & pdu)
 {
   H225_FeatureSet fs;
@@ -174,7 +174,7 @@ H323Connection::H323Connection(OpalCall & call,
   : OpalRTPConnection(call, ep, token, options, stringOptions)
   , endpoint(ep)
   , gkAccessTokenOID(ep.GetGkAccessTokenOID())
-#ifdef OPAL_H460
+#if OPAL_H460
   , features(ep.GetFeatureSet())
 #endif
 {
@@ -308,7 +308,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   alertDone   = PFalse;
   
-#ifdef OPAL_H460
+#if OPAL_H460
   features->LoadFeatureSet(H460_Feature::FeatureSignal, this);
 #endif
 }
@@ -331,7 +331,7 @@ H323Connection::~H323Connection()
   delete connectPDU;
   delete progressPDU;
   delete holdMediaChannel;
-#ifdef H323_H460
+#if OPAL_H460
   delete features;
 #endif
   delete controlListener;
@@ -578,7 +578,7 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   }
 #endif
 
-#ifdef H323_H460
+#if OPAL_H460
    ReceiveFeatureData<H323SignalPDU>(this, q931.GetMessageType(), pdu);
 #endif
 
@@ -780,7 +780,7 @@ void H323Connection::OnEstablished()
 
 void H323Connection::OnSendARQ(H225_AdmissionRequest & arq)
 {
-#ifdef H323_H460
+#if OPAL_H460
   H225_FeatureSet fs;
   if (OnSendFeatureSet(H460_MessageType::e_admissionRequest, fs)) {
     if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
@@ -804,7 +804,7 @@ void H323Connection::OnSendARQ(H225_AdmissionRequest & arq)
 
 void H323Connection::OnReceivedACF(const H225_AdmissionConfirm & acf)
 {
-#ifdef H323_H460
+#if OPAL_H460
   if (acf.HasOptionalField(H225_AdmissionConfirm::e_genericData)) {
     const H225_ArrayOf_GenericData & data = acf.m_genericData;
 
@@ -825,7 +825,7 @@ void H323Connection::OnReceivedACF(const H225_AdmissionConfirm & acf)
 
 void H323Connection::OnReceivedARJ(const H225_AdmissionReject & arj)
 {
-#ifdef H323_H460
+#if OPAL_H460
   if (arj.HasOptionalField(H225_AdmissionReject::e_genericData)) {
     const H225_ArrayOf_GenericData & data = arj.m_genericData;
 
@@ -846,7 +846,7 @@ void H323Connection::OnReceivedARJ(const H225_AdmissionReject & arj)
 
 void H323Connection::OnSendIRR(H225_InfoRequestResponse & irr) const
 {
-#ifdef H323_H460
+#if OPAL_H460
   H225_FeatureSet fs;
   if (OnSendFeatureSet(H460_MessageType::e_inforequestresponse, fs)) {
     if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
@@ -868,7 +868,7 @@ void H323Connection::OnSendIRR(H225_InfoRequestResponse & irr) const
 
 void H323Connection::OnSendDRQ(H225_DisengageRequest & drq) const
 {
-#ifdef H323_H460
+#if OPAL_H460
   H225_FeatureSet fs;
   if (OnSendFeatureSet(H460_MessageType::e_disengagerequest, fs)) {
     if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
@@ -1017,7 +1017,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
       localDestinationAddress = '*';
   }
   
-#ifdef OPAL_H460
+#if OPAL_H460
   ReceiveSetupFeatureSet(this, setup);
 #endif
 
@@ -1318,7 +1318,7 @@ PBoolean H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(call.m_destinationInfo);
   
-#ifdef OPAL_H460
+#if OPAL_H460
   ReceiveFeatureSet<H225_CallProceeding_UUIE>(this, H460_MessageType::e_callProceeding, call);
 #endif
 
@@ -1369,7 +1369,7 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(alert.m_destinationInfo);
   
-#ifdef OPAL_H460
+#if OPAL_H460
   ReceiveFeatureSet<H225_Alerting_UUIE>(this, H460_MessageType::e_alerting, alert);
 #endif
 
@@ -1411,7 +1411,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(connect.m_destinationInfo);
   
-#ifdef OPAL_H460
+#if OPAL_H460
   ReceiveFeatureSet<H225_Connect_UUIE>(this, H460_MessageType::e_connect, connect);
 #endif
 
@@ -1496,7 +1496,7 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
     return PFalse;
   const H225_Facility_UUIE & fac = pdu.m_h323_uu_pdu.m_h323_message_body;
   
-#ifdef OPAL_H460
+#if OPAL_H460
   // Do not process H.245 Control PDU's
   if (!pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h245Control))
     ReceiveFeatureSet<H225_Facility_UUIE>(this, H460_MessageType::e_facility, fac);
@@ -1640,7 +1640,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
       }
 #endif
           
-#ifdef OPAL_H460
+#if OPAL_H460
       ReceiveFeatureSet<H225_ReleaseComplete_UUIE>(this, H460_MessageType::e_releaseComplete, rc);
 #endif
 
@@ -1898,7 +1898,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     return EndedByConnectFail;
   }
 
-#ifdef H323_H460
+#if OPAL_H460
   setupPDU.InsertH460Setup(*this, setup);
 #endif
 
@@ -3700,7 +3700,7 @@ void H323Connection::OnMediaCommand(OpalMediaCommand & command, INT extra)
     H323Channel * video = FindChannel(OpalMediaFormat::DefaultVideoSessionID, true);
     if (video != NULL)
       video->OnMediaCommand(command);
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
     m_VideoUpdateRequestsSent++;
 #endif
   }
@@ -4671,7 +4671,7 @@ void H323Connection::MonitorCallStatus()
 
 PBoolean H323Connection::OnSendFeatureSet(unsigned code, H225_FeatureSet & featureSet) const
 {
-#ifdef H323_H460
+#if OPAL_H460
   return features->SendFeature(code, featureSet);
 #else
   return endpoint.OnSendFeatureSet(code, featureSet);
@@ -4681,7 +4681,7 @@ PBoolean H323Connection::OnSendFeatureSet(unsigned code, H225_FeatureSet & featu
 
 void H323Connection::OnReceiveFeatureSet(unsigned code, const H225_FeatureSet & featureSet) const
 {
-#ifdef H323_H460
+#if OPAL_H460
   features->ReceiveFeature(code, featureSet);
 #else
   endpoint.OnReceiveFeatureSet(code, featureSet);
@@ -4689,7 +4689,7 @@ void H323Connection::OnReceiveFeatureSet(unsigned code, const H225_FeatureSet & 
 }
 
 
-#ifdef OPAL_H460
+#if OPAL_H460
 H460_FeatureSet * H323Connection::GetFeatureSet()
 {
   return features;

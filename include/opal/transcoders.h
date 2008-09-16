@@ -322,7 +322,7 @@ class OpalTranscoder : public OpalMediaFormatPair
     virtual bool AcceptEmptyPayload() const  { return acceptEmptyPayload; }
     virtual bool AcceptOtherPayloads() const { return acceptOtherPayloads; }
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
   //@}
