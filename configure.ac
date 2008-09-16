@@ -126,7 +126,7 @@ AC_ARG_WITH([plugin-installdir],
              [PLUGIN_DIR="opal-${OPAL_VERSION}"]
            )
 
-EXPANDED_PLUGIN_DIR="${LIBDIR}/${PLUGIN_DIR}"
+EXPANDED_PLUGIN_DIR="${libdir}/${PLUGIN_DIR}"
 if test "x${exec_prefix}" = "xNONE" ; then
   if test "x${prefix}" = "xNONE" ; then
     EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#/usr/local#`
