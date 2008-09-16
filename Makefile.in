@@ -569,11 +569,11 @@ uninstall:
 ###############################################################################
 # A collection or random useful targets
 
-docs: FORCE
+docs:
 	cat opal_cfg.dxy > /tmp/docs.dxy ; echo HAVE_DOT=NO >> /tmp/docs.dxy
 	doxygen /tmp/docs.dxy
 
-graphdocs: FORCE
+graphdocs:
 	cat opal_cfg.dxy > /tmp/docs.dxy ; echo HAVE_DOT=YES >> /tmp/docs.dxy
 	doxygen /tmp/docs.dxy
 
