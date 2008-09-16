@@ -678,6 +678,7 @@ INSTALL_SCRIPT
 INSTALL_DATA
 RANLIB
 NM
+LDD
 OBJDUMP
 CPP
 GREP
@@ -3746,6 +3747,102 @@ esac
   fi
 else
   NM="$ac_cv_prog_NM"
+fi
+
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}ldd", so it can be a program name with args.
+set dummy ${ac_tool_prefix}ldd; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_prog_LDD+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$LDD"; then
+  ac_cv_prog_LDD="$LDD" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_LDD="${ac_tool_prefix}ldd"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+LDD=$ac_cv_prog_LDD
+if test -n "$LDD"; then
+  { echo "$as_me:$LINENO: result: $LDD" >&5
+echo "${ECHO_T}$LDD" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_LDD"; then
+  ac_ct_LDD=$LDD
+  # Extract the first word of "ldd", so it can be a program name with args.
+set dummy ldd; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_prog_ac_ct_LDD+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$ac_ct_LDD"; then
+  ac_cv_prog_ac_ct_LDD="$ac_ct_LDD" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_ac_ct_LDD="ldd"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_LDD=$ac_cv_prog_ac_ct_LDD
+if test -n "$ac_ct_LDD"; then
+  { echo "$as_me:$LINENO: result: $ac_ct_LDD" >&5
+echo "${ECHO_T}$ac_ct_LDD" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+  if test "x$ac_ct_LDD" = x; then
+    LDD=":"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ echo "$as_me:$LINENO: WARNING: In the future, Autoconf will not detect cross-tools
+whose name does not start with the host triplet.  If you think this
+configuration is useful to you, please write to autoconf@gnu.org." >&5
+echo "$as_me: WARNING: In the future, Autoconf will not detect cross-tools
+whose name does not start with the host triplet.  If you think this
+configuration is useful to you, please write to autoconf@gnu.org." >&2;}
+ac_tool_warned=yes ;;
+esac
+    LDD=$ac_ct_LDD
+  fi
+else
+  LDD="$ac_cv_prog_LDD"
 fi
 
 if test -n "$ac_tool_prefix"; then
@@ -9260,7 +9357,7 @@ int main () {}
 _ACEOF
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
           if test -x conftest$ac_exeext ; then
-            libavcodec_libdir=`ldd ./conftest | grep libavcodec | awk '{print $3; }'`
+            libavcodec_libdir=`$LDD ./conftest | grep libavcodec | awk '{print $3; }'`
             symbol=`$NM -D $libavcodec_libdir | grep h263p_encoder`
             if test "x$symbol" != "x"; then
               got_symbol=yes
@@ -9284,7 +9381,7 @@ int main () {}
 _ACEOF
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
           if test -x conftest$ac_exeext ; then
-            libavcodec_libdir=`ldd ./conftest | grep libavcodec | awk '{print $3; }'`
+            libavcodec_libdir=`$LDD ./conftest | grep libavcodec | awk '{print $3; }'`
             symbol=`$NM -D $libavcodec_libdir | grep mpeg4_encoder`
             if test "x$symbol" != "x"; then
               got_symbol=yes
@@ -9308,7 +9405,7 @@ int main () {}
 _ACEOF
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
           if test -x conftest$ac_exeext ; then
-            libavcodec_libdir=`ldd ./conftest | grep libavcodec | awk '{print $3; }'`
+            libavcodec_libdir=`$LDD ./conftest | grep libavcodec | awk '{print $3; }'`
             symbol=`$NM -D $libavcodec_libdir | grep h264_decoder`
             if test "x$symbol" != "x"; then
               got_symbol=yes
@@ -11852,6 +11949,7 @@ INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
 RANLIB!$RANLIB$ac_delim
 NM!$NM$ac_delim
+LDD!$LDD$ac_delim
 OBJDUMP!$OBJDUMP$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
@@ -11883,7 +11981,6 @@ HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
 LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
 X264_CFLAGS!$X264_CFLAGS$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
-X264_LIB_NAME!$X264_LIB_NAME$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -11925,6 +12022,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+X264_LIB_NAME!$X264_LIB_NAME$ac_delim
 X264_LINK_STATIC!$X264_LINK_STATIC$ac_delim
 HAVE_X264!$HAVE_X264$ac_delim
 THEORA_CFLAGS!$THEORA_CFLAGS$ac_delim
@@ -11942,7 +12040,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 15; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 16; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -12976,6 +13074,7 @@ INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
 RANLIB!$RANLIB$ac_delim
 NM!$NM$ac_delim
+LDD!$LDD$ac_delim
 OBJDUMP!$OBJDUMP$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
@@ -13007,7 +13106,6 @@ HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
 LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
 X264_CFLAGS!$X264_CFLAGS$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
-X264_LIB_NAME!$X264_LIB_NAME$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -13049,6 +13147,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+X264_LIB_NAME!$X264_LIB_NAME$ac_delim
 X264_LINK_STATIC!$X264_LINK_STATIC$ac_delim
 HAVE_X264!$HAVE_X264$ac_delim
 THEORA_CFLAGS!$THEORA_CFLAGS$ac_delim
@@ -13066,7 +13165,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 15; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 16; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
