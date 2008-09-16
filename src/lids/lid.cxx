@@ -51,7 +51,7 @@ static OpalLIDRegistration * RegisteredLIDsListHead;
 ostream & operator<<(ostream & o, OpalLineInterfaceDevice::CallProgressTones t)
 {
   static const char * const CallProgressTonesNames[OpalLineInterfaceDevice::NumTones+1] = {
-    "NoTone", "DialTone", "RingTone", "BusyTone", "CongestionTone", "ClearTone", "MwiTone", "CNGTone", "CEDTone"
+    "NoTone", "DialTone", "RingTone", "BusyTone", "CongestionTone", "ClearTone", "MwiTone", "RoutingTone", "CNGTone", "CEDTone"
   };
   if (t+1 < PARRAYSIZE(CallProgressTonesNames))
     return o << CallProgressTonesNames[t+1];
@@ -76,6 +76,7 @@ OpalLineInterfaceDevice::OpalLineInterfaceDevice()
   m_callProgressTones[CongestionTone] = "480+620:0.3-0.2";
   m_callProgressTones[ClearTone] = "350+440:0.5";
   m_callProgressTones[MwiTone] = "350+440:0.2";
+  m_callProgressTones[RoutingTone] = "1760:0.1-0.1-0.1-4.7";
   m_callProgressTones[CNGTone] = "1100:0.5";
   m_callProgressTones[CEDTone] = "2100:0.5";
 }
