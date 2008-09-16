@@ -70,7 +70,9 @@ IAX2SpecialProcessor::~IAX2SpecialProcessor()
   
 void IAX2SpecialProcessor::ProcessLists()
 {
-  while(ProcessOneIncomingEthernetFrame());
+  while(ProcessOneIncomingEthernetFrame()) {
+    ;
+  }
 }
 
 void IAX2SpecialProcessor::PrintOn(ostream & strm) const

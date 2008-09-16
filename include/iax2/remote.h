@@ -388,7 +388,7 @@ class IAX2Encryption : public PObject
   const PString & ChallengeKey() const;
 
   /**Report if the encryption is enabled  (or turned on) */
-  const PBoolean IsEncrypted() const;
+  PBoolean IsEncrypted() const;
 
 #if OPAL_PTLIB_SSL_AES
   /**Get a pointer to a filled AES_KEY encrypt structure */
