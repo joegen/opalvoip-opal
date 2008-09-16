@@ -66,7 +66,7 @@ AC_DEFUN([OPAL_GET_LIBNAME],
           if test \! -x conftest$ac_exeext ; then
             AC_MSG_RESULT(cannot determine - using defaults)
           else
-            $1_LIB_NAME=`$OBJDUMP -x ./conftest | grep 'NEEDED.*$2' | awk '{print @S|@2; }'`
+            $1_LIB_NAME=`$OBJDUMP -x ./conftest$ac_exeext | grep 'NEEDED.*$2' | awk '{print @S|@2; }'`
             AC_MSG_RESULT($$1_LIB_NAME)
             AC_DEFINE_UNQUOTED([$1_LIB_NAME], ["$$1_LIB_NAME"], [Filename of the $2 library])
           fi
@@ -514,7 +514,7 @@ AC_DEFUN([OPAL_CHECK_LIBAVCODEC],
           AC_LANG_CONFTEST([int main () {}])
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&AS_MESSAGE_LOG_FD
           if test -x conftest$ac_exeext ; then
-            libavcodec_libdir=`$LDD ./conftest | grep libavcodec | awk '{print @S|@3; }'`
+            libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print @S|@3; }'`
             symbol=`@S|@NM -D @S|@libavcodec_libdir | grep $1`
             if test "x$symbol" != "x"; then
               got_symbol=yes
