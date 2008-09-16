@@ -37,6 +37,8 @@
 #pragma implementation "rtp.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <rtp/rtp.h>
 
 #include <rtp/jitter.h>
@@ -426,7 +428,7 @@ void RTP_ControlFrame::ReceiverReport::SetLostPackets(unsigned packets)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
 
 OpalMediaStatistics::OpalMediaStatistics()
   : m_totalBytes(0)
@@ -1175,7 +1177,7 @@ PBoolean RTP_Session::SendReport()
 }
 
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
 void RTP_Session::GetStatistics(OpalMediaStatistics & statistics, bool receiver) const
 {
   statistics.m_totalBytes        = receiver ? GetOctetsReceived()     : GetOctetsSent();

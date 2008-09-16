@@ -37,8 +37,8 @@
 #pragma interface
 #endif
 
-
 #include <opal/buildopts.h>
+
 #include <opal/mediafmt.h>
 #include <iax2/iax2con.h>
 #include <iax2/iax2jitter.h>

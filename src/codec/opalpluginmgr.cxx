@@ -992,7 +992,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
           }
 #endif
           forceIFrame = false;
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
           m_keyFrames++;
 #endif
         }
@@ -1000,7 +1000,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
         else
           consecutiveIntraFrames = 0;
 #endif
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
         m_totalFrames++;
 #endif
         firstPacketForFrame = false;
@@ -1046,7 +1046,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
       dstList.Append(bufferRTP);
       bufferRTP = NULL;
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
       m_totalFrames++;
       if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
         m_keyFrames++;
@@ -1497,7 +1497,6 @@ void OpalPluginCodecManager::RegisterPluginPair(
       defaultSessionID = OpalMediaFormat::DefaultVideoSessionID;
       break;
 #endif
-
     case PluginCodec_MediaTypeAudio:
     case PluginCodec_MediaTypeAudioStreamed:
       defaultSessionID = OpalMediaFormat::DefaultAudioSessionID;
@@ -1536,7 +1535,6 @@ void OpalPluginCodecManager::RegisterPluginPair(
           mediaFormatInternal = handler->OnCreateVideoFormat(*this, encoderCodec, encoderCodec->sdpFormat, timeStamp);
           break;
 #endif
-
         case PluginCodec_MediaTypeAudio:
         case PluginCodec_MediaTypeAudioStreamed:
           mediaFormatInternal = handler->OnCreateAudioFormat(*this, encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
@@ -1593,7 +1591,6 @@ void OpalPluginCodecManager::RegisterPluginPair(
       handler->RegisterVideoTranscoder(encoderCodec->destFormat, OpalYUV420P, decoderCodec, PFalse);
       break;
 #endif
-
     case PluginCodec_MediaTypeAudio:
       if (encoderCodec->sampleRate == 8000) {
         new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, PTrue);
@@ -1726,8 +1723,8 @@ OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateAudioFormat(OpalPlugin
   return new OpalPluginAudioFormatInternal(encoderCodec, rtpEncodingName, frameTime, timeUnits, timeStamp);
 }
 
-
 #if OPAL_VIDEO
+
 OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateVideoFormat(OpalPluginCodecManager & /*mgr*/,
                                                      const PluginCodec_Definition * encoderCodec,
                                                                        const char * rtpEncodingName,

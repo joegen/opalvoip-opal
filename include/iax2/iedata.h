@@ -53,6 +53,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <ptlib/sockets.h>
 
 #ifdef P_USE_PRAGMA

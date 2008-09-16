@@ -34,8 +34,9 @@
 #pragma implementation "ivr.h"
 #endif
 
-#include <opal/ivr.h>
+#include <opal/buildopts.h>
 
+#include <opal/ivr.h>
 #include <opal/call.h>
 
 

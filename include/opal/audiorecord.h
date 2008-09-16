@@ -37,6 +37,7 @@
 //
 //  This class manages the recording of OPAL calls using the AudioMixer class
 //
+#include <opal/buildopts.h>
 
 #include <opal/opalmixer.h>
 

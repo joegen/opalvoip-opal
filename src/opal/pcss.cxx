@@ -35,9 +35,10 @@
 #endif
 
 #include <opal/buildopts.h>
+
 #include <opal/pcss.h>
 
-#if P_AUDIO
+#if OPAL_PTLIB_AUDIO
 
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
@@ -422,7 +423,7 @@ void OpalPCSSConnection::AcceptIncoming()
   }
 }
 
-#endif // P_AUDIO
+#endif // OPAL_PTLIB_AUDIO
 
 
 /////////////////////////////////////////////////////////////////////////////

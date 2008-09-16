@@ -32,6 +32,8 @@
 #ifndef __OPAL_SIP_H
 #define __OPAL_SIP_H
 
+#include <opal/buildopts.h>
+
 #include <sip/sipep.h>
 #include <sip/sipcon.h>
 

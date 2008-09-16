@@ -33,6 +33,8 @@
 #pragma implementation "g711codec.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <codec/g711codec.h>
 
 #define new PNEW

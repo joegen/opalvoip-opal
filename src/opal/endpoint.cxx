@@ -38,7 +38,6 @@
 #include <opal/buildopts.h>
 
 #include <opal/endpoint.h>
-
 #include <opal/manager.h>
 #include <opal/call.h>
 #include <rtp/rtp.h>
@@ -540,7 +539,7 @@ void OpalEndPoint::OnMWIReceived(const PString & party,
 }
 
 
-#if P_SSL
+#if OPAL_PTLIB_SSL
 PString OpalEndPoint::GetSSLCertificate() const
 {
   return "server.pem";

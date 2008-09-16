@@ -35,6 +35,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 class H323TransactionPDU;
 class H225_CryptoH323Token;
@@ -259,7 +260,7 @@ class H235AuthCAT : public H235Authenticator
 };
 
 
-#if P_SSL
+#if OPAL_PTLIB_SSL
 
 namespace PWLibStupidLinkerHacks {
   extern int h235AuthProcedure1Loader;

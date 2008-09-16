@@ -34,6 +34,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <rtp/rtp.h>
 

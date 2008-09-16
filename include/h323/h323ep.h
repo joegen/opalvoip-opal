@@ -38,6 +38,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/rtpep.h>
 #include <opal/manager.h>
@@ -47,7 +48,7 @@
 #include <h323/h323caps.h>
 #include <h323/h235auth.h>
 
-#ifdef OPAL_H460
+#if OPAL_H460
 #include <h460/h4601.h>
 #endif
 

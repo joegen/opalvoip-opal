@@ -47,7 +47,7 @@
 #include <h323/h323pdu.h>
 #include <h323/h323rtp.h>
 
-#ifdef OPAL_H460
+#if OPAL_H460
 #include <h460/h4601.h>
 #endif
 
@@ -59,7 +59,7 @@ static class PAuthInitialiseInstantiateMe
     PAuthInitialiseInstantiateMe()
     {
       PWLibStupidLinkerHacks::h235AuthLoader = 1;
-#if P_SSL
+#if OPAL_PTLIB_SSL
       PWLibStupidLinkerHacks::h235AuthProcedure1Loader = 1;
 #endif
     }
@@ -90,7 +90,7 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
 #endif
   , requestMutex(1, 1)
   , authenticators(ep.CreateAuthenticators())
-#ifdef OPAL_H460
+#if OPAL_H460
   , features(ep.GetFeatureSet())
 #endif
 {
@@ -112,7 +112,7 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
 
   monitor = PThread::Create(PCREATE_NOTIFIER(MonitorMain), "GkMonitor");
   
-#ifdef OPAL_H460
+#if OPAL_H460
   features->AttachEndPoint(&ep);
   features->LoadFeatureSet(H460_Feature::FeatureRas);
 #endif
@@ -1953,7 +1953,7 @@ void H323Gatekeeper::UpdateConnectionStatus()
 
 PBoolean H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & message) const
 {
-#ifdef OPAL_H460
+#if OPAL_H460
   return features->SendFeature(pduType, message);
 #else
   return endpoint.OnSendFeatureSet(pduType, message);
@@ -1963,7 +1963,7 @@ PBoolean H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & me
 
 void H323Gatekeeper::OnReceiveFeatureSet(unsigned pduType, const H225_FeatureSet & message) const
 {
-#ifdef OPAL_H460
+#if OPAL_H460
   features->ReceiveFeature(pduType, message);
 #else
   endpoint.OnReceiveFeatureSet(pduType, message);

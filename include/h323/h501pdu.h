@@ -35,6 +35,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <ptlib/sockets.h>
 

@@ -40,6 +40,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <ptclib/sockagg.h>
 #include <opal/rtpep.h>
 #include <sip/sipcon.h>

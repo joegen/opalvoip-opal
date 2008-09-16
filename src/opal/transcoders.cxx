@@ -34,6 +34,8 @@
 #pragma implementation "transcoders.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/transcoders.h>
 
 
@@ -120,7 +122,7 @@ RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(PBoolean input) const
 }
 
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
 void OpalTranscoder::GetStatistics(OpalMediaStatistics & /*statistics*/) const
 {
 }

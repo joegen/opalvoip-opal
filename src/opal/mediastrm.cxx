@@ -457,7 +457,7 @@ PBoolean OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMedia
 }
 
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
 void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics) const
 {
   PSafeLockReadOnly safeLock(*this);
@@ -690,7 +690,7 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
 }
 
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
 void OpalRTPMediaStream::GetStatistics(OpalMediaStatistics & statistics) const
 {
   rtpSession.GetStatistics(statistics, IsSource());
@@ -879,7 +879,7 @@ PBoolean OpalFileMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if P_AUDIO
+#if OPAL_PTLIB_AUDIO
 
 OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
                                            const OpalMediaFormat & mediaFormat,
@@ -936,7 +936,7 @@ PBoolean OpalAudioMediaStream::IsSynchronous() const
   return true;
 }
 
-#endif // P_AUDIO
+#endif // OPAL_PTLIB_AUDIO
 
 
 ///////////////////////////////////////////////////////////////////////////////

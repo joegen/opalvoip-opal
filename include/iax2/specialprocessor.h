@@ -44,6 +44,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/connection.h>
 
 #include <iax2/processor.h>

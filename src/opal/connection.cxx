@@ -179,7 +179,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   , silenceDetector(NULL)
   , echoCanceler(NULL)
   , stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
 #endif
 {
@@ -978,7 +978,7 @@ PBoolean OpalConnection::PromptUserInput(PBoolean /*play*/)
 }
 
 
-#if P_DTMF
+#if OPAL_PTLIB_DTMF
 void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
 {
   // This function is set up as an 'audio filter'.

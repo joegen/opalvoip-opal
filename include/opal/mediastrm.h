@@ -36,9 +36,10 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
 #include <ptclib/delaychan.h>
 
-#include <opal/buildopts.h>
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
 #include <ptlib/safecoll.h>
@@ -344,7 +345,7 @@ class OpalMediaStream : public PSafeObject
       */
     bool RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage);
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
   //@}
@@ -526,7 +527,7 @@ class OpalRTPMediaStream : public OpalMediaStream
     virtual RTP_Session & GetRtpSession() const
     { return rtpSession; }
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
   //@}
@@ -670,7 +671,7 @@ class OpalFileMediaStream : public OpalRawMediaStream, public OpalMediaStreamPac
 };
 
 
-#if P_AUDIO
+#if OPAL_PTLIB_AUDIO
 
 /**This class describes a media stream that transfers data to/from a audio
    PSoundChannel.
@@ -728,7 +729,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
     PINDEX soundChannelBuffers;
 };
 
-#endif // P_AUDIO
+#endif // OPAL_PTLIB_AUDIO
 
 #if OPAL_VIDEO
 

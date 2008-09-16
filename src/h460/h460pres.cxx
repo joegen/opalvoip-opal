@@ -9,9 +9,12 @@
 #endif
 
 #include <ptlib.h>
+
+#include <opal/buildopts.h>
+
 #include "h460/h460pres.h"
 
-#ifdef OPAL_H460
+#if OPAL_H460
 
 #define new PNEW
 

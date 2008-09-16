@@ -1336,7 +1336,7 @@ class OpalConnection : public PSafeObject
     MediaAddressesDict & GetMediaTransportAddresses()
     { return mediaTransportAddresses; }
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
     /**Get Video Update requests statistic.
       */
     unsigned GetVideoUpdateRequestsSent() const { return m_VideoUpdateRequestsSent; }
@@ -1385,7 +1385,7 @@ class OpalConnection : public PSafeObject
   protected:
     void OnConnectedInternal();
 
-#if P_DTMF
+#if OPAL_PTLIB_DTMF
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
 #endif
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
@@ -1439,7 +1439,7 @@ class OpalConnection : public PSafeObject
 
     // The In-Band DTMF detector. This is used inside an audio filter which is
     // added to the audio channel.
-#if P_DTMF
+#if OPAL_PTLIB_DTMF
     PDTMFDecoder        dtmfDecoder;
 #endif
 
@@ -1455,7 +1455,7 @@ class OpalConnection : public PSafeObject
     StringOptions * stringOptions;
     PString recordAudioFilename;
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
     unsigned m_VideoUpdateRequestsSent;
 #endif
 };

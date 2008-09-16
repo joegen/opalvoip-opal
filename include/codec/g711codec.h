@@ -34,6 +34,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/transcoders.h>
 #include <codec/g711a1_plc.h>

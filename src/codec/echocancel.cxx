@@ -36,7 +36,7 @@
 #include <opal/buildopts.h>
 
 extern "C" {
-#if OPAL_SYSTEM_SPEEX
+#ifdef OPAL_SYSTEM_SPEEX
 #if OPAL_HAVE_SPEEX_SPEEX_H
 #include <speex/speex_echo.h>
 #include <speex/speex_preprocess.h>

@@ -39,7 +39,7 @@
 
 #include <opal/buildopts.h>
 
-#if defined(OPAL_SRTP)
+#if OPAL_SRTP
 
 #include <rtp/srtp.h>
 #include <opal/connection.h>

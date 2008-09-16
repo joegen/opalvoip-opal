@@ -158,7 +158,7 @@ class MyManager : public OpalManager
 #if OPAL_LID
     OpalLineEndPoint * potsEP;
 #endif
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif
 

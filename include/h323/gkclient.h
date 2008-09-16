@@ -38,11 +38,12 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <h323/h225ras.h>
 #include <h323/h235auth.h>
 
-#ifdef OPAL_H460
+#if OPAL_H460
 class H460_FeatureSet;
 #endif
 
@@ -406,7 +407,7 @@ class H323Gatekeeper : public H225_RAS
 
     PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;
 	
-#ifdef OPAL_H460
+#if OPAL_H460
     H460_FeatureSet * features;
 #endif
 	
