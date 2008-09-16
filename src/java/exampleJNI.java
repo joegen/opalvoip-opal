@@ -9,14 +9,14 @@
 package org.opalvoip;
 
 class exampleJNI {
+  public final static native long OpalInitialise(long[] jarg1, String jarg2);
+  public final static native long OpalSendMessage(long jarg1, long jarg2);
   public final static native int OPAL_C_API_VERSION_get();
-  public final static native long OpalInitialise(long jarg1, String jarg2);
   public final static native String OPAL_INITIALISE_FUNCTION_get();
   public final static native void OpalShutDown(long jarg1);
   public final static native String OPAL_SHUTDOWN_FUNCTION_get();
   public final static native long OpalGetMessage(long jarg1, long jarg2);
   public final static native String OPAL_GET_MESSAGE_FUNCTION_get();
-  public final static native long OpalSendMessage(long jarg1, long jarg2);
   public final static native String OPAL_SEND_MESSAGE_FUNCTION_get();
   public final static native void OpalFreeMessage(long jarg1);
   public final static native String OPAL_FREE_MESSAGE_FUNCTION_get();

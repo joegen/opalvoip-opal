@@ -211,6 +211,57 @@ typedef union {
 extern "C" {
 #endif
 
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalInitialise(JNIEnv *jenv, jclass jcls, jlongArray jarg1, jstring jarg2) {
+  jlong jresult = 0 ;
+  unsigned int *arg1 = (unsigned int *) 0 ;
+  char *arg2 = (char *) 0 ;
+  OpalHandle result;
+  
+  (void)jenv;
+  (void)jcls;
+  {
+    if (!jarg1) {
+      SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "array null");
+      return 0;
+    }
+    if ((*jenv)->GetArrayLength(jenv, jarg1) == 0) {
+      SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "Array must contain at least 1 element");
+      return 0;
+    }
+    arg1 = (unsigned int *) (*jenv)->GetLongArrayElements(jenv, jarg1, 0); 
+  }
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
+    if (!arg2) return 0;
+  }
+  result = (OpalHandle)OpalInitialise(arg1,(char const *)arg2);
+  *(OpalHandle *)&jresult = result; 
+  {
+    (*jenv)->ReleaseLongArrayElements(jenv, jarg1, (jlong *)arg1, 0); 
+  }
+  
+  if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
+  return jresult;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalSendMessage(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2) {
+  jlong jresult = 0 ;
+  OpalHandle arg1 = (OpalHandle) 0 ;
+  OpalMessage *arg2 = (OpalMessage *) 0 ;
+  OpalMessage *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(OpalHandle *)&jarg1; 
+  arg2 = *(OpalMessage **)&jarg2; 
+  result = (OpalMessage *)OpalSendMessage(arg1,(struct OpalMessage const *)arg2);
+  *(OpalMessage **)&jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OPAL_1C_1API_1VERSION_1get(JNIEnv *jenv, jclass jcls) {
   jint jresult = 0 ;
   int result;
@@ -219,27 +270,6 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OPAL_1C_1API_1VERSION_1get(
   (void)jcls;
   result = (int) 11;
   jresult = (jint)result; 
-  return jresult;
-}
-
-
-SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalInitialise(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
-  jlong jresult = 0 ;
-  unsigned int *arg1 = (unsigned int *) 0 ;
-  char *arg2 = (char *) 0 ;
-  OpalHandle result;
-  
-  (void)jenv;
-  (void)jcls;
-  arg1 = *(unsigned int **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
-    if (!arg2) return 0;
-  }
-  result = (OpalHandle)OpalInitialise(arg1,(char const *)arg2);
-  *(OpalHandle *)&jresult = result; 
-  if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   return jresult;
 }
 
@@ -302,22 +332,6 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1GET_1MESSAGE_1FUNC
   (void)jcls;
   result = (char *) "OpalGetMessage";
   if(result) jresult = (*jenv)->NewStringUTF(jenv, (const char *)result);
-  return jresult;
-}
-
-
-SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalSendMessage(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2) {
-  jlong jresult = 0 ;
-  OpalHandle arg1 = (OpalHandle) 0 ;
-  OpalMessage *arg2 = (OpalMessage *) 0 ;
-  OpalMessage *result = 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  arg1 = *(OpalHandle *)&jarg1; 
-  arg2 = *(OpalMessage **)&jarg2; 
-  result = (OpalMessage *)OpalSendMessage(arg1,(struct OpalMessage const *)arg2);
-  *(OpalMessage **)&jresult = result; 
   return jresult;
 }
 
