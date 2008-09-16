@@ -37,10 +37,12 @@ endif
 # Determine which package to use debug or release
 ifeq ($(DEBUG_BUILD), yes)
 PKG_FLAGS = --define-variable=suffix=_d
+CFLAGS += -g
 else
 ifeq ($(STATIC_BUILD), yes)
 PKG_FLAGS = --define-variable=suffix=_s --static
 endif
+CFLAGS += -O3
 endif
 
 
