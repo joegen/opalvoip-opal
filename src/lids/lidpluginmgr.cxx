@@ -59,9 +59,13 @@ OpalPluginLIDManager::~OpalPluginLIDManager()
 void OpalPluginLIDManager::OnLoadPlugin(PDynaLink & dll, INT code)
 {
   PluginLID_GetDefinitionsFunction getDefinitions;
-  if (!dll.GetFunction(PString(signatureFunctionName), (PDynaLink::Function &)getDefinitions)) {
-    PTRACE(3, "LID Plugin\tDLL " << dll.GetName() << " is not a plugin LID");
-    return;
+  {
+    PDynaLink::Function fn;
+    if (!dll.GetFunction(PString(signatureFunctionName), fn)) {
+      PTRACE(3, "LID Plugin\tDLL " << dll.GetName() << " is not a plugin LID");
+      return;
+    }
+    getDefinitions = (PluginLID_GetDefinitionsFunction)fn;
   }
 
   unsigned count;
@@ -195,8 +199,9 @@ static ostream & operator<<(ostream & stream, PluginLID_Errors error)
 
 PluginLID_Errors OpalPluginLID::CheckError(PluginLID_Errors error, const char * fnName) const
 {
-  if (error != PluginLID_NoError && error != PluginLID_UnimplementedFunction && error != PluginLID_NoMoreNames)
+  if (error != PluginLID_NoError && error != PluginLID_UnimplementedFunction && error != PluginLID_NoMoreNames) {
     PTRACE(2, "LID Plugin\tFunction " << fnName << " in " << m_definition.name << " returned error " << error);
+  }
 
   osError = error;
   return error;

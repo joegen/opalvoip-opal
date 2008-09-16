@@ -350,7 +350,9 @@ void IAX2CallProcessor::ProcessFullFrame(IAX2FullFrame & fullFrame)
 
 void IAX2CallProcessor::ProcessLists()
 {
-  while(ProcessOneIncomingEthernetFrame());
+  while (ProcessOneIncomingEthernetFrame()) {
+    ;
+  }
   
   PBYTEArray *oneSound;
   do {

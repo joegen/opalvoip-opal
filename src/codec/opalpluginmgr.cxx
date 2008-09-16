@@ -1336,9 +1336,13 @@ void OpalPluginCodecManager::OnShutdown()
 void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, INT code)
 {
   PluginCodec_GetCodecFunction getCodecs;
-  if (!dll.GetFunction(PString(signatureFunctionName), (PDynaLink::Function &)getCodecs)) {
-    PTRACE(2, "OpalPlugin\tPlugin Codec DLL " << dll.GetName() << " is not a plugin codec");
-    return;
+  {
+    PDynaLink::Function fn;
+    if (!dll.GetFunction(PString(signatureFunctionName), fn)) {
+      PTRACE(2, "OpalPlugin\tPlugin Codec DLL " << dll.GetName() << " is not a plugin codec");
+      return;
+    }
+    getCodecs = (PluginCodec_GetCodecFunction)fn;
   }
 
   unsigned int count;
@@ -1418,26 +1422,26 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, PluginCode
     // for every encoder, we need a decoder
     PBoolean found = PFalse;
     PBoolean isEncoder = PFalse;
-    if (encoder.h323CapabilityType != PluginCodec_H323Codec_undefined &&
+    if ((encoder.h323CapabilityType != PluginCodec_H323Codec_undefined) && (
          (
            ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeAudio) && 
-            strcmp(encoder.sourceFormat, "L16") == 0
+            (strcmp(encoder.sourceFormat, "L16") == 0)
          ) ||
          (
            ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeAudioStreamed) && 
-            strcmp(encoder.sourceFormat, "L16") == 0
+            (strcmp(encoder.sourceFormat, "L16") == 0)
          ) ||
          (
            videoSupported &&
            ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeVideo) && 
-           strcmp(encoder.sourceFormat, "YUV420P") == 0
+           (strcmp(encoder.sourceFormat, "YUV420P") == 0)
         ) ||
          (
            faxSupported &&
            ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeFax) && 
-           strcmp(encoder.sourceFormat, "L16") == 0
+           (strcmp(encoder.sourceFormat, "L16") == 0)
         )
-       ) {
+       )) {
       isEncoder = PTrue;
       for (j = 0; j < count; j++) {
 
