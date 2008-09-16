@@ -9327,6 +9327,14 @@ _ACEOF
 echo "$as_me: libavcodec stack align hack disabled" >&6;}
           fi
 
+                   case "$target_os" in
+                      cygwin* | mingw* )
+                                         LIBAVCODEC_LIB_NAME="avcodec.dll"
+                                         HAVE_H263P=yes
+                                         HAVE_MPEG4=yes
+                                         HAVE_H264_DECODER=yes
+                                         ;;
+                                     * )
 
           { echo "$as_me:$LINENO: checking filename of libavcodec library" >&5
 echo $ECHO_N "checking filename of libavcodec library... $ECHO_C" >&6; }
@@ -9338,7 +9346,7 @@ _ACEOF
             { echo "$as_me:$LINENO: result: cannot determine - using defaults" >&5
 echo "${ECHO_T}cannot determine - using defaults" >&6; }
           else
-            LIBAVCODEC_LIB_NAME=`$OBJDUMP -x ./conftest | grep 'NEEDED.*libavcodec' | awk '{print $2; }'`
+            LIBAVCODEC_LIB_NAME=`$OBJDUMP -x ./conftest$ac_exeext | grep 'NEEDED.*libavcodec' | awk '{print $2; }'`
             { echo "$as_me:$LINENO: result: $LIBAVCODEC_LIB_NAME" >&5
 echo "${ECHO_T}$LIBAVCODEC_LIB_NAME" >&6; }
 
@@ -9357,7 +9365,7 @@ int main () {}
 _ACEOF
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
           if test -x conftest$ac_exeext ; then
-            libavcodec_libdir=`$LDD ./conftest | grep libavcodec | awk '{print $3; }'`
+            libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print $3; }'`
             symbol=`$NM -D $libavcodec_libdir | grep h263p_encoder`
             if test "x$symbol" != "x"; then
               got_symbol=yes
@@ -9381,7 +9389,7 @@ int main () {}
 _ACEOF
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
           if test -x conftest$ac_exeext ; then
-            libavcodec_libdir=`$LDD ./conftest | grep libavcodec | awk '{print $3; }'`
+            libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print $3; }'`
             symbol=`$NM -D $libavcodec_libdir | grep mpeg4_encoder`
             if test "x$symbol" != "x"; then
               got_symbol=yes
@@ -9405,7 +9413,7 @@ int main () {}
 _ACEOF
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
           if test -x conftest$ac_exeext ; then
-            libavcodec_libdir=`$LDD ./conftest | grep libavcodec | awk '{print $3; }'`
+            libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print $3; }'`
             symbol=`$NM -D $libavcodec_libdir | grep h264_decoder`
             if test "x$symbol" != "x"; then
               got_symbol=yes
@@ -9420,6 +9428,8 @@ else
 fi
 
 
+                                         ;;
+                   esac
 
 
 
@@ -9831,7 +9841,7 @@ _ACEOF
             { echo "$as_me:$LINENO: result: cannot determine - using defaults" >&5
 echo "${ECHO_T}cannot determine - using defaults" >&6; }
           else
-            X264_LIB_NAME=`$OBJDUMP -x ./conftest | grep 'NEEDED.*libx264' | awk '{print $2; }'`
+            X264_LIB_NAME=`$OBJDUMP -x ./conftest$ac_exeext | grep 'NEEDED.*libx264' | awk '{print $2; }'`
             { echo "$as_me:$LINENO: result: $X264_LIB_NAME" >&5
 echo "${ECHO_T}$X264_LIB_NAME" >&6; }
 
