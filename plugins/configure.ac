@@ -19,6 +19,7 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_CHECK_TOOL([NM], [nm], [:])
+AC_CHECK_TOOL([OBJDUMP], [objdump], [:])
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stddef.h limits.h float.h fcntl.h])
