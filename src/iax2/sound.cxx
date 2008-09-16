@@ -32,6 +32,7 @@
  */
 
 #include <ptlib.h>
+#include <opal/buildopts.h>
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "sound.h"

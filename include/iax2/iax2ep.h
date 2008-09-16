@@ -111,6 +111,8 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/endpoint.h>
 #include <iax2/iax2con.h>
 #include <iax2/processor.h>

@@ -39,11 +39,14 @@
  */
 
 #include <ptlib.h>
+
+#include <opal/buildopts.h>
+
 #include <h323/h323pdu.h>
 #include <h460/h460p.h>
 
 
-#ifdef OPAL_H460
+#if OPAL_H460
 
 static struct {
   unsigned id;

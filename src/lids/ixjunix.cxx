@@ -37,6 +37,8 @@
 #pragma implementation "ixjlid.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <lids/ixjlid.h>
 
 #ifdef HAS_IXJ

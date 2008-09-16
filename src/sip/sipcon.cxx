@@ -29,8 +29,8 @@
  */
 
 #include <ptlib.h>
-
 #include <opal/buildopts.h>
+
 #if OPAL_SIP
 
 #ifdef __GNUC__
@@ -2306,7 +2306,7 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
     //infoTransaction->WaitForCompletion();
     //if (infoTransaction->IsFailed()) { }
     infoTransaction->Start();
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
     m_VideoUpdateRequestsSent++;
 #endif
   }
@@ -2474,7 +2474,7 @@ void SIP_RTP_Session::OnRxStatistics(const RTP_Session & session) const
   connection.OnRTPStatistics(session);
 }
 
-#ifdef OPAL_VIDEO
+#if OPAL_VIDEO
 void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
 {
   // We got an intra frame request control packet, alert the encoder.

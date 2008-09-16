@@ -1,4 +1,5 @@
 #include <ptlib.h>
+#include <opal/buildopts.h>
 #include <ptclib/random.h>
 #include <typeinfo>
 

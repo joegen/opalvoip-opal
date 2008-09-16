@@ -43,7 +43,6 @@
 #include <opal/opalvxml.h>
 #include <opal/endpoint.h>
 
-
 class OpalIVRConnection;
 
 

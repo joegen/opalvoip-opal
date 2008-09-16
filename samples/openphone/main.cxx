@@ -3015,23 +3015,23 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Security fields
-#if P_SSL
+#if OPAL_PTLIB_SSL
   INIT_FIELD(SecureH323, m_manager.FindEndPoint("h323s") != NULL);
   INIT_FIELD(SecureSIP, m_manager.FindEndPoint("sips") != NULL);
 #else
   FindWindowByName(SecureH323Key)->Disable();
   FindWindowByName(SecureSIPKey)->Disable();
 #endif
-#if OPAL_SRTP || OPAL_ZRTP
+#if (defined OPAL_SRTP) || (defined OPAL_ZRTP)
   INIT_FIELD(RTPSecurityModeH323, m_manager.h323EP->GetDefaultSecurityMode());
   INIT_FIELD(RTPSecurityModeSIP, m_manager.sipEP->GetDefaultSecurityMode());
-#if !OPAL_SRTP
+#ifndef OPAL_SRTP
   choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeH323Key);
   choice->Delete(choice->FindString("SRTP"));
   choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeSIPKey);
   choice->Delete(choice->FindString("SRTP"));
 #endif
-#if !OPAL_ZRTP
+#ifndef OPAL_ZRTP
   choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeH323Key);
   choice->Delete(choice->FindString("ZRTP"));
   choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeSIPKey);

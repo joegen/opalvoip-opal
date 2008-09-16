@@ -35,8 +35,10 @@
 #pragma implementation "patch.h"
 #endif
 
-#include <opal/patch.h>
 
+#include <opal/buildopts.h>
+
+#include <opal/patch.h>
 #include <opal/mediastrm.h>
 #include <opal/transcoders.h>
 
@@ -283,7 +285,7 @@ void OpalMediaPatch::UnLockSinkTranscoder() const
 }
 
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
 void OpalMediaPatch::GetStatistics(OpalMediaStatistics & statistics) const
 {
   inUse.StartRead();

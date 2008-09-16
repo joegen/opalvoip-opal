@@ -38,6 +38,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <h323/h323pdu.h>
 #include <h323/channels.h>

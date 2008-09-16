@@ -43,6 +43,7 @@
 #endif
 
 #include <opal/buildopts.h>
+
 #include <opal/mediatype.h>
 
 #include <rtp/rtp.h>

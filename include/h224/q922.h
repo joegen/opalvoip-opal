@@ -34,6 +34,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #define Q922_HEADER_SIZE 3
 
 class Q922_Frame : public PBYTEArray

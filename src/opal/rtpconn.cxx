@@ -246,7 +246,7 @@ void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/
     RTP_Session * session = m_rtpSessions.GetSession(OpalMediaFormat::DefaultVideoSessionID);
     if (session != NULL)
       session->SendIntraFrameRequest();
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
     m_VideoUpdateRequestsSent++;
 #endif
   }
@@ -338,7 +338,7 @@ void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
   OpalConnection::OnPatchMediaStream(isSource, patch);
   if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
     AttachRFC2833HandlerToPatch(isSource, patch);
-#if P_DTMF
+#if OPAL_PTLIB_DTMF
     if (detectInBandDTMF && isSource) {
       patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
     }

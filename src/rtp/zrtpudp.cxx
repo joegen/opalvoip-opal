@@ -6,7 +6,7 @@
 
 #include <opal/buildopts.h>
 
-#ifdef OPAL_ZRTP
+#if OPAL_ZRTP
 
 #define BUILD_ZRTP_MUTEXES 1
 
@@ -29,7 +29,7 @@ OpalZrtp_UDP::OpalZrtp_UDP(const PString & encoding,
 #endif
                            unsigned id, PBoolean remoteIsNAT)
   : SecureRTP_UDP(encoding,
-#ifdef OPAL_RTP_AGGREGATE
+#if OPAL_RTP_AGGREGATE
                   aggregator,
 #endif
                   id, remoteIsNAT)

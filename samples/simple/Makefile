@@ -1,9 +1,7 @@
 #
 # Makefile
 #
-# Make file for simple sample application for the Open Phone Abstraction library.
-#
-# Copyright (c) 1998-2000 Equivalence Pty. Ltd.
+# Copyright (C) 2008 Post Increment, All Rights Reserved
 #
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.0 (the "License"); you may not use this file except in
@@ -15,49 +13,92 @@
 # the License for the specific language governing rights and limitations
 # under the License.
 #
-# The Original Code is Open Phone Abstraction Library.
+# The Original Code is OPAL library.
 #
-# The Initial Developer of the Original Code is Equivalence Pty. Ltd.
+# The Initial Developer of the Original Code is Post Increment
 #
-# Contributor(s): ______________________________________.
-#
-# $Log: Makefile,v $
-# Revision 2.2  2002/02/11 09:38:28  robertj
-# Moved version to root directory
-#
-# Revision 2.1  2001/07/30 03:07:15  robertj
-# Improved reporting of incorrect OPALDIR
-#
-# Revision 2.0  2001/07/27 15:48:24  robertj
-# Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
-#
-# Revision 1.2  2000/10/30 00:24:49  robertj
-# No longer need to include ptlib explicitly
-#
-# Revision 1.1  2000/05/11 04:05:57  robertj
-# Simple sample program.
+# Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
 #
 
 PROG		= simpleopal
-SOURCES		:= main.cxx
+SRCS            = main.cxx
 
-VERSION_FILE =  ../../version.h
 
-ifndef OPALDIR
-ifneq (,$(wildcard $(HOME)/opal))
-OPALDIR=$(HOME)/opal
+# If we have environment variables for local copies of
+# OPAL and PTLib then use those packages by overriding
+# the search path for pkg-config
+ifneq ($(PTLIBDIR),)
+ifneq ($(OPALDIR),)
+PKG_CONFIG_LIBDIR=$(OPALDIR):$(PTLIBDIR)
+endif
+endif
+
+
+# Determine which package to use debug or release
+ifeq ($(DEBUG_BUILD), yes)
+PKG_FLAGS = --define-variable=suffix=_d
+CFLAGS += -g
 else
-ifneq (,$(wildcard /usr/local/opal))
-OPALDIR=/usr/local/opal
-else
-default_target :
-	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
-	@echo environment variable to build this application.
+ifeq ($(STATIC_BUILD), yes)
+PKG_FLAGS = --define-variable=suffix=_s --static
 endif
-endif
+CFLAGS += -O3
 endif
 
-ifdef OPALDIR
-include $(OPALDIR)/opal_inc.mak
-endif
 
+# Get required flags from library
+
+CFLAGS += $(shell pkg-config $(PKG_FLAGS) --cflags opal)
+LDFLAGS += $(shell pkg-config $(PKG_FLAGS) --libs opal)
+
+
+# This part is we like to be tidy and put all the build products
+# in a sub-directory of a name specific to platform type.
+OBJDIR = $(shell pkg-config $(PKG_FLAGS) --variable=objdir opal)
+
+vpath	%.o   $(OBJDIR)
+
+$(OBJDIR)/%.o : %.cxx
+	@mkdir -p $(OBJDIR) >/dev/null 2>&1
+	$(CXX) $(CFLAGS) -c $< -o $@
+
+$(OPAL_DEPDIR)/%.dep : %.cxx 
+	@if [ ! -d $(OPAL_DEPDIR) ] ; then mkdir -p $(OPAL_DEPDIR) ; fi
+	@printf %s $(OPAL_OBJDIR)/ > $@
+	$(CXX) $(CXXFLAGS:-g=) -M $< >> $@
+
+
+# This builds the application
+
+OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
+
+$(OBJDIR)/$(PROG): $(OBJECTS)
+	 $(CXX) $^ $(LDFLAGS) -o $@
+
+clean:
+	rm -rf $(OBJDIR)
+
+
+# Some extra targets for convenience
+
+opt:
+	$(MAKE) DEBUG_BUILD=no STATIC_BUILD=no
+
+debug:
+	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=no
+	
+both:
+	$(MAKE) DEBUG_BUILD=no STATIC_BUILD=no
+	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=no
+
+optnoshared:
+	$(MAKE) DEBUG_BUILD=no STATIC_BUILD=yes
+
+debugnoshared:
+	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=yes
+	
+bothnoshared:
+	$(MAKE) DEBUG_BUILD=no STATIC_BUILD=yes
+	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=yes
+
+###########################################

@@ -35,8 +35,9 @@
 #pragma implementation "manager.h"
 #endif
 
-#include <opal/manager.h>
+#include <opal/buildopts.h>
 
+#include <opal/manager.h>
 #include <opal/endpoint.h>
 #include <opal/call.h>
 #include <opal/patch.h>
@@ -168,7 +169,7 @@ OpalManager::OpalManager()
   tcpPorts.current = tcpPorts.base = tcpPorts.max = 0;
   udpPorts.current = udpPorts.base = udpPorts.max = 0;
 
-#ifndef NO_OPAL_VIDEO
+#if OPAL_PTLIB_VIDEO
   PStringArray devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   PINDEX i;
   for (i = 0; i < devices.GetSize(); ++i) {

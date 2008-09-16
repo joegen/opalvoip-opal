@@ -674,7 +674,7 @@ class OpalEndPoint : public PObject
       OpalConnection & connection   ///< New connection just created
     );
 
-#if P_SSL
+#if OPAL_PTLIB_SSL
     PString GetSSLCertificate() const;
 #endif
 

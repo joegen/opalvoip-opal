@@ -39,8 +39,8 @@
 #endif
 
 #include <opal/buildopts.h>
-#include <ptlib/sockets.h>
 
+#include <ptlib/sockets.h>
 
 class RTP_JitterBuffer;
 class PNatMethod;
@@ -287,7 +287,7 @@ class RTP_Session;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
 
 /**This class carries statistics on the media stream.
   */
@@ -499,7 +499,7 @@ class RTP_Session : public PObject
       */
     virtual PString GetLocalHostName() = 0;
 
-#ifdef OPAL_STATISTICS
+#if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool receiver) const;
 #endif
   //@}

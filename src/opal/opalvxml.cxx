@@ -34,6 +34,8 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+
 #include <opal/opalvxml.h>
 
 #include <opal/connection.h>
@@ -42,7 +44,7 @@
 
 ///////////////////////////////////////////////////////////////
 
-#if defined(P_EXPAT) && defined(P_VXML)
+#if OPAL_PTLIB_VXML
 
 OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, PBoolean autoDelete)
   : PVXMLSession(tts, autoDelete),
@@ -86,7 +88,7 @@ PWAVFile * OpalVXMLSession::CreateWAVFile(const PFilePath & fn, PFile::OpenMode 
 }
 
 
-#endif // P_EXPAT
+#endif // #if OPAL_PTLIB_EXPAT
 
 
 // End of File /////////////////////////////////////////////////////////////

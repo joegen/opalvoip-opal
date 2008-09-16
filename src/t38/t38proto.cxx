@@ -34,6 +34,8 @@
 #pragma implementation "t38proto.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <t38/t38proto.h>
 
 

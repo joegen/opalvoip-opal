@@ -34,6 +34,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/connection.h>
 #include <opal/transports.h>
 #include <rtp/rtp.h>

@@ -34,6 +34,8 @@
 #include <ptlib.h>
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/mediatype.h>
 #include <h224/q922.h>
 

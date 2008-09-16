@@ -37,6 +37,8 @@
 #pragma implementation "jitter.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <rtp/jitter.h>
 
 /*Number of consecutive attempts to add a packet to the jitter buffer while
