@@ -598,6 +598,7 @@ PBoolean OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
       patch->AddFilter(silenceDetector->GetReceiveHandler(), line.GetReadFormat());
   }
 
+  line.StopTone(); // In case a RoutingTone or RingTone is going
   return true;
 }
 
@@ -785,7 +786,8 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 
   PTRACE(3, "LID\tRouted to \"" << ownerCall.GetPartyB() << "\" the "
          << (IsOriginating() ? "outgo" : "incom") << "ing connection " << *this);
-  ownerCall.OnSetUp(*this);
+  if (ownerCall.OnSetUp(*this) && line.IsTerminal())
+    line.PlayTone(OpalLineInterfaceDevice::RoutingTone);
 }
 
 

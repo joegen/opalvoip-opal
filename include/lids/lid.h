@@ -589,6 +589,7 @@ class OpalLineInterfaceDevice : public PObject
       CongestionTone,// aka fast busy tone
       ClearTone,   // Call failed/disconnected tone (often same as busy tone)
       MwiTone,     // Message Waiting Tone
+      RoutingTone, // Call is being routed (not normal for PSTN, but VoIP can take a while)
       CNGTone,     // Fax CNG tone
       CEDTone,     // Fax CED tone
       NumTones
