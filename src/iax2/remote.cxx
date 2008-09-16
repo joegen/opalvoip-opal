@@ -471,7 +471,7 @@ const PString & IAX2Encryption::ChallengeKey() const
   return challengeKey; 
 }
 
-const PBoolean IAX2Encryption::IsEncrypted() const
+PBoolean IAX2Encryption::IsEncrypted() const
 {
   return encryptionEnabled;
 }

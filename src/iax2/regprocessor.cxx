@@ -77,7 +77,9 @@ void IAX2RegProcessor::OnNoResponseTimeout()
 void IAX2RegProcessor::ProcessLists()
 {
   PWaitAndSignal m(stateMutex);
-  while(ProcessOneIncomingEthernetFrame());
+  while (ProcessOneIncomingEthernetFrame()) {
+    ;
+  }
   
   if (registrationState == registrationStart) {
     PTRACE(2, "starting registration cycle");
