@@ -352,12 +352,11 @@ AC_DEFUN([OPAL_CHECK_PTLIB],
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
 
+          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-            LDFLAGS="$LDFLAGS $PTLIB_LIBS $DEBUG_LIBS"
+            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
           else
-            CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS "
-            LDFLAGS="$LDFLAGS $PTLIB_LIBS $RELEASE_LIBS"
+            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
           fi
 
           AC_LANG(C++)
