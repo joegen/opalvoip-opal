@@ -385,6 +385,34 @@ AC_DEFUN([OPAL_CHECK_PTLIB],
 	  
          ])
 
+AC_DEFUN([OPAL_CHECK_PTLIB_EXISTS],
+         [
+          old_CXXFLAGS="$CXXFLAGS"
+          old_LDFLAGS="$LDFLAGS"
+
+          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
+          if test "x${DEBUG_BUILD}" = xyes; then
+            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+          else
+            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+          fi
+
+          AC_LANG(C++)
+          AC_LINK_IFELSE([int main() {}
+                         ], 
+                         [opal_ptlib_exists=yes],
+                         [opal_ptlib_exists=no])
+
+          CXXFLAGS="$old_CXXFLAGS"
+          LDFLAGS="$old_LDFLAGS"
+
+
+	  if test "x$opal_ptlib_exists" != "xyes" ; then
+            AC_MSG_ERROR([Could not find a linkable ptlib in specified environment to verify symbols (debug ptlib: ${DEBUG_BUILD})])
+	  fi
+
+         ])
+
 dnl OPAL_CHECK_PTLIB_DEFINE
 dnl Verify if a specific #define in ptlib is defined
 dnl Arguments: $1 define name / description 
