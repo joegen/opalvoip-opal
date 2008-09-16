@@ -2017,6 +2017,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
 
     return false;
   }
+  PTRACE(4, "SIP\tProcessing received SDP media description for " << mediaType);
 
   // see if the remote supports this media
   OpalMediaFormatList mediaFormatList = mediaDescription->GetMediaFormats();
@@ -2079,6 +2080,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
   if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 && otherParty != NULL)
     ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId);
 
+  PTRACE_IF(3, otherSidesDir == SDPMediaDescription::Inactive, "SIP\tNo streams opened as " << mediaType << " inactive");
   return true;
 }
 
