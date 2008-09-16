@@ -1945,6 +1945,7 @@ void H323Gatekeeper::UpdateConnectionStatus()
   
   if (lowPriorityMonitor.GetInterfaces(FALSE, addr).GetSize() > 0) {
     // at least one interface available, locate gatekeper
+    discoveryComplete = PFalse;
     reregisterNow = PTrue;
     monitorTickle.Signal();
   }
