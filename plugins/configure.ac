@@ -204,10 +204,20 @@ PKG_CHECK_MODULES([LIBAVCODEC],
                    AC_DEFINE([HAVE_LIBAVCODEC], [1], [ffmpeg])
                    HAVE_LIBAVCODEC=yes
                    OPAL_LIBAVCODEC_HACK
-                   OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [$LIBAVCODEC_LIBS])
-    		   OPAL_CHECK_LIBAVCODEC([h263p_encoder], [HAVE_H263P=yes], [HAVE_H263P=no])
-		   OPAL_CHECK_LIBAVCODEC([mpeg4_encoder], [HAVE_MPEG4=yes], [HAVE_MPEG4=no])
-		   OPAL_CHECK_LIBAVCODEC([h264_decoder], [HAVE_H264_DECODER=yes], [HAVE_H264_DECODER=no])
+                   case "$target_os" in
+                      cygwin* | mingw* ) 
+                                         LIBAVCODEC_LIB_NAME="avcodec.dll"
+                                         HAVE_H263P=yes
+                                         HAVE_MPEG4=yes
+                                         HAVE_H264_DECODER=yes
+                                         ;;
+                                     * ) 
+                                         OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [$LIBAVCODEC_LIBS])
+                                         OPAL_CHECK_LIBAVCODEC([h263p_encoder], [HAVE_H263P=yes], [HAVE_H263P=no])
+                                         OPAL_CHECK_LIBAVCODEC([mpeg4_encoder], [HAVE_MPEG4=yes], [HAVE_MPEG4=no])
+                                         OPAL_CHECK_LIBAVCODEC([h264_decoder], [HAVE_H264_DECODER=yes], [HAVE_H264_DECODER=no])
+                                         ;;
+                   esac
                    AC_SUBST(HAVE_H263P)
                    AC_SUBST(HAVE_MPEG4)
                    AC_SUBST(LIBAVCODEC_LIB_NAME)
