@@ -53,6 +53,7 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
 {
   src.SetPatch(this);
   patchThread = NULL;
+  PTRACE(5, "Patch\tCreated media patch " << this);
 }
 
 
@@ -65,7 +66,7 @@ OpalMediaPatch::~OpalMediaPatch()
     delete patchThread;
     patchThread = NULL;
   }
-  PTRACE(4, "Patch\tMedia patch thread " << *this << " destroyed.");
+  PTRACE(5, "Patch\tDestroyed media patch " << this);
 }
 
 
@@ -228,6 +229,7 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
     if (s->stream == stream) {
       sinks.erase(s);
+      PTRACE(5, "Patch\tRemoved media stream sink " << *stream);
       break;
     }
   }
