@@ -547,7 +547,7 @@ install:
 
 	mkdir -p $(DESTDIR)$(libdir)/pkgconfig ; chmod 755 $(DESTDIR)$(libdir)/pkgconfig
 	$(INSTALL) -m 444 opal.pc $(DESTDIR)$(libdir)/pkgconfig
-	mkdir -p $(DESTDIR)$(datarootdir)/opal ; chmod 755 $(DESTDIR)$(datarootdir)/opal
+#	mkdir -p $(DESTDIR)$(datarootdir)/opal ; chmod 755 $(DESTDIR)$(datarootdir)/opal
 
 	$(MAKE) -C plugins install
 
