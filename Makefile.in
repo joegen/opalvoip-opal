@@ -528,11 +528,11 @@ endif # OPAL_SHARED_LIB
 
 install:
 	mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir)
+	$(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) $(DESTDIR)$(libdir)
 	$(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)
 	( for filename in $(LIB_FILENAME_SHARED) \
 	                  $(LIB_FILENAME_SHARED_MAJ) \
-	                  $(LIB_FILENAME_SHARED_MIN) \
-	                  $(LIB_FILENAME_STATIC); \
+	                  $(LIB_FILENAME_SHARED_MIN); \
 	do ln -snf $(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)/$$filename ;\
 	done)
 
@@ -556,14 +556,12 @@ uninstall:
 	                  $(LIB_FILENAME_SHARED_MAJ) \
 	                  $(LIB_FILENAME_SHARED_MIN) \
                           $(LIB_FILENAME_SHARED_PAT) \
-                          libopal.so ; \
+                          $(LIB_FILENAME_STATIC); \
 	do rm -f $(DESTDIR)$(libdir)/$$filename ;\
 	done)
-
 	rm -rf $(DESTDIR)$(includedir)/opal
-
 	rm -f $(DESTDIR)$(libdir)/pkgconfig/opal.pc
-	rm -rf $(DESTDIR)$(datarootdir)/opal
+#	rm -rf $(DESTDIR)$(datarootdir)/opal
 
 	$(MAKE) -C plugins uninstall
 
