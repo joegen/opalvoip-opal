@@ -9,9 +9,14 @@
 package org.opalvoip;
 
 public class example implements exampleConstants {
-  public static SWIGTYPE_p_OpalHandleStruct OpalInitialise(SWIGTYPE_p_unsigned_int version, String options) {
-    long cPtr = exampleJNI.OpalInitialise(SWIGTYPE_p_unsigned_int.getCPtr(version), options);
+  public static SWIGTYPE_p_OpalHandleStruct OpalInitialise(long[] INOUT, String INPUT) {
+    long cPtr = exampleJNI.OpalInitialise(INOUT, INPUT);
     return (cPtr == 0) ? null : new SWIGTYPE_p_OpalHandleStruct(cPtr, false);
+  }
+
+  public static SWIGTYPE_p_OpalMessage OpalSendMessage(SWIGTYPE_p_OpalHandleStruct arg0, SWIGTYPE_p_OpalMessage arg1) {
+    long cPtr = exampleJNI.OpalSendMessage(SWIGTYPE_p_OpalHandleStruct.getCPtr(arg0), SWIGTYPE_p_OpalMessage.getCPtr(arg1));
+    return (cPtr == 0) ? null : new SWIGTYPE_p_OpalMessage(cPtr, false);
   }
 
   public static void OpalShutDown(SWIGTYPE_p_OpalHandleStruct opal) {
@@ -20,11 +25,6 @@ public class example implements exampleConstants {
 
   public static SWIGTYPE_p_OpalMessage OpalGetMessage(SWIGTYPE_p_OpalHandleStruct opal, long timeout) {
     long cPtr = exampleJNI.OpalGetMessage(SWIGTYPE_p_OpalHandleStruct.getCPtr(opal), timeout);
-    return (cPtr == 0) ? null : new SWIGTYPE_p_OpalMessage(cPtr, false);
-  }
-
-  public static SWIGTYPE_p_OpalMessage OpalSendMessage(SWIGTYPE_p_OpalHandleStruct opal, SWIGTYPE_p_OpalMessage message) {
-    long cPtr = exampleJNI.OpalSendMessage(SWIGTYPE_p_OpalHandleStruct.getCPtr(opal), SWIGTYPE_p_OpalMessage.getCPtr(message));
     return (cPtr == 0) ? null : new SWIGTYPE_p_OpalMessage(cPtr, false);
   }
 
