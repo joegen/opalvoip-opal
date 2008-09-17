@@ -3282,7 +3282,7 @@ bool OptionsDialog::TransferDataFromWindow()
   // Video fields
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs grabber = m_manager.GetVideoInputDevice();
-  SAVE_FIELD(VideoGrabber, grabber.deviceName = );
+  SAVE_FIELD(VideoGrabber, grabber.deviceName = (PString));
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
