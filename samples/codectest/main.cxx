@@ -66,6 +66,8 @@ void CodecTest::Main()
              "r-frame-rate:"
              "b-bit-rate:"
              "c-crop."
+             "m-suppress-marker."
+             "M-force-marker."
              "H:"
 #if PTRACING
              "o-output:"             "-no-output."
@@ -101,6 +103,8 @@ void CodecTest::Main()
               "  -s --frame-size size    : video frame size (\"qcif\", \"cif\", WxH)\n"
               "  -r --frame-rate size    : video frame rate (frames/second)\n"
               "  -b --bit-rate size      : video bit rate (bits/second)\n"
+              "  -m --suppress-marker    : suppress marker bits to decoder"
+              "  -M --force-marker       : force marker bits to decoder"
               "  -c --crop               : crop rather than scale if resizing\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
@@ -137,7 +141,7 @@ void CodecTest::Main()
       infos[i]->audio.Stop();
       infos[i]->video.Stop();
     }
-   
+
     return;
   }
 
@@ -226,6 +230,11 @@ void CodecTest::Main()
 
 int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & rawFormat)
 {
+  if (args.HasOption('m'))
+    markerHandling = SuppressMarkers;
+  else if (args.HasOption('M'))
+    markerHandling = ForceMarkers;
+
   for (PINDEX i = 0; i < args.GetCount(); i++) {
     OpalMediaFormat mediaFormat = args[i];
     if (mediaFormat.IsEmpty()) {
@@ -233,10 +242,7 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
       return 0;
     }
 
-cout << mediaFormat << " created " << rawFormat << ' ' << mediaFormat.GetDefaultSessionID() << ' ' << rawFormat.GetDefaultSessionID() << endl;
-
     if (mediaFormat.GetDefaultSessionID() == rawFormat.GetDefaultSessionID()) {
-cout << "matched " << mediaFormat << " to " << rawFormat << endl;
       if (rawFormat == mediaFormat) {
         decoder = NULL;
         encoder = NULL;
@@ -625,6 +631,15 @@ void TranscoderThread::Main()
       if (encoder == NULL)
         outFrames = encFrames;
       else {
+        switch (markerHandling) {
+          case SuppressMarkers :
+            encFrames[i].SetMarker(false);
+            break;
+          case ForceMarkers :
+            encFrames[i].SetMarker(true);
+            break;
+        }
+
         state = decoder->ConvertFrames(encFrames[i], outFrames);
         if (oldDecState != state) {
           oldDecState = state;
