@@ -76,6 +76,7 @@ AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
+target_os=@target_os@
 
 GSM_SYSTEM=@GSM_SYSTEM@
 GSM_LIBS=@GSM_LIBS@
@@ -151,7 +152,15 @@ uninstall:
 else
 
 $(PLUGIN): $(OBJECTS)
+
+ifeq (solaris,$(findstring solaris,$(target_os)))
+
+	$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+else 
 	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
+
+endif
+
 endif
 
 install:

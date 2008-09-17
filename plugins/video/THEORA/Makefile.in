@@ -24,6 +24,7 @@ VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
+target_os=@target_os@
 
 OBJDIR	= ./obj
 
@@ -65,8 +66,12 @@ STATIC	= ./lib$(BASENAME)_video_s.a
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CXX) $(LDFLAGS) $(LDSO)  -o $@ $^ $(THEORA_LIBS)
-
+ifeq (,$(findstring solaris,$(target_os)))
+	$(CXX) $(LDFLAGS) $(LDSO) -o $@ $^ $(THEORA_LIBS)
+else	
+	$(CXX) $(LDFLAGS) $(LDSO) $@ -o $@ $^ $(THEORA_LIBS)
+endif
+    
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
 	install $(PLUGIN) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
