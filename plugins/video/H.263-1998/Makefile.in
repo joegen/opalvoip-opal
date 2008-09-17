@@ -24,6 +24,8 @@ VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
+target_os=@target_os@
+
 DL_LIBS =@DL_LIBS@
 
 BASENAME	=h263-1998
@@ -62,8 +64,12 @@ STATIC	= ./lib$(BASENAME)_video_s.a
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
+ifeq (,$(findstring solaris,$(target_os)))
 	$(CXX) $(LDSO) $(DL_LIBS) -o $@ $^
-
+else	
+	$(CXX) $(LDSO) $(DL_LIBS) $@ -o $@ $^
+endif
+    
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
 	install $(PLUGIN) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
