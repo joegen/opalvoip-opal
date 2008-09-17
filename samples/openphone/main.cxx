@@ -2469,15 +2469,15 @@ void MyManager::StartRegistrars()
   for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
     if (iter->m_Active) {
       SIPRegister::Params param;
-      param.m_addressOfRecord = (PString)iter->m_User;
+      param.m_addressOfRecord = PString(iter->m_User.c_str());
       if (param.m_addressOfRecord.Find('@') == P_MAX_INDEX) {
         param.m_addressOfRecord += '@';
-        param.m_addressOfRecord += (PString)iter->m_Domain;
+        param.m_addressOfRecord += iter->m_Domain.mb_str(wxConvUTF8);
       }
-      param.m_authID = (PString)iter->m_AuthID;
+      param.m_authID = iter->m_AuthID.mb_str(wxConvUTF8);
       if (param.m_authID.IsEmpty())
-        param.m_authID = (PString)iter->m_User;
-      param.m_password = (PString)iter->m_Password;
+        param.m_authID = iter->m_User.mb_str(wxConvUTF8);
+      param.m_password = iter->m_Password.mb_str(wxConvUTF8);
       param.m_expire = iter->m_TimeToLive;
       bool ok = sipEP->Register(param);
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
@@ -3282,7 +3282,7 @@ bool OptionsDialog::TransferDataFromWindow()
   // Video fields
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs grabber = m_manager.GetVideoInputDevice();
-  SAVE_FIELD(VideoGrabber, grabber.deviceName = (PString));
+  SAVE_FIELD(VideoGrabber, grabber.deviceName = );
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
