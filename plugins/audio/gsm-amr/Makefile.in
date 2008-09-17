@@ -11,6 +11,7 @@ AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
+target_os=@target_os@
 
 OBJDIR	= ./obj
 SRCDIR  = ./src
@@ -50,7 +51,14 @@ OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
 
 $(PLUGIN): $(OBJECTS)
+
+ifeq (solaris,$(findstring solaris,$(target_os)))
+
+	$(CC) $(LDSO) $@ -o $@ $^
+else	
 	$(CC) $(LDSO) -o $@ $^
+
+endif	
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
