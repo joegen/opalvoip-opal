@@ -481,26 +481,21 @@ void RTP_UserData::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 
 /////////////////////////////////////////////////////////////////////////////
 
-RTP_Session::RTP_Session(
-                         const PString & encoding,
-#if OPAL_RTP_AGGREGATE
-                         PHandleAggregator * _aggregator, 
-#endif
-                         unsigned id, RTP_UserData * data, PBoolean autoDelete)
+RTP_Session::RTP_Session(const Params & params)
 : canonicalName(PProcess::Current().GetUserName()),
   toolName(PProcess::Current().GetName()),
   reportTimeInterval(0, 12),  // Seconds
   reportTimer(reportTimeInterval)
 #if OPAL_RTP_AGGREGATE
-  , aggregator(_aggregator)
+  , aggregator(params.aggregator)
 #endif
 {
-  PAssert(id > 0 && id < 256, PInvalidParameter);
-  sessionID = (BYTE)id;
-  isAudio = sessionID == 1;  // MAJOR ASSUMPTION!!!
+  PAssert(params.id > 0 && params.id < 256, PInvalidParameter);
+  sessionID = (BYTE)params.id;
+  isAudio = params.isAudio;
 
-  userData = data;
-  autoDeleteUserData = autoDelete;
+  userData = params.userData;
+  autoDeleteUserData = params.autoDelete;
   jitter = NULL;
 
   ignoreOutOfOrderPackets = true;
@@ -560,7 +555,7 @@ RTP_Session::RTP_Session(
   lastSentTimestamp = 0;  // should be calculated, but we'll settle for initialising it
 
   m_encodingHandler = NULL;
-  SetEncoding(encoding);
+  SetEncoding(params.encoding);
 }
 
 RTP_Session::~RTP_Session()
@@ -1478,28 +1473,23 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype)
     if (sz >= UDP_BUFFER_SIZE)
       return;
   }
+  else {
+    PTRACE(1, "RTP_UDP\tGetOption(" << buftype << ") failed: " << sock.GetErrorText());
+  }
 
   if (!sock.SetOption(buftype, UDP_BUFFER_SIZE)) {
     PTRACE(1, "RTP_UDP\tSetOption(" << buftype << ") failed: " << sock.GetErrorText());
   }
+
+  PTRACE_IF(1, !sock.GetOption(buftype, sz) && sz < UDP_BUFFER_SIZE, "RTP_UDP\tSetOption(" << buftype << ") failed, even though it said it succeeded!");
 }
 
 
-RTP_UDP::RTP_UDP(
-                 const PString & _format,
-#if OPAL_RTP_AGGREGATE
-                 PHandleAggregator * _aggregator, 
-#endif
-                 unsigned id, PBoolean _remoteIsNAT)
-  : RTP_Session(
-    _format,
-#if OPAL_RTP_AGGREGATE
-  _aggregator, 
-#endif
-  id),
+RTP_UDP::RTP_UDP(const Params & params)
+  : RTP_Session(params),
     remoteAddress(0),
     remoteTransmitAddress(0),
-    remoteIsNAT(_remoteIsNAT)
+    remoteIsNAT(params.remoteIsNAT)
 {
   PTRACE(4, "RTP_UDP\tSession " << sessionID << ", created with NAT flag set to " << remoteIsNAT);
   remoteDataPort    = 0;
@@ -1854,29 +1844,19 @@ int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, con
 
 int RTP_UDP::Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
 {
-  if (first && (sessionID == 1)) {
-    BYTE buffer[1500];
-    PINDEX count = 0;
-    do {
-      switch (PSocket::Select(dataSocket, controlSocket, PTimeInterval(0))) {
-        case -2:
-          controlSocket.Read(buffer, sizeof(buffer));
-          ++count;
-          break;
+  if (first && isAudio) {
+    PTimeInterval oldTimeout = dataSocket.GetReadTimeout();
+    dataSocket.SetReadTimeout(0);
 
-        case -3:
-          controlSocket.Read(buffer, sizeof(buffer));
-          ++count;
-        case -1:
-          dataSocket.Read(buffer, sizeof(buffer));
-          ++count;
-          break;
-        case 0:
-          first = false;
-          break;
-      }
-    } while (first);
-    PTRACE_IF(2, count > 0, "RTP_UDP\tSession " << sessionID << ", swallowed " << count << " RTP packets on startup");
+    BYTE buffer[2000];
+    PINDEX count = 0;
+    while (dataSocket.Read(buffer, sizeof(buffer)))
+      ++count;
+
+    PTRACE_IF(2, count > 0, "RTP_UDP\tSession " << sessionID << ", flushed " << count << " RTP data packets on startup");
+
+    dataSocket.SetReadTimeout(oldTimeout);
+    first = false;
   }
 
   return PSocket::Select(dataSocket, controlSocket, timeout);
@@ -2261,17 +2241,8 @@ int RTP_Encoding::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket
 
 /////////////////////////////////////////////////////////////////////////////
 
-SecureRTP_UDP::SecureRTP_UDP(const PString & encoding,
-#if OPAL_RTP_AGGREGATE
-
-                             PHandleAggregator * _aggregator, 
-#endif
-                             unsigned id, PBoolean remoteIsNAT)
-  : RTP_UDP(encoding,
-#if OPAL_RTP_AGGREGATE
-            _aggregator, 
-#endif
-            id, remoteIsNAT)
+SecureRTP_UDP::SecureRTP_UDP(const Params & params)
+  : RTP_UDP(params)
 {
   securityParms = NULL;
 }

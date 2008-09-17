@@ -162,21 +162,19 @@ RTP_UDP * OpalMediaTypeDefinition::CreateRTPSession(OpalRTPConnection & connecti
                                                     unsigned sessionID,
                                                     bool remoteIsNAT)
 {
-  if (securityMode != NULL) 
-    return securityMode->CreateRTPSession(connection,
-                                          GetRTPEncoding(),
+  RTP_Session::Params params;
+  params.id = sessionID;
+  params.encoding = GetRTPEncoding();
 #if OPAL_RTP_AGGREGATE
-                                          agg,
+  params.aggregator = agg;
 #endif
-                                          sessionID,
-                                          remoteIsNAT);
+  params.isAudio = mediaType == OpalMediaType::Audio();
+  params.remoteIsNAT = remoteIsNAT;
 
-  return new RTP_UDP(GetRTPEncoding(),
-#if OPAL_RTP_AGGREGATE
-                     agg,
-#endif
-                     sessionID,
-                     remoteIsNAT);
+  if (securityMode != NULL) 
+    return securityMode->CreateRTPSession(connection, params);
+
+  return new RTP_UDP(params);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -99,12 +99,7 @@ class OpalSRTP_UDP : public SecureRTP_UDP
   PCLASSINFO(OpalSRTP_UDP, SecureRTP_UDP);
   public:
     OpalSRTP_UDP(
-      const PString & encoding,          ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
-#if OPAL_RTP_AGGREGATE
-      PHandleAggregator * _aggregator,   ///< handle aggregator
-#endif
-      unsigned id,                       ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT               ///<  PTrue is remote is behind NAT
+      const Params & options ///< Parameters to construct with session.
     );
 
     virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame) = 0;
@@ -124,12 +119,7 @@ class LibSRTP_UDP : public OpalSRTP_UDP
   PCLASSINFO(LibSRTP_UDP, OpalSRTP_UDP);
   public:
     LibSRTP_UDP(
-      const PString & encoding,          ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
-#if OPAL_RTP_AGGREGATE
-      PHandleAggregator * _aggregator,   ///< handle aggregator
-#endif
-      unsigned int id,                   ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT               ///<  PTrue is remote is behind NAT
+      const Params & options ///< Parameters to construct with session.
     );
 
     ~LibSRTP_UDP();
