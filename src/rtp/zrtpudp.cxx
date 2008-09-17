@@ -23,16 +23,8 @@
 
 //////////////////////////////////////////////////////////////////////
 
-OpalZrtp_UDP::OpalZrtp_UDP(const PString & encoding,
-#if OPAL_RTP_AGGREGATE
-                           PHandleAggregator * aggregator,
-#endif
-                           unsigned id, PBoolean remoteIsNAT)
-  : SecureRTP_UDP(encoding,
-#if OPAL_RTP_AGGREGATE
-                  aggregator,
-#endif
-                  id, remoteIsNAT)
+OpalZrtp_UDP::OpalZrtp_UDP(const Params & params)
+  : SecureRTP_UDP(params)
   , zrtpStream(NULL)
 {
 }
@@ -223,18 +215,9 @@ void LibZrtpSecurityMode_Base::Init(int *sas, int *pk, int *auth, int *cipher, i
 }
  
 RTP_UDP * LibZrtpSecurityMode_Base::CreateRTPSession(OpalRTPConnection & connection,
-                                                     const PString & encoding,
-#if OPAL_RTP_AGGREGATE
-                                                     PHandleAggregator * _aggregator,
-#endif
-                                                     unsigned id,
-                                                     PBoolean remoteIsNAT)
+                                                     const RTP_Session::Params & options)
 {
-  OpalZrtp_UDP * session = new OpalZrtp_UDP(encoding,
-#if OPAL_RTP_AGGREGATE
-    _aggregator,
-#endif
-    id, remoteIsNAT);
+  OpalZrtp_UDP * session = new OpalZrtp_UDP(options);
   session->SetSecurityMode(this);
 
   int ssrc = session->GetOutgoingSSRC();

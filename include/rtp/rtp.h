@@ -389,16 +389,33 @@ class RTP_Session : public PObject
   public:
   /**@name Construction */
   //@{
+    struct Params {
+      Params()
+        : id(0)
+#if OPAL_RTP_AGGREGATE
+        , aggregator(NULL)
+#endif
+        , userData(NULL)
+        , autoDelete(true)
+        , isAudio(false)
+        , remoteIsNAT(false)
+      { }
+
+      PString             encoding;    ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
+      unsigned            id;          ///<  Session ID for RTP channel
+#if OPAL_RTP_AGGREGATE
+      PHandleAggregator * aggregator;  ///<  RTP aggregator
+#endif
+      RTP_UserData      * userData;    ///<  Optional data for session.
+      bool                autoDelete;  ///<  Delete optional data with session.
+      bool                isAudio;     ///<  is audio RTP data
+      bool                remoteIsNAT; ///<  Remote is behid NAT
+    };
+
     /**Create a new RTP session.
      */
     RTP_Session(
-      const PString & encoding,            ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
-#if OPAL_RTP_AGGREGATE
-      PHandleAggregator * aggregator,      ///<  RTP aggregator
-#endif
-      unsigned id,                         ///<  Session ID for RTP channel
-      RTP_UserData * userData = NULL,      ///<  Optional data for session.
-      PBoolean autoDeleteUserData = PTrue  ///<  Delete optional data with session.
+      const Params & options ///< Parameters to construct with session.
     );
 
     /**Delete a session.
@@ -909,12 +926,7 @@ class RTP_UDP : public RTP_Session
     /**Create a new RTP channel.
      */
     RTP_UDP(
-      const PString & _format,
-#if OPAL_RTP_AGGREGATE
-      PHandleAggregator * aggregator, ///< RTP aggregator
-#endif
-      unsigned id,                    ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
+      const Params & options ///< Parameters to construct with session.
     );
 
     /// Destroy the RTP
@@ -1129,12 +1141,7 @@ class SecureRTP_UDP : public RTP_UDP
     /**Create a new RTP channel.
      */
     SecureRTP_UDP(
-      const PString & encoding,       ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
-#if OPAL_RTP_AGGREGATE
-      PHandleAggregator * aggregator, ///< RTP aggregator
-#endif
-      unsigned id,                    ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
+      const Params & options ///< Parameters to construct with session.
     );
 
     /// Destroy the RTP
