@@ -43,7 +43,7 @@ SOURCES		:= main.cxx openphone.cxx
 
 VERSION_FILE	= $(OPALDIR)/version.h
 
-WX_CONFIG	+= wx-config --unicode=no
+WX_CONFIG	+= wx-config # --unicode=no
 ifdef DEBUG
 WX_CONFIG+=--debug=yes
 else

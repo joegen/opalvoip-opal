@@ -29,12 +29,13 @@
  * $Date$
  */
 
-#ifdef __GNUG__
-#pragma implementation
-#pragma interface
-#endif
+//#ifdef __GNUG__
+//#pragma implementation
+//#pragma interface
+//#endif
 
 #include "main.h"
+
 #include "version.h"
 
 #include <wx/config.h>
@@ -85,9 +86,9 @@ extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.x
 
 // Definitions of the configuration file section and key names
 
-#define DEF_FIELD(name) static const char name##Key[] = #name
+#define DEF_FIELD(name) static const wxChar name##Key[] = wxT(#name)
 
-static const char AppearanceGroup[] = "/Appearance";
+static const wxChar AppearanceGroup[] = wxT("/Appearance");
 DEF_FIELD(MainFrameX);
 DEF_FIELD(MainFrameY);
 DEF_FIELD(MainFrameWidth);
@@ -95,7 +96,7 @@ DEF_FIELD(MainFrameHeight);
 DEF_FIELD(SashPosition);
 DEF_FIELD(ActiveView);
 
-static const char GeneralGroup[] = "/General";
+static const wxChar GeneralGroup[] = wxT("/General");
 DEF_FIELD(Username);
 DEF_FIELD(DisplayName);
 DEF_FIELD(RingSoundDeviceName);
@@ -109,7 +110,7 @@ DEF_FIELD(MicrophoneMute);
 DEF_FIELD(LastDialed);
 DEF_FIELD(LastReceived);
 
-static const char NetworkingGroup[] = "/Networking";
+static const wxChar NetworkingGroup[] = wxT("/Networking");
 DEF_FIELD(Bandwidth);
 DEF_FIELD(TCPPortBase);
 DEF_FIELD(TCPPortMax);
@@ -122,9 +123,9 @@ DEF_FIELD(NATHandling);
 DEF_FIELD(NATRouter);
 DEF_FIELD(STUNServer);
 
-static const char LocalInterfacesGroup[] = "/Networking/Interfaces";
+static const wxChar LocalInterfacesGroup[] = wxT("/Networking/Interfaces");
 
-static const char AudioGroup[] = "/Audio";
+static const wxChar AudioGroup[] = wxT("/Audio");
 DEF_FIELD(SoundPlayer);
 DEF_FIELD(SoundRecorder);
 DEF_FIELD(SoundBuffers);
@@ -139,7 +140,7 @@ DEF_FIELD(SignalDeadband);
 DEF_FIELD(SilenceDeadband);
 DEF_FIELD(DisableDetectInBandDTMF);
 
-static const char VideoGroup[] = "/Video";
+static const wxChar VideoGroup[] = wxT("/Video");
 DEF_FIELD(VideoGrabber);
 DEF_FIELD(VideoGrabFormat);
 DEF_FIELD(VideoGrabSource);
@@ -157,21 +158,21 @@ DEF_FIELD(LocalVideoFrameY);
 DEF_FIELD(RemoteVideoFrameX);
 DEF_FIELD(RemoteVideoFrameY);
 
-static const char FaxGroup[] = "/Fax";
+static const wxChar FaxGroup[] = wxT("/Fax");
 DEF_FIELD(FaxStationIdentifier);
 DEF_FIELD(FaxReceiveDirectory);
 DEF_FIELD(FaxSpanDSP);
 
-static const char CodecsGroup[] = "/Codecs";
-static const char CodecNameKey[] = "Name";
+static const wxChar CodecsGroup[] = wxT("/Codecs");
+static const wxChar CodecNameKey[] = wxT("Name");
 
-static const char SecurityGroup[] = "/Security";
+static const wxChar SecurityGroup[] = wxT("/Security");
 DEF_FIELD(SecureH323);
 DEF_FIELD(SecureSIP);
 DEF_FIELD(RTPSecurityModeH323);
 DEF_FIELD(RTPSecurityModeSIP);
 
-static const char H323Group[] = "/H.323";
+static const wxChar H323Group[] = wxT("/H.323");
 DEF_FIELD(GatekeeperMode);
 DEF_FIELD(GatekeeperAddress);
 DEF_FIELD(GatekeeperIdentifier);
@@ -184,15 +185,15 @@ DEF_FIELD(DisableFastStart);
 DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
 
-static const char H323AliasesGroup[] = "/H.323/Aliases";
+static const wxChar H323AliasesGroup[] = wxT("/H.323/Aliases");
 
-static const char SIPGroup[] = "/SIP";
+static const wxChar SIPGroup[] = wxT("/SIP");
 DEF_FIELD(SIPProxyUsed);
 DEF_FIELD(SIPProxy);
 DEF_FIELD(SIPProxyUsername);
 DEF_FIELD(SIPProxyPassword);
 
-static const char RegistrarGroup[] = "/SIP/Registrars";
+static const wxChar RegistrarGroup[] = wxT("/SIP/Registrars");
 DEF_FIELD(RegistrarUsed);
 DEF_FIELD(RegistrarName);
 DEF_FIELD(RegistrarDomain);
@@ -203,10 +204,10 @@ DEF_FIELD(RegistrarTimeToLive);
 DEF_FIELD(SubscribeMWI);
 DEF_FIELD(SubscribePresence);
 
-static const char RoutingGroup[] = "/Routes";
+static const wxChar RoutingGroup[] = wxT("/Routes");
 
 #if PTRACING
-static const char TracingGroup[] = "/Tracing";
+static const wxChar TracingGroup[] = wxT("/Tracing");
 DEF_FIELD(EnableTracing);
 DEF_FIELD(TraceLevelThreshold);
 DEF_FIELD(TraceLevelNumber);
@@ -220,19 +221,19 @@ DEF_FIELD(TraceFileName);
 DEF_FIELD(TraceOptions);
 #endif
 
-static const char SpeedDialsGroup[] = "/Speed Dials";
-static const char SpeedDialAddressKey[] = "Address";
-static const char SpeedDialNumberKey[] = "Number";
-static const char SpeedDialDescriptionKey[] = "Description";
+static const wxChar SpeedDialsGroup[] = wxT("/Speed Dials");
+static const wxChar SpeedDialAddressKey[] = wxT("Address");
+static const wxChar SpeedDialNumberKey[] = wxT("Number");
+static const wxChar SpeedDialDescriptionKey[] = wxT("Description");
 
-static const char RecentCallsGroup[] = "/Recent Calls";
+static const wxChar RecentCallsGroup[] = wxT("/Recent Calls");
 static const size_t MaxSavedRecentCalls = 10;
 
-static const char SIPonly[] = " (SIP only)";
-static const char H323only[] = " (H.323 only)";
+static const wxChar SIPonly[] = wxT(" (SIP only)");
+static const wxChar H323only[] = wxT(" (H.323 only)");
 
+static const wxChar AllRouteSources[] = wxT("<ALL>");
 
-static char const AllRouteSources[] = "<ALL>";
 static const char * const DefaultRoutes[] = {
 #if OPAL_IVR
     ".*:#  = ivr:", // A hash from anywhere goes to IVR
@@ -285,7 +286,7 @@ DEFINE_EVENT_TYPE(wxEvtStateChange)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-template <class cls> cls * FindWindowByNameAs(wxWindow * window, const char * name)
+template <class cls> cls * FindWindowByNameAs(wxWindow * window, const wxChar * name)
 {
   wxWindow * baseChild = window->FindWindowByName(name);
   if (PAssert(baseChild != NULL, "Windows control not found")) {
@@ -300,9 +301,9 @@ template <class cls> cls * FindWindowByNameAs(wxWindow * window, const char * na
 
 void RemoveNotebookPage(wxWindow * window, const char * name)
 {
-  wxNotebook * book = FindWindowByNameAs<wxNotebook>(window, "OptionsNotebook");
+  wxNotebook * book = FindWindowByNameAs<wxNotebook>(window, wxT("OptionsNotebook"));
   for (size_t i = 0; i < book->GetPageCount(); ++i) {
-    if (book->GetPageText(i) == name) {
+    if (PwxString(book->GetPageText(i)) == name) {
       book->DeletePage(i);
       break;
     }
@@ -359,7 +360,7 @@ OpenPhoneApp::OpenPhoneApp()
   : PProcess(MANUFACTURER_TEXT, PRODUCT_NAME_TEXT,
              MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
 {
-  wxConfig::Set(new wxConfig((const char *)GetName(), (const char *)GetManufacturer()));
+  wxConfig::Set(new wxConfig(PwxString(GetName()), PwxString(GetManufacturer())));
 }
 
 
@@ -510,7 +511,7 @@ bool MyManager::Initialise()
   wxMenuBar * menubar;
   {
     PMEMORY_IGNORE_ALLOCATIONS_FOR_SCOPE;
-    if ((menubar = wxXmlResource::Get()->LoadMenuBar("MenuBar")) == NULL)
+    if ((menubar = wxXmlResource::Get()->LoadMenuBar(wxT("MenuBar"))) == NULL)
       return false;
     SetMenuBar(menubar);
   }
@@ -526,7 +527,7 @@ bool MyManager::Initialise()
   SetAcceleratorTable(accel);
 
   wxConfigBase * config = wxConfig::Get();
-  config->SetPath(AppearanceGroup);
+  config->SetPath(PwxString(AppearanceGroup));
 
   wxPoint initalPosition = wxDefaultPosition;
   if (config->Read(MainFrameXKey, &initalPosition.x) && config->Read(MainFrameYKey, &initalPosition.y))
@@ -549,10 +550,10 @@ bool MyManager::Initialise()
   int i;
   if (!config->Read(ActiveViewKey, &i) || i < 0 || i >= e_NumViews)
     i = e_ViewList;
-  static const char * const ViewMenuNames[e_NumViews] = {
-    "ViewLarge", "ViewSmall", "ViewList", "ViewDetails"
+  static const wxChar * const ViewMenuNames[e_NumViews] = {
+    wxT("ViewLarge"), wxT("ViewSmall"), wxT("ViewList"), wxT("ViewDetails")
   };
-  menubar->Check(XRCID(ViewMenuNames[i]), true);
+  menubar->Check(wxXmlResource::GetXRCID(ViewMenuNames[i]), true);
   RecreateSpeedDials((SpeedDialViews)i);
 
   // Speed dial panel switches to answer panel on ring
@@ -581,7 +582,7 @@ bool MyManager::Initialise()
             << " on " << PProcess::Current().GetOSClass() << ' ' << PProcess::Current().GetOSName()
             << " (" << PProcess::Current().GetOSVersion() << '-' << PProcess::Current().GetOSHardware() << ')' << endl;
 
-  m_ClipboardFormat.SetId("OpenPhone Speed Dial");
+  m_ClipboardFormat.SetId(wxT("OpenPhone Speed Dial"));
 
 #if PTRACING
   ////////////////////////////////////////
@@ -593,7 +594,7 @@ bool MyManager::Initialise()
     config->Read(TraceLevelThresholdKey, &traceLevelThreshold);
     int traceOptions = PTrace::DateAndTime|PTrace::Thread|PTrace::FileAndLine;
     config->Read(TraceOptionsKey, &traceOptions);
-    PTrace::Initialise(traceLevelThreshold, m_traceFileName, traceOptions);
+    PTrace::Initialise(traceLevelThreshold, PString(m_traceFileName), traceOptions);
   }
 #endif
 
@@ -725,9 +726,9 @@ bool MyManager::Initialise()
   config->Read(VideoFlipLocalKey, &videoArgs.flip);
   SetVideoInputDevice(videoArgs);
 
-  config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize,  "CIF");
-  config->Read(VideoMinFrameSizeKey,  &m_VideoMinFrameSize, "SQCIF");
-  config->Read(VideoMaxFrameSizeKey,  &m_VideoMaxFrameSize,   "CIF16");
+  config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize,  wxT("CIF"));
+  config->Read(VideoMinFrameSizeKey,  &m_VideoMinFrameSize, wxT("SQCIF"));
+  config->Read(VideoMaxFrameSizeKey,  &m_VideoMaxFrameSize,   wxT("CIF16"));
 
   config->Read(VideoGrabPreviewKey, &m_VideoGrabPreview);
   if (config->Read(VideoAutoTransmitKey, &onoff))
@@ -771,10 +772,10 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Codec fields
-  InitMediaInfo(pcssEP->GetPrefixName(), pcssEP->GetMediaFormats());
-  InitMediaInfo(potsEP->GetPrefixName(), potsEP->GetMediaFormats());
+  InitMediaInfo(PwxString(pcssEP->GetPrefixName()), pcssEP->GetMediaFormats());
+  InitMediaInfo(PwxString(potsEP->GetPrefixName()), potsEP->GetMediaFormats());
 #if OPAL_IVR
-  InitMediaInfo(ivrEP->GetPrefixName(), ivrEP->GetMediaFormats());
+  InitMediaInfo(PwxString(ivrEP->GetPrefixName()), ivrEP->GetMediaFormats());
 #endif
 
   OpalMediaFormatList mediaFormats;
@@ -786,13 +787,13 @@ bool MyManager::Initialise()
 #if OPAL_FAX
   mediaFormats += m_faxEP->GetMediaFormats();
 #endif
-  InitMediaInfo("sw", OpalTranscoder::GetPossibleFormats(mediaFormats));
+  InitMediaInfo(wxT("sw"), OpalTranscoder::GetPossibleFormats(mediaFormats));
 
   config->SetPath(CodecsGroup);
   int codecIndex = 0;
   for (;;) {
     wxString groupName;
-    groupName.sprintf("%04u", codecIndex);
+    groupName.sprintf(wxT("%04u"), codecIndex);
     if (!config->HasGroup(groupName))
       break;
 
@@ -822,7 +823,7 @@ bool MyManager::Initialise()
         }
       }
     }
-    config->SetPath("..");
+    config->SetPath(wxT(".."));
     codecIndex++;
   }
 
@@ -899,12 +900,12 @@ bool MyManager::Initialise()
     if (config->Read(GatekeeperTTLKey, &value1))
       h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, value1));
 
-    config->Read(GatekeeperLoginKey, &username, "");
-    config->Read(GatekeeperPasswordKey, &password, "");
+    config->Read(GatekeeperLoginKey, &username, wxT(""));
+    config->Read(GatekeeperPasswordKey, &password, wxT(""));
     h323EP->SetGatekeeperPassword(password, username);
 
-    config->Read(GatekeeperAddressKey, &m_gatekeeperAddress, "");
-    config->Read(GatekeeperIdentifierKey, &m_gatekeeperIdentifier, "");
+    config->Read(GatekeeperAddressKey, &m_gatekeeperAddress, wxT(""));
+    config->Read(GatekeeperIdentifierKey, &m_gatekeeperIdentifier, wxT(""));
     if (!StartGatekeeper())
       return false;
   }
@@ -948,7 +949,7 @@ bool MyManager::Initialise()
         config->Read(SubscribePresenceKey, &registrar.m_Presence, true);
         m_registrars.push_back(registrar);
       }
-      config->SetPath("..");
+      config->SetPath(wxT(".."));
     } while (config->GetNextGroup(groupName, groupIndex));
   }
 
@@ -980,7 +981,7 @@ void MyManager::StartLID()
 
   PwxString device;
   if (!config->Read(LineInterfaceDeviceKey, &device) ||
-      device.IsEmpty() || (device.StartsWith("<<") && device.EndsWith(">>")))
+      device.IsEmpty() || (device.StartsWith(wxT("<<")) && device.EndsWith(wxT(">>"))))
     return;
 
   if (!potsEP->AddDeviceName(device)) {
@@ -1099,12 +1100,12 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
   }
 
   int width;
-  static const char * const titles[e_NumColumns] = { "Name", "Number", "Address", "Description" };
+  static const wxChar * const titles[e_NumColumns] = { wxT("Name"), wxT("Number"), wxT("Address"), wxT("Description") };
 
   for (int i = 0; i < e_NumColumns; i++) {
     m_speedDials->InsertColumn(i, titles[i]);
     wxString key;
-    key.sprintf("ColumnWidth%u", i);
+    key.sprintf(wxT("ColumnWidth%u"), i);
     if (config->Read(key, &width))
       m_speedDials->SetColumnWidth(i, width);
   }
@@ -1131,18 +1132,18 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
       if (config->Read(SpeedDialAddressKey, &address) && !address.empty()) {
         int icon = 0;
         if (view == e_ViewLarge) {
-          if (address.StartsWith("h323"))
+          if (address.StartsWith(wxT("h323")))
             icon = 1;
-          else if (address.StartsWith("sip"))
+          else if (address.StartsWith(wxT("sip")))
             icon = 2;
         }
 
         int pos = m_speedDials->InsertItem(INT_MAX, groupName, icon);
-        m_speedDials->SetItem(pos, e_NumberColumn, config->Read(SpeedDialNumberKey, ""));
+        m_speedDials->SetItem(pos, e_NumberColumn, config->Read(SpeedDialNumberKey, wxT("")));
         m_speedDials->SetItem(pos, e_AddressColumn, address);
-        m_speedDials->SetItem(pos, e_DescriptionColumn, config->Read(SpeedDialDescriptionKey, ""));
+        m_speedDials->SetItem(pos, e_DescriptionColumn, config->Read(SpeedDialDescriptionKey, wxT("")));
       }
-      config->SetPath("..");
+      config->SetPath(wxT(".."));
     } while (config->GetNextGroup(groupName, groupIndex));
   }
 }
@@ -1235,14 +1236,14 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
     // Get ID of open audio to check the menu item
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, true);
     if (stream != NULL)
-      audioFormat = (const char *)stream->GetMediaFormat();
+      audioFormat = PwxString(stream->GetMediaFormat());
 
     stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
     hasStopVideo = stream != NULL && stream->Open();
 
     stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
     if (stream != NULL) {
-      videoFormat = (const char *)stream->GetMediaFormat();
+      videoFormat = PwxString(stream->GetMediaFormat());
       hasRxVideo = stream->Open();
     }
 
@@ -1287,8 +1288,8 @@ void MyManager::OnMenuQuit(wxCommandEvent& WXUNUSED(event))
 void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 {
   wxMessageDialog dialog(this,
-                         _T("OpenPhone\nPost Increment (c) 2004"),
-                         _T("About OpenPhone"),
+                         wxT("OpenPhone\nPost Increment (c) 2004"),
+                         wxT("About OpenPhone"),
                          wxOK);
   dialog.ShowModal();
 }
@@ -1345,14 +1346,14 @@ void MyManager::OnCallSpeedDialHandset(wxCommandEvent & /*event*/)
 void MyManager::OnSendFax(wxCommandEvent & /*event*/)
 {
   wxFileDialog faxDlg(this,
-                      "Send FAX file",
+                      wxT("Send FAX file"),
                       wxEmptyString,
                       wxEmptyString,
-                      "*.tif");
+                      wxT("*.tif"));
   if (faxDlg.ShowModal() == wxID_OK) {
     CallDialog callDlg(this, true);
     if (callDlg.ShowModal() == wxID_OK)
-      MakeCall(callDlg.m_Address, "t38:"+faxDlg.GetPath());
+      MakeCall(callDlg.m_Address, wxString(wxT("t38:")) + faxDlg.GetPath());
   }
 }
 
@@ -1368,12 +1369,12 @@ void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
   item.m_mask = wxLIST_MASK_TEXT;
   if (m_speedDials->GetItem(item)) {
     wxFileDialog faxDlg(this,
-                        "Send FAX file",
+                        wxT("Send FAX file"),
                         wxEmptyString,
                         wxEmptyString,
-                        "*.tif");
+                        wxT("*.tif"));
     if (faxDlg.ShowModal() == wxID_OK)
-      MakeCall(item.m_text, "t38:"+faxDlg.GetPath());
+      MakeCall(item.m_text, wxString(wxT("t38:")) + faxDlg.GetPath());
   }
 }
 
@@ -1390,9 +1391,9 @@ void MyManager::OnMenuHangUp(wxCommandEvent& WXUNUSED(event))
 }
 
 
-static wxString MakeUniqueSpeedDialName(wxListCtrl * speedDials, const char * baseName)
+static wxString MakeUniqueSpeedDialName(wxListCtrl * speedDials, const wxChar * baseName)
 {
-  wxString name = baseName;
+  wxString name(baseName);
   unsigned tieBreaker = 0;
   int count = speedDials->GetItemCount();
   int i = 0;
@@ -1400,7 +1401,7 @@ static wxString MakeUniqueSpeedDialName(wxListCtrl * speedDials, const char * ba
     if (speedDials->GetItemText(i).CmpNoCase(name) != 0)
       i++;
     else {
-      name.Printf("%s (%u)", baseName, ++tieBreaker);
+      name.Printf(wxT("%s (%u)"), baseName, ++tieBreaker);
       i = 0;
     }
   }
@@ -1410,12 +1411,12 @@ static wxString MakeUniqueSpeedDialName(wxListCtrl * speedDials, const char * ba
 
 void MyManager::OnNewSpeedDial(wxCommandEvent& WXUNUSED(event))
 {
-  wxString groupName = MakeUniqueSpeedDialName(m_speedDials, "New Speed Dial");
+  wxString groupName = MakeUniqueSpeedDialName(m_speedDials, wxT("New Speed Dial"));
 
   int pos = m_speedDials->InsertItem(INT_MAX, groupName);
-  m_speedDials->SetItem(pos, e_NumberColumn, "");
-  m_speedDials->SetItem(pos, e_AddressColumn, "");
-  m_speedDials->SetItem(pos, e_DescriptionColumn, "");
+  m_speedDials->SetItem(pos, e_NumberColumn, wxT(""));
+  m_speedDials->SetItem(pos, e_AddressColumn, wxT(""));
+  m_speedDials->SetItem(pos, e_DescriptionColumn, wxT(""));
   EditSpeedDial(pos, true);
 }
 
@@ -1490,7 +1491,7 @@ void MyManager::OnCopySpeedDial(wxCommandEvent& WXUNUSED(event))
       item.m_col = e_DescriptionColumn;
       if (m_speedDials->GetItem(item))
         tabbedText += item.m_text;
-      tabbedText += "\r\n";
+      tabbedText += wxT("\r\n");
     }
   }
 
@@ -1516,9 +1517,9 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent& WXUNUSED(event))
       myFormatData.SetFormat(m_ClipboardFormat);
       if (wxTheClipboard->GetData(myFormatData)) {
         wxConfigBase * config = wxConfig::Get();
-        wxStringTokenizer tabbedLines(myFormatData.GetText(), "\r\n");
+        wxStringTokenizer tabbedLines(myFormatData.GetText(), wxT("\r\n"));
         while (tabbedLines.HasMoreTokens()) {
-          wxStringTokenizer tabbedText(tabbedLines.GetNextToken(), "\t", wxTOKEN_RET_EMPTY_ALL);
+          wxStringTokenizer tabbedText(tabbedLines.GetNextToken(), wxT("\t"), wxTOKEN_RET_EMPTY_ALL);
           wxString name = MakeUniqueSpeedDialName(m_speedDials, tabbedText.GetNextToken());
           wxString number = tabbedText.GetNextToken();
           wxString address = tabbedText.GetNextToken();
@@ -1549,8 +1550,8 @@ void MyManager::OnDeleteSpeedDial(wxCommandEvent& WXUNUSED(event))
     return;
 
   wxString str;
-  str.Printf("Delete %u item%s?", count, count != 1 ? "s" : "");
-  wxMessageDialog dlg(this, str, "OpenPhone Speed Dials", wxYES_NO);
+  str.Printf(wxT("Delete %u item%s?"), count, count != 1 ? wxT("s") : wxT(""));
+  wxMessageDialog dlg(this, str, wxT("OpenPhone Speed Dials"), wxYES_NO);
   if (dlg.ShowModal() != wxID_YES)
     return;
 
@@ -1595,14 +1596,14 @@ void MyManager::OnSpeedDialColumnResize(wxListEvent& event)
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
   wxString key;
-  key.sprintf("ColumnWidth%u", event.GetColumn());
+  key.sprintf(wxT("ColumnWidth%u"), event.GetColumn());
   config->Write(key, m_speedDials->GetColumnWidth(event.GetColumn()));
 }
 
 
 void MyManager::OnRightClick(wxListEvent& event)
 {
-  wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar("SpeedDialMenu");
+  wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar(wxT("SpeedDialMenu"));
   menuBar->Enable(XRCID("CallSpeedDialHandset"), HasHandset());
   menuBar->Enable(XRCID("SendFaxSpeedDial"),     CanDoFax());
   PopupMenu(menuBar->GetMenu(0), event.GetPoint());
@@ -1768,7 +1769,7 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
 
   if (!m_autoAnswer && !m_RingSoundFileName.empty()) {
     m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
-    m_RingSoundChannel.PlayFile(m_RingSoundFileName.c_str(), PFalse);
+    m_RingSoundChannel.PlayFile(m_RingSoundFileName, PFalse);
     m_RingSoundTimer.RunContinuous(5000);
   }
 
@@ -1778,7 +1779,7 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
 
 void MyManager::OnRingSoundAgain(PTimer &, INT)
 {
-  m_RingSoundChannel.PlayFile(m_RingSoundFileName.c_str(), PFalse);
+  m_RingSoundChannel.PlayFile(m_RingSoundFileName, PFalse);
 }
 
 
@@ -2133,7 +2134,7 @@ void MyManager::OnTransfer(wxCommandEvent& theEvent)
     }
 
     CallDialog dlg(this, true);
-    dlg.SetTitle("Transfer Call");
+    dlg.SetTitle(wxT("Transfer Call"));
     if (dlg.ShowModal() == wxID_OK) {
       PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReference);
       if (connection != NULL)
@@ -2146,13 +2147,13 @@ void MyManager::OnTransfer(wxCommandEvent& theEvent)
 void MyManager::OnStartRecording(wxCommandEvent & /*event*/)
 {
   wxFileDialog dlg(this,
-                   "Save call to file",
+                   wxT("Save call to file"),
                    wxEmptyString,
-                   (const char *)m_lastRecordFile,
-                   "*.wav",
+                   PwxString(m_lastRecordFile),
+                   wxT("*.wav"),
                    wxFD_SAVE);
   if (dlg.ShowModal() == wxID_OK && m_activeCall != NULL) {
-    m_lastRecordFile = (const char *)dlg.GetPath();
+    m_lastRecordFile = PFilePath(dlg.GetPath().mb_str(wxConvUTF8));
     m_activeCall->StartRecording(m_lastRecordFile);
   }
 }
@@ -2167,7 +2168,7 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 
 void MyManager::OnNewCodec(wxCommandEvent& theEvent)
 {
-  OpalMediaFormat mediaFormat = GetMenuBar()->FindItem(theEvent.GetId())->GetLabel().c_str();
+  OpalMediaFormat mediaFormat(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel().mb_str(wxConvUTF8));
   if (mediaFormat.IsValid()) {
     PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
     if (connection != NULL) {
@@ -2232,7 +2233,7 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
   PString digit = connection.GetUserInput(firstDigitTimeout);
   connection.PromptUserInput(PFalse);
 
-  if (digit == '#')
+  if (digit == "#")
     return digit;
 
   PString input;
@@ -2247,13 +2248,13 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
       if (!m_speedDials->GetItem(item))
         continue;
 
-      size_t specialCharPos = item.m_text.find_first_of("-+");
+      size_t specialCharPos = item.m_text.find_first_of(wxT("-+"));
       if (specialCharPos == wxString::npos) {
-        if (input != item.m_text.c_str())
+        if (PwxString(input)  != item.m_text)
           continue;
       }
       else {
-        if (digit != '#' || strncmp(item.m_text, input, specialCharPos) != 0)
+        if (digit != "#" || strncmp(item.m_text.mb_str(wxConvUTF8), input, specialCharPos) != 0)
           continue;
         if (item.m_text[specialCharPos] == '-')
           input.Delete(0, specialCharPos);    // Using '-' so strip the prefix off
@@ -2337,7 +2338,7 @@ void MyManager::SetState(CallState newState, const char * token)
   theEvent.SetEventObject(this);
   theEvent.SetInt(newState);
   if (token != NULL)
-    theEvent.SetString(token);
+    theEvent.SetString(PwxString(token));
   GetEventHandler()->AddPendingEvent(theEvent);
 }
 
@@ -2382,9 +2383,9 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
       break;
 
     case ClearingCallState :
-      if (m_activeCall == NULL || m_activeCall->GetToken() != theEvent.GetString().c_str()) {
+      if (m_activeCall == NULL || PwxString(m_activeCall->GetToken()) != theEvent.GetString()) {
         // A call on hold got cleared
-        if (RemoveCallOnHold(theEvent.GetString().c_str()))
+        if (RemoveCallOnHold(PwxString(theEvent.GetString())))
           return;
       }
 
@@ -2396,7 +2397,7 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
     case InCallState :
       if (m_activeCall == NULL) {
         // Retrieve call from hold
-        RemoveCallOnHold(theEvent.GetString().c_str());
+        RemoveCallOnHold(PwxString(theEvent.GetString()));
         m_activeCall = FindCallWithLock(theEvent.GetString().c_str(), PSafeReference);
       }
       newWindow = m_inCallPanel;
@@ -2442,8 +2443,8 @@ bool MyManager::StartGatekeeper()
   else {
     PString gkDesc = m_gatekeeperIdentifier;
     if (!m_gatekeeperIdentifier.IsEmpty() || !m_gatekeeperAddress.IsEmpty())
-      gkDesc == '@';
-    gkDesc += (const char *)m_gatekeeperAddress;
+      gkDesc += "@";
+    gkDesc += m_gatekeeperAddress;
 
     if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
       LogWindow << "H.323 registration started for " << *h323EP->GetGatekeeper() << endl;
@@ -2468,13 +2469,15 @@ void MyManager::StartRegistrars()
   for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
     if (iter->m_Active) {
       SIPRegister::Params param;
-      param.m_addressOfRecord = (const char *)iter->m_User;
-      if (param.m_addressOfRecord.Find('@') == P_MAX_INDEX)
-        param.m_addressOfRecord += '@' + iter->m_Domain;
-      param.m_authID = (const char *)iter->m_AuthID;
+      param.m_addressOfRecord = PwxString(iter->m_User);
+      if (param.m_addressOfRecord.Find('@') == P_MAX_INDEX) {
+        param.m_addressOfRecord += '@';
+        param.m_addressOfRecord += PwxString(iter->m_Domain);
+      }
+      param.m_authID = PwxString(iter->m_AuthID);
       if (param.m_authID.IsEmpty())
-        param.m_authID = (const char *)iter->m_User;
-      param.m_password = (const char *)iter->m_Password;
+        param.m_authID = PwxString(iter->m_User);
+      param.m_password = PwxString(iter->m_Password);
       param.m_expire = iter->m_TimeToLive;
       bool ok = sipEP->Register(param);
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
@@ -2552,7 +2555,7 @@ bool MyManager::AdjustFrameSize()
 }
 
 
-void MyManager::InitMediaInfo(const char * source, const OpalMediaFormatList & mediaFormats)
+void MyManager::InitMediaInfo(const wxChar * source, const OpalMediaFormatList & mediaFormats)
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     const OpalMediaFormat & mediaFormat = mediaFormats[i];
@@ -2586,12 +2589,12 @@ void MyManager::ApplyMediaInfo()
       mediaFormatOrder.AppendString(mm->mediaFormat);
       if (mm->mediaFormat.GetMediaType() == OpalMediaType::Audio())
         audioMenu->Append(mm->preferenceOrder+ID_AUDIO_CODEC_MENU_BASE,
-                          (const char *)mm->mediaFormat.GetName(),
+                          PwxString(mm->mediaFormat.GetName()),
                           wxEmptyString,
                           true);
       else if (mm->mediaFormat.GetMediaType() == OpalMediaType::Video())
         videoMenu->Append(mm->preferenceOrder+ID_VIDEO_CODEC_MENU_BASE,
-                          (const char *)mm->mediaFormat.GetName(),
+                          PwxString(mm->mediaFormat.GetName()),
                           wxEmptyString,
                           true);
     }
@@ -2617,7 +2620,7 @@ MyMedia::MyMedia()
 }
 
 
-MyMedia::MyMedia(const char * source, const PString & format)
+MyMedia::MyMedia(const wxChar * source, const PString & format)
   : sourceProtocol(source)
   , mediaFormat(format)
   , preferenceOrder(-1) // -1 indicates disabled
@@ -2655,7 +2658,7 @@ public:
     if (PVideoFrameInfo::ParseSize(GetWindow()->GetLabel().c_str(), width, height))
       return true;
 
-    wxMessageBox("Illegal value for video size.", "Error", wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Illegal value for video size."), wxT("Error"), wxCANCEL|wxICON_EXCLAMATION);
     return false;
   }
 };
@@ -2690,7 +2693,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 
   ////////////////////////////////////////
   // Audio fields
-  EVT_COMBOBOX(XRCID(LineInterfaceDeviceKey), OptionsDialog::SelectedLID)
+  EVT_COMBOBOX(wxXmlResource::GetXRCID(LineInterfaceDeviceKey), OptionsDialog::SelectedLID)
 
   ////////////////////////////////////////
   // Fax fields
@@ -2760,7 +2763,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   PINDEX i;
 
   SetExtraStyle(GetExtraStyle() | wxWS_EX_VALIDATE_RECURSIVELY);
-  wxXmlResource::Get()->LoadDialog(this, manager, "OptionsDialog");
+  wxXmlResource::Get()->LoadDialog(this, manager, wxT("OptionsDialog"));
 
   ////////////////////////////////////////
   // General fields
@@ -2772,11 +2775,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   choice->SetValidator(wxGenericValidator(&m_RingSoundDeviceName));
   for (i = 0; i < devices.GetSize(); i++) {
     PwxString str = devices[i];
-    str.Replace("\t", ": ");
+    str.Replace(wxT("\t"), wxT(": "));
     choice->Append(str);
   }
   m_RingSoundDeviceName = m_manager.m_RingSoundDeviceName;
-  m_RingSoundDeviceName.Replace("\t", ": ");
+  m_RingSoundDeviceName.Replace(wxT("\t"), wxT(": "));
   INIT_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName);
 
   INIT_FIELD(AutoAnswer, m_manager.m_autoAnswer);
@@ -2788,7 +2791,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   // Networking fields
 #if OPAL_H323
   int bandwidth = m_manager.h323EP->GetInitialBandwidth();
-  m_Bandwidth.sprintf(bandwidth%10 == 0 ? "%u" : "%u.%u", bandwidth/10, bandwidth%10);
+  m_Bandwidth.sprintf(bandwidth%10 == 0 ? wxT("%u") : wxT("%u.%u"), bandwidth/10, bandwidth%10);
   FindWindowByName(BandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_Bandwidth));
   int bandwidthClass;
   if (bandwidth <= 144)
@@ -2803,7 +2806,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     bandwidthClass = 4;
   else
     bandwidthClass = 5;
-  FindWindowByNameAs<wxChoice>(this, "BandwidthClass")->SetSelection(bandwidthClass);
+  FindWindowByNameAs<wxChoice>(this, wxT("BandwidthClass"))->SetSelection(bandwidthClass);
 #endif
 
   INIT_FIELD(TCPPortBase, m_manager.GetTCPPortBase());
@@ -2814,14 +2817,14 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(RTPPortMax, m_manager.GetRtpIpPortMax());
   INIT_FIELD(RTPTOS, m_manager.GetRtpIpTypeofService());
 
-  m_NoNATUsedRadio = FindWindowByNameAs<wxRadioButton>(this, "NoNATUsed");
-  m_NATRouterRadio = FindWindowByNameAs<wxRadioButton>(this, "UseNATRouter");
-  m_STUNServerRadio= FindWindowByNameAs<wxRadioButton>(this, "UseSTUNServer");
+  m_NoNATUsedRadio = FindWindowByNameAs<wxRadioButton>(this, wxT("NoNATUsed"));
+  m_NATRouterRadio = FindWindowByNameAs<wxRadioButton>(this, wxT("UseNATRouter"));
+  m_STUNServerRadio= FindWindowByNameAs<wxRadioButton>(this, wxT("UseSTUNServer"));
   m_NATRouter = m_manager.m_NATRouter;
-  m_NATRouterWnd = FindWindowByNameAs<wxTextCtrl>(this, "NATRouter");
+  m_NATRouterWnd = FindWindowByNameAs<wxTextCtrl>(this, wxT("NATRouter"));
   m_NATRouterWnd->SetValidator(wxGenericValidator(&m_NATRouter));
   m_STUNServer = m_manager.m_STUNServer;
-  m_STUNServerWnd = FindWindowByNameAs<wxTextCtrl>(this, "STUNServer");
+  m_STUNServerWnd = FindWindowByNameAs<wxTextCtrl>(this, wxT("STUNServer"));
   m_STUNServerWnd->SetValidator(wxGenericValidator(&m_STUNServer));
   switch (m_manager.m_NATHandling) {
     case 2 :
@@ -2838,28 +2841,28 @@ OptionsDialog::OptionsDialog(MyManager * manager)
       m_STUNServerWnd->Disable();
   }
 
-  m_AddInterface = FindWindowByNameAs<wxButton>(this, "AddInterface");
+  m_AddInterface = FindWindowByNameAs<wxButton>(this, wxT("AddInterface"));
   m_AddInterface->Disable();
-  m_RemoveInterface = FindWindowByNameAs<wxButton>(this, "RemoveInterface");
+  m_RemoveInterface = FindWindowByNameAs<wxButton>(this, wxT("RemoveInterface"));
   m_RemoveInterface->Disable();
-  m_InterfaceProtocol = FindWindowByNameAs<wxRadioBox>(this, "InterfaceProtocol");
-  m_InterfacePort = FindWindowByNameAs<wxTextCtrl>(this, "InterfacePort");
-  m_InterfaceAddress = FindWindowByNameAs<wxComboBox>(this, "InterfaceAddress");
-  m_InterfaceAddress->Append("*");
+  m_InterfaceProtocol = FindWindowByNameAs<wxRadioBox>(this, wxT("InterfaceProtocol"));
+  m_InterfacePort = FindWindowByNameAs<wxTextCtrl>(this, wxT("InterfacePort"));
+  m_InterfaceAddress = FindWindowByNameAs<wxComboBox>(this, wxT("InterfaceAddress"));
+  m_InterfaceAddress->Append(wxT("*"));
   PIPSocket::InterfaceTable ifaces;
   if (PIPSocket::GetInterfaceTable(ifaces)) {
     for (i = 0; i < ifaces.GetSize(); i++) {
       PwxString addr = ifaces[i].GetAddress().AsString();
-      PwxString name = "%";
-      name += ifaces[i].GetName();
+      PwxString name = wxT("%");
+      name += PwxString(ifaces[i].GetName());
       m_InterfaceAddress->Append(addr);
       m_InterfaceAddress->Append(name);
       m_InterfaceAddress->Append(addr + name);
     }
   }
-  m_LocalInterfaces = FindWindowByNameAs<wxListBox>(this, "LocalInterfaces");
+  m_LocalInterfaces = FindWindowByNameAs<wxListBox>(this, wxT("LocalInterfaces"));
   for (i = 0; i < m_manager.m_LocalInterfaces.GetSize(); i++)
-    m_LocalInterfaces->Append((const char *)m_manager.m_LocalInterfaces[i]);
+    m_LocalInterfaces->Append(PwxString(m_manager.m_LocalInterfaces[i]));
 
   ////////////////////////////////////////
   // Sound fields
@@ -2877,11 +2880,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
   for (i = 0; i < devices.GetSize(); i++) {
     PwxString str = devices[i];
-    str.Replace("\t", ": ");
+    str.Replace(wxT("\t"), wxT(": "));
     combo->Append(str);
   }
   m_SoundPlayer = m_manager.pcssEP->GetSoundChannelPlayDevice();
-  m_SoundPlayer.Replace("\t", ": ");
+  m_SoundPlayer.Replace(wxT("\t"), wxT(": "));
 
   // Fill sound recorder combo box with available devices and set selection
   combo = FindWindowByNameAs<wxComboBox>(this, SoundRecorderKey);
@@ -2889,11 +2892,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   devices = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
   for (i = 0; i < devices.GetSize(); i++) {
     PwxString str = devices[i];
-    str.Replace("\t", ": ");
+    str.Replace(wxT("\t"), wxT(": "));
     combo->Append(str);
   }
   m_SoundRecorder = m_manager.pcssEP->GetSoundChannelRecordDevice();
-  m_SoundRecorder.Replace("\t", ": ");
+  m_SoundRecorder.Replace(wxT("\t"), wxT(": "));
 
   // Fill line interface combo box with available devices and set selection
   m_selectedAEC = FindWindowByNameAs<wxChoice>(this, AECKey);
@@ -2909,10 +2912,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     m_selectedCountry->Disable();
   }
   else {
-    static const char UseSoundCard[] = "<< Use sound card only >>";
+    static const wxChar UseSoundCard[] = wxT("<< Use sound card only >>");
     m_selectedLID->Append(UseSoundCard);
     for (i = 0; i < devices.GetSize(); i++)
-      m_selectedLID->Append((const char *)devices[i]);
+      m_selectedLID->Append(PwxString(devices[i]));
 
     OpalLine * line = m_manager.potsEP->GetLine("*");
     if (line != NULL) {
@@ -2934,7 +2937,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
       PStringList countries = line->GetDevice().GetCountryCodeNameList();
       for (PStringList::iterator country = countries.begin(); country != countries.end(); ++country)
-        m_selectedCountry->Append((const char *)*country);
+        m_selectedCountry->Append(PwxString(*country));
       INIT_FIELD(Country, line->GetDevice().GetCountryCodeName());
     }
     else {
@@ -2963,10 +2966,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_VideoMaxFrameSize = m_manager.m_VideoMaxFrameSize;
   FindWindowByName(VideoMaxFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoMaxFrameSize));
 
-  combo = FindWindowByNameAs<wxComboBox>(this, "VideoGrabber");
+  combo = FindWindowByNameAs<wxComboBox>(this, wxT("VideoGrabber"));
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
   for (i = 0; i < devices.GetSize(); i++)
-    combo->Append((const char *)devices[i]);
+    combo->Append(PwxString(devices[i]));
 
   ////////////////////////////////////////
   // Fax fields
@@ -2980,37 +2983,37 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Codec fields
-  m_AddCodec = FindWindowByNameAs<wxButton>(this, "AddCodec");
+  m_AddCodec = FindWindowByNameAs<wxButton>(this, wxT("AddCodec"));
   m_AddCodec->Disable();
-  m_RemoveCodec = FindWindowByNameAs<wxButton>(this, "RemoveCodec");
+  m_RemoveCodec = FindWindowByNameAs<wxButton>(this, wxT("RemoveCodec"));
   m_RemoveCodec->Disable();
-  m_MoveUpCodec = FindWindowByNameAs<wxButton>(this, "MoveUpCodec");
+  m_MoveUpCodec = FindWindowByNameAs<wxButton>(this, wxT("MoveUpCodec"));
   m_MoveUpCodec->Disable();
-  m_MoveDownCodec = FindWindowByNameAs<wxButton>(this, "MoveDownCodec");
+  m_MoveDownCodec = FindWindowByNameAs<wxButton>(this, wxT("MoveDownCodec"));
   m_MoveDownCodec->Disable();
 
-  m_allCodecs = FindWindowByNameAs<wxListBox>(this, "AllCodecs");
-  m_selectedCodecs = FindWindowByNameAs<wxListBox>(this, "SelectedCodecs");
+  m_allCodecs = FindWindowByNameAs<wxListBox>(this, wxT("AllCodecs"));
+  m_selectedCodecs = FindWindowByNameAs<wxListBox>(this, wxT("SelectedCodecs"));
   for (MyMediaList::iterator mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
-    wxString str = mm->sourceProtocol;
-    str += ": ";
-    str += (const char *)mm->mediaFormat;
+    PwxString str(mm->sourceProtocol);
+    str += wxT(": ");
+    str += PwxString(mm->mediaFormat);
     str += mm->validProtocols;
     m_allCodecs->Append(str, &*mm);
 
-    str = (const char *)mm->mediaFormat;
+    str = PwxString(mm->mediaFormat);
     if (mm->preferenceOrder >= 0 && m_selectedCodecs->FindString(str) < 0)
       m_selectedCodecs->Append(str, &*mm);
   }
-  m_codecOptions = FindWindowByNameAs<wxListCtrl>(this, "CodecOptionsList");
+  m_codecOptions = FindWindowByNameAs<wxListCtrl>(this, wxT("CodecOptionsList"));
   int columnWidth = (m_codecOptions->GetClientSize().GetWidth()-30)/2;
-  m_codecOptions->InsertColumn(0, "Option", wxLIST_FORMAT_LEFT, columnWidth);
-  m_codecOptions->InsertColumn(1, "Value", wxLIST_FORMAT_LEFT, columnWidth);
-  m_codecOptionValue = FindWindowByNameAs<wxTextCtrl>(this, "CodecOptionValue");
+  m_codecOptions->InsertColumn(0, wxT("Option"), wxLIST_FORMAT_LEFT, columnWidth);
+  m_codecOptions->InsertColumn(1, wxT("Value"), wxLIST_FORMAT_LEFT, columnWidth);
+  m_codecOptionValue = FindWindowByNameAs<wxTextCtrl>(this, wxT("CodecOptionValue"));
   m_codecOptionValue->Disable();
-  m_CodecOptionValueLabel = FindWindowByNameAs<wxStaticText>(this, "CodecOptionValueLabel");
+  m_CodecOptionValueLabel = FindWindowByNameAs<wxStaticText>(this, wxT("CodecOptionValueLabel"));
   m_CodecOptionValueLabel->Disable();
-  m_CodecOptionValueError = FindWindowByNameAs<wxStaticText>(this, "CodecOptionValueError");
+  m_CodecOptionValueError = FindWindowByNameAs<wxStaticText>(this, wxT("CodecOptionValueError"));
   m_CodecOptionValueError->Show(false);
 
   ////////////////////////////////////////
@@ -3045,15 +3048,15 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 #if OPAL_H323
   ////////////////////////////////////////
   // H.323 fields
-  m_AddAlias = FindWindowByNameAs<wxButton>(this, "AddAlias");
+  m_AddAlias = FindWindowByNameAs<wxButton>(this, wxT("AddAlias"));
   m_AddAlias->Disable();
-  m_RemoveAlias = FindWindowByNameAs<wxButton>(this, "RemoveAlias");
+  m_RemoveAlias = FindWindowByNameAs<wxButton>(this, wxT("RemoveAlias"));
   m_RemoveAlias->Disable();
-  m_NewAlias = FindWindowByNameAs<wxTextCtrl>(this, "NewAlias");
-  m_Aliases = FindWindowByNameAs<wxListBox>(this, "Aliases");
+  m_NewAlias = FindWindowByNameAs<wxTextCtrl>(this, wxT("NewAlias"));
+  m_Aliases = FindWindowByNameAs<wxListBox>(this, wxT("Aliases"));
   PStringList aliases = m_manager.h323EP->GetAliasNames();
   for (i = 1; i < aliases.GetSize(); i++)
-    m_Aliases->Append((const char *)aliases[i]);
+    m_Aliases->Append(PwxString(aliases[i]));
 
   INIT_FIELD(DTMFSendMode, m_manager.h323EP->GetSendUserInputMode());
   if (m_DTMFSendMode > OpalConnection::SendUserInputAsInlineRFC2833)
@@ -3079,7 +3082,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   m_SelectedRegistrar = INT_MAX;
 
-  m_Registrars = FindWindowByNameAs<wxListCtrl>(this, "Registrars");
+  m_Registrars = FindWindowByNameAs<wxListCtrl>(this, wxT("Registrars"));
   m_Registrars->InsertColumn(0, _T("Domain"));
   m_Registrars->InsertColumn(1, _T("User"));
   m_Registrars->InsertColumn(2, _T("Refresh"));
@@ -3095,13 +3098,13 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_Registrars->SetColumnWidth(4, 60);
   m_Registrars->SetColumnWidth(5, 60);
 
-  m_AddRegistrar = FindWindowByNameAs<wxButton>(this, "AddRegistrar");
+  m_AddRegistrar = FindWindowByNameAs<wxButton>(this, wxT("AddRegistrar"));
   m_AddRegistrar->Disable();
 
-  m_ChangeRegistrar = FindWindowByNameAs<wxButton>(this, "ChangeRegistrar");
+  m_ChangeRegistrar = FindWindowByNameAs<wxButton>(this, wxT("ChangeRegistrar"));
   m_ChangeRegistrar->Disable();
 
-  m_RemoveRegistrar = FindWindowByNameAs<wxButton>(this, "RemoveRegistrar");
+  m_RemoveRegistrar = FindWindowByNameAs<wxButton>(this, wxT("RemoveRegistrar"));
   m_RemoveRegistrar->Disable();
 
   m_RegistrarUser = FindWindowByNameAs<wxTextCtrl>(this, RegistrarUsernameKey);
@@ -3117,21 +3120,21 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   // Routing fields
   m_SelectedRoute = INT_MAX;
 
-  m_RouteDevice = FindWindowByNameAs<wxTextCtrl>(this, "RouteDevice");
-  m_RoutePattern = FindWindowByNameAs<wxTextCtrl>(this, "RoutePattern");
-  m_RouteDestination = FindWindowByNameAs<wxTextCtrl>(this, "RouteDestination");
+  m_RouteDevice = FindWindowByNameAs<wxTextCtrl>(this, wxT("RouteDevice"));
+  m_RoutePattern = FindWindowByNameAs<wxTextCtrl>(this, wxT("RoutePattern"));
+  m_RouteDestination = FindWindowByNameAs<wxTextCtrl>(this, wxT("RouteDestination"));
 
-  m_AddRoute = FindWindowByNameAs<wxButton>(this, "AddRoute");
+  m_AddRoute = FindWindowByNameAs<wxButton>(this, wxT("AddRoute"));
   m_AddRoute->Disable();
-  m_RemoveRoute = FindWindowByNameAs<wxButton>(this, "RemoveRoute");
+  m_RemoveRoute = FindWindowByNameAs<wxButton>(this, wxT("RemoveRoute"));
   m_RemoveRoute->Disable();
-  m_MoveUpRoute = FindWindowByNameAs<wxButton>(this, "MoveUpRoute");
+  m_MoveUpRoute = FindWindowByNameAs<wxButton>(this, wxT("MoveUpRoute"));
   m_MoveUpRoute->Disable();
-  m_MoveDownRoute = FindWindowByNameAs<wxButton>(this, "MoveDownRoute");
+  m_MoveDownRoute = FindWindowByNameAs<wxButton>(this, wxT("MoveDownRoute"));
   m_MoveDownRoute->Disable();
 
   // Fill list box with active routes
-  m_Routes = FindWindowByNameAs<wxListCtrl>(this, "Routes");
+  m_Routes = FindWindowByNameAs<wxListCtrl>(this, wxT("Routes"));
   m_Routes->InsertColumn(0, _T("Source"));
   m_Routes->InsertColumn(1, _T("Dev/If"));
   m_Routes->InsertColumn(2, _T("Pattern"));
@@ -3144,11 +3147,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     m_Routes->SetColumnWidth(i, wxLIST_AUTOSIZE_USEHEADER);
 
   // Fill combo box with possible protocols
-  m_RouteSource = FindWindowByNameAs<wxComboBox>(this, "RouteSource");
+  m_RouteSource = FindWindowByNameAs<wxComboBox>(this, wxT("RouteSource"));
   m_RouteSource->Append(AllRouteSources);
   PList<OpalEndPoint> endpoints = m_manager.GetEndPoints();
   for (i = 0; i < endpoints.GetSize(); i++)
-    m_RouteSource->Append((const char *)endpoints[i].GetPrefixName());
+    m_RouteSource->Append(PwxString(endpoints[i].GetPrefixName()));
   m_RouteSource->SetSelection(0);
 
 
@@ -3205,7 +3208,7 @@ bool OptionsDialog::TransferDataFromWindow()
   config->SetPath(GeneralGroup);
   SAVE_FIELD(Username, m_manager.SetDefaultUserName);
   SAVE_FIELD(DisplayName, m_manager.SetDefaultDisplayName);
-  m_RingSoundDeviceName.Replace(": ", "\t");
+  m_RingSoundDeviceName.Replace(wxT(": "), wxT("\t"));
   SAVE_FIELD(RingSoundDeviceName, m_manager.m_RingSoundDeviceName = );
   SAVE_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName = );
   SAVE_FIELD(AutoAnswer, m_manager.m_autoAnswer = );
@@ -3236,12 +3239,12 @@ bool OptionsDialog::TransferDataFromWindow()
   PStringArray newInterfaces(m_LocalInterfaces->GetCount());
   bool changed = m_manager.m_LocalInterfaces.GetSize() != newInterfaces.GetSize();
   for (int i = 0; i < newInterfaces.GetSize(); i++) {
-    newInterfaces[i] = m_LocalInterfaces->GetString(i);
+    newInterfaces[i] = PwxString(m_LocalInterfaces->GetString(i));
     PINDEX oldIndex = m_manager.m_LocalInterfaces.GetValuesIndex(newInterfaces[i]);
     if (oldIndex == P_MAX_INDEX || newInterfaces[i] != m_manager.m_LocalInterfaces[oldIndex])
       changed = true;
     wxString key;
-    key.sprintf("%u", i+1);
+    key.sprintf(wxT("%u"), i+1);
     config->Write(key, (const char *)newInterfaces[i]);
   }
   if (changed) {
@@ -3252,8 +3255,8 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // Sound fields
   config->SetPath(AudioGroup);
-  m_SoundPlayer.Replace(": ", "\t");
-  m_SoundRecorder.Replace(": ", "\t");
+  m_SoundPlayer.Replace(wxT(": "), wxT("\t"));
+  m_SoundRecorder.Replace(wxT(": "), wxT("\t"));
   SAVE_FIELD(SoundPlayer, m_manager.pcssEP->SetSoundChannelPlayDevice);
   SAVE_FIELD(SoundRecorder, m_manager.pcssEP->SetSoundChannelRecordDevice);
   SAVE_FIELD(SoundBuffers, m_manager.pcssEP->SetSoundChannelBufferDepth);
@@ -3268,7 +3271,7 @@ bool OptionsDialog::TransferDataFromWindow()
 
   SAVE_FIELD(DisableDetectInBandDTMF, m_manager.DisableDetectInBandDTMF);
 
-  if (m_LineInterfaceDevice.StartsWith("<<") && m_LineInterfaceDevice.EndsWith(">>"))
+  if (m_LineInterfaceDevice.StartsWith(wxT("<<")) && m_LineInterfaceDevice.EndsWith(wxT(">>")))
     m_LineInterfaceDevice.Empty();
   config->Write(LineInterfaceDeviceKey, m_LineInterfaceDevice);
   config->Write(AECKey, m_AEC);
@@ -3279,7 +3282,7 @@ bool OptionsDialog::TransferDataFromWindow()
   // Video fields
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs grabber = m_manager.GetVideoInputDevice();
-  SAVE_FIELD(VideoGrabber, grabber.deviceName = (const char *));
+  SAVE_FIELD(VideoGrabber, grabber.deviceName = );
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
@@ -3326,7 +3329,7 @@ bool OptionsDialog::TransferDataFromWindow()
   for (mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
     if (mm->preferenceOrder >= 0) {
       wxString groupName;
-      groupName.sprintf("%s/%04u", CodecsGroup, mm->preferenceOrder);
+      groupName.sprintf(wxT("%s/%04u"), CodecsGroup, mm->preferenceOrder);
       config->SetPath(groupName);
       config->Write(CodecNameKey, (const char *)mm->mediaFormat);
       for (PINDEX i = 0; i < mm->mediaFormat.GetOptionCount(); i++) {
@@ -3378,7 +3381,7 @@ bool OptionsDialog::TransferDataFromWindow()
     wxString alias = m_Aliases->GetString(i);
     m_manager.h323EP->AddAliasName(alias.c_str());
     wxString key;
-    key.sprintf("%u", i+1);
+    key.sprintf(wxT("%u"), i+1);
     config->Write(key, alias);
   }
 
@@ -3396,8 +3399,8 @@ bool OptionsDialog::TransferDataFromWindow()
   if (m_manager.m_gatekeeperMode != m_GatekeeperMode ||
       m_manager.m_gatekeeperAddress != m_GatekeeperAddress ||
       m_manager.m_gatekeeperIdentifier != m_GatekeeperIdentifier ||
-      m_manager.h323EP->GetGatekeeperUsername() != m_GatekeeperLogin.c_str() ||
-      m_manager.h323EP->GetGatekeeperPassword() != m_GatekeeperPassword.c_str()) {
+      PwxString(m_manager.h323EP->GetGatekeeperUsername()) != m_GatekeeperLogin ||
+      PwxString(m_manager.h323EP->GetGatekeeperPassword()) != m_GatekeeperPassword) {
     SAVE_FIELD(GatekeeperMode, m_manager.m_gatekeeperMode = );
     SAVE_FIELD(GatekeeperAddress, m_manager.m_gatekeeperAddress = );
     SAVE_FIELD(GatekeeperIdentifier, m_manager.m_gatekeeperIdentifier = );
@@ -3431,7 +3434,7 @@ bool OptionsDialog::TransferDataFromWindow()
     int registrarIndex = 1;
     for (RegistrarList::iterator iterReg = newRegistrars.begin(); iterReg != newRegistrars.end(); ++iterReg) {
       wxString group;
-      group.sprintf("%s/%04u", RegistrarGroup, registrarIndex++);
+      group.sprintf(wxT("%s/%04u"), RegistrarGroup, registrarIndex++);
       config->SetPath(group);
       config->Write(RegistrarUsedKey, iterReg->m_Active);
       config->Write(RegistrarUsernameKey, iterReg->m_User);
@@ -3460,11 +3463,11 @@ bool OptionsDialog::TransferDataFromWindow()
     item.m_itemId = i;
     item.m_mask = wxLIST_MASK_TEXT;
     m_Routes->GetItem(item);
-    spec += (item.m_text == "<ALL>") ? ".*" : item.m_text.c_str();
+    spec += (item.m_text == wxT("<ALL>")) ? wxT(".*") : item.m_text;
     spec += ':';
     item.m_col++;
     m_Routes->GetItem(item);
-    spec += item.m_text.empty() ? ".*" : item.m_text;
+    spec += item.m_text.empty() ? wxT(".*") : item.m_text;
     spec += '\t';
     item.m_col++;
     m_Routes->GetItem(item);
@@ -3476,7 +3479,7 @@ bool OptionsDialog::TransferDataFromWindow()
     routeSpecs.AppendString(spec);
 
     wxString key;
-    key.sprintf("%04u", i+1);
+    key.sprintf(wxT("%04u"), i+1);
     config->Write(key, spec);
   }
   m_manager.SetRouteTable(routeSpecs);
@@ -3511,7 +3514,7 @@ bool OptionsDialog::TransferDataFromWindow()
   if (m_manager.m_enableTracing && (!m_EnableTracing || m_TraceFileName.empty()))
     PTrace::SetStream(NULL);
   else if (m_EnableTracing && (!m_manager.m_enableTracing || m_manager.m_traceFileName != m_TraceFileName))
-    PTrace::Initialise(m_TraceLevelThreshold, m_TraceFileName, traceOptions);
+    PTrace::Initialise(m_TraceLevelThreshold, PFilePath(m_TraceFileName.c_str()), traceOptions);
   else {
     PTrace::SetLevel(m_TraceLevelThreshold);
     PTrace::SetOptions(traceOptions);
@@ -3533,11 +3536,11 @@ bool OptionsDialog::TransferDataFromWindow()
 
 void OptionsDialog::BrowseSoundFile(wxCommandEvent & /*event*/)
 {
-  wxString newFile = wxFileSelector("Sound file to play on incoming calls",
-                                    "",
+  wxString newFile = wxFileSelector(wxT("Sound file to play on incoming calls"),
+                                    wxT(""),
                                     m_RingSoundFileName,
-                                    ".wav",
-                                    "WAV files (*.wav)|*.wav",
+                                    wxT(".wav"),
+                                    wxT("WAV files (*.wav)|*.wav"),
                                     wxOPEN|wxFILE_MUST_EXIST);
   if (!newFile.empty()) {
     m_RingSoundFileName = newFile;
@@ -3549,7 +3552,7 @@ void OptionsDialog::BrowseSoundFile(wxCommandEvent & /*event*/)
 void OptionsDialog::PlaySoundFile(wxCommandEvent & /*event*/)
 {
   PSoundChannel speaker(m_manager.m_RingSoundDeviceName, PSoundChannel::Player);
-  speaker.PlayFile(m_RingSoundFileName.c_str());
+  speaker.PlayFile(m_RingSoundFileName);
 }
 
 
@@ -3558,8 +3561,8 @@ void OptionsDialog::PlaySoundFile(wxCommandEvent & /*event*/)
 
 void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 {
-  static const char * bandwidthClasses[] = {
-    "14.4", "28.8", "64.0", "128", "1500", "10000"
+  static const wxChar * bandwidthClasses[] = {
+    wxT("14.4"), wxT("28.8"), wxT("64.0"), wxT("128"), wxT("1500"), wxT("10000")
   };
 
   m_Bandwidth = bandwidthClasses[event.GetSelection()];
@@ -3621,10 +3624,10 @@ static const char * const InterfacePrefixes[] = {
 void OptionsDialog::AddInterface(wxCommandEvent & /*event*/)
 {
   int proto = m_InterfaceProtocol->GetSelection();
-  wxString iface = InterfacePrefixes[proto];
+  wxString iface = PwxString(InterfacePrefixes[proto]);
   iface += m_InterfaceAddress->GetValue();
-  if (proto > 0)
-    iface += ':' + m_InterfacePort->GetValue();
+  if (proto > 0) 
+    iface += wxT(":") + m_InterfacePort->GetValue();
   m_LocalInterfaces->Append(iface);
 }
 
@@ -3634,7 +3637,7 @@ void OptionsDialog::RemoveInterface(wxCommandEvent & /*event*/)
   wxString iface = m_LocalInterfaces->GetStringSelection();
 
   for (int i = 0; i < PARRAYSIZE(InterfacePrefixes); i++) {
-    if (iface.StartsWith(InterfacePrefixes[i])) {
+    if (iface.StartsWith(PwxString(InterfacePrefixes[i]))) {
       m_InterfaceProtocol->SetSelection(i);
       iface.Remove(0, strlen(InterfacePrefixes[i]));
     }
@@ -3673,8 +3676,8 @@ void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
       m_selectedCountry->Clear();
       PStringList countries = lid->GetCountryCodeNameList();
       for (PStringList::iterator country = countries.begin(); country != countries.end(); ++country)
-        m_selectedCountry->Append((const char *)*country);
-      m_selectedCountry->SetValue((const char *)lid->GetCountryCodeName());
+        m_selectedCountry->Append(PwxString(*country));
+      m_selectedCountry->SetValue(PwxString(lid->GetCountryCodeName()));
     }
     delete lidToDelete;
   }
@@ -3686,22 +3689,22 @@ void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
 
 void OptionsDialog::BrowseFaxDirectory(wxCommandEvent & /*event*/)
 {
-  wxDirDialog dlg(this, "Select Receive Directory for Faxes", m_FaxReceiveDirectory);
+  wxDirDialog dlg(this, wxT("Select Receive Directory for Faxes"), m_FaxReceiveDirectory);
   if (dlg.ShowModal() == wxID_OK) {
     m_FaxReceiveDirectory = dlg.GetPath();
-    FindWindowByNameAs<wxTextCtrl>(this, "FaxReceiveDirectory")->SetLabel(m_FaxReceiveDirectory);
+    FindWindowByNameAs<wxTextCtrl>(this, wxT("FaxReceiveDirectory"))->SetLabel(m_FaxReceiveDirectory);
   }
 }
 
 
 void OptionsDialog::BrowseFaxSpanDSP(wxCommandEvent & event)
 {
-  wxString newFile = wxFileSelector("Select location of Span DSP Utility executable",
-                                    "",
+  wxString newFile = wxFileSelector(wxT("Select location of Span DSP Utility executable"),
+                                    wxT(""),
                                     m_FaxSpanDSP,
 #ifdef _WIN32
-                                    ".exe",
-                                    "EXE files (*.exe)|*.exe",
+                                    wxT(".exe"),
+                                    wxT("EXE files (*.exe)|*.exe"),
 #else
                                     wxEmptyString,
                                     wxEmptyString,
@@ -3709,7 +3712,7 @@ void OptionsDialog::BrowseFaxSpanDSP(wxCommandEvent & event)
                                     wxOPEN|wxFILE_MUST_EXIST);
   if (!newFile.empty()) {
     m_FaxSpanDSP = newFile;
-    FindWindowByNameAs<wxTextCtrl>(this, "FaxSpanDSP")->SetLabel(newFile);
+    FindWindowByNameAs<wxTextCtrl>(this, wxT("FaxSpanDSP"))->SetLabel(newFile);
   }
 }
 
@@ -3731,8 +3734,8 @@ void OptionsDialog::AddCodec(wxCommandEvent & /*event*/)
     wxString value = m_allCodecs->GetString(sourceSelection);
     void * data = m_allCodecs->GetClientData(sourceSelection);
     value.Remove(0, value.Find(':')+2);
-    value.Replace(SIPonly, "");
-    value.Replace(H323only, "");
+    value.Replace(SIPonly, wxT(""));
+    value.Replace(H323only, wxT(""));
     if (m_selectedCodecs->FindString(value) < 0) {
       if (insertionPoint < 0)
         m_selectedCodecs->Append(value, data);
@@ -3808,7 +3811,7 @@ void OptionsDialog::SelectedCodec(wxCommandEvent & /*event*/)
   m_MoveDownCodec->Enable(count == 1 && selections[0] < (int)m_selectedCodecs->GetCount()-1);
 
   m_codecOptions->DeleteAllItems();
-  m_codecOptionValue->SetValue("");
+  m_codecOptionValue->SetValue(wxT(""));
   m_codecOptionValue->Disable();
   m_CodecOptionValueLabel->Disable();
 
@@ -3845,7 +3848,7 @@ void OptionsDialog::SelectedCodecOption(wxListEvent & /*event*/)
 
 void OptionsDialog::DeselectedCodecOption(wxListEvent & /*event*/)
 {
-  m_codecOptionValue->SetValue("");
+  m_codecOptionValue->SetValue(wxT(""));
   m_codecOptionValue->Disable();
   m_CodecOptionValueLabel->Disable();
 }
@@ -3945,12 +3948,12 @@ void OptionsDialog::RegistrarToList(bool overwrite, RegistrarInfo * registrar, i
   m_Registrars->SetItem(position, 1, registrar->m_User);
 
   wxString str;
-  str.sprintf("%u:%02u", registrar->m_TimeToLive/60, registrar->m_TimeToLive%60);
+  str.sprintf(wxT("%u:%02u"), registrar->m_TimeToLive/60, registrar->m_TimeToLive%60);
   m_Registrars->SetItem(position, 2, str);
 
-  m_Registrars->SetItem(position, 3, registrar->m_Active ? "ACTIVE" : "disabled");
-  m_Registrars->SetItem(position, 4, registrar->m_MWI      ? "subcribe" : "disabled");
-  m_Registrars->SetItem(position, 5, registrar->m_Presence ? "subcribe" : "disabled");
+  m_Registrars->SetItem(position, 3, registrar->m_Active   ? wxT("ACTIVE")   : wxT("disabled"));
+  m_Registrars->SetItem(position, 4, registrar->m_MWI      ? wxT("subcribe") : wxT("disabled"));
+  m_Registrars->SetItem(position, 5, registrar->m_Presence ? wxT("subcribe") : wxT("disabled"));
 }
 
 
@@ -4181,7 +4184,7 @@ void OptionsDialog::AddRouteTableEntry(OpalManager::RouteEntry entry)
   int pos = m_Routes->InsertItem(INT_MAX, source);
   m_Routes->SetItem(pos, 1, device);
   m_Routes->SetItem(pos, 2, pattern);
-  m_Routes->SetItem(pos, 3, (const char *)entry.destination);
+  m_Routes->SetItem(pos, 3, PwxString(entry.destination));
 }
 
 
@@ -4191,11 +4194,11 @@ void OptionsDialog::AddRouteTableEntry(OpalManager::RouteEntry entry)
 
 void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
 {
-  wxString newFile = wxFileSelector("Trace log file",
-                                    "",
+  wxString newFile = wxFileSelector(wxT("Trace log file"),
+                                    wxT(""),
                                     m_TraceFileName,
-                                    ".log",
-                                    "Log Files (*.log)|*.log|Text Files (*.txt)|*.txt||",
+                                    wxT(".log"),
+                                    wxT("Log Files (*.log)|*.log|Text Files (*.txt)|*.txt||"),
                                     wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
   if (!newFile.empty()) {
     m_TraceFileName = newFile;
@@ -4216,19 +4219,19 @@ END_EVENT_TABLE()
 CallDialog::CallDialog(MyManager * manager, bool hideHandset)
   : m_UseHandset(manager->HasHandset())
 {
-  wxXmlResource::Get()->LoadDialog(this, manager, "CallDialog");
+  wxXmlResource::Get()->LoadDialog(this, manager, wxT("CallDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, "wxID_OK");
+  m_ok = FindWindowByNameAs<wxButton>(this, wxT("wxID_OK"));
   m_ok->Disable();
 
-  wxCheckBox * useHandset = FindWindowByNameAs<wxCheckBox>(this, "UseHandset");
+  wxCheckBox * useHandset = FindWindowByNameAs<wxCheckBox>(this, wxT("UseHandset"));
   useHandset->SetValidator(wxGenericValidator(&m_UseHandset));
   if (hideHandset)
     useHandset->Hide();
   else
     useHandset->Enable(m_UseHandset);
 
-  m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, "Address");
+  m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, wxT("Address"));
   m_AddressCtrl->SetValidator(wxGenericValidator(&m_Address));
 
   wxConfigBase * config = wxConfig::Get();
@@ -4251,7 +4254,7 @@ void CallDialog::OnOK(wxCommandEvent & event)
   config->DeleteGroup(RecentCallsGroup);
   config->SetPath(RecentCallsGroup);
 
-  config->Write("1", m_Address);
+  config->Write(wxT("1"), m_Address);
 
   unsigned keyNumber = 1;
   for (size_t i = 0; i < m_AddressCtrl->GetCount() && keyNumber < MaxSavedRecentCalls; ++i) {
@@ -4259,7 +4262,7 @@ void CallDialog::OnOK(wxCommandEvent & event)
 
     if (m_Address != entry) {
       wxString key;
-      key.sprintf("%u", ++keyNumber);
+      key.sprintf(wxT("%u"), ++keyNumber);
       config->Write(key, entry);
     }
   }
@@ -4286,15 +4289,15 @@ END_EVENT_TABLE()
 AnswerPanel::AnswerPanel(MyManager & manager, wxWindow * parent)
   : m_manager(manager)
 {
-  wxXmlResource::Get()->LoadPanel(this, parent, "AnswerPanel");
+  wxXmlResource::Get()->LoadPanel(this, parent, wxT("AnswerPanel"));
 }
 
 
 void AnswerPanel::SetPartyNames(const PwxString & calling, const PwxString & called)
 {
-  FindWindowByNameAs<wxStaticText>(this, "CallingParty")->SetLabel(calling);
-  FindWindowByNameAs<wxStaticText>(this, "CalledParty")->SetLabel(called);
-  FindWindowByNameAs<wxStaticText>(this, "CalledParty")->SetLabel(called);
+  FindWindowByNameAs<wxStaticText>(this, wxT("CallingParty"))->SetLabel(calling);
+  FindWindowByNameAs<wxStaticText>(this, wxT("CalledParty"))->SetLabel(called);
+  FindWindowByNameAs<wxStaticText>(this, wxT("CalledParty"))->SetLabel(called);
 }
 
 
@@ -4325,7 +4328,7 @@ END_EVENT_TABLE()
 CallingPanel::CallingPanel(MyManager & manager, wxWindow * parent)
   : m_manager(manager)
 {
-  wxXmlResource::Get()->LoadPanel(this, parent, "CallingPanel");
+  wxXmlResource::Get()->LoadPanel(this, parent, wxT("CallingPanel"));
 }
 
 
@@ -4371,16 +4374,16 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
   , m_updateStatistics(0)
   , m_SwitchingHold(false)
 {
-  wxXmlResource::Get()->LoadPanel(this, parent, "InCallPanel");
+  wxXmlResource::Get()->LoadPanel(this, parent, wxT("InCallPanel"));
 
-  m_Hold = FindWindowByNameAs<wxButton>(this, "Hold");
-  m_SpeakerHandset = FindWindowByNameAs<wxButton>(this, "SpeakerHandset");
-  m_SpeakerMute = FindWindowByNameAs<wxCheckBox>(this, "SpeakerMute");
-  m_MicrophoneMute = FindWindowByNameAs<wxCheckBox>(this, "MicrophoneMute");
-  m_SpeakerVolume = FindWindowByNameAs<wxSlider>(this, "SpeakerVolume");
-  m_MicrophoneVolume = FindWindowByNameAs<wxSlider>(this, "MicrophoneVolume");
-  m_vuSpeaker = FindWindowByNameAs<wxGauge>(this, "SpeakerGauge");
-  m_vuMicrophone = FindWindowByNameAs<wxGauge>(this, "MicrophoneGauge");
+  m_Hold = FindWindowByNameAs<wxButton>(this, wxT("Hold"));
+  m_SpeakerHandset = FindWindowByNameAs<wxButton>(this, wxT("SpeakerHandset"));
+  m_SpeakerMute = FindWindowByNameAs<wxCheckBox>(this, wxT("SpeakerMute"));
+  m_MicrophoneMute = FindWindowByNameAs<wxCheckBox>(this, wxT("MicrophoneMute"));
+  m_SpeakerVolume = FindWindowByNameAs<wxSlider>(this, wxT("SpeakerVolume"));
+  m_MicrophoneVolume = FindWindowByNameAs<wxSlider>(this, wxT("MicrophoneVolume"));
+  m_vuSpeaker = FindWindowByNameAs<wxGauge>(this, wxT("SpeakerGauge"));
+  m_vuMicrophone = FindWindowByNameAs<wxGauge>(this, wxT("MicrophoneGauge"));
 
   m_vuTimer.Start(250);
 
@@ -4455,7 +4458,7 @@ void InCallPanel::OnHoldChanged(bool onHold)
     m_manager.m_callsOnHold.front().m_call->Retrieve();
   m_SwitchingHold = false;
 
-  m_Hold->SetLabel(anyCallsOnHols ? "Switch" : "Hold");
+  m_Hold->SetLabel(anyCallsOnHols ? wxT("Switch") : wxT("Hold"));
   m_Hold->Enable(true);
 }
 
@@ -4470,7 +4473,7 @@ void InCallPanel::OnRequestHold(wxCommandEvent & /*event*/)
     m_SwitchingHold = !m_manager.m_callsOnHold.empty();
   }
 
-  m_Hold->SetLabel("In Progress");
+  m_Hold->SetLabel(wxT("In Progress"));
   m_Hold->Enable(false);
 }
 
@@ -4563,7 +4566,7 @@ void InCallPanel::OnUpdateVU(wxTimerEvent& WXUNUSED(event))
 
 static vector<StatisticsField *> StatisticsFieldTemplates;
 
-StatisticsField::StatisticsField(const char * name, StatisticsPages page)
+StatisticsField::StatisticsField(const wxChar * name, StatisticsPages page)
   : m_name(name)
   , m_page(page)
   , m_staticText(NULL)
@@ -4582,7 +4585,7 @@ void StatisticsField::Init(wxWindow * panel)
 
 void StatisticsField::Clear()
 {
-  m_staticText->SetLabel("N/A");
+  m_staticText->SetLabel(wxT("N/A"));
   m_lastTick = 0;
 }
 
@@ -4616,7 +4619,7 @@ void StatisticsField::Update(const OpalConnection & connection, const OpalMediaS
 
 #define STATISTICS_FIELD_BEG(type, name) \
   class type##name##StatisticsField : public StatisticsField { \
-  public: type##name##StatisticsField() : StatisticsField(#type #name, type) { } \
+  public: type##name##StatisticsField() : StatisticsField(wxT(#type #name), type) { } \
     virtual StatisticsField * Clone() const { return new type##name##StatisticsField(*this); } \
     virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) {
 
@@ -4830,7 +4833,7 @@ void StatisticsPage::Init(InCallPanel * panel,
   m_receiver = receiver;
   m_isActive = false;
 
-  wxNotebook * book = FindWindowByNameAs<wxNotebook>(panel, "Statistics");
+  wxNotebook * book = FindWindowByNameAs<wxNotebook>(panel, wxT("Statistics"));
   m_window = book->GetPage(page > RxTxFax ? RxTxFax : page);
 
   for (size_t i = 0; i < StatisticsFieldTemplates.size(); i++) {
@@ -4876,23 +4879,23 @@ END_EVENT_TABLE()
 SpeedDialDialog::SpeedDialDialog(MyManager * manager)
   : m_manager(*manager)
 {
-  wxXmlResource::Get()->LoadDialog(this, manager, "SpeedDialDialog");
+  wxXmlResource::Get()->LoadDialog(this, manager, wxT("SpeedDialDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, "wxID_OK");
+  m_ok = FindWindowByNameAs<wxButton>(this, wxT("wxID_OK"));
 
-  m_nameCtrl = FindWindowByNameAs<wxTextCtrl>(this, "SpeedDialName");
+  m_nameCtrl = FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialName"));
   m_nameCtrl->SetValidator(wxGenericValidator(&m_Name));
 
-  m_numberCtrl = FindWindowByNameAs<wxTextCtrl>(this, "SpeedDialNumber");
+  m_numberCtrl = FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialNumber"));
   m_numberCtrl->SetValidator(wxGenericValidator(&m_Number));
 
-  m_addressCtrl = FindWindowByNameAs<wxTextCtrl>(this, "SpeedDialAddress");
+  m_addressCtrl = FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialAddress"));
   m_addressCtrl->SetValidator(wxGenericValidator(&m_Address));
 
-  FindWindowByName("SpeedDialDescription")->SetValidator(wxGenericValidator(&m_Description));
+  FindWindowByName(wxT("SpeedDialDescription"))->SetValidator(wxGenericValidator(&m_Description));
 
-  m_inUse = FindWindowByNameAs<wxStaticText>(this, "SpeedDialInUse");
-  m_ambiguous = FindWindowByNameAs<wxStaticText>(this, "SpeedDialAmbiguous");
+  m_inUse = FindWindowByNameAs<wxStaticText>(this, wxT("SpeedDialInUse"));
+  m_ambiguous = FindWindowByNameAs<wxStaticText>(this, wxT("SpeedDialAmbiguous"));
 }
 
 
@@ -4965,6 +4968,8 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
                                          SIP_PDU::StatusCodes reason)
 {
   switch (reason) {
+    default:
+      break;
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Information_Trying :
       return;
@@ -5001,6 +5006,8 @@ void MySIPEndPoint::OnSubscriptionStatus(const PString & eventPackage,
                                          SIP_PDU::StatusCodes reason)
 {
   switch (reason) {
+    default:
+      break;
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Information_Trying :
       return;
