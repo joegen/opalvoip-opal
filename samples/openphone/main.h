@@ -32,12 +32,13 @@
 #ifndef _OpenPhone_MAIN_H
 #define _OpenPhone_MAIN_H
 
+#include <wx/wx.h>
+#include <wx/dataobj.h>
+
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
-#include <wx/wx.h>
-#include <wx/dataobj.h>
 
 #include <opal/manager.h>
 
@@ -84,23 +85,39 @@ class PwxString : public wxString
   public:
     PwxString() { }
     PwxString(const wxString & str) : wxString(str) { }
-    PwxString(const PString & str) : wxString((const char *)str) { }
-    PwxString(const char * str) : wxString(str) { }
+    PwxString(const PString & str) : wxString(str, wxConvUTF8 ) { }
+    PwxString(const PFilePath & fn) : wxString(fn, wxConvUTF8 ) { }
+    PwxString(const char * str) : wxString(str, wxConvUTF8) { }
+    PwxString(const OpalMediaFormat & fmt) : wxString(fmt, wxConvUTF8) { }
+//#ifdef __UNICODE__
+    PwxString(const wchar_t * wstr) : wxString(wstr) { }
+//#endif
 
-    PwxString & operator=(const wxString & str) { wxString::operator=(str); return *this; }
-    PwxString & operator=(const PString & str) { wxString::operator=((const char *)str); return *this; }
-    PwxString & operator=(const char * str) { wxString::operator=(str); return *this; }
+    inline PwxString & operator=(const char * str)     { *this = wxString::wxString(str, wxConvUTF8); return *this; }
+//#ifdef __UNICODE__
+    inline PwxString & operator=(const wchar_t * wstr) { wxString::operator=(wstr); return *this; }
+//#endif
+    inline PwxString & operator=(const wxString & str) { wxString::operator=(str); return *this; }
+    inline PwxString & operator=(const PString & str)  { *this = wxString::wxString(str, wxConvUTF8); return *this; }
 
-    bool operator==(const char * other)            const { return IsSameAs(other); }
-    bool operator==(const wxString & other)        const { return IsSameAs(other); }
-    bool operator==(const PString & other)         const { return IsSameAs((const char *)other); }
-    bool operator==(const PwxString & other)       const { return IsSameAs((const char *)other); }
-    bool operator==(const OpalMediaFormat & other) const { return IsSameAs((const char *)other); }
+    inline bool operator==(const char * other)            const { return IsSameAs(wxString(other, wxConvUTF8)); }
+    inline bool operator==(const wchar_t * other)         const { return IsSameAs(other); }
+    inline bool operator==(const wxString & other)        const { return IsSameAs(other); }
+    inline bool operator==(const PString & other)         const { return IsSameAs(wxString(other, wxConvUTF8)); }
+    inline bool operator==(const PwxString & other)       const { return IsSameAs(other); }
+    inline bool operator==(const OpalMediaFormat & other) const { return IsSameAs(wxString(other, wxConvUTF8)); }
 
-    operator PString() const { return c_str(); }
-    operator PIPSocket::Address() const { return PIPSocket::Address(PString(c_str())); }
-    friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.c_str(); }
+    inline bool operator!=(const char * other)            const { return !IsSameAs(wxString(other, wxConvUTF8)); }
+    inline bool operator!=(const wchar_t * other)         const { return !IsSameAs(other); }
+    inline bool operator!=(const wxString & other)        const { return !IsSameAs(other); }
+    inline bool operator!=(const PString & other)         const { return !IsSameAs(wxString(other, wxConvUTF8)); }
+    inline bool operator!=(const PwxString & other)       const { return !IsSameAs(other); }
+    inline bool operator!=(const OpalMediaFormat & other) const { return !IsSameAs(wxString(other, wxConvUTF8)); }
 
+    inline operator PString() const { return c_str(); }
+    inline operator PFilePath() const { return PFilePath(c_str()); }
+    inline operator PIPSocket::Address() const { return PIPSocket::Address(PString(c_str())); }
+    inline friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.c_str(); }
 };
 
 
@@ -221,7 +238,7 @@ enum StatisticsPages {
 
 struct StatisticsField
 {
-  StatisticsField(const char * name, StatisticsPages page);
+  StatisticsField(const wxChar * name, StatisticsPages page);
   void Init(wxWindow * panel);
   void Clear();
   double CalculateBandwidth(DWORD bytes);
@@ -229,7 +246,7 @@ struct StatisticsField
   virtual void Update(const OpalConnection & connection, const OpalMediaStream & stream);
   virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) = 0;
 
-  const char    * m_name;
+  const wxChar    * m_name;
   StatisticsPages m_page;
   wxStaticText  * m_staticText;
   wxString        m_printFormat;
@@ -616,15 +633,15 @@ class MyMedia
 public:
   MyMedia();
   MyMedia(
-    const char * source,
+    const wxChar * source,
     const PString & format
   );
 
   bool operator<(const MyMedia & other) { return preferenceOrder < other.preferenceOrder; }
 
-  const char    * sourceProtocol;
+  const wxChar    * sourceProtocol;
   OpalMediaFormat mediaFormat;
-  const char    * validProtocols;
+  const wxChar    * validProtocols;
   int             preferenceOrder;
   bool            dirty;
 };
@@ -844,7 +861,7 @@ class MyManager : public wxFrame, public OpalManager
     bool AdjustFrameSize();
 
     MyMediaList m_mediaInfo;
-    void InitMediaInfo(const char * source, const OpalMediaFormatList & formats);
+    void InitMediaInfo(const wxChar * source, const OpalMediaFormatList & formats);
     void ApplyMediaInfo();
 
 #if PTRACING
