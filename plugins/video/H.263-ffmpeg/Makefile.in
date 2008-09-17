@@ -38,6 +38,7 @@ VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
+target_os=@target_os@
 
 BASENAME= h263-ffmpeg
 SONAME	=$(BASENAME)
@@ -74,7 +75,11 @@ STATIC	= ./lib$(BASENAME)_video_s.a
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
+ifeq (,$(findstring solaris,$(target_os)))
 	$(CXX) $(LDSO) -o $@ $^
+else
+	$(CXX) $(LDSO) $@ -o $@ $^
+endif
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
