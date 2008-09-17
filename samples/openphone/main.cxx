@@ -2444,7 +2444,7 @@ bool MyManager::StartGatekeeper()
     PString gkDesc = m_gatekeeperIdentifier;
     if (!m_gatekeeperIdentifier.IsEmpty() || !m_gatekeeperAddress.IsEmpty())
       gkDesc += "@";
-    gkDesc += m_gatekeeperAddress;
+    gkDesc += m_gatekeeperAddress.c_str();
 
     if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
       LogWindow << "H.323 registration started for " << *h323EP->GetGatekeeper() << endl;
@@ -2469,15 +2469,15 @@ void MyManager::StartRegistrars()
   for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
     if (iter->m_Active) {
       SIPRegister::Params param;
-      param.m_addressOfRecord = PwxString(iter->m_User);
+      param.m_addressOfRecord = (PString)iter->m_User;
       if (param.m_addressOfRecord.Find('@') == P_MAX_INDEX) {
         param.m_addressOfRecord += '@';
-        param.m_addressOfRecord += PwxString(iter->m_Domain);
+        param.m_addressOfRecord += (PString)iter->m_Domain;
       }
-      param.m_authID = PwxString(iter->m_AuthID);
+      param.m_authID = (PString)iter->m_AuthID;
       if (param.m_authID.IsEmpty())
-        param.m_authID = PwxString(iter->m_User);
-      param.m_password = PwxString(iter->m_Password);
+        param.m_authID = (PString)iter->m_User;
+      param.m_password = (PString)iter->m_Password;
       param.m_expire = iter->m_TimeToLive;
       bool ok = sipEP->Register(param);
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
@@ -3239,7 +3239,7 @@ bool OptionsDialog::TransferDataFromWindow()
   PStringArray newInterfaces(m_LocalInterfaces->GetCount());
   bool changed = m_manager.m_LocalInterfaces.GetSize() != newInterfaces.GetSize();
   for (int i = 0; i < newInterfaces.GetSize(); i++) {
-    newInterfaces[i] = PwxString(m_LocalInterfaces->GetString(i));
+    newInterfaces[i] = (PString)m_LocalInterfaces->GetString(i);
     PINDEX oldIndex = m_manager.m_LocalInterfaces.GetValuesIndex(newInterfaces[i]);
     if (oldIndex == P_MAX_INDEX || newInterfaces[i] != m_manager.m_LocalInterfaces[oldIndex])
       changed = true;
@@ -3282,7 +3282,7 @@ bool OptionsDialog::TransferDataFromWindow()
   // Video fields
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs grabber = m_manager.GetVideoInputDevice();
-  SAVE_FIELD(VideoGrabber, grabber.deviceName = );
+  SAVE_FIELD(VideoGrabber, grabber.deviceName = (PString));
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
