@@ -32,13 +32,13 @@
 #ifndef _OpenPhone_MAIN_H
 #define _OpenPhone_MAIN_H
 
-#include <wx/wx.h>
-#include <wx/dataobj.h>
-
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
+
+#include <wx/wx.h>
+#include <wx/dataobj.h>
 
 #include <opal/manager.h>
 
@@ -89,26 +89,30 @@ class PwxString : public wxString
     PwxString(const PFilePath & fn) : wxString(fn, wxConvUTF8 ) { }
     PwxString(const char * str) : wxString(str, wxConvUTF8) { }
     PwxString(const OpalMediaFormat & fmt) : wxString(fmt, wxConvUTF8) { }
-//#ifdef __UNICODE__
+#if wxUSE_UNICODE
     PwxString(const wchar_t * wstr) : wxString(wstr) { }
-//#endif
+#endif
 
     inline PwxString & operator=(const char * str)     { *this = wxString::wxString(str, wxConvUTF8); return *this; }
-//#ifdef __UNICODE__
+#if wxUSE_UNICODE
     inline PwxString & operator=(const wchar_t * wstr) { wxString::operator=(wstr); return *this; }
-//#endif
+#endif
     inline PwxString & operator=(const wxString & str) { wxString::operator=(str); return *this; }
     inline PwxString & operator=(const PString & str)  { *this = wxString::wxString(str, wxConvUTF8); return *this; }
 
     inline bool operator==(const char * other)            const { return IsSameAs(wxString(other, wxConvUTF8)); }
+#if wxUSE_UNICODE
     inline bool operator==(const wchar_t * other)         const { return IsSameAs(other); }
+#endif
     inline bool operator==(const wxString & other)        const { return IsSameAs(other); }
     inline bool operator==(const PString & other)         const { return IsSameAs(wxString(other, wxConvUTF8)); }
     inline bool operator==(const PwxString & other)       const { return IsSameAs(other); }
     inline bool operator==(const OpalMediaFormat & other) const { return IsSameAs(wxString(other, wxConvUTF8)); }
 
     inline bool operator!=(const char * other)            const { return !IsSameAs(wxString(other, wxConvUTF8)); }
+#if wxUSE_UNICODE
     inline bool operator!=(const wchar_t * other)         const { return !IsSameAs(other); }
+#endif
     inline bool operator!=(const wxString & other)        const { return !IsSameAs(other); }
     inline bool operator!=(const PString & other)         const { return !IsSameAs(wxString(other, wxConvUTF8)); }
     inline bool operator!=(const PwxString & other)       const { return !IsSameAs(other); }
