@@ -2157,6 +2157,8 @@ test -n "$target_alias" &&
 
 
 
+
+
           # Check whether --enable-debug was given.
 if test "${enable_debug+set}" = set; then
   enableval=$enable_debug; DEBUG_BUILD=$enableval
@@ -4772,6 +4774,7 @@ AC_PLUGIN_DIR="${PLUGIN_DIR}/codecs/audio"
 VC_PLUGIN_DIR="${PLUGIN_DIR}/codecs/video"
 LID_PLUGIN_DIR="${PLUGIN_DIR}/lid"
 FAX_PLUGIN_DIR="${PLUGIN_DIR}/fax"
+
 
 
 
