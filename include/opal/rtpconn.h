@@ -351,13 +351,8 @@ class OpalSecurityMode : public PObject
   PCLASSINFO(OpalSecurityMode, PObject);
   public:
     virtual RTP_UDP * CreateRTPSession(
-      OpalRTPConnection & connection,    ///< Connection creating session (may be needed by secure connections)
-      const PString & encoding,          ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
-#if OPAL_RTP_AGGREGATE
-      PHandleAggregator * _aggregator,   ///< handle aggregator
-#endif
-      unsigned id,                       ///< Session ID for RTP channel
-      PBoolean remoteIsNAT               ///< PTrue is remote is behind NAT
+      OpalRTPConnection & connection,     ///< Connection creating session (may be needed by secure connections)
+      const RTP_Session::Params & options ///< Parameters to construct with session.
     ) = 0;
     virtual PBoolean Open() = 0;
 };

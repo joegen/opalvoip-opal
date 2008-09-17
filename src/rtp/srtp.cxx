@@ -58,17 +58,8 @@ class PNatMethod;
 //  this class implements SRTP over UDP
 //
 
-OpalSRTP_UDP::OpalSRTP_UDP(const PString & encoding,
-#if OPAL_RTP_AGGREGATE
-                           PHandleAggregator * _aggregator,
-#endif
-                           unsigned id,
-                           PBoolean remoteIsNAT)
-  : SecureRTP_UDP(encoding,
-#if OPAL_RTP_AGGREGATE
-                  _aggregator,
-#endif
-                  id, remoteIsNAT)
+OpalSRTP_UDP::OpalSRTP_UDP(const Params & params)
+  : SecureRTP_UDP(params)
 {
 }
 
@@ -108,13 +99,8 @@ class LibSRTPSecurityMode_Base : public OpalSRTPSecurityMode
   PCLASSINFO(LibSRTPSecurityMode_Base, OpalSRTPSecurityMode);
   public:
     RTP_UDP * CreateRTPSession(
-      OpalRTPConnection & connection,    ///< Connection creating session (may be needed by secure connections)
-      const PString & encoding,          ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
-#if OPAL_RTP_AGGREGATE
-      PHandleAggregator * _aggregator,   ///< handle aggregator
-#endif
-      unsigned id,                       ///< Session ID for RTP channel
-      PBoolean remoteIsNAT               ///< PTrue is remote is behind NAT
+      OpalRTPConnection & connection,     ///< Connection creating session (may be needed by secure connections)
+      const RTP_Session::Params & options ///< Parameters to construct with session.
     );
 
     PBoolean SetOutgoingKey(const KeySalt & key)  { outgoingKey = key; return PTrue; }
@@ -166,19 +152,9 @@ void LibSRTPSecurityMode_Base::Init()
 
 
 RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(OpalRTPConnection & /*connection*/,
-                                                     const PString & encoding,
-#if OPAL_RTP_AGGREGATE
-                                                     PHandleAggregator * _aggregator,
-#endif
-                                                     unsigned id,
-                                                     PBoolean remoteIsNAT)
+                                                     const RTP_Session::Params & options)
 {
-  LibSRTP_UDP * session = new LibSRTP_UDP(encoding,
-#if OPAL_RTP_AGGREGATE
-                                          _aggregator,
-#endif
-                                          id,
-                                          remoteIsNAT);
+  LibSRTP_UDP * session = new LibSRTP_UDP(options);
   session->SetSecurityMode(this);
   return session;
 }
@@ -255,17 +231,8 @@ DECLARE_LIBSRTP_CRYPTO_ALG(STRONGHOLD,               crypto_policy_set_aes_cm_12
 
 ///////////////////////////////////////////////////////
 
-LibSRTP_UDP::LibSRTP_UDP(const PString & encoding,
-#if OPAL_RTP_AGGREGATE
-                         PHandleAggregator * _aggregator,
-#endif
-                         unsigned _sessionId, 
-                         PBoolean _remoteIsNAT)
-  : OpalSRTP_UDP(encoding,
-#if OPAL_RTP_AGGREGATE
-                 _aggregator,
-#endif
-                 _sessionId, _remoteIsNAT)
+LibSRTP_UDP::LibSRTP_UDP(const Params & params)
+  : OpalSRTP_UDP(params)
 {
 }
 

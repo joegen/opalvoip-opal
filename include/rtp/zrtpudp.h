@@ -23,6 +23,7 @@ class OpalZrtp_UDP : public SecureRTP_UDP
   public:
     OpalZrtp_UDP(
       const PString & encoding,       ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
+      bool audio,                     ///<  is audio RTP data
 #if OPAL_RTP_AGGREGATE
       PHandleAggregator * aggregator, ///< RTP aggregator
 #endif
@@ -58,13 +59,8 @@ class LibZrtpSecurityMode_Base : public OpalZrtpSecurityMode
     ~LibZrtpSecurityMode_Base();
 
     RTP_UDP * CreateRTPSession(
-      OpalRTPConnection & connection,    ///< Connection creating session (may be needed by secure connections)
-      const PString & encoding,          ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
-#if OPAL_RTP_AGGREGATE
-      PHandleAggregator * _aggregator,   ///< handle aggregator
-#endif
-      unsigned id,                       ///< Session ID for RTP channel
-      PBoolean remoteIsNAT               ///< PTrue is remote is behind NAT
+      OpalRTPConnection & connection,     ///< Connection creating session (may be needed by secure connections)
+      const RTP_Session::Params & options ///< Parameters to construct with session.
     );
 
     PBoolean Open();

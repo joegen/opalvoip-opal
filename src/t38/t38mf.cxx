@@ -87,11 +87,14 @@ RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &,
 #endif
                                              unsigned sessionID, bool remoteIsNAT)
 {
-  return new RTP_UDP(GetRTPEncoding(),
+  RTP_Session::Params params;
+  params.id = sessionID;
+  params.encoding = GetRTPEncoding();
 #if OPAL_RTP_AGGREGATE
-                     agg,
+  params.aggregator = agg;
 #endif
-                     sessionID, remoteIsNAT);
+  params.remoteIsNAT = remoteIsNAT;
+  return new RTP_UDP(params);
 }
 
 #endif // OPAL_T38_CAPABILITY
