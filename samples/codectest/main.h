@@ -40,6 +40,7 @@ class TranscoderThread : public PThread
       , decoder(NULL)
       , num(_num)
       , timestamp(0)
+      , markerHandling(NormalMarkers)
     {
     }
 
@@ -71,6 +72,11 @@ class TranscoderThread : public PThread
     OpalTranscoder * decoder;
     unsigned         num;
     DWORD            timestamp;
+    enum MarkerHandling {
+      SuppressMarkers,
+      ForceMarkers,
+      NormalMarkers
+    } markerHandling;
 };
 
 
