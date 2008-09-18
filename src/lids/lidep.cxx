@@ -786,9 +786,9 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
     return;
   }
 
-  PTRACE(3, "LID\tRouted to \"" << ownerCall.GetPartyB() << "\" the "
+  PTRACE(3, "LID Con\tRouted to \"" << ownerCall.GetPartyB() << "\", "
          << (IsOriginating() ? "outgo" : "incom") << "ing connection " << *this);
-  if (ownerCall.OnSetUp(*this) && line.IsTerminal())
+  if (ownerCall.OnSetUp(*this) && line.IsTerminal() && GetPhase() < AlertingPhase)
     line.PlayTone(OpalLineInterfaceDevice::RoutingTone);
 }
 
