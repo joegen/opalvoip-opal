@@ -741,6 +741,22 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     typedef PThreadPool<SIP_PDU_Work, SIP_PDU_Thread> SIPMainThreadPool;
     SIPMainThreadPool threadPool;
+
+    class InterfaceMonitor : public PInterfaceMonitorClient
+    {
+        PCLASSINFO(InterfaceMonitor, PInterfaceMonitorClient);
+      public:
+        InterfaceMonitor(SIPEndPoint & manager);
+        
+        virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
+        virtual void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
+
+    protected:
+        SIPEndPoint & m_endpoint;
+    } m_interfaceMonitor;
+
+    friend void InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry);
+    friend void InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
 };
 
 #endif // __OPAL_SIPEP_H
