@@ -3185,6 +3185,10 @@ OptionsDialog::~OptionsDialog()
   set(m_##name); \
   config->Write(name##Key, m_##name)
 
+#define SAVE_FIELD_POST(name, set, post) \
+  set(m_##name post); \
+  config->Write(name##Key, m_##name)
+
 #define SAVE_FIELD2(name1, name2, set) \
   set(m_##name1, m_##name2); \
   config->Write(name1##Key, m_##name1); \
@@ -3282,7 +3286,7 @@ bool OptionsDialog::TransferDataFromWindow()
   // Video fields
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs grabber = m_manager.GetVideoInputDevice();
-  SAVE_FIELD(VideoGrabber, grabber.deviceName = (PString));
+  SAVE_FIELD_POST(VideoGrabber, grabber.deviceName = (PString), .mb_str(wxConvUTF8));   /// XXXXX
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );

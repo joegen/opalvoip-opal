@@ -542,10 +542,14 @@ AC_DEFUN([OPAL_CHECK_LIBAVCODEC],
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&AS_MESSAGE_LOG_FD
           if test -x conftest$ac_exeext ; then
             libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print @S|@3; }'`
-            symbol=`@S|@NM -D @S|@libavcodec_libdir | grep $1`
-            if test "x$symbol" != "x"; then
-              got_symbol=yes
-	    fi
+            if test "$libavcodec_libdir" = "not" ; then
+              got_symbol="check_LD_LIBRARY_PATH"
+            else
+              symbol=`@S|@NM -D @S|@libavcodec_libdir | grep $1`
+              if test "x$symbol" != "x"; then
+                got_symbol=yes
+	      fi
+            fi
           fi
           AC_MSG_RESULT($got_symbol)
           AS_IF([test AS_VAR_GET([got_symbol]) = yes], [$2], [$3])[]
