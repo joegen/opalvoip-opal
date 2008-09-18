@@ -53,16 +53,23 @@
 ////////////////////////////////////////////////////////////////////////////
 
 SIPEndPoint::SIPEndPoint(OpalManager & mgr)
-: OpalRTPEndPoint(mgr, "sip", CanTerminateCall),
-    retryTimeoutMin(500),            // 0.5 seconds
-    retryTimeoutMax(0, 4),           // 4 seconds
-    nonInviteTimeout(0, 16),         // 16 seconds
-    pduCleanUpTimeout(0, 5),         // 5 seconds
-    inviteTimeout(0, 32),            // 32 seconds
-    ackTimeout(0, 32),               // 32 seconds
-    registrarTimeToLive(0, 0, 0, 1), // 1 hour
-    notifierTimeToLive(0, 0, 0, 1),  // 1 hour
-    natBindingTimeout(0, 0, 1)       // 1 minute
+  : OpalRTPEndPoint(mgr, "sip", CanTerminateCall)
+  , retryTimeoutMin(500)             // 0.5 seconds
+  , retryTimeoutMax(0, 4)            // 4 seconds
+  , nonInviteTimeout(0, 16)          // 16 seconds
+  , pduCleanUpTimeout(0, 5)          // 5 seconds
+  , inviteTimeout(0, 32)             // 32 seconds
+  , ackTimeout(0, 32)                // 32 seconds
+  , registrarTimeToLive(0, 0, 0, 1)  // 1 hour
+  , notifierTimeToLive(0, 0, 0, 1)   // 1 hour
+  , natBindingTimeout(0, 0, 1)       // 1 minute
+#ifdef _MSC_VER
+#pragma warning(disable:4355)
+#endif
+  , m_interfaceMonitor(*this)
+#ifdef _MSC_VER
+#pragma warning(default:4355)
+#endif
 {
   defaultSignalPort = 5060;
   mimeForm = PFalse;
@@ -1315,6 +1322,34 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
     delete work;
   }
 }
+
+
+SIPEndPoint::InterfaceMonitor::InterfaceMonitor(SIPEndPoint & ep)
+  : PInterfaceMonitorClient(30)  // Low priority, after the bundled socket has been done
+  , m_endpoint(ep)
+{
+}
+
+        
+void SIPEndPoint::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry &)
+{
+  for (PSafePtr<SIPHandler> handler(m_endpoint.activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+    if (handler->GetState() == SIPHandler::Unavailable)
+      handler->SendRequest(SIPHandler::Restoring);
+  }
+}
+
+
+void SIPEndPoint::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
+{
+  for (PSafePtr<SIPHandler> handler(m_endpoint.activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+    if (handler->GetState() == SIPHandler::Subscribed &&
+        handler->GetTransport() != NULL &&
+        handler->GetTransport()->GetInterface().Find(entry.GetName()) != P_MAX_INDEX)
+      handler->SendRequest(SIPHandler::Refreshing);
+  }
+}
+
 
 #endif // OPAL_SIP
 
