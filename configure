@@ -4629,7 +4629,7 @@ LDSOOPTS=
 case "$target_os" in
 	solaris*)
           SHAREDLIBEXT=so
-          SHARED_CFLAGS="-fPIC"
+          SHARED_CFLAGS="-KPIC -D__inline=inline"
 
           if test "xDEBUG" = "xDEBUG" ; then
             OBJ_SUFFIX="_d"
@@ -4712,7 +4712,7 @@ case "$target_os" in
 
           LDSOOPTS="-Bdynamic -G -h ${LIB_FILENAME_SHARED_PAT}"
 
-          DEBUG_CFLAGS="-gstabs+ -D_DEBUG"
+          DEBUG_CFLAGS="-D_DEBUG"
           HAVE_RANLIB=no
         ;;
 
@@ -5191,10 +5191,11 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
 echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
 
-if test -n "$PTLIB_CFLAGS"; then
-    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_CFLAGS"; then
+        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
   ac_status=$?
@@ -5204,13 +5205,15 @@ if test -n "$PTLIB_CFLAGS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
-if test -n "$PTLIB_LIBS"; then
-    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_LIBS"; then
+        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
   ac_status=$?
@@ -5220,8 +5223,9 @@ if test -n "$PTLIB_LIBS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
 
 
@@ -5234,9 +5238,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib >= ${PTLIB_REC_VERSION}"`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib >= ${PTLIB_REC_VERSION}"`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -5299,10 +5303,11 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
 echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
 
-if test -n "$PTLIB_CFLAGS"; then
-    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_CFLAGS"; then
+        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
   ac_status=$?
@@ -5312,13 +5317,15 @@ if test -n "$PTLIB_CFLAGS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
-if test -n "$PTLIB_LIBS"; then
-    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PTLIB_LIBS"; then
+        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
   ac_status=$?
@@ -5328,8 +5335,9 @@ if test -n "$PTLIB_LIBS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
 
 
@@ -5342,9 +5350,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib"`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib"`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -8857,10 +8865,11 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for SPEEX" >&5
 echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
 
-if test -n "$SPEEX_CFLAGS"; then
-    pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_CFLAGS"; then
+        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex") 2>&5
   ac_status=$?
@@ -8870,13 +8879,15 @@ if test -n "$SPEEX_CFLAGS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
-if test -n "$SPEEX_LIBS"; then
-    pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_LIBS"; then
+        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex") 2>&5
   ac_status=$?
@@ -8886,8 +8897,9 @@ if test -n "$SPEEX_LIBS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
 
 
@@ -8900,9 +8912,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "speex" 2>&1`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex"`
         else
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --print-errors "speex" 2>&1`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex"`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SPEEX_PKG_ERRORS" >&5
@@ -8937,10 +8949,11 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for SPEEX" >&5
 echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
 
-if test -n "$SPEEX_CFLAGS"; then
-    pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_CFLAGS"; then
+        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
   ac_status=$?
@@ -8950,13 +8963,15 @@ if test -n "$SPEEX_CFLAGS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
-if test -n "$SPEEX_LIBS"; then
-    pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
+if test -n "$PKG_CONFIG"; then
+    if test -n "$SPEEX_LIBS"; then
+        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
   ac_status=$?
@@ -8966,8 +8981,9 @@ if test -n "$SPEEX_LIBS"; then
 else
   pkg_failed=yes
 fi
- else
-    pkg_failed=untried
+    fi
+else
+	pkg_failed=untried
 fi
 
 
@@ -8980,9 +8996,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "speex >= $SPEEX_INTERNAL_VERSION" 2>&1`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
         else
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --print-errors "speex >= $SPEEX_INTERNAL_VERSION" 2>&1`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SPEEX_PKG_ERRORS" >&5
