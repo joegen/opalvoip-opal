@@ -180,12 +180,12 @@ LDSOOPTS=
 case "$target_os" in
 	solaris*)
           SHAREDLIBEXT=so
-          SHARED_CFLAGS="-fPIC"
+          SHARED_CFLAGS="-KPIC -D__inline=inline"
           OPAL_DETERMINE_LIBNAMES(DEBUG)
           OPAL_DETERMINE_LIBNAMES(RELEASE)
           LDSOOPTS="-Bdynamic -G -h ${LIB_FILENAME_SHARED_PAT}"
 
-          DEBUG_CFLAGS="-gstabs+ -D_DEBUG"
+          DEBUG_CFLAGS="-D_DEBUG"
           HAVE_RANLIB=no
         ;;
 
