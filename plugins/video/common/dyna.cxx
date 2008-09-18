@@ -50,7 +50,10 @@ bool DynaLink::Open(const char *name)
     return true;
 
   // As a last resort, try the current directory
-  return InternalOpen(".", name);
+  if (InternalOpen(".", name))
+    return true;
+
+  return InternalOpen("/usr/local/lib", name);
 }
 
 bool DynaLink::InternalOpen(const char * dir, const char *name)
@@ -65,6 +68,11 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
     strcat(path, DIR_SEPARATOR);
   }
   strcat(path, name);
+
+  if (strlen(path) == 0) {
+    TRACE(1, _codecString << "\tDYNA\tdir '" << (dir != NULL ? dir : "(NULL)") << "', name '" << (name != NULL ? name : "(NULL)") << "' resulted in empty path");
+    return false;
+  }
 
   // Load the Libary
 #ifdef _WIN32
@@ -93,15 +101,14 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
     }  
     else {
       TRACE(1, _codecString << "\tDYNA\tError loading " << path);
-      return false;
     }
 #else /* _WIN32 */
     TRACE(1, _codecString << "\tDYNA\tError loading " << path);
-    return false;
 #endif /* _WIN32 */
+    return false;
   } 
 
-  TRACE(1, _codecString << "\tDYNA\tSuccessfully loaded " << path);
+  TRACE(1, _codecString << "\tDYNA\tSuccessfully loaded '" << path << "'");
   return true;
 }
 
@@ -136,8 +143,10 @@ bool DynaLink::GetFunction(const char * name, Function & func)
   return true;
 #else
   void * p = dlsym(_hDLL, (const char *)name);
-  if (p == NULL)
+  if (p == NULL) {
+    TRACE(1, _codecString << "\tDYNA\tError " << dlerror());
     return false;
+  }
   func = (Function &)p;
   return true;
 #endif /* _WIN32 */

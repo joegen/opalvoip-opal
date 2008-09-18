@@ -1901,6 +1901,30 @@ void H323Gatekeeper::OnAddInterface(const PIPSocket::InterfaceEntry & /*entry*/,
 {
   if (priority != HighPriority)
     UpdateConnectionStatus();
+  else {
+    // special case if interface filtering is used: A new interface may 'hide' the old interface.
+    // If this is the case, remove the transport interface and do a full rediscovery. 
+    //
+    // There is a race condition: If the transport interface binding is cleared AFTER
+    // PMonitoredSockets::ReadFromSocket() is interrupted and starts listening again,
+    // the transport will still listen on the old interface only. Therefore, clear the
+    // socket binding BEFORE the monitored sockets update their interfaces.
+    if (PInterfaceMonitor::GetInstance().HasInterfaceFilter()) {
+      PString iface = transport->GetInterface();
+      if (iface.IsEmpty()) // not connected.
+        return;
+      
+      PIPSocket::Address addr;
+      if (!transport->GetRemoteAddress().GetIpAddress(addr))
+        return;
+      
+      PStringArray ifaces = lowPriorityMonitor.GetInterfaces(PFalse, addr);
+      
+      if (ifaces.GetStringsIndex(iface) == P_MAX_INDEX) { // original interface no longer available
+        transport->SetInterface(PString::Empty());
+      }
+    }
+  }
 }
 
 
@@ -1943,7 +1967,7 @@ void H323Gatekeeper::UpdateConnectionStatus()
   if (!transport->GetRemoteAddress().GetIpAddress(addr))
     return;
   
-  if (lowPriorityMonitor.GetInterfaces(FALSE, addr).GetSize() > 0) {
+  if (lowPriorityMonitor.GetInterfaces(false, addr).GetSize() > 0) {
     // at least one interface available, locate gatekeper
     discoveryComplete = PFalse;
     reregisterNow = PTrue;
