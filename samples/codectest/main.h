@@ -52,16 +52,11 @@ class TranscoderThread : public PThread
 
     int InitialiseCodec(PArgList & args, const OpalMediaFormat & rawFormat);
 
-    void Stop()
-    {
-      running = false;
-      WaitForTermination();
-    }
-
     virtual void Main();
 
     virtual bool Read(RTP_DataFrame & frame) = 0;
     virtual bool Write(const RTP_DataFrame & frame) = 0;
+    virtual void Stop() = 0;
 
     bool running;
 
@@ -102,6 +97,7 @@ class AudioThread : public TranscoderThread
     virtual void Main();
     virtual bool Read(RTP_DataFrame & frame);
     virtual bool Write(const RTP_DataFrame & frame);
+    virtual void Stop();
 
     PSoundChannel * recorder;
     PSoundChannel * player;
@@ -116,6 +112,8 @@ class VideoThread : public TranscoderThread
       : TranscoderThread(_num, "Video")
       , grabber(NULL)
       , display(NULL)
+      , singleStep(false)
+      , frameWait(0, INT_MAX)
     {
     }
 
@@ -130,9 +128,12 @@ class VideoThread : public TranscoderThread
     virtual void Main();
     virtual bool Read(RTP_DataFrame & frame);
     virtual bool Write(const RTP_DataFrame & frame);
+    virtual void Stop();
 
     PVideoInputDevice  * grabber;
     PVideoOutputDevice * display;
+    bool                 singleStep;
+    PSemaphore           frameWait;
 };
 
 
