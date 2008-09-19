@@ -49,45 +49,11 @@ libdir=@libdir@
 
 CC=@CC@
 CXX=@CXX@
-LDSO=@LDSO@
 PLUGINEXT=so
-
 SONAME	= vpb
-
-ifndef OSTYPE
-OSTYPE := $(shell uname -s)
-endif
-
-ifndef MACHTYPE
-MACHTYPE := $(shell uname -m)
-endif
-
-ifneq (,$(findstring macos,$(OSTYPE)))
-OSTYPE := Darwin
-endif
-
-ifeq ($(OSTYPE),darwin)
-  OSTYPE := Darwin
-endif
-
-ifeq ($(OSTYPE),Darwin)
-  # MacOS X or later / Darwin
-	
-  CFLAGS          += -fno-common -dynamic
-  LDFLAGS         += -multiply_defined suppress
-  STDCCFLAGS  	+= -D__MACOSX__
-	 
-  ifeq ($(MACHTYPE),x86)
-    STDCCFLAGS      += -m486
-  endif
-	
-  LDSO = -dynamiclib  -multiply_defined suppress 
-  SONAME	= 
-  PLUGINEXT     = dylib
-endif # Darwin
-
 SRCDIR	= ./src
 OBJDIR	= ./obj
+LDSO=@LDSO@
 
 SRCS	+= vpb.cpp
 
@@ -96,14 +62,14 @@ vpath	%.cpp $(SRCDIR)
 
 $(OBJDIR)/%.o : %.cpp
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) -I../../../include $(CXXFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CXX) -I../../../include $(CXXFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) -c $< -o $@
 
 PLUGIN	= ./vpb_lid_pwplugin.$(PLUGINEXT)
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cpp,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CC) $(LDSO)$(SONAME) -o $@ $^ $(EXTRALIBS)
+	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)
