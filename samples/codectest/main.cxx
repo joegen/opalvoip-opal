@@ -68,6 +68,7 @@ void CodecTest::Main()
              "c-crop."
              "m-suppress-marker."
              "M-force-marker."
+             "S-single-step."
              "H:"
 #if PTRACING
              "o-output:"             "-no-output."
@@ -103,6 +104,7 @@ void CodecTest::Main()
               "  -s --frame-size size    : video frame size (\"qcif\", \"cif\", WxH)\n"
               "  -r --frame-rate size    : video frame rate (frames/second)\n"
               "  -b --bit-rate size      : video bit rate (bits/second)\n"
+              "  -S --single-step        : video single frame at a time mode\n"
               "  -m --suppress-marker    : suppress marker bits to decoder"
               "  -M --force-marker       : force marker bits to decoder"
               "  -c --crop               : crop rather than scale if resizing\n"
@@ -173,6 +175,14 @@ void CodecTest::Main()
     if (cmd == "q" || cmd == "x" || cmd == "quit" || cmd == "exit")
       break;
 
+    if (cmd.NumCompare("n") == EqualTo) {
+      int steps = cmd.Mid(1).AsUnsigned();
+      do {
+        video.frameWait.Signal();
+      } while (--steps > 0);
+      continue;
+    }
+
     if (cmd == "vfu") {
       if (video.encoder == NULL)
         cout << "\nNo video encoder running!" << endl;
@@ -219,6 +229,7 @@ void CodecTest::Main()
             "  qcif   : Set size of grab & display to qcif\n"
             "  cif    : Set size of grab & display to cif\n"
             "  WxH    : Set size of grab & display W by H\n"
+            "  N      : Next video frame in sinlge step mode\n"
             "  Q or X : Exit program\n" << endl;
   } // end for
 
@@ -562,6 +573,8 @@ bool VideoThread::Initialise(PArgList & args)
   if (encoder != NULL)
     encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
 
+  singleStep = args.HasOption('S');
+
   return true;
 }
 
@@ -704,8 +717,18 @@ bool AudioThread::Write(const RTP_DataFrame & frame)
 }
 
 
+void AudioThread::Stop()
+{
+  running = false;
+  WaitForTermination();
+}
+
+
 bool VideoThread::Read(RTP_DataFrame & data)
 {
+  if (singleStep)
+    frameWait.Wait();
+
   data.SetPayloadSize(grabber->GetMaxFrameBytes()+sizeof(OpalVideoTranscoder::FrameHeader));
   data.SetMarker(TRUE);
 
@@ -727,6 +750,14 @@ bool VideoThread::Write(const RTP_DataFrame & data)
   return display->SetFrameData(frame->x, frame->y,
                                frame->width, frame->height,
                                OPAL_VIDEO_FRAME_DATA_PTR(frame), data.GetMarker());
+}
+
+
+void VideoThread::Stop()
+{
+  running = false;
+  frameWait.Signal();
+  WaitForTermination();
 }
 
 
