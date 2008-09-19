@@ -86,7 +86,6 @@ SONAME	=$(BASENAME)
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
 CXX	 	=@CXX@
-LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
@@ -138,9 +137,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 
 $(PLUGIN): $(OBJECTS)
 ifeq (,$(findstring solaris,$(target_os)))
-	$(CXX) $(LDSO) $(X264_LIBS) -o $@ $^
+	$(CXX) $(X264_LIBS) -o $@ $^
 else
-	$(CXX) $(LDSO) $(X264_LIBS) $@ -o $@ $^
+	$(CXX) $(X264_LIBS) $@ -o $@ $^
 endif
 
 install:
