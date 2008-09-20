@@ -183,7 +183,7 @@ case "$target_os" in
           SHARED_CFLAGS="-KPIC -D__inline=inline"
           OPAL_DETERMINE_LIBNAMES(DEBUG)
           OPAL_DETERMINE_LIBNAMES(RELEASE)
-          LDSOOPTS="-Bdynamic -G -h ${LIB_FILENAME_SHARED_PAT}"
+          LDSOOPTS="-Bdynamic -G -h \$(LIB_FILENAME_SHARED_PAT)"
 
           DEBUG_CFLAGS="-D_DEBUG"
           HAVE_RANLIB=no
@@ -223,7 +223,7 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           SHARED_CFLAGS="-fPIC"
           OPAL_DETERMINE_LIBNAMES(DEBUG)
           OPAL_DETERMINE_LIBNAMES(RELEASE)
-          LDSOOPTS="-shared -Wl,-soname,${LIB_FILENAME_SHARED_PAT}"
+          LDSOOPTS="-shared -Wl,-soname,\$(LIB_FILENAME_SHARED_PAT)"
 
           HAVE_RANLIB=yes
         ;;
@@ -233,7 +233,7 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           SHARED_CFLAGS="-fPIC"
           OPAL_DETERMINE_LIBNAMES(DEBUG)
           OPAL_DETERMINE_LIBNAMES(RELEASE)
-          LDSOOPTS="-shared -Wl,-soname,${LIB_FILENAME_SHARED_PAT}"
+          LDSOOPTS="-shared -Wl,-soname,\$(LIB_FILENAME_SHARED_PAT)"
 
           HAVE_RANLIB=no
         ;;
