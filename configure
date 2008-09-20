@@ -4710,7 +4710,7 @@ case "$target_os" in
 
 
 
-          LDSOOPTS="-Bdynamic -G -h ${LIB_FILENAME_SHARED_PAT}"
+          LDSOOPTS="-Bdynamic -G -h \$(LIB_FILENAME_SHARED_PAT)"
 
           DEBUG_CFLAGS="-D_DEBUG"
           HAVE_RANLIB=no
@@ -4983,7 +4983,7 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
 
 
-          LDSOOPTS="-shared -Wl,-soname,${LIB_FILENAME_SHARED_PAT}"
+          LDSOOPTS="-shared -Wl,-soname,\$(LIB_FILENAME_SHARED_PAT)"
 
           HAVE_RANLIB=yes
         ;;
@@ -5071,7 +5071,7 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
 
 
-          LDSOOPTS="-shared -Wl,-soname,${LIB_FILENAME_SHARED_PAT}"
+          LDSOOPTS="-shared -Wl,-soname,\$(LIB_FILENAME_SHARED_PAT)"
 
           HAVE_RANLIB=no
         ;;
