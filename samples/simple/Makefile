@@ -29,32 +29,37 @@ SRCS            = main.cxx
 # the search path for pkg-config
 ifneq ($(PTLIBDIR),)
 ifneq ($(OPALDIR),)
-PKG_CONFIG_LIBDIR=$(OPALDIR):$(PTLIBDIR)
+PKG_CONFIG_PATH=$(OPALDIR):$(PTLIBDIR)
 endif
 endif
-
 
 # Determine which package to use debug or release
 ifeq ($(DEBUG_BUILD), yes)
-PKG_FLAGS = --define-variable=suffix=_d
+DEBUG_SUFFIX=_d
 CFLAGS += -g
 else
-ifeq ($(STATIC_BUILD), yes)
-PKG_FLAGS = --define-variable=suffix=_s --static
-endif
+DEBUG_SUFFIX=
 CFLAGS += -O3
 endif
 
+ifeq ($(STATIC_BUILD), yes)
+SUFFIX=$(DEBUG_SUFFIX)_s --static
+else
+SUFFIX=$(DEBUG_SUFFIX)
+endif
 
+ifneq ($(SUFFIX),)
+PKG_FLAGS = --define-variable=suffix=$(SUFFIX)
+endif
 # Get required flags from library
 
-CFLAGS += $(shell pkg-config $(PKG_FLAGS) --cflags opal)
-LDFLAGS += $(shell pkg-config $(PKG_FLAGS) --libs opal)
+CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --cflags opal)
+LDFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --libs opal)
 
 
 # This part is we like to be tidy and put all the build products
 # in a sub-directory of a name specific to platform type.
-OBJDIR = $(shell pkg-config $(PKG_FLAGS) --variable=objdir opal)
+OBJDIR = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --variable=objdir opal)
 
 vpath	%.o   $(OBJDIR)
 
@@ -74,6 +79,12 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 
 $(OBJDIR)/$(PROG): $(OBJECTS)
 	 $(CXX) $^ $(LDFLAGS) -o $@
+
+distclean:
+	$(MAKE) DEBUG_BUILD=no  STATIC_BUILD=no  clean
+	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=no  clean
+	$(MAKE) DEBUG_BUILD=no  STATIC_BUILD=yes clean
+	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=yes clean
 
 clean:
 	rm -rf $(OBJDIR)
