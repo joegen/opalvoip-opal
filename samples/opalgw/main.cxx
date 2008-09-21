@@ -62,6 +62,7 @@ static const char DisableH245TunnelingKey[] = "Disable H.245 Tunneling";
 static const char DisableH245inSetupKey[] = "Disable H.245 in Setup";
 static const char H323BandwidthKey[] = "H.323 Bandwidth";
 static const char H323ListenersKey[] = "H.323 Listener Interfaces";
+static const char GatekeeperEnableKey[] = "Gatekeeper Enable";
 static const char GatekeeperAddressKey[] = "Gatekeeper Address";
 static const char GatekeeperIdentifierKey[] = "Gatekeeper Identifier";
 static const char GatekeeperInterfaceKey[] = "Gatekeeper Interface";
@@ -185,8 +186,10 @@ PBoolean OpalGw::Initialise(const char * initMsg)
   // SSL certificate file.
   PString certificateFile = cfg.GetString(HTTPCertificateFileKey, "server.pem");
   rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 25, certificateFile));
-  if (!SetServerCertificate(certificateFile, PTrue)) {
-    PSYSTEMLOG(Fatal, "BMAC\tCould not load certificate \"" << certificateFile << '"');
+  if (certificateFile.IsEmpty())
+    disableSSL = true;
+  else if (!SetServerCertificate(certificateFile, PTrue)) {
+    PSYSTEMLOG(Fatal, "OpalGw\tCould not load certificate \"" << certificateFile << '"');
     return PFalse;
   }
 #endif
@@ -382,6 +385,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     PSYSTEMLOG(Error, "Could not open any H.323 listeners!");
   }
 
+  bool gkEnable = cfg.GetBoolean(GatekeeperEnableKey, true);
+  rsrc->Add(new PHTTPBooleanField(GatekeeperEnableKey, gkEnable));
+
   PString gkAddress = cfg.GetString(GatekeeperAddressKey);
   rsrc->Add(new PHTTPStringField(GatekeeperAddressKey, 25, gkAddress));
 
@@ -399,11 +405,17 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   h323EP->SetGkAccessTokenOID(cfg.GetString(GatekeeperTokenOIDKey));
   rsrc->Add(new PHTTPStringField(GatekeeperTokenOIDKey, 25, h323EP->GetGkAccessTokenOID()));
 
-  if (h323EP->UseGatekeeper(gkAddress, gkIdentifier, gkInterface)) {
-    PSYSTEMLOG(Info, "Register with gatekeeper " << *h323EP->GetGatekeeper());
+  if (gkEnable) {
+    if (h323EP->UseGatekeeper(gkAddress, gkIdentifier, gkInterface)) {
+      PSYSTEMLOG(Info, "Register with gatekeeper " << *h323EP->GetGatekeeper());
+    }
+    else {
+      PSYSTEMLOG(Error, "Could not register with gatekeeper!");
+    }
   }
   else {
-    PSYSTEMLOG(Error, "Could not register with gatekeeper!");
+    PSYSTEMLOG(Info, "Not using gatekeeper.");
+    h323EP->RemoveGatekeeper();
   }
 
   if (!gkServer->Initialise(cfg, rsrc))
