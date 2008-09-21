@@ -908,7 +908,7 @@ PBoolean H323TransactionServer::AddListener(const H323TransportAddress & interfa
   for (i = 0; i < interfaces.GetSize(); i++) {
     addr = interfaces[i].GetAddress();
     if (addr != 0) {
-      if (AddListener(new H323TransportUDP(ownerEndPoint, addr, port)))
+      if (AddListener(new H323TransportUDP(ownerEndPoint, addr, port, false, true)))
         atLeastOne = PTrue;
     }
   }
