@@ -939,7 +939,8 @@ class OpalTransportUDP : public OpalTransportIP
       OpalEndPoint & endpoint,    ///<  Endpoint object
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to use
       WORD port = 0,              ///<  Local port to bind to
-      PBoolean reuseAddr = PFalse      ///<  Flag for binding to already bound interface
+      bool reuseAddr = false,     ///<  Flag for binding to already bound interface
+      bool preOpen = false        ///<  Flag to pre-open socket
     );
 
     /**Create a new transport channel.
