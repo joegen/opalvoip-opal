@@ -1050,7 +1050,7 @@ void OpalConnection::CopyPartyNames(const OpalConnection & other)
   remotePartyAddress  = other.remotePartyAddress;
   m_calledPartyName   = other.m_calledPartyName;
   m_calledPartyNumber = other.m_calledPartyNumber;
-  productInfo         = other.productInfo;
+  remoteProductInfo   = other.remoteProductInfo;
 }
 
 
