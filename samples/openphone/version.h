@@ -39,8 +39,8 @@
 
 
 #define MAJOR_VERSION 2
-#define MINOR_VERSION 1
-#define BUILD_TYPE    AlphaCode
+#define MINOR_VERSION 4
+#define BUILD_TYPE    BetaCode
 #define BUILD_NUMBER 0
 
 
