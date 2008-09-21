@@ -26,6 +26,14 @@
 # $Date$
 #
 
+ifndef DEBUG_BUILD
+DEBUG_BUILD             = @DEBUG_BUILD@
+endif
+ifndef OPAL_SHARED_LIB
+OPAL_SHARED_LIB         = @OPAL_SHARED_LIB@
+endif
+
+
 # Tool names detected by configure
 CXX                     = @CXX@
 CC                      = @CC@
@@ -79,8 +87,6 @@ CFLAGS                  = @CFLAGS@
 LIBS                    = @LIBS@
 LDSOOPTS                = @LDSOOPTS@
 HAVE_RANLIB             = @HAVE_RANLIB@
-DEBUG_BUILD             = @DEBUG_BUILD@
-OPAL_SHARED_LIB         = @OPAL_SHARED_LIB@
 
 OPAL_H323         = @OPAL_H323@
 OPAL_SIP          = @OPAL_SIP@
