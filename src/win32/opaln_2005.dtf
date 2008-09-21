@@ -10945,6 +10945,7 @@ EXPORTS
     ??_7?$PArray@VRouteEntry@OpalManager@@@@6B@ @41089 NONAME
     ??_7?$PArray@VSDPMediaDescription@@@@6B@ @41090 NONAME
     ??_7?$PArray@VSourceDescription@RTP_Session@@@@6B@ @8737 NONAME
+    ??_7?$PBaseArray@_W@@6B@ @46216 NONAME
     ??_7?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@6B@ @8738 NONAME
     ??_7?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@6B@ @8739 NONAME
     ??_7?$PDictionary@VPOrdinalKey@@V?$PArray@VPBYTEArray@@@@@@6B@ @36706 NONAME
@@ -13302,6 +13303,7 @@ EXPORTS
     ??_R0?AV?$PArray@VRouteEntry@OpalManager@@@@@8 @41182 NONAME
     ??_R0?AV?$PArray@VSDPMediaDescription@@@@@8 @41183 NONAME
     ??_R0?AV?$PArray@VSourceDescription@RTP_Session@@@@@8 @10803 NONAME
+    ??_R0?AV?$PBaseArray@_W@@@8 @46217 NONAME
     ??_R0?AV?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@@8 @10804 NONAME
     ??_R0?AV?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@@8 @10805 NONAME
     ??_R0?AV?$PDictionary@VPOrdinalKey@@V?$PArray@VPBYTEArray@@@@@@@8 @36707 NONAME
@@ -15570,6 +15572,7 @@ EXPORTS
     ??_R1A@?0A@EA@?$PArray@VRouteEntry@OpalManager@@@@8 @41218 NONAME
     ??_R1A@?0A@EA@?$PArray@VSDPMediaDescription@@@@8 @41219 NONAME
     ??_R1A@?0A@EA@?$PArray@VSourceDescription@RTP_Session@@@@8 @12832 NONAME
+    ??_R1A@?0A@EA@?$PBaseArray@_W@@8 @46218 NONAME
     ??_R1A@?0A@EA@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@8 @12833 NONAME
     ??_R1A@?0A@EA@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@8 @12834 NONAME
     ??_R1A@?0A@EA@?$PDictionary@VPOrdinalKey@@V?$PArray@VPBYTEArray@@@@@@8 @36709 NONAME
@@ -17885,6 +17888,7 @@ EXPORTS
     ??_R2?$PArray@VRouteEntry@OpalManager@@@@8 @41287 NONAME
     ??_R2?$PArray@VSDPMediaDescription@@@@8 @41288 NONAME
     ??_R2?$PArray@VSourceDescription@RTP_Session@@@@8 @14872 NONAME
+    ??_R2?$PBaseArray@_W@@8 @46219 NONAME
     ??_R2?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@8 @14873 NONAME
     ??_R2?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@8 @14874 NONAME
     ??_R2?$PDictionary@VPOrdinalKey@@V?$PArray@VPBYTEArray@@@@@@8 @36715 NONAME
@@ -20175,6 +20179,7 @@ EXPORTS
     ??_R3?$PArray@VRouteEntry@OpalManager@@@@8 @41348 NONAME
     ??_R3?$PArray@VSDPMediaDescription@@@@8 @41349 NONAME
     ??_R3?$PArray@VSourceDescription@RTP_Session@@@@8 @16901 NONAME
+    ??_R3?$PBaseArray@_W@@8 @46220 NONAME
     ??_R3?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@8 @16902 NONAME
     ??_R3?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@8 @16903 NONAME
     ??_R3?$PDictionary@VPOrdinalKey@@V?$PArray@VPBYTEArray@@@@@@8 @36717 NONAME
@@ -22464,6 +22469,7 @@ EXPORTS
     ??_R4?$PArray@VRouteEntry@OpalManager@@@@6B@ @41409 NONAME
     ??_R4?$PArray@VSDPMediaDescription@@@@6B@ @41410 NONAME
     ??_R4?$PArray@VSourceDescription@RTP_Session@@@@6B@ @18930 NONAME
+    ??_R4?$PBaseArray@_W@@6B@ @46221 NONAME
     ??_R4?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@6B@ @18931 NONAME
     ??_R4?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@6B@ @18932 NONAME
     ??_R4?$PDictionary@VPOrdinalKey@@V?$PArray@VPBYTEArray@@@@@@6B@ @36719 NONAME
@@ -25315,6 +25321,7 @@ EXPORTS
     ?Class@?$PArray@VRouteEntry@OpalManager@@@@SAPBDXZ @41535 NONAME
     ?Class@?$PArray@VSDPMediaDescription@@@@SAPBDXZ @41536 NONAME
     ?Class@?$PArray@VSourceDescription@RTP_Session@@@@SAPBDXZ @21377 NONAME
+    ?Class@?$PBaseArray@_W@@SAPBDXZ @46222 NONAME
     ?Class@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@SAPBDXZ @21378 NONAME
     ?Class@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@SAPBDXZ @21379 NONAME
     ?Class@?$PDictionary@VPOrdinalKey@@V?$PArray@VPBYTEArray@@@@@@SAPBDXZ @36723 NONAME
