@@ -2649,7 +2649,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
 
 SIPPublish::SIPPublish(SIPEndPoint & ep,
                        OpalTransport & trans,
-                       const PStringList & /*routeSet*/,
+                       const PStringList & routeSet,
                        const SIPURL & targetAddress,
                        const PString & id,
                        const PString & sipIfMatch,
@@ -2679,6 +2679,8 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
   
   mime.SetEvent("presence");
   mime.SetContentType("application/pidf+xml");
+
+  SetRoute(routeSet);
 
   if (!body.IsEmpty())
     entityBody = body;
