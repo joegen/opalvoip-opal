@@ -1194,11 +1194,14 @@ const char * OpalTransportTCP::GetProtoPrefix() const
 OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    PIPSocket::Address binding,
                                    WORD localPort,
-                                   PBoolean reuseAddr)
+                                   bool reuseAddr,
+                                   bool preOpen)
   : OpalTransportIP(ep, binding, localPort)
   , manager(ep.GetManager())
 {
   PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr, manager.GetNatMethod());
+  if (preOpen)
+    sockets->Open(localPort);
   Open(new PMonitoredSocketChannel(sockets, PFalse));
 }
 
