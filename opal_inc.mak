@@ -32,6 +32,15 @@
 
 
 
+ifdef DEBUG
+DEBUG_BUILD:=yes
+endif
+ 
+ifeq ($(P_SHARELIB),0)
+OPAL_SHARED_LIB:=no
+endif
+
+
 ifdef OPALDIR
 include $(OPALDIR)/opal_defs.mak
 else
