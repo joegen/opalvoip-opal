@@ -366,17 +366,17 @@ PLIST(OpalListenerList, OpalListener);
 /** Return a list of transport addresses corresponding to a listener list
   */
 OpalTransportAddressArray OpalGetInterfaceAddresses(
-  const OpalListenerList & listeners, ///<  List of listeners
-  PBoolean excludeLocalHost = PTrue,       ///<  Flag to exclude 127.0.0.1
-  OpalTransport * associatedTransport = NULL
-                          ///<  Associated transport for precedence and translation
+  const OpalListenerList & listeners,  ///<  List of listeners
+  bool excludeLocalHost,               ///<  Flag to exclude 127.0.0.1
+  OpalTransport * associatedTransport, ///<  Associated transport for precedence and translation
+  PNatMethod * natMethod               ///< NAT traversal method, e.g. STUN server if used
 );
 
 OpalTransportAddressArray OpalGetInterfaceAddresses(
-  const OpalTransportAddress & addr,  ///<  Possible INADDR_ANY address
-  PBoolean excludeLocalHost = PTrue,       ///<  Flag to exclude 127.0.0.1
-  OpalTransport * associatedTransport = NULL
-                          ///<  Associated transport for precedence and translation
+  const OpalTransportAddress & addr,   ///<  Possible INADDR_ANY address
+  bool excludeLocalHost,               ///<  Flag to exclude 127.0.0.1
+  OpalTransport * associatedTransport, ///<  Associated transport for precedence and translation
+  PNatMethod * natMethod               ///< NAT traversal method, e.g. STUN server if used
 );
 
 
