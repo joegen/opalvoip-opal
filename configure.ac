@@ -320,26 +320,20 @@ dnl     ########################
 OPAL_SPEEX_TYPES()
 AC_SUBST(SIZE16)
 AC_SUBST(SIZE32)
-OPAL_DETERMINE_SPEEX()
 
-if test "x$SPEEX_SYSTEM" = "xyes" ; then
- saved_LIBS="$LIBS"
- saved_CFLAGS="$CFLAGS"
- LIBS="$LIBS $SPEEX_LIBS"
- CFLAGS="$CFLAGS $SPEEX_CFLAGS"
- AC_CHECK_LIB(speex, speex_echo_state_init, [SPEEX_SYSTEM=yes], [SPEEX_SYSTEM=no])
- LIBS="$saved_LIBS"
- CFLAGS="$saved_CFLAGS"
+OPAL_DETERMINE_SPEEXDSP()
+
+if test "x$SPEEXDSP_SYSTEM" = "xyes" ; then
+  AC_DEFINE(OPAL_SYSTEM_SPEEX, [1], [Has system speex dsp library])
+  OPAL_SPEEX_FLOAT( [AC_DEFINE([OPAL_SPEEX_FLOAT_NOISE], [1], [Speex has float])] )
+
+  LIBS="$LIBS $SPEEXDSP_LIBS"
+  PKG_REQUIRES="$PKG_REQUIRES speexdsp"
+  CFLAGS="$CFLAGS $SPEEXDSP_CFLAGS"
+  CXXFLAGS="$CXXFLAGS $SPEEXDSP_CFLAGS"
 fi
 
-if test "x$SPEEX_SYSTEM" = "xyes" ; then
-  LIBS="$LIBS $SPEEX_LIBS"
-  PKG_REQUIRES="$PKG_REQUIRES speex"
-  CFLAGS="$CFLAGS $SPEEX_CFLAGS"
-  CXXFLAGS="$CXXFLAGS $SPEEX_CFLAGS"
-fi
-AC_SUBST(SPEEX_SYSTEM)
-
+AC_SUBST(SPEEXDSP_SYSTEM)
 
 dnl     ########################
 dnl     ZRTP

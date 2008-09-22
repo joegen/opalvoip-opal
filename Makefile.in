@@ -370,24 +370,22 @@ endif
 
 ifeq ($(OPAL_AEC), yes)
 
-ifeq ($(SPEEX_SYSTEM), no)
+ifeq ($(SPEEXDSP_SYSTEM), no)
 
-SPEEX_DIR       = $(OPAL_SRCDIR)/codec/speex
-SPEEX_INCDIR    = $(SPEEX_DIR)/libspeex
-SPEEX_SRCDIR    = $(SPEEX_DIR)/libspeex
+SPEEXDSP_SRCDIR    = $(OPAL_SRCDIR)/codec/speex/libspeex
 
-VPATH_C         += $(SPEEX_SRCDIR)
-VPATH_CXX       += $(SPEEX_SRCDIR)
+VPATH_C         += $(SPEEXDSP_SRCDIR)
+VPATH_CXX       += $(SPEEXDSP_SRCDIR)
 
-SOURCES         += $(SPEEX_SRCDIR)/speex_preprocess.c \
-		   $(SPEEX_SRCDIR)/smallft.c \
-                   $(SPEEX_SRCDIR)/misc.c \
-                   $(SPEEX_SRCDIR)/mdf.c \
-                   $(SPEEX_SRCDIR)/math_approx.c \
-                   $(SPEEX_SRCDIR)/kiss_fftr.c \
-                   $(SPEEX_SRCDIR)/kiss_fft.c \
-                   $(SPEEX_SRCDIR)/fftwrap.c
-endif # SPEEX_SYSTEM
+SOURCES         += $(SPEEXDSP_SRCDIR)/speex_preprocess.c \
+		   $(SPEEXDSP_SRCDIR)/smallft.c \
+                   $(SPEEXDSP_SRCDIR)/misc.c \
+                   $(SPEEXDSP_SRCDIR)/mdf.c \
+                   $(SPEEXDSP_SRCDIR)/math_approx.c \
+                   $(SPEEXDSP_SRCDIR)/kiss_fftr.c \
+                   $(SPEEXDSP_SRCDIR)/kiss_fft.c \
+                   $(SPEEXDSP_SRCDIR)/fftwrap.c
+endif # SPEEXDSP_SYSTEM
 
 endif # ifeq ($(OPAL_AEC), yes)
 
