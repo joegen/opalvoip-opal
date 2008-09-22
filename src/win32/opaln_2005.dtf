@@ -4995,7 +4995,6 @@ EXPORTS
     ??0OpalTransportAddress@@QAE@XZ @3966 NONAME
     ??0OpalTransportAddressArray@@IAE@HPBV0@@Z @3967 NONAME
     ??0OpalTransportAddressArray@@QAE@ABV0@@Z @3968 NONAME
-    ??0OpalTransportAddressArray@@QAE@ABVOpalTransportAddress@@@Z @3969 NONAME
     ??0OpalTransportAddressArray@@QAE@H@Z @3970 NONAME
     ??0OpalTransportIP@@QAE@AAVOpalEndPoint@@VAddress@PIPSocket@@G@Z @3971 NONAME
     ??0OpalTransportTCP@@QAE@AAVOpalEndPoint@@PAVPTCPSocket@@@Z @3972 NONAME
@@ -5003,7 +5002,7 @@ EXPORTS
     ??0OpalTransportTCPS@@QAE@AAVOpalEndPoint@@PAVPTCPSocket@@@Z @33162 NONAME
     ??0OpalTransportTCPS@@QAE@AAVOpalEndPoint@@VAddress@PIPSocket@@G_N@Z @36814 NONAME
     ??0OpalTransportUDP@@QAE@AAVOpalEndPoint@@ABVPBYTEArray@@ABV?$PSafePtr@VPMonitoredSockets@@@@ABVPString@@VAddress@PIPSocket@@G@Z @35098 NONAME
-    ??0OpalTransportUDP@@QAE@AAVOpalEndPoint@@VAddress@PIPSocket@@G_N@Z @36815 NONAME
+    ??0OpalTransportUDP@@QAE@AAVOpalEndPoint@@VAddress@PIPSocket@@G_N2@Z @46223 NONAME
     ??0OpalUDPMediaStream@@QAE@AAVOpalConnection@@ABVOpalMediaFormat@@I_NAAVOpalTransportUDP@@@Z @36816 NONAME
     ??0OpalVideoFormat@@QAE@PBDW4PayloadTypes@RTP_DataFrame@@0IIII_J@Z @3980 NONAME
     ??0OpalVideoFormatInternal@@QAE@ABV0@@Z @36817 NONAME
@@ -36536,8 +36535,8 @@ EXPORTS
     ?OpalDefaultNSEString@@3PBDB @36680 NONAME
     ?OpalDefaultNTEString@@3PBDB @36681 NONAME
     ?OpalGetBuildNumber@@YAIXZ @30870 NONAME
-    ?OpalGetInterfaceAddresses@@YA?AVOpalTransportAddressArray@@ABV?$PList@VOpalListener@@@@_NPAVOpalTransport@@@Z @39609 NONAME
-    ?OpalGetInterfaceAddresses@@YA?AVOpalTransportAddressArray@@ABVOpalTransportAddress@@_NPAVOpalTransport@@@Z @39610 NONAME
+    ?OpalGetInterfaceAddresses@@YA?AVOpalTransportAddressArray@@ABV?$PList@VOpalListener@@@@_NPAVOpalTransport@@PAVPNatMethod@@@Z @46224 NONAME
+    ?OpalGetInterfaceAddresses@@YA?AVOpalTransportAddressArray@@ABVOpalTransportAddress@@_NPAVOpalTransport@@PAVPNatMethod@@@Z @46225 NONAME
     ?OpalGetMajorVersion@@YAIXZ @30873 NONAME
     ?OpalGetMinorVersion@@YAIXZ @30874 NONAME
     ?OpalGetVersion@@YA?AVPString@@XZ @30875 NONAME

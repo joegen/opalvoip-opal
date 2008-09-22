@@ -4988,13 +4988,12 @@ EXPORTS
     ??0OpalTransportAddress@@QAA@XZ @4602 NONAME
     ??0OpalTransportAddressArray@@IAA@HPBV0@@Z @4603 NONAME
     ??0OpalTransportAddressArray@@QAA@ABV0@@Z @4604 NONAME
-    ??0OpalTransportAddressArray@@QAA@ABVOpalTransportAddress@@@Z @4605 NONAME
     ??0OpalTransportAddressArray@@QAA@H@Z @4606 NONAME
     ??0OpalTransportIP@@QAA@AAVOpalEndPoint@@VAddress@PIPSocket@@G@Z @4607 NONAME
     ??0OpalTransportTCP@@QAA@AAVOpalEndPoint@@PAVPTCPSocket@@@Z @4608 NONAME
     ??0OpalTransportTCP@@QAA@AAVOpalEndPoint@@VAddress@PIPSocket@@G_N@Z @4609 NONAME
     ??0OpalTransportUDP@@QAA@AAVOpalEndPoint@@ABVPBYTEArray@@ABV?$PSafePtr@VPMonitoredSockets@@@@ABVPString@@VAddress@PIPSocket@@G@Z @4610 NONAME
-    ??0OpalTransportUDP@@QAA@AAVOpalEndPoint@@VAddress@PIPSocket@@G_N@Z @4611 NONAME
+    ??0OpalTransportUDP@@QAA@AAVOpalEndPoint@@VAddress@PIPSocket@@G_N2@Z @46045 NONAME
     ??0OpalUDPMediaStream@@QAA@AAVOpalConnection@@ABVOpalMediaFormat@@I_NAAVOpalTransportUDP@@@Z @4612 NONAME
     ??0OpalVideoFormat@@QAA@PBDW4PayloadTypes@RTP_DataFrame@@0IIIIK@Z @4613 NONAME
     ??0OpalVideoFormatInternal@@QAA@ABV0@@Z @4614 NONAME
@@ -41857,8 +41856,8 @@ EXPORTS
     ?OpalDefaultNSEString@@3PBDB @39578 NONAME
     ?OpalDefaultNTEString@@3PBDB @39579 NONAME
     ?OpalGetBuildNumber@@YAIXZ @39580 NONAME
-    ?OpalGetInterfaceAddresses@@YA?AVOpalTransportAddressArray@@ABV?$PList@VOpalListener@@@@_NPAVOpalTransport@@@Z @39581 NONAME
-    ?OpalGetInterfaceAddresses@@YA?AVOpalTransportAddressArray@@ABVOpalTransportAddress@@_NPAVOpalTransport@@@Z @39582 NONAME
+    ?OpalGetInterfaceAddresses@@YA?AVOpalTransportAddressArray@@ABV?$PList@VOpalListener@@@@_NPAVOpalTransport@@PAVPNatMethod@@@Z @46046 NONAME
+    ?OpalGetInterfaceAddresses@@YA?AVOpalTransportAddressArray@@ABVOpalTransportAddress@@_NPAVOpalTransport@@PAVPNatMethod@@@Z @46047 NONAME
     ?OpalGetMajorVersion@@YAIXZ @39583 NONAME
     ?OpalGetMinorVersion@@YAIXZ @39584 NONAME
     ?OpalGetVersion@@YA?AVPString@@XZ @39585 NONAME
