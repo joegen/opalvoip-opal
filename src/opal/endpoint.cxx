@@ -267,7 +267,7 @@ PBoolean OpalEndPoint::RemoveListener(OpalListener * listener)
 OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLocalHost,
                                                               OpalTransport * associatedTransport)
 {
-  return OpalGetInterfaceAddresses(listeners, excludeLocalHost, associatedTransport);
+  return OpalGetInterfaceAddresses(listeners, excludeLocalHost, associatedTransport, GetManager().GetNatMethod());
 }
 
 
