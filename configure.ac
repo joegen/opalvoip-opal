@@ -119,6 +119,10 @@ AC_MSG_NOTICE(Opal version is ${OPAL_VERSION});
 AC_SUBST(OPAL_VERSION)
 AC_SUBST(BUILD_TYPE)
 
+dnl ########################################################################
+dnl Construct the plugins install path
+dnl ########################################################################
+
 AC_MSG_CHECKING(where plugins are being installed)
 AC_ARG_WITH([plugin-installdir],
              AS_HELP_STRING([--with-plugin-installdir=DIR],[Location where plugins are installed, starting at the lib dir]),
@@ -305,11 +309,7 @@ dnl     ########################
 
 OPAL_FIND_LIBDL([HAVE_LIBDL=yes], [HAVE_LIBDL=no])
 if test "x$HAVE_LIBDL" = "xyes" ; then
-    LIBS="$LIBS $DL_LIBS"
-    PKG_LIBS="$PKG_LIBS $DL_LIBS"
-    CFLAGS="$CFLAGS $DL_CFLAGS"
-    PKG_CFLAGS="$PKG_CFLAGS $DL_CFLAGS"
-    CXXFLAGS="$CXXFLAGS $DL_CFLAGS"
+    OPAL_ADD_CFLAGS_LIBS([$DL_CFLAGS], [$DL_LIBS])
 fi
 
 
@@ -326,11 +326,7 @@ OPAL_DETERMINE_SPEEXDSP()
 if test "x$SPEEXDSP_SYSTEM" = "xyes" ; then
   AC_DEFINE(OPAL_SYSTEM_SPEEX, [1], [Has system speex dsp library])
   OPAL_SPEEX_FLOAT( [AC_DEFINE([OPAL_SPEEX_FLOAT_NOISE], [1], [Speex has float])] )
-
-  LIBS="$LIBS $SPEEXDSP_LIBS"
-  PKG_REQUIRES="$PKG_REQUIRES speexdsp"
-  CFLAGS="$CFLAGS $SPEEXDSP_CFLAGS"
-  CXXFLAGS="$CXXFLAGS $SPEEXDSP_CFLAGS"
+  OPAL_ADD_CFLAGS_LIBS([$SPEEXDSP_CFLAGS], [$SPEEXDSP_LIBS], [speexdsp])
 fi
 
 AC_SUBST(SPEEXDSP_SYSTEM)
@@ -355,11 +351,7 @@ if test "x$OPAL_ZRTP" = "xyes" ; then
   OPAL_FIND_LIBZRTP([OPAL_ZRTP=yes], [OPAL_ZRTP=no])
   if test "x$OPAL_ZRTP" = "xyes" ; then
     AC_DEFINE([OPAL_ZRTP], [1], [libzrtp support])
-    LIBS="$LIBS $ZRTP_LIBS"
-    PKG_LIBS="$PKG_LIBS $ZRTP_LIBS"
-    CFLAGS="$CFLAGS $ZRTP_CFLAGS"
-    PKG_CFLAGS="$PKG_CFLAGS $ZRTP_CFLAGS"
-    CXXFLAGS="$CXXFLAGS $ZRTP_CFLAGS"
+    OPAL_ADD_CFLAGS_LIBS([$ZRTP_CFLAGS], [$ZRTP_LIBS])
   fi
 fi
 OPAL_MSG_CHECK([ZRTP protocol support],[$OPAL_ZRTP])
@@ -386,11 +378,7 @@ else
   OPAL_FIND_LIBSRTP([OPAL_SRTP=yes], [OPAL_SRTP=no])
   if test "x${OPAL_SRTP}" = "xyes" ; then
     AC_DEFINE([OPAL_SRTP], [1], [libsrtp support])
-    LIBS="$LIBS $SRTP_LIBS"
-    PKG_LIBS="$PKG_LIBS $SRTP_LIBS"
-    CFLAGS="$CFLAGS $SRTP_CFLAGS"
-    PKG_CFLAGS="$PKG_CFLAGS $SRTP_CFLAGS"
-    CXXFLAGS="$CXXFLAGS $SRTP_CFLAGS"
+    OPAL_ADD_CFLAGS_LIBS([$SRTP_CFLAGS], [$SRTP_LIBS])
   fi
 fi
 OPAL_MSG_CHECK([libsrtp support],[$OPAL_SRTP])
@@ -424,7 +412,7 @@ dnl ########################################################################
 
 dnl MSWIN_DISPLAY video,Video
 dnl MSWIN_DEFINE  video,OPAL_VIDEO
-OPAL_SIMPLE_OPTION([video],[OPAL_VIDEO], [wether to enable video codec support], [OPAL_PTLIB_VIDEO])
+OPAL_SIMPLE_OPTION([video],[OPAL_VIDEO], [whether to enable video codec support], [OPAL_PTLIB_VIDEO])
 
 dnl MSWIN_DISPLAY sip,SIP support
 dnl MSWIN_DEFINE  sip,OPAL_SIP
