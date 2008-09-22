@@ -51,6 +51,27 @@ AC_DEFUN([OPAL_SIMPLE_OPTION],
           fi
          ])
 
+dnl OPAL_ADD_CFLAGS_LIBS
+dnl Add options to LIBS and CFLAGS. 
+dnl Also add them to PKG_LIBS and PKG_REQUIRES accordingly.
+dnl Arguments: $1 CFLAGS to add
+dnl            $2 LIBS to add
+dnl            $3 PKG library to add
+dnl Return:    none
+AC_DEFUN([OPAL_ADD_CFLAGS_LIBS],
+         [
+          CFLAGS="$CFLAGS $1"
+          CXXFLAGS="$CXXFLAGS $1"
+          LIBS="$LIBS $2"
+
+          if test "x$3" = x; then
+            PKG_CFLAGS="$PKG_CFLAGS $1"
+            PKG_LIBS="$PKG_LIBS $2"
+          else
+            PKG_REQUIRES="$PKG_REQUIRES $3"
+          fi
+         ])
+
 dnl OPAL_GET_LIBNAME
 dnl Find out the real name of a library file
 dnl Arguments: $1 The prefix for variables referring to the library (e.g. LIBAVCODEC)
