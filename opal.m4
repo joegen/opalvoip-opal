@@ -674,6 +674,69 @@ AC_DEFUN([OPAL_DETERMINE_SPEEX],
           fi
          ])
 
+
+dnl OPAL_DETERMINE_SPEEXDSP
+dnl Determine whether to use the system or internal speex dsp lib (can be forced), uses pkg-config
+dnl Arguments: none
+dnl Return:    $SPEEXDSP_SYSTEM whether system or interal speex dsp lib shall be used
+dnl            $SPEEXDSP_CFLAGS System speex cflags (if using system speex)
+dnl            $SPEEXDSP_LIBS System speex libs (if using system speex)
+AC_DEFUN([OPAL_DETERMINE_SPEEXDSP],
+         [SPEEXDSP_SYSTEM=no
+          AC_ARG_ENABLE([localspeexdsp],
+                        [AC_HELP_STRING([--enable-localspeexdsp],[Force use local version of Speex DSP library for echo cancellation rather than system version])],
+                        [localspeexdsp=$enableval],
+                        [localspeexdsp=no])
+
+          if test "x$localspeexdsp" = "xno" ; then
+            PKG_CHECK_MODULES([SPEEXDSP],
+                              [speexdsp],
+                              [SPEEXDSP_SYSTEM=yes],
+                              [
+                               AC_MSG_RESULT(System Speex DSP library not found)
+                              ])
+
+            if test "x$SPEEXDSP_SYSTEM" = "xyes" ; then
+              old_CFLAGS="$CFLAGS"
+              CFLAGS="$CFLAGS $SPEEXDSP_CFLAGS"
+              AC_CHECK_HEADERS([speex/speex.h], [AC_DEFINE(OPAL_HAVE_SPEEX_SPEEX_H)])
+              CFLAGS="$old_CFLAGS"
+            fi
+          fi
+         ])
+
+dnl OPAL_SPEEX_FLOAT
+dnl Determine whether to use the system or internal speex dsp lib (can be forced), uses pkg-config
+dnl Arguments: $SPEEXDSP_CFLAGS
+dnl            $SPEEXDSP_LIBS
+dnl Return:    $SPEEXDSP_SYSTEM whether system or interal speex dsp lib shall be used
+AC_DEFUN([OPAL_SPEEX_FLOAT],
+         [
+          old_CFLAGS="$CFLAGS"
+          old_LIBS="$LIBS"
+          CFLAGS="$CFLAGS $SPEEXDSP_CFLAGS -Werror"
+          LIBS="$LIBS $SPEEXDSP_LIBS"
+          AC_CHECK_HEADERS([speex/speex.h], [speex_inc_dir="speex/"], [speex_inc_dir=])
+          AC_LINK_IFELSE([
+                          #include <${speex_inc_dir}speex.h>
+                          #include <${speex_inc_dir}speex_preprocess.h>
+                          #include <stdio.h>
+                          int main()
+                          {
+                            SpeexPreprocessState *st;
+                            spx_int16_t *x;
+                            float *echo;
+                            speex_preprocess(st, x, echo);
+                            return 0;
+                          }
+                          ], [opal_speexdsp_float=yes], [opal_speexdsp_float=no])
+          CFLAGS="$old_CFLAGS"
+          LIBS="$old_LIBS"
+          OPAL_MSG_CHECK([Speex has float], [$opal_speexdsp_float])
+
+          AS_IF([test AS_VAR_GET([opal_speexdsp_float]) = yes], [$1], [$2])[]
+         ])
+
 dnl ########################################################################
 dnl libdl
 dnl ########################################################################

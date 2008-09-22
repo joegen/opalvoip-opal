@@ -722,9 +722,9 @@ OPAL_PTLIB_SSL_AES
 CXXCPP
 SIZE16
 SIZE32
-SPEEX_CFLAGS
-SPEEX_LIBS
-SPEEX_SYSTEM
+SPEEXDSP_CFLAGS
+SPEEXDSP_LIBS
+SPEEXDSP_SYSTEM
 ZRTP_INCDIR
 ZRTP_LIBDIR
 BN_INCDIR
@@ -784,8 +784,8 @@ PTLIBDIR
 PTLIB_CFLAGS
 PTLIB_LIBS
 CXXCPP
-SPEEX_CFLAGS
-SPEEX_LIBS'
+SPEEXDSP_CFLAGS
+SPEEXDSP_LIBS'
 ac_subdirs_all='plugins'
 
 # Initialize some variables set by options.
@@ -1362,8 +1362,8 @@ Optional Features:
   --enable-shared         wether to build a shared library
   --enable-debug          Enable debug build
   --enable-versioncheck   enable ptlib versioncheck
-  --enable-localspeex     Force use local version of Speex library rather than
-                          system version
+  --enable-localspeexdsp  Force use local version of Speex DSP library for
+                          echo cancellation rather than system version
   --enable-zrtp           enable ZRTP protocol support
   --enable-java           enable Java JNI support
   --enable-video          wether to enable video codec support
@@ -1419,9 +1419,10 @@ Some influential environment variables:
               C compiler flags for PTLIB, overriding pkg-config
   PTLIB_LIBS  linker flags for PTLIB, overriding pkg-config
   CXXCPP      C++ preprocessor
-  SPEEX_CFLAGS
-              C compiler flags for SPEEX, overriding pkg-config
-  SPEEX_LIBS  linker flags for SPEEX, overriding pkg-config
+  SPEEXDSP_CFLAGS
+              C compiler flags for SPEEXDSP, overriding pkg-config
+  SPEEXDSP_LIBS
+              linker flags for SPEEXDSP, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -1967,6 +1968,11 @@ echo "${ECHO_T}no" >&6; }
 	fi
 
 fi
+
+
+
+
+
 
 
 
@@ -8828,54 +8834,33 @@ _ACEOF
 
 
 
-# Check whether --enable-localspeex was given.
-if test "${enable_localspeex+set}" = set; then
-  enableval=$enable_localspeex; localspeex=$enableval
+
+SPEEXDSP_SYSTEM=no
+          # Check whether --enable-localspeexdsp was given.
+if test "${enable_localspeexdsp+set}" = set; then
+  enableval=$enable_localspeexdsp; localspeexdsp=$enableval
 else
-  localspeex=
+  localspeexdsp=no
 fi
 
 
-          { echo "$as_me:$LINENO: checking internal Speex version" >&5
-echo $ECHO_N "checking internal Speex version... $ECHO_C" >&6; }
-          SPEEX_CFLAGS=
-          SPEEX_LIBS=
-          if test -f "audio/Speex/libspeex/misc.h"; then
-            SPEEX_INTERNAL_VERSION=`grep "#define SPEEX_VERSION" audio/Speex/libspeex/misc.h | sed -e 's/^.*speex\-//' -e 's/\".*//'`
-    	  elif test -f "src/codec/speex/libspeex/misc.h"; then
-            SPEEX_INTERNAL_VERSION=`grep "#define SPEEX_VERSION" src/codec/speex/libspeex/misc.h | sed -e 's/^.*speex\-//' -e 's/\".*//'`
-      	  else
-      	    { { echo "$as_me:$LINENO: error: Could not find internal speex library" >&5
-echo "$as_me: error: Could not find internal speex library" >&2;}
-   { (exit 1); exit 1; }; }
-      	  fi
-          { echo "$as_me:$LINENO: result: $SPEEX_INTERNAL_VERSION" >&5
-echo "${ECHO_T}$SPEEX_INTERNAL_VERSION" >&6; }
-
-          if test "x${localspeex}" = "xyes" ; then
-            { echo "$as_me:$LINENO: forcing use of local Speex sources" >&5
-echo "$as_me: forcing use of local Speex sources" >&6;}
-            SPEEX_SYSTEM=no
-
-          elif test "x${localspeex}" = "xno" ; then
-            { echo "$as_me:$LINENO: forcing use of system Speex library" >&5
-echo "$as_me: forcing use of system Speex library" >&6;}
+          if test "x$localspeexdsp" = "xno" ; then
 
 pkg_failed=no
-{ echo "$as_me:$LINENO: checking for SPEEX" >&5
-echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking for SPEEXDSP" >&5
+echo $ECHO_N "checking for SPEEXDSP... $ECHO_C" >&6; }
 
 if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_CFLAGS"; then
-        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
+    if test -n "$SPEEXDSP_CFLAGS"; then
+        pkg_cv_SPEEXDSP_CFLAGS="$SPEEXDSP_CFLAGS"
     else
         if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
-  ($PKG_CONFIG --exists --print-errors "speex") 2>&5
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speexdsp\"") >&5
+  ($PKG_CONFIG --exists --print-errors "speexdsp") 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; then
-  pkg_cv_SPEEX_CFLAGS=`$PKG_CONFIG --cflags "speex" 2>/dev/null`
+  pkg_cv_SPEEXDSP_CFLAGS=`$PKG_CONFIG --cflags "speexdsp" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -8884,16 +8869,16 @@ else
 	pkg_failed=untried
 fi
 if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_LIBS"; then
-        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+    if test -n "$SPEEXDSP_LIBS"; then
+        pkg_cv_SPEEXDSP_LIBS="$SPEEXDSP_LIBS"
     else
         if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
-  ($PKG_CONFIG --exists --print-errors "speex") 2>&5
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speexdsp\"") >&5
+  ($PKG_CONFIG --exists --print-errors "speexdsp") 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; then
-  pkg_cv_SPEEX_LIBS=`$PKG_CONFIG --libs "speex" 2>/dev/null`
+  pkg_cv_SPEEXDSP_LIBS=`$PKG_CONFIG --libs "speexdsp" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -8912,159 +8897,350 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex"`
+	        SPEEXDSP_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speexdsp"`
         else
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex"`
+	        SPEEXDSP_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speexdsp"`
         fi
 	# Put the nasty error message in config.log where it belongs
-	echo "$SPEEX_PKG_ERRORS" >&5
+	echo "$SPEEXDSP_PKG_ERRORS" >&5
 
 	{ echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
 
-                              { { echo "$as_me:$LINENO: error: cannot find system speex" >&5
-echo "$as_me: error: cannot find system speex" >&2;}
-   { (exit 1); exit 1; }; }
+                               { echo "$as_me:$LINENO: result: System Speex DSP library not found" >&5
+echo "${ECHO_T}System Speex DSP library not found" >&6; }
 
 elif test $pkg_failed = untried; then
 
-                              { { echo "$as_me:$LINENO: error: cannot find system speex" >&5
-echo "$as_me: error: cannot find system speex" >&2;}
-   { (exit 1); exit 1; }; }
+                               { echo "$as_me:$LINENO: result: System Speex DSP library not found" >&5
+echo "${ECHO_T}System Speex DSP library not found" >&6; }
 
 else
-	SPEEX_CFLAGS=$pkg_cv_SPEEX_CFLAGS
-	SPEEX_LIBS=$pkg_cv_SPEEX_LIBS
+	SPEEXDSP_CFLAGS=$pkg_cv_SPEEXDSP_CFLAGS
+	SPEEXDSP_LIBS=$pkg_cv_SPEEXDSP_LIBS
         { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
-	SPEEX_SYSTEM=yes
+	SPEEXDSP_SYSTEM=yes
 fi
 
-          else
+            if test "x$SPEEXDSP_SYSTEM" = "xyes" ; then
+              old_CFLAGS="$CFLAGS"
+              CFLAGS="$CFLAGS $SPEEXDSP_CFLAGS"
 
-            { echo "$as_me:$LINENO: checking whether system Speex or internal Speex is more recent" >&5
-echo "$as_me: checking whether system Speex or internal Speex is more recent" >&6;}
-
-pkg_failed=no
-{ echo "$as_me:$LINENO: checking for SPEEX" >&5
-echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
-
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_CFLAGS"; then
-        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
-  ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-  pkg_cv_SPEEX_CFLAGS=`$PKG_CONFIG --cflags "speex >= $SPEEX_INTERNAL_VERSION" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
-    fi
-else
-	pkg_failed=untried
-fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_LIBS"; then
-        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
-  ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-  pkg_cv_SPEEX_LIBS=`$PKG_CONFIG --libs "speex >= $SPEEX_INTERNAL_VERSION" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
-    fi
-else
-	pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
-        else
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$SPEEX_PKG_ERRORS" >&5
-
-	{ echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-
-                              SPEEX_SYSTEM=no
-                              { echo "$as_me:$LINENO: result: internal Speex version is more recent than system Speex or system Speex not found" >&5
-echo "${ECHO_T}internal Speex version is more recent than system Speex or system Speex not found" >&6; }
-
-elif test $pkg_failed = untried; then
-
-                              SPEEX_SYSTEM=no
-                              { echo "$as_me:$LINENO: result: internal Speex version is more recent than system Speex or system Speex not found" >&5
-echo "${ECHO_T}internal Speex version is more recent than system Speex or system Speex not found" >&6; }
-
-else
-	SPEEX_CFLAGS=$pkg_cv_SPEEX_CFLAGS
-	SPEEX_LIBS=$pkg_cv_SPEEX_LIBS
-        { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-	SPEEX_SYSTEM=yes
-fi
-          fi
-
-          if test "x${SPEEX_SYSTEM}" = "xyes" ; then
-            SPEEX_SYSTEM_VERSION=`$PKG_CONFIG speex --modversion`
-            { echo "$as_me:$LINENO: result: using system Speex version $SPEEX_SYSTEM_VERSION" >&5
-echo "${ECHO_T}using system Speex version $SPEEX_SYSTEM_VERSION" >&6; }
-          fi
-
-
-if test "x$SPEEX_SYSTEM" = "xyes" ; then
- saved_LIBS="$LIBS"
- saved_CFLAGS="$CFLAGS"
- LIBS="$LIBS $SPEEX_LIBS"
- CFLAGS="$CFLAGS $SPEEX_CFLAGS"
- { echo "$as_me:$LINENO: checking for speex_echo_state_init in -lspeex" >&5
-echo $ECHO_N "checking for speex_echo_state_init in -lspeex... $ECHO_C" >&6; }
-if test "${ac_cv_lib_speex_speex_echo_state_init+set}" = set; then
+for ac_header in speex/speex.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lspeex  $LIBS"
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6; }
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char speex_echo_state_init ();
-int
-main ()
-{
-return speex_echo_state_init ();
-  ;
-  return 0;
-}
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ cat >>confdefs.h <<\_ACEOF
+#define OPAL_HAVE_SPEEX_SPEEX_H 1
+_ACEOF
+
+fi
+
+done
+
+              CFLAGS="$old_CFLAGS"
+            fi
+          fi
+
+
+if test "x$SPEEXDSP_SYSTEM" = "xyes" ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define OPAL_SYSTEM_SPEEX 1
+_ACEOF
+
+
+          old_CFLAGS="$CFLAGS"
+          old_LIBS="$LIBS"
+          CFLAGS="$CFLAGS $SPEEXDSP_CFLAGS -Werror"
+          LIBS="$LIBS $SPEEXDSP_LIBS"
+
+for ac_header in speex/speex.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ speex_inc_dir="speex/"
+else
+  speex_inc_dir=
+fi
+
+done
+
+          cat >conftest.$ac_ext <<_ACEOF
+
+                          #include <${speex_inc_dir}speex.h>
+                          #include <${speex_inc_dir}speex_preprocess.h>
+                          #include <stdio.h>
+                          int main()
+                          {
+                            SpeexPreprocessState *st;
+                            spx_int16_t *x;
+                            float *echo;
+                            speex_preprocess(st, x, echo);
+                            return 0;
+                          }
+
 _ACEOF
 rm -f conftest.$ac_objext conftest$ac_exeext
 if { (ac_try="$ac_link"
@@ -9084,35 +9260,39 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test ! -s conftest.err
        } && test -s conftest$ac_exeext &&
        $as_test_x conftest$ac_exeext; then
-  ac_cv_lib_speex_speex_echo_state_init=yes
+  opal_speexdsp_float=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	ac_cv_lib_speex_speex_echo_state_init=no
+	opal_speexdsp_float=no
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_lib_speex_speex_echo_state_init" >&5
-echo "${ECHO_T}$ac_cv_lib_speex_speex_echo_state_init" >&6; }
-if test $ac_cv_lib_speex_speex_echo_state_init = yes; then
-  SPEEX_SYSTEM=yes
-else
-  SPEEX_SYSTEM=no
+          CFLAGS="$old_CFLAGS"
+          LIBS="$old_LIBS"
+
+          { echo "$as_me:$LINENO: checking Speex has float" >&5
+echo $ECHO_N "checking Speex has float... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: result: $opal_speexdsp_float" >&5
+echo "${ECHO_T}$opal_speexdsp_float" >&6; }
+
+
+          if test $opal_speexdsp_float = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define OPAL_SPEEX_FLOAT_NOISE 1
+_ACEOF
+
 fi
 
- LIBS="$saved_LIBS"
- CFLAGS="$saved_CFLAGS"
-fi
 
-if test "x$SPEEX_SYSTEM" = "xyes" ; then
-  LIBS="$LIBS $SPEEX_LIBS"
-  PKG_REQUIRES="$PKG_REQUIRES speex"
-  CFLAGS="$CFLAGS $SPEEX_CFLAGS"
-  CXXFLAGS="$CXXFLAGS $SPEEX_CFLAGS"
+
+  LIBS="$LIBS $SPEEXDSP_LIBS"
+  PKG_REQUIRES="$PKG_REQUIRES speexdsp"
+  CFLAGS="$CFLAGS $SPEEXDSP_CFLAGS"
+  CXXFLAGS="$CXXFLAGS $SPEEXDSP_CFLAGS"
 fi
 
 
@@ -11085,9 +11265,9 @@ OPAL_PTLIB_SSL_AES!$OPAL_PTLIB_SSL_AES$ac_delim
 CXXCPP!$CXXCPP$ac_delim
 SIZE16!$SIZE16$ac_delim
 SIZE32!$SIZE32$ac_delim
-SPEEX_CFLAGS!$SPEEX_CFLAGS$ac_delim
-SPEEX_LIBS!$SPEEX_LIBS$ac_delim
-SPEEX_SYSTEM!$SPEEX_SYSTEM$ac_delim
+SPEEXDSP_CFLAGS!$SPEEXDSP_CFLAGS$ac_delim
+SPEEXDSP_LIBS!$SPEEXDSP_LIBS$ac_delim
+SPEEXDSP_SYSTEM!$SPEEXDSP_SYSTEM$ac_delim
 ZRTP_INCDIR!$ZRTP_INCDIR$ac_delim
 ZRTP_LIBDIR!$ZRTP_LIBDIR$ac_delim
 BN_INCDIR!$BN_INCDIR$ac_delim
