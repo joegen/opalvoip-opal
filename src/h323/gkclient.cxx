@@ -388,16 +388,10 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDis
   PIPSocket::Address localAddress, remoteAddress;
   WORD localPort;
   
-  if(rasAddress.GetIpAndPort(localAddress, localPort) &&
-     transport->GetRemoteAddress().GetIpAddress(remoteAddress))
-  {
-      OpalManager & manager = transport->GetEndPoint().GetManager();
-      
-      if(manager.TranslateIPAddress(localAddress, remoteAddress))
-      {
-          rasAddress = H323TransportAddress(localAddress, localPort);
-      }
-  }
+  if (rasAddress.GetIpAndPort(localAddress, localPort) &&
+      transport->GetRemoteAddress().GetIpAddress(remoteAddress) &&
+      transport->GetEndPoint().GetManager().TranslateIPAddress(localAddress, remoteAddress))
+    rasAddress = H323TransportAddress(localAddress, localPort);
   
   rasAddress.SetPDU(rrq.m_rasAddress[0]);
 
