@@ -1366,7 +1366,7 @@ Optional Features:
                           echo cancellation rather than system version
   --enable-zrtp           enable ZRTP protocol support
   --enable-java           enable Java JNI support
-  --enable-video          wether to enable video codec support
+  --enable-video          whether to enable video codec support
   --enable-sip            whether to enable SIP protocol support
   --enable-h323           whether to enable H.323 protocol support
   --enable-iax            whether to enable IAX2 protocol support
@@ -1968,6 +1968,8 @@ echo "${ECHO_T}no" >&6; }
 	fi
 
 fi
+
+
 
 
 
@@ -4396,6 +4398,7 @@ _ACEOF
 echo "$as_me: Opal version is ${OPAL_VERSION}" >&6;};
 
 #use to set the version in opal.pc
+
 
 
 
@@ -7182,11 +7185,18 @@ fi
 
 
 if test "x$HAVE_LIBDL" = "xyes" ; then
-    LIBS="$LIBS $DL_LIBS"
-    PKG_LIBS="$PKG_LIBS $DL_LIBS"
-    CFLAGS="$CFLAGS $DL_CFLAGS"
-    PKG_CFLAGS="$PKG_CFLAGS $DL_CFLAGS"
-    CXXFLAGS="$CXXFLAGS $DL_CFLAGS"
+
+          CFLAGS="$CFLAGS $DL_CFLAGS"
+          CXXFLAGS="$CXXFLAGS $DL_CFLAGS"
+          LIBS="$LIBS $DL_LIBS"
+
+          if test "x" = x; then
+            PKG_CFLAGS="$PKG_CFLAGS $DL_CFLAGS"
+            PKG_LIBS="$PKG_LIBS $DL_LIBS"
+          else
+            PKG_REQUIRES="$PKG_REQUIRES "
+          fi
+
 fi
 
 
@@ -9289,10 +9299,17 @@ fi
 
 
 
-  LIBS="$LIBS $SPEEXDSP_LIBS"
-  PKG_REQUIRES="$PKG_REQUIRES speexdsp"
-  CFLAGS="$CFLAGS $SPEEXDSP_CFLAGS"
-  CXXFLAGS="$CXXFLAGS $SPEEXDSP_CFLAGS"
+          CFLAGS="$CFLAGS $SPEEXDSP_CFLAGS"
+          CXXFLAGS="$CXXFLAGS $SPEEXDSP_CFLAGS"
+          LIBS="$LIBS $SPEEXDSP_LIBS"
+
+          if test "xspeexdsp" = x; then
+            PKG_CFLAGS="$PKG_CFLAGS $SPEEXDSP_CFLAGS"
+            PKG_LIBS="$PKG_LIBS $SPEEXDSP_LIBS"
+          else
+            PKG_REQUIRES="$PKG_REQUIRES speexdsp"
+          fi
+
 fi
 
 
@@ -9390,11 +9407,18 @@ cat >>confdefs.h <<\_ACEOF
 #define OPAL_ZRTP 1
 _ACEOF
 
-    LIBS="$LIBS $ZRTP_LIBS"
-    PKG_LIBS="$PKG_LIBS $ZRTP_LIBS"
-    CFLAGS="$CFLAGS $ZRTP_CFLAGS"
-    PKG_CFLAGS="$PKG_CFLAGS $ZRTP_CFLAGS"
-    CXXFLAGS="$CXXFLAGS $ZRTP_CFLAGS"
+
+          CFLAGS="$CFLAGS $ZRTP_CFLAGS"
+          CXXFLAGS="$CXXFLAGS $ZRTP_CFLAGS"
+          LIBS="$LIBS $ZRTP_LIBS"
+
+          if test "x" = x; then
+            PKG_CFLAGS="$PKG_CFLAGS $ZRTP_CFLAGS"
+            PKG_LIBS="$PKG_LIBS $ZRTP_LIBS"
+          else
+            PKG_REQUIRES="$PKG_REQUIRES "
+          fi
+
   fi
 fi
 
@@ -9486,11 +9510,18 @@ cat >>confdefs.h <<\_ACEOF
 #define OPAL_SRTP 1
 _ACEOF
 
-    LIBS="$LIBS $SRTP_LIBS"
-    PKG_LIBS="$PKG_LIBS $SRTP_LIBS"
-    CFLAGS="$CFLAGS $SRTP_CFLAGS"
-    PKG_CFLAGS="$PKG_CFLAGS $SRTP_CFLAGS"
-    CXXFLAGS="$CXXFLAGS $SRTP_CFLAGS"
+
+          CFLAGS="$CFLAGS $SRTP_CFLAGS"
+          CXXFLAGS="$CXXFLAGS $SRTP_CFLAGS"
+          LIBS="$LIBS $SRTP_LIBS"
+
+          if test "x" = x; then
+            PKG_CFLAGS="$PKG_CFLAGS $SRTP_CFLAGS"
+            PKG_LIBS="$PKG_LIBS $SRTP_LIBS"
+          else
+            PKG_REQUIRES="$PKG_REQUIRES "
+          fi
+
   fi
 fi
 
@@ -9728,8 +9759,8 @@ echo "$as_me: video support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { echo "$as_me:$LINENO: checking wether to enable video codec support" >&5
-echo $ECHO_N "checking wether to enable video codec support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: checking whether to enable video codec support" >&5
+echo $ECHO_N "checking whether to enable video codec support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_VIDEO" >&5
 echo "${ECHO_T}$OPAL_VIDEO" >&6; }
 
