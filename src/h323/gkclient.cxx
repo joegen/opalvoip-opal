@@ -547,6 +547,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
     return PFalse;
 
   registrationFailReason = RegistrationSuccessful;
+  reregisterNow = false;
 
   endpointIdentifier = rcf.m_endpointIdentifier;
   PTRACE(3, "RAS\tRegistered " << endpointIdentifier << " with " << gatekeeperIdentifier);
@@ -1708,8 +1709,7 @@ void H323Gatekeeper::MonitorMain(PThread &, INT)
     if (monitorStop)
       break;
 
-    if (reregisterNow || 
-                (!timeToLive.IsRunning() && timeToLive.GetResetTime() > 0)) {
+    if (reregisterNow || (!timeToLive.IsRunning() && timeToLive.GetResetTime() > 0)) {
       RegistrationTimeToLive();
       timeToLive.Reset();
     }
