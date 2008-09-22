@@ -240,7 +240,8 @@ H323TransportAddressArray H323Transactor::GetInterfaceAddresses(PBoolean exclude
   else
     return OpalGetInterfaceAddresses(transport->GetLocalAddress(),
                                      excludeLocalHost,
-                                     associatedTransport);
+                                     associatedTransport,
+                                     NULL);
 }
 
 PBoolean H323Transactor::StartChannel()
