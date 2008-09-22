@@ -36,7 +36,7 @@
 PCREATE_PROCESS(OpalGw);
 
 
-const WORD DefaultHTTPPort = 6725;
+const WORD DefaultHTTPPort = 1719;
 static const char UsernameKey[] = "Username";
 static const char PasswordKey[] = "Password";
 static const char LogLevelKey[] = "Log Level";
@@ -61,18 +61,18 @@ static const char DisableFastStartKey[] = "Disable Fast Start";
 static const char DisableH245TunnelingKey[] = "Disable H.245 Tunneling";
 static const char DisableH245inSetupKey[] = "Disable H.245 in Setup";
 static const char H323BandwidthKey[] = "H.323 Bandwidth";
-static const char H323ListenersKey[] = "H.323 Listener Interfaces";
-static const char GatekeeperEnableKey[] = "Gatekeeper Enable";
-static const char GatekeeperAddressKey[] = "Gatekeeper Address";
-static const char GatekeeperIdentifierKey[] = "Gatekeeper Identifier";
-static const char GatekeeperInterfaceKey[] = "Gatekeeper Interface";
-static const char GatekeeperPasswordKey[] = "Gatekeeper Password";
-static const char GatekeeperTokenOIDKey[] = "Gatekeeper Token OID";
+static const char H323ListenersKey[] = "H.323 Interfaces";
+static const char GatekeeperEnableKey[] = "Remote Gatekeeper Enable";
+static const char GatekeeperAddressKey[] = "Remote Gatekeeper Address";
+static const char GatekeeperIdentifierKey[] = "Remote Gatekeeper Identifier";
+static const char GatekeeperInterfaceKey[] = "Remote Gatekeeper Interface";
+static const char GatekeeperPasswordKey[] = "Remote Gatekeeper Password";
+static const char GatekeeperTokenOIDKey[] = "Remote Gatekeeper Token OID";
 
 static const char SIPUsernameKey[] = "SIP User Name";
 static const char SIPProxyKey[] = "SIP Proxy URL";
 static const char SIPRegistrarKey[] = "SIP Registrar";
-static const char SIPListenersKey[] = "SIP Listener Interfaces";
+static const char SIPListenersKey[] = "SIP Interfaces";
 
 static const char LIDKey[] = "Line Interface Devices";
 
@@ -324,9 +324,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PStringArray formats = fieldArray->GetStrings(cfg);
   if (formats.GetSize() > 0)
     SetMediaFormatOrder(formats);
-  else {
+  else
     fieldArray->SetStrings(cfg, GetMediaFormatOrder());
-  }
   rsrc->Add(fieldArray);
 
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(RemovedMediaKey, 25), PTrue);
@@ -367,6 +366,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     for (PINDEX i = 1; i < aliases.GetSize(); i++)
       h323EP->AddAliasName(aliases[i]);
   }
+  rsrc->Add(fieldArray);
 
   h323EP->DisableFastStart(cfg.GetBoolean(DisableFastStartKey, h323EP->IsFastStartDisabled()));
   rsrc->Add(new PHTTPBooleanField(DisableFastStartKey,  h323EP->IsFastStartDisabled()));
@@ -384,6 +384,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   if (!h323EP->StartListeners(fieldArray->GetStrings(cfg))) {
     PSYSTEMLOG(Error, "Could not open any H.323 listeners!");
   }
+  rsrc->Add(fieldArray);
 
   bool gkEnable = cfg.GetBoolean(GatekeeperEnableKey, true);
   rsrc->Add(new PHTTPBooleanField(GatekeeperEnableKey, gkEnable));
@@ -438,6 +439,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   if (!sipEP->StartListeners(fieldArray->GetStrings(cfg))) {
     PSYSTEMLOG(Error, "Could not open any SIP listeners!");
   }
+  rsrc->Add(fieldArray);
 
   if (!registrar) {
     if (sipEP->Register(registrar)) {
@@ -452,11 +454,11 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   // Add POTS and PSTN endpoints
   fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices()), PFalse);
-  rsrc->Add(fieldArray);
   PStringArray devices = fieldArray->GetStrings(cfg);
   if (!potsEP->AddDeviceNames(devices)) {
     PSYSTEMLOG(Error, "No LID devices!");
   }
+  rsrc->Add(fieldArray);
 
 
 #if OPAL_PTLIB_EXPAT
@@ -506,8 +508,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #endif
   
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(DialPeerKey, 25), PTrue);
-  rsrc->Add(fieldArray);
   PStringArray routes = fieldArray->GetStrings(cfg);
+  rsrc->Add(fieldArray);
 
   if (!ivrAlias)
     routes += ".*:" + ivrAlias + "  = ivr:";

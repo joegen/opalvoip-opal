@@ -23,7 +23,7 @@
 
 //#define TEST_TOKEN
 
-static const char GatekeeperIdentifierKey[] = "Gatekeeper Server Identifier";
+static const char GatekeeperIdentifierKey[] = "Server Gatekeeper Identifier";
 static const char AvailableBandwidthKey[] = "Total Bandwidth";
 static const char DefaultBandwidthKey[] = "Default Bandwidth Allocation";
 static const char MaximumBandwidthKey[] = "Maximum Bandwidth Allocation";
@@ -44,6 +44,7 @@ static const char RouteAliasKey[] = "Alias";
 static const char RouteHostKey[] = "Host";
 static const char ClearingHouseKey[] = "H501 Clearing House";
 static const char H501InterfaceKey[] = "H501 Interface";
+static const char GkServerListenersKey[] = "Server Gatekeeper Interfaces";
 
 #ifdef H323_TRANSNEXUS_OSP
 static const char OSPRoutingURLKey[] = "OSP Routing URL";
@@ -52,7 +53,6 @@ static const char OSPPublicKeyFileKey[] = "OSP Public Key";
 static const char OSPServerKeyFileKey[] = "OSP Server Key";
 #endif
 
-#define GATEKEEPER_LISTENERS_SECTION  "Gatekeeper Listeners"
 #define LISTENER_INTERFACE_KEY        "Interface"
 
 #define USERS_SECTION "Authentication"
@@ -73,7 +73,7 @@ MainStatusPage::MainStatusPage(OpalGw & _app, PHTTPAuthority & auth)
 {
   PHTML html;
 
-  html << PHTML::Title("OpenH323 Gatekeeper Status")
+  html << PHTML::Title("OpenH323 Gatekeeper Server Status")
        << "<meta http-equiv=\"Refresh\" content=\"30\">\n"
        << PHTML::Body()
        << app.GetPageGraphic()
@@ -376,12 +376,10 @@ PBoolean MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
   SetGatekeeperIdentifier(gkid);
 
   // Interfaces to listen on
-  H323TransportAddressArray interfaces;
-  PINDEX arraySize = cfg.GetInteger(GATEKEEPER_LISTENERS_SECTION, LISTENER_INTERFACE_KEY" Array Size");
-  for (i = 0; i < arraySize; i++)
-    interfaces.Append(new H323TransportAddress(cfg.GetString(GATEKEEPER_LISTENERS_SECTION, psprintf(LISTENER_INTERFACE_KEY" %u", i+1), ""), 0, "udp"));
+  PHTTPFieldArray * fieldArray = new PHTTPFieldArray(new PHTTPStringField(GkServerListenersKey, 25), PFalse);
+  H323TransportAddressArray interfaces = fieldArray->GetStrings(cfg);
   AddListeners(interfaces);
-  rsrc->Add(new PHTTPFieldArray(new PHTTPStringField(GATEKEEPER_LISTENERS_SECTION"\\"LISTENER_INTERFACE_KEY, "Gatekeeper Interfaces", 20), FALSE));
+  rsrc->Add(fieldArray);
 
   SetAvailableBandwidth(cfg.GetInteger(AvailableBandwidthKey, GetAvailableBandwidth()/10)*10);
   rsrc->Add(new PHTTPIntegerField(AvailableBandwidthKey, 1, INT_MAX, GetAvailableBandwidth()/10, "kb/s"));
@@ -423,7 +421,7 @@ PBoolean MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
   rsrc->Add(new PHTTPBooleanField(IsGatekeeperRoutedKey, isGatekeeperRouted));
 
   routes.RemoveAll();
-  arraySize = cfg.GetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size");
+  PINDEX arraySize = cfg.GetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size");
   for (i = 0; i < arraySize; i++) {
     cfg.SetDefaultSection(psprintf(ROUTES_SECTION"\\"ROUTES_KEY" %u", i+1));
     RouteMap map(cfg.GetString(RouteAliasKey), cfg.GetString(RouteHostKey));
