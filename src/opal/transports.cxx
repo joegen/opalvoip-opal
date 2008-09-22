@@ -483,12 +483,13 @@ PBoolean OpalListener::StartThread(const PNotifier & theAcceptHandler, ThreadMod
 
 OpalTransportAddressArray OpalGetInterfaceAddresses(const OpalListenerList & listeners,
                                                     PBoolean excludeLocalHost,
-                                                    OpalTransport * associatedTransport)
+                                                    OpalTransport * associatedTransport,
+                                                    PNatMethod * natMethod)
 {
   OpalTransportAddressArray interfaceAddresses;
 
   for (OpalListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
-    OpalTransportAddressArray newAddrs = OpalGetInterfaceAddresses(listener->GetTransportAddress(), excludeLocalHost, associatedTransport);
+    OpalTransportAddressArray newAddrs = OpalGetInterfaceAddresses(listener->GetTransportAddress(), excludeLocalHost, associatedTransport, natMethod);
     PINDEX size  = interfaceAddresses.GetSize();
     PINDEX nsize = newAddrs.GetSize();
     interfaceAddresses.SetSize(size + nsize);
@@ -501,40 +502,56 @@ OpalTransportAddressArray OpalGetInterfaceAddresses(const OpalListenerList & lis
 }
 
 
+static void AddTransportAddress(OpalTransportAddressArray & addresses, const PIPSocket::Address & ip, WORD port, PNatMethod * natMethod)
+{
+  addresses.Append(new OpalTransportAddress(ip, port));
+
+  if (natMethod == NULL)
+    return;
+
+  PIPSocket::Address natIP;
+  if (!natMethod->GetInterfaceAddress(natIP))
+    return;
+
+  if (natIP != ip)
+    return;
+
+  if (natMethod->GetExternalAddress(natIP))
+    addresses.Append(new OpalTransportAddress(natIP, port));
+}
+
+
 OpalTransportAddressArray OpalGetInterfaceAddresses(const OpalTransportAddress & addr,
                                                     PBoolean excludeLocalHost,
-                                                    OpalTransport * associatedTransport)
+                                                    OpalTransport * associatedTransport,
+                                                    PNatMethod * natMethod)
 {
+  OpalTransportAddressArray interfaceAddresses;
+  PIPSocket::InterfaceTable interfaces;
+
   PIPSocket::Address ip;
   WORD port = 0;
-  if (!addr.GetIpAndPort(ip, port) || !ip.IsAny())
-    return addr;
+  if (!addr.GetIpAndPort(ip, port) || !ip.IsAny() || !PIPSocket::GetInterfaceTable(interfaces))
+    AddTransportAddress(interfaceAddresses, ip, port, natMethod);
+  else {
+    PINDEX i;
+    PIPSocket::Address firstAddress(0);
 
-  PIPSocket::InterfaceTable interfaces;
-  if (!PIPSocket::GetInterfaceTable(interfaces))
-    return addr;
-
-  if (interfaces.GetSize() == 1)
-    return OpalTransportAddress(interfaces[0].GetAddress(), port);
-
-  PINDEX i;
-  OpalTransportAddressArray interfaceAddresses;
-  PIPSocket::Address firstAddress(0);
-
-  if (associatedTransport != NULL) {
-    if (associatedTransport->GetLocalAddress().GetIpAddress(firstAddress)) {
-      for (i = 0; i < interfaces.GetSize(); i++) {
-        PIPSocket::Address ip = interfaces[i].GetAddress();
-        if (ip == firstAddress)
-          interfaceAddresses.Append(new OpalTransportAddress(ip, port));
+    if (associatedTransport != NULL) {
+      if (associatedTransport->GetLocalAddress().GetIpAddress(firstAddress)) {
+        for (i = 0; i < interfaces.GetSize(); i++) {
+          PIPSocket::Address ip = interfaces[i].GetAddress();
+          if (ip == firstAddress)
+            AddTransportAddress(interfaceAddresses, ip, port, natMethod);
+        }
       }
     }
-  }
 
-  for (i = 0; i < interfaces.GetSize(); i++) {
-    PIPSocket::Address ip = interfaces[i].GetAddress();
-    if (ip != firstAddress && !(excludeLocalHost && ip.IsLoopback()))
-      interfaceAddresses.Append(new OpalTransportAddress(ip, port));
+    for (i = 0; i < interfaces.GetSize(); i++) {
+      PIPSocket::Address ip = interfaces[i].GetAddress();
+      if (ip != firstAddress && !(excludeLocalHost && ip.IsLoopback()))
+        AddTransportAddress(interfaceAddresses, ip, port, natMethod);
+    }
   }
 
   return interfaceAddresses;
