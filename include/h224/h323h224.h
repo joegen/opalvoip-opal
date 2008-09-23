@@ -74,6 +74,9 @@ public:
 	
 };
 
+
+#if 0
+
 /** This class implements a H.224 logical channel
  */
 class H323_H224Channel : public H323Channel
@@ -126,6 +129,9 @@ protected:
   RTP_DataFrame::PayloadTypes rtpPayloadType;
   
 };
+
+#endif
+
 
 #endif // __OPAL_H323H224_H
 
