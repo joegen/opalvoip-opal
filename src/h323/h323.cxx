@@ -3460,8 +3460,6 @@ void H323Connection::OnSetLocalCapabilities()
     PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
     if (otherParty != NULL && otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
       capability->SetPayloadType(info.rfc2833);
-    else
-      localCapabilities.Remove(capability);
   }
 
   PTRACE(3, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
@@ -4079,10 +4077,9 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
         return NULL;
       }
       MediaInformation info;
-      if (!otherParty->GetMediaInformation(sessionID, info))
-        return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
-      else
+      if (otherParty->GetMediaInformation(sessionID, info))
         return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, info.data, info.control);
+      return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
     }
   }
 
