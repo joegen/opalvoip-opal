@@ -97,6 +97,7 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   , inDataSize(10*1024)
   , outDataSize(10*1024)
   , forceIFrame(true)
+  , lastFrameWasIFrame(false)
 #if OPAL_STATISTICS
   , m_totalFrames(0)
   , m_keyFrames(0)

@@ -144,12 +144,15 @@ class OpalVideoTranscoder : public OpalTranscoder
 #if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
+
+    bool WasLastFrameIFrame() const { return lastFrameWasIFrame; }
   //@}
 
   protected:
     PINDEX inDataSize;
     PINDEX outDataSize;
     bool   forceIFrame;
+    bool   lastFrameWasIFrame;
 
 #if OPAL_STATISTICS
     DWORD m_totalFrames;
