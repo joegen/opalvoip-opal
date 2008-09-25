@@ -742,9 +742,9 @@ void OpalManager_C::PostMessage(OpalMessageBuffer & message)
   m_messageMutex.Wait();
   if (m_messageAvailableCallback == NULL || m_messageAvailableCallback(message)) {
     m_messageQueue.push(message.Detach());
-    m_messageMutex.Signal();
+    m_messagesAvailable.Signal();
   }
-  m_messagesAvailable.Signal();
+  m_messageMutex.Signal();
 }
 
 
