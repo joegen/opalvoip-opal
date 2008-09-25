@@ -1514,19 +1514,8 @@ void OpalManager_C::OnIndMediaStream(const OpalMediaStream & stream, OpalMediaSt
   OpalMessageBuffer message(OpalIndMediaStream);
   SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_callToken, connection.GetCall().GetToken());
   SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_identifier, stream.GetID());
-  PString type;
-  switch (stream.GetMediaFormat().GetDefaultSessionID()) {
-    case OpalMediaFormat::DefaultAudioSessionID :
-      type = "audio";
-      break;
-    case OpalMediaFormat::DefaultVideoSessionID :
-      type = "video";
-      break;
-    case OpalMediaFormat::DefaultDataSessionID :
-      type = "fax";
-      break;
-  }
-  type += stream.IsSource() ? " in" : " out";
+  PStringStream type;
+  type << stream.GetMediaFormat().GetMediaType() << (stream.IsSource() ? " in" : " out");
   SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_type, type);
   SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_format, stream.GetMediaFormat().GetName());
   message->m_param.m_mediaStream.m_state = state;

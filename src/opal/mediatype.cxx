@@ -62,10 +62,10 @@ OPAL_INSTANTIATE_SIMPLE_MEDIATYPE_NO_SDP(userinput);
 ostream & operator << (ostream & strm, const OpalMediaType & mediaType)
 { mediaType.PrintOn(strm); return strm; }
 
-const char * OpalMediaType::Audio()     { static const char * str = "audio";     return str; }
-const char * OpalMediaType::Video()     { static const char * str = "video";     return str; }
-const char * OpalMediaType::Fax()       { static const char * str = "fax";       return str; };
-const char * OpalMediaType::UserInput() { static const char * str = "userinput"; return str; };
+const OpalMediaType & OpalMediaType::Audio()     { static const OpalMediaType type = "audio";     return type; }
+const OpalMediaType & OpalMediaType::Video()     { static const OpalMediaType type = "video";     return type; }
+const OpalMediaType & OpalMediaType::Fax()       { static const OpalMediaType type = "fax";       return type; };
+const OpalMediaType & OpalMediaType::UserInput() { static const OpalMediaType type = "userinput"; return type; };
 
 ///////////////////////////////////////////////////////////////////////////////
 

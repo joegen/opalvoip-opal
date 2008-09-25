@@ -366,7 +366,7 @@ OpalMediaStreamPtr OpalPCSSConnection::OpenMediaStream(const OpalMediaFormat & m
 {
 #if OPAL_VIDEO
   if ( isSource &&
-       sessionID == OpalMediaFormat::DefaultVideoSessionID &&
+       mediaFormat.GetMediaType() == OpalMediaType::Video() &&
       !ownerCall.IsEstablished() &&
       !endpoint.GetManager().CanAutoStartTransmitVideo()) {
     PTRACE(3, "PCSS\tOpenMediaStream auto start disabled, refusing video open");
@@ -380,7 +380,7 @@ OpalMediaStreamPtr OpalPCSSConnection::OpenMediaStream(const OpalMediaFormat & m
 
 PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage)
 {
-  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
   if (stream == NULL)
     return PFalse;
 
@@ -394,7 +394,7 @@ PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage
 
 unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
 {
-  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
   if (stream == NULL)
     return UINT_MAX;
 

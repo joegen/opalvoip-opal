@@ -181,7 +181,7 @@ PBoolean OpalCall::OnAlerting(OpalConnection & connection)
   if (isClearing)
     return false;
 
-  PBoolean hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, PTrue) != NULL;
+  PBoolean hasMedia = connection.GetMediaStream(OpalMediaType::Audio(), true) != NULL;
 
   bool ok = false;
 

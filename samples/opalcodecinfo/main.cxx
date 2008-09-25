@@ -365,20 +365,8 @@ void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
     str += fmt->IsValidForProtocol("h.323") ? "yes" : "no";
     str += ", sip=";
     str += fmt->IsValidForProtocol("sip") ? "yes" : "no";
-    cout << setw(max_len+2) << *fmt << "  ";
-    switch (fmt->GetDefaultSessionID()) {
-      case OpalMediaFormat::DefaultAudioSessionID:
-        cout << "audio, bandwidth=" << fmt->GetBandwidth() << ", RTP=" << fmt->GetPayloadType() << str << endl;
-        break;
-      case OpalMediaFormat::DefaultVideoSessionID:
-        cout << "video, bandwidth=" << fmt->GetBandwidth() << ", RTP=" << fmt->GetPayloadType() << str << endl;
-        break;
-      case OpalMediaFormat::DefaultDataSessionID:
-        cout << "data" << endl;;
-        break;
-      default:
-        cout << "unknown type " << hex << fmt->GetDefaultSessionID() << dec << endl;
-    }
+    cout << setw(max_len+2) << *fmt << "  " << fmt->GetMediaType()
+         << ", bandwidth=" << fmt->GetBandwidth() << ", RTP=" << fmt->GetPayloadType() << str << endl;
   }
 
   cout << "\n\n";
@@ -425,7 +413,7 @@ void DisplayMediaFormat(const PString & fmtName)
   }
 
   cout << "        Media Format Name       = " << mediaFormat << "\n"
-          "       Default Session ID (R/O) = " << mediaFormat.GetDefaultSessionID() << "\n"
+          "       Default Session ID (R/O) = " << mediaFormat.GetMediaType().GetDefinition()->GetDefaultSessionId() << "\n"
           "             Payload type (R/O) = " << (unsigned)mediaFormat.GetPayloadType() << "\n"
           "            Encoding name (R/O) = " << mediaFormat.GetEncodingName() << '\n';
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
@@ -454,7 +442,7 @@ void DisplayMediaFormat(const PString & fmtName)
 void AudioTest(const PString & fmtName)
 {
   OpalMediaFormat mediaFormat = fmtName;
-  if (mediaFormat.IsEmpty() || mediaFormat.GetDefaultSessionID() != OpalMediaFormat::DefaultAudioSessionID) {
+  if (mediaFormat.IsEmpty() || mediaFormat.GetMediaType() != OpalMediaType::Audio()) {
     cout << "error: cannot use format name \"" << fmtName << '"' << endl;
     return;
   }
@@ -512,7 +500,7 @@ void AudioTest(const PString & fmtName)
 void VideoTest(const PString & fmtName)
 {
   OpalMediaFormat mediaFormat = fmtName;
-  if (mediaFormat.IsEmpty() || mediaFormat.GetDefaultSessionID() != OpalMediaFormat::DefaultVideoSessionID) {
+  if (mediaFormat.IsEmpty() || mediaFormat.GetMediaType() != OpalMediaType::Video()) {
     cout << "error: cannot use format name \"" << fmtName << '"' << endl;
     return;
   }

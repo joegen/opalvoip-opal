@@ -730,7 +730,7 @@ H323Capability::MainTypes H323AudioCapability::GetMainType() const
 
 unsigned H323AudioCapability::GetDefaultSessionID() const
 {
-  return OpalMediaFormat::DefaultAudioSessionID;
+  return DefaultAudioSessionID;
 }
 
 
@@ -1126,7 +1126,7 @@ PBoolean H323VideoCapability::OnReceivedPDU(const H245_VideoCapability & pdu, Co
 
 unsigned H323VideoCapability::GetDefaultSessionID() const
 {
-  return OpalMediaFormat::DefaultVideoSessionID;
+  return DefaultVideoSessionID;
 }
 
 

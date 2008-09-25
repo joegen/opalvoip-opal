@@ -660,7 +660,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(
   )
 {
 #if OPAL_VIDEO
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID) {
+  if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
     if (isSource) {
       PVideoInputDevice * videoDevice;
       PBoolean autoDelete;
@@ -723,7 +723,7 @@ void OpalConnection::EnableRecording()
   if (!LockReadWrite())
     return;
 
-  OpalMediaStreamPtr stream = GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, PTrue);
+  OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
   if (stream != NULL) {
     OpalMediaPatch * patch = stream->GetPatch();
     if (patch != NULL)
@@ -738,7 +738,7 @@ void OpalConnection::DisableRecording()
   if (!LockReadWrite())
     return;
 
-  OpalMediaStreamPtr stream = GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, PTrue);
+  OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
   if (stream != NULL) {
     OpalMediaPatch * patch = stream->GetPatch();
     if (patch != NULL)
