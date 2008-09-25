@@ -656,7 +656,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
     localMedia->AddMediaFormats(formats, mediaType);
 
 #if OPAL_VIDEO
-    if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID) {
+    if (mediaType == OpalMediaType::Video()) {
       if (endpoint.GetManager().CanAutoStartTransmitVideo())
         localMedia->SetDirection(endpoint.GetManager().CanAutoStartReceiveVideo() ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
       else
@@ -787,7 +787,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(rtpSessionId);
 #if OPAL_VIDEO
-  if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID && GetPhase() < EstablishedPhase) {
+  if (mediaType == OpalMediaType::Video() && GetPhase() < EstablishedPhase) {
     // If processing initial INVITE and video, obey the auto-start flags
     if (!endpoint.GetManager().CanAutoStartTransmitVideo())
       otherSidesDir = (otherSidesDir&SDPMediaDescription::SendOnly) != 0 ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive;
@@ -864,7 +864,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     for (OpalMediaFormatList::iterator remoteFormat = remoteFormatList.begin(); remoteFormat != remoteFormatList.end(); ++remoteFormat) {
       for (OpalMediaFormatList::iterator localFormat = localFormatList.begin(); localFormat != localFormatList.end(); ++localFormat) {
         OpalMediaFormat intermediateFormat;
-        if (remoteFormat->GetDefaultSessionID() == rtpSessionId &&
+        if (remoteFormat->GetMediaType() == mediaType &&
             OpalTranscoder::FindIntermediateFormat(*localFormat, *remoteFormat, intermediateFormat)) {
           localMedia->AddMediaFormat(*remoteFormat);
           empty = false;
@@ -2438,7 +2438,7 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
   else {
     PTRACE(3, "SIP\tPictureFastUpdate received");
     if (LockReadWrite()) {
-      OpalMediaStreamPtr encodingStream = GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, PTrue);
+      OpalMediaStreamPtr encodingStream = GetMediaStream(OpalMediaType::Video(), true);
       if (encodingStream == NULL){
         PTRACE(3, "SIP\tNo video stream to update");
       } else {
