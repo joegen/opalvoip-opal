@@ -51,7 +51,9 @@ void IvrOPAL::Main()
   PArgList & args = GetArguments();
 
   args.Parse("h-help."
+             "u-user:"
              "r-register:"
+             "S-sip:"
              "g-gk-host:"
              "G-gk-id:"
 #if PTRACING
@@ -71,7 +73,10 @@ void IvrOPAL::Main()
             "\n"
             "Available options are:\n"
             "  -h or --help            : print this help message.\n"
-            "  -r or --register url    : SIP registration.\n"
+            "  -u or --user name       : Set local username, defaults to OS username.\n"
+            "  -S or --sip interface   : SIP listens on interface, defaults to udp$*:5060.\n"
+            "  -r or --register server : SIP registration to server.\n"
+            "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720.\n"
             "  -g or --gk-host host    : H.323 gatekeeper host.\n"
             "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
 #if PTRACING
@@ -110,12 +115,14 @@ void IvrOPAL::Main()
   }
 
   m_manager = new MyManager();
+  if (args.HasOption('u'))
+    m_manager->SetDefaultUserName(args.GetOptionString('u'));
 
 
   // Set up SIP
   SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
-  if (!sip->StartListeners(PStringArray())) {
-    cerr << "Could not start default SIP listeners." << endl;
+  if (!sip->StartListeners(args.GetOptionString('S').Lines())) {
+    cerr << "Could not start SIP listeners." << endl;
     return;
   }
 
@@ -125,8 +132,8 @@ void IvrOPAL::Main()
 
   // Set up H.323
   H323EndPoint * h323 = new H323EndPoint(*m_manager);
-  if (!h323->StartListeners(PStringArray())) {
-    cerr << "Could not start default H.323 listeners." << endl;
+  if (!h323->StartListeners(args.GetOptionString('H').Lines())) {
+    cerr << "Could not start H.323 listeners." << endl;
     return;
   }
 
