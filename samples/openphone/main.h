@@ -266,10 +266,10 @@ class StatisticsPage
     ~StatisticsPage();
 
     void Init(
-      InCallPanel   * panel,
-      StatisticsPages page,
-      const char    * mediaType,
-      bool            receiver
+      InCallPanel         * panel,
+      StatisticsPages       page,
+      const OpalMediaType & mediaType,
+      bool                  receiver
     );
 
     void UpdateSession(const OpalConnection * connection);

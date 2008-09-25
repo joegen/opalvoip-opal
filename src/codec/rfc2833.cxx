@@ -94,8 +94,8 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 
   // find an audio session in the current connection to send the packet on
   if (rtpSession == NULL) {
-    rtpSession = conn.GetSession(OpalMediaFormat::DefaultAudioSessionID);
-    if (rtpSession == NULL) {
+    OpalMediaStreamPtr stream = conn.GetMediaStream(OpalMediaType::Audio(), false);
+    if (stream == NULL || (rtpSession = conn.GetSession(stream->GetSessionID())) == NULL) {
       PTRACE(4, "RFC2833\tNo RTP session suitable for RFC2833");
       return PFalse;
     }

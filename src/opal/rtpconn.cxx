@@ -243,7 +243,7 @@ void OpalRTPConnection::SetSecurityData(void *data)
 void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    RTP_Session * session = m_rtpSessions.GetSession(OpalMediaFormat::DefaultVideoSessionID);
+    RTP_Session * session = m_rtpSessions.GetSession(H323Capability::DefaultVideoSessionID);
     if (session != NULL)
       session->SendIntraFrameRequest();
 #if OPAL_STATISTICS
@@ -309,10 +309,9 @@ PBoolean OpalRTPConnection::GetMediaInformation(unsigned sessionID,
   return PTrue;
 }
 
-PBoolean OpalRTPConnection::IsMediaBypassPossible(unsigned sessionID) const
+PBoolean OpalRTPConnection::IsMediaBypassPossible(unsigned) const
 {
-  return sessionID == OpalMediaFormat::DefaultAudioSessionID ||
-         sessionID == OpalMediaFormat::DefaultVideoSessionID;
+  return true;
 }
 
 OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
