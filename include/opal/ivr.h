@@ -222,6 +222,10 @@ class OpalIVRConnection : public OpalConnection
       */
     virtual bool IsNetworkConnection() const { return false; }
 
+    /**Get the local name/alias.
+      */
+    virtual PString GetLocalPartyURL() const;
+
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
        example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
