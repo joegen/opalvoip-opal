@@ -66,7 +66,7 @@ void FaxOPAL::Main()
 #endif
 
   if (args.HasOption('h') || args.GetCount() == 0) {
-    cerr << "usage: FaxOPAL [ options ] filename [ url ]\n"
+    cerr << "usage: " << GetFile().GetTitle() << " [ options ] filename [ url ]\n"
             "\n"
             "Available options are:\n"
             "  --help                   : print this help message.\n"
@@ -77,9 +77,9 @@ void FaxOPAL::Main()
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
 #endif
             "\n"
-            "e.g. ./FaxOPAL send_fax.tif sip:fred@bloggs.com\n"
+            "e.g. " << GetFile().GetTitle() << " send_fax.tif sip:fred@bloggs.com\n"
             "\n"
-            "     ./FaxOPAL received_fax.tif\n\n";
+            "     " << GetFile().GetTitle() << " received_fax.tif\n\n";
     return;
   }
 

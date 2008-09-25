@@ -104,7 +104,7 @@ void PlayRTP::Main()
 #endif
 
   if (args.HasOption('h') || args.GetCount() == 0) {
-    PError << "usage: PlayRTP [ options ] filename [ filename ... ]\n"
+    PError << "usage: " << GetFile().GetTitle() << " [ options ] filename [ filename ... ]\n"
               "\n"
               "Available options are:\n"
               "  --help                   : print this help message.\n"
@@ -124,7 +124,7 @@ void PlayRTP::Main()
               "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
 #endif
               "\n"
-              "e.g. ./PlayRTP conversation.pcap\n\n";
+              "e.g. " << GetFile().GetTitle() << " conversation.pcap\n\n";
     return;
   }
 
