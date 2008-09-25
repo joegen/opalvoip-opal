@@ -979,8 +979,22 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
         return PFalse;
       }
 
-      if (firstPacketForFrame) {
-        if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
+      if (!firstPacketForFrame) 
+        lastFrameWasIFrame = false;
+      else {
+#if OPAL_STATISTICS
+        m_totalFrames++;
+#endif
+        lastFrameWasIFrame = (flags & PluginCodec_ReturnCoderIFrame) != 0;
+        if (!lastFrameWasIFrame) {
+#if PTRACING
+          consecutiveIntraFrames = 0;
+#endif
+        }
+        else {
+#if OPAL_STATISTICS
+          m_keyFrames++;
+#endif
 #if PTRACING
           if (forceIFrame)
             PTRACE(3, "OpalPlugin\tSending I-Frame in response to videoFastUpdate");
@@ -992,18 +1006,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
           }
 #endif
           forceIFrame = false;
-#if OPAL_STATISTICS
-          m_keyFrames++;
-#endif
         }
-#if PTRACING
-        else
-          consecutiveIntraFrames = 0;
-#endif
-#if OPAL_STATISTICS
-        m_totalFrames++;
-#endif
-        firstPacketForFrame = false;
       }
 
       if (toLen > 0) {
