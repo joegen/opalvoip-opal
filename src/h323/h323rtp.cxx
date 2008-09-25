@@ -217,7 +217,7 @@ PBoolean H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
 
   PTRACE(1, "RTP_UDP\tNo mediaChannel or mediaControlChannel specified for " << channel);
 
-  if (rtp.GetSessionID() == OpalMediaFormat::DefaultDataSessionID)
+  if (rtp.GetSessionID() == H323Capability::DefaultDataSessionID)
     return PTrue;
 
   errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
@@ -240,7 +240,7 @@ PBoolean H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
 
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel)) {
     PTRACE(1, "RTP_UDP\tNo mediaControlChannel specified");
-    if (rtp.GetSessionID() != OpalMediaFormat::DefaultDataSessionID)
+    if (rtp.GetSessionID() != H323Capability::DefaultDataSessionID)
       return PFalse;
   }
   else

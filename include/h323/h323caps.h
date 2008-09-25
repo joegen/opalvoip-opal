@@ -149,10 +149,17 @@ class H323Capability : public PObject
       const PString & name     ///<  Name of capability
     );
 
+    enum {
+      DefaultAudioSessionID = 1,
+      DefaultVideoSessionID = 2,
+      DefaultDataSessionID  = 3,
+      DefaultH224SessionID  = 4
+    };
+
     /**Get the default RTP session.
        This function gets the default RTP session ID for the capability
        type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
+       H323Capability::DefaultAudioSessionID etc.
 
        The default behaviour returns zero, indicating it is not an RTP
        based capability.

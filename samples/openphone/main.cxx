@@ -1234,14 +1234,14 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReadOnly);
   if (connection != NULL) {
     // Get ID of open audio to check the menu item
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, true);
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Audio(), true);
     if (stream != NULL)
       audioFormat = PwxString(stream->GetMediaFormat());
 
-    stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
+    stream = connection->GetMediaStream(OpalMediaType::Video(), false);
     hasStopVideo = stream != NULL && stream->Open();
 
-    stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
+    stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL) {
       videoFormat = PwxString(stream->GetMediaFormat());
       hasRxVideo = stream->Open();
@@ -1250,7 +1250,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
     // Determine if video is startable, or is already started
     OpalMediaFormatList availableFormats = connection->GetMediaFormats();
     for (PINDEX idx = 0; idx < availableFormats.GetSize(); idx++) {
-      if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+      if (availableFormats[idx].GetMediaType() == OpalMediaType::Video()) {
         hasStartVideo = !hasStopVideo;
         break;
       }
@@ -1905,7 +1905,7 @@ static void LogMediaStream(const char * stopStart, const OpalMediaStream & strea
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
   LogWindow << stopStart << (stream.IsSource() ? " receiving " : " sending ") << mediaFormat;
 
-  if (!stream.IsSource() && mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID)
+  if (!stream.IsSource() && mediaFormat.GetMediaType() == OpalMediaType::Audio())
     LogWindow << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
 
   LogWindow << (stream.IsSource() ? " from " : " to ")
@@ -2187,9 +2187,9 @@ void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
 {
   PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
   if (connection != NULL) {
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream == NULL) {
-      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaType::Video(), OpalMediaFormat::DefaultVideoSessionID))
+      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaType::Video()))
         LogWindow << "Could not open video to remote!" << endl;
     }
   }
@@ -2200,7 +2200,7 @@ void MyManager::OnStopVideo(wxCommandEvent & /*event*/)
 {
   PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
   if (connection != NULL) {
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL)
       connection->CloseMediaStream(*stream);
   }
@@ -2540,7 +2540,7 @@ bool MyManager::AdjustFrameSize()
   OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = allMediaFormats[i];
-    if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+    if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
       mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption(), minWidth);
@@ -4829,7 +4829,7 @@ StatisticsPage::~StatisticsPage()
 
 void StatisticsPage::Init(InCallPanel * panel,
                           StatisticsPages page,
-                          const char * mediaType,
+                          const OpalMediaType & mediaType,
                           bool receiver)
 {
   m_page = page;

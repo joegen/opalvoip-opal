@@ -742,19 +742,6 @@ class OpalMediaFormat : public PContainer
       */
     const char * GetEncodingName() const { PWaitAndSignal m(_mutex); return m_info == NULL ? "" : m_info->rtpEncodingName.GetPointer(); }
 
-    enum {
-      DefaultAudioSessionID = 1,
-      DefaultVideoSessionID = 2,
-      DefaultDataSessionID  = 3,
-      DefaultH224SessionID  = 4
-    };
-
-    /**DEPRECATED - Get the default session ID for media format.
-      */
-    unsigned GetDefaultSessionID() const { 
-      PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : OpalMediaTypeDefinition::GetDefaultSessionId(m_info->mediaType); 
-    }
-
     /** Get the media type for this format
       */
     OpalMediaType GetMediaType() const { PWaitAndSignal m(_mutex); return m_info == NULL ? OpalMediaType() : m_info->mediaType; }

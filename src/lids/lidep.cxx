@@ -581,7 +581,7 @@ OpalMediaStream * OpalLineConnection::CreateMediaStream(const OpalMediaFormat & 
                                                         unsigned sessionID,
                                                         PBoolean isSource)
 {
-  if (sessionID != OpalMediaFormat::DefaultAudioSessionID)
+  if (mediaFormat.GetMediaType() != OpalMediaType::Audio())
     return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
   return new OpalLineMediaStream(*this, mediaFormat, sessionID, isSource, line);
@@ -606,7 +606,7 @@ PBoolean OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
 
 PBoolean OpalLineConnection::SetAudioVolume(PBoolean source, unsigned percentage)
 {
-  PSafePtr<OpalLineMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalLineMediaStream>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  PSafePtr<OpalLineMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalLineMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
   if (stream == NULL)
     return false;
 
@@ -617,7 +617,7 @@ PBoolean OpalLineConnection::SetAudioVolume(PBoolean source, unsigned percentage
 
 unsigned OpalLineConnection::GetAudioSignalLevel(PBoolean source)
 {
-  PSafePtr<OpalLineMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalLineMediaStream>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  PSafePtr<OpalLineMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalLineMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
   if (stream == NULL)
     return UINT_MAX;
 

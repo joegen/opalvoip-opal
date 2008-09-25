@@ -1492,37 +1492,37 @@ void OpalPluginCodecManager::RegisterPluginPair(
   if (timeStamp > mediaNow)
     timeStamp = mediaNow;
 
-  unsigned defaultSessionID = 0;
+  bool knownMedia;
   unsigned frameTime = 0;
   unsigned clockRate = 0;
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
 #if OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
-      defaultSessionID = OpalMediaFormat::DefaultVideoSessionID;
+      knownMedia = true;
       break;
 #endif
     case PluginCodec_MediaTypeAudio:
     case PluginCodec_MediaTypeAudioStreamed:
-      defaultSessionID = OpalMediaFormat::DefaultAudioSessionID;
+      knownMedia = true;
       frameTime = encoderCodec->parm.audio.samplesPerFrame;
       clockRate = encoderCodec->sampleRate;
       break;
 
 #if OPAL_T38_CAPABILITY
     case PluginCodec_MediaTypeFax:
-      defaultSessionID = OpalMediaFormat::DefaultDataSessionID;
+      knownMedia = true;
       frameTime = (8 * encoderCodec->usPerFrame) / 1000;
       clockRate = encoderCodec->sampleRate;
       break;
 #endif
     default:
+      knownMedia = false;
+      PTRACE(1, "OpalPlugin\tCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
       break;
   }
 
   // add the media format
-  if (defaultSessionID == 0) {
-    PTRACE(1, "OpalPlugin\tCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
-  } else {
+  if (knownMedia) {
     PString fmtName = CreateCodecName(encoderCodec);
     OpalMediaFormat existingFormat(fmtName);
     if (existingFormat.IsValid() && existingFormat.GetCodecVersionTime() >= timeStamp) {
