@@ -82,8 +82,8 @@ void CallGen::Main()
   
   if (args.GetCount() == 0 && !args.HasOption('l')) {
     cout << "Usage:\n"
-            "  callgen [options] -l\n"
-            "  callgen [options] destination [ destination ... ]\n"
+            "  " << GetFile().GetTitle() << " [options] -l\n"
+            "  " << GetFile().GetTitle() << " [options] destination [ destination ... ]\n"
             "where options:\n"
             "  -l                   Passive/listening mode.\n"
             "  -m --max num         Maximum number of simultaneous calls\n"

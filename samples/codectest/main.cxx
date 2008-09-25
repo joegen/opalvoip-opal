@@ -83,7 +83,7 @@ void CodecTest::Main()
 #endif
 
   if (args.HasOption('h') || args.GetCount() == 0) {
-    PError << "usage: codectest [ options ] fmtname [ fmtname ]\n"
+    PError << "usage: " << GetFile().GetTitle() << " [ options ] fmtname [ fmtname ]\n"
               "  where fmtname is the Media Format Name for the codec(s) to test, up to two\n"
               "  formats (one audio and one video) may be specified.\n"
               "\n"
@@ -113,7 +113,7 @@ void CodecTest::Main()
               "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
 #endif
               "\n"
-              "e.g. ./codectest --grab-device fake --grab-channel 2 GSM-AMR H.264\n\n";
+              "e.g. " << GetFile().GetTitle() << " --grab-device fake --grab-channel 2 GSM-AMR H.264\n\n";
     return;
   }
 
