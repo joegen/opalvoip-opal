@@ -171,9 +171,9 @@ void SimpleOpalProcess::Main()
 
 
   if (args.HasOption('h') || (!args.HasOption('l') && args.GetCount() == 0)) {
-    cout << "Usage : " << GetName() << " [options] -l\n"
-            "      : " << GetName() << " [options] [alias@]hostname   (no gatekeeper)\n"
-            "      : " << GetName() << " [options] alias[@hostname]   (with gatekeeper)\n"
+    cout << "Usage : " << GetFile().GetTitle() << " [options] -l\n"
+            "      : " << GetFile().GetTitle() << " [options] [alias@]hostname   (no gatekeeper)\n"
+            "      : " << GetFile().GetTitle() << " [options] alias[@hostname]   (with gatekeeper)\n"
             "General options:\n"
             "  -l --listen             : Listen for incoming calls.\n"
             "  -d --dial-peer spec     : Set dial peer for routing calls (see below)\n"
