@@ -3430,22 +3430,27 @@ void H323Connection::OnSetLocalCapabilities()
   }
 
   // Add those things that are in the other parties media format list
-  static unsigned sessionOrder[] = {
-    OpalMediaFormat::DefaultAudioSessionID,
-    OpalMediaFormat::DefaultVideoSessionID,
-    OpalMediaFormat::DefaultDataSessionID,
-    0
+  static const char * mediaList[] = {
+    OpalMediaType::Audio(),
+    OpalMediaType::Fax(),
+    NULL,
+    OpalMediaType::Video(),
   };
-  PINDEX simultaneous;
 
-  for (PINDEX s = 0; s < PARRAYSIZE(sessionOrder); s++) {
-    simultaneous = P_MAX_INDEX;
+  PINDEX simultaneous = P_MAX_INDEX;
+
+  for (PINDEX m = 0; m < PARRAYSIZE(mediaList); m++) {
+    if (mediaList[m] == NULL) {
+      simultaneous = P_MAX_INDEX;
+      continue;
+    }
+
     for (OpalMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
-      if (format->GetDefaultSessionID() == sessionOrder[s] && format->IsTransportable())
+      if (format->GetMediaType() == mediaList[m] && format->IsTransportable())
         simultaneous = localCapabilities.AddMediaFormat(0, simultaneous, *format);
     }
   }
-  
+
   // If H.224 is enabled, add the corresponding capabilities
   //if(GetEndPoint().IsH224Enabled()) {
   //  localCapabilities.SetCapability(0, P_MAX_INDEX, new H323_H224Capability());
