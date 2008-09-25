@@ -134,7 +134,7 @@ void SDPFaxMediaDescription::SetAttribute(const PString & attr, const PString & 
 
 void SDPFaxMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & mediaFormat)
 {
-  if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID) {
+  if (mediaFormat.GetMediaType() == OpalMediaType::Fax()) {
     for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
       const OpalMediaOption & option = mediaFormat.GetOption(i);
       if (option.GetName().Left(3) *= "t38") 

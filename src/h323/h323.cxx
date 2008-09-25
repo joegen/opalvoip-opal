@@ -3214,7 +3214,7 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
       return NULL;
 
     unsigned int session_id = channel->GetSessionID();
-    if (session_id == OpalMediaFormat::DefaultAudioSessionID || session_id == OpalMediaFormat::DefaultVideoSessionID) {
+    if (session_id == H323Capability::DefaultAudioSessionID || session_id == H323Capability::DefaultVideoSessionID) {
       const H323ChannelNumber & channelNumber = channel->GetNumber();
 
       H323_RTPChannel * chan2 = reinterpret_cast<H323_RTPChannel*>(channel);
@@ -3430,20 +3430,17 @@ void H323Connection::OnSetLocalCapabilities()
   }
 
   // Add those things that are in the other parties media format list
-  static const char * mediaList[] = {
+  static const OpalMediaType mediaList[] = {
     OpalMediaType::Audio(),
     OpalMediaType::Fax(),
-    NULL,
-    OpalMediaType::Video(),
+    OpalMediaType::Video()
   };
 
   PINDEX simultaneous = P_MAX_INDEX;
 
   for (PINDEX m = 0; m < PARRAYSIZE(mediaList); m++) {
-    if (mediaList[m] == NULL) {
-      simultaneous = P_MAX_INDEX;
-      continue;
-    }
+    if (m > 1)                    // First two (Audio/Fax) are in same simultaneous set
+      simultaneous = P_MAX_INDEX; // After that each is in it's own simultaneous set in TCS
 
     for (OpalMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
       if (format->GetMediaType() == mediaList[m] && format->IsTransportable())
@@ -3463,7 +3460,7 @@ void H323Connection::OnSetLocalCapabilities()
   if (capability != NULL) {
     MediaInformation info;
     PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
-    if (otherParty != NULL && otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
+    if (otherParty != NULL && otherParty->GetMediaInformation(H323Capability::DefaultAudioSessionID, info))
       capability->SetPayloadType(info.rfc2833);
   }
 
@@ -3524,7 +3521,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
     // If we are early starting, start channels as soon as possible instead of
     // waiting for connect PDU
-    if (earlyStart && IsH245Master() && FindChannel(OpalMediaFormat::DefaultAudioSessionID, PFalse) == NULL)
+    if (earlyStart && IsH245Master() && FindChannel(H323Capability::DefaultAudioSessionID, false) == NULL)
       OnSelectLogicalChannels();
   }
 
@@ -3541,7 +3538,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
   // Check if we have just been connected, or have come out of a transmitter side
   // paused, and have not already got an audio transmitter running via fast connect
-  if (connectionState == HasExecutedSignalConnect && FindChannel(OpalMediaFormat::DefaultAudioSessionID, PFalse) == NULL)
+  if (connectionState == HasExecutedSignalConnect && FindChannel(H323Capability::DefaultAudioSessionID, false) == NULL)
     OnSelectLogicalChannels(); // Start some media
 
   switch (GetPhase()) {
@@ -3608,7 +3605,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
 
 #if OPAL_VIDEO
   if ( isSource &&
-       sessionID == OpalMediaFormat::DefaultVideoSessionID &&
+       mediaFormat.GetMediaType() == OpalMediaType::Video() &&
       !ownerCall.IsEstablished() &&
       !endpoint.GetManager().CanAutoStartReceiveVideo()) {
     PTRACE(3, "H323\tOpenMediaStream auto start disabled, refusing video open");
@@ -3700,7 +3697,7 @@ void H323Connection::OnMediaCommand(OpalMediaCommand & command, INT extra)
 {
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    H323Channel * video = FindChannel(OpalMediaFormat::DefaultVideoSessionID, true);
+    H323Channel * video = FindChannel(H323Capability::DefaultVideoSessionID, true);
     if (video != NULL)
       video->OnMediaCommand(command);
 #if OPAL_STATISTICS
@@ -3755,17 +3752,17 @@ void H323Connection::OnSelectLogicalChannels()
   // Select the first codec that uses the "standard" audio session.
   switch (fastStartState) {
     default : //FastStartDisabled :
-      SelectDefaultLogicalChannel(OpalMediaType::Audio(), OpalMediaFormat::DefaultAudioSessionID);
+      SelectDefaultLogicalChannel(OpalMediaType::Audio(), H323Capability::DefaultAudioSessionID);
 #if OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
-        SelectDefaultLogicalChannel(OpalMediaType::Video(), OpalMediaFormat::DefaultVideoSessionID);
+        SelectDefaultLogicalChannel(OpalMediaType::Video(), H323Capability::DefaultVideoSessionID);
       else {
         PTRACE(4, "H245\tOnSelectLogicalChannels, video not auto-started");
       }
 #endif
 #if OPAL_T38_CAPABILITY
       if (endpoint.CanAutoStartTransmitFax())
-        SelectDefaultLogicalChannel(OpalMediaType::Fax(), OpalMediaFormat::DefaultDataSessionID);
+        SelectDefaultLogicalChannel(OpalMediaType::Fax(), H323Capability::DefaultDataSessionID);
       else {
         PTRACE(4, "H245\tOnSelectLogicalChannels, fax not auto-started");
       }
@@ -3773,33 +3770,33 @@ void H323Connection::OnSelectLogicalChannels()
       break;
 
     case FastStartInitiate :
-      SelectFastStartChannels(OpalMediaFormat::DefaultAudioSessionID, PTrue, PTrue);
+      SelectFastStartChannels(H323Capability::DefaultAudioSessionID, PTrue, PTrue);
 #if OPAL_VIDEO
-      SelectFastStartChannels(OpalMediaFormat::DefaultVideoSessionID,
+      SelectFastStartChannels(H323Capability::DefaultVideoSessionID,
                               endpoint.CanAutoStartTransmitVideo(),
                               endpoint.CanAutoStartReceiveVideo());
 #endif
 #if OPAL_T38_CAPABILITY
-      SelectFastStartChannels(OpalMediaFormat::DefaultDataSessionID,
+      SelectFastStartChannels(H323Capability::DefaultDataSessionID,
                               endpoint.CanAutoStartTransmitFax(),
                               endpoint.CanAutoStartReceiveFax());
 #endif
       break;
 
     case FastStartResponse :
-      StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsTransmitter);
-      StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsReceiver);
+      StartFastStartChannel(H323Capability::DefaultAudioSessionID, H323Channel::IsTransmitter);
+      StartFastStartChannel(H323Capability::DefaultAudioSessionID, H323Channel::IsReceiver);
 #if OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
-        StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsTransmitter);
+        StartFastStartChannel(H323Capability::DefaultVideoSessionID, H323Channel::IsTransmitter);
       if (endpoint.CanAutoStartReceiveVideo())
-        StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsReceiver);
+        StartFastStartChannel(H323Capability::DefaultVideoSessionID, H323Channel::IsReceiver);
 #endif
 #if OPAL_T38_CAPABILITY
       if (endpoint.CanAutoStartTransmitFax())
-        StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsTransmitter);
+        StartFastStartChannel(H323Capability::DefaultDataSessionID, H323Channel::IsTransmitter);
       if (endpoint.CanAutoStartReceiveFax())
-        StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsReceiver);
+        StartFastStartChannel(H323Capability::DefaultDataSessionID, H323Channel::IsReceiver);
 #endif
       break;
   }
