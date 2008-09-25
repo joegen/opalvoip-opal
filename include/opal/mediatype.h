@@ -76,10 +76,10 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     OpalMediaType(const PString & _str)
       : std::string((const char *)_str) { }
 
-    static const char * Audio();
-    static const char * Video();
-    static const char * Fax();
-    static const char * UserInput();
+    static const OpalMediaType & Audio();
+    static const OpalMediaType & Video();
+    static const OpalMediaType & Fax();
+    static const OpalMediaType & UserInput();
 
     void PrintOn(ostream & strm) const { strm << (std::string &)*this; }
 

@@ -831,7 +831,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = allMediaFormats[i];
-    if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+    if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
       if (args.HasOption("video-size")) {
         PString sizeStr = args.GetOptionString("video-size");
         unsigned width, height;

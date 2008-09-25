@@ -380,10 +380,11 @@ PBoolean OpalIVRConnection::SendUserInputString(const PString & value)
   return PTrue;
 }
 
-void OpalIVRConnection::OnMediaPatchStop(unsigned sessionId, bool isSource)
+void OpalIVRConnection::OnMediaPatchStop(unsigned, bool)
 {
-  // lose the audio patch, then lose the call
-  if (isSource && sessionId == OpalMediaFormat::DefaultAudioSessionID)
+  // lose the audio, then lose the call
+  OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
+  if (stream == NULL || !stream->IsOpen())
     Release();
 }
 
