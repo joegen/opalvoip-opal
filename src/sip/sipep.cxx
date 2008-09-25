@@ -861,8 +861,12 @@ bool SIPEndPoint::Register(const PString & host,
 {
   SIPRegister::Params params;
 
-  if (user.Find('@') == P_MAX_INDEX)
-    params.m_addressOfRecord = user + '@' + host;
+  if (user.Find('@') == P_MAX_INDEX) {
+    if (user.IsEmpty())
+      params.m_addressOfRecord = GetDefaultLocalPartyName() + '@' + host;
+    else
+      params.m_addressOfRecord = user + '@' + host;
+  }
   else {
     params.m_addressOfRecord = user;
     if (!host.IsEmpty())
@@ -872,7 +876,7 @@ bool SIPEndPoint::Register(const PString & host,
   params.m_authID = authName;
   params.m_password = password;
   params.m_realm = realm;
-  params.m_expire = expire;
+  params.m_expire = expire != 0 ? expire : GetRegistrarTimeToLive().GetSeconds();
   params.m_minRetryTime = minRetryTime;
   params.m_maxRetryTime = maxRetryTime;
 
