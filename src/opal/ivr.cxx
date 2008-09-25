@@ -174,17 +174,17 @@ OpalIVRConnection::~OpalIVRConnection()
 }
 
 
+PString OpalIVRConnection::GetLocalPartyURL() const
+{
+  return GetPrefixName() + ':' + vxmlToLoad.Left(vxmlToLoad.FindOneOf("\r\n"));
+}
+
+
 PBoolean OpalIVRConnection::SetUpConnection()
 {
-  originating = true;
+  originating = false;
 
   ApplyStringOptions();
-
-  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
-  if (otherConnection != NULL)
-    remotePartyName = otherConnection->GetRemotePartyName();
-  else
-    remotePartyName = ownerCall.GetPartyB();
 
   PTRACE(3, "IVR\tSetUpConnection(" << remotePartyName << ')');
 
@@ -380,11 +380,11 @@ PBoolean OpalIVRConnection::SendUserInputString(const PString & value)
   return PTrue;
 }
 
-void OpalIVRConnection::OnMediaPatchStop(unsigned, bool)
+void OpalIVRConnection::OnMediaPatchStop(unsigned sessionId, bool)
 {
   // lose the audio, then lose the call
   OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
-  if (stream == NULL || !stream->IsOpen())
+  if (stream == NULL || !stream->IsOpen() || stream->GetSessionID() == sessionId)
     Release();
 }
 
