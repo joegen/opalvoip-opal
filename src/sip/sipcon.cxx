@@ -1480,8 +1480,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       }
 
       // #2 - Different "dialog" determined by the tags in the to and from fields indicate forking
-      if (requestMIME.GetFieldParameter("From", "tag") != requestFromTag ||
-          requestMIME.GetFieldParameter("To",   "tag") != requestToTag) {
+      if (originalMIME.GetFieldParameter("From", "tag") != requestFromTag ||
+          originalMIME.GetFieldParameter("To",   "tag") != requestToTag) {
         PTRACE(3, "SIP\tIgnoring forked INVITE from " << request.GetURI());
         SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
         response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
