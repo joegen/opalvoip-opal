@@ -137,9 +137,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 
 $(PLUGIN): $(OBJECTS)
 ifeq (,$(findstring solaris,$(target_os)))
-	$(CXX) $(X264_LIBS) -o $@ $^
+	$(CXX) -o $@ $^ $(X264_LIBS)
 else
-	$(CXX) $(X264_LIBS) $@ -o $@ $^
+	$(CXX) $@ -o $@ $^ $(X264_LIBS)
 endif
 
 install:
