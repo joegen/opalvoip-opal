@@ -46,7 +46,7 @@
 
 #define PIPE_TIMEOUT 5000
 #define BUFSIZE 4096
-#define GPL_PROCESS_FILENAME "plugins\\libH264_pwplugin_helper.exe"
+#define GPL_PROCESS_FILENAME "plugins\\h264_video_pwplugin_helper.exe"
 #define DIR_SEPERATOR "\\"
 #define DIR_TOKENISER ";"
 
