@@ -257,7 +257,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetCallID(const PString & v);
 
     PString GetContact() const;
-    bool GetContacts(std::vector<SIPURL> & contacts) const;
+    bool GetContacts(std::list<SIPURL> & contacts) const;
     void SetContact(const PString & v);
     void SetContact(const SIPURL & url);
 
@@ -671,7 +671,8 @@ class SIP_PDU : public PSafeObject
       */
     PBoolean Write(
       OpalTransport & transport,
-      const OpalTransportAddress & remoteAddress = OpalTransportAddress()
+      const OpalTransportAddress & remoteAddress = OpalTransportAddress(),
+      const PString & localInterface = PString::Empty()
     );
 
     /**Write PDU as a response to a request.
@@ -780,7 +781,7 @@ class SIPTransaction : public SIP_PDU
 
     OpalTransport & GetTransport() const  { return transport; }
     SIPConnection * GetConnection() const { return connection; }
-    PString         GetInterface() const { return localInterface; }
+    PString         GetInterface() const { return m_localInterface; }
 
   protected:
     void Construct(
@@ -821,7 +822,7 @@ class SIPTransaction : public SIP_PDU
     PTimer     retryTimer;
     PTimer     completionTimer;
     PSyncPoint completed;
-    PString    localInterface;
+    PString              m_localInterface;
     OpalTransportAddress m_remoteAddress;
 };
 
@@ -879,6 +880,7 @@ class SIPRegister : public SIPTransaction
       OpalTransport & transport,
       const PStringList & routeSet,
       const PString & id,
+      unsigned cseq,
       const Params & params
     );
 };
