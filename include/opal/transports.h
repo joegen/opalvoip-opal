@@ -363,23 +363,6 @@ class OpalListener : public PObject
 PLIST(OpalListenerList, OpalListener);
 
 
-/** Return a list of transport addresses corresponding to a listener list
-  */
-OpalTransportAddressArray OpalGetInterfaceAddresses(
-  const OpalListenerList & listeners,  ///<  List of listeners
-  bool excludeLocalHost,               ///<  Flag to exclude 127.0.0.1
-  OpalTransport * associatedTransport, ///<  Associated transport for precedence and translation
-  PNatMethod * natMethod               ///< NAT traversal method, e.g. STUN server if used
-);
-
-OpalTransportAddressArray OpalGetInterfaceAddresses(
-  const OpalTransportAddress & addr,   ///<  Possible INADDR_ANY address
-  bool excludeLocalHost,               ///<  Flag to exclude 127.0.0.1
-  OpalTransport * associatedTransport, ///<  Associated transport for precedence and translation
-  PNatMethod * natMethod               ///< NAT traversal method, e.g. STUN server if used
-);
-
-
 class OpalListenerIP : public OpalListener
 {
   PCLASSINFO(OpalListenerIP, OpalListener);
@@ -785,9 +768,12 @@ class OpalTransport : public PIndirectChannel
       */
     virtual const char * GetProtoPrefix() const = 0;
 
+    PMutex & GetWriteMutex() { return m_writeMutex; }
+
   protected:
     OpalEndPoint & endpoint;
     PThread      * thread;      ///<  Thread handling the transport
+    PMutex         m_writeMutex;
 };
 
 

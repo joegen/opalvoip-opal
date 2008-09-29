@@ -193,7 +193,7 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
         case Options: 
           {
             SIPOptions options(*this, *transport, SIPURL(transport->GetRemoteAddress()).GetHostName());
-            options.Write(*transport, transport->GetRemoteAddress());
+            options.Write(*transport);
           }
           break;
 
@@ -536,11 +536,8 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
       || transaction.GetMethod() == SIP_PDU::Method_SUBSCRIBE
       || transaction.GetMethod() == SIP_PDU::Method_PUBLISH
       || transaction.GetMethod() == SIP_PDU::Method_MESSAGE) {
-
-    PString callID = transaction.GetMIME().GetCallID ();
-
-    // Have a response to the REGISTER/SUBSCRIBE/MESSAGE, 
-    handler = activeSIPHandlers.FindSIPHandlerByCallID (callID, PSafeReadOnly);
+    // Have a response to various non-INVITE messages
+    handler = activeSIPHandlers.FindSIPHandlerByCallID(transaction.GetMIME().GetCallID(), PSafeReadWrite);
     if (handler == NULL) 
       return;
   }
@@ -902,7 +899,7 @@ bool SIPEndPoint::Register(const SIPRegister::Params & params)
             "   minRetry=" << params.m_minRetryTime << "\n"
             "   maxRetry=" << params.m_maxRetryTime);
   PSafePtr<SIPRegisterHandler> handler = PSafePtrCast<SIPHandler, SIPRegisterHandler>(
-          activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadOnly));
+          activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadWrite));
 
   // If there is already a request with this URL and method, 
   // then update it with the new information
@@ -911,6 +908,7 @@ bool SIPEndPoint::Register(const SIPRegister::Params & params)
   else {
     // Otherwise create a new request with this method type
     handler = CreateRegisterHandler(params);
+    handler.SetSafetyMode(PSafeReadWrite);
     activeSIPHandlers.Append(handler);
   }
 
