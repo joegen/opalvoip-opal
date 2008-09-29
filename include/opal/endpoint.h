@@ -162,7 +162,7 @@ class OpalEndPoint : public PObject
       */
     OpalTransportAddressArray GetInterfaceAddresses(
       PBoolean excludeLocalHost = PTrue,       ///<  Flag to exclude 127.0.0.1
-      OpalTransport * associatedTransport = NULL
+      const OpalTransport * associatedTransport = NULL
                           ///<  Associated transport for precedence and translation
     );
 
