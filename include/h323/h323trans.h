@@ -143,9 +143,7 @@ class H323Transactor : public PObject
     /**Return the list of addresses used for this peer element
       */
     H323TransportAddressArray GetInterfaceAddresses(
-      PBoolean excludeLocalHost = PTrue,       ///<  Flag to exclude 127.0.0.1
-      H323Transport * associatedTransport = NULL
-                          ///<  Associated transport for precedence and translation
+      bool excludeLocalHost = true       ///<  Flag to exclude 127.0.0.1
     );
 
     /**Start the channel processing transactions

@@ -232,17 +232,15 @@ PBoolean H323Transactor::SetTransport(const H323TransportAddress & iface)
   return StartChannel();;
 }
 
-H323TransportAddressArray H323Transactor::GetInterfaceAddresses(PBoolean excludeLocalHost,
-                                                                H323Transport * associatedTransport)
+
+H323TransportAddressArray H323Transactor::GetInterfaceAddresses(bool excludeLocalHost)
 {
   if (transport == NULL)
     return H323TransportAddressArray();
   else
-    return OpalGetInterfaceAddresses(transport->GetLocalAddress(),
-                                     excludeLocalHost,
-                                     associatedTransport,
-                                     NULL);
+    return endpoint.GetInterfaceAddresses(excludeLocalHost, transport);
 }
+
 
 PBoolean H323Transactor::StartChannel()
 {

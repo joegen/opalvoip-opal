@@ -189,6 +189,7 @@ private:
   void SendStatus(SIP_PDU::StatusCodes code);
 
   SIPRegister::Params m_parameters;
+  unsigned            m_sequenceNumber;
 };
 
 
