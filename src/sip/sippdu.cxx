@@ -226,43 +226,51 @@ SIPURL::SIPURL(const PString & name,
                const OpalTransportAddress & address,
                WORD listenerPort)
 {
-  if (strncmp(name, "sip:", 4) == 0 || strncmp(name, "sips:", 5) == 0)
+  if (strncmp(name, "sip:", 4) == 0 || strncmp(name, "sips:", 5) == 0 || address.IsEmpty())
     Parse(name);
   else {
     PIPSocket::Address ip;
     WORD port;
     if (address.GetIpAndPort(ip, port)) {
+      PString transProto;
+      WORD defaultPort = 5060;
+
       PStringStream s;
-      s << "sip:" << name << '@';
+      s << "sip";
+
+      PCaselessString proto = address.Left(address.Find('$'));
+      if (proto == "tcps") {
+        defaultPort = 5061;
+        s << 's';
+        // use default tranport=UDP
+      }
+      else if (proto != "udp")
+        transProto = proto; // Typically "tcp"
+      // else use default UDP
+
+      s << ':' << name << '@';
       if (ip.GetVersion() == 6)
         s << '[' << ip << ']';
       else
         s << ip;
-      s << ':';
-      if (listenerPort != 0)
-        s << listenerPort;
-      else
-        s << port;
-      s << ";transport=";
-      if (strncmp(address, "tcp", 3) == 0)
-        s << "tcp";
-      else
-        s << "udp";
+
+      if (listenerPort == 0)
+        listenerPort = port;
+      if (listenerPort != 0 && listenerPort != defaultPort)
+        s << ':' << listenerPort;
+
+      if (!transProto.IsEmpty())
+        s << ";transport=" << transProto;
+
       Parse(s);
     }
   }
 }
 
 
-PBoolean SIPURL::InternalParse(const char * cstr, const char * _defaultScheme)
+PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
 {
-  PString defaultScheme;
-  if (_defaultScheme != NULL) 
-    defaultScheme = _defaultScheme;
-  else if (strncmp(cstr, "sips:", 5) == 0)
-    defaultScheme = "sips";
-  else 
-    defaultScheme = "sip";
+  PString defaultScheme = p_defaultScheme != NULL ? p_defaultScheme : "sip";
 
   displayName = PString::Empty();
   fieldParameters = PString::Empty();
@@ -270,63 +278,42 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * _defaultScheme)
   PString str = cstr;
 
   // see if URL is just a URI or it contains a display address as well
-  PINDEX start = str.FindLast('<');
-  PINDEX end = str.FindLast('>');
+  PINDEX startBracket = str.FindLast('<');
+  PINDEX endBracket = str.Find('>', startBracket);
 
   // see if URL is just a URI or it contains a display address as well
-  if (start == P_MAX_INDEX || end == P_MAX_INDEX) {
-    if (!PURL::InternalParse(cstr, defaultScheme)) {
-      return PFalse;
-    }
+  if (startBracket == P_MAX_INDEX || endBracket == P_MAX_INDEX) {
+    if (!PURL::InternalParse(cstr, defaultScheme))
+      return false;
   }
   else {
     // get the URI from between the angle brackets
-    if (!PURL::InternalParse(str(start+1, end-1), defaultScheme))
+    if (!PURL::InternalParse(str(startBracket+1, endBracket-1), defaultScheme))
       return PFalse;
 
-    fieldParameters = str.Mid(end+1).Trim();
+    fieldParameters = str.Mid(endBracket+1).Trim();
 
-    // extract the display address
-    end = str.FindLast('"', start);
-    start = str.FindLast('"', end-1);
-    // There are no double quotes around the display name
-    if (start == P_MAX_INDEX && end == P_MAX_INDEX) {
-      
-      displayName = str.Left(start-1).Trim();
-      start = str.FindLast ('<');
-      
-      // See if there is something before the <
-      if (start != P_MAX_INDEX && start > 0)
-        displayName = str.Left(start).Trim();
-      else { // Use the url as display name
-        end = str.FindLast('>');
-        if (end != P_MAX_INDEX)
-          str = displayName.Mid ((start == P_MAX_INDEX) ? 0:start+1, end-1);
-
-        /* Remove the tag from the display name, if any */
-        end = str.Find (';');
-        if (end != P_MAX_INDEX)
-          str = str.Left (end);
-
-        displayName = str;
-        displayName.Replace  ("sip:", "");
-      }
+    // See if display address quoted
+    PINDEX endQuote = str.FindLast('"', startBracket);
+    PINDEX startQuote = str.Find('"');
+    if (startQuote == P_MAX_INDEX || endQuote == P_MAX_INDEX || startQuote >= endQuote) {
+      // There are no double quotes around the display name, so take
+      // everything before the start angle bracket
+      displayName = str.Left(startBracket-1).Trim();
     }
-    else if (start != P_MAX_INDEX && end != P_MAX_INDEX) {
-      // No trim quotes off
-      displayName = str(start+1, end-1);
-      while ((start = displayName.Find('\\')) != P_MAX_INDEX)
-        displayName.Delete(start, 1);
+    else {
+      // Trim quotes off
+      displayName = str(startQuote+1, endQuote-1);
+      PINDEX backslash;
+      while ((backslash = displayName.Find('\\')) != P_MAX_INDEX)
+        displayName.Delete(backslash, 1);
     }
   }
 
-  if (!(scheme *= defaultScheme))
-    return PURL::Parse("");
-
-//  if (!paramVars.Contains("transport"))
-//    SetParamVar("transport", "udp");
-
-  Recalculate();
+  if (scheme == "sip" || scheme == "sips")
+    Recalculate();
+  else
+    PURL::Parse("");
   return !IsEmpty();
 }
 
@@ -623,12 +610,14 @@ PString SIPMIMEInfo::GetContact() const
 }
 
 
-bool SIPMIMEInfo::GetContacts(std::vector<SIPURL> & contacts) const
+bool SIPMIMEInfo::GetContacts(std::list<SIPURL> & contacts) const
 {
   PStringArray lines = GetString("Contact").Lines();
-  contacts.resize(lines.GetSize());
-  for (PINDEX i = 0; i < lines.GetSize(); i++)
-    contacts[i].Parse(lines[i]);
+  for (PINDEX i = 0; i < lines.GetSize(); i++) {
+    PStringArray items = lines[i].Tokenise(',');
+    for (PINDEX j = 0; j < items.GetSize(); j++)
+      contacts.push_back(items[j]);
+  }
 
   return !contacts.empty();
 }
@@ -1995,8 +1984,10 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
 }
 
 
-PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remoteAddress)
+PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remoteAddress, const PString & localInterface)
 {
+  PWaitAndSignal mutex(transport.GetWriteMutex());
+
   if (!transport.IsOpen()) {
     PTRACE(1, "SIP\tAttempt to write PDU to closed tansport " << transport);
     return PFalse;
@@ -2008,6 +1999,9 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
       return false;
     }
   }
+
+  if (!localInterface.IsEmpty() && transport.GetInterface() != localInterface)
+    transport.SetInterface(localInterface);
 
   mime.SetCompactForm(false);
   PString strPDU = Build();
@@ -2178,7 +2172,9 @@ PBoolean SIPTransaction::Start()
 
   state = Trying;
   retry = 0;
-  localInterface = transport.GetInterface();
+
+  if (m_localInterface.IsEmpty())
+    m_localInterface = transport.GetInterface();
 
   /* Get the address to which the request PDU should be sent, according to
      the RFC, for a request in a dialog. */
@@ -2198,7 +2194,7 @@ PBoolean SIPTransaction::Start()
   PTRACE(3, "SIP\tTransaction remote address is " << m_remoteAddress);
 
   // Use the connection transport to send the request
-  if (!Write(transport, m_remoteAddress)) {
+  if (!Write(transport, m_remoteAddress, m_localInterface)) {
     SetTerminated(Terminated_TransportError);
     return PFalse;
   }
@@ -2251,10 +2247,7 @@ void SIPTransaction::Abort()
 
 bool SIPTransaction::SendPDU(SIP_PDU & pdu)
 {
-  PString oldInterface = transport.GetInterface();
-  if (transport.SetInterface(localInterface) &&
-      pdu.Write(transport, m_remoteAddress) &&
-      transport.SetInterface(oldInterface))
+  if (pdu.Write(transport, m_remoteAddress, m_localInterface))
     return true;
 
   SetTerminated(Terminated_TransportError);
@@ -2270,7 +2263,7 @@ bool SIPTransaction::ResendCANCEL()
                  mime.GetFrom(),
                  mime.GetCallID(),
                  mime.GetCSeqIndex(),
-                 localInterface);
+                 m_localInterface);
   // Use the topmost via header from the INVITE we cancel as per 9.1. 
   PStringList viaList = mime.GetViaList();
   cancel.GetMIME().SetVia(viaList.front());
@@ -2535,27 +2528,22 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                          OpalTransport & trans,
                          const PStringList & routeSet,
                          const PString & id,
+                         unsigned cseq,
                          const Params & params)
   : SIPTransaction(ep, trans, params.m_minRetryTime, params.m_maxRetryTime)
 {
   SIPURL aor = params.m_addressOfRecord;
-  PString addrStr = aor.AsQuotedString();
-  OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
+  PString aorStr = aor.AsQuotedString();
   SIP_PDU::Construct(Method_REGISTER,
                      "sip:"+aor.GetHostName(),
-                     addrStr,
-                     addrStr+";tag="+OpalGloballyUniqueID().AsString(),
+                     aorStr,
+                     aorStr,
                      id,
-                     endpoint.GetNextCSeq(),
-                     viaAddress);
+                     cseq,
+                     ep.GetLocalURL(transport).GetHostAddress());
 
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
-  SIPURL contact = params.m_contactAddress;
-  if (contact.IsEmpty())
-    contact = endpoint.GetLocalURL(trans, aor.GetUserName());
-  contact.Sanitise(SIPURL::ContactURI);
-  mime.SetContact(contact);
-
+  mime.SetContact(params.m_contactAddress);
   mime.SetExpires(params.m_expire);
 
   SetRoute(routeSet);

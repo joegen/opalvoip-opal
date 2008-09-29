@@ -120,7 +120,7 @@ bool SIPHandler::ShutDown()
     case Subscribed :
       SendRequest(Unsubscribing);
     case Unsubscribing :
-      return false;
+      return transactions.IsEmpty();
 
     default :
       break;
@@ -359,21 +359,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   CollapseFork(transaction);
 
   // Restart the transaction with new authentication handler
-  SIPTransaction * newTransaction = CreateTransaction(*transport);
-  if (!authentication->Authorise(*newTransaction)) {
-    // don't send again if no authentication handler available
-    OnFailed(SIP_PDU::Failure_UnAuthorised);
-    delete newTransaction; // Not started yet, we need to delete
-    return;
-  }
-
-  // Section 8.1.3.5 of RFC3261 tells that the authenticated
-  // request SHOULD have the same value of the Call-ID, To and From.
-  newTransaction->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
-  newTransaction->GetMIME().SetCallID(GetCallID());
-  if (!newTransaction->Start()) {
-    PTRACE(1, "SIP\tCould not restart REGISTER/SUBSCRIBE for Authentication Required");
-  }
+  SendRequest(GetState());
 }
 
 
@@ -478,6 +464,7 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
                params.m_expire > 0 ? params.m_expire : endpoint.GetRegistrarTimeToLive().GetSeconds(),
                params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
   , m_parameters(params)
+  , m_sequenceNumber(0)
 {
   m_parameters.m_expire = expire; // Put possibly adjusted value back
 
@@ -499,22 +486,43 @@ SIPRegisterHandler::~SIPRegisterHandler()
 
 SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 {
-  m_parameters.m_expire = state != Unsubscribing ? expire : 0;
+  SIPRegister::Params params = m_parameters;
 
-  return new SIPRegister(endpoint, trans, GetRouteSet(), callID, m_parameters);
+  if (params.m_contactAddress.IsEmpty()) {
+    // Nothing explicit, put in all the bound interfaces.
+    PString userName = SIPURL(params.m_addressOfRecord).GetUserName();
+    OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses(true, &trans);
+    for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
+      if (!params.m_contactAddress.IsEmpty())
+        params.m_contactAddress += ", ";
+      SIPURL contact(userName, interfaces[i]);
+      contact.Sanitise(SIPURL::ContactURI);
+      params.m_contactAddress += contact.AsQuotedString();
+    }
+  }
+  else {
+    // Sanitise the contact address URI provided
+    SIPURL contact(params.m_contactAddress);
+    contact.Sanitise(SIPURL::ContactURI);
+    params.m_contactAddress = contact.AsString();
+  }
+
+  params.m_expire = state != Unsubscribing ? expire : 0;
+
+  return new SIPRegister(endpoint, trans, GetRouteSet(), callID, m_sequenceNumber, params);
 }
 
 
 void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  std::vector<SIPURL> requestContacts, replyContacts;
+  std::list<SIPURL> requestContacts, replyContacts;
   transaction.GetMIME().GetContacts(requestContacts);
   response.GetMIME().GetContacts(replyContacts);
 
-  for (size_t request = 0; request < requestContacts.size(); request++) {
-    for (size_t reply = 0; reply < replyContacts.size(); reply++) {
-      if (requestContacts[request] == replyContacts[reply]) {
-        PString expires = SIPMIMEInfo::ExtractFieldParameter(replyContacts[reply].GetFieldParameters(), "expires");
+  for (std::list<SIPURL>::iterator request = requestContacts.begin(); request != requestContacts.end(); ++request) {
+    for (std::list<SIPURL>::iterator reply = replyContacts.begin(); reply != replyContacts.end(); ++reply) {
+      if (*request == *reply) {
+        PString expires = SIPMIMEInfo::ExtractFieldParameter(reply->GetFieldParameters(), "expires");
         if (expires.IsEmpty())
           SetExpire(response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds()));
         else
@@ -540,6 +548,7 @@ void SIPRegisterHandler::OnFailed(SIP_PDU::StatusCodes r)
 PBoolean SIPRegisterHandler::SendRequest(SIPHandler::State s)
 {
   SendStatus(SIP_PDU::Information_Trying);
+  m_sequenceNumber = endpoint.GetNextCSeq();
   return SIPHandler::SendRequest(s);
 }
 
