@@ -759,7 +759,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
       else {
         PTRACE(3, "LID Con\tDetected Caller ID \"" << callerId << '"');
         remotePartyNumber = words[0].Trim();
-        remotePartyName = words[1].Trim();
+        remotePartyName = words[2].Trim();
         if (remotePartyName.IsEmpty())
           remotePartyName = remotePartyNumber;
       }
