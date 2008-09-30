@@ -3651,6 +3651,8 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
 
     PTRACE(3, "H323\tOpenMediaStream using channel " << channel->GetNumber() << " for session " << sessionID);
     stream = channel->GetMediaStream();
+    if (PAssertNULL(stream) == NULL)
+      return NULL;
   }
 
   if (stream->Open()) {
