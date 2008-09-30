@@ -65,6 +65,7 @@ void CodecTest::Main()
              "s-frame-size:"
              "r-frame-rate:"
              "b-bit-rate:"
+             "O-option:"
              "c-crop."
              "m-suppress-marker."
              "M-force-marker."
@@ -104,6 +105,7 @@ void CodecTest::Main()
               "  -s --frame-size size    : video frame size (\"qcif\", \"cif\", WxH)\n"
               "  -r --frame-rate size    : video frame rate (frames/second)\n"
               "  -b --bit-rate size      : video bit rate (bits/second)\n"
+              "  -O --option opt=val     : set media format option to value\n"
               "  -S --single-step        : video single frame at a time mode\n"
               "  -m --suppress-marker    : suppress marker bits to decoder"
               "  -M --force-marker       : force marker bits to decoder"
@@ -289,6 +291,28 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
 }
 
 
+void SetOptions(PArgList & args, OpalMediaFormat & mediaFormat)
+{
+  PStringArray options = args.GetOptionString('O').Lines();
+  for (PINDEX opt = 0; opt < options.GetSize(); ++opt) {
+    PString option = options[opt];
+    PINDEX equal = option.Find('=');
+    if (equal == P_MAX_INDEX)
+      cerr << "Illegal option \"" << option << "\" used." << endl;
+    else {
+      PString name = option.Left(equal);
+      PString value = option.Mid(equal+1);
+      if (mediaFormat.SetOptionValue(name, value))
+        cout << "Option \"" << name << "\" set to \"" << value << "\"." << endl;
+      else
+        cerr << "Could not set option \"" << name << "\" to \"" << value << "\"." << endl;
+    }
+  }
+
+  mediaFormat.ToCustomisedOptions();
+}
+
+
 bool AudioThread::Initialise(PArgList & args)
 {
   switch (InitialiseCodec(args, OpalPCM16)) {
@@ -372,6 +396,12 @@ bool AudioThread::Initialise(PArgList & args)
   if (!player->SetBuffers(readSize, bufferCount)) {
     cout << "could not be set." << endl;
     return false;
+  }
+
+  if (encoder != NULL) {
+    OpalMediaFormat mediaFormat = encoder->GetOutputFormat();
+    SetOptions(args, mediaFormat);
+    encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
   }
 
   cout << "opened and initialised." << endl;
@@ -567,8 +597,12 @@ bool VideoThread::Initialise(PArgList & args)
       return false;
     }
     mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), (unsigned)bitrate);
+    if (mediaFormat.GetOptionInteger(OpalVideoFormat::MaxBitRateOption()) < bitrate)
+      mediaFormat.SetOptionInteger(OpalVideoFormat::MaxBitRateOption(), (unsigned)bitrate);
   }
   cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
+
+  SetOptions(args, mediaFormat);
 
   if (encoder != NULL)
     encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
