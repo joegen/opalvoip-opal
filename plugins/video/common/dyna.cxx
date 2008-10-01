@@ -285,12 +285,6 @@ bool FFMPEGLibrary::Load()
     return false;
   }
   
-  if(!GetFunction("avcodec_build", (Function &)Favcodec_build)){
-    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_build");
-    return false;
-  }
-
-
   if (!GetFunction("av_log_set_level", (Function &)FAv_log_set_level)) {
     TRACE (1, _codecString << "\tDYNA\tFailed to load av_log_set_level");
     return false;
@@ -304,14 +298,11 @@ bool FFMPEGLibrary::Load()
   WITH_ALIGNED_STACK({  // must be called before using avcodec lib
 
     unsigned libVer = Favcodec_version();
-    unsigned libBuild = Favcodec_build();
-    if (libVer != LIBAVCODEC_VERSION_INT || libBuild != LIBAVCODEC_BUILD) {
-      TRACE (1, _codecString << "\tDYNA\tWarning: compiled against libavcodec headers from ver/build "
-             << std::hex << LIBAVCODEC_VERSION_INT << "/"
-             << std::dec << LIBAVCODEC_BUILD
+    if (libVer != LIBAVCODEC_VERSION_INT ) {
+      TRACE (1, _codecString << "\tDYNA\tWarning: compiled against libavcodec headers from version "
+             << (LIBAVCODEC_VERSION_INT >> 16) << ((LIBAVCODEC_VERSION_INT>>8) & 0xff) << (LIBAVCODEC_VERSION_INT & 0xff)
              << ", loaded " 
-             << std::hex << libVer << "/"
-             << std::dec << libBuild);
+             << (libVer >> 16) << ((libVer>>8) & 0xff) << (libVer & 0xff));
     }
 
     Favcodec_init();
