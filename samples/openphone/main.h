@@ -637,15 +637,15 @@ class MyMedia
 public:
   MyMedia();
   MyMedia(
-    const wxChar * source,
+    const char * source,
     const PString & format
   );
 
   bool operator<(const MyMedia & other) { return preferenceOrder < other.preferenceOrder; }
 
-  const wxChar    * sourceProtocol;
+  PString         sourceProtocol;
   OpalMediaFormat mediaFormat;
-  const wxChar    * validProtocols;
+  const wxChar  * validProtocols;
   int             preferenceOrder;
   bool            dirty;
 };
@@ -865,7 +865,7 @@ class MyManager : public wxFrame, public OpalManager
     bool AdjustFrameSize();
 
     MyMediaList m_mediaInfo;
-    void InitMediaInfo(const wxChar * source, const OpalMediaFormatList & formats);
+    void InitMediaInfo(const char * source, const OpalMediaFormatList & formats);
     void ApplyMediaInfo();
 
 #if PTRACING
