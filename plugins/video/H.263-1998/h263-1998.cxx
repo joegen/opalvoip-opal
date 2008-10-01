@@ -163,7 +163,6 @@ void H263PEncoderContext::InitContext()
 
   _context->max_b_frames = 0;
   _context->pix_fmt = PIX_FMT_YUV420P;
-  _context->rtp_mode = 1;
 
   // X-Lite does not like Custom Picture frequency clocks...
   _context->time_base.num = 100; 
