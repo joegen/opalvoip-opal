@@ -835,6 +835,7 @@ PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
 {
   PString body = request.GetEntityBody();
   SIPURL from = request.GetMIME().GetFrom();
+  from.Sanitise(SIPURL::ExternalURI);
   PString basic;
   PString note;
 
@@ -845,8 +846,10 @@ PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
   PXMLElement *basicElement = NULL;
   PXMLElement *noteElement = NULL;
 
-  if (!xmlPresence.Load(body))
+  if (!xmlPresence.Load(body)) {
+    endpoint.OnPresenceInfoReceived (from.AsQuotedString(), basic, note);
     return PFalse;
+  }
 
   rootElement = xmlPresence.GetRootElement();
   if (rootElement == NULL)
@@ -875,7 +878,6 @@ PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
   if (noteElement)
     note = noteElement->GetData();
 
-  from.Sanitise(SIPURL::ExternalURI);
   endpoint.OnPresenceInfoReceived (from.AsQuotedString(), basic, note);
   return PTrue;
 }
