@@ -772,10 +772,10 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Codec fields
-  InitMediaInfo(PwxString(pcssEP->GetPrefixName()), pcssEP->GetMediaFormats());
-  InitMediaInfo(PwxString(potsEP->GetPrefixName()), potsEP->GetMediaFormats());
+  InitMediaInfo(pcssEP->GetPrefixName(), pcssEP->GetMediaFormats());
+  InitMediaInfo(potsEP->GetPrefixName(), potsEP->GetMediaFormats());
 #if OPAL_IVR
-  InitMediaInfo(PwxString(ivrEP->GetPrefixName()), ivrEP->GetMediaFormats());
+  InitMediaInfo(ivrEP->GetPrefixName(), ivrEP->GetMediaFormats());
 #endif
 
   OpalMediaFormatList mediaFormats;
@@ -787,7 +787,7 @@ bool MyManager::Initialise()
 #if OPAL_FAX
   mediaFormats += m_faxEP->GetMediaFormats();
 #endif
-  InitMediaInfo(wxT("sw"), OpalTranscoder::GetPossibleFormats(mediaFormats));
+  InitMediaInfo("sw", OpalTranscoder::GetPossibleFormats(mediaFormats));
 
   config->SetPath(CodecsGroup);
   int codecIndex = 0;
@@ -2555,7 +2555,7 @@ bool MyManager::AdjustFrameSize()
 }
 
 
-void MyManager::InitMediaInfo(const wxChar * source, const OpalMediaFormatList & mediaFormats)
+void MyManager::InitMediaInfo(const char * source, const OpalMediaFormatList & mediaFormats)
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     const OpalMediaFormat & mediaFormat = mediaFormats[i];
@@ -2612,8 +2612,7 @@ void MyManager::ApplyMediaInfo()
 ///////////////////////////////////////////////////////////////////////////////
 
 MyMedia::MyMedia()
-  : sourceProtocol(NULL)
-  , validProtocols(NULL)
+  : validProtocols(NULL)
   , preferenceOrder(-1) // -1 indicates disabled
   , dirty(false)
 {
