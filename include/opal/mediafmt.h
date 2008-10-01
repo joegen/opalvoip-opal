@@ -510,8 +510,8 @@ class OpalMediaFormatInternal : public PObject
     virtual PObject * Clone() const;
     virtual void PrintOn(ostream & strm) const;
 
-    virtual PBoolean IsValid() const { return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !formatName.IsEmpty(); }
-    virtual PBoolean IsTransportable() const { return rtpPayloadType < RTP_DataFrame::MaxPayloadType && !rtpEncodingName.IsEmpty(); }
+    virtual bool IsValid() const;
+    virtual bool IsTransportable() const;
 
     virtual PStringToString GetOptions() const;
     virtual bool GetOptionValue(const PString & name, PString & value) const;
