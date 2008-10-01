@@ -968,6 +968,24 @@ bool OpalMediaFormatInternal::ToCustomisedOptions()
 }
 
 
+bool OpalMediaFormatInternal::IsValid() const
+{
+  return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !formatName.IsEmpty();
+}
+
+
+bool OpalMediaFormatInternal::IsTransportable() const
+{
+  if (rtpPayloadType >= RTP_DataFrame::MaxPayloadType)
+    return false;
+
+  if (rtpPayloadType < RTP_DataFrame::LastKnownPayloadType)
+    return true;
+
+  return !rtpEncodingName.IsEmpty();
+}
+
+
 PStringToString OpalMediaFormatInternal::GetOptions() const
 {
   PWaitAndSignal m1(media_format_mutex);
