@@ -567,7 +567,6 @@ void MPEG4EncoderContext::ResetBitCounter(int spread) {
 void MPEG4EncoderContext::SetStaticEncodingParams(){
     _avcontext->pix_fmt = PIX_FMT_YUV420P;
     _avcontext->mb_decision = FF_MB_DECISION_SIMPLE;    // high quality off
-    _avcontext->rtp_mode = 1;                           // use RTP packetization
     _avcontext->rtp_payload_size = 750;                 // ffh263 uses 750
     _avcontext->rtp_callback = &MPEG4EncoderContext::RtpCallback;
 
@@ -783,7 +782,6 @@ void MPEG4EncoderContext::RtpCallback(AVCodecContext *priv_data, void * /*data*/
 {
   MPEG4EncoderContext *c = static_cast<MPEG4EncoderContext *>(priv_data->opaque);
   c->_packetSizes.push_back(size);
-printf("size = %i\n", size);
 }
 		    
 /////////////////////////////////////////////////////////////////////////////
@@ -837,14 +835,11 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
             _avpicture->pict_type = 0;
         }
 
-printf("--start frame\n");
-
         // Encode a frame
         int total = FFMPEGLibraryInstance.AvcodecEncodeVideo
                             (_avcontext, _encFrameBuffer, _encFrameLen,
                              _avpicture);
 
-printf("--end frame %i\n", total);
 
         if (total > 0) {
             _frameNum++; // increment the number of frames encoded
@@ -895,7 +890,6 @@ printf("--end frame %i\n", total);
 
       dstLen = dstRTP.GetHeaderSize() + pktLen;
 
-      printf("--returning frame %i\n", pktLen);
     }
     
     return 1;
