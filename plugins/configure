@@ -9377,16 +9377,17 @@ _ACEOF
           if test -x conftest$ac_exeext ; then
             libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print $3; }'`
             if test "$libavcodec_libdir" = "not" ; then
-              got_symbol="check_LD_LIBRARY_PATH"
+              { echo "$as_me:$LINENO: result: no, please check LD_LIBRARY_PATH" >&5
+echo "${ECHO_T}no, please check LD_LIBRARY_PATH" >&6; }
             else
               symbol=`$NM -D $libavcodec_libdir | grep h263p_encoder`
               if test "x$symbol" != "x"; then
                 got_symbol=yes
 	      fi
+              { echo "$as_me:$LINENO: result: $got_symbol" >&5
+echo "${ECHO_T}$got_symbol" >&6; }
             fi
           fi
-          { echo "$as_me:$LINENO: result: $got_symbol" >&5
-echo "${ECHO_T}$got_symbol" >&6; }
           if test $got_symbol = yes; then
   HAVE_H263P=yes
 else
@@ -9405,16 +9406,17 @@ _ACEOF
           if test -x conftest$ac_exeext ; then
             libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print $3; }'`
             if test "$libavcodec_libdir" = "not" ; then
-              got_symbol="check_LD_LIBRARY_PATH"
+              { echo "$as_me:$LINENO: result: no, please check LD_LIBRARY_PATH" >&5
+echo "${ECHO_T}no, please check LD_LIBRARY_PATH" >&6; }
             else
               symbol=`$NM -D $libavcodec_libdir | grep mpeg4_encoder`
               if test "x$symbol" != "x"; then
                 got_symbol=yes
 	      fi
+              { echo "$as_me:$LINENO: result: $got_symbol" >&5
+echo "${ECHO_T}$got_symbol" >&6; }
             fi
           fi
-          { echo "$as_me:$LINENO: result: $got_symbol" >&5
-echo "${ECHO_T}$got_symbol" >&6; }
           if test $got_symbol = yes; then
   HAVE_MPEG4=yes
 else
@@ -9433,16 +9435,17 @@ _ACEOF
           if test -x conftest$ac_exeext ; then
             libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print $3; }'`
             if test "$libavcodec_libdir" = "not" ; then
-              got_symbol="check_LD_LIBRARY_PATH"
+              { echo "$as_me:$LINENO: result: no, please check LD_LIBRARY_PATH" >&5
+echo "${ECHO_T}no, please check LD_LIBRARY_PATH" >&6; }
             else
               symbol=`$NM -D $libavcodec_libdir | grep h264_decoder`
               if test "x$symbol" != "x"; then
                 got_symbol=yes
 	      fi
+              { echo "$as_me:$LINENO: result: $got_symbol" >&5
+echo "${ECHO_T}$got_symbol" >&6; }
             fi
           fi
-          { echo "$as_me:$LINENO: result: $got_symbol" >&5
-echo "${ECHO_T}$got_symbol" >&6; }
           if test $got_symbol = yes; then
   HAVE_H264_DECODER=yes
 else
