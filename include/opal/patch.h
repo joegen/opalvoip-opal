@@ -47,6 +47,34 @@
 class OpalTranscoder;
 
 
+class OpalVideoRateController
+{
+  public:
+    OpalVideoRateController();
+    void Reset();
+    void Open(unsigned targetBitRate, unsigned windowSizeInMs, unsigned rcMaxConsecutiveFramesSkip);
+    bool CheckSkipFrame();
+    void AddFrame(unsigned sizeInBytes);
+    void AddFrame(unsigned sizeInBytes, PInt64 now);
+
+  protected:
+    unsigned byteRate;
+    unsigned historySizeInMs;
+    unsigned maxConsecutiveFramesSkip;
+
+    unsigned consecutiveFramesSkipped;
+    PINDEX historyInBytes;
+
+    PInt64 now;
+
+    struct FrameInfo {
+      PInt64  time;
+      PINDEX  frameSize;
+    };
+
+    std::list<FrameInfo> history;
+};
+
 /**Media stream "patch cord".
    This class is the thread of control that transfers data from one
    "source" OpalMediStream to one or more other "sink" OpalMediStream
@@ -233,21 +261,10 @@ class OpalMediaPatch : public PObject
 
 #if OPAL_VIDEO
         void SetRateControlParameters(const OpalMediaFormat & mediaFormat);
-        bool RateControlExceeded(const PTimeInterval & currentTime);
+        bool RateControlExceeded();
 
-        bool          rcEnabled;
-        unsigned      rcByteRate;
-        unsigned      rcWindowSize;
-        unsigned      rcMaxConsecutiveFramesSkip;
-        unsigned      rcConsecutiveFramesSkipped;
-        PTimeInterval rcLastTime;
-        PINDEX        rcTotalSize;
-        
-        struct FrameInfo {
-          PTimeInterval time;
-          PINDEX        size;
-        };
-        std::list<FrameInfo> frameInfoList;
+        bool rcEnabled;
+        OpalVideoRateController rateController;
 #endif
     };
     PList<Sink> sinks;
