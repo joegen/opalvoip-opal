@@ -17,7 +17,7 @@ already have PWLib and OPAL installed, AND BUILT.
 
 For Windows:
 ------------
-  1.  Download the installer for wxWidgets, eg wxMSW-2.8.3-Setup.exe
+  1.  Download the installer for wxWidgets, eg wxMSW-2.8.4-Setup.exe, or later
 
   2.  Run the installer.
 
@@ -55,11 +55,11 @@ You should now be able to open %OPALDIR%/opal_samples_2003.sln or
 
 For Linux:
 ----------
-  1.  Download the tar file, eg wxGTK-2.6.3.tar.gz
+  1.  Download the tar file, eg wxGTK-2.8.4.tar.gz, or later.
 
   2.  Unpack it somewhere, you don't need to be root (yet)
 
-  3.  cd wxGTK-2.6.3
+  3.  cd wxGTK-2.8.?
 
   4.  Build wxWidgets. You can read the instructions in README-GTX.txt,
       or, if you are too lazy and feel lucky, follow the salient bits
