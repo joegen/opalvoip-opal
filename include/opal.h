@@ -55,7 +55,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 11
+#define OPAL_C_API_VERSION 12
 
 
 ///////////////////////////////////////
@@ -292,9 +292,11 @@ typedef enum OpalMessageType {
                                     OpalStatusMediaStream structure for more information. */
   OpalCmdMediaStream,           /**<Execute control on a media stream. See the OpalStatusMediaStream structure
                                     for more information. */
-
   OpalCmdSetUserData,           /**<Set the user data field associated with a call */
-
+  OpalIndLineAppearance,        /**<Line Appearance indication. This message is returned in the
+                                    OpalGetMessage() function when any of the supported protocols indicate that
+                                    the state of a "line" has changed, e.g. free, busy, on hold etc.
+                                */
   OpalMessageTypeCount
 } OpalMessageType;
 
@@ -711,6 +713,37 @@ typedef struct OpalStatusMessageWaiting {
 } OpalStatusMessageWaiting;
 
 
+/**Type code for media stream status/control.
+   This is used by the OpalIndMediaStream indication and OpalCmdMediaStream command
+   in the OpalStatusMediaStream structure.
+  */
+typedef enum OpalLineAppearanceStates {
+  OpalLineIdle,       /**< Line has moved to the idle state. */
+  OpalLineTrying,     /**< Line has been siezed. */
+  OpalLineProceeding, /**< Line is trying to make a call. */
+  OpalLineRinging,    /**< Line is ringing. */
+  OpalLineConnected   /**< Line is connected. */
+} OpalLineAppearanceStates;
+
+
+/**Line Appearance information for the OpalIndLineAppearance indication.
+   This is only returned from the OpalGetMessage() function.
+  */
+typedef struct OpalStatusLineAppearance {
+  const char *             m_line;       ///< URI for the line whose state is changing
+  OpalLineAppearanceStates m_state;      ///< State the line has just moved to.
+  int                      m_appearance; /**< Appearance code, this is an arbitrary integer
+                                              and is defined by the remote servers. If negative
+                                              then it is undefined. */
+  const char *             m_callId;     /**< If line is "in use" then this gives information
+                                              that identifies the call. Note that this will
+                                              include the from/to "tags" that can identify
+                                              the dialog for REFER/Replace. */
+  const char *             m_partyA;     /**< A-Party for call. */
+  const char *             m_partyB;     /**< B-Party for call. */
+} OpalStatusLineAppearance;
+
+
 /**Call clearance information for the OpalIndCallCleared indication.
    This is only returned from the OpalGetMessage() function.
   */
@@ -788,6 +821,7 @@ struct OpalMessage {
     OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
+    OpalStatusLineAppearance m_lineAppearance;     ///< Used by OpalIndLineAppearance
     OpalStatusCallCleared    m_callCleared;        ///< Used by OpalIndCallCleared
     OpalParamCallCleared     m_clearCall;          ///< Used by OpalCmdClearCall
     OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream/OpalCmdMediaStream
