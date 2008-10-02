@@ -122,6 +122,10 @@ class SIPURL : public PURL
       */
     PString GetFieldParameters() const { return fieldParameters; }
 
+    /**Returns the field parameter (outside of <>)
+      */
+    void SetFieldParameters(const PString & str ) { fieldParameters = str; }
+
     /**Get the host and port as a transpoprt address.
       */
     OpalTransportAddress GetHostAddress() const;
@@ -306,7 +310,7 @@ class SIPMIMEInfo : public PMIMEInfo
     PStringList GetRoute() const;
     void SetRoute(const PStringList & v);
 
-    PStringList GetRecordRoute() const;
+    PStringList GetRecordRoute(bool reversed) const;
     void SetRecordRoute(const PStringList & v);
 
     unsigned GetCSeqIndex() const { return GetCSeq().AsUnsigned(); }
@@ -380,7 +384,7 @@ class SIPMIMEInfo : public PMIMEInfo
   protected:
     	/** return list of route values from internal comma-delimited list
 	 */
-    PStringList GetRouteList(const char * name) const;
+    PStringList GetRouteList(const char * name, bool reversed) const;
 
 	/** store string list as one comma-delimited string of route values
 	    value formed as "<v[0]>,<v[1]>,<v[2]>" etc
@@ -680,12 +684,14 @@ class SIP_PDU : public PSafeObject
     bool SendResponse(
       OpalTransport & transport,
       StatusCodes code,
+      SIPEndPoint * endpoint = NULL,
       const char * contact = NULL,
       const char * extra = NULL
     );
     bool SendResponse(
       OpalTransport & transport,
-      SIP_PDU & response
+      SIP_PDU & response,
+      SIPEndPoint * endpoint = NULL
     );
 
     /** Construct the PDU string to output.
@@ -730,6 +736,58 @@ PQUEUE(SIP_PDU_Queue, SIP_PDU);
 #if PTRACING
 ostream & operator<<(ostream & strm, SIP_PDU::Methods method);
 #endif
+
+
+/////////////////////////////////////////////////////////////////////////
+// SIPDialogContext
+
+/** Session Initiation Protocol dialog context information.
+  */
+class SIPDialogContext
+{
+  public:
+    SIPDialogContext();
+
+    const PString & GetCallID() const { return m_callId; }
+    void SetCallID(const PString & id) { m_callId = id; }
+    void GenerateCallID();
+
+    const SIPURL & GetRequestURI() const { return m_requestURI; }
+    void SetRequestURI(const SIPURL & url) { m_requestURI = url; }
+    bool SetRequestURI(const PString & uri) { return m_requestURI.Parse(uri); }
+
+    const SIPURL & GetLocalURI() const { return m_localURI; }
+    const PString & GetLocalTag() const { return m_localTag; }
+    void SetLocalURI(const SIPURL & url);
+    bool SetLocalURI(const PString & uri);
+
+    const SIPURL & GetRemoteURI() const { return m_remoteURI; }
+    const PString & GetRemoteTag() const { return m_remoteTag; }
+    void SetRemoteURI(const SIPURL & url);
+    bool SetRemoteURI(const PString & uri);
+
+    const PStringList & GetRouteSet() const { return m_routeSet; }
+    void SetRouteSet(const PStringList & routes) { m_routeSet = routes; }
+    void UpdateRouteSet(const SIPURL & proxy);
+
+    void Update(const SIP_PDU & response);
+
+    unsigned GetNextCSeq() { return ++m_lastSentCSeq; }
+    bool IsDuplicateCSeq(unsigned sequenceNumber);
+
+    bool IsEstablished() const { return !m_remoteTag.IsEmpty(); }
+
+  protected:
+    PString     m_callId;
+    SIPURL      m_requestURI;
+    SIPURL      m_localURI;
+    PString     m_localTag;
+    SIPURL      m_remoteURI;
+    PString     m_remoteTag;
+    PStringList m_routeSet;
+    unsigned    m_lastSentCSeq;
+    unsigned    m_lastReceivedCSeq;
+};
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -783,10 +841,16 @@ class SIPTransaction : public SIP_PDU
     SIPConnection * GetConnection() const { return connection; }
     PString         GetInterface() const { return m_localInterface; }
 
+    static void GenerateCallID(PString & callId);
+    
   protected:
     void Construct(
       const PTimeInterval & minRetryTime = PMaxTimeInterval,
       const PTimeInterval & maxRetryTime = PMaxTimeInterval
+    );
+    void Construct(
+      Methods method, 
+      SIPDialogContext & dialog
     );
     bool SendPDU(SIP_PDU & pdu);
     bool ResendCANCEL();
@@ -878,8 +942,7 @@ class SIPRegister : public SIPTransaction
     SIPRegister(
       SIPEndPoint   & endpoint,
       OpalTransport & transport,
-      const PStringList & routeSet,
-      const PString & id,
+      const PString & callId,
       unsigned cseq,
       const Params & params
     );
@@ -897,17 +960,29 @@ class SIPSubscribe : public SIPTransaction
     enum PredefinedPackages {
       MessageSummary,
       Presence,
+      Dialog,
       NumPredefinedPackages
     };
-    static PredefinedPackages GetEventPackage(const PString & name);
-    static PString GetEventPackageName(PredefinedPackages pkg);
+
+    class EventPackage : public PCaselessString
+    {
+        PCLASSINFO(EventPackage, PCaselessString);
+      public:
+        EventPackage(PredefinedPackages);
+        EventPackage(const PString & str) : PCaselessString(str) { }
+        EventPackage(const char * cstr) : PCaselessString(cstr) { }
+        bool operator==(PredefinedPackages) const;
+        bool operator==(const PString & str) const { return Compare(str) == EqualTo; }
+        bool operator==(const char * cstr) const { return InternalCompare(0, P_MAX_INDEX, cstr) == EqualTo; }
+        virtual Comparison InternalCompare(PINDEX offset, PINDEX length, const char * cstr) const;
+    };
 
     struct Params {
       Params(PredefinedPackages pkg = NumPredefinedPackages);
 
-      PString       m_eventPackage;
-      PString       m_mimeType;
-      PString       m_targetAddress;
+      EventPackage  m_eventPackage;
+      PString       m_agentAddress;
+      PString       m_addressOfRecord;
       PString       m_contactAddress;
       PString       m_authID;
       PString       m_password;
@@ -918,17 +993,46 @@ class SIPSubscribe : public SIPTransaction
       PTimeInterval m_maxRetryTime;
     };
 
-    /** Valid types for a MWI
-    */
     SIPSubscribe(
         SIPEndPoint & ep,
         OpalTransport & trans,
-        const PStringList & routeSet,
-        const PString & to,
-        const PString & from,
-        const PString & id,
-        unsigned cseq,
+        SIPDialogContext & dialog,
         const Params & params
+    );
+};
+
+
+typedef SIPSubscribe::EventPackage SIPEventPackage;
+
+
+/////////////////////////////////////////////////////////////////////////
+
+class SIPHandler;
+
+class SIPEventPackageHandler
+{
+public:
+  virtual PString GetContentType() const = 0;
+  virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request) = 0;
+};
+
+
+typedef PFactory<SIPEventPackageHandler, SIPEventPackage> SIPEventPackageFactory;
+
+
+/////////////////////////////////////////////////////////////////////////
+
+class SIPNotify : public SIPTransaction
+{
+    PCLASSINFO(SIPNotify, SIPTransaction);
+  public:
+    SIPNotify(
+        SIPEndPoint & ep,
+        OpalTransport & trans,
+        SIPDialogContext & dialog,
+        const SIPEventPackage & eventPackage,
+        const PString & state,
+        const PString & body
     );
 };
 
@@ -1006,12 +1110,12 @@ class SIPMessage : public SIPTransaction
     
   public:
     SIPMessage(
-	       SIPEndPoint & ep,
-	       OpalTransport & trans,
-	       const SIPURL & to,
-               const PStringList & routeSet,
-               const PString & id,
-	       const PString & body
+      SIPEndPoint & ep,
+      OpalTransport & trans,
+      const SIPURL & to,
+      const PStringList & routeSet,
+      const PString & id,
+      const PString & body
     );
 };
 

@@ -41,6 +41,7 @@
 #include <opal/buildopts.h>
 #include <opal/rtpconn.h>
 #include <sip/sippdu.h>
+#include <sip/handlers.h>
 #if OPAL_VIDEO
 #include <opal/pcss.h>                  // for OpalPCSSConnection
 #include <codec/vidcodec.h>             // for OpalVideoUpdatePicture command
@@ -379,17 +380,13 @@ class SIPConnection : public OpalRTPConnection
     );
   //@}
 
-    unsigned GetNextCSeq() { return ++lastSentCSeq; }
-
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
 
     OpalTransport & GetTransport() const { return *transport; }
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
-    const SIPURL & GetRequestURI() const { return m_requestURI; }
-    const PString & GetDialogFrom() const { return m_dialogFrom; }
-    const PString & GetDialogTo() const { return m_dialogTo; }
-    const PStringList & GetRouteSet() const { return routeSet; }
+    SIPDialogContext & GetDialog() { return m_dialog; }
+    const SIPDialogContext & GetDialog() const { return m_dialog; }
     SIPAuthentication * GetAuthenticator() const { return authentication; }
 
 #if OPAL_VIDEO
@@ -407,7 +404,6 @@ class SIPConnection : public OpalRTPConnection
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);
 
-    void AdjustOutgoingINVITE();
     virtual RTP_UDP *OnUseRTPSession(
       const unsigned rtpSessionId,
       const OpalMediaType & mediaType,
@@ -441,11 +437,21 @@ class SIPConnection : public OpalRTPConnection
     );
     friend class SIPInvite;
     static PBoolean WriteINVITE(OpalTransport & transport, void * param);
+    bool WriteINVITE(OpalTransport & transport);
 
     OpalTransport * CreateTransport(const OpalTransportAddress & address, PBoolean isLocalAddress = PFalse);
 
-    void UpdateRemoteAddresses(const PString & addr);
+    void UpdateRemoteAddresses();
 
+    void NotifyDialogState(
+      SIPDialogNotification::States state,
+      SIPDialogNotification::Events eventType = SIPDialogNotification::NoEvent,
+      unsigned eventCode = 0
+    );
+    void ExtractAppearanceCode(SIP_PDU & pdu);
+
+
+    // Member variables
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
     bool                  deleteTransport;
@@ -466,10 +472,9 @@ class SIPConnection : public OpalRTPConnection
     PTime                 originalInviteTime;
 
     bool                  needReINVITE;
-    PStringList           routeSet;
-    SIPURL                m_requestURI;
-    PString               m_dialogFrom;
-    PString               m_dialogTo;
+    SIPDialogContext      m_dialog;
+    PGloballyUniqueID     m_dialogNotifyId;
+    int                   m_appearanceCode;
     SIPAuthentication   * authentication;
 
     std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
@@ -480,7 +485,6 @@ class SIPConnection : public OpalRTPConnection
     bool                      ackReceived;
     PSafePtr<SIPTransaction>  referTransaction;
     PSafeList<SIPTransaction> forkedInvitations; // Not for re-INVITE
-    PAtomicInteger            lastSentCSeq;
 
     enum {
       ReleaseWithBYE,
