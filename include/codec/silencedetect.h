@@ -127,7 +127,6 @@ class OpalSilenceDetector : public PObject
 
     Params param;
 
-    bool     inTalkBurst;           // Currently sending RTP data
     unsigned lastTimestamp;         // Last timestamp received
     unsigned receivedTime;          // Signal/Silence duration received so far.
     unsigned levelThreshold;        // Threshold level for silence/signal
@@ -135,6 +134,7 @@ class OpalSilenceDetector : public PObject
     unsigned silenceMaximum;        // Maximum of frames below threshold
     unsigned signalReceivedTime;    // Duration of signal received
     unsigned silenceReceivedTime;   // Duration of silence received
+    bool     inTalkBurst;           // Currently sending RTP data
 };
 
 
