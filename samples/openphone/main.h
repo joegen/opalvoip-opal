@@ -78,6 +78,7 @@ class wxListCtrl;
 class wxListEvent;
 class wxNotebook;
 class wxGrid;
+class wxConfigBase;
 
 
 class PwxString : public wxString
@@ -170,6 +171,9 @@ class MySIPEndPoint : public SIPEndPoint
       bool wasSubscribing,
       bool reSubscribing,
       SIP_PDU::StatusCodes reason
+    );
+    virtual void OnDialogInfoReceived(
+      const SIPDialogNotification & info  ///< Information on dialog state change
     );
 
     MyManager & m_manager;
@@ -369,42 +373,57 @@ class SpeedDialDialog : public wxDialog
 };
 
 
-class RegistrarInfo
+class RegistrationInfo
 {
   public:
-    RegistrarInfo()
-      : m_Active(false)
-      , m_TimeToLive(300)
-      , m_MWI(true)
-      , m_Presence(true)
-    {
-    }
+    enum Types {
+      Register,
+      SubscribeMWI,
+      SusbcribePresence,
+      SubscribeMLA
+    };
 
-    bool operator==(const RegistrarInfo & other) const
-    {
-      return m_Active     == other.m_Active &&
-             m_User       == other.m_User &&
-             m_Domain     == other.m_Domain &&
-             m_AuthID     == other.m_AuthID &&
-             m_Password   == other.m_Password &&
-             m_TimeToLive == other.m_TimeToLive &&
-             m_Proxy      == other.m_Proxy &&
-             m_MWI        == other.m_MWI &&
-             m_Presence   == other.m_Presence;
-    }
+    RegistrationInfo();
 
+    bool operator==(const RegistrationInfo & other) const;
+
+    bool Read(wxConfigBase & config);
+    void Write(wxConfigBase & config);
+    bool Start(SIPEndPoint & sipEP);
+    bool Stop(SIPEndPoint & sipEP);
+
+    Types     m_Type;
     bool      m_Active;
     PwxString m_User;
     PwxString m_Domain;
+    PwxString m_Contact;
     PwxString m_AuthID;
     PwxString m_Password;
     int       m_TimeToLive;
     PwxString m_Proxy;
-    bool      m_MWI;
-    bool      m_Presence;
+    PString   m_aor;
 };
 
-typedef list<RegistrarInfo> RegistrarList;
+typedef list<RegistrationInfo> RegistrationList;
+
+
+class RegistrationDialog : public wxDialog
+{
+  public:
+    RegistrationDialog(wxDialog *parent, const RegistrationInfo * info);
+
+    const RegistrationInfo & GetInfo() const { return m_info; }
+
+  private:
+    DECLARE_EVENT_TABLE()
+
+    void Changed(wxCommandEvent & event);
+
+    wxButton       * m_ok;
+    wxTextCtrl     * m_user;
+    wxTextCtrl     * m_domain;
+    RegistrationInfo m_info;
+};
 
 
 class OptionsDialog : public wxDialog
@@ -424,9 +443,9 @@ class OptionsDialog : public wxDialog
     PwxString m_RingSoundDeviceName;
     PwxString m_RingSoundFileName;
     bool      m_AutoAnswer;
-#if OPAL_IVR
-    PwxString m_IVRScript;
-#endif
+    PwxString m_VendorName;
+    PwxString m_ProductName;
+    PwxString m_ProductVersion;
 
     void BrowseSoundFile(wxCommandEvent & event);
     void PlaySoundFile(wxCommandEvent & event);
@@ -506,6 +525,12 @@ class OptionsDialog : public wxDialog
     void BrowseFaxSpanDSP(wxCommandEvent & event);
 
     ////////////////////////////////////////
+    // IVR fields
+#if OPAL_IVR
+    PwxString m_IVRScript;
+#endif
+
+    ////////////////////////////////////////
     // Codec fields
     wxButton     * m_AddCodec;
     wxButton     * m_RemoveCodec;
@@ -564,29 +589,25 @@ class OptionsDialog : public wxDialog
     PwxString m_SIPProxy;
     PwxString m_SIPProxyUsername;
     PwxString m_SIPProxyPassword;
+    int       m_LineAppearanceCode;
 
-    wxListCtrl * m_Registrars;
-    int          m_SelectedRegistrar;
-    wxButton   * m_AddRegistrar;
-    wxButton   * m_ChangeRegistrar;
-    wxButton   * m_RemoveRegistrar;
-    wxTextCtrl * m_RegistrarUser;
-    wxTextCtrl * m_RegistrarDomain;
-    wxTextCtrl * m_RegistrarAuthID;
-    wxTextCtrl * m_RegistrarPassword;
-    wxSpinCtrl * m_RegistrarTimeToLive;
-    wxCheckBox * m_RegistrarActive;
-    wxCheckBox * m_SubscribeMWI;
-    wxCheckBox * m_SubscribePresence;
+    wxListCtrl * m_Registrations;
+    int          m_SelectedRegistration;
+    wxButton   * m_ChangeRegistration;
+    wxButton   * m_RemoveRegistration;
+    wxButton   * m_MoveUpRegistration;
+    wxButton   * m_MoveDownRegistration;
 
-    void FieldsToRegistrar(RegistrarInfo & info);
-    void RegistrarToList(bool overwrite, RegistrarInfo * registrar, int position);
-    void AddRegistrar(wxCommandEvent & event);
-    void ChangeRegistrar(wxCommandEvent & event);
-    void RemoveRegistrar(wxCommandEvent & event);
-    void SelectedRegistrar(wxListEvent & event);
-    void DeselectedRegistrar(wxListEvent & event);
-    void ChangedRegistrarInfo(wxCommandEvent & event);
+    void RegistrationToList(bool create, RegistrationInfo * registration, int position);
+    void AddRegistration(wxCommandEvent & event);
+    void ChangeRegistration(wxCommandEvent & event);
+    void RemoveRegistration(wxCommandEvent & event);
+    void MoveUpRegistration(wxCommandEvent & event);
+    void MoveDownRegistration(wxCommandEvent & event);
+    void MoveRegistration(int delta);
+    void SelectedRegistration(wxListEvent & event);
+    void DeselectedRegistration(wxListEvent & event);
+    void ActivateRegistration(wxListEvent & event);
 
     ////////////////////////////////////////
     // Routing fields
@@ -836,11 +857,11 @@ class MyManager : public wxFrame, public OpalManager
 #endif
     bool StartGatekeeper();
 
-    MySIPEndPoint * sipEP;
-    bool            m_SIPProxyUsed;
-    RegistrarList   m_registrars;
-    void StartRegistrars();
-    void StopRegistrars();
+    MySIPEndPoint  * sipEP;
+    bool             m_SIPProxyUsed;
+    RegistrationList m_registrations;
+    void StartRegistrations();
+    void ReplaceRegistrations(const RegistrationList & newRegistrations);
 
 #if OPAL_IVR
     OpalIVREndPoint  * ivrEP;

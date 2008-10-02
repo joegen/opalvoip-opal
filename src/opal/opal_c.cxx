@@ -142,6 +142,9 @@ class SIPEndPoint_C : public SIPEndPoint
       bool reSubscribing,           ///< If subscribing then indication was refeshing subscription
       SIP_PDU::StatusCodes reason   ///< Status of subscription
     );
+    virtual void OnDialogInfoReceived(
+      const SIPDialogNotification & info  ///< Information on dialog state change
+    );
 
   private:
     OpalManager_C & m_manager;
@@ -568,6 +571,8 @@ SIPEndPoint_C::SIPEndPoint_C(OpalManager_C & mgr)
 
 void SIPEndPoint_C::OnRegistrationStatus(const RegistrationStatus & status)
 {
+  SIPEndPoint::OnRegistrationStatus(status);
+
   OpalMessageBuffer message(OpalIndRegistration);
   SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_protocol, OPAL_PREFIX_SIP);
   SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_serverName, status.m_addressofRecord);
@@ -608,8 +613,10 @@ void SIPEndPoint_C::OnSubscriptionStatus(const PString & eventPackage,
                                          bool reSubscribing,
                                          SIP_PDU::StatusCodes reason)
 {
+  SIPEndPoint::OnSubscriptionStatus(eventPackage, uri, wasSubscribing, reSubscribing, reason);
+
   if (reason == SIP_PDU::Successful_OK && !reSubscribing &&
-      eventPackage == SIPSubscribe::GetEventPackageName(SIPSubscribe::MessageSummary)) {
+      SIPEventPackage(SIPSubscribe::MessageSummary) == eventPackage) {
     OpalMessageBuffer message(OpalIndMessageWaiting);
     SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_party, uri.AsString());
     SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, wasSubscribing ? "SUBSCRIBED" : "UNSUBSCRIBED");
@@ -617,8 +624,32 @@ void SIPEndPoint_C::OnSubscriptionStatus(const PString & eventPackage,
                                             << "\" info=" << message->m_param.m_messageWaiting.m_extraInfo);
     m_manager.PostMessage(message);
   }
+}
 
-  SIPEndPoint::OnSubscriptionStatus(eventPackage, uri, wasSubscribing, reSubscribing, reason);
+
+void SIPEndPoint_C::OnDialogInfoReceived(const SIPDialogNotification & info)
+{
+  SIPEndPoint::OnDialogInfoReceived(info);
+
+  OpalMessageBuffer message(OpalIndLineAppearance);
+  SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_line, info.m_entity);
+  message->m_param.m_lineAppearance.m_state = (OpalLineAppearanceStates)info.m_state;
+  message->m_param.m_lineAppearance.m_appearance = info.m_local.m_appearance;
+
+  if (info.m_initiator) {
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_callId, info.m_callId+";to-tag="+info.m_local.m_dialogTag+";from-tag="+info.m_remote.m_dialogTag);
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyA, info.m_local.m_URI);
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyB, info.m_remote.m_URI);
+  }
+  else {
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_callId, info.m_callId+";to-tag="+info.m_remote.m_dialogTag+";from-tag="+info.m_local.m_dialogTag);
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyA, info.m_remote.m_URI);
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyB, info.m_local.m_URI);
+  }
+
+  PTRACE(4, "OpalC API\tOnDialogInfoReceived: entity=\"" << message->m_param.m_lineAppearance.m_line
+                                          << "\" callId=" << message->m_param.m_lineAppearance.m_callId);
+  m_manager.PostMessage(message);
 }
 
 
@@ -1138,48 +1169,38 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
       return;
     }
 
-    PStringStream aor;
-    PString host;
-    if (IsNullString(command.m_param.m_registrationInfo.m_identifier))
-      aor << GetDefaultUserName() << '@' << command.m_param.m_registrationInfo.m_hostName;
-    else {
-      aor << command.m_param.m_registrationInfo.m_identifier;
-      if (strchr(command.m_param.m_registrationInfo.m_identifier, '@') != NULL)
-        host = command.m_param.m_registrationInfo.m_hostName;
-      else
-        aor << '@' << command.m_param.m_registrationInfo.m_hostName;
-    }
-
     if (command.m_param.m_registrationInfo.m_timeToLive == 0) {
-      if (!sip->Unregister(aor))
+      if (!sip->Unregister(command.m_param.m_registrationInfo.m_identifier))
         response.SetError("Failed to initiate SIP unregistration.");
     }
     else {
+      PString aor;
+
       SIPRegister::Params regParams;
-      regParams.m_addressOfRecord = aor;
-      regParams.m_contactAddress = host;
+      regParams.m_addressOfRecord = command.m_param.m_registrationInfo.m_identifier;
+      regParams.m_contactAddress = command.m_param.m_registrationInfo.m_hostName;
       regParams.m_authID = command.m_param.m_registrationInfo.m_authUserName;
-      if (regParams.m_authID.IsEmpty())
-        regParams.m_authID = regParams.m_addressOfRecord.Left(regParams.m_addressOfRecord.Find('@'));
       regParams.m_password = command.m_param.m_registrationInfo.m_password;
       regParams.m_realm = command.m_param.m_registrationInfo.m_adminEntity;
       regParams.m_expire = command.m_param.m_registrationInfo.m_timeToLive;
       if (m_apiVersion >= 7 && command.m_param.m_registrationInfo.m_restoreTime > 0)
         regParams.m_restoreTime = command.m_param.m_registrationInfo.m_restoreTime;
 
-      if (!sip->Register(regParams))
+      if (sip->Register(regParams, aor))
+        SET_MESSAGE_STRING(response, m_param.m_registrationInfo.m_identifier, aor);
+      else
         response.SetError("Failed to initiate SIP registration.");
 
       if (m_apiVersion >= 10) {
         SIPSubscribe::Params mwiParams(SIPSubscribe::MessageSummary);
-        mwiParams.m_targetAddress = aor;
-        regParams.m_contactAddress = host;
+        mwiParams.m_addressOfRecord = command.m_param.m_registrationInfo.m_identifier;
+        regParams.m_contactAddress = command.m_param.m_registrationInfo.m_hostName;
         mwiParams.m_authID = regParams.m_authID;
         mwiParams.m_password = regParams.m_password;
         mwiParams.m_realm = regParams.m_realm;
         mwiParams.m_expire = command.m_param.m_registrationInfo.m_messageWaiting;
         mwiParams.m_restoreTime = regParams.m_restoreTime;
-        sip->Subscribe(mwiParams);
+        sip->Subscribe(mwiParams, aor);
       }
     }
     return;

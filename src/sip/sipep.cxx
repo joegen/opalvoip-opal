@@ -63,6 +63,9 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   , registrarTimeToLive(0, 0, 0, 1)  // 1 hour
   , notifierTimeToLive(0, 0, 0, 1)   // 1 hour
   , natBindingTimeout(0, 0, 1)       // 1 minute
+  , m_shuttingDown(false)
+  , m_dialogNotifyVersion(1)
+  , m_defaultAppearanceCode(-1)
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
@@ -104,9 +107,10 @@ SIPEndPoint::~SIPEndPoint()
 void SIPEndPoint::ShutDown()
 {
   PTRACE(4, "SIP\tShutting down.");
+  m_shuttingDown = true;
 
   // Stop timers before compiler destroys member objects
-  natBindingTimer.Stop();
+  natBindingTimer.Stop(false);
 
   // Clean up the handlers, wait for them to finish before destruction.
   bool shuttingDown = true;
@@ -176,9 +180,11 @@ void SIPEndPoint::TransportThreadMain(PThread &, INT param)
 
 void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 {
-  PTRACE(5, "SIP\tNAT Binding refresh started.");
+  if (m_shuttingDown)
+    return;
 
   if (natMethod != None) {
+    PTRACE(5, "SIP\tNAT Binding refresh started.");
     for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
 
       OpalTransport * transport = NULL;
@@ -205,9 +211,9 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
           break;
       }
     }
-  }
 
-  PTRACE(5, "SIP\tNAT Binding refresh finished.");
+    PTRACE(5, "SIP\tNAT Binding refresh finished.");
+  }
 }
 
 
@@ -273,7 +279,7 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
               "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
     if (transport.good()) {
       PTRACE(2, "SIP\tMalformed request received on " << transport);
-      SendResponse(SIP_PDU::Failure_BadRequest, transport, *pdu);
+      pdu->SendResponse(transport, SIP_PDU::Failure_BadRequest, this);
     }
   }
 
@@ -321,9 +327,8 @@ PBoolean SIPEndPoint::MakeConnection(OpalCall & call,
   if (listeners.IsEmpty())
     return false;
 
-  PStringStream callID;
-  OpalGloballyUniqueID id;
-  callID << id << '@' << PIPSocket::GetHostName();
+  PString callID;
+  SIPTransaction::GenerateCallID(callID);
   return AddConnection(CreateConnection(call, callID, userData, TranslateENUM(remoteParty), NULL, NULL, options, stringOptions));
 }
 
@@ -437,7 +442,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   // Adjust the Via list and send a trying in case it takes us a while to process request
   switch (pdu->GetMethod()) {
     default :
-      SendResponse(SIP_PDU::Information_Trying, transport, *pdu);
+      pdu->SendResponse(transport, SIP_PDU::Information_Trying, this);
       // Do next case
 
     case SIP_PDU::Method_ACK :
@@ -466,15 +471,20 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
 bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
-  switch (pdu->GetMethod()) {
-    case SIP_PDU::NumMethods :
-      {
-        PSafePtr<SIPTransaction> transaction = GetTransaction(pdu->GetTransactionID(), PSafeReference);
-        if (transaction != NULL)
-          transaction->OnReceivedResponse(*pdu);
-      }
-      return false;
+  if (pdu->GetMethod() == SIP_PDU::NumMethods) {
+    PSafePtr<SIPTransaction> transaction = GetTransaction(pdu->GetTransactionID(), PSafeReference);
+    if (transaction != NULL)
+      transaction->OnReceivedResponse(*pdu);
+    return false;
+  }
 
+  // Prevent any new INVITE/SUBSCRIBE etc etc while we are on the way out.
+  if (m_shuttingDown) {
+    pdu->SendResponse(transport, SIP_PDU::Failure_ServiceUnavailable);
+    return false;
+  }
+
+  switch (pdu->GetMethod()) {
     case SIP_PDU::Method_INVITE :
       return OnReceivedINVITE(transport, pdu);
 
@@ -505,7 +515,7 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
 
     case SIP_PDU::Method_ACK :
       // If we receive an ACK outside of the context of a connection, ignore it.
-      SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, *pdu);
+      pdu->SendResponse(transport, SIP_PDU::Failure_TransactionDoesNotExist, this);
       return false;
 
     default :
@@ -514,7 +524,7 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
 
   SIP_PDU response(*pdu, SIP_PDU::Failure_MethodNotAllowed);
   response.SetAllow(GetAllowedMethods()); // Required by spec
-  pdu->SendResponse(transport, response);
+  pdu->SendResponse(transport, response, this);
   return false;
 }
 
@@ -523,10 +533,58 @@ PBoolean SIPEndPoint::OnReceivedREGISTER(OpalTransport & /*transport*/, SIP_PDU 
   return false;
 }
 
-PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & /*transport*/, SIP_PDU & /*pdu*/)
+
+PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & pdu)
 {
-  return false;
+  SIPMIMEInfo & mime = pdu.GetMIME();
+
+  SIPSubscribe::EventPackage eventPackage = mime.GetEvent();
+  if (!CanNotify(eventPackage))
+    return false;
+
+  // See if already subscribed. Now this is not perfect as we only check the call-id and strictly
+  // speaking we should check the from-tag and to-tags as well due to it being a dialog.
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(mime.GetCallID(), PSafeReadWrite);
+  if (handler != NULL)
+    handler->SetExpire(mime.GetExpires()); // Already subscribed so this must be a refresh.
+  else {
+    SIPDialogContext dialog;
+    dialog.SetRequestURI(mime.GetContact());
+    dialog.SetLocalURI(mime.GetTo());
+    dialog.SetRemoteURI(mime.GetFrom());
+    dialog.SetCallID(mime.GetCallID());
+    dialog.SetRouteSet(mime.GetRecordRoute(true));
+
+    handler = new SIPNotifyHandler(*this, dialog.GetRemoteURI().AsString(), eventPackage, dialog);
+    activeSIPHandlers.Append(handler);
+
+    handler->GetTransport()->SetInterface(transport.GetInterface());
+
+    mime.SetTo(dialog.GetLocalURI().AsQuotedString());
+  }
+
+  // Update expiry time
+  handler->SetExpire(mime.GetExpires());
+
+  SIP_PDU response(pdu, SIP_PDU::Successful_OK);
+  response.GetMIME().SetEvent(eventPackage); // Required by spec
+  response.GetMIME().SetExpires(handler->GetExpire()); // Required by spec
+  pdu.SendResponse(transport, response, this);
+
+  if (handler->IsDuplicateCSeq(mime.GetCSeqIndex()))
+    return true;
+
+  // Send initial NOTIFY as per spec 3.1.6.2/RFC3265
+  if (eventPackage == SIPSubscribe::Dialog)
+    SendNotifyDialogInfo(SIPDialogNotification(handler->GetAddressOfRecord().AsString()));
+  else {
+    handler->SetBody(PString::Empty());
+    handler->SendRequest(SIPHandler::Subscribing);
+  }
+
+  return true;
 }
+
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
@@ -585,7 +643,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   SIPURL toAddr(mime.GetTo());
   if (!IsAcceptedAddress(toAddr)) {
     PTRACE(2, "SIP\tIncoming INVITE from " << request->GetURI() << " for unknown address " << toAddr);
-    SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
+    request->SendResponse(transport, SIP_PDU::Failure_NotFound, this);
     return PFalse;
   }
 
@@ -613,17 +671,17 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     PString callid = replaces.Left(replaces.Find(';')).Trim();
     if (callid.IsEmpty() || to.IsEmpty() || from.IsEmpty()) {
       PTRACE(2, "SIP\tBad Replaces header in INVITE from " << request->GetURI());
-      SendResponse(SIP_PDU::Failure_BadRequest, transport, *request);
+      request->SendResponse(transport, SIP_PDU::Failure_BadRequest, this);
       return false;
     }
 
     PSafePtr<SIPConnection> replacedConnection = GetSIPConnectionWithLock(callid, PSafeReadOnly);
     if (replacedConnection == NULL ||
-        replacedConnection->GetDialogTo().Find(to) == P_MAX_INDEX ||
-        replacedConnection->GetDialogFrom().Find(from) == P_MAX_INDEX) {
+        replacedConnection->GetDialog().GetLocalTag() != to ||
+        replacedConnection->GetDialog().GetRemoteTag() != from) {
       PTRACE(2, "SIP\tUnknown " << (replacedConnection != NULL ? "to/from" : "call-id")
              << " in Replaces header of INVITE from " << request->GetURI());
-      SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, *request);
+      request->SendResponse(transport, SIP_PDU::Failure_TransactionDoesNotExist, this);
       return false;
     }
 
@@ -640,7 +698,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     newTransport = CreateTransport(transport.GetRemoteAddress(), transport.GetInterface());
     if (newTransport == NULL) {
       PTRACE(1, "SIP\tFailed to create transport for SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
-      SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
+      request->SendResponse(transport, SIP_PDU::Failure_NotFound, this);
       return PFalse;
     }
   }
@@ -649,7 +707,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     // Get new instance of a call, abort if none created
     call = manager.InternalCreateCall();
     if (call == NULL) {
-      SendResponse(SIP_PDU::Failure_TemporarilyUnavailable, transport, *request);
+      request->SendResponse(transport, SIP_PDU::Failure_TemporarilyUnavailable, this);
       return false;
     }
   }
@@ -663,7 +721,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
                                                request);
   if (!AddConnection(connection)) {
     PTRACE(1, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
-    SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
+    request->SendResponse(transport, SIP_PDU::Failure_NotFound, this);
     return PFalse;
   }
 
@@ -731,33 +789,30 @@ void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
 
 PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
 {
-  PCaselessString state;
-  
-  PTRACE(3, "SIP\tReceived NOTIFY");
+  SIPEventPackage eventPackage = pdu.GetMIME().GetEvent();
+
+  PTRACE(3, "SIP\tReceived NOTIFY " << eventPackage);
   
   // A NOTIFY will have the same CallID than the SUBSCRIBE request it corresponds to
+  // Technically should check for whole dialog, but call-id will do.
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(pdu.GetMIME().GetCallID(), PSafeReadOnly);
 
-  if (handler == NULL) {
-    PCaselessString eventPackage = pdu.GetMIME().GetEvent();
-    if (eventPackage == SIPSubscribe::GetEventPackageName(SIPSubscribe::MessageSummary)) {
-      PTRACE(4, "SIP\tWork around Asterisk bug in message-summary event package.");
-      SIPURL url_from (pdu.GetMIME().GetFrom());
-      SIPURL url_to (pdu.GetMIME().GetTo());
-      PString to = url_to.GetUserName() + "@" + url_from.GetHostName();
-      handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);
-    }
+  if (handler == NULL && eventPackage == SIPSubscribe::MessageSummary) {
+    PTRACE(4, "SIP\tWork around Asterisk bug in message-summary event package.");
+    SIPURL url_from (pdu.GetMIME().GetFrom());
+    SIPURL url_to (pdu.GetMIME().GetTo());
+    PString to = url_to.GetUserName() + "@" + url_from.GetHostName();
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);
   }
 
   if (handler == NULL) {
-    PTRACE(3, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY");
-    SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, pdu);
+    PTRACE(3, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY " << eventPackage);
+    pdu.SendResponse(transport, SIP_PDU::Failure_TransactionDoesNotExist, this);
     return true;
   }
 
-  PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY");
-  handler->OnReceivedNOTIFY(pdu);
-  return true;
+  PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY " << eventPackage);
+  return handler->OnReceivedNOTIFY(pdu);
 }
 
 
@@ -772,14 +827,14 @@ bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
     from += '>';
 
   OnMessageReceived(from, pdu.GetEntityBody());
-  SendResponse(SIP_PDU::Successful_OK, transport, pdu);
+  pdu.SendResponse(transport, SIP_PDU::Successful_OK, this);
   return true;
 }
 
 
 bool SIPEndPoint::OnReceivedOPTIONS(OpalTransport & transport, SIP_PDU & pdu)
 {
-  SendResponse(SIP_PDU::Successful_OK, transport, pdu);
+  pdu.SendResponse(transport, SIP_PDU::Successful_OK, this);
   return true;
 }
 
@@ -877,20 +932,17 @@ bool SIPEndPoint::Register(const PString & host,
   params.m_minRetryTime = minRetryTime;
   params.m_maxRetryTime = maxRetryTime;
 
-  return Register(params);
+  PString dummy;
+  return Register(params, dummy);
 }
 
 
-bool SIPEndPoint::Register(const SIPRegister::Params & params)
+bool SIPEndPoint::Register(const SIPRegister::Params & params, PString & aor)
 {
-  PINDEX at = params.m_addressOfRecord.Find('@');
-  if (at == 0 || at >= params.m_addressOfRecord.GetLength()-1) {
-    PTRACE(2, "SIP\tInvalid address-of-record for registration.");
-    return false;
-  }
-
-  if (params.m_expire == 0)
+  if (params.m_expire == 0) {
+    aor = params.m_addressOfRecord;
     return Unregister(params.m_addressOfRecord);
+  }
 
   PTRACE(4, "SIP\tStart REGISTER\n"
             "        aor=" << params.m_addressOfRecord << "\n"
@@ -915,6 +967,8 @@ bool SIPEndPoint::Register(const SIPRegister::Params & params)
     handler.SetSafetyMode(PSafeReadWrite);
     activeSIPHandlers.Append(handler);
   }
+
+  aor = handler->GetAddressOfRecord().AsString();
 
   if (handler->SendRequest(SIPHandler::Subscribing))
     return true;
@@ -960,32 +1014,37 @@ bool SIPEndPoint::UnregisterAll()
 bool SIPEndPoint::Subscribe(SIPSubscribe::PredefinedPackages eventPackage, unsigned expire, const PString & to)
 {
   SIPSubscribe::Params params(eventPackage);
-  params.m_targetAddress = to;
+  params.m_addressOfRecord = to;
   params.m_expire = expire;
-  return Subscribe(params);
+
+  PString dummy;
+  return Subscribe(params, dummy);
 }
 
 
-bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & params)
+bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & params, PString & aor)
 {
   // Zero is special case of unsubscribe
-  if (params.m_expire == 0)
-    return Unsubscribe(params.m_eventPackage, params.m_targetAddress);
+  if (params.m_expire == 0) {
+    aor = params.m_addressOfRecord;
+    return Unsubscribe(params.m_eventPackage, params.m_addressOfRecord);
+  }
 
   // Create the SIPHandler structure
   PSafePtr<SIPSubscribeHandler> handler = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(
-          activeSIPHandlers.FindSIPHandlerByUrl(params.m_targetAddress, SIP_PDU::Method_SUBSCRIBE, params.m_eventPackage, PSafeReadOnly));
+          activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_SUBSCRIBE, params.m_eventPackage, PSafeReadOnly));
   
   // If there is already a request with this URL and method, 
   // then update it with the new information
-  if (handler != NULL && handler->GetState() != SIPHandler::Unsubscribed) {
+  if (handler != NULL && handler->GetState() != SIPHandler::Unsubscribed)
     handler->UpdateParameters(params);
-  }
   else {
     // Otherwise create a new request with this method type
     handler = new SIPSubscribeHandler(*this, params);
     activeSIPHandlers.Append(handler);
   }
+
+  aor = handler->GetAddressOfRecord().AsString();
 
   return handler->SendRequest(SIPHandler::Subscribing);
 }
@@ -993,7 +1052,7 @@ bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & params)
 
 bool SIPEndPoint::Unsubscribe(SIPSubscribe::PredefinedPackages eventPackage, const PString & to)
 {
-  return Unsubscribe(SIPSubscribe::GetEventPackageName(eventPackage), to);
+  return Unsubscribe(SIPEventPackage(eventPackage), to);
 }
 
 
@@ -1012,7 +1071,7 @@ bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & to)
 
 bool SIPEndPoint::UnsubcribeAll(SIPSubscribe::PredefinedPackages eventPackage)
 {
-  return UnsubcribeAll(SIPSubscribe::GetEventPackageName(eventPackage));
+  return UnsubcribeAll(SIPEventPackage(eventPackage));
 }
 
 
@@ -1028,6 +1087,30 @@ bool SIPEndPoint::UnsubcribeAll(const PString & eventPackage)
   }
 
   return ok;
+}
+
+
+bool SIPEndPoint::CanNotify(const PString & eventPackage)
+{
+  return SIPEventPackage(SIPSubscribe::Dialog) == eventPackage;
+}
+
+
+bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const PString & body)
+{
+  bool one = false;
+
+  for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadWrite); handler != NULL; ++handler) {
+    if (handler->GetMethod() == SIP_PDU::Method_NOTIFY &&
+        handler->GetAddressOfRecord() == aor &&
+        handler->GetEventPackage() == eventPackage) {
+      handler->SetBody(body);
+      if (handler->SendRequest(SIPHandler::Subscribing))
+        one = true;
+    }
+  }
+
+  return one;
 }
 
 
@@ -1102,6 +1185,85 @@ void SIPEndPoint::OnPresenceInfoReceived (const PString & /*user*/,
 }
 
 
+void SIPEndPoint::OnDialogInfoReceived(const SIPDialogNotification & PTRACE_PARAM(info))
+{
+  PTRACE(3, "SIP\tReceived dialog info for " << info.m_entity);
+}
+
+
+static void OutputParticipant(ostream & body, const char * name, const SIPDialogNotification::Participant & participant)
+{
+  if (participant.m_URI.IsEmpty())
+    return;
+
+  body << "    <" << name << ">\r\n";
+
+  if (!participant.m_identity.IsEmpty()) {
+    body << "      <identity";
+    if (!participant.m_display.IsEmpty())
+      body << " display\"" << participant.m_display << '"';
+    body << '>' << participant.m_identity << "</identity>\r\n";
+  }
+
+  body << "      <target uri=\"" << participant.m_URI << "\">\r\n";
+
+  if (participant.m_appearance >= 0)
+    body << "        <param pname=\"appearance\" pval=\"" << participant.m_appearance << "\"/>\r\n"
+            "        <param pname=\"x-line-id\" pval=\"" << participant.m_appearance << "\"/>\r\n";
+
+  if (participant.m_byeless)
+    body << "        <param pname=\"sip.byeless\" pval=\"true\"/>\r\n";
+
+  if (participant.m_rendering >= 0)
+    body << "        <param pname=\"sip.rendering\" pval=\"" << (participant.m_rendering > 0 ? "yes" : "no") << "\"/>\r\n";
+
+  body << "      </target>\r\n"
+       << "    </" << name << ">\r\n";
+}
+
+
+void SIPEndPoint::SendNotifyDialogInfo(const SIPDialogNotification & info)
+{
+  PStringStream body;
+  body << "<?xml version=\"1.0\"?>\r\n"
+          "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" version=\""
+       << m_dialogNotifyVersion++ << "\" state=\"partial\" entity=\""
+       << info.m_entity << "\">\r\n";
+
+  if (!info.m_dialogId) {
+    // Start dialog XML tag
+    body << "  <dialog id=\"" << info.m_dialogId << '"';
+    if (!info.m_callId)
+      body << " call-id=\"" << info.m_callId << '"';
+    if (!info.m_local.m_dialogTag)
+      body << " local-tag=\"" << info.m_local.m_dialogTag << '"';
+    if (!info.m_remote.m_dialogTag)
+      body << " remote-tag=\"" << info.m_remote.m_dialogTag << '"';
+    body << " direction=\"" << (info.m_initiator ? "initiator" : "receiver") << "\">\r\n";
+
+    // State XML tag & value
+    body << "    <state";
+    if (info.m_eventType > SIPDialogNotification::NoEvent) {
+      body << " event=\"" << info.GetEventName() << '"';
+      if (info.m_eventCode > 0)
+        body << " code=\"" << info.m_eventCode << '"';
+    }
+    body << '>' << info.GetStateName() << "</state>\r\n";
+
+    // Participant XML tags (local/remopte)
+    OutputParticipant(body, "local", info.m_local);
+    OutputParticipant(body, "remote", info.m_remote);
+
+    // Close out dialog tag
+    body << "  </dialog>\r\n";
+  }
+
+  body << "</dialog-info>\r\n";
+
+  Notify(info.m_entity, SIPEventPackage(SIPSubscribe::Dialog), body);
+}
+
+
 void SIPEndPoint::OnMessageFailed(const SIPURL & /* messageUrl */,
           SIP_PDU::StatusCodes /* reason */)
 {
@@ -1161,49 +1323,51 @@ PBoolean SIPEndPoint::GetAuthentication(const PString & authRealm, PString & rea
   if (handler == NULL)
     return PFalse;
 
-  realm    = handler->authenticationAuthRealm;
-  user     = handler->authenticationUsername;
-  password = handler->authenticationPassword;
+  realm    = handler->GetRealm();
+  user     = handler->GetUsername();
+  password = handler->GetPassword();
 
   return PTrue;
 }
 
-SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url)
+SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url, const OpalTransport & transport)
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (handler == NULL) 
-    return GetDefaultRegisteredPartyName();
+    return GetDefaultRegisteredPartyName(transport);
 
-  return handler->GetTargetAddress();
+  return handler->GetAddressOfRecord();
 }
 
 
-SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
+SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transport)
 {
-  SIPURL rpn;
-
+  OpalTransportAddress myAddress;
   WORD port = GetDefaultSignalPort();
-
   OpalTransportAddressArray interfaces = GetInterfaceAddresses();
-  if (interfaces.GetSize() != 0) {
-    PIPSocket::Address dummy;
-    interfaces[0].GetIpAndPort(dummy, port);
-  }
 
-  {
-    PString hostName = PIPSocket::GetHostName();
-    PIPSocket::Address dummy;
-    if (!PIPSocket::GetHostAddress(hostName, dummy)) 
-      rpn = SIPURL(PString("sip:") + GetDefaultLocalPartyName() + "@" + hostName + PString(PString::Unsigned, port) + ";transport=udp");
-    else {
-      OpalTransportAddress addr(hostName, port, "udp");
-      rpn = SIPURL(GetDefaultLocalPartyName(), addr, port);
+  PIPSocket::Address transportAddress;
+  if (transport.GetLocalAddress().GetIpAddress(transportAddress)) {
+    for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
+      PIPSocket::Address interfaceAddress;
+      if (interfaces[i].GetIpAddress(interfaceAddress) && interfaceAddress == transportAddress) {
+        myAddress = interfaces[i];
+        break;
+      }
     }
   }
 
+  if (myAddress.IsEmpty() && !interfaces.IsEmpty())
+    myAddress = interfaces[0];
+
+  if (myAddress.IsEmpty())
+    myAddress = OpalTransportAddress(PIPSocket::GetHostName(), port, "udp");
+
+  SIPURL rpn(GetDefaultLocalPartyName(), myAddress, port);
   rpn.SetDisplayName(GetDefaultDisplayName());
   return rpn;
 }
+
 
 SIPURL SIPEndPoint::GetContactURL(const OpalTransport &transport, const PString & userName, const PString & host)
 {
@@ -1211,7 +1375,7 @@ SIPURL SIPEndPoint::GetContactURL(const OpalTransport &transport, const PString 
   if (handler != NULL) {
     OpalTransport * handlerTransport = handler->GetTransport();
     if (handlerTransport != NULL)
-      return GetLocalURL(*handlerTransport, handler->GetTargetAddress().GetUserName());
+      return GetLocalURL(*handlerTransport, handler->GetAddressOfRecord().GetUserName());
   }
 
     return GetLocalURL(transport, userName);
@@ -1251,15 +1415,6 @@ SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & 
   SIPURL contact(userName, contactAddress, contactPort);
 
   return contact;
-}
-
-
-PBoolean SIPEndPoint::SendResponse(SIP_PDU::StatusCodes code, OpalTransport & transport, SIP_PDU & pdu)
-{
-  PString username = SIPURL(pdu.GetMIME().GetTo()).GetUserName();
-  SIPURL contact = GetLocalURL(transport, username);
-  contact.Sanitise(SIPURL::ContactURI);
-  return pdu.SendResponse(transport, code, contact.AsString());
 }
 
 

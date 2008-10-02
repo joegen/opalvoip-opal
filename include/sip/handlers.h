@@ -57,8 +57,9 @@ class SIPHandler : public PSafeObject
 protected:
   SIPHandler(
     SIPEndPoint & ep, 
-    const PString & to,
-    int expireTime,
+    const PString & target,
+    const PString & remote,
+    int expireTime = 0,
     int offlineExpire = 30,
     const PTimeInterval & retryMin = PMaxTimeInterval,
     const PTimeInterval & retryMax = PMaxTimeInterval
@@ -70,7 +71,6 @@ public:
   virtual bool ShutDown();
 
   enum State {
-
     Subscribed,       // The registration is active
     Subscribing,      // The registration is in process
     Unavailable,      // The registration is offline and still being attempted
@@ -90,10 +90,8 @@ public:
   virtual SIPAuthentication * GetAuthentication()
   { return authentication; }
 
-  virtual const SIPURL & GetTargetAddress()
-    { return targetAddress; }
-
-  virtual const PString GetRemotePartyAddress();
+  virtual const SIPURL & GetAddressOfRecord()
+    { return m_addressOfRecord; }
 
   virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
 
@@ -108,10 +106,12 @@ public:
   virtual void SetBody(const PString & b)
     { body = b;}
 
+  virtual bool IsDuplicateCSeq(unsigned ) { return false; }
+
   virtual SIPTransaction * CreateTransaction(OpalTransport & t) = 0;
 
   virtual SIP_PDU::Methods GetMethod() = 0;
-  virtual PCaselessString GetEventPackage() const
+  virtual SIPSubscribe::EventPackage GetEventPackage() const
   { return PString::Empty(); }
 
   virtual void OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response);
@@ -121,14 +121,14 @@ public:
 
   virtual PBoolean SendRequest(SIPHandler::State state);
 
-  const PStringList & GetRouteSet() const { return routeSet; }
+  SIPEndPoint & GetEndPoint() const { return endpoint; }
+  const PStringList & GetRouteSet() const { return m_routeSet; }
 
   const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
-  PString                     authenticationUsername;
-  PString                     authenticationPassword;
-  PString                     authenticationAuthRealm;
-
+  const PString & GetUsername() const { return m_username; }
+  const PString & GetPassword() const { return m_password; }
+  const PString & GetRealm() const { return m_realm; }
 protected:
   void CollapseFork(SIPTransaction & transaction);
   PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
@@ -137,24 +137,28 @@ protected:
 
   SIPEndPoint               & endpoint;
 
-  SIPAuthentication           * authentication;
+  SIPAuthentication         * authentication;
+  PString                     m_username;
+  PString                     m_password;
+  PString                     m_realm;
+
 
   PSafeList<SIPTransaction>   transactions;
-  OpalTransport             * transport;
-  SIPURL                      targetAddress;
+  OpalTransport             * m_transport;
+  SIPURL                      m_addressOfRecord;
+  SIPURL                      m_remoteAddress;
   PString                     callID;
-  int	                        expire;
+  int                         expire;
   int                         originalExpire;
   int                         offlineExpire;
-  PStringList                 routeSet;
-  PString		                  body;
+  PStringList                 m_routeSet;
+  PString                     body;
   unsigned                    authenticationAttempts;
   State                       state;
   PTimer                      expireTimer; 
   PTimeInterval               retryTimeoutMin; 
   PTimeInterval               retryTimeoutMax; 
-  PString remotePartyAddress;
-  SIPURL proxy;
+  SIPURL                      proxy;
   OpalProductInfo             m_productInfo;
 };
 
@@ -207,10 +211,12 @@ public:
   virtual PBoolean SendRequest(SIPHandler::State state);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_SUBSCRIBE; }
-  virtual PCaselessString GetEventPackage() const
+  virtual SIPEventPackage GetEventPackage() const
     { return m_parameters.m_eventPackage; }
 
   void UpdateParameters(const SIPSubscribe::Params & params);
+
+  virtual bool IsDuplicateCSeq(unsigned sequenceNumber) { return m_dialog.IsDuplicateCSeq(sequenceNumber); }
 
 private:
   void SendStatus(SIP_PDU::StatusCodes code);
@@ -218,11 +224,42 @@ private:
   PBoolean OnReceivedPresenceNOTIFY(SIP_PDU & response);
 
   SIPSubscribe::Params m_parameters;
+  SIPDialogContext     m_dialog;
+};
 
-  PString  localPartyAddress;
-  PBoolean dialogCreated;
-  unsigned lastSentCSeq;
-  unsigned lastReceivedCSeq;
+
+class SIPNotifyHandler : public SIPHandler
+{
+  PCLASSINFO(SIPNotifyHandler, SIPHandler);
+public:
+  SIPNotifyHandler(
+    SIPEndPoint & ep,
+    const PString & targetAddress,
+    const SIPEventPackage & eventPackage,
+    const SIPDialogContext & dialog
+  );
+  virtual SIPTransaction * CreateTransaction(OpalTransport &);
+  virtual PBoolean SendRequest(SIPHandler::State state);
+  virtual SIP_PDU::Methods GetMethod ()
+    { return SIP_PDU::Method_NOTIFY; }
+  virtual SIPEventPackage GetEventPackage() const
+    { return m_eventPackage; }
+
+  virtual bool IsDuplicateCSeq(unsigned sequenceNumber) { return m_dialog.IsDuplicateCSeq(sequenceNumber); }
+
+  enum Reasons {
+    Deactivated,
+    Probation,
+    Rejected,
+    Timeout,
+    GiveUp,
+    NoResource
+  };
+
+private:
+  SIPEventPackage  m_eventPackage;
+  SIPDialogContext m_dialog;
+  Reasons          m_reason;
 };
 
 
@@ -324,6 +361,77 @@ class SIPHandlersList : public PSafeList<SIPHandler>
      * could be "sip.seconix.com" or "seconix.com".
      */
     PSafePtr <SIPHandler> FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode m);
+};
+
+
+/** Information for Sip "dialog" event package notification messages.
+  */
+struct SIPDialogNotification
+{
+  enum States {
+    Terminated,
+    Trying,
+    Proceeding,
+    Early,
+    Confirmed,
+
+    FirstState = Terminated,
+    LastState = Confirmed
+  };
+  friend States operator++(States & state) { return (state = (States)(state+1)); }
+  friend States operator--(States & state) { return (state = (States)(state-1)); }
+  static PString GetStateName(States state);
+  PString GetStateName() const { return GetStateName(m_state); }
+
+  enum Events {
+    NoEvent = -1,
+    Cancelled,
+    Rejected,
+    Replaced,
+    LocalBye,
+    RemoteBye,
+    Error,
+    Timeout,
+
+    FirstEvent = Cancelled,
+    LastEvent = Timeout
+  };
+  friend Events operator++(Events & evt) { return (evt = (Events)(evt+1)); }
+  friend Events operator--(Events & evt) { return (evt = (Events)(evt-1)); }
+  static PString GetEventName(Events state);
+  PString GetEventName() const { return GetEventName(m_eventType); }
+
+  enum Rendering {
+    RenderingUnknown = -1,
+    NotRenderingMedia,
+    RenderingMedia
+  };
+
+  PString  m_entity;
+  PString  m_dialogId;
+  PString  m_callId;
+  bool     m_initiator;
+  States   m_state;
+  Events   m_eventType;
+  unsigned m_eventCode;
+  struct Participant {
+    Participant() : m_appearance(-1), m_byeless(false), m_rendering(RenderingUnknown) { }
+    PString   m_URI;
+    PString   m_dialogTag;
+    PString   m_identity;
+    PString   m_display;
+    int       m_appearance;
+    bool      m_byeless;
+    Rendering m_rendering;
+  } m_local, m_remote;
+
+  SIPDialogNotification(const PString & entity)
+    : m_entity(entity)
+    , m_initiator(false)
+    , m_state(Terminated)
+    , m_eventType(NoEvent)
+    , m_eventCode(0)
+  { }
 };
 
 

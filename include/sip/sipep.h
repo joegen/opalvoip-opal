@@ -349,7 +349,8 @@ class SIPEndPoint : public OpalRTPEndPoint
        occur with the "best guess" of authentication parameters.
      */
     bool Register(
-      const SIPRegister::Params & params /// Registration paarameters
+      const SIPRegister::Params & params, ///< Registration paarameters
+      PString & aor                       ///< Resultant address-of-record for unregister
     );
 
     /// Registration function for backward compatibility.
@@ -428,39 +429,40 @@ class SIPEndPoint : public OpalRTPEndPoint
      * several subscriptions to occur at the same time.
      */
     bool Subscribe(
-      SIPSubscribe::PredefinedPackages eventPackage,
-      unsigned expire,
-      const PString & to
+      SIPSubscribe::PredefinedPackages eventPackage, ///< Event packege being unsubscribed
+      unsigned expire,                               ///< Expiry time in seconds
+      const PString & aor                            ///< Address-of-record for subscription
     );
     bool Subscribe(
-      const SIPSubscribe::Params & params /// Registration paarameters
+      const SIPSubscribe::Params & params, ///< Registration paarameters
+      PString & aor                        ///< Resultant address-of-record for unsubscribe
     );
 
 
     bool Unsubscribe(
-      SIPSubscribe::PredefinedPackages eventPackage,
-      const PString & to
+      SIPSubscribe::PredefinedPackages eventPackage,  ///< Event packege being unsubscribed
+      const PString & aor                             ///< Address-of-record for subscription
     );
     bool Unsubscribe(
-      const PString & eventPackage,
-      const PString & to
+      const PString & eventPackage,  ///< Event packege being unsubscribed
+      const PString & aor            ///< Address-of-record for subscription
     );
 
     /**Unsubscribe all current subscriptions.
       */
     bool UnsubcribeAll(
-      SIPSubscribe::PredefinedPackages eventPackage
+      SIPSubscribe::PredefinedPackages eventPackage  ///< Event packege being unsubscribed
     );
     bool UnsubcribeAll(
-      const PString & eventPackage
+      const PString & eventPackage  ///< Event packege being unsubscribed
     );
 
     /**Returns PTrue if the endpoint is subscribed to some
      * event for the given to address.
      */
     PBoolean IsSubscribed(
-      const PString & eventPackage,
-      const PString & to
+      const PString & eventPackage,  ///< Event packege being unsubscribed
+      const PString & aor            ///< Address-of-record for subscription
     );
 
     /** Returns the number of registered accounts.
@@ -475,6 +477,20 @@ class SIPEndPoint : public OpalRTPEndPoint
       bool wasSubscribing,          ///< Indication the subscribing or unsubscribing
       bool reSubscribing,           ///< If subscribing then indication was refeshing subscription
       SIP_PDU::StatusCodes reason   ///< Status of subscription
+    );
+
+    /** Indicate notifications for the specified event package are supported.
+      */
+    virtual bool CanNotify(
+      const PString & eventPackage ///< Event package we support
+    );
+
+    /** Send notification to all remotes that are subcribed to the event package.
+      */
+    bool Notify(
+      const SIPURL & targetAddress, ///< Address that was subscribed
+      const PString & eventPackage, ///< Event package for notification
+      const PString & body          ///< Body of notification
     );
 
 
@@ -508,6 +524,16 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PString & user,
       const PString & basic,
       const PString & note
+    );
+
+    /**Callback called when dialog NOTIFY message is received
+     */
+    virtual void OnDialogInfoReceived(
+      const SIPDialogNotification & info  ///< Information on dialog state change
+    );
+
+    void SendNotifyDialogInfo(
+      const SIPDialogNotification & info  ///< Information on dialog state change
     );
 
     /**Callback called when a message sent by the endpoint didn't reach
@@ -578,7 +604,6 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
-    
     /**Return the SIPAuthentication for a specific realm.
      */
     PBoolean GetAuthentication(const PString & authRealm, PString & realm, PString & user, PString & password); 
@@ -588,12 +613,12 @@ class SIPEndPoint : public OpalRTPEndPoint
      * That URL can be used in the FORM field of the PDU's. 
      * The host part can be different from the registration domain.
      */
-    virtual SIPURL GetRegisteredPartyName(const SIPURL &);
+    virtual SIPURL GetRegisteredPartyName(const SIPURL & remoteURL, const OpalTransport & transport);
 
 
     /**Return the default registered party name URL.
      */
-    virtual SIPURL GetDefaultRegisteredPartyName();
+    virtual SIPURL GetDefaultRegisteredPartyName(const OpalTransport & transport);
     
 
     /**Return the contact URL for the given host and user name
@@ -644,6 +669,14 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     
+    /**Get the default line appearance code for new connections.
+      */
+    int GetDefaultAppearanceCode() const { return m_defaultAppearanceCode; }
+
+    /**Set the default line appearance code for new connections.
+      */
+    void SetDefaultAppearanceCode(int code) { m_defaultAppearanceCode = code; }
+
     /**Get the User Agent for this endpoint.
        Default behaviour returns an empty string so the SIPConnection builds
        a valid string from the productInfo data.
@@ -661,11 +694,6 @@ class SIPEndPoint : public OpalRTPEndPoint
       */
     virtual unsigned GetAllowedMethods() const;
 
-    PBoolean SendResponse(
-      SIP_PDU::StatusCodes code, 
-      OpalTransport & transport, 
-      SIP_PDU & pdu
-    );
 
     /**NAT Binding Refresh Method
      */
@@ -701,15 +729,17 @@ class SIPEndPoint : public OpalRTPEndPoint
     PTimeInterval registrarTimeToLive;
     PTimeInterval notifierTimeToLive;
     PTimeInterval natBindingTimeout;
-    
+
+    bool              m_shuttingDown;
     SIPHandlersList   activeSIPHandlers;
 
     PSafeDictionary<PString, SIPTransaction> transactions;
 
     PTimer                  natBindingTimer;
     NATBindingRefreshMethod natMethod;
-    
-    PAtomicInteger          lastSentCSeq;    
+    PAtomicInteger          lastSentCSeq;
+    unsigned                m_dialogNotifyVersion;
+    int                     m_defaultAppearanceCode;
 
     struct SIP_PDU_Work
     {

@@ -285,7 +285,7 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
   if (startBracket == P_MAX_INDEX || endBracket == P_MAX_INDEX) {
     if (!PURL::InternalParse(cstr, defaultScheme))
       return false;
-  }
+    }
   else {
     // get the URI from between the angle brackets
     if (!PURL::InternalParse(str(startBracket+1, endBracket-1), defaultScheme))
@@ -300,7 +300,7 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
       // There are no double quotes around the display name, so take
       // everything before the start angle bracket
       displayName = str.Left(startBracket-1).Trim();
-    }
+      }
     else {
       // Trim quotes off
       displayName = str(startQuote+1, endQuote-1);
@@ -308,10 +308,10 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
       while ((backslash = displayName.Find('\\')) != P_MAX_INDEX)
         displayName.Delete(backslash, 1);
     }
-  }
+    }
 
   if (scheme == "sip" || scheme == "sips")
-    Recalculate();
+  Recalculate();
   else
     PURL::Parse("");
   return !IsEmpty();
@@ -357,6 +357,9 @@ PString SIPURL::AsQuotedString() const
   if (!displayName)
     s << '"' << displayName << "\" ";
   s << '<' << AsString() << '>';
+
+  if (!fieldParameters.IsEmpty())
+    s << ';' << fieldParameters;
 
   return s;
 }
@@ -739,7 +742,7 @@ void SIPMIMEInfo::SetCSeq(const PString & v)
 
 PStringList SIPMIMEInfo::GetRoute() const
 {
-  return GetRouteList("Route");
+  return GetRouteList("Route", false);
 }
 
 
@@ -750,9 +753,9 @@ void SIPMIMEInfo::SetRoute(const PStringList & v)
 }
 
 
-PStringList SIPMIMEInfo::GetRecordRoute() const
+PStringList SIPMIMEInfo::GetRecordRoute(bool reversed) const
 {
-  return GetRouteList("Record-Route");
+  return GetRouteList("Record-Route", reversed);
 }
 
 
@@ -763,7 +766,7 @@ void SIPMIMEInfo::SetRecordRoute(const PStringList & v)
 }
 
 
-PStringList SIPMIMEInfo::GetRouteList(const char * name) const
+PStringList SIPMIMEInfo::GetRouteList(const char * name, bool reversed) const
 {
   PStringList routeSet;
 
@@ -772,8 +775,13 @@ PStringList SIPMIMEInfo::GetRouteList(const char * name) const
   PINDEX right = 0;
   while ((left = s.Find('<', right)) != P_MAX_INDEX &&
          (right = s.Find('>', left)) != P_MAX_INDEX &&
-         (right - left) > 5)
-    routeSet.AppendString(s(left+1, right-1));
+         (right - left) > 5) {
+    PString * pstr = new PString(s(left+1, right-1));
+    if (reversed)
+      routeSet.InsertAt(0, pstr);
+    else
+      routeSet.Append(pstr);
+  }
 
   return routeSet;
 }
@@ -1528,7 +1536,7 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
   mime.SetCallID(requestMIME.GetCallID());
   mime.SetCSeq(requestMIME.GetCSeq());
   mime.SetVia(requestMIME.GetVia());
-  mime.SetRecordRoute(requestMIME.GetRecordRoute());
+  mime.SetRecordRoute(requestMIME.GetRecordRoute(false));
 
   /* Use extra parameter as redirection URL in case of 302 */
   if (code == SIP_PDU::Redirection_MovedTemporarily) {
@@ -1644,23 +1652,24 @@ void SIP_PDU::Construct(Methods meth,
                         SIPConnection & connection,
                         const OpalTransport & transport)
 {
-  PStringList routeSet = connection.GetRouteSet();
   SIPEndPoint & endpoint = connection.GetEndPoint();
   PString localPartyName = connection.GetLocalPartyName();
   SIPURL contact = endpoint.GetContactURL(transport, localPartyName, SIPURL(connection.GetRemotePartyAddress()).GetHostName());
-  SIPURL via = endpoint.GetLocalURL(transport, localPartyName);
   contact.Sanitise(meth != Method_INVITE ? SIPURL::ContactURI : SIPURL::RouteURI);
   mime.SetContact(contact);
 
+  SIPURL via = endpoint.GetLocalURL(transport, localPartyName);
+
+  SIPDialogContext & dialog = connection.GetDialog();
   Construct(meth,
-            connection.GetRequestURI(),
-            connection.GetDialogTo(),
-            connection.GetDialogFrom(),
-            connection.GetToken(),
-            connection.GetNextCSeq(),
+            dialog.GetRequestURI(),
+            dialog.GetRemoteURI().AsQuotedString(),
+            dialog.GetLocalURI().AsQuotedString(),
+            dialog.GetCallID(),
+            dialog.GetNextCSeq(),
             via.GetHostAddress());
 
-  SetRoute(routeSet); // Possibly adjust the URI and the route
+  SetRoute(dialog.GetRouteSet()); // Possibly adjust the URI and the route
 }
 
 
@@ -1747,14 +1756,14 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
 }
 
 
-bool SIP_PDU::SendResponse(OpalTransport & transport, StatusCodes code, const char * contact, const char * extra)
+bool SIP_PDU::SendResponse(OpalTransport & transport, StatusCodes code, SIPEndPoint * endpoint, const char * contact, const char * extra)
 {
   SIP_PDU response(*this, code, contact, extra);
-  return SendResponse(transport, response);
+  return SendResponse(transport, response, endpoint);
 }
 
 
-bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response)
+bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEndPoint * endpoint)
 {
   OpalTransportAddress newAddress;
 
@@ -1815,6 +1824,14 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response)
 
       newAddress = OpalTransportAddress(url.GetHostName()+ ":" + PString(PString::Unsigned, url.GetPort()), defaultPort, "udp$");
     }
+  }
+
+  if (endpoint != NULL && response.GetMIME().GetContact().IsEmpty()) {
+    SIPURL to = GetMIME().GetTo();
+    PString username = to.GetUserName();
+    SIPURL contact = endpoint->GetLocalURL(transport, username);
+    contact.Sanitise(SIPURL::ContactURI);
+    response.GetMIME().SetContact(contact);
   }
 
   return response.Write(transport, newAddress);
@@ -2108,6 +2125,141 @@ SDPSessionDescription * SIP_PDU::GetSDP()
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+SIPDialogContext::SIPDialogContext()
+  : m_lastSentCSeq(0)
+  , m_lastReceivedCSeq(0)
+{
+  GenerateCallID();
+}
+
+
+void SIPDialogContext::GenerateCallID()
+{
+  m_callId = PGloballyUniqueID().AsString() + '@' + PIPSocket::GetHostName();
+}
+
+
+static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool generate)
+{
+  uri = url;
+
+  PString newTag = url.GetParamVars()("tag");
+  if (newTag.IsEmpty())
+    newTag = SIPMIMEInfo::ExtractFieldParameter(uri.GetFieldParameters(), "tag");
+  else
+    uri.SetParamVar("tag", PString::Empty());
+
+  if (!newTag.IsEmpty() && tag != newTag) {
+    PTRACE(4, "SIP\tUpdating dialog tag from \"" << tag << "\" to \"" << newTag << '"');
+    tag = newTag;
+  }
+
+  if (tag.IsEmpty() && generate)
+    tag = PGloballyUniqueID().AsString();
+
+  if (!tag.IsEmpty())
+    uri.SetFieldParameters("tag="+tag);
+}
+
+
+static bool SetWithTag(const PString & str, SIPURL & uri, PString & tag, bool generate)
+{
+  SIPURL url;
+  if (!url.Parse(str))
+    return false;
+
+  SetWithTag(url, uri, tag, generate);
+  return true;
+}
+
+
+void SIPDialogContext::SetLocalURI(const SIPURL & url)
+{
+  SetWithTag(url, m_localURI, m_localTag, true);
+}
+
+
+bool SIPDialogContext::SetLocalURI(const PString & uri)
+{
+  return SetWithTag(uri, m_localURI, m_localTag, true);
+}
+
+
+void SIPDialogContext::SetRemoteURI(const SIPURL & url)
+{
+  SetWithTag(url, m_remoteURI, m_remoteTag, false);
+}
+
+
+bool SIPDialogContext::SetRemoteURI(const PString & uri)
+{
+  return SetWithTag(uri, m_remoteURI, m_remoteTag, false);
+}
+
+
+void SIPDialogContext::UpdateRouteSet(const SIPURL & proxy)
+{
+  // Default routeSet if there is a proxy
+  if (m_routeSet.IsEmpty() && !proxy.IsEmpty()) {
+    PStringStream str;
+    str << "sip:" << proxy.GetHostName() << ':'  << proxy.GetPort() << ";lr";
+    m_routeSet += str;
+  }
+}
+
+
+void SIPDialogContext::Update(const SIP_PDU & pdu)
+{
+  const SIPMIMEInfo & mime = pdu.GetMIME();
+
+  if (m_remoteTag.IsEmpty()) {
+    // get the route set from the Record-Route response field according to 12.1.2
+    // requests in a dialog do not modify the initial route set according to 12.2
+    m_routeSet = mime.GetRecordRoute(pdu.GetMethod() == SIP_PDU::NumMethods);
+  }
+
+  // Update request URI
+  if (pdu.GetMethod() == SIP_PDU::NumMethods && pdu.GetStatusCode()/100 == 2) {
+    PString contact = mime.GetContact();
+    if (!contact.IsEmpty()) {
+      m_requestURI.Parse(contact);
+      PTRACE(4, "SIP\tSet Request URI to " << m_requestURI);
+    }
+  }
+
+  /* Update the local/remote fields */
+  if (pdu.GetMethod() == SIP_PDU::NumMethods) {
+    SetRemoteURI(mime.GetTo());
+    SetLocalURI(mime.GetFrom());
+  }
+  else {
+    SetLocalURI(mime.GetTo()); // Will add a tag
+    SetRemoteURI(mime.GetFrom());
+  }
+}
+
+
+bool SIPDialogContext::IsDuplicateCSeq(unsigned requestCSeq)
+{
+  /* See if have had a mesage before and this one is older than the last,
+     with a check for server bugs where the sequence number changes
+     dramatically. if older then is a retransmission so return true and do
+     not process it. */
+  bool duplicate = m_lastReceivedCSeq != 0 && requestCSeq <= m_lastReceivedCSeq && (m_lastReceivedCSeq - requestCSeq) < 10;
+
+  PTRACE_IF(4, m_lastReceivedCSeq == 0, "SIP\tDialog initial sequence number " << requestCSeq);
+  PTRACE_IF(3, duplicate, "SIP\tReceived duplicate sequence number " << requestCSeq);
+  PTRACE_IF(2, !duplicate && requestCSeq != m_lastReceivedCSeq+1,
+            "SIP\tReceived unexpected sequence number " << requestCSeq << ", expecting " << m_lastReceivedCSeq+1);
+
+  m_lastReceivedCSeq = requestCSeq;
+
+  return duplicate;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
 SIPTransaction::SIPTransaction(SIPEndPoint & ep,
                                OpalTransport & trans,
                                const PTimeInterval & minRetryTime,
@@ -2143,6 +2295,19 @@ void SIPTransaction::Construct(const PTimeInterval & minRetryTime, const PTimeIn
 
   retryTimeoutMin = ((minRetryTime != PMaxTimeInterval) && (minRetryTime != 0)) ? minRetryTime : endpoint.GetRetryTimeoutMin(); 
   retryTimeoutMax = ((maxRetryTime != PMaxTimeInterval) && (maxRetryTime != 0)) ? maxRetryTime : endpoint.GetRetryTimeoutMax();
+}
+
+
+void SIPTransaction::Construct(Methods method, SIPDialogContext & dialog)
+{
+  SIP_PDU::Construct(method,
+                     dialog.GetRequestURI(),
+                     dialog.GetRemoteURI().AsQuotedString(),
+                     dialog.GetLocalURI().AsQuotedString(),
+                     dialog.GetCallID(),
+                     dialog.GetNextCSeq(),
+                     endpoint.GetLocalURL(transport).GetHostAddress());
+  SetRoute(dialog.GetRouteSet());
 }
 
 
@@ -2455,6 +2620,12 @@ void SIPTransaction::SetTerminated(States newState)
 }
 
 
+void SIPTransaction::GenerateCallID(PString & callId)
+{
+  callId = PGloballyUniqueID().AsString() + '@' + PIPSocket::GetHostName();
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, OpalRTPSessionManager * sm)
@@ -2526,7 +2697,6 @@ SIPRegister::Params::Params()
 
 SIPRegister::SIPRegister(SIPEndPoint & ep,
                          OpalTransport & trans,
-                         const PStringList & routeSet,
                          const PString & id,
                          unsigned cseq,
                          const Params & params)
@@ -2546,90 +2716,128 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   mime.SetContact(params.m_contactAddress);
   mime.SetExpires(params.m_expire);
 
-  SetRoute(routeSet);
   SetAllow(ep.GetAllowedMethods());
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+static const char * const KnownEventPackage[SIPSubscribe::NumPredefinedPackages] = {
+  "message-summary",
+  "presence",
+  "dialog;sla;ma" // sla is the old version ma is the new for Line Appearance extension
+};
+
+SIPSubscribe::EventPackage::EventPackage(PredefinedPackages pkg)
+  : PCaselessString(pkg < NumPredefinedPackages ? KnownEventPackage[pkg] : "")
+{
+}
+
+
+bool SIPSubscribe::EventPackage::operator==(PredefinedPackages pkg) const
+{
+  return InternalCompare(0, P_MAX_INDEX, pkg < NumPredefinedPackages ? KnownEventPackage[pkg] : "") == EqualTo;
+}
+
+
+PObject::Comparison SIPSubscribe::EventPackage::InternalCompare(PINDEX offset, PINDEX length, const char * cstr) const
+{
+  // Special rules for comparing event package strings, only up to the ';', if present
+
+  do {
+    if (length-- == 0)
+      return EqualTo;
+    if (theArray[offset] == '\0' && cstr[offset] == '\0')
+      return EqualTo;
+    Comparison c = PCaselessString::InternalCompare(offset, cstr[offset]);
+    if (c != EqualTo)
+      return c;
+    offset++;
+  } while (theArray[offset] != ';' || cstr[offset] != ';');
+
+  PINDEX myIdPos = Find("id", offset);
+  const char * theirIdPtr = strstr(cstr+offset, "id");
+  if (myIdPos == P_MAX_INDEX && theirIdPtr == NULL)
+    return EqualTo;
+
+  PINDEX myIdLen = Find(';', myIdPos);
+  if (myIdLen != P_MAX_INDEX)
+    myIdLen -= myIdPos;
+
+  const char * theirIdEnd = strchr(theirIdPtr, ';');
+  if (theirIdEnd != NULL && myIdLen < (theirIdEnd - theirIdPtr))
+    return LessThan;
+
+  return PCaselessString::InternalCompare(myIdPos, myIdLen, theirIdPtr);
+}
+
+
 SIPSubscribe::Params::Params(PredefinedPackages pkg)
-  : m_eventPackage(SIPSubscribe::GetEventPackageName(pkg))
+  : m_eventPackage(pkg)
   , m_expire(0)
   , m_restoreTime(30)
   , m_minRetryTime(PMaxTimeInterval)
   , m_maxRetryTime(PMaxTimeInterval)
 {
-  switch (pkg) {
-    case SIPSubscribe::MessageSummary :
-      m_mimeType = "application/simple-message-summary";
-      break;
-
-    case SIPSubscribe::Presence :
-      m_mimeType = "application/pidf+xml";
-      break;
-
-    default :
-      break;
-  }
-}
-
-
-SIPSubscribe::PredefinedPackages SIPSubscribe::GetEventPackage(const PString & name)
-{
-  if (name *= "message-summary")
-    return SIPSubscribe::MessageSummary;
-  else if (name *= "presence")
-    return SIPSubscribe::Presence;
- 
-  return SIPSubscribe::NumPredefinedPackages;
-}
-
-
-PString SIPSubscribe::GetEventPackageName(PredefinedPackages pkg)
-{
-  static const char * const names[NumPredefinedPackages] = {
-    "message-summary",
-    "presence"
-  };
-  if (pkg < NumPredefinedPackages)
-    return names[pkg];
-  return PString::Empty();
 }
 
 
 SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                            OpalTransport & trans,
-                           const PStringList & routeSet,
-                           const PString & to,
-                           const PString & from,
-                           const PString & id,
-                           unsigned cseq,
+                           SIPDialogContext & dialog,
                            const Params & params)
   : SIPTransaction(ep, trans)
 {
-  SIPURL targetAddress = params.m_targetAddress;
-  targetAddress.Sanitise(SIPURL::RequestURI);
+  Construct(Method_SUBSCRIBE, dialog);
 
-  OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
-  SIP_PDU::Construct(Method_SUBSCRIBE,
-                     targetAddress,
-                     to,
-                     from,
-                     id,
-                     cseq,
-                     viaAddress);
+  if (params.m_contactAddress.IsEmpty()) {
+    SIPURL contact = endpoint.GetLocalURL(trans, dialog.GetLocalURI().GetUserName());
+    contact.Sanitise(SIPURL::ContactURI);
+    mime.SetContact(contact);
+  }
+  else
+    mime.SetContact(params.m_contactAddress);
 
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
-  SIPURL contact = endpoint.GetLocalURL(trans, SIPURL(from).GetUserName());
-  contact.Sanitise(SIPURL::ContactURI);
-  mime.SetContact(contact);
-  mime.SetAccept(params.m_mimeType);
   mime.SetEvent(params.m_eventPackage);
   mime.SetExpires(params.m_expire);
 
-  SetRoute(routeSet);
+  SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
+  if (packageHandler != NULL) {
+    mime.SetAccept(packageHandler->GetContentType());
+    delete packageHandler;
+  }
+
   SetAllow(ep.GetAllowedMethods());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+SIPNotify::SIPNotify(SIPEndPoint & ep,
+                     OpalTransport & trans,
+                     SIPDialogContext & dialog,
+                     const SIPEventPackage & eventPackage,
+                     const PString & state,
+                     const PString & body)
+  : SIPTransaction(ep, trans)
+{
+  Construct(Method_NOTIFY, dialog);
+
+  SIPURL contact = endpoint.GetLocalURL(trans, dialog.GetLocalURI().GetUserName());
+  contact.Sanitise(SIPURL::ContactURI);
+  mime.SetContact(contact);
+  mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
+  mime.SetEvent(eventPackage);
+  mime.SetSubscriptionState(state);
+
+  SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(eventPackage);
+  if (packageHandler != NULL) {
+    mime.SetContentType(packageHandler->GetContentType());
+    delete packageHandler;
+  }
+
+  entityBody = body;
 }
 
 
@@ -2646,7 +2854,6 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   PString addrStr = targetAddress.AsQuotedString();
-  OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
 
   SIP_PDU::Construct(Method_PUBLISH,
                      targetAddress,
@@ -2654,7 +2861,7 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
                      addrStr+";tag="+OpalGloballyUniqueID().AsString(),
                      id,
                      endpoint.GetNextCSeq(),
-                     viaAddress);
+                     ep.GetLocalURL(transport).GetHostAddress());
 
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
   SIPURL contact = endpoint.GetLocalURL(trans, targetAddress.GetUserName());
@@ -2731,13 +2938,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
                        const PString & body)
   : SIPTransaction(ep, trans)
 {
-  OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
-    
-  // Build the correct From field
-  PString displayName = ep.GetDefaultDisplayName();
-  PString partyName = endpoint.GetRegisteredPartyName(address).AsString(); 
-
-  SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
+  SIPURL myAddress = endpoint.GetRegisteredPartyName(address.GetHostName(), transport);
 
   SIP_PDU::Construct(Method_MESSAGE,
                      address.AsQuotedString(),
@@ -2745,7 +2946,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
                      myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
                      id,
                      endpoint.GetNextCSeq(),
-                     viaAddress);
+                     ep.GetLocalURL(transport).GetHostAddress());
   mime.SetContentType("text/plain;charset=UTF-8");
   mime.SetRoute(routeSet);
 
@@ -2760,23 +2961,13 @@ SIPPing::SIPPing(SIPEndPoint & ep,
                  const PString & body)
   : SIPTransaction(ep, trans)
 {
-  PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
-  OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
-    
-  // Build the correct From field
-  PString displayName = ep.GetDefaultDisplayName();
-  PString partyName = endpoint.GetRegisteredPartyName(address).AsString(); 
-
-  SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
-  
   SIP_PDU::Construct(Method_PING,
                      address.AsQuotedString(),
                      address.AsQuotedString(),
-                     // myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
-                     id,
+                     OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName(),
                      endpoint.GetNextCSeq(),
-                     viaAddress);
+                     ep.GetLocalURL(transport).GetHostAddress());
   mime.SetContentType("text/plain;charset=UTF-8");
 
   entityBody = body;
@@ -2823,26 +3014,16 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
                        const SIPURL & address)
   : SIPTransaction(ep, trans)
 {
-  PString requestURI;
-  PString hosturl;
-  PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
-  OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
-    
   // Build the correct From field
-  PString displayName = ep.GetDefaultDisplayName();
-  PString partyName = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).AsString();
+  SIPURL myAddress = endpoint.GetRegisteredPartyName(address.GetHostName(), transport);
 
-  SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
-
-  requestURI = "sip:" + address.AsQuotedString();
-  
   SIP_PDU::Construct(Method_OPTIONS,
-                     requestURI,
+                     address,
                      address.AsQuotedString(),
                      myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
-                     id,
+                     OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName(),
                      endpoint.GetNextCSeq(),
-                     viaAddress);
+                     ep.GetLocalURL(transport).GetHostAddress());
   mime.SetAccept("application/sdp, application/media_control+xml, application/dtmf, application/dtmf-relay");
 
   SetAllow(ep.GetAllowedMethods());
