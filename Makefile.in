@@ -597,5 +597,8 @@ update:
 	svn -q update
 	$(MAKE) all
 
+distclean: clean
+	rm -rf config.log config.err autom4te.cache config.status a.out
+	rm -rf lib*
 
 # End of file #################################################################
