@@ -146,6 +146,7 @@ class OpalVideoTranscoder : public OpalTranscoder
 #endif
 
     bool WasLastFrameIFrame() const { return lastFrameWasIFrame; }
+    void ForceIFrame()              { forceIFrame = true; }
   //@}
 
   protected:
