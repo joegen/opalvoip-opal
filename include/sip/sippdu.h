@@ -1012,6 +1012,7 @@ class SIPHandler;
 class SIPEventPackageHandler
 {
 public:
+  virtual ~SIPEventPackageHandler() { }
   virtual PString GetContentType() const = 0;
   virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request) = 0;
 };
