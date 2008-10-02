@@ -52,8 +52,8 @@ class OpalVideoRateController
   public:
     OpalVideoRateController();
     void Reset();
-    void Open(unsigned targetBitRate, unsigned windowSizeInMs, unsigned rcMaxConsecutiveFramesSkip);
-    bool CheckSkipFrame();
+    void Open(unsigned targetBitRate, unsigned windowSizeInMs = 5000, unsigned rcMaxConsecutiveFramesSkip = 5);
+    bool SkipFrame();
     void AddFrame(unsigned sizeInBytes);
     void AddFrame(unsigned sizeInBytes, PInt64 now);
 
@@ -61,6 +61,10 @@ class OpalVideoRateController
     unsigned byteRate;
     unsigned historySizeInMs;
     unsigned maxConsecutiveFramesSkip;
+    PInt64  targetHistorySize;
+    PInt64  startTime;
+    PInt64  totalBytes;
+    PInt64  frameCount;
 
     unsigned consecutiveFramesSkipped;
     PINDEX historyInBytes;
