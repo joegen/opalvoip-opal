@@ -590,7 +590,7 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
 
 bool OpalMediaPatch::Sink::RateControlExceeded()
 {
-  if (!rcEnabled || rateController.CheckSkipFrame()) 
+  if (!rcEnabled || rateController.SkipFrame()) 
     return false;
 
   PTRACE(4, "Patch\tRate controller skipping frame.");
@@ -709,10 +709,12 @@ OpalVideoRateController::OpalVideoRateController()
 
 void OpalVideoRateController::Reset()
 {
+ history.resize(0);
  consecutiveFramesSkipped = 0;
  historyInBytes           = 0;
- historySizeInMs          = 0;
- history.resize(0);
+ startTime                = PTimer::Tick().GetMilliSeconds();
+ totalBytes               = 0;
+ frameCount               = 0;
 }
 
 void OpalVideoRateController::Open(unsigned _targetBitRate, 
@@ -736,12 +738,13 @@ void OpalVideoRateController::Open(unsigned _targetBitRate,
     byteRate                 = newByteRate;
     historySizeInMs          = _historySizeInMs;
     maxConsecutiveFramesSkip = _maxConsecutiveFramesSkip;
+    targetHistorySize        = (byteRate * historySizeInMs) / 1000;
 
     Reset();
   }
 }
 
-bool OpalVideoRateController::CheckSkipFrame()
+bool OpalVideoRateController::SkipFrame()
 {
   // get "now"
   now = PTimer::Tick().GetMilliSeconds();
@@ -751,27 +754,39 @@ bool OpalVideoRateController::CheckSkipFrame()
          (history.size() != 0) && 
          ((now - history.begin()->time) > historySizeInMs)
          ) {
+
     historyInBytes -= history.begin()->frameSize;
     history.erase(history.begin());
   }
 
-  // determine current bit rate based on the history
-  PInt64 currentRate = 0;
-  if (history.size() != 0)
-    currentRate = (historyInBytes * 1000) / (now - history.begin()->time);
+  if (history.size() < 2)
+    return false;
 
-  PTRACE(5, "Patch\tRTP packets, accumulated: " << historyInBytes << " bytes"
-            << " in " << history.size() << " frames"
-            << " with " << currentRate << " bytes/sec");
+  PInt64 range = now - history.begin()->time;
 
-  // if rate is OK, allow frame to be sent
-  if (currentRate <= byteRate) {
+  if (range == 0)
+    return false;
+
+  PTRACE(5, "Patch\taverage bit rate over " << range << "ms is " << (historyInBytes * 8 * 1000 / range) << " bps using " << history.size() << " frames");
+  PTRACE(5, "Patch\tAverage frame size = " << historyInBytes / history.size() << " bytes");
+
+  unsigned averageFrameSize = historyInBytes / history.size();
+  PInt64 scaledHistorySize = averageFrameSize + ((historyInBytes * historySizeInMs) / range);
+
+  // if it is likely this frame will fit, then allow it
+  if (scaledHistorySize <= targetHistorySize) {
     consecutiveFramesSkipped = 0;
-    return true;
+    return false;
   }
 
   // see if max consecutive frames has been reached
-  return ++consecutiveFramesSkipped <= maxConsecutiveFramesSkip;
+  if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) 
+    return true;
+
+  PTRACE(5, "Patch\tAllowing bit rate to be exceeded after " << consecutiveFramesSkipped-1 << " skipped frames");
+  
+  consecutiveFramesSkipped = 0;
+  return false;
 }
 
 void OpalVideoRateController::AddFrame(unsigned size, PInt64 _now)
@@ -789,6 +804,8 @@ void OpalVideoRateController::AddFrame(unsigned size)
   history.push_back(info);
 
   historyInBytes += size;
+  totalBytes     += size;
+  frameCount++;
 }
 
 
