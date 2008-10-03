@@ -1876,20 +1876,13 @@ H323Capabilities::H323Capabilities()
 H323Capabilities::H323Capabilities(const H323Connection & connection,
                                    const H245_TerminalCapabilitySet & pdu)
 {
-  H323Capabilities allCapabilities;
-  const H323Capabilities & localCapabilities = connection.GetLocalCapabilities();
-  for (PINDEX c = 0; c < localCapabilities.GetSize(); c++)
-    allCapabilities.Add(allCapabilities.Copy(localCapabilities[c]));
-  allCapabilities.AddAllCapabilities(connection.GetEndPoint(), 0, 0, "*");
-  H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
+  PTRACE(4, "H323\tH323Capabilities(ctor)");
 
   /** If mediaPacketization information is available, use this with the FindCapability() logic.
    *  Certain codecs, such as H.263, need additional information in order to match the specific
    *  version of the codec against possibly multiple codec with the same 'subtype' such as
    *  e_h263VideoCapability.
    */
-  PTRACE(4, "H323\tH323Capabilities(ctor) build list of mediaPacketization if available.");
-
   const H245_MultiplexCapability * muxCap = NULL;
   if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_multiplexCapability)) {
     muxCap = &pdu.m_multiplexCapability;
@@ -1914,6 +1907,13 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
 
   // Decode out of the PDU, the list of known codecs.
   if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_capabilityTable)) {
+    H323Capabilities allCapabilities;
+    const H323Capabilities & localCapabilities = connection.GetLocalCapabilities();
+    for (PINDEX c = 0; c < localCapabilities.GetSize(); c++)
+      allCapabilities.Add(allCapabilities.Copy(localCapabilities[c]));
+    allCapabilities.AddAllCapabilities(connection.GetEndPoint(), 0, 0, "*");
+    H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
+
     for (PINDEX i = 0; i < pdu.m_capabilityTable.GetSize(); i++) {
       if (pdu.m_capabilityTable[i].HasOptionalField(H245_CapabilityTableEntry::e_capability)) {
         H323Capability * capability = allCapabilities.FindCapability(pdu.m_capabilityTable[i].m_capability);
