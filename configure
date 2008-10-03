@@ -692,15 +692,11 @@ DEBUG_OPAL_OBJDIR
 DEBUG_LIB_NAME
 DEBUG_LIB_FILENAME_SHARED
 DEBUG_LIB_FILENAME_STATIC
-DEBUG_LIB_FILENAME_SHARED_MAJ
-DEBUG_LIB_FILENAME_SHARED_MIN
 DEBUG_LIB_FILENAME_SHARED_PAT
 RELEASE_OPAL_OBJDIR
 RELEASE_LIB_NAME
 RELEASE_LIB_FILENAME_SHARED
 RELEASE_LIB_FILENAME_STATIC
-RELEASE_LIB_FILENAME_SHARED_MAJ
-RELEASE_LIB_FILENAME_SHARED_MIN
 RELEASE_LIB_FILENAME_SHARED_PAT
 LIBDIR
 PTLIBDIR
@@ -4659,18 +4655,12 @@ case "$target_os" in
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
                     DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
                     DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
-
-
 
 
 
@@ -4699,18 +4689,12 @@ case "$target_os" in
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
                     RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
                     RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
-
-
 
 
 
@@ -4748,18 +4732,12 @@ case "$target_os" in
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
                     DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
                     DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
-
-
 
 
 
@@ -4788,18 +4766,12 @@ case "$target_os" in
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
                     RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
                     RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
-
-
 
 
 
@@ -4843,18 +4815,12 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
                     DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
                     DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
-
-
 
 
 
@@ -4883,18 +4849,12 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
                     RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
                     RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
-
-
 
 
 
@@ -4932,18 +4892,12 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
                     DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
                     DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
-
-
 
 
 
@@ -4972,18 +4926,12 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
                     RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
                     RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
-
-
 
 
 
@@ -5020,18 +4968,12 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
                     DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    DEBUG_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    DEBUG_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
                     DEBUG_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
-
-
 
 
 
@@ -5060,18 +5002,12 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
                     RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
-                    RELEASE_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    RELEASE_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
                     RELEASE_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
-
-
 
 
 
@@ -11225,15 +11161,11 @@ DEBUG_OPAL_OBJDIR!$DEBUG_OPAL_OBJDIR$ac_delim
 DEBUG_LIB_NAME!$DEBUG_LIB_NAME$ac_delim
 DEBUG_LIB_FILENAME_SHARED!$DEBUG_LIB_FILENAME_SHARED$ac_delim
 DEBUG_LIB_FILENAME_STATIC!$DEBUG_LIB_FILENAME_STATIC$ac_delim
-DEBUG_LIB_FILENAME_SHARED_MAJ!$DEBUG_LIB_FILENAME_SHARED_MAJ$ac_delim
-DEBUG_LIB_FILENAME_SHARED_MIN!$DEBUG_LIB_FILENAME_SHARED_MIN$ac_delim
 DEBUG_LIB_FILENAME_SHARED_PAT!$DEBUG_LIB_FILENAME_SHARED_PAT$ac_delim
 RELEASE_OPAL_OBJDIR!$RELEASE_OPAL_OBJDIR$ac_delim
 RELEASE_LIB_NAME!$RELEASE_LIB_NAME$ac_delim
 RELEASE_LIB_FILENAME_SHARED!$RELEASE_LIB_FILENAME_SHARED$ac_delim
 RELEASE_LIB_FILENAME_STATIC!$RELEASE_LIB_FILENAME_STATIC$ac_delim
-RELEASE_LIB_FILENAME_SHARED_MAJ!$RELEASE_LIB_FILENAME_SHARED_MAJ$ac_delim
-RELEASE_LIB_FILENAME_SHARED_MIN!$RELEASE_LIB_FILENAME_SHARED_MIN$ac_delim
 RELEASE_LIB_FILENAME_SHARED_PAT!$RELEASE_LIB_FILENAME_SHARED_PAT$ac_delim
 LIBDIR!$LIBDIR$ac_delim
 PTLIBDIR!$PTLIBDIR$ac_delim
@@ -11243,6 +11175,10 @@ OPAL_PTLIB_SSL!$OPAL_PTLIB_SSL$ac_delim
 OPAL_PTLIB_ASN!$OPAL_PTLIB_ASN$ac_delim
 OPAL_PTLIB_EXPAT!$OPAL_PTLIB_EXPAT$ac_delim
 OPAL_PTLIB_VIDEO!$OPAL_PTLIB_VIDEO$ac_delim
+OPAL_PTLIB_WAVFILE!$OPAL_PTLIB_WAVFILE$ac_delim
+OPAL_PTLIB_VXML!$OPAL_PTLIB_VXML$ac_delim
+OPAL_PTLIB_IPV6!$OPAL_PTLIB_IPV6$ac_delim
+OPAL_PTLIB_DTMF!$OPAL_PTLIB_DTMF$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -11284,10 +11220,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-OPAL_PTLIB_WAVFILE!$OPAL_PTLIB_WAVFILE$ac_delim
-OPAL_PTLIB_VXML!$OPAL_PTLIB_VXML$ac_delim
-OPAL_PTLIB_IPV6!$OPAL_PTLIB_IPV6$ac_delim
-OPAL_PTLIB_DTMF!$OPAL_PTLIB_DTMF$ac_delim
 OPAL_PTLIB_LDAP!$OPAL_PTLIB_LDAP$ac_delim
 OPAL_PTLIB_DNS!$OPAL_PTLIB_DNS$ac_delim
 OPAL_PTLIB_AUDIO!$OPAL_PTLIB_AUDIO$ac_delim
@@ -11342,7 +11274,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 56; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 52; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
