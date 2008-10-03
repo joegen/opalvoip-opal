@@ -166,6 +166,8 @@ H323Connection::H323Connection(OpalCall & call,
     remotePartyAddress = alias + '@' + address;
   }
 
+  remoteProductInfo.name.MakeEmpty();
+
   /* Add the local alias name in the ARQ, TODO: overwrite alias name from partyB */
   localAliasNames = ep.GetAliasNames();
   
@@ -561,7 +563,7 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 #endif
 
   // Add special code to detect if call is from a Cisco and remoteApplication needs setting
-  if (GetRemoteApplication().IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
+  if (remoteProductInfo.name.IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
     for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_nonStandardControl.GetSize(); i++) {
       const H225_NonStandardIdentifier & id = pdu.m_h323_uu_pdu.m_nonStandardControl[i].m_nonStandardIdentifier;
       if (id.GetTag() == H225_NonStandardIdentifier::e_h221NonStandard) {
@@ -3456,10 +3458,10 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
   // Check if we have just been connected, or have come out of a transmitter side
   // paused, and have not already got an audio transmitter running via fast connect
-  if (connectionState == HasExecutedSignalConnect && FindChannel(OpalMediaFormat::DefaultAudioSessionID, PFalse) == NULL)
+  if (connectionState == HasExecutedSignalConnect && FindChannel(OpalMediaFormat::DefaultAudioSessionID, false) == NULL)
     OnSelectLogicalChannels(); // Start some media
 
-  switch (phase) {
+  switch (GetPhase()) {
     case ConnectedPhase :
       SetPhase(EstablishedPhase);
       OnEstablished();
