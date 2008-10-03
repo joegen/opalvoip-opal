@@ -185,8 +185,6 @@ dnl Return:    $OBJ_SUFFIX
 dnl            $OPAL_OBJDIR
 dnl            $LIB_FILENAME_STATIC
 dnl            $LIB_FILENAME_SHARED
-dnl            $LIB_FILENAME_SHARED_MAJ
-dnl            $LIB_FILENAME_SHARED_MIN
 dnl            $LIB_FILENAME_SHARED_PAT
 AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
          [
@@ -209,13 +207,9 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
 
           case "$target_os" in
                   cygwin*|mingw*|darwin*)  
-                    $1_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${SHAREDLIBEXT}"
-                    $1_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}.${SHAREDLIBEXT}"
                     $1_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}" 
                     ;;
                   *)
-                    $1_LIB_FILENAME_SHARED_MAJ="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}"
-                    $1_LIB_FILENAME_SHARED_MIN="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}"
                     $1_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
                     ;;
           esac
@@ -225,8 +219,6 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
           AC_SUBST($1_LIB_NAME)
           AC_SUBST($1_LIB_FILENAME_SHARED)
           AC_SUBST($1_LIB_FILENAME_STATIC)
-          AC_SUBST($1_LIB_FILENAME_SHARED_MAJ)
-          AC_SUBST($1_LIB_FILENAME_SHARED_MIN)
           AC_SUBST($1_LIB_FILENAME_SHARED_PAT)
          ])
 
