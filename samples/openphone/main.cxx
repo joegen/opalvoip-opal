@@ -1296,10 +1296,17 @@ void MyManager::OnMenuQuit(wxCommandEvent& WXUNUSED(event))
 
 void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 {
-  wxMessageDialog dialog(this,
-                         wxT("OpenPhone\nPost Increment (c) 2004"),
-                         wxT("About OpenPhone"),
-                         wxOK);
+  wxString text;
+  text.sprintf(PRODUCT_NAME_TEXT " %s\n""\n"
+               "Copyright © 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
+               "\n"
+               "This application may be used for any purpose so long as it is not sold "
+               "or distributed for profit on it's own, or it's ownership by " COPYRIGHT_HOLDER
+               " disguised or hidden in any way.\n"
+               "\n"
+               "Part of the Open Phone Abstraction Library, http://www.opalvoip.org\n",
+               (const char *)PProcess::Current().GetVersion());
+  wxMessageDialog dialog(this, text, wxT("About " PRODUCT_NAME_TEXT), wxOK);
   dialog.ShowModal();
 }
 
