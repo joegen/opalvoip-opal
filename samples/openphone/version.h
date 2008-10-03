@@ -35,7 +35,7 @@
 #define	PRODUCT_NAME_TEXT	"Open Phone"
 #define	EXE_NAME_TEXT	        "openphone"
 #define	MANUFACTURER_TEXT	"Vox Lucida"
-#define	COPYRIGHT_HOLDER	"Vox Lucida (Australia)"
+#define	COPYRIGHT_HOLDER	"Vox Lucida Pty. Ltd. (Australia)"
 
 
 #define MAJOR_VERSION 2

@@ -83,7 +83,7 @@ BEGIN
             VALUE "FileDescription",  PRODUCT_NAME_TEXT "\0"
             VALUE "FileVersion",      VERSION_STRING "\0"
             VALUE "InternalName",     EXE_NAME_TEXT "\0"
-            VALUE "LegalCopyright",   "Copyright © " COPYRIGHT_HOLDER " 2003\0"
+            VALUE "LegalCopyright",   "Copyright © 2007-2008 " COPYRIGHT_HOLDER ". All rights reserved.\0"
             VALUE "OriginalFilename", EXE_NAME_TEXT ".exe\0"
             VALUE "ProductName",      PRODUCT_NAME_TEXT "\0"
             VALUE "ProductVersion",   VERSION_STRING "\0"
