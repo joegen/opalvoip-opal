@@ -48,16 +48,12 @@ endif
 ifeq ($(DEBUG_BUILD),yes)
   LIB_FILENAME_STATIC=$(DEBUG_LIB_FILENAME_STATIC)
   LIB_FILENAME_SHARED=$(DEBUG_LIB_FILENAME_SHARED)
-  LIB_FILENAME_SHARED_MAJ=$(DEBUG_LIB_FILENAME_SHARED_MAJ)
-  LIB_FILENAME_SHARED_MIN=$(DEBUG_LIB_FILENAME_SHARED_MIN)
   LIB_FILENAME_SHARED_PAT=$(DEBUG_LIB_FILENAME_SHARED_PAT)
   OPAL_OBJDIR=$(DEBUG_OPAL_OBJDIR)
   OPAL_DEPDIR=$(DEBUG_OPAL_DEPDIR)
 else
   LIB_FILENAME_STATIC=$(RELEASE_LIB_FILENAME_STATIC)
   LIB_FILENAME_SHARED=$(RELEASE_LIB_FILENAME_SHARED)
-  LIB_FILENAME_SHARED_MAJ=$(RELEASE_LIB_FILENAME_SHARED_MAJ)
-  LIB_FILENAME_SHARED_MIN=$(RELEASE_LIB_FILENAME_SHARED_MIN)
   LIB_FILENAME_SHARED_PAT=$(RELEASE_LIB_FILENAME_SHARED_PAT)
   OPAL_OBJDIR=$(RELEASE_OPAL_OBJDIR)
   OPAL_DEPDIR=$(RELEASE_OPAL_DEPDIR)
@@ -506,11 +502,7 @@ $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED): $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
 ifeq ($(OPAL_SHARED_LIB),yes)
 
   $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED): $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT)
-	( for filename in $(LIB_FILENAME_SHARED) \
-	                  $(LIB_FILENAME_SHARED_MAJ) \
-	                  $(LIB_FILENAME_SHARED_MIN); \
-	do  rm -f $(OPAL_LIBDIR)/$$filename ; ln -sf  $(LIB_FILENAME_SHARED_PAT) $(OPAL_LIBDIR)/$$filename;\
-	done)
+	rm -f $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED) ; ln -sf  $(LIB_FILENAME_SHARED_PAT) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
 
   $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT): $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
 	@echo EXTLIBS = $(EXTLIBS)
@@ -528,11 +520,9 @@ install:
 	mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir)
 	$(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) $(DESTDIR)$(libdir)
 	$(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)
-	( for filename in $(LIB_FILENAME_SHARED) \
-	                  $(LIB_FILENAME_SHARED_MAJ) \
-	                  $(LIB_FILENAME_SHARED_MIN); \
-	do ln -snf $(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)/$$filename ;\
-	done)
+	ln -snf $(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)/$(LIB_FILENAME_SHARED)
+	mkdir -p $(DESTDIR)$(libdir)/pkgconfig ; chmod 755 $(DESTDIR)$(libdir)/pkgconfig
+	$(INSTALL) -m 644 opal.pc $(DESTDIR)$(libdir)/pkgconfig
 
 	mkdir -p $(DESTDIR)$(includedir)/opal; chmod 755 $(DESTDIR)$(includedir)/opal
 	$(INSTALL) -m 644 include/opal.h $(DESTDIR)$(includedir)/opal
@@ -543,23 +533,16 @@ install:
 		done); \
 	done)
 
-	mkdir -p $(DESTDIR)$(libdir)/pkgconfig ; chmod 755 $(DESTDIR)$(libdir)/pkgconfig
-	$(INSTALL) -m 644 opal.pc $(DESTDIR)$(libdir)/pkgconfig
-#	mkdir -p $(DESTDIR)$(datarootdir)/opal ; chmod 755 $(DESTDIR)$(datarootdir)/opal
-
 	$(MAKE) -C plugins install
 
 uninstall:
 	( for filename in $(LIB_FILENAME_SHARED) \
-	                  $(LIB_FILENAME_SHARED_MAJ) \
-	                  $(LIB_FILENAME_SHARED_MIN) \
                           $(LIB_FILENAME_SHARED_PAT) \
                           $(LIB_FILENAME_STATIC); \
 	do rm -f $(DESTDIR)$(libdir)/$$filename ;\
 	done)
 	rm -rf $(DESTDIR)$(includedir)/opal
 	rm -f $(DESTDIR)$(libdir)/pkgconfig/opal.pc
-#	rm -rf $(DESTDIR)$(datarootdir)/opal
 
 	$(MAKE) -C plugins uninstall
 
