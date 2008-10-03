@@ -166,6 +166,8 @@ H323Connection::H323Connection(OpalCall & call,
     remotePartyAddress = alias + '@' + address;
   }
 
+  remoteProductInfo.name.MakeEmpty();
+
   /* Add the local alias name in the ARQ, TODO: overwrite alias name from partyB */
   localAliasNames = ep.GetAliasNames();
   
@@ -560,7 +562,7 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 #endif
 
   // Add special code to detect if call is from a Cisco and remoteApplication needs setting
-  if (GetRemoteApplication().IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
+  if (remoteProductInfo.name.IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
     for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_nonStandardControl.GetSize(); i++) {
       const H225_NonStandardIdentifier & id = pdu.m_h323_uu_pdu.m_nonStandardControl[i].m_nonStandardIdentifier;
       if (id.GetTag() == H225_NonStandardIdentifier::e_h221NonStandard) {
@@ -3219,6 +3221,7 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
   }
 
   if (remoteCaps.GetSize() == 0) {
+    PTRACE(3, "H323\tReceived empty CapabilitySet, shutting down transmitters.");
     // Received empty TCS, so close all transmit channels
     for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
       H245NegLogicalChannel & negChannel = logicalChannels->GetNegLogicalChannelAt(i);
@@ -3239,10 +3242,11 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       return PFalse;
 
     if (transmitterSidePaused) {
+      PTRACE(3, "H323\tReceived CapabilitySet while paused, re-starting transmitters.");
       transmitterSidePaused = PFalse;
       connectionState = HasExecutedSignalConnect;
-      SetPhase(ConnectedPhase);
       capabilityExchangeProcedure->Start(PTrue);
+      masterSlaveDeterminationProcedure->Start(PFalse);
     }
     else {
       if (localCapabilities.GetSize() > 0)
@@ -3400,17 +3404,16 @@ void H323Connection::InternalEstablishedConnectionCheck()
   }
 #endif
   
-  switch (phase) {
+  // Check if we have just been connected, or have come out of a transmitter side
+  // paused, and have not already got an audio transmitter running via fast connect
+  if (connectionState == HasExecutedSignalConnect && FindChannel(OpalMediaFormat::DefaultAudioSessionID, false) == NULL)
+    OnSelectLogicalChannels(); // Start some media
+
+  switch (GetPhase()) {
     case ConnectedPhase :
-      // Check if we have already got a transmitter running, select one if not
-      if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, PFalse) == NULL)
-        OnSelectLogicalChannels();
-
-      connectionState = EstablishedConnection;
       SetPhase(EstablishedPhase);
-
       OnEstablished();
-      break;
+      // Set established in next case
 
     case EstablishedPhase :
       connectionState = EstablishedConnection; // Keep in sync

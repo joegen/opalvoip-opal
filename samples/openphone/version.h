@@ -39,9 +39,9 @@
 
 
 #define MAJOR_VERSION 2
-#define MINOR_VERSION 1
-#define BUILD_TYPE    AlphaCode
-#define BUILD_NUMBER 0
+#define MINOR_VERSION 2
+#define BUILD_TYPE    BetaCode
+#define BUILD_NUMBER 2
 
 
 #endif  // _OpenPhone_VERSION_H
