@@ -704,8 +704,12 @@ PBoolean H245NegLogicalChannel::HandleOpenAck(const H245_OpenLogicalChannelAck &
       state = e_Established;
       replyTimer.Stop();
 
-      if (!channel->OnReceivedAckPDU(pdu))
-        return CloseWhileLocked();
+      if (!channel->OnReceivedAckPDU(pdu)) {
+        if (connection.GetRemoteProductInfo().name != "Cisco IOS")
+          return CloseWhileLocked();
+        PTRACE(4, "H245\tWorkaround for Cisco bug, cannot close channel on illegal ack or it hangs up on you.");
+        return true;
+      }
 
       if (channel->GetDirection() == H323Channel::IsBidirectional) {
         H323ControlPDU reply;
