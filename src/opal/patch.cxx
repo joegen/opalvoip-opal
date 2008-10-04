@@ -421,27 +421,35 @@ void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, PBoolean fro
   }
 }
 
+
+bool OpalMediaPatch::OnPatchStart()
+{
+  source.OnPatchStart();
+
+  if (source.IsSynchronous())
+    return false;
+
+  bool isAudio = source.GetMediaFormat().GetMediaType() == OpalMediaType::Audio();
+
+  PReadWaitAndSignal mutex(inUse);
+
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
+    if (s->stream->IsSynchronous()) {
+      if (isAudio) 
+        source.EnableJitterBuffer();
+      return false;
+    }
+  }
+	
+  return true;
+}
+
+
 void OpalMediaPatch::Main()
 {
   PTRACE(4, "Patch\tThread started for " << *this);
 	
-  bool isAudio = source.GetMediaFormat().GetMediaType() == OpalMediaType::Audio();
-
-  inUse.StartRead();
-  source.OnPatchStart();
-  PBoolean isSynchronous = source.IsSynchronous();
-  if (!source.IsSynchronous()) {
-    for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
-      if (s->stream->IsSynchronous()) {
-        if (isAudio) 
-          source.EnableJitterBuffer();
-        isSynchronous = PTrue;
-        break;
-      }
-    }
-  }
-	
-  inUse.EndRead();
+  bool asynchronous = OnPatchStart();
 
   RTP_DataFrame sourceFrame(source.GetDataSize());
   sourceFrame.SetPayloadType(source.GetMediaFormat().GetPayloadType());
@@ -465,7 +473,7 @@ void OpalMediaPatch::Main()
     // Don't starve the CPU if we have idle frames and the no source or destination is synchronous.
     // Note that performing a Yield is not good enough, as the media patch threads are
     // high priority and will consume all available CPU if allowed.
-    if (!isSynchronous)
+    if (asynchronous)
       PThread::Sleep(5);
   }
 

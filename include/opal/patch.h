@@ -126,6 +126,16 @@ class OpalMediaPatch : public PObject
       */
     virtual void Start();
 
+    /**Indicate the patch has started. Typically called from the beginning
+       of the patch thread.
+
+       Default behaviour make sure jitter buffer is created.
+
+       Returns bool indicating all media streams are asynchronous so the patch
+               should assure no thread startvation
+      */
+    virtual bool OnPatchStart();
+
     /**Close the patch.
       This is an internal function that closes all of the sink streams and
        waits for the the thread to terminate. It is called when the source
