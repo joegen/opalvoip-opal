@@ -265,8 +265,8 @@ int main(int argc, char *argv[])
           readStream(stream, (LPVOID)&src, srcLen);
           readStream(stream, (LPVOID)&headerLen, sizeof(headerLen));
           readStream(stream, (LPVOID)&dst, headerLen);
-
-      case ENCODE_FRAMES_BUFFERED:
+          readStream(stream, (LPVOID)&flags, sizeof(flags));   
+      case ENCODE_FRAMES_BUFFERED:     
           ret = (x264->EncodeFrames( src,  srcLen, dst, dstLen, flags));
           writeStream(stream,(LPCVOID)&msg, sizeof(msg));
           writeStream(stream,(LPCVOID)&dstLen, sizeof(dstLen));
