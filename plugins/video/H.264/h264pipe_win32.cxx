@@ -138,13 +138,14 @@ void H264EncCtx::call(unsigned msg , const u_char * src, unsigned & srcLen, u_ch
       writeStream((LPCVOID) src, size);
       writeStream((LPCVOID) &headerLen, sizeof(headerLen));
       writeStream((LPCVOID) dst, headerLen);
-
+      writeStream((LPCVOID) &flags, sizeof(flags) );
     }
     else {
       writeStream((LPCVOID) &srcLen, sizeof(srcLen));
       writeStream((LPCVOID) src, srcLen);
       writeStream((LPCVOID) &headerLen, sizeof(headerLen));
       writeStream((LPCVOID) dst, headerLen);
+      writeStream((LPCVOID) &flags, sizeof(flags) );
     }
   }
   else {

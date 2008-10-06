@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
         readStream(dlStream, (char*)&src, srcLen);
         readStream(dlStream, (char*)&headerLen, sizeof(headerLen));
         readStream(dlStream, (char*)&dst, headerLen);
-
+        readStream(dlStream, (char*)&flags, sizeof(flags));
     case ENCODE_FRAMES_BUFFERED:
         ret = (x264->EncodeFrames( src,  srcLen, dst, dstLen, flags));
         writeStream(ulStream,(char*)&msg, sizeof(msg));
