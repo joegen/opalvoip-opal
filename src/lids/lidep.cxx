@@ -354,21 +354,24 @@ OpalLine * OpalLineEndPoint::GetLine(const PString & lineName, bool enableAudio,
 {
   PWaitAndSignal mutex(linesMutex);
 
-  PTRACE(3, "LID EP\tGetLine " << lineName << ", enableAudio=" << enableAudio << ", terminating=" << terminating);
+  PTRACE(4, "LID EP\tGetLine " << lineName << ", enableAudio=" << enableAudio << ", terminating=" << terminating);
   for (OpalLineList::iterator line = lines.begin(); line != lines.end(); ++line) {
     PString lineToken = line->GetToken();
-
-    PTRACE(3, "LID EP\tGetLine name=\"" << lineToken << "\", enableAudio=" << line->IsAudioEnabled());
-
-    if ((lineName == defaultLine || lineToken == lineName) &&
-        (line->IsTerminal() == terminating) &&
-         line->IsPresent() &&
-        (!enableAudio || (!line->IsAudioEnabled() && line->EnableAudio()))) {
+    if (lineName != defaultLine && lineToken != lineName)
+      PTRACE(4, "LID EP\tNo match to line name=\"" << lineToken << "\", default=" << defaultLine);
+    else if (line->IsTerminal() == terminating)
+      PTRACE(4, "LID EP\tNo match to line name=\"" << lineToken << "\", terminating=" << line->IsTerminal());
+    else if (!line->IsPresent())
+      PTRACE(4, "LID EP\tNo match to line name=\"" << lineToken << "\", not present");
+    else if (enableAudio && (line->IsAudioEnabled() || !line->EnableAudio()))
+      PTRACE(4, "LID EP\tNo match to line name=\"" << lineToken << "\", enableAudio=" << line->IsAudioEnabled());
+    else {
       PTRACE(3, "LID EP\tGetLine found the line \"" << lineName << '"');
       return &*line;
     }  
   }
 
+  PTRACE(3, "LID EP\tGetLine could not find/enable \"" << lineName << '"');
   return NULL;
 }
 
