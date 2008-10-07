@@ -4109,7 +4109,15 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     return NULL;
 
   ((RTP_UDP *) session)->Reopen(dir == H323Channel::IsReceiver);
-  return new H323_RTPChannel(*this, capability, dir, *session);
+  return CreateRTPChannel(capability, dir, *session);
+}
+
+
+H323_RTPChannel * H323Connection::CreateRTPChannel(const H323Capability & capability,
+                                                   H323Channel::Directions direction,
+                                                   RTP_Session & rtp)
+{
+  return new H323_RTPChannel(*this, capability, direction, rtp);
 }
 
 

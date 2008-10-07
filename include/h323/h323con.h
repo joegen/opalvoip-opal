@@ -1344,6 +1344,15 @@ class H323Connection : public OpalRTPConnection
                                          ///<  Parameters for channel
       RTP_QOS * rtpqos = NULL            ///<  QoS for RTP
     );
+    
+    /**Creates a new instance of an RTP channel.
+       Allows subclasses to return a custom instance
+      */
+    virtual H323_RTPChannel * CreateRTPChannel(
+      const H323Capability & capability,
+      H323Channel::Directions direction,
+      RTP_Session & rtp
+    );
 
     /**This function is called when the remote endpoint want's to create
        a new channel.
