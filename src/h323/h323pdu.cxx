@@ -685,11 +685,11 @@ H225_Information_UUIE & H323SignalPDU::BuildInformation(const H323Connection & c
 
 
 H323Connection::CallEndReason H323TranslateToCallEndReason(Q931::CauseValues cause,
-                                               const H225_ReleaseCompleteReason & reason)
+                                                           unsigned reason)
 {
   switch (cause) {
     case Q931::ErrorInCauseIE :
-      switch (reason.GetTag()) {
+      switch (reason) {
         case H225_ReleaseCompleteReason::e_noBandwidth :
           return H323Connection::EndedByNoBandwidth;
 
@@ -758,8 +758,8 @@ H323Connection::CallEndReason H323TranslateToCallEndReason(Q931::CauseValues cau
 }
 
 
-Q931::CauseValues H323TranslateFromCallEndReason(const H323Connection & connection,
-                                                 H225_ReleaseCompleteReason & reason)
+Q931::CauseValues H323TranslateFromCallEndReason(H323Connection::CallEndReason callEndReason,
+                                                 H225_ReleaseCompleteReason & releaseCompleteReason)
 {
   static int const ReasonCodes[H323Connection::NumCallEndReasons] = {
     Q931::NormalCallClearing,                               /// EndedByLocalUser,         Local endpoint application cleared call
@@ -789,13 +789,13 @@ Q931::CauseValues H323TranslateFromCallEndReason(const H323Connection & connecti
     Q931::NormalUnspecified,                                /// EndedByDurationLimit,     Call cleared due to an enforced duration limit
   };
 
-  int code = ReasonCodes[connection.GetCallEndReason()];
+  int code = ReasonCodes[callEndReason];
   if (code == Q931::UnknownCauseIE)
-    return (Q931::CauseValues)connection.GetCallEndReason();
+    return (Q931::CauseValues)callEndReason;
   if (code >= 0)
     return (Q931::CauseValues)code;
 
-  reason.SetTag(-code);
+  releaseCompleteReason.SetTag(-code);
   return Q931::ErrorInCauseIE;
 }
 
@@ -814,7 +814,7 @@ H225_ReleaseComplete_UUIE &
 
   Q931::CauseValues cause = (Q931::CauseValues)connection.GetQ931Cause();
   if (cause == Q931::ErrorInCauseIE)
-    cause = H323TranslateFromCallEndReason(connection, release.m_reason);
+    cause = H323TranslateFromCallEndReason(connection.GetCallEndReason(), release.m_reason);
   if (cause != Q931::ErrorInCauseIE)
     q931pdu.SetCause(cause);
   else

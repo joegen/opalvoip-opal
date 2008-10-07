@@ -1138,12 +1138,11 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnDisengage(H323GatekeeperDR
   if (info.drq.HasOptionalField(H225_DisengageRequest::e_terminationCause)) {
     if (info.drq.m_terminationCause.GetTag() == H225_CallTerminationCause::e_releaseCompleteReason) {
       H225_ReleaseCompleteReason & reason = info.drq.m_terminationCause;
-      callEndReason = H323TranslateToCallEndReason(Q931::ErrorInCauseIE, reason);
+      callEndReason = H323TranslateToCallEndReason(Q931::ErrorInCauseIE, reason.GetTag());
     }
     else {
       PASN_OctetString & cause = info.drq.m_terminationCause;
-      H225_ReleaseCompleteReason dummy;
-      callEndReason = H323TranslateToCallEndReason((Q931::CauseValues)(cause[1]&0x7f), dummy);
+      callEndReason = H323TranslateToCallEndReason((Q931::CauseValues)(cause[1]&0x7f), UINT_MAX);
     }
   }
 
