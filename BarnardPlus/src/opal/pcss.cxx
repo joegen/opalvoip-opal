@@ -130,23 +130,6 @@ PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
   if (!SetDeviceName(recordDevice, PSoundChannel::Recorder, recordDevice))
     recordDevice = soundChannelRecordDevice;
 
-  // Make sure sound devices are available.
-  PSoundChannel * soundChannel = PSoundChannel::CreateChannelByName(playDevice, PSoundChannel::Player);
-  if (soundChannel == NULL) {
-    PTRACE(2, "PCSS\tSound player device \"" << playDevice << "\" in use, call " << call << " aborted.");
-    call.Clear(OpalConnection::EndedByLocalBusy);
-    return false;
-  }
-  delete soundChannel;
-
-  soundChannel = PSoundChannel::CreateChannelByName(recordDevice, PSoundChannel::Recorder);
-  if (soundChannel == NULL) {
-    PTRACE(2, "PCSS\tSound recording device \"" << recordDevice << "\" in use, call " << call << " aborted.");
-    call.Clear(OpalConnection::EndedByLocalBusy);
-    return false;
-  }
-  delete soundChannel;
-
   return AddConnection(CreateConnection(call, playDevice, recordDevice, userData));
 }
 

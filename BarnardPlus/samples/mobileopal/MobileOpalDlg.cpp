@@ -37,6 +37,8 @@
 
 #include <winsock2.h>
 #include <iphlpapi.h>
+#include <pmpolicy.h>
+#include <pm.h>
 
 
 #ifdef _DEBUG
@@ -452,7 +454,10 @@ void CMobileOpalDlg::InitialiseOPAL()
   command.m_type = OpalCmdSetGeneralParameters;
 
   CStringA strStunServer = GetOptionStringA(STUNServerKey);
+  command.m_param.m_general.m_audioPlayerDevice = "Audio Output";
+  command.m_param.m_general.m_audioRecordDevice = "Audio Input";
   command.m_param.m_general.m_stunServer = strStunServer;
+  command.m_param.m_general.m_mediaMask = "RFC4175*";
 
   if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
     ErrorBox(IDS_CONFIGURATION_FAIL, response);
@@ -539,6 +544,8 @@ void CMobileOpalDlg::InitialiseOPAL()
     }
     OpalFreeMessage(response);
   }
+
+  PowerPolicyNotify(PPN_UNATTENDEDMODE, TRUE);
 }
 
 
@@ -690,6 +697,8 @@ void CMobileOpalDlg::HandleMessage(OpalMessage & message)
         m_ctrlCallAddress.EnableWindow(false);
         ShowWindow(true);
         BringWindowToTop();
+        PowerPolicyNotify(PPN_UNATTENDEDMODE, FALSE);
+        SetSystemPowerState(NULL, POWER_STATE_ON, POWER_FORCE);
       }
       else {
         OpalMessage command;
@@ -727,6 +736,8 @@ void CMobileOpalDlg::HandleMessage(OpalMessage & message)
         m_ctrlCallAddress.EnableWindow(true);
 
         SetStatusText(IDS_READY, message.m_param.m_callCleared.m_reason);
+
+        PowerPolicyNotify(PPN_UNATTENDEDMODE, TRUE);
       }
   }
 }
