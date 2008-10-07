@@ -48,19 +48,25 @@
 
 #ifndef __H263P_1998_H__
 #define __H263P_1998_H__ 1
-#include "plugin-config.h"
 #include <codec/opalplugin.h>
 #include "h263pframe.h"
+#include "rfc2190.h"
 #include "critsect.h"
 
 typedef unsigned char BYTE;
 
 #define H263P_CLOCKRATE        90000
 #define H263P_BITRATE         327600
-#define H263P_PAYLOAD_SIZE      1400
+#define H263P_PAYLOAD_SIZE       600
 #define H263P_FRAME_RATE          25
 #define H263P_KEY_FRAME_INTERVAL 125
 #define H263P_MIN_QUANT            2
+
+#define H263_CLOCKRATE         90000
+#define H263_BITRATE          327600
+#define H263_PAYLOAD_SIZE        (600/8)
+#define RTP_RFC2190_PAYLOAD       34
+#define H263_KEY_FRAME_INTERVAL  125
 
 #define CIF_WIDTH       352
 #define CIF_HEIGHT      288
@@ -93,14 +99,16 @@ enum Annex {
     P
 };
 
-class H263PEncoderContext
+class H263_Base_EncoderContext
 {
   public:
-    H263PEncoderContext();
-    ~H263PEncoderContext();
+    H263_Base_EncoderContext(const char * prefix);
+    virtual ~H263_Base_EncoderContext();
 
-    int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
-    void SetMaxRTPFrameSize (unsigned size);
+    virtual bool Open() = 0;
+    virtual bool Open(CodecID codecId);
+
+    virtual int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags) = 0;
     void SetMaxKeyFramePeriod (unsigned period);
     void SetTargetBitrate (unsigned rate);
     void SetFrameWidth (unsigned width);
@@ -113,27 +121,64 @@ class H263PEncoderContext
 
     void Lock();
     void Unlock();
+
+    virtual void SetMaxRTPFrameSize (unsigned size) = 0;
+
   protected:
-    void InitContext();
+    virtual bool InitContext() = 0;
 
     unsigned char _inputFrameBuffer[MAX_YUV420P_FRAME_SIZE];
     AVCodec        *_codec;
     AVCodecContext *_context;
     AVFrame        *_inputFrame;
 
-    H263PFrame* _txH263PFrame;
     int _frameCount;
     CriticalSection _mutex;
+    const char * prefix;
 };
 
+////////////////////////////////////////////////////////////////////////////
 
-class H263PDecoderContext
+class H263_RFC2190_EncoderContext : public H263_Base_EncoderContext
 {
   public:
-    H263PDecoderContext();
-    ~H263PDecoderContext();
+    H263_RFC2190_EncoderContext();
+    ~H263_RFC2190_EncoderContext();
+    bool Open();
+    bool InitContext();
+    void SetMaxRTPFrameSize (unsigned size);
+    int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
+  protected:
+    bool Init();
+    RFC2190Packetizer packetizer;
+};
 
-    bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
+////////////////////////////////////////////////////////////////////////////
+
+class H263_RFC2429_EncoderContext : public H263_Base_EncoderContext
+{
+  public:
+    H263_RFC2429_EncoderContext();
+    ~H263_RFC2429_EncoderContext();
+
+    bool Open();
+    bool InitContext();
+    void SetMaxRTPFrameSize (unsigned size);
+    int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
+  protected:
+    bool Init();
+    H263PFrame * _txH263PFrame;
+};
+
+////////////////////////////////////////////////////////////////////////////
+
+class H263_Base_DecoderContext
+{
+  public:
+    H263_Base_DecoderContext(const char * prefix);
+    ~H263_Base_DecoderContext();
+
+    virtual bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags) = 0;
 
   protected:
     bool OpenCodec();
@@ -143,13 +188,41 @@ class H263PDecoderContext
     AVCodecContext *_context;
     AVFrame        *_outputFrame;
 
-    H263PFrame* _rxH263PFrame;
     int _frameCount;
+    CriticalSection _mutex;
+    const char * prefix;
+};
+
+////////////////////////////////////////////////////////////////////////////
+
+class H263_RFC2190_DecoderContext : public H263_Base_DecoderContext
+{
+  public:
+    H263_RFC2190_DecoderContext();
+    ~H263_RFC2190_DecoderContext();
+    bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
+
+  protected:
+    RFC2190Depacketizer depacketizer;
+};
+
+////////////////////////////////////////////////////////////////////////////
+
+class H263_RFC2429_DecoderContext : public H263_Base_DecoderContext
+{
+  public:
+     H263_RFC2429_DecoderContext();
+     ~H263_RFC2429_DecoderContext();
+
+     bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
+  protected:
     unsigned int _skippedFrameCounter;
     bool _gotIFrame;
     bool _gotAGoodFrame;
-    CriticalSection _mutex;
+    H263PFrame* _rxH263PFrame;
 };
+
+////////////////////////////////////////////////////////////////////////////
 
 static int valid_for_protocol    ( const struct PluginCodec_Definition *, void *, const char *,
                                    void * parm, unsigned * parmLen);
@@ -183,259 +256,4 @@ static int decoder_get_output_data_size ( const PluginCodec_Definition * codec, 
                                    void *, unsigned *);
 /////////////////////////////////////////////////////////////////////////////
 
-
-static struct PluginCodec_information licenseInfo = {
-  1145863600,                                                   // timestamp =  Mon 24 Apr 2006 07:26:40 AM UTC
-
-  "Matthias Schneider, Craig Southeren"                         // source code author
-  "Guilhem Tardy, Derek Smithies",
-  "1.0",                                                        // source code version
-  "openh323@openh323.org",                                      // source code email
-  "http://sourceforge.net/projects/openh323",                   // source code URL
-  "Copyright (C) 2007 Matthias Schneider"                       // source code copyright
-  ", Copyright (C) 2006 by Post Increment"
-  ", Copyright (C) 2005 Salyens"
-  ", Copyright (C) 2001 March Networks Corporation"
-  ", Copyright (C) 1999-2000 Equivalence Pty. Ltd.",
-  "MPL 1.0",                                                    // source code license
-  PluginCodec_License_MPL,                                      // source code license
-  
-  "FFMPEG",                                                     // codec description
-  "Michael Niedermayer, Fabrice Bellard",                       // codec author
-  "",                                                           // codec version
-  "ffmpeg-devel-request@mplayerhq.hu",                          // codec email
-  "http://ffmpeg.mplayerhq.hu",                                 // codec URL
-  "Copyright (c) 2000-2001 Fabrice Bellard"                     // codec copyright information
-  ", Copyright (c) 2002-2003 Michael Niedermayer",
-  "GNU LESSER GENERAL PUBLIC LICENSE, Version 2.1, February 1999", // codec license
-  PluginCodec_License_LGPL                                         // codec license code
-};
-
-static const char YUV420PDesc[]  = { "YUV420P" };
-static const char h263PDesc[]    = { "H.263P" };
-static const char sdpH263[]      = { "h263-1998" };
-
-static const char SQCIF_MPI[]  = PLUGINCODEC_SQCIF_MPI;
-static const char QCIF_MPI[]   = PLUGINCODEC_QCIF_MPI;
-static const char CIF_MPI[]    = PLUGINCODEC_CIF_MPI;
-static const char CIF4_MPI[]   = PLUGINCODEC_CIF4_MPI;
-static const char CIF16_MPI[]  = PLUGINCODEC_CIF16_MPI;
-
-static PluginCodec_ControlDefn EncoderControls[] = {
-  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
-  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
-  { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
-  { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
-  { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
-  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
-  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
-  { NULL }
-};
-
-static PluginCodec_ControlDefn DecoderControls[] = {
-  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
-  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
-  { NULL }
-};
-
-static struct PluginCodec_Option const sqcifMPI =
-{
-  PluginCodec_IntegerOption,            // Option type
-  SQCIF_MPI,                            // User visible name
-  false,                                // User Read/Only flag
-  PluginCodec_MaxMerge,                 // Merge mode
-  "1",                                  // Initial value
-  "SQCIF",                              // FMTP option name
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
-  0,                                    // H.245 generic capability code and bit mask
-  "1",                                  // Minimum value
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
-};
-
-static struct PluginCodec_Option const qcifMPI =
-{
-  PluginCodec_IntegerOption,            // Option type
-  QCIF_MPI,                             // User visible name
-  false,                                // User Read/Only flag
-  PluginCodec_MaxMerge,                 // Merge mode
-  "1",                                  // Initial value
-  "QCIF",                               // FMTP option name
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
-  0,                                    // H.245 generic capability code and bit mask
-  "1",                                  // Minimum value
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
-};
-
-static struct PluginCodec_Option const cifMPI =
-{
-  PluginCodec_IntegerOption,            // Option type
-  CIF_MPI,                              // User visible name
-  false,                                // User Read/Only flag
-  PluginCodec_MaxMerge,                 // Merge mode
-  "1",                                  // Initial value
-  "CIF",                                // FMTP option name
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
-  0,                                    // H.245 generic capability code and bit mask
-  "1",                                  // Minimum value
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
-};
-
-static struct PluginCodec_Option const cif4MPI =
-{
-  PluginCodec_IntegerOption,            // Option type
-  CIF4_MPI,                             // User visible name
-  false,                                // User Read/Only flag
-  PluginCodec_MaxMerge,                 // Merge mode
-  "1",                                  // Initial value
-  "CIF4",                               // FMTP option name
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
-  0,                                    // H.245 generic capability code and bit mask
-  "1",                                  // Minimum value
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
-};
-
-static struct PluginCodec_Option const cif16MPI =
-{
-  PluginCodec_IntegerOption,            // Option type
-  CIF16_MPI,                            // User visible name
-  false,                                // User Read/Only flag
-  PluginCodec_MaxMerge,                 // Merge mode
-  "1",                                  // Initial value
-  "CIF16",                              // FMTP option name
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
-  0,                                    // H.245 generic capability code and bit mask
-  "1",                                  // Minimum value
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
-};
-
-static struct PluginCodec_Option const sifMPI =
-  { PluginCodec_StringOption, "SIF MPI", false, PluginCodec_EqualMerge, "320,240,1", "CUSTOM"};
-
-static struct PluginCodec_Option const sif4MPI =
-  { PluginCodec_StringOption, "SIF4 MPI", false, PluginCodec_EqualMerge, "640,480,1", "CUSTOM"};
-
-static struct PluginCodec_Option const annexF =
-  { PluginCodec_BoolOption,    "Annex F",   false,  PluginCodec_MinMerge, "1", "F", "0" };
-
-static struct PluginCodec_Option const annexI =
-  { PluginCodec_BoolOption,    "Annex I",   false,  PluginCodec_MinMerge, "1", "I", "0" };
-
-static struct PluginCodec_Option const annexJ =
-  { PluginCodec_BoolOption,    "Annex J",   true,  PluginCodec_MinMerge, "1", "J", "0" };
-
-static struct PluginCodec_Option const annexK =
-  { PluginCodec_IntegerOption, "Annex K",   true,  PluginCodec_EqualMerge, "0", "K", "0", 0, "0", "4" };
-
-static struct PluginCodec_Option const annexN =
-  { PluginCodec_BoolOption,    "Annex N",   true,  PluginCodec_AndMerge, "0", "N", "0" };
-
-static struct PluginCodec_Option const annexP =
-  { PluginCodec_BoolOption,    "Annex P",   true,  PluginCodec_AndMerge, "0", "P", "0" };
-
-static struct PluginCodec_Option const annexT =
-  { PluginCodec_BoolOption,    "Annex T",   true,  PluginCodec_AndMerge, "0", "T", "0" };
-
-static struct PluginCodec_Option const annexD =
-  { PluginCodec_BoolOption,    "Annex D",   true,  PluginCodec_MinMerge, "1", "D", "0" };
-
-static struct PluginCodec_Option const * const optionTable[] = {
-  &qcifMPI,
-  &cifMPI,
-  &sqcifMPI,
-  &cif4MPI,
-  &cif16MPI,
-  &sifMPI,
-  &sif4MPI,
-  &annexF,
-  &annexI,
-  &annexJ,
-  &annexK,
-  &annexN,
-  &annexP,
-  &annexT,
-  &annexD,
-  NULL
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-static struct PluginCodec_Definition h263PCodecDefn[2] = {
-{ 
-  // All frame sizes (dynamic) encoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeVideo |        // audio codec
-  PluginCodec_RTPTypeShared |         // specified RTP type
-  PluginCodec_RTPTypeDynamic,         // specified RTP type
-
-  h263PDesc,                           // text decription
-  YUV420PDesc,                        // source format
-  h263PDesc,                           // destination format
-
-  optionTable,                        // user data 
-
-  H263P_CLOCKRATE,                    // samples per second
-  H263P_BITRATE,                      // raw bits per second
-  20000,                              // nanoseconds per frame
-
-  {{
-    CIF4_WIDTH,                       // frame width
-    CIF4_HEIGHT,                      // frame height
-    10,                               // recommended frame rate
-    60,                               // maximum frame rate
-  }},
-
-  0,                                  // IANA RTP payload code
-  sdpH263,                            // RTP payload name
-
-  create_encoder,                     // create codec function
-  destroy_encoder,                    // destroy codec
-  codec_encoder,                      // encode/decode
-  EncoderControls,                    // codec controls
-
-  PluginCodec_H323Codec_NoH323,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-{ 
-  // All frame sizes (dynamic) decoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeVideo |        // audio codec
-  PluginCodec_RTPTypeShared |         // specified RTP type
-  PluginCodec_RTPTypeDynamic,         // specified RTP type
-
-  h263PDesc,                           // text decription
-  h263PDesc,                           // source format
-  YUV420PDesc,                        // destination format
-
-  optionTable,                        // user data 
-
-  H263P_CLOCKRATE,                    // samples per second
-  H263P_BITRATE,                      // raw bits per second
-  20000,                              // nanoseconds per frame
-
-  {{
-    CIF4_WIDTH,                       // frame width
-    CIF4_HEIGHT,                      // frame height
-    10,                               // recommended frame rate
-    60,                               // maximum frame rate
-  }},
-  0,                                  // IANA RTP payload code
-  sdpH263,                            // RTP payload name
-
-  create_decoder,                     // create codec function
-  destroy_decoder,                    // destroy codec
-  codec_decoder,                      // encode/decode
-  DecoderControls,                    // codec controls
-
-  PluginCodec_H323Codec_NoH323,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
 #endif /* __H263P_1998_H__ */
