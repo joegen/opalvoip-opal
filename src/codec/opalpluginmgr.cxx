@@ -2114,7 +2114,7 @@ PBoolean H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) cons
 
   h261.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, PFalse);
   h261.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 621700)+50)/100;
-  h261.m_stillImageTransmission            = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, PFalse);
+  h261.m_stillImageTransmission            = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, mediaFormat.GetOptionBoolean(H261_ANNEX_D));
 
   return PTrue;
 }
@@ -2133,7 +2133,7 @@ PBoolean H323H261PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
                                                : H245_H261VideoMode_resolution::e_cif);
 
   mode.m_bitRate                = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 621700) + 50) / 1000;
-  mode.m_stillImageTransmission = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, PFalse);
+  mode.m_stillImageTransmission = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, mediaFormat.GetOptionBoolean(H261_ANNEX_D));
 
   return PTrue;
 }
@@ -2175,6 +2175,7 @@ PBoolean H323H261PluginCapability::OnReceivedPDU(const H245_VideoCapability & ca
   mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(),        h261.m_maxBitRate*100);
   mediaFormat.SetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, h261.m_temporalSpatialTradeOffCapability);
   mediaFormat.SetOptionBoolean(h323_stillImageTransmission_tag,            h261.m_stillImageTransmission);
+  mediaFormat.SetOptionBoolean(H261_ANNEX_D,                               h261.m_stillImageTransmission);
 
   return PTrue;
 }
@@ -2276,24 +2277,30 @@ PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) cons
   h263.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, PFalse);
   h263.m_unrestrictedVector	           = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, PFalse);
   h263.m_arithmeticCoding	           = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, PFalse);
-  h263.m_advancedPrediction	           = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, PFalse);
+  h263.m_advancedPrediction	           = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, mediaFormat.GetOptionBoolean(H263_ANNEX_F));
   h263.m_pbFrames	                   = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, PFalse);
   h263.m_errorCompensation                 = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, PFalse);
 
-  {
-    int hrdB = mediaFormat.GetOptionInteger(h323_hrdB_tag, -1);
-    if (hrdB >= 0) {
-      h263.IncludeOptionalField(H245_H263VideoCapability::e_hrd_B);
-	    h263.m_hrd_B = hrdB;
-    }
+  int hrdB = mediaFormat.GetOptionInteger(h323_hrdB_tag, -1);
+  if (hrdB >= 0) {
+    h263.IncludeOptionalField(H245_H263VideoCapability::e_hrd_B);
+    h263.m_hrd_B = hrdB;
   }
 
-  {
-    int bppMaxKb = mediaFormat.GetOptionInteger(h323_bppMaxKb_tag, -1);
-    if (bppMaxKb >= 0) {
-      h263.IncludeOptionalField(H245_H263VideoCapability::e_bppMaxKb);
-	    h263.m_bppMaxKb = bppMaxKb;
-    }
+  int bppMaxKb = mediaFormat.GetOptionInteger(h323_bppMaxKb_tag, -1);
+  if (bppMaxKb >= 0) {
+    h263.IncludeOptionalField(H245_H263VideoCapability::e_bppMaxKb);
+    h263.m_bppMaxKb = bppMaxKb;
+  }
+
+  bool annexI = mediaFormat.GetOptionBoolean(H263_ANNEX_I);
+  bool annexJ = mediaFormat.GetOptionBoolean(H263_ANNEX_J);
+  bool annexT = mediaFormat.GetOptionBoolean(H263_ANNEX_T);
+  if (annexI || annexJ || annexT) {
+    h263.IncludeOptionalField(H245_H263VideoCapability::e_h263Options);
+    h263.m_h263Options.m_advancedIntraCodingMode  = annexI;
+    h263.m_h263Options.m_deblockingFilterMode     = annexJ;
+    h263.m_h263Options.m_modifiedQuantizationMode = annexT;
   }
 
   return PTrue;
@@ -2321,9 +2328,19 @@ PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
   mode.m_bitRate              = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
   mode.m_unrestrictedVector   = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, PFalse);
   mode.m_arithmeticCoding     = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, PFalse);
-  mode.m_advancedPrediction   = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, PFalse);
+  mode.m_advancedPrediction   = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, mediaFormat.GetOptionBoolean(H263_ANNEX_F));
   mode.m_pbFrames             = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, PFalse);
   mode.m_errorCompensation    = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, PFalse);
+
+  bool annexI = mediaFormat.GetOptionBoolean(H263_ANNEX_I);
+  bool annexJ = mediaFormat.GetOptionBoolean(H263_ANNEX_J);
+  bool annexT = mediaFormat.GetOptionBoolean(H263_ANNEX_T);
+  if (annexI || annexJ || annexT) {
+    mode.IncludeOptionalField(H245_H263VideoMode::e_h263Options);
+    mode.m_h263Options.m_advancedIntraCodingMode  = annexI;
+    mode.m_h263Options.m_deblockingFilterMode     = annexJ;
+    mode.m_h263Options.m_modifiedQuantizationMode = annexT;
+  }
 
   return PTrue;
 }
@@ -2450,6 +2467,18 @@ PBoolean H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & ca
 
   if (h263.HasOptionalField(H245_H263VideoCapability::e_bppMaxKb))
     mediaFormat.SetOptionInteger(h323_bppMaxKb_tag, h263.m_bppMaxKb);
+
+  mediaFormat.SetOptionBoolean(H263_ANNEX_F, h263.m_advancedPrediction);
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_h263Options)) {
+    mediaFormat.SetOptionBoolean(H263_ANNEX_I, h263.m_h263Options.m_advancedIntraCodingMode);
+    mediaFormat.SetOptionBoolean(H263_ANNEX_J, h263.m_h263Options.m_deblockingFilterMode);
+    mediaFormat.SetOptionBoolean(H263_ANNEX_T, h263.m_h263Options.m_modifiedQuantizationMode);
+  }
+  else {
+    mediaFormat.SetOptionBoolean(H263_ANNEX_I, false);
+    mediaFormat.SetOptionBoolean(H263_ANNEX_J, false);
+    mediaFormat.SetOptionBoolean(H263_ANNEX_T, false);
+  }
 
 //PStringStream str; mediaFormat.PrintOptions(str);
 //PTRACE(4, "OpalPlugin\tCreated H.263 cap from incoming PDU with format " << mediaFormat << " and options\n" << str);

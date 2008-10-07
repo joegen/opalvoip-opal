@@ -526,6 +526,12 @@ enum {
 
 #define PLUGINCODEC_MEDIA_PACKETIZATION "Media Packetization"
 
+#define H261_ANNEX_D "Annex D - Still Image Transmit"
+#define H263_ANNEX_F "Annex F - Advanced Prediction"
+#define H263_ANNEX_I "Annex I - Advanced INTRA Coding"
+#define H263_ANNEX_J "Annex J - Deblocking Filter"
+#define H263_ANNEX_T "Annex T - Modified Quantization"
+
 #ifndef STRINGIZE
 #define __INTERNAL_STRINGIZE__(v) #v
 #define STRINGIZE(v) __INTERNAL_STRINGIZE__(v)
