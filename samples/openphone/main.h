@@ -180,6 +180,21 @@ class MySIPEndPoint : public SIPEndPoint
 };
 
 
+class VideoControlDialog : public wxDialog
+{
+  public:
+    VideoControlDialog(MyManager * manager);
+
+  private:
+    bool TransferDataFromWindow();
+
+    MyManager & m_manager;
+    wxSlider  * m_TargetBitRate;
+
+    DECLARE_EVENT_TABLE()
+};
+
+
 class CallDialog : public wxDialog
 {
   public:
@@ -790,6 +805,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnStartVideo(wxCommandEvent& event);
     void OnStopVideo(wxCommandEvent& event);
     void OnVFU(wxCommandEvent& event);
+    void OnVideoControl(wxCommandEvent& event);
     void OnSashPositioned(wxSplitterEvent& event);
     void OnSpeedDialActivated(wxListEvent& event);
     void OnSpeedDialColumnResize(wxListEvent& event);
