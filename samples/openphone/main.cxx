@@ -429,6 +429,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuStartVideo"),      MyManager::OnStartVideo)
   EVT_MENU(XRCID("MenuStopVideo"),       MyManager::OnStopVideo)
   EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnVFU)
+  EVT_MENU(XRCID("MenuVideoControl"),    MyManager::OnVideoControl)
 
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyManager::OnSashPositioned)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyManager::OnSpeedDialActivated)
@@ -1274,6 +1275,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuStartVideo"), hasStartVideo);
   menubar->Enable(XRCID("MenuStopVideo"), hasStopVideo);
   menubar->Enable(XRCID("MenuSendVFU"), hasRxVideo);
+  menubar->Enable(XRCID("MenuVideoControl"), hasStopVideo);
 
   menubar->Enable(XRCID("SubMenuRetrieve"), !m_callsOnHold.empty());
 }
@@ -2221,6 +2223,13 @@ void MyManager::OnVFU(wxCommandEvent& /*event*/)
     OpalVideoUpdatePicture cmd;
     connection->OnMediaCommand(cmd, 0);
   }
+}
+
+
+void MyManager::OnVideoControl(wxCommandEvent& /*event*/)
+{
+  VideoControlDialog dlg(this);
+  dlg.ShowModal();
 }
 
 
@@ -4218,6 +4227,50 @@ void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
 }
 #endif
 
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(VideoControlDialog, wxDialog)
+END_EVENT_TABLE()
+
+VideoControlDialog::VideoControlDialog(MyManager * manager)
+  : m_manager(*manager)
+{
+  wxXmlResource::Get()->LoadDialog(this, manager, wxT("VideoControlDialog"));
+
+  m_TargetBitRate = FindWindowByNameAs<wxSlider>(this, wxT("VideoBitRate"));
+
+  PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadOnly);
+  if (connection != NULL) {
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
+    if (stream != NULL) {
+      OpalMediaFormat mediaFormat = stream->GetMediaFormat();
+      m_TargetBitRate->SetMax(mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())/1000);
+      m_TargetBitRate->SetValue(mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption())/1000);
+      m_TargetBitRate->SetTickFreq(m_TargetBitRate->GetMax()/10,1);
+    }
+  }
+}
+
+
+bool VideoControlDialog::TransferDataFromWindow()
+{
+  if (!wxDialog::TransferDataFromWindow())
+    return false;
+
+  PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
+  if (connection != NULL) {
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), false);
+    if (stream != NULL) {
+      OpalMediaFormat mediaFormat = stream->GetMediaFormat();
+      mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), m_TargetBitRate->GetValue()*1000);
+      stream->UpdateMediaFormat(mediaFormat);
+    }
+  }
+
+  return true;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
