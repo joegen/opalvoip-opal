@@ -1264,7 +1264,7 @@ PBoolean H323Gatekeeper::DisengageRequest(const H323Connection & connection, uns
 
   drq.IncludeOptionalField(H225_DisengageRequest::e_terminationCause);
   drq.m_terminationCause.SetTag(H225_CallTerminationCause::e_releaseCompleteReason);
-  Q931::CauseValues cause = H323TranslateFromCallEndReason(connection, drq.m_terminationCause);
+  Q931::CauseValues cause = H323TranslateFromCallEndReason(connection.GetCallEndReason(), drq.m_terminationCause);
   if (cause != Q931::ErrorInCauseIE) {
     drq.m_terminationCause.SetTag(H225_CallTerminationCause::e_releaseCompleteCauseIE);
     PASN_OctetString & rcReason = drq.m_terminationCause;
