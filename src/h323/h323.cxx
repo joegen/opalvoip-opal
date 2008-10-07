@@ -1650,7 +1650,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
         Release(EndedByRefusal);
       else {
         SetRemoteVersions(rc.m_protocolIdentifier);
-        Release(H323TranslateToCallEndReason(pdu.GetQ931().GetCause(), rc.m_reason));
+        Release(H323TranslateToCallEndReason(pdu.GetQ931().GetCause(), rc.m_reason.GetTag()));
       }
   }
 }

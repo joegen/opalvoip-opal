@@ -469,11 +469,11 @@ PString H323GetAliasAddressE164(const H225_ArrayOf_AliasAddress & aliases);
 
 H323Connection::CallEndReason H323TranslateToCallEndReason(
   Q931::CauseValues cause,
-  const H225_ReleaseCompleteReason & reason
+  unsigned reason
 );
 Q931::CauseValues H323TranslateFromCallEndReason(
-  const H323Connection & connection,
-  H225_ReleaseCompleteReason & rcReason
+  H323Connection::CallEndReason callEndReason,
+  H225_ReleaseCompleteReason & releaseCompleteReason
 );
 
 void H323GetApplicationInfo(OpalProductInfo & info, const H225_VendorIdentifier & vendor);
