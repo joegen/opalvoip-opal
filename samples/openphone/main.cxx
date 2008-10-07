@@ -4607,7 +4607,7 @@ double StatisticsField::CalculateBandwidth(DWORD bytes)
 
   double value;
   if (m_lastTick != 0)
-    value = 8.0 * (bytes - m_lastBytes) / (tick - m_lastTick).GetMilliSeconds(); // Ends up as kilobits/second
+    value = (bytes - m_lastBytes) / (double)(tick - m_lastTick).GetMilliSeconds(); // Ends up as kilobits/second
   else
     value = 0;
 
