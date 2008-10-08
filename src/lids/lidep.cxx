@@ -114,15 +114,8 @@ PBoolean OpalLineEndPoint::MakeConnection(OpalCall & call,
   
   // Locate a line
   OpalLine * line = GetLine(lineName, true, terminating);
-  if (line == NULL && lineName != defaultLine) {
-    PTRACE(1,"LID EP\tMakeConnection cannot find the line \"" << lineName << '"');
-    line = GetLine(defaultLine, true, terminating);
-  }  
-  if (line == NULL){
-    PTRACE(1,"LID EP\tMakeConnection cannot find the default line " << defaultLine);
+  if (line == NULL)
     return false;
-
-  }
 
   return AddConnection(CreateConnection(call, *line, userData, number));
 }
@@ -359,7 +352,7 @@ OpalLine * OpalLineEndPoint::GetLine(const PString & lineName, bool enableAudio,
     PString lineToken = line->GetToken();
     if (lineName != defaultLine && lineToken != lineName)
       PTRACE(4, "LID EP\tNo match to line name=\"" << lineToken << "\", default=" << defaultLine);
-    else if (line->IsTerminal() == terminating)
+    else if (line->IsTerminal() != terminating)
       PTRACE(4, "LID EP\tNo match to line name=\"" << lineToken << "\", terminating=" << line->IsTerminal());
     else if (!line->IsPresent())
       PTRACE(4, "LID EP\tNo match to line name=\"" << lineToken << "\", not present");
@@ -876,11 +869,6 @@ PBoolean OpalLineConnection::SetUpConnection()
       return true;
     }
 
-    if (line.IsToneDetected() == OpalLineInterfaceDevice::BusyTone) {
-      Release(OpalConnection::EndedByRemoteBusy);
-      return false;
-    }
-
     PThread::Sleep(100);
   }
 
@@ -889,7 +877,7 @@ PBoolean OpalLineConnection::SetUpConnection()
          << ") on line " << line);
 
   if (m_dialParams.m_requireTones) {
-    Release(OpalConnection::EndedByRemoteBusy);
+    Release(OpalConnection::EndedByNoAnswer);
     return false;
   }
 
