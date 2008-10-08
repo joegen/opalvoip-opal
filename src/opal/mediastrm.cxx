@@ -111,12 +111,8 @@ PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaForm
     return false;
 
   // If we are source, then update the sink side, and vice versa
-  if (mediaPatch != NULL && !fromPatch) {
-    if (!mediaPatch->UpdateMediaFormat(newMediaFormat, IsSink())) {
-      PTRACE(2, "Media\tPatch did not allow media format update of " << *this);
-      return false;
-    }
-  }
+  if (mediaPatch != NULL && !fromPatch)
+    return mediaPatch->UpdateMediaFormat(newMediaFormat);
 
   if (mediaFormat != newMediaFormat)
     return mediaFormat.Merge(newMediaFormat);
