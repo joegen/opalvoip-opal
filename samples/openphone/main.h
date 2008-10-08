@@ -261,6 +261,7 @@ struct StatisticsField
   void Init(wxWindow * panel);
   void Clear();
   double CalculateBandwidth(DWORD bytes);
+  double CalculateFrameRate(DWORD frames);
   virtual StatisticsField * Clone() const = 0;
   virtual void Update(const OpalConnection & connection, const OpalMediaStream & stream);
   virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) = 0;
@@ -270,8 +271,11 @@ struct StatisticsField
   wxStaticText  * m_staticText;
   wxString        m_printFormat;
 
-  PTimeInterval   m_lastTick;
+  PTimeInterval   m_lastBandwidthTick;
   DWORD           m_lastBytes;
+
+  PTimeInterval   m_lastFrameTick;
+  DWORD           m_lastFrames;
 };
 
 class StatisticsPage

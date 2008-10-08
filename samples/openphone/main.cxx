@@ -4241,9 +4241,9 @@ VideoControlDialog::VideoControlDialog(MyManager * manager)
 
   m_TargetBitRate = FindWindowByNameAs<wxSlider>(this, wxT("VideoBitRate"));
 
-  PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadOnly);
+  PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
   if (connection != NULL) {
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), false);
     if (stream != NULL) {
       OpalMediaFormat mediaFormat = stream->GetMediaFormat();
       m_TargetBitRate->SetMax(mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())/1000);
@@ -4634,6 +4634,8 @@ StatisticsField::StatisticsField(const wxChar * name, StatisticsPages page)
   : m_name(name)
   , m_page(page)
   , m_staticText(NULL)
+  , m_lastBytes(0)
+  , m_lastFrames(0)
 {
   StatisticsFieldTemplates.push_back(this);
 }
@@ -4650,7 +4652,7 @@ void StatisticsField::Init(wxWindow * panel)
 void StatisticsField::Clear()
 {
   m_staticText->SetLabel(wxT("N/A"));
-  m_lastTick = 0;
+  m_lastBandwidthTick = 0;
 }
 
 
@@ -4659,13 +4661,30 @@ double StatisticsField::CalculateBandwidth(DWORD bytes)
   PTimeInterval tick = PTimer::Tick();
 
   double value;
-  if (m_lastTick != 0)
-    value = 8.0 * (bytes - m_lastBytes) / (tick - m_lastTick).GetMilliSeconds(); // Ends up as kilobits/second
+  if (m_lastBandwidthTick != 0)
+    value = 8.0 * (bytes - m_lastBytes) / (tick - m_lastBandwidthTick).GetMilliSeconds(); // Ends up as kilobits/second
   else
     value = 0;
 
-  m_lastTick = tick;
+  m_lastBandwidthTick = tick;
   m_lastBytes = bytes;
+
+  return value;
+}
+
+
+double StatisticsField::CalculateFrameRate(DWORD frames)
+{
+  PTimeInterval tick = PTimer::Tick();
+
+  double value;
+  if (m_lastFrameTick != 0)
+    value = (frames - m_lastFrames) / (double)(tick - m_lastFrameTick).GetSeconds(); // Ends up as frames/second
+  else
+    value = 0;
+
+  m_lastFrameTick = tick;
+  m_lastFrames = frames;
 
   return value;
 }
@@ -4810,6 +4829,10 @@ STATISTICS_FIELD_BEG(RxVideo, KeyFrames)
   value.sprintf(m_printFormat, statistics.m_keyFrames);
 STATISTICS_FIELD_END(RxVideo, KeyFrames)
 
+STATISTICS_FIELD_BEG(RxVideo, FrameRate)
+  value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_totalFrames));
+STATISTICS_FIELD_END(RxVideo, FrameRate)
+
 STATISTICS_FIELD_BEG(RxVideo, VFU)
   value.sprintf(m_printFormat, connection.GetVideoUpdateRequestsSent());
 STATISTICS_FIELD_END(RxVideo, VFU)
@@ -4845,6 +4868,10 @@ STATISTICS_FIELD_END(TxVideo, Frames)
 STATISTICS_FIELD_BEG(TxVideo, KeyFrames)
   value.sprintf(m_printFormat, statistics.m_keyFrames);
 STATISTICS_FIELD_END(TxVideo, KeyFrames)
+
+STATISTICS_FIELD_BEG(TxVideo, FrameRate)
+  value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_totalFrames));
+STATISTICS_FIELD_END(TxVideo, FrameRate)
 
 STATISTICS_FIELD_BEG(RxFax, Bandwidth)
   value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
