@@ -385,17 +385,16 @@ void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
 }
 
 
-PBoolean OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat, PBoolean fromSink)
+bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   PReadWaitAndSignal mutex(inUse);
 
-  if (fromSink)
-    return source.UpdateMediaFormat(mediaFormat, true);
+  bool atLeastOne = source.UpdateMediaFormat(mediaFormat, true);
 
-  PBoolean atLeastOne = PFalse;
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
     atLeastOne = s->UpdateMediaFormat(mediaFormat) || atLeastOne;
 
+  PTRACE_IF(2, !atLeastOne, "Patch\tCould not update media format for any stream/transcoder in " << *this);
   return atLeastOne;
 }
 
@@ -502,26 +501,21 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
 {
   bool ok;
 
-  if (primaryCodec == NULL) {
+  if (primaryCodec == NULL)
     ok = stream->UpdateMediaFormat(mediaFormat, true);
-#if OPAL_VIDEO
-    SetRateControlParameters(stream->GetMediaFormat());
-#endif
-  }
-  else if (secondaryCodec != NULL && secondaryCodec->GetOutputFormat() == mediaFormat) {
-    ok = secondaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
-#if OPAL_VIDEO
-    SetRateControlParameters(secondaryCodec->GetOutputFormat());
-#endif
-  }
-  else if (primaryCodec->GetOutputFormat() == mediaFormat) {
-    ok = primaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
-#if OPAL_VIDEO
-    SetRateControlParameters(primaryCodec->GetOutputFormat());
-#endif
-  }
+  else if (secondaryCodec != NULL && secondaryCodec->GetOutputFormat() == mediaFormat)
+    ok = secondaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat) &&
+         stream->UpdateMediaFormat(secondaryCodec->GetOutputFormat(), true);
+  else if (primaryCodec->GetOutputFormat() == mediaFormat)
+    ok = primaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat) &&
+         stream->UpdateMediaFormat(primaryCodec->GetOutputFormat(), true);
   else
-    ok = primaryCodec->UpdateMediaFormats(mediaFormat, OpalMediaFormat());
+    ok = primaryCodec->UpdateMediaFormats(mediaFormat, OpalMediaFormat()) &&
+         stream->UpdateMediaFormat(primaryCodec->GetInputFormat(), true);
+
+#if OPAL_VIDEO
+  SetRateControlParameters(stream->GetMediaFormat());
+#endif
 
   PTRACE(3, "Patch\tUpdated Sink: format=" << mediaFormat << " ok=" << ok);
   return ok;
@@ -633,8 +627,8 @@ bool OpalMediaPatch::Sink::RateControlExceeded(const PTimeInterval & currentTime
   }
 
   PTRACE(4, "Patch\tRate controller skipping frame.");
-  ++rcConsecutiveFramesSkipped;
-  return true;
+    ++rcConsecutiveFramesSkipped;
+    return true;
 }
 #endif
 
