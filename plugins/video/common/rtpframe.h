@@ -38,12 +38,12 @@
 
 class RTPFrame {
 public:
-  RTPFrame (const unsigned char* frame, int frameLen) {
+  RTPFrame(const unsigned char * frame, int frameLen) {
     _frame = (unsigned char*) frame;
     _frameLen = frameLen;
   };
 
-  RTPFrame (unsigned char* frame, int frameLen, unsigned char payloadType) {
+  RTPFrame(unsigned char * frame, int frameLen, unsigned char payloadType) {
     _frame = frame;
     _frameLen = frameLen;
     if (_frameLen > 0)
@@ -51,23 +51,23 @@ public:
     SetPayloadType(payloadType);
   }
 
-  unsigned GetPayloadSize () {
+  unsigned GetPayloadSize() const {
     return (_frameLen - GetHeaderSize());
   }
 
-  void SetPayloadSize (int size) {
+  void SetPayloadSize(int size) {
     _frameLen = size + GetHeaderSize();
   }
 
-  int GetFrameLen () {
+  int GetFrameLen () const {
     return (_frameLen);
   }
 
-  unsigned char* GetPayloadPtr () {
+  unsigned char * GetPayloadPtr() const {
     return (_frame + GetHeaderSize());
   }
 
-  int GetHeaderSize () {
+  int GetHeaderSize() const {
     int size;
     size = 12;
     if (_frameLen < 12) 
@@ -80,41 +80,39 @@ public:
     return 0;
   }
 
-  bool GetMarker () {
+  bool GetMarker() const {
     if (_frameLen < 2) 
       return false;
     return (_frame[1] & 0x80);
   }
 
-  unsigned GetSequenceNumber () {
+  unsigned GetSequenceNumber() const {
     if (_frameLen < 4)
       return 0;
     return (_frame[2] << 8) + _frame[3];
   }
-				  
 
-
-  void SetMarker (bool set) {
+  void SetMarker(bool set) {
     if (_frameLen < 2) 
       return;
     _frame[1] = _frame[1] & 0x7f;
     if (set) _frame[1] = _frame[1] | 0x80;
   }
 
-  void SetPayloadType (unsigned char type) {
+  void SetPayloadType(unsigned char type) {
     if (_frameLen < 2) 
       return;
     _frame[1] = _frame [1] & 0x80;
     _frame[1] = _frame [1] | (type & 0x7f);
   }
 
-  unsigned long GetTimestamp() {
+  unsigned long GetTimestamp() const {
     if (_frameLen < 8)
       return 0;
     return ((_frame[4] << 24) + (_frame[5] << 16) + (_frame[6] << 8) + _frame[7]);
   }
 
-  void SetTimestamp (unsigned long timestamp) {
+  void SetTimestamp(unsigned long timestamp) {
      if (_frameLen < 8)
        return;
      _frame[4] = (unsigned char) ((timestamp >> 24) & 0xff);
