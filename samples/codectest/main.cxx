@@ -31,6 +31,8 @@
 #include "precompile.h"
 #include "main.h"
 
+#include <opal/patch.h>
+
 
 PCREATE_PROCESS(CodecTest);
 
@@ -71,6 +73,8 @@ void CodecTest::Main()
              "M-force-marker."
              "S-single-step."
              "H:"
+             "T-statistics."
+             "C-rate-control."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -110,6 +114,8 @@ void CodecTest::Main()
               "  -m --suppress-marker    : suppress marker bits to decoder"
               "  -M --force-marker       : force marker bits to decoder"
               "  -c --crop               : crop rather than scale if resizing\n"
+              "  -T --statistics         : output statistics files\n"
+              "  -C --rate-control       : enable rate control\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
               "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -482,7 +488,6 @@ bool VideoThread::Initialise(PArgList & args)
   cout << "Grabber channel set to " << grabber->GetChannel() << endl;
 
   
-  unsigned frameRate;
   if (args.HasOption("frame-rate"))
     frameRate = args.GetOptionString("frame-rate").AsUnsigned();
   else
@@ -602,6 +607,18 @@ bool VideoThread::Initialise(PArgList & args)
   }
   cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
 
+  if (args.HasOption('T')) {
+    frameFn  = "frame_stats.txt";
+    packetFn = "packet_stats.txt";
+  }
+
+  if (args.HasOption('C')) {
+    rcEnable = true;
+    unsigned rate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
+    rateController.Open(rate, 5000, 12);
+    cout << "Video rate controller enabled for bit rate " << rate << " bps" << endl;
+  }
+
   SetOptions(args, mediaFormat);
 
   if (encoder != NULL)
@@ -634,7 +651,22 @@ void VideoThread::Main()
   grabber->Start();
   display->Start();
 
+  //decoder->SetCommandNotifier(PCREATE_NOTIFIER(OnTranscoderCommand));
+
+  forceIFrame = false;
   TranscoderThread::Main();
+}
+
+void TranscoderThread::OnTranscoderCommand(OpalMediaCommand & cmd, INT)
+{
+  if (PIsDescendant(&cmd, OpalVideoUpdatePicture)) {
+    cout << "decoder lost sync" << endl;
+    forceIFrame = true;
+    ((OpalVideoTranscoder *)encoder)->ForceIFrame();
+  }
+  else {
+    cout << "unknown decoder command " << cmd.GetName() << endl;
+  }
 }
 
 
@@ -643,6 +675,7 @@ void TranscoderThread::Main()
   PUInt64 byteCount = 0;
   PUInt64 frameCount = 0;
   PUInt64 packetCount = 0;
+  unsigned long sequenceNumber = 0;
   bool oldSrcState = true;
   bool oldOutState = true;
   bool oldEncState = true;
@@ -661,8 +694,13 @@ void TranscoderThread::Main()
     srcFrame.SetTimestamp(timestamp);
     timestamp += encoder->GetOutputFormat().GetFrameTime();
 
+    if (rcEnable && rateController.SkipFrame()) {
+      cerr << "Rate controller forced frame skip" << endl;
+      continue;
+    }
+      
     RTP_DataFrameList encFrames;
-    if (encoder == NULL)
+    if (encoder == NULL) 
       encFrames.Append(new RTP_DataFrame(srcFrame)); 
     else {
       state = encoder->ConvertFrames(srcFrame, encFrames);
@@ -673,6 +711,11 @@ void TranscoderThread::Main()
       }
     }
 
+    for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+      encFrames[i].SetSequenceNumber(++sequenceNumber);
+    }
+
+    unsigned long frameSize = 0;
     for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
       RTP_DataFrameList outFrames;
       if (encoder == NULL)
@@ -688,23 +731,28 @@ void TranscoderThread::Main()
         }
 
         state = decoder->ConvertFrames(encFrames[i], outFrames);
+
         if (oldDecState != state) {
           oldDecState = state;
           cerr << "Decoder " << (state ? "restor" : "fail") << "ed at packet " << packetCount << endl;
           continue;
         }
+        UpdateStats(encFrames[i]);
       }
       for (PINDEX j = 0; j < outFrames.GetSize(); j++) {
         state = Write(outFrames[j]);
-        if (oldOutState != state)
-        {
+        if (oldOutState != state) {
           oldOutState = state;
           cerr << "Frame display " << (state ? "restor" : "fail") << "ed at packet " << packetCount << endl;
         }
       }
       byteCount += encFrames[i].GetPayloadSize();
+      frameSize += encFrames[i].GetPayloadSize() + encFrames[i].GetHeaderSize();
       packetCount++;
     }
+
+    if (rcEnable)
+      rateController.AddFrame(frameSize);
 
     if (pause.Wait(0)) {
       pause.Acknowledge();
@@ -794,5 +842,57 @@ void VideoThread::Stop()
   WaitForTermination();
 }
 
+void VideoThread::InitStats()
+{
+  packetCount= 0;
+  frameCount = 0;
+  frameBytes = 0;
+  totalFrameBytes = 0;
+
+  timeval startTime;
+}
+
+void VideoThread::UpdateStats(const RTP_DataFrame & frame)
+{
+  if (!packetFn.IsEmpty()) {
+    packetStatFile.Open(packetFn, PFile::WriteOnly);
+    packetFn.MakeEmpty();
+  }
+
+  packetCount++;
+  frameBytes      += frame.GetPayloadSize();
+  totalFrameBytes += frame.GetPayloadSize();
+
+  if (packetStatFile.IsOpen()) 
+    packetStatFile << packetCount << " "
+                   << frame.GetPayloadSize() << endl;
+
+  if (frame.GetMarker()) 
+    UpdateFrameStats();
+}
+
+PInt64 BpsTokbps(PInt64 Bps)
+{
+  return ((Bps * 8) + 500) / 1000;
+}
+
+void VideoThread::UpdateFrameStats()
+{
+  if (!frameFn.IsEmpty()) {
+    frameStatFile.Open(frameFn, PFile::WriteOnly);
+    frameFn.MakeEmpty();
+  }
+
+  frameCount++;
+
+  if (frameStatFile.IsOpen()) {
+    frameStatFile << frameCount << " "
+                  << (frameBytes * 8) << " "
+                  << BpsTokbps(frameBytes * frameRate) << " "
+                  << BpsTokbps((totalFrameBytes * frameRate) / frameCount) << endl;
+  }
+
+  frameBytes = 0;
+}
 
 // End of File ///////////////////////////////////////////////////////////////
