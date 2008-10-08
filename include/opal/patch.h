@@ -203,9 +203,8 @@ class OpalMediaPatch : public PObject
        The default behaviour updates the source/sink media stream and the
        output side of any relevant transcoders.
       */
-    virtual PBoolean UpdateMediaFormat(
-      const OpalMediaFormat & mediaFormat,  ///<  New media format
-      PBoolean fromSink                         ///<  Flag for source or sink
+    virtual bool UpdateMediaFormat(
+      const OpalMediaFormat & mediaFormat  ///<  New media format
     );
 
     /**Execute the command specified to the transcoder. The commands are
