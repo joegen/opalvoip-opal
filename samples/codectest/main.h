@@ -29,6 +29,9 @@
 #ifndef _CodecTest_MAIN_H
 #define _CodecTest_MAIN_H
 
+#include <codec/vidcodec.h>
+#include <opal/patch.h>
+
 
 class TranscoderThread : public PThread
 {
@@ -41,6 +44,7 @@ class TranscoderThread : public PThread
       , num(_num)
       , timestamp(0)
       , markerHandling(NormalMarkers)
+      , rcEnable(false)
     {
     }
 
@@ -58,6 +62,8 @@ class TranscoderThread : public PThread
     virtual bool Write(const RTP_DataFrame & frame) = 0;
     virtual void Stop() = 0;
 
+    virtual void UpdateStats(const RTP_DataFrame &) { }
+
     bool running;
 
     PSyncPointAck pause;
@@ -72,6 +78,12 @@ class TranscoderThread : public PThread
       ForceMarkers,
       NormalMarkers
     } markerHandling;
+
+    PDECLARE_NOTIFIER(OpalMediaCommand, TranscoderThread, OnTranscoderCommand);
+    bool forceIFrame;
+
+    bool rcEnable;
+    OpalVideoRateController rateController;
 };
 
 
@@ -104,7 +116,6 @@ class AudioThread : public TranscoderThread
     PINDEX          readSize;
 };
 
-
 class VideoThread : public TranscoderThread
 {
   public:
@@ -115,6 +126,7 @@ class VideoThread : public TranscoderThread
       , singleStep(false)
       , frameWait(0, INT_MAX)
     {
+      InitStats();
     }
 
     ~VideoThread()
@@ -130,10 +142,25 @@ class VideoThread : public TranscoderThread
     virtual bool Write(const RTP_DataFrame & frame);
     virtual void Stop();
 
+    void InitStats();
+    virtual void UpdateStats(const RTP_DataFrame &);
+    void UpdateFrameStats();
+
     PVideoInputDevice  * grabber;
     PVideoOutputDevice * display;
+
     bool                 singleStep;
     PSemaphore           frameWait;
+    unsigned             frameRate;
+
+    PString frameFn;
+    PString packetFn;
+
+    PTextFile packetStatFile, frameStatFile;
+    PInt64 packetCount;
+    PInt64 frameCount;
+    PInt64 frameBytes;
+    PInt64 totalFrameBytes;
 };
 
 
