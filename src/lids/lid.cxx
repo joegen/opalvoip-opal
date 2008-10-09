@@ -1105,15 +1105,17 @@ PBoolean OpalLine::IsRinging(DWORD * cadence)
 
   if (device.IsLineRinging(lineNumber, cadence)) {
     ringTick = tick;
-    if (ringCount == 0) {
-      PTRACE(4, "LID\tRing start detected on line " << lineNumber);
-      ringCount = 1;
-    }
-    lastRingState = true;
-  }
-  else if (lastRingState && delta > ringInterCadenceTime) {
-    PTRACE(4, "LID\tRing cadence incremented on line " << lineNumber);
+    if (lastRingState)
+      return true;
+
+    PTRACE_IF(4, ringCount == 0, "LID\tRing start detected on line " << lineNumber);
     ringCount++;
+    lastRingState = true;
+    return true;
+  }
+
+  if (lastRingState && delta > ringInterCadenceTime) {
+    PTRACE(4, "LID\tRing cadence incremented on line " << lineNumber);
     lastRingState = false;
   }
 
