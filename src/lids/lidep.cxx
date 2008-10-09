@@ -750,7 +750,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
       PThread::Sleep(100);
       if (GetPhase() >= ReleasingPhase)
         return;
-    } while (count <= minimumRingCount); // Wait till we have CLID
+    } while (count < minimumRingCount); // Wait till we have CLID
 
     // Get caller ID
     PString callerId;

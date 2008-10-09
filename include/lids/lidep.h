@@ -483,6 +483,12 @@ class OpalLineConnection : public OpalConnection
   //@}
 
 
+  /**@name Member variable access */
+  //@{
+    /**Get the line being used by this media stream.
+      */
+    OpalLine & GetLine() { return line; }
+
     /** delay in msec to wait between the dial tone detection and dialing the dtmf 
       * @param uiDial the dial delay to set
      */
@@ -492,7 +498,7 @@ class OpalLineConnection : public OpalConnection
      * @return uiDialDelay the dial delay to get
      */
     unsigned int getDialDelay() const { return m_dialParams.m_dialStartDelay; }
-
+  //@}
         
   protected:
     OpalLineEndPoint & endpoint;
