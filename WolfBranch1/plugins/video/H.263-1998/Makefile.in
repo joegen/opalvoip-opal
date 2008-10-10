@@ -50,6 +50,7 @@ vpath   %.o   $(OBJDIR)
 
 SRCS	+= h263-1998.cxx \
 	   h263pframe.cxx \
+	   rfc2190.cxx \
 	   $(COMMONDIR)/trace.cxx \
 	   $(COMMONDIR)/dyna.cxx \
 	   $(COMMONDIR)/mpi.cxx
@@ -70,7 +71,7 @@ else
 	$(CXX) $(LDSO) $(DL_LIBS) $@ -o $@ $^
 endif
     
-install:
+install: $(PLUGIN)
 	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
 	install $(PLUGIN) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
 
