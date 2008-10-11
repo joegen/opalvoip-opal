@@ -34,9 +34,9 @@
 #pragma implementation "t120proto.h"
 #endif
 
-#include <opal/buildopts.h>
-
 #include <t120/t120proto.h>
+
+#if OPAL_T120DATA
 
 #include <h323/transaddr.h>
 #include <t120/x224.h>
@@ -225,6 +225,9 @@ PBoolean OpalT120Protocol::HandleDomain(const MCS_DomainMCSPDU & /*pdu*/)
 {
   return PTrue;
 }
+
+
+#endif // OPAL_T120DATA
 
 
 /////////////////////////////////////////////////////////////////////////////

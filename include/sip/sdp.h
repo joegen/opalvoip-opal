@@ -29,14 +29,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_SDP_H
-#define __OPAL_SDP_H
+#ifndef OPAL_SIP_SDP_H
+#define OPAL_SIP_SDP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_SIP
 
 #include <opal/transports.h>
 #include <opal/mediatype.h>
@@ -359,7 +361,9 @@ class SDPSessionDescription : public PObject
 /////////////////////////////////////////////////////////
 
 
-#endif // __OPAL_SDP_H
+#endif // OPAL_SIP
+
+#endif // OPAL_SIP_SDP_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

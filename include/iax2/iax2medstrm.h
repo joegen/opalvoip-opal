@@ -30,14 +30,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_IAX2_MEDIASTRM_H
-#define __OPAL_IAX2_MEDIASTRM_H
+#ifndef OPAL_IAX2_MEDIASTRM_H
+#define OPAL_IAX2_MEDIASTRM_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <opal/mediafmt.h>
 #include <iax2/iax2con.h>
@@ -123,7 +125,10 @@ class OpalIAX2MediaStream : public OpalMediaStream
     PBYTEArray pendingData;
 };
 
-#endif  //__OPAL_IAX2_MEDIASTRM_H
+
+#endif // OPAL_IAX2
+
+#endif  // OPAL_IAX2_MEDIASTRM_H
 
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 2 spaces.     */
@@ -135,4 +140,3 @@ class OpalIAX2MediaStream : public OpalMediaStream
  * c-basic-offset:2
  * End:
  */
-

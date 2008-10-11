@@ -24,42 +24,15 @@
  *
  * The author of this code is Derek J Smithies
  *
- *
- *  $Log: transmit.cxx,v $
- *  Revision 1.7  2007/08/07 03:10:18  dereksmithies
- *  Modify comments. Reduce some of the verbosity of the PTRACE messages.
- *
- *  Revision 1.6  2007/01/23 02:10:39  dereksmithies
- *   Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
- *
- *  Revision 1.5  2007/01/11 03:02:16  dereksmithies
- *  Remove the previous audio buffering code, and switch to using the jitter
- *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
- *
- *  Revision 1.4  2007/01/09 03:32:23  dereksmithies
- *  Tidy up and improve the close down process - make it more robust.
- *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
- *
- *  Revision 1.3  2006/08/09 03:46:39  dereksmithies
- *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
- *  into a callProcessor and a regProcessor class.
- *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- *
- *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
- *  Change naming convention, so all class names contain the string "IAX2"
- *
- *  Revision 1.1  2005/07/30 07:01:33  csoutheren
- *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
- *  writing and contributing this code
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "transmit.h"
@@ -216,6 +189,9 @@ void IAX2Transmit::ProcessSendList()
     ackingFrames.AddNewFrame(active);
   }
 }
+
+
+#endif // OPAL_IAX2
 
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 2 spaces.     */

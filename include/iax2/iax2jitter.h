@@ -22,31 +22,23 @@
  *
  * The Initial Developer of the Original Code is Indranet Technologies Ltd
  *
- *
- *  $Log: iax2jitter.h,v $
- *  Revision 1.2  2007/04/19 06:17:21  csoutheren
- *  Fixes for precompiled headers with gcc
- *
- *  Revision 1.1  2007/01/11 03:07:49  dereksmithies
- *  Remove the jitter.h file, which was erroneously added. Replace it with the
- *  correct iax2jitter.h file.
- *
- *  Revision 1.2  2006/09/11 03:12:51  dereksmithies
- *  Add logging and MPL license statements.
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 /////////////////////////////////////////////////////////////////////////////
 
-#ifndef IAX2_JITTER_H
-#define IAX2_JITTER_H
+#ifndef OPAL_IAX2_JITTER_H
+#define OPAL_IAX2_JITTER_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <rtp/rtp.h>
 #include <rtp/jitter.h>
@@ -150,6 +142,6 @@ class IAX2JitterBuffer : public OpalJitterBuffer
 };
 
 
+#endif // OPAL_IAX2
 
-
-#endif /*IAX2_JITTER_H*/
+#endif // OPAL_IAX2_JITTER_H

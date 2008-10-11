@@ -27,8 +27,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_SILENCEDETECT_H
-#define __OPAL_SILENCEDETECT_H
+#ifndef OPAL_CODEC_SILENCEDETECT_H
+#define OPAL_CODEC_SILENCEDETECT_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -169,7 +169,7 @@ class OpalPCM16SilenceDetector : public OpalSilenceDetector
 extern ostream & operator<<(ostream & strm, OpalSilenceDetector::Mode mode);
 
 
-#endif // __OPAL_SILENCEDETECT_H
+#endif // OPAL_CODEC_SILENCEDETECT_H
 
 
 /////////////////////////////////////////////////////////////////////////////

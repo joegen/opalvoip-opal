@@ -40,8 +40,8 @@
  * $Date$
 */
 
-#if !defined(_H460_H)
-#define _H460_H
+#ifndef OPAL_H460_H4601_H
+#define OPAL_H460_H4601_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -1146,4 +1146,4 @@ PCREATE_PLUGIN(H460_Feature##name##, H460_Feature, &H460_Feature##name##_descrip
 
 #endif // OPAL_H460
 
-#endif // !defined(_H460_H)
+#endif // OPAL_H460_H4601_H

@@ -25,8 +25,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef __OPAL_MEDIACMD_H
-#define __OPAL_MEDIACMD_H
+#ifndef OPAL_OPAL_MEDIACMD_H
+#define OPAL_OPAL_MEDIACMD_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -88,7 +88,7 @@ class OpalMediaCommand : public PObject
   }
 
 
-#endif // __OPAL_MEDIACMD_H
+#endif // OPAL_OPAL_MEDIACMD_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

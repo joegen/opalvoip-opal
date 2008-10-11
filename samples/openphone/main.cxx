@@ -59,6 +59,7 @@
 #include <lids/lidep.h>
 #include <ptclib/pstun.h>
 #include <t38/t38proto.h>
+#include <codec/vidcodec.h>
 
 
 #if defined(__WXGTK__)   || \
@@ -286,6 +287,10 @@ DEFINE_EVENT_TYPE(wxEvtStateChange)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifdef _MSC_VER
+#pragma warning(disable:4100)
+#endif
+
 template <class cls> cls * FindWindowByNameAs(wxWindow * window, const wxChar * name)
 {
   wxWindow * baseChild = window->FindWindowByName(name);
@@ -309,6 +314,10 @@ void RemoveNotebookPage(wxWindow * window, const char * name)
     }
   }
 }
+
+#ifdef _MSC_VER
+#pragma warning(default:4100)
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -450,7 +459,9 @@ MyManager::MyManager()
 #if OPAL_H323
   , h323EP(NULL)
 #endif
+#if OPAL_SIP
   , sipEP(NULL)
+#endif
 #if OPAL_IVR
   , ivrEP(NULL)
 #endif
@@ -605,7 +616,9 @@ bool MyManager::Initialise()
   h323EP = new MyH323EndPoint(*this);
 #endif
 
+#if OPAL_SIP
   sipEP = new MySIPEndPoint(*this);
+#endif
 
 #if OPAL_IVR
   ivrEP = new OpalIVREndPoint(*this);
@@ -866,8 +879,10 @@ bool MyManager::Initialise()
   if (config->Read(RTPSecurityModeH323Key, &str) && str != "None")
     h323EP->SetDefaultSecurityMode(str);
 #endif
+#if OPAL_SIP
   if (config->Read(RTPSecurityModeSIPKey, &str) && str != "None")
     sipEP->SetDefaultSecurityMode(str);
+#endif
 
   PwxString username, password;
 
@@ -887,8 +902,10 @@ bool MyManager::Initialise()
 
   if (config->Read(DTMFSendModeKey, &value1) && value1 >= 0 && value1 < H323Connection::NumSendUserInputModes)
     h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)value1);
+#if OPAL_450
   if (config->Read(CallIntrusionProtectionLevelKey, &value1))
     h323EP->SetCallIntrusionProtectionLevel(value1);
+#endif
   if (config->Read(DisableFastStartKey, &onoff))
     h323EP->DisableFastStart(onoff);
   if (config->Read(DisableH245TunnelingKey, &onoff))
@@ -911,6 +928,8 @@ bool MyManager::Initialise()
       return false;
   }
 #endif
+
+#if OPAL_SIP
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
@@ -955,6 +974,7 @@ bool MyManager::Initialise()
   }
 
   StartRegistrars();
+#endif // OPAL_SIP
 
 
   ////////////////////////////////////////
@@ -1074,7 +1094,9 @@ void MyManager::StartAllListeners()
 #if OPAL_H323
   StartListenerForEP(h323EP, m_LocalInterfaces);
 #endif
+#if OPAL_SIP
   StartListenerForEP(sipEP, m_LocalInterfaces);
+#endif
 }
 
 
@@ -2234,7 +2256,7 @@ void MyManager::OnVideoControl(wxCommandEvent& /*event*/)
 
 
 PString MyManager::ReadUserInput(OpalConnection & connection,
-                                 const char * terminators,
+                                 const char *,
                                  unsigned,
                                  unsigned firstDigitTimeout)
 {
@@ -2477,6 +2499,7 @@ bool MyManager::StartGatekeeper()
 }
 
 
+#if OPAL_SIP
 void MyManager::StartRegistrars()
 {
   if (sipEP == NULL)
@@ -2530,6 +2553,7 @@ void MyManager::StopRegistrars()
     sipEP->UnsubcribeAll(SIPSubscribe::Presence);
   }
 }
+#endif // OPAL_SIP
 
 
 bool MyManager::AdjustFrameSize()
@@ -2668,7 +2692,7 @@ public:
     return new wxFrameSizeValidator(*this);
   }
 
-  virtual bool Validate(wxWindow * parent)
+  virtual bool Validate(wxWindow *)
   {
     unsigned width, height;
     if (PVideoFrameInfo::ParseSize(GetWindow()->GetLabel().c_str(), width, height))
@@ -3042,8 +3066,12 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   FindWindowByName(SecureSIPKey)->Disable();
 #endif
 #if (defined OPAL_SRTP) || (defined OPAL_ZRTP)
+#if OPAL_H323
   INIT_FIELD(RTPSecurityModeH323, m_manager.h323EP->GetDefaultSecurityMode());
+#endif // OPAL_H323
+#if OPAL_SIP
   INIT_FIELD(RTPSecurityModeSIP, m_manager.sipEP->GetDefaultSecurityMode());
+#endif
 #ifndef OPAL_SRTP
   choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeH323Key);
   choice->Delete(choice->FindString("SRTP"));
@@ -3077,7 +3105,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(DTMFSendMode, m_manager.h323EP->GetSendUserInputMode());
   if (m_DTMFSendMode > OpalConnection::SendUserInputAsInlineRFC2833)
     m_DTMFSendMode = OpalConnection::SendUserInputAsString;
+#if OPAL_450
   INIT_FIELD(CallIntrusionProtectionLevel, m_manager.h323EP->GetCallIntrusionProtectionLevel());
+#endif
   INIT_FIELD(DisableFastStart, m_manager.h323EP->IsFastStartDisabled() != PFalse);
   INIT_FIELD(DisableH245Tunneling, m_manager.h323EP->IsH245TunnelingDisabled() != PFalse);
   INIT_FIELD(DisableH245inSETUP, m_manager.h323EP->IsH245inSetupDisabled() != PFalse);
@@ -3089,6 +3119,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(GatekeeperPassword, m_manager.h323EP->GetGatekeeperPassword());
 #endif
 
+#if OPAL_SIP
   ////////////////////////////////////////
   // SIP fields
   INIT_FIELD(SIPProxyUsed, m_manager.m_SIPProxyUsed);
@@ -3131,6 +3162,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_RegistrarActive = FindWindowByNameAs<wxCheckBox>(this, RegistrarUsedKey);
   m_SubscribeMWI = FindWindowByNameAs<wxCheckBox>(this, SubscribeMWIKey);
   m_SubscribePresence = FindWindowByNameAs<wxCheckBox>(this, SubscribePresenceKey);
+#endif // OPAL_SIP
+
 
   ////////////////////////////////////////
   // Routing fields
@@ -3387,7 +3420,9 @@ bool OptionsDialog::TransferDataFromWindow()
 #if OPAL_H323
   SAVE_FIELD(RTPSecurityModeH323, m_manager.h323EP->SetDefaultSecurityMode);
 #endif
+#if OPAL_SIP
   SAVE_FIELD(RTPSecurityModeSIP, m_manager.sipEP->SetDefaultSecurityMode);
+#endif
 
 
 #if OPAL_H323
@@ -3408,7 +3443,9 @@ bool OptionsDialog::TransferDataFromWindow()
   config->SetPath(H323Group);
   m_manager.h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)m_DTMFSendMode);
   config->Write(DTMFSendModeKey, m_DTMFSendMode);
+#if OPAL_450
   SAVE_FIELD(CallIntrusionProtectionLevel, m_manager.h323EP->SetCallIntrusionProtectionLevel);
+#endif
   SAVE_FIELD(DisableFastStart, m_manager.h323EP->DisableFastStart);
   SAVE_FIELD(DisableH245Tunneling, m_manager.h323EP->DisableH245Tunneling);
   SAVE_FIELD(DisableH245inSETUP, m_manager.h323EP->DisableH245inSetup);
@@ -3430,6 +3467,8 @@ bool OptionsDialog::TransferDataFromWindow()
       m_manager.Close();
   }
 #endif
+
+#if OPAL_SIP
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
@@ -3470,6 +3509,7 @@ bool OptionsDialog::TransferDataFromWindow()
     m_manager.m_registrars = newRegistrars;
     m_manager.StartRegistrars();
   }
+#endif // OPAL_SIP
 
   ////////////////////////////////////////
   // Routing fields
@@ -3717,7 +3757,7 @@ void OptionsDialog::BrowseFaxDirectory(wxCommandEvent & /*event*/)
 }
 
 
-void OptionsDialog::BrowseFaxSpanDSP(wxCommandEvent & event)
+void OptionsDialog::BrowseFaxSpanDSP(wxCommandEvent &)
 {
   wxString newFile = wxFileSelector(wxT("Select location of Span DSP Utility executable"),
                                     wxT(""),
@@ -4158,7 +4198,7 @@ void OptionsDialog::ChangedRouteInfo(wxCommandEvent & /*event*/)
 }
 
 
-void OptionsDialog::RestoreDefaultRoutes(wxCommandEvent & event)
+void OptionsDialog::RestoreDefaultRoutes(wxCommandEvent &)
 {
   m_Routes->DeleteAllItems();
 
@@ -4312,7 +4352,7 @@ CallDialog::CallDialog(MyManager * manager, bool hideHandset)
 }
 
 
-void CallDialog::OnOK(wxCommandEvent & event)
+void CallDialog::OnOK(wxCommandEvent &)
 {
   wxConfigBase * config = wxConfig::Get();
   config->DeleteGroup(RecentCallsGroup);
@@ -4709,6 +4749,10 @@ void StatisticsField::Update(const OpalConnection & connection, const OpalMediaS
 #define STATISTICS_FIELD_END(type, name) \
     } } Static##type##name##StatisticsField;
 
+#ifdef _MSC_VER
+#pragma warning(disable:4100)
+#endif
+
 STATISTICS_FIELD_BEG(RxAudio, Bandwidth)
   value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
 STATISTICS_FIELD_END(RxAudio, Bandwidth)
@@ -4897,6 +4941,10 @@ STATISTICS_FIELD_BEG(TxFax, Packets)
   value.sprintf(m_printFormat, statistics.m_totalPackets);
 STATISTICS_FIELD_END(TxFax, Packets)
 
+#ifdef _MSC_VER
+#pragma warning(default:4100)
+#endif
+
 
 StatisticsPage::StatisticsPage()
   : m_page(NumPages)
@@ -5046,6 +5094,8 @@ void MyH323EndPoint::OnRegistrationConfirm()
 #endif
 ///////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_SIP
+
 MySIPEndPoint::MySIPEndPoint(MyManager & manager)
   : SIPEndPoint(manager),
     m_manager(manager)
@@ -5126,6 +5176,8 @@ void MySIPEndPoint::OnSubscriptionStatus(const PString & eventPackage,
   }
   LogWindow << '.' << endl;
 }
+
+#endif // OPAL_SIP
 
 
 // End of File ///////////////////////////////////////////////////////////////

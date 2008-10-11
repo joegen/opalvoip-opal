@@ -24,8 +24,6 @@
  *
  * The author of this code is Derek J Smithies
  *
- *
- *
  * $Revision$
  * $Author$
  * $Date$
@@ -34,10 +32,11 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#if OPAL_IAX2
+
 #ifdef P_USE_PRAGMA
 #pragma implementation "iax2jitter.h"
 #endif
-
 
 #include <iax2/iax2jitter.h>
 #include <rtp/rtp.h>
@@ -127,6 +126,9 @@ PBoolean IAX2JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
 
     return PTrue;
 }
+
+
+#endif // OPAL_IAX2
 
 ////////////////////////////////////////////////////////////////////////////////
 /* The comment below is magic for those who use emacs to edit this file. */

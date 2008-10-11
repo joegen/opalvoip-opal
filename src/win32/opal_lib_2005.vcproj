@@ -14169,10 +14169,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\asn\ldap.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\include\asn\mcs.h"
 					>
 				</File>

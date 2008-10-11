@@ -26,8 +26,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_RTPEP_H
-#define __OPAL_RTPEP_H
+#ifndef OPAL_OPAL_RTPEP_H
+#define OPAL_OPAL_RTPEP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -138,4 +138,4 @@ class OpalRTPEndPoint : public OpalEndPoint
 };
 
 
-#endif // __OPAL_RTPEP_H
+#endif // OPAL_OPAL_RTPEP_H

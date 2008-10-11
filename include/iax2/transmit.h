@@ -26,42 +26,21 @@
  *
  * The author of this code is Derek J Smithies
  *
- *  $Log: transmit.h,v $
- *  Revision 1.6  2007/04/19 06:17:21  csoutheren
- *  Fixes for precompiled headers with gcc
- *
- *  Revision 1.5  2007/01/23 02:08:25  dereksmithies
- *  Handle Vnak frames correctly. handle iseqno and oseqno correctly.
- *
- *  Revision 1.4  2007/01/09 03:32:23  dereksmithies
- *  Tidy up and improve the close down process - make it more robust.
- *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
- *
- *  Revision 1.3  2006/06/16 01:47:08  dereksmithies
- *  Get the OnHold features of IAX2 to work correctly.
- *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- *
- *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
- *  Change naming convention, so all class names contain the string "IAX2"
- *
- *  Revision 1.1  2005/07/30 07:01:32  csoutheren
- *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
- *  writing and contributing this code
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
-#ifndef TRANSMIT_H
-#define TRANSMIT_H
+#ifndef OPAL_IAX2_TRANSMIT_H
+#define OPAL_IAX2_TRANSMIT_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <ptlib/sockets.h>
 
@@ -169,7 +148,11 @@ class IAX2Transmit : public PThread
   PBoolean       keepGoing;
 };
 
-#endif // IAX2_TRANSMIT_H
+
+#endif // OPAL_IAX2
+
+#endif // OPAL_IAX2_TRANSMIT_H
+
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */
 
@@ -179,4 +162,3 @@ class IAX2Transmit : public PThread
  * c-basic-offset:2
  * End:
  */
-

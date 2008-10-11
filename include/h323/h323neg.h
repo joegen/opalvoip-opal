@@ -31,14 +31,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_H323NEG_H
-#define __OPAL_H323NEG_H
+#ifndef OPAL_H323_H323NEG_H
+#define OPAL_H323_H323NEG_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H323
 
 #include <h323/h323pdu.h>
 #include <h323/channels.h>
@@ -320,7 +322,9 @@ class H245NegRoundTripDelay : public H245Negotiator
 };
 
 
-#endif // __OPAL_H323NEG_H
+#endif // OPAL_H323
+
+#endif // OPAL_H323_H323NEG_H
 
 
 /////////////////////////////////////////////////////////////////////////////

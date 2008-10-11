@@ -25,35 +25,21 @@
  *
  * The author of this code is Derek J Smithies
  * 
- * 
- * 
- * 
- *  $Log: iedata.h,v $
- *  Revision 1.3  2007/04/19 06:17:21  csoutheren
- *  Fixes for precompiled headers with gcc
- *
- *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
- *  Change naming convention, so all class names contain the string "IAX2"
- *
- *  Revision 1.1  2005/07/30 07:01:32  csoutheren
- *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
- *  writing and contributing this code
- *
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
-#ifndef IEDATA_H
-#define IEDATA_H
+#ifndef OPAL_IAX2_IEDATA_H
+#define OPAL_IAX2_IEDATA_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <ptlib/sockets.h>
 
@@ -136,7 +122,11 @@ class IAX2IeData :  public PObject
   unsigned int       receivedOoo;           /*!< Frames received Out of Order u32 */
 };
 
-#endif // IEDATAH
+
+#endif // OPAL_IAX2
+
+#endif // OPAL_IAX2_IEDATA_H
+
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */
 
@@ -147,4 +137,3 @@ class IAX2IeData :  public PObject
  * c-basic-offset:2
  * End:
  */
-

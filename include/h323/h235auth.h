@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_H235AUTH_H
-#define __OPAL_H235AUTH_H
+#ifndef OPAL_H323_H235AUTH_H
+#define OPAL_H323_H235AUTH_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -305,7 +305,7 @@ class H235AuthProcedure1 : public H235Authenticator
 #endif
 
 
-#endif //__OPAL_H235AUTH_H
+#endif //OPAL_H323_H235AUTH_H
 
 
 /////////////////////////////////////////////////////////////////////////////

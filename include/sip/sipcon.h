@@ -29,14 +29,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_SIPCON_H
-#define __OPAL_SIPCON_H
+#ifndef OPAL_SIP_SIPCON_H
+#define OPAL_SIP_SIPCON_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_SIP
 
 #include <opal/buildopts.h>
 #include <opal/rtpconn.h>
@@ -560,7 +562,9 @@ class SIP_RTP_Session : public RTP_UserData
 };
 
 
-#endif // __OPAL_SIPCON_H
+#endif // OPAL_SIP
+
+#endif // OPAL_SIP_SIPCON_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

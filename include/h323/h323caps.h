@@ -31,14 +31,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_H323CAPS_H
-#define __OPAL_H323CAPS_H
+#ifndef OPAL_H323_H323CAPS_H
+#define OPAL_H323_H323CAPS_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H323
 
 #include <opal/mediafmt.h>
 #include <h323/channels.h>
@@ -2349,7 +2351,10 @@ typedef PFactory<H323Capability, std::string> H323CapabilityFactory;
 
 #define H323_REGISTER_CAPABILITY(cls, capName)   static H323CapabilityFactory::Worker<cls> cls##Factory(capName, true); \
 
-#endif // __OPAL_H323CAPS_H
+
+#endif // OPAL_H323
+
+#endif // OPAL_H323_H323CAPS_H
 
 
 /////////////////////////////////////////////////////////////////////////////

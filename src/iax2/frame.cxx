@@ -24,104 +24,41 @@
  *
  * The author of this code is Derek J Smithies
  *
- *  $Log: frame.cxx,v $
- *  Revision 1.21  2007/07/31 23:15:42  dereksmithies
- *  Reduce verbosity in generated log file.
- *
- *  Revision 1.20  2007/04/22 22:37:59  dereksmithies
- *  Lower verbosity of PTRACE statements.
- *
- *  Revision 1.19  2007/01/23 02:10:38  dereksmithies
- *   Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
- *
- *  Revision 1.18  2007/01/17 03:48:48  dereksmithies
- *  Tidy up comments, remove leaks, improve reporting of packet types.
- *
- *  Revision 1.17  2007/01/16 03:17:42  dereksmithies
- *  tidyup of comments. Remove unused variables.
- *  Guarantee that media frames are sent with a monotonically increasing timestamp
- *
- *  Revision 1.16  2007/01/12 02:39:00  dereksmithies
- *  Remove the notion of srcProcessors and dstProcessor lists from the ep.
- *  Ensure that the connection looks after the callProcessor.
- *
- *  Revision 1.15  2007/01/11 03:02:15  dereksmithies
- *  Remove the previous audio buffering code, and switch to using the jitter
- *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
- *
- *  Revision 1.14  2007/01/08 04:06:58  dereksmithies
- *  Modify logging level, and improve the comments.
- *
- *  Revision 1.13  2006/08/09 03:46:39  dereksmithies
- *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
- *  into a callProcessor and a regProcessor class.
- *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- *
- *  Revision 1.12  2005/09/20 07:22:54  csoutheren
- *  Fixed compile warning on Windows
- *
- *  Revision 1.11  2005/09/19 00:17:10  dereksmithies
- *  lower verbosity of logging.
- *
- *  Revision 1.10  2005/08/28 23:28:34  dereksmithies
- *  Add a good fix from Adrian Sietsma. Many thanks.
- *
- *  Revision 1.9  2005/08/26 03:26:51  dereksmithies
- *  Add some tidyups from Adrian Sietsma.  Many thanks..
- *
- *  Revision 1.8  2005/08/26 03:07:38  dereksmithies
- *  Change naming convention, so all class names contain the string "IAX2"
- *
- *  Revision 1.7  2005/08/25 03:26:06  dereksmithies
- *  Add patch from Adrian Sietsma to correctly set the packet timestamps under windows.
- *  Many thanks.
- *
- *  Revision 1.6  2005/08/25 00:46:08  dereksmithies
- *  Thanks to Adrian Sietsma for his code to better dissect the remote party name
- *  Add  PTRACE statements, and more P_SSL_AES tests
- *
- *  Revision 1.5  2005/08/24 13:06:19  rjongbloed
- *  Added configuration define for AEC encryption
- *
- *  Revision 1.4  2005/08/24 04:56:25  dereksmithies
- *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
- *  the remote end.  Many Thanks.
- *
- *  Revision 1.3  2005/08/24 01:38:38  dereksmithies
- *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
- *
- *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
- *  Fixed Windows build under DevStudio 2003 of IAX2 code
- *
- *  Revision 1.1  2005/07/30 07:01:33  csoutheren
- *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
- *  writing and contributing this code
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
+
 #include <ptlib.h>
 #include <opal/buildopts.h>
-#include <ptclib/cypher.h>
 
-#if OPAL_PTLIB_SSL_AES
-#include <openssl/aes.h>
-#endif
+#if OPAL_IAX2
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "frame.h"
 #endif
 
 #include <iax2/frame.h>
+
 #include <iax2/iax2con.h>
 #include <iax2/iax2ep.h>
 #include <iax2/ies.h>
 #include <iax2/receiver.h>
 #include <iax2/transmit.h>
 
+#include <ptclib/cypher.h>
+
+#if OPAL_PTLIB_SSL_AES
+#include <openssl/aes.h>
+  #ifdef _MSC_VER
+    #pragma comment(lib, P_SSL_LIB1)
+    #pragma comment(lib, P_SSL_LIB2)
+  #endif
+#endif
+
+
 #define new PNEW
+
 
 IAX2Frame::IAX2Frame(IAX2EndPoint &_endpoint)
   : endpoint(_endpoint)
@@ -1783,6 +1720,9 @@ void IAX2FrameList::MarkAllAsResent()
     active->MarkAsResent();
   }
 }
+
+
+#endif // OPAL_IAX2
 
 
 ////////////////////////////////////////////////////////////////////////////////

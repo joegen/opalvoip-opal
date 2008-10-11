@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_LIDPLUGIN_H
-#define __OPAL_LIDPLUGIN_H
+#ifndef OPAL_LIDS_LIDPLUGIN_H
+#define OPAL_LIDS_LIDPLUGIN_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -295,4 +295,4 @@ typedef struct PluginLID_Definition * (* PluginLID_GetDefinitionsFunction)(unsig
 };
 #endif
 
-#endif // __OPAL_LIDPLUGIN_H
+#endif // OPAL_LIDS_LIDPLUGIN_H
