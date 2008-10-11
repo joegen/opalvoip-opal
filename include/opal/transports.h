@@ -33,8 +33,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_TRANSPORT_H
-#define __OPAL_TRANSPORT_H
+#ifndef OPAL_OPAL_TRANSPORT_H
+#define OPAL_OPAL_TRANSPORT_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -1233,7 +1233,7 @@ typedef OpalInternalIPTransportTemplate<OpalListenerTCPS, OpalTransportTCPS, Opa
 #endif // OPAL_PTLIB_SSL
 
 
-#endif  // __OPAL_TRANSPORT_H
+#endif  // OPAL_OPAL_TRANSPORT_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

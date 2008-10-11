@@ -24,96 +24,21 @@
  *
  * The author of this code is Derek J Smithies
  *
- *  $Log: iax2con.h,v $
- *  Revision 1.19  2007/08/13 04:24:26  csoutheren
- *  Normalise IAX2 answer logic
- *
- *  Revision 1.18  2007/08/02 23:25:07  dereksmithies
- *  Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
- *  will correctly advise on receiving an incoming call.
- *
- *  Revision 1.17  2007/08/01 02:20:24  dereksmithies
- *  Change the way we accept/reject incoming iax2 calls. This change makes us
- *  more compliant to the OPAL standard. Thanks Craig for pointing this out.
- *
- *  Revision 1.16  2007/04/19 06:17:21  csoutheren
- *  Fixes for precompiled headers with gcc
- *
- *  Revision 1.15  2007/01/24 04:00:55  csoutheren
- *  Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
- *  Added some pure viritual functions to prevent old code from breaking silently
- *  New OpalEndpoint and OpalConnection descendants will need to re-implement
- *  OnIncomingConnection. Sorry :)
- *
- *  Revision 1.14  2007/01/18 04:45:16  csoutheren
- *  Messy, but simple change to add additional options argument to OpalConnection constructor
- *  This allows the provision of non-trivial arguments for connections
- *
- *  Revision 1.13  2007/01/17 03:48:13  dereksmithies
- *  Tidy up comments, remove leaks, improve reporting of packet types.
- *
- *  Revision 1.12  2007/01/12 02:48:11  dereksmithies
- *  Make the iax2callprocessor a more permanent variable in the iax2connection.
- *
- *  Revision 1.11  2007/01/12 02:39:00  dereksmithies
- *  Remove the notion of srcProcessors and dstProcessor lists from the ep.
- *  Ensure that the connection looks after the callProcessor.
- *
- *  Revision 1.10  2007/01/11 03:02:15  dereksmithies
- *  Remove the previous audio buffering code, and switch to using the jitter
- *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
- *
- *  Revision 1.9  2006/09/11 03:08:51  dereksmithies
- *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
- *  improve call handling. Notably, IAX2 call transfer. Many thanks.
- *  Thanks also to the Google summer of code for sponsoring this work.
- *
- *  Revision 1.8  2006/08/09 03:46:39  dereksmithies
- *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
- *  into a callProcessor and a regProcessor class.
- *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- * 
- *  Revision 1.7  2006/06/16 01:47:08  dereksmithies
- *  Get the OnHold features of IAX2 to work correctly.
- *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- *
- *  Revision 1.6  2005/09/05 01:19:43  dereksmithies
- *  add patches from Adrian Sietsma to avoid multiple hangup packets at call end,
- *  and stop the sending of ping/lagrq packets at call end. Many thanks.
- *
- *  Revision 1.5  2005/08/26 03:07:38  dereksmithies
- *  Change naming convention, so all class names contain the string "IAX2"
- *
- *  Revision 1.4  2005/08/25 03:26:06  dereksmithies
- *  Add patch from Adrian Sietsma to correctly set the packet timestamps under windows.
- *  Many thanks.
- *
- *  Revision 1.3  2005/08/24 04:56:25  dereksmithies
- *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
- *  the remote end.  Many Thanks.
- *
- *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
- *  Fixed Windows build under DevStudio 2003 of IAX2 code
- *
- *  Revision 1.1  2005/07/30 07:01:32  csoutheren
- *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
- *  writing and contributing this code
- *
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
-#ifndef IAX_CONNECTION_H
-#define IAX_CONNECTION_H
+#ifndef OPAL_IAX2_IAX2CON_H
+#define OPAL_IAX2_IAX2CON_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <opal/connection.h>
 
@@ -540,8 +465,10 @@ class IAX2Connection : public OpalConnection
 ////////////////////////////////////////////////////////////////////////////////
 
 
+#endif // OPAL_IAX2
 
-#endif // IAX_CONNECTION_H
+#endif // OPAL_IAX2_IAX2CON_H
+
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 2 spaces.     */
 
@@ -551,6 +478,3 @@ class IAX2Connection : public OpalConnection
  * c-basic-offset:2
  * End:
  */
-
-
-

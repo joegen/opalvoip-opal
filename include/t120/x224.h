@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_X224_H
-#define __OPAL_X224_H
+#ifndef OPAL_T120_X224_H
+#define OPAL_T120_X224_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -75,7 +75,7 @@ class X224 : public PObject
 };
 
 
-#endif // __OPAL_X224_H
+#endif // OPAL_T120_X224_H
 
 
 /////////////////////////////////////////////////////////////////////////////

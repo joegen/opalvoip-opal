@@ -25,35 +25,21 @@
  *
  * The author of this code is Derek J Smithies
  *
- *  $Log: safestrings.h,v $
- *  Revision 1.4  2007/04/19 06:17:21  csoutheren
- *  Fixes for precompiled headers with gcc
- *
- *  Revision 1.3  2007/01/17 22:27:52  dereksmithies
- *  Correctly sends DTMF to remote node. Tidy up string handling.
- *
- *  Revision 1.2  2005/08/24 04:56:25  dereksmithies
- *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
- *  the remote end.  Many Thanks.
- *
- *  Revision 1.1  2005/07/30 07:01:32  csoutheren
- *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
- *  writing and contributing this code
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
-#ifndef SAFESTRINGS_H
-#define SAFESTRINGS_H
+#ifndef OPAL_IAX2_SAFESTRINGS_H
+#define OPAL_IAX2_SAFESTRINGS_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -160,7 +146,11 @@ class SafeString : public PObject
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif // SAFESTRINGS_H
+
+#endif // OPAL_IAX2
+
+#endif // OPAL_IAX2_SAFESTRINGS_H
+
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */
 
@@ -171,4 +161,3 @@ class SafeString : public PObject
  * c-basic-offset:2
  * End:
  */
-

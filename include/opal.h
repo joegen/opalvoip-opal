@@ -31,8 +31,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_H
-#define __OPAL_H
+#ifndef OPAL_OPAL_H
+#define OPAL_OPAL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -800,7 +800,7 @@ struct OpalMessage {
 };
 #endif
 
-#endif // __OPAL_H
+#endif // OPAL_OPAL_H
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __LIDPLUGINMGR_H
-#define __LIDPLUGINMGR_H
+#ifndef OPAL_LIDS_LIDPLUGINMGR_H
+#define OPAL_LIDS_LIDPLUGINMGR_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -663,4 +663,4 @@ class OpalPluginLID : public OpalLineInterfaceDevice
 };
 
 
-#endif // __LIDPLUGINMGR_H
+#endif // OPAL_LIDS_LIDPLUGINMGR_H

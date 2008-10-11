@@ -28,14 +28,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_T120PROTO_H
-#define __OPAL_T120PROTO_H
+#ifndef OPAL_T120_T120PROTO_H
+#define OPAL_T120_T120PROTO_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_T120DATA
 
 #include <opal/mediafmt.h>
 
@@ -102,7 +104,9 @@ class OpalT120Protocol : public PObject
 };
 
 
-#endif // __OPAL_T120PROTO_H
+#endif // OPAL_T120DATA
+
+#endif // OPAL_T120_T120PROTO_H
 
 
 /////////////////////////////////////////////////////////////////////////////

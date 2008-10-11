@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_CODECPLUGIN_H
-#define __OPAL_CODECPLUGIN_H
+#ifndef OPAL_CODEC_OPALPLUGIN_H
+#define OPAL_CODEC_OPALPLUGIN_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -634,4 +634,4 @@ PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(u
 #pragma warning(default:4201)
 #endif
 
-#endif // __OPAL_CODECPLUGIN_H
+#endif // OPAL_CODEC_OPALPLUGIN_H

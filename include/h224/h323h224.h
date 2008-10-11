@@ -24,8 +24,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_H323H224_H
-#define __OPAL_H323H224_H
+#ifndef OPAL_H224_H323H224_H
+#define OPAL_H224_H323H224_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -127,5 +127,5 @@ protected:
   
 };
 
-#endif // __OPAL_H323H224_H
+#endif // OPAL_H224_H323H224_H
 

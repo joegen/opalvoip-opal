@@ -24,27 +24,25 @@
  *
  * The author of this code is Derek J Smithies
  *
- *
- *
  * $Revision$
  * $Author$
  * $Date$
  */
 
-
 #include <ptlib.h>
 #include <opal/buildopts.h>
-#include <ptclib/cypher.h>
 
+#if OPAL_IAX2
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "ies.h"
 #endif
 
-
 #include <iax2/ies.h>
 #include <iax2/frame.h>
 #include <iax2/causecode.h>
+
+#include <ptclib/cypher.h>
 
 #define new PNEW
 
@@ -1001,6 +999,8 @@ void IAX2IeReceivedOoo::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
+
+#endif // OPAL_IAX2
 
 ////////////////////////////////////////////////////////////////////////////////
 /* The comment below is magic for those who use emacs to edit this file. */

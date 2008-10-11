@@ -8,6 +8,8 @@
 #include "MfcDlg.h"
 
 #include <h323/h323ep.h>
+#include <sip/sipep.h>
+
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -33,7 +35,12 @@ PBoolean CMfcManager::Initialise(CMfcDlg *dlg)
 {
   m_dialog = dlg;
 
+#if OPAL_H323
   new H323EndPoint(*this);
+#endif // OPAL_H323
+#if OPAL_SIP
+  new SIPEndPoint(*this);
+#endif // OPAL_SIP
 
   return true;
 }

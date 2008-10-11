@@ -25,8 +25,6 @@
  *
  * The author of this code is Derek J Smithies
  *
- *
- *
  * $Revision$
  * $Author$
  * $Date$
@@ -34,7 +32,8 @@
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
-#include <ptclib/random.h>
+
+#if OPAL_IAX2
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "iax2ep.h"
@@ -44,6 +43,8 @@
 #include <iax2/receiver.h>
 #include <iax2/transmit.h>
 #include <iax2/specialprocessor.h>
+
+#include <ptclib/random.h>
 
 #define new PNEW
 
@@ -829,6 +830,9 @@ void IAX2IncomingEthernetFrames::ProcessList()
 {
   activate.Signal(); 
 }
+
+
+#endif // OPAL_IAX2
 
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 2 spaces.     */

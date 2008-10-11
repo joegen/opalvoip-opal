@@ -30,6 +30,10 @@
  * $Author$
  * $Date$
  */
+
+#ifndef OPAL_H323_H323_H
+#define OPAL_H323_H323_H
+
 #include <opal/buildopts.h>
 
 #include <h323/h323ep.h>
@@ -42,5 +46,7 @@ unsigned OpalGetMajorVersion();
 unsigned OpalGetMinorVersion();
 unsigned OpalGetBuildNumber();
 
+
+#endif // OPAL_H323_H323_H
 
 /////////////////////////////////////////////////////////////////////////////

@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_MEDIASTRM_H
-#define __OPAL_MEDIASTRM_H
+#ifndef OPAL_OPAL_MEDIASTRM_H
+#define OPAL_OPAL_MEDIASTRM_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -887,7 +887,7 @@ class OpalUDPMediaStream : public OpalMediaStream
 };
 
 
-#endif //__OPAL_MEDIASTRM_H
+#endif //OPAL_OPAL_MEDIASTRM_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

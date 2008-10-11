@@ -85,17 +85,21 @@ void FaxOPAL::Main()
 
   m_manager = new MyManager();
 
+#if OPAL_SIP
   SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
   if (!sip->StartListeners(PStringArray())) {
     cerr << "Could not start default SIP listeners." << endl;
     return;
   }
+#endif // OPAL_SIP
 
+#if OPAL_H323
   H323EndPoint * h323 = new H323EndPoint(*m_manager);
   if (!h323->StartListeners(PStringArray())) {
     cerr << "Could not start default H.323 listeners." << endl;
     return;
   }
+#endif // OPAL_H323
 
   OpalT38EndPoint * t38  = new OpalT38EndPoint(*m_manager);
   if (args.HasOption('d'))
@@ -104,8 +108,12 @@ void FaxOPAL::Main()
     t38->SetSpanDSP(args.GetOptionString('s'));
 
   // Route SIP/H.323 calls to the T38 endpoint
+#if OPAL_SIP
   m_manager->AddRouteEntry("sip.*:.* = t38:" + args[0] + ";receive");
+#endif
+#if OPAL_H323
   m_manager->AddRouteEntry("h323.*:.* = t38:" + args[0] + ";receive");
+#endif
 
   // If no explicit protocol on URI, then send to SIP.
   m_manager->AddRouteEntry("t38:.* = sip:<da>");
@@ -127,7 +135,7 @@ void FaxOPAL::Main()
 }
 
 
-void MyManager::OnClearedCall(OpalCall & call)
+void MyManager::OnClearedCall(OpalCall & /*call*/)
 {
   m_completed.Signal();
 }

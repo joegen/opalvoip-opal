@@ -40,6 +40,8 @@
  * $Date$
  */
 
+#ifndef OPAL_H460_H460_H
+#define OPAL_H460_H460_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -85,3 +87,5 @@ class H460_MessageType
 };
 
 #endif // OPAL_H460
+
+#endif // OPAL_H460_H460_H

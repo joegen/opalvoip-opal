@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_Q931_H
-#define __OPAL_Q931_H
+#ifndef OPAL_H323_Q931_H
+#define OPAL_H323_Q931_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -414,7 +414,7 @@ class Q931 : public PObject
 };
 
 
-#endif // __OPAL_Q931_H
+#endif // OPAL_H323_Q931_H
 
 
 /////////////////////////////////////////////////////////////////////////////

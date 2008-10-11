@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef _OPAL_OPALVXML_H
-#define _OPAL_OPALVXML_H
+#ifndef OPAL_OPAL_OPALVXML_H
+#define OPAL_OPAL_OPALVXML_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -76,7 +76,7 @@ class OpalVXMLSession : public PVXMLSession
 
 #endif
 
-#endif // _OPAL_OPALVXML_H
+#endif // OPAL_OPAL_OPALVXML_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

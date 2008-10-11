@@ -31,14 +31,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_GKCLIENT_H
-#define __OPAL_GKCLIENT_H
+#ifndef OPAL_H323_GKCLIENT_H
+#define OPAL_H323_GKCLIENT_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H323
 
 #include <h323/h225ras.h>
 #include <h323/h235auth.h>
@@ -417,7 +419,9 @@ class H323Gatekeeper : public H225_RAS
 PLIST(H323GatekeeperList, H323Gatekeeper);
 
 
-#endif // __OPAL_GKCLIENT_H
+#endif // OPAL_H323
+
+#endif // OPAL_H323_GKCLIENT_H
 
 
 /////////////////////////////////////////////////////////////////////////////

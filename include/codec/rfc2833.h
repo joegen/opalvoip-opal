@@ -27,8 +27,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_RFC2833_H
-#define __OPAL_RFC2833_H
+#ifndef OPAL_CODEC_RFC2833_H
+#define OPAL_CODEC_RFC2833_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -160,7 +160,7 @@ class OpalRFC2833Proto : public PObject {
 };
 
 
-#endif // __OPAL_RFC2833_H
+#endif // OPAL_CODEC_RFC2833_H
 
 
 /////////////////////////////////////////////////////////////////////////////

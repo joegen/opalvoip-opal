@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_T38PROTO_H
-#define __OPAL_T38PROTO_H
+#ifndef OPAL_T38_T38PROTO_H
+#define OPAL_T38_T38PROTO_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -497,4 +497,4 @@ class OpalT38Connection : public OpalFaxConnection
 
 #endif // OPAL_FAX
 
-#endif // __OPAL_T38PROTO_H
+#endif // OPAL_T38_T38PROTO_H

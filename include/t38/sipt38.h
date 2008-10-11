@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_SIPT38_H
-#define __OPAL_SIPT38_H
+#ifndef OPAL_T38_SIPT38_H
+#define OPAL_T38_SIPT38_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -69,5 +69,5 @@ class SDPFaxMediaDescription : public SDPMediaDescription
 
 #endif // OPAL_SIP
 
-#endif // __OPAL_SIPT38_H
+#endif // OPAL_T38_SIPT38_H
 
