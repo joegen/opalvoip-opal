@@ -31,14 +31,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_GKSERVER_H
-#define __OPAL_GKSERVER_H
+#ifndef OPAL_H323_GKSERVER_H
+#define OPAL_H323_GKSERVER_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H323
 
 #include <ptlib/safecoll.h>
 #include <opal/guid.h>
@@ -65,8 +67,10 @@ class H323RegisteredEndPoint;
 class H323GatekeeperListener;
 class H323GatekeeperServer;
 class H323RasPDU;
-class H323PeerElement;
 
+#if OPAL_H501
+class H323PeerElement;
+#endif
 
 class H323GatekeeperRequest : public H323Transaction
 {
@@ -1500,6 +1504,7 @@ class H323GatekeeperServer : public H323TransactionServer
     ) const;
   //@}
 
+#if OPAL_H501
   /**@name H.323 Annex G Peer Element support */
   //@{
     /**Get the associated peer element for the gatekeeper.
@@ -1533,6 +1538,7 @@ class H323GatekeeperServer : public H323TransactionServer
       PBoolean keepTrying = PTrue
     );
   //@}
+#endif
 
   /**@name Access functions */
   //@{
@@ -1680,7 +1686,9 @@ class H323GatekeeperServer : public H323TransactionServer
     PLIST(ListenerList, H323GatekeeperListener);
     ListenerList listeners;
 
+#if OPAL_H501
     H323PeerElement * peerElement;
+#endif
 
     PSafeDictionary<PString, H323RegisteredEndPoint> byIdentifier;
 
@@ -1709,7 +1717,9 @@ class H323GatekeeperServer : public H323TransactionServer
 };
 
 
-#endif // __OPAL_GKSERVER_H
+#endif // OPAL_H323
+
+#endif // OPAL_H323_GKSERVER_H
 
 
 /////////////////////////////////////////////////////////////////////////////

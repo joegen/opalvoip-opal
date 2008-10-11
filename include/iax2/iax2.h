@@ -32,16 +32,19 @@
  * $Date$
  */
 
-#ifndef __OPAL_IAX_H
-#define __OPAL_IAX_H
+#ifndef OPAL_IAX2_IAX2_H
+#define OPAL_IAX2_IAX2_H
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <iax2/iax2ep.h>
 #include <iax2/iax2con.h>
 
+#endif // OPAL_IAX2
 
-#endif // __OPAL_IAX_H
+#endif // OPAL_IAX2_IAX2_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

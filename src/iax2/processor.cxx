@@ -35,6 +35,9 @@
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
+
 #include <typeinfo>
 
 #ifdef P_USE_PRAGMA
@@ -460,3 +463,6 @@ void IAX2Processor::ReportLists(PString & answer)
 {
   answer= PString(" Incoming size ") + PString(frameList.GetSize());
 }
+
+
+#endif // OPAL_IAX2

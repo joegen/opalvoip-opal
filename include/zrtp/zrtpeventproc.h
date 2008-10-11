@@ -1,5 +1,5 @@
-#ifndef __ZRTPEVENTPROC_H
-#define __ZRTPEVENTPROC_H
+#ifndef OPAL_ZRTP_ZRTPEVENTPROC_H
+#define OPAL_ZRTP_ZRTPEVENTPROC_H
 
 #include <zrtp.h>
 #include <opal/buildopts.h>
@@ -18,4 +18,4 @@ class ZrtpEventProcessor {
     virtual void OnUnknownEvent    (OpalConnection * /*connection*/, unsigned int /*sessionID*/, zrtp_event_t /*event*/) {}
 };
 
-#endif //__ZRTPEVENTPROC_H
+#endif // OPAL_ZRTP_ZRTPEVENTPROC_H

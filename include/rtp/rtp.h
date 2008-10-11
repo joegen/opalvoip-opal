@@ -31,8 +31,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_RTP_H
-#define __OPAL_RTP_H
+#ifndef OPAL_RTP_RTP_H
+#define OPAL_RTP_RTP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -1154,6 +1154,6 @@ class SecureRTP_UDP : public RTP_UDP
     OpalSecurityMode * securityParms;
 };
 
-#endif // __OPAL_RTP_H
+#endif // OPAL_RTP_RTP_H
 
 /////////////////////////////////////////////////////////////////////////////

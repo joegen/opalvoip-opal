@@ -15,6 +15,8 @@
 #include "precompile.h"
 #include "main.h"
 
+#if OPAL_H323
+
 #include <ptclib/random.h>
 
 #ifdef H323_TRANSNEXUS_OSP
@@ -739,6 +741,8 @@ MyGatekeeperCall::~MyGatekeeperCall()
   }
 #endif
 }
+
+#endif // OPAL_H323
 
 
 // End of File ///////////////////////////////////////////////////////////////

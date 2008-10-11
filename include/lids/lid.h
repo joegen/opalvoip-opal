@@ -31,8 +31,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_LID_H
-#define __OPAL_LID_H
+#ifndef OPAL_LIDS_LID_H
+#define OPAL_LIDS_LID_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -1449,7 +1449,7 @@ OpalLineInterfaceDevice * cls##_Registration::Create(void * param) const
   { return new cls(parameter); }
 
 
-#endif // __OPAL_LID_H
+#endif // OPAL_LIDS_LID_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

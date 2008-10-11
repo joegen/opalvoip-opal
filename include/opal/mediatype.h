@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_MEDIATYPE_H
-#define __OPAL_MEDIATYPE_H
+#ifndef OPAL_OPAL_MEDIATYPE_H
+#define OPAL_OPAL_MEDIATYPE_H
 
 #include <ptbuildopts.h>
 #include <ptlib/pfactory.h>
@@ -321,4 +321,4 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 #endif // OPAL_T38_CAPABILITY
 
 
-#endif // __OPAL_MEDIATYPE_H
+#endif // OPAL_OPAL_MEDIATYPE_H

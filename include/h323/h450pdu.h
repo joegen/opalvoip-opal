@@ -28,14 +28,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_H450PDU_H
-#define __OPAL_H450PDU_H
+#ifndef OPAL_H323_H450PDU_H
+#define OPAL_H323_H450PDU_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H450
 
 #include <asn/x880.h>
 #include <asn/h4501.h>
@@ -920,7 +922,9 @@ class H45011Handler : public H450xHandler
 };
 
 
-#endif // __OPAL_H450PDU_H
+#endif // OPAL_H450
+
+#endif // OPAL_H323_H450PDU_H
 
 
 /////////////////////////////////////////////////////////////////////////////

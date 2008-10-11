@@ -100,7 +100,7 @@ OpalMessage * MySendCommand(OpalMessage * command, const char * errorMessage)
 
 #if LOCAL_MEDIA
 
-int MyReadMediaData(const char * token, const char * id, const char * format, void * data, int size)
+int MyReadMediaData(const char * token, const char * id, const char * format, void * userData, void * data, int size)
 {
   static FILE * file = NULL;
   if (file == NULL) {
@@ -117,7 +117,7 @@ int MyReadMediaData(const char * token, const char * id, const char * format, vo
 }
 
 
-int MyWriteMediaData(const char * token, const char * id, const char * format, void * data, int size)
+int MyWriteMediaData(const char * token, const char * id, const char * format, void * userData, void * data, int size)
 {
   static FILE * file = NULL;
   if (file == NULL) {

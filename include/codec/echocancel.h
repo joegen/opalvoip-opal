@@ -27,8 +27,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_ECHOCANCEL_H
-#define __OPAL_ECHOCANCEL_H
+#ifndef OPAL_CODEC_ECHOCANCEL_H
+#define OPAL_CODEC_ECHOCANCEL_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -119,6 +119,6 @@ private:
   void * noise;
 };
 
-#endif // __OPAL_ECHOCANCEL_H
+#endif // OPAL_CODEC_ECHOCANCEL_H
 
 /////////////////////////////////////////////////////////////////////////////

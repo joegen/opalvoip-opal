@@ -30,8 +30,8 @@
  */
 
 
-#ifndef _OPALAUDIORECORD_H
-#define _OPALAUDIORECORD_H
+#ifndef OPAL_OPAL_AUDIORECORD_H
+#define OPAL_OPAL_AUDIORECORD_H
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -76,4 +76,4 @@ class OpalRecordManager
 };
 
 
-#endif // _OPALAUDIOMIXER_H
+#endif // OPAL_OPAL_AUDIORECORD_H

@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_GUID_H
-#define __OPAL_GUID_H
+#ifndef OPAL_OPAL_GUID_H
+#define OPAL_OPAL_GUID_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -41,7 +41,7 @@
 
 #define OpalGloballyUniqueID PGloballyUniqueID
 
-#endif // __OPAL_GUID_H
+#endif // OPAL_OPAL_GUID_H
 
 
 /////////////////////////////////////////////////////////////////////////////
