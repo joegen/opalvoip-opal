@@ -31,7 +31,8 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#if OPAL_H323
+
+#if OPAL_H501
 
 #ifdef __GNUC__
 #pragma implementation "peclient.h"
@@ -1619,6 +1620,6 @@ unsigned H323PeerElementDescriptor::GetProtocolList(const H501_ArrayOf_Supported
 }
 
 
-#endif // OPAL_H323
+#endif // OPAL_H501
 
 // End of file ////////////////////////////////////////////////////////////////
