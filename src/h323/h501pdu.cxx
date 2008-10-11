@@ -32,7 +32,8 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
-#if OPAL_H323
+
+#if OPAL_H501
 
 #ifdef __GNUC__
 #pragma implementation "h501pdu.h"
@@ -399,6 +400,6 @@ H501_AuthenticationRejection & H501PDU::BuildAuthenticationRejection(unsigned se
 }
 
 
-#endif // OPAL_H323
+#endif // OPAL_H501
 
 /////////////////////////////////////////////////////////////////////////////
