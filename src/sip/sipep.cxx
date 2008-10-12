@@ -66,7 +66,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
-  , m_interfaceMonitor(*this)
+  , m_highPriorityMonitor(*this, HighPriority)
+  , m_lowPriorityMonitor(*this, LowPriority)
 #ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
@@ -1322,8 +1323,8 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
 }
 
 
-SIPEndPoint::InterfaceMonitor::InterfaceMonitor(SIPEndPoint & ep)
-  : PInterfaceMonitorClient(30)  // Low priority, after the bundled socket has been done
+SIPEndPoint::InterfaceMonitor::InterfaceMonitor(SIPEndPoint & ep, PINDEX priority)
+  : PInterfaceMonitorClient(priority) 
   , m_endpoint(ep)
 {
 }
@@ -1331,20 +1332,55 @@ SIPEndPoint::InterfaceMonitor::InterfaceMonitor(SIPEndPoint & ep)
         
 void SIPEndPoint::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry &)
 {
-  for (PSafePtr<SIPHandler> handler(m_endpoint.activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
-    if (handler->GetState() == SIPHandler::Unavailable)
-      handler->SendRequest(SIPHandler::Restoring);
+  if (priority == SIPEndPoint::LowPriority) {
+    for (PSafePtr<SIPHandler> handler(m_endpoint.activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+      if (handler->GetState() == SIPHandler::Unavailable)
+        handler->SendRequest(SIPHandler::Restoring);
+    }
+  } else {
+    // special case if interface filtering is used: A new interface may 'hide' the old interface.
+    // If this is the case, remove the transport interface. 
+    //
+    // There is a race condition: If the transport interface binding is cleared AFTER
+    // PMonitoredSockets::ReadFromSocket() is interrupted and starts listening again,
+    // the transport will still listen on the old interface only. Therefore, clear the
+    // socket binding BEFORE the monitored sockets update their interfaces.
+    if (PInterfaceMonitor::GetInstance().HasInterfaceFilter()) {
+      for (PSafePtr<SIPHandler> handler(m_endpoint.activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+        OpalTransport *transport = handler->GetTransport();
+        if (transport != NULL) {
+          PString iface = transport->GetInterface();
+          if (iface.IsEmpty()) // not connected
+            continue;
+          
+          PIPSocket::Address addr;
+          if (!transport->GetRemoteAddress().GetIpAddress(addr))
+            continue;
+          
+          PStringArray ifaces = GetInterfaces(PFalse, addr);
+          
+          if (ifaces.GetStringsIndex(iface) == P_MAX_INDEX) { // original interface no longer available
+            transport->SetInterface(PString::Empty());
+            handler->SetState(SIPHandler::Unavailable);
+          }
+        }
+      }
+    }
   }
 }
 
 
 void SIPEndPoint::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
 {
-  for (PSafePtr<SIPHandler> handler(m_endpoint.activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
-    if (handler->GetState() == SIPHandler::Subscribed &&
-        handler->GetTransport() != NULL &&
-        handler->GetTransport()->GetInterface().Find(entry.GetName()) != P_MAX_INDEX)
-      handler->SendRequest(SIPHandler::Refreshing);
+  if (priority == SIPEndPoint::LowPriority) {
+    for (PSafePtr<SIPHandler> handler(m_endpoint.activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+      if (handler->GetState() == SIPHandler::Subscribed &&
+          handler->GetTransport() != NULL &&
+          handler->GetTransport()->GetInterface().Find(entry.GetName()) != P_MAX_INDEX) {
+        handler->GetTransport()->SetInterface(PString::Empty());
+        handler->SendRequest(SIPHandler::Refreshing);
+      }
+    }
   }
 }
 
