@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_RFC4175_H
-#define __OPAL_RFC4175_H
+#ifndef OPAL_CODEC_RFC4175_H
+#define OPAL_CODEC_RFC4175_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -231,4 +231,4 @@ class Opal_RGB24_to_RFC4175RGB : public OpalRFC4175Encoder
 
 /////////////////////////////////////////////////////////////////////////////
 
-#endif
+#endif // OPAL_CODEC_RFC4175_H

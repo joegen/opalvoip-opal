@@ -24,8 +24,6 @@
  *
  * The author of this code is Derek J Smithies
  *
- *
- *
  * $Revision$
  * $Author$
  * $Date$
@@ -34,7 +32,7 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
-#include <typeinfo>
+#if OPAL_IAX2
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "callprocessor.h"
@@ -50,6 +48,8 @@
 #include <iax2/callprocessor.h>
 #include <iax2/sound.h>
 #include <iax2/transmit.h>
+
+#include <typeinfo>
 
 #define new PNEW
 
@@ -1293,6 +1293,8 @@ PBoolean IAX2CallProcessor::IncomingMessageOutOfOrder(IAX2FullFrame *f)
   return PFalse;
 }
 
+
+#endif // OPAL_IAX2
 
 ////////////////////////////////////////////////////////////////////////////////
 

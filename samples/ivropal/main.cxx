@@ -119,6 +119,7 @@ void IvrOPAL::Main()
     m_manager->SetDefaultUserName(args.GetOptionString('u'));
 
 
+#if OPAL_SIP
   // Set up SIP
   SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
   if (!sip->StartListeners(args.GetOptionString('S').Lines())) {
@@ -129,7 +130,12 @@ void IvrOPAL::Main()
   if (args.HasOption('r'))
     sip->Register(args.GetOptionString('r'));
 
+  m_manager->AddRouteEntry("sip.*:.* = ivr:");
+  m_manager->AddRouteEntry("ivr:.* = sip:<da>");
+#endif // OPAL_SIP
 
+
+#if OPAL_H323
   // Set up H.323
   H323EndPoint * h323 = new H323EndPoint(*m_manager);
   if (!h323->StartListeners(args.GetOptionString('H').Lines())) {
@@ -140,18 +146,15 @@ void IvrOPAL::Main()
   if (args.HasOption('g') || args.HasOption('G'))
     h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'));
 
+  m_manager->AddRouteEntry("h323.*:.* = ivr:");
+  m_manager->AddRouteEntry("ivr:.* = h323:<da>");
+#endif // OPAL_H323
+
 
   // Set up IVR
   OpalIVREndPoint * ivr  = new OpalIVREndPoint(*m_manager);
   ivr->SetDefaultVXML(args[0]);
 
-
-  // Route SIP/H.323 calls to the IVR endpoint
-  m_manager->AddRouteEntry("sip.*:.* = ivr:");
-  m_manager->AddRouteEntry("h323.*:.* = ivr:");
-
-  // If no explicit protocol on URI, then send to SIP.
-  m_manager->AddRouteEntry("ivr:.* = sip:<da>");
 
   if (args.GetCount() == 1)
     cout << "Awaiting incoming call, using VXML \"" << args[0] << "\" ..." << flush;

@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __CODEC_G711A1_PLC_H__
-#define __CODEC_G711A1_PLC_H__
+#ifndef OPAL_CODEC_G711A1_PLC_H
+#define OPAL_CODEC_G711A1_PLC_H
 
 #include <opal/buildopts.h>
 
@@ -113,4 +113,5 @@ class OpalG711_PLC
 
 
 #endif // OPAL_G711PLC
-#endif // __CODEC_G711A1_PLC_H__
+
+#endif // OPAL_CODEC_G711A1_PLC_H

@@ -420,8 +420,11 @@ void DisplayMediaFormat(const PString & fmtName)
     const OpalMediaOption & option = mediaFormat.GetOption(i);
     cout << right << setw(25) << option.GetName() << " (R/" << (option.IsReadOnly() ? 'O' : 'W')
          << ") = " << left << setw(10) << option.AsString();
+#if OPAL_SIP
     if (!option.GetFMTPName().IsEmpty())
       cout << "  FMTP name: " << option.GetFMTPName() << " (" << option.GetFMTPDefault() << ')';
+#endif // OPAL_SIP
+#if OPAL_H323
     const OpalMediaOption::H245GenericInfo & genericInfo = option.GetH245Generic();
     if (genericInfo.mode != OpalMediaOption::H245GenericInfo::None) {
       cout << "  H.245 Ordinal: " << genericInfo.ordinal
@@ -433,6 +436,7 @@ void DisplayMediaFormat(const PString & fmtName)
       if (!genericInfo.excludeReqMode)
         cout << " RM";
     }
+#endif // OPAL_H323
     cout << endl;
   }
   cout << endl;
@@ -628,6 +632,7 @@ void OpalCodecInfo::Main()
     needHelp = false;
   }
 
+#if OPAL_H323
   if (args.HasOption('a')) {
     H323CapabilityFactory::KeyList_T keyList = H323CapabilityFactory::GetKeyList();
     cout << "Registered capabilities:" << endl
@@ -648,6 +653,7 @@ void OpalCodecInfo::Main()
     }
     needHelp = false;
   }
+#endif // OPAL_H323
 
   if (args.HasOption('T')) {
     cout << "Available trancoders:" << endl;

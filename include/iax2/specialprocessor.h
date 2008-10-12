@@ -24,27 +24,21 @@
  *
  * The author of this code is Stephen Cook
  *
- *  $Log: specialprocessor.h,v $
- *  Revision 1.4  2007/04/19 06:17:21  csoutheren
- *  Fixes for precompiled headers with gcc
- *
- *  Revision 1.3  2007/01/17 03:48:13  dereksmithies
- *  Tidy up comments, remove leaks, improve reporting of packet types.
- *
- *  Revision 1.2  2006/09/11 03:12:51  dereksmithies
- *  Add logging and MPL license statements.
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
-#ifndef SPECIALPROCESSOR_H
-#define SPECIALPROCESSOR_H
+#ifndef OPAL_IAX2_SPECIALPROCESSOR_H
+#define OPAL_IAX2_SPECIALPROCESSOR_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <opal/connection.h>
 
@@ -105,4 +99,7 @@ class IAX2SpecialProcessor : public IAX2Processor
 
 };
 
-#endif /*SPECIALPROCESSOR_H*/
+
+#endif // OPAL_IAX2
+
+#endif // OPAL_IAX2_SPECIALPROCESSOR_H

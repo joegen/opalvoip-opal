@@ -28,14 +28,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_H501PDU_H
-#define __OPAL_H501PDU_H
+#ifndef OPAL_H323_H501PDU_H
+#define OPAL_H323_H501PDU_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H501
 
 #include <ptlib/sockets.h>
 
@@ -110,7 +112,10 @@ class H501PDU : public H501_Message, public H323TransactionPDU
     void BuildPDU(unsigned tag, unsigned seqnum);
 };
 
-#endif  // __OPAL_H501PDU_H
+
+#endif // OPAL_H501
+
+#endif  // OPAL_H323_H501PDU_H
 
 
 /////////////////////////////////////////////////////////////////////////////

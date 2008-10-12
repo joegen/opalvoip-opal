@@ -208,8 +208,10 @@ PBoolean OpalGw::Initialise(const char * initMsg)
   httpNameSpace.AddResource(rsrc, PHTTPSpace::Overwrite);
 
 
+#if OPAL_H323
   // Create the status page
   httpNameSpace.AddResource(new MainStatusPage(*this, authority), PHTTPSpace::Overwrite);
+#endif // OPAL_H323
 
 
   // Create the home page
@@ -268,7 +270,9 @@ MyManager::MyManager()
 #if OPAL_SIP
   sipEP = NULL;
 #endif
+#if OPAL_LID
   potsEP = NULL;
+#endif
 #if OPAL_PTLIB_EXPAT
   ivrEP = NULL;
 #endif
@@ -281,9 +285,11 @@ MyManager::MyManager()
 
 MyManager::~MyManager()
 {
+#if OPAL_LID
   // Must do this before we destroy the manager or a crash will result
   if (potsEP != NULL)
     potsEP->RemoveAllLines();
+#endif
 
 #if OPAL_H323
   delete gkServer;
@@ -452,6 +458,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #endif
 
+#if OPAL_LID
   // Add POTS and PSTN endpoints
   fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices()), PFalse);
   PStringArray devices = fieldArray->GetStrings(cfg);
@@ -459,6 +466,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     PSYSTEMLOG(Error, "No LID devices!");
   }
   rsrc->Add(fieldArray);
+#endif // OPAL_LID
 
 
 #if OPAL_PTLIB_EXPAT

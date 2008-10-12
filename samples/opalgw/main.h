@@ -185,6 +185,8 @@ class OpalGw : public OpalGwProcessAncestor
 };
 
 
+#if OPAL_H323
+
 class MainStatusPage : public PServiceHTTPString
 {
   PCLASSINFO(MainStatusPage, PServiceHTTPString);
@@ -201,6 +203,8 @@ class MainStatusPage : public PServiceHTTPString
   private:
     OpalGw & app;
 };
+
+#endif // OPAL_H323
 
 
 #endif  // _OpalGw_MAIN_H

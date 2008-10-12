@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_VIDCODEC_H
-#define __OPAL_VIDCODEC_H
+#ifndef OPAL_CODEC_VIDCODEC_H
+#define OPAL_CODEC_VIDCODEC_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -221,6 +221,6 @@ class OpalLostPicture : public OpalMediaCommand
 
 #endif // OPAL_VIDEO
 
-#endif // __OPAL_VIDCODEC_H
+#endif // OPAL_CODEC_VIDCODEC_H
 
 /////////////////////////////////////////////////////////////////////////////

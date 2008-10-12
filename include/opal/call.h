@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_CALL_H
-#define __OPAL_CALL_H
+#ifndef OPAL_OPAL_CALL_H
+#define OPAL_OPAL_CALL_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -486,7 +486,7 @@ class OpalCall : public PSafeObject
 };
 
 
-#endif // __OPAL_CALL_H
+#endif // OPAL_OPAL_CALL_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

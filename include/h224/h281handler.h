@@ -23,8 +23,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_H281HANDLER_H
-#define __OPAL_H281HANDLER_H
+#ifndef OPAL_H224_H281HANDLER_H
+#define OPAL_H224_H281HANDLER_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -216,5 +216,5 @@ protected:
   PTimer receiveTimer;
 };
 
-#endif // __OPAL_H281HANDLER_H
+#endif // OPAL_H224_H281HANDLER_H
 

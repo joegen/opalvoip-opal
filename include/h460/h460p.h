@@ -38,8 +38,8 @@
  * $Date$
  */
 
-
-#pragma once
+#ifndef OPAL_H460_H460P_H
+#define OPAL_H460_H460P_H
 
 #include <opal/buildopts.h>
 
@@ -216,4 +216,4 @@ class H323PresenceIdentifiers   : public H460P_ArrayOf_PresenceIdentifier
 
 #endif
 
-
+#endif // OPAL_H460_H460P_H

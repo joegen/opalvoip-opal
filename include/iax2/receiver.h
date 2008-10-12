@@ -25,41 +25,21 @@
  *
  * The author of this code is Derek J Smithies
  *
- *  $Log: receiver.h,v $
- *  Revision 1.5  2007/04/19 06:17:21  csoutheren
- *  Fixes for precompiled headers with gcc
- *
- *  Revision 1.4  2007/01/09 03:32:23  dereksmithies
- *  Tidy up and improve the close down process - make it more robust.
- *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
- *
- *  Revision 1.3  2006/08/09 03:46:39  dereksmithies
- *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
- *  into a callProcessor and a regProcessor class.
- *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- *
- *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
- *  Change naming convention, so all class names contain the string "IAX2"
- *
- *  Revision 1.1  2005/07/30 07:01:32  csoutheren
- *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
- *  writing and contributing this code
- *
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
-#ifndef RECEIVER_H
-#define RECEIVER_H
+#ifndef OPAL_IAX2_RECEIVER_H
+#define OPAL_IAX2_RECEIVER_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <ptlib/sockets.h>
 
@@ -133,7 +113,11 @@ class IAX2Receiver : public PThread
   PBoolean           keepGoing;
 };
 
-#endif // RECEIVER_H
+
+#endif // OPAL_IAX2
+
+#endif // OPAL_IAX2_RECEIVER_H
+
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 2 spaces.     */
 
@@ -143,4 +127,3 @@ class IAX2Receiver : public PThread
  * c-basic-offset:2
  * End:
  */
-

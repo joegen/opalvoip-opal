@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_ENDPOINT_H
-#define __OPAL_ENDPOINT_H
+#ifndef OPAL_OPAL_ENDPOINT_H
+#define OPAL_OPAL_ENDPOINT_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -705,7 +705,7 @@ class OpalEndPoint : public PObject
 };
 
 
-#endif // __OPAL_ENDPOINT_H
+#endif // OPAL_OPAL_ENDPOINT_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

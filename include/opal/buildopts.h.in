@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef _OPAL_BUILDOPTS_H
-#define _OPAL_BUILDOPTS_H
+#ifndef OPAL_BUILDOPTS_H
+#define OPAL_BUILDOPTS_H
 
 #include <ptbuildopts.h>
 
@@ -111,46 +111,94 @@
 #undef	OPAL_SIP
 #undef	OPAL_H323
 #undef  OPAL_LID
-#undef  OPAL_H224FECC
 #undef  OPAL_T120DATA
-#undef  OPAL_H450
-#undef  OPAL_H460
-#undef  OPAL_STATISTICS
 
 #if OPAL_PTLIB_EXPAT
-#undef  OPAL_IVR
+  #undef  OPAL_IVR
 #endif
 
-#if OPAL_H450
-#define H323_H450   OPAL_H450
+#if OPAL_H323
+  #undef  OPAL_H224FECC
+  #undef  OPAL_H501
+  
+  #undef  OPAL_H450
+  #if OPAL_H450
+    #define H323_H450   OPAL_H450
+  #endif
+
+  #undef  OPAL_H460
+  #if OPAL_H460
+    #define H323_H460   OPAL_H460
+  #endif
+#else // OPAL_H323
+  #define H323_DISABLE_H225 1
+  #define H323_DISABLE_H235 1
+  #define H323_DISABLE_H245 1
+#endif // OPAL_H323
+
+
+#if !OPAL_H450
+  #define H323_DISABLE_X880 1
+  #define H323_DISABLE_H4501 1
+  #define H323_DISABLE_H4502 1
+  #define H323_DISABLE_H4503 1
+  #define H323_DISABLE_H4504 1
+  #define H323_DISABLE_H4505 1
+  #define H323_DISABLE_H4506 1
+  #define H323_DISABLE_H4507 1
+  #define H323_DISABLE_H4508 1
+  #define H323_DISABLE_H4509 1
+  #define H323_DISABLE_H45010 1
+  #define H323_DISABLE_H45011 1
 #endif
 
-#if OPAL_H460
-#define H323_H460   OPAL_H460
+
+#if !OPAL_T120DATA
+  #define H323_DISABLE_GCC 1
+  #define H323_DISABLE_MCS 1
+#endif // OPAL_T120DATA
+
+
+#if !OPAL_H501
+  #define H323_DISABLE_H501 1
 #endif
+
+
+/////////////////////////////////////////////////
+//
+// Various options
+//
+
+#undef  OPAL_STATISTICS
+//#define OPAL_RTP_AGGREGATE   1
+#undef GCC_HAS_CLZ
+
 
 /////////////////////////////////////////////////
 //
 // Media support
 //
 
+#undef  OPAL_G711PLC
+
 #undef  OPAL_VIDEO
 
 #if OPAL_VIDEO
-#undef  OPAL_RFC4175 
+  #undef  OPAL_RFC4175 
 #endif
 
 
 #undef  OPAL_T38_CAPABILITY
 
 #if OPAL_T38_CAPABILITY
-#if OPAL_PTLIB_ASN
-#undef  OPAL_FAX
-#endif
+  #if OPAL_PTLIB_ASN
+    #undef  OPAL_FAX
+  #endif
 #endif
 
-
-#undef  OPAL_G711PLC
+#if !OPAL_FAX
+  #define H323_DISABLE_T38 1
+#endif
 
 
 /////////////////////////////////////////////////
@@ -167,114 +215,104 @@
 //
 
 #if OPAL_LID
-#undef HAS_VPB
+  #undef HAS_VPB
 
-#if HAS_VPB
-#if defined(_MSC_VER)
-
-#pragma include_alias(<vpbapi.h>, <@VPB_DIR@/src/vpbapi.h>)
-
-#define VPB_LIBRARY "@VPB_DIR@/win32/libvpb/Debug/libvpb.lib"
-
-#endif
-#endif
+  #if HAS_VPB
+    #if defined(_MSC_VER)
+      #pragma include_alias(<vpbapi.h>, <@VPB_DIR@/src/vpbapi.h>)
+      #define VPB_LIBRARY "@VPB_DIR@/win32/libvpb/Debug/libvpb.lib"
+    #endif
+  #endif
 #endif
 
-
-/////////////////////////////////////////////////
-//
-// Various options
-//
-//#define OPAL_RTP_AGGREGATE   1
-#undef GCC_HAS_CLZ
 
 /////////////////////////////////////////////////
 //
 // libZRTP support
 //
+
 //#undef HAS_LIBZRTP
 
 #if defined(HAS_LIBZRTP) && !defined(_WIN32_WCE)
 
-#define OPAL_ZRTP  1
+  #define OPAL_ZRTP  1
 
-#if defined(_MSC_VER)
+  #if defined(_MSC_VER)
 
-#ifdef _DEBUG
-#define LIBZRTP_LIBRARY "@LIBZRTP_DIR@/Debug/libzrtp.lib"
-#else
-#define LIBZRTP_LIBRARY "@LIBZRTP_DIR@/Release/libzrtp.lib"
-#endif
+    #ifdef _DEBUG
+      #define LIBZRTP_LIBRARY "@LIBZRTP_DIR@/Debug/libzrtp.lib"
+    #else
+      #define LIBZRTP_LIBRARY "@LIBZRTP_DIR@/Release/libzrtp.lib"
+    #endif
 
-#pragma comment(lib, LIBZRTP_LIBRARY)
+    #pragma comment(lib, LIBZRTP_LIBRARY)
 
-#pragma include_alias("WINCONFIG/config.h",         "@LIBZRTP_DIR@/srtp_win32k/WINCONFIG/config.h")
-#pragma include_alias("WINCONFIG\config.h",         "@LIBZRTP_DIR@/srtp_win32k/WINCONFIG/config.h")
+    #pragma include_alias("WINCONFIG/config.h",         "@LIBZRTP_DIR@/srtp_win32k/WINCONFIG/config.h")
+    #pragma include_alias("WINCONFIG\config.h",         "@LIBZRTP_DIR@/srtp_win32k/WINCONFIG/config.h")
 
-#pragma include_alias(<zrtp.h>,                     <@LIBZRTP_DIR@/include/zrtp.h>)
-#pragma include_alias(<zrtp_log.h>,                 <@LIBZRTP_DIR@/include/zrtp_log.h>)
-#pragma include_alias(<zrtp_types.h>,               <@LIBZRTP_DIR@/include/zrtp_types.h>)   
-#pragma include_alias(<zrtp_crypto.h>,              <@LIBZRTP_DIR@/include/zrtp_crypto.h>)
-#pragma include_alias(<zrtp_protocol.h>,            <@LIBZRTP_DIR@/include/zrtp_protocol.h>)
-#pragma include_alias(<zrtp_string.h>,              <@LIBZRTP_DIR@/include/zrtp_string.h>)
-#pragma include_alias(<zrtp_iface.h>,               <@LIBZRTP_DIR@/include/zrtp_iface.h>)
-#pragma include_alias(<zrtp_error.h>,               <@LIBZRTP_DIR@/include/zrtp_error.h>)
-#pragma include_alias(<zrtp_net.h>,                 <@LIBZRTP_DIR@/include/zrtp_net.h>)
-#pragma include_alias(<zrtp_system.h>,              <@LIBZRTP_DIR@/include/zrtp_system.h>)
-#pragma include_alias("bn.h",                       "@LIBZRTP_DIR@/bnlib/bn.h")
-#pragma include_alias(<bn.h>,                       <@LIBZRTP_DIR@/bnlib/bn.h>)
-#pragma include_alias("bnsize00.h",                 "@LIBZRTP_DIR@/bnlib/bnsize00.h")
-#pragma include_alias(<bnsize00.h>,                 <@LIBZRTP_DIR@/bnlib/bnsize00.h>)
+    #pragma include_alias(<zrtp.h>,                     <@LIBZRTP_DIR@/include/zrtp.h>)
+    #pragma include_alias(<zrtp_log.h>,                 <@LIBZRTP_DIR@/include/zrtp_log.h>)
+    #pragma include_alias(<zrtp_types.h>,               <@LIBZRTP_DIR@/include/zrtp_types.h>)   
+    #pragma include_alias(<zrtp_crypto.h>,              <@LIBZRTP_DIR@/include/zrtp_crypto.h>)
+    #pragma include_alias(<zrtp_protocol.h>,            <@LIBZRTP_DIR@/include/zrtp_protocol.h>)
+    #pragma include_alias(<zrtp_string.h>,              <@LIBZRTP_DIR@/include/zrtp_string.h>)
+    #pragma include_alias(<zrtp_iface.h>,               <@LIBZRTP_DIR@/include/zrtp_iface.h>)
+    #pragma include_alias(<zrtp_error.h>,               <@LIBZRTP_DIR@/include/zrtp_error.h>)
+    #pragma include_alias(<zrtp_net.h>,                 <@LIBZRTP_DIR@/include/zrtp_net.h>)
+    #pragma include_alias(<zrtp_system.h>,              <@LIBZRTP_DIR@/include/zrtp_system.h>)
+    #pragma include_alias("bn.h",                       "@LIBZRTP_DIR@/bnlib/bn.h")
+    #pragma include_alias(<bn.h>,                       <@LIBZRTP_DIR@/bnlib/bn.h>)
+    #pragma include_alias("bnsize00.h",                 "@LIBZRTP_DIR@/bnlib/bnsize00.h")
+    #pragma include_alias(<bnsize00.h>,                 <@LIBZRTP_DIR@/bnlib/bnsize00.h>)
 
-#pragma include_alias("aes.h",                      "@LIBZRTP_DIR@/bgaes/aes.h")
-#pragma include_alias("sha2.h",                     "@LIBZRTP_DIR@/bgaes/sha2.h")
+    #pragma include_alias("aes.h",                      "@LIBZRTP_DIR@/bgaes/aes.h")
+    #pragma include_alias("sha2.h",                     "@LIBZRTP_DIR@/bgaes/sha2.h")
 
-#pragma include_alias("zrtp_win_config.h",          "@LIBZRTP_DIR@/config/zrtp_win_config.h")
+    #pragma include_alias("zrtp_win_config.h",          "@LIBZRTP_DIR@/config/zrtp_win_config.h")
 
 
-// ZRTP includes SRTP, so include SRTP headers
+    // ZRTP includes SRTP, so include SRTP headers
 
-#pragma include_alias("srtp.h",              "@LIBZRTP_DIR@/srtp_win32k/include/srtp.h")
-#pragma include_alias(<srtp.h>,              <@LIBZRTP_DIR@/srtp_win32k/include/srtp.h>)
-#pragma include_alias("srtp/srtp.h",         "@LIBZRTP_DIR@/srtp_win32k/include/srtp.h")
-#pragma include_alias(<srtp/include/srtp.h>, <@LIBZRTP_DIR@/srtp_win32k/include/srtp.h>)
-#pragma include_alias("crypto_kernel.h",     "@LIBZRTP_DIR@/srtp_win32k/crypto/include/crypto_kernel.h")
-#pragma include_alias("rdbx.h",              "@LIBZRTP_DIR@/srtp_win32k/crypto/include/rdbx.h")
-#pragma include_alias("rdb.h",               "@LIBZRTP_DIR@/srtp_win32k/crypto/include/rdb.h")
-#pragma include_alias("integers.h",          "@LIBZRTP_DIR@/srtp_win32k/crypto/include/integers.h")
+    #pragma include_alias("srtp.h",              "@LIBZRTP_DIR@/srtp_win32k/include/srtp.h")
+    #pragma include_alias(<srtp.h>,              <@LIBZRTP_DIR@/srtp_win32k/include/srtp.h>)
+    #pragma include_alias("srtp/srtp.h",         "@LIBZRTP_DIR@/srtp_win32k/include/srtp.h")
+    #pragma include_alias(<srtp/include/srtp.h>, <@LIBZRTP_DIR@/srtp_win32k/include/srtp.h>)
+    #pragma include_alias("crypto_kernel.h",     "@LIBZRTP_DIR@/srtp_win32k/crypto/include/crypto_kernel.h")
+    #pragma include_alias("rdbx.h",              "@LIBZRTP_DIR@/srtp_win32k/crypto/include/rdbx.h")
+    #pragma include_alias("rdb.h",               "@LIBZRTP_DIR@/srtp_win32k/crypto/include/rdb.h")
+    #pragma include_alias("integers.h",          "@LIBZRTP_DIR@/srtp_win32k/crypto/include/integers.h")
 
-// end of SRTP headers
+    // end of SRTP headers
 
-#endif
+  #endif
 #endif
 
 /////////////////////////////////////////////////
 //
 // libSRTP support
 //
+
 #undef HAS_LIBSRTP
 
 #if HAS_LIBSRTP && !OPAL_ZRTP && !defined(_WIN32_WCE)
 
-#define OPAL_SRTP  1
+  #define OPAL_SRTP  1
 
-#if defined(_MSC_VER)
+  #if defined(_MSC_VER)
 
-#pragma include_alias("srtp/srtp.h",         "@LIBSRTP_DIR@/include/srtp.h")
-#pragma include_alias(<srtp/include/srtp.h>, <@LIBSRTP_DIR@/include/srtp.h>)
-#pragma include_alias("crypto_kernel.h",     "@LIBSRTP_DIR@/crypto/include/crypto_kernel.h")
-#pragma include_alias("rdbx.h",              "@LIBSRTP_DIR@/crypto/include/rdbx.h")
-#pragma include_alias("rdb.h",               "@LIBSRTP_DIR@/crypto/include/rdb.h")
-#pragma include_alias("integers.h",          "@LIBSRTP_DIR@/crypto/include/integers.h")
+    #pragma include_alias("srtp/srtp.h",         "@LIBSRTP_DIR@/include/srtp.h")
+    #pragma include_alias(<srtp/include/srtp.h>, <@LIBSRTP_DIR@/include/srtp.h>)
+    #pragma include_alias("crypto_kernel.h",     "@LIBSRTP_DIR@/crypto/include/crypto_kernel.h")
+    #pragma include_alias("rdbx.h",              "@LIBSRTP_DIR@/crypto/include/rdbx.h")
+    #pragma include_alias("rdb.h",               "@LIBSRTP_DIR@/crypto/include/rdb.h")
+    #pragma include_alias("integers.h",          "@LIBSRTP_DIR@/crypto/include/integers.h")
 
-
-#ifdef _DEBUG
-#define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Debug/libsrtp.lib"
-#else
-#define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Release/libsrtp.lib"
-#endif
-
-#endif
+    #ifdef _DEBUG
+      #define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Debug/libsrtp.lib"
+    #else
+      #define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Release/libsrtp.lib"
+    #endif
+  #endif
 #endif
 
 
@@ -282,20 +320,18 @@
 //
 // Java JNI support
 //
+
 #undef OPAL_JAVA
 
 #if OPAL_JAVA
-#if defined(_MSC_VER)
-
-#pragma include_alias(<jni.h>,    <@JAVA_DIR@/include/jni.h>)
-#pragma include_alias("jni_md.h", "@JAVA_DIR@/include/win32/jni_md.h")
-
-
-#endif
+  #if defined(_MSC_VER)
+    #pragma include_alias(<jni.h>,    <@JAVA_DIR@/include/jni.h>)
+    #pragma include_alias("jni_md.h", "@JAVA_DIR@/include/win32/jni_md.h")
+  #endif
 #endif
 
 
-#endif // _OPAL_BUILDOPTS_H
+#endif // OPAL_BUILDOPTS_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_PATCH_H
-#define __OPAL_PATCH_H
+#ifndef OPAL_OPAL_PATCH_H
+#define OPAL_OPAL_PATCH_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -325,7 +325,7 @@ class OpalPassiveMediaPatch : public OpalMediaPatch
 };
 
 
-#endif // __OPAL_PATCH_H
+#endif // OPAL_OPAL_PATCH_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

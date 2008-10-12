@@ -1673,6 +1673,7 @@ H323GatekeeperRequest::Response H323RegisteredEndPoint::OnRegistration(H323Gatek
       info.rcf.IncludeOptionalField(H225_RegistrationConfirm::e_serviceControl);
   }
 
+#if OPAL_H501
   // If have peer element, so add/update a descriptor for ep.
   H323PeerElement * peerElement = gatekeeper.GetPeerElement();
   if (peerElement != NULL) {
@@ -1695,6 +1696,7 @@ H323GatekeeperRequest::Response H323RegisteredEndPoint::OnRegistration(H323Gatek
                                  PTime());
     }
   }
+#endif
 
   return H323GatekeeperRequest::Confirm;
 }
@@ -2646,7 +2648,9 @@ H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
   totalCalls = 0;
   rejectedCalls = 0;
 
+#if OPAL_H501
   peerElement = NULL;
+#endif
 
   monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorMain), "GkSrv Monitor");
 }
@@ -2657,7 +2661,9 @@ H323GatekeeperServer::~H323GatekeeperServer()
   monitorExit.Signal();
   PAssert(monitorThread->WaitForTermination(10000), "Gatekeeper monitor thread did not terminate!");
   delete monitorThread;
+#if OPAL_H501
   delete peerElement;
+#endif
 }
 
 
@@ -2856,10 +2862,12 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnUnregistration(H323Gatek
 
     // if no aliases left, then remove the endpoint
     if (info.endpoint->GetAliasCount() > 0) {
+#if OPAL_H501
       if (peerElement != NULL)
         peerElement->AddDescriptor(info.endpoint->GetDescriptorID(),
                                    info.endpoint->GetAliases(),
                                    info.endpoint->GetSignalAddresses());
+#endif
     } else {
       PTRACE(3, "RAS\tRemoving endpoint " << *info.endpoint << " with no aliases");
       RemoveEndPoint(info.endpoint);  // will also remove descriptor if required
@@ -2948,9 +2956,11 @@ PBoolean H323GatekeeperServer::RemoveEndPoint(H323RegisteredEndPoint * ep)
       byAddress.RemoveAt(i);
   }
 
+#if OPAL_H501
   // remove the descriptor
   if (peerElement != NULL)
     peerElement->DeleteDescriptor(ep->GetDescriptorID());
+#endif
 
   // remove the endpoint from the list of active endpoints
   // ep is deleted by this
@@ -3377,6 +3387,7 @@ PBoolean H323GatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & a
                                                  H323GatekeeperCall * /*call*/)
 {
   if (!TranslateAliasAddressToSignalAddress(alias, address)) {
+#if OPAL_H501
     H225_AliasAddress transportAlias;
     if ((peerElement != NULL) && (peerElement->AccessRequest(alias, aliases, transportAlias))) {
       // if AccessRequest returns OK, but no aliases, then all of the aliases
@@ -3389,6 +3400,7 @@ PBoolean H323GatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & a
       address = H323GetAliasAddressString(transportAlias);
       return PTrue;
     }
+#endif
     return PFalse;
   }
 
@@ -3498,6 +3510,7 @@ void H323GatekeeperServer::SetGatekeeperIdentifier(const PString & id,
 }
 
 
+#if OPAL_H501
 void H323GatekeeperServer::SetPeerElement(H323PeerElement * newPeerElement)
 {
   delete peerElement;
@@ -3525,6 +3538,7 @@ PBoolean H323GatekeeperServer::OpenPeerElement(const H323TransportAddress & remo
   else
     return peerElement->SetOnlyServiceRelationship(remotePeer, keepTrying);
 }
+#endif
 
 
 void H323GatekeeperServer::MonitorMain(PThread &, INT)

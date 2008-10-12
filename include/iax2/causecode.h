@@ -24,23 +24,17 @@
  *
  * The author of this code is Derek J Smithies
  *
- *  $Log: causecode.h,v $
- *  Revision 1.2  2005/08/26 03:07:35  dereksmithies
- *  Change naming convention, so all class names contain the string "IAX2"
- *
- *  Revision 1.1  2005/07/30 07:01:32  csoutheren
- *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
- *  writing and contributing this code
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
-#ifndef CAUSECODE_H
-#define CAUSECODE_H
+
+#ifndef OPAL_IAX2_CAUSECODE_H
+#define OPAL_IAX2_CAUSECODE_H
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <iax2/ies.h>
 
@@ -127,7 +121,9 @@ class IAX2IeCauseCode : public IAX2IeByte
 
 };
 
-#endif //CAUSECODE_H
+#endif // OPAL_IAX2
+
+#endif // OPAL_IAX2_CAUSECODE_H
 
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */

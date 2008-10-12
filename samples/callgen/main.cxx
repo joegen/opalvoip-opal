@@ -28,6 +28,8 @@
 #include "main.h"
 #include "version.h"
 
+#include <opal/transcoders.h>
+
 
 PCREATE_PROCESS(CallGen);
 
@@ -132,7 +134,9 @@ void CallGen::Main()
 		     PTrace::Blocks | PTrace::DateAndTime | PTrace::Thread | PTrace::FileAndLine);
 #endif
 
+#if OPAL_H323
   H323EndPoint * h323 = new H323EndPoint(manager);
+#endif
 
   outgoingMessageFile = args.GetOptionString('O', "ogm.wav");
   if (outgoingMessageFile.IsEmpty())
@@ -159,6 +163,7 @@ void CallGen::Main()
     incomingAudioDirectory = PString::Empty();
   }
 
+#if OPAL_H323
   {
     PStringArray interfaces = args.GetOptionString("h323-interface").Lines();
     if (!h323->StartListeners(interfaces)) {
@@ -168,7 +173,9 @@ void CallGen::Main()
     }
     cout << "H.323 listening on: " << setfill(',') << h323->GetListeners() << setfill(' ') << endl;
   }
+#endif // OPAL_H323
 
+#if OPAL_SIP
   {
     PStringArray interfaces = args.GetOptionString("sip-interface").Lines();
     SIPEndPoint * sip = new SIPEndPoint(manager);
@@ -179,7 +186,9 @@ void CallGen::Main()
     }
     cout << "SIP listening on: " << setfill(',') << sip->GetListeners() << setfill(' ') << endl;
   }
+#endif // OPAL_SIP
 
+#if OPAL_IVR
   OpalIVREndPoint * ivr = new OpalIVREndPoint(manager);
 #if 0
   PStringStream vxml;
@@ -206,6 +215,8 @@ void CallGen::Main()
 #else
   ivr->SetDefaultVXML("file://" + outgoingMessageFile);
 #endif
+#endif // OPAL_IVR
+
 
   unsigned simultaneous = args.GetOptionString('m').AsUnsigned();
   if (simultaneous == 0)
@@ -269,12 +280,15 @@ void CallGen::Main()
   // set local username, is necessary
   if (args.HasOption('u')) {
     PStringArray aliases = args.GetOptionString('u').Lines();
-    h323->SetLocalUserName(aliases[0]);
+    manager.SetDefaultUserName(aliases[0]);
+#if OPAL_H323
     for (PINDEX i = 1; i < aliases.GetSize(); ++i)
       h323->AddAliasName(aliases[i]);
+#endif // OPAL_H323
   }
-  cout << "Local username: \"" << h323->GetLocalUserName() << '"' << endl;
+  cout << "Local username: \"" << manager.GetDefaultUserName() << '"' << endl;
   
+#if OPAL_H323
   if (args.HasOption('p')) {
     h323->SetGatekeeperPassword(args.GetOptionString('p'));
     cout << "Using H.235 security." << endl;
@@ -284,7 +298,7 @@ void CallGen::Main()
     h323->SetGkAccessTokenOID(args.GetOptionString('a'));
     cout << "Set Access Token OID to \"" << h323->GetGkAccessTokenOID() << '"' << endl;
   }
-  
+
   // process gatekeeper registration options
   if (args.HasOption('g')) {
     PString gkAddr = args.GetOptionString('g');
@@ -311,12 +325,13 @@ void CallGen::Main()
     h323->DisableFastStart(TRUE);
   if (args.HasOption('T'))
     h323->DisableH245Tunneling(TRUE);
+#endif // OPAL_H323
   
   if (args.HasOption('l')) {
     manager.AddRouteEntry(".*\t.* = ivr:"); // Everything goes to IVR
     cout << "Endpoint is listening for incoming calls, press ENTER to exit.\n";
     console.ReadChar();
-    h323->ClearAllCalls();
+    manager.ClearAllCalls();
   }
   else {
     CallParams params(*this);
@@ -688,7 +703,7 @@ void MyCall::OnRTPStatistics(const OpalConnection & connection, const RTP_Sessio
 
     const RTP_UDP * udpSess = dynamic_cast<const RTP_UDP *>(&session);
     if (udpSess != NULL) 
-      mediaGateway = H323TransportAddress(udpSess->GetRemoteAddress(), udpSess->GetRemoteDataPort());
+      mediaGateway = OpalTransportAddress(udpSess->GetRemoteAddress(), udpSess->GetRemoteDataPort());
   }
 }
 

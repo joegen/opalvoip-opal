@@ -1,5 +1,5 @@
-#ifndef __OPALZRTP_H
-#define __OPALZRTP_H
+#ifndef OPAL_ZRTP_OPALZRTP_H
+#define OPAL_ZRTP_OPALZRTP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -39,4 +39,4 @@ class OpalZrtp {
 
 
 
-#endif //__OPALZRTP_H
+#endif // OPAL_ZRTP_OPALZRTP_H

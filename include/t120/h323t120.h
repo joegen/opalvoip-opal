@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_H323T120_H
-#define __OPAL_H323T120_H
+#ifndef OPAL_T120_H323T120_H
+#define OPAL_T120_H323T120_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -243,7 +243,7 @@ class H323_T120Channel : public H323DataChannel
 };
 
 
-#endif // __OPAL_H323T120_H
+#endif // OPAL_T120_H323T120_H
 
 
 /////////////////////////////////////////////////////////////////////////////

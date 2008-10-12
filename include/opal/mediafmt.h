@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_MEDIAFMT_H
-#define __OPAL_MEDIAFMT_H
+#ifndef OPAL_OPAL_MEDIAFMT_H
+#define OPAL_OPAL_MEDIAFMT_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -1214,7 +1214,7 @@ extern const OpalMediaFormat & GetOpalT38();
 #endif
 #endif
 
-#endif  // __OPAL_MEDIAFMT_H
+#endif  // OPAL_OPAL_MEDIAFMT_H
 
 
 // End of File ///////////////////////////////////////////////////////////////
