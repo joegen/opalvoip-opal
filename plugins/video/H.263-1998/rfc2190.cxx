@@ -20,6 +20,7 @@
  */
 
 #include <iostream>
+#include <string.h>
 using namespace std;
 
 #include "rfc2190.h"
