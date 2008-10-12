@@ -3264,8 +3264,6 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_RemoveRegistration = FindWindowByNameAs<wxButton>(this, wxT("RemoveRegistrar"));
   m_MoveUpRegistration = FindWindowByNameAs<wxButton>(this, wxT("MoveUpRegistrar"));
   m_MoveDownRegistration = FindWindowByNameAs<wxButton>(this, wxT("MoveDownRegistrar"));
-
-  m_SubscribePresence = FindWindowByNameAs<wxCheckBox>(this, SubscribePresenceKey);
 #endif // OPAL_SIP
 
 
