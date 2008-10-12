@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPALPLUGINMGR_H
-#define __OPALPLUGINMGR_H
+#ifndef OPAL_CODEC_OPALPLUGINMGR_H
+#define OPAL_CODEC_OPALPLUGINMGR_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -719,4 +719,4 @@ class H323H263PluginCapability : public H323VideoPluginCapability
 #endif // OPAL_VIDEO
 #endif // OPAL_H323
 
-#endif // __OPALPLUGINMGR_H
+#endif // OPAL_CODEC_OPALPLUGINMGR_H

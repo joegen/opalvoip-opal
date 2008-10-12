@@ -31,14 +31,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_CHANNELS_H
-#define __OPAL_CHANNELS_H
+#ifndef OPAL_H323_CHANNELS_H
+#define OPAL_H323_CHANNELS_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H323
 
 #include <rtp/rtp.h>
 #include <h323/transaddr.h>
@@ -896,7 +898,9 @@ class H323DataChannel : public H323UnidirectionalChannel
 };
 
 
-#endif // __OPAL_CHANNELS_H
+#endif // OPAL_H323
+
+#endif // OPAL_H323_CHANNELS_H
 
 
 /////////////////////////////////////////////////////////////////////////////

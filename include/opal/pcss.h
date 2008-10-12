@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_PCSS_H
-#define __OPAL_PCSS_H
+#ifndef OPAL_OPAL_PCSS_H
+#define OPAL_OPAL_PCSS_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -421,7 +421,7 @@ class OpalPCSSConnection : public OpalConnection
 
 #endif // OPAL_PTLIB_AUDIO
 
-#endif // __OPAL_PCSS_H
+#endif // OPAL_OPAL_PCSS_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

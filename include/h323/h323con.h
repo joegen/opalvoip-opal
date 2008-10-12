@@ -31,14 +31,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_H323CON_H
-#define __OPAL_H323CON_H
+#ifndef OPAL_H323_H323CON_H
+#define OPAL_H323_H323CON_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H323
 
 #include <opal/rtpconn.h>
 #include <opal/guid.h>
@@ -2056,7 +2058,9 @@ class H323Connection : public OpalRTPConnection
 PDICTIONARY(H323CallIdentityDict, PString, H323Connection);
 
 
-#endif // __OPAL_H323CON_H
+#endif // OPAL_H323
+
+#endif // OPAL_H323_H323CON_H
 
 
 /////////////////////////////////////////////////////////////////////////////

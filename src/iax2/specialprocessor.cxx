@@ -24,21 +24,16 @@
  *
  * The author of this code is Stephen Cook
  *
- *  $Log: specialprocessor.cxx,v $
- *  Revision 1.4  2007/01/17 03:48:48  dereksmithies
- *  Tidy up comments, remove leaks, improve reporting of packet types.
- *
- *  Revision 1.3  2006/09/13 00:20:12  csoutheren
- *  Fixed warnings under VS.net
- *
- *  Revision 1.2  2006/09/11 03:12:51  dereksmithies
- *  Add logging and MPL license statements.
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
+
 #include <typeinfo>
 
 #ifdef P_USE_PRAGMA
@@ -134,3 +129,6 @@ void IAX2SpecialProcessor::ProcessIaxCmdPoke(IAX2FullFrameProtocol *src)
   TransmitFrameToRemoteEndpoint(f);
   delete src;
 }
+
+
+#endif // OPAL_IAX2

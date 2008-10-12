@@ -28,14 +28,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_PECLIENT_H
-#define __OPAL_PECLIENT_H
+#ifndef OPAL_H323_PECLIENT_H
+#define OPAL_H323_PECLIENT_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H501
 
 #include <h323/h323annexg.h>
 #include <h323/h323ep.h>
@@ -528,7 +530,9 @@ class H323PeerElement : public H323_AnnexG
 };
 
 
-#endif // __OPAL_PECLIENT_H
+#endif // OPAL_H501
+
+#endif // OPAL_H323_PECLIENT_H
 
 
 /////////////////////////////////////////////////////////////////////////////

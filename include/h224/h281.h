@@ -23,8 +23,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_H281_H
-#define __OPAL_H281_H
+#ifndef OPAL_H224_H281_H
+#define OPAL_H224_H281_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -126,5 +126,5 @@ public:
   void SetPresetNumber(BYTE presetNumber);
 };
 
-#endif // __OPAL_H281_H
+#endif // OPAL_H224_H281_H
 

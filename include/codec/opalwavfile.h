@@ -26,8 +26,8 @@
  * $Date$
  */
 
-#ifndef __OPALWAVFILE_H
-#define __OPALWAVFILE_H
+#ifndef OPAL_CODEC_OPALWAVFILE_H
+#define OPAL_CODEC_OPALWAVFILE_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -92,7 +92,7 @@ class OpalWAVFile : public PWAVFile
     );
 };
 
-#endif // __OPALWAVFILE_H
+#endif // OPAL_CODEC_OPALWAVFILE_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

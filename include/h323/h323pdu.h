@@ -31,14 +31,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_H323PDU_H
-#define __OPAL_H323PDU_H
+#ifndef OPAL_H323_H323PDU_H
+#define OPAL_H323_H323PDU_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H323
 
 #include <ptlib/sockets.h>
 #include <h323/h323con.h>
@@ -505,7 +507,9 @@ void H323TraceDumpPDU(
 #endif
 
 
-#endif // __OPAL_H323PDU_H
+#endif // OPAL_H323
+
+#endif // OPAL_H323_H323PDU_H
 
 
 /////////////////////////////////////////////////////////////////////////////

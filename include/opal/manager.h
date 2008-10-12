@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_MANAGER_H
-#define __OPAL_MANAGER_H
+#ifndef OPAL_OPAL_MANAGER_H
+#define OPAL_OPAL_MANAGER_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -1336,7 +1336,7 @@ unsigned OpalGetMinorVersion();
 unsigned OpalGetBuildNumber();
 
 
-#endif // __OPAL_MANAGER_H
+#endif // OPAL_OPAL_MANAGER_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

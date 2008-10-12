@@ -31,8 +31,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_JITTER_H
-#define __OPAL_JITTER_H
+#ifndef OPAL_RTP_JITTER_H
+#define OPAL_RTP_JITTER_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -78,9 +78,9 @@ class OpalJitterBuffer : public PObject
 
     @return PTrue on successful read, PFalse on faulty read. */
     virtual PBoolean OnReadPacket    (
-	RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-	PBoolean loop               ///<  If PTrue, loop as long as data is available, if PFalse, only process once
-	) = 0;
+      RTP_DataFrame & frame,  ///<  Frame read from the RTP session
+      PBoolean loop               ///<  If PTrue, loop as long as data is available, if PFalse, only process once
+    ) = 0;
 
 //    PINDEX GetSize() const { return bufferSize; }
     /**Set the maximum delay the jitter buffer will operate to.
@@ -218,28 +218,28 @@ class RTP_JitterBuffer : public OpalJitterBuffer
 
  public:
     RTP_JitterBuffer(
-	    RTP_Session & session,   ///<  Associated RTP session tor ead data from
-	    unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
-	    unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
-	    unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
-	    PINDEX stackSize = 30000 ///<  Stack size for jitter thread
-	    );
+      RTP_Session & session,   ///<  Associated RTP session tor ead data from
+      unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
+      unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
+      unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
+      PINDEX stackSize = 30000 ///<  Stack size for jitter thread
+    );
 
     /**This class instance collects data from the outside world in this
        method.
 
     @return PTrue on successful read, PFalse on faulty read. */
-    virtual PBoolean OnReadPacket    (
+    virtual PBoolean OnReadPacket(
       RTP_DataFrame & frame,  ///<  Frame read from the RTP session
       PBoolean loop           ///<  If PTrue, loop as long as data is available, if PFalse, only process once
-	) ;
+    );
 
  protected:
-	/**This class extracts data from the outside world by reading from this session variable */
+   /**This class extracts data from the outside world by reading from this session variable */
    RTP_Session & session;
 };
 
-#endif // __OPAL_JITTER_H
+#endif // OPAL_RTP_JITTER_H
 
 
 /////////////////////////////////////////////////////////////////////////////

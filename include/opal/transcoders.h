@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_TRANSCODERS_H
-#define __OPAL_TRANSCODERS_H
+#ifndef OPAL_OPAL_TRANSCODERS_H
+#define OPAL_OPAL_TRANSCODERS_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -545,7 +545,7 @@ class Opal_Empty_##fmt##_Decoder : public OpalEmptyFramedAudioTranscoder \
 OPAL_REGISTER_TRANSCODER(Opal_Empty_##fmt##_Encoder, OpalPCM16, fmt); \
 OPAL_REGISTER_TRANSCODER(Opal_Empty_##fmt##_Decoder, fmt,       OpalPCM16); \
 
-#endif // __OPAL_TRANSCODERS_H
+#endif // OPAL_OPAL_TRANSCODERS_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

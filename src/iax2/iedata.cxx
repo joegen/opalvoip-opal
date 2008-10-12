@@ -24,8 +24,6 @@
  *
  * The author of this code is Derek J Smithies
  *
- *
- *
  * $Revision$
  * $Author$
  * $Date$
@@ -33,6 +31,8 @@
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "iedata.h"
@@ -123,6 +123,9 @@ void IAX2IeData::PrintOn(ostream & strm) const
        <<   "Dropped frames (presumably by jitterbuf) u32         " << receivedDropped   << endl
        <<   "Frames received Out of Order u32                     " << receivedOoo       << endl;
 }
+
+
+#endif // OPAL_IAX2
 
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */

@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_SIPEP_H
-#define __OPAL_SIPEP_H
+#ifndef OPAL_SIP_SIPEP_H
+#define OPAL_SIP_SIPEP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -41,6 +41,8 @@
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_SIP
 
 #include <ptclib/sockagg.h>
 #include <opal/rtpep.h>
@@ -795,7 +797,10 @@ class SIPEndPoint : public OpalRTPEndPoint
     friend void InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
 };
 
-#endif // __OPAL_SIPEP_H
+
+#endif // OPAL_SIP
+
+#endif // OPAL_SIP_SIPEP_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

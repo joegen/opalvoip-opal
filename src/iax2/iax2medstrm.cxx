@@ -24,8 +24,6 @@
  *
  * The author of this code is Derek J Smithies
  *
- *
- *
  * $Revision$
  * $Author$
  * $Date$
@@ -34,22 +32,22 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#if OPAL_IAX2
+
 #ifdef __GNUC__
 #pragma implementation "iax2medstrm.h"
 #endif
 
-#if OPAL_VIDEO
-#include <codec/vidcodec.h>
-#endif
+#include <iax2/iax2medstrm.h>
 
 #include <iax2/frame.h>
 #include <iax2/iax2con.h>
-#include <iax2/iax2medstrm.h>
 #include <lids/lid.h>
 #include <opal/mediastrm.h>
 #include <opal/patch.h>
 #include <ptlib/videoio.h>
 #include <rtp/rtp.h>
+#include <codec/vidcodec.h>
 
 
 #define MAX_PAYLOAD_TYPE_MISMATCHES 10
@@ -148,6 +146,8 @@ PBoolean OpalIAX2MediaStream::IsSynchronous() const
   return PTrue;
 }
 
+
+#endif // OPAL_IAX2
 
 /////////////////////////////////////////////////////////////////////////////
 

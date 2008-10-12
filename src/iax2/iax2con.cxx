@@ -25,8 +25,6 @@
  *
  * The author of this code is Derek J Smithies
  *
- *
- *
  * $Revision$
  * $Author$
  * $Date$
@@ -34,8 +32,8 @@
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
-#include <typeinfo>
 
+#if OPAL_IAX2
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "iax2con.h"
@@ -49,6 +47,8 @@
 #include <iax2/ies.h>
 #include <iax2/sound.h>
 #include <iax2/transmit.h>
+
+#include <typeinfo>
 
 
 #define new PNEW
@@ -535,6 +535,9 @@ PBoolean IAX2Connection::ReadSoundPacket(RTP_DataFrame & packet)
   packet.SetPayloadSize(packet.GetSize() - packet.GetHeaderSize());
   return PTrue;
 }
+
+
+#endif // OPAL_IAX2
 
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 2 spaces.     */

@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_IVR_H
-#define __OPAL_IVR_H
+#ifndef OPAL_OPAL_IVR_H
+#define OPAL_OPAL_IVR_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -373,7 +373,7 @@ class OpalIVRMediaStream : public OpalRawMediaStream
 
 #endif // OPAL_IVR
 
-#endif // __OPAL_IVR_H
+#endif // OPAL_OPAL_IVR_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

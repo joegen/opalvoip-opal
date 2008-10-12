@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_LOCAL_H
-#define __OPAL_LOCAL_H
+#ifndef OPAL_OPAL_LOCALEP_H
+#define OPAL_OPAL_LOCALEP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -408,6 +408,7 @@ class OpalLocalMediaStream : public OpalMediaStream, public OpalMediaStreamPacin
 };
 
 
-#endif // __OPAL_LOCAL_H
+#endif // OPAL_OPAL_LOCALEP_H
+
 
 // End of File ///////////////////////////////////////////////////////////////

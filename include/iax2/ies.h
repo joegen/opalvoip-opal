@@ -24,55 +24,21 @@
  *
  * The author of this code is Derek J Smithies
  *
- *  $Log: ies.h,v $
- *  Revision 1.9  2007/09/05 04:04:35  csoutheren
- *  Fixed spelling mistakes
- *
- *  Revision 1.8  2007/04/19 06:17:21  csoutheren
- *  Fixes for precompiled headers with gcc
- *
- *  Revision 1.7  2006/09/11 03:08:51  dereksmithies
- *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
- *  improve call handling. Notably, IAX2 call transfer. Many thanks.
- *  Thanks also to the Google summer of code for sponsoring this work.
- *
- *  Revision 1.6  2006/08/09 03:46:39  dereksmithies
- *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
- *  into a callProcessor and a regProcessor class.
- *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- *
- *  Revision 1.5  2006/06/16 01:47:08  dereksmithies
- *  Get the OnHold features of IAX2 to work correctly.
- *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- *
- *  Revision 1.4  2006/01/31 03:28:47  csoutheren
- *  Removed compile warnings and changed functions args to const refs
- *
- *  Revision 1.3  2005/08/26 03:07:38  dereksmithies
- *  Change naming convention, so all class names contain the string "IAX2"
- *
- *  Revision 1.2  2005/08/24 01:38:38  dereksmithies
- *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
- *
- *  Revision 1.1  2005/07/30 07:01:32  csoutheren
- *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
- *  writing and contributing this code
- *
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
-#ifndef IES_H
-#define IES_H
+#ifndef OPAL_IAX2_IES_H
+#define OPAL_IAX2_IES_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <ptlib/sockets.h>
 #include <iax2/iedata.h>
@@ -2021,7 +1987,9 @@ class IAX2IeList : public IAX2Ie *
 };
 
 
-#endif // IAX_IES_H
+#endif // OPAL_IAX2
+
+#endif // OPAL_IAX2_IES_H
 
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */

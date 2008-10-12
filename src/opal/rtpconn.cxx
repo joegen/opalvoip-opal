@@ -243,12 +243,16 @@ void OpalRTPConnection::SetSecurityData(void *data)
 void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    RTP_Session * session = m_rtpSessions.GetSession(H323Capability::DefaultVideoSessionID);
-    if (session != NULL)
-      session->SendIntraFrameRequest();
+    OpalMediaStreamPtr videoStream = GetMediaStream(OpalMediaType::Video(), false);
+    if (videoStream != NULL) {
+      RTP_Session * session = m_rtpSessions.GetSession(videoStream->GetSessionID());
+      if (session != NULL) {
+        session->SendIntraFrameRequest();
 #if OPAL_STATISTICS
-    m_VideoUpdateRequestsSent++;
+        m_VideoUpdateRequestsSent++;
+      }
 #endif
+    }
   }
 }
 #else

@@ -29,14 +29,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_SIPPDU_H
-#define __OPAL_SIPPDU_H
+#ifndef OPAL_SIP_SIPPDU_H
+#define OPAL_SIP_SIPPDU_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_SIP
 
 #include <ptclib/mime.h>
 #include <ptclib/url.h>
@@ -1172,7 +1174,9 @@ class SIPPing : public SIPTransaction
 };
 
 
-#endif // __OPAL_SIPPDU_H
+#endif // OPAL_SIP
+
+#endif // OPAL_SIP_SIPPDU_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

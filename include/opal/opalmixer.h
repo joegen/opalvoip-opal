@@ -30,8 +30,8 @@
  */
 
 
-#ifndef _OPALMIXER_H
-#define _OPALMIXER_H
+#ifndef OPAL_OPAL_OPALMIXER_H
+#define OPAL_OPAL_OPALMIXER_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
@@ -364,5 +364,5 @@ class OpalAudioMixer
     PBoolean Write(const Key_T & key, const RTP_DataFrame & rtp);
 };
 
-#endif // _OPAL_MIXER
+#endif // OPAL_OPAL_OPAL_MIXER
 

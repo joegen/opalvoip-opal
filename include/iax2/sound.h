@@ -25,30 +25,21 @@
  *
  * The author of this code is Derek J Smithies
  *
- *  $Log: sound.h,v $
- *  Revision 1.3  2007/04/19 06:17:21  csoutheren
- *  Fixes for precompiled headers with gcc
- *
- *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
- *  Change naming convention, so all class names contain the string "IAX2"
- *
- *  Revision 1.1  2005/07/30 07:01:32  csoutheren
- *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
- *  writing and contributing this code
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
-#ifndef SOUND_H
-#define SOUND_H
+#ifndef OPAL_IAX2_SOUND_H
+#define OPAL_IAX2_SOUND_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -101,9 +92,10 @@ class IAX2SoundList : public PBYTEArray *
 };
 
 
+#endif // OPAL_IAX2
 
+#endif // OPAL_IAX2_SOUND_H
 
-#endif // SOUND_H
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */
 
@@ -114,4 +106,3 @@ class IAX2SoundList : public PBYTEArray *
  * c-basic-offset:2
  * End:
  */
-

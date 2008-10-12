@@ -29,16 +29,20 @@
  * $Date$
  */
 
-#ifndef __OPAL_SIP_H
-#define __OPAL_SIP_H
+#ifndef OPAL_SIP_SIP_H
+#define OPAL_SIP_SIP_H
 
 #include <opal/buildopts.h>
+
+#if OPAL_SIP
 
 #include <sip/sipep.h>
 #include <sip/sipcon.h>
 
 
-#endif // __OPAL_SIP_H
+#endif // OPAL_SIP
+
+#endif // OPAL_SIP_SIP_H
 
 
 // End of File ///////////////////////////////////////////////////////////////
