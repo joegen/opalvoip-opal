@@ -366,8 +366,6 @@ class SIPHandlersList : public PSafeList<SIPHandler>
 };
 
 
-
-#endif // OPAL_SIP_HANDLERS_H
 /** Information for Sip "dialog" event package notification messages.
   */
 struct SIPDialogNotification
