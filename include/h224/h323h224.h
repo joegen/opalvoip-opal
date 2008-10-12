@@ -131,4 +131,6 @@ protected:
 };
 
 
+#endif
+
 #endif // OPAL_H224_H323H224_H
