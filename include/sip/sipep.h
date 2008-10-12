@@ -772,18 +772,24 @@ class SIPEndPoint : public OpalRTPEndPoint
     typedef PThreadPool<SIP_PDU_Work, SIP_PDU_Thread> SIPMainThreadPool;
     SIPMainThreadPool threadPool;
 
+    enum {
+      HighPriority = 80,
+      LowPriority  = 30,
+    };
     class InterfaceMonitor : public PInterfaceMonitorClient
     {
         PCLASSINFO(InterfaceMonitor, PInterfaceMonitorClient);
       public:
-        InterfaceMonitor(SIPEndPoint & manager);
+        InterfaceMonitor(SIPEndPoint & manager, PINDEX priority);
         
         virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
         virtual void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
 
     protected:
         SIPEndPoint & m_endpoint;
-    } m_interfaceMonitor;
+    };
+    InterfaceMonitor m_highPriorityMonitor;
+    InterfaceMonitor m_lowPriorityMonitor;
 
     friend void InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry);
     friend void InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
