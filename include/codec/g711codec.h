@@ -27,8 +27,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_G711CODEC_H
-#define __OPAL_G711CODEC_H
+#ifndef OPAL_CODEC_G711CODEC_H
+#define OPAL_CODEC_G711CODEC_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -110,7 +110,7 @@ OPAL_REGISTER_TRANSCODER(Opal_PCM_G711_uLaw, OpalPCM16,         OpalG711_ULAW_64
 OPAL_REGISTER_TRANSCODER(Opal_G711_ALaw_PCM, OpalG711_ALAW_64K, OpalPCM16); \
 OPAL_REGISTER_TRANSCODER(Opal_PCM_G711_ALaw, OpalPCM16,         OpalG711_ALAW_64K)
 
-#endif // __OPAL_G711CODEC_H
+#endif // OPAL_CODEC_G711CODEC_H
 
 
 /////////////////////////////////////////////////////////////////////////////

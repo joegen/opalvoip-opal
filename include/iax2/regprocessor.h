@@ -1,11 +1,45 @@
-#ifndef REGPROCESSOR_H
-#define REGPROCESSOR_H
+/*
+ *
+ *
+ * Inter Asterisk Exchange 2
+ * 
+ * A class to describe the node we are talking to.
+ * 
+ * Open Phone Abstraction Library (OPAL)
+ *
+ * Copyright (c) 2005 Indranet Technologies Ltd.
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is Open Phone Abstraction Library.
+ *
+ * The Initial Developer of the Original Code is Indranet Technologies Ltd.
+ *
+ * The author of this code is Derek J Smithies
+ *
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
+
+#ifndef OPAL_IAX2_REGPROCESSOR_H
+#define OPAL_IAX2_REGPROCESSOR_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <ptclib/random.h>
 #include <opal/connection.h>
@@ -143,4 +177,7 @@ class IAX2RegProcessor : public IAX2Processor
   PRandom regRandom;
 };
 
-#endif // REGPROCESSOR_H
+
+#endif // OPAL_IAX2
+
+#endif // OPAL_IAX2_REGPROCESSOR_H

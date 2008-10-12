@@ -31,8 +31,8 @@
  * $Date$
  */
 
-#ifndef __LIDS_LIDEP_H
-#define __LIDS_LIDEP_H
+#ifndef OPAL_LIDS_LIDEP_H
+#define OPAL_LIDS_LIDEP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -664,7 +664,7 @@ class OpalLineSilenceDetector : public OpalSilenceDetector
 };
 
 
-#endif // __LIDS_LIDEP_H
+#endif // OPAL_LIDS_LIDEP_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

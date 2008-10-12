@@ -24,84 +24,13 @@
  *
  * The author of this code is Derek J Smithies
  *
- *  $Log: iax2ep.h,v $
- *  Revision 1.17  2007/08/13 04:24:26  csoutheren
- *  Normalise IAX2 answer logic
- *
- *  Revision 1.16  2007/08/09 22:15:44  dereksmithies
- *  Formatting tidyup. No functional difference.
- *
- *  Revision 1.15  2007/08/03 01:24:06  dereksmithies
- *  Tidyups so it compiles...
- *
- *  Revision 1.14  2007/08/02 23:25:07  dereksmithies
- *  Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
- *  will correctly advise on receiving an incoming call.
- *
- *  Revision 1.13  2007/04/19 06:17:21  csoutheren
- *  Fixes for precompiled headers with gcc
- *
- *  Revision 1.12  2007/03/13 00:32:16  csoutheren
- *  Simple but messy changes to allow compile time removal of protocol
- *  options such as H.450 and H.460
- *  Fix MakeConnection overrides
- *
- *  Revision 1.11  2007/03/01 05:51:03  rjongbloed
- *  Fixed backward compatibility of OnIncomingConnection() virtual
- *    functions on various classes. If an old override returned PFalse
- *    then it will now abort the call as it used to.
- *
- *  Revision 1.10  2007/01/24 04:00:55  csoutheren
- *  Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
- *  Added some pure viritual functions to prevent old code from breaking silently
- *  New OpalEndpoint and OpalConnection descendants will need to re-implement
- *  OnIncomingConnection. Sorry :)
- *
- *  Revision 1.9  2007/01/12 02:39:00  dereksmithies
- *  Remove the notion of srcProcessors and dstProcessor lists from the ep.
- *  Ensure that the connection looks after the callProcessor.
- *
- *  Revision 1.8  2007/01/09 03:32:23  dereksmithies
- *  Tidy up and improve the close down process - make it more robust.
- *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
- *
- *  Revision 1.7  2006/12/18 03:18:41  csoutheren
- *  Messy but simple fixes
- *    - Add access to SIP REGISTER timeout
- *    - Ensure OpalConnection options are correctly progagated
- *
- *  Revision 1.6  2006/09/11 03:08:51  dereksmithies
- *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
- *  improve call handling. Notably, IAX2 call transfer. Many thanks.
- *  Thanks also to the Google summer of code for sponsoring this work.
- *
- *  Revision 1.5  2006/08/09 03:46:39  dereksmithies
- *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
- *  into a callProcessor and a regProcessor class.
- *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- *
- *  Revision 1.4  2005/08/26 03:07:38  dereksmithies
- *  Change naming convention, so all class names contain the string "IAX2"
- *
- *  Revision 1.3  2005/08/24 01:38:38  dereksmithies
- *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
- *
- *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
- *  Fixed Windows build under DevStudio 2003 of IAX2 code
- *
- *  Revision 1.1  2005/07/30 07:01:32  csoutheren
- *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
- *  writing and contributing this code
- *
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
-#ifndef IAX_ENDPOINT_H
-#define IAX_ENDPOINT_H
+#ifndef OPAL_IAX2_IAX2EP_H
+#define OPAL_IAX2_IAX2EP_H
 
 #ifndef _PTLIB_H
 #include <ptlib.h>
@@ -112,6 +41,8 @@
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_IAX2
 
 #include <opal/endpoint.h>
 #include <iax2/iax2con.h>
@@ -566,7 +497,11 @@ class IAX2EndPoint : public OpalEndPoint
   
 };
 
-#endif // IAX_ENDPOINT_H
+
+#endif // OPAL_IAX2
+
+#endif // OPAL_IAX2_IAX2EP_H
+
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 2 spaces.     */
 

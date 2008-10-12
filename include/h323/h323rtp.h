@@ -31,14 +31,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_H323RTP_H
-#define __OPAL_H323RTP_H
+#ifndef OPAL_H323_H323RTP_H
+#define OPAL_H323_H323RTP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H323
 
 #include <rtp/rtp.h>
 
@@ -225,7 +227,9 @@ class H323_RTP_UDP : public H323_RTP_Session
 };
 
 
-#endif // __OPAL_H323RTP_H
+#endif // OPAL_H323
+
+#endif // OPAL_H323_H323RTP_H
 
 
 /////////////////////////////////////////////////////////////////////////////

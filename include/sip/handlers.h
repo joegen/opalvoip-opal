@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_HANDLERS_H
-#define __OPAL_HANDLERS_H
+#ifndef OPAL_SIP_HANDLERS_H
+#define OPAL_SIP_HANDLERS_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -40,6 +40,8 @@
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_SIP
 
 #include <ptlib/safecoll.h>
 
@@ -364,6 +366,8 @@ class SIPHandlersList : public PSafeList<SIPHandler>
 };
 
 
+
+#endif // OPAL_SIP_HANDLERS_H
 /** Information for Sip "dialog" event package notification messages.
   */
 struct SIPDialogNotification
@@ -435,4 +439,6 @@ struct SIPDialogNotification
 };
 
 
-#endif
+#endif // OPAL_SIP
+
+#endif // OPAL_SIP_HANDLERS_H

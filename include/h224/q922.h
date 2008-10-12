@@ -23,8 +23,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_Q922_H
-#define __OPAL_Q922_H
+#ifndef OPAL_H224_Q922_H
+#define OPAL_H224_Q922_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -100,5 +100,5 @@ private:
   inline WORD CalculateFCS(const BYTE*data, PINDEX length) const;
 };
 
-#endif // __OPAL_Q922_H
+#endif // OPAL_H224_Q922_H
 

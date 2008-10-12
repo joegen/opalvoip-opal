@@ -32,8 +32,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_CONNECTION_H
-#define __OPAL_CONNECTION_H
+#ifndef OPAL_OPAL_CONNECTION_H
+#define OPAL_OPAL_CONNECTION_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -1460,7 +1460,7 @@ class OpalConnection : public PSafeObject
 #endif
 };
 
-#endif // __OPAL_CONNECTION_H
+#endif // OPAL_OPAL_CONNECTION_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

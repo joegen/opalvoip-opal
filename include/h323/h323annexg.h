@@ -24,14 +24,16 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef __OPAL_H323ANNEXG_H
-#define __OPAL_H323ANNEXG_H
+#ifndef OPAL_H323_H323ANNEXG_H
+#define OPAL_H323_H323ANNEXG_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H501
 
 #include <h323/h323trans.h>
 #include <h323/h501pdu.h>
@@ -142,7 +144,9 @@ class H323_AnnexG : public H323Transactor
 };
 
 
-#endif // __OPAL_H323ANNEXG_H
+#endif // OPAL_H501
+
+#endif // OPAL_H323_H323ANNEXG_H
 
 
 /////////////////////////////////////////////////////////////////////////////

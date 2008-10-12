@@ -48,17 +48,8 @@
 
 #include <opal/pcss.h>
 
-#ifndef OPAL_H323
-#error Must compile with H.323 enabled!
-#endif
-
 #include <h323/h323.h>
 #include <h323/gkclient.h>
-
-#ifndef OPAL_SIP
-#error Must compile with SIP enabled!
-#endif
-
 #include <sip/sip.h>
 
 
@@ -153,6 +144,8 @@ class MyH323EndPoint : public H323EndPoint
 };
 #endif
 
+
+#if OPAL_SIP
 class MySIPEndPoint : public SIPEndPoint
 {
   public:
@@ -178,6 +171,7 @@ class MySIPEndPoint : public SIPEndPoint
 
     MyManager & m_manager;
 };
+#endif // OPAL_SIP
 
 
 class VideoControlDialog : public wxDialog
@@ -877,11 +871,13 @@ class MyManager : public wxFrame, public OpalManager
 #endif
     bool StartGatekeeper();
 
+#if OPAL_SIP
     MySIPEndPoint  * sipEP;
     bool             m_SIPProxyUsed;
     RegistrationList m_registrations;
     void StartRegistrations();
     void ReplaceRegistrations(const RegistrationList & newRegistrations);
+#endif
 
 #if OPAL_IVR
     OpalIVREndPoint  * ivrEP;

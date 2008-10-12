@@ -31,8 +31,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_SRTP_H
-#define __OPAL_SRTP_H
+#ifndef OPAL_RTP_SRTP_H
+#define OPAL_RTP_SRTP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -142,4 +142,4 @@ class LibSRTP_UDP : public OpalSRTP_UDP
 
 #endif // OPAL_SRTP
 
-#endif // __OPAL_SRTP_H
+#endif // OPAL_RTP_SRTP_H

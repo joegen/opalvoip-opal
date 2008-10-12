@@ -23,8 +23,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_H224_H
-#define __OPAL_H224_H
+#ifndef OPAL_H224_H224_H
+#define OPAL_H224_H224_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -105,5 +105,5 @@ public:
   PBoolean Decode(const BYTE *data, PINDEX size);
 };
 
-#endif // __OPAL_H224_H
+#endif // OPAL_H224_H224_H
 

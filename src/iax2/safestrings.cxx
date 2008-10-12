@@ -32,6 +32,8 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#if OPAL_IAX2
+
 #ifdef P_USE_PRAGMA
 #pragma implementation "safestrings.h"
 #endif
@@ -156,6 +158,8 @@ PString SafeString::GetAndDelete()
   return res;
 }  
 			
+#endif // OPAL_IAX2
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /* The comment below is magic for those who use emacs to edit this file. */

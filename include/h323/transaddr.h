@@ -31,14 +31,16 @@
  * $Date$
  */
 
-#ifndef __H323_TRANSADDR_H
-#define __H323_TRANSADDR_H
+#ifndef OPAL_H323_TRANSADDR_H
+#define OPAL_H323_TRANSADDR_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H323
 
 #include <ptlib/sockets.h>
 #include <opal/transports.h>
@@ -144,7 +146,9 @@ void H323SetTransportAddresses(
 );
 
 
-#endif ///<  __H323_TRANSADDR_H
+#endif // OPAL_H323
+
+#endif // OPAL_H323_TRANSADDR_H
 
 
 /////////////////////////////////////////////////////////////////////////////

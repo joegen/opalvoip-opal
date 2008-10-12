@@ -27,14 +27,16 @@
  * $Date$
  */
 
-#ifndef __OPAL_SVCCTRL_H
-#define __OPAL_SVCCTRL_H
+#ifndef OPAL_H323_SVCCTRL_H
+#define OPAL_H323_SVCCTRL_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_H323
 
 class H225_ServiceControlDescriptor;
 class H225_ServiceControlIndication;
@@ -350,7 +352,9 @@ class H323CallCreditServiceControl : public H323ServiceControlSession
 };
 
 
-#endif // __OPAL_SVCCTRL_H
+#endif // OPAL_H323
+
+#endif // OPAL_H323_SVCCTRL_H
 
 
 /////////////////////////////////////////////////////////////////////////////

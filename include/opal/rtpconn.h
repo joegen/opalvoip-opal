@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_RTPCONN_H
-#define __OPAL_RTPCONN_H
+#ifndef OPAL_OPAL_RTPCONN_H
+#define OPAL_OPAL_RTPCONN_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -357,5 +357,4 @@ class OpalSecurityMode : public PObject
     virtual PBoolean Open() = 0;
 };
 
-#endif 
-
+#endif // OPAL_OPAL_RTPCONN_H

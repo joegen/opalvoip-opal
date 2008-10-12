@@ -23,8 +23,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_H224HANDLER_H
-#define __OPAL_H224HANDLER_H
+#ifndef OPAL_H224_H224HANDLER_H
+#define OPAL_H224_H224HANDLER_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -133,5 +133,5 @@ private:
 #endif //
 
 
-#endif // __OPAL_H224HANDLER_H
+#endif // OPAL_H224_H224HANDLER_H
 
