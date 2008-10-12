@@ -516,6 +516,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
       SIPURL contact(userName, interfaces[i]);
       contact.Sanitise(SIPURL::ContactURI);
       params.m_contactAddress += contact.AsQuotedString();
+      setlocale(LC_NUMERIC, "POSIX");
       params.m_contactAddress.sprintf(";q=%.3f", qvalue);
       qvalue -= 1.0/interfaces.GetSize();
     }
