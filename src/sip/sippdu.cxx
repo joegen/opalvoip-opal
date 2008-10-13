@@ -2260,10 +2260,11 @@ PBoolean SIPTransaction::Cancel()
   PSafeLockReadWrite lock(*this);
 
   if (state == NotStarted || state >= Cancelling) {
-    PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " cannot be cancelled.");
+    PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " cannot be cancelled as in state " << state);
     return PFalse;
   }
 
+  PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " cancelled.");
   completionTimer = endpoint.GetPduCleanUpTimeout();
   return ResendCANCEL();
 }
@@ -2342,36 +2343,29 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   if (!lock.IsLocked())
     return PFalse;
 
-  PBoolean notCompletedFlag = state < Completed;
-  bool signalCompletionFlag = false;
-
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
      and one only host, so anything coming back with that CSeq is OK. This has
      "issues" according to the spec but
      */
-  if (notCompletedFlag && response.GetStatusCode()/100 == 1) {
-    PTRACE(3, "SIP\tTransaction " << cseq << " proceeding.");
+  if (IsInProgress()) {
+    if (response.GetStatusCode()/100 == 1) {
+      PTRACE(3, "SIP\tTransaction " << cseq << " proceeding.");
 
-    if (state == Trying)
-      state = Proceeding;
+      if (state == Trying)
+        state = Proceeding;
 
-    retry = 0;
-    retryTimer = retryTimeoutMax;
-    completionTimer = endpoint.GetNonInviteTimeout();
-  }
-  else {
-    if (notCompletedFlag) {
+      retry = 0;
+      retryTimer = retryTimeoutMax;
+      completionTimer = endpoint.GetNonInviteTimeout();
+    }
+    else {
       PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
       state = Completed;
       statusCode = response.GetStatusCode();
+      completionTimer = endpoint.GetPduCleanUpTimeout();
     }
 
-    signalCompletionFlag = true;
-    completionTimer = endpoint.GetPduCleanUpTimeout();
-  }
-
-  if (notCompletedFlag) {
     if (connection != NULL)
       connection->OnReceivedResponse(*this, response);
     else
@@ -2381,8 +2375,10 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       OnCompleted(response);
   }
 
-  if (signalCompletionFlag)
+  if (response.GetStatusCode() >= 200) {
+    completionTimer = endpoint.GetPduCleanUpTimeout();
     completed.Signal();
+  }
 
   return PTrue;
 }
@@ -2442,7 +2438,6 @@ void SIPTransaction::SetTerminated(States newState)
   static const char * const StateNames[NumStates] = {
     "NotStarted",
     "Trying",
-    "Aborting",
     "Proceeding",
     "Cancelling",
     "Completed",
@@ -2513,7 +2508,8 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, Opal
 PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
   if (response.GetMIME().GetCSeq().Find(MethodNames[Method_INVITE]) != P_MAX_INDEX) {
-    connection->OnReceivedResponseToINVITE(*this, response);
+    if (IsInProgress())
+      connection->OnReceivedResponseToINVITE(*this, response);
 
     if (response.GetStatusCode() >= 200) {
       PSafeLockReadWrite lock(*this);
