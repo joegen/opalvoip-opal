@@ -337,8 +337,8 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
   PString authRealm = m_realm;
-  PString username = m_username;
-  PString password = m_username;
+  PString username  = m_username;
+  PString password  = m_password;
   if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), authRealm, username, password)) {
     PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
   }
@@ -365,7 +365,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   // switch authentication schemes
   delete authentication;
   authentication = newAuth;
-  m_realm = newAuth->GetAuthRealm();
+  m_realm    = newAuth->GetAuthRealm();
   m_username = username;
   m_password = password;
 
@@ -488,6 +488,9 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   m_username = params.m_authID;
   m_password = params.m_password;
   m_realm    = params.m_realm;
+
+  if (m_username.IsEmpty())
+    m_username = m_addressOfRecord.GetUserName();
 }
 
 
