@@ -866,7 +866,6 @@ class SIPTransaction : public SIP_PDU
     enum States {
       NotStarted,
       Trying,
-      Aborting,
       Proceeding,
       Cancelling,
       Completed,
