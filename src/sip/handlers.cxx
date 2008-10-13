@@ -330,48 +330,44 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
                                                                                errorMsg);
   if (newAuth == NULL) {
     PTRACE(2, "SIP\t" << errorMsg);
-    OnFailed(SIP_PDU::Failure_UnAuthorised);
-    return;
-  }
-
-  // check to see if this is a follow-on from the last authentication scheme used
-  if (authentication != NULL && 
-      (authentication->GetClass() == newAuth->GetClass()) && 
-      newAuth->EquivalentTo(*authentication) &&
-      GetState() == SIPHandler::Subscribing) {
-    delete newAuth;
-    PTRACE(1, "SIP\tAuthentication already performed for " << proxyTrace << "Authentication Required");
-    OnFailed(SIP_PDU::Failure_UnAuthorised);
+    OnFailed(SIP_PDU::Failure_Forbidden);
     return;
   }
 
   // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
-  if (m_username.IsEmpty () && m_password.IsEmpty ()) {
-    if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), m_realm, m_username, m_password)) {
-      PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
-    }
-    else {
-      SIPURL proxy = endpoint.GetProxy();
-      if (proxy.IsEmpty()) {
-        PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm());
-        delete newAuth;
-        OnFailed(SIP_PDU::Failure_UnAuthorised);
-        return;
-      }
-
+  PString authRealm = m_realm;
+  PString username = m_username;
+  PString password = m_username;
+  if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), authRealm, username, password)) {
+    PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
+  }
+  else {
+    const SIPURL & proxy = endpoint.GetProxy();
+    if (!proxy.IsEmpty()) {
       PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
-      m_username = proxy.GetUserName();
-      m_password = proxy.GetPassword();
+      username = proxy.GetUserName();
+      password = proxy.GetPassword();
     }
   }
-  m_realm = newAuth->GetAuthRealm();
-  newAuth->SetUsername(m_username);
-  newAuth->SetPassword(m_password);
+
+  newAuth->SetUsername(username);
+  newAuth->SetPassword(password);
+
+  // check to see if this is a follow-on from the last authentication scheme used
+  if (GetState() == Subscribing && authentication != NULL && *newAuth == *authentication) {
+    delete newAuth;
+    PTRACE(1, "SIP\tAuthentication already performed using current credentials, not trying again.");
+    OnFailed(SIP_PDU::Failure_Forbidden);
+    return;
+  }
 
   // switch authentication schemes
   delete authentication;
   authentication = newAuth;
+  m_realm = newAuth->GetAuthRealm();
+  m_username = username;
+  m_password = password;
 
   // And end connect mode on the transport
   CollapseFork(transaction);
