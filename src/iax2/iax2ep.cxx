@@ -190,6 +190,8 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
     return;
   }
 
+  /*Now activate the connection and start processing packets */
+  connection->StartOperation();
   connection->IncomingEthernetFrame(f);
 }
 
@@ -397,6 +399,7 @@ PBoolean IAX2EndPoint::MakeConnection(
   if (!AddConnection(connection))
     return PFalse;
 
+  connection->StartOperation();
   //search through the register srcProcessors to see if there is a relevant userName
   //and password we can use for authentication.  If there isn't then the default
   //userName and password of this endpoint will be used instead.
@@ -786,12 +789,6 @@ PINDEX IAX2EndPoint::GetRegistrationsCount() {
   PWaitAndSignal m(regProcessorsMutex);
   return regProcessors.GetSize();
 }
-
-PBoolean IAX2EndPoint::OnIncomingCall(IAX2Connection & conn)
-{
-  return conn.OnIncomingCall(0, NULL);
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
