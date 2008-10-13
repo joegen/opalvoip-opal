@@ -515,7 +515,8 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
       break;
 
     case SIP_PDU::Method_ACK :
-      // If we receive an ACK outside of the context of a connection, ignore it.
+    case SIP_PDU::Method_BYE :
+      // If we receive an ACK or BYE outside of the context of a connection, ignore it.
       pdu->SendResponse(transport, SIP_PDU::Failure_TransactionDoesNotExist, this);
       return false;
 
