@@ -1148,6 +1148,20 @@ SIPAuthentication::SIPAuthentication()
 }
 
 
+PObject::Comparison SIPAuthentication::Compare(const PObject & other) const
+{
+  const SIPAuthentication * otherAuth = dynamic_cast<const SIPAuthentication *>(&other);
+  if (otherAuth == NULL)
+    return LessThan;
+
+  Comparison result = GetUsername().Compare(otherAuth->GetUsername());
+  if (result != EqualTo)
+    return result;
+
+  return GetPassword().Compare(otherAuth->GetPassword());
+}
+
+
 PString SIPAuthentication::GetAuthParam(const PString & auth, const char * name) const
 {
   PString value;
@@ -1243,13 +1257,20 @@ SIPDigestAuthentication & SIPDigestAuthentication::operator =(const SIPDigestAut
   return *this;
 }
 
-bool SIPDigestAuthentication::EquivalentTo(const SIPAuthentication & _oldAuth)
+PObject::Comparison SIPDigestAuthentication::Compare(const PObject & other) const
 {
-  const SIPDigestAuthentication * oldAuth = dynamic_cast<const SIPDigestAuthentication *>(&_oldAuth);
-  PAssert(oldAuth != NULL, "Cannot compare auths of different classes");
+  const SIPDigestAuthentication * otherAuth = dynamic_cast<const SIPDigestAuthentication *>(&other);
+  if (otherAuth == NULL)
+    return LessThan;
 
-  return GetUsername() == oldAuth->GetUsername() &&
-         GetNonce()    == oldAuth->GetNonce();
+  Comparison result = GetAuthRealm().Compare(otherAuth->GetAuthRealm());
+  if (result != EqualTo)
+    return result;
+
+  if (GetAlgorithm() != otherAuth->GetAlgorithm())
+    return GetAlgorithm() < otherAuth->GetAlgorithm() ? LessThan : GreaterThan;
+
+  return SIPAuthentication::Compare(other);
 }
 
 PBoolean SIPDigestAuthentication::Parse(const PString & _auth, PBoolean proxy)
@@ -1405,9 +1426,9 @@ class SIPNTLMAuthentication : public SIPAuthentication
   public: 
     SIPNTLMAuthentication();
 
-    bool EquivalentTo(
-      const SIPAuthentication & _oldAuth
-    );
+    virtual Comparison Compare(
+      const PObject & other
+    ) const;
 
     PBoolean Parse(
       const PString & auth,
@@ -1451,9 +1472,21 @@ SIPNTLMAuthentication::SIPNTLMAuthentication()
   domainName = "Domain";
 }
 
-bool SIPNTLMAuthentication::EquivalentTo(const SIPAuthentication & /*_oldAuth*/)
+PObject::Comparison SIPNTLMAuthentication::Compare(const PObject & other) const
 {
-  return false;
+  const SIPNTLMAuthentication * otherAuth = dynamic_cast<const SIPNTLMAuthentication *>(&other);
+  if (otherAuth == NULL)
+    return LessThan;
+
+  Comparison result = hostName.Compare(otherAuth->hostName);
+  if (result != EqualTo)
+    return result;
+
+  result = domainName.Compare(otherAuth->domainName);
+  if (result != EqualTo)
+    return result;
+
+  return SIPAuthentication::Compare(other);
 }
 
 PBoolean SIPNTLMAuthentication::Parse(const PString & /*auth*/, PBoolean /*proxy*/)
