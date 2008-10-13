@@ -289,8 +289,6 @@ class IAX2EndPoint : public OpalEndPoint
       */
   virtual OpalMediaFormatList GetMediaFormats() const;
 
-  virtual PBoolean OnIncomingCall(IAX2Connection & conn);
-
   /**Return the bitmask which specifies the possible codecs we support */
   PINDEX GetSupportedCodecs(OpalMediaFormatList & list);
   

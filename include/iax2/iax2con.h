@@ -85,6 +85,11 @@ class IAX2Connection : public OpalConnection
   ~IAX2Connection();
   //@}
 
+  /**this method starts the callprocessor of a connection, and maves
+     the phase to setup. Essentially, we start the entire call
+     handling process here. */
+  void StartOperation();
+
     /**Get indication of connection being to a "network".
        This indicates the if the connection may be regarded as a "network"
        connection. The distinction is about if there is a concept of a "remote"
@@ -241,16 +246,16 @@ class IAX2Connection : public OpalConnection
 			  ); 
      
   /**Open a new media stream.  This will create a media stream of 
-     subclass OpalIAXMediaStream.
+     class OpalIAX2MediaStream.
      
      Note that media streams may be created internally to the
      underlying protocol. This function is not the only way a stream
      can come into existance.
   */
-  OpalMediaStream * CreateMediaStream(
-				      const OpalMediaFormat & mediaFormat, ///<Media format for stream
-				      unsigned sessionID,///<Session number for stream
-				      PBoolean isSource  ///<Is a source stream
+  virtual OpalMediaStream * CreateMediaStream(
+				      const OpalMediaFormat & mediaFormat, ///< Media format for stream
+				      unsigned sessionID,///< Session number for stream
+				      PBoolean isSource  ///< Is a source stream
 				      );
 
   /**Give the call token a value. The call token is the ipaddress of
@@ -301,11 +306,6 @@ class IAX2Connection : public OpalConnection
      
      This method is called after OnIncomingConnection().*/
   void OnSetUp();
-
-  PBoolean OnIncomingCall(
-    unsigned int options, 
-    OpalConnection::StringOptions * stringOptions
-  );
 
 
   /**Start an outgoing connection.
