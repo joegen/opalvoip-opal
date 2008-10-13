@@ -358,7 +358,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   if (GetState() == Subscribing && authentication != NULL && *newAuth == *authentication) {
     delete newAuth;
     PTRACE(1, "SIP\tAuthentication already performed using current credentials, not trying again.");
-    OnFailed(SIP_PDU::Failure_Forbidden);
+    OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
   }
 
