@@ -252,7 +252,6 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
   remote.SetRemoteAddress(ip);
     
   IAX2FullFrameProtocol * f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdNew);
-  PTRACE(4, "Create full frame protocol to do cmdNew. Just contains data. ");
   f->AppendIe(new IAX2IeVersion());
   f->AppendIe(new IAX2IeFormat(con->GetPreferredCodec()));
   f->AppendIe(new IAX2IeCapability(con->GetSupportedCodecs()));
@@ -281,7 +280,6 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
   f->AppendIe(new IAX2IeEncryption());
 #endif
 
-  PTRACE(5, "Create full frame protocol to do cmdNew. Finished appending Ies. ");
   TransmitFrameToRemoteEndpoint(f);
   StartNoResponseTimer();
   return;
@@ -911,12 +909,17 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   }
   
   SetCallNewed();
+  PTRACE(3, "ProcessIaxCmdNew have an incoming call to manage");
+  {
+    unsigned options = 0;
+    OpalConnection::StringOptions stringOptions;
+    con->OnIncomingConnection(options, &stringOptions);
+  }
+  con->OnSetUp();   //The person receiving call does ownerCall.OnSetUp();
 
-  con->OnSetUp();   //ONLY the  callee (person receiving call) does ownerCall.OnSetUp();
+  con->GetEndPoint().GetCodecLengths(selectedCodec, audioCompressedBytes, 
+				     audioFrameDuration);
 
-  con->GetEndPoint().GetCodecLengths(selectedCodec, audioCompressedBytes, audioFrameDuration);
-  PTRACE(4, "codec frame play duration is " << audioFrameDuration << " ms, which compressed to "
-         << audioCompressedBytes << " bytes of data");
 
   /*At this point, we have selected a codec to use. */
   reply = new  IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdAccept);
@@ -927,11 +930,10 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   /*We could send an AuthReq frame at this point */
 
   IAX2FullFrameSessionControl *r;
-  r = new IAX2FullFrameSessionControl(this, IAX2FullFrameSessionControl::ringing);
+  r = new IAX2FullFrameSessionControl(this, 
+				      IAX2FullFrameSessionControl::ringing);
   TransmitFrameToRemoteEndpoint(r, IAX2WaitingForAck::RingingAcked);
   delete src;
-
-  con->GetEndPoint().OnIncomingCall(*con);
 }
 
 void IAX2CallProcessor::ProcessIaxCmdAck(IAX2FullFrameProtocol *src)
