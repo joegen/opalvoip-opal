@@ -486,6 +486,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 
   if (params.m_contactAddress.IsEmpty()) {
     // Nothing explicit, put in all the bound interfaces.
+    unsigned qvalue = 1000;
     PString userName = SIPURL(params.m_addressOfRecord).GetUserName();
     OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses(true, &trans);
     for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
@@ -494,6 +495,8 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
       SIPURL contact(userName, interfaces[i]);
       contact.Sanitise(SIPURL::ContactURI);
       params.m_contactAddress += contact.AsQuotedString();
+      params.m_contactAddress.sprintf(qvalue < 1000 ? ";q=0.%03u" : ";q=1", qvalue);
+      qvalue -= 1000/interfaces.GetSize();
     }
   }
   else {
