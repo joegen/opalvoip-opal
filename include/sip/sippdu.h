@@ -403,9 +403,9 @@ class SIPAuthentication : public PObject
   public:
     SIPAuthentication();
 
-    virtual bool EquivalentTo(
-      const SIPAuthentication & _oldAuth
-    ) = 0;
+    virtual Comparison Compare(
+      const PObject & other
+    ) const;
 
     virtual PBoolean Parse(
       const PString & auth,
@@ -420,11 +420,11 @@ class SIPAuthentication : public PObject
 
     virtual PString GetUsername() const   { return username; }
     virtual PString GetPassword() const   { return password; }
-    virtual PString GetAuthRealm() const  { return authRealm; }
+    virtual PString GetAuthRealm() const  { return PString::Empty(); }
 
     virtual void SetUsername(const PString & user) { username = user; }
     virtual void SetPassword(const PString & pass) { password = pass; }
-    virtual void SetAuthRealm(const PString & r)   { authRealm = r; }
+    virtual void SetAuthRealm(const PString &)     { }
 
     PString GetAuthParam(const PString & auth, const char * name) const;
     PString AsHex(PMessageDigest5::Code & digest) const;
@@ -439,7 +439,6 @@ class SIPAuthentication : public PObject
 
     PString   username;
     PString   password;
-    PString   authRealm;
 };
 
 typedef PFactory<SIPAuthentication> SIPAuthenticationFactory;
@@ -456,18 +455,21 @@ class SIPDigestAuthentication : public SIPAuthentication
       const SIPDigestAuthentication & auth
     );
 
-    bool EquivalentTo(
-      const SIPAuthentication & _oldAuth
-    );
+    virtual Comparison Compare(
+      const PObject & other
+    ) const;
 
-    PBoolean Parse(
+    virtual PBoolean Parse(
       const PString & auth,
       PBoolean proxy
     );
 
-    PBoolean Authorise(
+    virtual PBoolean Authorise(
       SIP_PDU & pdu
     ) const;
+
+    virtual PString GetAuthRealm() const         { return authRealm; }
+    virtual void SetAuthRealm(const PString & r) { authRealm = r; }
 
     enum Algorithm {
       Algorithm_MD5,
@@ -478,6 +480,7 @@ class SIPDigestAuthentication : public SIPAuthentication
     const PString & GetOpaque() const      { return opaque; }
 
   protected:
+    PString   authRealm;
     PString   nonce;
     Algorithm algorithm;
     PString   opaque;
