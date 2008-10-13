@@ -1885,25 +1885,33 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
     return false;
   }
 
-  SIPURL proxy = endpoint.GetProxy();
-
    // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
-  PString realm, user, password;
-  if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), realm, user, password)) {
+  PString realm, username, password;
+  if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), realm, username, password)) {
     PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
-    newAuth->SetUsername(user);
-    newAuth->SetPassword(password);
   }
-  else if (!proxy.IsEmpty()) {
-    PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
-    newAuth->SetUsername(proxy.GetUserName());
-    newAuth->SetPassword(proxy.GetPassword());
-  } 
   else {
-    PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm());
+    SIPURL proxy = endpoint.GetProxy();
+    if (proxy.IsEmpty()) {
+      PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm());
+      delete newAuth;
+      return false;
+    }
+
+    PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
+    username = proxy.GetUserName();
+    password = proxy.GetPassword();
+  } 
+
+  newAuth->SetUsername(username);
+  newAuth->SetPassword(password);
+
+  // check to see if this is a follow-on from the last authentication scheme used
+  if (authentication != NULL && *newAuth == *authentication) {
+    PTRACE(1, "SIP\tAuthentication already performed using current credentials, not trying again.");
     delete newAuth;
-    return PFalse;
+    return false;
   }
 
   // Restart the transaction with new authentication info
