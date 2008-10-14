@@ -453,6 +453,9 @@ void CMobileOpalDlg::InitialiseOPAL()
 
   CStringA strStunServer = GetOptionStringA(STUNServerKey);
   command.m_param.m_general.m_stunServer = strStunServer;
+  command.m_param.m_general.m_audioPlayerDevice = "Audio Output";
+  command.m_param.m_general.m_audioRecordDevice = "Audio Input";
+  command.m_param.m_general.m_mediaMask = "RFC4175*";
 
   if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
     ErrorBox(IDS_CONFIGURATION_FAIL, response);
