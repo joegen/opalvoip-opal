@@ -47,9 +47,6 @@
 #include <codec/vidcodec.h>
 #endif
 
-#include <h224/h224handler.h>
-#include <h224/h281handler.h>
-
 #include <ptclib/random.h>
 
 #include "../../version.h"
