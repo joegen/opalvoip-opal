@@ -37,21 +37,22 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediatype.h>
+#include <opal/mediafmt.h>
 #include <h224/q922.h>
 
 #define H224_HEADER_SIZE 6
-
-#define H224_BROADCAST 0x0000
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  declare a media type for H.224
 //
 
-class OpalH224MediaType : OpalRTPAVPMediaType 
+class OpalH224MediaType : public OpalRTPAVPMediaType 
 {
   public:
     OpalH224MediaType();
+  
+    static const OpalMediaType & MediaType();
 
 #if OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
@@ -59,6 +60,32 @@ class OpalH224MediaType : OpalRTPAVPMediaType
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+//
+// H.224 Media Format
+//
+
+class OpalH224MediaFormatInternal : public OpalMediaFormatInternal
+{
+  PCLASSINFO(OpalH224MediaFormatInternal, OpalMediaFormatInternal);
+  
+  public:
+    OpalH224MediaFormatInternal();
+    virtual PObject * Clone() const;
+};
+
+class OpalH224MediaFormat : public OpalMediaFormat
+{
+  PCLASSINFO(OpalH224MediaFormat, OpalMediaFormat);
+  
+  public:
+    OpalH224MediaFormat();
+};
+
+extern const OpalMediaFormat & GetOpalH224();
+
+///////////////////////////////////////////////////////////////////////////////
+
+class OpalH224Client; 
 
 class H224_Frame : public Q922_Frame
 {
@@ -67,6 +94,7 @@ class H224_Frame : public Q922_Frame
 public:
 	
   H224_Frame(PINDEX clientDataSize = 254);
+  H224_Frame(const OpalH224Client & h224Client, PINDEX clientDataSize = 254);
   ~H224_Frame();
 	
   PBoolean IsHighPriority() const { return (GetLowOrderAddressOctet() == 0x71); }
@@ -78,10 +106,31 @@ public:
   WORD GetSourceTerminalAddress() const;
   void SetSourceTerminalAddress(WORD source);
 	
-  // Only standard client IDs are supported at the moment
+  /**Convenience function to set the H.224 header values */
+  void SetClient(const OpalH224Client & h224Client);
+  
   BYTE GetClientID() const;
   void SetClientID(BYTE clientID);
+  
+  /**Returns 0 in case clientID isn't set to ExtendedClientID */
+  BYTE GetExtendedClientID() const;
+  /**Does nothing in case clientID isn't set to ExtendedClientID */
+  void SetExtendedClientID(BYTE extendedClientID);
+  
+  /**Returns 0 in case clientID isn't set to NonStandardClientID */
+  BYTE GetCountryCode() const;
+  BYTE GetCountryCodeExtension() const;
+  WORD GetManufacturerCode() const;
+  BYTE GetManufacturerClientID() const;
+  
+  /**Does nothing in case clientID isn't set to NonStandardClientID */
+  void SetNonStandardClientInformation(BYTE countryCode,
+                                       BYTE countryCodeExtension,
+                                       WORD manufacturerCode,
+                                       BYTE manufacturerClientID);
 	
+  /**Note: The following methods depend on the value of clientID as to where put the value.
+    Always set clientID first before altering these values */
   PBoolean GetBS() const;
   void SetBS(PBoolean bs);
 	
@@ -97,12 +146,15 @@ public:
   BYTE GetSegmentNumber() const;
   void SetSegmentNumber(BYTE segmentNumber);
 	
-  BYTE *GetClientDataPtr() const { return (GetInformationFieldPtr() + H224_HEADER_SIZE); }
+  BYTE *GetClientDataPtr() const;
 	
-  PINDEX GetClientDataSize() const { return (GetInformationFieldSize() - H224_HEADER_SIZE); }
-  void SetClientDataSize(PINDEX size) { SetInformationFieldSize(size + H224_HEADER_SIZE); }
+  PINDEX GetClientDataSize() const;
+  void SetClientDataSize(PINDEX size);
 	
   PBoolean Decode(const BYTE *data, PINDEX size);
+  
+private:
+  PINDEX GetHeaderSize() const;
 };
 
 #endif // OPAL_H224_H224_H

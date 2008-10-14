@@ -60,7 +60,7 @@
 #endif
 
 #if OPAL_H224FECC
-#include <h224/h323h224.h>
+#include <h224/h224.h>
 #endif
 
 #if OPAL_H460
@@ -3436,6 +3436,9 @@ void H323Connection::OnSetLocalCapabilities()
     OpalMediaType::Audio(),
     OpalMediaType::Fax(),
     OpalMediaType::Video()
+#if OPAL_H224FECC
+    , OpalH224MediaType::MediaType()
+#endif
   };
 
   PINDEX simultaneous = P_MAX_INDEX;
@@ -3449,11 +3452,6 @@ void H323Connection::OnSetLocalCapabilities()
         simultaneous = localCapabilities.AddMediaFormat(0, simultaneous, *format);
     }
   }
-
-  // If H.224 is enabled, add the corresponding capabilities
-  //if(GetEndPoint().IsH224Enabled()) {
-  //  localCapabilities.SetCapability(0, P_MAX_INDEX, new H323_H224Capability());
-  //}
 
   H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX);
 
@@ -3556,24 +3554,6 @@ void H323Connection::InternalEstablishedConnectionCheck()
     default :
       break;
   }
-
-#if 0
-  if (h245_available && startH224) {
-    if(remoteCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME) != NULL) {
-      H323Capability * capability = localCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME);
-      if (capability != NULL) {
-        if (logicalChannels->Open(*capability, OpalMediaFormat::DefaultH224SessionID)) {
-          H323Channel * channel = capability->CreateChannel(*this, H323Channel::IsTransmitter, OpalMediaFormat::DefaultH224SessionID, NULL);
-          if  (channel != NULL) {
-            channel->SetNumber(logicalChannels->GetNextChannelNumber());
-            fastStartChannels.Append(channel);
-          }
-        }
-      }
-    }
-    startH224 = PFalse;
-  }
-#endif
 }
 
 
@@ -3771,6 +3751,9 @@ void H323Connection::OnSelectLogicalChannels()
         PTRACE(4, "H245\tOnSelectLogicalChannels, fax not auto-started");
       }
 #endif
+#if OPAL_H224FECC
+      SelectDefaultLogicalChannel(OpalH224MediaType::MediaType(), H323Capability::DefaultH224SessionID);
+#endif
       break;
 
     case FastStartInitiate :
@@ -3784,6 +3767,10 @@ void H323Connection::OnSelectLogicalChannels()
       SelectFastStartChannels(H323Capability::DefaultDataSessionID,
                               endpoint.CanAutoStartTransmitFax(),
                               endpoint.CanAutoStartReceiveFax());
+#endif
+#if OPAL_H224FECC
+      SelectFastStartChannels(H323Capability::DefaultH224SessionID,
+                              true, true);
 #endif
       break;
 
@@ -3801,6 +3788,10 @@ void H323Connection::OnSelectLogicalChannels()
         StartFastStartChannel(H323Capability::DefaultDataSessionID, H323Channel::IsTransmitter);
       if (endpoint.CanAutoStartReceiveFax())
         StartFastStartChannel(H323Capability::DefaultDataSessionID, H323Channel::IsReceiver);
+#endif
+#if OPAL_H224FECC
+      StartFastStartChannel(H323Capability::DefaultH224SessionID, H323Channel::IsTransmitter);
+      StartFastStartChannel(H323Capability::DefaultH224SessionID, H323Channel::IsReceiver);
 #endif
       break;
   }

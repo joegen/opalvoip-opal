@@ -34,8 +34,6 @@
 #include <ptlib.h>
 #endif
 
-#include <opal/buildopts.h>
-
 #include <h224/h224.h>
 
 class H281_Frame : public H224_Frame
@@ -45,49 +43,49 @@ class H281_Frame : public H224_Frame
 public:
 	
   enum RequestType {
-	IllegalRequest		= 0x00,
-	StartAction			= 0x01,
-	ContinueAction		= 0x02,
-	StopAction			= 0x03,
-	SelectVideoSource	= 0x04,
-	VideoSourceSwitched = 0x05,
-	StoreAsPreset		= 0x07,
-	ActivatePreset		= 0x08
+    IllegalRequest      = 0x00,
+    StartAction         = 0x01,
+    ContinueAction      = 0x02,
+    StopAction          = 0x03,
+    SelectVideoSource	  = 0x04,
+    VideoSourceSwitched = 0x05,
+    StoreAsPreset       = 0x07,
+    ActivatePreset      = 0x08
   };
 	
   enum PanDirection {
-	NoPan		= 0x00,
-	IllegalPan	= 0x40,
-	PanLeft		= 0x80,
-	PanRight	= 0xc0,
+    NoPan       = 0x00,
+    IllegalPan  = 0x40,
+    PanLeft     = 0x80,
+    PanRight    = 0xc0,
   };
 	
   enum TiltDirection {
-    NoTilt		= 0x00,
-	IllegalTilt = 0x10,
-	TiltDown	= 0x20,
-	TiltUp		= 0x30,
+    NoTilt      = 0x00,
+    IllegalTilt = 0x10,
+    TiltDown    = 0x20,
+    TiltUp      = 0x30,
   };
 	
   enum ZoomDirection {
-    NoZoom		= 0x00,
-	IllegalZoom = 0x04,
-	ZoomOut		= 0x08,
-	ZoomIn		= 0x0c
+    NoZoom      = 0x00,
+    IllegalZoom = 0x04,
+    ZoomOut     = 0x08,
+    ZoomIn      = 0x0c
   };
 	
   enum FocusDirection {
-    NoFocus			= 0x00,
-	IllegalFocus	= 0x01,
-	FocusOut		= 0x02,
-	FocusIn			= 0x03
+    NoFocus       = 0x00,
+    IllegalFocus  = 0x01,
+    FocusOut      = 0x02,
+    FocusIn       = 0x03
   };
 	
   enum VideoMode {	
-    MotionVideo					= 0x00,
-	IllegalVideoMode			= 0x01,
-	NormalResolutionStillImage	= 0x02,
-	DoubleResolutionStillImage	= 0x03
+    MotionVideo                 = 0x00,
+    IllegalVideoMode            = 0x01,
+    NormalResolutionStillImage  = 0x02,
+    DoubleResolutionStillImage  = 0x03
   };
 	
   H281_Frame();

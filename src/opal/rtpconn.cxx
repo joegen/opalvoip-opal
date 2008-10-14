@@ -42,7 +42,6 @@
 #include <codec/rfc2833.h>
 #include <t38/t38proto.h>
 #include <opal/patch.h>
-#include <h224/h224handler.h>
 
 #if OPAL_VIDEO
 #include <codec/vidcodec.h>
