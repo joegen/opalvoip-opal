@@ -592,6 +592,7 @@ class OpalLineInterfaceDevice : public PObject
       RoutingTone, // Call is being routed (not normal for PSTN, but VoIP can take a while)
       CNGTone,     // Fax CNG tone
       CEDTone,     // Fax CED tone
+      UserDefinedTone,
       NumTones
     };
 
