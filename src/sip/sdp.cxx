@@ -229,10 +229,12 @@ void SDPMediaFormat::SetFMTP(const PString & str)
   // Parse the string for option names and values OPT=VAL;OPT=VAL
   PINDEX sep1prev = 0;
   do {
+    // find the next separator (' ' or ';')
     PINDEX sep1next = str.Find(sep, sep1prev);
     if (sep1next == P_MAX_INDEX)
       sep1next--; // Implicit assumption string is not a couple of gigabytes long ...
 
+    // find the next '='. If past the next separator, then ignore it
     PINDEX sep2pos = str.Find('=', sep1prev);
     if (sep2pos > sep1next)
       sep2pos = sep1next;
@@ -258,6 +260,12 @@ void SDPMediaFormat::SetFMTP(const PString & str)
         if (str.GetLength() % 2 != 0)
           value = value.Trim();
       } else {
+        // for non-octet string parameters, check for mixed separators
+        PINDEX brokenSep = str.Find(' ', sep2pos);
+        if (brokenSep < sep1next) {
+          sep1next = brokenSep;
+          value = str(sep2pos+1, sep1next-1);
+        }
         value = value.Trim();
         if (value.IsEmpty())
           value = "1"; // Assume it is a boolean
