@@ -66,7 +66,7 @@ void H281_Frame::SetRequestType(RequestType requestType)
 	
   data[0] = (BYTE)requestType;
 	
-  switch(requestType) {
+  switch (requestType) {
 	
     case StartAction:
       SetClientDataSize(3);
@@ -81,12 +81,11 @@ H281_Frame::PanDirection H281_Frame::GetPanDirection() const
 {
   RequestType requestType = GetRequestType();
 	
-  if(requestType != StartAction &&
-	 requestType != ContinueAction &&
-	 requestType != StopAction)
-  {
-	// not valid
-	return IllegalPan;
+  if (requestType != StartAction &&
+      requestType != ContinueAction &&
+      requestType != StopAction) {
+    // not valid
+    return IllegalPan;
   }
 	
   BYTE *data = GetClientDataPtr();
@@ -98,12 +97,11 @@ void H281_Frame::SetPanDirection(PanDirection direction)
 {
   RequestType requestType = GetRequestType();
 	
-  if(requestType != StartAction &&
-     requestType != ContinueAction &&
-	 requestType != StopAction)
-  {
-	// not valid
-	return;
+  if (requestType != StartAction &&
+      requestType != ContinueAction &&
+      requestType != StopAction) {
+    // not valid
+    return;
   }
 	
   BYTE *data = GetClientDataPtr();
@@ -116,11 +114,10 @@ H281_Frame::TiltDirection H281_Frame::GetTiltDirection() const
 {
   RequestType requestType = GetRequestType();
 	
-  if(requestType != StartAction &&
-	 requestType != ContinueAction &&
-	 requestType != StopAction)
-  {
-	// not valid
+  if (requestType != StartAction &&
+      requestType != ContinueAction &&
+      requestType != StopAction) {
+    // not valid
     return IllegalTilt;
   }
 
@@ -133,12 +130,11 @@ void H281_Frame::SetTiltDirection(TiltDirection direction)
 {
   RequestType requestType = GetRequestType();
 	
-  if(requestType != StartAction &&
-	 requestType != ContinueAction &&
-	 requestType != StopAction)
-  {
-	// not valid
-	return;
+  if (requestType != StartAction &&
+      requestType != ContinueAction &&
+      requestType != StopAction) {
+    // not valid
+    return;
   }
 	
   BYTE *data = GetClientDataPtr();
@@ -151,12 +147,11 @@ H281_Frame::ZoomDirection H281_Frame::GetZoomDirection() const
 {
   RequestType requestType = GetRequestType();
 	
-  if(requestType != StartAction &&
-	 requestType != ContinueAction &&
-     requestType != StopAction)
-  {
-	// not valid
-	return IllegalZoom;
+  if (requestType != StartAction &&
+      requestType != ContinueAction &&
+      requestType != StopAction) {
+    // not valid
+    return IllegalZoom;
   }
 	
   BYTE *data = GetClientDataPtr();
@@ -168,12 +163,11 @@ void H281_Frame::SetZoomDirection(ZoomDirection direction)
 {
   RequestType requestType = GetRequestType();
 	
-  if(requestType != StartAction &&
-	 requestType != ContinueAction &&
-	 requestType != StopAction)
-  {
-	// not valid
-	return;
+  if (requestType != StartAction &&
+      requestType != ContinueAction &&
+      requestType != StopAction) {
+    // not valid
+    return;
   }
 	
   BYTE *data = GetClientDataPtr();
@@ -186,12 +180,11 @@ H281_Frame::FocusDirection H281_Frame::GetFocusDirection() const
 {
   RequestType requestType = GetRequestType();
 	
-  if(requestType != StartAction &&
-	 requestType != ContinueAction &&
-     requestType != StopAction)
-  {
-	// not valid
-	return IllegalFocus;
+  if (requestType != StartAction &&
+      requestType != ContinueAction &&
+      requestType != StopAction) {
+    // not valid
+    return IllegalFocus;
   }
 	
   BYTE *data = GetClientDataPtr();
@@ -203,12 +196,11 @@ void H281_Frame::SetFocusDirection(FocusDirection direction)
 {
   RequestType requestType = GetRequestType();
 	
-  if(requestType != StartAction &&
-	 requestType != ContinueAction &&
-	 requestType != StopAction)
-  {
-	// not valid
-	return;
+  if (requestType != StartAction &&
+      requestType != ContinueAction &&
+      requestType != StopAction) {
+    // not valid
+    return;
   }
 	
   BYTE *data = GetClientDataPtr();
@@ -221,8 +213,8 @@ BYTE H281_Frame::GetTimeout() const
 {
   RequestType requestType = GetRequestType();
 	
-  if(requestType != StartAction) {
-	return 0x00;
+  if (requestType != StartAction) {
+    return 0x00;
   }
 	
   BYTE *data = GetClientDataPtr();
@@ -234,8 +226,8 @@ void H281_Frame::SetTimeout(BYTE timeout)
 {
   RequestType requestType = GetRequestType();
 
-  if(requestType != StartAction) {
-	return;
+  if (requestType != StartAction) {
+    return;
   }
 	
   BYTE *data = GetClientDataPtr();
@@ -247,9 +239,8 @@ BYTE H281_Frame::GetVideoSourceNumber() const
 {
   RequestType requestType = GetRequestType();
 
-  if(requestType != SelectVideoSource &&
-	 requestType != VideoSourceSwitched)
-  {
+  if (requestType != SelectVideoSource &&
+      requestType != VideoSourceSwitched) {
     return 0x00;
   }
 	
@@ -262,9 +253,8 @@ void H281_Frame::SetVideoSourceNumber(BYTE videoSourceNumber)
 {
   RequestType requestType = GetRequestType();
 
-  if(requestType != SelectVideoSource &&
-	 requestType != VideoSourceSwitched)
-  {
+  if (requestType != SelectVideoSource &&
+      requestType != VideoSourceSwitched) {
     return;
   }
 	
@@ -278,9 +268,8 @@ H281_Frame::VideoMode H281_Frame::GetVideoMode() const
 {  
   RequestType requestType = GetRequestType();
 
-  if(requestType != SelectVideoSource &&
-	 requestType != VideoSourceSwitched)
-  {
+  if (requestType != SelectVideoSource &&
+      requestType != VideoSourceSwitched) {
     return IllegalVideoMode;
   }
 	
@@ -293,9 +282,8 @@ void H281_Frame::SetVideoMode(VideoMode mode)
 {
   RequestType requestType = GetRequestType();
 
-  if(requestType != SelectVideoSource &&
-	 requestType != VideoSourceSwitched)
-  {
+  if (requestType != SelectVideoSource &&
+      requestType != VideoSourceSwitched) {
     return;
   }
 	
@@ -309,9 +297,8 @@ BYTE H281_Frame::GetPresetNumber() const
 {
   RequestType requestType = GetRequestType();
 
-  if(requestType != StoreAsPreset &&
-	 requestType != ActivatePreset)
-  {
+  if (requestType != StoreAsPreset &&
+      requestType != ActivatePreset) {
     return 0x00;
   }
 	
@@ -324,9 +311,8 @@ void H281_Frame::SetPresetNumber(BYTE presetNumber)
 {
   RequestType requestType = GetRequestType();
 
-  if(requestType != StoreAsPreset &&
-	 requestType != ActivatePreset)
-  {
+  if (requestType != StoreAsPreset &&
+      requestType != ActivatePreset) {
     return;
   }
 	
@@ -353,7 +339,7 @@ H281VideoSource::~H281VideoSource()
 void H281VideoSource::SetVideoSourceNumber(BYTE number)
 {
   // only accepting the default camera types
-  if(number > 5)	{
+  if (number > 5)	{
     return;
   }
 	
@@ -363,7 +349,7 @@ void H281VideoSource::SetVideoSourceNumber(BYTE number)
 
 void H281VideoSource::SetCanMotionVideo(PBoolean flag)
 {
-  if(flag) {
+  if (flag) {
     firstOctet |= 0x04;
   } else {
     firstOctet &= 0xfb;
@@ -372,7 +358,7 @@ void H281VideoSource::SetCanMotionVideo(PBoolean flag)
 
 void H281VideoSource::SetCanNormalResolutionStillImage(PBoolean flag)
 {
-  if(flag) {
+  if (flag) {
     firstOctet |= 0x02;
   }	else {
     firstOctet &= 0xfd;
@@ -381,7 +367,7 @@ void H281VideoSource::SetCanNormalResolutionStillImage(PBoolean flag)
 
 void H281VideoSource::SetCanDoubleResolutionStillImage(PBoolean flag)
 {
-  if(flag) {
+  if (flag) {
     firstOctet |= 0x01;
   } else {
     firstOctet &= 0xfe;
@@ -390,7 +376,7 @@ void H281VideoSource::SetCanDoubleResolutionStillImage(PBoolean flag)
 
 void H281VideoSource::SetCanPan(PBoolean flag)
 {
-  if(flag) {
+  if (flag) {
     secondOctet |= 0x80;
   }	else {
     secondOctet &= 0x7f;
@@ -399,7 +385,7 @@ void H281VideoSource::SetCanPan(PBoolean flag)
 
 void H281VideoSource::SetCanTilt(PBoolean flag)
 {
-  if(flag) {
+  if (flag) {
     secondOctet |= 0x40;
   }	else {
     secondOctet &= 0xbf;
@@ -408,7 +394,7 @@ void H281VideoSource::SetCanTilt(PBoolean flag)
 
 void H281VideoSource::SetCanZoom(PBoolean flag)
 {
-  if(flag) {
+  if (flag) {
     secondOctet |= 0x20;
   } else {
     secondOctet &= 0xdf;
@@ -417,7 +403,7 @@ void H281VideoSource::SetCanZoom(PBoolean flag)
 
 void H281VideoSource::SetCanFocus(PBoolean flag)
 {
-  if(flag) {
+  if (flag) {
     secondOctet |= 0x10;
   }	else {
     secondOctet &= 0xef;
@@ -434,7 +420,7 @@ PBoolean H281VideoSource::Decode(const BYTE *data)
 {	
   // only accepting the standard video sources
   BYTE videoSourceNumber = (data[0] >> 4) & 0x0f;
-  if(videoSourceNumber > 5)	{
+  if (videoSourceNumber > 5)	{
     return PFalse;
   }
 		
@@ -446,15 +432,13 @@ PBoolean H281VideoSource::Decode(const BYTE *data)
 
 ///////////////////////////////
 
-OpalH281Handler::OpalH281Handler(/*OpalH224Handler & theH224Handler*/)
-  //: h224Handler(theH224Handler)
+OpalH281Handler::OpalH281Handler()
 {
-  remoteHasH281 = PFalse;
   localNumberOfPresets = 0;
   remoteNumberOfPresets = 0;
 	
   // set correct video source numbers
-  for(BYTE srcnum = 0; srcnum < 6; srcnum++) {	  
+  for (BYTE srcnum = 0; srcnum < 6; srcnum++) {	  
     localVideoSources[srcnum].SetVideoSourceNumber(srcnum);
     remoteVideoSources[srcnum].SetVideoSourceNumber(srcnum);
   }
@@ -467,6 +451,7 @@ OpalH281Handler::OpalH281Handler(/*OpalH224Handler & theH224Handler*/)
   //localVideoSources[MainCamera].SetCanTilt(PTrue);
   //localVideoSources[MainCamera].SetCanZoom(PTrue);
 	
+  transmitFrame.SetClient(*this);
   transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
   transmitFrame.SetBS(PTrue);
   transmitFrame.SetES(PTrue);
@@ -481,9 +466,7 @@ OpalH281Handler::OpalH281Handler(/*OpalH224Handler & theH224Handler*/)
 }
 
 OpalH281Handler::~OpalH281Handler()
-{
-  //PWaitAndSignal m(h224Handler.GetTransmitMutex());
-	
+{	
   transmitTimer.Stop();
   receiveTimer.Stop();
 }
@@ -503,9 +486,9 @@ void OpalH281Handler::StartAction(H281_Frame::PanDirection panDirection,
                                   H281_Frame::ZoomDirection zoomDirection,
                                   H281_Frame::FocusDirection focusDirection)
 {
-//  PWaitAndSignal m(h224Handler.GetTransmitMutex());
+  PWaitAndSignal m(h224Handler->GetTransmitMutex());
 
-  if(transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
+  if (transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
 
     if (transmitFrame.GetPanDirection() == panDirection &&
         transmitFrame.GetTiltDirection() == tiltDirection &&
@@ -526,7 +509,7 @@ void OpalH281Handler::StartAction(H281_Frame::PanDirection panDirection,
   transmitFrame.SetFocusDirection(focusDirection);
   transmitFrame.SetTimeout(0); //800msec
 
-  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  h224Handler->TransmitClientFrame(*this, transmitFrame);
 
   // send a ContinueAction every 400msec
   transmitTimer.RunContinuous(400);
@@ -534,11 +517,11 @@ void OpalH281Handler::StartAction(H281_Frame::PanDirection panDirection,
 
 void OpalH281Handler::StopAction()
 {
-//  PWaitAndSignal m(h224Handler.GetTransmitMutex());
+  PWaitAndSignal m(h224Handler->GetTransmitMutex());
 	
   transmitFrame.SetRequestType(H281_Frame::StopAction);
 	
-  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  h224Handler->TransmitClientFrame(*this, transmitFrame);
 	
   transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
   transmitTimer.Stop();
@@ -546,9 +529,9 @@ void OpalH281Handler::StopAction()
 
 void OpalH281Handler::SelectVideoSource(BYTE videoSourceNumber, H281_Frame::VideoMode videoMode)
 {
-//  PWaitAndSignal m(h224Handler.GetTransmitMutex());
+  PWaitAndSignal m(h224Handler->GetTransmitMutex());
 	
-  if(transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
+  if (transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
     StopAction();
   }
 	
@@ -556,39 +539,39 @@ void OpalH281Handler::SelectVideoSource(BYTE videoSourceNumber, H281_Frame::Vide
   transmitFrame.SetVideoSourceNumber(videoSourceNumber);
   transmitFrame.SetVideoMode(videoMode);
 	
-  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  h224Handler->TransmitClientFrame(*this, transmitFrame);
 	
   transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
 }
 
 void OpalH281Handler::StoreAsPreset(BYTE presetNumber)
 {
-//  PWaitAndSignal m(h224Handler.GetTransmitMutex());
+  PWaitAndSignal m(h224Handler->GetTransmitMutex());
 	
-  if(transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
+  if (transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
     StopAction();
   }
 	
   transmitFrame.SetRequestType(H281_Frame::StoreAsPreset);
   transmitFrame.SetPresetNumber(presetNumber);
   
-  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  h224Handler->TransmitClientFrame(*this, transmitFrame);
 	
   transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
 }
 
 void OpalH281Handler::ActivatePreset(BYTE presetNumber)
 {
-//  PWaitAndSignal m(h224Handler.GetTransmitMutex());
+  PWaitAndSignal m(h224Handler->GetTransmitMutex());
 	
-  if(transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
+  if (transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
     StopAction();
   }
 	
   transmitFrame.SetRequestType(H281_Frame::ActivatePreset);
   transmitFrame.SetPresetNumber(presetNumber);
 	
-  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  h224Handler->TransmitClientFrame(*this, transmitFrame);
 	
   transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
 }
@@ -602,30 +585,28 @@ void OpalH281Handler::SendExtraCapabilities() const
 	
   PINDEX size = 1;
 	
-  for(PINDEX i = 1; i < 6; i++) {
+  for (PINDEX i = 1; i < 6; i++) {
 		
-	if(localVideoSources[i].IsEnabled()) {
-      localVideoSources[i].Encode(capabilities+size);
+    if (localVideoSources[i].IsEnabled()) {
+        localVideoSources[i].Encode(capabilities+size);
       size += 2;
     }
   }
 	
-//  h224Handler.SendExtraCapabilitiesMessage(H281_CLIENT_ID, capabilities, size);
+  h224Handler->SendExtraCapabilitiesMessage(*this, capabilities, size);
 }
 
 void OpalH281Handler::OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size)
-{
-  remoteHasH281 = PTrue;
-	
+{	
   remoteNumberOfPresets = (capabilities[0] & 0x0f);
 	
   PINDEX i = 1;
 	 
-  while(i < size) {
+  while (i < size) {
 		
     BYTE videoSource = (capabilities[i] >> 4) & 0x0f;
 		
-    if(videoSource <= 5) {
+    if (videoSource <= 5) {
       remoteVideoSources[videoSource].SetEnabled(PTrue);
       remoteVideoSources[videoSource].Decode(capabilities + i);
       i += 2;
@@ -644,17 +625,17 @@ void OpalH281Handler::OnReceivedExtraCapabilities(const BYTE *capabilities, PIND
   OnRemoteCapabilitiesUpdated();
 }
 
-void OpalH281Handler::OnReceivedMessage(const H281_Frame & message)
+void OpalH281Handler::OnReceivedMessage(const H224_Frame & h224Frame)
 {
+  const H281_Frame & message = (const H281_Frame &)h224Frame;
   H281_Frame::RequestType requestType = message.GetRequestType();
 	
-  if(requestType == H281_Frame::StartAction) {
+  if (requestType == H281_Frame::StartAction) {
 	
-    if(requestedPanDirection != H281_Frame::NoPan ||
-	   requestedTiltDirection != H281_Frame::NoTilt ||
-	   requestedZoomDirection != H281_Frame::NoZoom ||
-	   requestedFocusDirection != H281_Frame::NoFocus)
-    {
+    if (requestedPanDirection != H281_Frame::NoPan ||
+        requestedTiltDirection != H281_Frame::NoTilt ||
+        requestedZoomDirection != H281_Frame::NoZoom ||
+        requestedFocusDirection != H281_Frame::NoFocus) {
       // an action is already running and thus is stopped
       OnStopAction();
     }
@@ -665,14 +646,14 @@ void OpalH281Handler::OnReceivedMessage(const H281_Frame & message)
     requestedFocusDirection = message.GetFocusDirection();
 		
     OnStartAction(requestedPanDirection,
-				  requestedTiltDirection,
-				  requestedZoomDirection,
-				  requestedFocusDirection);
+                  requestedTiltDirection,
+                  requestedZoomDirection,
+                  requestedFocusDirection);
 		
     // timeout is always 800 msec
     receiveTimer = 800;
 		
-  } else if(requestType == H281_Frame::ContinueAction) {
+  } else if (requestType == H281_Frame::ContinueAction) {
 	
     H281_Frame::PanDirection panDirection = message.GetPanDirection();
     H281_Frame::TiltDirection tiltDirection = message.GetTiltDirection();
@@ -680,34 +661,32 @@ void OpalH281Handler::OnReceivedMessage(const H281_Frame & message)
     H281_Frame::FocusDirection focusDirection = message.GetFocusDirection();
 		
     // if request is valid, reset the timer. Otherwise ignore
-    if(panDirection == requestedPanDirection &&
-	   tiltDirection == requestedTiltDirection &&
-	   zoomDirection == requestedZoomDirection &&
-	   focusDirection == requestedFocusDirection &&
-	   (panDirection != H281_Frame::NoPan ||
-		tiltDirection != H281_Frame::NoTilt ||
-		zoomDirection != H281_Frame::NoZoom ||
-		focusDirection != H281_Frame::NoFocus))
-	{
+    if (panDirection == requestedPanDirection &&
+        tiltDirection == requestedTiltDirection &&
+        zoomDirection == requestedZoomDirection &&
+        focusDirection == requestedFocusDirection &&
+        (panDirection != H281_Frame::NoPan ||
+         tiltDirection != H281_Frame::NoTilt ||
+         zoomDirection != H281_Frame::NoZoom ||
+         focusDirection != H281_Frame::NoFocus)) {
       receiveTimer = 800;
     }
 	
-  } else if(requestType == H281_Frame::StopAction){
+  } else if (requestType == H281_Frame::StopAction){
     H281_Frame::PanDirection panDirection = message.GetPanDirection();
     H281_Frame::TiltDirection tiltDirection = message.GetTiltDirection();
     H281_Frame::ZoomDirection zoomDirection = message.GetZoomDirection();
     H281_Frame::FocusDirection focusDirection = message.GetFocusDirection();
 		
     // if request is valid, stop the action. Otherwise ignore
-    if(panDirection == requestedPanDirection &&
-	   tiltDirection == requestedTiltDirection &&
-	   zoomDirection == requestedZoomDirection &&
-	   focusDirection == requestedFocusDirection &&
-	   (panDirection != H281_Frame::NoPan ||
-		tiltDirection != H281_Frame::NoTilt ||
-		zoomDirection != H281_Frame::NoZoom ||
-		focusDirection != H281_Frame::NoFocus))
-    {
+    if (panDirection == requestedPanDirection &&
+        tiltDirection == requestedTiltDirection &&
+        zoomDirection == requestedZoomDirection &&
+        focusDirection == requestedFocusDirection &&
+        (panDirection != H281_Frame::NoPan ||
+         tiltDirection != H281_Frame::NoTilt ||
+         zoomDirection != H281_Frame::NoZoom ||
+         focusDirection != H281_Frame::NoFocus)) {
       requestedPanDirection = H281_Frame::NoPan;
       requestedTiltDirection = H281_Frame::NoTilt;
       requestedZoomDirection = H281_Frame::NoZoom;
@@ -716,13 +695,13 @@ void OpalH281Handler::OnReceivedMessage(const H281_Frame & message)
       OnStopAction();
     }
 
-  } else if(requestType == H281_Frame::SelectVideoSource) {
+  } else if (requestType == H281_Frame::SelectVideoSource) {
     OnSelectVideoSource(message.GetVideoSourceNumber(), message.GetVideoMode());
 
-  } else if(requestType == H281_Frame::StoreAsPreset) {
+  } else if (requestType == H281_Frame::StoreAsPreset) {
     OnStoreAsPreset(message.GetPresetNumber());
 
-  } else if(requestType == H281_Frame::ActivatePreset) {
+  } else if (requestType == H281_Frame::ActivatePreset) {
     OnActivatePreset(message.GetPresetNumber());
 
   } else {
@@ -764,11 +743,11 @@ void OpalH281Handler::OnActivatePreset(BYTE /*presetNumber*/)
 
 void OpalH281Handler::ContinueAction(PTimer &, INT)
 {
-//  PWaitAndSignal(h224Handler.GetTransmitMutex());
+  PWaitAndSignal(h224Handler->GetTransmitMutex());
 	
   transmitFrame.SetRequestType(H281_Frame::ContinueAction);
 	
-  //h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
+  h224Handler->TransmitClientFrame(*this, transmitFrame);
 }
 
 void OpalH281Handler::StopActionLocally(PTimer &, INT)

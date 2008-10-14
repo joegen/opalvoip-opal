@@ -36,10 +36,10 @@
 
 #include <opal/buildopts.h>
 
-//#include <h224/h224handler.h>
+#include <h224/h224handler.h>
 #include <h224/h281.h>
 
-//class OpalH224Handler;
+class OpalH224Handler;
 
 /** This class implements a storage for which cameras are
     available at both the local or remote side
@@ -91,28 +91,33 @@ protected:
 	
 };
 
-/** This class implements a defalt H.281 handler
+/** This class implements a default H.281 handler
  */
-class OpalH281Handler : public PObject
+class OpalH281Handler : public OpalH224Client
 {
   PCLASSINFO(OpalH281Handler, PObject);
 	
 public:
 	
-  OpalH281Handler(/*OpalH224Handler & h224Handler*/);
+  OpalH281Handler();
   ~OpalH281Handler();
 	
   enum VideoSource {
-    CurrentVideoSource		= 0x00,
-	MainCamera				= 0x01,
-	AuxiliaryCamera			= 0x02,
-	DocumentCamera			= 0x03,
-	AuxiliaryDocumentCamera = 0x04,
-	VideoPlaybackSource		= 0x05
+    CurrentVideoSource      = 0x00,
+    MainCamera              = 0x01,
+    AuxiliaryCamera         = 0x02,
+    DocumentCamera          = 0x03,
+    AuxiliaryDocumentCamera = 0x04,
+    VideoPlaybackSource     = 0x05
   };
-	
-  PBoolean GetRemoteHasH281() const { return remoteHasH281; }
-  void SetRemoteHasH281(PBoolean flag) { remoteHasH281 = flag; }
+  
+  /**Overriding default OpalH224Client methods */
+  virtual BYTE GetClientID() const { return OpalH224Client::H281ClientID; }
+  virtual PBoolean HasExtraCapabilities() const { return PTrue; }
+  
+  /**Process incoming frames. Overrides from OpalH224Client */
+  virtual void OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size);
+  virtual void OnReceivedMessage(const H224_Frame & message);
 	
   BYTE GetLocalNumberOfPresets() const { return localNumberOfPresets; }
   void SetLocalNumberOfPresets(BYTE presets) { localNumberOfPresets = presets; }
@@ -126,9 +131,9 @@ public:
       The action will continue until StopAction() is called.
    */
   void StartAction(H281_Frame::PanDirection panDirection,
-				   H281_Frame::TiltDirection tiltDirection,
-				   H281_Frame::ZoomDirection zoomDireciton,
-			       H281_Frame::FocusDirection focusDirection);
+                   H281_Frame::TiltDirection tiltDirection,
+                   H281_Frame::ZoomDirection zoomDireciton,
+                   H281_Frame::FocusDirection focusDirection);
   
   /** Stops any action currently ongoing
    */
@@ -156,11 +161,6 @@ public:
    */
   void SendExtraCapabilities() const;
 	
-  /** Processing incoming frames
-   */
-  void OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size);
-  void OnReceivedMessage(const H281_Frame & message);
-	
   /*
    * methods that subclasses can override.
    * The default handler does not implement FECC on the local side.
@@ -174,9 +174,9 @@ public:
   /** Indicates to start the action specified
    */
   virtual void OnStartAction(H281_Frame::PanDirection panDirection,
-							 H281_Frame::TiltDirection tiltDirection,
-							 H281_Frame::ZoomDirection zoomDirection,
-							 H281_Frame::FocusDirection focusDirection);
+                             H281_Frame::TiltDirection tiltDirection,
+                             H281_Frame::ZoomDirection zoomDirection,
+                             H281_Frame::FocusDirection focusDirection);
 	
   /** Indicates to stop the action stared with OnStartAction()
    */
@@ -199,8 +199,6 @@ protected:
   PDECLARE_NOTIFIER(PTimer, OpalH281Handler, ContinueAction);
   PDECLARE_NOTIFIER(PTimer, OpalH281Handler, StopActionLocally);
 	
-  //OpalH224Handler & h224Handler;
-  PBoolean remoteHasH281;
   BYTE localNumberOfPresets;
   BYTE remoteNumberOfPresets;
   H281VideoSource localVideoSources[6];

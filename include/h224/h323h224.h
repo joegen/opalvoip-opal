@@ -74,63 +74,7 @@ public:
 	
 };
 
-
-#if 0
-
-/** This class implements a H.224 logical channel
- */
-class H323_H224Channel : public H323Channel
-{
-  PCLASSINFO(H323_H224Channel, H323Channel);
-	
-public:
-  H323_H224Channel(H323Connection & connection,
-				   const H323Capability & capability,
-				   Directions direction,
-				   RTP_UDP & session,
-				   unsigned sessionID);
-  ~H323_H224Channel();
-	
-  virtual H323Channel::Directions GetDirection() const;
-  virtual PBoolean SetInitialBandwidth();
-		
-  virtual PBoolean Open();
-  virtual PBoolean Start();
-  virtual void Close();
-	
-  virtual PBoolean OnSendingPDU(H245_OpenLogicalChannel & openPDU) const;
-  virtual void OnSendOpenAck(const H245_OpenLogicalChannel & openPDU, 
-							 H245_OpenLogicalChannelAck & ack) const;
-  virtual PBoolean OnReceivedPDU(const H245_OpenLogicalChannel & pdu, unsigned & errorCode);
-  virtual PBoolean OnReceivedAckPDU(const H245_OpenLogicalChannelAck & pdu);
-	
-  virtual PBoolean OnSendingPDU(H245_H2250LogicalChannelParameters & param) const;
-  virtual void OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const;
-  virtual PBoolean OnReceivedPDU(const H245_H2250LogicalChannelParameters & param,
-							 unsigned & errorCode);
-  virtual PBoolean OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param);
-	
-  virtual PBoolean SetDynamicRTPPayloadType(int newType);
-  RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
-	
-  //OpalH224Handler * GetHandler() const { return h224Handler; }
-	
-protected:
-		
-  virtual PBoolean ExtractTransport(const H245_TransportAddress & pdu,
-								PBoolean isDataPort,
-								unsigned & errorCode);
-	
-  unsigned sessionID;
-  Directions direction;
-  RTP_UDP & rtpSession;
-  H323_RTP_Session & rtpCallbacks;
-  //OpalH224Handler *h224Handler;
-  RTP_DataFrame::PayloadTypes rtpPayloadType;
-  
-};
-
-
-#endif
+#define OPAL_REGISTER_H224_CAPABILITY() \
+  H323_REGISTER_CAPABILITY(H323_H224Capability, GetOpalH224().GetName()); \
 
 #endif // OPAL_H224_H323H224_H

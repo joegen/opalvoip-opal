@@ -1342,7 +1342,6 @@ class H323EndPoint : public OpalRTPEndPoint
     PStringList     localAliasPatterns;
     PBoolean        autoStartReceiveFax;
     PBoolean        autoStartTransmitFax;
-    PBoolean        isH224Enabled;
     PBoolean        autoCallForward;
     PBoolean        disableFastStart;
     PBoolean        disableH245Tunneling;

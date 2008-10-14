@@ -90,8 +90,6 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   localAliasNames.AppendString(defaultLocalPartyName);
 
   autoStartReceiveFax = autoStartTransmitFax = PFalse;
-  
-  isH224Enabled = PFalse;
 
   m_bH245Disabled = PFalse;
   autoCallForward = PTrue;
