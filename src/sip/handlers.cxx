@@ -342,7 +342,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), authRealm, username, password)) {
     PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
   }
-  else {
+  else if (username.IsEmpty()) {
     const SIPURL & proxy = endpoint.GetProxy();
     if (!proxy.IsEmpty()) {
       PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
