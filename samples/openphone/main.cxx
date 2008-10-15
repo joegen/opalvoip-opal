@@ -343,7 +343,7 @@ class TextCtrlChannel : public PChannel
 
       wxCommandEvent theEvent(wxEvtLogMessage, ID_LOG_MESSAGE);
       theEvent.SetEventObject(m_frame);
-      theEvent.SetString(wxString((const wxChar *)buf, (size_t)len));
+      theEvent.SetString(wxString((const char *)buf, wxMBConvUTF8(), (size_t)len));
       m_frame->GetEventHandler()->AddPendingEvent(theEvent);
       return PTrue;
     }
@@ -1320,17 +1320,17 @@ void MyManager::OnMenuQuit(wxCommandEvent& WXUNUSED(event))
 
 void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 {
-  wxString text;
-  text.sprintf(PRODUCT_NAME_TEXT " %s\n""\n"
-               "Copyright © 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
-               "\n"
-               "This application may be used for any purpose so long as it is not sold "
-               "or distributed for profit on it's own, or it's ownership by " COPYRIGHT_HOLDER
-               " disguised or hidden in any way.\n"
-               "\n"
-               "Part of the Open Phone Abstraction Library, http://www.opalvoip.org\n",
-               (const char *)PProcess::Current().GetVersion());
-  wxMessageDialog dialog(this, text, wxT("About " PRODUCT_NAME_TEXT), wxOK);
+  wstringstream text;
+  text  << PRODUCT_NAME_TEXT " Version " << PProcess::Current().GetVersion() << "\n"
+           "\n"
+           "Copyright © 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
+           "\n"
+           "This application may be used for any purpose so long as it is not sold "
+           "or distributed for profit on it's own, or it's ownership by " COPYRIGHT_HOLDER
+           " disguised or hidden in any way.\n"
+           "\n"
+           "Part of the Open Phone Abstraction Library, http://www.opalvoip.org\n";
+  wxMessageDialog dialog(this, text.str(), wxT("About ..."), wxOK);
   dialog.ShowModal();
 }
 
@@ -2767,7 +2767,7 @@ MyMedia::MyMedia()
 }
 
 
-MyMedia::MyMedia(const wxChar * source, const PString & format)
+MyMedia::MyMedia(const char * source, const PString & format)
   : sourceProtocol(source)
   , mediaFormat(format)
   , preferenceOrder(-1) // -1 indicates disabled
@@ -3192,9 +3192,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 #endif
 #ifndef OPAL_ZRTP
   choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeH323Key);
-  choice->Delete(choice->FindString("ZRTP"));
+  choice->Delete(choice->FindString(wxT("ZRTP")));
   choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeSIPKey);
-  choice->Delete(choice->FindString("ZRTP"));
+  choice->Delete(choice->FindString(wxT("ZRTP")));
 #endif
 #else
   FindWindowByName(RTPSecurityModeH323Key)->Disable();
@@ -4089,7 +4089,7 @@ static void RenumberList(wxListCtrl * list, int position)
 {
   while (position < list->GetItemCount()) {
     wxString str;
-    str.sprintf("%3u", position+1);
+    str.sprintf(wxT("%3u"), position+1);
     list->SetItem(position, 0, str);
     ++position;
   }
@@ -4099,17 +4099,17 @@ static void RenumberList(wxListCtrl * list, int position)
 void OptionsDialog::RegistrationToList(bool create, RegistrationInfo * registration, int position)
 {
   if (create) {
-    position = m_Registrations->InsertItem(position, "999");
+    position = m_Registrations->InsertItem(position, wxT("999"));
     RenumberList(m_Registrations, position);
     m_Registrations->SetItemPtrData(position, (wxUIntPtr)registration);
   }
 
 
-  static const char * const TypeNames[] = {
-    "Registration",
-    "Messages",
-    "Presence",
-    "Appearance"
+  static const wxChar * const TypeNames[] = {
+    wxT("Registration"),
+    wxT("Messages"),
+    wxT("Presence"),
+    wxT("Appearance")
   };
   m_Registrations->SetItem(position, 1, TypeNames[registration->m_Type]);
   m_Registrations->SetItem(position, 2, registration->m_User);
@@ -4440,13 +4440,13 @@ bool VideoControlDialog::TransferDataFromWindow()
 ///////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(RegistrationDialog, wxDialog)
-  EVT_TEXT(XRCID(RegistrarUsernameKey), RegistrationDialog::Changed)
-  EVT_TEXT(XRCID(RegistrarDomainKey), RegistrationDialog::Changed)
-  EVT_TEXT(XRCID(RegistrarContactKey), RegistrationDialog::Changed)
-  EVT_TEXT(XRCID(RegistrarAuthIDKey), RegistrationDialog::Changed)
-  EVT_TEXT(XRCID(RegistrarPasswordKey), RegistrationDialog::Changed)
-  EVT_TEXT(XRCID(RegistrarTimeToLiveKey), RegistrationDialog::Changed)
-  EVT_BUTTON(XRCID(RegistrarUsedKey), RegistrationDialog::Changed)
+  EVT_TEXT(wxXmlResource::GetXRCID(RegistrarUsernameKey), RegistrationDialog::Changed)
+  EVT_TEXT(wxXmlResource::GetXRCID(RegistrarDomainKey), RegistrationDialog::Changed)
+  EVT_TEXT(wxXmlResource::GetXRCID(RegistrarContactKey), RegistrationDialog::Changed)
+  EVT_TEXT(wxXmlResource::GetXRCID(RegistrarAuthIDKey), RegistrationDialog::Changed)
+  EVT_TEXT(wxXmlResource::GetXRCID(RegistrarPasswordKey), RegistrationDialog::Changed)
+  EVT_TEXT(wxXmlResource::GetXRCID(RegistrarTimeToLiveKey), RegistrationDialog::Changed)
+  EVT_BUTTON(wxXmlResource::GetXRCID(RegistrarUsedKey), RegistrationDialog::Changed)
 END_EVENT_TABLE()
 
 RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo * info)
@@ -4454,9 +4454,9 @@ RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo
   if (info != NULL)
     m_info = *info;
 
-  wxXmlResource::Get()->LoadDialog(this, parent, "RegistrationDialog");
+  wxXmlResource::Get()->LoadDialog(this, parent, wxT("RegistrationDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, "wxID_OK");
+  m_ok = FindWindowByNameAs<wxButton>(this, wxT("wxID_OK"));
   m_ok->Disable();
 
   m_user = FindWindowByNameAs<wxTextCtrl>(this, RegistrarUsernameKey);
@@ -4917,7 +4917,7 @@ void StatisticsField::Update(const OpalConnection & connection, const OpalMediaS
 
 #define STATISTICS_FIELD_BEG(type, name) \
   class type##name##StatisticsField : public StatisticsField { \
-  public: type##name##StatisticsField() : StatisticsField(wxT(#type #name), type) { } \
+  public: type##name##StatisticsField() : StatisticsField(wxT(#type) wxT(#name), type) { } \
     virtual StatisticsField * Clone() const { return new type##name##StatisticsField(*this); } \
     virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) {
 
