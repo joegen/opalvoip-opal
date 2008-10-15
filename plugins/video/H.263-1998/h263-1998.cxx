@@ -58,6 +58,7 @@
 #include "dyna.h"
 #include "mpi.h"
 
+
 extern "C" {
 #include LIBAVCODEC_HEADER
 };
@@ -180,7 +181,6 @@ TRACE(1, prefix << "\tEncoder\tInitialising encode for RFC2190");
   // X-Lite does not like Custom Picture frequency clocks...
   _context->time_base.num = 100; 
   _context->time_base.den = 2997;
-
   _context->gop_size      = 125;
 
 //  _context->flags = 0;
@@ -421,9 +421,9 @@ bool H263_RFC2190_EncoderContext::Open()
   //_context->rtp_callback = &H263_RFC2190_EncoderContext::RtpCallback;
   //_context->opaque = this; // used to separate out packets from different encode threads
 
-  _context->flags &= ~CODEC_FLAG_H263P_UMV;
-  _context->flags &= ~CODEC_FLAG_4MV;
-  _context->flags &= ~CODEC_FLAG_H263P_AIC;
+  //_context->flags &= ~CODEC_FLAG_H263P_UMV;
+  //_context->flags &= ~CODEC_FLAG_4MV;
+  //_context->flags &= ~CODEC_FLAG_H263P_AIC;
   
   SetMaxKeyFramePeriod(H263_KEY_FRAME_INTERVAL);
   SetMaxRTPFrameSize(H263_PAYLOAD_SIZE);
@@ -1590,6 +1590,7 @@ static struct PluginCodec_Option const * const h263OptionTable[] = {
   &sqcifMPI,
   &cif4MPI,
   &cif16MPI,
+  &annexF,
   NULL
 };
 
