@@ -42,18 +42,45 @@
 #include <h224/h224.h>
 #include <h224/h224handler.h>
 
-#define OPAL_H224_CAPABILITY_NAME "H.224"
-
-/** This class describes the H.224 capability
- */
-class H323_H224Capability : public H323DataCapability
+/** This class describes the H.224 capability, using the H.323 Annex Q mode
+*/
+class H323_H224_AnnexQCapability : public H323DataCapability
 {
-  PCLASSINFO(H323_H224Capability, H323DataCapability);
+  PCLASSINFO(H323_H224_AnnexQCapability, H323DataCapability);
+  
+public:
+  
+  H323_H224_AnnexQCapability();
+  ~H323_H224_AnnexQCapability();
+  
+  Comparison Compare(const PObject & obj) const;
+	
+  virtual PObject * Clone() const;
+	
+  virtual unsigned GetSubType() const;
+	
+  virtual PString GetFormatName() const;
+  
+  virtual H323Channel * CreateChannel(H323Connection & connection,
+                                      H323Channel::Directions direction,
+                                      unsigned int sessionID,
+                                      const H245_H2250LogicalChannelParameters * params) const;
+	
+  virtual PBoolean OnSendingPDU(H245_DataApplicationCapability & pdu) const;
+  virtual PBoolean OnSendingPDU(H245_DataMode & pdu) const;
+  virtual PBoolean OnReceivedPDU(const H245_DataApplicationCapability & pdu);
+};
+
+/** This class describes the H.224 capability, using the HDLC tunneling mode
+ */
+class H323_H224_HDLCTunnelingCapability : public H323DataCapability
+{
+  PCLASSINFO(H323_H224_HDLCTunnelingCapability, H323DataCapability);
 	
 public:
 	
-  H323_H224Capability();
-  ~H323_H224Capability();
+  H323_H224_HDLCTunnelingCapability();
+  ~H323_H224_HDLCTunnelingCapability();
 	
   Comparison Compare(const PObject & obj) const;
 	
@@ -62,11 +89,11 @@ public:
   virtual unsigned GetSubType() const;
 	
   virtual PString GetFormatName() const;
-	
+  
   virtual H323Channel * CreateChannel(H323Connection & connection,
-									  H323Channel::Directions dir,
-									  unsigned sesionID,
-									  const H245_H2250LogicalChannelParameters * param) const;
+                                      H323Channel::Directions direction,
+                                      unsigned int sessionID,
+                                      const H245_H2250LogicalChannelParameters * params) const;
 	
   virtual PBoolean OnSendingPDU(H245_DataApplicationCapability & pdu) const;
   virtual PBoolean OnSendingPDU(H245_DataMode & pdu) const;
@@ -75,6 +102,7 @@ public:
 };
 
 #define OPAL_REGISTER_H224_CAPABILITY() \
-  H323_REGISTER_CAPABILITY(H323_H224Capability, GetOpalH224().GetName()); \
+  H323_REGISTER_CAPABILITY(H323_H224_AnnexQCapability, GetOpalH224_H323AnnexQ().GetName()); \
+  H323_REGISTER_CAPABILITY(H323_H224_HDLCTunnelingCapability, GetOpalH224_HDLCTunneling().GetName()); \
 
 #endif // OPAL_H224_H323H224_H

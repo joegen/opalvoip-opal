@@ -157,6 +157,10 @@ public:
   PBoolean AddClient(OpalH224Client & client);
   PBoolean RemoveClient(OpalH224Client & client);
   
+  /**Sets the transmit / receive media format*/
+  void SetTransmitMediaFormat(const OpalMediaFormat & mediaFormat);
+  void SetReceiveMediaFormat(const OpalMediaFormat & mediaFormat);
+  
   /**Sets / unsets the transmit H224 media stream*/
   void SetTransmitMediaStream(OpalH224MediaStream * transmitMediaStream);
 	
@@ -205,9 +209,10 @@ protected:
   OpalH224ClientList clients;
 	
 private:
-		
   void TransmitFrame(H224_Frame & frame);
 	
+  PBoolean transmitHDLCTunneling;
+  PBoolean receiveHDLCTunneling;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
