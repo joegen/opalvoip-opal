@@ -40,7 +40,10 @@
 
 #include <h224/h224.h>
 #include <h224/h224handler.h>
-#include <h323/h323con.h>
+
+#if OPAL_SIP
+#include <sip/sdp.h>
+#endif
 
 #define H224_MAX_HEADER_SIZE 6+5
 
@@ -53,25 +56,43 @@ OpalH224MediaType::OpalH224MediaType()
 {
 }
 
-#if OPAL_SIP
-
-SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTransportAddress & /*localAddress*/)
-{
-  return NULL;
-}
-
 const OpalMediaType & OpalH224MediaType::MediaType()
 {
   static const OpalMediaType type = "h224";
   return type;
 }
 
+#if OPAL_SIP
+
+class SDPH224MediaDescription : public SDPRTPAVPMediaDescription
+{
+  PCLASSINFO(SDPH224MediaDescription, SDPRTPAVPMediaDescription);
+  public:
+    SDPH224MediaDescription(const OpalTransportAddress & address);
+    virtual PString GetSDPMediaType() const;
+};
+
+SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+{
+  return new SDPH224MediaDescription(localAddress);
+}
+
+SDPH224MediaDescription::SDPH224MediaDescription(const OpalTransportAddress & address)
+: SDPRTPAVPMediaDescription(address)
+{
+}
+
+PString SDPH224MediaDescription::GetSDPMediaType() const
+{
+  return "application";
+}
+
 #endif
 
 /////////////////////////////////////////////////////////////////////////
 
-OpalH224MediaFormatInternal::OpalH224MediaFormatInternal()
-: OpalMediaFormatInternal(OPAL_H224,
+OpalH224MediaFormatInternal::OpalH224MediaFormatInternal(bool _useHDLCTunneling)
+: OpalMediaFormatInternal(_useHDLCTunneling ? "H.224/HDLCTunneling" : "H.224/H323AnnexQ",
                           "h224",
                           (RTP_DataFrame::PayloadTypes)100, // Most other implementations seem to use this payload code
                           "H224",
@@ -80,7 +101,8 @@ OpalH224MediaFormatInternal::OpalH224MediaFormatInternal()
                           0,
                           0,
                           4800,  // As defined in RFC 4573
-                          0)
+                          0),
+  useHDLCTunneling(_useHDLCTunneling)
 {
 }
 
@@ -89,16 +111,32 @@ PObject * OpalH224MediaFormatInternal::Clone() const
   return new OpalH224MediaFormatInternal(*this);
 }
 
+PBoolean OpalH224MediaFormatInternal::IsValidForProtocol(const PString & protocol) const
+{
+  if (useHDLCTunneling) {
+    if (protocol == "sip") {
+      return PFalse;
+    }
+  }
+  return PTrue;
+}
+
 /////////////////////////////////////////////////////////////////////////
 
-OpalH224MediaFormat::OpalH224MediaFormat()
-: OpalMediaFormat(new OpalH224MediaFormatInternal())
+OpalH224MediaFormat::OpalH224MediaFormat(PBoolean useHDLCTunneling)
+: OpalMediaFormat(new OpalH224MediaFormatInternal(useHDLCTunneling))
 {
 }
 
-const OpalMediaFormat & GetOpalH224()
+const OpalMediaFormat & GetOpalH224_H323AnnexQ()
 {
-  static const OpalH224MediaFormat format;
+  static const OpalH224MediaFormat format(PFalse);
+  return format;
+}
+
+const OpalMediaFormat & GetOpalH224_HDLCTunneling()
+{
+  static const OpalH224MediaFormat format(PTrue);
   return format;
 }
 
@@ -397,15 +435,38 @@ void H224_Frame::SetClientDataSize(PINDEX size)
   SetInformationFieldSize(size + GetHeaderSize());
 }
 
-PBoolean H224_Frame::Decode(const BYTE *data, PINDEX size)
+PBoolean H224_Frame::DecodeAnnexQ(const BYTE *data, PINDEX size)
 {
-  PBoolean result = Q922_Frame::Decode(data, size);
+  PBoolean result = Q922_Frame::DecodeAnnexQ(data, size);
 	
   if (result == PFalse) {
     return PFalse;
   }
 	
-  // doing some validity check for H.224 frames
+  // doing some validity checks for H.224 frames
+  BYTE highOrderAddressOctet = GetHighOrderAddressOctet();
+  BYTE lowOrderAddressOctet = GetLowOrderAddressOctet();
+  BYTE controlFieldOctet = GetControlFieldOctet();
+	
+  if ((highOrderAddressOctet != 0x00) ||
+      (!(lowOrderAddressOctet == 0x61 || lowOrderAddressOctet == 0x71)) ||
+      (controlFieldOctet != 0x03)) {		
+	  return PFalse;
+  }
+	
+  return PTrue;
+  
+}
+
+PBoolean H224_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
+{
+  PBoolean result = Q922_Frame::DecodeHDLC(data, size);
+	
+  if (result == PFalse) {
+    return PFalse;
+  }
+	
+  // doing some validity checks for H.224 frames
   BYTE highOrderAddressOctet = GetHighOrderAddressOctet();
   BYTE lowOrderAddressOctet = GetLowOrderAddressOctet();
   BYTE controlFieldOctet = GetControlFieldOctet();
@@ -444,6 +505,9 @@ OpalH224Handler::OpalH224Handler()
   transmitStartTime = NULL;
   transmitMediaStream = NULL;
   
+  transmitHDLCTunneling = PFalse;
+  receiveHDLCTunneling = PFalse;
+  
   clients.DisallowDeleteObjects();
 }
 
@@ -473,6 +537,28 @@ PBoolean OpalH224Handler::RemoveClient(OpalH224Client & client)
     client.SetH224Handler(NULL);
   }
   return result;
+}
+
+void OpalH224Handler::SetTransmitMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  if (mediaFormat == GetOpalH224_H323AnnexQ()) {
+    transmitHDLCTunneling = PFalse;
+  } else if (mediaFormat == GetOpalH224_HDLCTunneling()) {
+    transmitHDLCTunneling = PTrue;
+  } else {
+    PTRACE(1, "H224\tInvalid transmit media format");
+  }
+}
+
+void OpalH224Handler::SetReceiveMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  if (mediaFormat == GetOpalH224_H323AnnexQ()) {
+    receiveHDLCTunneling = PFalse;
+  } else if (mediaFormat == GetOpalH224_HDLCTunneling()) {
+    receiveHDLCTunneling = PTrue;
+  } else {
+    PTRACE(1, "H224\tInvalid receive media format");
+  }
 }
 
 void OpalH224Handler::SetTransmitMediaStream(OpalH224MediaStream * mediaStream)
@@ -979,22 +1065,42 @@ PBoolean OpalH224Handler::OnReceivedExtraCapabilitiesCommand()
 
 PBoolean OpalH224Handler::HandleFrame(const RTP_DataFrame & dataFrame)
 {
-  if (receiveFrame.Decode(dataFrame.GetPayloadPtr(), dataFrame.GetPayloadSize())) {
-    PBoolean result = OnReceivedFrame(receiveFrame);
-    return result;
+  if (receiveHDLCTunneling) {
+    if (receiveFrame.DecodeHDLC(dataFrame.GetPayloadPtr(), dataFrame.GetPayloadSize())) {
+      PBoolean result = OnReceivedFrame(receiveFrame);
+      return result;
+    } else {
+      PTRACE(1, "H224\tDecoding of the frame failed");
+      return PFalse;
+    }
   } else {
-    PTRACE(1, "Decoding of H.224 frame failed");
-    return PFalse;
+    if (receiveFrame.DecodeAnnexQ(dataFrame.GetPayloadPtr(), dataFrame.GetPayloadSize())) {
+      PBoolean result = OnReceivedFrame(receiveFrame);
+      return result;
+    } else {
+      PTRACE(1, "H224\tDecoding of the frame failed");
+      return PFalse;
+    }
   }
 }
 
 void OpalH224Handler::TransmitFrame(H224_Frame & frame)
 {
-  PINDEX size = frame.GetEncodedSize();
-  
-  if (!frame.Encode(transmitFrame.GetPayloadPtr(), size, transmitBitIndex)) {
-    PTRACE(1, "Failed to encode H.224 frame");
-    return;
+  PINDEX size;
+  if (transmitHDLCTunneling) {
+    size = frame.GetHDLCEncodedSize();
+    transmitFrame.SetMinSize(size);
+    if (!frame.EncodeHDLC(transmitFrame.GetPayloadPtr(), size, transmitBitIndex)) {
+      PTRACE(1, "H224\tFailed to encode the frame");
+      return;
+    }
+  } else {
+    size = frame.GetAnnexQEncodedSize();
+    transmitFrame.SetMinSize(size);
+    if (!frame.EncodeAnnexQ(transmitFrame.GetPayloadPtr(), size)) {
+      PTRACE(1, "H224\tFailed to encode the frame");
+      return;
+    }
   }
   
   // determining correct timestamp
@@ -1019,7 +1125,10 @@ OpalH224MediaStream::OpalH224MediaStream(OpalConnection & connection,
   h224Handler(handler)
 {
   if (isSource == PTrue) {
+    h224Handler.SetTransmitMediaFormat(mediaFormat);
     h224Handler.SetTransmitMediaStream(this);
+  } else {
+    h224Handler.SetReceiveMediaFormat(mediaFormat);
   }
 }
 
