@@ -22,6 +22,7 @@
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -50,7 +51,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\msw&quot;;&quot;$(WXDIR)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswu&quot;;&quot;$(WXDIR)\include&quot;"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;PTRACING"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -77,7 +78,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wxmsw$(WXVER)_xrc.lib wxmsw$(WXVER)_html.lib wxmsw$(WXVER)_adv.lib wxmsw$(WXVER)_core.lib wxbase$(WXVER)_xml.lib wxbase$(WXVER).lib wxexpat.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="wxmsw$(WXVER)u_xrc.lib wxmsw$(WXVER)u_html.lib wxmsw$(WXVER)u_adv.lib wxmsw$(WXVER)u_core.lib wxbase$(WXVER)u_xml.lib wxbase$(WXVER)u.lib wxexpat.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib comctl32.lib rpcrt4.lib"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
@@ -118,6 +119,7 @@
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -145,7 +147,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswd&quot;;&quot;$(WXDIR)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswud&quot;;&quot;$(WXDIR)\include&quot;"
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;PTRACING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -173,7 +175,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wxmsw$(WXVER)d_xrc.lib wxmsw$(WXVER)d_html.lib wxmsw$(WXVER)d_adv.lib wxmsw$(WXVER)d_core.lib wxbase$(WXVER)d_xml.lib wxbase$(WXVER)d.lib wxexpatd.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib wxregexd.lib wsock32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="wxmsw$(WXVER)ud_xrc.lib wxmsw$(WXVER)ud_html.lib wxmsw$(WXVER)ud_adv.lib wxmsw$(WXVER)ud_core.lib wxbase$(WXVER)ud_xml.lib wxbase$(WXVER)ud.lib wxexpatd.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib wxregexd.lib wsock32.lib comctl32.lib rpcrt4.lib"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
@@ -215,6 +217,7 @@
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -243,7 +246,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\msw&quot;;&quot;$(WXDIR)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswu&quot;;&quot;$(WXDIR)\include&quot;"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -270,7 +273,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wxmsw$(WXVER)_xrc.lib wxmsw$(WXVER)_html.lib wxmsw$(WXVER)_adv.lib wxmsw$(WXVER)_core.lib wxbase$(WXVER)_xml.lib wxbase$(WXVER).lib wxexpat.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="wxmsw$(WXVER)u_xrc.lib wxmsw$(WXVER)u_html.lib wxmsw$(WXVER)u_adv.lib wxmsw$(WXVER)u_core.lib wxbase$(WXVER)u_xml.lib wxbase$(WXVER)u.lib wxexpat.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib comctl32.lib rpcrt4.lib"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"

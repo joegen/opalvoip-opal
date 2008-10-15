@@ -30,9 +30,9 @@ For Windows:
       will be asked whether to convert project files. Let it do the conversion
       and use the converted projects.
 
-  5.  Build the Release and Debug versions of everything. The safest way is to
-      simply select "Debug", go "Build Solution", then select "Release" and go
-      "Build Solution" again.
+  5.  Build the "Unicode Release" and "Unicode Debug" versions of everything.
+      The safest way is to simply select "Unicode Debug" in teh tool bar drop
+      down list, go "Build Solution", then do the same for "Unicode Release".
 
   6.  Open the DevStudio workspace %WXDIR%\utils\wxrc\wxrc.dsw, if missing then
       %WXDIR%\utils\wxrc\wxrc.dsp will do. Let it convert the projects as before.
