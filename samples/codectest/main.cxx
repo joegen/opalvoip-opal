@@ -675,7 +675,7 @@ void TranscoderThread::Main()
   PUInt64 byteCount = 0;
   PUInt64 frameCount = 0;
   PUInt64 packetCount = 0;
-  unsigned long sequenceNumber = 0;
+  WORD sequenceNumber = 0;
   bool oldSrcState = true;
   bool oldOutState = true;
   bool oldEncState = true;
@@ -848,8 +848,6 @@ void VideoThread::InitStats()
   frameCount = 0;
   frameBytes = 0;
   totalFrameBytes = 0;
-
-  timeval startTime;
 }
 
 void VideoThread::UpdateStats(const RTP_DataFrame & frame)
