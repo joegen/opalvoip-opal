@@ -209,8 +209,12 @@ void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
   if (transport == NULL)
     return;
 
-  if (port != 0 && Find(':', dollar) == P_MAX_INDEX)
-    sprintf(":%u", port);
+  if (port != 0 && Find(':', dollar) == P_MAX_INDEX) {
+    PINDEX end = GetLength();
+    if (GetAt(end-1) == '+')
+      end--;
+    Splice(psprintf(":%u", port), end);
+  }
 }
 
 
@@ -576,27 +580,12 @@ PBoolean OpalListenerTCP::Open(const PNotifier & theAcceptHandler, ThreadMode mo
     return StartThread(theAcceptHandler, mode);
   }
 
-  if (listener.Listen(localAddress, 1, listenerPort))
+  if (listener.Listen(localAddress, 10, listenerPort, exclusiveListener ? PSocket::AddressIsExclusive : PSocket::CanReuseAddress))
     return StartThread(theAcceptHandler, mode);
 
-  if (exclusiveListener) {
-    PTRACE(1, "Listen\tOpen on " << localAddress << ':' << listener.GetPort()
-           << " failed: " << listener.GetErrorText());
-    return PFalse;
-  }
-
-  if (listener.GetErrorNumber() != EADDRINUSE)
-    return PFalse;
-
-  PTRACE(1, "Listen\tSocket for " << localAddress << ':' << listener.GetPort()
-         << " already in use, incoming connections may not all be serviced!");
-
-  if (listener.Listen(localAddress, 100, 0, PSocket::CanReuseAddress))
-    return StartThread(theAcceptHandler, mode);
-
-  PTRACE(1, "Listen\tOpen (REUSEADDR) on " << localAddress << ':' << listener.GetPort()
+  PTRACE(1, "Listen\tOpen (" << (exclusiveListener ? "EXCLUSIVE" : "REUSEADDR") << ") on " << localAddress << ':' << listener.GetPort()
          << " failed: " << listener.GetErrorText());
-  return PFalse;
+  return false;
 }
 
 
