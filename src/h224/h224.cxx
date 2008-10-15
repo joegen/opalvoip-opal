@@ -919,7 +919,7 @@ PBoolean OpalH224Handler::OnReceivedExtraCapabilities(H224_Frame & frame)
   BYTE *data = frame.GetClientDataPtr();
 	
   BYTE clientID = (data[2] & 0x7f);
-  PINDEX dataIndex;
+  PINDEX dataIndex = 0;
   BYTE extendedClientID = 0x00;
   BYTE countryCode = CountryCodeEscape;
   BYTE countryCodeExtension = 0x00;
@@ -958,7 +958,7 @@ PBoolean OpalH224Handler::OnReceivedExtraCapabilities(H224_Frame & frame)
         }
       }
     }
-    if (found == PTrue) {
+    if (found) {
       PINDEX size = frame.GetClientDataSize() - dataIndex;
       client.SetRemoteClientAvailable(PTrue, PTrue);
       client.OnReceivedExtraCapabilities((data + dataIndex), size);
@@ -1046,7 +1046,7 @@ PBoolean OpalH224MediaStream::Close()
   return PTrue;
 }
 
-PBoolean OpalH224MediaStream::ReadPacket(RTP_DataFrame & packet)
+PBoolean OpalH224MediaStream::ReadPacket(RTP_DataFrame & /*packet*/)
 {
   return PFalse;
 }
