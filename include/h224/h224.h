@@ -69,8 +69,11 @@ class OpalH224MediaFormatInternal : public OpalMediaFormatInternal
   PCLASSINFO(OpalH224MediaFormatInternal, OpalMediaFormatInternal);
   
   public:
-    OpalH224MediaFormatInternal();
+    OpalH224MediaFormatInternal(PBoolean useHDLCTunneling);
     virtual PObject * Clone() const;
+    virtual PBoolean IsValidForProtocol(const PString & protocol) const;
+  private:
+    PBoolean useHDLCTunneling;
 };
 
 class OpalH224MediaFormat : public OpalMediaFormat
@@ -78,10 +81,11 @@ class OpalH224MediaFormat : public OpalMediaFormat
   PCLASSINFO(OpalH224MediaFormat, OpalMediaFormat);
   
   public:
-    OpalH224MediaFormat();
+    OpalH224MediaFormat(PBoolean useHDLCTunneling);
 };
 
-extern const OpalMediaFormat & GetOpalH224();
+extern const OpalMediaFormat & GetOpalH224_H323AnnexQ();
+extern const OpalMediaFormat & GetOpalH224_HDLCTunneling();
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -151,7 +155,8 @@ public:
   PINDEX GetClientDataSize() const;
   void SetClientDataSize(PINDEX size);
 	
-  PBoolean Decode(const BYTE *data, PINDEX size);
+  PBoolean DecodeAnnexQ(const BYTE *data, PINDEX size);
+  PBoolean DecodeHDLC(const BYTE *data, PINDEX size);
   
 private:
   PINDEX GetHeaderSize() const;

@@ -1144,7 +1144,6 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_RFC2833        "UserInput/RFC2833"
 #define OPAL_CISCONSE       "NamedSignalEvent"
 #define OPAL_T38            "T.38"
-#define OPAL_H224            "H.224"
 
 extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16_16KHZ();

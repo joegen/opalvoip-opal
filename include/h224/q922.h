@@ -59,20 +59,35 @@ public:
 	
   PINDEX GetInformationFieldSize() const { return informationFieldSize; }
   void SetInformationFieldSize(PINDEX size);
+  
+  /**Decodes a Q.922 frame from a given buffer, encoded as descibed in
+     H.323 Annex Q. Returns the success of this operation
+    **/
+  PBoolean DecodeAnnexQ(const BYTE *buffer, PINDEX size);
+  
+  /**Returns the size if encoded as described in H.323 Annex Q
+    */
+  PINDEX GetAnnexQEncodedSize() const;
+  
+  /** Encodes this Q.922 frame into the given buffer.
+    * On return, size contains the number of octets occupied in the buffer
+    */
+  PBoolean EncodeAnnexQ(BYTE *buffer, PINDEX & size) const;
+  
+  /**Decodes a Q.922 frame from a given buffer.
+     Returns the success of this operation
+    */
+  PBoolean DecodeHDLC(const BYTE *data, PINDEX size);
 	
-  /** Decodes a Q.922 frame from a given buffer, returns the success of this operation
-	*/
-  PBoolean Decode(const BYTE *data, PINDEX size);
-	
- /** Returns an estimate of the encoded size.
+  /** Returns an estimate of the encoded size.
 	 The receiver will use at most the size when encoding. Returns zero if encoding will fail.
    */
-  PINDEX GetEncodedSize() const;
+  PINDEX GetHDLCEncodedSize() const;
   
   /** Encodes this Q.922 frame into the given buffer.
 	  On return, size contains the number of octets occupied in the buffer.
 	*/
-  PBoolean Encode(BYTE *buffer, PINDEX & size) const;
+  PBoolean EncodeHDLC(BYTE *buffer, PINDEX & size) const;
 
   /** Encodes this Q.922 frame into the given buffer.
 	  On return, size contains the number of octets occupied in the buffer.
@@ -81,7 +96,7 @@ public:
 	  bitPosition shall be in the range 0-7, whereas 7 means that the FLAG sequence
 	  is encoded at byte boundaries
 	*/
-  PBoolean Encode(BYTE *buffer, PINDEX & size, BYTE & bitPosition) const;
+  PBoolean EncodeHDLC(BYTE *buffer, PINDEX & size, BYTE & bitPosition) const;
 	
 protected:
 	
@@ -89,8 +104,9 @@ protected:
 	
 private:
 
+  // for HDLC mode
   inline PBoolean FindFlagEnd(const BYTE *buffer, PINDEX bufferSize, PINDEX & octetIndex, BYTE & bitIndex);
-  inline BYTE DecodeByte(const BYTE *buffer, BYTE *destination, PINDEX & octetIndex, BYTE & bitIndex, BYTE & onesCounter);
+  inline BYTE DecodeOctet(const BYTE *buffer, BYTE *destination, PINDEX & octetIndex, BYTE & bitIndex, BYTE & onesCounter);
   inline BYTE DecodeBit(const BYTE *buffer, PINDEX & octetIndex, BYTE & bitIndex);
 	
   inline void EncodeOctet(BYTE octet, BYTE *buffer, PINDEX & octetIndex, BYTE & bitIndex, BYTE & onesCounter) const;

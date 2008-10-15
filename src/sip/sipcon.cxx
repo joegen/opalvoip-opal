@@ -49,6 +49,9 @@
 #include <ptclib/pdns.h>
 #include <h323/q931.h>
 
+#if OPAL_H224FECC
+#include <h224/h224.h>
+#endif
 
 #define new PNEW
 
@@ -528,6 +531,9 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
 #if OPAL_VIDEO
     sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut);
 #endif
+#if OPAL_H224FECC
+    sdpOK |= OfferSDPMediaDescription(OpalH224MediaType::MediaType(), 0, rtpSessions, sdpOut);
+#endif
   }
 
   needReINVITE = true;
@@ -693,6 +699,11 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
         localMedia->SetDirection(endpoint.GetManager().CanAutoStartReceiveVideo() ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
       else
         localMedia->SetDirection(endpoint.GetManager().CanAutoStartReceiveVideo() ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive);
+    }
+#endif
+#if OPAL_H224FECC
+    if (mediaType == OpalH224MediaType::MediaType()) {
+      localMedia->SetDirection(SDPMediaDescription::SendRecv);
     }
 #endif
   }
