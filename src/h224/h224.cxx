@@ -843,6 +843,10 @@ PBoolean OpalH224Handler::SendExtraCapabilitiesMessage(const OpalH224Client & cl
 PBoolean OpalH224Handler::TransmitClientFrame(const OpalH224Client & client, H224_Frame & frame)
 {
   PWaitAndSignal m(transmitMutex);
+  
+  if (canTransmit == PFalse) {
+    return PFalse;
+  }
 	
   if (clients.GetObjectsIndex(&client) == P_MAX_INDEX) {
     return PFalse; // Only allow if the client is really registered
