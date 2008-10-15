@@ -97,28 +97,28 @@ public:
   /**Called if the CME client received an Extra Capabilities PDU for this client.
      Default does nothing.
     */
-  virtual void OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size) {}
+  virtual void OnReceivedExtraCapabilities(const BYTE * /*capabilities*/, PINDEX /*size*/) { }
 
   /**Called if a PDU for this client was received.
      Default does nothing.
     */
-  virtual void OnReceivedMessage(const H224_Frame & message) {};
+  virtual void OnReceivedMessage(const H224_Frame & /*message*/) { }
 
   /**Called to indicate that the extra capabilities pdu should be sent.
      Default does nothing
     */
-  virtual void SendExtraCapabilities() const {};
+  virtual void SendExtraCapabilities() const { }
 
   virtual Comparison Compare(const PObject & obj);
 
   /**Connection to the H.224 protocol handler */
-  void SetH224Handler(OpalH224Handler * handler) { h224Handler = handler; };
+  void SetH224Handler(OpalH224Handler * handler) { h224Handler = handler; }
 
   /**Called by the H.224 handler to indicate if the remote party has such a client or not */
   void SetRemoteClientAvailable(PBoolean remoteClientAvailable, PBoolean remoteClientHasExtraCapabilities);
 
-  PBoolean GetRemoteClientAvailable() const { return remoteClientAvailable; };
-  PBoolean GetRemoteClientHasExtraCapabilities() const { return remoteClientHasExtraCapabilities; };
+  PBoolean GetRemoteClientAvailable() const { return remoteClientAvailable; }
+  PBoolean GetRemoteClientHasExtraCapabilities() const { return remoteClientHasExtraCapabilities; }
 
 protected:
 
