@@ -51,14 +51,13 @@ static OpalLIDRegistration * RegisteredLIDsListHead;
 ostream & operator<<(ostream & o, OpalLineInterfaceDevice::CallProgressTones t)
 {
   static const char * const CallProgressTonesNames[OpalLineInterfaceDevice::NumTones+1] = {
-    "NoTone", "DialTone", "RingTone", "BusyTone", "CongestionTone", "ClearTone", "MwiTone", "RoutingTone", "CNGTone", "CEDTone"
+    "NoTone", "DialTone", "RingTone", "BusyTone", "CongestionTone", "ClearTone", "MwiTone", "RoutingTone", "CNGTone", "CEDTone", "UserTone"
   };
-  if (t+1 < PARRAYSIZE(CallProgressTonesNames))
+  if (t+1 < PARRAYSIZE(CallProgressTonesNames) && CallProgressTonesNames[t+1] != NULL)
     return o << CallProgressTonesNames[t+1];
   else
-    return o << "Unknown";
+    return o << "UnknownTone:" << (unsigned)t;
 }
-
 #endif
 
 
