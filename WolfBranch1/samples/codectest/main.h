@@ -29,6 +29,9 @@
 #ifndef _CodecTest_MAIN_H
 #define _CodecTest_MAIN_H
 
+#include <codec/vidcodec.h>
+#include <opal/patch.h>
+
 
 class TranscoderThread : public PThread
 {
@@ -52,16 +55,13 @@ class TranscoderThread : public PThread
 
     int InitialiseCodec(PArgList & args, const OpalMediaFormat & rawFormat);
 
-    void Stop()
-    {
-      running = false;
-      WaitForTermination();
-    }
-
     virtual void Main();
 
     virtual bool Read(RTP_DataFrame & frame) = 0;
     virtual bool Write(const RTP_DataFrame & frame) = 0;
+    virtual void Stop() = 0;
+
+    virtual void UpdateStats(const RTP_DataFrame &) { }
 
     bool running;
 
@@ -77,6 +77,11 @@ class TranscoderThread : public PThread
       ForceMarkers,
       NormalMarkers
     } markerHandling;
+
+    PDECLARE_NOTIFIER(OpalMediaCommand, TranscoderThread, OnTranscoderCommand);
+    bool forceIFrame;
+
+    int framesToTranscode;
 };
 
 
@@ -102,12 +107,12 @@ class AudioThread : public TranscoderThread
     virtual void Main();
     virtual bool Read(RTP_DataFrame & frame);
     virtual bool Write(const RTP_DataFrame & frame);
+    virtual void Stop();
 
     PSoundChannel * recorder;
     PSoundChannel * player;
     PINDEX          readSize;
 };
-
 
 class VideoThread : public TranscoderThread
 {
@@ -116,7 +121,10 @@ class VideoThread : public TranscoderThread
       : TranscoderThread(_num, "Video")
       , grabber(NULL)
       , display(NULL)
+      , singleStep(false)
+      , frameWait(0, INT_MAX)
     {
+      InitStats();
     }
 
     ~VideoThread()
@@ -130,9 +138,27 @@ class VideoThread : public TranscoderThread
     virtual void Main();
     virtual bool Read(RTP_DataFrame & frame);
     virtual bool Write(const RTP_DataFrame & frame);
+    virtual void Stop();
+
+    void InitStats();
+    virtual void UpdateStats(const RTP_DataFrame &);
+    void UpdateFrameStats();
 
     PVideoInputDevice  * grabber;
     PVideoOutputDevice * display;
+
+    bool                 singleStep;
+    PSemaphore           frameWait;
+    unsigned             frameRate;
+
+    PString frameFn;
+    PString packetFn;
+
+    PTextFile packetStatFile, frameStatFile;
+    PInt64 packetCount;
+    PInt64 frameCount;
+    PInt64 frameBytes;
+    PInt64 totalFrameBytes;
 };
 
 
