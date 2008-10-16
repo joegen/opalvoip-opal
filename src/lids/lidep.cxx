@@ -467,6 +467,9 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
   remotePartyName = number;
   if (remotePartyName.IsEmpty())
     remotePartyName = "Unknown";
+  else
+    remotePartyAddress = remotePartyName + '@';
+  remotePartyAddress += GetToken();
 
   silenceDetector = new OpalLineSilenceDetector(line, (endpoint.GetManager().GetSilenceDetectParams()));
 
