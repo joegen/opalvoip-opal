@@ -153,7 +153,7 @@ class FFMPEGLibrary : public DynaLink
     FFMPEGLibrary(CodecID codec);
     ~FFMPEGLibrary();
 
-    bool Load();
+    bool Load(int ver = 0);
 
     AVCodec *AvcodecFindEncoder(enum CodecID id);
     AVCodec *AvcodecFindDecoder(enum CodecID id);
@@ -164,6 +164,7 @@ class FFMPEGLibrary : public DynaLink
     int AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict);
     int AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size);
     void AvcodecFree(void * ptr);
+    void AvSetDimensions(AVCodecContext *s, int width, int height);
 
     void AvLogSetLevel(int level);
     void AvLogSetCallback(void (*callback)(void*, int, const char*, va_list));
@@ -193,6 +194,7 @@ class FFMPEGLibrary : public DynaLink
     int (*Favcodec_decode_video)(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size);
     unsigned (*Favcodec_version)(void);
     unsigned (*Favcodec_build)(void);
+    void (*Favcodec_set_dimensions)(AVCodecContext *ctx, int width, int height);
 
     void (*FAv_log_set_level)(int level);
     void (*FAv_log_set_callback)(void (*callback)(void*, int, const char*, va_list));
