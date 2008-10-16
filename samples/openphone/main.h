@@ -117,11 +117,10 @@ class PwxString : public wxString
     inline friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.ToUTF8(); }
     inline friend wostream & operator<<(wostream & stream, const PwxString & string) { return stream << string.c_str(); }
 #else
-    inline operator PString() const { return c_str(); }
     inline operator PFilePath() const { return c_str(); }
-    inline operator PIPSocket::Address() const { return c_str()); }
+    inline operator PIPSocket::Address() const { return c_str(); }
     inline friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.c_str(); }
-    inline friend wostream & operator<<(wostream & stream, const PwxString & string) { return stream << string.wc_str(); }
+    inline friend wostream & operator<<(wostream & stream, const PwxString & string) { return stream << string.c_str(); }
 #endif
 };
 
