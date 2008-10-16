@@ -84,6 +84,7 @@ class TranscoderThread : public PThread
 
     bool rcEnable;
     OpalVideoRateController rateController;
+    int framesToTranscode;
 };
 
 
