@@ -110,14 +110,16 @@ class PwxString : public wxString
     inline bool operator!=(const PwxString & other)       const { return !IsSameAs(other); }
     inline bool operator!=(const OpalMediaFormat & other) const { return !IsSameAs(wxString(other, wxConvUTF8)); }
 
-    inline operator PString() const { return c_str(); }
-    inline operator PFilePath() const { return PFilePath(c_str()); }
-    inline operator PIPSocket::Address() const { return PIPSocket::Address(PString(c_str())); }
-
 #if wxUSE_UNICODE
+    inline operator PString() const { return ToUTF8().data(); }
+    inline operator PFilePath() const { return ToUTF8().data(); }
+    inline operator PIPSocket::Address() const { return PString(ToUTF8().data()); }
     inline friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.ToUTF8(); }
     inline friend wostream & operator<<(wostream & stream, const PwxString & string) { return stream << string.c_str(); }
 #else
+    inline operator PString() const { return c_str(); }
+    inline operator PFilePath() const { return c_str(); }
+    inline operator PIPSocket::Address() const { return c_str()); }
     inline friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.c_str(); }
     inline friend wostream & operator<<(wostream & stream, const PwxString & string) { return stream << string.wc_str(); }
 #endif
@@ -958,8 +960,7 @@ class MyManager : public wxFrame, public OpalManager
     };
     list<CallsOnHold>    m_callsOnHold;
 
-    PFilePath m_lastRecordFile;
-    PFilePath m_faxReceiveDirectory;
+    PwxString m_lastRecordFile;
 
     DECLARE_EVENT_TABLE()
 

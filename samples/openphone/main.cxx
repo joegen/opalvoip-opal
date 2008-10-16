@@ -308,11 +308,11 @@ template <class cls> cls * FindWindowByNameAs(wxWindow * window, const wxChar * 
 }
 
 
-void RemoveNotebookPage(wxWindow * window, const char * name)
+void RemoveNotebookPage(wxWindow * window, const wxChar * name)
 {
   wxNotebook * book = FindWindowByNameAs<wxNotebook>(window, wxT("OptionsNotebook"));
   for (size_t i = 0; i < book->GetPageCount(); ++i) {
-    if (PwxString(book->GetPageText(i)) == name) {
+    if (book->GetPageText(i) == name) {
       book->DeletePage(i);
       break;
     }
@@ -610,7 +610,7 @@ bool MyManager::Initialise()
     config->Read(TraceLevelThresholdKey, &traceLevelThreshold);
     int traceOptions = PTrace::DateAndTime|PTrace::Thread|PTrace::FileAndLine;
     config->Read(TraceOptionsKey, &traceOptions);
-    PTrace::Initialise(traceLevelThreshold, PString(m_traceFileName), traceOptions);
+    PTrace::Initialise(traceLevelThreshold, m_traceFileName.ToUTF8(), traceOptions);
   }
 #endif
 
@@ -655,11 +655,11 @@ bool MyManager::Initialise()
 
   OpalProductInfo productInfo = GetProductInfo();
   if (config->Read(VendorNameKey, &str) && !str.IsEmpty())
-    productInfo.vendor = str.ToUTF8();
+    productInfo.vendor = str;
   if (config->Read(ProductNameKey, &str) && !str.IsEmpty())
-    productInfo.name = str.ToUTF8();
+    productInfo.name = str;
   if (config->Read(ProductVersionKey, &str) && !str.IsEmpty())
-    productInfo.version = str.ToUTF8();
+    productInfo.version = str;
   SetProductInfo(productInfo);
 
 #if OPAL_IVR
@@ -699,9 +699,9 @@ bool MyManager::Initialise()
   long entryIndex;
   if (config->GetFirstEntry(entryName, entryIndex)) {
     do {
-      wxString localInterface;
+      PwxString localInterface;
       if (config->Read(entryName, &localInterface) && !localInterface.empty())
-        m_LocalInterfaces.AppendString(localInterface.c_str());
+        m_LocalInterfaces.AppendString(localInterface);
     } while (config->GetNextEntry(entryName, entryIndex));
   }
 
@@ -744,7 +744,7 @@ bool MyManager::Initialise()
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs videoArgs = GetVideoInputDevice();
   if (config->Read(VideoGrabberKey, &str))
-    videoArgs.deviceName = (PString)PString(str.c_str());
+    videoArgs.deviceName = str;
   if (config->Read(VideoGrabFormatKey, &value1) && value1 >= 0 && value1 < PVideoDevice::NumVideoFormats)
     videoArgs.videoFormat = (PVideoDevice::VideoFormat)value1;
   if (config->Read(VideoGrabSourceKey, &value1))
@@ -793,9 +793,9 @@ bool MyManager::Initialise()
   if (config->Read(FaxStationIdentifierKey, &str))
     m_faxEP->SetDefaultDisplayName(str);
   if (config->Read(FaxReceiveDirectoryKey, &str))
-    m_faxEP->SetDefaultDirectory(str.c_str());
+    m_faxEP->SetDefaultDirectory(str);
   if (config->Read(FaxSpanDSPKey, &str))
-    m_faxEP->SetSpanDSP(str.c_str());
+    m_faxEP->SetSpanDSP(str);
 #endif
 
   ////////////////////////////////////////
@@ -906,9 +906,9 @@ bool MyManager::Initialise()
   config->SetPath(H323AliasesGroup);
   if (config->GetFirstEntry(entryName, entryIndex)) {
     do {
-      wxString alias;
+      PwxString alias;
       if (config->Read(entryName, &alias) && !alias.empty())
-        h323EP->AddAliasName(alias.c_str());
+        h323EP->AddAliasName(alias);
     } while (config->GetNextEntry(entryName, entryIndex));
   }
 
@@ -991,9 +991,9 @@ bool MyManager::Initialise()
   config->SetPath(RoutingGroup);
   if (config->GetFirstEntry(entryName, entryIndex)) {
     do {
-      wxString routeSpec;
+      PwxString routeSpec;
       if (config->Read(entryName, &routeSpec))
-        AddRouteEntry(routeSpec.c_str());
+        AddRouteEntry(routeSpec);
     } while (config->GetNextEntry(entryName, entryIndex));
   }
   else {
@@ -2189,11 +2189,11 @@ void MyManager::OnStartRecording(wxCommandEvent & /*event*/)
   wxFileDialog dlg(this,
                    wxT("Save call to file"),
                    wxEmptyString,
-                   PwxString(m_lastRecordFile),
+                   m_lastRecordFile,
                    wxT("*.wav"),
                    wxFD_SAVE);
   if (dlg.ShowModal() == wxID_OK && m_activeCall != NULL) {
-    m_lastRecordFile = dlg.GetPath().ToUTF8();
+    m_lastRecordFile = dlg.GetPath();
     m_activeCall->StartRecording(m_lastRecordFile);
   }
 }
@@ -2208,7 +2208,7 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 
 void MyManager::OnNewCodec(wxCommandEvent& theEvent)
 {
-  OpalMediaFormat mediaFormat(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel().ToUTF8());
+  OpalMediaFormat mediaFormat(PwxString(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel()));
   if (mediaFormat.IsValid()) {
     PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
     if (connection != NULL) {
@@ -2312,8 +2312,8 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
       if (!m_speedDials->GetItem(item))
         continue;
 
-      PString address = item.m_text.c_str();
-      address.Replace("<dn>", input);
+      PwxString address = item.m_text;
+      address.Replace(wxT("<dn>"), input);
 
       item.m_col = e_NameColumn;
       m_speedDials->GetItem(item);
@@ -2399,6 +2399,8 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
 
   PTRACE(3, "OpenPhone\tGUI state changed from " << m_callState << " to " << newState);
 
+  PwxString token = theEvent.GetString();
+
   wxWindow * newWindow;
   switch (newState) {
     case RingingState :
@@ -2430,9 +2432,9 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
       break;
 
     case ClearingCallState :
-      if (m_activeCall == NULL || PwxString(m_activeCall->GetToken()) != theEvent.GetString()) {
+      if (m_activeCall == NULL || PwxString(m_activeCall->GetToken()) != token) {
         // A call on hold got cleared
-        if (RemoveCallOnHold(PwxString(theEvent.GetString())))
+        if (RemoveCallOnHold(token))
           return;
       }
 
@@ -2444,8 +2446,8 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
     case InCallState :
       if (m_activeCall == NULL) {
         // Retrieve call from hold
-        RemoveCallOnHold(PwxString(theEvent.GetString()));
-        m_activeCall = FindCallWithLock(theEvent.GetString().c_str(), PSafeReference);
+        RemoveCallOnHold(token);
+        m_activeCall = FindCallWithLock(token, PSafeReference);
       }
       newWindow = m_inCallPanel;
       break;
@@ -2491,7 +2493,7 @@ bool MyManager::StartGatekeeper()
     PString gkDesc = m_gatekeeperIdentifier;
     if (!m_gatekeeperIdentifier.IsEmpty() || !m_gatekeeperAddress.IsEmpty())
       gkDesc += "@";
-    gkDesc += m_gatekeeperAddress.c_str();
+    gkDesc += m_gatekeeperAddress;
 
     if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
       LogWindow << "H.323 registration started for " << *h323EP->GetGatekeeper() << endl;
@@ -2712,21 +2714,21 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
 
   if (m_Type == Register) {
     SIPRegister::Params param;
-    param.m_addressOfRecord = m_User.c_str();
-    param.m_registrarAddress = m_Domain.c_str();
-    param.m_contactAddress = m_Contact.c_str();
-    param.m_authID = m_AuthID.c_str();
-    param.m_password = m_Password.c_str();
+    param.m_addressOfRecord = m_User;
+    param.m_registrarAddress = m_Domain;
+    param.m_contactAddress = m_Contact;
+    param.m_authID = m_AuthID;
+    param.m_password = m_Password;
     param.m_expire = m_TimeToLive;
     ok = sipEP.Register(param, m_aor);
   }
   else {
     SIPSubscribe::Params param(EventPackageMapping[m_Type]);
-    param.m_addressOfRecord = m_User.c_str();
-    param.m_agentAddress = m_Domain.c_str();
-    param.m_contactAddress = m_Contact.c_str();
-    param.m_authID = m_AuthID.c_str();
-    param.m_password = m_Password.c_str();
+    param.m_addressOfRecord = m_User;
+    param.m_agentAddress = m_Domain;
+    param.m_contactAddress = m_Contact;
+    param.m_authID = m_AuthID;
+    param.m_password = m_Password;
     param.m_expire = m_TimeToLive;
     ok = sipEP.Subscribe(param, m_aor);
   }
@@ -2801,11 +2803,15 @@ public:
 
   virtual bool Validate(wxWindow *)
   {
+    wxComboBox *control = (wxComboBox *) m_validatorWindow;
+    PwxString size = control->GetValue();
+
     unsigned width, height;
-    if (PVideoFrameInfo::ParseSize(GetWindow()->GetLabel().c_str(), width, height))
+    if (PVideoFrameInfo::ParseSize(size, width, height))
       return true;
 
-    wxMessageBox(wxT("Illegal value for video size."), wxT("Error"), wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Illegal value \"") + size + wxT("\" for video size."),
+                 wxT("Error"), wxCANCEL|wxICON_EXCLAMATION);
     return false;
   }
 };
@@ -3072,7 +3078,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
       }
       if (i >= devices.GetSize()) {
         for (i = 0; i < devices.GetSize(); i++) {
-          if (devices[i].Find(m_LineInterfaceDevice.c_str()) == 0)
+          if (devices[i].Find(m_LineInterfaceDevice) == 0)
             break;
         }
         if (i >= devices.GetSize())
@@ -3124,7 +3130,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(FaxReceiveDirectory, m_manager.m_faxEP->GetDefaultDirectory());
   INIT_FIELD(FaxSpanDSP, m_manager.m_faxEP->GetSpanDSP());
 #else
-  RemoveNotebookPage(this, "Fax");
+  RemoveNotebookPage(this, wxT("Fax"));
 #endif
 
   ////////////////////////////////////////
@@ -3320,7 +3326,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(TraceThreadAddress, (PTrace::GetOptions()&PTrace::ThreadAddress) != 0);
   INIT_FIELD(TraceFileName, m_manager.m_traceFileName);
 #else
-  RemoveNotebookPage(this, "Tracing");
+  RemoveNotebookPage(this, wxT("Tracing"));
 #endif // PTRACING
 }
 
@@ -3336,7 +3342,7 @@ OptionsDialog::~OptionsDialog()
   config->Write(name##Key, m_##name)
 
 #define SAVE_FIELD_STR(name, set) \
-  set(m_##name.ToUTF8()); \
+  set(m_##name); \
   config->Write(name##Key, m_##name)
 
 #define SAVE_FIELD2(name1, name2, set) \
@@ -3400,7 +3406,7 @@ bool OptionsDialog::TransferDataFromWindow()
   PStringArray newInterfaces(m_LocalInterfaces->GetCount());
   bool changed = m_manager.m_LocalInterfaces.GetSize() != newInterfaces.GetSize();
   for (int i = 0; i < newInterfaces.GetSize(); i++) {
-    newInterfaces[i] = (PString)m_LocalInterfaces->GetString(i);
+    newInterfaces[i] = PwxString(m_LocalInterfaces->GetString(i));
     PINDEX oldIndex = m_manager.m_LocalInterfaces.GetValuesIndex(newInterfaces[i]);
     if (oldIndex == P_MAX_INDEX || newInterfaces[i] != m_manager.m_LocalInterfaces[oldIndex])
       changed = true;
@@ -3541,8 +3547,8 @@ bool OptionsDialog::TransferDataFromWindow()
   m_manager.h323EP->SetLocalUserName(m_Username);
   PStringList aliases = m_manager.h323EP->GetAliasNames();
   for (size_t i = 0; i < m_Aliases->GetCount(); i++) {
-    wxString alias = m_Aliases->GetString(i);
-    m_manager.h323EP->AddAliasName(alias.c_str());
+    PwxString alias = m_Aliases->GetString(i);
+    m_manager.h323EP->AddAliasName(alias);
     wxString key;
     key.sprintf(wxT("%u"), i+1);
     config->Write(key, alias);
@@ -3676,7 +3682,7 @@ bool OptionsDialog::TransferDataFromWindow()
   if (m_manager.m_enableTracing && (!m_EnableTracing || m_TraceFileName.empty()))
     PTrace::SetStream(NULL);
   else if (m_EnableTracing && (!m_manager.m_enableTracing || m_manager.m_traceFileName != m_TraceFileName))
-    PTrace::Initialise(m_TraceLevelThreshold, PFilePath(m_TraceFileName.c_str()), traceOptions);
+    PTrace::Initialise(m_TraceLevelThreshold, m_TraceFileName.ToUTF8(), traceOptions);
   else {
     PTrace::SetLevel(m_TraceLevelThreshold);
     PTrace::SetOptions(traceOptions);
@@ -3758,12 +3764,12 @@ void OptionsDialog::SelectedLocalInterface(wxCommandEvent & /*event*/)
 void OptionsDialog::ChangedInterfaceInfo(wxCommandEvent & /*event*/)
 {
   bool enab = true;
-  PString iface = m_InterfaceAddress->GetValue().c_str();
+  PwxString iface = m_InterfaceAddress->GetValue();
   if (iface.IsEmpty())
     enab = false;
   else if (iface != "*") {
-    PIPSocket::Address test(iface);
-    if (!test.IsValid())
+    PIPSocket::Address test;
+    if (!test.FromString(iface))
       enab = false;
   }
 
@@ -3786,7 +3792,7 @@ static const char * const InterfacePrefixes[] = {
 void OptionsDialog::AddInterface(wxCommandEvent & /*event*/)
 {
   int proto = m_InterfaceProtocol->GetSelection();
-  wxString iface = PwxString(InterfacePrefixes[proto]);
+  PwxString iface = InterfacePrefixes[proto];
   iface += m_InterfaceAddress->GetValue();
   if (proto > 0) 
     iface += wxT(":") + m_InterfacePort->GetValue();
@@ -4039,7 +4045,7 @@ void OptionsDialog::ChangedCodecOptionValue(wxCommandEvent & /*event*/)
 
   item.m_col = 0;
   m_codecOptions->GetItem(item);
-  bool ok = media->mediaFormat.SetOptionValue(item.m_text.c_str(), newValue);
+  bool ok = media->mediaFormat.SetOptionValue(PwxString(item.m_text), newValue);
   if (ok) {
     media->dirty = true;
 
