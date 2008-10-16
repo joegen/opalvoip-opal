@@ -1320,7 +1320,12 @@ void MyManager::OnMenuQuit(wxCommandEvent& WXUNUSED(event))
 
 void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 {
+#if wxUSE_UNICODE
   wstringstream text;
+#else
+  stringstream text;
+#endif
+
   text  << PRODUCT_NAME_TEXT " Version " << PProcess::Current().GetVersion() << "\n"
            "\n"
            "Copyright © 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
