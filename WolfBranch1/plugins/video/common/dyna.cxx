@@ -164,7 +164,7 @@ FFMPEGLibrary::FFMPEGLibrary(CodecID codec)
   isLoadedOK = false;
 }
 
-bool FFMPEGLibrary::Load()
+bool FFMPEGLibrary::Load(int ver)
 {
   WaitAndSignal m(processLock);      
   if (IsLoaded())
@@ -225,10 +225,10 @@ bool FFMPEGLibrary::Load()
     }
   }
 
-    if (!GetFunction("register_avcodec", (Function &)Favcodec_register)) {
-      TRACE (1, _codecString << "\tDYNA\tFailed to load register_avcodec");
-      return false;
-    }
+  if (!GetFunction("register_avcodec", (Function &)Favcodec_register)) {
+    TRACE (1, _codecString << "\tDYNA\tFailed to load register_avcodec");
+    return false;
+  }
   
   if (!GetFunction("avcodec_find_encoder", (Function &)Favcodec_find_encoder)) {
     TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_find_encoder");
@@ -267,6 +267,12 @@ bool FFMPEGLibrary::Load()
 
   if (!GetFunction("avcodec_decode_video", (Function &)Favcodec_decode_video)) {
     TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_decode_video");
+    return false;
+  }
+
+  Favcodec_set_dimensions = NULL;
+  if (ver > 0 && !GetFunction("avcodec_set_dimensions", (Function &)Favcodec_set_dimensions)) {
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_set_dimensions");
     return false;
   }
 
@@ -417,6 +423,14 @@ void FFMPEGLibrary::AvcodecFree(void * ptr)
   });
 }
 
+void FFMPEGLibrary::AvSetDimensions(AVCodecContext *s, int width, int height)
+{
+  WITH_ALIGNED_STACK({
+    Favcodec_set_dimensions(s, width, height);
+  });
+}
+  
+
 void FFMPEGLibrary::AvLogSetLevel(int level)
 {
   WITH_ALIGNED_STACK({
@@ -446,3 +460,4 @@ bool FFMPEGLibrary::IsLoaded()
 {
   return isLoadedOK;
 }
+

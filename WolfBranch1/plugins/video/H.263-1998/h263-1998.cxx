@@ -197,8 +197,9 @@ TRACE(1, prefix << "\tEncoder\tInitialising encode for RFC2190");
     _context->debug |= FF_DEBUG_QP;
   }
 
-  SetFrameWidth(CIF_WIDTH);
-  SetFrameHeight(CIF_HEIGHT);
+  _height = CIF_WIDTH; _width = CIF_HEIGHT;
+  SetFrameWidth(_height);
+  SetFrameHeight(_width);
   SetTargetBitrate(256000);
   SetTSTO(31);
   DisableAnnex(D);
@@ -238,7 +239,8 @@ void H263_Base_EncoderContext::SetTargetBitrate (unsigned rate)
 
 void H263_Base_EncoderContext::SetFrameWidth (unsigned width)
 {
-  _context->width  = width;
+  _width = width;
+  FFMPEGLibraryInstance.AvSetDimensions(_context, _width, _height);
 
   _inputFrame->linesize[0] = width;
   _inputFrame->linesize[1] = width / 2;
@@ -248,7 +250,8 @@ void H263_Base_EncoderContext::SetFrameWidth (unsigned width)
 
 void H263_Base_EncoderContext::SetFrameHeight (unsigned height)
 {
-  _context->height = height;
+  _height = height;
+  FFMPEGLibraryInstance.AvSetDimensions(_context, _width, _height);
 }
 
 void H263_Base_EncoderContext::SetTSTO (unsigned tsto)
@@ -485,8 +488,8 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
 
   // if this is the first frame, or the frame size has changed, deal wth it
   if ((_frameCount == 0) || 
-      ((unsigned) _context->width !=  header->width) || 
-      ((unsigned) _context->height != header->height)) {
+      ((unsigned) _width !=  header->width) || 
+      ((unsigned) _height != header->height)) {
 
     TRACE(4,  prefix << "\tEncoder\tFirst frame received or resolution has changed - reopening codec");
     CloseCodec();
@@ -499,7 +502,7 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
   }
   ++_frameCount;
 
-  int size = _context->width * _context->height;
+  int size = header->width * header->height;
   int frameSize = (size * 3) >> 1;
  
   // we need FF_INPUT_BUFFER_PADDING_SIZE allocated bytes after the YVU420P image for the encoder
@@ -624,8 +627,8 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
 
   // if this is the first frame, or the frame size has changed, deal wth it
   if ((_frameCount == 0) || 
-      ((unsigned) _context->width !=  header->width) || 
-      ((unsigned) _context->height != header->height)) {
+      ((unsigned) _width !=  header->width) || 
+      ((unsigned) _height != header->height)) {
 
     TRACE(4,  prefix << "\tEncoder\tFirst frame received or resolution has changed - reopening codec");
     CloseCodec();
@@ -637,7 +640,7 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
     }
   }
 
-  int size = _context->width * _context->height;
+  int size = header->width * header->height;
   int frameSize = (size * 3) >> 1;
  
   // we need FF_INPUT_BUFFER_PADDING_SIZE allocated bytes after the YVU420P image for the encoder
@@ -1765,7 +1768,7 @@ extern "C" {
       Trace::SetLevelUserPlane(0);
     }
 
-    if (!FFMPEGLibraryInstance.Load()) {
+    if (!FFMPEGLibraryInstance.Load(1)) {
       *count = 0;
       TRACE(1, "H.263\tCodec\tDisabled");
       return NULL;
