@@ -339,13 +339,13 @@ class TextCtrlChannel : public PChannel
       PINDEX len        /// Number of bytes to write.
     ) {
       if (m_frame == NULL)
-        return PFalse;
+        return false;
 
       wxCommandEvent theEvent(wxEvtLogMessage, ID_LOG_MESSAGE);
       theEvent.SetEventObject(m_frame);
-      theEvent.SetString(wxString((const char *)buf, wxMBConvUTF8(), (size_t)len));
+      theEvent.SetString(wxString::FromUTF8((const char *)buf, (size_t)len));
       m_frame->GetEventHandler()->AddPendingEvent(theEvent);
-      return PTrue;
+      return true;
     }
 
     void SetFrame(
@@ -655,11 +655,11 @@ bool MyManager::Initialise()
 
   OpalProductInfo productInfo = GetProductInfo();
   if (config->Read(VendorNameKey, &str) && !str.IsEmpty())
-    productInfo.vendor = str.mb_str(wxConvUTF8);
+    productInfo.vendor = str.ToUTF8();
   if (config->Read(ProductNameKey, &str) && !str.IsEmpty())
-    productInfo.name = str.mb_str(wxConvUTF8);
+    productInfo.name = str.ToUTF8();
   if (config->Read(ProductVersionKey, &str) && !str.IsEmpty())
-    productInfo.version = str.mb_str(wxConvUTF8);
+    productInfo.version = str.ToUTF8();
   SetProductInfo(productInfo);
 
 #if OPAL_IVR
@@ -2193,7 +2193,7 @@ void MyManager::OnStartRecording(wxCommandEvent & /*event*/)
                    wxT("*.wav"),
                    wxFD_SAVE);
   if (dlg.ShowModal() == wxID_OK && m_activeCall != NULL) {
-    m_lastRecordFile = PFilePath(dlg.GetPath().mb_str(wxConvUTF8));
+    m_lastRecordFile = dlg.GetPath().ToUTF8();
     m_activeCall->StartRecording(m_lastRecordFile);
   }
 }
@@ -2208,7 +2208,7 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 
 void MyManager::OnNewCodec(wxCommandEvent& theEvent)
 {
-  OpalMediaFormat mediaFormat(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel().mb_str(wxConvUTF8));
+  OpalMediaFormat mediaFormat(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel().ToUTF8());
   if (mediaFormat.IsValid()) {
     PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
     if (connection != NULL) {
@@ -2277,13 +2277,13 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
   PTRACE(3, "OpalPhone\tReadUserInput from " << connection);
 
   connection.PromptUserInput(PTrue);
-  PString digit = connection.GetUserInput(firstDigitTimeout);
+  PwxString digit = connection.GetUserInput(firstDigitTimeout);
   connection.PromptUserInput(PFalse);
 
   if (digit == "#")
     return digit;
 
-  PString input;
+  PwxString input;
   while (!digit.IsEmpty()) {
     input += digit;
 
@@ -2297,15 +2297,15 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
 
       size_t specialCharPos = item.m_text.find_first_of(wxT("-+"));
       if (specialCharPos == wxString::npos) {
-        if (PwxString(input)  != item.m_text)
+        if (input  != item.m_text)
           continue;
       }
       else {
-        if (digit != "#" || strncmp(item.m_text.mb_str(wxConvUTF8), input, specialCharPos) != 0)
+        if (digit != "#" || item.m_text.compare(0, specialCharPos, input) != 0)
           continue;
         if (item.m_text[specialCharPos] == '-')
-          input.Delete(0, specialCharPos);    // Using '-' so strip the prefix off
-        input.Delete(input.GetLength()-1, 1); // Also get rid of the '#' at the end
+          input.Remove(0, specialCharPos);    // Using '-' so strip the prefix off
+        input.Remove(input.length()-1, 1); // Also get rid of the '#' at the end
       }
 
       item.m_col = e_AddressColumn;
@@ -3120,9 +3120,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   ////////////////////////////////////////
   // Fax fields
 #if OPAL_FAX
-  INIT_FIELD(FaxStationIdentifier, (const char *)m_manager.m_faxEP->GetDefaultDisplayName());
-  INIT_FIELD(FaxReceiveDirectory, (const char *)m_manager.m_faxEP->GetDefaultDirectory());
-  INIT_FIELD(FaxSpanDSP, (const char *)m_manager.m_faxEP->GetSpanDSP());
+  INIT_FIELD(FaxStationIdentifier, m_manager.m_faxEP->GetDefaultDisplayName());
+  INIT_FIELD(FaxReceiveDirectory, m_manager.m_faxEP->GetDefaultDirectory());
+  INIT_FIELD(FaxSpanDSP, m_manager.m_faxEP->GetSpanDSP());
 #else
   RemoveNotebookPage(this, "Fax");
 #endif
@@ -3336,7 +3336,7 @@ OptionsDialog::~OptionsDialog()
   config->Write(name##Key, m_##name)
 
 #define SAVE_FIELD_STR(name, set) \
-  set(m_##name.mb_str(wxConvUTF8)); \
+  set(m_##name.ToUTF8()); \
   config->Write(name##Key, m_##name)
 
 #define SAVE_FIELD2(name1, name2, set) \
@@ -3406,7 +3406,7 @@ bool OptionsDialog::TransferDataFromWindow()
       changed = true;
     wxString key;
     key.sprintf(wxT("%u"), i+1);
-    config->Write(key, (const char *)newInterfaces[i]);
+    config->Write(key, PwxString(newInterfaces[i]));
   }
   if (changed) {
     m_manager.m_LocalInterfaces = newInterfaces;
@@ -3492,7 +3492,7 @@ bool OptionsDialog::TransferDataFromWindow()
       wxString groupName;
       groupName.sprintf(wxT("%s/%04u"), CodecsGroup, mm->preferenceOrder);
       config->SetPath(groupName);
-      config->Write(CodecNameKey, (const char *)mm->mediaFormat);
+      config->Write(CodecNameKey, PwxString(mm->mediaFormat));
       for (PINDEX i = 0; i < mm->mediaFormat.GetOptionCount(); i++) {
         const OpalMediaOption & option = mm->mediaFormat.GetOption(i);
         if (!option.IsReadOnly())
@@ -4348,7 +4348,7 @@ void OptionsDialog::AddRouteTableEntry(OpalManager::RouteEntry entry)
   PwxString source, device, pattern;
   if (colon >= tab) {
     source = AllRouteSources;
-    device = (const char *)expression(colon+1, tab-1);
+    device = expression(colon+1, tab-1);
     pattern = expression.Mid(tab+1);
   }
   else {
