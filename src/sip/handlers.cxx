@@ -257,6 +257,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
   if (!retryLater) {
     // Restoring or first time, try every interface
     if (s == Restoring || transport->GetInterface().IsEmpty()) {
+      PWaitAndSignal mutex(transport->GetWriteMutex());
       if(transport->WriteConnect(WriteSIPHandler, this))
         return true;
     }
