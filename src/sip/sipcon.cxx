@@ -1056,6 +1056,8 @@ PBoolean SIPConnection::SetUpConnection()
     return PFalse;
   }
 
+  PWaitAndSignal mutex(transport->GetWriteMutex());
+
   if (!transport->WriteConnect(WriteINVITE, this)) {
     PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
     Release(EndedByTransportFail);
