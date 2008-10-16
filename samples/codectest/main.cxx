@@ -75,6 +75,8 @@ void CodecTest::Main()
              "H:"
              "T-statistics."
              "C-rate-control."
+             "-count:"
+             "-noprompt."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -116,6 +118,8 @@ void CodecTest::Main()
               "  -c --crop               : crop rather than scale if resizing\n"
               "  -T --statistics         : output statistics files\n"
               "  -C --rate-control       : enable rate control\n"
+              "  --count n               : set number of frames to transcode\n"
+              "  --noprompt              : do not prompt for commands, i.e. exit when input closes\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
               "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -173,77 +177,84 @@ void CodecTest::Main()
   video.Resume();
 
   // command line
-  for (;;) {
+  if (args.HasOption("noprompt")) {
+    cout << "Waiting for finish" << endl;
+    audio.WaitForTermination();
+    video.WaitForTermination();
+  }
+  else {
+    for (;;) {
 
-    // display the prompt
-    cout << "codectest> " << flush;
-    PCaselessString cmd;
-    cin >> cmd;
+      // display the prompt
+      cout << "codectest> " << flush;
+      PCaselessString cmd;
+      cin >> cmd;
 
-    if (cmd == "q" || cmd == "x" || cmd == "quit" || cmd == "exit")
-      break;
+      if (cmd == "q" || cmd == "x" || cmd == "quit" || cmd == "exit")
+        break;
 
-    if (cmd.NumCompare("n") == EqualTo) {
-      int steps = cmd.Mid(1).AsUnsigned();
-      do {
-        video.frameWait.Signal();
-      } while (--steps > 0);
-      continue;
-    }
+      if (cmd.NumCompare("n") == EqualTo) {
+        int steps = cmd.Mid(1).AsUnsigned();
+        do {
+          video.frameWait.Signal();
+        } while (--steps > 0);
+        continue;
+      }
 
-    if (cmd == "vfu") {
-      if (video.encoder == NULL)
-        cout << "\nNo video encoder running!" << endl;
-      else
-        video.encoder->ExecuteCommand(OpalVideoUpdatePicture());
-      continue;
-    }
+      if (cmd == "vfu") {
+        if (video.encoder == NULL)
+          cout << "\nNo video encoder running!" << endl;
+        else
+          video.encoder->ExecuteCommand(OpalVideoUpdatePicture());
+        continue;
+      }
 
-    if (cmd == "fg") {
-      if (video.grabber == NULL)
-        cout << "\nNo video grabber running!" << endl;
-      else if (!video.grabber->SetVFlipState(!video.grabber->GetVFlipState()))
-        cout << "\nCould not toggle Vflip state of video grabber device" << endl;
-      continue;
-    }
+      if (cmd == "fg") {
+        if (video.grabber == NULL)
+          cout << "\nNo video grabber running!" << endl;
+        else if (!video.grabber->SetVFlipState(!video.grabber->GetVFlipState()))
+          cout << "\nCould not toggle Vflip state of video grabber device" << endl;
+        continue;
+      }
 
-    if (cmd == "fd") {
-      if (video.display == NULL)
-        cout << "\nNo video display running!" << endl;
-      else if (!video.display->SetVFlipState(!video.display->GetVFlipState()))
-        cout << "\nCould not toggle Vflip state of video display device" << endl;
-      continue;
-    }
+      if (cmd == "fd") {
+        if (video.display == NULL)
+          cout << "\nNo video display running!" << endl;
+        else if (!video.display->SetVFlipState(!video.display->GetVFlipState()))
+          cout << "\nCould not toggle Vflip state of video display device" << endl;
+        continue;
+      }
 
-    unsigned width, height;
-    if (PVideoFrameInfo::ParseSize(cmd, width, height)) {
-      video.pause.Signal();
-      if (video.grabber == NULL)
-        cout << "\nNo video grabber running!" << endl;
-      else if (!video.grabber->SetFrameSizeConverter(width, height))
-        cout << "Video grabber device could not be set to size " << width << 'x' << height << endl;
-      if (video.display == NULL)
-        cout << "\nNo video display running!" << endl;
-      else if (!video.display->SetFrameSizeConverter(width, height))
-        cout << "Video display device could not be set to size " << width << 'x' << height << endl;
-      video.resume.Signal();
-      continue;
-    }
+      unsigned width, height;
+      if (PVideoFrameInfo::ParseSize(cmd, width, height)) {
+        video.pause.Signal();
+        if (video.grabber == NULL)
+          cout << "\nNo video grabber running!" << endl;
+        else if (!video.grabber->SetFrameSizeConverter(width, height))
+          cout << "Video grabber device could not be set to size " << width << 'x' << height << endl;
+        if (video.display == NULL)
+          cout << "\nNo video display running!" << endl;
+        else if (!video.display->SetFrameSizeConverter(width, height))
+          cout << "Video display device could not be set to size " << width << 'x' << height << endl;
+        video.resume.Signal();
+        continue;
+      }
 
-    cout << "Select:\n"
-            "  vfu    : Video Fast Update (force I-Frame)\n"
-            "  fg     : Flip video grabber top to bottom\n"
-            "  fd     : Flip video display top to bottom\n"
-            "  qcif   : Set size of grab & display to qcif\n"
-            "  cif    : Set size of grab & display to cif\n"
-            "  WxH    : Set size of grab & display W by H\n"
-            "  N      : Next video frame in sinlge step mode\n"
-            "  Q or X : Exit program\n" << endl;
-  } // end for
+      cout << "Select:\n"
+              "  vfu    : Video Fast Update (force I-Frame)\n"
+              "  fg     : Flip video grabber top to bottom\n"
+              "  fd     : Flip video display top to bottom\n"
+              "  qcif   : Set size of grab & display to qcif\n"
+              "  cif    : Set size of grab & display to cif\n"
+              "  WxH    : Set size of grab & display W by H\n"
+              "  N      : Next video frame in sinlge step mode\n"
+              "  Q or X : Exit program\n" << endl;
+    } // end for
 
-  cout << "Exiting." << endl;
-  audio.Stop();
-  video.Stop();
+    cout << "Exiting." << endl;
+    audio.Stop();
+    video.Stop();
+  }
 }
 
 
@@ -253,6 +264,11 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
     markerHandling = SuppressMarkers;
   else if (args.HasOption('M'))
     markerHandling = ForceMarkers;
+
+  framesToTranscode = -1;
+  PString s = args.GetOptionString("count");
+  if (!s.IsEmpty())
+    framesToTranscode = s.AsInteger();
 
   for (PINDEX i = 0; i < args.GetCount(); i++) {
     OpalMediaFormat mediaFormat = args[i];
@@ -682,7 +698,7 @@ void TranscoderThread::Main()
   bool oldDecState = true;
 
   PTimeInterval startTick = PTimer::Tick();
-  while (running) {
+  while (running && framesToTranscode < 0 || (framesToTranscode-- > 0)) {
 
     RTP_DataFrame srcFrame;
     bool state = Read(srcFrame);
