@@ -133,6 +133,7 @@ class H263_Base_EncoderContext
     AVFrame        *_inputFrame;
 
     int _frameCount;
+    int _width, _height;
     CriticalSection _mutex;
     const char * prefix;
 };
