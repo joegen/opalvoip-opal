@@ -49,15 +49,15 @@
 
 OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
   : OpalEndPoint(mgr, prefix, CanTerminateCall),
-    defaultVXML("<?xml version=\"1.0\"?>"
-                "<vxml version=\"1.0\">"
-                  "<form id=\"root\">"
-                    "<audio src=\"welcome.wav\">"
-                      "This is the OPAL, V X M L test program, please speak after the tone."
-                    "</audio>"
-                    "<record name=\"msg\" beep=\"true\" dtmfterm=\"true\" dest=\"recording.wav\" maxtime=\"10s\"/>"
-                  "</form>"
-                "</vxml>")
+    defaultVXML("<?xml version=\"1.0\"?>\n"
+                "<vxml version=\"1.0\">\n"
+                "  <form id=\"root\">\n"
+                "    <audio src=\"welcome.wav\">\n"
+                "      This is the OPAL, V X M L test program, please speak after the tone.\n"
+                "    </audio>\n"
+                "    <record name=\"msg\" beep=\"true\" dtmfterm=\"true\" dest=\"recording.wav\" maxtime=\"10s\"/>\n"
+                "  </form>\n"
+                "</vxml>\n")
 {
   nextTokenNumber = 1;
 
