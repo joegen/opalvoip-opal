@@ -724,7 +724,10 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
                                           PBoolean & autoDelete)
 {
   // Donot use our one and only SDL window, if we need it for the video output.
-  if (preview && videoPreviewDevice.driverName == "SDL" && videoOutputDevice.driverName == "SDL")
+  if (preview && (
+      (videoPreviewDevice.driverName == "SDL" && videoOutputDevice.driverName == "SDL") ||
+      (videoPreviewDevice.deviceName == "SDL" && videoOutputDevice.deviceName == "SDL")
+      ))
     return PFalse;
 
   // Make copy so we can adjust the size
