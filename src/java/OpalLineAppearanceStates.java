@@ -14,6 +14,8 @@ public final class OpalLineAppearanceStates {
   public final static OpalLineAppearanceStates OpalLineProceeding = new OpalLineAppearanceStates("OpalLineProceeding");
   public final static OpalLineAppearanceStates OpalLineRinging = new OpalLineAppearanceStates("OpalLineRinging");
   public final static OpalLineAppearanceStates OpalLineConnected = new OpalLineAppearanceStates("OpalLineConnected");
+  public final static OpalLineAppearanceStates OpalLineSubcribed = new OpalLineAppearanceStates("OpalLineSubcribed");
+  public final static OpalLineAppearanceStates OpalLineUnsubcribed = new OpalLineAppearanceStates("OpalLineUnsubcribed");
 
   public final int swigValue() {
     return swigValue;
@@ -49,7 +51,7 @@ public final class OpalLineAppearanceStates {
     swigNext = this.swigValue+1;
   }
 
-  private static OpalLineAppearanceStates[] swigValues = { OpalLineIdle, OpalLineTrying, OpalLineProceeding, OpalLineRinging, OpalLineConnected };
+  private static OpalLineAppearanceStates[] swigValues = { OpalLineIdle, OpalLineTrying, OpalLineProceeding, OpalLineRinging, OpalLineConnected, OpalLineSubcribed, OpalLineUnsubcribed };
   private static int swigNext = 0;
   private final int swigValue;
   private final String swigName;

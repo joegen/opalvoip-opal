@@ -227,6 +227,7 @@ private:
 
   SIPSubscribe::Params m_parameters;
   SIPDialogContext     m_dialog;
+  bool                 m_unconfirmed;
 };
 
 

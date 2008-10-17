@@ -42,6 +42,17 @@ extern "C" {
     This file contains an API for accessing the OPAL system via "C" language interface.
     A contrained set of functions are declared which allows the library to be easily
     "late bound" using Windows LoadLibrary() or Unix dlopen() at run time.
+
+    You may look at the sample code in opal/samples/c_api/main.c for an example of how
+    to do late binding.
+
+    Late binding also allows for easier integration of OPAL fucntionality to
+    interpreted languages such as Java, Perl etc. Systems like "swig" may be used to
+    produce interface files for such languages.
+
+    To make the above easier, there are only four functions: OpalInitialise(),
+    OpalShutDown(), OpalGetMessage() and OpalSendMessage(). All commands to OPAL and
+    indications back from OPAL are done through the latter two functions.
   */
 
 #ifdef _WIN32
@@ -55,7 +66,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 12
+#define OPAL_C_API_VERSION 13
 
 
 ///////////////////////////////////////
@@ -91,6 +102,22 @@ typedef struct OpalMessage OpalMessage;
     If NULL is returned then an initialisation error occurred. This can only
     really occur if the user specifies prefixes which are not supported by
     the library.
+
+    Example:
+      OpalHandle hOPAL;
+      unsigned   version;
+
+      version = OPAL_C_API_VERSION;
+      if ((hOPAL = OpalInitialise(&version,
+                                  OPAL_PREFIX_H323  " "
+                                  OPAL_PREFIX_SIP   " "
+                                  OPAL_PREFIX_IAX2  " "
+                                  OPAL_PREFIX_PCSS
+                                  " TraceLevel=4")) == NULL) {
+        fputs("Could not initialise OPAL\n", stderr);
+        return false;
+      }
+
   */
 OpalHandle OPAL_EXPORT OpalInitialise(unsigned * version, const char * options);
 
@@ -109,6 +136,9 @@ typedef OpalHandle (OPAL_EXPORT *OpalInitialiseFunction)(unsigned * version, con
 
 /** Shut down and clean up all resource used by the OPAL system. The parameter
     must be the handle returned by OpalInitialise().
+
+    Example:
+      OpalShutDown(hOPAL);
   */
 void OPAL_EXPORT OpalShutDown(OpalHandle opal);
 
@@ -132,8 +162,32 @@ typedef void (OPAL_EXPORT *OpalShutDownFunction)(OpalHandle opal);
 
     The returned message must be disposed of by a call to OpalFreeMessage().
 
+    The OPAL system will serialise all messages returned from this function to
+    avoid any multi-threading issues. If the application wishes to avoid even
+    this small delay, there is a callback function that may be configured that
+    is not thread safe but may be used to get the messages as soon as they are
+    generated. See OpalCmdSetGeneralParameters.
+
     Note if OpalShutDown() is called from a different thread then this function
     will break from its block and return NULL.
+
+    Example:
+      OpalMessage * message;
+        
+      while ((message = OpalGetMessage(hOPAL, timeout)) != NULL) {
+        switch (message->m_type) {
+          case OpalIndRegistration :
+            HandleRegistration(message);
+            break;
+          case OpalIndIncomingCall :
+            Ring(message);
+            break;
+          case OpalIndCallCleared :
+            HandleHangUp(message);
+            break;
+        }
+        FreeMessageFunction(message);
+      }
   */
 OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle opal, unsigned timeout);
 
@@ -171,6 +225,22 @@ typedef OpalMessage * (OPAL_EXPORT *OpalGetMessageFunction)(OpalHandle opal, uns
     A NULL is only returned if the either OpalHandle or OpalMessage parameters is NULL.
 
     The returned message must be disposed of by a call to OpalFreeMessage().
+
+    Example:
+      void SendCommand(OpalMessage * command)
+      {
+        OpalMessage * response;
+        if ((response = OpalSendMessage(hOPAL, command)) == NULL) {
+          puts("OPAL not initialised.");
+        else if (response->m_type != OpalIndCommandError)
+          HandleResponse(response);
+        else if (response->m_param.m_commandError == NULL || *response->m_param.m_commandError == '\0')
+          puts("OPAL error.");
+        else
+          printf("OPAL error: %s\n", response->m_param.m_commandError);
+
+        FreeMessageFunction(response);
+      }
   */
 OpalMessage * OPAL_EXPORT OpalSendMessage(OpalHandle opal, const OpalMessage * message);
 
@@ -378,6 +448,16 @@ typedef enum OpalMediaDataType {
 
 /**General parameters for the OpalCmdSetGeneralParameters command.
    This is only passed to and returned from the OpalSendMessage() function.
+
+   Example:
+      OpalMessage   command;
+      OpalMessage * response;
+
+      memset(&command, 0, sizeof(command));
+      command.m_type = OpalCmdSetGeneralParameters;
+      command.m_param.m_general.m_stunServer = "stun.voxgratia.org";
+      command.m_param.m_general.m_mediaMask = "RFC4175*";
+      response = OpalSendMessage(hOPAL, &command);
   */
 typedef struct OpalParamGeneral {
   const char * m_audioRecordDevice;   /**< Audio recording device name */
@@ -485,6 +565,17 @@ typedef struct OpalProductDescription {
 
 /**Protocol parameters for the OpalCmdSetProtocolParameters command.
    This is only passed to and returned from the OpalSendMessage() function.
+
+   Example:
+      OpalMessage   command;
+      OpalMessage * response;
+
+      memset(&command, 0, sizeof(command));
+      command.m_type = OpalCmdSetProtocolParameters;
+      command.m_param.m_protocol.m_userName = "robertj";
+      command.m_param.m_protocol.m_displayName = "Robert Jongbloed";
+      command.m_param.m_protocol.m_interfaceAddresses = "*";
+      response = OpalSendMessage(hOPAL, &command);
   */
 typedef struct OpalParamProtocol {
   const char * m_prefix;              /**< Protocol prefix for parameters, e.g. "h323" or "sip". If this is
@@ -504,8 +595,41 @@ typedef struct OpalParamProtocol {
 } OpalParamProtocol;
 
 
+#define OPAL_MWI_EVENT_PACKAGE             "message-summary"
+#define OPAL_LINE_APPEARANCE_EVENT_PACKAGE "dialog;sla;ma"
+
 /**Registration parameters for the OpalCmdRegistration command.
    This is only passed to and returned from the OpalSendMessage() function.
+
+   Example:
+      OpalMessage   command;
+      OpalMessage * response;
+
+      memset(&command, 0, sizeof(command));
+      command.m_type = OpalCmdRegistration;
+      command.m_param.m_registrationInfo.m_protocol = "h323";
+      command.m_param.m_registrationInfo.m_identifier = "31415";
+      command.m_param.m_registrationInfo.m_hostName = gk.voxgratia.org;
+      command.m_param.m_registrationInfo.m_password = "secret";
+      command.m_param.m_registrationInfo.m_timeToLive = 300;
+      response = OpalSendMessage(hOPAL, &command);
+
+      memset(&command, 0, sizeof(command));
+      command.m_type = OpalCmdRegistration;
+      command.m_param.m_registrationInfo.m_protocol = "sip";
+      command.m_param.m_registrationInfo.m_identifier = "rjongbloed@ekiga.net";
+      command.m_param.m_registrationInfo.m_password = "secret";
+      command.m_param.m_registrationInfo.m_timeToLive = 300;
+      response = OpalSendMessage(hOPAL, &command);
+
+      memset(&command, 0, sizeof(command));
+      command.m_type = OpalCmdRegistration;
+      command.m_param.m_registrationInfo.m_protocol = "sip";
+      command.m_param.m_registrationInfo.m_identifier = "1501@pbx.local";
+      command.m_param.m_registrationInfo.m_hostName = "1502@pbx.local";
+      command.m_param.m_registrationInfo.m_eventPackage = OPAL_LINE_APPEARANCE_EVENT_PACKAGE;
+      command.m_param.m_registrationInfo.m_timeToLive = 300;
+      response = OpalSendMessage(hOPAL, &command);
   */
 typedef struct OpalParamRegistration {
   const char * m_protocol;      /**< Protocol prefix for registration. Currently must be "h323" or
@@ -513,12 +637,13 @@ typedef struct OpalParamRegistration {
   const char * m_identifier;    /**< Identifier for name to be registered at server. If NULL
                                      or empty then the value provided in the OpalParamProtocol::m_userName
                                      field of the OpalCmdSetProtocolParameters command is used. Note
-                                     that for SIP the value will have "@" and the
+                                     that for SIP the default value will have "@" and the
                                      OpalParamRegistration::m_hostName field apepnded to it to create
                                      and Address-Of_Record. */
   const char * m_hostName;      /**< Host or domain name for server. For SIP this cannot be NULL.
                                      For H.323 a NULL value indicates that a broadcast discovery is
-                                     be performed. */
+                                     be performed. If, for SIP, this contains an "@" and a user part
+                                     then a "third party" registration is performed. */
   const char * m_authUserName;  /**< User name for authentication. */
   const char * m_password;      ///< Password for authentication with server.
   const char * m_adminEntity;   /**< Identification of the administrative entity. For H.323 this will
@@ -529,11 +654,14 @@ typedef struct OpalParamRegistration {
   unsigned     m_restoreTime;   /**< Time in seconds between attempts to restore a registration after
                                      registrar/gatekeeper has gone offline. If zero then a default
                                      value is used. */
-  unsigned     m_messageWaiting;/**< Time in seconds for Message Waiting subscription time to live. If
-                                     non-zero then a subscription is attempted with the same server we
-                                     are registering with. If the subscription is successful, then the
-                                     OpalIndMessageWaiting indication is sent whenever the message
-                                     waiting state changes. If zero then no subscription is made. */
+  const char * m_eventPackage;  /**< If non-NULL then this indicates that a subscription is made
+                                     rather than a registration. The string represents the particular
+                                     event package being subscribed too.
+                                     A value of OPAL_MWI_EVENT_PACKAGE will cause an
+                                     OpalIndMessageWaiting to be sent.
+                                     A value of OPAL_LINE_APPEARANCE_EVENT_PACKAGE will cause the
+                                     OpalIndLineAppearance to be sent.
+                                     Other values are currently not supported. */
 } OpalParamRegistration;
 
 
@@ -583,6 +711,28 @@ typedef struct OpalStatusRegistration {
 
    For OpalIndAlerting and OpalIndEstablished indications the three fields are set
    to the data for the call in progress.
+
+   Example:
+      OpalMessage   command;
+      OpalMessage * response;
+
+      memset(&command, 0, sizeof(command));
+      command.m_type = OpalCmdSetUpCall;
+      command.m_param.m_callSetUp.m_partyB = "h323:10.0.1.11";
+      response = OpalSendMessage(hOPAL, &command);
+
+      memset(&command, 0, sizeof(command));
+      command.m_type = OpalCmdSetUpCall;
+      command.m_param.m_callSetUp.m_partyA = "pots:LINE1";
+      command.m_param.m_callSetUp.m_partyB = "sip:10.0.1.11";
+      response = OpalSendMessage(hOPAL, &command);
+      callToken = strdup(response->m_param.m_callSetUp.m_callToken);
+
+      memset(&command, 0, sizeof(command));
+      command.m_type = OpalCmdTransferCall;
+      command.m_param.m_callSetUp.m_callToken = callToken;
+      command.m_param.m_callSetUp.m_partyB = "sip:10.0.1.12";
+      response = OpalSendMessage(hOPAL, &command);
   */
 typedef struct OpalParamSetUpCall {
   const char * m_partyA;      /**< A-Party for call.
@@ -722,7 +872,9 @@ typedef enum OpalLineAppearanceStates {
   OpalLineTrying,     /**< Line has been siezed. */
   OpalLineProceeding, /**< Line is trying to make a call. */
   OpalLineRinging,    /**< Line is ringing. */
-  OpalLineConnected   /**< Line is connected. */
+  OpalLineConnected,  /**< Line is connected. */
+  OpalLineSubcribed,  /**< Line appearance subscription successful. */
+  OpalLineUnsubcribed /**< Line appearance unsubscription successful. */
 } OpalLineAppearanceStates;
 
 

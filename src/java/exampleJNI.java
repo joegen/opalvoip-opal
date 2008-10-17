@@ -121,6 +121,8 @@ class exampleJNI {
   public final static native String OpalParamProtocol_m_interfaceAddresses_get(long jarg1, OpalParamProtocol jarg1_);
   public final static native long new_OpalParamProtocol();
   public final static native void delete_OpalParamProtocol(long jarg1);
+  public final static native String OPAL_MWI_EVENT_PACKAGE_get();
+  public final static native String OPAL_LINE_APPEARANCE_EVENT_PACKAGE_get();
   public final static native void OpalParamRegistration_m_protocol_set(long jarg1, OpalParamRegistration jarg1_, String jarg2);
   public final static native String OpalParamRegistration_m_protocol_get(long jarg1, OpalParamRegistration jarg1_);
   public final static native void OpalParamRegistration_m_identifier_set(long jarg1, OpalParamRegistration jarg1_, String jarg2);
@@ -137,8 +139,8 @@ class exampleJNI {
   public final static native long OpalParamRegistration_m_timeToLive_get(long jarg1, OpalParamRegistration jarg1_);
   public final static native void OpalParamRegistration_m_restoreTime_set(long jarg1, OpalParamRegistration jarg1_, long jarg2);
   public final static native long OpalParamRegistration_m_restoreTime_get(long jarg1, OpalParamRegistration jarg1_);
-  public final static native void OpalParamRegistration_m_messageWaiting_set(long jarg1, OpalParamRegistration jarg1_, long jarg2);
-  public final static native long OpalParamRegistration_m_messageWaiting_get(long jarg1, OpalParamRegistration jarg1_);
+  public final static native void OpalParamRegistration_m_eventPackage_set(long jarg1, OpalParamRegistration jarg1_, String jarg2);
+  public final static native String OpalParamRegistration_m_eventPackage_get(long jarg1, OpalParamRegistration jarg1_);
   public final static native long new_OpalParamRegistration();
   public final static native void delete_OpalParamRegistration(long jarg1);
   public final static native void OpalStatusRegistration_m_protocol_set(long jarg1, OpalStatusRegistration jarg1_, String jarg2);

@@ -631,6 +631,7 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
                params.m_expire,
                params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
   , m_parameters(params)
+  , m_unconfirmed(true)
 {
   // Put possibly adjusted value back
   m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
@@ -700,6 +701,10 @@ void SIPSubscribeHandler::SendStatus(SIP_PDU::StatusCodes code)
       break;
 
     case Subscribed :
+      if (m_unconfirmed)
+        endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, GetAddressOfRecord(), true, false, code);
+      // Do next state
+
     case Refreshing :
       endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, GetAddressOfRecord(), true, true, code);
       break;
@@ -742,7 +747,9 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
 
   response.GetMIME().GetProductInfo(m_productInfo);
 
-  SendStatus(SIP_PDU::Successful_OK);
+  if (GetState() == Unsubscribing)
+    SendStatus(SIP_PDU::Successful_OK);
+
   SIPHandler::OnReceivedOK(transaction, response);
 }
 
@@ -751,6 +758,11 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 {
   if (PAssertNULL(m_transport) == NULL)
     return false;
+
+  if (m_unconfirmed) {
+    SendStatus(SIP_PDU::Successful_OK);
+    m_unconfirmed = false;
+  }
 
   // If we received a NOTIFY before
   if (m_dialog.IsDuplicateCSeq(request.GetMIME().GetCSeqIndex())) {
@@ -961,40 +973,36 @@ class SIPDialogEventPackageHandler : public SIPEventPackageHandler
     if (rootElement == NULL || rootElement->GetName() != "dialog-info")
       return false;
 
-    PString entity = rootElement->GetAttribute("entity");
+    SIPDialogNotification info(rootElement->GetAttribute("entity"));
 
     PXMLElement * dialogElement = rootElement->GetElement("dialog");
-    if (dialogElement == NULL || entity.IsEmpty()) {
-      PTRACE(3, "SIP\tEmpty dialog event received.");
-      return true; // OK just empty
-    }
+    if (dialogElement != NULL && !info.m_entity.IsEmpty()) {
+      info.m_callId = dialogElement->GetAttribute("call-id");
+      info.m_local.m_dialogTag = dialogElement->GetAttribute("local-tag");
+      info.m_remote.m_dialogTag = dialogElement->GetAttribute("remote-tag");
 
-    SIPDialogNotification info(entity);
-    info.m_callId = dialogElement->GetAttribute("call-id");
-    info.m_local.m_dialogTag = dialogElement->GetAttribute("local-tag");
-    info.m_remote.m_dialogTag = dialogElement->GetAttribute("remote-tag");
+      PXMLElement * stateElement = dialogElement->GetElement("state");
+      if (stateElement == NULL)
+        info.m_state = SIPDialogNotification::Terminated;
+      else {
+        PCaselessString str = stateElement->GetData();
+        for (info.m_state = SIPDialogNotification::LastState; info.m_state > SIPDialogNotification::FirstState; --info.m_state) {
+          if (str == info.GetStateName())
+            break;
+        }
 
-    PXMLElement * stateElement = dialogElement->GetElement("state");
-    if (stateElement == NULL)
-      info.m_state = SIPDialogNotification::Terminated;
-    else {
-      PCaselessString str = stateElement->GetData();
-      for (info.m_state = SIPDialogNotification::LastState; info.m_state > SIPDialogNotification::FirstState; --info.m_state) {
-        if (str == info.GetStateName())
-          break;
+        str = stateElement->GetAttribute("event");
+        for (info.m_eventType = SIPDialogNotification::LastEvent; info.m_eventType >= SIPDialogNotification::FirstState; --info.m_eventType) {
+          if (str == info.GetEventName())
+            break;
+        }
+
+        info.m_eventCode = stateElement->GetAttribute("code").AsUnsigned();
       }
 
-      str = stateElement->GetAttribute("event");
-      for (info.m_eventType = SIPDialogNotification::LastEvent; info.m_eventType >= SIPDialogNotification::FirstState; --info.m_eventType) {
-        if (str == info.GetEventName())
-          break;
-      }
-
-      info.m_eventCode = stateElement->GetAttribute("code").AsUnsigned();
+      ParseParticipant(dialogElement->GetElement("local"), info.m_local);
+      ParseParticipant(dialogElement->GetElement("remote"), info.m_remote);
     }
-
-    ParseParticipant(dialogElement->GetElement("local"), info.m_local);
-    ParseParticipant(dialogElement->GetElement("remote"), info.m_remote);
 
     handler.GetEndPoint().OnDialogInfoReceived(info);
     return true;

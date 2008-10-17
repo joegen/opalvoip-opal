@@ -97,12 +97,12 @@ public class OpalParamRegistration {
     return exampleJNI.OpalParamRegistration_m_restoreTime_get(swigCPtr, this);
   }
 
-  public void setM_messageWaiting(long value) {
-    exampleJNI.OpalParamRegistration_m_messageWaiting_set(swigCPtr, this, value);
+  public void setM_eventPackage(String value) {
+    exampleJNI.OpalParamRegistration_m_eventPackage_set(swigCPtr, this, value);
   }
 
-  public long getM_messageWaiting() {
-    return exampleJNI.OpalParamRegistration_m_messageWaiting_get(swigCPtr, this);
+  public String getM_eventPackage() {
+    return exampleJNI.OpalParamRegistration_m_eventPackage_get(swigCPtr, this);
   }
 
   public OpalParamRegistration() {
