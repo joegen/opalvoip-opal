@@ -655,11 +655,11 @@ bool MyManager::Initialise()
 
   OpalProductInfo productInfo = GetProductInfo();
   if (config->Read(VendorNameKey, &str) && !str.IsEmpty())
-    productInfo.vendor = str;
+    productInfo.vendor = str.p_str();
   if (config->Read(ProductNameKey, &str) && !str.IsEmpty())
-    productInfo.name = str;
+    productInfo.name = str.p_str();
   if (config->Read(ProductVersionKey, &str) && !str.IsEmpty())
-    productInfo.version = str;
+    productInfo.version = str.p_str();
   SetProductInfo(productInfo);
 
 #if OPAL_IVR
@@ -701,7 +701,7 @@ bool MyManager::Initialise()
     do {
       PwxString localInterface;
       if (config->Read(entryName, &localInterface) && !localInterface.empty())
-        m_LocalInterfaces.AppendString(localInterface);
+        m_LocalInterfaces.push_back(localInterface);
     } while (config->GetNextEntry(entryName, entryIndex));
   }
 
@@ -744,7 +744,7 @@ bool MyManager::Initialise()
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs videoArgs = GetVideoInputDevice();
   if (config->Read(VideoGrabberKey, &str))
-    videoArgs.deviceName = str;
+    videoArgs.deviceName = str.p_str();
   if (config->Read(VideoGrabFormatKey, &value1) && value1 >= 0 && value1 < PVideoDevice::NumVideoFormats)
     videoArgs.videoFormat = (PVideoDevice::VideoFormat)value1;
   if (config->Read(VideoGrabSourceKey, &value1))
@@ -1070,7 +1070,7 @@ void MyManager::SetNATHandling()
 }
 
 
-static void StartListenerForEP(OpalEndPoint * ep, const PStringArray & allInterfaces)
+static void StartListenerForEP(OpalEndPoint * ep, const vector<PwxString> & allInterfaces)
 {
   if (ep == NULL)
     return;
@@ -1078,8 +1078,8 @@ static void StartListenerForEP(OpalEndPoint * ep, const PStringArray & allInterf
   PStringArray interfacesForEP;
   PString prefixAndColon = ep->GetPrefixName() + ':';
 
-  for (PINDEX i = 0; i < allInterfaces.GetSize(); i++) {
-    PCaselessString iface = allInterfaces[i];
+  for (size_t i = 0; i < allInterfaces.size(); i++) {
+    PCaselessString iface = allInterfaces[i].p_str();
     if (iface.NumCompare("all:", 4) == PObject::EqualTo)
       interfacesForEP += iface.Mid(4);
     else if (iface.NumCompare(prefixAndColon) == PObject::EqualTo)
@@ -2213,7 +2213,7 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 
 void MyManager::OnNewCodec(wxCommandEvent& theEvent)
 {
-  OpalMediaFormat mediaFormat(PwxString(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel()));
+  OpalMediaFormat mediaFormat(PwxString(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel()).p_str());
   if (mediaFormat.IsValid()) {
     PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
     if (connection != NULL) {
@@ -2498,7 +2498,7 @@ bool MyManager::StartGatekeeper()
     PString gkDesc = m_gatekeeperIdentifier;
     if (!m_gatekeeperIdentifier.IsEmpty() || !m_gatekeeperAddress.IsEmpty())
       gkDesc += "@";
-    gkDesc += m_gatekeeperAddress;
+    gkDesc += m_gatekeeperAddress.p_str();
 
     if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
       LogWindow << "H.323 registration started for " << *h323EP->GetGatekeeper() << endl;
@@ -2719,21 +2719,21 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
 
   if (m_Type == Register) {
     SIPRegister::Params param;
-    param.m_addressOfRecord = m_User;
-    param.m_registrarAddress = m_Domain;
-    param.m_contactAddress = m_Contact;
-    param.m_authID = m_AuthID;
-    param.m_password = m_Password;
+    param.m_addressOfRecord = m_User.p_str();
+    param.m_registrarAddress = m_Domain.p_str();
+    param.m_contactAddress = m_Contact.p_str();
+    param.m_authID = m_AuthID.p_str();
+    param.m_password = m_Password.p_str();
     param.m_expire = m_TimeToLive;
     ok = sipEP.Register(param, m_aor);
   }
   else {
     SIPSubscribe::Params param(EventPackageMapping[m_Type]);
-    param.m_addressOfRecord = m_User;
-    param.m_agentAddress = m_Domain;
-    param.m_contactAddress = m_Contact;
-    param.m_authID = m_AuthID;
-    param.m_password = m_Password;
+    param.m_addressOfRecord = m_User.p_str();
+    param.m_agentAddress = m_Domain.p_str();
+    param.m_contactAddress = m_Contact.p_str();
+    param.m_authID = m_AuthID.p_str();
+    param.m_password = m_Password.p_str();
     param.m_expire = m_TimeToLive;
     ok = sipEP.Subscribe(param, m_aor);
   }
@@ -3018,7 +3018,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     }
   }
   m_LocalInterfaces = FindWindowByNameAs<wxListBox>(this, wxT("LocalInterfaces"));
-  for (i = 0; i < m_manager.m_LocalInterfaces.GetSize(); i++)
+  for (i = 0; (size_t)i < m_manager.m_LocalInterfaces.size(); i++)
     m_LocalInterfaces->Append(PwxString(m_manager.m_LocalInterfaces[i]));
 
   ////////////////////////////////////////
@@ -3083,7 +3083,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
       }
       if (i >= devices.GetSize()) {
         for (i = 0; i < devices.GetSize(); i++) {
-          if (devices[i].Find(m_LineInterfaceDevice) == 0)
+          if (devices[i].Find(m_LineInterfaceDevice.p_str()) == 0)
             break;
         }
         if (i >= devices.GetSize())
@@ -3347,7 +3347,7 @@ OptionsDialog::~OptionsDialog()
   config->Write(name##Key, m_##name)
 
 #define SAVE_FIELD_STR(name, set) \
-  set(m_##name); \
+  set(m_##name.p_str()); \
   config->Write(name##Key, m_##name)
 
 #define SAVE_FIELD2(name1, name2, set) \
@@ -3380,8 +3380,8 @@ bool OptionsDialog::TransferDataFromWindow()
 
   OpalProductInfo productInfo = m_manager.GetProductInfo();
   SAVE_FIELD_STR(VendorName, productInfo.vendor = );
-  SAVE_FIELD_STR(ProductName, productInfo.name =);
-  SAVE_FIELD_STR(ProductVersion, productInfo.version =);
+  SAVE_FIELD_STR(ProductName, productInfo.name = );
+  SAVE_FIELD_STR(ProductVersion, productInfo.version = );
   m_manager.SetProductInfo(productInfo);
 
 #if OPAL_IVR
@@ -3408,12 +3408,14 @@ bool OptionsDialog::TransferDataFromWindow()
 
   config->DeleteGroup(LocalInterfacesGroup);
   config->SetPath(LocalInterfacesGroup);
-  PStringArray newInterfaces(m_LocalInterfaces->GetCount());
-  bool changed = m_manager.m_LocalInterfaces.GetSize() != newInterfaces.GetSize();
-  for (int i = 0; i < newInterfaces.GetSize(); i++) {
-    newInterfaces[i] = PwxString(m_LocalInterfaces->GetString(i));
-    PINDEX oldIndex = m_manager.m_LocalInterfaces.GetValuesIndex(newInterfaces[i]);
-    if (oldIndex == P_MAX_INDEX || newInterfaces[i] != m_manager.m_LocalInterfaces[oldIndex])
+  vector<PwxString> newInterfaces(m_LocalInterfaces->GetCount());
+  bool changed = m_manager.m_LocalInterfaces.size() != newInterfaces.size();
+  for (size_t i = 0; i < newInterfaces.size(); i++) {
+    newInterfaces[i] = m_LocalInterfaces->GetString(i);
+    vector<PwxString>::iterator old = std::find(m_manager.m_LocalInterfaces.begin(),
+                                                m_manager.m_LocalInterfaces.end(),
+                                                newInterfaces[i]);
+    if (old == m_manager.m_LocalInterfaces.end() || newInterfaces[i] != *old)
       changed = true;
     wxString key;
     key.sprintf(wxT("%u"), i+1);
@@ -3454,7 +3456,7 @@ bool OptionsDialog::TransferDataFromWindow()
   // Video fields
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs grabber = m_manager.GetVideoInputDevice();
-  SAVE_FIELD_STR(VideoGrabber, grabber.deviceName =);
+  SAVE_FIELD_STR(VideoGrabber, grabber.deviceName = );
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );

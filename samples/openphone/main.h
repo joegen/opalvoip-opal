@@ -111,12 +111,15 @@ class PwxString : public wxString
     inline bool operator!=(const OpalMediaFormat & other) const { return !IsSameAs(wxString(other, wxConvUTF8)); }
 
 #if wxUSE_UNICODE
+    inline PString p_str() const { return ToUTF8().data(); }
     inline operator PString() const { return ToUTF8().data(); }
     inline operator PFilePath() const { return ToUTF8().data(); }
     inline operator PIPSocket::Address() const { return PString(ToUTF8().data()); }
     inline friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.ToUTF8(); }
     inline friend wostream & operator<<(wostream & stream, const PwxString & string) { return stream << string.c_str(); }
 #else
+    inline PString p_str() const { return c_str(); }
+    inline operator PString() const { return c_str(); }
     inline operator PFilePath() const { return c_str(); }
     inline operator PIPSocket::Address() const { return c_str(); }
     inline friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.c_str(); }
@@ -868,7 +871,7 @@ class MyManager : public wxFrame, public OpalManager
     PwxString m_STUNServer;
     void SetNATHandling();
 
-    PStringArray m_LocalInterfaces;
+    vector<PwxString> m_LocalInterfaces;
     void StartAllListeners();
 
 #if OPAL_H323
