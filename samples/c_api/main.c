@@ -192,6 +192,7 @@ int InitialiseOPAL()
   //command.m_param.m_general.m_audioRecordDevice = "Camera Microphone (2- Logitech";
   command.m_param.m_general.m_autoRxMedia = command.m_param.m_general.m_autoTxMedia = "audio";
   command.m_param.m_general.m_stunServer = "stun.voxgratia.org";
+  command.m_param.m_general.m_mediaMask = "RFC4175*";
 
 #if LOCAL_MEDIA
   command.m_param.m_general.m_mediaReadData = MyReadMediaData;
@@ -233,23 +234,51 @@ static void HandleMessages(unsigned timeout)
       case OpalIndRegistration :
         switch (message->m_param.m_registrationStatus.m_status) {
           case OpalRegisterRetrying :
-            puts("Trying registration.\n");
+            printf("Trying registration to %s.\n", message->m_param.m_registrationStatus.m_serverName);
             break;
           case OpalRegisterRestored :
-            puts("Registration restored.\n");
+            printf("Registration of %s restored.\n", message->m_param.m_registrationStatus.m_serverName);
             break;
           case OpalRegisterSuccessful :
-            puts("Registration successful.\n");
+            printf("Registration of %s successful.\n", message->m_param.m_registrationStatus.m_serverName);
             break;
           case OpalRegisterRemoved :
-            puts("Unregistered.\n");
+            printf("Unregistered %s.\n", message->m_param.m_registrationStatus.m_serverName);
             break;
           case OpalRegisterFailed :
             if (message->m_param.m_registrationStatus.m_error == NULL ||
                 message->m_param.m_registrationStatus.m_error[0] == '\0')
-              puts("Registration failed.\n");
+              printf("Registration of %s failed.\n", message->m_param.m_registrationStatus.m_serverName);
             else
-              printf("Registration error: %s\n", message->m_param.m_registrationStatus.m_error);
+              printf("Registration of %s error: %s\n",
+                     message->m_param.m_registrationStatus.m_serverName,
+                     message->m_param.m_registrationStatus.m_error);
+        }
+        break;
+
+      case OpalIndLineAppearance :
+        switch (message->m_param.m_lineAppearance.m_state) {
+          case OpalLineIdle :
+            printf("Line %s available.\n", message->m_param.m_lineAppearance.m_line);
+            break;
+          case OpalLineTrying :
+            printf("Line %s in use.\n", message->m_param.m_lineAppearance.m_line);
+            break;
+          case OpalLineProceeding :
+            printf("Line %s calling.\n", message->m_param.m_lineAppearance.m_line);
+            break;
+          case OpalLineRinging :
+            printf("Line %s ringing.\n", message->m_param.m_lineAppearance.m_line);
+            break;
+          case OpalLineConnected :
+            printf("Line %s connected.\n", message->m_param.m_lineAppearance.m_line);
+            break;
+          case OpalLineSubcribed :
+            printf("Line %s subscription successful.\n", message->m_param.m_lineAppearance.m_line);
+            break;
+          case OpalLineUnsubcribed :
+            printf("Unsubscribed line %s.\n", message->m_param.m_lineAppearance.m_line);
+            break;
         }
         break;
 
@@ -313,6 +342,7 @@ static void HandleMessages(unsigned timeout)
 
 int DoCall(const char * from, const char * to)
 {
+  // Example cmd line: call 612@ekiga.net
   OpalMessage command;
   OpalMessage * response;
 
@@ -334,6 +364,7 @@ int DoCall(const char * from, const char * to)
 
 int DoMute(int on)
 {
+  // Example cmd line: mute 612@ekiga.net
   OpalMessage command;
   OpalMessage * response;
 
@@ -355,6 +386,7 @@ int DoMute(int on)
 
 int DoHold()
 {
+  // Example cmd line: hold 612@ekiga.net
   OpalMessage command;
   OpalMessage * response;
 
@@ -377,6 +409,7 @@ int DoHold()
 
 int DoTransfer(const char * to)
 {
+  // Example cmd line: transfer fred@10.0.1.11 noris@10.0.1.15
   OpalMessage command;
   OpalMessage * response;
 
@@ -397,6 +430,7 @@ int DoTransfer(const char * to)
 
 int DoRegister(const char * aor, const char * pwd)
 {
+  // Example cmd line: register robertj@ekiga.net secret
   OpalMessage command;
   OpalMessage * response;
   char * colon;
@@ -419,8 +453,31 @@ int DoRegister(const char * aor, const char * pwd)
 
   command.m_param.m_registrationInfo.m_password = pwd;
   command.m_param.m_registrationInfo.m_timeToLive = 300;
-  command.m_param.m_registrationInfo.m_messageWaiting = 120;
   if ((response = MySendCommand(&command, "Could not register endpoint")) == NULL)
+    return 0;
+
+  FreeMessageFunction(response);
+  return 1;
+}
+
+
+int DoSubscribe(const char * package, const char * aor, const char * from)
+{
+  // Example cmd line: subscribe "dialog;sla;ma" 1501@192.168.1.32 1502@192.168.1.32
+  OpalMessage command;
+  OpalMessage * response;
+
+
+  printf("Susbcribing %s\n", aor);
+
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdRegistration;
+  command.m_param.m_registrationInfo.m_protocol = "sip";
+  command.m_param.m_registrationInfo.m_identifier = aor;
+  command.m_param.m_registrationInfo.m_hostName = from;
+  command.m_param.m_registrationInfo.m_eventPackage = package;
+  command.m_param.m_registrationInfo.m_timeToLive = 300;
+  if ((response = MySendCommand(&command, "Could not subscribe")) == NULL)
     return 0;
 
   FreeMessageFunction(response);
@@ -437,14 +494,15 @@ typedef enum
   OpTransfer,
   OpConsult,
   OpRegister,
+  OpSubscribe,
   NumOperations
 } Operations;
 
 static const char * const OperationNames[NumOperations] =
-  { "listen", "call", "mute", "hold", "transfer", "consult", "register" };
+  { "listen", "call", "mute", "hold", "transfer", "consult", "register", "subscribe" };
 
 static int const RequiredArgsForOperation[NumOperations] =
-  { 2, 3, 3, 3, 4, 4, 3 };
+  { 2, 3, 3, 3, 4, 4, 3, 3 };
 
 
 static Operations GetOperation(const char * name)
@@ -548,6 +606,12 @@ int main(int argc, char * argv[])
       if (!DoRegister(argv[2], argv[3]))
         break;
       HandleMessages(15000);
+      break;
+
+    case OpSubscribe :
+      if (!DoSubscribe(argv[2], argv[3], argv[4]))
+        break;
+      HandleMessages(INT_MAX); // More or less forever
       break;
 
     default :
