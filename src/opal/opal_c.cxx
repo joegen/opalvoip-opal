@@ -225,7 +225,11 @@ public:
     if (pos != P_MAX_INDEX)
       level = options.Mid(pos+sizeof(TraceLevelKey)-1).AsUnsigned();
 
+#if WIN32
     PString filename = "DEBUGSTREAM";
+#else
+    PString filename = "stderr";
+#endif
     static char const TraceFileKey[] = "TraceFile=";
     pos = options.Find(TraceFileKey);
     if (pos != P_MAX_INDEX) {
