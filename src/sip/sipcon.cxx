@@ -1881,17 +1881,24 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 
 void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 {
-  PString origTo;
+  PString origTo, reqTo;
 
   // Currently only handle CANCEL requests for the original INVITE that
   // created this connection, all else ignored
-  // Ignore the tag added by OPAL
+
+  // Ignore the tag added by OPAL or remote as they may not be there on
+  // both sides yet if the dialog has not yet been established.
   if (originalInvite != NULL) {
     origTo = originalInvite->GetMIME().GetTo();
-    origTo.Delete(origTo.Find(";tag="), P_MAX_INDEX);
+    PINDEX pos = origTo.Find(";tag=");
+    origTo.Delete(pos, origTo.Find(';', pos+1));
+    reqTo = request.GetMIME().GetTo();
+    pos = reqTo.Find(";tag=");
+    reqTo.Delete(pos, reqTo.Find(';', pos+1));
   }
+
   if (originalInvite == NULL || 
-      request.GetMIME().GetTo() != origTo || 
+      reqTo != origTo || 
       request.GetMIME().GetFrom() != originalInvite->GetMIME().GetFrom() || 
       request.GetMIME().GetCSeqIndex() != originalInvite->GetMIME().GetCSeqIndex()) {
     PTRACE(2, "SIP\tUnattached " << request << " received for " << *this);
