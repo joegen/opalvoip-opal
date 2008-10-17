@@ -269,7 +269,7 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OPAL_1C_1API_1VERSION_1get(
   
   (void)jenv;
   (void)jcls;
-  result = (int) 12;
+  result = (int) 13;
   jresult = (jint)result; 
   return jresult;
 }
@@ -1966,6 +1966,30 @@ SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalParamProtocol(J
 }
 
 
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1MWI_1EVENT_1PACKAGE_1get(JNIEnv *jenv, jclass jcls) {
+  jstring jresult = 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  result = (char *) "message-summary";
+  if(result) jresult = (*jenv)->NewStringUTF(jenv, (const char *)result);
+  return jresult;
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OPAL_1LINE_1APPEARANCE_1EVENT_1PACKAGE_1get(JNIEnv *jenv, jclass jcls) {
+  jstring jresult = 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  result = (char *) "dialog;sla;ma";
+  if(result) jresult = (*jenv)->NewStringUTF(jenv, (const char *)result);
+  return jresult;
+}
+
+
 SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1protocol_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -2262,30 +2286,42 @@ SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1
 }
 
 
-SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1messageWaiting_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1eventPackage_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
-  unsigned int arg2 ;
+  char *arg2 = (char *) 0 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(OpalParamRegistration **)&jarg1; 
-  arg2 = (unsigned int)jarg2; 
-  if (arg1) (arg1)->m_messageWaiting = arg2;
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg2) {
+      arg1->m_eventPackage = (char const *) malloc(strlen((const char *)arg2)+1);
+      strcpy((char *)arg1->m_eventPackage, (const char *)arg2);
+    } else {
+      arg1->m_eventPackage = 0;
+    }
+  }
+  if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
 }
 
 
-SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1messageWaiting_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
-  jlong jresult = 0 ;
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1eventPackage_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
   OpalParamRegistration *arg1 = (OpalParamRegistration *) 0 ;
-  unsigned int result;
+  char *result = 0 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(OpalParamRegistration **)&jarg1; 
-  result = (unsigned int) ((arg1)->m_messageWaiting);
-  jresult = (jlong)result; 
+  result = (char *) ((arg1)->m_eventPackage);
+  if(result) jresult = (*jenv)->NewStringUTF(jenv, (const char *)result);
   return jresult;
 }
 

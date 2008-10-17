@@ -1189,7 +1189,7 @@ void SIPEndPoint::OnPresenceInfoReceived (const PString & /*user*/,
 
 void SIPEndPoint::OnDialogInfoReceived(const SIPDialogNotification & PTRACE_PARAM(info))
 {
-  PTRACE(3, "SIP\tReceived dialog info for " << info.m_entity);
+  PTRACE(3, "SIP\tReceived dialog info for \"" << info.m_entity << "\" id=\"" << info.m_callId << '"');
 }
 
 
