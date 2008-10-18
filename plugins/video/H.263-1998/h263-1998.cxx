@@ -52,6 +52,7 @@
 #include "plugin-config.h"
 
 #include "h263-1998.h"
+#include <limits.h>
 #include <math.h>
 #include "trace.h"
 #include <string.h>
