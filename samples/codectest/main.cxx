@@ -77,6 +77,7 @@ void CodecTest::Main()
              "C-rate-control."
              "-count:"
              "-noprompt."
+             "-snr."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -120,6 +121,7 @@ void CodecTest::Main()
               "  -C --rate-control       : enable rate control\n"
               "  --count n               : set number of frames to transcode\n"
               "  --noprompt              : do not prompt for commands, i.e. exit when input closes\n"
+              "  --snr                   : calculate signal-to-noise ratio between input and output"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
               "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -165,6 +167,7 @@ void CodecTest::Main()
   if (!audio.Initialise(args) || !video.Initialise(args))
     return;
 
+#if 0
   if (video.encoder == NULL && audio.encoder == NULL) {
     cout << "Could not identify media formats ";
     for (int i = 0; i < args.GetCount(); ++i)
@@ -172,6 +175,7 @@ void CodecTest::Main()
     cout << endl;
     return;
   }
+#endif
 
   audio.Resume();
   video.Resume();
@@ -270,6 +274,8 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
   if (!s.IsEmpty())
     framesToTranscode = s.AsInteger();
 
+  calcSNR = args.HasOption("snr");
+
   for (PINDEX i = 0; i < args.GetCount(); i++) {
     OpalMediaFormat mediaFormat = args[i];
     if (mediaFormat.IsEmpty()) {
@@ -334,6 +340,27 @@ void SetOptions(PArgList & args, OpalMediaFormat & mediaFormat)
   mediaFormat.ToCustomisedOptions();
 }
 
+static int udiff(unsigned int const subtrahend, unsigned int const subtractor) 
+{
+  return subtrahend - subtractor;
+}
+
+
+static double square(double const arg) 
+{
+  return(arg*arg);
+}
+
+static double CalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen)
+{
+  double diff2 = 0.0;
+  for (PINDEX i = 0; i < dataLen; ++i) 
+    diff2 += square(udiff(*src1++, *src2++));
+
+  double const snr = diff2 / dataLen / 255;
+
+  return snr;
+}
 
 bool AudioThread::Initialise(PArgList & args)
 {
@@ -345,7 +372,7 @@ bool AudioThread::Initialise(PArgList & args)
   }
 
   readSize = encoder != NULL ? encoder->GetOptimalDataFrameSize(TRUE) : 480;
-  OpalMediaFormat mediaFormat = encoder != NULL ? encoder->GetOutputFormat() : OpalYUV420P;
+  OpalMediaFormat mediaFormat = encoder != NULL ? encoder->GetOutputFormat() : OpalPCM16;
 
   cout << "Audio media format set to " << mediaFormat << endl;
 
@@ -385,7 +412,6 @@ bool AudioThread::Initialise(PArgList & args)
 
   cout << "opened and initialised." << endl;
 
-
   // Audio player
   driverName = args.GetOptionString("play-driver");
   deviceName = args.GetOptionString("play-device");
@@ -420,7 +446,9 @@ bool AudioThread::Initialise(PArgList & args)
     return false;
   }
 
-  if (encoder != NULL) {
+  if (encoder == NULL) 
+    frameTime = mediaFormat.GetFrameTime();
+  else {
     OpalMediaFormat mediaFormat = encoder->GetOutputFormat();
     SetOptions(args, mediaFormat);
     encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
@@ -518,7 +546,6 @@ bool VideoThread::Initialise(PArgList & args)
 
   cout << "Grabber frame rate set to " << grabber->GetFrameRate() << endl;
 
-
   // Video display
   driverName = args.GetOptionString("display-driver");
   deviceName = args.GetOptionString("display-device");
@@ -573,7 +600,6 @@ bool VideoThread::Initialise(PArgList & args)
   }
 
   cout << "Display frame size set to " << display->GetFrameWidth() << 'x' << display->GetFrameHeight() << endl;
-
 
   if (!grabber->SetColourFormatConverter("YUV420P") ) {
     cerr << "Video grabber device could not be set to colour format YUV420P" << endl;
@@ -637,10 +663,15 @@ bool VideoThread::Initialise(PArgList & args)
 
   SetOptions(args, mediaFormat);
 
-  if (encoder != NULL)
+  if (encoder == NULL) 
+    frameTime = mediaFormat.GetFrameTime();
+  else 
     encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
 
   singleStep = args.HasOption('S');
+
+  sumYSNR = sumCbSNR = sumCrSNR = 0.0;
+  snrCount = 0;
 
   return true;
 }
@@ -685,6 +716,78 @@ void TranscoderThread::OnTranscoderCommand(OpalMediaCommand & cmd, INT)
   }
 }
 
+void VideoThread::CalcSNR(const RTP_DataFrame & src, const RTP_DataFrame & dst)
+{
+  if (src.GetPayloadSize() < sizeof(OpalVideoTranscoder::FrameHeader) || dst.GetPayloadSize() < sizeof(OpalVideoTranscoder::FrameHeader))
+    return;
+
+  const BYTE * src1 = src.GetPayloadPtr();
+  const BYTE * src2 = dst.GetPayloadPtr();
+
+  const OpalVideoTranscoder::FrameHeader * hdr1 = (OpalVideoTranscoder::FrameHeader *)src1;
+  const OpalVideoTranscoder::FrameHeader * hdr2 = (OpalVideoTranscoder::FrameHeader *)src2;
+
+  if (hdr1->height != hdr2->height || hdr1->width != hdr2->width)
+    return;
+
+  if (hdr1->height != snrHeight || hdr1->width != snrWidth) {
+    sumYSNR = sumCbSNR = sumCrSNR = 0.0;
+    snrCount = 0;
+    snrHeight = hdr1->height;
+    snrWidth  = hdr1->width;
+  }
+
+  unsigned size = snrHeight * snrWidth;
+
+  unsigned tsize = sizeof(OpalVideoTranscoder::FrameHeader) + size*3/2;
+
+  if (src.GetPayloadSize() < tsize || dst.GetPayloadSize() < tsize)
+    return;
+
+  src1 += sizeof(OpalVideoTranscoder::FrameHeader);
+  src2 += sizeof(OpalVideoTranscoder::FrameHeader);
+
+  sumYSNR  = ::CalcSNR(src1, src2, size);
+  src1 += size;
+  src2 += size;
+
+  size = size / 4;
+  sumCbSNR = ::CalcSNR(src1, src2, size);
+  src1 += size;
+  src2 += size;
+
+  sumCrSNR = ::CalcSNR(src1, src2, size);
+
+  ++snrCount;
+}
+
+void VideoThread::ReportSNR()
+{
+  /* The PSNR is the mean of the sum of squares of the differences,
+     normalized to the range 0..1
+  */
+  double const yPsnr = sumYSNR / snrCount;
+
+  if (yPsnr <= 1e-9)
+    cout << "Y  color component identical" << endl;
+  else
+    printf("Y  color component avg SNR : %.2f dB\n", 10 * log10(1/yPsnr));
+
+  double const cbPsnr = sumCbSNR / snrCount;
+
+  if (cbPsnr <= 1e-9)
+    cout << "Cb color component identical" << endl;
+  else
+    printf("Cb color component avg SNR : %.2f dB\n", 10 * log10(1/cbPsnr));
+
+  double const crPsnr = sumCrSNR / snrCount;
+
+  if (crPsnr <= 1e-9)
+    cout << "Cr color component identical" << endl;
+  else
+    printf("Cr color component avg SNR : %.2f dB\n", 10 * log10(1/crPsnr));
+}
+
 
 void TranscoderThread::Main()
 {
@@ -708,7 +811,7 @@ void TranscoderThread::Main()
     }
 
     srcFrame.SetTimestamp(timestamp);
-    timestamp += encoder->GetOutputFormat().GetFrameTime();
+    timestamp += frameTime;
 
     if (rcEnable && rateController.SkipFrame()) {
       cerr << "Rate controller forced frame skip" << endl;
@@ -755,7 +858,12 @@ void TranscoderThread::Main()
         }
         UpdateStats(encFrames[i]);
       }
+
       for (PINDEX j = 0; j < outFrames.GetSize(); j++) {
+
+        if (calcSNR) 
+          CalcSNR(srcFrame, outFrames[j]);
+
         state = Write(outFrames[j]);
         if (oldOutState != state) {
           oldOutState = state;
@@ -766,6 +874,7 @@ void TranscoderThread::Main()
       frameSize += encFrames[i].GetPayloadSize() + encFrames[i].GetHeaderSize();
       packetCount++;
     }
+
 
     if (rcEnable)
       rateController.AddFrame(frameSize);
@@ -799,6 +908,9 @@ void TranscoderThread::Main()
   else if (bitRate < 10000000000ULL)
     cout << bitRate/1000000.0 << " M";
   cout << "bits/s." << endl;
+
+  if (calcSNR) 
+    ReportSNR();
 }
 
 
