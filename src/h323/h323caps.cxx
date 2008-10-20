@@ -1897,8 +1897,8 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
         for (PINDEX i = 0; i < mediaPacket.m_rtpPayloadType.GetSize(); i++) {
           PString mediaPacketization = H323GetRTPPacketization(mediaPacket.m_rtpPayloadType[i]);
           if (!mediaPacketization.IsEmpty()) {
-              mediaPacketizations += mediaPacketization;
-              PTRACE(4, "H323\tH323Capabilities(ctor) Appended mediaPacketization=" << mediaPacketization << ", mediaPacketization count=" << mediaPacketizations.GetSize());
+            mediaPacketizations += mediaPacketization;
+            PTRACE(4, "H323\tH323Capabilities(ctor) Appended mediaPacketization=" << mediaPacketization << ", mediaPacketization count=" << mediaPacketizations.GetSize());
           }
         } // for ... m_rtpPayloadType.GetSize()
       } // e_rtpPayloadType
@@ -1913,6 +1913,7 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
       allCapabilities.Add(allCapabilities.Copy(localCapabilities[c]));
     allCapabilities.AddAllCapabilities(connection.GetEndPoint(), 0, 0, "*");
     H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
+    allCapabilities.SetMediaPacketizations(mediaPacketizations);
 
     for (PINDEX i = 0; i < pdu.m_capabilityTable.GetSize(); i++) {
       if (pdu.m_capabilityTable[i].HasOptionalField(H245_CapabilityTableEntry::e_capability)) {
@@ -1920,6 +1921,29 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
         if (capability != NULL) {
           H323Capability * copy = (H323Capability *)capability->Clone();
           copy->SetCapabilityNumber(pdu.m_capabilityTable[i].m_capabilityTableEntryNumber);
+          if (mediaPacketizations.GetSize() != 0) { // also update the mediaPacketizations option
+            OpalMediaFormat & mediaFormat = copy->GetWritableMediaFormat();
+            PString packetizationString = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption());
+            if (!packetizationString.IsEmpty()) {
+              // remove packetizations not signaled by the remote party
+              PStringArray packetizations = packetizationString.Tokenise(",");
+              for (PINDEX j = packetizations.GetSize(); j > 0; j--) {
+                if (!mediaPacketizations.Contains(packetizations[j-1])) {
+                  packetizations.RemoveAt(j-1);
+                }
+              }
+              // construct the new packetization string
+              if (packetizations.GetSize() == 0) { // should not happen actually
+                mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(), "");
+              } else {
+                packetizationString = packetizations[0];
+                for (PINDEX j = 1; j < packetizations.GetSize(); j++) {
+                  packetizationString += "," + packetizations[j];
+                }
+                mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(), packetizationString);
+              }
+            }
+          }
           if (copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability) &&
               copy->GetWritableMediaFormat().ToNormalisedOptions())
             table.Append(copy);
@@ -2057,9 +2081,13 @@ PINDEX H323Capabilities::AddMediaFormat(PINDEX descriptorNum,
     if (capability != NULL) {
       capability->GetWritableMediaFormat() = mediaFormat;
       reply = SetCapability(descriptorNum, simultaneous, capability);
-      PString packetization = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption());
-      if (!packetization.IsEmpty())
-        mediaPacketizations += packetization;
+      PString packetizationString = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption());
+      if (!packetizationString.IsEmpty()) {
+        PStringArray packetizations = packetizationString.Tokenise(",");
+        for (PINDEX i = 0; i < packetizations.GetSize(); i++) {
+          mediaPacketizations += packetizations[i];
+        }
+      }
     }
   }
 
@@ -2277,15 +2305,24 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
      *  e_h263VideoCapability.
      */
     if (!mediaPacketizations.IsEmpty()) {
-      PString capabilitiesPacketization = capability.GetMediaFormat().GetOptionString(OpalMediaFormat::MediaPacketizationOption());
-      if (!capabilitiesPacketization.IsEmpty()) {
-        PINDEX j;
-        for (j = 0; j < mediaPacketizations.GetSize(); j++) {
-          if (mediaPacketizations.GetKeyAt(j) == capabilitiesPacketization)
+      PString packetizationString = capability.GetMediaFormat().GetOptionString(OpalMediaFormat::MediaPacketizationOption());
+      if (!packetizationString.IsEmpty()) {
+        PStringArray packetizations = packetizationString.Tokenise(",");
+         
+        // require at least one of the media format's packetizations to be in the mediaPacketizations list
+        PBoolean foundOne = false;
+        for (PINDEX j = 0; j < packetizations.GetSize(); j++) {
+          for (PINDEX k = 0; k < mediaPacketizations.GetSize(); k++) {
+            if (mediaPacketizations.GetKeyAt(k) == packetizations[j]) {
+              foundOne = true;
+              break;
+            }
+          }
+          if (foundOne)
             break;
         }
-        if (j >= mediaPacketizations.GetSize())
-          return false;
+        if (!foundOne)
+          return PFalse;
       }
     }
 
@@ -2547,18 +2584,8 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
       capability.GetWritableMediaFormat().ToCustomisedOptions();
       capability.OnSendingPDU(entry.m_capability);
 
-      h225_0.m_mediaPacketizationCapability.m_rtpPayloadType.SetSize(rtpPacketizationCount+1);
-      if (H323SetRTPPacketization(h225_0.m_mediaPacketizationCapability.m_rtpPayloadType[rtpPacketizationCount],
-                                                    capability.GetMediaFormat(), RTP_DataFrame::IllegalPayloadType)) {
-        // Check if already in list
-        PINDEX test;
-        for (test = 0; test < rtpPacketizationCount; test++) {
-          if (h225_0.m_mediaPacketizationCapability.m_rtpPayloadType[test] == h225_0.m_mediaPacketizationCapability.m_rtpPayloadType[rtpPacketizationCount])
-            break;
-        }
-        if (test == rtpPacketizationCount)
-          rtpPacketizationCount++;
-      }
+      H323SetRTPPacketization(h225_0.m_mediaPacketizationCapability.m_rtpPayloadType, rtpPacketizationCount,
+                              capability.GetMediaFormat(), RTP_DataFrame::IllegalPayloadType);
     }
   }
 

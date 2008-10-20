@@ -2337,6 +2337,8 @@ class H323Capabilities : public PObject
   //@}
 
   protected:
+    void SetMediaPacketizations(const PStringSet & packetizations) { mediaPacketizations = packetizations; }
+    
     H323CapabilitiesList table;
     H323CapabilitiesSet  set;
     PStringSet           mediaPacketizations;
