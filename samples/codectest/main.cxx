@@ -739,7 +739,7 @@ void VideoThread::CalcSNR(const RTP_DataFrame & src, const RTP_DataFrame & dst)
 
   unsigned size = snrHeight * snrWidth;
 
-  unsigned tsize = sizeof(OpalVideoTranscoder::FrameHeader) + size*3/2;
+  int tsize = sizeof(OpalVideoTranscoder::FrameHeader) + size*3/2;
 
   if (src.GetPayloadSize() < tsize || dst.GetPayloadSize() < tsize)
     return;
@@ -835,6 +835,7 @@ void TranscoderThread::Main()
     }
 
     unsigned long frameSize = 0;
+    unsigned long framePacketCount = 0;
     for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
       RTP_DataFrameList outFrames;
       if (encoder == NULL)
@@ -872,12 +873,13 @@ void TranscoderThread::Main()
       }
       byteCount += encFrames[i].GetPayloadSize();
       frameSize += encFrames[i].GetPayloadSize() + encFrames[i].GetHeaderSize();
+      framePacketCount++;
       packetCount++;
     }
 
 
     if (rcEnable)
-      rateController.AddFrame(frameSize);
+      rateController.AddFrame(frameSize, framePacketCount);
 
     if (pause.Wait(0)) {
       pause.Acknowledge();
