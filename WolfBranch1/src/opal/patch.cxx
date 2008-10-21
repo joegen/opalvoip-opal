@@ -317,12 +317,6 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   , writeSuccessful(true)
 #if OPAL_VIDEO
   , rcEnabled(false)
-  , rcByteRate(0)
-  , rcWindowSize(0)
-  , rcMaxConsecutiveFramesSkip(0)
-  , rcConsecutiveFramesSkipped(0)
-  , rcLastTime(PTimer::Tick())
-  , rcTotalSize(0)
 #endif
 {
   intermediateFrames.Append(new RTP_DataFrame);
@@ -577,59 +571,26 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
 {
   unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
-  rcWindowSize = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption());
-  rcMaxConsecutiveFramesSkip = mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlMaxFramesSkipOption());
 
-  if (((unsigned) (targetBitRate / 8)) != rcByteRate) {
-    rcByteRate = (unsigned) (targetBitRate / 8);
+  if (rcEnabled) 
+    rateController.Open(
+                        targetBitRate,
+                        mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption()),
+                        mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlMaxFramesSkipOption())
+                        );
 
-    std::list<FrameInfo>::iterator iter = frameInfoList.begin();
-    while (iter != frameInfoList.end()) {
-      rcTotalSize -= iter->size;
-      frameInfoList.erase(iter);
-      iter = frameInfoList.begin();
-    }
-  }
-
-  PTRACE(3, "Patch\tSet rate control from format " << mediaFormat
-         << ", bitrate=" << targetBitRate
-         << ", rate control=" << rcEnabled
-         << ", window=" << rcWindowSize);
 }
 
 
-bool OpalMediaPatch::Sink::RateControlExceeded(const PTimeInterval & currentTime)
+bool OpalMediaPatch::Sink::RateControlExceeded()
 {
-  if (!rcEnabled)
+  if (!rcEnabled || rateController.SkipFrame()) 
     return false;
-
-  std::list<FrameInfo>::iterator iter = frameInfoList.begin();
-  while (iter != frameInfoList.end()) {
-    if ((currentTime - iter->time) < rcWindowSize) {
-      rcLastTime = iter->time;
-      break;
-    }
-
-    rcTotalSize -= iter->size;
-    frameInfoList.erase(iter);
-    iter = frameInfoList.begin();
-  }
-
-  unsigned passedTime = (unsigned)(currentTime - rcLastTime).GetMilliSeconds();
-  PTRACE(5, "Patch\tRTP packets,  accumulated: " << rcTotalSize
-         << " list: " << frameInfoList.size()
-         << "over Time " << passedTime
-         << " byterate " << rcTotalSize * 1000 / passedTime
-         << " <= " << rcByteRate);
-  if (rcTotalSize * 1000 / passedTime < rcByteRate || rcConsecutiveFramesSkipped >= rcMaxConsecutiveFramesSkip) {
-    rcConsecutiveFramesSkipped = 0;
-    return false;
-  }
 
   PTRACE(4, "Patch\tRate controller skipping frame.");
-    ++rcConsecutiveFramesSkipped;
-    return true;
+  return true;
 }
+
 #endif
 
 
@@ -639,11 +600,11 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     return false;
   
 #if OPAL_VIDEO
-  FrameInfo frameInfo;
-  frameInfo.time = PTimer::Tick();
-  frameInfo.size = 0;
-  if (RateControlExceeded(frameInfo.time))
+  if (RateControlExceeded())
     return true;
+
+  PInt64 totalPayloadSize = 0;
+  int frameCount = 0;
 #endif
 
   if (primaryCodec == NULL)
@@ -664,7 +625,8 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       if (!stream->WritePacket(*interFrame))
         return (writeSuccessful = false);
 #if OPAL_VIDEO
-      frameInfo.size += interFrame->GetPayloadSize() + interFrame->GetHeaderSize();
+      totalPayloadSize += interFrame->GetPayloadSize() + interFrame->GetHeaderSize();
+      frameCount++;
 #endif
       sourceFrame.SetTimestamp(interFrame->GetTimestamp());
       continue;
@@ -686,17 +648,16 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       if (!stream->WritePacket(*finalFrame))
         return (writeSuccessful = false);
 #if OPAL_VIDEO
-      frameInfo.size += finalFrame->GetPayloadSize() + finalFrame->GetHeaderSize();
+      totalPayloadSize += finalFrame->GetPayloadSize() + finalFrame->GetHeaderSize();
+      frameCount++;
 #endif
       sourceFrame.SetTimestamp(finalFrame->GetTimestamp());
     }
   }
 
 #if OPAL_VIDEO
-  if (rcEnabled && frameInfo.size > 0) {
-    frameInfoList.push_back(frameInfo);
-    rcTotalSize += frameInfo.size;
-  }
+  if (rcEnabled)
+    rateController.AddFrame(totalPayloadSize, frameCount);
 #endif
 
   return true;
@@ -735,4 +696,3 @@ PBoolean OpalPassiveMediaPatch::PushFrame(RTP_DataFrame & frame)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////

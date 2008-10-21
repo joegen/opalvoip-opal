@@ -144,6 +144,7 @@ class OpalVideoTranscoder : public OpalTranscoder
 #if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
+    void ForceIFrame()              { forceIFrame = true; }
   //@}
 
   protected:

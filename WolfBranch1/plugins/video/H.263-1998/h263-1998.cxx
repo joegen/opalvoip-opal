@@ -426,7 +426,7 @@ bool H263_RFC2190_EncoderContext::Open()
 
   //_context->flags &= ~CODEC_FLAG_H263P_UMV;
   //_context->flags &= ~CODEC_FLAG_4MV;
-  //_context->flags &= ~CODEC_FLAG_H263P_AIC;
+  //_context->flags |= CODEC_FLAG_H263P_AIC;
   
   SetMaxKeyFramePeriod(H263_KEY_FRAME_INTERVAL);
   SetMaxRTPFrameSize(H263_PAYLOAD_SIZE);

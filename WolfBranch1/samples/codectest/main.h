@@ -44,6 +44,7 @@ class TranscoderThread : public PThread
       , num(_num)
       , timestamp(0)
       , markerHandling(NormalMarkers)
+      , rcEnable(false)
     {
     }
 
@@ -62,6 +63,12 @@ class TranscoderThread : public PThread
     virtual void Stop() = 0;
 
     virtual void UpdateStats(const RTP_DataFrame &) { }
+
+    virtual void CalcSNR(const RTP_DataFrame & /*src*/, const RTP_DataFrame & /*dst*/)
+    {  }
+
+    virtual void ReportSNR()
+    {  }
 
     bool running;
 
@@ -82,6 +89,11 @@ class TranscoderThread : public PThread
     bool forceIFrame;
 
     int framesToTranscode;
+    int frameTime;
+    bool calcSNR;
+
+    bool rcEnable;
+    OpalVideoRateController rateController;
 };
 
 
@@ -151,6 +163,9 @@ class VideoThread : public TranscoderThread
     PSemaphore           frameWait;
     unsigned             frameRate;
 
+    void CalcSNR(const RTP_DataFrame & src, const RTP_DataFrame & dst);
+    void ReportSNR();
+
     PString frameFn;
     PString packetFn;
 
@@ -159,6 +174,12 @@ class VideoThread : public TranscoderThread
     PInt64 frameCount;
     PInt64 frameBytes;
     PInt64 totalFrameBytes;
+
+    unsigned snrWidth, snrHeight;
+    double sumYSNR;
+    double sumCbSNR;
+    double sumCrSNR;
+    PInt64 snrCount;
 };
 
 

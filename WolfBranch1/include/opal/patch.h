@@ -40,12 +40,11 @@
 
 #include <opal/mediastrm.h>
 #include <opal/mediacmd.h>
+#include <codec/ratectl.h>
 
 #include <list>
 
-
 class OpalTranscoder;
-
 
 /**Media stream "patch cord".
    This class is the thread of control that transfers data from one
@@ -232,21 +231,10 @@ class OpalMediaPatch : public PObject
 
 #if OPAL_VIDEO
         void SetRateControlParameters(const OpalMediaFormat & mediaFormat);
-        bool RateControlExceeded(const PTimeInterval & currentTime);
+        bool RateControlExceeded();
 
-        bool          rcEnabled;
-        unsigned      rcByteRate;
-        unsigned      rcWindowSize;
-        unsigned      rcMaxConsecutiveFramesSkip;
-        unsigned      rcConsecutiveFramesSkipped;
-        PTimeInterval rcLastTime;
-        PINDEX        rcTotalSize;
-        
-        struct FrameInfo {
-          PTimeInterval time;
-          PINDEX        size;
-        };
-        std::list<FrameInfo> frameInfoList;
+        bool rcEnabled;
+        OpalVideoRateController rateController;
 #endif
     };
     PList<Sink> sinks;
