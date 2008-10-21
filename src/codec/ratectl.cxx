@@ -148,7 +148,6 @@ bool OpalVideoRateController::SkipFrame()
   PInt64 avgPacketSize = averagePacketsPerFrame * UDP_OVERHEAD + averagePayloadSize;
 
   if ((now - lastReport) > 1000) {
-  {
     PTRACE(5, "RateController\n"
               "Frame rate  : in=" << (inputFrameCount * 1000) / (now - startTime) << ",out=" << (outputFrameCount * 1000) / (now - startTime) << "\n"
               "Total frames: in=" << inputFrameCount << ",out=" << outputFrameCount << ",dropped=" << (inputFrameCount - outputFrameCount) << "(" << (inputFrameCount - outputFrameCount) * 100 / inputFrameCount << "%)\n"
