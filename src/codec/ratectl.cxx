@@ -189,8 +189,6 @@ void OpalVideoRateController::AddFrame(PInt64 totalPayloadSize, int packetCount,
 
 void OpalVideoRateController::AddFrame(PInt64 totalPayloadSize, int packetCount)
 {
-  PTRACE(5, "RateController\nAdding frame of size " << totalPayloadSize << " in " << packetCount << "packets");
-
   outputFrameCount++;
 
   FrameInfo info;
