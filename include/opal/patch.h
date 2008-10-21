@@ -40,44 +40,11 @@
 
 #include <opal/mediastrm.h>
 #include <opal/mediacmd.h>
+#include <codec/ratectl.h>
 
 #include <list>
 
-
 class OpalTranscoder;
-
-
-class OpalVideoRateController
-{
-  public:
-    OpalVideoRateController();
-    void Reset();
-    void Open(unsigned targetBitRate, unsigned windowSizeInMs = 5000, unsigned rcMaxConsecutiveFramesSkip = 5);
-    bool SkipFrame();
-    void AddFrame(unsigned sizeInBytes);
-    void AddFrame(unsigned sizeInBytes, PInt64 now);
-
-  protected:
-    unsigned byteRate;
-    unsigned historySizeInMs;
-    unsigned maxConsecutiveFramesSkip;
-    PInt64  targetHistorySize;
-    PInt64  startTime;
-    PInt64  totalBytes;
-    PInt64  frameCount;
-
-    unsigned consecutiveFramesSkipped;
-    PINDEX historyInBytes;
-
-    PInt64 now;
-
-    struct FrameInfo {
-      PInt64  time;
-      PINDEX  frameSize;
-    };
-
-    std::list<FrameInfo> history;
-};
 
 /**Media stream "patch cord".
    This class is the thread of control that transfers data from one
