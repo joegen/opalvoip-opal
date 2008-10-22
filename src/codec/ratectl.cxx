@@ -44,8 +44,39 @@
 // 
 #define UDP_OVERHEAD  (20 + 8)
 
+//
+// size of history used for calcluating average packet size
+//
+#define PACKET_HISTORY_SIZE   5
+
 #define new PNEW
 
+
+//
+//  This file implements a video rate controller that seeks to maintain a constant bit rate 
+//  by indicating when encoded video frames should be dropped
+//
+//  The instantaneous bit rate is monitored by calculating the total number of bytes that have been 
+//  transmitted over the past few seconds. This decision to drop a frame is based on whether the 
+//  the actual transmitted count is less, or more, then the number of bytes that would have been 
+//  transmitted if the target bit rate had been maintained. 
+//
+//  The size of this history used to calculate the current bit rate is set when the rate 
+//  controller is opened. Experience shows that a history of 5000ms seems to work well.
+//
+//  The decision to drop a frame is made before the frame is encoded. The rate controller predicts
+//  the probable size of the encoded frame by looking at the previous 5 encoded frames. Experiments
+//  were done with longer histories (for example the same history used for the bit rate calculation)
+//  but it was found that this tended to over-estimate the probable frame size due to the inclusion 
+//  of occasional I-frames.
+//
+//  The maximum number of consecutive dropped frames is also set when the rate controller is opened. 
+//
+//  The bit rate calculations take into account the 28 bytes of IP and UDP overhead on every RTP packet
+//  This can make a big difference when small video packets are being transmitted
+//
+//  Additionally, this code can also enforce an output frame rate
+//
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -59,6 +90,7 @@ static double square(double const arg)
 {
   return(arg*arg);
 }
+
 
 double OpalCalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen)
 {
@@ -80,6 +112,38 @@ OpalVideoRateController::OpalVideoRateController()
   Reset();
 }
 
+void OpalVideoRateController::Open(unsigned _targetBitRate, 
+                                        int _outputFrameTime,
+                                   unsigned _historySizeInMs, 
+                                   unsigned _maxConsecutiveFramesSkip)
+{
+  // convert bit rate to byte rate
+  unsigned newByteRate = (_targetBitRate + 7) / 8; 
+
+  // if any paramaters have changed, reset the rate controller
+  if (
+      (_outputFrameTime != outputFrameTime) ||
+      (_historySizeInMs != historySizeInMs) ||
+      (_maxConsecutiveFramesSkip != maxConsecutiveFramesSkip) ||
+      (newByteRate != byteRate) 
+      ) {
+
+    PTRACE(3, "Patch\tSet new paramaters for rate controller : " 
+           << "bitrate=" << _targetBitRate
+           << ", window=" << _historySizeInMs
+           << ", frame rate=" << _outputFrameTime);
+
+    // set the new parameters
+    byteRate                 = newByteRate;
+    historySizeInMs          = _historySizeInMs;
+    maxConsecutiveFramesSkip = _maxConsecutiveFramesSkip;
+    targetHistorySize        = (byteRate * historySizeInMs) / 1000;
+    outputFrameTime          = _outputFrameTime;
+
+    Reset();
+  }
+}
+
 void OpalVideoRateController::Reset()
 {
   frameHistory.reset();
@@ -89,33 +153,6 @@ void OpalVideoRateController::Reset()
   startTime                = PTimer::Tick().GetMilliSeconds();
   inputFrameCount          = 0;
   outputFrameCount         = 0;
-}
-
-void OpalVideoRateController::Open(unsigned _targetBitRate, 
-                                   unsigned _historySizeInMs, 
-                                   unsigned _maxConsecutiveFramesSkip)
-{
-  unsigned newByteRate = (_targetBitRate + 7) / 8; 
-
-  // if any paramaters have changed, reset the rate controller
-  if (
-      (_historySizeInMs != historySizeInMs) ||
-      (_maxConsecutiveFramesSkip != maxConsecutiveFramesSkip) ||
-      (newByteRate != byteRate) 
-      ) {
-
-    PTRACE(3, "Patch\tSet new paramaters for rate controller : " 
-           << "bitrate=" << _targetBitRate
-           << ", window=" << _historySizeInMs);
-
-    // set the new parameters
-    byteRate                 = newByteRate;
-    historySizeInMs          = _historySizeInMs;
-    maxConsecutiveFramesSkip = _maxConsecutiveFramesSkip;
-    targetHistorySize        = (byteRate * historySizeInMs) / 1000;
-
-    Reset();
-  }
 }
 
 bool OpalVideoRateController::SkipFrame()
@@ -137,16 +174,17 @@ bool OpalVideoRateController::SkipFrame()
   if (frameHistory.size() < 2)
     return false;
   PInt64 range = now - frameHistory.begin()->time;
-  if (range < 20)
+  if (range < 200)
     return false;
 
+  // calculate average payload and packets per frame
   PInt64 averagePayloadSize     = packetHistory.bytes / packetHistory.size();
   PInt64 averagePacketsPerFrame = packetHistory.packets / packetHistory.size();
   if (averagePacketsPerFrame < 1)
     averagePacketsPerFrame = 1;
-
   PInt64 avgPacketSize = averagePacketsPerFrame * UDP_OVERHEAD + averagePayloadSize;
 
+  // show some statistics
   if ((now - lastReport) > 1000) {
     PTRACE(5, "RateController\n"
               "Frame rate  : in=" << (inputFrameCount * 1000) / (now - startTime) << ",out=" << (outputFrameCount * 1000) / (now - startTime) << "\n"
@@ -155,6 +193,14 @@ bool OpalVideoRateController::SkipFrame()
               "Bit rate    : total=" << ((frameHistory.packets * UDP_OVERHEAD + frameHistory.bytes) * 8 * 1000) / range << " bps,payload=" << (frameHistory.bytes * 8 * 1000) / range << "," << range << "ms," << frameHistory.size() << ",frames," << frameHistory.packets << " packets\n"
               );
     lastReport = now;
+  }
+
+  // if maintaining a frame rate, check to see if frame should be dropped
+  if (outputFrameTime > 0) {
+    PInt64 desiredFrameCount = ((range * 90) + (outputFrameTime/2)) / outputFrameTime;
+    cout << "desiredFrameCount = " << desiredFrameCount << ",actual=" << frameHistory.size() << endl;
+    if ((frameHistory.size()+1) > desiredFrameCount)
+      return true;
   }
 
   // calculate history size, scaled to one second of data
@@ -198,7 +244,7 @@ void OpalVideoRateController::AddFrame(PInt64 totalPayloadSize, int packetCount)
 
   frameHistory.push(info);
   packetHistory.push(info);
-  if (packetHistory.size() > 5) 
+  if (packetHistory.size() > PACKET_HISTORY_SIZE) 
     packetHistory.pop();
 }
 
