@@ -108,6 +108,13 @@ PBoolean H323_H224_AnnexQCapability::OnSendingPDU(H245_DataMode & pdu) const
 {
   pdu.m_bitRate = maxBitRate;
   pdu.m_application.SetTag(H245_DataMode_application::e_genericDataMode);
+  
+  H245_GenericCapability & capability = pdu.m_application;
+  
+  H245_CapabilityIdentifier & capabilityIdentifier = capability.m_capabilityIdentifier;
+  capabilityIdentifier.SetTag(H245_CapabilityIdentifier::e_standard);
+  PASN_ObjectId & objectId = capabilityIdentifier;
+  objectId.SetValue("0.0.8.224.1.0");
 	
   return PTrue;
 }
@@ -180,6 +187,9 @@ PBoolean H323_H224_HDLCTunnelingCapability::OnSendingPDU(H245_DataMode & pdu) co
 {
   pdu.m_bitRate = maxBitRate;
   pdu.m_application.SetTag(H245_DataMode_application::e_h224);
+  
+  H245_DataProtocolCapability & dataProtocolCapability = pdu.m_application;
+  dataProtocolCapability.SetTag(H245_DataProtocolCapability::e_hdlcFrameTunnelling);
 	
   return PTrue;
 }
