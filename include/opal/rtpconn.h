@@ -40,6 +40,24 @@
 #include <opal/connection.h>
 #include <opal/mediatype.h>
 
+#ifdef OPAL_ZRTP
+
+class OpalZRTPStreamInfo {
+  public:
+    virtual bool Open() = 0;
+    virtual RTP_UDP * CreateRTPSession(OpalConnection & conn, unsigned sessionId, bool remoteIsNat) = 0;
+};
+
+class OpalZRTPConnectionInfo {
+  public:
+    virtual bool Open() = 0;
+    virtual RTP_UDP * CreateRTPSession(OpalConnection & conn, unsigned sessionId, bool remoteIsNat) = 0;
+
+    PMutex mutex;
+};
+
+#endif // OPAL_ZRTP
+
 
 class OpalRTPEndPoint;
 
@@ -318,29 +336,24 @@ class OpalRTPConnection : public OpalConnection
       */
     virtual void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
 
-    virtual void SetSecurityMode(const PString & v)
-    { securityMode = v; }
-
-    virtual PString GetSecurityMode() const 
-    { return securityMode; }
-
-    virtual void * GetSecurityData();         
-    virtual void SetSecurityData(void *data); 
-
     void OnMediaCommand(OpalMediaCommand & command, INT extra);
 
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
 
   protected:
-    PString securityMode;
-    void * securityData;
     OpalRTPSessionManager m_rtpSessions;
     OpalRFC2833Proto * rfc2833Handler;
     OpalRFC2833Proto * ciscoNSEHandler;
 
     PBoolean remoteIsNAT;
     PBoolean useRTPAggregation;
+
+#ifdef OPAL_ZRTP
+    bool zrtpEnabled;
+    PMutex zrtpConnInfoMutex;
+    OpalZRTPConnectionInfo * zrtpConnInfo;
+#endif
 };
 
 

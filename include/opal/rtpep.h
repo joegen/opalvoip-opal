@@ -55,26 +55,6 @@ class OpalRTPEndPoint : public OpalEndPoint
      */
     ~OpalRTPEndPoint();
 
-#if OPAL_RTP_AGGREGATE
-
-    virtual PBoolean UseRTPAggregation() const;
-
-    /**Set the RTP aggregation size
-      */
-    void SetRTPAggregationSize(
-      PINDEX size            ///< max connections per aggregation thread. Value of 1 or zero disables aggregation
-    );
-
-    /**Get the RTP aggregation size
-      */
-    PINDEX GetRTPAggregationSize() const;
-
-    /** Get the aggregator used for RTP channels
-      */
-    PHandleAggregator * GetRTPAggregator();
-
-#endif
-	
     /**Callback to allow interface adjustments before connecting to the remote party
        The default implementation does nothing and returns PTrue
       */
@@ -106,11 +86,9 @@ class OpalRTPEndPoint : public OpalEndPoint
       PBoolean incoming                       ///< Incoming/outgoing connection
     );
 
-    virtual void SetDefaultSecurityMode(const PString & v)
-    { defaultSecurityMode = v; }
-
-    virtual PString GetDefaultSecurityMode() const 
-    { return defaultSecurityMode; }
+#ifdef OPAL_ZRTP
+    virtual bool GetZRTPEnabled() const;
+#endif
 
     /**Get the data formats this endpoint is capable of operating.
        This provides a list of media data format names that may be used by an
@@ -125,13 +103,8 @@ class OpalRTPEndPoint : public OpalEndPoint
   //@}
     
   protected:
-    PString defaultSecurityMode; 
-
-#if OPAL_RTP_AGGREGATE
-    PMutex rtpAggregationMutex;
-    PBoolean useRTPAggregation; 
-    PINDEX rtpAggregationSize;
-    PHandleAggregator * rtpAggregator;
+#ifdef OPAL_ZRTP
+    bool zrtpEnabled;
 #endif
 
   //@}

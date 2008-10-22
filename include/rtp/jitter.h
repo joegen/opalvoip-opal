@@ -127,7 +127,7 @@ class OpalJitterBuffer : public PObject
 
     /**Start jitter thread
       */
-    virtual void Resume(PHandleAggregator * aggregator = NULL);
+    virtual void Resume();
 
     PDECLARE_NOTIFIER(PThread, OpalJitterBuffer, JitterThreadMain);
 

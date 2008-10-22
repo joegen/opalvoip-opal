@@ -106,12 +106,6 @@ ostream & operator << (ostream & strm, const OpalMediaType & mediaType);
 class OpalRTPConnection;
 class RTP_UDP;
 
-#if OPAL_RTP_AGGREGATE
-class PHandleAggregator;
-#else
-typedef void * PHandleAggregator;
-#endif
-
 #if OPAL_SIP
 class SDPMediaDescription;
 class OpalTransportAddress;
@@ -151,10 +145,6 @@ class OpalMediaTypeDefinition  {
     //  By default, this will create a RTP_UDP session with the correct initial format
     //
     virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
-#if OPAL_RTP_AGGREGATE
-                                       PHandleAggregator * agg,
-#endif
-                                        OpalSecurityMode * securityMode, 
                                                   unsigned sessionID, 
                                                       bool remoteIsNAT);
 
@@ -231,11 +221,7 @@ class SimpleMediaType : public OpalMediaTypeDefinition
 
     virtual ~SimpleMediaType()                     { }
 
-    virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & ,
-#if OPAL_RTP_AGGREGATE
-                                       PHandleAggregator * ,
-#endif
-                                       unsigned , bool ) { return NULL; }
+    virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & ,unsigned , bool ) { return NULL; }
 
   PString GetRTPEncoding() const { return PString::Empty(); } 
 
@@ -308,9 +294,6 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 
     PString GetRTPEncoding(void) const;
     RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
-#if OPAL_RTP_AGGREGATE
-                               PHandleAggregator * agg,
-#endif
                                unsigned sessionID, bool remoteIsNAT);
 
 #if OPAL_SIP

@@ -47,21 +47,10 @@
 #include <codec/vidcodec.h>
 #endif
 
-#ifdef HAS_LIBZRTP
+#ifdef OPAL_ZRTP
 
-#define BUILD_ZRTP_MUTEXES 1
+extern OpalZRTPConnectionInfo * OpalLibZRTPConnInfo_Create();
 
-#ifdef _WIN32
-#define ZRTP_PLATFORM ZP_WIN32
-#endif
-
-#ifdef P_LINUX
-#define ZRTP_PLATFORM ZP_LINUX
-#endif
-
-#include <zrtp.h>
-#include <zrtp/opalzrtp.h>
-#include <rtp/zrtpudp.h>
 #endif
 
 
@@ -71,25 +60,14 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
                                    unsigned int options,
                OpalConnection::StringOptions * _stringOptions)
   : OpalConnection(call, ep, token, options, _stringOptions)
-  , securityData(NULL)
   , remoteIsNAT(false)
 {
   rfc2833Handler  = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
   ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
 
-  securityMode = ep.GetDefaultSecurityMode();
-
-#if OPAL_RTP_AGGREGATE
-  switch (options & RTPAggregationMask) {
-    case RTPAggregationDisable:
-      useRTPAggregation = PFalse;
-      break;
-    case RTPAggregationEnable:
-      useRTPAggregation = PTrue;
-      break;
-    default:
-      useRTPAggregation = ep.UseRTPAggregation();
-  }
+#ifdef OPAL_ZRTP
+  zrtpEnabled = ep.GetZRTPEnabled();
+  zrtpConnInfo = NULL;
 #endif
 
   // if this is the second connection in this call, then we are making an outgoing H.323/SIP call
@@ -152,32 +130,28 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   }
 
   // create an RTP session
-  RTP_UDP          * rtpSession    = NULL;
-  OpalSecurityMode * securityParms = NULL;
+  RTP_UDP * rtpSession    = NULL;
 
-  if (!securityMode.IsEmpty()) {
-    securityParms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
-    if (securityParms == NULL) {
-      PTRACE(1, "RTPCon\tSecurity mode " << securityMode << " unknown");
-      return NULL;
+#ifdef OPAL_ZRTP
+  // create ZRTP channel if enabled
+  {
+    PWaitAndSignal m(zrtpConnInfoMutex);
+    if (zrtpEnabled) {
+      if (zrtpConnInfo == NULL)
+        zrtpConnInfo = OpalLibZRTPConnInfo_Create();
+      if (zrtpConnInfo != NULL) {
+        rtpSession = zrtpConnInfo->CreateRTPSession(*this, sessionID, remoteIsNAT);
+        if (rtpSession == NULL) {
+          delete zrtpConnInfo;
+          zrtpConnInfo = NULL;
+        }
+      }
     }
-    PTRACE(1, "RTPCon\tCreating security mode " << securityMode);
   }
-
-  rtpSession = def->CreateRTPSession(*this,
-#if OPAL_RTP_AGGREGATE
-                             useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
 #endif
-                             securityParms, sessionID, remoteIsNAT);  
-  if (rtpSession == NULL) {
-    if (securityParms == NULL) {
-      PTRACE(1, "RTPCon\tCannot create RTP session " << sessionID);
-    } else {
-      PTRACE(1, "RTPCon\tCannot create RTP session " << sessionID << " with security mode " << securityMode);
-      delete securityParms;
-    }
-    return NULL;
-  }
+
+  if (rtpSession == NULL)
+    rtpSession = def->CreateRTPSession(*this, sessionID, remoteIsNAT);  
 
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;
@@ -226,16 +200,6 @@ PBoolean OpalRTPConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr
                                                               PBoolean incoming)
 {
   return static_cast<OpalRTPEndPoint &>(endpoint).IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, incoming);
-}
-
-void * OpalRTPConnection::GetSecurityData()
-{
-  return securityData;
-}
- 
-void OpalRTPConnection::SetSecurityData(void *data)
-{
-  securityData = data;
 }
 
 #if OPAL_VIDEO

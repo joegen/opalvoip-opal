@@ -81,18 +81,11 @@ OpalFaxMediaType::OpalFaxMediaType()
 PString OpalFaxMediaType::GetRTPEncoding() const
 { return "udptl"; }
 
-RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &,
-#if OPAL_RTP_AGGREGATE
-                                             PHandleAggregator * agg,
-#endif
-                                             unsigned sessionID, bool remoteIsNAT)
+RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &, unsigned sessionID, bool remoteIsNAT)
 {
   RTP_Session::Params params;
   params.id = sessionID;
   params.encoding = GetRTPEncoding();
-#if OPAL_RTP_AGGREGATE
-  params.aggregator = agg;
-#endif
   params.remoteIsNAT = remoteIsNAT;
   return new RTP_UDP(params);
 }

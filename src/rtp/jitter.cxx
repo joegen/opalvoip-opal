@@ -197,7 +197,7 @@ void OpalJitterBuffer::SetDelay(unsigned _minJitterDelay, unsigned _maxJitterDel
   PTRACE(3, "RTP\tJitter buffer restarted:" << *this);
 }
 
-void OpalJitterBuffer::Resume(PHandleAggregator * /*aggregator */)
+void OpalJitterBuffer::Resume()
 {
   PWaitAndSignal m(bufferMutex);
   if (jitterThread != NULL) {

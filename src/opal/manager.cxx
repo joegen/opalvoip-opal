@@ -155,8 +155,8 @@ OpalManager::OpalManager()
   , interfaceMonitor(NULL)
   , activeCalls(*this)
   , clearingAllCalls(PFalse)
-#if OPAL_RTP_AGGREGATE
-  , useRTPAggregation(false)
+#ifdef OPAL_ZRTP
+  , zrtpEnabled(false)
 #endif
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
@@ -1497,15 +1497,6 @@ void OpalManager::OnNewConnection(OpalConnection & /*conn*/)
 {
 }
 
-PBoolean OpalManager::UseRTPAggregation() const
-{ 
-#if OPAL_RTP_AGGREGATE
-  return useRTPAggregation; 
-#else
-  return PFalse;
-#endif
-}
-
 PBoolean OpalManager::StartRecording(const PString & callToken, const PFilePath & fn)
 {
   PSafePtr<OpalCall> call = activeCalls.FindWithLock(callToken, PSafeReadWrite);
@@ -1552,6 +1543,12 @@ void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::Interface
     stun->InvalidateCache();
 }
 
+#ifdef OPAL_ZRTP
+bool OpalManager::GetZRTPEnabled() const
+{
+  return zrtpEnabled;
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
