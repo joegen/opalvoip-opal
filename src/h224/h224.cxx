@@ -1115,7 +1115,9 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
   transmitFrame.SetPayloadSize(size);
   transmitFrame.SetMarker(PTrue);
   
-  transmitMediaStream->PushPacket(transmitFrame);
+  if (transmitMediaStream != NULL) {
+    transmitMediaStream->PushPacket(transmitFrame);
+  }
 }
 
 ////////////////////////////////////
