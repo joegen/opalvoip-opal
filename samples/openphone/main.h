@@ -267,6 +267,7 @@ enum StatisticsPages {
 struct StatisticsField
 {
   StatisticsField(const wxChar * name, StatisticsPages page);
+  virtual ~StatisticsField() { }
   void Init(wxWindow * panel);
   void Clear();
   double CalculateBandwidth(DWORD bytes);
