@@ -192,7 +192,7 @@ PBoolean IAX2Connection::SetConnected()
     jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
 			  endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
     PTRACE(5, "Iax2Con\t Start jitter buffer");
-    jitterBuffer.Resume(NULL);
+    jitterBuffer.Resume();
   }
 
   return OpalConnection::SetConnected();
@@ -235,7 +235,7 @@ void IAX2Connection::OnConnected()
     jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
 			  endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
     PTRACE(5, "Iax2Con\t Start jitter buffer");
-    jitterBuffer.Resume(NULL);
+    jitterBuffer.Resume();
   }
 
     // Let OPAL do it's thing with the OnConnected callback.

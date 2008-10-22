@@ -486,9 +486,6 @@ RTP_Session::RTP_Session(const Params & params)
   toolName(PProcess::Current().GetName()),
   reportTimeInterval(0, 12),  // Seconds
   reportTimer(reportTimeInterval)
-#if OPAL_RTP_AGGREGATE
-  , aggregator(params.aggregator)
-#endif
 {
   PAssert(params.id > 0 && params.id < 256, PInvalidParameter);
   sessionID = (BYTE)params.id;
@@ -695,11 +692,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
       jitter->SetDelay(minJitterDelay, maxJitterDelay);
     else
       jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
-    jitter->Resume(
-#if OPAL_RTP_AGGREGATE
-      aggregator
-#endif
-    );
+    jitter->Resume();
   }
 }
 

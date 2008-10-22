@@ -102,17 +102,6 @@ void OpalEndPoint::ShutDown()
 
   // Shut down the listeners as soon as possible to avoid race conditions
   listeners.RemoveAll();
-
-#if OPAL_RTP_AGGREGATE
-  // delete aggregators
-  {
-    PWaitAndSignal m(rtpAggregationMutex);
-    if (rtpAggregator != NULL) {
-      delete rtpAggregator;
-      rtpAggregator = NULL;
-    }
-  }
-#endif
 }
 
 

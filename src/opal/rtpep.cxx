@@ -40,27 +40,14 @@ OpalRTPEndPoint::OpalRTPEndPoint(OpalManager & manager,     ///<  Manager of all
                        const PCaselessString & prefix,      ///<  Prefix for URL style address strings
                                       unsigned attributes)  ///<  Bit mask of attributes endpoint has
   : OpalEndPoint(manager, prefix, attributes)
-{
-  defaultSecurityMode = manager.GetDefaultSecurityMode();
-#if OPAL_RTP_AGGREGATE
-    ,useRTPAggregation(manager.UseRTPAggregation()),
-    rtpAggregationSize(10),
-    rtpAggregator(NULL)
+#ifdef OPAL_ZRTP
+    , zrtpEnabled(manager.GetZRTPEnabled())
 #endif
+{
 }
 
 OpalRTPEndPoint::~OpalRTPEndPoint()
 {
-#if OPAL_RTP_AGGREGATE
-  // delete aggregators
-  {
-    PWaitAndSignal m(rtpAggregationMutex);
-    if (rtpAggregator != NULL) {
-      delete rtpAggregator;
-      rtpAggregator = NULL;
-    }
-  }
-#endif
 }
 
 PBoolean OpalRTPEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddress*/, 
@@ -84,35 +71,12 @@ OpalMediaFormatList OpalRTPEndPoint::GetMediaFormats() const
   return OpalMediaFormat::GetAllRegisteredMediaFormats();
 }
 
-#if OPAL_RTP_AGGREGATE
+#ifdef OPAL_ZRTP
 
-PHandleAggregator * OpalRTPEndPoint::GetRTPAggregator()
-{
-  PWaitAndSignal m(rtpAggregationMutex);
-  if (rtpAggregationSize == 0)
-    return NULL;
-
-  if (rtpAggregator == NULL)
-    rtpAggregator = new PHandleAggregator(rtpAggregationSize);
-
-  return rtpAggregator;
-}
-
-PBoolean OpalRTPEndPoint::UseRTPAggregation() const
+bool OpalRTPEndPoint::GetZRTPEnabled() const
 { 
-  return useRTPAggregation; 
+  return zrtpEnabled; 
 }
 
-void OpalRTPEndPoint::SetRTPAggregationSize(PINDEX size)
-{ 
-  rtpAggregationSize = size; 
-}
-
-PINDEX OpalRTPEndPoint::GetRTPAggregationSize() const
-{ 
-  return rtpAggregationSize; 
-}
-
-#endif // OPAL_RTP_AGGREGATE
-
+#endif
 
