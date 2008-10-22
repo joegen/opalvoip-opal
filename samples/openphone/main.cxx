@@ -890,12 +890,12 @@ bool MyManager::Initialise()
   if (config->Read(SecureSIPKey, &onoff) && !onoff)
     DetachEndPoint("sips");
 #if OPAL_H323
-  if (config->Read(RTPSecurityModeH323Key, &str) && str != "None")
-    h323EP->SetDefaultSecurityMode(str);
+  //if (config->Read(RTPSecurityModeH323Key, &str) && str != "None")
+  //  h323EP->SetDefaultSecurityMode(str);
 #endif
 #if OPAL_SIP
-  if (config->Read(RTPSecurityModeSIPKey, &str) && str != "None")
-    sipEP->SetDefaultSecurityMode(str);
+  //if (config->Read(RTPSecurityModeSIPKey, &str) && str != "None")
+  //  sipEP->SetDefaultSecurityMode(str);
 #endif
 
   PwxString username, password;
@@ -3539,10 +3539,10 @@ bool OptionsDialog::TransferDataFromWindow()
   if (m_RTPSecurityModeSIP == "None")
     m_RTPSecurityModeSIP.erase();
 #if OPAL_H323
-  SAVE_FIELD(RTPSecurityModeH323, m_manager.h323EP->SetDefaultSecurityMode);
+  //SAVE_FIELD(RTPSecurityModeH323, m_manager.h323EP->SetDefaultSecurityMode);
 #endif
 #if OPAL_SIP
-  SAVE_FIELD(RTPSecurityModeSIP, m_manager.sipEP->SetDefaultSecurityMode);
+  //SAVE_FIELD(RTPSecurityModeSIP, m_manager.sipEP->SetDefaultSecurityMode);
 #endif
 
 
@@ -4931,6 +4931,7 @@ void StatisticsField::Update(const OpalConnection & connection, const OpalMediaS
 #define STATISTICS_FIELD_BEG(type, name) \
   class type##name##StatisticsField : public StatisticsField { \
   public: type##name##StatisticsField() : StatisticsField(wxT(#type) wxT(#name), type) { } \
+    virtual ~type##name##StatisticsField() { } \
     virtual StatisticsField * Clone() const { return new type##name##StatisticsField(*this); } \
     virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) {
 
