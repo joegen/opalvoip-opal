@@ -31,19 +31,19 @@ For Windows:
       and use the converted projects.
 
   5.  Build the "Unicode Release" and "Unicode Debug" versions of everything.
-      The safest way is to simply select "Unicode Debug" in teh tool bar drop
+      The safest way is to simply select "Unicode Debug" in the tool bar drop
       down list, go "Build Solution", then do the same for "Unicode Release".
 
   6.  Open the DevStudio workspace %WXDIR%\utils\wxrc\wxrc.dsw, if missing then
       %WXDIR%\utils\wxrc\wxrc.dsp will do. Let it convert the projects as before.
 
-  7.  Build the release version. Note: when using VC Express 2005, you may get
+  7.  Build the "Unicode Release" version. Note: when using VC Express 2005, you may get
       a large number of undefined symbols when linking. To fix this, add the
       following libraries to the linker command line:
 
                  user32.lib ole32.lib advapi32.lib shell32.lib
 
-  8.  Copy the %WXDIR%\utils\wxrc\vc_msw\wxrc.exe file to %WXDIR%\bin\wxrc.exe.
+  8.  Copy the %WXDIR%\utils\wxrc\vc_mswu\wxrc.exe file to %WXDIR%\bin\wxrc.exe.
       You may need to create the %WXDIR%\bin directory.
 
   9.  wxWidgets is now ready to use.
