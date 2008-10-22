@@ -40,20 +40,55 @@
 
 #include <opal/buildopts.h>
 
+//
+//  This file implements a video rate controller that seeks to maintain a constant bit rate 
+//  by indicating when encoded video frames should be dropped
+//
+//  To use the rate controller, open it with the appropriate parameters. 
+//
+//  Before encoding a potential output frame, use the SkipFrame function to determine if the 
+//  frame should be skipped. If the frame is not skipped, encode the frame and then call AddFrame
+//  with the parameters of the final data.
+//
+
+
 class OpalVideoRateController
 {
   public:
     OpalVideoRateController();
-    void Reset();
-    void Open(unsigned targetBitRate, unsigned windowSizeInMs = 5000, unsigned rcMaxConsecutiveFramesSkip = 5);
+
+    /** Open the rate controller with the specific parameters
+      */
+    void Open(
+      unsigned targetBitRate,                  ///< target bit rate to acheive
+      int outputFrameTime = -1,                ///< output frame time (90000 / rate), or -1 to not limit frame rate
+      unsigned windowSizeInMs = 5000,          ///< size of history used for calculating output bit rate
+      unsigned maxConsecutiveFramesSkip = 5    ///< maximum number of consecutive frames to skip
+    );
+
+    /** Determine if the next frame should be skipped
+      */
     bool SkipFrame();
-    void AddFrame(PInt64 sizeInBytes, int packetPacketCount);
-    void AddFrame(PInt64 sizeInBytes, int packetPacketCount, PInt64 now);
+
+    /** Add information about an encoded frame 
+      */
+    void AddFrame(
+      PInt64 sizeInBytes,                      ///< total payload size in bytes, including all RTP headers
+      int packetPacketCount                    ///< total number of RTP packets sent
+    );
 
   protected:
+    void Reset();
+    void AddFrame(
+      PInt64 sizeInBytes, 
+      int packetPacketCount, 
+      PInt64 now);
+
     unsigned byteRate;
     unsigned historySizeInMs;
     unsigned maxConsecutiveFramesSkip;
+    int outputFrameTime;
+
     PInt64  targetHistorySize;
     PInt64  startTime;
     PInt64  inputFrameCount;
