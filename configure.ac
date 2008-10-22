@@ -335,9 +335,9 @@ AC_SUBST(SPEEXDSP_SYSTEM)
 dnl     ########################
 dnl     ZRTP
 dnl     ########################
-dnl MSWIN_DISPLAY     libzrtp,libZRTP support
-dnl MSWIN_CHECK_FILE  libzrtp,include\zrtp.h,HAS_LIBZRTP=1
-dnl MSWIN_DIR_SYMBOL  libzrtp,LIBZRTP_DIR
+dnl XMSWIN_DISPLAY     libzrtp,libZRTP support
+dnl XMSWIN_CHECK_FILE  libzrtp,include\zrtp.h,OPAL_ZRTP=1
+dnl XMSWIN_DIR_SYMBOL  libzrtp,LIBZRTP_DIR
 
 AC_ARG_ENABLE([zrtp],
               [AC_HELP_STRING([--enable-zrtp],[enable ZRTP protocol support])],

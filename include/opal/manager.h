@@ -1207,20 +1207,16 @@ class OpalManager : public PObject
       OpalConnection & connection   ///< New connection just created
     );
 
-    virtual void SetDefaultSecurityMode(const PString & v)
-    { defaultSecurityMode = v; }
-
-    virtual PString GetDefaultSecurityMode() const 
-    { return defaultSecurityMode; }
-
-    virtual PBoolean UseRTPAggregation() const;
-
     OpalRecordManager & GetRecordManager()
     { return recordManager; }
 
     virtual PBoolean StartRecording(const PString & callToken, const PFilePath & fn);
     virtual bool IsRecording(const PString & callToken);
     virtual void StopRecording(const PString & callToken);
+
+#ifdef OPAL_ZRTP
+    virtual bool GetZRTPEnabled() const;
+#endif
 
   protected:
     // Configuration variables
@@ -1317,10 +1313,8 @@ class OpalManager : public PObject
     PSyncPoint   garbageCollectExit;
     PDECLARE_NOTIFIER(PThread, OpalManager, GarbageMain);
 
-    PString defaultSecurityMode;
-
-#if OPAL_RTP_AGGREGATE
-    PBoolean useRTPAggregation; 
+#ifdef OPAL_ZRTP
+    bool zrtpEnabled;
 #endif
 
     OpalRecordManager recordManager;

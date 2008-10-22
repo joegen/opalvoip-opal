@@ -46,13 +46,6 @@ class RTP_JitterBuffer;
 class PNatMethod;
 class OpalSecurityMode;
 
-#if OPAL_RTP_AGGREGATE
-#include <ptclib/sockagg.h>
-#else
-typedef void * PHandleAggregator;
-typedef void * RTP_AggregatedHandle;
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
 // 
 // class to hold the QoS definitions for an RTP channel
@@ -392,9 +385,6 @@ class RTP_Session : public PObject
     struct Params {
       Params()
         : id(0)
-#if OPAL_RTP_AGGREGATE
-        , aggregator(NULL)
-#endif
         , userData(NULL)
         , autoDelete(true)
         , isAudio(false)
@@ -403,9 +393,6 @@ class RTP_Session : public PObject
 
       PString             encoding;    ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
       unsigned            id;          ///<  Session ID for RTP channel
-#if OPAL_RTP_AGGREGATE
-      PHandleAggregator * aggregator;  ///<  RTP aggregator
-#endif
       RTP_UserData      * userData;    ///<  Optional data for session.
       bool                autoDelete;  ///<  Delete optional data with session.
       bool                isAudio;     ///<  is audio RTP data
@@ -905,10 +892,6 @@ class RTP_Session : public PObject
 
     PMutex reportMutex;
     PTimer reportTimer;
-
-#if OPAL_RTP_AGGREGATE
-    PHandleAggregator * aggregator;
-#endif
 
     PBoolean closeOnBye;
     PBoolean byeSent;

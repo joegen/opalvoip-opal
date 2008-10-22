@@ -8,17 +8,155 @@
 
 #if OPAL_ZRTP
 
-#define BUILD_ZRTP_MUTEXES 1
+  #define BUILD_ZRTP_MUTEXES 1
 
-#ifdef _WIN32
-#define ZRTP_PLATFORM ZP_WIN32
+  #ifdef _WIN32
+  #define ZRTP_PLATFORM ZP_WIN32
+  #endif
+
+  #ifdef P_LINUX
+  #define ZRTP_PLATFORM ZP_LINUX
+  #endif
+
+  #include "rtp/zrtpudp.h"
+
+  extern "C" {
+  #include <zrtp.h>
+  };
+
+class OpalLibZRTPConnectionInfo : public OpalZRTPConnectionInfo {
+  public:
+    OpalLibZRTPConnectionInfo();
+
+    bool Open();
+    virtual RTP_UDP * CreateRTPSession(OpalConnection & conn, unsigned sessionId, bool remoteIsNat);
+
+    static PMutex globalMutex;
+    static bool globalInited;
+    static zrtp_global_ctx_t zrtpGlobal;
+
+    zrtp_conn_ctx_t zrtpConnContext;
+};
+
+class OpalLibZRTPStreamInfo : public OpalZRTPStreamInfo {
+  public:
+    virtual bool Open();
+};
+
+
+PMutex OpalLibZRTPConnectionInfo::globalMutex;
+bool OpalLibZRTPConnectionInfo::globalInited = false;
+zrtp_global_ctx_t OpalLibZRTPConnectionInfo::zrtpGlobal;
+
+//////////////////////////////////////////////////////////////////////
+
+class OpalZrtp_UDP : public SecureRTP_UDP
+{
+  PCLASSINFO(OpalZrtp_UDP, SecureRTP_UDP);
+  public:
+    OpalZrtp_UDP(
+      const PString & encoding,       ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
+      bool audio,                     ///<  is audio RTP data
+      unsigned id,                    ///<  Session ID for RTP channel
+      PBoolean remoteIsNAT            ///<  TRUE is remote is behind NAT
+    );
+
+    virtual ~OpalZrtp_UDP();
+
+    virtual PBoolean WriteZrtpData(RTP_DataFrame & frame);
+
+    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
+    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
+    virtual DWORD GetOutgoingSSRC();
+
+  protected:
+    zrtp_conn_ctx_t	zrtpSession;
+};
+
+
+class OpalZrtpSecurityMode : public OpalSecurityMode
+{
+  PCLASSINFO(OpalZrtpSecurityMode, OpalSecurityMode);
+};
+
+class LibZrtpSecurityMode_Base : public OpalZrtpSecurityMode
+{
+    PCLASSINFO(LibZrtpSecurityMode_Base, OpalZrtpSecurityMode);
+  public:
+    LibZrtpSecurityMode_Base();
+    ~LibZrtpSecurityMode_Base();
+
+    RTP_UDP * CreateRTPSession(
+      OpalRTPConnection & connection,     ///< Connection creating session (may be needed by secure connections)
+      const RTP_Session::Params & options ///< Parameters to construct with session.
+    );
+
+    PBoolean Open();
+
+    zrtp_profile_t * GetZrtpProfile();
+
+    zrtp_conn_ctx_t	* zrtpSession;
+
+  protected:
+    // last element of each array mush be 0
+    void Init(int *sas, int *pk, int *auth, int *cipher, int *hash);
+    zrtp_profile_t *profile;
+};
+
+//////////////////////////////////////////////////////////////////////
+
+OpalLibZRTPConnectionInfo * OpalLibZRTPConnectionInfo_Create()
+{
+  OpalLibZRTPConnectionInfo * zrtp = new OpalLibZRTPConnectionInfo();
+  if (zrtp == NULL || !zrtp->Open()) {
+    delete zrtp;
+    return NULL;
+  }
+
+  return zrtp;
+}
+
+OpalLibZRTPConnectionInfo::OpalLibZRTPConnectionInfo()
+{
+}
+
+bool OpalLibZRTPConnectionInfo::Open()
+{
+  // do the global init
+  {
+    PWaitAndSignal m(globalMutex);
+    if (!globalInited) {
+      if (zrtp_init(&zrtpGlobal, 
+                    "Opal", 
+#ifdef _DEBUG
+                    ZRTP_LICENSE_MODE_UNLIMITED
+#else
+                    ZRTP_LICENSE_MODE_PASSIVE
 #endif
+      ) != zrtp_status_ok)
+        return false;
 
-#ifdef P_LINUX
-#define ZRTP_PLATFORM ZP_LINUX
-#endif
+      globalInited = true;
+    }
 
-#include "rtp/zrtpudp.h"
+    // do the per-session init
+    if (zrtp_init_session_ctx(&zrtpConnContext, &zrtpGlobal, NULL, 0) != zrtp_status_ok) 
+      return false;
+  }
+
+  return true;
+}
+
+RTP_UDP * OpalLibZRTPConnectionInfo::CreateRTPSession(OpalConnection & conn, unsigned sessionId, bool remoteIsNat)
+{
+  return new OpalZrtp_UDP(
+  //OpalZRTPStreamInfo * zrtpStreamInfo = zrtpConnInfo->CreateStream();
+  //if (zrtpStreamInfo != NULL) {
+
+  return NULL;
+}
 
 
 //////////////////////////////////////////////////////////////////////
@@ -27,6 +165,7 @@ OpalZrtp_UDP::OpalZrtp_UDP(const Params & params)
   : SecureRTP_UDP(params)
   , zrtpStream(NULL)
 {
+  zrtp_conn_ctx_t	* zrtpSession;
 }
  
 
@@ -236,6 +375,5 @@ PBoolean LibZrtpSecurityMode_Base::Open()
 {
 	return PTrue;
 }
-
 
 #endif
