@@ -181,6 +181,24 @@ AC_SUBST(SPEEX_CFLAGS)
 AC_SUBST(SPEEX_LIBS)
 
 dnl ########################################################################
+dnl sbc,Bluetooth SBC for telephony with CD quality
+
+AC_ARG_ENABLE([sbc],
+              [AC_HELP_STRING([--enable-sbc],[enable use of Bluetooth SBC for CD quality telephony])],
+              [has_sbc=$enableval],
+              [has_sbc=])
+
+if test "$has_sbc" = "yes" ; then
+  AC_CHECK_LIB(samplerate,src_get_version,has_samplerate=yes,has_samplerate=no)
+  if test "$has_samplerate" = "yes" ; then
+    HAVE_SBC=yes
+    AC_DEFINE(HAVE_SBC, yes)
+    AC_MSG_NOTICE(Enabling SBC codec)
+  fi
+fi
+AC_SUBST(HAVE_SBC)
+
+dnl ########################################################################
 dnl Video Codecs
 dnl ########################################################################
 
@@ -373,6 +391,9 @@ fi
 if test -d audio/IMA_ADPCM ; then
   AC_CONFIG_FILES(audio/IMA_ADPCM/Makefile)
 fi
+if test -d audio/SBC ; then
+  AC_CONFIG_FILES(audio/SBC/Makefile)
+fi
 if test -d video/H.261-vic ; then
   AC_CONFIG_FILES(video/H.261-vic/Makefile)
 fi
@@ -449,6 +470,12 @@ fi
 echo "                            LPC10 :  yes"
 echo "                            G.726 :  yes"
 echo "                        IMA_ADPCM :  yes"
+
+if test "x${HAVE_SBC}" = "xyes" ; then
+echo "                              SBC :  yes"
+else
+echo "                              SBC :  no"
+fi
 
 echo ""
 
