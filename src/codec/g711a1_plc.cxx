@@ -28,9 +28,11 @@
 * $Date$
 */
 
-
+#ifndef SBC_DISABLE_PTLIB
 #include <ptlib.h>
 #include <opal/buildopts.h>
+#endif
+
 #include <codec/g711a1_plc.h>
 
 #if OPAL_G711PLC
@@ -78,12 +80,19 @@ __inline double round(const double & value)
 
 OpalG711_PLC::OpalG711_PLC(int rate, double pitch_low, double pitch_high)
 {
+#ifndef SBC_DISABLE_PTLIB
   PAssert(rate >= 8000 && rate <= 48000, PInvalidParameter);
+#endif
   this->rate = rate;
 
+#ifndef SBC_DISABLE_PTLIB
   PAssert(pitch_high <= 1000 && pitch_high > pitch_low, PInvalidParameter);
+#endif
   pitch_min = int(rate/pitch_high);                /* minimum allowed pitch, default 200 Hz */
+
+#ifndef SBC_DISABLE_PTLIB
   PAssert(1/pitch_low < corr_len_ms, PInvalidParameter);
+#endif
   pitch_max = int(rate/pitch_low);                /* maximum allowed pitch, default 66 Hz */
 
 
@@ -190,7 +199,9 @@ void OpalG711_PLC::dofe(short *out, int size)
 {
   do {
     int res = dofe_partly(out, size);
+#ifndef SBC_DISABLE_PTLIB
     PAssert(res > 0 && res <=size, PInvalidParameter);
+#endif
     size -= res;
     out += res;
   }while(size>0);
@@ -297,7 +308,10 @@ int OpalG711_PLC::dofe_partly(short *out, int size)
     break;
 
   default:
-    PAssertAlways(PLogicError);
+#ifndef SBC_DISABLE_PTLIB
+    PAssertAlways(PLogicError)
+#endif
+    ;
   }
 
   conceal_count+=size;
@@ -422,9 +436,11 @@ void OpalG711_PLC::drop(short *s, int size)
 */
 void OpalG711_PLC::overlapaddatend(short *s, short *f, int start, int end, int count) const
 {
+#ifndef SBC_DISABLE_PTLIB
   PAssert(start<=end, PInvalidParameter);
   PAssert(end<=count, PInvalidParameter);
   PAssert(start >= 0 && count < 32767, PInvalidParameter);
+#endif
 
   int size=end-start;
   start++;
@@ -437,7 +453,9 @@ void OpalG711_PLC::overlapaddatend(short *s, short *f, int start, int end, int c
     else if (t < -32768)
       t = -32768;
     s[i] = (short)t;
+#ifndef SBC_DISABLE_PTLIB
     PAssert(end >=0 && end<=count && start >=0 && start <= count, PInvalidParameter);
+#endif
     start++;
   }
 }

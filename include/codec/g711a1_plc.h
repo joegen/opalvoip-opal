@@ -31,10 +31,13 @@
 #ifndef OPAL_CODEC_G711A1_PLC_H
 #define OPAL_CODEC_G711A1_PLC_H
 
+#ifndef SBC_DISABLE_PTLIB
 #include <opal/buildopts.h>
+#endif
 
 #if OPAL_G711PLC
 
+#include <string.h>
 
 /** concealment state variables.
  * This class contains states and code of my concealment algorithm.
