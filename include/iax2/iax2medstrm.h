@@ -56,9 +56,10 @@ class OpalLine;
 class OpalIAX2MediaStream : public OpalMediaStream
 {
   PCLASSINFO(OpalIAX2MediaStream, OpalMediaStream);
-  /**@name Construction */
+  /**@name Construction and Destruction*/
   //@{
-    /**Construct a new media stream for connecting to the media 
+    /**Construct a new media stream for connecting to the media.
+       This method grabs a SafeReference on the connection, so the connection won't go away on us.
       */
     OpalIAX2MediaStream(
 		   IAX2Connection &con,                 /*!< IAX connection to read/send incoming packets */
@@ -66,7 +67,12 @@ class OpalIAX2MediaStream : public OpalMediaStream
 		   unsigned sessionID,                  /*!< Session number for stream */
 		   PBoolean isSource                        /*!< Is a source stream */
 		   );
+    /**Destroy a new media stream for connecting to the media.
+       This method releases the SafeReference on the connection, so the connection can be destroyed */
+    ~OpalIAX2MediaStream();
   //@}
+
+
  
  public:
   /**@name Overrides of OpalMediaStream class */
@@ -131,12 +137,11 @@ class OpalIAX2MediaStream : public OpalMediaStream
 #endif  // OPAL_IAX2_MEDIASTRM_H
 
 /* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 2 spaces.     */
+/* With the comment below, the tab key does auto indent to 4 spaces.     */
 
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
- * c-basic-offset:2
+ * c-basic-offset:4
  * End:
  */
