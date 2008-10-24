@@ -2322,7 +2322,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
             break;
         }
         if (!foundOne)
-          return PFalse;
+          continue;
       }
     }
 
