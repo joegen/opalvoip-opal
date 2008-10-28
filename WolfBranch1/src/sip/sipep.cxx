@@ -869,7 +869,7 @@ bool SIPEndPoint::Register(const PString & host,
   params.m_authID = authName;
   params.m_password = password;
   params.m_realm = realm;
-  params.m_expire = expire;
+  params.m_expire = expire != 0 ? expire : GetRegistrarTimeToLive().GetSeconds();
   params.m_minRetryTime = minRetryTime;
   params.m_maxRetryTime = maxRetryTime;
 
