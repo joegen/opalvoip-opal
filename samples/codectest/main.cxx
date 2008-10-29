@@ -657,7 +657,7 @@ bool VideoThread::Initialise(PArgList & args)
   if (args.HasOption('C')) {
     rcEnable = true;
     unsigned rate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
-    rateController.Open(rate, 5000, 12);
+    rateController.Open(rate);
     cout << "Video rate controller enabled for bit rate " << rate << " bps" << endl;
   }
 
