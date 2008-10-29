@@ -6571,6 +6571,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\codec\ratectl.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\codec\rfc2833.cxx"
 					>
 					<FileConfiguration
@@ -10592,6 +10596,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\codec\opalwavfile.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\codec\ratectl.h"
 					>
 				</File>
 				<File
