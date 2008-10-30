@@ -85,11 +85,11 @@ class OpalVideoRateController
       PInt64 now);
 
     unsigned byteRate;
-    unsigned historySizeInMs;
+    unsigned bitRateHistorySizeInMs;
     unsigned maxConsecutiveFramesSkip;
-    int outputFrameTime;
+    int targetOutputFrameTime;
 
-    PInt64  targetHistorySize;
+    PInt64  targetBitRateHistorySize;
     PInt64  startTime;
     PInt64  inputFrameCount;
     PInt64  outputFrameCount;
@@ -100,7 +100,7 @@ class OpalVideoRateController
     PInt64 lastReport;
 
     struct FrameInfo {
-      PInt64  time;
+      PInt64 time;
       PInt64 totalPayloadSize;
       int packetCount;
     };
@@ -131,13 +131,19 @@ class OpalVideoRateController
           pop_front();
         }
 
+        void remove_older_than(PInt64 now, PInt64 age)
+        {
+          while ((size() != 0) && ((now - begin()->time) > age))
+            pop();
+        }
+
         PInt64 bytes;
         int packets;
 
     };
 
-    FrameInfoList frameHistory;
-    FrameInfoList packetHistory;
+    FrameInfoList bitRateHistory;
+    FrameInfoList frameRateHistory;
 };
 
 extern double OpalCalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen);

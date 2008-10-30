@@ -42,6 +42,9 @@
 #include <opal/mediastrm.h>
 #include <opal/transcoders.h>
 
+#if OPAL_VIDEO
+#include <codec/vidcodec.h>
+#endif
 
 #define new PNEW
 
@@ -483,7 +486,7 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
     if (s->WriteFrame(frame))
       written = true;
     else {
-      PTRACE(2, "Patch\tWritePacket failed");
+      PTRACE(2, "Patch\tWriteFrame failed");
     }
   }
 
@@ -570,7 +573,9 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
 void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & mediaFormat)
 {
   unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
-  rcEnabled = mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
+  rcEnabled = (mediaFormat.GetMediaType() == OpalMediaType::Video()) &&
+              mediaFormat != OpalYUV420P &&
+              mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
 
   if (rcEnabled) 
     rateController.Open(
@@ -584,7 +589,7 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
 
 bool OpalMediaPatch::Sink::RateControlExceeded()
 {
-  if (!rcEnabled || rateController.SkipFrame()) 
+  if (!rcEnabled || !rateController.SkipFrame()) 
     return false;
 
   PTRACE(4, "Patch\tRate controller skipping frame.");
