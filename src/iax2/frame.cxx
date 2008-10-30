@@ -1562,14 +1562,12 @@ void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
       continue;
     } 
 
-    if (sent->GetSequenceInfo().IsSequenceNosZero() && sent->IsNewFrame()) {
-      //Outgoing frame has a zero sequence nos, - delete this one
-      PTRACE(5, "MarkDeleteNow on the New frame " << sent->IdString());
-      PTRACE(5, "Have a reply of " << reply->IdString());
+    if (sent->IsNewFrame() &&
+	reply->GetSequenceInfo().IsFirstReplyFrame()) {
+      PTRACE(5, "Have a match on a new frame we sent out");
       goto foundMatch;
-    } else {
-      PTRACE(5, "Non zero sequence nos in the sequence number - look for exact match");
     }
+
         
     if (sent->IsRegReqFrame() && 
         (reply->IsRegAckFrame() || reply->IsRegAuthFrame() || reply->IsRegRejFrame())) {

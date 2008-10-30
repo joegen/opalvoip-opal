@@ -95,6 +95,7 @@ iax2Processor(*new IAX2CallProcessor(ep))
 
 IAX2Connection::~IAX2Connection()
 {
+  jitterBuffer.CloseDown();
   iax2Processor.Terminate();
   iax2Processor.WaitForTermination(1000);
   if (!iax2Processor.IsTerminated()) {
@@ -526,7 +527,7 @@ PBoolean IAX2Connection::ReadSoundPacket(RTP_DataFrame & packet)
     PINDEX zeroBytes = packet.GetSize() - packet.GetHeaderSize();
     memset(packet.GetPayloadPtr() + packet.GetHeaderSize(), 0, zeroBytes);
     PTRACE(5, "Iax2Con\t faulty  read from  jitter buffer"); 
-    return false;
+    return PFalse;
   }
 
   packet.SetPayloadSize(packet.GetSize() - packet.GetHeaderSize());
