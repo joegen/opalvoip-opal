@@ -2608,9 +2608,9 @@ void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & /*session*/) con
 
 #endif // OPAL_VIDEO
 
-void SIP_RTP_Session::OnClearCall(const RTP_Session & /*session*/)
+void SIP_RTP_Session::SessionFailing(RTP_Session & session)
 {
-  ((SIPConnection &)connection).ClearCall();
+  ((SIPConnection &)connection).SessionFailing(session);
 }
 
 void SIPConnection::OnSessionTimeout(PTimer &, INT)
