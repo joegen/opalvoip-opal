@@ -110,8 +110,8 @@ class IAX2JitterBuffer : public OpalJitterBuffer
     /**Build a jitter buffer for this connection, which defaults to 8khz*/
     IAX2JitterBuffer();
 
-    /**Stop the jitter buffer thread in this class, which allows the jitter buffer
-       to close down nicely */
+    /**Stop the jitter buffer thread in this class, which allows the
+       jitter buffer to close down nicely */
     ~IAX2JitterBuffer();
 
     /**This class instance collects data from the outside world in this
@@ -123,21 +123,27 @@ class IAX2JitterBuffer : public OpalJitterBuffer
         PBoolean loop               ///<  If PTrue, loop as long as data is available, if PFalse, only process once
         ) ;
 
-    /**Have receive a new frame from the network. Place it on the internal list */
+    /**Have receive a new frame from the network. Place it on the
+       internal list */
     void NewFrameFromNetwork(RTP_DataFrame *newFrame)
 	{ receivedFrames.AddNewFrame(newFrame); }
 
-    /**Terminate this intance of the jitter buffer permanently, which is
-       required prior to destruction. This closedown mechanism is a bit
-       different to that used in this libraries SIP/H.323 rtp code. However,
-       that code has one socket per media stream. IAX2 and its use of one
-       socket for all streams makes life difficult - we cannot just close that
-       one main socket and close this stream. */
-    void CloseDown() { receivedFrames.CloseDown(); }
+    /**Terminate this intance of the jitter buffer permanently, which
+       is required prior to destruction. This closedown mechanism is a
+       bit different to that used in OPAL's SIP/H.323 rtp code. OPAL's
+       SIP?H.323 rtp code has one socket per media stream. IAX2 has
+       just one socket for all IAX2 streams - we cannot close that one
+       main socket and (consequently) close one media stream. */
+    void CloseDown();
 
  protected:
 
-    /**The list of frames just read from the network*/
+    /**The list of frames just read from the network. The Jitter
+     Buffer thread will pull frames from this list as required. When
+     the jitter buffer thread fails to get frames of this list, the
+     jitter buffer thread closes. In OPAL's H.323&SIP code, the jitter
+     buffer thread closes because read of a network socket has
+     failed.  */
     PendingRtpDataFrames receivedFrames;
 };
 

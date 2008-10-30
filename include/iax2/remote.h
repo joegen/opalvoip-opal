@@ -121,7 +121,7 @@ class IAX2Remote : public PObject
      that generated an ethernet frame which is to be transmitted*/
   PBoolean operator == (IAX2Remote & other);
   
-  /**Return true if remote port & address & destCallNumber==sourceCallNumber match up.
+  /**Return true if remote port & address & destCallNumber==sourceCallNumber  match up.
      This is used when finding a Connection to process an incoming ethernet frame */
   PBoolean operator *= (IAX2Remote & other);
   
@@ -257,8 +257,12 @@ class IAX2SequenceNumbers
   /**Read the outgoing sequence number */
   PINDEX OutSeqNo();
   
-  /**Report true if the frame has inSeqNo and outSeqNo of zero,
-     indicating if it is a "New" packet. */
+  /**Report true if the frame has inSeqNo and outSeqNo of 1 and 0 respectively, 
+     indicating this is a reply to a new frame (could be an ack, accept frame) */
+  PBoolean IsFirstReplyFrame();
+
+  /**Report if the sequences numbers (in and out) are both Zero. This is the case for
+     some frames (new, invalid) */
   PBoolean IsSequenceNosZero();
 
   /**Assign new value to the in (or expected) seq number */

@@ -60,18 +60,19 @@
 
 OpalIAX2MediaStream::OpalIAX2MediaStream(IAX2Connection & conn, 
                                   const OpalMediaFormat & mediaFormat,
-				                                         unsigned sessionID,   
-				                                             PBoolean isSource)
+					 unsigned sessionID,   
+					 PBoolean isSource)
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource),
     connection(conn)
 {
-    PTRACE(6, "Media\tConstructor OpalIAX2MediaStream" << mediaFormat);
+  PTRACE(6, "Media\tConstructor OpalIAX2MediaStream" << mediaFormat);
     connection.SafeReference();
 }
  
 OpalIAX2MediaStream::~OpalIAX2MediaStream()
 {
-   connection.SafeDereference();
+  PTRACE(6, "Media\tDestructor OpalIAX2MediaStream");
+  connection.SafeDereference();
 }
  
 PBoolean OpalIAX2MediaStream::Open()

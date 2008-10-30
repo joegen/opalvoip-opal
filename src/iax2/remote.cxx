@@ -91,6 +91,7 @@ PBoolean IAX2Remote::operator==(IAX2Remote & other)
   return PTrue;
 }
 
+
 PBoolean IAX2Remote::operator*=(IAX2Remote & other)
 {
   PTRACE(6, "Incoming ethernet frame. Compare" << endl << other << endl << (*this) );
@@ -105,7 +106,7 @@ PBoolean IAX2Remote::operator*=(IAX2Remote & other)
     return PFalse;
   }
   
-  if ((sourceCallNumber != other.DestCallNumber()) && (other.DestCallNumber() != callNumberUndefined)) {
+  if (sourceCallNumber != other.DestCallNumber()) {
     PTRACE(5, "comparison of two remotes. Local source number differs to incoming dest call number");
     PTRACE(5, " local sourceCallNumber " << sourceCallNumber 
 	   << "        incoming Dest " << other.DestCallNumber());
@@ -410,10 +411,16 @@ PINDEX IAX2SequenceNumbers::OutSeqNo()
   return outSeqNo; 
 }
   
-PBoolean IAX2SequenceNumbers::IsSequenceNosZero() 
+PBoolean IAX2SequenceNumbers::IsFirstReplyFrame() 
 { 
   PWaitAndSignal m(mutex);
-  return ((inSeqNo & 0xff) == 0) && ((outSeqNo & 0xff) == 0); 
+  return (inSeqNo == 1) && (outSeqNo == 0); 
+}
+
+PBoolean IAX2SequenceNumbers::IsSequenceNosZero()
+{
+  PWaitAndSignal m(mutex);
+  return ((inSeqNo && 0xff) == 0) && ((outSeqNo && 0xff) == 0); 
 }
 
 void IAX2SequenceNumbers::SetInSeqNo(PINDEX newVal) 
