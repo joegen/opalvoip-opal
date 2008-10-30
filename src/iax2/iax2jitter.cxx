@@ -51,15 +51,12 @@ PendingRtpDataFrames::PendingRtpDataFrames()
 
 PendingRtpDataFrames::~PendingRtpDataFrames()
 {
-    AllowDeleteObjects();
+  CloseDown();
 }
 
 RTP_DataFrame * PendingRtpDataFrames::InternalGetLastFrame() 
 {
   PWaitAndSignal m(mutex);
-
-  if (!keepGoing)
-      return NULL;
   
   PINDEX size = PAbstractList::GetSize();
   
@@ -86,6 +83,10 @@ RTP_DataFrame * PendingRtpDataFrames::GetLastFrame()
 
 void PendingRtpDataFrames::AddNewFrame(RTP_DataFrame *newElem)
 {
+  if (!keepGoing) {
+    delete newElem;
+    return;
+  }
   mutex.Wait();
   InsertAt(0, newElem);
   mutex.Signal();
@@ -96,6 +97,14 @@ void PendingRtpDataFrames::AddNewFrame(RTP_DataFrame *newElem)
 void PendingRtpDataFrames::CloseDown()
 {
     keepGoing = PFalse;
+    bool listIsFull = true;
+    while(listIsFull) {
+      RTP_DataFrame *frame = InternalGetLastFrame();
+      if (frame != NULL) 
+	delete frame;
+      else
+	listIsFull = PFalse;
+    }
     activate.Signal();
 }
 
@@ -127,7 +136,11 @@ PBoolean IAX2JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
     return PTrue;
 }
 
-
+void IAX2JitterBuffer::CloseDown() 
+{ 
+  PTRACE(4, "IAX2\tJitterBuffer Read process blocked, and should terminate");
+  receivedFrames.CloseDown(); 
+}
 #endif // OPAL_IAX2
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -137,7 +150,6 @@ PBoolean IAX2JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
 /*
  * Local Variables:
  * mode:c
- * c-file-style:linux
- * c-basic-offset:2
+ * c-basic-offset:4
  * End:
  */
