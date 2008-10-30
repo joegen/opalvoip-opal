@@ -369,11 +369,11 @@ class RTP_UserData : public PObject
     ) const;
 #endif
 
-    /**Callback from the RTP session when a call needs to be shut down.
+    /**Callback from the RTP session when RTP session is failing due to the remote being unavailable
        The default behaviour does nothing.
       */
-    virtual void OnClearCall(
-      const RTP_Session & session   ///<  Session with statistics
+    virtual void SessionFailing(
+      RTP_Session & session   ///<  Session with statistics
     );
 };
 
@@ -827,6 +827,12 @@ class RTP_Session : public PObject
 
     friend class EncodingLock; 
 
+    void SetFailed(bool v)
+    { failed = v; }
+
+    bool GetFailed() const
+    { return failed; }
+
   protected:
     virtual void SendBYE();
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
@@ -912,6 +918,7 @@ class RTP_Session : public PObject
 
     PBoolean closeOnBye;
     PBoolean byeSent;
+    bool                failed;      ///<  set to true if session has received too many ICMP destination unreachable
 };
 
 /**This class is for the IETF Real Time Protocol interface on UDP/IP.
@@ -1099,6 +1106,7 @@ class RTP_UDP : public RTP_Session
     bool localHasNAT;
     bool first;
     int  badTransmitCounter;
+    PTime badTransmitStart;
 };
 
 /////////////////////////////////////////////////////////////////////////////

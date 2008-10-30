@@ -356,10 +356,23 @@ void OpalRTPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT typ
 
 void OpalRTPConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & /*info*/, INT)
 {
-  cout << "Received NSE event" << endl;
   //if (!info.IsToneStart())
   //  OnUserInputTone(info.GetTone(), info.GetDuration()/8);
 }
+
+void OpalRTPConnection::SessionFailing(RTP_Session & session)
+{
+  // set this session as failed
+  session.SetFailed(true);
+
+  // check to see if all RTP session have failed
+  // if so, clear the call
+  if (m_rtpSessions.AllSessionsFailing()) {
+    PTRACE(2, "RTPCon\tClearing call as all RTP session are failing");
+    ClearCall();
+  }
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -482,6 +495,20 @@ RTP_Session * OpalRTPSessionManager::GetSession(unsigned sessionID) const
   return session->rtpSession;
 }
 
+bool OpalRTPSessionManager::AllSessionsFailing()
+{
+  PWaitAndSignal wait(m_mutex);
+
+  for (PINDEX i = 0; i < sessions.GetSize(); ++i) {
+    RTP_Session * session = sessions.GetDataAt(i).rtpSession;
+    if (session == NULL)
+      continue;
+    if (!session->GetFailed())
+      return false;
+  }
+
+  return true;
+}
 
 void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, OpalConnection::StringOptions * stringOptions)
 {

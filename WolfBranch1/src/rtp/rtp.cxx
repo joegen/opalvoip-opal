@@ -48,6 +48,7 @@
 
 #define new PNEW
 
+#define BAD_TRANSMIT_TIME_MAX 10    //  maximum of seconds of transmit fails before session is killed
 
 const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
 
@@ -464,7 +465,7 @@ void RTP_UserData::OnRxStatistics(const RTP_Session & /*session*/) const
 {
 }
 
-void RTP_UserData::OnClearCall(const RTP_Session & /*session*/)
+void RTP_UserData::SessionFailing(RTP_Session & /*session*/)
 {
 }
 
@@ -482,10 +483,11 @@ void RTP_UserData::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 /////////////////////////////////////////////////////////////////////////////
 
 RTP_Session::RTP_Session(const Params & params)
-: canonicalName(PProcess::Current().GetUserName()),
-  toolName(PProcess::Current().GetName()),
-  reportTimeInterval(0, 12),  // Seconds
-  reportTimer(reportTimeInterval)
+  : canonicalName(PProcess::Current().GetUserName())
+  , toolName(PProcess::Current().GetName())
+  , reportTimeInterval(0, 12)  // Seconds
+  , reportTimer(reportTimeInterval)
+  , failed(false)
 #if OPAL_RTP_AGGREGATE
   , aggregator(params.aggregator)
 #endif
@@ -1914,15 +1916,16 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(BYTE * framePtr,
   switch (socket.GetErrorNumber()) {
     case ECONNRESET :
     case ECONNREFUSED :
-      if (++badTransmitCounter < 25) { 
-        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName << " port on remote not ready.");
-        return RTP_Session::e_IgnorePacket;
-      }
+      PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName << " port on remote not ready.");
+      if (++badTransmitCounter == 1) 
+        badTransmitStart = PTime();
       else {
-        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName << " too many transmit fails - killing call");
-        userData->OnClearCall(*this);
-        return RTP_Session::e_AbortTransport;
+        if ((PTime()- badTransmitStart).GetMilliSeconds() < BAD_TRANSMIT_TIME_MAX * 1000)
+          return RTP_Session::e_IgnorePacket;
+        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName << " " << BAD_TRANSMIT_TIME_MAX << "s of transmit fails - informing connection");
+        userData->SessionFailing(*this);
       }
+      return RTP_Session::e_IgnorePacket;
 
     case EMSGSIZE :
       PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName
