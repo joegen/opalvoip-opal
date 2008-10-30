@@ -320,8 +320,10 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
     unsigned oldTimestamp = timestamp;
 
     PINDEX written;
-    if (!WriteData(ptr, size, written) || (written == 0))
+    if (!WriteData(ptr, size, written) || (written == 0)) {
+      PTRACE(2, "Media\tWritePacket failed with written " << written);
       return false;
+    }
 
     // If the Write() function did not change the timestamp then use the default
     // method of fixed frame times and sizes.
@@ -748,8 +750,10 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
 
 PBoolean OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
 {
-  if (!isOpen)
+  if (!isOpen) {
+    PTRACE(1, "Media\tTried to write to closed media stream");
     return false;
+  }
 
   written = 0;
 
@@ -758,8 +762,10 @@ PBoolean OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDE
     return false;
   }
   
-  if (!IsOpen() || channel == NULL)
+  if (!IsOpen() || channel == NULL) {
+    PTRACE(1, "Media\tTried to write to media stream with no channel");
     return false;
+  }
 
   if (buffer != NULL && length != 0) {
     if (!channel->Write(buffer, length))
