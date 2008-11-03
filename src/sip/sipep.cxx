@@ -1302,6 +1302,9 @@ PString SIPEndPoint::GetUserAgent() const
   return userAgentString;
 }
 
+void SIPEndPoint::OnStartTransaction(SIPConnection & /*conn*/, SIPTransaction & /*transaction*/)
+{
+}
 
 unsigned SIPEndPoint::GetAllowedMethods() const
 {

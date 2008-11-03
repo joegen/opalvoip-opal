@@ -1917,6 +1917,10 @@ void SIPConnection::ExtractAppearanceCode(SIP_PDU & pdu)
     m_appearanceCode = info.Mid(pos+sizeof(appearance2)).AsUnsigned();
 }
 
+void SIPConnection::OnStartTransaction(SIPTransaction & transaction)
+{
+  endpoint.OnStartTransaction(*this, transaction);
+}
 
 void SIPConnection::OnReceivedRinging(SIP_PDU & response)
 {
