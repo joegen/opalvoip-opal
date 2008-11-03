@@ -402,6 +402,8 @@ class SIPConnection : public OpalRTPConnection
 
     virtual void OnMediaCommand(OpalMediaCommand & note, INT extra);
 
+    virtual void OnStartTransaction(SIPTransaction & transaction);
+
   protected:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);

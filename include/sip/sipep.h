@@ -713,6 +713,8 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     virtual SIPRegisterHandler * CreateRegisterHandler(const SIPRegister::Params & params);
 
+    virtual void OnStartTransaction(SIPConnection & conn, SIPTransaction & transaction);
+
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);
