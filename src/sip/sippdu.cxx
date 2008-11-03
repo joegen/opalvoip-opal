@@ -2356,6 +2356,8 @@ PBoolean SIPTransaction::Start()
   if (state == Completed)
     return PTrue;
 
+  connection->OnStartTransaction(*this);
+
   endpoint.AddTransaction(this);
 
   if (state != NotStarted) {
