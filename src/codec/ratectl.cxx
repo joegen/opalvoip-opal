@@ -108,7 +108,7 @@ double OpalCalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen)
 OpalVideoRateController::OpalVideoRateController()
 {
   lastReport = 0;
-  byteRate = historySizeInMs = maxConsecutiveFramesSkip = 0;
+  byteRate = bitRateHistorySizeInMs = maxConsecutiveFramesSkip = 0;
   Reset();
 }
 
@@ -122,23 +122,24 @@ void OpalVideoRateController::Open(unsigned _targetBitRate,
 
   // if any paramaters have changed, reset the rate controller
   if (
-      (_outputFrameTime != outputFrameTime) ||
-      (_historySizeInMs != historySizeInMs) ||
+      (_outputFrameTime != targetOutputFrameTime) ||
+      (_historySizeInMs != bitRateHistorySizeInMs) ||
       (_maxConsecutiveFramesSkip != maxConsecutiveFramesSkip) ||
       (newByteRate != byteRate) 
       ) {
 
-    PTRACE(3, "Patch\tSet new paramaters for rate controller : " 
+    PTRACE(3, "RateController\tNew paramaters: "
            << "bitrate=" << _targetBitRate
            << ", window=" << _historySizeInMs
-           << ", frame rate=" << _outputFrameTime);
+           << ", frame time=" << _outputFrameTime << "(rate=" << (((2*90000) + _outputFrameTime) / (2 *_outputFrameTime)) << ")"
+           << ", max skipped frames=" << _maxConsecutiveFramesSkip);
 
     // set the new parameters
     byteRate                 = newByteRate;
-    historySizeInMs          = _historySizeInMs;
+    bitRateHistorySizeInMs   = _historySizeInMs;
     maxConsecutiveFramesSkip = _maxConsecutiveFramesSkip;
-    targetHistorySize        = (byteRate * historySizeInMs) / 1000;
-    outputFrameTime          = _outputFrameTime;
+    targetBitRateHistorySize = (byteRate * bitRateHistorySizeInMs) / 1000;
+    targetOutputFrameTime    = _outputFrameTime;
 
     Reset();
   }
@@ -146,8 +147,8 @@ void OpalVideoRateController::Open(unsigned _targetBitRate,
 
 void OpalVideoRateController::Reset()
 {
-  frameHistory.reset();
-  packetHistory.reset();
+  bitRateHistory.reset();
+  frameRateHistory.reset();
 
   consecutiveFramesSkipped = 0;
   startTime                = PTimer::Tick().GetMilliSeconds();
@@ -157,70 +158,83 @@ void OpalVideoRateController::Reset()
 
 bool OpalVideoRateController::SkipFrame()
 {
-  inputFrameCount++;
-
   // get "now"
   now = PTimer::Tick().GetMilliSeconds();
+  bool reporting = (now - lastReport) > 1000;
+  if (reporting)
+    lastReport = now;
 
-  // flush history older than window
-  while (
-         (frameHistory.size() != 0) && 
-         ((now - frameHistory.begin()->time) > historySizeInMs)
-         ) 
-    frameHistory.pop();
+  PTRACE_IF(3, reporting, "RateController\tReport:Total frames:in=" << inputFrameCount << ",out=" << outputFrameCount << ",dropped=" << (inputFrameCount - outputFrameCount) << "(" << (inputFrameCount < 1 ? 0 : ((inputFrameCount - outputFrameCount) * 100 / inputFrameCount)) << "%)");
+
+  // flush histories older than window
+  bitRateHistory.remove_older_than(now, bitRateHistorySizeInMs);
+  frameRateHistory.remove_older_than(now, PACKET_HISTORY_SIZE * 1000);
+
+  inputFrameCount++;
+  
+  // if maintaining a frame rate, check to see if frame should be dropped
+  // need to have at least 2 frames of history to make any useful predictions
+  // and the history must span a non-trivial time window
+  if (targetOutputFrameTime > 0 && frameRateHistory.size() > 0) {
+    PInt64 frameRateHistoryDuration = now - frameRateHistory.begin()->time;
+    if (frameRateHistoryDuration >= 200 && frameRateHistory.size() > 2) {
+      PTRACE_IF(3, reporting, "RateController\tReport:in=" << ((inputFrameCount-1) * 1000) / (now - startTime)
+                   << " fps,out=" << (outputFrameCount * 1000) / (now - startTime) 
+                   << " fps,target=" << (((2*90000) + targetOutputFrameTime) / (2 * targetOutputFrameTime))
+                   << " fps;history=" << frameRateHistoryDuration << "ms "
+                   << frameRateHistory.size() << " frames");
+      PInt64 targetFrameHistorySize = ((frameRateHistoryDuration * 90) + (targetOutputFrameTime/2)) / targetOutputFrameTime;
+      if ((frameRateHistory.size()+1) > targetFrameHistorySize) {
+        if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) {
+          PTRACE(5, "RateController\tSkipping frame to reduce frame rate from " << frameRateHistory.size() * 1000 / frameRateHistoryDuration);
+          return true;
+        }
+        PTRACE(5, "RateController\tAllowing " << consecutiveFramesSkipped - maxConsecutiveFramesSkip << " frames to exceed frame rate");
+        return false;
+      }
+    }
+    else
+    {
+      PTRACE(3, "RateController\thistory too small to support frame rate control");
+    }
+  }
 
   // need to have at least 2 frames of history to make any useful predictions
   // and the history must span a non-trivial time window
-  if (frameHistory.size() < 2)
+  PInt64 bitRateHistoryDuration;
+  if ((bitRateHistory.size() < 2) || (bitRateHistoryDuration = now - bitRateHistory.begin()->time) < 200 || outputFrameCount < 2) {
+    PTRACE(3, "RateController\thistory too small to support bit rate control");
     return false;
-  PInt64 range = now - frameHistory.begin()->time;
-  if (range < 200)
-    return false;
+  }
 
   // calculate average payload and packets per frame
-  PInt64 averagePayloadSize     = packetHistory.bytes / packetHistory.size();
-  PInt64 averagePacketsPerFrame = packetHistory.packets / packetHistory.size();
+  PInt64 averagePayloadSize     = frameRateHistory.bytes / frameRateHistory.size();
+  PInt64 averagePacketsPerFrame = frameRateHistory.packets / frameRateHistory.size();
   if (averagePacketsPerFrame < 1)
     averagePacketsPerFrame = 1;
+
   PInt64 avgPacketSize = averagePacketsPerFrame * UDP_OVERHEAD + averagePayloadSize;
+  PInt64 historySize = bitRateHistory.packets * UDP_OVERHEAD + bitRateHistory.bytes;
 
   // show some statistics
-  if ((now - lastReport) > 1000) {
-    PTRACE(5, "RateController\n"
-              "Frame rate  : in=" << (inputFrameCount * 1000) / (now - startTime) << ",out=" << (outputFrameCount * 1000) / (now - startTime) << "\n"
-              "Total frames: in=" << inputFrameCount << ",out=" << outputFrameCount << ",dropped=" << (inputFrameCount - outputFrameCount) << "(" << (inputFrameCount - outputFrameCount) * 100 / inputFrameCount << "%)\n"
-              "Output frame: avg packet size" << avgPacketSize << ",avg packet per frame=" << averagePacketsPerFrame << " packets\n"
-              "Bit rate    : total=" << ((frameHistory.packets * UDP_OVERHEAD + frameHistory.bytes) * 8 * 1000) / range << " bps,payload=" << (frameHistory.bytes * 8 * 1000) / range << "," << range << "ms," << frameHistory.size() << ",frames," << frameHistory.packets << " packets\n"
+  PTRACE_IF(3, reporting, "RateController\tReport:udp="<< (historySize * 8 * 1000) / bitRateHistoryDuration << " bps,rtp=" << (bitRateHistory.bytes * 8 * 1000) / bitRateHistoryDuration << ",target=" << (byteRate*8) << ";history=" << bitRateHistoryDuration << "ms," << bitRateHistory.size() << " frames," << bitRateHistory.packets << " packets"
               );
-    lastReport = now;
-  }
-
-  // if maintaining a frame rate, check to see if frame should be dropped
-  if (outputFrameTime > 0) {
-    PInt64 desiredFrameCount = ((range * 90) + (outputFrameTime/2)) / outputFrameTime;
-    cout << "desiredFrameCount = " << desiredFrameCount << ",actual=" << frameHistory.size() << endl;
-    if ((frameHistory.size()+1) > desiredFrameCount)
-      return true;
-  }
-
-  // calculate history size, scaled to one second of data
-  // note that the variable "historyInBytes" is the current total history size, and thus must be scaled to
-  // before comparison to the "targetHistorySize" which is always bytes per second
-  PInt64 scaledHistorySize = ((frameHistory.packets * UDP_OVERHEAD + frameHistory.bytes) * historySizeInMs) / range;
 
   // allow the packet if the expected history size with this packet is less 
   // than half the target history size plus half the average packet size
   // if it is likely this frame will fit, then allow it
-  if ((scaledHistorySize + (avgPacketSize / 2)) <= targetHistorySize) {
+  if ((historySize + (avgPacketSize / 2)) <= targetBitRateHistorySize) {
     consecutiveFramesSkipped = 0;
     return false;
   }
 
   // see if max consecutive frames has been reached
-  if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) 
+  if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) {
+    PTRACE(5, "RateController\tSkipping frame to reduce bit rate from " << (historySize * 8 * 1000) / bitRateHistoryDuration);
     return true;
+  }
 
-  PTRACE(5, "Patch\tAllowing bit rate to be exceeded after " << consecutiveFramesSkipped-1 << " skipped frames");
+  PTRACE(5, "RateController\tAllowing " << consecutiveFramesSkipped - maxConsecutiveFramesSkip  << " frames to exceed bit rate");
   
   consecutiveFramesSkipped = 0;
   return false;
@@ -242,10 +256,8 @@ void OpalVideoRateController::AddFrame(PInt64 totalPayloadSize, int packetCount)
   info.totalPayloadSize = totalPayloadSize;
   info.packetCount      = packetCount;
 
-  frameHistory.push(info);
-  packetHistory.push(info);
-  if (packetHistory.size() > PACKET_HISTORY_SIZE) 
-    packetHistory.pop();
+  bitRateHistory.push(info);
+  frameRateHistory.push(info);
 }
 
 
