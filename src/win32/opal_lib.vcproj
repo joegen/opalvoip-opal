@@ -1045,6 +1045,24 @@
 				</File>
 				<File
 					RelativePath="..\codec\g711a1_plc.cxx">
+					<FileConfiguration
+						Name="Debug|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\codec\g711codec.cxx">
@@ -1097,6 +1115,9 @@
 							Optimization="1"
 							PreprocessorDefinitions=""/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\codec\ratectl.cxx">
 				</File>
 				<File
 					RelativePath="..\codec\rfc2833.cxx">
@@ -1996,6 +2017,9 @@
 				</File>
 				<File
 					RelativePath="..\..\include\codec\opalwavfile.h">
+				</File>
+				<File
+					RelativePath="..\..\include\codec\ratectl.h">
 				</File>
 				<File
 					RelativePath="..\..\include\codec\rfc2833.h">

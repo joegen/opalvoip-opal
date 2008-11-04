@@ -3892,6 +3892,30 @@
 				<File
 					RelativePath="..\codec\g711a1_plc.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\codec\g711codec.cxx"
@@ -3927,6 +3951,10 @@
 				</File>
 				<File
 					RelativePath="..\codec\opalpluginmgr.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\ratectl.cxx"
 					>
 				</File>
 				<File
@@ -6460,6 +6488,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\codec\opalwavfile.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\codec\ratectl.h"
 					>
 				</File>
 				<File

@@ -201,7 +201,7 @@ bool OpalVideoRateController::SkipFrame()
 
   // need to have at least 2 frames of history to make any useful predictions
   // and the history must span a non-trivial time window
-  PInt64 bitRateHistoryDuration;
+  PInt64 bitRateHistoryDuration = 1;
   if ((bitRateHistory.size() < 2) || (bitRateHistoryDuration = now - bitRateHistory.begin()->time) < 200 || outputFrameCount < 2) {
     PTRACE(3, "RateController\thistory too small to support bit rate control");
     return false;
@@ -217,7 +217,12 @@ bool OpalVideoRateController::SkipFrame()
   PInt64 historySize = bitRateHistory.packets * UDP_OVERHEAD + bitRateHistory.bytes;
 
   // show some statistics
-  PTRACE_IF(3, reporting, "RateController\tReport:udp="<< (historySize * 8 * 1000) / bitRateHistoryDuration << " bps,rtp=" << (bitRateHistory.bytes * 8 * 1000) / bitRateHistoryDuration << ",target=" << (byteRate*8) << ";history=" << bitRateHistoryDuration << "ms," << bitRateHistory.size() << " frames," << bitRateHistory.packets << " packets"
+  PTRACE_IF(3, reporting, "RateController\tReport:udp=" << (historySize * 8 * 1000) / bitRateHistoryDuration << " bps, "
+                          "rtp=" << (bitRateHistory.bytes * 8 * 1000) / bitRateHistoryDuration << ", "
+                          "target=" << (byteRate*8) << ", "
+                          "history=" << bitRateHistoryDuration << "ms, "
+                       << bitRateHistory.size() << " frames, "
+                       << bitRateHistory.packets << " packets"
               );
 
   // allow the packet if the expected history size with this packet is less 
