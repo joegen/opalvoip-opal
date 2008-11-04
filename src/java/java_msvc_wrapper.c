@@ -31,6 +31,8 @@
 
 #include <opal/buildopts.h>
 
+#pragma warning(disable:4206)
+
 #if OPAL_JAVA
 #include "java_swig_wrapper.inc"
 #endif
