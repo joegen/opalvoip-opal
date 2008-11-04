@@ -159,7 +159,7 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
 #pragma warning(push)
 #pragma warning(disable:4355)
 #endif
-    vxmlSession(this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()))
+    vxmlSession(this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true)
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
