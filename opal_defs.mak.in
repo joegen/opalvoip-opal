@@ -42,6 +42,7 @@ AR                      = @AR@
 RANLIB                  = @RANLIB@
 LD                      = @LD@
 ARCHIVE                 = @ARCHIVE@
+SWIG                    = @SWIG@
 
 # The install directories
 prefix                  = @prefix@
