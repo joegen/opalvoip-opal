@@ -235,7 +235,8 @@
 
 #if defined(HAS_LIBZRTP) && !defined(_WIN32_WCE)
 
-  #define OPAL_ZRTP  1
+  //Temporarily disabled until security API is sorted out
+  //#define OPAL_ZRTP  1
 
   #if defined(_MSC_VER)
 
@@ -296,7 +297,8 @@
 
 #if HAS_LIBSRTP && !OPAL_ZRTP && !defined(_WIN32_WCE)
 
-  #define OPAL_SRTP  1
+  //Temporarily disabled until security API is sorted out
+  //#define OPAL_SRTP  1
 
   #if defined(_MSC_VER)
 
