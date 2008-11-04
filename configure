@@ -728,6 +728,7 @@ BN_LIBDIR
 OPAL_ZRTP
 OPAL_SRTP
 OPAL_JAVA
+SWIG
 OPAL_VIDEO
 OPAL_SIP
 OPAL_H323
@@ -737,6 +738,7 @@ OPAL_T38_CAPABILITY
 OPAL_FAX
 OPAL_H450
 OPAL_H460
+OPAL_H501
 OPAL_LID
 OPAL_IVR
 OPAL_RFC4175
@@ -1371,6 +1373,7 @@ Optional Features:
   --enable-fax            whether to enable T.38 FAX protocol support
   --enable-h450           whether to enable H.450
   --enable-h460           whether to enable H.460
+  --enable-h501           whether to enable H.501
   --enable-lid            whether to enable LID support
   --enable-ivr            whether to enable IVR support
   --enable-rfc4175        whether to enable RFC4175 support
@@ -4346,6 +4349,7 @@ OPAL_FAX=yes
 OPAL_H224FECC=yes
 OPAL_H450=yes
 OPAL_H460=yes
+OPAL_H501=yes
 OPAL_LID=yes
 OPAL_STATISTICS=yes
 OPAL_AEC=yes
@@ -5136,11 +5140,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
 echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_CFLAGS"; then
-        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_CFLAGS"; then
+    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
   ac_status=$?
@@ -5150,15 +5153,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_LIBS"; then
-        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_LIBS"; then
+    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
   ac_status=$?
@@ -5168,9 +5169,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -5183,9 +5183,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib >= ${PTLIB_REC_VERSION}"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib >= ${PTLIB_REC_VERSION}"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -5248,11 +5248,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for PTLIB" >&5
 echo $ECHO_N "checking for PTLIB... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_CFLAGS"; then
-        pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_CFLAGS"; then
+    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
   ac_status=$?
@@ -5262,15 +5261,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$PTLIB_LIBS"; then
-        pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$PTLIB_LIBS"; then
+    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"ptlib\"") >&5
   ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
   ac_status=$?
@@ -5280,9 +5277,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -5295,9 +5291,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "ptlib"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib" 2>&1`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "ptlib"`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -8796,11 +8792,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for SPEEXDSP" >&5
 echo $ECHO_N "checking for SPEEXDSP... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEXDSP_CFLAGS"; then
-        pkg_cv_SPEEXDSP_CFLAGS="$SPEEXDSP_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$SPEEXDSP_CFLAGS"; then
+    pkg_cv_SPEEXDSP_CFLAGS="$SPEEXDSP_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speexdsp\"") >&5
   ($PKG_CONFIG --exists --print-errors "speexdsp") 2>&5
   ac_status=$?
@@ -8810,15 +8805,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEXDSP_LIBS"; then
-        pkg_cv_SPEEXDSP_LIBS="$SPEEXDSP_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$SPEEXDSP_LIBS"; then
+    pkg_cv_SPEEXDSP_LIBS="$SPEEXDSP_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speexdsp\"") >&5
   ($PKG_CONFIG --exists --print-errors "speexdsp") 2>&5
   ac_status=$?
@@ -8828,9 +8821,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -8843,9 +8835,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SPEEXDSP_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speexdsp"`
+	        SPEEXDSP_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "speexdsp" 2>&1`
         else
-	        SPEEXDSP_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speexdsp"`
+	        SPEEXDSP_PKG_ERRORS=`$PKG_CONFIG --print-errors "speexdsp" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SPEEXDSP_PKG_ERRORS" >&5
@@ -9665,6 +9657,48 @@ fi
 fi
 
 
+# Extract the first word of "swig", so it can be a program name with args.
+set dummy swig; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_SWIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $SWIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SWIG="$SWIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_SWIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SWIG=$ac_cv_path_SWIG
+if test -n "$SWIG"; then
+  { echo "$as_me:$LINENO: result: $SWIG" >&5
+echo "${ECHO_T}$SWIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
+
 
 
           if test "x$OPAL_VIDEO" = "x"; then
@@ -10057,6 +10091,50 @@ echo "${ECHO_T}$OPAL_H460" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_H460 1
+_ACEOF
+
+          fi
+
+
+
+          if test "x$OPAL_H501" = "x"; then
+            { { echo "$as_me:$LINENO: error: No default specified for OPAL_H501, please correct configure.ac" >&5
+echo "$as_me: error: No default specified for OPAL_H501, please correct configure.ac" >&2;}
+   { (exit 1); exit 1; }; }
+	  fi
+          # Check whether --enable-h501 was given.
+if test "${enable_h501+set}" = set; then
+  enableval=$enable_h501; OPAL_H501=$enableval
+fi
+
+
+          if test "xOPAL_H323" != "x"; then
+            if test "x$OPAL_H323" != "xyes"; then
+              { echo "$as_me:$LINENO: h501 support disabled due to disabled dependency OPAL_H323" >&5
+echo "$as_me: h501 support disabled due to disabled dependency OPAL_H323" >&6;}
+	      OPAL_H501=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: h501 support disabled due to disabled dependency " >&5
+echo "$as_me: h501 support disabled due to disabled dependency " >&6;}
+	      OPAL_H501=no
+	    fi
+	  fi
+
+
+          { echo "$as_me:$LINENO: checking whether to enable H.501" >&5
+echo $ECHO_N "checking whether to enable H.501... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: result: $OPAL_H501" >&5
+echo "${ECHO_T}$OPAL_H501" >&6; }
+
+
+          if test "x$OPAL_H501" = "xyes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define OPAL_H501 1
 _ACEOF
 
           fi
@@ -11238,6 +11316,7 @@ BN_LIBDIR!$BN_LIBDIR$ac_delim
 OPAL_ZRTP!$OPAL_ZRTP$ac_delim
 OPAL_SRTP!$OPAL_SRTP$ac_delim
 OPAL_JAVA!$OPAL_JAVA$ac_delim
+SWIG!$SWIG$ac_delim
 OPAL_VIDEO!$OPAL_VIDEO$ac_delim
 OPAL_SIP!$OPAL_SIP$ac_delim
 OPAL_H323!$OPAL_H323$ac_delim
@@ -11247,6 +11326,7 @@ OPAL_T38_CAPABILITY!$OPAL_T38_CAPABILITY$ac_delim
 OPAL_FAX!$OPAL_FAX$ac_delim
 OPAL_H450!$OPAL_H450$ac_delim
 OPAL_H460!$OPAL_H460$ac_delim
+OPAL_H501!$OPAL_H501$ac_delim
 OPAL_LID!$OPAL_LID$ac_delim
 OPAL_IVR!$OPAL_IVR$ac_delim
 OPAL_RFC4175!$OPAL_RFC4175$ac_delim
@@ -11274,7 +11354,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 52; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 54; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
