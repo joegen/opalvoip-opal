@@ -57,14 +57,9 @@ class RFC2190Packetizer
     int annexD, annexE, annexF, annexG, pQuant, cpm;
     int macroblocksPerGOB;
 
-    struct fragment {
-      unsigned length;
-      unsigned mbNum;
-    };
-
     unsigned long timestamp;
-    std::list<fragment> fragments;     // use list because we want fast insert and delete
-    std::list<fragment>::iterator currFrag;
+    std::list<int> fragments;
+    std::list<int>::iterator currFrag;
     unsigned char * fragPtr;
 };
 
