@@ -758,10 +758,10 @@ void OpalConnection::AttachRFC2833HandlerToPatch(PBoolean /*isSource*/, OpalMedi
 }
 
 
-OpalMediaStreamPtr OpalConnection::GetMediaStream(const PString & streamID) const
+OpalMediaStreamPtr OpalConnection::GetMediaStream(const PString & streamID, bool source) const
 {
   for (PSafePtr<OpalMediaStream> mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    if (mediaStream->GetID() == streamID)
+    if (mediaStream->GetID() == streamID && mediaStream->IsSource() == source)
       return mediaStream;
   }
 
