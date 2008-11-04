@@ -746,6 +746,13 @@ PStringList SIPMIMEInfo::GetRoute() const
 }
 
 
+void SIPMIMEInfo::SetRoute(const PString & v)
+{
+  if (!v.IsEmpty())
+    SetAt("Route",  v);
+}
+
+
 void SIPMIMEInfo::SetRoute(const PStringList & v)
 {
   if (!v.IsEmpty())
@@ -1706,12 +1713,12 @@ void SIP_PDU::Construct(Methods meth,
 }
 
 
-PBoolean SIP_PDU::SetRoute(const PStringList & set)
+bool SIP_PDU::SetRoute(const PStringList & set)
 {
   PStringList routeSet = set;
 
   if (routeSet.IsEmpty())
-    return PFalse;
+    return false;
 
   SIPURL firstRoute = routeSet.front();
   if (!firstRoute.GetParamVars().Contains("lr")) {
@@ -1724,7 +1731,19 @@ PBoolean SIP_PDU::SetRoute(const PStringList & set)
   }
 
   mime.SetRoute(routeSet);
-  return PTrue;
+  return true;
+}
+
+
+bool SIP_PDU::SetRoute(const SIPURL & proxy)
+{
+  if (proxy.IsEmpty())
+    return false;
+
+  PStringStream str;
+  str << "<sip:" << proxy.GetHostName() << ':'  << proxy.GetPort() << ";lr>";
+  mime.SetRoute(str);
+  return true;
 }
 
 
@@ -2729,6 +2748,7 @@ SIPRegister::Params::Params()
 
 SIPRegister::SIPRegister(SIPEndPoint & ep,
                          OpalTransport & trans,
+                         const SIPURL & proxy,
                          const PString & id,
                          unsigned cseq,
                          const Params & params)
@@ -2749,6 +2769,7 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   mime.SetExpires(params.m_expire);
 
   SetAllow(ep.GetAllowedMethods());
+  SetRoute(proxy);
 }
 
 
@@ -2877,7 +2898,7 @@ SIPNotify::SIPNotify(SIPEndPoint & ep,
 
 SIPPublish::SIPPublish(SIPEndPoint & ep,
                        OpalTransport & trans,
-                       const PStringList & routeSet,
+                       const SIPURL & proxy,
                        const SIPURL & targetAddress,
                        const PString & id,
                        const PString & sipIfMatch,
@@ -2907,7 +2928,7 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
   mime.SetEvent("presence");
   mime.SetContentType("application/pidf+xml");
 
-  SetRoute(routeSet);
+  SetRoute(proxy);
 
   if (!body.IsEmpty())
     entityBody = body;
@@ -2964,8 +2985,8 @@ SIPReferNotify::SIPReferNotify(SIPConnection & connection, OpalTransport & trans
 
 SIPMessage::SIPMessage(SIPEndPoint & ep,
                        OpalTransport & trans,
+                       const SIPURL & proxy,
                        const SIPURL & address,
-                       const PStringList & routeSet,
                        const PString & id,
                        const PString & body)
   : SIPTransaction(ep, trans)
@@ -2980,7 +3001,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
                      endpoint.GetNextCSeq(),
                      ep.GetLocalURL(transport).GetHostAddress());
   mime.SetContentType("text/plain;charset=UTF-8");
-  mime.SetRoute(routeSet);
+  SetRoute(proxy);
 
   entityBody = body;
 }

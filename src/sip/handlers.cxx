@@ -114,7 +114,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
       m_remoteAddress = m_addressOfRecord;
     else if (remote.Find('@') == P_MAX_INDEX) {
       if (!m_addressOfRecord.GetHostAddress().IsEquivalent(remote))
-        proxy = remote;
+        m_proxy = remote;
     }
     else
       m_remoteAddress = remote;
@@ -184,22 +184,22 @@ OpalTransport * SIPHandler::GetTransport()
     m_transport = NULL;
   }
 
-  if (proxy.IsEmpty()) {
+  if (m_proxy.IsEmpty()) {
     // Look for a "proxy" parameter to override default proxy
     const PStringToString & params = m_addressOfRecord.GetParamVars();
     if (params.Contains("proxy")) {
-      proxy.Parse(params("proxy"));
+      m_proxy.Parse(params("proxy"));
       m_addressOfRecord.SetParamVar("proxy", PString::Empty());
     }
   }
 
-  if (proxy.IsEmpty())
-    proxy = endpoint.GetProxy();
+  if (m_proxy.IsEmpty())
+    m_proxy = endpoint.GetProxy();
 
-  if (proxy.IsEmpty())
+  if (m_proxy.IsEmpty())
     return (m_transport = endpoint.CreateTransport(GetAddressOfRecord().GetHostAddress()));
 
-  m_transport = endpoint.CreateTransport(proxy.GetHostAddress());
+  m_transport = endpoint.CreateTransport(m_proxy.GetHostAddress());
   return m_transport;
 }
 
@@ -529,7 +529,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 
   params.m_expire = state != Unsubscribing ? expire : 0;
 
-  return new SIPRegister(endpoint, trans, GetCallID(), m_sequenceNumber, params);
+  return new SIPRegister(endpoint, trans, m_proxy, GetCallID(), m_sequenceNumber, params);
 }
 
 
@@ -657,7 +657,7 @@ SIPSubscribeHandler::~SIPSubscribeHandler()
 SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 { 
   // Default routeSet if there is a proxy
-  m_dialog.UpdateRouteSet(proxy);
+  m_dialog.UpdateRouteSet(m_proxy);
 
   if (!m_dialog.IsEstablished()) {
     if (m_parameters.m_eventPackage == SIPSubscribe::Presence)
@@ -1123,7 +1123,7 @@ SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
   SIPTransaction::GenerateCallID(callID);
   return new SIPPublish(endpoint,
                         t, 
-                        m_routeSet, 
+                        m_proxy, 
                         GetAddressOfRecord(), 
                         GetCallID(),
                         sipETag, 
@@ -1227,7 +1227,7 @@ SIPMessageHandler::~SIPMessageHandler ()
 SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
 { 
   SetExpire(originalExpire);
-  return new SIPMessage(endpoint, transport, GetAddressOfRecord(), m_routeSet, GetCallID(), body);
+  return new SIPMessage(endpoint, transport, m_proxy, GetAddressOfRecord(), GetCallID(), body);
 }
 
 

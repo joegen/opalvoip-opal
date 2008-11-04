@@ -310,6 +310,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetProxyAuthenticate(const PString & v);
 
     PStringList GetRoute() const;
+    void SetRoute(const PString & v);
     void SetRoute(const PStringList & v);
 
     PStringList GetRecordRoute(bool reversed) const;
@@ -660,7 +661,8 @@ class SIP_PDU : public PSafeObject
       If first route is strict, exchange with URI.
       Returns PTrue if routeSet.
       */
-    PBoolean SetRoute(const PStringList & routeSet);
+    bool SetRoute(const PStringList & routeSet);
+    bool SetRoute(const SIPURL & proxy);
 
     /**Set mime allow field to all supported methods.
       */
@@ -946,6 +948,7 @@ class SIPRegister : public SIPTransaction
     SIPRegister(
       SIPEndPoint   & endpoint,
       OpalTransport & transport,
+      const SIPURL & proxy,
       const PString & callId,
       unsigned cseq,
       const Params & params
@@ -1051,7 +1054,7 @@ class SIPPublish : public SIPTransaction
     SIPPublish(
       SIPEndPoint & ep,
       OpalTransport & trans,
-      const PStringList & routeSet,
+      const SIPURL & proxy,
       const SIPURL & targetAddress,
       const PString & id,
       const PString & sipIfMatch,
@@ -1117,8 +1120,8 @@ class SIPMessage : public SIPTransaction
     SIPMessage(
       SIPEndPoint & ep,
       OpalTransport & trans,
+      const SIPURL & proxy,
       const SIPURL & to,
-      const PStringList & routeSet,
       const PString & id,
       const PString & body
     );
