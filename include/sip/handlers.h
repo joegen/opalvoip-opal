@@ -124,13 +124,13 @@ public:
   virtual PBoolean SendRequest(SIPHandler::State state);
 
   SIPEndPoint & GetEndPoint() const { return endpoint; }
-  const PStringList & GetRouteSet() const { return m_routeSet; }
 
   const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
   const PString & GetUsername() const { return m_username; }
   const PString & GetPassword() const { return m_password; }
   const PString & GetRealm() const { return m_realm; }
+
 protected:
   void CollapseFork(SIPTransaction & transaction);
   PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
@@ -144,7 +144,6 @@ protected:
   PString                     m_password;
   PString                     m_realm;
 
-
   PSafeList<SIPTransaction>   transactions;
   OpalTransport             * m_transport;
   SIPURL                      m_addressOfRecord;
@@ -153,14 +152,13 @@ protected:
   int                         expire;
   int                         originalExpire;
   int                         offlineExpire;
-  PStringList                 m_routeSet;
   PString                     body;
   unsigned                    authenticationAttempts;
   State                       state;
   PTimer                      expireTimer; 
   PTimeInterval               retryTimeoutMin; 
   PTimeInterval               retryTimeoutMax; 
-  SIPURL                      proxy;
+  SIPURL                      m_proxy;
   OpalProductInfo             m_productInfo;
 };
 
