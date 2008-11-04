@@ -25,7 +25,7 @@ using namespace std;
 
 #include "rfc2190.h"
 
-#define MAX_PACKET_LEN 400
+#define MAX_PACKET_LEN 1024
 
 const unsigned char PSC[3]      = { 0x00, 0x00, 0x80 };
 const unsigned char PSC_Mask[3] = { 0xff, 0xff, 0xfc };
@@ -201,6 +201,8 @@ int RFC2190Packetizer::Open(unsigned long _timestamp)
        << endl;
 #endif
 
+#if 0
+
   // divide the frame into fragments based on marked GOB boundaries
   const unsigned char * fragStart = data;
   int remaining = dataLen;
@@ -219,8 +221,13 @@ int RFC2190Packetizer::Open(unsigned long _timestamp)
     remaining -= fragLen;
   }
 
+cout << timestamp << " " << fragments.size() << " fragments after GBSC search";
+for (std::list<unsigned>::iterator i = fragments.begin(); i != fragments.end(); ++i)
+  cout << " " << *i;
+cout << endl;
+
   // split fragments longer than the maximum
-  std::list<int>::iterator r;
+  std::list<unsigned>::iterator r;
   for (r = fragments.begin(); r != fragments.end(); ++r) {
     while (*r > MAX_PACKET_LEN) {
       int oldLen = *r;
@@ -234,6 +241,13 @@ int RFC2190Packetizer::Open(unsigned long _timestamp)
     }
   }
 
+#endif
+
+cout << timestamp << " " << fragments.size() << " fragments";
+for (std::list<fragment>::iterator i = fragments.begin(); i != fragments.end(); ++i)
+  cout << " " << i->length;
+cout << endl;
+
   // reset pointers to start of fragments
   currFrag = fragments.begin();
   fragPtr = &buffer[0];
@@ -246,28 +260,82 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
   if ((fragments.size() == 0) || (currFrag == fragments.end()))
     return 0;
 
+  // set the timestamp
   outputFrame.SetTimestamp(timestamp);
-  int fragLen = *currFrag++;
+  fragment frag = *currFrag++;
 
-  // create a mode A frame
-  outputFrame.SetPayloadSize(4 + fragLen);
-
-  // get buffer space for new packet
+  // get ptr to payload that is about to be created
   unsigned char * ptr = outputFrame.GetPayloadPtr();
+  size_t offs = 0;
 
-  // create the Mode A header
-  int sBit = 0;
-  int eBit = 0;
-  ptr[0] = (annexG ? 0x80 : 0) | ((sBit & 7) << 3) | (eBit & 7);
-  ptr[1] = (frameSize << 5) | (iFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0);
+  // if this fragement starts with a GBSC, and so does the next one, then output as Mode A
+  // else output as Mode B
+  
+  cout << timestamp << " " << hex << (int)fragPtr[0] << " " << (int)fragPtr[1] << " " << (int)fragPtr[2];
 
-  // annex G not supported
-  ptr[2] = 0x00;
-  ptr[3] = 0x00;
+  bool modeA = false;
+  if ((frag.length >= 3) &&
+      (fragPtr[0] == 0x00) &&
+      (fragPtr[1] == 0x00) &&
+      ((fragPtr[2] & 0x80) == 0x80)) {
+    if (currFrag == fragments.end()) {
+      modeA = true;
+    }
+    else {
+      unsigned char * nextFrag = fragPtr + frag.length;
+cout << " " << (int)nextFrag[0] << " " << (int)nextFrag[1] << " " << (int)nextFrag[2];
+      modeA = (currFrag->length > 3) &&
+              (nextFrag[0] == 0x00) &&
+              (nextFrag[1] == 0x00) &&
+              ((nextFrag[2] & 0x80) == 0x80);
+
+    }
+  }
+
+cout << " = mode " << (modeA ? 'A' : 'B') << dec << endl;
+
+  if (modeA) {
+
+    // create a mode A frame
+    outputFrame.SetPayloadSize(4 + frag.length);
+
+    // create the Mode A header
+    int sBit = 0;
+    int eBit = 0;
+    ptr[0] = ((sBit & 7) << 3) | (eBit & 7);
+    ptr[1] = (frameSize << 5) | (iFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0);
+    ptr[2] = ptr[3] = 0;
+
+    // offset of the data
+    offs = 4;
+  }
+
+  else
+
+  // ....or Mode B
+  {
+    // create a mode B frame
+    outputFrame.SetPayloadSize(8 + frag.length);
+
+    // create the Mode B header
+    int sBit = 0;
+    int eBit = 0;
+    int gobn = frag.mbNum / macroblocksPerGOB;
+    int mba  = frag.mbNum % macroblocksPerGOB;
+    ptr[0] = 0x80 | ((sBit & 7) << 3) | (eBit & 7);
+    ptr[1] = (frameSize << 5);
+    ptr[2] = ((gobn << 3) & 0xf8) | ((mba >> 6) & 0x7);
+    ptr[3] = (mba << 2) & 0xfc;
+    ptr[4] = (iFrame ? 0 : 0x80) | (annexD ? 0x40 : 0) | (annexE ? 0x20 : 0) | (annexF ? 0x010: 0);
+    ptr[5] = ptr[6] = ptr[7] = 0;
+
+    // offset of the data
+    offs = 8;
+  }
 
   // copy the data
-  memcpy(ptr + 4, fragPtr, fragLen);
-  fragPtr += fragLen;
+  memcpy(ptr + offs, fragPtr, frag.length);
+  fragPtr += frag.length;
 
   // set marker bit
   flags = 0;
