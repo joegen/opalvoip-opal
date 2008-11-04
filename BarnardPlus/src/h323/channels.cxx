@@ -446,7 +446,7 @@ void H323UnidirectionalChannel::OnMediaCommand(OpalMediaCommand & command)
     H323ControlPDU pdu;
     const OpalVideoUpdatePicture & updatePicture = (const OpalVideoUpdatePicture &)command;
 
-    if (updatePicture.GetNumBlocks() < 0)
+    if (updatePicture.GetNumBlocks() <= 0)
       pdu.BuildMiscellaneousCommand(GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdatePicture);
     else if (updatePicture.GetFirstMB() < 0) {
       H245_MiscellaneousCommand_type_videoFastUpdateGOB & fuGOB = 
