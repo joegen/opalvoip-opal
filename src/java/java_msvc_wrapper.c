@@ -32,6 +32,6 @@
 #include <opal/buildopts.h>
 
 #if OPAL_JAVA
-#include "java_swig_wrapper.c"
+#include "java_swig_wrapper.inc"
 #endif
 
