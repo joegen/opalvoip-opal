@@ -559,6 +559,12 @@ RTP_Session::RTP_Session(const Params & params)
 
 RTP_Session::~RTP_Session()
 {
+  if (userData != NULL)
+    userData->OnTxStatistics(*this);
+
+  if (packetsReceived == 1 && userData != NULL)
+    userData->OnRxStatistics(*this);
+
   PTRACE_IF(3, packetsSent != 0 || packetsReceived != 0,
       "RTP\tSession " << sessionID << ", final statistics:\n"
       "    packetsSent       = " << packetsSent << "\n"
