@@ -35,8 +35,8 @@
 #include <libgen.h>
 #endif
 
-unsigned TraceLevel = 0;
-unsigned TraceLevelUserPlane = 0;
+unsigned TraceLevel = 24;
+unsigned TraceLevelUserPlane = 24;
 
 void Trace::SetLevel (unsigned level)
 {
