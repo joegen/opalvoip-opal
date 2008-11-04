@@ -861,7 +861,8 @@ class OpalConnection : public PSafeObject
        Locates a stream given an identifier string.
       */
     OpalMediaStreamPtr GetMediaStream(
-      const PString & streamID  ///<  Stream ID to search for.
+      const PString & streamID,  ///<  Stream ID to search for.
+      bool source                ///<  Indicates the direction of stream.
     ) const;
 
     /**Get a media stream.
