@@ -50,6 +50,8 @@ extern int lpcini_(void);
   #ifdef _MSC_VER
     #include <malloc.h>
   #endif
+#else
+	extern void * malloc();
 #endif
 
 /* Common Block Declarations */
