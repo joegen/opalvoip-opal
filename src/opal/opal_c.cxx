@@ -1478,7 +1478,7 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
 
   OpalMediaStreamPtr stream;
   if (!IsNullString(command.m_param.m_mediaStream.m_identifier))
-    stream = connection->GetMediaStream(command.m_param.m_mediaStream.m_identifier);
+    stream = connection->GetMediaStream(PString(command.m_param.m_mediaStream.m_identifier), source);
   else if (!IsNullString(command.m_param.m_mediaStream.m_type))
     stream = connection->GetMediaStream(mediaType, source);
   else {
