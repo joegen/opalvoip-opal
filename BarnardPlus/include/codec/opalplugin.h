@@ -495,10 +495,10 @@ enum {
 // Video Capabilities
 
 // H264 (as defined in H.241)
-#define OpalPluginCodec_Identifer_H264            "0.0.8.241.0.0.0.0"
-#define OpalPluginCodec_Identifer_H264_RFC3984    "0.0.8.241.0.0.0.1"
-#define OpalPluginCodec_Identifer_H264_RFC3984Int "0.0.8.241.0.0.0.2"
-#define OpalPluginCodec_Identifer_H264_Generic    "0.0.8.241.0.0.1"
+#define OpalPluginCodec_Identifer_H264_Aligned        "0.0.8.241.0.0.0.0"
+#define OpalPluginCodec_Identifer_H264_NonInterleaved "0.0.8.241.0.0.0.1"
+#define OpalPluginCodec_Identifer_H264_Interleaved    "0.0.8.241.0.0.0.2"
+#define OpalPluginCodec_Identifer_H264_Generic        "0.0.8.241.0.0.1"
 
 // ISO/IEC 14496-2 MPEG4 part 2 (as defined in H.245v13 Annex E)
 #define OpalPluginCodec_Identifer_MPEG4           "0.0.8.245.1.0.0"
@@ -518,6 +518,12 @@ enum {
 #define PLUGINCODEC_MPI_DISABLED 33
 
 #define PLUGINCODEC_MEDIA_PACKETIZATION "Media Packetization"
+
+#define H261_ANNEX_D "Annex D - Still Image Transmit"
+#define H263_ANNEX_F "Annex F - Advanced Prediction"
+#define H263_ANNEX_I "Annex I - Advanced INTRA Coding"
+#define H263_ANNEX_J "Annex J - Deblocking Filter"
+#define H263_ANNEX_T "Annex T - Modified Quantization"
 
 #ifndef STRINGIZE
 #define __INTERNAL_STRINGIZE__(v) #v
