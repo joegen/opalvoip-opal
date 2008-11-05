@@ -2652,8 +2652,7 @@ void MyManager::ApplyMediaInfo()
 ///////////////////////////////////////////////////////////////////////////////
 
 MyMedia::MyMedia()
-  : sourceProtocol(NULL)
-  , validProtocols(NULL)
+  : validProtocols(NULL)
   , preferenceOrder(-1) // -1 indicates disabled
   , dirty(false)
 {
