@@ -656,7 +656,7 @@ public:
 
   bool operator<(const MyMedia & other) { return preferenceOrder < other.preferenceOrder; }
 
-  const wxChar    * sourceProtocol;
+  const wxString  sourceProtocol;
   OpalMediaFormat mediaFormat;
   const wxChar    * validProtocols;
   int             preferenceOrder;
