@@ -2264,7 +2264,7 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
 {
   const SIPMIMEInfo & mime = pdu.GetMIME();
 
-  if (m_remoteTag.IsEmpty()) {
+  if (m_routeSet.IsEmpty()) {
     // get the route set from the Record-Route response field according to 12.1.2
     // requests in a dialog do not modify the initial route set according to 12.2
     m_routeSet = mime.GetRecordRoute(pdu.GetMethod() == SIP_PDU::NumMethods);
