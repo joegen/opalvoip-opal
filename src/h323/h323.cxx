@@ -1726,7 +1726,6 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
   }
 
   OpalConnection::AnsweringCall(response);
-  InternalEstablishedConnectionCheck();
 }
 
 
@@ -2113,6 +2112,8 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
     /* let the application to know that the alerting has been sent */
     /* do nothing for now, at least check for the return value */
   }
+
+  InternalEstablishedConnectionCheck();
   return bOk;
 }
 
