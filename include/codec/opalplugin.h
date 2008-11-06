@@ -524,7 +524,8 @@ enum {
 
 #define PLUGINCODEC_MPI_DISABLED 33
 
-#define PLUGINCODEC_MEDIA_PACKETIZATION "Media Packetization"
+#define PLUGINCODEC_MEDIA_PACKETIZATION  "Media Packetization"
+#define PLUGINCODEC_MEDIA_PACKETIZATIONS "Media Packetizations"
 
 #define H261_ANNEX_D "Annex D - Still Image Transmit"
 #define H263_ANNEX_F "Annex F - Advanced Prediction"

@@ -613,14 +613,16 @@ void OpalMediaOptionOctets::SetValue(const BYTE * data, PINDEX length)
 
 /////////////////////////////////////////////////////////////////////////////
 
-const PString & OpalMediaFormat::NeedsJitterOption()  { static PString s = PLUGINCODEC_OPTION_NEEDS_JITTER;   return s; }
-const PString & OpalMediaFormat::MaxFrameSizeOption() { static PString s = PLUGINCODEC_OPTION_MAX_FRAME_SIZE; return s; }
-const PString & OpalMediaFormat::FrameTimeOption()    { static PString s = PLUGINCODEC_OPTION_FRAME_TIME;     return s; }
-const PString & OpalMediaFormat::ClockRateOption()    { static PString s = PLUGINCODEC_OPTION_CLOCK_RATE;     return s; }
-const PString & OpalMediaFormat::MaxBitRateOption()   { static PString s = PLUGINCODEC_OPTION_MAX_BIT_RATE;   return s; }
-const PString & OpalMediaFormat::TargetBitRateOption(){ static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE; return s; }
+const PString & OpalMediaFormat::NeedsJitterOption()   { static PString s = PLUGINCODEC_OPTION_NEEDS_JITTER;    return s; }
+const PString & OpalMediaFormat::MaxFrameSizeOption()  { static PString s = PLUGINCODEC_OPTION_MAX_FRAME_SIZE;  return s; }
+const PString & OpalMediaFormat::FrameTimeOption()     { static PString s = PLUGINCODEC_OPTION_FRAME_TIME;      return s; }
+const PString & OpalMediaFormat::ClockRateOption()     { static PString s = PLUGINCODEC_OPTION_CLOCK_RATE;      return s; }
+const PString & OpalMediaFormat::MaxBitRateOption()    { static PString s = PLUGINCODEC_OPTION_MAX_BIT_RATE;    return s; }
+const PString & OpalMediaFormat::TargetBitRateOption() { static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE; return s; }
+
 #if OPAL_H323
-const PString & OpalMediaFormat::MediaPacketizationOption(){ static PString s = PLUGINCODEC_MEDIA_PACKETIZATION; return s; }
+const PString & OpalMediaFormat::MediaPacketizationOption()  { static PString s = PLUGINCODEC_MEDIA_PACKETIZATION;  return s; }
+const PString & OpalMediaFormat::MediaPacketizationsOption() { static PString s = PLUGINCODEC_MEDIA_PACKETIZATIONS; return s; }
 #endif
 
 

@@ -1011,6 +1011,7 @@ class OpalMediaFormat : public PContainer
 
 #if OPAL_H323
     static const PString & MediaPacketizationOption();
+    static const PString & MediaPacketizationsOption();
 #endif
 
   private:
