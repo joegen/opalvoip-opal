@@ -33,6 +33,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
+#include <codec/opalplugin.h>
 
 
 #define new PNEW
@@ -82,7 +83,7 @@ const OpalAudioFormat & GetOpalGSMAMR()
         }
 #endif
 
-        AddOption(new OpalMediaOptionString("Media Packetization", true, "RFC3267"));
+        AddOption(new OpalMediaOptionString(PLUGINCODEC_MEDIA_PACKETIZATIONS, true, "RFC3267,RFC4867"));
       }
   } const GSMAMR;
   return GSMAMR;
