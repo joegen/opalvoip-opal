@@ -353,7 +353,8 @@ void H323SetRTPPacketization(H245_ArrayOf_RTPPayloadType & rtpPacketizations,
                              const OpalMediaFormat & mediaFormat,
                              RTP_DataFrame::PayloadTypes payloadType)
 {
-  PString mediaPacketization = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption());
+  PString mediaPacketization = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
+                               mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption()));
   if (mediaPacketization.IsEmpty())
     return;
   
@@ -385,7 +386,8 @@ bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
                              const OpalMediaFormat & mediaFormat,
                              RTP_DataFrame::PayloadTypes payloadType)
 {
-  PString mediaPacketization = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption());
+  PString mediaPacketization = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
+                               mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption()));
   if (mediaPacketization.IsEmpty())
     return PFalse;
 
@@ -470,7 +472,8 @@ bool H323GetRTPPacketization(OpalMediaFormat & mediaFormat, const H245_RTPPayloa
   if (mediaPacketization.IsEmpty())
     return false;
   
-  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(), mediaPacketization);
+  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationsOption(), mediaPacketization);
+  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(), mediaPacketization.Left(mediaPacketization.Find(',')));
   return true;
 }
 
