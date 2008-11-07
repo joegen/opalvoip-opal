@@ -209,6 +209,11 @@ void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
   if (transport == NULL)
     return;
 
+  // Get port, even if string is bracketed, i.e. udp$[2001...]:1720
+  PINDEX rbracket = Find(']');
+  if( rbracket != P_MAX_INDEX )
+	  dollar = rbracket + 1;
+
   if (port != 0 && Find(':', dollar) == P_MAX_INDEX) {
     PINDEX end = GetLength();
     if (GetAt(end-1) == '+')
@@ -882,7 +887,7 @@ OpalTransportIP::OpalTransportIP(OpalEndPoint & end,
                                  WORD port)
   : OpalTransport(end),
     localAddress(binding),
-    remoteAddress(0)
+    remoteAddress(PIPSocket::Address::GetAny(binding.GetVersion()))
 {
   localPort = port;
   remotePort = 0;
@@ -1182,7 +1187,7 @@ PBoolean OpalTransportUDP::Connect()
     return PFalse;
 
   if (remoteAddress.IsAny() || remoteAddress.IsBroadcast()) {
-    remoteAddress = PIPSocket::Address::GetBroadcast();
+	  remoteAddress = PIPSocket::Address::GetBroadcast(remoteAddress.GetVersion());
     PTRACE(3, "OpalUDP\tBroadcast connect to port " << remotePort);
   }
   else {
