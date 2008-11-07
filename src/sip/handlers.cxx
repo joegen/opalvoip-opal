@@ -1347,12 +1347,13 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, S
  * For example, in the above case, the name parameter
  * could be "sip.seconix.com" or "seconix.com".
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods /*meth*/, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
 {
   for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
 
-    if (handler->GetState() != SIPHandler::Unsubscribed &&
-       (handler->GetAddressOfRecord().GetHostName() == name ||
+    if ((handler->GetMethod() == meth) &&
+        (handler->GetState() != SIPHandler::Unsubscribed) &&
+        (handler->GetAddressOfRecord().GetHostName() == name ||
         handler->GetAddressOfRecord().GetHostAddress().IsEquivalent(name)))
       return handler;
   }
