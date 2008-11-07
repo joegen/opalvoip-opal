@@ -2581,6 +2581,9 @@ void MyManager::OnRxMessage(wxCommandEvent & theEvent)
 
   ConversationInfo * conversation = GetConversation(from->AsString());
   conversation->dialog->AddTextToScreen(text, false);
+
+  LogWindow << "Received page mode IM from " << *from << endl;
+
   //free(from);
 }
 
@@ -4679,7 +4682,10 @@ void IMDialog::SendCurrentText()
   PwxString text = m_enteredText->GetValue();
   AddTextToScreen(text, true);
   m_enteredText->SetValue(wxT(""));
-  if (!manager->sipEP->Message(them.p_str(), text.p_str())) {
+  if (manager->sipEP->Message(them.p_str(), text.p_str())) {
+    LogWindow << "Sending page mode IM to " << them << endl;
+  } else {
+    LogWindow << "Page mode IM to " << them << " failed" << endl;
     m_textArea->SetDefaultStyle(theirStyle);
     m_textArea->AppendText(wxT("ERROR: Message could not be delivered"));
     m_textArea->SetDefaultStyle(defaultStyle);
