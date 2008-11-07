@@ -179,6 +179,10 @@ class MySIPEndPoint : public SIPEndPoint
     virtual void OnDialogInfoReceived(
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
+    virtual void OnMessageReceived(
+      const SIPURL & from, 
+      const PString & body
+    );
 
     MyManager & m_manager;
 };
@@ -218,6 +222,50 @@ class CallDialog : public wxDialog
     DECLARE_EVENT_TABLE()
 };
 
+class CallIMDialog : public wxDialog
+{
+  public:
+    CallIMDialog(MyManager * manager);
+
+    PwxString m_Address;
+
+  private:
+    void OnOK(wxCommandEvent & event);
+    void OnAddressChange(wxCommandEvent & event);
+
+    wxComboBox * m_AddressCtrl;
+    wxButton   * m_ok;
+
+    DECLARE_EVENT_TABLE()
+};
+
+class IMDialog : public wxDialog
+{
+  public:
+    IMDialog(MyManager * manager, const PwxString & destination);
+    ~IMDialog();
+
+    void AddTextToScreen(const wxString & text, bool fromUs);
+
+  private:
+    void OnSend(wxCommandEvent & event);
+    void OnTextEnter(wxCommandEvent & event);
+    void OnCloseWindow(wxCloseEvent &event);
+
+    void SendCurrentText();
+
+    MyManager * manager;
+    PwxString them;
+    PwxString us;
+
+    wxTextCtrl * m_enteredText;
+    wxTextCtrl * m_textArea;
+    wxTextAttr defaultStyle;
+    wxTextAttr ourStyle;
+    wxTextAttr theirStyle;
+
+    DECLARE_EVENT_TABLE()
+};
 
 class CallingPanel : public wxPanel
 {
@@ -783,6 +831,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnAdjustMenus(wxMenuEvent& event);
     void OnStateChange(wxCommandEvent & event);
     void OnStreamsChanged(wxCommandEvent &);
+    void OnRxMessage(wxCommandEvent &);
 
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
@@ -793,6 +842,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnCallSpeedDialHandset(wxCommandEvent& event);
     void OnSendFax(wxCommandEvent& event);
     void OnSendFaxSpeedDial(wxCommandEvent& event);
+    void OnStartIM(wxCommandEvent& event);
     void OnMenuAnswer(wxCommandEvent& event);
     void OnMenuHangUp(wxCommandEvent& event);
     void OnNewSpeedDial(wxCommandEvent& event);
@@ -884,11 +934,25 @@ class MyManager : public wxFrame, public OpalManager
     bool StartGatekeeper();
 
 #if OPAL_SIP
+    friend class MySIPEndPoint;
     MySIPEndPoint  * sipEP;
     bool             m_SIPProxyUsed;
     RegistrationList m_registrations;
+
     void StartRegistrations();
     void ReplaceRegistrations(const RegistrationList & newRegistrations);
+
+    friend IMDialog;
+    struct ConversationInfo {
+      IMDialog * dialog;
+    };
+    typedef std::map<std::string, ConversationInfo> ConversationMapType;
+    PMutex conversationMapMutex;
+
+    void OnMessageReceived(const SIPURL & from, const PString & body);
+    ConversationInfo * GetConversation(const PwxString & remoteParty);
+
+    ConversationMapType conversationMap;
 #endif
 
 #if OPAL_IVR
@@ -969,6 +1033,7 @@ class MyManager : public wxFrame, public OpalManager
 
   friend class OptionsDialog;
   friend class InCallPanel;
+  friend class IMDialog;
 };
 
 
