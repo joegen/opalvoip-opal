@@ -1527,7 +1527,7 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
       fac.m_h245Address.Encode(otherBuffer);
 
       if (myBuffer < otherBuffer) {
-        PTRACE(2, "H225\tSimultaneous start of H.245 channel, connecting to remote.");
+		PTRACE(2, "H225\tSimultaneous start of H.245 channel, connecting to remote.");
         controlChannel->CloseWait();
         delete controlChannel;
         controlChannel = NULL;
@@ -4089,7 +4089,8 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
       return NULL;
 
     const H245_UnicastAddress & uaddr = param->m_mediaControlChannel;
-    if (uaddr.GetTag() != H245_UnicastAddress::e_iPAddress)
+	unsigned int tag = uaddr.GetTag();
+    if ((tag != H245_UnicastAddress::e_iPAddress) && (tag != H245_UnicastAddress::e_iP6Address))
       return NULL;
   }
 
