@@ -234,6 +234,9 @@ static const wxChar SpeedDialDescriptionKey[] = wxT("Description");
 static const wxChar RecentCallsGroup[] = wxT("/Recent Calls");
 static const size_t MaxSavedRecentCalls = 10;
 
+static const wxChar RecentIMCallsGroup[] = wxT("/Recent IM Calls");
+static const size_t MaxSavedRecentIMCalls = 10;
+
 static const wxChar SIPonly[] = wxT(" (SIP only)");
 static const wxChar H323only[] = wxT(" (H.323 only)");
 
@@ -277,6 +280,7 @@ enum {
   ID_LOG_MESSAGE,
   ID_STATE_CHANGE,
   ID_STREAMS_CHANGED,
+  ID_RX_MESSAGE
 };
 
 DECLARE_EVENT_TYPE(wxEvtLogMessage, -1)
@@ -288,6 +292,8 @@ DEFINE_EVENT_TYPE(wxEvtStreamsChanged)
 DECLARE_EVENT_TYPE(wxEvtStateChange, -1)
 DEFINE_EVENT_TYPE(wxEvtStateChange)
 
+DECLARE_EVENT_TYPE(wxEvtRxMessage, -1)
+DEFINE_EVENT_TYPE(wxEvtRxMessage)
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -417,6 +423,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("CallSpeedDialAudio"),  MyManager::OnCallSpeedDialAudio)
   EVT_MENU(XRCID("CallSpeedDialHandset"),MyManager::OnCallSpeedDialHandset)
   EVT_MENU(XRCID("MenuSendFax"),         MyManager::OnSendFax)
+  EVT_MENU(XRCID("MenuStartIM"),         MyManager::OnStartIM)
   EVT_MENU(XRCID("SendFaxSpeedDial"),    MyManager::OnSendFaxSpeedDial)
   EVT_MENU(XRCID("MenuAnswer"),          MyManager::OnMenuAnswer)
   EVT_MENU(XRCID("MenuHangUp"),          MyManager::OnMenuHangUp)
@@ -449,9 +456,11 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_LIST_COL_END_DRAG(SpeedDialsID, MyManager::OnSpeedDialColumnResize)
   EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID, MyManager::OnRightClick) 
 
-  EVT_COMMAND(ID_LOG_MESSAGE, wxEvtLogMessage, MyManager::OnLogMessage)
-  EVT_COMMAND(ID_STATE_CHANGE, wxEvtStateChange, MyManager::OnStateChange)
+  EVT_COMMAND(ID_LOG_MESSAGE,     wxEvtLogMessage,     MyManager::OnLogMessage)
+  EVT_COMMAND(ID_STATE_CHANGE,    wxEvtStateChange,    MyManager::OnStateChange)
   EVT_COMMAND(ID_STREAMS_CHANGED, wxEvtStreamsChanged, MyManager::OnStreamsChanged)
+  EVT_COMMAND(ID_RX_MESSAGE,      wxEvtRxMessage,      MyManager::OnRxMessage)
+  
 END_EVENT_TABLE()
 
 MyManager::MyManager()
@@ -1402,6 +1411,15 @@ void MyManager::OnSendFax(wxCommandEvent & /*event*/)
   }
 }
 
+void MyManager::OnStartIM(wxCommandEvent & /*event*/)
+{
+  CallIMDialog dlg(this);
+  if (dlg.ShowModal() != wxID_OK)
+    return;
+
+  PWaitAndSignal m(conversationMapMutex);
+  GetConversation(dlg.m_Address);
+}
 
 void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
 {
@@ -2546,6 +2564,39 @@ void MyManager::ReplaceRegistrations(const RegistrationList & newRegistrations)
     }
   }
 }
+
+void MyManager::OnMessageReceived(const SIPURL & from, const PString & body)
+{
+  wxCommandEvent theEvent(wxEvtRxMessage, ID_RX_MESSAGE);
+  theEvent.SetEventObject(this);
+  theEvent.SetClientData(new SIPURL(from));
+  theEvent.SetString(PwxString(body));
+  GetEventHandler()->AddPendingEvent(theEvent);
+}
+
+void MyManager::OnRxMessage(wxCommandEvent & theEvent)
+{
+  SIPURL * from = (SIPURL *)theEvent.GetClientData();
+  PwxString text = theEvent.GetString();
+
+  ConversationInfo * conversation = GetConversation(from->AsString());
+  conversation->dialog->AddTextToScreen(text, false);
+  //free(from);
+}
+
+MyManager::ConversationInfo * MyManager::GetConversation(const PwxString & remoteParty)
+{
+  PString key = remoteParty;
+  ConversationMapType::iterator r = conversationMap.find((const char *)key);
+  if (r != conversationMap.end()) 
+    return &r->second;
+
+  ConversationInfo info;
+  info.dialog = new IMDialog(this, remoteParty);
+  info.dialog->Show();
+  return &conversationMap.find((const char *)key)->second;
+}
+
 #endif // OPAL_SIP
 
 
@@ -4569,6 +4620,151 @@ void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
   m_ok->Enable(!m_Address.IsEmpty());
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(IMDialog, wxDialog)
+  EVT_BUTTON(XRCID("Send"), IMDialog::OnSend)
+  EVT_TEXT_ENTER(XRCID("EnteredText"), IMDialog::OnTextEnter)
+  EVT_CLOSE(IMDialog::OnCloseWindow)
+END_EVENT_TABLE()
+
+IMDialog::IMDialog(MyManager * _manager, const PwxString & _them)
+  : manager(_manager), them(_them)
+{
+  wxXmlResource::Get()->LoadDialog(this, manager, wxT("IMDialog"));
+  wxString title; title.sprintf(wxT("Conversation with %s"), them);
+  SetTitle(title);
+
+  m_textArea    = FindWindowByNameAs<wxTextCtrl>(this, wxT("TextArea"));
+  m_enteredText = FindWindowByNameAs<wxTextCtrl>(this, wxT("EnteredText"));
+  m_enteredText->SetFocus();
+
+  defaultStyle = m_textArea->GetDefaultStyle();
+  ourStyle = defaultStyle;
+  theirStyle = defaultStyle;
+  ourStyle.SetTextColour(*wxRED);
+  theirStyle.SetTextColour(*wxGREEN);
+
+  us = wxT("(local)");
+
+  PString key = them;
+  MyManager::ConversationInfo info;
+  info.dialog = this;
+  manager->conversationMap.insert(MyManager::ConversationMapType::value_type((const char *)key, info));
+}
+
+IMDialog::~IMDialog()
+{
+  PString key = them;
+  manager->conversationMap.erase((const char *)key);
+}
+
+void IMDialog::OnCloseWindow(wxCloseEvent & WXUNUSED(event))
+{
+  Destroy();
+}
+
+void IMDialog::OnSend(wxCommandEvent &)
+{
+  SendCurrentText();
+}
+
+void IMDialog::OnTextEnter(wxCommandEvent & WXUNUSED(event))
+{
+  SendCurrentText();
+}
+
+void IMDialog::SendCurrentText()
+{
+  PwxString text = m_enteredText->GetValue();
+  AddTextToScreen(text, true);
+  m_enteredText->SetValue(wxT(""));
+  if (!manager->sipEP->Message(them.p_str(), text.p_str())) {
+    m_textArea->SetDefaultStyle(theirStyle);
+    m_textArea->AppendText(wxT("ERROR: Message could not be delivered"));
+    m_textArea->SetDefaultStyle(defaultStyle);
+    m_textArea->AppendText(wxT("\n"));
+  }
+}
+
+void IMDialog::AddTextToScreen(const wxString & text, bool fromUs)
+{
+  PTime now;
+  PwxString nowStr = PTime().AsString("yy/MM/dd hh:mm");
+  m_textArea->AppendText(nowStr);
+  m_textArea->AppendText(wxT(" "));
+  if (fromUs) {
+    m_textArea->SetDefaultStyle(ourStyle);
+    m_textArea->AppendText(us);
+  } else {
+    m_textArea->SetDefaultStyle(theirStyle);
+    m_textArea->AppendText(them);
+  }
+  m_textArea->AppendText(wxT(": "));
+  m_textArea->SetDefaultStyle(defaultStyle);
+  m_textArea->AppendText(text);
+  m_textArea->AppendText(wxT("\n"));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(CallIMDialog, wxDialog)
+  EVT_BUTTON(XRCID("wxID_OK"), CallIMDialog::OnOK)
+  EVT_TEXT(XRCID("Address"), CallIMDialog::OnAddressChange)
+END_EVENT_TABLE()
+
+CallIMDialog::CallIMDialog(MyManager * manager)
+{
+  wxXmlResource::Get()->LoadDialog(this, manager, wxT("CallIMDialog"));
+
+  m_ok = FindWindowByNameAs<wxButton>(this, wxT("wxID_OK"));
+  m_ok->Disable();
+
+  m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, wxT("Address"));
+  m_AddressCtrl->SetValidator(wxGenericValidator(&m_Address));
+
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(RecentIMCallsGroup);
+  wxString entryName;
+  long entryIndex;
+  if (config->GetFirstEntry(entryName, entryIndex)) {
+    do {
+      wxString address;
+      if (config->Read(entryName, &address))
+        m_AddressCtrl->AppendString(address);
+    } while (config->GetNextEntry(entryName, entryIndex));
+  }
+}
+
+
+void CallIMDialog::OnOK(wxCommandEvent &)
+{
+  wxConfigBase * config = wxConfig::Get();
+  config->DeleteGroup(RecentIMCallsGroup);
+  config->SetPath(RecentIMCallsGroup);
+
+  config->Write(wxT("1"), m_Address);
+
+  unsigned keyNumber = 1;
+  for (size_t i = 0; i < m_AddressCtrl->GetCount() && keyNumber < MaxSavedRecentIMCalls; ++i) {
+    wxString entry = m_AddressCtrl->GetString(i);
+
+    if (m_Address != entry) {
+      wxString key;
+      key.sprintf(wxT("%u"), ++keyNumber);
+      config->Write(key, entry);
+    }
+  }
+
+  EndModal(wxID_OK);
+}
+
+
+void CallIMDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
+{
+  TransferDataFromWindow();
+  m_ok->Enable(!m_Address.IsEmpty());
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -5393,6 +5589,11 @@ void MySIPEndPoint::OnDialogInfoReceived(const SIPDialogNotification & info)
     default :
       break;
   }
+}
+
+void MySIPEndPoint::OnMessageReceived(const SIPURL & from, const PString & body)
+{
+  m_manager.OnMessageReceived(from, body);
 }
 
 #endif // OPAL_SIP
