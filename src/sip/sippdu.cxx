@@ -2271,7 +2271,7 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
   }
 
   // Update request URI
-  if (pdu.GetMethod() == SIP_PDU::NumMethods && pdu.GetStatusCode()/100 == 2) {
+  if (pdu.GetMethod() != SIP_PDU::NumMethods || pdu.GetStatusCode()/100 == 2) {
     PString contact = mime.GetContact();
     if (!contact.IsEmpty()) {
       m_requestURI.Parse(contact);
