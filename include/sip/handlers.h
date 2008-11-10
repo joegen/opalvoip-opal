@@ -127,9 +127,10 @@ public:
 
   const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
-  const PString & GetUsername() const { return m_username; }
-  const PString & GetPassword() const { return m_password; }
-  const PString & GetRealm() const { return m_realm; }
+  const PString & GetUsername() const     { return m_username; }
+  const PString & GetPassword() const     { return m_password; }
+  const PString & GetRealm() const        { return m_realm; }
+  const SIPURL & GetRemoteAddress() const { return m_remoteAddress; }
 
 protected:
   void CollapseFork(SIPTransaction & transaction);
@@ -220,8 +221,6 @@ public:
 
 private:
   void SendStatus(SIP_PDU::StatusCodes code);
-  PBoolean OnReceivedMWINOTIFY(SIP_PDU & response);
-  PBoolean OnReceivedPresenceNOTIFY(SIP_PDU & response);
 
   SIPSubscribe::Params m_parameters;
   SIPDialogContext     m_dialog;
@@ -325,8 +324,7 @@ public:
 
 
 /** This dictionary is used both to contain the active and successful
- * registrations, and subscriptions. Currently, only MWI subscriptions
- * are supported.
+ * registrations, and subscriptions. 
  */
 class SIPHandlersList : public PSafeList<SIPHandler>
 {

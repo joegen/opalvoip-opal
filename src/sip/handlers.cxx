@@ -556,6 +556,10 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   response.GetMIME().GetProductInfo(m_productInfo);
 
+  PSafePtr<SIPTransaction> optionsTransaction = new SIPOptions(endpoint, transaction.GetTransport(), m_parameters.m_registrarAddress);
+  optionsTransaction->SetURI(m_parameters.m_registrarAddress);
+  optionsTransaction->Start();
+
   SendStatus(SIP_PDU::Successful_OK);
   SIPHandler::OnReceivedOK(transaction, response);
 }
