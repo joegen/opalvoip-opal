@@ -132,8 +132,8 @@ PBoolean OpalTransportAddress::IsCompatible(const OpalTransportAddress & address
   if (IsEmpty() || address.IsEmpty())
     return PTrue;
 
-  PCaselessString myPrefix = Left(Find('$'));
-  PCaselessString theirPrefix = address.Left(address.Find('$'));
+  PCaselessString myPrefix = GetProto();
+  PCaselessString theirPrefix = address.GetProto();
   return myPrefix == theirPrefix ||
         (myPrefix    == IpPrefix && (theirPrefix == TcpPrefix || theirPrefix == UdpPrefix 
 #if OPAL_PTLIB_SSL
@@ -342,7 +342,7 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
     port = 0;
   else {
     if (!service) {
-      PString proto = address.Left(address.Find('$'));
+      PCaselessString proto = address.GetProto();
       if (proto *= "ip")
         proto = "tcp";
       port = PIPSocket::GetPortByService(proto, service);

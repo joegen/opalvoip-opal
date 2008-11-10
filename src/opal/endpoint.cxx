@@ -275,7 +275,7 @@ static void AddTransportAddresses(OpalTransportAddressArray & interfaceAddresses
 {
   PIPSocket::InterfaceTable interfaces;
 
-  PString proto = localAddress.Left(localAddress.Find('$')+1);
+  PCaselessString proto = localAddress.GetProto();
 
   PIPSocket::Address ip;
   WORD port = 0;
