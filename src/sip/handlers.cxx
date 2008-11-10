@@ -215,8 +215,11 @@ void SIPHandler::SetExpire(int e)
   if (originalExpire < e)
     originalExpire = e;
 
+  // retry before the expire time.
+  // if the expire time is more than 20 mins, retry 10mins before expiry
+  // if the expire time is less than 20 mins, retry after half of the expiry time
   if (expire > 0 && state < Unsubscribing)
-    expireTimer.SetInterval(0, (unsigned) (9*expire/10));
+    expireTimer.SetInterval(0, (unsigned)(expire < 1200*1000 ? expire/2 : expire-600*1000));
 }
 
 
