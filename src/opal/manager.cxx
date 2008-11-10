@@ -1202,18 +1202,21 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
 PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
                                      const PIPSocket::Address & remoteAddress)
 {
-  if (!translationAddress.IsValid())
-    return PFalse; // Have nothing to translate it to
-
   if (!IsLocalAddress(localAddress))
-    return PFalse; // Is already translated
+    return false; // Is already translated
 
   if (IsLocalAddress(remoteAddress))
-    return PFalse; // Does not need to be translated
+    return false; // Does not need to be translated
 
-  // Tranlsate it!
-  localAddress = translationAddress;
-  return PTrue;
+  if (translationAddress.IsValid()) {
+    localAddress = translationAddress; // Translate it!
+    return true;
+  }
+
+  if (stun != NULL && stun->GetNatType() != PSTUNClient::BlockedNat)
+    return stun->GetExternalAddress(localAddress); // Translate it!
+
+  return false; // Have nothing to translate it to
 }
 
 
@@ -1271,10 +1274,11 @@ PSTUNClient::NatTypes OpalManager::SetSTUNServer(const PString & server)
   }
 
   PSTUNClient::NatTypes type = stun->GetNatType();
+  PIPSocket::Address stunExternalAddress;
   if (type != PSTUNClient::BlockedNat)
-    stun->GetExternalAddress(translationAddress);
+    stun->GetExternalAddress(stunExternalAddress);
 
-  PTRACE(3, "OPAL\tSTUN server \"" << server << "\" replies " << type << ", external IP " << translationAddress);
+  PTRACE(3, "OPAL\tSTUN server \"" << server << "\" replies " << type << ", external IP " << stunExternalAddress);
 
   return type;
 }
