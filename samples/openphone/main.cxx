@@ -74,11 +74,13 @@
 #include "otherphone.xpm"
 #include "smallphone.xpm"
 
-#define USE_SDL 1
+#define VIDEO_WINDOW_DRIVER "SDL"
+#define VIDEO_WINDOW_DEVICE "SDL"
 
 #else
 
-#define USE_SDL 0
+#define VIDEO_WINDOW_DRIVER "Window"
+#define VIDEO_WINDOW_DEVICE "MSWIN STYLE=0x80C80000"  // WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION
 
 #endif
 
@@ -774,19 +776,11 @@ bool MyManager::Initialise()
     SetAutoStartReceiveVideo(onoff);
 
   videoArgs = GetVideoPreviewDevice();
-#if USE_SDL
-  videoArgs.driverName = "SDL";
-#else
-  videoArgs.driverName = "Window";
-#endif
+  videoArgs.driverName = VIDEO_WINDOW_DRIVER;
   SetVideoPreviewDevice(videoArgs);
 
   videoArgs = GetVideoOutputDevice();
-#if USE_SDL
-  videoArgs.driverName = "SDL";
-#else
-  videoArgs.driverName = "Window";
-#endif
+  videoArgs.driverName = VIDEO_WINDOW_DRIVER;
   config->Read(VideoFlipRemoteKey, &videoArgs.flip);
   SetVideoOutputDevice(videoArgs);
 
@@ -2355,14 +2349,7 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
 
 static const PVideoDevice::OpenArgs & AdjustVideoArgs(PVideoDevice::OpenArgs & videoArgs, const char * title, int x, int y)
 {
-#if USE_SDL
-  videoArgs.deviceName = "SDL";
-#else
-  videoArgs.deviceName = psprintf("MSWIN STYLE=0x%08X", WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION);
-#endif
-
-  videoArgs.deviceName.sprintf(" TITLE=\"%s\" X=%i Y=%i", title, x, y);
-
+  videoArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"%s\" X=%i Y=%i", title, x, y);
   return videoArgs;
 }
 
@@ -2906,6 +2893,10 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   ////////////////////////////////////////
   // Audio fields
   EVT_COMBOBOX(wxXmlResource::GetXRCID(LineInterfaceDeviceKey), OptionsDialog::SelectedLID)
+
+  ////////////////////////////////////////
+  // Video fields
+  EVT_BUTTON(wxXmlResource::GetXRCID("TestVideoCapture"), OptionsDialog::TestVideoCapture)
 
   ////////////////////////////////////////
   // Fax fields
@@ -3910,6 +3901,57 @@ void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
     }
     delete lidToDelete;
   }
+}
+
+
+////////////////////////////////////////
+// Video fields
+
+void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
+{
+  if (!wxDialog::TransferDataFromWindow())
+    return;
+
+  PVideoDevice::OpenArgs grabberArgs;
+  grabberArgs.deviceName = m_VideoGrabber.mb_str(wxConvUTF8);
+  grabberArgs.videoFormat = (PVideoDevice::VideoFormat)m_VideoGrabFormat;
+  grabberArgs.channelNumber = m_VideoGrabSource;
+  grabberArgs.rate = m_VideoGrabFrameRate;
+  PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, grabberArgs.width, grabberArgs.height);
+  grabberArgs.flip = m_VideoFlipLocal;
+
+  PVideoInputDevice * grabber = PVideoInputDevice::CreateOpenedDevice(grabberArgs);
+  if (grabber == NULL) {
+    wxMessageBox(wxT("Could not open video capture."), wxT("Video Test"), wxCANCEL|wxICON_EXCLAMATION);
+    return;
+  }
+
+  wxRect box(0, 0, grabberArgs.width, grabberArgs.height);
+  box = box.CentreIn(GetRect());
+
+  PVideoDevice::OpenArgs displayArgs;
+  displayArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"Video Test\" X=%i Y=%i", box.GetLeft(), box.GetTop());
+  displayArgs.width = grabberArgs.width;
+  displayArgs.height = grabberArgs.height;
+
+  PVideoOutputDevice * display = PVideoOutputDevice::CreateOpenedDevice(displayArgs, true);
+  if (PAssertNULL(display) == NULL) {
+    delete grabber;
+    return;
+  }
+
+  if (!grabber->Start())
+    wxMessageBox(wxT("Could not start video capture."), wxT("Video Test"), wxCANCEL|wxICON_EXCLAMATION);
+  else {
+    PBYTEArray frame;
+    unsigned frameCount = 0;
+    while (grabber->GetFrame(frame) &&
+           display->SetFrameData(0, 0, grabber->GetFrameWidth(), grabber->GetFrameHeight(), frame))
+      frameCount++;
+  }
+
+  delete display;
+  delete grabber;
 }
 
 

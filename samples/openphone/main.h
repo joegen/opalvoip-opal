@@ -589,6 +589,8 @@ class OptionsDialog : public wxDialog
     PwxString m_VideoMinFrameSize;
     PwxString m_VideoMaxFrameSize;
 
+    void TestVideoCapture(wxCommandEvent & event);
+
     ////////////////////////////////////////
     // Fax fields
     PwxString m_FaxStationIdentifier;
