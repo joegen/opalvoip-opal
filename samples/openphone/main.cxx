@@ -2896,7 +2896,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 
   ////////////////////////////////////////
   // Video fields
-  EVT_BUTTON(wxXmlResource::GetXRCID("TestVideoCapture"), OptionsDialog::TestVideoCapture)
+  EVT_BUTTON(XRCID("TestVideoCapture"), OptionsDialog::TestVideoCapture)
 
   ////////////////////////////////////////
   // Fax fields
