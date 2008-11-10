@@ -960,9 +960,8 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
   unsigned flags;
 
   if (isEncoder) {
-    bool firstPacketForFrame = true;
+    bool isIFrame = false;
     do {
-
       // create the output buffer, outputDataSize is supposed to include the
       // RTP header size, so take that off as ctor adds it back.
       RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize - PluginCodec_RTP_MinHeaderSize);
@@ -979,32 +978,8 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
         return PFalse;
       }
 
-      if (firstPacketForFrame) {
-        if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
-#if PTRACING
-          if (forceIFrame)
-            PTRACE(3, "OpalPlugin\tSending I-Frame in response to videoFastUpdate");
-          else if (consecutiveIntraFrames < 10) {
-            if (++consecutiveIntraFrames >= 10)
-              PTRACE(3, "OpalPlugin\tSending many consecutive I-Frames, assuming codec cannot do P-Frames");
-            else
-              PTRACE(4, "OpalPlugin\tSending I-Frame");
-          }
-#endif
-          forceIFrame = false;
-#if OPAL_STATISTICS
-          m_keyFrames++;
-#endif
-        }
-#if PTRACING
-        else
-          consecutiveIntraFrames = 0;
-#endif
-#if OPAL_STATISTICS
-        m_totalFrames++;
-#endif
-        firstPacketForFrame = false;
-      }
+      if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
+        isIFrame = true;
 
       if (toLen > 0) {
         dst->SetPayloadSize(toLen - dst->GetHeaderSize());
@@ -1012,6 +987,28 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
       }
 
     } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
+
+#if OPAL_STATISTICS
+    m_totalFrames++;
+    if (isIFrame)
+      m_keyFrames++;
+#endif
+
+#if PTRACING
+    if (!isIFrame)
+      consecutiveIntraFrames = 0;
+    else if (forceIFrame)
+      PTRACE(3, "OpalPlugin\tSending I-Frame in response to videoFastUpdate");
+    else if (consecutiveIntraFrames < 10) {
+      if (++consecutiveIntraFrames >= 10)
+        PTRACE(3, "OpalPlugin\tSending many consecutive I-Frames, assuming codec cannot do P-Frames");
+      else
+        PTRACE(4, "OpalPlugin\tSending I-Frame");
+    }
+#endif
+
+    if (isIFrame)
+      forceIFrame = false;
   }
 
   else {
