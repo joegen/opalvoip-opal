@@ -1905,7 +1905,7 @@ void SIP_PDU::PrintOn(ostream & strm) const
 PBoolean SIP_PDU::Read(OpalTransport & transport)
 {
   if (!transport.IsOpen()) {
-    PTRACE(1, "SIP\tAttempt to read PDU from closed tansport " << transport);
+    PTRACE(1, "SIP\tAttempt to read PDU from closed transport " << transport);
     return PFalse;
   }
 
@@ -2058,13 +2058,13 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
   PWaitAndSignal mutex(transport.GetWriteMutex());
 
   if (!transport.IsOpen()) {
-    PTRACE(1, "SIP\tAttempt to write PDU to closed tansport " << transport);
+    PTRACE(1, "SIP\tAttempt to write PDU to closed transport " << transport);
     return PFalse;
   }
 
   if (!remoteAddress.IsEmpty() && !transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
     if (!transport.SetRemoteAddress(remoteAddress)) {
-      PTRACE(1, "SIP\tCannot use remote address " << remoteAddress << " for tansport " << transport);
+      PTRACE(1, "SIP\tCannot use remote address " << remoteAddress << " for transport " << transport);
       return false;
     }
   }
