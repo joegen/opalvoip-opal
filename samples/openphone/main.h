@@ -179,10 +179,8 @@ class MySIPEndPoint : public SIPEndPoint
     virtual void OnDialogInfoReceived(
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
-    virtual void OnMessageReceived(
-      const SIPURL & from, 
-      const PString & body
-    );
+    virtual void OnMessageReceived(const SIPURL & from, const PString & body);
+    virtual void OnPresenceInfoReceived (const PString & user, const PString & basic, const PString & );
 
     MyManager & m_manager;
 };
@@ -834,6 +832,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnStateChange(wxCommandEvent & event);
     void OnStreamsChanged(wxCommandEvent &);
     void OnRxMessage(wxCommandEvent &);
+    void OnPresence(wxCommandEvent &);
 
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
@@ -872,6 +871,9 @@ class MyManager : public wxFrame, public OpalManager
     void OnSpeedDialActivated(wxListEvent& event);
     void OnSpeedDialColumnResize(wxListEvent& event);
     void OnRightClick(wxListEvent& event);
+
+    void OnGoOnline(wxCommandEvent& event);
+    void OnGoOffline(wxCommandEvent& event);
 
     bool CanDoFax() const;
 
@@ -955,6 +957,9 @@ class MyManager : public wxFrame, public OpalManager
     ConversationInfo * GetConversation(const PwxString & remoteParty);
 
     ConversationMapType conversationMap;
+
+    void OnPresenceInfoReceived (const PString & user, const PString & basic);
+
 #endif
 
 #if OPAL_IVR

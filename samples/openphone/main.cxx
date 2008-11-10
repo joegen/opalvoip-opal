@@ -282,7 +282,8 @@ enum {
   ID_LOG_MESSAGE,
   ID_STATE_CHANGE,
   ID_STREAMS_CHANGED,
-  ID_RX_MESSAGE
+  ID_RX_MESSAGE,
+  ID_PRESENCE_MESSAGE
 };
 
 DECLARE_EVENT_TYPE(wxEvtLogMessage, -1)
@@ -296,6 +297,9 @@ DEFINE_EVENT_TYPE(wxEvtStateChange)
 
 DECLARE_EVENT_TYPE(wxEvtRxMessage, -1)
 DEFINE_EVENT_TYPE(wxEvtRxMessage)
+
+DECLARE_EVENT_TYPE(wxPresenceMessage, -1)
+DEFINE_EVENT_TYPE(wxPresenceMessage)
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -453,15 +457,19 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnVFU)
   EVT_MENU(XRCID("MenuVideoControl"),    MyManager::OnVideoControl)
 
+  EVT_MENU(XRCID("MenuGoOnline"),        MyManager::OnGoOnline)
+  EVT_MENU(XRCID("MenuGoOffLine"),       MyManager::OnGoOffline)
+
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyManager::OnSashPositioned)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyManager::OnSpeedDialActivated)
   EVT_LIST_COL_END_DRAG(SpeedDialsID, MyManager::OnSpeedDialColumnResize)
   EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID, MyManager::OnRightClick) 
 
-  EVT_COMMAND(ID_LOG_MESSAGE,     wxEvtLogMessage,     MyManager::OnLogMessage)
-  EVT_COMMAND(ID_STATE_CHANGE,    wxEvtStateChange,    MyManager::OnStateChange)
-  EVT_COMMAND(ID_STREAMS_CHANGED, wxEvtStreamsChanged, MyManager::OnStreamsChanged)
-  EVT_COMMAND(ID_RX_MESSAGE,      wxEvtRxMessage,      MyManager::OnRxMessage)
+  EVT_COMMAND(ID_LOG_MESSAGE,      wxEvtLogMessage,     MyManager::OnLogMessage)
+  EVT_COMMAND(ID_STATE_CHANGE,     wxEvtStateChange,    MyManager::OnStateChange)
+  EVT_COMMAND(ID_STREAMS_CHANGED,  wxEvtStreamsChanged, MyManager::OnStreamsChanged)
+  EVT_COMMAND(ID_RX_MESSAGE,       wxEvtRxMessage,      MyManager::OnRxMessage)
+  EVT_COMMAND(ID_PRESENCE_MESSAGE, wxPresenceMessage,   MyManager::OnPresence)
   
 END_EVENT_TABLE()
 
@@ -1413,6 +1421,14 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
 
   PWaitAndSignal m(conversationMapMutex);
   GetConversation(dlg.m_Address);
+}
+
+void MyManager::OnGoOnline(wxCommandEvent & /*event*/)
+{
+}
+
+void MyManager::OnGoOffline(wxCommandEvent & /*event*/)
+{
 }
 
 void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
@@ -2585,6 +2601,26 @@ MyManager::ConversationInfo * MyManager::GetConversation(const PwxString & remot
   info.dialog = new IMDialog(this, remoteParty);
   info.dialog->Show();
   return &conversationMap.find((const char *)key)->second;
+}
+
+void MyManager::OnPresenceInfoReceived (const PString & user,
+                                        const PString & basic)
+{
+  wxCommandEvent theEvent(wxPresenceMessage, ID_PRESENCE_MESSAGE);
+  theEvent.SetEventObject(this);
+  PwxString str = user;
+  theEvent.SetString(PwxString(user) + wxT("\n") + PwxString(basic));
+  GetEventHandler()->AddPendingEvent(theEvent);
+}
+
+void MyManager::OnPresence(wxCommandEvent & theEvent)
+{
+  PString text = theEvent.GetString();
+  PINDEX pos = text.Find('\n');
+  PString from = text.Left(pos);
+  PString state = text.Mid(pos+1);
+
+  LogWindow << "Presence NOTIFY received for " << from  << " : " << state << endl;
 }
 
 #endif // OPAL_SIP
@@ -5543,35 +5579,66 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
 {
   SIPEndPoint::OnRegistrationStatus(aor, wasRegistering, reRegistering, reason);
 
+  bool logIt = true;
+
   switch (reason) {
     default:
       break;
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Information_Trying :
-      return;
-
-    case SIP_PDU::Successful_OK :
-      if (reRegistering)
-        return;
-  }
-
-  LogWindow << "SIP ";
-  if (!wasRegistering)
-    LogWindow << "un";
-  LogWindow << "registration of " << aor << ' ';
-  switch (reason) {
-    case SIP_PDU::Successful_OK :
-      LogWindow << "successful";
+      logIt = false;
       break;
 
-    case SIP_PDU::Failure_RequestTimeout :
-      LogWindow << "timed out";
-      break;
-
-    default :
-      LogWindow << "failed (" << reason << ')';
+    case SIP_PDU::Successful_OK :
+      if (reRegistering) {
+        logIt = false;
+      }
   }
-  LogWindow << '.' << endl;
+  if (logIt) {
+    LogWindow << "SIP ";
+    if (!wasRegistering)
+      LogWindow << "un";
+    LogWindow << "registration of " << aor << ' ';
+    switch (reason) {
+      case SIP_PDU::Successful_OK :
+        LogWindow << "successful";
+        break;
+
+      case SIP_PDU::Failure_RequestTimeout :
+        LogWindow << "timed out";
+        break;
+
+      default :
+        LogWindow << "failed (" << reason << ')';
+    }
+    LogWindow << '.' << endl;
+  }
+
+  PSafePtr<SIPHandler> regHandler = activeSIPHandlers.FindSIPHandlerByUrl(aor, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+/*
+  if (regHandler != NULL) {
+    PStringStream xmlBody;
+    xmlBody << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+               "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"";
+
+    PString pres = aor;
+    pres.Replace("sip:", "pres:");
+    xmlBody << pres;
+    
+    xmlBody << "\">"
+               "<tuple id=\"none\">"
+               "<status><basic>";
+
+    if (wasRegistering)
+      xmlBody << "open";
+    else
+      xmlBody << "closed";
+    xmlBody << "</basic></status>"
+               "</tuple></presence>";
+
+    Publish(regHandler->GetRemoteAddress().AsString(), xmlBody, 300);
+  }
+  */
 }
 
 
@@ -5643,6 +5710,14 @@ void MySIPEndPoint::OnMessageReceived(const SIPURL & from, const PString & body)
 {
   m_manager.OnMessageReceived(from, body);
 }
+
+void MySIPEndPoint::OnPresenceInfoReceived (const PString & user,
+                                            const PString & basic,
+                                            const PString &)
+{
+  m_manager.OnPresenceInfoReceived(user, basic);
+}
+
 
 #endif // OPAL_SIP
 
