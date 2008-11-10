@@ -1347,28 +1347,34 @@ SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url, const OpalTranspo
 
 SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transport)
 {
-  OpalTransportAddress myAddress;
-  WORD port = GetDefaultSignalPort();
+  PIPSocket::Address myAddress(0);
+  WORD myPort = GetDefaultSignalPort();
   OpalTransportAddressArray interfaces = GetInterfaceAddresses();
 
   PIPSocket::Address transportAddress;
   if (transport.GetLocalAddress().GetIpAddress(transportAddress)) {
     for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
       PIPSocket::Address interfaceAddress;
+      WORD interfacePort = myPort;
       if (interfaces[i].GetIpAddress(interfaceAddress) && interfaceAddress == transportAddress) {
-        myAddress = interfaces[i];
+        myAddress = interfaceAddress;
+        myPort = interfacePort;
         break;
       }
     }
   }
 
-  if (myAddress.IsEmpty() && !interfaces.IsEmpty())
-    myAddress = interfaces[0];
+  if (!myAddress.IsValid() && !interfaces.IsEmpty())
+    interfaces[0].GetIpAndPort(myAddress, myPort);
 
-  if (myAddress.IsEmpty())
-    myAddress = OpalTransportAddress(PIPSocket::GetHostName(), port, "udp");
+  if (!myAddress.IsValid())
+    PIPSocket::GetHostAddress(myAddress);
 
-  SIPURL rpn(GetDefaultLocalPartyName(), myAddress, port);
+  if (transport.GetRemoteAddress().GetIpAddress(transportAddress))
+    GetManager().TranslateIPAddress(myAddress, transportAddress);
+
+  OpalTransportAddress addr(myAddress, myPort, transport.GetLocalAddress().GetProto());
+  SIPURL rpn(GetDefaultLocalPartyName(), addr, myPort);
   rpn.SetDisplayName(GetDefaultDisplayName());
   return rpn;
 }
@@ -1383,7 +1389,7 @@ SIPURL SIPEndPoint::GetContactURL(const OpalTransport &transport, const PString 
       return GetLocalURL(*handlerTransport, handler->GetAddressOfRecord().GetUserName());
   }
 
-    return GetLocalURL(transport, userName);
+  return GetLocalURL(transport, userName);
 }
 
 
