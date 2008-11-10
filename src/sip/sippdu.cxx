@@ -238,7 +238,7 @@ SIPURL::SIPURL(const PString & name,
       PStringStream s;
       s << "sip";
 
-      PCaselessString proto = address.Left(address.Find('$'));
+      PCaselessString proto = address.GetProto();
       if (proto == "tcps") {
         defaultPort = 5061;
         s << 's';

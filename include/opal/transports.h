@@ -93,6 +93,10 @@ class OpalTransportAddress : public PString
       const OpalTransportAddress & address
     ) const;
 
+    /**Return the underlying protocol for the transport address.
+      */
+    PCaselessString GetProto() const { return Left(Find('$')); }
+
     /**Extract the ip address from transport address.
        Returns PFalse, if the address is not an IP transport address.
       */
