@@ -333,9 +333,8 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /**Callback for SIP message received
      */
-    virtual void OnMessageReceived (const SIPURL & from,
-                    const PString & body);
-
+    virtual void OnMessageReceived (const SIPURL & from, const PString & body);
+    virtual void OnMessageReceived (const SIPURL & from, const SIP_PDU & pdu);
 
     /**Register to a registrar. This function is asynchronous to permit
        several registrations to occur at the same time. It can be
@@ -498,9 +497,15 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /**Send a message to the given URL.
      */
-    PBoolean Message (
+    PBoolean Message(
       const PString & to, 
       const PString & body
+    );
+    PBoolean Message(
+      const PString & to, 
+      const PString & body,
+      const PString & remoteContact, 
+      const PString & callID
     );
     
 

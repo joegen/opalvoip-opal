@@ -828,11 +828,10 @@ bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
   if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
     from += '>';
 
-  OnMessageReceived(from, pdu.GetEntityBody());
+  OnMessageReceived(from, pdu);
   pdu.SendResponse(transport, SIP_PDU::Successful_OK, this);
   return true;
 }
-
 
 bool SIPEndPoint::OnReceivedOPTIONS(OpalTransport & transport, SIP_PDU & pdu)
 {
@@ -1115,20 +1114,35 @@ bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const
   return one;
 }
 
-
-PBoolean SIPEndPoint::Message (const PString & to, 
-                               const PString & body)
+PBoolean SIPEndPoint::Message(const PString & to, const PString & body)
 {
+  PString id;
+  SIPTransaction::GenerateCallID(id);
+
   // Create the SIPHandler structure
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_MESSAGE, PSafeReadOnly);
+
+  // Otherwise create a new request with this method type
+  if (handler != NULL)
+    handler->SetBody(body);
+  else {
+    handler = new SIPMessageHandler(*this, to, body, "", id);
+    activeSIPHandlers.Append(handler);
+  }
+
+  return handler->SendRequest(SIPHandler::Subscribing);
+}
+
+PBoolean SIPEndPoint::Message(const PString & to, const PString & body, const PString & remoteContact, const PString & callId)
+{
+  // Create the SIPHandler structure
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(callId, PSafeReadOnly);
   
   // Otherwise create a new request with this method type
   if (handler != NULL)
     handler->SetBody(body);
   else {
-    handler = new SIPMessageHandler(*this, 
-                                    to,
-                                    body);
+    handler = new SIPMessageHandler(*this, to, body, remoteContact, callId);
     activeSIPHandlers.Append(handler);
   }
 
@@ -1174,11 +1188,14 @@ PBoolean SIPEndPoint::Ping(const PString & to)
 }
 
 
-void SIPEndPoint::OnMessageReceived (const SIPURL & /*from*/,
-             const PString & /*body*/)
+void SIPEndPoint::OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu)
 {
+  OnMessageReceived(from, pdu.GetEntityBody());
 }
 
+void SIPEndPoint::OnMessageReceived (const SIPURL & /*from*/, const PString & /*body*/)
+{
+}
 
 void SIPEndPoint::OnPresenceInfoReceived (const PString & /*user*/,
                                           const PString & /*basic*/,
