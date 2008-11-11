@@ -297,7 +297,9 @@ class SIPMessageHandler : public SIPHandler
 public:
   SIPMessageHandler(SIPEndPoint & ep, 
                     const PString & to,
-                    const PString & body);
+                    const PString & body,
+                    const PString & remoteContact,
+                    const PString & callId);
   ~SIPMessageHandler();
 
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
