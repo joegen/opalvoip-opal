@@ -52,6 +52,7 @@
 #include "plugin-config.h"
 
 #include "h263-1998.h"
+#include <limits.h>
 #include <math.h>
 #include "trace.h"
 #include <string.h>
@@ -112,10 +113,13 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
     vsprintf(buffer + strlen(buffer), fmt, arg);
     if (strlen(buffer) > 0)
       buffer[strlen(buffer)-1] = 0;
+printf("%s\n", buffer);
+/*
     if (severity = 4) 
       { TRACE_UP (severity, buffer); }
     else
       { TRACE (severity, buffer); }
+*/
   }
 }
 
@@ -414,19 +418,38 @@ H263_RFC2190_EncoderContext::~H263_RFC2190_EncoderContext()
   TRACE(3, prefix << "\tEncoder\tencoder closed");
 }
 
+//s->avctx->rtp_callback(s->avctx, s->ptr_lastgob, current_packet_size, number_mb)
+static void rtp_callback(struct AVCodecContext *avctx, void * _data, int size, int mb_nb)
+{
+  void * opaque = avctx->opaque;
+  H263_RFC2190_EncoderContext * context = (H263_RFC2190_EncoderContext *)opaque;
+  context->RTPCallBack(avctx, _data, size, mb_nb);
+}
+
+void H263_RFC2190_EncoderContext::RTPCallBack(struct AVCodecContext *avctx, void * _data, int size, int mbCount)
+{
+  RFC2190Packetizer::fragment frag;
+  frag.length = size;
+  frag.mbNum  = currentMb;
+  packetizer.fragments.push_back(frag);
+  currentMb = currentMb + mbCount;
+}
+
 bool H263_RFC2190_EncoderContext::Open()
 {
   if (!H263_Base_EncoderContext::Open(CODEC_ID_H263))
     return false;
 
-  //_context->rtp_mode = 1;
-  //_context->rtp_payload_size = 500;
-  //_context->rtp_callback = &H263_RFC2190_EncoderContext::RtpCallback;
-  //_context->opaque = this; // used to separate out packets from different encode threads
+  _context->rtp_mode = 1;
+  _context->rtp_payload_size = 200;
+  _context->rtp_callback = &rtp_callback;
+  _context->opaque = (H263_RFC2190_EncoderContext *)this; // used to separate out packets from different encode threads
 
-  //_context->flags &= ~CODEC_FLAG_H263P_UMV;
-  //_context->flags &= ~CODEC_FLAG_4MV;
-  //_context->flags |= CODEC_FLAG_H263P_AIC;
+  _context->flags &= ~CODEC_FLAG_H263P_UMV;
+  _context->flags &= ~CODEC_FLAG_4MV;
+  _context->flags &= ~CODEC_FLAG_H263P_AIC;
+  _context->flags &= ~CODEC_FLAG_H263P_AIV;
+  _context->flags &= ~CODEC_FLAG_H263P_SLICE_STRUCT;
   
   SetMaxKeyFramePeriod(H263_KEY_FRAME_INTERVAL);
   SetMaxRTPFrameSize(H263_PAYLOAD_SIZE);
@@ -515,6 +538,8 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
   _inputFrame->data[2] = _inputFrame->data[1] + (size / 4);
   _inputFrame->pict_type = 0; // (flags && forceIFrame) ? FF_I_TYPE : 0;
 
+  currentMb = 0;
+  packetizer.fragments.resize(0);
   packetizer.buffer.resize(frameSize);
   int encodedLen = FFMPEGLibraryInstance.AvcodecEncodeVideo(_context, &packetizer.buffer[0], frameSize, _inputFrame);  
   packetizer.buffer.resize(encodedLen);

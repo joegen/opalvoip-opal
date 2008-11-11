@@ -149,9 +149,11 @@ class H263_RFC2190_EncoderContext : public H263_Base_EncoderContext
     bool InitContext();
     void SetMaxRTPFrameSize (unsigned size);
     int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
+    void RTPCallBack(struct AVCodecContext *avctx, void * _data, int size, int mbCount);
   protected:
     bool Init();
     RFC2190Packetizer packetizer;
+    unsigned currentMb;
 };
 
 ////////////////////////////////////////////////////////////////////////////
