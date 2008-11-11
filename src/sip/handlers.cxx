@@ -1214,13 +1214,11 @@ PString SIPPublishHandler::BuildBody(const PString & to,
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPMessageHandler::SIPMessageHandler (SIPEndPoint & endpoint, 
-                                      const PString & to,
-                                      const PString & b)
-  : SIPHandler(endpoint, to, "")
+SIPMessageHandler::SIPMessageHandler (SIPEndPoint & endpoint, const PString & to, const PString & b, const PString & c, const PString & id)
+  : SIPHandler(endpoint, to, c)
 {
-  body = b;
-
+  body   = b;
+  callID = id;
   SetState(Subscribed);
 }
 
@@ -1253,7 +1251,6 @@ void SIPMessageHandler::OnExpireTimeout(PTimer &, INT)
 
 void SIPMessageHandler::SetBody(const PString & b)
 {
-  SIPTransaction::GenerateCallID(callID);
   SIPHandler::SetBody (b);
 }
 
