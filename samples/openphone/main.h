@@ -142,6 +142,20 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
     MyManager & m_manager;
 };
 
+class IMDialog;
+
+struct MessageInfo {
+  PString callId;
+  SIPURL from;
+  PString remoteContact;
+  PString body;
+};
+
+struct PresenceInfo {
+  PString entity;
+  PString status;
+};
+
 #if OPAL_H323
 class MyH323EndPoint : public H323EndPoint
 {
@@ -179,7 +193,7 @@ class MySIPEndPoint : public SIPEndPoint
     virtual void OnDialogInfoReceived(
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
-    virtual void OnMessageReceived(const SIPURL & from, const PString & body);
+    virtual void OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu);
     virtual void OnPresenceInfoReceived (const PString & user, const PString & basic, const PString & );
 
     MyManager & m_manager;
@@ -240,10 +254,13 @@ class CallIMDialog : public wxDialog
 class IMDialog : public wxDialog
 {
   public:
-    IMDialog(MyManager * manager, const PwxString & destination);
+    IMDialog(MyManager * _manager, const PString & _callId, const SIPURL & _them, const PString & _remoteContact);
     ~IMDialog();
 
     void AddTextToScreen(const wxString & text, bool fromUs);
+
+    PString   callId;
+    PString   remoteContact;
 
   private:
     void OnSend(wxCommandEvent & event);
@@ -253,6 +270,7 @@ class IMDialog : public wxDialog
     void SendCurrentText();
 
     MyManager * manager;
+
     PwxString them;
     PwxString us;
 
@@ -746,7 +764,6 @@ public:
 
 typedef std::list<MyMedia> MyMediaList;
 
-
 class MyManager : public wxFrame, public OpalManager
 {
   public:
@@ -947,18 +964,15 @@ class MyManager : public wxFrame, public OpalManager
     void ReplaceRegistrations(const RegistrationList & newRegistrations);
 
     friend IMDialog;
-    struct ConversationInfo {
-      IMDialog * dialog;
-    };
-    typedef std::map<std::string, ConversationInfo> ConversationMapType;
+    typedef std::map<std::string, IMDialog *> ConversationMapType;
     PMutex conversationMapMutex;
 
-    void OnMessageReceived(const SIPURL & from, const PString & body);
-    ConversationInfo * GetConversation(const PwxString & remoteParty);
+    void OnMessageReceived(MessageInfo * info);
+    IMDialog * GetOrCreateConversation(const MessageInfo & messageInfo);
 
     ConversationMapType conversationMap;
 
-    void OnPresenceInfoReceived (const PString & user, const PString & basic);
+    void OnPresenceInfoReceived(PresenceInfo * info);
 
 #endif
 
