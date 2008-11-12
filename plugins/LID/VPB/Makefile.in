@@ -46,6 +46,7 @@ LID_PLUGIN_DIR=@LID_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
+target_os=@target_os@
 
 CC=@CC@
 CXX=@CXX@
@@ -69,7 +70,14 @@ PLUGIN	= ./vpb_lid_pwplugin.$(PLUGINEXT)
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cpp,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
+
+ifeq (solaris,$(findstring solaris,$(target_os)))
+
+	$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+else	
 	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
+
+endif	
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)
