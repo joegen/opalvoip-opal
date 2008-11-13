@@ -81,7 +81,7 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     static const OpalMediaType & Fax();
     static const OpalMediaType & UserInput();
 
-    void PrintOn(ostream & strm) const { strm << (std::string &)*this; }
+    void PrintOn(ostream & strm) const { strm << c_str(); }
 
     OpalMediaTypeDefinition * GetDefinition() const;
     static OpalMediaTypeDefinition * GetDefinition(const OpalMediaType & key);
