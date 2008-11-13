@@ -1150,56 +1150,79 @@ PBoolean SIPEndPoint::Message(const PString & to, const PString & body, const PS
 }
 
 
-PBoolean SIPEndPoint::Publish(const PString & to,
-                          const PString & body,
-                          unsigned expire)
-{
-  // Create the SIPHandler structure
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_PUBLISH, PSafeReadOnly);
-
-  // Otherwise create a new request with this method type
-  if (handler != NULL) {
-    handler->SetBody(body);
-    return true; // Let background timer send message
-  }
-
-  handler = new SIPPublishHandler(*this,
-                                  to,
-                                  body,
-                                  expire);
-  activeSIPHandlers.Append(handler);
-
-  return handler->SendRequest(SIPHandler::Subscribing);
-}
-
-
-PBoolean SIPEndPoint::Ping(const PString & to)
-{
-  // Create the SIPHandler structure
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_PING, PSafeReadOnly);
-
-  // Otherwise create a new request with this method type
-  if (handler == NULL) {
-    handler = new SIPPingHandler(*this,
-                                 to);
-  }
-
-  return handler->SendRequest(SIPHandler::Subscribing);
-}
-
-
 void SIPEndPoint::OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu)
 {
   OnMessageReceived(from, pdu.GetEntityBody());
 }
 
+
 void SIPEndPoint::OnMessageReceived (const SIPURL & /*from*/, const PString & /*body*/)
 {
 }
 
-void SIPEndPoint::OnPresenceInfoReceived (const PString & /*user*/,
-                                          const PString & /*basic*/,
-                                          const PString & /*note*/)
+
+PBoolean SIPEndPoint::Ping(const PString & to)
+{
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_PING, PSafeReadOnly);
+  if (handler == NULL)
+    handler = new SIPPingHandler(*this, to);
+
+  return handler->SendRequest(SIPHandler::Subscribing);
+}
+
+
+bool SIPEndPoint::Publish(const SIPSubscribe::Params & params, const PString & body, PString & aor)
+{
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_PUBLISH, PSafeReadWrite);
+  if (handler != NULL)
+    handler->SetBody(body);
+  else {
+    handler = new SIPPublishHandler(*this, params, body);
+    activeSIPHandlers.Append(handler);
+  }
+
+  aor = handler->GetAddressOfRecord().AsString();
+
+  return handler->SendRequest(params.m_expire != 0 ? SIPHandler::Subscribing : SIPHandler::Unsubscribing);
+}
+
+
+bool SIPEndPoint::Publish(const PString & to, const PString & body, unsigned expire)
+{
+  SIPSubscribe::Params params(SIPSubscribe::Presence);
+  params.m_addressOfRecord = to;
+  params.m_expire = expire;
+
+  PString aor;
+  return Publish(params, body, aor);
+}
+
+
+bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
+{
+  return Publish(info.m_address, info.AsString(), info.m_basic != SIPPresenceInfo::Closed ? expire : 0);
+}
+
+
+void SIPEndPoint::OnPresenceInfoReceived(const SIPPresenceInfo & info)
+{
+  // For backward compatibility
+  switch (info.m_basic) {
+    case SIPPresenceInfo::Open :
+      OnPresenceInfoReceived(info.m_address, "open", info.m_note);
+      break;
+    case SIPPresenceInfo::Closed :
+      OnPresenceInfoReceived(info.m_address, "closed", info.m_note);
+      break;
+    default :
+      OnPresenceInfoReceived(info.m_address, PString::Empty(), info.m_note);
+  }
+}
+
+
+void SIPEndPoint::OnPresenceInfoReceived(const PString & /*user*/,
+                                         const PString & /*basic*/,
+                                         const PString & /*note*/)
 {
 }
 

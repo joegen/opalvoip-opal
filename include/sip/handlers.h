@@ -269,25 +269,22 @@ class SIPPublishHandler : public SIPHandler
 
 public:
   SIPPublishHandler(SIPEndPoint & ep, 
-                    const PString & to,
-                    const PString & body,
-                    int expire);
+                    const SIPSubscribe::Params & params,
+                    const PString & body);
   ~SIPPublishHandler();
 
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual SIP_PDU::Methods GetMethod()
     { return SIP_PDU::Method_PUBLISH; }
+  virtual SIPEventPackage GetEventPackage() const
+    { return m_parameters.m_eventPackage; }
   virtual void SetBody(const PString & body);
-  static PString BuildBody(const PString & to,
-                           const PString & basic,
-                           const PString & note);
 
 private:
-  PDECLARE_NOTIFIER(PTimer, SIPPublishHandler, OnPublishTimeout);
-  PTimer publishTimer;
-  PString sipETag;
-  PBoolean stateChanged;
+  SIPSubscribe::Params m_parameters;
+  PString              m_sipETag;
+  bool                 m_stateChanged;
 };
 
 
@@ -337,6 +334,11 @@ class SIPHandlersList : public PSafeList<SIPHandler>
     unsigned GetCount(SIP_PDU::Methods meth, const PString & eventPackage = PString::Empty()) const;
 
     /**
+     * Return a list of the active address of records for each handler.
+     */
+    PStringList GetAddresses(bool includeOffline, SIP_PDU::Methods meth, const PString & eventPackage = PString::Empty()) const;
+
+    /**
      * Find the SIPHandler object with the specified callID
      */
     PSafePtr<SIPHandler> FindSIPHandlerByCallID(const PString & callID, PSafetyMode m);
@@ -365,7 +367,29 @@ class SIPHandlersList : public PSafeList<SIPHandler>
 };
 
 
-/** Information for Sip "dialog" event package notification messages.
+/** Information for SIP "presence" event package notification messages.
+  */
+struct SIPPresenceInfo
+{
+  enum BasicStates {
+    Unknown,
+    Open,
+    Closed
+  };
+
+  SIPPresenceInfo() : m_basic(Unknown) { }
+
+  PString     m_address;
+  PString     m_entity;
+  BasicStates m_basic;
+  PString     m_note;
+  PString     m_contact;
+
+  PString AsString() const;
+};
+
+
+/** Information for SIP "dialog" event package notification messages.
   */
 struct SIPDialogNotification
 {

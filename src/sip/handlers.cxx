@@ -744,7 +744,7 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
    * for SUBSCRIBE. RFC3265, 3.1.1.
    * An answer can only shorten the expires time.
    */
-  SetExpire(response.GetMIME().GetExpires(3600));
+  SetExpire(response.GetMIME().GetExpires(originalExpire));
 
   m_dialog.Update(response);
 
@@ -872,9 +872,12 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
     SIPURL from = request.GetMIME().GetFrom();
     from.Sanitise(SIPURL::ExternalURI);
 
+    SIPPresenceInfo info;
+    info.m_address = from.AsQuotedString();
+
     // Check for empty body, if so then is OK, just a ping ...
     if (request.GetEntityBody().IsEmpty()) {
-      handler.GetEndPoint().OnPresenceInfoReceived(from.AsQuotedString(), PString::Empty(), PString::Empty());
+      handler.GetEndPoint().OnPresenceInfoReceived(info);
       return true;
     }
 
@@ -895,20 +898,27 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
       return false;
 
     PXMLElement * basicElement = statusElement->GetElement("basic");
-    PString basic;
-    if (basicElement != NULL)
-      basic = basicElement->GetData();
+    if (basicElement != NULL) {
+      PCaselessString value = basicElement->GetData();
+      if (value == "open")
+        info.m_basic = SIPPresenceInfo::Open;
+      else if (value == "closed")
+        info.m_basic = SIPPresenceInfo::Closed;
+    }
 
-    PString note;
     PXMLElement * noteElement = statusElement->GetElement("note");
     if (!noteElement)
       noteElement = rootElement->GetElement("note");
     if (!noteElement)
       noteElement = tupleElement->GetElement("note");
     if (noteElement)
-      note = noteElement->GetData();
+      info.m_note = noteElement->GetData();
 
-    handler.GetEndPoint().OnPresenceInfoReceived(from.AsQuotedString(), basic, note);
+    PXMLElement * contactElement = tupleElement->GetElement("contact");
+    if (contactElement != NULL)
+      info.m_contact = contactElement->GetData();
+
+    handler.GetEndPoint().OnPresenceInfoReceived(info);
     return true;
   }
 };
@@ -1100,15 +1110,23 @@ PBoolean SIPNotifyHandler::SendRequest(SIPHandler::State state)
 /////////////////////////////////////////////////////////////////////////
 
 SIPPublishHandler::SIPPublishHandler(SIPEndPoint & endpoint,
-                                     const PString & to,   /* The to field  */
-                                     const PString & b,
-                                     int exp)
-  : SIPHandler(endpoint, to, "", exp)
+                                     const SIPSubscribe::Params & params,
+                                     const PString & b)
+  : SIPHandler(endpoint,
+               params.m_addressOfRecord,
+               params.m_agentAddress,
+               params.m_expire,
+               params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
+  , m_parameters(params)
+  , m_stateChanged(false)
 {
-  publishTimer.SetNotifier(PCREATE_NOTIFIER(OnPublishTimeout));
-  publishTimer.RunContinuous (PTimeInterval (0, 5));
+  // Put possibly adjusted value back
+  m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
+  m_parameters.m_expire = expire;
 
-  stateChanged = PFalse;
+  m_username = params.m_authID;
+  m_password = params.m_password;
+  m_realm    = params.m_realm;
 
   body = b;
 }
@@ -1123,73 +1141,70 @@ SIPPublishHandler::~SIPPublishHandler()
 SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
 {
   SetExpire(originalExpire);
-  SIPTransaction::GenerateCallID(callID);
   return new SIPPublish(endpoint,
                         t, 
-                        m_proxy, 
-                        GetAddressOfRecord(), 
                         GetCallID(),
-                        sipETag, 
-                        (GetState() == Refreshing) ? PString::Empty() : body, 
-                        expire);
+                        m_sipETag,
+                        m_parameters,
+                        (GetState() == Refreshing) ? PString::Empty() : body);
 }
 
 
 void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
   if (!response.GetMIME().GetSIPETag().IsEmpty())
-    sipETag = response.GetMIME().GetSIPETag();
+    m_sipETag = response.GetMIME().GetSIPETag();
 
-  SetExpire(response.GetMIME().GetExpires(3600));
+  SetExpire(response.GetMIME().GetExpires(originalExpire));
 
   SIPHandler::OnReceivedOK(transaction, response);
 }
 
 
-void SIPPublishHandler::OnPublishTimeout(PTimer &, INT)
-{
-  if (GetState() == Subscribed) {
-    if (stateChanged) {
-      if (!SendRequest(Subscribing))
-        SetState(Unavailable);
-      stateChanged = PFalse;
-    }
-  }
-}
-
-
 void SIPPublishHandler::SetBody(const PString & b)
 {
-  stateChanged = PTrue;
-
-  SIPHandler::SetBody (b);
+  m_stateChanged = true;
+  SIPHandler::SetBody(b);
 }
 
 
-PString SIPPublishHandler::BuildBody(const PString & to,
-                                     const PString & basic,
-                                     const PString & note)
+PString SIPPresenceInfo::AsString() const
 {
-  if (to.IsEmpty())
+  if (m_address.IsEmpty())
     return PString::Empty();
-
-  PCaselessString entity = to;
-  if (entity.NumCompare("sip:") == EqualTo)
-    entity.Delete(0, 4);
 
   PStringStream xml;
 
   xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-         "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"pres:" << entity << "\">\r\n"
+         "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"";
+
+  if (m_entity.IsEmpty()) {
+    PCaselessString entity = m_address;
+    if (entity.NumCompare("sip:") == PObject::EqualTo)
+      entity.Delete(0, 4);
+    xml << "pres:" << entity;
+  }
+  else
+    xml << m_entity;
+
+  xml << "\">\r\n"
          "  <tuple id=\"" << OpalGloballyUniqueID() << "\">\r\n";
 
-  if (!note.IsEmpty())
-    xml << "  <note>" << note << "</note>\r\n";
+  if (!m_note.IsEmpty())
+    xml << "  <note>" << m_note << "</note>\r\n";
 
-  xml << "    <status>\r\n"
-         "      <basic>" << basic << "</basic>\r\n"
-         "    </status>\r\n"
-         "    <contact priority=\"1\">" << to << "</contact>\r\n"
+  xml << "    <status>\r\n";
+  switch (m_basic) {
+    case Open :
+      xml << "      <basic>open</basic>\r\n";
+      break;
+
+    case Closed :
+      xml << "      <basic>closed</basic>\r\n";
+      break;
+  }
+  xml << "    </status>\r\n"
+         "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? m_address : m_contact) << "</contact>\r\n"
          "  </tuple>\r\n"
          "</presence>\r\n";
 
@@ -1265,6 +1280,19 @@ unsigned SIPHandlersList::GetCount(SIP_PDU::Methods meth, const PString & eventP
         (eventPackage.IsEmpty() || handler->GetEventPackage() == eventPackage))
       count++;
   return count;
+}
+
+
+PStringList SIPHandlersList::GetAddresses(bool includeOffline, SIP_PDU::Methods meth, const PString & eventPackage) const
+{
+  PStringList addresses;
+  for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler)
+    if ((includeOffline ? handler->GetState () != SIPHandler::Unsubscribed
+                        : handler->GetState () == SIPHandler::Subscribed) &&
+        handler->GetMethod() == meth &&
+        (eventPackage.IsEmpty() || handler->GetEventPackage() == eventPackage))
+      addresses.AppendString(handler->GetAddressOfRecord().AsString());
+  return addresses;
 }
 
 

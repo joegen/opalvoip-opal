@@ -457,8 +457,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnVFU)
   EVT_MENU(XRCID("MenuVideoControl"),    MyManager::OnVideoControl)
 
-  EVT_MENU(XRCID("MenuGoOnline"),        MyManager::OnGoOnline)
-  EVT_MENU(XRCID("MenuGoOffLine"),       MyManager::OnGoOffline)
+  EVT_MENU(XRCID("MenuPresence"),        MyManager::OnMyPresence)
 
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyManager::OnSashPositioned)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyManager::OnSpeedDialActivated)
@@ -1430,13 +1429,13 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
   dialog->Show();
 }
 
-void MyManager::OnGoOnline(wxCommandEvent & /*event*/)
+
+void MyManager::OnMyPresence(wxCommandEvent & /*event*/)
 {
+  PresenceDialog dlg(this, *sipEP);
+  dlg.ShowModal();
 }
 
-void MyManager::OnGoOffline(wxCommandEvent & /*event*/)
-{
-}
 
 void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
 {
@@ -2575,6 +2574,7 @@ void MyManager::ReplaceRegistrations(const RegistrationList & newRegistrations)
   }
 }
 
+
 void MyManager::OnMessageReceived(MessageInfo * info)
 {
   wxCommandEvent theEvent(wxEvtRxMessage, ID_RX_MESSAGE);
@@ -2595,6 +2595,7 @@ void MyManager::OnRxMessage(wxCommandEvent & theEvent)
   delete(info);
 }
 
+
 IMDialog * MyManager::GetOrCreateConversation(const MessageInfo & messageInfo)
 {
   ConversationMapType::iterator r = conversationMap.find(messageInfo.callId);
@@ -2609,18 +2610,34 @@ IMDialog * MyManager::GetOrCreateConversation(const MessageInfo & messageInfo)
   return conversationMap.find(messageInfo.callId)->second;
 }
 
-void MyManager::OnPresenceInfoReceived (PresenceInfo * info)
+
+void MyManager::OnPresenceInfoReceived(const SIPPresenceInfo & info)
 {
   wxCommandEvent theEvent(wxPresenceMessage, ID_PRESENCE_MESSAGE);
   theEvent.SetEventObject(this);
-  theEvent.SetClientData(info);
+  theEvent.SetClientData(new SIPPresenceInfo(info));
   GetEventHandler()->AddPendingEvent(theEvent);
 }
 
+
 void MyManager::OnPresence(wxCommandEvent & theEvent)
 {
-  PresenceInfo * info = (PresenceInfo *)theEvent.GetClientData();
-  LogWindow << "Presence NOTIFY received for " << info->entity << " : " << info->status << endl;
+  SIPPresenceInfo * info = (SIPPresenceInfo *)theEvent.GetClientData();
+  LogWindow << "Presence NOTIFY received for " << info->m_address;
+  switch (info->m_basic) {
+    case SIPPresenceInfo::Open :
+      LogWindow << ": ";
+      if (info->m_note.IsEmpty())
+        LogWindow << "Open";
+      else
+        LogWindow << '"' << info->m_note << '"';
+      break;
+
+    case SIPPresenceInfo::Closed :
+      LogWindow << ": Closed";
+      break;
+  }
+  LogWindow << endl;
   delete info;
 }
 
@@ -2795,32 +2812,49 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
 
   bool ok;
 
-  if (m_Type == Register) {
-    SIPRegister::Params param;
-    param.m_addressOfRecord = m_User.p_str();
-    param.m_registrarAddress = m_Domain.p_str();
-    param.m_contactAddress = m_Contact.p_str();
-    param.m_authID = m_AuthID.p_str();
-    param.m_password = m_Password.p_str();
-    param.m_expire = m_TimeToLive;
-    ok = sipEP.Register(param, m_aor);
-  }
-  else {
-    SIPSubscribe::Params param(EventPackageMapping[m_Type]);
-    param.m_addressOfRecord = m_User.p_str();
-    param.m_agentAddress = m_Domain.p_str();
-    param.m_contactAddress = m_Contact.p_str();
-    param.m_authID = m_AuthID.p_str();
-    param.m_password = m_Password.p_str();
-    param.m_expire = m_TimeToLive;
-    ok = sipEP.Subscribe(param, m_aor);
+  switch (m_Type) {
+    case Register : {
+      SIPRegister::Params param;
+      param.m_addressOfRecord = m_User.p_str();
+      param.m_registrarAddress = m_Domain.p_str();
+      param.m_contactAddress = m_Contact.p_str();
+      param.m_authID = m_AuthID.p_str();
+      param.m_password = m_Password.p_str();
+      param.m_expire = m_TimeToLive;
+      ok = sipEP.Register(param, m_aor);
+      break;
+    }
+
+    case PublishPresence : {
+      m_aor = m_User.p_str();
+      if (m_aor.Find('@') == P_MAX_INDEX && !m_Domain.IsEmpty())
+        m_aor += '@' + m_Domain.p_str();
+
+      SIPPresenceInfo param;
+      param.m_address = m_aor;
+      param.m_basic = SIPPresenceInfo::Open;
+      param.m_contact = m_Contact.p_str();
+      ok = sipEP.PublishPresence(param, m_TimeToLive);
+      break;
+    }
+
+    default :
+      SIPSubscribe::Params param(EventPackageMapping[m_Type]);
+      param.m_addressOfRecord = m_User.p_str();
+      param.m_agentAddress = m_Domain.p_str();
+      param.m_contactAddress = m_Contact.p_str();
+      param.m_authID = m_AuthID.p_str();
+      param.m_password = m_Password.p_str();
+      param.m_expire = m_TimeToLive;
+      ok = sipEP.Subscribe(param, m_aor);
   }
 
   static const char * const TypeNames[] = {
     "Register",
     "MWI subscribe",
     "Presence subscribe",
-    "Appearance subscribe"
+    "Appearance subscribe",
+    "Presence publish"
   };
   LogWindow << "SIP " << TypeNames[m_Type] << ' ' << (ok ? "start" : "fail") << "ed for " << m_aor << endl;
   return ok;
@@ -2832,10 +2866,22 @@ bool RegistrationInfo::Stop(SIPEndPoint & sipEP)
   if (!m_Active || m_aor.IsEmpty())
     return false;
 
-  if (m_Type == Register)
-    sipEP.Unregister(m_aor);
-  else
-    sipEP.Unsubscribe(EventPackageMapping[m_Type], m_aor);
+  switch (m_Type) {
+    case Register :
+      sipEP.Unregister(m_aor);
+      break;
+
+    case PublishPresence : {
+      SIPPresenceInfo info;
+      info.m_address = m_aor;
+      info.m_basic = SIPPresenceInfo::Closed;
+      sipEP.PublishPresence(info);
+      break;
+    }
+
+    default :
+      sipEP.Unsubscribe(EventPackageMapping[m_Type], m_aor);
+  }
 
   m_aor.MakeEmpty();
   return true;
@@ -4253,9 +4299,10 @@ void OptionsDialog::RegistrationToList(bool create, RegistrationInfo * registrat
 
   static const wxChar * const TypeNames[] = {
     wxT("Registration"),
-    wxT("Messages"),
-    wxT("Presence"),
-    wxT("Appearance")
+    wxT("Message Waiting"),
+    wxT("Others Presence"),
+    wxT("Line Appearance"),
+    wxT("My Presence")
   };
   m_Registrations->SetItem(position, 1, TypeNames[registration->m_Type]);
   m_Registrations->SetItem(position, 2, registration->m_User);
@@ -4537,6 +4584,54 @@ void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
 }
 #endif
 
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(PresenceDialog, wxDialog)
+END_EVENT_TABLE()
+
+PresenceDialog::PresenceDialog(MyManager * manager, SIPEndPoint & sipEP)
+  : m_sipEP(sipEP)
+{
+  wxXmlResource::Get()->LoadDialog(this, manager, wxT("PresenceDialog"));
+
+  wxComboBox * states = FindWindowByNameAs<wxComboBox>(this, wxT("PresenceState"));
+  states->SetValidator(wxGenericValidator(&m_status));
+
+  wxChoice * addresses = FindWindowByNameAs<wxChoice>(this, wxT("PresenceAddress"));
+  addresses->SetValidator(wxGenericValidator(&m_address));
+  PStringList presences = m_sipEP.GetPublications(SIPSubscribe::Presence);
+  if (presences.IsEmpty()) {
+    addresses->Disable();
+    states->Disable();
+    FindWindow(wxID_OK)->Disable();
+  }
+  else {
+    for (PStringList::iterator i = presences.begin(); i != presences.end(); ++i)
+      addresses->AppendString(PwxString(*i));
+    addresses->SetSelection(0);
+  }
+}
+
+
+bool PresenceDialog::TransferDataFromWindow()
+{
+  if (!wxDialog::TransferDataFromWindow())
+    return false;
+
+  SIPPresenceInfo info;
+  info.m_address = m_address;
+  if (m_status == "Invisible")
+    info.m_basic = SIPPresenceInfo::Closed;
+  else {
+    info.m_basic = SIPPresenceInfo::Open;
+    info.m_note = m_status;
+  }
+
+  m_sipEP.PublishPresence(info);
+  return true;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -5594,14 +5689,6 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
       return;
 
     case SIP_PDU::Successful_OK :
-      PSafePtr<SIPHandler> regHandler = activeSIPHandlers.FindSIPHandlerByUrl(aor, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-      if (regHandler != NULL)
-        Publish(regHandler->GetRemoteAddress().AsString(),
-                SIPPublishHandler::BuildBody(aor,
-                                             wasRegistering ? "open" : "closed",
-                                             PString::Empty()),
-                300);
-
       if (reRegistering)
         return;
   }
@@ -5700,13 +5787,8 @@ void MySIPEndPoint::OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu)
   m_manager.OnMessageReceived(info);
 }
 
-void MySIPEndPoint::OnPresenceInfoReceived (const PString & user,
-                                            const PString & basic,
-                                            const PString &)
+void MySIPEndPoint::OnPresenceInfoReceived(const SIPPresenceInfo & info)
 {
-  PresenceInfo * info = new PresenceInfo;
-  info->entity = user;
-  info->status = basic;
   m_manager.OnPresenceInfoReceived(info);
 }
 

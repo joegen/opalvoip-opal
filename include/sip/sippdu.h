@@ -1054,12 +1054,10 @@ class SIPPublish : public SIPTransaction
     SIPPublish(
       SIPEndPoint & ep,
       OpalTransport & trans,
-      const SIPURL & proxy,
-      const SIPURL & targetAddress,
       const PString & id,
       const PString & sipIfMatch,
-      const PString & body,
-      unsigned expires
+      SIPSubscribe::Params & params,
+      const PString & body
     );
 };
 
