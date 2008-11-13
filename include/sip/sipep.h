@@ -385,6 +385,12 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     unsigned GetRegistrationsCount() const { return activeSIPHandlers.GetCount(SIP_PDU::Method_REGISTER); }
 
+    /** Returns a list of registered accounts.
+     */
+    PStringList GetRegistrations(
+      bool includeOffline = false   ///< Include offline registrations
+    ) const { return activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_REGISTER); }
+
     /** Information provided on the registration status. */
     struct RegistrationStatus {
       PString              m_addressofRecord;   ///< Address of record for registration
@@ -430,45 +436,54 @@ class SIPEndPoint : public OpalRTPEndPoint
      * several subscriptions to occur at the same time.
      */
     bool Subscribe(
-      SIPSubscribe::PredefinedPackages eventPackage, ///< Event packege being unsubscribed
+      SIPSubscribe::PredefinedPackages eventPackage, ///< Event package being unsubscribed
       unsigned expire,                               ///< Expiry time in seconds
       const PString & aor                            ///< Address-of-record for subscription
     );
     bool Subscribe(
-      const SIPSubscribe::Params & params, ///< Registration paarameters
+      const SIPSubscribe::Params & params, ///< Subscription paarameters
       PString & aor                        ///< Resultant address-of-record for unsubscribe
     );
 
 
     bool Unsubscribe(
-      SIPSubscribe::PredefinedPackages eventPackage,  ///< Event packege being unsubscribed
+      SIPSubscribe::PredefinedPackages eventPackage,  ///< Event package being unsubscribed
       const PString & aor                             ///< Address-of-record for subscription
     );
     bool Unsubscribe(
-      const PString & eventPackage,  ///< Event packege being unsubscribed
+      const PString & eventPackage,  ///< Event package being unsubscribed
       const PString & aor            ///< Address-of-record for subscription
     );
 
     /**Unsubscribe all current subscriptions.
       */
     bool UnsubcribeAll(
-      SIPSubscribe::PredefinedPackages eventPackage  ///< Event packege being unsubscribed
+      SIPSubscribe::PredefinedPackages eventPackage  ///< Event package being unsubscribed
     );
     bool UnsubcribeAll(
-      const PString & eventPackage  ///< Event packege being unsubscribed
+      const PString & eventPackage  ///< Event package being unsubscribed
     );
 
     /**Returns PTrue if the endpoint is subscribed to some
      * event for the given to address.
      */
     PBoolean IsSubscribed(
-      const PString & eventPackage,  ///< Event packege being unsubscribed
+      const PString & eventPackage,  ///< Event package being unsubscribed
       const PString & aor            ///< Address-of-record for subscription
     );
 
     /** Returns the number of registered accounts.
      */
-    unsigned GetSubscriptionCount(const PString & eventPackage) { return activeSIPHandlers.GetCount(SIP_PDU::Method_SUBSCRIBE, eventPackage); }
+    unsigned GetSubscriptionCount(
+      const SIPSubscribe::EventPackage & eventPackage  ///< Event package of subscription
+    ) { return activeSIPHandlers.GetCount(SIP_PDU::Method_SUBSCRIBE, eventPackage); }
+
+    /** Returns a list of subscribed accounts for package.
+     */
+    PStringList GetSubscriptions(
+      const SIPSubscribe::EventPackage & eventPackage, ///< Event package of subscription
+      bool includeOffline = false   ///< Include offline subscriptions
+    ) const { return activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_REGISTER, eventPackage); }
 
     /**Callback called when a subscription to a SIP UA status changes.
      */
@@ -495,6 +510,17 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
 
+    /**Callback called when dialog NOTIFY message is received
+     */
+    virtual void OnDialogInfoReceived(
+      const SIPDialogNotification & info  ///< Information on dialog state change
+    );
+
+    void SendNotifyDialogInfo(
+      const SIPDialogNotification & info  ///< Information on dialog state change
+    );
+
+
     /**Send a message to the given URL.
      */
     PBoolean Message(
@@ -508,16 +534,57 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PString & callID
     );
     
+    /**Callback called when a message sent by the endpoint didn't reach
+     * its destination or when the proxy or remote endpoint returns
+     * an error code.
+     */
+    virtual void OnMessageFailed(
+      const SIPURL & messageUrl,
+      SIP_PDU::StatusCodes reason
+    );
+
+
+    /**Publish new state information.
+       A expire time of zero will cease to automatically update the publish.
+     */
+    bool Publish(
+      const SIPSubscribe::Params & params,
+      const PString & body,
+      PString & aor
+    );
+    bool Publish(
+      const PString & to,   ///< Address to send PUBLISH
+      const PString & body, ///< Body of PUBLISH
+      unsigned expire = 300 ///< Time between automatic updates in seconds.
+    );
+
+    /** Returns a list of published entities.
+     */
+    PStringList GetPublications(
+      const SIPSubscribe::EventPackage & eventPackage, ///< Event package for publication
+      bool includeOffline = false   ///< Include offline publications
+    ) const { return activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_PUBLISH, eventPackage); }
+
 
     /**Publish new state information.
      * Only the basic & note fields of the PIDF+xml are supported for now.
      */
-    PBoolean Publish(
-      const PString & to,
-      const PString & body,
-      unsigned expire = 0
+    bool PublishPresence(
+      const SIPPresenceInfo & info,  ///< Presence info to publish
+      unsigned expire = 300          ///< Refresh time
     );
     
+    /**Callback called when presence is received
+     */
+    virtual void OnPresenceInfoReceived (
+      const SIPPresenceInfo & info  ///< Presence info publicised
+    );
+    virtual void OnPresenceInfoReceived (
+      const PString & identity,
+      const PString & basic,
+      const PString & note
+    );
+
 
     /**Send a SIP PING to the remote host
       */
@@ -525,32 +592,6 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PString & to
     );
 
-    /**Callback called when presence is received
-     */
-    virtual void OnPresenceInfoReceived (
-      const PString & user,
-      const PString & basic,
-      const PString & note
-    );
-
-    /**Callback called when dialog NOTIFY message is received
-     */
-    virtual void OnDialogInfoReceived(
-      const SIPDialogNotification & info  ///< Information on dialog state change
-    );
-
-    void SendNotifyDialogInfo(
-      const SIPDialogNotification & info  ///< Information on dialog state change
-    );
-
-    /**Callback called when a message sent by the endpoint didn't reach
-     * its destination or when the proxy or remote endpoint returns
-     * an error code.
-     */
-    virtual void OnMessageFailed(
-      const SIPURL & messageUrl,
-      SIP_PDU::StatusCodes reason);
-    
 
     void SetMIMEForm(PBoolean v) { mimeForm = v; }
     PBoolean GetMIMEForm() const { return mimeForm; }
