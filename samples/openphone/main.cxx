@@ -5585,65 +5585,44 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
 {
   SIPEndPoint::OnRegistrationStatus(aor, wasRegistering, reRegistering, reason);
 
-  bool logIt = true;
-
   switch (reason) {
     default:
       break;
+
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Information_Trying :
-      logIt = false;
-      break;
+      return;
 
     case SIP_PDU::Successful_OK :
-      if (reRegistering) {
-        logIt = false;
-      }
-  }
-  if (logIt) {
-    LogWindow << "SIP ";
-    if (!wasRegistering)
-      LogWindow << "un";
-    LogWindow << "registration of " << aor << ' ';
-    switch (reason) {
-      case SIP_PDU::Successful_OK :
-        LogWindow << "successful";
-        break;
+      PSafePtr<SIPHandler> regHandler = activeSIPHandlers.FindSIPHandlerByUrl(aor, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+      if (regHandler != NULL)
+        Publish(regHandler->GetRemoteAddress().AsString(),
+                SIPPublishHandler::BuildBody(aor,
+                                             wasRegistering ? "open" : "closed",
+                                             PString::Empty()),
+                300);
 
-      case SIP_PDU::Failure_RequestTimeout :
-        LogWindow << "timed out";
-        break;
-
-      default :
-        LogWindow << "failed (" << reason << ')';
-    }
-    LogWindow << '.' << endl;
+      if (reRegistering)
+        return;
   }
 
-  PSafePtr<SIPHandler> regHandler = activeSIPHandlers.FindSIPHandlerByUrl(aor, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+  LogWindow << "SIP ";
+  if (!wasRegistering)
+    LogWindow << "un";
+  LogWindow << "registration of " << aor << ' ';
+  switch (reason) {
+    case SIP_PDU::Successful_OK :
+      LogWindow << "successful";
+      break;
 
-  if (regHandler != NULL) {
-    PStringStream xmlBody;
-    xmlBody << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-               "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"";
+    case SIP_PDU::Failure_RequestTimeout :
+      LogWindow << "timed out";
+      break;
 
-    PString pres = aor;
-    pres.Replace("sip:", "pres:");
-    xmlBody << pres;
-    
-    xmlBody << "\">"
-               "<tuple id=\"none\">"
-               "<status><basic>";
-
-    if (wasRegistering)
-      xmlBody << "open";
-    else
-      xmlBody << "closed";
-    xmlBody << "</basic></status>"
-               "</tuple></presence>";
-
-    Publish(regHandler->GetRemoteAddress().AsString(), xmlBody, 300);
+    default :
+      LogWindow << "failed (" << reason << ')';
   }
+  LogWindow << '.' << endl;
 }
 
 
