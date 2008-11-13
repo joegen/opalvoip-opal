@@ -194,11 +194,27 @@ class MySIPEndPoint : public SIPEndPoint
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
     virtual void OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu);
-    virtual void OnPresenceInfoReceived (const PString & user, const PString & basic, const PString & );
+    virtual void OnPresenceInfoReceived(const SIPPresenceInfo & info);
 
     MyManager & m_manager;
 };
 #endif // OPAL_SIP
+
+
+class PresenceDialog : public wxDialog
+{
+  public:
+    PresenceDialog(MyManager * manager, SIPEndPoint & sipEP);
+
+  private:
+    bool TransferDataFromWindow();
+
+    SIPEndPoint & m_sipEP;
+    PwxString     m_address;
+    PwxString     m_status;
+
+    DECLARE_EVENT_TABLE()
+};
 
 
 class VideoControlDialog : public wxDialog
@@ -469,7 +485,8 @@ class RegistrationInfo
       Register,
       SubscribeMWI,
       SusbcribePresence,
-      SubscribeMLA
+      SubscribeMLA,
+      PublishPresence
     };
 
     RegistrationInfo();
@@ -889,8 +906,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnSpeedDialColumnResize(wxListEvent& event);
     void OnRightClick(wxListEvent& event);
 
-    void OnGoOnline(wxCommandEvent& event);
-    void OnGoOffline(wxCommandEvent& event);
+    void OnMyPresence(wxCommandEvent& event);
 
     bool CanDoFax() const;
 
@@ -972,7 +988,7 @@ class MyManager : public wxFrame, public OpalManager
 
     ConversationMapType conversationMap;
 
-    void OnPresenceInfoReceived(PresenceInfo * info);
+    void OnPresenceInfoReceived(const SIPPresenceInfo & info);
 
 #endif
 

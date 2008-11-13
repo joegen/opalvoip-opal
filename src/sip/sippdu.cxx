@@ -2898,14 +2898,13 @@ SIPNotify::SIPNotify(SIPEndPoint & ep,
 
 SIPPublish::SIPPublish(SIPEndPoint & ep,
                        OpalTransport & trans,
-                       const SIPURL & proxy,
-                       const SIPURL & targetAddress,
                        const PString & id,
                        const PString & sipIfMatch,
-                       const PString & body,
-                       unsigned expires)
+                       SIPSubscribe::Params & params,
+                       const PString & body)
   : SIPTransaction(ep, trans)
 {
+  SIPURL targetAddress = params.m_addressOfRecord;
   PString addrStr = targetAddress.AsQuotedString();
 
   SIP_PDU::Construct(Method_PUBLISH,
@@ -2920,15 +2919,19 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
   SIPURL contact = endpoint.GetLocalURL(trans, targetAddress.GetUserName());
   contact.Sanitise(SIPURL::ContactURI);
   mime.SetContact(contact);
-  mime.SetExpires(expires);
+  mime.SetExpires(params.m_expire);
 
   if (!sipIfMatch.IsEmpty())
     mime.SetSIPIfMatch(sipIfMatch);
   
-  mime.SetEvent("presence");
-  mime.SetContentType("application/pidf+xml");
+  mime.SetEvent(params.m_eventPackage);
+  SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
+  if (packageHandler != NULL) {
+    mime.SetContentType(packageHandler->GetContentType());
+    delete packageHandler;
+  }
 
-  SetRoute(proxy);
+  SetRoute(SIPURL(params.m_agentAddress));
 
   if (!body.IsEmpty())
     entityBody = body;
