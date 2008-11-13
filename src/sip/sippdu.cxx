@@ -2649,9 +2649,6 @@ void SIPTransaction::SetTerminated(States newState)
   state = newState;
   PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for transaction " << mime.GetCSeq());
 
-  if (oldState != Completed)
-    completed.Signal();
-
   // Transaction failed, tell the endpoint
   switch (state) {
     case Terminated_Success :
@@ -2667,6 +2664,9 @@ void SIPTransaction::SetTerminated(States newState)
       if (connection != NULL)
         connection->OnTransactionFailed(*this);
   }
+
+  if (oldState != Completed)
+    completed.Signal();
 }
 
 
