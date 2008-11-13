@@ -1176,41 +1176,30 @@ PString SIPPublishHandler::BuildBody(const PString & to,
                                      const PString & basic,
                                      const PString & note)
 {
-  PString data;
-
   if (to.IsEmpty())
-    return data;
+    return PString::Empty();
 
-  data += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n";
+  PCaselessString entity = to;
+  if (entity.NumCompare("sip:") == EqualTo)
+    entity.Delete(0, 4);
 
-  data += "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"pres:";
-  data += to;
-  data += "\">\r\n";
+  PStringStream xml;
 
-  data += "<tuple id=\"";
-  data += OpalGloballyUniqueID().AsString();
-  data += "\">\r\n";
+  xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+         "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"pres:" << entity << "\">\r\n"
+         "  <tuple id=\"" << OpalGloballyUniqueID() << "\">\r\n";
 
-  data += "<note>";
-  data += note;
-  data += "</note>\r\n";
+  if (!note.IsEmpty())
+    xml << "  <note>" << note << "</note>\r\n";
 
-  data += "<status>\r\n";
-  data += "<basic>";
-  data += basic;
-  data += "</basic>\r\n";
-  data += "</status>\r\n";
+  xml << "    <status>\r\n"
+         "      <basic>" << basic << "</basic>\r\n"
+         "    </status>\r\n"
+         "    <contact priority=\"1\">" << to << "</contact>\r\n"
+         "  </tuple>\r\n"
+         "</presence>\r\n";
 
-  data += "<contact priority=\"1\">";
-  data += to;
-  data += "</contact>\r\n";
-
-  data += "</tuple>\r\n";
-
-  data += "</presence>\r\n";
-
-
-  return data;
+  return xml;
 }
 
 
