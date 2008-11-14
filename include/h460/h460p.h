@@ -217,3 +217,4 @@ class H323PresenceIdentifiers   : public H460P_ArrayOf_PresenceIdentifier
 #endif
 
 #endif // OPAL_H460_H460P_H
+
