@@ -2047,6 +2047,19 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 {
   PTRACE(3, "SIP\tHandling " << response.GetStatusCode() << " response for " << transaction.GetMethod());
 
+  // see if the contact address provided in the response changes the transport type
+  OpalTransportAddress newContactAddress = SIPURL(response.GetMIME().GetContact()).GetHostAddress();
+  if (!newContactAddress.IsCompatible(transport->GetLocalAddress())) {
+    PTRACE(2, "SIP\tINVITE response changed transport for call");
+
+    OpalTransport * newTransport = endpoint.CreateTransport(newContactAddress);
+    if (newTransport != NULL) {
+      if (deleteTransport)
+        delete transport;
+      transport = newTransport;
+    }
+  }
+
   switch (transaction.GetMethod()) {
     case SIP_PDU::Method_INVITE :
       break;
@@ -2233,7 +2246,19 @@ PBoolean SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
 {
   const SIPURL & localPartyURL = m_dialog.GetLocalURI();
   PString userName = endpoint.GetRegisteredPartyName(localPartyURL, *transport).GetUserName();
-  SIPURL contact = endpoint.GetContactURL(*transport, userName, localPartyURL.GetHostName());
+
+  // this can be used to prompoe any incoming calls to TCP. Not quite there yet, but it *almost* works
+  SIPURL contact;
+  bool promoteToTCP = false;    // disable code for now
+  if (!promoteToTCP || (transport != NULL && (PString(transport->GetProtoPrefix()) == "$tcp"))) 
+    contact = endpoint.GetContactURL(*transport, userName, localPartyURL.GetHostName());
+  else {
+    // see if endpoint contains a TCP listener we can use
+    OpalTransportAddress newAddr;
+    if (!endpoint.FindListenerForProtocol("tcp", newAddr))
+      return false;
+    contact = SIPURL("", newAddr, 0);
+  }
 
   return SendInviteResponse(SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString(), NULL, &sdp);
 }
