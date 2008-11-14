@@ -678,6 +678,10 @@ class OpalEndPoint : public PObject
     PString GetSSLCertificate() const;
 #endif
 
+    /** Find a listener that is compatible with the specified protocol
+     */
+    bool FindListenerForProtocol(const char * protoPrefix, OpalTransportAddress & addr);
+
   protected:
     OpalManager   & manager;
     PCaselessString prefixName;
