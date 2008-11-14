@@ -50,15 +50,16 @@ void IvrOPAL::Main()
 {
   PArgList & args = GetArguments();
 
-  args.Parse("h-help."
-             "u-user:"
+  args.Parse("g-gk-host:"
+             "G-gk-id:"
+             "h-help."
+             "p-password:"
              "r-register:"
              "S-sip:"
-             "g-gk-host:"
-             "G-gk-id:"
+             "u-user:"
 #if PTRACING
-             "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
+             "o-output:"             "-no-output."
 #endif
              , FALSE);
 
@@ -74,6 +75,7 @@ void IvrOPAL::Main()
             "Available options are:\n"
             "  -h or --help            : print this help message.\n"
             "  -u or --user name       : Set local username, defaults to OS username.\n"
+            "  -p or --password pwd    : Set password for authentication.\n"
             "  -S or --sip interface   : SIP listens on interface, defaults to udp$*:5060.\n"
             "  -r or --register server : SIP registration to server.\n"
             "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720.\n"
@@ -127,8 +129,15 @@ void IvrOPAL::Main()
     return;
   }
 
-  if (args.HasOption('r'))
-    sip->Register(args.GetOptionString('r'));
+  if (args.HasOption('r')) {
+    SIPRegister::Params params;
+    params.m_addressOfRecord = args.GetOptionString('r');
+    params.m_password = args.GetOptionString('p');
+    params.m_expire = 300;
+
+    PString aor;
+    sip->Register(params, aor);
+  }
 
   m_manager->AddRouteEntry("sip.*:.* = ivr:");
   m_manager->AddRouteEntry("ivr:.* = sip:<da>");
@@ -177,6 +186,16 @@ void MyManager::OnClearedCall(OpalCall & call)
 {
   if (call.GetPartyA().NumCompare("ivr") == EqualTo)
     m_completed.Signal();
+}
+
+
+bool IvrOPAL::OnInterrupt(bool)
+{
+  if (m_manager == NULL)
+    return false;
+
+  m_manager->m_completed.Signal();
+  return true;
 }
 
 
