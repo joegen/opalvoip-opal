@@ -50,6 +50,7 @@ class IvrOPAL : public PProcess
     ~IvrOPAL();
 
     virtual void Main();
+    virtual bool OnInterrupt(bool);
 
   private:
     MyManager * m_manager;
