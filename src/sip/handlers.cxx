@@ -999,7 +999,7 @@ class SIPDialogEventPackageHandler : public SIPEventPackageHandler
         }
 
         str = stateElement->GetAttribute("event");
-        for (info.m_eventType = SIPDialogNotification::LastEvent; info.m_eventType >= SIPDialogNotification::FirstState; --info.m_eventType) {
+        for (info.m_eventType = SIPDialogNotification::LastEvent; info.m_eventType >= SIPDialogNotification::FirstEvent; --info.m_eventType) {
           if (str == info.GetEventName())
             break;
         }
@@ -1195,6 +1195,10 @@ PString SIPPresenceInfo::AsString() const
 
     case Closed :
       xml << "      <basic>closed</basic>\r\n";
+      break;
+
+    default:
+      xml << "      <basic>unknown</basic>\r\n";
       break;
   }
   xml << "    </status>\r\n"
