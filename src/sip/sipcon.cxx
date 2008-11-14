@@ -1127,23 +1127,28 @@ PBoolean SIPConnection::SetUpConnection()
 
   if (deleteTransport)
     delete transport;
-  transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
+  transport = endpoint.CreateTransport(transportAddress);
   if (transport == NULL) {
     Release(EndedByUnreachable);
     return PFalse;
   }
 
-  PWaitAndSignal mutex(transport->GetWriteMutex());
-
-  if (!transport->WriteConnect(WriteINVITE, this)) {
-    PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
-    Release(EndedByTransportFail);
-    return PFalse;
+  bool ok;
+  if (!transport->GetInterface().IsEmpty())
+    ok = WriteINVITE(*transport);
+  else {
+    PWaitAndSignal mutex(transport->GetWriteMutex());
+    ok = transport->WriteConnect(WriteINVITE, this);
   }
 
-  releaseMethod = ReleaseWithCANCEL;
+  if (ok) {
+    releaseMethod = ReleaseWithCANCEL;
+    return true;
+  }
 
-  return PTrue;
+  PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
+  Release(EndedByTransportFail);
+  return false;
 }
 
 

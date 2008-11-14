@@ -206,8 +206,8 @@ class SIPEndPoint : public OpalRTPEndPoint
        address is interpreted as the remote address to which the transport should connect
       */
     OpalTransport * CreateTransport(
-      const OpalTransportAddress & remoteAddress,
-      const OpalTransportAddress & localAddress = OpalTransportAddress()
+      const SIPURL & remoteURL,
+      const PString & localInterface = PString::Empty()
     );
 
     virtual void HandlePDU(
