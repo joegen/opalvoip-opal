@@ -585,6 +585,16 @@ void OpalEndPoint::OnMWIReceived(const PString & party,
   manager.OnMWIReceived(party, type, extraInfo);
 }
 
+bool OpalEndPoint::FindListenerForProtocol(const char * protoPrefix, OpalTransportAddress & addr)
+{
+  OpalTransportAddress compatibleTo("*", 0, protoPrefix);
+  for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+    addr = listener->GetLocalAddress();
+    if (addr.IsCompatible(compatibleTo))
+      return true;
+   }
+  return false;
+}
 
 #if OPAL_PTLIB_SSL
 PString OpalEndPoint::GetSSLCertificate() const
