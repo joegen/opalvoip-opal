@@ -237,6 +237,8 @@ void SIPConnection::OnReleased()
     return;
   };
 
+  bool transportIsReliable = (transport != NULL) && transport->IsReliable();
+
   SetPhase(ReleasingPhase);
 
   PSafePtr<SIPTransaction> byeTransaction;
@@ -302,7 +304,7 @@ void SIPConnection::OnReleased()
 
   OpalRTPConnection::OnReleased();
 
-  if (transport != NULL)
+  if (!transportIsReliable)
     transport->CloseWait();
 }
 
