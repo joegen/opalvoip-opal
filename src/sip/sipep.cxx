@@ -218,11 +218,28 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 }
 
 
-OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remoteAddress,
-                                             const OpalTransportAddress & localAddress)
+OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PString & localInterface)
 {
+  OpalTransportAddress remoteAddress = remoteURL.GetHostAddress();
+
+  OpalTransportAddress localAddress;
+  if (!localInterface.IsEmpty()) {
+    if (localInterface != "*") // Nasty kludge to get around infinite recursion in REGISTER
+      localAddress = OpalTransportAddress(localInterface, 0, remoteAddress.GetProto());
+  }
+  else {
+    PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(remoteURL.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
+    if (handler != NULL) {
+      OpalTransport * transport = handler->GetTransport();
+      if (transport != NULL) {
+        localAddress = transport->GetInterface();
+        PTRACE(4, "SIP\tFound registrar on domain " << remoteURL.GetHostName() << ", using interface " << transport->GetInterface());
+      }
+    }
+  }
+
   OpalTransport * transport = NULL;
-  
+
   for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
     if ((transport = listener->CreateTransport(localAddress, remoteAddress)) != NULL)
       break;

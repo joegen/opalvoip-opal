@@ -196,10 +196,8 @@ OpalTransport * SIPHandler::GetTransport()
   if (m_proxy.IsEmpty())
     m_proxy = endpoint.GetProxy();
 
-  if (m_proxy.IsEmpty())
-    return (m_transport = endpoint.CreateTransport(GetAddressOfRecord().GetHostAddress()));
-
-  m_transport = endpoint.CreateTransport(m_proxy.GetHostAddress());
+  // Must specify a network interface or get infinite recursion
+  m_transport = endpoint.CreateTransport(m_proxy.IsEmpty() ? GetAddressOfRecord() : m_proxy, "*");
   return m_transport;
 }
 
@@ -641,7 +639,7 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
   m_parameters.m_expire = expire;
 
   m_dialog.SetRequestURI(m_remoteAddress);
-  m_dialog.SetRemoteURI(m_remoteAddress);
+  m_dialog.SetRemoteURI(m_addressOfRecord);
 
   callID = m_dialog.GetCallID();
 
@@ -662,12 +660,8 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
   // Default routeSet if there is a proxy
   m_dialog.UpdateRouteSet(m_proxy);
 
-  if (!m_dialog.IsEstablished()) {
-    if (m_parameters.m_eventPackage == SIPSubscribe::Presence)
-      m_dialog.SetLocalURI(endpoint.GetRegisteredPartyName(GetAddressOfRecord(), *m_transport));
-    else
-      m_dialog.SetLocalURI(GetAddressOfRecord());
-  }
+  if (!m_dialog.IsEstablished())
+    m_dialog.SetLocalURI(endpoint.GetRegisteredPartyName(GetAddressOfRecord(), *m_transport));
 
   m_parameters.m_expire = state != Unsubscribing ? expire : 0;
   return new SIPSubscribe(endpoint, trans, m_dialog, m_parameters);
