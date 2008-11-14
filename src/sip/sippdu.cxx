@@ -223,47 +223,62 @@ SIPURL::SIPURL(const PString & str, const char * defaultScheme)
 
 
 SIPURL::SIPURL(const PString & name,
-               const OpalTransportAddress & address,
+               const OpalTransportAddress & _address,
                WORD listenerPort)
 {
-  if (strncmp(name, "sip:", 4) == 0 || strncmp(name, "sips:", 5) == 0 || address.IsEmpty())
+  if (strncmp(name, "sip:", 4) == 0 || strncmp(name, "sips:", 5) == 0)
     Parse(name);
   else {
-    PIPSocket::Address ip;
-    WORD port;
-    if (address.GetIpAndPort(ip, port)) {
-      PString transProto;
-      WORD defaultPort = 5060;
+    OpalTransportAddress address(_address);
+    if (address.IsEmpty() && (name.Find('$') != P_MAX_INDEX)) 
+      address = name;
+    ParseAsAddress(name, address, listenerPort);
+  }
+}
 
-      PStringStream s;
-      s << "sip";
+SIPURL::SIPURL(const OpalTransportAddress & _address, WORD listenerPort)
+{
+  ParseAsAddress("", _address, listenerPort);
+}
+  
+void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & address, WORD listenerPort)
+{
+  PIPSocket::Address ip;
+  WORD port;
+  if (address.GetIpAndPort(ip, port)) {
+    PString transProto;
+    WORD defaultPort = 5060;
 
-      PCaselessString proto = address.GetProto();
-      if (proto == "tcps") {
-        defaultPort = 5061;
-        s << 's';
-        // use default tranport=UDP
-      }
-      else if (proto != "udp")
-        transProto = proto; // Typically "tcp"
-      // else use default UDP
+    PStringStream s;
+    s << "sip";
 
-      s << ':' << name << '@';
-      if (ip.GetVersion() == 6)
-        s << '[' << ip << ']';
-      else
-        s << ip;
-
-      if (listenerPort == 0)
-        listenerPort = port;
-      if (listenerPort != 0 && listenerPort != defaultPort)
-        s << ':' << listenerPort;
-
-      if (!transProto.IsEmpty())
-        s << ";transport=" << transProto;
-
-      Parse(s);
+    PCaselessString proto = address.GetProto();
+    if (proto == "tcps") {
+      defaultPort = 5061;
+      s << 's';
+      // use default tranport=UDP
     }
+    else if (proto != "udp")
+      transProto = proto; // Typically "tcp"
+    // else use default UDP
+
+    s << ':';
+    if (!name.IsEmpty())
+      s << name << '@';
+    if (ip.GetVersion() == 6)
+      s << '[' << ip << ']';
+    else
+      s << ip;
+
+    if (listenerPort == 0)
+      listenerPort = port;
+    if (listenerPort != 0 && listenerPort != defaultPort)
+      s << ':' << listenerPort;
+
+    if (!transProto.IsEmpty())
+      s << ";transport=" << transProto;
+
+    Parse(s);
   }
 }
 
@@ -3035,7 +3050,11 @@ SIPPing::SIPPing(SIPEndPoint & ep,
 SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
 {
   if (response.GetStatusCode() < 300) {
-    Construct(Method_ACK, *invite.GetConnection(), invite.GetTransport());
+    Construct(Method_ACK, 
+              *invite.GetConnection(), 
+              invite.GetTransport()
+    );
+    SetURI(invite.GetURI()); // Make sure we have original URI, not one updated by Contact field 
     mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
   }
   else {

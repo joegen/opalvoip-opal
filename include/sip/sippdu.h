@@ -96,6 +96,11 @@ class SIPURL : public PURL
       WORD listenerPort = 0
     );
 
+    SIPURL(
+      const OpalTransportAddress & _address, 
+      WORD listenerPort = 0
+    );
+
     /**Compare the two SIPURLs and return their relative rank.
        Note that does an intelligent comparison according to the rules
        in RFC3261 Section 19.1.4.
@@ -128,7 +133,7 @@ class SIPURL : public PURL
       */
     void SetFieldParameters(const PString & str ) { fieldParameters = str; }
 
-    /**Get the host and port as a transpoprt address.
+    /**Get the host and port as a transport address.
       */
     OpalTransportAddress GetHostAddress() const;
 
@@ -160,6 +165,8 @@ class SIPURL : public PURL
     );
 
   protected:
+    void ParseAsAddress(const PString & name, const OpalTransportAddress & _address, WORD listenerPort = 0);
+
     /** Parses name-addr, like:
         "displayname"<scheme:user:password@host:port;transport=type>;tag=value
         into:
