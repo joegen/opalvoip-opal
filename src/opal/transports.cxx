@@ -95,7 +95,7 @@ OpalTransportAddress::OpalTransportAddress(const PString & str,
 
 
 OpalTransportAddress::OpalTransportAddress(const PIPSocket::Address & addr, WORD port, const char * proto)
-  : PString(addr.AsString())
+  : PString(addr.AsString(true))
 {
   SetInternalTransport(port, proto);
 }
@@ -321,7 +321,7 @@ PString OpalInternalIPTransport::GetHostName(const OpalTransportAddress & addres
 
   PIPSocket::Address ip;
   if (ip.FromString(host))
-    return ip.AsString();
+    return ip.AsString(true);
 
   return host;
 }
@@ -519,7 +519,7 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
 
   // If specifically bound to interface use that
   if (!localAddress.IsAny())
-    addr = localAddress.AsString();
+    addr = localAddress.AsString(true);
   else {
     // If bound to all, then use '*' unless a preferred address is specified
     addr = "*";
@@ -531,7 +531,7 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
       if (PIPSocket::GetInterfaceTable(interfaces)) {
         for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
           if (interfaces[i].GetAddress() == ip) {
-            addr = ip.AsString();
+            addr = ip.AsString(true);
             break;
           }
         }
@@ -750,7 +750,7 @@ OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & lo
 
   PString iface;
   if (localAddress.GetIpAddress(addr))
-    iface = addr.AsString();
+    iface = addr.AsString(true);
 
   return new OpalTransportUDP(endpoint, PBYTEArray(), listenerBundle, iface, PIPSocket::GetDefaultIpAny(), 0);
 }
