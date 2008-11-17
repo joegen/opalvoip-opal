@@ -231,7 +231,7 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
 
 PBoolean SIPHandler::SendRequest(SIPHandler::State s)
 {
-  expireTimer.Stop(); // Stop automatic retry
+  expireTimer.Stop(false); // Stop automatic retry
   bool retryLater = false;
 
   switch (s) {
@@ -432,7 +432,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
     default :
       PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response " << code);
       expire = 0; // OK, stop trying
-      expireTimer.Stop();
+      expireTimer.Stop(false);
       SetState(Unsubscribed);
       ShutDown();
   }
@@ -446,10 +446,24 @@ void SIPHandler::OnExpireTimeout(PTimer &, INT)
   if (!lock.IsLocked())
     return;
 
-  PTRACE(2, "SIP\tStarting " << GetMethod() << " for binding refresh");
+  switch (GetState()) {
+    case Subscribed :
+      PTRACE(2, "SIP\tStarting " << GetMethod() << " for binding refresh");
+      if (SendRequest(Refreshing))
+        return;
+      break;
 
-  if (!SendRequest(GetState() == Subscribed ? Refreshing : Restoring))
-    SetState(Unavailable);
+    case Unavailable :
+      PTRACE(2, "SIP\tStarting " << GetMethod() << " for offline retry");
+      if (SendRequest(Restoring))
+        return;
+      break;
+
+    default :
+      return;
+  }
+
+  SetState(Unavailable);
 }
 
 
