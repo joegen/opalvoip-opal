@@ -650,8 +650,8 @@ bool VideoThread::Initialise(PArgList & args)
   cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
 
   if (args.HasOption('T')) {
-    frameFn  = "frame_stats.txt";
-    packetFn = "packet_stats.txt";
+    frameFn  = "frame_stats.csv";
+    packetFn = "packet_stats.csv";
   }
 
   if (args.HasOption('C')) {
@@ -983,7 +983,8 @@ void VideoThread::InitStats()
 void VideoThread::UpdateStats(const RTP_DataFrame & frame)
 {
   if (!packetFn.IsEmpty()) {
-    packetStatFile.Open(packetFn, PFile::WriteOnly);
+    if (packetStatFile.Open(packetFn, PFile::WriteOnly))
+      packetStatFile << "PacketNum,PacketSize\n";
     packetFn.MakeEmpty();
   }
 
@@ -992,7 +993,7 @@ void VideoThread::UpdateStats(const RTP_DataFrame & frame)
   totalFrameBytes += frame.GetPayloadSize();
 
   if (packetStatFile.IsOpen()) 
-    packetStatFile << packetCount << " "
+    packetStatFile << packetCount << ','
                    << frame.GetPayloadSize() << endl;
 
   if (frame.GetMarker()) 
@@ -1007,16 +1008,17 @@ PInt64 BpsTokbps(PInt64 Bps)
 void VideoThread::UpdateFrameStats()
 {
   if (!frameFn.IsEmpty()) {
-    frameStatFile.Open(frameFn, PFile::WriteOnly);
+    if (frameStatFile.Open(frameFn, PFile::WriteOnly))
+      frameStatFile << "FrameNum,FrameBits,FrameKBPS,TotalKBPS\n";
     frameFn.MakeEmpty();
   }
 
   frameCount++;
 
   if (frameStatFile.IsOpen()) {
-    frameStatFile << frameCount << " "
-                  << (frameBytes * 8) << " "
-                  << BpsTokbps(frameBytes * frameRate) << " "
+    frameStatFile << frameCount << ','
+                  << (frameBytes * 8) << ','
+                  << BpsTokbps(frameBytes * frameRate) << ','
                   << BpsTokbps((totalFrameBytes * frameRate) / frameCount) << endl;
   }
 
