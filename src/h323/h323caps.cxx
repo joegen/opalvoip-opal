@@ -1883,6 +1883,7 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
    *  version of the codec against possibly multiple codec with the same 'subtype' such as
    *  e_h263VideoCapability.
    */
+  mediaPacketizations += "RFC2190";  // Always supported
   const H245_MultiplexCapability * muxCap = NULL;
   if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_multiplexCapability)) {
     muxCap = &pdu.m_multiplexCapability;
@@ -2356,7 +2357,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
        *  e_h263VideoCapability.
        */
       OpalMediaFormat mediaFormat = capability.GetMediaFormat();
-      PString packetizationString = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption(),
+      PString packetizationString = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
                                     mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption()));
       if (packetizationString.IsEmpty())
         return &capability;
