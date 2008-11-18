@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="OpenPhone"
 	ProjectGUID="{56E04FF6-6AEB-4917-B8FC-6C0C1F5831F1}"
 	RootNamespace="OpenPhone"
@@ -20,9 +20,9 @@
 			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -78,7 +78,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wxmsw$(WXVER)_xrc.lib wxmsw$(WXVER)_html.lib wxmsw$(WXVER)_adv.lib wxmsw$(WXVER)_core.lib wxbase$(WXVER)_xml.lib wxbase$(WXVER).lib wxexpat.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="wxmsw$(WXVER)u_xrc.lib wxmsw$(WXVER)u_html.lib wxmsw$(WXVER)u_adv.lib wxmsw$(WXVER)u_core.lib wxbase$(WXVER)u_xml.lib wxbase$(WXVER)u.lib wxexpat.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib comctl32.lib rpcrt4.lib"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
@@ -115,9 +115,9 @@
 			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -173,7 +173,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wxmsw$(WXVER)d_xrc.lib wxmsw$(WXVER)d_html.lib wxmsw$(WXVER)d_adv.lib wxmsw$(WXVER)d_core.lib wxbase$(WXVER)d_xml.lib wxbase$(WXVER)d.lib wxexpatd.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib wxregexd.lib wsock32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="wxmsw$(WXVER)ud_xrc.lib wxmsw$(WXVER)ud_html.lib wxmsw$(WXVER)ud_adv.lib wxmsw$(WXVER)ud_core.lib wxbase$(WXVER)ud_xml.lib wxbase$(WXVER)ud.lib wxexpatd.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib wxregexd.lib wsock32.lib comctl32.lib rpcrt4.lib"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
@@ -211,9 +211,9 @@
 			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -269,7 +269,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wxmsw$(WXVER)_xrc.lib wxmsw$(WXVER)_html.lib wxmsw$(WXVER)_adv.lib wxmsw$(WXVER)_core.lib wxbase$(WXVER)_xml.lib wxbase$(WXVER).lib wxexpat.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="wxmsw$(WXVER)u_xrc.lib wxmsw$(WXVER)u_html.lib wxmsw$(WXVER)u_adv.lib wxmsw$(WXVER)u_core.lib wxbase$(WXVER)u_xml.lib wxbase$(WXVER)u.lib wxexpat.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib comctl32.lib rpcrt4.lib"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
@@ -305,9 +305,11 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
+			RelativePathToProject=".\src\win32\opal_dll_2008.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
+			RelativePathToProject="..\ptlib\src\ptlib\msos\PTLib_2008.vcproj"
 		/>
 	</References>
 	<Files>
