@@ -293,9 +293,7 @@ static PBoolean SplitAddress(const PString & addr, PString & host, PString & dev
     bracket = 0;
 
   PINDEX colon = addr.FindLast(':');
-  if (colon == P_MAX_INDEX || // ipv4, no port
-	  colon < bracket      || // ipv6 in brackets
-	  addr.Find(':') < colon) // ipv6 and no port
+  if (colon == P_MAX_INDEX || colon < bracket)
     colon = length;
 
   PINDEX percent = addr.Find('%', dollar);
