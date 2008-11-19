@@ -445,11 +445,11 @@ void OpalConnection::AnsweringCall(AnswerCallResponse response)
   PTRACE(3, "OpalCon\tAnswering call: " << response);
 
   PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
+  if (!safeLock.IsLocked())
     return;
 
-  // Can only answer call in these two phases
-  if (GetPhase() != SetUpPhase && GetPhase() != AlertingPhase)
+  // Can't answer call if already answered
+  if (GetPhase() >= ConnectedPhase)
     return;
 
   switch (response) {
