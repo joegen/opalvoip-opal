@@ -184,7 +184,7 @@ PBoolean OpalGw::Initialise(const char * initMsg)
 
 #if OPAL_PTLIB_SSL
   // SSL certificate file.
-  PString certificateFile = cfg.GetString(HTTPCertificateFileKey, "server.pem");
+  PString certificateFile = cfg.GetString(HTTPCertificateFileKey);
   rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 25, certificateFile));
   if (certificateFile.IsEmpty())
     disableSSL = true;
