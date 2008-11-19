@@ -940,6 +940,8 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   if (originalSetupPDU.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_setup)
     return PFalse;
 
+  SetPhase(SetUpPhase);
+
   setupPDU = new H323SignalPDU(originalSetupPDU);
 
   H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
