@@ -4621,12 +4621,12 @@ bool PresenceDialog::TransferDataFromWindow()
     return false;
 
   SIPPresenceInfo info;
-  info.m_address = m_address;
+  info.m_address = m_address.p_str();
   if (m_status == "Invisible")
     info.m_basic = SIPPresenceInfo::Closed;
   else {
     info.m_basic = SIPPresenceInfo::Open;
-    info.m_note = m_status;
+    info.m_note = m_status.p_str();
   }
 
   m_sipEP.PublishPresence(info);
