@@ -177,20 +177,40 @@ PBoolean H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
 static PBoolean WriteGRQ(H323Transport & transport, void * param)
 {
   H323RasPDU & pdu = *(H323RasPDU *)param;
-  H225_GatekeeperRequest & grq = pdu;
+
+  OpalEndPoint & endpoint = transport.GetEndPoint();
+
   H323TransportAddress address = transport.GetLocalAddress();
-  
-  // We do have to use the translated address if one is specified
-  PIPSocket::Address localAddress, remoteAddress;
+
+  // Get interface we are about to send PDU out on
+  PIPSocket::Address localAddress;
   WORD localPort;
-  
-  if (address.GetIpAndPort(localAddress, localPort) &&
-      transport.GetRemoteAddress().GetIpAddress(remoteAddress))
-  {
-    if (transport.GetEndPoint().GetManager().TranslateIPAddress(localAddress, remoteAddress))
-      address = H323TransportAddress(localAddress, localPort);
+  if (!address.GetIpAndPort(localAddress, localPort))
+    return false;
+
+  // Check if interface is used by signalling channel listeners
+  OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses();
+  bool notInterface = true;
+  for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
+    PIPSocket::Address ifAddress;
+    if (interfaces[i].GetIpAddress(ifAddress) && ifAddress == localAddress) {
+      notInterface = false;
+      break;
+    }
   }
-  
+  if (notInterface) {
+    PTRACE(3, "RAS\tNot sending GRQ on " << localAddress << " as no signalling chanel is listening there.");
+    return true;
+  }
+
+  // We also have to use the translated address if one is specified
+  PIPSocket::Address remoteAddress;
+  if (transport.GetRemoteAddress().GetIpAddress(remoteAddress) &&
+      endpoint.GetManager().TranslateIPAddress(localAddress, remoteAddress))
+    address = H323TransportAddress(localAddress, localPort);
+
+  // Adjust out outgoing local address in PDU
+  H225_GatekeeperRequest & grq = pdu;
   address.SetPDU(grq.m_rasAddress);
   return pdu.Write(transport);
 }
