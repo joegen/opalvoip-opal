@@ -428,11 +428,21 @@ static void rtp_callback(struct AVCodecContext *avctx, void * _data, int size, i
 
 void H263_RFC2190_EncoderContext::RTPCallBack(struct AVCodecContext *avctx, void * _data, int size, int mbCount)
 {
+  // sometimes, FFmpeg encodes the same frame multiple times
+  // we need to detect this in order to avoid duplicating the encoded data
+  if ((_data == &packetizer.buffer[0]) && (packetizer.fragments.size() != 0)) {
+    packetizer.fragments.resize(0);
+    currentMb = 0;
+    currentBytes = 0;
+  }
+
+  // add the fragment to the list
   RFC2190Packetizer::fragment frag;
   frag.length = size;
   frag.mbNum  = currentMb;
   packetizer.fragments.push_back(frag);
   currentMb = currentMb + mbCount;
+  currentBytes += size;
 }
 
 bool H263_RFC2190_EncoderContext::Open()
@@ -539,13 +549,15 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
   _inputFrame->pict_type = 0; // (flags && forceIFrame) ? FF_I_TYPE : 0;
 
   currentMb = 0;
+  currentBytes = 0;
   packetizer.fragments.resize(0);
   packetizer.buffer.resize(frameSize);
   int encodedLen = FFMPEGLibraryInstance.AvcodecEncodeVideo(_context, &packetizer.buffer[0], frameSize, _inputFrame);  
+
   packetizer.buffer.resize(encodedLen);
 
   // push the encoded frame through the packetizer
-  if (packetizer.Open(srcRTP.GetTimestamp()) < 0) {
+  if (packetizer.Open(srcRTP.GetTimestamp(), encodedLen) < 0) {
     TRACE(1,  prefix << "\tEncoder\tPacketizer failed");
     flags = 1;
     return 0;
