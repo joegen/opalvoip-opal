@@ -3052,11 +3052,7 @@ SIPPing::SIPPing(SIPEndPoint & ep,
 SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
 {
   if (response.GetStatusCode() < 300) {
-    Construct(Method_ACK, 
-              *invite.GetConnection(), 
-              invite.GetTransport()
-    );
-    SetURI(invite.GetURI()); // Make sure we have original URI, not one updated by Contact field 
+    Construct(Method_ACK, *invite.GetConnection(), invite.GetTransport());
     mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
   }
   else {
