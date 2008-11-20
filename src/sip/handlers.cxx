@@ -539,7 +539,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
     // Sanitise the contact address URI provided
     SIPURL contact(params.m_contactAddress);
     contact.Sanitise(SIPURL::ContactURI);
-    params.m_contactAddress = contact.AsString();
+    params.m_contactAddress = contact.AsQuotedString();
   }
 
   params.m_expire = state != Unsubscribing ? expire : 0;
