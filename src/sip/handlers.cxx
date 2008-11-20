@@ -477,6 +477,8 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   , m_parameters(params)
   , m_sequenceNumber(0)
 {
+  m_parameters.m_addressOfRecord = targetAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString();
+  m_parameters.m_registrarAddress = targetAddress.AsQuotedString();
   m_parameters.m_expire = expire; // Put possibly adjusted value back
 
   SIPURL registrar = params.m_registrarAddress;
