@@ -373,8 +373,11 @@ PString SIPURL::AsQuotedString() const
     s << '"' << displayName << "\" ";
   s << '<' << AsString() << '>';
 
-  if (!fieldParameters.IsEmpty())
-    s << ';' << fieldParameters;
+  if (!fieldParameters.IsEmpty()) {
+    if (fieldParameters[0] != ';')
+      s << ';';
+    s << fieldParameters;
+  }
 
   return s;
 }
