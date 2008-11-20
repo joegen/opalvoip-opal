@@ -154,6 +154,7 @@ class H263_RFC2190_EncoderContext : public H263_Base_EncoderContext
     bool Init();
     RFC2190Packetizer packetizer;
     unsigned currentMb;
+    unsigned currentBytes;
 };
 
 ////////////////////////////////////////////////////////////////////////////
