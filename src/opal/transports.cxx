@@ -353,7 +353,11 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
     }
   }
 
-  if (host[0] == '*' || host == "0.0.0.0") {
+  if (host[0] == '*' || host == "0.0.0.0"
+#ifdef P_HAS_IPV6
+	  || host == ":" || host == "::"  || host == "[::]"
+#endif
+	  ) {
     ip = PIPSocket::GetDefaultIpAny();
     return PTrue;
   }
