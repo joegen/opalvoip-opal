@@ -2772,12 +2772,11 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                          const Params & params)
   : SIPTransaction(ep, trans, params.m_minRetryTime, params.m_maxRetryTime)
 {
-  SIPURL aor = params.m_addressOfRecord;
-  PString aorStr = aor.AsQuotedString();
+  SIPURL target = params.m_registrarAddress;
   SIP_PDU::Construct(Method_REGISTER,
-                     "sip:"+aor.GetHostName(),
-                     aorStr,
-                     aorStr,
+                     "sip:"+target.GetHostName(),
+                     target.GetUserName().IsEmpty() ? params.m_addressOfRecord : params.m_registrarAddress,
+                     params.m_addressOfRecord,
                      id,
                      cseq,
                      ep.GetLocalURL(transport).GetHostAddress());

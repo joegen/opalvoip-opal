@@ -497,8 +497,9 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   , m_parameters(params)
   , m_sequenceNumber(0)
 {
-  // Put possibly adjusted value back
-  m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
+  // Put adjusted values back
+  m_parameters.m_addressOfRecord = GetAddressOfRecord().AsQuotedString()+";tag="+::OpalGloballyUniqueID().AsString();
+  m_parameters.m_registrarAddress = m_remoteAddress.AsString();
   m_parameters.m_expire = expire;
 
   m_username = params.m_authID;
