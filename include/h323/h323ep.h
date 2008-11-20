@@ -846,6 +846,12 @@ class H323EndPoint : public OpalRTPEndPoint
 
   /**@name Member variable access */
   //@{
+    /**Set the default local party name for all connections on this endpoint.
+      */
+    virtual void SetDefaultLocalPartyName(
+      const PString & name  /// Name for local party
+    );
+
     /**Set the user name to be used for the local end of any connections. This
        defaults to the logged in user as obtained from the
        PProcess::GetUserName() function.
