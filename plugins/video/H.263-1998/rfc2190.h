@@ -47,7 +47,7 @@ class RFC2190Packetizer
 {
   public:
     RFC2190Packetizer();
-    int Open(unsigned long timeStamp);
+    int Open(unsigned long timeStamp, unsigned long maxLen);
     int GetPacket(RTPFrame & outputFrame, unsigned int & flags);
 
     std::vector<unsigned char> buffer;
