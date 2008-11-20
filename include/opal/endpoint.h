@@ -631,7 +631,9 @@ class OpalEndPoint : public PObject
 
     /**Set the default local party name for all connections on this endpoint.
       */
-    void SetDefaultLocalPartyName(const PString & name) { defaultLocalPartyName = name; }
+    virtual void SetDefaultLocalPartyName(
+      const PString & name  /// Name for local party
+    ) { defaultLocalPartyName = name; }
 
     /**Get the default local display name for all connections on this endpoint.
       */
