@@ -109,8 +109,19 @@ RFC2190Packetizer::RFC2190Packetizer()
 {
 }
 
-int RFC2190Packetizer::Open(unsigned long _timestamp)
+int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long maxLen)
 {
+  // do a sanity check on the fragment data - must be equal to maxLen
+  {
+    unsigned long len = 0;
+    FragmentListType::iterator r;
+    for (r = fragments.begin(); r != fragments.end(); ++r) 
+      len += r->length;
+    if (len != maxLen) 
+cout << "rfc2190: mismatch between encoder length and fragment length - " << len << "/" << maxLen << endl;
+  }
+  
+  // save timestamp
   timestamp = _timestamp;
 
   const unsigned char * data = &buffer[0];
@@ -234,76 +245,74 @@ int RFC2190Packetizer::Open(unsigned long _timestamp)
 
 int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
 {
-  if ((fragments.size() == 0) || (currFrag == fragments.end()))
-    return 0;
+  while ((fragments.size() != 0) && (currFrag != fragments.end())) {
+      
+    // set the timestamp
+    outputFrame.SetTimestamp(timestamp);
+    fragment frag = *currFrag++;
 
-  // set the timestamp
-  outputFrame.SetTimestamp(timestamp);
-  fragment frag = *currFrag++;
+    // get ptr to payload that is about to be created
+    unsigned char * ptr = outputFrame.GetPayloadPtr();
+    size_t offs = 0;
 
-  // get ptr to payload that is about to be created
-  unsigned char * ptr = outputFrame.GetPayloadPtr();
-  size_t offs = 0;
+    // if this fragment starts with a GBSC, then output as Mode A else output as Mode B
+    bool modeA = ((frag.length >= 3) &&
+                  (fragPtr[0] == 0x00) &&
+                  (fragPtr[1] == 0x00) &&
+                  ((fragPtr[2] & 0x80) == 0x80));
 
-  // if this fragement starts with a GBSC, and so does the next one, then output as Mode A
-  // else output as Mode B
-  
-  bool modeA = ((frag.length >= 3) &&
-                (fragPtr[0] == 0x00) &&
-                (fragPtr[1] == 0x00) &&
-                ((fragPtr[2] & 0x80) == 0x80));
-
-  if (modeA) {
-
-    // create a mode A frame
-    outputFrame.SetPayloadSize(4 + frag.length);
-
-    // create the Mode A header
-    int sBit = 0;
-    int eBit = 0;
-    ptr[0] = ((sBit & 7) << 3) | (eBit & 7);
-    ptr[1] = (frameSize << 5) | (iFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0);
-    ptr[2] = ptr[3] = 0;
+    int payloadRemaining = outputFrame.GetFrameLen() - outputFrame.GetHeaderSize();
 
     // offset of the data
-    offs = 4;
+    offs = modeA ? 4 : 8;
+
+    // make sure RTP storage is sufficient
+    if ((frag.length + offs) > payloadRemaining) {
+      std::cout << "no room for Mode " << (modeA ? 'A' : 'B') << " frame - " << (frag.length+offs) << " > " << payloadRemaining << std::endl;
+      continue;
+    }
+
+    // set size of final frame
+    outputFrame.SetPayloadSize(offs + frag.length);
+
+    if (modeA) {
+      int sBit = 0;
+      int eBit = 0;
+      ptr[0] = ((sBit & 7) << 3) | (eBit & 7);
+      ptr[1] = (frameSize << 5) | (iFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0);
+      ptr[2] = ptr[3] = 0;
+    }
+    else
+    {
+      // create the Mode B header
+      int sBit = 0;
+      int eBit = 0;
+      int gobn = frag.mbNum / macroblocksPerGOB;
+      int mba  = frag.mbNum % macroblocksPerGOB;
+      ptr[0] = 0x80 | ((sBit & 7) << 3) | (eBit & 7);
+      ptr[1] = (frameSize << 5);
+      ptr[2] = ((gobn << 3) & 0xf8) | ((mba >> 6) & 0x7);
+      ptr[3] = (mba << 2) & 0xfc;
+      ptr[4] = (iFrame ? 0 : 0x80) | (annexD ? 0x40 : 0) | (annexE ? 0x20 : 0) | (annexF ? 0x010: 0);
+      ptr[5] = ptr[6] = ptr[7] = 0;
+    }
+
+    // copy the data
+    memcpy(ptr + offs, fragPtr, frag.length);
+
+    fragPtr += frag.length;
+
+    // set marker bit
+    flags = 0;
+    if (currFrag == fragments.end()) {
+      flags |= 1;
+      outputFrame.SetMarker(1);
+    }
+
+    return 1;
   }
 
-  else
-
-  // ....or Mode B
-  {
-    // create a mode B frame
-    outputFrame.SetPayloadSize(8 + frag.length);
-
-    // create the Mode B header
-    int sBit = 0;
-    int eBit = 0;
-    int gobn = frag.mbNum / macroblocksPerGOB;
-    int mba  = frag.mbNum % macroblocksPerGOB;
-    ptr[0] = 0x80 | ((sBit & 7) << 3) | (eBit & 7);
-    ptr[1] = (frameSize << 5);
-    ptr[2] = ((gobn << 3) & 0xf8) | ((mba >> 6) & 0x7);
-    ptr[3] = (mba << 2) & 0xfc;
-    ptr[4] = (iFrame ? 0 : 0x80) | (annexD ? 0x40 : 0) | (annexE ? 0x20 : 0) | (annexF ? 0x010: 0);
-    ptr[5] = ptr[6] = ptr[7] = 0;
-
-    // offset of the data
-    offs = 8;
-  }
-
-  // copy the data
-  memcpy(ptr + offs, fragPtr, frag.length);
-  fragPtr += frag.length;
-
-  // set marker bit
-  flags = 0;
-  if (currFrag == fragments.end()) {
-    flags |= 1;
-    outputFrame.SetMarker(1);
-  }
-
-  return 1;
+  return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////3Y
