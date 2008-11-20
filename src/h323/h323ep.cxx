@@ -1163,6 +1163,13 @@ H323ServiceControlSession * H323EndPoint::CreateServiceControlSession(const H225
 }
 
 
+void H323EndPoint::SetDefaultLocalPartyName(const PString & name)
+{
+  SetLocalUserName(name);
+  OpalEndPoint::SetDefaultLocalPartyName(name);
+}
+
+
 void H323EndPoint::SetLocalUserName(const PString & name)
 {
   PAssert(!name, "Must have non-empty string in AliasAddress!");
