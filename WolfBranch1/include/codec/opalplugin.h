@@ -29,8 +29,8 @@
  * $Date$
  */
 
-#ifndef __OPAL_CODECPLUGIN_H
-#define __OPAL_CODECPLUGIN_H
+#ifndef OPAL_CODEC_OPALPLUGIN_H
+#define OPAL_CODEC_OPALPLUGIN_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -502,10 +502,10 @@ enum {
 // Video Capabilities
 
 // H264 (as defined in H.241)
-#define OpalPluginCodec_Identifer_H264            "0.0.8.241.0.0.0.0"
-#define OpalPluginCodec_Identifer_H264_RFC3984    "0.0.8.241.0.0.0.1"
-#define OpalPluginCodec_Identifer_H264_RFC3984Int "0.0.8.241.0.0.0.2"
-#define OpalPluginCodec_Identifer_H264_Generic    "0.0.8.241.0.0.1"
+#define OpalPluginCodec_Identifer_H264_Aligned        "0.0.8.241.0.0.0.0"
+#define OpalPluginCodec_Identifer_H264_NonInterleaved "0.0.8.241.0.0.0.1"
+#define OpalPluginCodec_Identifer_H264_Interleaved    "0.0.8.241.0.0.0.2"
+#define OpalPluginCodec_Identifer_H264_Generic        "0.0.8.241.0.0.1"
 
 // ISO/IEC 14496-2 MPEG4 part 2 (as defined in H.245v13 Annex E)
 #define OpalPluginCodec_Identifer_MPEG4           "0.0.8.245.1.0.0"
@@ -524,7 +524,8 @@ enum {
 
 #define PLUGINCODEC_MPI_DISABLED 33
 
-#define PLUGINCODEC_MEDIA_PACKETIZATION "Media Packetization"
+#define PLUGINCODEC_MEDIA_PACKETIZATION  "Media Packetization"
+#define PLUGINCODEC_MEDIA_PACKETIZATIONS "Media Packetizations"
 
 #define H261_ANNEX_D "Annex D - Still Image Transmit"
 #define H263_ANNEX_F "Annex F - Advanced Prediction"
@@ -634,4 +635,4 @@ PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(u
 #pragma warning(default:4201)
 #endif
 
-#endif // __OPAL_CODECPLUGIN_H
+#endif // OPAL_CODEC_OPALPLUGIN_H
