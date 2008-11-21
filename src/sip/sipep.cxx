@@ -891,23 +891,25 @@ void SIPEndPoint::OnRegistered(const PString & /*aor*/,
 }
 
 
-PBoolean SIPEndPoint::IsRegistered(const PString & url) 
+PBoolean SIPEndPoint::IsRegistered(const PString & url, bool includeOffline) 
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (handler == NULL)
     return PFalse;
-  
-  return (handler->GetState() == SIPHandler::Subscribed);
+
+  return includeOffline ? (handler->GetState() != SIPHandler::Unsubscribed)
+                        : (handler->GetState() == SIPHandler::Subscribed);
 }
 
 
-PBoolean SIPEndPoint::IsSubscribed(const PString & eventPackage, const PString & to) 
+PBoolean SIPEndPoint::IsSubscribed(const PString & eventPackage, const PString & to, bool includeOffline) 
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);
   if (handler == NULL)
     return PFalse;
 
-  return (handler->GetState() == SIPHandler::Subscribed);
+  return includeOffline ? (handler->GetState() != SIPHandler::Unsubscribed)
+                        : (handler->GetState() == SIPHandler::Subscribed);
 }
 
 
