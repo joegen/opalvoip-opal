@@ -112,12 +112,14 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
     m_addressOfRecord = target;
     if (remote.IsEmpty())
       m_remoteAddress = m_addressOfRecord;
-    else if (remote.Find('@') == P_MAX_INDEX) {
-      if (!m_addressOfRecord.GetHostAddress().IsEquivalent(remote))
-        m_proxy = remote;
-    }
-    else
+    else if (remote.Find('@') != P_MAX_INDEX)
       m_remoteAddress = remote;
+    else if (m_addressOfRecord.GetHostAddress().IsEquivalent(remote))
+      m_remoteAddress = m_addressOfRecord;
+    else {
+      m_remoteAddress = m_proxy = remote;
+      m_remoteAddress.SetUserName(m_addressOfRecord.GetUserName());
+    }
   }
 
   authenticationAttempts = 0;
@@ -499,7 +501,7 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
 {
   // Put adjusted values back
   m_parameters.m_addressOfRecord = GetAddressOfRecord().AsQuotedString()+";tag="+::OpalGloballyUniqueID().AsString();
-  m_parameters.m_registrarAddress = m_remoteAddress.AsString();
+  m_parameters.m_registrarAddress = m_remoteAddress.AsQuotedString();
   m_parameters.m_expire = expire;
 
   m_username = params.m_authID;
