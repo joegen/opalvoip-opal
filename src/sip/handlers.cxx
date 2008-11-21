@@ -553,6 +553,10 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 
 void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
+  State oldState = GetState();
+
+  SIPHandler::OnReceivedOK(transaction, response);
+
   std::list<SIPURL> requestContacts, replyContacts;
   transaction.GetMIME().GetContacts(requestContacts);
   response.GetMIME().GetContacts(replyContacts);
@@ -571,34 +575,33 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   response.GetMIME().GetProductInfo(m_productInfo);
 
-  SendStatus(SIP_PDU::Successful_OK);
-  SIPHandler::OnReceivedOK(transaction, response);
+  SendStatus(SIP_PDU::Successful_OK, oldState);
 }
 
 
 void SIPRegisterHandler::OnFailed(SIP_PDU::StatusCodes r)
 {
-  SendStatus(r);
+  SendStatus(r, GetState());
   SIPHandler::OnFailed(r);
 }
 
 
 PBoolean SIPRegisterHandler::SendRequest(SIPHandler::State s)
 {
-  SendStatus(SIP_PDU::Information_Trying);
+  SendStatus(SIP_PDU::Information_Trying, GetState());
   m_sequenceNumber = endpoint.GetNextCSeq();
   return SIPHandler::SendRequest(s);
 }
 
 
-void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code)
+void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
 {
   SIPEndPoint::RegistrationStatus status;
   status.m_addressofRecord = GetAddressOfRecord().AsString();
   status.m_productInfo = m_productInfo;
   status.m_reason = code;
 
-  switch (GetState()) {
+  switch (state) {
     case Subscribing :
       status.m_wasRegistering = true;
       status.m_reRegistering = false;
@@ -687,7 +690,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 
 void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes r)
 {
-  SendStatus(r);
+  SendStatus(r, GetState());
   SIPHandler::OnFailed(r);
   
   if (r == SIP_PDU::Failure_TransactionDoesNotExist) {
@@ -702,14 +705,14 @@ void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes r)
 
 PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
 {
-  SendStatus(SIP_PDU::Information_Trying);
+  SendStatus(SIP_PDU::Information_Trying, GetState());
   return SIPHandler::SendRequest(s);
 }
 
 
-void SIPSubscribeHandler::SendStatus(SIP_PDU::StatusCodes code)
+void SIPSubscribeHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
 {
-  switch (GetState()) {
+  switch (state) {
     case Subscribing :
       endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, GetAddressOfRecord(), true, false, code);
       break;
@@ -751,6 +754,8 @@ void SIPSubscribeHandler::UpdateParameters(const SIPSubscribe::Params & params)
 
 void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
+  SIPHandler::OnReceivedOK(transaction, response);
+
   /* An "expire" parameter in the Contact header has no semantics
    * for SUBSCRIBE. RFC3265, 3.1.1.
    * An answer can only shorten the expires time.
@@ -761,10 +766,8 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
 
   response.GetMIME().GetProductInfo(m_productInfo);
 
-  if (GetState() == Unsubscribing)
-    SendStatus(SIP_PDU::Successful_OK);
-
-  SIPHandler::OnReceivedOK(transaction, response);
+  if (GetState() == Unsubscribed)
+    SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
 }
 
 
@@ -774,7 +777,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     return false;
 
   if (m_unconfirmed) {
-    SendStatus(SIP_PDU::Successful_OK);
+    SendStatus(SIP_PDU::Successful_OK, GetState());
     m_unconfirmed = false;
   }
 

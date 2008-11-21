@@ -2810,10 +2810,13 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
   if (!m_Active)
     return false;
 
-  bool ok;
+  int status;
 
   switch (m_Type) {
-    case Register : {
+    case Register :
+      if (sipEP.IsRegistered(m_aor, true))
+        status = 0;
+      else {
       SIPRegister::Params param;
       param.m_addressOfRecord = m_User.p_str();
       param.m_registrarAddress = m_Domain.p_str();
@@ -2821,9 +2824,9 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
       param.m_authID = m_AuthID.p_str();
       param.m_password = m_Password.p_str();
       param.m_expire = m_TimeToLive;
-      ok = sipEP.Register(param, m_aor);
+        status = sipEP.Register(param, m_aor) ? 1 : 2;
+      }
       break;
-    }
 
     case PublishPresence : {
       m_aor = m_User.p_str();
@@ -2834,11 +2837,14 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
       param.m_address = m_aor;
       param.m_basic = SIPPresenceInfo::Open;
       param.m_contact = m_Contact.p_str();
-      ok = sipEP.PublishPresence(param, m_TimeToLive);
+      status = sipEP.PublishPresence(param, m_TimeToLive) ? 0 : 2;
       break;
     }
 
     default :
+      if (sipEP.IsSubscribed(EventPackageMapping[m_Type], m_aor, true))
+        status = 0;
+      else {
       SIPSubscribe::Params param(EventPackageMapping[m_Type]);
       param.m_addressOfRecord = m_User.p_str();
       param.m_agentAddress = m_Domain.p_str();
@@ -2846,8 +2852,12 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
       param.m_authID = m_AuthID.p_str();
       param.m_password = m_Password.p_str();
       param.m_expire = m_TimeToLive;
-      ok = sipEP.Subscribe(param, m_aor);
+        status = sipEP.Subscribe(param, m_aor) ? 1 : 2;
   }
+  }
+
+  if (status == 0)
+    return true;
 
   static const char * const TypeNames[] = {
     "Register",
@@ -2856,8 +2866,8 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
     "Appearance subscribe",
     "Presence publish"
   };
-  LogWindow << "SIP " << TypeNames[m_Type] << ' ' << (ok ? "start" : "fail") << "ed for " << m_aor << endl;
-  return ok;
+  LogWindow << "SIP " << TypeNames[m_Type] << ' ' << (status == 1 ? "start" : "fail") << "ed for " << m_aor << endl;
+  return status != 2;
 }
 
 
@@ -5710,6 +5720,9 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
       LogWindow << "failed (" << reason << ')';
   }
   LogWindow << '.' << endl;
+
+  if (!wasRegistering)
+    m_manager.StartRegistrations();
 }
 
 
@@ -5749,6 +5762,9 @@ void MySIPEndPoint::OnSubscriptionStatus(const PString & eventPackage,
       LogWindow << "failed (" << reason << ')';
   }
   LogWindow << '.' << endl;
+
+  if (!wasSubscribing)
+    m_manager.StartRegistrations();
 }
 
 

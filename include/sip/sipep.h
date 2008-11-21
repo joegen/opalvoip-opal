@@ -377,9 +377,15 @@ class SIPEndPoint : public OpalRTPEndPoint
     bool UnregisterAll();
 
     /**Returns PTrue if the given URL has been registered 
-     * (e.g.: 6001@seconix.com).
+     * (e.g.: 6001@seconix.com). The includeOffline parameter indicates
+       if the caller is interested in if we are, to the best of our knowlegde,
+       currently registered (have had recent confirmation) or we are not sure
+       if we are registered or not, but are continually re-trying.
      */
-    PBoolean IsRegistered(const PString & aor);
+    PBoolean IsRegistered(
+      const PString & aor,          ///< Address of record to check
+      bool includeOffline = false   ///< Include offline registrations
+    );
 
     /** Returns the number of registered accounts.
      */
@@ -464,12 +470,16 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PString & eventPackage  ///< Event package being unsubscribed
     );
 
-    /**Returns PTrue if the endpoint is subscribed to some
-     * event for the given to address.
+    /**Returns true if the endpoint is subscribed to some
+       event for the given to address. The includeOffline parameter indicates
+       if the caller is interested in if we are, to the best of our knowlegde,
+       currently subscribed (have had recent confirmation) or we are not sure
+       if we are subscribed or not, but are continually re-trying.
      */
     PBoolean IsSubscribed(
       const PString & eventPackage,  ///< Event package being unsubscribed
-      const PString & aor            ///< Address-of-record for subscription
+      const PString & aor,           ///< Address-of-record for subscription
+      bool includeOffline = false    ///< Include offline subscriptions
     );
 
     /** Returns the number of registered accounts.
