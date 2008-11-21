@@ -191,7 +191,7 @@ public:
   void UpdateParameters(const SIPRegister::Params & params);
 
 private:
-  void SendStatus(SIP_PDU::StatusCodes code);
+  void SendStatus(SIP_PDU::StatusCodes code, State state);
 
   SIPRegister::Params m_parameters;
   unsigned            m_sequenceNumber;
@@ -220,7 +220,7 @@ public:
   virtual bool IsDuplicateCSeq(unsigned sequenceNumber) { return m_dialog.IsDuplicateCSeq(sequenceNumber); }
 
 private:
-  void SendStatus(SIP_PDU::StatusCodes code);
+  void SendStatus(SIP_PDU::StatusCodes code, State state);
 
   SIPSubscribe::Params m_parameters;
   SIPDialogContext     m_dialog;
