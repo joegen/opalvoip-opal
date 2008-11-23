@@ -592,7 +592,8 @@ PBoolean OpalListenerTCP::Open(const PNotifier & theAcceptHandler, ThreadMode mo
   if (listener.Listen(localAddress, 10, listenerPort, exclusiveListener ? PSocket::AddressIsExclusive : PSocket::CanReuseAddress))
     return StartThread(theAcceptHandler, mode);
 
-  PTRACE(1, "Listen\tOpen (" << (exclusiveListener ? "EXCLUSIVE" : "REUSEADDR") << ") on " << localAddress << ':' << listener.GetPort()
+  PTRACE(1, "Listen\tOpen (" << (exclusiveListener ? "EXCLUSIVE" : "REUSEADDR") << ") on "
+         << localAddress.AsString(true) << ':' << listener.GetPort()
          << " failed: " << listener.GetErrorText());
   return false;
 }
@@ -636,7 +637,6 @@ OpalTransport * OpalListenerTCP::Accept(const PTimeInterval & timeout)
   delete socket;
   return NULL;
 }
-
 
 
 OpalTransport * OpalListenerTCP::CreateTransport(const OpalTransportAddress & localAddress,
@@ -992,7 +992,7 @@ PBoolean OpalTransportTCP::Connect()
   WORD firstPort = localPort;
   for (;;) {
     PTRACE(4, "OpalTCP\tConnecting to "
-           << remoteAddress << ':' << remotePort
+           << remoteAddress.AsString(true) << ':' << remotePort
            << " (local port=" << localPort << ')');
     if (socket->Connect(localPort, remoteAddress))
       break;
@@ -1000,7 +1000,7 @@ PBoolean OpalTransportTCP::Connect()
     int errnum = socket->GetErrorNumber();
     if (localPort == 0 || (errnum != EADDRINUSE && errnum != EADDRNOTAVAIL)) {
       PTRACE(1, "OpalTCP\tCould not connect to "
-                << remoteAddress << ':' << remotePort
+                << remoteAddress.AsString(true) << ':' << remotePort
                 << " (local port=" << localPort << ") - "
                 << socket->GetErrorText() << '(' << errnum << ')');
       return SetErrorValues(socket->GetErrorCode(), errnum);
@@ -1112,8 +1112,8 @@ PBoolean OpalTransportTCP::OnOpen()
 #endif
 
   PTRACE(3, "OpalTCP\tStarted connection to "
-         << remoteAddress << ':' << remotePort
-         << " (if=" << localAddress << ':' << localPort << ')');
+         << remoteAddress.AsString(true) << ':' << remotePort
+         << " (if=" << localAddress.AsString(true) << ':' << localPort << ')');
 
   return PTrue;
 }
@@ -1161,7 +1161,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   socket->GetLocal(localAddress, localPort, !manager.IsLocalAddress(remoteAddress));
   Open(socket);
 
-  PTRACE(3, "OpalUDP\tBinding to interface: " << localAddress << ':' << localPort);
+  PTRACE(3, "OpalUDP\tBinding to interface: " << localAddress.AsString(true) << ':' << localPort);
 }
 
 
@@ -1195,7 +1195,7 @@ PBoolean OpalTransportUDP::Connect()
     PTRACE(3, "OpalUDP\tBroadcast connect to port " << remotePort);
   }
   else {
-    PTRACE(3, "OpalUDP\tStarted connect to " << remoteAddress << ':' << remotePort);
+    PTRACE(3, "OpalUDP\tStarted connect to " << remoteAddress.AsString(true) << ':' << remotePort);
   }
 
   if (PAssertNULL(writeChannel) == NULL)
@@ -1479,7 +1479,7 @@ PBoolean OpalTransportTCPS::Connect()
   WORD firstPort = localPort;
   for (;;) {
     PTRACE(4, "OpalTCPS\tConnecting to "
-           << remoteAddress << ':' << remotePort
+           << remoteAddress.AsString(true) << ':' << remotePort
            << " (local port=" << localPort << ')');
     if (socket->Connect(localPort, remoteAddress))
       break;
@@ -1487,7 +1487,7 @@ PBoolean OpalTransportTCPS::Connect()
     int errnum = socket->GetErrorNumber();
     if (localPort == 0 || (errnum != EADDRINUSE && errnum != EADDRNOTAVAIL)) {
       PTRACE(1, "OpalTCPS\tCould not connect to "
-                << remoteAddress << ':' << remotePort
+                << remoteAddress.AsString(true) << ':' << remotePort
                 << " (local port=" << localPort << ") - "
                 << socket->GetErrorText() << '(' << errnum << ')');
       return SetErrorValues(socket->GetErrorCode(), errnum);
@@ -1553,8 +1553,8 @@ PBoolean OpalTransportTCPS::OnOpen()
 #endif
 
   PTRACE(3, "OpalTCPS\tStarted connection to "
-         << remoteAddress << ':' << remotePort
-         << " (if=" << localAddress << ':' << localPort << ')');
+         << remoteAddress.AsString(true) << ':' << remotePort
+         << " (if=" << localAddress.AsString(true) << ':' << localPort << ')');
 
   return PTrue;
 }
