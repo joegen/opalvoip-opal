@@ -7,6 +7,10 @@ AC_INIT
 AC_CONFIG_SRCDIR([include/opal/manager.h])
 
 PKG_PROG_PKG_CONFIG()
+if test -z "$PKG_CONFIG" ; then
+  AC_MSG_ERROR(OPAL must have pkg-config installed, 1)
+fi
+
 m4_include(opal.m4)
 
 dnl Prevent CFLAGS and CXXFLAGS from being overwritten if undefined
