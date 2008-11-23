@@ -1697,7 +1697,12 @@ void SIP_PDU::Construct(Methods meth,
   PIPSocket::Address ip;
   WORD port;
   if (via.GetIpAndPort(ip, port))
-    str << ip << ':' << port;
+  {
+   if (ip.GetVersion() == 6)
+      str << '[' << ip << ']' << ':' << port; 
+   else
+	  str << ip << ':' << port;
+  }
   else
     str << via.Mid(dollar+1);
   str << ";branch=z9hG4bK" << branch << ";rport";
