@@ -3005,8 +3005,10 @@ H323RegisteredEndPoint * H323GatekeeperServer::CreateRegisteredEndPoint(H323Gate
 
 PString H323GatekeeperServer::CreateEndPointIdentifier()
 {
+  PStringStream id;
   PWaitAndSignal wait(mutex);
-  return psprintf("%x:", identifierBase) + PString(nextIdentifier++);
+  id << hex << identifierBase << ':' << nextIdentifier++;
+  return id;
 }
 
 
