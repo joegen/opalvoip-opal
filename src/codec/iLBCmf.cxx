@@ -41,15 +41,16 @@
 /////////////////////////////////////////////////////////////////////////////
 
 
-const OpalAudioFormat & GetOpaliLBC()
+const OpalMediaFormat & GetOpaliLBC()
 {
-  static class OpaliLBCFormat : public OpalAudioFormat
+  static char PreferredMode[] = "Preferred Mode";
+  class OpaliLBCFormat : public OpalAudioFormatInternal
   {
     public:
       OpaliLBCFormat()
-        : OpalAudioFormat(OPAL_iLBC, RTP_DataFrame::DynamicBase, "iLBC",  50, 160, 1, 1, 1, 8000)
+        : OpalAudioFormatInternal(OPAL_iLBC, RTP_DataFrame::DynamicBase, "iLBC",  50, 160, 1, 1, 1, 8000, 0)
       {
-        OpalMediaOption * option = new OpalMediaOptionInteger("Preferred Mode", false, OpalMediaOption::MaxMerge, 7);
+        OpalMediaOption * option = new OpalMediaOptionInteger(PreferredMode, false, OpalMediaOption::MaxMerge, 7);
 #if OPAL_SIP
         option->SetFMTPName("mode");
         option->SetFMTPDefault("0");
@@ -63,14 +64,56 @@ const OpalAudioFormat & GetOpaliLBC()
         AddOption(option);
 
 #if OPAL_H323
-        option = FindOption(RxFramesPerPacketOption());
+        option = FindOption(OpalAudioFormat::RxFramesPerPacketOption());
         if (option != NULL) {
           info.ordinal = 0; // All other fields the same as for the mode
           option->SetH245Generic(info);
         }
 #endif
+
+        FindOption(OpalMediaFormat::FrameTimeOption())->SetMerge(OpalMediaOption::MaxMerge);
       }
-  } const iLBC;
+
+      virtual PObject * Clone() const { return new OpaliLBCFormat(*this); }
+
+      virtual bool ToNormalisedOptions()
+      {
+        int mode = GetOptionInteger(PreferredMode, 20);
+        if (mode == 0)
+          return true;
+
+        unsigned frameTime = GetOptionInteger(OpalMediaFormat::FrameTimeOption(), 160);
+
+        if (mode < 25) {
+          mode = 20;
+          frameTime = 160;
+        }
+        else {
+          mode = 30;
+          frameTime = 240;
+        }
+
+        return SetOptionInteger(PreferredMode, mode) && SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
+      }
+
+      virtual bool ToCustomisedOptions()
+      {
+        int mode = GetOptionInteger(PreferredMode, 20);
+        unsigned frameTime = GetOptionInteger(OpalMediaFormat::FrameTimeOption(), 160);
+
+        if (frameTime < 200) {
+          mode = 20;
+          frameTime = 160;
+        }
+        else {
+          mode = 30;
+          frameTime = 240;
+        }
+
+        return SetOptionInteger(PreferredMode, mode) && SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
+      }
+  };
+  static OpalMediaFormat const iLBC(new OpaliLBCFormat);
   return iLBC;
 }
 

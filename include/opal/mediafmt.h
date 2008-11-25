@@ -1168,7 +1168,7 @@ extern const OpalAudioFormat & GetOpalG7231A_6k3();
 extern const OpalAudioFormat & GetOpalG7231A_5k3();
 extern const OpalAudioFormat & GetOpalGSM0610();
 extern const OpalAudioFormat & GetOpalGSMAMR();
-extern const OpalAudioFormat & GetOpaliLBC();
+extern const OpalMediaFormat & GetOpaliLBC();
 
 extern const OpalMediaFormat & GetOpalRFC2833();
 #if OPAL_T38_CAPABILITY
