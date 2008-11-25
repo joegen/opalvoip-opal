@@ -52,7 +52,9 @@
 #undef  OPAL_PTLIB_WAVFILE
 #undef  OPAL_PTLIB_DTMF
 #undef  OPAL_PTLIB_IPV6
+#ifndef _WIN32_WCE
 #undef  OPAL_PTLIB_DNS
+#endif
 #undef  OPAL_PTLIB_LDAP
 #undef  OPAL_PTLIB_VXML
 #undef  OPAL_PTLIB_CONFIG_FILE
@@ -114,7 +116,11 @@
 #undef  OPAL_T120DATA
 
 #if OPAL_PTLIB_EXPAT
+
+#ifndef _WIN32_WCE
   #undef  OPAL_IVR
+#endif
+
 #endif
 
 #if OPAL_H323
