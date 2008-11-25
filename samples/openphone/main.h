@@ -299,24 +299,42 @@ class IMDialog : public wxDialog
     DECLARE_EVENT_TABLE()
 };
 
-class CallingPanel : public wxPanel
+
+class CallPanelBase : public wxPanel
+{
+  protected:
+    CallPanelBase(
+      MyManager & manager,
+      const PwxString & token,
+      wxWindow * parent,
+      const wxChar * resource
+    );
+
+  public:
+    const PwxString & GetToken() const { return m_token; }
+
+  protected:
+    MyManager & m_manager;
+    PwxString   m_token;
+};
+
+
+class CallingPanel : public CallPanelBase
 {
   public:
-    CallingPanel(MyManager & manager, wxWindow * parent);
+    CallingPanel(MyManager & manager, const PwxString & token, wxWindow * parent);
 
   private:
     void OnHangUp(wxCommandEvent & event);
-
-    MyManager & m_manager;
 
     DECLARE_EVENT_TABLE()
 };
 
 
-class AnswerPanel : public wxPanel
+class AnswerPanel : public CallPanelBase
 {
   public:
-    AnswerPanel(MyManager & manager, wxWindow * parent);
+    AnswerPanel(MyManager & manager, const PwxString & token, wxWindow * parent);
 
     void SetPartyNames(const PwxString & calling, const PwxString & called);
 
@@ -324,8 +342,6 @@ class AnswerPanel : public wxPanel
     void OnAnswer(wxCommandEvent & event);
     void OnReject(wxCommandEvent & event);
     void OnChangeAnswerMode(wxCommandEvent & event);
-
-    MyManager & m_manager;
 
     DECLARE_EVENT_TABLE()
 };
@@ -397,10 +413,10 @@ class StatisticsPage
     void operator=(const StatisticsPage &) { }
 };
 
-class InCallPanel : public wxPanel
+class InCallPanel : public CallPanelBase
 {
   public:
-    InCallPanel(MyManager & manager, wxWindow * parent);
+    InCallPanel(MyManager & manager, const PwxString & token, wxWindow * parent);
     virtual bool Show(bool show = true);
 
     void OnStreamsChanged();
@@ -408,7 +424,7 @@ class InCallPanel : public wxPanel
 
   private:
     void OnHangUp(wxCommandEvent & event);
-    void OnRequestHold(wxCommandEvent & event);
+    void OnHoldRetrieve(wxCommandEvent & event);
     void OnSpeakerMute(wxCommandEvent & event);
     void OnMicrophoneMute(wxCommandEvent & event);
     void OnUserInput1(wxCommandEvent & event);
@@ -432,7 +448,6 @@ class InCallPanel : public wxPanel
 
     bool GetConnections(bool user);
 
-    MyManager & m_manager;
     wxButton  * m_Hold;
     wxButton  * m_SpeakerHandset;
     wxCheckBox* m_SpeakerMute;
@@ -460,6 +475,7 @@ class SpeedDialDialog : public wxDialog
     wxString m_Name;
     wxString m_Number;
     wxString m_Address;
+    wxString m_StateURL;
     wxString m_Description;
 
   private:
@@ -928,8 +944,10 @@ class MyManager : public wxFrame, public OpalManager
 
     enum {
       e_NameColumn,
+      e_StatusColumn,
       e_NumberColumn,
       e_AddressColumn,
+      e_StateUrlColumn,
       e_DescriptionColumn,
       e_NumColumns
     };
@@ -937,17 +955,16 @@ class MyManager : public wxFrame, public OpalManager
     // Controls on main frame
     enum {
       SplitterID = 100,
+      TabsID,
       SpeedDialsID
     };
 
     wxSplitterWindow * m_splitter;
+    wxNotebook       * m_tabs;
     wxTextCtrl       * m_logWindow;
     wxListCtrl       * m_speedDials;
     wxImageList      * m_imageListNormal;
     wxImageList      * m_imageListSmall;
-    AnswerPanel      * m_answerPanel;
-    CallingPanel     * m_callingPanel;
-    InCallPanel      * m_inCallPanel;
     wxDataFormat       m_ClipboardFormat;
 
     MyPCSSEndPoint   * pcssEP;
@@ -1041,7 +1058,7 @@ class MyManager : public wxFrame, public OpalManager
     friend ostream & operator<<(ostream & strm, CallState state);
     void SetState(
       CallState newState,
-      const char * token = NULL
+      const PString & token
     );
 
     PString            m_incomingToken;
@@ -1052,6 +1069,10 @@ class MyManager : public wxFrame, public OpalManager
     );
     bool RemoveCallOnHold(
       const PString & token
+    );
+    void OnHoldChanged(
+      const PString & token,
+      bool onHold
     );
 
     struct CallsOnHold {
