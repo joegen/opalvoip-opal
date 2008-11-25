@@ -38,7 +38,7 @@
 #define	COPYRIGHT_HOLDER	"Vox Lucida Pty. Ltd. (Australia)"
 
 
-#define MAJOR_VERSION 2
+#define MAJOR_VERSION 3
 #define MINOR_VERSION 5
 #define BUILD_TYPE    BetaCode
 #define BUILD_NUMBER 0
