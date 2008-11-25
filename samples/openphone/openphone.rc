@@ -32,10 +32,12 @@
 
 AppIcon  ICON "OpenPhone.ico"
 
-H323Phone  ICON "H323Phone.ico"
-SIPPhone   ICON "SIPPhone.ico"
-OtherPhone ICON "OtherPhone.ico"
-SmallPhone ICON "SmallPhone.ico"
+unknown16    ICON "unknown16.ico"
+unknown48    ICON "unknown48.ico"
+absent16     ICON "absent16.ico"
+absent48     ICON "absent48.ico"
+present16    ICON "present16.ico"
+present48    ICON "present48.ico"
 
 #include "wx/msw/wx.rc"
 

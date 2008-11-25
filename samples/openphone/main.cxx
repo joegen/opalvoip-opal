@@ -69,10 +69,12 @@
     defined(__WXMGL__)   || \
     defined(__WXCOCOA__)
 #include "openphone.xpm"
-#include "h323phone.xpm"
-#include "sipphone.xpm"
-#include "otherphone.xpm"
-#include "smallphone.xpm"
+#include "unknown16.xpm"
+#include "unknown48.xpm"
+#include "absent16.xpm"
+#include "absent48.xpm"
+#include "present16.xpm"
+#include "present48.xpm"
 
 #define VIDEO_WINDOW_DRIVER "SDL"
 #define VIDEO_WINDOW_DEVICE "SDL"
@@ -230,6 +232,7 @@ DEF_FIELD(TraceOptions);
 
 static const wxChar SpeedDialsGroup[] = wxT("/Speed Dials");
 static const wxChar SpeedDialAddressKey[] = wxT("Address");
+static const wxChar SpeedDialStateUrlKey[] = wxT("State URL");
 static const wxChar SpeedDialNumberKey[] = wxT("Number");
 static const wxChar SpeedDialDescriptionKey[] = wxT("Description");
 
@@ -243,6 +246,23 @@ static const wxChar SIPonly[] = wxT(" (SIP only)");
 static const wxChar H323only[] = wxT(" (H.323 only)");
 
 static const wxChar AllRouteSources[] = wxT("<ALL>");
+
+static const wxChar SpeedDialTabTitle[] = wxT("Speed Dials");
+
+enum IconStates {
+  Icon_Unknown,
+  Icon_Absent,
+  Icon_Present,
+  NumIconStates
+};
+
+static const wxChar * const IconStatusNames[] =
+{
+  wxT("Unknown"),
+  wxT("Offline"),
+  wxT("Online")
+};
+
 
 static const char * const DefaultRoutes[] = {
 #if OPAL_IVR
@@ -502,15 +522,16 @@ MyManager::MyManager()
   SetIcon(wxICON(AppIcon));
 
   // Make an image list containing large icons
-  m_imageListNormal = new wxImageList(32, 32, true);
-
-  // Order here is important!!
-  m_imageListNormal->Add(wxICON(OtherPhone));
-  m_imageListNormal->Add(wxICON(H323Phone));
-  m_imageListNormal->Add(wxICON(SIPPhone));
-
   m_imageListSmall = new wxImageList(16, 16, true);
-  m_imageListSmall->Add(wxICON(SmallPhone));
+  m_imageListNormal = new wxImageList(48, 48, true);
+
+  // Order here is important!! Must be same as IconStates enum
+  m_imageListSmall ->Add(wxICON(unknown16));
+  m_imageListNormal->Add(wxICON(unknown48));
+  m_imageListSmall ->Add(wxICON(absent16));
+  m_imageListNormal->Add(wxICON(absent48));
+  m_imageListSmall ->Add(wxICON(present16));
+  m_imageListNormal->Add(wxICON(present48));
 
   m_RingSoundTimer.SetNotifier(PCREATE_NOTIFIER(OnRingSoundAgain));
 
@@ -574,41 +595,36 @@ bool MyManager::Initialise()
   // Make the content of the main window, speed dial and log panes inside a splitter
   m_splitter = new wxSplitterWindow(this, SplitterID, wxPoint(), initialSize, wxSP_3D);
 
-  // Log window - gets informative text
+  // Create notebook for tabs in top half of splitter
+  m_tabs = new wxNotebook(m_splitter, TabsID);
+
+  // Log window - gets informative text - bottom half of splitter
   initialSize.y /= 2;
   m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString, wxPoint(), wxSize(512, 128), wxTE_MULTILINE | wxTE_DONTWRAP | wxSUNKEN_BORDER);
   m_logWindow->SetForegroundColour(wxColour(0,255,0)); // Green
   m_logWindow->SetBackgroundColour(wxColour(0,0,0)); // Black
-
-  // Speed dial window - icons for each speed dial
-  int i;
-  if (!config->Read(ActiveViewKey, &i) || i < 0 || i >= e_NumViews)
-    i = e_ViewList;
-  static const wxChar * const ViewMenuNames[e_NumViews] = {
-    wxT("ViewLarge"), wxT("ViewSmall"), wxT("ViewList"), wxT("ViewDetails")
-  };
-  menubar->Check(wxXmlResource::GetXRCID(ViewMenuNames[i]), true);
-  RecreateSpeedDials((SpeedDialViews)i);
-
-  // Speed dial panel switches to answer panel on ring
-  m_answerPanel = new AnswerPanel(*this, m_splitter);
-  m_answerPanel->Show(false);
-
-  // Speed dial panel switches to calling panel on dial
-  m_callingPanel = new CallingPanel(*this, m_splitter);
-  m_callingPanel->Show(false);
-
-  // Speed dial/Answer/Calling panel switches to "in call" panel on successful call establishment
-  m_inCallPanel = new InCallPanel(*this, m_splitter);
-  m_inCallPanel->Show(false);
 
   // Set up sizer to automatically resize the splitter to size of window
   wxBoxSizer * sizer = new wxBoxSizer(wxVERTICAL);
   sizer->Add(m_splitter, 1, wxGROW, 0);
   SetSizer(sizer);
 
+  int width;
+  config->Read(SashPositionKey, &width);
+  m_splitter->SplitHorizontally(m_tabs, m_logWindow, width);
+
+  // Speed dial window - icons for each speed dial
+  int view;
+  if (!config->Read(ActiveViewKey, &view) || view < 0 || view >= e_NumViews)
+    view = e_ViewList;
+  static const wxChar * const ViewMenuNames[e_NumViews] = {
+    wxT("ViewLarge"), wxT("ViewSmall"), wxT("ViewList"), wxT("ViewDetails")
+  };
+  menubar->Check(wxXmlResource::GetXRCID(ViewMenuNames[view]), true);
+  RecreateSpeedDials((SpeedDialViews)view);
+
   // Show the frame window
-  Show(PTrue);
+  Show(true);
 
   LogWindow << PProcess::Current().GetName()
             << " Version " << PProcess::Current().GetVersion(TRUE)
@@ -1126,15 +1142,13 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
 
   config->Write(ActiveViewKey, view);
 
-  wxListCtrl * oldSpeedDials = m_speedDials;
-
   static DWORD const ListCtrlStyle[e_NumViews] = {
     wxLC_ICON, wxLC_SMALL_ICON, wxLC_LIST, wxLC_REPORT
   };
 
-  m_speedDials = new wxListCtrl(m_splitter, SpeedDialsID,
-                               wxDefaultPosition, wxSize(512, 128),
-                               ListCtrlStyle[view] | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
+  m_speedDials = new wxListCtrl(m_tabs, SpeedDialsID,
+                                wxDefaultPosition, wxSize(512, 128),
+                                ListCtrlStyle[view] | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
 
   if (view != e_ViewDetails) {
     m_speedDials->SetImageList(m_imageListNormal, wxIMAGE_LIST_NORMAL);
@@ -1142,7 +1156,14 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
   }
 
   int width;
-  static const wxChar * const titles[e_NumColumns] = { wxT("Name"), wxT("Number"), wxT("Address"), wxT("Description") };
+  static const wxChar * const titles[e_NumColumns] = {
+    wxT("Name"),
+    wxT("Status"),
+    wxT("Number"),
+    wxT("Address"),
+    wxT("State URL"),
+    wxT("Description")
+  };
 
   for (int i = 0; i < e_NumColumns; i++) {
     m_speedDials->InsertColumn(i, titles[i]);
@@ -1152,15 +1173,12 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
       m_speedDials->SetColumnWidth(i, width);
   }
 
-  // Now either replace the top half of the splitter or set it for the first time
-  if (oldSpeedDials == NULL) {
-    width = 0;
-    config->Read(SashPositionKey, &width);
-    m_splitter->SplitHorizontally(m_speedDials, m_logWindow, width);
-  }
+  // Now either replace the tab or set it for the first time
+  if (m_tabs->GetPageCount() == 0)
+    m_tabs->AddPage(m_speedDials, SpeedDialTabTitle);
   else {
-    m_splitter->ReplaceWindow(oldSpeedDials, m_speedDials);
-    delete oldSpeedDials;
+    m_tabs->DeletePage(0);
+    m_tabs->InsertPage(0, m_speedDials, SpeedDialTabTitle);
   }
 
   // Read the speed dials from the configuration
@@ -1170,19 +1188,17 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
   if (config->GetFirstGroup(groupName, groupIndex)) {
     do {
       config->SetPath(groupName);
-      wxString number, address, description;
+      wxString number, address, stateURL, description;
       if (config->Read(SpeedDialAddressKey, &address) && !address.empty()) {
-        int icon = 0;
-        if (view == e_ViewLarge) {
-          if (address.StartsWith(wxT("h323")))
-            icon = 1;
-          else if (address.StartsWith(wxT("sip")))
-            icon = 2;
-        }
+        IconStates icon = Icon_Unknown;
+        if (config->Read(SpeedDialStateUrlKey, &stateURL) && !stateURL.empty())
+          icon = Icon_Absent;
 
         int pos = m_speedDials->InsertItem(INT_MAX, groupName, icon);
         m_speedDials->SetItem(pos, e_NumberColumn, config->Read(SpeedDialNumberKey, wxT("")));
+        m_speedDials->SetItem(pos, e_StatusColumn, IconStatusNames[icon]);
         m_speedDials->SetItem(pos, e_AddressColumn, address);
+        m_speedDials->SetItem(pos, e_StateUrlColumn, stateURL);
         m_speedDials->SetItem(pos, e_DescriptionColumn, config->Read(SpeedDialDescriptionKey, wxT("")));
       }
       config->SetPath(wxT(".."));
@@ -1324,7 +1340,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
 
 void MyManager::OnMenuQuit(wxCommandEvent& WXUNUSED(event))
 {
-    Close(PTrue);
+    Close(true);
 }
 
 
@@ -1493,9 +1509,7 @@ void MyManager::OnNewSpeedDial(wxCommandEvent& WXUNUSED(event))
   wxString groupName = MakeUniqueSpeedDialName(m_speedDials, wxT("New Speed Dial"));
 
   int pos = m_speedDials->InsertItem(INT_MAX, groupName);
-  m_speedDials->SetItem(pos, e_NumberColumn, wxT(""));
-  m_speedDials->SetItem(pos, e_AddressColumn, wxT(""));
-  m_speedDials->SetItem(pos, e_DescriptionColumn, wxT(""));
+  m_speedDials->SetItem(pos, e_StatusColumn, IconStatusNames[Icon_Unknown]);
   EditSpeedDial(pos, true);
 }
 
@@ -1570,6 +1584,11 @@ void MyManager::OnCopySpeedDial(wxCommandEvent& WXUNUSED(event))
       item.m_col = e_DescriptionColumn;
       if (m_speedDials->GetItem(item))
         tabbedText += item.m_text;
+      tabbedText += '\t';
+
+      item.m_col = e_StateUrlColumn; // Must be at end to be backward compatible
+      if (m_speedDials->GetItem(item))
+        tabbedText += item.m_text;
       tabbedText += wxT("\r\n");
     }
   }
@@ -1603,16 +1622,19 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent& WXUNUSED(event))
           wxString number = tabbedText.GetNextToken();
           wxString address = tabbedText.GetNextToken();
           wxString description = tabbedText.GetNextToken();
+          wxString stateURL = tabbedText.GetNextToken();
 
           int pos = m_speedDials->InsertItem(INT_MAX, name);
           m_speedDials->SetItem(pos, e_NumberColumn, number);
           m_speedDials->SetItem(pos, e_AddressColumn, address);
+          m_speedDials->SetItem(pos, e_StateUrlColumn, stateURL);
           m_speedDials->SetItem(pos, e_DescriptionColumn, description);
 
           config->SetPath(SpeedDialsGroup);
           config->SetPath(name);
           config->Write(SpeedDialNumberKey, number);
           config->Write(SpeedDialAddressKey, address);
+          config->Write(SpeedDialStateUrlKey, stateURL);
           config->Write(SpeedDialDescriptionKey, description);
         }
       }
@@ -1716,6 +1738,10 @@ void MyManager::EditSpeedDial(int index, bool newItem)
   if (m_speedDials->GetItem(item))
     dlg.m_Address = item.m_text;
 
+  item.m_col = e_StateUrlColumn;
+  if (m_speedDials->GetItem(item))
+    dlg.m_StateURL = item.m_text;
+
   item.m_col = e_DescriptionColumn;
   if (m_speedDials->GetItem(item))
     dlg.m_Description = item.m_text;
@@ -1738,9 +1764,15 @@ void MyManager::EditSpeedDial(int index, bool newItem)
   item.m_text = dlg.m_Address;
   m_speedDials->SetItem(item);
 
+  item.m_col = e_StateUrlColumn;
+  item.m_text = dlg.m_StateURL;
+  m_speedDials->SetItem(item);
+
   item.m_col = e_DescriptionColumn;
   item.m_text = dlg.m_Description;
   m_speedDials->SetItem(item);
+
+  m_speedDials->SetItemImage(item, dlg.m_StateURL.IsEmpty() ? Icon_Unknown : Icon_Absent);
 
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(SpeedDialsGroup);
@@ -1748,6 +1780,7 @@ void MyManager::EditSpeedDial(int index, bool newItem)
   config->SetPath(dlg.m_Name);
   config->Write(SpeedDialNumberKey, dlg.m_Number);
   config->Write(SpeedDialAddressKey, dlg.m_Address);
+  config->Write(SpeedDialStateUrlKey, dlg.m_StateURL);
   config->Write(SpeedDialDescriptionKey, dlg.m_Description);
 }
 
@@ -1791,11 +1824,11 @@ void MyManager::MakeCall(const PwxString & address, const PwxString & local)
   if (SetUpCall(from, address, token)) {
     LogWindow << "Calling \"" << address << '"' << endl;
     m_activeCall = FindCallWithLock(token, PSafeReference);
-    SetState(CallingState);
+    SetState(CallingState, token);
   }
   else {
     LogWindow << "Could not call \"" << address << '"' << endl;
-    SetState(IdleState);
+    SetState(IdleState, token);
   }
 }
 
@@ -1806,7 +1839,7 @@ void MyManager::AnswerCall()
     StopRingSound();
 
     // Must do this before AcceptIncomingConnection or InCallState arrives before AnsweringState!
-    SetState(AnsweringState);
+    SetState(AnsweringState, m_incomingToken);
 
     pcssEP->AcceptIncomingConnection(m_incomingToken);
     m_incomingToken.MakeEmpty();
@@ -1835,7 +1868,7 @@ void MyManager::HangUpCall()
 
 void MyManager::OnRinging(const OpalPCSSConnection & connection)
 {
-  m_incomingToken = connection.GetToken();
+  m_incomingToken = connection.GetCall().GetToken();
 
   PTime now;
   LogWindow << "\nIncoming call at " << now.AsString("w h:mma")
@@ -1848,17 +1881,17 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
 
   if (!m_autoAnswer && !m_RingSoundFileName.empty()) {
     m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
-    m_RingSoundChannel.PlayFile(m_RingSoundFileName, PFalse);
+    m_RingSoundChannel.PlayFile(m_RingSoundFileName, false);
     m_RingSoundTimer.RunContinuous(5000);
   }
 
-  SetState(RingingState);
+  SetState(RingingState, connection.GetCall().GetToken());
 }
 
 
 void MyManager::OnRingSoundAgain(PTimer &, INT)
 {
-  m_RingSoundChannel.PlayFile(m_RingSoundFileName, PFalse);
+  m_RingSoundChannel.PlayFile(m_RingSoundFileName, false);
 }
 
 
@@ -1880,7 +1913,7 @@ PBoolean MyManager::OnIncomingConnection(OpalConnection & connection, unsigned o
 
   if (usingHandset) {
     m_activeCall = &connection.GetCall();
-    SetState(CallingState);
+    SetState(CallingState, connection.GetCall().GetToken());
   }
 
   return true;
@@ -1892,7 +1925,7 @@ void MyManager::OnEstablishedCall(OpalCall & call)
   m_activeCall = &call;
 
   LogWindow << "Established call from " << call.GetPartyA() << " to " << call.GetPartyB() << endl;
-  SetState(InCallState);
+  SetState(InCallState, call.GetToken());
 
   if (m_AnswerMode == AnswerFax)
     SwitchToFax();
@@ -2002,6 +2035,7 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStre
 
   wxCommandEvent theEvent(wxEvtStreamsChanged, ID_STREAMS_CHANGED);
   theEvent.SetEventObject(this);
+  theEvent.SetString(PwxString(connection.GetCall().GetToken()));
   GetEventHandler()->AddPendingEvent(theEvent);
 
   return true;
@@ -2099,6 +2133,8 @@ void MyManager::AddCallOnHold(OpalCall & call)
   item = menubar->FindItem(XRCID("SubMenuTransfer"));
   menu = PAssertNULL(item)->GetSubMenu();
   PAssertNULL(menu)->Append(m_callsOnHold.back().m_transferMenuId, otherParty);
+
+  OnHoldChanged(call.GetToken(), true);
 }
 
 
@@ -2128,8 +2164,21 @@ bool MyManager::RemoveCallOnHold(const PString & token)
 
   m_callsOnHold.erase(it);
 
-  m_inCallPanel->OnHoldChanged(false);
+  OnHoldChanged(token, false);
+
   return true;
+}
+
+
+void MyManager::OnHoldChanged(const PString & token, bool onHold)
+{
+  for (size_t i = 0; i < m_tabs->GetPageCount(); ++i) {
+    InCallPanel * panel = dynamic_cast<InCallPanel *>(m_tabs->GetPage(i));
+    if (panel != NULL && panel->GetToken() == token) {
+      panel->OnHoldChanged(onHold);
+      break;
+    }
+  }
 }
 
 
@@ -2315,9 +2364,9 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
 
   PTRACE(3, "OpalPhone\tReadUserInput from " << connection);
 
-  connection.PromptUserInput(PTrue);
+  connection.PromptUserInput(true);
   PwxString digit = connection.GetUserInput(firstDigitTimeout);
-  connection.PromptUserInput(PFalse);
+  connection.PromptUserInput(false);
 
   if (digit == "#")
     return digit;
@@ -2382,7 +2431,7 @@ PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
                                         PBoolean & autoDelete)
 {
   if (preview && !m_VideoGrabPreview)
-    return PFalse;
+    return false;
 
   if (m_localVideoFrameX == INT_MIN) {
     wxRect rect(GetPosition(), GetSize());
@@ -2411,7 +2460,7 @@ ostream & operator<<(ostream & strm, MyManager::CallState state)
 }
 
 
-void MyManager::SetState(CallState newState, const char * token)
+void MyManager::SetState(CallState newState, const PString & token)
 {
   wxCommandEvent theEvent(wxEvtStateChange, ID_STATE_CHANGE);
   theEvent.SetEventObject(this);
@@ -2433,22 +2482,20 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
 
   PwxString token = theEvent.GetString();
 
-  wxWindow * newWindow;
   switch (newState) {
     case RingingState :
       if (!IsActive())
         RequestUserAttention();
       Raise();
 
-      if (!m_autoAnswer) {
+      if (!m_autoAnswer || m_activeCall != NULL) {
+        AnswerPanel * answerPanel = new AnswerPanel(*this, token, m_tabs);
+
         // Want the network side connection to get calling and called party names.
-        PSafePtr<OpalConnection> connection = pcssEP->GetConnectionWithLock(m_incomingToken, PSafeReadOnly);
-        if (connection != NULL) {
-          connection = connection->GetCall().GetConnection(0, PSafeReadOnly);
-          if (connection != NULL)
-            m_answerPanel->SetPartyNames(connection->GetRemotePartyURL(), connection->GetDestinationAddress());
-        }
-        newWindow = m_answerPanel;
+        PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReadOnly);
+        if (call != NULL)
+          answerPanel->SetPartyNames(call->GetPartyA(), call->GetPartyB());
+        m_tabs->AddPage(answerPanel, wxT("Incoming"), true);
         break;
       }
 
@@ -2459,12 +2506,22 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
       // Do next state
 
     case AnsweringState :
+      m_tabs->AddPage(new CallingPanel(*this, token, m_tabs), wxT("Answering"), true);
+      break;
+
     case CallingState :
-      newWindow = m_callingPanel;
+      m_tabs->AddPage(new CallingPanel(*this, token, m_tabs), wxT("Calling"), true);
       break;
 
     case ClearingCallState :
-      if (m_activeCall == NULL || PwxString(m_activeCall->GetToken()) != token) {
+      // Call gone away, get rid of any panels associated with it
+      for (size_t i = 0; i < m_tabs->GetPageCount(); ++i) {
+        CallPanelBase * panel = dynamic_cast<CallPanelBase *>(m_tabs->GetPage(i));
+        if (panel != NULL && panel->GetToken() == token)
+          m_tabs->DeletePage(i--);
+      }
+
+      if (m_activeCall == NULL || token != m_activeCall->GetToken()) {
         // A call on hold got cleared
         if (RemoveCallOnHold(token))
           return;
@@ -2472,7 +2529,6 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
 
       m_activeCall.SetNULL();
       newState = IdleState;
-      newWindow = m_speedDials;
       break;
 
     case InCallState :
@@ -2481,16 +2537,29 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
         RemoveCallOnHold(token);
         m_activeCall = FindCallWithLock(token, PSafeReference);
       }
-      newWindow = m_inCallPanel;
+      else {
+        bool createInCallPanel = true;
+        for (size_t i = 0; i < m_tabs->GetPageCount(); ++i) {
+          CallPanelBase * panel = dynamic_cast<CallPanelBase *>(m_tabs->GetPage(i));
+          if (panel != NULL && panel->GetToken() == token) {
+            if (dynamic_cast<InCallPanel *>(panel) != NULL)
+              createInCallPanel = false;
+            else
+              m_tabs->DeletePage(i--);
+          }
+        }
+        if (createInCallPanel) {
+          PwxString title = m_activeCall->IsNetworkOriginated() ? m_activeCall->GetPartyA() : m_activeCall->GetPartyB();
+          m_tabs->AddPage(new InCallPanel(*this, token, m_tabs), title, true);
+        }
+      }
       break;
 
     case IdleState :
       if (m_activeCall != NULL) {
         AddCallOnHold(*m_activeCall);
         m_activeCall.SetNULL();
-        m_inCallPanel->OnHoldChanged(true);
       }
-      newWindow = m_speedDials;
       break;
 
     default :
@@ -2499,20 +2568,18 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
   }
 
   m_callState = newState;
-
-  m_speedDials->Hide();
-  m_answerPanel->Hide();
-  m_callingPanel->Hide();
-  m_inCallPanel->Hide();
-  newWindow->Show();
-
-  m_splitter->ReplaceWindow(m_splitter->GetWindow1(), newWindow);
 }
 
 
-void MyManager::OnStreamsChanged(wxCommandEvent &)
+void MyManager::OnStreamsChanged(wxCommandEvent & evnt)
 {
-  m_inCallPanel->OnStreamsChanged();
+  for (size_t i = 0; i < m_tabs->GetPageCount(); ++i) {
+    InCallPanel * panel = dynamic_cast<InCallPanel *>(m_tabs->GetPage(i));
+    if (panel != NULL && panel->GetToken() == evnt.GetString()) {
+      panel->OnStreamsChanged();
+      break;
+    }
+  }
 }
 
 
@@ -2817,13 +2884,13 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
       if (sipEP.IsRegistered(m_aor, true))
         status = 0;
       else {
-      SIPRegister::Params param;
-      param.m_addressOfRecord = m_User.p_str();
-      param.m_registrarAddress = m_Domain.p_str();
-      param.m_contactAddress = m_Contact.p_str();
-      param.m_authID = m_AuthID.p_str();
-      param.m_password = m_Password.p_str();
-      param.m_expire = m_TimeToLive;
+        SIPRegister::Params param;
+        param.m_addressOfRecord = m_User.p_str();
+        param.m_registrarAddress = m_Domain.p_str();
+        param.m_contactAddress = m_Contact.p_str();
+        param.m_authID = m_AuthID.p_str();
+        param.m_password = m_Password.p_str();
+        param.m_expire = m_TimeToLive;
         status = sipEP.Register(param, m_aor) ? 1 : 2;
       }
       break;
@@ -2845,15 +2912,15 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
       if (sipEP.IsSubscribed(EventPackageMapping[m_Type], m_aor, true))
         status = 0;
       else {
-      SIPSubscribe::Params param(EventPackageMapping[m_Type]);
-      param.m_addressOfRecord = m_User.p_str();
-      param.m_agentAddress = m_Domain.p_str();
-      param.m_contactAddress = m_Contact.p_str();
-      param.m_authID = m_AuthID.p_str();
-      param.m_password = m_Password.p_str();
-      param.m_expire = m_TimeToLive;
+        SIPSubscribe::Params param(EventPackageMapping[m_Type]);
+        param.m_addressOfRecord = m_User.p_str();
+        param.m_agentAddress = m_Domain.p_str();
+        param.m_contactAddress = m_Contact.p_str();
+        param.m_authID = m_AuthID.p_str();
+        param.m_password = m_Password.p_str();
+        param.m_expire = m_TimeToLive;
         status = sipEP.Subscribe(param, m_aor) ? 1 : 2;
-  }
+      }
   }
 
   if (status == 0)
@@ -3248,11 +3315,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoGrabFormat, m_manager.GetVideoInputDevice().videoFormat);
   INIT_FIELD(VideoGrabSource, m_manager.GetVideoInputDevice().channelNumber);
   INIT_FIELD(VideoGrabFrameRate, m_manager.GetVideoInputDevice().rate);
-  INIT_FIELD(VideoFlipLocal, m_manager.GetVideoInputDevice().flip != PFalse);
+  INIT_FIELD(VideoFlipLocal, m_manager.GetVideoInputDevice().flip != false);
   INIT_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview);
-  INIT_FIELD(VideoAutoTransmit, m_manager.CanAutoStartTransmitVideo() != PFalse);
-  INIT_FIELD(VideoAutoReceive, m_manager.CanAutoStartReceiveVideo() != PFalse);
-  INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != PFalse);
+  INIT_FIELD(VideoAutoTransmit, m_manager.CanAutoStartTransmitVideo() != false);
+  INIT_FIELD(VideoAutoReceive, m_manager.CanAutoStartReceiveVideo() != false);
+  INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != false);
 
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
   FindWindowByName(VideoGrabFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
@@ -3369,9 +3436,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 #if OPAL_450
   INIT_FIELD(CallIntrusionProtectionLevel, m_manager.h323EP->GetCallIntrusionProtectionLevel());
 #endif
-  INIT_FIELD(DisableFastStart, m_manager.h323EP->IsFastStartDisabled() != PFalse);
-  INIT_FIELD(DisableH245Tunneling, m_manager.h323EP->IsH245TunnelingDisabled() != PFalse);
-  INIT_FIELD(DisableH245inSETUP, m_manager.h323EP->IsH245inSetupDisabled() != PFalse);
+  INIT_FIELD(DisableFastStart, m_manager.h323EP->IsFastStartDisabled() != false);
+  INIT_FIELD(DisableH245Tunneling, m_manager.h323EP->IsH245TunnelingDisabled() != false);
+  INIT_FIELD(DisableH245inSETUP, m_manager.h323EP->IsH245inSetupDisabled() != false);
   INIT_FIELD(GatekeeperMode, m_manager.m_gatekeeperMode);
   INIT_FIELD(GatekeeperAddress, m_manager.m_gatekeeperAddress);
   INIT_FIELD(GatekeeperIdentifier, m_manager.m_gatekeeperIdentifier);
@@ -4961,18 +5028,31 @@ void CallIMDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
   m_ok->Enable(!m_Address.IsEmpty());
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(AnswerPanel, wxPanel)
+CallPanelBase::CallPanelBase(MyManager & manager,
+                             const PwxString & token,
+                             wxWindow * parent,
+                             const wxChar * resource)
+  : m_manager(manager)
+  , m_token(token)
+{
+  wxXmlResource::Get()->LoadPanel(this, parent, resource);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(AnswerPanel, CallPanelBase)
   EVT_BUTTON(XRCID("AnswerCall"), AnswerPanel::OnAnswer)
   EVT_BUTTON(XRCID("RejectCall"), AnswerPanel::OnReject)
   EVT_RADIOBOX(XRCID("AnswerAs"), AnswerPanel::OnChangeAnswerMode)
 END_EVENT_TABLE()
 
-AnswerPanel::AnswerPanel(MyManager & manager, wxWindow * parent)
-  : m_manager(manager)
+AnswerPanel::AnswerPanel(MyManager & manager, const PwxString & token, wxWindow * parent)
+  : CallPanelBase(manager, token, parent, wxT("AnswerPanel"))
 {
-  wxXmlResource::Get()->LoadPanel(this, parent, wxT("AnswerPanel"));
 }
 
 
@@ -5004,14 +5084,13 @@ void AnswerPanel::OnChangeAnswerMode(wxCommandEvent & theEvent)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(CallingPanel, wxPanel)
+BEGIN_EVENT_TABLE(CallingPanel, CallPanelBase)
   EVT_BUTTON(XRCID("HangUpCall"), CallingPanel::OnHangUp)
 END_EVENT_TABLE()
 
-CallingPanel::CallingPanel(MyManager & manager, wxWindow * parent)
-  : m_manager(manager)
+CallingPanel::CallingPanel(MyManager & manager, const PwxString & token, wxWindow * parent)
+  : CallPanelBase(manager, token, parent, wxT("CallingPanel"))
 {
-  wxXmlResource::Get()->LoadPanel(this, parent, wxT("CallingPanel"));
 }
 
 
@@ -5025,9 +5104,9 @@ void CallingPanel::OnHangUp(wxCommandEvent & /*event*/)
 
 const int VU_UPDATE_TIMER_ID = 1000;
 
-BEGIN_EVENT_TABLE(InCallPanel, wxPanel)
+BEGIN_EVENT_TABLE(InCallPanel, CallPanelBase)
   EVT_BUTTON(XRCID("HangUp"), InCallPanel::OnHangUp)
-  EVT_BUTTON(XRCID("Hold"), InCallPanel::OnRequestHold)
+  EVT_BUTTON(XRCID("Hold"), InCallPanel::OnHoldRetrieve)
   EVT_CHECKBOX(XRCID("SpeakerMute"), InCallPanel::OnSpeakerMute)
   EVT_CHECKBOX(XRCID("MicrophoneMute"), InCallPanel::OnMicrophoneMute)
   EVT_BUTTON(XRCID("Input1"), InCallPanel::OnUserInput1)
@@ -5051,14 +5130,12 @@ BEGIN_EVENT_TABLE(InCallPanel, wxPanel)
 END_EVENT_TABLE()
 
 
-InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
-  : m_manager(manager)
+InCallPanel::InCallPanel(MyManager & manager, const PwxString & token, wxWindow * parent)
+  : CallPanelBase(manager, token, parent, wxT("InCallPanel"))
   , m_vuTimer(this, VU_UPDATE_TIMER_ID)
   , m_updateStatistics(0)
   , m_SwitchingHold(false)
 {
-  wxXmlResource::Get()->LoadPanel(this, parent, wxT("InCallPanel"));
-
   m_Hold = FindWindowByNameAs<wxButton>(this, wxT("Hold"));
   m_SpeakerHandset = FindWindowByNameAs<wxButton>(this, wxT("SpeakerHandset"));
   m_SpeakerMute = FindWindowByNameAs<wxCheckBox>(this, wxT("SpeakerMute"));
@@ -5130,7 +5207,11 @@ void InCallPanel::OnStreamsChanged()
 
 void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 {
-  m_manager.HangUpCall();
+  PSafePtr<OpalCall> activeCall = m_manager.FindCallWithLock(m_token, PSafeReadOnly);
+  if (PAssertNULL(activeCall) != NULL) {
+    LogWindow << "Hanging up \"" << *activeCall << '"' << endl;
+    activeCall->Clear();
+  }
 }
 
 
@@ -5141,19 +5222,29 @@ void InCallPanel::OnHoldChanged(bool onHold)
     m_manager.m_callsOnHold.front().m_call->Retrieve();
   m_SwitchingHold = false;
 
-  m_Hold->SetLabel(anyCallsOnHols ? wxT("Switch") : wxT("Hold"));
+  m_Hold->SetLabel(anyCallsOnHols ? wxT("Retrieve") : wxT("Hold"));
   m_Hold->Enable(true);
 }
 
 
-void InCallPanel::OnRequestHold(wxCommandEvent & /*event*/)
+void InCallPanel::OnHoldRetrieve(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalCall> call = m_manager.GetCall(PSafeReadWrite);
-  if (call != NULL) {
+  PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_token, PSafeReadWrite);
+  if (PAssertNULL(call) == NULL)
+    return;
+
+  if (call->IsOnHold()) {
+    PSafePtr<OpalCall> activeCall = m_manager.GetCall(PSafeReadWrite);
+    if (activeCall == NULL)
+      call->Retrieve();
+    else {
+      m_SwitchingHold = true;
+      activeCall->Hold();
+    }
+  }
+  else {
     if (!call->Hold())
       return;
-
-    m_SwitchingHold = !m_manager.m_callsOnHold.empty();
   }
 
   m_Hold->SetLabel(wxT("In Progress"));
@@ -5611,6 +5702,8 @@ SpeedDialDialog::SpeedDialDialog(MyManager * manager)
   m_addressCtrl = FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialAddress"));
   m_addressCtrl->SetValidator(wxGenericValidator(&m_Address));
 
+  FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialStateURL"))->SetValidator(wxGenericValidator(&m_StateURL));
+
   FindWindowByName(wxT("SpeedDialDescription"))->SetValidator(wxGenericValidator(&m_Description));
 
   m_inUse = FindWindowByNameAs<wxStaticText>(this, wxT("SpeedDialInUse"));
@@ -5642,7 +5735,7 @@ MyPCSSEndPoint::MyPCSSEndPoint(MyManager & manager)
 PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 {
   m_manager.OnRinging(connection);
-  return PTrue;
+  return true;
 
 }
 
@@ -5652,7 +5745,7 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
   PTime now;
   LogWindow << connection.GetRemotePartyName() << " is ringing on "
             << now.AsString("w h:mma") << " ..." << endl;
-  return PTrue;
+  return true;
 }
 
 
