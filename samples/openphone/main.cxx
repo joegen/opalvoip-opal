@@ -600,7 +600,7 @@ bool MyManager::Initialise()
 
   // Log window - gets informative text - bottom half of splitter
   initialSize.y /= 2;
-  m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString, wxPoint(), wxSize(512, 128), wxTE_MULTILINE | wxTE_DONTWRAP | wxSUNKEN_BORDER);
+  m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString, wxPoint(), initialSize, wxTE_MULTILINE | wxTE_DONTWRAP | wxSUNKEN_BORDER);
   m_logWindow->SetForegroundColour(wxColour(0,255,0)); // Green
   m_logWindow->SetBackgroundColour(wxColour(0,0,0)); // Black
 
@@ -609,7 +609,7 @@ bool MyManager::Initialise()
   sizer->Add(m_splitter, 1, wxGROW, 0);
   SetSizer(sizer);
 
-  int width;
+  int width = initialSize.y;
   config->Read(SashPositionKey, &width);
   m_splitter->SplitHorizontally(m_tabs, m_logWindow, width);
 
