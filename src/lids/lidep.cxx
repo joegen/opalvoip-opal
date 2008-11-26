@@ -587,7 +587,8 @@ OpalMediaStream * OpalLineConnection::CreateMediaStream(const OpalMediaFormat & 
                                                         unsigned sessionID,
                                                         PBoolean isSource)
 {
-  if (mediaFormat.GetMediaType() != OpalMediaType::Audio())
+  OpalMediaFormatList formats = line.GetDevice().GetMediaFormats();
+  if (formats.FindFormat(mediaFormat) == formats.end())
     return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
   return new OpalLineMediaStream(*this, mediaFormat, sessionID, isSource, line);
