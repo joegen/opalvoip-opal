@@ -1186,11 +1186,14 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
     interfaces[0].GetIpAndPort(dummy, port);
   }
 
-  {
+  PString defPartyName = GetDefaultLocalPartyName();
+  if (defPartyName.Find('@') != P_MAX_INDEX)
+    rpn = SIPURL(PString("sip:") + defPartyName + ":" + PString(PString::Unsigned, port) + ";transport=udp");
+  else {
     PString hostName = PIPSocket::GetHostName();
     PIPSocket::Address dummy;
-    if (!PIPSocket::GetHostAddress(hostName, dummy)) 
-      rpn = SIPURL(PString("sip:") + GetDefaultLocalPartyName() + "@" + hostName + PString(PString::Unsigned, port) + ";transport=udp");
+    if (!PIPSocket::GetHostAddress(hostName, dummy))
+      rpn = SIPURL(PString("sip:") + defPartyName + "@" + hostName + ":" + PString(PString::Unsigned, port) + ";transport=udp");
     else {
       OpalTransportAddress addr(hostName, port, "udp");
       rpn = SIPURL(GetDefaultLocalPartyName(), addr, port);
