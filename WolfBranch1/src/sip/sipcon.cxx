@@ -1160,6 +1160,10 @@ void SIPConnection::AdjustOutgoingINVITE()
     PString name((*stringOptions)("Calling-Party-Name"));
     if (!name.IsEmpty())
       myAddress.SetDisplayName(name);
+
+    PString domain((*stringOptions)("Calling-Party-Domain"));
+    if (!domain.IsEmpty())
+      myAddress.SetHostName(domain);
   }
 
   if (myAddress.GetDisplayName(false).IsEmpty())

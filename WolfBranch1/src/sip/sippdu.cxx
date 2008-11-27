@@ -1647,6 +1647,9 @@ void SIP_PDU::Construct(Methods meth,
   PStringList routeSet = connection.GetRouteSet();
   SIPEndPoint & endpoint = connection.GetEndPoint();
   PString localPartyName = connection.GetLocalPartyName();
+  PINDEX pos = localPartyName.Find('@');
+  if (pos != P_MAX_INDEX)
+    localPartyName = localPartyName.Left(pos);
   SIPURL contact = endpoint.GetContactURL(transport, localPartyName, SIPURL(connection.GetRemotePartyAddress()).GetHostName());
   SIPURL via = endpoint.GetLocalURL(transport, localPartyName);
   contact.Sanitise(meth != Method_INVITE ? SIPURL::ContactURI : SIPURL::RouteURI);
