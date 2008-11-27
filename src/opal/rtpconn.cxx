@@ -353,9 +353,9 @@ void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
 
 void OpalRTPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT type)
 {
-  // trigger on end of tone
+  // trigger on start of tone only
   if (type == 0)
-    OnUserInputTone(info.GetTone(), info.GetDuration()/8);
+    OnUserInputTone(info.GetTone(), info.GetDuration() > 0 ? info.GetDuration()/8 : 100);
 }
 
 void OpalRTPConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & /*info*/, INT)

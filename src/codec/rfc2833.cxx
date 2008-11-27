@@ -40,7 +40,7 @@
 static const char RFC2833Table1Events[] = "0123456789*#ABCD!";
 const char * OpalDefaultNTEString = "0-15,32-49";
 
-static const char NSEEvents[] = "xy";
+static const char NSEEvents[] = "XY";
 const char * OpalDefaultNSEString = "192,193";
 
 #define new PNEW
@@ -186,20 +186,22 @@ void OpalRFC2833Proto::SendAsyncFrame()
     } 
   }
 
-  PTRACE(4, "RFC2833\tSending " << ((payload[1] & 0x80) ? "end" : "tone") << ":tone=" << (unsigned)transmitCode << ",dur=" << transmitDuration << ",ts=" << frame.GetTimestamp() << ",mkr=" << frame.GetMarker());
+  PTRACE(4, "RFC2833\tSending " << ((payload[1] & 0x80) ? "end" : "tone") << ": code=" << (unsigned)transmitCode
+         << ", dur=" << transmitDuration << ", ts=" << frame.GetTimestamp() << ", mkr=" << frame.GetMarker());
 }
 
 PINDEX OpalRFC2833Proto::ASCIIToRFC2833(char tone)
 {
-  const char * theChar = strchr(RFC2833Table1Events, tone);
+  int upperTone = toupper(tone);
+  const char * theChar = strchr(RFC2833Table1Events, upperTone);
   if (theChar != NULL) 
     return (PINDEX)(theChar-RFC2833Table1Events);
   
-  theChar = strchr(NSEEvents, tone);
+  theChar = strchr(NSEEvents, upperTone);
   if (theChar != NULL) 
     return (PINDEX)(192+theChar-NSEEvents);
 
-  PTRACE(1, "RFC2833\tInvalid tone character.");
+  PTRACE(1, "RFC2833\tInvalid tone character '" << tone << "'.");
   return P_MAX_INDEX;
 }
 
@@ -246,7 +248,7 @@ void OpalRFC2833Proto::OnStartReceive(char tone, unsigned timestamp)
   ++tonesReceived;
   previousReceivedTimestamp = timestamp;
   OnStartReceive(tone);
-  OpalRFC2833Info info(tone, timestamp);
+  OpalRFC2833Info info(tone, 0, timestamp);
   receiveNotifier(info, 0);
 }
 
@@ -278,9 +280,9 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
 
   const BYTE * payload = frame.GetPayloadPtr();
 
-  BYTE tone = RFC2833ToASCII(payload[0]);
+  char tone = RFC2833ToASCII(payload[0]);
   if (tone == '\0') {
-    PTRACE(2, "RFC2833\tIgnoring packet " << payload[0] << " - unsupported event.");
+    PTRACE(2, "RFC2833\tIgnoring packet with code " << payload[0] << " - unsupported event.");
     return;
   }
   unsigned duration  = ((payload[2] <<8) + payload[3]) / 8;
@@ -289,11 +291,12 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
 
   // RFC 2833 says to ignore below -55db
   if (volume > 55) {
-    PTRACE(2, "RFC2833\tIgnoring packet " << payload[0] << " with volume -" << volume << "db");
+    PTRACE(2, "RFC2833\tIgnoring packet " << (unsigned)payload[0] << " with volume -" << volume << "db");
     return;
   }
 
-  PTRACE(4, "RFC2833\tReceived " << ((payload[1] & 0x80) ? "end" : "tone") << ":tone=" << (unsigned)tone << ",dur=" << duration << ",vol=" << volume << ",ts=" << timeStamp << ",mkr=" << frame.GetMarker());
+  PTRACE(4, "RFC2833\tReceived " << ((payload[1] & 0x80) ? "end" : "tone") << ": code='" << (unsigned)payload[0]
+         << "', dur=" << duration << ", vol=" << volume << ", ts=" << timeStamp << ", mkr=" << frame.GetMarker());
 
   // the only safe way to detect a new tone is the timestamp
   // because the packet with the marker bit could go missing and 
