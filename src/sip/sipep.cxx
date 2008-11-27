@@ -1433,7 +1433,16 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
     GetManager().TranslateIPAddress(myAddress, transportAddress);
 
   OpalTransportAddress addr(myAddress, myPort, transport.GetLocalAddress().GetProto());
-  SIPURL rpn(GetDefaultLocalPartyName(), addr, myPort);
+  PString defPartyName(GetDefaultLocalPartyName());
+  SIPURL rpn;
+  PINDEX pos;
+  if ((pos = defPartyName.Find('@')) == P_MAX_INDEX) 
+    rpn = SIPURL(defPartyName, addr, myPort);
+  else {
+    rpn = SIPURL(defPartyName.Left(pos), addr, myPort);   // set transport from address
+    rpn.SetHostName(defPartyName.Right(pos+1));
+  }
+
   rpn.SetDisplayName(GetDefaultDisplayName());
   return rpn;
 }
