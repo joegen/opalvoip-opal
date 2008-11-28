@@ -34,7 +34,7 @@ PCREATE_PROCESS(FaxOPAL);
 
 
 FaxOPAL::FaxOPAL()
-  : PProcess("OPAL T.38 Fax", "FaxOPAL", 1, 0, ReleaseCode, 0)
+  : PProcess("OPAL T.38 Fax", "FaxOPAL", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
   , m_manager(NULL)
 {
 }
@@ -53,6 +53,7 @@ void FaxOPAL::Main()
   args.Parse("h-help."
              "d-directory:"
              "s-spandsp:"
+             "G-G711."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -69,9 +70,10 @@ void FaxOPAL::Main()
     cerr << "usage: " << GetFile().GetTitle() << " [ options ] filename [ url ]\n"
             "\n"
             "Available options are:\n"
-            "  --help                   : print this help message.\n"
-            "  -d or --directory dir    : Set default directory for fax receive\n"
-            "  -s or --spandsp exe      : Set location of spandsp_util.exe\n"
+            "  --help                  : print this help message.\n"
+            "  -d or --directory dir   : Set default directory for fax receive\n"
+            "  -s or --spandsp exe     : Set location of spandsp_util.exe\n"
+            "  -G or -G711             : Send fax as G.711 audio\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -101,28 +103,30 @@ void FaxOPAL::Main()
   }
 #endif // OPAL_H323
 
-  OpalT38EndPoint * t38  = new OpalT38EndPoint(*m_manager);
+  // Create audio or T.38 fax endpoint.
+  OpalFaxEndPoint * fax  = args.HasOption('G') ? new OpalFaxEndPoint(*m_manager)
+                                               : new OpalT38EndPoint(*m_manager);
   if (args.HasOption('d'))
-    t38->SetDefaultDirectory(args.GetOptionString('d'));
+    fax->SetDefaultDirectory(args.GetOptionString('d'));
   if (args.HasOption('s'))
-    t38->SetSpanDSP(args.GetOptionString('s'));
+    fax->SetSpanDSP(args.GetOptionString('s'));
 
-  // Route SIP/H.323 calls to the T38 endpoint
+  // Route SIP/H.323 calls to the Fax endpoint
 #if OPAL_SIP
-  m_manager->AddRouteEntry("sip.*:.* = t38:" + args[0] + ";receive");
+  m_manager->AddRouteEntry("sip.*:.* = " + fax->GetPrefixName() + ":" + args[0] + ";receive");
 #endif
 #if OPAL_H323
-  m_manager->AddRouteEntry("h323.*:.* = t38:" + args[0] + ";receive");
+  m_manager->AddRouteEntry("h323.*:.* = " + fax->GetPrefixName() + ":" + args[0] + ";receive");
 #endif
 
   // If no explicit protocol on URI, then send to SIP.
-  m_manager->AddRouteEntry("t38:.* = sip:<da>");
+  m_manager->AddRouteEntry(fax->GetPrefixName()+":.* = sip:<da>");
 
   if (args.GetCount() == 1)
     cout << "Awaiting incoming fax, saving as " << args[0] << " ..." << flush;
   else {
     PString token;
-    if (!m_manager->SetUpCall("t38:" + args[0], args[1], token)) {
+    if (!m_manager->SetUpCall(fax->GetPrefixName() + ":" + args[0], args[1], token)) {
       cerr << "Could not start call to \"" << args[1] << '"' << endl;
       return;
     }
