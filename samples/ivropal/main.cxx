@@ -53,6 +53,7 @@ void IvrOPAL::Main()
   args.Parse("g-gk-host:"
              "G-gk-id:"
              "h-help."
+             "H-h323:"
              "p-password:"
              "r-register:"
              "S-sip:"
@@ -76,9 +77,9 @@ void IvrOPAL::Main()
             "  -h or --help            : print this help message.\n"
             "  -u or --user name       : Set local username, defaults to OS username.\n"
             "  -p or --password pwd    : Set password for authentication.\n"
-            "  -S or --sip interface   : SIP listens on interface, defaults to udp$*:5060.\n"
+            "  -S or --sip interface   : SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
             "  -r or --register server : SIP registration to server.\n"
-            "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720.\n"
+            "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
             "  -g or --gk-host host    : H.323 gatekeeper host.\n"
             "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
 #if PTRACING
@@ -120,43 +121,50 @@ void IvrOPAL::Main()
   if (args.HasOption('u'))
     m_manager->SetDefaultUserName(args.GetOptionString('u'));
 
+  PCaselessString interfaces;
 
 #if OPAL_SIP
   // Set up SIP
-  SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
-  if (!sip->StartListeners(args.GetOptionString('S').Lines())) {
-    cerr << "Could not start SIP listeners." << endl;
-    return;
+  interfaces = args.GetOptionString('S');
+  if (interfaces != "x") {
+    SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
+    if (!sip->StartListeners(interfaces.Lines())) {
+      cerr << "Could not start SIP listeners." << endl;
+      return;
+    }
+
+    if (args.HasOption('r')) {
+      SIPRegister::Params params;
+      params.m_addressOfRecord = args.GetOptionString('r');
+      params.m_password = args.GetOptionString('p');
+      params.m_expire = 300;
+
+      PString aor;
+      sip->Register(params, aor);
+    }
+
+    m_manager->AddRouteEntry("sip.*:.* = ivr:");
+    m_manager->AddRouteEntry("ivr:.* = sip:<da>");
   }
-
-  if (args.HasOption('r')) {
-    SIPRegister::Params params;
-    params.m_addressOfRecord = args.GetOptionString('r');
-    params.m_password = args.GetOptionString('p');
-    params.m_expire = 300;
-
-    PString aor;
-    sip->Register(params, aor);
-  }
-
-  m_manager->AddRouteEntry("sip.*:.* = ivr:");
-  m_manager->AddRouteEntry("ivr:.* = sip:<da>");
 #endif // OPAL_SIP
 
 
 #if OPAL_H323
   // Set up H.323
-  H323EndPoint * h323 = new H323EndPoint(*m_manager);
-  if (!h323->StartListeners(args.GetOptionString('H').Lines())) {
-    cerr << "Could not start H.323 listeners." << endl;
-    return;
+  interfaces = args.GetOptionString('H');
+  if (interfaces != "x") {
+    H323EndPoint * h323 = new H323EndPoint(*m_manager);
+    if (!h323->StartListeners(interfaces.Lines())) {
+      cerr << "Could not start H.323 listeners." << endl;
+      return;
+    }
+
+    if (args.HasOption('g') || args.HasOption('G'))
+      h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'));
+
+    m_manager->AddRouteEntry("h323.*:.* = ivr:");
+    m_manager->AddRouteEntry("ivr:.* = h323:<da>");
   }
-
-  if (args.HasOption('g') || args.HasOption('G'))
-    h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'));
-
-  m_manager->AddRouteEntry("h323.*:.* = ivr:");
-  m_manager->AddRouteEntry("ivr:.* = h323:<da>");
 #endif // OPAL_H323
 
 
