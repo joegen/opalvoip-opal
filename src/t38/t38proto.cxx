@@ -517,7 +517,7 @@ PString OpalFaxMediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
     cmdline << "fax_to_tiff";
   else
     cmdline << "tiff_to_fax";
-  cmdline << "-V 0 -n '" << filename << "' -f 127.0.0.1:" << port;
+  cmdline << " -V 0 -n '" << filename << "' -f 127.0.0.1:" << port;
 
   return cmdline;
 }
@@ -658,9 +658,7 @@ OpalFaxConnection * OpalFaxEndPoint::CreateConnection(OpalCall & call, const PSt
 OpalMediaFormatList OpalFaxEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
-
-  //formats += OpalPCM16;        
-
+  formats += OpalPCM16;
   return formats;
 }
 
@@ -730,39 +728,36 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
   return PTrue;
 }
 
-void OpalFaxEndPoint::OnPatchMediaStream(const OpalFaxConnection & /*connection*/, PBoolean /*isSource*/, OpalMediaPatch & /*patch*/)
-{
-}
 
 /////////////////////////////////////////////////////////////////////////////
 
 OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, const PString & _filename, PBoolean _receive, const PString & _token, OpalConnection::StringOptions * _stringOptions)
-  : OpalConnection(call, ep, _token, 0, _stringOptions), endpoint(ep), filename(_filename), receive(_receive)
+  : OpalConnection(call, ep, _token, 0, _stringOptions)
+  , endpoint(ep)
+  , filename(_filename)
+  , receive(_receive)
 {
   PTRACE(3, "FAX\tCreated FAX connection with token '" << callToken << "'");
   SetPhase(SetUpPhase);
 
-  if (stringOptions != NULL) {
-    forceFaxAudio = stringOptions->Contains("Force-Fax-Audio");
-    stationId     = (*stringOptions)("stationid");
-  }
+  if (stringOptions != NULL)
+    stationId = (*stringOptions)("stationid");
 
   detectInBandDTMF = true;
 }
+
 
 OpalFaxConnection::~OpalFaxConnection()
 {
   PTRACE(3, "FAX\tDeleted FAX connection.");
 }
 
+
 OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
-  // if creating an audio session, use a NULL stream
-  if (forceFaxAudio && (mediaFormat == OpalPCM16))
-    return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive, stationId);
-  else
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource, true);
+  return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive, stationId);
 }
+
 
 PBoolean OpalFaxConnection::SetUpConnection()
 {
@@ -786,7 +781,6 @@ PBoolean OpalFaxConnection::SetUpConnection()
 
   PTRACE(3, "FAX\tSetUpConnection(" << remotePartyName << ')');
   SetPhase(AlertingPhase);
-  //endpoint.OnShowIncoming(*this);
   OnAlerting();
 
   OnConnectedInternal();
@@ -800,7 +794,6 @@ PBoolean OpalFaxConnection::SetAlerting(const PString & calleeName, PBoolean)
   PTRACE(3, "Fax\tSetAlerting(" << calleeName << ')');
   SetPhase(AlertingPhase);
   remotePartyName = calleeName;
-  //return endpoint.OnShowOutgoing(*this);
   return PTrue;
 }
 
@@ -812,16 +805,19 @@ OpalMediaFormatList OpalFaxConnection::GetMediaFormats() const
   return formats;
 }
 
+
 void OpalFaxConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const
 {
-  endpoint.AdjustMediaFormats(*this, mediaFormats);
-  if (forceFaxAudio)
-    mediaFormats.Remove(PStringArray(OpalT38));
-}
+  // Remove everything but G.711 or T.38
+  OpalMediaFormatList::iterator i = mediaFormats.begin();
+  while (i != mediaFormats.end()) {
+    if (*i == OpalG711_ULAW_64K || *i == OpalG711_ALAW_64K || *i == OpalT38)
+      ++i;
+    else
+      mediaFormats -= *i++;
+  }
 
-void OpalFaxConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
-{
-  endpoint.OnPatchMediaStream(*this, isSource, patch);
+  OpalConnection::AdjustMediaFormats(mediaFormats);
 }
 
 
@@ -863,20 +859,24 @@ PString OpalT38EndPoint::MakeToken()
 /////////////////////////////////////////////////////////////////////////////
 
 OpalT38Connection::OpalT38Connection(OpalCall & call, OpalT38EndPoint & ep, const PString & _filename, PBoolean _receive, const PString & _token, OpalConnection::StringOptions * stringOptions)
-  : OpalFaxConnection(call, ep, _filename, _receive, _token, stringOptions), t38WaitMode(T38Mode_Auto)
+  : OpalFaxConnection(call, ep, _filename, _receive, _token, stringOptions)
+  , forceFaxAudio(stringOptions != NULL && stringOptions->Contains("Force-Fax-Audio"))
+  , t38WaitMode(T38Mode_Auto)
+  , currentMode(false)
+  , newMode(false)
+  , modeChangeTriggered(false)
+  , faxStartup(true)
 {
   PTRACE(3, "FAX\tCreated T.38 connection with token '" << callToken << "'");
-  forceFaxAudio         = false;
-  currentMode = newMode = false;
-  modeChangeTriggered   = false;
-  faxStartup            = true;
 
   faxTimer.SetNotifier(PCREATE_NOTIFIER(OnFaxChangeTimeout));
 }
 
+
 OpalT38Connection::~OpalT38Connection()
 {
 }
+
 
 OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
@@ -903,16 +903,12 @@ OpalMediaFormatList OpalT38Connection::GetMediaFormats() const
   OpalMediaFormatList formats;
 
   formats += OpalPCM16;        
-  formats += OpalT38;        
+  if (!forceFaxAudio)
+    formats += OpalT38;        
 
   return formats;
 }
 
-
-void OpalT38Connection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
-{
-  OpalConnection::OnPatchMediaStream(isSource, patch);
-}
 
 PBoolean OpalT38Connection::SendUserInputTone(char tone, unsigned /*duration*/)
 {

@@ -268,16 +268,6 @@ class OpalFaxEndPoint : public OpalEndPoint
     virtual void AcceptIncomingConnection(
       const PString & connectionToken ///<  Token of connection to accept call
     );
-
-    /**Call back when patching a media stream.
-       This function is called when a connection has created a new media
-       patch between two streams.
-      */
-    virtual void OnPatchMediaStream(
-      const OpalFaxConnection & connection, ///<  Connection having new patch
-      PBoolean isSource,                         ///<  Source patch
-      OpalMediaPatch & patch                 ///<  New patch
-    );
   //@}
 
   /**@name Member variable access */
@@ -379,18 +369,6 @@ class OpalFaxConnection : public OpalConnection
 
     OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
 
-    /**Call back when patching a media stream.
-       This function is called when a connection has created a new media
-       patch between two streams.
-       Add the echo canceler patch and call the endpoint function of
-       the same name.
-       Add a PCM silence detector filter.
-      */
-    virtual void OnPatchMediaStream(
-      PBoolean isSource,
-      OpalMediaPatch & patch    ///<  New patch
-    );
-
   /**@name New operations */
   //@{
     /**Accept the incoming connection.
@@ -403,10 +381,9 @@ class OpalFaxConnection : public OpalConnection
 
   protected:
     OpalFaxEndPoint & endpoint;
-    PString filename;
-    PBoolean receive;
-    PBoolean forceFaxAudio;
-    PString stationId;
+    PString           filename;
+    bool              receive;
+    PString           stationId;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -461,7 +438,6 @@ class OpalT38Connection : public OpalFaxConnection
 
     ~OpalT38Connection();
 
-    void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
     OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
     OpalMediaFormatList GetMediaFormats() const;
 
@@ -485,6 +461,7 @@ class OpalT38Connection : public OpalFaxConnection
     void RequestFaxMode(bool fax);
     void InFaxMode(bool fax);
 
+    bool     forceFaxAudio;
     unsigned t38WaitMode;
 
     PMutex modeMutex;
