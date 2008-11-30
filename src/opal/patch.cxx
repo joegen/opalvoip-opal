@@ -567,6 +567,7 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
   if ((pt != codec.GetPayloadType(true)) && !codec.AcceptOtherPayloads()) {
     PTRACE(4, "Patch\tRemoving frame with mismatched payload type " << pt << " - should be " << codec.GetPayloadType(true));
     frame.SetPayloadSize(0);   // remove the payload because the transcoder has indicated it won't understand it
+    frame.SetPayloadType(codec.GetPayloadType(true)); // Reset pt so if get silence frames from jitter buffer, they don't cause errors
     return true;
   }
 
