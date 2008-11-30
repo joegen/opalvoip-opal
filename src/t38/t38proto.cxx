@@ -1004,7 +1004,7 @@ void OpalT38Connection::InFaxMode(bool toFax)
       }
       else {
         if (faxStartup && !currentMode && (t38WaitMode & T38Mode_Timeout) != 0) {
-          faxTimer = receive ? 2000 : 8000;
+          faxTimer = receive ? 8000 : 2000;
           PTRACE(1, "T38\tStarting timer for mode change");
         }
       }
