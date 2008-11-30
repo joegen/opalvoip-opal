@@ -1125,6 +1125,21 @@ void SIPMIMEInfo::SetSIPETag(const PString & v)
 }
 
 
+PString SIPMIMEInfo::GetRequire() const
+{
+  return GetString("Require");  // no compact form
+}
+
+
+void SIPMIMEInfo::SetRequire(const PString & v, bool overwrite)
+{
+  if (overwrite || !Contains("Require"))
+    SetAt("Require",  v);        // no compact form
+  else
+    SetAt("Require",  GetString("Require") + ", " + v);
+}
+
+
 static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & end)
 {
   PINDEX semicolon = (PINDEX)-1;
