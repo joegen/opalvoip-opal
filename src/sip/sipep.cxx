@@ -415,7 +415,7 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
 
   OpalConnection::StringOptions options;
   if (!callId.IsEmpty())
-    options.SetAt("Replaces", callId);
+    options.SetAt(SIP_HEADER_REPLACES, callId);
 
   PStringStream callID;
   OpalGloballyUniqueID id;

@@ -62,6 +62,7 @@
 
 typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 
+static const char HeaderPrefix[] = SIP_HEADER_PREFIX;
 static const char TagParamName[] = ";tag=";
 static const char ApplicationDTMFRelayKey[]       = "application/dtmf-relay";
 static const char ApplicationDTMFKey[]            = "application/dtmf";
@@ -208,6 +209,12 @@ SIPConnection::SIPConnection(OpalCall & call,
     m_appearanceCode = params["appearance"].AsUnsigned();
     adjustedDestination.SetParamVar("appearance", PString::Empty());
   }
+
+  const PStringToString & query = adjustedDestination.GetQueryVars();
+  for (PINDEX i = 0; i < query.GetSize(); ++i)
+    m_stringOptions.SetAt(HeaderPrefix+query.GetKeyAt(i),
+                          PURL::UntranslateString(query.GetDataAt(i), PURL::QueryTranslation));
+  adjustedDestination.SetQuery(PString::Empty());
 
   m_dialog.SetRequestURI(adjustedDestination);
   m_dialog.SetRemoteURI(adjustedDestination);
@@ -2217,11 +2224,17 @@ void SIPConnection::OnCreatingINVITE(SIP_PDU & request)
 {
   PTRACE(3, "SIP\tCreating INVITE request");
 
-  PString replaces(m_stringOptions("Replaces"));
-  if (!replaces.IsEmpty()) {
-    SIPMIMEInfo & mime = request.GetMIME();
-    mime.SetAt("Require", "replaces");
-    mime.SetAt("Replaces", replaces);
+  SIPMIMEInfo & mime = request.GetMIME();
+  for (PINDEX i = 0; i < m_stringOptions.GetSize(); ++i) {
+    PCaselessString key = m_stringOptions.GetKeyAt(i);
+    if (key.NumCompare(HeaderPrefix) == EqualTo) {
+      PString data = m_stringOptions.GetDataAt(i);
+      if (!data.IsEmpty()) {
+        mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), m_stringOptions.GetDataAt(i));
+        if (key == SIP_HEADER_REPLACES)
+          mime.SetRequire("replaces", false);
+      }
+    }
   }
 
   if (!request.GetSDP() || request.GetSDP()->GetMediaDescriptions().GetSize () == 0)

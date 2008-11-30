@@ -355,6 +355,9 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetSIPETag() const;
     void SetSIPETag(const PString & v);
 
+    PString GetRequire() const;
+    void SetRequire(const PString & v, bool overwrite);
+
     /** return the value of a header field parameter, empty if none
      */
     PString GetFieldParameter(
