@@ -50,10 +50,17 @@ void FaxOPAL::Main()
 {
   PArgList & args = GetArguments();
 
-  args.Parse("h-help."
+  args.Parse("a-audio."
              "d-directory:"
+             "g-gk-host:"
+             "G-gk-id:"
+             "h-help."
+             "H-h323:"
+             "p-password:"
+             "r-register:"
              "s-spandsp:"
-             "G-G711."
+             "S-sip:"
+             "u-user:"
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -73,7 +80,14 @@ void FaxOPAL::Main()
             "  --help                  : print this help message.\n"
             "  -d or --directory dir   : Set default directory for fax receive\n"
             "  -s or --spandsp exe     : Set location of spandsp_util.exe\n"
-            "  -G or -G711             : Send fax as G.711 audio\n"
+            "  -a or -audio            : Send fax as G.711 audio\n"
+            "  -u or --user name       : Set local username, defaults to OS username.\n"
+            "  -p or --password pwd    : Set password for authentication.\n"
+            "  -S or --sip interface   : SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
+            "  -r or --register server : SIP registration to server.\n"
+            "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
+            "  -g or --gk-host host    : H.323 gatekeeper host.\n"
+            "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -87,24 +101,51 @@ void FaxOPAL::Main()
 
   m_manager = new MyManager();
 
+  if (args.HasOption('u'))
+    m_manager->SetDefaultUserName(args.GetOptionString('u'));
+
+  PCaselessString interfaces;
+
 #if OPAL_SIP
-  SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
-  if (!sip->StartListeners(PStringArray())) {
-    cerr << "Could not start default SIP listeners." << endl;
-    return;
+  // Set up SIP
+  interfaces = args.GetOptionString('S');
+  if (interfaces != "x") {
+    SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
+    if (!sip->StartListeners(interfaces.Lines())) {
+      cerr << "Could not start SIP listeners." << endl;
+      return;
+    }
+
+    if (args.HasOption('r')) {
+      SIPRegister::Params params;
+      params.m_addressOfRecord = args.GetOptionString('r');
+      params.m_password = args.GetOptionString('p');
+      params.m_expire = 300;
+
+      PString aor;
+      sip->Register(params, aor);
+    }
   }
 #endif // OPAL_SIP
 
+
 #if OPAL_H323
-  H323EndPoint * h323 = new H323EndPoint(*m_manager);
-  if (!h323->StartListeners(PStringArray())) {
-    cerr << "Could not start default H.323 listeners." << endl;
-    return;
+  // Set up H.323
+  interfaces = args.GetOptionString('H');
+  if (interfaces != "x") {
+    H323EndPoint * h323 = new H323EndPoint(*m_manager);
+    if (!h323->StartListeners(interfaces.Lines())) {
+      cerr << "Could not start H.323 listeners." << endl;
+      return;
+    }
+
+    if (args.HasOption('g') || args.HasOption('G'))
+      h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'));
   }
 #endif // OPAL_H323
 
   // Create audio or T.38 fax endpoint.
-  OpalFaxEndPoint * fax  = args.HasOption('G') ? new OpalFaxEndPoint(*m_manager)
+  OpalFaxEndPoint * fax  = args.HasOption('a') ? new OpalFaxEndPoint(*m_manager)
                                                : new OpalT38EndPoint(*m_manager);
   if (args.HasOption('d'))
     fax->SetDefaultDirectory(args.GetOptionString('d'));
