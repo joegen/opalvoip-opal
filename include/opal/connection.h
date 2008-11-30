@@ -1344,10 +1344,9 @@ class OpalConnection : public PSafeObject
 #endif
   //@}
 
-    StringOptions * GetStringOptions() const
-    { return stringOptions; }
+    /// Get the string options associated with this connection.
+    const StringOptions & GetStringOptions() const { return m_stringOptions; }
 
-    void SetStringOptions(StringOptions * options);
 
     /**Open the media channels associated with an incoming call
  
@@ -1453,7 +1452,7 @@ class OpalConnection : public PSafeObject
     friend ostream & operator<<(ostream & o, Phases p);
 #endif
 
-    StringOptions * stringOptions;
+    StringOptions m_stringOptions;
     PString recordAudioFilename;
 
 #if OPAL_STATISTICS

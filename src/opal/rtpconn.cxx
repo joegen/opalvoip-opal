@@ -58,8 +58,8 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
                              OpalRTPEndPoint  & ep,
                                 const PString & token,
                                    unsigned int options,
-               OpalConnection::StringOptions * _stringOptions)
-  : OpalConnection(call, ep, token, options, _stringOptions)
+                                StringOptions * stringOptions)
+  : OpalConnection(call, ep, token, options, stringOptions)
   , remoteIsNAT(false)
 {
   rfc2833Handler  = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
@@ -76,7 +76,7 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
   if (conn != NULL) 
     m_rtpSessions.Initialise(*this, conn->GetStringOptions());
   else
-    m_rtpSessions.Initialise(*this, stringOptions);
+    m_rtpSessions.Initialise(*this, m_stringOptions);
 }
 
 OpalRTPConnection::~OpalRTPConnection()
@@ -477,7 +477,7 @@ bool OpalRTPSessionManager::AllSessionsFailing()
   return true;
 }
 
-void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, OpalConnection::StringOptions * stringOptions)
+void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, const OpalConnection::StringOptions & stringOptions)
 {
   PWaitAndSignal m(m_mutex);
 
@@ -487,35 +487,30 @@ void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, OpalConnection:
 
   m_initialised = true;
 
-  // see if stringoptions contains AutoStart option
-  if (stringOptions != NULL && stringOptions->Contains("autostart")) {
+  // get autostart option as lines
+  PStringArray lines = stringOptions("autostart").Lines();
+  for (PINDEX i = 0; i < lines.GetSize(); ++i) {
+    PString line = lines[i];
+    PINDEX colon = line.Find(':');
+    OpalMediaType mediaType = line.Left(colon);
 
-    // get autostart option as lines
-    PStringArray lines = (*stringOptions)("autostart").Lines();
-    PINDEX i;
-    for (i = 0; i < lines.GetSize(); ++i) {
-      PString line = lines[i];
-      PINDEX colon = line.Find(':');
-      OpalMediaType mediaType = line.Left(colon);
-
-      // see if media type is known, and if it is, enable it
-      OpalMediaTypeDefinition * def = mediaType.GetDefinition();
-      if (def != NULL) {
-        OpalMediaSession info(mediaType);
-        bool autoStartReceive  = true;
-        bool autoStartTransmit = true;
-        if (colon != P_MAX_INDEX) {
-          PStringArray tokens = line.Mid(colon+1).Tokenise(";", FALSE);
-          PINDEX j;
-          for (j = 0; j < tokens.GetSize(); ++j) {
-            if (tokens[i] *= "no") {
-              autoStartReceive  = false;
-              autoStartTransmit = false;
-            }
+    // see if media type is known, and if it is, enable it
+    OpalMediaTypeDefinition * def = mediaType.GetDefinition();
+    if (def != NULL) {
+      OpalMediaSession info(mediaType);
+      bool autoStartReceive  = true;
+      bool autoStartTransmit = true;
+      if (colon != P_MAX_INDEX) {
+        PStringArray tokens = line.Mid(colon+1).Tokenise(";", FALSE);
+        PINDEX j;
+        for (j = 0; j < tokens.GetSize(); ++j) {
+          if (tokens[i] *= "no") {
+            autoStartReceive  = false;
+            autoStartTransmit = false;
           }
         }
-        AutoStartSession(def->GetDefaultSessionId(), mediaType, autoStartReceive, autoStartTransmit);
       }
+      AutoStartSession(def->GetDefaultSessionId(), mediaType, autoStartReceive, autoStartTransmit);
     }
   }
 

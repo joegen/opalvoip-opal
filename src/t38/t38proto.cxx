@@ -740,8 +740,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, cons
   PTRACE(3, "FAX\tCreated FAX connection with token '" << callToken << "'");
   SetPhase(SetUpPhase);
 
-  if (stringOptions != NULL)
-    stationId = (*stringOptions)("stationid");
+  stationId = m_stringOptions("stationid");
 
   detectInBandDTMF = true;
 }
@@ -765,7 +764,7 @@ PBoolean OpalFaxConnection::SetUpConnection()
   if (ownerCall.GetConnection(0) == this) {
     SetPhase(SetUpPhase);
 
-    if (!OnIncomingConnection(0, stringOptions)) {
+    if (!OnIncomingConnection(0, &m_stringOptions)) {
       Release(EndedByCallerAbort);
       return PFalse;
     }

@@ -1058,23 +1058,20 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   if (!transportProtocol.IsEmpty())
     myAddress.SetParamVar("transport", transportProtocol);
 
-  // allow callers to override the From field
-  if (stringOptions != NULL) {
-    // only allow override of calling party number if the local party
-    // name hasn't been first specified by a register handler. i.e a
-    // register handler's target number is always used
-    PString number((*stringOptions)("Calling-Party-Number"));
-    if (!number.IsEmpty() && myAddress.GetUserName() == endpoint.GetDefaultLocalPartyName())
-      myAddress.SetUserName(number);
+  // only allow override of calling party number if the local party
+  // name hasn't been first specified by a register handler. i.e a
+  // register handler's target number is always used
+  PString number(m_stringOptions("Calling-Party-Number"));
+  if (!number.IsEmpty() && myAddress.GetUserName() == endpoint.GetDefaultLocalPartyName())
+    myAddress.SetUserName(number);
 
-    PString name((*stringOptions)("Calling-Party-Name"));
-    if (!name.IsEmpty())
-      myAddress.SetDisplayName(name);
+  PString name(m_stringOptions("Calling-Party-Name"));
+  if (!name.IsEmpty())
+    myAddress.SetDisplayName(name);
 
-    PString domain((*stringOptions)("Calling-Party-Domain"));
-    if (!domain.IsEmpty())
-      myAddress.SetHostName(domain);
-  }
+  PString domain(m_stringOptions("Calling-Party-Domain"));
+  if (!domain.IsEmpty())
+    myAddress.SetHostName(domain);
 
   if (myAddress.GetDisplayName(false).IsEmpty())
     myAddress.SetDisplayName(GetDisplayName());
@@ -2220,13 +2217,11 @@ void SIPConnection::OnCreatingINVITE(SIP_PDU & request)
 {
   PTRACE(3, "SIP\tCreating INVITE request");
 
-  if (stringOptions != NULL) {
-    PString replaces((*stringOptions)("Replaces"));
-    if (!replaces.IsEmpty()) {
-      SIPMIMEInfo & mime = request.GetMIME();
-      mime.SetAt("Require", "replaces");
-      mime.SetAt("Replaces", replaces);
-    }
+  PString replaces(m_stringOptions("Replaces"));
+  if (!replaces.IsEmpty()) {
+    SIPMIMEInfo & mime = request.GetMIME();
+    mime.SetAt("Require", "replaces");
+    mime.SetAt("Replaces", replaces);
   }
 
   if (!request.GetSDP() || request.GetSDP()->GetMediaDescriptions().GetSize () == 0)

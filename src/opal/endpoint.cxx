@@ -105,12 +105,6 @@ void OpalEndPoint::ShutDown()
 }
 
 
-PBoolean OpalEndPoint::MakeConnection(OpalCall & /*call*/, const PString & /*party*/, void * /*userData*/, unsigned int /*options*/, OpalConnection::StringOptions * /*stringOptions*/)
-{
-  PAssertAlways("Must implement descendant of OpalEndPoint::MakeConnection");
-  return PFalse;
-}
-
 void OpalEndPoint::PrintOn(ostream & strm) const
 {
   strm << "EP<" << prefixName << '>';
