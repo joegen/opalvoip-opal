@@ -485,7 +485,11 @@ PString OpalManager::GetNextCallToken()
   return psprintf("%c%08x%u", PRandom::Number('a', 'z'), PRandom::Number(), ++lastCallTokenID);
 }
 
-PBoolean OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData, unsigned int options, OpalConnection::StringOptions * stringOptions)
+PBoolean OpalManager::MakeConnection(OpalCall & call,
+                                     const PString & remoteParty,
+                                     void * userData,
+                                     unsigned int options,
+                                     OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
 

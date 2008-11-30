@@ -159,7 +159,7 @@ OpalConnection::OpalConnection(OpalCall & call,
                                OpalEndPoint  & ep,
                                const PString & token,
                                unsigned int options,
-                               OpalConnection::StringOptions * _stringOptions)
+                               OpalConnection::StringOptions * stringOptions)
   : PSafeObject(&call)  // Share the lock flag from the call
   , ownerCall(call)
   , endpoint(ep)
@@ -178,7 +178,6 @@ OpalConnection::OpalConnection(OpalCall & call,
   , q931Cause(0x100)
   , silenceDetector(NULL)
   , echoCanceler(NULL)
-  , stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
 #if OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
 #endif
@@ -188,6 +187,9 @@ OpalConnection::OpalConnection(OpalCall & call,
   PAssert(ownerCall.SafeReference(), PLogicError);
 
   ownerCall.connectionsActive.Append(this);
+
+  if (stringOptions != NULL)
+    m_stringOptions = *stringOptions;
 
   detectInBandDTMF = !endpoint.GetManager().DetectInBandDTMFDisabled();
   minAudioJitterDelay = endpoint.GetManager().GetMinAudioJitterDelay();
@@ -240,7 +242,6 @@ OpalConnection::~OpalConnection()
 #if OPAL_T120DATA
   delete t120handler;
 #endif
-  delete stringOptions;
 
   ownerCall.connectionsActive.Remove(this);
   ownerCall.SafeDereference();
@@ -1089,30 +1090,19 @@ PBoolean OpalConnection::OnOpenIncomingMediaChannels()
 }
 
 
-void OpalConnection::SetStringOptions(StringOptions * options)
-{
-  if (LockReadWrite()) {
-    if (stringOptions != NULL)
-      delete stringOptions;
-    stringOptions = options;
-    UnlockReadWrite();
-  }
-}
-
-
 void OpalConnection::ApplyStringOptions()
 {
-  if (stringOptions != NULL && LockReadWrite()) {
-    if (stringOptions->Contains("Disable-Jitter"))
+  if (LockReadWrite()) {
+    if (m_stringOptions.Contains("Disable-Jitter"))
       maxAudioJitterDelay = minAudioJitterDelay = 0;
-    PString str = (*stringOptions)("Max-Jitter");
+    PString str = m_stringOptions("Max-Jitter");
     if (!str.IsEmpty())
       maxAudioJitterDelay = str.AsUnsigned();
-    str = (*stringOptions)("Min-Jitter");
+    str = m_stringOptions("Min-Jitter");
     if (!str.IsEmpty())
       minAudioJitterDelay = str.AsUnsigned();
-    if (stringOptions->Contains("Record-Audio"))
-      recordAudioFilename = (*stringOptions)("Record-Audio");
+    if (m_stringOptions.Contains("Record-Audio"))
+      recordAudioFilename = m_stringOptions("Record-Audio");
     UnlockReadWrite();
   }
 }
