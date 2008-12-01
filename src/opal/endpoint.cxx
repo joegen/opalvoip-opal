@@ -492,6 +492,10 @@ OpalMediaFormatList OpalEndPoint::GetMediaFormats() const
   AddVideoMediaFormats(formats);
 #endif
 
+#if OPAL_IM_CAPABILITY
+  AddIMMediaFormats(formats);
+#endif
+
   return formats;
 }
 
@@ -596,5 +600,13 @@ PString OpalEndPoint::GetSSLCertificate() const
   return "server.pem";
 }
 #endif
+
+#if OPAL_IM_CAPABILITY
+void OpalEndPoint::AddIMMediaFormats(OpalMediaFormatList & mediaFormats, const OpalConnection * connection) const
+{
+  manager.AddIMMediaFormats(mediaFormats, connection);
+}
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
