@@ -67,7 +67,7 @@ class OpalMSRPManager : public PObject
     //
     //  Allocate a new MSRP session ID
     //
-    std::string OpalMSRPManager::AllocateID();
+    std::string AllocateID();
 
     //
     //  Dellocate an existing MSRP session ID

@@ -67,7 +67,8 @@ VPATH_CXX := $(OPAL_SRCDIR)/opal \
 	     $(OPAL_SRCDIR)/rtp \
 	     $(OPAL_SRCDIR)/lids \
 	     $(OPAL_SRCDIR)/codec \
-             $(OPAL_SRCDIR)/t38
+             $(OPAL_SRCDIR)/t38 \
+             $(OPAL_SRCDIR)/im
 
 ifneq (,$(wildcard src/iax2))
 IAX2_AVAIL = yes
@@ -332,6 +333,11 @@ SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx \
 endif
 
 
+##################
+# IM/MSRP
+
+SOURCES += $(OPAL_SRCDIR)/im/msrp.cxx \
+           $(OPAL_SRCDIR)/im/im_mf.cxx
 
 ##################
 # Software codecs
