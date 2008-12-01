@@ -206,6 +206,7 @@
   #define H323_DISABLE_T38 1
 #endif
 
+#undef  OPAL_IM_CAPABILITY
 
 /////////////////////////////////////////////////
 //

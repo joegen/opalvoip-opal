@@ -868,7 +868,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
                                                  unsigned ft,
                                                  unsigned cr,
                                                  time_t ts)
-  : formatName(fullName), mediaType(_mediaType)
+  : formatName(fullName), mediaType(_mediaType), forceIsTransportable(false)
 {
   codecVersionTime = ts;
   rtpPayloadType = pt;
@@ -889,8 +889,15 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
     AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::ClockRateOption(), true, OpalMediaOption::AlwaysMerge, cr));
 
   // assume non-dynamic payload types are correct and do not need deconflicting
-  if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType >= RTP_DataFrame::MaxPayloadType)
+  if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType >= RTP_DataFrame::MaxPayloadType) {
+    if (rtpPayloadType == RTP_DataFrame::MaxPayloadType && 
+        rtpEncodingName.GetLength() > 0 &&
+        rtpEncodingName[0] == '+') {
+      forceIsTransportable = true;
+      rtpEncodingName = rtpEncodingName.Mid(1);
+    }
     return;
+  }
 
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
@@ -978,6 +985,9 @@ bool OpalMediaFormatInternal::IsValid() const
 
 bool OpalMediaFormatInternal::IsTransportable() const
 {
+  if (forceIsTransportable)
+    return true;
+
   if (rtpPayloadType >= RTP_DataFrame::MaxPayloadType)
     return false;
 
@@ -1634,6 +1644,17 @@ void OpalMediaFormatList::Reorder(const PStringArray & order)
     }
   }
   AllowDeleteObjects();
+}
+
+bool OpalMediaFormatList::HasType(const OpalMediaType & type, bool mustBeTransportable) const
+{
+  OpalMediaFormatList::const_iterator format;
+  for (format = begin(); format != end(); ++format) {
+    if (format->GetMediaType() == type && (mustBeTransportable || format->IsTransportable()))
+      return true;
+  }
+
+  return false;
 }
 
 

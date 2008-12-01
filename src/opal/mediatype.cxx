@@ -108,6 +108,11 @@ OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * _mediaType, const 
   GetMediaTypeToSessionIDMap().insert(MediaTypeToSessionIDMap_T::value_type(_mediaType, preferredSessionId));
 }
 
+OpalMediaSession * OpalMediaTypeDefinition::CreateMediaSession(OpalConnection & /*conn*/, unsigned /* sessionID*/) const
+{ 
+  return NULL; 
+}
+
 unsigned OpalMediaTypeDefinition::GetDefaultSessionId(const OpalMediaType & mediaType)
 {
   PWaitAndSignal m(GetMapMutex());
@@ -178,6 +183,12 @@ PString OpalRTPAVPMediaType::GetRTPEncoding() const
 {
   return "rtp/avp";
 }
+
+OpalMediaSession * OpalRTPAVPMediaType::CreateMediaSession(OpalConnection & _conn, unsigned /* sessionID*/) const
+{
+  return new OpalRTPMediaSession(_conn, mediaType);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 

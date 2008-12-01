@@ -83,7 +83,7 @@ class SDPMediaFormat : public PObject
       const char * nteString = NULL
     );
 
-    void PrintOn(ostream & str) const;
+    virtual void PrintOn(ostream & str) const;
 
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return payloadType; }
 

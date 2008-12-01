@@ -168,6 +168,13 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     void Reorder(
       const PStringArray & order
     );
+
+    /**Determine if a list contains a specific media type
+      */
+    bool HasType(
+      const OpalMediaType & type,
+      bool mustBeTransportable = true
+    ) const;
   //@}
 
   private:
@@ -545,6 +552,7 @@ class OpalMediaFormatInternal : public PObject
     PMutex                       media_format_mutex;
     PSortedList<OpalMediaOption> options;
     time_t                       codecVersionTime;
+    bool                         forceIsTransportable;
 
   friend bool operator==(const char * other, const OpalMediaFormat & fmt);
   friend bool operator!=(const char * other, const OpalMediaFormat & fmt);
@@ -1145,6 +1153,7 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_RFC2833        "UserInput/RFC2833"
 #define OPAL_CISCONSE       "NamedSignalEvent"
 #define OPAL_T38            "T.38"
+#define OPAL_MSRP           "MSRP"
 
 extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16_16KHZ();
@@ -1171,9 +1180,16 @@ extern const OpalAudioFormat & GetOpalGSMAMR();
 extern const OpalMediaFormat & GetOpaliLBC();
 
 extern const OpalMediaFormat & GetOpalRFC2833();
+
 #if OPAL_T38_CAPABILITY
 extern const OpalMediaFormat & GetOpalCiscoNSE();
 extern const OpalMediaFormat & GetOpalT38();
+#endif
+
+#if OPAL_IM_CAPABILITY
+extern const OpalMediaFormat & GetOpalIMText();
+extern const OpalMediaFormat & GetOpalIMHTML();
+extern const OpalMediaFormat & GetOpalIMCPIM();
 #endif
 
 #define OpalPCM16          GetOpalPCM16()
@@ -1202,6 +1218,10 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalRFC2833        GetOpalRFC2833()
 #define OpalCiscoNSE       GetOpalCiscoNSE()
 #define OpalT38            GetOpalT38()
+
+#define OpalIMText         GetOpalIMText()
+#define OpalIMHTML         GetOpalIMHTML();
+#define OpalIMCPIM         GetOpalIMCPIM();
 
 #define OpalL16Mono8kHz    OpalL16_MONO_8KHZ
 #define OpalL16Mono16kHz   OpalL16_MONO_16KHZ

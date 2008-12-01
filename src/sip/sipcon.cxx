@@ -53,6 +53,10 @@
 #include <h224/h224.h>
 #endif
 
+#ifdef OPAL_IM_CAPABILITY
+#include <im/msrp.h>
+#endif
+
 #define new PNEW
 
 //
@@ -400,7 +404,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   if (!withMedia) 
     SendInviteResponse(SIP_PDU::Information_Ringing);
   else {
-    SDPSessionDescription sdpOut(GetLocalAddress());
+    SDPSessionDescription sdpOut(GetDefaultSDPConnectAddress());
     if (!OnSendSDP(true, m_rtpSessions, sdpOut)) {
       SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
       releaseMethod = ReleaseWithNothing;
@@ -440,7 +444,7 @@ PBoolean SIPConnection::SetConnected()
   
   PTRACE(3, "SIP\tSetConnected");
 
-  SDPSessionDescription sdpOut(GetLocalAddress());
+  SDPSessionDescription sdpOut(GetDefaultSDPConnectAddress());
   if (!OnSendSDP(true, m_rtpSessions, sdpOut)) {
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
     releaseMethod = ReleaseWithNothing;
@@ -499,7 +503,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalM
       rtpSession->SetUserData(new SIP_RTP_Session(*this));
 
     // Local Address of the session
-    localAddress = GetLocalAddress(rtpSession->GetLocalDataPort());
+    localAddress = GetDefaultSDPConnectAddress();
   }
   
   return rtpSession;
@@ -534,13 +538,27 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
 
     // construct offer as per RFC 3261, para 14.2
     // Use |= to avoid McCarthy boolean || from not calling video/fax
-    sdpOK  |= OfferSDPMediaDescription(OpalMediaType::Audio(), 0, rtpSessions, sdpOut);
+
+    OpalMediaFormatList formats = GetLocalMediaFormats();
+
+    // always offer audio first
+    if (formats.HasType(OpalMediaType::Audio()))
+      sdpOK  |= OfferSDPMediaDescription(OpalMediaType::Audio(), 0, rtpSessions, sdpOut);
+
 #if OPAL_VIDEO
-    sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut);
+    // always offer video second (if enabled)
+    if (formats.HasType(OpalMediaType::Video()))
+      sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut);
 #endif
-#if OPAL_H224FECC
-    sdpOK |= OfferSDPMediaDescription(OpalH224MediaType::MediaType(), 0, rtpSessions, sdpOut);
-#endif
+
+    // offer other formats
+    OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaType::GetList();
+    OpalMediaTypeFactory::KeyList_T::iterator r;
+    for (r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
+      OpalMediaType f = *r;
+      if (f != OpalMediaType::Video() && f != OpalMediaType::Audio())
+        sdpOK |= OfferSDPMediaDescription(f, 0, rtpSessions, sdpOut);
+    }
   }
 
   needReINVITE = true;
@@ -592,12 +610,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   OpalMediaFormatList formats = GetLocalMediaFormats();
 
   // See if any media formats of this session id, so don't create unused RTP session
-  OpalMediaFormatList::iterator format;
-  for (format = formats.begin(); format != formats.end(); ++format) {
-    if (format->GetMediaType() == mediaType && format->IsTransportable())
-      break;
-  }
-  if (format == formats.end()) {
+  if (!formats.HasType(mediaType)) {
     PTRACE(3, "SIP\tNo media formats of type " << mediaType << ", not adding SDP");
     return PFalse;
   }
@@ -619,51 +632,67 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
     }
   }
 
-  if (localAddress.IsEmpty()) {
+  OpalMediaSession * mediaSession = NULL;
+
+  OpalTransportAddress sdpContactAddress;
+
+  if (!localAddress.IsEmpty())
+    sdpContactAddress = localAddress;
+  else {
 
     /* We are not doing media bypass, so must have some media session
        Due to the possibility of several INVITEs going out, all with different
        transport requirements, we actually need to use an rtpSession dictionary
        for each INVITE and not the one for the connection. Once an INVITE is
        accepted the rtpSessions for that INVITE is put into the connection. */
-    RTP_Session * rtpSession = rtpSessions.GetSession(rtpSessionId);
-    if (rtpSession == NULL) {
-
-      // Not already there, so create one
-      rtpSession = CreateSession(GetTransport(), rtpSessionId, NULL);
-      if (rtpSession == NULL) {
-        PTRACE(1, "SIP\tCould not create session id " << rtpSessionId << ", released " << *this);
-        Release(OpalConnection::EndedByTransportFail);
-        return PFalse;
+    // need different handling for RTP and non-RTP sessions
+    if (!mediaType.GetDefinition()->UsesRTP()) {
+      mediaSession = rtpSessions.GetMediaSession(rtpSessionId);
+      if (mediaSession == NULL) {
+        mediaSession = mediaType.GetDefinition()->CreateMediaSession(*this, rtpSessionId);
+        if (mediaSession == NULL) {
+          PTRACE(1, "SIP\tCould not create media session " << rtpSessionId << " for media type " << mediaType << ", released " << *this);
+          Release(OpalConnection::EndedByTransportFail);
+          return PFalse;
+        }
+        rtpSessions.AddMediaSession(mediaSession, mediaType);
       }
-
-      rtpSession->SetUserData(new SIP_RTP_Session(*this));
-
-      // add the RTP session to the RTP session manager in INVITE
-      rtpSessions.AddSession(rtpSession, mediaType);
+      sdpContactAddress = mediaSession->GetLocalMediaAddress();
     }
 
-    if (rtpSession == NULL)
-      return false;
+    else {
+      RTP_Session * rtpSession = rtpSessions.GetSession(rtpSessionId);
+      if (rtpSession == NULL) {
 
-    localAddress = GetLocalAddress(((RTP_UDP *)rtpSession)->GetLocalDataPort());
+        // Not already there, so create one
+        rtpSession = CreateSession(GetTransport(), rtpSessionId, false);
+        if (rtpSession == NULL) {
+          PTRACE(1, "SIP\tCould not create RTP session " << rtpSessionId << " for media type " << mediaType << ", released " << *this);
+          Release(OpalConnection::EndedByTransportFail);
+          return PFalse;
+        }
+
+        rtpSession->SetUserData(new SIP_RTP_Session(*this));
+
+        // add the RTP session to the RTP session manager in INVITE
+        rtpSessions.AddSession(rtpSession, mediaType);
+
+        mediaSession = rtpSessions.GetMediaSession(rtpSessionId);
+        PAssert(mediaSession != NULL, "cannot retrieve newly added RTP session");
+      }
+      sdpContactAddress = GetDefaultSDPConnectAddress(((RTP_UDP *)rtpSession)->GetLocalDataPort());
+    }
   }
 
-  if (localAddress.IsEmpty()) {
+  if (sdpContactAddress.IsEmpty()) {
     PTRACE(2, "SIP\tRefusing to add SDP media description for session id " << rtpSessionId << " with no transport address");
     return false;
   }
 
   if (sdp.GetDefaultConnectAddress().IsEmpty())
-    sdp.SetDefaultConnectAddress(localAddress);
+    sdp.SetDefaultConnectAddress(sdpContactAddress);
 
-  OpalMediaTypeDefinition * def;
-  if (mediaType.empty() || ((def = mediaType.GetDefinition()) == NULL)) {
-    PTRACE(2, "SIP\tCan't create media type for unknown default session ID " << rtpSessionId);
-    return false;
-  }
-
-  SDPMediaDescription * localMedia = def->CreateSDPMediaDescription(localAddress);
+  SDPMediaDescription * localMedia = mediaSession->CreateSDPMediaDescription(sdpContactAddress);
   if (localMedia == NULL) {
     PTRACE(2, "SIP\tCan't create SDP media description for media type " << mediaType);
     return false;
@@ -949,7 +978,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 }
 
 
-OpalTransportAddress SIPConnection::GetLocalAddress(WORD port) const
+OpalTransportAddress SIPConnection::GetDefaultSDPConnectAddress(WORD port) const
 {
   PIPSocket::Address localIP;
   if (!transport->GetLocalAddress().GetIpAddress(localIP)) {
@@ -964,7 +993,7 @@ OpalTransportAddress SIPConnection::GetLocalAddress(WORD port) const
   }
 
   endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
-  return OpalTransportAddress(localIP, port, "udp");
+  return OpalTransportAddress(localIP, port, transport->GetProtoPrefix());
 }
 
 
@@ -1682,8 +1711,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   PTRACE(3, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
 
   remoteFormatList.RemoveAll();
-  SDPSessionDescription sdpOut(GetLocalAddress());
-
+  SDPSessionDescription sdpOut(GetDefaultSDPConnectAddress());
 
   // get the remote media formats, if any
   SDPSessionDescription * sdpIn = originalInvite->GetSDP();
@@ -2610,6 +2638,15 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
 }
 #endif
 
+OpalMediaSession * SIPConnection::CreateIMSession(unsigned sessionID)
+{
+#ifndef OPAL_IM_CAPABILITY
+  return NULL;
+#else
+  return new OpalMSRPMediaSession(*this, sessionID);
+#endif
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2667,5 +2704,6 @@ void SIPConnection::OnSessionTimeout(PTimer &, INT)
 }
 
 #endif // OPAL_SIP
+
 
 // End of file ////////////////////////////////////////////////////////////////
