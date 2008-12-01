@@ -564,9 +564,7 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
   // See if already subscribed. Now this is not perfect as we only check the call-id and strictly
   // speaking we should check the from-tag and to-tags as well due to it being a dialog.
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(mime.GetCallID(), PSafeReadWrite);
-  if (handler != NULL)
-    handler->SetExpire(mime.GetExpires()); // Already subscribed so this must be a refresh.
-  else {
+  if (handler == NULL) {
     SIPDialogContext dialog;
     dialog.SetRequestURI(mime.GetContact());
     dialog.SetLocalURI(mime.GetTo());
@@ -583,7 +581,9 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
   }
 
   // Update expiry time
-  handler->SetExpire(mime.GetExpires());
+  unsigned expires = mime.GetExpires();
+  if (expires > 0)
+    handler->SetExpire(expires);
 
   SIP_PDU response(pdu, SIP_PDU::Successful_OK);
   response.GetMIME().SetEvent(eventPackage); // Required by spec
@@ -594,11 +594,11 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
     return true;
 
   // Send initial NOTIFY as per spec 3.1.6.2/RFC3265
-  if (eventPackage == SIPSubscribe::Dialog)
+  if (expires > 0 && eventPackage == SIPSubscribe::Dialog)
     SendNotifyDialogInfo(SIPDialogNotification(handler->GetAddressOfRecord().AsString()));
   else {
     handler->SetBody(PString::Empty());
-    handler->SendRequest(SIPHandler::Subscribing);
+    handler->SendRequest(expires > 0 ? SIPHandler::Subscribing : SIPHandler::Unsubscribing);
   }
 
   return true;

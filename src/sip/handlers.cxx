@@ -206,8 +206,9 @@ OpalTransport * SIPHandler::GetTransport()
 
 void SIPHandler::SetExpire(int e)
 {
-  expire = e > 0 ? e : originalExpire;
+  expire = e;
   PTRACE(3, "SIP\tExpiry time for " << GetMethod() << " set to " << expire << " seconds.");
+
   // Only modify the originalExpire for future requests if IntervalTooBrief gives
   // a bigger expire time. expire itself will always reflect the proxy decision
   // (bigger or lower), but originalExpire determines what is used in future 
@@ -265,7 +266,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
     case Subscribing :
     case Refreshing :
     case Restoring :
-      SetState(s);
+      SetState(expire > 0 ? s : Unsubscribing);
       if (GetTransport() == NULL) 
         retryLater = true;
       break;
@@ -523,29 +524,35 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 {
   SIPRegister::Params params = m_parameters;
 
-  if (params.m_contactAddress.IsEmpty()) {
-    // Nothing explicit, put in all the bound interfaces.
-    unsigned qvalue = 1000;
-    PString userName = SIPURL(params.m_addressOfRecord).GetUserName();
-    OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses(true, &trans);
-    for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
-      if (!params.m_contactAddress.IsEmpty())
-        params.m_contactAddress += ", ";
-      SIPURL contact(userName, interfaces[i]);
-      contact.Sanitise(SIPURL::ContactURI);
-      params.m_contactAddress += contact.AsQuotedString();
-      params.m_contactAddress.sprintf(qvalue < 1000 ? ";q=0.%03u" : ";q=1", qvalue);
-      qvalue -= 1000/interfaces.GetSize();
-    }
+  if (expire == 0 || GetState() == Unsubscribing) {
+    params.m_expire = 0;
+    params.m_contactAddress = "*";
   }
   else {
-    // Sanitise the contact address URI provided
-    SIPURL contact(params.m_contactAddress);
-    contact.Sanitise(SIPURL::ContactURI);
-    params.m_contactAddress = contact.AsQuotedString();
-  }
+    params.m_expire = expire;
 
-  params.m_expire = state != Unsubscribing ? expire : 0;
+    if (params.m_contactAddress.IsEmpty()) {
+      // Nothing explicit, put in all the bound interfaces.
+      unsigned qvalue = 1000;
+      PString userName = SIPURL(params.m_addressOfRecord).GetUserName();
+      OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses(true, &trans);
+      for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
+        if (!params.m_contactAddress.IsEmpty())
+          params.m_contactAddress += ", ";
+        SIPURL contact(userName, interfaces[i]);
+        contact.Sanitise(SIPURL::ContactURI);
+        params.m_contactAddress += contact.AsQuotedString();
+        params.m_contactAddress.sprintf(qvalue < 1000 ? ";q=0.%03u" : ";q=1", qvalue);
+        qvalue -= 1000/interfaces.GetSize();
+      }
+    }
+    else {
+      // Sanitise the contact address URI provided
+      SIPURL contact(params.m_contactAddress);
+      contact.Sanitise(SIPURL::ContactURI);
+      params.m_contactAddress = contact.AsQuotedString();
+    }
+  }
 
   return new SIPRegister(endpoint, trans, m_proxy, GetCallID(), m_sequenceNumber, params);
 }
@@ -639,7 +646,8 @@ void SIPRegisterHandler::UpdateParameters(const SIPRegister::Params & params)
   if (!params.m_password.IsEmpty())
     m_password = params.m_password; // Adjust the password if required 
 
-  SetExpire(params.m_expire);
+  if (params.m_expire > 0)
+    SetExpire(params.m_expire);
 }
 
 
@@ -748,7 +756,8 @@ void SIPSubscribeHandler::UpdateParameters(const SIPSubscribe::Params & params)
   if (!params.m_password.IsEmpty())
     m_password = params.m_password; // Adjust the password if required 
 
-  SetExpire(params.m_expire);
+  if (params.m_expire > 0)
+    SetExpire(params.m_expire);
 }
 
 
@@ -1093,7 +1102,7 @@ SIPNotifyHandler::SIPNotifyHandler(SIPEndPoint & endpoint,
 SIPTransaction * SIPNotifyHandler::CreateTransaction(OpalTransport & trans)
 {
   PString state;
-  if (GetState() != Unsubscribing)
+  if (expire > 0 && GetState() != Unsubscribing)
     state.sprintf("active;expires=%u", expire);
   else {
     state = "terminated;reason=";
