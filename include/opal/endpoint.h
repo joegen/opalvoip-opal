@@ -684,6 +684,16 @@ class OpalEndPoint : public PObject
      */
     bool FindListenerForProtocol(const char * protoPrefix, OpalTransportAddress & addr);
 
+#ifdef OPAL_IM_CAPABILITY
+    /**Add IM media formats available on a connection.
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void AddIMMediaFormats(
+      OpalMediaFormatList & mediaFormats, ///<  Media formats to use
+      const OpalConnection * connection = NULL  ///<  Optional connection that is using formats
+    ) const;
+#endif
+
   protected:
     OpalManager   & manager;
     PCaselessString prefixName;
