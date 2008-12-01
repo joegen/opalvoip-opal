@@ -1530,6 +1530,17 @@ void OpalManager::StopRecording(const PString & callToken)
 }
 
 
+#if OPAL_IM_CAPABILITY
+
+void OpalManager::AddIMMediaFormats(OpalMediaFormatList & mediaFormats, const OpalConnection * /*connection*/) const
+{
+  mediaFormats += OpalIMText;
+  mediaFormats += OpalIMHTML;
+  mediaFormats += OpalIMCPIM;
+}
+
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalManager::InterfaceMonitor::InterfaceMonitor(OpalManager & manager)
