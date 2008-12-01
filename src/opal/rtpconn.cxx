@@ -60,7 +60,6 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
                                    unsigned int options,
                                 StringOptions * stringOptions)
   : OpalConnection(call, ep, token, options, stringOptions)
-  , remoteIsNAT(false)
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
@@ -68,6 +67,7 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
 #ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
+  , remoteIsNAT(false)
 {
   rfc2833Handler  = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
   ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
