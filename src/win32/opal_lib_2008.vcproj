@@ -6179,6 +6179,18 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="IM Sources"
+				>
+				<File
+					RelativePath="..\im\im_mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\im\msrp.cxx"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -6760,6 +6772,18 @@
 				</File>
 				<File
 					RelativePath="..\..\include\h460\h460tm.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="IM Headers"
+				>
+				<File
+					RelativePath="..\..\include\im\im.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\im\msrp.h"
 					>
 				</File>
 			</Filter>
