@@ -258,7 +258,9 @@ class CallIMDialog : public wxDialog
     PwxString m_Address;
 
   private:
-    void OnOK(wxCommandEvent & event);
+    void OnOK(int code);
+    void OnPage(wxCommandEvent & event);
+    void OnSession(wxCommandEvent & event);
     void OnAddressChange(wxCommandEvent & event);
 
     wxComboBox * m_AddressCtrl;
@@ -808,7 +810,7 @@ class MyManager : public wxFrame, public OpalManager
     bool HasSpeedDialName(const wxString & name) const;
     bool HasSpeedDialNumber(const wxString & number, const wxString & ignore) const;
 
-    void MakeCall(const PwxString & address, const PwxString & local = wxEmptyString);
+    void MakeCall(const PwxString & address, const PwxString & local = wxEmptyString, OpalConnection::StringOptions * options = NULL);
     void AnswerCall();
     void RejectCall();
     void HangUpCall();
