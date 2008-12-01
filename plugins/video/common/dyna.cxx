@@ -387,6 +387,8 @@ int FFMPEGLibrary::AvcodecOpen(AVCodecContext *ctx, AVCodec *codec)
 
 int FFMPEGLibrary::AvcodecClose(AVCodecContext *ctx)
 {
+  WaitAndSignal m(processLock);
+
   WITH_ALIGNED_STACK({
     return Favcodec_close(ctx);
   });
