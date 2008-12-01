@@ -73,15 +73,56 @@ class OpalMediaSession : public PObject
 {
   PCLASSINFO(OpalMediaSession, PObject);
   public:
-    OpalMediaSession(const OpalMediaType & _mediaType);
+    OpalMediaSession(OpalConnection & conn, const OpalMediaType & _mediaType);
     OpalMediaSession(const OpalMediaSession & _obj);
 
-    PObject * Clone() const { return new OpalMediaSession(*this); }
+    virtual void Close() = 0;
 
+    virtual PObject * Clone() const = 0;
+
+    virtual bool IsActive() const = 0;
+
+    virtual bool IsRTP() const = 0;
+
+    virtual bool HasFailed() const = 0;
+
+    virtual OpalTransportAddress GetLocalMediaAddress() const = 0;
+
+    virtual SDPMediaDescription * CreateSDPMediaDescription(
+      const OpalTransportAddress & localAddress
+    ) = 0;
+
+    OpalConnection & connection;
     OpalMediaType mediaType;     // media type for session
     bool autoStartReceive;       // if true, this session should receive data when the call is started
     bool autoStartTransmit;      // if true, this session  should transmit data when the call is started
     unsigned sessionId;          // unique session ID
+};
+
+/** Class for carrying RTP session information
+  */
+class OpalRTPMediaSession : public OpalMediaSession
+{
+  PCLASSINFO(OpalRTPMediaSession, OpalMediaSession);
+  public:
+    OpalRTPMediaSession(OpalConnection & conn, const OpalMediaType & _mediaType);
+    OpalRTPMediaSession(const OpalRTPMediaSession & _obj);
+
+    PObject * Clone() const { return new OpalRTPMediaSession(*this); }
+
+    virtual void Close();
+
+    virtual bool IsActive() const { return rtpSession != NULL; }
+
+    virtual bool IsRTP() const { return true; }
+
+    virtual bool HasFailed() const { return rtpSession != NULL && rtpSession->HasFailed(); }
+
+    virtual OpalTransportAddress GetLocalMediaAddress() const;
+
+    virtual SDPMediaDescription * CreateSDPMediaDescription(
+      const OpalTransportAddress & localAddress
+    );
 
     RTP_Session * rtpSession;    // RTP session
 };
@@ -97,7 +138,7 @@ class OpalRTPSessionManager : public PObject
   //@{
     /**Construct new session manager database.
       */
-    OpalRTPSessionManager();
+    OpalRTPSessionManager(OpalConnection & conn);
     ~OpalRTPSessionManager();
   //@}
 
@@ -134,6 +175,10 @@ class OpalRTPSessionManager : public PObject
       RTP_Session * session,          ///<  Session to add.
       const OpalMediaType & mediaType ///< initial media type for this session
     );
+    void AddMediaSession(
+      OpalMediaSession * session,          ///<  Session to add.
+      const OpalMediaType & mediaType ///< initial media type for this session
+    );
 
     /**Release the session.
      */
@@ -147,6 +192,9 @@ class OpalRTPSessionManager : public PObject
     RTP_Session * GetSession(
       unsigned sessionID    ///<  Session ID to get.
     ) const;
+    OpalMediaSession * GetMediaSession(
+      unsigned sessionID
+    ) const;
 
     void SetCleanup(bool v) { m_cleanupOnDelete = v; }
 
@@ -158,6 +206,7 @@ class OpalRTPSessionManager : public PObject
   protected:
     void SetOldOptions(unsigned channelId, const OpalMediaType & mediaType, bool rx, bool tx);
 
+    OpalConnection & connection;
     PMutex m_mutex;
     bool m_initialised;
     bool m_cleanupOnDelete;
@@ -165,7 +214,7 @@ class OpalRTPSessionManager : public PObject
     SessionDict sessions;
 
   private:
-    OpalRTPSessionManager (const OpalRTPSessionManager & other): PObject (other) { }
+    OpalRTPSessionManager (const OpalRTPSessionManager & other): PObject (other), connection(other.connection) { }
     OpalRTPSessionManager & operator=(const OpalRTPSessionManager &) { return *this; }
 
 };

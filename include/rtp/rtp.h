@@ -817,7 +817,7 @@ class RTP_Session : public PObject
     void SetFailed(bool v)
     { failed = v; }
 
-    bool GetFailed() const
+    bool HasFailed() const
     { return failed; }
 
   protected:

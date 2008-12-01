@@ -1388,6 +1388,12 @@ class OpalConnection : public PSafeObject
       */
     PDECLARE_NOTIFIER(OpalMediaCommand, OpalConnection, OnMediaCommand);
 
+    //
+    //  called when a IM session is requireed
+    //  default is to return NULL
+    //
+    virtual OpalMediaSession * CreateIMSession(unsigned sessionID);
+
   protected:
     void OnConnectedInternal();
 

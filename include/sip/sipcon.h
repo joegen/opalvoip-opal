@@ -385,7 +385,7 @@ class SIPConnection : public OpalRTPConnection
     );
   //@}
 
-    OpalTransportAddress GetLocalAddress(WORD port = 0) const;
+    OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;
 
     OpalTransport & GetTransport() const { return *transport; }
 
@@ -406,6 +406,12 @@ class SIPConnection : public OpalRTPConnection
     virtual void OnMediaCommand(OpalMediaCommand & note, INT extra);
 
     virtual void OnStartTransaction(SIPTransaction & transaction);
+
+    //
+    //  called when a IM session is requireed
+    //  default is to return NULL
+    //
+    virtual OpalMediaSession * CreateIMSession(unsigned sessionID);
 
   protected:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);

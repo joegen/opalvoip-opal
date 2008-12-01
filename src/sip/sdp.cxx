@@ -397,7 +397,7 @@ void SDPMediaFormat::AddNXEToken(POrdinalSet & nxeSet, const PString & ostr)
 
 void SDPMediaFormat::PrintOn(ostream & strm) const
 {
-  PAssert(!encodingName.IsEmpty(), "SDPAudioMediaFormat encoding name is empty");
+  PAssert(!encodingName.IsEmpty(), "SDPMediaFormat encoding name is empty");
   mediaFormat.ToCustomisedOptions();
 
   PINDEX i;
