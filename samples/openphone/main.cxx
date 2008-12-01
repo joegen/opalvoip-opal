@@ -303,7 +303,9 @@ enum {
   ID_STATE_CHANGE,
   ID_STREAMS_CHANGED,
   ID_RX_MESSAGE,
-  ID_PRESENCE_MESSAGE
+  ID_PRESENCE_MESSAGE,
+  ID_IMPAGE,
+  ID_IMSESSION,
 };
 
 DECLARE_EVENT_TYPE(wxEvtLogMessage, -1)
@@ -1430,18 +1432,23 @@ void MyManager::OnSendFax(wxCommandEvent & /*event*/)
 void MyManager::OnStartIM(wxCommandEvent & /*event*/)
 {
   CallIMDialog dlg(this);
-  if (dlg.ShowModal() != wxID_OK)
+  int result = dlg.ShowModal();
+  if (result == ID_IMPAGE) {
+    PWaitAndSignal m(conversationMapMutex);
+    PString callId;
+    SIPTransaction::GenerateCallID(callId);
+    IMDialog * dialog = new IMDialog(this, callId, PString(dlg.m_Address), dlg.m_Address);
+    conversationMap.insert(ConversationMapType::value_type(callId, dialog));
+    dialog->Show();
     return;
+  }
+  if (result == ID_IMSESSION) {
+    OpalConnection::StringOptions * options = new OpalConnection::StringOptions;
+    options->SetAt("autostart", "im");
+    MakeCall(dlg.m_Address, wxEmptyString, options);
 
-  PWaitAndSignal m(conversationMapMutex);
-
-  PString callId;
-  SIPTransaction::GenerateCallID(callId);
-
-  IMDialog * dialog = new IMDialog(this, callId, PString(dlg.m_Address), dlg.m_Address);
-  conversationMap.insert(ConversationMapType::value_type(callId, dialog));
-
-  dialog->Show();
+    return;
+  }
 }
 
 
@@ -1805,7 +1812,7 @@ bool MyManager::HasSpeedDialNumber(const wxString & number, const wxString & ign
 }
 
 
-void MyManager::MakeCall(const PwxString & address, const PwxString & local)
+void MyManager::MakeCall(const PwxString & address, const PwxString & local, OpalConnection::StringOptions * options)
 {
   if (address.IsEmpty())
     return;
@@ -1820,7 +1827,7 @@ void MyManager::MakeCall(const PwxString & address, const PwxString & local)
     from = "pc:*";
 
   PString token;
-  if (SetUpCall(from, address, token)) {
+  if (SetUpCall(from, address, token, NULL, 0, options)) {
     LogWindow << "Calling \"" << address << '"' << endl;
     m_activeCall = FindCallWithLock(token, PSafeReference);
     SetState(CallingState, token);
@@ -4970,7 +4977,8 @@ void IMDialog::AddTextToScreen(const wxString & text, bool fromUs)
 ///////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(CallIMDialog, wxDialog)
-  EVT_BUTTON(XRCID("wxID_OK"), CallIMDialog::OnOK)
+  EVT_BUTTON(XRCID("ID_IMPAGE"),    CallIMDialog::OnPage)
+  EVT_BUTTON(XRCID("ID_IMSESSION"), CallIMDialog::OnSession)
   EVT_TEXT(XRCID("Address"), CallIMDialog::OnAddressChange)
 END_EVENT_TABLE()
 
@@ -4978,7 +4986,8 @@ CallIMDialog::CallIMDialog(MyManager * manager)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("CallIMDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, wxT("wxID_OK"));
+  m_ok = FindWindowByNameAs<wxButton>(this, wxT("ID_IMSESSION"));
+  m_ok = FindWindowByNameAs<wxButton>(this, wxT("ID_IMPAGE"));
   m_ok->Disable();
 
   m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, wxT("Address"));
@@ -4998,7 +5007,17 @@ CallIMDialog::CallIMDialog(MyManager * manager)
 }
 
 
-void CallIMDialog::OnOK(wxCommandEvent &)
+void CallIMDialog::OnPage(wxCommandEvent &)
+{
+  OnOK(ID_IMPAGE);
+}
+
+void CallIMDialog::OnSession(wxCommandEvent &)
+{
+  OnOK(ID_IMSESSION);
+}
+
+void CallIMDialog::OnOK(int code)
 {
   wxConfigBase * config = wxConfig::Get();
   config->DeleteGroup(RecentIMCallsGroup);
@@ -5016,8 +5035,7 @@ void CallIMDialog::OnOK(wxCommandEvent &)
       config->Write(key, entry);
     }
   }
-
-  EndModal(wxID_OK);
+  EndModal(code);
 }
 
 
