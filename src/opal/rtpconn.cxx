@@ -399,7 +399,9 @@ void OpalRTPMediaSession::Close()
 
 OpalTransportAddress OpalRTPMediaSession::GetLocalMediaAddress() const
 {
-  return ((RTP_UDP *)rtpSession)->GetLocalAddress();
+  PIPSocket::Address addr = ((RTP_UDP *)rtpSession)->GetLocalAddress();
+  WORD port               = ((RTP_UDP *)rtpSession)->GetLocalDataPort();
+  return OpalTransportAddress(addr, port, "udp$");
 }
 
 SDPMediaDescription * OpalRTPMediaSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
