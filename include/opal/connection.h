@@ -1347,6 +1347,14 @@ class OpalConnection : public PSafeObject
     /// Get the string options associated with this connection.
     const StringOptions & GetStringOptions() const { return m_stringOptions; }
 
+    /// Set the string options associated with this connection.
+    void SetStringOptions(
+      const StringOptions & options,
+      bool overwrite
+    );
+
+    virtual void ApplyStringOptions();
+
 
     /**Open the media channels associated with an incoming call
  
@@ -1360,8 +1368,6 @@ class OpalConnection : public PSafeObject
        beyond those provided by the OnAnswer interface
       */
     virtual PBoolean OnOpenIncomingMediaChannels();
-
-    virtual void ApplyStringOptions();
 
     virtual void PreviewPeerMediaFormats(const OpalMediaFormatList & fmts);
 

@@ -1090,6 +1090,17 @@ PBoolean OpalConnection::OnOpenIncomingMediaChannels()
 }
 
 
+void OpalConnection::SetStringOptions(const StringOptions & options, bool overwrite)
+{
+  if (overwrite)
+    m_stringOptions = options;
+  else {
+    for (PINDEX i = 0; i < options.GetSize(); ++i)
+      m_stringOptions.SetAt(options.GetKeyAt(i), options.GetDataAt(i));
+  }
+}
+
+
 void OpalConnection::ApplyStringOptions()
 {
   if (LockReadWrite()) {
