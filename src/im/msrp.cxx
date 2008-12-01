@@ -36,13 +36,17 @@
 #endif
 
 #include <ptlib/socket.h>
-#include <opal/transports.h>
-#include <opal/mediafmt.h>
 #include <ptclib/random.h>
+
+#include <opal/transports.h>
+#include <opal/mediatype.h>
+#include <opal/mediafmt.h>
 
 #include <im/msrp.h>
 
 #define DEFAULT_MSRP_PORT   2855
+
+#if OPAL_IM_CAPABILITY
 
 #if OPAL_SIP
 
@@ -322,7 +326,7 @@ bool OpalMSRPManager::GetLocalPort(WORD & port)
 }
 
 
-
+#endif //  OPAL_IM_CAPABILITY
 
 
 

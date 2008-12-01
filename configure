@@ -735,6 +735,7 @@ OPAL_H323
 OPAL_IAX2
 OPAL_H224FECC
 OPAL_T38_CAPABILITY
+OPAL_IM_CAPABILITY
 OPAL_FAX
 OPAL_H450
 OPAL_H460
@@ -1370,6 +1371,7 @@ Optional Features:
   --enable-iax            whether to enable IAX2 protocol support
   --enable-h224           whether to enable H.224 protocol support
   --enable-t38            whether to enable T.38 capability support
+  --enable-im             whether to enable IM capability support
   --enable-fax            whether to enable T.38 FAX protocol support
   --enable-h450           whether to enable H.450
   --enable-h460           whether to enable H.460
@@ -4351,6 +4353,7 @@ OPAL_SIP=yes
 OPAL_IAX2=yes
 OPAL_VIDEO=yes
 OPAL_T38_CAPABILITY=yes
+OPAL_IM_CAPABILITY=yes
 OPAL_FAX=yes
 OPAL_H224FECC=yes
 OPAL_H450=yes
@@ -9971,6 +9974,50 @@ _ACEOF
 
 
 
+          if test "x$OPAL_IM_CAPABILITY" = "x"; then
+            { { echo "$as_me:$LINENO: error: No default specified for OPAL_IM_CAPABILITY, please correct configure.ac" >&5
+echo "$as_me: error: No default specified for OPAL_IM_CAPABILITY, please correct configure.ac" >&2;}
+   { (exit 1); exit 1; }; }
+	  fi
+          # Check whether --enable-im was given.
+if test "${enable_im+set}" = set; then
+  enableval=$enable_im; OPAL_IM_CAPABILITY=$enableval
+fi
+
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: im support disabled due to disabled dependency " >&5
+echo "$as_me: im support disabled due to disabled dependency " >&6;}
+	      OPAL_IM_CAPABILITY=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: im support disabled due to disabled dependency " >&5
+echo "$as_me: im support disabled due to disabled dependency " >&6;}
+	      OPAL_IM_CAPABILITY=no
+	    fi
+	  fi
+
+
+          { echo "$as_me:$LINENO: checking whether to enable IM capability support" >&5
+echo $ECHO_N "checking whether to enable IM capability support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: result: $OPAL_IM_CAPABILITY" >&5
+echo "${ECHO_T}$OPAL_IM_CAPABILITY" >&6; }
+
+
+          if test "x$OPAL_IM_CAPABILITY" = "xyes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define OPAL_IM_CAPABILITY 1
+_ACEOF
+
+          fi
+
+
+
           if test "x$OPAL_FAX" = "x"; then
             { { echo "$as_me:$LINENO: error: No default specified for OPAL_FAX, please correct configure.ac" >&5
 echo "$as_me: error: No default specified for OPAL_FAX, please correct configure.ac" >&2;}
@@ -11329,6 +11376,7 @@ OPAL_H323!$OPAL_H323$ac_delim
 OPAL_IAX2!$OPAL_IAX2$ac_delim
 OPAL_H224FECC!$OPAL_H224FECC$ac_delim
 OPAL_T38_CAPABILITY!$OPAL_T38_CAPABILITY$ac_delim
+OPAL_IM_CAPABILITY!$OPAL_IM_CAPABILITY$ac_delim
 OPAL_FAX!$OPAL_FAX$ac_delim
 OPAL_H450!$OPAL_H450$ac_delim
 OPAL_H460!$OPAL_H460$ac_delim
@@ -11360,7 +11408,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 54; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 55; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
