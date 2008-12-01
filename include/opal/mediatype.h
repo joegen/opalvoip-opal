@@ -45,6 +45,7 @@ extern int mediaTypeLoader;
 
 class OpalMediaTypeDefinition;
 class OpalSecurityMode;
+class OpalConnection;
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -111,6 +112,8 @@ class SDPMediaDescription;
 class OpalTransportAddress;
 #endif
 
+class OpalMediaSession;
+
 ////////////////////////////////////////////////////////////////////////////
 //
 //  this class defines the type used to define the attributes of a media type
@@ -134,15 +137,30 @@ class OpalMediaTypeDefinition  {
     virtual ~OpalMediaTypeDefinition() { }
 
     //
+    //  if true, then this type uses RTP for transport
+    //  if not, then it uses a generic OpaMediaSession
+    //
+    virtual bool UsesRTP() const { return true; }
+
+    //
+    //
+    //
+    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
+
+    //
     //  get the string used for the RTP_FormatHandler PFactory which is used
     //  to create the RTP handler for the this media type
     //  possible values include "rtp/avp" and "udptl"
+    //
+    //  Only valid if UsesRTP return true
     //
     virtual PString GetRTPEncoding() const = 0;
 
     //
     //  create an RTP session for this media format
     //  By default, this will create a RTP_UDP session with the correct initial format
+    //
+    //  Only valid if UsesRTP return true
     //
     virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
                                                   unsigned sessionID, 
@@ -223,7 +241,7 @@ class SimpleMediaType : public OpalMediaTypeDefinition
 
     virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & ,unsigned , bool ) { return NULL; }
 
-  PString GetRTPEncoding() const { return PString::Empty(); } 
+    PString GetRTPEncoding() const { return PString::Empty(); } 
 
 #if OPAL_SIP
   public:
@@ -256,6 +274,8 @@ class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
     );
 
     virtual PString GetRTPEncoding() const;
+
+    OpalMediaSession * CreateMediaSession(OpalConnection & /*conn*/, unsigned /* sessionID*/) const;
 };
 
 
@@ -285,8 +305,6 @@ class OpalVideoMediaType : public OpalRTPAVPMediaType {
 
 #if OPAL_T38_CAPABILITY
 
-#include <opal/mediatype.h>
-
 class OpalFaxMediaType : public OpalMediaTypeDefinition 
 {
   public:
@@ -303,5 +321,25 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 
 #endif // OPAL_T38_CAPABILITY
 
+
+#if OPAL_IM_CAPABILITY
+
+class OpalIMMediaType : public OpalMediaTypeDefinition 
+{
+  public:
+    OpalIMMediaType();
+
+    PString GetRTPEncoding(void) const;
+    RTP_UDP * CreateRTPSession(OpalRTPConnection & conn, unsigned sessionID, bool remoteIsNAT);
+
+    virtual bool UsesRTP() const;
+    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
+
+#if OPAL_SIP
+    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
+#endif
+};
+
+#endif // OPAL_IM_CAPABILITY
 
 #endif // OPAL_OPAL_MEDIATYPE_H

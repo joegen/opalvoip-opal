@@ -1144,5 +1144,10 @@ void OpalConnection::OnMediaCommand(OpalMediaCommand & /*command*/, INT /*extra*
 {
 }
 
+OpalMediaSession * OpalConnection::CreateIMSession(unsigned /*sessionID*/)
+{
+  return NULL;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
