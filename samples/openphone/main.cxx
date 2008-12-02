@@ -61,6 +61,8 @@
 #include <t38/t38proto.h>
 #include <codec/vidcodec.h>
 
+#include <algorithm>
+
 
 #if defined(__WXGTK__)   || \
     defined(__WXMOTIF__) || \
@@ -528,7 +530,7 @@ MyManager::MyManager()
   m_imageListNormal = new wxImageList(48, 48, true);
 
   // Order here is important!! Must be same as IconStates enum
-  m_imageListSmall ->Add(wxICON(unknown16));
+  m_imageListSmall ->Add(wxICON(SmallPhone));
   m_imageListNormal->Add(wxICON(unknown48));
   m_imageListSmall ->Add(wxICON(absent16));
   m_imageListNormal->Add(wxICON(absent48));
@@ -1437,7 +1439,7 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
     PWaitAndSignal m(conversationMapMutex);
     PString callId;
     SIPTransaction::GenerateCallID(callId);
-    IMDialog * dialog = new IMDialog(this, callId, PString(dlg.m_Address), dlg.m_Address);
+    IMDialog * dialog = new IMDialog(this, callId, SIPURL(dlg.m_Address), dlg.m_Address);
     conversationMap.insert(ConversationMapType::value_type(callId, dialog));
     dialog->Show();
     return;
@@ -2708,6 +2710,10 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
 
     case SIPPresenceInfo::Closed :
       LogWindow << ": Closed";
+      break;
+    case SIPPresenceInfo::Unknown :
+    default:
+      LogWindow << ": Unknown";
       break;
   }
   LogWindow << endl;
@@ -4889,7 +4895,7 @@ BEGIN_EVENT_TABLE(IMDialog, wxDialog)
 END_EVENT_TABLE()
 
 IMDialog::IMDialog(MyManager * _manager, const PString & _callId, const SIPURL & _them, const PString & _remoteContact)
-  : manager(_manager), callId(_callId), them(_them.AsString()), remoteContact(_remoteContact)
+  : callId(_callId), remoteContact(_remoteContact), manager(_manager), them(_them.AsString())
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("IMDialog"));
   {
@@ -4899,7 +4905,9 @@ IMDialog::IMDialog(MyManager * _manager, const PString & _callId, const SIPURL &
     else
       t = _them.AsString();
 
-    wxString s; s.sprintf(wxT("Conversation with %s (%s)"), PwxString(t), PwxString(_callId));
+    PwxString tw(t);
+    PwxString iw(_callId);
+    wxString s; s.sprintf(wxT("Conversation with %s (%s)"), tw.c_str(), iw.c_str());
     SetTitle(s);
   }
 
