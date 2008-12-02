@@ -1009,11 +1009,11 @@ class H323EndPoint : public OpalRTPEndPoint
 #if OPAL_T38_CAPABILITY
     /**See if should auto-start receive fax channels on connection.
      */
-    PBoolean CanAutoStartReceiveFax() const { return autoStartReceiveFax; }
+    PBoolean CanAutoStartReceiveFax() const { return OpalMediaType::Fax().GetDefinition()->GetAutoStartReceive(); }
 
     /**See if should auto-start transmit fax channels on connection.
      */
-    PBoolean CanAutoStartTransmitFax() const { return autoStartTransmitFax; }
+    PBoolean CanAutoStartTransmitFax() const { return OpalMediaType::Fax().GetDefinition()->GetAutoStartTransmit(); }
 #endif
 
     /**See if should automatically do call forward of connection.
@@ -1346,8 +1346,6 @@ class H323EndPoint : public OpalRTPEndPoint
     // Configuration variables, commonly changed
     PStringList     localAliasNames;
     PStringList     localAliasPatterns;
-    PBoolean        autoStartReceiveFax;
-    PBoolean        autoStartTransmitFax;
     PBoolean        autoCallForward;
     PBoolean        disableFastStart;
     PBoolean        disableH245Tunneling;

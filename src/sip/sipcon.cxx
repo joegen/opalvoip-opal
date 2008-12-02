@@ -542,25 +542,20 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
     // construct offer as per RFC 3261, para 14.2
     // Use |= to avoid McCarthy boolean || from not calling video/fax
 
-    OpalMediaFormatList formats = GetLocalMediaFormats();
-
     // always offer audio first
-    if (formats.HasType(OpalMediaType::Audio()))
-      sdpOK  |= OfferSDPMediaDescription(OpalMediaType::Audio(), 0, rtpSessions, sdpOut);
+    sdpOK  |= OfferSDPMediaDescription(OpalMediaType::Audio(), 0, rtpSessions, sdpOut);
 
 #if OPAL_VIDEO
     // always offer video second (if enabled)
-    if (formats.HasType(OpalMediaType::Video()))
-      sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut);
+    sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut);
 #endif
 
     // offer other formats
     OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaType::GetList();
-    OpalMediaTypeFactory::KeyList_T::iterator r;
-    for (r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
-      OpalMediaType f = *r;
-      if (f != OpalMediaType::Video() && f != OpalMediaType::Audio())
-        sdpOK |= OfferSDPMediaDescription(f, 0, rtpSessions, sdpOut);
+    for (OpalMediaTypeFactory::KeyList_T::iterator r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
+      OpalMediaType mediaType = *r;
+      if (mediaType != OpalMediaType::Video() && mediaType != OpalMediaType::Audio())
+        sdpOK |= OfferSDPMediaDescription(mediaType, 0, rtpSessions, sdpOut);
     }
   }
 
@@ -606,10 +601,6 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
                                              OpalRTPSessionManager & rtpSessions,
                                              SDPSessionDescription & sdp)
 {
-  OpalTransportAddress localAddress;
-  RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
-  RTP_DataFrame::PayloadTypes nsePayloadCode = RTP_DataFrame::IllegalPayloadType;
-
   OpalMediaFormatList formats = GetLocalMediaFormats();
 
   // See if any media formats of this session id, so don't create unused RTP session
@@ -622,6 +613,10 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
 
   if (rtpSessionId == 0)
     rtpSessionId = sdp.GetMediaDescriptions().GetSize()+1;
+
+  OpalTransportAddress localAddress;
+  RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
+  RTP_DataFrame::PayloadTypes nsePayloadCode = RTP_DataFrame::IllegalPayloadType;
 
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
     PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
@@ -734,19 +729,11 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   else {
     localMedia->AddMediaFormats(formats, mediaType);
 
-#if OPAL_VIDEO
-    if (mediaType == OpalMediaType::Video()) {
-      if (endpoint.GetManager().CanAutoStartTransmitVideo())
-        localMedia->SetDirection(endpoint.GetManager().CanAutoStartReceiveVideo() ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly);
-      else
-        localMedia->SetDirection(endpoint.GetManager().CanAutoStartReceiveVideo() ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive);
-    }
-#endif
-#if OPAL_H224FECC
-    if (mediaType == OpalH224MediaType::MediaType()) {
-      localMedia->SetDirection(SDPMediaDescription::SendRecv);
-    }
-#endif
+    SDPMediaDescription::Direction dir = mediaType.GetDefinition()->GetAutoStartReceive()
+                                                 ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
+    if (mediaType.GetDefinition()->GetAutoStartTransmit())
+      dir = dir == SDPMediaDescription::RecvOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
+    localMedia->SetDirection(dir);
   }
 
   // Set format if we have an RTP payload type for RFC2833 and/or NSE
