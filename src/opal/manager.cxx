@@ -175,19 +175,17 @@ OpalManager::OpalManager()
     videoInputDevice.deviceName = devices[i];
     break;
   }
-  autoStartTransmitVideo = !videoInputDevice.deviceName.IsEmpty();
+  SetAutoStartTransmitVideo(!videoInputDevice.deviceName.IsEmpty());
 
   devices = PVideoOutputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   for (i = 0; i < devices.GetSize(); ++i) {
     if ((devices[i] *= "*.yuv") || (devices[i] *= "null"))
       continue;
     videoOutputDevice.deviceName = devices[i];
+    videoPreviewDevice = videoOutputDevice;
     break;
   }
-  autoStartReceiveVideo = !videoOutputDevice.deviceName.IsEmpty();
-
-  if (autoStartReceiveVideo)
-    videoPreviewDevice = videoOutputDevice;
+  SetAutoStartReceiveVideo(!videoOutputDevice.deviceName.IsEmpty());
 #endif
 
   garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), "Opal Garbage");
