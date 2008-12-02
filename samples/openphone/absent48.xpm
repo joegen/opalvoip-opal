@@ -1,5 +1,5 @@
 /* XPM */
-static char * Absent_xpm[] = {
+static const char * const absent48_xpm[] = {
 "48 48 1122 2",
 "  	c None",
 ". 	c #D5F2F8",
