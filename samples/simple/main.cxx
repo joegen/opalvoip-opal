@@ -412,13 +412,13 @@ PBoolean MyManager::Initialise(PArgList & args)
 #if OPAL_VIDEO
   // Set the various global options
   if (args.HasOption("rx-video"))
-    autoStartReceiveVideo = PTrue;
+    SetAutoStartReceiveVideo(true);
   if (args.HasOption("no-rx-video"))
-    autoStartReceiveVideo = PFalse;
+    SetAutoStartReceiveVideo(false);
   if (args.HasOption("tx-video"))
-    autoStartTransmitVideo = PTrue;
+    SetAutoStartTransmitVideo(true);
   if (args.HasOption("no-tx-video"))
-    autoStartTransmitVideo = PFalse;
+    SetAutoStartTransmitVideo(false);
 
   if (args.HasOption("grabber")) {
     PVideoDevice::OpenArgs video = GetVideoInputDevice();
