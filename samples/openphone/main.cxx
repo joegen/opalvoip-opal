@@ -1439,7 +1439,7 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
     PWaitAndSignal m(conversationMapMutex);
     PString callId;
     SIPTransaction::GenerateCallID(callId);
-    IMDialog * dialog = new IMDialog(this, callId, SIPURL(dlg.m_Address), dlg.m_Address);
+    IMDialog * dialog = new IMDialog(this, callId, SIPURL(dlg.m_Address.p_str()), dlg.m_Address);
     conversationMap.insert(ConversationMapType::value_type(callId, dialog));
     dialog->Show();
     return;
@@ -4903,16 +4903,14 @@ IMDialog::IMDialog(MyManager * manager, const PString & callId, const SIPURL & t
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("IMDialog"));
   {
-    PString t;
+    PStringStream str;
+    str << "Conversation with ";
     if (!them.GetDisplayName().IsEmpty())
-      t = them.GetDisplayName();
+      str << them.GetDisplayName();
     else
-      t = m_them;
-
-    PwxString tw(t);
-    PwxString iw(m_callId);
-    wxString s; s.sprintf(wxT("Conversation with %s (%s)"), tw.c_str(), iw.c_str());
-    SetTitle(s);
+      str << m_them;
+    str << " (" << m_callId << ')';
+    SetTitle(PwxString(str));
   }
 
   m_textArea    = FindWindowByNameAs<wxTextCtrl>(this, wxT("TextArea"));
