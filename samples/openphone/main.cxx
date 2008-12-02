@@ -530,7 +530,7 @@ MyManager::MyManager()
   m_imageListNormal = new wxImageList(48, 48, true);
 
   // Order here is important!! Must be same as IconStates enum
-  m_imageListSmall ->Add(wxICON(SmallPhone));
+  m_imageListSmall ->Add(wxICON(unknown16));
   m_imageListNormal->Add(wxICON(unknown48));
   m_imageListSmall ->Add(wxICON(absent16));
   m_imageListNormal->Add(wxICON(absent48));
@@ -2675,7 +2675,7 @@ IMDialog * MyManager::GetOrCreateConversation(const MessageInfo & messageInfo)
 {
   ConversationMapType::iterator r = conversationMap.find(messageInfo.callId);
   if (r != conversationMap.end()) {
-    r->second->remoteContact = messageInfo.remoteContact;
+    r->second->m_remoteContact = messageInfo.remoteContact;
     return r->second;
   }
 
@@ -4894,19 +4894,23 @@ BEGIN_EVENT_TABLE(IMDialog, wxDialog)
   EVT_CLOSE(IMDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
-IMDialog::IMDialog(MyManager * _manager, const PString & _callId, const SIPURL & _them, const PString & _remoteContact)
-  : callId(_callId), remoteContact(_remoteContact), manager(_manager), them(_them.AsString())
+IMDialog::IMDialog(MyManager * manager, const PString & callId, const SIPURL & them, const PString & remoteContact)
+  : m_callId(callId)
+  , m_remoteContact(remoteContact)
+  , m_manager(manager)
+  , m_them(them.AsString())
+  , m_us(wxT("(local)"))
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("IMDialog"));
   {
     PString t;
-    if (!_them.GetDisplayName().IsEmpty())
-      t = _them.GetDisplayName();
+    if (!them.GetDisplayName().IsEmpty())
+      t = them.GetDisplayName();
     else
-      t = _them.AsString();
+      t = m_them;
 
     PwxString tw(t);
-    PwxString iw(_callId);
+    PwxString iw(m_callId);
     wxString s; s.sprintf(wxT("Conversation with %s (%s)"), tw.c_str(), iw.c_str());
     SetTitle(s);
   }
@@ -4915,21 +4919,19 @@ IMDialog::IMDialog(MyManager * _manager, const PString & _callId, const SIPURL &
   m_enteredText = FindWindowByNameAs<wxTextCtrl>(this, wxT("EnteredText"));
   m_enteredText->SetFocus();
 
-  defaultStyle = m_textArea->GetDefaultStyle();
-  ourStyle = defaultStyle;
-  theirStyle = defaultStyle;
-  ourStyle.SetTextColour(*wxRED);
-  theirStyle.SetTextColour(wxColour(0, 0xc0, 0));
-
-  us = wxT("(local)");
+  m_defaultStyle = m_textArea->GetDefaultStyle();
+  m_ourStyle = m_defaultStyle;
+  m_theirStyle = m_defaultStyle;
+  m_ourStyle.SetTextColour(*wxRED);
+  m_theirStyle.SetTextColour(wxColour(0, 0xc0, 0));
 
   manager->conversationMap.insert(MyManager::ConversationMapType::value_type((const char *)callId, this));
 }
 
 IMDialog::~IMDialog()
 {
-  PString key = callId;
-  manager->conversationMap.erase((const char *)key);
+  PString key = m_callId;
+  m_manager->conversationMap.erase((const char *)key);
 }
 
 void IMDialog::OnCloseWindow(wxCloseEvent & WXUNUSED(event))
@@ -4952,13 +4954,13 @@ void IMDialog::SendCurrentText()
   PwxString text = m_enteredText->GetValue();
   AddTextToScreen(text, true);
   m_enteredText->SetValue(wxT(""));
-  if (manager->sipEP->Message(them.p_str(), text.p_str(), remoteContact, callId)) {
-    LogWindow << "Sending page mode IM to " << them << " (" << callId << ")" << endl;
+  if (m_manager->sipEP->Message(m_them.p_str(), text.p_str(), m_remoteContact, m_callId)) {
+    LogWindow << "Sending page mode IM to " << m_them << " (" << m_callId << ")" << endl;
   } else {
-    LogWindow << "Page mode IM to " << them << " failed" << endl;
-    m_textArea->SetDefaultStyle(theirStyle);
+    LogWindow << "Page mode IM to " << m_them << " failed" << endl;
+    m_textArea->SetDefaultStyle(m_theirStyle);
     m_textArea->AppendText(wxT("ERROR: Message could not be delivered"));
-    m_textArea->SetDefaultStyle(defaultStyle);
+    m_textArea->SetDefaultStyle(m_defaultStyle);
     m_textArea->AppendText(wxT("\n"));
   }
 }
@@ -4970,14 +4972,14 @@ void IMDialog::AddTextToScreen(const wxString & text, bool fromUs)
   m_textArea->AppendText(nowStr);
   m_textArea->AppendText(wxT(" "));
   if (fromUs) {
-    m_textArea->SetDefaultStyle(ourStyle);
-    m_textArea->AppendText(us);
+    m_textArea->SetDefaultStyle(m_ourStyle);
+    m_textArea->AppendText(m_us);
   } else {
-    m_textArea->SetDefaultStyle(theirStyle);
-    m_textArea->AppendText(them);
+    m_textArea->SetDefaultStyle(m_theirStyle);
+    m_textArea->AppendText(m_them);
   }
   m_textArea->AppendText(wxT(": "));
-  m_textArea->SetDefaultStyle(defaultStyle);
+  m_textArea->SetDefaultStyle(m_defaultStyle);
   m_textArea->AppendText(text);
   m_textArea->AppendText(wxT("\n"));
 }
