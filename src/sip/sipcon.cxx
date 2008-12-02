@@ -465,7 +465,10 @@ PBoolean SIPConnection::SetConnected()
 }
 
 
-RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalMediaType & mediaType, const OpalTransportAddress & mediaAddress, OpalTransportAddress & localAddress)
+RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId,
+                                        const OpalMediaType & mediaType,
+                                        const OpalTransportAddress & mediaAddress,
+                                        OpalTransportAddress & localAddress)
 {
   RTP_UDP *rtpSession = NULL;
   RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
@@ -503,7 +506,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalM
       rtpSession->SetUserData(new SIP_RTP_Session(*this));
 
     // Local Address of the session
-    localAddress = GetDefaultSDPConnectAddress();
+    localAddress = OpalTransportAddress(rtpSession->GetLocalAddress(), rtpSession->GetLocalDataPort());
   }
   
   return rtpSession;
@@ -847,13 +850,15 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     }
     else {
       // see if remote socket information has changed
-      remoteChanged = (rtpSession->GetRemoteAddress() != ip) || (rtpSession->GetRemoteDataPort() != port);
-      if (remoteChanged) {
+      bool remoteSet = rtpSession->GetRemoteDataPort() != 0 && rtpSession->GetRemoteAddress().IsValid();
+      if (remoteSet)
+        remoteChanged = (rtpSession->GetRemoteAddress() != ip) || (rtpSession->GetRemoteDataPort() != port);
+      if (remoteChanged || !remoteSet) {
+        PTRACE_IF(3, remoteChanged, "SIP\tRemote changed IP address");
         if (!rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
           PTRACE(1, "SIP\tCannot set remote ports on RTP session");
           return false;
         }
-        PTRACE(4, "SIP\tRemote changed IP address");
       }
     }
   }
@@ -899,7 +904,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       bool paused = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
       recvStream->SetPaused(paused);
       if (!paused)
-        newDirection = newDirection == SDPMediaDescription::SendOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
+        newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
     }
     else {
       recvStream->Close();
@@ -913,7 +918,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       recvStream == NULL &&
       ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId) &&
       (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
-    newDirection = SDPMediaDescription::RecvOnly;
+    newDirection = newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
 
   PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
   if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 &&
@@ -921,7 +926,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
        sendStream == NULL &&
        ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId) &&
        (sendStream = GetMediaStream(rtpSessionId, false)) != NULL)
-    newDirection = newDirection == SDPMediaDescription::RecvOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
+    newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
 
   if (newDirection == SDPMediaDescription::SendRecv) {
     // If we are sendrecv we will receive the same payload type as we transmit.
