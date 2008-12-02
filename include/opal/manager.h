@@ -871,19 +871,19 @@ class OpalManager : public PObject
 
     /**See if should auto-start receive video channels on connection.
      */
-    PBoolean CanAutoStartReceiveVideo() const { return autoStartReceiveVideo; }
+    bool CanAutoStartReceiveVideo() const { return OpalMediaType::Video().GetDefinition()->GetAutoStartReceive(); }
 
     /**Set if should auto-start receive video channels on connection.
      */
-    void SetAutoStartReceiveVideo(PBoolean can) { autoStartReceiveVideo = can; }
+    void SetAutoStartReceiveVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStartReceive(can); }
 
     /**See if should auto-start transmit video channels on connection.
      */
-    PBoolean CanAutoStartTransmitVideo() const { return autoStartTransmitVideo; }
+    bool CanAutoStartTransmitVideo() const { return OpalMediaType::Video().GetDefinition()->GetAutoStartTransmit(); }
 
     /**Set if should auto-start transmit video channels on connection.
      */
-    void SetAutoStartTransmitVideo(PBoolean can) { autoStartTransmitVideo = can; }
+    void SetAutoStartTransmitVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStartTransmit(can); }
 
 #endif
 
@@ -1231,11 +1231,6 @@ class OpalManager : public PObject
 
     PString       defaultUserName;
     PString       defaultDisplayName;
-
-#if OPAL_VIDEO
-    PBoolean          autoStartReceiveVideo;
-    PBoolean          autoStartTransmitVideo;
-#endif
 
     BYTE          rtpIpTypeofService;
     PINDEX        rtpPayloadSizeMax;

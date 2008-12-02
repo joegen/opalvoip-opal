@@ -54,11 +54,9 @@ class OpalConnection;
 typedef PFactory<OpalMediaTypeDefinition> OpalMediaTypeFactory;
 typedef OpalMediaTypeFactory::KeyList_T OpalMediaTypeList;
 
-////////////////////////////////////////////////////////////////////////////
-//
-//  define the type used to hold the media type identifiers, i.e. "audio", "video", "h.224", "fax" etc
-//
 
+/** Define the type used to hold the media type identifiers, i.e. "audio", "video", "h.224", "fax" etc
+  */
 class OpalMediaType : public std::string     // do not make this PCaselessString as that type does not work as index for std::map etc
 {
   public:
@@ -68,14 +66,14 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     virtual ~OpalMediaType()
     { }
 
-    OpalMediaType(const std::string & _str)
-      : std::string(_str) { }
+    OpalMediaType(const std::string & str)
+      : std::string(str) { }
 
-    OpalMediaType(const char * _str)
-      : std::string(_str) { }
+    OpalMediaType(const char * str)
+      : std::string(str) { }
 
-    OpalMediaType(const PString & _str)
-      : std::string((const char *)_str) { }
+    OpalMediaType(const PString & str)
+      : std::string((const char *)str) { }
 
     static const OpalMediaType & Audio();
     static const OpalMediaType & Video();
@@ -114,72 +112,83 @@ class OpalTransportAddress;
 
 class OpalMediaSession;
 
-////////////////////////////////////////////////////////////////////////////
-//
-//  this class defines the type used to define the attributes of a media type
-//
-
-class OpalMediaTypeDefinition  {
+/** This class defines the type used to define the attributes of a media type
+ */
+class OpalMediaTypeDefinition
+{
   public:
-    //
-    //  create a new media type definition
-    //
+    /// Create a new media type definition
     OpalMediaTypeDefinition(
-      const char * mediaType,          // name of the media type (audio, video etc)
-      const char * sdpType,            // name of the SDP type 
-      unsigned preferredSessionId      // preferred session ID
+      const char * mediaType,          ///< name of the media type (audio, video etc)
+      const char * sdpType,            ///< name of the SDP type 
+      unsigned     preferredSessionId, ///< preferred session ID
+      bool         autoStart = false   ///< Default value for auto-start transmit & receive
     );
 
-    //
-    //  needed to avoid gcc warning about classes with virtual functions and 
+    // Needed to avoid gcc warning about classes with virtual functions and 
     //  without a virtual destructor
-    //
     virtual ~OpalMediaTypeDefinition() { }
 
-    //
-    //  if true, then this type uses RTP for transport
-    //  if not, then it uses a generic OpaMediaSession
-    //
+    /** Get flag for media type can auto-start receive on call initiation.
+      */
+    bool GetAutoStartReceive() const { return m_autoStartReceive; }
+
+    /** Set flag for media type can auto-start receive on call initiation.
+      */
+    void SetAutoStartReceive(bool v) { m_autoStartReceive = v; }
+
+    /** Get flag for media type can auto-start transmit on call initiation.
+      */
+    bool GetAutoStartTransmit() const { return m_autoStartTransmit; }
+
+    /** Set flag for media type can auto-start transmit on call initiation.
+      */
+    void SetAutoStartTransmit(bool v) { m_autoStartTransmit = v; }
+
+    /** Indicate type uses RTP for transport.
+        If false, then it uses a generic OpaMediaSession
+      */
     virtual bool UsesRTP() const { return true; }
 
-    //
-    //
-    //
-    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
+    /** Create a media session suitable for the media type.
+      */
+    virtual OpalMediaSession * CreateMediaSession(
+      OpalConnection & connection,  ///< Connection media session is being created for
+      unsigned         sessionID    ///< ID for the media session
+    ) const;
 
-    //
-    //  get the string used for the RTP_FormatHandler PFactory which is used
-    //  to create the RTP handler for the this media type
-    //  possible values include "rtp/avp" and "udptl"
-    //
-    //  Only valid if UsesRTP return true
-    //
+    /** Get the string used for the RTP_FormatHandler PFactory which is used
+        to create the RTP handler for the this media type
+        possible values include "rtp/avp" and "udptl"
+
+        Only valid if UsesRTP return true
+      */
     virtual PString GetRTPEncoding() const = 0;
 
-    //
-    //  create an RTP session for this media format
-    //  By default, this will create a RTP_UDP session with the correct initial format
-    //
-    //  Only valid if UsesRTP return true
-    //
-    virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
-                                                  unsigned sessionID, 
-                                                      bool remoteIsNAT);
+    /** Create an RTP session for this media format.
+        By default, this will create a RTP_UDP session with the correct initial format
 
-    //
-    // return the default session ID for a media type
-    //
-    unsigned GetDefaultSessionId()   { return GetDefaultSessionId(mediaType); }
+        Only valid if UsesRTP return true
+      */
+    virtual RTP_UDP * CreateRTPSession(
+      OpalRTPConnection & conn,
+      unsigned sessionID, 
+      bool remoteIsNAT);
 
+    /** Return the default session ID for this media type.
+      */
+    unsigned GetDefaultSessionId() const { return GetDefaultSessionId(m_mediaType); }
+
+    /** Return the default session ID for a specified media type.
+      */
     static unsigned GetDefaultSessionId(
-      const OpalMediaType & mediaType
+      const OpalMediaType & mediaType   ///< Media type to get default session ID for
     );
 
-    //
-    // return the media type associated with a default media type
-    //
+    /** Return the media type associated with a default media type
+      */
     static OpalMediaType GetMediaTypeForSessionId(
-      unsigned sessionId
+      unsigned sessionId      ///< Session ID to search for media type.
     );
 
   protected:
@@ -191,7 +200,9 @@ class OpalMediaTypeDefinition  {
     typedef std::map<unsigned, OpalMediaType> SessionIDToMediaTypeMap_T;
     static SessionIDToMediaTypeMap_T & GetSessionIDToMediaTypeMap();
 
-    std::string mediaType;
+    std::string m_mediaType;
+    bool        m_autoStartReceive;
+    bool        m_autoStartTransmit;
 
 #if OPAL_SIP
   public:
@@ -199,7 +210,7 @@ class OpalMediaTypeDefinition  {
     //  return the SDP type for this media type
     //
     virtual std::string GetSDPType() const 
-    { return sdpType; }
+    { return m_sdpType; }
 
     //
     //  create an SDP media description entry for this media type
@@ -209,7 +220,7 @@ class OpalMediaTypeDefinition  {
     ) = 0;
 
   protected:
-    std::string sdpType;
+    std::string m_sdpType;
 #endif
 };
 
