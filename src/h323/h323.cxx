@@ -1100,25 +1100,21 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     }
   }
 
-  if (!OnOpenIncomingMediaChannels())
-    return PFalse;
-
-  return connectionState != ShuttingDownConnection;
-}
-
-PBoolean H323Connection::OnOpenIncomingMediaChannels()
-{
   ApplyStringOptions();
 
   // Get the local capabilities before fast start or tunnelled TCS is handled
   OnSetLocalCapabilities();
 
-  H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
-
-  // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
-  // before it knows what what formats can support. 
   if (setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
+    PTRACE(3, "H225\tFast start detected");
 
+    // If we have not received caps from remote, we are going to build a
+    // fake one from the fast connect data.
+    if (!capabilityExchangeProcedure->HasReceivedCapabilities())
+      remoteCapabilities.RemoveAll();
+
+    // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
+    // before it knows what what formats can support. 
     OpalMediaFormatList previewFormats;
 
     // Extract capabilities from the fast start OpenLogicalChannel structures
@@ -1126,28 +1122,28 @@ PBoolean H323Connection::OnOpenIncomingMediaChannels()
     for (i = 0; i < setup.m_fastStart.GetSize(); i++) {
       H245_OpenLogicalChannel open;
       if (setup.m_fastStart[i].DecodeSubType(open)) {
-        const H245_H2250LogicalChannelParameters * param;
         const H245_DataType * dataType = NULL;
-        H323Channel::Directions direction;
         if (open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
           if (open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==
-                H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters) {
-            PTRACE(3, "H323\tCreateLogicalChannel - reverse channel");
+                H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters)
             dataType = &open.m_reverseLogicalChannelParameters.m_dataType;
-            param = &(const H245_H2250LogicalChannelParameters &)open.m_reverseLogicalChannelParameters.m_multiplexParameters;
-            direction = H323Channel::IsTransmitter;
-          }
         }
-        else if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() ==
-              H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters
-                                                      ::e_h2250LogicalChannelParameters) {
-          dataType = &open.m_forwardLogicalChannelParameters.m_dataType;
-          param = &(const H245_H2250LogicalChannelParameters &)
-                      open.m_forwardLogicalChannelParameters.m_multiplexParameters;
-          direction = H323Channel::IsReceiver;
+        else {
+          if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() ==
+              H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters)
+            dataType = &open.m_forwardLogicalChannelParameters.m_dataType;
         }
         if (dataType != NULL) {
-          H323Capability * capability = localCapabilities.FindCapability(*dataType);
+          H323Capability * capability = remoteCapabilities.FindCapability(*dataType);
+          if (capability == NULL &&
+                      !capabilityExchangeProcedure->HasReceivedCapabilities() &&
+                      (capability = localCapabilities.FindCapability(*dataType)) != NULL) {
+            // If we actually have the remote capabilities then the remote (very oddly)
+            // had a fast connect entry it could not do. If we have not yet got a remote
+            // cap table then build one using all possible caps.
+            capability = remoteCapabilities.Copy(*capability);
+            remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID(), capability);
+          }
           if (capability != NULL)
             previewFormats += capability->GetMediaFormat();
         }
@@ -1162,42 +1158,6 @@ PBoolean H323Connection::OnOpenIncomingMediaChannels()
   if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address) && (!setupPDU->m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
     if (!CreateOutgoingControlChannel(setup.m_h245Address))
       return PFalse;
-
-  PINDEX i;
-
-  // See if remote endpoint wants to start fast
-  if ((fastStartState != FastStartDisabled) && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
-    PTRACE(3, "H225\tFast start detected");
-
-    // If we have not received caps from remote, we are going to build a
-    // fake one from the fast connect data.
-    if (!capabilityExchangeProcedure->HasReceivedCapabilities())
-      remoteCapabilities.RemoveAll();
-
-    // Extract capabilities from the fast start OpenLogicalChannel structures
-    for (i = 0; i < setup.m_fastStart.GetSize(); i++) {
-      H245_OpenLogicalChannel open;
-      if (setup.m_fastStart[i].DecodeSubType(open)) {
-        PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
-        unsigned error;
-        H323Channel * channel = CreateLogicalChannel(open, PTrue, error);
-        if (channel != NULL) {
-          if (channel->GetDirection() == H323Channel::IsTransmitter)
-            channel->SetNumber(logicalChannels->GetNextChannelNumber());
-          fastStartChannels.Append(channel);
-        }
-      }
-      else {
-        PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << open);
-      }
-    }
-
-    PTRACE(3, "H225\tOpened " << fastStartChannels.GetSize() << " fast start channels");
-
-    // If we are incapable of ANY of the fast start channels, don't do fast start
-    if (!fastStartChannels.IsEmpty())
-      fastStartState = FastStartResponse;
-  }
 
   // Build the reply with the channels we are actually using
   connectPDU = new H323SignalPDU;
@@ -1398,8 +1358,8 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   if (!alertDone) {
     alertDone = PTrue;
     alertingTime = PTime();
-        if (!OnAlerting(pdu, remotePartyName))
-            return PFalse;
+    if (!OnAlerting(pdu, remotePartyName))
+      return PFalse;
   }
 
   if (connectionState == ShuttingDownConnection)
@@ -1720,6 +1680,37 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
     return;
+
+  if (response != AnswerCallDeferred && fastStartState != FastStartDisabled && fastStartChannels.IsEmpty()) {
+    // See if remote endpoint wants to start fast
+    H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
+    if (setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
+      // Extract capabilities from the fast start OpenLogicalChannel structures
+      for (PINDEX i = 0; i < setup.m_fastStart.GetSize(); i++) {
+        H245_OpenLogicalChannel open;
+        if (setup.m_fastStart[i].DecodeSubType(open)) {
+          PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
+          unsigned error;
+          H323Channel * channel = CreateLogicalChannel(open, PTrue, error);
+          if (channel != NULL) {
+            if (channel->GetDirection() == H323Channel::IsTransmitter)
+              channel->SetNumber(logicalChannels->GetNextChannelNumber());
+            fastStartChannels.Append(channel);
+          }
+        }
+        else {
+          PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << open);
+        }
+      }
+
+      PTRACE(3, "H225\tOpened " << fastStartChannels.GetSize() << " fast start channels");
+
+      // If we are incapable of ANY of the fast start channels, don't do fast start
+      if (!fastStartChannels.IsEmpty())
+        fastStartState = FastStartResponse;
+    }
+  }
+
 
   if (response == AnswerCallProgress) {
     H323SignalPDU want245PDU;
@@ -3994,21 +3985,8 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
                       open.m_reverseLogicalChannelParameters.m_multiplexParameters;
     direction = H323Channel::IsTransmitter;
 
+    // Must have been put in earlier
     capability = remoteCapabilities.FindCapability(*dataType);
-    if (capability == NULL) {
-      // If we actually have the remote capabilities then the remote (very oddly)
-      // had a fast connect entry it could not do. If we have not yet got a remote
-      // cap table then build one using all possible caps.
-      if (capabilityExchangeProcedure->HasReceivedCapabilities() ||
-                (capability = localCapabilities.FindCapability(*dataType)) == NULL) {
-        errorCode = H245_OpenLogicalChannelReject_cause::e_unknownDataType;
-        PTRACE(1, "H323\tCreateLogicalChannel - unknown data type");
-        return NULL; // If codec not supported, return error
-      }
-      
-      capability = remoteCapabilities.Copy(*capability);
-      remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID(), capability);
-    }
   }
   else {
     if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() !=
@@ -4027,11 +4005,12 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
 
     // See if datatype is supported
     capability = localCapabilities.FindCapability(*dataType);
-    if (capability == NULL) {
-      errorCode = H245_OpenLogicalChannelReject_cause::e_unknownDataType;
-      PTRACE(1, "H323\tCreateLogicalChannel - unknown data type");
-      return NULL; // If codec not supported, return error
-    }
+  }
+
+  if (capability == NULL) {
+    errorCode = H245_OpenLogicalChannelReject_cause::e_unknownDataType;
+    PTRACE(1, "H323\tCreateLogicalChannel - unknown data type");
+    return NULL; // If codec not supported, return error
   }
 
   if (!capability->OnReceivedPDU(*dataType, direction == H323Channel::IsReceiver)) {

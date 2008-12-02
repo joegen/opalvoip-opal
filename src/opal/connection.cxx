@@ -1084,12 +1084,6 @@ void OpalConnection::SetPhase(Phases phaseToSet)
 }
 
 
-PBoolean OpalConnection::OnOpenIncomingMediaChannels()
-{
-  return true;
-}
-
-
 void OpalConnection::SetStringOptions(const StringOptions & options, bool overwrite)
 {
   if (overwrite)
