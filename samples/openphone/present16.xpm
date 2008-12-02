@@ -1,5 +1,5 @@
 /* XPM */
-static const char * const SmallPhone_xpm[] = {
+static const char * const present16_xpm[] = {
 /* columns rows colors chars-per-pixel */
 "16 16 13 1",
 "  c opaque",

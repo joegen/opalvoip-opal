@@ -272,13 +272,13 @@ class CallIMDialog : public wxDialog
 class IMDialog : public wxDialog
 {
   public:
-    IMDialog(MyManager * _manager, const PString & _callId, const SIPURL & _them, const PString & _remoteContact);
+    IMDialog(MyManager * manager, const PString & callId, const SIPURL & them, const PString & remoteContact);
     ~IMDialog();
 
     void AddTextToScreen(const wxString & text, bool fromUs);
 
-    PString   callId;
-    PString   remoteContact;
+    PString   m_callId;
+    PString   m_remoteContact;
 
   private:
     void OnSend(wxCommandEvent & event);
@@ -287,16 +287,16 @@ class IMDialog : public wxDialog
 
     void SendCurrentText();
 
-    MyManager * manager;
+    MyManager * m_manager;
 
-    PwxString them;
-    PwxString us;
+    PwxString m_them;
+    PwxString m_us;
 
     wxTextCtrl * m_enteredText;
     wxTextCtrl * m_textArea;
-    wxTextAttr defaultStyle;
-    wxTextAttr ourStyle;
-    wxTextAttr theirStyle;
+    wxTextAttr   m_defaultStyle;
+    wxTextAttr   m_ourStyle;
+    wxTextAttr   m_theirStyle;
 
     DECLARE_EVENT_TABLE()
 };
@@ -998,7 +998,6 @@ class MyManager : public wxFrame, public OpalManager
     void StartRegistrations();
     void ReplaceRegistrations(const RegistrationList & newRegistrations);
 
-    friend IMDialog;
     typedef std::map<std::string, IMDialog *> ConversationMapType;
     PMutex conversationMapMutex;
 

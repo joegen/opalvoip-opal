@@ -1,5 +1,5 @@
 /* XPM */
-static char * Present_xpm[] = {
+static const char * const present48_xpm[] = {
 "48 48 1125 2",
 "  	c #D5F2F8",
 ". 	c #D4F1F7",
