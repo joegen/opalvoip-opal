@@ -1,9 +1,9 @@
 #
 # Makefile
 #
-# Makefile for FaxOPAL
+# Makefile for SipIM
 #
-# Copyright (c) 2008 Vox Lucida Pty. Ltd.
+# Copyright (c) 2008 Post Increment
 #
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.0 (the "License"); you may not use this file except in
@@ -27,7 +27,7 @@
 #
 
 
-PROG = faxopal
+PROG = sipim
 SOURCES := main.cxx
 
 ifndef OPALDIR
