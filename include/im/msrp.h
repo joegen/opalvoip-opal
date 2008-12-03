@@ -34,6 +34,7 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 #include <opal/rtpconn.h>
+#include <opal/manager.h>
 
 #if OPAL_SIP
 #include <sip/sdp.h>
@@ -48,10 +49,14 @@
 class OpalMSRPManager : public PObject
 {
   public:
+    enum {
+      DefaultPort = 2855
+    };
+
     //
     //  Create an MSRP manager. This is a singleton class
     //
-    OpalMSRPManager();
+    OpalMSRPManager(OpalManager & opal, WORD port = DefaultPort);
     ~OpalMSRPManager();
 
     //
@@ -74,18 +79,21 @@ class OpalMSRPManager : public PObject
     //
     void DeallocateID(const std::string & id);
 
+    //
+    //  Main listening thread
+    //
     void ThreadMain();
 
-    //
-    //  Get the singleton MSRP manager
-    //
-    static OpalMSRPManager & Current();
+    OpalManager & GetOpalManager() { return opalManager; }
 
   protected:
+    OpalManager & opalManager;
+    WORD listeningPort;
     PMutex mutex;
     PAtomicInteger lastID;
     PTCPSocket listeningSocket;
     PThread * listeningThread;
+    OpalTransportAddress listeningAddress;
 
     struct SessionInfo {
     };
@@ -102,11 +110,15 @@ class OpalMSRPManager : public PObject
 class MSRPSession 
 {
   public:
-    MSRPSession();
+    MSRPSession(OpalMSRPManager & _manager);
     ~MSRPSession();
 
     virtual SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
 
+    OpalMSRPManager & GetManager() { return manager; }
+
+  protected:
+    OpalMSRPManager & manager;
     std::string msrpSessionId;
     PString url;
     PTCPSocket msrpSocket;

@@ -41,10 +41,9 @@
 #include <opal/transports.h>
 #include <opal/mediatype.h>
 #include <opal/mediafmt.h>
+#include <opal/endpoint.h>
 
 #include <im/msrp.h>
-
-#define DEFAULT_MSRP_PORT   2855
 
 #if OPAL_IM_CAPABILITY
 
@@ -191,14 +190,20 @@ void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-MSRPSession::MSRPSession()
+MSRPSession::MSRPSession(OpalMSRPManager & _manager)
+  : manager(_manager)
 {
   // sessionIDs are supposed to unguessable
-  msrpSessionId = OpalMSRPManager::Current().AllocateID();
+  msrpSessionId = manager.AllocateID();
 
   WORD port;
-  PAssert(OpalMSRPManager::Current().GetLocalPort(port), "Cannot start MSRP manager");
-  PString hostname = PIPSocket::GetHostName();
+  manager.GetLocalPort(port);
+  PIPSocket::Address addr;
+  PString hostname;
+  if (!PIPSocket::GetHostAddress(addr))
+    hostname = PIPSocket::GetHostName();
+  else
+    hostname = addr.AsString();
 
   PStringStream str;
   str << "msrp://"
@@ -214,7 +219,7 @@ MSRPSession::MSRPSession()
 
 MSRPSession::~MSRPSession()
 {
-  OpalMSRPManager::Current().DeallocateID(msrpSessionId);
+  manager.DeallocateID(msrpSessionId);
 }
 
 SDPMediaDescription * MSRPSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
@@ -225,10 +230,42 @@ SDPMediaDescription * MSRPSession::CreateSDPMediaDescription(const OpalTransport
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+class MSRPInitialiser : public PProcessStartup
+{
+  PCLASSINFO(MSRPInitialiser, PProcessStartup)
+  public:
+    virtual void OnShutdown()
+    {
+      PWaitAndSignal m(mutex);
+      delete manager;
+      manager = NULL;
+    }
+
+    static OpalMSRPManager & KickStart(OpalManager & opalManager)
+    {
+      PWaitAndSignal m(mutex);
+      if (manager == NULL) 
+        manager = new OpalMSRPManager(opalManager, OpalMSRPManager::DefaultPort);
+
+      return * manager;
+    }
+
+protected:
+    static PMutex mutex;
+    static OpalMSRPManager * manager;
+};
+
+PMutex MSRPInitialiser::mutex;
+OpalMSRPManager * MSRPInitialiser::manager = NULL;
+
+static PFactory<PProcessStartup>::Worker<MSRPInitialiser> opalpluginStartupFactory("MSRP", true);
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
 OpalMSRPMediaSession::OpalMSRPMediaSession(OpalConnection & _conn, unsigned /*sessionId*/)
 : OpalMediaSession(_conn, "im")
 {
-  msrpSession = new MSRPSession();
+  msrpSession = new MSRPSession(MSRPInitialiser::KickStart(_conn.GetEndPoint().GetManager()));
 }
 
 OpalMSRPMediaSession::OpalMSRPMediaSession(const OpalMSRPMediaSession & _obj)
@@ -248,7 +285,7 @@ void OpalMSRPMediaSession::Close()
 OpalTransportAddress OpalMSRPMediaSession::GetLocalMediaAddress() const
 {
   OpalTransportAddress addr;
-  if (OpalMSRPManager::Current().GetLocalAddress(addr))
+  if (msrpSession->GetManager().GetLocalAddress(addr))
     return addr;
 
   return OpalTransportAddress();
@@ -261,18 +298,8 @@ SDPMediaDescription * OpalMSRPMediaSession::CreateSDPMediaDescription(const Opal
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-OpalMSRPManager & OpalMSRPManager::Current()
-{
-  static PMutex mutex;
-
-  PWaitAndSignal m(mutex);
-
-  static OpalMSRPManager msrp;
-  return msrp;
-}
-
-OpalMSRPManager::OpalMSRPManager()
-  : listeningThread(NULL)
+OpalMSRPManager::OpalMSRPManager(OpalManager & _opalManager, WORD _port)
+  : listeningThread(NULL), opalManager(_opalManager), listeningPort(_port)
 {
 }
 
@@ -312,27 +339,35 @@ bool OpalMSRPManager::GetLocalAddress(OpalTransportAddress & addr)
   PWaitAndSignal m(mutex);
 
   if (!listeningSocket.IsOpen()) {
-    if (!listeningSocket.Listen(5, DEFAULT_MSRP_PORT)) {
-      PTRACE(2, "MSRP\tCannot start MSRP listened on port " << DEFAULT_MSRP_PORT);
+    if (!listeningSocket.Listen(5, listeningPort)) {
+      PTRACE(2, "MSRP\tCannot start MSRP listener on port " << listeningPort);
       return false;
     }
 
     listeningThread = new PThreadObj<OpalMSRPManager>(*this, &OpalMSRPManager::ThreadMain);
+
+    PIPSocket::Address ip; WORD port;
+    listeningSocket.GetLocalAddress(ip, port);
+    if (ip.IsAny()) {
+      if (!PIPSocket::GetNetworkInterface(ip)) {
+        PTRACE(2, "MSRP\tUnable to get specific IP address for MSRP listener");
+        return false;
+      }
+    }
+
+    listeningAddress = OpalTransportAddress(ip, port);
+    PTRACE(2, "MSRP\tListener started on " << listeningAddress);
   }
 
-  PIPSocket::Address ip; WORD port;
-  listeningSocket.GetLocalAddress(ip, port);
-  addr = OpalTransportAddress(ip, port);
+  addr = listeningAddress;
+
   return true;
 }
 
 bool OpalMSRPManager::GetLocalPort(WORD & port)
 {
-  OpalTransportAddress addr;
-  if (!GetLocalAddress(addr))
-    return false;
-  PIPSocket::Address ip;
-  return addr.GetIpAndPort(ip, port);
+  port = listeningPort;
+  return true;
 }
 
 void OpalMSRPManager::ThreadMain()
