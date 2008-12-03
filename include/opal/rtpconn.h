@@ -201,7 +201,9 @@ class OpalRTPSessionManager : public PObject
   //@}
     PMutex & GetMutex() { return m_mutex; }
 
-    bool AllSessionsFailing();
+    virtual bool AllSessionsFailing();
+
+    virtual bool CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive, bool & autoStart);
 
   protected:
     void SetOldOptions(unsigned channelId, const OpalMediaType & mediaType, bool rx, bool tx);
@@ -393,6 +395,8 @@ class OpalRTPConnection : public OpalConnection
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
 
     virtual void SessionFailing(RTP_Session & session);
+
+    virtual bool CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive);
 
   protected:
     OpalRTPSessionManager m_rtpSessions;

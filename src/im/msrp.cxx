@@ -198,7 +198,7 @@ MSRPSession::MSRPSession()
 
   WORD port;
   PAssert(OpalMSRPManager::Current().GetLocalPort(port), "Cannot start MSRP manager");
-  PString hostname = "hostname";
+  PString hostname = PIPSocket::GetHostName();
 
   PStringStream str;
   str << "msrp://"
@@ -272,11 +272,19 @@ OpalMSRPManager & OpalMSRPManager::Current()
 }
 
 OpalMSRPManager::OpalMSRPManager()
+  : listeningThread(NULL)
 {
 }
 
 OpalMSRPManager::~OpalMSRPManager()
 {
+  PWaitAndSignal m(mutex);
+
+  if (listeningThread != NULL) {
+    listeningSocket.Close();
+    listeningThread->WaitForTermination();
+    delete listeningThread;
+  }
 }
 
 std::string OpalMSRPManager::AllocateID()
@@ -308,6 +316,8 @@ bool OpalMSRPManager::GetLocalAddress(OpalTransportAddress & addr)
       PTRACE(2, "MSRP\tCannot start MSRP listened on port " << DEFAULT_MSRP_PORT);
       return false;
     }
+
+    listeningThread = new PThreadObj<OpalMSRPManager>(*this, &OpalMSRPManager::ThreadMain);
   }
 
   PIPSocket::Address ip; WORD port;
@@ -325,6 +335,18 @@ bool OpalMSRPManager::GetLocalPort(WORD & port)
   return addr.GetIpAndPort(ip, port);
 }
 
+void OpalMSRPManager::ThreadMain()
+{
+  PTRACE(2, "MSRP\tListener thread started");
+  for (;;) {
+    PTCPSocket * socket = new PTCPSocket;
+    if (!socket->Accept(listeningSocket)) {
+      delete socket;
+      break;
+    }
+  }
+  PTRACE(2, "MSRP\tListener thread ended");
+}
 
 #endif //  OPAL_IM_CAPABILITY
 

@@ -144,10 +144,7 @@ class OpalManager : public PObject
        application to gain access to the call at later time. This is necesary
        as any pointer being returned could become invalid (due to being
        deleted) at any time due to the multithreaded nature of the OPAL
-       system. While this function does return a pointer it is only safe to
-       use immediately after the function returns. At any other time the
-       FindCallWithLock() function should be used to gain a locked pointer
-       to the call.
+       system. 
      */
     virtual PBoolean SetUpCall(
       const PString & partyA,       ///<  The A party of call
@@ -868,6 +865,12 @@ class OpalManager : public PObject
     );
 
 #if OPAL_VIDEO
+
+    //
+    // these functions are deprecated and used only for backwards compatibility
+    // applications should use OpalConnection::CanAutoStartMediaType to check whether
+    // a specific media type can be auto-started
+    //
 
     /**See if should auto-start receive video channels on connection.
      */
