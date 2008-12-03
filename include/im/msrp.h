@@ -43,6 +43,19 @@
 
 ////////////////////////////////////////////////////////////////////////////
 //
+//  Ancestor for all MSRP media types
+//
+
+class MSRPMediaType {
+  public:
+    MSRPMediaType()
+    { }
+
+    virtual const char * GetMediaFormatName() const = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////
+//
 //
 //
 
@@ -52,6 +65,8 @@ class OpalMSRPManager : public PObject
     enum {
       DefaultPort = 2855
     };
+
+    typedef PFactory<MSRPMediaType> MSRPMediaTypeFactory;
 
     //
     //  Create an MSRP manager. This is a singleton class
@@ -83,7 +98,6 @@ class OpalMSRPManager : public PObject
     //  Main listening thread
     //
     void ThreadMain();
-
     OpalManager & GetOpalManager() { return opalManager; }
 
   protected:

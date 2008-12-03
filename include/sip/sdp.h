@@ -117,6 +117,8 @@ class SDPMediaFormat : public PObject
     void AddNXEToken(POrdinalSet & nxeSet, const PString & ostr);
     PString GetNXEString(POrdinalSet & nxeSet) const;
 
+    virtual void UpdateMediaFormat() const;
+
     mutable OpalMediaFormat mediaFormat;
     RTP_DataFrame::PayloadTypes payloadType;
 
@@ -171,8 +173,6 @@ class SDPMediaDescription : public PObject
     virtual bool Decode(char key, const PString & value);
     virtual bool PostDecode();
 
-    //virtual MediaType GetMediaType() const { return mediaType; }
-
     // return the string used within SDP to identify this media type
     virtual PString GetSDPMediaType() const = 0;
 
@@ -206,6 +206,7 @@ class SDPMediaDescription : public PObject
 
     virtual void RemoveSDPMediaFormat(const SDPMediaFormat & sdpMediaFormat);
 
+    virtual void CreateSDPMediaFormats(const PStringArray & tokens);
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString) = 0;
 
     virtual PString GetSDPPortList() const = 0;

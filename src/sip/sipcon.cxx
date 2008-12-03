@@ -833,24 +833,40 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       return PFalse;
     }
 
-    // Create the RTPSession if required
-    RTP_UDP * rtpSession = OnUseRTPSession(rtpSessionId, mediaType, mediaAddress, localAddress);
-    if (rtpSession == NULL) {
-      if (!ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-        PTRACE(1, "SIP\tCannot create RTP session on non-bypassed connection");
-        return false;
+    OpalMediaSession * mediaSession = m_rtpSessions.GetMediaSession(rtpSessionId);
+
+    if (!defn->UsesRTP()) {
+
+      // create media session if required
+      if (mediaSession == NULL) {
+        mediaSession = mediaType.GetDefinition()->CreateMediaSession(*this, rtpSessionId);
+        if (mediaSession != NULL)
+          m_rtpSessions.AddMediaSession(mediaSession, mediaType);
       }
+      if (mediaSession != NULL)
+        localAddress = mediaSession->GetLocalMediaAddress();
     }
-    else {
-      // see if remote socket information has changed
-      bool remoteSet = rtpSession->GetRemoteDataPort() != 0 && rtpSession->GetRemoteAddress().IsValid();
-      if (remoteSet)
-        remoteChanged = (rtpSession->GetRemoteAddress() != ip) || (rtpSession->GetRemoteDataPort() != port);
-      if (remoteChanged || !remoteSet) {
-        PTRACE_IF(3, remoteChanged, "SIP\tRemote changed IP address");
-        if (!rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
-          PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+    else 
+    {
+      // Create the RTPSession if required
+      RTP_UDP * rtpSession = OnUseRTPSession(rtpSessionId, mediaType, mediaAddress, localAddress);
+      if (rtpSession == NULL) {
+        if (!ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
+          PTRACE(1, "SIP\tCannot create RTP session on non-bypassed connection");
           return false;
+        }
+      }
+      else {
+        // see if remote socket information has changed
+        bool remoteSet = rtpSession->GetRemoteDataPort() != 0 && rtpSession->GetRemoteAddress().IsValid();
+        if (remoteSet)
+          remoteChanged = (rtpSession->GetRemoteAddress() != ip) || (rtpSession->GetRemoteDataPort() != port);
+        if (remoteChanged || !remoteSet) {
+          PTRACE_IF(3, remoteChanged, "SIP\tRemote changed IP address");
+          if (!rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
+            PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+            return false;
+          }
         }
       }
     }

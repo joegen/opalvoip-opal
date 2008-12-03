@@ -88,7 +88,7 @@ const OpalMediaFormat & GetOpalIM##title() \
         : OpalMediaFormat(name, \
                           "im", \
                           RTP_DataFrame::MaxPayloadType, \
-                          encoding, \
+                          "+", \
                           false,  \
                           1440, \
                           512, \
@@ -97,10 +97,30 @@ const OpalMediaFormat & GetOpalIM##title() \
       { } \
   } const f; \
   return f; \
-} 
+} \
+class IM##title##MSRPMediaType : public MSRPMediaType \
+{ \
+  public: \
+    IM##title##MSRPMediaType(); \
+    virtual const char * GetMediaFormatName() const { return name; } \
+}; \
+static PFactory<MSRPMediaType>::Worker<IM##title##MSRPMediaType> worker_##IM##title##MSRPMediaType(encoding, true); \
 
-DECLARE_IM_FORMAT(Text, "IM-Text", "+text/plain");
-DECLARE_IM_FORMAT(CPIM, "IM-CPIM", "+message/cpim");
-DECLARE_IM_FORMAT(HTML, "IM-HTML", "+message/html");
+
+DECLARE_IM_FORMAT(Text, "IM-Text", "text/plain");
+DECLARE_IM_FORMAT(CPIM, "IM-CPIM", "message/cpim");
+DECLARE_IM_FORMAT(HTML, "IM-HTML", "message/html");
+
+IMTextMSRPMediaType::IMTextMSRPMediaType()
+{ }
+
+IMCPIMMSRPMediaType::IMCPIMMSRPMediaType()
+{ }
+
+IMHTMLMSRPMediaType::IMHTMLMSRPMediaType()
+{ }
+
+
+
 
 #endif // OPAL_IM_CAPABILITY

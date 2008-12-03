@@ -427,11 +427,19 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
   }
 }
 
+void SDPMediaFormat::UpdateMediaFormat() const
+{
+  mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+  if (mediaFormat.IsEmpty())
+    mediaFormat = OpalMediaFormat(encodingName);
+}
 
 const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 {
   if (mediaFormat.IsEmpty()) {
-    mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+
+    UpdateMediaFormat();
+
     PTRACE_IF(2, mediaFormat.IsEmpty(), "SDP\tCould not find media format for \""
               << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
 
@@ -467,7 +475,7 @@ bool SDPMediaFormat::ToNormalisedOptions()
   if (mediaFormat.ToNormalisedOptions())
     return true;
 
-  PTRACE(2, "SDP\tCould not normalise format \"" << GetEncodingName() << "\", pt=" << GetPayloadType() << ", removing.");
+  PTRACE(2, "SDP\tCould not normalise format \"" << encodingName << "\", pt=" << payloadType << ", removing.");
   return false;
 }
 
@@ -481,18 +489,6 @@ void SDPMediaFormat::SetPacketTime(const PString & optionName, unsigned ptime)
     PTRACE(4, "SDP\tMedia format \"" << mediaFormat << "\" option \"" << optionName
            << "\" set to " << newCount << " packets from " << ptime << " milliseconds");
   }
-}
-
-
-PBoolean SDPMediaDescription::SetTransportAddress(const OpalTransportAddress &t)
-{
-  PIPSocket::Address ip;
-  WORD port = 0;
-  if (transportAddress.GetIpAndPort(ip, port)) {
-    transportAddress = OpalTransportAddress(t, port);
-    return PTrue;
-  }
-  return PFalse;
 }
 
 
@@ -542,6 +538,16 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address)
   portCount = 0;
 }
 
+PBoolean SDPMediaDescription::SetTransportAddress(const OpalTransportAddress &t)
+{
+  PIPSocket::Address ip;
+  WORD port = 0;
+  if (transportAddress.GetIpAndPort(ip, port)) {
+    transportAddress = OpalTransportAddress(t, port);
+    return PTrue;
+  }
+  return PFalse;
+}
 
 bool SDPMediaDescription::Decode(const PStringArray & tokens)
 {
@@ -596,16 +602,22 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
         transportAddress = OpalTransportAddress(ip, (WORD)port);
   }
 
+  CreateSDPMediaFormats(tokens);
+
+  return PTrue;
+}
+
+void SDPMediaDescription::CreateSDPMediaFormats(const PStringArray & tokens)
+{
   // create the format list
   for (PINDEX i = 3; i < tokens.GetSize(); i++) {
     SDPMediaFormat * fmt = CreateSDPMediaFormat(tokens[i]);
-    if (fmt == NULL) {
+    if (fmt != NULL) 
+      formats.Append(fmt);
+    else {
       PTRACE(2, "SDP\tCannot create SDP media format for port " << tokens[i]);
     }
-    formats.Append(fmt);
   }
-
-  return PTrue;
 }
 
 
@@ -704,6 +716,7 @@ SDPMediaFormat * SDPMediaDescription::FindFormat(PString & params) const
   // extract the RTP payload type
   PINDEX pos = params.FindSpan("0123456789");
   if (pos == P_MAX_INDEX || isspace(params[pos])) {
+
     // find the format that matches the payload type
     RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)params.Left(pos).AsUnsigned();
     for (format = formats.begin(); format != formats.end(); ++format) {
@@ -714,9 +727,9 @@ SDPMediaFormat * SDPMediaDescription::FindFormat(PString & params) const
   else {
     // Check for it a format name
     pos = params.Find(' ');
-    PString fmtName = params.Left(pos);
+    PString encodingName = params.Left(pos);
     for (format = formats.begin(); format != formats.end(); ++format) {
-      if (format->GetEncodingName() == fmtName)
+      if (format->GetEncodingName() == encodingName)
         break;
     }
   }
@@ -1284,6 +1297,8 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
           case 'm' : // media name and transport address (mandatory)
             {
               if (currentMedia != NULL) {
+                PTRACE(3, "SDP\tParsed media session with " << currentMedia->GetSDPMediaFormats().GetSize()
+                                                            << " '" << currentMedia->GetSDPMediaType() << "' formats");
                 if (!currentMedia->PostDecode())
                   ok = false;
               }
@@ -1315,8 +1330,6 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
                     }
                     else if (currentMedia->Decode(tokens)) {
                       mediaDescriptions.Append(currentMedia);
-                      PTRACE(3, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize()
-                                                                  << ' ' << currentMedia->GetSDPMediaType() << " formats");
                     }
                     else {
                       delete currentMedia;
@@ -1336,6 +1349,8 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
   }
 
   if (currentMedia != NULL) {
+    PTRACE(3, "SDP\tParsed media session with " << currentMedia->GetSDPMediaFormats().GetSize()
+                                                << " '" << currentMedia->GetSDPMediaType() << "' formats");
     if (!currentMedia->PostDecode())
       ok = false;
   }
