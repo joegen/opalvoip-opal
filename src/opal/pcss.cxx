@@ -116,8 +116,8 @@ static PBoolean SetDeviceName(const PString & name,
 PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
                                       const PString & remoteParty,
                                       void * userData,
-                               unsigned int /*options*/,
-                               OpalConnection::StringOptions *)
+                               unsigned int options,
+                               OpalConnection::StringOptions * stringOptions)
 {
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
@@ -156,16 +156,26 @@ PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
   }
   delete soundChannel;
 
-  return AddConnection(CreateConnection(call, playDevice, recordDevice, userData));
+  return AddConnection(CreateConnection(call, playDevice, recordDevice, userData, options, stringOptions));
 }
 
 
 OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
                                                         const PString & playDevice,
                                                         const PString & recordDevice,
-                                                        void * /*userData*/)
+                                                        void * /*userData*/,
+                                                        unsigned options,
+                                                        OpalConnection::StringOptions * stringOptions)
 {
-  return new OpalPCSSConnection(call, *this, playDevice, recordDevice);
+  return new OpalPCSSConnection(call, *this, playDevice, recordDevice, options, stringOptions);
+}
+
+OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
+                                                        const PString & playDevice,
+                                                        const PString & recordDevice,
+                                                        void * userData)
+{
+  return CreateConnection(call, playDevice, recordDevice, userData, 0, NULL);
 }
 
 
@@ -271,8 +281,10 @@ static unsigned LastConnectionTokenID;
 OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
                                        OpalPCSSEndPoint & ep,
                                        const PString & playDevice,
-                                       const PString & recordDevice)
-  : OpalConnection(call, ep, psprintf("%u", ++LastConnectionTokenID)),
+                                       const PString & recordDevice,
+                                       unsigned options,
+                          OpalConnection::StringOptions * stringOptions)
+  : OpalConnection(call, ep, psprintf("%u", ++LastConnectionTokenID), options, stringOptions),
     endpoint(ep),
     soundChannelPlayDevice(playDevice),
     soundChannelRecordDevice(recordDevice),
