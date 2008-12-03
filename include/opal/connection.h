@@ -1376,10 +1376,9 @@ class OpalConnection : public PSafeObject
     PDECLARE_NOTIFIER(OpalMediaCommand, OpalConnection, OnMediaCommand);
 
     //
-    //  called when a IM session is requireed
-    //  default is to return NULL
+    //  indicate whether a particulat media type can be autostarted
     //
-    virtual OpalMediaSession * CreateIMSession(unsigned sessionID);
+    virtual bool CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive);
 
   protected:
     void OnConnectedInternal();

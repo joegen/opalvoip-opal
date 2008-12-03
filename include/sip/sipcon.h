@@ -407,12 +407,6 @@ class SIPConnection : public OpalRTPConnection
 
     virtual void OnStartTransaction(SIPTransaction & transaction);
 
-    //
-    //  called when a IM session is requireed
-    //  default is to return NULL
-    //
-    virtual OpalMediaSession * CreateIMSession(unsigned sessionID);
-
   protected:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);

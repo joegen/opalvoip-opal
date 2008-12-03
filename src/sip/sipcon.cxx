@@ -734,9 +734,8 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   else {
     localMedia->AddMediaFormats(formats, mediaType);
 
-    SDPMediaDescription::Direction dir = mediaType.GetDefinition()->GetAutoStartReceive()
-                                                 ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
-    if (mediaType.GetDefinition()->GetAutoStartTransmit())
+    SDPMediaDescription::Direction dir = CanAutoStartMediaType(mediaType, false) ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
+    if (CanAutoStartMediaType(mediaType, true))
       dir = dir == SDPMediaDescription::RecvOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
     localMedia->SetDirection(dir);
   }
@@ -864,15 +863,13 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   }
 
   SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(rtpSessionId);
-#if OPAL_VIDEO
-  if (mediaType == OpalMediaType::Video() && GetPhase() < EstablishedPhase) {
+  if (GetPhase() < EstablishedPhase) {
     // If processing initial INVITE and video, obey the auto-start flags
-    if (!endpoint.GetManager().CanAutoStartTransmitVideo())
+    if (!CanAutoStartMediaType(mediaType, false))
       otherSidesDir = (otherSidesDir&SDPMediaDescription::SendOnly) != 0 ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive;
-    if (!endpoint.GetManager().CanAutoStartReceiveVideo())
+    if (!CanAutoStartMediaType(mediaType, true))
       otherSidesDir = (otherSidesDir&SDPMediaDescription::RecvOnly) != 0 ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
   }
-#endif
 
   SDPMediaDescription::Direction newDirection = SDPMediaDescription::Inactive;
 
@@ -2636,16 +2633,6 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
   return PTrue;
 }
 #endif
-
-OpalMediaSession * SIPConnection::CreateIMSession(unsigned sessionID)
-{
-#ifndef OPAL_IM_CAPABILITY
-  return NULL;
-#else
-  return new OpalMSRPMediaSession(*this, sessionID);
-#endif
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 
