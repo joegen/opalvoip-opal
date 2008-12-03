@@ -54,14 +54,23 @@
 //
 //  SDP media description for MSRP
 //
+//  A new class is needed for MSRP due to the following differences
+//
+//  - the SDP type is "message"
+//  - the transport is "TCP/MSRP"
+//  - the format list is always "*". The actual supported formats are defined by the a=accept-types attribute
+//  - the OpalMediaFormats for the IM types have no RTP encoding names
+//
 
 class SDPMSRPMediaDescription : public SDPMediaDescription
 {
   PCLASSINFO(SDPMSRPMediaDescription, SDPMediaDescription);
   public:
+    SDPMSRPMediaDescription(const OpalTransportAddress & address);
     SDPMSRPMediaDescription(const OpalTransportAddress & address, const PString & url);
+
     virtual PCaselessString GetSDPTransportType() const;
-    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
+    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & encoding);
     virtual PString GetSDPMediaType() const;
     virtual PString GetSDPPortList() const;
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
@@ -69,28 +78,42 @@ class SDPMSRPMediaDescription : public SDPMediaDescription
     virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
     virtual void AddMediaFormat(const OpalMediaFormat & mediaFormat);
 
+    virtual OpalMediaFormatList GetMediaFormats() const;
+
+    // CreateSDPMediaFormats is used for processing format lists. MSRP always contains only "*"
+    virtual void CreateSDPMediaFormats(const PStringArray &) { }
+
+    // FindFormat is used only for rtpmap and fmtp, neither of which are used for MSRP
+    virtual SDPMediaFormat * FindFormat(PString &) const { return NULL; }
+
   protected:
     PString url;
     PStringToString msrpAttributes;
 };
 
-class SDPMSRPMediaFormat : public SDPMediaFormat
+////////////////////////////////////////////////////////////////////////////////////////////
+
+static OpalMediaFormat IMEncodingToOpalMediaTypeName(const PString & encoding)
 {
-  public:
-    SDPMSRPMediaFormat()
-      : SDPMediaFormat("im", RTP_DataFrame::MaxPayloadType)
-    { }
-};
+  MSRPMediaType * def = PFactory<MSRPMediaType>::CreateInstance(encoding);
+  if (def == NULL)
+    return OpalMediaFormat();
+  return def->GetMediaFormatName();
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-SDPMediaDescription * OpalIMMediaType::CreateSDPMediaDescription(const OpalTransportAddress & /*localAddress*/)
+SDPMediaDescription * OpalIMMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
 {
-  return NULL;
+  return new SDPMSRPMediaDescription(localAddress);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////
+
+SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & address)
+  : SDPMediaDescription(address)
+{
+}
 
 SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & address, const PString & _url)
   : SDPMediaDescription(address), url(_url)
@@ -107,9 +130,9 @@ PString SDPMSRPMediaDescription::GetSDPMediaType() const
   return "message"; 
 }
 
-SDPMediaFormat * SDPMSRPMediaDescription::CreateSDPMediaFormat(const PString & /*portString*/)
+SDPMediaFormat * SDPMSRPMediaDescription::CreateSDPMediaFormat(const PString & encoding)
 {
-  return new SDPMSRPMediaFormat();
+  return new SDPMediaFormat(RTP_DataFrame::MaxPayloadType, encoding);
 }
 
 PString SDPMSRPMediaDescription::GetSDPPortList() const
@@ -145,7 +168,27 @@ bool SDPMSRPMediaDescription::PrintOn(ostream & str, const PString & /*connectSt
 
 void SDPMSRPMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
-  if (attr.Left(5) *= "msrp-") {
+  if (attr *= "path") 
+    url = value;
+  else if (attr *= "accept-types") {
+    PStringArray tokens = value.Tokenise(" ", false);
+    for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
+      PString encoding = tokens[i].ToLower();
+      PString mediaFormatName = IMEncodingToOpalMediaTypeName(encoding);
+      if (mediaFormatName.IsEmpty()) {
+        PTRACE(2, "MSRP\tCannot create SDP media format for unknown encoding " << encoding);
+      }
+      else {
+        SDPMediaFormat * fmt = CreateSDPMediaFormat(mediaFormatName);
+        if (fmt != NULL) 
+          formats.Append(fmt);
+        else {
+          PTRACE(2, "MSRP\tCannot create SDP media format for encoding " << encoding);
+        }
+      }
+    }
+  }
+  else if (attr.Left(5) *= "msrp-") {
     msrpAttributes.SetAt(attr.Mid(5), value);
     return;
   }
@@ -153,7 +196,7 @@ void SDPMSRPMediaDescription::SetAttribute(const PString & attr, const PString &
 
 void SDPMSRPMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & mediaFormat)
 {
-  if (mediaFormat.GetMediaType() == OpalMediaType::Fax()) {
+  if (mediaFormat.GetMediaType() == "im") {
     for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
       const OpalMediaOption & option = mediaFormat.GetOption(i);
       if (option.GetName().Left(5) *= "msrp-") 
@@ -172,6 +215,7 @@ void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat
   for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
     if (format->GetMediaFormat().GetMediaType() != "im")
       continue;
+
     if (format->GetEncodingName() *= mediaFormat.GetEncodingName()) {
       PTRACE(4, "SDP\tSDP not including " << mediaFormat << " as it is already included");
       return;
@@ -183,6 +227,27 @@ void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat
   ProcessMediaOptions(*sdpFormat, mediaFormat);
 
   AddSDPMediaFormat(sdpFormat);
+}
+
+OpalMediaFormatList SDPMSRPMediaDescription::GetMediaFormats() const
+{
+  OpalMediaFormatList list;
+
+  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
+    OpalMediaFormat opalFormat(format->GetEncodingName());
+    if (opalFormat.IsEmpty())
+      PTRACE(2, "SIP\tRTP payload type " << format->GetPayloadType() 
+             << ", name=" << format->GetEncodingName() << ", not matched to supported codecs");
+    else {
+      if (opalFormat.GetMediaType() == mediaType && 
+          opalFormat.IsValidForProtocol("sip")) {
+        PTRACE(3, "SIP\tRTP payload type " << format->GetPayloadType() << " matched to codec " << opalFormat);
+        list += opalFormat;
+      }
+    }
+  }
+
+  return list;
 }
 
 
@@ -382,6 +447,10 @@ void OpalMSRPManager::ThreadMain()
   }
   PTRACE(2, "MSRP\tListener thread ended");
 }
+
+////////////////////////////////////////////////////////
+
+
 
 #endif //  OPAL_IM_CAPABILITY
 

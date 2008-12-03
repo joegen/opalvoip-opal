@@ -1223,7 +1223,7 @@ bool OpalMediaFormatInternal::IsValidForProtocol(const PString & protocol) const
 
   // the protocol is only valid for SIP if the RTP name is not NULL
   if (protocol *= "sip")
-    return rtpEncodingName != NULL;
+    return (rtpEncodingName != NULL) || (forceIsTransportable);
 
   return true;
 }
