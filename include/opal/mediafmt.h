@@ -140,6 +140,18 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       const_iterator start = const_iterator()
     ) const;
 
+    /**Get a format position in the list not matching the wildcard.
+       The wildcard string is a simple substring match using the '*'
+       character. For example: "G.711*" would match "G.711-uLaw-64k" and
+       "G.711-ALaw-64k".
+
+       Returns P_MAX_INDEX list contains only matches.
+      */
+    const_iterator FindNotFormat(
+      const PString & wildcard,    ///<  Wildcard string name.
+      const_iterator start = const_iterator()
+    ) const;
+
     /**Determine if a format matching the payload type is in the list.
       */
     PBoolean HasFormat(

@@ -1534,13 +1534,23 @@ OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormatList 
 }
 
 
-void OpalMediaFormatList::Remove(const PStringArray & mask)
+void OpalMediaFormatList::Remove(const PStringArray & maskList)
 {
   PINDEX i;
-  for (i = 0; i < mask.GetSize(); i++) {
-    OpalMediaFormatList::const_iterator fmt;
-    while ((fmt = FindFormat(mask[i])) != end())
-      erase(fmt);
+  for (i = 0; i < maskList.GetSize(); i++) {
+    PString mask = maskList[i];
+    if (mask.GetLength() > 1 && mask[0] == '!') {
+      mask = mask.Mid(1);
+      OpalMediaFormatList::const_iterator fmt;
+      while ((fmt = FindNotFormat(mask)) != end())
+        erase(fmt);
+    }
+    else
+    {
+      OpalMediaFormatList::const_iterator fmt;
+      while ((fmt = FindFormat(mask)) != end())
+        erase(fmt);
+    }
   }
 }
 
@@ -1625,6 +1635,19 @@ OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(const PStrin
   return end();
 }
 
+OpalMediaFormatList::const_iterator OpalMediaFormatList::FindNotFormat(const PString & search, const_iterator iter) const
+{
+  PStringArray wildcards = search.Tokenise('*', true);
+  if (iter == const_iterator())
+    iter = begin();
+  while (iter != end()) {
+    if (!WildcardMatch(iter->m_info->formatName, wildcards))
+      return iter;
+    ++iter;
+  }
+
+  return end();
+}
 
 void OpalMediaFormatList::Reorder(const PStringArray & order)
 {
