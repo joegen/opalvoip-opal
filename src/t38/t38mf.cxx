@@ -33,6 +33,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
+#include <opal/rtpconn.h>
 
 
 #define new PNEW
@@ -89,6 +90,12 @@ RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &, unsigned sessi
   params.remoteIsNAT = remoteIsNAT;
   return new RTP_UDP(params);
 }
+
+OpalMediaSession * OpalFaxMediaType::CreateMediaSession(OpalConnection & conn, unsigned /* sessionID*/) const
+{
+  return new OpalRTPMediaSession(conn, m_mediaType);
+}
+
 
 #endif // OPAL_T38_CAPABILITY
 

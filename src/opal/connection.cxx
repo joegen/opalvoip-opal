@@ -1138,10 +1138,12 @@ void OpalConnection::OnMediaCommand(OpalMediaCommand & /*command*/, INT /*extra*
 {
 }
 
-OpalMediaSession * OpalConnection::CreateIMSession(unsigned /*sessionID*/)
+bool OpalConnection::CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive)
 {
-  return NULL;
-}
+  if (mediaType == OpalMediaType::Video()) 
+    return receive ? endpoint.GetManager().CanAutoStartReceiveVideo() : endpoint.GetManager().CanAutoStartTransmitVideo();
 
+  return receive ? mediaType.GetDefinition()->GetAutoStartReceive() : mediaType.GetDefinition()->GetAutoStartTransmit();
+}
 
 /////////////////////////////////////////////////////////////////////////////

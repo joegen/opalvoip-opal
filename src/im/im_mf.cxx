@@ -33,13 +33,12 @@
 
 #include <opal/mediafmt.h>
 #include <opal/connection.h>
-
+#include <im/msrp.h>
+#include <rtp/rtp.h>
 
 #define new PNEW
 
 #if OPAL_IM_CAPABILITY
-
-#include <rtp/rtp.h>
 
 OPAL_INSTANTIATE_MEDIATYPE(im, OpalIMMediaType);
 
@@ -67,7 +66,15 @@ bool OpalIMMediaType::UsesRTP() const
 
 OpalMediaSession * OpalIMMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
 {
-  return conn.CreateIMSession(sessionID);
+  // as this is called in the constructor of an OpalConnection descendant, 
+  // we can't use a virtual function on OpalConnection
+
+#if OPAL_IM_CAPABILITY
+  if (conn.GetPrefixName() *= "sip")
+    return new OpalMSRPMediaSession(conn, sessionID);
+#endif
+
+  return NULL;
 }
 
 /////////////////////////////////////////////////////////////////////////////

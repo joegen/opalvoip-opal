@@ -74,6 +74,8 @@ class OpalMSRPManager : public PObject
     //
     void DeallocateID(const std::string & id);
 
+    void ThreadMain();
+
     //
     //  Get the singleton MSRP manager
     //
@@ -83,6 +85,7 @@ class OpalMSRPManager : public PObject
     PMutex mutex;
     PAtomicInteger lastID;
     PTCPSocket listeningSocket;
+    PThread * listeningThread;
 
     struct SessionInfo {
     };

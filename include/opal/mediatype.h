@@ -325,6 +325,8 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
     RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
                                unsigned sessionID, bool remoteIsNAT);
 
+    OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned /* sessionID*/) const;
+
 #if OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
 #endif
