@@ -189,7 +189,7 @@ static PBoolean WriteGRQ(H323Transport & transport, void * param)
     return false;
 
   // Check if interface is used by signalling channel listeners
-  OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses();
+  OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses(true, &transport);
   bool notInterface = true;
   for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
     PIPSocket::Address ifAddress;
