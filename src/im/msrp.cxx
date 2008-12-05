@@ -364,7 +364,7 @@ SDPMediaDescription * OpalMSRPMediaSession::CreateSDPMediaDescription(const Opal
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 OpalMSRPManager::OpalMSRPManager(OpalManager & _opalManager, WORD _port)
-  : listeningThread(NULL), opalManager(_opalManager), listeningPort(_port)
+  : opalManager(_opalManager), listeningPort(_port), listeningThread(NULL)
 {
 }
 
