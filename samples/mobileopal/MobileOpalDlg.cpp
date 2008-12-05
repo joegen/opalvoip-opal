@@ -529,17 +529,22 @@ void CMobileOpalDlg::InitialiseOPAL()
     command.m_param.m_registrationInfo.m_adminEntity = strRealm;
 
     command.m_param.m_registrationInfo.m_timeToLive = 300;
-    command.m_param.m_registrationInfo.m_messageWaiting = 300;
 
     SetStatusText(IDS_REGISTERING);
     if ((response = OpalSendMessage(m_opal, &command)) != NULL && response->m_type != OpalIndCommandError) {
       m_currentAOR = strAOR;
       m_currentHost = strHost;
+
+      OpalFreeMessage(response);
+      command.m_param.m_registrationInfo.m_eventPackage = OPAL_MWI_EVENT_PACKAGE;
+      response = OpalSendMessage(m_opal, &command);
     }
-    else {
+
+    if (response == NULL || response->m_type == OpalIndCommandError) {
       ErrorBox(IDS_REGISTRATION_FAIL, response);
       SetStatusText(IDS_READY);
     }
+
     OpalFreeMessage(response);
   }
 }

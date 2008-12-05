@@ -24,4 +24,6 @@ public interface exampleConstants {
   public final static String OPAL_PREFIX_PSTN = exampleJNI.OPAL_PREFIX_PSTN_get();
   public final static String OPAL_PREFIX_IVR = exampleJNI.OPAL_PREFIX_IVR_get();
   public final static String OPAL_PREFIX_ALL = exampleJNI.OPAL_PREFIX_ALL_get();
+  public final static String OPAL_MWI_EVENT_PACKAGE = exampleJNI.OPAL_MWI_EVENT_PACKAGE_get();
+  public final static String OPAL_LINE_APPEARANCE_EVENT_PACKAGE = exampleJNI.OPAL_LINE_APPEARANCE_EVENT_PACKAGE_get();
 }
