@@ -121,6 +121,15 @@ public class OpalMessage_m_param {
     return (cPtr == 0) ? null : new OpalStatusMessageWaiting(cPtr, false);
   }
 
+  public void setM_lineAppearance(OpalStatusLineAppearance value) {
+    exampleJNI.OpalMessage_m_param_m_lineAppearance_set(swigCPtr, this, OpalStatusLineAppearance.getCPtr(value), value);
+  }
+
+  public OpalStatusLineAppearance getM_lineAppearance() {
+    long cPtr = exampleJNI.OpalMessage_m_param_m_lineAppearance_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalStatusLineAppearance(cPtr, false);
+  }
+
   public void setM_callCleared(OpalStatusCallCleared value) {
     exampleJNI.OpalMessage_m_param_m_callCleared_set(swigCPtr, this, OpalStatusCallCleared.getCPtr(value), value);
   }

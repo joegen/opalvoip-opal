@@ -222,7 +222,11 @@ public:
     if (pos != P_MAX_INDEX)
       level = options.Mid(pos+sizeof(TraceLevelKey)-1).AsUnsigned();
 
+#ifdef WIN32
     PString filename = "DEBUGSTREAM";
+#else
+    PString filename = "stderr";
+#endif
     static char const TraceFileKey[] = "TraceFile=";
     pos = options.Find(TraceFileKey);
     if (pos != P_MAX_INDEX) {
@@ -568,6 +572,8 @@ SIPEndPoint_C::SIPEndPoint_C(OpalManager_C & mgr)
 
 void SIPEndPoint_C::OnRegistrationStatus(const RegistrationStatus & status)
 {
+  SIPEndPoint::OnRegistrationStatus(status);
+
   OpalMessageBuffer message(OpalIndRegistration);
   SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_protocol, OPAL_PREFIX_SIP);
   SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_serverName, status.m_addressofRecord);
@@ -608,17 +614,20 @@ void SIPEndPoint_C::OnSubscriptionStatus(const PString & eventPackage,
                                          bool reSubscribing,
                                          SIP_PDU::StatusCodes reason)
 {
-  if (reason == SIP_PDU::Successful_OK && !reSubscribing &&
-      eventPackage == SIPSubscribe::GetEventPackageName(SIPSubscribe::MessageSummary)) {
-    OpalMessageBuffer message(OpalIndMessageWaiting);
-    SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_party, uri.AsString());
-    SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, wasSubscribing ? "SUBSCRIBED" : "UNSUBSCRIBED");
-    PTRACE(4, "OpalC API\tOnSubscriptionStatus: party=\"" << message->m_param.m_messageWaiting.m_party
+  SIPEndPoint::OnSubscriptionStatus(eventPackage, uri, wasSubscribing, reSubscribing, reason);
+
+  if (reason == SIP_PDU::Successful_OK && !reSubscribing) {
+    if (eventPackage == SIPSubscribe::GetEventPackageName(SIPSubscribe::MessageSummary)) {
+      OpalMessageBuffer message(OpalIndMessageWaiting);
+      SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_party, uri.AsString());
+      SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, wasSubscribing ? "SUBSCRIBED" : "UNSUBSCRIBED");
+      PTRACE(4, "OpalC API\tOnSubscriptionStatus - MWI: party=\"" << message->m_param.m_messageWaiting.m_party
                                             << "\" info=" << message->m_param.m_messageWaiting.m_extraInfo);
-    m_manager.PostMessage(message);
+      m_manager.PostMessage(message);
+    }
   }
 
-  SIPEndPoint::OnSubscriptionStatus(eventPackage, uri, wasSubscribing, reSubscribing, reason);
+
 }
 
 
@@ -1138,48 +1147,64 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
       return;
     }
 
-    PStringStream aor;
-    PString host;
-    if (IsNullString(command.m_param.m_registrationInfo.m_identifier))
-      aor << GetDefaultUserName() << '@' << command.m_param.m_registrationInfo.m_hostName;
-    else {
-      aor << command.m_param.m_registrationInfo.m_identifier;
-      if (strchr(command.m_param.m_registrationInfo.m_identifier, '@') != NULL)
-        host = command.m_param.m_registrationInfo.m_hostName;
-      else
-        aor << '@' << command.m_param.m_registrationInfo.m_hostName;
+    PString aor = command.m_param.m_registrationInfo.m_identifier;
+    if (aor.Find('@') == P_MAX_INDEX) {
+      if (aor.IsEmpty())
+        aor = PProcess::Current().GetUserName();
+      aor += '@';
+      aor += command.m_param.m_registrationInfo.m_hostName;
     }
 
     if (command.m_param.m_registrationInfo.m_timeToLive == 0) {
-      if (!sip->Unregister(aor))
+      if (!sip->Unregister(command.m_param.m_registrationInfo.m_identifier))
         response.SetError("Failed to initiate SIP unregistration.");
     }
     else {
-      SIPRegister::Params regParams;
-      regParams.m_addressOfRecord = aor;
-      regParams.m_contactAddress = host;
-      regParams.m_authID = command.m_param.m_registrationInfo.m_authUserName;
-      if (regParams.m_authID.IsEmpty())
-        regParams.m_authID = regParams.m_addressOfRecord.Left(regParams.m_addressOfRecord.Find('@'));
-      regParams.m_password = command.m_param.m_registrationInfo.m_password;
-      regParams.m_realm = command.m_param.m_registrationInfo.m_adminEntity;
-      regParams.m_expire = command.m_param.m_registrationInfo.m_timeToLive;
-      if (m_apiVersion >= 7 && command.m_param.m_registrationInfo.m_restoreTime > 0)
-        regParams.m_restoreTime = command.m_param.m_registrationInfo.m_restoreTime;
+      if (m_apiVersion < 13 || command.m_param.m_registrationInfo.m_eventPackage == NULL) {
+        SIPRegister::Params regParams;
+        regParams.m_addressOfRecord = aor;
+        regParams.m_authID = command.m_param.m_registrationInfo.m_authUserName;
+        regParams.m_password = command.m_param.m_registrationInfo.m_password;
+        regParams.m_realm = command.m_param.m_registrationInfo.m_adminEntity;
+        regParams.m_expire = command.m_param.m_registrationInfo.m_timeToLive;
+        if (m_apiVersion >= 7 && command.m_param.m_registrationInfo.m_restoreTime > 0)
+          regParams.m_restoreTime = command.m_param.m_registrationInfo.m_restoreTime;
 
-      if (!sip->Register(regParams))
-        response.SetError("Failed to initiate SIP registration.");
+        if (sip->Register(regParams))
+          SET_MESSAGE_STRING(response, m_param.m_registrationInfo.m_identifier, aor);
+        else
+          response.SetError("Failed to initiate SIP registration.");
+      }
 
       if (m_apiVersion >= 10) {
-        SIPSubscribe::Params mwiParams(SIPSubscribe::MessageSummary);
-        mwiParams.m_targetAddress = aor;
-        regParams.m_contactAddress = host;
-        mwiParams.m_authID = regParams.m_authID;
-        mwiParams.m_password = regParams.m_password;
-        mwiParams.m_realm = regParams.m_realm;
-        mwiParams.m_expire = command.m_param.m_registrationInfo.m_messageWaiting;
-        mwiParams.m_restoreTime = regParams.m_restoreTime;
-        sip->Subscribe(mwiParams);
+        SIPSubscribe::Params subParams;
+        if (m_apiVersion < 13)
+          subParams.m_eventPackage = SIPSubscribe::MessageSummary;
+
+        else {
+          if (command.m_param.m_registrationInfo.m_eventPackage == NULL)
+            return;
+          subParams.m_eventPackage = command.m_param.m_registrationInfo.m_eventPackage;
+        }
+
+        subParams.m_targetAddress = aor;
+        subParams.m_authID = command.m_param.m_registrationInfo.m_authUserName;
+        subParams.m_password = command.m_param.m_registrationInfo.m_password;
+        subParams.m_realm = command.m_param.m_registrationInfo.m_adminEntity;
+#if P_64BIT
+        subParams.m_expire = m_apiVersion = command.m_param.m_registrationInfo.m_timeToLive;
+#else
+        subParams.m_expire = m_apiVersion >= 13 ? command.m_param.m_registrationInfo.m_timeToLive
+                                               : (unsigned)command.m_param.m_registrationInfo.m_eventPackage; // Backward compatibility
+#endif
+        subParams.m_restoreTime = command.m_param.m_registrationInfo.m_restoreTime;
+        bool ok = sip->Subscribe(subParams);
+        if (m_apiVersion >= 13) {
+          if (ok)
+            SET_MESSAGE_STRING(response, m_param.m_registrationInfo.m_identifier, aor);
+          else
+            response.SetError("Failed to initiate SIP subscription.");
+        }
       }
     }
     return;
@@ -1423,7 +1448,7 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
 
   OpalMediaStreamPtr stream;
   if (!IsNullString(command.m_param.m_mediaStream.m_identifier))
-    stream = connection->GetMediaStream(command.m_param.m_mediaStream.m_identifier);
+    stream = connection->GetMediaStream(PString(command.m_param.m_mediaStream.m_identifier), source);
   else if (!IsNullString(command.m_param.m_mediaStream.m_type))
     stream = connection->GetMediaStream(mediaType, source);
   else {
