@@ -230,6 +230,14 @@ OpalConnection::OpalConnection(OpalCall & call,
     str = (*stringOptions)("dtmfdiv");
     if (!str.IsEmpty())
       dtmfScaleDivisor = str.AsInteger();
+
+    // if this is the second connection in this call, then we are making an outgoing H.323/SIP call
+    // so, get the autoStart info from the other connection
+    PSafePtr<OpalConnection> conn  = call.GetConnection(0);
+    if (conn != NULL) 
+      m_autoStartInfo.Initialise(*this, conn->GetStringOptions());
+    else
+      m_autoStartInfo.Initialise(*this, m_stringOptions);
   }
 }
 
@@ -1140,10 +1148,133 @@ void OpalConnection::OnMediaCommand(OpalMediaCommand & /*command*/, INT /*extra*
 
 bool OpalConnection::CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive)
 {
+  // see if user has explicitly set via string options
+  bool autoStart;
+  if (m_autoStartInfo.CanAutoStartMediaType(mediaType, receive, autoStart))
+    return autoStart;
+
   if (mediaType == OpalMediaType::Video()) 
     return receive ? endpoint.GetManager().CanAutoStartReceiveVideo() : endpoint.GetManager().CanAutoStartTransmitVideo();
 
   return receive ? mediaType.GetDefinition()->GetAutoStartReceive() : mediaType.GetDefinition()->GetAutoStartTransmit();
 }
+
+OpalConnection::AutoStartMap::AutoStartMap()
+{
+  m_initialised = true;
+}
+
+void OpalConnection::AutoStartMap::Initialise(OpalConnection & conn, const OpalConnection::StringOptions & stringOptions)
+{
+  PWaitAndSignal m(m_mutex);
+
+  // make function idempotent
+  if (m_initialised)
+    return;
+
+  m_initialised = true;
+
+  // get autostart option as lines
+  PStringArray lines = stringOptions("autostart").Lines();
+  for (PINDEX i = 0; i < lines.GetSize(); ++i) {
+    PString line = lines[i];
+    PINDEX colon = line.Find(':');
+    OpalMediaType mediaType = line.Left(colon);
+
+    // see if media type is known, and if it is, enable it
+    OpalMediaTypeDefinition * def = mediaType.GetDefinition();
+    if (def != NULL) {
+      if (colon == P_MAX_INDEX) 
+        AutoStartSession(def->GetDefaultSessionId(), mediaType, true, true);
+      else {
+        PStringArray tokens = line.Mid(colon+1).Tokenise(";", FALSE);
+        PINDEX j;
+        for (j = 0; j < tokens.GetSize(); ++j) {
+          if ((tokens[i] *= "no") || (tokens[i] *= "false") || (tokens[i] *= "0"))
+            AutoStartSession(def->GetDefaultSessionId(), mediaType, false, false);
+          else if ((tokens[i] *= "yes") || (tokens[i] *= "true") || (tokens[i] *= "1") || (tokens[i] *= "sendrecv"))
+            AutoStartSession(def->GetDefaultSessionId(), mediaType, true, true);
+          else if (tokens[i] *= "recvonly")
+            AutoStartSession(def->GetDefaultSessionId(), mediaType, true, false);
+          else if (tokens[i] *= "sendonly")
+            AutoStartSession(def->GetDefaultSessionId(), mediaType, false, true);
+          else if (tokens[i] *= "exclusive") {
+            OpalMediaTypeFactory::KeyList_T types = OpalMediaType::GetList();
+            OpalMediaTypeFactory::KeyList_T::iterator r;
+            for (r = types.begin(); r != types.end(); ++r) {
+              bool start = *r == mediaType;
+              AutoStartSession(OpalMediaType(*r).GetDefinition()->GetDefaultSessionId(), *r, start, start);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // set old video and audio auto start if not already set
+  SetOldOptions(1, OpalMediaType::Audio(), true, true);
+#if OPAL_VIDEO
+  OpalManager & mgr = conn.GetCall().GetManager();
+  SetOldOptions(2, OpalMediaType::Video(), mgr.CanAutoStartReceiveVideo(), mgr.CanAutoStartTransmitVideo());
+#endif
+}
+
+void OpalConnection::AutoStartMap::SetOldOptions(unsigned preferredSessionIndex, const OpalMediaType & mediaType, bool rx, bool tx)
+{
+  PWaitAndSignal m(m_mutex);
+
+  const_iterator r = find(mediaType);
+  if (r == end())
+    AutoStartSession(preferredSessionIndex, mediaType, rx, tx);
+}
+
+
+unsigned OpalConnection::AutoStartMap::AutoStartSession(unsigned sessionID, const OpalMediaType & mediaType, bool autoStartReceive, bool autoStartTransmit)
+{
+  PWaitAndSignal m(m_mutex);
+  m_initialised = true;
+
+  // deconflict session ID
+  if (size() == 0) {
+    if (sessionID == 0) 
+      sessionID = 1;
+  }
+  else {
+    iterator r = begin();
+    while (r != end()) {
+      if (r->second.preferredSessionId != sessionID) 
+        ++r;
+      else {
+        ++sessionID;
+        r = begin();
+      }
+    }
+  }
+
+  AutoStartInfo info;
+  info.autoStartReceive   = autoStartReceive;
+  info.autoStartTransmit  = autoStartTransmit;
+  info.preferredSessionId = sessionID;
+
+  insert(value_type(mediaType, info));
+
+  return sessionID;
+}
+
+bool OpalConnection::AutoStartMap::CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive, bool & autoStart) const
+{
+  PWaitAndSignal m(m_mutex);
+
+  const_iterator r = find(mediaType);
+  if (r == end())
+    return false;
+
+  const AutoStartInfo & info = r->second;
+
+  autoStart = receive ? info.autoStartReceive : info.autoStartTransmit;
+
+  return true;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////

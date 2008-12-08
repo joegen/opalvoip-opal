@@ -35,6 +35,8 @@
 #include <opal/buildopts.h>
 #include <opal/rtpconn.h>
 #include <opal/manager.h>
+#include <opal/mediastrm.h>
+#include <im/im.h>
 
 #if OPAL_SIP
 #include <sip/sdp.h>
@@ -50,8 +52,6 @@ class MSRPMediaType {
   public:
     MSRPMediaType()
     { }
-
-    virtual const char * GetMediaFormatName() const = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -135,9 +135,9 @@ class MSRPSession
     OpalMSRPManager & manager;
     std::string msrpSessionId;
     PString url;
-    PTCPSocket msrpSocket;
 };
 
+////////////////////////////////////////////////////////////////////////////
 
 /** Class for carrying MSRP session information
   */
@@ -160,11 +160,59 @@ class OpalMSRPMediaSession : public OpalMediaSession
 
     virtual OpalTransportAddress GetLocalMediaAddress() const;
 
+#if OPAL_SIP
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
     );
 
+    virtual OpalMediaStream * CreateMediaStream(
+      const OpalMediaFormat & mediaFormat, 
+      unsigned sessionID, 
+      PBoolean isSource
+    );
+#endif
+
     MSRPSession * msrpSession;
+};
+
+////////////////////////////////////////////////////////////////////////////
+
+class OpalMSRPMediaStream : public OpalIMMediaStream
+{
+  public:
+    OpalMSRPMediaStream(
+      OpalConnection & conn,
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      bool isSource                        ///<  Is a source stream
+    );
+
+    ~OpalMSRPMediaStream();
+
+    /**Read raw media data from the source media stream.
+       The default behaviour reads from the PChannel object.
+      */
+    virtual PBoolean ReadData(
+      BYTE * data,      ///<  Data buffer to read to
+      PINDEX size,      ///<  Size of buffer
+      PINDEX & length   ///<  Length of data actually read
+    );
+
+    /**Write raw media data to the sink media stream.
+       The default behaviour writes to the PChannel object.
+      */
+    virtual PBoolean WriteData(
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
+    );
+
+    /**Close the media stream.
+
+       Closes the associated PChannel.
+      */
+    virtual PBoolean Close();
+  //@}
 };
 
 #endif // OPAL_MSRP_MSRP_H

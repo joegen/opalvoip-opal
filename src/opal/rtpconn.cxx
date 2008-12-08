@@ -76,14 +76,6 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
   zrtpEnabled = ep.GetZRTPEnabled();
   zrtpConnInfo = NULL;
 #endif
-
-  // if this is the second connection in this call, then we are making an outgoing H.323/SIP call
-  // so, get the autoStart info from the other connection
-  PSafePtr<OpalConnection> conn  = call.GetConnection(0);
-  if (conn != NULL) 
-    m_rtpSessions.Initialise(*this, conn->GetStringOptions());
-  else
-    m_rtpSessions.Initialise(*this, m_stringOptions);
 }
 
 OpalRTPConnection::~OpalRTPConnection()
@@ -98,6 +90,10 @@ RTP_Session * OpalRTPConnection::GetSession(unsigned sessionID) const
   return m_rtpSessions.GetSession(sessionID);
 }
 
+OpalMediaSession * OpalRTPConnection::GetMediaSession(unsigned sessionID) const
+{
+  return m_rtpSessions.GetMediaSession(sessionID);
+}
 
 RTP_Session * OpalRTPConnection::UseSession(const OpalTransport & transport, unsigned sessionID, const OpalMediaType & mediaType, RTP_QOS * rtpqos)
 {
@@ -291,22 +287,18 @@ PBoolean OpalRTPConnection::IsMediaBypassPossible(unsigned) const
   return true;
 }
 
-OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                    unsigned sessionID,
-                                                    PBoolean isSource)
+OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID))
     return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
 
-  RTP_Session * session = GetSession(sessionID);
-  if (session == NULL) {
+  OpalMediaSession * mediaSession = GetMediaSession(sessionID);
+  if (mediaSession == NULL) {
     PTRACE(1, "RTPCon\tCreateMediaStream could not find session " << sessionID);
     return NULL;
   }
 
-  return new OpalRTPMediaStream(*this, mediaFormat, isSource, *session,
-                                GetMinAudioJitterDelay(),
-                                GetMaxAudioJitterDelay());
+  return mediaSession->CreateMediaStream(mediaFormat, sessionID, isSource);
 }
 
 void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
@@ -350,24 +342,12 @@ void OpalRTPConnection::SessionFailing(RTP_Session & session)
   }
 }
 
-bool OpalRTPConnection::CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive)
-{
-  // see if user has explicitly set via string options
-  bool autoStart;
-  if (m_rtpSessions.CanAutoStartMediaType(mediaType, receive, autoStart))
-    return autoStart;
-
-  // otherwise call ancestor
-  return OpalConnection::CanAutoStartMediaType(mediaType, receive);
-}
-
 /////////////////////////////////////////////////////////////////////////////
 
-OpalMediaSession::OpalMediaSession(OpalConnection & _conn, const OpalMediaType & _mediaType)
-  : connection(_conn), mediaType(_mediaType)
-  , autoStartReceive(true)
-  , autoStartTransmit(true)
-  , sessionId(0)
+OpalMediaSession::OpalMediaSession(OpalConnection & _conn, const OpalMediaType & _mediaType, unsigned _sessionId)
+  : connection(_conn)
+  , mediaType(_mediaType)
+  , sessionId(_sessionId)
 {
 }
 
@@ -375,16 +355,14 @@ OpalMediaSession::OpalMediaSession(const OpalMediaSession & _obj)
   : PObject(_obj)
   , connection(_obj.connection)
   , mediaType(_obj.mediaType)
-  , autoStartReceive(_obj.autoStartReceive)
-  , autoStartTransmit(_obj.autoStartTransmit)
   , sessionId(_obj.sessionId)
 {
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalRTPMediaSession::OpalRTPMediaSession(OpalConnection & _conn, const OpalMediaType & _mediaType)
-  : OpalMediaSession(_conn, _mediaType)
+OpalRTPMediaSession::OpalRTPMediaSession(OpalConnection & _conn, const OpalMediaType & _mediaType, unsigned _sessionId)
+  : OpalMediaSession(_conn, _mediaType, _sessionId)
   , rtpSession(NULL)
 {
 }
@@ -418,6 +396,16 @@ SDPMediaDescription * OpalRTPMediaSession::CreateSDPMediaDescription(const OpalT
 {
   return mediaType.GetDefinition()->CreateSDPMediaDescription(sdpContactAddress);
 }
+
+OpalMediaStream * OpalRTPMediaSession::CreateMediaStream(const OpalMediaFormat & mediaFormat, 
+                                                                         unsigned /*sessionID*/, 
+                                                                         PBoolean isSource)
+{
+  return new OpalRTPMediaStream((OpalRTPConnection &)connection, mediaFormat, isSource, *rtpSession,
+                                connection.GetMinAudioJitterDelay(),
+                                connection.GetMaxAudioJitterDelay());
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -480,7 +468,7 @@ void OpalRTPSessionManager::AddSession(RTP_Session * rtpSession, const OpalMedia
     OpalMediaSession * session = sessions.GetAt(rtpSession->GetSessionID());
     OpalRTPMediaSession * s;
     if (session == NULL) {
-      s = new OpalRTPMediaSession(connection, mediaType);
+      s = new OpalRTPMediaSession(connection, mediaType, 0);
       s->rtpSession = rtpSession;
       sessions.Insert(POrdinalKey(rtpSession->GetSessionID()), s);
       PTRACE(3, "RTP\tCreating new session " << *rtpSession);
@@ -513,7 +501,7 @@ OpalMediaSession * OpalRTPSessionManager::GetMediaSession(unsigned sessionID) co
   PWaitAndSignal wait(m_mutex);
 
   OpalMediaSession * session;
-  if ((session = sessions.GetAt(sessionID)) == NULL) {
+  if (((session = sessions.GetAt(sessionID)) == NULL) || !session->IsActive()) {
     PTRACE(3, "RTP\tCannot find media session " << sessionID);
     return NULL;
   }
@@ -552,116 +540,6 @@ bool OpalRTPSessionManager::AllSessionsFailing()
 
   return true;
 }
-
-void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, const OpalConnection::StringOptions & stringOptions)
-{
-  PWaitAndSignal m(m_mutex);
-
-  // make function idempotent
-  if (m_initialised)
-    return;
-
-  m_initialised = true;
-
-  // get autostart option as lines
-  PStringArray lines = stringOptions("autostart").Lines();
-  for (PINDEX i = 0; i < lines.GetSize(); ++i) {
-    PString line = lines[i];
-    PINDEX colon = line.Find(':');
-    OpalMediaType mediaType = line.Left(colon);
-
-    // see if media type is known, and if it is, enable it
-    OpalMediaTypeDefinition * def = mediaType.GetDefinition();
-    if (def != NULL) {
-      if (colon == P_MAX_INDEX) 
-        AutoStartSession(def->GetDefaultSessionId(), mediaType, true, true);
-      else {
-        PStringArray tokens = line.Mid(colon+1).Tokenise(";", FALSE);
-        PINDEX j;
-        for (j = 0; j < tokens.GetSize(); ++j) {
-          if ((tokens[i] *= "no") || (tokens[i] *= "false") || (tokens[i] *= "0"))
-            AutoStartSession(def->GetDefaultSessionId(), mediaType, false, false);
-          else if ((tokens[i] *= "yes") || (tokens[i] *= "true") || (tokens[i] *= "1") || (tokens[i] *= "sendrecv"))
-            AutoStartSession(def->GetDefaultSessionId(), mediaType, true, true);
-          else if (tokens[i] *= "recvonly")
-            AutoStartSession(def->GetDefaultSessionId(), mediaType, true, false);
-          else if (tokens[i] *= "sendonly")
-            AutoStartSession(def->GetDefaultSessionId(), mediaType, false, true);
-          else if (tokens[i] *= "exclusive") {
-            OpalMediaTypeFactory::KeyList_T types = OpalMediaType::GetList();
-            OpalMediaTypeFactory::KeyList_T::iterator r;
-            for (r = types.begin(); r != types.end(); ++r) {
-              bool start = *r == mediaType;
-              AutoStartSession(OpalMediaType(*r).GetDefinition()->GetDefaultSessionId(), *r, start, start);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // set old video and audio auto start if not already set
-  SetOldOptions(1, OpalMediaType::Audio(), true, true);
-#if OPAL_VIDEO
-  OpalManager & mgr = conn.GetCall().GetManager();
-  SetOldOptions(2, OpalMediaType::Video(), mgr.CanAutoStartReceiveVideo(), mgr.CanAutoStartTransmitVideo());
-#endif
-}
-
-void OpalRTPSessionManager::SetOldOptions(unsigned preferredSessionIndex, const OpalMediaType & mediaType, bool rx, bool tx)
-{
-  PINDEX i;
-  for (i = 0; i < sessions.GetSize(); ++i) {
-    if (sessions.GetDataAt(i).mediaType == mediaType)
-      break;
-  }
-  if (i == sessions.GetSize()) 
-    AutoStartSession(preferredSessionIndex, mediaType, rx, tx);
-}
-
-
-unsigned OpalRTPSessionManager::AutoStartSession(unsigned sessionID, const OpalMediaType & mediaType, bool autoStartReceive, bool autoStartTransmit)
-{
-  PWaitAndSignal m(m_mutex);
-  m_initialised = true;
-
-  if ((sessionID == 0) || (sessions.Contains(sessionID))) {
-    unsigned i = 1;
-    while (sessions.Contains(i))
-      ++i;
-    sessionID = i;
-  }
-
-  OpalMediaSession * s = mediaType.GetDefinition()->CreateMediaSession(connection, sessionID);
-  if (s != NULL) {
-    s->autoStartReceive  = autoStartReceive;
-    s->autoStartTransmit = autoStartTransmit;
-    sessions.Insert(POrdinalKey(sessionID), s);
-  }
-
-  return sessionID;
-}
-
-bool OpalRTPSessionManager::CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive, bool & autoStart)
-{
-  PWaitAndSignal m(m_mutex);
-
-  PINDEX i;
-  for (i = 0; i < sessions.GetSize(); ++i) {
-    if (sessions.GetDataAt(i).mediaType == mediaType)
-      break;
-  }
-
-  if (i == sessions.GetSize()) 
-    return false;
-
-  OpalMediaSession & session = sessions.GetDataAt(i);
-
-  autoStart = receive ? session.autoStartReceive : session.autoStartTransmit;
-
-  return true;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 

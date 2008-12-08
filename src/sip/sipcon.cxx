@@ -772,27 +772,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     return false;
   }
 
-  SDPMediaDescription * localMedia = NULL;
-
-  OpalMediaFormatList sdpFormats = incomingMedia->GetMediaFormats();
-  sdpFormats.Remove(endpoint.GetManager().GetMediaFormatMask());
-  if (sdpFormats.GetSize() == 0) {
-    PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
-    // Send back a m= line with port value zero and the first entry of the offer payload types as per RFC3264
-    if ((localMedia = defn->CreateSDPMediaDescription(OpalTransportAddress())) == NULL) {
-      PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
-      return false;
-    }
-    if (!incomingMedia->GetSDPMediaFormats().IsEmpty())
-      localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
-    sdpOut.AddMediaDescription(localMedia);
-    return PFalse;
-  }
   
-  // Create the list of Opal format names for the remote end.
-  // We will answer with the media format that will be opened.
-  // When sending an answer SDP, remove media formats that we do not support.
-  remoteFormatList += sdpFormats;
 
   // find the payload type used for telephone-event, if present
   const SDPMediaFormatList & sdpMediaList = incomingMedia->GetSDPMediaFormats();
@@ -817,6 +797,8 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
   bool remoteChanged = false;
 
+  OpalMediaSession * mediaSession = NULL;
+
   if (mediaAddress.IsEmpty()) {
     // Hold aka pause media, should only occur on a re-INVITE.
     RTP_UDP * rtpSession = dynamic_cast<RTP_UDP *>(GetSession(rtpSessionId));
@@ -833,7 +815,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       return PFalse;
     }
 
-    OpalMediaSession * mediaSession = m_rtpSessions.GetMediaSession(rtpSessionId);
+    mediaSession = m_rtpSessions.GetMediaSession(rtpSessionId);
 
     if (!defn->UsesRTP()) {
 
@@ -870,10 +852,36 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
         }
       }
     }
+    mediaSession = m_rtpSessions.GetMediaSession(rtpSessionId);
   }
 
+  SDPMediaDescription * localMedia = NULL;
+
+  OpalMediaFormatList sdpFormats = incomingMedia->GetMediaFormats();
+  sdpFormats.Remove(endpoint.GetManager().GetMediaFormatMask());
+  if (sdpFormats.GetSize() == 0) {
+    PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
+    // Send back a m= line with port value zero and the first entry of the offer payload types as per RFC3264
+    localMedia = mediaSession->CreateSDPMediaDescription(OpalTransportAddress());
+    if (localMedia  == NULL) {
+      PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
+      return false;
+    }
+    if (!incomingMedia->GetSDPMediaFormats().IsEmpty())
+      localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
+    sdpOut.AddMediaDescription(localMedia);
+    return PFalse;
+  }
+  
+  // Create the list of Opal format names for the remote end.
+  // We will answer with the media format that will be opened.
+  // When sending an answer SDP, remove media formats that we do not support.
+  remoteFormatList += sdpFormats;
+
+
+
   // construct a new media session list 
-  if ((localMedia = defn->CreateSDPMediaDescription(localAddress)) == NULL) {
+  if ((localMedia = mediaSession->CreateSDPMediaDescription(localAddress)) == NULL) {
     PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
     return false;
   }
@@ -953,13 +961,16 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     bool empty = true;
     OpalMediaFormatList localFormatList = GetLocalMediaFormats();
     for (OpalMediaFormatList::iterator remoteFormat = remoteFormatList.begin(); remoteFormat != remoteFormatList.end(); ++remoteFormat) {
-      for (OpalMediaFormatList::iterator localFormat = localFormatList.begin(); localFormat != localFormatList.end(); ++localFormat) {
-        OpalMediaFormat intermediateFormat;
-        if (remoteFormat->GetMediaType() == mediaType &&
-            OpalTranscoder::FindIntermediateFormat(*localFormat, *remoteFormat, intermediateFormat)) {
-          localMedia->AddMediaFormat(*remoteFormat);
-          empty = false;
-          break;
+      if (remoteFormat->GetMediaType() == mediaType) {
+        for (OpalMediaFormatList::iterator localFormat = localFormatList.begin(); localFormat != localFormatList.end(); ++localFormat) {
+          if (localFormat->GetMediaType() == mediaType) {
+            OpalMediaFormat intermediateFormat;
+            if (OpalTranscoder::FindIntermediateFormat(*localFormat, *remoteFormat, intermediateFormat)) {
+              localMedia->AddMediaFormat(*remoteFormat);
+              empty = false;
+              break;
+            }
+          }
         }
       }
     }
