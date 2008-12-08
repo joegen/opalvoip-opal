@@ -1906,6 +1906,12 @@ class H323Connection : public OpalRTPConnection
 #endif
 
     virtual void OnMediaCommand(OpalMediaCommand & note, INT extra);
+    
+    // H.245 - compliant handling of session IDs
+    // if no internal session ID is found, zero is returned
+    unsigned GetExternalSessionID(unsigned internalSessionID) const;
+    unsigned GetExternalSessionID(unsigned internalSessionID, const OpalMediaType & mediaType);
+    unsigned GetInternalSessionID(unsigned externalSessionID, const H323Capability & capability);
 
   protected:
     /**Internal function to check if call established.
@@ -2001,6 +2007,15 @@ class H323Connection : public OpalRTPConnection
     FastStartStates        fastStartState;
     H323LogicalChannelList fastStartChannels;
     OpalMediaStreamPtr     fastStartMediaStream;
+    
+    // H.245 - compliant handling of session IDs
+    PBoolean defaultAudioSessionIDAssigned, defaultVideoSessionIDAssigned;
+    unsigned nextSessionID;
+    typedef std::map<unsigned, unsigned> InternalToExternalSessionIDMap;
+    typedef std::map<OpalMediaType, unsigned> MediaTypeToInternalSessionIDMap;
+    InternalToExternalSessionIDMap internalToExternalSessionIDMap;
+    MediaTypeToInternalSessionIDMap mediaTypeToInternalSessionIDMap;
+    PMutex sessionIDHandlingMutex;
 
 #if PTRACING
     static const char * GetConnectionStatesName(ConnectionStates s);

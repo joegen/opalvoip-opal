@@ -82,11 +82,9 @@ H323_RTP_UDP::H323_RTP_UDP(const H323Connection & conn,
 
 
 PBoolean H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
-                                H245_H2250LogicalChannelParameters & param) const
+                                    H245_H2250LogicalChannelParameters & param) const
 {
   PTRACE(3, "RTP\tOnSendingPDU");
-
-  param.m_sessionID = rtp.GetSessionID();
 
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaGuaranteedDelivery);
   param.m_mediaGuaranteedDelivery = PFalse;
@@ -177,7 +175,10 @@ PBoolean H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
                                  const H245_H2250LogicalChannelParameters & param,
                                  unsigned & errorCode)
 {
-  if (param.m_sessionID != rtp.GetSessionID()) {
+  H323Connection & theConnection = const_cast<H323Connection &>(connection);
+  unsigned theSessionID = theConnection.GetInternalSessionID(param.m_sessionID, channel.GetCapability());
+  
+  if (theSessionID != rtp.GetSessionID()) {
     PTRACE(1, "RTP_UDP\tOpen of " << channel << " with invalid session: " << param.m_sessionID);
     errorCode = H245_OpenLogicalChannelReject_cause::e_invalidSessionID;
     return PFalse;
@@ -232,8 +233,11 @@ PBoolean H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID)) {
     PTRACE(1, "RTP_UDP\tNo session specified");
   }
+  
+  H323Connection & theConnection = const_cast<H323Connection &>(connection);
+  unsigned theSessionID = theConnection.GetInternalSessionID(param.m_sessionID, channel.GetCapability());
 
-  if (param.m_sessionID != rtp.GetSessionID()) {
+  if (theSessionID != rtp.GetSessionID()) {
     PTRACE(1, "RTP_UDP\tAck for invalid session: " << param.m_sessionID);
   }
 
@@ -265,7 +269,7 @@ PBoolean H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
 
 void H323_RTP_UDP::OnSendRasInfo(H225_RTPSession & info)
 {
-  info.m_sessionId = rtp.GetSessionID();
+  info.m_sessionId = connection.GetExternalSessionID(rtp.GetSessionID());
   info.m_ssrc = rtp.GetSyncSourceOut();
   info.m_cname = rtp.GetCanonicalName();
 
