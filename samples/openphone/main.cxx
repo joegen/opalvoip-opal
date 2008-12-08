@@ -102,6 +102,7 @@ DEF_FIELD(MainFrameWidth);
 DEF_FIELD(MainFrameHeight);
 DEF_FIELD(SashPosition);
 DEF_FIELD(ActiveView);
+static const wxChar ColumnWidthKey[] = wxT("ColumnWidth%u");
 
 static const wxChar GeneralGroup[] = wxT("/General");
 DEF_FIELD(Username);
@@ -1171,7 +1172,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
   for (int i = 0; i < e_NumColumns; i++) {
     m_speedDials->InsertColumn(i, titles[i]);
     wxString key;
-    key.sprintf(wxT("ColumnWidth%u"), i);
+    key.sprintf(ColumnWidthKey, i);
     if (config->Read(key, &width))
       m_speedDials->SetColumnWidth(i, width);
   }
@@ -1226,6 +1227,12 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
   GetSize(&w, &h);
   config->Write(MainFrameWidthKey, w);
   config->Write(MainFrameHeightKey, h);
+
+  for (int i = 0; i < e_NumColumns; i++) {
+    wxString key;
+    key.sprintf(ColumnWidthKey, i);
+    config->Write(key, m_speedDials->GetColumnWidth(i));
+  }
 
   potsEP = NULL;
   m_activeCall.SetNULL();
@@ -1705,7 +1712,7 @@ void MyManager::OnSpeedDialColumnResize(wxListEvent& event)
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
   wxString key;
-  key.sprintf(wxT("ColumnWidth%u"), event.GetColumn());
+  key.sprintf(ColumnWidthKey, event.GetColumn());
   config->Write(key, m_speedDials->GetColumnWidth(event.GetColumn()));
 }
 
