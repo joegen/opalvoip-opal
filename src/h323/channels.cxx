@@ -815,7 +815,7 @@ void H323_ExternalRTPChannel::Transmit()
 
 PBoolean H323_ExternalRTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & param) const
 {
-  param.m_sessionID = sessionID;
+  param.m_sessionID = connection.GetExternalSessionID(sessionID);
 
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaGuaranteedDelivery);
   param.m_mediaGuaranteedDelivery = PFalse;
@@ -865,7 +865,7 @@ PBoolean H323_ExternalRTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelPa
                                           unsigned & errorCode)
 {
   // Only support a single audio session
-  if (param.m_sessionID != sessionID) {
+  if (connection.GetInternalSessionID(param.m_sessionID, GetCapability()) != sessionID) {
     PTRACE(1, "LogChan\tOpen for invalid session: " << param.m_sessionID);
     errorCode = H245_OpenLogicalChannelReject_cause::e_invalidSessionID;
     return PFalse;
@@ -1029,7 +1029,7 @@ PBoolean H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
               H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters
                   ::e_h2250LogicalChannelParameters);
   H245_H2250LogicalChannelParameters & fparam = open.m_forwardLogicalChannelParameters.m_multiplexParameters;
-  fparam.m_sessionID = GetSessionID();
+  fparam.m_sessionID = connection.GetExternalSessionID(GetSessionID());
 
   if (separateReverseChannel)
     return PTrue;
@@ -1041,13 +1041,13 @@ PBoolean H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
               H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters
                   ::e_h2250LogicalChannelParameters);
   H245_H2250LogicalChannelParameters & rparam = open.m_reverseLogicalChannelParameters.m_multiplexParameters;
-  rparam.m_sessionID = GetSessionID();
+  rparam.m_sessionID = connection.GetExternalSessionID(GetSessionID());
 
   return capability->OnSendingPDU(open.m_reverseLogicalChannelParameters.m_dataType);
 }
 
 
-void H323DataChannel::OnSendOpenAck(const H245_OpenLogicalChannel & /*open*/,
+void H323DataChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
                                     H245_OpenLogicalChannelAck & ack) const
 {
   if (listener == NULL && transport == NULL) {
@@ -1056,6 +1056,8 @@ void H323DataChannel::OnSendOpenAck(const H245_OpenLogicalChannel & /*open*/,
   }
 
   PTRACE(3, "LogChan\tOnSendOpenAck for channel: " << number);
+  
+  unsigned theSessionID;
 
   H245_H2250LogicalChannelAckParameters * param;
 
@@ -1064,6 +1066,9 @@ void H323DataChannel::OnSendOpenAck(const H245_OpenLogicalChannel & /*open*/,
     ack.m_forwardMultiplexAckParameters.SetTag(
               H245_OpenLogicalChannelAck_forwardMultiplexAckParameters::e_h2250LogicalChannelAckParameters);
     param = (H245_H2250LogicalChannelAckParameters*)&ack.m_forwardMultiplexAckParameters.GetObject();
+    const H245_H2250LogicalChannelParameters & openparam =
+      open.m_forwardLogicalChannelParameters.m_multiplexParameters;
+    theSessionID = openparam.m_sessionID;
   }
   else {
     ack.IncludeOptionalField(H245_OpenLogicalChannelAck::e_reverseLogicalChannelParameters);
@@ -1072,12 +1077,15 @@ void H323DataChannel::OnSendOpenAck(const H245_OpenLogicalChannel & /*open*/,
                   ::e_h2250LogicalChannelParameters);
     param = (H245_H2250LogicalChannelAckParameters*)
                 &ack.m_reverseLogicalChannelParameters.m_multiplexParameters.GetObject();
+    const H245_H2250LogicalChannelParameters & openparam =
+      open.m_reverseLogicalChannelParameters.m_multiplexParameters;
+    theSessionID = openparam.m_sessionID;
   }
 
   unsigned session = GetSessionID();
   if (session != 0) {
     param->IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID);
-    param->m_sessionID = GetSessionID();
+    param->m_sessionID = theSessionID; // ensure same session ID is used as in OLC
   }
 
   H323TransportAddress address;
