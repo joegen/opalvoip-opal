@@ -422,6 +422,7 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDis
   }
 
   for (PINDEX i = 0; i < listeners.GetSize(); i++)
+   if(listeners[i].GetProto() == "tcp")
     listeners[i].SetPDU(rrq.m_callSignalAddress, *transport);
 
   endpoint.SetEndpointTypeInfo(rrq.m_terminalType);
