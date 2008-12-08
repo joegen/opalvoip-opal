@@ -34,33 +34,21 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
-#if OPAL_SIP
+#include <opal/mediastrm.h>
 
-/////////////////////////////////////////////////////////
-//
-//  SDP media description for IM
-//
-
-#include <sip/sdp.h>
-
-class SDPIMMediaDescription : public SDPMediaDescription
+class OpalIMMediaStream : public OpalMediaStream
 {
-  PCLASSINFO(SDPIMMediaDescription, SDPMediaDescription);
   public:
-    SDPIMMediaDescription(const OpalTransportAddress & address);
+    OpalIMMediaStream(
+      OpalConnection & conn,
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      bool isSource                        ///<  Is a source stream
+    );
 
-    virtual PString GetSDPMediaType() const;
-    virtual PCaselessString GetSDPTransportType() const;
-    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
-    virtual PString GetSDPPortList() const;
-    virtual bool PrintOn(ostream & str, const PString & connectString) const;
-    void SetAttribute(const PString & attr, const PString & value);
-    void ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & mediaFormat);
-  
-  protected:
-    PStringToString msrpAttributes;
+    virtual PBoolean IsSynchronous() const         { return false; }
+    virtual PBoolean RequiresPatchThread() const   { return false; }
 };
 
-#endif
 
 #endif // OPAL_MSRP_MSRP_H

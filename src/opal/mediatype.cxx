@@ -196,9 +196,9 @@ PString OpalRTPAVPMediaType::GetRTPEncoding() const
   return "rtp/avp";
 }
 
-OpalMediaSession * OpalRTPAVPMediaType::CreateMediaSession(OpalConnection & conn, unsigned /* sessionID*/) const
+OpalMediaSession * OpalRTPAVPMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
 {
-  return new OpalRTPMediaSession(conn, m_mediaType);
+  return new OpalRTPMediaSession(conn, m_mediaType, sessionID);
 }
 
 

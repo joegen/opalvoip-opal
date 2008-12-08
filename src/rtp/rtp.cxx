@@ -1472,7 +1472,7 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype)
     PTRACE(1, "RTP_UDP\tGetOption(" << buftype << ") failed: " << sock.GetErrorText());
   }
 
-  if (!sock.SetOption(buftype, UDP_BUFFER_SIZE)) {
+  if (!sock.SetOption(buftype, 1000 /*UDP_BUFFER_SIZE*/)) {
     PTRACE(1, "RTP_UDP\tSetOption(" << buftype << ") failed: " << sock.GetErrorText());
   }
 

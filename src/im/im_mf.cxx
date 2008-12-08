@@ -34,6 +34,7 @@
 #include <opal/mediafmt.h>
 #include <opal/connection.h>
 #include <im/msrp.h>
+#include <im/im.h>
 #include <rtp/rtp.h>
 
 #define new PNEW
@@ -45,7 +46,7 @@ OPAL_INSTANTIATE_MEDIATYPE(im, OpalIMMediaType);
 /////////////////////////////////////////////////////////////////////////////
 
 OpalIMMediaType::OpalIMMediaType()
-  : OpalMediaTypeDefinition("im", "message", 5)
+  : OpalMediaTypeDefinition("im", "message", 5, true)
 {
 }
 
@@ -77,50 +78,65 @@ OpalMediaSession * OpalIMMediaType::CreateMediaSession(OpalConnection & conn, un
   return NULL;
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
 
-#define DECLARE_IM_FORMAT(title, name, encoding) \
-const OpalMediaFormat & GetOpalIM##title() \
-{ \
-  static class IM##title##MediaFormat : public OpalMediaFormat { \
-    public: \
-      IM##title##MediaFormat() \
-        : OpalMediaFormat(name, \
-                          "im", \
-                          RTP_DataFrame::MaxPayloadType, \
-                          "+", \
-                          false,  \
-                          1440, \
-                          512, \
-                          0, \
-                          0) \
-      { } \
-  } const f; \
-  return f; \
-} \
+
+#define DECLARE_MSRP_FORMAT(title, encoding) \
 class IM##title##MSRPMediaType : public MSRPMediaType \
 { \
-  public: \
-    IM##title##MSRPMediaType(); \
-    virtual const char * GetMediaFormatName() const { return name; } \
 }; \
 static PFactory<MSRPMediaType>::Worker<IM##title##MSRPMediaType> worker_##IM##title##MSRPMediaType(encoding, true); \
 
+/////////////////////////////////////////////////////////////////////////////
 
-DECLARE_IM_FORMAT(Text, "IM-Text", "text/plain");
-DECLARE_IM_FORMAT(CPIM, "IM-CPIM", "message/cpim");
-DECLARE_IM_FORMAT(HTML, "IM-HTML", "message/html");
+DECLARE_MSRP_FORMAT(Text, "text/plain");
+DECLARE_MSRP_FORMAT(CPIM, "message/cpim");
+DECLARE_MSRP_FORMAT(HTML, "message/html");
 
-IMTextMSRPMediaType::IMTextMSRPMediaType()
-{ }
+const OpalMediaFormat & GetOpalIMMSRP() 
+{ 
+  static class IMMSRPMediaFormat : public OpalMediaFormat { 
+    public: 
+      IMMSRPMediaFormat() 
+        : OpalMediaFormat("IM-MSRP", 
+                          "im", 
+                          RTP_DataFrame::MaxPayloadType, 
+                          "+", 
+                          false,  
+                          1440, 
+                          512, 
+                          0, 
+                          0) 
+      { 
+        PFactory<MSRPMediaType>::KeyList_T types = PFactory<MSRPMediaType>::GetKeyList();
+        PFactory<MSRPMediaType>::KeyList_T::iterator r;
 
-IMCPIMMSRPMediaType::IMCPIMMSRPMediaType()
-{ }
+        PString acceptTypes;
+        for (r = types.begin(); r != types.end(); ++r) {
+          if (!acceptTypes.IsEmpty())
+            acceptTypes += " ";
+          acceptTypes += *r;
+        }
+        
+        OpalMediaOption * acceptOption = new OpalMediaOptionString("Accept Types", false, acceptTypes);
+        acceptOption->SetMerge(OpalMediaOption::NoMerge);
+        AddOption(acceptOption);
+      } 
+  } const f; 
+  return f; 
+} 
 
-IMHTMLMSRPMediaType::IMHTMLMSRPMediaType()
-{ }
+//////////////////////////////////////////////////////////////////////////////////////////
 
-
-
+OpalIMMediaStream::OpalIMMediaStream(
+      OpalConnection & conn,
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      bool isSource                       ///<  Is a source stream
+    )
+  : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
+{
+}
 
 #endif // OPAL_IM_CAPABILITY

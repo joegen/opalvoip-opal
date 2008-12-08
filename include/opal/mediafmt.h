@@ -1165,7 +1165,6 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_RFC2833        "UserInput/RFC2833"
 #define OPAL_CISCONSE       "NamedSignalEvent"
 #define OPAL_T38            "T.38"
-#define OPAL_MSRP           "MSRP"
 
 extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16_16KHZ();
@@ -1198,11 +1197,6 @@ extern const OpalMediaFormat & GetOpalCiscoNSE();
 extern const OpalMediaFormat & GetOpalT38();
 #endif
 
-#if OPAL_IM_CAPABILITY
-extern const OpalMediaFormat & GetOpalIMText();
-extern const OpalMediaFormat & GetOpalIMHTML();
-extern const OpalMediaFormat & GetOpalIMCPIM();
-#endif
 
 #define OpalPCM16          GetOpalPCM16()
 #define OpalPCM16_16KHZ    GetOpalPCM16_16KHZ()
@@ -1231,14 +1225,18 @@ extern const OpalMediaFormat & GetOpalIMCPIM();
 #define OpalCiscoNSE       GetOpalCiscoNSE()
 #define OpalT38            GetOpalT38()
 
-#define OpalIMText         GetOpalIMText()
-#define OpalIMHTML         GetOpalIMHTML();
-#define OpalIMCPIM         GetOpalIMCPIM();
-
 #define OpalL16Mono8kHz    OpalL16_MONO_8KHZ
 #define OpalL16Mono16kHz   OpalL16_MONO_16KHZ
 #define OpalG711uLaw       OpalG711_ULAW_64K
 #define OpalG711ALaw       OpalG711_ALAW_64K
+
+
+#if OPAL_IM_CAPABILITY
+#define OPAL_IMMSRP           "IM-MSRP"
+#define OpalIMMSRP         GetOpalIMMSRP()
+extern const OpalMediaFormat & GetOpalIMMSRP();
+#endif
+
 
 #ifdef _MSC_VER
 #if _MSC_VER < 1300

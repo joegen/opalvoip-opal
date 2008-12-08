@@ -73,7 +73,7 @@ class OpalMediaSession : public PObject
 {
   PCLASSINFO(OpalMediaSession, PObject);
   public:
-    OpalMediaSession(OpalConnection & conn, const OpalMediaType & _mediaType);
+    OpalMediaSession(OpalConnection & conn, const OpalMediaType & _mediaType, unsigned sessionId);
     OpalMediaSession(const OpalMediaSession & _obj);
 
     virtual void Close() = 0;
@@ -88,14 +88,20 @@ class OpalMediaSession : public PObject
 
     virtual OpalTransportAddress GetLocalMediaAddress() const = 0;
 
+#if OPAL_SIP
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
     ) = 0;
 
+    virtual OpalMediaStream * CreateMediaStream(
+      const OpalMediaFormat & mediaFormat, 
+      unsigned sessionID, 
+      PBoolean isSource
+    ) = 0;
+#endif
+
     OpalConnection & connection;
     OpalMediaType mediaType;     // media type for session
-    bool autoStartReceive;       // if true, this session should receive data when the call is started
-    bool autoStartTransmit;      // if true, this session  should transmit data when the call is started
     unsigned sessionId;          // unique session ID
 };
 
@@ -105,7 +111,7 @@ class OpalRTPMediaSession : public OpalMediaSession
 {
   PCLASSINFO(OpalRTPMediaSession, OpalMediaSession);
   public:
-    OpalRTPMediaSession(OpalConnection & conn, const OpalMediaType & _mediaType);
+    OpalRTPMediaSession(OpalConnection & conn, const OpalMediaType & _mediaType, unsigned _sessionId);
     OpalRTPMediaSession(const OpalRTPMediaSession & _obj);
 
     PObject * Clone() const { return new OpalRTPMediaSession(*this); }
@@ -120,9 +126,17 @@ class OpalRTPMediaSession : public OpalMediaSession
 
     virtual OpalTransportAddress GetLocalMediaAddress() const;
 
+#if OPAL_SIP
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
     );
+
+    virtual OpalMediaStream * CreateMediaStream(
+      const OpalMediaFormat & mediaFormat, 
+      unsigned sessionID, 
+      PBoolean isSource
+    );
+#endif
 
     RTP_Session * rtpSession;    // RTP session
 };
@@ -144,24 +158,6 @@ class OpalRTPSessionManager : public PObject
 
     void CopyFromMaster(const OpalRTPSessionManager & sm);
     void CopyToMaster(OpalRTPSessionManager & sm);
-
-    /**
-       Initialise the autostart options within the session
-      */
-    void Initialise(
-      OpalRTPConnection & conn, 
-      const OpalConnection::StringOptions & stringOptions
-    );
-
-    /**
-       Initialise the autostart options for a session
-      */
-    unsigned AutoStartSession(
-      unsigned sessionID,        ///<  Session ID to use.
-      const OpalMediaType & mediaType,
-      bool autoStartReceive, 
-      bool autoStartTransmit
-    );
 
   /**@name Operations */
   //@{
@@ -203,11 +199,7 @@ class OpalRTPSessionManager : public PObject
 
     virtual bool AllSessionsFailing();
 
-    virtual bool CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive, bool & autoStart);
-
   protected:
-    void SetOldOptions(unsigned channelId, const OpalMediaType & mediaType, bool rx, bool tx);
-
     OpalConnection & connection;
     PMutex m_mutex;
     bool m_initialised;
@@ -253,6 +245,9 @@ class OpalRTPConnection : public OpalConnection
        If there is no session of the specified ID, NULL is returned.
       */
     virtual RTP_Session * GetSession(
+      unsigned sessionID    ///<  RTP session number
+    ) const;
+    virtual OpalMediaSession * GetMediaSession(
       unsigned sessionID    ///<  RTP session number
     ) const;
 
@@ -395,8 +390,6 @@ class OpalRTPConnection : public OpalConnection
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
 
     virtual void SessionFailing(RTP_Session & session);
-
-    virtual bool CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive);
 
   protected:
     OpalRTPSessionManager m_rtpSessions;
