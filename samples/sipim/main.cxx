@@ -21,9 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 21651 $
- * $Author: rjongbloed $
- * $Date: 2008-11-30 11:26:42 +1100 (Sun, 30 Nov 2008) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include "main.h"

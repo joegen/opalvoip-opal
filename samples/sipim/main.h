@@ -21,9 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 20534 $
- * $Author: rjongbloed $
- * $Date: 2008-07-04 13:47:05 +1000 (Fri, 04 Jul 2008) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef _SipIM_MAIN_H
