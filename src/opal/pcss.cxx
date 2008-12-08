@@ -52,9 +52,50 @@
 #include <opal/patch.h>
 #include <opal/manager.h>
 
+#if OPAL_IM_CAPABILITY
+
+#include <im/im.h>
+
+class PCSSIMStream : public OpalIMMediaStream
+{
+  public:
+    PCSSIMStream(OpalConnection & conn,
+               const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+                              unsigned sessionID,   ///<  Session number for stream
+                                  bool isSource)     ///<  Is a source stream
+      : OpalIMMediaStream(conn, mediaFormat, sessionID, isSource)
+    {
+    }
+
+    virtual PBoolean ReadData(
+      BYTE * data,      ///<  Data buffer to read to
+      PINDEX size,      ///<  Size of buffer
+      PINDEX & length   ///<  Length of data actually read
+    )
+    {
+      if (!IsOpen())
+        return false;
+      return true;
+    }
+
+    /**Write raw media data to the sink media stream.
+       The default behaviour writes to the PChannel object.
+      */
+    virtual PBoolean WriteData(
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
+    )
+    {
+      if (!IsOpen())
+        return false;
+      return true;
+    }
+};
+
+#endif  // OPAL_IM_CAPABILITY
 
 #define new PNEW
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -345,14 +386,21 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
                                                         unsigned sessionID,
                                                         PBoolean isSource)
 {
-  if (mediaFormat.GetMediaType() != OpalMediaType::Audio())
-    return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
+  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
+    PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, isSource);
+    if (soundChannel == NULL)
+      return NULL;
 
-  PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, isSource);
-  if (soundChannel == NULL)
-    return NULL;
+    return new OpalAudioMediaStream(*this, mediaFormat, sessionID, isSource, soundChannelBuffers, soundChannel);
+  }
 
-  return new OpalAudioMediaStream(*this, mediaFormat, sessionID, isSource, soundChannelBuffers, soundChannel);
+#if OPAL_IM_CAPABILITY
+  if (mediaFormat.GetMediaType() == "im") {
+    return new PCSSIMStream(*this, mediaFormat, sessionID, isSource);
+  }
+#endif
+
+  return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 }
 
 

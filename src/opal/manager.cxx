@@ -1532,9 +1532,7 @@ void OpalManager::StopRecording(const PString & callToken)
 
 void OpalManager::AddIMMediaFormats(OpalMediaFormatList & mediaFormats, const OpalConnection * /*connection*/) const
 {
-  mediaFormats += OpalIMText;
-  mediaFormats += OpalIMHTML;
-  mediaFormats += OpalIMCPIM;
+  mediaFormats += OpalIMMSRP;
 }
 
 #endif

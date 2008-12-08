@@ -1456,6 +1456,28 @@ class OpalConnection : public PSafeObject
 #if OPAL_STATISTICS
     unsigned m_VideoUpdateRequestsSent;
 #endif
+
+    struct AutoStartInfo {
+      unsigned preferredSessionId;  // preferred session ID (only used for originating)
+      bool autoStartReceive;        // if true, this session should receive data when the call is started
+      bool autoStartTransmit;       // if true, this session  should transmit data when the call is started
+    };
+
+    class AutoStartMap : public std::map<OpalMediaType, AutoStartInfo>
+    {
+      public:
+        AutoStartMap();
+        void Initialise(OpalConnection & conn, const OpalConnection::StringOptions & stringOptions);
+        void SetOldOptions(unsigned preferredSessionIndex, const OpalMediaType & mediaType, bool rx, bool tx);
+        bool CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive, bool & autoStart) const;
+        unsigned AutoStartSession(unsigned sessionID, const OpalMediaType & mediaType, bool autoStartReceive, bool autoStartTransmit);
+
+      protected:
+        bool m_initialised;
+        PMutex m_mutex;
+
+    };
+    AutoStartMap m_autoStartInfo;
 };
 
 #endif // OPAL_OPAL_CONNECTION_H
