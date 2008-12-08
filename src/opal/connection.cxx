@@ -778,7 +778,7 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(const PString & streamID, bool
 OpalMediaStreamPtr OpalConnection::GetMediaStream(unsigned sessionId, bool source) const
 {
   for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    if ((sessionId == 0 || mediaStream->GetSessionID() == sessionId) && mediaStream->IsSource() == source)
+    if (mediaStream->GetSessionID() == sessionId && mediaStream->IsSource() == source)
       return mediaStream;
   }
 

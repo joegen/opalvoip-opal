@@ -1462,10 +1462,6 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
   info.m_local.m_dialogTag  = m_dialog.GetLocalTag();
   info.m_local.m_identity = url.AsString();
   info.m_local.m_display = url.GetDisplayName();
-  if (GetMediaStream(0, false) != NULL)
-    info.m_local.m_rendering = SIPDialogNotification::RenderingMedia;
-  else if (GetPhase() >= EstablishedPhase)
-    info.m_local.m_rendering = SIPDialogNotification::NotRenderingMedia;
   info.m_local.m_appearance = m_appearanceCode;
 
   url = m_dialog.GetRemoteURI();
@@ -1475,10 +1471,6 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
   info.m_remote.m_dialogTag = m_dialog.GetRemoteTag();
   info.m_remote.m_identity = url.AsString();
   info.m_remote.m_display = url.GetDisplayName();
-  if (GetMediaStream(0, true) != NULL)
-    info.m_remote.m_rendering = SIPDialogNotification::RenderingMedia;
-  else if (GetPhase() >= EstablishedPhase)
-    info.m_remote.m_rendering = SIPDialogNotification::NotRenderingMedia;
 
   if (!info.m_remote.m_dialogTag.IsEmpty() && state == SIPDialogNotification::Proceeding)
     state = SIPDialogNotification::Early;
@@ -1487,6 +1479,16 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
   info.m_state = state;
   info.m_eventType = eventType;
   info.m_eventCode = eventCode;
+
+  if (GetPhase() >= EstablishedPhase)
+    info.m_local.m_rendering = info.m_remote.m_rendering = SIPDialogNotification::NotRenderingMedia;
+
+  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+    if (mediaStream->IsSource())
+      info.m_remote.m_rendering = SIPDialogNotification::RenderingMedia;
+    else
+      info.m_local.m_rendering = SIPDialogNotification::RenderingMedia;
+  }
 
   endpoint.SendNotifyDialogInfo(info);
 }
