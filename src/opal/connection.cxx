@@ -1153,16 +1153,15 @@ bool OpalConnection::CanAutoStartMediaType(const OpalMediaType & mediaType, bool
   if (m_autoStartInfo.CanAutoStartMediaType(mediaType, receive, autoStart))
     return autoStart;
 
-  if (mediaType == OpalMediaType::Video()) 
-    return receive ? endpoint.GetManager().CanAutoStartReceiveVideo() : endpoint.GetManager().CanAutoStartTransmitVideo();
-
   return receive ? mediaType.GetDefinition()->GetAutoStartReceive() : mediaType.GetDefinition()->GetAutoStartTransmit();
 }
+
 
 OpalConnection::AutoStartMap::AutoStartMap()
 {
   m_initialised = true;
 }
+
 
 void OpalConnection::AutoStartMap::Initialise(OpalConnection & conn, const OpalConnection::StringOptions & stringOptions)
 {

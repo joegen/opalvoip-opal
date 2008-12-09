@@ -996,26 +996,6 @@ class H323EndPoint : public OpalRTPEndPoint
       */
     virtual void OnReceivedInitiateReturnError();
 
-#if OPAL_VIDEO
-    /**See if should auto-start receive video channels on connection.
-     */
-    PBoolean CanAutoStartReceiveVideo() const { return manager.CanAutoStartReceiveVideo(); }
-
-    /**See if should auto-start transmit video channels on connection.
-     */
-    PBoolean CanAutoStartTransmitVideo() const { return manager.CanAutoStartTransmitVideo(); }
-#endif
-
-#if OPAL_T38_CAPABILITY
-    /**See if should auto-start receive fax channels on connection.
-     */
-    PBoolean CanAutoStartReceiveFax() const { return OpalMediaType::Fax().GetDefinition()->GetAutoStartReceive(); }
-
-    /**See if should auto-start transmit fax channels on connection.
-     */
-    PBoolean CanAutoStartTransmitFax() const { return OpalMediaType::Fax().GetDefinition()->GetAutoStartTransmit(); }
-#endif
-
     /**See if should automatically do call forward of connection.
      */
     PBoolean CanAutoCallForward() const { return autoCallForward; }
