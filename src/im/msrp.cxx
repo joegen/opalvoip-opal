@@ -156,7 +156,7 @@ OpalMediaFormatList SDPMSRPMediaDescription::GetMediaFormats() const
   OpalMediaFormat msrp(OpalMSRP);
   msrp.SetOptionString("Accept Types", types);
 
-  PTRACE(4, "MSRP\tNew format is " << setw(-1) << msrp);
+  PTRACE(4, "MSRP\tNew format is\n" << setw(-1) << msrp);
 
   OpalMediaFormatList fmts;
   fmts += msrp;
