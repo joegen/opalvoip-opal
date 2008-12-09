@@ -2879,13 +2879,16 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
 {
   Construct(Method_SUBSCRIBE, dialog);
 
+  SIPURL contact;
   if (params.m_contactAddress.IsEmpty()) {
-    SIPURL contact = endpoint.GetLocalURL(trans, dialog.GetLocalURI().GetUserName());
-    contact.Sanitise(SIPURL::ContactURI);
-    mime.SetContact(contact);
+    // I have no idea why this is necessary, but it is the way OpenSIPS works ....
+    const SIPURL & userURI = params.m_eventPackage == SIPSubscribe::Dialog ? dialog.GetRemoteURI() : dialog.GetLocalURI();
+    contact = endpoint.GetLocalURL(trans, userURI.GetUserName());
   }
   else
-    mime.SetContact(params.m_contactAddress);
+    contact = params.m_contactAddress;
+  contact.Sanitise(SIPURL::ContactURI);
+  mime.SetContact(contact);
 
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
   mime.SetEvent(params.m_eventPackage);
