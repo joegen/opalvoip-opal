@@ -213,8 +213,9 @@ class SDPMediaDescription : public PObject
 
     virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
 
-  protected:
     virtual bool PrintOn(ostream & strm, const PString & str) const;
+
+  protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
     virtual void SetPacketTime(const PString & optionName, const PString & value);
 

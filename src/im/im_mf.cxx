@@ -33,74 +33,45 @@
 
 #include <opal/mediafmt.h>
 #include <opal/connection.h>
-#include <im/msrp.h>
 #include <im/im.h>
+#include <im/msrp.h>
 #include <rtp/rtp.h>
 
 #define new PNEW
 
-#if OPAL_IM_CAPABILITY
-
-OPAL_INSTANTIATE_MEDIATYPE(im, OpalIMMediaType);
-
 /////////////////////////////////////////////////////////////////////////////
 
-OpalIMMediaType::OpalIMMediaType()
-  : OpalMediaTypeDefinition("im", "message", 5, true)
+#if OPAL_MSRP_CAPABILITY
+
+OPAL_INSTANTIATE_MEDIATYPE(msrp, OpalMSRPMediaType);
+
+OpalMSRPMediaType::OpalMSRPMediaType()
+  : OpalIMMediaType("msrp", "message", 5, true)
 {
 }
-
-PString OpalIMMediaType::GetRTPEncoding() const
-{
-  return "";
-}
-
-RTP_UDP * OpalIMMediaType::CreateRTPSession(OpalRTPConnection & , unsigned /*sessionID*/, bool /*remoteIsNAT*/)
-{
-  return NULL;
-}
-
-bool OpalIMMediaType::UsesRTP() const
-{ 
-  return false; 
-}
-
-OpalMediaSession * OpalIMMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
-{
-  // as this is called in the constructor of an OpalConnection descendant, 
-  // we can't use a virtual function on OpalConnection
-
-#if OPAL_IM_CAPABILITY
-  if (conn.GetPrefixName() *= "sip")
-    return new OpalMSRPMediaSession(conn, sessionID);
-#endif
-
-  return NULL;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 
 
-#define DECLARE_MSRP_FORMAT(title, encoding) \
-class IM##title##MSRPMediaType : public MSRPMediaType \
+#define DECLARE_MSRP_ENCODING(title, encoding) \
+class IM##title##OpalMSRPEncoding : public OpalMSRPEncoding \
 { \
 }; \
-static PFactory<MSRPMediaType>::Worker<IM##title##MSRPMediaType> worker_##IM##title##MSRPMediaType(encoding, true); \
+static PFactory<OpalMSRPEncoding>::Worker<IM##title##OpalMSRPEncoding> worker_##IM##title##OpalMSRPEncoding(encoding, true); \
 
 /////////////////////////////////////////////////////////////////////////////
 
-DECLARE_MSRP_FORMAT(Text, "text/plain");
-DECLARE_MSRP_FORMAT(CPIM, "message/cpim");
-DECLARE_MSRP_FORMAT(HTML, "message/html");
+DECLARE_MSRP_ENCODING(Text, "text/plain");
+DECLARE_MSRP_ENCODING(CPIM, "message/cpim");
+DECLARE_MSRP_ENCODING(HTML, "message/html");
 
-const OpalMediaFormat & GetOpalIMMSRP() 
+const OpalMediaFormat & GetOpalMSRP() 
 { 
   static class IMMSRPMediaFormat : public OpalMediaFormat { 
     public: 
       IMMSRPMediaFormat() 
-        : OpalMediaFormat("IM-MSRP", 
-                          "im", 
+        : OpalMediaFormat(OPAL_MSRP, 
+                          "msrp", 
                           RTP_DataFrame::MaxPayloadType, 
                           "+", 
                           false,  
@@ -109,8 +80,8 @@ const OpalMediaFormat & GetOpalIMMSRP()
                           0, 
                           0) 
       { 
-        PFactory<MSRPMediaType>::KeyList_T types = PFactory<MSRPMediaType>::GetKeyList();
-        PFactory<MSRPMediaType>::KeyList_T::iterator r;
+        PFactory<OpalMSRPEncoding>::KeyList_T types = PFactory<OpalMSRPEncoding>::GetKeyList();
+        PFactory<OpalMSRPEncoding>::KeyList_T::iterator r;
 
         PString acceptTypes;
         for (r = types.begin(); r != types.end(); ++r) {
@@ -127,6 +98,46 @@ const OpalMediaFormat & GetOpalIMMSRP()
   return f; 
 } 
 
+#endif // OPAL_MSRP_CAPABILITY 
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_SIPIM_CAPABILITY
+
+OPAL_INSTANTIATE_MEDIATYPE2(sipim, "sip-im", OpalSIPIMMediaType);
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalSIPIMMediaType::OpalSIPIMMediaType()
+  : OpalIMMediaType("sip-im", "message", 6, true)
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+const OpalMediaFormat & GetOpalSIPIM() 
+{ 
+  static class IMSIPMediaFormat : public OpalMediaFormat { 
+    public: 
+      IMSIPMediaFormat() 
+        : OpalMediaFormat(OPAL_SIPIM, 
+                          "sip-im", 
+                          RTP_DataFrame::MaxPayloadType, 
+                          "+", 
+                          false,  
+                          1440, 
+                          512, 
+                          0, 
+                          0) 
+      { 
+      } 
+  } const f; 
+  return f; 
+} 
+
+#endif // OPAL_SIPIM_CAPABILITY
+
 //////////////////////////////////////////////////////////////////////////////////////////
 
 OpalIMMediaStream::OpalIMMediaStream(
@@ -139,4 +150,3 @@ OpalIMMediaStream::OpalIMMediaStream(
 {
 }
 
-#endif // OPAL_IM_CAPABILITY

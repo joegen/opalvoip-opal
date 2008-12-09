@@ -2723,6 +2723,14 @@ void SIPConnection::OnSessionTimeout(PTimer &, INT)
   //sessionTimer = 10000;
 }
 
+PString SIPConnection::GetLocalPartyURL() const
+{
+  SIPURL url = m_dialog.GetLocalURI();
+  url.Sanitise(SIPURL::ExternalURI);
+  return url.AsString();
+}
+
+
 #endif // OPAL_SIP
 
 
