@@ -225,7 +225,7 @@ OpalMediaStream * OpalSIPIMMediaSession::CreateMediaStream(const OpalMediaFormat
                                                                          unsigned sessionID, 
                                                                          PBoolean isSource)
 {
-  PTRACE(2, "SIPIM\tCreated " << (connection.IsOriginating() ? "originating" : "receiving") << " media stream");
+  PTRACE(2, "SIPIM\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with " << fromURL);
   return new OpalSIPIMMediaStream(connection, mediaFormat, sessionID, isSource);
 }
 
