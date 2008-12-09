@@ -53,6 +53,7 @@ void SipIM::Main()
   args.Parse(
              "u-user:"
              "h-help."
+             "-sipim."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -71,6 +72,7 @@ void SipIM::Main()
             "Available options are:\n"
             "  -u or --user            : set local username.\n"
             "  --help                  : print this help message.\n"
+            "  --sipim                 : use SIPIM instead of MSRP\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -86,6 +88,8 @@ void SipIM::Main()
   if (args.HasOption('u'))
     m_manager.SetDefaultUserName(args.GetOptionString('u'));
 
+  bool sipIM = args.HasOption("sipim");
+
   OpalMediaFormatList allMediaFormats;
 
   SIPEndPoint * sip  = new SIPEndPoint(m_manager);
@@ -98,21 +102,22 @@ void SipIM::Main()
   MyPCSSEndPoint * pcss = new MyPCSSEndPoint(m_manager);
   allMediaFormats += pcss->GetMediaFormats();
 
-  PString imFormatMask("!*IM-*");
-  m_manager.SetMediaFormatMask(imFormatMask);
-
   allMediaFormats = OpalTranscoder::GetPossibleFormats(allMediaFormats); // Add transcoders
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
     if (!allMediaFormats[i].IsTransportable())
       allMediaFormats.RemoveAt(i--); // Don't show media formats that are not used over the wire
   }
 
-  allMediaFormats.Remove(imFormatMask);
-  
   cout << "Available codecs: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
 
+  PString imFormatMask = sipIM ? "!SIP-IM" : "!MSRP";
+  m_manager.SetMediaFormatMask(imFormatMask);
+  allMediaFormats.Remove(imFormatMask);
+  
+  cout << "Codecs to be used: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
+
   OpalConnection::StringOptions * options = new OpalConnection::StringOptions();
-  options->SetAt("autostart", "im:exclusive");
+  options->SetAt("autostart", sipIM ? "sip-im:exclusive" : "msrp:exclusive");
 
   if (args.GetCount() == 0)
     cout << "Awaiting incoming IM ..." << flush;
