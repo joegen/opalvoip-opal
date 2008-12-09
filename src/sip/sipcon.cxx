@@ -734,8 +734,8 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   else {
     localMedia->AddMediaFormats(formats, mediaType);
 
-    SDPMediaDescription::Direction dir = CanAutoStartMediaType(mediaType, false) ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
-    if (CanAutoStartMediaType(mediaType, true))
+    SDPMediaDescription::Direction dir = CanAutoStartMediaType(mediaType, true) ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
+    if (CanAutoStartMediaType(mediaType, false))
       dir = dir == SDPMediaDescription::RecvOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
     localMedia->SetDirection(dir);
   }
