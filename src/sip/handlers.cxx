@@ -756,6 +756,8 @@ void SIPSubscribeHandler::UpdateParameters(const SIPSubscribe::Params & params)
   if (!params.m_password.IsEmpty())
     m_password = params.m_password; // Adjust the password if required 
 
+  m_parameters.m_contactAddress = params.m_contactAddress;
+
   if (params.m_expire > 0)
     SetExpire(params.m_expire);
 }
