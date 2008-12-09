@@ -539,7 +539,8 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
     std::vector<bool> sessions;
     for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
       unsigned session = stream->GetSessionID();
-      sessions.resize(std::max(sessions.size(),session+1));
+      sessions.resize(
+	std::max((unsigned int)sessions.size(),session+1));
       if (!sessions[session]) {
         sessions[session] = true;
         sdpOK |= OfferSDPMediaDescription(stream->GetMediaFormat().GetMediaType(), session, rtpSessions, sdpOut);
