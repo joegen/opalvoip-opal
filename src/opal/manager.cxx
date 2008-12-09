@@ -707,7 +707,9 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection
   PVideoDevice::OpenArgs args = videoInputDevice;
   args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
   args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
-  args.rate = mediaFormat.GetClockRate()/mediaFormat.GetFrameTime();
+  unsigned maxRate = mediaFormat.GetClockRate()/mediaFormat.GetFrameTime();
+  if (args.rate > maxRate)
+    args.rate = maxRate;
 
   autoDelete = PTrue;
   device = PVideoInputDevice::CreateOpenedDevice(args, false);
