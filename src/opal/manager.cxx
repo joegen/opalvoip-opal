@@ -1528,14 +1528,15 @@ void OpalManager::StopRecording(const PString & callToken)
 }
 
 
-#if OPAL_IM_CAPABILITY
-
 void OpalManager::AddIMMediaFormats(OpalMediaFormatList & mediaFormats, const OpalConnection * /*connection*/) const
 {
-  mediaFormats += OpalIMMSRP;
-}
-
+#if OPAL_MSRP_CAPABILITY
+  mediaFormats += OpalMSRP;
 #endif
+#if OPAL_SIPIM_CAPABILITY
+  mediaFormats += OpalSIPIM;
+#endif
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

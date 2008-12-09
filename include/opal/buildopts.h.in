@@ -206,7 +206,10 @@
   #define H323_DISABLE_T38 1
 #endif
 
-#undef  OPAL_IM_CAPABILITY
+#define OPAL_MSRP_CAPABILITY 1
+#define OPAL_SIPIM_CAPABILITY 1
+
+#define OPAL_IM_CAPABILITY    (OPAL_MSRP_CAPABILITY || OPAL_MSRP_CAPABILITY)
 
 /////////////////////////////////////////////////
 //

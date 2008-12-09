@@ -71,7 +71,8 @@ OPAL_SIP=yes
 OPAL_IAX2=yes
 OPAL_VIDEO=yes
 OPAL_T38_CAPABILITY=yes
-OPAL_IM_CAPABILITY=yes
+OPAL_MSRP_CAPABILITY=yes
+OPAL_SIPIM_CAPABILITY=yes
 OPAL_FAX=yes
 OPAL_H224FECC=yes
 OPAL_H450=yes
@@ -445,9 +446,13 @@ dnl MSWIN_DISPLAY    t38,T.38 capability
 dnl MSWIN_DEFINE     t38,OPAL_T38_CAPABILITY
 OPAL_SIMPLE_OPTION([t38],[OPAL_T38_CAPABILITY], [whether to enable T.38 capability support])
 
-dnl MSWIN_DISPLAY    im,IM capability
-dnl MSWIN_DEFINE     im,OPAL_IM_CAPABILITY
-OPAL_SIMPLE_OPTION([im],[OPAL_IM_CAPABILITY], [whether to enable IM capability support])
+dnl MSWIN_DISPLAY    msrp,MSRP capability
+dnl MSWIN_DEFINE     msrp,OPAL_MSRP_CAPABILITY
+OPAL_SIMPLE_OPTION([msrp],[OPAL_MSRP_CAPABILITY], [whether to enable MSRP support])
+
+dnl MSWIN_DISPLAY    sipim,SIPIM capability
+dnl MSWIN_DEFINE     sipim,OPAL_SIPIM_CAPABILITY
+OPAL_SIMPLE_OPTION([sipim],[OPAL_SIPIM_CAPABILITY], [whether to enable SIPIM session support])
 
 dnl MSWIN_DISPLAY    fax,T.38 FAX protocol
 dnl MSWIN_DEFINE     fax,OPAL_FAX
