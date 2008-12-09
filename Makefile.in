@@ -337,7 +337,8 @@ endif
 # IM/MSRP
 
 SOURCES += $(OPAL_SRCDIR)/im/msrp.cxx \
-           $(OPAL_SRCDIR)/im/im_mf.cxx
+           $(OPAL_SRCDIR)/im/im_mf.cxx \
+           $(OPAL_SRCDIR)/im/sipim.cxx
 
 ##################
 # Software codecs
