@@ -1838,6 +1838,9 @@
 				<File
 					RelativePath="..\im\msrp.cxx">
 				</File>
+				<File
+					RelativePath="..\im\sipim.cxx">
+				</File>
 			</Filter>
 		</Filter>
 		<Filter
@@ -2249,6 +2252,9 @@
 				</File>
 				<File
 					RelativePath="..\..\include\im\msrp.h">
+				</File>
+				<File
+					RelativePath="..\..\include\im\sipim.h">
 				</File>
 			</Filter>
 		</Filter>
