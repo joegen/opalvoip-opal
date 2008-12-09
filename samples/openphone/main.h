@@ -584,6 +584,7 @@ class OptionsDialog : public wxDialog
     int             m_RTPPortBase;
     int             m_RTPPortMax;
     int             m_RTPTOS;
+    int             m_MaxRtpPayloadSize;
     wxRadioButton * m_NoNATUsedRadio;
     wxRadioButton * m_NATRouterRadio;
     wxRadioButton * m_STUNServerRadio;

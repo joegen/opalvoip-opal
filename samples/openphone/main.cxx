@@ -130,6 +130,7 @@ DEF_FIELD(UDPPortMax);
 DEF_FIELD(RTPPortBase);
 DEF_FIELD(RTPPortMax);
 DEF_FIELD(RTPTOS);
+DEF_FIELD(MaxRtpPayloadSize);
 DEF_FIELD(NATHandling);
 DEF_FIELD(NATRouter);
 DEF_FIELD(STUNServer);
@@ -725,6 +726,8 @@ bool MyManager::Initialise()
     SetRtpIpPorts(value1, value2);
   if (config->Read(RTPTOSKey, &value1))
     SetRtpIpTypeofService(value1);
+  if (config->Read(MaxRtpPayloadSizeKey, &value1))
+    SetMaxRtpPayloadSize(value1);
   config->Read(NATRouterKey, &m_NATRouter);
   config->Read(STUNServerKey, &m_STUNServer);
   if (!config->Read(NATHandlingKey, &m_NATHandling))
@@ -3197,6 +3200,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(RTPPortBase, m_manager.GetRtpIpPortBase());
   INIT_FIELD(RTPPortMax, m_manager.GetRtpIpPortMax());
   INIT_FIELD(RTPTOS, m_manager.GetRtpIpTypeofService());
+  INIT_FIELD(MaxRtpPayloadSize, m_manager.GetMaxRtpPayloadSize());
 
   m_NoNATUsedRadio = FindWindowByNameAs<wxRadioButton>(this, wxT("NoNATUsed"));
   m_NATRouterRadio = FindWindowByNameAs<wxRadioButton>(this, wxT("UseNATRouter"));
@@ -3624,6 +3628,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD2(UDPPortBase, UDPPortMax, m_manager.SetUDPPorts);
   SAVE_FIELD2(RTPPortBase, RTPPortMax, m_manager.SetRtpIpPorts);
   SAVE_FIELD(RTPTOS, m_manager.SetRtpIpTypeofService);
+  SAVE_FIELD(MaxRtpPayloadSize, m_manager.SetMaxRtpPayloadSize);
   m_manager.m_NATHandling = m_STUNServerRadio->GetValue() ? 2 : m_NATRouterRadio->GetValue() ? 1 : 0;
   config->Write(NATHandlingKey, m_manager.m_NATHandling);
   SAVE_FIELD(STUNServer, m_manager.m_STUNServer = );
