@@ -66,7 +66,7 @@ void SipIM::Main()
          PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
 #endif
 
-  if (args.HasOption('h') || args.GetCount() == 0) {
+  if (args.HasOption('h')) {
     cerr << "usage: " << GetFile().GetTitle() << " [ options ] [url]\n"
             "\n"
             "Available options are:\n"
@@ -107,6 +107,9 @@ void SipIM::Main()
     if (!allMediaFormats[i].IsTransportable())
       allMediaFormats.RemoveAt(i--); // Don't show media formats that are not used over the wire
   }
+
+  m_manager.AddRouteEntry("sip:.*  = pc:<du>");
+  m_manager.AddRouteEntry("pc:.*   = sip:<da>");
 
   cout << "Available codecs: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
 
