@@ -59,20 +59,20 @@
 //  the following functions bind the media type factory to the SDP format types
 //
 
-PString OpalMediaType::GetSDPFromFromMediaType(const OpalMediaType & type)
-{
-  OpalMediaTypeDefinition * defn = type.GetDefinition();
-  if (defn == NULL)
-    return PString();
-  return defn->GetSDPType();
-}
-
-OpalMediaType OpalMediaType::GetMediaTypeFromSDP(const std::string & sdp)
+OpalMediaType OpalMediaType::GetMediaTypeFromSDP(const std::string & sdp, const std::string & transport)
 {
   OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaTypeFactory::GetKeyList();
   OpalMediaTypeFactory::KeyList_T::iterator r;
+
   for (r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
     if (OpalMediaType::GetDefinition(*r)->GetSDPType() == sdp)
+      return OpalMediaType(*r);
+  }
+
+  std::string s = sdp +"|" + transport;
+
+  for (r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
+    if (OpalMediaType::GetDefinition(*r)->GetSDPType() == s)
       return OpalMediaType(*r);
   }
 
@@ -551,8 +551,13 @@ PBoolean SDPMediaDescription::SetTransportAddress(const OpalTransportAddress &t)
 
 bool SDPMediaDescription::Decode(const PStringArray & tokens)
 {
+  if (tokens.GetSize() < 3) {
+    PTRACE(1, "SDP\tUnknown SDP media type " << tokens[0]);
+    return false;
+  }
+
   // parse the media type
-  mediaType = OpalMediaType::GetMediaTypeFromSDP(tokens[0]);
+  mediaType = OpalMediaType::GetMediaTypeFromSDP(tokens[0], tokens[2]);
   if (mediaType.empty()) {
     PTRACE(1, "SDP\tUnknown SDP media type " << tokens[0]);
     return false;
@@ -1311,7 +1316,8 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
               else
               {
                 // parse the media type
-                OpalMediaType mediaType = OpalMediaType::GetMediaTypeFromSDP(tokens[0]);
+                PString mt = tokens[0].ToLower();
+                OpalMediaType mediaType = OpalMediaType::GetMediaTypeFromSDP(tokens[0], tokens[2]);
                 if (mediaType.empty()) {
                   PTRACE(1, "SDP\tUnknown SDP media type " << tokens[0]);
                   currentMedia = NULL;

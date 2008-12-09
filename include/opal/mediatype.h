@@ -89,9 +89,7 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
 
 #if OPAL_SIP
   public:
-    static OpalMediaType GetMediaTypeFromSDP(const std::string & key);
-    static PString       GetSDPFromFromMediaType(const OpalMediaType & type);
-    static OpalMediaTypeDefinition * GetDefinitionFromSDP(const std::string & key);
+    static OpalMediaType GetMediaTypeFromSDP(const std::string & key, const std::string & transport);
 #endif  // OPAL_SIP
 };
 

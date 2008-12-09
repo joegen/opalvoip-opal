@@ -46,7 +46,7 @@
 OPAL_INSTANTIATE_MEDIATYPE(msrp, OpalMSRPMediaType);
 
 OpalMSRPMediaType::OpalMSRPMediaType()
-  : OpalIMMediaType("msrp", "message", 5, true)
+  : OpalIMMediaType("msrp", "message|tcp/msrp", 5, true)
 {
 }
 
@@ -110,7 +110,7 @@ OPAL_INSTANTIATE_MEDIATYPE2(sipim, "sip-im", OpalSIPIMMediaType);
 /////////////////////////////////////////////////////////////////////////////
 
 OpalSIPIMMediaType::OpalSIPIMMediaType()
-  : OpalIMMediaType("sip-im", "message", 6, true)
+  : OpalIMMediaType("sip-im", "message|sip", 6, true)
 {
 }
 
