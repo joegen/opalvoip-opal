@@ -230,10 +230,13 @@ class OpalMediaTypeDefinition
 //  define a macro for declaring a new OpalMediaTypeDefinition factory
 //
 
-#define OPAL_INSTANTIATE_MEDIATYPE(type, cls) \
+#define OPAL_INSTANTIATE_MEDIATYPE2(title, name, cls) \
 namespace OpalMediaTypeSpace { \
-  static PFactory<OpalMediaTypeDefinition>::Worker<cls> static_##type##_##cls(#type, true); \
+  static PFactory<OpalMediaTypeDefinition>::Worker<cls> static_##title##_##cls(name, true); \
 }; \
+
+#define OPAL_INSTANTIATE_MEDIATYPE(type, cls) \
+  OPAL_INSTANTIATE_MEDIATYPE2(type, #type, cls) \
 
 
 #ifdef SOLARIS
@@ -334,18 +337,33 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 
 #endif // OPAL_T38_CAPABILITY
 
-
 #if OPAL_IM_CAPABILITY
 
 class OpalIMMediaType : public OpalMediaTypeDefinition 
 {
   public:
-    OpalIMMediaType();
+    OpalIMMediaType(
+      const char * mediaType,          ///< name of the media type (audio, video etc)
+      const char * sdpType,            ///< name of the SDP type 
+      unsigned     preferredSessionId, ///< preferred session ID
+      bool         autoStart = false   ///< Default value for auto-start transmit & receive
+    )
+      : OpalMediaTypeDefinition(mediaType, sdpType, preferredSessionId, autoStart)
+    { }
 
-    PString GetRTPEncoding(void) const;
-    RTP_UDP * CreateRTPSession(OpalRTPConnection & conn, unsigned sessionID, bool remoteIsNAT);
+    PString GetRTPEncoding() const { return PString::Empty(); }
+    RTP_UDP * CreateRTPSession(OpalRTPConnection & , unsigned , bool ) { return NULL; }
+    virtual bool UsesRTP() const { return false; }
+};
 
-    virtual bool UsesRTP() const;
+#endif // OPAL_IM_CAPABILITY
+
+#if OPAL_MSRP_CAPABILITY
+
+class OpalMSRPMediaType : public OpalIMMediaType 
+{
+  public:
+    OpalMSRPMediaType();
     virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
 
 #if OPAL_SIP
@@ -353,6 +371,21 @@ class OpalIMMediaType : public OpalMediaTypeDefinition
 #endif
 };
 
-#endif // OPAL_IM_CAPABILITY
+#endif // OPAL_MSRP_CAPABILITY
+
+#if OPAL_SIPIM_CAPABILITY
+
+class OpalSIPIMMediaType : public OpalIMMediaType 
+{
+  public:
+    OpalSIPIMMediaType();
+    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
+
+#if OPAL_SIP
+    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
+#endif
+};
+
+#endif // OPAL_SIPIM_CAPABILITY
 
 #endif // OPAL_OPAL_MEDIATYPE_H

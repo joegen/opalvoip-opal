@@ -1231,10 +1231,16 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalG711ALaw       OpalG711_ALAW_64K
 
 
-#if OPAL_IM_CAPABILITY
-#define OPAL_IMMSRP           "IM-MSRP"
-#define OpalIMMSRP         GetOpalIMMSRP()
-extern const OpalMediaFormat & GetOpalIMMSRP();
+#if OPAL_MSRP_CAPABILITY
+#define OPAL_MSRP           "MSRP"
+#define OpalMSRP            GetOpalMSRP()
+extern const OpalMediaFormat & GetOpalMSRP();
+#endif
+
+#if OPAL_SIPIM_CAPABILITY
+#define OPAL_SIPIM             "SIP-IM"
+#define OpalSIPIM              GetOpalSIPIM()
+extern const OpalMediaFormat & GetOpalSIPIM();
 #endif
 
 

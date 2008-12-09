@@ -1221,12 +1221,10 @@ class OpalManager : public PObject
     virtual bool GetZRTPEnabled() const;
 #endif
 
-#ifdef OPAL_IM_CAPABILITY
     virtual void AddIMMediaFormats(
       OpalMediaFormatList & mediaFormats,       ///<  Media formats to use
       const OpalConnection * connection = NULL  ///<  Optional connection that is using formats
     ) const;
-#endif
 
   protected:
     // Configuration variables

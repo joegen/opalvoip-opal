@@ -435,11 +435,11 @@ void SIPURL::Sanitise(UsageContext context)
     unsigned     contexts;
   } const SanitaryFields[] = {
     { "method",    (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|(1<<RouteURI) },
-    { "maddr",     (1<<ToURI)|(1<<FromURI) },
-    { "ttl",       (1<<ToURI)|(1<<FromURI)|(1<<RouteURI) },
-    { "transport", (1<<ToURI)|(1<<FromURI) },
-    { "lr",        (1<<ToURI)|(1<<FromURI)|(1<<ContactURI) },
-    { "tag",       (1<<RequestURI)|(1<<ContactURI)|(1<<RouteURI)|(1<<ExternalURI) }
+    { "maddr",                     (1<<ToURI)|(1<<FromURI) },
+    { "ttl",                       (1<<ToURI)|(1<<FromURI)                |(1<<RouteURI) },
+    { "transport",                 (1<<ToURI)|(1<<FromURI) },
+    { "lr",                        (1<<ToURI)|(1<<FromURI)|(1<<ContactURI) },
+    { "tag",       (1<<RequestURI)                        |(1<<ContactURI)|(1<<RouteURI)|(1<<ExternalURI) }
   };
 
   for (PINDEX i = 0; i < PARRAYSIZE(SanitaryFields); i++) {

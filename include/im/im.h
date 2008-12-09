@@ -28,8 +28,8 @@
  * $Date: 2008-10-13 10:24:41 +1100 (Mon, 13 Oct 2008) $
  */
 
-#ifndef OPAL_IM_IM_MF_H
-#define OPAL_IM_IM_MF_H
+#ifndef OPAL_IM_IM_H
+#define OPAL_IM_IM_H
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
@@ -51,4 +51,4 @@ class OpalIMMediaStream : public OpalMediaStream
 };
 
 
-#endif // OPAL_MSRP_MSRP_H
+#endif // OPAL_IM_IM_H

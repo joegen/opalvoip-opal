@@ -28,8 +28,8 @@
  * $Date: 2008-10-13 10:24:41 +1100 (Mon, 13 Oct 2008) $
  */
 
-#ifndef OPAL_MSRP_MSRP_H
-#define OPAL_MSRP_MSRP_H
+#ifndef OPAL_IM_MSRP_H
+#define OPAL_IM_MSRP_H
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
@@ -45,13 +45,10 @@
 
 ////////////////////////////////////////////////////////////////////////////
 //
-//  Ancestor for all MSRP media types
+//  Ancestor for all MSRP encoding types
 //
 
-class MSRPMediaType {
-  public:
-    MSRPMediaType()
-    { }
+class OpalMSRPEncoding {
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -65,8 +62,6 @@ class OpalMSRPManager : public PObject
     enum {
       DefaultPort = 2855
     };
-
-    typedef PFactory<MSRPMediaType> MSRPMediaTypeFactory;
 
     //
     //  Create an MSRP manager. This is a singleton class
@@ -87,12 +82,17 @@ class OpalMSRPManager : public PObject
     //
     //  Allocate a new MSRP session ID
     //
-    std::string AllocateID();
+    std::string OpenSession();
 
     //
     //  Dellocate an existing MSRP session ID
     //
-    void DeallocateID(const std::string & id);
+    void CloseSession(const std::string & id);
+
+    //
+    //  return session ID as a path
+    //
+    std::string SessionIDToPath(const std::string & id);
 
     //
     //  Main listening thread
@@ -115,6 +115,12 @@ class OpalMSRPManager : public PObject
     typedef std::map<std::string, SessionInfo> SessionInfoMap;
     SessionInfoMap sessionInfoMap;
 
+    struct ConnectionInfo {
+      PTCPSocket * socket;
+    };
+    typedef std::map<std::string, ConnectionInfo> ConnectionInfoMap;
+    ConnectionInfoMap connectionInfoMap;
+
   private:
     static OpalMSRPManager * msrp;
 };
@@ -130,6 +136,8 @@ class MSRPSession
     virtual SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
 
     OpalMSRPManager & GetManager() { return manager; }
+
+    PString GetURL() const { return url; }
 
   protected:
     OpalMSRPManager & manager;
@@ -215,4 +223,4 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
   //@}
 };
 
-#endif // OPAL_MSRP_MSRP_H
+#endif // OPAL_IM_MSRP_H

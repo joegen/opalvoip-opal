@@ -502,6 +502,8 @@ class SIPConnection : public OpalRTPConnection
 
     OpalMediaFormatList remoteFormatList;
 
+    PString GetLocalPartyURL() const;
+
   protected:
     PTimer sessionTimer;
   public:
