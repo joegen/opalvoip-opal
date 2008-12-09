@@ -1375,10 +1375,16 @@ class OpalConnection : public PSafeObject
       */
     PDECLARE_NOTIFIER(OpalMediaCommand, OpalConnection, OnMediaCommand);
 
-    //
-    //  indicate whether a particulat media type can be autostarted
-    //
-    virtual bool CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive);
+    /** Indicate whether a particular media type can auto-start.
+        This is typically used for things like video or fax to contol if on
+        initial connection, that media type is opened straight away. Streams
+        of that type may be opened later, during the call, by using the
+        OpalCall::OpenSourceMediaStreams() function.
+      */
+    virtual bool CanAutoStartMediaType(
+      const OpalMediaType & mediaType,  ///< media type to check
+      bool receive                      ///< flag for auto-start receive or transmit
+    );
 
   protected:
     void OnConnectedInternal();
