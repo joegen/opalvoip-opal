@@ -536,9 +536,14 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
       sdpOK |= AnswerSDPMediaDescription(*sdp, i+1, sdpOut);
   }
   else if (needReINVITE && !mediaStreams.IsEmpty()) {
+    std::vector<bool> sessions;
     for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
-      if (stream->IsSource())
-        sdpOK |= OfferSDPMediaDescription(stream->GetMediaFormat().GetMediaType(), stream->GetSessionID(), rtpSessions, sdpOut);
+      unsigned session = stream->GetSessionID();
+      sessions.resize(std::max(sessions.size(),session+1));
+      if (!sessions[session]) {
+        sessions[session] = true;
+        sdpOK |= OfferSDPMediaDescription(stream->GetMediaFormat().GetMediaType(), session, rtpSessions, sdpOut);
+      }
     }
   }
 
