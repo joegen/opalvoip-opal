@@ -487,7 +487,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId,
   if (otherParty == NULL) {
     PTRACE(2, "SIP\tCowardly refusing to create an RTP channel with only one connection");
     return NULL;
-   }
+  }
 
   // if doing media bypass, we need to set the local address
   // otherwise create an RTP session
@@ -2191,7 +2191,6 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & request)
 
 bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, unsigned rtpSessionId)
 {
-  RTP_UDP *rtpSession = NULL;
   SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByIndex(rtpSessionId);
   PAssert(mediaDescription != NULL, "media description list changed");
 
@@ -2228,16 +2227,28 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
   OpalTransportAddress localAddress;
   OpalTransportAddress address = mediaDescription->GetTransportAddress();
   if (!address.IsEmpty()) {
-    rtpSession = OnUseRTPSession(rtpSessionId, mediaType, address, localAddress);
-    if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId))
-      return false;
+    if (!mediaType.GetDefinition()->UsesRTP()) {
+      OpalMediaSession * mediaSession = GetMediaSession(rtpSessionId);
+      if (mediaSession == NULL) {
+        PTRACE(1, "SIP\tCould not find media session " << rtpSessionId);
+        return false;
+      }
 
-    // set the remote address 
-    PIPSocket::Address ip;
-    WORD port = 0;
-    if (!address.GetIpAndPort(ip, port) || port == 0 || (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, true))) {
-      PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-      return false;
+      // set the remote address 
+      mediaSession->SetRemoteMediaAddress(address);
+
+    } else {
+      RTP_UDP *rtpSession = OnUseRTPSession(rtpSessionId, mediaType, address, localAddress);
+      if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId))
+        return false;
+
+      // set the remote address 
+      PIPSocket::Address ip;
+      WORD port = 0;
+      if (!address.GetIpAndPort(ip, port) || port == 0 || (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, true))) {
+        PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+        return false;
+      }
     }
   }
 

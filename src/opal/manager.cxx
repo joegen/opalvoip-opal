@@ -1540,6 +1540,11 @@ void OpalManager::AddIMMediaFormats(OpalMediaFormatList & mediaFormats, const Op
 #endif
 }
 
+void OpalManager::OnSendPDU(const char * /*protocol*/, const BYTE * /*data*/, unsigned int /*len*/)
+{
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalManager::InterfaceMonitor::InterfaceMonitor(OpalManager & manager)

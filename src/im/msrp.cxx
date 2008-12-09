@@ -271,7 +271,7 @@ OpalMediaStream * OpalMSRPMediaSession::CreateMediaStream(const OpalMediaFormat 
                                                                          unsigned sessionID, 
                                                                          PBoolean isSource)
 {
-  PTRACE(2, "MSRP\tCreated " << (connection.IsOriginating() ? "originating" : "receiving") << " media stream " << msrpSession->GetURL());
+  PTRACE(2, "MSRP\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with " << msrpSession->GetURL());
   return new OpalMSRPMediaStream(connection, mediaFormat, sessionID, isSource);
 }
 
