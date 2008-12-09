@@ -5,9 +5,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenPhone", "samples\openph
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
-	ProjectSection(ProjectDependencies) = postProject
-		{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8} = {ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL_dll", "src\win32\opal_dll_2005.vcproj", "{C7546C76-E010-4105-AEAE-48FCD6C09527}"
 	ProjectSection(WebsiteProperties) = preProject
@@ -31,9 +28,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Simple OPAL Static", "sampl
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-	ProjectSection(ProjectDependencies) = postProject
-		{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D} = {D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Simple OPAL DLL", "samples\simple\simpleDLL_2005.vcproj", "{282B78AF-C514-4077-91EB-7E55E198015E}"
@@ -121,9 +115,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sipim", "samples\sipim\sipi
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-	ProjectSection(ProjectDependencies) = postProject
-		{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8} = {ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}
 	EndProjectSection
 EndProject
 Global
