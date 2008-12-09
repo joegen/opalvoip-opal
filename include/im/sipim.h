@@ -84,4 +84,44 @@ class OpalSIPIMMediaSession : public OpalMediaSession
 
 ////////////////////////////////////////////////////////////////////////////
 
+class OpalSIPIMMediaStream : public OpalIMMediaStream
+{
+  public:
+    OpalSIPIMMediaStream(
+      OpalConnection & conn,
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      bool isSource                        ///<  Is a source stream
+    );
+
+    ~OpalSIPIMMediaStream();
+
+    /**Read raw media data from the source media stream.
+       The default behaviour reads from the PChannel object.
+      */
+    virtual PBoolean ReadData(
+      BYTE * data,      ///<  Data buffer to read to
+      PINDEX size,      ///<  Size of buffer
+      PINDEX & length   ///<  Length of data actually read
+    );
+
+    /**Write raw media data to the sink media stream.
+       The default behaviour writes to the PChannel object.
+      */
+    virtual PBoolean WriteData(
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
+    );
+
+    /**Close the media stream.
+
+       Closes the associated PChannel.
+      */
+    virtual PBoolean Close();
+  //@}
+};
+
+////////////////////////////////////////////////////////////////////////////
+
 #endif // OPAL_IM_SIPIM_H

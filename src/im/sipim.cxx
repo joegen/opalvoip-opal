@@ -226,9 +226,48 @@ OpalMediaStream * OpalSIPIMMediaSession::CreateMediaStream(const OpalMediaFormat
                                                                          PBoolean isSource)
 {
   PTRACE(2, "SIPIM\tCreated " << (connection.IsOriginating() ? "originating" : "receiving") << " media stream");
-  //return new OpalMSRPMediaStream(connection, mediaFormat, sessionID, isSource);
-  return NULL;
+  return new OpalSIPIMMediaStream(connection, mediaFormat, sessionID, isSource);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+OpalSIPIMMediaStream::OpalSIPIMMediaStream(
+      OpalConnection & conn,
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      bool isSource                        ///<  Is a source stream
+)
+  : OpalIMMediaStream(conn, mediaFormat, sessionID, isSource)
+{
+}
+
+OpalSIPIMMediaStream::~OpalSIPIMMediaStream()
+{
+}
+
+PBoolean OpalSIPIMMediaStream::ReadData(
+      BYTE * data,      ///<  Data buffer to read to
+      PINDEX size,      ///<  Size of buffer
+      PINDEX & length   ///<  Length of data actually read
+    )
+{
+  return OpalIMMediaStream::ReadData(data, size, length);
+}
+
+PBoolean OpalSIPIMMediaStream::WriteData(
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
+    )
+{
+  return OpalIMMediaStream::WriteData(data, length, written);
+}
+
+PBoolean OpalSIPIMMediaStream::Close()
+{
+  return OpalIMMediaStream::Close();
+}
+
 
 
 #endif // OPAL_SIPIM_CAPABILITY
