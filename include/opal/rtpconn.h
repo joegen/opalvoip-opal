@@ -88,6 +88,8 @@ class OpalMediaSession : public PObject
 
     virtual OpalTransportAddress GetLocalMediaAddress() const = 0;
 
+    virtual void SetRemoteMediaAddress(const OpalTransportAddress &) { }
+
 #if OPAL_SIP
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
