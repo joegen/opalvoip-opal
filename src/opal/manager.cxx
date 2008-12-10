@@ -63,7 +63,11 @@ static const char * const DefaultMediaFormatOrder[] = {
   OPAL_GSM0610,
   OPAL_G728,
   OPAL_G711_ULAW_64K,
-  OPAL_G711_ALAW_64K
+  OPAL_G711_ALAW_64K,
+  OPAL_H264,
+  OPAL_MPEG4,
+  OPAL_H263,
+  OPAL_H261
 };
 
 #define new PNEW
