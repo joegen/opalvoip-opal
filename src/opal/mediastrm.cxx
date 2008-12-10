@@ -583,7 +583,12 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
   if (!mediaFormat.NeedsJitterBuffer())
     minAudioJitterDelay = maxAudioJitterDelay = 0;
 
-  defaultDataSize = conn.GetMaxRtpPayloadSize();
+  /* If we are a source then we should set our buffer size to the max
+     practical UDP packet size. This means we have a buffer that can accept
+     whatever the RTP sender throws at us. For sink, we set it to the
+     maximum size based on MTU (or other criteria). */
+  defaultDataSize = isSource ? 2048 : conn.GetMaxRtpPayloadSize();
+
   rtp.SetEncoding(mediaFormat.GetMediaType().GetDefinition()->GetRTPEncoding());
 }
 
@@ -655,25 +660,16 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 
 }
 
+
 PBoolean OpalRTPMediaStream::SetDataSize(PINDEX dataSize)
 {
   if (dataSize <= 0)
     return false;
 
-  defaultDataSize = dataSize;
-
-  /* If we are a source then we should set our buffer size to the max
-     practical UDP packet size. This means we have a buffer that can accept
-     whatever the RTP sender throws at us. For sink, we just clamp it to the
-     maximum size based on MTU (or other criteria). */
-  PINDEX minSize = IsSource() ? 2048 : connection.GetMaxRtpPayloadSize();
-  if (defaultDataSize < minSize) {
-    PTRACE(1, "Media\tClamping RTP media stream data size from " << dataSize << " to minimum " << minSize);
-    defaultDataSize = minSize;
-  }
-
+  PTRACE(3, "Media\tRTP data size cannot be changed to " << dataSize << ", fixed at " << defaultDataSize);
   return true;
 }
+
 
 PBoolean OpalRTPMediaStream::IsSynchronous() const
 {
