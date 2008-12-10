@@ -1,5 +1,5 @@
 /*
- * OptionsGeneral.h
+ * OptionsGeneral.cpp
  *
  * Sample Windows Mobile application.
  *
@@ -35,14 +35,15 @@
 
 // COptionsGeneral dialog
 
-IMPLEMENT_DYNAMIC(COptionsGeneral, CDialog)
+IMPLEMENT_DYNAMIC(COptionsGeneral, CScrollableDialog)
 
 COptionsGeneral::COptionsGeneral(CWnd* pParent /*=NULL*/)
-  : CDialog(COptionsGeneral::IDD, pParent)
+  : CScrollableDialog(COptionsGeneral::IDD, pParent)
   , m_strUsername(_T(""))
   , m_strDisplayName(_T(""))
   , m_strStunServer(_T(""))
   , m_interfaceAddress(_T(""))
+  , m_AutoStartTxVideo(TRUE)
 {
 
 }
@@ -59,20 +60,17 @@ void COptionsGeneral::DoDataExchange(CDataExchange* pDX)
   DDX_Text(pDX, IDC_STUN_SERVER, m_strStunServer);
   DDX_CBString(pDX, IDC_INTERFACE_ADDRESS, m_interfaceAddress);
   DDX_Control(pDX, IDC_INTERFACE_ADDRESS, m_interfaceAddressCombo);
+  DDX_Check(pDX, IDC_AUTO_START_TX_VIDEO, m_AutoStartTxVideo);
 }
 
 
-BEGIN_MESSAGE_MAP(COptionsGeneral, CDialog)
+BEGIN_MESSAGE_MAP(COptionsGeneral, CScrollableDialog)
 END_MESSAGE_MAP()
 
 
 BOOL COptionsGeneral::OnInitDialog()
 {
-  CDialog::OnInitDialog();
-
-  if (!m_dlgCommandBar.Create(this) || !m_dlgCommandBar.InsertMenuBar(IDR_DIALOGS)) {
-    TRACE0("Failed to create CommandBar\n");
-  }
+  CScrollableDialog::OnInitDialog();
 
   m_interfaceAddressCombo.AddString(L"*");
 

@@ -1,5 +1,5 @@
 /*
- * OptionsH323.h
+ * ScrollableDialog.h
  *
  * Sample Windows Mobile application.
  *
@@ -29,37 +29,25 @@
  */
 
 #pragma once
-#include "ScrollableDialog.h"
+#include "afxwin.h"
 
 
-// COptionsH323 dialog
+// CScrollableDialog class
 
-class COptionsH323 : public CScrollableDialog
+class CScrollableDialog : public CDialog
 {
-  DECLARE_DYNAMIC(COptionsH323)
+  DECLARE_DYNAMIC(CScrollableDialog)
 
 public:
-  COptionsH323(CWnd* pParent = NULL);   // standard constructor
-  virtual ~COptionsH323();
-
-  // Dialog Data
-  enum { IDD = IDD_OPTIONS_H323 };
+  CScrollableDialog(int id, CWnd* pParent = NULL);   // standard constructor
+  virtual ~CScrollableDialog();
 
 protected:
-  virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+  CCommandBar m_dlgCommandBar;
+
   virtual BOOL OnInitDialog();
 
   DECLARE_MESSAGE_MAP()
 
-  afx_msg void OnBnClickedGatekeeperType();
-
-public:
-  UINT m_uiGatekeeperType;
-  CEdit m_ctrlGkId;
-  CString m_strGkId;
-  CEdit m_ctrlGkHost;
-  CString m_strGkHost;
-  CString m_strAlias;
-  CString m_strAuthUser;
-  CString m_strPassword;
+  afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 };
