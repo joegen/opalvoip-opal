@@ -49,27 +49,28 @@ void CodecTest::Main()
 {
   PArgList & args = GetArguments();
 
-  args.Parse("h-help."
+  args.Parse("b-bit-rate:"
+             "c-crop."
+             "D-display-device:"
+             "F-audio-frames:"
+             "G-grab-device:"
+             "h-help."
+             "m-suppress-marker."
+             "M-force-marker."
+             "O-option:"
+             "p-payload-size:"
+             "P-play-device:"
+             "r-frame-rate:"
+             "s-frame-size:"
+             "S-simultaneous:"
              "-record-driver:"
+             "-play-buffers:"
              "R-record-device:"
              "-play-driver:"
-             "P-play-device:"
-             "-play-buffers:"
-             "F-audio-frames:"
              "-grab-driver:"
-             "G-grab-device:"
              "-grab-format:"
              "-grab-channel:"
              "-display-driver:"
-             "D-display-device:"
-             "s-frame-size:"
-             "r-frame-rate:"
-             "b-bit-rate:"
-             "O-option:"
-             "c-crop."
-             "m-suppress-marker."
-             "M-force-marker."
-             "H:"
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -105,9 +106,11 @@ void CodecTest::Main()
               "  -r --frame-rate size    : video frame rate (frames/second)\n"
               "  -b --bit-rate size      : video bit rate (bits/second)\n"
               "  -O --option opt=val     : set media format option to value\n"
+              "  -c --crop               : crop rather than scale if resizing\n"
               "  -m --suppress-marker    : suppress marker bits to decoder"
               "  -M --force-marker       : force marker bits to decoder"
-              "  -c --crop               : crop rather than scale if resizing\n"
+              "  -p --payload-size sz    : Set size of maximum RTP payload for encoded data\n"
+              "  -S --simultanoues n     : Number of simultaneous encode/decode threads\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
               "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -117,7 +120,7 @@ void CodecTest::Main()
     return;
   }
 
-  unsigned threadCount = args.GetOptionString('H').AsInteger();
+  unsigned threadCount = args.GetOptionString('S').AsInteger();
   if (threadCount > 0) {
     unsigned i;
     TestThreadInfo ** infos = (TestThreadInfo **)malloc(threadCount * sizeof(TestThreadInfo *));
@@ -593,8 +596,11 @@ bool VideoThread::Initialise(PArgList & args)
 
   SetOptions(args, mediaFormat);
 
-  if (encoder != NULL)
+  if (encoder != NULL) {
     encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
+    if (args.HasOption('p'))
+      encoder->SetMaxOutputSize(args.GetOptionString('p').AsUnsigned());
+  }
 
   return true;
 }
@@ -683,8 +689,7 @@ void TranscoderThread::Main()
       }
       for (PINDEX j = 0; j < outFrames.GetSize(); j++) {
         state = Write(outFrames[j]);
-        if (oldOutState != state)
-        {
+        if (oldOutState != state) {
           oldOutState = state;
           cerr << "Frame display " << (state ? "restor" : "fail") << "ed at packet " << packetCount << endl;
         }
@@ -711,6 +716,7 @@ void TranscoderThread::Main()
   else if (byteCount < 10000000000ULL)
     cout << byteCount/1000000.0 << " M";
   cout << "bytes, "
+       << packetCount << " packets, "
        << frameCount << " frames over " << duration << " seconds at "
        << (frameCount*1000.0/duration.GetMilliSeconds()) << " f/s and ";
 
