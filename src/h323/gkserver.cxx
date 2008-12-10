@@ -2710,6 +2710,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
   PTRACE_BLOCK("H323GatekeeperServer::OnRegistration");
 
   PINDEX i;
+  PBoolean noAliasesInRRQ = PFalse;
 
   // Initialise reply with default stuff
   info.rcf.IncludeOptionalField(H225_RegistrationConfirm::e_preGrantedARQ);
@@ -2733,22 +2734,46 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
     return H323GatekeeperRequest::Reject;
   }
 
+  // reject if new registration comes with no aliases.
+  if(info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias
+	&& info.rrq.m_terminalAlias.GetSize() == 0))
+		noAliasesInRRQ = PTrue;
+
   for (i = 0; i < info.rrq.m_callSignalAddress.GetSize(); i++) {
     PSafePtr<H323RegisteredEndPoint> ep2 = FindEndPointBySignalAddress(info.rrq.m_callSignalAddress[i]);
-    if (ep2 != NULL && ep2 != info.endpoint) {
-      if (overwriteOnSameSignalAddress) {
-        PTRACE(2, "RAS\tOverwriting existing endpoint " << *ep2);
-        RemoveEndPoint(ep2);
-      }
-      else {
-        info.SetRejectReason(H225_RegistrationRejectReason::e_invalidCallSignalAddress);
-        PTRACE(2, "RAS\tRRQ rejected, duplicate callSignalAddress");
-        return H323GatekeeperRequest::Reject;
-      }
-    }
+	
+	// keep old aliases if missing in new request.
+	if((ep2 != NULL) && (ep2->GetAliases().GetSize() > 0) && noAliasesInRRQ)
+	{
+		noAliasesInRRQ = PFalse;
+		H323SetAliasAddresses(ep2->GetAliases(), info.rrq.m_terminalAlias);
+		info.rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
+
+		PTRACE(2, "RAS\tRRQ missing aliases, keeping saved ones: " << ep2->GetAliases());
+	}
+
+	if (ep2 != NULL && ep2 != info.endpoint) {
+	  if (overwriteOnSameSignalAddress) {
+		PTRACE(2, "RAS\tOverwriting existing endpoint " << *ep2);
+		RemoveEndPoint(ep2);
+	  }
+	  else {
+		info.SetRejectReason(H225_RegistrationRejectReason::e_invalidCallSignalAddress);
+		PTRACE(2, "RAS\tRRQ rejected, duplicate callSignalAddress");
+		return H323GatekeeperRequest::Reject;
+	  }
+	}
   }
 
-  if (info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias) && !AllowDuplicateAlias(info.rrq.m_terminalAlias)) {
+  if(noAliasesInRRQ)
+  {
+	info.SetRejectReason(H225_RegistrationRejectReason::e_invalidTerminalAliases);
+    PTRACE(2, "RAS\tRRQ rejected, no aliases");
+	return H323GatekeeperRequest::Reject;
+  }
+
+  if (info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias) && 
+	  (!AllowDuplicateAlias(info.rrq.m_terminalAlias) || !noAliasesInRRQ)) {
     H225_ArrayOf_AliasAddress duplicateAliases;
     for (i = 0; i < info.rrq.m_terminalAlias.GetSize(); i++) {
       PSafePtr<H323RegisteredEndPoint> ep2 = FindEndPointByAliasAddress(info.rrq.m_terminalAlias[i]);
