@@ -30,11 +30,12 @@
 
 #pragma once
 #include "afxwin.h"
+#include "ScrollableDialog.h"
 
 
 // COptionsGeneral dialog
 
-class COptionsGeneral : public CDialog
+class COptionsGeneral : public CScrollableDialog
 {
   DECLARE_DYNAMIC(COptionsGeneral)
 
@@ -46,8 +47,6 @@ public:
   enum { IDD = IDD_OPTIONS_GENERAL };
 
 protected:
-  CCommandBar m_dlgCommandBar;
-
   virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
   virtual BOOL OnInitDialog();
 
@@ -61,4 +60,5 @@ public:
   CString m_strStunServer;
   CString m_interfaceAddress;
   CComboBox m_interfaceAddressCombo;
+  BOOL m_AutoStartTxVideo;
 };

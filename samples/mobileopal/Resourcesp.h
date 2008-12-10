@@ -29,6 +29,7 @@
 #define IDC_GK_HOST                     1019
 #define IDC_LOCAL_ADDRESS               1022
 #define IDC_INTERFACE_ADDRESS           1023
+#define IDC_AUTO_START_TX_VIDEO         1024
 #define IDS_CALL                        10000
 #define IDS_ANSWER                      10001
 #define IDS_READY                       10002

@@ -41,7 +41,8 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#define TRACE_OPTIONS "TraceLevel=4"
+#define TRACE_OPTIONS "TraceLevel=4 TraceFile=\\MobileOpalLog.txt"
+//#define TRACE_OPTIONS "TraceLevel=4"
 #else
 #define TRACE_OPTIONS "TraceLevel=4 TraceAppend TraceFile=\\MobileOpalLog.txt"
 #endif
@@ -57,6 +58,7 @@ static TCHAR const UserNameKey[]         = L"UserName";
 static TCHAR const DisplayNameKey[]      = L"DisplayName";
 static TCHAR const STUNServerKey[]       = L"STUNServer";
 static TCHAR const InterfaceAddressKey[] = L"InterfaceAddress";
+static TCHAR const AutoStartTxVideoKey[] = L"AutoStartTxVideo";
 static TCHAR const GkTypeKey[]           = L"GatekeeperType";
 static TCHAR const GkIdKey[]             = L"GatekeeperIdentifer";
 static TCHAR const GkHostKey[]           = L"GatekeeperHost";
@@ -84,9 +86,9 @@ static CStringA GetOptionStringA(LPCTSTR szKey, LPCTSTR szDefault = NULL)
 }
 
 
-static UINT GetOptionInt(LPCTSTR szKey)
+static UINT GetOptionInt(LPCTSTR szKey, int iDefault = 0)
 {
-  return AfxGetApp()->GetProfileInt(OptionsSection, szKey, 0);
+  return AfxGetApp()->GetProfileInt(OptionsSection, szKey, iDefault);
 }
 
 
@@ -447,12 +449,59 @@ void CMobileOpalDlg::InitialiseOPAL()
     m_currentHost.Empty();
   }
 
+  /* Calucalte some configuration strings, determine position of a QCIF
+     window so is in bottom left corner, and a preview window for camera
+     in lower right corner, scaled to fit remaining space. */
+  static const unsigned videoWidth = 176;
+  static const unsigned videoHeight = 144;
+  CRect box;
+  GetClientRect(&box);
+
+  CRect commandBox;
+  m_dlgCommandBar.GetWindowRect(&commandBox);
+  box.bottom -= commandBox.Height();
+
+  CStringA strVideoOutputDevice;
+  strVideoOutputDevice.Format("MSWIN STYLE=0x%08X PARENT=0x%08X X=%i Y=%i WIDTH=%u HEIGHT=%u",
+                              WS_CHILD|WS_BORDER, GetSafeHwnd(),
+                              0, box.Height()-videoHeight,
+                              videoWidth, videoHeight);
+
+  unsigned previewWidth = box.Width() - videoWidth - 2;
+  unsigned previewHeight = previewWidth*videoHeight/videoWidth;
+  CStringA strVideoPreviewDevice;
+  strVideoPreviewDevice.Format("MSWIN STYLE=0x%08X PARENT=0x%08X X=%i Y=%i WIDTH=%u HEIGHT=%u",
+                               WS_CHILD|WS_BORDER, GetSafeHwnd(),
+                               videoWidth+2, box.Height()-previewHeight,
+                               previewWidth, previewHeight);
+
+  CStringA strMediaOptions;
+  strMediaOptions.Format("Video:Max Bit Rate=128000\n"
+                         "Video:Target Bit Rate=128000\n"
+                         "Video:Frame Time=9000\n" // 10 frames/second
+                         "Video:Frame Width=%u\n"
+                         "Video:Frame Height=%u\n"
+                         "Video:Max Rx Frame Width=%u\n"
+                         "Video:Max Rx Frame Height=%u\n"
+                         "H.264:Level=1b\n",
+                          videoWidth, videoHeight,
+                          videoWidth, videoHeight);
+
   // General options
   memset(&command, 0, sizeof(command));
   command.m_type = OpalCmdSetGeneralParameters;
 
   CStringA strStunServer = GetOptionStringA(STUNServerKey);
   command.m_param.m_general.m_stunServer = strStunServer;
+  command.m_param.m_general.m_audioPlayerDevice = "Audio Output";
+  command.m_param.m_general.m_audioRecordDevice = "Audio Input";
+  command.m_param.m_general.m_videoInputDevice = "CAM1:";
+  command.m_param.m_general.m_videoOutputDevice = strVideoOutputDevice;
+  command.m_param.m_general.m_videoPreviewDevice = strVideoPreviewDevice;
+  command.m_param.m_general.m_mediaMask = "RFC4175*\nMPEG4";
+  command.m_param.m_general.m_mediaOptions = strMediaOptions;
+  command.m_param.m_general.m_autoTxMedia = GetOptionInt(AutoStartTxVideoKey, true) != 0 ? "audio video" : "audio";
+  command.m_param.m_general.m_rtpMaxPayloadSize = 1400;
 
   if ((response = OpalSendMessage(m_opal, &command)) == NULL || response->m_type == OpalIndCommandError)
     ErrorBox(IDS_CONFIGURATION_FAIL, response);
@@ -839,12 +888,14 @@ void CMobileOpalDlg::OnMenuOptionsGeneral()
   dlg.m_strDisplayName = GetOptionString(DisplayNameKey);
   dlg.m_strStunServer = GetOptionString(STUNServerKey);
   dlg.m_interfaceAddress = GetOptionString(InterfaceAddressKey, L"*");
+  dlg.m_AutoStartTxVideo = GetOptionInt(AutoStartTxVideoKey, true) != 0;
 
   if (dlg.DoModal() == IDOK) {
     SetOptionString(UserNameKey, dlg.m_strUsername);
     SetOptionString(DisplayNameKey, dlg.m_strDisplayName);
     SetOptionString(STUNServerKey, dlg.m_strStunServer);
     SetOptionString(InterfaceAddressKey, dlg.m_interfaceAddress);
+    SetOptionInt(AutoStartTxVideoKey, dlg.m_AutoStartTxVideo);
     InitialiseOPAL();
   }
 }
