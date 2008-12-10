@@ -31,6 +31,8 @@
 #define IDC_GK_HOST                     1020
 #define IDC_LOCAL_ADDRESS               1022
 #define IDC_INTERFACE_ADDRESS           1023
+#define IDC_AUTO_START_VIDEO            1024
+#define IDC_AUTO_START_TX_VIDEO         1024
 #define IDS_CALL                        10000
 #define IDS_ANSWER                      10001
 #define IDS_READY                       10002
@@ -72,7 +74,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        134
 #define _APS_NEXT_COMMAND_VALUE         32784
-#define _APS_NEXT_CONTROL_VALUE         1024
+#define _APS_NEXT_CONTROL_VALUE         1025
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

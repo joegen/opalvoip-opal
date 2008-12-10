@@ -38,7 +38,7 @@
 IMPLEMENT_DYNAMIC(COptionsSIP, CDialog)
 
 COptionsSIP::COptionsSIP(CWnd* pParent /*=NULL*/)
-  : CDialog(COptionsSIP::IDD, pParent)
+  : CScrollableDialog(COptionsSIP::IDD, pParent)
   , m_strAddressOfRecord(_T(""))
   , m_strHostName(_T(""))
   , m_strAuthUser(_T(""))
@@ -63,17 +63,13 @@ void COptionsSIP::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(COptionsSIP, CDialog)
+BEGIN_MESSAGE_MAP(COptionsSIP, CScrollableDialog)
 END_MESSAGE_MAP()
 
 
 BOOL COptionsSIP::OnInitDialog()
 {
-  CDialog::OnInitDialog();
-
-  if (!m_dlgCommandBar.Create(this) || !m_dlgCommandBar.InsertMenuBar(IDR_DIALOGS)) {
-    TRACE0("Failed to create CommandBar\n");
-  }
+  CScrollableDialog::OnInitDialog();
 
   return TRUE;
 }
