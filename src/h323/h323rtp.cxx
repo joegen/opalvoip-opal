@@ -176,7 +176,7 @@ PBoolean H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
                                  unsigned & errorCode)
 {
   H323Connection & theConnection = const_cast<H323Connection &>(connection);
-  unsigned theSessionID = theConnection.GetInternalSessionID(param.m_sessionID, channel.GetCapability());
+  unsigned theSessionID = theConnection.GetInternalSessionID(param.m_sessionID, channel.GetCapability().GetMediaFormat().GetMediaType());
   
   if (theSessionID != rtp.GetSessionID()) {
     PTRACE(1, "RTP_UDP\tOpen of " << channel << " with invalid session: " << param.m_sessionID);
@@ -235,7 +235,7 @@ PBoolean H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
   }
   
   H323Connection & theConnection = const_cast<H323Connection &>(connection);
-  unsigned theSessionID = theConnection.GetInternalSessionID(param.m_sessionID, channel.GetCapability());
+  unsigned theSessionID = theConnection.GetInternalSessionID(param.m_sessionID, channel.GetCapability().GetMediaFormat().GetMediaType());
 
   if (theSessionID != rtp.GetSessionID()) {
     PTRACE(1, "RTP_UDP\tAck for invalid session: " << param.m_sessionID);

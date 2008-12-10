@@ -1911,7 +1911,7 @@ class H323Connection : public OpalRTPConnection
     // if no internal session ID is found, zero is returned
     unsigned GetExternalSessionID(unsigned internalSessionID) const;
     unsigned GetExternalSessionID(unsigned internalSessionID, const OpalMediaType & mediaType);
-    unsigned GetInternalSessionID(unsigned externalSessionID, const H323Capability & capability);
+    unsigned GetInternalSessionID(unsigned externalSessionID, const OpalMediaType & mediaType);
 
   protected:
     /**Internal function to check if call established.
