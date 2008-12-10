@@ -762,10 +762,15 @@ static H323CodecPluginCapabilityMapEntry videoMaps[] = {
 OpalPluginTranscoder::OpalPluginTranscoder(const PluginCodec_Definition * defn, PBoolean isEnc)
   : codecDef(defn)
   , isEncoder(isEnc)
-  , context(codecDef->createCodec != NULL ? (*codecDef->createCodec)(codecDef) : NULL)
   , setCodecOptions(defn, PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS)
   , getOutputDataSizeControl(defn, PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE)
 {
+  if (codecDef->createCodec == NULL)
+    context = NULL;
+  else {
+    context = (*codecDef->createCodec)(codecDef);
+    PTRACE_IF(1, context == NULL, "OpalPlugin\tFailed to create context for \"" << codecDef->descr << '"');
+  }
 }
 
 
@@ -954,17 +959,16 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
   // get the size of the output buffer
   int outputDataSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
-  if (outputDataSize <= 0)
-    outputDataSize = isEncoder ? PluginCodec_RTP_MaxPacketSize : (sizeof(PluginCodec_Video_FrameHeader) + GetOptimalDataFrameSize(PFalse));
+  int optimalDataSize = GetOptimalDataFrameSize(false);
+  if (outputDataSize < optimalDataSize)
+    outputDataSize = optimalDataSize;
 
   unsigned flags;
 
   if (isEncoder) {
     bool isIFrame = false;
     do {
-      // create the output buffer, outputDataSize is supposed to include the
-      // RTP header size, so take that off as ctor adds it back.
-      RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize - PluginCodec_RTP_MinHeaderSize);
+      RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize);
       dst->SetPayloadType(GetPayloadType(PFalse));
       dst->SetTimestamp(src.GetTimestamp());
 
@@ -1014,7 +1018,9 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
   else {
     // We use the data size indicated by plug in as a payload size, we do not adjust the size
     // downward as many plug ins forget to add the RTP header size in its output data size and
-    // it doesn't hurt to make thisbuffer an extra 12 bytes long.
+    // it doesn't hurt to make this buffer an extra few bytes longer than needed.
+
+    outputDataSize += sizeof(PluginCodec_Video_FrameHeader);
 
     if (bufferRTP == NULL)
       bufferRTP = new RTP_DataFrame(outputDataSize);
