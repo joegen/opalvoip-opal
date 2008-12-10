@@ -1318,10 +1318,12 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   // according to 12.1.2
   // requests in a dialog do not modify the initial route set fo according 
   // to 12.2
-  routeSet.RemoveAll();
   PStringList recordRoute = response.GetMIME().GetRecordRoute();
-  for (PStringList::iterator route = recordRoute.rbegin(); route != recordRoute.rend(); --route)
-    routeSet.AppendString(*route);
+  if (!recordRoute.IsEmpty()) {
+    routeSet.RemoveAll();
+    for (PStringList::iterator route = recordRoute.rbegin(); route != recordRoute.rend(); --route)
+      routeSet.AppendString(*route);
+  }
 
   // Save the sessions etc we are actually using of all the forked INVITES sent
   if (response.GetSDP() != NULL)
