@@ -1037,6 +1037,60 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   response->m_param.m_general.m_messageAvailable = m_messageAvailableCallback;
   m_messageAvailableCallback = command.m_param.m_general.m_messageAvailable;
   m_messageMutex.Signal();
+
+  if (m_apiVersion < 14)
+    return;
+
+  PStringArray options = PString(command.m_param.m_general.m_mediaOptions).Lines();
+  for (PINDEX i = 0; i < options.GetSize(); ++i) {
+    PString optionSpec = options[i];
+    PINDEX colon = optionSpec.Find(':');
+    PINDEX equal = optionSpec.Find('=', colon);
+    PString mediaName = optionSpec.Left(colon);
+    PString optionName = optionSpec(colon+1, equal-1);
+    PString optionValue = optionSpec.Mid(equal+1);
+
+    if (mediaName.IsEmpty() || optionName.IsEmpty()) {
+      PTRACE(2, "OpalC API\tInvalid syntax for media format option: \"" << optionSpec << '"');
+    }
+    else {
+      OpalMediaType mediaType = mediaName.ToLower();
+      if (OpalMediaTypeFactory::CreateInstance(mediaType) != NULL) {
+        // Known media type name, change all codecs of that type
+        OpalMediaFormatList allCodecs = OpalMediaFormat::GetAllRegisteredMediaFormats();
+        for (OpalMediaFormatList::iterator it = allCodecs.begin(); it != allCodecs.end(); ++it) {
+          if (it->GetMediaType() == mediaType) {
+            if (it->SetOptionValue(optionName, optionValue)) {
+              OpalMediaFormat::SetRegisteredMediaFormat(*it);
+              PTRACE(4, "OpalC API\tSet " << mediaType << " media format \"" << *it
+                     << "\" option \"" << optionName << "\" to \"" << optionValue << '"');
+            }
+            else {
+              PTRACE(2, "OpalC API\tCould not set " << mediaType
+                     << " media format option \"" << optionName << "\" to \"" << optionValue << '"');
+            }
+          }
+        }
+      }
+      else {
+        OpalMediaFormat mediaFormat = mediaName;
+        if (mediaFormat.IsValid()) {
+          if (mediaFormat.SetOptionValue(optionName, optionValue)) {
+            OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
+            PTRACE(2, "OpalC API\tSet media format \"" << mediaFormat
+                   << "\" option \"" << optionName << "\" to \"" << optionValue << '"');
+          }
+          else {
+            PTRACE(2, "OpalC API\tCould not set media format \"" << mediaFormat
+                   << "\" option \"" << optionName << "\" to \"" << optionValue << '"');
+          }
+        }
+        else {
+          PTRACE(2, "OpalC API\tTried to set option for unknown media format: \"" << mediaName << '"');
+        }
+      }
+    }
+  }
 }
 
 
