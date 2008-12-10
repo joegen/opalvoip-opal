@@ -51,30 +51,29 @@ void CodecTest::Main()
 {
   PArgList & args = GetArguments();
 
-  args.Parse("h-help."
-             "-record-driver:"
-             "R-record-device:"
-             "-play-driver:"
-             "P-play-device:"
-             "-play-buffers:"
+  args.Parse("b-bit-rate:"
+             "c-crop."
+             "C-rate-control."
+             "D-display-device:"
+             "-display-driver:"
              "F-audio-frames:"
-             "-grab-driver:"
              "G-grab-device:"
+             "-grab-driver:"
              "-grab-format:"
              "-grab-channel:"
-             "-display-driver:"
-             "D-display-device:"
-             "s-frame-size:"
-             "r-frame-rate:"
-             "b-bit-rate:"
-             "O-option:"
-             "c-crop."
+             "h-help."
              "m-suppress-marker."
              "M-force-marker."
-             "S-single-step."
-             "H:"
-             "T-statistics."
-             "C-rate-control."
+             "O-option:"
+             "p-payload-size:"
+             "P-play-device:"
+             "-play-driver:"
+             "-play-buffers:"
+             "r-frame-rate:"
+             "R-record-device:"
+             "-record-driver:"
+             "s-frame-size:"
+             "S-simultaneous:"
              "-count:"
              "-noprompt."
              "-snr."
@@ -114,9 +113,11 @@ void CodecTest::Main()
               "  -b --bit-rate size      : video bit rate (bits/second)\n"
               "  -O --option opt=val     : set media format option to value\n"
               "  -S --single-step        : video single frame at a time mode\n"
+              "  -c --crop               : crop rather than scale if resizing\n"
               "  -m --suppress-marker    : suppress marker bits to decoder"
               "  -M --force-marker       : force marker bits to decoder"
-              "  -c --crop               : crop rather than scale if resizing\n"
+              "  -p --payload-size sz    : Set size of maximum RTP payload for encoded data\n"
+              "  -S --simultanoues n     : Number of simultaneous encode/decode threads\n"
               "  -T --statistics         : output statistics files\n"
               "  -C --rate-control       : enable rate control\n"
               "  --count n               : set number of frames to transcode\n"
@@ -131,7 +132,7 @@ void CodecTest::Main()
     return;
   }
 
-  unsigned threadCount = args.GetOptionString('H').AsInteger();
+  unsigned threadCount = args.GetOptionString('S').AsInteger();
   if (threadCount > 0) {
     unsigned i;
     TestThreadInfo ** infos = (TestThreadInfo **)malloc(threadCount * sizeof(TestThreadInfo *));
@@ -665,8 +666,11 @@ bool VideoThread::Initialise(PArgList & args)
 
   if (encoder == NULL) 
     frameTime = mediaFormat.GetFrameTime();
-  else 
+  else {
     encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
+    if (args.HasOption('p'))
+      encoder->SetMaxOutputSize(args.GetOptionString('p').AsUnsigned());
+  }
 
   singleStep = args.HasOption('S');
 
@@ -899,6 +903,7 @@ void TranscoderThread::Main()
   else if (byteCount < 10000000000ULL)
     cout << byteCount/1000000.0 << " M";
   cout << "bytes, "
+       << packetCount << " packets, "
        << frameCount << " frames over " << duration << " seconds at "
        << (frameCount*1000.0/duration.GetMilliSeconds()) << " f/s and ";
 
