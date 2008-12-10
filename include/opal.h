@@ -66,7 +66,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 13
+#define OPAL_C_API_VERSION 14
 
 
 ///////////////////////////////////////
@@ -529,6 +529,13 @@ typedef struct OpalParamGeneral {
                                                         the message is queued for return in the
                                                         GetMessage(). See the
                                                         OpalMessageAvailableFunction for more details. */
+  const char * m_mediaOptions;        /**< List of media format options to be set. This is a '\n' separated
+                                           list of entries of the form "codec:option=value". Codec is either
+                                           a media type (e.g. "Audio" or "Video") or a specific media format,
+                                           for example:
+                                             "G.723.1:Tx Frames Per Packet=2\nH.263:Annex T=0\n"
+                                             "Video:Max Rx Frame Width=176\nVideo:Max Rx Frame Height=144"
+                                           */
 } OpalParamGeneral;
 
 
