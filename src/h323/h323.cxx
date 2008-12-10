@@ -4026,7 +4026,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   if (!OnCreateLogicalChannel(*capability, direction, errorCode))
     return NULL; // If codec combination not supported, return error
 
-  unsigned theSessionID = GetInternalSessionID(param->m_sessionID, *capability);
+  unsigned theSessionID = GetInternalSessionID(param->m_sessionID, (*capability).GetMediaFormat().GetMediaType());
   H323Channel * channel = capability->CreateChannel(*this, direction, theSessionID, param);
   if (channel == NULL) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotAvailable;
@@ -4081,7 +4081,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   }
 
   if (param != NULL)
-    sessionID = GetInternalSessionID(param->m_sessionID, capability);
+    sessionID = GetInternalSessionID(param->m_sessionID, capability.GetMediaFormat().GetMediaType());
 
   session = UseSession(GetControlChannel(), sessionID, capability.GetMediaFormat().GetMediaType(), rtpqos);
   if (session == NULL)
@@ -4728,32 +4728,65 @@ unsigned H323Connection::GetExternalSessionID(unsigned internalSessionID, const 
   
   // if we're H.245 master, directly assign the session ID. Otherwise, return zero
   if (IsH245Master()) {
-    PTRACE(3, "H323\tLocal EP is H.245 master. Directly assigning external session ID " << nextSessionID << "to internal session ID" << internalSessionID);
-    internalToExternalSessionIDMap[internalSessionID] = nextSessionID;
-    return nextSessionID++;
+    unsigned externalSessionID = internalSessionID;
+    PTRACE(3, "H323\tLocal EP is H.245 master. Directly assigning the internal session ID " << internalSessionID << " as the external session ID");
+    internalToExternalSessionIDMap[internalSessionID] = externalSessionID;
+    if (nextSessionID <= externalSessionID) {
+      nextSessionID = externalSessionID+1;
+    }
+    return externalSessionID;
   }
   PTRACE(3, "H323\tLocal EP is H.245 slave: Can't directly assign an external session ID to internal session ID " << internalSessionID);
   return 0;
 }
 
-unsigned H323Connection::GetInternalSessionID(unsigned externalSessionID, const H323Capability & capability)
+unsigned H323Connection::GetInternalSessionID(unsigned externalSessionID, const OpalMediaType & mediaType)
 {
   PWaitAndSignal m(sessionIDHandlingMutex);
   unsigned internalSessionID = 0;
   
   // directly look up the internal session ID
-  MediaTypeToInternalSessionIDMap::iterator iter = mediaTypeToInternalSessionIDMap.find(capability.GetMediaFormat().GetMediaType());
+  MediaTypeToInternalSessionIDMap::iterator iter = mediaTypeToInternalSessionIDMap.find(mediaType);
   if (iter != mediaTypeToInternalSessionIDMap.end()) {
     internalSessionID = iter->second;
   }
   
-  if (!IsH245Master() && internalSessionID != 0) {
-    // also update the internal <-> external session ID assignment
-    InternalToExternalSessionIDMap::iterator iter;
-    iter = internalToExternalSessionIDMap.find(internalSessionID);
-    if (iter == internalToExternalSessionIDMap.end()) {
-      PTRACE(3, "H323\tMapping external session ID " << externalSessionID << " to internal session ID " << internalSessionID << " as assigned by the H.245 master");
+  // also update the internal <-> external session ID map
+  if (IsH245Master()) {
+    if (externalSessionID != 0 && internalSessionID == 0) {
+      // remote requested a non-zero session ID which isn't assigned yet.
+      if (externalSessionID == 1 || externalSessionID == 2 || externalSessionID == 3) {
+        // remote requested primary session IDs, check if local did not already assign the requested session ID
+        InternalToExternalSessionIDMap::iterator iter;
+        if (internalToExternalSessionIDMap.find(externalSessionID) != internalToExternalSessionIDMap.end()) {
+          // session ID is already taken
+        } else {
+          // session ID is not taken
+          internalSessionID = externalSessionID;
+          internalToExternalSessionIDMap[internalSessionID] = externalSessionID;
+          mediaTypeToInternalSessionIDMap[mediaType] = internalSessionID;
+          PTRACE(3, "H323\tAssigning primary session ID " << internalSessionID << " for request by remote H.245 slave");
+        }
+      } else {
+        // remote sent a nonzero session ID which does not belong to the primary session IDs but is not
+        // present in the session ID map. Should not happen.
+      }
+    } else if (externalSessionID == 0 && internalSessionID == 0) {
+      // remote requested a new session ID for a media type which isn't assigned yet.
+      internalSessionID = nextSessionID;
+      internalToExternalSessionIDMap[internalSessionID] = nextSessionID;
+      mediaTypeToInternalSessionIDMap[mediaType] = internalSessionID;
+      nextSessionID++;
+      PTRACE(3, "H323\tAssigning internal session ID " << internalSessionID << " for request with media type " << mediaType);
+    }
+  } else { // H.245 slave
+    if (internalSessionID == 0) {
+      // have not yet assigned an internal session ID for the requested session ID
+      internalSessionID = nextSessionID;
       internalToExternalSessionIDMap[internalSessionID] = externalSessionID;
+      mediaTypeToInternalSessionIDMap[mediaType] = internalSessionID;
+      nextSessionID++;
+      PTRACE(3, "H323\tAssigning internal session ID " << internalSessionID << " for external session ID " << externalSessionID);
     }
   }
   

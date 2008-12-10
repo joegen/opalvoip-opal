@@ -558,6 +558,12 @@ void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
   const H245_H2250LogicalChannelParameters & openparam =
                           open.m_forwardLogicalChannelParameters.m_multiplexParameters;
   unsigned sessionID = openparam.m_sessionID;
+  
+  // Let the H.245 master assign the session ID if needed
+  if (connection.IsH245Master() && sessionID == 0) {
+    PTRACE(3, "H323\tOBTAINING EXTERNAL");
+    sessionID = connection.GetExternalSessionID(GetSessionID(), GetCapability().GetMediaFormat().GetMediaType());
+  }
   param.m_sessionID = sessionID;
 
   OnSendOpenAck(param);
@@ -865,7 +871,7 @@ PBoolean H323_ExternalRTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelPa
                                           unsigned & errorCode)
 {
   // Only support a single audio session
-  if (connection.GetInternalSessionID(param.m_sessionID, GetCapability()) != sessionID) {
+  if (connection.GetInternalSessionID(param.m_sessionID, GetCapability().GetMediaFormat().GetMediaType()) != sessionID) {
     PTRACE(1, "LogChan\tOpen for invalid session: " << param.m_sessionID);
     errorCode = H245_OpenLogicalChannelReject_cause::e_invalidSessionID;
     return PFalse;
