@@ -418,7 +418,6 @@ int DoRegister(const char * aor, const char * pwd)
 
   command.m_param.m_registrationInfo.m_password = pwd;
   command.m_param.m_registrationInfo.m_timeToLive = 300;
-  command.m_param.m_registrationInfo.m_messageWaiting = 120;
   if ((response = MySendCommand(&command, "Could not register endpoint")) == NULL)
     return 0;
 
