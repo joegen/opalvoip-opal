@@ -127,7 +127,7 @@ class H263_Base_EncoderContext
   protected:
     virtual bool InitContext() = 0;
 
-    unsigned char _inputFrameBuffer[MAX_YUV420P_FRAME_SIZE];
+    unsigned char _inputFrameBuffer[MAX_YUV420P_FRAME_SIZE] __attribute__ ((aligned (16)));
     AVCodec        *_codec;
     AVCodecContext *_context;
     AVFrame        *_inputFrame;
