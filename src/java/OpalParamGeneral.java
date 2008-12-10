@@ -292,6 +292,14 @@ public class OpalParamGeneral {
     return (cPtr == 0) ? null : new SWIGTYPE_p_f_p_q_const__struct_OpalMessage__int(cPtr, false);
   }
 
+  public void setM_mediaOptions(String value) {
+    exampleJNI.OpalParamGeneral_m_mediaOptions_set(swigCPtr, this, value);
+  }
+
+  public String getM_mediaOptions() {
+    return exampleJNI.OpalParamGeneral_m_mediaOptions_get(swigCPtr, this);
+  }
+
   public OpalParamGeneral() {
     this(exampleJNI.new_OpalParamGeneral(), true);
   }
