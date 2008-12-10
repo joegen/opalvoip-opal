@@ -38,7 +38,7 @@
 IMPLEMENT_DYNAMIC(COptionsH323, CDialog)
 
 COptionsH323::COptionsH323(CWnd* pParent /*=NULL*/)
-  : CDialog(COptionsH323::IDD, pParent)
+  : CScrollableDialog(COptionsH323::IDD, pParent)
   , m_uiGatekeeperType(0)
   , m_strGkId(_T(""))
   , m_strGkHost(_T(""))
@@ -72,7 +72,7 @@ void COptionsH323::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(COptionsH323, CDialog)
+BEGIN_MESSAGE_MAP(COptionsH323, CScrollableDialog)
   ON_BN_CLICKED(IDC_NO_GATEKEEPER, &COptionsH323::OnBnClickedGatekeeperType)
   ON_BN_CLICKED(IDC_DISCOVER_GATEKEEPER, &COptionsH323::OnBnClickedGatekeeperType)
   ON_BN_CLICKED(IDC_GATEKEEPER_ZONE, &COptionsH323::OnBnClickedGatekeeperType)
@@ -82,11 +82,7 @@ END_MESSAGE_MAP()
 
 BOOL COptionsH323::OnInitDialog()
 {
-  CDialog::OnInitDialog();
-
-  if (!m_dlgCommandBar.Create(this) || !m_dlgCommandBar.InsertMenuBar(IDR_DIALOGS)) {
-    TRACE0("Failed to create CommandBar\n");
-  }
+  CScrollableDialog::OnInitDialog();
 
   return TRUE;
 }

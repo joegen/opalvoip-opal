@@ -29,11 +29,12 @@
  */
 
 #pragma once
+#include "ScrollableDialog.h"
 
 
 // COptionsSIP dialog
 
-class COptionsSIP : public CDialog
+class COptionsSIP : public CScrollableDialog
 {
   DECLARE_DYNAMIC(COptionsSIP)
 
@@ -45,8 +46,6 @@ public:
   enum { IDD = IDD_OPTIONS_SIP };
 
 protected:
-  CCommandBar m_dlgCommandBar;
-
   virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
   virtual BOOL OnInitDialog();
 
