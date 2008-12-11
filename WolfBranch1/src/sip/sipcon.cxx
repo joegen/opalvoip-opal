@@ -304,7 +304,7 @@ void SIPConnection::OnReleased()
 
   OpalRTPConnection::OnReleased();
 
-  if (!transportIsReliable)
+  if (transport != NULL)
     transport->CloseWait();
 }
 
