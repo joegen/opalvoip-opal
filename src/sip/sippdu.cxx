@@ -2317,7 +2317,7 @@ bool SIPTransaction::ResendCANCEL()
 
 PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
-  // Stop the timers outside of the mutex to avoid deadlock
+  // Stop the timers with asynchronous flag to avoid deadlock
   retryTimer.Stop(false);
   completionTimer.Stop(false);
 
@@ -2336,6 +2336,9 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   // Something wrong here, response is not for the request we made!
   if (cseq.Find(MethodNames[method]) == P_MAX_INDEX) {
     PTRACE(2, "SIP\tTransaction " << cseq << " response not for " << *this);
+    // Restart timer as haven't finished yet
+    retryTimer = retryTimer.GetResetTime();
+    completionTimer = completionTimer.GetResetTime();
     return PFalse;
   }
 
