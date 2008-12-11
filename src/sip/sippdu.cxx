@@ -2843,16 +2843,18 @@ PObject::Comparison SIPSubscribe::EventPackage::InternalCompare(PINDEX offset, P
 {
   // Special rules for comparing event package strings, only up to the ';', if present
 
-  do {
+  for (;;) {
     if (length-- == 0)
       return EqualTo;
     if (theArray[offset] == '\0' && cstr[offset] == '\0')
       return EqualTo;
+    if (theArray[offset] == ';' || cstr[offset] == ';')
+      break;
     Comparison c = PCaselessString::InternalCompare(offset, cstr[offset]);
     if (c != EqualTo)
       return c;
     offset++;
-  } while (theArray[offset] != ';' || cstr[offset] != ';');
+  }
 
   PINDEX myIdPos = Find("id", offset);
   const char * theirIdPtr = strstr(cstr+offset, "id");
