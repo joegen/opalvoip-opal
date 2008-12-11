@@ -134,7 +134,8 @@ class SIPURL : public PURL
       ToURI,        ///< To header field
       FromURI,      ///< From header field
       ContactURI,   ///< Registration or Redirection Contact header field
-      RouteURI      ///< Dialog Contact header field, or Record-Route header field
+      RouteURI,     ///< Dialog Contact header field, or Record-Route header field
+      RegisterURI   ///< URI on REGISTER request line.
     };
 
     /** Removes tag parm & query vars and recalculates urlString

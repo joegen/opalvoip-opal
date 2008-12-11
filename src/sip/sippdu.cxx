@@ -413,12 +413,12 @@ void SIPURL::Sanitise(UsageContext context)
     const char * name;
     unsigned     contexts;
   } const SanitaryFields[] = {
-    { "method",    (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|(1<<RouteURI) },
+    { "method",    (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|(1<<RouteURI)|(1<<RegisterURI) },
     { "maddr",     (1<<ToURI)|(1<<FromURI) },
-    { "ttl",       (1<<ToURI)|(1<<FromURI)|(1<<RouteURI) },
+    { "ttl",       (1<<ToURI)|(1<<FromURI)|(1<<RouteURI)|(1<<RegisterURI) },
     { "transport", (1<<ToURI)|(1<<FromURI) },
-    { "lr",        (1<<ToURI)|(1<<FromURI)|(1<<ContactURI) },
-    { "tag",       (1<<RequestURI)|(1<<ContactURI)|(1<<RouteURI)|(1<<ExternalURI) }
+    { "lr",        (1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|(1<<RegisterURI) },
+    { "tag",       (1<<RequestURI)|(1<<ContactURI)|(1<<RouteURI)|(1<<ExternalURI)|(1<<RegisterURI) }
   };
 
   for (PINDEX i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
@@ -431,6 +431,11 @@ void SIPURL::Sanitise(UsageContext context)
 
   if (context == ToURI || context == FromURI)
     port = (scheme *= "sips") ? 5061 : 5060;
+
+  if (context == RegisterURI) {
+    username.MakeEmpty();
+    password.MakeEmpty();
+  }
 
   Recalculate();
 }
@@ -2564,10 +2569,12 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                          const Params & params)
   : SIPTransaction(ep, trans, params.m_minRetryTime, params.m_maxRetryTime)
 {
-  SIPURL target = params.m_registrarAddress;
+  SIPURL uri = params.m_registrarAddress;
+  PString to = uri.GetUserName().IsEmpty() ? params.m_addressOfRecord : params.m_registrarAddress;
+  uri.Sanitise(SIPURL::RegisterURI);
   SIP_PDU::Construct(Method_REGISTER,
-                     "sip:"+target.GetHostName(),
-                     target.GetUserName().IsEmpty() ? params.m_addressOfRecord : params.m_registrarAddress,
+                     uri.AsString(),
+                     to,
                      params.m_addressOfRecord,
                      id,
                      cseq,
