@@ -56,6 +56,7 @@ void FaxOPAL::Main()
              "G-gk-id:"
              "h-help."
              "H-h323:"
+             "N-stun:"
              "p-password:"
              "r-register:"
              "s-spandsp:"
@@ -88,6 +89,7 @@ void FaxOPAL::Main()
             "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
             "  -g or --gk-host host    : H.323 gatekeeper host.\n"
             "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
+            "  -N or --stun server     : Set NAT traversal STUN server.\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -100,6 +102,15 @@ void FaxOPAL::Main()
   }
 
   m_manager = new MyManager();
+
+  if (args.HasOption('N')) {
+    PSTUNClient::NatTypes nat = m_manager->SetSTUNServer(args.GetOptionString('N'));
+    cout << "STUN server \"" << m_manager->GetSTUNClient()->GetServer() << "\" replies " << nat;
+    PIPSocket::Address externalAddress;
+    if (nat != PSTUNClient::BlockedNat && m_manager->GetSTUNClient()->GetExternalAddress(externalAddress))
+      cout << " with address " << externalAddress;
+    cout << endl;
+  }
 
   if (args.HasOption('u'))
     m_manager->SetDefaultUserName(args.GetOptionString('u'));
