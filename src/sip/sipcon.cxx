@@ -538,9 +538,8 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
   else if (needReINVITE && !mediaStreams.IsEmpty()) {
     std::vector<bool> sessions;
     for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
-      unsigned session = stream->GetSessionID();
-      sessions.resize(
-	std::max((unsigned int)sessions.size(),session+1));
+      std::vector<bool>::size_type session = stream->GetSessionID();
+      sessions.resize(std::max(sessions.size(),session+1));
       if (!sessions[session]) {
         sessions[session] = true;
         sdpOK |= OfferSDPMediaDescription(stream->GetMediaFormat().GetMediaType(), session, rtpSessions, sdpOut);
@@ -1929,26 +1928,10 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 
 void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 {
-  PString origTo, reqTo;
-
   // Currently only handle CANCEL requests for the original INVITE that
   // created this connection, all else ignored
 
-  // Ignore the tag added by OPAL or remote as they may not be there on
-  // both sides yet if the dialog has not yet been established.
-  if (originalInvite != NULL) {
-    origTo = originalInvite->GetMIME().GetTo();
-    PINDEX pos = origTo.Find(TagParamName);
-    origTo.Delete(pos, origTo.Find(';', pos+sizeof(TagParamName)));
-    reqTo = request.GetMIME().GetTo();
-    pos = reqTo.Find(TagParamName);
-    reqTo.Delete(pos, reqTo.Find(';', pos+sizeof(TagParamName)));
-  }
-
-  if (originalInvite == NULL || 
-      reqTo != origTo || 
-      request.GetMIME().GetFrom() != originalInvite->GetMIME().GetFrom() || 
-      request.GetMIME().GetCSeqIndex() != originalInvite->GetMIME().GetCSeqIndex()) {
+  if (originalInvite == NULL || originalInvite->GetTransactionID() != request.GetTransactionID()) {
     PTRACE(2, "SIP\tUnattached " << request << " received for " << *this);
     request.SendResponse(*transport, SIP_PDU::Failure_TransactionDoesNotExist);
     return;
