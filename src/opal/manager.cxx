@@ -1575,10 +1575,10 @@ bool OpalManager::GetZRTPEnabled() const
 /////////////////////////////////////////////////////////////////////////////
 
 OpalRecordManager::Mixer_T::Mixer_T()
-  : OpalAudioMixer(PTrue)
-{ 
-  mono = PFalse; 
-  started = PFalse; 
+  :	OpalAudioMixer(true)
+  ,	mono(false)
+  ,	started(false)
+{
 }
 
 PBoolean OpalRecordManager::Mixer_T::Open(const PFilePath & fn)
@@ -1598,8 +1598,11 @@ PBoolean OpalRecordManager::Mixer_T::Open(const PFilePath & fn)
 PBoolean OpalRecordManager::Mixer_T::Close()
 {
   PWaitAndSignal m(mutex);
+  
+  started = false;
   file.Close();
-  return PTrue;
+
+  return true;
 }
 
 PBoolean OpalRecordManager::Mixer_T::OnWriteAudio(const MixerFrame & mixerFrame)
