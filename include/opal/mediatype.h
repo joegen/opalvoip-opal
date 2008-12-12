@@ -282,7 +282,9 @@ class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
     OpalRTPAVPMediaType(
       const char * mediaType, 
       const char * sdpType, 
-          unsigned preferredSessionId
+          unsigned preferredSessionId,
+              bool autoStart = false
+
     );
 
     virtual PString GetRTPEncoding() const;
