@@ -1458,6 +1458,7 @@ class OpalConnection : public PSafeObject
 
     StringOptions m_stringOptions;
     PString recordAudioFilename;
+    PNotifier recordNotifier;
 
 #if OPAL_STATISTICS
     unsigned m_VideoUpdateRequestsSent;
