@@ -42,6 +42,18 @@
 #include <sip/sdp.h>
 #endif
 
+
+class OpalSIPIMMediaType : public OpalIMMediaType 
+{
+  public:
+    OpalSIPIMMediaType();
+    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
+
+#if OPAL_SIP
+    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
+#endif
+};
+
 ////////////////////////////////////////////////////////////////////////////
 
 /** Class for carrying MSRP session information
@@ -65,6 +77,8 @@ class OpalSIPIMMediaSession : public OpalMediaSession
 
     virtual OpalTransportAddress GetLocalMediaAddress() const;
 
+    virtual void SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & );
+
 #if OPAL_SIP
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
@@ -79,7 +93,9 @@ class OpalSIPIMMediaSession : public OpalMediaSession
 
   protected:
     OpalTransportAddress transportAddress;
-    PString fromURL;
+    PString localURL;
+    PString remoteURL;
+    PString callId;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -91,7 +107,10 @@ class OpalSIPIMMediaStream : public OpalIMMediaStream
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      bool isSource                        ///<  Is a source stream
+      bool isSource,                       ///<  Is a source stream
+      const PString & localURL,
+      const PString & remoteURL,
+      const PString & callId
     );
 
     ~OpalSIPIMMediaStream();
@@ -120,7 +139,33 @@ class OpalSIPIMMediaStream : public OpalIMMediaStream
       */
     virtual PBoolean Close();
   //@}
+
+  protected:
+      PString localURL;
+      PString remoteURL;
+      PString callId;
 };
+
+////////////////////////////////////////////////////////////////////////////
+
+class SIPEndPoint;
+class SIP_PDU;
+
+class OpalSIPIMManager : public PObject
+{
+  public:
+    OpalSIPIMManager(SIPEndPoint & endpoint);
+    void OnReceivedMessage(const SIP_PDU & pdu);
+
+    bool StartSession(const PString & callId);
+
+    bool EndSession(const PString & callId);
+
+  protected:
+    SIPEndPoint & endpoint;
+};
+
+
 
 ////////////////////////////////////////////////////////////////////////////
 

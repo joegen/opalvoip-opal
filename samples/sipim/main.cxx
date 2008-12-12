@@ -29,9 +29,10 @@
 #include "main.h"
 
 #include <opal/pcss.h>
+#include <im/rfc4103.h>
+#include <opal/patch.h>
 
 PCREATE_PROCESS(SipIM);
-
 
 SipIM::SipIM()
   : PProcess("OPAL SIP IM", "SipIM", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
@@ -54,6 +55,8 @@ void SipIM::Main()
              "u-user:"
              "h-help."
              "-sipim."
+             "-t140."
+             "-msrp."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -72,7 +75,9 @@ void SipIM::Main()
             "Available options are:\n"
             "  -u or --user            : set local username.\n"
             "  --help                  : print this help message.\n"
-            "  --sipim                 : use SIPIM instead of MSRP\n"
+            "  --msrp                  : use MSRP (default)\n"
+            "  --sipim                 : use SIPIM\n"
+            "  --t140                  : use T.140\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -85,10 +90,21 @@ void SipIM::Main()
 
   MyManager m_manager;
 
+
+
   if (args.HasOption('u'))
     m_manager.SetDefaultUserName(args.GetOptionString('u'));
 
-  bool sipIM = args.HasOption("sipim");
+  OpalMediaFormat imFormat("MSRP");
+  Mode mode = Use_MSRP;
+  if (args.HasOption("sipim")) {
+    mode = Use_SIPIM;
+    imFormat = OpalSIPIM;
+  }
+  else if (args.HasOption("t140")) {
+    mode = Use_T140;
+    imFormat = OpalT140;
+  }
 
   OpalMediaFormatList allMediaFormats;
 
@@ -113,22 +129,34 @@ void SipIM::Main()
 
   cout << "Available codecs: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
 
-  PString imFormatMask = sipIM ? "!SIP-IM" : "!MSRP";
+  PString imFormatMask = PString("!") + PString(imFormat);
   m_manager.SetMediaFormatMask(imFormatMask);
   allMediaFormats.Remove(imFormatMask);
   
   cout << "Codecs to be used: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
 
   OpalConnection::StringOptions * options = new OpalConnection::StringOptions();
-  options->SetAt("autostart", sipIM ? "sip-im:exclusive" : "msrp:exclusive");
+  options->SetAt("autostart", imFormat.GetMediaType() + ":exclusive");
 
   if (args.GetCount() == 0)
-    cout << "Awaiting incoming IM ..." << flush;
+    cout << "Awaiting incoming call ..." << flush;
   else {
-    PString token;
-    if (!m_manager.SetUpCall("pc:", args[0], token, NULL, 0, options)) {
+    if (!m_manager.SetUpCall("pc:", args[0], m_manager.m_callToken, NULL, 0, options)) {
       cerr << "Could not start IM to \"" << args[0] << '"' << endl;
       return;
+    }
+  }
+
+  m_manager.m_connected.Wait();
+
+  for (;;) {
+    PThread::Sleep(1000);
+    const char * textData = "Hello, world";
+
+    PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_manager.m_callToken);
+    if (call != NULL) {
+      PSafePtr<OpalConnection> conn = call->GetConnectionAs<OpalPCSSConnection>();
+      conn->SendIM(imFormat, t140(textData));
     }
   }
 
@@ -139,18 +167,27 @@ void SipIM::Main()
 
 void MyManager::OnClearedCall(OpalCall & /*call*/)
 {
+  m_connected.Signal();
   m_completed.Signal();
 }
 
 PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 {
-  AcceptIncomingConnection(connection.GetToken());
+  MyManager & mgr = (MyManager &)manager;
+  mgr.m_callToken = connection.GetToken();
+  AcceptIncomingConnection(mgr.m_callToken);
+  mgr.m_connected.Signal();
+  cout << "Incoming call connected" << endl;
   return PTrue;
 }
 
 
 PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
+  MyManager & mgr = (MyManager &)manager;
+
+  cout << "Outgoing call connected" << endl;
+  mgr.m_connected.Signal();
   return PTrue;
 }
 

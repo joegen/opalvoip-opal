@@ -55,6 +55,7 @@ class OpalSilenceDetector;
 class OpalEchoCanceler;
 class OpalRFC2833Proto;
 class OpalRFC2833Info;
+class T140String;
 
 /*! \page pageOpalConnections Connection handling in the OPAL library
 
@@ -1385,6 +1386,12 @@ class OpalConnection : public PSafeObject
       const OpalMediaType & mediaType,  ///< media type to check
       bool receive                      ///< flag for auto-start receive or transmit
     );
+
+#if OPAL_IM_CAPABILITY
+    virtual bool SendIM(const OpalMediaFormat & format, const T140String & body);
+    virtual void OnReceiveIM(unsigned sessionId, const OpalMediaFormat & format, const T140String & body);
+    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnReceiveIM);
+#endif
 
   protected:
     void OnConnectedInternal();

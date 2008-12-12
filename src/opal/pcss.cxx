@@ -68,9 +68,9 @@ class PCSSIMStream : public OpalIMMediaStream
     }
 
     virtual PBoolean ReadData(
-      BYTE * data,      ///<  Data buffer to read to
-      PINDEX size,      ///<  Size of buffer
-      PINDEX & length   ///<  Length of data actually read
+      BYTE * /*data*/,      ///<  Data buffer to read to
+      PINDEX /*size*/,      ///<  Size of buffer
+      PINDEX & /*length*/   ///<  Length of data actually read
     )
     {
       if (!IsOpen())
@@ -82,9 +82,9 @@ class PCSSIMStream : public OpalIMMediaStream
        The default behaviour writes to the PChannel object.
       */
     virtual PBoolean WriteData(
-      const BYTE * data,   ///<  Data to write
-      PINDEX length,       ///<  Length of data to read.
-      PINDEX & written     ///<  Length of data actually written
+      const BYTE * /*data*/,   ///<  Data to write
+      PINDEX /*length*/,       ///<  Length of data to read.
+      PINDEX & /*written*/     ///<  Length of data actually written
     )
     {
       if (!IsOpen())

@@ -48,6 +48,11 @@
 
 #if OPAL_MSRP_CAPABILITY
 
+OpalMSRPMediaType::OpalMSRPMediaType()
+  : OpalIMMediaType("msrp", "message|tcp/msrp", 5, true)
+{
+}
+
 #if OPAL_SIP
 
 /////////////////////////////////////////////////////////
@@ -155,6 +160,7 @@ OpalMediaFormatList SDPMSRPMediaDescription::GetMediaFormats() const
 {
   OpalMediaFormat msrp(OpalMSRP);
   msrp.SetOptionString("Accept Types", types);
+  msrp.SetOptionString("Path",         path);
 
   PTRACE(4, "MSRP\tNew format is\n" << setw(-1) << msrp);
 
@@ -273,6 +279,10 @@ OpalMediaStream * OpalMSRPMediaSession::CreateMediaStream(const OpalMediaFormat 
 {
   PTRACE(2, "MSRP\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with " << msrpSession->GetURL());
   return new OpalMSRPMediaStream(connection, mediaFormat, sessionID, isSource);
+}
+
+void OpalMSRPMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & )
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////

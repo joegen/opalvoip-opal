@@ -52,6 +52,10 @@
 #include <t38/t38proto.h>
 #include <ptclib/url.h>
 
+#if OPAL_IM_CAPABILITY
+#include <im/sipim.h>
+#include <im/rfc4103.h>
+#endif
 
 #define new PNEW
 
@@ -1281,6 +1285,35 @@ bool OpalConnection::AutoStartMap::CanAutoStartMediaType(const OpalMediaType & m
 
   return true;
 }
+
+#if OPAL_IM_CAPABILITY
+
+bool OpalConnection::SendIM(const OpalMediaFormat & format, const T140String & body)
+{
+  if (!LockReadWrite())
+    return false;
+
+  bool stat = true;
+
+  OpalMediaStreamPtr strm = GetMediaStream(format.GetMediaType(), true);
+  if (strm == NULL) 
+    stat = false;
+  else {
+    RFC4103Frame frame(body);
+    strm->GetPatch()->PushFrame(frame);
+  }
+  
+  UnlockReadWrite();
+
+  return stat;
+}
+
+void OpalConnection::OnReceiveIM(unsigned /*sessionId*/, const OpalMediaFormat & /*format*/, const T140String & /*body*/)
+{
+}
+
+#endif
+
 
 
 /////////////////////////////////////////////////////////////////////////////

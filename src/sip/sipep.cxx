@@ -66,11 +66,18 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   , m_shuttingDown(false)
   , m_dialogNotifyVersion(1)
   , m_defaultAppearanceCode(-1)
+
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
+
   , m_highPriorityMonitor(*this, HighPriority)
   , m_lowPriorityMonitor(*this, LowPriority)
+
+#if OPAL_SIPIM_CAPABILITY
+  , m_sipIMManager(*this)
+#endif
+
 #ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
@@ -1172,6 +1179,10 @@ PBoolean SIPEndPoint::Message(const PString & to, const PString & body, const PS
 void SIPEndPoint::OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu)
 {
   OnMessageReceived(from, pdu.GetEntityBody());
+
+#if OPAL_SIPIM_CAPABILITY
+  m_sipIMManager.OnReceivedMessage(pdu);
+#endif
 }
 
 

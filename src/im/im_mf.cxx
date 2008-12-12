@@ -35,6 +35,8 @@
 #include <opal/connection.h>
 #include <im/im.h>
 #include <im/msrp.h>
+#include <im/sipim.h>
+#include <im/t140.h>
 #include <rtp/rtp.h>
 
 #define new PNEW
@@ -44,11 +46,6 @@
 #if OPAL_MSRP_CAPABILITY
 
 OPAL_INSTANTIATE_MEDIATYPE(msrp, OpalMSRPMediaType);
-
-OpalMSRPMediaType::OpalMSRPMediaType()
-  : OpalIMMediaType("msrp", "message|tcp/msrp", 5, true)
-{
-}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -78,7 +75,7 @@ const OpalMediaFormat & GetOpalMSRP()
                           1440, 
                           512, 
                           0, 
-                          0) 
+                          1000)            // as defined in RFC 4103 - good as anything else   
       { 
         PFactory<OpalMSRPEncoding>::KeyList_T types = PFactory<OpalMSRPEncoding>::GetKeyList();
         PFactory<OpalMSRPEncoding>::KeyList_T::iterator r;
@@ -90,9 +87,13 @@ const OpalMediaFormat & GetOpalMSRP()
           acceptTypes += *r;
         }
         
-        OpalMediaOption * acceptOption = new OpalMediaOptionString("Accept Types", false, acceptTypes);
-        acceptOption->SetMerge(OpalMediaOption::NoMerge);
-        AddOption(acceptOption);
+        OpalMediaOption * option = new OpalMediaOptionString("Accept Types", false, acceptTypes);
+        option->SetMerge(OpalMediaOption::NoMerge);
+        AddOption(option);
+
+        option = new OpalMediaOptionString("Path", false, "");
+        option->SetMerge(OpalMediaOption::NoMerge);
+        AddOption(option);
       } 
   } const f; 
   return f; 
@@ -107,15 +108,6 @@ const OpalMediaFormat & GetOpalMSRP()
 
 OPAL_INSTANTIATE_MEDIATYPE2(sipim, "sip-im", OpalSIPIMMediaType);
 
-/////////////////////////////////////////////////////////////////////////////
-
-OpalSIPIMMediaType::OpalSIPIMMediaType()
-  : OpalIMMediaType("sip-im", "message|sip", 6, true)
-{
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
 const OpalMediaFormat & GetOpalSIPIM() 
 { 
   static class IMSIPMediaFormat : public OpalMediaFormat { 
@@ -129,14 +121,47 @@ const OpalMediaFormat & GetOpalSIPIM()
                           1440, 
                           512, 
                           0, 
-                          0) 
+                          1000)     // as defined in RFC 4103 - good as anything else
       { 
+        OpalMediaOption * option = new OpalMediaOptionString("URL", false, "");
+        option->SetMerge(OpalMediaOption::NoMerge);
+        AddOption(option);
       } 
   } const f; 
   return f; 
 } 
 
 #endif // OPAL_SIPIM_CAPABILITY
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_T140_CAPABILITY
+
+/////////////////////////////////////////////////////////////////////////////
+
+const OpalMediaFormat & GetOpalT140() 
+{ 
+  static class T140MediaFormat : public OpalMediaFormat { 
+    public: 
+      T140MediaFormat() 
+        : OpalMediaFormat(OPAL_T140, 
+                          "t140", 
+                          RTP_DataFrame::DynamicBase, 
+                          "text", 
+                          false,  
+                          1440, 
+                          512, 
+                          0, 
+                          1000)    // as defined in RFC 4103
+      { 
+      } 
+  } const f; 
+  return f; 
+} 
+
+OPAL_INSTANTIATE_MEDIATYPE(t140, OpalT140MediaType);
+
+#endif // OPAL_T140_CAPABILITY
 
 //////////////////////////////////////////////////////////////////////////////////////////
 

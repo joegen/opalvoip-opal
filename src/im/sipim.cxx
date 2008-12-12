@@ -45,8 +45,18 @@
 
 #include <im/im.h>
 #include <im/sipim.h>
+#include <sip/sipep.h>
 
 #if OPAL_SIPIM_CAPABILITY
+
+////////////////////////////////////////////////////////////////////////////
+
+OpalSIPIMMediaType::OpalSIPIMMediaType()
+  : OpalIMMediaType("sip-im", "message|sip", 6, true)
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_SIP
 
@@ -154,6 +164,7 @@ void SDPSIPIMMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*
 OpalMediaFormatList SDPSIPIMMediaDescription::GetMediaFormats() const
 {
   OpalMediaFormat sipim(OpalSIPIM);
+  sipim.SetOptionString("URL", fromURL);
 
   PTRACE(4, "SIPIM\tNew format is " << setw(-1) << sipim);
 
@@ -199,7 +210,9 @@ OpalSIPIMMediaSession::OpalSIPIMMediaSession(OpalConnection & _conn, unsigned _s
 : OpalMediaSession(_conn, "sip-im", _sessionId)
 {
   transportAddress = connection.GetTransport().GetLocalAddress();
-  fromURL          = connection.GetLocalPartyURL();
+  localURL         = connection.GetLocalPartyURL();
+  remoteURL        = connection.GetRemotePartyURL();
+  callId           = connection.GetToken();
 }
 
 OpalSIPIMMediaSession::OpalSIPIMMediaSession(const OpalSIPIMMediaSession & _obj)
@@ -218,15 +231,19 @@ OpalTransportAddress OpalSIPIMMediaSession::GetLocalMediaAddress() const
 
 SDPMediaDescription * OpalSIPIMMediaSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
 {
-  return new SDPSIPIMMediaDescription(sdpContactAddress, transportAddress, fromURL);
+  return new SDPSIPIMMediaDescription(sdpContactAddress, transportAddress, localURL);
 }
 
 OpalMediaStream * OpalSIPIMMediaSession::CreateMediaStream(const OpalMediaFormat & mediaFormat, 
                                                                          unsigned sessionID, 
                                                                          PBoolean isSource)
 {
-  PTRACE(2, "SIPIM\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with " << fromURL);
-  return new OpalSIPIMMediaStream(connection, mediaFormat, sessionID, isSource);
+  PTRACE(2, "SIPIM\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with local " << localURL << " and remote " << remoteURL);
+  return new OpalSIPIMMediaStream(connection, mediaFormat, sessionID, isSource, localURL, remoteURL, callId);
+}
+
+void OpalSIPIMMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList &)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -235,9 +252,15 @@ OpalSIPIMMediaStream::OpalSIPIMMediaStream(
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      bool isSource                        ///<  Is a source stream
+      bool isSource,                        ///<  Is a source stream
+      const PString & _localURL,
+      const PString & _remoteURL,
+      const PString & _callId
 )
   : OpalIMMediaStream(conn, mediaFormat, sessionID, isSource)
+  , localURL(_localURL)
+  , remoteURL(_remoteURL)
+  , callId(_callId)
 {
 }
 
@@ -245,22 +268,35 @@ OpalSIPIMMediaStream::~OpalSIPIMMediaStream()
 {
 }
 
-PBoolean OpalSIPIMMediaStream::ReadData(
-      BYTE * data,      ///<  Data buffer to read to
-      PINDEX size,      ///<  Size of buffer
-      PINDEX & length   ///<  Length of data actually read
-    )
+PBoolean OpalSIPIMMediaStream::ReadData(BYTE *,PINDEX,PINDEX &)
 {
-  return OpalIMMediaStream::ReadData(data, size, length);
+  if (!IsOpen())
+    return false;
+
+  PAssertAlways("ReadData called for SIPIM");
+  return false;
 }
 
 PBoolean OpalSIPIMMediaStream::WriteData(
       const BYTE * data,   ///<  Data to write
-      PINDEX length,       ///<  Length of data to read.
-      PINDEX & written     ///<  Length of data actually written
+            PINDEX length,       ///<  Length of data to read.
+          PINDEX & written     ///<  Length of data actually written
     )
 {
-  return OpalIMMediaStream::WriteData(data, length, written);
+  if (!IsOpen())
+    return false;
+
+  if (length != 0 && data != NULL) {
+    // T.140 data has 3 bytes at the start of the data
+    if (length > 4) {
+      PString body((const char *)data + 3, length-3);
+      SIPEndPoint * ep = dynamic_cast<SIPEndPoint *>(&connection.GetEndPoint());
+      if (ep != NULL)
+        ep->Message(remoteURL, body, localURL, callId);
+    }
+    written = length;
+  }
+  return true;
 }
 
 PBoolean OpalSIPIMMediaStream::Close()
@@ -268,6 +304,25 @@ PBoolean OpalSIPIMMediaStream::Close()
   return OpalIMMediaStream::Close();
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////
 
+OpalSIPIMManager::OpalSIPIMManager(SIPEndPoint & _endpoint)
+  : endpoint(_endpoint)
+{
+}
+
+void OpalSIPIMManager::OnReceivedMessage(const SIP_PDU & /*pdu*/)
+{
+}
+
+bool OpalSIPIMManager::StartSession(const PString & /*callId*/)
+{ 
+  return true;
+}
+
+bool OpalSIPIMManager::EndSession(const PString & /*callId*/)
+{ 
+  return true;
+}
 
 #endif // OPAL_SIPIM_CAPABILITY
