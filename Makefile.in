@@ -338,7 +338,9 @@ endif
 
 SOURCES += $(OPAL_SRCDIR)/im/msrp.cxx \
            $(OPAL_SRCDIR)/im/im_mf.cxx \
-           $(OPAL_SRCDIR)/im/sipim.cxx
+           $(OPAL_SRCDIR)/im/sipim.cxx \
+           $(OPAL_SRCDIR)/im/rfc4103.cxx \
+           $(OPAL_SRCDIR)/im/t140.cxx
 
 ##################
 # Software codecs

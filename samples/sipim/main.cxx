@@ -129,7 +129,7 @@ void SipIM::Main()
 
   cout << "Available codecs: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
 
-  PString imFormatMask = PString("!") + PString(imFormat);
+  PString imFormatMask = PString("!") + (const char *)imFormat;
   m_manager.SetMediaFormatMask(imFormatMask);
   allMediaFormats.Remove(imFormatMask);
   
@@ -155,8 +155,9 @@ void SipIM::Main()
 
     PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_manager.m_callToken);
     if (call != NULL) {
-      PSafePtr<OpalConnection> conn = call->GetConnectionAs<OpalPCSSConnection>();
-      conn->SendIM(imFormat, t140(textData));
+      PSafePtr<OpalPCSSConnection> conn = call->GetConnectionAs<OpalPCSSConnection>();
+      if (conn != NULL)
+        conn->SendIM(imFormat, T140String(textData));
     }
   }
 
