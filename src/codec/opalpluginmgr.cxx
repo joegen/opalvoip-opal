@@ -40,8 +40,11 @@
 #include <opal/transcoders.h>
 #include <codec/opalpluginmgr.h>
 #include <codec/opalplugin.h>
+
+#if OPAL_H323
 #include <h323/h323caps.h>
 #include <asn/h245.h>
+#endif
 
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
