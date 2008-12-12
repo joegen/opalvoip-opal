@@ -961,15 +961,15 @@ void H323_ExternalRTPChannel::SetExternalAddress(const H323TransportAddress & da
 PBoolean H323_ExternalRTPChannel::GetRemoteAddress(PIPSocket::Address & ip,
                                                WORD & dataPort) const
 {
+  if (!remoteMediaAddress)
+    return remoteMediaAddress.GetIpAndPort(ip, dataPort);
+
   if (!remoteMediaControlAddress) {
     if (remoteMediaControlAddress.GetIpAndPort(ip, dataPort)) {
       dataPort--;
       return PTrue;
     }
   }
-
-  if (!remoteMediaAddress)
-    return remoteMediaAddress.GetIpAndPort(ip, dataPort);
 
   return PFalse;
 }
