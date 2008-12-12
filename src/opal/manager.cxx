@@ -170,7 +170,7 @@ OpalManager::OpalManager()
   tcpPorts.current = tcpPorts.base = tcpPorts.max = 0;
   udpPorts.current = udpPorts.base = udpPorts.max = 0;
 
-#if OPAL_PTLIB_VIDEO
+#if OPAL_VIDEO
   PStringArray devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   PINDEX i;
   for (i = 0; i < devices.GetSize(); ++i) {

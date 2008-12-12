@@ -187,7 +187,9 @@
 
 #undef  OPAL_G711PLC
 
-#undef  OPAL_VIDEO
+#ifdef P_VIDEO
+  #undef  OPAL_VIDEO
+#endif
 
 #if OPAL_VIDEO
   #undef  OPAL_RFC4175 
