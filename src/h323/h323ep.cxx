@@ -751,8 +751,8 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
         PIPSocketAddressAndPortVector addresses;
         if (PDNS::LookupSRV(hostname, "_h323._tcp", url.GetPort(), addresses) && !addresses.empty()) {
           // Only use first entry
-          url.SetHostName(addresses[0].address.AsString());
-          url.SetPort(addresses[0].port);
+          url.SetHostName(addresses[0].GetAddress().AsString());
+          url.SetPort(addresses[0].GetPort());
         }
       }
     }

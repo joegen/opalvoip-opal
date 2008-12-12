@@ -214,7 +214,7 @@ PBoolean OpalIVRConnection::StartVXML()
     originator = m_stringOptions("Remote-Address");
   if (!originator.IsEmpty()) {
     PIPSocketAddressAndPort ap(originator);
-    vars.SetAt("Source-IP-Address", ap.address.AsString());
+    vars.SetAt("Source-IP-Address", ap.GetAddress().AsString());
   }
 
   vars.SetAt("Time", PTime().AsString());
