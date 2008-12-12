@@ -36,6 +36,29 @@
 
 #include <opal/mediastrm.h>
 
+
+#if OPAL_IM_CAPABILITY
+
+class OpalIMMediaType : public OpalMediaTypeDefinition 
+{
+  public:
+    OpalIMMediaType(
+      const char * mediaType,          ///< name of the media type (audio, video etc)
+      const char * sdpType,            ///< name of the SDP type 
+      unsigned     preferredSessionId, ///< preferred session ID
+      bool         autoStart = false   ///< Default value for auto-start transmit & receive
+    )
+      : OpalMediaTypeDefinition(mediaType, sdpType, preferredSessionId, autoStart)
+    { }
+
+    PString GetRTPEncoding() const { return PString::Empty(); }
+    RTP_UDP * CreateRTPSession(OpalRTPConnection & , unsigned , bool ) { return NULL; }
+    virtual bool UsesRTP() const { return false; }
+};
+
+#endif // OPAL_IM_CAPABILITY
+
+
 class OpalIMMediaStream : public OpalMediaStream
 {
   public:
@@ -49,6 +72,8 @@ class OpalIMMediaStream : public OpalMediaStream
     virtual PBoolean IsSynchronous() const         { return false; }
     virtual PBoolean RequiresPatchThread() const   { return false; }
 };
+
+
 
 
 #endif // OPAL_IM_IM_H

@@ -2219,7 +2219,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
       }
 
       // set the remote address 
-      mediaSession->SetRemoteMediaAddress(address);
+      mediaSession->SetRemoteMediaAddress(address, mediaDescription->GetMediaFormats());
 
     } else {
       RTP_UDP *rtpSession = OnUseRTPSession(rtpSessionId, mediaType, address, localAddress);

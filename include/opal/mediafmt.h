@@ -1247,6 +1247,11 @@ extern const OpalMediaFormat & GetOpalMSRP();
 extern const OpalMediaFormat & GetOpalSIPIM();
 #endif
 
+#if OPAL_T140_CAPABILITY
+#define OPAL_T140             "T.140"
+#define OpalT140              GetOpalT140()
+extern const OpalMediaFormat & GetOpalT140();
+#endif
 
 #ifdef _MSC_VER
 #if _MSC_VER < 1300
