@@ -1841,6 +1841,14 @@
 				<File
 					RelativePath="..\im\sipim.cxx">
 				</File>
+				<File
+					RelativePath="..\im\rfc4103.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\im\t140.cxx"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter
@@ -2255,6 +2263,14 @@
 				</File>
 				<File
 					RelativePath="..\..\include\im\sipim.h">
+				</File>
+				<File
+					RelativePath="..\..\include\im\rfc4103.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\im\t140.h"
+					>
 				</File>
 			</Filter>
 		</Filter>
