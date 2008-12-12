@@ -55,6 +55,7 @@ static const char UDPPortMaxKey[] = "UDP Port Max";
 static const char RTPPortBaseKey[] = "RTP Port Base";
 static const char RTPPortMaxKey[] = "RTP Port Max";
 static const char RTPTOSKey[] = "RTP Type of Service";
+static const char STUNServerKey[] = "STUN Server";
 
 static const char H323AliasesKey[] = "H.323 Aliases";
 static const char DisableFastStartKey[] = "Disable Fast Start";
@@ -278,8 +279,7 @@ MyManager::MyManager()
 #endif
 
 #if OPAL_VIDEO
-  SetAutoStartReceiveVideo(false);
-  SetAutoStartTransmitVideo(false);
+  autoStartReceiveVideo = autoStartTransmitVideo = PFalse;
 #endif
 }
 
@@ -360,6 +360,10 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   SetRtpIpTypeofService(cfg.GetInteger(RTPTOSKey, GetRtpIpTypeofService()));
   rsrc->Add(new PHTTPIntegerField(RTPTOSKey,  0, 255, GetRtpIpTypeofService()));
+
+  PString STUNServer = cfg.GetString(STUNServerKey, "stun.voxgratia.org");
+  rsrc->Add(new PHTTPStringField(STUNServerKey, 25, STUNServer));
+  SetSTUNServer(STUNServer);
 
 #if OPAL_H323
 
@@ -584,6 +588,5 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   return PTrue;
 }
-
 
 // End of File ///////////////////////////////////////////////////////////////
