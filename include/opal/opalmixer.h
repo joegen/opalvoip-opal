@@ -279,7 +279,10 @@ class OpalAudioMixerStream {
       public:
         DWORD timestamp;
         unsigned channelNumber;
+
         StreamFrame()
+          : timestamp(0)
+          , channelNumber(0)
         { }
 
         StreamFrame(const RTP_DataFrame & rtp);
@@ -317,7 +320,7 @@ class OpalAudioMixer
 
     class MixerFrame
     {
-      public:
+      protected:
         MixerPCMMap_T channelData;
 
         DWORD timeStamp;
@@ -325,12 +328,15 @@ class OpalAudioMixer
         mutable PIntArray mixedData;
         mutable PMutex mutex;
 
-        MixerFrame(PINDEX _frameLength);
+      public:
+		MixerFrame(PINDEX _frameLength);
         void CreateMixedData() const;
         PBoolean GetMixedFrame(OpalAudioMixerStream::StreamFrame & frame) const;
         PBoolean GetStereoFrame(OpalAudioMixerStream::StreamFrame & frame) const;
         PBoolean GetChannelFrame(Key_T key, OpalAudioMixerStream::StreamFrame & frame) const;
-    };
+        void InsertFrame(Key_T key, OpalAudioMixerStream::StreamFrame & frame);
+        void SetTimestamp(DWORD outputTimestamp) { timeStamp = outputTimestamp; }
+	};
 
   protected:
     PINDEX frameLengthMs;                  ///< size of each audio chunk in milliseconds
@@ -341,7 +347,7 @@ class OpalAudioMixer
 
     PBoolean realTime;                         ///< PTrue if realtime mixing
     PBoolean pushThread;                       ///< PTrue if to use a thread to push data out
-    PThread * thread;                      ///< reader thread handle
+    PThread * mixerWorkerThread;                      ///< reader thread handle
     PBoolean threadRunning;                    ///< used to stop reader thread
 
     PBoolean audioStarted;                     ///< PTrue if output audio is running
@@ -354,7 +360,7 @@ class OpalAudioMixer
     OpalAudioMixer(PBoolean realTime = PTrue, PBoolean _pushThread = PTrue);
     virtual ~OpalAudioMixer() { }
     virtual PBoolean OnWriteAudio(const MixerFrame &);
-    PBoolean AddStream(const Key_T & key, OpalAudioMixerStream * stream);
+    void AddStream(const Key_T & key, OpalAudioMixerStream * stream);
     void RemoveStream(const Key_T & key);
     void RemoveAllStreams();
     void StartThread();

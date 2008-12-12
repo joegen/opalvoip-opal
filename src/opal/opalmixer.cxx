@@ -11,9 +11,9 @@
 #define BYTES_TO_SAMPLES(bytes) (bytes/2)
 
 OpalAudioMixerStream::StreamFrame::StreamFrame(const RTP_DataFrame & rtp)
-  : PMemBuffer<PMutex>(rtp.GetPayloadPtr(), rtp.GetPayloadSize()), timestamp(rtp.GetTimestamp())
+  :	PMemBuffer<PMutex>(rtp.GetPayloadPtr(), rtp.GetPayloadSize()), timestamp(rtp.GetTimestamp())
+  ,	channelNumber(0)
 {
-  channelNumber = 0;
 }
 
 OpalAudioMixerStream::OpalAudioMixerStream()
@@ -302,19 +302,38 @@ PBoolean OpalAudioMixer::MixerFrame::GetChannelFrame(Key_T key, OpalAudioMixerSt
   return PTrue;
 }
 
-OpalAudioMixer::OpalAudioMixer(PBoolean _realTime, PBoolean _pushThread)
-  : realTime(_realTime), pushThread(_pushThread)
+void OpalAudioMixer::MixerFrame::InsertFrame(Key_T key, OpalAudioMixerStream::StreamFrame &frame)
 {
-  frameLengthMs   = 10;
-  channelNumber   = 0;
-  thread          = NULL;
-  audioStarted    = PFalse;
-  firstRead       = PTrue;
-  outputTimestamp = 10000000;
+	channelData.insert(MixerPCMMap_T::value_type(key, frame));
 }
 
+OpalAudioMixer::OpalAudioMixer(PBoolean _realTime, PBoolean _pushThread)
+  : frameLengthMs(10)
+  , channelNumber(0)
+  , realTime(_realTime)
+  , pushThread(_pushThread)
+  , mixerWorkerThread(NULL)
+  , threadRunning(false)
+  , audioStarted(false)
+  , firstRead(true)
+  , outputTimestamp(10000000)
+{
+}
+
+
 PBoolean OpalAudioMixer::OnWriteAudio(const MixerFrame &)
-{ return PTrue; }
+{
+  return true;
+}
+
+void OpalAudioMixer::AddStream(const Key_T & key, OpalAudioMixerStream *stream)
+{
+  PWaitAndSignal m(mutex);
+  stream->channelNumber = channelNumber++;
+  streamInfoMap.insert(StreamInfoMap_T::value_type(key, stream));
+  StartThread();
+}
+
 
 void OpalAudioMixer::RemoveStream(const Key_T & key)
 {
@@ -326,27 +345,30 @@ void OpalAudioMixer::RemoveStream(const Key_T & key)
   }
 }
 
+
 void OpalAudioMixer::RemoveAllStreams()
 {
-  threadRunning = PFalse;
-  if (thread != NULL) {
-    thread->WaitForTermination();
-    delete thread;
-    thread = NULL;
+  threadRunning = false;
+  if (mixerWorkerThread != NULL) {
+    mixerWorkerThread->WaitForTermination();
+    delete mixerWorkerThread;
+    mixerWorkerThread = NULL;
   }
 
   while (streamInfoMap.size() > 0)
     RemoveStream(streamInfoMap.begin()->first);
+
+  channelNumber = 0;
 }
 
 void OpalAudioMixer::StartThread()
 {
   if (pushThread) {
     PWaitAndSignal m(mutex);
-    if (thread == NULL) {
-      threadRunning = PTrue;
-      thread = new PThreadObj<OpalAudioMixer>(*this, &OpalAudioMixer::ThreadMain);
-    }
+    if (mixerWorkerThread == NULL) {
+  	  threadRunning = true;
+      mixerWorkerThread = new PThreadObj<OpalAudioMixer>(*this, &OpalAudioMixer::ThreadMain);
+	}
   }
 }
 
@@ -392,7 +414,7 @@ void OpalAudioMixer::WriteMixedFrame()
   PWaitAndSignal m(mutex);
 
   // set the timestamp of the new frame
-  mixerFrame->timeStamp = outputTimestamp;
+  mixerFrame->SetTimestamp(outputTimestamp);
 
   // iterate through the streams and get an unmixed frame from each one
   StreamInfoMap_T::iterator r;
@@ -402,7 +424,7 @@ void OpalAudioMixer::WriteMixedFrame()
     if (stream.ReadFrame(tempFrame, frameLengthMs)) {
       tempFrame.timestamp = outputTimestamp;
       tempFrame.channelNumber = stream.channelNumber;
-      mixerFrame->channelData.insert(MixerPCMMap_T::value_type(r->first, tempFrame));
+      mixerFrame->InsertFrame(r->first, tempFrame);
     }
   }
 
@@ -439,9 +461,7 @@ PBoolean OpalAudioMixer::Write(const Key_T & key, const RTP_DataFrame & rtp)
       stream = r->second;
     else {
       stream = new OpalAudioMixerStream();
-      stream->channelNumber = channelNumber++;
-      streamInfoMap.insert(StreamInfoMap_T::value_type(key, stream));
-      StartThread(); 
+      AddStream(key, stream);
     }
 
     // write the data

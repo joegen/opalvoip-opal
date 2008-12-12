@@ -178,6 +178,13 @@ OpalConnection::OpalConnection(OpalCall & call,
   , q931Cause(0x100)
   , silenceDetector(NULL)
   , echoCanceler(NULL)
+#ifdef _MSC_VER
+#pragma warning(disable:4355)
+#endif
+  , recordNotifier(PCREATE_NOTIFIER(OnRecordAudio))
+#ifdef _MSC_VER
+#pragma warning(default:4355)
+#endif
 #if OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
 #endif
@@ -733,7 +740,7 @@ void OpalConnection::EnableRecording()
   if (stream != NULL) {
     OpalMediaPatch * patch = stream->GetPatch();
     if (patch != NULL)
-      patch->AddFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
+      patch->AddFilter(recordNotifier, OPAL_PCM16);
   }
   
   UnlockReadWrite();
@@ -748,7 +755,7 @@ void OpalConnection::DisableRecording()
   if (stream != NULL) {
     OpalMediaPatch * patch = stream->GetPatch();
     if (patch != NULL)
-      patch->RemoveFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
+      patch->RemoveFilter(recordNotifier, OPAL_PCM16);
   }
   
   UnlockReadWrite();
