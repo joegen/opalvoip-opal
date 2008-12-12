@@ -40,7 +40,9 @@ class MyManager : public OpalManager
   public:
     virtual void OnClearedCall(OpalCall & call); // Callback override
 
+    PSyncPoint m_connected;
     PSyncPoint m_completed;
+    PString m_callToken;
 };
 
 class MyPCSSEndPoint : public OpalPCSSEndPoint
@@ -63,6 +65,12 @@ class SipIM : public PProcess
   public:
     SipIM();
     ~SipIM();
+
+    enum Mode {
+      Use_MSRP,
+      Use_SIPIM,
+      Use_T140
+    };
 
     virtual void Main();
 

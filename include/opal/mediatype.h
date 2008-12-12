@@ -335,55 +335,5 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 
 #endif // OPAL_T38_CAPABILITY
 
-#if OPAL_IM_CAPABILITY
-
-class OpalIMMediaType : public OpalMediaTypeDefinition 
-{
-  public:
-    OpalIMMediaType(
-      const char * mediaType,          ///< name of the media type (audio, video etc)
-      const char * sdpType,            ///< name of the SDP type 
-      unsigned     preferredSessionId, ///< preferred session ID
-      bool         autoStart = false   ///< Default value for auto-start transmit & receive
-    )
-      : OpalMediaTypeDefinition(mediaType, sdpType, preferredSessionId, autoStart)
-    { }
-
-    PString GetRTPEncoding() const { return PString::Empty(); }
-    RTP_UDP * CreateRTPSession(OpalRTPConnection & , unsigned , bool ) { return NULL; }
-    virtual bool UsesRTP() const { return false; }
-};
-
-#endif // OPAL_IM_CAPABILITY
-
-#if OPAL_MSRP_CAPABILITY
-
-class OpalMSRPMediaType : public OpalIMMediaType 
-{
-  public:
-    OpalMSRPMediaType();
-    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
-
-#if OPAL_SIP
-    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
-#endif
-};
-
-#endif // OPAL_MSRP_CAPABILITY
-
-#if OPAL_SIPIM_CAPABILITY
-
-class OpalSIPIMMediaType : public OpalIMMediaType 
-{
-  public:
-    OpalSIPIMMediaType();
-    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
-
-#if OPAL_SIP
-    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
-#endif
-};
-
-#endif // OPAL_SIPIM_CAPABILITY
 
 #endif // OPAL_OPAL_MEDIATYPE_H

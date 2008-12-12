@@ -42,6 +42,16 @@
 #include <sip/sdp.h>
 #endif
 
+class OpalMSRPMediaType : public OpalIMMediaType 
+{
+  public:
+    OpalMSRPMediaType();
+    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
+
+#if OPAL_SIP
+    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
+#endif
+};
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -167,6 +177,8 @@ class OpalMSRPMediaSession : public OpalMediaSession
     virtual bool HasFailed() const { return false; }
 
     virtual OpalTransportAddress GetLocalMediaAddress() const;
+
+    virtual void SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & );
 
 #if OPAL_SIP
     virtual SDPMediaDescription * CreateSDPMediaDescription(
