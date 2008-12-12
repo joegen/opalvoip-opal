@@ -487,8 +487,8 @@ PBoolean SIPURL::AdjustToDNS(PINDEX entry)
     return PFalse;
 
   // Adjust our host and port to what the DNS SRV record says
-  SetHostName(addrs[entry].address.AsString());
-  SetPort(addrs[entry].port);
+  SetHostName(addrs[entry].GetAddress().AsString());
+  SetPort(addrs[entry].GetPort());
   return PTrue;
 }
 #else
