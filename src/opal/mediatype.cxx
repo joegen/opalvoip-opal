@@ -186,8 +186,8 @@ RTP_UDP * OpalMediaTypeDefinition::CreateRTPSession(OpalRTPConnection & /*connec
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType, const char * sdpType, unsigned preferredSessionId)
-  : OpalMediaTypeDefinition(mediaType, sdpType, preferredSessionId, true)
+OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType, const char * sdpType, unsigned preferredSessionId, bool _autoStart)
+  : OpalMediaTypeDefinition(mediaType, sdpType, preferredSessionId, _autoStart)
 {
 }
 

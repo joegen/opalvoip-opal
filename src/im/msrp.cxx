@@ -49,7 +49,7 @@
 #if OPAL_MSRP_CAPABILITY
 
 OpalMSRPMediaType::OpalMSRPMediaType()
-  : OpalIMMediaType("msrp", "message|tcp/msrp", 5, true)
+  : OpalIMMediaType("msrp", "message|tcp/msrp", 5)
 {
 }
 
