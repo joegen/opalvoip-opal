@@ -40,6 +40,7 @@ const WORD DefaultHTTPPort = 1719;
 static const char UsernameKey[] = "Username";
 static const char PasswordKey[] = "Password";
 static const char LogLevelKey[] = "Log Level";
+static const char DefaultAddressFamilyKey[] = "AddressFamily";
 #if OPAL_PTLIB_SSL
 static const char HTTPCertificateFileKey[]  = "HTTP Certificate";
 #endif
@@ -167,6 +168,10 @@ PBoolean OpalGw::Initialise(const char * initMsg)
   // Get the HTTP basic authentication info
   PString username = cfg.GetString(UsernameKey);
   PString password = PHTTPPasswordField::Decrypt(cfg.GetString(PasswordKey));
+
+  PString addressFamily = cfg.GetString(DefaultAddressFamilyKey, "IPV4");
+  if(addressFamily *= "IPV6")
+	 PIPSocket::SetDefaultIpAddressFamilyV6();
 
   PHTTPSimpleAuth authority(GetName(), username, password);
 
@@ -363,7 +368,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   PString STUNServer = cfg.GetString(STUNServerKey, "stun.voxgratia.org");
   rsrc->Add(new PHTTPStringField(STUNServerKey, 25, STUNServer));
-  SetSTUNServer(STUNServer);
+  if(PIPSocket::GetDefaultIpAddressFamily() != AF_INET6)
+	SetSTUNServer(STUNServer);
 
 #if OPAL_H323
 
