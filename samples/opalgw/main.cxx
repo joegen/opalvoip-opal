@@ -284,7 +284,8 @@ MyManager::MyManager()
 #endif
 
 #if OPAL_VIDEO
-  autoStartReceiveVideo = autoStartTransmitVideo = PFalse;
+  SetAutoStartReceiveVideo(false);
+  SetAutoStartTransmitVideo(false);
 #endif
 }
 
