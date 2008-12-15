@@ -47,7 +47,7 @@
 #include <im/sipim.h>
 #include <sip/sipep.h>
 
-#if OPAL_SIPIM_CAPABILITY
+#if OPAL_HAS_SIPIM
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -229,10 +229,14 @@ OpalTransportAddress OpalSIPIMMediaSession::GetLocalMediaAddress() const
   return transportAddress;
 }
 
+#if OPAL_SIP
+
 SDPMediaDescription * OpalSIPIMMediaSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
 {
   return new SDPSIPIMMediaDescription(sdpContactAddress, transportAddress, localURL);
 }
+
+#endif
 
 OpalMediaStream * OpalSIPIMMediaSession::CreateMediaStream(const OpalMediaFormat & mediaFormat, 
                                                                          unsigned sessionID, 
@@ -286,6 +290,8 @@ PBoolean OpalSIPIMMediaStream::WriteData(
   if (!IsOpen())
     return false;
 
+#if OPAL_SIP
+
   if (length != 0 && data != NULL) {
     // T.140 data has 3 bytes at the start of the data
     if (length > 4) {
@@ -296,6 +302,9 @@ PBoolean OpalSIPIMMediaStream::WriteData(
     }
     written = length;
   }
+
+#endif
+
   return true;
 }
 
@@ -325,4 +334,4 @@ bool OpalSIPIMManager::EndSession(const PString & /*callId*/)
   return true;
 }
 
-#endif // OPAL_SIPIM_CAPABILITY
+#endif // OPAL_HAS_SIPIM

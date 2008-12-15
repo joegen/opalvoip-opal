@@ -46,7 +46,7 @@
 #include <im/im.h>
 #include <im/msrp.h>
 
-#if OPAL_MSRP_CAPABILITY
+#if OPAL_HAS_MSRP
 
 OpalMSRPMediaType::OpalMSRPMediaType()
   : OpalIMMediaType("msrp", "message|tcp/msrp", 5)
@@ -199,11 +199,14 @@ MSRPSession::~MSRPSession()
   manager.CloseSession(msrpSessionId);
 }
 
+#if OPAL_SIP
+
 SDPMediaDescription * MSRPSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
 {
   return new SDPMSRPMediaDescription(sdpContactAddress, url);
 }
 
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -268,10 +271,14 @@ OpalTransportAddress OpalMSRPMediaSession::GetLocalMediaAddress() const
   return OpalTransportAddress();
 }
 
+#if OPAL_SIP
+
 SDPMediaDescription * OpalMSRPMediaSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
 {
   return msrpSession->CreateSDPMediaDescription(sdpContactAddress);
 }
+
+#endif
 
 OpalMediaStream * OpalMSRPMediaSession::CreateMediaStream(const OpalMediaFormat & mediaFormat, 
                                                                          unsigned sessionID, 
@@ -453,7 +460,4 @@ PBoolean OpalMSRPMediaStream::Close()
 
 ////////////////////////////////////////////////////////
 
-#endif //  OPAL_MSRP_CAPABILITY
-
-
-
+#endif //  OPAL_HAS_MSRP

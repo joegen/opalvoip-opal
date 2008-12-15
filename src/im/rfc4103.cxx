@@ -36,38 +36,7 @@
 #endif
 
 #include <im/rfc4103.h>
-
-
 #include <sip/sdp.h>
-
-/////////////////////////////////////////////////////////
-//
-//  SDP media description for audio media
-//
-
-class SDPT140MediaDescription : public SDPRTPAVPMediaDescription
-{
-  PCLASSINFO(SDPT140MediaDescription, SDPRTPAVPMediaDescription);
-  public:
-    SDPT140MediaDescription(const OpalTransportAddress & address)
-      : SDPRTPAVPMediaDescription(address)
-    { }
-
-    virtual PString GetSDPMediaType() const
-    {  return "text";  }
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-OpalT140MediaType::OpalT140MediaType()
-  : OpalRTPAVPMediaType("t140", "text", 7, false)
-{
-}
-
-SDPMediaDescription * OpalT140MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
-{
-  return new SDPT140MediaDescription(localAddress);
-}
 
 /////////////////////////////////////////////////////////////////////////////
 

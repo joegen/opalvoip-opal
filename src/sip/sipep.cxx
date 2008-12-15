@@ -74,7 +74,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   , m_highPriorityMonitor(*this, HighPriority)
   , m_lowPriorityMonitor(*this, LowPriority)
 
-#if OPAL_SIPIM_CAPABILITY
+#if OPAL_HAS_SIPIM
   , m_sipIMManager(*this)
 #endif
 
