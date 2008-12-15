@@ -205,7 +205,7 @@ OpalMediaSession * OpalRTPAVPMediaType::CreateMediaSession(OpalConnection & conn
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalAudioMediaType::OpalAudioMediaType()
-  : OpalRTPAVPMediaType("audio", "audio", 1)
+  : OpalRTPAVPMediaType("audio", "audio", 1, true)
 {
 }
 
