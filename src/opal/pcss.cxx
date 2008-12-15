@@ -52,7 +52,7 @@
 #include <opal/patch.h>
 #include <opal/manager.h>
 
-#if OPAL_IM_CAPABILITY
+#if OPAL_HAS_IM
 
 #include <im/im.h>
 
@@ -93,7 +93,7 @@ class PCSSIMStream : public OpalIMMediaStream
     }
 };
 
-#endif  // OPAL_IM_CAPABILITY
+#endif  // OPAL_HAS_IM
 
 #define new PNEW
 
@@ -394,7 +394,7 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
     return new OpalAudioMediaStream(*this, mediaFormat, sessionID, isSource, soundChannelBuffers, soundChannel);
   }
 
-#if OPAL_IM_CAPABILITY
+#if OPAL_HAS_IM
   if (mediaFormat.GetMediaType() == "msrp" || mediaFormat.GetMediaType() == "sip-im") {
     return new PCSSIMStream(*this, mediaFormat, sessionID, isSource);
   }

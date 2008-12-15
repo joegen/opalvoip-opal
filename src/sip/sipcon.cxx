@@ -53,7 +53,7 @@
 #include <h224/h224.h>
 #endif
 
-#ifdef OPAL_IM_CAPABILITY
+#if OPAL_HAS_IM
 #include <im/msrp.h>
 #endif
 

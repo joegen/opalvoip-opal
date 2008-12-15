@@ -1387,7 +1387,7 @@ class OpalConnection : public PSafeObject
       bool receive                      ///< flag for auto-start receive or transmit
     );
 
-#if OPAL_IM_CAPABILITY
+#if OPAL_HAS_IM
     virtual bool SendIM(const OpalMediaFormat & format, const T140String & body);
     virtual void OnReceiveIM(unsigned sessionId, const OpalMediaFormat & format, const T140String & body);
     //PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnReceiveIM);

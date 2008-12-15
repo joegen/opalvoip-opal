@@ -50,7 +50,7 @@
 #include <sip/sippdu.h>
 #include <sip/handlers.h> 
 
-#if OPAL_SIPIM_CAPABILITY
+#if OPAL_HAS_SIPIM
 #include <im/sipim.h>
 #endif
 
@@ -857,7 +857,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     friend void InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry);
     friend void InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
 
-#if OPAL_SIPIM_CAPABILITY
+#if OPAL_HAS_SIPIM
     OpalSIPIMManager m_sipIMManager;
 #endif
 };

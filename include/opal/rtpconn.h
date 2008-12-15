@@ -94,13 +94,13 @@ class OpalMediaSession : public PObject
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
     ) = 0;
+#endif
 
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 
       unsigned sessionID, 
       PBoolean isSource
     ) = 0;
-#endif
 
     OpalConnection & connection;
     OpalMediaType mediaType;     // media type for session
@@ -132,13 +132,13 @@ class OpalRTPMediaSession : public OpalMediaSession
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
     );
+#endif
 
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 
       unsigned sessionID, 
       PBoolean isSource
     );
-#endif
 
     RTP_Session * rtpSession;    // RTP session
 };
