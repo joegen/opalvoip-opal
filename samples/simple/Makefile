@@ -87,8 +87,7 @@ distclean:
 	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=yes clean
 
 clean:
-	rm -rf $(OBJDIR)
-
+	rm -rf $(OBJDIR) $(OBJDIR)_d
 
 # Some extra targets for convenience
 
