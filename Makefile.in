@@ -545,7 +545,7 @@ install:
 
 	mkdir -p $(DESTDIR)$(includedir)/opal; chmod 755 $(DESTDIR)$(includedir)/opal
 	$(INSTALL) -m 644 include/opal.h $(DESTDIR)$(includedir)/opal
-	( for dir in asn codec h323 h460 iax2 lids opal rtp sip t120 t38 zrtp; \
+	( for dir in asn codec h323 h460 iax2 im lids opal rtp sip t120 t38 zrtp; \
 		do mkdir -p $(DESTDIR)$(includedir)/opal/$$dir ; chmod 755 $(DESTDIR)$(includedir)/opal/$$dir ; \
 		( for fn in include/$$dir/*.h ; do \
 			$(INSTALL) -m 644 $$fn $(DESTDIR)$(includedir)/opal/$$dir ; \
