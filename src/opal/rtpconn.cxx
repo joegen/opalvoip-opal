@@ -232,20 +232,19 @@ void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & /*command*/, INT /*ext
 
 void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMediaPatch & patch)
 {
-  if (rfc2833Handler != NULL) {
-    if(isSource) {
-      PTRACE(3, "RTPCon\tAdding RFC2833 receive handler");
-      OpalMediaStream & mediaStream = patch.GetSource();
-      patch.AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-    } 
-  }
-
-  if (ciscoNSEHandler != NULL) {
-    if(isSource) {
-      PTRACE(3, "RTPCon\tAdding Cisco NSE receive handler");
-      OpalMediaStream & mediaStream = patch.GetSource();
-      patch.AddFilter(ciscoNSEHandler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-    } 
+  if (isSource && (rfc2833Handler != NULL || ciscoNSEHandler != NULL)) {
+    OpalRTPMediaStream * mediaStream = dynamic_cast<OpalRTPMediaStream *>(&patch.GetSource());
+    if (mediaStream != NULL) {
+      RTP_Session & rtpSession = mediaStream->GetRtpSession();
+      if (rfc2833Handler != NULL) {
+        PTRACE(3, "RTPCon\tAdding RFC2833 receive handler");
+        rtpSession.AddFilter(rfc2833Handler->GetReceiveHandler());
+      }
+      if (ciscoNSEHandler != NULL) {
+        PTRACE(3, "RTPCon\tAdding Cisco NSE receive handler");
+        rtpSession.AddFilter(ciscoNSEHandler->GetReceiveHandler());
+      }
+    }
   }
 }
 

@@ -820,6 +820,8 @@ class RTP_Session : public PObject
     bool HasFailed() const
     { return failed; }
 
+    void AddFilter(const PNotifier & filter);
+
   protected:
     virtual void SendBYE();
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
@@ -902,6 +904,14 @@ class RTP_Session : public PObject
     PBoolean closeOnBye;
     PBoolean byeSent;
     bool                failed;      ///<  set to true if session has received too many ICMP destination unreachable
+
+    class Filter : public PObject {
+        PCLASSINFO(Filter, PObject);
+      public:
+        Filter(const PNotifier & n) : notifier(n) { }
+        PNotifier notifier;
+    };
+    PList<Filter> filters;
 };
 
 /**This class is for the IETF Real Time Protocol interface on UDP/IP.
