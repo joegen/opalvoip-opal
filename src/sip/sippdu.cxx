@@ -2103,15 +2103,21 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
     return PFalse;
   }
 
-  if (!remoteAddress.IsEmpty() && !transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
+  OpalTransportAddress oldRemoteAddress = transport.GetRemoteAddress();
+  if (!remoteAddress.IsEmpty() && !oldRemoteAddress.IsEquivalent(remoteAddress)) {
     if (!transport.SetRemoteAddress(remoteAddress)) {
       PTRACE(1, "SIP\tCannot use remote address " << remoteAddress << " for transport " << transport);
       return false;
     }
   }
 
-  if (!localInterface.IsEmpty() && transport.GetInterface() != localInterface)
-    transport.SetInterface(localInterface);
+  PString oldInterface = transport.GetInterface();
+  if (!localInterface.IsEmpty() && oldInterface != localInterface) {
+    if (!transport.SetInterface(localInterface)) {
+      PTRACE(1, "SIP\tCannot use local interface \"" << localInterface << "\" for transport " << transport);
+      return false;
+    }
+  }
 
   mime.SetCompactForm(false);
   PString strPDU = Build();
@@ -2149,11 +2155,13 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
   }
 #endif
 
-  if (transport.WriteString(strPDU))
-    return PTrue;
+  bool ok = transport.WriteString(strPDU);
+  PTRACE_IF(1, !ok, "SIP\tPDU Write failed: " << transport.GetErrorText(PChannel::LastWriteError));
 
-  PTRACE(1, "SIP\tPDU Write failed: " << transport.GetErrorText(PChannel::LastWriteError));
-  return PFalse;
+  transport.SetInterface(oldInterface);
+  transport.SetRemoteAddress(oldRemoteAddress);
+
+  return ok;
 }
 
 
