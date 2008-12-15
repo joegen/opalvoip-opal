@@ -923,7 +923,8 @@ class SIPInvite : public SIPTransaction
     SIPInvite(
       SIPConnection & connection,
       OpalTransport & transport,
-      OpalRTPSessionManager * sm
+      OpalRTPSessionManager & sm,
+      bool transfer
     );
 
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);

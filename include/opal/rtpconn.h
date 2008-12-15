@@ -113,8 +113,8 @@ class OpalRTPMediaSession : public OpalMediaSession
 {
   PCLASSINFO(OpalRTPMediaSession, OpalMediaSession);
   public:
-    OpalRTPMediaSession(OpalConnection & conn, const OpalMediaType & _mediaType, unsigned _sessionId);
-    OpalRTPMediaSession(const OpalRTPMediaSession & _obj);
+    OpalRTPMediaSession(OpalConnection & conn, const OpalMediaType & mediaType, unsigned sessionId);
+    OpalRTPMediaSession(const OpalRTPMediaSession & obj);
 
     PObject * Clone() const { return new OpalRTPMediaSession(*this); }
 
@@ -155,11 +155,11 @@ class OpalRTPSessionManager : public PObject
     /**Construct new session manager database.
       */
     OpalRTPSessionManager(OpalConnection & conn);
+    OpalRTPSessionManager(OpalRTPSessionManager & other, bool transfer);
     ~OpalRTPSessionManager();
   //@}
 
-    void CopyFromMaster(const OpalRTPSessionManager & sm);
-    void CopyToMaster(OpalRTPSessionManager & sm);
+    void TransferFrom(OpalRTPSessionManager & from);
 
   /**@name Operations */
   //@{
@@ -193,10 +193,8 @@ class OpalRTPSessionManager : public PObject
     OpalMediaSession * GetMediaSession(
       unsigned sessionID
     ) const;
-
-    void SetCleanup(bool v) { m_cleanupOnDelete = v; }
-
   //@}
+
     PMutex & GetMutex() { return m_mutex; }
 
     virtual bool AllSessionsFailing();
@@ -205,14 +203,13 @@ class OpalRTPSessionManager : public PObject
     OpalConnection & connection;
     PMutex m_mutex;
     bool m_initialised;
-    bool m_cleanupOnDelete;
+
     PDICTIONARY(SessionDict, POrdinalKey, OpalMediaSession);
     SessionDict sessions;
 
   private:
-    OpalRTPSessionManager (const OpalRTPSessionManager & other): PObject (other), connection(other.connection) { }
+    OpalRTPSessionManager(const OpalRTPSessionManager & other) : PObject(other), connection(other.connection) { }
     OpalRTPSessionManager & operator=(const OpalRTPSessionManager &) { return *this; }
-
 };
 
 typedef OpalRTPSessionManager RTP_SessionManager;

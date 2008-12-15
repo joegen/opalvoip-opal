@@ -1085,7 +1085,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
   if (GetPhase() == EstablishedPhase && needReINVITE) {
     PTRACE(3, "SIP\tStarting re-INVITE to open channel.");
-    SIPTransaction * invite = new SIPInvite(*this, *transport, &m_rtpSessions);
+    SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions, false);
     invite->Start();
   }
 
@@ -1099,7 +1099,7 @@ bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
 
   if (GetPhase() == EstablishedPhase && needReINVITE) {
     PTRACE(3, "SIP\tStarting re-INVITE to close channel.");
-    SIPTransaction * invite = new SIPInvite(*this, *transport, &m_rtpSessions);
+    SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions, false);
     invite->Start();
   }
 
@@ -1145,7 +1145,8 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   NotifyDialogState(SIPDialogNotification::Trying);
 
   needReINVITE = false;
-  SIPTransaction * invite = new SIPInvite(*this, transport, NULL);
+  OpalRTPSessionManager newSessions(*this);
+  SIPTransaction * invite = new SIPInvite(*this, transport, newSessions, true);
 
   if (m_appearanceCode >= 0)
     invite->GetMIME().SetAt("Alert-Info", psprintf("<>;appearance=%u", m_appearanceCode));
@@ -1243,7 +1244,7 @@ bool SIPConnection::HoldConnection()
 
   m_holdToRemote = eHoldInProgress;
 
-  SIPTransaction * invite = new SIPInvite(*this, *transport, &m_rtpSessions);
+  SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions, false);
   if (invite->Start())
     return true;
 
@@ -1272,7 +1273,7 @@ bool SIPConnection::RetrieveConnection()
 
   PTRACE(3, "SIP\tStarting re-INVITE to retrieve connection from hold");
 
-  SIPTransaction * invite = new SIPInvite(*this, *transport, &m_rtpSessions);
+  SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions, false);
   if (invite->Start())
     return true;
 
@@ -1412,10 +1413,8 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   m_dialog.Update(response);
   UpdateRemoteAddresses();
 
-  if (reInvite) {
-    (((SIPInvite &)transaction).GetSessionManager()).SetCleanup(false);
+  if (reInvite)
     return;
-  }
 
   if (statusClass == 2) {
     // Have a final response to the INVITE, so cancel all the other invitations sent.
@@ -1430,7 +1429,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
   // Save the sessions etc we are actually using of all the forked INVITES sent
   if (response.GetSDP() != NULL)
-    m_rtpSessions.CopyToMaster(((SIPInvite &)transaction).GetSessionManager());
+    m_rtpSessions.TransferFrom(((SIPInvite &)transaction).GetSessionManager());
 
   response.GetMIME().GetProductInfo(remoteProductInfo);
 }
@@ -2074,9 +2073,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
   needReINVITE = false; // Is not actually a re-INVITE though it looks a little bit like one.
   transport->SetInterface(transaction.GetInterface());
-  OpalRTPSessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
-  (((SIPInvite &)transaction).GetSessionManager()).SetCleanup(false);
-  SIPTransaction * invite = new SIPInvite(*this, *transport, &origRtpSessions);
+  SIPTransaction * invite = new SIPInvite(*this, *transport, ((SIPInvite &)transaction).GetSessionManager(), true);
 
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.

@@ -2722,16 +2722,13 @@ void SIPTransaction::GenerateCallID(PString & callId)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, OpalRTPSessionManager * sm)
+SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, OpalRTPSessionManager & sm, bool transfer)
   : SIPTransaction(connection, transport, Method_INVITE)
-  , rtpSessions(connection)
+  , rtpSessions(sm, transfer)
 {
-  mime.SetDate() ;                             // now
+  mime.SetDate(); // now
   SetAllow(connection.GetEndPoint().GetAllowedMethods());
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
-
-  if (sm != NULL)
-    rtpSessions.CopyFromMaster(*sm);
 
   m_SDP = new SDPSessionDescription();
   if (!connection.OnSendSDP(false, rtpSessions, *m_SDP)) {
