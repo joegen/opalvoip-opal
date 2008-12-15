@@ -43,7 +43,7 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_MSRP_CAPABILITY
+#if OPAL_HAS_MSRP
 
 OPAL_INSTANTIATE_MEDIATYPE(msrp, OpalMSRPMediaType);
 
@@ -99,12 +99,12 @@ const OpalMediaFormat & GetOpalMSRP()
   return f; 
 } 
 
-#endif // OPAL_MSRP_CAPABILITY 
+#endif // OPAL_HAS_MSRP
 
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_SIPIM_CAPABILITY
+#if OPAL_HAS_SIPIM
 
 OPAL_INSTANTIATE_MEDIATYPE2(sipim, "sip-im", OpalSIPIMMediaType);
 
@@ -131,11 +131,9 @@ const OpalMediaFormat & GetOpalSIPIM()
   return f; 
 } 
 
-#endif // OPAL_SIPIM_CAPABILITY
+#endif // OPAL_HAS_SIPIM
 
 //////////////////////////////////////////////////////////////////////////////////////////
-
-#if OPAL_T140_CAPABILITY
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -160,8 +158,6 @@ const OpalMediaFormat & GetOpalT140()
 } 
 
 OPAL_INSTANTIATE_MEDIATYPE(t140, OpalT140MediaType);
-
-#endif // OPAL_T140_CAPABILITY
 
 //////////////////////////////////////////////////////////////////////////////////////////
 

@@ -38,8 +38,49 @@
 #include <im/t140.h>
 #include <string.h>
 
+#if OPAL_SIP
+#include <sip/sdp.h>
+#endif
+
 #define ZERO_WIDTH_NO_BREAK 0xfeff
 #define UTF_NEWLINE         0x2028
+
+#if OPAL_SIP
+
+/////////////////////////////////////////////////////////
+//
+//  SDP media description for audio media
+//
+
+class SDPT140MediaDescription : public SDPRTPAVPMediaDescription
+{
+  PCLASSINFO(SDPT140MediaDescription, SDPRTPAVPMediaDescription);
+  public:
+    SDPT140MediaDescription(const OpalTransportAddress & address)
+      : SDPRTPAVPMediaDescription(address)
+    { }
+
+    virtual PString GetSDPMediaType() const
+    {  return "text";  }
+};
+
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalT140MediaType::OpalT140MediaType()
+  : OpalRTPAVPMediaType("t140", "text", 7, false)
+{
+}
+
+#if OPAL_SIP
+
+SDPMediaDescription * OpalT140MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+{
+  return new SDPT140MediaDescription(localAddress);
+}
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -83,8 +124,10 @@ PINDEX T140String::GetUTFLen(WORD c)
     return 1;
   if (c <= 0x7ff)
     return 2;
+/*
   if (c <= 0xffff)
     return 3;
+*/
 
   return 0;
 }
@@ -114,12 +157,14 @@ PINDEX T140String::SetUTF(BYTE * ptr, WORD c)
     ptr[1] = 0x80 | (cl & 0x3f);
     return 2;
   }
+#if 0
   if (c <= 0xffff) {
     ptr[0] = 0xe0 | (ch >> 4) | (cl >> 6); 
     ptr[1] = 0x80 | (ch << 2) | (cl >> 6); 
     ptr[2] = 0x80 | (cl & 0x3f);
     return 3;
   }
+#endif
 
   return 0;
 }

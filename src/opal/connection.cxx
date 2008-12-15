@@ -52,7 +52,7 @@
 #include <t38/t38proto.h>
 #include <ptclib/url.h>
 
-#if OPAL_IM_CAPABILITY
+#if OPAL_HAS_IM
 #include <im/sipim.h>
 #include <im/rfc4103.h>
 #endif
@@ -1286,7 +1286,7 @@ bool OpalConnection::AutoStartMap::CanAutoStartMediaType(const OpalMediaType & m
   return true;
 }
 
-#if OPAL_IM_CAPABILITY
+#if OPAL_HAS_IM
 
 bool OpalConnection::SendIM(const OpalMediaFormat & format, const T140String & body)
 {

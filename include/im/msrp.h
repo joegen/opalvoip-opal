@@ -36,11 +36,14 @@
 #include <opal/rtpconn.h>
 #include <opal/manager.h>
 #include <opal/mediastrm.h>
+#include <opal/mediatype.h>
 #include <im/im.h>
 
 #if OPAL_SIP
 #include <sip/sdp.h>
 #endif
+
+#if OPAL_HAS_MSRP
 
 class OpalMSRPMediaType : public OpalIMMediaType 
 {
@@ -143,7 +146,9 @@ class MSRPSession
     MSRPSession(OpalMSRPManager & _manager);
     ~MSRPSession();
 
+#if OPAL_SIP
     virtual SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
+#endif
 
     OpalMSRPManager & GetManager() { return manager; }
 
@@ -184,13 +189,13 @@ class OpalMSRPMediaSession : public OpalMediaSession
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
     );
+#endif
 
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 
       unsigned sessionID, 
       PBoolean isSource
     );
-#endif
 
     MSRPSession * msrpSession;
 };
@@ -235,4 +240,7 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
   //@}
 };
 
+#endif // OPAL_HAS_MSRP
+
 #endif // OPAL_IM_MSRP_H
+

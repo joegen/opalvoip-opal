@@ -36,12 +36,14 @@
 #include <opal/rtpconn.h>
 #include <opal/manager.h>
 #include <opal/mediastrm.h>
+#include <opal/mediatype.h>
 #include <im/im.h>
 
 #if OPAL_SIP
 #include <sip/sdp.h>
 #endif
 
+#if OPAL_HAS_SIPIM
 
 class OpalSIPIMMediaType : public OpalIMMediaType 
 {
@@ -83,13 +85,13 @@ class OpalSIPIMMediaSession : public OpalMediaSession
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
     );
+#endif
 
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 
       unsigned sessionID, 
       PBoolean isSource
     );
-#endif
 
   protected:
     OpalTransportAddress transportAddress;
@@ -168,5 +170,7 @@ class OpalSIPIMManager : public PObject
 
 
 ////////////////////////////////////////////////////////////////////////////
+
+#endif // OPAL_HAS_SIPIM
 
 #endif // OPAL_IM_SIPIM_H

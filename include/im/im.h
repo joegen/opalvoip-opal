@@ -37,7 +37,7 @@
 #include <opal/mediastrm.h>
 
 
-#if OPAL_IM_CAPABILITY
+#if OPAL_HAS_IM
 
 class OpalIMMediaType : public OpalMediaTypeDefinition 
 {
@@ -56,7 +56,7 @@ class OpalIMMediaType : public OpalMediaTypeDefinition
     virtual bool UsesRTP() const { return false; }
 };
 
-#endif // OPAL_IM_CAPABILITY
+#endif // OPAL_HAS_IM
 
 
 class OpalIMMediaStream : public OpalMediaStream

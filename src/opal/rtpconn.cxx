@@ -391,10 +391,14 @@ OpalTransportAddress OpalRTPMediaSession::GetLocalMediaAddress() const
   return OpalTransportAddress(addr, port, "udp$");
 }
 
+#if OPAL_SIP
+
 SDPMediaDescription * OpalRTPMediaSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
 {
   return mediaType.GetDefinition()->CreateSDPMediaDescription(sdpContactAddress);
 }
+
+#endif
 
 OpalMediaStream * OpalRTPMediaSession::CreateMediaStream(const OpalMediaFormat & mediaFormat, 
                                                                          unsigned /*sessionID*/, 
