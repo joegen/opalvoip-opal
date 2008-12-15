@@ -360,16 +360,16 @@ OpalMediaSession::OpalMediaSession(const OpalMediaSession & _obj)
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalRTPMediaSession::OpalRTPMediaSession(OpalConnection & _conn, const OpalMediaType & _mediaType, unsigned _sessionId)
-  : OpalMediaSession(_conn, _mediaType, _sessionId)
+OpalRTPMediaSession::OpalRTPMediaSession(OpalConnection & conn, const OpalMediaType & mediaType, unsigned sessionId)
+  : OpalMediaSession(conn, mediaType, sessionId)
   , rtpSession(NULL)
 {
 }
 
 
-OpalRTPMediaSession::OpalRTPMediaSession(const OpalRTPMediaSession & _obj)
-  : OpalMediaSession(_obj)
-  , rtpSession(_obj.rtpSession)
+OpalRTPMediaSession::OpalRTPMediaSession(const OpalRTPMediaSession & obj)
+  : OpalMediaSession(obj)
+  , rtpSession(NULL)
 {
 }
 
@@ -408,54 +408,42 @@ OpalMediaStream * OpalRTPMediaSession::CreateMediaStream(const OpalMediaFormat &
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalRTPSessionManager::OpalRTPSessionManager(OpalConnection & _conn)
-  : connection(_conn)
+OpalRTPSessionManager::OpalRTPSessionManager(OpalConnection & conn)
+  : connection(conn)
+  , m_initialised(false)
 {
-  m_initialised = false;
-  m_cleanupOnDelete = true;
 }
+
+
+OpalRTPSessionManager::OpalRTPSessionManager(OpalRTPSessionManager & other, bool transfer)
+  : connection(other.connection)
+  , m_initialised(false)
+  , sessions(other.sessions)
+{
+  if (transfer)
+    other.sessions = SessionDict(); // Break reference so current is only owner
+  else
+    sessions.MakeUnique();          // Break reference by cloning sessions
+}
+
 
 OpalRTPSessionManager::~OpalRTPSessionManager()
 {
-  if (m_cleanupOnDelete) {
-    while (sessions.GetSize() > 0) {
-      sessions.GetDataAt(0).Close();
-      sessions.RemoveAt(sessions.GetKeyAt(0));
-    }
+  PWaitAndSignal m(m_mutex);
+  while (sessions.GetSize() > 0) {
+    sessions.GetDataAt(0).Close();
+    sessions.RemoveAt(sessions.GetKeyAt(0));
   }
 }
 
-void OpalRTPSessionManager::CopyFromMaster(const OpalRTPSessionManager & from)
+
+void OpalRTPSessionManager::TransferFrom(OpalRTPSessionManager & from)
 {
   PWaitAndSignal m1(m_mutex);
   PWaitAndSignal m2(from.m_mutex);
 
-  PAssert(sessions.GetSize() == 0, "Cannot copy from master RTP session list to non-empty list");
-
-  //for (PINDEX i = 0; i < sessions.GetSize(); ++i) {
-  //  PAssert(sessions.GetDataAt(i).rtpSession == NULL, "Cannot copy from master RTP session list after sockets have been created");
-  //}
-
   sessions = from.sessions;
-  sessions.MakeUnique();
-}
-
-void OpalRTPSessionManager::CopyToMaster(OpalRTPSessionManager & from)
-{
-  PWaitAndSignal m1(m_mutex);
-  PWaitAndSignal m2(from.m_mutex);
-
-  PAssert(from.sessions.GetSize() != 0, "Cannot copy from empty list to master RTP session list");
-
-  //for (PINDEX i = 0; i < sessions.GetSize(); ++i) {
-  //  if (sessions.GetDataAt(i).rtpSession != NULL) {
-  //    PTRACE(2, "RTP\tCannot copy to master RTP session list after sockets have been created");
-  //    return;
-  //  }
-  //}
-
-  sessions = from.sessions;
-  from.m_cleanupOnDelete = false;
+  from.sessions = SessionDict(); // Disconnect internal reference
 }
 
 
