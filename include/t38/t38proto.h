@@ -50,6 +50,7 @@
 class OpalTransport;
 class T38_IFPPacket;
 class PASN_OctetString;
+class OpalFaxConnection;
 
 
 namespace PWLibStupidLinkerHacks {
@@ -108,7 +109,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     /**Construct a new media stream for T.38 sessions.
       */
     OpalFaxMediaStream(
-      OpalConnection & conn,
+      OpalFaxConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID, 
       PBoolean isSource ,                      ///<  Is a source stream
@@ -132,13 +133,6 @@ class OpalFaxMediaStream : public OpalMediaStream
        The default does nothing.
       */
     virtual PBoolean Close();
-
-    /**Start the media stream.
-
-       The default behaviour calls Resume() on the associated OpalMediaPatch
-       thread if it was suspended.
-      */
-    virtual PBoolean Start();
 
     /**Read an RTP frame of data from the source media stream.
        The new behaviour simply calls RTP_Session::ReadData().
@@ -164,14 +158,15 @@ class OpalFaxMediaStream : public OpalMediaStream
   //@}
 
   protected:
+    OpalFaxConnection & m_connection;
     PMutex infoMutex;
     PString sessionToken;
     OpalFaxCallInfo * faxCallInfo;
-    PFilePath filename;
-    PBoolean receive;
+    PFilePath m_filename;
+    PBoolean m_receive;
     BYTE writeBuffer[320];
     PINDEX writeBufferLen;
-    PString stationId;
+    PString m_stationId;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -183,7 +178,7 @@ class OpalT38MediaStream : public OpalFaxMediaStream
   PCLASSINFO(OpalT38MediaStream, OpalFaxMediaStream);
   public:
     OpalT38MediaStream(
-      OpalConnection & conn,
+      OpalFaxConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID, 
       PBoolean isSource ,                      ///<  Is a source stream
@@ -367,7 +362,9 @@ class OpalFaxConnection : public OpalConnection
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
-    OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
+    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
+    virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
+    virtual void AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const;
 
   /**@name New operations */
   //@{
@@ -375,17 +372,19 @@ class OpalFaxConnection : public OpalConnection
       */
     virtual void AcceptIncoming();
 
+    /** Check for no more I/O which means fax stopped.
+      */
+    void CheckFaxStopped();
   //@}
 
-    void AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const;
-
-    void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
-
   protected:
-    OpalFaxEndPoint & endpoint;
-    PString           filename;
-    bool              receive;
-    PString           stationId;
+    PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnFaxStoppedTimeout);
+
+    OpalFaxEndPoint & m_endpoint;
+    PString           m_filename;
+    bool              m_receive;
+    PString           m_stationId;
+    PTimer            m_faxStopped;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -434,14 +433,16 @@ class OpalT38Connection : public OpalFaxConnection
       OpalT38EndPoint & endpoint,      ///<  Owner endpoint for connection
       const PString & filename,        ///<  filename to send/receive
       PBoolean receive,                ///<  true if receiving fax
-      const PString & _token,          ///<  token for connection
+      const PString & token,           ///<  token for connection
       OpalConnection::StringOptions * stringOptions = NULL
     );
 
     ~OpalT38Connection();
 
-    OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
-    OpalMediaFormatList GetMediaFormats() const;
+    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
+    virtual void OnEstablished();
+    virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
     // triggers into fax mode
     enum {
@@ -457,20 +458,17 @@ class OpalT38Connection : public OpalFaxConnection
       unsigned duration
     );
 
-    PDECLARE_NOTIFIER(PTimer, OpalT38Connection, OnFaxChangeTimeout);
-
   protected:
+    PDECLARE_NOTIFIER(PTimer,  OpalT38Connection, OnFaxChangeTimeout);
+    PDECLARE_NOTIFIER(PThread, OpalT38Connection, OpenFaxStreams);
     void RequestFaxMode(bool fax);
-    void InFaxMode(bool fax);
 
-    bool     forceFaxAudio;
-    unsigned t38WaitMode;
+    bool     m_forceFaxAudio;
+    unsigned m_waitMode;
 
-    PMutex modeMutex;
-    bool currentMode, newMode;  // false if audio, true if fax
-    bool modeChangeTriggered;
-    PTimer faxTimer;
-    bool faxStartup;
+    PMutex m_mutex;
+    bool   m_faxMode;  // false if audio, true if fax
+    PTimer m_faxTimer;
 };
 
 
