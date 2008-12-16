@@ -5239,6 +5239,9 @@ void InCallPanel::OnStreamsChanged()
 
   for (PINDEX i = 0; i < NumPages; i++)
     m_pages[i].UpdateSession(connection);
+
+  if (connection->GetMediaStream(OpalMediaType::Fax(), true) != NULL)
+    FindWindowByNameAs<wxNotebook>(this, wxT("Statistics"))->SetSelection(RxFax);
 }
 
 
