@@ -923,13 +923,12 @@ class SIPInvite : public SIPTransaction
     SIPInvite(
       SIPConnection & connection,
       OpalTransport & transport,
-      OpalRTPSessionManager & sm,
-      bool transfer
+      const OpalRTPSessionManager & sm
     );
 
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
 
-    OpalRTPSessionManager & GetSessionManager() { return rtpSessions; }
+    const OpalRTPSessionManager & GetSessionManager() const { return rtpSessions; }
 
   protected:
     OpalRTPSessionManager rtpSessions;

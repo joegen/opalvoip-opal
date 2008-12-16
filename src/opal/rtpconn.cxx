@@ -415,40 +415,21 @@ OpalMediaStream * OpalRTPMediaSession::CreateMediaStream(const OpalMediaFormat &
 
 OpalRTPSessionManager::OpalRTPSessionManager(OpalConnection & conn)
   : connection(conn)
-  , m_initialised(false)
 {
-}
-
-
-OpalRTPSessionManager::OpalRTPSessionManager(OpalRTPSessionManager & other, bool transfer)
-  : connection(other.connection)
-  , m_initialised(false)
-  , sessions(other.sessions)
-{
-  if (transfer)
-    other.sessions = SessionDict(); // Break reference so current is only owner
-  else
-    sessions.MakeUnique();          // Break reference by cloning sessions
 }
 
 
 OpalRTPSessionManager::~OpalRTPSessionManager()
 {
   PWaitAndSignal m(m_mutex);
-  while (sessions.GetSize() > 0) {
-    sessions.GetDataAt(0).Close();
-    sessions.RemoveAt(sessions.GetKeyAt(0));
+  if (sessions.IsUnique()) {
+    while (sessions.GetSize() > 0) {
+      PINDEX id = sessions.GetKeyAt(0);
+      PTRACE(3, "RTP\tClosing session " << id);
+      sessions[id].Close();
+      sessions.RemoveAt(id);
+    }
   }
-}
-
-
-void OpalRTPSessionManager::TransferFrom(OpalRTPSessionManager & from)
-{
-  PWaitAndSignal m1(m_mutex);
-  PWaitAndSignal m2(from.m_mutex);
-
-  sessions = from.sessions;
-  from.sessions = SessionDict(); // Disconnect internal reference
 }
 
 
