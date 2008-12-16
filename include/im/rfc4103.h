@@ -42,6 +42,19 @@ class RFC4103Frame : public RTP_DataFrame
   public:
     RFC4103Frame();
     RFC4103Frame(const T140String & t140);
+    void SetPayload(const T140String & t140);
+};
+
+class RFC4103Context : public PObject
+{
+  public:
+    RFC4103Context();
+    void NewFrame(RFC4103Frame & frame, const T140String & body);
+
+    PMutex mutex;
+    WORD sequence;
+    DWORD baseTimeStamp;
+    PTime baseTime;
 };
 
 #endif // OPAL_IM_RFC4103_H

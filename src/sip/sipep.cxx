@@ -1180,7 +1180,7 @@ void SIPEndPoint::OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu)
 {
   OnMessageReceived(from, pdu.GetEntityBody());
 
-#if OPAL_SIPIM_CAPABILITY
+#if OPAL_HAS_SIPIM
   m_sipIMManager.OnReceivedMessage(pdu);
 #endif
 }
