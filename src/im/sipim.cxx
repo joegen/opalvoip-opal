@@ -347,7 +347,7 @@ void OpalSIPIMManager::OnReceivedMessage(const SIP_PDU & pdu)
   PString callId = pdu.GetMIME().GetCallID();
   if (!callId.IsEmpty()) {
     PWaitAndSignal m(m_mutex);
-    IMSessionMapType::iterator r = m_imSessionMap.find(std::string(callId));
+    IMSessionMapType::iterator r = m_imSessionMap.find((const char *)callId);
     if (r != m_imSessionMap.end()) {
       r->second->SendMessage(pdu.GetMIME().GetContentEncoding(), pdu.GetEntityBody());
     }
@@ -357,14 +357,16 @@ void OpalSIPIMManager::OnReceivedMessage(const SIP_PDU & pdu)
 bool OpalSIPIMManager::StartSession(OpalSIPIMMediaSession * mediaSession)
 { 
   PWaitAndSignal m(m_mutex);
-  m_imSessionMap.insert(IMSessionMapType::value_type(std::string(mediaSession->GetCallID()), mediaSession));
+  PString callId(mediaSession->GetCallID());
+  m_imSessionMap.insert(IMSessionMapType::value_type((const char *)callId, mediaSession));
   return true;
 }
 
 bool OpalSIPIMManager::EndSession(OpalSIPIMMediaSession * mediaSession)
 { 
   PWaitAndSignal m(m_mutex);
-  IMSessionMapType::iterator r = m_imSessionMap.find(std::string(mediaSession->GetCallID()));
+  PString callId(mediaSession->GetCallID());
+  IMSessionMapType::iterator r = m_imSessionMap.find((const char *)callId);
   if (r != m_imSessionMap.end())
     m_imSessionMap.erase(r);
   return true;
