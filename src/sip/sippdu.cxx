@@ -2730,9 +2730,9 @@ void SIPTransaction::GenerateCallID(PString & callId)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, OpalRTPSessionManager & sm, bool transfer)
+SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, const OpalRTPSessionManager & sm)
   : SIPTransaction(connection, transport, Method_INVITE)
-  , rtpSessions(sm, transfer)
+  , rtpSessions(sm)
 {
   mime.SetDate(); // now
   SetAllow(connection.GetEndPoint().GetAllowedMethods());

@@ -155,11 +155,9 @@ class OpalRTPSessionManager : public PObject
     /**Construct new session manager database.
       */
     OpalRTPSessionManager(OpalConnection & conn);
-    OpalRTPSessionManager(OpalRTPSessionManager & other, bool transfer);
     ~OpalRTPSessionManager();
+    void operator=(const OpalRTPSessionManager & other) { sessions = other.sessions; }
   //@}
-
-    void TransferFrom(OpalRTPSessionManager & from);
 
   /**@name Operations */
   //@{
@@ -202,14 +200,9 @@ class OpalRTPSessionManager : public PObject
   protected:
     OpalConnection & connection;
     PMutex m_mutex;
-    bool m_initialised;
 
     PDICTIONARY(SessionDict, POrdinalKey, OpalMediaSession);
     SessionDict sessions;
-
-  private:
-    OpalRTPSessionManager(const OpalRTPSessionManager & other) : PObject(other), connection(other.connection) { }
-    OpalRTPSessionManager & operator=(const OpalRTPSessionManager &) { return *this; }
 };
 
 typedef OpalRTPSessionManager RTP_SessionManager;
