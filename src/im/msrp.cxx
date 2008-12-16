@@ -285,7 +285,7 @@ OpalMediaStream * OpalMSRPMediaSession::CreateMediaStream(const OpalMediaFormat 
                                                                          PBoolean isSource)
 {
   PTRACE(2, "MSRP\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with " << msrpSession->GetURL());
-  return new OpalMSRPMediaStream(connection, mediaFormat, sessionID, isSource);
+  return new OpalMSRPMediaStream(connection, mediaFormat, sessionID, isSource, *this);
 }
 
 void OpalMSRPMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & )
@@ -425,9 +425,11 @@ OpalMSRPMediaStream::OpalMSRPMediaStream(
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      bool isSource                        ///<  Is a source stream
+      bool isSource,                       ///<  Is a source stream
+      OpalMSRPMediaSession & msrpSession
 )
   : OpalIMMediaStream(conn, mediaFormat, sessionID, isSource)
+  , m_msrpSession(msrpSession)
 {
 }
 
@@ -436,21 +438,28 @@ OpalMSRPMediaStream::~OpalMSRPMediaStream()
 }
 
 PBoolean OpalMSRPMediaStream::ReadData(
-      BYTE * data,      ///<  Data buffer to read to
-      PINDEX size,      ///<  Size of buffer
-      PINDEX & length   ///<  Length of data actually read
+      BYTE *,
+      PINDEX,
+      PINDEX &
     )
 {
-  return OpalIMMediaStream::ReadData(data, size, length);
+  PAssertAlways("Cannot ReadData from OpalMSRPMediaStream");
+  return false;
 }
 
 PBoolean OpalMSRPMediaStream::WriteData(
-      const BYTE * data,   ///<  Data to write
-      PINDEX length,       ///<  Length of data to read.
-      PINDEX & written     ///<  Length of data actually written
+      const BYTE * /*data*/,   ///<  Data to write
+      PINDEX /*length*/,       ///<  Length of data to read.
+      PINDEX & /*written*/     ///<  Length of data actually written
     )
 {
-  return OpalIMMediaStream::WriteData(data, length, written);
+  if (!isOpen)
+    return false;
+
+  // TODO: write MSRP frame via MSRP manager
+  // m_msrpSession.xxxxxx
+
+  return true;
 }
 
 PBoolean OpalMSRPMediaStream::Close()

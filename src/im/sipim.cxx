@@ -220,10 +220,6 @@ OpalSIPIMMediaSession::OpalSIPIMMediaSession(const OpalSIPIMMediaSession & _obj)
 {
 }
 
-void OpalSIPIMMediaSession::Close()
-{
-}
-
 OpalTransportAddress OpalSIPIMMediaSession::GetLocalMediaAddress() const
 {
   return transportAddress;
@@ -243,11 +239,20 @@ OpalMediaStream * OpalSIPIMMediaSession::CreateMediaStream(const OpalMediaFormat
                                                                          PBoolean isSource)
 {
   PTRACE(2, "SIPIM\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with local " << localURL << " and remote " << remoteURL);
-  return new OpalSIPIMMediaStream(connection, mediaFormat, sessionID, isSource, localURL, remoteURL, callId);
+  return new OpalSIPIMMediaStream(connection, mediaFormat, sessionID, isSource, *this);
 }
 
 void OpalSIPIMMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList &)
 {
+}
+
+bool OpalSIPIMMediaSession::SendMessage(const PString & /*contentType*/, const PString & body)
+{
+  SIPEndPoint * ep = dynamic_cast<SIPEndPoint *>(&connection.GetEndPoint());
+  if (ep == NULL)
+    return false;
+
+  return ep->Message(remoteURL, body, localURL, callId);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -257,14 +262,10 @@ OpalSIPIMMediaStream::OpalSIPIMMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       bool isSource,                        ///<  Is a source stream
-      const PString & _localURL,
-      const PString & _remoteURL,
-      const PString & _callId
+      OpalSIPIMMediaSession & mediaSession
 )
   : OpalIMMediaStream(conn, mediaFormat, sessionID, isSource)
-  , localURL(_localURL)
-  , remoteURL(_remoteURL)
-  , callId(_callId)
+  , m_imSession(mediaSession)
 {
 }
 
@@ -272,12 +273,38 @@ OpalSIPIMMediaStream::~OpalSIPIMMediaStream()
 {
 }
 
-PBoolean OpalSIPIMMediaStream::ReadData(BYTE *,PINDEX,PINDEX &)
+bool OpalSIPIMMediaStream::Open()
 {
-  if (!IsOpen())
+  if (!OpalIMMediaStream::Open())
     return false;
 
-  PAssertAlways("ReadData called for SIPIM");
+  SIPEndPoint * ep = dynamic_cast<SIPEndPoint *>(&connection.GetEndPoint());
+  if (ep == NULL) 
+    return false;
+
+  ep->GetSIPIMManager().StartSession(&m_imSession);
+
+  return true;
+}
+
+
+PBoolean OpalSIPIMMediaStream::Close()
+{
+  if (!OpalIMMediaStream::Close())
+    return false;
+
+  SIPEndPoint * ep = dynamic_cast<SIPEndPoint *>(&connection.GetEndPoint());
+  if (ep == NULL) 
+    return false;
+
+  ep->GetSIPIMManager().EndSession(&m_imSession);
+
+  return true;
+}
+
+PBoolean OpalSIPIMMediaStream::ReadData(BYTE *,PINDEX,PINDEX &)
+{
+  PAssertAlways("Cannot ReadData from OpalSIPIMMediaStream");
   return false;
 }
 
@@ -290,47 +317,56 @@ PBoolean OpalSIPIMMediaStream::WriteData(
   if (!IsOpen())
     return false;
 
+  bool stat = true;
+
 #if OPAL_SIP
 
   if (length != 0 && data != NULL) {
     // T.140 data has 3 bytes at the start of the data
     if (length > 4) {
       PString body((const char *)data + 3, length-3);
-      SIPEndPoint * ep = dynamic_cast<SIPEndPoint *>(&connection.GetEndPoint());
-      if (ep != NULL)
-        ep->Message(remoteURL, body, localURL, callId);
+      stat = m_imSession.SendMessage("", body);
     }
     written = length;
   }
 
 #endif
 
-  return true;
-}
-
-PBoolean OpalSIPIMMediaStream::Close()
-{
-  return OpalIMMediaStream::Close();
+  return stat;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-OpalSIPIMManager::OpalSIPIMManager(SIPEndPoint & _endpoint)
-  : endpoint(_endpoint)
+OpalSIPIMManager::OpalSIPIMManager(SIPEndPoint & endpoint)
+  : m_endpoint(endpoint)
 {
 }
 
-void OpalSIPIMManager::OnReceivedMessage(const SIP_PDU & /*pdu*/)
+void OpalSIPIMManager::OnReceivedMessage(const SIP_PDU & pdu)
 {
+  PString callId = pdu.GetMIME().GetCallID();
+  if (!callId.IsEmpty()) {
+    PWaitAndSignal m(m_mutex);
+    IMSessionMapType::iterator r = m_imSessionMap.find(std::string(callId));
+    if (r != m_imSessionMap.end()) {
+      r->second->SendMessage(pdu.GetMIME().GetContentEncoding(), pdu.GetEntityBody());
+    }
+  }
 }
 
-bool OpalSIPIMManager::StartSession(const PString & /*callId*/)
+bool OpalSIPIMManager::StartSession(OpalSIPIMMediaSession * mediaSession)
 { 
+  PWaitAndSignal m(m_mutex);
+  m_imSessionMap.insert(IMSessionMapType::value_type(std::string(mediaSession->GetCallID()), mediaSession));
   return true;
 }
 
-bool OpalSIPIMManager::EndSession(const PString & /*callId*/)
+bool OpalSIPIMManager::EndSession(OpalSIPIMMediaSession * mediaSession)
 { 
+  PWaitAndSignal m(m_mutex);
+  IMSessionMapType::iterator r = m_imSessionMap.find(std::string(mediaSession->GetCallID()));
+  if (r != m_imSessionMap.end())
+    m_imSessionMap.erase(r);
   return true;
 }
 

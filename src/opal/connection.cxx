@@ -241,15 +241,11 @@ OpalConnection::OpalConnection(OpalCall & call,
     str = (*stringOptions)("dtmfdiv");
     if (!str.IsEmpty())
       dtmfScaleDivisor = str.AsInteger();
-
-    // if this is the second connection in this call, then we are making an outgoing H.323/SIP call
-    // so, get the autoStart info from the other connection
-    PSafePtr<OpalConnection> conn  = call.GetConnection(0);
-    if (conn != NULL) 
-      m_autoStartInfo.Initialise(*this, conn->GetStringOptions());
-    else
-      m_autoStartInfo.Initialise(*this, m_stringOptions);
   }
+
+  // always use autostart info from the first connection in a call
+  PSafePtr<OpalConnection> conn  = call.GetConnection(0);
+  m_autoStartInfo.Initialise(*this, conn->GetStringOptions());
 }
 
 OpalConnection::~OpalConnection()
@@ -1170,7 +1166,7 @@ bool OpalConnection::CanAutoStartMediaType(const OpalMediaType & mediaType, bool
 
 OpalConnection::AutoStartMap::AutoStartMap()
 {
-  m_initialised = true;
+  m_initialised = false;
 }
 
 
@@ -1299,8 +1295,9 @@ bool OpalConnection::SendIM(const OpalMediaFormat & format, const T140String & b
   if (strm == NULL) 
     stat = false;
   else {
-    RFC4103Frame frame(body);
-    strm->GetPatch()->PushFrame(frame);
+    OpalIMMediaStream * imStream = dynamic_cast<OpalIMMediaStream *>(&strm);
+    if (imStream != NULL) 
+      imStream->PushIM(body);
   }
   
   UnlockReadWrite();
