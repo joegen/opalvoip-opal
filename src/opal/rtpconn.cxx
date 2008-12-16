@@ -404,6 +404,7 @@ OpalMediaStream * OpalRTPMediaSession::CreateMediaStream(const OpalMediaFormat &
                                                                          unsigned /*sessionID*/, 
                                                                          PBoolean isSource)
 {
+  mediaType = mediaFormat.GetMediaType();
   return new OpalRTPMediaStream((OpalRTPConnection &)connection, mediaFormat, isSource, *rtpSession,
                                 connection.GetMinAudioJitterDelay(),
                                 connection.GetMaxAudioJitterDelay());

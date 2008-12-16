@@ -1085,7 +1085,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
   if (GetPhase() == EstablishedPhase && needReINVITE) {
     PTRACE(3, "SIP\tStarting re-INVITE to open channel.");
-    SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions, false);
+    SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions, true);
     invite->Start();
   }
 
