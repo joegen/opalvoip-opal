@@ -599,14 +599,18 @@ PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
     return PFalse;
   }
 
-  // Restriction: the call must be made on the same transport as the one
+  // Restriction: the call must be made on the same local interface as the one
   // that the gatekeeper is using.
   H323Transport * transport;
   if (gatekeeper != NULL)
     transport = gatekeeper->GetTransport().GetLocalAddress().CreateTransport(
                                           *this, OpalTransportAddress::Streamed);
-  else
+  else if (stringOptions == NULL || !stringOptions->Contains("interface"))
     transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
+  else {
+    OpalTransportAddress localInterface = (*stringOptions)["interface"];
+    transport = localInterface.CreateTransport(*this, OpalTransportAddress::HostOnly);
+  }
 
   if (transport == NULL) {
     PTRACE(1, "H323\tInvalid transport in \"" << remoteParty << '"');
