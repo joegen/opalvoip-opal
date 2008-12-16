@@ -482,6 +482,7 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
 #endif
   }
   else if (needReINVITE && !mediaStreams.IsEmpty()) {
+    std::vector<bool> sessions;
     for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
       std::vector<bool>::size_type session = stream->GetSessionID();
       sessions.resize(std::max(sessions.size(),session+1));
