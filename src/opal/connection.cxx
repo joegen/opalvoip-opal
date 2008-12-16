@@ -200,7 +200,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   ownerCall.connectionsActive.Append(this);
 
   if (stringOptions != NULL)
-    m_stringOptions = *stringOptions;
+    m_connStringOptions = *stringOptions;
 
   detectInBandDTMF = !endpoint.GetManager().DetectInBandDTMFDisabled();
   minAudioJitterDelay = endpoint.GetManager().GetMinAudioJitterDelay();
@@ -224,28 +224,6 @@ OpalConnection::OpalConnection(OpalCall & call,
       sendUserInputMode = ep.GetSendUserInputMode();
       break;
   }
-  
-  if (stringOptions != NULL) {
-    PString str((*stringOptions)("Call-Identifier"));
-    if (!str.IsEmpty())
-      callIdentifier = PGloballyUniqueID(str);
-
-    str = (*stringOptions)("enableinbanddtmf");
-    if (!str.IsEmpty())
-      detectInBandDTMF = str *= "true";
-    str = (*stringOptions)("dtmfmult");
-    if (!str.IsEmpty()) {
-      dtmfScaleMultiplier = str.AsInteger();
-      dtmfScaleDivisor    = 1;
-    }
-    str = (*stringOptions)("dtmfdiv");
-    if (!str.IsEmpty())
-      dtmfScaleDivisor = str.AsInteger();
-  }
-
-  // always use autostart info from the first connection in a call
-  PSafePtr<OpalConnection> conn  = call.GetConnection(0);
-  m_autoStartInfo.Initialise(*this, conn->GetStringOptions());
 }
 
 OpalConnection::~OpalConnection()
@@ -1102,27 +1080,53 @@ void OpalConnection::SetPhase(Phases phaseToSet)
 void OpalConnection::SetStringOptions(const StringOptions & options, bool overwrite)
 {
   if (overwrite)
-    m_stringOptions = options;
+    m_connStringOptions = options;
   else {
     for (PINDEX i = 0; i < options.GetSize(); ++i)
-      m_stringOptions.SetAt(options.GetKeyAt(i), options.GetDataAt(i));
+      m_connStringOptions.SetAt(options.GetKeyAt(i), options.GetDataAt(i));
   }
 }
 
+void OpalConnection::OnApplyStringOptions()
+{
+  endpoint.GetManager().OnApplyStringOptions(*this, m_connStringOptions);
+}
 
-void OpalConnection::ApplyStringOptions()
+void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
 {
   if (LockReadWrite()) {
-    if (m_stringOptions.Contains("Disable-Jitter"))
+
+    m_connStringOptions = stringOptions;
+  
+    PString str(stringOptions("Call-Identifier"));
+    if (!str.IsEmpty())
+      callIdentifier = PGloballyUniqueID(str);
+
+    str = stringOptions("enableinbanddtmf");
+    if (!str.IsEmpty())
+      detectInBandDTMF = str *= "true";
+    str = stringOptions("dtmfmult");
+    if (!str.IsEmpty()) {
+      dtmfScaleMultiplier = str.AsInteger();
+      dtmfScaleDivisor    = 1;
+    }
+    str = stringOptions("dtmfdiv");
+    if (!str.IsEmpty())
+      dtmfScaleDivisor = str.AsInteger();
+
+    m_autoStartInfo.Initialise(*this, stringOptions);
+
+    if (stringOptions.Contains("Disable-Jitter"))
       maxAudioJitterDelay = minAudioJitterDelay = 0;
-    PString str = m_stringOptions("Max-Jitter");
+    str = stringOptions("Max-Jitter");
     if (!str.IsEmpty())
       maxAudioJitterDelay = str.AsUnsigned();
-    str = m_stringOptions("Min-Jitter");
+    str = stringOptions("Min-Jitter");
     if (!str.IsEmpty())
       minAudioJitterDelay = str.AsUnsigned();
-    if (m_stringOptions.Contains("Record-Audio"))
-      recordAudioFilename = m_stringOptions("Record-Audio");
+    if (stringOptions.Contains("Record-Audio"))
+      recordAudioFilename = m_connStringOptions("Record-Audio");
+
     UnlockReadWrite();
   }
 }
@@ -1295,7 +1299,7 @@ bool OpalConnection::SendIM(const OpalMediaFormat & format, const T140String & b
   if (strm == NULL) 
     stat = false;
   else {
-    OpalIMMediaStream * imStream = dynamic_cast<OpalIMMediaStream *>(&strm);
+    OpalIMMediaStream * imStream = dynamic_cast<OpalIMMediaStream *>(&*strm);
     if (imStream != NULL) 
       imStream->PushIM(body);
   }
@@ -1305,12 +1309,28 @@ bool OpalConnection::SendIM(const OpalMediaFormat & format, const T140String & b
   return stat;
 }
 
-void OpalConnection::OnReceiveIM(unsigned /*sessionId*/, const OpalMediaFormat & /*format*/, const T140String & /*body*/)
+void OpalConnection::OnReceiveIM(const IMInfo & im)
 {
+  if (!LockReadWrite())
+    return;
+
+  for (PList<PNotifier>::iterator f = m_imListeners.begin(); f != m_imListeners.end(); ++f) {
+    (*f)((IMInfo &)im, (INT)this);
+  }
+
+  UnlockReadWrite();
+}
+
+void OpalConnection::AddIMListener(const PNotifier & listener)
+{
+  if (!LockReadWrite())
+    return;
+
+  m_imListeners.Append(new PNotifier(listener));
+
+  UnlockReadWrite();
 }
 
 #endif
-
-
 
 /////////////////////////////////////////////////////////////////////////////

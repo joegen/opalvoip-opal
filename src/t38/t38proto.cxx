@@ -740,8 +740,6 @@ OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, cons
   PTRACE(3, "FAX\tCreated FAX connection with token '" << callToken << "'");
   SetPhase(SetUpPhase);
 
-  stationId = m_stringOptions("stationid");
-
   detectInBandDTMF = true;
 }
 
@@ -749,6 +747,12 @@ OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, cons
 OpalFaxConnection::~OpalFaxConnection()
 {
   PTRACE(3, "FAX\tDeleted FAX connection.");
+}
+
+void OpalFaxConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
+{
+  stationId = stringOptions("stationid");
+  OpalConnection::ApplyStringOptions(stringOptions);
 }
 
 
@@ -764,7 +768,9 @@ PBoolean OpalFaxConnection::SetUpConnection()
   if (ownerCall.GetConnection(0) == this) {
     SetPhase(SetUpPhase);
 
-    if (!OnIncomingConnection(0, &m_stringOptions)) {
+    OnApplyStringOptions();
+
+    if (!OnIncomingConnection(0)) {
       Release(EndedByCallerAbort);
       return PFalse;
     }

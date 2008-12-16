@@ -39,10 +39,12 @@ class MyManager : public OpalManager
 
   public:
     virtual void OnClearedCall(OpalCall & call); // Callback override
+    void OnApplyStringOptions(OpalConnection & conn, OpalConnection::StringOptions & options);
 
     PSyncPoint m_connected;
     PSyncPoint m_completed;
     PString m_callToken;
+    OpalMediaFormat m_imFormat;
 };
 
 class MyPCSSEndPoint : public OpalPCSSEndPoint
@@ -56,6 +58,8 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 
     virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
     virtual PBoolean OnShowOutgoing(const OpalPCSSConnection & connection);
+
+    PDECLARE_NOTIFIER(OpalConnection::IMInfo, MyPCSSEndPoint, OnReceiveIM);
 };
 
 class SipIM : public PProcess

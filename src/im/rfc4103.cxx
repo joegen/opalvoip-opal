@@ -46,24 +46,33 @@ RFC4103Context::RFC4103Context()
 {
 }
 
-void RFC4103Context::NewFrame(RFC4103Frame & frame, const T140String & body)
+RTP_DataFrameList RFC4103Context::ConvertToFrames(const T140String & body)
 {
   DWORD ts = baseTimeStamp;
   ts += (DWORD)((PTime() - baseTime).GetMilliSeconds());
 
-  frame.SetTimestamp(ts);
-  frame.SetSequenceNumber(++sequence);
-  frame.SetPayload(body);
+  RTP_DataFrameList frames;
+  RFC4103Frame * frame = new RFC4103Frame();
+
+  frame->SetPayloadType(RTP_DataFrame::MaxPayloadType);
+  frame->SetMarker(true);
+  frame->SetTimestamp(ts);
+  frame->SetSequenceNumber(++sequence);
+  frame->SetPayload(body);
+
+  frames.Append(frame);
+
+  return frames;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 RFC4103Frame::RFC4103Frame()
-{ }
+{ 
+}
 
 RFC4103Frame::RFC4103Frame(const T140String & t140)
 {
-  SetPayloadType(MaxPayloadType);
   SetPayload(t140);
 }
 

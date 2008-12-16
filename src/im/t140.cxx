@@ -42,9 +42,6 @@
 #include <sip/sdp.h>
 #endif
 
-#define ZERO_WIDTH_NO_BREAK 0xfeff
-#define UTF_NEWLINE         0x2028
-
 #if OPAL_SIP
 
 /////////////////////////////////////////////////////////
@@ -93,28 +90,60 @@ T140String::T140String()
 T140String::T140String(const PBYTEArray & bytes)
   : length(0)
 { 
-  AppendUnicode16(ZERO_WIDTH_NO_BREAK);
+  WORD ch;
+  if (bytes.GetSize() < 3 ||
+      GetUTF((const BYTE *)bytes, bytes.GetSize(), ch) != 3 ||
+      ch != ZERO_WIDTH_NO_BREAK)
+    AppendUnicode16(ZERO_WIDTH_NO_BREAK);
   AppendUTF((const BYTE *)bytes, bytes.GetSize());
+}
+
+T140String::T140String(const BYTE * data, PINDEX len)
+  : length(0)
+{ 
+  WORD ch;
+  if (len < 3 ||
+      GetUTF(data, len, ch) != 3 ||
+      ch != ZERO_WIDTH_NO_BREAK)
+    AppendUnicode16(ZERO_WIDTH_NO_BREAK); 
+  AppendUTF((const BYTE *)data, len);
 }
 
 T140String::T140String(const char * chars)
   : length(0)
 { 
-  AppendUnicode16(ZERO_WIDTH_NO_BREAK); 
+  WORD ch;
+  if (strlen(chars) < 3 ||
+      GetUTF((const BYTE *)chars, strlen(chars), ch) != 3 ||
+      ch != ZERO_WIDTH_NO_BREAK)
+    AppendUnicode16(ZERO_WIDTH_NO_BREAK); 
   AppendUTF((const BYTE *)chars, strlen(chars));
 }
 
 T140String::T140String(const PString & str)
   : length(0)
 { 
-  AppendUnicode16(ZERO_WIDTH_NO_BREAK); 
+  WORD ch;
+  if (str.GetLength() < 3 ||
+      GetUTF((const BYTE *)(const char *)str, str.GetLength(), ch) != 3 ||
+      ch != ZERO_WIDTH_NO_BREAK)
+    AppendUnicode16(ZERO_WIDTH_NO_BREAK); 
   AppendUTF((const BYTE *)(const char *)str, str.GetLength());
 }
 
 PINDEX T140String::AppendUTF(const BYTE * utf, PINDEX utfLen)
 {
-  memcpy(GetPointer(length+utfLen)+length, utf, utfLen);
-  length += utfLen;
+  WORD ch;
+  if (utfLen >= 3 &&
+      GetUTF(utf, utfLen, ch) == 3 &&
+      ch == ZERO_WIDTH_NO_BREAK) {
+    utf += 3; 
+    utfLen -= 3;
+  }
+  if (utfLen > 0) {
+    memcpy(GetPointer(length+utfLen)+length, utf, utfLen);
+    length += utfLen;
+  }
   return utfLen;
 }
 
@@ -124,12 +153,8 @@ PINDEX T140String::GetUTFLen(WORD c)
     return 1;
   if (c <= 0x7ff)
     return 2;
-/*
-  if (c <= 0xffff)
-    return 3;
-*/
 
-  return 0;
+  return 3;
 }
 
 PINDEX T140String::AppendUnicode16(WORD c)
@@ -157,14 +182,44 @@ PINDEX T140String::SetUTF(BYTE * ptr, WORD c)
     ptr[1] = 0x80 | (cl & 0x3f);
     return 2;
   }
-#if 0
-  if (c <= 0xffff) {
-    ptr[0] = 0xe0 | (ch >> 4) | (cl >> 6); 
-    ptr[1] = 0x80 | (ch << 2) | (cl >> 6); 
-    ptr[2] = 0x80 | (cl & 0x3f);
-    return 3;
-  }
-#endif
 
-  return 0;
+  //if (c <= 0xffff) {
+  ptr[0] = 0xe0 | (ch >> 4) | (cl >> 6); 
+  ptr[1] = 0x80 | (ch << 2) | (cl >> 6); 
+  ptr[2] = 0x80 | (cl & 0x3f);
+  return 3;
+}
+
+PINDEX T140String::GetUTF(PINDEX pos, WORD & ch)
+{
+  return GetUTF(GetPointer()+pos, GetSize()-pos, ch);
+}
+
+PINDEX T140String::GetUTF(const BYTE * ptr, PINDEX len, WORD & ch)
+{
+  if (len < 1)
+    return 0;
+
+  // 0x00 .. 0x7f
+  if (ptr[0] <= 0x7f) {
+    ch = ptr[0];
+    return 1;
+  }
+
+  if (ptr[0] <= 0xc1 || len < 2) 
+    return 0;
+
+  // 0x80 .. 0x7ff
+  if (ptr[0] <= 0xdf) {
+    ch = (ptr[0] << 6) | (ptr[1] & 0x3f);
+    return 2;
+  }
+
+  if (ptr[0] > 0xef || len < 3) 
+    return 0;
+
+  // 0x800 .. 0xffff
+  ch = (ptr[0] << 12) | ((ptr[1] & 0x3f) << 6) || (ptr[2] & 0x3f);
+
+  return 3;
 }
