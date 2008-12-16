@@ -33,10 +33,11 @@
 
 #include <opal/mediafmt.h>
 #include <opal/connection.h>
+#include <opal/patch.h>
 #include <im/im.h>
 #include <im/msrp.h>
 #include <im/sipim.h>
-#include <im/t140.h>
+#include <im/rfc4103.h>
 #include <rtp/rtp.h>
 
 #define new PNEW
@@ -135,8 +136,6 @@ const OpalMediaFormat & GetOpalSIPIM()
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-
 const OpalMediaFormat & GetOpalT140() 
 { 
   static class T140MediaFormat : public OpalMediaFormat { 
@@ -165,9 +164,16 @@ OpalIMMediaStream::OpalIMMediaStream(
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      bool isSource                       ///<  Is a source stream
+      bool isSource                        ///<  Is a source stream
     )
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
 {
+
 }
 
+bool OpalIMMediaStream::PushIM(const T140String & text)
+{
+  RFC4103Frame frame;
+  rfc4103.NewFrame(frame, text);
+  return GetPatch()->PushFrame(frame);
+}

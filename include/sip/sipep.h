@@ -774,6 +774,10 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     virtual void OnStartTransaction(SIPConnection & conn, SIPTransaction & transaction);
 
+#if OPAL_HAS_SIPIM
+    virtual OpalSIPIMManager & GetSIPIMManager() { return m_sipIMManager; }
+#endif
+
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);

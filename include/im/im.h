@@ -36,8 +36,9 @@
 
 #include <opal/mediastrm.h>
 
-
 #if OPAL_HAS_IM
+
+#include <im/rfc4103.h>
 
 class OpalIMMediaType : public OpalMediaTypeDefinition 
 {
@@ -71,9 +72,15 @@ class OpalIMMediaStream : public OpalMediaStream
 
     virtual PBoolean IsSynchronous() const         { return false; }
     virtual PBoolean RequiresPatchThread() const   { return false; }
+
+    /*
+     * called to send IM to remote connection
+     */
+    virtual bool PushIM(const T140String & text);
+
+  protected:
+    RFC4103Context rfc4103;
 };
-
-
 
 
 #endif // OPAL_IM_IM_H

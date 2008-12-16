@@ -209,7 +209,9 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      bool isSource                        ///<  Is a source stream
+      bool isSource,                       ///<  Is a source stream
+      OpalMSRPMediaSession & msrpSession
+
     );
 
     ~OpalMSRPMediaStream();
@@ -238,6 +240,8 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
       */
     virtual PBoolean Close();
   //@}
+  protected:
+    OpalMSRPMediaSession & m_msrpSession;
 };
 
 #endif // OPAL_HAS_MSRP

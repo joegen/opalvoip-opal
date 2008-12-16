@@ -40,13 +40,36 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+RFC4103Context::RFC4103Context()
+  : sequence(0)
+  , baseTimeStamp(0)
+{
+}
+
+void RFC4103Context::NewFrame(RFC4103Frame & frame, const T140String & body)
+{
+  DWORD ts = baseTimeStamp;
+  ts += (DWORD)((PTime() - baseTime).GetMilliSeconds());
+
+  frame.SetTimestamp(ts);
+  frame.SetSequenceNumber(++sequence);
+  frame.SetPayload(body);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 RFC4103Frame::RFC4103Frame()
 { }
-
 
 RFC4103Frame::RFC4103Frame(const T140String & t140)
 {
   SetPayloadType(MaxPayloadType);
+  SetPayload(t140);
+}
+
+void RFC4103Frame::SetPayload(const T140String & t140)
+{
   SetPayloadSize(t140.GetSize());
   memcpy(GetPayloadPtr(), (const BYTE *)t140, t140.GetLength());
 }
+
