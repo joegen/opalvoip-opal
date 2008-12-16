@@ -90,20 +90,21 @@ void SipIM::Main()
 
   MyManager m_manager;
 
-
-
   if (args.HasOption('u'))
     m_manager.SetDefaultUserName(args.GetOptionString('u'));
 
-  OpalMediaFormat imFormat("MSRP");
   Mode mode = Use_MSRP;
   if (args.HasOption("sipim")) {
     mode = Use_SIPIM;
-    imFormat = OpalSIPIM;
+    m_manager.m_imFormat = OpalSIPIM;
   }
   else if (args.HasOption("t140")) {
     mode = Use_T140;
-    imFormat = OpalT140;
+    m_manager.m_imFormat = OpalT140;
+  }
+  else if (args.HasOption("msrp")) {
+    mode = Use_MSRP;
+    m_manager.m_imFormat = OpalMSRP;
   }
 
   OpalMediaFormatList allMediaFormats;
@@ -129,14 +130,14 @@ void SipIM::Main()
 
   cout << "Available codecs: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
 
-  PString imFormatMask = PString("!") + (const char *)imFormat;
+  PString imFormatMask = PString("!") + (const char *)m_manager.m_imFormat;
   m_manager.SetMediaFormatMask(imFormatMask);
   allMediaFormats.Remove(imFormatMask);
   
   cout << "Codecs to be used: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
 
   OpalConnection::StringOptions * options = new OpalConnection::StringOptions();
-  options->SetAt("autostart", imFormat.GetMediaType() + ":exclusive");
+  options->SetAt("autostart", m_manager.m_imFormat.GetMediaType() + ":exclusive");
 
   if (args.GetCount() == 0)
     cout << "Awaiting incoming call ..." << flush;
@@ -157,7 +158,7 @@ void SipIM::Main()
     if (call != NULL) {
       PSafePtr<OpalPCSSConnection> conn = call->GetConnectionAs<OpalPCSSConnection>();
       if (conn != NULL)
-        conn->SendIM(imFormat, T140String(textData));
+        conn->SendIM(m_manager.m_imFormat, T140String(textData));
     }
   }
 
@@ -172,13 +173,22 @@ void MyManager::OnClearedCall(OpalCall & /*call*/)
   m_completed.Signal();
 }
 
+void MyManager::OnApplyStringOptions(OpalConnection & conn, OpalConnection::StringOptions & options)
+{
+  options.SetAt("autostart", m_imFormat.GetMediaType() + ":exclusive");
+  OpalManager::OnApplyStringOptions(conn, options);
+}
+
 PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 {
   MyManager & mgr = (MyManager &)manager;
-  mgr.m_callToken = connection.GetToken();
+  mgr.m_callToken = connection.GetCall().GetToken();
   AcceptIncomingConnection(mgr.m_callToken);
   mgr.m_connected.Signal();
   cout << "Incoming call connected" << endl;
+
+  ((OpalConnection &)connection).AddIMListener(PCREATE_NOTIFIER(OnReceiveIM));
+
   return PTrue;
 }
 
@@ -190,6 +200,11 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
   cout << "Outgoing call connected" << endl;
   mgr.m_connected.Signal();
   return PTrue;
+}
+
+void MyPCSSEndPoint::OnReceiveIM(OpalConnection::IMInfo & im, INT)
+{
+  cout << "Received IM: " << im.body << endl;
 }
 
 

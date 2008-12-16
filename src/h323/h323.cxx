@@ -1104,7 +1104,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     }
   }
 
-  ApplyStringOptions();
+  OnApplyStringOptions();
 
   // Get the local capabilities before fast start or tunnelled TCS is handled
   OnSetLocalCapabilities();
@@ -1736,7 +1736,7 @@ PBoolean H323Connection::SetUpConnection()
 {
   originating = true;
 
-  ApplyStringOptions();
+  OnApplyStringOptions();
 
   signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), "H225 Caller"));
   return PTrue;
@@ -1944,7 +1944,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     transportAddress.SetPDU(setup.m_destCallSignalAddress);
   }
 
-  ApplyStringOptions();
+  OnApplyStringOptions();
 
   // Get the local capabilities before fast start is handled
   OnSetLocalCapabilities();

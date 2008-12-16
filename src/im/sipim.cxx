@@ -215,9 +215,13 @@ OpalSIPIMMediaSession::OpalSIPIMMediaSession(OpalConnection & _conn, unsigned _s
   callId           = connection.GetToken();
 }
 
-OpalSIPIMMediaSession::OpalSIPIMMediaSession(const OpalSIPIMMediaSession & _obj)
-  : OpalMediaSession(_obj)
+OpalSIPIMMediaSession::OpalSIPIMMediaSession(const OpalSIPIMMediaSession & obj)
+  : OpalMediaSession(obj)
 {
+  transportAddress = obj.transportAddress;
+  localURL         = obj.localURL;        
+  remoteURL        = obj.remoteURL;       
+  callId           = obj.callId;          
 }
 
 OpalTransportAddress OpalSIPIMMediaSession::GetLocalMediaAddress() const

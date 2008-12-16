@@ -173,7 +173,9 @@ OpalIMMediaStream::OpalIMMediaStream(
 
 bool OpalIMMediaStream::PushIM(const T140String & text)
 {
-  RFC4103Frame frame;
-  rfc4103.NewFrame(frame, text);
-  return GetPatch()->PushFrame(frame);
+  RTP_DataFrameList frames = rfc4103.ConvertToFrames(text);
+  for (PINDEX i = 0; i < frames.GetSize(); ++i)
+    if (!GetPatch()->PushFrame(frames[i]))
+      return false;
+  return true;
 }
