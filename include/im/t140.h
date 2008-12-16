@@ -51,7 +51,13 @@ class OpalT140MediaType : public OpalRTPAVPMediaType
 class T140String : public PBYTEArray
 {
   public:
+    enum {
+      ZERO_WIDTH_NO_BREAK = 0xfeff,
+      UTF_NEWLINE         = 0x2028,
+    };
+
     T140String();
+    T140String(const BYTE * data, PINDEX len);
     T140String(const PBYTEArray & bytes);
     T140String(const char * chars);
     T140String(const PString & str);
@@ -59,6 +65,9 @@ class T140String : public PBYTEArray
     PINDEX GetLength() const { return length; }
 
     PINDEX GetUTFLen(WORD c);
+    PINDEX GetUTF(const BYTE * ptr, PINDEX len, WORD & ch);
+    PINDEX GetUTF(PINDEX pos, WORD & ch);
+
     PINDEX AppendUnicode16(WORD c);
     PINDEX AppendUTF(const BYTE * utf, PINDEX utfLen);
 

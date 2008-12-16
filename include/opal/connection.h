@@ -48,6 +48,7 @@
 #include <ptclib/dtmf.h>
 #include <ptlib/safecoll.h>
 #include <rtp/rtp.h>
+#include <im/t140.h>
 
 class OpalEndPoint;
 class OpalCall;
@@ -55,7 +56,6 @@ class OpalSilenceDetector;
 class OpalEchoCanceler;
 class OpalRFC2833Proto;
 class OpalRFC2833Info;
-class T140String;
 
 /*! \page pageOpalConnections Connection handling in the OPAL library
 
@@ -1346,7 +1346,7 @@ class OpalConnection : public PSafeObject
   //@}
 
     /// Get the string options associated with this connection.
-    const StringOptions & GetStringOptions() const { return m_stringOptions; }
+    const StringOptions & GetStringOptions() const { return m_connStringOptions; }
 
     /// Set the string options associated with this connection.
     void SetStringOptions(
@@ -1354,8 +1354,8 @@ class OpalConnection : public PSafeObject
       bool overwrite
     );
 
-    virtual void ApplyStringOptions();
-
+    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
+    virtual void OnApplyStringOptions();
 
     virtual void PreviewPeerMediaFormats(const OpalMediaFormatList & fmts);
 
@@ -1388,8 +1388,18 @@ class OpalConnection : public PSafeObject
     );
 
 #if OPAL_HAS_IM
+    struct IMInfo : public PObject {
+      unsigned sessionId;
+      OpalMediaFormat mediaFormat;
+      T140String body;
+    };
+
     virtual bool SendIM(const OpalMediaFormat & format, const T140String & body);
-    virtual void OnReceiveIM(unsigned sessionId, const OpalMediaFormat & format, const T140String & body);
+    virtual void OnReceiveIM(const IMInfo & im);
+
+    void AddIMListener(
+      const PNotifier & listener
+    );
 #endif
 
   protected:
@@ -1462,7 +1472,7 @@ class OpalConnection : public PSafeObject
     friend ostream & operator<<(ostream & o, Phases p);
 #endif
 
-    StringOptions m_stringOptions;
+    StringOptions m_connStringOptions;
     PString recordAudioFilename;
     PNotifier recordNotifier;
 
@@ -1491,6 +1501,11 @@ class OpalConnection : public PSafeObject
 
     };
     AutoStartMap m_autoStartInfo;
+
+#if OPAL_HAS_IM
+    mutable PList<PNotifier> m_imListeners;
+#endif
+
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

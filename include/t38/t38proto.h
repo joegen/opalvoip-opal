@@ -379,6 +379,8 @@ class OpalFaxConnection : public OpalConnection
 
     void AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const;
 
+    void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
+
   protected:
     OpalFaxEndPoint & endpoint;
     PString           filename;

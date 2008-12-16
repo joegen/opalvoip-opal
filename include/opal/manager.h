@@ -1226,6 +1226,11 @@ class OpalManager : public PObject
       const OpalConnection * connection = NULL  ///<  Optional connection that is using formats
     ) const;
 
+    virtual void OnApplyStringOptions(
+      OpalConnection & conn,
+      OpalConnection::StringOptions & stringOptions
+    );
+
   protected:
     // Configuration variables
     OpalProductInfo productInfo;

@@ -49,7 +49,7 @@ class RFC4103Context : public PObject
 {
   public:
     RFC4103Context();
-    void NewFrame(RFC4103Frame & frame, const T140String & body);
+    RTP_DataFrameList ConvertToFrames(const T140String & body);
 
     PMutex mutex;
     WORD sequence;

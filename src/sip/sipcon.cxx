@@ -216,7 +216,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   const PStringToString & query = adjustedDestination.GetQueryVars();
   for (PINDEX i = 0; i < query.GetSize(); ++i)
-    m_stringOptions.SetAt(HeaderPrefix+query.GetKeyAt(i),
+    m_connStringOptions.SetAt(HeaderPrefix+query.GetKeyAt(i),
                           PURL::UntranslateString(query.GetDataAt(i), PURL::QueryTranslation));
   adjustedDestination.SetQuery(PString::Empty());
 
@@ -1125,15 +1125,15 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   // only allow override of calling party number if the local party
   // name hasn't been first specified by a register handler. i.e a
   // register handler's target number is always used
-  PString number(m_stringOptions("Calling-Party-Number"));
+  PString number(m_connStringOptions("Calling-Party-Number"));
   if (!number.IsEmpty() && myAddress.GetUserName() == endpoint.GetDefaultLocalPartyName())
     myAddress.SetUserName(number);
 
-  PString name(m_stringOptions("Calling-Party-Name"));
+  PString name(m_connStringOptions("Calling-Party-Name"));
   if (!name.IsEmpty())
     myAddress.SetDisplayName(name);
 
-  PString domain(m_stringOptions("Calling-Party-Domain"));
+  PString domain(m_connStringOptions("Calling-Party-Domain"));
   if (!domain.IsEmpty())
     myAddress.SetHostName(domain);
 
@@ -1177,7 +1177,7 @@ PBoolean SIPConnection::SetUpConnection()
 
   SetPhase(SetUpPhase);
 
-  ApplyStringOptions();
+  OnApplyStringOptions();
 
   SIPURL transportAddress;
 
@@ -2275,12 +2275,12 @@ void SIPConnection::OnCreatingINVITE(SIP_PDU & request)
   PTRACE(3, "SIP\tCreating INVITE request");
 
   SIPMIMEInfo & mime = request.GetMIME();
-  for (PINDEX i = 0; i < m_stringOptions.GetSize(); ++i) {
-    PCaselessString key = m_stringOptions.GetKeyAt(i);
+  for (PINDEX i = 0; i < m_connStringOptions.GetSize(); ++i) {
+    PCaselessString key = m_connStringOptions.GetKeyAt(i);
     if (key.NumCompare(HeaderPrefix) == EqualTo) {
-      PString data = m_stringOptions.GetDataAt(i);
+      PString data = m_connStringOptions.GetDataAt(i);
       if (!data.IsEmpty()) {
-        mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), m_stringOptions.GetDataAt(i));
+        mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), m_connStringOptions.GetDataAt(i));
         if (key == SIP_HEADER_REPLACES)
           mime.SetRequire("replaces", false);
       }

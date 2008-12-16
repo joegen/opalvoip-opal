@@ -533,7 +533,9 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & /*connection*/, unsi
 
 PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  PTRACE(3, "OpalMan\tOn incoming connection " << connection);
+  PTRACE(3, "OpalMan\tOnIncoming connection " << connection);
+
+  connection.OnApplyStringOptions();
 
   if (!OnIncomingConnection(connection))
     return PFalse;
@@ -1545,6 +1547,14 @@ void OpalManager::AddIMMediaFormats(OpalMediaFormatList & mediaFormats, const Op
 #if OPAL_HAS_RFC4103
   mediaFormats += OpalT140;
 #endif
+}
+
+void OpalManager::OnApplyStringOptions(
+  OpalConnection & conn,
+  OpalConnection::StringOptions & stringOptions
+)
+{
+  conn.ApplyStringOptions(stringOptions);
 }
 
 /////////////////////////////////////////////////////////////////////////////
