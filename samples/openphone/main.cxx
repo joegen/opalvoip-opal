@@ -174,6 +174,8 @@ static const wxChar FaxGroup[] = wxT("/Fax");
 DEF_FIELD(FaxStationIdentifier);
 DEF_FIELD(FaxReceiveDirectory);
 DEF_FIELD(FaxSpanDSP);
+DEF_FIELD(FaxSyncMode);
+static const wxChar * FaxSyncModes[] = { wxT("Wait"), wxT("Timeout"), wxT("UserInput"), wxT("InBand") };
 
 static const wxChar CodecsGroup[] = wxT("/Codecs");
 static const wxChar CodecNameKey[] = wxT("Name");
@@ -829,6 +831,8 @@ bool MyManager::Initialise()
     m_faxEP->SetDefaultDirectory(str);
   if (config->Read(FaxSpanDSPKey, &str))
     m_faxEP->SetSpanDSP(str);
+  if (config->Read(FaxSyncModeKey, &str))
+    m_faxEP->SetDefaultStringOption("Fax-Sync-Mode", str);
 #endif
 
   ////////////////////////////////////////
@@ -3362,6 +3366,15 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(FaxStationIdentifier, m_manager.m_faxEP->GetDefaultDisplayName());
   INIT_FIELD(FaxReceiveDirectory, m_manager.m_faxEP->GetDefaultDirectory());
   INIT_FIELD(FaxSpanDSP, m_manager.m_faxEP->GetSpanDSP());
+
+  PwxString syncMode = m_manager.m_faxEP->GetDefaultStringOptions()("Fax-Sync-Mode");
+  for (m_FaxSyncMode = 0; m_FaxSyncMode < PARRAYSIZE(FaxSyncModes); ++m_FaxSyncMode) {
+    if (syncMode == FaxSyncModes[m_FaxSyncMode])
+      break;
+  }
+  if (m_FaxSyncMode >= PARRAYSIZE(FaxSyncModes))
+    m_FaxSyncMode = 2;
+  FindWindowByName(FaxSyncModeKey)->SetValidator(wxGenericValidator(&m_FaxSyncMode));
 #else
   RemoveNotebookPage(this, wxT("Fax"));
 #endif
@@ -3707,6 +3720,8 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(FaxStationIdentifier, m_manager.m_faxEP->SetDefaultDisplayName);
   SAVE_FIELD(FaxReceiveDirectory, m_manager.m_faxEP->SetDefaultDirectory);
   SAVE_FIELD(FaxSpanDSP, m_manager.m_faxEP->SetSpanDSP);
+  m_manager.m_faxEP->SetDefaultStringOption("Fax-Sync-Mode", FaxSyncModes[m_FaxSyncMode]);
+  config->Write(FaxSyncModeKey, FaxSyncModes[m_FaxSyncMode]);
 #endif
 
   ////////////////////////////////////////
