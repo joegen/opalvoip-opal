@@ -725,13 +725,7 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
   if (connection != NULL)
     return false;
 
-  connection = CreateConnection(call, filename, receive, userData, stringOptions);
-  if (connection == NULL)
-    return false;
-
-  connectionsActive.SetAt(connection->GetToken(), connection);
-
-  return true;
+  return AddConnection(CreateConnection(call, filename, receive, userData, stringOptions));
 }
 
 
@@ -895,12 +889,10 @@ OpalT38Connection::OpalT38Connection(OpalCall & call,
                                      OpalConnection::StringOptions * stringOptions)
   : OpalFaxConnection(call, ep, filename, receive, token, stringOptions)
   , m_forceFaxAudio(false)
-  , m_waitMode(T38Mode_Auto)
+  , m_syncMode(Mode_UserInput)
   , m_faxMode(false)
 {
   PTRACE(3, "FAX\tCreated T.38 connection with token '" << callToken << "'");
-
-  m_faxTimer.SetNotifier(PCREATE_NOTIFIER(OnFaxChangeTimeout));
 }
 
 
@@ -912,17 +904,44 @@ OpalT38Connection::~OpalT38Connection()
 void OpalT38Connection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
 {
   m_forceFaxAudio = stringOptions.Contains("Force-Fax-Audio");
+
+  PCaselessString opt = stringOptions("Fax-Sync-Mode");
+  if (opt == "Wait")
+    m_syncMode = Mode_Wait;
+  else if (opt == "Timeout")
+    m_syncMode = Mode_Timeout;
+  else if (opt == "UserInput")
+    m_syncMode = Mode_UserInput;
+  else if (opt == "InBand")
+    m_syncMode = Mode_InBand;
+
   OpalFaxConnection::ApplyStringOptions(stringOptions);
 }
 
 
 void OpalT38Connection::OnEstablished()
 {
-  PWaitAndSignal mutex(m_mutex);
+  OpalFaxConnection::OnEstablished();
 
-  if (!m_faxMode && (m_waitMode & T38Mode_Timeout) != 0) {
-    m_faxTimer = m_receive ? 8000 : 2000;
-    PTRACE(1, "T38\tStarting timer for mode change");
+  if (m_faxMode)
+    return;
+
+  switch (m_syncMode) {
+    case Mode_Timeout :
+      m_faxTimer.SetNotifier(PCREATE_NOTIFIER(OnFaxChangeTimeout));
+      m_faxTimer = 2000;
+      PTRACE(1, "T38\tStarting timer for mode change");
+      break;
+
+    case Mode_UserInput :
+    case Mode_InBand :
+      m_faxTimer.SetNotifier(PCREATE_NOTIFIER(OnSendCNGCED));
+      m_faxTimer = 1000;
+      PTRACE(1, "T38\tStarting timer for CNG/CED tone");
+      break;
+
+    default :
+      break;
   }
 }
 
@@ -955,10 +974,26 @@ OpalMediaFormatList OpalT38Connection::GetMediaFormats() const
 
 PBoolean OpalT38Connection::SendUserInputTone(char tone, unsigned /*duration*/)
 {
-  if (((m_waitMode & T38Mode_NSECED) != 0) && (tolower(tone) == 'y'))
+  if (!m_faxMode && m_syncMode != Mode_Wait && toupper(tone) == (m_receive ? 'X' : 'Y'))
     RequestFaxMode(true);
-
   return true;
+}
+
+
+void OpalT38Connection::OnSendCNGCED(PTimer & timer, INT)
+{
+  if (m_syncMode == Mode_UserInput) {
+    if (m_receive) {
+      // Cadence for CED is single tone, but we repeat just in case
+      OnUserInputTone('Y', 3600);
+      timer = 5000;
+    }
+    else {
+      // Cadence for CNG is 500ms on 3 seconds off
+      OnUserInputTone('X', 500);
+      timer = 3000;
+    }
+  }
 }
 
 
@@ -993,8 +1028,6 @@ void OpalT38Connection::RequestFaxMode(bool toFax)
 #if PTRACING
   const char * modeStr = toFax ? "fax" : "audio";
 #endif
-
-  PWaitAndSignal mutex(m_mutex);
 
   if (toFax == m_faxMode) {
     PTRACE(1, "T38\tAlready in mode " << modeStr);
