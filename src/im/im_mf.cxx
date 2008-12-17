@@ -159,7 +159,7 @@ const OpalMediaFormat & GetOpalT140()
 OPAL_INSTANTIATE_MEDIATYPE(t140, OpalT140MediaType);
 
 //////////////////////////////////////////////////////////////////////////////////////////
-
+#if OPAL_HAS_IM
 OpalIMMediaStream::OpalIMMediaStream(
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
@@ -179,3 +179,5 @@ bool OpalIMMediaStream::PushIM(const T140String & text)
       return false;
   return true;
 }
+
+#endif // OPAL_HAS_IM
