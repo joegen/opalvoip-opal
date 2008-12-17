@@ -655,6 +655,18 @@ class OpalEndPoint : public PObject
      */
     const OpalListenerList & GetListeners() const { return listeners; }
 
+    /**Get the default options for created connections.
+      */
+    const OpalConnection::StringOptions & GetDefaultStringOptions() const { return m_defaultStringOptions; }
+
+    /**Set the default options for created connections.
+      */
+    void SetDefaultStringOptions(const OpalConnection::StringOptions & opts) { m_defaultStringOptions = opts; }
+
+    /**Set the default option for created connections.
+      */
+    void SetDefaultStringOption(const PCaselessString & key, const PString & data) { m_defaultStringOptions.SetAt(key, data); }
+
     /**Get the default mode for sending User Input Indications.
       */
     OpalConnection::SendUserInputModes GetSendUserInputMode() const { return defaultSendUserInputMode; }
@@ -702,6 +714,7 @@ class OpalEndPoint : public PObject
     PString         defaultDisplayName;
 
     unsigned initialBandwidth;  // in 100s of bits/sev
+    OpalConnection::StringOptions      m_defaultStringOptions;
     OpalConnection::SendUserInputModes defaultSendUserInputMode;
 
     OpalListenerList   listeners;

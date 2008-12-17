@@ -353,6 +353,8 @@ PBoolean OpalEndPoint::AddConnection(OpalConnection * connection)
   if (connection == NULL)
     return PFalse;
 
+  connection->SetStringOptions(m_defaultStringOptions, false);
+
   OnNewConnection(connection->GetCall(), *connection);
 
   connectionsActive.SetAt(connection->GetToken(), connection);
