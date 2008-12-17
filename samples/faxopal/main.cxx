@@ -56,6 +56,7 @@ void FaxOPAL::Main()
              "G-gk-id:"
              "h-help."
              "H-h323:"
+             "m-mode:"
              "N-stun:"
              "p-password:"
              "r-register:"
@@ -81,7 +82,12 @@ void FaxOPAL::Main()
             "  --help                  : print this help message.\n"
             "  -d or --directory dir   : Set default directory for fax receive\n"
             "  -s or --spandsp exe     : Set location of spandsp_util.exe\n"
-            "  -a or -audio            : Send fax as G.711 audio\n"
+            "  -a or --audio           : Send fax as G.711 audio\n"
+            "  -m or --mode m          : T.38 synchronisation mode:\n"
+            "                            \"Wait\" wait for remote to switch,\n"
+            "                            \"Timeout\" switch after a short time\n"
+            "                            \"UserInput\" send/detect CNG/CED tones\n"
+            "                            \"InBand\" send/detect CNG/CED tones in band\n"
             "  -u or --user name       : Set local username, defaults to OS username.\n"
             "  -p or --password pwd    : Set password for authentication.\n"
             "  -S or --sip interface   : SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
@@ -162,6 +168,8 @@ void FaxOPAL::Main()
     fax->SetDefaultDirectory(args.GetOptionString('d'));
   if (args.HasOption('s'))
     fax->SetSpanDSP(args.GetOptionString('s'));
+  if (args.HasOption('m'))
+    fax->SetDefaultStringOption("Fax-Sync-Mode", args.GetOptionString('m'));
 
   // Route SIP/H.323 calls to the Fax endpoint
 #if OPAL_SIP
