@@ -517,34 +517,7 @@ RTP_Session::RTP_Session(const Params & params)
   lastRRSequenceNumber = 0;
   consecutiveOutOfOrderPackets = 0;
 
-  packetsSent = 0;
-  rtcpPacketsSent = 0;
-  octetsSent = 0;
-  packetsReceived = 0;
-  octetsReceived = 0;
-  packetsLost = 0;
-  packetsOutOfOrder = 0;
-  averageSendTime = 0;
-  maximumSendTime = 0;
-  minimumSendTime = 0;
-  averageReceiveTime = 0;
-  maximumReceiveTime = 0;
-  minimumReceiveTime = 0;
-  jitterLevel = 0;
-  maximumJitterLevel = 0;
-  markerRecvCount = 0;
-  markerSendCount = 0;
-
-  txStatisticsCount = 0;
-  rxStatisticsCount = 0;
-  averageSendTimeAccum = 0;
-  maximumSendTimeAccum = 0;
-  minimumSendTimeAccum = 0xffffffff;
-  averageReceiveTimeAccum = 0;
-  maximumReceiveTimeAccum = 0;
-  minimumReceiveTimeAccum = 0xffffffff;
-  packetsLostSinceLastRR = 0;
-  lastTransitTime = 0;
+  ClearStatistics();
 
   lastReceivedPayloadType = RTP_DataFrame::IllegalPayloadType;
 
@@ -583,6 +556,40 @@ RTP_Session::~RTP_Session()
     delete userData;
   delete m_encodingHandler;
 }
+
+
+void RTP_Session::ClearStatistics()
+{
+  packetsSent = 0;
+  rtcpPacketsSent = 0;
+  octetsSent = 0;
+  packetsReceived = 0;
+  octetsReceived = 0;
+  packetsLost = 0;
+  packetsOutOfOrder = 0;
+  averageSendTime = 0;
+  maximumSendTime = 0;
+  minimumSendTime = 0;
+  averageReceiveTime = 0;
+  maximumReceiveTime = 0;
+  minimumReceiveTime = 0;
+  jitterLevel = 0;
+  maximumJitterLevel = 0;
+  markerRecvCount = 0;
+  markerSendCount = 0;
+
+  txStatisticsCount = 0;
+  rxStatisticsCount = 0;
+  averageSendTimeAccum = 0;
+  maximumSendTimeAccum = 0;
+  minimumSendTimeAccum = 0xffffffff;
+  averageReceiveTimeAccum = 0;
+  maximumReceiveTimeAccum = 0;
+  minimumReceiveTimeAccum = 0xffffffff;
+  packetsLostSinceLastRR = 0;
+  lastTransitTime = 0;
+}
+
 
 void RTP_Session::SendBYE()
 {
@@ -2156,6 +2163,8 @@ void RTP_Session::SetEncoding(const PString & newEncoding)
     m_encoding  = newEncoding;
     m_encodingHandler = newHandler;
   }
+
+  ClearStatistics();
 
   EncodingLock(*this)->OnStart(*this);
 }
