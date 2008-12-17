@@ -57,8 +57,6 @@ class OpalIMMediaType : public OpalMediaTypeDefinition
     virtual bool UsesRTP() const { return false; }
 };
 
-#endif // OPAL_HAS_IM
-
 
 class OpalIMMediaStream : public OpalMediaStream
 {
@@ -81,6 +79,8 @@ class OpalIMMediaStream : public OpalMediaStream
   protected:
     RFC4103Context rfc4103;
 };
+
+#endif // OPAL_HAS_IM
 
 
 #endif // OPAL_IM_IM_H
