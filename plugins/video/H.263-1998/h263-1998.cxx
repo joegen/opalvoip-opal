@@ -1811,7 +1811,7 @@ extern "C" {
       return NULL;
     }
 
-    FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
+    FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_FATAL);
     FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
 
     if (version < PLUGIN_CODEC_VERSION_OPTIONS) {
