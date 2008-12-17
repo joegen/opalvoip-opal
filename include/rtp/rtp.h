@@ -684,6 +684,10 @@ class RTP_Session : public PObject
       unsigned packets   ///<  Number of packets between callbacks
     );
 
+    /**Clear statistics
+      */
+    void ClearStatistics();
+
     /**Get total number of packets sent in session.
       */
     DWORD GetPacketsSent() const { return packetsSent; }
