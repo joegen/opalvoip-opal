@@ -445,12 +445,11 @@ class OpalT38Connection : public OpalFaxConnection
     virtual OpalMediaFormatList GetMediaFormats() const;
 
     // triggers into fax mode
-    enum {
-      T38Mode_Wait         = 0,   // Do nothing and wait for the other end to send a reinvite
-      T38Mode_InBandCED    = 1,   // If receiving, send CED tone in-band. If sending, trigger mode change if CED detected in-band
-      T38Mode_NSECED       = 2,   // If receiving, send CED as RFC2833. If sending, trigger mode change if RFC2833 CED received
-      T38Mode_Timeout      = 4,   // Trigger mode change if has not occurred after 5 seconds
-      T38Mode_Auto         = 7    // All of the above :)
+    enum Mode {
+      Mode_Wait,      // Do nothing and wait for the other end to send to switch to T.38 mode
+      Mode_Timeout,   // Switch to T.38 mode a short time after call is established
+      Mode_UserInput, // Send CNG/CED as UserInput (e.g. RFC2833).
+      Mode_InBand     // Send CNG/CED tone in-band (not yet implemented!)
     };
 
     virtual PBoolean SendUserInputTone(
@@ -459,14 +458,14 @@ class OpalT38Connection : public OpalFaxConnection
     );
 
   protected:
+    PDECLARE_NOTIFIER(PTimer,  OpalT38Connection, OnSendCNGCED);
     PDECLARE_NOTIFIER(PTimer,  OpalT38Connection, OnFaxChangeTimeout);
     PDECLARE_NOTIFIER(PThread, OpalT38Connection, OpenFaxStreams);
     void RequestFaxMode(bool fax);
 
-    bool     m_forceFaxAudio;
-    unsigned m_waitMode;
+    bool m_forceFaxAudio;
+    Mode m_syncMode;
 
-    PMutex m_mutex;
     bool   m_faxMode;  // false if audio, true if fax
     PTimer m_faxTimer;
 };
