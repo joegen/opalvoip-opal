@@ -611,6 +611,10 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
                                              OpalRTPSessionManager & rtpSessions,
                                              SDPSessionDescription & sdp)
 {
+  OpalMediaType::AutoStartMode autoStart = GetAutoStart(mediaType);
+  if (autoStart == OpalMediaType::DontOffer)
+    return false;
+
   OpalMediaFormatList formats = GetLocalMediaFormats();
 
   // See if any media formats of this session id, so don't create unused RTP session
@@ -738,11 +742,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   }
   else {
     localMedia->AddMediaFormats(formats, mediaType);
-
-    SDPMediaDescription::Direction dir = CanAutoStartMediaType(mediaType, true) ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
-    if (CanAutoStartMediaType(mediaType, false))
-      dir = dir == SDPMediaDescription::RecvOnly ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
-    localMedia->SetDirection(dir);
+    localMedia->SetDirection((SDPMediaDescription::Direction)autoStart);
   }
 
   // Set format if we have an RTP payload type for RFC2833 and/or NSE
@@ -776,8 +776,6 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     PTRACE(1, "SIP\tUnknown media type " << mediaType << " in session " << rtpSessionId);
     return false;
   }
-
-  
 
   // find the payload type used for telephone-event, if present
   const SDPMediaFormatList & sdpMediaList = incomingMedia->GetSDPMediaFormats();
@@ -894,9 +892,10 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(rtpSessionId);
   if (GetPhase() < EstablishedPhase) {
     // If processing initial INVITE and video, obey the auto-start flags
-    if (!CanAutoStartMediaType(mediaType, false))
+    OpalMediaType::AutoStartMode autoStart = GetAutoStart(mediaType);
+    if ((autoStart&OpalMediaType::Transmit) == 0)
       otherSidesDir = (otherSidesDir&SDPMediaDescription::SendOnly) != 0 ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive;
-    if (!CanAutoStartMediaType(mediaType, true))
+    if ((autoStart&OpalMediaType::Receive) == 0)
       otherSidesDir = (otherSidesDir&SDPMediaDescription::RecvOnly) != 0 ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
   }
 

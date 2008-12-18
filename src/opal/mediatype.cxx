@@ -89,10 +89,9 @@ OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType,
                                                  const char *,
 #endif
                                                  unsigned preferredSessionId,
-                                                 bool autoStart)
+                                                 OpalMediaType::AutoStartMode autoStart)
   : m_mediaType(mediaType)
-  , m_autoStartReceive(autoStart)
-  , m_autoStartTransmit(autoStart)
+  , m_autoStart(autoStart)
 #if OPAL_SIP
   , m_sdpType(sdpType != NULL ? sdpType : "")
 #endif
@@ -186,8 +185,11 @@ RTP_UDP * OpalMediaTypeDefinition::CreateRTPSession(OpalRTPConnection & /*connec
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType, const char * sdpType, unsigned preferredSessionId, bool _autoStart)
-  : OpalMediaTypeDefinition(mediaType, sdpType, preferredSessionId, _autoStart)
+OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType,
+                                         const char * sdpType,
+                                         unsigned preferredSessionId,
+                                         OpalMediaType::AutoStartMode autoStart)
+  : OpalMediaTypeDefinition(mediaType, sdpType, preferredSessionId, autoStart)
 {
 }
 
@@ -205,7 +207,7 @@ OpalMediaSession * OpalRTPAVPMediaType::CreateMediaSession(OpalConnection & conn
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalAudioMediaType::OpalAudioMediaType()
-  : OpalRTPAVPMediaType("audio", "audio", 1, true)
+  : OpalRTPAVPMediaType("audio", "audio", 1, OpalMediaType::ReceiveTransmit)
 {
 }
 
