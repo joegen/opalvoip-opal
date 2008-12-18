@@ -1382,10 +1382,9 @@ class OpalConnection : public PSafeObject
         of that type may be opened later, during the call, by using the
         OpalCall::OpenSourceMediaStreams() function.
       */
-    virtual bool CanAutoStartMediaType(
-      const OpalMediaType & mediaType,  ///< media type to check
-      bool receive                      ///< flag for auto-start receive or transmit
-    );
+    virtual OpalMediaType::AutoStartMode GetAutoStart(
+      const OpalMediaType & mediaType  ///< media type to check
+    ) const;
 
 #if OPAL_HAS_IM
     struct IMInfo : public PObject {
@@ -1482,18 +1481,16 @@ class OpalConnection : public PSafeObject
 
     struct AutoStartInfo {
       unsigned preferredSessionId;  // preferred session ID (only used for originating)
-      bool autoStartReceive;        // if true, this session should receive data when the call is started
-      bool autoStartTransmit;       // if true, this session  should transmit data when the call is started
+      OpalMediaType::AutoStartMode autoStart;// Mode for this session when the call is started
     };
 
     class AutoStartMap : public std::map<OpalMediaType, AutoStartInfo>
     {
       public:
         AutoStartMap();
-        void Initialise(OpalConnection & conn, const OpalConnection::StringOptions & stringOptions);
-        void SetOldOptions(unsigned preferredSessionIndex, const OpalMediaType & mediaType, bool rx, bool tx);
-        bool CanAutoStartMediaType(const OpalMediaType & mediaType, bool receive, bool & autoStart) const;
-        unsigned AutoStartSession(unsigned sessionID, const OpalMediaType & mediaType, bool autoStartReceive, bool autoStartTransmit);
+        void Initialise(const OpalConnection::StringOptions & stringOptions);
+        OpalMediaType::AutoStartMode GetAutoStart(const OpalMediaType & mediaType) const;
+        void SetAutoStart(const OpalMediaType & mediaType, OpalMediaType::AutoStartMode autoStart);
 
       protected:
         bool m_initialised;

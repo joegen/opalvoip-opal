@@ -46,10 +46,9 @@ class OpalIMMediaType : public OpalMediaTypeDefinition
     OpalIMMediaType(
       const char * mediaType,          ///< name of the media type (audio, video etc)
       const char * sdpType,            ///< name of the SDP type 
-      unsigned     preferredSessionId, ///< preferred session ID
-      bool         autoStart = false   ///< Default value for auto-start transmit & receive
+      unsigned     preferredSessionId  ///< preferred session ID
     )
-      : OpalMediaTypeDefinition(mediaType, sdpType, preferredSessionId, autoStart)
+      : OpalMediaTypeDefinition(mediaType, sdpType, preferredSessionId, OpalMediaType::DontOffer)
     { }
 
     PString GetRTPEncoding() const { return PString::Empty(); }

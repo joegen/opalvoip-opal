@@ -868,25 +868,25 @@ class OpalManager : public PObject
 
     //
     // these functions are deprecated and used only for backwards compatibility
-    // applications should use OpalConnection::CanAutoStartMediaType to check whether
+    // applications should use OpalConnection::GetAutoStart() to check whether
     // a specific media type can be auto-started
     //
 
     /**See if should auto-start receive video channels on connection.
      */
-    bool CanAutoStartReceiveVideo() const { return OpalMediaType::Video().GetDefinition()->GetAutoStartReceive(); }
+    bool CanAutoStartReceiveVideo() const { return (OpalMediaType::Video().GetAutoStart()&OpalMediaType::Receive) != 0; }
 
     /**Set if should auto-start receive video channels on connection.
      */
-    void SetAutoStartReceiveVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStartReceive(can); }
+    void SetAutoStartReceiveVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStart(CanAutoStartTransmitVideo() ? can ? OpalMediaType::ReceiveTransmit : OpalMediaType::Transmit : can ? OpalMediaType::Receive : OpalMediaType::OfferInactive); }
 
     /**See if should auto-start transmit video channels on connection.
      */
-    bool CanAutoStartTransmitVideo() const { return OpalMediaType::Video().GetDefinition()->GetAutoStartTransmit(); }
+    bool CanAutoStartTransmitVideo() const { return (OpalMediaType::Video().GetAutoStart()&OpalMediaType::Transmit) != 0; }
 
     /**Set if should auto-start transmit video channels on connection.
      */
-    void SetAutoStartTransmitVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStartTransmit(can); }
+    void SetAutoStartTransmitVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStart(CanAutoStartReceiveVideo() ? can ? OpalMediaType::ReceiveTransmit : OpalMediaType::Receive : can ? OpalMediaType::Transmit : OpalMediaType::OfferInactive); }
 
 #endif
 

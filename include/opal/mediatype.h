@@ -88,9 +88,18 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     static OpalMediaTypeFactory::KeyList_T GetList() { return OpalMediaTypeFactory::GetKeyList(); }
 
 #if OPAL_SIP
-  public:
     static OpalMediaType GetMediaTypeFromSDP(const std::string & key, const std::string & transport);
 #endif  // OPAL_SIP
+
+    enum AutoStartMode {
+      DontOffer = -1, // Do not change order of enum as useful for bitmasking rx/tx
+      OfferInactive,
+      Receive,
+      Transmit,
+      ReceiveTransmit,
+      TransmitReceive = ReceiveTransmit
+    };
+    AutoStartMode GetAutoStart() const;
 };
 
 ostream & operator << (ostream & strm, const OpalMediaType & mediaType);
@@ -120,28 +129,20 @@ class OpalMediaTypeDefinition
       const char * mediaType,          ///< name of the media type (audio, video etc)
       const char * sdpType,            ///< name of the SDP type 
       unsigned     preferredSessionId, ///< preferred session ID
-      bool         autoStart = false   ///< Default value for auto-start transmit & receive
+      OpalMediaType::AutoStartMode autoStart = OpalMediaType::DontOffer   ///< Default value for auto-start transmit & receive
     );
 
     // Needed to avoid gcc warning about classes with virtual functions and 
     //  without a virtual destructor
     virtual ~OpalMediaTypeDefinition() { }
 
-    /** Get flag for media type can auto-start receive on call initiation.
+    /** Get flags for media type can auto-start on call initiation.
       */
-    bool GetAutoStartReceive() const { return m_autoStartReceive; }
+    OpalMediaType::AutoStartMode GetAutoStart() const { return m_autoStart; }
 
     /** Set flag for media type can auto-start receive on call initiation.
       */
-    void SetAutoStartReceive(bool v) { m_autoStartReceive = v; }
-
-    /** Get flag for media type can auto-start transmit on call initiation.
-      */
-    bool GetAutoStartTransmit() const { return m_autoStartTransmit; }
-
-    /** Set flag for media type can auto-start transmit on call initiation.
-      */
-    void SetAutoStartTransmit(bool v) { m_autoStartTransmit = v; }
+    void SetAutoStart(OpalMediaType::AutoStartMode v) { m_autoStart = v; }
 
     /** Indicate type uses RTP for transport.
         If false, then it uses a generic OpaMediaSession
@@ -199,8 +200,7 @@ class OpalMediaTypeDefinition
     static SessionIDToMediaTypeMap_T & GetSessionIDToMediaTypeMap();
 
     std::string m_mediaType;
-    bool        m_autoStartReceive;
-    bool        m_autoStartTransmit;
+    OpalMediaType::AutoStartMode m_autoStart;
 
 #if OPAL_SIP
   public:
@@ -282,9 +282,8 @@ class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
     OpalRTPAVPMediaType(
       const char * mediaType, 
       const char * sdpType, 
-          unsigned preferredSessionId,
-              bool autoStart = false
-
+      unsigned     preferredSessionId,
+      OpalMediaType::AutoStartMode autoStart = OpalMediaType::DontOffer
     );
 
     virtual PString GetRTPEncoding() const;
@@ -336,6 +335,9 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 };
 
 #endif // OPAL_T38_CAPABILITY
+
+
+__inline OpalMediaType::AutoStartMode OpalMediaType::GetAutoStart() const { return GetDefinition()->GetAutoStart(); }
 
 
 #endif // OPAL_OPAL_MEDIATYPE_H
