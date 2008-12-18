@@ -4724,12 +4724,14 @@ unsigned H323Connection::GetExternalSessionID(unsigned internalSessionID, const 
   mediaTypeToInternalSessionIDMap[mediaType] = internalSessionID;
   
   // if a session ID 1&2 can be assigned, do it. See H.245 B.3.1, p. 112, H2250LogicalChannelParameters
-  if (mediaType == OpalMediaType::Audio() && defaultAudioSessionIDAssigned == PFalse) {
+  if (!defaultAudioSessionIDAssigned && mediaType == OpalMediaType::Audio()) {
     PTRACE(3, "H323\tMapping session ID " << internalSessionID << " to primary session ID 1");
     defaultAudioSessionIDAssigned = PTrue;
     internalToExternalSessionIDMap[internalSessionID] = 1;
     return 1;
-  } else if (mediaType == OpalMediaType::Video() && defaultVideoSessionIDAssigned == PFalse) {
+  }
+
+  if (!defaultVideoSessionIDAssigned && mediaType == OpalMediaType::Video()) {
     PTRACE(3, "H323\tMapping session ID " << internalSessionID << " to primary session ID 2");
     defaultVideoSessionIDAssigned = PTrue;
     internalToExternalSessionIDMap[internalSessionID] = 2;
@@ -4761,6 +4763,21 @@ unsigned H323Connection::GetInternalSessionID(unsigned externalSessionID, const 
     internalSessionID = iter->second;
   }
   
+  // if a session ID 1&2 can be assigned, do it. See H.245 B.3.1, p. 112, H2250LogicalChannelParameters
+  if (!defaultAudioSessionIDAssigned && mediaType == OpalMediaType::Audio()) {
+    PTRACE(3, "H323\tMapping session ID " << internalSessionID << " to primary session ID 1");
+    defaultAudioSessionIDAssigned = PTrue;
+    internalToExternalSessionIDMap[internalSessionID] = 1;
+    return 1;
+  }
+  
+  if (!defaultVideoSessionIDAssigned && mediaType == OpalMediaType::Video()) {
+    PTRACE(3, "H323\tMapping session ID " << internalSessionID << " to primary session ID 2");
+    defaultVideoSessionIDAssigned = PTrue;
+    internalToExternalSessionIDMap[internalSessionID] = 2;
+    return 2;
+  }
+
   // also update the internal <-> external session ID map
   if (IsH245Master()) {
     if (externalSessionID != 0 && internalSessionID == 0) {
