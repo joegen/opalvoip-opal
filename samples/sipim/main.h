@@ -32,6 +32,9 @@
 #include <opal/manager.h>
 #include <sip/sipep.h>
 
+#if !OPAL_HAS_IM
+#error Cannot compile IM sample program without IM!
+#endif
 
 class MyManager : public OpalManager
 {

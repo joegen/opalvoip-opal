@@ -31,6 +31,8 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#if OPAL_HAS_IM
+
 #include <opal/mediafmt.h>
 #include <opal/connection.h>
 #include <opal/patch.h>
@@ -179,5 +181,6 @@ bool OpalIMMediaStream::PushIM(const T140String & text)
       return false;
   return true;
 }
+
 
 #endif // OPAL_HAS_IM

@@ -34,9 +34,9 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
-#include <opal/mediastrm.h>
-
 #if OPAL_HAS_IM
+
+#include <opal/mediastrm.h>
 
 #include <im/rfc4103.h>
 
@@ -80,7 +80,7 @@ class OpalIMMediaStream : public OpalMediaStream
     RFC4103Context rfc4103;
 };
 
-#endif // OPAL_HAS_IM
 
+#endif // OPAL_HAS_IM
 
 #endif // OPAL_IM_IM_H
