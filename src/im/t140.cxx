@@ -66,7 +66,7 @@ class SDPT140MediaDescription : public SDPRTPAVPMediaDescription
 /////////////////////////////////////////////////////////////////////////////
 
 OpalT140MediaType::OpalT140MediaType()
-  : OpalRTPAVPMediaType("t140", "text", 7, false)
+  : OpalRTPAVPMediaType("t140", "text", 7)
 {
 }
 
