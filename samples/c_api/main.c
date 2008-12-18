@@ -101,6 +101,10 @@ OpalMessage * MySendCommand(OpalMessage * command, const char * errorMessage)
 
 #if LOCAL_MEDIA
 
+#ifdef _MSC_VER
+#pragma warning(disable:4100)
+#endif
+
 int MyReadMediaData(const char * token, const char * id, const char * format, void * userData, void * data, int size)
 {
   static FILE * file = NULL;
@@ -135,7 +139,11 @@ int MyWriteMediaData(const char * token, const char * id, const char * format, v
   return fwrite(data, 1, size, file);
 }
 
+#ifdef _MSC_VER
+#pragma warning(default:4100)
 #endif
+
+#endif // LOCAL_MEDIA
 
 
 int InitialiseOPAL()
