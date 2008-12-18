@@ -456,7 +456,8 @@ Global
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Win32.Build.0 = Debug|Win32
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I).ActiveCfg = Debug|Win32
-		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Windows Mobile 6 Professional SDK (ARMV4I)
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).Build.0 = Debug|Windows Mobile 6 Professional SDK (ARMV4I)
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Windows Mobile 6 Standard SDK (ARMV4I).ActiveCfg = Debug|Win32
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.No Trace|Win32.ActiveCfg = Debug|Win32
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
@@ -514,8 +515,6 @@ Global
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I).Build.0 = Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I).Deploy.0 = Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Windows Mobile 6 Professional SDK (ARMV4I)
-		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).Build.0 = Debug|Windows Mobile 6 Professional SDK (ARMV4I)
-		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).Deploy.0 = Debug|Windows Mobile 6 Professional SDK (ARMV4I)
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|Windows Mobile 6 Standard SDK (ARMV4I).ActiveCfg = Debug|Windows Mobile 6 Standard SDK (ARMV4I)
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|Windows Mobile 6 Standard SDK (ARMV4I).Build.0 = Debug|Windows Mobile 6 Standard SDK (ARMV4I)
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|Windows Mobile 6 Standard SDK (ARMV4I).Deploy.0 = Debug|Windows Mobile 6 Standard SDK (ARMV4I)
