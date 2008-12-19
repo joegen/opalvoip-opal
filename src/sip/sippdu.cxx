@@ -2759,6 +2759,19 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
       if (!lock.IsLocked())
         return false;
 
+      if (response.GetStatusCode() < 300) {
+        // Need to update where the ACK goes to when have 2xx response
+        SIPURL dest;
+        SIPDialogContext & dialog = connection->GetDialog();
+        const PStringList & routeSet = dialog.GetRouteSet();
+        if (routeSet.IsEmpty())
+          dest = dialog.GetRequestURI();
+        else
+          dest = routeSet.front();
+        m_remoteAddress = dest.GetHostAddress();
+        PTRACE(4, "SIP\tTransaction remote address changed to " << m_remoteAddress);
+      }
+
       // ACK constructed following 17.1.1.3
       SIPAck ack(*this, response);
       if (!SendPDU(ack))
