@@ -1044,33 +1044,36 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
   if (!SendReport())
     return e_AbortTransport;
 
-  if (rxStatisticsCount < rxStatisticsInterval)
-    return e_ProcessPacket;
+  if (rxStatisticsCount >= rxStatisticsInterval) {
 
-  rxStatisticsCount = 0;
+    rxStatisticsCount = 0;
 
-  averageReceiveTime = averageReceiveTimeAccum/rxStatisticsInterval;
-  maximumReceiveTime = maximumReceiveTimeAccum;
-  minimumReceiveTime = minimumReceiveTimeAccum;
+    averageReceiveTime = averageReceiveTimeAccum/rxStatisticsInterval;
+    maximumReceiveTime = maximumReceiveTimeAccum;
+    minimumReceiveTime = minimumReceiveTimeAccum;
 
-  averageReceiveTimeAccum = 0;
-  maximumReceiveTimeAccum = 0;
-  minimumReceiveTimeAccum = 0xffffffff;
+    averageReceiveTimeAccum = 0;
+    maximumReceiveTimeAccum = 0;
+    minimumReceiveTimeAccum = 0xffffffff;
 
-  PTRACE(4, "RTP\tSession " << sessionID << ", receive statistics:"
-            " packets=" << packetsReceived <<
-            " octets=" << octetsReceived <<
-            " lost=" << packetsLost <<
-            " tooLate=" << GetPacketsTooLate() <<
-            " order=" << packetsOutOfOrder <<
-            " avgTime=" << averageReceiveTime <<
-            " maxTime=" << maximumReceiveTime <<
-            " minTime=" << minimumReceiveTime <<
-            " jitter=" << (jitterLevel >> 7) <<
-            " maxJitter=" << (maximumJitterLevel >> 7));
+    PTRACE(4, "RTP\tSession " << sessionID << ", receive statistics:"
+              " packets=" << packetsReceived <<
+              " octets=" << octetsReceived <<
+              " lost=" << packetsLost <<
+              " tooLate=" << GetPacketsTooLate() <<
+              " order=" << packetsOutOfOrder <<
+              " avgTime=" << averageReceiveTime <<
+              " maxTime=" << maximumReceiveTime <<
+              " minTime=" << minimumReceiveTime <<
+              " jitter=" << (jitterLevel >> 7) <<
+              " maxJitter=" << (maximumJitterLevel >> 7));
 
-  if (userData != NULL)
-    userData->OnRxStatistics(*this);
+    if (userData != NULL)
+      userData->OnRxStatistics(*this);
+  }
+
+  for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) 
+    f->notifier(frame, (INT)this);
 
   return e_ProcessPacket;
 }
@@ -1465,6 +1468,17 @@ PBoolean RTP_Session::WriteOOBData(RTP_DataFrame &, bool)
 {
   return true;
 }
+
+void RTP_Session::AddFilter(const PNotifier & filter)
+{
+  // ensures that a filter is added only once
+  for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) {
+    if (f->notifier == filter)
+      return;
+  }
+  filters.Append(new Filter(filter));
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
