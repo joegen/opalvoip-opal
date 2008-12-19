@@ -2874,20 +2874,24 @@ PObject::Comparison SIPSubscribe::EventPackage::InternalCompare(PINDEX offset, P
     offset++;
   }
 
-  PINDEX myIdPos = Find("id", offset);
+  const char * myIdPtr = strstr(theArray+offset, "id");
   const char * theirIdPtr = strstr(cstr+offset, "id");
-  if (myIdPos == P_MAX_INDEX && theirIdPtr == NULL)
+  if (myIdPtr == NULL && theirIdPtr == NULL)
     return EqualTo;
 
-  PINDEX myIdLen = Find(';', myIdPos);
-  if (myIdLen != P_MAX_INDEX)
-    myIdLen -= myIdPos;
+  const char * myIdEnd = strchr(myIdPtr, ';');
+  PINDEX myIdLen = myIdEnd != NULL ? myIdEnd - myIdPtr : strlen(myIdPtr);
 
   const char * theirIdEnd = strchr(theirIdPtr, ';');
-  if (theirIdEnd != NULL && myIdLen < (theirIdEnd - theirIdPtr))
+  PINDEX theirIdLen = theirIdEnd != NULL ? theirIdEnd - theirIdPtr : strlen(theirIdPtr);
+
+  if (myIdLen < theirIdLen)
     return LessThan;
 
-  return PCaselessString::InternalCompare(myIdPos, myIdLen, theirIdPtr);
+  if (myIdLen > theirIdLen)
+    return GreaterThan;
+
+  return (Comparison)strncmp(myIdPtr, theirIdPtr, theirIdLen);
 }
 
 
