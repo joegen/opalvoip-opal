@@ -663,6 +663,13 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReje
     SetAlternates(rrj.m_altGKInfo.m_alternateGatekeeper,
                   rrj.m_altGKInfo.m_altGKisPermanent);
 
+  // Update registration fail reason from last request fail reason
+  switch(lastRequest->rejectReason) {
+	case H225_RegistrationRejectReason::e_duplicateAlias : registrationFailReason = DuplicateAlias; break;
+	case H225_RegistrationRejectReason::e_securityDenial: registrationFailReason = SecurityDenied; break;
+	default: ;
+  }
+  
   endpoint.OnRegistrationReject();
 
   return PTrue;
