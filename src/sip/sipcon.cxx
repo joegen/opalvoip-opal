@@ -612,7 +612,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
                                              SDPSessionDescription & sdp)
 {
   OpalMediaType::AutoStartMode autoStart = GetAutoStart(mediaType);
-  if (autoStart == OpalMediaType::DontOffer)
+  if (rtpSessionId == 0 && autoStart == OpalMediaType::DontOffer)
     return false;
 
   OpalMediaFormatList formats = GetLocalMediaFormats();
