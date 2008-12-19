@@ -1629,7 +1629,7 @@ void SIP_PDU::Construct(Methods meth,
   str << "SIP/" << versionMajor << '.' << versionMinor << '/'
       << via.Left(dollar).ToUpper() << ' ';
   PIPSocket::Address ip;
-  WORD port;
+  WORD port = 5060;
   if (via.GetIpAndPort(ip, port))
     str << ip << ':' << port;
   else
