@@ -56,6 +56,7 @@ void IvrOPAL::Main()
              "H-h323:"
              "N-stun:"
              "p-password:"
+             "P-proxy:"
              "r-register:"
              "S-sip:"
              "u-user:"
@@ -78,11 +79,16 @@ void IvrOPAL::Main()
             "  -h or --help            : print this help message.\n"
             "  -u or --user name       : Set local username, defaults to OS username.\n"
             "  -p or --password pwd    : Set password for authentication.\n"
+#if OPAL_SIP
             "  -S or --sip interface   : SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
             "  -r or --register server : SIP registration to server.\n"
+            "  -P or --proxy url       : SIP outbound proxy.\n"
+#endif
+#if OPAL_H323
             "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
             "  -g or --gk-host host    : H.323 gatekeeper host.\n"
             "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
+#endif
             "  -N or --stun server     : Set NAT traversal STUN server.\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
@@ -154,6 +160,9 @@ void IvrOPAL::Main()
       PString aor;
       sip->Register(params, aor);
     }
+
+    if (args.HasOption('P'))
+      sip->SetProxy(args.GetOptionString('P'), args.GetOptionString('u'), args.GetOptionString('p'));
 
     m_manager->AddRouteEntry("sip.*:.* = ivr:");
     m_manager->AddRouteEntry("ivr:.* = sip:<da>");
