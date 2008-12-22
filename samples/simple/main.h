@@ -113,7 +113,6 @@ class MyManager : public OpalManager
 #endif
 #if OPAL_FAX
     OpalFaxEndPoint  * faxEP;
-    OpalFaxEndPoint  * t38EP;
 #endif
 
     bool    pauseBeforeDialing;
