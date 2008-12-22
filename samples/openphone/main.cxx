@@ -275,24 +275,26 @@ static const char * const DefaultRoutes[] = {
     ".*:#  = ivr:", // A hash from anywhere goes to IVR
 #endif
     "pots:.*\\*.*\\*.* = sip:<dn2ip>",
-    "pots:.*           = sip:<da>",
-    "pc:.*             = sip:<da>",
+    "pots:.* = sip:<da>",
+    "pc:.*   = sip:<da>",
 
 #if OPAL_FAX
-    "t38:.*            = sip:<da>",
+    "t38:.* = sip:<da>",
+    "fax:.* = sip:<da>",
+    ".*:.*\t.*:(fax|329)@.* = t38:incoming.tif;receive",
 #endif
 
-    "h323:.*           = pots:<dn>",
-    "h323:.*           = pc:<du>",
+    "h323:.*  = pots:<dn>",
+    "h323:.*  = pc:<du>",
 
-    "h323s:.*          = pots:<dn>",
-    "h323s:.*          = pc:<du>",
+    "h323s:.* = pots:<dn>",
+    "h323s:.* = pc:<du>",
 
-    "sip:.*            = pots:<dn>",
-    "sip:.*            = pc:<du>",
+    "sip:.*   = pots:<dn>",
+    "sip:.*   = pc:<du>",
 
-    "sips:.*           = pots:<dn>",
-    "sips:.*           = pc:<du>"
+    "sips:.*  = pots:<dn>",
+    "sips:.*  = pc:<du>"
 };
 
 
@@ -670,7 +672,7 @@ bool MyManager::Initialise()
 #endif
 
 #if OPAL_FAX
-  m_faxEP = new OpalT38EndPoint(*this);
+  m_faxEP = new OpalFaxEndPoint(*this);
 #endif
 
   potsEP = new OpalLineEndPoint(*this);
@@ -1385,7 +1387,7 @@ void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 
 void MyManager::OnMenuCall(wxCommandEvent& WXUNUSED(event))
 {
-  CallDialog dlg(this, false);
+  CallDialog dlg(this, false, true);
   if (dlg.ShowModal() == wxID_OK)
     MakeCall(dlg.m_Address, dlg.m_UseHandset ? "pots:*" : "pc:*");
 }
@@ -1439,9 +1441,11 @@ void MyManager::OnSendFax(wxCommandEvent & /*event*/)
                       wxEmptyString,
                       wxT("*.tif"));
   if (faxDlg.ShowModal() == wxID_OK) {
-    CallDialog callDlg(this, true);
-    if (callDlg.ShowModal() == wxID_OK)
-      MakeCall(callDlg.m_Address, wxString(wxT("t38:")) + faxDlg.GetPath());
+    CallDialog callDlg(this, true, false);
+    if (callDlg.ShowModal() == wxID_OK) {
+      wxString prefix = callDlg.m_FaxMode ? wxT("fax:") : wxT("t38:");
+      MakeCall(callDlg.m_Address, prefix + faxDlg.GetPath());
+    }
   }
 }
 
@@ -2031,9 +2035,9 @@ void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold
 }
 
 
-static void LogMediaStream(const char * stopStart, const OpalMediaStream & stream, const PString & epPrefix)
+static void LogMediaStream(const char * stopStart, const OpalMediaStream & stream, const OpalConnection & connection)
 {
-  if (epPrefix == "pc" || epPrefix == "pots")
+  if (!connection.IsNetworkConnection())
     return;
 
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
@@ -2043,7 +2047,7 @@ static void LogMediaStream(const char * stopStart, const OpalMediaStream & strea
     LogWindow << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
 
   LogWindow << (stream.IsSource() ? " from " : " to ")
-            << epPrefix << " endpoint"
+            << connection.GetPrefixName() << " endpoint"
             << endl;
 }
 
@@ -2053,7 +2057,7 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStre
   if (!OpalManager::OnOpenMediaStream(connection, stream))
     return false;
 
-  LogMediaStream("Started", stream, connection.GetEndPoint().GetPrefixName());
+  LogMediaStream("Started", stream, connection);
 
   wxCommandEvent theEvent(wxEvtStreamsChanged, ID_STREAMS_CHANGED);
   theEvent.SetEventObject(this);
@@ -2068,7 +2072,7 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   OpalManager::OnClosedMediaStream(stream);
 
-  LogMediaStream("Stopped", stream, stream.GetConnection().GetEndPoint().GetPrefixName());
+  LogMediaStream("Stopped", stream, stream.GetConnection());
 
   wxCommandEvent theEvent(wxEvtStreamsChanged, ID_STREAMS_CHANGED);
   theEvent.SetEventObject(this);
@@ -2283,7 +2287,7 @@ void MyManager::OnTransfer(wxCommandEvent& theEvent)
       }
     }
 
-    CallDialog dlg(this, true);
+    CallDialog dlg(this, true, true);
     dlg.SetTitle(wxT("Transfer Call"));
     if (dlg.ShowModal() == wxID_OK) {
       PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReference);
@@ -4852,8 +4856,9 @@ BEGIN_EVENT_TABLE(CallDialog, wxDialog)
   EVT_TEXT(XRCID("Address"), CallDialog::OnAddressChange)
 END_EVENT_TABLE()
 
-CallDialog::CallDialog(MyManager * manager, bool hideHandset)
+CallDialog::CallDialog(MyManager * manager, bool hideHandset, bool hideFax)
   : m_UseHandset(manager->HasHandset())
+  , m_FaxMode(0)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("CallDialog"));
 
@@ -4866,6 +4871,11 @@ CallDialog::CallDialog(MyManager * manager, bool hideHandset)
     useHandset->Hide();
   else
     useHandset->Enable(m_UseHandset);
+
+  wxRadioBox * faxMode = FindWindowByNameAs<wxRadioBox>(this, wxT("FaxMode"));
+  faxMode->SetValidator(wxGenericValidator(&m_FaxMode));
+  if (hideFax)
+    faxMode->Hide();
 
   m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, wxT("Address"));
   m_AddressCtrl->SetValidator(wxGenericValidator(&m_Address));
@@ -5255,7 +5265,7 @@ void InCallPanel::OnStreamsChanged()
   for (PINDEX i = 0; i < NumPages; i++)
     m_pages[i].UpdateSession(connection);
 
-  if (connection != NULL && connection->GetMediaStream(OpalMediaType::Fax(), true) != NULL)
+  if (connection->GetMediaStream(OpalMediaType::Fax(), true) != NULL)
     FindWindowByNameAs<wxNotebook>(this, wxT("Statistics"))->SetSelection(RxFax);
 }
 
