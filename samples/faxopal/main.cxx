@@ -139,6 +139,9 @@ void FaxOPAL::Main()
       return;
     }
 
+    if (args.HasOption('P'))
+      sip->SetProxy(args.GetOptionString('P'), args.GetOptionString('u'), args.GetOptionString('p'));
+
     if (args.HasOption('r')) {
       SIPRegister::Params params;
       params.m_addressOfRecord = args.GetOptionString('r');
@@ -148,9 +151,6 @@ void FaxOPAL::Main()
       PString aor;
       sip->Register(params, aor);
     }
-
-    if (args.HasOption('P'))
-      sip->SetProxy(args.GetOptionString('P'), args.GetOptionString('u'), args.GetOptionString('p'));
   }
 #endif // OPAL_SIP
 
