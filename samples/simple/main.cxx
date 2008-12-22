@@ -47,8 +47,6 @@
 #include <t38/t38proto.h>
 #endif
 
-#include <t38/t38proto.h>
-
 #include <opal/transcoders.h>
 #include <lids/lidep.h>
 #include <ptclib/pstun.h>
@@ -390,7 +388,6 @@ MyManager::MyManager()
 #endif
 #if OPAL_FAX
   faxEP = NULL;
-  t38EP = NULL;
 #endif
 
   pauseBeforeDialing = PFalse;
@@ -700,9 +697,6 @@ PBoolean MyManager::Initialise(PArgList & args)
   {
     OpalMediaFormat fmt(OpalT38); // Force instantiation of T.38 media format
     faxEP = new OpalFaxEndPoint(*this);
-    t38EP = new OpalT38EndPoint(*this);
-
-    allMediaFormats += t38EP->GetMediaFormats();
     allMediaFormats += faxEP->GetMediaFormats();
   }
 #endif
@@ -790,8 +784,9 @@ PBoolean MyManager::Initialise(PArgList & args)
 #endif
 
 #if OPAL_FAX
-  if (t38EP != NULL) {
-      AddRouteEntry("sip:.*  = t38:<da>");
+  if (faxEP != NULL) {
+    AddRouteEntry("sip:.*  = t38:<da>");
+    AddRouteEntry("sip:.*  = fax:<da>");
   }
 #endif
 
