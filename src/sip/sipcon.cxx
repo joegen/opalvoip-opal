@@ -771,8 +771,8 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   }
 
   OpalMediaType mediaType = incomingMedia->GetMediaType();
-  OpalMediaTypeDefinition * defn = mediaType.GetDefinition();
-  if (defn == NULL) {
+  OpalMediaTypeDefinition * mediaDefinition = mediaType.GetDefinition();
+  if (mediaDefinition == NULL) {
     PTRACE(1, "SIP\tUnknown media type " << mediaType << " in session " << rtpSessionId);
     return false;
   }
@@ -800,7 +800,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
   bool remoteChanged = false;
 
-  OpalMediaSession * mediaSession = NULL;
+  OpalMediaSession * mediaSession;
 
   if (mediaAddress.IsEmpty()) {
     // Hold aka pause media, should only occur on a re-INVITE.
@@ -808,6 +808,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     if (rtpSession == NULL)
       return false;
     localAddress = OpalTransportAddress(rtpSession->GetLocalAddress(), rtpSession->GetLocalDataPort());
+    mediaSession = m_rtpSessions.GetMediaSession(rtpSessionId);
     remoteChanged = true;
   }
   else {
@@ -818,21 +819,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       return PFalse;
     }
 
-    mediaSession = m_rtpSessions.GetMediaSession(rtpSessionId);
-
-    if (!defn->UsesRTP()) {
-
-      // create media session if required
-      if (mediaSession == NULL) {
-        mediaSession = mediaType.GetDefinition()->CreateMediaSession(*this, rtpSessionId);
-        if (mediaSession != NULL)
-          m_rtpSessions.AddMediaSession(mediaSession, mediaType);
-      }
-      if (mediaSession != NULL)
-        localAddress = mediaSession->GetLocalMediaAddress();
-    }
-    else 
-    {
+    if (mediaDefinition->UsesRTP()) {
       // Create the RTPSession if required
       RTP_UDP * rtpSession = OnUseRTPSession(rtpSessionId, mediaType, mediaAddress, localAddress);
       if (rtpSession == NULL) {
@@ -854,9 +841,24 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
           }
         }
       }
+      mediaSession = m_rtpSessions.GetMediaSession(rtpSessionId);
     }
-    mediaSession = m_rtpSessions.GetMediaSession(rtpSessionId);
+    else {
+      mediaSession = mediaDefinition->CreateMediaSession(*this, rtpSessionId);
+      if (mediaSession == NULL) {
+        PTRACE(1, "SIP\tCannot create session for " << mediaType);
+        return false;
+      }
+      m_rtpSessions.AddMediaSession(mediaSession, mediaType);
+      localAddress = mediaSession->GetLocalMediaAddress();
+    }
   }
+
+  if (!PAssertNULL(mediaSession))
+    return false;
+
+  // For fax we have to translate the media type
+  mediaSession->mediaType = mediaType;
 
   SDPMediaDescription * localMedia = NULL;
 
@@ -880,8 +882,6 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   // We will answer with the media format that will be opened.
   // When sending an answer SDP, remove media formats that we do not support.
   remoteFormatList += sdpFormats;
-
-
 
   // construct a new media session list 
   if ((localMedia = mediaSession->CreateSDPMediaDescription(localAddress)) == NULL) {
