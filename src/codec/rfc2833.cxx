@@ -224,10 +224,10 @@ PBoolean OpalRFC2833Proto::BeginTransmit(char tone)
   PWaitAndSignal m(mutex);
 
   // convert tone to correct code
-  PINDEX code = ASCIIToRFC2833(tone);
-  if (code == P_MAX_INDEX) {
-    PTRACE(1, "RFC2833\tInvalid tone character.");
-    return PFalse;
+  PINDEX code;
+  if (tone == '.' || (code = ASCIIToRFC2833(tone)) == P_MAX_INDEX) {
+    transmitState = TransmitIdle;
+    return false;
   }
 
   // kick off the transmitter
