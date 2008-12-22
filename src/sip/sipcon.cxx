@@ -1388,6 +1388,9 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     case SIP_PDU::Method_PING :
       OnReceivedPING(pdu);
       break;
+    case SIP_PDU::Method_MESSAGE :
+      OnReceivedMESSAGE(pdu);
+      break;
     default :
       // Shouldn't have got this!
       PTRACE(2, "SIP\tUnhandled PDU " << pdu);
@@ -2438,6 +2441,29 @@ void SIPConnection::OnReceivedPING(SIP_PDU & request)
   request.SendResponse(*transport, SIP_PDU::Successful_OK);
 }
 
+void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
+{
+  PTRACE(3, "SIP\tReceived MESSAGE");
+
+  PString from = pdu.GetMIME().GetFrom();
+  PINDEX j = from.Find (';');
+  if (j != P_MAX_INDEX)
+    from = from.Left(j); // Remove all parameters
+  j = from.Find ('<');
+  if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
+    from += '>';
+
+  OnMessageReceived(from, pdu);
+
+  pdu.SendResponse(*transport, SIP_PDU::Successful_OK);
+}
+
+void SIPConnection::OnMessageReceived(const SIPURL & /*from*/, const SIP_PDU & pdu)
+{
+#if OPAL_HAS_SIPIM
+  ((SIPEndPoint &)endpoint).GetSIPIMManager().OnReceivedMessage(pdu);
+#endif
+}
 
 OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() const
 {

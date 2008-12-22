@@ -398,7 +398,7 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
   }
 
 #if OPAL_HAS_IM
-  if (mediaFormat.GetMediaType() == "msrp" || mediaFormat.GetMediaType() == "sip-im") {
+  if (mediaFormat.GetMediaType() == "msrp" || mediaFormat.GetMediaType() == "sip-im" || mediaFormat.GetMediaType() == "t140") {
     return new PCSSIMStream(*this, mediaFormat, sessionID, isSource);
   }
 #endif

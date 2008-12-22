@@ -1259,25 +1259,36 @@ OpalMediaType::AutoStartMode OpalConnection::AutoStartMap::GetAutoStart(const Op
 
 #if OPAL_HAS_IM
 
-bool OpalConnection::SendIM(const OpalMediaFormat & format, const T140String & body)
+template <class DataType>
+bool SendIMHelper(OpalConnection & conn, const OpalMediaFormat & format, const DataType & data)
 {
-  if (!LockReadWrite())
+  if (!conn.LockReadWrite())
     return false;
 
   bool stat = true;
 
-  OpalMediaStreamPtr strm = GetMediaStream(format.GetMediaType(), true);
+  OpalMediaStreamPtr strm = conn.GetMediaStream(format.GetMediaType(), true);
   if (strm == NULL) 
     stat = false;
   else {
     OpalIMMediaStream * imStream = dynamic_cast<OpalIMMediaStream *>(&*strm);
     if (imStream != NULL) 
-      imStream->PushIM(body);
+      imStream->PushIM(data);
   }
   
-  UnlockReadWrite();
+  conn.UnlockReadWrite();
 
   return stat;
+}
+
+bool OpalConnection::SendIM(const OpalMediaFormat & format, const T140String & text)
+{
+  return SendIMHelper<T140String>(*this, format, text);
+}
+
+bool OpalConnection::SendIM(const OpalMediaFormat & format, const RTP_DataFrame & frame)
+{
+  return SendIMHelper<RTP_DataFrame>(*this, format, frame);
 }
 
 void OpalConnection::OnReceiveIM(const IMInfo & im)

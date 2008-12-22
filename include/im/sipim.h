@@ -97,6 +97,8 @@ class OpalSIPIMMediaSession : public OpalMediaSession
 
     virtual bool SendMessage(const PString & contentType, const PString & body);
 
+    virtual bool SendIM(const PString & contentType, const PString & body);
+
     virtual PString GetCallID() const { return callId; }
 
   protected:
