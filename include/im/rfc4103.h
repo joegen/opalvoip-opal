@@ -34,8 +34,10 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#include <opal/mediafmt.h>
 #include <im/t140.h>
 #include <rtp/rtp.h>
+
 
 class RFC4103Frame : public RTP_DataFrame
 {
@@ -48,13 +50,14 @@ class RFC4103Frame : public RTP_DataFrame
 class RFC4103Context : public PObject
 {
   public:
-    RFC4103Context();
+    RFC4103Context(const OpalMediaFormat & fmt);
     RTP_DataFrameList ConvertToFrames(const T140String & body);
 
-    PMutex mutex;
-    WORD sequence;
-    DWORD baseTimeStamp;
-    PTime baseTime;
+    OpalMediaFormat m_mediaFormat;
+    PMutex m_mutex;
+    WORD   m_sequence;
+    DWORD  m_baseTimeStamp;
+    PTime  m_baseTime;
 };
 
 #endif // OPAL_IM_RFC4103_H
