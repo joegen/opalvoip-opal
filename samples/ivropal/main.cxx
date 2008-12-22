@@ -151,6 +151,9 @@ void IvrOPAL::Main()
       return;
     }
 
+    if (args.HasOption('P'))
+      sip->SetProxy(args.GetOptionString('P'), args.GetOptionString('u'), args.GetOptionString('p'));
+
     if (args.HasOption('r')) {
       SIPRegister::Params params;
       params.m_addressOfRecord = args.GetOptionString('r');
@@ -160,9 +163,6 @@ void IvrOPAL::Main()
       PString aor;
       sip->Register(params, aor);
     }
-
-    if (args.HasOption('P'))
-      sip->SetProxy(args.GetOptionString('P'), args.GetOptionString('u'), args.GetOptionString('p'));
 
     m_manager->AddRouteEntry("sip.*:.* = ivr:");
     m_manager->AddRouteEntry("ivr:.* = sip:<da>");
