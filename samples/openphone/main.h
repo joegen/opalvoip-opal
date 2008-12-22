@@ -60,7 +60,7 @@ class MyManager;
 
 class OpalLineEndPoint;
 class OpalIVREndPoint;
-class OpalT38EndPoint;
+class OpalFaxEndPoint;
 
 class wxSplitterWindow;
 class wxSplitterEvent;
@@ -235,10 +235,11 @@ class VideoControlDialog : public wxDialog
 class CallDialog : public wxDialog
 {
   public:
-    CallDialog(MyManager * manager, bool hideHandset);
+    CallDialog(MyManager * manager, bool hideHandset, bool hideFax);
 
     PwxString m_Address;
     bool      m_UseHandset;
+    int       m_FaxMode;
 
   private:
     void OnOK(wxCommandEvent & event);
@@ -1017,7 +1018,7 @@ class MyManager : public wxFrame, public OpalManager
 #endif
 
 #if OPAL_FAX
-    OpalT38EndPoint  * m_faxEP;
+    OpalFaxEndPoint  * m_faxEP;
 #endif
 
     bool      m_autoAnswer;
