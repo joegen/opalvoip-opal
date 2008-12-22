@@ -259,6 +259,12 @@ bool OpalSIPIMMediaSession::SendMessage(const PString & /*contentType*/, const P
   return ep->Message(remoteURL, body, localURL, callId);
 }
 
+bool OpalSIPIMMediaSession::SendIM(const PString & /*contentType*/, const PString & body)
+{
+  return connection.SendIM(OpalSIPIM, body);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 OpalSIPIMMediaStream::OpalSIPIMMediaStream(
@@ -353,7 +359,7 @@ void OpalSIPIMManager::OnReceivedMessage(const SIP_PDU & pdu)
     PWaitAndSignal m(m_mutex);
     IMSessionMapType::iterator r = m_imSessionMap.find((const char *)callId);
     if (r != m_imSessionMap.end()) {
-      r->second->SendMessage(pdu.GetMIME().GetContentEncoding(), pdu.GetEntityBody());
+      r->second->SendIM(pdu.GetMIME().GetContentEncoding(), pdu.GetEntityBody());
     }
   }
 }

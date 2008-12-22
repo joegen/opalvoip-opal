@@ -1394,6 +1394,7 @@ class OpalConnection : public PSafeObject
     };
 
     virtual bool SendIM(const OpalMediaFormat & format, const T140String & body);
+    virtual bool SendIM(const OpalMediaFormat & format, const RTP_DataFrame & body);
     virtual void OnReceiveIM(const IMInfo & im);
 
     void AddIMListener(

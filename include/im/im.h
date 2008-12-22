@@ -74,6 +74,7 @@ class OpalIMMediaStream : public OpalMediaStream
      * called to send IM to remote connection
      */
     virtual bool PushIM(const T140String & text);
+    virtual bool PushIM(RTP_DataFrame & frame);
 
   protected:
     RFC4103Context rfc4103;
