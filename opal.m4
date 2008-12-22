@@ -712,7 +712,7 @@ AC_DEFUN([OPAL_DETERMINE_SPEEXDSP],
             if test "x$SPEEXDSP_SYSTEM" = "xyes" ; then
               old_CFLAGS="$CFLAGS"
               CFLAGS="$CFLAGS $SPEEXDSP_CFLAGS"
-              AC_CHECK_HEADERS([speex/speex.h], [AC_DEFINE(OPAL_HAVE_SPEEX_SPEEX_H)])
+              AC_CHECK_HEADERS([speex/speex.h], [AC_DEFINE(OPAL_HAVE_SPEEX_SPEEX_H, [1], [speex/speex.h available])])
               CFLAGS="$old_CFLAGS"
             fi
           fi

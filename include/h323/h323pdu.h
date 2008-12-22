@@ -251,7 +251,7 @@ class H323SignalPDU : public H225_H323_UserInformation
       int screening = -1
     );
 
-#ifdef H323_H460
+#ifdef OPAL_H460
     /** When sending the H460 message in the Setup PDU you have to ensure
         the ARQ is received first then add the Fields to the Setup PDU
     	so we require a call back

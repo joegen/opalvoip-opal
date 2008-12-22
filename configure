@@ -4392,17 +4392,21 @@ BUILD_NUMBER=`cat ${OPALDIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
 OPAL_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${BUILD_NUMBER}"
 BUILD_TYPE=`cat ${OPALDIR}/version.h | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
 
+
 cat >>confdefs.h <<_ACEOF
 #define OPAL_MAJOR ${MAJOR_VERSION}
 _ACEOF
+
 
 cat >>confdefs.h <<_ACEOF
 #define OPAL_MINOR ${MINOR_VERSION}
 _ACEOF
 
+
 cat >>confdefs.h <<_ACEOF
 #define OPAL_BUILD ${BUILD_NUMBER}
 _ACEOF
+
 
 cat >>confdefs.h <<_ACEOF
 #define OPAL_VERSION "$OPAL_VERSION"
@@ -9014,7 +9018,8 @@ if test `eval echo '${'$as_ac_Header'}'` = yes; then
   cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
- cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define OPAL_HAVE_SPEEX_SPEEX_H 1
 _ACEOF
 
