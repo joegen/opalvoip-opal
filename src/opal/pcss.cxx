@@ -94,6 +94,9 @@ class PCSSIMStream : public OpalIMMediaStream
 
       return true;
     }
+
+    virtual PBoolean RequiresPatchThread() const   { return !isSource; }
+
 };
 
 #endif  // OPAL_HAS_IM
