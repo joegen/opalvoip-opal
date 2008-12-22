@@ -192,7 +192,7 @@ if test "$has_sbc" = "yes" ; then
   AC_CHECK_LIB(samplerate,src_get_version,has_samplerate=yes,has_samplerate=no)
   if test "$has_samplerate" = "yes" ; then
     HAVE_SBC=yes
-    AC_DEFINE(HAVE_SBC, yes)
+    AC_DEFINE(HAVE_SBC, [1], [Enable SBC codec])
     AC_MSG_NOTICE(Enabling SBC codec)
   fi
 fi
