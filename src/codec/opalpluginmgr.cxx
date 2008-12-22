@@ -801,8 +801,8 @@ bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
 //
 
 OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, const char * rawFormat)
-  : OpalFramedTranscoder( (strcmp(_codec->sourceFormat, "L16") == 0) ? (rawFormat != NULL ? rawFormat : ((_codec->sampleRate == 8000) ? OpalPCM16 : OpalPCM16_16KHZ)) : _codec->sourceFormat,
-                          (strcmp(_codec->destFormat, "L16") == 0)   ? (rawFormat != NULL ? rawFormat : ((_codec->sampleRate == 8000) ? OpalPCM16 : OpalPCM16_16KHZ)) : _codec->destFormat,
+  : OpalFramedTranscoder( (strcmp(_codec->sourceFormat, "L16") == 0) ? (rawFormat != NULL ? rawFormat : ((_codec->sampleRate == 8000) ? OpalPCM16 : ((_codec->sampleRate == 16000) ? OpalPCM16_16KHZ : ((_codec->sampleRate == 32000) ? OpalPCM16_32KHZ : OpalPCM16_48KHZ)))) : _codec->sourceFormat,
+                          (strcmp(_codec->destFormat, "L16") == 0)   ? (rawFormat != NULL ? rawFormat : ((_codec->sampleRate == 8000) ? OpalPCM16 : ((_codec->sampleRate == 16000) ? OpalPCM16_16KHZ : ((_codec->sampleRate == 32000) ? OpalPCM16_32KHZ : OpalPCM16_48KHZ)))) : _codec->destFormat,
                          _isEncoder ? _codec->parm.audio.samplesPerFrame*2 : _codec->parm.audio.bytesPerFrame,
                          _isEncoder ? _codec->parm.audio.bytesPerFrame     : _codec->parm.audio.samplesPerFrame*2)
   , OpalPluginTranscoder(_codec, _isEncoder)
@@ -877,8 +877,8 @@ OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(PluginCodec
                                                                      PBoolean _isEncoder,
                                                                      unsigned inputBits,
                                                                      unsigned outputBits)
-  : OpalStreamedTranscoder((strcmp(_codec->sourceFormat, "L16") == 0) ? ((_codec->sampleRate == 8000) ? OpalPCM16 : OpalPCM16_16KHZ) : _codec->sourceFormat,
-                           (strcmp(_codec->destFormat, "L16") == 0)   ? ((_codec->sampleRate == 8000) ? OpalPCM16 : OpalPCM16_16KHZ) : _codec->destFormat,
+  : OpalStreamedTranscoder((strcmp(_codec->sourceFormat, "L16") == 0) ? ((_codec->sampleRate == 8000) ? OpalPCM16 : ((_codec->sampleRate == 16000) ? OpalPCM16_16KHZ : ((_codec->sampleRate == 32000) ? OpalPCM16_32KHZ : OpalPCM16_48KHZ))) : _codec->sourceFormat,
+                           (strcmp(_codec->destFormat, "L16") == 0)   ? ((_codec->sampleRate == 8000) ? OpalPCM16 : ((_codec->sampleRate == 16000) ? OpalPCM16_16KHZ : ((_codec->sampleRate == 32000) ? OpalPCM16_32KHZ : OpalPCM16_48KHZ))) : _codec->destFormat,
                            inputBits, outputBits)
   , OpalPluginTranscoder(_codec, _isEncoder)
 { 
@@ -1611,6 +1611,16 @@ void OpalPluginCodecManager::RegisterPluginPair(
         new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, PTrue);
         new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, PFalse);
       }
+      else if (encoderCodec->sampleRate == 32000)
+      {
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16_32KHZ,          encoderCodec->destFormat), encoderCodec, PTrue);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_32KHZ),                 decoderCodec, PFalse);
+      }
+      else if (encoderCodec->sampleRate == 48000)
+      {
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16_48KHZ,          encoderCodec->destFormat), encoderCodec, PTrue);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_48KHZ),                 decoderCodec, PFalse);
+      }
       else
       {
         PTRACE(1, "OpalPlugin\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
@@ -1625,6 +1635,16 @@ void OpalPluginCodecManager::RegisterPluginPair(
       {
         new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, PTrue);
         new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, PFalse);
+      }
+      else if (encoderCodec->sampleRate == 32000)
+      {
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(OpalPCM16_32KHZ,          encoderCodec->destFormat), encoderCodec, PTrue);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_32KHZ),                 decoderCodec, PFalse);
+      }
+      else if (encoderCodec->sampleRate == 48000)
+      {
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(OpalPCM16_48KHZ,          encoderCodec->destFormat), encoderCodec, PTrue);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_48KHZ),                 decoderCodec, PFalse);
       }
       else
       {

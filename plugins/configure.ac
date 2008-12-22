@@ -111,6 +111,7 @@ HAVE_CAPI=yes
 HAVE_IXJ=no
 HAVE_H263=yes
 HAVE_H264=yes
+HAVE_CELT=no
 HAVE_SPANDSP=yes
 DEFAULT_TO_FULL_CAPABILITIES=yes
 X264_LINK_STATIC=no
@@ -288,6 +289,22 @@ PKG_CHECK_MODULES([THEORA],
 AC_SUBST(HAVE_THEORA)
 
 dnl     ########################
+dnl     celt
+dnl     ########################
+PKG_CHECK_MODULES([CELT],
+                  [celt],
+                  [
+                   AC_SUBST(CELT_CFLAGS)
+                   AC_SUBST(CELT_LIBS)
+                   AC_DEFINE([HAVE_CELT], [1], [celt])
+                   HAVE_CELT=yes
+                  ],
+                  [
+                   HAVE_CELT=no
+                  ])
+AC_SUBST(HAVE_CELT)
+
+dnl     ########################
 dnl     LIBDL
 dnl     ########################
 OPAL_FIND_LIBDL([HAVE_LIBDL=yes], [HAVE_LIBDL=no])
@@ -394,6 +411,9 @@ fi
 if test -d audio/SBC ; then
   AC_CONFIG_FILES(audio/SBC/Makefile)
 fi
+if test -d audio/celt ; then
+  AC_CONFIG_FILES(audio/celt/Makefile)
+fi
 if test -d video/H.261-vic ; then
   AC_CONFIG_FILES(video/H.261-vic/Makefile)
 fi
@@ -494,6 +514,7 @@ fi
 else
 echo "                    MPEG4 Part 2  :  no"
 fi
+echo "                            CELT  :  ${HAVE_CELT}"
 
 echo ""
 echo "                     SpanDSP FAX  :  $HAVE_SPANDSP"

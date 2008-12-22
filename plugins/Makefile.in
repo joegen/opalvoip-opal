@@ -12,6 +12,11 @@ ifeq ($(HAVE_SBC),yes)
 SUBDIRS += audio/SBC
 endif
 
+HAVE_CELT=@HAVE_CELT@
+ifeq ($(HAVE_CELT),yes)
+SUBDIRS += audio/celt
+endif
+
 HAVE_H263=@HAVE_H263@
 ifeq ($(HAVE_H263),yes)
 SUBDIRS += video/H.263-ffmpeg

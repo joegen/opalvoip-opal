@@ -45,7 +45,7 @@ ifdef OPALDIR
 include $(OPALDIR)/opal_defs.mak
 else
 default_target:
-	@echo "Must have OPALDIR defined
+	@echo "Must have OPALDIR defined"
 	@false
 endif
 
@@ -56,7 +56,7 @@ opt ::
 include $(PTLIBDIR)/make/ptlib.mak
 else
 default_target:
-	@echo "Must have PTLIBDIR defined
+	@echo "Must have PTLIBDIR defined"
 	@false
 endif
 
