@@ -207,6 +207,8 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
   MyManager & mgr = (MyManager &)manager;
 
+  ((OpalConnection &)connection).AddIMListener(PCREATE_NOTIFIER(OnReceiveIM));
+
   cout << "Outgoing call connected" << endl;
   mgr.m_connected.Signal();
   return PTrue;
