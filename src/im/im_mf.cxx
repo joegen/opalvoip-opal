@@ -169,6 +169,7 @@ OpalIMMediaStream::OpalIMMediaStream(
       bool isSource                        ///<  Is a source stream
     )
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
+  , rfc4103(mediaFormat)
 {
 
 }

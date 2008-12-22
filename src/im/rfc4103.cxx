@@ -40,24 +40,25 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-RFC4103Context::RFC4103Context()
-  : sequence(0)
-  , baseTimeStamp(0)
+RFC4103Context::RFC4103Context(const OpalMediaFormat & fmt)
+  : m_mediaFormat(fmt)
+  , m_sequence(0)
+  , m_baseTimeStamp(0)
 {
 }
 
 RTP_DataFrameList RFC4103Context::ConvertToFrames(const T140String & body)
 {
-  DWORD ts = baseTimeStamp;
-  ts += (DWORD)((PTime() - baseTime).GetMilliSeconds());
+  DWORD ts = m_baseTimeStamp;
+  ts += (DWORD)((PTime() - m_baseTime).GetMilliSeconds());
 
   RTP_DataFrameList frames;
   RFC4103Frame * frame = new RFC4103Frame();
 
-  frame->SetPayloadType(RTP_DataFrame::MaxPayloadType);
+  frame->SetPayloadType(m_mediaFormat.GetPayloadType());
   frame->SetMarker(true);
   frame->SetTimestamp(ts);
-  frame->SetSequenceNumber(++sequence);
+  frame->SetSequenceNumber(++m_sequence);
   frame->SetPayload(body);
 
   frames.Append(frame);
