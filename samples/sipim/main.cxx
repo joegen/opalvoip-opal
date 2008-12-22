@@ -75,8 +75,12 @@ void SipIM::Main()
             "Available options are:\n"
             "  -u or --user            : set local username.\n"
             "  --help                  : print this help message.\n"
+#if OPAL_HAS_MSRP
             "  --msrp                  : use MSRP (default)\n"
+#endif
+#if OPAL_HAS_SIPIM
             "  --sipim                 : use SIPIM\n"
+#endif
             "  --t140                  : use T.140\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
@@ -93,7 +97,7 @@ void SipIM::Main()
   if (args.HasOption('u'))
     m_manager.SetDefaultUserName(args.GetOptionString('u'));
 
-  Mode mode = Use_MSRP;
+  Mode mode;
   if (args.HasOption("sipim")) {
     mode = Use_SIPIM;
     m_manager.m_imFormat = OpalSIPIM;
@@ -102,9 +106,15 @@ void SipIM::Main()
     mode = Use_T140;
     m_manager.m_imFormat = OpalT140;
   }
+#if OPAL_HAS_MSRP
   else if (args.HasOption("msrp")) {
     mode = Use_MSRP;
     m_manager.m_imFormat = OpalMSRP;
+  }
+#endif
+  else {
+    cout << "error: must select IM mode" << endl;
+    return;
   }
 
   OpalMediaFormatList allMediaFormats;
