@@ -157,34 +157,16 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _nam
   : payloadType(pt)
   , clockRate(0)
   , encodingName(_name)
-  , nteSet(PTrue)
-  , nseSet(PTrue)
 {
-  if (encodingName == OpalRFC2833.GetEncodingName())
-    AddNTEString("0-15,32-49");
-#if OPAL_T38_CAPABILITY
-  else if (encodingName == OpalCiscoNSE.GetEncodingName())
-    AddNSEString("192,193");
-#endif
 }
 
 
-SDPMediaFormat::SDPMediaFormat(const OpalMediaFormat & fmt,
-                               RTP_DataFrame::PayloadTypes pt,
-                               const char * nxeString)
+SDPMediaFormat::SDPMediaFormat(const OpalMediaFormat & fmt)
   : mediaFormat(fmt)
-  , payloadType(pt)
+  , payloadType(fmt.GetPayloadType())
   , clockRate(fmt.GetClockRate())
   , encodingName(fmt.GetEncodingName())
-  , nteSet(PTrue)
-  , nseSet(PTrue)
 {
-  if (nxeString != NULL) {
-    if (encodingName *= "nse")
-      AddNSEString(nxeString);
-    else
-      AddNTEString(nxeString);
-  }
   if (fmt.GetMediaType() == OpalMediaType::Audio()) 
     parameters = PString(PString::Unsigned, fmt.GetOptionInteger(OpalAudioFormat::ChannelsOption()));
 }
@@ -193,20 +175,6 @@ void SDPMediaFormat::SetFMTP(const PString & str)
 {
   if (str.IsEmpty())
     return;
-
-  if (encodingName == OpalRFC2833.GetEncodingName()) {
-    nteSet.RemoveAll();
-    AddNTEString(str);
-    return;
-  }
-
-#if OPAL_T38_CAPABILITY
-  else if (encodingName == OpalCiscoNSE.GetEncodingName()) {
-    nseSet.RemoveAll();
-    AddNSEString(str);
-    return;
-  }
-#endif
 
   fmtp = str;
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
@@ -282,14 +250,6 @@ void SDPMediaFormat::SetFMTP(const PString & str)
 
 PString SDPMediaFormat::GetFMTP() const
 {
-  if (encodingName == OpalRFC2833.GetEncodingName())
-    return GetNTEString();
-
-#if OPAL_T38_CAPABILITY
-  if (encodingName == OpalCiscoNSE.GetEncodingName())
-    return GetNSEString();
-#endif
-
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
     return fmtp;
 
@@ -311,87 +271,6 @@ PString SDPMediaFormat::GetFMTP() const
   }
 
   return !str ? str : fmtp;
-}
-
-
-PString SDPMediaFormat::GetNTEString() const
-{
-  return GetNXEString(nteSet);
-}
-
-void SDPMediaFormat::AddNTEString(const PString & str)
-{
-  AddNXEString(nteSet, str);
-}
-
-void SDPMediaFormat::AddNTEToken(const PString & ostr)
-{
-  AddNXEToken(nteSet, ostr);
-}
-
-PString SDPMediaFormat::GetNSEString() const
-{
-  return GetNXEString(nseSet);
-}
-
-void SDPMediaFormat::AddNSEString(const PString & str)
-{
-  AddNXEString(nseSet, str);
-}
-
-void SDPMediaFormat::AddNSEToken(const PString & ostr)
-{
-  AddNXEToken(nseSet, ostr);
-}
-
-PString SDPMediaFormat::GetNXEString(POrdinalSet & nxeSet) const
-{
-  PString str;
-  PINDEX i = 0;
-  while (i < 255) {
-    if (!nxeSet.Contains(POrdinalKey(i)))
-      i++;
-    else {
-      PINDEX start = i++;
-      while (nxeSet.Contains(POrdinalKey(i)))
-        i++;
-      if (!str.IsEmpty())
-        str += ",";
-      str += PString(PString::Unsigned, start);
-      if (i > start+1)
-        str += PString('-') + PString(PString::Unsigned, i-1);
-    }
-  }
-
-  return str;
-}
-
-
-void SDPMediaFormat::AddNXEString(POrdinalSet & nxeSet, const PString & str)
-{
-  PStringArray tokens = str.Tokenise(",", PFalse);
-  PINDEX i;
-  for (i = 0; i < tokens.GetSize(); i++)
-    AddNXEToken(nxeSet, tokens[i]);
-}
-
-
-void SDPMediaFormat::AddNXEToken(POrdinalSet & nxeSet, const PString & ostr)
-{
-  PString str = ostr.Trim();
-  if (str[0] == ',')
-    str = str.Mid(1);
-  if (str.Right(1) == ",")
-    str = str.Left(str.GetLength()-1);
-  PINDEX pos = str.Find('-');
-  if (pos == P_MAX_INDEX)
-    nxeSet.Include(new POrdinalKey(str.AsInteger()));
-  else {
-    PINDEX from = str.Left(pos).AsInteger();
-    PINDEX to   = str.Mid(pos+1).AsInteger();
-    while (from <= to)
-      nxeSet.Include(new POrdinalKey(from++));
-  }
 }
 
 
@@ -902,7 +781,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
     }
   }
 
-  SDPMediaFormat * sdpFormat = new SDPMediaFormat(mediaFormat, payloadType);
+  SDPMediaFormat * sdpFormat = new SDPMediaFormat(mediaFormat);
 
   ProcessMediaOptions(*sdpFormat, mediaFormat);
 

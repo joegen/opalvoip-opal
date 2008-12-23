@@ -69,8 +69,10 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
 #endif
   , remoteIsNAT(false)
 {
-  rfc2833Handler  = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
-  ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
+  rfc2833Handler  = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalRFC2833);
+#if OPAL_T38_CAPABILITY
+  ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE), OpalCiscoNSE);
+#endif
 
 #ifdef OPAL_ZRTP
   zrtpEnabled = ep.GetZRTPEnabled();
@@ -248,13 +250,20 @@ void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMedia
   }
 }
 
+
 PBoolean OpalRTPConnection::SendUserInputTone(char tone, unsigned duration)
 {
-  if (duration == 0)
-    duration = 180;
+  if (ciscoNSEHandler->SendToneAsync(tone, duration) ||
+       rfc2833Handler->SendToneAsync(tone, duration))
+    return true;
 
-  return rfc2833Handler->SendToneAsync(tone, duration);
+  PTRACE(2, "RTPCon\tCould not send tone '" << tone << "' via RFC2833.");
+
+  //Probably need a PCM generator in here
+
+  return true;
 }
+
 
 PBoolean OpalRTPConnection::GetMediaInformation(unsigned sessionID,
                                          MediaInformation & info) const

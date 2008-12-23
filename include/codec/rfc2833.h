@@ -38,17 +38,38 @@
 
 #include <rtp/rtp.h>
 
-extern const char * OpalDefaultNTEString;
 
-#if OPAL_T38_CAPABILITY
-extern const char * OpalDefaultNSEString;
-#endif
+class OpalMediaFormat;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
 class OpalRFC2833Info : public PObject {
     PCLASSINFO(OpalRFC2833Info, PObject);
   public:
+    // the following values are mandated by RFC 2833
+    enum NTEEvent {
+      Digit0 = 0,
+      Digit1 = 1,
+      Digit2 = 2,
+      Digit3 = 3,
+      Digit4 = 4,
+      Digit5 = 5,
+      Digit6 = 6,
+      Digit7 = 7,
+      Digit8 = 8,
+      Digit9 = 9,
+      Star   = 10,
+      Hash   = 11,
+      A      = 12,
+      B      = 13,
+      C      = 14,
+      D      = 15,
+      Flash  = 16,
+      CED    = 32,
+      CNG    = 36
+    };
+
     OpalRFC2833Info(
       char tone,
       unsigned duration = 0,
@@ -58,7 +79,7 @@ class OpalRFC2833Info : public PObject {
     char GetTone() const { return tone; }
     unsigned GetDuration() const { return duration; }
     unsigned GetTimestamp() const { return timestamp; }
-    PBoolean IsToneStart() const { return duration == 0; }
+    bool IsToneStart() const { return duration == 0; }
 
   protected:
     char     tone;
@@ -73,17 +94,14 @@ class OpalRFC2833Proto : public PObject {
   public:
     OpalRFC2833Proto(
       OpalRTPConnection & conn,
-      const PNotifier & receiveNotifier
+      const PNotifier & receiveNotifier,
+      const OpalMediaFormat & mediaFormat
     );
     ~OpalRFC2833Proto();
 
-    virtual PBoolean SendToneAsync(
+    virtual bool SendToneAsync(
       char tone, 
       unsigned duration
-    );
-
-    virtual PBoolean BeginTransmit(
-      char tone  ///<  DTMF tone code
     );
 
     virtual void OnStartReceive(
@@ -99,45 +117,46 @@ class OpalRFC2833Proto : public PObject {
       unsigned timestamp
     );
 
-    RTP_DataFrame::PayloadTypes GetPayloadType() const { return payloadType; }
+    RTP_DataFrame::PayloadTypes GetPayloadType() const { return m_payloadType; }
 
     void SetPayloadType(
       RTP_DataFrame::PayloadTypes type ///<  new payload type
-    ) { payloadType = type; }
+    ) { m_payloadType = type; }
 
-    const PNotifier & GetReceiveHandler() const { return receiveHandler; }
+    const PNotifier & GetReceiveHandler() const { return m_receiveHandler; }
 
-    static PINDEX ASCIIToRFC2833(char tone);
-    static char RFC2833ToASCII(PINDEX rfc2833);
+    PString GetTxCapability() const;
+    PString GetRxCapability() const;
+    void SetTxCapability(const PString & codes);
+    void SetRxCapability(const PString & codes);
+
+    static PINDEX ASCIIToRFC2833(char tone, bool hasNSE);
+    static char RFC2833ToASCII(PINDEX rfc2833, bool hasNSE);
 
   protected:
     void SendAsyncFrame();
-
-    OpalRTPConnection & conn;
 
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalRFC2833Proto, ReceivedPacket);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, ReceiveTimeout);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, AsyncTimeout);
 
-    RTP_DataFrame::PayloadTypes payloadType;
-
-    PMutex mutex;
+    OpalRTPConnection         & m_connection;
+    RTP_DataFrame::PayloadTypes m_payloadType;
+    std::vector<bool>           m_txCapabilitySet;
+    std::vector<bool>           m_rxCapabilitySet;
+    PNotifier                   m_receiveNotifier;
+    PNotifier                   m_receiveHandler;
 
     enum {
       ReceiveIdle,
       ReceiveActive,
       ReceiveEnding
-    } receiveState;
+    } m_receiveState;
 
-    BYTE      receivedTone;
-
-    //PBoolean  receiveComplete;
-    //unsigned  receivedDuration;
-    //unsigned  receiveTimestamp;
-
-    PNotifier receiveNotifier;
-    PTimer    receiveTimer;
-    PNotifier receiveHandler;
+    BYTE     m_receivedTone;
+    unsigned m_tonesReceived;
+    PTimer   m_receiveTimer;
+    DWORD    m_previousReceivedTimestamp;
 
     enum {
       TransmitIdle,
@@ -145,18 +164,18 @@ class OpalRFC2833Proto : public PObject {
       TransmitEnding1,
       TransmitEnding2,
       TransmitEnding3,
-    } transmitState;
-    BYTE      transmitCode;
+    } m_transmitState;
 
-    RTP_Session * rtpSession;
-    PTimer        asyncTransmitTimer;
-    PTimer        asyncDurationTimer;
-    DWORD         transmitTimestamp;
-    PBoolean      rewriteTransmitTimestamp;
-    PTimeInterval asyncStart;
-    unsigned      transmitDuration;
-    unsigned      tonesReceived;
-    DWORD         previousReceivedTimestamp;
+    RTP_Session * m_rtpSession;
+    PTimer        m_asyncTransmitTimer;
+    PTimer        m_asyncDurationTimer;
+    DWORD         m_transmitTimestamp;
+    bool          m_rewriteTransmitTimestamp;
+    PTimeInterval m_asyncStart;
+    BYTE          m_transmitCode;
+    unsigned      m_transmitDuration;
+
+    PMutex m_mutex;
 };
 
 

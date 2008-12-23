@@ -939,7 +939,7 @@ void OpalT38Connection::OnClosedMediaStream(const OpalMediaStream & stream)
   m_faxMode = stream.GetMediaFormat().GetMediaType() != OpalMediaType::Fax();
 
   if (m_syncMode == Mode_UserInput)
-    OnUserInputTone('.', 0);
+    OnUserInputTone(' ', 0);
   m_faxTimer.Stop();
 
   OpalFaxConnection::OnClosedMediaStream(stream);

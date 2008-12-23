@@ -51,36 +51,13 @@ class SDPMediaFormat : public PObject
 {
   PCLASSINFO(SDPMediaFormat, PObject);
   public:
-    // the following values are mandated by RFC 2833
-    enum NTEEvent {
-      Digit0 = 0,
-      Digit1 = 1,
-      Digit2 = 2,
-      Digit3 = 3,
-      Digit4 = 4,
-      Digit5 = 5,
-      Digit6 = 6,
-      Digit7 = 7,
-      Digit8 = 8,
-      Digit9 = 9,
-      Star   = 10,
-      Hash   = 11,
-      A      = 12,
-      B      = 13,
-      C      = 14,
-      D      = 15,
-      Flash  = 16
-    };
-    
     SDPMediaFormat(
       RTP_DataFrame::PayloadTypes payloadType,
       const char * name = NULL
     );
 
     SDPMediaFormat(
-      const OpalMediaFormat & mediaFormat,
-      RTP_DataFrame::PayloadTypes pt,
-      const char * nteString = NULL
+      const OpalMediaFormat & mediaFormat
     );
 
     virtual void PrintOn(ostream & str) const;
@@ -105,18 +82,6 @@ class SDPMediaFormat : public PObject
     bool ToNormalisedOptions();
 
   protected:
-    void AddNTEString(const PString & str);
-    void AddNTEToken(const PString & ostr);
-    PString GetNTEString() const;
-
-    void AddNSEString(const PString & str);
-    void AddNSEToken(const PString & ostr);
-    PString GetNSEString() const;
-
-    void AddNXEString(POrdinalSet & nxeSet, const PString & str);
-    void AddNXEToken(POrdinalSet & nxeSet, const PString & ostr);
-    PString GetNXEString(POrdinalSet & nxeSet) const;
-
     virtual void UpdateMediaFormat() const;
 
     mutable OpalMediaFormat mediaFormat;
@@ -126,9 +91,6 @@ class SDPMediaFormat : public PObject
     PString encodingName;
     PString parameters;
     PString fmtp;
-
-    mutable POrdinalSet nteSet;     // used for NTE formats only
-    mutable POrdinalSet nseSet;     // used for NSE formats only
 };
 
 PLIST(SDPMediaFormatList, SDPMediaFormat);
