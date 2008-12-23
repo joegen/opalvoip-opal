@@ -31,7 +31,7 @@
 #pragma implementation "q922.h"
 #endif
 
-#if OPAL_H224FECC
+#if OPAL_HAS_H224
 
 #include <h224/h323h224.h>
 
@@ -521,4 +521,4 @@ WORD Q922_Frame::CalculateFCS(const BYTE *data, PINDEX length) const
   return fcs;
 }
 
-#endif // OPAL_H224FECC
+#endif // OPAL_HAS_H224

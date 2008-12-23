@@ -72,7 +72,8 @@ OPAL_IAX2=yes
 OPAL_VIDEO=yes
 OPAL_T38_CAPABILITY=yes
 OPAL_FAX=yes
-OPAL_H224FECC=yes
+OPAL_HAS_H224=yes
+OPAL_HAS_H281=yes
 OPAL_H450=yes
 OPAL_H460=yes
 OPAL_H501=yes
@@ -440,8 +441,12 @@ dnl MSWIN_DEFINE  iax2,OPAL_IAX2
 OPAL_SIMPLE_OPTION([iax],[OPAL_IAX2], [whether to enable IAX2 protocol support])
 
 dnl MSWIN_DISPLAY h224,H.224 support
-dnl MSWIN_DEFINE  h224,OPAL_H224FECC
-OPAL_SIMPLE_OPTION([h224],[OPAL_H224FECC], [whether to enable H.224 protocol support], [OPAL_H323])
+dnl MSWIN_DEFINE  h224,OPAL_HAS_H224
+OPAL_SIMPLE_OPTION([h224],[OPAL_HAS_H224], [whether to enable H.224 protocol support])
+
+dnl MSWIN_DISPLAY h281,H.281 (Far End Camera Control) support
+dnl MSWIN_DEFINE  h281,OPAL_HAS_H281
+OPAL_SIMPLE_OPTION([h281],[OPAL_HAS_H281], [whether to enable H.281 (Far End Camera Control) protocol support], [OPAL_HAS_H224])
 
 dnl MSWIN_DISPLAY    t38,T.38 capability
 dnl MSWIN_DEFINE     t38,OPAL_T38_CAPABILITY
