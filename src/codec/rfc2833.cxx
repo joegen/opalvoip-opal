@@ -37,13 +37,61 @@
 #include <opal/rtpconn.h>
 #include <rtp/rtp.h>
 
-static const char RFC2833Table1Events[] = "0123456789*#ABCD!";
-const char * OpalDefaultNTEString = "0-15,32-49";
-
+static const char RFC2833Table1Events[] = "0123456789*#ABCD!                Y   X";
 static const char NSEEvents[] = "XY";
-const char * OpalDefaultNSEString = "192,193";
+static PINDEX NSECodeBase = 192;
 
 #define new PNEW
+
+
+static PString GetCapability(const std::vector<bool> & capabilitySet)
+{
+  PStringStream str;
+
+  PINDEX i = 0;
+  while (i < 255) {
+    if (!capabilitySet[i])
+      i++;
+    else {
+      PINDEX start = i++;
+      while (capabilitySet[i])
+        i++;
+      if (!str.IsEmpty())
+        str += ",";
+      str.sprintf("%u", start);
+      if (i > start+1)
+        str.sprintf("-%u", i-1);
+    }
+  }
+
+  return str;
+}
+
+
+static void SetCapability(const PString & codes, std::vector<bool> & capabilitySet)
+{
+  if (codes.IsEmpty()) {
+    SetCapability("0-15", capabilitySet); // RFC specified default
+    return;
+  }
+
+  capabilitySet.resize(0);
+  capabilitySet.resize(256);
+
+  PStringArray tokens = codes.Tokenise(',');
+  for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
+    PString token = tokens[i];
+    unsigned code = token.AsUnsigned();
+    if (code < 256) {
+      PINDEX dash = token.Find('-');
+      unsigned end = dash == P_MAX_INDEX ? code : token.Mid(dash+1).AsUnsigned();
+      if (end > 255)
+        end = 255;
+      while (code <= end)
+        capabilitySet[code++] = true;
+    }
+  }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,114 +106,139 @@ OpalRFC2833Info::OpalRFC2833Info(char t, unsigned d, unsigned ts)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & _conn, const PNotifier & rx)
-  : conn(_conn), receiveNotifier(rx),
+OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & rx, const OpalMediaFormat & fmt)
+  : m_connection(conn)
+  , m_payloadType(RTP_DataFrame::IllegalPayloadType)
+  , m_receiveNotifier(rx)
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
-    receiveHandler(PCREATE_NOTIFIER(ReceivedPacket))
+  , m_receiveHandler(PCREATE_NOTIFIER(ReceivedPacket))
 #ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
+  , m_receiveState(ReceiveIdle)
+  , m_receivedTone('\0')
+  , m_tonesReceived(0)
+  , m_transmitState(TransmitIdle)
+  , m_rtpSession(NULL)
+  , m_transmitTimestamp(0)
+  , m_rewriteTransmitTimestamp(false)
+  , m_transmitCode('\0')
+  , m_transmitDuration(0)
 {
   PTRACE(4, "RFC2833\tHandler created");
 
-  payloadType = RTP_DataFrame::IllegalPayloadType;
-  receiveTimer.SetNotifier(PCREATE_NOTIFIER(ReceiveTimeout));
+  m_receiveTimer.SetNotifier(PCREATE_NOTIFIER(ReceiveTimeout));
+  m_asyncTransmitTimer.SetNotifier(PCREATE_NOTIFIER(AsyncTimeout));
 
-  receiveState  = ReceiveIdle;
-  transmitState = TransmitIdle;
-
-  asyncTransmitTimer.SetNotifier(PCREATE_NOTIFIER(AsyncTimeout));
-  rtpSession = NULL;
-
-  tonesReceived = 0;
+  SetRxCapability(fmt.GetOptionString("FMTP", "0-15"));
+  m_txCapabilitySet = m_rxCapabilitySet;
 }
 
 OpalRFC2833Proto::~OpalRFC2833Proto()
 {
-  if (rtpSession != NULL)
-    conn.ReleaseSession(1);
+  if (m_rtpSession != NULL)
+    m_connection.ReleaseSession(m_rtpSession->GetSessionID());
 }
 
 PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 {
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal mutex(m_mutex);
 
   // find an audio session in the current connection to send the packet on
-  if (rtpSession == NULL) {
-    OpalMediaStreamPtr stream = conn.GetMediaStream(OpalMediaType::Audio(), false);
-    if (stream == NULL || (rtpSession = conn.GetSession(stream->GetSessionID())) == NULL) {
-      PTRACE(4, "RFC2833\tNo RTP session suitable for RFC2833");
-      return PFalse;
+  if (m_rtpSession == NULL) {
+    OpalMediaStreamPtr stream = m_connection.GetMediaStream(OpalMediaType::Audio(), false);
+    if (stream == NULL || (m_rtpSession = m_connection.GetSession(stream->GetSessionID())) == NULL) {
+      PTRACE(2, "RFC2833\tNo RTP session suitable for RFC2833");
+      return false;
     }
   }
 
-  // if not ' ', then start a new tone
-  // if ' ', then update last tone sent
-  if (tone != ' ') {
-    if (!BeginTransmit(tone))
-      return PFalse;
+  // convert tone to correct code
+  PINDEX code = ASCIIToRFC2833(tone, m_txCapabilitySet[NSECodeBase]);
+
+  // if same tone as last time and still transmitting, just extend the time
+  if (m_transmitState == TransmitIdle || (code != ' ' && code != m_transmitCode)) {
+    if (code == P_MAX_INDEX || !m_txCapabilitySet[code]) {
+      m_transmitState = TransmitIdle;
+      return false;
+    }
+
+    // kick off the transmitter
+    m_transmitCode             = (BYTE)code;
+    m_transmitState            = TransmitActive;
+    m_rewriteTransmitTimestamp = true;
+    m_asyncStart               = 0;
+
+    // Starting so cannot have zero duration
+    if (duration == 0)
+      duration = 180;
   }
 
-  // reset the duration and retransmit timers
-  asyncDurationTimer = duration;
-  asyncTransmitTimer.RunContinuous(30);
+  if (duration == 0)
+    m_transmitState = TransmitEnding1;
+  else {
+    // reset the duration and retransmit timers
+    m_asyncDurationTimer = duration;
+    m_asyncTransmitTimer.RunContinuous(30);
+  }
 
   // send the current frame
   SendAsyncFrame();
 
-  return PTrue;
+  return true;
 }
+
 
 void OpalRFC2833Proto::SendAsyncFrame()
 {
   // be thread safe
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal mutex(m_mutex);
 
   // if transmittter is ever in this state, then stop the duration timer
-  if (transmitState == TransmitIdle) {
-    asyncDurationTimer.Stop(false);
+  if (m_transmitState == TransmitIdle) {
+    m_asyncDurationTimer.Stop(false);
     return;
   }
 
   RTP_DataFrame frame;
-  frame.SetPayloadType(payloadType);
+  frame.SetPayloadType(m_payloadType);
   frame.SetPayloadSize(4);
 
   BYTE * payload = frame.GetPayloadPtr();
-  payload[0] = transmitCode; // tone
-  payload[1] = (7 & 0x3f);   // Volume
+  payload[0] = m_transmitCode; // tone
+  payload[1] = (7 & 0x3f);     // Volume
 
   // set end bit if sending last three packets
-  switch (transmitState) {
+  switch (m_transmitState) {
     case TransmitActive:
       // if the duration has ended, then go into ending state
-      if (!asyncDurationTimer.IsRunning()) 
-        transmitState = TransmitEnding1;
+      if (!m_asyncDurationTimer.IsRunning()) 
+        m_transmitState = TransmitEnding1;
 
       // set duration to time since start of time
-      if (asyncStart != PTimeInterval(0)) 
-        transmitDuration = (PTimer::Tick() - asyncStart).GetInterval() * 8;
+      if (m_asyncStart != PTimeInterval(0)) 
+        m_transmitDuration = (PTimer::Tick() - m_asyncStart).GetInterval() * 8;
       else {
-        transmitDuration = 0;
-        frame.SetMarker(PTrue);
-        asyncStart = PTimer::Tick();
+        m_transmitDuration = 0;
+        frame.SetMarker(true);
+        m_asyncStart = PTimer::Tick();
       }
       break;
     case TransmitEnding1:
-      transmitDuration = (PTimer::Tick() - asyncStart).GetInterval() * 8;
       payload[1] |= 0x80;
-      transmitState = TransmitEnding2;
+      m_transmitDuration = (PTimer::Tick() - m_asyncStart).GetInterval() * 8;
+      m_transmitState = TransmitEnding2;
       break;
     case TransmitEnding2:
       payload[1] |= 0x80;
-      transmitState = TransmitEnding3;
+      m_transmitState = TransmitEnding3;
       break;
     case TransmitEnding3:
       payload[1] |= 0x80;
-      transmitState = TransmitIdle;
-      asyncTransmitTimer.Stop();
+      m_transmitState = TransmitIdle;
+      m_asyncTransmitTimer.Stop();
       break;
     default:
       PAssertAlways("RFC2833\tunknown transmit state");
@@ -173,84 +246,93 @@ void OpalRFC2833Proto::SendAsyncFrame()
   }
 
   // set tone duration
-  payload[2] = (BYTE)(transmitDuration >> 8);
-  payload[3] = (BYTE) transmitDuration;
+  payload[2] = (BYTE)(m_transmitDuration >> 8);
+  payload[3] = (BYTE) m_transmitDuration;
 
-  if (rtpSession != NULL) {
-    if (!rewriteTransmitTimestamp)
-      frame.SetTimestamp(transmitTimestamp);
-    rtpSession->WriteOOBData(frame, rewriteTransmitTimestamp);
-    if (rewriteTransmitTimestamp) {
-      transmitTimestamp        = frame.GetTimestamp();
-      rewriteTransmitTimestamp = false;
+  if (m_rtpSession != NULL) {
+    if (!m_rewriteTransmitTimestamp)
+      frame.SetTimestamp(m_transmitTimestamp);
+    m_rtpSession->WriteOOBData(frame, m_rewriteTransmitTimestamp);
+    if (m_rewriteTransmitTimestamp) {
+      m_transmitTimestamp        = frame.GetTimestamp();
+      m_rewriteTransmitTimestamp = false;
     } 
   }
 
-  PTRACE(4, "RFC2833\tSending " << ((payload[1] & 0x80) ? "end" : "tone") << ": code=" << (unsigned)transmitCode
-         << ", dur=" << transmitDuration << ", ts=" << frame.GetTimestamp() << ", mkr=" << frame.GetMarker());
+  PTRACE(4, "RFC2833\tSending " << ((payload[1] & 0x80) ? "end" : "tone") << ": code=" << (unsigned)m_transmitCode
+         << ", dur=" << m_transmitDuration << ", ts=" << frame.GetTimestamp() << ", mkr=" << frame.GetMarker());
 }
 
-PINDEX OpalRFC2833Proto::ASCIIToRFC2833(char tone)
+
+PString OpalRFC2833Proto::GetTxCapability() const
 {
+  return GetCapability(m_txCapabilitySet);
+}
+
+
+PString OpalRFC2833Proto::GetRxCapability() const
+{
+  return GetCapability(m_rxCapabilitySet);
+}
+
+
+void OpalRFC2833Proto::SetTxCapability(const PString & codes)
+{
+  SetCapability(codes, m_txCapabilitySet);
+}
+
+
+void OpalRFC2833Proto::SetRxCapability(const PString & codes)
+{
+  SetCapability(codes, m_rxCapabilitySet);
+}
+
+
+PINDEX OpalRFC2833Proto::ASCIIToRFC2833(char tone, bool hasNSE)
+{
+  const char * theChar;
   int upperTone = toupper(tone);
-  const char * theChar = strchr(RFC2833Table1Events, upperTone);
-  if (theChar != NULL) 
+
+  if (hasNSE && (theChar = strchr(NSEEvents, upperTone)) != NULL)
+    return (PINDEX)(NSECodeBase+theChar-NSEEvents);
+
+  if ((theChar = strchr(RFC2833Table1Events, upperTone)) != NULL) 
     return (PINDEX)(theChar-RFC2833Table1Events);
-  
-  theChar = strchr(NSEEvents, upperTone);
-  if (theChar != NULL) 
-    return (PINDEX)(192+theChar-NSEEvents);
 
   PTRACE(1, "RFC2833\tInvalid tone character '" << tone << "'.");
   return P_MAX_INDEX;
 }
 
-char OpalRFC2833Proto::RFC2833ToASCII(PINDEX rfc2833)
+
+char OpalRFC2833Proto::RFC2833ToASCII(PINDEX rfc2833, bool hasNSE)
 {
   PASSERTINDEX(rfc2833);
+
+  if (hasNSE && rfc2833 >= NSECodeBase && rfc2833 < NSECodeBase+(PINDEX)sizeof(NSEEvents)-1)
+    return NSEEvents[rfc2833-NSECodeBase];
 
   if (rfc2833 >= 0 && rfc2833 < (PINDEX)sizeof(RFC2833Table1Events)-1)
     return RFC2833Table1Events[rfc2833];
 
-  if (rfc2833 >= 192 && rfc2833 < 194)
-    return NSEEvents[rfc2833-192];
-
   return '\0';
 }
 
-
-PBoolean OpalRFC2833Proto::BeginTransmit(char tone)
-{
-  PWaitAndSignal m(mutex);
-
-  // convert tone to correct code
-  PINDEX code;
-  if (tone == '.' || (code = ASCIIToRFC2833(tone)) == P_MAX_INDEX) {
-    transmitState = TransmitIdle;
-    return false;
-  }
-
-  // kick off the transmitter
-  transmitCode             = (BYTE)code;
-  transmitState            = TransmitActive;
-  rewriteTransmitTimestamp = true;
-  asyncStart               = 0;
-  return PTrue;
-}
 
 void OpalRFC2833Proto::AsyncTimeout(PTimer &, INT)
 {
   SendAsyncFrame();
 }
 
+
 void OpalRFC2833Proto::OnStartReceive(char tone, unsigned timestamp)
 {
-  ++tonesReceived;
-  previousReceivedTimestamp = timestamp;
+  ++m_tonesReceived;
+  m_previousReceivedTimestamp = timestamp;
   OnStartReceive(tone);
   OpalRFC2833Info info(tone, 0, timestamp);
-  receiveNotifier(info, 0);
+  m_receiveNotifier(info, 0);
 }
+
 
 void OpalRFC2833Proto::OnStartReceive(char)
 {
@@ -259,19 +341,19 @@ void OpalRFC2833Proto::OnStartReceive(char)
 
 void OpalRFC2833Proto::OnEndReceive(char tone, unsigned duration, unsigned timestamp)
 {
-  receiveState = ReceiveIdle;
-  receiveTimer.Stop(false);
+  m_receiveState = ReceiveIdle;
+  m_receiveTimer.Stop(false);
   OpalRFC2833Info info(tone, duration, timestamp);
-  receiveNotifier(info, 1);
+  m_receiveNotifier(info, 1);
 }
 
 
 void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
 {
-  if (frame.GetPayloadType() != payloadType || frame.GetPayloadSize() == 0)
+  if (frame.GetPayloadType() != m_payloadType || frame.GetPayloadSize() == 0)
     return;
 
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal mutex(m_mutex);
 
   if (frame.GetPayloadSize() < 4) {
     PTRACE(2, "RFC2833\tIgnoring packet size " << frame.GetPayloadSize() << " - too small.");
@@ -280,7 +362,7 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
 
   const BYTE * payload = frame.GetPayloadPtr();
 
-  char tone = RFC2833ToASCII(payload[0]);
+  char tone = RFC2833ToASCII(payload[0], m_rxCapabilitySet[NSECodeBase]);
   if (tone == '\0') {
     PTRACE(2, "RFC2833\tIgnoring packet with code " << payload[0] << " - unsupported event.");
     return;
@@ -301,50 +383,51 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
   // the only safe way to detect a new tone is the timestamp
   // because the packet with the marker bit could go missing and 
   // because some endpoints (*cough* Kapanga *cough*) send multiple marker bits
-  bool newTone = (tonesReceived == 0) || (timeStamp != previousReceivedTimestamp);
+  bool newTone = (m_tonesReceived == 0) || (timeStamp != m_previousReceivedTimestamp);
 
   // if new tone, end any current tone and start new one
   if (!newTone) {
-    if (receiveState == ReceiveActive)
-      receiveTimer = 200;
+    if (m_receiveState == ReceiveActive)
+      m_receiveTimer = 200;
     else
-      receiveTimer.Stop();
+      m_receiveTimer.Stop();
   }
   else {
-    receiveTimer.Stop();
+    m_receiveTimer.Stop();
 
     // finish any existing tone
-    if (receiveState == ReceiveActive) 
-      OnEndReceive(receivedTone, duration, previousReceivedTimestamp);
+    if (m_receiveState == ReceiveActive) 
+      OnEndReceive(m_receivedTone, duration, m_previousReceivedTimestamp);
 
     // do callback for new tone
     OnStartReceive(tone, timeStamp);
 
     // setup for new tone
-    receivedTone = tone;
-    receiveTimer = 200;
-    receiveState = ReceiveActive;
+    m_receivedTone = tone;
+    m_receiveTimer = 200;
+    m_receiveState = ReceiveActive;
   }
 
   // if end of active tone, do callback and change to idle 
   // no else, so this works for single packet tones too
-  if ((receiveState == ReceiveActive) && ((payload[1]&0x80) != 0)) 
-    OnEndReceive(receivedTone, duration, timeStamp);
+  if ((m_receiveState == ReceiveActive) && ((payload[1]&0x80) != 0)) 
+    OnEndReceive(m_receivedTone, duration, timeStamp);
 }
 
 
 void OpalRFC2833Proto::ReceiveTimeout(PTimer &, INT)
 {
-  PTRACE(3, "RFC2833\tTimeout occurred while receiving " << (unsigned)receivedTone);
+  PTRACE(3, "RFC2833\tTimeout occurred while receiving " << (unsigned)m_receivedTone);
 
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal mutex(m_mutex);
 
-  if (receiveState != ReceiveIdle) {
-    receiveState = ReceiveIdle;
+  if (m_receiveState != ReceiveIdle) {
+    m_receiveState = ReceiveIdle;
     //OnEndReceive(receivedTone, 0, 0);
   }
 
-  receiveTimer.Stop(false);
+  m_receiveTimer.Stop(false);
 }
+
 
 /////////////////////////////////////////////////////////////////////////////

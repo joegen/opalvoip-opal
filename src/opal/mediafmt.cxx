@@ -119,33 +119,41 @@ const OpalAudioFormat & GetOpalL16_STEREO_48KHZ()
 
 const OpalMediaFormat & GetOpalRFC2833()
 {
-  static const OpalMediaFormat RFC2833(
-    OPAL_RFC2833,
-    "userinput",
-    (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
-    "telephone-event",
-    true,   // Needs jitter
-    32*(1000/50), // bits/sec  (32 bits every 50ms)
-    4,      // bytes/frame
-    150*8,  // 150 millisecond
-    OpalMediaFormat::AudioClockRate
-  );
+  static struct OpalRFC2833MediaFormat : public OpalMediaFormat {
+    OpalRFC2833MediaFormat()
+      : OpalMediaFormat(OPAL_RFC2833,
+                        "userinput",
+                        (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
+                        "telephone-event",
+                        true,   // Needs jitter
+                        32*(1000/50), // bits/sec  (32 bits every 50ms)
+                        4,      // bytes/frame
+                        150*8,  // 150 millisecond
+                        OpalMediaFormat::AudioClockRate)
+    {
+      AddOption(new OpalMediaOptionString("FMTP", false, "0-16,32,36"));
+    }
+  } const RFC2833;
   return RFC2833;
 }
 
 const OpalMediaFormat & GetOpalCiscoNSE()
 {
-  static const OpalMediaFormat CiscoNSE(
-    OPAL_CISCONSE,
-    "userinput",
-    (RTP_DataFrame::PayloadTypes)100,  // Set to this for Cisco compatibility
-    "NSE",
-    true,   // Needs jitter
-    32*(1000/50), // bits/sec  (32 bits every 50ms)
-    4,      // bytes/frame
-    150*8,  // 150 millisecond
-    OpalMediaFormat::AudioClockRate
-  );
+  static struct OpalCiscoNSEMediaFormat : public OpalMediaFormat {
+    OpalCiscoNSEMediaFormat()
+      : OpalMediaFormat(OPAL_CISCONSE,
+                        "userinput",
+                        (RTP_DataFrame::PayloadTypes)100,  // Set to this for Cisco compatibility
+                        "NSE",
+                        true,   // Needs jitter
+                        32*(1000/50), // bits/sec  (32 bits every 50ms)
+                        4,      // bytes/frame
+                        150*8,  // 150 millisecond
+                        OpalMediaFormat::AudioClockRate)
+    {
+      AddOption(new OpalMediaOptionString("FMTP", false, "192,193"));
+    }
+  } const CiscoNSE;
   return CiscoNSE;
 }
 
