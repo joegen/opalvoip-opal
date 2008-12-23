@@ -857,6 +857,7 @@ void OpalFaxConnection::CheckFaxStopped()
 
 void OpalFaxConnection::OnFaxStoppedTimeout(PTimer &, INT)
 {
+  PTRACE(3, "FAX\tTimeout on fax connection: " << GetToken());
   Release();
 }
 
@@ -870,7 +871,7 @@ OpalT38Connection::OpalT38Connection(OpalCall        & call,
                                      const PString   & token,
                                      OpalConnection::StringOptions * stringOptions)
   : OpalFaxConnection(call, ep, filename, receive, token, stringOptions)
-  , m_syncMode(Mode_UserInput)
+  , m_syncMode(Mode_Timeout)
   , m_faxMode(false)
 {
   PTRACE(3, "FAX\tCreated T.38 connection with token '" << callToken << "'");
