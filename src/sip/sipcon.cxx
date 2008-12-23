@@ -763,10 +763,12 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
 
   // Set format if we have an RTP payload type for RFC2833 and/or NSE
   // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
-  SetNxECapabilities(localMedia, OpalRFC2833, rfc2833Handler,  ntePayloadCode);
+  if (mediaType == OpalMediaType::Audio()) {
+    SetNxECapabilities(localMedia, OpalRFC2833, rfc2833Handler,  ntePayloadCode);
 #if OPAL_T38_CAPABILITY
-  SetNxECapabilities(localMedia, OpalCiscoNSE, ciscoNSEHandler, nsePayloadCode);
+    SetNxECapabilities(localMedia, OpalCiscoNSE, ciscoNSEHandler, nsePayloadCode);
 #endif
+  }
 
   sdp.AddMediaDescription(localMedia);
 
@@ -994,12 +996,10 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   }
 
   // Set format if we have an RTP payload type for RFC2833 and/or NSE
-  if (mediaType == OpalMediaType::Audio()) {
-    SetNxECapabilities(localMedia, nteFormat, rfc2833Handler);
+  SetNxECapabilities(localMedia, nteFormat, rfc2833Handler);
 #if OPAL_T38_CAPABILITY
-    SetNxECapabilities(localMedia, nseFormat, ciscoNSEHandler);
+  SetNxECapabilities(localMedia, nseFormat, ciscoNSEHandler);
 #endif
-  }
 
   sdpOut.AddMediaDescription(localMedia);
 
