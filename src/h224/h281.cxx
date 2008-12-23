@@ -32,7 +32,7 @@
 #pragma implementation "h281handler.h"
 #endif
 
-#if OPAL_H224FECC
+#if defined(OPAL_HAS_H224) && defined(OPAL_HAS_H281)
 
 #include <h224/h281.h>
 #include <h224/h281handler.h>
@@ -760,5 +760,5 @@ void OpalH281Handler::StopActionLocally(PTimer &, INT)
   OnStopAction();
 }
 
-#endif // OPAL_H224FECC
+#endif // defined(OPAL_HAS_H224) && defined(OPAL_HAS_H281)
 

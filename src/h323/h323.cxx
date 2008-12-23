@@ -59,7 +59,7 @@
 #include <codec/vidcodec.h>
 #endif
 
-#if OPAL_H224FECC
+#if OPAL_HAS_H224
 #include <h224/h224.h>
 #endif
 
@@ -3434,7 +3434,7 @@ void H323Connection::OnSetLocalCapabilities()
     OpalMediaType::Audio(),
     OpalMediaType::Fax(),
     OpalMediaType::Video()
-#if OPAL_H224FECC
+#if OPAL_HAS_H224
     , OpalH224MediaType::MediaType()
 #endif
   };
@@ -3734,7 +3734,7 @@ void H323Connection::OnSelectLogicalChannels()
 #if OPAL_T38_CAPABILITY
   OpalMediaType::AutoStartMode autoStartFax = GetAutoStart(OpalMediaType::Fax());
 #endif
-#if OPAL_H224FECC
+#if OPAL_HAS_H224
   OpalMediaType::AutoStartMode autoStartH224 = GetAutoStart(GetOpalH224_H323AnnexQ().GetMediaType());
 #endif
 
@@ -3756,7 +3756,7 @@ void H323Connection::OnSelectLogicalChannels()
         PTRACE(4, "H245\tOnSelectLogicalChannels, fax not auto-started");
       }
 #endif
-#if OPAL_H224FECC
+#if OPAL_HAS_H224
       SelectDefaultLogicalChannel(OpalH224MediaType::MediaType(), H323Capability::DefaultH224SessionID);
 #endif
       break;
@@ -3773,7 +3773,7 @@ void H323Connection::OnSelectLogicalChannels()
                               (autoStartFax&OpalMediaType::Transmit) != 0,
                               (autoStartFax&OpalMediaType::Receive) != 0);
 #endif
-#if OPAL_H224FECC
+#if OPAL_HAS_H224
       SelectFastStartChannels(H323Capability::DefaultH224SessionID,
                               (autoStartH224&OpalMediaType::Transmit) != 0,
                               (autoStartH224&OpalMediaType::Receive) != 0);
@@ -3795,7 +3795,7 @@ void H323Connection::OnSelectLogicalChannels()
       if ((autoStartFax&OpalMediaType::Receive) != 0)
         StartFastStartChannel(H323Capability::DefaultDataSessionID, H323Channel::IsReceiver);
 #endif
-#if OPAL_H224FECC
+#if OPAL_HAS_H224
       if ((autoStartH224&OpalMediaType::Transmit) != 0)
         StartFastStartChannel(H323Capability::DefaultH224SessionID, H323Channel::IsTransmitter);
       if ((autoStartH224&OpalMediaType::Receive) != 0)

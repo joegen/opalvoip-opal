@@ -124,7 +124,6 @@
 #endif
 
 #if OPAL_H323
-  #undef  OPAL_H224FECC
   #undef  OPAL_H501
   
   #undef  OPAL_H450
@@ -169,6 +168,9 @@
   #define H323_DISABLE_H501 1
 #endif
 
+
+#undef  OPAL_HAS_H224
+#undef  OPAL_HAS_H281
 
 /////////////////////////////////////////////////
 //
