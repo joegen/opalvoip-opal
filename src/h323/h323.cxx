@@ -4767,14 +4767,16 @@ unsigned H323Connection::GetInternalSessionID(unsigned externalSessionID, const 
   if (!defaultAudioSessionIDAssigned && mediaType == OpalMediaType::Audio()) {
     PTRACE(3, "H323\tMapping session ID " << internalSessionID << " to primary session ID 1");
     defaultAudioSessionIDAssigned = PTrue;
-    internalToExternalSessionIDMap[internalSessionID] = 1;
+    internalToExternalSessionIDMap[1] = 1;
+    mediaTypeToInternalSessionIDMap[mediaType] = 1;
     return 1;
   }
   
   if (!defaultVideoSessionIDAssigned && mediaType == OpalMediaType::Video()) {
     PTRACE(3, "H323\tMapping session ID " << internalSessionID << " to primary session ID 2");
     defaultVideoSessionIDAssigned = PTrue;
-    internalToExternalSessionIDMap[internalSessionID] = 2;
+    internalToExternalSessionIDMap[2] = 2;
+    mediaTypeToInternalSessionIDMap[mediaType] = 2;
     return 2;
   }
 
