@@ -49,7 +49,7 @@
 #include <ptclib/pdns.h>
 #include <h323/q931.h>
 
-#if OPAL_H224FECC
+#if OPAL_HAS_H224
 #include <h224/h224.h>
 #endif
 

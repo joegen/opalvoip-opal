@@ -64,28 +64,25 @@ class OpalH224MediaType : public OpalRTPAVPMediaType
 // H.224 Media Format
 //
 
-class OpalH224MediaFormatInternal : public OpalMediaFormatInternal
-{
-  PCLASSINFO(OpalH224MediaFormatInternal, OpalMediaFormatInternal);
-  
-  public:
-    OpalH224MediaFormatInternal(PBoolean useHDLCTunneling);
-    virtual PObject * Clone() const;
-    virtual PBoolean IsValidForProtocol(const PString & protocol) const;
-  private:
-    PBoolean useHDLCTunneling;
-};
-
 class OpalH224MediaFormat : public OpalMediaFormat
 {
   PCLASSINFO(OpalH224MediaFormat, OpalMediaFormat);
   
   public:
-    OpalH224MediaFormat(PBoolean useHDLCTunneling);
+    OpalH224MediaFormat(
+      const char * fullName,                      ///<  Full name of media format
+      RTP_DataFrame::PayloadTypes rtpPayloadType  ///<  RTP payload type code
+    );
+    virtual PObject * Clone() const;
+    virtual PBoolean IsValidForProtocol(const PString & protocol) const;
 };
 
 extern const OpalMediaFormat & GetOpalH224_H323AnnexQ();
 extern const OpalMediaFormat & GetOpalH224_HDLCTunneling();
+
+
+#define OpalH224AnnexQ      GetOpalH224_H323AnnexQ()
+#define OpalH224Tunnelled   GetOpalH224_HDLCTunneling()
 
 ///////////////////////////////////////////////////////////////////////////////
 

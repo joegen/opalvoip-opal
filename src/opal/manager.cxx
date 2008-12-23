@@ -47,6 +47,10 @@
 #include <codec/vidcodec.h>
 #endif
 
+#if OPAL_HAS_H224
+#include <h224/h224.h>
+#endif
+
 #include <ptclib/random.h>
 
 #include "../../version.h"
@@ -1546,6 +1550,10 @@ void OpalManager::AddIMMediaFormats(OpalMediaFormatList & mediaFormats, const Op
 #endif
 #if OPAL_HAS_RFC4103
   mediaFormats += OpalT140;
+#endif
+#if OPAL_HAS_H224
+  mediaFormats += OpalH224AnnexQ;
+  mediaFormats += OpalH224Tunnelled;
 #endif
 }
 

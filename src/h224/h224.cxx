@@ -36,7 +36,7 @@
 #pragma implementation "h224handler.h"
 #endif
 
-#if OPAL_H224FECC
+#if OPAL_HAS_H224
 
 #include <h224/h224.h>
 #include <h224/h224handler.h>
@@ -91,53 +91,60 @@ PString SDPH224MediaDescription::GetSDPMediaType() const
 
 /////////////////////////////////////////////////////////////////////////
 
-OpalH224MediaFormatInternal::OpalH224MediaFormatInternal(bool _useHDLCTunneling)
-: OpalMediaFormatInternal(_useHDLCTunneling ? "H.224/HDLCTunneling" : "H.224/H323AnnexQ",
-                          "h224",
-                          (RTP_DataFrame::PayloadTypes)100, // Most other implementations seem to use this payload code
-                          "H224",
-                          PFalse,
-                          6400, // 6.4kbit/s as defined in RFC 4573
-                          0,
-                          0,
-                          4800,  // As defined in RFC 4573
-                          0),
-  useHDLCTunneling(_useHDLCTunneling)
-{
-}
-
-PObject * OpalH224MediaFormatInternal::Clone() const
-{
-  return new OpalH224MediaFormatInternal(*this);
-}
-
-PBoolean OpalH224MediaFormatInternal::IsValidForProtocol(const PString & protocol) const
-{
-  if (useHDLCTunneling) {
-    if (protocol == "sip") {
-      return PFalse;
-    }
-  }
-  return PTrue;
-}
-
-/////////////////////////////////////////////////////////////////////////
-
-OpalH224MediaFormat::OpalH224MediaFormat(PBoolean useHDLCTunneling)
-: OpalMediaFormat(new OpalH224MediaFormatInternal(useHDLCTunneling))
-{
-}
-
 const OpalMediaFormat & GetOpalH224_H323AnnexQ()
 {
-  static const OpalH224MediaFormat format(PFalse);
-  return format;
-}
+  static class H224_AnnexQ_MediaFormat : public OpalH224MediaFormat { 
+    public: 
+      H224_AnnexQ_MediaFormat() 
+        : OpalH224MediaFormat("H.224/H323AnnexQ", (RTP_DataFrame::PayloadTypes)100)  // Most other implementations seem to use this payload code
+      { 
+        OpalMediaOption * option = new OpalMediaOptionBoolean("HDLC Tunneling", true, OpalMediaOption::MinMerge, false);
+        AddOption(option);
+      } 
+  } const f; 
+  return f; 
+};
 
 const OpalMediaFormat & GetOpalH224_HDLCTunneling()
 {
-  static const OpalH224MediaFormat format(PTrue);
-  return format;
+  static class H224_HDLCTunneling_MediaFormat : public OpalH224MediaFormat { 
+    public: 
+      H224_HDLCTunneling_MediaFormat() 
+        : OpalH224MediaFormat("H.224/HDLCTunneling", RTP_DataFrame::MaxPayloadType)    // HDLC tunnelled is not sent over RTP
+      { 
+        OpalMediaOption * option = new OpalMediaOptionBoolean("HDLC Tunneling", true, OpalMediaOption::MinMerge, true);
+        AddOption(option);
+      } 
+  } const f; 
+  return f; 
+}
+
+OpalH224MediaFormat::OpalH224MediaFormat(
+      const char * fullName,                      ///<  Full name of media format
+      RTP_DataFrame::PayloadTypes rtpPayloadType  ///<  RTP payload type code
+  ) 
+  : OpalMediaFormat(fullName, 
+                    "h224", 
+                    rtpPayloadType,
+                    "h224",
+                    PFalse,
+                    6400,  // 6.4kbit/s as defined in RFC 4573
+                    0,
+                    0,
+                    4800,  // As defined in RFC 4573
+                    0)
+{
+}
+
+PObject * OpalH224MediaFormat::Clone() const
+{
+  return new OpalH224MediaFormat(*this);
+}
+
+PBoolean OpalH224MediaFormat::IsValidForProtocol(const PString & protocol) const
+{
+  // HDLC tunnelling only makes sense for H.323. Everything else uses RTP;
+  return !GetOptionBoolean("HDLC Tunneling") || (protocol == "h323");
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -541,24 +548,14 @@ PBoolean OpalH224Handler::RemoveClient(OpalH224Client & client)
 
 void OpalH224Handler::SetTransmitMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  if (mediaFormat == GetOpalH224_H323AnnexQ()) {
-    transmitHDLCTunneling = PFalse;
-  } else if (mediaFormat == GetOpalH224_HDLCTunneling()) {
-    transmitHDLCTunneling = PTrue;
-  } else {
-    PTRACE(1, "H224\tInvalid transmit media format");
-  }
+  PAssert(mediaFormat.GetMediaType() == "h224", "H.224 handler passed incorrect media format");
+  transmitHDLCTunneling = mediaFormat.GetOptionBoolean("HDLC Tunneling");
 }
 
 void OpalH224Handler::SetReceiveMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  if (mediaFormat == GetOpalH224_H323AnnexQ()) {
-    receiveHDLCTunneling = PFalse;
-  } else if (mediaFormat == GetOpalH224_HDLCTunneling()) {
-    receiveHDLCTunneling = PTrue;
-  } else {
-    PTRACE(1, "H224\tInvalid receive media format");
-  }
+  PAssert(mediaFormat.GetMediaType() == "h224", "H.224 handler passed incorrect media format");
+  receiveHDLCTunneling = mediaFormat.GetOptionBoolean("HDLC Tunneling");
 }
 
 void OpalH224Handler::SetTransmitMediaStream(OpalH224MediaStream * mediaStream)
@@ -1262,4 +1259,4 @@ void OpalH224Client::SetRemoteClientAvailable(PBoolean available, PBoolean hasEx
   remoteClientHasExtraCapabilities = hasExtraCapabilities;
 }
 
-#endif // OPAL_H224FECC
+#endif // OPAL_HAS_H224

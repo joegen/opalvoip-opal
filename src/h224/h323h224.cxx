@@ -32,7 +32,7 @@
 #pragma implementation "h323h224.h"
 #endif
 
-#if OPAL_H224FECC
+#if defined(OPAL_HAS_H224) && defined(OPAL_H323)
 
 #include <h224/h323h224.h>
 
@@ -199,5 +199,5 @@ PBoolean H323_H224_HDLCTunnelingCapability::OnReceivedPDU(const H245_DataApplica
   return PTrue;
 }
 
-#endif // OPAL_H224FECC
+#endif // defined(OPAL_HAS_H224) && defined(OPAL_H323)
 
