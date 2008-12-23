@@ -197,6 +197,9 @@ void OpalRFC2833Proto::SendAsyncFrame()
   PWaitAndSignal mutex(m_mutex);
 
   // if transmittter is ever in this state, then stop the duration timer
+  if (m_payloadType == RTP_DataFrame::IllegalPayloadType)
+    m_transmitState = TransmitIdle;
+
   if (m_transmitState == TransmitIdle) {
     m_asyncDurationTimer.Stop(false);
     return;
