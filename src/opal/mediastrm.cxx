@@ -344,12 +344,16 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
 
 PBoolean OpalMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
 {
-  if (!isOpen)
+  if (!isOpen) {
+    length = 0;
     return false;
+  }
 
   RTP_DataFrame packet(size);
-  if (!ReadPacket(packet))
+  if (!ReadPacket(packet)) {
+    length = 0;
     return false;
+  }
 
   length = packet.GetPayloadSize();
   if (length > size)
@@ -363,8 +367,10 @@ PBoolean OpalMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
 
 PBoolean OpalMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
 {
-  if (!isOpen)
+  if (!isOpen) {
+    written = 0;
     return false;
+  }
 
   written = length;
   RTP_DataFrame packet(length);
