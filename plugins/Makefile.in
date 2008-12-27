@@ -1,4 +1,5 @@
-SUBDIRS = audio/GSM0610 \
+SUBDIRS = audio/G722 \
+          audio/GSM0610 \
           audio/Speex \
           audio/iLBC \
 	  audio/LPC_10 \

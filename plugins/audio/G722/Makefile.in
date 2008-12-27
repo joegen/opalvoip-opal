@@ -24,14 +24,16 @@
 # $Date$
 #
 
-PREFIX=@INSTALLPREFIX@
-exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
+AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+target_os=@target_os@
 
 SONAME	= g722
 STDCCFLAGS += @STDCCFLAGS@ -fPIC
 
-SRCDIR	= ./VoipCodecs
+SRCDIR	= ./VoIPCodecs
 OBJDIR	= ./obj
 
 CC		=@CC@
@@ -51,9 +53,9 @@ vpath	%.c $(SRCDIR)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include -I./g726 $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
-PLUGIN	= ./g726_audio_pwplugin.$(PLUGINEXT)
+PLUGIN	= ./g722_audio_pwplugin.$(PLUGINEXT)
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
@@ -61,11 +63,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
+	mkdir -p $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
+	install $(PLUGIN) $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/$(PLUGIN)
+	rm -f $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)
