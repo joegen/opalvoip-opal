@@ -27,6 +27,8 @@
 
 /*! \file */
 
+#include <stdint.h>
+
 #if !defined(_SPANDSP_BITSTREAM_H_)
 #define _SPANDSP_BITSTREAM_H_
 
