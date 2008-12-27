@@ -387,6 +387,9 @@ AC_SUBST(HAVE_SPANDSP)
 AC_SUBST(SPANDSP_LIBS)
 dnl ########################################################################
 
+if test -d audio/G722 ; then
+  AC_CONFIG_FILES(audio/G722/Makefile)
+fi
 if test -d audio/GSM0610 ; then
   AC_CONFIG_FILES(audio/GSM0610/Makefile)
 fi

@@ -32,6 +32,7 @@
  * $Id: g722.h,v 1.17 2008/02/09 15:32:26 steveu Exp $
  */
 
+#include <stdint.h>
 
 /*! \file */
 
