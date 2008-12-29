@@ -372,7 +372,7 @@ int RFC2190Depacketizer::SetPacket(const RTPFrame & inputFrame, bool & requestIF
   unsigned int sbit = (payload[0] >> 3) & 0x07;
   unsigned hdrLen;
 
-char mode;
+  char mode;
 
   // handle mode A frames
   if ((payload[0] & 0x80) == 0) {
@@ -406,23 +406,22 @@ char mode;
 
   unsigned char * src = payload + hdrLen;
   size_t cpyLen = payloadLen - hdrLen;
-  frame.reserve(frame.size() + cpyLen);
-  unsigned char * dst = &frame[0] + frame.size();
 
   // handle first partial byte
   if ((sbit != 0) && (frame.size() > 0)) {
     
     static unsigned char smasks[7] = { 0x7f, 0x3f, 0x1f, 0x0f, 0x07, 0x03, 0x01 };
     unsigned smask = smasks[sbit-1];
-    dst[-1] |= (*src & smask);
+    frame[frame.size()-1] |= (*src & smask);
     --cpyLen;
     ++src;
   }
 
   // copy whole bytes
   if (cpyLen > 0) {
-    frame.resize(frame.size() + cpyLen);
-    memcpy(dst, src, cpyLen);
+    size_t frameSize = frame.size();
+    frame.resize(frameSize + cpyLen);
+    memcpy(&frame[0] + frameSize, src, cpyLen);
   }
 
   // keep ebit for next time
