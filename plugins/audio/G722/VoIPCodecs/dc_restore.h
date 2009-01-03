@@ -61,9 +61,6 @@ typedef struct
     int32_t state;
 } dc_restore_state_t;
 
-#include <stdint.h>
-#include <math.h>
-
 #if defined(__cplusplus)
 extern "C"
 {

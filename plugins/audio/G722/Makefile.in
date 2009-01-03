@@ -59,6 +59,8 @@ PLUGIN	= ./g722_audio_pwplugin.$(PLUGINEXT)
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
+all: $(PLUGIN)
+
 $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
