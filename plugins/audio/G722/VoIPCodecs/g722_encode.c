@@ -44,9 +44,7 @@
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
-#if defined(HAVE_MATH_H)
 #include <math.h>
-#endif
 
 #include "telephony.h"
 #include "dc_restore.h"

@@ -32,12 +32,14 @@
  * $Id: g722.h,v 1.17 2008/02/09 15:32:26 steveu Exp $
  */
 
-#include <stdint.h>
 
 /*! \file */
 
 #if !defined(_SPANDSP_G722_H_)
 #define _SPANDSP_G722_H_
+
+#include "inttypes.h"
+
 
 /*! \page g722_page G.722 encoding and decoding
 \section g722_page_sec_1 What does it do?
