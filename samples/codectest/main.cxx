@@ -292,7 +292,7 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
       else {
         OpalMediaFormat adjustedRawFormat = rawFormat;
         if (rawFormat == OpalPCM16) {
-          if (mediaFormat.GetClockRate() != rawFormat.GetClockRate())
+          if (mediaFormat.GetClockRate() != rawFormat.GetClockRate() || mediaFormat.GetPayloadType() == RTP_DataFrame::G722)
             adjustedRawFormat = OpalPCM16_16KHZ;
           if (args.HasOption('F')) {
             unsigned fpp = args.GetOptionString('F').AsUnsigned();
