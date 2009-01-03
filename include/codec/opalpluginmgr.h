@@ -80,7 +80,7 @@ class OpalPluginCodecHandler : public PObject
     OpalPluginCodecHandler();
 
     virtual OpalMediaFormatInternal * OnCreateAudioFormat(OpalPluginCodecManager & mgr,
-                                            const PluginCodec_Definition * encoderCodec,
+                                            const PluginCodec_Definition * codecDefn,
                                                               const char * rtpEncodingName,
                                                                   unsigned frameTime,
                                                                   unsigned timeUnits,
@@ -88,15 +88,15 @@ class OpalPluginCodecHandler : public PObject
 
 #if OPAL_VIDEO
     virtual OpalMediaFormatInternal * OnCreateVideoFormat(OpalPluginCodecManager & mgr,
-                                            const PluginCodec_Definition * encoderCodec,
+                                            const PluginCodec_Definition * codecDefn,
                                                               const char * rtpEncodingName,
                                                                     time_t timeStamp);
-    virtual void RegisterVideoTranscoder(const PString & src, const PString & dst, PluginCodec_Definition * codec, PBoolean v);
+    virtual void RegisterVideoTranscoder(const PString & src, const PString & dst, const PluginCodec_Definition * codec, bool v);
 #endif
 
 #if OPAL_T38_CAPABILITY
     virtual OpalMediaFormatInternal * OnCreateFaxFormat(OpalPluginCodecManager & mgr,
-                                          const PluginCodec_Definition * encoderCodec,
+                                          const PluginCodec_Definition * codecDefn,
                                                             const char * rtpEncodingName,
                                                                 unsigned frameTime,
                                                                 unsigned timeUnits,
@@ -132,20 +132,14 @@ class OpalPluginCodecManager : public PPluginModuleManager
 #endif
 
   protected:
-    void RegisterPluginPair(
-      PluginCodec_Definition * _encoderCodec,
-      PluginCodec_Definition * _decoderCodec,
-      OpalPluginCodecHandler * handler
-    );
-
     // Note the below MUST NOT be an OpalMediaFormatList
     PList<OpalMediaFormat> mediaFormatsOnHeap;
 
-    void RegisterCodecPlugins  (unsigned int count, PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
-    void UnregisterCodecPlugins(unsigned int count, PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
+    void RegisterCodecPlugins  (unsigned int count, const PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
+    void UnregisterCodecPlugins(unsigned int count, const PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
 
 #if OPAL_H323
-    void RegisterCapability(PluginCodec_Definition * encoderCodec, PluginCodec_Definition * decoderCodec);
+    void RegisterCapability(const PluginCodec_Definition * codecDefn);
 #endif
 };
 
@@ -157,7 +151,7 @@ class OpalPluginControl
   public:
     OpalPluginControl(const PluginCodec_Definition * def, const char * name);
 
-    PBoolean Exists() const
+    bool Exists() const
     {
       return controlDef != NULL;
     }
@@ -217,11 +211,11 @@ class OpalPluginMediaFormat : public OpalMediaFormat
 class OpalPluginTranscoder
 {
   public:
-    OpalPluginTranscoder(const PluginCodec_Definition * defn, PBoolean isEnc);
+    OpalPluginTranscoder(const PluginCodec_Definition * defn, bool isEnc);
     ~OpalPluginTranscoder();
 
     bool UpdateOptions(const OpalMediaFormat & fmt);
-    PBoolean Transcode(const void * from, unsigned * fromLen, void * to, unsigned * toLen, unsigned * flags) const
+    bool Transcode(const void * from, unsigned * fromLen, void * to, unsigned * toLen, unsigned * flags) const
     {
       return codecDef != NULL && codecDef->codecFunction != NULL &&
             (codecDef->codecFunction)(codecDef, context, from, fromLen, to, toLen, flags) != 0;
@@ -229,7 +223,7 @@ class OpalPluginTranscoder
 
   protected:
     const PluginCodec_Definition * codecDef;
-    PBoolean   isEncoder;
+    bool   isEncoder;
     void * context;
 
     OpalPluginControl setCodecOptions;
@@ -245,7 +239,7 @@ class OpalPluginAudioFormatInternal : public OpalAudioFormatInternal, public Opa
     friend class OpalPluginCodecManager;
 
     OpalPluginAudioFormatInternal(
-      const PluginCodec_Definition * _encoderCodec,
+      const PluginCodec_Definition * codecDefn,
       const char * rtpEncodingName, /// rtp encoding name
       unsigned frameTime,           /// Time for frame in RTP units (if applicable)
       unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
@@ -262,7 +256,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public Opal
 {
   PCLASSINFO(OpalPluginFramedAudioTranscoder, OpalFramedTranscoder);
   public:
-    OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, const char * rawFormat = NULL);
+    OpalPluginFramedAudioTranscoder(const PluginCodec_Definition * codecDefn, bool isEncoder);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
     PBoolean ConvertFrame(const BYTE * input, PINDEX & consumed, BYTE * output, PINDEX & created);
     virtual PBoolean ConvertSilentFrame(BYTE * buffer);
@@ -276,7 +270,7 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
 {
   PCLASSINFO(OpalPluginStreamedAudioTranscoder, OpalStreamedTranscoder);
   public:
-    OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, unsigned inputBits, unsigned outputBits);
+    OpalPluginStreamedAudioTranscoder(const PluginCodec_Definition * codec, bool isEncoder, unsigned inputBits, unsigned outputBits);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
     virtual bool AcceptComfortNoise() const { return comfortNoise; }
   protected:
@@ -288,7 +282,7 @@ class OpalPluginStreamedAudioEncoder : public OpalPluginStreamedAudioTranscoder
 {
   PCLASSINFO(OpalPluginStreamedAudioEncoder, OpalPluginStreamedAudioTranscoder);
   public:
-    OpalPluginStreamedAudioEncoder(PluginCodec_Definition * _codec, PBoolean);
+    OpalPluginStreamedAudioEncoder(const PluginCodec_Definition * codec, bool);
     int ConvertOne(int _sample) const;
 };
 
@@ -296,7 +290,7 @@ class OpalPluginStreamedAudioDecoder : public OpalPluginStreamedAudioTranscoder
 {
   PCLASSINFO(OpalPluginStreamedAudioDecoder, OpalPluginStreamedAudioTranscoder);
   public:
-    OpalPluginStreamedAudioDecoder(PluginCodec_Definition * _codec, PBoolean);
+    OpalPluginStreamedAudioDecoder(const PluginCodec_Definition * codec, bool);
     int ConvertOne(int codedSample) const;
 };
 
@@ -309,7 +303,7 @@ class OpalPluginVideoFormatInternal : public OpalVideoFormatInternal, public Opa
 {
   public:
     OpalPluginVideoFormatInternal(
-      const PluginCodec_Definition * _encoderCodec,
+      const PluginCodec_Definition * codec,
       const char * rtpEncodingName, /// rtp encoding name
       time_t timeStamp              /// timestamp (for versioning)
     );
@@ -324,7 +318,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
 {
   PCLASSINFO(OpalPluginVideoTranscoder, OpalVideoTranscoder);
   public:
-    OpalPluginVideoTranscoder(const PluginCodec_Definition * _codec, PBoolean _isEncoder);
+    OpalPluginVideoTranscoder(const PluginCodec_Definition * codec, bool isEncoder);
     ~OpalPluginVideoTranscoder();
 
     PBoolean ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
@@ -348,7 +342,7 @@ class OpalPluginFaxFormatInternal : public OpalMediaFormatInternal, public OpalP
 {
   public:
     OpalPluginFaxFormatInternal(
-      const PluginCodec_Definition * _encoderCodec,
+      const PluginCodec_Definition * codec,
       const char * rtpEncodingName, /// rtp encoding name
       unsigned frameTime,
       unsigned /*timeUnits*/,           /// RTP units for frameTime (if applicable)
@@ -431,16 +425,16 @@ class OpalPluginTranscoderFactory : public OpalTranscoderFactory
     class Worker : public OpalTranscoderFactory::WorkerBase 
     {
       public:
-        Worker(const OpalTranscoderKey & key, PluginCodec_Definition * _codecDefn, PBoolean _isEncoder)
-          : OpalTranscoderFactory::WorkerBase(), codecDefn(_codecDefn), isEncoder(_isEncoder)
+        Worker(const OpalTranscoderKey & key, const PluginCodec_Definition * codec, bool enc)
+          : OpalTranscoderFactory::WorkerBase(), codecDefn(codec), isEncoder(enc)
         { OpalTranscoderFactory::Register(key, this); }
 
       protected:
         virtual OpalTranscoder * Create(const OpalTranscoderKey &) const
         { return new TranscoderClass(codecDefn, isEncoder); }
 
-        PluginCodec_Definition * codecDefn;
-        PBoolean isEncoder;
+        const PluginCodec_Definition * codecDefn;
+        bool isEncoder;
     };
 };
 
@@ -452,18 +446,16 @@ class OpalPluginTranscoderFactory : public OpalTranscoderFactory
 class H323PluginCapabilityInfo
 {
   public:
-    H323PluginCapabilityInfo(const PluginCodec_Definition * _encoderCodec,
-                             const PluginCodec_Definition * _decoderCodec);
+    H323PluginCapabilityInfo(const PluginCodec_Definition * codecDefn);
 
     H323PluginCapabilityInfo(const PString & _baseName);
 
     const PString & GetFormatName() const
-    { return capabilityFormatName; }
+    { return m_capabilityFormatName; }
 
   protected:
-    const PluginCodec_Definition * encoderCodec;
-    const PluginCodec_Definition * decoderCodec;
-    PString                        capabilityFormatName;
+    const PluginCodec_Definition * m_codecDefn;
+    PString                        m_capabilityFormatName;
 };
 
 #if OPAL_H323
@@ -478,9 +470,8 @@ class H323AudioPluginCapability : public H323AudioCapability,
 {
   PCLASSINFO(H323AudioPluginCapability, H323AudioCapability);
   public:
-    H323AudioPluginCapability(const PluginCodec_Definition * _encoderCodec,
-                              const PluginCodec_Definition * _decoderCodec,
-                              unsigned _pluginSubType);
+    H323AudioPluginCapability(const PluginCodec_Definition * codecDefn,
+                              unsigned pluginSubType);
 
     // this constructor is only used when creating a capability without a codec
     H323AudioPluginCapability(const PString & _mediaFormat,
@@ -495,7 +486,6 @@ class H323AudioPluginCapability : public H323AudioCapability,
 
   protected:
     unsigned pluginSubType;
-    //unsigned h323subType;   // only set if using capability without codec
 };
 
 #define OPAL_DECLARE_EMPTY_AUDIO_CAPABILITY(fmt, type) \
@@ -517,19 +507,17 @@ class H323PluginG7231Capability : public H323AudioPluginCapability
 {
   PCLASSINFO(H323PluginG7231Capability, H323AudioPluginCapability);
   public:
-    H323PluginG7231Capability(const PluginCodec_Definition * _encoderCodec,
-                              const PluginCodec_Definition * _decoderCodec,
-                              PBoolean _annexA = PTrue);
+    H323PluginG7231Capability(const PluginCodec_Definition * codecDefn, bool annexA = true);
 
     // this constructor is used for creating empty codecs
-    H323PluginG7231Capability(const OpalMediaFormat & fmt, PBoolean _annexA = PTrue);
+    H323PluginG7231Capability(const OpalMediaFormat & fmt, bool annexA = true);
 
     virtual PObject * Clone() const;
     virtual PBoolean OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const;
     virtual PBoolean OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize);
 
   protected:
-    PBoolean annexA;
+    bool m_annexA;
 };
 
 #define OPAL_DECLARE_EMPTY_G7231_CAPABILITY(fmt, annex) \
@@ -552,13 +540,11 @@ class H323CodecPluginNonStandardAudioCapability : public H323NonStandardAudioCap
 {
   PCLASSINFO(H323CodecPluginNonStandardAudioCapability, H323NonStandardAudioCapability);
   public:
-    H323CodecPluginNonStandardAudioCapability(const PluginCodec_Definition * _encoderCodec,
-                                              const PluginCodec_Definition * _decoderCodec,
+    H323CodecPluginNonStandardAudioCapability(const PluginCodec_Definition * codecDefn,
                                               H323NonStandardCapabilityInfo::CompareFuncType compareFunc,
                                               const unsigned char * data, unsigned dataLen);
 
-    H323CodecPluginNonStandardAudioCapability(const PluginCodec_Definition * _encoderCodec,
-                                              const PluginCodec_Definition * _decoderCodec,
+    H323CodecPluginNonStandardAudioCapability(const PluginCodec_Definition * codecDefn,
                                               const unsigned char * data, unsigned dataLen);
 
     virtual PObject * Clone() const;
@@ -576,8 +562,7 @@ class H323CodecPluginGenericAudioCapability : public H323GenericAudioCapability,
 {
   PCLASSINFO(H323CodecPluginGenericAudioCapability, H323GenericAudioCapability);
   public:
-    H323CodecPluginGenericAudioCapability(const PluginCodec_Definition * _encoderCodec,
-                                          const PluginCodec_Definition * _decoderCodec,
+    H323CodecPluginGenericAudioCapability(const PluginCodec_Definition * codecDefn,
 				          const PluginCodec_H323GenericCodecData * data);
 
     virtual PObject * Clone() const;
@@ -597,15 +582,14 @@ class H323VideoPluginCapability : public H323VideoCapability,
 {
   PCLASSINFO(H323VideoPluginCapability, H323VideoCapability);
   public:
-    H323VideoPluginCapability(const PluginCodec_Definition * _encoderCodec,
-                              const PluginCodec_Definition * _decoderCodec,
+    H323VideoPluginCapability(const PluginCodec_Definition * codecDefn,
                               unsigned _pluginSubType);
 
     virtual PString GetFormatName() const;
 
     virtual unsigned GetSubType() const;
 
-    static PBoolean SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
+    static bool SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
 
     virtual void PrintOn(std::ostream & strm) const;
 
@@ -624,13 +608,11 @@ class H323CodecPluginNonStandardVideoCapability : public H323NonStandardVideoCap
 {
   PCLASSINFO(H323CodecPluginNonStandardVideoCapability, H323NonStandardVideoCapability);
   public:
-    H323CodecPluginNonStandardVideoCapability(const PluginCodec_Definition * _encoderCodec,
-                                              const PluginCodec_Definition * _decoderCodec,
+    H323CodecPluginNonStandardVideoCapability(const PluginCodec_Definition * codecDefn,
                                               H323NonStandardCapabilityInfo::CompareFuncType compareFunc,
                                               const unsigned char * data, unsigned dataLen);
 
-    H323CodecPluginNonStandardVideoCapability(const PluginCodec_Definition * _encoderCodec,
-                                              const PluginCodec_Definition * _decoderCodec,
+    H323CodecPluginNonStandardVideoCapability(const PluginCodec_Definition * codecDefn,
                                               const unsigned char * data, unsigned dataLen);
 
     virtual PObject * Clone() const;
@@ -648,8 +630,7 @@ class H323CodecPluginGenericVideoCapability : public H323GenericVideoCapability,
 {
   PCLASSINFO(H323CodecPluginGenericVideoCapability, H323GenericVideoCapability);
   public:
-    H323CodecPluginGenericVideoCapability(const PluginCodec_Definition * _encoderCodec,
-                                          const PluginCodec_Definition * _decoderCodec,
+    H323CodecPluginGenericVideoCapability(const PluginCodec_Definition * codecDefn,
 				          const PluginCodec_H323GenericCodecData * data);
 
     virtual PObject * Clone() const;
@@ -666,8 +647,7 @@ class H323H261PluginCapability : public H323VideoPluginCapability
 {
   PCLASSINFO(H323H261PluginCapability, H323VideoPluginCapability);
   public:
-    H323H261PluginCapability(const PluginCodec_Definition * _encoderCodec,
-                             const PluginCodec_Definition * _decoderCodec);
+    H323H261PluginCapability(const PluginCodec_Definition * codecDefn);
 
     Comparison Compare(const PObject & obj) const;
 
@@ -695,8 +675,7 @@ class H323H263PluginCapability : public H323VideoPluginCapability
 {
   PCLASSINFO(H323H263PluginCapability, H323VideoPluginCapability);
   public:
-    H323H263PluginCapability(const PluginCodec_Definition * _encoderCodec,
-                             const PluginCodec_Definition * _decoderCodec);
+    H323H263PluginCapability(const PluginCodec_Definition * codecDefn);
 
     Comparison Compare(const PObject & obj) const;
 
