@@ -30,7 +30,11 @@
 #include "VoIPCodecs/g722.h"
 
 
-#define CLOCK_RATE              16000  // Due to a spec error, clock rate is 8kHz even though this is 16kHz codec, see RFC3551/4.5.2
+/* Due to a spec error, clock rate is 8kHz even though this is 16kHz codec,
+   see RFC3551/4.5.2. So some of these values have to be lied about so that
+   the OPAL system gets it right.
+  */
+#define CLOCK_RATE              8000  // Clock rate is not samples/second in this case!
 #define BITS_PER_SECOND         64000 // raw bits per second
 #define FRAME_TIME              1000  // Microseconds in a millisecond
 #define SAMPLES_PER_FRAME       16    // Samples in a millisecond
@@ -38,7 +42,7 @@
 #define MAX_FRAMES_PER_PACKET   90    // 90 milliseconds, which means RTP packets smaller than 1500 bytes typical LAN maximum
 #define PREF_FRAMES_PER_PACKET  20    // 20 milliseconds
 
-static const char L16Desc[]  = "L16"; //"PCM-16-16kHz";
+static const char L16Desc[]  = "PCM-16-16kHz"; // Cannot use "L16" as usual, force 16kHz PCM
 static const char g722[]     = "G.722-64k";
 static const char sdpG722[]  = "G722";
 
