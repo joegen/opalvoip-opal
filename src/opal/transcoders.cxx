@@ -140,7 +140,7 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   }
 
   // set the output timestamp and marker bit
-  output.front().SetTimestamp(input.GetTimestamp());
+  output.front().SetTimestamp(input.GetTimestamp()*outputMediaFormat.GetClockRate()/inputMediaFormat.GetClockRate());
   output.front().SetMarker(input.GetMarker());
 
   // set the output payload type directly from the output media format

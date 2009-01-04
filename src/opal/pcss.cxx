@@ -249,12 +249,14 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
   }
 
   unsigned channels = mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption());
+  unsigned clockRate = mediaFormat.GetClockRate();
 
-  if (soundChannel->Open(deviceName, dir, channels, mediaFormat.GetClockRate(), 16)) {
+  if (soundChannel->Open(deviceName, dir, channels, clockRate, 16)) {
     PTRACE(3, "PCSS\tOpened " 
                << ((channels == 1) ? "mono" : ((channels == 2) ? "stereo" : "multi-channel")) 
                << " sound channel \"" << deviceName
-               << "\" for " << (isSource ? "record" : "play") << "ing.");
+               << "\" for " << (isSource ? "record" : "play") << "ing at "
+               << clockRate/1000 << '.' << (clockRate%1000)/100 << " kHz.");
     return soundChannel;
   }
 
