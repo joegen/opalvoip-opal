@@ -144,7 +144,7 @@ static int celt_codec_encoder(const struct PluginCodec_Definition * codec,
   if (*toLen < celt->bytes_per_packet)
     return FALSE;
 
-  byteCount = celt_encode(celt->encoder_state, (const short *)fromPtr, NULL, (char *)toPtr, celt->bytes_per_packet);
+  byteCount = celt_encode(celt->encoder_state, (celt_int16_t *)fromPtr, (char *)toPtr, celt->bytes_per_packet);
   if (byteCount < 0) {
 	return 0;
   }
