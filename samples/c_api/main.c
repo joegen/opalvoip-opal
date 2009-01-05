@@ -36,7 +36,7 @@
 #include <opal.h>
 
 
-#define LOCAL_MEDIA 1
+#define LOCAL_MEDIA 0
 
 
 #if defined(_WIN32)
@@ -61,7 +61,7 @@
 
   #define OPAL_DLL "libopal.so"
 
-  #define OPEN_LIBRARY(name)             dlopen(name, RTLD_NOW)
+  #define OPEN_LIBRARY(name)             dlopen(name, RTLD_NOW|RTLD_GLOBAL)
   #define GET_LIBRARY_FUNCTION(dll, fn)  dlsym(dll, (const char *)(fn));
 
   void * hDLL;

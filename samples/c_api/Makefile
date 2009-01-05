@@ -30,21 +30,41 @@
 PROG		= c_api
 SOURCES		:= main.c
 
-ifndef OPALDIR
-ifneq (,$(wildcard $(HOME)/opal))
-OPALDIR=$(HOME)/opal
-else
-ifneq (,$(wildcard /usr/local/opal))
-OPALDIR=/usr/local/opal
-else
-default_target :
-	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
-	@echo environment variable to build this application.
-endif
+
+# If we have environment variables for local copies of
+# OPAL and PTLib then use those packages by overriding
+# the search path for pkg-config
+ifneq ($(PTLIBDIR),)
+ifneq ($(OPALDIR),)
+PKG_CONFIG_PATH=$(OPALDIR):$(PTLIBDIR)
 endif
 endif
 
-ifdef OPALDIR
-include $(OPALDIR)/opal_inc.mak
-endif
+
+# Get required flags from library
+
+CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --cflags opal)
+LDFLAGS += -ldl
+
+
+OBJDIR := obj
+
+vpath	%.o   $(OBJDIR)
+
+$(OBJDIR)/%.o : %.c
+	@mkdir -p $(OBJDIR) >/dev/null 2>&1
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OPAL_DEPDIR)/%.dep : %.cxx 
+	@if [ ! -d $(OPAL_DEPDIR) ] ; then mkdir -p $(OPAL_DEPDIR) ; fi
+	@printf %s $(OPAL_OBJDIR)/ > $@
+	$(CC) $(CFLAGS:-g=) -M $< >> $@
+
+
+# This builds the application
+
+OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SOURCES)))))
+
+$(OBJDIR)/$(PROG): $(OBJECTS)
+	 $(CC) $^ $(LDFLAGS) -o $@
 
