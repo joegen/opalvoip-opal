@@ -842,6 +842,7 @@ PBoolean MyManager::Initialise(PArgList & args)
         unsigned rate = args.GetOptionString("video-rate").AsUnsigned();
         unsigned frameTime = 90000 / rate;
         mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
+        mediaFormat.SetOptionBoolean("Rate Control Enable", true);
       }
       OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
     }
