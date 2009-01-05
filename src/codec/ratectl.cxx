@@ -185,12 +185,12 @@ bool OpalVideoRateController::SkipFrame()
                    << frameRateHistory.size() << " frames");
       PInt64 targetFrameHistorySize = ((frameRateHistoryDuration * 90) + (targetOutputFrameTime/2)) / targetOutputFrameTime;
       if ((frameRateHistory.size()+1) > targetFrameHistorySize) {
-        if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) {
+        //if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) {
           PTRACE(5, "RateController\tSkipping frame to reduce frame rate from " << frameRateHistory.size() * 1000 / frameRateHistoryDuration);
           return true;
-        }
-        PTRACE(5, "RateController\tAllowing " << consecutiveFramesSkipped - maxConsecutiveFramesSkip << " frames to exceed frame rate");
-        return false;
+        //}
+        //PTRACE(5, "RateController\tAllowing " << consecutiveFramesSkipped - maxConsecutiveFramesSkip << " frames to exceed frame rate");
+        //return false;
       }
     }
     else
