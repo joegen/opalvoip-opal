@@ -308,6 +308,8 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
       flags |= 1;
       outputFrame.SetMarker(1);
     }
+    if (iFrame)
+      flags |= 2;
 
     return 1;
   }
@@ -376,7 +378,7 @@ int RFC2190Depacketizer::SetPacket(const RTPFrame & inputFrame, bool & requestIF
 
   // handle mode A frames
   if ((payload[0] & 0x80) == 0) {
-    isIFrame = (payload[1] & 0x20) == 0;
+    isIFrame = (payload[1] & 0x10) == 0;
     hdrLen = 4;
     mode = 'A';
   }

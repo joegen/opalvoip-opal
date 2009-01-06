@@ -59,6 +59,9 @@
 #include "dyna.h"
 #include "mpi.h"
 
+#include "tracer.h"
+
+DECLARE_TRACER
 
 extern "C" {
 #include LIBAVCODEC_HEADER
@@ -131,11 +134,80 @@ static char * num2str(int num)
   sprintf(buf, "%i", num);
   return strdup(buf);
 }
+
+#if TRACE_FILE
+
+static void DumpRTPPayload(Tracer & tracer, const RTPFrame & rtp, int max)
+{
+  if (max > rtp.GetPayloadSize())
+    max = rtp.GetPayloadSize();
+  unsigned char * ptr = rtp.GetPayloadPtr();
+  tracer.GetStream() << hex << setfill('0') << setprecision(2);
+  while (max-- > 0) 
+    tracer.GetStream() << (int) *ptr++ << ' ';
+  tracer.GetStream() << setfill(' ') << dec;
+}
+
+static ostream & RTPDump(Tracer & tracer, const RTPFrame & rtp)
+{
+  tracer.GetStream() << "seq=" << rtp.GetSequenceNumber()
+       << ",ts=" << rtp.GetTimestamp()
+       << ",mkr=" << rtp.GetMarker()
+       << ",pt=" << (int)rtp.GetPayloadType()
+       << ",ps=" << rtp.GetPayloadSize();
+  return tracer.GetStream();
+}
+
+static ostream & RFC2190Dump(Tracer & tracer, const RTPFrame & rtp)
+{
+  RTPDump(tracer, rtp);
+  if (rtp.GetPayloadSize() > 2) {
+    bool iFrame = false;
+    char mode;
+    unsigned char * payload = rtp.GetPayloadPtr();
+    if ((payload[0] & 0x80) == 0) {
+      mode = 'A';
+      iFrame = (payload[1] & 0x10) == 0;
+    }
+    else if ((payload[0] & 0x40) == 0) {
+      mode = 'B';
+      iFrame = (payload[4] & 0x80) == 0;
+    }
+    else {
+      mode = 'C';
+      iFrame = (payload[4] & 0x80) == 0;
+    }
+    tracer.GetStream() << "mode=" << mode << ",I=" << (iFrame ? "yes" : "no");
+  }
+  tracer.GetStream() << ",data=";
+  DumpRTPPayload(tracer, rtp, 10);
+  return tracer.GetStream();
+}
+
+static ostream & RFC2429Dump(Tracer & tracer, const RTPFrame & rtp)
+{
+  RTPDump(tracer, rtp);
+  tracer.GetStream() << ",data=";
+  DumpRTPPayload(tracer, rtp, 10);
+  return tracer.GetStream();
+}
+
+#define CODEC_TRACER_RTP(tracer, text, rtp, func) \
+tracer.Start(); tracer.GetStream() << text; func(tracer, rtp); tracer.End()
+
+#else
+
+#define CODEC_TRACER_RTP(tracer, text, rtp, func) 
+
+#endif
       
 /////////////////////////////////////////////////////////////////////////////
       
 H263_Base_EncoderContext::H263_Base_EncoderContext(const char * _prefix)
   : prefix(_prefix)
+#if TRACE_FILE
+  , tracer(_prefix, true)
+#endif
 { 
 }
 
@@ -145,26 +217,26 @@ H263_Base_EncoderContext::~H263_Base_EncoderContext()
 
 bool H263_Base_EncoderContext::Open(CodecID codecId)
 {
-TRACE(1, prefix << "\tEncoder\tInitialising encode for RFC2190");
+  TRACE_AND_LOG(tracer, 1, "Opening encoder");
 
   if (!FFMPEGLibraryInstance.IsLoaded())
     return false;
 
   _codec = FFMPEGLibraryInstance.AvcodecFindEncoder(codecId);
   if (_codec == NULL) {
-    TRACE(1, prefix << "\tEncoder\tCodec not found for encoder");
+    TRACE_AND_LOG(tracer, 1, "Codec not found for encoder");
     return false;
   }
 
   _context = FFMPEGLibraryInstance.AvcodecAllocContext();
   if (_context == NULL) {
-    TRACE(1, prefix << "\tEncoder\tFailed to allocate context for encoder");
+    TRACE_AND_LOG(tracer, 1, "Failed to allocate context for encoder");
     return false;
   }
 
   _inputFrame = FFMPEGLibraryInstance.AvcodecAllocFrame();
   if (_inputFrame == NULL) {
-    TRACE(1, prefix << "\tEncoder\tFailed to allocate frame for encoder");
+    TRACE_AND_LOG(tracer, 1, "Failed to allocate frame for encoder");
     return false;
   }
 
@@ -215,7 +287,7 @@ TRACE(1, prefix << "\tEncoder\tInitialising encode for RFC2190");
 
   _frameCount = 0;
 
-  TRACE(3, prefix << "\tEncoder\tencoder created");
+  TRACE_AND_LOG(tracer, 3, "encoder created");
 
   return true;
 }
@@ -239,6 +311,8 @@ void H263_Base_EncoderContext::SetTargetBitrate (unsigned rate)
   _context->rc_qsquish = 0;                    // limit q by clipping 
   _context->rc_eq = (char*) "1";       // rate control equation
   _context->rc_buffer_size = rate * 64;
+
+  CODEC_TRACER(tracer, "target bit rate set to " << rate);
 }
 
 void H263_Base_EncoderContext::SetFrameWidth (unsigned width)
@@ -250,12 +324,14 @@ void H263_Base_EncoderContext::SetFrameWidth (unsigned width)
   _inputFrame->linesize[1] = width / 2;
   _inputFrame->linesize[2] = width / 2;
 
+  CODEC_TRACER(tracer, "frame width set to width");
 }
 
 void H263_Base_EncoderContext::SetFrameHeight (unsigned height)
 {
   _height = height;
   FFMPEGLibraryInstance.AvSetDimensions(_context, _width, _height);
+  CODEC_TRACER(tracer, "frame height set to " << height);
 }
 
 void H263_Base_EncoderContext::SetTSTO (unsigned tsto)
@@ -278,6 +354,8 @@ void H263_Base_EncoderContext::SetTSTO (unsigned tsto)
   // Lagrange multipliers - this is how the context defaults do it:
   _context->lmin = _context->qmin * FF_QP2LAMBDA;
   _context->lmax = _context->qmax * FF_QP2LAMBDA; 
+
+  CODEC_TRACER(tracer, "TSTO set to " << tsto);
 }
 
 void H263_Base_EncoderContext::EnableAnnex (Annex annex)
@@ -368,12 +446,25 @@ void H263_Base_EncoderContext::DisableAnnex (Annex annex)
   }
 }
 
+#define CODEC_TRACER_FLAG(tracer, flag) \
+CODEC_TRACER(tracer, #flag " is " << ((_context->flags & flag) ? "enabled" : "disabled"));
+
 bool H263_Base_EncoderContext::OpenCodec()
 {
   if (_codec == NULL) {
-    TRACE(1, prefix << "\tEncoder\tCodec not initialized");
+    TRACE_AND_LOG(tracer, 1, "Codec not initialized");
     return false;
   }
+
+  CODEC_TRACER(tracer, "Size is " << _width << "x" << _height);
+  CODEC_TRACER(tracer, "rc_max_rate is " <<  _context->rc_max_rate);
+  CODEC_TRACER(tracer, "GOP is " << _context->gop_size);
+  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_H263P_UMV);
+  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_OBMC);
+  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_AC_PRED);
+  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_H263P_SLICE_STRUCT)
+  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_LOOP_FILTER);
+  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_H263P_AIV);
 
   return FFMPEGLibraryInstance.AvcodecOpen(_context, _codec) == 0;
 }
@@ -415,7 +506,7 @@ H263_RFC2190_EncoderContext::~H263_RFC2190_EncoderContext()
     FFMPEGLibraryInstance.AvcodecFree(_context);
     FFMPEGLibraryInstance.AvcodecFree(_inputFrame);
   }  
-  TRACE(3, prefix << "\tEncoder\tencoder closed");
+  TRACE_AND_LOG(tracer, 3, "encoder closed");
 }
 
 //s->avctx->rtp_callback(s->avctx, s->ptr_lastgob, current_packet_size, number_mb)
@@ -491,7 +582,7 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
     return 0;
 
   if (_codec == NULL) {
-    TRACE(1, prefix << "\tEncoder\tCodec not initialized");
+    TRACE_AND_LOG(tracer, 1, "Encoder\tCodec not initialized");
     return 0;
   }
 
@@ -504,18 +595,19 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
 
   // if still running out packets from previous frame, then return it
   if (packetizer.GetPacket(dstRTP, flags) != 0) {
+    CODEC_TRACER_RTP(tracer, "Tx frame:", dstRTP, RFC2190Dump);
     dstLen = dstRTP.GetFrameLen();
     return 1;
   }
 
   // make sure the source frame is legal
   if (srcRTP.GetPayloadSize() < sizeof(PluginCodec_Video_FrameHeader)) {
-    TRACE(1,prefix << "\tEncoder\tVideo grab too small, closing down video transmission thread.");
+    TRACE_AND_LOG(tracer, 1, "Video grab too small, closing down video transmission thread.");
     return 0;
   }
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
   if (header->x != 0 || header->y != 0) {
-    TRACE(1, prefix << "\tEncoder\tVideo grab of partial frame unsupported, closing down video transmission thread.");
+    TRACE_AND_LOG(tracer, 1, "Video grab of partial frame unsupported, closing down video transmission thread.");
     return 0;
   }
 
@@ -524,15 +616,20 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
       ((unsigned) _width !=  header->width) || 
       ((unsigned) _height != header->height)) {
 
-    TRACE(4,  prefix << "\tEncoder\tFirst frame received or resolution has changed - reopening codec");
+    TRACE_AND_LOG(tracer, 4, "First frame received or resolution has changed - reopening codec");
     CloseCodec();
     SetFrameWidth(header->width);
     SetFrameHeight(header->height);
     if (!OpenCodec()) {
-      TRACE(1,  prefix << "\tEncoder\tReopening codec failed");
+      TRACE_AND_LOG(tracer, 1, "Reopening codec failed");
       return 0;
     }
   }
+
+  CODEC_TRACER(tracer, "Input:seq=" << _frameCount
+                       << ",size=" << header->width << "x" << header->height
+                       << ",I=" << ((flags && forceIFrame) ? "yes" : "no"));
+
   ++_frameCount;
 
   int size = header->width * header->height;
@@ -546,26 +643,42 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
   _inputFrame->data[0] = _inputFrameBuffer + FF_INPUT_BUFFER_PADDING_SIZE;
   _inputFrame->data[1] = _inputFrame->data[0] + size;
   _inputFrame->data[2] = _inputFrame->data[1] + (size / 4);
-  _inputFrame->pict_type = 0; // (flags && forceIFrame) ? FF_I_TYPE : 0;
+  _inputFrame->pict_type = (flags && forceIFrame) ? FF_I_TYPE : 0;
 
   currentMb = 0;
   currentBytes = 0;
   packetizer.fragments.resize(0);
   packetizer.buffer.resize(frameSize);
+
+  CODEC_TRACER(tracer, "Encoder called with " << frameSize << " bytes and frame type " << _inputFrame->pict_type << " at " << header->width << "x" << header->height);
+
   int encodedLen = FFMPEGLibraryInstance.AvcodecEncodeVideo(_context, &packetizer.buffer[0], frameSize, _inputFrame);  
 
   packetizer.buffer.resize(encodedLen);
 
   // push the encoded frame through the packetizer
+#if TRACE_FILE
+  if (encodedLen > 0) {
+    const unsigned char * p =  &packetizer.buffer[0];
+    CODEC_TRACER(tracer, "Raw data: " << hex << setfill('0') << setprecision(2)
+                         << (int)p[0] << ' ' << (int)p[1] << ' ' << (int)p[2] << ' ' << (int)p[3] << ' ' << (int)p[4]
+                         << setfill(' ') << dec);
+  }
+#endif
+
   if (packetizer.Open(srcRTP.GetTimestamp(), encodedLen) < 0) {
-    TRACE(1,  prefix << "\tEncoder\tPacketizer failed");
+    TRACE_AND_LOG(tracer, 1,  "Packetizer failed");
     flags = 1;
     return 0;
   }
 
+  CODEC_TRACER(tracer, "Encoder returned " << encodedLen << " bytes as " << packetizer.fragments.size() << " frames");
+
   // return the first encoded block of data
-  if (packetizer.GetPacket(dstRTP, flags)) 
+  if (packetizer.GetPacket(dstRTP, flags)) {
+    CODEC_TRACER_RTP(tracer, "Tx frame:", dstRTP, RFC2190Dump);
     dstLen = dstRTP.GetFrameLen();
+  }
 
   return 1;
 }
@@ -592,7 +705,7 @@ H263_RFC2429_EncoderContext::~H263_RFC2429_EncoderContext()
     FFMPEGLibraryInstance.AvcodecFree(_context);
     FFMPEGLibraryInstance.AvcodecFree(_inputFrame);
   }  
-  TRACE(3, prefix << "\tEncoder\tencoder closed");
+  TRACE_AND_LOG(tracer, 3, "encoder closed");
 }
 
 
@@ -632,7 +745,7 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
     return 0;
 
   if (_codec == NULL) {
-    TRACE(1, prefix << "\tEncoder\tCodec not initialized");
+    TRACE_AND_LOG(tracer, 1, "Codec not initialized");
     return 0;
   }
 
@@ -648,17 +761,18 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
   {
     _txH263PFrame->GetRTPFrame(dstRTP, flags);
     dstLen = dstRTP.GetFrameLen();
+    CODEC_TRACER_RTP(tracer, "Tx frame:", dstRTP, RFC2429Dump);
     return 1;
   }
 
   if (srcRTP.GetPayloadSize() < sizeof(PluginCodec_Video_FrameHeader)) {
-    TRACE(1,prefix << "\tEncoder\tVideo grab too small, closing down video transmission thread.");
+    TRACE_AND_LOG(tracer, 1, "Video grab too small, closing down video transmission thread.");
     return 0;
   }
 
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
   if (header->x != 0 || header->y != 0) {
-    TRACE(1, prefix << "\tEncoder\tVideo grab of partial frame unsupported, closing down video transmission thread.");
+    TRACE_AND_LOG(tracer, 1, "Video grab of partial frame unsupported, closing down video transmission thread.");
     return 0;
   }
 
@@ -667,15 +781,19 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
       ((unsigned) _width !=  header->width) || 
       ((unsigned) _height != header->height)) {
 
-    TRACE(4,  prefix << "\tEncoder\tFirst frame received or resolution has changed - reopening codec");
+    TRACE_AND_LOG(tracer, 4, "First frame received or resolution has changed - reopening codec");
     CloseCodec();
     SetFrameWidth(header->width);
     SetFrameHeight(header->height);
     if (!OpenCodec()) {
-      TRACE(1,  prefix << "\tEncoder\tReopening codec failed");
+      TRACE_AND_LOG(tracer, 1, "Reopening codec failed");
       return 0;
     }
   }
+
+  CODEC_TRACER(tracer, "Input:seq=" << _frameCount
+                       << ",size=" << header->width << "x" << header->height
+                       << ",I=" << ((flags && forceIFrame) ? "yes" : "no"));
 
   int size = header->width * header->height;
   int frameSize = (size * 3) >> 1;
@@ -696,14 +814,17 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
   _frameCount++; 
 
   if (_txH263PFrame->GetFrameSize() == 0) {
-    TRACE(1, prefix << "\tEncoder internal error - there should be outstanding packets at this point");
+    TRACE_AND_LOG(tracer, 1, "Encoder internal error - there should be outstanding packets at this point");
     return 1;
   }
+
+  CODEC_TRACER(tracer, "Encoder created " << _txH263PFrame->GetFrameSize() << " output frames");
 
   if (_txH263PFrame->HasRTPFrames())
   {
     _txH263PFrame->GetRTPFrame(dstRTP, flags);
     dstLen = dstRTP.GetFrameLen();
+    CODEC_TRACER_RTP(tracer, "Tx frame:", dstRTP, RFC2429Dump);
     return 1;
   }
   return 1;
@@ -713,29 +834,32 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
 
 H263_Base_DecoderContext::H263_Base_DecoderContext(const char * _prefix)
   : prefix(_prefix)
+#if TRACE_FILE
+  , tracer(_prefix, false)
+#endif
 {
   if (!FFMPEGLibraryInstance.IsLoaded())
     return;
 
   if ((_codec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_H263)) == NULL) {
-    TRACE(1, prefix << "\tDecoder\tCodec not found for decoder");
+    TRACE_AND_LOG(tracer, 1, "Codec not found for decoder");
     return;
   }
 
   _context = FFMPEGLibraryInstance.AvcodecAllocContext();
   if (_context == NULL) {
-    TRACE(1, prefix << "\tDecoder\tFailed to allocate context for decoder");
+    TRACE_AND_LOG(tracer, 1, "Failed to allocate context for decoder");
     return;
   }
 
   _outputFrame = FFMPEGLibraryInstance.AvcodecAllocFrame();
   if (_outputFrame == NULL) {
-    TRACE(1, prefix << "\tDecoder\tFailed to allocate frame for decoder");
+    TRACE_AND_LOG(tracer, 1, "Failed to allocate frame for decoder");
     return;
   }
 
   if (!OpenCodec()) { // decoder will re-initialise context with correct frame size
-    TRACE(1, prefix << "\tDecoder\tFailed to open codec for decoder");
+    TRACE_AND_LOG(tracer, 1, "Failed to open codec for decoder");
     return;
   }
 
@@ -748,7 +872,7 @@ H263_Base_DecoderContext::H263_Base_DecoderContext(const char * _prefix)
     _context->debug |= FF_DEBUG_MV;
   }
 
-  TRACE(4,  prefix << "\tDecoder\tH263 decoder created");
+  TRACE_AND_LOG(tracer, 4, "Decoder created");
 }
 
 H263_Base_DecoderContext::~H263_Base_DecoderContext()
@@ -764,14 +888,16 @@ H263_Base_DecoderContext::~H263_Base_DecoderContext()
 bool H263_Base_DecoderContext::OpenCodec()
 {
   if (_codec == NULL) {
-    TRACE(1, prefix << "\tDecoder\tCodec not initialized");
+    TRACE_AND_LOG(tracer, 1, "Codec not initialized");
     return 0;
   }
 
   if (FFMPEGLibraryInstance.AvcodecOpen(_context, _codec) < 0) {
-    TRACE(1, prefix << "\tDecoder\tFailed to open H.263 decoder");
+    TRACE_AND_LOG(tracer, 1, "Failed to open H.263 decoder");
     return false;
   }
+
+  TRACE_AND_LOG(tracer, 4, "Codec opened");
 
   return true;
 }
@@ -781,7 +907,7 @@ void H263_Base_DecoderContext::CloseCodec()
   if (_context != NULL) {
     if (_context->codec != NULL) {
       FFMPEGLibraryInstance.AvcodecClose(_context);
-      TRACE(4, prefix << "\tDecoder\tClosed H.263 decoder" );
+      TRACE_AND_LOG(tracer, 4, "Closed H.263 decoder" );
     }
   }
 }
@@ -808,8 +934,12 @@ bool H263_RFC2429_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   if (!FFMPEGLibraryInstance.IsLoaded())
     return 0;
 
+  TRACE_AND_LOG(tracer, 4, "Codec opened");
+
   // create RTP frame from source buffer
   RTPFrame srcRTP(src, srcLen);
+
+  CODEC_TRACER_RTP(tracer, "Tx frame:", srcRTP, RFC2429Dump);
 
   // create RTP frame from destination buffer
   RTPFrame dstRTP(dst, dstLen, 0);
@@ -830,13 +960,13 @@ bool H263_RFC2429_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   if (_rxH263PFrame->GetFrameSize()==0)
   {
     _rxH263PFrame->BeginNewFrame();
-    TRACE(4, prefix << "\tDecoder\tGot an empty frame - skipping");
+    TRACE_AND_LOG(tracer, 4, "Got an empty frame - skipping");
     _skippedFrameCounter++;
     return 1;
   }
 
   if (!_rxH263PFrame->hasPicHeader()) {
-    TRACE(1, prefix << "\tDecoder\tReceived frame has no picture header - dropping");
+    TRACE_AND_LOG(tracer, 1, "Received frame has no picture header - dropping");
     _rxH263PFrame->BeginNewFrame();
     flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
     _gotAGoodFrame = false;
@@ -848,7 +978,7 @@ bool H263_RFC2429_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   {
     if (!_rxH263PFrame->IsIFrame())
     {
-      TRACE(1, prefix << "\tDecoder\tWaiting for an I-Frame");
+      TRACE_AND_LOG(tracer, 1, "Waiting for an I-Frame");
       _rxH263PFrame->BeginNewFrame();
       flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
       _gotAGoodFrame = false;
@@ -859,25 +989,25 @@ bool H263_RFC2429_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
 
   int gotPicture = 0;
 
-  TRACE_UP(4, prefix << "\tDecoder\tDecoding " << _rxH263PFrame->GetFrameSize()  << " bytes");
+  TRACE_AND_LOG(tracer, 4, "Decoding " << _rxH263PFrame->GetFrameSize()  << " bytes");
   int bytesDecoded = FFMPEGLibraryInstance.AvcodecDecodeVideo(_context, _outputFrame, &gotPicture, _rxH263PFrame->GetFramePtr(), _rxH263PFrame->GetFrameSize());
 
   _rxH263PFrame->BeginNewFrame();
 
   if (!gotPicture) 
   {
-    TRACE(1, prefix << "\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture"); 
+    TRACE_AND_LOG(tracer, 1, "Decoded "<< bytesDecoded << " bytes without getting a Picture"); 
     _skippedFrameCounter++;
     flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
     _gotAGoodFrame = false;
     return 1;
   }
 
-  TRACE_UP(4, prefix << "\tDecoder\tDecoded " << bytesDecoded << " bytes"<< ", Resolution: " << _context->width << "x" << _context->height);
+  TRACE_AND_LOG(tracer, 4, "Decoded " << bytesDecoded << " bytes"<< ", Resolution: " << _context->width << "x" << _context->height);
 
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
   if (bytesDecoded < 0) {
-    TRACE(1, prefix << "\tDecoder\tDecoded 0 bytes");
+    TRACE_AND_LOG(tracer, 1, "Decoded 0 bytes");
     flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
     _gotAGoodFrame = false;
     return 1;
@@ -885,7 +1015,7 @@ bool H263_RFC2429_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
 
   // if decoded frame size is not legal, request an I-Frame
   if (_context->width == 0 || _context->height == 0) {
-    TRACE(1, prefix << "\tDecoder\tReceived frame with invalid size");
+    TRACE_AND_LOG(tracer, 1, "Received frame with invalid size");
     flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
     _gotAGoodFrame = false;
     return 1;
@@ -953,13 +1083,15 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   // create RTP frame from source buffer
   RTPFrame srcRTP(src, srcLen);
 
+  CODEC_TRACER_RTP(tracer, "Rx frame:", srcRTP, RFC2190Dump);
+
   // push new frame through the depacketiser
   bool requestIFrame, isIFrame;
   int code = depacketizer.SetPacket(srcRTP, requestIFrame, isIFrame);
   if (code <= 0)
     return true;
 
-  TRACE_UP(4, prefix << "\tDecoder\tDecoding " << depacketizer.frame.size()  << " bytes");
+  TRACE_AND_LOG(tracer, 4, "Decoder called with " << depacketizer.frame.size()  << " bytes");
 
   int gotPicture = 0;
   int bytesDecoded = FFMPEGLibraryInstance.AvcodecDecodeVideo(_context, _outputFrame, &gotPicture, &depacketizer.frame[0], depacketizer.frame.size());
@@ -967,12 +1099,12 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   depacketizer.NewFrame();
 
   if (!gotPicture) {
-    TRACE(1, prefix << "\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture"); 
+    TRACE_AND_LOG(tracer, 1, "Decoded "<< bytesDecoded << " bytes without getting a Picture"); 
     flags = PluginCodec_ReturnCoderRequestIFrame;
     return 1;
   }
 
-  TRACE_UP(4, prefix << "\tDecoder\tDecoded " << bytesDecoded << " bytes"<< ", Resolution: " << _context->width << "x" << _context->height);
+  TRACE_AND_LOG(tracer, 4, "Decoder processed " << bytesDecoded << " bytes, creating frame at " << _context->width << "x" << _context->height);
 
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
   if (bytesDecoded < 0) {
@@ -982,7 +1114,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
 
   // if decoded frame size is not legal, request an I-Frame
   if (_context->width == 0 || _context->height == 0) {
-    TRACE(1, prefix << "\tDecoder\tReceived frame with invalid size");
+    TRACE_AND_LOG(tracer, 1, "Received frame with invalid size");
     flags = PluginCodec_ReturnCoderRequestIFrame;
     return 1;
   }
