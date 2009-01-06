@@ -722,7 +722,8 @@ void TranscoderThread::OnTranscoderCommand(OpalMediaCommand & cmd, INT)
 
 void VideoThread::CalcSNR(const RTP_DataFrame & src, const RTP_DataFrame & dst)
 {
-  if (src.GetPayloadSize() < sizeof(OpalVideoTranscoder::FrameHeader) || dst.GetPayloadSize() < sizeof(OpalVideoTranscoder::FrameHeader))
+  if (src.GetPayloadSize() < (PINDEX)sizeof(OpalVideoTranscoder::FrameHeader) ||
+      dst.GetPayloadSize() < (PINDEX)sizeof(OpalVideoTranscoder::FrameHeader))
     return;
 
   const BYTE * src1 = src.GetPayloadPtr();
@@ -851,6 +852,8 @@ void TranscoderThread::Main()
             break;
           case ForceMarkers :
             encFrames[i].SetMarker(true);
+            break;
+          default :
             break;
         }
 
