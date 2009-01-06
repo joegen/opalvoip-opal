@@ -53,6 +53,10 @@
 #include "rfc2190.h"
 #include "critsect.h"
 
+#if TRACE_FILE
+#include "tracer.h"
+#endif
+
 typedef unsigned char BYTE;
 
 #define H263P_CLOCKRATE        90000
@@ -136,6 +140,9 @@ class H263_Base_EncoderContext
     int _width, _height;
     CriticalSection _mutex;
     const char * prefix;
+#if TRACE_FILE
+    Tracer tracer;
+#endif
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -195,6 +202,9 @@ class H263_Base_DecoderContext
     int _frameCount;
     CriticalSection _mutex;
     const char * prefix;
+#if TRACE_FILE
+    Tracer tracer;
+#endif
 };
 
 ////////////////////////////////////////////////////////////////////////////
