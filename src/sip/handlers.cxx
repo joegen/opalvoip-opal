@@ -372,7 +372,10 @@ void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
     case Subscribing :
     case Refreshing :
     case Restoring :
-      SetState(Subscribed);
+      if (expire == 0) 
+        SetState(Unsubscribed);
+      else
+        SetState(Subscribed);
       break;
 
     default :
