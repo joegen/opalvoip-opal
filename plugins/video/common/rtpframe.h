@@ -106,6 +106,13 @@ public:
     _frame[1] = _frame [1] | (type & 0x7f);
   }
 
+  unsigned char GetPayloadType() const
+  {
+    if (_frameLen < 1)
+      return 0xff;
+    return _frame[1] & 0x7f;
+  }
+
   unsigned long GetTimestamp() const {
     if (_frameLen < 8)
       return 0;
