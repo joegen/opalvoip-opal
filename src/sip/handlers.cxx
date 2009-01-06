@@ -394,7 +394,10 @@ void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
     case Subscribing :
     case Refreshing :
     case Restoring :
-      SetState(Subscribed);
+      if (expire == 0)
+        SetState(Unsubscribed);
+      else
+        SetState(Subscribed);
       break;
 
     default :
@@ -765,13 +768,13 @@ void SIPSubscribeHandler::UpdateParameters(const SIPSubscribe::Params & params)
 
 void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  SIPHandler::OnReceivedOK(transaction, response);
-
   /* An "expire" parameter in the Contact header has no semantics
    * for SUBSCRIBE. RFC3265, 3.1.1.
    * An answer can only shorten the expires time.
    */
   SetExpire(response.GetMIME().GetExpires(originalExpire));
+
+  SIPHandler::OnReceivedOK(transaction, response);
 
   m_dialog.Update(response);
 
