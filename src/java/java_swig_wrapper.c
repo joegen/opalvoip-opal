@@ -195,7 +195,7 @@ typedef union {
     OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
     OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistrationStatus
     OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndAlerting/OpalIndEstablished
-    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldcall/OpalCmdRetreiveCall
+    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldcall/OpalCmdRetreiveCall/OpalCmdStopRecording
     OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
@@ -204,6 +204,7 @@ typedef union {
     OpalParamCallCleared     m_clearCall;          ///< Used by OpalCmdClearCall
     OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream/OpalCmdMediaStream
     OpalParamSetUserData     m_setUserData;        ///< Used by OpalCmdSetUserData
+    OpalParamRecording       m_recording;          ///< Used by OpalCmdStartRecording
   } OpalMessage_m_param;
 
 
@@ -269,7 +270,7 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OPAL_1C_1API_1VERSION_1get(
   
   (void)jenv;
   (void)jcls;
-  result = (int) 14;
+  result = (int) 15;
   jresult = (jint)result; 
   return jresult;
 }
@@ -3870,6 +3871,108 @@ SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalStatusLineAppea
 }
 
 
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  OpalParamRecording *arg1 = (OpalParamRecording *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamRecording **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg2) {
+      arg1->m_callToken = (char const *) malloc(strlen((const char *)arg2)+1);
+      strcpy((char *)arg1->m_callToken, (const char *)arg2);
+    } else {
+      arg1->m_callToken = 0;
+    }
+  }
+  if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1callToken_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  OpalParamRecording *arg1 = (OpalParamRecording *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamRecording **)&jarg1; 
+  result = (char *) ((arg1)->m_callToken);
+  if(result) jresult = (*jenv)->NewStringUTF(jenv, (const char *)result);
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1file_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  OpalParamRecording *arg1 = (OpalParamRecording *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamRecording **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg2) {
+      arg1->m_file = (char const *) malloc(strlen((const char *)arg2)+1);
+      strcpy((char *)arg1->m_file, (const char *)arg2);
+    } else {
+      arg1->m_file = 0;
+    }
+  }
+  if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1file_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  OpalParamRecording *arg1 = (OpalParamRecording *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamRecording **)&jarg1; 
+  result = (char *) ((arg1)->m_file);
+  if(result) jresult = (*jenv)->NewStringUTF(jenv, (const char *)result);
+  return jresult;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalParamRecording(JNIEnv *jenv, jclass jcls) {
+  jlong jresult = 0 ;
+  OpalParamRecording *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  result = (OpalParamRecording *)calloc(1, sizeof(OpalParamRecording));
+  *(OpalParamRecording **)&jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalParamRecording(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  OpalParamRecording *arg1 = (OpalParamRecording *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(OpalParamRecording **)&jarg1; 
+  free((char *) arg1);
+}
+
+
 SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusCallCleared_1m_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusCallCleared *arg1 = (OpalStatusCallCleared *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -4589,6 +4692,35 @@ SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1
   arg1 = *(OpalMessage_m_param **)&jarg1; 
   result = (OpalParamSetUserData *)& ((arg1)->m_setUserData);
   *(OpalParamSetUserData **)&jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1recording_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+  OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
+  OpalParamRecording *arg2 = (OpalParamRecording *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  (void)jarg2_;
+  arg1 = *(OpalMessage_m_param **)&jarg1; 
+  arg2 = *(OpalParamRecording **)&jarg2; 
+  if (arg1) (arg1)->m_recording = *arg2;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1recording_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
+  OpalParamRecording *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalMessage_m_param **)&jarg1; 
+  result = (OpalParamRecording *)& ((arg1)->m_recording);
+  *(OpalParamRecording **)&jresult = result; 
   return jresult;
 }
 
