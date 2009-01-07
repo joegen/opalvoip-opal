@@ -10169,6 +10169,20 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
                    HAVE_CELT=yes
+                   if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"celt >= 0.5.0\"") >&5
+  ($PKG_CONFIG --exists --print-errors "celt >= 0.5.0") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_CELT_0_5_0_OR_LATER 1
+_ACEOF
+
+
+fi
 
 fi
 

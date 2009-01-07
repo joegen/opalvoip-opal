@@ -298,6 +298,10 @@ PKG_CHECK_MODULES([CELT],
                    AC_SUBST(CELT_LIBS)
                    AC_DEFINE([HAVE_CELT], [1], [celt])
                    HAVE_CELT=yes
+                   PKG_CHECK_EXISTS([celt >= 0.5.0],
+                                     [
+                                      AC_DEFINE([HAVE_CELT_0_5_0_OR_LATER], [1], [celt 0.5.0 or later found])
+                   ])
                   ],
                   [
                    HAVE_CELT=no
