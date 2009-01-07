@@ -1406,6 +1406,34 @@ void OpalPluginCodecManager::RegisterStaticCodec(
   delete handler;
 }
 
+
+static bool IsEncoder(const PluginCodec_Definition & encoder)
+{
+  PBoolean videoSupported = encoder.version >= PLUGIN_CODEC_VERSION_VIDEO;
+  PBoolean faxSupported   = encoder.version >= PLUGIN_CODEC_VERSION_FAX;
+
+  return ((encoder.h323CapabilityType != PluginCodec_H323Codec_undefined) && (
+         (
+           ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeAudio) && 
+            (strcmp(encoder.sourceFormat, "L16") == 0)
+         ) ||
+         (
+           ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeAudioStreamed) && 
+            (strcmp(encoder.sourceFormat, "L16") == 0)
+         ) ||
+         (
+           videoSupported &&
+           ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeVideo) && 
+           (strcmp(encoder.sourceFormat, "YUV420P") == 0)
+        ) ||
+         (
+           faxSupported &&
+           ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeFax) && 
+           (strcmp(encoder.sourceFormat, "L16") == 0)
+        )
+       ));
+}
+
 void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const PluginCodec_Definition * codecDefn, OpalPluginCodecHandler * handler)
 {
   // make sure all non-timestamped codecs have the same concept of "now"
@@ -1514,18 +1542,18 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
     switch (codecDefn->flags & PluginCodec_MediaTypeMask) {
   #if OPAL_VIDEO
       case PluginCodec_MediaTypeVideo:
-        handler->RegisterVideoTranscoder(src, dst, codecDefn, true);
+        handler->RegisterVideoTranscoder(src, dst, codecDefn, IsEncoder(*codecDefn));
         break;
   #endif
       case PluginCodec_MediaTypeAudio:
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, true);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, IsEncoder(*codecDefn));
         break;
       case PluginCodec_MediaTypeAudioStreamed:
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, true);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, IsEncoder(*codecDefn));
         break;
   #if OPAL_T38_CAPABILITY
       case PluginCodec_MediaTypeFax:
-        new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, true);
+        new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, IsEncoder(*codecDefn));
         break;
   #endif
       default:
