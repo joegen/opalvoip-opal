@@ -231,6 +231,12 @@ class exampleJNI {
   public final static native String OpalStatusLineAppearance_m_partyB_get(long jarg1, OpalStatusLineAppearance jarg1_);
   public final static native long new_OpalStatusLineAppearance();
   public final static native void delete_OpalStatusLineAppearance(long jarg1);
+  public final static native void OpalParamRecording_m_callToken_set(long jarg1, OpalParamRecording jarg1_, String jarg2);
+  public final static native String OpalParamRecording_m_callToken_get(long jarg1, OpalParamRecording jarg1_);
+  public final static native void OpalParamRecording_m_file_set(long jarg1, OpalParamRecording jarg1_, String jarg2);
+  public final static native String OpalParamRecording_m_file_get(long jarg1, OpalParamRecording jarg1_);
+  public final static native long new_OpalParamRecording();
+  public final static native void delete_OpalParamRecording(long jarg1);
   public final static native void OpalStatusCallCleared_m_callToken_set(long jarg1, OpalStatusCallCleared jarg1_, String jarg2);
   public final static native String OpalStatusCallCleared_m_callToken_get(long jarg1, OpalStatusCallCleared jarg1_);
   public final static native void OpalStatusCallCleared_m_reason_set(long jarg1, OpalStatusCallCleared jarg1_, String jarg2);
@@ -279,6 +285,8 @@ class exampleJNI {
   public final static native long OpalMessage_m_param_m_mediaStream_get(long jarg1, OpalMessage_m_param jarg1_);
   public final static native void OpalMessage_m_param_m_setUserData_set(long jarg1, OpalMessage_m_param jarg1_, long jarg2, OpalParamSetUserData jarg2_);
   public final static native long OpalMessage_m_param_m_setUserData_get(long jarg1, OpalMessage_m_param jarg1_);
+  public final static native void OpalMessage_m_param_m_recording_set(long jarg1, OpalMessage_m_param jarg1_, long jarg2, OpalParamRecording jarg2_);
+  public final static native long OpalMessage_m_param_m_recording_get(long jarg1, OpalMessage_m_param jarg1_);
   public final static native long new_OpalMessage_m_param();
   public final static native void delete_OpalMessage_m_param(long jarg1);
 }

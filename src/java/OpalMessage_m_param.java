@@ -166,6 +166,15 @@ public class OpalMessage_m_param {
     return (cPtr == 0) ? null : new OpalParamSetUserData(cPtr, false);
   }
 
+  public void setM_recording(OpalParamRecording value) {
+    exampleJNI.OpalMessage_m_param_m_recording_set(swigCPtr, this, OpalParamRecording.getCPtr(value), value);
+  }
+
+  public OpalParamRecording getM_recording() {
+    long cPtr = exampleJNI.OpalMessage_m_param_m_recording_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalParamRecording(cPtr, false);
+  }
+
   public OpalMessage_m_param() {
     this(exampleJNI.new_OpalMessage_m_param(), true);
   }

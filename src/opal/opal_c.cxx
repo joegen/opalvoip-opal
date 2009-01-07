@@ -185,20 +185,24 @@ class OpalManager_C : public OpalManager
     virtual void OnClearedCall(OpalCall & call);
 
   private:
-    void HandleSetGeneral   (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleSetProtocol  (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleRegistration (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleSetUpCall    (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleAnswerCall   (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleUserInput    (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleClearCall    (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleHoldCall     (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleRetrieveCall (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleTransferCall (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleMediaStream  (const OpalMessage & command, OpalMessageBuffer & response);
-    void HandleSetUserData  (const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleSetGeneral    (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleSetProtocol   (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleRegistration  (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleSetUpCall     (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleAnswerCall    (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleUserInput     (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleClearCall     (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleHoldCall      (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleRetrieveCall  (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleTransferCall  (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleMediaStream   (const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleSetUserData   (const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleStartRecording(const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleStopRecording (const OpalMessage & command, OpalMessageBuffer & response);
 
     void OnIndMediaStream(const OpalMediaStream & stream, OpalMediaStates state);
+
+    bool FindCall(const char * token, OpalMessageBuffer & response, PSafePtr<OpalCall> & call);
 
     OpalLocalEndPoint_C * localEP;
 #if OPAL_PTLIB_AUDIO
@@ -854,6 +858,12 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
     case OpalCmdSetUserData :
       HandleSetUserData(*message, response);
       break;
+    case OpalCmdStartRecording :
+      HandleStartRecording(*message, response);
+      break;
+    case OpalCmdStopRecording :
+      HandleStopRecording(*message, response);
+      break;
     default :
       return NULL;
   }
@@ -1358,6 +1368,23 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
 }
 
 
+bool OpalManager_C::FindCall(const char * token, OpalMessageBuffer & response, PSafePtr<OpalCall> & call)
+{
+  if (IsNullString(token)) {
+    response.SetError("No call token provided.");
+    return false;
+  }
+
+  call = FindCallWithLock(token);
+  if (call == NULL) {
+    response.SetError("No call found by the token provided.");
+    return false;
+  }
+
+  return true;
+}
+
+
 void OpalManager_C::HandleUserInput(const OpalMessage & command, OpalMessageBuffer & response)
 {
   if (IsNullString(command.m_param.m_userInput.m_userInput)) {
@@ -1365,24 +1392,17 @@ void OpalManager_C::HandleUserInput(const OpalMessage & command, OpalMessageBuff
     return;
   }
 
-  if (IsNullString(command.m_param.m_userInput.m_callToken)) {
-    response.SetError("No call token provided.");
+  PSafePtr<OpalCall> call;
+  if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
     return;
-  }
-
-  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_userInput.m_callToken);
-  if (call == NULL) {
-    response.SetError("No call found by the token provided.");
-    return;
-  }
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
   while (connection->IsNetworkConnection()) {
     ++connection;
-  if (connection == NULL) {
-    response.SetError("No suitable connection for user input.");
-    return;
-  }
+    if (connection == NULL) {
+      response.SetError("No suitable connection for user input.");
+      return;
+    }
   }
 
   if (command.m_param.m_userInput.m_duration == 0)
@@ -1418,16 +1438,9 @@ void OpalManager_C::HandleClearCall(const OpalMessage & command, OpalMessageBuff
 
 void OpalManager_C::HandleHoldCall(const OpalMessage & command, OpalMessageBuffer & response)
 {
-  if (IsNullString(command.m_param.m_callToken)) {
-    response.SetError("No call token provided.");
+  PSafePtr<OpalCall> call;
+  if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
     return;
-  }
-
-  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_callToken);
-  if (call == NULL) {
-    response.SetError("No call found by the token provided.");
-    return;
-  }
 
   if (call->IsOnHold()) {
     response.SetError("Call is already on hold.");
@@ -1440,16 +1453,9 @@ void OpalManager_C::HandleHoldCall(const OpalMessage & command, OpalMessageBuffe
 
 void OpalManager_C::HandleRetrieveCall(const OpalMessage & command, OpalMessageBuffer & response)
 {
-  if (IsNullString(command.m_param.m_callToken)) {
-    response.SetError("No call token provided.");
+  PSafePtr<OpalCall> call;
+  if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
     return;
-  }
-
-  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_callToken);
-  if (call == NULL) {
-    response.SetError("No call found by the token provided.");
-    return;
-  }
 
   if (!call->IsOnHold()) {
     response.SetError("Call is not on hold.");
@@ -1462,21 +1468,14 @@ void OpalManager_C::HandleRetrieveCall(const OpalMessage & command, OpalMessageB
 
 void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageBuffer & response)
 {
-  if (IsNullString(command.m_param.m_callSetUp.m_callToken)) {
-    response.SetError("No call token provided.");
-    return;
-  }
-
   if (IsNullString(command.m_param.m_callSetUp.m_partyB)) {
     response.SetError("No destination address provided.");
     return;
   }
 
-  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_callSetUp.m_callToken);
-  if (call == NULL) {
-    response.SetError("No call available by the token provided.");
+  PSafePtr<OpalCall> call;
+  if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
     return;
-  }
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
   if (IsNullString(command.m_param.m_callSetUp.m_partyA)) {
@@ -1502,16 +1501,9 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
 
 void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBuffer & response)
 {
-  if (IsNullString(command.m_param.m_mediaStream.m_callToken)) {
-    response.SetError("No call token provided.");
+  PSafePtr<OpalCall> call;
+  if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
     return;
-  }
-
-  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_mediaStream.m_callToken);
-  if (call == NULL) {
-    response.SetError("No call found by the token provided.");
-    return;
-  }
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
   while (connection->IsNetworkConnection()) {
@@ -1578,18 +1570,39 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
   }
 }
 
-void OpalManager_C::HandleSetUserData(const OpalMessage & command, OpalMessageBuffer & response)
+
+void OpalManager_C::HandleStartRecording(const OpalMessage & command, OpalMessageBuffer & response)
 {
-  if (IsNullString(command.m_param.m_setUserData.m_callToken)) {
-    response.SetError("No call token provided.");
+  PSafePtr<OpalCall> call;
+  if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
+    return;
+
+  if (IsNullString(command.m_param.m_recording.m_file)) {
+    if (!call->IsRecording())
+      response.SetError("No recording active for call.");
     return;
   }
 
-  PSafePtr<OpalCall> call = FindCallWithLock(command.m_param.m_setUserData.m_callToken);
-  if (call == NULL) {
-    response.SetError("No call found by the token provided.");
+  if (!call->StartRecording(command.m_param.m_recording.m_file))
+    response.SetError("Could not start recording for call.");
+}
+
+
+void OpalManager_C::HandleStopRecording(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  PSafePtr<OpalCall> call;
+  if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
     return;
-  }
+
+  call->StopRecording();
+}
+
+
+void OpalManager_C::HandleSetUserData(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  PSafePtr<OpalCall> call;
+  if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
+    return;
 
   PSafePtr<OpalLocalConnection> connection = call->GetConnectionAs<OpalLocalConnection>();
   if (connection == NULL) {
@@ -1599,6 +1612,7 @@ void OpalManager_C::HandleSetUserData(const OpalMessage & command, OpalMessageBu
 
   connection->SetUserData(command.m_param.m_setUserData.m_userData);
 }
+
 
 void OpalManager_C::OnEstablishedCall(OpalCall & call)
 {
