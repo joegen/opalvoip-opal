@@ -963,6 +963,9 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
   if (isEncoder) {
     bool isIFrame = false;
     do {
+      if (outputDataSize < 2048)
+        outputDataSize = 2048;
+
       RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize);
       dst->SetPayloadType(GetPayloadType(false));
       dst->SetTimestamp(src.GetTimestamp());
