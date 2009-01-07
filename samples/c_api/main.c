@@ -494,6 +494,37 @@ int DoSubscribe(const char * package, const char * aor, const char * from)
 }
 
 
+int DoRecord(const char * to, const char * file)
+{
+  // Example cmd line: call 612@ekiga.net
+  OpalMessage command;
+  OpalMessage * response;
+
+
+  printf("Calling %s\n", to);
+
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdSetUpCall;
+  command.m_param.m_callSetUp.m_partyB = to;
+  if ((response = MySendCommand(&command, "Could not make call")) == NULL)
+    return 0;
+
+  CurrentCallToken = strdup(response->m_param.m_callSetUp.m_callToken);
+  FreeMessageFunction(response);
+
+  printf("Recording %s\n", file);
+
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdStartRecording;
+  command.m_param.m_recording.m_callToken = CurrentCallToken;
+  command.m_param.m_recording.m_file = file;
+  if ((response = MySendCommand(&command, "Could not start recording")) == NULL)
+    return 0;
+
+  return 1;
+}
+
+
 typedef enum
 {
   OpListen,
@@ -504,14 +535,15 @@ typedef enum
   OpConsult,
   OpRegister,
   OpSubscribe,
+  OpRecord,
   NumOperations
 } Operations;
 
 static const char * const OperationNames[NumOperations] =
-  { "listen", "call", "mute", "hold", "transfer", "consult", "register", "subscribe" };
+  { "listen", "call", "mute", "hold", "transfer", "consult", "register", "subscribe", "record" };
 
 static int const RequiredArgsForOperation[NumOperations] =
-  { 2, 3, 3, 3, 4, 4, 3, 3 };
+  { 2, 3, 3, 3, 4, 4, 3, 3, 3 };
 
 
 static Operations GetOperation(const char * name)
@@ -540,7 +572,7 @@ int main(int argc, char * argv[])
         fputs(" | ", stderr);
       fputs(OperationNames[op], stderr);
     }
-    fputs(" } [ A-party [ B-party ] ]\n", stderr);
+    fputs(" } [ A-party [ B-party | file ] ]\n", stderr);
     return 1;
   }
 
@@ -619,6 +651,12 @@ int main(int argc, char * argv[])
 
     case OpSubscribe :
       if (!DoSubscribe(argv[2], argv[3], argv[4]))
+        break;
+      HandleMessages(INT_MAX); // More or less forever
+      break;
+
+    case OpRecord :
+      if (!DoRecord(argv[2], argv[3]))
         break;
       HandleMessages(INT_MAX); // More or less forever
       break;

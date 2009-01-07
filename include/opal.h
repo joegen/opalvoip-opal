@@ -66,7 +66,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 14
+#define OPAL_C_API_VERSION 15
 
 
 ///////////////////////////////////////
@@ -367,6 +367,10 @@ typedef enum OpalMessageType {
                                     OpalGetMessage() function when any of the supported protocols indicate that
                                     the state of a "line" has changed, e.g. free, busy, on hold etc.
                                 */
+  OpalCmdStartRecording,        /**<Start recording an active call. See the OpalParamRecording structure
+                                    for more information. */
+  OpalCmdStopRecording,         /**<Stop recording an active call. Only the m_callToken field of the
+                                    OpalMessage union is used. */
   OpalMessageTypeCount
 } OpalMessageType;
 
@@ -903,6 +907,15 @@ typedef struct OpalStatusLineAppearance {
 } OpalStatusLineAppearance;
 
 
+/**Call recording information for the OpalCmdStartRecording command.
+  */
+typedef struct OpalParamRecording {
+  const char * m_callToken;  ///< Call token for call being cleared.
+  const char * m_file;       /**< File to record into. If NULL then a test is done
+                                  for if recording is currently active. */
+} OpalParamRecording;
+
+
 /**Call clearance information for the OpalIndCallCleared indication.
    This is only returned from the OpalGetMessage() function.
   */
@@ -976,7 +989,7 @@ struct OpalMessage {
     OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
     OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistrationStatus
     OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndAlerting/OpalIndEstablished
-    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldcall/OpalCmdRetreiveCall
+    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldcall/OpalCmdRetreiveCall/OpalCmdStopRecording
     OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
@@ -985,6 +998,7 @@ struct OpalMessage {
     OpalParamCallCleared     m_clearCall;          ///< Used by OpalCmdClearCall
     OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream/OpalCmdMediaStream
     OpalParamSetUserData     m_setUserData;        ///< Used by OpalCmdSetUserData
+    OpalParamRecording       m_recording;          ///< Used by OpalCmdStartRecording
   } m_param;
 };
 
