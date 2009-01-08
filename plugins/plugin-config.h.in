@@ -25,4 +25,7 @@
 /* Statically link x264 to the plugin. Default for win32. */
 #undef X264_LINK_STATIC
 
+/* Which CELT API */
+#undef HAVE_CELT_0_5_0_OR_LATER
+
 #endif /* _PLUGIN_CONFIG_H_ */
