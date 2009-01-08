@@ -106,6 +106,7 @@ class OpalTransportAddress : public PString
        Returns PFalse, if the address is not an IP transport address.
       */
     PBoolean GetIpAndPort(PIPSocket::Address & ip, WORD & port) const;
+    PBoolean GetIpAndPort(PIPSocketAddressAndPort & ipPort) const;
 
     /**Translate the transport address to a more human readable form.
        Returns the hostname if using IP.
