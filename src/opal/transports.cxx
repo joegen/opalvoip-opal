@@ -167,6 +167,21 @@ PBoolean OpalTransportAddress::GetIpAndPort(PIPSocket::Address & ip, WORD & port
 }
 
 
+PBoolean OpalTransportAddress::GetIpAndPort(PIPSocketAddressAndPort & ipPort) const
+{
+  if (transport == NULL)
+    return PFalse;
+
+  PIPSocket::Address ip;
+  WORD port = 0;
+  if (!transport->GetIpAndPort(*this, ip, port))
+    return false;
+
+  ipPort.SetAddress(ip, port);
+  return true;
+}
+
+
 OpalListener * OpalTransportAddress::CreateListener(OpalEndPoint & endpoint,
                                                     BindOptions option) const
 {
