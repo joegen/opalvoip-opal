@@ -733,7 +733,8 @@ OPAL_VIDEO
 OPAL_SIP
 OPAL_H323
 OPAL_IAX2
-OPAL_H224FECC
+OPAL_HAS_H224
+OPAL_HAS_H281
 OPAL_T38_CAPABILITY
 OPAL_HAS_MSRP
 OPAL_HAS_SIPIM
@@ -1372,6 +1373,8 @@ Optional Features:
   --enable-h323           whether to enable H.323 protocol support
   --enable-iax            whether to enable IAX2 protocol support
   --enable-h224           whether to enable H.224 protocol support
+  --enable-h281           whether to enable H.281 (Far End Camera Control)
+                          protocol support
   --enable-t38            whether to enable T.38 capability support
   --enable-msrp           whether to enable MSRP support
   --enable-sipim          whether to enable SIPIM session support
@@ -4358,7 +4361,8 @@ OPAL_IAX2=yes
 OPAL_VIDEO=yes
 OPAL_T38_CAPABILITY=yes
 OPAL_FAX=yes
-OPAL_H224FECC=yes
+OPAL_HAS_H224=yes
+OPAL_HAS_H281=yes
 OPAL_H450=yes
 OPAL_H460=yes
 OPAL_H501=yes
@@ -9897,22 +9901,22 @@ _ACEOF
 
 
 
-          if test "x$OPAL_H224FECC" = "x"; then
-            { { echo "$as_me:$LINENO: error: No default specified for OPAL_H224FECC, please correct configure.ac" >&5
-echo "$as_me: error: No default specified for OPAL_H224FECC, please correct configure.ac" >&2;}
+          if test "x$OPAL_HAS_H224" = "x"; then
+            { { echo "$as_me:$LINENO: error: No default specified for OPAL_HAS_H224, please correct configure.ac" >&5
+echo "$as_me: error: No default specified for OPAL_HAS_H224, please correct configure.ac" >&2;}
    { (exit 1); exit 1; }; }
 	  fi
           # Check whether --enable-h224 was given.
 if test "${enable_h224+set}" = set; then
-  enableval=$enable_h224; OPAL_H224FECC=$enableval
+  enableval=$enable_h224; OPAL_HAS_H224=$enableval
 fi
 
 
-          if test "xOPAL_H323" != "x"; then
-            if test "x$OPAL_H323" != "xyes"; then
-              { echo "$as_me:$LINENO: h224 support disabled due to disabled dependency OPAL_H323" >&5
-echo "$as_me: h224 support disabled due to disabled dependency OPAL_H323" >&6;}
-	      OPAL_H224FECC=no
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: h224 support disabled due to disabled dependency " >&5
+echo "$as_me: h224 support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_H224=no
 	    fi
 	  fi
 
@@ -9920,21 +9924,65 @@ echo "$as_me: h224 support disabled due to disabled dependency OPAL_H323" >&6;}
             if test "x$" != "xyes"; then
               { echo "$as_me:$LINENO: h224 support disabled due to disabled dependency " >&5
 echo "$as_me: h224 support disabled due to disabled dependency " >&6;}
-	      OPAL_H224FECC=no
+	      OPAL_HAS_H224=no
 	    fi
 	  fi
 
 
           { echo "$as_me:$LINENO: checking whether to enable H.224 protocol support" >&5
 echo $ECHO_N "checking whether to enable H.224 protocol support... $ECHO_C" >&6; }
-          { echo "$as_me:$LINENO: result: $OPAL_H224FECC" >&5
-echo "${ECHO_T}$OPAL_H224FECC" >&6; }
+          { echo "$as_me:$LINENO: result: $OPAL_HAS_H224" >&5
+echo "${ECHO_T}$OPAL_HAS_H224" >&6; }
 
 
-          if test "x$OPAL_H224FECC" = "xyes"; then
+          if test "x$OPAL_HAS_H224" = "xyes"; then
 
 cat >>confdefs.h <<\_ACEOF
-#define OPAL_H224FECC 1
+#define OPAL_HAS_H224 1
+_ACEOF
+
+          fi
+
+
+
+          if test "x$OPAL_HAS_H281" = "x"; then
+            { { echo "$as_me:$LINENO: error: No default specified for OPAL_HAS_H281, please correct configure.ac" >&5
+echo "$as_me: error: No default specified for OPAL_HAS_H281, please correct configure.ac" >&2;}
+   { (exit 1); exit 1; }; }
+	  fi
+          # Check whether --enable-h281 was given.
+if test "${enable_h281+set}" = set; then
+  enableval=$enable_h281; OPAL_HAS_H281=$enableval
+fi
+
+
+          if test "xOPAL_HAS_H224" != "x"; then
+            if test "x$OPAL_HAS_H224" != "xyes"; then
+              { echo "$as_me:$LINENO: h281 support disabled due to disabled dependency OPAL_HAS_H224" >&5
+echo "$as_me: h281 support disabled due to disabled dependency OPAL_HAS_H224" >&6;}
+	      OPAL_HAS_H281=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: h281 support disabled due to disabled dependency " >&5
+echo "$as_me: h281 support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_H281=no
+	    fi
+	  fi
+
+
+          { echo "$as_me:$LINENO: checking whether to enable H.281 (Far End Camera Control) protocol support" >&5
+echo $ECHO_N "checking whether to enable H.281 (Far End Camera Control) protocol support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: result: $OPAL_HAS_H281" >&5
+echo "${ECHO_T}$OPAL_HAS_H281" >&6; }
+
+
+          if test "x$OPAL_HAS_H281" = "xyes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define OPAL_HAS_H281 1
 _ACEOF
 
           fi
@@ -11473,7 +11521,8 @@ OPAL_VIDEO!$OPAL_VIDEO$ac_delim
 OPAL_SIP!$OPAL_SIP$ac_delim
 OPAL_H323!$OPAL_H323$ac_delim
 OPAL_IAX2!$OPAL_IAX2$ac_delim
-OPAL_H224FECC!$OPAL_H224FECC$ac_delim
+OPAL_HAS_H224!$OPAL_HAS_H224$ac_delim
+OPAL_HAS_H281!$OPAL_HAS_H281$ac_delim
 OPAL_T38_CAPABILITY!$OPAL_T38_CAPABILITY$ac_delim
 OPAL_HAS_MSRP!$OPAL_HAS_MSRP$ac_delim
 OPAL_HAS_SIPIM!$OPAL_HAS_SIPIM$ac_delim
@@ -11509,7 +11558,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 57; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 58; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
