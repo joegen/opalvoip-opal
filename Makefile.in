@@ -211,7 +211,7 @@ ifeq ($(OPAL_T38_CAP), yes)
 SOURCES += $(OPAL_SRCDIR)/t38/h323t38.cxx
 endif
 
-ifeq ($(OPAL_H224FECC), yes)
+ifeq ($(OPAL_HAS_H224), yes)
 ifdef H224_AVAIL
 SOURCES += $(OPAL_SRCDIR)/h224/h323h224.cxx
 endif
@@ -281,12 +281,12 @@ endif
 ##################
 # H.224 files
 
-ifeq ($(OPAL_H224FECC), yes)
+ifeq ($(OPAL_HAS_H224), yes)
 ifdef H224_AVAIL
 
 SOURCES += $(OPAL_SRCDIR)/h224/q922.cxx \
-		   $(OPAL_SRCDIR)/h224/h224.cxx \
-		   $(OPAL_SRCDIR)/h224/h281.cxx
+	   $(OPAL_SRCDIR)/h224/h224.cxx \
+	   $(OPAL_SRCDIR)/h224/h281.cxx
 endif
 endif
 
