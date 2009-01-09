@@ -394,6 +394,8 @@ class IAX2EndPoint : public OpalEndPoint
     const PString & transport = PString::Empty()
   );
   
+  /**Report if this iax2 endpoint class is correctly initialised */
+  PBoolean InitialisedOK() { return (transmitter != NULL) && (receiver != NULL); }
   //@}
   
  protected:
