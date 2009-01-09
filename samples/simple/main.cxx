@@ -341,7 +341,8 @@ void SimpleOpalProcess::Main()
 #endif
 #if OPAL_IAX2
 "    If IAX2 is enabled then you can make a iax2 call with a command like:\n"
-"       simpleopal -IHn  iax2:guest@misery.digium.com/s\n"
+"       simpleopal -I -H  iax2:guest@misery.digium.com/s\n"
+"           ((Please ensure simplopal is the only iax2 app running on your box))\n"
 #endif
             << endl;
     return;
@@ -605,6 +606,12 @@ PBoolean MyManager::Initialise(PArgList & args)
   if (!args.HasOption("no-iax2")) {
     iax2EP = new IAX2EndPoint(*this);
     
+    if (!iax2EP->InitialisedOK()) {
+      cerr << "IAX2 Endpoint is not initialised correctly" << endl;
+      cerr << "Is there another application using port 4569? " << endl;
+      return PFalse;
+    }
+
     if (args.HasOption('p'))
       iax2EP->SetPassword(args.GetOptionString('p'));
     
