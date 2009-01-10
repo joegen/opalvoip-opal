@@ -37,6 +37,8 @@
 
 #include <winsock2.h>
 #include <iphlpapi.h>
+#include <pmpolicy.h>
+#include <pm.h>
 
 
 #ifdef _DEBUG
@@ -301,6 +303,7 @@ CMobileOpalDlg::CMobileOpalDlg(CWnd* pParent /*=NULL*/)
   , m_opal(NULL)
   , m_opalVersion(OPAL_C_API_VERSION)
   , m_speakerphone(false)
+  , m_hPowerRequirement(NULL)
 {
   m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -587,6 +590,8 @@ void CMobileOpalDlg::InitialiseOPAL()
     }
     OpalFreeMessage(response);
   }
+
+  PowerPolicyNotify(PPN_UNATTENDEDMODE, TRUE);
 }
 
 
@@ -680,6 +685,15 @@ void CMobileOpalDlg::AddRecentCall(const CString & uri)
 }
 
 
+void CMobileOpalDlg::EnableFullPower()
+{
+  m_hPowerRequirement = SetPowerRequirement(_T("WAV1:"), D0, POWER_FORCE|POWER_NAME, NULL, 0);
+  if (m_hPowerRequirement == NULL)
+    MessageBox(_T("Could not set power mode!"));
+  SetSystemPowerState(NULL, POWER_STATE_ON, POWER_FORCE);
+}
+
+
 void CMobileOpalDlg::OnTimer(UINT_PTR nIDEvent)
 {
   if (m_opal == NULL)
@@ -738,6 +752,7 @@ void CMobileOpalDlg::HandleMessage(OpalMessage & message)
         m_ctrlCallAddress.EnableWindow(false);
         ShowWindow(true);
         BringWindowToTop();
+        EnableFullPower();
       }
       else {
         OpalMessage command;
@@ -775,6 +790,12 @@ void CMobileOpalDlg::HandleMessage(OpalMessage & message)
         m_ctrlCallAddress.EnableWindow(true);
 
         SetStatusText(IDS_READY, message.m_param.m_callCleared.m_reason);
+
+        if (m_hPowerRequirement != NULL) {
+          ReleasePowerRequirement(m_hPowerRequirement);
+          m_hPowerRequirement = NULL;
+        }
+        PowerPolicyNotify(PPN_UNATTENDEDMODE, TRUE);
       }
   }
 }
@@ -858,6 +879,7 @@ void CMobileOpalDlg::OnCallAnswer()
     else if (command.m_type == OpalCmdSetUpCall) {
       m_currentCallToken = response->m_param.m_callSetUp.m_callToken;
       AddRecentCall(m_callAddress);
+      EnableFullPower();
     }
     else if (command.m_type == OpalCmdAnswerCall) {
       m_currentCallToken = m_incomingCallToken;

@@ -61,6 +61,7 @@ protected:
   bool m_speakerphone;
   CStringA m_currentAOR;
   CStringA m_currentHost;
+  HANDLE m_hPowerRequirement;
 
   // Generated message map functions
   virtual BOOL OnInitDialog();
@@ -73,6 +74,7 @@ protected:
   void SetCallButton(bool enabled, UINT strId = 0);
   void AddRecentCall(const CString & uri);
   void HandleMessage(OpalMessage & message);
+  void EnableFullPower();
 
 public:
   afx_msg void OnTimer(UINT_PTR nIDEvent);
