@@ -141,22 +141,52 @@ static PBoolean SetDeviceName(const PString & name,
                           PSoundChannel::Directions dir,
                           PString & result)
 {
-  if (name[0] == '#') {
-    PStringArray devices = PSoundChannel::GetDeviceNames(dir);
+  PStringArray devices = PSoundChannel::GetDeviceNames(dir);
+
+  if (name.GetLength() >= 2 && name[0] == '#' && isdigit(name[1])) {
     PINDEX id = name.Mid(1).AsUnsigned();
-    if (id == 0 || id > devices.GetSize())
-      return PFalse;
-    result = devices[id-1];
-  }
-  else {
-    PSoundChannel * pChannel = PSoundChannel::CreateChannelByName(name, dir);
-    if (pChannel == NULL)
-      return PFalse;
-    delete pChannel;
-    result = name;
+    if (id > 0 && id <= devices.GetSize()) {
+      result = devices[id-1];
+      return true;
+    }
   }
 
-  return PTrue;
+  // Create unique names sans driver
+  PStringList uniqueNames;
+  for (PINDEX i = 0; i < devices.GetSize(); ++i) {
+    PCaselessString deviceName = devices[i];
+    PINDEX tab = deviceName.Find('\t');
+    if (tab != P_MAX_INDEX)
+      deviceName.Delete(0, tab+1);
+    if (uniqueNames.GetValuesIndex(deviceName) == P_MAX_INDEX)
+      uniqueNames.AppendString(deviceName);
+  }
+
+  int partialMatch = -1;
+  for (PINDEX index = 0; index < uniqueNames.GetSize(); index++) {
+    PCaselessString deviceName = uniqueNames[index];
+
+    // Perfect match?
+    if (deviceName == name) {
+      result = deviceName;
+      return true;
+    }
+
+    // Partial match?
+    if (deviceName.NumCompare(name) == PObject::EqualTo) {
+      if (partialMatch == -1)
+        partialMatch = index;
+      else
+        partialMatch = -2;
+    }
+  }
+
+  // Not a partial match or ambiguous partial
+  if (partialMatch < 0)
+    return false;
+
+  result = uniqueNames[partialMatch];
+  return true;
 }
 
 
@@ -181,27 +211,21 @@ PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
     recordDevice = remoteParty.Mid(separator+1);
   }
 
-  if (!SetDeviceName(playDevice, PSoundChannel::Player, playDevice))
+  if (playDevice.IsEmpty() || playDevice == "*")
     playDevice = soundChannelPlayDevice;
-  if (!SetDeviceName(recordDevice, PSoundChannel::Recorder, recordDevice))
+  if (!SetDeviceName(playDevice, PSoundChannel::Player, playDevice)) {
+    PTRACE(2, "PCSS\tSound player device \"" << playDevice << "\" does not exist, call " << call << " aborted.");
+    call.Clear(OpalConnection::EndedByLocalBusy);
+    return false;
+  }
+
+  if (recordDevice.IsEmpty() || recordDevice == "*")
     recordDevice = soundChannelRecordDevice;
-
-  // Make sure sound devices are available.
-  PSoundChannel * soundChannel = PSoundChannel::CreateChannelByName(playDevice, PSoundChannel::Player);
-  if (soundChannel == NULL) {
-    PTRACE(2, "PCSS\tSound player device \"" << playDevice << "\" in use, call " << call << " aborted.");
+  if (!SetDeviceName(recordDevice, PSoundChannel::Recorder, recordDevice)) {
+    PTRACE(2, "PCSS\tSound recording device \"" << recordDevice << "\" does not exist, call " << call << " aborted.");
     call.Clear(OpalConnection::EndedByLocalBusy);
     return false;
   }
-  delete soundChannel;
-
-  soundChannel = PSoundChannel::CreateChannelByName(recordDevice, PSoundChannel::Recorder);
-  if (soundChannel == NULL) {
-    PTRACE(2, "PCSS\tSound recording device \"" << recordDevice << "\" in use, call " << call << " aborted.");
-    call.Clear(OpalConnection::EndedByLocalBusy);
-    return false;
-  }
-  delete soundChannel;
 
   return AddConnection(CreateConnection(call, playDevice, recordDevice, userData, options, stringOptions));
 }
@@ -325,15 +349,13 @@ void OpalPCSSEndPoint::SetSoundChannelBufferDepth(unsigned depth)
 
 /////////////////////////////////////////////////////////////////////////////
 
-static unsigned LastConnectionTokenID;
-
 OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
                                        OpalPCSSEndPoint & ep,
                                        const PString & playDevice,
                                        const PString & recordDevice,
                                        unsigned options,
                           OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, psprintf("%u", ++LastConnectionTokenID), options, stringOptions),
+  : OpalConnection(call, ep, ep.GetManager().GetNextCallToken(), options, stringOptions),
     endpoint(ep),
     soundChannelPlayDevice(playDevice),
     soundChannelRecordDevice(recordDevice),
@@ -342,7 +364,8 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   silenceDetector = new OpalPCM16SilenceDetector(endpoint.GetManager().GetSilenceDetectParams());
   echoCanceler = new OpalEchoCanceler;
 
-  PTRACE(4, "PCSS\tCreated PC sound system connection with token '" << callToken << "'");
+  PTRACE(4, "PCSS\tCreated PC sound system connection: token=\"" << callToken << "\" "
+            "player=\"" << playDevice << "\" recorder=\"" << recordDevice << '"');
 }
 
 
