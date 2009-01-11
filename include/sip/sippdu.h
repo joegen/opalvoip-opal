@@ -842,11 +842,13 @@ class SIPTransaction : public SIP_PDU
     ~SIPTransaction();
 
     PBoolean Start();
-    PBoolean IsInProgress() const { return state == Trying || state == Proceeding; }
-    PBoolean IsFailed() const { return state > Terminated_Success; }
-    PBoolean IsCompleted() const { return state >= Completed; }
-    PBoolean IsCanceled() const { return state == Cancelling || state == Terminated_Cancelled || state == Terminated_Aborted; }
-    PBoolean IsTerminated() const { return state >= Terminated_Success; }
+    bool IsTrying()     const { return state == Trying; }
+    bool IsProceeding() const { return state == Proceeding; }
+    bool IsInProgress() const { return state == Trying || state == Proceeding; }
+    bool IsFailed()     const { return state > Terminated_Success; }
+    bool IsCompleted()  const { return state >= Completed; }
+    bool IsCanceled()   const { return state == Cancelling || state == Terminated_Cancelled || state == Terminated_Aborted; }
+    bool IsTerminated() const { return state >= Terminated_Success; }
 
     void WaitForCompletion();
     PBoolean Cancel();
