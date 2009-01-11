@@ -1581,8 +1581,12 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     // Final check to see if we have forked INVITEs still running, don't
     // release connection until all of them have failed.
     for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
-      if (invitation->IsInProgress())
+      if (invitation->IsProceeding())
         return;
+      // If we have not even got a 1xx from the remote for this forked INVITE,
+      // don't keep waiting, cancel it and take the error we got
+      if (invitation->IsTrying())
+        invitation->Cancel();
     }
   }
 
