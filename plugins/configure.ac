@@ -109,7 +109,7 @@ dnl ########################################################################
 HAVE_VPB=yes
 HAVE_CAPI=yes
 HAVE_IXJ=no
-HAVE_H263=yes
+HAVE_H263=no
 HAVE_H264=yes
 HAVE_CELT=no
 HAVE_SPANDSP=yes
@@ -507,8 +507,8 @@ fi
 echo ""
 
 echo "                           H.261  :  yes"
-echo "                           H.263  :  ${HAVE_H263}"
-echo "                           H.263+ :  ${HAVE_H263P}"
+echo "                           H.263  :  ${HAVE_H263} (old ffmpeg version)"
+echo "                     H.263/H.263+ :  ${HAVE_H263P}"
 echo "                           H.264  :  ${HAVE_H264}"
 echo "                          THEORA  :  ${HAVE_THEORA}"
 
