@@ -378,6 +378,7 @@ class OpalManager : public PObject
        variable and uses MakeConnection() to start the B-party connection.
       */
     virtual bool OnRouteConnection(
+      PStringSet & routesTried,     ///< Set of routes already tried
       const PString & a_party,      ///< Source local address
       const PString & b_party,      ///< Destination indicated by source
       OpalCall & call,              ///< Call for new connection
