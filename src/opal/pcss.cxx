@@ -151,6 +151,12 @@ static PBoolean SetDeviceName(const PString & name,
     }
   }
 
+  if (devices.GetValuesIndex(name) != P_MAX_INDEX) {
+    // Perfect match (possibly including driver name)
+    result = name;
+    return true;
+  }
+
   // Create unique names sans driver
   PStringList uniqueNames;
   for (PINDEX i = 0; i < devices.GetSize(); ++i) {
