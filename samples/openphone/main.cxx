@@ -285,16 +285,16 @@ static const char * const DefaultRoutes[] = {
 #endif
 
     "h323:.*  = pots:<dn>",
-    "h323:.*  = pc:<du>",
+    "h323:.*  = pc:*",
 
     "h323s:.* = pots:<dn>",
-    "h323s:.* = pc:<du>",
+    "h323s:.* = pc:*",
 
     "sip:.*   = pots:<dn>",
-    "sip:.*   = pc:<du>",
+    "sip:.*   = pc:*",
 
     "sips:.*  = pots:<dn>",
-    "sips:.*  = pc:<du>"
+    "sips:.*  = pc:*"
 };
 
 
@@ -5244,12 +5244,6 @@ bool InCallPanel::Show(bool show)
     m_MicrophoneMute->SetValue(!mute);
     SetVolume(true, value, mute);
   }
-  else {
-    config->Write(SpeakerVolumeKey, m_SpeakerVolume->GetValue());
-    config->Write(SpeakerMuteKey, !m_SpeakerMute->GetValue());
-    config->Write(MicrophoneVolumeKey, m_MicrophoneVolume->GetValue());
-    config->Write(MicrophoneMuteKey, !m_MicrophoneMute->GetValue());
-  }
 
   return wxPanel::Show(show);
 }
@@ -5317,15 +5311,19 @@ void InCallPanel::OnHoldRetrieve(wxCommandEvent & /*event*/)
 }
 
 
-void InCallPanel::OnSpeakerMute(wxCommandEvent & event)
+void InCallPanel::OnSpeakerMute(wxCommandEvent & cmdEvent)
 {
-  SetVolume(false, m_SpeakerVolume->GetValue(), !event.IsChecked());
+  bool muted = !cmdEvent.IsChecked();
+  SetVolume(false, m_SpeakerVolume->GetValue(), muted);
+  wxConfig::Get()->Write(SpeakerMuteKey, muted);
 }
 
 
-void InCallPanel::OnMicrophoneMute(wxCommandEvent & event)
+void InCallPanel::OnMicrophoneMute(wxCommandEvent & cmdEvent)
 {
-  SetVolume(true, m_MicrophoneVolume->GetValue(), !event.IsChecked());
+  bool muted = !cmdEvent.IsChecked();
+  SetVolume(true, m_MicrophoneVolume->GetValue(), muted);
+  wxConfig::Get()->Write(MicrophoneMuteKey, muted);
 }
 
 
@@ -5348,15 +5346,19 @@ ON_USER_INPUT_HANDLER(Hash,'#')
 ON_USER_INPUT_HANDLER(Flash,'!')
 
 
-void InCallPanel::SpeakerVolume(wxScrollEvent & event)
+void InCallPanel::SpeakerVolume(wxScrollEvent & scrollEvent)
 {
-  SetVolume(false, event.GetPosition(), !m_SpeakerMute->GetValue());
+  int newValue = scrollEvent.GetPosition();
+  SetVolume(false, newValue, !m_SpeakerMute->GetValue());
+  wxConfig::Get()->Write(SpeakerVolumeKey, newValue);
 }
 
 
-void InCallPanel::MicrophoneVolume(wxScrollEvent & event)
+void InCallPanel::MicrophoneVolume(wxScrollEvent & scrollEvent)
 {
-  SetVolume(true, event.GetPosition(), !m_MicrophoneMute->GetValue());
+  int newValue = scrollEvent.GetPosition();
+  SetVolume(true, newValue, !m_MicrophoneMute->GetValue());
+  wxConfig::Get()->Write(MicrophoneVolumeKey, newValue);
 }
 
 
