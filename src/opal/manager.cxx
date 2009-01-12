@@ -565,11 +565,13 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   }
 
   // Use a routing algorithm to figure out who the B-Party is, and make second connection
-  return OnRouteConnection(connection.GetLocalPartyURL(), destination, call, options, stringOptions);
+  PStringSet routesTried;
+  return OnRouteConnection(routesTried, connection.GetLocalPartyURL(), destination, call, options, stringOptions);
 }
 
 
-bool OpalManager::OnRouteConnection(const PString & a_party,
+bool OpalManager::OnRouteConnection(PStringSet & routesTried,
+                                    const PString & a_party,
                                     const PString & b_party,
                                     OpalCall & call,
                                     unsigned options,
@@ -583,12 +585,17 @@ bool OpalManager::OnRouteConnection(const PString & a_party,
       return false;
     }
 
+    // See if already tried, keep searching if this route has already failed
+    if (routesTried[route])
+      continue;
+    routesTried += route;
+
     // See if this route can be connected
     if (MakeConnection(call, route, NULL, options, stringOptions))
       return true;
 
     // Recursively call with translated route
-    if (route != b_party && OnRouteConnection(a_party, route, call, options, stringOptions))
+    if (OnRouteConnection(routesTried, a_party, route, call, options, stringOptions))
       return true;
   }
 }
