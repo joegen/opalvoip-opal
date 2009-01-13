@@ -72,6 +72,8 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
   rfc2833Handler  = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalRFC2833);
 #if OPAL_T38_CAPABILITY
   ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE), OpalCiscoNSE);
+#else
+  ciscoNSEHandler = NULL;
 #endif
 
 #ifdef OPAL_ZRTP
