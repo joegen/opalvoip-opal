@@ -72,8 +72,6 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
   rfc2833Handler  = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalRFC2833);
 #if OPAL_T38_CAPABILITY
   ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE), OpalCiscoNSE);
-#else
-  ciscoNSEHandler = NULL;
 #endif
 
 #ifdef OPAL_ZRTP
@@ -85,7 +83,9 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
 OpalRTPConnection::~OpalRTPConnection()
 {
   delete rfc2833Handler;
+#if OPAL_T38_CAPABILITY
   delete ciscoNSEHandler;
+#endif
 }
 
 
@@ -236,7 +236,7 @@ void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & /*command*/, INT /*ext
 
 void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMediaPatch & patch)
 {
-  if (isSource && (rfc2833Handler != NULL || ciscoNSEHandler != NULL)) {
+  if (isSource) {
     OpalRTPMediaStream * mediaStream = dynamic_cast<OpalRTPMediaStream *>(&patch.GetSource());
     if (mediaStream != NULL) {
       RTP_Session & rtpSession = mediaStream->GetRtpSession();
@@ -244,10 +244,12 @@ void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMedia
         PTRACE(3, "RTPCon\tAdding RFC2833 receive handler");
         rtpSession.AddFilter(rfc2833Handler->GetReceiveHandler());
       }
+#if OPAL_T38_CAPABILITY
       if (ciscoNSEHandler != NULL) {
         PTRACE(3, "RTPCon\tAdding Cisco NSE receive handler");
         rtpSession.AddFilter(ciscoNSEHandler->GetReceiveHandler());
       }
+#endif
     }
   }
 }
@@ -255,7 +257,10 @@ void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMedia
 
 PBoolean OpalRTPConnection::SendUserInputTone(char tone, unsigned duration)
 {
-  if (ciscoNSEHandler->SendToneAsync(tone, duration) ||
+  if (
+#if OPAL_T38_CAPABILITY
+      ciscoNSEHandler->SendToneAsync(tone, duration) ||
+#endif
        rfc2833Handler->SendToneAsync(tone, duration))
     return true;
 

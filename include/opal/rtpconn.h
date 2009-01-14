@@ -386,7 +386,9 @@ class OpalRTPConnection : public OpalConnection
   protected:
     OpalRTPSessionManager m_rtpSessions;
     OpalRFC2833Proto * rfc2833Handler;
+#if OPAL_T38_CAPABILITY
     OpalRFC2833Proto * ciscoNSEHandler;
+#endif
 
     PBoolean remoteIsNAT;
     PBoolean useRTPAggregation;
