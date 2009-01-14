@@ -718,7 +718,7 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
 
   PINDEX pcPos = options.Find("pc");
   if (pcPos < defUserPos) {
-    defUser = "pc:<du>";
+    defUser = "pc:*";
     defUserPos = pcPos;
   }
 
