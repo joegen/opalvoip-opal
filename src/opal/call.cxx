@@ -654,14 +654,17 @@ void OpalCall::SetPartyNames()
     return;
 
   if (connectionB->IsNetworkConnection()) {
-    m_partyB = connectionB->GetRemotePartyURL();
-    if (!connectionA->IsNetworkConnection())
+    if (!networkA)
       connectionA->CopyPartyNames(*connectionB);
+    m_partyB = connectionB->GetRemotePartyURL();
   }
   else {
-    m_partyB = connectionB->GetLocalPartyURL();
-    if (connectionA->IsNetworkConnection())
+    if (networkA) {
       connectionB->CopyPartyNames(*connectionA);
+      m_partyB = connectionA->GetCalledPartyURL();
+    }
+    if (m_partyB.IsEmpty())
+      m_partyB = connectionB->GetLocalPartyURL();
   }
 }
 
