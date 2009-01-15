@@ -407,7 +407,7 @@ PBoolean OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::
 
 PString OpalConnection::GetDestinationAddress()
 {
-  return "*";
+  return PString::Empty();
 }
 
 
