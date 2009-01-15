@@ -1226,6 +1226,9 @@ PString SIPConnection::GetDestinationAddress()
 
 PString SIPConnection::GetCalledPartyURL()
 {
+  if (originalInvite != NULL)
+    return originalInvite->GetURI().AsString();
+
   SIPURL calledParty = m_dialog.GetRemoteURI();
   calledParty.Sanitise(SIPURL::ToURI);
   return calledParty.AsString();
