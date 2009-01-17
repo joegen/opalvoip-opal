@@ -322,6 +322,16 @@ class OpalPCSSConnection : public OpalConnection
       PBoolean withMedia                ///<  Open media with alerting
     );
 
+    /**Initiate the transfer of an existing call (connection) to a new remote 
+       party.
+
+       If remoteParty is a valid call token, then the remote party is transferred
+       to that party (consultation transfer) and both calls are cleared.
+     */
+    virtual bool TransferConnection(
+      const PString & remoteParty   ///<  Remote party to transfer the existing call to
+    );
+
     /**Open a new media stream.
        This will create a media stream of an appropriate subclass as required
        by the underlying connection protocol. For instance H.323 would create
