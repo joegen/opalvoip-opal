@@ -706,13 +706,13 @@ OpalRawMediaStream::OpalRawMediaStream(OpalConnection & conn,
                                      const OpalMediaFormat & mediaFormat,
                                        unsigned sessionID,
                                        PBoolean isSource,
-                                       PChannel * chan, PBoolean autoDel)
+                                       PChannel * chan, PBoolean autoDelete)
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
+  , m_channel(chan)
+  , m_autoDelete(autoDelete)
+  , m_averageSignalSum(0)
+  , m_averageSignalSamples(0)
 {
-  channel = chan;
-  autoDelete = autoDel;
-  averageSignalSum = 0;
-  averageSignalSamples = 0;
 }
 
 
@@ -720,9 +720,9 @@ OpalRawMediaStream::~OpalRawMediaStream()
 {
   Close();
 
-  if (autoDelete)
-    delete channel;
-  channel = NULL;
+  if (m_autoDelete)
+    delete m_channel;
+  m_channel = NULL;
 }
 
 
@@ -738,13 +738,15 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
     return false;
   }
 
-  if (!IsOpen() || channel == NULL)
+  PWaitAndSignal mutex(m_channelMutex);
+
+  if (!IsOpen() || m_channel == NULL)
     return false;
 
-  if (!channel->Read(buffer, size))
+  if (!m_channel->Read(buffer, size))
     return false;
 
-  length = channel->GetLastReadCount();
+  length = m_channel->GetLastReadCount();
   CollectAverage(buffer, length);
   return true;
 }
@@ -764,24 +766,50 @@ PBoolean OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDE
     return false;
   }
   
-  if (!IsOpen() || channel == NULL) {
+  PWaitAndSignal mutex(m_channelMutex);
+
+  if (!IsOpen() || m_channel == NULL) {
     PTRACE(1, "Media\tTried to write to media stream with no channel");
     return false;
   }
 
   if (buffer != NULL && length != 0) {
-    if (!channel->Write(buffer, length))
+    if (!m_channel->Write(buffer, length))
       return false;
-    written = channel->GetLastWriteCount();
+    written = m_channel->GetLastWriteCount();
     CollectAverage(buffer, written);
   }
   else {
     PBYTEArray silence(defaultDataSize);
-    if (!channel->Write(silence, defaultDataSize))
+    if (!m_channel->Write(silence, defaultDataSize))
       return false;
-    written = channel->GetLastWriteCount();
+    written = m_channel->GetLastWriteCount();
     CollectAverage(silence, written);
   }
+
+  return true;
+}
+
+
+bool OpalRawMediaStream::SetChannel(PChannel * chan, bool autoDelete)
+{
+  if (chan == NULL || !chan->IsOpen()) {
+    if (autoDelete)
+      delete chan;
+    return false;
+  }
+
+  m_channelMutex.Wait();
+
+  PChannel * channelToDelete = m_autoDelete ? m_channel : NULL;
+  m_channel = chan;
+  m_autoDelete = autoDelete;
+
+  SetDataSize(GetDataSize());
+
+  m_channelMutex.Signal();
+
+  delete channelToDelete; // Outside mutex
 
   return true;
 }
@@ -792,8 +820,8 @@ PBoolean OpalRawMediaStream::Close()
   if (!OpalMediaStream::Close())
     return false;
 
-  if (channel != NULL)
-    channel->Close();
+  if (m_channel != NULL)
+    m_channel->Close();
 
   return true;
 }
@@ -801,27 +829,27 @@ PBoolean OpalRawMediaStream::Close()
 
 unsigned OpalRawMediaStream::GetAverageSignalLevel()
 {
-  PWaitAndSignal m(averagingMutex);
+  PWaitAndSignal mutex(m_averagingMutex);
 
-  if (averageSignalSamples == 0)
+  if (m_averageSignalSamples == 0)
     return UINT_MAX;
 
-  unsigned average = (unsigned)(averageSignalSum/averageSignalSamples);
-  averageSignalSum = average;
-  averageSignalSamples = 1;
+  unsigned average = (unsigned)(m_averageSignalSum/m_averageSignalSamples);
+  m_averageSignalSum = average;
+  m_averageSignalSamples = 1;
   return average;
 }
 
 
 void OpalRawMediaStream::CollectAverage(const BYTE * buffer, PINDEX size)
 {
-  PWaitAndSignal m(averagingMutex);
+  PWaitAndSignal mutex(m_averagingMutex);
 
   size = size/2;
-  averageSignalSamples += size;
+  m_averageSignalSamples += size;
   const short * pcm = (const short *)buffer;
   while (size-- > 0) {
-    averageSignalSum += PABS(*pcm);
+    m_averageSignalSum += PABS(*pcm);
     pcm++;
   }
 }
@@ -933,7 +961,7 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize)
   PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
          << dataSize << " bytes and " << soundChannelBuffers << " buffers.");
   return OpalMediaStream::SetDataSize(dataSize) &&
-         ((PSoundChannel *)channel)->SetBuffers(dataSize, soundChannelBuffers);
+         ((PSoundChannel *)m_channel)->SetBuffers(dataSize, soundChannelBuffers);
 }
 
 
