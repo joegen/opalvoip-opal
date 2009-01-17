@@ -739,10 +739,13 @@ void OpalConnection::DisableRecording()
   UnlockReadWrite();
 }
 
-void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT)
+
+void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT param)
 {
-  GetCall().GetManager().GetRecordManager().WriteAudio(GetCall().GetToken(), callIdentifier.AsString(), frame);
+  const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
+  GetCall().OnRecordAudio(patch->GetSource().GetID(), frame);
 }
+
 
 void OpalConnection::AttachRFC2833HandlerToPatch(PBoolean /*isSource*/, OpalMediaPatch & /*patch*/)
 {
