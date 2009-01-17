@@ -217,6 +217,21 @@ class PresenceDialog : public wxDialog
 };
 
 
+class AudioDevicesDialog : public wxDialog
+{
+  public:
+    AudioDevicesDialog(MyManager * manager, const OpalPCSSConnection & connection);
+
+    PString GetTransferAddress() const;
+
+  private:
+    PwxString     m_playDevice;
+    PwxString     m_recordDevice;
+
+    DECLARE_EVENT_TABLE()
+};
+
+
 class VideoControlDialog : public wxDialog
 {
   public:
@@ -917,6 +932,8 @@ class MyManager : public wxFrame, public OpalManager
     void OnTransfer(wxCommandEvent& event);
     void OnStartRecording(wxCommandEvent& event);
     void OnStopRecording(wxCommandEvent& event);
+    void OnAudioDevicePair(wxCommandEvent& event);
+    void OnAudioDevicePreset(wxCommandEvent& event);
     void OnNewCodec(wxCommandEvent& event);
     void OnStartVideo(wxCommandEvent& event);
     void OnStopVideo(wxCommandEvent& event);
@@ -1050,6 +1067,7 @@ class MyManager : public wxFrame, public OpalManager
     PTimer        m_RingSoundTimer;
     PDECLARE_NOTIFIER(PTimer, MyManager, OnRingSoundAgain);
     void StopRingSound();
+    void UpdateAudioDevices();
 
     enum CallState {
       IdleState,

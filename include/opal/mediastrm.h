@@ -587,8 +587,15 @@ class OpalRawMediaStream : public OpalMediaStream
 
     /**Return the associated PChannel 
      */
-    PChannel * GetChannel() { return channel; }
-    
+    PChannel * GetChannel() { return m_channel; }
+
+    /**Set a new channel for raw PCM stream.
+      */
+    bool SetChannel(
+      PChannel * channel,     ///< New channel
+      bool autoDelete = true  ///< Auto delete channel on exit or replacement
+    );
+
     /**Close the media stream.
 
        Closes the associated PChannel.
@@ -601,12 +608,13 @@ class OpalRawMediaStream : public OpalMediaStream
   //@}
 
   protected:
-    PChannel * channel;
-    bool       autoDelete;
+    PChannel * m_channel;
+    bool       m_autoDelete;
+    PMutex     m_channelMutex;
 
-    PUInt64    averageSignalSum;
-    unsigned   averageSignalSamples;
-    PMutex     averagingMutex;
+    PUInt64    m_averageSignalSum;
+    unsigned   m_averageSignalSamples;
+    PMutex     m_averagingMutex;
 
     void CollectAverage(const BYTE * buffer, PINDEX size);
 };

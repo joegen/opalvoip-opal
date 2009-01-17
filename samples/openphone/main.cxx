@@ -303,6 +303,8 @@ enum {
   ID_RETRIEVE_MENU_TOP = ID_RETRIEVE_MENU_BASE+999,
   ID_TRANSFER_MENU_BASE,
   ID_TRANSFER_MENU_TOP = ID_TRANSFER_MENU_BASE+999,
+  ID_AUDIO_DEVICE_MENU_BASE,
+  ID_AUDIO_DEVICE_MENU_TOP = ID_AUDIO_DEVICE_MENU_BASE+99,
   ID_AUDIO_CODEC_MENU_BASE,
   ID_AUDIO_CODEC_MENU_TOP = ID_AUDIO_CODEC_MENU_BASE+99,
   ID_VIDEO_CODEC_MENU_BASE,
@@ -364,6 +366,28 @@ void RemoveNotebookPage(wxWindow * window, const wxChar * name)
 #ifdef _MSC_VER
 #pragma warning(default:4100)
 #endif
+
+
+static PwxString AudioDeviceNameToScreen(const PString & name)
+{
+  PwxString str = name;
+  str.Replace(wxT("\t"), wxT(": "));
+  return str;
+}
+
+static PString AudioDeviceNameFromScreen(const wxString & name)
+{
+  PwxString str = name;
+  str.Replace(wxT(": "), wxT("\t"));
+  return str.p_str();
+}
+
+static void FillAudioDeviceComboBox(wxControlWithItems * list, PSoundChannel::Directions dir)
+{
+  PStringArray devices = PSoundChannel::GetDeviceNames(dir);
+  for (PINDEX i = 0; i < devices.GetSize(); i++)
+    list->Append(AudioDeviceNameToScreen(devices[i]));
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -480,6 +504,8 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,ID_TRANSFER_MENU_TOP, MyManager::OnTransfer)
   EVT_MENU(XRCID("MenuStartRecording"),  MyManager::OnStartRecording)
   EVT_MENU(XRCID("MenuStopRecording"),   MyManager::OnStopRecording)
+  EVT_MENU(XRCID("MenuAudioDevice"),   MyManager::OnAudioDevicePair)
+  EVT_MENU_RANGE(ID_AUDIO_DEVICE_MENU_BASE, ID_AUDIO_DEVICE_MENU_TOP, MyManager::OnAudioDevicePreset)
   EVT_MENU_RANGE(ID_AUDIO_CODEC_MENU_BASE, ID_AUDIO_CODEC_MENU_TOP, MyManager::OnNewCodec)
   EVT_MENU_RANGE(ID_VIDEO_CODEC_MENU_BASE, ID_VIDEO_CODEC_MENU_TOP, MyManager::OnNewCodec)
   EVT_MENU(XRCID("MenuStartVideo"),      MyManager::OnStartVideo)
@@ -781,6 +807,7 @@ bool MyManager::Initialise()
   if (config->Read(DisableDetectInBandDTMFKey, &onoff))
     DisableDetectInBandDTMF(onoff);
 
+  UpdateAudioDevices();
   StartLID();
 
 
@@ -1272,6 +1299,8 @@ bool MyManager::CanDoFax() const
 
 void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
 {
+  int id;
+
   wxMenuBar * menubar = GetMenuBar();
   menubar->Enable(XRCID("MenuCall"),            m_callState == IdleState);
   menubar->Enable(XRCID("MenuCallLastDialed"),  m_callState == IdleState && !m_LastDialed.IsEmpty());
@@ -1302,6 +1331,17 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
     wxTheClipboard->Close();
   }
   menubar->Enable(XRCID("MenuPaste"), hasFormat);
+
+  wxString deviceName;
+  menubar->Enable(XRCID("SubMenuSound"), m_callState == InCallState);
+  PSafePtr<OpalPCSSConnection> pcss = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReadOnly));
+  if (pcss != NULL)
+    deviceName = AudioDeviceNameToScreen(pcss->GetSoundChannelPlayDevice());
+  for (id = ID_AUDIO_DEVICE_MENU_BASE; id <= ID_AUDIO_DEVICE_MENU_TOP; id++) {
+    wxMenuItem * item = menubar->FindItem(id);
+    if (item != NULL)
+      item->Check(item->GetLabel() == deviceName);
+  }
 
   bool hasStartVideo = false;
   bool hasStopVideo = false;
@@ -1335,14 +1375,14 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   }
 
   menubar->Enable(XRCID("SubMenuAudio"), m_callState == InCallState);
-  for (int id = ID_AUDIO_CODEC_MENU_BASE; id <= ID_AUDIO_CODEC_MENU_TOP; id++) {
+  for (id = ID_AUDIO_CODEC_MENU_BASE; id <= ID_AUDIO_CODEC_MENU_TOP; id++) {
     wxMenuItem * item = menubar->FindItem(id);
     if (item != NULL)
       item->Check(item->GetLabel() == audioFormat);
   }
 
   menubar->Enable(XRCID("SubMenuVideo"), !videoFormat.IsEmpty() && m_callState == InCallState);
-  for (int id = ID_VIDEO_CODEC_MENU_BASE; id <= ID_VIDEO_CODEC_MENU_TOP; id++) {
+  for (id = ID_VIDEO_CODEC_MENU_BASE; id <= ID_VIDEO_CODEC_MENU_TOP; id++) {
     wxMenuItem * item = menubar->FindItem(id);
     if (item != NULL)
       item->Check(item->GetLabel() == videoFormat);
@@ -2320,6 +2360,25 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 }
 
 
+void MyManager::OnAudioDevicePair(wxCommandEvent & /*theEvent*/)
+{
+  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReadOnly));
+  if (connection != NULL) {
+    AudioDevicesDialog dlg(this, *connection);
+    if (dlg.ShowModal() == wxID_OK && connection.SetSafetyMode(PSafeReadWrite))
+      m_activeCall->Transfer(*connection, dlg.GetTransferAddress());
+  }
+}
+
+
+void MyManager::OnAudioDevicePreset(wxCommandEvent & theEvent)
+{
+  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReadWrite));
+  if (connection != NULL)
+    m_activeCall->Transfer(*connection, "pc:"+AudioDeviceNameFromScreen(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel()));
+}
+
+
 void MyManager::OnNewCodec(wxCommandEvent& theEvent)
 {
   OpalMediaFormat mediaFormat(PwxString(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel()).p_str());
@@ -2780,6 +2839,24 @@ bool MyManager::AdjustFrameSize()
 }
 
 
+void MyManager::UpdateAudioDevices()
+{
+  wxMenuBar * menubar = GetMenuBar();
+  wxMenuItem * item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuSound"));
+  wxMenu * audioMenu = PAssertNULL(item)->GetSubMenu();
+  while (audioMenu->GetMenuItemCount() > 2)
+    audioMenu->Delete(audioMenu->FindItemByPosition(2));
+
+  unsigned id = ID_AUDIO_DEVICE_MENU_BASE;
+  PStringList playDevices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
+  PStringList recordDevices = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
+  for (PINDEX i = 0; i < playDevices.GetSize(); i++) {
+    if (recordDevices.GetValuesIndex(playDevices[i]) != P_MAX_INDEX)
+      audioMenu->Append(id++, AudioDeviceNameToScreen(playDevices[i]), wxEmptyString, true);
+  }
+}
+
+
 void MyManager::InitMediaInfo(const char * source, const OpalMediaFormatList & mediaFormats)
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
@@ -3052,6 +3129,7 @@ public:
   }
 };
 
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void MyManager::OnOptions(wxCommandEvent& /*event*/)
@@ -3161,16 +3239,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(Username, m_manager.GetDefaultUserName());
   INIT_FIELD(DisplayName, m_manager.GetDefaultDisplayName());
 
-  PStringList devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
   wxChoice * choice = FindWindowByNameAs<wxChoice>(this, RingSoundDeviceNameKey);
   choice->SetValidator(wxGenericValidator(&m_RingSoundDeviceName));
-  for (i = 0; i < devices.GetSize(); i++) {
-    PwxString str = devices[i];
-    str.Replace(wxT("\t"), wxT(": "));
-    choice->Append(str);
-  }
-  m_RingSoundDeviceName = m_manager.m_RingSoundDeviceName;
-  m_RingSoundDeviceName.Replace(wxT("\t"), wxT(": "));
+  FillAudioDeviceComboBox(choice, PSoundChannel::Player);
+  m_RingSoundDeviceName = AudioDeviceNameToScreen(m_manager.m_RingSoundDeviceName);
   INIT_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName);
 
   INIT_FIELD(AutoAnswer, m_manager.m_autoAnswer);
@@ -3271,25 +3343,14 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   // Fill sound player combo box with available devices and set selection
   wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, SoundPlayerKey);
   combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
-  for (i = 0; i < devices.GetSize(); i++) {
-    PwxString str = devices[i];
-    str.Replace(wxT("\t"), wxT(": "));
-    combo->Append(str);
-  }
-  m_SoundPlayer = m_manager.pcssEP->GetSoundChannelPlayDevice();
-  m_SoundPlayer.Replace(wxT("\t"), wxT(": "));
+  FillAudioDeviceComboBox(combo, PSoundChannel::Player);
+  m_SoundPlayer = AudioDeviceNameToScreen(m_manager.pcssEP->GetSoundChannelPlayDevice());
 
   // Fill sound recorder combo box with available devices and set selection
   combo = FindWindowByNameAs<wxComboBox>(this, SoundRecorderKey);
   combo->SetValidator(wxGenericValidator(&m_SoundRecorder));
-  devices = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
-  for (i = 0; i < devices.GetSize(); i++) {
-    PwxString str = devices[i];
-    str.Replace(wxT("\t"), wxT(": "));
-    combo->Append(str);
-  }
-  m_SoundRecorder = m_manager.pcssEP->GetSoundChannelRecordDevice();
-  m_SoundRecorder.Replace(wxT("\t"), wxT(": "));
+  FillAudioDeviceComboBox(combo, PSoundChannel::Recorder);
+  m_SoundRecorder = AudioDeviceNameToScreen(m_manager.pcssEP->GetSoundChannelRecordDevice());
 
   // Fill line interface combo box with available devices and set selection
   m_selectedAEC = FindWindowByNameAs<wxChoice>(this, AECKey);
@@ -3297,7 +3358,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_selectedCountry->SetValidator(wxGenericValidator(&m_Country));
   m_selectedLID = FindWindowByNameAs<wxComboBox>(this, LineInterfaceDeviceKey);
   m_selectedLID->SetValidator(wxGenericValidator(&m_LineInterfaceDevice));
-  devices = OpalLineInterfaceDevice::GetAllDevices();
+  PStringList devices = OpalLineInterfaceDevice::GetAllDevices();
   if (devices.IsEmpty()) {
     m_LineInterfaceDevice = "<< None available >>";
     m_selectedLID->Append(m_LineInterfaceDevice);
@@ -3618,8 +3679,7 @@ bool OptionsDialog::TransferDataFromWindow()
   config->SetPath(GeneralGroup);
   SAVE_FIELD(Username, m_manager.SetDefaultUserName);
   SAVE_FIELD(DisplayName, m_manager.SetDefaultDisplayName);
-  m_RingSoundDeviceName.Replace(wxT(": "), wxT("\t"));
-  SAVE_FIELD(RingSoundDeviceName, m_manager.m_RingSoundDeviceName = );
+  SAVE_FIELD(RingSoundDeviceName, m_manager.m_RingSoundDeviceName = AudioDeviceNameFromScreen);
   SAVE_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName = );
   SAVE_FIELD(AutoAnswer, m_manager.m_autoAnswer = );
 
@@ -3675,10 +3735,10 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // Sound fields
   config->SetPath(AudioGroup);
-  m_SoundPlayer.Replace(wxT(": "), wxT("\t"));
-  m_SoundRecorder.Replace(wxT(": "), wxT("\t"));
-  SAVE_FIELD(SoundPlayer, m_manager.pcssEP->SetSoundChannelPlayDevice);
-  SAVE_FIELD(SoundRecorder, m_manager.pcssEP->SetSoundChannelRecordDevice);
+  m_manager.pcssEP->SetSoundChannelPlayDevice(AudioDeviceNameFromScreen(m_SoundPlayer));
+  config->Write(SoundPlayerKey, PwxString(m_manager.pcssEP->GetSoundChannelPlayDevice()));
+  m_manager.pcssEP->SetSoundChannelRecordDevice(AudioDeviceNameFromScreen(m_SoundRecorder));
+  config->Write(SoundRecorderKey, PwxString(m_manager.pcssEP->GetSoundChannelRecordDevice()));
   SAVE_FIELD(SoundBuffers, m_manager.pcssEP->SetSoundChannelBufferDepth);
   SAVE_FIELD2(MinJitter, MaxJitter, m_manager.SetAudioJitterDelay);
 
@@ -4751,6 +4811,34 @@ bool PresenceDialog::TransferDataFromWindow()
 
   m_sipEP.PublishPresence(info);
   return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(AudioDevicesDialog, wxDialog)
+END_EVENT_TABLE()
+
+AudioDevicesDialog::AudioDevicesDialog(MyManager * manager, const OpalPCSSConnection & connection)
+{
+  wxXmlResource::Get()->LoadDialog(this, manager, wxT("AudioDevicesDialog"));
+
+  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, wxT("PlayDevice"));
+  combo->SetValidator(wxGenericValidator(&m_playDevice));
+  FillAudioDeviceComboBox(combo, PSoundChannel::Player);
+  m_playDevice = AudioDeviceNameToScreen(connection.GetSoundChannelPlayDevice());
+
+  combo = FindWindowByNameAs<wxComboBox>(this, wxT("RecordDevice"));
+  combo->SetValidator(wxGenericValidator(&m_recordDevice));
+  FillAudioDeviceComboBox(combo, PSoundChannel::Recorder);
+  m_recordDevice = AudioDeviceNameToScreen(connection.GetSoundChannelRecordDevice());
+}
+
+
+PString AudioDevicesDialog::GetTransferAddress() const
+{
+  return "pc:" + AudioDeviceNameFromScreen(m_playDevice)
+        + '\n' + AudioDeviceNameFromScreen(m_recordDevice);
 }
 
 

@@ -196,39 +196,46 @@ static PBoolean SetDeviceName(const PString & name,
 }
 
 
+static bool SetDeviceNames(const PString & remoteParty, PString & playResult, PString & recordResult, const char * PTRACE_PARAM(operation))
+{
+  PINDEX prefixLength = remoteParty.Find(':')+1;
+
+  PString playDevice, recordDevice;
+  PINDEX separator = remoteParty.FindOneOf("\n\\", prefixLength);
+  if (separator == P_MAX_INDEX)
+    playDevice = recordDevice = remoteParty.Mid(prefixLength);
+  else {
+    playDevice = remoteParty(prefixLength, separator-1);
+    recordDevice = remoteParty.Mid(separator+1);
+  }
+
+  if (playDevice.IsEmpty() || playDevice == "*")
+    playDevice = playResult;
+  if (!SetDeviceName(playDevice, PSoundChannel::Player, playResult)) {
+    PTRACE(2, "PCSS\tSound player device \"" << playDevice << "\" does not exist, " << operation << " aborted.");
+    return false;
+  }
+
+  if (recordDevice.IsEmpty() || recordDevice == "*")
+    recordDevice = recordResult;
+  if (!SetDeviceName(recordDevice, PSoundChannel::Recorder, recordResult)) {
+    PTRACE(2, "PCSS\tSound recording device \"" << recordDevice << "\" does not exist, " << operation << " aborted.");
+    return false;
+  }
+
+  return true;
+}
+
+
 PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
                                       const PString & remoteParty,
                                       void * userData,
                                unsigned int options,
                                OpalConnection::StringOptions * stringOptions)
 {
-  // First strip of the prefix if present
-  PINDEX prefixLength = 0;
-  if (remoteParty.Find(GetPrefixName()+":") == 0)
-    prefixLength = GetPrefixName().GetLength()+1;
-
-  PString playDevice;
-  PString recordDevice;
-  PINDEX separator = remoteParty.FindOneOf("\n\t\\", prefixLength);
-  if (separator == P_MAX_INDEX)
-    playDevice = recordDevice = remoteParty.Mid(prefixLength);
-  else {
-    playDevice = remoteParty(prefixLength+1, separator-1);
-    recordDevice = remoteParty.Mid(separator+1);
-  }
-
-  if (playDevice.IsEmpty() || playDevice == "*")
-    playDevice = soundChannelPlayDevice;
-  if (!SetDeviceName(playDevice, PSoundChannel::Player, playDevice)) {
-    PTRACE(2, "PCSS\tSound player device \"" << playDevice << "\" does not exist, call " << call << " aborted.");
-    call.Clear(OpalConnection::EndedByLocalBusy);
-    return false;
-  }
-
-  if (recordDevice.IsEmpty() || recordDevice == "*")
-    recordDevice = soundChannelRecordDevice;
-  if (!SetDeviceName(recordDevice, PSoundChannel::Recorder, recordDevice)) {
-    PTRACE(2, "PCSS\tSound recording device \"" << recordDevice << "\" does not exist, call " << call << " aborted.");
+  PString playDevice = soundChannelPlayDevice;
+  PString recordDevice = soundChannelRecordDevice;
+  if (!SetDeviceNames(remoteParty, playDevice, recordDevice, "call")) {
     call.Clear(OpalConnection::EndedByLocalBusy);
     return false;
   }
@@ -416,6 +423,32 @@ PBoolean OpalPCSSConnection::SetAlerting(const PString & calleeName, PBoolean)
   SetPhase(AlertingPhase);
   remotePartyName = calleeName;
   return endpoint.OnShowOutgoing(*this);
+}
+
+
+bool OpalPCSSConnection::TransferConnection(const PString & remoteParty)
+{
+  PString playDevice = soundChannelPlayDevice;
+  PString recordDevice = soundChannelRecordDevice;
+  if (!SetDeviceNames(remoteParty, playDevice, recordDevice, "transfer"))
+    return false;
+
+  if ((playDevice *= soundChannelPlayDevice) &&
+      (recordDevice *= soundChannelRecordDevice)) {
+    PTRACE(2, "PCSS\tTransfer to same sound devices, ignoring.");
+    return true;
+  }
+
+  soundChannelPlayDevice = playDevice;
+  soundChannelRecordDevice = recordDevice;
+
+  // Now we be really sneaky and just change the sound devices in the OpalAudioMediaStream
+  for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream) {
+    OpalRawMediaStream * rawStream = dynamic_cast<OpalRawMediaStream *>(&*mediaStream);
+    if (rawStream != NULL)
+      rawStream->SetChannel(CreateSoundChannel(rawStream->GetMediaFormat(), rawStream->IsSource()));
+  }
+  return true;
 }
 
 
