@@ -1211,12 +1211,36 @@ class OpalManager : public PObject
       OpalConnection & connection   ///< New connection just created
     );
 
-    OpalRecordManager & GetRecordManager()
-    { return recordManager; }
+    OpalRecordManager & GetRecordManager() const
+    { return *m_recordManager; }
 
-    virtual PBoolean StartRecording(const PString & callToken, const PFilePath & fn);
-    virtual bool IsRecording(const PString & callToken);
-    virtual void StopRecording(const PString & callToken);
+    /**Start recording a call.
+       Current version saves to a WAV file. It may either mix the receive and
+       transmit audio stream to a single mono file, or the streams are placed
+       into the left and right channels of a stereo WAV file.
+
+       Returns true if the call exists and there is no recording in progress
+               for the call.
+      */
+    virtual PBoolean StartRecording(
+      const PString & callToken,  ///< Call token for call to record
+      const PFilePath & filename, ///< File into which to record
+      bool mono = false           ///< Record as mono/stereo
+    );
+
+    /**Indicate if recording is currently active on call.
+      */
+    virtual bool IsRecording(
+      const PString & callToken   ///< Call token for call to check if recording
+    );
+
+    /** Stop a recording.
+        Returns true if the call does exists, that recording is active is
+                not indicated.
+      */
+    virtual bool StopRecording(
+      const PString & callToken   ///< Call token for call to stop recording
+    );
 
 #ifdef OPAL_ZRTP
     virtual bool GetZRTPEnabled() const;
@@ -1326,7 +1350,7 @@ class OpalManager : public PObject
     bool zrtpEnabled;
 #endif
 
-    OpalRecordManager recordManager;
+    OpalRecordManager * m_recordManager;
 
     friend OpalCall::OpalCall(OpalManager & mgr);
     friend void OpalCall::OnReleased(OpalConnection & connection);

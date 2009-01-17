@@ -448,10 +448,33 @@ class OpalCall : public PSafeObject
     const PTime & GetStartTime() const { return startTime; }
   //@}
 
-    virtual PBoolean StartRecording(const PFilePath & fn);
-    virtual bool IsRecording() const;
-    virtual void StopRecording();
-    void OnStopRecordAudio(const PString & callToken);
+
+    /**Start recording a call.
+       Current version saves to a WAV file. It may either mix the receive and
+       transmit audio stream to a single mono file, or the streams are placed
+       into the left and right channels of a stereo WAV file.
+      */
+    bool StartRecording(
+      const PFilePath & filename, ///< File into which to record
+      bool mono = false           ///< Record as mono/stereo
+    );
+
+    /**Indicate if recording is currently active on call.
+      */
+    bool IsRecording() const;
+
+    /** Stop a recording.
+        Returns true if the call does exists, an active call is not indicated.
+      */
+    void StopRecording();
+
+    /** Call back for having a frame of audio to record.
+      */
+    virtual void OnRecordAudio(const PString & streamId, const RTP_DataFrame & frame);
+
+    /** Call back on recording stopped.
+      */
+    virtual void OnStopRecordAudio(const PString & streamId);
 
   protected:
     void SetPartyNames();

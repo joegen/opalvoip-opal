@@ -44,35 +44,48 @@
 class OpalRecordManager
 {
   public:
+    virtual ~OpalRecordManager() { }
+
+    virtual bool Open(const PString & callToken, const PFilePath & fn, bool mono) = 0;
+    virtual bool IsOpen(const PString & callToken) const = 0;
+    virtual bool CloseStream(const PString & callToken, const std::string & strmId) = 0;
+    virtual bool Close(const PString & callToken) = 0;
+    virtual bool WriteAudio(const PString & callToken, const std::string & strmId, const RTP_DataFrame & rtp) = 0;
+};
+
+
+class OpalWAVRecordManager : public OpalRecordManager
+{
+  public:
     class Mixer_T : public OpalAudioMixer
     {
       protected:
-        OpalWAVFile file;
-        PBoolean mono;
-        PBoolean started;
+        OpalWAVFile m_file;
+        bool        m_mono;
+        bool        m_started;
 
       public:
         Mixer_T();
-        PBoolean Open(const PFilePath & fn);
-        bool IsOpen() const { return file.IsOpen(); }
-        PBoolean Close();
-        PBoolean OnWriteAudio(const MixerFrame & mixerFrame);
+        bool Open(const PFilePath & fn, bool mono);
+        bool IsOpen() const { return m_file.IsOpen(); }
+        bool Close();
+        virtual PBoolean OnWriteAudio(const MixerFrame & mixerFrame);
     };
 
-    Mixer_T mixer;
+  public:
+    OpalWAVRecordManager();
+    ~OpalWAVRecordManager();
+
+    virtual bool Open(const PString & callToken, const PFilePath & fn, bool mono);
+    virtual bool IsOpen(const PString & callToken) const;
+    virtual bool CloseStream(const PString & callToken, const std::string & strmId);
+    virtual bool Close(const PString & callToken);
+    virtual bool WriteAudio(const PString & callToken, const std::string & strmId, const RTP_DataFrame & rtp);
 
   protected:
-    PMutex mutex;
-    PString token;
-    PBoolean started;
-
-  public:
-    OpalRecordManager();
-    PBoolean Open(const PString & _callToken, const PFilePath & fn);
-    bool IsOpen() const { return mixer.IsOpen(); }
-    PBoolean CloseStream(const PString & _callToken, const std::string & _strm);
-    PBoolean Close(const PString & _callToken);
-    PBoolean WriteAudio(const PString & _callToken, const std::string & strm, const RTP_DataFrame & rtp);
+    typedef std::map<PString, Mixer_T *> MixerMap_T;
+    MixerMap_T m_mixers;
+    PMutex     m_mutex;
 };
 
 
