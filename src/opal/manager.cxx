@@ -162,11 +162,13 @@ OpalManager::OpalManager()
   , stun(NULL)
   , interfaceMonitor(NULL)
   , activeCalls(*this)
-  , clearingAllCalls(PFalse)
+  , clearingAllCalls(false)
 #ifdef OPAL_ZRTP
   , zrtpEnabled(false)
 #endif
 {
+  m_recordManager = new OpalWAVRecordManager();
+
   rtpIpPorts.current = rtpIpPorts.base = 5000;
   rtpIpPorts.max = 5999;
 
@@ -220,6 +222,7 @@ OpalManager::~OpalManager()
   delete garbageCollector;
 
   delete stun;
+  delete m_recordManager;
   delete interfaceMonitor;
 
   PTRACE(4, "OpalMan\tDeleted manager.");
@@ -368,7 +371,7 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
   // thread.
   if (MakeConnection(*call, partyA, userData, options, stringOptions) && call->GetConnection(0)->SetUpConnection()) {
     PTRACE(3, "OpalMan\tSetUpCall succeeded, call=" << *call);
-    return PTrue;
+    return true;
   }
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0);
@@ -377,7 +380,7 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
 
   token.MakeEmpty();
 
-  return PFalse;
+  return false;
 }
 
 
@@ -390,7 +393,7 @@ PBoolean OpalManager::IsCallEstablished(const PString & token)
 {
   PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReadOnly);
   if (call == NULL)
-    return PFalse;
+    return false;
 
   return call->IsEstablished();
 }
@@ -412,7 +415,7 @@ PBoolean OpalManager::ClearCall(const PString & token,
     // Find the call by token, callid or conferenceid
     PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReference);
     if (call == NULL)
-      return PFalse;
+      return false;
 
     call->Clear(reason, sync);
   }
@@ -420,7 +423,7 @@ PBoolean OpalManager::ClearCall(const PString & token,
   if (sync != NULL)
     sync->Wait();
 
-  return PTrue;
+  return true;
 }
 
 
@@ -500,7 +503,7 @@ PBoolean OpalManager::MakeConnection(OpalCall & call,
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
 
   if (remoteParty.IsEmpty())
-    return PFalse;
+    return false;
 
   PCaselessString epname = remoteParty.Left(remoteParty.Find(':'));
 
@@ -516,23 +519,23 @@ PBoolean OpalManager::MakeConnection(OpalCall & call,
 
   if (ep != NULL) {
     if (ep->MakeConnection(call, remoteParty, userData, options, stringOptions))
-      return PTrue;
+      return true;
     PTRACE(1, "OpalMan\tCould not use endpoint for protocol \"" << epname << '"');
   }
   else {
     PTRACE(1, "OpalMan\tCould not find endpoint to handle protocol \"" << epname << '"');
   }
-  return PFalse;
+  return false;
 }
 
 PBoolean OpalManager::OnIncomingConnection(OpalConnection & /*connection*/)
 {
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalManager::OnIncomingConnection(OpalConnection & /*connection*/, unsigned /*options*/)
 {
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
@@ -542,10 +545,10 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   connection.OnApplyStringOptions();
 
   if (!OnIncomingConnection(connection))
-    return PFalse;
+    return false;
 
   if (!OnIncomingConnection(connection, options))
-    return PFalse;
+    return false;
 
   // See if we already have a B-Party in the call. If not, make one.
   if (connection.GetOtherPartyConnection() != NULL)
@@ -659,7 +662,7 @@ PBoolean OpalManager::OnForwarded(OpalConnection & PTRACE_PARAM(connection),
 			      const PString & /*forwardParty*/)
 {
   PTRACE(4, "OpalEP\tOnForwarded " << connection);
-  return PTrue;
+  return true;
 }
 
 
@@ -687,7 +690,7 @@ PBoolean OpalManager::OnOpenMediaStream(OpalConnection & PTRACE_PARAM(connection
 {
   PTRACE(3, "OpalMan\tOnOpenMediaStream " << connection << ',' << stream);
 
-  return PTrue;
+  return true;
 }
 
 
@@ -728,7 +731,7 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection
   if (args.rate > maxRate)
     args.rate = maxRate;
 
-  autoDelete = PTrue;
+  autoDelete = true;
   device = PVideoInputDevice::CreateOpenedDevice(args, false);
   PTRACE_IF(2, device == NULL, "OpalCon\tCould not open video device \"" << args.deviceName << '"');
   return device != NULL;
@@ -746,7 +749,7 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
       (videoPreviewDevice.driverName == "SDL" && videoOutputDevice.driverName == "SDL") ||
       (videoPreviewDevice.deviceName == "SDL" && videoOutputDevice.deviceName == "SDL")
       ))
-    return PFalse;
+    return false;
 
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
@@ -760,7 +763,7 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
     args.deviceName.Splice(preview ? "Local Preview" : connection.GetRemotePartyName(), start, args.deviceName.Find('"', start)-start);
   }
 
-  autoDelete = PTrue;
+  autoDelete = true;
   device = PVideoOutputDevice::CreateOpenedDevice(args, false);
   return device != NULL;
 }
@@ -787,7 +790,7 @@ void OpalManager::DestroyMediaPatch(OpalMediaPatch * patch)
 
 PBoolean OpalManager::OnStartMediaPatch(const OpalMediaPatch & /*patch*/)
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -813,9 +816,9 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
 {
   PTRACE(3, "OpalMan\tReadUserInput from " << connection);
 
-  connection.PromptUserInput(PTrue);
+  connection.PromptUserInput(true);
   PString digit = connection.GetUserInput(firstDigitTimeout);
-  connection.PromptUserInput(PFalse);
+  connection.PromptUserInput(false);
 
   if (digit.IsEmpty()) {
     PTRACE(2, "OpalMan\tReadUserInput first character timeout (" << firstDigitTimeout << " seconds) on " << *this);
@@ -875,21 +878,21 @@ void OpalManager::RouteEntry::PrintOn(ostream & strm) const
 PBoolean OpalManager::AddRouteEntry(const PString & spec)
 {
   if (spec[0] == '#') // Comment
-    return PFalse;
+    return false;
 
   if (spec[0] == '@') { // Load from file
     PTextFile file;
     if (!file.Open(spec.Mid(1), PFile::ReadOnly)) {
       PTRACE(1, "OpalMan\tCould not open route file \"" << file.GetFilePath() << '"');
-      return PFalse;
+      return false;
     }
     PTRACE(4, "OpalMan\tAdding routes from file \"" << file.GetFilePath() << '"');
-    PBoolean ok = PFalse;
+    PBoolean ok = false;
     PString line;
     while (file.good()) {
       file >> line;
       if (AddRouteEntry(line))
-        ok = PTrue;
+        ok = true;
     }
     return ok;
   }
@@ -897,34 +900,34 @@ PBoolean OpalManager::AddRouteEntry(const PString & spec)
   PINDEX equal = spec.Find('=');
   if (equal == P_MAX_INDEX) {
     PTRACE(2, "OpalMan\tInvalid route table entry: \"" << spec << '"');
-    return PFalse;
+    return false;
   }
 
   RouteEntry * entry = new RouteEntry(spec.Left(equal).Trim(), spec.Mid(equal+1).Trim());
   if (entry->regex.GetErrorCode() != PRegularExpression::NoError) {
     PTRACE(2, "OpalMan\tIllegal regular expression in route table entry: \"" << spec << '"');
     delete entry;
-    return PFalse;
+    return false;
   }
 
   PTRACE(4, "OpalMan\tAdded route \"" << *entry << '"');
   routeTableMutex.Wait();
   routeTable.Append(entry);
   routeTableMutex.Signal();
-  return PTrue;
+  return true;
 }
 
 
 PBoolean OpalManager::SetRouteTable(const PStringArray & specs)
 {
-  PBoolean ok = PFalse;
+  PBoolean ok = false;
 
   routeTableMutex.Wait();
   routeTable.RemoveAll();
 
   for (PINDEX i = 0; i < specs.GetSize(); i++) {
     if (AddRouteEntry(specs[i].Trim()))
-      ok = PTrue;
+      ok = true;
   }
 
   routeTableMutex.Signal();
@@ -1438,24 +1441,24 @@ static PBoolean SetVideoDevice(const PVideoDevice::OpenArgs & args, PVideoDevice
   if (pDevice != NULL) {
     delete pDevice;
     member = args;
-    return PTrue;
+    return true;
   }
 
   if (args.deviceName[0] != '#')
-    return PFalse;
+    return false;
 
   // Selected device by ordinal
   PStringArray devices = PVideoXxxDevice::GetDriversDeviceNames(args.driverName, args.pluginMgr);
   if (devices.IsEmpty())
-    return PFalse;
+    return false;
 
   PINDEX id = args.deviceName.Mid(1).AsUnsigned();
   if (id <= 0 || id > devices.GetSize())
-    return PFalse;
+    return false;
 
   member = args;
   member.deviceName = devices[id-1];
-  return PTrue;
+  return true;
 }
 
 
@@ -1481,10 +1484,10 @@ PBoolean OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args)
 PBoolean OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval) 
 {
   if (newInterval < 10)
-    return PFalse;
+    return false;
 
   noMediaTimeout = newInterval; 
-  return PTrue; 
+  return true; 
 }
 
 
@@ -1496,7 +1499,7 @@ void OpalManager::GarbageCollection()
 
   for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep) {
     if (!ep->GarbageCollection())
-      allCleared = PFalse;
+      allCleared = false;
   }
 
   endpointsMutex.EndRead();
@@ -1522,13 +1525,13 @@ void OpalManager::OnNewConnection(OpalConnection & /*conn*/)
 {
 }
 
-PBoolean OpalManager::StartRecording(const PString & callToken, const PFilePath & fn)
+bool OpalManager::StartRecording(const PString & callToken, const PFilePath & fn, bool mono)
 {
   PSafePtr<OpalCall> call = activeCalls.FindWithLock(callToken, PSafeReadWrite);
   if (call == NULL)
-    return PFalse;
+    return false;
 
-  return call->StartRecording(fn);
+  return call->StartRecording(fn, mono);
 }
 
 
@@ -1539,11 +1542,14 @@ bool OpalManager::IsRecording(const PString & callToken)
 }
 
 
-void OpalManager::StopRecording(const PString & callToken)
+bool OpalManager::StopRecording(const PString & callToken)
 {
   PSafePtr<OpalCall> call = activeCalls.FindWithLock(callToken, PSafeReadWrite);
-  if (call != NULL)
-    call->StopRecording();
+  if (call == NULL)
+    return false;
+
+  call->StopRecording();
+  return true;
 }
 
 
@@ -1600,106 +1606,146 @@ bool OpalManager::GetZRTPEnabled() const
 }
 #endif
 
+
 /////////////////////////////////////////////////////////////////////////////
 
-OpalRecordManager::Mixer_T::Mixer_T()
+OpalWAVRecordManager::Mixer_T::Mixer_T()
   :	OpalAudioMixer(true)
-  ,	mono(false)
-  ,	started(false)
+  ,	m_mono(false)
+  ,	m_started(false)
 {
 }
 
-PBoolean OpalRecordManager::Mixer_T::Open(const PFilePath & fn)
+bool OpalWAVRecordManager::Mixer_T::Open(const PFilePath & fn, bool mono)
 {
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal mut(mutex);
 
-  if (!started) {
-    file.SetFormat(OpalWAVFile::fmt_PCM);
-    file.Open(fn, PFile::ReadWrite);
-    if (!mono)
-      file.SetChannels(2);
-    started = PTrue;
-  }
-  return PTrue;
-}
+  if (m_started)
+    return false;
 
-PBoolean OpalRecordManager::Mixer_T::Close()
-{
-  PWaitAndSignal m(mutex);
-  
-  started = false;
-  file.Close();
+  m_file.SetFormat(OpalWAVFile::fmt_PCM);
+  if (!m_file.Open(fn, PFile::ReadWrite))
+    return false;
+
+  m_mono = mono;
+  if (!mono)
+    m_file.SetChannels(2);
+
+  m_started = true;
 
   return true;
 }
 
-PBoolean OpalRecordManager::Mixer_T::OnWriteAudio(const MixerFrame & mixerFrame)
+bool OpalWAVRecordManager::Mixer_T::Close()
 {
-  if (file.IsOpen()) {
-    OpalAudioMixerStream::StreamFrame frame;
-    if (mono) {
-      mixerFrame.GetMixedFrame(frame);
-      file.Write(frame.GetPointerAndLock(), frame.GetSize());
-      frame.Unlock();
-    } else {
-      mixerFrame.GetStereoFrame(frame);
-      file.Write(frame.GetPointerAndLock(), frame.GetSize());
-      frame.Unlock();
-    }
+  RemoveAllStreams();
+
+  PWaitAndSignal mut(mutex);
+  m_started = false;
+  m_file.Close();
+
+  return true;
+}
+
+PBoolean OpalWAVRecordManager::Mixer_T::OnWriteAudio(const MixerFrame & mixerFrame)
+{
+  if (!m_file.IsOpen())
+    return false;
+
+  OpalAudioMixerStream::StreamFrame frame;
+  if (m_mono)
+    mixerFrame.GetMixedFrame(frame);
+  else
+    mixerFrame.GetStereoFrame(frame);
+  m_file.Write(frame.GetPointerAndLock(), frame.GetSize());
+  frame.Unlock();
+
+  return true;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+OpalWAVRecordManager::OpalWAVRecordManager()
+{
+}
+
+
+OpalWAVRecordManager::~OpalWAVRecordManager()
+{
+  for (MixerMap_T::iterator mixer = m_mixers.begin(); mixer != m_mixers.end(); ++mixer)
+    delete mixer->second;
+}
+
+
+bool OpalWAVRecordManager::Open(const PString & callToken, const PFilePath & fn, bool mono)
+{
+  PWaitAndSignal mutex(m_mutex);
+
+  if (callToken.IsEmpty())
+    return false;
+
+  if (m_mixers.find(callToken) != m_mixers.end())
+    return false;
+
+  Mixer_T * mixer = new Mixer_T;
+  if (mixer->Open(fn, mono)) {
+    m_mixers[callToken] = mixer;
+    return true;
   }
-  return PTrue;
+
+  delete mixer;
+  return false;
 }
 
-OpalRecordManager::OpalRecordManager()
+
+bool OpalWAVRecordManager::IsOpen(const PString & callToken) const
 {
-  started = PFalse;
+  PWaitAndSignal mutex(m_mutex);
+
+  MixerMap_T::const_iterator mixer = m_mixers.find(callToken);
+  if (mixer == m_mixers.end())
+    return false;
+
+  return mixer->second->IsOpen();
 }
 
-PBoolean OpalRecordManager::Open(const PString & _callToken, const PFilePath & fn)
+
+bool OpalWAVRecordManager::CloseStream(const PString & callToken, const std::string & streamId)
 {
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal mutex(m_mutex);
 
-  if (_callToken.IsEmpty())
-    return PFalse;
+  MixerMap_T::iterator mixer = m_mixers.find(callToken);
+  if (mixer == m_mixers.end())
+    return false;
 
-  if (token.IsEmpty())
-    token = _callToken;
-  else if (_callToken != token)
-    return PFalse;
-
-  return mixer.Open(fn);
+  mixer->second->RemoveStream(streamId);
+  return true;
 }
 
-PBoolean OpalRecordManager::CloseStream(const PString & _callToken, const std::string & _strm)
+
+bool OpalWAVRecordManager::Close(const PString & callToken)
 {
-  {
-    PWaitAndSignal m(mutex);
-    if (_callToken.IsEmpty() || token.IsEmpty() || (token != _callToken))
-      return PFalse;
+  PWaitAndSignal mutex(m_mutex);
 
-    mixer.RemoveStream(_strm);
-  }
-  return PTrue;
+  MixerMap_T::iterator mixer = m_mixers.find(callToken);
+  if (mixer == m_mixers.end())
+    return false;
+
+  mixer->second->Close();
+  delete mixer->second;
+  m_mixers.erase(mixer);
+  return true;
 }
 
-PBoolean OpalRecordManager::Close(const PString & _callToken)
-{
-  {
-    PWaitAndSignal m(mutex);
-    if (_callToken.IsEmpty() || token.IsEmpty() || (token != _callToken))
-      return PFalse;
 
-    mixer.RemoveAllStreams();
-  }
-  mixer.Close();
-  return PTrue;
-}
-
-PBoolean OpalRecordManager::WriteAudio(const PString & _callToken, const std::string & strm, const RTP_DataFrame & rtp)
+bool OpalWAVRecordManager::WriteAudio(const PString & callToken, const std::string & strm, const RTP_DataFrame & rtp)
 { 
-  PWaitAndSignal m(mutex);
-  if (_callToken.IsEmpty() || token.IsEmpty() || (token != _callToken))
-    return PFalse;
+  PWaitAndSignal mutex(m_mutex);
 
-  return mixer.Write(strm, rtp);
+  MixerMap_T::iterator mixer = m_mixers.find(callToken);
+  if (mixer == m_mixers.end())
+    return false;
+
+  return mixer->second->Write(strm, rtp);
 }

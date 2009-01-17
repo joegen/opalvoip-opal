@@ -77,8 +77,6 @@ OpalCall::OpalCall(OpalManager & mgr)
 OpalCall::~OpalCall()
 {
   PTRACE(3, "Call\t" << *this << " destroyed.");
-
-  manager.GetRecordManager().Close(myToken);
 }
 
 
@@ -133,6 +131,7 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 void OpalCall::OnCleared()
 {
   manager.OnClearedCall(*this);
+  manager.GetRecordManager().Close(myToken);
 
   if (!LockReadWrite())
     return;
@@ -588,10 +587,10 @@ void OpalCall::OnHold(OpalConnection & /*connection*/,
 }
 
 
-PBoolean OpalCall::StartRecording(const PFilePath & fn)
+PBoolean OpalCall::StartRecording(const PFilePath & fn, bool mono)
 {
   // create the mixer entry
-  if (!manager.GetRecordManager().Open(myToken, fn))
+  if (!manager.GetRecordManager().Open(myToken, fn, mono))
     return PFalse;
 
   // tell each connection to start sending data
@@ -605,7 +604,7 @@ PBoolean OpalCall::StartRecording(const PFilePath & fn)
 
 bool OpalCall::IsRecording() const
 {
-  return manager.GetRecordManager().IsOpen();
+  return manager.GetRecordManager().IsOpen(myToken);
 }
 
 
@@ -620,9 +619,15 @@ void OpalCall::StopRecording()
 }
 
 
-void OpalCall::OnStopRecordAudio(const PString & callToken)
+void OpalCall::OnRecordAudio(const PString & streamId, const RTP_DataFrame & frame)
 {
-  manager.GetRecordManager().CloseStream(myToken, callToken);
+  manager.GetRecordManager().WriteAudio(myToken, streamId, frame);
+}
+
+
+void OpalCall::OnStopRecordAudio(const PString & streamId)
+{
+  manager.GetRecordManager().CloseStream(myToken, streamId);
 }
 
 
