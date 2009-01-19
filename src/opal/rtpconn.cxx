@@ -129,39 +129,10 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   transport.GetRemoteAddress().GetIpAddress(remoteAddress);
   PNatMethod * natMethod = manager.GetNatMethod(remoteAddress);
 
-  OpalMediaType mediaType = OpalMediaTypeDefinition::GetMediaTypeForSessionId(sessionID);
-  OpalMediaTypeDefinition * def = mediaType.GetDefinition();
-  if (def == NULL) {
-    PTRACE(1, "RTPCon\tNo definition for media type " << mediaType);
-    return NULL;
-  }
-
   // create an RTP session
-  RTP_UDP * rtpSession    = NULL;
-
-#ifdef OPAL_ZRTP
-  // create ZRTP channel if enabled
-  {
-    PWaitAndSignal m(zrtpConnInfoMutex);
-    if (zrtpEnabled) {
-      if (zrtpConnInfo == NULL)
-        zrtpConnInfo = OpalLibZRTPConnInfo_Create();
-      if (zrtpConnInfo != NULL) {
-        rtpSession = zrtpConnInfo->CreateRTPSession(*this, sessionID, remoteIsNAT);
-        if (rtpSession == NULL) {
-          delete zrtpConnInfo;
-          zrtpConnInfo = NULL;
-        }
-      }
-    }
-  }
-#endif
-
-  if (rtpSession == NULL) {
-    rtpSession = def->CreateRTPSession(*this, sessionID, remoteIsNAT);  
-    if (rtpSession == NULL) 
-      return NULL;
-  }
+  RTP_UDP * rtpSession = CreateRTPSession(sessionID, remoteIsNAT);
+  if (rtpSession == NULL) 
+    return NULL;
 
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;
@@ -181,6 +152,38 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   
   return rtpSession;
 }
+
+
+RTP_UDP * OpalRTPConnection::CreateRTPSession(unsigned sessionID, bool remoteIsNAT)
+{
+  OpalMediaType mediaType = OpalMediaTypeDefinition::GetMediaTypeForSessionId(sessionID);
+  OpalMediaTypeDefinition * def = mediaType.GetDefinition();
+  if (def == NULL) {
+    PTRACE(1, "RTPCon\tNo definition for media type " << mediaType);
+    return NULL;
+  }
+
+#ifdef OPAL_ZRTP
+  // create ZRTP channel if enabled
+  {
+    PWaitAndSignal m(zrtpConnInfoMutex);
+    if (zrtpEnabled) {
+      if (zrtpConnInfo == NULL)
+        zrtpConnInfo = OpalLibZRTPConnInfo_Create();
+      if (zrtpConnInfo != NULL) {
+        RTP_UDP * rtpSession = zrtpConnInfo->CreateRTPSession(*this, sessionID, remoteIsNAT);
+        if (rtpSession != NULL)
+          return rtpSession;
+        delete zrtpConnInfo;
+        zrtpConnInfo = NULL;
+      }
+    }
+  }
+#endif
+
+  return def->CreateRTPSession(*this, sessionID, remoteIsNAT);
+}
+
 
 void OpalRTPConnection::ReleaseSession(unsigned sessionID, PBoolean clearAll/* = PFalse */)
 {
