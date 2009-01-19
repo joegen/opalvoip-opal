@@ -1474,25 +1474,21 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
   }
 
   PSafePtr<OpalCall> call;
-  if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
+  if (!FindCall(command.m_param.m_callSetUp.m_callToken, response, call))
     return;
+
+  PString search = command.m_param.m_callSetUp.m_partyA;
+  if (search.IsEmpty()) {
+    search = command.m_param.m_callSetUp.m_partyB;
+    search.Delete(search.Find(':'), P_MAX_INDEX);
+  }
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
-  if (IsNullString(command.m_param.m_callSetUp.m_partyA)) {
-    if (!connection->IsNetworkConnection())
-      ++connection;
-  }
-  else {
-    do {
-      if (connection->GetLocalPartyURL() == command.m_param.m_callSetUp.m_partyA)
-        break;
-      ++connection;
-    } while (connection != NULL);
-  }
-
-  if (connection == NULL) {
-    response.SetError("Call does not have suitable connection to transfer.");
-    return;
+  while (connection->GetLocalPartyURL().NumCompare(search) != EqualTo) {
+    if (++connection == NULL) {
+      response.SetError("Call does not have suitable connection to transfer.");
+      return;
+    }
   }
 
   connection->TransferConnection(command.m_param.m_callSetUp.m_partyB);
