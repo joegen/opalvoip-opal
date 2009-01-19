@@ -275,6 +275,12 @@ class OpalRTPConnection : public OpalConnection
       RTP_QOS * rtpqos
     );
 
+    /** Create a new underlying RTP session instance.
+      */
+    virtual RTP_UDP * CreateRTPSession(
+      unsigned sessionId,
+      bool remoteIsNat
+    );
   //@}
 
   //@{
