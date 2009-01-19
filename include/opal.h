@@ -755,8 +755,8 @@ typedef struct OpalParamSetUpCall {
 
                                    For OpalCmdTransferCall this indicates the party to be
                                    transferred, e.g. "sip:fred@nurk.com". If NULL then
-                                   it is assumed that the party that is not the pc or pots
-                                   connection is to be transferred.
+                                   it is assumed that the party to be transferred is of the
+                                   same "protocol" as the m_partyB field, e.g. "pc" or "sip".
 
                                    For OpalIndAlerting and OpalIndEstablished this indicates
                                    the A-party of the call in progress. */
