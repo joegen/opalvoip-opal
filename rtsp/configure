@@ -739,6 +739,7 @@ OPAL_T38_CAPABILITY
 OPAL_HAS_MSRP
 OPAL_HAS_SIPIM
 OPAL_HAS_RFC4103
+OPAL_HAS_RTSP
 OPAL_FAX
 OPAL_H450
 OPAL_H460
@@ -1379,6 +1380,7 @@ Optional Features:
   --enable-msrp           whether to enable MSRP support
   --enable-sipim          whether to enable SIPIM session support
   --enable-rfc4103        whether to enable RFC4103 support
+  --enable-rtsp           whether to enable RTSP support
   --enable-fax            whether to enable T.38 FAX protocol support
   --enable-h450           whether to enable H.450
   --enable-h460           whether to enable H.460
@@ -4380,6 +4382,7 @@ OPAL_JAVA=yes
 OPAL_HAS_MSRP=no
 OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
+OPAL_HAS_RTSP=yes
 PTLIB_REC_VERSION="2.0.0"
 
 
@@ -10165,6 +10168,50 @@ _ACEOF
 
 
 
+          if test "x$OPAL_HAS_RTSP" = "x"; then
+            { { echo "$as_me:$LINENO: error: No default specified for OPAL_HAS_RTSP, please correct configure.ac" >&5
+echo "$as_me: error: No default specified for OPAL_HAS_RTSP, please correct configure.ac" >&2;}
+   { (exit 1); exit 1; }; }
+	  fi
+          # Check whether --enable-rtsp was given.
+if test "${enable_rtsp+set}" = set; then
+  enableval=$enable_rtsp; OPAL_HAS_RTSP=$enableval
+fi
+
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: rtsp support disabled due to disabled dependency " >&5
+echo "$as_me: rtsp support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_RTSP=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: rtsp support disabled due to disabled dependency " >&5
+echo "$as_me: rtsp support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_RTSP=no
+	    fi
+	  fi
+
+
+          { echo "$as_me:$LINENO: checking whether to enable RTSP support" >&5
+echo $ECHO_N "checking whether to enable RTSP support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: result: $OPAL_HAS_RTSP" >&5
+echo "${ECHO_T}$OPAL_HAS_RTSP" >&6; }
+
+
+          if test "x$OPAL_HAS_RTSP" = "xyes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define OPAL_HAS_RTSP 1
+_ACEOF
+
+          fi
+
+
+
           if test "x$OPAL_FAX" = "x"; then
             { { echo "$as_me:$LINENO: error: No default specified for OPAL_FAX, please correct configure.ac" >&5
 echo "$as_me: error: No default specified for OPAL_FAX, please correct configure.ac" >&2;}
@@ -11527,6 +11574,7 @@ OPAL_T38_CAPABILITY!$OPAL_T38_CAPABILITY$ac_delim
 OPAL_HAS_MSRP!$OPAL_HAS_MSRP$ac_delim
 OPAL_HAS_SIPIM!$OPAL_HAS_SIPIM$ac_delim
 OPAL_HAS_RFC4103!$OPAL_HAS_RFC4103$ac_delim
+OPAL_HAS_RTSP!$OPAL_HAS_RTSP$ac_delim
 OPAL_FAX!$OPAL_FAX$ac_delim
 OPAL_H450!$OPAL_H450$ac_delim
 OPAL_H460!$OPAL_H460$ac_delim
@@ -11558,7 +11606,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 58; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 59; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

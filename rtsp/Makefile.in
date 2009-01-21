@@ -68,7 +68,8 @@ VPATH_CXX := $(OPAL_SRCDIR)/opal \
 	     $(OPAL_SRCDIR)/lids \
 	     $(OPAL_SRCDIR)/codec \
              $(OPAL_SRCDIR)/t38 \
-             $(OPAL_SRCDIR)/im
+             $(OPAL_SRCDIR)/im \
+             $(OPAL_SRCDIR)/rtsp
 
 ifneq (,$(wildcard src/iax2))
 IAX2_AVAIL = yes
@@ -288,6 +289,15 @@ SOURCES += $(OPAL_SRCDIR)/h224/q922.cxx \
 	   $(OPAL_SRCDIR)/h224/h224.cxx \
 	   $(OPAL_SRCDIR)/h224/h281.cxx
 endif
+endif
+
+##################
+# RTSP files
+
+ifeq ($(OPAL_HAS_RTSP), yes)
+
+SOURCES += $(OPAL_SRCDIR)/rtsp/rtspep.cxx
+
 endif
 
 ##################

@@ -117,4 +117,19 @@ void OpalRTSPEndPoint::HandlePDU(OpalTransport & transport)
   delete pdu;
 }
 
+
+bool OpalRTSPEndPoint::OnReceivedPDU(OpalTransport&, RTSP_PDU*)
+{
+  return false;
+}
+
+RTSP_PDU::RTSP_PDU()
+{
+}
+
+bool RTSP_PDU::Read(OpalTransport&)
+{
+  return false;
+}
+
 #endif
