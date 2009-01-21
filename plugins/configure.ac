@@ -252,6 +252,19 @@ AC_SUBST(HAVE_LIBAVCODEC)
 OPAL_LIBAVCODEC_SOURCE()
 AC_SUBST(LIBAVCODEC_SOURCE_DIR)
 
+if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
+  AC_MSG_CHECKING(if libavcodec has rtp_mode);
+  LIBAVINCDIR=`pkg-config --variable=includedir libavcodec`/libavcodec
+  AC_TRY_COMPILE([#include <libavcodec/avcodec.h>],
+                  [int main(int ac,char **av) { AVCodecContext c; c.rtp_mode = 1; return 0; }], [HAVE_LIBAVCODEC_RTP_MODE=1])
+  if test "x$HAVE_LIBAVCODEC_RTP_MODE" = "x1" ; then
+    AC_MSG_RESULT(yes);
+  else
+    AC_MSG_RESULT(no)
+  fi
+fi
+AC_SUBST(HAVE_LIBAVCODEC_RTP_MODE)
+
 dnl     ########################
 dnl     x264
 dnl     ########################

@@ -303,6 +303,7 @@ void H263_Base_EncoderContext::SetTargetBitrate (unsigned rate)
   _context->bit_rate_tolerance = rate >> 1;
   _context->rc_min_rate = 0;                   // minimum bitrate
   _context->rc_max_rate = rate;                // maximum bitrate
+  _context->rc_buffer_size = 224;
 
   /* ratecontrol qmin qmax limiting method
      0-> clipping, 1-> use a nice continous function to limit qscale wthin qmin/qmax.
@@ -541,14 +542,19 @@ bool H263_RFC2190_EncoderContext::Open()
   if (!H263_Base_EncoderContext::Open(CODEC_ID_H263))
     return false;
 
+#if LIBAVCODEC_RTP_MODE
   _context->rtp_mode = 1;
+#endif
+
   _context->rtp_payload_size = 200;
   _context->rtp_callback = &rtp_callback;
   _context->opaque = (H263_RFC2190_EncoderContext *)this; // used to separate out packets from different encode threads
 
   _context->flags &= ~CODEC_FLAG_H263P_UMV;
   _context->flags &= ~CODEC_FLAG_4MV;
+#if LIBAVCODEC_RTP_MODE
   _context->flags &= ~CODEC_FLAG_H263P_AIC;
+#endif
   _context->flags &= ~CODEC_FLAG_H263P_AIV;
   _context->flags &= ~CODEC_FLAG_H263P_SLICE_STRUCT;
   
