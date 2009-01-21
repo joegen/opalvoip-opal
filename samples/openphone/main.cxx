@@ -382,7 +382,7 @@ static PString AudioDeviceNameFromScreen(const wxString & name)
   return str.p_str();
 }
 
-static void FillAudioDeviceComboBox(wxControlWithItems * list, PSoundChannel::Directions dir)
+static void FillAudioDeviceComboBox(wxItemContainer * list, PSoundChannel::Directions dir)
 {
   PStringArray devices = PSoundChannel::GetDeviceNames(dir);
   for (PINDEX i = 0; i < devices.GetSize(); i++)
