@@ -709,6 +709,7 @@ HAVE_MPEG4
 LIBAVCODEC_LIB_NAME
 HAVE_LIBAVCODEC
 LIBAVCODEC_SOURCE_DIR
+HAVE_LIBAVCODEC_RTP_MODE
 X264_CFLAGS
 X264_LIBS
 X264_LIB_NAME
@@ -9876,6 +9877,61 @@ echo "${ECHO_T}disabled" >&6; }
 
 
 
+if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
+  { echo "$as_me:$LINENO: checking if libavcodec has rtp_mode" >&5
+echo $ECHO_N "checking if libavcodec has rtp_mode... $ECHO_C" >&6; };
+  LIBAVINCDIR=`pkg-config --variable=includedir libavcodec`/libavcodec
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <libavcodec/avcodec.h>
+int
+main ()
+{
+int main(int ac,char **av) { AVCodecContext c; c.rtp_mode = 1; return 0; }
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  HAVE_LIBAVCODEC_RTP_MODE=1
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  if test "x$HAVE_LIBAVCODEC_RTP_MODE" = "x1" ; then
+    { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; };
+  else
+    { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+  fi
+fi
+
+
 
 pkg_failed=no
 { echo "$as_me:$LINENO: checking for X264" >&5
@@ -12230,7 +12286,7 @@ HAVE_MPEG4!$HAVE_MPEG4$ac_delim
 LIBAVCODEC_LIB_NAME!$LIBAVCODEC_LIB_NAME$ac_delim
 HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
 LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
-X264_CFLAGS!$X264_CFLAGS$ac_delim
+HAVE_LIBAVCODEC_RTP_MODE!$HAVE_LIBAVCODEC_RTP_MODE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -12272,6 +12328,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+X264_CFLAGS!$X264_CFLAGS$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
 X264_LIB_NAME!$X264_LIB_NAME$ac_delim
 X264_LINK_STATIC!$X264_LINK_STATIC$ac_delim
@@ -12294,7 +12351,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 20; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 21; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -13362,7 +13419,7 @@ HAVE_MPEG4!$HAVE_MPEG4$ac_delim
 LIBAVCODEC_LIB_NAME!$LIBAVCODEC_LIB_NAME$ac_delim
 HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
 LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
-X264_CFLAGS!$X264_CFLAGS$ac_delim
+HAVE_LIBAVCODEC_RTP_MODE!$HAVE_LIBAVCODEC_RTP_MODE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -13404,6 +13461,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+X264_CFLAGS!$X264_CFLAGS$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
 X264_LIB_NAME!$X264_LIB_NAME$ac_delim
 X264_LINK_STATIC!$X264_LINK_STATIC$ac_delim
@@ -13426,7 +13484,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 20; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 21; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
