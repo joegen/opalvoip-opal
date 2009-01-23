@@ -213,7 +213,7 @@ bool OpalVideoRateController::CheckFrameRate(bool reporting)
     PInt64 targetFrameHistorySize = frameRateHistoryDuration * 90;
 
     if (((frameRateHistory.size()-1) * targetOutputFrameTime) > targetFrameHistorySize) {
-      PTRACE(5, "RateController\tSkipping frame to enforce frame rate");
+      PTRACE(3, "RateController\tSkipping frame to enforce frame rate");
       return true;
     }
   }
@@ -225,7 +225,7 @@ bool OpalVideoRateController::CheckBitRate(bool reporting)
 {
   // need to have at least 2 frames of history to make any useful predictions
   // and the history must span a non-trivial time window
-  PInt64 bitRateHistoryDuration = 1;
+  PInt64 bitRateHistoryDuration;
   if ((bitRateHistory.size() < 2) || (bitRateHistoryDuration = now - bitRateHistory.begin()->time) < 10 || outputFrameCount < 2) {
     PTRACE(3, "RateController\thistory too small for bit rate control");
     return false;
@@ -237,29 +237,33 @@ bool OpalVideoRateController::CheckBitRate(bool reporting)
   if (averagePacketsPerFrame < 1)
     averagePacketsPerFrame = 1;
 
-  PInt64 avgPacketSize = averagePacketsPerFrame * UDP_OVERHEAD + averagePayloadSize;
-  PInt64 historySize = bitRateHistory.packets * UDP_OVERHEAD + bitRateHistory.bytes;
+  // Use these to rate limit based on UDP packet size
+  //PInt64 avgPacketSize = averagePacketsPerFrame * UDP_OVERHEAD + averagePayloadSize;
+  //PInt64 historySize = bitRateHistory.packets * UDP_OVERHEAD + bitRateHistory.bytes;
+  
+  // use these to rate limit on payload size
+  PInt64 avgPacketSize = averagePayloadSize;
+  PInt64 historySize   = bitRateHistory.bytes;
 
   // show some statistics
-  PTRACE_IF(3, reporting, "RateController\tReport:udp=" << (historySize * 8 * 1000) / bitRateHistoryDuration << " bps, "
-                          "rtp=" << (bitRateHistory.bytes * 8 * 1000) / bitRateHistoryDuration << ", "
-                          "target=" << (byteRate*8) << ", "
-                          "history=" << bitRateHistoryDuration << "ms, "
-                       << bitRateHistory.size() << " frames, "
-                       << bitRateHistory.packets << " packets"
+  PTRACE_IF(3, reporting, "RateController\tReport:"
+                          "payload=" << (bitRateHistory.bytes * 8 * 1000) / bitRateHistoryDuration << ","
+                          "udp="     << ((bitRateHistory.packets * UDP_OVERHEAD + bitRateHistory.bytes) * 8 * 1000) / bitRateHistoryDuration << " bps,"
+                          "target=" << (byteRate*8) << ","
+                          "history=" << bitRateHistoryDuration << "ms," << bitRateHistory.size() << " frames," << bitRateHistory.packets << " packets"
               );
 
   // allow the packet if the expected history size with this packet is less 
-  // than half the target history size plus half the average packet size
-  // if it is likely this frame will fit, then allow it
-  if ((historySize + (avgPacketSize / 2)) <= targetBitRateHistorySize) {
+  // than the target history size 
+  if ((historySize + avgPacketSize) <= targetBitRateHistorySize) {
+    PTRACE(3, "RateController\tpacket does not exceed bitrate");
     consecutiveFramesSkipped = 0;
     return false;
   }
 
   // see if max consecutive frames has been reached
   //if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) {
-    PTRACE(5, "RateController\tSkipping frame to enforce bit rate");
+    PTRACE(3, "RateController\tSkipping frame to enforce bit rate");
     return true;
   //}
 
