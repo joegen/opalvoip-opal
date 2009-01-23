@@ -78,6 +78,9 @@ class OpalVideoRateController
     );
 
   protected:
+    bool CheckFrameRate(bool reporting);
+    bool CheckBitRate(bool reporting);
+
     void Reset();
     void AddFrame(
       PInt64 sizeInBytes, 
