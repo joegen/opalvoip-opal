@@ -158,52 +158,76 @@ void OpalVideoRateController::Reset()
 
 bool OpalVideoRateController::SkipFrame()
 {
+  inputFrameCount++;
+
   // get "now"
   now = PTimer::Tick().GetMilliSeconds();
+
+  // report every second
   bool reporting = (now - lastReport) > 1000;
   if (reporting)
     lastReport = now;
 
-  PTRACE_IF(3, reporting, "RateController\tReport:Total frames:in=" << inputFrameCount << ",out=" << outputFrameCount << ",dropped=" << (inputFrameCount - outputFrameCount) << "(" << (inputFrameCount < 1 ? 0 : ((inputFrameCount - outputFrameCount) * 100 / inputFrameCount)) << "%)");
+  if (CheckFrameRate(reporting))
+    return true;
+
+  return CheckBitRate(reporting);
+}
+
+bool OpalVideoRateController::CheckFrameRate(bool reporting)
+{
+  // the first one is always free
+  if (frameRateHistory.size() == 0) {
+    PTRACE(5, "RateController\tHistory too small for frame rate control");
+    return false;
+  }
+
+  PTRACE_IF(3, reporting, "RateController\tReport:Total frames:in=" << inputFrameCount
+                          << ",out=" << outputFrameCount
+                          << ",dropped=" << (inputFrameCount - outputFrameCount)
+                          << "(" << (inputFrameCount < 1 ? 0 : ((inputFrameCount - outputFrameCount) * 100 / inputFrameCount)) << "%)");
 
   // flush histories older than window
   bitRateHistory.remove_older_than(now, bitRateHistorySizeInMs);
   frameRateHistory.remove_older_than(now, PACKET_HISTORY_SIZE * 1000);
 
-  inputFrameCount++;
-  
   // if maintaining a frame rate, check to see if frame should be dropped
-  // need to have at least 2 frames of history to make any useful predictions
-  // and the history must span a non-trivial time window
-  if (targetOutputFrameTime > 0 && frameRateHistory.size() > 0) {
+  // to make this decision, check what the rate would be if this frame was not dropped
+  if (targetOutputFrameTime > 0) {
+  
+    // if the frame history covers zero time, it is doubtful that outputting this
+    // frame will result in a valid frame rate
     PInt64 frameRateHistoryDuration = now - frameRateHistory.begin()->time;
-    if (frameRateHistoryDuration >= 200 && frameRateHistory.size() > 2) {
-      PTRACE_IF(3, reporting, "RateController\tReport:in=" << ((inputFrameCount-1) * 1000) / (now - startTime)
-                   << " fps,out=" << (outputFrameCount * 1000) / (now - startTime) 
-                   << " fps,target=" << (((2*90000) + targetOutputFrameTime) / (2 * targetOutputFrameTime))
-                   << " fps;history=" << frameRateHistoryDuration << "ms "
-                   << frameRateHistory.size() << " frames");
-      PInt64 targetFrameHistorySize = ((frameRateHistoryDuration * 90) + (targetOutputFrameTime/2)) / targetOutputFrameTime;
-      if ((frameRateHistory.size()+1) > targetFrameHistorySize) {
-        //if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) {
-          PTRACE(5, "RateController\tSkipping frame to reduce frame rate from " << frameRateHistory.size() * 1000 / frameRateHistoryDuration);
-          return true;
-        //}
-        //PTRACE(5, "RateController\tAllowing " << consecutiveFramesSkipped - maxConsecutiveFramesSkip << " frames to exceed frame rate");
-        //return false;
-      }
+    if (now == 0) {
+      PTRACE(5, "RateController\tDropping frame as frame history has zero length");
+      return true;
     }
-    else
-    {
-      PTRACE(3, "RateController\thistory too small to support frame rate control");
+  
+    // output report now we have useful statistics
+    PTRACE_IF(3, reporting, "RateController\tReport:"
+                 "in="      << ((inputFrameCount-0)  * 1000) / (now - startTime) << " fps,"
+                 "out="     << ((outputFrameCount-0) * 1000) / (now - startTime) << " fps,"
+                 "target="  << ((90000 + targetOutputFrameTime/2) / targetOutputFrameTime) << " fps,"
+                 "history=" << frameRateHistoryDuration << "ms " << frameRateHistory.size() << " frames");
+
+    PInt64 targetFrameHistorySize = frameRateHistoryDuration * 90;
+
+    if (((frameRateHistory.size()-1) * targetOutputFrameTime) > targetFrameHistorySize) {
+      PTRACE(5, "RateController\tSkipping frame to enforce frame rate");
+      return true;
     }
   }
 
+  return false;
+}
+
+bool OpalVideoRateController::CheckBitRate(bool reporting)
+{
   // need to have at least 2 frames of history to make any useful predictions
   // and the history must span a non-trivial time window
   PInt64 bitRateHistoryDuration = 1;
-  if ((bitRateHistory.size() < 2) || (bitRateHistoryDuration = now - bitRateHistory.begin()->time) < 200 || outputFrameCount < 2) {
-    PTRACE(3, "RateController\thistory too small to support bit rate control");
+  if ((bitRateHistory.size() < 2) || (bitRateHistoryDuration = now - bitRateHistory.begin()->time) < 10 || outputFrameCount < 2) {
+    PTRACE(3, "RateController\thistory too small for bit rate control");
     return false;
   }
 
@@ -234,15 +258,17 @@ bool OpalVideoRateController::SkipFrame()
   }
 
   // see if max consecutive frames has been reached
-  if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) {
-    PTRACE(5, "RateController\tSkipping frame to reduce bit rate from " << (historySize * 8 * 1000) / bitRateHistoryDuration);
+  //if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) {
+    PTRACE(5, "RateController\tSkipping frame to enforce bit rate");
     return true;
-  }
+  //}
 
+#if 0
   PTRACE(5, "RateController\tAllowing " << consecutiveFramesSkipped - maxConsecutiveFramesSkip  << " frames to exceed bit rate");
   
   consecutiveFramesSkipped = 0;
   return false;
+#endif
 }
 
 void OpalVideoRateController::AddFrame(PInt64 totalPayloadSize, int packetCount, PInt64 _now)
