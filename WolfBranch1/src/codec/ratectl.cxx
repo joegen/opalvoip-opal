@@ -168,10 +168,17 @@ bool OpalVideoRateController::SkipFrame()
   if (reporting)
     lastReport = now;
 
-  if (CheckFrameRate(reporting))
-    return true;
+  if (consecutiveFramesSkipped > maxConsecutiveFramesSkip) {
+    PTRACE(5, "RateController\tAllowing frame to avoid too many consecutive skipped frames");
+    return false;
+  }
 
-  return CheckBitRate(reporting);
+  if (CheckFrameRate(reporting) || CheckBitRate(reporting)) {
+    consecutiveFramesSkipped++;
+    return true;
+  }
+
+  return false;
 }
 
 bool OpalVideoRateController::CheckFrameRate(bool reporting)
@@ -188,7 +195,6 @@ bool OpalVideoRateController::CheckFrameRate(bool reporting)
                           << "(" << (inputFrameCount < 1 ? 0 : ((inputFrameCount - outputFrameCount) * 100 / inputFrameCount)) << "%)");
 
   // flush histories older than window
-  bitRateHistory.remove_older_than(now, bitRateHistorySizeInMs);
   frameRateHistory.remove_older_than(now, PACKET_HISTORY_SIZE * 1000);
 
   // if maintaining a frame rate, check to see if frame should be dropped
@@ -223,6 +229,8 @@ bool OpalVideoRateController::CheckFrameRate(bool reporting)
 
 bool OpalVideoRateController::CheckBitRate(bool reporting)
 {
+  bitRateHistory.remove_older_than(now, bitRateHistorySizeInMs);
+
   // need to have at least 2 frames of history to make any useful predictions
   // and the history must span a non-trivial time window
   PInt64 bitRateHistoryDuration;
@@ -232,18 +240,10 @@ bool OpalVideoRateController::CheckBitRate(bool reporting)
   }
 
   // calculate average payload and packets per frame
-  PInt64 averagePayloadSize     = frameRateHistory.bytes / frameRateHistory.size();
-  PInt64 averagePacketsPerFrame = frameRateHistory.packets / frameRateHistory.size();
+  PInt64 averagePayloadSize     = bitRateHistory.bytes / frameRateHistory.size();
+  PInt64 averagePacketsPerFrame = bitRateHistory.packets / frameRateHistory.size();
   if (averagePacketsPerFrame < 1)
     averagePacketsPerFrame = 1;
-
-  // Use these to rate limit based on UDP packet size
-  //PInt64 avgPacketSize = averagePacketsPerFrame * UDP_OVERHEAD + averagePayloadSize;
-  //PInt64 historySize = bitRateHistory.packets * UDP_OVERHEAD + bitRateHistory.bytes;
-  
-  // use these to rate limit on payload size
-  PInt64 avgPacketSize = averagePayloadSize;
-  PInt64 historySize   = bitRateHistory.bytes;
 
   // show some statistics
   PTRACE_IF(3, reporting, "RateController\tReport:"
@@ -253,26 +253,23 @@ bool OpalVideoRateController::CheckBitRate(bool reporting)
                           "history=" << bitRateHistoryDuration << "ms," << bitRateHistory.size() << " frames," << bitRateHistory.packets << " packets"
               );
 
+  // use these to rate limit on payload size
+  PInt64 avgPacketSize = averagePayloadSize;
+  PInt64 historySize   = bitRateHistory.bytes;
+
+  // Use these to rate limit based on UDP packet size
+  //PInt64 avgPacketSize += averagePacketsPerFrame * UDP_OVERHEAD;
+  //PInt64 historySize   += bitRateHistory.packets * UDP_OVERHEAD;
+  
   // allow the packet if the expected history size with this packet is less 
   // than the target history size 
   if ((historySize + avgPacketSize) <= targetBitRateHistorySize) {
     PTRACE(3, "RateController\tpacket does not exceed bitrate");
-    consecutiveFramesSkipped = 0;
     return false;
   }
 
-  // see if max consecutive frames has been reached
-  //if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) {
-    PTRACE(3, "RateController\tSkipping frame to enforce bit rate");
-    return true;
-  //}
-
-#if 0
-  PTRACE(5, "RateController\tAllowing " << consecutiveFramesSkipped - maxConsecutiveFramesSkip  << " frames to exceed bit rate");
-  
-  consecutiveFramesSkipped = 0;
-  return false;
-#endif
+  PTRACE(3, "RateController\tSkipping frame to enforce bit rate");
+  return true;
 }
 
 void OpalVideoRateController::AddFrame(PInt64 totalPayloadSize, int packetCount, PInt64 _now)
@@ -293,6 +290,8 @@ void OpalVideoRateController::AddFrame(PInt64 totalPayloadSize, int packetCount)
 
   bitRateHistory.push(info);
   frameRateHistory.push(info);
+
+  consecutiveFramesSkipped = 0;
 }
 
 
