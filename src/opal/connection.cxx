@@ -717,8 +717,10 @@ void OpalConnection::EnableRecording()
   OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
   if (stream != NULL) {
     OpalMediaPatch * patch = stream->GetPatch();
-    if (patch != NULL)
+    if (patch != NULL) {
       patch->AddFilter(recordNotifier, OPAL_PCM16);
+      PTRACE(4, "OpalCon\tAdded record filter on connection " << *this << ", patch " << *patch);
+    }
   }
   
   UnlockReadWrite();
