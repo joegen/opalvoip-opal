@@ -314,7 +314,7 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
     if (startQuote == P_MAX_INDEX || endQuote == P_MAX_INDEX || startQuote >= endQuote) {
       // There are no double quotes around the display name, so take
       // everything before the start angle bracket
-      displayName = str.Left(startBracket-1).Trim();
+      displayName = str.Left(startBracket).Trim();
       }
     else {
       // Trim quotes off
