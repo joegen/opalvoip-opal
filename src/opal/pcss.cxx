@@ -442,6 +442,8 @@ bool OpalPCSSConnection::TransferConnection(const PString & remoteParty)
   soundChannelPlayDevice = playDevice;
   soundChannelRecordDevice = recordDevice;
 
+  PTRACE(3, "PCSS\tTransfer to sound devices: play=\"" << playDevice << "\", record=\"" << recordDevice << '"');
+
   // Now we be really sneaky and just change the sound devices in the OpalAudioMediaStream
   for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream) {
     OpalRawMediaStream * rawStream = dynamic_cast<OpalRawMediaStream *>(&*mediaStream);
