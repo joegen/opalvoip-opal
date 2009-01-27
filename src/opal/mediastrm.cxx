@@ -811,6 +811,7 @@ bool OpalRawMediaStream::SetChannel(PChannel * chan, bool autoDelete)
 
   delete channelToDelete; // Outside mutex
 
+  PTRACE(4, "Media\tSet raw media channel to \"" << m_channel->GetName() << '"');
   return true;
 }
 
