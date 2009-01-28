@@ -492,6 +492,10 @@ enum {
 #define OpalPluginCodec_Identifer_AMR_NB          "0.0.8.245.1.1.9"
 #define OpalPluginCodec_Identifer_AMR_WB          "0.0.8.245.1.1.10"
 
+// G.722.1
+#define OpalPluginCodec_Identifer_G7221           "0.0.7.7221.1.0"
+#define OpalPluginCodec_Identifer_G7221ext        "0.0.7.7221.1.1.0"
+
 // G.722.2 (aka AMR-WB)
 #define OpalPluginCodec_Identifer_G7222           "0.0.7.7222.1.0"
 
