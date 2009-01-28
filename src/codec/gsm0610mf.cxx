@@ -33,6 +33,8 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
+#include <h323/h323caps.h>
+#include <asn/h245.h>
 
 
 #define new PNEW
@@ -45,6 +47,59 @@ const OpalAudioFormat & GetOpalGSM0610()
   static const OpalAudioFormat GSM0610(OPAL_GSM0610, RTP_DataFrame::GSM, "GSM",  33, 160, 7, 4, 7, 8000 );
   return GSM0610;
 }
+
+
+#if OPAL_H323
+
+class H323_GSM0610Capability : public H323AudioCapability
+{
+  public:
+    virtual PObject * Clone() const
+    {
+      return new H323_GSM0610Capability(*this);
+    }
+
+    virtual unsigned GetSubType() const
+    {
+      return H245_AudioCapability::e_gsmFullRate;
+    }
+
+    virtual PString GetFormatName() const
+    {
+      return OpalGSM0610;
+    }
+
+    virtual void SetTxFramesInPacket(unsigned frames)
+    {
+      H323AudioCapability::SetTxFramesInPacket(frames > 7 ? 7 : frames);
+    }
+
+    virtual PBoolean OnSendingPDU(H245_AudioCapability & pdu, unsigned packetSize) const
+    {
+      pdu.SetTag(H245_AudioCapability::e_gsmFullRate);
+
+      H245_GSMAudioCapability & gsm = pdu;
+      gsm.m_audioUnitSize = packetSize*33;
+      return true;
+    }
+
+    virtual PBoolean OnReceivedPDU(const H245_AudioCapability & pdu, unsigned & packetSize)
+    {
+      if (pdu.GetTag() != H245_AudioCapability::e_gsmFullRate)
+        return false;
+
+      const H245_GSMAudioCapability & gsm = pdu;
+      packetSize = gsm.m_audioUnitSize/33;
+      if (packetSize == 0)
+        packetSize = 1;
+      return true;
+    }
+};
+
+H323_REGISTER_CAPABILITY(H323_GSM0610Capability, OPAL_GSM0610);
+
+
+#endif // OPAL_H323
 
 
 // End of File ///////////////////////////////////////////////////////////////
