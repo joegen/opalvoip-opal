@@ -41,10 +41,10 @@
 
 
 enum G729SubTypes {
-  G729,
-  G729A,
-  G729B,
-  G729AB
+  G729   = 0,
+  G729A  = 1,
+  G729B  = 2,
+  G729AB = 3
 };
 
 static const char * const G729Name[4] = {
@@ -78,8 +78,8 @@ class OpalG729Format : public OpalAudioFormat
 #define FORMAT(name) \
   const OpalAudioFormat & GetOpal##name() \
   { \
-    static const OpalG729Format name(G729Name[name]); \
-    return name; \
+    static const OpalG729Format format(G729Name[name]); \
+    return format; \
   }
 
 FORMAT(G729  );
