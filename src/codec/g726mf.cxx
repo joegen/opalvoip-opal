@@ -41,10 +41,10 @@
 
 
 enum G726SubTypes {
-  G726_40K,
-  G726_32K,
-  G726_24K,
-  G726_16K
+  G726_40K = 0,
+  G726_32K = 1,
+  G726_24K = 2,
+  G726_16K = 3
 };
 
 static const char * const G726Name[4] = {
@@ -74,8 +74,8 @@ static unsigned const G726Bits[4] = {
 #define FORMAT(type) \
   const OpalAudioFormat & GetOpal##type() \
   { \
-    static const OpalAudioFormat type(G726Name[type], RTP_DataFrame::DynamicBase,  G726IANA[type], G726Bits[type], 8, 240, 30, 256, 8000); \
-    return type; \
+    static const OpalAudioFormat format(G726Name[type], RTP_DataFrame::DynamicBase,  G726IANA[type], G726Bits[type], 8, 240, 30, 256, 8000); \
+    return format; \
   }
 
 
