@@ -1068,6 +1068,18 @@
 					RelativePath="..\codec\g711codec.cxx">
 				</File>
 				<File
+					RelativePath="..\codec\g7221mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\g7222mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\g722mf.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\codec\g7231mf.cxx">
 				</File>
 				<File
