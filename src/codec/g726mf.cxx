@@ -33,36 +33,95 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
+#include <h323/h323caps.h>
+#include <asn/h245.h>
 
 
 #define new PNEW
 
 
+enum G726SubTypes {
+  G726_40K,
+  G726_32K,
+  G726_24K,
+  G726_16K
+};
+
+static const char * const G726Name[4] = {
+  OPAL_G726_40K,
+  OPAL_G726_32K,
+  OPAL_G726_24K,
+  OPAL_G726_16K
+};
+
+static const char * const G726IANA[4] = {
+  "G726-40",
+  "G726-32",
+  "G726-24",
+  "G726-16"
+};
+
+static unsigned const G726Bits[4] = {
+  5,
+  4,
+  3,
+  2
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 
-const OpalAudioFormat & GetOpalG726_40K()
-{
-  static const OpalAudioFormat G726_40K(OPAL_G726_40K, RTP_DataFrame::DynamicBase,  "G726-40", 5, 8, 240, 30, 256, 8000);
-  return G726_40K;
-}
+#define FORMAT(type) \
+  const OpalAudioFormat & GetOpal##type() \
+  { \
+    static const OpalAudioFormat type(G726Name[type], RTP_DataFrame::DynamicBase,  G726IANA[type], G726Bits[type], 8, 240, 30, 256, 8000); \
+    return type; \
+  }
 
-const OpalAudioFormat & GetOpalG726_32K()
-{
-  static const OpalAudioFormat G726_32K(OPAL_G726_32K, RTP_DataFrame::DynamicBase,  "G726-32", 4, 8, 240, 30, 256, 8000);
-  return G726_32K;
-}
 
-const OpalAudioFormat & GetOpalG726_24K()
-{
-  static const OpalAudioFormat G726_24K(OPAL_G726_24K, RTP_DataFrame::DynamicBase,  "G726-24", 3, 8, 240, 30, 256, 8000);
-  return G726_24K;
-}
+FORMAT(G726_40K);
+FORMAT(G726_32K);
+FORMAT(G726_24K);
+FORMAT(G726_16K);
 
-const OpalAudioFormat & GetOpalG726_16K()
+
+#if OPAL_H323
+
+static const char * const G726OID[4] = {
+  "0.0.8.726.0.40",
+  "0.0.8.726.0.32",
+  "0.0.8.726.0.24",
+  "0.0.8.726.0.16"
+};
+
+template <G726SubTypes subtype>
+class H323_G726Capability : public H323GenericAudioCapability
 {
-  static const OpalAudioFormat G726_16K(OPAL_G726_16K, RTP_DataFrame::DynamicBase,  "G726-16", 2, 8, 240, 30, 256, 8000);
-  return G726_16K;
-}
+  public:
+    H323_G726Capability()
+      : H323GenericAudioCapability(G726OID[subtype])
+    {
+    }
+
+    virtual PObject * Clone() const
+    {
+      return new H323_G726Capability(*this);
+    }
+
+    virtual PString GetFormatName() const
+    {
+      return G726Name[subtype];
+    }
+};
+
+#define FACTORY(type) static H323CapabilityFactory::Worker<H323_G726Capability<type> > type##_Factory(G726Name[type], true);
+FACTORY(G726_40K);
+FACTORY(G726_32K);
+FACTORY(G726_24K);
+FACTORY(G726_16K);
+
+
+#endif // OPAL_H323
 
 
 // End of File ///////////////////////////////////////////////////////////////

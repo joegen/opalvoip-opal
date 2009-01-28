@@ -34,6 +34,8 @@
 
 #include <opal/mediafmt.h>
 #include <codec/opalplugin.h>
+#include <h323/h323caps.h>
+#include <asn/h245.h>
 
 
 #define new PNEW
@@ -88,6 +90,33 @@ const OpalAudioFormat & GetOpalGSMAMR()
   } const GSMAMR;
   return GSMAMR;
 }
+
+
+#if OPAL_H323
+
+class H323_GSMAMRCapability : public H323GenericAudioCapability
+{
+  public:
+    H323_GSMAMRCapability()
+      : H323GenericAudioCapability(OpalPluginCodec_Identifer_AMR)
+    {
+    }
+
+    virtual PObject * Clone() const
+    {
+      return new H323_GSMAMRCapability(*this);
+    }
+
+    virtual PString GetFormatName() const
+    {
+      return OpalGSMAMR;
+    }
+};
+
+static H323CapabilityFactory::Worker<H323_GSMAMRCapability> GSMAMR_Factory(OPAL_GSMAMR, true);
+
+
+#endif // OPAL_H323
 
 
 // End of File ///////////////////////////////////////////////////////////////
