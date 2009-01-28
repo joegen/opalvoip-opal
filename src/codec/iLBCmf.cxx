@@ -33,6 +33,9 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
+#include <codec/opalplugin.h>
+#include <h323/h323caps.h>
+#include <asn/h245.h>
 
 
 #define new PNEW
@@ -116,6 +119,33 @@ const OpalMediaFormat & GetOpaliLBC()
   static OpalMediaFormat const iLBC(new OpaliLBCFormat);
   return iLBC;
 }
+
+
+#if OPAL_H323
+
+class H323_iLBCCapability : public H323GenericAudioCapability
+{
+  public:
+    H323_iLBCCapability()
+      : H323GenericAudioCapability(OpalPluginCodec_Identifer_iLBC)
+    {
+    }
+
+    virtual PObject * Clone() const
+    {
+      return new H323_iLBCCapability(*this);
+    }
+
+    virtual PString GetFormatName() const
+    {
+      return OpaliLBC;
+    }
+};
+
+static H323CapabilityFactory::Worker<H323_iLBCCapability> iLBC_Factory(OPAL_iLBC, true);
+
+
+#endif // OPAL_H323
 
 
 // End of File ///////////////////////////////////////////////////////////////
