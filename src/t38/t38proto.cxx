@@ -754,6 +754,8 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   PTRACE(3, "FAX\tCreated FAX connection with token '" << callToken << "'");
 
   m_faxStopped.SetNotifier(PCREATE_NOTIFIER(OnFaxStoppedTimeout));
+
+  minAudioJitterDelay = maxAudioJitterDelay = 0; // No jitter buffer for fax
 }
 
 
