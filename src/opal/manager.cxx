@@ -414,8 +414,10 @@ PBoolean OpalManager::ClearCall(const PString & token,
   {
     // Find the call by token, callid or conferenceid
     PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReference);
-    if (call == NULL)
+    if (call == NULL) {
+      PTRACE(2, "OpalMan\tCould not find/lock call token \"" << token << '"');
       return false;
+    }
 
     call->Clear(reason, sync);
   }
