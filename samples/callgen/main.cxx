@@ -508,6 +508,7 @@ void CallThread::Main()
       bool stopping = FALSE;
 
       delay = RandomRange(rand, params.tmin_call, params.tmax_call);
+      PTRACE(1, "CallGen\tMax call time " << delay);
 
       START_OUTPUT(index, token) << "Making call " << count;
       if (params.repeat)
@@ -519,11 +520,13 @@ void CallThread::Main()
 
       if (params.tmax_est > 0) {
         OUTPUT(index, token, "Waiting " << params.tmax_est << " seconds for establishment");
+        PTRACE(1, "CallGen\tWaiting " << params.tmax_est << " seconds for establishment");
 
         PTimer timeout = params.tmax_est;
         while (!callgen.manager.IsCallEstablished(token)) {
           stopping = exit.Wait(100);
           if (stopping || !timeout.IsRunning() || !callgen.manager.HasCall(token)) {
+            PTRACE(1, "CallGen\tTimeout/Stopped on establishment");
             delay = 0;
             break;
           }
@@ -538,6 +541,7 @@ void CallThread::Main()
 
       // end the call
       OUTPUT(index, token, "Clearing call");
+      PTRACE(1, "CallGen\tClearing call");
 
       callgen.manager.ClearCallSynchronous(token);
 
