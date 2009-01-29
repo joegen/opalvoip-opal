@@ -1099,6 +1099,8 @@ void OpalConnection::OnApplyStringOptions()
 
 void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
 {
+  PTRACE(4, "OpalCon\tApplying string options:\n" << stringOptions);
+
   if (LockReadWrite()) {
 
     m_connStringOptions = stringOptions;
