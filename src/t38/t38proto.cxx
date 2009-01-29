@@ -733,6 +733,8 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
   if ((*stringOptions)("stationid").IsEmpty())
     stringOptions->SetAt("stationid", stationId);
 
+  stringOptions->SetAt("Disable-Jitter", "1");
+
   return AddConnection(CreateConnection(call, userData, stringOptions, filename, receive,
                                         remoteParty.Left(prefixLength) *= m_t38Prefix));
 }
@@ -751,11 +753,9 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_filename(filename)
   , m_receive(receive)
 {
-  PTRACE(3, "FAX\tCreated FAX connection with token '" << callToken << "'");
+  PTRACE(3, "FAX\tCreated FAX connection with token \"" << callToken << '"');
 
   m_faxStopped.SetNotifier(PCREATE_NOTIFIER(OnFaxStoppedTimeout));
-
-  minAudioJitterDelay = maxAudioJitterDelay = 0; // No jitter buffer for fax
 }
 
 
@@ -876,7 +876,7 @@ OpalT38Connection::OpalT38Connection(OpalCall        & call,
   , m_syncMode(Mode_Timeout)
   , m_faxMode(false)
 {
-  PTRACE(3, "FAX\tCreated T.38 connection with token '" << callToken << "'");
+  PTRACE(3, "FAX\tCreated T.38 connection");
 }
 
 
