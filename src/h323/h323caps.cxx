@@ -2192,8 +2192,17 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       PStringArray packetizations = packetizationString.Tokenise(",");
       for (PINDEX j = 0; j < packetizations.GetSize(); j++) {
         for (PINDEX k = 0; k < mediaPacketizations.GetSize(); k++) {
-          if (mediaPacketizations.GetKeyAt(k) == packetizations[j])
+          const PString & packetization = mediaPacketizations.GetKeyAt(k);
+          if (packetization == packetizations[j])
             return &capability;
+          
+          // workaround for some stupid endpoints that can't define correct media packetization strings
+          // Is there a better place to implement this?
+          
+          // Polycom ViaVideo Release 8.0 omits some characters in the H.264 OID
+          if (packetization == "0.0.8.241.0.0.0" && packetizations[j] == "0.0.8.241.0.0.0.0") {
+            return &capability;
+          }
         }
       }
 
