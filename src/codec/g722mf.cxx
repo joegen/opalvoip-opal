@@ -42,18 +42,32 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_H323
+class H323_G722Capability : public H323AudioCapability
+{
+  public:
+    virtual PObject * Clone() const
+    {
+      return new H323_G722Capability(*this);
+    }
+
+    virtual unsigned GetSubType() const
+    {
+      return H245_AudioCapability::e_g722_64k;
+    }
+
+    virtual PString GetFormatName() const
+    {
+      return OpalG722;
+    }
+};
+#endif
+
 const OpalAudioFormat & GetOpalG722()
 {
   static const OpalAudioFormat G722_Format(OPAL_G722, RTP_DataFrame::G722,  "G722", 2, 16, 50, 10, 256, 16000);
 
 #if OPAL_H323
-  class H323_G722Capability : public H323AudioCapability
-  {
-    public:
-      virtual PObject * Clone() const { return new H323_G722Capability(*this); }
-      virtual unsigned GetSubType() const { return H245_AudioCapability::e_g722_64k; }
-      virtual PString GetFormatName() const { return OpalG722; }
-  };
   static H323CapabilityFactory::Worker<H323_G722Capability> G722_Factory(OPAL_G722, true);
 #endif // OPAL_H323
 

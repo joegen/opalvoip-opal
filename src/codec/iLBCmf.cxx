@@ -43,88 +43,106 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+static char PreferredMode[] = "Preferred Mode";
+
+class OpaliLBCFormat : public OpalAudioFormatInternal
+{
+  public:
+    OpaliLBCFormat()
+      : OpalAudioFormatInternal(OPAL_iLBC, RTP_DataFrame::DynamicBase, "iLBC",  50, 160, 1, 1, 1, 8000, 0)
+    {
+      OpalMediaOption * option = new OpalMediaOptionInteger(PreferredMode, false, OpalMediaOption::MaxMerge, 7);
+#if OPAL_SIP
+      option->SetFMTPName("mode");
+      option->SetFMTPDefault("0");
+#endif
+#if OPAL_H323
+      OpalMediaOption::H245GenericInfo info;
+      info.ordinal = 1;
+      info.mode = OpalMediaOption::H245GenericInfo::Collapsing;
+      option->SetH245Generic(info);
+#endif
+      AddOption(option);
+
+#if OPAL_H323
+      option = FindOption(OpalAudioFormat::RxFramesPerPacketOption());
+      if (option != NULL) {
+        info.ordinal = 0; // All other fields the same as for the mode
+        option->SetH245Generic(info);
+      }
+#endif
+
+      FindOption(OpalMediaFormat::FrameTimeOption())->SetMerge(OpalMediaOption::MaxMerge);
+    }
+
+    virtual PObject * Clone() const { return new OpaliLBCFormat(*this); }
+
+    virtual bool ToNormalisedOptions()
+    {
+      int mode = GetOptionInteger(PreferredMode, 20);
+      if (mode == 0)
+        return true;
+
+      unsigned frameTime = GetOptionInteger(OpalMediaFormat::FrameTimeOption(), 160);
+
+      if (mode < 25) {
+        mode = 20;
+        frameTime = 160;
+      }
+      else {
+        mode = 30;
+        frameTime = 240;
+      }
+
+      return SetOptionInteger(PreferredMode, mode) && SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
+    }
+
+    virtual bool ToCustomisedOptions()
+    {
+      int mode = GetOptionInteger(PreferredMode, 20);
+      unsigned frameTime = GetOptionInteger(OpalMediaFormat::FrameTimeOption(), 160);
+
+      if (frameTime < 200) {
+        mode = 20;
+        frameTime = 160;
+      }
+      else {
+        mode = 30;
+        frameTime = 240;
+      }
+
+      return SetOptionInteger(PreferredMode, mode) && SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
+    }
+};
+
+
+#if OPAL_H323
+class H323_iLBCCapability : public H323GenericAudioCapability
+{
+  public:
+    H323_iLBCCapability()
+      : H323GenericAudioCapability(OpalPluginCodec_Identifer_iLBC)
+    {
+    }
+
+    virtual PObject * Clone() const
+    {
+      return new H323_iLBCCapability(*this);
+    }
+
+    virtual PString GetFormatName() const
+    {
+      return OpaliLBC;
+    }
+};
+#endif // OPAL_H323
+
+
 const OpalMediaFormat & GetOpaliLBC()
 {
-  static char PreferredMode[] = "Preferred Mode";
-  class OpaliLBCFormat : public OpalAudioFormatInternal
-  {
-    public:
-      OpaliLBCFormat()
-        : OpalAudioFormatInternal(OPAL_iLBC, RTP_DataFrame::DynamicBase, "iLBC",  50, 160, 1, 1, 1, 8000, 0)
-      {
-        OpalMediaOption * option = new OpalMediaOptionInteger(PreferredMode, false, OpalMediaOption::MaxMerge, 7);
-#if OPAL_SIP
-        option->SetFMTPName("mode");
-        option->SetFMTPDefault("0");
-#endif
-#if OPAL_H323
-        OpalMediaOption::H245GenericInfo info;
-        info.ordinal = 1;
-        info.mode = OpalMediaOption::H245GenericInfo::Collapsing;
-        option->SetH245Generic(info);
-#endif
-        AddOption(option);
-
-#if OPAL_H323
-        option = FindOption(OpalAudioFormat::RxFramesPerPacketOption());
-        if (option != NULL) {
-          info.ordinal = 0; // All other fields the same as for the mode
-          option->SetH245Generic(info);
-        }
-#endif
-
-        FindOption(OpalMediaFormat::FrameTimeOption())->SetMerge(OpalMediaOption::MaxMerge);
-      }
-
-      virtual PObject * Clone() const { return new OpaliLBCFormat(*this); }
-
-      virtual bool ToNormalisedOptions()
-      {
-        int mode = GetOptionInteger(PreferredMode, 20);
-        if (mode == 0)
-          return true;
-
-        unsigned frameTime = GetOptionInteger(OpalMediaFormat::FrameTimeOption(), 160);
-
-        if (mode < 25) {
-          mode = 20;
-          frameTime = 160;
-        }
-        else {
-          mode = 30;
-          frameTime = 240;
-        }
-
-        return SetOptionInteger(PreferredMode, mode) && SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
-      }
-
-      virtual bool ToCustomisedOptions()
-      {
-        int mode = GetOptionInteger(PreferredMode, 20);
-        unsigned frameTime = GetOptionInteger(OpalMediaFormat::FrameTimeOption(), 160);
-
-        if (frameTime < 200) {
-          mode = 20;
-          frameTime = 160;
-        }
-        else {
-          mode = 30;
-          frameTime = 240;
-        }
-
-        return SetOptionInteger(PreferredMode, mode) && SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
-      }
-  };
   static OpalMediaFormat const iLBC_Format(new OpaliLBCFormat);
 
 #if OPAL_H323
-  class H323_iLBCCapability : public H323GenericAudioCapability
-  {
-    public:
-      H323_iLBCCapability() : H323GenericAudioCapability(OpalPluginCodec_Identifer_iLBC) { }
-      virtual PObject * Clone() const { return new H323_iLBCCapability(*this); }
-      virtual PString GetFormatName() const { return OpaliLBC; }
-  };
   static H323CapabilityFactory::Worker<H323_iLBCCapability> iLBC_Factory(OPAL_iLBC, true);
 #endif // OPAL_H323
 
