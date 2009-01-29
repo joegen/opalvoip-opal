@@ -54,39 +54,8 @@ static const char * const G729Name[4] = {
   OPAL_G729AB
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
-
-class OpalG729Format : public OpalAudioFormat
-{
-  public:
-    OpalG729Format(const char * variant)
-      : OpalAudioFormat(variant, RTP_DataFrame::G729, "G729", 10, 80, 24, 5, 256, 8000)
-    {
-      // As per RFC3555
-      bool isAnnexB = strchr(variant, 'B') != NULL;
-      static const char * const yesno[] = { "no", "yes" };
-      OpalMediaOption * option = new OpalMediaOptionEnum("VAD", true, yesno, 2, OpalMediaOption::AndMerge, isAnnexB);
-#if OPAL_SIP
-      option->SetFMTPName("annexb");
-      option->SetFMTPDefault("yes");
-#endif
-      AddOption(option);
-    }
-};
-
-
-#define FORMAT(name) \
-  const OpalAudioFormat & GetOpal##name() \
-  { \
-    static const OpalG729Format format(G729Name[name]); \
-    return format; \
-  }
-
-FORMAT(G729  );
-FORMAT(G729A );
-FORMAT(G729B );
-FORMAT(G729AB);
-
 
 #if OPAL_H323
 
@@ -117,14 +86,46 @@ class H323_G729CapabilityTemplate : public H323AudioCapability
     }
 };
 
-#define FACTORY(type) static H323CapabilityFactory::Worker<H323_G729CapabilityTemplate<type> > type##_Factory(G729Name[type], true)
-FACTORY(G729  );
-FACTORY(G729A );
-FACTORY(G729B );
-FACTORY(G729AB);
+#define CAPABILITY(type) static H323CapabilityFactory::Worker<H323_G729CapabilityTemplate<type> > type##_Factory(G729Name[type], true)
 
-
+#else
+#define CAPABILITY(t)
 #endif // OPAL_H323
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+class OpalG729Format : public OpalAudioFormat
+{
+  public:
+    OpalG729Format(const char * variant)
+      : OpalAudioFormat(variant, RTP_DataFrame::G729, "G729", 10, 80, 24, 5, 256, 8000)
+    {
+      // As per RFC3555
+      bool isAnnexB = strchr(variant, 'B') != NULL;
+      static const char * const yesno[] = { "no", "yes" };
+      OpalMediaOption * option = new OpalMediaOptionEnum("VAD", true, yesno, 2, OpalMediaOption::AndMerge, isAnnexB);
+#if OPAL_SIP
+      option->SetFMTPName("annexb");
+      option->SetFMTPDefault("yes");
+#endif
+      AddOption(option);
+    }
+};
+
+
+#define FORMAT(name) \
+  const OpalAudioFormat & GetOpal##name() \
+  { \
+  static const OpalG729Format name##_Format(G729Name[name]); \
+    CAPABILITY(name); \
+    return name##_Format; \
+  }
+
+FORMAT(G729  );
+FORMAT(G729A );
+FORMAT(G729B );
+FORMAT(G729AB);
 
 
 // End of File ///////////////////////////////////////////////////////////////

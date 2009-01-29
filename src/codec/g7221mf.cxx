@@ -52,36 +52,21 @@ const OpalAudioFormat & GetOpalG7221()
         : OpalAudioFormat(OPAL_G7221, RTP_DataFrame::DynamicBase, "G7221",  80, 320, 1, 1, 1, 16000)
       {
       }
-  } const G7221;
-  return G7221;
-}
-
+  } const G7221_Format;
 
 #if OPAL_H323
-
-class H323_G7221Capability : public H323GenericAudioCapability
-{
-  public:
-    H323_G7221Capability()
-      : H323GenericAudioCapability(OpalPluginCodec_Identifer_G7221)
-    {
-    }
-
-    virtual PObject * Clone() const
-    {
-      return new H323_G7221Capability(*this);
-    }
-
-    virtual PString GetFormatName() const
-    {
-      return OpalG7221;
-    }
-};
-
-static H323CapabilityFactory::Worker<H323_G7221Capability> G7221_Factory(OPAL_G7221, true);
-
-
+  class H323_G7221Capability : public H323GenericAudioCapability
+  {
+    public:
+      H323_G7221Capability() : H323GenericAudioCapability(OpalPluginCodec_Identifer_G7221) { }
+      virtual PObject * Clone() const { return new H323_G7221Capability(*this); }
+      virtual PString GetFormatName() const { return OpalG7221; }
+  };
+  static H323CapabilityFactory::Worker<H323_G7221Capability> G7221_Factory(OPAL_G7221, true);
 #endif // OPAL_H323
+
+  return G7221_Format;
+}
 
 
 // End of File ///////////////////////////////////////////////////////////////

@@ -44,36 +44,21 @@
 
 const OpalAudioFormat & GetOpalG728()
 {
-  static const OpalAudioFormat G728(OPAL_G728, RTP_DataFrame::G728,  "G728", 5, 20, 100, 10, 256, 8000);
-  return G728;
-}
-
+  static const OpalAudioFormat G728_Format(OPAL_G728, RTP_DataFrame::G728,  "G728", 5, 20, 100, 10, 256, 8000);
 
 #if OPAL_H323
-
-class H323_G728Capability : public H323AudioCapability
-{
-  public:
-    virtual PObject * Clone() const
-    {
-      return new H323_G728Capability(*this);
-    }
-
-    virtual unsigned GetSubType() const
-    {
-      return H245_AudioCapability::e_g728;
-    }
-
-    virtual PString GetFormatName() const
-    {
-      return OpalG728;
-    }
-};
-
-H323_REGISTER_CAPABILITY(H323_G728Capability, OPAL_G728);
-
-
+  class H323_G728Capability : public H323AudioCapability
+  {
+    public:
+      virtual PObject * Clone() const { return new H323_G728Capability(*this); }
+      virtual unsigned GetSubType() const { return H245_AudioCapability::e_g728; }
+      virtual PString GetFormatName() const { return OpalG728; }
+  };
+  static H323CapabilityFactory::Worker<H323_G728Capability> G728_Factory(OPAL_G728, true);
 #endif // OPAL_H323
+
+  return G728_Format;
+}
 
 
 // End of File ///////////////////////////////////////////////////////////////

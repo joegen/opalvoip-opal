@@ -42,36 +42,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalG723Format : public OpalAudioFormat
-{
-  public:
-    OpalG723Format(const char * variant)
-      : OpalAudioFormat(variant, RTP_DataFrame::G7231, "G723", 24, 240,  8,  3, 256,  8000)
-    {
-      bool isAnnexA = strchr(variant, 'A') != NULL;
-      static const char * const yesno[] = { "no", "yes" };
-      OpalMediaOption * option = new OpalMediaOptionEnum("VAD", true, yesno, 2, OpalMediaOption::AndMerge, isAnnexA);
-#if OPAL_SIP
-      option->SetFMTPName("annexa");
-      option->SetFMTPDefault("yes");
-#endif
-      AddOption(option);
-    }
-};
-
-#define FORMAT(name) \
-  const OpalAudioFormat & GetOpal##name() \
-  { \
-    static const OpalG723Format name(OPAL_##name); \
-    return name; \
-  }
-
-FORMAT(G7231_6k3);
-FORMAT(G7231_5k3);
-FORMAT(G7231A_6k3);
-FORMAT(G7231A_5k3);
-
-
 #if OPAL_H323
 
 class H323_G7231Capability : public H323AudioCapability
@@ -113,14 +83,44 @@ class H323_G7231Capability : public H323AudioCapability
     }
 };
 
-#define FACTORY(type) static H323CapabilityFactory::Worker<H323_G7231Capability> type##_Factory(OPAL_##type, true)
-FACTORY(G7231_6k3);
-FACTORY(G7231_5k3);
-FACTORY(G7231A_6k3);
-FACTORY(G7231A_5k3);
+#define CAPABILITY(type) static H323CapabilityFactory::Worker<H323_G7231Capability> type##_Factory(OPAL_##type, true)
 
-
+#else
+#define CAPABILITY(t)
 #endif // OPAL_H323
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+class OpalG723Format : public OpalAudioFormat
+{
+  public:
+    OpalG723Format(const char * variant)
+      : OpalAudioFormat(variant, RTP_DataFrame::G7231, "G723", 24, 240,  8,  3, 256,  8000)
+    {
+      bool isAnnexA = strchr(variant, 'A') != NULL;
+      static const char * const yesno[] = { "no", "yes" };
+      OpalMediaOption * option = new OpalMediaOptionEnum("VAD", true, yesno, 2, OpalMediaOption::AndMerge, isAnnexA);
+#if OPAL_SIP
+      option->SetFMTPName("annexa");
+      option->SetFMTPDefault("yes");
+#endif
+      AddOption(option);
+    }
+};
+
+#define FORMAT(name) \
+  const OpalAudioFormat & GetOpal##name() \
+  { \
+    static const OpalG723Format name##_Format(OPAL_##name); \
+    CAPABILITY(name); \
+    return name##_Format; \
+  }
+
+FORMAT(G7231_6k3);
+FORMAT(G7231_5k3);
+FORMAT(G7231A_6k3);
+FORMAT(G7231A_5k3);
 
 
 // End of File ///////////////////////////////////////////////////////////////
