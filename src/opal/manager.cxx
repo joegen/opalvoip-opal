@@ -567,9 +567,15 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
     }
   }
 
+  OpalConnection::StringOptions mergedOptions = connection.GetStringOptions();
+  if (stringOptions != NULL) {
+    for (PINDEX i = 0; i < stringOptions->GetSize(); ++i)
+      mergedOptions.SetAt(stringOptions->GetKeyAt(i), stringOptions->GetDataAt(i));
+  }
+
   // Use a routing algorithm to figure out who the B-Party is, and make second connection
   PStringSet routesTried;
-  return OnRouteConnection(routesTried, connection.GetLocalPartyURL(), destination, call, options, stringOptions);
+  return OnRouteConnection(routesTried, connection.GetLocalPartyURL(), destination, call, options, &mergedOptions);
 }
 
 
