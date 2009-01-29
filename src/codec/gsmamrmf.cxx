@@ -35,7 +35,6 @@
 #include <opal/mediafmt.h>
 #include <codec/opalplugin.h>
 #include <h323/h323caps.h>
-#include <asn/h245.h>
 
 
 #define new PNEW
@@ -43,14 +42,13 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-
-const OpalAudioFormat & GetOpalGSMAMR()
+const OpalMediaFormat & GetOpalGSMAMR()
 {
-  static class OpalGSMAMRFormat : public OpalAudioFormat
+  class OpalGSMAMRFormat : public OpalAudioFormatInternal
   {
     public:
       OpalGSMAMRFormat()
-        : OpalAudioFormat(OPAL_GSMAMR, RTP_DataFrame::DynamicBase, "AMR",  33, 160, 1, 1, 1, 8000)
+        : OpalAudioFormatInternal(OPAL_GSMAMR, RTP_DataFrame::DynamicBase, "AMR",  33, 160, 1, 1, 1, 8000, 0)
       {
         OpalMediaOption * option = new OpalMediaOptionInteger("Initial Mode", false, OpalMediaOption::MinMerge, 7);
 #if OPAL_SIP
@@ -76,7 +74,7 @@ const OpalAudioFormat & GetOpalGSMAMR()
         AddOption(option);
 
 #if OPAL_H323
-        option = FindOption(RxFramesPerPacketOption());
+        option = FindOption(OpalAudioFormat::RxFramesPerPacketOption());
         if (option != NULL) {
           info.ordinal = 0; // All other fields the same as for the mode
           info.excludeTCS = false;
@@ -87,36 +85,22 @@ const OpalAudioFormat & GetOpalGSMAMR()
 
         AddOption(new OpalMediaOptionString(PLUGINCODEC_MEDIA_PACKETIZATIONS, true, "RFC3267,RFC4867"));
       }
-  } const GSMAMR;
-  return GSMAMR;
-}
-
+  };
+  static OpalMediaFormat const GSMAMR_Format(new OpalGSMAMRFormat);
 
 #if OPAL_H323
-
-class H323_GSMAMRCapability : public H323GenericAudioCapability
-{
-  public:
-    H323_GSMAMRCapability()
-      : H323GenericAudioCapability(OpalPluginCodec_Identifer_AMR)
-    {
-    }
-
-    virtual PObject * Clone() const
-    {
-      return new H323_GSMAMRCapability(*this);
-    }
-
-    virtual PString GetFormatName() const
-    {
-      return OpalGSMAMR;
-    }
-};
-
-static H323CapabilityFactory::Worker<H323_GSMAMRCapability> GSMAMR_Factory(OPAL_GSMAMR, true);
-
-
+  class H323_GSMAMRCapability : public H323GenericAudioCapability
+  {
+    public:
+      H323_GSMAMRCapability() : H323GenericAudioCapability(OpalPluginCodec_Identifer_AMR) { }
+      virtual PObject * Clone() const { return new H323_GSMAMRCapability(*this); }
+      virtual PString GetFormatName() const { return OpalGSMAMR; }
+  };
+  static H323CapabilityFactory::Worker<H323_GSMAMRCapability> GSMAMR_Factory(OPAL_GSMAMR, true);
 #endif // OPAL_H323
+
+  return GSMAMR_Format;
+}
 
 
 // End of File ///////////////////////////////////////////////////////////////
