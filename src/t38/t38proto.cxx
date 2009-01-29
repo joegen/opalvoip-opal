@@ -728,8 +728,10 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
     return false;
   }
 
+  OpalConnection::StringOptions localOptions;
   if (stringOptions == NULL)
-    stringOptions = new OpalConnection::StringOptions;
+    stringOptions = &localOptions;
+
   if ((*stringOptions)("stationid").IsEmpty())
     stringOptions->SetAt("stationid", stationId);
 
@@ -783,8 +785,6 @@ PBoolean OpalFaxConnection::SetUpConnection()
   // Check if we are A-Party in this call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     SetPhase(SetUpPhase);
-
-    OnApplyStringOptions();
 
     if (!OnIncomingConnection(0, NULL)) {
       Release(EndedByCallerAbort);
