@@ -71,27 +71,13 @@ static unsigned const G726Bits[4] = {
 
 /////////////////////////////////////////////////////////////////////////////
 
-#define FORMAT(type) \
-  const OpalAudioFormat & GetOpal##type() \
-  { \
-    static const OpalAudioFormat format(G726Name[type], RTP_DataFrame::DynamicBase,  G726IANA[type], G726Bits[type], 8, 240, 30, 256, 8000); \
-    return format; \
-  }
-
-
-FORMAT(G726_40K);
-FORMAT(G726_32K);
-FORMAT(G726_24K);
-FORMAT(G726_16K);
-
-
 #if OPAL_H323
 
 static const char * const G726OID[4] = {
-  "0.0.8.726.0.40",
-  "0.0.8.726.0.32",
-  "0.0.8.726.0.24",
-  "0.0.8.726.0.16"
+  "0.0.7.726.1.0.40",
+  "0.0.7.726.1.0.32",
+  "0.0.7.726.1.0.24",
+  "0.0.7.726.1.0.16"
 };
 
 template <G726SubTypes subtype>
@@ -114,14 +100,27 @@ class H323_G726Capability : public H323GenericAudioCapability
     }
 };
 
-#define FACTORY(type) static H323CapabilityFactory::Worker<H323_G726Capability<type> > type##_Factory(G726Name[type], true);
-FACTORY(G726_40K);
-FACTORY(G726_32K);
-FACTORY(G726_24K);
-FACTORY(G726_16K);
+#define CAPABILITY(type) static H323CapabilityFactory::Worker<H323_G726Capability<type> > type##_Factory(G726Name[type], true);
 
-
+#else
+#define CAPABILITY(t)
 #endif // OPAL_H323
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#define FORMAT(type) \
+  const OpalAudioFormat & GetOpal##type() \
+  { \
+    static const OpalAudioFormat type##_Format(G726Name[type], RTP_DataFrame::DynamicBase,  G726IANA[type], G726Bits[type], 8, 240, 30, 256, 8000); \
+    CAPABILITY(type); \
+    return type##_Format; \
+  }
+
+FORMAT(G726_40K);
+FORMAT(G726_32K);
+FORMAT(G726_24K);
+FORMAT(G726_16K);
 
 
 // End of File ///////////////////////////////////////////////////////////////

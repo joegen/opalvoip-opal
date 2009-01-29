@@ -43,7 +43,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-
 const OpalMediaFormat & GetOpaliLBC()
 {
   static char PreferredMode[] = "Preferred Mode";
@@ -116,36 +115,21 @@ const OpalMediaFormat & GetOpaliLBC()
         return SetOptionInteger(PreferredMode, mode) && SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
       }
   };
-  static OpalMediaFormat const iLBC(new OpaliLBCFormat);
-  return iLBC;
-}
-
+  static OpalMediaFormat const iLBC_Format(new OpaliLBCFormat);
 
 #if OPAL_H323
-
-class H323_iLBCCapability : public H323GenericAudioCapability
-{
-  public:
-    H323_iLBCCapability()
-      : H323GenericAudioCapability(OpalPluginCodec_Identifer_iLBC)
-    {
-    }
-
-    virtual PObject * Clone() const
-    {
-      return new H323_iLBCCapability(*this);
-    }
-
-    virtual PString GetFormatName() const
-    {
-      return OpaliLBC;
-    }
-};
-
-static H323CapabilityFactory::Worker<H323_iLBCCapability> iLBC_Factory(OPAL_iLBC, true);
-
-
+  class H323_iLBCCapability : public H323GenericAudioCapability
+  {
+    public:
+      H323_iLBCCapability() : H323GenericAudioCapability(OpalPluginCodec_Identifer_iLBC) { }
+      virtual PObject * Clone() const { return new H323_iLBCCapability(*this); }
+      virtual PString GetFormatName() const { return OpaliLBC; }
+  };
+  static H323CapabilityFactory::Worker<H323_iLBCCapability> iLBC_Factory(OPAL_iLBC, true);
 #endif // OPAL_H323
+
+  return iLBC_Format;
+}
 
 
 // End of File ///////////////////////////////////////////////////////////////
