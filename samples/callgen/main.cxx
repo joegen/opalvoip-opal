@@ -55,8 +55,8 @@ void CallGen::Main()
              "f-fast-disable."
              "g-gatekeeper:"
              "I-in-dir:"
-	     "-h323-interface:"
-	     "-sip-interface:"
+             "-h323-interface:"
+             "-sip-interface:"
              "l-listen."
              "m-max:"
              "n-no-gatekeeper."
@@ -64,6 +64,7 @@ void CallGen::Main()
              "o-output:"
              "P-prefer:"
              "p-password:"
+             "q-quiet."
              "r-repeat:"
              "-require-gatekeeper."
              "T-h245tunneldisable."
@@ -88,6 +89,7 @@ void CallGen::Main()
             "  " << GetFile().GetTitle() << " [options] destination [ destination ... ]\n"
             "where options:\n"
             "  -l                   Passive/listening mode.\n"
+            "  -q --quiet           Do not display call progress output.\n"
             "  -m --max num         Maximum number of simultaneous calls\n"
             "  -r --repeat num      Repeat calls n times\n"
             "  -C --cycle           Each simultaneous call cycles through destination list\n"
@@ -137,6 +139,8 @@ void CallGen::Main()
 #if OPAL_H323
   H323EndPoint * h323 = new H323EndPoint(manager);
 #endif
+
+  quietMode = args.HasOption('q');
 
   outgoingMessageFile = args.GetOptionString('O', "ogm.wav");
   if (outgoingMessageFile.IsEmpty())
@@ -460,21 +464,18 @@ static unsigned RandomRange(PRandom & rand,
 
 
 #define START_OUTPUT(index, token) \
-{ \
-  CallGen::Current().coutMutex.Wait(); \
-  cout << setw(3) << index << ": " << setw(10) << token.Left(10) << ": "
+  if (CallGen::Current().quietMode) ; else { \
+    CallGen::Current().coutMutex.Wait(); \
+    cout << setw(3) << index << ": " << setw(10) << token.Left(10) << ": "
 
 #define END_OUTPUT() \
-  cout << endl; \
-  CallGen::Current().coutMutex.Signal(); \
-}
+    cout << endl; \
+    CallGen::Current().coutMutex.Signal(); \
+  }
 
 static bool generateOutput = false;
 
-#define OUTPUT(index, token, info) \
-  if (generateOutput) { \
-  START_OUTPUT(index, token) << info; END_OUTPUT() \
-  } \
+#define OUTPUT(index, token, info) START_OUTPUT(index, token) << info; END_OUTPUT()
 
 
 void CallThread::Main()

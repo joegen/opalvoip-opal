@@ -129,6 +129,7 @@ class CallGen : public PProcess
     PSyncPoint threadEnded;
     unsigned   totalAttempts;
     unsigned   totalEstablished;
+    bool       quietMode;
     PMutex     coutMutex;
 
     PDECLARE_NOTIFIER(PThread, CallGen, Cancel);
