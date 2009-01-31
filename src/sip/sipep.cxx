@@ -1273,7 +1273,7 @@ static void OutputParticipant(ostream & body, const char * name, const SIPDialog
   if (!participant.m_identity.IsEmpty()) {
     body << "      <identity";
     if (!participant.m_display.IsEmpty())
-      body << " display\"" << participant.m_display << '"';
+      body << " display=\"" << participant.m_display << '"';
     body << '>' << participant.m_identity << "</identity>\r\n";
   }
 
