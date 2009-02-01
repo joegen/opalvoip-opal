@@ -76,6 +76,7 @@ PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 EXTRACFLAGS     =-I$(PLUGINDIR)
+SONAME		= iLBC
 
 SRCS	= ilbccodec.c $(SRCDIR)/anaFilter.c $(SRCDIR)/constants.c $(SRCDIR)/createCB.c $(SRCDIR)/doCPLC.c \
 	  $(SRCDIR)/enhancer.c $(SRCDIR)/filter.c $(SRCDIR)/FrameClassify.c $(SRCDIR)/gainquant.c \
@@ -98,13 +99,10 @@ PLUGIN	= ./ilbc_audio_pwplugin.$(PLUGINEXT)
 OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
-
 ifeq (solaris,$(findstring solaris,$(target_os)))
-
 	$(CC) $(LDSO) $@ -o $@ $^
 else	
 	$(CC) $(LDSO) -o $@ $^
-
 endif	
 
 install:
