@@ -49,6 +49,7 @@
   #define STRCMPI  strcasecmp
 #endif
 #include <string.h>
+#include <stdio.h>
 
 theoraEncoderContext::theoraEncoderContext()
 {
