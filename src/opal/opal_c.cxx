@@ -1579,7 +1579,8 @@ void OpalManager_C::HandleStartRecording(const OpalMessage & command, OpalMessag
     return;
   }
 
-  if (!call->StartRecording(command.m_param.m_recording.m_file))
+  if (!call->StartRecording(command.m_param.m_recording.m_file,
+                            command.m_param.m_recording.m_channels < 2))
     response.SetError("Could not start recording for call.");
 }
 
