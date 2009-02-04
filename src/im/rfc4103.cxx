@@ -69,10 +69,12 @@ RTP_DataFrameList RFC4103Context::ConvertToFrames(const T140String & body)
 /////////////////////////////////////////////////////////////////////////////
 
 RFC4103Frame::RFC4103Frame()
+  : RTP_DataFrame(0)
 { 
 }
 
 RFC4103Frame::RFC4103Frame(const T140String & t140)
+  : RTP_DataFrame(0)
 {
   SetPayload(t140);
 }

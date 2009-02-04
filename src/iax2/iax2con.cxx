@@ -506,12 +506,11 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
       return;
     }
 
-    RTP_DataFrame *mediaFrame = new RTP_DataFrame();
+    RTP_DataFrame *mediaFrame = new RTP_DataFrame(soundFrame->GetMediaDataSize());
     mediaFrame->SetTimestamp(soundFrame->GetTimeStamp() * 8);
     mediaFrame->SetMarker(PFalse);
     mediaFrame->SetPayloadType(opalPayloadType);
 
-    mediaFrame->SetPayloadSize(soundFrame->GetMediaDataSize());
     mediaFrame->SetSize(mediaFrame->GetPayloadSize() + mediaFrame->GetHeaderSize());
     memcpy(mediaFrame->GetPayloadPtr(), soundFrame->GetMediaDataPointer(), 
 	   soundFrame->GetMediaDataSize());
