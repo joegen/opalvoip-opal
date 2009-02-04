@@ -76,7 +76,7 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
                                const OpalMediaFormat & outputMediaFormat)
   : OpalMediaFormatPair(inputMediaFormat, outputMediaFormat)
 {
-  maxOutputSize = P_MAX_INDEX; // Just something, usually changed by OpalMediaPatch
+  maxOutputSize = 32768; // Just something, usually changed by OpalMediaPatch
   outputIsRTP = inputIsRTP = PFalse;
   acceptEmptyPayload = false;
   acceptOtherPayloads = false;
@@ -133,7 +133,7 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 {
   // make sure there is at least one output frame available
   if (output.IsEmpty())
-    output.Append(new RTP_DataFrame);
+    output.Append(new RTP_DataFrame(0, maxOutputSize));
   else {
     while (output.GetSize() > 1)
       output.RemoveAt(1);

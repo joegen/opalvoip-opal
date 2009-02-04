@@ -808,7 +808,7 @@ void TranscoderThread::Main()
   PTimeInterval startTick = PTimer::Tick();
   while (running && framesToTranscode < 0 || (framesToTranscode-- > 0)) {
 
-    RTP_DataFrame srcFrame;
+    RTP_DataFrame srcFrame(0);
     bool state = Read(srcFrame);
     if (oldSrcState != state) {
       oldSrcState = state;

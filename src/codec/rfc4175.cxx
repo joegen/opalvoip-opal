@@ -266,11 +266,10 @@ void OpalRFC4175Encoder::AddNewDstFrame()
   FinishOutputFrame();
 
   // allocate a new output frame
-  RTP_DataFrame * frame = new RTP_DataFrame;
+  RTP_DataFrame * frame = new RTP_DataFrame(maximumPacketSize - RTP_DataFrame::MinHeaderSize);
   dstFrames->Append(frame);
 
   // initialise payload size for maximum size
-  frame->SetPayloadSize(maximumPacketSize - frame->GetHeaderSize());
   frame->SetPayloadType(outputMediaFormat.GetPayloadType());
   // initialise current output scanline count;
   dstScanLineCount = 0;
@@ -503,11 +502,10 @@ PBoolean Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & outpu
   PTRACE(4, "RFC4175\tDecoding output from " << inputFrames.GetSize() << " input frames");
 
   // allocate destination frame
-  output.Append(new RTP_DataFrame());
+  output.Append(new RTP_DataFrame(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(frameWidth*frameHeight)));
   RTP_DataFrame & outputFrame = output.back();
   outputFrame.SetMarker(PTrue);
   outputFrame.SetPayloadType(outputMediaFormat.GetPayloadType());
-  outputFrame.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(frameWidth*frameHeight));
 
   // get pointer to header and payload
   PluginCodec_Video_FrameHeader * hdr = (PluginCodec_Video_FrameHeader *)outputFrame.GetPayloadPtr();
@@ -622,10 +620,9 @@ PBoolean Opal_RFC4175RGB_to_RGB24::DecodeFrames(RTP_DataFrameList & output)
   PTRACE(4, "RFC4175\tDecoding output from " << inputFrames.GetSize() << " input frames");
 
   // allocate destination frame
-  output.Append(new RTP_DataFrame());
+  output.Append(new RTP_DataFrame(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(frameWidth*frameHeight)));
   RTP_DataFrame & outputFrame = output.back();
   outputFrame.SetMarker(PTrue);
-  outputFrame.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(frameWidth*frameHeight));
 
   // get pointer to header and payload
   PluginCodec_Video_FrameHeader * hdr = (PluginCodec_Video_FrameHeader *)outputFrame.GetPayloadPtr();

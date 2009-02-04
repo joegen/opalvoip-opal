@@ -73,10 +73,10 @@ static PFactory<RTP_Encoding>::Worker<RTP_Encoding> rtpAVPHandler("rtp/avp");
 
 /////////////////////////////////////////////////////////////////////////////
 
-RTP_DataFrame::RTP_DataFrame(PINDEX sz)
-  : PBYTEArray(MinHeaderSize+sz)
+RTP_DataFrame::RTP_DataFrame(PINDEX payloadSz, PINDEX bufferSz)
+  : PBYTEArray(std::max(bufferSz, MinHeaderSize+payloadSz))
 {
-  payloadSize = sz;
+  payloadSize = payloadSz;
   theArray[0] = '\x80';
 }
 
