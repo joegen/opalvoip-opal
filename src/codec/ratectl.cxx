@@ -176,6 +176,10 @@ bool OpalVideoRateController::SkipFrame()
 
 bool OpalVideoRateController::CheckFrameRate(bool reporting)
 {
+  // flush histories older than window
+  bitRateHistory.remove_older_than(now, bitRateHistorySizeInMs);
+  frameRateHistory.remove_older_than(now, PACKET_HISTORY_SIZE * 1000);
+
   // the first one is always free
   if (frameRateHistory.size() == 0) {
     PTRACE(5, "RateController\tHistory too small for frame rate control");
@@ -186,10 +190,6 @@ bool OpalVideoRateController::CheckFrameRate(bool reporting)
                           << ",out=" << outputFrameCount
                           << ",dropped=" << (inputFrameCount - outputFrameCount)
                           << "(" << (inputFrameCount < 1 ? 0 : ((inputFrameCount - outputFrameCount) * 100 / inputFrameCount)) << "%)");
-
-  // flush histories older than window
-  bitRateHistory.remove_older_than(now, bitRateHistorySizeInMs);
-  frameRateHistory.remove_older_than(now, PACKET_HISTORY_SIZE * 1000);
 
   // if maintaining a frame rate, check to see if frame should be dropped
   // to make this decision, check what the rate would be if this frame was not dropped
@@ -225,8 +225,8 @@ bool OpalVideoRateController::CheckBitRate(bool reporting)
 {
   // need to have at least 2 frames of history to make any useful predictions
   // and the history must span a non-trivial time window
-  PInt64 bitRateHistoryDuration;
-  if ((bitRateHistory.size() < 2) || (bitRateHistoryDuration = now - bitRateHistory.begin()->time) < 10 || outputFrameCount < 2) {
+  PInt64 bitRateHistoryDuration = 0;
+  if ((bitRateHistory.size() < 2) || (bitRateHistoryDuration = bitRateHistory.back().time - bitRateHistory.front().time) < 10 || outputFrameCount < 2) {
     PTRACE(3, "RateController\thistory too small for bit rate control");
     return false;
   }
@@ -249,30 +249,19 @@ bool OpalVideoRateController::CheckBitRate(bool reporting)
   PTRACE_IF(3, reporting, "RateController\tReport:"
                           "payload=" << (bitRateHistory.bytes * 8 * 1000) / bitRateHistoryDuration << ","
                           "udp="     << ((bitRateHistory.packets * UDP_OVERHEAD + bitRateHistory.bytes) * 8 * 1000) / bitRateHistoryDuration << " bps,"
-                          "target=" << (byteRate*8) << ","
+                          "target="  << (byteRate*8) << ","
                           "history=" << bitRateHistoryDuration << "ms," << bitRateHistory.size() << " frames," << bitRateHistory.packets << " packets"
               );
 
   // allow the packet if the expected history size with this packet is less 
   // than the target history size 
   if ((historySize + avgPacketSize) <= targetBitRateHistorySize) {
-    PTRACE(3, "RateController\tpacket does not exceed bitrate");
     consecutiveFramesSkipped = 0;
     return false;
   }
 
-  // see if max consecutive frames has been reached
-  //if (++consecutiveFramesSkipped <= maxConsecutiveFramesSkip) {
-    PTRACE(3, "RateController\tSkipping frame to enforce bit rate");
-    return true;
-  //}
-
-#if 0
-  PTRACE(5, "RateController\tAllowing " << consecutiveFramesSkipped - maxConsecutiveFramesSkip  << " frames to exceed bit rate");
-  
-  consecutiveFramesSkipped = 0;
-  return false;
-#endif
+  PTRACE(3, "RateController\tSkipping frame to enforce bit rate");
+  return true;
 }
 
 void OpalVideoRateController::AddFrame(PInt64 totalPayloadSize, int packetCount, PInt64 _now)
