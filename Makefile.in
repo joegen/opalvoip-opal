@@ -487,6 +487,8 @@ clean:
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
 
 depend:   Makefile $(DEPS) 
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) depend; fi ; )
+
 
 ifneq ($(wildcard $(OPAL_DEPDIR)/*.dep),)
 include $(OPAL_DEPDIR)/*.dep
