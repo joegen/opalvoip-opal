@@ -62,7 +62,7 @@ class OpalVideoRateController
     void Open(
       unsigned targetBitRate,                  ///< target bit rate to acheive
       int outputFrameTime = -1,                ///< output frame time (90000 / rate), or -1 to not limit frame rate
-      unsigned windowSizeInMs = 5000,          ///< size of history used for calculating output bit rate
+      unsigned windowSizeInMs = 500,           ///< size of history used for calculating output bit rate
       unsigned maxConsecutiveFramesSkip = 5    ///< maximum number of consecutive frames to skip
     );
 

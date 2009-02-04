@@ -88,12 +88,11 @@ class TranscoderThread : public PThread
     PDECLARE_NOTIFIER(OpalMediaCommand, TranscoderThread, OnTranscoderCommand);
     bool forceIFrame;
 
+    bool rcEnable;
+    OpalVideoRateController rateController;
     int framesToTranscode;
     int frameTime;
     bool calcSNR;
-
-    bool rcEnable;
-    OpalVideoRateController rateController;
 };
 
 

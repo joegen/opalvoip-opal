@@ -960,7 +960,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
   unsigned flags;
 
   if (isEncoder) {
-    bool firstPacketForFrame = true;
+    lastFrameWasIFrame = false;
     do {
 
       // create the output buffer, outputDataSize is supposed to include the
@@ -979,32 +979,8 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
         return PFalse;
       }
 
-      if (firstPacketForFrame) {
-        if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
-#if PTRACING
-          if (forceIFrame)
-            PTRACE(3, "OpalPlugin\tSending I-Frame in response to videoFastUpdate");
-          else if (consecutiveIntraFrames < 10) {
-            if (++consecutiveIntraFrames >= 10)
-              PTRACE(3, "OpalPlugin\tSending many consecutive I-Frames, assuming codec cannot do P-Frames");
-            else
-              PTRACE(4, "OpalPlugin\tSending I-Frame");
-          }
-#endif
-          forceIFrame = false;
-#if OPAL_STATISTICS
-          m_keyFrames++;
-#endif
-        }
-#if PTRACING
-        else
-          consecutiveIntraFrames = 0;
-#endif
-#if OPAL_STATISTICS
-        m_totalFrames++;
-#endif
-        firstPacketForFrame = false;
-      }
+      if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
+        lastFrameWasIFrame = true;
 
       if (toLen > 0) {
         dst->SetPayloadSize(toLen - dst->GetHeaderSize());
@@ -1012,6 +988,28 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
       }
 
     } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
+
+#if OPAL_STATISTICS
+    m_totalFrames++;
+    if (lastFrameWasIFrame)
+      m_keyFrames++;
+#endif
+
+#if PTRACING
+    if (!lastFrameWasIFrame)
+      consecutiveIntraFrames = 0;
+    else if (forceIFrame)
+      PTRACE(3, "OpalPlugin\tSending I-Frame in response to videoFastUpdate");
+    else if (consecutiveIntraFrames < 10) {
+      if (++consecutiveIntraFrames >= 10)
+        PTRACE(3, "OpalPlugin\tSending many consecutive I-Frames, assuming codec cannot do P-Frames");
+      else
+        PTRACE(4, "OpalPlugin\tSending I-Frame");
+    }
+#endif
+
+    if (lastFrameWasIFrame)
+      forceIFrame = false;
   }
 
   else {
@@ -1046,9 +1044,11 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
       dstList.Append(bufferRTP);
       bufferRTP = NULL;
 
+      lastFrameWasIFrame = (flags & PluginCodec_ReturnCoderIFrame) != 0;
+
 #if OPAL_STATISTICS
       m_totalFrames++;
-      if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
+      if (lastFrameWasIFrame)
         m_keyFrames++;
 #endif
     }

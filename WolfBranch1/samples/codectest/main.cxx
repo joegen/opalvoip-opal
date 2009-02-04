@@ -51,30 +51,29 @@ void CodecTest::Main()
 {
   PArgList & args = GetArguments();
 
-  args.Parse("h-help."
-             "-record-driver:"
-             "R-record-device:"
-             "-play-driver:"
-             "P-play-device:"
-             "-play-buffers:"
+  args.Parse("b-bit-rate:"
+             "c-crop."
+             "C-rate-control."
+             "D-display-device:"
+             "-display-driver:"
              "F-audio-frames:"
-             "-grab-driver:"
              "G-grab-device:"
+             "-grab-driver:"
              "-grab-format:"
              "-grab-channel:"
-             "-display-driver:"
-             "D-display-device:"
-             "s-frame-size:"
-             "r-frame-rate:"
-             "b-bit-rate:"
-             "O-option:"
-             "c-crop."
+             "h-help."
              "m-suppress-marker."
              "M-force-marker."
-             "S-single-step."
-             "H:"
-             "T-statistics."
-             "C-rate-control."
+             "O-option:"
+             "p-payload-size:"
+             "P-play-device:"
+             "-play-driver:"
+             "-play-buffers:"
+             "r-frame-rate:"
+             "R-record-device:"
+             "-record-driver:"
+             "s-frame-size:"
+             "S-simultaneous:"
              "-count:"
              "-noprompt."
              "-snr."
@@ -114,9 +113,11 @@ void CodecTest::Main()
               "  -b --bit-rate size      : video bit rate (bits/second)\n"
               "  -O --option opt=val     : set media format option to value\n"
               "  -S --single-step        : video single frame at a time mode\n"
+              "  -c --crop               : crop rather than scale if resizing\n"
               "  -m --suppress-marker    : suppress marker bits to decoder"
               "  -M --force-marker       : force marker bits to decoder"
-              "  -c --crop               : crop rather than scale if resizing\n"
+              "  -p --payload-size sz    : Set size of maximum RTP payload for encoded data\n"
+              "  -S --simultanoues n     : Number of simultaneous encode/decode threads\n"
               "  -T --statistics         : output statistics files\n"
               "  -C --rate-control       : enable rate control\n"
               "  --count n               : set number of frames to transcode\n"
@@ -131,7 +132,7 @@ void CodecTest::Main()
     return;
   }
 
-  unsigned threadCount = args.GetOptionString('H').AsInteger();
+  unsigned threadCount = args.GetOptionString('S').AsInteger();
   if (threadCount > 0) {
     unsigned i;
     TestThreadInfo ** infos = (TestThreadInfo **)malloc(threadCount * sizeof(TestThreadInfo *));
@@ -271,10 +272,8 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
 
   framesToTranscode = -1;
   PString s = args.GetOptionString("count");
-  if (!s.IsEmpty()) {
+  if (!s.IsEmpty())
     framesToTranscode = s.AsInteger();
-    cout << "Transcoding " << framesToTranscode << " frames" << endl;
-  }
 
   calcSNR = args.HasOption("snr");
 
@@ -293,7 +292,7 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
       else {
         OpalMediaFormat adjustedRawFormat = rawFormat;
         if (rawFormat == OpalPCM16) {
-          if (mediaFormat.GetClockRate() != rawFormat.GetClockRate())
+          if (mediaFormat.GetClockRate() != rawFormat.GetClockRate() || mediaFormat.GetPayloadType() == RTP_DataFrame::G722)
             adjustedRawFormat = OpalPCM16_16KHZ;
           if (args.HasOption('F')) {
             unsigned fpp = args.GetOptionString('F').AsUnsigned();
@@ -652,23 +651,26 @@ bool VideoThread::Initialise(PArgList & args)
   cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
 
   if (args.HasOption('T')) {
-    frameFn  = "frame_stats.txt";
-    packetFn = "packet_stats.txt";
+    frameFn  = "frame_stats.csv";
+    packetFn = "packet_stats.csv";
   }
 
   if (args.HasOption('C')) {
     rcEnable = true;
     unsigned rate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
-    rateController.Open(rate, 5000, 12);
-    cout << "Video rate controller enabled for bit rate " << rate << " bps" << endl;
+    rateController.Open(rate, 90000 / 10); // frameRate);
+    cout << "Video rate controller enabled for bit rate " << rate << " bps and frame rate " << frameRate << endl;
   }
 
   SetOptions(args, mediaFormat);
 
   if (encoder == NULL) 
     frameTime = mediaFormat.GetFrameTime();
-  else 
+  else {
     encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
+    if (args.HasOption('p'))
+      encoder->SetMaxOutputSize(args.GetOptionString('p').AsUnsigned());
+  }
 
   singleStep = args.HasOption('S');
 
@@ -720,7 +722,8 @@ void TranscoderThread::OnTranscoderCommand(OpalMediaCommand & cmd, INT)
 
 void VideoThread::CalcSNR(const RTP_DataFrame & src, const RTP_DataFrame & dst)
 {
-  if (src.GetPayloadSize() < (int)sizeof(OpalVideoTranscoder::FrameHeader) || dst.GetPayloadSize() < (int)sizeof(OpalVideoTranscoder::FrameHeader))
+  if (src.GetPayloadSize() < (PINDEX)sizeof(OpalVideoTranscoder::FrameHeader) ||
+      dst.GetPayloadSize() < (PINDEX)sizeof(OpalVideoTranscoder::FrameHeader))
     return;
 
   const BYTE * src1 = src.GetPayloadPtr();
@@ -805,7 +808,7 @@ void TranscoderThread::Main()
   PTimeInterval startTick = PTimer::Tick();
   while (running && framesToTranscode < 0 || (framesToTranscode-- > 0)) {
 
-    RTP_DataFrame srcFrame;
+    RTP_DataFrame srcFrame(0);
     bool state = Read(srcFrame);
     if (oldSrcState != state) {
       oldSrcState = state;
@@ -816,7 +819,7 @@ void TranscoderThread::Main()
     timestamp += frameTime;
 
     if (rcEnable && rateController.SkipFrame()) {
-      //cerr << "Rate controller forced frame skip" << endl;
+      cerr << "Rate controller forced frame skip" << endl;
       continue;
     }
       
@@ -850,6 +853,8 @@ void TranscoderThread::Main()
           case ForceMarkers :
             encFrames[i].SetMarker(true);
             break;
+          default :
+            break;
         }
 
         state = decoder->ConvertFrames(encFrames[i], outFrames);
@@ -879,6 +884,7 @@ void TranscoderThread::Main()
       packetCount++;
     }
 
+
     if (rcEnable)
       rateController.AddFrame(frameSize, framePacketCount);
 
@@ -900,10 +906,11 @@ void TranscoderThread::Main()
   else if (byteCount < 10000000000ULL)
     cout << byteCount/1000000.0 << " M";
   cout << "bytes, "
+       << packetCount << " packets, "
        << frameCount << " frames over " << duration << " seconds at "
        << (frameCount*1000.0/duration.GetMilliSeconds()) << " f/s and ";
 
-  PUInt64 bitRate = byteCount*8 * 1000 /duration.GetMilliSeconds();
+  PUInt64 bitRate = byteCount*8/duration.GetSeconds();
   if (bitRate < 10000ULL)
     cout << bitRate << ' ';
   else if (bitRate < 10000000ULL)
@@ -984,7 +991,8 @@ void VideoThread::InitStats()
 void VideoThread::UpdateStats(const RTP_DataFrame & frame)
 {
   if (!packetFn.IsEmpty()) {
-    packetStatFile.Open(packetFn, PFile::WriteOnly);
+    if (packetStatFile.Open(packetFn, PFile::WriteOnly))
+      packetStatFile << "PacketNum,PacketSize\n";
     packetFn.MakeEmpty();
   }
 
@@ -993,7 +1001,7 @@ void VideoThread::UpdateStats(const RTP_DataFrame & frame)
   totalFrameBytes += frame.GetPayloadSize();
 
   if (packetStatFile.IsOpen()) 
-    packetStatFile << packetCount << " "
+    packetStatFile << packetCount << ','
                    << frame.GetPayloadSize() << endl;
 
   if (frame.GetMarker()) 
@@ -1008,16 +1016,17 @@ PInt64 BpsTokbps(PInt64 Bps)
 void VideoThread::UpdateFrameStats()
 {
   if (!frameFn.IsEmpty()) {
-    frameStatFile.Open(frameFn, PFile::WriteOnly);
+    if (frameStatFile.Open(frameFn, PFile::WriteOnly))
+      frameStatFile << "FrameNum,FrameBits,FrameKBPS,TotalKBPS\n";
     frameFn.MakeEmpty();
   }
 
   frameCount++;
 
   if (frameStatFile.IsOpen()) {
-    frameStatFile << frameCount << " "
-                  << (frameBytes * 8) << " "
-                  << BpsTokbps(frameBytes * frameRate) << " "
+    frameStatFile << frameCount << ','
+                  << (frameBytes * 8) << ','
+                  << BpsTokbps(frameBytes * frameRate) << ','
                   << BpsTokbps((totalFrameBytes * frameRate) / frameCount) << endl;
   }
 
