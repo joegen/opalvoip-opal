@@ -573,7 +573,8 @@ OpalStreamedTranscoder::OpalStreamedTranscoder(const OpalMediaFormat & inputMedi
 PINDEX OpalStreamedTranscoder::GetOptimalDataFrameSize(PBoolean input) const
 {
   // For streamed codecs a "frame" is one milliseconds worth of data
-  PINDEX size = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
+  PINDEX size = outputMediaFormat.GetOptionInteger(input ? OpalAudioFormat::TxFramesPerPacketOption()
+                                                         : OpalAudioFormat::RxFramesPerPacketOption(), 1);
 
   size *= outputMediaFormat.GetClockRate()/1000;            // Convert to milliseconds
   size *= input ? inputBitsPerSample : outputBitsPerSample; // Total bits
