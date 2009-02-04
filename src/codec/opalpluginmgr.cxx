@@ -961,7 +961,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
   unsigned flags;
 
   if (isEncoder) {
-    bool isIFrame = false;
+    lastFrameWasIFrame = false;
     do {
       if (outputDataSize < 2048)
         outputDataSize = 2048;
@@ -981,7 +981,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
       }
 
       if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
-        isIFrame = true;
+        lastFrameWasIFrame = true;
 
       if (toLen > 0) {
         dst->SetPayloadSize(toLen - dst->GetHeaderSize());
@@ -992,12 +992,12 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
 #if OPAL_STATISTICS
     m_totalFrames++;
-    if (isIFrame)
+    if (lastFrameWasIFrame)
       m_keyFrames++;
 #endif
 
 #if PTRACING
-    if (!isIFrame)
+    if (!lastFrameWasIFrame)
       consecutiveIntraFrames = 0;
     else if (forceIFrame)
       PTRACE(3, "OpalPlugin\tSending I-Frame in response to videoFastUpdate");
@@ -1009,7 +1009,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
     }
 #endif
 
-    if (isIFrame)
+    if (lastFrameWasIFrame)
       forceIFrame = false;
   }
 
@@ -1047,9 +1047,11 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
       dstList.Append(bufferRTP);
       bufferRTP = NULL;
 
+      lastFrameWasIFrame = (flags & PluginCodec_ReturnCoderIFrame) != 0;
+
 #if OPAL_STATISTICS
       m_totalFrames++;
-      if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
+      if (lastFrameWasIFrame)
         m_keyFrames++;
 #endif
     }
