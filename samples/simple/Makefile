@@ -67,9 +67,9 @@ $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(CXX) $(CFLAGS) -c $< -o $@
 
-$(OPAL_DEPDIR)/%.dep : %.cxx 
-	@if [ ! -d $(OPAL_DEPDIR) ] ; then mkdir -p $(OPAL_DEPDIR) ; fi
-	@printf %s $(OPAL_OBJDIR)/ > $@
+$(OBJDIR)/%.dep : %.cxx 
+	@if [ ! -d $(OBJDIR) ] ; then mkdir -p $(OBJDIR) ; fi
+	@printf %s $(OBJDIR)/ > $@
 	$(CXX) $(CXXFLAGS:-g=) -M $< >> $@
 
 
@@ -110,5 +110,9 @@ debugnoshared:
 bothnoshared:
 	$(MAKE) DEBUG_BUILD=no STATIC_BUILD=yes
 	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=yes
+
+depend: Makefile $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(SRCS) $(DEPS))
+	@echo Dependencies created.
+
 
 ###########################################
