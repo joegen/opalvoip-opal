@@ -621,7 +621,8 @@ void OpalCall::StopRecording()
 
 void OpalCall::OnRecordAudio(const PString & streamId, const RTP_DataFrame & frame)
 {
-  manager.GetRecordManager().WriteAudio(myToken, streamId, frame);
+  if (!manager.GetRecordManager().WriteAudio(myToken, streamId, frame))
+    StopRecording();
 }
 
 

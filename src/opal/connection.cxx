@@ -700,12 +700,15 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-void OpalConnection::OnPatchMediaStream(PBoolean PTRACE_PARAM(isSource), OpalMediaPatch & PTRACE_PARAM(patch))
+void OpalConnection::OnPatchMediaStream(PBoolean PTRACE_PARAM(isSource), OpalMediaPatch & patch)
 {
   if (!recordAudioFilename.IsEmpty())
     GetCall().StartRecording(recordAudioFilename);
+  else if (GetCall().IsRecording()) {
+    patch.AddFilter(recordNotifier, OPAL_PCM16);
+    PTRACE(4, "OpalCon\tAdded record filter on connection " << *this << ", patch " << patch);
+  }
 
-  // TODO - add autorecord functions here
   PTRACE(3, "OpalCon\t" << (isSource ? "Source" : "Sink") << " stream of connection " << *this << " uses patch " << patch);
 }
 
