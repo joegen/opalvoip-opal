@@ -42,11 +42,9 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class Opal_G711_uLaw_PCM : public OpalStreamedTranscoder {
+class Opal_G711_PCM : public OpalStreamedTranscoder {
   public:
-    Opal_G711_uLaw_PCM();
-    virtual int ConvertOne(int sample) const;
-    static int ConvertSample(int sample);
+    Opal_G711_PCM(const OpalMediaFormat & inputMediaFormat);
 
 #if OPAL_G711PLC 
    virtual PBoolean Convert(
@@ -58,6 +56,16 @@ class Opal_G711_uLaw_PCM : public OpalStreamedTranscoder {
     OpalG711_PLC plc;
     PINDEX       lastPayloadSize;
 #endif
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class Opal_G711_uLaw_PCM : public Opal_G711_PCM {
+  public:
+    Opal_G711_uLaw_PCM();
+    virtual int ConvertOne(int sample) const;
+    static int ConvertSample(int sample);
 };
 
 
@@ -73,22 +81,11 @@ class Opal_PCM_G711_uLaw : public OpalStreamedTranscoder {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class Opal_G711_ALaw_PCM : public OpalStreamedTranscoder {
+class Opal_G711_ALaw_PCM : public Opal_G711_PCM {
   public:
     Opal_G711_ALaw_PCM();
     virtual int ConvertOne(int sample) const;
     static int ConvertSample(int sample);
-
-#if OPAL_G711PLC 
-   virtual PBoolean Convert(
-      const RTP_DataFrame & input,  ///<  Input data
-      RTP_DataFrame & output        ///<  Output data
-    );
-
-  protected:
-    OpalG711_PLC plc;
-    PINDEX       lastPayloadSize;
-#endif
 };
 
 
