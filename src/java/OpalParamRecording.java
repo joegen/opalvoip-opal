@@ -49,6 +49,14 @@ public class OpalParamRecording {
     return exampleJNI.OpalParamRecording_m_file_get(swigCPtr, this);
   }
 
+  public void setM_channels(long value) {
+    exampleJNI.OpalParamRecording_m_channels_set(swigCPtr, this, value);
+  }
+
+  public long getM_channels() {
+    return exampleJNI.OpalParamRecording_m_channels_get(swigCPtr, this);
+  }
+
   public OpalParamRecording() {
     this(exampleJNI.new_OpalParamRecording(), true);
   }

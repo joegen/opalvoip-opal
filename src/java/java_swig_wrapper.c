@@ -3951,6 +3951,34 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1f
 }
 
 
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1channels_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  OpalParamRecording *arg1 = (OpalParamRecording *) 0 ;
+  unsigned int arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamRecording **)&jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->m_channels = arg2;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1channels_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  OpalParamRecording *arg1 = (OpalParamRecording *) 0 ;
+  unsigned int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamRecording **)&jarg1; 
+  result = (unsigned int) ((arg1)->m_channels);
+  jresult = (jlong)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_new_1OpalParamRecording(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalParamRecording *result = 0 ;
