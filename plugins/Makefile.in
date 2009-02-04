@@ -78,5 +78,5 @@ clean optclean debugclean:
 install uninstall:
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) $@; fi ; )
 
-optdepend debugdepend bothdepend release tagbuild:
+depend optdepend debugdepend bothdepend release tagbuild:
 	@echo

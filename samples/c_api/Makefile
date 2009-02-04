@@ -68,3 +68,5 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 $(OBJDIR)/$(PROG): $(OBJECTS)
 	 $(CC) $^ $(LDFLAGS) -o $@
 
+depend:
+
