@@ -205,9 +205,8 @@ void OpalRFC2833Proto::SendAsyncFrame()
     return;
   }
 
-  RTP_DataFrame frame;
+  RTP_DataFrame frame(4);
   frame.SetPayloadType(m_payloadType);
-  frame.SetPayloadSize(4);
 
   BYTE * payload = frame.GetPayloadPtr();
   payload[0] = m_transmitCode; // tone

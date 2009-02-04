@@ -321,9 +321,6 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   , rcEnabled(false)
 #endif
 {
-  intermediateFrames.Append(new RTP_DataFrame);
-  finalFrames.Append(new RTP_DataFrame);
-
 #if OPAL_VIDEO
   SetRateControlParameters(stream->GetMediaFormat());
 #endif

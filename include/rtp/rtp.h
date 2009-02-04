@@ -68,7 +68,7 @@ class RTP_DataFrame : public PBYTEArray
   PCLASSINFO(RTP_DataFrame, PBYTEArray);
 
   public:
-    RTP_DataFrame(PINDEX payloadSize = 2048);
+    RTP_DataFrame(PINDEX payloadSize, PINDEX bufferSize = 0);
     RTP_DataFrame(const BYTE * data, PINDEX len, PBoolean dynamic = PTrue);
 
     enum {

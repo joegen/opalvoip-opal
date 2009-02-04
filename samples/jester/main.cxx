@@ -244,7 +244,7 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
 	    }
 	    lastFrameWasSilence = PTrue;
 	} else {
-	    RTP_DataFrame *frame = new RTP_DataFrame;
+	    RTP_DataFrame *frame = new RTP_DataFrame(bytesPerBlock);
 	    if (lastFrameWasSilence) {
 		PTRACE(3, "StartAudio here");
 		cout << "Start Audio at " << PTime() << endl;
@@ -254,7 +254,6 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
 	    frame->SetPayloadType(RTP_DataFrame::L16_Mono);
 	    frame->SetSyncSource(0x12345678);
 	    frame->SetSequenceNumber((WORD)(generateIndex + 100));
-	    frame->SetPayloadSize(bytesPerBlock);
 	    
 	    frame->SetTimestamp(generateTimestamp);
 	    
@@ -291,7 +290,7 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
 
 void JesterProcess::ConsumeUdpPackets(PThread &, INT)
 {
-  RTP_DataFrame readFrame;
+  RTP_DataFrame readFrame(0, bytesPerBlock);
   PBYTEArray silence(bytesPerBlock);
   consumeTimestamp = 0;
   consumeIndex = 0;

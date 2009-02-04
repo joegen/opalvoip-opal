@@ -166,6 +166,7 @@ class OpalJitterBuffer : public PObject
     class Entry : public RTP_DataFrame
     {
       public:
+        Entry() : RTP_DataFrame(0, 512) { } // Allocate enough for 250ms of L16 audio, zero payload size
         PTimeInterval tick;
     };
 

@@ -471,10 +471,8 @@ void AudioTest(const PString & fmtName)
 
   PTones tones("110:0.4-0.1/220:0.4-0.1/440:0.4-0.1/880:0.4-0.1/1760:0.4-0.1");
 
-  RTP_DataFrame source, output, encoded;
-  source.SetPayloadSize(decBlkSize);
-  output.SetPayloadSize(decBlkSize);
-  encoded.SetPayloadSize(PMAX(encoder->GetOptimalDataFrameSize(PFalse), decoder->GetOptimalDataFrameSize(PTrue)));
+  RTP_DataFrame source(decBlkSize), output(decBlkSize);
+  RTP_DataFrame encoded(PMAX(encoder->GetOptimalDataFrameSize(PFalse), decoder->GetOptimalDataFrameSize(PTrue)));
   encoded.SetPayloadType(mediaFormat.GetPayloadType());
 
   int count = 0;
@@ -526,8 +524,7 @@ void VideoTest(const PString & fmtName)
   fakeVideo->SetColourFormat(OpalYUV420P);
   fakeVideo->Open("");
 
-  RTP_DataFrame source;
-  source.SetPayloadSize(fakeVideo->GetMaxFrameBytes()+sizeof(OpalVideoTranscoder::FrameHeader));
+  RTP_DataFrame source(fakeVideo->GetMaxFrameBytes()+sizeof(OpalVideoTranscoder::FrameHeader));
 
   RTP_DataFrameList encoded, output;
 
