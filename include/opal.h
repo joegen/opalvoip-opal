@@ -913,6 +913,9 @@ typedef struct OpalParamRecording {
   const char * m_callToken;  ///< Call token for call being cleared.
   const char * m_file;       /**< File to record into. If NULL then a test is done
                                   for if recording is currently active. */
+  unsigned     m_channels;   /**< Number of channels in WAV file, 1 for mono (default) or 2 for
+                                  stereo where incoming & outgoing audio are in individual
+                                  channels. */
 } OpalParamRecording;
 
 

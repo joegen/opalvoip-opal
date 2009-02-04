@@ -235,6 +235,8 @@ class exampleJNI {
   public final static native String OpalParamRecording_m_callToken_get(long jarg1, OpalParamRecording jarg1_);
   public final static native void OpalParamRecording_m_file_set(long jarg1, OpalParamRecording jarg1_, String jarg2);
   public final static native String OpalParamRecording_m_file_get(long jarg1, OpalParamRecording jarg1_);
+  public final static native void OpalParamRecording_m_channels_set(long jarg1, OpalParamRecording jarg1_, long jarg2);
+  public final static native long OpalParamRecording_m_channels_get(long jarg1, OpalParamRecording jarg1_);
   public final static native long new_OpalParamRecording();
   public final static native void delete_OpalParamRecording(long jarg1);
   public final static native void OpalStatusCallCleared_m_callToken_set(long jarg1, OpalStatusCallCleared jarg1_, String jarg2);
