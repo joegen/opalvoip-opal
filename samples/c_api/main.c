@@ -518,6 +518,7 @@ int DoRecord(const char * to, const char * file)
   command.m_type = OpalCmdStartRecording;
   command.m_param.m_recording.m_callToken = CurrentCallToken;
   command.m_param.m_recording.m_file = file;
+  command.m_param.m_recording.m_channels = 2;
   if ((response = MySendCommand(&command, "Could not start recording")) == NULL)
     return 0;
 
