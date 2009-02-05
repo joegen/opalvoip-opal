@@ -222,9 +222,10 @@ public:
 private:
   void SendStatus(SIP_PDU::StatusCodes code, State state);
 
-  SIPSubscribe::Params m_parameters;
-  SIPDialogContext     m_dialog;
-  bool                 m_unconfirmed;
+  SIPSubscribe::Params     m_parameters;
+  SIPDialogContext         m_dialog;
+  bool                     m_unconfirmed;
+  SIPEventPackageHandler * m_packageHandler;
 };
 
 
@@ -238,6 +239,8 @@ public:
     const SIPEventPackage & eventPackage,
     const SIPDialogContext & dialog
   );
+  ~SIPNotifyHandler();
+
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual PBoolean SendRequest(SIPHandler::State state);
   virtual SIP_PDU::Methods GetMethod ()
@@ -257,9 +260,10 @@ public:
   };
 
 private:
-  SIPEventPackage  m_eventPackage;
-  SIPDialogContext m_dialog;
-  Reasons          m_reason;
+  SIPEventPackage          m_eventPackage;
+  SIPDialogContext         m_dialog;
+  Reasons                  m_reason;
+  SIPEventPackageHandler * m_packageHandler;
 };
 
 
@@ -450,13 +454,9 @@ struct SIPDialogNotification
     Rendering m_rendering;
   } m_local, m_remote;
 
-  SIPDialogNotification(const PString & entity)
-    : m_entity(entity)
-    , m_initiator(false)
-    , m_state(Terminated)
-    , m_eventType(NoEvent)
-    , m_eventCode(0)
-  { }
+  SIPDialogNotification(const PString & entity);
+
+  PString AsString(unsigned version) const;
 };
 
 

@@ -1035,6 +1035,8 @@ public:
   virtual ~SIPEventPackageHandler() { }
   virtual PString GetContentType() const = 0;
   virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request) = 0;
+  virtual void SendingNotify(SIPHandler & /*handler*/, const PString & /*body*/) { }
+  virtual PString GetSubscriptionNotify(SIPHandler & /*handler*/) { return PString::Empty(); }
 };
 
 
