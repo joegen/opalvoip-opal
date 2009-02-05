@@ -618,8 +618,12 @@ typedef struct OpalParamSetUpCall {
   */
 typedef struct OpalStatusIncomingCall {
   const char * m_callToken;     ///< Call token for new call.
-  const char * m_localAddress;  ///< Address of local interface. e.g. "sip:me@here.com"
-  const char * m_remoteAddress; ///< Address of remote party. e.g. "sip:them@there.com"
+  const char * m_localAddress;      ///< URL of local interface. e.g. "sip:me@here.com"
+  const char * m_remoteAddress;     ///< URL of calling party. e.g. "sip:them@there.com"
+  const char * m_remotePartyNumber; ///< This is the E.164 number of the caller, if available.
+  const char * m_remoteDisplayName; ///< Display name calling party. e.g. "Fred Nurk"
+  const char * m_calledAddress;     ///< URL of called party the remote is trying to contact.
+  const char * m_calledPartyNumber; ///< This is the E.164 number of the called party, if available.
   OpalProductDescription m_product; /**< Product description data */
 } OpalStatusIncomingCall;
 

@@ -324,10 +324,15 @@ OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
 PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connection)
 {
   PTRACE(4, "OpalC\tOnShowIncoming " << connection);
+  PSafePtr<OpalConnection> network = connection.GetCall().GetOtherPartyConnection(connection);
   OpalMessageBuffer message(OpalIndIncomingCall);
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, connection.GetLocalPartyURL());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, connection.GetRemotePartyCallbackURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, network->GetLocalPartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, network->GetRemotePartyAddress());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remotePartyNumber, network->GetRemotePartyNumber());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteDisplayName, network->GetRemotePartyName());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledAddress, network->GetCalledDestinationURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledPartyNumber, network->GetCalledDestinationNumber());
 
   const OpalProductInfo & info = connection.GetProductInfo();
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_vendor,  info.vendor);
