@@ -46,7 +46,7 @@
 #define TRACE_OPTIONS "TraceLevel=4 TraceFile=\\MobileOpalLog.txt"
 //#define TRACE_OPTIONS "TraceLevel=4"
 #else
-#define TRACE_OPTIONS "TraceLevel=4 TraceAppend TraceFile=\\MobileOpalLog.txt"
+#define TRACE_OPTIONS "TraceLevel=3 TraceAppend TraceFile=\\MobileOpalLog.txt"
 #endif
 
 #define SPEAKERMODE_METHOD 3
@@ -627,7 +627,7 @@ void CMobileOpalDlg::SetStatusText(UINT ids, const char * str)
     }
 
     if (text.IsEmpty())
-    text = str;
+      text = str;
   }
   else {
     if (ids == 0)
@@ -747,7 +747,17 @@ void CMobileOpalDlg::HandleMessage(OpalMessage & message)
     case OpalIndIncomingCall :
       if (m_incomingCallToken.IsEmpty() && m_currentCallToken.IsEmpty()) {
         m_incomingCallToken = message.m_param.m_incomingCall.m_callToken;
-        SetStatusText(IDS_INCOMING_CALL);
+
+        CString text;
+        text.LoadString(IDS_INCOMING_CALL);
+        text += "\r\n";
+        if (*message.m_param.m_incomingCall.m_remoteDisplayName != '\0')
+          text += message.m_param.m_incomingCall.m_remoteDisplayName;
+        else if (*message.m_param.m_incomingCall.m_remoteAddress != '\0')
+          text += message.m_param.m_incomingCall.m_remoteAddress;
+        m_ctrlStatus.SetWindowText(text);
+        m_ctrlStatus.UpdateWindow();
+
         SetCallButton(true, IDS_ANSWER);
         m_ctrlCallAddress.EnableWindow(false);
         ShowWindow(true);
