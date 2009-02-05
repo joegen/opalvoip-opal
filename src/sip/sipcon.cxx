@@ -276,60 +276,62 @@ void SIPConnection::OnReleased()
   SetPhase(ReleasingPhase);
 
   PSafePtr<SIPTransaction> byeTransaction;
+  SIPDialogNotification::Events notifyDialogEvent = SIPDialogNotification::NoEvent;
+  SIP_PDU::StatusCodes sipCode = SIP_PDU::Failure_BadGateway;
 
   switch (releaseMethod) {
     case ReleaseWithNothing :
       if (!forkedInvitations.IsEmpty())
-        NotifyDialogState(SIPDialogNotification::Terminated, SIPDialogNotification::Timeout);
+        notifyDialogEvent = SIPDialogNotification::Timeout;
       break;
 
     case ReleaseWithResponse :
-      {
-        SIP_PDU::StatusCodes sipCode = SIP_PDU::Failure_BadGateway;
-
-        // Try find best match for return code
-        for (PINDEX i = 0; i < PARRAYSIZE(ReasonToSIPCode); i++) {
-          if (ReasonToSIPCode[i].q931Cause == GetQ931Cause()) {
-            sipCode = ReasonToSIPCode[i].code;
-            break;
-          }
-          if (ReasonToSIPCode[i].reason == callEndReason) {
-            sipCode = ReasonToSIPCode[i].code;
-            break;
-          }
+      // Try find best match for return code
+      for (PINDEX i = 0; i < PARRAYSIZE(ReasonToSIPCode); i++) {
+        if (ReasonToSIPCode[i].q931Cause == GetQ931Cause()) {
+          sipCode = ReasonToSIPCode[i].code;
+          break;
         }
-
-        // EndedByCallForwarded is a special case because it needs extra paramater
-        SendInviteResponse(sipCode, NULL, callEndReason == EndedByCallForwarded ? (const char *)forwardParty : NULL);
-        NotifyDialogState(SIPDialogNotification::Terminated, SIPDialogNotification::Rejected, sipCode);
+        if (ReasonToSIPCode[i].reason == callEndReason) {
+          sipCode = ReasonToSIPCode[i].code;
+          break;
+        }
       }
+
+      // EndedByCallForwarded is a special case because it needs extra paramater
+      SendInviteResponse(sipCode, NULL, callEndReason == EndedByCallForwarded ? (const char *)forwardParty : NULL);
+      notifyDialogEvent = SIPDialogNotification::Rejected;
       break;
 
     case ReleaseWithBYE :
       // create BYE now & delete it later to prevent memory access errors
       byeTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE);
-      switch (GetCallEndReason()) {
-        case EndedByRemoteUser :
-          NotifyDialogState(SIPDialogNotification::Terminated, SIPDialogNotification::RemoteBye);
-          break;
-
-        case OpalConnection::EndedByCallForwarded :
-          NotifyDialogState(SIPDialogNotification::Terminated, SIPDialogNotification::Replaced);
-          break;
-
-        default :
-          NotifyDialogState(SIPDialogNotification::Terminated, SIPDialogNotification::LocalBye);
-      }
       break;
 
     case ReleaseWithCANCEL :
-      {
-        PTRACE(3, "SIP\tCancelling " << forkedInvitations.GetSize() << " transactions.");
-        for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation)
-          invitation->Cancel();
-      }
-      NotifyDialogState(SIPDialogNotification::Terminated, SIPDialogNotification::Cancelled);
+      PTRACE(3, "SIP\tCancelling " << forkedInvitations.GetSize() << " transactions.");
+      for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation)
+        invitation->Cancel();
+      notifyDialogEvent = SIPDialogNotification::Cancelled;
   }
+
+  // No termination event set yet, get it from the call end reason
+  if (notifyDialogEvent == SIPDialogNotification::NoEvent) {
+    switch (GetCallEndReason()) {
+      case EndedByRemoteUser :
+        notifyDialogEvent = SIPDialogNotification::RemoteBye;
+        break;
+
+      case OpalConnection::EndedByCallForwarded :
+        notifyDialogEvent = SIPDialogNotification::Replaced;
+        break;
+
+      default :
+        notifyDialogEvent = SIPDialogNotification::LocalBye;
+    }
+  }
+
+  NotifyDialogState(SIPDialogNotification::Terminated, notifyDialogEvent, sipCode);
 
   // Close media
   CloseMediaStreams();
