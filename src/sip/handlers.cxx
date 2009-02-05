@@ -246,7 +246,6 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
   }
 
   PTRACE(2, "SIP\tDid not start transaction on " << transport);
-  OnFailed(SIP_PDU::Local_TransportError);
   return false;
 }
 
@@ -288,6 +287,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
       if (WriteSIPHandler(*m_transport))
         return true;
     }
+    OnFailed(SIP_PDU::Local_TransportError);
     retryLater = true;
   }
 
