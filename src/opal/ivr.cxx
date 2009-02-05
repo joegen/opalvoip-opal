@@ -382,8 +382,10 @@ void OpalIVRConnection::OnMediaPatchStop(unsigned sessionId, bool)
 {
   // lose the audio, then lose the call
   OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
-  if (stream == NULL || !stream->IsOpen() || stream->GetSessionID() == sessionId)
+  if (stream == NULL || !stream->IsOpen() || stream->GetSessionID() == sessionId) {
+    synchronousOnRelease = false; // Deadlocks if try to do it synchronously ...
     Release();
+  }
 }
 
 
