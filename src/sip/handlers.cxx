@@ -664,6 +664,7 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
                params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
   , m_parameters(params)
   , m_unconfirmed(true)
+  , m_packageHandler(SIPEventPackageFactory::CreateInstance(params.m_eventPackage))
 {
   // Put possibly adjusted value back
   m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
@@ -683,6 +684,7 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
 SIPSubscribeHandler::~SIPSubscribeHandler()
 {
   PTRACE(4, "SIP\tDeleting SIPSubscribeHandler " << GetAddressOfRecord());
+  delete m_packageHandler;
 }
 
 
@@ -821,15 +823,12 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       SetExpire(expire.AsUnsigned());
   }
 
-  SIPEventPackage eventPackage = request.GetMIME().GetEvent();
-  SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(eventPackage);
-  if (packageHandler == NULL)
+  if (m_packageHandler == NULL)
     request.SendResponse(*m_transport, SIP_PDU::Failure_BadEvent, &endpoint);
-  else if (packageHandler->OnReceivedNOTIFY(*this, request))
+  else if (m_packageHandler->OnReceivedNOTIFY(*this, request))
     request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
   else
     request.SendResponse(*m_transport, SIP_PDU::Failure_BadRequest, &endpoint);
-  delete packageHandler;
   return true;
 }
 
@@ -1048,11 +1047,35 @@ class SIPDialogEventPackageHandler : public SIPEventPackageHandler
     handler.GetEndPoint().OnDialogInfoReceived(info);
     return true;
   }
+
+  virtual void SendingNotify(SIPHandler & /*handler*/, const PString & body)
+  {
+    m_lastBody = body;
+  }
+
+  virtual PString GetSubscriptionNotify(SIPHandler & handler)
+  {
+    if (m_lastBody.IsEmpty())
+      m_lastBody = SIPDialogNotification(handler.GetAddressOfRecord().AsString()).AsString(1);
+    return m_lastBody;
+  }
+
+  PString m_lastBody;
 };
 
 static SIPEventPackageFactory::Worker<SIPDialogEventPackageHandler> dialogEventPackageHandler(SIPSubscribe::Dialog);
 
 #endif // P_EXPAT
+
+
+SIPDialogNotification::SIPDialogNotification(const PString & entity)
+  : m_entity(entity)
+  , m_initiator(false)
+  , m_state(Terminated)
+  , m_eventType(NoEvent)
+  , m_eventCode(0)
+{
+}
 
 
 PString SIPDialogNotification::GetStateName(States state)
@@ -1089,6 +1112,77 @@ PString SIPDialogNotification::GetEventName(Events state)
 }
 
 
+static void OutputParticipant(ostream & body, const char * name, const SIPDialogNotification::Participant & participant)
+{
+  if (participant.m_URI.IsEmpty())
+    return;
+
+  body << "    <" << name << ">\r\n";
+
+  if (!participant.m_identity.IsEmpty()) {
+    body << "      <identity";
+    if (!participant.m_display.IsEmpty())
+      body << " display=\"" << participant.m_display << '"';
+    body << '>' << participant.m_identity << "</identity>\r\n";
+  }
+
+  body << "      <target uri=\"" << participant.m_URI << "\">\r\n";
+
+  if (participant.m_appearance >= 0)
+    body << "        <param pname=\"appearance\" pval=\"" << participant.m_appearance << "\"/>\r\n"
+            "        <param pname=\"x-line-id\" pval=\"" << participant.m_appearance << "\"/>\r\n";
+
+  if (participant.m_byeless)
+    body << "        <param pname=\"sip.byeless\" pval=\"true\"/>\r\n";
+
+  if (participant.m_rendering >= 0)
+    body << "        <param pname=\"sip.rendering\" pval=\"" << (participant.m_rendering > 0 ? "yes" : "no") << "\"/>\r\n";
+
+  body << "      </target>\r\n"
+       << "    </" << name << ">\r\n";
+}
+
+
+PString SIPDialogNotification::AsString(unsigned version) const
+{
+  PStringStream body;
+  body << "<?xml version=\"1.0\"?>\r\n"
+          "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" version=\""
+       << version << "\" state=\"partial\" entity=\""
+       << m_entity << "\">\r\n";
+
+  if (!m_dialogId) {
+    // Start dialog XML tag
+    body << "  <dialog id=\"" << m_dialogId << '"';
+    if (!m_callId)
+      body << " call-id=\"" << m_callId << '"';
+    if (!m_local.m_dialogTag)
+      body << " local-tag=\"" << m_local.m_dialogTag << '"';
+    if (!m_remote.m_dialogTag)
+      body << " remote-tag=\"" << m_remote.m_dialogTag << '"';
+    body << " direction=\"" << (m_initiator ? "initiator" : "receiver") << "\">\r\n";
+
+    // State XML tag & value
+    body << "    <state";
+    if (m_eventType > SIPDialogNotification::NoEvent) {
+      body << " event=\"" << GetEventName() << '"';
+      if (m_eventCode > 0)
+        body << " code=\"" << m_eventCode << '"';
+    }
+    body << '>' << GetStateName() << "</state>\r\n";
+
+    // Participant XML tags (local/remopte)
+    OutputParticipant(body, "local", m_local);
+    OutputParticipant(body, "remote", m_remote);
+
+    // Close out dialog tag
+    body << "  </dialog>\r\n";
+  }
+
+  body << "</dialog-info>\r\n";
+  return body;
+}
+
 /////////////////////////////////////////////////////////////////////////
 
 SIPNotifyHandler::SIPNotifyHandler(SIPEndPoint & endpoint,
@@ -1099,8 +1193,15 @@ SIPNotifyHandler::SIPNotifyHandler(SIPEndPoint & endpoint,
   , m_eventPackage(eventPackage)
   , m_dialog(dialog)
   , m_reason(Deactivated)
+  , m_packageHandler(SIPEventPackageFactory::CreateInstance(eventPackage))
 {
   callID = m_dialog.GetCallID();
+}
+
+
+SIPNotifyHandler::~SIPNotifyHandler()
+{
+  delete m_packageHandler;
 }
 
 
@@ -1131,6 +1232,14 @@ PBoolean SIPNotifyHandler::SendRequest(SIPHandler::State state)
   // If times out, i.e. Refreshing, then this is actually a time out unsubscribe.
   if (state == Refreshing)
     m_reason = Timeout;
+
+  if (m_packageHandler != NULL) {
+    if (body.IsEmpty())
+      SetBody(m_packageHandler->GetSubscriptionNotify(*this));
+    else
+      m_packageHandler->SendingNotify(*this, body);
+  }
+
   return SIPHandler::SendRequest(state == Refreshing ? Unsubscribing : state);
 }
 

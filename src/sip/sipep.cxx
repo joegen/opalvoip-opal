@@ -601,12 +601,8 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
     return true;
 
   // Send initial NOTIFY as per spec 3.1.6.2/RFC3265
-  if (expires > 0 && eventPackage == SIPSubscribe::Dialog)
-    SendNotifyDialogInfo(SIPDialogNotification(handler->GetAddressOfRecord().AsString()));
-  else {
-    handler->SetBody(PString::Empty());
-    handler->SendRequest(expires > 0 ? SIPHandler::Subscribing : SIPHandler::Unsubscribing);
-  }
+  handler->SetBody(PString::Empty());
+  handler->SendRequest(expires > 0 ? SIPHandler::Subscribing : SIPHandler::Unsubscribing);
 
   return true;
 }
@@ -1263,76 +1259,9 @@ void SIPEndPoint::OnDialogInfoReceived(const SIPDialogNotification & PTRACE_PARA
 }
 
 
-static void OutputParticipant(ostream & body, const char * name, const SIPDialogNotification::Participant & participant)
-{
-  if (participant.m_URI.IsEmpty())
-    return;
-
-  body << "    <" << name << ">\r\n";
-
-  if (!participant.m_identity.IsEmpty()) {
-    body << "      <identity";
-    if (!participant.m_display.IsEmpty())
-      body << " display=\"" << participant.m_display << '"';
-    body << '>' << participant.m_identity << "</identity>\r\n";
-  }
-
-  body << "      <target uri=\"" << participant.m_URI << "\">\r\n";
-
-  if (participant.m_appearance >= 0)
-    body << "        <param pname=\"appearance\" pval=\"" << participant.m_appearance << "\"/>\r\n"
-            "        <param pname=\"x-line-id\" pval=\"" << participant.m_appearance << "\"/>\r\n";
-
-  if (participant.m_byeless)
-    body << "        <param pname=\"sip.byeless\" pval=\"true\"/>\r\n";
-
-  if (participant.m_rendering >= 0)
-    body << "        <param pname=\"sip.rendering\" pval=\"" << (participant.m_rendering > 0 ? "yes" : "no") << "\"/>\r\n";
-
-  body << "      </target>\r\n"
-       << "    </" << name << ">\r\n";
-}
-
-
 void SIPEndPoint::SendNotifyDialogInfo(const SIPDialogNotification & info)
 {
-  PStringStream body;
-  body << "<?xml version=\"1.0\"?>\r\n"
-          "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" version=\""
-       << m_dialogNotifyVersion++ << "\" state=\"partial\" entity=\""
-       << info.m_entity << "\">\r\n";
-
-  if (!info.m_dialogId) {
-    // Start dialog XML tag
-    body << "  <dialog id=\"" << info.m_dialogId << '"';
-    if (!info.m_callId)
-      body << " call-id=\"" << info.m_callId << '"';
-    if (!info.m_local.m_dialogTag)
-      body << " local-tag=\"" << info.m_local.m_dialogTag << '"';
-    if (!info.m_remote.m_dialogTag)
-      body << " remote-tag=\"" << info.m_remote.m_dialogTag << '"';
-    body << " direction=\"" << (info.m_initiator ? "initiator" : "receiver") << "\">\r\n";
-
-    // State XML tag & value
-    body << "    <state";
-    if (info.m_eventType > SIPDialogNotification::NoEvent) {
-      body << " event=\"" << info.GetEventName() << '"';
-      if (info.m_eventCode > 0)
-        body << " code=\"" << info.m_eventCode << '"';
-    }
-    body << '>' << info.GetStateName() << "</state>\r\n";
-
-    // Participant XML tags (local/remopte)
-    OutputParticipant(body, "local", info.m_local);
-    OutputParticipant(body, "remote", info.m_remote);
-
-    // Close out dialog tag
-    body << "  </dialog>\r\n";
-  }
-
-  body << "</dialog-info>\r\n";
-
-  Notify(info.m_entity, SIPEventPackage(SIPSubscribe::Dialog), body);
+  Notify(info.m_entity, SIPEventPackage(SIPSubscribe::Dialog), info.AsString(m_dialogNotifyVersion++));
 }
 
 
