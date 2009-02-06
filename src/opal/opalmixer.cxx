@@ -413,9 +413,6 @@ void OpalAudioMixer::WriteMixedFrame()
   // lock the mixer
   PWaitAndSignal m(mutex);
 
-  // set the timestamp of the new frame
-  mixerFrame->SetTimestamp(outputTimestamp);
-
   // iterate through the streams and get an unmixed frame from each one
   StreamInfoMap_T::iterator r;
   OpalAudioMixerStream::StreamFrame tempFrame;

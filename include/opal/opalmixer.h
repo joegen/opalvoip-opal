@@ -323,7 +323,6 @@ class OpalAudioMixer
       protected:
         MixerPCMMap_T channelData;
 
-        DWORD timeStamp;
         PINDEX frameLengthSamples;
         mutable PIntArray mixedData;
         mutable PMutex mutex;
@@ -335,7 +334,6 @@ class OpalAudioMixer
         PBoolean GetStereoFrame(OpalAudioMixerStream::StreamFrame & frame) const;
         PBoolean GetChannelFrame(Key_T key, OpalAudioMixerStream::StreamFrame & frame) const;
         void InsertFrame(Key_T key, OpalAudioMixerStream::StreamFrame & frame);
-        void SetTimestamp(DWORD outputTimestamp) { timeStamp = outputTimestamp; }
 	};
 
   protected:
