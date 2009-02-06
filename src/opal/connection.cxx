@@ -712,6 +712,13 @@ void OpalConnection::OnPatchMediaStream(PBoolean PTRACE_PARAM(isSource), OpalMed
   PTRACE(3, "OpalCon\t" << (isSource ? "Source" : "Sink") << " stream of connection " << *this << " uses patch " << patch);
 }
 
+
+static PString MakeRecordingKey(const OpalMediaPatch & patch)
+{
+  return psprintf("%08x", &patch);
+}
+
+
 void OpalConnection::EnableRecording()
 {
   if (!LockReadWrite())
@@ -722,12 +729,13 @@ void OpalConnection::EnableRecording()
     OpalMediaPatch * patch = stream->GetPatch();
     if (patch != NULL) {
       patch->AddFilter(recordNotifier, OPAL_PCM16);
-      PTRACE(4, "OpalCon\tAdded record filter on connection " << *this << ", patch " << *patch);
+      PTRACE(4, "OpalCon\tAdded record filter on " << MakeRecordingKey(*patch));
     }
   }
   
   UnlockReadWrite();
 }
+
 
 void OpalConnection::DisableRecording()
 {
@@ -737,8 +745,10 @@ void OpalConnection::DisableRecording()
   OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
   if (stream != NULL) {
     OpalMediaPatch * patch = stream->GetPatch();
-    if (patch != NULL)
+    if (patch != NULL) {
       patch->RemoveFilter(recordNotifier, OPAL_PCM16);
+      PTRACE(4, "OpalCon\tRemoved record filter on " << MakeRecordingKey(*patch));
+    }
   }
   
   UnlockReadWrite();
@@ -748,7 +758,7 @@ void OpalConnection::DisableRecording()
 void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
-  GetCall().OnRecordAudio(patch->GetSource().GetID(), frame);
+  GetCall().OnRecordAudio(MakeRecordingKey(*patch), frame);
 }
 
 
