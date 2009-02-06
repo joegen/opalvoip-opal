@@ -458,7 +458,7 @@ struct SIPDialogNotification : public PObject
     Rendering m_rendering;
   } m_local, m_remote;
 
-  SIPDialogNotification(const PString & entity);
+  SIPDialogNotification(const PString & entity = PString::Empty());
 
   void PrintOn(ostream & strm) const;
 };
