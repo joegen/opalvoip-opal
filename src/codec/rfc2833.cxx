@@ -131,6 +131,7 @@ OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & r
 
   m_receiveTimer.SetNotifier(PCREATE_NOTIFIER(ReceiveTimeout));
   m_asyncTransmitTimer.SetNotifier(PCREATE_NOTIFIER(AsyncTimeout));
+  m_asyncDurationTimer.SetNotifier(PCREATE_NOTIFIER(AsyncTimeout));
 
   SetRxCapability(fmt.GetOptionString("FMTP", "0-15"));
   m_txCapabilitySet = m_rxCapabilitySet;
@@ -173,7 +174,7 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 
     // Starting so cannot have zero duration
     if (duration == 0)
-      duration = 180;
+      duration = 90;
   }
 
   if (duration == 0)
@@ -216,32 +217,39 @@ void OpalRFC2833Proto::SendAsyncFrame()
   switch (m_transmitState) {
     case TransmitActive:
       // if the duration has ended, then go into ending state
-      if (!m_asyncDurationTimer.IsRunning()) 
-        m_transmitState = TransmitEnding1;
-
-      // set duration to time since start of time
-      if (m_asyncStart != PTimeInterval(0)) 
-        m_transmitDuration = (PTimer::Tick() - m_asyncStart).GetInterval() * 8;
-      else {
-        m_transmitDuration = 0;
-        frame.SetMarker(true);
-        m_asyncStart = PTimer::Tick();
+      if (m_asyncDurationTimer.IsRunning()) {
+        // set duration to time since start of time
+        if (m_asyncStart != PTimeInterval(0)) 
+          m_transmitDuration = (PTimer::Tick() - m_asyncStart).GetInterval() * 8;
+        else {
+          m_transmitDuration = 0;
+          frame.SetMarker(true);
+          m_asyncStart = PTimer::Tick();
+        }
+        break;
       }
-      break;
+
+      m_transmitState = TransmitEnding1;
+      m_asyncTransmitTimer.RunContinuous(5); // Output the three end packets a bit quicker.
+      // Do next case
+
     case TransmitEnding1:
       payload[1] |= 0x80;
       m_transmitDuration = (PTimer::Tick() - m_asyncStart).GetInterval() * 8;
       m_transmitState = TransmitEnding2;
       break;
+
     case TransmitEnding2:
       payload[1] |= 0x80;
       m_transmitState = TransmitEnding3;
       break;
+
     case TransmitEnding3:
       payload[1] |= 0x80;
       m_transmitState = TransmitIdle;
       m_asyncTransmitTimer.Stop();
       break;
+
     default:
       PAssertAlways("RFC2833\tunknown transmit state");
       return;
