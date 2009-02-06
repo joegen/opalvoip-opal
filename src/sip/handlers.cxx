@@ -1073,7 +1073,7 @@ public:
     const SIPDialogNotification * info = dynamic_cast<const SIPDialogNotification *>(data);
     if (info != NULL) {
       if (info->m_state != SIPDialogNotification::Terminated)
-        m_activeDialogs.insert(pair<PString, SIPDialogNotification>(info->m_callId, *info));
+        m_activeDialogs[info->m_callId] = *info;
       else {
         iter = m_activeDialogs.find(info->m_callId);
         if (iter != m_activeDialogs.end())
