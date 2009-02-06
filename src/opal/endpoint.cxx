@@ -308,6 +308,9 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
   for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener)
     AddTransportAddresses(interfaceAddresses, excludeLocalHost, natInterfaceIP, natExternalIP, listener->GetTransportAddress());
 
+  PTRACE(4, "OpalMan\tListener interfaces: associated transport="
+         << (associatedTransport != NULL ? associatedTransport->GetLocalAddress() : PString("None"))
+         << "\n    " << setfill(',') << interfaceAddresses);
   return interfaceAddresses;
 }
 
