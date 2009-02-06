@@ -307,21 +307,40 @@ void CallGen::Main()
   if (args.HasOption('g')) {
     PString gkAddr = args.GetOptionString('g');
     cout << "Registering with gatekeeper \"" << gkAddr << "\" ..." << flush;
-    if (h323->UseGatekeeper(gkAddr))
-      cout << "\nGatekeeper set to \"" << *h323->GetGatekeeper() << '"' << endl;
-    else {
+    if (!h323->UseGatekeeper(gkAddr)) {
       cout << "\nError registering with gatekeeper at \"" << gkAddr << '"' << endl;
       return;
     }
   }
   else if (!args.HasOption('n')) {
     cout << "Searching for gatekeeper ..." << flush;
-    if (h323->UseGatekeeper())
-      cout << "\nGatekeeper found: " << *h323->GetGatekeeper() << endl;
-    else {
+    if (!h323->UseGatekeeper()) {
       cout << "\nNo gatekeeper found." << endl;
       if (args.HasOption("require-gatekeeper")) 
         return;
+    }
+  }
+
+  H323Gatekeeper * gk = h323->GetGatekeeper();
+  if (gk != NULL) {
+    H323Gatekeeper::RegistrationFailReasons reason;
+    while ((reason = gk->GetRegistrationFailReason()) == H323Gatekeeper::UnregisteredLocally)
+      PThread::Sleep(500);
+    switch (reason) {
+      case H323Gatekeeper::RegistrationSuccessful :
+        cout << "\nGatekeeper set to \"" << *gk << '"' << endl;
+        break;
+      case H323Gatekeeper::DuplicateAlias :
+        cout << "\nGatekeeper registration failed: duplicate alias" << endl;
+        break;
+      case H323Gatekeeper::SecurityDenied :
+        cout << "\nGatekeeper registration failed: security denied" << endl;
+        break;
+      case H323Gatekeeper::TransportError :
+        cout << "\nGatekeeper registration failed: transport error" << endl;
+        break;
+      default :
+        cout << "\nGatekeeper registration failed: code=" << reason << endl;
     }
   }
 
