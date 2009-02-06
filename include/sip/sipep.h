@@ -519,7 +519,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     bool Notify(
       const SIPURL & targetAddress, ///< Address that was subscribed
       const PString & eventPackage, ///< Event package for notification
-      const PString & body          ///< Body of notification
+      const PObject & body          ///< Body of notification
     );
 
 
@@ -805,7 +805,6 @@ class SIPEndPoint : public OpalRTPEndPoint
     PTimer                  natBindingTimer;
     NATBindingRefreshMethod natMethod;
     PAtomicInteger          lastSentCSeq;
-    unsigned                m_dialogNotifyVersion;
     int                     m_defaultAppearanceCode;
 
     struct SIP_PDU_Work
