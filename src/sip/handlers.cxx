@@ -994,6 +994,12 @@ static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotifica
 
 class SIPDialogEventPackageHandler : public SIPEventPackageHandler
 {
+public:
+  SIPDialogEventPackageHandler()
+    : m_dialogNotifyVersion(1)
+  {
+  }
+
   virtual PString GetContentType() const
   {
     return "application/dialog-info+xml";
@@ -1014,9 +1020,12 @@ class SIPDialogEventPackageHandler : public SIPEventPackageHandler
       return false;
 
     SIPDialogNotification info(rootElement->GetAttribute("entity"));
+    if (info.m_entity.IsEmpty())
+      return false;
 
-    PXMLElement * dialogElement = rootElement->GetElement("dialog");
-    if (dialogElement != NULL && !info.m_entity.IsEmpty()) {
+    PINDEX index = 0;
+    PXMLElement * dialogElement;
+    while ((dialogElement = rootElement->GetElement("dialog", index)) != NULL) {
       info.m_callId = dialogElement->GetAttribute("call-id");
       info.m_local.m_dialogTag = dialogElement->GetAttribute("local-tag");
       info.m_remote.m_dialogTag = dialogElement->GetAttribute("remote-tag");
@@ -1042,25 +1051,47 @@ class SIPDialogEventPackageHandler : public SIPEventPackageHandler
 
       ParseParticipant(dialogElement->GetElement("local"), info.m_local);
       ParseParticipant(dialogElement->GetElement("remote"), info.m_remote);
+      handler.GetEndPoint().OnDialogInfoReceived(info);
+      index++;
     }
 
-    handler.GetEndPoint().OnDialogInfoReceived(info);
+    if (index == 0)
+      handler.GetEndPoint().OnDialogInfoReceived(info);
     return true;
   }
 
-  virtual void SendingNotify(SIPHandler & /*handler*/, const PString & body)
+  virtual PString OnSendNOTIFY(SIPHandler & handler, const PObject * data)
   {
-    m_lastBody = body;
+    PStringStream body;
+    body << "<?xml version=\"1.0\"?>\r\n"
+            "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" version=\""
+         << m_dialogNotifyVersion++ << "\" state=\"partial\" entity=\""
+         << handler.GetAddressOfRecord() << "\">\r\n";
+
+    map<PString, SIPDialogNotification>::iterator iter;
+
+    const SIPDialogNotification * info = dynamic_cast<const SIPDialogNotification *>(data);
+    if (info != NULL) {
+      if (info->m_state != SIPDialogNotification::Terminated)
+        m_activeDialogs.insert(pair<PString, SIPDialogNotification>(info->m_callId, *info));
+      else {
+        iter = m_activeDialogs.find(info->m_callId);
+        if (iter != m_activeDialogs.end())
+          m_activeDialogs.erase(iter);
+
+        body << *info;
+      }
+    }
+
+    for (iter = m_activeDialogs.begin(); iter != m_activeDialogs.end(); ++iter)
+      body << iter->second;
+
+    body << "</dialog-info>\r\n";
+    return body;
   }
 
-  virtual PString GetSubscriptionNotify(SIPHandler & handler)
-  {
-    if (m_lastBody.IsEmpty())
-      m_lastBody = SIPDialogNotification(handler.GetAddressOfRecord().AsString()).AsString(1);
-    return m_lastBody;
-  }
-
-  PString m_lastBody;
+  unsigned m_dialogNotifyVersion;
+  map<PString, SIPDialogNotification> m_activeDialogs;
 };
 
 static SIPEventPackageFactory::Worker<SIPDialogEventPackageHandler> dialogEventPackageHandler(SIPSubscribe::Dialog);
@@ -1112,75 +1143,67 @@ PString SIPDialogNotification::GetEventName(Events state)
 }
 
 
-static void OutputParticipant(ostream & body, const char * name, const SIPDialogNotification::Participant & participant)
+static void OutputParticipant(ostream & strm, const char * name, const SIPDialogNotification::Participant & participant)
 {
   if (participant.m_URI.IsEmpty())
     return;
 
-  body << "    <" << name << ">\r\n";
+  strm << "    <" << name << ">\r\n";
 
   if (!participant.m_identity.IsEmpty()) {
-    body << "      <identity";
+    strm << "      <identity";
     if (!participant.m_display.IsEmpty())
-      body << " display=\"" << participant.m_display << '"';
-    body << '>' << participant.m_identity << "</identity>\r\n";
+      strm << " display=\"" << participant.m_display << '"';
+    strm << '>' << participant.m_identity << "</identity>\r\n";
   }
 
-  body << "      <target uri=\"" << participant.m_URI << "\">\r\n";
+  strm << "      <target uri=\"" << participant.m_URI << "\">\r\n";
 
   if (participant.m_appearance >= 0)
-    body << "        <param pname=\"appearance\" pval=\"" << participant.m_appearance << "\"/>\r\n"
+    strm << "        <param pname=\"appearance\" pval=\"" << participant.m_appearance << "\"/>\r\n"
             "        <param pname=\"x-line-id\" pval=\"" << participant.m_appearance << "\"/>\r\n";
 
   if (participant.m_byeless)
-    body << "        <param pname=\"sip.byeless\" pval=\"true\"/>\r\n";
+    strm << "        <param pname=\"sip.byeless\" pval=\"true\"/>\r\n";
 
   if (participant.m_rendering >= 0)
-    body << "        <param pname=\"sip.rendering\" pval=\"" << (participant.m_rendering > 0 ? "yes" : "no") << "\"/>\r\n";
+    strm << "        <param pname=\"sip.rendering\" pval=\"" << (participant.m_rendering > 0 ? "yes" : "no") << "\"/>\r\n";
 
-  body << "      </target>\r\n"
+  strm << "      </target>\r\n"
        << "    </" << name << ">\r\n";
 }
 
 
-PString SIPDialogNotification::AsString(unsigned version) const
+void SIPDialogNotification::PrintOn(ostream & strm) const
 {
-  PStringStream body;
-  body << "<?xml version=\"1.0\"?>\r\n"
-          "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" version=\""
-       << version << "\" state=\"partial\" entity=\""
-       << m_entity << "\">\r\n";
+  if (m_dialogId.IsEmpty())
+    return;
 
-  if (!m_dialogId) {
-    // Start dialog XML tag
-    body << "  <dialog id=\"" << m_dialogId << '"';
-    if (!m_callId)
-      body << " call-id=\"" << m_callId << '"';
-    if (!m_local.m_dialogTag)
-      body << " local-tag=\"" << m_local.m_dialogTag << '"';
-    if (!m_remote.m_dialogTag)
-      body << " remote-tag=\"" << m_remote.m_dialogTag << '"';
-    body << " direction=\"" << (m_initiator ? "initiator" : "receiver") << "\">\r\n";
+  // Start dialog XML tag
+  strm << "  <dialog id=\"" << m_dialogId << '"';
+  if (!m_callId)
+    strm << " call-id=\"" << m_callId << '"';
+  if (!m_local.m_dialogTag)
+    strm << " local-tag=\"" << m_local.m_dialogTag << '"';
+  if (!m_remote.m_dialogTag)
+    strm << " remote-tag=\"" << m_remote.m_dialogTag << '"';
+  strm << " direction=\"" << (m_initiator ? "initiator" : "receiver") << "\">\r\n";
 
-    // State XML tag & value
-    body << "    <state";
-    if (m_eventType > SIPDialogNotification::NoEvent) {
-      body << " event=\"" << GetEventName() << '"';
-      if (m_eventCode > 0)
-        body << " code=\"" << m_eventCode << '"';
-    }
-    body << '>' << GetStateName() << "</state>\r\n";
-
-    // Participant XML tags (local/remopte)
-    OutputParticipant(body, "local", m_local);
-    OutputParticipant(body, "remote", m_remote);
-
-    // Close out dialog tag
-    body << "  </dialog>\r\n";
+  // State XML tag & value
+  strm << "    <state";
+  if (m_eventType > SIPDialogNotification::NoEvent) {
+    strm << " event=\"" << GetEventName() << '"';
+    if (m_eventCode > 0)
+      strm << " code=\"" << m_eventCode << '"';
   }
+  strm << '>' << GetStateName() << "</state>\r\n";
 
-  body << "</dialog-info>\r\n";
-  return body;
+  // Participant XML tags (local/remopte)
+  OutputParticipant(strm, "local", m_local);
+  OutputParticipant(strm, "remote", m_remote);
+
+  // Close out dialog tag
+  strm << "  </dialog>\r\n";
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -1233,14 +1256,23 @@ PBoolean SIPNotifyHandler::SendRequest(SIPHandler::State state)
   if (state == Refreshing)
     m_reason = Timeout;
 
-  if (m_packageHandler != NULL) {
-    if (body.IsEmpty())
-      SetBody(m_packageHandler->GetSubscriptionNotify(*this));
-    else
-      m_packageHandler->SendingNotify(*this, body);
+  return SIPHandler::SendRequest(state == Refreshing ? Unsubscribing : state);
+}
+
+
+bool SIPNotifyHandler::SendNotify(const PObject * body)
+{
+  if (m_packageHandler != NULL)
+    SetBody(m_packageHandler->OnSendNOTIFY(*this, body));
+  else if (body == NULL)
+    SetBody(PString::Empty());
+  else {
+    PStringStream str;
+    str << body;
+    SetBody(str);
   }
 
-  return SIPHandler::SendRequest(state == Refreshing ? Unsubscribing : state);
+  return SendRequest(Subscribing);
 }
 
 

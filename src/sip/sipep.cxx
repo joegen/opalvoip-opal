@@ -64,7 +64,6 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   , notifierTimeToLive(0, 0, 0, 1)   // 1 hour
   , natBindingTimeout(0, 0, 1)       // 1 minute
   , m_shuttingDown(false)
-  , m_dialogNotifyVersion(1)
   , m_defaultAppearanceCode(-1)
 
 #ifdef _MSC_VER
@@ -601,8 +600,10 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
     return true;
 
   // Send initial NOTIFY as per spec 3.1.6.2/RFC3265
-  handler->SetBody(PString::Empty());
-  handler->SendRequest(expires > 0 ? SIPHandler::Subscribing : SIPHandler::Unsubscribing);
+  if (expires > 0)
+    handler->SendNotify(NULL);
+  else
+    handler->SendRequest(SIPHandler::Unsubscribing);
 
   return true;
 }
@@ -1119,21 +1120,19 @@ bool SIPEndPoint::CanNotify(const PString & eventPackage)
 }
 
 
-bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const PString & body)
+bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const PObject & body)
 {
-  bool one = false;
+  bool atLeastOne = false;
 
   for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadWrite); handler != NULL; ++handler) {
     if (handler->GetMethod() == SIP_PDU::Method_NOTIFY &&
         handler->GetAddressOfRecord() == aor &&
-        handler->GetEventPackage() == eventPackage) {
-      handler->SetBody(body);
-      if (handler->SendRequest(SIPHandler::Subscribing))
-        one = true;
-    }
+        handler->GetEventPackage() == eventPackage &&
+        handler->SendNotify(&body))
+      atLeastOne = true;
   }
 
-  return one;
+  return atLeastOne;
 }
 
 PBoolean SIPEndPoint::Message(const PString & to, const PString & body)
@@ -1261,7 +1260,7 @@ void SIPEndPoint::OnDialogInfoReceived(const SIPDialogNotification & PTRACE_PARA
 
 void SIPEndPoint::SendNotifyDialogInfo(const SIPDialogNotification & info)
 {
-  Notify(info.m_entity, SIPEventPackage(SIPSubscribe::Dialog), info.AsString(m_dialogNotifyVersion++));
+  Notify(info.m_entity, SIPEventPackage(SIPSubscribe::Dialog), info);
 }
 
 

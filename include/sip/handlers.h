@@ -122,6 +122,7 @@ public:
   virtual void OnFailed(SIP_PDU::StatusCodes);
 
   virtual PBoolean SendRequest(SIPHandler::State state);
+  virtual bool SendNotify(const PObject * /*body*/) { return false; }
 
   SIPEndPoint & GetEndPoint() const { return endpoint; }
 
@@ -249,6 +250,7 @@ public:
     { return m_eventPackage; }
 
   virtual bool IsDuplicateCSeq(unsigned sequenceNumber) { return m_dialog.IsDuplicateCSeq(sequenceNumber); }
+  virtual bool SendNotify(const PObject * body);
 
   enum Reasons {
     Deactivated,
@@ -395,8 +397,10 @@ struct SIPPresenceInfo
 
 /** Information for SIP "dialog" event package notification messages.
   */
-struct SIPDialogNotification
+struct SIPDialogNotification : public PObject
 {
+  PCLASSINFO(SIPDialogNotification, PObject);
+
   enum States {
     Terminated,
     Trying,
@@ -456,7 +460,7 @@ struct SIPDialogNotification
 
   SIPDialogNotification(const PString & entity);
 
-  PString AsString(unsigned version) const;
+  void PrintOn(ostream & strm) const;
 };
 
 
