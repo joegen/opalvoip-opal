@@ -277,7 +277,7 @@ void SIPConnection::OnReleased()
 
   PSafePtr<SIPTransaction> byeTransaction;
   SIPDialogNotification::Events notifyDialogEvent = SIPDialogNotification::NoEvent;
-  SIP_PDU::StatusCodes sipCode = SIP_PDU::Failure_BadGateway;
+  SIP_PDU::StatusCodes sipCode = SIP_PDU::IllegalStatusCode;
 
   switch (releaseMethod) {
     case ReleaseWithNothing :
@@ -287,6 +287,7 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithResponse :
       // Try find best match for return code
+      sipCode = SIP_PDU::Failure_BadGateway;
       for (PINDEX i = 0; i < PARRAYSIZE(ReasonToSIPCode); i++) {
         if (ReasonToSIPCode[i].q931Cause == GetQ931Cause()) {
           sipCode = ReasonToSIPCode[i].code;
