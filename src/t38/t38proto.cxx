@@ -505,7 +505,8 @@ PBoolean OpalFaxMediaStream::Close()
 
 PBoolean OpalFaxMediaStream::IsSynchronous() const
 {
-  return true;
+  // Make sure we don't get a jitter buffer by saying we are asynchronous when a sink stream
+  return IsSource();
 }
 
 PString OpalFaxMediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
