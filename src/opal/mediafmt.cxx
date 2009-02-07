@@ -1548,21 +1548,13 @@ OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormatList 
 
 void OpalMediaFormatList::Remove(const PStringArray & maskList)
 {
+  PTRACE(4,"MediaFormat\tRemoving codecs " << setfill(',') << maskList);
+
   PINDEX i;
   for (i = 0; i < maskList.GetSize(); i++) {
-    PString mask = maskList[i];
-    if (mask.GetLength() > 1 && mask[0] == '!') {
-      mask = mask.Mid(1);
-      OpalMediaFormatList::const_iterator fmt;
-      while ((fmt = FindNotFormat(mask)) != end())
-        erase(fmt);
-    }
-    else
-    {
-      OpalMediaFormatList::const_iterator fmt;
-      while ((fmt = FindFormat(mask)) != end())
-        erase(fmt);
-    }
+    OpalMediaFormatList::const_iterator fmt;
+    while ((fmt = FindFormat(maskList[i])) != end())
+      erase(fmt);
   }
 }
 
@@ -1635,31 +1627,38 @@ static bool WildcardMatch(const PCaselessString & str, const PStringArray & wild
 
 OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(const PString & search, const_iterator iter) const
 {
-  PStringArray wildcards = search.Tokenise('*', true);
+  if (search.IsEmpty())
+    return end();
+
   if (iter == const_iterator())
     iter = begin();
-  while (iter != end()) {
-    if (WildcardMatch(iter->m_info->formatName, wildcards))
-      return iter;
-    ++iter;
+
+  bool negative = search[0] == '!';
+
+  PString adjustedSearch = search.Mid(negative ? 1 : 0);
+  if (adjustedSearch.IsEmpty())
+    return end();
+
+  if (adjustedSearch[0] == '@') {
+    OpalMediaType searchType = adjustedSearch.Mid(1);
+    while (iter != end()) {
+      if ((iter->GetMediaType() == searchType) != negative)
+        return iter;
+      ++iter;
+    }
+  }
+  else {
+    PStringArray wildcards = adjustedSearch.Tokenise('*', true);
+    while (iter != end()) {
+      if (WildcardMatch(iter->m_info->formatName, wildcards) != negative)
+        return iter;
+      ++iter;
+    }
   }
 
   return end();
 }
 
-OpalMediaFormatList::const_iterator OpalMediaFormatList::FindNotFormat(const PString & search, const_iterator iter) const
-{
-  PStringArray wildcards = search.Tokenise('*', true);
-  if (iter == const_iterator())
-    iter = begin();
-  while (iter != end()) {
-    if (!WildcardMatch(iter->m_info->formatName, wildcards))
-      return iter;
-    ++iter;
-  }
-
-  return end();
-}
 
 void OpalMediaFormatList::Reorder(const PStringArray & order)
 {
