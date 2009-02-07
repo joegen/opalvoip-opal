@@ -1424,6 +1424,8 @@ OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormatList 
 
 void OpalMediaFormatList::Remove(const PStringArray & mask)
 {
+  PTRACE(4,"MediaFormat\tRemoving codecs " << setfill(',') << mask);
+
   PINDEX i;
   for (i = 0; i < mask.GetSize(); i++) {
     OpalMediaFormatList::const_iterator fmt;
@@ -1501,13 +1503,36 @@ static bool WildcardMatch(const PCaselessString & str, const PStringArray & wild
 
 OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(const PString & search, const_iterator iter) const
 {
-  PStringArray wildcards = search.Tokenise('*', true);
+  if (search.IsEmpty())
+    return end();
+
   if (iter == const_iterator())
     iter = begin();
-  while (iter != end()) {
-    if (WildcardMatch(iter->m_info->formatName, wildcards))
-      return iter;
-    ++iter;
+
+  bool negative = search[0] == '!';
+  PString adjustedSearch = search.Mid(negative ? 1 : 0);
+
+  if (adjustedSearch == "@audio") {
+    while (iter != end()) {
+      if ((iter->GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID) != negative)
+        return iter;
+      ++iter;
+    }
+  }
+  else if (adjustedSearch == "@video") {
+    while (iter != end()) {
+      if ((iter->GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) != negative)
+        return iter;
+      ++iter;
+    }
+  }
+  else {
+    PStringArray wildcards = adjustedSearch.Tokenise('*', true);
+    while (iter != end()) {
+      if (WildcardMatch(iter->m_info->formatName, wildcards) != negative)
+        return iter;
+      ++iter;
+    }
   }
 
   return end();

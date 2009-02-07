@@ -126,10 +126,19 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       const char * protocol = NULL                ///<  protocol to be valid for (if NULL, then all)
     ) const;
 
-    /**Get a format position in the list matching the wildcard.
-       The wildcard string is a simple substring match using the '*'
-       character. For example: "G.711*" would match "G.711-uLaw-64k" and
-       "G.711-ALaw-64k".
+    /**Get a position in the list of the first entry matching the wildcard.
+       The wildcard string is a string match using several special
+       characters.
+       
+       The '*' character indicates substrings, for example: "G.711*" would
+       match "G.711-uLaw-64k" and "G.711-ALaw-64k".
+
+       The '@' character indicates a type of media format, Currently only
+       "@audio" and "@video" is supported.
+
+       The '!' character indicates a negative test. That is the first entry
+       that does NOT match the string is returned. The string after the '!'
+       may contain '*' and '@' characters.
 
        Returns P_MAX_INDEX if not in list.
       */
@@ -154,14 +163,19 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     ) const { return FindFormat(wildcard) != end(); }
 
     /**Remove all the formats specified.
+       Each string in the array is checked using the wildcard matching algorithm in
+       FindFormat().
       */
     void Remove(
       const PStringArray & mask
     );
 
     /**Reorder the formats in the list.
-       The order variable is an array of wildcards and the list is reordered
+       The order variable is an array of names and the list is reordered
        according to the order in that array.
+
+       Each string in the array is checked using the wildcard matching algorithm in
+       FindFormat().
       */
     void Reorder(
       const PStringArray & order
