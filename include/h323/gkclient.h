@@ -333,7 +333,7 @@ class H323Gatekeeper : public H225_RAS
     void OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
     void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
     void UpdateConnectionStatus();
-
+    bool SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu);
 
     // Gatekeeper registration state variables
     PBoolean     discoveryComplete;
