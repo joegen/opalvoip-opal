@@ -189,7 +189,7 @@ static PBoolean WriteGRQ(H323Transport & transport, void * param)
     return false;
 
   // Check if interface is used by signalling channel listeners
-  OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses();
+  OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses(true, &transport);
   bool notInterface = true;
   for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
     PIPSocket::Address ifAddress;
@@ -354,7 +354,6 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
     PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
     return PFalse;
   }
-  transport->SetInterface(transport->GetLastReceivedInterface());
 
   if (gcf.HasOptionalField(H225_GatekeeperConfirm::e_alternateGatekeeper))
     SetAlternates(gcf.m_alternateGatekeeper, PFalse);
@@ -421,9 +420,10 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDis
     return PFalse;
   }
 
-  for (PINDEX i = 0; i < listeners.GetSize(); i++)
-   if(listeners[i].GetProto() == "tcp")
-    listeners[i].SetPDU(rrq.m_callSignalAddress, *transport);
+  for (PINDEX i = 0; i < listeners.GetSize(); i++) {
+    if (listeners[i].GetProto() == "tcp")
+      listeners[i].SetPDU(rrq.m_callSignalAddress, *transport);
+  }
 
   endpoint.SetEndpointTypeInfo(rrq.m_terminalType);
   endpoint.SetVendorIdentifierInfo(rrq.m_endpointVendor);
