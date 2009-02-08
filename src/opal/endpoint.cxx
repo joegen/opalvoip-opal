@@ -254,8 +254,10 @@ static void AddTransportAddress(OpalTransportAddressArray & interfaceAddresses,
                                 WORD port,
                                 const PString & proto)
 {
-  PIPSocket::Address localIP = ip == natInterfaceIP ? natExternalIP : ip;
-  OpalTransportAddress addr(localIP, port, proto);
+  if (ip == natInterfaceIP && ip != natExternalIP)
+    AddTransportAddress(interfaceAddresses, natInterfaceIP, natExternalIP, natExternalIP, port, proto);
+
+  OpalTransportAddress addr(ip, port, proto);
   if (interfaceAddresses.GetValuesIndex(addr) == P_MAX_INDEX)
     interfaceAddresses.Append(new OpalTransportAddress(addr));
 }
@@ -301,8 +303,6 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
       natMethod->GetInterfaceAddress(natInterfaceIP);
       natMethod->GetExternalAddress(natExternalIP);
     }
-
-    AddTransportAddresses(interfaceAddresses, false, natInterfaceIP, natExternalIP, associatedTransport->GetLocalAddress());
   }
 
   for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener)
