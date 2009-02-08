@@ -386,6 +386,38 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperReject(const H225_GatekeeperReject &
 }
 
 
+bool H323Gatekeeper::SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu)
+{
+  H323TransportAddressArray listeners = endpoint.GetInterfaceAddresses(true, transport);
+  if (listeners.IsEmpty())
+    return false;
+
+  for (PINDEX i = 0; i < listeners.GetSize(); i++) {
+    if (listeners[i].GetProto() != "tcp")
+      continue;
+
+    H225_TransportAddress pduAddr;
+    if (!listeners[i].SetPDU(pduAddr))
+      continue;
+
+    // Check for already have had that address.
+    PINDEX pos, lastPos = pdu.GetSize();
+    for (pos = 0; pos < lastPos; pos++) {
+      if (pdu[pos] == pduAddr)
+        break;
+    }
+
+    if (pos >= lastPos) {
+      // Put new listener into array
+      pdu.SetSize(lastPos+1);
+      pdu[lastPos] = pduAddr;
+    }
+  }
+
+  return pdu.GetSize() > 0;
+}
+
+
 PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDiscovery)
 {
   if (PAssertNULL(transport) == NULL)
@@ -414,15 +446,9 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDis
   
   rasAddress.SetPDU(rrq.m_rasAddress[0]);
 
-  H323TransportAddressArray listeners = endpoint.GetInterfaceAddresses(PTrue, transport);
-  if (listeners.IsEmpty()) {
+  if (!SetListenerAddresses(rrq.m_callSignalAddress)) {
     PTRACE(1, "RAS\tCannot register with Gatekeeper without a H323Listener!");
-    return PFalse;
-  }
-
-  for (PINDEX i = 0; i < listeners.GetSize(); i++) {
-    if (listeners[i].GetProto() == "tcp")
-      listeners[i].SetPDU(rrq.m_callSignalAddress, *transport);
+    return false;
   }
 
   endpoint.SetEndpointTypeInfo(rrq.m_terminalType);
@@ -732,11 +758,7 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
 
   H323TransportAddress rasAddress = transport->GetLocalAddress();
 
-  const H323ListenerList & listeners = endpoint.GetListeners();
-  for (H323ListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
-    H323TransportAddress signalAddress = listener->GetLocalAddress(rasAddress);
-    signalAddress.SetPDU(urq.m_callSignalAddress, *transport);
-  }
+  SetListenerAddresses(urq.m_callSignalAddress);
 
   urq.IncludeOptionalField(H225_UnregistrationRequest::e_endpointAlias);
   H323SetAliasAddresses(endpoint.GetAliasNames(), urq.m_endpointAlias);
@@ -1450,11 +1472,7 @@ H225_InfoRequestResponse & H323Gatekeeper::BuildInfoRequestResponse(H323RasPDU &
   }
   address.SetPDU(irr.m_rasAddress);
 
-  const H323ListenerList & listeners = endpoint.GetListeners();
-  for (H323ListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
-    address = listener->GetLocalAddress();
-    address.SetPDU(irr.m_callSignalAddress, *transport);
-  }
+  SetListenerAddresses(irr.m_callSignalAddress);
 
   irr.IncludeOptionalField(H225_InfoRequestResponse::e_endpointAlias);
   H323SetAliasAddresses(endpoint.GetAliasNames(), irr.m_endpointAlias);
