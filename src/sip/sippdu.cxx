@@ -2702,19 +2702,29 @@ void SIPTransaction::SetTerminated(States newState)
   PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for transaction " << mime.GetCSeq());
 
   // Transaction failed, tell the endpoint
-  switch (state) {
-    case Terminated_Success :
-      break;
+  if (state > Terminated_Success) {
+    switch (state) {
+      case Terminated_Timeout :
+      case Terminated_RetriesExceeded:
+        statusCode = SIP_PDU::Failure_RequestTimeout;
+        break;
 
-    case Terminated_Timeout :
-    case Terminated_RetriesExceeded:
-      statusCode = SIP_PDU::Failure_RequestTimeout;
-      // Do default case
+      case Terminated_TransportError :
+        statusCode = SIP_PDU::Local_TransportError;
+        break;
 
-    default :
-      endpoint.OnTransactionFailed(*this);
-      if (connection != NULL)
-        connection->OnTransactionFailed(*this);
+      case Terminated_Aborted :
+      case Terminated_Cancelled :
+        statusCode = SIP_PDU::Failure_RequestTerminated;
+        break;
+
+      default :// Prevent GNU warning
+        break;
+    }
+
+    endpoint.OnTransactionFailed(*this);
+    if (connection != NULL)
+      connection->OnTransactionFailed(*this);
   }
 
   if (oldState != Completed)
@@ -2787,7 +2797,7 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 
   /* Handle response to outgoing call cancellation */
   if (response.GetStatusCode() == Failure_RequestTerminated)
-    SetTerminated(Terminated_Success);
+    SetTerminated(Terminated_Cancelled);
 
   if (response.GetStatusCode()/100 == 1)
     completionTimer = PTimeInterval(0, mime.GetExpires(180));
