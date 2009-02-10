@@ -47,16 +47,31 @@
 
 /////////////////////////////////////////////////////////
 
+class SDPBandwidth : public std::map<PString, unsigned>
+{
+  public:
+    unsigned & operator[](const PString & type);
+    unsigned operator[](const PString & type) const;
+    friend ostream & operator<<(ostream & out, const SDPBandwidth & bw);
+    bool Parse(const PString & param);
+};
+
+/////////////////////////////////////////////////////////
+
+class SDPMediaDescription;
+
 class SDPMediaFormat : public PObject
 {
   PCLASSINFO(SDPMediaFormat, PObject);
   public:
     SDPMediaFormat(
+      SDPMediaDescription & parent,
       RTP_DataFrame::PayloadTypes payloadType,
       const char * name = NULL
     );
 
     SDPMediaFormat(
+      SDPMediaDescription & parent,
       const OpalMediaFormat & mediaFormat
     );
 
@@ -87,6 +102,7 @@ class SDPMediaFormat : public PObject
     mutable OpalMediaFormat mediaFormat;
     RTP_DataFrame::PayloadTypes payloadType;
 
+    SDPMediaDescription & m_parent;
     unsigned clockRate;
     PString encodingName;
     PString parameters;
@@ -94,19 +110,6 @@ class SDPMediaFormat : public PObject
 };
 
 PLIST(SDPMediaFormatList, SDPMediaFormat);
-
-
-/////////////////////////////////////////////////////////
-
-class SDPBandwidth : public std::map<PString, unsigned>
-{
-  public:
-    unsigned & operator[](const PString & type);
-    unsigned operator[](const PString & type) const;
-    friend ostream & operator<<(ostream & out, const SDPBandwidth & bw);
-    bool Parse(const PString & param);
-};
-
 
 /////////////////////////////////////////////////////////
 
@@ -165,6 +168,8 @@ class SDPMediaDescription : public PObject
 
     virtual unsigned GetBandwidth(const PString & type) const { return bandwidth[type]; }
     virtual void SetBandwidth(const PString & type, unsigned value) { bandwidth[type] = value; }
+
+    virtual const SDPBandwidth & GetBandwidth() const { return bandwidth; }
 
     virtual void RemoveSDPMediaFormat(const SDPMediaFormat & sdpMediaFormat);
 
