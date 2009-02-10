@@ -43,10 +43,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Vic H.261 Video Codec", "vi
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ffmpeg H.263 Video Codec", "video\H.263-ffmpeg\h263ffmpeg.vcproj", "{4D3EE295-5953-498D-AEDF-9C8792AB5723}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IxJ LID", "LID\IxJ\IxJ_2003.vcproj", "{DA4001E4-1B19-4A2E-A6B4-795AB65C41BF}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
@@ -171,12 +167,6 @@ Global
 		{E3B2ADAC-1BD0-45B6-A00E-DE010CB75903}.No Trace.Build.0 = Debug|Win32
 		{E3B2ADAC-1BD0-45B6-A00E-DE010CB75903}.Release.ActiveCfg = Release|Win32
 		{E3B2ADAC-1BD0-45B6-A00E-DE010CB75903}.Release.Build.0 = Release|Win32
-		{4D3EE295-5953-498D-AEDF-9C8792AB5723}.Debug.ActiveCfg = Debug|Win32
-		{4D3EE295-5953-498D-AEDF-9C8792AB5723}.Debug.Build.0 = Debug|Win32
-		{4D3EE295-5953-498D-AEDF-9C8792AB5723}.No Trace.ActiveCfg = Debug|Win32
-		{4D3EE295-5953-498D-AEDF-9C8792AB5723}.No Trace.Build.0 = Debug|Win32
-		{4D3EE295-5953-498D-AEDF-9C8792AB5723}.Release.ActiveCfg = Release|Win32
-		{4D3EE295-5953-498D-AEDF-9C8792AB5723}.Release.Build.0 = Release|Win32
 		{DA4001E4-1B19-4A2E-A6B4-795AB65C41BF}.Debug.ActiveCfg = Debug|Win32
 		{DA4001E4-1B19-4A2E-A6B4-795AB65C41BF}.Debug.Build.0 = Debug|Win32
 		{DA4001E4-1B19-4A2E-A6B4-795AB65C41BF}.No Trace.ActiveCfg = Release|Win32

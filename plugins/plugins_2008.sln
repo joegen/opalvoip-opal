@@ -25,12 +25,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Vic H.261 Video Codec", "vi
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ffmpeg H.263 Video Codec", "video\H.263-ffmpeg\h263ffmpeg_2008.vcproj", "{3716C952-D6E0-40C2-B132-4F6D1636D31B}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LPC-10 Audio Codec", "audio\LPC_10\LPC_10_2008.vcproj", "{9481B85A-4166-4607-ADC4-0C19D2753EB7}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
@@ -216,15 +210,6 @@ Global
 		{4A1B92CB-CA8E-4511-A1D5-B0A322FDE67C}.Release|Win32.ActiveCfg = Release|Win32
 		{4A1B92CB-CA8E-4511-A1D5-B0A322FDE67C}.Release|Win32.Build.0 = Release|Win32
 		{4A1B92CB-CA8E-4511-A1D5-B0A322FDE67C}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
-		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.Debug|Win32.ActiveCfg = Debug|Win32
-		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.Debug|Win32.Build.0 = Debug|Win32
-		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
-		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.No Trace|Win32.ActiveCfg = Debug|Win32
-		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.No Trace|Win32.Build.0 = Debug|Win32
-		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
-		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.Release|Win32.ActiveCfg = Release|Win32
-		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.Release|Win32.Build.0 = Release|Win32
-		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
 		{9481B85A-4166-4607-ADC4-0C19D2753EB7}.Debug|Win32.ActiveCfg = Debug|Win32
 		{9481B85A-4166-4607-ADC4-0C19D2753EB7}.Debug|Win32.Build.0 = Debug|Win32
 		{9481B85A-4166-4607-ADC4-0C19D2753EB7}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32

@@ -27,44 +27,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_645BC224EB61455DA5644048A32DBB86"
-        "OwnerKey" = "8:_6695D59E856E4626A0A254167561C4FE"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_645BC224EB61455DA5644048A32DBB86"
-        "OwnerKey" = "8:_D744668B2D48467782735F6205E32354"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_645BC224EB61455DA5644048A32DBB86"
-        "OwnerKey" = "8:_12401CFF8D0A4BB583A93CADA6A7465F"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_645BC224EB61455DA5644048A32DBB86"
-        "OwnerKey" = "8:_9256B1D6A69340D698AE57AC648373EF"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_645BC224EB61455DA5644048A32DBB86"
-        "OwnerKey" = "8:_0286D92735C14397B76D4726D138DD6E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_645BC224EB61455DA5644048A32DBB86"
-        "OwnerKey" = "8:_F6D8AC7F4D154A2EB19E996F8DC40552"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_6695D59E856E4626A0A254167561C4FE"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_26E0AC5DD52043A8881C270A961884C9"
+        "OwnerKey" = "8:_CCEE7781D65D4A54A2674802C268EA83"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -87,8 +51,44 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_95E0A6CF6BBE8C18B2A9D753CD4B10B8"
+        "OwnerKey" = "8:_93F13C84DD594D2D9243B50308D96BC5"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_96021A92BC274AD2A89EDDE93F92ED9E"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_CCEE7781D65D4A54A2674802C268EA83"
+        "OwnerKey" = "8:_0286D92735C14397B76D4726D138DD6E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_CCEE7781D65D4A54A2674802C268EA83"
+        "OwnerKey" = "8:_F6D8AC7F4D154A2EB19E996F8DC40552"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_CCEE7781D65D4A54A2674802C268EA83"
+        "OwnerKey" = "8:_D744668B2D48467782735F6205E32354"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_CCEE7781D65D4A54A2674802C268EA83"
+        "OwnerKey" = "8:_9256B1D6A69340D698AE57AC648373EF"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_CCEE7781D65D4A54A2674802C268EA83"
+        "OwnerKey" = "8:_12401CFF8D0A4BB583A93CADA6A7465F"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -101,18 +101,6 @@
         {
         "MsmKey" = "8:_F6D8AC7F4D154A2EB19E996F8DC40552"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_FA51614930554ABC949E049E9452A0FD"
-        "OwnerKey" = "8:_645BC224EB61455DA5644048A32DBB86"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_FE7DBDF847EB4CBBF2D1B61DE4836A5B"
-        "OwnerKey" = "8:_93F13C84DD594D2D9243B50308D96BC5"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -208,6 +196,26 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_95E0A6CF6BBE8C18B2A9D753CD4B10B8"
+            {
+            "SourcePath" = "8:CM_HID.dll"
+            "TargetName" = "8:CM_HID.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_47475E5205E046D39A1D5E41C222D5CF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_96021A92BC274AD2A89EDDE93F92ED9E"
             {
             "SourcePath" = "8:LID\\TigerJet\\TjIpSys.dll"
@@ -226,26 +234,6 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FE7DBDF847EB4CBBF2D1B61DE4836A5B"
-            {
-            "SourcePath" = "8:CM_HID.dll"
-            "TargetName" = "8:CM_HID.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_47475E5205E046D39A1D5E41C222D5CF"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FF2667AF55B04E8DAD22ADA3DAF843E4"
@@ -839,11 +827,11 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_645BC224EB61455DA5644048A32DBB86"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_26E0AC5DD52043A8881C270A961884C9"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:Microsoft_VC80_CRT_x86.msm"
+            "SourcePath" = "8:policy_8_0_microsoft_vc80_debugcrt_x86.msm"
                 "Properties"
                 {
                 }
@@ -853,11 +841,11 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_FA51614930554ABC949E049E9452A0FD"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_CCEE7781D65D4A54A2674802C268EA83"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
+            "SourcePath" = "8:Microsoft_VC80_DebugCRT_x86.msm"
                 "Properties"
                 {
                 }
@@ -872,7 +860,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_0286D92735C14397B76D4726D138DD6E"
             {
-            "SourcePath" = "8:release\\gsmamr_ptplugin.dll"
+            "SourcePath" = "8:debug\\gsmamr_ptplugin.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_47475E5205E046D39A1D5E41C222D5CF"
@@ -900,7 +888,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_12401CFF8D0A4BB583A93CADA6A7465F"
             {
-            "SourcePath" = "8:release\\speex_ptplugin.dll"
+            "SourcePath" = "8:debug\\speex_ptplugin.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_47475E5205E046D39A1D5E41C222D5CF"
@@ -926,37 +914,9 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_6695D59E856E4626A0A254167561C4FE"
-            {
-            "SourcePath" = "8:release\\h263ffmpeg_ptplugin.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_47475E5205E046D39A1D5E41C222D5CF"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{3716C952-D6E0-40C2-B132-4F6D1636D31B}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_691678B967B447FEBFD3FD3CBC897043"
             {
-            "SourcePath" = "8:release\\tj_lid_ptplugin.dll"
+            "SourcePath" = "8:debug\\tj_lid_ptplugin.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_47475E5205E046D39A1D5E41C222D5CF"
@@ -984,7 +944,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9256B1D6A69340D698AE57AC648373EF"
             {
-            "SourcePath" = "8:release\\iLBC_ptplugin.dll"
+            "SourcePath" = "8:debug\\iLBC_ptplugin.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_47475E5205E046D39A1D5E41C222D5CF"
@@ -1012,7 +972,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_93F13C84DD594D2D9243B50308D96BC5"
             {
-            "SourcePath" = "8:release\\USB HID LID_ptplugin.dll"
+            "SourcePath" = "8:debug\\cm_hid_lid_ptplugin.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_47475E5205E046D39A1D5E41C222D5CF"
@@ -1040,7 +1000,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_D744668B2D48467782735F6205E32354"
             {
-            "SourcePath" = "8:release\\h261vic_ptplugin.dll"
+            "SourcePath" = "8:debug\\h261vic_ptplugin.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_47475E5205E046D39A1D5E41C222D5CF"
@@ -1068,7 +1028,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_F6D8AC7F4D154A2EB19E996F8DC40552"
             {
-            "SourcePath" = "8:release\\gsm0610_ptplugin.dll"
+            "SourcePath" = "8:debug\\gsm0610_ptplugin.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_47475E5205E046D39A1D5E41C222D5CF"
