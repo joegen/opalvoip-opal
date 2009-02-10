@@ -1116,7 +1116,7 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & RateControlEnableOption();
     static const PString & RateControlWindowSizeOption();
     static const PString & RateControlMaxFramesSkipOption();
-    static const PString & RateControllerBitRateOption();
+    static const PString & RateControllerBitRateScalerOption();
 };
 #endif
 
