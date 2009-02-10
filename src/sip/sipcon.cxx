@@ -603,7 +603,7 @@ static void SetNxECapabilities(SDPMediaDescription * localMedia,
   OpalMediaFormat adjustedFormat = mediaFormat;
   adjustedFormat.SetPayloadType(nxePayloadCode);
   adjustedFormat.SetOptionString("FMTP", handler->GetRxCapability());
-  localMedia->AddSDPMediaFormat(new SDPMediaFormat(adjustedFormat));
+  localMedia->AddSDPMediaFormat(new SDPMediaFormat(*localMedia, adjustedFormat));
 }
 
 

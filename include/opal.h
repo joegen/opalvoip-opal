@@ -445,7 +445,7 @@ typedef enum OpalMediaDataType {
   OpalMediaDataNoChange,      /**< No change to the media data type. */
   OpalMediaDataPayloadOnly,   /**< Indicate only the RTP payload is passed to the
                                    read/write function */
-  OpalMediaDataWithHeader     /**< Indicate the while RTP frame including header is
+  OpalMediaDataWithHeader     /**< Indicate the whole RTP frame including header is
                                    passed to the read/write function */
 } OpalMediaDataType;
 

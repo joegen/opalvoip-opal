@@ -128,7 +128,7 @@ SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & 
 
 void SDPSIPIMMediaDescription::CreateSDPMediaFormats(const PStringArray &)
 {
-  formats.Append(new SDPMediaFormat(OpalSIPIM));
+  formats.Append(new SDPMediaFormat(*this, OpalSIPIM));
 }
 
 
@@ -180,7 +180,7 @@ void SDPSIPIMMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaForma
     return;
   }
 
-  SDPMediaFormat * sdpFormat = new SDPMediaFormat(mediaFormat);
+  SDPMediaFormat * sdpFormat = new SDPMediaFormat(*this, mediaFormat);
   ProcessMediaOptions(*sdpFormat, mediaFormat);
   AddSDPMediaFormat(sdpFormat);
 }
