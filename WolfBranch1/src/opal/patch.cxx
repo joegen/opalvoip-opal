@@ -577,7 +577,9 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
               mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
 
   if (rcEnabled) {
-    unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption(), mediaFormat.HasOption(OpalVideoFormat::RateControllerBitRateOption()));
+    unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
+    if (mediaFormat.HasOption(OpalVideoFormat::RateControllerBitRateOption()))
+      targetBitRate = targetBitRate * mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) / 100;
     rateController.Open(
                         targetBitRate,
                         mediaFormat.GetOptionInteger(OpalVideoFormat::FrameTimeOption(), -1),
