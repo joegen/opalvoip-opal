@@ -255,14 +255,6 @@ bool H323Gatekeeper::DiscoverGatekeeper()
   
   request.Poll(*this, endpoint.GetGatekeeperRequestRetries(), endpoint.GetGatekeeperRequestTimeout());
   
-  transport->SetInterface(transport->GetLastReceivedInterface());
-  
-  if (discoveryComplete) {
-    PTRACE(3, "RAS\tGatekeeper discovered at: "
-           << transport->GetRemoteAddress()
-           << " (if=" << transport->GetLocalAddress() << ')');
-  }
-  
   requestsMutex.Wait();
   requests.SetAt(request.sequenceNumber, NULL);
   requestsMutex.Signal();
@@ -275,6 +267,8 @@ PBoolean H323Gatekeeper::WriteTo(H323TransactionPDU & pdu,
                                  const H323TransportAddressArray & addresses, 
                                  PBoolean callback)
 {
+  PWaitAndSignal mutex(transport->GetWriteMutex());
+
   if (!discoveryComplete && pdu.GetPDU().GetTag() == H225_RasMessage::e_gatekeeperRequest) {
     if (!transport->WriteConnect(WriteGRQ, &pdu.GetPDU())) {
       PTRACE(1, "RAS\tError writing discovery PDU: " << transport->GetErrorText());
@@ -345,14 +339,20 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
       iterAuth->Enable(iterAuth->IsCapability(gcf.m_authenticationMode, gcf.m_algorithmOID));
   }
 
-  H323TransportAddress locatedAddress(gcf.m_rasAddress, "udp");
-  PTRACE(3, "RAS\tGatekeeper discovered at: "
-         << transport->GetRemoteAddress()
-         << " (if=" << transport->GetLocalAddress() << ')');
+  {
+    PWaitAndSignal mutex(transport->GetWriteMutex());
 
-  if (!transport->SetRemoteAddress(locatedAddress)) {
-    PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
-    return PFalse;
+    H323TransportAddress locatedAddress(gcf.m_rasAddress, "udp");
+    if (!transport->SetRemoteAddress(locatedAddress)) {
+      PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
+      return PFalse;
+    }
+
+    transport->SetInterface(transport->GetLastReceivedInterface());
+
+    PTRACE(3, "RAS\tGatekeeper discovered at: "
+           << transport->GetRemoteAddress()
+           << " (if=" << transport->GetLocalAddress() << ')');
   }
 
   if (gcf.HasOptionalField(H225_GatekeeperConfirm::e_alternateGatekeeper))
@@ -1653,15 +1653,17 @@ PBoolean H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
     return PFalse;
 
   H323TransportAddress oldAddress = transport->GetRemoteAddress();
-  if (!oldAddress.IsEquivalent(replyAddress)) {
-
-    PBoolean ok = transport->ConnectTo(replyAddress) && WritePDU(response);
-    transport->ConnectTo(oldAddress);
-
-    return ok;
-  }
-  else 
+  if (oldAddress.IsEquivalent(replyAddress))
     return WritePDU(response);
+
+  transport->GetWriteMutex().Wait();
+
+  bool ok = transport->ConnectTo(replyAddress) && WritePDU(response);
+  transport->ConnectTo(oldAddress);
+
+  transport->GetWriteMutex().Signal();
+
+  return ok;
 }
 
 
