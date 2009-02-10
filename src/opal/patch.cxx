@@ -577,18 +577,19 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
 #if OPAL_VIDEO
 void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & mediaFormat)
 {
-  unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   rcEnabled = (mediaFormat.GetMediaType() == OpalMediaType::Video()) &&
               mediaFormat != OpalYUV420P &&
               mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption());
 
-  if (rcEnabled) 
+  if (rcEnabled) {
+    unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption(), mediaFormat.HasOption(OpalVideoFormat::RateControllerBitRateOption()));
     rateController.Open(
                         targetBitRate,
                         mediaFormat.GetOptionInteger(OpalVideoFormat::FrameTimeOption(), -1),
                         mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlWindowSizeOption()),
                         mediaFormat.GetOptionInteger(OpalVideoFormat::RateControlMaxFramesSkipOption())
                         );
+  }
 }
 
 
