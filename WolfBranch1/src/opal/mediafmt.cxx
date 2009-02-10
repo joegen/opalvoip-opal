@@ -613,12 +613,15 @@ void OpalMediaOptionOctets::SetValue(const BYTE * data, PINDEX length)
 
 /////////////////////////////////////////////////////////////////////////////
 
-const PString & OpalMediaFormat::NeedsJitterOption()  { static PString s = PLUGINCODEC_OPTION_NEEDS_JITTER;   return s; }
-const PString & OpalMediaFormat::MaxFrameSizeOption() { static PString s = PLUGINCODEC_OPTION_MAX_FRAME_SIZE; return s; }
-const PString & OpalMediaFormat::FrameTimeOption()    { static PString s = PLUGINCODEC_OPTION_FRAME_TIME;     return s; }
-const PString & OpalMediaFormat::ClockRateOption()    { static PString s = PLUGINCODEC_OPTION_CLOCK_RATE;     return s; }
-const PString & OpalMediaFormat::MaxBitRateOption()   { static PString s = PLUGINCODEC_OPTION_MAX_BIT_RATE;   return s; }
-const PString & OpalMediaFormat::TargetBitRateOption(){ static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE; return s; }
+const PString & OpalMediaFormat::NeedsJitterOption()   { static PString s = PLUGINCODEC_OPTION_NEEDS_JITTER;    return s; }
+const PString & OpalMediaFormat::MaxFrameSizeOption()  { static PString s = PLUGINCODEC_OPTION_MAX_FRAME_SIZE;  return s; }
+const PString & OpalMediaFormat::FrameTimeOption()     { static PString s = PLUGINCODEC_OPTION_FRAME_TIME;      return s; }
+const PString & OpalMediaFormat::ClockRateOption()     { static PString s = PLUGINCODEC_OPTION_CLOCK_RATE;      return s; }
+const PString & OpalMediaFormat::MaxBitRateOption()    { static PString s = PLUGINCODEC_OPTION_MAX_BIT_RATE;    return s; }
+const PString & OpalMediaFormat::TargetBitRateOption() { static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE; return s; }
+const PString & OpalMediaFormat::BandwidthTIASOption() { static PString s = PLUGINCODEC_OPTION_TIAS;            return s; }
+const PString & OpalMediaFormat::MaxPacketRateOption() { static PString s = PLUGINCODEC_OPTION_MAXPRATE;        return s; }
+
 #if OPAL_H323
 const PString & OpalMediaFormat::MediaPacketizationOption(){ static PString s = PLUGINCODEC_MEDIA_PACKETIZATION; return s; }
 #endif
@@ -885,6 +888,8 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
 
   if (cr > 0)
     AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::ClockRateOption(), true, OpalMediaOption::AlwaysMerge, cr));
+
+  AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::BandwidthTIASOption(), false, OpalMediaOption::MinMerge, bw, 1, bw));
 
   // assume non-dynamic payload types are correct and do not need deconflicting
   if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType >= RTP_DataFrame::MaxPayloadType)
@@ -1375,7 +1380,7 @@ const PString & OpalVideoFormat::TxKeyFramePeriodOption()         { static PStri
 const PString & OpalVideoFormat::RateControlEnableOption()        { static PString s = "Rate Control Enable";                        return s; }
 const PString & OpalVideoFormat::RateControlWindowSizeOption()    { static PString s = "Rate Control Window Size";                   return s; }
 const PString & OpalVideoFormat::RateControlMaxFramesSkipOption() { static PString s = "Rate Control Max Frames Skip";               return s; }
-
+const PString & OpalVideoFormat::RateControllerBitRateOption()    { static PString s = "Rate Controller Bit Rate";                   return s; }
 
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1426,6 +1431,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::RateControlEnableOption(),        false, OpalMediaOption::NoMerge,     false                                  ));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControlWindowSizeOption(),    false, OpalMediaOption::NoMerge,     5000,                        100,100000));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControlMaxFramesSkipOption(), false, OpalMediaOption::NoMerge,     5,                           1,   10   ));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControllerBitRateOption(),    false, OpalMediaOption::MinMerge,    0,                           0, maxBitRate));
 								
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
