@@ -92,7 +92,7 @@ PString SDPFaxMediaDescription::GetSDPMediaType() const
 
 SDPMediaFormat * SDPFaxMediaDescription::CreateSDPMediaFormat(const PString & portString)
 {
-  return new SDPMediaFormat(RTP_DataFrame::DynamicBase, portString);
+  return new SDPMediaFormat(*this, RTP_DataFrame::DynamicBase, portString);
 }
 
 

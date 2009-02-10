@@ -153,16 +153,18 @@ static PString GetConnectAddressString(const OpalTransportAddress & address)
 
 /////////////////////////////////////////////////////////
 
-SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _name)
-  : payloadType(pt)
+SDPMediaFormat::SDPMediaFormat(SDPMediaDescription & parent, RTP_DataFrame::PayloadTypes pt, const char * _name)
+  : m_parent(parent) 
+  , payloadType(pt)
   , clockRate(0)
   , encodingName(_name)
 {
 }
 
 
-SDPMediaFormat::SDPMediaFormat(const OpalMediaFormat & fmt)
-  : mediaFormat(fmt)
+SDPMediaFormat::SDPMediaFormat(SDPMediaDescription & parent, const OpalMediaFormat & fmt)
+  : m_parent(parent) 
+  , mediaFormat(fmt)
   , payloadType(fmt.GetPayloadType())
   , clockRate(fmt.GetClockRate())
   , encodingName(fmt.GetEncodingName())
@@ -336,6 +338,9 @@ const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
       if (!option.GetFMTPName().IsEmpty() && !option.GetFMTPDefault().IsEmpty())
         option.FromString(option.GetFMTPDefault());
     }
+
+    for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) 
+      mediaFormat.AddOption(new OpalMediaOptionString("Bandwidth-" & r->first, false, r->second), PTrue);
   }
 
   return mediaFormat;
@@ -587,7 +592,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     return;
   }
 
-  // unknown attriutes
+  // unknown attributes
   PTRACE(2, "SDP\tUnknown media attribute " << attr);
   return;
 }
@@ -781,7 +786,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
     }
   }
 
-  SDPMediaFormat * sdpFormat = new SDPMediaFormat(mediaFormat);
+  SDPMediaFormat * sdpFormat = new SDPMediaFormat(*this, mediaFormat);
 
   ProcessMediaOptions(*sdpFormat, mediaFormat);
 
@@ -817,7 +822,7 @@ PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 
 SDPMediaFormat * SDPRTPAVPMediaDescription::CreateSDPMediaFormat(const PString & portString)
 {
-  return new SDPMediaFormat((RTP_DataFrame::PayloadTypes)portString.AsUnsigned());
+  return new SDPMediaFormat(*this, (RTP_DataFrame::PayloadTypes)portString.AsUnsigned());
 }
 
 
@@ -975,7 +980,7 @@ PString SDPApplicationMediaDescription::GetSDPMediaType() const
 
 SDPMediaFormat * SDPApplicationMediaDescription::CreateSDPMediaFormat(const PString & portString)
 {
-  return new SDPMediaFormat(RTP_DataFrame::DynamicBase, portString);
+  return new SDPMediaFormat(*this, RTP_DataFrame::DynamicBase, portString);
 }
 
 PString SDPApplicationMediaDescription::GetSDPPortList() const
