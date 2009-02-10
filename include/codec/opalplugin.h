@@ -265,6 +265,9 @@ struct PluginCodec_Option {
 #define PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT        "Max Rx Frame Height"
 #define PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF "Temporal Spatial Trade Off"
 #define PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD        "Tx Key Frame Period"
+#define PLUGINCODEC_OPTION_TIAS                       "Bandwidth-TIAS"
+#define PLUGINCODEC_OPTION_MAXPRATE                   "MaxPRate"
+
 
 
 // Full definition of the codec

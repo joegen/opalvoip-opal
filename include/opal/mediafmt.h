@@ -591,6 +591,9 @@ class OpalMediaFormat : public PContainer
   PCONTAINERINFO(OpalMediaFormat, PContainer);
 
   public:
+    static const PString & BandwidthTIASOption();
+    static const PString & MaxPacketRateOption();
+
     /**Default constructor creates a PCM-16 media format.
       */
     OpalMediaFormat(
@@ -1136,6 +1139,7 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & RateControlEnableOption();
     static const PString & RateControlWindowSizeOption();
     static const PString & RateControlMaxFramesSkipOption();
+    static const PString & RateControllerBitRateOption();
 };
 #endif
 
