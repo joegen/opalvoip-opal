@@ -1477,7 +1477,7 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
   for (unsigned  i = 0; i < count; i++,codecDefn++) {
 #if PTRACING
     OpalPluginControl setLogFn(codecDefn, PLUGINCODEC_CONTROL_SET_LOG_FUNCTION);
-    setLogFn.Call(PlugInLogFunction, sizeof(PluginCodec_LogFunction));
+    setLogFn.Call((void *)PlugInLogFunction, sizeof(PluginCodec_LogFunction));
 #endif
 
     // deal with codec having no info, or timestamp in future
