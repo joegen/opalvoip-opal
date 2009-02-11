@@ -1439,6 +1439,29 @@ static bool IsEncoder(const PluginCodec_Definition & encoder)
        ));
 }
 
+
+#if PTRACING
+static int PlugInLogFunction(unsigned level,
+                             const char * file,
+                             unsigned line,
+                             const char * section,
+                             const char * log)
+{
+  if (level > PTrace::GetLevel())
+    return false;
+
+  if (log == NULL)
+    return true;
+
+  if (section == NULL)
+    section = "PlugIn";
+
+  PTrace::Begin(level, file, line) << section << '\t' << log << PTrace::End;
+  return true;
+}
+#endif
+
+
 void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const PluginCodec_Definition * codecDefn, OpalPluginCodecHandler * handler)
 {
   // make sure all non-timestamped codecs have the same concept of "now"
@@ -1452,6 +1475,10 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
   GetOpalYUV420P();
 
   for (unsigned  i = 0; i < count; i++,codecDefn++) {
+#if PTRACING
+    OpalPluginControl setLogFn(codecDefn, PLUGINCODEC_CONTROL_SET_LOG_FUNCTION);
+    setLogFn.Call(PlugInLogFunction, sizeof(PluginCodec_LogFunction));
+#endif
 
     // deal with codec having no info, or timestamp in future
     time_t timeStamp;
