@@ -689,6 +689,8 @@ unsigned H323_RTPChannel::GetSessionID() const
 
 PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & param) const
 {
+  param.m_sessionID = connection.GetExternalSessionID(GetSessionID(), GetCapability().GetMediaFormat().GetMediaType());
+
   return rtpCallbacks.OnSendingPDU(*this, param);
 }
 
