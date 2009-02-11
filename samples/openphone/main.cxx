@@ -1495,8 +1495,7 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
   int result = dlg.ShowModal();
   if (result == ID_IMPAGE) {
     PWaitAndSignal m(conversationMapMutex);
-    PString callId;
-    SIPTransaction::GenerateCallID(callId);
+    PString callId = SIPTransaction::GenerateCallID();
     IMDialog * dialog = new IMDialog(this, callId, SIPURL(dlg.m_Address.p_str()), dlg.m_Address);
     conversationMap.insert(ConversationMapType::value_type(callId, dialog));
     dialog->Show();
@@ -1946,6 +1945,7 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
   config->Write(LastReceivedKey, m_LastDialed);
 
   if (!m_autoAnswer && !m_RingSoundFileName.empty()) {
+    PTRACE(4, "OpenPhone\tPlaying ring file \"" << m_RingSoundFileName << '"');
     m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
     m_RingSoundChannel.PlayFile(m_RingSoundFileName, false);
     m_RingSoundTimer.RunContinuous(5000);
@@ -1957,12 +1957,14 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
 
 void MyManager::OnRingSoundAgain(PTimer &, INT)
 {
+  PTRACE(4, "OpenPhone\tReplaying ring file \"" << m_RingSoundFileName << '"');
   m_RingSoundChannel.PlayFile(m_RingSoundFileName, false);
 }
 
 
 void MyManager::StopRingSound()
 {
+  PTRACE(4, "OpenPhone\tStopping play of ring file \"" << m_RingSoundFileName << '"');
   m_RingSoundTimer.Stop();
   m_RingSoundChannel.Close();
 }

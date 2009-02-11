@@ -77,6 +77,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
                        const PTimeInterval & retryMax)
   : endpoint(ep)
   , m_transport(NULL)
+  , callID(SIPTransaction::GenerateCallID())
   , expire(expireTime > 0 ? expireTime : endpoint.GetNotifierTimeToLive().GetSeconds())
   , originalExpire(expire)
   , offlineExpire(offlineExpireTime)
@@ -124,8 +125,6 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
 
   authenticationAttempts = 0;
   authentication = NULL;
-
-  SIPTransaction::GenerateCallID(callID);
 
   expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 }
@@ -504,7 +503,9 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   , m_sequenceNumber(0)
 {
   // Put adjusted values back
-  m_parameters.m_addressOfRecord = GetAddressOfRecord().AsQuotedString()+";tag="+::OpalGloballyUniqueID().AsString();
+  SIPURL aor = GetAddressOfRecord();
+  aor.SetTag();
+  m_parameters.m_addressOfRecord = aor.AsQuotedString();
   m_parameters.m_registrarAddress = m_remoteAddress.AsQuotedString();
   m_parameters.m_expire = expire;
 

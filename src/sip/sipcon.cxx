@@ -193,8 +193,6 @@ SIPConnection::SIPConnection(OpalCall & call,
 {
   synchronousOnRelease = false;
 
-  m_dialog.SetCallID(token);
-
   SIPURL adjustedDestination = destination;
   // Look for a "proxy" parameter to override default proxy
   PStringToString params = adjustedDestination.GetParamVars();
@@ -382,7 +380,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     if (sip != NULL) {
       PStringStream referTo;
       referTo << sip->GetRemotePartyURL()
-              << "?Replaces=" << sip->GetToken()
+              << "?Replaces=" << sip->GetDialog().GetCallID()
               << "%3Bto-tag%3D"   << sip->GetDialog().GetLocalTag() // "to/from" is from the other sides perspective
               << "%3Bfrom-tag%3D" << sip->GetDialog().GetRemoteTag();
       referTransaction = new SIPRefer(*this, *transport, referTo, localPartyURL);
@@ -1144,6 +1142,7 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   if (myAddress.GetDisplayName(false).IsEmpty())
     myAddress.SetDisplayName(GetDisplayName());
 
+  myAddress.SetTag(GetToken());
   m_dialog.SetLocalURI(myAddress);
 
   NotifyDialogState(SIPDialogNotification::Trying);
@@ -1484,7 +1483,7 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
   SIPDialogNotification info(url.AsString());
 
   info.m_dialogId = m_dialogNotifyId.AsString();
-  info.m_callId = GetToken();
+  info.m_callId = m_dialog.GetCallID();
 
   info.m_local.m_URI = url.AsString();
   info.m_local.m_dialogTag  = m_dialog.GetLocalTag();
@@ -1676,6 +1675,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   SIPMIMEInfo & mime = originalInvite->GetMIME();
 
   // update the dialog context
+  m_dialog.SetLocalTag(GetToken());
   m_dialog.Update(request);
   UpdateRemoteAddresses();
 

@@ -159,6 +159,28 @@ class SIPEndPoint : public OpalRTPEndPoint
       OpalConnection::StringOptions * stringOptions  ///<  complex string options
     );
 
+    /**A call back function whenever a connection is broken.
+       This function can do any internal cleaning up and waiting on background
+       threads that may be using the connection object.
+
+       Note that there is not a one to one relationship with the
+       OnEstablishedConnection() function. This function may be called without
+       that function being called. For example if MakeConnection() was used
+       but the call never completed.
+
+       Classes that override this function should make sure they call the
+       ancestor version for correct operation.
+
+       An application will not typically call this function as it is used by
+       the OpalManager during a release of the connection.
+
+       The default behaviour removes the connection from the internal database
+       and calls the OpalManager function of the same name.
+      */
+    virtual void OnReleased(
+      OpalConnection & connection   ///<  Connection that was established
+    );
+
     /** Execute garbage collection for endpoint.
         Returns PTrue if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
@@ -799,6 +821,7 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     bool              m_shuttingDown;
     SIPHandlersList   activeSIPHandlers;
+    PSet<PString>     m_incomingCallIDs;
 
     PSafeDictionary<PString, SIPTransaction> transactions;
 
@@ -809,12 +832,16 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     struct SIP_PDU_Work
     {
-      SIP_PDU_Work()
-      { ep = NULL; pdu = NULL; }
+      public:
+        SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu);
+        ~SIP_PDU_Work();
 
-      SIPEndPoint * ep;
-      SIP_PDU * pdu;
-      PString callID;
+        void OnReceivedPDU();
+
+      private:
+        SIPEndPoint & m_endpoint;
+        PString       m_token;
+        SIP_PDU     * m_pdu;
     };
 
     typedef std::queue<SIP_PDU_Work *> SIP_PDUWorkQueue;
