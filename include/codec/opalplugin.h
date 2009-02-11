@@ -186,6 +186,19 @@ struct PluginCodec_Definition;
 #define PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS "to_normalised_options"
 #define PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS "to_customised_options"
 #define PLUGINCODEC_CONTROL_SET_INSTANCE_ID       "set_instance_id"
+#define PLUGINCODEC_CONTROL_SET_LOG_FUNCTION      "set_log_function"
+
+
+/* Log function, plug in gets a pointer to this function which allows
+   it to use the standard OPAL logging system. The function returns 0 if
+   no logging was performed due to the log level. Note if log == NULL
+   then this return state is all that happens, so this may be executed
+   first to prevent lengthy logs that would not result in any output. */
+typedef int (*PluginCodec_LogFunction)(unsigned level,
+                                       const char * file,
+                                       unsigned line,
+                                       const char * section,
+                                       const char * log);
 
 
 struct PluginCodec_ControlDefn {
@@ -563,6 +576,8 @@ enum {
 #define PluginCodec_RTP_SetMarker(ptr, mark)       (((unsigned char*)(ptr))[1] = (((unsigned char*)(ptr))[1] & 0x7f) | (mark != 0 ? 0x80 : 0))
 #define PluginCodec_RTP_GetTimestamp(ptr)         ((((unsigned char*)(ptr))[4] << 24) | (((unsigned char*)(ptr))[5] << 16) | (((unsigned char*)(ptr))[6] << 8) | ((unsigned char*)(ptr))[7])
 #define PluginCodec_RTP_SetTimestamp(ptr, ts)     ((((unsigned char*)(ptr))[4] = ((ts) >> 24)),(((unsigned char*)(ptr))[5] = ((ts) >> 16)),(((unsigned char*)(ptr))[6] = ((ts) >> 8)),(((unsigned char*)(ptr))[7] = (ts)))
+#define PluginCodec_RTP_GetSequenceNumber(ptr)    ((((unsigned char*)(ptr))[2] << 8) | ((unsigned char*)(ptr))[3])
+#define PluginCodec_RTP_SetSequenceNumber(ptr, sn)((((unsigned char*)(ptr))[2] = ((sn) >> 8)),(((unsigned char*)(ptr))[3] = (sn)))
 
 
 /////////////////
