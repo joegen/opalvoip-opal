@@ -1300,6 +1300,12 @@ PString SIPConnection::GetPrefixName() const
 }
 
 
+PString SIPConnection::GetIdentifier() const
+{
+  return m_dialog.GetCallID();
+}
+
+
 PString SIPConnection::GetRemotePartyURL() const
 {
   SIPURL url = GetRemotePartyAddress();

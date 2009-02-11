@@ -1317,9 +1317,9 @@ class OpalConnection : public PSafeObject
     OpalEchoCanceler * GetEchoCanceler() const { return echoCanceler; }
 
     /**Get the protocol-specific unique identifier for this connection.
+       Default behaviour just returns the connection token.
      */
-    virtual const OpalGloballyUniqueID & GetIdentifier() const
-    { return callIdentifier; }
+    virtual PString GetIdentifier() const;
 
     /**Get the maximum RTP payload size. This function allows a user to
        override the value returned on a connection by connection basis, for
@@ -1421,7 +1421,6 @@ class OpalConnection : public PSafeObject
 
   protected:
     PString              callToken;
-    OpalGloballyUniqueID callIdentifier;
     PBoolean             originating;
     PTime                setupTime;
     PTime                alertingTime;

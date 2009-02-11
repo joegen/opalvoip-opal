@@ -1077,6 +1077,13 @@ void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
   maxAudioJitterDelay = maxDelay;
 }
 
+
+PString OpalConnection::GetIdentifier() const
+{
+  return GetToken();
+}
+
+
 PINDEX OpalConnection::GetMaxRtpPayloadSize() const
 { 
   return endpoint.GetManager().GetMaxRtpPayloadSize(); 
@@ -1120,11 +1127,7 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
 
     m_connStringOptions = stringOptions;
   
-    PString str(stringOptions("Call-Identifier"));
-    if (!str.IsEmpty())
-      callIdentifier = PGloballyUniqueID(str);
-
-    str = stringOptions("enableinbanddtmf");
+    PCaselessString str = stringOptions("enableinbanddtmf");
     if (!str.IsEmpty())
       detectInBandDTMF = str *= "true";
     str = stringOptions("dtmfmult");
