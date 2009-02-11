@@ -287,6 +287,8 @@ class H323Connection : public OpalRTPConnection
        H323EndPoint during a clear call.
       */
     virtual void CleanUpOnCallEnd();
+
+    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
   //@}
 
 
@@ -1773,10 +1775,13 @@ class H323Connection : public OpalRTPConnection
     unsigned GetCallReference() const { return callReference; }
 
     /**Get the call identifier for this connection.
-      * preserved for backwards compatibility with OpenH323 only
      */
     inline const OpalGloballyUniqueID & GetCallIdentifier() const 
-    { return GetIdentifier(); }
+    { return callIdentifier; }
+
+    /**Get the protocol-specific unique identifier for this connection.
+     */
+    virtual PString GetIdentifier() const;
 
     /**Get the conference identifier for this connection.
      */
@@ -1933,6 +1938,7 @@ class H323Connection : public OpalRTPConnection
     PBoolean                 gatekeeperRouted;
     unsigned             distinctiveRing;
     unsigned             callReference;
+    OpalGloballyUniqueID callIdentifier;
     OpalGloballyUniqueID conferenceIdentifier;
 
     PString            localDestinationAddress;
