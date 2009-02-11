@@ -165,6 +165,14 @@ class SIPURL : public PURL
       PINDEX entry = 0  /// Entry in the SRV record to adjust to
     );
 
+    /// Generate a unique string suitable as a dialog tag
+    static PString GenerateTag();
+
+    /// Set a tag with a new unique ID.
+    void SetTag(
+      const PString & tag = GenerateTag()
+    );
+
   protected:
     void ParseAsAddress(const PString & name, const OpalTransportAddress & _address, WORD listenerPort = 0);
 
@@ -768,19 +776,22 @@ class SIPDialogContext
 
     const PString & GetCallID() const { return m_callId; }
     void SetCallID(const PString & id) { m_callId = id; }
-    void GenerateCallID();
 
     const SIPURL & GetRequestURI() const { return m_requestURI; }
     void SetRequestURI(const SIPURL & url) { m_requestURI = url; }
     bool SetRequestURI(const PString & uri) { return m_requestURI.Parse(uri); }
 
-    const SIPURL & GetLocalURI() const { return m_localURI; }
     const PString & GetLocalTag() const { return m_localTag; }
+    void SetLocalTag(const PString & tag) { m_localTag = tag; }
+
+    const SIPURL & GetLocalURI() const { return m_localURI; }
     void SetLocalURI(const SIPURL & url);
     bool SetLocalURI(const PString & uri);
 
-    const SIPURL & GetRemoteURI() const { return m_remoteURI; }
     const PString & GetRemoteTag() const { return m_remoteTag; }
+    void SetRemoteTag(const PString & tag) { m_remoteTag = tag; }
+
+    const SIPURL & GetRemoteURI() const { return m_remoteURI; }
     void SetRemoteURI(const SIPURL & url);
     bool SetRemoteURI(const PString & uri);
 
@@ -861,7 +872,7 @@ class SIPTransaction : public SIP_PDU
     SIPConnection * GetConnection() const { return connection; }
     PString         GetInterface() const { return m_localInterface; }
 
-    static void GenerateCallID(PString & callId);
+    static PString GenerateCallID();
     
   protected:
     void Construct(

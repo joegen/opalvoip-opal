@@ -499,6 +499,21 @@ PBoolean SIPURL::AdjustToDNS(PINDEX)
 #endif
 
 
+PString SIPURL::GenerateTag()
+{
+  return OpalGloballyUniqueID().AsString();
+}
+
+
+void SIPURL::SetTag(const PString & tag)
+{
+  if (fieldParameters.Find(";tag=") != P_MAX_INDEX)
+    return;
+
+  fieldParameters += ";tag=" + tag;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 SIPMIMEInfo::SIPMIMEInfo(PBoolean _compactForm)
@@ -1710,7 +1725,6 @@ void SIP_PDU::Construct(Methods meth,
   // construct Via:
   PINDEX dollar = via.Find('$');
 
-  OpalGloballyUniqueID branch;
   PStringStream str;
   str << "SIP/" << versionMajor << '.' << versionMinor << '/'
       << via.Left(dollar).ToUpper() << ' ';
@@ -1720,7 +1734,7 @@ void SIP_PDU::Construct(Methods meth,
     str << ip.AsString(true) << ':' << port;
   else
     str << via.Mid(dollar+1);
-  str << ";branch=z9hG4bK" << branch << ";rport";
+  str << ";branch=z9hG4bK" << OpalGloballyUniqueID() << ";rport";
 
   mime.SetVia(str);
 }
@@ -2227,16 +2241,10 @@ SDPSessionDescription * SIP_PDU::GetSDP()
 ////////////////////////////////////////////////////////////////////////////////////
 
 SIPDialogContext::SIPDialogContext()
-  : m_lastSentCSeq(0)
+  : m_callId(SIPTransaction::GenerateCallID())
+  , m_lastSentCSeq(0)
   , m_lastReceivedCSeq(0)
 {
-  GenerateCallID();
-}
-
-
-void SIPDialogContext::GenerateCallID()
-{
-  m_callId = PGloballyUniqueID().AsString() + '@' + PIPSocket::GetHostName();
 }
 
 
@@ -2256,7 +2264,7 @@ static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool gen
   }
 
   if (tag.IsEmpty() && generate)
-    tag = PGloballyUniqueID().AsString();
+    tag = SIPURL::GenerateTag();
 
   if (!tag.IsEmpty())
     uri.SetFieldParameters("tag="+tag);
@@ -2312,6 +2320,8 @@ void SIPDialogContext::UpdateRouteSet(const SIPURL & proxy)
 void SIPDialogContext::Update(const SIP_PDU & pdu)
 {
   const SIPMIMEInfo & mime = pdu.GetMIME();
+
+  SetCallID(mime.GetCallID());
 
   if (m_routeSet.IsEmpty()) {
     // get the route set from the Record-Route response field according to 12.1.2
@@ -2732,9 +2742,9 @@ void SIPTransaction::SetTerminated(States newState)
 }
 
 
-void SIPTransaction::GenerateCallID(PString & callId)
+PString SIPTransaction::GenerateCallID()
 {
-  callId = PGloballyUniqueID().AsString() + '@' + PIPSocket::GetHostName();
+  return PGloballyUniqueID().AsString() + '@' + PIPSocket::GetHostName();
 }
 
 
@@ -2987,19 +2997,20 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
                        const PString & body)
   : SIPTransaction(ep, trans)
 {
-  SIPURL targetAddress = params.m_addressOfRecord;
-  PString addrStr = targetAddress.AsQuotedString();
+  SIPURL toAddress = params.m_addressOfRecord;
+  SIPURL fromAddress = toAddress;
+  fromAddress.SetTag();
 
   SIP_PDU::Construct(Method_PUBLISH,
-                     targetAddress,
-                     addrStr,
-                     addrStr+";tag="+OpalGloballyUniqueID().AsString(),
+                     toAddress,
+                     toAddress.AsQuotedString(),
+                     fromAddress.AsQuotedString(),
                      id,
                      endpoint.GetNextCSeq(),
                      ep.GetLocalURL(transport).GetHostAddress());
 
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
-  SIPURL contact = endpoint.GetLocalURL(trans, targetAddress.GetUserName());
+  SIPURL contact = endpoint.GetLocalURL(trans, toAddress.GetUserName());
   contact.Sanitise(SIPURL::ContactURI);
   mime.SetContact(contact);
   mime.SetExpires(params.m_expire);
@@ -3078,11 +3089,12 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   SIPURL myAddress = endpoint.GetRegisteredPartyName(address.GetHostName(), transport);
+  myAddress.SetTag();
 
   SIP_PDU::Construct(Method_MESSAGE,
                      address.AsQuotedString(),
                      address.AsQuotedString(),
-                     myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
+                     myAddress.AsQuotedString(),
                      id,
                      endpoint.GetNextCSeq(),
                      ep.GetLocalURL(transport).GetHostAddress());
@@ -3104,7 +3116,7 @@ SIPPing::SIPPing(SIPEndPoint & ep,
                      address.AsQuotedString(),
                      address.AsQuotedString(),
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
-                     OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName(),
+                     GenerateCallID(),
                      endpoint.GetNextCSeq(),
                      ep.GetLocalURL(transport).GetHostAddress());
   mime.SetContentType("text/plain;charset=UTF-8");
@@ -3155,12 +3167,13 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
 {
   // Build the correct From field
   SIPURL myAddress = endpoint.GetRegisteredPartyName(address.GetHostName(), transport);
+  myAddress.SetTag();
 
   SIP_PDU::Construct(Method_OPTIONS,
                      address,
                      address.AsQuotedString(),
-                     myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
-                     OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName(),
+                     myAddress.AsQuotedString(),
+                     GenerateCallID(),
                      endpoint.GetNextCSeq(),
                      ep.GetLocalURL(transport).GetHostAddress());
   mime.SetAccept("application/sdp, application/media_control+xml, application/dtmf, application/dtmf-relay");

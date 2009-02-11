@@ -351,9 +351,14 @@ PBoolean SIPEndPoint::MakeConnection(OpalCall & call,
   if (listeners.IsEmpty())
     return false;
 
-  PString callID;
-  SIPTransaction::GenerateCallID(callID);
-  return AddConnection(CreateConnection(call, callID, userData, TranslateENUM(remoteParty), NULL, NULL, options, stringOptions));
+  return AddConnection(CreateConnection(call, SIPURL::GenerateTag(), userData, TranslateENUM(remoteParty), NULL, NULL, options, stringOptions));
+}
+
+
+void SIPEndPoint::OnReleased(OpalConnection & connection)
+{
+  m_incomingCallIDs -= connection.GetIdentifier();
+  OpalEndPoint::OnReleased(connection);
 }
 
 
@@ -423,10 +428,7 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
   if (!callId.IsEmpty())
     options.SetAt(SIP_HEADER_REPLACES, callId);
 
-  PStringStream callID;
-  OpalGloballyUniqueID id;
-  callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = CreateConnection(call, callID, userData, TranslateENUM(remoteParty), NULL, NULL, 0, &options);
+  SIPConnection * connection = CreateConnection(call, SIPURL::GenerateTag(), userData, TranslateENUM(remoteParty), NULL, NULL, 0, &options);
   if (!AddConnection(connection))
     return false;
 
@@ -437,16 +439,11 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
 }
 
 
-PBoolean SIPEndPoint::ForwardConnection(SIPConnection & connection,  
-            const PString & forwardParty)
+PBoolean SIPEndPoint::ForwardConnection(SIPConnection & connection, const PString & forwardParty)
 {
   OpalCall & call = connection.GetCall();
   
-  PStringStream callID;
-  OpalGloballyUniqueID id;
-  callID << id << '@' << PIPSocket::GetHostName();
-
-  SIPConnection * conn = CreateConnection(call, callID, NULL, forwardParty, NULL, NULL);
+  SIPConnection * conn = CreateConnection(call, SIPURL::GenerateTag(), NULL, forwardParty, NULL, NULL);
   if (!AddConnection(conn))
     return PFalse;
 
@@ -463,8 +460,28 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   if (PAssertNULL(pdu) == NULL)
     return PFalse;
 
+  const SIPMIMEInfo & mime = pdu->GetMIME();
+
+  /* Get tokens to determine the connection to operate on, not as easy as it
+     sounds due to allowing for talking to ones self, always thought madness
+     generally lies that way ... */
+
+  PString fromToken = mime.GetFieldParameter("from", "tag");
+  PString toToken = mime.GetFieldParameter("to", "tag");
+  bool hasFromConnection = HasConnection(fromToken);
+  bool hasToConnection = HasConnection(toToken);
+
   // Adjust the Via list and send a trying in case it takes us a while to process request
   switch (pdu->GetMethod()) {
+    case SIP_PDU::Method_INVITE :
+      if (toToken.IsEmpty())
+        return OnReceivedConnectionlessPDU(transport, pdu);
+      if (!hasToConnection) {
+        // Has to tag but doesn't correspond to anything, odd.
+        pdu->SendResponse(transport, SIP_PDU::Failure_TransactionDoesNotExist);
+        return false;
+      }
+
     default :
       pdu->SendResponse(transport, SIP_PDU::Information_Trying, this);
       // Do next case
@@ -478,18 +495,19 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       break;
   }
 
-  // pass message off to thread pool
-  PString callID = pdu->GetMIME().GetCallID();
-  if (HasConnection(callID)) {
-    SIP_PDU_Work * work = new SIP_PDU_Work;
-    work->callID    = callID;
-    work->ep        = this;
-    work->pdu       = pdu;
-    threadPool.AddWork(work);
-    return true;
-  }
+  PString token;
 
-  return OnReceivedConnectionlessPDU(transport, pdu);
+  if (hasFromConnection && hasToConnection)
+    token = pdu->GetMethod() != SIP_PDU::NumMethods ? fromToken : toToken;
+  else if (hasFromConnection)
+    token = fromToken;
+  else if (hasToConnection)
+    token = toToken;
+  else
+    return OnReceivedConnectionlessPDU(transport, pdu);
+
+  threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+  return true;
 }
 
 
@@ -665,9 +683,23 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   // parse the incoming To field, and check if we accept incoming calls for this address
   SIPURL toAddr(mime.GetTo());
   if (!IsAcceptedAddress(toAddr)) {
-    PTRACE(2, "SIP\tIncoming INVITE from " << request->GetURI() << " for unknown address " << toAddr);
+    PTRACE(2, "SIP\tIncoming INVITE from " << request->GetURI() << " for unacceptable address " << toAddr);
     request->SendResponse(transport, SIP_PDU::Failure_NotFound, this);
     return PFalse;
+  }
+
+  /* Check RFC3261/8.2.2.2, if we got here then to-tag is already empty.
+     Technically we should also check the CSeq, but as we don't support
+     multiple dialogs on a single call anyway, there is no point. All we
+     are really interested in is this a retransmission? In which case it
+     will have the same branch via field and be in the transaction list,
+     or is it a second dialog be through forking or multiple interface
+     branch, don't care, knock it back. */
+  PString callID = mime.GetCallID();
+  if (GetTransaction(request->GetTransactionID(), PSafeReference) == NULL && m_incomingCallIDs[callID]) {
+    PTRACE(3, "SIP\tIgnoring forked INVITE from " << request->GetURI() << " for " << callID);
+    request->SendResponse(transport, SIP_PDU::Failure_LoopDetected, this);
+    return false;
   }
 
   // See if we are replacing an existing call.
@@ -737,7 +769,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
 
   // ask the endpoint for a connection
   SIPConnection *connection = CreateConnection(*call,
-                                               mime.GetCallID(),
+                                               SIPURL::GenerateTag(),
                                                NULL,
                                                request->GetURI(),
                                                newTransport,
@@ -748,12 +780,10 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return PFalse;
   }
 
+  m_incomingCallIDs += callID;
+
   // Get the connection to handle the rest of the INVITE in the thread pool
-  SIP_PDU_Work * work = new SIP_PDU_Work;
-  work->ep        = this;
-  work->pdu       = request;
-  work->callID    = mime.GetCallID();
-  threadPool.AddWork(work);
+  threadPool.AddWork(new SIP_PDU_Work(*this, connection->GetToken(), request));
 
   return PTrue;
 }
@@ -1137,9 +1167,6 @@ bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const
 
 PBoolean SIPEndPoint::Message(const PString & to, const PString & body)
 {
-  PString id;
-  SIPTransaction::GenerateCallID(id);
-
   // Create the SIPHandler structure
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_MESSAGE, PSafeReadOnly);
 
@@ -1147,7 +1174,7 @@ PBoolean SIPEndPoint::Message(const PString & to, const PString & body)
   if (handler != NULL)
     handler->SetBody(body);
   else {
-    handler = new SIPMessageHandler(*this, to, body, "", id);
+    handler = new SIPMessageHandler(*this, to, body, "", SIPTransaction::GenerateCallID());
     activeSIPHandlers.Append(handler);
   }
 
@@ -1479,22 +1506,45 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
     pduQueue.pop();
     mutex.Signal();
 
-    if (work->pdu->GetMethod() == SIP_PDU::NumMethods) {
-      PSafePtr<SIPTransaction> transaction = work->ep->GetTransaction(work->pdu->GetTransactionID(), PSafeReference);
-      if (transaction != NULL)
-        transaction->OnReceivedResponse(*work->pdu);
-      else {
-        PTRACE(3, "SIP\tCannot find transaction for response");
-      }
-    }
-    else if (!work->callID.IsEmpty()) {
-      PSafePtr<SIPConnection> connection = work->ep->GetSIPConnectionWithLock(work->callID, PSafeReference);
-      if (connection != NULL) 
-        connection->OnReceivedPDU(*work->pdu);
-    }
-
-    delete work->pdu;
+    work->OnReceivedPDU();
     delete work;
+  }
+}
+
+
+SIPEndPoint::SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu)
+  : m_endpoint(ep)
+  , m_token(token)
+  , m_pdu(pdu)
+{
+}
+
+
+SIPEndPoint::SIP_PDU_Work::~SIP_PDU_Work()
+{
+  delete m_pdu;
+}
+
+
+void SIPEndPoint::SIP_PDU_Work::OnReceivedPDU()
+{
+  if (PAssertNULL(m_pdu) == NULL)
+    return;
+
+  if (m_pdu->GetMethod() == SIP_PDU::NumMethods) {
+    PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(m_pdu->GetTransactionID(), PSafeReference);
+    if (transaction != NULL)
+      transaction->OnReceivedResponse(*m_pdu);
+    else {
+      PTRACE(3, "SIP\tCannot find transaction for response");
+    }
+    return;
+  }
+
+  if (PAssert(!m_token.IsEmpty(), PInvalidParameter)) {
+    PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReference);
+    if (connection != NULL) 
+      connection->OnReceivedPDU(*m_pdu);
   }
 }
 
