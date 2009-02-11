@@ -612,8 +612,6 @@ void OpalConnection::StartMediaStreams()
 
 void OpalConnection::CloseMediaStreams()
 {
-  GetCall().OnStopRecordAudio(callIdentifier.AsString());
-
   // Do this double loop as while closing streams, the instance may disappear from the
   // mediaStreams list, prematurely stopping the for loop.
   bool someOpen = true;
@@ -694,8 +692,18 @@ PBoolean OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
 }
 
 
+static PString MakeRecordingKey(const OpalMediaPatch & patch)
+{
+  return psprintf("%08x", &patch);
+}
+
+
 void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
+  OpalMediaPatch * patch = stream.GetPatch();
+  if (patch != NULL)
+    GetCall().OnStopRecordAudio(MakeRecordingKey(*patch));
+
   endpoint.OnClosedMediaStream(stream);
 }
 
@@ -710,12 +718,6 @@ void OpalConnection::OnPatchMediaStream(PBoolean PTRACE_PARAM(isSource), OpalMed
   }
 
   PTRACE(3, "OpalCon\t" << (isSource ? "Source" : "Sink") << " stream of connection " << *this << " uses patch " << patch);
-}
-
-
-static PString MakeRecordingKey(const OpalMediaPatch & patch)
-{
-  return psprintf("%08x", &patch);
 }
 
 
