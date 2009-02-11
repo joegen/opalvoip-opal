@@ -345,6 +345,20 @@ H323Connection::~H323Connection()
   PTRACE(4, "H323\tConnection " << callToken << " deleted.");
 }
 
+
+void H323Connection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
+{
+  if (LockReadWrite()) {
+    PString str(stringOptions("Call-Identifier"));
+    if (!str.IsEmpty())
+      callIdentifier = PGloballyUniqueID(str);
+    UnlockReadWrite();
+  }
+
+  OpalConnection::ApplyStringOptions(stringOptions);
+}
+
+
 void H323Connection::OnReleased()
 {
   OpalRTPConnection::OnReleased();
@@ -1191,6 +1205,12 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
 
   return connectionState != ShuttingDownConnection;
+}
+
+
+PString H323Connection::GetIdentifier() const
+{
+  return callIdentifier.AsString();
 }
 
 
