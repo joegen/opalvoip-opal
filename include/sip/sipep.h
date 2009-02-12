@@ -821,7 +821,7 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     bool              m_shuttingDown;
     SIPHandlersList   activeSIPHandlers;
-    PSet<PString>     m_incomingCallIDs;
+    PStringToString   m_incomingINVITEs; // Map of call-id's to transaction-id's for loop/fork detection
 
     PSafeDictionary<PString, SIPTransaction> transactions;
 
