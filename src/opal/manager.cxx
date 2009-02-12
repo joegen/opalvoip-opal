@@ -162,7 +162,6 @@ OpalManager::OpalManager()
   , stun(NULL)
   , interfaceMonitor(NULL)
   , activeCalls(*this)
-  , clearingAllCalls(false)
 #ifdef OPAL_ZRTP
   , zrtpEnabled(false)
 #endif
@@ -248,8 +247,7 @@ void OpalManager::ShutDownEndpoints()
   PTRACE(4, "OpalMan\tShutting down endpoints.");
 
   // Clear any pending calls, set flag so no calls can be received before endpoints removed
-  clearingAllCalls = true;
-  ClearAllCalls();
+  InternalClearAllCalls(OpalConnection::EndedByLocalUser, true, m_clearingAllCallsCount++ == 0);
 
   // Deregister the endpoints
   endpointsMutex.StartRead();
@@ -262,7 +260,7 @@ void OpalManager::ShutDownEndpoints()
   endpointList.RemoveAll();
   endpointsMutex.EndWrite();
 
-  clearingAllCalls = false; // Allow for endpoints to be added again.
+  --m_clearingAllCallsCount; // Allow for endpoints to be added again.
 }
 
 
@@ -353,14 +351,12 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
                             unsigned int options,
                             OpalConnection::StringOptions * stringOptions)
 {
-  if (clearingAllCalls) {
-    PTRACE(2, "OpalMan\tSet up call not performed as clearing all calls.");
-    return false;
-  }
-
   PTRACE(3, "OpalMan\tSet up call from " << partyA << " to " << partyB);
 
   OpalCall * call = CreateCall(userData);
+  if (call == NULL)
+    return false;
+
   token = call->GetToken();
 
   call->SetPartyB(partyB);
@@ -439,21 +435,33 @@ PBoolean OpalManager::ClearCallSynchronous(const PString & token,
 
 void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, PBoolean wait)
 {
-  PTRACE(4, "OpalMan\tClearing all calls " << (wait ? " and waiting" : "asynchronously"));
+  InternalClearAllCalls(reason, wait, m_clearingAllCallsCount++ == 0);
+  --m_clearingAllCallsCount;
+}
 
-  bool oldFlag = clearingAllCalls;
-  clearingAllCalls = true;
 
-  // Remove all calls from the active list first
-  for (PSafePtr<OpalCall> call = activeCalls; call != NULL; ++call)
-    call->Clear(reason);
+void OpalManager::InternalClearAllCalls(OpalConnection::CallEndReason reason, bool wait, bool firstThread)
+{
+  PTRACE(3, "OpalMan\tClearing all calls " << (wait ? "and waiting" : "asynchronously")
+                      << ", " << (firstThread ? "primary" : "secondary") << " thread.");
 
-  if (wait) {
-    allCallsCleared.Wait();
-    PTRACE(4, "OpalMan\tAll calls cleared.");
+  if (firstThread) {
+    // Clear all the currentyl active calls
+    for (PSafePtr<OpalCall> call = activeCalls; call != NULL; ++call)
+      call->Clear(reason);
   }
 
-  clearingAllCalls = oldFlag;
+  if (wait) {
+    /* This is done this way as PSyncPoint only works for one thread at a time,
+       all subsequent threads will wait on the mutex for the first one to be
+       released from the PSyncPoint wait. */
+    m_clearingAllCallsMutex.Wait();
+    if (firstThread)
+      m_allCallsCleared.Wait();
+    m_clearingAllCallsMutex.Signal();
+  }
+
+  PTRACE(3, "OpalMan\tAll calls cleared.");
 }
 
 
@@ -465,8 +473,8 @@ void OpalManager::OnClearedCall(OpalCall & PTRACE_PARAM(call))
 
 OpalCall * OpalManager::InternalCreateCall()
 {
-  if (clearingAllCalls) {
-    PTRACE(2, "OpalMan\tCreate call not performed as clearing all calls.");
+  if (m_clearingAllCallsCount != 0) {
+    PTRACE(2, "OpalMan\tCreate call not performed as currently clearing all calls.");
     return NULL;
   }
 
@@ -1511,8 +1519,8 @@ void OpalManager::GarbageCollection()
 
   endpointsMutex.EndRead();
 
-  if (allCleared && clearingAllCalls)
-    allCallsCleared.Signal();
+  if (allCleared && m_clearingAllCallsCount != 0)
+    m_allCallsCleared.Signal();
 }
 
 
