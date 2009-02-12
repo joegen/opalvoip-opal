@@ -159,7 +159,7 @@ OpalConnection::OpalConnection(OpalCall & call,
                                OpalEndPoint  & ep,
                                const PString & token,
                                unsigned int options,
-                               OpalConnection::StringOptions * _stringOptions)
+                               OpalConnection::StringOptions * stringOptions)
   : PSafeObject(&call)  // Share the lock flag from the call
   , ownerCall(call)
   , endpoint(ep)
@@ -178,7 +178,6 @@ OpalConnection::OpalConnection(OpalCall & call,
   , q931Cause(0x100)
   , silenceDetector(NULL)
   , echoCanceler(NULL)
-  , stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
 #if OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
 #endif
@@ -188,6 +187,9 @@ OpalConnection::OpalConnection(OpalCall & call,
   PAssert(ownerCall.SafeReference(), PLogicError);
 
   ownerCall.connectionsActive.Append(this);
+
+  if (stringOptions != NULL)
+    m_connStringOptions = *stringOptions;
 
   detectInBandDTMF = !endpoint.GetManager().DetectInBandDTMFDisabled();
   minAudioJitterDelay = endpoint.GetManager().GetMinAudioJitterDelay();
@@ -211,24 +213,6 @@ OpalConnection::OpalConnection(OpalCall & call,
       sendUserInputMode = ep.GetSendUserInputMode();
       break;
   }
-  
-  if (stringOptions != NULL) {
-    PString str((*stringOptions)("Call-Identifier"));
-    if (!str.IsEmpty())
-      callIdentifier = PGloballyUniqueID(str);
-
-    str = (*stringOptions)("enableinbanddtmf");
-    if (!str.IsEmpty())
-      detectInBandDTMF = str *= "true";
-    str = (*stringOptions)("dtmfmult");
-    if (!str.IsEmpty()) {
-      dtmfScaleMultiplier = str.AsInteger();
-      dtmfScaleDivisor    = 1;
-    }
-    str = (*stringOptions)("dtmfdiv");
-    if (!str.IsEmpty())
-      dtmfScaleDivisor = str.AsInteger();
-  }
 }
 
 OpalConnection::~OpalConnection()
@@ -240,7 +224,6 @@ OpalConnection::~OpalConnection()
 #if OPAL_T120DATA
   delete t120handler;
 #endif
-  delete stringOptions;
 
   ownerCall.connectionsActive.Remove(this);
   ownerCall.SafeDereference();
@@ -621,7 +604,7 @@ void OpalConnection::StartMediaStreams()
 
 void OpalConnection::CloseMediaStreams()
 {
-  GetCall().OnStopRecordAudio(callIdentifier.AsString());
+  GetCall().OnStopRecordAudio(GetIdentifier());
 
   // Do this double loop as while closing streams, the instance may disappear from the
   // mediaStreams list, prematurely stopping the for loop.
@@ -750,7 +733,7 @@ void OpalConnection::DisableRecording()
 
 void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT)
 {
-  GetCall().GetManager().GetRecordManager().WriteAudio(GetCall().GetToken(), callIdentifier.AsString(), frame);
+  GetCall().GetManager().GetRecordManager().WriteAudio(GetCall().GetToken(), GetIdentifier(), frame);
 }
 
 void OpalConnection::AttachRFC2833HandlerToPatch(PBoolean /*isSource*/, OpalMediaPatch & /*patch*/)
@@ -1066,6 +1049,13 @@ void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
   maxAudioJitterDelay = maxDelay;
 }
 
+
+PString OpalConnection::GetIdentifier() const
+{
+  return GetToken();
+}
+
+
 PINDEX OpalConnection::GetMaxRtpPayloadSize() const
 { 
   return endpoint.GetManager().GetMaxRtpPayloadSize(); 
@@ -1092,30 +1082,53 @@ PBoolean OpalConnection::OnOpenIncomingMediaChannels()
 }
 
 
-void OpalConnection::SetStringOptions(StringOptions * options)
+void OpalConnection::SetStringOptions(const StringOptions & options, bool overwrite)
 {
-  if (LockReadWrite()) {
-    if (stringOptions != NULL)
-      delete stringOptions;
-    stringOptions = options;
-    UnlockReadWrite();
+  if (overwrite)
+    m_connStringOptions = options;
+  else {
+    for (PINDEX i = 0; i < options.GetSize(); ++i)
+      m_connStringOptions.SetAt(options.GetKeyAt(i), options.GetDataAt(i));
   }
 }
 
 
-void OpalConnection::ApplyStringOptions()
+void OpalConnection::OnApplyStringOptions()
 {
-  if (stringOptions != NULL && LockReadWrite()) {
-    if (stringOptions->Contains("Disable-Jitter"))
+  endpoint.GetManager().OnApplyStringOptions(*this, m_connStringOptions);
+}
+
+void OpalConnection::ApplyStringOptions(StringOptions & stringOptions)
+{
+  PTRACE(4, "OpalCon\tApplying string options:\n" << stringOptions);
+
+  if (LockReadWrite()) {
+
+    m_connStringOptions = stringOptions;
+
+    PString str = stringOptions("enableinbanddtmf");
+    if (!str.IsEmpty())
+      detectInBandDTMF = str *= "true";
+    str = stringOptions("dtmfmult");
+    if (!str.IsEmpty()) {
+      dtmfScaleMultiplier = str.AsInteger();
+      dtmfScaleDivisor    = 1;
+    }
+    str = stringOptions("dtmfdiv");
+    if (!str.IsEmpty())
+      dtmfScaleDivisor = str.AsInteger();
+
+    if (stringOptions.Contains("Disable-Jitter"))
       maxAudioJitterDelay = minAudioJitterDelay = 0;
-    PString str = (*stringOptions)("Max-Jitter");
+    str = stringOptions("Max-Jitter");
     if (!str.IsEmpty())
       maxAudioJitterDelay = str.AsUnsigned();
-    str = (*stringOptions)("Min-Jitter");
+    str = stringOptions("Min-Jitter");
     if (!str.IsEmpty())
       minAudioJitterDelay = str.AsUnsigned();
-    if (stringOptions->Contains("Record-Audio"))
-      recordAudioFilename = (*stringOptions)("Record-Audio");
+    if (stringOptions.Contains("Record-Audio"))
+      recordAudioFilename = stringOptions("Record-Audio");
+
     UnlockReadWrite();
   }
 }

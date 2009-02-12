@@ -99,7 +99,7 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
   if (conn != NULL) 
     m_rtpSessions.Initialise(*this, conn->GetStringOptions());
   else
-    m_rtpSessions.Initialise(*this, stringOptions);
+    m_rtpSessions.Initialise(*this, m_connStringOptions);
 }
 
 OpalRTPConnection::~OpalRTPConnection()
@@ -509,7 +509,7 @@ bool OpalRTPSessionManager::AllSessionsFailing()
   return true;
 }
 
-void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, OpalConnection::StringOptions * stringOptions)
+void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, const OpalConnection::StringOptions & stringOptions)
 {
   PWaitAndSignal m(m_mutex);
 
@@ -520,10 +520,10 @@ void OpalRTPSessionManager::Initialise(OpalRTPConnection & conn, OpalConnection:
   m_initialised = true;
 
   // see if stringoptions contains AutoStart option
-  if (stringOptions != NULL && stringOptions->Contains("autostart")) {
+  if (stringOptions.Contains("autostart")) {
 
     // get autostart option as lines
-    PStringArray lines = (*stringOptions)("autostart").Lines();
+    PStringArray lines = stringOptions("autostart").Lines();
     PINDEX i;
     for (i = 0; i < lines.GetSize(); ++i) {
       PString line = lines[i];

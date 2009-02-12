@@ -68,6 +68,12 @@ ostream & operator<<(ostream & strm, SIPHandler::State state)
 
 ////////////////////////////////////////////////////////////////////////////
 
+PString SIPHandler::GenerateCallID()
+{
+  return PGloballyUniqueID().AsString() + '@' + PIPSocket::GetHostName();
+}
+
+
 SIPHandler::SIPHandler(SIPEndPoint & ep,
                        const PString & to,
                        int expireTime,
@@ -91,7 +97,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
   authenticationAttempts = 0;
   authentication = NULL;
 
-  callID = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
+  callID = SIPHandler::GenerateCallID();
 
   expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 }
@@ -915,7 +921,7 @@ SIPPublishHandler::~SIPPublishHandler()
 SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
 {
   SetExpire(originalExpire);
-  callID = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
+  callID = SIPHandler::GenerateCallID();
   return new SIPPublish(endpoint,
                         t, 
                         GetRouteSet(), 
@@ -1041,7 +1047,7 @@ void SIPMessageHandler::OnExpireTimeout(PTimer &, INT)
 
 void SIPMessageHandler::SetBody(const PString & b)
 {
-  callID = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
+  callID = SIPHandler::GenerateCallID();
   
   SIPHandler::SetBody (b);
 }

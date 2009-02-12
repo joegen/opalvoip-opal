@@ -1315,9 +1315,9 @@ class OpalConnection : public PSafeObject
     OpalEchoCanceler * GetEchoCanceler() const { return echoCanceler; }
 
     /**Get the protocol-specific unique identifier for this connection.
+       Default behaviour just returns the connection token.
      */
-    virtual const OpalGloballyUniqueID & GetIdentifier() const
-    { return callIdentifier; }
+    virtual PString GetIdentifier() const;
 
     /**Get the maximum RTP payload size. This function allows a user to
        override the value returned on a connection by connection basis, for
@@ -1343,10 +1343,16 @@ class OpalConnection : public PSafeObject
 #endif
   //@}
 
-    StringOptions * GetStringOptions() const
-    { return stringOptions; }
+    const StringOptions & GetStringOptions() const { return m_connStringOptions; }
 
-    void SetStringOptions(StringOptions * options);
+    /// Set the string options associated with this connection.
+    void SetStringOptions(
+      const StringOptions & options,
+      bool overwrite
+    );
+
+    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions); 
+    virtual void OnApplyStringOptions();
 
     /**Open the media channels associated with an incoming call
  
@@ -1360,8 +1366,6 @@ class OpalConnection : public PSafeObject
        beyond those provided by the OnAnswer interface
       */
     virtual PBoolean OnOpenIncomingMediaChannels();
-
-    virtual void ApplyStringOptions();
 
     virtual void PreviewPeerMediaFormats(const OpalMediaFormatList & fmts);
 
@@ -1401,7 +1405,6 @@ class OpalConnection : public PSafeObject
 
   protected:
     PString              callToken;
-    OpalGloballyUniqueID callIdentifier;
     PBoolean             originating;
     PTime                setupTime;
     PTime                alertingTime;
@@ -1452,7 +1455,7 @@ class OpalConnection : public PSafeObject
     friend ostream & operator<<(ostream & o, Phases p);
 #endif
 
-    StringOptions * stringOptions;
+    StringOptions m_connStringOptions;
     PString recordAudioFilename;
 
 #if OPAL_STATISTICS

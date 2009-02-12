@@ -1222,6 +1222,12 @@ class OpalManager : public PObject
     virtual bool IsRecording(const PString & callToken);
     virtual void StopRecording(const PString & callToken);
 
+    virtual void OnApplyStringOptions(
+      OpalConnection & conn,
+      OpalConnection::StringOptions & stringOptions
+    );
+
+
   protected:
     // Configuration variables
     OpalProductInfo productInfo;

@@ -341,6 +341,20 @@ H323Connection::~H323Connection()
   PTRACE(4, "H323\tConnection " << callToken << " deleted.");
 }
 
+
+void H323Connection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
+{
+  if (LockReadWrite()) {
+    PString str(stringOptions("Call-Identifier"));
+    if (!str.IsEmpty())
+      callIdentifier = PGloballyUniqueID(str);
+    UnlockReadWrite();
+  }
+
+  OpalConnection::ApplyStringOptions(stringOptions);
+}
+
+
 void H323Connection::OnReleased()
 {
   OpalRTPConnection::OnReleased();
@@ -1106,7 +1120,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
 
 PBoolean H323Connection::OnOpenIncomingMediaChannels()
 {
-  ApplyStringOptions();
+  OnApplyStringOptions();
 
   // Get the local capabilities before fast start or tunnelled TCS is handled
   OnSetLocalCapabilities();
@@ -1225,6 +1239,12 @@ PBoolean H323Connection::OnOpenIncomingMediaChannels()
   AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
 
   return connectionState != ShuttingDownConnection;
+}
+
+
+PString H323Connection::GetIdentifier() const
+{
+  return callIdentifier.AsString();
 }
 
 
@@ -1740,7 +1760,7 @@ PBoolean H323Connection::SetUpConnection()
 {
   originating = true;
 
-  ApplyStringOptions();
+  OnApplyStringOptions();
 
   signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), "H225 Caller"));
   return PTrue;
@@ -1948,7 +1968,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     transportAddress.SetPDU(setup.m_destCallSignalAddress);
   }
 
-  ApplyStringOptions();
+  OnApplyStringOptions();
 
   // Get the local capabilities before fast start is handled
   OnSetLocalCapabilities();
