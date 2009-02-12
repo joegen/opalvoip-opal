@@ -357,7 +357,7 @@ PBoolean SIPEndPoint::MakeConnection(OpalCall & call,
 
 void SIPEndPoint::OnReleased(OpalConnection & connection)
 {
-  m_incomingCallIDs -= connection.GetIdentifier();
+  m_incomingINVITEs.RemoveAt(connection.GetIdentifier());
   OpalEndPoint::OnReleased(connection);
 }
 
@@ -695,8 +695,9 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
      will have the same branch via field and be in the transaction list,
      or is it a second dialog be through forking or multiple interface
      branch, don't care, knock it back. */
+  PString transactionID = request->GetTransactionID();
   PString callID = mime.GetCallID();
-  if (GetTransaction(request->GetTransactionID(), PSafeReference) == NULL && m_incomingCallIDs[callID]) {
+  if (m_incomingINVITEs.Contains(callID) && m_incomingINVITEs[callID] != transactionID) {
     PTRACE(3, "SIP\tIgnoring forked INVITE from " << request->GetURI() << " for " << callID);
     request->SendResponse(transport, SIP_PDU::Failure_LoopDetected, this);
     return false;
@@ -780,7 +781,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return PFalse;
   }
 
-  m_incomingCallIDs += callID;
+  m_incomingINVITEs.SetAt(callID, transactionID);
 
   // Get the connection to handle the rest of the INVITE in the thread pool
   threadPool.AddWork(new SIP_PDU_Work(*this, connection->GetToken(), request));
