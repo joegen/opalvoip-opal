@@ -114,15 +114,15 @@ void CodecTest::Main()
               "  -O --option opt=val     : set media format option to value\n"
               "  -S --single-step        : video single frame at a time mode\n"
               "  -c --crop               : crop rather than scale if resizing\n"
-              "  -m --suppress-marker    : suppress marker bits to decoder"
-              "  -M --force-marker       : force marker bits to decoder"
+              "  -m --suppress-marker    : suppress marker bits to decoder\n"
+              "  -M --force-marker       : force marker bits to decoder\n"
               "  -p --payload-size sz    : Set size of maximum RTP payload for encoded data\n"
               "  -S --simultanoues n     : Number of simultaneous encode/decode threads\n"
               "  -T --statistics         : output statistics files\n"
               "  -C --rate-control       : enable rate control\n"
               "  --count n               : set number of frames to transcode\n"
               "  --noprompt              : do not prompt for commands, i.e. exit when input closes\n"
-              "  --snr                   : calculate signal-to-noise ratio between input and output"
+              "  --snr                   : calculate signal-to-noise ratio between input and output\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
               "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -858,6 +858,12 @@ void TranscoderThread::Main()
         }
 
         state = decoder->ConvertFrames(encFrames[i], outFrames);
+
+        if (PIsDescendant(decoder, OpalVideoTranscoder)) {
+          if (((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame()) {
+            cerr << "Decoder returned I-Frame at frame " << frameCount << endl;
+          }
+        }
 
         if (oldDecState != state) {
           oldDecState = state;
