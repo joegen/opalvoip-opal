@@ -2487,7 +2487,7 @@ PString H323CodecPluginGenericVideoCapability::GetFormatName() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-static PAtomicInteger bootStrapCount = 0;
+static PAtomicInteger bootStrapCount;
 
 void OpalPluginCodecManager::Bootstrap()
 {
