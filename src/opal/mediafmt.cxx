@@ -1421,7 +1421,7 @@ const PString & OpalVideoFormat::TxKeyFramePeriodOption()         { static PStri
 const PString & OpalVideoFormat::RateControlEnableOption()        { static PString s = "Rate Control Enable";                        return s; }
 const PString & OpalVideoFormat::RateControlWindowSizeOption()    { static PString s = "Rate Control Window Size";                   return s; }
 const PString & OpalVideoFormat::RateControlMaxFramesSkipOption() { static PString s = "Rate Control Max Frames Skip";               return s; }
-const PString & OpalVideoFormat::RateControllerBitRateOption()    { static PString s = "Rate Controller Bit Rate";                   return s; }
+const PString & OpalVideoFormat::RateControllerBitRateScalerOption() { static PString s = "Rate Controller Bit Rate Scaler";            return s; }
 
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1473,7 +1473,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::RateControlEnableOption(),        false, OpalMediaOption::NoMerge,     false                                  ));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControlWindowSizeOption(),    false, OpalMediaOption::NoMerge,     5000,                        100,100000));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControlMaxFramesSkipOption(), false, OpalMediaOption::NoMerge,     5,                           1,   10   ));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControllerBitRateOption(),    false, OpalMediaOption::MinMerge,    0,                           0, maxBitRate));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControllerBitRateScalerOption(), false, OpalMediaOption::NoMerge,  100,                         50, 200));
 								
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
