@@ -1340,8 +1340,11 @@ class OpalManager : public PObject
         OpalManager & manager;
     } activeCalls;
 
-    PBoolean	 clearingAllCalls;
-    PSyncPoint   allCallsCleared;
+    PAtomicInteger m_clearingAllCallsCount;
+    PMutex         m_clearingAllCallsMutex;
+    PSyncPoint     m_allCallsCleared;
+    void InternalClearAllCalls(OpalConnection::CallEndReason reason, bool wait, bool first);
+
     PThread    * garbageCollector;
     PSyncPoint   garbageCollectExit;
     PDECLARE_NOTIFIER(PThread, OpalManager, GarbageMain);
