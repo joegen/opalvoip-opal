@@ -474,8 +474,11 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   // Adjust the Via list and send a trying in case it takes us a while to process request
   switch (pdu->GetMethod()) {
     case SIP_PDU::Method_INVITE :
-      if (toToken.IsEmpty())
+      if (toToken.IsEmpty()) {
+        pdu->SendResponse(transport, SIP_PDU::Information_Trying, this);
         return OnReceivedConnectionlessPDU(transport, pdu);
+      }
+
       if (!hasToConnection) {
         // Has to tag but doesn't correspond to anything, odd.
         pdu->SendResponse(transport, SIP_PDU::Failure_TransactionDoesNotExist);
