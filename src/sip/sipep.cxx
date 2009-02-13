@@ -357,7 +357,7 @@ PBoolean SIPEndPoint::MakeConnection(OpalCall & call,
 
 void SIPEndPoint::OnReleased(OpalConnection & connection)
 {
-  m_incomingINVITEs.RemoveAt(connection.GetIdentifier());
+  m_receivedConnectionTokens.RemoveAt(connection.GetIdentifier());
   OpalEndPoint::OnReleased(connection);
 }
 
@@ -475,6 +475,12 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   switch (pdu->GetMethod()) {
     case SIP_PDU::Method_INVITE :
       if (toToken.IsEmpty()) {
+        PString token = m_receivedConnectionTokens(mime.GetCallID());
+        if (!token.IsEmpty()) {
+          threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+          return true;
+        }
+
         pdu->SendResponse(transport, SIP_PDU::Information_Trying, this);
         return OnReceivedConnectionlessPDU(transport, pdu);
       }
@@ -691,21 +697,6 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return PFalse;
   }
 
-  /* Check RFC3261/8.2.2.2, if we got here then to-tag is already empty.
-     Technically we should also check the CSeq, but as we don't support
-     multiple dialogs on a single call anyway, there is no point. All we
-     are really interested in is this a retransmission? In which case it
-     will have the same branch via field and be in the transaction list,
-     or is it a second dialog be through forking or multiple interface
-     branch, don't care, knock it back. */
-  PString transactionID = request->GetTransactionID();
-  PString callID = mime.GetCallID();
-  if (m_incomingINVITEs.Contains(callID) && m_incomingINVITEs[callID] != transactionID) {
-    PTRACE(3, "SIP\tIgnoring forked INVITE from " << request->GetURI() << " for " << callID);
-    request->SendResponse(transport, SIP_PDU::Failure_LoopDetected, this);
-    return false;
-  }
-
   // See if we are replacing an existing call.
   OpalCall * call = NULL;
   if (mime.Contains("Replaces")) {
@@ -784,7 +775,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return PFalse;
   }
 
-  m_incomingINVITEs.SetAt(callID, transactionID);
+  m_receivedConnectionTokens.SetAt(connection->GetIdentifier(), connection->GetToken());
 
   // Get the connection to handle the rest of the INVITE in the thread pool
   threadPool.AddWork(new SIP_PDU_Work(*this, connection->GetToken(), request));
