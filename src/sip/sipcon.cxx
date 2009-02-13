@@ -1645,8 +1645,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       // Have received multiple INVITEs, three possibilities
       const SIPMIMEInfo & originalMIME = originalInvite->GetMIME();
 
-      // #1 - Same sequence number means it is a retransmission
-      if (originalMIME.GetCSeq() == requestMIME.GetCSeq()) {
+      // #1 - Same transaction means it is a retransmission
+      if (originalInvite->GetTransactionID() == request.GetTransactionID()) {
         PTimeInterval timeSinceInvite = PTime() - originalInviteTime;
         PTRACE(3, "SIP\tIgnoring duplicate INVITE from " << request.GetURI() << " after " << timeSinceInvite);
         return;
