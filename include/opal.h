@@ -616,6 +616,7 @@ typedef struct OpalParamProtocol {
       OpalMessage   command;
       OpalMessage * response;
 
+      // H.323 register with gatekeeper
       memset(&command, 0, sizeof(command));
       command.m_type = OpalCmdRegistration;
       command.m_param.m_registrationInfo.m_protocol = "h323";
@@ -624,7 +625,10 @@ typedef struct OpalParamProtocol {
       command.m_param.m_registrationInfo.m_password = "secret";
       command.m_param.m_registrationInfo.m_timeToLive = 300;
       response = OpalSendMessage(hOPAL, &command);
+      if (response != NULL && response->m_type == OpalCmdRegistration)
+        m_AddressOfRecord = response->m_param.m_registrationInfo.m_identifier
 
+      // SIP register with regstrar/proxy
       memset(&command, 0, sizeof(command));
       command.m_type = OpalCmdRegistration;
       command.m_param.m_registrationInfo.m_protocol = "sip";
@@ -632,14 +636,36 @@ typedef struct OpalParamProtocol {
       command.m_param.m_registrationInfo.m_password = "secret";
       command.m_param.m_registrationInfo.m_timeToLive = 300;
       response = OpalSendMessage(hOPAL, &command);
+      if (response != NULL && response->m_type == OpalCmdRegistration)
+        m_AddressOfRecord = response->m_param.m_registrationInfo.m_identifier
 
+      // unREGISTER
       memset(&command, 0, sizeof(command));
       command.m_type = OpalCmdRegistration;
       command.m_param.m_registrationInfo.m_protocol = "sip";
-      command.m_param.m_registrationInfo.m_identifier = "1501@pbx.local";
-      command.m_param.m_registrationInfo.m_hostName = "1502@pbx.local";
+      command.m_param.m_registrationInfo.m_identifier = m_AddressOfRecord;
+      command.m_param.m_registrationInfo.m_timeToLive = 0;
+      response = OpalSendMessage(hOPAL, &command);
+
+      // Set event package so do SUBSCRIBE
+      memset(&command, 0, sizeof(command));
+      command.m_type = OpalCmdRegistration;
+      command.m_param.m_registrationInfo.m_protocol = "sip";
+      command.m_param.m_registrationInfo.m_identifier = "2012@pbx.local";
+      command.m_param.m_registrationInfo.m_hostName = "sa@pbx.local";
       command.m_param.m_registrationInfo.m_eventPackage = OPAL_LINE_APPEARANCE_EVENT_PACKAGE;
       command.m_param.m_registrationInfo.m_timeToLive = 300;
+      response = OpalSendMessage(hOPAL, &command);
+      if (response != NULL && response->m_type == OpalCmdRegistration)
+        m_AddressOfRecord = response->m_param.m_registrationInfo.m_identifier
+
+      // unSUBSCRIBE
+      memset(&command, 0, sizeof(command));
+      command.m_type = OpalCmdRegistration;
+      command.m_param.m_registrationInfo.m_protocol = "sip";
+      command.m_param.m_registrationInfo.m_identifier = m_AddressOfRecord;
+      command.m_param.m_registrationInfo.m_eventPackage = OPAL_LINE_APPEARANCE_EVENT_PACKAGE;
+      command.m_param.m_registrationInfo.m_timeToLive = 0;
       response = OpalSendMessage(hOPAL, &command);
   */
 typedef struct OpalParamRegistration {
