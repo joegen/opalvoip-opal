@@ -387,10 +387,13 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     OpalMediaPatch * patch = sourceStream->GetPatch();
     if (patch != NULL)
       sinkStream = patch->GetSink();
-    if (!preselectedFormat.IsValid() ||
-         preselectedFormat == sourceStream->GetMediaFormat() ||
-         (sinkStream != NULL && sinkStream->GetMediaFormat() == preselectedFormat)) {
+    if (sourceStream->GetMediaFormat() == preselectedFormat ||
+        (sinkStream != NULL && sinkStream->GetMediaFormat() == preselectedFormat)) {
       PTRACE(3, "Call\tOpenSourceMediaStreams (already opened) for session " << sessionID << " on " << connection);
+      return true;
+    }
+    if (sourceStream->IsOpen()) {
+      PTRACE(3, "Call\tOpenSourceMediaStreams (is opening) for session " << sessionID << " on " << connection);
       return true;
     }
   }
