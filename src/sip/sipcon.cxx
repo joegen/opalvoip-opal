@@ -1628,12 +1628,14 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   if (IsOriginating()) {
     // Check for in the same dialog
     if (m_dialog.GetRemoteTag() != requestFromTag || m_dialog.GetLocalTag() != requestToTag) {
+      /* Weird, got incoming INVITE for a call we originated, however it is not in
+         the same dialog. Send back a refusal as this just isn't handled. */
       PTRACE(2, "SIP\tIgnoring INVITE from " << request.GetURI() << " when originated call.");
       request.SendResponse(*transport, SIP_PDU::Failure_LoopDetected);
       return;
     }
 
-    // We originated the call, so any INVITE must be a re-INVITE, 
+    // We originated the call, same dialog, so any INVITE must be a re-INVITE, 
     isReinvite = PTrue;
   }
   else {
@@ -1642,17 +1644,19 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       PTRACE(4, "SIP\tInitial INVITE from " << request.GetURI());
     }
     else {
-      // Have received multiple INVITEs, three possibilities
-      const SIPMIMEInfo & originalMIME = originalInvite->GetMIME();
-
-      // #1 - Same transaction means it is a retransmission
+      /* If we have same transaction ID, it means it is a retransmission
+         of the original INVITE, probably should re-transmit last sent response
+         but we just ignore it. Still should work. */
       if (originalInvite->GetTransactionID() == request.GetTransactionID()) {
         PTimeInterval timeSinceInvite = PTime() - originalInviteTime;
         PTRACE(3, "SIP\tIgnoring duplicate INVITE from " << request.GetURI() << " after " << timeSinceInvite);
         return;
       }
 
-      // #2 - Different "dialog" determined by the tags in the to and from fields indicate forking
+      /* Same transaction but different "dialog" determined by the tags in the to
+         and from fields probably indicate forking request or request arriving via
+         multiple IP paths. This will also include the RFC3261/8.2.2.2 case relating
+         to merged requests. */
       if (m_dialog.GetRemoteTag() != requestFromTag || m_dialog.GetLocalTag() != requestToTag) {
         PTRACE(3, "SIP\tIgnoring forked INVITE from " << request.GetURI());
         SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
@@ -1661,7 +1665,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
         return;
       }
 
-      // #3 - A new INVITE in the same "dialog" but different cseq must be a re-INVITE
+      // Different transaction but same dialog, must be a re-INVITE
       isReinvite = PTrue;
     }
   }
