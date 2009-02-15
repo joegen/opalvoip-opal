@@ -234,7 +234,9 @@ bool H323Gatekeeper::StartGatekeeper(const H323TransportAddress & initialAddress
     return false;
 
   reregisterNow = true;
-  monitorTickle.Signal();
+
+  // Make sure transctor (socket read) thread has started, before kicking off GRQ
+  timeToLive.SetInterval(500);
   return true;
 }
 
@@ -709,15 +711,14 @@ void H323Gatekeeper::RegistrationTimeToLive()
   PBoolean didGkDiscovery = false;
 
   if (!discoveryComplete) {
+    timeToLive.SetInterval(0, 0, 1);
     if (endpoint.GetSendGRQ()) {
-      if (DiscoverGatekeeper()) {
-        requiresDiscovery = false;
-        didGkDiscovery = true;
-      } else {
+      if (!DiscoverGatekeeper()) {
         PTRACE_IF(2, !reregisterNow, "RAS\tDiscovery failed, retrying in 1 minute");
-        timeToLive = PTimeInterval(0, 0, 1);
         return;
       }
+      requiresDiscovery = false;
+      didGkDiscovery = true;
     }
     else {
       PTRACE_IF(3, !requiresDiscovery, "RAS\tSkipping gatekeeper discovery for " << transport->GetRemoteAddress());
