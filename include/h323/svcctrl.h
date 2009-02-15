@@ -345,9 +345,21 @@ class H323CallCreditServiceControl : public H323ServiceControlSession
     ) const;
   //@}
 
+  /**@name Member access */
+  //@{
+    /// Return the amount string
+    const PString & GetAmount() const { return amount; }
+
+    /// Return the mode of operation
+    bool GetMode() const { return mode; }
+
+    /// Return the duration limit
+    unsigned GetDurationLimit() const { return durationLimit; }
+  //@}
+
   protected:
     PString  amount;
-    PBoolean     mode;
+    bool     mode;
     unsigned durationLimit;
 };
 
