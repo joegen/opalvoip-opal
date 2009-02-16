@@ -2703,7 +2703,7 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
   else {
     PTRACE(3, "SIP\tPictureFastUpdate received");
     if (LockReadWrite()) {
-      OpalMediaStreamPtr encodingStream = GetMediaStream(OpalMediaType::Video(), true);
+      OpalMediaStreamPtr encodingStream = GetMediaStream(OpalMediaType::Video(), false);
       if (encodingStream == NULL){
         PTRACE(3, "SIP\tNo video stream to update");
       } else {
