@@ -253,6 +253,9 @@ SIPConnection::~SIPConnection()
   delete authentication;
   delete originalInvite;
 
+  if (transport != NULL)
+    transport->CloseWait();
+
   if (deleteTransport)
     delete transport;
 
@@ -354,9 +357,6 @@ void SIPConnection::OnReleased()
   SetPhase(ReleasedPhase);
 
   OpalRTPConnection::OnReleased();
-
-  if (transport != NULL)
-    transport->CloseWait();
 }
 
 

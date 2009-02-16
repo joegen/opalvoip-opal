@@ -2569,13 +2569,10 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
   PString cseq = response.GetMIME().GetCSeq();
 
-  // If is the response to a CANCEL we sent, then just ignore it
+  /* If is the response to a CANCEL we sent, then we stop retransmissions
+     and wait for the 487 Request Terminated to come in */
   if (cseq.Find(MethodNames[Method_CANCEL]) != P_MAX_INDEX) {
-    // Lock only if we have not already locked it in SIPInvite::OnReceivedResponse
-    if (LockReadWrite()) {
-      SetTerminated(Terminated_Cancelled);
-      UnlockReadWrite();
-    }
+    completionTimer = endpoint.GetPduCleanUpTimeout();
     return PFalse;
   }
 
@@ -2606,7 +2603,14 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
       retry = 0;
       retryTimer = retryTimeoutMax;
-      completionTimer = endpoint.GetNonInviteTimeout();
+
+      int expiry = mime.GetExpires();
+      if (expiry > 0)
+        completionTimer.SetInterval(0, expiry);
+      else if (method == Method_INVITE)
+        completionTimer = endpoint.GetInviteTimeout();
+      else
+        completionTimer = endpoint.GetNonInviteTimeout();
     }
     else {
       PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
@@ -2676,8 +2680,20 @@ void SIPTransaction::OnTimeout(PTimer &, INT)
 {
   PSafeLockReadWrite lock(*this);
 
-  if (lock.IsLocked() && state <= Completed)
-    SetTerminated(state != Completed ? Terminated_Timeout : Terminated_Success);
+  if (lock.IsLocked() && state <= Completed) {
+    switch (state) {
+      case Completed :
+        SetTerminated(Terminated_Success);
+        break;
+
+      case Cancelling :
+        SetTerminated(Terminated_Cancelled);
+        break;
+
+      default :
+        SetTerminated(Terminated_Timeout);
+    }
+  }
 }
 
 
@@ -2799,22 +2815,7 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
     }
   }
 
-  if (!SIPTransaction::OnReceivedResponse(response))
-    return false;
-
-  if (!LockReadWrite())
-    return false;
-
-  /* Handle response to outgoing call cancellation */
-  if (response.GetStatusCode() == Failure_RequestTerminated)
-    SetTerminated(Terminated_Cancelled);
-
-  if (response.GetStatusCode()/100 == 1)
-    completionTimer = PTimeInterval(0, mime.GetExpires(180));
-    
-  UnlockReadWrite();
-
-  return true;
+  return SIPTransaction::OnReceivedResponse(response);
 }
 
 
