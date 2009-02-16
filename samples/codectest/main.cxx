@@ -822,7 +822,7 @@ void TranscoderThread::Main()
       cerr << "Rate controller forced frame skip" << endl;
       continue;
     }
-      
+
     RTP_DataFrameList encFrames;
     if (encoder == NULL) 
       encFrames.Append(new RTP_DataFrame(srcFrame)); 
@@ -833,14 +833,16 @@ void TranscoderThread::Main()
         cerr << "Encoder " << (state ? "restor" : "fail") << "ed at frame " << frameCount << endl;
         continue;
       }
+      if (PIsDescendant(encoder, OpalVideoTranscoder) && ((OpalVideoTranscoder *)encoder)->WasLastFrameIFrame())
+        cerr << "Encoder returned I-Frame at frame " << frameCount << endl;
     }
 
-    for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+    for (PINDEX i = 0; i < encFrames.GetSize(); i++)
       encFrames[i].SetSequenceNumber(++sequenceNumber);
-    }
 
     unsigned long frameSize = 0;
     unsigned long framePacketCount = 0;
+    bool isIFrame = false;
     for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
       RTP_DataFrameList outFrames;
       if (encoder == NULL)
@@ -859,11 +861,8 @@ void TranscoderThread::Main()
 
         state = decoder->ConvertFrames(encFrames[i], outFrames);
 
-        if (PIsDescendant(decoder, OpalVideoTranscoder)) {
-          if (((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame()) {
-            cerr << "Decoder returned I-Frame at frame " << frameCount << endl;
-          }
-        }
+        if (PIsDescendant(decoder, OpalVideoTranscoder) && ((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame())
+          isIFrame = true;
 
         if (oldDecState != state) {
           oldDecState = state;
@@ -890,6 +889,8 @@ void TranscoderThread::Main()
       packetCount++;
     }
 
+    if (isIFrame)
+      cerr << "Decoder returned I-Frame at frame " << frameCount << endl;
 
     if (rcEnable)
       rateController.AddFrame(frameSize, framePacketCount);
