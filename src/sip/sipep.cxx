@@ -282,7 +282,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
     transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(TransportThreadMain),
                                             (INT)transport,
                                             PThread::NoAutoDeleteThread,
-                                            PThread::NormalPriority,
+                                            PThread::HighestPriority,
                                             "SIP Transport"));
   return transport;
 }
@@ -1465,7 +1465,10 @@ void SIPEndPoint::OnRTPStatistics(const SIPConnection & connection,
 }
 
 SIPEndPoint::SIP_PDU_Thread::SIP_PDU_Thread(PThreadPoolBase & _pool)
-  : PThreadPoolWorkerBase(_pool) { }
+  : PThreadPoolWorkerBase(_pool)
+{
+  SetPriority(HighestPriority);
+}
 
 unsigned SIPEndPoint::SIP_PDU_Thread::GetWorkSize() const { return pduQueue.size(); }
 
