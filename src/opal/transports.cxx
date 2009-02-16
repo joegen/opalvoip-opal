@@ -706,8 +706,14 @@ OpalListenerUDP::~OpalListenerUDP()
 
 PBoolean OpalListenerUDP::Open(const PNotifier & theAcceptHandler, ThreadMode /*mode*/)
 {
-  if (listenerBundle->Open(listenerPort))
-    return StartThread(theAcceptHandler, SingleThreadMode);
+  if (listenerBundle->Open(listenerPort) && StartThread(theAcceptHandler, SingleThreadMode)) {
+    /* UDP packets need to be handled. Not so much at high speed, but must not be
+       significantly delayed by media threads which are running at HighPriority.
+       This, for example, helps make sure that a SIP BYE is received and processed
+       to kill a call where codecs etc in the media threads are hogging all the CPU. */
+    thread->SetPriority(PThread::HighestPriority);
+    return true;
+  }
 
   PTRACE(1, "Listen\tCould not start any UDP listeners");
   return PFalse;
