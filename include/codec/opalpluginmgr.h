@@ -325,10 +325,11 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
 
   protected:
-    RTP_DataFrame * bufferRTP;
+    RTP_DataFrame * m_bufferRTP;
+    PTimeInterval   m_lastVideoFastUpdate;
 
 #if PTRACING
-    unsigned consecutiveIntraFrames;
+    unsigned m_consecutiveIntraFrames;
 #endif
 };
 
