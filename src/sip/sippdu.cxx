@@ -2565,7 +2565,6 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
   // Stop the timers with asynchronous flag to avoid deadlock
   retryTimer.Stop(false);
-  completionTimer.Stop(false);
 
   PString cseq = response.GetMIME().GetCSeq();
 
@@ -2616,7 +2615,6 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
       state = Completed;
       statusCode = response.GetStatusCode();
-      completionTimer = endpoint.GetPduCleanUpTimeout();
     }
 
     if (connection != NULL)
@@ -2714,7 +2712,11 @@ void SIPTransaction::SetTerminated(States newState)
     "Terminated_Aborted"
   };
 #endif
-  
+
+  // Terminated, so finished with timers
+  retryTimer.Stop(false);
+  completionTimer.Stop(false);
+
   if (state >= Terminated_Success) {
     PTRACE_IF(3, newState != Terminated_Success, "SIP\tTried to set state " << StateNames[newState] 
               << " for transaction " << mime.GetCSeq()
