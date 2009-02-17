@@ -47,10 +47,12 @@
 #include <codec/vidcodec.h>
 #endif
 
+
+#define new PNEW
+
+
 #ifdef OPAL_ZRTP
-
 extern OpalZRTPConnectionInfo * OpalLibZRTPConnInfo_Create();
-
 #endif
 
 
