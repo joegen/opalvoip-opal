@@ -2678,18 +2678,33 @@ void SIPTransaction::OnTimeout(PTimer &, INT)
 {
   PSafeLockReadWrite lock(*this);
 
-  if (lock.IsLocked() && state <= Completed) {
+  if (lock.IsLocked()) {
     switch (state) {
-      case Completed :
-        SetTerminated(Terminated_Success);
+      case Trying :
+        // Sent inityial command and got nothin'
+        SetTerminated(Terminated_Timeout);
+        break;
+
+      case Proceeding :
+        /* Got a 100 response and then nothing, give up with a CANCEL
+           just in case the other side is still there, and in particular
+           in the case of an INVITE where nobody answers */
+        Cancel();
         break;
 
       case Cancelling :
+        // We cancelled and finished waiting for retries
         SetTerminated(Terminated_Cancelled);
         break;
 
+      case Completed :
+        // We completed and finished waiting for retries
+        SetTerminated(Terminated_Success);
+        break;
+
       default :
-        SetTerminated(Terminated_Timeout);
+        // Already terminated in some way
+        break;
     }
   }
 }
