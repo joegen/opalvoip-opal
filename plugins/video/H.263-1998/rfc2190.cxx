@@ -117,8 +117,9 @@ int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long maxLen)
     FragmentListType::iterator r;
     for (r = fragments.begin(); r != fragments.end(); ++r) 
       len += r->length;
-    if (len != maxLen) 
-cout << "rfc2190: mismatch between encoder length and fragment length - " << len << "/" << maxLen << endl;
+
+//    if (len != maxLen) 
+//      cout << "rfc2190: mismatch between encoder length and fragment length - " << len << "/" << maxLen << endl;
   }
   
   // save timestamp
@@ -268,7 +269,7 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
 
     // make sure RTP storage is sufficient
     if ((frag.length + offs) > payloadRemaining) {
-      std::cout << "no room for Mode " << (modeA ? 'A' : 'B') << " frame - " << (frag.length+offs) << " > " << payloadRemaining << std::endl;
+      //std::cout << "no room for Mode " << (modeA ? 'A' : 'B') << " frame - " << (frag.length+offs) << " > " << payloadRemaining << std::endl;
       continue;
     }
 
