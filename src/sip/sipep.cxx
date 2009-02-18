@@ -471,11 +471,21 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   bool hasFromConnection = HasConnection(fromToken);
   bool hasToConnection = HasConnection(toToken);
 
+  PString token;
+
   // Adjust the Via list and send a trying in case it takes us a while to process request
   switch (pdu->GetMethod()) {
+    case SIP_PDU::Method_CANCEL :
+      token = m_receivedConnectionTokens(mime.GetCallID());
+      if (!token.IsEmpty()) {
+        threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+        return true;
+      }
+      break;
+
     case SIP_PDU::Method_INVITE :
       if (toToken.IsEmpty()) {
-        PString token = m_receivedConnectionTokens(mime.GetCallID());
+        token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
           threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
           return true;
@@ -490,21 +500,19 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
         pdu->SendResponse(transport, SIP_PDU::Failure_TransactionDoesNotExist);
         return false;
       }
+      // Do next case
 
     default :
       pdu->SendResponse(transport, SIP_PDU::Information_Trying, this);
       // Do next case
 
     case SIP_PDU::Method_ACK :
-    case SIP_PDU::Method_CANCEL :
       pdu->AdjustVia(transport);
       // Do next case
 
     case SIP_PDU::NumMethods :
       break;
   }
-
-  PString token;
 
   if (hasFromConnection && hasToConnection)
     token = pdu->GetMethod() != SIP_PDU::NumMethods ? fromToken : toToken;
@@ -522,7 +530,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
 bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
-  if (pdu->GetMethod() == SIP_PDU::NumMethods) {
+  if (pdu->GetMethod() == SIP_PDU::NumMethods || pdu->GetMethod() == SIP_PDU::Method_CANCEL) {
     PSafePtr<SIPTransaction> transaction = GetTransaction(pdu->GetTransactionID(), PSafeReference);
     if (transaction != NULL)
       transaction->OnReceivedResponse(*pdu);
@@ -775,7 +783,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return PFalse;
   }
 
-  m_receivedConnectionTokens.SetAt(connection->GetIdentifier(), connection->GetToken());
+  m_receivedConnectionTokens.SetAt(mime.GetCallID(), connection->GetToken());
 
   // Get the connection to handle the rest of the INVITE in the thread pool
   threadPool.AddWork(new SIP_PDU_Work(*this, connection->GetToken(), request));
