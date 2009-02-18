@@ -132,6 +132,7 @@ ReasonToSIPCode[] = {
 // This table comes from RFC 3398 para 8.2.6.1
 //
 SIPCodeToReason[] = {
+  { SIP_PDU::Failure_RequestTerminated          , OpalConnection::EndedByNoAnswer          ,  19 }, // No answer
   { SIP_PDU::Failure_BadRequest                 , OpalConnection::EndedByQ931Cause         ,  41 }, // Temporary Failure
   { SIP_PDU::Failure_UnAuthorised               , OpalConnection::EndedBySecurityDenial    ,  21 }, // Call rejected (*)
   { SIP_PDU::Failure_PaymentRequired            , OpalConnection::EndedByQ931Cause         ,  21 }, // Call rejected
@@ -1332,7 +1333,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
   if (GetPhase() >= ReleasingPhase)
     return;
 
-  bool allFailed = true;
+  bool stilltrying = false;
   {
     // The connection stays alive unless all INVITEs have failed
     PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference);
@@ -1341,17 +1342,25 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
         forkedInvitations.Remove(invitation++);
       else {
         if (!invitation->IsFailed())
-          allFailed = false;
+          stilltrying = true;
         ++invitation;
       }
     }
   }
 
-  // All invitations failed, die now
-  if (allFailed && GetPhase() < ConnectedPhase) {
-    releaseMethod = ReleaseWithNothing;
-    Release(EndedByConnectFail);
+  if (stilltrying || GetPhase() >= ConnectedPhase)
+    return;
+
+  // All invitations failed, die now, with correct code
+  for (PINDEX i = 0; i < PARRAYSIZE(SIPCodeToReason); i++) {
+    if (transaction.GetStatusCode() == SIPCodeToReason[i].code) {
+      SetQ931Cause(SIPCodeToReason[i].q931Cause);
+      Release(SIPCodeToReason[i].reason);
+      return;
+    }
   }
+
+  Release(EndedByConnectFail);
 }
 
 
