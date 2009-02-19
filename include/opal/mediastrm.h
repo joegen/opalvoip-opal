@@ -540,7 +540,7 @@ class OpalRTPMediaStream : public OpalMediaStream
 
 
 
-/**This class describes a media stream that transfers data to/from a PChannel.
+/**This class describes a media stream that transfers PCM-16 data to/from a PChannel.
   */
 class OpalRawMediaStream : public OpalMediaStream
 {
@@ -611,6 +611,8 @@ class OpalRawMediaStream : public OpalMediaStream
     PChannel * m_channel;
     bool       m_autoDelete;
     PMutex     m_channelMutex;
+
+    PBYTEArray m_silence;
 
     PUInt64    m_averageSignalSum;
     unsigned   m_averageSignalSamples;
