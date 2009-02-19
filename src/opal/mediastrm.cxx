@@ -397,6 +397,7 @@ PBoolean OpalMediaStream::SetDataSize(PINDEX dataSize)
   if (dataSize <= 0)
     return false;
 
+  PTRACE_IF(4, defaultDataSize != dataSize, "Media\tSet data size from " << defaultDataSize << " to " << dataSize);
   defaultDataSize = dataSize;
   return true;
 }
@@ -773,20 +774,29 @@ PBoolean OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDE
     return false;
   }
 
-  if (buffer != NULL && length != 0) {
-    if (!m_channel->Write(buffer, length))
-      return false;
-    written = m_channel->GetLastWriteCount();
-    CollectAverage(buffer, written);
-  }
+  /* We make the assumption that the remote is sending the same sized packets
+     all the time and does not suddenly switch from 30ms to 20ms, even though
+     this is technically legal. We have never yet seen it, and even if it did
+     it doesn't hurt the silence insertion algorithm very much.
+
+     So, silence buffer is set to be the largest chunk of audio the remote has
+     ever sent to us. Then when they stop sending, (we get length==0) we just
+     keep outputting that number of bytes to the raw channel until the remote
+     starts up again.
+     */
+
+  if (buffer != NULL && length != 0)
+    m_silence.SetMinSize(length);
   else {
-    PBYTEArray silence(defaultDataSize);
-    if (!m_channel->Write(silence, defaultDataSize))
-      return false;
-    written = m_channel->GetLastWriteCount();
-    CollectAverage(silence, written);
+    length = m_silence.GetSize();
+    buffer = m_silence;
   }
 
+  if (!m_channel->Write(buffer, length))
+    return false;
+
+  written = m_channel->GetLastWriteCount();
+  CollectAverage(buffer, written);
   return true;
 }
 
