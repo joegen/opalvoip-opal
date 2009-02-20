@@ -79,7 +79,7 @@ OpalTransportAddress::OpalTransportAddress()
 OpalTransportAddress::OpalTransportAddress(const char * cstr,
                                            WORD port,
                                            const char * proto)
-  : PString(cstr)
+  : PCaselessString(cstr)
 {
   SetInternalTransport(port, proto);
 }
@@ -88,14 +88,14 @@ OpalTransportAddress::OpalTransportAddress(const char * cstr,
 OpalTransportAddress::OpalTransportAddress(const PString & str,
                                            WORD port,
                                            const char * proto)
-  : PString(str)
+  : PCaselessString(str)
 {
   SetInternalTransport(port, proto);
 }
 
 
 OpalTransportAddress::OpalTransportAddress(const PIPSocket::Address & addr, WORD port, const char * proto)
-  : PString(addr.AsString(true))
+  : PCaselessString(addr.AsString(true))
 {
   SetInternalTransport(port, proto);
 }
