@@ -524,7 +524,7 @@ PBoolean OpalLineConnection::SetAlerting(const PString & /*calleeName*/, PBoolea
 {
   PTRACE(3, "LID Con\tSetAlerting " << *this);
 
-  if (GetPhase() != SetUpPhase) 
+  if (GetPhase() >= AlertingPhase) 
     return false;
 
   // switch phase 

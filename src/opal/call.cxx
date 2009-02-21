@@ -173,6 +173,12 @@ PBoolean OpalCall::OnSetUp(OpalConnection & connection)
 }
 
 
+void OpalCall::OnProceeding(OpalConnection & PTRACE_PARAM(connection))
+{
+  PTRACE(3, "Call\tOnProceeding " << connection);
+}
+
+
 PBoolean OpalCall::OnAlerting(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnAlerting " << connection);

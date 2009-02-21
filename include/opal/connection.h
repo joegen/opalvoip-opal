@@ -451,14 +451,15 @@ class OpalConnection : public PSafeObject
        instances. These phases are fully described in the documentation page
        \ref pageOpalConnections.  */
     enum Phases {
-	UninitialisedPhase,   /*!< Indicates the OpalConnection instance has just been constructed*/
-	SetUpPhase,           /*!< In the process of sending/receiving the initial INVITE packet */
-	AlertingPhase,        /*!< There is a phone ringing, somewhere                           */
-	ConnectedPhase,       /*!< There is agreement on having a call, media type etc            */
-	EstablishedPhase,     /*!< Media is flowing, control streams  are all operational         */
-	ReleasingPhase,       /*!< Hangup packet has been sent/received, media and control not yet stopped  */
-	ReleasedPhase,        /*!< Media and control streams have been terminated                           */
-	NumPhases             /*!< Number of available phases. Can be used to indicate an unknown phase     */
+      UninitialisedPhase,   //!< Indicates the OpalConnection instance has just been constructed
+      SetUpPhase,           //!< In the process of sending/receiving the initial INVITE packet
+      ProceedingPhase,      //!< The remote is now responsible for completing the call
+      AlertingPhase,        //!< The remote says there is a phone ringing, somewhere
+      ConnectedPhase,       //!< There is agreement on having a call, usually means billing will apply
+      EstablishedPhase,     //!< Media is flowing, control streams  are all operational
+      ReleasingPhase,       //!< Hangup packet has been sent/received, media and control not yet stopped
+      ReleasedPhase,        //!< Media and control streams have been terminated
+      NumPhases             //!< Number of available phases. Can be used to indicate an unknown phase
     };
 
     /**Get the phase of the connection.
@@ -591,18 +592,29 @@ class OpalConnection : public PSafeObject
     virtual PBoolean OnSetUpConnection();
 
     
+    /**Call back for remote party is now responsible for completing the call.
+       This function is called when the remote system has been contacted and it
+       has accepted responsibility for completing, or failing, the call. This
+       is distinct from OnAlerting() in that it is not known at this time if
+       anything is ringing. This indication may be used to distinguish between
+       "transport" level error, in which case another host may be tried, and
+       that finalising the call has moved "upstream" and the local system has
+       no more to do but await a result.
+
+       If an application overrides this function, it should generally call the
+       ancestor version for correct operation.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+     */
+    virtual void OnProceeding();
+
     /**Call back for remote party being alerted.
        This function is called after the connection is informed that the
        remote endpoint is "ringing". Generally some time after the
        SetUpConnection() function was called, this is function is called.
 
-       If PFalse is returned the connection is aborted.
-
        If an application overrides this function, it should generally call the
-       ancestor version for correct operation. An application would typically
-       only intercept this function if it wishes to do some form of logging.
-       For this you can obtain the name of the caller by using the function
-       OpalConnection::GetRemotePartyName().
+       ancestor version for correct operation.
 
        The default behaviour calls the OpalEndPoint function of the same name.
      */

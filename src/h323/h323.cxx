@@ -1318,6 +1318,11 @@ PBoolean H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
   if (call.HasOptionalField(H225_CallProceeding_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
     CreateOutgoingControlChannel(call.m_h245Address);
 
+  if (GetPhase() < ProceedingPhase) {
+    SetPhase(ProceedingPhase);
+    OnProceeding();
+  }
+
   return PTrue;
 }
 
