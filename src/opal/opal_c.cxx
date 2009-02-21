@@ -182,6 +182,7 @@ class OpalManager_C : public OpalManager
     virtual void OnUserInputString(OpalConnection & connection, const PString & value);
     virtual void OnUserInputTone(OpalConnection & connection, char tone, int duration);
     virtual void OnMWIReceived(const PString & party, MessageWaitingType type, const PString & extraInfo);
+    virtual void OnProceeding(OpalConnection & conenction);
     virtual void OnClearedCall(OpalCall & call);
 
   private:
@@ -1711,6 +1712,24 @@ void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type
   PostMessage(message);
 
   OpalManager::OnMWIReceived(party, type, extraInfo);
+}
+
+
+void OpalManager_C::OnProceeding(OpalConnection & connection)
+{
+  OpalCall & call = connection.GetCall();
+
+  OpalMessageBuffer message(OpalIndProceeding);
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
+  PTRACE(4, "OpalC API\tOnProceeding:"
+            " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
+            " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
+            " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
+  PostMessage(message);
+
+  OpalManager::OnProceeding(connection);
 }
 
 

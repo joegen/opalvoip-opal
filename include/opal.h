@@ -355,8 +355,7 @@ typedef enum OpalMessageType {
                                     connection. See the OpalStatusUserInput structure for more information. */
   OpalIndMessageWaiting,        /**<Message Waiting indication. This message is returned in the
                                     OpalGetMessage() function when an MWI is received on any of the supported
-                                    protocols.
-                                */
+                                    protocols. */
   OpalIndMediaStream,           /**<A media stream has started/stopped. This message is returned in the
                                     OpalGetMessage() function when a media stream is started or stopped. See the
                                     OpalStatusMediaStream structure for more information. */
@@ -365,12 +364,19 @@ typedef enum OpalMessageType {
   OpalCmdSetUserData,           /**<Set the user data field associated with a call */
   OpalIndLineAppearance,        /**<Line Appearance indication. This message is returned in the
                                     OpalGetMessage() function when any of the supported protocols indicate that
-                                    the state of a "line" has changed, e.g. free, busy, on hold etc.
-                                */
+                                    the state of a "line" has changed, e.g. free, busy, on hold etc. */
   OpalCmdStartRecording,        /**<Start recording an active call. See the OpalParamRecording structure
                                     for more information. */
   OpalCmdStopRecording,         /**<Stop recording an active call. Only the m_callToken field of the
                                     OpalMessage union is used. */
+  OpalIndProceeding,            /**<Call has been accepted by remote. This message is returned in the
+                                    OpalGetMessage() function when the underlying protocol states the remote
+                                    endpoint acknowledged that it will route the call. This is distinct from
+                                    OpalIndAlerting in that it is not known at this time if anything is
+                                    ringing. This indication may be used to distinguish between "transport"
+                                    level error, in which case another host may be tried, and that the
+                                    responsibility for finalising the call has moved "upstream". See the
+                                    OpalParamSetUpCall structure for more information. */
   OpalMessageTypeCount
 } OpalMessageType;
 

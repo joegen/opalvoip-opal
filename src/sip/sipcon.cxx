@@ -408,7 +408,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   
   PTRACE(3, "SIP\tSetAlerting");
 
-  if (GetPhase() != SetUpPhase) 
+  if (GetPhase() >= AlertingPhase) 
     return PFalse;
 
   if (!withMedia) 
@@ -1990,6 +1990,11 @@ void SIPConnection::OnReceivedTrying(SIP_PDU & /*response*/)
 {
   PTRACE(3, "SIP\tReceived Trying response");
   NotifyDialogState(SIPDialogNotification::Proceeding);
+
+  if (GetPhase() < ProceedingPhase) {
+    SetPhase(ProceedingPhase);
+    OnProceeding();
+  }
 }
 
 

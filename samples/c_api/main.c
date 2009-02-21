@@ -314,6 +314,10 @@ static void HandleMessages(unsigned timeout)
         }
         break;
 
+      case OpalIndProceeding :
+        puts("Proceeding.\n");
+        break;
+
       case OpalIndAlerting :
         puts("Ringing.\n");
         break;

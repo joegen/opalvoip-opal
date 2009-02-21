@@ -620,6 +620,13 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
 }
 
 
+void OpalManager::OnProceeding(OpalConnection & connection)
+{
+  PTRACE(3, "OpalMan\tOnProceeding " << connection);
+
+  connection.GetCall().OnProceeding(connection);
+}
+
 void OpalManager::OnAlerting(OpalConnection & connection)
 {
   PTRACE(3, "OpalMan\tOnAlerting " << connection);

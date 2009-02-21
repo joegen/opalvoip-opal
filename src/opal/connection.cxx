@@ -66,6 +66,7 @@ ostream & operator<<(ostream & out, OpalConnection::Phases phase)
   static const char * const names[OpalConnection::NumPhases] = {
     "UninitialisedPhase",
     "SetUpPhase",
+    "ProceedingPhase",
     "AlertingPhase",
     "ConnectedPhase",
     "EstablishedPhase",
@@ -422,6 +423,11 @@ PSafePtr<OpalConnection> OpalConnection::GetOtherPartyConnection() const
   return GetCall().GetOtherPartyConnection(*this);
 }
 
+
+void OpalConnection::OnProceeding()
+{
+  endpoint.OnProceeding(*this);
+}
 
 void OpalConnection::OnAlerting()
 {
