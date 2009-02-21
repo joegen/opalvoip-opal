@@ -411,13 +411,16 @@ static void SetIncomingCall(OpalMessageBuffer & message, const OpalConnection & 
   message->m_param.m_incomingCall.m_product.m_t35Extension     = info.t35Extension;
   message->m_param.m_incomingCall.m_product.m_manufacturerCode = info.manufacturerCode;
 
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_alertingType, network->GetAlertingType());
+
   PTRACE(4, "OpalC API\tOpalIndIncomingCall: token=\""  << message->m_param.m_incomingCall.m_callToken << "\"\n"
             "  Local  - URL=\"" << message->m_param.m_incomingCall.m_localAddress << "\"\n"
             "  Remote - URL=\"" << message->m_param.m_incomingCall.m_remoteAddress << "\""
                     " E.164=\"" << message->m_param.m_incomingCall.m_remotePartyNumber << "\""
                   " Display=\"" << message->m_param.m_incomingCall.m_remoteDisplayName << "\"\n"
             "  Dest.  - URL=\"" << message->m_param.m_incomingCall.m_calledAddress << "\""
-                    " E.164=\"" << message->m_param.m_incomingCall.m_calledPartyNumber << '"');
+                    " E.164=\"" << message->m_param.m_incomingCall.m_calledPartyNumber << "\"\n"
+            "  AlertingType=\"" << message->m_param.m_incomingCall.m_alertingType << '"');
 }
 
 
@@ -1330,8 +1333,12 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
       partyA = "pots:*";
   }
 
+  OpalConnection::StringOptions options;
+  if (!IsNullString(command.m_param.m_callSetUp.m_alertingType))
+    options.SetAt("Alerting-Type", command.m_param.m_callSetUp.m_alertingType);
+
   PString token;
-  if (SetUpCall(partyA, command.m_param.m_callSetUp.m_partyB, token)) {
+  if (SetUpCall(partyA, command.m_param.m_callSetUp.m_partyB, token, NULL, 0, &options)) {
     SET_MESSAGE_STRING(response, m_param.m_callSetUp.m_partyA, partyA);
     SET_MESSAGE_STRING(response, m_param.m_callSetUp.m_partyB, command.m_param.m_callSetUp.m_partyB);
     SET_MESSAGE_STRING(response, m_param.m_callSetUp.m_callToken, token);

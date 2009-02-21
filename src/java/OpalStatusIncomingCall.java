@@ -98,6 +98,14 @@ public class OpalStatusIncomingCall {
     return (cPtr == 0) ? null : new OpalProductDescription(cPtr, false);
   }
 
+  public void setM_alertingType(String value) {
+    exampleJNI.OpalStatusIncomingCall_m_alertingType_set(swigCPtr, this, value);
+  }
+
+  public String getM_alertingType() {
+    return exampleJNI.OpalStatusIncomingCall_m_alertingType_get(swigCPtr, this);
+  }
+
   public OpalStatusIncomingCall() {
     this(exampleJNI.new_OpalStatusIncomingCall(), true);
   }

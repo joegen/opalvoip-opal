@@ -1935,9 +1935,17 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
 {
   m_incomingToken = connection.GetCall().GetToken();
 
+  PString alertingType;
+  PSafePtr<OpalConnection> network = connection.GetOtherPartyConnection();
+  if (network != NULL)
+    alertingType = network->GetAlertingType();
+
   PTime now;
   LogWindow << "\nIncoming call at " << now.AsString("w h:mma")
-            << " from " << connection.GetRemotePartyName() << endl;
+            << " from " << connection.GetRemotePartyName();
+  if (!alertingType.IsEmpty())
+    LogWindow << ", type=" << alertingType;
+  LogWindow << endl;
 
   m_LastReceived = connection.GetRemotePartyAddress();
   wxConfigBase * config = wxConfig::Get();

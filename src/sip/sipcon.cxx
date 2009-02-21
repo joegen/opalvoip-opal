@@ -1151,8 +1151,7 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   needReINVITE = false;
   SIPTransaction * invite = new SIPInvite(*this, transport, OpalRTPSessionManager(*this));
 
-  if (m_appearanceCode >= 0)
-    invite->GetMIME().SetAt("Alert-Info", psprintf("<>;appearance=%u", m_appearanceCode));
+  invite->GetMIME().SetAlertInfo(m_alertInfo, m_appearanceCode);
 
   // It may happen that constructing the INVITE causes the connection
   // to be released (e.g. there are no UDP ports available for the RTP sessions)
@@ -1235,6 +1234,19 @@ PString SIPConnection::GetCalledPartyURL()
   SIPURL calledParty = m_dialog.GetRemoteURI();
   calledParty.Sanitise(SIPURL::ToURI);
   return calledParty.AsString();
+}
+
+
+PString SIPConnection::GetAlertingType() const
+{
+  return m_alertInfo;
+}
+
+
+bool SIPConnection::SetAlertingType(const PString & info)
+{
+  m_alertInfo = info;
+  return true;
 }
 
 
@@ -1699,7 +1711,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
 
   NotifyDialogState(SIPDialogNotification::Trying);
-  ExtractAppearanceCode(request);
+  mime.GetAlertInfo(m_alertInfo, m_appearanceCode);
 
   // Fill in all the various connection info, note our to/from is their from/to
   mime.GetProductInfo(remoteProductInfo);
@@ -1998,25 +2010,6 @@ void SIPConnection::OnReceivedTrying(SIP_PDU & /*response*/)
 }
 
 
-void SIPConnection::ExtractAppearanceCode(SIP_PDU & pdu)
-{
-  PString info = pdu.GetMIME()("Alert-Info");
-  if (info.IsEmpty())
-    return;
-
-  static const char appearance1[] = ";appearance=";
-  PINDEX pos = info.Find(appearance1);
-  if (pos != P_MAX_INDEX) {
-    m_appearanceCode = info.Mid(pos+sizeof(appearance1)).AsUnsigned();
-    return;
-  }
-
-  static const char appearance2[] = ";x-line-id";
-  pos = info.Find(appearance2);
-  if (pos != P_MAX_INDEX)
-    m_appearanceCode = info.Mid(pos+sizeof(appearance2)).AsUnsigned();
-}
-
 void SIPConnection::OnStartTransaction(SIPTransaction & transaction)
 {
   endpoint.OnStartTransaction(*this, transaction);
@@ -2026,7 +2019,7 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & response)
 {
   PTRACE(3, "SIP\tReceived Ringing response");
 
-  ExtractAppearanceCode(response);
+  response.GetMIME().GetAlertInfo(m_alertInfo, m_appearanceCode);
 
   if (GetPhase() < AlertingPhase) {
     SetPhase(AlertingPhase);
@@ -2387,8 +2380,8 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
   response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
   response.SetAllow(endpoint.GetAllowedMethods());
 
-  if (m_appearanceCode >= 0 && response.GetStatusCode() == SIP_PDU::Information_Ringing)
-    response.GetMIME().SetAt("Alert-Info", psprintf("<>;appearance=%u", m_appearanceCode));
+  if (response.GetStatusCode() == SIP_PDU::Information_Ringing)
+    response.GetMIME().SetAlertInfo(m_alertInfo, m_appearanceCode);
 
   if (response.GetStatusCode() >= 200) {
     ackPacket = response;

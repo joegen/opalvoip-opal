@@ -367,6 +367,9 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetRequire() const;
     void SetRequire(const PString & v, bool overwrite);
 
+    void GetAlertInfo(PString & info, int & appearance);
+    void SetAlertInfo(const PString & info, int appearance);
+
     /** return the value of a header field parameter, empty if none
      */
     PString GetFieldParameter(

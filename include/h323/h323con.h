@@ -229,6 +229,36 @@ class H323Connection : public OpalRTPConnection
       */
     virtual PString GetDestinationAddress();
 
+    /**Get alerting type information of an incoming call.
+       The type of "distinctive ringing" for the call. The string is protocol
+       dependent, so the caller would need to be aware of the type of call
+       being made. Some protocols may ignore the field completely.
+
+       For SIP this corresponds to the string contained in the "Alert-Info"
+       header field of the INVITE. This is typically a URI for the ring file.
+
+       For H.323 this must be a string representation of an integer from 0 to 7
+       which will be contained in the Q.931 SIGNAL (0x34) Information Element.
+
+       Default behaviour returns an empty string.
+      */
+    virtual PString GetAlertingType() const;
+
+    /**Set alerting type information for outgoing call.
+       The type of "distinctive ringing" for the call. The string is protocol
+       dependent, so the caller would need to be aware of the type of call
+       being made. Some protocols may ignore the field completely.
+
+       For SIP this corresponds to the string contained in the "Alert-Info"
+       header field of the INVITE. This is typically a URI for the ring file.
+
+       For H.323 this must be a string representation of an integer from 0 to 7
+       which will be contained in the Q.931 SIGNAL (0x34) Information Element.
+
+       Default behaviour returns false.
+      */
+    virtual bool SetAlertingType(const PString & info);
+
     /**Get the data formats this connection is capable of operating.
        This provides a list of media data format names that an
        OpalMediaStream may be created in within this connection.
