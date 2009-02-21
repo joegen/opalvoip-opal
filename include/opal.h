@@ -66,7 +66,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 15
+#define OPAL_C_API_VERSION 16
 
 
 ///////////////////////////////////////
@@ -809,6 +809,24 @@ typedef struct OpalParamSetUpCall {
                                    returned by the OpalSendMessage() function. The user would
                                    provide the call token for the call being transferred when
                                    OpalCmdTransferCall is being called. */
+  const char * m_alertingType;/**< The type of "distinctive ringing" for the call. The string
+                                   is protocol dependent, so the caller would need to be aware
+                                   of the type of call being made. Some protocols may ignore
+                                   the field completely.
+
+                                   For SIP this corresponds to the string contained in the
+                                   "Alert-Info" header field of the INVITE. This is typically
+                                   a URI for the ring file.
+
+                                   For H.323 this must be a string representation of an
+                                   integer from 0 to 7 which will be contained in the
+                                   Q.931 SIGNAL (0x34) Information Element.
+
+                                   This is only used in OpalCmdSetUpCall to set the string to
+                                   be sent to the remote to change the type of ring the remote
+                                   may emit.
+
+                                   For other indications this field is NULL. */
 } OpalParamSetUpCall;
 
 
@@ -824,6 +842,18 @@ typedef struct OpalStatusIncomingCall {
   const char * m_calledAddress;     ///< URL of called party the remote is trying to contact.
   const char * m_calledPartyNumber; ///< This is the E.164 number of the called party, if available.
   OpalProductDescription m_product; /**< Product description data */
+  const char * m_alertingType;/**< The type of "distinctive ringing" for the call. The string
+                                   is protocol dependent, so the caller would need to be aware
+                                   of the type of call being made. Some protocols may ignore
+                                   the field completely.
+
+                                   For SIP this corresponds to the string contained in the
+                                   "Alert-Info" header field of the INVITE. This is typically
+                                   a URI for the ring file.
+
+                                   For H.323 this must be a string representation of an
+                                   integer from 0 to 7 which will be contained in the
+                                   Q.931 SIGNAL (0x34) Information Element. */
 } OpalStatusIncomingCall;
 
 
@@ -1023,7 +1053,7 @@ struct OpalMessage {
     OpalParamProtocol        m_protocol;           ///< Used by OpalCmdSetProtocolParameters
     OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
     OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistrationStatus
-    OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndAlerting/OpalIndEstablished
+    OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndProceeding/OpalIndAlerting/OpalIndEstablished
     const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldcall/OpalCmdRetreiveCall/OpalCmdStopRecording
     OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput

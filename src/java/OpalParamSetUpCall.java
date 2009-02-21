@@ -57,6 +57,14 @@ public class OpalParamSetUpCall {
     return exampleJNI.OpalParamSetUpCall_m_callToken_get(swigCPtr, this);
   }
 
+  public void setM_alertingType(String value) {
+    exampleJNI.OpalParamSetUpCall_m_alertingType_set(swigCPtr, this, value);
+  }
+
+  public String getM_alertingType() {
+    return exampleJNI.OpalParamSetUpCall_m_alertingType_get(swigCPtr, this);
+  }
+
   public OpalParamSetUpCall() {
     this(exampleJNI.new_OpalParamSetUpCall(), true);
   }

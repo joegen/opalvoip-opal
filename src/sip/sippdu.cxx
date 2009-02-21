@@ -1160,6 +1160,56 @@ void SIPMIMEInfo::SetRequire(const PString & v, bool overwrite)
 }
 
 
+void SIPMIMEInfo::GetAlertInfo(PString & info, int & appearance)
+{
+  info.MakeEmpty();
+  appearance = -1;
+
+  PString str = GetString("Alert-Info");
+  if (str.IsEmpty())
+    return;
+
+  PINDEX pos = str.Find('<');
+  PINDEX end = str.Find('>', pos);
+  if (pos == P_MAX_INDEX || end == P_MAX_INDEX) {
+    info = str;
+    return;
+  }
+
+  info = str(pos+1, end-1);
+
+  static const char appearance1[] = ";appearance=";
+  pos = str.Find(appearance1, end);
+  if (pos != P_MAX_INDEX) {
+    appearance = str.Mid(pos+sizeof(appearance1)).AsUnsigned();
+    return;
+  }
+
+  static const char appearance2[] = ";x-line-id";
+  pos = str.Find(appearance2, end);
+  if (pos != P_MAX_INDEX)
+    appearance = str.Mid(pos+sizeof(appearance2)).AsUnsigned();
+}
+
+
+void SIPMIMEInfo::SetAlertInfo(const PString & info, int appearance)
+{
+  if (appearance < 0) {
+    SetAt("Alert-Info", info);
+    return;
+  }
+
+  PStringStream str;
+  if (info[0] == '<')
+    str << info;
+  else
+    str << '<' << info << '>';
+  str << ";appearance=" << appearance;
+
+  SetAt("Alert-Info", str);
+}
+
+
 static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & end)
 {
   PINDEX semicolon = (PINDEX)-1;

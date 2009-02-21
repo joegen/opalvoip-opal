@@ -138,6 +138,36 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual PString GetCalledPartyURL();
 
+    /**Get alerting type information of an incoming call.
+       The type of "distinctive ringing" for the call. The string is protocol
+       dependent, so the caller would need to be aware of the type of call
+       being made. Some protocols may ignore the field completely.
+
+       For SIP this corresponds to the string contained in the "Alert-Info"
+       header field of the INVITE. This is typically a URI for the ring file.
+
+       For H.323 this must be a string representation of an integer from 0 to 7
+       which will be contained in the Q.931 SIGNAL (0x34) Information Element.
+
+       Default behaviour returns an empty string.
+      */
+    virtual PString GetAlertingType() const;
+
+    /**Set alerting type information for outgoing call.
+       The type of "distinctive ringing" for the call. The string is protocol
+       dependent, so the caller would need to be aware of the type of call
+       being made. Some protocols may ignore the field completely.
+
+       For SIP this corresponds to the string contained in the "Alert-Info"
+       header field of the INVITE. This is typically a URI for the ring file.
+
+       For H.323 this must be a string representation of an integer from 0 to 7
+       which will be contained in the Q.931 SIGNAL (0x34) Information Element.
+
+       Default behaviour returns false.
+      */
+    virtual bool SetAlertingType(const PString & info);
+
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
 
@@ -462,7 +492,6 @@ class SIPConnection : public OpalRTPConnection
       SIPDialogNotification::Events eventType = SIPDialogNotification::NoEvent,
       unsigned eventCode = 0
     );
-    void ExtractAppearanceCode(SIP_PDU & pdu);
 
 
     // Member variables
@@ -489,6 +518,7 @@ class SIPConnection : public OpalRTPConnection
     SIPDialogContext      m_dialog;
     OpalGloballyUniqueID  m_dialogNotifyId;
     int                   m_appearanceCode;
+    PString               m_alertInfo;
     SIPAuthentication   * authentication;
 
     std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
