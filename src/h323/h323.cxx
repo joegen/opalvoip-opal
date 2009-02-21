@@ -461,6 +461,26 @@ PString H323Connection::GetDestinationAddress()
 }
 
 
+PString H323Connection::GetAlertingType() const
+{
+  return psprintf("%u", distinctiveRing);
+}
+
+
+bool H323Connection::SetAlertingType(const PString & info)
+{
+  if (!isdigit(info[0]))
+    return false;
+
+  unsigned value = info.AsUnsigned();
+  if (value > 7)
+    return false;
+
+  distinctiveRing = value;
+  return true;
+}
+
+
 void H323Connection::AttachSignalChannel(const PString & token,
                                          H323Transport * channel,
                                          PBoolean answeringCall)

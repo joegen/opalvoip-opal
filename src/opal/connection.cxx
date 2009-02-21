@@ -1071,6 +1071,18 @@ void OpalConnection::CopyPartyNames(const OpalConnection & other)
 }
 
 
+PString OpalConnection::GetAlertingType() const
+{
+  return PString::Empty();
+}
+
+
+bool OpalConnection::SetAlertingType(const PString & /*info*/)
+{
+  return false;
+}
+
+
 void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
   maxDelay = PMAX(10, PMIN(maxDelay, 999));
@@ -1157,6 +1169,10 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
       minAudioJitterDelay = str.AsUnsigned();
     if (stringOptions.Contains("Record-Audio"))
       recordAudioFilename = m_connStringOptions("Record-Audio");
+
+    str = stringOptions("Alerting-Type");
+    if (!str.IsEmpty())
+      SetAlertingType(str);
 
     UnlockReadWrite();
   }
