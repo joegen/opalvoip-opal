@@ -399,6 +399,11 @@ PBoolean OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigne
 }
 
 
+void OpalEndPoint::OnProceeding(OpalConnection & connection)
+{
+  manager.OnProceeding(connection);
+}
+
 void OpalEndPoint::OnAlerting(OpalConnection & connection)
 {
   manager.OnAlerting(connection);

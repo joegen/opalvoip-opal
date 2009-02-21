@@ -386,6 +386,25 @@ class OpalManager : public PObject
       OpalConnection::StringOptions * stringOptions
     );
 
+    /**Call back for remote party is now responsible for completing the call.
+       This function is called when the remote system has been contacted and it
+       has accepted responsibility for completing, or failing, the call. This
+       is distinct from OnAlerting() in that it is not known at this time if
+       anything is ringing. This indication may be used to distinguish between
+       "transport" level error, in which case another host may be tried, and
+       that finalising the call has moved "upstream" and the local system has
+       no more to do but await a result.
+
+       If an application overrides this function, it should generally call the
+       ancestor version for correct operation.
+
+       The default behaviour calls the OnProceeding() on the connection's
+       associated OpalCall object.
+     */
+    virtual void OnProceeding(
+      OpalConnection & connection   ///<  Connection that is proceeeding
+    );
+
     /**Call back for remote party being alerted on outgoing call.
        This function is called after the connection is informed that the
        remote endpoint is "ringing". This function is generally called

@@ -164,7 +164,36 @@ class OpalCall : public PSafeObject
       OpalConnection & connection   ///<  Connection that indicates it is alerting
     );
 
-    /**Call back for alerting.
+    /**Call back for remote party is now responsible for completing the call.
+       This function is called when the remote system has been contacted and it
+       has accepted responsibility for completing, or failing, the call. This
+       is distinct from OnAlerting() in that it is not known at this time if
+       anything is ringing. This indication may be used to distinguish between
+       "transport" level error, in which case another host may be tried, and
+       that finalising the call has moved "upstream" and the local system has
+       no more to do but await a result.
+
+       If an application overrides this function, it should generally call the
+       ancestor version for correct operation.
+
+       The default behaviour does nothing.
+     */
+    virtual void OnProceeding(
+      OpalConnection & connection   ///<  Connection that is proceeeding
+    );
+
+    /**Call back for remote party being alerted.
+       This function is called after the connection is informed that the
+       remote endpoint is "ringing". Generally some time after the
+       MakeConnection() function was called, this is function is called.
+
+       If PFalse is returned the connection is aborted.
+
+       If an application overrides this function, it should generally call the
+       ancestor version for correct operation. An application would typically
+       only intercept this function if it wishes to do some form of logging.
+       For this you can obtain the name of the caller by using the function
+       OpalConnection::GetRemotePartyName().
 
        The default behaviour is to call SetAlerting() on all the other
        connections in the call.
