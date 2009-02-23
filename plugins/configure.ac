@@ -517,7 +517,6 @@ fi
 echo ""
 
 echo "                           H.261  :  yes"
-echo "       H.263 (old ffmpeg version) :  ${HAVE_H263}"
 echo "                     H.263/H.263+ :  ${HAVE_H263P}"
 echo "                           H.264  :  ${HAVE_H264}"
 echo "                          THEORA  :  ${HAVE_THEORA}"
