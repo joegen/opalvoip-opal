@@ -1478,7 +1478,9 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
   GetOpalPCM16_16KHZ();
   GetOpalPCM16_32KHZ();
   GetOpalPCM16_48KHZ();
+#if OPAL_VIDEO
   GetOpalYUV420P();
+#endif
 
   for (unsigned  i = 0; i < count; i++,codecDefn++) {
 #if PTRACING
