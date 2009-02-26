@@ -704,13 +704,14 @@ void OpalRTPMediaStream::GetStatistics(OpalMediaStatistics & statistics) const
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalRawMediaStream::OpalRawMediaStream(OpalConnection & conn,
-                                     const OpalMediaFormat & mediaFormat,
+                                       const OpalMediaFormat & mediaFormat,
                                        unsigned sessionID,
                                        PBoolean isSource,
                                        PChannel * chan, PBoolean autoDelete)
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
   , m_channel(chan)
   , m_autoDelete(autoDelete)
+  , m_silence(160) // At least 10ms
   , m_averageSignalSum(0)
   , m_averageSignalSamples(0)
 {
