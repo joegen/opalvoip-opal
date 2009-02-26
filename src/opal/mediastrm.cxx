@@ -749,7 +749,10 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
     return false;
 
   length = m_channel->GetLastReadCount();
-  CollectAverage(buffer, length);
+
+  if (buffer != NULL)
+    CollectAverage(buffer, length);
+
   return true;
 }
 
