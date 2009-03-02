@@ -241,10 +241,8 @@ class OpalMediaPatch : public PObject
 
 #if OPAL_VIDEO
         void SetRateControlParameters(const OpalMediaFormat & mediaFormat);
-        bool RateControlExceeded();
-
-        bool rcEnabled;
-        OpalVideoRateController rateController;
+        bool RateControlExceeded(bool & forceIFrame);
+        OpalVideoRateController * rateController;
 #endif
     };
     PList<Sink> sinks;
