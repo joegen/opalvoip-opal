@@ -594,7 +594,7 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
 
 bool OpalMediaPatch::Sink::RateControlExceeded(bool & forceIFrame)
 {
-  if (!rateController != NULL || !rateController->SkipFrame(forceIFrame)) 
+  if ((rateController == NULL) || !rateController->SkipFrame(forceIFrame)) 
     return false;
 
   PTRACE(4, "Patch\tRate controller skipping frame.");
