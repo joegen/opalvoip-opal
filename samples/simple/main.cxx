@@ -59,7 +59,6 @@
 
 #define new PNEW
 
-
 PCREATE_PROCESS(SimpleOpalProcess);
 
 ///////////////////////////////////////////////////////////////
@@ -148,6 +147,7 @@ void SimpleOpalProcess::Main()
              "-udp-max:"
              "-use-long-mime."
 #if OPAL_VIDEO
+             "C-ratecontrol:"
              "-rx-video." "-no-rx-video."
              "-tx-video." "-no-tx-video."
              "-grabber:"
@@ -157,6 +157,7 @@ void SimpleOpalProcess::Main()
              "-displaydriver:"
              "-video-size:"
              "-video-rate:"
+             "-video-bitrate:"
 #endif
 #if OPAL_IVR
              "V-no-ivr."
@@ -206,6 +207,8 @@ void SimpleOpalProcess::Main()
             "     --video-size size    : Set the size of the video for all video formats, use\n"
             "                          : \"qcif\", \"cif\", WxH etc\n"
             "     --video-rate rate    : Set the frame rate of video for all video formats\n"
+            "     --video-bitrate rate : Set the bit rate for all video formats\n"
+            "     -C string            : Enable and select video rate control algorithm\n"
             "\n"
 #endif
 
@@ -423,6 +426,8 @@ PBoolean MyManager::Initialise(PArgList & args)
     video.deviceName = args.GetOptionString("grabber");
     video.driverName = args.GetOptionString("grabdriver");
     video.channelNumber = args.GetOptionString("grabchannel").AsInteger();
+    if (args.HasOption("video-rate")) 
+      video.rate = args.GetOptionString("video-rate").AsUnsigned();
     if (!SetVideoInputDevice(video)) {
       cerr << "Unknown grabber device " << video.deviceName << "\n"
               "Available devices are:" << setfill(',') << PVideoInputDevice::GetDriversDeviceNames("") << endl;
@@ -830,6 +835,7 @@ PBoolean MyManager::Initialise(PArgList & args)
           "Available codecs: " << allMediaFormats << setfill(' ') << endl;
 
 #if OPAL_VIDEO
+  PString rcOption = args.GetOptionString('C');
   OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = allMediaFormats[i];
@@ -849,8 +855,13 @@ PBoolean MyManager::Initialise(PArgList & args)
         unsigned rate = args.GetOptionString("video-rate").AsUnsigned();
         unsigned frameTime = 90000 / rate;
         mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
-        mediaFormat.SetOptionBoolean("Rate Control Enable", true);
       }
+      if (args.HasOption("video-bitrate")) {
+        unsigned rate = args.GetOptionString("video-bitrate").AsUnsigned();
+        mediaFormat.SetOptionInteger(OpalMediaFormat::TargetBitRateOption(), rate);
+      }
+      if (!rcOption.IsEmpty())
+        mediaFormat.SetOptionString(OpalVideoFormat::RateControllerOption(), rcOption);
       OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
     }
   }
