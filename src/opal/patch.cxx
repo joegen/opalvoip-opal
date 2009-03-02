@@ -585,6 +585,12 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
     if (rc.IsEmpty() && mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption()))
       rc = "Standard";
     rateController = PFactory<OpalVideoRateController>::CreateInstance(rc);
+    if (rateController != NULL) {   
+      PTRACE(3, "Patch\tCreated " << rc << " rate controller");
+    }
+    else {
+      PTRACE(3, "Patch\tCould not create " << rc << " rate controller");
+    }
   }
 
   if (rateController != NULL) 
@@ -633,9 +639,11 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
 
 #if OPAL_VIDEO
   if (secondaryCodec == NULL && rateController != NULL) {
+PTRACE(3, "Pushing " << intermediateFrames.GetSize() << " frames through RC");
     rateController->Push(intermediateFrames, ((OpalVideoTranscoder *)primaryCodec)->WasLastFrameIFrame());
     bool wasIFrame = false;
     if (rateController->Pop(intermediateFrames, wasIFrame, false)) {
+PTRACE(3, "RC returned " << intermediateFrames.GetSize() << " frames");
       for (RTP_DataFrameList::iterator interFrame = intermediateFrames.begin(); interFrame != intermediateFrames.end(); ++interFrame) {
         patch.FilterFrame(*interFrame, primaryCodec->GetOutputFormat());
         if (!stream->WritePacket(*interFrame))
@@ -643,6 +651,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
         sourceFrame.SetTimestamp(interFrame->GetTimestamp());
         continue;
       }
+      intermediateFrames.RemoveAll();
     }
   }
   else 
