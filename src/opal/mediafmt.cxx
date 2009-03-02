@@ -1470,8 +1470,12 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TargetBitRateOption(),            false, OpalMediaOption::AlwaysMerge, maxBitRate,                  1000      ));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TxKeyFramePeriodOption(),         false, OpalMediaOption::AlwaysMerge, 125,                         0,   1000));
   AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::RateControlEnableOption(),        false, OpalMediaOption::NoMerge,     false                                  ));
-  AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false));
-  AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          false, OpalMediaOption::AlwaysMerge, 2048,                        100,    2048));
+  AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          false, OpalMediaOption::NoMerge,     2048,                        100,    2048));
+  {
+    OpalMediaOption * opt = new OpalMediaOptionString(OpalVideoFormat::RateControllerOption(), false);
+    opt->SetMerge(OpalMediaOption::NoMerge);
+    AddOption(opt);
+  }
 								
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);

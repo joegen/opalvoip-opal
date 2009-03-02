@@ -242,6 +242,8 @@ void OpalVideoRateController::Open(const OpalMediaFormat & mediaFormat)
   m_inputFrameCount  = 0;
   m_outputFrameCount = 0;
 
+  PTRACE(4, "RateController\tOpened with rate " << m_targetBitRate << " and frame rate " << 1000 / m_outputFrameTime);
+
   m_bitRateCalc.SetQuanta(m_outputFrameTime);
 }
 
