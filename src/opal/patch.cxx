@@ -584,12 +584,16 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
     PString rc = mediaFormat.GetOptionString(OpalVideoFormat::RateControllerOption());
     if (rc.IsEmpty() && mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption()))
       rc = "Standard";
-    rateController = PFactory<OpalVideoRateController>::CreateInstance(rc);
-    if (rateController != NULL) {   
-      PTRACE(3, "Patch\tCreated " << rc << " rate controller");
-    }
+    else if (rc.IsEmpty()) 
+      rateController = NULL;
     else {
-      PTRACE(3, "Patch\tCould not create " << rc << " rate controller");
+      rateController = PFactory<OpalVideoRateController>::CreateInstance(rc);
+      if (rateController != NULL) {   
+        PTRACE(3, "Patch\tCreated " << rc << " rate controller");
+      }
+      else {
+        PTRACE(3, "Patch\tCould not create " << rc << " rate controller");
+      }
     }
   }
 
@@ -618,11 +622,11 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
 #if OPAL_VIDEO
   if (rateController != NULL) {
     bool forceIFrame = false;
-    if (RateControlExceeded(forceIFrame)) {
-      if (forceIFrame)
-        stream->ExecuteCommand(OpalVideoUpdatePicture());
+    bool s = RateControlExceeded(forceIFrame);
+    if (forceIFrame)
+      stream->ExecuteCommand(OpalVideoUpdatePicture());
+    if (s)
       return true;
-    }
   }
 #endif
 
