@@ -30,6 +30,8 @@
  */
 
 #include <ptlib.h>
+#include <list>
+using namespace std;
 
 #ifdef __GNUC__
 #pragma implementation "ratectl.h"
@@ -37,6 +39,11 @@
 
 #include <opal/buildopts.h>
 #include <codec/ratectl.h>
+#include <opal/mediafmt.h>
+
+namespace PWLibStupidLinkerHacks {
+  int rateControlKickerVal = 0;
+};
 
 //
 // 20 bytes for nominal TCP header
@@ -51,6 +58,121 @@
 
 #define new PNEW
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//
+//
+
+OpalBitRateCalculator::OpalBitRateCalculator()
+{ 
+  Reset(); 
+}
+
+PInt64 OpalBitRateCalculator::GetNow()  
+{ 
+  return (PTime().GetTimestamp()+500)/1000; 
+}
+
+void OpalBitRateCalculator::Reset()
+{
+  m_first        = true;
+  m_bitRate      = 0;
+
+  m_historySize    = 0;
+  m_totalSize      = 0;
+  m_historyFrames  = 0;
+
+  m_history.clear();
+}
+
+void OpalBitRateCalculator::SetQuanta(unsigned quanta_)
+{ 
+  m_quanta = quanta_; 
+}
+
+void OpalBitRateCalculator::AddPacket(PINDEX size, bool marker)
+{
+  PInt64 now = GetNow();
+  if (m_first) {
+    m_baseTimeStamp = now;
+    m_first = false;
+  }
+
+  m_history.push_back(History(size, now, marker));
+  m_historySize    += size;
+  m_totalSize      += size;
+
+  if (marker)
+    ++m_historyFrames;
+
+  Flush();
+}
+
+unsigned OpalBitRateCalculator::GetTrialBitRate(PINDEX size)
+{
+  PInt64 now = GetNow();
+  Flush(now);
+
+  unsigned trialBitRate = 0;
+
+  if (m_history.size() > 0) 
+    trialBitRate = (unsigned)((size + m_historySize) * 8 * 1000 / (m_quanta + (now - m_history.front().m_timeStamp)));
+
+  return trialBitRate;
+}
+
+unsigned OpalBitRateCalculator::GetBitRate() 
+{
+  PInt64 now = GetNow();
+  Flush(now);
+
+  if (m_history.size() > 0) 
+    m_bitRate = (unsigned)((m_historySize * 8 * 1000) / (m_quanta + (now - m_history.front().m_timeStamp)));
+
+  return m_bitRate;
+}
+
+unsigned OpalBitRateCalculator::GetAverageBitRate() 
+{
+  if (m_first)
+    return 0;
+
+  return (unsigned)(((m_totalSize * 8 * 1000) / (m_quanta + GetNow() - m_baseTimeStamp)));
+}
+
+PInt64 OpalBitRateCalculator::GetTotalSize() const
+{ 
+  return m_totalSize; 
+}
+
+void OpalBitRateCalculator::Flush()
+{ 
+  Flush(GetNow()); 
+}
+
+void OpalBitRateCalculator::Flush(PInt64 now)
+{
+  // flush history
+  while ((m_history.size() > 0) && ((now - m_history.front().m_timeStamp) > 1000)) {
+    m_historySize -= m_history.front().m_size;
+    if (m_history.front().m_marker)
+      --m_historyFrames;
+    m_history.pop_front();
+  }
+}
+
+PInt64 OpalBitRateCalculator::GetTotalTime() const
+{
+  return GetNow() - m_baseTimeStamp;
+}
+
+unsigned OpalBitRateCalculator::GetHistoryFrames() const
+{ 
+  if (m_history.size() == 0)
+    return 0;
+
+  return m_historyFrames + (m_history.back().m_marker ? 0 : 1); 
+}
 
 //
 //  This file implements a video rate controller that seeks to maintain a constant bit rate 
@@ -103,116 +225,176 @@ double OpalCalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen)
   return snr;
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalVideoRateController::OpalVideoRateController()
 {
-  lastReport = 0;
-  byteRate = bitRateHistorySizeInMs = maxConsecutiveFramesSkip = 0;
-  Reset();
+  m_targetBitRate    = 0;
+  m_outputFrameTime  = 0;
 }
 
-void OpalVideoRateController::Open(unsigned _targetBitRate, 
-                                        int _outputFrameTime,
-                                   unsigned _historySizeInMs, 
-                                   unsigned _maxConsecutiveFramesSkip)
+
+void OpalVideoRateController::Open(const OpalMediaFormat & mediaFormat)
 {
-  // convert bit rate to byte rate
-  unsigned newByteRate = (_targetBitRate + 7) / 8; 
+  m_targetBitRate    = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
+  m_outputFrameTime  = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameTimeOption()) / 90;
+  m_inputFrameCount  = 0;
+  m_outputFrameCount = 0;
 
-  // if any paramaters have changed, reset the rate controller
-  if (
-      (_outputFrameTime != targetOutputFrameTime) ||
-      (_historySizeInMs != bitRateHistorySizeInMs) ||
-      (_maxConsecutiveFramesSkip != maxConsecutiveFramesSkip) ||
-      (newByteRate != byteRate) 
-      ) {
+  m_bitRateCalc.SetQuanta(m_outputFrameTime);
+}
 
-    PTRACE(3, "RateController\tNew paramaters: "
-           << "bitrate=" << _targetBitRate
-           << ", window=" << _historySizeInMs
-           << ", frame time=" << _outputFrameTime << "(rate=" << (((2*90000) + _outputFrameTime) / (2 *_outputFrameTime)) << ")"
-           << ", max skipped frames=" << _maxConsecutiveFramesSkip);
 
-    // set the new parameters
-    byteRate                 = newByteRate;
-    bitRateHistorySizeInMs   = _historySizeInMs;
-    maxConsecutiveFramesSkip = _maxConsecutiveFramesSkip;
-    targetBitRateHistorySize = (byteRate * bitRateHistorySizeInMs) / 1000;
-    targetOutputFrameTime    = _outputFrameTime;
+void OpalVideoRateController::Push(RTP_DataFrameList & inputFrames, bool iFrame)
+{ 
+  if (inputFrames.GetSize() == 0)
+    return;
 
-    Reset();
+  inputFrames.DisallowDeleteObjects();
+
+  // add the new data to the unsent frame list
+  DWORD startTimeStamp = inputFrames[0].GetTimestamp();
+  for (PINDEX i = 0; i < inputFrames.GetSize(); ++i) {
+    PAssert(inputFrames[0].GetTimestamp() == startTimeStamp, "Packet pacer input cannot span frames");
+    m_packets.push_back(PacketEntry(&inputFrames[i], iFrame));
   }
+
+  inputFrames.RemoveAll();
+  inputFrames.AllowDeleteObjects();
+
+  ++m_inputFrameCount;
 }
 
-void OpalVideoRateController::Reset()
+bool OpalVideoRateController::Pop(RTP_DataFrameList & outputPackets, bool & iFrame, bool /*force*/)
 {
-  bitRateHistory.reset();
-  frameRateHistory.reset();
-
-  consecutiveFramesSkipped = 0;
-  startTime                = PTimer::Tick().GetMilliSeconds();
-  inputFrameCount          = 0;
-  outputFrameCount         = 0;
+  while (m_packets.size() > 0) {
+    outputPackets.Append(m_packets[0].m_rtp);
+    iFrame = m_packets[0].m_iFrame;
+    m_bitRateCalc.AddPacket(m_packets[0].m_rtp->GetPayloadSize(), m_packets[0].m_rtp->GetMarker());
+    m_packets.pop_front();
+  }
+  return outputPackets.GetSize() != 0;
 }
 
-bool OpalVideoRateController::SkipFrame()
+/////////////////////////////////////////////////////////////////////////////
+
+//
+//  This file implements a video rate controller that seeks to maintain a constant bit rate 
+//  by indicating when encoded video frames should be dropped
+//
+//  To use the rate controller, open it with the appropriate parameters. 
+//
+//  Before encoding a potential output frame, use the SkipFrame function to determine if the 
+//  frame should be skipped. If the frame is not skipped, encode the frame and then call AddFrame
+//  with the parameters of the final data.
+//
+
+class OpalStandardVideoRateController : public OpalVideoRateController
 {
-  inputFrameCount++;
+  public:
+    OpalStandardVideoRateController();
+
+    /** Open the rate controller with the specific parameters
+      */
+    void Open(
+      const OpalMediaFormat & mediaFormat    // media format for video 
+    );
+
+    /** Determine if the next frame should be skipped.
+      * The rate controller can also indicate whether the next frame should
+      * be encoded as an I-frame, which is useful if many frames have been skipped
+      */
+    virtual bool SkipFrame(
+      bool & forceIFrame
+    );
+
+    bool Pop(RTP_DataFrameList & outputPackets, bool & iFrame, bool force);
+
+  protected:
+    bool CheckFrameRate(bool reporting);
+    bool CheckBitRate(bool reporting, unsigned currentBitRate);
+    PInt64  startTime;
+    PInt64 now;
+    PInt64 lastReport;
+};
+
+
+OpalStandardVideoRateController::OpalStandardVideoRateController()
+{
+}
+
+void OpalStandardVideoRateController::Open(const OpalMediaFormat & fmt)
+{
+  OpalVideoRateController::Open(fmt);
+
+  startTime  = PTimer::Tick().GetMilliSeconds();
+  lastReport = 0;
+}
+
+bool OpalStandardVideoRateController::SkipFrame(bool & iFrame)
+{
+  // increment incoming frame count
+  ++m_inputFrameCount;
+
+  // never force I-frames
+  iFrame = false;
 
   // get "now"
   now = PTimer::Tick().GetMilliSeconds();
 
-  // report every second
+  // set flag for reporting every second
   bool reporting = (now - lastReport) > 1000;
   if (reporting)
     lastReport = now;
 
+  // get bit rate now to avoid flushing history multiple times
+  unsigned currentBitRate = m_bitRateCalc.GetBitRate();
+
+  // check frame rate
   if (CheckFrameRate(reporting))
     return true;
 
-  return CheckBitRate(reporting);
+  // checl bit rate
+  return CheckBitRate(reporting, currentBitRate);
 }
 
-bool OpalVideoRateController::CheckFrameRate(bool reporting)
+bool OpalStandardVideoRateController::CheckFrameRate(bool reporting)
 {
-  // flush histories older than window
-  bitRateHistory.remove_older_than(now, bitRateHistorySizeInMs);
-  frameRateHistory.remove_older_than(now, PACKET_HISTORY_SIZE * 1000);
+  m_bitRateCalc.Flush();
+
+  unsigned frameHistoryCount = m_bitRateCalc.GetHistoryCount();
 
   // the first one is always free
-  if (frameRateHistory.size() == 0) {
+  if (frameHistoryCount == 0) {
     PTRACE(5, "RateController\tHistory too small for frame rate control");
     return false;
   }
 
-  PTRACE_IF(3, reporting, "RateController\tReport:Total frames:in=" << inputFrameCount
-                          << ",out=" << outputFrameCount
-                          << ",dropped=" << (inputFrameCount - outputFrameCount)
-                          << "(" << (inputFrameCount < 1 ? 0 : ((inputFrameCount - outputFrameCount) * 100 / inputFrameCount)) << "%)");
+  PTRACE_IF(3, reporting, "RateController\tReport:Total frames:in=" << m_inputFrameCount
+                          << ",out=" << m_outputFrameCount
+                          << ",dropped=" << (m_inputFrameCount - m_outputFrameCount)
+                          << "(" << (m_inputFrameCount < 1 ? 0 : ((m_inputFrameCount - m_outputFrameCount) * 100 / m_inputFrameCount)) << "%)");
+
+  unsigned outputFrameTime = m_bitRateCalc.GetQuanta();
 
   // if maintaining a frame rate, check to see if frame should be dropped
   // to make this decision, check what the rate would be if this frame was not dropped
-  if (targetOutputFrameTime > 0) {
+  if (outputFrameTime > 0) {
   
     // if the frame history covers zero time, it is doubtful that outputting this
-    // frame will result in a valid frame rate
-    PInt64 frameRateHistoryDuration = now - frameRateHistory.begin()->time;
-    if (now == 0) {
-      PTRACE(5, "RateController\tDropping frame as frame history has zero length");
-      return true;
-    }
+    // frame will result in an invalid frame rate
+    PInt64 frameRateHistoryDuration = now - m_bitRateCalc.GetEarliestHistoryTime();
+    if (frameRateHistoryDuration == 0) 
+      return false;
   
     // output report now we have useful statistics
     PTRACE_IF(3, reporting, "RateController\tReport:"
-                 "in="      << ((inputFrameCount-0)  * 1000) / (now - startTime) << " fps,"
-                 "out="     << ((outputFrameCount-0) * 1000) / (now - startTime) << " fps,"
-                 "target="  << ((90000 + targetOutputFrameTime/2) / targetOutputFrameTime) << " fps,"
-                 "history=" << frameRateHistoryDuration << "ms " << frameRateHistory.size() << " frames");
+                 "in="      << ((m_inputFrameCount-0)  * 1000) / (now - startTime) << " fps,"
+                 "out="     << ((m_outputFrameCount-0) * 1000) / (now - startTime) << " fps,"
+                 "target="  << (1000 / m_outputFrameTime) << " fps");
 
-    PInt64 targetFrameHistorySize = frameRateHistoryDuration * 90;
-
-    if (((frameRateHistory.size()-1) * targetOutputFrameTime) > targetFrameHistorySize) {
+    if ((frameRateHistoryDuration + outputFrameTime) > (m_bitRateCalc.GetHistoryFrames()+1) * outputFrameTime) {
       PTRACE(3, "RateController\tSkipping frame to enforce frame rate");
       return true;
     }
@@ -221,67 +403,39 @@ bool OpalVideoRateController::CheckFrameRate(bool reporting)
   return false;
 }
 
-bool OpalVideoRateController::CheckBitRate(bool reporting)
+bool OpalStandardVideoRateController::CheckBitRate(bool reporting, unsigned currentBitRate)
 {
-  // need to have at least 2 frames of history to make any useful predictions
-  // and the history must span a non-trivial time window
-  PInt64 bitRateHistoryDuration = 0;
-  if ((bitRateHistory.size() < 2) || (bitRateHistoryDuration = bitRateHistory.back().time - bitRateHistory.front().time) < 10 || outputFrameCount < 2) {
-    PTRACE(3, "RateController\thistory too small for bit rate control");
+  if (m_bitRateCalc.GetHistoryCount() == 0)
     return false;
-  }
 
-  // calculate average payload and packets per frame
-  PInt64 averagePayloadSize     = frameRateHistory.bytes / frameRateHistory.size();
-  PInt64 averagePacketsPerFrame = frameRateHistory.packets / frameRateHistory.size();
-  if (averagePacketsPerFrame < 1)
-    averagePacketsPerFrame = 1;
-
-  // Use these to rate limit based on UDP packet size
-  //PInt64 avgPacketSize = averagePacketsPerFrame * UDP_OVERHEAD + averagePayloadSize;
-  //PInt64 historySize = bitRateHistory.packets * UDP_OVERHEAD + bitRateHistory.bytes;
-  
-  // use these to rate limit on payload size
-  PInt64 avgPacketSize = averagePayloadSize;
-  PInt64 historySize   = bitRateHistory.bytes;
+  // calculate average payload size
+  unsigned averagePayloadSize = (int)(m_bitRateCalc.GetHistorySize() / m_bitRateCalc.GetHistoryCount());
 
   // show some statistics
   PTRACE_IF(3, reporting, "RateController\tReport:"
-                          "payload=" << (bitRateHistory.bytes * 8 * 1000) / bitRateHistoryDuration << ","
-                          "udp="     << ((bitRateHistory.packets * UDP_OVERHEAD + bitRateHistory.bytes) * 8 * 1000) / bitRateHistoryDuration << " bps,"
-                          "target="  << (byteRate*8) << ","
-                          "history=" << bitRateHistoryDuration << "ms," << bitRateHistory.size() << " frames," << bitRateHistory.packets << " packets"
-              );
+                          "current=" << currentBitRate << " bps,"
+                          "target="  << m_targetBitRate << " bps");
 
   // allow the packet if the expected history size with this packet is less 
   // than the target history size 
-  if ((historySize + avgPacketSize) <= targetBitRateHistorySize) {
-    consecutiveFramesSkipped = 0;
+  unsigned trialBitRate = m_bitRateCalc.GetTrialBitRate(averagePayloadSize);
+  if (trialBitRate <= m_targetBitRate) 
     return false;
-  }
 
   PTRACE(3, "RateController\tSkipping frame to enforce bit rate");
   return true;
 }
 
-void OpalVideoRateController::AddFrame(PInt64 totalPayloadSize, int packetCount, PInt64 _now)
+
+bool OpalStandardVideoRateController::Pop(RTP_DataFrameList & outputPackets, bool & iFrame, bool force)
 {
-  now = _now;
-  AddFrame(totalPayloadSize, packetCount);
+  if (!OpalVideoRateController::Pop(outputPackets, iFrame, force))
+    return false;
+
+  ++m_outputFrameCount;
+  return true;
 }
 
 
-void OpalVideoRateController::AddFrame(PInt64 totalPayloadSize, int packetCount)
-{
-  outputFrameCount++;
-
-  FrameInfo info;
-  info.time             = now;
-  info.totalPayloadSize = totalPayloadSize;
-  info.packetCount      = packetCount;
-
-  bitRateHistory.push(info);
-  frameRateHistory.push(info);
-}
-
+static PFactory<OpalVideoRateController>::Worker<OpalStandardVideoRateController> opalStandardVideoRateController("Standard");
 

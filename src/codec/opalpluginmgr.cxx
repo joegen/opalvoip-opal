@@ -963,6 +963,10 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
   if (isEncoder) {
     do {
+      PINDEX reportedBufferSize = outputDataSize;
+      if (reportedBufferSize > GetMaxEncoderOutputSize())
+        reportedBufferSize = GetMaxEncoderOutputSize();
+
       if (outputDataSize < 2048)
         outputDataSize = 2048;
 
@@ -972,7 +976,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
       // call the codec function
       unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
-      unsigned int toLen = dst->GetSize();
+      unsigned int toLen = reportedBufferSize;
       flags = forceIFrame ? PluginCodec_CoderForceIFrame : 0;
 
       if (!Transcode((const BYTE *)src, &fromLen, dst->GetPointer(), &toLen, &flags)) {
@@ -982,6 +986,9 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
       if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
         lastFrameWasIFrame = true;
+
+      if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
+        ExecuteCommand(OpalVideoUpdatePicture());
 
       if (toLen > 0) {
         dst->SetPayloadSize(toLen - dst->GetHeaderSize());
@@ -1050,6 +1057,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
     if (toLen > (unsigned)m_bufferRTP->GetHeaderSize() && (flags & PluginCodec_ReturnCoderLastFrame) != 0) {
       m_bufferRTP->SetPayloadSize(toLen);
+      m_bufferRTP->SetTimestamp(src.GetTimestamp());
       dstList.Append(m_bufferRTP);
       m_bufferRTP = NULL;
 
