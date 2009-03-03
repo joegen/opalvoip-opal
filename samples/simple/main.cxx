@@ -333,9 +333,9 @@ void SimpleOpalProcess::Main()
 "      iax2:.* = pots:<dn>\n"
 "\n"
 "    If POTS is not enabled and the PC sound system is enabled:\n"
-"      iax2:.* = pc:<du>\n"
-"      h323:.* = pc:<du>\n"
-"      sip:. * = pc:<du>\n"
+"      iax2:.* = pc:\n"
+"      h323:.* = pc:\n"
+"      sip:. * = pc:\n"
 "\n"
 #if OPAL_IVR
 "    If IVR is enabled then a # from any protocol will route it it, ie:\n"
@@ -776,21 +776,21 @@ PBoolean MyManager::Initialise(PArgList & args)
 #endif // OPAL_LID
     if (pcssEP != NULL) {
 #if OPAL_H323
-      AddRouteEntry("h323:.* = pc:<du>");
+      AddRouteEntry("h323:.* = pc:");
 #if OPAL_PTLIB_SSL
       //if (h323sEP != NULL) 
-        AddRouteEntry("h323s:.* = pc:<du>");
+        AddRouteEntry("h323s:.* = pc:");
 #endif
 #endif
 #if OPAL_SIP
-      AddRouteEntry("sip:.*  = pc:<du>");
+      AddRouteEntry("sip:.*  = pc:");
 #endif
     }
   }
                                                                                                                                             
 #if OPAL_IAX2
   if (pcssEP != NULL) {
-    AddRouteEntry("iax2:.*  = pc:<du>");
+    AddRouteEntry("iax2:.*  = pc:");
     AddRouteEntry("pc:.*   = iax2:<da>");
   }
 #endif
