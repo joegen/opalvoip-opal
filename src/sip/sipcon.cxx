@@ -1722,7 +1722,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   m_calledPartyName = request.GetURI().GetUserName();
   if (!m_calledPartyName.IsEmpty() && m_calledPartyName.FindSpan("0123456789*#") == P_MAX_INDEX) {
     m_calledPartyNumber = m_calledPartyName;
-    m_calledPartyName = request.GetURI().GetDisplayName();
+    m_calledPartyName = request.GetURI().GetDisplayName(false);
   }
 
   // get the address that remote end *thinks* it is using from the Contact field
