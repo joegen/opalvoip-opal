@@ -1129,7 +1129,7 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   // name hasn't been first specified by a register handler. i.e a
   // register handler's target number is always used
   PString number(m_connStringOptions("Calling-Party-Number"));
-  if (!number.IsEmpty() && myAddress.GetUserName() == endpoint.GetDefaultLocalPartyName())
+  if (!number.IsEmpty())
     myAddress.SetUserName(number);
 
   PString name(m_connStringOptions("Calling-Party-Name"));
