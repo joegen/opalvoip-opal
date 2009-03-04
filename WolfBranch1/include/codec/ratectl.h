@@ -220,7 +220,7 @@ class OpalVideoRateController
 
 namespace PWLibStupidLinkerHacks {
   extern int rateControlKickerVal;
-//  static class RateControlKicker { public: RateControlKicker() { rateControlKickerVal = 1; } } rateControlKicker;
+  static class RateControlKicker { public: RateControlKicker() { rateControlKickerVal = 1; } } rateControlKicker;
 };
 
 #endif // OPAL_RATE_CONTROL_H

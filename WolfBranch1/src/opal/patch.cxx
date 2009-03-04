@@ -579,7 +579,17 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
     PString rc = mediaFormat.GetOptionString(OpalVideoFormat::RateControllerOption());
     if (rc.IsEmpty() && mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption()))
       rc = "Standard";
-    rateController = PFactory<OpalVideoRateController>::CreateInstance(rc);
+    else if (rc.IsEmpty()) 
+      rateController = NULL;
+    else {
+      rateController = PFactory<OpalVideoRateController>::CreateInstance(rc);
+      if (rateController != NULL) {   
+        PTRACE(3, "Patch\tCreated " << rc << " rate controller");
+      }
+      else {
+        PTRACE(3, "Patch\tCould not create " << rc << " rate controller");
+      }
+    }
   }
 
   if (rateController != NULL) 
@@ -589,7 +599,7 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
 
 bool OpalMediaPatch::Sink::RateControlExceeded(bool & forceIFrame)
 {
-  if (!rateController != NULL || !rateController->SkipFrame(forceIFrame)) 
+  if ((rateController == NULL) || !rateController->SkipFrame(forceIFrame)) 
     return false;
 
   PTRACE(4, "Patch\tRate controller skipping frame.");
@@ -607,11 +617,11 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
 #if OPAL_VIDEO
   if (rateController != NULL) {
     bool forceIFrame = false;
-    if (RateControlExceeded(forceIFrame)) {
-      if (forceIFrame)
-        stream->ExecuteCommand(OpalVideoUpdatePicture());
+    bool s = RateControlExceeded(forceIFrame);
+    if (forceIFrame)
+      stream->ExecuteCommand(OpalVideoUpdatePicture());
+    if (s)
       return true;
-    }
   }
 #endif
 
@@ -628,9 +638,11 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
 
 #if OPAL_VIDEO
   if (secondaryCodec == NULL && rateController != NULL) {
+PTRACE(3, "Pushing " << intermediateFrames.GetSize() << " packets through RC");
     rateController->Push(intermediateFrames, ((OpalVideoTranscoder *)primaryCodec)->WasLastFrameIFrame());
     bool wasIFrame = false;
     if (rateController->Pop(intermediateFrames, wasIFrame, false)) {
+PTRACE(3, "RC returned " << intermediateFrames.GetSize() << " packets");
       for (RTP_DataFrameList::iterator interFrame = intermediateFrames.begin(); interFrame != intermediateFrames.end(); ++interFrame) {
         patch.FilterFrame(*interFrame, primaryCodec->GetOutputFormat());
         if (!stream->WritePacket(*interFrame))
@@ -638,6 +650,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
         sourceFrame.SetTimestamp(interFrame->GetTimestamp());
         continue;
       }
+      intermediateFrames.RemoveAll();
     }
   }
   else 
