@@ -1305,7 +1305,7 @@ bool SDPSessionDescription::IsHold() const
   PINDEX i;
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
     SDPMediaDescription::Direction dir = mediaDescriptions[i].GetDirection();
-    if ((dir == SDPMediaDescription::Undefined) || ((dir & SDPMediaDescription::SendOnly) != 0))
+    if ((dir == SDPMediaDescription::Undefined) || ((dir & SDPMediaDescription::RecvOnly) != 0))
       return false;
   }
 
