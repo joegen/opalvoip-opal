@@ -32,7 +32,6 @@
 #include <codec/vidcodec.h>
 #include <opal/patch.h>
 
-
 class TranscoderThread : public PThread
 {
   public:
@@ -44,7 +43,7 @@ class TranscoderThread : public PThread
       , num(_num)
       , timestamp(0)
       , markerHandling(NormalMarkers)
-      , rcEnable(false)
+      , rateController(NULL)
     {
     }
 
@@ -86,10 +85,9 @@ class TranscoderThread : public PThread
     } markerHandling;
 
     PDECLARE_NOTIFIER(OpalMediaCommand, TranscoderThread, OnTranscoderCommand);
-    bool forceIFrame;
+    bool m_forceIFrame;
 
-    bool rcEnable;
-    OpalVideoRateController rateController;
+    OpalVideoRateController * rateController;
     int framesToTranscode;
     int frameTime;
     bool calcSNR;
@@ -135,7 +133,6 @@ class VideoThread : public TranscoderThread
       , singleStep(false)
       , frameWait(0, INT_MAX)
     {
-      InitStats();
     }
 
     ~VideoThread()
@@ -151,9 +148,8 @@ class VideoThread : public TranscoderThread
     virtual bool Write(const RTP_DataFrame & frame);
     virtual void Stop();
 
-    void InitStats();
-    virtual void UpdateStats(const RTP_DataFrame &);
-    void UpdateFrameStats();
+    void CalcVideoPacketStats(const RTP_DataFrameList & frames, bool isIFrame);
+    void WriteFrameStats(const PString & str);
 
     PVideoInputDevice  * grabber;
     PVideoOutputDevice * display;
@@ -162,23 +158,26 @@ class VideoThread : public TranscoderThread
     PSemaphore           frameWait;
     unsigned             frameRate;
 
+    void SaveSNRFrame(const RTP_DataFrame * src)
+    { snrSourceFrames.push(src); }
+
+    void CalcSNR(const RTP_DataFrame & src);
     void CalcSNR(const RTP_DataFrame & src, const RTP_DataFrame & dst);
     void ReportSNR();
 
     PString frameFn;
-    PString packetFn;
-
-    PTextFile packetStatFile, frameStatFile;
-    PInt64 packetCount;
+    PTextFile frameStatFile;
     PInt64 frameCount;
-    PInt64 frameBytes;
-    PInt64 totalFrameBytes;
+    DWORD frameStartTimestamp;
+    std::queue<const RTP_DataFrame *> snrSourceFrames;
 
     unsigned snrWidth, snrHeight;
     double sumYSNR;
     double sumCbSNR;
     double sumCrSNR;
     PInt64 snrCount;
+
+    OpalBitRateCalculator m_bitRateCalc;
 };
 
 
