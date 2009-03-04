@@ -183,7 +183,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   , ackReceived(false)
   , releaseMethod(ReleaseWithNothing)
 {
-  m_callId = SIPHandler::GenerateCallID();
   synchronousOnRelease = false;
 
   // Look for a "proxy" parameter to override default proxy
@@ -1037,7 +1036,7 @@ PBoolean SIPConnection::SetUpConnection()
 
   SetPhase(SetUpPhase);
 
-  OnApplyStringOptions();
+  ApplyStringOptions();
 
   SIPURL transportAddress;
 
@@ -1149,21 +1148,23 @@ void SIPConnection::AdjustOutgoingINVITE()
   if (!transport.IsEmpty())
     myAddress.SetParamVar("transport", transport);
 
-  // only allow override of calling party number if the local party
-  // name hasn't been first specified by a register handler. i.e a
-  // register handler's target number is always used
-  const StringOptions & stringOptions = GetStringOptions();
-  PString number(stringOptions("Calling-Party-Number"));
-  if (!number.IsEmpty() && myAddress.GetUserName() == endpoint.GetDefaultLocalPartyName())
-    myAddress.SetUserName(number);
+  // allow callers to override the From field
+  if (stringOptions != NULL) {
+    // only allow override of calling party number if the local party
+    // name hasn't been first specified by a register handler. i.e a
+    // register handler's target number is always used
+    PString number((*stringOptions)("Calling-Party-Number"));
+    if (!number.IsEmpty() && myAddress.GetUserName() == endpoint.GetDefaultLocalPartyName())
+      myAddress.SetUserName(number);
 
-  PString name(stringOptions("Calling-Party-Name"));
-  if (!name.IsEmpty())
-    myAddress.SetDisplayName(name);
+    PString name((*stringOptions)("Calling-Party-Name"));
+    if (!name.IsEmpty())
+      myAddress.SetDisplayName(name);
 
-  PString domain(stringOptions("Calling-Party-Domain"));
-  if (!domain.IsEmpty())
-    myAddress.SetHostName(domain);
+    PString domain((*stringOptions)("Calling-Party-Domain"));
+    if (!domain.IsEmpty())
+      myAddress.SetHostName(domain);
+  }
 
   if (myAddress.GetDisplayName(false).IsEmpty())
     myAddress.SetDisplayName(GetDisplayName());
@@ -1175,12 +1176,6 @@ void SIPConnection::AdjustOutgoingINVITE()
 PString SIPConnection::GetPrefixName() const
 {
   return m_requestURI.GetScheme();
-}
-
-
-PString SIPConnection::GetIdentifier() const
-{
-  return m_callId;
 }
 
 
@@ -2102,11 +2097,13 @@ void SIPConnection::OnCreatingINVITE(SIP_PDU & request)
 {
   PTRACE(3, "SIP\tCreating INVITE request");
 
-  PString replaces(m_connStringOptions("Replaces"));
-  if (!replaces.IsEmpty()) {
-    SIPMIMEInfo & mime = request.GetMIME();
-    mime.SetAt("Require", "replaces");
-    mime.SetAt("Replaces", replaces);
+  if (stringOptions != NULL) {
+    PString replaces((*stringOptions)("Replaces"));
+    if (!replaces.IsEmpty()) {
+      SIPMIMEInfo & mime = request.GetMIME();
+      mime.SetAt("Require", "replaces");
+      mime.SetAt("Replaces", replaces);
+    }
   }
 
   if (!request.GetSDP() || request.GetSDP()->GetMediaDescriptions().GetSize () == 0)

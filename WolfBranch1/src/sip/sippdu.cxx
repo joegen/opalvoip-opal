@@ -2775,7 +2775,7 @@ SIPPing::SIPPing(SIPEndPoint & ep,
                  const PString & body)
   : SIPTransaction(ep, trans)
 {
-  PString id = SIPHandler::GenerateCallID();
+  PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
     
   // Build the correct From field
@@ -2840,7 +2840,7 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
 {
   PString requestURI;
   PString hosturl;
-  PString id = SIPHandler::GenerateCallID();
+  PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
     
   // Build the correct From field

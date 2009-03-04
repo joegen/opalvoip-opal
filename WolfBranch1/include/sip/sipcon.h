@@ -95,10 +95,6 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual PString GetPrefixName() const;
 
-    /**Get the protocol-specific unique identifier for this connection.
-     */
-    virtual PString GetIdentifier() const;
-
     /**Get the remote party address as URL.
        This will return the "best guess" at an address to use in a
        to call the user again later. Note that under some circumstances this may be
@@ -471,11 +467,9 @@ class SIPConnection : public OpalRTPConnection
 
     bool                  needReINVITE;
     PStringList           routeSet;
-    PString               m_callId;
     SIPURL                m_requestURI;
     PString               m_dialogFrom;
     PString               m_dialogTo;
-    OpalGloballyUniqueID  m_dialogNotifyId;
     SIPAuthentication   * authentication;
 
     std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;

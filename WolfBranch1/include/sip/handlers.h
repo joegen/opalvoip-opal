@@ -80,8 +80,6 @@ public:
     Unsubscribed      // The registrating is inactive
   };
 
-  static PString GenerateCallID();
-
   void SetState (SIPHandler::State s);
 
   inline SIPHandler::State GetState () 

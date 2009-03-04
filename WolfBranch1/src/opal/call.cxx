@@ -216,8 +216,7 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
   UnlockReadOnly();
 
   if (ok) {
-    if (!manager.MakeConnection(*this, m_partyB, NULL, 0,
-                                const_cast<OpalConnection::StringOptions *>(&connection.GetStringOptions())))
+    if (!manager.MakeConnection(*this, m_partyB, NULL, 0, connection.GetStringOptions()))
       connection.Release(OpalConnection::EndedByNoUser);
     return OnSetUp(connection);
   }

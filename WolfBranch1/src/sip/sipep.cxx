@@ -321,7 +321,10 @@ PBoolean SIPEndPoint::MakeConnection(OpalCall & call,
   if (listeners.IsEmpty())
     return false;
 
-  return AddConnection(CreateConnection(call, SIPHandler::GenerateCallID(), userData, TranslateENUM(remoteParty), NULL, NULL, options, stringOptions));
+  PStringStream callID;
+  OpalGloballyUniqueID id;
+  callID << id << '@' << PIPSocket::GetHostName();
+  return AddConnection(CreateConnection(call, callID, userData, TranslateENUM(remoteParty), NULL, NULL, options, stringOptions));
 }
 
 
@@ -391,7 +394,10 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
   if (!callId.IsEmpty())
     options.SetAt("Replaces", callId);
 
-  SIPConnection * connection = CreateConnection(call, SIPHandler::GenerateCallID(), userData, TranslateENUM(remoteParty), NULL, NULL, 0, &options);
+  PStringStream callID;
+  OpalGloballyUniqueID id;
+  callID << id << '@' << PIPSocket::GetHostName();
+  SIPConnection * connection = CreateConnection(call, callID, userData, TranslateENUM(remoteParty), NULL, NULL, 0, &options);
   if (!AddConnection(connection))
     return false;
 
@@ -407,7 +413,11 @@ PBoolean SIPEndPoint::ForwardConnection(SIPConnection & connection,
 {
   OpalCall & call = connection.GetCall();
   
-  SIPConnection * conn = CreateConnection(call, SIPHandler::GenerateCallID(), NULL, forwardParty, NULL, NULL);
+  PStringStream callID;
+  OpalGloballyUniqueID id;
+  callID << id << '@' << PIPSocket::GetHostName();
+
+  SIPConnection * conn = CreateConnection(call, callID, NULL, forwardParty, NULL, NULL);
   if (!AddConnection(conn))
     return PFalse;
 

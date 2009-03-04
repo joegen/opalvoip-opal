@@ -532,8 +532,6 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
 {
   PTRACE(3, "OpalMan\tOn incoming connection " << connection);
 
-  connection.OnApplyStringOptions();
-
   if (!OnIncomingConnection(connection))
     return PFalse;
 
@@ -1535,13 +1533,6 @@ void OpalManager::StopRecording(const PString & callToken)
     call->StopRecording();
 }
 
-void OpalManager::OnApplyStringOptions(
-  OpalConnection & conn,
-  OpalConnection::StringOptions & stringOptions
-)
-{
-  conn.ApplyStringOptions(stringOptions);
-}
 
 /////////////////////////////////////////////////////////////////////////////
 

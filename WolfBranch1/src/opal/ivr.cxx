@@ -184,7 +184,7 @@ PBoolean OpalIVRConnection::SetUpConnection()
 {
   originating = false;
 
-  OnApplyStringOptions();
+  ApplyStringOptions();
 
   PTRACE(3, "IVR\tSetUpConnection(" << remotePartyName << ')');
 
@@ -209,12 +209,14 @@ PBoolean OpalIVRConnection::StartVXML()
 {
   PStringToString & vars = vxmlSession.GetSessionVars();
 
-  PString originator = m_connStringOptions("Originator-Address");
-  if (originator.IsEmpty())
-      originator = m_connStringOptions("Remote-Address");
-  if (!originator.IsEmpty()) {
-    PIPSocketAddressAndPort ap(originator);
-    vars.SetAt("Source-IP-Address", ap.address.AsString());
+  if (stringOptions != NULL) {
+    PString originator = (*stringOptions)("Originator-Address");
+    if (originator.IsEmpty())
+      originator = (*stringOptions)("Remote-Address");
+    if (!originator.IsEmpty()) {
+      PIPSocketAddressAndPort ap(originator);
+      vars.SetAt("Source-IP-Address", ap.address.AsString());
+    }
   }
 
   vars.SetAt("Time", PTime().AsString());

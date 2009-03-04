@@ -91,7 +91,7 @@ class OpalRTPSessionManager : public PObject
       */
     void Initialise(
       OpalRTPConnection & conn, 
-      const OpalConnection::StringOptions & stringOptions
+      OpalConnection::StringOptions * stringOptions
     );
 
     /**

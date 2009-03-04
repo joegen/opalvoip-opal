@@ -712,10 +712,8 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
     return PFalse;
   }
 
-  OpalConnection::StringOptions localOptions;
   if (stringOptions == NULL)
-    stringOptions = &localOptions;
-
+    stringOptions = new OpalConnection::StringOptions;
   if ((*stringOptions)("stationid").IsEmpty())
     stringOptions->SetAt("stationid", stationId);
 
@@ -744,8 +742,10 @@ OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, cons
   PTRACE(3, "FAX\tCreated FAX connection with token '" << callToken << "'");
   SetPhase(SetUpPhase);
 
-  forceFaxAudio = m_connStringOptions.Contains("Force-Fax-Audio");
-  stationId     = m_connStringOptions("stationid");
+  if (stringOptions != NULL) {
+    forceFaxAudio = stringOptions->Contains("Force-Fax-Audio");
+    stationId     = (*stringOptions)("stationid");
+  }
 
   detectInBandDTMF = true;
 }
@@ -770,7 +770,7 @@ PBoolean OpalFaxConnection::SetUpConnection()
   if (ownerCall.GetConnection(0) == this) {
     SetPhase(SetUpPhase);
 
-    if (!OnIncomingConnection(0, NULL)) {
+    if (!OnIncomingConnection(0, stringOptions)) {
       Release(EndedByCallerAbort);
       return PFalse;
     }
