@@ -1630,11 +1630,10 @@ void OpalPluginCodecManager::RegisterCapability(const PluginCodec_Definition * c
 
   OpalPluginControl isValid(codecDefn, PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL);
   if (isValid.Exists() && !isValid.Call((void *)"h323", sizeof(const char *))) {
-    PTRACE(4, "OpalPlugin\tDeferring creation of H.323 capability for plugin codec " << codecDefn->descr);
+    PTRACE(2, "OpalPlugin\tNot adding H.323 capability for plugin codec " << codecDefn->descr << " as this has been specifically disabled");
     return;
   }
 
-    PTRACE(2, "OpalPlugin\tNot adding H.323 capability for plugin codec " << codecDefn->descr << " as this has been specifically disabled");
   // add the capability
   H323CodecPluginCapabilityMapEntry * map = NULL;
 
