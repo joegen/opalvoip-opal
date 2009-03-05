@@ -343,10 +343,11 @@ void OpalRTPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT typ
     OnUserInputTone(info.GetTone(), info.GetDuration() > 0 ? info.GetDuration()/8 : 100);
 }
 
-void OpalRTPConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & /*info*/, INT)
+void OpalRTPConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & info, INT type)
 {
-  //if (!info.IsToneStart())
-  //  OnUserInputTone(info.GetTone(), info.GetDuration()/8);
+  // trigger on start of tone only
+  if (type == 0)
+    OnUserInputTone(info.GetTone(), info.GetDuration() > 0 ? info.GetDuration()/8 : 100);
 }
 
 void OpalRTPConnection::SessionFailing(RTP_Session & session)
