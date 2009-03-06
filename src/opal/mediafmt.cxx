@@ -419,7 +419,7 @@ PObject * OpalMediaOptionString::Clone() const
 
 void OpalMediaOptionString::PrintOn(ostream & strm) const
 {
-  strm << m_value.ToLiteral();
+  strm << m_value;
 }
 
 
@@ -1673,16 +1673,30 @@ void OpalMediaFormatList::Reorder(const PStringArray & order)
   DisallowDeleteObjects();
   PINDEX nextPos = 0;
   for (PINDEX i = 0; i < order.GetSize(); i++) {
-    PStringArray wildcards = order[i].Tokenise('*', true);
-
-    PINDEX findPos = 0;
-    while (findPos < GetSize()) {
-      if (WildcardMatch((*this)[findPos].m_info->formatName, wildcards)) {
-        if (findPos > nextPos)
-          OpalMediaFormatBaseList::InsertAt(nextPos, RemoveAt(findPos));
-        nextPos++;
+    if (order[i][0] == '@') {
+      OpalMediaType mediaType = order[i].Mid(1);
+      PINDEX findPos = 0;
+      while (findPos < GetSize()) {
+        if ((*this)[findPos].GetMediaType() == mediaType) {
+          if (findPos > nextPos)
+            OpalMediaFormatBaseList::InsertAt(nextPos, RemoveAt(findPos));
+          nextPos++;
+        }
+        findPos++;
       }
-      findPos++;
+    }
+    else {
+      PStringArray wildcards = order[i].Tokenise('*', true);
+
+      PINDEX findPos = 0;
+      while (findPos < GetSize()) {
+        if (WildcardMatch((*this)[findPos].m_info->formatName, wildcards)) {
+          if (findPos > nextPos)
+            OpalMediaFormatBaseList::InsertAt(nextPos, RemoveAt(findPos));
+          nextPos++;
+        }
+        findPos++;
+      }
     }
   }
   AllowDeleteObjects();

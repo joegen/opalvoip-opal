@@ -131,12 +131,12 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     /**Get a position in the list of the first entry matching the wildcard.
        The wildcard string is a string match using several special
        characters.
-       
+
        The '*' character indicates substrings, for example: "G.711*" would
        match "G.711-uLaw-64k" and "G.711-ALaw-64k".
 
-       The '@' character indicates a type of media format, Currently only
-       "@audio" and "@video" is supported.
+       The '@' character indicates a type of media format, so say "@video
+       would find the first video codec.
 
        The '!' character indicates a negative test. That is the first entry
        that does NOT match the string is returned. The string after the '!'
@@ -167,6 +167,20 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     /**Remove all the formats specified.
        Each string in the array is checked using the wildcard matching algorithm in
        FindFormat().
+
+       The '*' character indicates substrings, for example: "G.711*" would
+       match "G.711-uLaw-64k" and "G.711-ALaw-64k".
+
+       The '@' character indicates a type of media format, so say "@video
+       would find the first video codec.
+
+       The '!' character indicates a negative test. That is the first entry
+       that does NOT match the string is returned. The string after the '!'
+       may contain '*' and '@' characters.
+
+       I should be noted that when the ! operator is used, codecs are removed
+       at that time and later ! operators may not have an affect. For example
+       {"!G.729","!G.728"} will NOT give you two codecs but on G.729.
       */
     void Remove(
       const PStringArray & mask
@@ -176,8 +190,16 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
        The order variable is an array of names and the list is reordered
        according to the order in that array.
 
-       Each string in the array is checked using the wildcard matching algorithm in
-       FindFormat().
+       Each string in the array is checked using the wildcard matching algorithm
+       similar to FindFormat().
+
+       The '*' character indicates substrings, for example: "G.711*" would
+       match "G.711-uLaw-64k" and "G.711-ALaw-64k".
+
+       The '@' character indicates a type of media format, so say "@video
+       would sort by video codec.
+
+        The '!' character is not supported.
       */
     void Reorder(
       const PStringArray & order
