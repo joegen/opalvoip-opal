@@ -419,26 +419,23 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 
   PSafePtr<OpalConnection> otherConnection;
   while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
+    PStringArray order;
+    if (sinkFormat.IsValid())
+      order += sinkFormat.GetName(); // Preferential treatment to format already in use
+    order += '@' + mediaType;        // And media of the same type
+
     OpalMediaFormatList sinkMediaFormats = otherConnection->GetMediaFormats();
     if (preselectedFormat.IsValid()  && sinkMediaFormats.HasFormat(preselectedFormat))
       sinkMediaFormats = preselectedFormat;
     else
-      sinkMediaFormats.Reorder(sinkFormat.GetName()); // Preferential treatment to format already in use
+      sinkMediaFormats.Reorder(order);
 
     OpalMediaFormatList sourceMediaFormats;
     if (sourceFormat.IsValid())
       sourceMediaFormats = sourceFormat; // Use the source format already established
     else {
-      OpalMediaFormatList connectionMediaFormats = connection.GetMediaFormats();
-      if (preselectedFormat.IsValid()  && connectionMediaFormats.HasFormat(preselectedFormat))
-        sourceMediaFormats = preselectedFormat;
-      else {
-        // Only include media formats that are of the same media type
-        for (OpalMediaFormatList::iterator i = connectionMediaFormats.begin(); i != connectionMediaFormats.end(); ++i) {
-          if (i->GetMediaType() == mediaType)
-            sourceMediaFormats += *i;
-        }
-      }
+      sourceMediaFormats = connection.GetMediaFormats();
+      sourceMediaFormats.Reorder(order);
     }
 
     // Get other media directions format so we give preference to symmetric codecs
