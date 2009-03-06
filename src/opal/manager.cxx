@@ -600,6 +600,10 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
   for (;;) {
     PString route = ApplyRouteTable(a_party, b_party, tableEntry);
     if (route.IsEmpty()) {
+      // Check for if B-Party is an explicit address
+      if (FindEndPoint(b_party.Left(b_party.Find(':'))) != NULL)
+        return MakeConnection(call, b_party, NULL, options, stringOptions);
+
       PTRACE(3, "OpalMan\tCould not route a=\"" << a_party << "\", b=\"" << b_party << ", call=" << call);
       return false;
     }
