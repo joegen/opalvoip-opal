@@ -2290,7 +2290,7 @@ void MyManager::SwitchToFax()
   if (!m_activeCall->IsNetworkOriginated())
     return; // We originated call
 
-  if (m_activeCall->GetPartyB().NumCompare("t38") == EqualTo)
+  if (m_activeCall->GetConnectionAs<OpalFaxConnection>() != NULL)
     return; // Already switched
 
   PSafePtr<OpalConnection> connection = m_activeCall->GetConnection(1);
