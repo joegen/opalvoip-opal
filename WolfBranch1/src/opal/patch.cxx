@@ -576,12 +576,12 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
 void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & mediaFormat)
 {
   if ((mediaFormat.GetMediaType() == OpalMediaType::Video()) && mediaFormat != OpalYUV420P) {
+    rateController = NULL;
     PString rc = mediaFormat.GetOptionString(OpalVideoFormat::RateControllerOption());
+PTRACE(3, "Patch\tSetRateControlParameters '" << rc << "'");
     if (rc.IsEmpty() && mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption()))
       rc = "Standard";
-    else if (rc.IsEmpty()) 
-      rateController = NULL;
-    else {
+    if (!rc.IsEmpty()) {
       rateController = PFactory<OpalVideoRateController>::CreateInstance(rc);
       if (rateController != NULL) {   
         PTRACE(3, "Patch\tCreated " << rc << " rate controller");
