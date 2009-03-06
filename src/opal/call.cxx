@@ -398,7 +398,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       PTRACE(3, "Call\tOpenSourceMediaStreams (already opened) for session " << sessionID << " on " << connection);
       return true;
     }
-    if (sourceStream->IsOpen()) {
+    if (sinkStream == NULL && sourceStream->IsOpen()) {
       PTRACE(3, "Call\tOpenSourceMediaStreams (is opening) for session " << sessionID << " on " << connection);
       return true;
     }
