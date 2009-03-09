@@ -479,12 +479,18 @@ PBoolean SIPURL::AdjustToDNS(PINDEX entry)
   // Do the SRV lookup, if fails, then we actually return TRUE so outer loops
   // can use the original host name value.
   PIPSocketAddressAndPortVector addrs;
-  if (!PDNS::LookupSRV(GetHostName(), "_sip._" + paramVars("transport", "udp"), GetPort(), addrs))
+  if (!PDNS::LookupSRV(GetHostName(), "_sip._" + paramVars("transport", "udp"), GetPort(), addrs)) {
+    PTRACE(4, "SIP\tNo SRV record found.");
     return PTrue;
+  }
 
   // Got the SRV list, return FALSE if outer loop has got to the end of it
-  if (entry >= (PINDEX)addrs.size())
+  if (entry >= (PINDEX)addrs.size()) {
+    PTRACE(4, "SIP\tRan out of SRV records at entry " << entry);
     return PFalse;
+  }
+
+  PTRACE(4, "SIP\tAttempting SRV record entry " << entry << ": " << addrs[entry].AsString());
 
   // Adjust our host and port to what the DNS SRV record says
   SetHostName(addrs[entry].GetAddress().AsString());
@@ -2176,6 +2182,7 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
       PTRACE(1, "SIP\tCannot use remote address " << remoteAddress << " for transport " << transport);
       return false;
     }
+    PTRACE(4, "SIP\tSet new remote address " << remoteAddress << " for transport " << transport);
   }
 
   PString oldInterface = transport.GetInterface();
@@ -2184,6 +2191,7 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
       PTRACE(1, "SIP\tCannot use local interface \"" << localInterface << "\" for transport " << transport);
       return false;
     }
+    PTRACE(4, "SIP\tSet new interface " << localInterface << " for transport " << transport);
   }
 
   mime.SetCompactForm(false);
