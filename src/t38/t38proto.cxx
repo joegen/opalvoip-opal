@@ -949,8 +949,10 @@ OpalMediaFormatList OpalT38Connection::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
 
-  formats += OpalPCM16;
-  formats += OpalT38;
+  if (m_faxMode)
+    formats += OpalT38;
+  else
+    formats += OpalPCM16;
 
   return formats;
 }
