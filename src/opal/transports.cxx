@@ -110,7 +110,7 @@ PString OpalTransportAddress::GetHostName() const
 }
   
 
-PBoolean OpalTransportAddress::IsEquivalent(const OpalTransportAddress & address) const
+PBoolean OpalTransportAddress::IsEquivalent(const OpalTransportAddress & address, bool wildcard) const
 {
   if (*this == address)
     return PTrue;
@@ -122,8 +122,8 @@ PBoolean OpalTransportAddress::IsEquivalent(const OpalTransportAddress & address
   WORD port1 = 65535, port2 = 65535;
   return GetIpAndPort(ip1, port1) &&
          address.GetIpAndPort(ip2, port2) &&
-         (ip1.IsAny() || ip2.IsAny() || (ip1 *= ip2)) &&
-         (port1 == 65535 || port2 == 65535 || port1 == port2);
+         ((ip1 *= ip2) || (wildcard && (ip1.IsAny() || ip2.IsAny()))) &&
+         (port1 == port2 || (wildcard && (port1 == 65535 || port2 == 65535)));
 }
 
 
@@ -953,6 +953,7 @@ PBoolean OpalTransportIP::SetRemoteAddress(const OpalTransportAddress & address)
   if (IsCompatibleTransport(address))
     return address.GetIpAndPort(remoteAddress, remotePort);
 
+  PTRACE(2, "OpalIP\tAttempt to set incompatible transport " << address);
   return PFalse;
 }
 
