@@ -330,6 +330,11 @@ void OpalStandardVideoRateController::Open(const OpalMediaFormat & fmt)
 {
   OpalVideoRateController::Open(fmt);
 
+  int scaler = fmt.GetOptionInteger("Bit Rate Scaler", 100);
+  m_targetBitRate = m_targetBitRate * scaler / 100;
+
+  PTRACE(4, "StandardRateController\tOpened with rate " << m_targetBitRate << " and frame rate " << 1000 / m_outputFrameTime);
+
   startTime  = PTimer::Tick().GetMilliSeconds();
   lastReport = 0;
 }
