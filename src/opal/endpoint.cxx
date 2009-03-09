@@ -223,7 +223,7 @@ PStringArray OpalEndPoint::GetDefaultListeners() const
 OpalListener * OpalEndPoint::FindListener(const OpalTransportAddress & iface)
 {
   for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
-    if (listener->GetTransportAddress().IsEquivalent(iface))
+    if (listener->GetTransportAddress().IsEquivalent(iface, true))
       return &*listener;
   }
   return NULL;
