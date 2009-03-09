@@ -82,9 +82,13 @@ class OpalTransportAddress : public PCaselessString
   /**@name Operations */
   //@{
     /**Determine if the two transport addresses are equivalent.
+       The second parameter indicates if wildcards are allowed. A wildcard
+       IP address is one for which isAny() returns true, a wildcard port
+       is the value 65535.
       */
     PBoolean IsEquivalent(
-      const OpalTransportAddress & address
+      const OpalTransportAddress & address,
+      bool wildcards = false   ///< Allow wildcards
     ) const;
 
     /**Determine if the two transport addresses are compatible.
