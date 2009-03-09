@@ -583,7 +583,6 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
   if ((mediaFormat.GetMediaType() == OpalMediaType::Video()) && mediaFormat != OpalYUV420P) {
     rateController = NULL;
     PString rc = mediaFormat.GetOptionString(OpalVideoFormat::RateControllerOption());
-PTRACE(3, "Patch\tSetRateControlParameters '" << rc << "'");
     if (rc.IsEmpty() && mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption()))
       rc = "Standard";
     if (!rc.IsEmpty()) {
@@ -643,11 +642,11 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
 
 #if OPAL_VIDEO
   if (secondaryCodec == NULL && rateController != NULL) {
-PTRACE(3, "Pushing " << intermediateFrames.GetSize() << " frames through RC");
+    PTRACE(4, "Patch\tPushing " << intermediateFrames.GetSize() << " packet into RC");
     rateController->Push(intermediateFrames, ((OpalVideoTranscoder *)primaryCodec)->WasLastFrameIFrame());
     bool wasIFrame = false;
     if (rateController->Pop(intermediateFrames, wasIFrame, false)) {
-PTRACE(3, "RC returned " << intermediateFrames.GetSize() << " frames");
+      PTRACE(4, "Patch\tPulled " << intermediateFrames.GetSize() << " frames from RC");
       for (RTP_DataFrameList::iterator interFrame = intermediateFrames.begin(); interFrame != intermediateFrames.end(); ++interFrame) {
         patch.FilterFrame(*interFrame, primaryCodec->GetOutputFormat());
         if (!stream->WritePacket(*interFrame))
