@@ -1,0 +1,93 @@
+#ifndef _PLUGIN_CONFIG_H_
+#define _PLUGIN_CONFIG_H_
+
+#if defined (WIN32)
+  #if !defined(_WIN32) 
+    #define _WIN32
+  #endif
+#endif
+
+/////////////////////////////////////////////////
+//
+//  General plugin related configuration
+//
+
+#ifndef P_DEFAULT_PLUGIN_DIR
+#  if defined (_WIN32_WCE)
+#    define P_DEFAULT_PLUGIN_DIR ".;\\Program Files\\PTLib Plug Ins"
+#  elif defined (_WIN32)
+#    define P_DEFAULT_PLUGIN_DIR ".;C:\\Program Files\\PTLib Plug Ins;C:\\PTLIB_PLUGINS;C:\\PWLIB_PLUGINS"
+#  else
+#    define P_DEFAULT_PLUGIN_DIR ".:/usr/lib/ptlib:/usr/lib/pwlib"
+#  endif
+#endif
+
+#ifdef  _WIN32
+#define PATH_SEP   ";"
+#else
+#define PATH_SEP   ":"
+#endif
+
+#ifndef PDIR_SEPARATOR 
+#ifdef _WIN32
+#define PDIR_SEPARATOR '\\'
+#else
+#define PDIR_SEPARATOR '/'
+#endif
+#endif
+
+/////////////////////////////////////////////////
+//
+//  FFmpeg related configuration
+//
+
+#ifdef _WIN32
+
+  /* For the win32 build */
+  #undef PLUGIN_CODEC_DLL_EXPORTS
+
+  #define _CRT_NONSTDC_NO_DEPRECATE 1
+  #define _CRT_SECURE_NO_WARNINGS 1
+
+  #define  LIBAVCODEC_HEADER    "C:\msys\local\include\libavcodec\avcodec.h"
+
+  #define LIBAVCODEC_LIB_NAME   "avcodec-51.dll"
+
+  #define  DEFAULT_TO_FULL_CAPABILITIES  1
+
+  /* Stack alignment hack for libavcodec library */
+  //#define LIBAVCODEC_STACKALIGN_HACK 1
+
+#else
+
+  /* Directory with libavcodec source code, for MPEG4 rate control correction */
+  #undef LIBAVCODEC_HAVE_SOURCE_DIR
+
+  /* Directory of the libavcodec header files */
+  #undef LIBAVCODEC_HEADER
+
+  /* Filename of the libavcodec library */
+  #undef LIBAVCODEC_LIB_NAME
+
+  /* Stack alignment hack for libavcodec library */
+  #undef LIBAVCODEC_STACKALIGN_HACK
+
+  /* Assume full capabilities at empty fmtp lines */
+  #undef DEFAULT_TO_FULL_CAPABILITIES
+
+  /* Which CELT API */
+  #undef HAVE_CELT_0_5_0_OR_LATER
+  
+#endif
+
+/* Filename of the libx264 library */
+#undef X264_LIB_NAME
+
+/* Statically link x264 to the plugin. Default for win32. */
+#undef X264_LINK_STATIC
+
+#ifndef LIBAVCODEC_HEADER
+#error "Warning: libavcodec not found or not configured correctly"
+#endif
+
+#endif /* _PLUGIN_CONFIG_H_ */
