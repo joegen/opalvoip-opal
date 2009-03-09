@@ -161,7 +161,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     OpalFaxConnection & m_connection;
     PMutex              infoMutex;
     PString             sessionToken;
-    OpalFaxCallInfo   * faxCallInfo;
+    OpalFaxCallInfo   * m_faxCallInfo;
     PFilePath           m_filename;
     bool                m_receive;
     BYTE                writeBuffer[320];
