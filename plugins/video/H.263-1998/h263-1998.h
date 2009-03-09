@@ -128,6 +128,8 @@ class H263_Base_EncoderContext
 
     virtual void SetMaxRTPFrameSize (unsigned size) = 0;
 
+    int m_targetBitRate;
+
   protected:
     virtual bool InitContext() = 0;
 
