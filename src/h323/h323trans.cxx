@@ -849,7 +849,7 @@ PBoolean H323TransactionServer::AddListeners(const H323TransportAddressArray & i
   while (iterListener != listeners.end()) {
     PBoolean remove = PTrue;
     for (PINDEX j = 0; j < ifaces.GetSize(); j++) {
-      if (iterListener->GetTransport().GetLocalAddress().IsEquivalent(ifaces[j])) {
+      if (iterListener->GetTransport().GetLocalAddress().IsEquivalent(ifaces[j], true)) {
         remove = PFalse;
        break;
       }
@@ -878,7 +878,7 @@ PBoolean H323TransactionServer::AddListener(const H323TransportAddress & interfa
 
   PINDEX i;
   for (ListenerList::iterator iterListener = listeners.begin(); iterListener != listeners.end(); ++iterListener) {
-    if (iterListener->GetTransport().GetLocalAddress().IsEquivalent(interfaceName)) {
+    if (iterListener->GetTransport().GetLocalAddress().IsEquivalent(interfaceName, true)) {
       PTRACE(2, "H323\tAlready have listener for " << interfaceName);
       return PTrue;
     }
