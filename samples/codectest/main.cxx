@@ -657,6 +657,8 @@ bool VideoThread::Initialise(PArgList & args)
   }
   cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
 
+  SetOptions(args, mediaFormat);
+
   unsigned bitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   PString rc = args.GetOptionString('C');
   if (rc.IsEmpty()) 
@@ -671,8 +673,6 @@ bool VideoThread::Initialise(PArgList & args)
 
   if (args.HasOption('T'))
     frameFn = "frame_stats.csv";
-
-  SetOptions(args, mediaFormat);
 
   frameTime = mediaFormat.GetFrameTime();
   if (encoder != NULL) {
@@ -1170,25 +1170,27 @@ void VideoThread::CalcVideoPacketStats(const RTP_DataFrameList & packets, bool i
     
     //m_bitRateCalc.AddPacket(packets[i].GetPayloadSize());
 
-    OpalBitRateCalculator & m_bitRateCalc = rateController->m_bitRateCalc;
+    if (rateController != NULL) {
+      OpalBitRateCalculator & m_bitRateCalc = rateController->m_bitRateCalc;
 
-    unsigned r = m_bitRateCalc.GetBitRate();
-    if (r > maximumBitRate)
-      maximumBitRate = r;
+      unsigned r = m_bitRateCalc.GetBitRate();
+      if (r > maximumBitRate)
+        maximumBitRate = r;
 
-    unsigned a = m_bitRateCalc.GetAverageBitRate();
-    if (a > maximumAvgBitRate)
-      maximumAvgBitRate = a;
+      unsigned a = m_bitRateCalc.GetAverageBitRate();
+      if (a > maximumAvgBitRate)
+        maximumAvgBitRate = a;
 
-    PStringStream str;
-    str << "index=" << (packets[i].GetTimestamp() / 3600)
-        << ",ps=" << packets[i].GetPayloadSize()
-        << ",rate=" << r
-        << ",avg=" << a 
-        << ",maxrate=" << maximumBitRate
-        << ",maxavg=" << maximumAvgBitRate 
-        << ",f=" << (isIFrame?"I":"") << (packets[i].GetMarker()?"M":"");
-    ((VideoThread *)this)->WriteFrameStats(str);
+      PStringStream str;
+      str << "index=" << (packets[i].GetTimestamp() / 3600)
+          << ",ps=" << packets[i].GetPayloadSize()
+          << ",rate=" << r
+          << ",avg=" << a 
+          << ",maxrate=" << maximumBitRate
+          << ",maxavg=" << maximumAvgBitRate 
+          << ",f=" << (isIFrame?"I":"") << (packets[i].GetMarker()?"M":"");
+      ((VideoThread *)this)->WriteFrameStats(str);
+    }
   }
 }
 
