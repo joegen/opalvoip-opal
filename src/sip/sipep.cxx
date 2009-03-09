@@ -375,19 +375,18 @@ PBoolean SIPEndPoint::GarbageCollection()
       ++transaction;
   }
 
-  transactions.DeleteObjectsToBeRemoved();
-
   PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReference);
   while (handler != NULL) {
-    if (handler->GetState() == SIPHandler::Unsubscribed && handler->ShutDown())
+    if (handler->GetState() == SIPHandler::Unsubscribed || handler->ShutDown())
       activeSIPHandlers.Remove(handler++);
     else
       ++handler;
   }
 
-  activeSIPHandlers.DeleteObjectsToBeRemoved();
-
-  return OpalEndPoint::GarbageCollection();
+  // Note use & rather than && so not McCarthy boolean, want all three functions executed
+  return transactions.DeleteObjectsToBeRemoved() &
+         activeSIPHandlers.DeleteObjectsToBeRemoved() &
+         OpalEndPoint::GarbageCollection();
 }
 
 
