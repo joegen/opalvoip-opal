@@ -2303,12 +2303,14 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
   }
 
   // Then open the streams if the direction allows
-  if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0)
+  if (recvStream == NULL && (otherSidesDir&SDPMediaDescription::SendOnly) != 0)
     ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId);
 
-  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
-  if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 && otherParty != NULL)
-    ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId);
+  if (sendStream == NULL && (otherSidesDir&SDPMediaDescription::RecvOnly) != 0) {
+    PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
+    if (otherParty != NULL)
+      ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId);
+  }
 
   PTRACE_IF(3, otherSidesDir == SDPMediaDescription::Inactive, "SIP\tNo streams opened as " << mediaType << " inactive");
   return true;

@@ -241,11 +241,11 @@ OpalFaxMediaStream::OpalFaxMediaStream(OpalFaxConnection & conn,
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
   , m_connection(conn)
   , sessionToken(token)
+  , m_faxCallInfo(NULL)
   , m_filename(filename)
   , m_receive(receive)
   , m_stationId(stationId)
 {
-  faxCallInfo = NULL;
   SetDataSize(RTP_DataFrame::MaxMtuPayloadSize);
 }
 
@@ -256,27 +256,27 @@ PBoolean OpalFaxMediaStream::Open()
     return false;
   }
 
-  PWaitAndSignal m2(faxMapMutex);
   PWaitAndSignal m(infoMutex);
 
-  if (faxCallInfo == NULL) {
+  if (m_faxCallInfo == NULL) {
+    PWaitAndSignal m2(faxMapMutex);
     OpalFaxCallInfoMap_T::iterator r = faxCallInfoMap.find(sessionToken);
     if (r != faxCallInfoMap.end()) {
-      faxCallInfo = r->second;
-      ++faxCallInfo->refCount;
+      m_faxCallInfo = r->second;
+      ++m_faxCallInfo->refCount;
     } else {
-      faxCallInfo = new OpalFaxCallInfo();
-      if (!faxCallInfo->socket.Listen()) {
+      m_faxCallInfo = new OpalFaxCallInfo();
+      if (!m_faxCallInfo->socket.Listen()) {
         PTRACE(1, "Fax\tCannot open listening socket for SpanDSP");
         return false;
       }
       {
         PIPSocket::Address addr; WORD port;
-        faxCallInfo->socket.GetLocalAddress(addr, port);
+        m_faxCallInfo->socket.GetLocalAddress(addr, port);
         PTRACE(2, "Fax\tLocal spandsp address set to " << addr << ":" << port);
       }
-      faxCallInfo->socket.SetReadTimeout(1000);
-      faxCallInfoMap.insert(OpalFaxCallInfoMap_T::value_type((const char *)sessionToken, faxCallInfo));
+      m_faxCallInfo->socket.SetReadTimeout(1000);
+      faxCallInfoMap.insert(OpalFaxCallInfoMap_T::value_type((const char *)sessionToken, m_faxCallInfo));
     }
   }
 
@@ -284,10 +284,10 @@ PBoolean OpalFaxMediaStream::Open()
   writeBufferLen = 0;
 
   // start the spandsp process
-  if (!faxCallInfo->spanDSP.IsOpen()) {
+  if (!m_faxCallInfo->spanDSP.IsOpen()) {
 
     // create the command line for spandsp_util
-    PString cmdLine = GetSpanDSPCommandLine(*faxCallInfo);
+    PString cmdLine = GetSpanDSPCommandLine(*m_faxCallInfo);
 
 #if _WIN32
     cmdLine.Replace("\\", "\\\\", true);
@@ -296,19 +296,19 @@ PBoolean OpalFaxMediaStream::Open()
     PTRACE(1, "Fax\tExecuting '" << cmdLine << "'");
 
     // open connection to spandsp
-    if (!faxCallInfo->spanDSP.Open(cmdLine, PPipeChannel::ReadOnly, false, true)) {
-      PTRACE(1, "Fax\tCannot open SpanDSP: " << faxCallInfo->spanDSP.GetErrorText());
+    if (!m_faxCallInfo->spanDSP.Open(cmdLine, PPipeChannel::ReadOnly, false, true)) {
+      PTRACE(1, "Fax\tCannot open SpanDSP: " << m_faxCallInfo->spanDSP.GetErrorText());
       return false;
     }
 
 #if PTRACING
     PString errmsg;
-    while (faxCallInfo->spanDSP.ReadStandardError(errmsg, false))
+    while (m_faxCallInfo->spanDSP.ReadStandardError(errmsg, false))
       PTRACE(1, "Fax\tspandsp_util: " << errmsg);
 #endif
 
-    if (!faxCallInfo->spanDSP.Execute()) {
-      PTRACE(1, "Fax\tCannot execute SpanDSP: return code=" << faxCallInfo->spanDSP.GetReturnCode());
+    if (!m_faxCallInfo->spanDSP.Execute()) {
+      PTRACE(1, "Fax\tCannot execute SpanDSP: return code=" << m_faxCallInfo->spanDSP.GetReturnCode());
       return false;
     }
   }
@@ -320,13 +320,13 @@ PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
 #if PTRACING
     PString errmsg;
-    while (faxCallInfo->spanDSP.ReadStandardError(errmsg, false))
+    while (m_faxCallInfo->spanDSP.ReadStandardError(errmsg, false))
       PTRACE(1, "Fax\tspandsp_util: " << errmsg);
 #endif
 
   // it is possible for ReadPacket to be called before the media stream has been opened, so deal with that case
   PWaitAndSignal m(infoMutex);
-  if ((faxCallInfo == NULL) || !faxCallInfo->spanDSP.IsRunning()) {
+  if ((m_faxCallInfo == NULL) || !m_faxCallInfo->spanDSP.IsRunning()) {
 
     // return silence
     packet.SetPayloadSize(0);
@@ -335,19 +335,19 @@ PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
 
     packet.SetSize(2048);
 
-    if (faxCallInfo->spanDSPPort > 0) {
-      if (!faxCallInfo->socket.Read(packet.GetPointer()+RTP_DataFrame::MinHeaderSize, packet.GetSize()-RTP_DataFrame::MinHeaderSize)) {
-        faxCallInfo->socket.Close();
+    if (m_faxCallInfo->spanDSPPort > 0) {
+      if (!m_faxCallInfo->socket.Read(packet.GetPointer()+RTP_DataFrame::MinHeaderSize, packet.GetSize()-RTP_DataFrame::MinHeaderSize)) {
+        m_faxCallInfo->socket.Close();
         return false;
       }
     } else{ 
-      if (!faxCallInfo->socket.ReadFrom(packet.GetPointer()+RTP_DataFrame::MinHeaderSize, packet.GetSize()-RTP_DataFrame::MinHeaderSize, faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
-        faxCallInfo->socket.Close();
+      if (!m_faxCallInfo->socket.ReadFrom(packet.GetPointer()+RTP_DataFrame::MinHeaderSize, packet.GetSize()-RTP_DataFrame::MinHeaderSize, m_faxCallInfo->spanDSPAddr, m_faxCallInfo->spanDSPPort)) {
+        m_faxCallInfo->socket.Close();
         return false;
       }
     }
 
-    PINDEX len = faxCallInfo->socket.GetLastReadCount();
+    PINDEX len = m_faxCallInfo->socket.GetLastReadCount();
     packet.SetPayloadType(RTP_DataFrame::MaxPayloadType);
     packet.SetPayloadSize(len);
 
@@ -371,14 +371,14 @@ PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
 PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
 {
   PWaitAndSignal m(infoMutex);
-  if ((faxCallInfo == NULL) || !faxCallInfo->spanDSP.IsRunning()) {
+  if ((m_faxCallInfo == NULL) || !m_faxCallInfo->spanDSP.IsRunning()) {
    
     // return silence
     packet.SetPayloadSize(0);
 
   } else {
 
-    if (!faxCallInfo->spanDSP.IsRunning()) {
+    if (!m_faxCallInfo->spanDSP.IsRunning()) {
       PTRACE(1, "Fax\tspandsp ended");
       return false;
     }
@@ -394,7 +394,7 @@ PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
     }
 #endif
 
-    if (faxCallInfo->spanDSPPort > 0) {
+    if (m_faxCallInfo->spanDSPPort > 0) {
 
       PINDEX size = packet.GetPayloadSize();
       BYTE * ptr = packet.GetPayloadPtr();
@@ -403,8 +403,8 @@ PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
       while ((writeBufferLen + size) >= (PINDEX)sizeof(writeBuffer)) {
         PINDEX len;
         if (writeBufferLen == 0) {
-          if (!faxCallInfo->socket.WriteTo(ptr, sizeof(writeBuffer), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
-            PTRACE(1, "Fax\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
+          if (!m_faxCallInfo->socket.WriteTo(ptr, sizeof(writeBuffer), m_faxCallInfo->spanDSPAddr, m_faxCallInfo->spanDSPPort)) {
+            PTRACE(1, "Fax\tSocket write error - " << m_faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
             return false;
           }
           len = sizeof(writeBuffer);
@@ -412,8 +412,8 @@ PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
         else {
           len = sizeof(writeBuffer) - writeBufferLen;
           memcpy(writeBuffer + writeBufferLen, ptr, len);
-          if (!faxCallInfo->socket.WriteTo(writeBuffer, sizeof(writeBuffer), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
-            PTRACE(1, "Fax\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
+          if (!m_faxCallInfo->socket.WriteTo(writeBuffer, sizeof(writeBuffer), m_faxCallInfo->spanDSPAddr, m_faxCallInfo->spanDSPPort)) {
+            PTRACE(1, "Fax\tSocket write error - " << m_faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
             return false;
           }
         }
@@ -429,8 +429,8 @@ PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
       }
 
       if (writeBufferLen == sizeof(writeBuffer)) {
-        if (!faxCallInfo->socket.WriteTo(writeBuffer, sizeof(writeBuffer), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
-          PTRACE(1, "Fax\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
+        if (!m_faxCallInfo->socket.WriteTo(writeBuffer, sizeof(writeBuffer), m_faxCallInfo->spanDSPAddr, m_faxCallInfo->spanDSPPort)) {
+          PTRACE(1, "Fax\tSocket write error - " << m_faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
           return false;
         }
         writeBufferLen = 0;
@@ -445,15 +445,22 @@ PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
 
 PBoolean OpalFaxMediaStream::Close()
 {
-  bool stat = OpalMediaStream::Close();
+  if (!OpalMediaStream::Close())
+    return false;
 
-  PWaitAndSignal m2(faxMapMutex);
-
+  OpalFaxCallInfo * faxCallInfo;
   {
-    if (faxCallInfo == NULL || sessionToken.IsEmpty()) {
+    PWaitAndSignal m1(infoMutex);
+
+    if (m_faxCallInfo == NULL || sessionToken.IsEmpty()) {
       PTRACE(1, "Fax\tCannot close unknown media stream");
-      return stat;
+      return true;
     }
+
+    faxCallInfo = m_faxCallInfo;
+    m_faxCallInfo = NULL;
+
+    PWaitAndSignal m2(faxMapMutex);
 
     // shutdown whatever is running
     faxCallInfo->socket.Close();
@@ -462,45 +469,33 @@ PBoolean OpalFaxMediaStream::Close()
     OpalFaxCallInfoMap_T::iterator r = faxCallInfoMap.find(sessionToken);
     if (r == faxCallInfoMap.end()) {
       PTRACE(1, "Fax\tError: media stream not found in T38 session list");
-      PWaitAndSignal m(infoMutex);
-      faxCallInfo = NULL;
-      return stat;
+      return true;
     }
 
     if (r->second != faxCallInfo) {
       PTRACE(1, "Fax\tError: session list does not match local ptr");
-      PWaitAndSignal m(infoMutex);
-      faxCallInfo = NULL;
-      return stat;
+      return true;
     }
 
-    else if (faxCallInfo->refCount == 0) {
+    if (faxCallInfo->refCount == 0) {
       PTRACE(1, "Fax\tError: media stream has incorrect reference count");
-      PWaitAndSignal m(infoMutex);
-      faxCallInfo = NULL;
-      return stat;
+      return true;
     }
 
     if (--faxCallInfo->refCount > 0) {
-      PWaitAndSignal m(infoMutex);
-      faxCallInfo = NULL;
-      PTRACE(1, "Fax\tClosed fax media stream");
-      return stat;
+      PTRACE(1, "Fax\tClosed fax media stream (references left)");
+      return true;
     }
-  }
 
-  // remove info from map
-  faxCallInfoMap.erase(sessionToken);
+    // remove info from map
+    faxCallInfoMap.erase(sessionToken);
+  }
 
   // delete the object
-  OpalFaxCallInfo * oldFaxCallInfo = faxCallInfo;
-  {
-    PWaitAndSignal m(infoMutex);
-    faxCallInfo = NULL;
-  }
-  delete oldFaxCallInfo;
+  delete faxCallInfo;
 
-  return stat;
+  PTRACE(1, "Fax\tClosed fax media stream (deleted info)");
+  return true;
 }
 
 PBoolean OpalFaxMediaStream::IsSynchronous() const
@@ -568,7 +563,7 @@ PBoolean OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   // it is possible for ReadPacket to be called before the media stream has been opened, so deal with that case
   PWaitAndSignal m(infoMutex);
-  if ((faxCallInfo == NULL) || !faxCallInfo->spanDSP.IsRunning()) {
+  if ((m_faxCallInfo == NULL) || !m_faxCallInfo->spanDSP.IsRunning()) {
 
     // return silence
     packet.SetPayloadSize(0);
@@ -580,22 +575,22 @@ PBoolean OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
 
     bool stat;
 
-    if (faxCallInfo->spanDSPPort > 0) 
-      stat = faxCallInfo->socket.Read(packet.GetPointer(), packet.GetSize());
+    if (m_faxCallInfo->spanDSPPort > 0) 
+      stat = m_faxCallInfo->socket.Read(packet.GetPointer(), packet.GetSize());
     else {
-      stat = faxCallInfo->socket.ReadFrom(packet.GetPointer(), packet.GetSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort);
-      PTRACE(2, "Fax\tRemote spandsp address set to " << faxCallInfo->spanDSPAddr << ":" << faxCallInfo->spanDSPPort);
+      stat = m_faxCallInfo->socket.ReadFrom(packet.GetPointer(), packet.GetSize(), m_faxCallInfo->spanDSPAddr, m_faxCallInfo->spanDSPPort);
+      PTRACE(2, "Fax\tRemote spandsp address set to " << m_faxCallInfo->spanDSPAddr << ":" << m_faxCallInfo->spanDSPPort);
     }
 
     if (!stat) {
-      if (faxCallInfo->socket.GetErrorCode(PChannel::LastReadError) == PChannel::Timeout) {
+      if (m_faxCallInfo->socket.GetErrorCode(PChannel::LastReadError) == PChannel::Timeout) {
         packet.SetPayloadSize(0);
         return true;
       }
       return false;
     }
 
-    PINDEX len = faxCallInfo->socket.GetLastReadCount();
+    PINDEX len = m_faxCallInfo->socket.GetLastReadCount();
     if (len < RTP_DataFrame::MinHeaderSize)
       return false;
 
@@ -613,23 +608,23 @@ PBoolean OpalT38MediaStream::WritePacket(RTP_DataFrame & packet)
   PWaitAndSignal m(infoMutex);
   if ((packet.GetPayloadSize() == 1) && (packet.GetPayloadPtr()[0] == 0xff)) {
     // ignore T.38 timing frames
-  } else if ((faxCallInfo == NULL) || !faxCallInfo->spanDSP.IsRunning() || faxCallInfo->spanDSPPort == 0) {
+  } else if ((m_faxCallInfo == NULL) || !m_faxCallInfo->spanDSP.IsRunning() || m_faxCallInfo->spanDSPPort == 0) {
     // queue frames before we know where to send them
     queuedFrames.Append(new RTP_DataFrame(packet));
   } else {
-    PTRACE(5, "Fax\tT.38 Write RTP packet size = " << packet.GetHeaderSize() + packet.GetPayloadSize() <<" to " << faxCallInfo->spanDSPAddr << ":" << faxCallInfo->spanDSPPort);
+    PTRACE(5, "Fax\tT.38 Write RTP packet size = " << packet.GetHeaderSize() + packet.GetPayloadSize() <<" to " << m_faxCallInfo->spanDSPAddr << ":" << m_faxCallInfo->spanDSPPort);
     if (queuedFrames.GetSize() > 0) {
       for (PINDEX i = 0; i < queuedFrames.GetSize(); ++i) {
         RTP_DataFrame & frame = queuedFrames[i];
-        if (!faxCallInfo->socket.WriteTo(frame.GetPointer(), frame.GetHeaderSize() + frame.GetPayloadSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
-          PTRACE(2, "T38_UDP\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
+        if (!m_faxCallInfo->socket.WriteTo(frame.GetPointer(), frame.GetHeaderSize() + frame.GetPayloadSize(), m_faxCallInfo->spanDSPAddr, m_faxCallInfo->spanDSPPort)) {
+          PTRACE(2, "T38_UDP\tSocket write error - " << m_faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
           return false;
         }
       }
       queuedFrames.RemoveAll();
     }
-    if (!faxCallInfo->socket.WriteTo(packet.GetPointer(), packet.GetHeaderSize() + packet.GetPayloadSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
-      PTRACE(2, "T38_UDP\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
+    if (!m_faxCallInfo->socket.WriteTo(packet.GetPointer(), packet.GetHeaderSize() + packet.GetPayloadSize(), m_faxCallInfo->spanDSPAddr, m_faxCallInfo->spanDSPPort)) {
+      PTRACE(2, "T38_UDP\tSocket write error - " << m_faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
       return false;
     }
     m_connection.CheckFaxStopped();
@@ -672,7 +667,7 @@ OpalFaxConnection * OpalFaxEndPoint::CreateConnection(OpalCall & call,
                                                       bool t38)
 {
   PString token = t38 ? m_t38Prefix : GetPrefixName();
-  token.sprintf("%i", ++faxCallIndex);
+  token.sprintf("_%i", ++faxCallIndex);
 
   if (t38)
     return new OpalT38Connection(call, *this, filename, receive, token, stringOptions);
@@ -854,7 +849,7 @@ void OpalFaxConnection::AcceptIncoming()
 
 void OpalFaxConnection::CheckFaxStopped()
 {
-  m_faxStopped.SetInterval(0, 10);
+  m_faxStopped.SetInterval(0, 30);
 }
 
 
