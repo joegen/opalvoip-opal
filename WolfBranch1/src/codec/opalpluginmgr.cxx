@@ -969,6 +969,9 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
       if (outputDataSize < 2048)
         outputDataSize = 2048;
 
+      if (outputDataSize > reportedBufferSize)
+        outputDataSize = reportedBufferSize;
+
       // create the output buffer, outputDataSize is supposed to include the
       // RTP header size, so take that off as ctor adds it back.
       RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize - PluginCodec_RTP_MinHeaderSize);
