@@ -60,7 +60,7 @@ class SIPEndPoint;
 
 /**Session Initiation Protocol connection.
  */
-//class SIPConnection : public OpalConnection
+
 class SIPConnection : public OpalRTPConnection
 {
   PCLASSINFO(SIPConnection, OpalRTPConnection);
