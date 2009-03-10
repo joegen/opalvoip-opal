@@ -988,11 +988,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
         return PFalse;
       }
 
-      if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
-        lastFrameWasIFrame = true;
-
-      if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
-        ExecuteCommand(OpalVideoUpdatePicture());
+      lastFrameWasIFrame = (flags & PluginCodec_ReturnCoderIFrame) != 0;
 
       if (toLen > 0) {
         dst->SetPayloadSize(toLen - dst->GetHeaderSize());
@@ -1011,12 +1007,12 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
     if (!lastFrameWasIFrame)
       consecutiveIntraFrames = 0;
     else if (forceIFrame)
-      PTRACE(3, "OpalPlugin\tSending I-Frame in response to videoFastUpdate");
+      PTRACE(3, "OpalPlugin\tEncoder sent forced I-Frame");
     else if (consecutiveIntraFrames < 10) {
       if (++consecutiveIntraFrames >= 10)
-        PTRACE(3, "OpalPlugin\tSending many consecutive I-Frames, assuming codec cannot do P-Frames");
+        PTRACE(3, "OpalPlugin\tEncoder has sent too many consecutive I-Frames - assume codec cannot do P-Frames");
       else
-        PTRACE(4, "OpalPlugin\tSending I-Frame");
+        PTRACE(4, "OpalPlugin\tEncoder resending forced I-Frame");
     }
 #endif
 
@@ -1043,8 +1039,13 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
     if (!Transcode((const BYTE *)src, &fromLen, bufferRTP->GetPointer(), &toLen, &flags))
       return PFalse;
 
-    if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
-      if (commandNotifier != PNotifier()) {
+    if ((commandNotifier != PNotifier()) && (flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
+      PTimeInterval tick = PTimer::Tick();
+      // Don't send lots of consecutive VideoFastUpdate commands
+      if (tick - m_lastVideoFastUpdate < 2000)
+        PTRACE(4, "OpalPlugin\tCould not decode frame, but a recent VideoUpdatePicture was sent.");
+      else {
+        m_lastVideoFastUpdate = PTimer::Tick();
         OpalVideoUpdatePicture updatePictureCommand;
         commandNotifier(updatePictureCommand, 0); 
         PTRACE (3, "OpalPlugin\tCould not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
@@ -1058,6 +1059,9 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
       bufferRTP = NULL;
 
       lastFrameWasIFrame = (flags & PluginCodec_ReturnCoderIFrame) != 0;
+      if (lastFrameWasIFrame) {
+        PTRACE(5, "OpalPlugin\tVideo decoder returned I-frame");
+      }
 
 #if OPAL_STATISTICS
       m_totalFrames++;

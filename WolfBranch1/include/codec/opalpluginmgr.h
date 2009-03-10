@@ -332,6 +332,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
 
   protected:
     RTP_DataFrame * bufferRTP;
+    PTimeInterval   m_lastVideoFastUpdate;
 
 #if PTRACING
     unsigned consecutiveIntraFrames;
