@@ -249,22 +249,32 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
 }
 
 
-PBoolean SIPHandler::SendRequest(SIPHandler::State s)
+PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
 {
   expireTimer.Stop(false); // Stop automatic retry
   bool retryLater = false;
 
-  switch (s) {
+  if (expire == 0)
+    newState = Unsubscribing;
+
+  switch (newState) {
     case Unsubscribing:
-      if (state != Subscribed)
-        return false;
-      SetState(s);
+      switch (state) {
+        case Unsubscribed :
+          return true;
+
+        case Subscribed :
+        case Unavailable :
+          break;
+
+        default : // Are in the process of doing something
+          return false;
+      }
       break;
 
     case Subscribing :
     case Refreshing :
     case Restoring :
-      SetState(expire > 0 ? s : Unsubscribing);
       if (GetTransport() == NULL) 
         retryLater = true;
       break;
@@ -274,9 +284,11 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
       return false;
   }
 
+  SetState(newState);
+
   if (!retryLater) {
     // Restoring or first time, try every interface
-    if (s == Restoring || m_transport->GetInterface().IsEmpty()) {
+    if (newState == Restoring || m_transport->GetInterface().IsEmpty()) {
       PWaitAndSignal mutex(m_transport->GetWriteMutex());
       if (m_transport->WriteConnect(WriteSIPHandler, this))
         return true;
