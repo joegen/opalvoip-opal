@@ -100,9 +100,9 @@ class SDPMediaFormat : public PObject
     virtual void UpdateMediaFormat() const;
 
     mutable OpalMediaFormat mediaFormat;
-    RTP_DataFrame::PayloadTypes payloadType;
 
     SDPMediaDescription & m_parent;
+    RTP_DataFrame::PayloadTypes payloadType;
     unsigned clockRate;
     PString encodingName;
     PString parameters;
