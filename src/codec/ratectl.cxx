@@ -234,6 +234,9 @@ OpalVideoRateController::OpalVideoRateController()
   m_outputFrameTime  = 0;
 }
 
+OpalVideoRateController::~OpalVideoRateController()
+{
+}
 
 void OpalVideoRateController::Open(const OpalMediaFormat & mediaFormat)
 {

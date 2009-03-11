@@ -168,6 +168,8 @@ class OpalVideoRateController
   public:
     OpalVideoRateController();
 
+    virtual ~OpalVideoRateController();
+
     /** Open the rate controller with the specific parameters
       */
     virtual void Open(
