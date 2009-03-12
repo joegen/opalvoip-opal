@@ -663,10 +663,8 @@ class OptionsDialog : public wxDialog
     // Fax fields
     PwxString m_FaxStationIdentifier;
     PwxString m_FaxReceiveDirectory;
-    PwxString m_FaxSpanDSP;
     int       m_FaxSyncMode;
     void BrowseFaxDirectory(wxCommandEvent & event);
-    void BrowseFaxSpanDSP(wxCommandEvent & event);
 
     ////////////////////////////////////////
     // IVR fields

@@ -173,7 +173,6 @@ DEF_FIELD(RemoteVideoFrameY);
 static const wxChar FaxGroup[] = wxT("/Fax");
 DEF_FIELD(FaxStationIdentifier);
 DEF_FIELD(FaxReceiveDirectory);
-DEF_FIELD(FaxSpanDSP);
 DEF_FIELD(FaxSyncMode);
 static const wxChar * FaxSyncModes[] = { wxT("Wait"), wxT("Timeout"), wxT("UserInput"), wxT("InBand") };
 
@@ -858,8 +857,6 @@ bool MyManager::Initialise()
     m_faxEP->SetDefaultDisplayName(str);
   if (config->Read(FaxReceiveDirectoryKey, &str))
     m_faxEP->SetDefaultDirectory(str);
-  if (config->Read(FaxSpanDSPKey, &str))
-    m_faxEP->SetSpanDSP(str);
   if (config->Read(FaxSyncModeKey, &str))
     m_faxEP->SetDefaultStringOption("Fax-Sync-Mode", str);
 #endif
@@ -1290,7 +1287,7 @@ bool MyManager::CanDoFax() const
 #if OPAL_FAX
   return m_callState != InCallState &&
          GetMediaFormatMask().GetValuesIndex(OpalT38.GetName()) == P_MAX_INDEX &&
-         PFile::Exists(m_faxEP->GetSpanDSP());
+         OpalMediaFormat("TIFF-File").IsValid();
 #else
   return false;
 #endif
@@ -3179,7 +3176,6 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   ////////////////////////////////////////
   // Fax fields
   EVT_BUTTON(XRCID("FaxBrowseReceiveDirectory"), OptionsDialog::BrowseFaxDirectory)
-  EVT_BUTTON(XRCID("FaxBrowseSpanDSP"), OptionsDialog::BrowseFaxSpanDSP)
 
   ////////////////////////////////////////
   // Codec fields
@@ -3440,7 +3436,6 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 #if OPAL_FAX
   INIT_FIELD(FaxStationIdentifier, m_manager.m_faxEP->GetDefaultDisplayName());
   INIT_FIELD(FaxReceiveDirectory, m_manager.m_faxEP->GetDefaultDirectory());
-  INIT_FIELD(FaxSpanDSP, m_manager.m_faxEP->GetSpanDSP());
 
   PwxString syncMode = m_manager.m_faxEP->GetDefaultStringOptions()("Fax-Sync-Mode");
   for (m_FaxSyncMode = 0; m_FaxSyncMode < PARRAYSIZE(FaxSyncModes); ++m_FaxSyncMode) {
@@ -3793,7 +3788,6 @@ bool OptionsDialog::TransferDataFromWindow()
   config->SetPath(FaxGroup);
   SAVE_FIELD(FaxStationIdentifier, m_manager.m_faxEP->SetDefaultDisplayName);
   SAVE_FIELD(FaxReceiveDirectory, m_manager.m_faxEP->SetDefaultDirectory);
-  SAVE_FIELD(FaxSpanDSP, m_manager.m_faxEP->SetSpanDSP);
   m_manager.m_faxEP->SetDefaultStringOption("Fax-Sync-Mode", FaxSyncModes[m_FaxSyncMode]);
   config->Write(FaxSyncModeKey, FaxSyncModes[m_FaxSyncMode]);
 #endif
@@ -4237,26 +4231,6 @@ void OptionsDialog::BrowseFaxDirectory(wxCommandEvent & /*event*/)
   if (dlg.ShowModal() == wxID_OK) {
     m_FaxReceiveDirectory = dlg.GetPath();
     FindWindowByNameAs<wxTextCtrl>(this, wxT("FaxReceiveDirectory"))->SetLabel(m_FaxReceiveDirectory);
-  }
-}
-
-
-void OptionsDialog::BrowseFaxSpanDSP(wxCommandEvent &)
-{
-  wxString newFile = wxFileSelector(wxT("Select location of Span DSP Utility executable"),
-                                    wxT(""),
-                                    m_FaxSpanDSP,
-#ifdef _WIN32
-                                    wxT(".exe"),
-                                    wxT("EXE files (*.exe)|*.exe"),
-#else
-                                    wxEmptyString,
-                                    wxEmptyString,
-#endif
-                                    wxOPEN|wxFILE_MUST_EXIST);
-  if (!newFile.empty()) {
-    m_FaxSpanDSP = newFile;
-    FindWindowByNameAs<wxTextCtrl>(this, wxT("FaxSpanDSP"))->SetLabel(newFile);
   }
 }
 
