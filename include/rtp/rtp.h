@@ -1118,7 +1118,7 @@ class RTP_Encoding
     virtual void OnStart(RTP_Session & _rtpSession);
     virtual void OnFinish();
     virtual RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
-    virtual PBoolean WriteData(RTP_DataFrame & frame);
+    virtual PBoolean WriteData(RTP_DataFrame & frame, bool oob);
     virtual PBoolean WriteDataPDU(RTP_DataFrame & frame);
     virtual RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
     virtual RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);

@@ -2019,6 +2019,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
   return OnReceiveControl(frame);
 }
 
+
 PBoolean RTP_UDP::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
 {
   PWaitAndSignal m(dataMutex);
@@ -2039,12 +2040,12 @@ PBoolean RTP_UDP::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
     frame.SetTimestamp(oobTimeStampOutBase + ((PTimer::Tick() - oobTimeStampBase).GetInterval() * 8));
 
   // write the data
-  return WriteData(frame);
+  return EncodingLock(*this)->WriteData(frame, true);
 }
 
 PBoolean RTP_UDP::WriteData(RTP_DataFrame & frame)
 {
-  return EncodingLock(*this)->WriteData(frame);
+  return EncodingLock(*this)->WriteData(frame, false);
 }
 
 
@@ -2218,7 +2219,7 @@ RTP_Session::SendReceiveStatus RTP_Encoding::OnSendData(RTP_DataFrame & frame)
   return rtpUDP->Internal_OnSendData(frame);
 }
 
-PBoolean RTP_Encoding::WriteData(RTP_DataFrame & frame)
+PBoolean RTP_Encoding::WriteData(RTP_DataFrame & frame, bool)
 {
   return rtpUDP->Internal_WriteData(frame);
 }

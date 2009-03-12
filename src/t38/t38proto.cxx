@@ -73,6 +73,15 @@ class T38PseudoRTP_Handler : public RTP_Encoding
     }
 
 
+    PBoolean WriteData(RTP_DataFrame & frame, bool oob)
+    {
+      if (oob)
+        return false;
+
+      return RTP_Encoding::WriteData(frame, false);
+    }
+
+
     bool WriteDataPDU(RTP_DataFrame & frame)
     {
       if (frame.GetPayloadSize() == 0)
@@ -937,8 +946,6 @@ void OpalT38Connection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   m_faxMode = stream.GetMediaFormat().GetMediaType() != OpalMediaType::Fax();
 
-  if (m_syncMode == Mode_UserInput)
-    OnUserInputTone(' ', 0);
   m_faxTimer.Stop();
 
   OpalFaxConnection::OnClosedMediaStream(stream);
@@ -1029,8 +1036,6 @@ void OpalT38Connection::RequestFaxMode(bool toFax)
 
   m_faxMode = toFax;
   m_faxTimer.Stop();
-  if (m_syncMode == Mode_UserInput)
-    OnUserInputTone('\0', 0);
 
   PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
 }
