@@ -1,654 +1,889 @@
 /*  
  * Fax plugin codec for OPAL using SpanDSP
  *
- * Copyright (C) 2007 Post Increment, All Rights Reserved
+ * Copyright (C) 2008 Post Increment, All Rights Reserved
  *
- * The contents of this file are subject to the Mozilla Public License
- * Version 1.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
+ * Contributor(s): Craig Southeren (craigs@postincrement.com)
+ *                 Robert Jongbloed (robertj@voxlucida.com.au)
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
- * the License for the specific language governing rights and limitations
- * under the License.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License version 2.1,
+ * as published by the Free Software Foundation.
  *
- * The Original Code is Fax plugin codec for OPAL using SpanDSP
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
  *
- * The Initial Developer of the Original Code is Post Increment
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * Contributor(s): ______________________________________.
- *
- * $Log: spandsp_fax.cpp,v $
- * Revision 1.5  2007/07/24 04:37:35  csoutheren
- * MIgrated fax code from PrePresenceBranch
- *
- * Revision 1.3.2.2  2007/07/19 08:25:22  csoutheren
- * Fix length check problem
- *
- * Revision 1.3.2.1  2007/05/18 04:24:29  csoutheren
- * Fixed Linux compile
- *
- * Revision 1.3  2007/05/10 05:32:43  csoutheren
- * Fix release build
- * Normalise log output
- * Add blocking and deblocking
- *
- * Revision 1.2  2007/03/29 08:28:58  csoutheren
- * Fix shutdown issues
- *
- * Revision 1.1  2007/03/29 04:49:20  csoutheren
- * Initial checkin
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
+
+
+#define LOGGING 1
+
+extern "C" {
+#include "spandsp.h"
+};
 
 #include <codec/opalplugin.h>
 
-extern "C" {
-  
-PLUGIN_CODEC_IMPLEMENT(SpanDSP_Fax)
-
-};
-
-#define USE_EMBEDDED_SPANDSP  1
 
 #include <stdlib.h>
-#include <iostream>
-using namespace std;
 
 #if defined(_WIN32) || defined(_WIN32_WCE)
-  #define _CRT_SECURE_NO_DEPRECATE
+  #define WIN32_LEAN_AND_MEAN
   #include <windows.h>
-  #include <process.h>
-  #include <malloc.h>
-  #include <sys/stat.h>
-  #define STRCMPI  _strcmpi
+  #include <io.h>
+  #define strcasecmp _stricmp
+  #define access _access
+  #define W_OK 2
+  #define R_OK 4
+  #define DIR_SEPERATORS "/\\:"
 #else
-  #define STRCMPI  strcasecmp
-  #include <semaphore.h>
-  #include <time.h>
-  #include <signal.h>
   #include <unistd.h>
+  #include <pthread.h>
+  #define DIR_SEPERATORS "/"
 #endif
 
-#include <string.h>
+#include <sstream>
 #include <vector>
+#include <queue>
 #include <map>
 
-#if USE_EMBEDDED_SPANDSP
-#include "spandsp_util/spandsp_if.h"
-#else
-#error "Non-embedded SpanDSP not yet supported"
-#endif
-
-const char sdpT38[]  = "t38";
 
 #define   BITS_PER_SECOND           14400
+#define   MICROSECONDS_PER_FRAME    20000
 #define   SAMPLES_PER_FRAME         160
 #define   BYTES_PER_FRAME           100
 #define   PREF_FRAMES_PER_PACKET    1
 #define   MAX_FRAMES_PER_PACKET     1
-  
+
+
+#if LOGGING
+
+static PluginCodec_LogFunction LogFunction;
+
+#define PTRACE(level, args) \
+    if (LogFunction != NULL && LogFunction(level, NULL, 0, NULL, NULL)) { \
+    std::ostringstream strm; strm << args; \
+      LogFunction(level, __FILE__, __LINE__, "SpanDSP", strm.str().c_str()); \
+    } else (void)0
+
+static void SpanDSP_Message(int level, const char *text)
+{
+  if (*text != '\0' && LogFunction != NULL && LogFunction(level, NULL, 0, NULL, NULL)) {
+    int last = strlen(text)-1;
+    if (text[last] == '\n')
+      ((char *)text)[last] = '\0';
+    LogFunction(level, __FILE__, __LINE__, "SpanDSP", text);
+  }
+}
+
+static void InitLogging(logging_state_t * logging)
+{
+  span_log_set_message_handler(logging, SpanDSP_Message);
+  span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG);
+}
+
+#else // LOGGING
+
+#define PTRACE(level, expr)
+#define InitLogging(logging)
+
+#endif // LOGGING
+
 /////////////////////////////////////////////////////////////////////////////
 
-#ifdef _MSC_VER
-#pragma warning(disable:4100)
-#endif
+static const char L16Format[] = "L16";
+static const char T38Format[] = "T.38";
+static const char TIFFFormat[] = "TIFF-File";
+static const char T38sdp[]    = "t38";
+
+
+static struct PluginCodec_Option const ReceivingOption =
+{
+  PluginCodec_BoolOption,     // PluginCodec_OptionTypes
+  "Receiving",                // Generic (human readable) option name
+  1,                          // Read Only flag
+  PluginCodec_AlwaysMerge,    // Merge mode
+  "0",                        // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0                           // H.245 Generic Capability number and scope bits
+};
+
+static struct PluginCodec_Option const TiffFileNameOption =
+{
+  PluginCodec_StringOption,   // PluginCodec_OptionTypes
+  "TIFF-File-Name",           // Generic (human readable) option name
+  1,                          // Read Only flag
+  PluginCodec_AlwaysMerge,    // Merge mode
+  "",                         // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0                           // H.245 Generic Capability number and scope bits
+};
+
+static struct PluginCodec_Option const T38FaxVersion =
+{
+  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
+  "T38FaxVersion",            // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MinMerge,       // Merge mode
+  "0",                        // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0,                          // H.245 Generic Capability number and scope bits
+  "0",                        // Minimum value
+  "1"                         // Maximum value
+};
+
+static struct PluginCodec_Option const T38FaxRateManagement =
+{
+  PluginCodec_EnumOption,     // PluginCodec_OptionTypes
+  "T38FaxRateManagement",     // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MinMerge,       // Merge mode
+  "transferredTCF",           // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0,                          // H.245 Generic Capability number and scope bits
+  "localTCF:transferredTCF"   // enum values
+};
+
+static struct PluginCodec_Option const T38MaxBitRate =
+{
+  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
+  "T38MaxBitRate",            // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MinMerge,       // Merge mode
+  "14400",                    // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0,                          // H.245 Generic Capability number and scope bits
+  "300",                      // Minimum value
+  "56000"                     // Maximum value
+};
+
+static struct PluginCodec_Option const T38FaxMaxBuffer =
+{
+  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
+  "T38FaxMaxBuffer",          // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MinMerge,       // Merge mode
+  "72",                       // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0,                          // H.245 Generic Capability number and scope bits
+  "10",                       // Minimum value
+  "1000"                      // Maximum value
+};
+
+static struct PluginCodec_Option const T38FaxMaxDatagram =
+{
+  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
+  "T38FaxMaxDatagram",        // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MinMerge,       // Merge mode
+  "316",                      // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0,                          // H.245 Generic Capability number and scope bits
+  "100",                      // Minimum value
+  "1500"                      // Maximum value
+};
+
+static struct PluginCodec_Option const T38FaxUdpEC =
+{
+  PluginCodec_EnumOption,     // PluginCodec_OptionTypes
+  "T38FaxUdpEC",              // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MinMerge,       // Merge mode
+  "t38UDPFEC",                // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0,                          // H.245 Generic Capability number and scope bits
+  "t38UDPRedundancy:t38UDPFEC"// enum values
+};
+
+static struct PluginCodec_Option const T38FaxFillBitRemoval =
+{
+  PluginCodec_BoolOption,     // PluginCodec_OptionTypes
+  "T38FaxFillBitRemoval",     // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MinMerge,       // Merge mode
+  "0",                        // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0                           // H.245 Generic Capability number and scope bits
+};
+
+static struct PluginCodec_Option const T38FaxTranscodingMMR =
+{
+  PluginCodec_BoolOption,     // PluginCodec_OptionTypes
+  "T38FaxTranscodingMMR",     // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MinMerge,       // Merge mode
+  "0",                        // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0                           // H.245 Generic Capability number and scope bits
+};
+
+static struct PluginCodec_Option const T38FaxTranscodingJBIG =
+{
+  PluginCodec_BoolOption,     // PluginCodec_OptionTypes
+  "T38FaxTranscodingJBIG",    // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MinMerge,       // Merge mode
+  "0",                        // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0                           // H.245 Generic Capability number and scope bits
+};
+
+static struct PluginCodec_Option const * const OptionTable[] = {
+  &ReceivingOption,
+  &TiffFileNameOption,
+  &T38FaxVersion,
+  &T38FaxRateManagement,
+  &T38MaxBitRate,
+  &T38FaxMaxBuffer,
+  &T38FaxMaxDatagram,
+  &T38FaxUdpEC,
+  &T38FaxFillBitRemoval,
+  &T38FaxTranscodingMMR,
+  &T38FaxTranscodingJBIG,
+  NULL
+};
+
 
 /////////////////////////////////////////////////////////////////
 //
 // define a class to implement a critical section mutex
 // based on PCriticalSection from PWLib
 
+#ifdef _WIN32
 class CriticalSection
 {
-  public:
-    CriticalSection()
-    { 
-#ifdef _WIN32
-      ::InitializeCriticalSection(&criticalSection); 
-#else
-      ::sem_init(&sem, 0, 1);
-#endif
-    }
-
-    ~CriticalSection()
-    { 
-#ifdef _WIN32
-      ::DeleteCriticalSection(&criticalSection); 
-#else
-      ::sem_destroy(&sem);
-#endif
-    }
-
-    void Wait()
-    { 
-#ifdef _WIN32
-      ::EnterCriticalSection(&criticalSection); 
-#else
-      ::sem_wait(&sem);
-#endif
-    }
-
-    void Signal()
-    { 
-#ifdef _WIN32
-      ::LeaveCriticalSection(&criticalSection); 
-#else
-      ::sem_post(&sem); 
-#endif
-    }
-
-  private:
-    CriticalSection & operator=(const CriticalSection &) { return *this; }
-#ifdef _WIN32
-    mutable CRITICAL_SECTION criticalSection; 
-#else
-    mutable sem_t sem;
-#endif
+private:
+  CRITICAL_SECTION m_CriticalSection;
+public:
+  inline CriticalSection()  { InitializeCriticalSection(&m_CriticalSection); }
+  inline ~CriticalSection() { DeleteCriticalSection(&m_CriticalSection); }
+  inline void Wait()        { EnterCriticalSection(&m_CriticalSection); }
+  inline void Signal()      { LeaveCriticalSection(&m_CriticalSection); }
 };
-    
-class WaitAndSignal {
-  public:
-    inline WaitAndSignal(const CriticalSection & cs)
-      : sync((CriticalSection &)cs)
-    { sync.Wait(); }
-
-    ~WaitAndSignal()
-    { sync.Signal(); }
-
-    WaitAndSignal & operator=(const WaitAndSignal &) 
-    { return *this; }
-
-  protected:
-    CriticalSection & sync;
-};
-
-#if USE_EMBEDDED_SPANDSP
-#if _WIN32
-int socketpair(int d, int type, int protocol, socket_t fds[2])
+#else
+class CriticalSection
 {
-  fds[0] = fds[1] = INVALID_SOCKET;
-
-  if (d != AF_UNIX || type != SOCK_DGRAM)
-    return -1;
-
-  // get local IP address
-  in_addr hostAddress;
-  {
-    char hostname[80];
-    if (gethostname(hostname, sizeof(hostname)) == SOCKET_ERROR)
-      return -1;
-    struct hostent * he = gethostbyname(hostname);
-    if (he == 0)
-      return -1;
-    int i;
-    for (i = 0; he->h_addr_list[i] != 0; ++i) {
-      if (*(u_long *)(he->h_addr_list[i]) != INADDR_LOOPBACK) {
-        memcpy(&hostAddress, he->h_addr_list[i], sizeof(hostAddress));
-        break;
-      }
-    }
-    if (he->h_addr_list[i] == 0)
-      return -1;
-  }
-
-  // windows does not support AF_UNIX, so use localhost instead
-  sockaddr_in sockAddrs[2];
-  int sockLens[2];
-  
-  int i;
-
-  for (i = 0; i < 2; ++i) {
-    if ((fds[i] = socket(AF_INET, type, 0)) == INVALID_SOCKET)
-      break;
-
-    sockLens[i] = sizeof(sockAddrs[0]);
-    memset(&sockAddrs[i], 0, sizeof(sockLens[i]));
-
-    sockAddrs[i].sin_family  = AF_INET;
-    sockAddrs[i].sin_addr    = hostAddress;
-    sockAddrs[i].sin_port    = 0;
-
-    if (bind(fds[i], (sockaddr *)&sockAddrs[i], sockLens[i]) != 0) 
-      break;
-
-    sockLens[i] = sizeof(sockAddrs[0]);
-    memset(&sockAddrs[i], 0, sizeof(sockLens[i]));
-
-    if (getsockname(fds[i], (sockaddr *)&sockAddrs[i], &sockLens[i]) != 0) 
-      break;
-  }
-
-  if (i == 2) {
-    if (connect(fds[0], (sockaddr *)&sockAddrs[1], sockLens[1]) == 0) {
-      if (connect(fds[1], (sockaddr *)&sockAddrs[0], sockLens[0]) == 0)
-        return 0;
-    }
-  }
-
-  cerr << "last error is " << WSAGetLastError() << endl;
-
-  closesocket(fds[0]);
-  closesocket(fds[1]);
-
-  fds[0] = fds[1] = INVALID_SOCKET;
-
-  return -1;
-}
+private:
+  pthread_mutex_t m_Mutex;
+public:
+  inline CriticalSection()  { pthread_mutex_init(&m_Mutex, NULL); }
+  inline ~CriticalSection() { pthread_mutex_destroy(&m_Mutex); }
+  inline void Wait()        { pthread_mutex_lock(&m_Mutex); }
+  inline void Signal()      { pthread_mutex_unlock(&m_Mutex); }
+};
 #endif
-#endif
+    
+class WaitAndSignal
+{
+  private:
+    CriticalSection & m_criticalSection;
+
+    void operator=(const WaitAndSignal &) { }
+    WaitAndSignal(const WaitAndSignal & other) : m_criticalSection(other.m_criticalSection) { }
+  public:
+    inline WaitAndSignal(const CriticalSection & cs) 
+      : m_criticalSection((CriticalSection &)cs) { m_criticalSection.Wait(); }
+    inline ~WaitAndSignal()                      { m_criticalSection.Signal(); }
+};
+
 
 /////////////////////////////////////////////////////////////////
 
 typedef std::vector<unsigned char> InstanceKey;
 
-class FaxInstance
+class FaxSpanDSP
 {
-  public:
-    CriticalSection mutex;
+  protected:
+    CriticalSection m_mutex;
+    unsigned        m_referenceCount;
 
-    FaxInstance();
-    ~FaxInstance();
+    bool            m_receiving;
+    bool            m_usingT38;
+    std::string     m_tiffFileName;
+    std::string     m_stationIdentifer;
+    unsigned        m_protoVersion;
+    bool            m_useECM;
 
-    bool WritePCM(const void * from, unsigned * fromLen);
-    bool ReadPCM(void * to, unsigned * toLen, bool & moreToRead);
+    t38_terminal_state_t * m_t38State;
+    fax_state_t          * m_faxState;
+    t30_state_t          * m_t30state;
+    int                    m_t30result;
 
-    bool WriteT38(const void * from, unsigned * fromLen);
-    bool ReadT38(void * to, unsigned  * toLen);
-
-    unsigned refCount;
-
-#if USE_EMBEDDED_SPANDSP
-    SpanDSP::T38Gateway t38Gateway;
-    void GatewayMain();
-    SpanDSP::AdaptiveDelay writeDelay;
-
-#if _WIN32
-    SOCKET t38Sockets[2];
-    SOCKET faxSockets[2];
-    HANDLE threadHandle;
-#else
-    int t38Sockets[2];
-    int faxSockets[2];
-    pthread_t threadHandle;
-#endif
-#endif // USE_EMBEDDED_SPANDSP
-    bool Open();
-    bool first;
-};
-
-#if USE_EMBEDDED_SPANDSP
-
-extern "C" {
-#if _WIN32
-static unsigned __stdcall GatewayMain_Static(void * userData)
-#else
-static void * GatewayMain_Static(void * userData)
-#endif
-{
-  FaxInstance * fax = (FaxInstance*)userData;
-  if (fax != NULL)
-    fax->GatewayMain();
-  return 0;
-}
-};
-
-FaxInstance::FaxInstance()
-{ 
-  refCount = 0; 
-  first    = true;
-#if _WIN32
-  t38Sockets[0] = t38Sockets[1] = INVALID_SOCKET;
-  faxSockets[0] = faxSockets[1] = INVALID_SOCKET;
-  threadHandle = NULL;
-#else
-  t38Sockets[0] = t38Sockets[1] = -1;
-  faxSockets[0] = faxSockets[1] = -1;
-  threadHandle = 0;
-#endif
-}
-
-FaxInstance::~FaxInstance()
-{
-#if _WIN32
-  if (t38Sockets[0] != INVALID_SOCKET)
-    closesocket(t38Sockets[0]);
-  if (t38Sockets[1] != INVALID_SOCKET)
-    closesocket(t38Sockets[1]);
-  if (faxSockets[0] != INVALID_SOCKET)
-    closesocket(faxSockets[0]);
-  if (faxSockets[1] != INVALID_SOCKET)
-    closesocket(faxSockets[1]);
-  if (threadHandle != NULL) {
-    DWORD result;
-    int retries = 10;
-    while ((result = WaitForSingleObject(threadHandle, 1000)) != WAIT_TIMEOUT) {
-      if (result == WAIT_OBJECT_0)
-        break;
-      if (::GetLastError() != ERROR_INVALID_HANDLE) 
-        break;
-      if (retries == 0)
-        break;
-      retries--;
-    }
-    CloseHandle(threadHandle);
-  }
-#else
-  if (t38Sockets[0] != -1)
-    close(t38Sockets[0]);
-  if (t38Sockets[1] != -1)
-    close(t38Sockets[1]);
-  if (faxSockets[0] != -1)
-    close(faxSockets[0]);
-  if (faxSockets[1] != -1)
-    close(faxSockets[1]);
-  if (threadHandle != 0) {
-    int i = 20;
-    while (i-- > 0) {
-      if (pthread_kill(threadHandle, 0) == 0)
-        break;
-      usleep(100000);
-    }
-  }
-#endif
-}
-
-void FaxInstance::GatewayMain()
-{
-  t38Gateway.Serve(faxSockets[1], t38Sockets[1]);
-}
-
-bool FaxInstance::Open()
-{
-  SpanDSP::progmode = "SpanDSP_Fax";
-
-  // open the sockets
-  if ((socketpair(AF_UNIX, SOCK_DGRAM, 0, faxSockets) != 0) || 
-      (socketpair(AF_UNIX, SOCK_DGRAM, 0, t38Sockets) != 0))
-    return false;
-
-  t38Gateway.SetVersion(0);
-
-  // start the gateway object
-  t38Gateway.Start();
-
-  // put gateway into a seperate thread
-
-#if _WIN32
-
-  threadHandle = (HANDLE)_beginthreadex(NULL, 10000, &GatewayMain_Static, this, 0, NULL);
-  return TRUE;
-
-#else
-
-  pthread_attr_t threadAttr;
-  pthread_attr_init(&threadAttr);
-  pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_DETACHED);
-  return pthread_create(&threadHandle, &threadAttr, &GatewayMain_Static, this) == 0;
-
-#endif
-
-}
-
-bool FaxInstance::WritePCM(const void * from, unsigned * fromLen)
-{
-  return sendto(faxSockets[0], 12+(const char *)from, *fromLen-12, 0, NULL, 0) == (int)(*fromLen-12);
-}
-
-bool FaxInstance::ReadPCM(void * to, unsigned * toLen, bool & moreToRead)
-{
-  moreToRead = false;
-  static short seq = 0;
-
-  if (*toLen < 320+12)
-    return false;
-  int stat = recvfrom(faxSockets[0], 12+(char *)to, 320, 0, NULL, 0);
-  if (stat < 0) {
-    cerr << "fax read failed" << endl;
-    return false;
-  }
-
-#if WRITE_PCM_FILES
-  static int file = _open("codec_read.pcm", _O_BINARY | _O_CREAT | _O_TRUNC | _O_WRONLY, _S_IREAD | _S_IWRITE);
-  if (file >= 0) {
-    if (_write(file, 12+(char *)to, stat) < stat) {
-      cerr << "cannot write codec read PCM data to file" << endl;
-      file = -1;
-    }
-  }
-#endif
-
-  if (stat == 320)
-    *toLen = 320+12;
-  else {
-    *toLen = 0;
-    cerr << "fax read returned error" << endl;
-  }
-
-  fd_set fds;
-  FD_ZERO(&fds);
-  FD_SET(faxSockets[0], &fds);
-
-  timeval timeout;
-  timeout.tv_sec  = 0;
-  timeout.tv_usec = 0;
-  moreToRead = select(faxSockets[0]+1, &fds, NULL, NULL, &timeout) > 0;
-
-  return TRUE;
-}
-
-bool FaxInstance::WriteT38(const void * from, unsigned * fromLen)
-{
-  return sendto(t38Sockets[0], (const char *)from, *fromLen, 0, NULL, 0) == (int)*fromLen;
-}
-
-bool FaxInstance::ReadT38(void * to, unsigned  * toLen)
-{
-  // T.38 packets do not arrive regularly, so don't block waiting for them
-  fd_set fds;
-  FD_ZERO(&fds);
-  FD_SET(t38Sockets[0], &fds);
-
-  int delay = writeDelay.Calculate(20);
-  if (delay == 0)
-    delay = 1;
-  timeval timeout;
-  timeout.tv_sec  = 0;
-  timeout.tv_usec = delay * 1000;
-  int stat = select(t38Sockets[0]+1, &fds, NULL, NULL, &timeout);
-
-  if (stat == 0) {
-    *toLen = 0;
-    return true;
-  }
-  stat = recvfrom(t38Sockets[0], (char *)to, *toLen, 0, NULL, 0);
-  if (stat < 0)
-    return false;
-  *toLen = stat;
-
-  return true;
-}
-
-#endif // USE_EMBEDDED_SPANDSP
-
-
-typedef std::map<InstanceKey, FaxInstance *> InstanceMapType_T;
-static InstanceMapType_T instanceMap;
-CriticalSection instanceMapMutex;
-
-class FaxCodecContext
-{
-  public:
-    FaxCodecContext()
-    { 
-      key.resize(0); 
-      instance = NULL;
-    }
-
-    ~FaxCodecContext()
+    struct T38Packet : public std::vector<unsigned char>
     {
-      if ((instance == NULL) || (key.size() == 0))
-        return;
+      int m_sequence;
+    };
+    std::queue<T38Packet> m_t38Queue;
 
-      WaitAndSignal m(instanceMapMutex);
+  public:
+    FaxSpanDSP(bool usingT38)
+      : m_referenceCount(1)
+      , m_receiving(false)
+      , m_usingT38(usingT38)
+      , m_stationIdentifer("-")
+      , m_protoVersion(0)
+      , m_useECM(false)
+      , m_t38State(NULL)
+      , m_faxState(NULL)
+      , m_t30state(NULL)
+      , m_t30result(-1)
+    {
+    }
 
-      InstanceMapType_T::iterator r = instanceMap.find(key);
-      if (r != instanceMap.end()) {
-        instance = r->second;
-        instance->mutex.Wait();
-        if (instance->refCount > 0)
-          --instance->refCount;
-        else {
-          instance->mutex.Signal();
-          delete instance;
-          instance = NULL;
-        }
+
+    ~FaxSpanDSP()
+    {
+      if (m_t38State != NULL) {
+        t38_terminal_release(m_t38State);
+        t38_terminal_free(m_t38State);
       }
+      if (m_faxState != NULL) {
+        fax_release(m_faxState);
+        fax_free(m_faxState);
+      }
+      PTRACE(4, "Deleted SpanDSP instance.");
     }
 
-    bool StartCodec()
-    {
-      if (instance != NULL)
-        return true;
 
-      if (key.size() == 0)
+    void AddReference()
+    {
+      m_mutex.Wait();
+      ++m_referenceCount;
+      m_mutex.Signal();
+    }
+
+
+    bool Dereference()
+    {
+      WaitAndSignal mutex(m_mutex);
+      return --m_referenceCount == 0;
+    }
+
+
+    bool SetOptions(const char * const * options)
+    {
+      if (options == NULL)
         return false;
 
-      WaitAndSignal m(instanceMapMutex);
-
-      InstanceMapType_T::iterator r = instanceMap.find(key);
-      if (r != instanceMap.end()) {
-        instance = r->second;
-        instance->mutex.Wait();
-        ++instance->refCount;
-        instance->mutex.Signal();
-      }
-      else {
-        instance = new FaxInstance();
-        if (!instance->Open())
+      while (options[0] != NULL && options[1] != NULL) {
+        if (!SetOption(options[0], options[1]))
           return false;
-
-        instance->mutex.Wait();
-        instanceMap.insert(InstanceMapType_T::value_type(key, instance));
-        instance->mutex.Signal();
+        options += 2;
       }
+
       return true;
     }
 
-    InstanceKey key;
-    FaxInstance * instance;
+
+    bool SetOption(const char * option, const char * value)
+    {
+      if (strcasecmp(option, TiffFileNameOption.m_name) == 0) {
+        m_tiffFileName = value;
+        return true;
+      }
+
+      if (strcasecmp(option, ReceivingOption.m_name) == 0) {
+        m_receiving = atoi(value) != 0;
+        return true;
+      }
+
+      if (strcasecmp(option, T38FaxVersion.m_name) == 0) {
+        m_protoVersion = atoi(value);
+        return true;
+      }
+
+      return true;
+    }
+
+
+    void PhaseE(t30_state_t * t30state, int result)
+    {
+      m_t30result = result;
+#if LOGGING
+      if (LogFunction != NULL && LogFunction(3, NULL, 0, NULL, NULL)) { \
+        t30_stats_t stats;
+        t30_get_transfer_statistics(t30state, &stats);
+
+        std::ostringstream strm;
+        strm << "SpanDSP entered Phase E: " << t30_completion_code_to_str(result) << "\n"
+                "Encoding: " << stats.encoding << "\n"
+                "Bit rate: " << stats.bit_rate << "\n"
+                "Bytes = " << stats.image_size << "\n"
+                "Pages: tx=" << stats.pages_tx << " rx=" << stats.pages_rx << " total=" << stats.pages_in_file << "\n"
+                "Resolution: x=" << stats.x_resolution << " y=" << stats.y_resolution << "\n"
+                "Pixel Width: " << stats.width << "\n"
+                "Pixel Rows: " << stats.length << " (bad=" << stats.bad_rows << ")\n"
+                "Error Correction Mode: " << stats.error_correcting_mode << " (retries=" << stats.error_correcting_mode_retries << ")\n"
+                "Status = " << stats.current_status;
+        LogFunction(3, __FILE__, __LINE__, "SpanDSP", strm.str().c_str());
+    }
+#endif
+    }
+    static void PhaseE(t30_state_t * t30state, void * user_data, int result)
+    {
+      if (user_data != NULL)
+        ((FaxSpanDSP *)user_data)->PhaseE(t30state, result);
+    }
+
+
+    void T38Packets(const uint8_t * buf, int len, int sequence)
+    {
+      m_mutex.Wait();
+
+      m_t38Queue.push(T38Packet());
+      T38Packet & packet = m_t38Queue.back();
+      packet.resize(len);
+      memcpy(&packet[0], buf, len);
+      packet.m_sequence = sequence;
+
+      m_mutex.Signal();
+    }
+    static int T38Packets(t38_core_state_t *, void * user_data, const uint8_t * buf, int len, int sequence)
+    {
+      if (user_data != NULL)
+        ((FaxSpanDSP *)user_data)->T38Packets(buf, len, sequence);
+      return 0;
+    }
+
+
+    bool Open()
+    {
+      WaitAndSignal mutex(m_mutex);
+
+      if (m_t30result >= 0)
+        return false; // Finished, exit codec loops
+
+      if (m_t30state != NULL)
+        return true;
+
+      if (m_usingT38) {
+        PTRACE(3, "Opening SpanDSP for T.38");
+        if ((m_t38State = t38_terminal_init(NULL, !m_receiving, T38Packets, this)) == NULL)
+          return false;
+
+        InitLogging(t38_terminal_get_logging_state(m_t38State));
+        t38_terminal_set_config(m_t38State, false);
+
+        t38_core_state_t * t38core = t38_terminal_get_t38_core_state(m_t38State);
+        InitLogging(t38_core_get_logging_state(t38core));
+        t38_set_t38_version(t38core, m_protoVersion);
+
+        m_t30state = t38_terminal_get_t30_state(m_t38State);
+      }
+      else {
+        PTRACE(3, "Opening SpanDSP for PCM");
+        if ((m_faxState = fax_init(NULL, !m_receiving)) == NULL)
+          return false;
+
+        InitLogging(fax_get_logging_state(m_faxState));
+
+        m_t30state = fax_get_t30_state(m_faxState);
+      }
+
+      if (!m_tiffFileName.empty()) {
+        if (m_receiving) {
+          std::string dir;
+          std::string::size_type pos = m_tiffFileName.find_last_of(DIR_SEPERATORS);
+          if (pos == std::string::npos)
+            dir = ".";
+          else
+            dir.assign(m_tiffFileName, 0, pos+1);
+
+          if (access(dir.c_str(), W_OK) != 0) {
+            PTRACE(1, "Cannot set receive TIFF file to \"" << m_tiffFileName << '"');
+            return false;
+          }
+
+          t30_set_rx_file(m_t30state, m_tiffFileName.c_str(), -1);
+          PTRACE(3, "Set receive TIFF file to \"" << m_tiffFileName << '"');
+        }
+        else {
+          if (access(m_tiffFileName.c_str(), R_OK) != 0) {
+            PTRACE(1, "Cannot set transmit TIFF file to \"" << m_tiffFileName << '"');
+            return false;
+          }
+
+          t30_set_tx_file(m_t30state, m_tiffFileName.c_str(), -1, -1);
+          PTRACE(3, "Set transmit TIFF file to \"" << m_tiffFileName << '"');
+        }
+      }
+
+      t30_set_phase_e_handler(m_t30state, PhaseE, this);
+      t30_set_tx_ident(m_t30state, m_stationIdentifer.c_str());
+      t30_set_ecm_capability(m_t30state, m_useECM);
+
+      return true;
+    }
+
+
+    bool WritePCM(const void * fromPtr, unsigned & fromLen)
+    {
+      int samplesLeft = fax_rx(m_faxState, (int16_t *)fromPtr, fromLen/2);
+      if (samplesLeft < 0)
+        return false;
+
+      fromLen -= samplesLeft*2;
+      return true;
+    }
+
+
+    bool ReadPCM(void * toPtr, unsigned & toLen, unsigned & flags)
+    {
+      int samplesGenerated = fax_tx(m_faxState, (int16_t *)PluginCodec_RTP_GetPayloadPtr(toPtr), toLen/2);
+      if (samplesGenerated < 0)
+        return false;
+
+      toLen = samplesGenerated*2;
+      flags = PluginCodec_ReturnCoderLastFrame;
+      return true;
+    }
+
+
+    bool WriteT38(const void * fromPtr, unsigned & fromLen)
+    {
+      int payloadSize = fromLen - PluginCodec_RTP_GetHeaderLength(fromPtr);
+      if (payloadSize < 0)
+        return false;
+
+      if (payloadSize == 0)
+        return true;
+
+      return t38_core_rx_ifp_packet(t38_terminal_get_t38_core_state(m_t38State),
+                                    PluginCodec_RTP_GetPayloadPtr(fromPtr),
+                                    payloadSize,
+                                    PluginCodec_RTP_GetSequenceNumber(fromPtr)) != -1;
+    }
+
+
+    bool ReadT38(void * toPtr, unsigned  & toLen, unsigned & flags)
+    {
+      WaitAndSignal mutex(m_mutex);
+
+      if (t38_terminal_send_timeout(m_t38State, SAMPLES_PER_FRAME) || m_t38Queue.empty()) {
+        toLen = 0;
+        flags = PluginCodec_ReturnCoderLastFrame;
+      }
+      else {
+        T38Packet & packet = m_t38Queue.front();
+        size_t size = packet.size() + PluginCodec_RTP_MinHeaderSize;
+        if (toLen < size)
+          return false;
+
+        toLen = size;
+        memcpy(PluginCodec_RTP_GetPayloadPtr(toPtr), &packet[0], packet.size());
+
+        m_t38Queue.pop();
+      }
+
+      return true;
+    }
+
+
+    virtual bool Encode(const void * fromPtr, unsigned & fromLen, void * toPtr, unsigned & toLen, unsigned & flags) = 0;
+    virtual bool Decode(const void * fromPtr, unsigned & fromLen, void * toPtr, unsigned & toLen, unsigned & flags) = 0;
 };
 
-static void * create_encoder(const struct PluginCodec_Definition * codec)
+
+
+typedef std::map<InstanceKey, FaxSpanDSP *> InstanceMapType;
+static InstanceMapType InstanceMap;
+static CriticalSection InstanceMapMutex;
+
+
+/////////////////////////////////////////////////////////////////
+
+class T38_PCM : public FaxSpanDSP
 {
-  return new FaxCodecContext();
-}
+  public:
+    T38_PCM()
+      : FaxSpanDSP(true)
+    {
+      PTRACE(4, "Created T38_PCM");
+    }
 
-static void destroy_coder(const struct PluginCodec_Definition * codec, void * _context)
+    virtual bool Encode(const void * fromPtr, unsigned & fromLen, void * toPtr, unsigned & toLen, unsigned & flags)
+    {
+      return Open() && WritePCM(fromPtr, fromLen) && ReadT38(toPtr, toLen, flags);
+    }
+
+    virtual bool Decode(const void * fromPtr, unsigned & fromLen, void * toPtr, unsigned & toLen, unsigned & flags)
+    {
+      return Open() && WriteT38(fromPtr, fromLen) && ReadPCM(toPtr, toLen, flags);
+    }
+};
+
+
+/////////////////////////////////////////////////////////////////
+
+class TIFF_T38 : public FaxSpanDSP
 {
-  if (_context == NULL)
-    return;
-  
-  FaxCodecContext * context = (FaxCodecContext *)_context;
-  delete context;
-}
+  public:
+    TIFF_T38()
+      : FaxSpanDSP(true)
+    {
+      PTRACE(4, "Created TIFF_T38");
+    }
 
-static int codec_pcm_to_t38(const struct PluginCodec_Definition * codec, 
-                                           void * _context,
-                                     const void * from, 
-                                       unsigned * fromLen,
-                                           void * to,         
-                                       unsigned * toLen,
-                                   unsigned int * flag)
+    virtual bool Encode(const void * /*fromPtr*/, unsigned & /*fromLen*/, void * toPtr, unsigned & toLen, unsigned & flags)
+    {
+      return Open() && ReadT38(toPtr, toLen, flags);
+    }
+
+    virtual bool Decode(const void * fromPtr, unsigned & fromLen, void * /*toPtr*/, unsigned & toLen, unsigned & flags)
+    {
+      toLen = 0;
+      flags = PluginCodec_ReturnCoderLastFrame;
+      return Open() && WriteT38(fromPtr, fromLen);
+    }
+};
+
+
+/////////////////////////////////////////////////////////////////
+
+class TIFF_PCM : public FaxSpanDSP
 {
-  if (_context == NULL)
-    return 0;
+  public:
+    TIFF_PCM()
+      : FaxSpanDSP(false)
+    {
+      PTRACE(4, "Created TIFF_PCM");
+    }
 
-  FaxCodecContext & context = *(FaxCodecContext *)_context;
+    virtual bool Encode(const void * /*fromPtr*/, unsigned & /*fromLen*/, void * toPtr, unsigned & toLen, unsigned & flags)
+    {
+      return Open() && ReadPCM(toPtr, toLen, flags);
+    }
 
-  if ((context.instance == NULL) && !context.StartCodec())
-    return 0;
+    virtual bool Decode(const void * fromPtr, unsigned & fromLen, void * /*toPtr*/, unsigned & toLen, unsigned & flags)
+    {
+      toLen = 0;
+      flags = PluginCodec_ReturnCoderLastFrame;
+      return Open() && WritePCM(fromPtr, fromLen);
+    }
+};
 
-  context.instance->WritePCM(from, fromLen);
-  context.instance->ReadT38(to, toLen);
 
-  *flag = PluginCodec_ReturnCoderLastFrame;
-  
-  return 1;
-}
+/////////////////////////////////////////////////////////////////
 
-static void * create_decoder(const struct PluginCodec_Definition * codec)
+class FaxCodecContext
 {
-  return new FaxCodecContext();
-}
+  private:
+    const PluginCodec_Definition * m_definition;
+    InstanceKey                    m_key;
+    FaxSpanDSP                   * m_instance;
 
-static int codec_t38_to_pcm(const struct PluginCodec_Definition * codec, 
-                                           void * _context,
-                                     const void * from, 
-                                       unsigned * fromLen,
-                                           void * to,         
-                                       unsigned * toLen,
-                                   unsigned int * flag)
-{
-  if (_context == NULL)
-    return 0;
-  
-  FaxCodecContext & context = *(FaxCodecContext *)_context;
-  
-  if ((context.instance == NULL) && !context.StartCodec())
-    return 0;
+  public:
+    FaxCodecContext(const PluginCodec_Definition * defn)
+      : m_definition(defn)
+      , m_instance(NULL)
+    {
+    }
 
-  // ignore padding frames
-  if ((*fromLen == 13) && (((const unsigned char *)from)[12] == 0xff))
-    ;
-  // only write T.38 data if there is a payload
-  else if (*fromLen > 12)
-    context.instance->WriteT38(from, fromLen);
 
-  // always read PCM
-  bool moreToRead;
-  context.instance->ReadPCM(to, toLen, moreToRead);
+    ~FaxCodecContext()
+    {
+      if (m_instance == NULL)
+        return;
 
-  *flag = moreToRead ? 0 : PluginCodec_ReturnCoderLastFrame;
+      WaitAndSignal mutex(InstanceMapMutex);
 
-  return 1;
-}
+      InstanceMapType::iterator iter = InstanceMap.find(m_key);
+      if (iter != InstanceMap.end() && iter->second->Dereference()) {
+        delete iter->second;
+        InstanceMap.erase(iter);
+      }
+    }
 
-static int set_instance_id(
-      const struct PluginCodec_Definition * codec, 
-      void * _context, 
-      const char * , 
-      void * parm , 
-      unsigned * parmLen)
-{
-  if (_context == NULL || parm == NULL || parmLen == NULL)
-    return 0;
 
-  FaxCodecContext & context = *(FaxCodecContext *)_context;
+    bool SetContextId(void * parm, unsigned * parmLen)
+    {
+      if (parm == NULL || parmLen == NULL || *parmLen == 0)
+        return false;
 
-  context.key.resize(*parmLen);
-  memcpy(&context.key[0], parm, *parmLen);
+      m_key.resize(*parmLen);
+      memcpy(&m_key[0], parm, *parmLen);
 
-  return 1;
-}
+      WaitAndSignal mutex(InstanceMapMutex);
 
-static int valid_for_sip(
-      const struct PluginCodec_Definition * codec, 
-      void * context, 
-      const char * key, 
-      void * parm , 
-      unsigned * parmLen)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
-    return 0;
+      InstanceMapType::iterator iter = InstanceMap.find(m_key);
+      if (iter != InstanceMap.end()) {
+        m_instance = iter->second;
+        m_instance->AddReference();
+      }
+      else {
+        if (m_definition->sourceFormat == TIFFFormat) {
+          if (m_definition->destFormat == T38Format)
+            m_instance = new TIFF_T38();
+          else
+            m_instance = new TIFF_PCM();
+        }
+        else if (m_definition->sourceFormat == T38Format) {
+          if (m_definition->destFormat == TIFFFormat)
+            m_instance = new TIFF_T38();
+          else
+            m_instance = new T38_PCM();
+        }
+        else {
+          if (m_definition->destFormat == TIFFFormat)
+            m_instance = new TIFF_PCM();
+          else
+            m_instance = new T38_PCM();
+        }
+        InstanceMap[m_key] = m_instance;
+      }
 
-  return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
-}
+      return true;
+    }
+
+
+    bool SetOptions(const char * const * options)
+    {
+      return m_instance != NULL && m_instance->SetOptions(options);
+    }
+
+
+    bool Encode(const void * fromPtr, unsigned & fromLen, void * toPtr, unsigned & toLen, unsigned & flags)
+    {
+      return m_instance != NULL && m_instance->Encode(fromPtr, fromLen, toPtr, toLen, flags);
+    }
+
+
+    bool Decode(const void * fromPtr, unsigned & fromLen, void * toPtr, unsigned & toLen, unsigned & flags)
+    {
+      return m_instance != NULL && m_instance->Decode(fromPtr, fromLen, toPtr, toLen, flags);
+    }
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 
-static struct PluginCodec_information licenseInfo = {
+static int get_codec_options(const PluginCodec_Definition * ,
+                                                     void * ,
+                                               const char * ,
+                                                     void * parm,
+                                                 unsigned * parmLen)
+{
+  if (parm == NULL || parmLen == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
+    return false;
+
+  *(struct PluginCodec_Option const * const * *)parm = OptionTable;
+  return true;
+}
+
+
+static int set_codec_options(const PluginCodec_Definition * ,
+                                                     void * context,
+                                               const char * , 
+                                                     void * parm, 
+                                                 unsigned * parmLen)
+{
+  return context != NULL &&
+         parm != NULL &&
+         parmLen != NULL &&
+         *parmLen == sizeof(const char **) &&
+         ((FaxCodecContext *)context)->SetOptions((const char * const *)parm);
+}
+
+
+static int set_instance_id(const PluginCodec_Definition * ,
+                                                   void * context,
+                                             const char * ,
+                                                   void * parm,
+                                               unsigned * parmLen)
+{
+  return context != NULL && ((FaxCodecContext *)context)->SetContextId(parm, parmLen);
+}
+
+
+#if LOGGING
+static int set_log_function(const PluginCodec_Definition * ,
+                                                   void * ,
+                                             const char * ,
+                                                   void * parm,
+                                               unsigned * parmLen)
+{
+  if (parmLen == NULL || *parmLen != sizeof(PluginCodec_LogFunction))
+    return false;
+
+  LogFunction = (PluginCodec_LogFunction)parm;
+  return true;
+}
+#endif
+
+
+static struct PluginCodec_ControlDefn Controls[] = {
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS, get_codec_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS, set_codec_options },
+  { PLUGINCODEC_CONTROL_SET_INSTANCE_ID,   set_instance_id },
+#if LOGGING
+  { PLUGINCODEC_CONTROL_SET_LOG_FUNCTION,  set_log_function },
+#endif
+  { NULL }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+static void * Create(const PluginCodec_Definition * codec)
+{
+  return new FaxCodecContext(codec);
+}
+
+
+static void Destroy(const PluginCodec_Definition * /*codec*/, void * context)
+{
+  delete (FaxCodecContext *)context;
+}
+
+
+static int Encode(const PluginCodec_Definition * /*codec*/,
+                                          void * context,
+                                    const void * fromPtr,
+                                      unsigned * fromLen,
+                                          void * toPtr,
+                                      unsigned * toLen,
+                                      unsigned * flags)
+{
+  return context != NULL && ((FaxCodecContext *)context)->Encode(fromPtr, *fromLen, toPtr, *toLen, *flags);
+}
+
+
+
+static int Decode(const PluginCodec_Definition * /*codec*/,
+                                          void * context,
+                                    const void * fromPtr,
+                                      unsigned * fromLen,
+                                          void * toPtr,
+                                      unsigned * toLen,
+                                      unsigned * flags)
+{
+  return context != NULL && ((FaxCodecContext *)context)->Decode(fromPtr, *fromLen, toPtr, *toLen, *flags);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+static struct PluginCodec_information LicenseInfo = {
   1081086550,                              // timestamp = Sun 04 Apr 2004 01:49:10 PM UTC = 
 
   "Craig Southeren, Post Increment",                           // source code author
@@ -669,142 +904,226 @@ static struct PluginCodec_information licenseInfo = {
   PluginCodec_License_MPL                                      // codec license code
 };
 
-/////////////////////////////////////////////////////////////////////////////
+#define MY_API_VERSION PLUGIN_CODEC_VERSION_OPTIONS
 
-static const char L16Desc[]  = { "L16" };
+static PluginCodec_Definition faxCodecDefn[] = {
 
-static const char t38CodecName[]  = { "T.38" };
+  { 
+    // encoder
+    MY_API_VERSION,                     // codec API version
+    &LicenseInfo,                       // license information
 
-static char * default_t38_parms[] = {
-//  { "fmtp",                       "sr=16000,mode=any" ,     "s" },
-   "T38FaxVersion",                      "<0",                "i",
-   "T38MaxBitRate",                      "<14400",            "i",
-   "T38FaxRateManagement",               "transferredTCF",    "e:localTCF:transferredTCF",
-   "T38FaxMaxBuffer",                    "<72",               "i",
-   "T38FaxMaxDatagram",                  "<316",              "i", 
-   "T38FaxUdpEC",                        "t38UDPFEC",         "e:t38UDPRedundancy:t38UDPFEC",
+    PluginCodec_MediaTypeFax |          // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRTP |         // RTP output data
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-   //"T38FaxFillBitRemoval",               "false",             "b"
-   //"T38FaxTranscodingMMR",               "false",             "b"
-   //"T38FaxTranscodingJBIG",              "false",             "b"
+    "PCM to T.38 Codec",                // text decription
+    L16Format,                          // source format
+    T38Format,                          // destination format
 
-   NULL, NULL, NULL
+    NULL,                               // user data
+
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    MICROSECONDS_PER_FRAME,             // microseconds per frame
+    SAMPLES_PER_FRAME,                  // samples per frame
+    BYTES_PER_FRAME,                    // bytes per frame
+    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    0,                                  // dynamic payload
+    T38sdp,                             // RTP payload name
+
+    Create,                             // create codec function
+    Destroy,                            // destroy codec
+    Encode,                             // encode/decode
+    Controls,                           // codec controls
+
+    PluginCodec_H323T38Codec,           // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+
+  { 
+    // decoder
+    MY_API_VERSION,                     // codec API version
+    &LicenseInfo,                       // license information
+
+    PluginCodec_MediaTypeFax |          // audio codec
+    PluginCodec_InputTypeRTP |          // raw input RTP
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+
+    "T.38 to PCM Codec",                // text decription
+    T38Format,                          // source format
+    L16Format,                          // destination format
+
+    NULL,                               // user data
+
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    MICROSECONDS_PER_FRAME,             // microseconds per frame
+    SAMPLES_PER_FRAME,                  // samples per frame
+    BYTES_PER_FRAME,                    // bytes per frame
+    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    0,                                  // dynamic payload
+    T38sdp,                             // RTP payload name
+
+    Create,                             // create codec function
+    Destroy,                            // destroy codec
+    Decode,                             // encode/decode
+    Controls,                           // codec controls
+
+    PluginCodec_H323T38Codec,           // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+
+  { 
+    // encoder
+    MY_API_VERSION,                     // codec API version
+    &LicenseInfo,                       // license information
+
+    PluginCodec_MediaTypeFax |          // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRTP |         // RTP output data
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+
+    "TIFF to T.38 Codec",               // text decription
+    TIFFFormat,                         // source format
+    T38Format,                          // destination format
+
+    NULL,                               // user data
+
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    MICROSECONDS_PER_FRAME,             // microseconds per frame
+    SAMPLES_PER_FRAME,                  // samples per frame
+    BYTES_PER_FRAME,                    // bytes per frame
+    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    0,                                  // dynamic payload
+    NULL,                               // RTP payload name
+
+    Create,                             // create codec function
+    Destroy,                            // destroy codec
+    Encode,                             // encode/decode
+    Controls,                           // codec controls
+
+    PluginCodec_H323T38Codec,           // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+
+  { 
+    // decoder
+    MY_API_VERSION,                     // codec API version
+    &LicenseInfo,                       // license information
+
+    PluginCodec_MediaTypeFax |          // audio codec
+    PluginCodec_InputTypeRTP |          // raw input RTP
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+
+    "T.38 to TIFF Codec",               // text decription
+    T38Format,                          // source format
+    TIFFFormat,                         // destination format
+
+    NULL,                               // user data
+
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    MICROSECONDS_PER_FRAME,             // microseconds per frame
+    SAMPLES_PER_FRAME,                  // samples per frame
+    BYTES_PER_FRAME,                    // bytes per frame
+    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    0,                                  // dynamic payload
+    NULL,                               // RTP payload name
+
+    Create,                             // create codec function
+    Destroy,                            // destroy codec
+    Decode,                             // encode/decode
+    Controls,                           // codec controls
+
+    PluginCodec_H323T38Codec,           // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+
+  { 
+    // encoder
+    MY_API_VERSION,                     // codec API version
+    &LicenseInfo,                       // license information
+
+    PluginCodec_MediaTypeFax |          // audio codec
+    PluginCodec_InputTypeRaw |          // raw input data
+    PluginCodec_OutputTypeRaw |         // RTP output data
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+
+    "PCM to TIFF Codec",                // text decription
+    L16Format,                          // source format
+    TIFFFormat,                         // destination format
+
+    NULL,                               // user data
+
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    MICROSECONDS_PER_FRAME,             // microseconds per frame
+    SAMPLES_PER_FRAME,                  // samples per frame
+    BYTES_PER_FRAME,                    // bytes per frame
+    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    0,                                  // dynamic payload
+    NULL,                               // RTP payload name
+
+    Create,                             // create codec function
+    Destroy,                            // destroy codec
+    Encode,                             // encode/decode
+    Controls,                           // codec controls
+
+    0,                                  // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+
+  { 
+    // decoder
+    MY_API_VERSION,                     // codec API version
+    &LicenseInfo,                       // license information
+
+    PluginCodec_MediaTypeFax |          // audio codec
+    PluginCodec_InputTypeRaw |          // raw input RTP
+    PluginCodec_OutputTypeRaw |         // raw output data
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+
+    "TIFF to PCM Codec",                // text decription
+    TIFFFormat,                         // source format
+    L16Format,                          // destination format
+
+    NULL,                               // user data
+
+    8000,                               // samples per second
+    BITS_PER_SECOND,                    // raw bits per second
+    MICROSECONDS_PER_FRAME,             // microseconds per frame
+    SAMPLES_PER_FRAME,                  // samples per frame
+    BYTES_PER_FRAME,                    // bytes per frame
+    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    0,                                  // dynamic payload
+    NULL,                               // RTP payload name
+
+    Create,                             // create codec function
+    Destroy,                            // destroy codec
+    Decode,                             // encode/decode
+    Controls,                           // codec controls
+
+    0,                                  // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+
 };
-
-static int coder_get_sip_options (
-      const struct PluginCodec_Definition * codec, 
-      void * context, 
-      const char * key, 
-      void * parm , 
-      unsigned * parmLen)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
-    return 0;
-
-  char ***options = (char ***)parm;
-
-  *options = default_t38_parms;
-
-  return 1; 
-}
-
-
-static struct PluginCodec_ControlDefn sipCoderControls[] = {
-  { "set_instance_id",          set_instance_id       },
-  { "valid_for_protocol",       valid_for_sip         },
-  { "get_codec_options",        coder_get_sip_options },
-//  { "set_codec_options",        coder_set_sip_options },
-  { NULL }
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-
-static struct PluginCodec_Definition faxCodecDefn[2] = {
-
-{ 
-  // encoder
-  PLUGIN_CODEC_VERSION_FAX,           // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeFax |          // audio codec
-  PluginCodec_InputTypeRaw |          // raw input data
-  PluginCodec_OutputTypeRTP |         // RTP output data
-  PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-  t38CodecName,                       // text decription
-  L16Desc,                            // source format
-  t38CodecName,                       // destination format
-
-  0,                                  // user data (no WAV49)
-
-  8000,                               // samples per second
-  BITS_PER_SECOND,                    // raw bits per second
-  20000,                              // nanoseconds per frame
-  SAMPLES_PER_FRAME,                  // samples per frame
-  BYTES_PER_FRAME,                    // bytes per frame
-  PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-  MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-  0,                                  // dynamic payload
-  sdpT38,                             // RTP payload name
-
-  create_encoder,                     // create codec function
-  destroy_coder,                      // destroy codec
-  codec_pcm_to_t38,                   // encode/decode
-  sipCoderControls,                   // codec controls
-
-  PluginCodec_H323T38Codec,           // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-
-{ 
-  // decoder
-  PLUGIN_CODEC_VERSION_FAX,           // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeFax |          // audio codec
-  PluginCodec_InputTypeRTP |          // raw input RTP
-  PluginCodec_OutputTypeRaw |         // raw output data
-  PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-  t38CodecName,                       // text decription
-  t38CodecName,                       // source format
-  L16Desc,                            // destination format
-
-  0,                                  // user data
-
-  8000,                               // samples per second
-  BITS_PER_SECOND,                    // raw bits per second
-  20000,                              // nanoseconds per frame
-  SAMPLES_PER_FRAME,                  // samples per frame
-  BYTES_PER_FRAME,                    // bytes per frame
-  PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-  MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-  0,                                  // dynamic payload
-  sdpT38,                             // RTP payload name
-
-  create_decoder,                     // create codec function
-  destroy_coder,                      // destroy codec
-  codec_t38_to_pcm,                   // encode/decode
-  sipCoderControls,                   // codec controls
-
-  PluginCodec_H323T38Codec,            // h323CapabilityType 
-  NULL                                 // h323CapabilityData
-},
-
-
-};
-
-#define NUM_DEFNS   (sizeof(faxCodecDefn) / sizeof(struct PluginCodec_Definition))
 
 /////////////////////////////////////////////////////////////////////////////
 
 extern "C" {
 
-PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-{
-  *count = NUM_DEFNS;
-  return faxCodecDefn;
-}
+PLUGIN_CODEC_IMPLEMENT_ALL(SpanDSP, faxCodecDefn, MY_API_VERSION)
 
 };

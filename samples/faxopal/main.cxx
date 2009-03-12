@@ -30,6 +30,9 @@
 #include "main.h"
 
 
+// -ttttt c:\temp\testfax.tif sip:fax@10.0.1.11
+// -ttttt c:\temp\incoming.tif
+
 PCREATE_PROCESS(FaxOPAL);
 
 
@@ -56,12 +59,12 @@ void FaxOPAL::Main()
              "G-gk-id:"
              "h-help."
              "H-h323:"
+             "L-lines:"
              "m-mode:"
              "N-stun:"
              "p-password:"
              "P-proxy:"
              "r-register:"
-             "s-spandsp:"
              "S-sip:"
              "u-user:"
 #if PTRACING
@@ -82,13 +85,7 @@ void FaxOPAL::Main()
             "Available options are:\n"
             "  --help                  : print this help message.\n"
             "  -d or --directory dir   : Set default directory for fax receive\n"
-            "  -s or --spandsp exe     : Set location of spandsp_util.exe\n"
             "  -a or --audio           : Send fax as G.711 audio\n"
-            "  -m or --mode m          : T.38 synchronisation mode:\n"
-            "                            \"Wait\" wait for remote to switch,\n"
-            "                            \"Timeout\" switch after a short time\n"
-            "                            \"UserInput\" send/detect CNG/CED tones\n"
-            "                            \"InBand\" send/detect CNG/CED tones in band\n"
             "  -u or --user name       : Set local username, defaults to OS username.\n"
             "  -p or --password pwd    : Set password for authentication.\n"
 #if OPAL_SIP
@@ -101,6 +98,7 @@ void FaxOPAL::Main()
             "  -g or --gk-host host    : H.323 gatekeeper host.\n"
             "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
 #endif
+            "  -L or --lines devices   : Set Line Interface Devices.\n"
             "  -N or --stun server     : Set NAT traversal STUN server.\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
@@ -127,6 +125,7 @@ void FaxOPAL::Main()
   if (args.HasOption('u'))
     m_manager->SetDefaultUserName(args.GetOptionString('u'));
 
+  PString prefix = args.HasOption('a') ? "fax" : "t38";
   PCaselessString interfaces;
 
 #if OPAL_SIP
@@ -151,6 +150,8 @@ void FaxOPAL::Main()
       PString aor;
       sip->Register(params, aor);
     }
+
+    m_manager->AddRouteEntry("sip.*:.* = " + prefix + ":" + args[0] + ";receive");
   }
 #endif // OPAL_SIP
 
@@ -167,29 +168,29 @@ void FaxOPAL::Main()
 
     if (args.HasOption('g') || args.HasOption('G'))
       h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'));
+
+    m_manager->AddRouteEntry("h323.*:.* = " + prefix + ":" + args[0] + ";receive");
   }
 #endif // OPAL_H323
+
+
+  // If we have LIDs speficied in command line, load them
+  if (args.HasOption('L')) {
+    OpalLineEndPoint * lines = new OpalLineEndPoint(*m_manager);
+    if (!lines->AddDeviceNames(args.GetOptionString('L').Lines()))
+      cerr << "Could not start Line Interface Device(s)" << endl;
+    else {
+      m_manager->AddRouteEntry("pots.*:.* = " + prefix + ":" + args[0] + ";receive");
+      m_manager->AddRouteEntry("pstn.*:.* = " + prefix + ":" + args[0] + ";receive");
+    }
+  }
+
 
   // Create audio or T.38 fax endpoint.
   OpalFaxEndPoint * fax  = new OpalFaxEndPoint(*m_manager);
   if (args.HasOption('d'))
     fax->SetDefaultDirectory(args.GetOptionString('d'));
-  if (args.HasOption('s'))
-    fax->SetSpanDSP(args.GetOptionString('s'));
-  if (args.HasOption('m'))
-    fax->SetDefaultStringOption("Fax-Sync-Mode", args.GetOptionString('m'));
 
-  // Route SIP/H.323 calls to the Fax endpoint
-  PString prefix = args.HasOption('a') ? "fax" : "t38";
-#if OPAL_SIP
-  m_manager->AddRouteEntry("sip.*:.* = " + prefix + ":" + args[0] + ";receive");
-#endif
-#if OPAL_H323
-  m_manager->AddRouteEntry("h323.*:.* = " + prefix + ":" + args[0] + ";receive");
-#endif
-
-  // If no explicit protocol on URI, then send to SIP.
-  m_manager->AddRouteEntry(prefix+":.* = sip:<da>");
 
   if (args.GetCount() == 1)
     cout << "Awaiting incoming fax, saving as " << args[0] << " ..." << flush;
