@@ -167,8 +167,8 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 {
   OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat, destFormat));
   if (transcoder != NULL) {
+    transcoder->SetInstanceID(instance, instanceLen); // Make sure this is done first
     transcoder->UpdateMediaFormats(srcFormat, destFormat);
-    transcoder->SetInstanceID(instance, instanceLen);
   }
 
   return transcoder;

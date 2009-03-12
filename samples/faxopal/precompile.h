@@ -31,6 +31,7 @@
 #include <t38/t38proto.h>
 #include <sip/sipep.h>
 #include <h323/h323ep.h>
+#include <lids/lidep.h>
 
 
 // End of File ///////////////////////////////////////////////////////////////

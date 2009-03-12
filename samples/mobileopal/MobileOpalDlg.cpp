@@ -43,13 +43,13 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#define TRACE_OPTIONS "TraceLevel=4 TraceFile=\\MobileOpalLog.txt"
-//#define TRACE_OPTIONS "TraceLevel=4"
-#else
-#define TRACE_OPTIONS "TraceLevel=3 TraceAppend TraceFile=\\MobileOpalLog.txt"
 #endif
 
 #define SPEAKERMODE_METHOD 3
+
+
+#define TRACE_OPTIONS "TraceLevel=4 TraceFile=\\MobileOpalLog.txt"
+//#define TRACE_OPTIONS "TraceLevel=3 TraceAppend TraceFile=\\MobileOpalLog.txt"
 
 
 static UINT TimerID = 1;
