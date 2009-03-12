@@ -95,7 +95,7 @@ OpalTransportAddress::OpalTransportAddress(const PString & str,
 
 
 OpalTransportAddress::OpalTransportAddress(const PIPSocket::Address & addr, WORD port, const char * proto)
-  : PCaselessString(addr.AsString(true))
+  : PCaselessString(addr.IsAny() ? PString('*') : addr.AsString(true))
 {
   SetInternalTransport(port, proto);
 }
@@ -108,7 +108,7 @@ PString OpalTransportAddress::GetHostName() const
 
   return transport->GetHostName(*this);
 }
-  
+
 
 PBoolean OpalTransportAddress::IsEquivalent(const OpalTransportAddress & address, bool wildcard) const
 {
@@ -530,35 +530,22 @@ OpalListenerIP::OpalListenerIP(OpalEndPoint & endpoint,
 }
 
 
-OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress & preferredAddress) const
+OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress & remoteAddress) const
 {
-  PString addr;
+  PIPSocket::Address localIP = localAddress;
 
-  // If specifically bound to interface use that
-  if (!localAddress.IsAny())
-    addr = localAddress.AsString(true);
-  else {
-    // If bound to all, then use '*' unless a preferred address is specified
-    addr = "*";
-
-    PIPSocket::Address ip;
-    if (preferredAddress.GetIpAddress(ip)) {
-      // Verify preferred address is actually an interface in this machine!
-      PIPSocket::InterfaceTable interfaces;
-      if (PIPSocket::GetInterfaceTable(interfaces)) {
-        for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
-          if (interfaces[i].GetAddress() == ip) {
-            addr = ip.AsString(true);
-            break;
-          }
-        }
-      }
+  PIPSocket::Address remoteIP;
+  if (remoteAddress.GetIpAddress(remoteIP)) {
+    OpalManager & manager = endpoint.GetManager();
+    PNatMethod * natMethod = manager.GetNatMethod(remoteIP);
+    if (natMethod != NULL) {
+      if (localIP.IsAny())
+        natMethod->GetInterfaceAddress(localIP);
+      manager.TranslateIPAddress(localIP, remoteIP);
     }
   }
 
-  addr.sprintf(":%u", listenerPort);
-
-  return GetProtoPrefix() + addr;
+  return OpalTransportAddress(localIP, listenerPort, GetProtoPrefix());
 }
 
 
@@ -785,6 +772,27 @@ const char * OpalListenerUDP::GetProtoPrefix() const
 }
 
 
+OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress & remoteAddress) const
+{
+  PIPSocket::Address localIP = PIPSocket::GetDefaultIpAny();
+  WORD port = listenerPort;
+
+  PIPSocket::Address remoteIP;
+  if (remoteAddress.GetIpAddress(remoteIP)) {
+    PNatMethod * natMethod = endpoint.GetManager().GetNatMethod(remoteIP);
+    if (natMethod != NULL) {
+      natMethod->GetInterfaceAddress(localIP);
+      listenerBundle->GetAddress(localIP.AsString(), localIP, port, true);
+    }
+  }
+
+  if (localIP.IsAny())
+    listenerBundle->GetAddress(PString::Empty(), localIP, port, false);
+
+  return OpalTransportAddress(localIP, port, GetProtoPrefix());
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 
 OpalTransport::OpalTransport(OpalEndPoint & end)
@@ -919,7 +927,7 @@ OpalTransportIP::OpalTransportIP(OpalEndPoint & end,
 }
 
 
-OpalTransportAddress OpalTransportIP::GetLocalAddress() const
+OpalTransportAddress OpalTransportIP::GetLocalAddress(bool /*allowNAT*/) const
 {
   return OpalTransportAddress(localAddress, localPort, GetProtoPrefix());
 }
@@ -1267,15 +1275,15 @@ bool OpalTransportUDP::SetInterface(const PString & iface)
 }
 
 
-OpalTransportAddress OpalTransportUDP::GetLocalAddress() const
+OpalTransportAddress OpalTransportUDP::GetLocalAddress(bool allowNAT) const
 {
   PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
   if (socket != NULL) {
     OpalTransportUDP * thisWritable = const_cast<OpalTransportUDP *>(this);
-    socket->GetLocal(thisWritable->localAddress, thisWritable->localPort, !manager.IsLocalAddress(remoteAddress));
+    socket->GetLocal(thisWritable->localAddress, thisWritable->localPort, allowNAT && !manager.IsLocalAddress(remoteAddress));
   }
 
-  return OpalTransportIP::GetLocalAddress();
+  return OpalTransportIP::GetLocalAddress(allowNAT);
 }
 
 

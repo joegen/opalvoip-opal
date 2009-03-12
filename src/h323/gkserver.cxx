@@ -3448,7 +3448,7 @@ PBoolean H323GatekeeperServer::TranslateAliasAddressToSignalAddress(const H225_A
 
   if (isGatekeeperRouted) {
     const H323ListenerList & listeners = ownerEndPoint.GetListeners();
-    address = listeners.front().GetTransportAddress();
+    address = listeners.front().GetLocalAddress();
     PTRACE(3, "RAS\tTranslating alias " << aliasString << " to " << address << ", gatekeeper routed");
     return PTrue;
   }

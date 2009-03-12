@@ -1099,7 +1099,7 @@ void H323DataChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
   H323TransportAddress address;
   param->IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
   if (listener != NULL)
-    address = listener->GetLocalAddress(connection.GetControlChannel().GetLocalAddress());
+    address = listener->GetLocalAddress(connection.GetControlChannel().GetRemoteAddress());
   else
     address = transport->GetLocalAddress();
 
