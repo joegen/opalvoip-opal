@@ -197,9 +197,16 @@ void OpalRFC2833Proto::SendAsyncFrame()
   // be thread safe
   PWaitAndSignal mutex(m_mutex);
 
-  // if transmittter is ever in this state, then stop the duration timer
-  if (m_payloadType == RTP_DataFrame::IllegalPayloadType)
+  if (m_rtpSession == NULL) {
+    PTRACE(2, "RFC2833\tCannot send as not RTP session attached");
     m_transmitState = TransmitIdle;
+  }
+
+  // if transmittter is ever in this state, then stop the duration timer
+  if (m_payloadType == RTP_DataFrame::IllegalPayloadType) {
+    PTRACE(2, "RFC2833\tNo payload type for sent packet.");
+    m_transmitState = TransmitIdle;
+  }
 
   if (m_transmitState == TransmitIdle) {
     m_asyncDurationTimer.Stop(false);
@@ -259,18 +266,24 @@ void OpalRFC2833Proto::SendAsyncFrame()
   payload[2] = (BYTE)(m_transmitDuration >> 8);
   payload[3] = (BYTE) m_transmitDuration;
 
-  if (m_rtpSession != NULL) {
-    if (!m_rewriteTransmitTimestamp)
-      frame.SetTimestamp(m_transmitTimestamp);
-    m_rtpSession->WriteOOBData(frame, m_rewriteTransmitTimestamp);
-    if (m_rewriteTransmitTimestamp) {
-      m_transmitTimestamp        = frame.GetTimestamp();
-      m_rewriteTransmitTimestamp = false;
-    } 
+  if (!m_rewriteTransmitTimestamp)
+    frame.SetTimestamp(m_transmitTimestamp);
+
+  if (!m_rtpSession->WriteOOBData(frame, m_rewriteTransmitTimestamp)) {
+    PTRACE(3, "RFC2833\tTransmission stopped by RTP session");
+    // Abort further transmission
+    m_transmitState = TransmitIdle;
+    m_asyncDurationTimer.Stop(false);
   }
 
-  PTRACE(4, "RFC2833\tSending " << ((payload[1] & 0x80) ? "end" : "tone") << ": code=" << (unsigned)m_transmitCode
-         << ", dur=" << m_transmitDuration << ", ts=" << frame.GetTimestamp() << ", mkr=" << frame.GetMarker());
+  if (m_rewriteTransmitTimestamp) {
+    m_transmitTimestamp        = frame.GetTimestamp();
+    m_rewriteTransmitTimestamp = false;
+  } 
+
+  PTRACE(frame.GetMarker() ? 3 : 4,
+         "RFC2833\tSent " << ((payload[1] & 0x80) ? "end" : "tone") << ": code=" << (unsigned)m_transmitCode <<
+         ", dur=" << m_transmitDuration << ", ts=" << frame.GetTimestamp() << ", mkr=" << frame.GetMarker());
 }
 
 
