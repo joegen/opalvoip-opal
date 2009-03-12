@@ -326,15 +326,13 @@ class OpalListener : public PObject
     ) const = 0;
 
     /**Get the local transport address on which this listener may be accessed.
+       If remoteAddress is present and is an address that requires NAT for
+       connectivity, then the returned address is adjusted to return the
+       external address and port.
       */
     virtual OpalTransportAddress GetLocalAddress(
-      const OpalTransportAddress & preferredAddress = OpalTransportAddress()
+      const OpalTransportAddress & remoteAddress = OpalTransportAddress()
     ) const = 0;
-
-    /**Get the local transport address on which this listener may be accessed.
-       For backward compatibility with OpenH323, now deprecated.
-      */
-    OpalTransportAddress GetTransportAddress() const { return GetLocalAddress(); }
 
     /**Close channel and wait for associated thread to terminate.
       */
@@ -396,9 +394,12 @@ class OpalListenerIP : public OpalListener
   /**@name Overrides from OpalListener */
   //@{
     /**Get the local transport address on which this listener may be accessed.
+       If remoteAddress is present and is an address that requires NAT for
+       connectivity, then the returned address is adjusted to return the
+       external address and port.
       */
     virtual OpalTransportAddress GetLocalAddress(
-      const OpalTransportAddress & preferredAddress = OpalTransportAddress()
+      const OpalTransportAddress & remoteAddress = OpalTransportAddress()
     ) const;
   //@}
 
@@ -571,6 +572,15 @@ class OpalListenerUDP : public OpalListenerIP
       const OpalTransportAddress & localAddress,
       const OpalTransportAddress & remoteAddress
     ) const;
+
+    /**Get the local transport address on which this listener may be accessed.
+       If remoteAddress is present and is an address that requires NAT for
+       connectivity, then the returned address is adjusted to return the
+       external address and port.
+      */
+    virtual OpalTransportAddress GetLocalAddress(
+      const OpalTransportAddress & remoteAddress = OpalTransportAddress()
+    ) const;
   //@}
 
 
@@ -637,7 +647,9 @@ class OpalTransport : public PIndirectChannel
 
     /**Get the transport dependent name of the local endpoint.
       */
-    virtual OpalTransportAddress GetLocalAddress() const = 0;
+    virtual OpalTransportAddress GetLocalAddress(
+      bool allowNAT = true   ///< Allow translation if remote needs NAT
+    ) const = 0;
 
     /**Set local address to connect from.
        Note that this may not work for all transport types or may work only
@@ -805,7 +817,9 @@ class OpalTransportIP : public OpalTransport
   //@{
     /**Get the transport dependent name of the local endpoint.
       */
-    virtual OpalTransportAddress GetLocalAddress() const;
+    virtual OpalTransportAddress GetLocalAddress(
+      bool allowNAT = true   ///< Allow translation if remote needs NAT
+    ) const;
 
     /**Set local address to connect from.
        Note that this may not work for all transport types or may work only
@@ -998,7 +1012,9 @@ class OpalTransportUDP : public OpalTransportIP
 
     /**Get the transport dependent name of the local endpoint.
       */
-    virtual OpalTransportAddress GetLocalAddress() const;
+    virtual OpalTransportAddress GetLocalAddress(
+      bool allowNAT = true   ///< Allow translation if remote needs NAT
+    ) const;
 
     /**Set local address to connect from.
        Note that this may not work for all transport types or may work only
