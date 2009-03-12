@@ -2528,9 +2528,8 @@ PBoolean H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h2
     return PFalse;
   }
   
-  H323TransportAddress localSignallingInterface = signallingChannel->GetLocalAddress();
   if (controlListener == NULL) {
-    controlListener = localSignallingInterface.CreateListener(endpoint, OpalTransportAddress::HostOnly);
+    controlListener = signallingChannel->GetLocalAddress().CreateListener(endpoint, OpalTransportAddress::HostOnly);
     if (controlListener == NULL)
       return PFalse;
 
@@ -2541,17 +2540,7 @@ PBoolean H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h2
     }
   }
 
-  H323TransportAddress listeningAddress = controlListener->GetLocalAddress(localSignallingInterface);
-
-  // map H.245 listening address using NAT code
-  PIPSocket::Address localAddress; WORD listenPort;
-  listeningAddress.GetIpAndPort(localAddress, listenPort);
-
-  PIPSocket::Address remoteAddress;
-  signallingChannel->GetRemoteAddress().GetIpAddress(remoteAddress);
-
-  endpoint.TranslateTCPAddress(localAddress, remoteAddress);
-  listeningAddress = H323TransportAddress(localAddress, listenPort);
+  H323TransportAddress listeningAddress = controlListener->GetLocalAddress(signallingChannel->GetRemoteAddress());
 
   // assign address into the PDU
   return listeningAddress.SetPDU(h245Address);
