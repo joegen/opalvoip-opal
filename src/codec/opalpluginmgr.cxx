@@ -44,7 +44,7 @@
 #if OPAL_H323
 #include <h323/h323caps.h>
 #include <asn/h245.h>
-#include <t38\h323t38.h>
+#include <t38/h323t38.h>
 #endif
 
 #if OPAL_VIDEO
