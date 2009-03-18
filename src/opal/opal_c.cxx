@@ -647,6 +647,14 @@ void SIPEndPoint_C::OnSubscriptionStatus(const PString & eventPackage,
 }
 
 
+static PString GetParticipantName(const SIPDialogNotification::Participant & participant)
+{
+  PStringStream strm;
+  strm << '"' << participant.m_display << "\" <" << participant.m_URI << '>';
+  return strm;
+}
+
+
 void SIPEndPoint_C::OnDialogInfoReceived(const SIPDialogNotification & info)
 {
   SIPEndPoint::OnDialogInfoReceived(info);
@@ -658,13 +666,13 @@ void SIPEndPoint_C::OnDialogInfoReceived(const SIPDialogNotification & info)
 
   if (info.m_initiator) {
     SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_callId, info.m_callId+";to-tag="+info.m_local.m_dialogTag+";from-tag="+info.m_remote.m_dialogTag);
-    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyA, info.m_local.m_URI);
-    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyB, info.m_remote.m_URI);
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyA, GetParticipantName(info.m_local));
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyB, GetParticipantName(info.m_remote));
   }
   else {
     SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_callId, info.m_callId+";to-tag="+info.m_remote.m_dialogTag+";from-tag="+info.m_local.m_dialogTag);
-    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyA, info.m_remote.m_URI);
-    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyB, info.m_local.m_URI);
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyA, GetParticipantName(info.m_remote));
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyB, GetParticipantName(info.m_local));
   }
 
   PTRACE(4, "OpalC API\tOnDialogInfoReceived: entity=\"" << message->m_param.m_lineAppearance.m_line
