@@ -132,7 +132,7 @@ void FaxOPAL::Main()
   // Set up SIP
   interfaces = args.GetOptionString('S');
   if (interfaces != "x") {
-    SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
+    MySIPEndPoint * sip  = new MySIPEndPoint(*m_manager);
     if (!sip->StartListeners(interfaces.Lines())) {
       cerr << "Could not start SIP listeners." << endl;
       return;
@@ -148,7 +148,17 @@ void FaxOPAL::Main()
       params.m_expire = 300;
 
       PString aor;
-      sip->Register(params, aor);
+      if (!sip->Register(params, aor)) {
+        cerr << "Could not start SIP registration to " << params.m_addressOfRecord << endl;
+        return;
+      }
+
+      sip->m_completed.Wait();
+
+      if (!sip->IsRegistered(aor)) {
+        cerr << "Could not complete SIP registration for " << aor << endl;
+        return;
+      }
     }
 
     m_manager->AddRouteEntry("sip.*:.* = " + prefix + ":" + args[0] + ";receive");
@@ -212,6 +222,14 @@ void FaxOPAL::Main()
 void MyManager::OnClearedCall(OpalCall & /*call*/)
 {
   m_completed.Signal();
+}
+
+
+void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
+{
+  SIPEndPoint::OnRegistrationStatus(status);
+  if (status.m_reason >= SIP_PDU::Successful_OK)
+    m_completed.Signal();
 }
 
 
