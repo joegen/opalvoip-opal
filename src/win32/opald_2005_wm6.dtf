@@ -7504,6 +7504,7 @@ EXPORTS
     ??1_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@USIPDialogNotification@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@USIPDialogNotification@@@std@@@4@$0A@@std@@@std@@QAA@XZ @46594 NONAME
     ??4?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QAAAAV01@PBD@Z @7222 NONAME
     ??4?$H460@VH225_GenericIdentifier@@@@QAAAAV0@ABV0@@Z @7223 NONAME
+    ??4?$iterator@Ubidirectional_iterator_tag@std@@VOpalListener@@HPAV3@AAV3@@std@@QAAAAU01@ABU01@@Z @48250 NONAME
     ??4?$iterator@Ubidirectional_iterator_tag@std@@VOpalMediaFormat@@HPAV3@AAV3@@std@@QAAAAU01@ABU01@@Z @7224 NONAME
     ??4?$iterator@Ubidirectional_iterator_tag@std@@VSDPMediaFormat@@HPAV3@AAV3@@std@@QAAAAU01@ABU01@@Z @43141 NONAME
     ??4?$pair@VPString@@V1@@std@@QAAAAU01@ABU01@@Z @7226 NONAME
@@ -7896,6 +7897,7 @@ EXPORTS
     ??4H501_TimeZone@@QAAAAV0@H@Z @7641 NONAME
     ??4H501_TimeZone@@QAAAAV0@I@Z @7642 NONAME
     ??4IAX2Remote@@QAAAAV0@ABV0@@Z @7643 NONAME
+    ??4iterator@?$PList@VOpalListener@@@@QAAAAV01@ABV01@@Z @48251 NONAME
     ??4iterator@?$PList@VOpalMediaFormat@@@@QAAAAV01@ABV01@@Z @7644 NONAME
     ??4iterator@?$_Tree@V?$_Tmap_traits@IIU?$less@I@std@@V?$allocator@U?$pair@$$CBII@std@@@2@$0A@@std@@@std@@QAAAAV012@ABV012@@Z @46611 NONAME
     ??4iterator@?$_Tree@V?$_Tmap_traits@U?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@U?$less@U?$pair@VPString@@V1@@std@@@2@V?$allocator@U?$pair@$$CBU?$pair@VPString@@V1@@std@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@U?$pair@VPString@@V1@@std@@@@@std@@@2@$0A@@std@@@std@@QAAAAV012@ABV012@@Z @7645 NONAME
@@ -7915,6 +7917,7 @@ EXPORTS
     ??4iterator@?$_Tree@V?$_Tmap_traits@VPString@@PAVOpalEndPoint@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVOpalEndPoint@@@std@@@4@$0A@@std@@@std@@QAAAAV012@ABV012@@Z @43190 NONAME
     ??4iterator@?$_Tree@V?$_Tmap_traits@VPString@@USIPDialogNotification@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@USIPDialogNotification@@@std@@@4@$0A@@std@@@std@@QAAAAV012@ABV012@@Z @46616 NONAME
     ??4iterator@?$_Tree@V?$_Tmap_traits@W4Methods@SIP_PDU@@IU?$less@W4Methods@SIP_PDU@@@std@@V?$allocator@U?$pair@$$CBW4Methods@SIP_PDU@@I@std@@@4@$0A@@std@@@std@@QAAAAV012@ABV012@@Z @43191 NONAME
+    ??4iterator_base@?$PList@VOpalListener@@@@QAAAAV01@ABV01@@Z @48252 NONAME
     ??4iterator_base@?$PList@VOpalMediaFormat@@@@QAAAAV01@ABV01@@Z @7653 NONAME
     ??4iterator_base@?$PList@VSDPMediaFormat@@@@QAAAAV01@ABV01@@Z @43192 NONAME
     ??4OpalMediaFormat@@QAAAAV0@ABV0@@Z @7673 NONAME
@@ -34733,8 +34736,9 @@ EXPORTS
     ?GetList@OpalMediaType@@SA?AV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ @47652 NONAME
     ?GetListeners@OpalEndPoint@@QBAABV?$PList@VOpalListener@@@@XZ @35621 NONAME
     ?GetLocalAddress@OpalListenerIP@@UBA?AVOpalTransportAddress@@ABV2@@Z @35622 NONAME
-    ?GetLocalAddress@OpalTransportIP@@UBA?AVOpalTransportAddress@@XZ @35623 NONAME
-    ?GetLocalAddress@OpalTransportUDP@@UBA?AVOpalTransportAddress@@XZ @35624 NONAME
+    ?GetLocalAddress@OpalListenerUDP@@UBA?AVOpalTransportAddress@@ABV2@@Z @48253 NONAME
+    ?GetLocalAddress@OpalTransportIP@@UBA?AVOpalTransportAddress@@_N@Z @48254 NONAME
+    ?GetLocalAddress@OpalTransportUDP@@UBA?AVOpalTransportAddress@@_N@Z @48255 NONAME
     ?GetLocalAddress@RTP_UDP@@UBA?AVAddress@PIPSocket@@XZ @35625 NONAME
     ?GetLocalAliasNames@H323Connection@@QBAABVPStringList@@XZ @35627 NONAME
     ?GetLocalCallIntrusionProtectionLevel@H323Connection@@QAAIXZ @35628 NONAME
@@ -35344,7 +35348,6 @@ EXPORTS
     ?GetTransport@SIPConnection@@UBAAAVOpalTransport@@XZ @36135 NONAME
     ?GetTransport@SIPHandler@@UAAPAVOpalTransport@@XZ @44986 NONAME
     ?GetTransport@SIPTransaction@@QBAAAVOpalTransport@@XZ @36137 NONAME
-    ?GetTransportAddress@OpalListener@@QBA?AVOpalTransportAddress@@XZ @36138 NONAME
     ?GetTransportAddress@SDPMediaDescription@@UBAABVOpalTransportAddress@@XZ @44987 NONAME
     ?GetTxCapability@OpalRFC2833Proto@@QBA?AVPString@@XZ @47720 NONAME
     ?GetTxFramesInPacket@H323AudioCapability@@UBAIXZ @36140 NONAME
@@ -37504,7 +37507,7 @@ EXPORTS
     ?IsEmpty@SafeStrings@@QAA_NXZ @38392 NONAME
     ?IsEnabled@H281VideoSource@@QBA_NXZ @38393 NONAME
     ?IsEncrypted@IAX2Encryption@@QBA_NXZ @47780 NONAME
-    ?IsEquivalent@OpalTransportAddress@@QBA_NABV1@@Z @38395 NONAME
+    ?IsEquivalent@OpalTransportAddress@@QBA_NABV1@_N@Z @48256 NONAME
     ?IsEstablished@H323Connection@@QBA_NXZ @38396 NONAME
     ?IsEstablished@OpalCall@@QBA_NXZ @38397 NONAME
     ?IsEstablished@SIPDialogContext@@QBA_NXZ @47781 NONAME
