@@ -156,6 +156,12 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
     }
   }
 
+  // if transmittter is ever in this state, then stop the duration timer
+  if (m_payloadType == RTP_DataFrame::IllegalPayloadType) {
+    PTRACE(2, "RFC2833\tNo payload type, cannot send packet.");
+    return false;
+  }
+
   // convert tone to correct code
   PINDEX code = ASCIIToRFC2833(tone, m_txCapabilitySet[NSECodeBase]);
 
