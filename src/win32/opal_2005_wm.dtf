@@ -34185,8 +34185,9 @@ EXPORTS
     ?GetList@OpalMediaType@@SA?AV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ @46950 NONAME
     ?GetListeners@OpalEndPoint@@QBAABV?$PList@VOpalListener@@@@XZ @35260 NONAME
     ?GetLocalAddress@OpalListenerIP@@UBA?AVOpalTransportAddress@@ABV2@@Z @35261 NONAME
-    ?GetLocalAddress@OpalTransportIP@@UBA?AVOpalTransportAddress@@XZ @35262 NONAME
-    ?GetLocalAddress@OpalTransportUDP@@UBA?AVOpalTransportAddress@@XZ @35263 NONAME
+    ?GetLocalAddress@OpalListenerUDP@@UBA?AVOpalTransportAddress@@ABV2@@Z @47539 NONAME
+    ?GetLocalAddress@OpalTransportIP@@UBA?AVOpalTransportAddress@@_N@Z @47540 NONAME
+    ?GetLocalAddress@OpalTransportUDP@@UBA?AVOpalTransportAddress@@_N@Z @47541 NONAME
     ?GetLocalAddress@RTP_UDP@@UBA?AVAddress@PIPSocket@@XZ @35264 NONAME
     ?GetLocalAliasNames@H323Connection@@QBAABVPStringList@@XZ @35266 NONAME
     ?GetLocalCallIntrusionProtectionLevel@H323Connection@@QAAIXZ @35267 NONAME
@@ -34796,7 +34797,6 @@ EXPORTS
     ?GetTransport@SIPConnection@@UBAAAVOpalTransport@@XZ @35774 NONAME
     ?GetTransport@SIPHandler@@UAAPAVOpalTransport@@XZ @44402 NONAME
     ?GetTransport@SIPTransaction@@QBAAAVOpalTransport@@XZ @35776 NONAME
-    ?GetTransportAddress@OpalListener@@QBA?AVOpalTransportAddress@@XZ @35777 NONAME
     ?GetTransportAddress@SDPMediaDescription@@UBAABVOpalTransportAddress@@XZ @44403 NONAME
     ?GetTxCapability@OpalRFC2833Proto@@QBA?AVPString@@XZ @47018 NONAME
     ?GetTxFramesInPacket@H323AudioCapability@@UBAIXZ @35779 NONAME
@@ -36956,7 +36956,7 @@ EXPORTS
     ?IsEmpty@SafeStrings@@QAA_NXZ @38031 NONAME
     ?IsEnabled@H281VideoSource@@QBA_NXZ @38032 NONAME
     ?IsEncrypted@IAX2Encryption@@QBA_NXZ @47078 NONAME
-    ?IsEquivalent@OpalTransportAddress@@QBA_NABV1@@Z @38034 NONAME
+    ?IsEquivalent@OpalTransportAddress@@QBA_NABV1@_N@Z @47542 NONAME
     ?IsEstablished@H323Connection@@QBA_NXZ @38035 NONAME
     ?IsEstablished@OpalCall@@QBA_NXZ @38036 NONAME
     ?IsEstablished@SIPDialogContext@@QBA_NXZ @47079 NONAME
