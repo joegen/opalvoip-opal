@@ -279,20 +279,6 @@ H323Connection::H323Connection(OpalCall & call,
 
   remoteMaxAudioDelayJitter = 0;
 
-  switch (options&DetectInBandDTMFOptionMask) {
-    case DetectInBandDTMFOptionDisable :
-      detectInBandDTMF = PFalse;
-      break;
-
-    case DetectInBandDTMFOptionEnable :
-      detectInBandDTMF = PTrue;
-      break;
-
-    default :
-      detectInBandDTMF = PFalse;
-      break;
-  }
-  
   defaultAudioSessionIDAssigned = PFalse;
   defaultVideoSessionIDAssigned = PFalse;
   nextSessionID = 3; // 1 and 2 are 'reserved'

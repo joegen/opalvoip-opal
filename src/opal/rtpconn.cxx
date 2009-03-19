@@ -270,10 +270,7 @@ PBoolean OpalRTPConnection::SendUserInputTone(char tone, unsigned duration)
     return true;
 
   PTRACE(2, "RTPCon\tCould not send tone '" << tone << "' via RFC2833.");
-
-  //Probably need a PCM generator in here
-
-  return true;
+  return OpalConnection::SendUserInputTone(tone, duration);
 }
 
 
@@ -324,16 +321,9 @@ OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & m
 void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
   OpalConnection::OnPatchMediaStream(isSource, patch);
-  if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
-    AttachRFC2833HandlerToPatch(isSource, patch);
-#if OPAL_PTLIB_DTMF
-    if (detectInBandDTMF && isSource) {
-      patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
-    }
-#endif
-  }
 
-  patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
+  if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio())
+    AttachRFC2833HandlerToPatch(isSource, patch);
 }
 
 void OpalRTPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT type)
