@@ -343,6 +343,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_filename(filename)
   , m_receiving(receiving)
   , m_disableT38(disableT38)
+  , m_releaseTimeout(0, 0, 1)
   , m_tiffFileFormat(TIFF_File_FormatName)
   , m_faxMode(false)
 {
@@ -525,8 +526,15 @@ void OpalFaxConnection::OnFaxStoppedTimeout(PTimer &, INT)
 void OpalFaxConnection::OnSendCNGCED(PTimer & timer, INT)
 {
   if (LockReadOnly() && !m_faxMode) {
-    if (m_switchTimeout > 0 && (PTime() - connectedTime) > m_switchTimeout)
+    PTimeInterval elapsed = PTime() - connectedTime;
+    if (m_releaseTimeout > 0 && elapsed > m_releaseTimeout) {
+      PTRACE(2, "T38\tDid not switch to T.38 mode, releasing connection");
+      Release(OpalConnection::EndedByCapabilityExchange);
+    }
+    if (m_switchTimeout > 0 && elapsed > m_switchTimeout) {
+      PTRACE(2, "T38\tDid not switch to T.38 mode, forcing switch");
       RequestFax(true);
+    }
     else if (m_receiving) {
       // Cadence for CED is single tone, but we repeat just in case
       OnUserInputTone('Y', 3600);
@@ -535,7 +543,7 @@ void OpalFaxConnection::OnSendCNGCED(PTimer & timer, INT)
     else {
       // Cadence for CNG is 500ms on 3 seconds off
       OnUserInputTone('X', 500);
-      timer = 3000;
+      timer = 3500;
     }
     UnlockReadOnly();
   }
