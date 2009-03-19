@@ -1449,9 +1449,6 @@ class OpalConnection : public PSafeObject
   protected:
     void OnConnectedInternal();
 
-#if OPAL_PTLIB_DTMF
-    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
-#endif
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
 
@@ -1485,9 +1482,6 @@ class OpalConnection : public PSafeObject
     SendUserInputModes    sendUserInputMode;
     PString               userInputString;
     PSyncPoint            userInputAvailable;
-    PBoolean              detectInBandDTMF;
-    unsigned              dtmfScaleMultiplier;
-    unsigned              dtmfScaleDivisor;
     unsigned              q931Cause;
 
     OpalSilenceDetector * silenceDetector;
@@ -1503,7 +1497,16 @@ class OpalConnection : public PSafeObject
     // The In-Band DTMF detector. This is used inside an audio filter which is
     // added to the audio channel.
 #if OPAL_PTLIB_DTMF
-    PDTMFDecoder        dtmfDecoder;
+    PDTMFDecoder m_dtmfDecoder;
+    bool         m_detectInBandDTMF;
+    unsigned     m_dtmfScaleMultiplier;
+    unsigned     m_dtmfScaleDivisor;
+    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnDetectInBandDTMF);
+
+    bool         m_sendInBandDTMF;
+    PDTMFEncoder m_inBandDTMF;
+    PINDEX       m_emittedInBandDTMF;
+    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnSendInBandDTMF);
 #endif
 
     /**Set the phase of the connection.
