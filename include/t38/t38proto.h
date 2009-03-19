@@ -261,11 +261,12 @@ class OpalFaxConnection : public OpalConnection
     bool              m_receiving;
     PString           m_stationId;
     bool              m_disableT38;
+    PTimeInterval     m_releaseTimeout;
     PTimeInterval     m_switchTimeout;
     OpalMediaFormat   m_tiffFileFormat;
 
-    bool   m_faxMode;  // false if audio preamble, true if in TIFF->fax mode
-    PTimer m_faxTimer;
+    bool     m_faxMode;  // false if audio preamble, true if in TIFF->fax mode
+    PTimer   m_faxTimer;
 };
 
 
