@@ -56,6 +56,7 @@ void FaxOPAL::Main()
              "G-gk-id:"
              "h-help."
              "H-h323:"
+             "I-inband."
              "m-mode:"
              "N-stun:"
              "p-password:"
@@ -102,6 +103,7 @@ void FaxOPAL::Main()
             "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
 #endif
             "  -N or --stun server     : Set NAT traversal STUN server.\n"
+            "  -I or --inband          : Disable detection of in-band tones.\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -133,7 +135,7 @@ void FaxOPAL::Main()
   // Set up SIP
   interfaces = args.GetOptionString('S');
   if (interfaces != "x") {
-    SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
+    MySIPEndPoint * sip  = new MySIPEndPoint(*m_manager);
     if (!sip->StartListeners(interfaces.Lines())) {
       cerr << "Could not start SIP listeners." << endl;
       return;
@@ -149,7 +151,17 @@ void FaxOPAL::Main()
       params.m_expire = 300;
 
       PString aor;
-      sip->Register(params, aor);
+      if (!sip->Register(params, aor)) {
+        cerr << "Could not start SIP registration to " << params.m_addressOfRecord << endl;
+        return;
+      }
+
+      sip->m_completed.Wait();
+
+      if (!sip->IsRegistered(aor)) {
+        cerr << "Could not complete SIP registration for " << aor << endl;
+        return;
+      }
     }
   }
 #endif // OPAL_SIP
@@ -191,6 +203,8 @@ void FaxOPAL::Main()
   // If no explicit protocol on URI, then send to SIP.
   m_manager->AddRouteEntry(prefix+":.* = sip:<da>");
 
+  m_manager->DisableDetectInBandDTMF(args.HasOption('I'));
+
   if (args.GetCount() == 1)
     cout << "Awaiting incoming fax, saving as " << args[0] << " ..." << flush;
   else {
@@ -211,6 +225,14 @@ void FaxOPAL::Main()
 void MyManager::OnClearedCall(OpalCall & /*call*/)
 {
   m_completed.Signal();
+}
+
+
+void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
+{
+  SIPEndPoint::OnRegistrationStatus(status);
+  if (status.m_reason >= SIP_PDU::Successful_OK)
+    m_completed.Signal();
 }
 
 
