@@ -263,6 +263,14 @@ class OpalFaxEndPoint : public OpalEndPoint
     virtual void AcceptIncomingConnection(
       const PString & connectionToken ///<  Token of connection to accept call
     );
+
+    /**Fax transmission/receipt completed.
+       Default behaviour releases the connection.
+      */
+    virtual void OnFaxCompleted(
+      OpalFaxConnection & connection, ///< Connection that completed.
+      bool timeout                    ///< Fax timed out rather than orderly completion
+    );
   //@}
 
   /**@name Member variable access */
@@ -376,6 +384,13 @@ class OpalFaxConnection : public OpalConnection
       */
     virtual void AcceptIncoming();
 
+    /**Fax transmission/receipt completed.
+       Default behaviour calls equivalent function on OpalFaxEndPoint.
+      */
+    virtual void OnFaxCompleted(
+      bool timeout   ///< Fax timed out rather than orderly completion
+    );
+
     /** Check for no more I/O which means fax stopped.
       */
     void CheckFaxStopped();
@@ -416,7 +431,7 @@ class OpalT38Connection : public OpalFaxConnection
     virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
     virtual void OnEstablished();
     virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
-    virtual void OnClosedMediaStream(const OpalMediaStream & stream);
+    virtual void OnMediaPatchStop(unsigned sessionId, bool isSource);
     virtual OpalMediaFormatList GetMediaFormats() const;
 
     // triggers into fax mode
