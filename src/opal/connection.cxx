@@ -183,6 +183,12 @@ OpalConnection::OpalConnection(OpalCall & call,
   , q931Cause(0x100)
   , silenceDetector(NULL)
   , echoCanceler(NULL)
+#if OPAL_PTLIB_DTMF
+  , m_dtmfScaleMultiplier(1)
+  , m_dtmfScaleDivisor(1)
+  , m_sendInBandDTMF(true)
+  , m_emittedInBandDTMF(0)
+#endif
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
@@ -203,12 +209,25 @@ OpalConnection::OpalConnection(OpalCall & call,
   if (stringOptions != NULL)
     m_connStringOptions = *stringOptions;
 
-  detectInBandDTMF = !endpoint.GetManager().DetectInBandDTMFDisabled();
   minAudioJitterDelay = endpoint.GetManager().GetMinAudioJitterDelay();
   maxAudioJitterDelay = endpoint.GetManager().GetMaxAudioJitterDelay();
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
-  dtmfScaleMultiplier = dtmfScaleDivisor = 1;
+#if OPAL_PTLIB_DTMF
+  switch (options&DetectInBandDTMFOptionMask) {
+    case DetectInBandDTMFOptionDisable :
+      m_detectInBandDTMF = false;
+      break;
+
+    case DetectInBandDTMFOptionEnable :
+      m_detectInBandDTMF = true;
+      break;
+
+    default :
+      m_detectInBandDTMF = !endpoint.GetManager().DetectInBandDTMFDisabled();
+      break;
+  }
+#endif
 
   switch (options & SendDTMFMask) {
     case SendDTMFAsString:
@@ -714,8 +733,19 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-void OpalConnection::OnPatchMediaStream(PBoolean PTRACE_PARAM(isSource), OpalMediaPatch & patch)
+void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
+  patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
+
+#if OPAL_PTLIB_DTMF
+  if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
+    if (m_detectInBandDTMF && isSource)
+      patch.AddFilter(PCREATE_NOTIFIER(OnDetectInBandDTMF), OPAL_PCM16);
+    if (m_sendInBandDTMF && !isSource)
+      patch.AddFilter(PCREATE_NOTIFIER(OnSendInBandDTMF), OPAL_PCM16);
+  }
+#endif
+
   if (!recordAudioFilename.IsEmpty())
     GetCall().StartRecording(recordAudioFilename);
   else if (GetCall().IsRecording()) {
@@ -939,10 +969,28 @@ PBoolean OpalConnection::SendUserInputString(const PString & value)
 }
 
 
+#if OPAL_PTLIB_DTMF
+PBoolean OpalConnection::SendUserInputTone(char tone, unsigned duration)
+{
+  if (!LockReadWrite())
+    return false;
+
+  if (m_sendInBandDTMF) {
+    if (duration <= 0)
+      duration = PDTMFEncoder::DefaultToneLen;
+    PTRACE(3, "OPAL\tSending in-band DTMF tone '" << tone << "', duration=" << duration);
+    m_inBandDTMF.AddTone(tone, duration);
+  }
+
+  UnlockReadWrite();
+  return true;
+}
+#else
 PBoolean OpalConnection::SendUserInputTone(char /*tone*/, unsigned /*duration*/)
 {
   return false;
 }
+#endif
 
 
 void OpalConnection::OnUserInputString(const PString & value)
@@ -996,21 +1044,46 @@ PBoolean OpalConnection::PromptUserInput(PBoolean /*play*/)
 
 
 #if OPAL_PTLIB_DTMF
-void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
+void OpalConnection::OnDetectInBandDTMF(RTP_DataFrame & frame, INT)
 {
   // This function is set up as an 'audio filter'.
   // This allows us to access the 16 bit PCM audio (at 8Khz sample rate)
   // before the audio is passed on to the sound card (or other output device)
 
   // Pass the 16 bit PCM audio through the DTMF decoder   
-  PString tones = dtmfDecoder.Decode((const short *)frame.GetPayloadPtr(), frame.GetPayloadSize()/sizeof(short), dtmfScaleMultiplier, dtmfScaleDivisor);
+  PString tones = m_dtmfDecoder.Decode((const short *)frame.GetPayloadPtr(),
+                                       frame.GetPayloadSize()/sizeof(short),
+                                       m_dtmfScaleMultiplier,
+                                       m_dtmfScaleDivisor);
   if (!tones.IsEmpty()) {
-    PTRACE(3, "OPAL\tDTMF detected. " << tones);
-    PINDEX i;
-    for (i = 0; i < tones.GetLength(); i++) {
+    PTRACE(3, "OPAL\tDTMF detected: \"" << tones << '"');
+    for (PINDEX i = 0; i < tones.GetLength(); i++)
       OnUserInputTone(tones[i], 0);
-    }
   }
+}
+
+void OpalConnection::OnSendInBandDTMF(RTP_DataFrame & frame, INT)
+{
+  if (m_inBandDTMF.IsEmpty())
+    return;
+
+  if (!LockReadWrite())
+    return;
+
+  PINDEX bytes = (m_inBandDTMF.GetSize() - m_emittedInBandDTMF)*sizeof(short);
+  if (bytes > frame.GetPayloadSize())
+    bytes = frame.GetPayloadSize();
+  memcpy(frame.GetPayloadPtr(), &m_inBandDTMF[m_emittedInBandDTMF], bytes);
+
+  m_emittedInBandDTMF += bytes/sizeof(short);
+
+  if (m_emittedInBandDTMF >= m_inBandDTMF.GetSize()) {
+    PTRACE(4, "OPAL\tSent in-band DTMF tone, " << m_inBandDTMF.GetSize() << " samples");
+    m_inBandDTMF.SetSize(0);
+    m_emittedInBandDTMF = 0;
+  }
+
+  UnlockReadWrite();
 }
 #endif
 
@@ -1142,20 +1215,31 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
   PTRACE(4, "OpalCon\tApplying string options:\n" << stringOptions);
 
   if (LockReadWrite()) {
+    PCaselessString str;
 
     m_connStringOptions = stringOptions;
-  
-    PCaselessString str = stringOptions("enableinbanddtmf");
+
+#if OPAL_PTLIB_DTMF
+    str = stringOptions("EnableInBandDTMF");
     if (!str.IsEmpty())
-      detectInBandDTMF = str *= "true";
+      m_sendInBandDTMF = m_detectInBandDTMF = str == "true";
+
+    str = stringOptions("DetectInBandDTMF");
+    if (!str.IsEmpty())
+      m_detectInBandDTMF = str == "true";
+
+    str = stringOptions("SendInBandDTMF");
+    if (!str.IsEmpty())
+      m_sendInBandDTMF = str == "true";
+
     str = stringOptions("dtmfmult");
-    if (!str.IsEmpty()) {
-      dtmfScaleMultiplier = str.AsInteger();
-      dtmfScaleDivisor    = 1;
-    }
+    if (!str.IsEmpty())
+      m_dtmfScaleMultiplier = str.AsInteger();
+
     str = stringOptions("dtmfdiv");
     if (!str.IsEmpty())
-      dtmfScaleDivisor = str.AsInteger();
+      m_dtmfScaleDivisor = str.AsInteger();
+#endif
 
     m_autoStartInfo.Initialise(stringOptions);
 
@@ -1168,7 +1252,7 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
     if (!str.IsEmpty())
       minAudioJitterDelay = str.AsUnsigned();
     if (stringOptions.Contains("Record-Audio"))
-      recordAudioFilename = m_connStringOptions("Record-Audio");
+      recordAudioFilename = stringOptions("Record-Audio");
 
     str = stringOptions("Alerting-Type");
     if (!str.IsEmpty())
