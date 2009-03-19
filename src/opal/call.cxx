@@ -353,6 +353,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   PSafePtr<OpalConnection> otherConnection;
   while (EnumerateConnections(otherConnection, PSafeReadOnly, includeSpecifiedConnection ? NULL : &connection)) {
     OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(otherConnection->GetMediaFormats());
+    otherConnection->AdjustMediaFormats(possibleFormats);
     if (first) {
       commonFormats = possibleFormats;
       first = PFalse;
