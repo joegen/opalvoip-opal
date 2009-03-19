@@ -1674,7 +1674,6 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
   PTRACE(3, "RTP_UDP\tSession " << sessionID << " created: "
          << localAddress << ':' << localDataPort << '-' << localControlPort
          << " ssrc=" << syncSourceOut);
-  
 
   return true;
 }
@@ -1688,6 +1687,8 @@ void RTP_UDP::Reopen(PBoolean reading)
     shutdownRead = false;
   else
     shutdownWrite = false;
+
+  PTRACE(3, "RTP_UDP\tSession " << sessionID << " reopened for " << (reading ? "reading" : "writing"));
 }
 
 
