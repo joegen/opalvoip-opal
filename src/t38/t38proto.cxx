@@ -66,10 +66,12 @@ class T38PseudoRTP_Handler : public RTP_Encoding
     {  
       RTP_Encoding::OnStart(_rtpUDP);
       rtpUDP->SetJitterBufferSize(0, 0);
-      consecutiveBadPackets = 0;
-      oneGoodPacket         = false;
+      m_consecutiveBadPackets  = 0;
+      m_oneGoodPacket          = false;
+      m_expectedSequenceNumber = 0;
+      m_secondaryPacket        = -1;
 
-      lastIFP.SetSize(0);
+      m_lastSentIFP.SetSize(0);
       rtpUDP->SetReportTimeInterval(20);
       rtpUDP->SetNextSentSequenceNumber(0);
     }
@@ -99,15 +101,15 @@ class T38PseudoRTP_Handler : public RTP_Encoding
       udptl.m_error_recovery.SetTag(T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets);
       T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondary = udptl.m_error_recovery;
       T38_UDPTLPacket_error_recovery_secondary_ifp_packets & redundantPackets = secondary;
-      if (lastIFP.GetSize() == 0)
+      if (m_lastSentIFP.GetSize() == 0)
         redundantPackets.SetSize(0);
       else {
         redundantPackets.SetSize(1);
         T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype & redundantPacket = redundantPackets[0];
-        redundantPacket.SetValue(lastIFP, lastIFP.GetSize());
+        redundantPacket.SetValue(m_lastSentIFP, m_lastSentIFP.GetSize());
       }
 
-      lastIFP = udptl.m_primary_ifp_packet;
+      m_lastSentIFP = udptl.m_primary_ifp_packet;
 
       PTRACE(5, "T38_RTP\tEncoded transmitted UDPTL data :\n  " << setprecision(2) << udptl);
 
@@ -148,6 +150,9 @@ class T38PseudoRTP_Handler : public RTP_Encoding
 
     int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &)
     {
+      if (m_secondaryPacket >= 0)
+        return -1; // Force immediate call to ReadDataPDU
+
       // Break out once a second so closes down in orderly fashion
       return PSocket::Select(dataSocket, controlSocket, 1000);
     }
@@ -162,8 +167,28 @@ class T38PseudoRTP_Handler : public RTP_Encoding
     }
 
 
+    void SetFrameFromIFP(RTP_DataFrame & frame, const PASN_OctetString & ifp, unsigned sequenceNumber)
+    {
+      frame.SetPayloadSize(ifp.GetDataLength());
+      memcpy(frame.GetPayloadPtr(), (const BYTE *)ifp, ifp.GetDataLength());
+      frame.SetSequenceNumber((WORD)(sequenceNumber & 0xffff));
+      if (m_secondaryPacket <= 0)
+        m_expectedSequenceNumber = sequenceNumber+1;
+    }
+
     RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame)
     {
+      if (m_secondaryPacket >= 0) {
+        if (m_secondaryPacket == 0)
+          SetFrameFromIFP(frame, m_receivedPacket.m_primary_ifp_packet, m_receivedPacket.m_seq_number);
+        else {
+          T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondaryPackets = m_receivedPacket.m_error_recovery;
+          SetFrameFromIFP(frame, secondaryPackets[m_secondaryPacket-1], m_receivedPacket.m_seq_number - m_secondaryPacket);
+        }
+        --m_secondaryPacket;
+        return RTP_Session::e_ProcessPacket;
+      }
+
       BYTE thisUDPTL[500];
       RTP_Session::SendReceiveStatus status = rtpUDP->ReadDataOrControlPDU(thisUDPTL, sizeof(thisUDPTL), true);
       if (status != RTP_Session::e_ProcessPacket)
@@ -173,53 +198,62 @@ class T38PseudoRTP_Handler : public RTP_Encoding
       
       PTRACE(4, "T38_RTP\tRead UDPTL of size " << pduSize);
 
-      if ((pduSize == 1) && (thisUDPTL[0] == 0xff)) {
-        // ignore T.38 timing frames 
-        frame.SetPayloadSize(0);
+      PPER_Stream rawData(thisUDPTL, pduSize);
+
+      // Decode the PDU
+      if (!m_receivedPacket.Decode(rawData)) {
+  #if PTRACING
+        if (m_oneGoodPacket)
+          PTRACE(2, "RTP_T38\tRaw data decode failure:\n  "
+                 << setprecision(2) << rawData << "\n  UDPTL = "
+                 << setprecision(2) << m_receivedPacket);
+        else
+          PTRACE(2, "RTP_T38\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
+  #endif
+
+        m_consecutiveBadPackets++;
+        if (m_consecutiveBadPackets < 100)
+          return RTP_Session::e_IgnorePacket;
+
+        PTRACE(1, "RTP_T38\tRaw data decode failed 100 times, remote probably not switched from audio, aborting!");
+        return RTP_Session::e_AbortTransport;
       }
-      else {
-        PPER_Stream rawData(thisUDPTL, pduSize);
 
-        // Decode the PDU
-        T38_UDPTLPacket udptl;
-        if (!udptl.Decode(rawData)) {
-    #if PTRACING
-          if (oneGoodPacket)
-            PTRACE(2, "RTP_T38\tRaw data decode failure:\n  "
-                   << setprecision(2) << rawData << "\n  UDPTL = "
-                   << setprecision(2) << udptl);
-          else
-            PTRACE(2, "RTP_T38\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
-    #endif
+      PTRACE_IF(3, !m_oneGoodPacket, "T38_RTP\tFirst decoded UDPTL packet");
+      m_oneGoodPacket = true;
+      m_consecutiveBadPackets = 0;
 
-          consecutiveBadPackets++;
-          if (consecutiveBadPackets < 100)
-            return RTP_Session::e_IgnorePacket;
+      PTRACE(5, "T38_RTP\tDecoded UDPTL packet:\n  " << setprecision(2) << m_receivedPacket);
 
-          PTRACE(1, "RTP_T38\tRaw data decode failed 100 times, remote probably not switched from audio, aborting!");
-          return RTP_Session::e_AbortTransport;
+      int missing = m_receivedPacket.m_seq_number - m_expectedSequenceNumber;
+      if (missing > 0 && m_receivedPacket.m_error_recovery.GetTag() == T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets) {
+        // Packets are missing and we have redundency in the UDPTL packets
+        T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondaryPackets = m_receivedPacket.m_error_recovery;
+        if (secondaryPackets.GetSize() > 0) {
+          PTRACE(4, "T38_RTP\tUsing redundant data to reconstruct missing/out of order packet at SN=" << m_expectedSequenceNumber);
+          m_secondaryPacket = missing;
+          if (m_secondaryPacket > secondaryPackets.GetSize())
+            m_secondaryPacket = secondaryPackets.GetSize();
+          SetFrameFromIFP(frame, secondaryPackets[m_secondaryPacket-1], m_receivedPacket.m_seq_number - m_secondaryPacket);
+          --m_secondaryPacket;
+          return RTP_Session::e_ProcessPacket;
         }
-
-        consecutiveBadPackets = 0;
-        PTRACE_IF(3, !oneGoodPacket, "T38_RTP\tFirst decoded UDPTL packet");
-        oneGoodPacket = true;
-
-        PASN_OctetString & ifp = udptl.m_primary_ifp_packet;
-        frame.SetPayloadSize(ifp.GetDataLength());
-
-        memcpy(frame.GetPayloadPtr(), ifp.GetPointer(), ifp.GetDataLength());
-        frame.SetSequenceNumber((WORD)(udptl.m_seq_number & 0xffff));
-        PTRACE(5, "T38_RTP\tDecoded UDPTL packet:\n  " << setprecision(2) << udptl);
       }
+
+      SetFrameFromIFP(frame, m_receivedPacket.m_primary_ifp_packet, m_receivedPacket.m_seq_number);
+      m_expectedSequenceNumber = m_receivedPacket.m_seq_number+1;
 
       return RTP_Session::e_ProcessPacket;
     }
 
 
   protected:
-    int consecutiveBadPackets;
-    bool oneGoodPacket;
-    PBYTEArray lastIFP;
+    int             m_consecutiveBadPackets;
+    bool            m_oneGoodPacket;
+    PBYTEArray      m_lastSentIFP;
+    T38_UDPTLPacket m_receivedPacket;
+    unsigned        m_expectedSequenceNumber;
+    int             m_secondaryPacket;
 };
 
 
