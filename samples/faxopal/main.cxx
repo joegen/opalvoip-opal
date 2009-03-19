@@ -59,6 +59,7 @@ void FaxOPAL::Main()
              "G-gk-id:"
              "h-help."
              "H-h323:"
+             "I-inband."
              "L-lines:"
              "m-mode:"
              "N-stun:"
@@ -100,6 +101,7 @@ void FaxOPAL::Main()
 #endif
             "  -L or --lines devices   : Set Line Interface Devices.\n"
             "  -N or --stun server     : Set NAT traversal STUN server.\n"
+            "  -I or --inband          : Disable detection of in-band tones.\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -201,6 +203,8 @@ void FaxOPAL::Main()
   if (args.HasOption('d'))
     fax->SetDefaultDirectory(args.GetOptionString('d'));
 
+
+  m_manager->DisableDetectInBandDTMF(args.HasOption('I'));
 
   if (args.GetCount() == 1)
     cout << "Awaiting incoming fax, saving as " << args[0] << " ..." << flush;
