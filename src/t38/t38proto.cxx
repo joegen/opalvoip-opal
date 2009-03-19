@@ -174,9 +174,13 @@ class T38PseudoRTP_Handler : public RTP_Encoding
         if (!udptl.Decode(rawData)) {
     #if PTRACING
           if (oneGoodPacket)
-            PTRACE(2, "RTP_T38\tRaw data decode failure:\n  "
-                   << setprecision(2) << rawData << "\n  UDPTL = "
-                   << setprecision(2) << udptl);
+            if (PTrace::CanTrace(5))
+              PTRACE(5, "RTP_T38\tRaw data decode failure:\n  "
+                     << setprecision(2) << rawData << "\n  UDPTL = "
+                     << setprecision(2) << udptl);
+            else
+              PTRACE(2, "RTP_T38\tRaw data decode failure:\n  "
+                     << setprecision(2) << rawData);
           else
             PTRACE(2, "RTP_T38\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
     #endif
@@ -692,6 +696,13 @@ void OpalFaxEndPoint::AcceptIncomingConnection(const PString & token)
 }
 
 
+void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool timeout)
+{
+  PTRACE(3, "FAX\tFax completed " << (timeout ? "with timeout" : "normally") << " on connection: " << connection);
+  connection.Release(timeout ? OpalConnection::EndedByRemoteUser : OpalConnection::EndedByLocalUser);
+}
+
+
 PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
                                 const PString & remoteParty,
                                          void * userData,
@@ -847,6 +858,12 @@ void OpalFaxConnection::AcceptIncoming()
 }
 
 
+void OpalFaxConnection::OnFaxCompleted(bool timeout)
+{
+  m_endpoint.OnFaxCompleted(*this, timeout);
+}
+
+
 void OpalFaxConnection::CheckFaxStopped()
 {
   m_faxStopped.SetInterval(0, 30);
@@ -856,7 +873,7 @@ void OpalFaxConnection::CheckFaxStopped()
 void OpalFaxConnection::OnFaxStoppedTimeout(PTimer &, INT)
 {
   PTRACE(3, "FAX\tTimeout on fax connection: " << GetToken());
-  Release();
+  OnFaxCompleted(true);
 }
 
 
@@ -933,15 +950,22 @@ OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & m
 }
 
 
-void OpalT38Connection::OnClosedMediaStream(const OpalMediaStream & stream)
+void OpalT38Connection::OnMediaPatchStop(unsigned sessionId, bool isSource)
 {
-  m_faxMode = stream.GetMediaFormat().GetMediaType() != OpalMediaType::Fax();
+  OpalMediaStreamPtr stream = GetMediaStream(sessionId, isSource);
+  bool newMode = stream->GetMediaFormat().GetMediaType() != OpalMediaType::Fax();
+  if (m_faxMode != newMode) {
+    m_faxTimer.Stop();
+    m_faxMode = newMode;
 
-  if (m_syncMode == Mode_UserInput)
-    OnUserInputTone(' ', 0);
-  m_faxTimer.Stop();
+    // If was fax media, must have finished sending/receiving
+    if (!m_faxMode) {
+      synchronousOnRelease = false; // Get deadlock if OnRelease() from patch thread.
+      OnFaxCompleted(false);
+    }
+  }
 
-  OpalFaxConnection::OnClosedMediaStream(stream);
+  OpalConnection::OnMediaPatchStop(sessionId, isSource);
 }
 
 
@@ -966,16 +990,18 @@ PBoolean OpalT38Connection::SendUserInputTone(char tone, unsigned /*duration*/)
 
 void OpalT38Connection::OnSendCNGCED(PTimer & timer, INT)
 {
-  if (LockReadOnly() && !m_faxMode && m_syncMode == Mode_UserInput) {
-    if (m_receive) {
-      // Cadence for CED is single tone, but we repeat just in case
-      OnUserInputTone('Y', 3600);
-      timer = 5000;
-    }
-    else {
-      // Cadence for CNG is 500ms on 3 seconds off
-      OnUserInputTone('X', 500);
-      timer = 3000;
+  if (LockReadOnly()) {
+    if (!m_faxMode && m_syncMode == Mode_UserInput) {
+      if (m_receive) {
+        // Cadence for CED is single tone, but we repeat just in case
+        OnUserInputTone('Y', 3600);
+        timer = 5000;
+      }
+      else {
+        // Cadence for CNG is 500ms on 3 seconds off
+        OnUserInputTone('X', 500);
+        timer = 3000;
+      }
     }
     UnlockReadOnly();
   }
@@ -1023,7 +1049,7 @@ void OpalT38Connection::RequestFaxMode(bool toFax)
   }
 
   // definitely changing mode
-  PTRACE(1, "T38\tRequesting mode change to " << modeStr);
+  PTRACE(3, "T38\tRequesting mode change to " << modeStr);
 
   m_faxMode = toFax;
   m_faxTimer.Stop();
