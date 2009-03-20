@@ -43,6 +43,7 @@
 #include <sip/sipep.h>
 #include <iax2/iax2ep.h>
 #include <lids/lidep.h>
+#include <t38/t38proto.h>
 #include <opal/ivr.h>
 
 #include <queue>
@@ -728,6 +729,20 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 #endif
 
+#if OPAL_FAX
+  PINDEX faxPos = options.Find("fax");
+  if (faxPos < defUserPos) {
+    defUser = "fax:";
+    defUserPos = faxPos;
+  }
+
+  PINDEX t38Pos = options.Find("t38");
+  if (t38Pos < defProtoPos) {
+    defUser = "t38:";
+    defProtoPos = t38Pos;
+  }
+#endif
+
   PINDEX pcPos = options.Find("pc");
   if (pcPos < defUserPos) {
     defUser = "pc:*";
@@ -777,6 +792,17 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
       AddRouteEntry("pots:.*=" + defProto + ":<da>");
     if (pstnPos != P_MAX_INDEX)
       AddRouteEntry("pstn:.*=" + defUser + ":<da>");
+  }
+#endif
+
+#if OPAL_FAX
+  if (faxPos != P_MAX_INDEX || t38Pos != P_MAX_INDEX) {
+    new OpalFaxEndPoint(*this);
+
+    if (faxPos != P_MAX_INDEX)
+      AddRouteEntry("fax:.*=" + defProto + ":<da>");
+    if (t38Pos != P_MAX_INDEX)
+      AddRouteEntry("t38:.*=" + defUser + ":<da>");
   }
 #endif
 
@@ -1813,7 +1839,7 @@ extern "C" {
 
   OpalHandle OPAL_EXPORT OpalInitialise(unsigned * version, const char * options)
   {
-    PCaselessString optionsString = IsNullString(options) ? "pcss h323 sip iax2 pots pstn ivr" : options;
+    PCaselessString optionsString = IsNullString(options) ? "pcss h323 sip iax2 pots pstn fax t38 ivr" : options;
 
     unsigned callerVersion = 1;
     if (version != NULL) {
