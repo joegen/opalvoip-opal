@@ -681,14 +681,13 @@ bool SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
   WORD port = 0;
   transportAddress.GetIpAndPort(ip, port);
 
-  // output media header
+  /* output media header, note the order is important according to RFC!
+     Must be icbka */
   str << "m=" 
-      << GetSDPMediaType() << " "
-      << port << " "
+      << GetSDPMediaType() << ' '
+      << port << ' '
       << GetSDPTransportType()
-      << bandwidth;
-
-  str << GetSDPPortList() << "\r\n";
+      << GetSDPPortList() << "\r\n";
 
   if (!connectString.IsEmpty())
     str << "c=" << connectString << "\r\n";
@@ -696,6 +695,8 @@ bool SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
   // If we have a port of zero, then shutting down SDP stream. No need for anything more
   if (port == 0)
     return false;
+
+  str << bandwidth;
 
   // media format direction
   switch (direction) {
@@ -1039,7 +1040,8 @@ void SDPSessionDescription::PrintOn(ostream & str) const
     }
   }
 
-  // encode mandatory session information
+  /* encode mandatory session information, note the order is important according to RFC!
+     Must be vosiuepcbzkatrm and within the m it is icbka */
   str << "v=" << protocolVersion << "\r\n"
          "o=" << ownerUsername << ' '
       << ownerSessionId << ' '
@@ -1048,14 +1050,11 @@ void SDPSessionDescription::PrintOn(ostream & str) const
       << "\r\n"
          "s=" << sessionName << "\r\n";
 
-  // make sure the "c=" line (if required) is before the "t=" otherwise the proxy
-  // used by FWD will reject the call with an SDP parse error. This does not seem to be 
-  // required by the RFC so it is probably a bug in the proxy
   if (useCommonConnect)
     str << "c=" << GetConnectAddressString(connectionAddress) << "\r\n";
   
-  str << "t=" << "0 0" << "\r\n"
-      << bandwidth;
+  str << bandwidth
+      << "t=" << "0 0" << "\r\n";
 
   switch (direction) {
     case SDPMediaDescription::RecvOnly:
