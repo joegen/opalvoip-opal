@@ -250,8 +250,8 @@ void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/
         session->SendIntraFrameRequest();
 #if OPAL_STATISTICS
         m_VideoUpdateRequestsSent++;
-      }
 #endif
+      }
     }
   }
 }
