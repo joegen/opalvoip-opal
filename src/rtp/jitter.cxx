@@ -244,6 +244,7 @@ PBoolean OpalJitterBuffer::Init(Entry * & /*currentReadFrame*/, PBoolean & marke
 
 void OpalJitterBuffer::DeInit(Entry * & /*currentReadFrame*/, PBoolean & /*markerWarning*/)
 {
+  bufferMutex.Signal();
 }
 
 PBoolean OpalJitterBuffer::PreRead(OpalJitterBuffer::Entry * & currentReadFrame, PBoolean & /*markerWarning*/)
