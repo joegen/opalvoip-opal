@@ -2706,12 +2706,10 @@ void SIPTransaction::OnRetry(PTimer &, INT)
 {
   PSafeLockReadWrite lock(*this);
 
-  if (!lock.IsLocked() || (state != Trying && state != Cancelling))
+  if (!lock.IsLocked() || state > Cancelling || (state == Proceeding && method == Method_INVITE))
     return;
 
   retry++;
-
-  PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " timeout, making retry " << retry);
 
   if (retry >= endpoint.GetMaxRetries()) {
     SetTerminated(Terminated_RetriesExceeded);
@@ -2727,11 +2725,16 @@ void SIPTransaction::OnRetry(PTimer &, INT)
       return;
   }
 
-  PTimeInterval timeout = retryTimeoutMin*(1<<retry);
-  if (timeout > retryTimeoutMax)
+  if (state > Trying)
     retryTimer = retryTimeoutMax;
-  else
+  else {
+    PTimeInterval timeout = retryTimeoutMin*(1<<retry);
+    if (timeout > retryTimeoutMax)
+      timeout = retryTimeoutMax;
     retryTimer = timeout;
+  }
+
+  PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " timeout, making retry " << retry << ", timeout " << retryTimer);
 }
 
 
