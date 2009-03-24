@@ -1374,9 +1374,14 @@ PBoolean SIPEndPoint::GetAuthentication(const PString & authRealm, PString & rea
 
 SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url, const OpalTransport & transport)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  if (handler == NULL) 
-    return GetDefaultRegisteredPartyName(transport);
+  // Look up by the full URL first in case of multiple registrations to the same domain.
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(url.AsString(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
+  if (handler == NULL) {
+    // Precise AOR not found, locate the name used for the domain.
+    handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
+    if (handler == NULL) 
+      return GetDefaultRegisteredPartyName(transport);
+  }
 
   return handler->GetAddressOfRecord();
 }
@@ -1426,16 +1431,18 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
 }
 
 
-SIPURL SIPEndPoint::GetContactURL(const OpalTransport &transport, const PString & userName, const PString & host)
+SIPURL SIPEndPoint::GetContactURL(const OpalTransport &transport, const SIPURL & localURI)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  if (handler != NULL) {
-    OpalTransport * handlerTransport = handler->GetTransport();
-    if (handlerTransport != NULL)
-      return GetLocalURL(*handlerTransport, handler->GetAddressOfRecord().GetUserName());
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(localURI.AsString(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
+  if (handler == NULL) {
+    // Precise AOR not found, locate the name used for the domain.
+    handler = activeSIPHandlers.FindSIPHandlerByDomain(localURI.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
+    if (handler == NULL)
+      return GetLocalURL(transport, localURI.GetUserName());
   }
 
-  return GetLocalURL(transport, userName);
+  OpalTransport * handlerTransport = handler->GetTransport();
+  return GetLocalURL(handlerTransport != NULL ? *handlerTransport : transport, handler->GetAddressOfRecord().GetUserName());
 }
 
 
