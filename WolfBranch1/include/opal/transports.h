@@ -55,9 +55,9 @@ class OpalInternalTransport;
 
 ////////////////////////////////////////////////////////////////
 
-class OpalTransportAddress : public PString
+class OpalTransportAddress : public PCaselessString
 {
-  PCLASSINFO(OpalTransportAddress, PString);
+  PCLASSINFO(OpalTransportAddress, PCaselessString);
   public:
   /**@name Construction */
   //@{
