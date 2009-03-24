@@ -2354,14 +2354,11 @@ PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
 
 PBoolean SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
 {
-  const SIPURL & localPartyURL = m_dialog.GetLocalURI();
-  PString userName = endpoint.GetRegisteredPartyName(localPartyURL, *transport).GetUserName();
-
   // this can be used to prompoe any incoming calls to TCP. Not quite there yet, but it *almost* works
   SIPURL contact;
   bool promoteToTCP = false;    // disable code for now
   if (!promoteToTCP || (transport != NULL && (PString(transport->GetProtoPrefix()) == "$tcp"))) 
-    contact = endpoint.GetContactURL(*transport, userName, localPartyURL.GetHostName());
+    contact = endpoint.GetContactURL(*transport, m_dialog.GetLocalURI());
   else {
     // see if endpoint contains a TCP listener we can use
     OpalTransportAddress newAddr;
