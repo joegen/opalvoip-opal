@@ -59,17 +59,17 @@ bool DynaLink::Open(const char *name)
 bool DynaLink::InternalOpen(const char * dir, const char *name)
 {
   char path[1024];
-  memset(path, 0, sizeof(path));
+  path[0] = '\0';
 
   // Copy the directory to "path" and add a separator if necessary
-  if (strlen(path) > 0) {
+  if (dir != NULL && *dir != '\0') {
     strcpy(path, dir);
     if (path[strlen(path)-1] != DIR_SEPARATOR[0]) 
-    strcat(path, DIR_SEPARATOR);
+      strcat(path, DIR_SEPARATOR);
   }
   strcat(path, name);
 
-  if (strlen(path) == 0) {
+  if (path[0] == '\0') {
     TRACE(1, _codecString << "\tDYNA\tdir '" << (dir != NULL ? dir : "(NULL)") << "', name '" << (name != NULL ? name : "(NULL)") << "' resulted in empty path");
     return false;
   }
