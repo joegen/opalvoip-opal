@@ -44,7 +44,7 @@
 
 #if OPAL_SIP
 
-#include <ptclib/sockagg.h>
+#include <ptclib/threadpool.h>
 #include <opal/rtpep.h>
 #include <sip/sipcon.h>
 #include <sip/sippdu.h>
