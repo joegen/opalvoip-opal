@@ -715,7 +715,7 @@ class SIPEndPoint : public OpalRTPEndPoint
      * If no active registration is used, return the result of GetLocalURL
      * on the given transport.
      */
-    SIPURL GetContactURL(const OpalTransport &transport, const PString & userName, const PString & host);
+    SIPURL GetContactURL(const OpalTransport &transport, const SIPURL & localURI);
 
 
     /**Return the local URL for the given transport and user name.
