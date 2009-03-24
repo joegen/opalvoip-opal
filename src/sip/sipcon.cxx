@@ -109,7 +109,7 @@ ReasonToSIPCode[] = {
   { SIP_PDU::Failure_Forbidden                  , OpalConnection::EndedByNoUser            ,  55 }, // incoming calls barred within CUG     
   { SIP_PDU::Failure_Forbidden                  , OpalConnection::EndedByNoUser            ,  57 }, // bearer capability not authorized     
   { SIP_PDU::Failure_ServiceUnavailable         , OpalConnection::EndedByNoUser            ,  58 }, // bearer capability not presently available
-  { SIP_PDU::Failure_NotAcceptableHere          , OpalConnection::EndedByNoUser            ,  65 }, // bearer capability not implemented
+  { SIP_PDU::Failure_NotAcceptableHere          , OpalConnection::EndedByCapabilityExchange,  65 }, // bearer capability not implemented
   { SIP_PDU::Failure_NotAcceptableHere          , OpalConnection::EndedByNoUser            ,  70 }, // only restricted digital avail    
   { SIP_PDU::Failure_NotImplemented             , OpalConnection::EndedByNoUser            ,  79 }, // service or option not implemented
   { SIP_PDU::Failure_Forbidden                  , OpalConnection::EndedByNoUser            ,  87 }, // user not member of CUG           
@@ -118,7 +118,6 @@ ReasonToSIPCode[] = {
   { SIP_PDU::Failure_InternalServerError        , OpalConnection::EndedByNoUser            , 111 }, // protocol error                   
   { SIP_PDU::Failure_InternalServerError        , OpalConnection::EndedByNoUser            , 127 }, // interworking unspecified         
   { SIP_PDU::Failure_RequestTerminated          , OpalConnection::EndedByCallerAbort             },
-  { SIP_PDU::Failure_UnsupportedMediaType       , OpalConnection::EndedByCapabilityExchange      },
   { SIP_PDU::Redirection_MovedTemporarily       , OpalConnection::EndedByCallForwarded           },
   { SIP_PDU::GlobalFailure_Decline              , OpalConnection::EndedByAnswerDenied            },
   { SIP_PDU::GlobalFailure_Decline              , OpalConnection::EndedByRefusal                 }, // TODO - SGW - add for call reject from H323 side.
@@ -304,6 +303,11 @@ void SIPConnection::OnReleased()
 
       // EndedByCallForwarded is a special case because it needs extra paramater
       SendInviteResponse(sipCode, NULL, callEndReason == EndedByCallForwarded ? (const char *)forwardParty : NULL);
+
+      // Wait for ACK from remote before destroying object
+      while (!ackReceived)
+        PThread::Sleep(100);
+
       notifyDialogEvent = SIPDialogNotification::Rejected;
       break;
 
@@ -417,8 +421,6 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   else {
     SDPSessionDescription sdpOut(GetDefaultSDPConnectAddress());
     if (!OnSendSDP(true, m_rtpSessions, sdpOut)) {
-      SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
-      releaseMethod = ReleaseWithNothing;
       Release(EndedByCapabilityExchange);
       return PFalse;
     }
@@ -457,8 +459,6 @@ PBoolean SIPConnection::SetConnected()
 
   SDPSessionDescription sdpOut(GetDefaultSDPConnectAddress());
   if (!OnSendSDP(true, m_rtpSessions, sdpOut)) {
-    SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
-    releaseMethod = ReleaseWithNothing;
     Release(EndedByCapabilityExchange);
     return PFalse;
   }
@@ -2410,8 +2410,11 @@ void SIPConnection::OnAckTimeout(PTimer &, INT)
   if (safeLock.IsLocked() && !ackReceived) {
     PTRACE(1, "SIP\tFailed to receive ACK!");
     ackRetry.Stop();
-    releaseMethod = ReleaseWithBYE;
-    Release(EndedByTemporaryFailure);
+    ackReceived = true;
+    if (GetPhase() < ReleasingPhase) {
+      releaseMethod = ReleaseWithBYE;
+      Release(EndedByTemporaryFailure);
+    }
   }
 }
 
