@@ -818,7 +818,7 @@ AC_DEFUN([OPAL_FIND_GSM],
             LIBS="$LIBS -lgsm"
             AC_RUN_IFELSE(
             [AC_LANG_PROGRAM([[
-            #include <gsm.h>
+            #include <gsm/gsm.h>
  ]],[[
             int option = 0;
             gsm handle = gsm_create();
@@ -828,7 +828,7 @@ AC_DEFUN([OPAL_FIND_GSM],
             AC_MSG_RESULT($opal_gsm)
 
             if test "x${opal_gsm}" = "xyes" ; then
-              GSM_CLFAGS=""
+              GSM_CFLAGS="-I/usr/include/gsm -I/usr/local/include/gsm"
               GSM_LIBS="-lgsm"
             fi
             OPAL_MSG_CHECK([System GSM], [$opal_gsm])
