@@ -1367,6 +1367,7 @@ Optional Features:
   --enable-localspeexdsp  Force use local version of Speex DSP library for
                           echo cancellation rather than system version
   --enable-zrtp           enable ZRTP protocol support
+  --enable-srtp           enable SRTP protocol support
   --enable-java           enable Java JNI support
   --enable-video          whether to enable video codec support
   --enable-sip            whether to enable SIP protocol support
@@ -9273,7 +9274,6 @@ if test "${enable_zrtp+set}" = set; then
 fi
 
 
-
 if test "x$OPAL_ZRTP" = "xyes" ; then
   if test "x$OPAL_SIP" != "xyes" ; then
     echo "  ERROR: SIP protocol is disabled";
@@ -9383,6 +9383,12 @@ echo "${ECHO_T}$OPAL_ZRTP" >&6; }
 
 
 
+# Check whether --enable-srtp was given.
+if test "${enable_srtp+set}" = set; then
+  enableval=$enable_srtp; OPAL_SRTP=$enableval
+fi
+
+
 SRTP_LIBS=
 SRTP_CFLAGS=
 if test "x$OPAL_ZRTP" = "xyes" ; then
@@ -9390,6 +9396,10 @@ if test "x$OPAL_ZRTP" = "xyes" ; then
 echo "$as_me: disable SRTP due to presence of ZRTP" >&6;}
   OPAL_SRTP=no
 else
+  if test "x$OPAL_SRTP" = "xno" ; then
+    { echo "$as_me:$LINENO: disabled by user" >&5
+echo "$as_me: disabled by user" >&6;}
+  else
 
           ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -9456,7 +9466,7 @@ else
 fi
 
 
-  if test "x${OPAL_SRTP}" = "xyes" ; then
+    if test "x${OPAL_SRTP}" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_SRTP 1
@@ -9474,14 +9484,15 @@ _ACEOF
             PKG_REQUIRES="$PKG_REQUIRES "
           fi
 
-  fi
-fi
+    fi
 
           { echo "$as_me:$LINENO: checking libsrtp support" >&5
 echo $ECHO_N "checking libsrtp support... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $OPAL_SRTP" >&5
 echo "${ECHO_T}$OPAL_SRTP" >&6; }
 
+  fi
+fi
 
 
 
