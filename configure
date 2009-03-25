@@ -5410,13 +5410,13 @@ echo "${ECHO_T}$PTLIB_VERSION" >&6; }
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -5459,7 +5459,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
 	  if test "x$opal_ptlib_exists" != "xyes" ; then
@@ -5472,12 +5472,13 @@ echo "$as_me: error: Could not find a linkable ptlib in specified environment to
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -5528,7 +5529,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has SSL" >&5
@@ -5550,12 +5551,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -5606,7 +5608,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has ASN.1" >&5
@@ -5628,12 +5630,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -5684,7 +5687,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has expat" >&5
@@ -5706,12 +5709,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -5762,7 +5766,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has video" >&5
@@ -5784,12 +5788,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -5840,7 +5845,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has wavfile" >&5
@@ -5862,12 +5867,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -5918,7 +5924,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has vxml" >&5
@@ -5940,12 +5946,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -5996,7 +6003,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has ipv6" >&5
@@ -6018,12 +6025,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -6074,7 +6082,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has dtmf" >&5
@@ -6096,12 +6104,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -6152,7 +6161,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has ldap" >&5
@@ -6174,12 +6183,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -6230,7 +6240,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has dns" >&5
@@ -6252,12 +6262,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -6308,7 +6319,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has audio" >&5
@@ -6330,12 +6341,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -6386,7 +6398,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has config" >&5
