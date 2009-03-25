@@ -380,6 +380,17 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   if (isClearing || !lock.IsLocked())
     return false;
 
+  if (sessionID == 0) {
+    if (mediaType == "audio")
+      sessionID = 1;
+    else if (mediaType == "video")
+      sessionID = 2;
+    else {
+      PTRACE(1, "Call\tCannot invent session ID for media type " << mediaType);
+      return false;
+    }
+  }
+
   // Check if already done
   OpalMediaStreamPtr sinkStream;
   OpalMediaStreamPtr sourceStream = connection.GetMediaStream(sessionID, true);
