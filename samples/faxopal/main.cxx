@@ -59,7 +59,8 @@ void FaxOPAL::Main()
              "G-gk-id:"
              "h-help."
              "H-h323:"
-             "I-inband."
+             "I-inband-detect."
+             "i-inband-send."
              "L-lines:"
              "m-mode:"
              "N-stun:"
@@ -101,7 +102,8 @@ void FaxOPAL::Main()
 #endif
             "  -L or --lines devices   : Set Line Interface Devices.\n"
             "  -N or --stun server     : Set NAT traversal STUN server.\n"
-            "  -I or --inband          : Disable detection of in-band tones.\n"
+            "  -I or --inband-detect   : Disable detection of in-band tones.\n"
+            "  -i or --inband-send     : Disable transmission of in-band tones.\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -115,6 +117,19 @@ void FaxOPAL::Main()
 
   m_manager = new MyManager();
 
+  if (args.HasOption('u'))
+    m_manager->SetDefaultUserName(args.GetOptionString('u'));
+
+  PString prefix = args.HasOption('a') ? "fax" : "t38";
+
+  // Create audio or T.38 fax endpoint.
+  OpalFaxEndPoint * fax  = new OpalFaxEndPoint(*m_manager);
+  if (args.HasOption('d'))
+    fax->SetDefaultDirectory(args.GetOptionString('d'));
+
+
+  PCaselessString interfaces;
+
   if (args.HasOption('N')) {
     PSTUNClient::NatTypes nat = m_manager->SetSTUNServer(args.GetOptionString('N'));
     cout << "STUN server \"" << m_manager->GetSTUNClient()->GetServer() << "\" replies " << nat;
@@ -124,11 +139,6 @@ void FaxOPAL::Main()
     cout << endl;
   }
 
-  if (args.HasOption('u'))
-    m_manager->SetDefaultUserName(args.GetOptionString('u'));
-
-  PString prefix = args.HasOption('a') ? "fax" : "t38";
-  PCaselessString interfaces;
 
 #if OPAL_SIP
   // Set up SIP
@@ -161,6 +171,8 @@ void FaxOPAL::Main()
         cerr << "Could not complete SIP registration for " << aor << endl;
         return;
       }
+
+      m_manager->AddRouteEntry(prefix + ":.*\ttel:.* = sip:<dn>" + aor.Mid(aor.Find('@')));
     }
 
     m_manager->AddRouteEntry("sip.*:.* = " + prefix + ":" + args[0] + ";receive");
@@ -178,8 +190,14 @@ void FaxOPAL::Main()
       return;
     }
 
-    if (args.HasOption('g') || args.HasOption('G'))
-      h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'));
+    if (args.HasOption('g') || args.HasOption('G')) {
+      if (!h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'))) {
+        cerr << "Could not complete gatekeeper registration" << endl;
+        return;
+      }
+
+      m_manager->AddRouteEntry(prefix + ":.*\ttel:.* = h323:<dn>");
+    }
 
     m_manager->AddRouteEntry("h323.*:.* = " + prefix + ":" + args[0] + ";receive");
   }
@@ -198,19 +216,17 @@ void FaxOPAL::Main()
   }
 
 
-  // Create audio or T.38 fax endpoint.
-  OpalFaxEndPoint * fax  = new OpalFaxEndPoint(*m_manager);
-  if (args.HasOption('d'))
-    fax->SetDefaultDirectory(args.GetOptionString('d'));
-
-
-  m_manager->DisableDetectInBandDTMF(args.HasOption('I'));
+  OpalConnection::StringOptions stringOptions;
+  if (args.HasOption('I'))
+    stringOptions.SetAt("DetectInBandDTMF", "false");
+  if (args.HasOption('i'))
+    stringOptions.SetAt("SendInBandDTMF", "false");
 
   if (args.GetCount() == 1)
     cout << "Awaiting incoming fax, saving as " << args[0] << " ..." << flush;
   else {
     PString token;
-    if (!m_manager->SetUpCall(prefix + ":" + args[0], args[1], token)) {
+    if (!m_manager->SetUpCall(prefix + ":" + args[0], args[1], token, NULL, 0, &stringOptions)) {
       cerr << "Could not start call to \"" << args[1] << '"' << endl;
       return;
     }
