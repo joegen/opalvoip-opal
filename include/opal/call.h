@@ -115,6 +115,10 @@ class OpalCall : public PSafeObject
       */
     OpalConnection::CallEndReason GetCallEndReason() const { return callEndReason; }
 
+    /**Get the reason for this connection shutting down as text.
+      */
+    PString GetCallEndReasonText() const { return OpalConnection::GetCallEndReasonText(callEndReason); }
+
     /**Set the call clearance reason.
        An application should have no cause to use this function. It is present
        for the H323EndPoint::ClearCall() function to set the clearance reason.

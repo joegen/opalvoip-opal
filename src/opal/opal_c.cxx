@@ -1465,7 +1465,7 @@ void OpalManager_C::HandleClearCall(const OpalMessage & command, OpalMessageBuff
   }
   else {
     callToken = command.m_param.m_clearCall.m_callToken;
-    reason = (OpalConnection::CallEndReason)command.m_param.m_clearCall.m_reason;
+    reason.code = (OpalConnection::CallEndReasonCodes)command.m_param.m_clearCall.m_reason;
   }
 
   if (IsNullString(callToken)) {
@@ -1779,49 +1779,9 @@ void OpalManager_C::OnClearedCall(OpalCall & call)
   OpalMessageBuffer message(OpalIndCallCleared);
   SET_MESSAGE_STRING(message, m_param.m_callCleared.m_callToken, call.GetToken());
 
-  static const char * const CallEndReasonStrings[] = {
-    "Local party cleared call",
-    "Local party did not accept call",
-    "Local party declined to answer call",
-    "Remote party cleared call",
-    "Remote party refused call",
-    "Remote party did not answer in required time",
-    "Remote party stopped calling",
-    "Call failed due to a transport error",
-    "Connection to remote failed",
-    "Gatekeeper has cleared call",
-    "Call failed as could not find user",
-    "Call failed due to insufficient bandwidth",
-    "Call failed as could not find common media capabilities",
-    "Call was forwarded",
-    "Call failed security check",
-    "Local party busy",
-    "Local party congested",
-    "Remote party busy",
-    "Remote switch congested",
-    "Remote party could but be reached",
-    "Remote party application is not running",
-    "Remote party host is off line",
-    "Remote system failed temporarily",
-    "Call cleared with unmapped Q.931 cause code",
-    "Call cleared due to an enforced duration limit",
-    "Call cleared due to invalid conference ID",
-    "Call cleared due to missing dial tone",
-    "Call cleared due to missing ringback tone",
-    "Call cleared because the line is out of service",
-    "Call cleared because another call is answered"
-  };
 
   PStringStream str;
-  OpalConnection::CallEndReason reason = call.GetCallEndReason();
-  str << (unsigned)reason << ": ";
-
-  if (reason < PARRAYSIZE(CallEndReasonStrings))
-    str << CallEndReasonStrings[reason];
-  else if ((reason&OpalConnection::EndedWithQ931Code) != 0)
-    str << "Call cleared with Q.931 code " << (reason >> 8);
-  else
-    str << "Call cleared with unknown cause code.";
+  str << (unsigned)call.GetCallEndReason() << ": " << call.GetCallEndReasonText();
 
   SET_MESSAGE_STRING(message, m_param.m_callCleared.m_reason, str);
   PTRACE(4, "OpalC API\tOnClearedCall:"

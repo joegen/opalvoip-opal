@@ -234,7 +234,6 @@ H323Connection::H323Connection(OpalCall & call,
   progressPDU = NULL;
   
   connectionState = NoConnectionActive;
-  q931Cause = Q931::ErrorInCauseIE;
 
   uuiesRequested = 0; // Empty set
   addAccessTokenToSetup = PTrue; // Automatic inclusion of ACF access token in SETUP
@@ -1611,18 +1610,17 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 
   endSessionReceived.Signal();
 
-  if (q931Cause == Q931::ErrorInCauseIE)
-    q931Cause = pdu.GetQ931().GetCause();
+  CallEndReason reason(EndedByRefusal, pdu.GetQ931().GetCause());
   
   const H225_ReleaseComplete_UUIE & rc = pdu.m_h323_uu_pdu.m_h323_message_body;
 
   switch (connectionState) {
     case EstablishedConnection :
-      Release(EndedByRemoteUser);
+      reason.code = EndedByRemoteUser;
       break;
 
     case AwaitingLocalAnswer :
-      Release(EndedByCallerAbort);
+      reason.code = EndedByCallerAbort;
       break;
 
     default :
@@ -1643,13 +1641,13 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
       ReceiveFeatureSet<H225_ReleaseComplete_UUIE>(this, H460_MessageType::e_releaseComplete, rc);
 #endif
 
-      if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_releaseComplete)
-        Release(EndedByRefusal);
-      else {
+      if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_releaseComplete) {
         SetRemoteVersions(rc.m_protocolIdentifier);
-        Release(H323TranslateToCallEndReason(pdu.GetQ931().GetCause(), rc.m_reason.GetTag()));
+        reason = H323TranslateToCallEndReason(pdu.GetQ931().GetCause(), rc.m_reason.GetTag());
       }
   }
+
+  Release(reason);
 }
 
 
