@@ -729,12 +729,11 @@ H225_Information_UUIE & H323SignalPDU::BuildInformation(const H323Connection & c
 }
 
 
-H323Connection::CallEndReason H323TranslateToCallEndReason(Q931::CauseValues cause,
-                                                           unsigned reason)
+static OpalConnection::CallEndReason H323TranslateToCallEndReasonCode(Q931::CauseValues cause, unsigned reasonTag)
 {
   switch (cause) {
     case Q931::ErrorInCauseIE :
-      switch (reason) {
+      switch (reasonTag) {
         case H225_ReleaseCompleteReason::e_noBandwidth :
           return H323Connection::EndedByNoBandwidth;
 
@@ -775,6 +774,9 @@ H323Connection::CallEndReason H323TranslateToCallEndReason(Q931::CauseValues cau
     case Q931::ResourceUnavailable :
       return H323Connection::EndedByRemoteCongestion;
 
+    case Q931::CallRejected :
+      return H323Connection::EndedByRefusal;
+
     case Q931::NoResponse :
     case Q931::NoAnswer :
       return H323Connection::EndedByNoAnswer;
@@ -800,6 +802,11 @@ H323Connection::CallEndReason H323TranslateToCallEndReason(Q931::CauseValues cau
     default:
       return H323Connection::EndedByQ931Cause;
   }
+}
+
+H323Connection::CallEndReason H323TranslateToCallEndReason(Q931::CauseValues cause, unsigned reasonTag)
+{
+  return OpalConnection::CallEndReason(H323TranslateToCallEndReasonCode(cause, reasonTag), cause);
 }
 
 
@@ -834,9 +841,10 @@ Q931::CauseValues H323TranslateFromCallEndReason(H323Connection::CallEndReason c
     Q931::NormalUnspecified,                                /// EndedByDurationLimit,     Call cleared due to an enforced duration limit
   };
 
+  if (callEndReason.q931 != Q931::UnknownCauseIE)
+    return (Q931::CauseValues)callEndReason.q931;
+
   int code = ReasonCodes[callEndReason];
-  if (code == Q931::UnknownCauseIE)
-    return (Q931::CauseValues)callEndReason;
   if (code >= 0)
     return (Q931::CauseValues)code;
 
@@ -857,14 +865,12 @@ H225_ReleaseComplete_UUIE &
   SetH225Version(connection, release.m_protocolIdentifier);
   release.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
-  Q931::CauseValues cause = (Q931::CauseValues)connection.GetQ931Cause();
-  if (cause == Q931::ErrorInCauseIE)
-    cause = H323TranslateFromCallEndReason(connection.GetCallEndReason(), release.m_reason);
+  Q931::CauseValues cause = H323TranslateFromCallEndReason(connection.GetCallEndReason(), release.m_reason);
   if (cause != Q931::ErrorInCauseIE)
     q931pdu.SetCause(cause);
   else
     release.IncludeOptionalField(H225_ReleaseComplete_UUIE::e_reason);
-  
+
 #if OPAL_H460
   SendFeatureSet<H225_ReleaseComplete_UUIE>(&connection, H460_MessageType::e_releaseComplete, m_h323_uu_pdu, release);
 #endif
