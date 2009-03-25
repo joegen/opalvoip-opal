@@ -117,7 +117,7 @@ void IAX2Connection::Release( CallEndReason reason)
 { 
   PTRACE(4, "IAX2Con\tRelease( CallEndReason " << reason);
 
-  iax2Processor.Hangup(reason); ///Send hangup frame
+  iax2Processor.Hangup(GetCallEndReasonText(reason)); ///Send hangup frame
 
   iax2Processor.Release(reason); 
 

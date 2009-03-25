@@ -312,40 +312,50 @@ class OpalConnection : public PSafeObject
        NOTE: if anything is added to this, you also need to add the field to
        the tables in connection.cxx and h323pdu.cxx.
       */
-    enum CallEndReason {
-      EndedByLocalUser,         /// Local endpoint application cleared call
-      EndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=PFalse
-      EndedByAnswerDenied,      /// Local endpoint declined to answer call
-      EndedByRemoteUser,        /// Remote endpoint application cleared call
-      EndedByRefusal,           /// Remote endpoint refused call
-      EndedByNoAnswer,          /// Remote endpoint did not answer in required time
-      EndedByCallerAbort,       /// Remote endpoint stopped calling
-      EndedByTransportFail,     /// Transport error cleared call
-      EndedByConnectFail,       /// Transport connection failed to establish call
-      EndedByGatekeeper,        /// Gatekeeper has cleared call
-      EndedByNoUser,            /// Call failed as could not find user (in GK)
-      EndedByNoBandwidth,       /// Call failed as could not get enough bandwidth
-      EndedByCapabilityExchange,/// Could not find common capabilities
-      EndedByCallForwarded,     /// Call was forwarded using FACILITY message
-      EndedBySecurityDenial,    /// Call failed a security check and was ended
-      EndedByLocalBusy,         /// Local endpoint busy
-      EndedByLocalCongestion,   /// Local endpoint congested
-      EndedByRemoteBusy,        /// Remote endpoint busy
-      EndedByRemoteCongestion,  /// Remote endpoint congested
-      EndedByUnreachable,       /// Could not reach the remote party
-      EndedByNoEndPoint,        /// The remote party is not running an endpoint
-      EndedByHostOffline,       /// The remote party host off line
-      EndedByTemporaryFailure,  /// The remote failed temporarily app may retry
-      EndedByQ931Cause,         /// The remote ended the call with unmapped Q.931 cause code
-      EndedByDurationLimit,     /// Call cleared due to an enforced duration limit
-      EndedByInvalidConferenceID, /// Call cleared due to invalid conference ID
-      EndedByNoDialTone,        /// Call cleared due to missing dial tone
-      EndedByNoRingBackTone,    /// Call cleared due to missing ringback tone
-      EndedByOutOfService,      /// Call cleared because the line is out of service, 
+    enum CallEndReasonCodes {
+      EndedByLocalUser,            /// Local endpoint application cleared call
+      EndedByNoAccept,             /// Local endpoint did not accept call OnIncomingCall()=PFalse
+      EndedByAnswerDenied,         /// Local endpoint declined to answer call
+      EndedByRemoteUser,           /// Remote endpoint application cleared call
+      EndedByRefusal,              /// Remote endpoint refused call
+      EndedByNoAnswer,             /// Remote endpoint did not answer in required time
+      EndedByCallerAbort,          /// Remote endpoint stopped calling
+      EndedByTransportFail,        /// Transport error cleared call
+      EndedByConnectFail,          /// Transport connection failed to establish call
+      EndedByGatekeeper,           /// Gatekeeper has cleared call
+      EndedByNoUser,               /// Call failed as could not find user (in GK)
+      EndedByNoBandwidth,          /// Call failed as could not get enough bandwidth
+      EndedByCapabilityExchange,   /// Could not find common capabilities
+      EndedByCallForwarded,        /// Call was forwarded using FACILITY message
+      EndedBySecurityDenial,       /// Call failed a security check and was ended
+      EndedByLocalBusy,            /// Local endpoint busy
+      EndedByLocalCongestion,      /// Local endpoint congested
+      EndedByRemoteBusy,           /// Remote endpoint busy
+      EndedByRemoteCongestion,     /// Remote endpoint congested
+      EndedByUnreachable,          /// Could not reach the remote party
+      EndedByNoEndPoint,           /// The remote party is not running an endpoint
+      EndedByHostOffline,          /// The remote party host off line
+      EndedByTemporaryFailure,     /// The remote failed temporarily app may retry
+      EndedByQ931Cause,            /// The remote ended the call with unmapped Q.931 cause code
+      EndedByDurationLimit,        /// Call cleared due to an enforced duration limit
+      EndedByInvalidConferenceID,  /// Call cleared due to invalid conference ID
+      EndedByNoDialTone,           /// Call cleared due to missing dial tone
+      EndedByNoRingBackTone,       /// Call cleared due to missing ringback tone
+      EndedByOutOfService,         /// Call cleared because the line is out of service, 
       EndedByAcceptingCallWaiting, /// Call cleared because another call is answered
-      NumCallEndReasons,
+      NumCallEndReasons
+    };
 
-      EndedWithQ931Code = 0x100  /// Q931 code specified in MS byte
+    struct CallEndReason {
+      CallEndReason(
+        CallEndReasonCodes reason = NumCallEndReasons,
+        unsigned cause = 0
+      ) : code(reason), q931(cause) { }
+
+      operator CallEndReasonCodes() const { return code; }
+
+      CallEndReasonCodes code:8; // Normalised OPAL code
+      unsigned           q931:8; // PSTN Interworking code, actually Q.850
     };
 
 #if PTRACING
@@ -468,7 +478,7 @@ class OpalConnection : public PSafeObject
       */
     inline Phases GetPhase() const { return phase; }
 
-    /**Get the call clearand reason for this connection shutting down.
+    /**Get the reason for this connection shutting down.
        Note that this function is only generally useful in the
        H323EndPoint::OnConnectionCleared() function. This is due to the
        connection not being cleared before that, and the object not even
@@ -477,6 +487,15 @@ class OpalConnection : public PSafeObject
        If the call is still active then this will return NumCallEndReasons.
       */
     CallEndReason GetCallEndReason() const { return callEndReason; }
+
+    /**Get the reason for this connection shutting down as text.
+      */
+    static PString GetCallEndReasonText(CallEndReason reason);
+    PString GetCallEndReasonText() const { return GetCallEndReasonText(callEndReason); }
+
+    /**Get the reason for this connection shutting down as text.
+      */
+    static void SetCallEndReasonText(CallEndReasonCodes reasonCode, const PString & newText);
 
     /**Set the call clearance reason.
        An application should have no cause to use this function. It is present
@@ -507,12 +526,12 @@ class OpalConnection : public PSafeObject
     /**Get the Q.931 cause code (Q.850) that terminated this call.
        See Q931::CauseValues for common values.
      */
-    unsigned GetQ931Cause() const { return q931Cause; }
+    unsigned GetQ931Cause() const { return callEndReason.q931; }
 
     /**Set the outgoing Q.931 cause code (Q.850) that is sent for this call
        See Q931::CauseValues for common values.
      */
-    void SetQ931Cause(unsigned v) { q931Cause = v; }
+    void SetQ931Cause(unsigned v) { callEndReason.q931 = v; }
 
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
@@ -1482,7 +1501,6 @@ class OpalConnection : public PSafeObject
     SendUserInputModes    sendUserInputMode;
     PString               userInputString;
     PSyncPoint            userInputAvailable;
-    unsigned              q931Cause;
 
     OpalSilenceDetector * silenceDetector;
     OpalEchoCanceler    * echoCanceler;

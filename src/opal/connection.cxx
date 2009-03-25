@@ -158,6 +158,43 @@ ostream & operator<<(ostream & o, OpalConnection::SendUserInputModes m)
 
 #endif
 
+
+static POrdinalToString::Initialiser const CallEndReasonStringsInitialiser[] = {
+  { OpalConnection::EndedByLocalUser,            "Local party cleared call" },
+  { OpalConnection::EndedByNoAccept,             "Local party did not accept call" },
+  { OpalConnection::EndedByAnswerDenied,         "Local party declined to answer call" },
+  { OpalConnection::EndedByRemoteUser,           "Remote party cleared call" },
+  { OpalConnection::EndedByRefusal,              "Remote party refused call" },
+  { OpalConnection::EndedByNoAnswer,             "Remote party did not answer in required time" },
+  { OpalConnection::EndedByCallerAbort,          "Remote party stopped calling" },
+  { OpalConnection::EndedByTransportFail,        "Call failed due to a transport error" },
+  { OpalConnection::EndedByConnectFail,          "Connection to remote failed" },
+  { OpalConnection::EndedByGatekeeper,           "Gatekeeper has cleared call" },
+  { OpalConnection::EndedByNoUser,               "Call failed as could not find user" },
+  { OpalConnection::EndedByNoBandwidth,          "Call failed due to insufficient bandwidth" },
+  { OpalConnection::EndedByCapabilityExchange,   "Call failed as could not find common media capabilities" },
+  { OpalConnection::EndedByCallForwarded,        "Call was forwarded" },
+  { OpalConnection::EndedBySecurityDenial,       "Call failed security check" },
+  { OpalConnection::EndedByLocalBusy,            "Local party busy" },
+  { OpalConnection::EndedByLocalCongestion,      "Local party congested" },
+  { OpalConnection::EndedByRemoteBusy,           "Remote party busy" },
+  { OpalConnection::EndedByRemoteCongestion,     "Remote switch congested" },
+  { OpalConnection::EndedByUnreachable,          "Remote party could but be reached" },
+  { OpalConnection::EndedByNoEndPoint,           "Remote party application is not running" },
+  { OpalConnection::EndedByHostOffline,          "Remote party host is off line" },
+  { OpalConnection::EndedByTemporaryFailure,     "Remote system failed temporarily" },
+  { OpalConnection::EndedByQ931Cause,            "Call cleared with Q.931 cause code %u" },
+  { OpalConnection::EndedByDurationLimit,        "Call cleared due to an enforced duration limit" },
+  { OpalConnection::EndedByInvalidConferenceID,  "Call cleared due to invalid conference ID" },
+  { OpalConnection::EndedByNoDialTone,           "Call cleared due to missing dial tone" },
+  { OpalConnection::EndedByNoRingBackTone,       "Call cleared due to missing ringback tone" },
+  { OpalConnection::EndedByOutOfService,         "Call cleared because the line is out of service" },
+  { OpalConnection::EndedByAcceptingCallWaiting, "Call cleared because another call is answered" }
+};
+
+static POrdinalToString CallEndReasonStrings(PARRAYSIZE(CallEndReasonStringsInitialiser), CallEndReasonStringsInitialiser);
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalConnection::OpalConnection(OpalCall & call,
@@ -180,7 +217,6 @@ OpalConnection::OpalConnection(OpalCall & call,
   , remotePartyName(token)
   , callEndReason(NumCallEndReasons)
   , synchronousOnRelease(true)
-  , q931Cause(0x100)
   , silenceDetector(NULL)
   , echoCanceler(NULL)
 #if OPAL_PTLIB_DTMF
@@ -307,14 +343,22 @@ void OpalConnection::OnHold(bool fromRemote, bool onHold)
 }
 
 
+PString OpalConnection::GetCallEndReasonText(CallEndReason reason)
+{
+  return psprintf(CallEndReasonStrings(reason.code), reason.q931);
+}
+
+
+void OpalConnection::SetCallEndReasonText(CallEndReasonCodes reasonCode, const PString & newText)
+{
+  CallEndReasonStrings.SetAt(reasonCode, newText);
+}
+
+
 void OpalConnection::SetCallEndReason(CallEndReason reason)
 {
   // Only set reason if not already set to something
   if (callEndReason == NumCallEndReasons) {
-    if ((reason & EndedWithQ931Code) != 0) {
-      SetQ931Cause((int)reason >> 24);
-      reason = (CallEndReason)(reason & 0xff);
-    }
     PTRACE(3, "OpalCon\tCall end reason for " << *this << " set to " << reason);
     callEndReason = reason;
     ownerCall.SetCallEndReason(reason);
