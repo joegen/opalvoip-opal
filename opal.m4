@@ -924,10 +924,8 @@ AC_DEFUN([OPAL_FIND_LIBSRTP],
           AC_LANG(C)
           AC_COMPILE_IFELSE([
                              AC_LANG_PROGRAM([[#include "srtp/srtp.h"]], 
-                                             [[int main(int argc, char *argv[]) 
-                                             {
+                                             [[
                                                crypto_policy_t p; p.cipher_key_len = SRTP_MASTER_KEY_LEN; return 0; 
-                                             }
                                              ]]
                                             )
                             ],

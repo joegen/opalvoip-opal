@@ -9430,10 +9430,8 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int main(int argc, char *argv[])
-                                             {
+
                                                crypto_policy_t p; p.cipher_key_len = SRTP_MASTER_KEY_LEN; return 0;
-                                             }
 
 
   ;
