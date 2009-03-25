@@ -1321,7 +1321,7 @@ PString SIPConnection::GetIdentifier() const
 
 PString SIPConnection::GetRemotePartyURL() const
 {
-  SIPURL url = GetRemotePartyAddress();
+  SIPURL url = m_dialog.GetRemoteURI();
   url.Sanitise(SIPURL::ExternalURI);
   return url.AsString();
 }
@@ -1485,7 +1485,7 @@ void SIPConnection::UpdateRemoteAddresses()
   SIPURL url = m_dialog.GetRemoteURI();
   url.Sanitise(SIPURL::ExternalURI);
 
-  remotePartyAddress = url.AsString();
+  remotePartyAddress = url.GetHostAddress();
 
   remotePartyNumber = url.GetUserName();
   if (remotePartyNumber.FindSpan("0123456789*#") != P_MAX_INDEX)
@@ -2049,7 +2049,7 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
   m_dialog.Update(response);
   UpdateRemoteAddresses();
-  endpoint.ForwardConnection (*this, remotePartyAddress);
+  endpoint.ForwardConnection (*this, GetRemotePartyURL());
 }
 
 
