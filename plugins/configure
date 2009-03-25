@@ -7062,7 +7062,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-            #include <gsm.h>
+            #include <gsm/gsm.h>
 
 int
 main ()
@@ -7112,7 +7112,7 @@ fi
 echo "${ECHO_T}$opal_gsm" >&6; }
 
             if test "x${opal_gsm}" = "xyes" ; then
-              GSM_CLFAGS=""
+              GSM_CFLAGS="-I/usr/include/gsm -I/usr/local/include/gsm"
               GSM_LIBS="-lgsm"
             fi
 
@@ -7226,7 +7226,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-            #include <gsm.h>
+            #include <gsm/gsm.h>
 
 int
 main ()
@@ -7276,7 +7276,7 @@ fi
 echo "${ECHO_T}$opal_gsm" >&6; }
 
             if test "x${opal_gsm}" = "xyes" ; then
-              GSM_CLFAGS=""
+              GSM_CFLAGS="-I/usr/include/gsm -I/usr/local/include/gsm"
               GSM_LIBS="-lgsm"
             fi
 

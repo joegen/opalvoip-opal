@@ -37,7 +37,7 @@
 
 #include <codec/opalplugin.h>
 
-#include "./inc/gsm.h"
+#include <gsm.h>
 
 #define	BITS_PER_SECOND         13200
 
