@@ -364,12 +364,13 @@ AC_DEFUN([OPAL_CHECK_PTLIB],
          [
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           AC_LANG(C++)
@@ -387,7 +388,7 @@ AC_DEFUN([OPAL_CHECK_PTLIB],
                          [opal_ptlib_option=no])
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
           OPAL_MSG_CHECK([PTLIB has $1], [$opal_ptlib_option])
 	  $4="$opal_ptlib_option"
@@ -401,13 +402,13 @@ AC_DEFUN([OPAL_CHECK_PTLIB],
 AC_DEFUN([OPAL_CHECK_PTLIB_EXISTS],
          [
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           AC_LANG(C++)
@@ -417,7 +418,7 @@ AC_DEFUN([OPAL_CHECK_PTLIB_EXISTS],
                          [opal_ptlib_exists=no])
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
 	  if test "x$opal_ptlib_exists" != "xyes" ; then
