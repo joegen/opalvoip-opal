@@ -109,11 +109,11 @@ dnl ########################################################################
 HAVE_VPB=yes
 HAVE_CAPI=yes
 HAVE_IXJ=no
-HAVE_H263=no
 HAVE_H264=yes
-HAVE_CELT=no
+HAVE_CELT=yes
 HAVE_SPANDSP=yes
 DEFAULT_TO_FULL_CAPABILITIES=yes
+HAVE_X264=yes
 X264_LINK_STATIC=no
 LIBAVCODEC_STACKALIGN_HACK=no
 
@@ -204,11 +204,6 @@ dnl Video Codecs
 dnl ########################################################################
 
 dnl     ########################
-dnl     ffmpeg for H.263
-dnl     #######################
-OPAL_SIMPLE_OPTION([ffmpeg-h263],[HAVE_H263], [enable plugin supporting H.263 via patched FFMPEG])
-
-dnl     ########################
 dnl     Capabilities option
 dnl     ########################
 OPAL_SIMPLE_OPTION([default-to-full-capabilties],[DEFAULT_TO_FULL_CAPABILITIES], [default to full capabilities at empty fmtp lines])
@@ -216,37 +211,48 @@ OPAL_SIMPLE_OPTION([default-to-full-capabilties],[DEFAULT_TO_FULL_CAPABILITIES],
 dnl     ########################
 dnl     libavcodec (ffmpeg)
 dnl     ########################
-PKG_CHECK_MODULES([LIBAVCODEC],
-                  [libavcodec >= 51.11.0],
-                  [
-                   AC_SUBST(LIBAVCODEC_CFLAGS)
-                   AC_SUBST(LIBAVCODEC_LIBS)
-                   AC_DEFINE([HAVE_LIBAVCODEC], [1], [ffmpeg])
-                   HAVE_LIBAVCODEC=yes
-                   OPAL_LIBAVCODEC_HACK
-                   case "$target_os" in
-                      cygwin* | mingw* ) 
-                                         LIBAVCODEC_LIB_NAME="avcodec.dll"
-                                         HAVE_H263P=yes
-                                         HAVE_MPEG4=yes
-                                         HAVE_H264_DECODER=yes
-                                         ;;
-                                     * ) 
-                                         OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [$LIBAVCODEC_LIBS])
-                                         OPAL_CHECK_LIBAVCODEC([h263p_encoder], [HAVE_H263P=yes], [HAVE_H263P=no])
-                                         OPAL_CHECK_LIBAVCODEC([mpeg4_encoder], [HAVE_MPEG4=yes], [HAVE_MPEG4=no])
-                                         OPAL_CHECK_LIBAVCODEC([h264_decoder], [HAVE_H264_DECODER=yes], [HAVE_H264_DECODER=no])
-                                         ;;
-                   esac
-                   AC_SUBST(HAVE_H263P)
-                   AC_SUBST(HAVE_MPEG4)
-                   AC_SUBST(LIBAVCODEC_LIB_NAME)
-                   OPAL_LIBAVCODEC_HEADER
-                  ],
-                  [
-                   HAVE_LIBAVCODEC=no
-                  ]
-                 )
+AC_ARG_ENABLE([libavcodec],
+              [AC_HELP_STRING([--disable-libavcodec],[disable libavcodec support])],
+              [HAVE_LIBAVCODEC=$enableval])
+
+if test "x$HAVE_LIBAVCODEC" = "xno" ; then
+  AC_MSG_RESULT(Manually disabled libavcodec support)
+  HAVE_H263P=no
+  HAVE_MPEG4=no
+  HAVE_H264_DECODER=no
+else
+  PKG_CHECK_MODULES([LIBAVCODEC],
+                    [libavcodec >= 51.11.0],
+                    [
+                     AC_SUBST(LIBAVCODEC_CFLAGS)
+                     AC_SUBST(LIBAVCODEC_LIBS)
+                     AC_DEFINE([HAVE_LIBAVCODEC], [1], [ffmpeg])
+                     HAVE_LIBAVCODEC=yes
+                     OPAL_LIBAVCODEC_HACK
+                     case "$target_os" in
+                        cygwin* | mingw* ) 
+                                           LIBAVCODEC_LIB_NAME="avcodec.dll"
+                                           HAVE_H263P=yes
+                                           HAVE_MPEG4=yes
+                                           HAVE_H264_DECODER=yes
+                                           ;;
+                                       * ) 
+                                           OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [$LIBAVCODEC_LIBS])
+                                           OPAL_CHECK_LIBAVCODEC([h263p_encoder], [HAVE_H263P=yes], [HAVE_H263P=no])
+                                           OPAL_CHECK_LIBAVCODEC([mpeg4_encoder], [HAVE_MPEG4=yes], [HAVE_MPEG4=no])
+                                           OPAL_CHECK_LIBAVCODEC([h264_decoder], [HAVE_H264_DECODER=yes], [HAVE_H264_DECODER=no])
+                                           ;;
+                     esac
+                     AC_SUBST(HAVE_H263P)
+                     AC_SUBST(HAVE_MPEG4)
+                     AC_SUBST(LIBAVCODEC_LIB_NAME)
+                     OPAL_LIBAVCODEC_HEADER
+                    ],
+                    [
+                     HAVE_LIBAVCODEC=no
+                    ]
+                   )
+fi
 AC_SUBST(HAVE_LIBAVCODEC)
 
 OPAL_LIBAVCODEC_SOURCE()
@@ -268,57 +274,81 @@ AC_SUBST(HAVE_LIBAVCODEC_RTP_MODE)
 dnl     ########################
 dnl     x264
 dnl     ########################
-PKG_CHECK_MODULES([X264],
-                  [x264 >= 0.48],
-                  [
-                   AC_SUBST(X264_CFLAGS)
-                   AC_SUBST(X264_LIBS)
-                   HAVE_X264=yes
-                   OPAL_GET_LIBNAME([X264], [libx264], [$X264_LIBS])
-                   AC_SUBST(X264_LIB_NAME)
-                   OPAL_X264_LINKAGE
-                  ],
-                  [
-                   HAVE_X264=no
-                  ]
-                 )
+AC_ARG_ENABLE([x264],
+              [AC_HELP_STRING([--disable-x264],[disable x264 support])],
+              [HAVE_X264=$enableval])
+
+if test "x$HAVE_X264" = "xno" ; then
+  AC_MSG_RESULT(Manually disabled X264)
+else
+  PKG_CHECK_MODULES([X264],
+                    [x264 >= 0.48],
+                    [
+                     AC_SUBST(X264_CFLAGS)
+                     AC_SUBST(X264_LIBS)
+                     HAVE_X264=yes
+                     OPAL_GET_LIBNAME([X264], [libx264], [$X264_LIBS])
+                     AC_SUBST(X264_LIB_NAME)
+                     OPAL_X264_LINKAGE
+                    ],
+                    [
+                     HAVE_X264=no
+                    ]
+                   )
+fi
 AC_SUBST(X264_LINK_STATIC)
 AC_SUBST(HAVE_X264)
 
 dnl     ########################
 dnl     theora
 dnl     ########################
-PKG_CHECK_MODULES([THEORA],
-                  [theora],
-                  [
-                   AC_SUBST(THEORA_CFLAGS)
-                   AC_SUBST(THEORA_LIBS)
-                   AC_DEFINE([HAVE_THEORA], [1], [theora])
-                   HAVE_THEORA=yes
-                  ],
-                  [
-                   HAVE_THEORA=no
-                  ])
+AC_ARG_ENABLE([theora],
+              [AC_HELP_STRING([--disable-theora],[disable Theora support])],
+              [HAVE_THEORA=$enableval])
+
+if test "x$HAVE_THEORA" = "xno" ; then
+  AC_MSG_RESULT(Manually disabled theora)
+else
+  PKG_CHECK_MODULES([THEORA],
+                    [theora],
+                    [
+                     AC_SUBST(THEORA_CFLAGS)
+                     AC_SUBST(THEORA_LIBS)
+                     AC_DEFINE([HAVE_THEORA], [1], [theora])
+                     HAVE_THEORA=yes
+                    ],
+                    [
+                     HAVE_THEORA=no
+                    ])
+fi
 AC_SUBST(HAVE_THEORA)
 
 dnl     ########################
 dnl     celt
 dnl     ########################
-PKG_CHECK_MODULES([CELT],
-                  [celt],
-                  [
-                   AC_SUBST(CELT_CFLAGS)
-                   AC_SUBST(CELT_LIBS)
-                   AC_DEFINE([HAVE_CELT], [1], [celt])
-                   HAVE_CELT=yes
-                   PKG_CHECK_EXISTS([celt >= 0.5.0],
-                                     [
-                                      AC_DEFINE([HAVE_CELT_0_5_0_OR_LATER], [1], [celt 0.5.0 or later found])
-                   ])
-                  ],
-                  [
-                   HAVE_CELT=no
-                  ])
+AC_ARG_ENABLE([celt],
+              [AC_HELP_STRING([--disable-celt],[disable CELT support])],
+              [HAVE_CELT=$enableval])
+
+if test "x$HAVE_CELT" = "xno" ; then
+  AC_MSG_RESULT(Manually disabled CELT)
+else
+  PKG_CHECK_MODULES([CELT],
+                    [celt],
+                    [
+                     AC_SUBST(CELT_CFLAGS)
+                     AC_SUBST(CELT_LIBS)
+                     AC_DEFINE([HAVE_CELT], [1], [celt])
+                     HAVE_CELT=yes
+                     PKG_CHECK_EXISTS([celt >= 0.5.0],
+                                       [
+                                        AC_DEFINE([HAVE_CELT_0_5_0_OR_LATER], [1], [celt 0.5.0 or later found])
+                     ])
+                    ],
+                    [
+                     HAVE_CELT=no
+                    ])
+fi
 AC_SUBST(HAVE_CELT)
 
 dnl     ########################
