@@ -1297,7 +1297,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   // to the contact field in the 2xx/1xx response for a target refresh 
   // request
   PString contact = response.GetMIME().GetContact();
-  if (statusClass == 2 && !contact.IsEmpty()) {
+  if (statusClass <= 2 && !contact.IsEmpty()) {
     m_requestURI = contact;
     PTRACE(4, "SIP\tSet Request URI to " << m_requestURI);
   }
