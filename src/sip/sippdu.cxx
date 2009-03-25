@@ -1808,7 +1808,18 @@ void SIP_PDU::Construct(Methods meth,
   PINDEX pos = localPartyName.Find('@');
   if (pos != P_MAX_INDEX)
     localPartyName = localPartyName.Left(pos);
-  SIPURL contact = endpoint.GetContactURL(transport, SIPURL(localPartyName, connection.GetRemotePartyAddress(), endpoint.GetDefaultSignalPort()));
+
+  pos = localPartyName.Find(' ');
+  if (pos != P_MAX_INDEX)
+    localPartyName.Replace(" ", "_", PTrue);
+
+  PString remotePartyAddress = connection.GetRemotePartyAddress();
+  PINDEX prefix = remotePartyAddress.Find("sip:");
+  if(prefix != P_MAX_INDEX)
+    remotePartyAddress = remotePartyAddress.Mid(prefix + 4);
+
+  SIPURL localPartyURL(localPartyName, remotePartyAddress, endpoint.GetDefaultSignalPort());
+  SIPURL contact = endpoint.GetContactURL(transport, localPartyURL);
   contact.Sanitise(meth != Method_INVITE ? SIPURL::ContactURI : SIPURL::RouteURI);
   mime.SetContact(contact);
 
