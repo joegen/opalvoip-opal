@@ -351,7 +351,6 @@ AC_ARG_ENABLE([zrtp],
               [AC_HELP_STRING([--enable-zrtp],[enable ZRTP protocol support])],
               [OPAL_ZRTP=$enableval])
 
-
 if test "x$OPAL_ZRTP" = "xyes" ; then
   if test "x$OPAL_SIP" != "xyes" ; then
     echo "  ERROR: SIP protocol is disabled";
@@ -378,19 +377,27 @@ dnl MSWIN_CHECK_DIR   libsrtp,.\srtp
 dnl MSWIN_CHECK_DIR   libsrtp,..\external\srtp
 dnl MSWIN_CHECK_DIR   libsrtp,c:\libs
 
+AC_ARG_ENABLE([srtp],
+              [AC_HELP_STRING([--enable-srtp],[enable SRTP protocol support])],
+              [OPAL_SRTP=$enableval])
+
 SRTP_LIBS=
 SRTP_CFLAGS=
 if test "x$OPAL_ZRTP" = "xyes" ; then
   AC_MSG_NOTICE([disable SRTP due to presence of ZRTP])
   OPAL_SRTP=no
 else
-  OPAL_FIND_LIBSRTP([OPAL_SRTP=yes], [OPAL_SRTP=no])
-  if test "x${OPAL_SRTP}" = "xyes" ; then
-    AC_DEFINE([OPAL_SRTP], [1], [libsrtp support])
-    OPAL_ADD_CFLAGS_LIBS([$SRTP_CFLAGS], [$SRTP_LIBS])
+  if test "x$OPAL_SRTP" = "xno" ; then
+    AC_MSG_NOTICE([disabled by user])
+  else
+    OPAL_FIND_LIBSRTP([OPAL_SRTP=yes], [OPAL_SRTP=no])
+    if test "x${OPAL_SRTP}" = "xyes" ; then
+      AC_DEFINE([OPAL_SRTP], [1], [libsrtp support])
+      OPAL_ADD_CFLAGS_LIBS([$SRTP_CFLAGS], [$SRTP_LIBS])
+    fi
+    OPAL_MSG_CHECK([libsrtp support],[$OPAL_SRTP])
   fi
 fi
-OPAL_MSG_CHECK([libsrtp support],[$OPAL_SRTP])
 AC_SUBST(OPAL_SRTP)
 
 
