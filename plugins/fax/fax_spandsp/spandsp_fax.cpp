@@ -177,12 +177,12 @@ static struct PluginCodec_Option const T38FaxMaxBuffer =
   "T38FaxMaxBuffer",          // Generic (human readable) option name
   0,                          // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
-  "72",                       // Initial value
+  "2000",                     // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
-  "10",                       // Minimum value
-  "1000"                      // Maximum value
+  "100",                       // Minimum value
+  "9999"                      // Maximum value
 };
 
 static struct PluginCodec_Option const T38FaxMaxDatagram =
@@ -191,11 +191,11 @@ static struct PluginCodec_Option const T38FaxMaxDatagram =
   "T38FaxMaxDatagram",        // Generic (human readable) option name
   0,                          // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
-  "316",                      // Initial value
+  "528",                      // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
-  "100",                      // Minimum value
+  "10",                       // Minimum value
   "1500"                      // Maximum value
 };
 
@@ -205,7 +205,7 @@ static struct PluginCodec_Option const T38FaxUdpEC =
   "T38FaxUdpEC",              // Generic (human readable) option name
   0,                          // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
-  "t38UDPFEC",                // Initial value
+  "t38UDPRedundancy",         // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
@@ -579,21 +579,23 @@ class FaxSpanDSP
     {
       WaitAndSignal mutex(m_mutex);
 
-      if (t38_terminal_send_timeout(m_t38State, SAMPLES_PER_FRAME) || m_t38Queue.empty()) {
-        toLen = 0;
-        flags = PluginCodec_ReturnCoderLastFrame;
+      if (m_t38Queue.empty()) {
+        if (t38_terminal_send_timeout(m_t38State, SAMPLES_PER_FRAME) || m_t38Queue.empty()) {
+          toLen = 0;
+          flags = PluginCodec_ReturnCoderLastFrame;
+          return true;
+        }
       }
-      else {
-        T38Packet & packet = m_t38Queue.front();
-        size_t size = packet.size() + PluginCodec_RTP_MinHeaderSize;
-        if (toLen < size)
-          return false;
 
-        toLen = size;
-        memcpy(PluginCodec_RTP_GetPayloadPtr(toPtr), &packet[0], packet.size());
+      T38Packet & packet = m_t38Queue.front();
+      size_t size = packet.size() + PluginCodec_RTP_MinHeaderSize;
+      if (toLen < size)
+        return false;
 
-        m_t38Queue.pop();
-      }
+      toLen = size;
+      memcpy(PluginCodec_RTP_GetPayloadPtr(toPtr), &packet[0], packet.size());
+
+      m_t38Queue.pop();
 
       return true;
     }
