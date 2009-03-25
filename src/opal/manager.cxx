@@ -371,8 +371,12 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
   }
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0);
-  OpalConnection::CallEndReason endReason = connection != NULL ? connection->GetCallEndReason() : OpalConnection::NumCallEndReasons;
-  call->Clear(endReason != OpalConnection::NumCallEndReasons ? endReason : OpalConnection::EndedByTemporaryFailure);
+  OpalConnection::CallEndReason endReason = OpalConnection::NumCallEndReasons;
+  if (connection != NULL)
+    endReason = connection->GetCallEndReason();
+  if (endReason == OpalConnection::NumCallEndReasons)
+    endReason = OpalConnection::EndedByTemporaryFailure;
+  call->Clear(endReason);
 
   token.MakeEmpty();
 
