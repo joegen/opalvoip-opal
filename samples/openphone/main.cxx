@@ -1500,7 +1500,7 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
   }
   if (result == ID_IMSESSION) {
     OpalConnection::StringOptions * options = new OpalConnection::StringOptions;
-    options->SetAt("autostart", "im");
+    options->SetAt(OPAL_OPT_AUTO_START, "im");
     MakeCall(dlg.m_Address, wxEmptyString, options);
 
     return;
