@@ -605,10 +605,10 @@ PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
   if (gatekeeper != NULL)
     transport = gatekeeper->GetTransport().GetLocalAddress().CreateTransport(
                                           *this, OpalTransportAddress::Streamed);
-  else if (stringOptions == NULL || !stringOptions->Contains("interface"))
+  else if (stringOptions == NULL || !stringOptions->Contains(OPAL_OPT_INTERFACE))
     transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
   else {
-    OpalTransportAddress localInterface = (*stringOptions)["interface"];
+    OpalTransportAddress localInterface = (*stringOptions)[OPAL_OPT_INTERFACE];
     transport = localInterface.CreateTransport(*this, OpalTransportAddress::HostOnly);
   }
 

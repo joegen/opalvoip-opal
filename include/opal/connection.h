@@ -57,6 +57,29 @@ class OpalEchoCanceler;
 class OpalRFC2833Proto;
 class OpalRFC2833Info;
 
+
+#define OPAL_OPT_AUTO_START           "AutoStart"             ///< String option for auto-started media types
+#define OPAL_OPT_CALL_IDENTIFIER      "Call-Identifier"       ///< String option to override generated call identifier
+#define OPAL_OPT_CALLING_PARTY_URL    "Calling-Party-URL"     ///< String option to set outgoing local URL
+#define OPAL_OPT_CALLING_PARTY_NUMBER "Calling-Party-Number"  ///< String option to set outgoing local number
+#define OPAL_OPT_CALLING_PARTY_NAME   "Calling-Party-Name"    ///< String option to set outgoing local name
+#define OPAL_OPT_CALLING_PARTY_DOMAIN "Calling-Party-Domain"  ///< String option to set outgoing local host/address/domain
+#define OPAL_OPT_CALLING_DISPLAY_NAME "Calling-Display-Name"  ///< String option to set outgoing display name
+#define OPAL_OPT_ORIGINATOR_ADDRESS   "Originator-Address"    ///< String option for originator address used by IVR
+#define OPAL_OPT_INTERFACE            "Interface"             ///< String option to set the interface used for outgoing call
+#define OPAL_OPT_ENABLE_INBAND_DTMF   "EnableInbandDTMF"      ///< String option to enable in band DTMF detection
+#define OPAL_OPT_ENABLE_INBAND_DTMF   "EnableInbandDTMF"      ///< String option to enable in band DTMF detection/send
+#define OPAL_OPT_DETECT_INBAND_DTMF   "DetectInBandDTMF"      ///< String option to enable in band DTMF detection
+#define OPAL_OPT_SEND_INBAND_DTMF     "SendInBandDTMF"        ///< String option to enable in band DTMF send
+#define OPAL_OPT_DTMF_MULT            "dtmfmult"
+#define OPAL_OPT_DTMF_DIV             "dtmfdiv"
+#define OPAL_OPT_DISABLE_JITTER       "Disable-Jitter"        ///< String option to disable jitter buffer if "true"
+#define OPAL_OPT_MAX_JITTER           "Max-Jitter"            ///< String option to set maximum jitter in milliseconds
+#define OPAL_OPT_MIN_JITTER           "Min-Jitter"            ///< String option to set minimum jitter in milliseconds
+#define OPAL_OPT_RECORD_AUDIO         "Record-Audio"          ///< String option to start recording to a file for call
+#define OPAL_OPT_ALERTING_TYPE        "Alerting-Type"         ///< String option to set teh alerting type string for call
+
+
 /*! \page pageOpalConnections Connection handling in the OPAL library
 
 \section secOverview Overview 

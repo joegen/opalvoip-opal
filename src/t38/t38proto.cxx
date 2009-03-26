@@ -322,7 +322,7 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
   if ((*stringOptions)("stationid").IsEmpty())
     stringOptions->SetAt("stationid", stationId);
 
-  stringOptions->SetAt("Disable-Jitter", "1");
+  stringOptions->SetAt(OPAL_OPT_DISABLE_JITTER, "1");
 
   return AddConnection(CreateConnection(call, userData, stringOptions, filename, receiving,
                                         remoteParty.Left(prefixLength) *= GetPrefixName()));
