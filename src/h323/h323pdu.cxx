@@ -574,7 +574,7 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
   setup.IncludeOptionalField(H225_Setup_UUIE::e_sourceAddress);
   {
     PString callingParty;
-    callingParty = connection.GetStringOptions()("Calling-Party-Name");
+    callingParty = connection.GetStringOptions()(OPAL_OPT_CALLING_PARTY_NAME);
     if (callingParty.IsEmpty())
       H323SetAliasAddresses(endpoint.GetAliasNames(), setup.m_sourceAddress);
     else
@@ -1231,8 +1231,8 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
   {
     const OpalConnection::StringOptions & stringOptions = connection.GetStringOptions();
     PString strLocal, strDisplay;
-    strLocal   = stringOptions("Calling-Party-Name");
-    strDisplay = stringOptions("Calling-Display-Name");
+    strLocal   = stringOptions(OPAL_OPT_CALLING_PARTY_NAME);
+    strDisplay = stringOptions(OPAL_OPT_CALLING_DISPLAY_NAME);
     if (strDisplay.IsEmpty())
       strDisplay = strLocal;
 

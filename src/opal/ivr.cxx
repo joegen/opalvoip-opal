@@ -209,7 +209,7 @@ PBoolean OpalIVRConnection::StartVXML()
 {
   PStringToString & vars = vxmlSession.GetSessionVars();
 
-  PString originator = m_connStringOptions("Originator-Address");
+  PString originator = m_connStringOptions(OPAL_OPT_ORIGINATOR_ADDRESS);
   if (originator.IsEmpty())
     originator = m_connStringOptions("Remote-Address");
   if (!originator.IsEmpty()) {

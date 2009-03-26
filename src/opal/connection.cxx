@@ -1145,32 +1145,32 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
 
     m_connStringOptions = stringOptions;
   
-    PCaselessString str = stringOptions("enableinbanddtmf");
+    PCaselessString str = stringOptions(OPAL_OPT_ENABLE_INBAND_DTMF);
     if (!str.IsEmpty())
       detectInBandDTMF = str *= "true";
-    str = stringOptions("dtmfmult");
+    str = stringOptions(OPAL_OPT_DTMF_MULT);
     if (!str.IsEmpty()) {
       dtmfScaleMultiplier = str.AsInteger();
       dtmfScaleDivisor    = 1;
     }
-    str = stringOptions("dtmfdiv");
+    str = stringOptions(OPAL_OPT_DTMF_DIV);
     if (!str.IsEmpty())
       dtmfScaleDivisor = str.AsInteger();
 
     m_autoStartInfo.Initialise(stringOptions);
 
-    if (stringOptions.Contains("Disable-Jitter"))
+    if (stringOptions.Contains(OPAL_OPT_DISABLE_JITTER))
       maxAudioJitterDelay = minAudioJitterDelay = 0;
-    str = stringOptions("Max-Jitter");
+    str = stringOptions(OPAL_OPT_MAX_JITTER);
     if (!str.IsEmpty())
       maxAudioJitterDelay = str.AsUnsigned();
-    str = stringOptions("Min-Jitter");
+    str = stringOptions(OPAL_OPT_MIN_JITTER);
     if (!str.IsEmpty())
       minAudioJitterDelay = str.AsUnsigned();
-    if (stringOptions.Contains("Record-Audio"))
-      recordAudioFilename = m_connStringOptions("Record-Audio");
+    if (stringOptions.Contains(OPAL_OPT_RECORD_AUDIO))
+      recordAudioFilename = m_connStringOptions(OPAL_OPT_RECORD_AUDIO);
 
-    str = stringOptions("Alerting-Type");
+    str = stringOptions(OPAL_OPT_ALERTING_TYPE);
     if (!str.IsEmpty())
       SetAlertingType(str);
 
@@ -1228,7 +1228,7 @@ void OpalConnection::AutoStartMap::Initialise(const OpalConnection::StringOption
   m_initialised = true;
 
   // get autostart option as lines
-  PStringArray lines = stringOptions("autostart").Lines();
+  PStringArray lines = stringOptions(OPAL_OPT_AUTO_START).Lines();
   for (PINDEX i = 0; i < lines.GetSize(); ++i) {
     PString line = lines[i];
     PINDEX colon = line.Find(':');
