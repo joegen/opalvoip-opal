@@ -124,9 +124,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 $(PLUGIN): $(OBJECTS)
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
 ifeq (,$(findstring solaris,$(target_os)))
-	$(CXX) $(LDSO) $(DL_LIBS) -o $@ $^
+	$(CXX) $(LDSO) $(LDFLAGS) $(DL_LIBS) -o $@ $^
 else
-	$(CXX) $(LDSO) $(DL_LIBS) $@ -o $@ $^
+	$(CXX) $(LDSO) $(LDFLAGS) $(DL_LIBS) $@ -o $@ $^
 endif
 
 
