@@ -436,6 +436,7 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
   OpalConnection::StringOptions options;
   if (!callId.IsEmpty())
     options.SetAt(SIP_HEADER_REPLACES, callId);
+  options.SetAt(OPAL_OPT_CALLING_PARTY_URL, otherConnection->GetLocalPartyURL());
 
   SIPConnection * connection = CreateConnection(call, SIPURL::GenerateTag(), userData, TranslateENUM(remoteParty), NULL, NULL, 0, &options);
   if (!AddConnection(connection))

@@ -334,7 +334,7 @@ H323Connection::~H323Connection()
 void H323Connection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
 {
   if (LockReadWrite()) {
-    PString str(stringOptions("Call-Identifier"));
+    PString str(stringOptions(OPAL_OPT_CALL_IDENTIFIER));
     if (!str.IsEmpty())
       callIdentifier = PGloballyUniqueID(str);
     UnlockReadWrite();

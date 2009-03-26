@@ -1264,41 +1264,41 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
     m_connStringOptions = stringOptions;
 
 #if OPAL_PTLIB_DTMF
-    str = stringOptions("EnableInBandDTMF");
+    str = stringOptions(OPAL_OPT_ENABLE_INBAND_DTMF);
     if (!str.IsEmpty())
       m_sendInBandDTMF = m_detectInBandDTMF = str == "true";
 
-    str = stringOptions("DetectInBandDTMF");
+    str = stringOptions(OPAL_OPT_DETECT_INBAND_DTMF);
     if (!str.IsEmpty())
       m_detectInBandDTMF = str == "true";
 
-    str = stringOptions("SendInBandDTMF");
+    str = stringOptions(OPAL_OPT_SEND_INBAND_DTMF);
     if (!str.IsEmpty())
       m_sendInBandDTMF = str == "true";
 
-    str = stringOptions("dtmfmult");
+    str = stringOptions(OPAL_OPT_DTMF_MULT);
     if (!str.IsEmpty())
       m_dtmfScaleMultiplier = str.AsInteger();
 
-    str = stringOptions("dtmfdiv");
+    str = stringOptions(OPAL_OPT_DTMF_DIV);
     if (!str.IsEmpty())
       m_dtmfScaleDivisor = str.AsInteger();
 #endif
 
     m_autoStartInfo.Initialise(stringOptions);
 
-    if (stringOptions.Contains("Disable-Jitter"))
+    if (stringOptions.Contains(OPAL_OPT_DISABLE_JITTER))
       maxAudioJitterDelay = minAudioJitterDelay = 0;
-    str = stringOptions("Max-Jitter");
+    str = stringOptions(OPAL_OPT_MAX_JITTER);
     if (!str.IsEmpty())
       maxAudioJitterDelay = str.AsUnsigned();
-    str = stringOptions("Min-Jitter");
+    str = stringOptions(OPAL_OPT_MIN_JITTER);
     if (!str.IsEmpty())
       minAudioJitterDelay = str.AsUnsigned();
-    if (stringOptions.Contains("Record-Audio"))
-      recordAudioFilename = stringOptions("Record-Audio");
+    if (stringOptions.Contains(OPAL_OPT_RECORD_AUDIO))
+      recordAudioFilename = m_connStringOptions(OPAL_OPT_RECORD_AUDIO);
 
-    str = stringOptions("Alerting-Type");
+    str = stringOptions(OPAL_OPT_ALERTING_TYPE);
     if (!str.IsEmpty())
       SetAlertingType(str);
 
@@ -1356,7 +1356,7 @@ void OpalConnection::AutoStartMap::Initialise(const OpalConnection::StringOption
   m_initialised = true;
 
   // get autostart option as lines
-  PStringArray lines = stringOptions("autostart").Lines();
+  PStringArray lines = stringOptions(OPAL_OPT_AUTO_START).Lines();
   for (PINDEX i = 0; i < lines.GetSize(); ++i) {
     PString line = lines[i];
     PINDEX colon = line.Find(':');

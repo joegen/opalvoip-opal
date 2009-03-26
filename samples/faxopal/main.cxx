@@ -218,9 +218,9 @@ void FaxOPAL::Main()
 
   OpalConnection::StringOptions stringOptions;
   if (args.HasOption('I'))
-    stringOptions.SetAt("DetectInBandDTMF", "false");
+    stringOptions.SetAt(OPAL_OPT_DETECT_INBAND_DTMF, "false");
   if (args.HasOption('i'))
-    stringOptions.SetAt("SendInBandDTMF", "false");
+    stringOptions.SetAt(OPAL_OPT_SEND_INBAND_DTMF, "false");
 
   if (args.GetCount() == 1)
     cout << "Awaiting incoming fax, saving as " << args[0] << " ..." << flush;

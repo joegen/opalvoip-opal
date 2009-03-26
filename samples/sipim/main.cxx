@@ -147,7 +147,7 @@ void SipIM::Main()
   cout << "Codecs to be used: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
 
   OpalConnection::StringOptions * options = new OpalConnection::StringOptions();
-  options->SetAt("autostart", m_manager.m_imFormat.GetMediaType() + ":exclusive");
+  options->SetAt(OPAL_OPT_AUTO_START, m_manager.m_imFormat.GetMediaType() + ":exclusive");
 
   if (args.GetCount() == 0)
     cout << "Awaiting incoming call ..." << flush;
@@ -185,7 +185,7 @@ void MyManager::OnClearedCall(OpalCall & /*call*/)
 
 void MyManager::OnApplyStringOptions(OpalConnection & conn, OpalConnection::StringOptions & options)
 {
-  options.SetAt("autostart", m_imFormat.GetMediaType() + ":exclusive");
+  options.SetAt(OPAL_OPT_AUTO_START, m_imFormat.GetMediaType() + ":exclusive");
   OpalManager::OnApplyStringOptions(conn, options);
 }
 
