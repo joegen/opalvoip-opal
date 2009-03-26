@@ -1120,7 +1120,9 @@ PBoolean SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 bool SIPConnection::WriteINVITE(OpalTransport & transport)
 {
   const SIPURL & requestURI = m_dialog.GetRequestURI();
-  SIPURL myAddress = endpoint.GetRegisteredPartyName(requestURI, transport);
+  SIPURL myAddress = m_connStringOptions(OPAL_OPT_CALLING_PARTY_URL);
+  if (myAddress.IsEmpty())
+    myAddress = endpoint.GetRegisteredPartyName(requestURI, transport);
 
   PString transportProtocol = requestURI.GetParamVars()("transport");
   if (!transportProtocol.IsEmpty())
@@ -1129,15 +1131,15 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   // only allow override of calling party number if the local party
   // name hasn't been first specified by a register handler. i.e a
   // register handler's target number is always used
-  PString number(m_connStringOptions("Calling-Party-Number"));
+  PString number(m_connStringOptions(OPAL_OPT_CALLING_PARTY_NUMBER));
   if (!number.IsEmpty())
     myAddress.SetUserName(number);
 
-  PString name(m_connStringOptions("Calling-Party-Name"));
+  PString name(m_connStringOptions(OPAL_OPT_CALLING_PARTY_NAME));
   if (!name.IsEmpty())
     myAddress.SetDisplayName(name);
 
-  PString domain(m_connStringOptions("Calling-Party-Domain"));
+  PString domain(m_connStringOptions(OPAL_OPT_CALLING_PARTY_DOMAIN));
   if (!domain.IsEmpty())
     myAddress.SetHostName(domain);
 

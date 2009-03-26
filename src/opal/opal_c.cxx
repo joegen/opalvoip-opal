@@ -1343,7 +1343,7 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
 
   OpalConnection::StringOptions options;
   if (!IsNullString(command.m_param.m_callSetUp.m_alertingType))
-    options.SetAt("Alerting-Type", command.m_param.m_callSetUp.m_alertingType);
+    options.SetAt(OPAL_OPT_ALERTING_TYPE, command.m_param.m_callSetUp.m_alertingType);
 
   PString token;
   if (SetUpCall(partyA, command.m_param.m_callSetUp.m_partyB, token, NULL, 0, &options)) {
