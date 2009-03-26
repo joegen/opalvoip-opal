@@ -2395,6 +2395,12 @@ class H323CodecPluginCapabilityMapEntry {
     H323Capability * (* createFunc)(const PluginCodec_Definition * codecDefn, const OpalMediaFormat & mediaFormat, int subType);
 };
 
+// Disambiguate table entries for video
+enum {
+  PluginCodec_H323Codec_nonStandardVideo = PluginCodec_H323Codec_NoH323+1,
+  PluginCodec_H323Codec_genericVideo
+};
+
 static H323CodecPluginCapabilityMapEntry H323CapabilityMaps[] = {
   { PluginCodec_H323Codec_nonStandard,              H245_AudioCapability::e_nonStandard,            &CreateNonStandardAudioCap },
   { PluginCodec_H323AudioCodec_gsmFullRate,	        H245_AudioCapability::e_gsmFullRate,            &CreateGSMCap },
@@ -2424,10 +2430,10 @@ static H323CodecPluginCapabilityMapEntry H323CapabilityMaps[] = {
 #if OPAL_VIDEO
 
   // video codecs
-  { PluginCodec_H323Codec_nonStandard,              H245_VideoCapability::e_nonStandard,            &CreateNonStandardVideoCap },
+  { PluginCodec_H323Codec_nonStandardVideo,         H245_VideoCapability::e_nonStandard,            &CreateNonStandardVideoCap },
   { PluginCodec_H323VideoCodec_h261,                H245_VideoCapability::e_h261VideoCapability,    &CreateH261Cap },
   { PluginCodec_H323VideoCodec_h263,                H245_VideoCapability::e_h263VideoCapability,    &CreateH263Cap },
-  { PluginCodec_H323Codec_generic,                  H245_VideoCapability::e_genericVideoCapability, &CreateGenericVideoCap },
+  { PluginCodec_H323Codec_genericVideo,             H245_VideoCapability::e_genericVideoCapability, &CreateGenericVideoCap },
 /*
   PluginCodec_H323VideoCodec_h262,                // not yet implemented
   PluginCodec_H323VideoCodec_is11172,             // not yet implemented
@@ -2444,8 +2450,8 @@ static H323CodecPluginCapabilityMapEntry H323CapabilityMaps[] = {
 
 void OpalPluginCodecManager::RegisterCapability(const PluginCodec_Definition * codecDefn)
 {
-  if (codecDefn->h323CapabilityType == PluginCodec_H323Codec_NoH323 ||
-      codecDefn->h323CapabilityType == PluginCodec_H323Codec_undefined)
+  int capabilityType = codecDefn->h323CapabilityType;
+  if (capabilityType == PluginCodec_H323Codec_NoH323 || capabilityType == PluginCodec_H323Codec_undefined)
     return;
 
   OpalPluginControl isValid(codecDefn, PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL);
@@ -2454,9 +2460,20 @@ void OpalPluginCodecManager::RegisterCapability(const PluginCodec_Definition * c
     return;
   }
 
+  if ((codecDefn->flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeVideo) {
+    switch (capabilityType) {
+      case PluginCodec_H323Codec_nonStandard :
+        capabilityType = PluginCodec_H323Codec_nonStandardVideo;
+        break;
+      case PluginCodec_H323Codec_generic :
+        capabilityType = PluginCodec_H323Codec_genericVideo;
+        break;
+    }
+  }
+
   // add the capability
   for (PINDEX i = 0; H323CapabilityMaps[i].pluginCapType >= 0; i++) {
-    if (H323CapabilityMaps[i].pluginCapType == codecDefn->h323CapabilityType) {
+    if (H323CapabilityMaps[i].pluginCapType == capabilityType) {
       OpalMediaFormat mediaFormat = codecDefn->destFormat;
       if (!mediaFormat.IsTransportable())
         mediaFormat = codecDefn->sourceFormat;
