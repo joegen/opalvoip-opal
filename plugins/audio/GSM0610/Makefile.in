@@ -133,7 +133,7 @@ endif
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include  $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) $(GSM_CFLAGS) $(EXTRACFLAGS) -c $< -o $@
+	$(CC) -I../../../include  $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(GSM_CFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./gsm0610_audio_pwplugin.$(PLUGINEXT)
 STATIC	= ./libgsm0610_audio_s.a
