@@ -555,7 +555,9 @@ install:
 		done); \
 	done)
 
+ifeq ($(OPAL_PLUGINS),yes)
 	$(MAKE) -C plugins install
+endif
 
 uninstall:
 	( for filename in $(LIB_FILENAME_SHARED) \
@@ -566,7 +568,9 @@ uninstall:
 	rm -rf $(DESTDIR)$(includedir)/opal
 	rm -f $(DESTDIR)$(libdir)/pkgconfig/opal.pc
 
+ifeq ($(OPAL_PLUGINS),yes)
 	$(MAKE) -C plugins uninstall
+endif
 
 
 ###############################################################################
