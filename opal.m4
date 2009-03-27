@@ -391,11 +391,18 @@ AC_DEFUN([OPAL_CHECK_PTLIB],
           LIBS="$old_LIBS"
 
           OPAL_MSG_CHECK([PTLIB has $1], [$opal_ptlib_option])
-	  $4="$opal_ptlib_option"
-	  AC_SUBST($4)
-	  if test "x$opal_ptlib_option" = "xyes" ; then
-	    AC_DEFINE([$4], [1], [$1])
-	  fi
+          if test "x$4" = "x" ; then
+	    if test "x$opal_ptlib_option" = "xno" ; then
+              echo "  ERROR: compulsory feature from PTLib disabled.";
+              exit 1; 
+            fi
+          else
+	    $4="$opal_ptlib_option"
+	    AC_SUBST($4)
+	    if test "x$opal_ptlib_option" = "xyes" ; then
+	      AC_DEFINE([$4], [1], [$1])
+	    fi
+          fi
 	  
          ])
 
