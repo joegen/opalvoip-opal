@@ -148,7 +148,7 @@ vpath	%.cxx $(SRCDIR)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -c $(STDCCFLAGS) $(CFLAGS) $(EXTRACCFLAGS) -o $@ $<
+	$(CC) -c $(STDCCFLAGS) $(EXTRACCFLAGS) $(CFLAGS) -o $@ $<
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
