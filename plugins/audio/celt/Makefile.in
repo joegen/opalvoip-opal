@@ -35,7 +35,7 @@ LIBS        += @CELT_LIBS@
 PLUGIN	= ./$(BASENAME)_pwplugin.$(PLUGINEXT)
 
 %.o : %.c
-	$(CC) -c $(STDCCFLAGS) $(CFLAGS) $(EXTRACFLAGS) -o $@ $<
+	$(CC) -c $(STDCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -o $@ $<
 
 OBJECTS	= $(patsubst %.c,%.o,$(notdir $(SRCS)))
 

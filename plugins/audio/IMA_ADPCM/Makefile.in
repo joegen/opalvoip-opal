@@ -75,7 +75,7 @@ vpath	%.c $(SRCDIR)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) $(EXTRACFLAGS) -c $< -o $@
+	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./ima_adpcm_audio_pwplugin.$(PLUGINEXT)
 

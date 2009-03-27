@@ -113,7 +113,7 @@ vpath	%.c $(SRCDIR)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I. -I../../../include -I./src $(STDCCFLAGS) $(CFLAGS) $(EXTRACFLAGS) -c $< -o $@
+	$(CC) -I. -I../../../include -I./src $(STDCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./lpc10_audio_pwplugin.$(PLUGINEXT)
 

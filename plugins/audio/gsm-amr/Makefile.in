@@ -45,7 +45,7 @@ PLUGIN	= ./$(BASENAME)_pwplugin.$(PLUGINEXT)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -c -I../../../include $(STDCCFLAGS) $(CFLAGS) $(EXTRACFLAGS) -o $@ $<
+	$(CC) -c -I../../../include $(STDCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -o $@ $<
 
 OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
