@@ -889,126 +889,134 @@ void TranscoderThread::Main()
     if (rateController != NULL && rateController->SkipFrame(rateControlForceIFrame)) {
       cerr << "Packet pacer forced skip of input frame " << totalInputFrameCount-1 << endl;
       ++skippedFrames;
-      continue;
     }
 
-    //////////////////////////////////////////////
-    //
-    //  push frames through encoder
-    //
-    RTP_DataFrameList encFrames;
-    if (encoder == NULL) 
-      encFrames.Append(new RTP_DataFrame(srcFrame)); 
     else {
-      if (isVideo) {
-        if (m_forceIFrame) 
-          cerr << "Decoder forced I-frame at input frame " << totalInputFrameCount-1 << endl;
-        if (rateControlForceIFrame)
-          cerr << "Rate controller forced I-frame at input frame " << totalInputFrameCount-1 << endl;
-        if (m_forceIFrame || rateControlForceIFrame)
-          ((OpalVideoTranscoder *)encoder)->ForceIFrame();
-      }
 
-      bool state = encoder->ConvertFrames(srcFrame, encFrames);
-      if (oldEncState != state) {
-        oldEncState = state;
-        cerr << "Encoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
-        continue;
-      }
-      if (isVideo && ((OpalVideoTranscoder *)encoder)->WasLastFrameIFrame())
-        cerr << "Encoder returned I-Frame at input frame " << totalInputFrameCount-1 << endl;
-    }
-
-    totalEncodedPacketCount += encFrames.GetSize();
-
-    if (isVideo && calcSNR) {
-      ((VideoThread *)this)->SaveSNRFrame(srcFrame_);
-      srcFrame_ = NULL;
-    }
-
-    //////////////////////////////////////////////
-    //
-    //  re-format encoded frames
-    //
-    unsigned long encodedPayloadSize = 0;
-    unsigned long encodedPacketCount = 0;
-    unsigned long encodedDataSize    = 0;
-    for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
-      encFrames[i].SetSequenceNumber(++sequenceNumber);
-      ++encodedPacketCount;
-      encodedPayloadSize += encFrames[i].GetPayloadSize();
-      encodedDataSize    += encFrames[i].GetPayloadSize() + encFrames[i].GetHeaderSize();
-      switch (markerHandling) {
-        case SuppressMarkers :
-          encFrames[i].SetMarker(false);
-          break;
-        case ForceMarkers :
-          encFrames[i].SetMarker(true);
-          break;
-        default :
-          break;
-      }
-    }
-
-    //////////////////////////////////////////////
-    //
-    //  push audio/video frames through NULL decoder
-    //
-    if (encoder == NULL) {
-      totalEncodedByteCount += encodedPayloadSize;
-      RTP_DataFrameList outFrames;
-      outFrames = encFrames;
-      if (outFrames.GetSize() != 1)
-        cerr << "NULL decoder returned != 1 output frame for input frame " << totalInputFrameCount-1 << endl;
+      //////////////////////////////////////////////
+      //
+      //  push frames through encoder
+      //
+      RTP_DataFrameList encFrames;
+      if (encoder == NULL) 
+        encFrames.Append(new RTP_DataFrame(srcFrame)); 
       else {
-        bool state = Write(outFrames[0]);
-        if (oldOutState != state) {
-          oldOutState = state;
-          cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
+        if (isVideo) {
+          if (m_forceIFrame) 
+            cerr << "Decoder forced I-frame at input frame " << totalInputFrameCount-1 << endl;
+          if (rateControlForceIFrame)
+            cerr << "Rate controller forced I-frame at input frame " << totalInputFrameCount-1 << endl;
+          if (m_forceIFrame || rateControlForceIFrame)
+            ((OpalVideoTranscoder *)encoder)->ForceIFrame();
         }
-        totalOutputFrameCount++;
-      }
-    }
 
-    //////////////////////////////////////////////
-    //
-    //  push audio/video frames through explicit decoder
-    //
-    else if (rateController == NULL) {
-      totalEncodedByteCount += encodedPayloadSize;
-      if (isVideo)
-        ((VideoThread *)this)->CalcVideoPacketStats(encFrames, ((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame());
-      RTP_DataFrameList outFrames;
-      for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
-        bool state = decoder->ConvertFrames(encFrames[i], outFrames);
-        if (oldDecState != state) {
-          oldDecState = state;
-          cerr << "Decoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
+        bool state = encoder->ConvertFrames(srcFrame, encFrames);
+        if (oldEncState != state) {
+          oldEncState = state;
+          cerr << "Encoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
           continue;
         }
-        if (outFrames.GetSize() > 1) 
-          cerr << "Non rate controlled video decoder returned != 1 output frame for input frame " << totalInputFrameCount-1 << endl;
-        else if (outFrames.GetSize() == 1) {
-          if (isVideo && ((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame())
-            cerr << "Decoder returned I-Frame at output frame " << totalOutputFrameCount << endl;
+        if (isVideo && ((OpalVideoTranscoder *)encoder)->WasLastFrameIFrame())
+          cerr << "Encoder returned I-Frame at input frame " << totalInputFrameCount-1 << endl;
+      }
+
+      totalEncodedPacketCount += encFrames.GetSize();
+
+      if (isVideo && calcSNR) {
+        ((VideoThread *)this)->SaveSNRFrame(srcFrame_);
+        srcFrame_ = NULL;
+      }
+
+      //////////////////////////////////////////////
+      //
+      //  re-format encoded frames
+      //
+      unsigned long encodedPayloadSize = 0;
+      unsigned long encodedPacketCount = 0;
+      unsigned long encodedDataSize    = 0;
+      for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+        encFrames[i].SetSequenceNumber(++sequenceNumber);
+        ++encodedPacketCount;
+        encodedPayloadSize += encFrames[i].GetPayloadSize();
+        encodedDataSize    += encFrames[i].GetPayloadSize() + encFrames[i].GetHeaderSize();
+        switch (markerHandling) {
+          case SuppressMarkers :
+            encFrames[i].SetMarker(false);
+            break;
+          case ForceMarkers :
+            encFrames[i].SetMarker(true);
+            break;
+          default :
+            break;
+        }
+      }
+
+      //////////////////////////////////////////////
+      //
+      //  push audio/video frames through NULL decoder
+      //
+      if (encoder == NULL) {
+        totalEncodedByteCount += encodedPayloadSize;
+        RTP_DataFrameList outFrames;
+        outFrames = encFrames;
+        if (outFrames.GetSize() != 1)
+          cerr << "NULL decoder returned != 1 output frame for input frame " << totalInputFrameCount-1 << endl;
+        else {
           bool state = Write(outFrames[0]);
           if (oldOutState != state) {
             oldOutState = state;
             cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
           }
-          if (isVideo && calcSNR) 
-            ((VideoThread *)this)->CalcSNR(outFrames[0]);
           totalOutputFrameCount++;
         }
       }
+
+      //////////////////////////////////////////////
+      //
+      //  push audio/video frames through explicit decoder
+      //
+      else if (rateController == NULL) {
+        totalEncodedByteCount += encodedPayloadSize;
+        if (isVideo)
+          ((VideoThread *)this)->CalcVideoPacketStats(encFrames, ((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame());
+        RTP_DataFrameList outFrames;
+        for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+          bool state = decoder->ConvertFrames(encFrames[i], outFrames);
+          if (oldDecState != state) {
+            oldDecState = state;
+            cerr << "Decoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
+            continue;
+          }
+          if (outFrames.GetSize() > 1) 
+            cerr << "Non rate controlled video decoder returned != 1 output frame for input frame " << totalInputFrameCount-1 << endl;
+          else if (outFrames.GetSize() == 1) {
+            if (isVideo && ((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame())
+              cerr << "Decoder returned I-Frame at output frame " << totalOutputFrameCount << endl;
+            bool state = Write(outFrames[0]);
+            if (oldOutState != state) {
+              oldOutState = state;
+              cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
+            }
+            if (isVideo && calcSNR) 
+              ((VideoThread *)this)->CalcSNR(outFrames[0]);
+            totalOutputFrameCount++;
+          }
+        }
+      }
+
+      //////////////////////////////////////////////
+      //
+      //  push video frames into rate controller 
+      //
+      else 
+        rateController->Push(encFrames, ((OpalVideoTranscoder *)encoder)->WasLastFrameIFrame());
     }
 
     //////////////////////////////////////////////
     //
-    //  push video frames through rate controller and explicit decoder
+    //  pop video frames from rate controller and explicit decoder
     //
-    else {
-      rateController->Push(encFrames, ((OpalVideoTranscoder *)encoder)->WasLastFrameIFrame());
+    if (rateController != NULL) {
       for (;;) {
         bool outIFrame;
         RTP_DataFrameList pacedFrames;
