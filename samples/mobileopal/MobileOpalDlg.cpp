@@ -160,7 +160,7 @@ void GetNetworkInterfaces(CStringArray & interfaces, bool includeNames)
     }
   }
 
-#elif SPEAKERMODE_METHOD==2
+#elif SPEAKERMODE_METHOD==2 || SPEAKERMODE_METHOD==5
 
   /* Stuff from Wavedev.h */
   #define IOCTL_WAV_MESSAGE 0x001d000c
@@ -201,12 +201,12 @@ void GetNetworkInterfaces(CStringArray & interfaces, bool includeNames)
         if (hWavDev == INVALID_HANDLE_VALUE)
           return false;
 
-        DWORD dwRet, dwOut; 
+        DWORD dwRet = 0, dwOut; 
         MMDRV_MESSAGE_PARAMS mp; 
         memset(&mp,0,sizeof(mp));
         mp.uMsg = uMsg;
         mp.dwParam1 = dwParam1;
-        mp.dwParam2 = dwParam1;
+        mp.dwParam2 = dwParam2;
         if (DeviceIoControl(hWavDev, IOCTL_WAV_MESSAGE, &mp, sizeof(mp), &dwOut, sizeof(dwOut), &dwRet, 0))
           return true;
 
@@ -221,6 +221,7 @@ void GetNetworkInterfaces(CStringArray & interfaces, bool includeNames)
   static void SetSpeakerMode(bool speakerphone)
   {
     WavDevice wd;
+#if SPEAKERMODE_METHOD==2
     if (!wd.SendMessage(1002, speakerphone ? 0 : 2))
       return;
     if (!wd.SendMessage(1012, speakerphone ? 0 : 1))
@@ -228,6 +229,9 @@ void GetNetworkInterfaces(CStringArray & interfaces, bool includeNames)
     if (speakerphone && !wd.SendMessage(1013))
       return;
     wd.SendMessage(1000, speakerphone ? 2 : 4, speakerphone ? 0 : 7);
+#else
+    wd.SendMessage(102, speakerphone);
+#endif
   }
 
 #elif SPEAKERMODE_METHOD==3
@@ -283,6 +287,55 @@ void GetNetworkInterfaces(CStringArray & interfaces, bool includeNames)
   {
     OsSvcsDll dll;
     dll.SetSpeakerMode(speakerphone ? 1 : 0);
+  }
+
+#elif SPEAKERMODE_METHOD==4
+
+  #include "ril.h"
+  #pragma comment(lib, "ril.lib")
+
+  static void CALLBACK ResultCallback(DWORD dwCode,           // @parm result code
+                                      HRESULT hrCmdID,        // @parm ID returned by the command that originated this response
+                                      const void* lpData,     // @parm data associated with the notification
+                                      DWORD cbData,           // @parm size of the strcuture pointed to lpData
+                                      DWORD dwParam           // @parm parameter passed to <f RIL_Initialize>
+                                     )
+  {
+  }
+
+  static void CALLBACK NotifyCallback(DWORD dwCode,           // @parm notification code
+                                      const void* lpData,     // @parm data associated with the notification
+                                      DWORD cbData,           // @parm size of the strcuture pointed to lpData
+                                      DWORD dwParam           // @parm parameter passed to <f RIL_Initialize>
+                                     )
+  {
+  }
+
+  static void SetSpeakerMode(bool speakerphone)
+  {
+    HRIL hRIL;
+    HRESULT result = RIL_Initialize(1, ResultCallback, NotifyCallback, RIL_NCLASS_MISC, 0, &hRIL);
+    if (result != S_OK) {
+      wchar_t buffer[200];
+      wsprintf(buffer, L"Could not open RIL, error=0x%x", result);
+      AfxMessageBox(buffer);
+      return;
+    }
+
+    RILAUDIODEVICEINFO info;
+    info.cbSize = sizeof(info);
+    info.dwParams = RIL_PARAM_ADI_ALL; // RIL_PARAM_ADI_TXDEVICE;
+    info.dwRxDevice = RIL_AUDIO_HANDSET;
+    info.dwTxDevice = speakerphone ? RIL_AUDIO_SPEAKERPHONE : RIL_AUDIO_HANDSET;
+
+    result = RIL_SetAudioDevices(hRIL, &info);
+    if (result != S_OK) {
+      wchar_t buffer[200];
+      wsprintf(buffer, L"Could not open RIL, error=0x%x", result);
+      AfxMessageBox(buffer);
+    }
+
+    RIL_Deinitialize(hRIL);
   }
 
 #else
