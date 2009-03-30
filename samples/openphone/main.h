@@ -753,6 +753,8 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // Routing fields
+    wxString     m_ForwardingAddress;
+    int          m_ForwardingTimeout;
     wxListCtrl * m_Routes;
     int          m_SelectedRoute;
     wxComboBox * m_RouteSource;
@@ -1039,6 +1041,11 @@ class MyManager : public wxFrame, public OpalManager
     bool      m_autoAnswer;
     PwxString m_LastDialed;
     PwxString m_LastReceived;
+
+    PwxString m_ForwardingAddress;
+    int       m_ForwardingTimeout;
+    PTimer    m_ForwardingTimer;
+    PDECLARE_NOTIFIER(PTimer, MyManager, OnForwardingTimeout);
 
     bool m_VideoGrabPreview;
     int  m_localVideoFrameX;

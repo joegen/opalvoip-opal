@@ -219,6 +219,8 @@ DEF_FIELD(RegistrarPassword);
 DEF_FIELD(RegistrarTimeToLive);
 
 static const wxChar RoutingGroup[] = wxT("/Routes");
+DEF_FIELD(ForwardingAddress);
+DEF_FIELD(ForwardingTimeout);
 
 #if PTRACING
 static const wxChar TracingGroup[] = wxT("/Tracing");
@@ -543,6 +545,7 @@ MyManager::MyManager()
   , ivrEP(NULL)
 #endif
   , m_autoAnswer(false)
+  , m_ForwardingTimeout(30)
   , m_VideoGrabPreview(true)
   , m_localVideoFrameX(INT_MIN)
   , m_localVideoFrameY(INT_MIN)
@@ -569,6 +572,7 @@ MyManager::MyManager()
   m_imageListNormal->Add(wxICON(present48));
 
   m_RingSoundTimer.SetNotifier(PCREATE_NOTIFIER(OnRingSoundAgain));
+  m_ForwardingTimer.SetNotifier(PCREATE_NOTIFIER(OnForwardingTimeout));
 
   LogWindow.SetFrame(this);
 }
@@ -1051,6 +1055,10 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Routing fields
+  config->SetPath(GeneralGroup);
+  config->Read(ForwardingAddressKey, &m_ForwardingAddress);
+  config->Read(ForwardingTimeoutKey, &m_ForwardingTimeout);
+
   config->SetPath(RoutingGroup);
   if (config->GetFirstEntry(entryName, entryIndex)) {
     do {
@@ -1949,13 +1957,6 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
   config->SetPath(GeneralGroup);
   config->Write(LastReceivedKey, m_LastDialed);
 
-  if (!m_autoAnswer && !m_RingSoundFileName.empty()) {
-    PTRACE(4, "OpenPhone\tPlaying ring file \"" << m_RingSoundFileName << '"');
-    m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
-    m_RingSoundChannel.PlayFile(m_RingSoundFileName, false);
-    m_RingSoundTimer.RunContinuous(5000);
-  }
-
   SetState(RingingState, connection.GetCall().GetToken());
 }
 
@@ -2290,11 +2291,7 @@ void MyManager::SwitchToFax()
   if (!m_activeCall->IsNetworkOriginated())
     return; // We originated call
 
-  PSafePtr<OpalConnection> connection = m_activeCall->GetConnection(1);
-  if (connection == NULL)
-    return; // Huh? again!
-
-  if (m_activeCall->Transfer(*connection, "t38:*;receive"))
+  if (m_activeCall->Transfer("t38:*;receive", m_activeCall->GetConnection(1)))
     LogWindow << "Switching to T.38 fax mode." << endl;
   else
     LogWindow << "Could not switch to T.38 fax mode." << endl;
@@ -2327,20 +2324,15 @@ void MyManager::OnTransfer(wxCommandEvent& theEvent)
   if (PAssert(m_activeCall != NULL, PLogicError)) {
     for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
       if (theEvent.GetId() == it->m_transferMenuId) {
-        PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReference);
-        if (connection != NULL)
-          m_activeCall->Transfer(*connection, it->m_call->GetToken());
+        m_activeCall->Transfer(it->m_call->GetToken(), GetConnection(false, PSafeReference));
         return;
       }
     }
 
     CallDialog dlg(this, true, true);
     dlg.SetTitle(wxT("Transfer Call"));
-    if (dlg.ShowModal() == wxID_OK) {
-      PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReference);
-      if (connection != NULL)
-        m_activeCall->Transfer(*connection, dlg.m_Address);
-    }
+    if (dlg.ShowModal() == wxID_OK)
+      m_activeCall->Transfer(dlg.m_Address, GetConnection(false, PSafeReference));
   }
 }
 
@@ -2373,16 +2365,14 @@ void MyManager::OnAudioDevicePair(wxCommandEvent & /*theEvent*/)
   if (connection != NULL) {
     AudioDevicesDialog dlg(this, *connection);
     if (dlg.ShowModal() == wxID_OK && connection.SetSafetyMode(PSafeReadWrite))
-      m_activeCall->Transfer(*connection, dlg.GetTransferAddress());
+      m_activeCall->Transfer(dlg.GetTransferAddress(), connection);
   }
 }
 
 
 void MyManager::OnAudioDevicePreset(wxCommandEvent & theEvent)
 {
-  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReadWrite));
-  if (connection != NULL)
-    m_activeCall->Transfer(*connection, "pc:"+AudioDeviceNameFromScreen(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel()));
+  m_activeCall->Transfer("pc:"+AudioDeviceNameFromScreen(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel()));
 }
 
 
@@ -2563,6 +2553,25 @@ void MyManager::SetState(CallState newState, const PString & token)
 }
 
 
+void MyManager::OnForwardingTimeout(PTimer &, INT)
+{
+  if (m_incomingToken.IsEmpty())
+    return;
+
+  // Transfer the incoming call to the forwarding address
+  PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReadWrite);
+  if (call == NULL)
+    return;
+
+  if (call->Transfer(m_ForwardingAddress, call->GetConnection(1)))
+    LogWindow << "Forwarded \"" << call->GetPartyB() << "\" to \"" << m_ForwardingAddress << '"' << endl;
+  else
+    LogWindow << "Could not forward \"" << call->GetPartyB() << "\" to \"" << m_ForwardingAddress << '"' << endl;
+
+  m_incomingToken.MakeEmpty();
+}
+
+
 void MyManager::OnStateChange(wxCommandEvent & theEvent)
 {
   CallState newState = (CallState)theEvent.GetInt();
@@ -2580,6 +2589,13 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
         RequestUserAttention();
       Raise();
 
+      if (!m_ForwardingAddress.IsEmpty()) {
+        if (m_ForwardingTimeout != 0)
+          m_ForwardingTimer.SetInterval(0, m_ForwardingTimeout);
+        else
+          OnForwardingTimeout(m_ForwardingTimer, 0);
+      }
+
       if (!m_autoAnswer || m_activeCall != NULL) {
         AnswerPanel * answerPanel = new AnswerPanel(*this, token, m_tabs);
 
@@ -2588,6 +2604,13 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
         if (call != NULL)
           answerPanel->SetPartyNames(call->GetPartyA(), call->GetPartyB());
         m_tabs->AddPage(answerPanel, wxT("Incoming"), true);
+
+        if (!m_RingSoundFileName.empty()) {
+          PTRACE(4, "OpenPhone\tPlaying ring file \"" << m_RingSoundFileName << '"');
+          m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
+          m_RingSoundChannel.PlayFile(m_RingSoundFileName, false);
+          m_RingSoundTimer.RunContinuous(5000);
+        }
         break;
       }
 
@@ -3591,6 +3614,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Routing fields
+  INIT_FIELD(ForwardingAddress, m_manager.m_ForwardingAddress);
+  INIT_FIELD(ForwardingTimeout, m_manager.m_ForwardingTimeout);
+
   m_SelectedRoute = INT_MAX;
 
   m_RouteDevice = FindWindowByNameAs<wxTextCtrl>(this, wxT("RouteDevice"));
@@ -3940,6 +3966,9 @@ bool OptionsDialog::TransferDataFromWindow()
 
   ////////////////////////////////////////
   // Routing fields
+  config->SetPath(GeneralGroup);
+  SAVE_FIELD(ForwardingAddress, m_manager.m_ForwardingAddress =);
+  SAVE_FIELD(ForwardingTimeout, m_manager.m_ForwardingTimeout =);
 
   config->DeleteGroup(RoutingGroup);
   config->SetPath(RoutingGroup);
