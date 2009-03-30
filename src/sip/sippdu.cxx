@@ -2402,7 +2402,7 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
   }
 
   // Update request URI
-  if (pdu.GetMethod() != SIP_PDU::NumMethods || pdu.GetStatusCode()/100 <= 2) {
+  if (pdu.GetMethod() != SIP_PDU::NumMethods || pdu.GetStatusCode()/100 == 2) {
     PString contact = mime.GetContact();
     if (!contact.IsEmpty()) {
       m_requestURI.Parse(contact);
@@ -2887,13 +2887,8 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
       if (!lock.IsLocked())
         return false;
 
-      // ACK constructed following 17.1.1.3
-      SIPAck ack(*this, response);
-      if (!SendPDU(ack))
-        return false;
-
-      if ((response.GetStatusCode() / 100) == 2) {
-        // Need to update where the ACK goes to when have 2xx response
+      if (response.GetStatusCode() < 300) {
+        // Need to update where the ACK goes to when have 2xx response as per 13.2.2.4
         SIPURL dest;
         SIPDialogContext & dialog = connection->GetDialog();
         const PStringList & routeSet = dialog.GetRouteSet();
@@ -2904,6 +2899,11 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
         m_remoteAddress = dest.GetHostAddress();
         PTRACE(4, "SIP\tTransaction remote address changed to " << m_remoteAddress);
       }
+
+      // ACK constructed following 13.2.2.4 or 17.1.1.3
+      SIPAck ack(*this, response);
+      if (!SendPDU(ack))
+        return false;
     }
   }
 
