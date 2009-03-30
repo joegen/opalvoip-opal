@@ -322,21 +322,36 @@ bool OpalCall::IsOnHold() const
 }
 
 
-bool OpalCall::Transfer(OpalConnection & connection, const PString & newAddress)
+bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
 {
-  if (newAddress.NumCompare(connection.GetPrefixName()+':') == EqualTo)
-    return connection.TransferConnection(newAddress);
+  PCaselessString prefix = newAddress.Left(newAddress.Find(':'));
 
-  PSafePtr<OpalConnection> connectionToKeep;
-  EnumerateConnections(connectionToKeep, PSafeReference, &connection);
+  if (connection == NULL) {
+    for (PSafePtr<OpalConnection> conn = GetConnection(0); conn != NULL; ++conn) {
+      if (prefix == conn->GetPrefixName())
+        return conn->TransferConnection(newAddress);
+    }
+
+    return false;
+  }
+
+  if (prefix == "*")
+    return connection->TransferConnection(connection->GetPrefixName() + newAddress.Mid(1));
+
+  if (prefix == connection->GetPrefixName())
+    return connection->TransferConnection(newAddress);
+
+  PSafePtr<OpalConnection> connectionToKeep = GetOtherPartyConnection(*connection);
+  if (connectionToKeep == NULL)
+    return false;
 
   if (!manager.MakeConnection(*this, newAddress))
     return false;
 
-  connection.Release(OpalConnection::EndedByCallForwarded);
+  connection->Release(OpalConnection::EndedByCallForwarded);
 
   // Close streams, but as we Released above should not do re-INVITE/OLC
-  connection.CloseMediaStreams();
+  connection->CloseMediaStreams();
 
   // Restart with new connection
   return OnSetUp(*connectionToKeep);

@@ -330,17 +330,30 @@ class OpalCall : public PSafeObject
     bool IsOnHold() const;
 
     /**Transfer connection.
-       If the newAddress indicates a protocol type and it is the same as
-       connection then this simply calls TransferConnection on the
-       connection variable.
+       There are several scenarios for this function. If 'connection' is not
+       NULL and the protocol type for 'address' is the same, or the protocol
+       type is "*", then this simply calls TransferConnection() on the
+       'connection' variable, e.g. connection="sip:fred@bloggs.com" and
+       address="*:1234", then connection->TransferConnection("sip:1234") is
+       called, which sends a REFER command to the remote. The connection and
+       call are subsequently released in this case.
 
-       If there is a protocol change, e.g. "pc" to "t38", then the connection
-       is completely closed, all links to the second conection in the call (if
+       If connection="pc:Speakers" and address="pc:Headset", then the sound
+       device in the 'connection' instance is changed and the call and media
+       is continued unchanged.
+
+       If there is a protocol change, e.g. "pc" to "t38", then the 'connection'
+       is completely releasd, all links to the second conection in the call (if
        any) severed and a new connection establshed and new streams started.
+
+       If 'connection' is NULL, it will choose the first connection in the call
+       of the same protocol type. For example in a call from "pc:Speakers" to
+       "sip:fred@bloggs.com", the previous examples would operate identically
+       even if 'connection' is NULL.
       */
     bool Transfer(
-      OpalConnection & connection, ///< Connection to transfer
-      const PString & newAddress   ///< New address to transfer to
+      const PString & address,           ///< New address to transfer to
+      OpalConnection * connection = NULL ///< Connection to transfer
     );
   //@}
 
