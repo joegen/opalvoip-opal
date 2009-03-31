@@ -5530,7 +5530,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has URL" >&5
@@ -5559,12 +5559,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -5615,7 +5616,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has STUN" >&5
@@ -5644,12 +5645,13 @@ _ACEOF
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -10136,12 +10138,13 @@ if test "x$OPAL_H323" = "xyes" ; then
 
           old_CXXFLAGS="$CXXFLAGS"
           old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           if test "x${DEBUG_BUILD}" = xyes; then
-            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+            LIBS="$LIBS $DEBUG_LIBS"
           else
-            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+            LIBS="$LIBS $RELEASE_LIBS"
           fi
 
           ac_ext=cpp
@@ -10192,7 +10195,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
           CXXFLAGS="$old_CXXFLAGS"
-          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
 
 
           { echo "$as_me:$LINENO: checking PTLIB has ASN" >&5
@@ -10439,6 +10442,10 @@ _ACEOF
 
           fi
 
+if test "x$OPAL_HAS_MSRP" = "xyes" ; then
+  { echo "$as_me:$LINENO: WARNING: MSRP is highly experimental and is recommended for developers only. Please don't complain if this does not compile or breaks your system" >&5
+echo "$as_me: WARNING: MSRP is highly experimental and is recommended for developers only. Please don't complain if this does not compile or breaks your system" >&6;}
+fi
 
 
           if test "x$OPAL_HAS_SIPIM" = "x"; then

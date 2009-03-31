@@ -468,6 +468,9 @@ OPAL_SIMPLE_OPTION([t38],[OPAL_T38_CAPABILITY], [whether to enable T.38 capabili
 dnl disable MSWIN_DISPLAY    msrp,MSRP capability
 dnl disable MSWIN_DEFINE     msrp,OPAL_HAS_MSRP
 OPAL_SIMPLE_OPTION([msrp],[OPAL_HAS_MSRP], [whether to enable MSRP support])
+if test "x$OPAL_HAS_MSRP" = "xyes" ; then
+  AC_MSG_NOTICE([WARNING: MSRP is highly experimental and is recommended for developers only. Please don't complain if this does not compile or breaks your system])
+fi
 
 dnl MSWIN_DISPLAY    sipim,SIPIM capability
 dnl MSWIN_DEFINE     sipim,OPAL_HAS_SIPIM
