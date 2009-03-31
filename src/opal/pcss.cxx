@@ -137,28 +137,24 @@ OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
   return list;
 }
 
-static PBoolean SetDeviceName(const PString & name,
+static bool SetDeviceName(const PString & name,
                           PSoundChannel::Directions dir,
                           PString & result)
 {
-  PStringArray devices = PSoundChannel::GetDeviceNames(dir);
-
-  if (name.GetLength() >= 2 && name[0] == '#' && isdigit(name[1])) {
-    PINDEX id = name.Mid(1).AsUnsigned();
-    if (id > 0 && id <= devices.GetSize()) {
-      result = devices[id-1];
-      return true;
-    }
-  }
-
-  if (devices.GetValuesIndex(name) != P_MAX_INDEX) {
-    // Perfect match (possibly including driver name)
+  // First see if the channel can be created from the name alone, this
+  // picks up *.wav style names.
+  PSoundChannel * channel = PSoundChannel::CreateChannelByName(name, dir);
+  if (channel != NULL) {
+    delete channel;
     result = name;
     return true;
   }
 
-  // Create unique names sans driver
+  // Otherwise, look for a partial match.
+
+  // Need to create unique names sans driver
   PStringList uniqueNames;
+  PStringArray devices = PSoundChannel::GetDeviceNames(dir);
   for (PINDEX i = 0; i < devices.GetSize(); ++i) {
     PCaselessString deviceName = devices[i];
     PINDEX tab = deviceName.Find('\t');
