@@ -367,8 +367,9 @@ bool SDPMediaFormat::ToNormalisedOptions()
 void SDPMediaFormat::SetPacketTime(const PString & optionName, unsigned ptime)
 {
   if (mediaFormat.HasOption(optionName)) {
-    unsigned frameTime = mediaFormat.GetFrameTime();
-    unsigned newCount = (ptime*mediaFormat.GetTimeUnits()+frameTime-1)/frameTime;
+    unsigned newCount = (ptime*mediaFormat.GetTimeUnits())/mediaFormat.GetFrameTime();
+    if (newCount < 1)
+      newCount = 1;
     mediaFormat.SetOptionInteger(optionName, newCount);
     PTRACE(4, "SDP\tMedia format \"" << mediaFormat << "\" option \"" << optionName
            << "\" set to " << newCount << " packets from " << ptime << " milliseconds");
@@ -899,42 +900,57 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
   if (!SDPRTPAVPMediaDescription::PrintOn(str, connectString))
     return false;
 
-#ifdef HAVE_PTIME
-  // Fill in the ptime  as maximum tx packets of all media formats
-  // and maxptime as minimum rx packets of all media formats
-  unsigned ptime = 0;
+  /* The ptime parameter is a recommendation to the remote that we want them
+     to send that number of milliseconds on audio in each RTP packet. OPAL
+     does not have an equivalent parameter anywhere, so we do not provide it
+     on outgoing SDP. We do try to honour it on incoing SDP, however.
+
+     The maxptime parameter can be represented by the RxFramesPerPacketOption,
+     so we go through all the codecs offered and calculate a maxptime based on
+     the smallest maximum rx packets of the codecs. Allowance must be made for
+     maxptime to be at least big enough for 1 frame per packet for the largest
+     frame size of those codecs.
+     
+     In practice this generally means if we mix GSM and G.723.1 then the
+     maxptime cannot be smaller than 30ms even if GSM wants one frame per
+     packet. That should still work as teh remote cannot send 2fpp as it would
+     exceed the 30ms.
+
+     However, certain combinations cannot be represented, e.g. if you want 2fpp
+     of G.729 (20ms) and 1fpp of G.723.1 (30ms) then the G.729 codec COULD
+     receive 3fpp. This is really a failing in SIP/SDP and the techniques for
+     woking around the limitation are for too complicated to be worth doing for
+     what should be rare cases.
+    */
+
+  unsigned largestFrameTime = 0;
   unsigned maxptime = UINT_MAX;
 
   // output attributes for each payload type
-  for (format = formats.begin(); format != formats.end(); ++format) {
-    const OpalMediaFormat & mediaFormat = formats[i].GetMediaFormat();
-    if (mediaFormat.HasOption(OpalAudioFormat::TxFramesPerPacketOption())) {
-      unsigned ptime1 = txFrames*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
-      if (ptime < ptime1)
-        ptime = ptime1;
-    }
+  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
+    const OpalMediaFormat & mediaFormat = format->GetMediaFormat();
     if (mediaFormat.HasOption(OpalAudioFormat::RxFramesPerPacketOption())) {
-      unsigned maxptime1 = mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
+      unsigned frameTime = mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
+      if (largestFrameTime < frameTime)
+        largestFrameTime = frameTime;
+
+      unsigned maxptime1 = mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption())*frameTime;
       if (maxptime > maxptime1)
         maxptime = maxptime1;
     }
   }
 
-  // don't output ptime parameters, as some Cisco endpoints barf on it
-  // and it's not very well-defined anyway
-  //if (ptime > 0)
-  //  str << "a=ptime:" << ptime << "\r\n";
-
-  if (maxptime < UINT_MAX)
+  if (maxptime < UINT_MAX) {
+    if (maxptime < largestFrameTime)
+      maxptime = largestFrameTime;
     str << "a=maxptime:" << maxptime << "\r\n";
-#endif // HAVE_PTIME
+  }
 
   return true;
 }
 
 void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
-#ifdef HAVE_PTIME
   if (attr *= "ptime") {
     SetPacketTime(OpalAudioFormat::TxFramesPerPacketOption(), value);
     return;
@@ -944,7 +960,6 @@ void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString 
     SetPacketTime(OpalAudioFormat::RxFramesPerPacketOption(), value);
     return;
   }
-#endif // HAVE_PTIME
 
   return SDPRTPAVPMediaDescription::SetAttribute(attr, value);
 }
