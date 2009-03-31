@@ -291,6 +291,7 @@ PBoolean OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, 
   do {
     // Keep reading from the RTP transport frames
     if (!OnReadPacket(*currentReadFrame, loop)) {
+      bufferMutex.Wait();
       if (currentReadFrame != NULL)
         delete currentReadFrame;  // Destructor won't delete this one, so do it here.
       shuttingDown = true; // Flag to stop the reading side thread
