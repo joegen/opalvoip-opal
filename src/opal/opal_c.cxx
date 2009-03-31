@@ -665,12 +665,12 @@ void SIPEndPoint_C::OnDialogInfoReceived(const SIPDialogNotification & info)
   message->m_param.m_lineAppearance.m_appearance = info.m_local.m_appearance;
 
   if (info.m_initiator) {
-    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_callId, info.m_callId+";to-tag="+info.m_local.m_dialogTag+";from-tag="+info.m_remote.m_dialogTag);
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_callId, info.m_callId+";to-tag="+info.m_remote.m_dialogTag+";from-tag="+info.m_local.m_dialogTag);
     SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyA, GetParticipantName(info.m_local));
     SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyB, GetParticipantName(info.m_remote));
   }
   else {
-    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_callId, info.m_callId+";to-tag="+info.m_remote.m_dialogTag+";from-tag="+info.m_local.m_dialogTag);
+    SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_callId, info.m_callId+";to-tag="+info.m_local.m_dialogTag+";from-tag="+info.m_remote.m_dialogTag);
     SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyA, GetParticipantName(info.m_remote));
     SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyB, GetParticipantName(info.m_local));
   }
