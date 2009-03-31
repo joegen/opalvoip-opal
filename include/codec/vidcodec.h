@@ -147,11 +147,15 @@ class OpalVideoTranscoder : public OpalTranscoder
 
     bool WasLastFrameIFrame() const { return lastFrameWasIFrame; }
     void ForceIFrame()              { forceIFrame = true; }
+
+    PINDEX GetMaxEncoderOutputSize() const { return videoEncoderMaxOutputSize; }
+
   //@}
 
   protected:
     PINDEX inDataSize;
     PINDEX outDataSize;
+    PINDEX videoEncoderMaxOutputSize;
     bool   forceIFrame;
     bool   lastFrameWasIFrame;
 

@@ -36,119 +36,193 @@
 #pragma interface
 #endif
 
-#include <list>
-
 #include <opal/buildopts.h>
+#include <rtp/rtp.h>
+
+extern double OpalCalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen);
+
+/**  This class is used to calculate the instantaneous bit rate of a data stream
+  *  using a one second sliding window 
+ */
+
+class OpalBitRateCalculator
+{
+  public:
+    /**  Create the calculator
+    */
+    OpalBitRateCalculator();
+
+    /** Reset the statistics
+    */
+    void Reset();
+
+    /** Set the quanta (usually the frame time)
+    */
+    void SetQuanta(
+      unsigned quanta_
+    );
+
+    /** Get the quanta (usually the frame time)
+    */
+    unsigned GetQuanta() const
+    { return m_quanta; }
+
+    /** Add a new packet to the bit rate calculations
+    */
+    void AddPacket(PINDEX size, bool marker);
+
+    /** Get the instantaneous bit rate
+    */
+    unsigned GetBitRate();
+
+    /** Get the average bit rate since SetQuanta was called
+    */
+    unsigned GetAverageBitRate();
+
+    /** Get the average bit rate since SetQuanta was called
+    */
+    unsigned GetAveragePacketSize();
+
+    /** return the bit rate if the specific data size was transmitted
+    */
+    unsigned GetTrialBitRate(PINDEX size);
+
+    /** Return total bytes sent since SetQuanta was called
+    */
+    PInt64 GetTotalSize() const;
+
+    /** Return total miliseconds since SetQuanta was called
+    */
+    PInt64 GetTotalTime() const;
+
+    /** Return number of frames in history
+    */
+    unsigned GetHistoryCount() const
+    { return m_history.size(); }
+
+    /** Return number of bytes in history
+    */
+    unsigned GetHistorySize() const
+    { return m_historySize; }
+
+    /** Return earlist timestamp in history
+    */
+    PInt64 GetEarliestHistoryTime() const
+    { if (m_history.size() == 0) return 0; return m_history.begin()->m_timeStamp; }
+
+    /** Return number of marker bits in history
+    */
+    unsigned GetHistoryFrames() const;
+
+    // flush old data from history
+    void Flush();
+
+    // used to get "now"
+    static PInt64 GetNow();
+
+  protected:
+
+    void Flush(PInt64 now);
+
+    struct History {
+      History(PINDEX size_, PInt64 timeStamp_, bool marker_)
+        : m_size(size_), m_timeStamp(timeStamp_), m_marker(marker_)
+      { }
+
+      PINDEX m_size;
+      PInt64 m_timeStamp;
+      bool m_marker;
+    };
+
+    std::deque<History> m_history;
+
+    PINDEX m_historySize;
+    PInt64 m_totalSize;
+    PINDEX m_historyFrames;
+
+    unsigned m_quanta;
+    unsigned m_bitRate;
+    bool m_first;
+    PInt64 m_baseTimeStamp;
+};
 
 //
-//  This file implements a video rate controller that seeks to maintain a constant bit rate 
-//  by indicating when encoded video frames should be dropped
-//
-//  To use the rate controller, open it with the appropriate parameters. 
+//  Declare a generic video rate controller class.
+//  A rate controller seeks to maintain a constant bit rate by manipulating
+//  the parameters of the video stream
 //
 //  Before encoding a potential output frame, use the SkipFrame function to determine if the 
-//  frame should be skipped. If the frame is not skipped, encode the frame and then call AddFrame
-//  with the parameters of the final data.
+//  frame should be skipped. 
+//
+//  If the frame is not skipped, encode the frame and call PushFrame to add the frame to the rate controller queue
+//  PopFrame can then be called to retreive frames to transmit
+//
+//  PushFrame must always be called with packets from a single video frame, but PopFrame may return packets 
+//  from multiple video frames
 //
 
+class OpalMediaFormat;
 
 class OpalVideoRateController
 {
   public:
     OpalVideoRateController();
 
+    virtual ~OpalVideoRateController();
+
     /** Open the rate controller with the specific parameters
       */
-    void Open(
-      unsigned targetBitRate,                  ///< target bit rate to acheive
-      int outputFrameTime = -1,                ///< output frame time (90000 / rate), or -1 to not limit frame rate
-      unsigned windowSizeInMs = 500,           ///< size of history used for calculating output bit rate
-      unsigned maxConsecutiveFramesSkip = 5    ///< maximum number of consecutive frames to skip
+    virtual void Open(
+      const OpalMediaFormat & mediaFormat
     );
 
-    /** Determine if the next frame should be skipped
+    /** Determine if the next frame should be skipped.
+      * The rate controller can also indicate whether the next frame should
+      * be encoded as an I-frame, which is useful if many frames have been skipped
       */
-    bool SkipFrame();
+    virtual bool SkipFrame(
+      bool & forceIFrame
+    ) = 0;
 
-    /** Add information about an encoded frame 
+    /** push encoded frames into the rate controller queue
       */
-    void AddFrame(
-      PInt64 sizeInBytes,                      ///< total payload size in bytes, including all RTP headers
-      int packetPacketCount                    ///< total number of RTP packets sent
+    virtual void Push(
+      RTP_DataFrameList & inputFrames, 
+      bool iFrame
     );
+
+    /** retreive encoded frames from the rate controller queue
+      */
+    virtual bool Pop(
+      RTP_DataFrameList & outputPackets, 
+      bool & iFrame, 
+      bool force
+    );
+
+    /** Bit rate calculator used by rate controller
+      */
+    OpalBitRateCalculator m_bitRateCalc;
 
   protected:
-    bool CheckFrameRate(bool reporting);
-    bool CheckBitRate(bool reporting);
+    unsigned m_targetBitRate;
+    unsigned m_outputFrameTime;
+    PInt64   m_inputFrameCount;
+    PInt64   m_outputFrameCount;
 
-    void Reset();
-    void AddFrame(
-      PInt64 sizeInBytes, 
-      int packetPacketCount, 
-      PInt64 now);
+    struct PacketEntry {
+      PacketEntry(RTP_DataFrame * rtp_, bool iFrame_)
+        : m_rtp(rtp_), m_iFrame(iFrame_)
+      { }
 
-    unsigned byteRate;
-    unsigned bitRateHistorySizeInMs;
-    unsigned maxConsecutiveFramesSkip;
-    int targetOutputFrameTime;
-
-    PInt64  targetBitRateHistorySize;
-    PInt64  startTime;
-    PInt64  inputFrameCount;
-    PInt64  outputFrameCount;
-
-    unsigned consecutiveFramesSkipped;
-
-    PInt64 now;
-    PInt64 lastReport;
-
-    struct FrameInfo {
-      PInt64 time;
-      PInt64 totalPayloadSize;
-      int packetCount;
+      RTP_DataFrame * m_rtp;
+      bool m_iFrame;
     };
-
-    class FrameInfoList : public std::list<FrameInfo> 
-    {
-      public:
-        FrameInfoList()
-        { reset(); }
-
-        void reset()
-        {
-          resize(0);
-          bytes = packets = 0;
-        }
-
-        void push(const FrameInfo & info)
-        {
-          bytes   += info.totalPayloadSize;
-          packets += info.packetCount;
-          push_back(info);
-        }
-
-        void pop()
-        {
-          bytes   -= front().totalPayloadSize;
-          packets -= front().packetCount;
-          pop_front();
-        }
-
-        void remove_older_than(PInt64 now, PInt64 age)
-        {
-          while ((size() != 0) && ((now - begin()->time) > age))
-            pop();
-        }
-
-        PInt64 bytes;
-        int packets;
-
-    };
-
-    FrameInfoList bitRateHistory;
-    FrameInfoList frameRateHistory;
+    std::deque<PacketEntry> m_packets;
 };
 
-extern double OpalCalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen);
+namespace PWLibStupidLinkerHacks {
+  extern int rateControlKickerVal;
+//  static class RateControlKicker { public: RateControlKicker() { rateControlKickerVal = 1; } } rateControlKicker;
+};
 
 #endif // OPAL_RATE_CONTROL_H
