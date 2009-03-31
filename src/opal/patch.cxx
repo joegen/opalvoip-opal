@@ -624,8 +624,23 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     bool s = RateControlExceeded(forceIFrame);
     if (forceIFrame)
       stream->ExecuteCommand(OpalVideoUpdatePicture());
-    if (s)
+    if (s) {
+      if (secondaryCodec == NULL) {
+        bool wasIFrame = false;
+        if (rateController->Pop(intermediateFrames, wasIFrame, false)) {
+        PTRACE(3, "RC returned " << intermediateFrames.GetSize() << " packets");
+          for (RTP_DataFrameList::iterator interFrame = intermediateFrames.begin(); interFrame != intermediateFrames.end(); ++interFrame) {
+            patch.FilterFrame(*interFrame, primaryCodec->GetOutputFormat());
+            if (!stream->WritePacket(*interFrame))
+              return (writeSuccessful = false);
+            sourceFrame.SetTimestamp(interFrame->GetTimestamp());
+            continue;
+          }
+          intermediateFrames.RemoveAll();
+        }
+      }
       return true;
+    }
   }
 #endif
 
