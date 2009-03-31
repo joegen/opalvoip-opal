@@ -1512,10 +1512,8 @@ static H323Capability * CreateStandardAudioCap(const PluginCodec_Definition * co
 //
 
 H323PluginG7231Capability::H323PluginG7231Capability(const PluginCodec_Definition * codecDefn,
-                                                     const OpalMediaFormat & mediaFormat,
-                                                     bool annexA)
+                                                     const OpalMediaFormat & mediaFormat)
   : H323AudioPluginCapability(codecDefn, mediaFormat, H245_AudioCapability::e_g7231)
-  , m_annexA(annexA)
 {
 }
 
@@ -1531,7 +1529,7 @@ PBoolean H323PluginG7231Capability::OnSendingPDU(H245_AudioCapability & cap, uns
   cap.SetTag(H245_AudioCapability::e_g7231);
   H245_AudioCapability_g7231 & g7231 = cap;
   g7231.m_maxAl_sduAudioFrames = packetSize;
-  g7231.m_silenceSuppression = m_annexA;
+  g7231.m_silenceSuppression = GetMediaFormat().GetOptionBoolean("VAD");
   return true;
 }
 
@@ -1541,7 +1539,7 @@ PBoolean H323PluginG7231Capability::OnReceivedPDU(const H245_AudioCapability & c
     return false;
   const H245_AudioCapability_g7231 & g7231 = cap;
   packetSize = g7231.m_maxAl_sduAudioFrames;
-  m_annexA = g7231.m_silenceSuppression;
+  GetWritableMediaFormat().SetOptionBoolean("VAD", g7231.m_silenceSuppression);
   return true;
 }
 
@@ -1550,7 +1548,7 @@ H323Capability * CreateG7231Cap(const PluginCodec_Definition * codecDefn,
                                 const OpalMediaFormat & mediaFormat,
                                 int /*subType*/) 
 {
-  return new H323PluginG7231Capability(codecDefn, mediaFormat, codecDefn->h323CapabilityData != 0);
+  return new H323PluginG7231Capability(codecDefn, mediaFormat);
 }
 
 

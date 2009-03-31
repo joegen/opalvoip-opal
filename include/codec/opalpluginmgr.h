@@ -512,15 +512,11 @@ class H323PluginG7231Capability : public H323AudioPluginCapability
   PCLASSINFO(H323PluginG7231Capability, H323AudioPluginCapability);
   public:
     H323PluginG7231Capability(const PluginCodec_Definition * codecDefn,
-                              const OpalMediaFormat & mediaFormat,
-                              bool annexA = true);
+                              const OpalMediaFormat & mediaFormat);
 
     virtual PObject * Clone() const;
     virtual PBoolean OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const;
     virtual PBoolean OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize);
-
-  protected:
-    bool m_annexA;
 };
 
 #define OPAL_DECLARE_EMPTY_G7231_CAPABILITY(fmt, annex) \
