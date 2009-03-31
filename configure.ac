@@ -445,6 +445,10 @@ dnl MSWIN_DISPLAY h323,H.323 support
 dnl MSWIN_DEFINE  h323,OPAL_H323
 OPAL_SIMPLE_OPTION([h323],[OPAL_H323], [whether to enable H.323 protocol support])
 
+if test "x$OPAL_H323" = "xyes" ; then
+  OPAL_CHECK_PTLIB([ASN], [ptclib/asner.h],  [PPER_Stream per;], [])
+fi
+
 dnl MSWIN_DISPLAY iax2,IAX2 support
 dnl MSWIN_DEFINE  iax2,OPAL_IAX2
 OPAL_SIMPLE_OPTION([iax],[OPAL_IAX2], [whether to enable IAX2 protocol support])
