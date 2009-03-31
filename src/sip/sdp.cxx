@@ -163,8 +163,8 @@ SDPMediaFormat::SDPMediaFormat(SDPMediaDescription & parent, RTP_DataFrame::Payl
 
 
 SDPMediaFormat::SDPMediaFormat(SDPMediaDescription & parent, const OpalMediaFormat & fmt)
-  : m_parent(parent) 
-  , mediaFormat(fmt)
+  : mediaFormat(fmt)
+  , m_parent(parent) 
   , payloadType(fmt.GetPayloadType())
   , clockRate(fmt.GetClockRate())
   , encodingName(fmt.GetEncodingName())
