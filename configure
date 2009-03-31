@@ -10111,6 +10111,94 @@ _ACEOF
           fi
 
 
+if test "x$OPAL_H323" = "xyes" ; then
+
+          old_CXXFLAGS="$CXXFLAGS"
+          old_LDFLAGS="$LDFLAGS"
+
+          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
+          if test "x${DEBUG_BUILD}" = xyes; then
+            LDFLAGS="$LDFLAGS $DEBUG_LIBS"
+          else
+            LDFLAGS="$LDFLAGS $RELEASE_LIBS"
+          fi
+
+          ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+          cat >conftest.$ac_ext <<_ACEOF
+
+                          #include <ptbuildopts.h>
+                          #include <ptlib.h>
+                          #include <ptclib/asner.h>
+
+                          int main()
+                          {
+                            PPER_Stream per;
+                          }
+
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  opal_ptlib_option=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	opal_ptlib_option=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+
+          CXXFLAGS="$old_CXXFLAGS"
+          LDFLAGS="$old_LDFLAGS"
+
+
+          { echo "$as_me:$LINENO: checking PTLIB has ASN" >&5
+echo $ECHO_N "checking PTLIB has ASN... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
+echo "${ECHO_T}$opal_ptlib_option" >&6; }
+
+          if test "x" = "x" ; then
+	    if test "x$opal_ptlib_option" = "xno" ; then
+              echo "  ERROR: compulsory feature from PTLib disabled.";
+              exit 1;
+            fi
+          else
+	    ="$opal_ptlib_option"
+
+	    if test "x$opal_ptlib_option" = "xyes" ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define  1
+_ACEOF
+
+	    fi
+          fi
+
+
+fi
+
 
           if test "x$OPAL_IAX2" = "x"; then
             { { echo "$as_me:$LINENO: error: No default specified for OPAL_IAX2, please correct configure.ac" >&5
