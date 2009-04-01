@@ -347,11 +347,15 @@ class SIPEndPoint : public OpalRTPEndPoint
     /**Find a connection that uses the specified token.
        This searches the endpoint for the connection that contains the token
        as provided by functions such as MakeConnection().
+
+       Note the token may be a "replaces" style value of the form:
+         "callid;to-tag=tag;from-tag=tag"
       */
     PSafePtr<SIPConnection> GetSIPConnectionWithLock(
       const PString & token,     ///<  Token to identify connection
-      PSafetyMode mode = PSafeReadWrite
-    ) { return PSafePtrCast<OpalConnection, SIPConnection>(GetConnectionWithLock(token, mode)); }
+      PSafetyMode mode = PSafeReadWrite,
+      SIP_PDU::StatusCodes * errorCode = NULL
+    );
 
     virtual PBoolean IsAcceptedAddress(const SIPURL & toAddr);
 
@@ -878,7 +882,7 @@ class SIPEndPoint : public OpalRTPEndPoint
         virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
         virtual void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
 
-    protected:
+      protected:
         SIPEndPoint & m_endpoint;
     };
     InterfaceMonitor m_highPriorityMonitor;
