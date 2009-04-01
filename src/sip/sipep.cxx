@@ -703,6 +703,60 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
 }
 
 
+PSafePtr<SIPConnection> SIPEndPoint::GetSIPConnectionWithLock(const PString & token,
+                                                              PSafetyMode mode,
+                                                              SIP_PDU::StatusCodes * errorCode)
+{
+  PSafePtr<SIPConnection> connection = PSafePtrCast<OpalConnection, SIPConnection>(GetConnectionWithLock(token, mode));
+  if (connection != NULL)
+    return connection;
+
+  PString to;
+  static const char toTag[] = ";to-tag=";
+  PINDEX pos = token.Find(toTag);
+  if (pos != P_MAX_INDEX) {
+    pos += sizeof(toTag)-1;
+    to = token(pos, token.Find(';', pos)-1).Trim();
+  }
+
+  PString from;
+  static const char fromTag[] = ";from-tag=";
+  pos = token.Find(fromTag);
+  if (pos != P_MAX_INDEX) {
+    pos += sizeof(fromTag)-1;
+    from = token(pos, token.Find(';', pos)-1).Trim();
+  }
+
+  PString callid = token.Left(token.Find(';')).Trim();
+  if (callid.IsEmpty() || to.IsEmpty() || from.IsEmpty()) {
+    if (errorCode == NULL)
+      *errorCode = SIP_PDU::Failure_BadRequest;
+    return NULL;
+  }
+
+  connection = PSafePtrCast<OpalConnection, SIPConnection>(connectionsActive.GetAt(0, PSafeReference));
+  while (connection != NULL) {
+    const SIPDialogContext & context = connection->GetDialog();
+    if (context.GetCallID() == callid) {
+      if (context.GetLocalTag() == to && context.GetRemoteTag() == from) {
+        if (connection.SetSafetyMode(mode))
+          return connection;
+        break;
+      }
+
+      PTRACE(4, "SIP\tReplaces header matches callid, but not to/from tags: "
+                "to=" << context.GetLocalTag() << ", from=" << context.GetRemoteTag());
+    }
+
+    ++connection;
+  }
+
+  if (errorCode == NULL)
+    *errorCode = SIP_PDU::Failure_TransactionDoesNotExist;
+  return NULL;
+}
+
+
 PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 {
   SIPMIMEInfo & mime = request->GetMIME();
@@ -718,49 +772,15 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   // See if we are replacing an existing call.
   OpalCall * call = NULL;
   if (mime.Contains("Replaces")) {
-    PString replaces = mime("Replaces");
-
-    PString to;
-    static const char toTag[] = ";to-tag=";
-    PINDEX pos = replaces.Find(toTag);
-    if (pos != P_MAX_INDEX) {
-      pos += sizeof(toTag)-1;
-      to = replaces(pos, replaces.Find(';', pos)-1).Trim();
-    }
-
-    PString from;
-    static const char fromTag[] = ";from-tag=";
-    pos = replaces.Find(fromTag);
-    if (pos != P_MAX_INDEX) {
-      pos += sizeof(fromTag)-1;
-      from = replaces(pos, replaces.Find(';', pos)-1).Trim();
-    }
-
-    PString callid = replaces.Left(replaces.Find(';')).Trim();
-    if (callid.IsEmpty() || to.IsEmpty() || from.IsEmpty()) {
-      PTRACE(2, "SIP\tBad Replaces header in INVITE from " << request->GetURI());
-      request->SendResponse(transport, SIP_PDU::Failure_BadRequest, this);
+    SIP_PDU::StatusCodes errorCode;
+    PSafePtr<SIPConnection> replacedConnection = GetSIPConnectionWithLock(mime("Replaces"), PSafeReference, &errorCode);
+    if (replacedConnection == NULL) {
+      PTRACE_IF(2, errorCode==SIP_PDU::Failure_BadRequest,
+                "SIP\tBad Replaces header in INVITE from " << request->GetURI());
+      PTRACE_IF(2, errorCode==SIP_PDU::Failure_TransactionDoesNotExist,
+                "SIP\tNo connection matching dialog info in Replaces header of INVITE from " << request->GetURI());
+      request->SendResponse(transport, errorCode, this);
       return false;
-    }
-
-    PSafePtr<SIPConnection> replacedConnection = PSafePtrCast<OpalConnection, SIPConnection>(connectionsActive.GetAt(0, PSafeReference));
-    for (;;) {
-      if (replacedConnection == NULL) {
-        PTRACE(2, "SIP\tNo connection matching dialog info in Replaces header of INVITE from " << request->GetURI());
-        request->SendResponse(transport, SIP_PDU::Failure_TransactionDoesNotExist, this);
-        return false;
-      }
-
-      const SIPDialogContext & context = replacedConnection->GetDialog();
-      if (context.GetCallID() == callid) {
-        if (context.GetLocalTag() == to && context.GetRemoteTag() == from)
-          break;
-
-        PTRACE(4, "SIP\tReplaces header matches callid, but not to/from tags: "
-                  "to=" << context.GetLocalTag() << ", from=" << context.GetRemoteTag());
-      }
-
-      ++replacedConnection;
     }
 
     // Use the existing call instance when replacing the SIP side of it.
