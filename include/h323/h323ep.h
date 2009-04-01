@@ -278,6 +278,9 @@ class H323EndPoint : public OpalRTPEndPoint
        If the endpoint is already registered with a gatekeeper that meets
        the same criteria then the gatekeeper is not changed, otherwise it is
        deleted (with unregistration) and new one created and registered to.
+
+       Note that a gatekeeper address of "*" is treated like an empty string
+       resulting in gatekeeper discovery.
      */
     PBoolean UseGatekeeper(
       const PString & address = PString::Empty(),     ///<  Address of gatekeeper to use.

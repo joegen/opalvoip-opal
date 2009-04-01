@@ -279,7 +279,7 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
   if (gatekeeper != NULL) {
     PBoolean same = PTrue;
 
-    if (!address)
+    if (!address && address != "*")
       same = gatekeeper->GetTransport().GetRemoteAddress().IsEquivalent(address);
 
     if (!same && !identifier)
@@ -303,7 +303,7 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
       transport = new H323TransportUDP(*this, ip, port);
   }
 
-  if (address.IsEmpty()) {
+  if (address.IsEmpty() || address == "*") {
     if (identifier.IsEmpty())
       return DiscoverGatekeeper(transport);
     else
