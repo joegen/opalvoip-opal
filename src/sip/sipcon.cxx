@@ -1752,12 +1752,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   releaseMethod = ReleaseWithResponse;
 
-  PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
   SetPhase(SetUpPhase);
 
   // Replaces header has already been validated in SIPEndPoint::OnReceivedINVITE
-  PString replaces = mime("Replaces");
-  PSafePtr<SIPConnection> replacedConnection = endpoint.GetSIPConnectionWithLock(replaces.Left(replaces.Find(';')).Trim(), PSafeReadOnly);
+  PSafePtr<SIPConnection> replacedConnection = endpoint.GetSIPConnectionWithLock(mime("Replaces"), PSafeReadOnly);
   if (replacedConnection != NULL) {
     PTRACE(3, "SIP\tConnection " << *replacedConnection << " replaced by " << *this);
 
@@ -1778,6 +1776,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     Release();
     return;
   }
+
+  PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 
   // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
   // before it knows what what formats can support. 
