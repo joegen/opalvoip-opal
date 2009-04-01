@@ -729,7 +729,7 @@ PSafePtr<SIPConnection> SIPEndPoint::GetSIPConnectionWithLock(const PString & to
 
   PString callid = token.Left(token.Find(';')).Trim();
   if (callid.IsEmpty() || to.IsEmpty() || from.IsEmpty()) {
-    if (errorCode == NULL)
+    if (errorCode != NULL)
       *errorCode = SIP_PDU::Failure_BadRequest;
     return NULL;
   }
