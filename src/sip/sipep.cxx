@@ -751,7 +751,7 @@ PSafePtr<SIPConnection> SIPEndPoint::GetSIPConnectionWithLock(const PString & to
     ++connection;
   }
 
-  if (errorCode == NULL)
+  if (errorCode != NULL)
     *errorCode = SIP_PDU::Failure_TransactionDoesNotExist;
   return NULL;
 }
