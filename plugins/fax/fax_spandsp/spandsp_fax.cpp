@@ -248,7 +248,13 @@ static struct PluginCodec_Option const T38FaxTranscodingJBIG =
   0                           // H.245 Generic Capability number and scope bits
 };
 
-static struct PluginCodec_Option const * const OptionTable[] = {
+static struct PluginCodec_Option const * const OptionTableTIFF[] = {
+  &ReceivingOption,
+  &TiffFileNameOption,
+  NULL
+};
+
+static struct PluginCodec_Option const * const OptionTableT38[] = {
   &ReceivingOption,
   &TiffFileNameOption,
   &T38FaxVersion,
@@ -780,7 +786,7 @@ class FaxCodecContext
 /////////////////////////////////////////////////////////////////////////////
 
 static int get_codec_options(const PluginCodec_Definition * ,
-                                                     void * ,
+                                                     void * context,
                                                const char * ,
                                                      void * parm,
                                                  unsigned * parmLen)
@@ -788,7 +794,8 @@ static int get_codec_options(const PluginCodec_Definition * ,
   if (parm == NULL || parmLen == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
     return false;
 
-  *(struct PluginCodec_Option const * const * *)parm = OptionTable;
+  *(struct PluginCodec_Option const * const * *)parm =
+          context != NULL && strcasecmp((char *)context, T38Format) == 0 ? OptionTableT38 : OptionTableTIFF;
   return true;
 }
 

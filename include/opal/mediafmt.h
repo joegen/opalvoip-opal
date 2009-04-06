@@ -550,6 +550,8 @@ class OpalMediaFormatInternal : public PObject
       time_t timeStamp
     );
 
+    const PCaselessString & GetName() const { return formatName; }
+
     virtual PObject * Clone() const;
     virtual void PrintOn(ostream & strm) const;
 
