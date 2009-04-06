@@ -783,10 +783,14 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
 
 #if OPAL_PTLIB_DTMF
   if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
-    if (m_detectInBandDTMF && isSource)
+    if (m_detectInBandDTMF && isSource) {
       patch.AddFilter(PCREATE_NOTIFIER(OnDetectInBandDTMF), OPAL_PCM16);
-    if (m_sendInBandDTMF && !isSource)
+      PTRACE(4, "OpalCon\tAdded detect DTMF filter on connection " << *this << ", patch " << patch);
+    }
+    if (m_sendInBandDTMF && !isSource) {
       patch.AddFilter(PCREATE_NOTIFIER(OnSendInBandDTMF), OPAL_PCM16);
+      PTRACE(4, "OpalCon\tAdded send DTMF filter on connection " << *this << ", patch " << patch);
+    }
   }
 #endif
 
@@ -1023,7 +1027,9 @@ PBoolean OpalConnection::SendUserInputTone(char tone, unsigned duration)
     if (duration <= 0)
       duration = PDTMFEncoder::DefaultToneLen;
     PTRACE(3, "OPAL\tSending in-band DTMF tone '" << tone << "', duration=" << duration);
+    m_inBandMutex.Wait();
     m_inBandDTMF.AddTone(tone, duration);
+    m_inBandMutex.Signal();
   }
 
   UnlockReadWrite();
@@ -1111,8 +1117,8 @@ void OpalConnection::OnSendInBandDTMF(RTP_DataFrame & frame, INT)
   if (m_inBandDTMF.IsEmpty())
     return;
 
-  if (!LockReadWrite())
-    return;
+  // Can't do the usual LockReadWrite() as deadlocks
+  m_inBandMutex.Wait();
 
   PINDEX bytes = (m_inBandDTMF.GetSize() - m_emittedInBandDTMF)*sizeof(short);
   if (bytes > frame.GetPayloadSize())
@@ -1127,7 +1133,7 @@ void OpalConnection::OnSendInBandDTMF(RTP_DataFrame & frame, INT)
     m_emittedInBandDTMF = 0;
   }
 
-  UnlockReadWrite();
+  m_inBandMutex.Signal();
 }
 #endif
 
