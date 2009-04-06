@@ -233,10 +233,14 @@ class OpalTranscoder : public OpalMediaFormatPair
        There could be many possible matches between the two lists, so
        preference is given to the order of the destination formats.
 
-       Returns PFalse if there is no registered media transcoder that can be used
-       between the two named formats.
+       At least one of the two selected medai formats (source or destination)
+       must also be of the specified media type ("audio", "video" etc).
+
+       Returns false if there is no registered media transcoder that can be
+               used to get from src to dst for the media type.
       */
     static bool SelectFormats(
+      const OpalMediaType & mediaType,        ///< Media type for selection.
       const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
       const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
       const OpalMediaFormatList & allFormats, ///<  Master list of formats for merging options
