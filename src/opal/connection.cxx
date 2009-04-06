@@ -179,7 +179,7 @@ static POrdinalToString::Initialiser const CallEndReasonStringsInitialiser[] = {
   { OpalConnection::EndedByLocalCongestion,      "Local party congested" },
   { OpalConnection::EndedByRemoteBusy,           "Remote party busy" },
   { OpalConnection::EndedByRemoteCongestion,     "Remote switch congested" },
-  { OpalConnection::EndedByUnreachable,          "Remote party could but be reached" },
+  { OpalConnection::EndedByUnreachable,          "Remote party could not be reached" },
   { OpalConnection::EndedByNoEndPoint,           "Remote party application is not running" },
   { OpalConnection::EndedByHostOffline,          "Remote party host is off line" },
   { OpalConnection::EndedByTemporaryFailure,     "Remote system failed temporarily" },
