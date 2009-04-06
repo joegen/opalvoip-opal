@@ -289,7 +289,7 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
 {
   void ** rawOptions = NULL;
   unsigned int optionsLen = sizeof(rawOptions);
-  getOptionsControl.Call(&rawOptions, &optionsLen);
+  getOptionsControl.Call(&rawOptions, &optionsLen, (void *)(const char *)format.GetName());
   if (rawOptions != NULL) {
     if (codecDef->version < PLUGIN_CODEC_VERSION_OPTIONS) {
       PTRACE(3, "OpalPlugin\tAdding options to OpalMediaFormat " << format << " using old style method");
