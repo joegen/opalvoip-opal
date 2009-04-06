@@ -196,7 +196,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying fax plug in and debug files"
-				CommandLine="if not exist c:\ptlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\ptlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins&#x0D;&#x0A;copy .\spandsp-0.0.6\src\debug\libspandsp.dll c:\ptlib_plugins&#x0D;&#x0A;copy .\spandsp-0.0.6\src\debug\libspandsp.pdb c:\ptlib_plugins&#x0D;&#x0A;"
+				CommandLine="if not exist c:\ptlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\ptlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins&#x0D;&#x0A;copy .\debug\libspandsp.dll c:\ptlib_plugins&#x0D;&#x0A;copy .\debug\libspandsp.pdb c:\ptlib_plugins&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
