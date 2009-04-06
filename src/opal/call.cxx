@@ -462,7 +462,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       sinkMediaFormats.Reorder(priorityFormat);
     }
 
-    if (!SelectMediaFormats(sourceMediaFormats,
+    if (!SelectMediaFormats(mediaType,
+                            sourceMediaFormats,
                             sinkMediaFormats,
                             connection.GetLocalMediaFormats(),
                             sourceFormat,
@@ -508,13 +509,14 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 }
 
 
-bool OpalCall::SelectMediaFormats(const OpalMediaFormatList & srcFormats,
+bool OpalCall::SelectMediaFormats(const OpalMediaType & mediaType,
+                                  const OpalMediaFormatList & srcFormats,
                                   const OpalMediaFormatList & dstFormats,
                                   const OpalMediaFormatList & allFormats,
                                   OpalMediaFormat & srcFormat,
                                   OpalMediaFormat & dstFormat) const
 {
-  if (OpalTranscoder::SelectFormats(srcFormats, dstFormats, allFormats, srcFormat, dstFormat)) {
+  if (OpalTranscoder::SelectFormats(mediaType, srcFormats, dstFormats, allFormats, srcFormat, dstFormat)) {
     PTRACE(3, "Call\tSelected media formats " << srcFormat << " -> " << dstFormat);
     return true;
   }

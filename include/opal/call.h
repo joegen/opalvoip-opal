@@ -393,6 +393,7 @@ class OpalCall : public PSafeObject
        Default behavour calls OpalTranscoder::SelectFormats().
       */
     virtual bool SelectMediaFormats(
+      const OpalMediaType & mediaType,        ///< Media type for selection.
       const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
       const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
       const OpalMediaFormatList & allFormats, ///<  Master list of formats for merging options
