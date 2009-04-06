@@ -2025,23 +2025,11 @@ void MyManager::OnClearedCall(OpalCall & call)
     case OpalConnection::EndedByNoAnswer :
       LogWindow << '"' << name << "\" did not answer your call";
       break;
-    case OpalConnection::EndedByTransportFail :
-      LogWindow << "Call with \"" << name << "\" ended abnormally";
-      break;
-    case OpalConnection::EndedByCapabilityExchange :
-      LogWindow << "Could not find common codec with \"" << name << '"';
-      break;
     case OpalConnection::EndedByNoAccept :
       LogWindow << "Did not accept incoming call from \"" << name << '"';
       break;
-    case OpalConnection::EndedByAnswerDenied :
-      LogWindow << "Refused incoming call from \"" << name << '"';
-      break;
     case OpalConnection::EndedByNoUser :
-      LogWindow << "Gatekeeper could find user \"" << name << '"';
-      break;
-    case OpalConnection::EndedByNoBandwidth :
-      LogWindow << "Call to \"" << name << "\" aborted, insufficient bandwidth.";
+      LogWindow << "Could find user \"" << name << '"';
       break;
     case OpalConnection::EndedByUnreachable :
       LogWindow << '"' << name << "\" could not be reached.";
@@ -2056,7 +2044,7 @@ void MyManager::OnClearedCall(OpalCall & call)
       LogWindow << "Transport error calling \"" << name << '"';
       break;
     default :
-      LogWindow << "Call with \"" << name << "\" completed";
+      LogWindow << call.GetCallEndReasonText() << " with \"" << name << '"';
   }
   PTime now;
   LogWindow << ", on " << now.AsString("w h:mma") << ". Duration "
