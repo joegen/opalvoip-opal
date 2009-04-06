@@ -221,6 +221,7 @@ class exampleJNI {
   public final static native String OpalStatusMessageWaiting_m_extraInfo_get(long jarg1, OpalStatusMessageWaiting jarg1_);
   public final static native long new_OpalStatusMessageWaiting();
   public final static native void delete_OpalStatusMessageWaiting(long jarg1);
+  public final static native int OpalLineIdle_get();
   public final static native void OpalStatusLineAppearance_m_line_set(long jarg1, OpalStatusLineAppearance jarg1_, String jarg2);
   public final static native String OpalStatusLineAppearance_m_line_get(long jarg1, OpalStatusLineAppearance jarg1_);
   public final static native void OpalStatusLineAppearance_m_state_set(long jarg1, OpalStatusLineAppearance jarg1_, int jarg2);
