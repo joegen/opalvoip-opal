@@ -3713,6 +3713,18 @@ SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_delete_1OpalStatusMessageWa
 }
 
 
+SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OpalLineIdle_1get(JNIEnv *jenv, jclass jcls) {
+  jint jresult = 0 ;
+  enum OpalLineAppearanceStates result;
+  
+  (void)jenv;
+  (void)jcls;
+  result = (enum OpalLineAppearanceStates)OpalLineIdle;
+  jresult = (jint)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1line_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusLineAppearance *arg1 = (OpalStatusLineAppearance *) 0 ;
   char *arg2 = (char *) 0 ;

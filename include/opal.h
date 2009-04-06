@@ -941,13 +941,15 @@ typedef struct OpalStatusMessageWaiting {
    in the OpalStatusMediaStream structure.
   */
 typedef enum OpalLineAppearanceStates {
-  OpalLineIdle,       /**< Line has moved to the idle state. */
-  OpalLineTrying,     /**< Line has been siezed. */
-  OpalLineProceeding, /**< Line is trying to make a call. */
-  OpalLineRinging,    /**< Line is ringing. */
-  OpalLineConnected,  /**< Line is connected. */
-  OpalLineSubcribed,  /**< Line appearance subscription successful. */
-  OpalLineUnsubcribed /**< Line appearance unsubscription successful. */
+  OpalLineTerminated,  /**< Line has ended a call. */
+  OpalLineTrying,      /**< Line has been siezed. */
+  OpalLineProceeding,  /**< Line is trying to make a call. */
+  OpalLineRinging,     /**< Line is ringing. */
+  OpalLineConnected,   /**< Line is connected. */
+  OpalLineSubcribed,   /**< Line appearance subscription successful. */
+  OpalLineUnsubcribed, /**< Line appearance unsubscription successful. */
+
+  OpalLineIdle = OpalLineTerminated // Kept for backward compatibility
 } OpalLineAppearanceStates;
 
 
