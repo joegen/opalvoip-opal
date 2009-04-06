@@ -2291,7 +2291,11 @@ void MyManager::SwitchToFax()
   if (!m_activeCall->IsNetworkOriginated())
     return; // We originated call
 
-  if (m_activeCall->Transfer("t38:*;receive", m_activeCall->GetConnection(1)))
+  PSafePtr<OpalConnection> connection = m_activeCall->GetConnection(1);
+  if (connection == NULL)
+    return; // Only one connection!
+
+  if (m_activeCall->Transfer("t38:*;receive", connection))
     LogWindow << "Switching to T.38 fax mode." << endl;
   else
     LogWindow << "Could not switch to T.38 fax mode." << endl;
