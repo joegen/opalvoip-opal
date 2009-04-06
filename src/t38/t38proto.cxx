@@ -503,6 +503,13 @@ void OpalFaxConnection::OnEstablished()
 }
 
 
+void OpalFaxConnection::OnReleased()
+{
+  m_faxTimer.Stop(false);
+  OpalConnection::OnReleased();
+}
+
+
 OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
   return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource, true);
