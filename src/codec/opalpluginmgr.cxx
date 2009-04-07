@@ -963,17 +963,21 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
   if (outputDataSize < optimalDataSize)
     outputDataSize = optimalDataSize;
 
+
   unsigned flags;
 
   if (isEncoder) {
     bool isIFrame = false;
     do {
+      if (outputDataSize < 2048)
+            outputDataSize = 2048;
+
       RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize);
       dst->SetPayloadType(GetPayloadType(PFalse));
       dst->SetTimestamp(src.GetTimestamp());
 
       // call the codec function
-      unsigned int fromLen = src.GetSize();
+      unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
       unsigned int toLen = dst->GetSize();
       flags = forceIFrame ? PluginCodec_CoderForceIFrame : 0;
 
