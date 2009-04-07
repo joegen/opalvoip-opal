@@ -258,7 +258,7 @@ static const wxChar SpeedDialTabTitle[] = wxT("Speed Dials");
 
 enum IconStates {
   Icon_Unknown,
-  Icon_Absent,
+  Icon_Busy,
   Icon_Present,
   NumIconStates
 };
@@ -266,7 +266,7 @@ enum IconStates {
 static const wxChar * const IconStatusNames[] =
 {
   wxT("Unknown"),
-  wxT("Offline"),
+  wxT("Busy"),
   wxT("Online")
 };
 
@@ -1072,9 +1072,18 @@ bool MyManager::Initialise()
       AddRouteEntry(DefaultRoutes[i]);
   }
 
+  SubscribeToSpeedDialPresence();
+
   return true;
 }
 
+
+void MyManager::SubscribeToSpeedDialPresence()
+{
+  URLToSpeedDialPos::iterator r;
+  for (r = urlToSpeedDialPos.begin(); r != urlToSpeedDialPos.end(); ++r) 
+    sipEP->Subscribe(SIPSubscribe::Presence, 60, PString(r->first));
+}
 
 void MyManager::StartLID()
 {
@@ -1179,7 +1188,6 @@ void MyManager::StartAllListeners()
 #endif
 }
 
-
 void MyManager::RecreateSpeedDials(SpeedDialViews view)
 {
   wxConfigBase * config = wxConfig::Get();
@@ -1227,6 +1235,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
   }
 
   // Read the speed dials from the configuration
+  urlToSpeedDialPos.clear();
   config->SetPath(SpeedDialsGroup);
   wxString groupName;
   long groupIndex;
@@ -1236,8 +1245,9 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
       wxString number, address, stateURL, description;
       if (config->Read(SpeedDialAddressKey, &address) && !address.empty()) {
         IconStates icon = Icon_Unknown;
-        if (config->Read(SpeedDialStateUrlKey, &stateURL) && !stateURL.empty())
-          icon = Icon_Absent;
+
+        //if (config->Read(SpeedDialStateUrlKey, &stateURL) && !stateURL.empty())
+        //  icon = Icon_Busy;
 
         int pos = m_speedDials->InsertItem(INT_MAX, groupName, icon);
         m_speedDials->SetItem(pos, e_NumberColumn, config->Read(SpeedDialNumberKey, wxT("")));
@@ -1245,6 +1255,8 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
         m_speedDials->SetItem(pos, e_AddressColumn, address);
         m_speedDials->SetItem(pos, e_StateUrlColumn, stateURL);
         m_speedDials->SetItem(pos, e_DescriptionColumn, config->Read(SpeedDialDescriptionKey, wxT("")));
+
+        urlToSpeedDialPos.insert(URLToSpeedDialPos::value_type(PString(stateURL), pos));
       }
       config->SetPath(wxT(".."));
     } while (config->GetNextGroup(groupName, groupIndex));
@@ -1706,6 +1718,8 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent& WXUNUSED(event))
           config->Write(SpeedDialAddressKey, address);
           config->Write(SpeedDialStateUrlKey, stateURL);
           config->Write(SpeedDialDescriptionKey, description);
+
+          urlToSpeedDialPos.insert(URLToSpeedDialPos::value_type(PString(stateURL), pos));
         }
       }
     }
@@ -1799,6 +1813,7 @@ void MyManager::EditSpeedDial(int index, bool newItem)
   SpeedDialDialog dlg(this);
 
   wxString originalName = dlg.m_Name = item.m_text;
+  wxString originalURL  = dlg.m_StateURL;
 
   item.m_col = e_NumberColumn;
   if (m_speedDials->GetItem(item))
@@ -1842,7 +1857,7 @@ void MyManager::EditSpeedDial(int index, bool newItem)
   item.m_text = dlg.m_Description;
   m_speedDials->SetItem(item);
 
-  m_speedDials->SetItemImage(item, dlg.m_StateURL.IsEmpty() ? Icon_Unknown : Icon_Absent);
+  m_speedDials->SetItemImage(item, Icon_Unknown);
 
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(SpeedDialsGroup);
@@ -1852,6 +1867,16 @@ void MyManager::EditSpeedDial(int index, bool newItem)
   config->Write(SpeedDialAddressKey, dlg.m_Address);
   config->Write(SpeedDialStateUrlKey, dlg.m_StateURL);
   config->Write(SpeedDialDescriptionKey, dlg.m_Description);
+
+  if (originalURL != dlg.m_StateURL) {
+    if (!originalURL.empty()) {
+      URLToSpeedDialPos::iterator r = urlToSpeedDialPos.find(PString(originalURL));
+      if (r != urlToSpeedDialPos.end()) 
+        urlToSpeedDialPos.erase(r);
+    }
+    if (!dlg.m_StateURL.empty()) 
+      urlToSpeedDialPos.insert(URLToSpeedDialPos::value_type(PString(dlg.m_StateURL), index));
+  }
 }
 
 
@@ -2797,25 +2822,18 @@ void MyManager::OnPresenceInfoReceived(const SIPPresenceInfo & info)
 void MyManager::OnPresence(wxCommandEvent & theEvent)
 {
   SIPPresenceInfo * info = (SIPPresenceInfo *)theEvent.GetClientData();
-  LogWindow << "Presence NOTIFY received for " << info->m_address;
-  switch (info->m_basic) {
-    case SIPPresenceInfo::Open :
-      LogWindow << ": ";
-      if (info->m_note.IsEmpty())
-        LogWindow << "Open";
-      else
-        LogWindow << '"' << info->m_note << '"';
-      break;
+  LogWindow << "Presence NOTIFY received for " << info->m_address << ": " << info->AsString(true) << endl;
 
-    case SIPPresenceInfo::Closed :
-      LogWindow << ": Closed";
-      break;
-    case SIPPresenceInfo::Unknown :
-    default:
-      LogWindow << ": Unknown";
-      break;
+  SIPURL url(info->m_address);
+  url.Sanitise(SIPURL::ExternalURI);
+  PString uri = url.AsString();
+
+  URLToSpeedDialPos::iterator r = urlToSpeedDialPos.find(uri);
+  if (r != urlToSpeedDialPos.end()) {
+
+
   }
-  LogWindow << endl;
+
   delete info;
 }
 
