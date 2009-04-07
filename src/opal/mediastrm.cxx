@@ -975,7 +975,7 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize)
   }
 
   unsigned dataTime = ((dataSize/sizeof(short))*1000)/mediaFormat.GetClockRate();
-  unsigned soundChannelBuffers = (m_soundChannelBufferTime+dataTime-1)/dataTime;
+  PINDEX soundChannelBuffers = (m_soundChannelBufferTime+dataTime-1)/dataTime;
   if (soundChannelBuffers < m_soundChannelBuffers)
     soundChannelBuffers = m_soundChannelBuffers;
 
