@@ -51,6 +51,7 @@
 #include <h323/h323.h>
 #include <h323/gkclient.h>
 #include <sip/sip.h>
+#include <ptlib/wxstring.h>
 
 
 #include <list>
@@ -70,62 +71,6 @@ class wxListEvent;
 class wxNotebook;
 class wxGrid;
 class wxConfigBase;
-
-
-class PwxString : public wxString
-{
-  public:
-    PwxString() { }
-    PwxString(const wxString & str) : wxString(str) { }
-    PwxString(const PString & str) : wxString(str, wxConvUTF8 ) { }
-    PwxString(const PFilePath & fn) : wxString(fn, wxConvUTF8 ) { }
-    PwxString(const char * str) : wxString(str, wxConvUTF8) { }
-    PwxString(const OpalMediaFormat & fmt) : wxString(fmt, wxConvUTF8) { }
-#if wxUSE_UNICODE
-    PwxString(const wchar_t * wstr) : wxString(wstr) { }
-#endif
-
-    inline PwxString & operator=(const char * str)     { *this = wxString::wxString(str, wxConvUTF8); return *this; }
-#if wxUSE_UNICODE
-    inline PwxString & operator=(const wchar_t * wstr) { wxString::operator=(wstr); return *this; }
-#endif
-    inline PwxString & operator=(const wxString & str) { wxString::operator=(str); return *this; }
-    inline PwxString & operator=(const PString & str)  { *this = wxString::wxString(str, wxConvUTF8); return *this; }
-
-    inline bool operator==(const char * other)            const { return IsSameAs(wxString(other, wxConvUTF8)); }
-#if wxUSE_UNICODE
-    inline bool operator==(const wchar_t * other)         const { return IsSameAs(other); }
-#endif
-    inline bool operator==(const wxString & other)        const { return IsSameAs(other); }
-    inline bool operator==(const PString & other)         const { return IsSameAs(wxString(other, wxConvUTF8)); }
-    inline bool operator==(const PwxString & other)       const { return IsSameAs(other); }
-    inline bool operator==(const OpalMediaFormat & other) const { return IsSameAs(wxString(other, wxConvUTF8)); }
-
-    inline bool operator!=(const char * other)            const { return !IsSameAs(wxString(other, wxConvUTF8)); }
-#if wxUSE_UNICODE
-    inline bool operator!=(const wchar_t * other)         const { return !IsSameAs(other); }
-#endif
-    inline bool operator!=(const wxString & other)        const { return !IsSameAs(other); }
-    inline bool operator!=(const PString & other)         const { return !IsSameAs(wxString(other, wxConvUTF8)); }
-    inline bool operator!=(const PwxString & other)       const { return !IsSameAs(other); }
-    inline bool operator!=(const OpalMediaFormat & other) const { return !IsSameAs(wxString(other, wxConvUTF8)); }
-
-#if wxUSE_UNICODE
-    inline PString p_str() const { return ToUTF8().data(); }
-    inline operator PString() const { return ToUTF8().data(); }
-    inline operator PFilePath() const { return ToUTF8().data(); }
-    inline operator PIPSocket::Address() const { return PString(ToUTF8().data()); }
-    inline friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.ToUTF8(); }
-    inline friend wostream & operator<<(wostream & stream, const PwxString & string) { return stream << string.c_str(); }
-#else
-    inline PString p_str() const { return c_str(); }
-    inline operator PString() const { return c_str(); }
-    inline operator PFilePath() const { return c_str(); }
-    inline operator PIPSocket::Address() const { return c_str(); }
-    inline friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.c_str(); }
-    inline friend wostream & operator<<(wostream & stream, const PwxString & string) { return stream << string.c_str(); }
-#endif
-};
 
 
 class MyPCSSEndPoint : public OpalPCSSEndPoint
