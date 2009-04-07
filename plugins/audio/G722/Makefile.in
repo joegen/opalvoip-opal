@@ -35,6 +35,7 @@ STDCCFLAGS += @STDCCFLAGS@ -fPIC
 
 SRCDIR	= ./VoIPCodecs
 OBJDIR	= ./obj
+PLUGINDIR=../..
 
 CC		=@CC@
 CXX		=@CXX@
@@ -42,6 +43,7 @@ LDSO		=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
+EXTRACFLAGS     =-I$(PLUGINDIR)
 
 SRCS	+= g722codec.c \
 	   $(SRCDIR)/g722_encode.c \
@@ -53,7 +55,7 @@ vpath	%.c $(SRCDIR)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./g722_audio_pwplugin.$(PLUGINEXT)
 
