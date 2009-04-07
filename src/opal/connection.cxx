@@ -223,6 +223,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   , m_dtmfScaleMultiplier(1)
   , m_dtmfScaleDivisor(1)
   , m_sendInBandDTMF(true)
+  , m_installedInBandDTMF(false)
   , m_emittedInBandDTMF(0)
 #endif
 #ifdef _MSC_VER
@@ -788,6 +789,7 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
       PTRACE(4, "OpalCon\tAdded detect DTMF filter on connection " << *this << ", patch " << patch);
     }
     if (m_sendInBandDTMF && !isSource) {
+      m_installedInBandDTMF = true;
       patch.AddFilter(PCREATE_NOTIFIER(OnSendInBandDTMF), OPAL_PCM16);
       PTRACE(4, "OpalCon\tAdded send DTMF filter on connection " << *this << ", patch " << patch);
     }
@@ -1020,19 +1022,17 @@ PBoolean OpalConnection::SendUserInputString(const PString & value)
 #if OPAL_PTLIB_DTMF
 PBoolean OpalConnection::SendUserInputTone(char tone, unsigned duration)
 {
-  if (!LockReadWrite())
+  if (!m_installedInBandDTMF)
     return false;
 
-  if (m_sendInBandDTMF) {
-    if (duration <= 0)
-      duration = PDTMFEncoder::DefaultToneLen;
-    PTRACE(3, "OPAL\tSending in-band DTMF tone '" << tone << "', duration=" << duration);
-    m_inBandMutex.Wait();
-    m_inBandDTMF.AddTone(tone, duration);
-    m_inBandMutex.Signal();
-  }
+  if (duration <= 0)
+    duration = PDTMFEncoder::DefaultToneLen;
 
-  UnlockReadWrite();
+  PTRACE(3, "OPAL\tSending in-band DTMF tone '" << tone << "', duration=" << duration);
+  m_inBandMutex.Wait();
+  m_inBandDTMF.AddTone(tone, duration);
+  m_inBandMutex.Signal();
+
   return true;
 }
 #else
