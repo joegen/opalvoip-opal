@@ -1545,6 +1545,7 @@ class OpalConnection : public PSafeObject
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnDetectInBandDTMF);
 
     bool         m_sendInBandDTMF;
+    bool         m_installedInBandDTMF;
     PDTMFEncoder m_inBandDTMF;
     PINDEX       m_emittedInBandDTMF;
     PMutex       m_inBandMutex;
