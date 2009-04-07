@@ -383,15 +383,50 @@ struct SIPPresenceInfo
     Closed
   };
 
+  enum ExtendedStates {
+    UnknownExtended,
+    Appointment,
+    Away,
+    Breakfast,
+    Busy,
+    Dinner,
+    Holiday,
+    InTransit,
+    LookingForWork,
+    Lunch,
+    Meal,
+    Meeting,
+    OnThePhone,
+    Other,
+    Performance,
+    PermanentAbsence,
+    Playing,
+    Presentation,
+    Shopping,
+    Sleeping,
+    Spectator,
+    Steering,
+    Travel,
+    TV,
+    Vacation,
+    Working,
+    Worship
+  };
+
   SIPPresenceInfo() : m_basic(Unknown) { }
 
+  // basic presence defined by RFC 3863
   PString     m_address;
   PString     m_entity;
   BasicStates m_basic;
   PString     m_note;
   PString     m_contact;
 
-  PString AsString() const;
+  // presence extensions defined by RFC 4480
+  PStringArray m_activities;  // list of activities, seperated by newline
+  ExtendedStates m_activity;  // primary activity
+
+  PString AsString(bool stateOnly = false) const;
 };
 
 

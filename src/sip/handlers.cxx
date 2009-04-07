@@ -929,34 +929,76 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
     if (rootElement == NULL || rootElement->GetName() != "presence")
       return false;
 
-    PXMLElement * tupleElement = rootElement->GetElement("tuple");
-    if (tupleElement == NULL)
-      return false;
+    {
+      PXMLElement * tupleElement = rootElement->GetElement("tuple");
+      if (tupleElement == NULL)
+        return false;
 
-    PXMLElement * statusElement = tupleElement->GetElement("status");
-    if (statusElement == NULL)
-      return false;
-
-    PXMLElement * basicElement = statusElement->GetElement("basic");
-    if (basicElement != NULL) {
-      PCaselessString value = basicElement->GetData();
-      if (value == "open")
-        info.m_basic = SIPPresenceInfo::Open;
-      else if (value == "closed")
-        info.m_basic = SIPPresenceInfo::Closed;
+      {
+        PXMLElement * statusElement = tupleElement->GetElement("status");
+        if (statusElement == NULL)
+          return false;
+        {
+          PXMLElement * basicElement = statusElement->GetElement("basic");
+          if (basicElement != NULL) {
+            PCaselessString value = basicElement->GetData();
+            if (value == "open")
+              info.m_basic = SIPPresenceInfo::Open;
+            else if (value == "closed")
+              info.m_basic = SIPPresenceInfo::Closed;
+          }
+        }
+        {
+          PXMLElement * noteElement = statusElement->GetElement("note");
+          if (!noteElement)
+            noteElement = rootElement->GetElement("note");
+          if (!noteElement)
+            noteElement = tupleElement->GetElement("note");
+          if (noteElement)
+            info.m_note = noteElement->GetData();
+        }
+      }
+      {
+        PXMLElement * contactElement = tupleElement->GetElement("contact");
+        if (contactElement != NULL)
+          info.m_contact = contactElement->GetData();
+      }
     }
+    {
+      info.m_activity = SIPPresenceInfo::UnknownExtended;
+      PXMLElement * personElement = rootElement->GetElement("dm:person");
+      if (personElement != NULL) {
+        PXMLElement * activitiesElement = personElement->GetElement("rpid:activities");
+        if (activitiesElement != NULL) {
+          PINDEX index = 0;
+          PXMLObject * activity = activitiesElement->GetElement(index);
+          while (activity != NULL) {
+            if (activity->IsElement()) {
+              PXMLElement * activityElement = (PXMLElement *)activity;
+              PString state = activityElement->GetName();
+              if (state.Left(5) *= "rpid:") 
+                state = state.Mid(5);
 
-    PXMLElement * noteElement = statusElement->GetElement("note");
-    if (!noteElement)
-      noteElement = rootElement->GetElement("note");
-    if (!noteElement)
-      noteElement = tupleElement->GetElement("note");
-    if (noteElement)
-      info.m_note = noteElement->GetData();
+              if (state *= "working")
+                info.m_activity = SIPPresenceInfo::Working;
+              else if (state *= "on-the-phone")
+                info.m_activity = SIPPresenceInfo::OnThePhone;
+              else if (state *= "busy")
+                info.m_activity = SIPPresenceInfo::Busy;
+              else if (state *= "away")
+                info.m_activity = SIPPresenceInfo::Away;
+              else if (state *= "vacation")
+                info.m_activity = SIPPresenceInfo::Vacation;
+              else if (state *= "holiday")
+                info.m_activity = SIPPresenceInfo::Holiday;
 
-    PXMLElement * contactElement = tupleElement->GetElement("contact");
-    if (contactElement != NULL)
-      info.m_contact = contactElement->GetData();
+              info.m_activities.AppendString(state);
+            }
+            activity = activitiesElement->GetElement(++index);
+          }
+        }
+      }
+    }
 
     handler.GetEndPoint().OnPresenceInfoReceived(info);
     return true;
@@ -1350,10 +1392,38 @@ void SIPPublishHandler::SetBody(const PString & b)
 }
 
 
-PString SIPPresenceInfo::AsString() const
+PString SIPPresenceInfo::AsString(bool stateOnly) const
 {
   if (m_address.IsEmpty())
     return PString::Empty();
+
+  if (stateOnly) {
+    PStringStream strm;
+    if (m_activities.GetSize() > 0) {
+      strm << setfill(',') << m_activities << setfill(' ');
+    } 
+    else {
+      switch (m_basic) {
+        case SIPPresenceInfo::Open :
+          if (m_note.IsEmpty())
+            strm << "Open";
+          else
+            strm << m_note;
+          break;
+
+        case SIPPresenceInfo::Closed :
+          strm << "Closed";
+          break;
+
+        case SIPPresenceInfo::Unknown :
+        default:
+          strm << "Unknown";
+          break;
+      }
+    }
+    strm << "\n";
+    return strm;
+  }
 
   PStringStream xml;
 
