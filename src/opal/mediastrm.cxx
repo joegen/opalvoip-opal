@@ -832,13 +832,10 @@ bool OpalRawMediaStream::SetChannel(PChannel * chan, bool autoDelete)
 
 PBoolean OpalRawMediaStream::Close()
 {
-  if (!OpalMediaStream::Close())
-    return false;
-
   if (m_channel != NULL)
     m_channel->Close();
 
-  return true;
+  return OpalMediaStream::Close();
 }
 
 
