@@ -866,8 +866,12 @@ class SIPEndPoint : public OpalRTPEndPoint
         SIP_PDUWorkQueue pduQueue;
     };
 
-    typedef PThreadPool<SIP_PDU_Work, SIP_PDU_Thread> SIPMainThreadPool;
-    SIPMainThreadPool threadPool;
+    class SIPMainThreadPool : public PThreadPool<SIP_PDU_Work, SIP_PDU_Thread>
+    {
+      public:
+        virtual PThreadPoolWorkerBase * CreateWorkerThread()
+        { return new SIP_PDU_Thread(*this); }
+    } threadPool;
 
     enum {
       HighPriority = 80,
