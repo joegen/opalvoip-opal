@@ -1114,6 +1114,11 @@ class MyManager : public wxFrame, public OpalManager
 
     PwxString m_lastRecordFile;
 
+    void SubscribeToSpeedDialPresence();
+
+    typedef std::map<std::string, int> URLToSpeedDialPos;
+    URLToSpeedDialPos urlToSpeedDialPos;
+
     DECLARE_EVENT_TABLE()
 
   friend class OptionsDialog;
