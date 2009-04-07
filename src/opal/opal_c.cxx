@@ -1139,6 +1139,18 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       }
     }
   }
+
+  if (m_apiVersion < 17)
+    return;
+
+#if OPAL_PTLIB_AUDIO
+  if (pcssEP != NULL) {
+    response->m_param.m_general.m_audioBufferTime = pcssEP->GetSoundChannelBufferTime();
+    if (command.m_param.m_general.m_audioBufferTime != 0)
+      pcssEP->SetSoundChannelBufferTime(command.m_param.m_general.m_audioBufferTime);
+  }
+#endif
+
 }
 
 

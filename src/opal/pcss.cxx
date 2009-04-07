@@ -113,11 +113,12 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
 #ifdef _WIN32
   // Windows MultMedia stuff seems to need greater depth due to enormous
   // latencies in its operation
-  soundChannelBuffers = 6;
+  m_soundChannelBufferTime = 120;
 #else
   // Should only need double buffering for Unix platforms
-  soundChannelBuffers = 2;
+  m_soundChannelBufferTime = 40;
 #endif
+  soundChannelBuffers = 2;
 
   PTRACE(3, "PCSS\tCreated PC sound system endpoint.\n" << setfill('\n')
          << "Players:\n"   << PSoundChannel::GetDeviceNames(PSoundChannel::Player)
@@ -356,6 +357,13 @@ void OpalPCSSEndPoint::SetSoundChannelBufferDepth(unsigned depth)
 }
 
 
+void OpalPCSSEndPoint::SetSoundChannelBufferTime(unsigned depth)
+{
+  PAssert(depth >= 20, PInvalidParameter);
+  m_soundChannelBufferTime = depth;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
@@ -364,11 +372,12 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
                                        const PString & recordDevice,
                                        unsigned options,
                           OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, ep.GetManager().GetNextCallToken(), options, stringOptions),
-    endpoint(ep),
-    soundChannelPlayDevice(playDevice),
-    soundChannelRecordDevice(recordDevice),
-    soundChannelBuffers(ep.GetSoundChannelBufferDepth())
+  : OpalConnection(call, ep, ep.GetManager().GetNextCallToken(), options, stringOptions)
+  , endpoint(ep)
+  , soundChannelPlayDevice(playDevice)
+  , soundChannelRecordDevice(recordDevice)
+  , soundChannelBuffers(ep.GetSoundChannelBufferDepth())
+  , m_soundChannelBufferTime(ep.GetSoundChannelBufferTime())
 {
   silenceDetector = new OpalPCM16SilenceDetector(endpoint.GetManager().GetSilenceDetectParams());
   echoCanceler = new OpalEchoCanceler;
@@ -459,7 +468,7 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
     if (soundChannel == NULL)
       return NULL;
 
-    return new OpalAudioMediaStream(*this, mediaFormat, sessionID, isSource, soundChannelBuffers, soundChannel);
+    return new OpalAudioMediaStream(*this, mediaFormat, sessionID, isSource, soundChannelBuffers, m_soundChannelBufferTime, soundChannel);
   }
 
 #if OPAL_HAS_IM

@@ -140,7 +140,7 @@ static const wxChar LocalInterfacesGroup[] = wxT("/Networking/Interfaces");
 static const wxChar AudioGroup[] = wxT("/Audio");
 DEF_FIELD(SoundPlayer);
 DEF_FIELD(SoundRecorder);
-DEF_FIELD(SoundBuffers);
+DEF_FIELD(SoundBufferTime);
 DEF_FIELD(LineInterfaceDevice);
 DEF_FIELD(AEC);
 DEF_FIELD(Country);
@@ -788,8 +788,8 @@ bool MyManager::Initialise()
     pcssEP->SetSoundChannelPlayDevice(str);
   if (config->Read(SoundRecorderKey, &str))
     pcssEP->SetSoundChannelRecordDevice(str);
-  if (config->Read(SoundBuffersKey, &value1))
-    pcssEP->SetSoundChannelBufferDepth(value1);
+  if (config->Read(SoundBufferTimeKey, &value1))
+    pcssEP->SetSoundChannelBufferTime(value1);
 
   if (config->Read(MinJitterKey, &value1)) {
     config->Read(MaxJitterKey, &value2, value1);
@@ -3370,7 +3370,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Sound fields
-  INIT_FIELD(SoundBuffers, m_manager.pcssEP->GetSoundChannelBufferDepth());
+  INIT_FIELD(SoundBufferTime, m_manager.pcssEP->GetSoundChannelBufferTime());
   INIT_FIELD(MinJitter, m_manager.GetMinAudioJitterDelay());
   INIT_FIELD(MaxJitter, m_manager.GetMaxAudioJitterDelay());
   INIT_FIELD(SilenceSuppression, m_manager.GetSilenceDetectParams().m_mode);
@@ -3780,7 +3780,7 @@ bool OptionsDialog::TransferDataFromWindow()
   config->Write(SoundPlayerKey, PwxString(m_manager.pcssEP->GetSoundChannelPlayDevice()));
   m_manager.pcssEP->SetSoundChannelRecordDevice(AudioDeviceNameFromScreen(m_SoundRecorder));
   config->Write(SoundRecorderKey, PwxString(m_manager.pcssEP->GetSoundChannelRecordDevice()));
-  SAVE_FIELD(SoundBuffers, m_manager.pcssEP->SetSoundChannelBufferDepth);
+  SAVE_FIELD(SoundBufferTime, m_manager.pcssEP->SetSoundChannelBufferTime);
   SAVE_FIELD2(MinJitter, MaxJitter, m_manager.SetAudioJitterDelay);
 
   OpalSilenceDetector::Params silenceParams;
