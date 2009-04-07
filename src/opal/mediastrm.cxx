@@ -932,11 +932,13 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
                                            unsigned sessionID,
                                            PBoolean isSource,
                                            PINDEX buffers,
+                                           unsigned bufferTime,
                                            PSoundChannel * channel,
                                            PBoolean autoDel)
   : OpalRawMediaStream(conn, mediaFormat, sessionID, isSource, channel, autoDel)
+  , m_soundChannelBuffers(buffers)
+  , m_soundChannelBufferTime(bufferTime)
 {
-  soundChannelBuffers = buffers;
 }
 
 
@@ -945,6 +947,7 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
                                            unsigned sessionID,
                                            PBoolean isSource,
                                            PINDEX buffers,
+                                           unsigned bufferTime,
                                            const PString & deviceName)
   : OpalRawMediaStream(conn, mediaFormat, sessionID, isSource,
                        PSoundChannel::CreateOpenedChannel(PString::Empty(),
@@ -953,8 +956,9 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
                                                                    : PSoundChannel::Player,
                                                           1, mediaFormat.GetClockRate(), 16),
                        true)
+  , m_soundChannelBuffers(buffers)
+  , m_soundChannelBufferTime(bufferTime)
 {
-  soundChannelBuffers = buffers;
 }
 
 
@@ -969,6 +973,11 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize)
     PTRACE(1, "Media\tClamping audio stream data size from " << dataSize << " to minimum " << minSize);
     dataSize = ((minSize+dataSize-1)/dataSize)*dataSize;
   }
+
+  unsigned dataTime = ((dataSize/sizeof(short))*1000)/mediaFormat.GetClockRate();
+  unsigned soundChannelBuffers = (m_soundChannelBufferTime+dataTime-1)/dataTime;
+  if (soundChannelBuffers < m_soundChannelBuffers)
+    soundChannelBuffers = m_soundChannelBuffers;
 
   PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
          << dataSize << " bytes and " << soundChannelBuffers << " buffers.");

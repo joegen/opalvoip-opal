@@ -625,7 +625,7 @@ class OptionsDialog : public wxDialog
     // Sound fields
     PwxString m_SoundPlayer;
     PwxString m_SoundRecorder;
-    int       m_SoundBuffers;
+    int       m_SoundBufferTime;
     PwxString m_LineInterfaceDevice;
     int       m_AEC;
     PwxString m_Country;

@@ -300,6 +300,14 @@ public class OpalParamGeneral {
     return exampleJNI.OpalParamGeneral_m_mediaOptions_get(swigCPtr, this);
   }
 
+  public void setM_audioBufferTime(long value) {
+    exampleJNI.OpalParamGeneral_m_audioBufferTime_set(swigCPtr, this, value);
+  }
+
+  public long getM_audioBufferTime() {
+    return exampleJNI.OpalParamGeneral_m_audioBufferTime_get(swigCPtr, this);
+  }
+
   public OpalParamGeneral() {
     this(exampleJNI.new_OpalParamGeneral(), true);
   }

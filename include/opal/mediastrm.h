@@ -702,6 +702,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
       unsigned sessionID,                  ///<  Session number for stream
       bool isSource,                       ///<  Is a source stream
       PINDEX buffers,                      ///<  Number of buffers on sound channel
+      unsigned bufferTime,                 ///<  Buffering time on sound channel (milliseconds)
       PSoundChannel * channel,             ///<  Audio device to stream to/from
       bool autoDelete = true               ///<  Automatically delete PSoundChannel
     );
@@ -714,6 +715,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
       unsigned sessionID,                  ///<  Session number for stream
       bool isSource,                       ///<  Is a source stream
       PINDEX buffers,                      ///<  Number of buffers on sound channel
+      unsigned bufferTime,                 ///<  Buffering time on sound channel (milliseconds)
       const PString & deviceName           ///<  Name of audio device to stream to/from
     );
   //@}
@@ -736,7 +738,8 @@ class OpalAudioMediaStream : public OpalRawMediaStream
   //@}
 
   protected:
-    PINDEX soundChannelBuffers;
+    PINDEX   m_soundChannelBuffers;
+    unsigned m_soundChannelBufferTime;
 };
 
 #endif // OPAL_PTLIB_AUDIO
