@@ -2244,17 +2244,18 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
   }
   PTRACE(4, "SIP\tProcessing received SDP media description for " << mediaType);
 
-  // see if the remote supports this media
+  /* Get the media the remote has answered to our offer. Remove the media
+     formats we do not support, in case the remote is insane and replied
+     with something we did not actually offer. */
   OpalMediaFormatList mediaFormatList = mediaDescription->GetMediaFormats();
+  mediaFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
   if (mediaFormatList.GetSize() == 0) {
-    PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
+    PTRACE(2, "SIP\tCould not find supported media formats in SDP media description for session " << rtpSessionId);
     return false;
   }
 
   // When receiving an answer SDP, keep the remote SDP media formats order
-  // but remove the media formats we do not support.
   remoteFormatList += mediaFormatList;
-  remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
 
   // Find the payload type and capabilities used for telephone-event, if present
   remoteFormatList += GetNxECapabilities(rfc2833Handler, mediaDescription, OpalRFC2833);
