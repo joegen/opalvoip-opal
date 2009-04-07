@@ -567,8 +567,6 @@ PBoolean MyManager::Initialise(PArgList & args)
   if (!args.HasOption('S')) {
     pcssEP = new MyPCSSEndPoint(*this);
 
-    pcssEP->SetSoundChannelBufferDepth(10);
-
     pcssEP->autoAnswer = args.HasOption('a');
     cout << "Auto answer is " << (pcssEP->autoAnswer ? "on" : "off") << "\n";
           

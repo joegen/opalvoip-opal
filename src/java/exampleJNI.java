@@ -95,6 +95,8 @@ class exampleJNI {
   public final static native long OpalParamGeneral_m_messageAvailable_get(long jarg1, OpalParamGeneral jarg1_);
   public final static native void OpalParamGeneral_m_mediaOptions_set(long jarg1, OpalParamGeneral jarg1_, String jarg2);
   public final static native String OpalParamGeneral_m_mediaOptions_get(long jarg1, OpalParamGeneral jarg1_);
+  public final static native void OpalParamGeneral_m_audioBufferTime_set(long jarg1, OpalParamGeneral jarg1_, long jarg2);
+  public final static native long OpalParamGeneral_m_audioBufferTime_get(long jarg1, OpalParamGeneral jarg1_);
   public final static native long new_OpalParamGeneral();
   public final static native void delete_OpalParamGeneral(long jarg1);
   public final static native void OpalProductDescription_m_vendor_set(long jarg1, OpalProductDescription jarg1_, String jarg2);

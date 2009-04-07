@@ -66,7 +66,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 16
+#define OPAL_C_API_VERSION 17
 
 
 ///////////////////////////////////////
@@ -527,7 +527,9 @@ typedef struct OpalParamGeneral {
                                            units (8000Hz). */
   OpalEchoCancelMode m_echoCancellation; /**< Accoustic Echo Cancellation control. 0=no change, 1=disabled,
                                               2=enabled. */
-  unsigned     m_audioBuffers;        /**< Set the number of hardware sound buffers to use. */
+  unsigned     m_audioBuffers;        /**< Set the number of hardware sound buffers to use.
+                                           Note the largest of m_audioBuffers and m_audioBufferTime/frametime
+                                           will be used. */
   OpalMediaDataFunction m_mediaReadData;   /**< Callback function for reading raw media data. See
                                                 OpalMediaDataFunction for more information. */
   OpalMediaDataFunction m_mediaWriteData;  /**< Callback function for writing raw media data. See
@@ -546,6 +548,9 @@ typedef struct OpalParamGeneral {
                                              "G.723.1:Tx Frames Per Packet=2\nH.263:Annex T=0\n"
                                              "Video:Max Rx Frame Width=176\nVideo:Max Rx Frame Height=144"
                                            */
+  unsigned     m_audioBufferTime;     /**< Set the hardware sound buffers to use in milliseconds.
+                                           Note the largest of m_audioBuffers and m_audioBufferTime/frametime
+                                           will be used. */
 } OpalParamGeneral;
 
 

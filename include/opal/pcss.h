@@ -244,13 +244,31 @@ class OpalPCSSEndPoint : public OpalEndPoint
     const PString & GetSoundChannelRecordDevice() const { return soundChannelRecordDevice; }
 
     /**Get default the sound channel buffer depth.
+       Note the largest of the depth in frames and the depth in milliseconds
+       as returned by GetSoundBufferTime() is used.
       */
     unsigned GetSoundChannelBufferDepth() const { return soundChannelBuffers; }
 
     /**Set the default sound channel buffer depth.
+       Note the largest of the depth in frames and the depth in milliseconds
+       as returned by GetSoundBufferTime() is used.
       */
     void SetSoundChannelBufferDepth(
       unsigned depth    ///<  New depth
+    );
+
+    /**Get default the sound channel buffer time in milliseconds.
+       Note the largest of the depth in frames and the depth in milliseconds
+       as returned by GetSoundBufferTime() is used.
+      */
+    unsigned GetSoundChannelBufferTime() const { return m_soundChannelBufferTime; }
+
+    /**Set the default sound channel buffer time in milliseconds.
+       Note the largest of the depth in frames and the depth in milliseconds
+       as returned by GetSoundBufferTime() is used.
+      */
+    void SetSoundChannelBufferTime(
+      unsigned depth    ///<  New depth in milliseconds
     );
   //@}
 
@@ -260,6 +278,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
     PString  soundChannelPlayDevice;
     PString  soundChannelRecordDevice;
     unsigned soundChannelBuffers;
+    unsigned m_soundChannelBufferTime;
 };
 
 
@@ -427,8 +446,16 @@ class OpalPCSSConnection : public OpalConnection
     const PString & GetSoundChannelRecordDevice() const { return soundChannelRecordDevice; }
 
     /**Get default the sound channel buffer depth.
+       Note the largest of the depth in frames and the depth in milliseconds
+       as returned by GetSoundBufferTime() is used.
       */
     unsigned GetSoundChannelBufferDepth() const { return soundChannelBuffers; }
+
+    /**Get default the sound channel buffer time in milliseconds.
+       Note the largest of the depth in frames and the depth in milliseconds
+       as returned by GetSoundBufferTime() is used.
+      */
+    unsigned GetSoundChannelBufferTime() const { return m_soundChannelBufferTime; }
   //@}
 
 
@@ -437,6 +464,7 @@ class OpalPCSSConnection : public OpalConnection
     PString            soundChannelPlayDevice;
     PString            soundChannelRecordDevice;
     unsigned           soundChannelBuffers;
+    unsigned           m_soundChannelBufferTime;
 };
 
 #endif // OPAL_PTLIB_AUDIO
