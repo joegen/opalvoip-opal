@@ -780,14 +780,6 @@ class RTP_Session : public PObject
     DWORD GetMaxJitterTime() const { return maximumJitterLevel>>7; }
   //@}
 
-  /**@name Functions added to support RTP aggregation */
-  //@{
-    virtual int GetDataSocketHandle() const
-    { return -1; }
-    virtual int GetControlSocketHandle() const
-    { return -1; }
-  //@}
-
     virtual void SetCloseOnBYE(PBoolean v)  { closeOnBye = v; }
 
     /** Tell the rtp session to send out an intra frame request control packet.
