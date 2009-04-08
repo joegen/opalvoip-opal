@@ -1405,38 +1405,38 @@ void SIPPublishHandler::SetBody(const PString & b)
 }
 
 
-PString SIPPresenceInfo::AsString(bool stateOnly) const
+void SIPPresenceInfo::PrintOn(ostream & strm) const
+{
+  if (m_address.IsEmpty())
+    return;
+
+  if (m_activities.GetSize() > 0)
+    strm << setfill(',') << m_activities << setfill(' ');
+  else {
+    switch (m_basic) {
+      case SIPPresenceInfo::Open :
+        if (m_note.IsEmpty())
+          strm << "Open";
+        else
+          strm << m_note;
+        break;
+
+      case SIPPresenceInfo::Closed :
+        strm << "Closed";
+        break;
+
+      case SIPPresenceInfo::Unknown :
+      default:
+        strm << "Unknown";
+    }
+  }
+}
+
+
+PString SIPPresenceInfo::AsXML() const
 {
   if (m_address.IsEmpty())
     return PString::Empty();
-
-  if (stateOnly) {
-    PStringStream strm;
-    if (m_activities.GetSize() > 0) {
-      strm << setfill(',') << m_activities << setfill(' ');
-    } 
-    else {
-      switch (m_basic) {
-        case SIPPresenceInfo::Open :
-          if (m_note.IsEmpty())
-            strm << "Open";
-          else
-            strm << m_note;
-          break;
-
-        case SIPPresenceInfo::Closed :
-          strm << "Closed";
-          break;
-
-        case SIPPresenceInfo::Unknown :
-        default:
-          strm << "Unknown";
-          break;
-      }
-    }
-    strm << "\n";
-    return strm;
-  }
 
   PStringStream xml;
 
@@ -1456,7 +1456,7 @@ PString SIPPresenceInfo::AsString(bool stateOnly) const
          "  <tuple id=\"" << OpalGloballyUniqueID() << "\">\r\n";
 
   if (!m_note.IsEmpty())
-    xml << "  <note>" << m_note << "</note>\r\n";
+    xml << "    <note>" << m_note << "</note>\r\n";
 
   xml << "    <status>\r\n";
   switch (m_basic) {

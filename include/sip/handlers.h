@@ -426,7 +426,10 @@ struct SIPPresenceInfo
   PStringArray m_activities;  // list of activities, seperated by newline
   ExtendedStates m_activity;  // primary activity
 
-  PString AsString(bool stateOnly = false) const;
+  PString AsXML() const;
+
+  void PrintOn(ostream & strm) const;
+  friend ostream & operator<<(ostream & strm, const SIPPresenceInfo & info) { info.PrintOn(strm); return strm; }
 };
 
 
