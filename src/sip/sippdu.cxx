@@ -323,12 +323,8 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
       while ((backslash = displayName.Find('\\')) != P_MAX_INDEX)
         displayName.Delete(backslash, 1);
     }
-    }
+  }
 
-  if (scheme == "sip" || scheme == "sips")
-  Recalculate();
-  else
-    PURL::Parse("");
   return !IsEmpty();
 }
 
@@ -2591,7 +2587,8 @@ PBoolean SIPTransaction::Cancel()
 void SIPTransaction::Abort()
 {
   if (LockReadWrite()) {
-    SetTerminated(Terminated_Aborted);
+    if (!IsCompleted())
+      SetTerminated(Terminated_Aborted);
     UnlockReadWrite();
   }
 }
