@@ -2820,7 +2820,7 @@ bool MyManager::SubscribePresence(wxString & uri)
     return false;
 
   SIPSubscribe::Params params(SIPSubscribe::Presence);
-  params.m_addressOfRecord = PwxString(uri);
+  params.m_addressOfRecord = PwxString(uri).p_str();
   params.m_expire = 300;
 
   PString aor;
@@ -2848,7 +2848,7 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
   item.m_col = e_StateUrlColumn;
   for (item.m_itemId = 0; item.m_itemId < count; item.m_itemId++) {
     if (m_speedDials->GetItem(item)) {
-      SIPURL speedDialURL(PwxString(item.m_text));
+      SIPURL speedDialURL(PwxString(item.m_text).p_str());
       if (incomingURL == speedDialURL) {
         PwxString status = info->m_note;
 
