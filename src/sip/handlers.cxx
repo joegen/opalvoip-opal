@@ -472,7 +472,6 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
       SetState(Unsubscribed);
       ShutDown();
   }
-
 }
 
 
@@ -1007,6 +1006,20 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
 
 static SIPEventPackageFactory::Worker<SIPPresenceEventPackageHandler> presenceEventPackageHandler(SIPSubscribe::Presence);
 
+
+class SIPPresenceURL : public PURLLegacyScheme
+{
+  public:
+    SIPPresenceURL()
+      : PURLLegacyScheme("pres", true, false, true, false, false, false, false, false, false, false, 5060)
+    {
+    }
+};
+
+static PFactory<PURLScheme>::Worker<SIPPresenceURL> presenceURL("pres", true);
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotification::Participant & participant)
 {
