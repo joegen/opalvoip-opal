@@ -77,6 +77,8 @@
 #include "absent48.xpm"
 #include "present16.xpm"
 #include "present48.xpm"
+#include "busy16.xpm"
+#include "busy48.xpm"
 
 #define VIDEO_WINDOW_DRIVER "SDL"
 #define VIDEO_WINDOW_DEVICE "SDL"
@@ -258,15 +260,16 @@ static const wxChar SpeedDialTabTitle[] = wxT("Speed Dials");
 
 enum IconStates {
   Icon_Unknown,
-  Icon_Busy,
+  Icon_Absent,
   Icon_Present,
+  Icon_Busy,
   NumIconStates
 };
 
 static const wxChar * const IconStatusNames[] =
 {
   wxT("Unknown"),
-  wxT("Busy"),
+  wxT("Unavailable"),
   wxT("Online")
 };
 
@@ -570,6 +573,8 @@ MyManager::MyManager()
   m_imageListNormal->Add(wxICON(absent48));
   m_imageListSmall ->Add(wxICON(present16));
   m_imageListNormal->Add(wxICON(present48));
+  m_imageListSmall ->Add(wxICON(busy16));
+  m_imageListNormal->Add(wxICON(busy48));
 
   m_RingSoundTimer.SetNotifier(PCREATE_NOTIFIER(OnRingSoundAgain));
   m_ForwardingTimer.SetNotifier(PCREATE_NOTIFIER(OnForwardingTimeout));
@@ -1050,6 +1055,15 @@ bool MyManager::Initialise()
   }
 
   StartRegistrations();
+
+  int count = m_speedDials->GetItemCount();
+  wxListItem item;
+  item.m_mask = wxLIST_MASK_TEXT;
+  item.m_col = e_StateUrlColumn;
+  for (item.m_itemId = 0; item.m_itemId < count; item.m_itemId++) {
+    if (m_speedDials->GetItem(item) && SubscribePresence(item.m_text))
+      m_speedDials->SetItem(item);
+  }
 #endif // OPAL_SIP
 
 
@@ -1072,18 +1086,9 @@ bool MyManager::Initialise()
       AddRouteEntry(DefaultRoutes[i]);
   }
 
-  SubscribeToSpeedDialPresence();
-
   return true;
 }
 
-
-void MyManager::SubscribeToSpeedDialPresence()
-{
-  URLToSpeedDialPos::iterator r;
-  for (r = urlToSpeedDialPos.begin(); r != urlToSpeedDialPos.end(); ++r) 
-    sipEP->Subscribe(SIPSubscribe::Presence, 60, PString(r->first));
-}
 
 void MyManager::StartLID()
 {
@@ -1235,7 +1240,6 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
   }
 
   // Read the speed dials from the configuration
-  urlToSpeedDialPos.clear();
   config->SetPath(SpeedDialsGroup);
   wxString groupName;
   long groupIndex;
@@ -1244,19 +1248,12 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
       config->SetPath(groupName);
       wxString number, address, stateURL, description;
       if (config->Read(SpeedDialAddressKey, &address) && !address.empty()) {
-        IconStates icon = Icon_Unknown;
-
-        //if (config->Read(SpeedDialStateUrlKey, &stateURL) && !stateURL.empty())
-        //  icon = Icon_Busy;
-
-        int pos = m_speedDials->InsertItem(INT_MAX, groupName, icon);
-        m_speedDials->SetItem(pos, e_NumberColumn, config->Read(SpeedDialNumberKey, wxT("")));
-        m_speedDials->SetItem(pos, e_StatusColumn, IconStatusNames[icon]);
+        int pos = m_speedDials->InsertItem(INT_MAX, groupName);
+        m_speedDials->SetItem(pos, e_NumberColumn, config->Read(SpeedDialNumberKey));
+        m_speedDials->SetItem(pos, e_StatusColumn, IconStatusNames[Icon_Unknown]);
         m_speedDials->SetItem(pos, e_AddressColumn, address);
-        m_speedDials->SetItem(pos, e_StateUrlColumn, stateURL);
-        m_speedDials->SetItem(pos, e_DescriptionColumn, config->Read(SpeedDialDescriptionKey, wxT("")));
-
-        urlToSpeedDialPos.insert(URLToSpeedDialPos::value_type(PString(stateURL), pos));
+        m_speedDials->SetItem(pos, e_StateUrlColumn, config->Read(SpeedDialStateUrlKey));
+        m_speedDials->SetItem(pos, e_DescriptionColumn, config->Read(SpeedDialDescriptionKey));
       }
       config->SetPath(wxT(".."));
     } while (config->GetNextGroup(groupName, groupIndex));
@@ -1718,8 +1715,6 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent& WXUNUSED(event))
           config->Write(SpeedDialAddressKey, address);
           config->Write(SpeedDialStateUrlKey, stateURL);
           config->Write(SpeedDialDescriptionKey, description);
-
-          urlToSpeedDialPos.insert(URLToSpeedDialPos::value_type(PString(stateURL), pos));
         }
       }
     }
@@ -1813,7 +1808,6 @@ void MyManager::EditSpeedDial(int index, bool newItem)
   SpeedDialDialog dlg(this);
 
   wxString originalName = dlg.m_Name = item.m_text;
-  wxString originalURL  = dlg.m_StateURL;
 
   item.m_col = e_NumberColumn;
   if (m_speedDials->GetItem(item))
@@ -1826,6 +1820,7 @@ void MyManager::EditSpeedDial(int index, bool newItem)
   item.m_col = e_StateUrlColumn;
   if (m_speedDials->GetItem(item))
     dlg.m_StateURL = item.m_text;
+  PwxString originalURL = dlg.m_StateURL;
 
   item.m_col = e_DescriptionColumn;
   if (m_speedDials->GetItem(item))
@@ -1836,6 +1831,18 @@ void MyManager::EditSpeedDial(int index, bool newItem)
       m_speedDials->DeleteItem(item);
     return;
   }
+
+#if OPAL_SIP
+  if (originalURL != dlg.m_StateURL) {
+    m_speedDials->SetItemImage(item, Icon_Unknown);
+
+    if (!originalURL.empty())
+      sipEP->Unsubscribe(SIPSubscribe::Presence, originalURL);
+
+    if (!dlg.m_StateURL.empty())
+      SubscribePresence(dlg.m_StateURL);
+  }
+#endif // OPAL_SIP
 
   item.m_col = e_NameColumn;
   item.m_text = dlg.m_Name;
@@ -1857,8 +1864,6 @@ void MyManager::EditSpeedDial(int index, bool newItem)
   item.m_text = dlg.m_Description;
   m_speedDials->SetItem(item);
 
-  m_speedDials->SetItemImage(item, Icon_Unknown);
-
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(SpeedDialsGroup);
   config->DeleteGroup(originalName);
@@ -1867,16 +1872,6 @@ void MyManager::EditSpeedDial(int index, bool newItem)
   config->Write(SpeedDialAddressKey, dlg.m_Address);
   config->Write(SpeedDialStateUrlKey, dlg.m_StateURL);
   config->Write(SpeedDialDescriptionKey, dlg.m_Description);
-
-  if (originalURL != dlg.m_StateURL) {
-    if (!originalURL.empty()) {
-      URLToSpeedDialPos::iterator r = urlToSpeedDialPos.find(PString(originalURL));
-      if (r != urlToSpeedDialPos.end()) 
-        urlToSpeedDialPos.erase(r);
-    }
-    if (!dlg.m_StateURL.empty()) 
-      urlToSpeedDialPos.insert(URLToSpeedDialPos::value_type(PString(dlg.m_StateURL), index));
-  }
 }
 
 
@@ -2819,19 +2814,82 @@ void MyManager::OnPresenceInfoReceived(const SIPPresenceInfo & info)
 }
 
 
+bool MyManager::SubscribePresence(wxString & uri)
+{
+  if (uri.IsEmpty())
+    return false;
+
+  SIPSubscribe::Params params(SIPSubscribe::Presence);
+  params.m_addressOfRecord = PwxString(uri);
+  params.m_expire = 300;
+
+  PString aor;
+  if (!sipEP->Subscribe(params, aor)) {
+    LogWindow << "SIP Subscribe failed for " << params.m_addressOfRecord << endl;
+    return false;
+  }
+
+  LogWindow << "SIP Subscribe started for " << aor << endl;
+  uri = PwxString(aor);
+  return true;
+}
+
+
 void MyManager::OnPresence(wxCommandEvent & theEvent)
 {
   SIPPresenceInfo * info = (SIPPresenceInfo *)theEvent.GetClientData();
-  LogWindow << "Presence NOTIFY received for " << info->m_address << ": " << info->AsString(true) << endl;
+  LogWindow << "Presence NOTIFY received for " << info->m_address << ": " << *info << endl;
 
-  SIPURL url(info->m_address);
-  url.Sanitise(SIPURL::ExternalURI);
-  PString uri = url.AsString();
+  SIPURL incomingURL(info->m_address);
 
-  URLToSpeedDialPos::iterator r = urlToSpeedDialPos.find(uri);
-  if (r != urlToSpeedDialPos.end()) {
+  int count = m_speedDials->GetItemCount();
+  wxListItem item;
+  item.m_mask = wxLIST_MASK_TEXT;
+  item.m_col = e_StateUrlColumn;
+  for (item.m_itemId = 0; item.m_itemId < count; item.m_itemId++) {
+    if (m_speedDials->GetItem(item)) {
+      SIPURL speedDialURL(PwxString(item.m_text));
+      if (incomingURL == speedDialURL) {
+        PwxString status = info->m_note;
 
+        IconStates icon;
+        switch (info->m_basic) {
+          case SIPPresenceInfo::Open :
+            switch (info->m_activity) {
+              case SIPPresenceInfo::Busy :
+                icon = Icon_Busy;
+                break;
 
+              case SIPPresenceInfo::Away :
+                icon = Icon_Absent;
+                break;
+
+              default :
+                if (status.CmpNoCase(wxT("busy")) == 0)
+                  icon = Icon_Busy;
+                else if (status.CmpNoCase(wxT("away")) == 0)
+                  icon = Icon_Absent;
+                else
+                  icon = Icon_Present;
+            }
+            break;
+
+          case SIPPresenceInfo::Closed :
+            icon = Icon_Absent;
+            break;
+
+          default :
+            icon = Icon_Unknown;
+        }
+
+        m_speedDials->SetItemImage(item.m_itemId, icon);
+
+        if (status.IsEmpty())
+          status = IconStatusNames[icon];
+        m_speedDials->SetItem(item.m_itemId, e_StatusColumn, status);
+        break;
+      }
+    }
   }
 
   delete info;
