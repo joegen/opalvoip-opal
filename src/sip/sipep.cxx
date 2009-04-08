@@ -1295,7 +1295,7 @@ bool SIPEndPoint::Publish(const PString & to, const PString & body, unsigned exp
 
 bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
 {
-  return Publish(info.m_address, info.AsString(), info.m_basic != SIPPresenceInfo::Closed ? expire : 0);
+  return Publish(info.m_address, info.AsXML(), expire);
 }
 
 
