@@ -1,5 +1,5 @@
 /* XPM */
-static char * absent48_xpm[] = {
+static const char * const absent48_xpm[] = {
 "29 38 2 1",
 " 	c None",
 ".	c #950000",
