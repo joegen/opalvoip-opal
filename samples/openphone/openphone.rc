@@ -38,6 +38,8 @@ absent16     ICON "absent16.ico"
 absent48     ICON "absent48.ico"
 present16    ICON "present16.ico"
 present48    ICON "present48.ico"
+busy16       ICON "busy16.ico"
+busy48       ICON "busy48.ico"
 
 #include "wx/msw/wx.rc"
 

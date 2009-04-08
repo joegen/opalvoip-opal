@@ -971,8 +971,8 @@ class MyManager : public wxFrame, public OpalManager
 
     ConversationMapType conversationMap;
 
+    bool SubscribePresence(wxString & uri);
     void OnPresenceInfoReceived(const SIPPresenceInfo & info);
-
 #endif
 
 #if OPAL_IVR
@@ -1058,11 +1058,6 @@ class MyManager : public wxFrame, public OpalManager
     list<CallsOnHold>    m_callsOnHold;
 
     PwxString m_lastRecordFile;
-
-    void SubscribeToSpeedDialPresence();
-
-    typedef std::map<std::string, int> URLToSpeedDialPos;
-    URLToSpeedDialPos urlToSpeedDialPos;
 
     DECLARE_EVENT_TABLE()
 
