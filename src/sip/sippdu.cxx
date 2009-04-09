@@ -2753,7 +2753,7 @@ void SIPTransaction::OnTimeout(PTimer &, INT)
   if (lock.IsLocked()) {
     switch (state) {
       case Trying :
-        // Sent inityial command and got nothin'
+        // Sent initial command and got nothin'
         SetTerminated(Terminated_Timeout);
         break;
 
@@ -2821,7 +2821,7 @@ void SIPTransaction::SetTerminated(States newState)
     switch (state) {
       case Terminated_Timeout :
       case Terminated_RetriesExceeded:
-        statusCode = SIP_PDU::Failure_RequestTimeout;
+        statusCode = SIP_PDU::Local_Timeout;
         break;
 
       case Terminated_TransportError :
