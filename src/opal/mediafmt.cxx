@@ -1088,6 +1088,10 @@ static bool SetOptionOfType(OpalMediaFormatInternal & format, const PString & na
 bool OpalMediaFormatInternal::GetOptionBoolean(const PString & name, bool dflt) const
 {
   PWaitAndSignal m(media_format_mutex);
+  const OpalMediaOptionEnum * optEnum = dynamic_cast<const OpalMediaOptionEnum *>(FindOption(name));
+  if (optEnum != NULL && optEnum->GetEnumerations().GetSize() == 2)
+    return optEnum->GetValue() != 0;
+
   return GetOptionOfType<OpalMediaOptionBoolean, bool>(*this, name, dflt);
 }
 
@@ -1095,6 +1099,12 @@ bool OpalMediaFormatInternal::GetOptionBoolean(const PString & name, bool dflt) 
 bool OpalMediaFormatInternal::SetOptionBoolean(const PString & name, bool value)
 {
   PWaitAndSignal m(media_format_mutex);
+  OpalMediaOptionEnum * optEnum = dynamic_cast<OpalMediaOptionEnum *>(FindOption(name));
+  if (optEnum != NULL && optEnum->GetEnumerations().GetSize() == 2) {
+    optEnum->SetValue(value);
+    return true;
+  }
+
   return SetOptionOfType<OpalMediaOptionBoolean, bool>(*this, name, value);
 }
 
