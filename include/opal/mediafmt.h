@@ -446,6 +446,7 @@ class OpalMediaOptionEnum : public OpalMediaOption
     PINDEX GetValue() const { return m_value; }
     void SetValue(PINDEX value);
 
+    const PStringArray & GetEnumerations() const { return m_enumerations; }
     void SetEnumerations(const PStringArray & e)
     {
       m_enumerations = e;
