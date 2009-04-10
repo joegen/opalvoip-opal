@@ -52,7 +52,11 @@
 
 const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
 
+#ifndef _WIN32_WCE
 #define UDP_BUFFER_SIZE 32768
+#else
+#define UDP_BUFFER_SIZE 8192
+#endif
 
 namespace PWLibStupidLinkerHacks {
 extern int opalLoader;
