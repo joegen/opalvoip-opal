@@ -739,8 +739,8 @@ void OpalPassiveMediaPatch::Start()
 
 PBoolean OpalPassiveMediaPatch::PushFrame(RTP_DataFrame & frame)
 {
-  DispatchFrame(frame);
-  return PTrue;
+  PReadWaitAndSignal mutex(inUse);
+  return DispatchFrame(frame);
 }
 
 
