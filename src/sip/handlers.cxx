@@ -252,7 +252,6 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
 PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
 {
   expireTimer.Stop(false); // Stop automatic retry
-  bool retryLater = false;
 
   if (expire == 0)
     newState = Unsubscribing;
@@ -275,8 +274,6 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
     case Subscribing :
     case Refreshing :
     case Restoring :
-      if (GetTransport() == NULL) 
-        retryLater = true;
       break;
 
     default :
@@ -286,7 +283,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
 
   SetState(newState);
 
-  if (!retryLater) {
+  if (GetTransport() != NULL) {
     // Restoring or first time, try every interface
     if (newState == Restoring || m_transport->GetInterface().IsEmpty()) {
       PWaitAndSignal mutex(m_transport->GetWriteMutex());
@@ -298,19 +295,21 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
       if (WriteSIPHandler(*m_transport))
         return true;
     }
+
     OnFailed(SIP_PDU::Local_TransportError);
-    retryLater = true;
   }
 
-  if (retryLater) {
-    PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
-    OnFailed(SIP_PDU::Local_BadTransportAddress);
-    expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
-    SetState(Unavailable);
+  if (newState == Unsubscribing) {
+    // Transport level error, probably never going to get the unsubscribe through
+    SetState(Unsubscribed);
     return true;
   }
 
-  return false;
+  PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
+  OnFailed(SIP_PDU::Local_BadTransportAddress);
+  expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
+  SetState(Unavailable);
+  return true;
 }
 
 
