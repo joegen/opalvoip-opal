@@ -602,6 +602,8 @@ class FaxSpanDSP
       memcpy(PluginCodec_RTP_GetPayloadPtr(toPtr), &packet[0], packet.size());
 
       m_t38Queue.pop();
+      if (m_t38Queue.empty())
+        flags = PluginCodec_ReturnCoderLastFrame;
 
       return true;
     }
