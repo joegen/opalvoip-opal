@@ -59,6 +59,31 @@ static PAtomicInteger faxCallIndex;
 
 /////////////////////////////////////////////////////////////////////////////
 
+class OpalFaxMediaStream : public OpalNullMediaStream
+{
+  public:
+    OpalFaxMediaStream(OpalFaxConnection & conn,
+                       const OpalMediaFormat & mediaFormat,
+                       unsigned sessionID,
+                       bool isSource)
+      : OpalNullMediaStream(conn, mediaFormat, sessionID, isSource, true)
+      , m_connection(conn)
+    {
+    }
+
+    virtual PBoolean WriteData(const BYTE * data, PINDEX length, PINDEX & written)
+    {
+      m_connection.m_faxTimer.Reset();
+      return OpalNullMediaStream::WriteData(data, length, written);
+    }
+
+  private:
+    OpalFaxConnection & m_connection;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 class T38PseudoRTP_Handler : public RTP_Encoding
 {
   public:
@@ -512,7 +537,7 @@ void OpalFaxConnection::OnReleased()
 
 OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
-  return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource, true);
+  return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource);
 }
 
 
@@ -628,7 +653,7 @@ void OpalFaxConnection::RequestFax(bool toFax)
   m_faxMode = toFax;
 
   m_faxTimer.SetNotifier(PCREATE_NOTIFIER(OnFaxStoppedTimeout));
-  m_faxTimer.SetInterval(0, 30); // No media for 30 seconds, give up and hang up
+  m_faxTimer.SetInterval(0, 60); // No data received for a minute, give up and hang up
 
   PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
 }

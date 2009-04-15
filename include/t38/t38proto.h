@@ -268,6 +268,8 @@ class OpalFaxConnection : public OpalConnection
 
     bool     m_faxMode;  // false if audio preamble, true if in TIFF->fax mode
     PTimer   m_faxTimer;
+
+  friend class OpalFaxMediaStream;
 };
 
 
