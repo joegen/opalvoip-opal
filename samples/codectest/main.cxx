@@ -141,38 +141,35 @@ void CodecTest::Main()
 
   unsigned threadCount = args.GetOptionString('S').AsInteger();
   if (threadCount > 0) {
+    PList<TestThreadInfo> infos;
     unsigned i;
-    TestThreadInfo ** infos = (TestThreadInfo **)malloc(threadCount * sizeof(TestThreadInfo *));
     for (i = 0; i < threadCount; ++i) {
-      cout << "------------------------------" << endl
-           << "Starting thread " << i+1 << endl;
+      cout << "Creating thread " << i+1 << endl;
       TestThreadInfo * info = new TestThreadInfo(i+1);
-      if (!info->audio.Initialise(args) || !info->video.Initialise(args)) {
-        cout << "failed" << endl;
+      if (!info->Initialise(args)) {
+        cout << "Failed to create thread, aborting." << endl;
         return;
       }
-      info->audio.Resume();
-      info->video.Resume();
-      infos[i] = info;
+      infos.Append(info);
     }
-    cout << endl << "Tests running" << endl;
 
-    cout << "press return to stop" << endl;
+    cout << "Starting threads." << endl;
+    for (i = 0; i < threadCount; ++i)
+      infos[i].Start();
+
+    cout << "\n\n\nTests running, press return to stop." << endl;
     PCaselessString cmd;
     cin >> cmd;
 
-    for (i = 0; i < threadCount; ++i) {
-      infos[i]->audio.Stop();
-      infos[i]->video.Stop();
-    }
+    for (i = 0; i < threadCount; ++i)
+      infos[i].Stop();
 
     return;
   }
 
-  AudioThread audio(0);
-  VideoThread video(0);
+  TestThreadInfo test(0);
 
-  if (!audio.Initialise(args) || !video.Initialise(args))
+  if (!test.Initialise(args))
     return;
 
 #if 0
@@ -185,14 +182,12 @@ void CodecTest::Main()
   }
 #endif
 
-  audio.Resume();
-  video.Resume();
+  test.Start();
 
   // command line
   if (args.HasOption("noprompt")) {
     cout << "Waiting for finish" << endl;
-    audio.WaitForTermination();
-    video.WaitForTermination();
+    test.Wait();
   }
   else {
     for (;;) {
@@ -208,47 +203,47 @@ void CodecTest::Main()
       if (cmd.NumCompare("n") == EqualTo) {
         int steps = cmd.Mid(1).AsUnsigned();
         do {
-          video.frameWait.Signal();
+          test.video.frameWait.Signal();
         } while (--steps > 0);
         continue;
       }
 
       if (cmd == "vfu") {
-        if (video.encoder == NULL)
+        if (test.video.encoder == NULL)
           cout << "\nNo video encoder running!" << endl;
         else
-          video.encoder->ExecuteCommand(OpalVideoUpdatePicture());
+          test.video.encoder->ExecuteCommand(OpalVideoUpdatePicture());
         continue;
       }
 
       if (cmd == "fg") {
-        if (video.grabber == NULL)
+        if (test.video.grabber == NULL)
           cout << "\nNo video grabber running!" << endl;
-        else if (!video.grabber->SetVFlipState(!video.grabber->GetVFlipState()))
+        else if (!test.video.grabber->SetVFlipState(!test.video.grabber->GetVFlipState()))
           cout << "\nCould not toggle Vflip state of video grabber device" << endl;
         continue;
       }
 
       if (cmd == "fd") {
-        if (video.display == NULL)
+        if (test.video.display == NULL)
           cout << "\nNo video display running!" << endl;
-        else if (!video.display->SetVFlipState(!video.display->GetVFlipState()))
+        else if (!test.video.display->SetVFlipState(!test.video.display->GetVFlipState()))
           cout << "\nCould not toggle Vflip state of video display device" << endl;
         continue;
       }
 
       unsigned width, height;
       if (PVideoFrameInfo::ParseSize(cmd, width, height)) {
-        video.pause.Signal();
-        if (video.grabber == NULL)
+        test.video.pause.Signal();
+        if (test.video.grabber == NULL)
           cout << "\nNo video grabber running!" << endl;
-        else if (!video.grabber->SetFrameSizeConverter(width, height))
+        else if (!test.video.grabber->SetFrameSizeConverter(width, height))
           cout << "Video grabber device could not be set to size " << width << 'x' << height << endl;
-        if (video.display == NULL)
+        if (test.video.display == NULL)
           cout << "\nNo video display running!" << endl;
-        else if (!video.display->SetFrameSizeConverter(width, height))
+        else if (!test.video.display->SetFrameSizeConverter(width, height))
           cout << "Video display device could not be set to size " << width << 'x' << height << endl;
-        video.resume.Signal();
+        test.video.resume.Signal();
         continue;
       }
 
@@ -264,8 +259,7 @@ void CodecTest::Main()
     } // end for
 
     cout << "Exiting." << endl;
-    audio.Stop();
-    video.Stop();
+    test.Stop();
   }
 }
 
@@ -463,6 +457,7 @@ bool AudioThread::Initialise(PArgList & args)
   }
 
   cout << "opened and initialised." << endl;
+  running = true;
 
   return true;
 }
@@ -685,6 +680,7 @@ bool VideoThread::Initialise(PArgList & args)
 
   sumYSNR = sumCbSNR = sumCrSNR = 0.0;
   snrCount = 0;
+  running = true;
 
   return true;
 }
@@ -1163,9 +1159,11 @@ bool VideoThread::Write(const RTP_DataFrame & data)
 
 void VideoThread::Stop()
 {
-  running = false;
-  frameWait.Signal();
-  WaitForTermination();
+  if (running) {
+    running = false;
+    frameWait.Signal();
+    WaitForTermination();
+  }
 }
 
 
