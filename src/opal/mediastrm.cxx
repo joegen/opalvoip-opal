@@ -979,6 +979,14 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize)
   if (soundChannelBuffers < m_soundChannelBuffers)
     soundChannelBuffers = m_soundChannelBuffers;
 
+  /* If we get a large buffer size from upper layers, try to make it into
+     a bunch of smaller buffers as the Window3s drivers like that better */
+  while (dataTime > 60) {
+    soundChannelBuffers *= 2;
+    dataSize /= 2;
+    dataTime /= 2;
+  }
+
   PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
          << dataSize << " bytes and " << soundChannelBuffers << " buffers.");
   return OpalMediaStream::SetDataSize(dataSize) &&
