@@ -114,12 +114,21 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
     if (remote.IsEmpty())
       m_remoteAddress = m_addressOfRecord;
     else if (remote.Find('@') != P_MAX_INDEX)
-      m_remoteAddress = remote;
-    else if (m_addressOfRecord.GetHostAddress().IsEquivalent(remote))
-      m_remoteAddress = m_addressOfRecord;
+      m_remoteAddress = remote; // For third party registrations
     else {
-      m_remoteAddress = m_proxy = remote;
-      m_remoteAddress.SetUserName(m_addressOfRecord.GetUserName());
+      SIPURL remoteURL = remote;
+      if (m_addressOfRecord.GetHostAddress().IsEquivalent(remoteURL.GetHostAddress()))
+        m_remoteAddress = m_addressOfRecord;
+      else {
+        /* Note this sets the proxy field because the user has givena full AOR
+           with a domain for "target" and then specified a specific host name
+           which as far as we are concered is the host to talk to. Setting the
+           proxy will prevent SRV lookups or other things that might stop uis
+           from going to that very specific host.
+         */
+        m_remoteAddress = m_proxy = remoteURL;
+        m_remoteAddress.SetUserName(m_addressOfRecord.GetUserName());
+      }
     }
   }
 
