@@ -524,8 +524,17 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       break;
   }
 
-  if (hasFromConnection && hasToConnection)
-    token = pdu->GetMethod() != SIP_PDU::NumMethods ? fromToken : toToken;
+  if (hasFromConnection && hasToConnection) {
+    switch (pdu->GetMethod()) {
+      case SIP_PDU::Method_ACK :
+      case SIP_PDU::NumMethods :
+        token = toToken;
+        break;
+
+      default :
+        token = fromToken;
+    }
+  }
   else if (hasFromConnection)
     token = fromToken;
   else if (hasToConnection)
