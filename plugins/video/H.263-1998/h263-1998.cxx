@@ -277,7 +277,7 @@ bool H263_Base_EncoderContext::Open(CodecID codecId)
   SetFrameWidth(_height);
   SetFrameHeight(_width);
   SetTargetBitrate(256000);
-  SetTSTO(31);
+  SetTSTO(0);
   DisableAnnex(D);
   DisableAnnex(F);
   DisableAnnex(I);
@@ -461,6 +461,13 @@ bool H263_Base_EncoderContext::OpenCodec()
   CODEC_TRACER(tracer, "Size is " << _width << "x" << _height);
   CODEC_TRACER(tracer, "rc_max_rate is " <<  _context->rc_max_rate);
   CODEC_TRACER(tracer, "GOP is " << _context->gop_size);
+  CODEC_TRACER(tracer, "qmin set to " << _context->qmin);
+  CODEC_TRACER(tracer, "qmax set to " << _context->qmax);
+  CODEC_TRACER(tracer, "mb_qmin set to " << _context->mb_qmin);
+  CODEC_TRACER(tracer, "mb_qmax set to " << _context->mb_qmax);
+  CODEC_TRACER(tracer, "bit_rate set to " << _context->bit_rate);
+  CODEC_TRACER(tracer, "bit_rate_tolerance set to " <<_context->bit_rate_tolerance);
+  CODEC_TRACER(tracer, "rc_min_rate set to " << _context->rc_min_rate);
   CODEC_TRACER_FLAG(tracer, CODEC_FLAG_H263P_UMV);
   CODEC_TRACER_FLAG(tracer, CODEC_FLAG_OBMC);
   CODEC_TRACER_FLAG(tracer, CODEC_FLAG_AC_PRED);
