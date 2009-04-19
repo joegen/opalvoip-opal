@@ -615,6 +615,11 @@ class OptionsDialog : public wxDialog
     PwxString m_VideoMinFrameSize;
     PwxString m_VideoMaxFrameSize;
 
+    wxComboBox * m_videoGrabDevice;
+    wxChoice   * m_videoSourceChoice;
+
+    void AdjustVideoControls(const PwxString & device);
+    void ChangeVideoGrabber(wxCommandEvent & event);
     void TestVideoCapture(wxCommandEvent & event);
 
     ////////////////////////////////////////
