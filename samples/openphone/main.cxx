@@ -3316,6 +3316,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 
   ////////////////////////////////////////
   // Video fields
+  EVT_COMBOBOX(XRCID("VideoGrabber"), OptionsDialog::ChangeVideoGrabber)
   EVT_BUTTON(XRCID("TestVideoCapture"), OptionsDialog::TestVideoCapture)
 
   ////////////////////////////////////////
@@ -3556,7 +3557,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   // Video fields
   INIT_FIELD(VideoGrabber, m_manager.GetVideoInputDevice().deviceName);
   INIT_FIELD(VideoGrabFormat, m_manager.GetVideoInputDevice().videoFormat);
-  INIT_FIELD(VideoGrabSource, m_manager.GetVideoInputDevice().channelNumber);
+  m_videoSourceChoice = FindWindowByNameAs<wxChoice>(this, wxT("VideoGrabSource"));
+  m_VideoGrabSource = m_manager.GetVideoInputDevice().channelNumber+1;
+  m_videoSourceChoice->SetValidator(wxGenericValidator(&m_VideoGrabSource));
   INIT_FIELD(VideoGrabFrameRate, m_manager.GetVideoInputDevice().rate);
   INIT_FIELD(VideoFlipLocal, m_manager.GetVideoInputDevice().flip != false);
   INIT_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview);
@@ -3571,10 +3574,12 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_VideoMaxFrameSize = m_manager.m_VideoMaxFrameSize;
   FindWindowByName(VideoMaxFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoMaxFrameSize));
 
-  combo = FindWindowByNameAs<wxComboBox>(this, wxT("VideoGrabber"));
+  m_videoGrabDevice = FindWindowByNameAs<wxComboBox>(this, wxT("VideoGrabber"));
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
   for (i = 0; i < devices.GetSize(); i++)
-    combo->Append(PwxString(devices[i]));
+    m_videoGrabDevice->Append(PwxString(devices[i]));
+
+  AdjustVideoControls(m_VideoGrabber);
 
   ////////////////////////////////////////
   // Fax fields
@@ -3917,6 +3922,7 @@ bool OptionsDialog::TransferDataFromWindow()
   PVideoDevice::OpenArgs grabber = m_manager.GetVideoInputDevice();
   SAVE_FIELD_STR(VideoGrabber, grabber.deviceName = );
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
+  --m_VideoGrabSource;
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
   SAVE_FIELD(VideoGrabFrameSize, m_manager.m_VideoGrabFrameSize = );
@@ -4324,6 +4330,28 @@ void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
 
 ////////////////////////////////////////
 // Video fields
+
+void OptionsDialog::AdjustVideoControls(const PwxString & device)
+{
+  unsigned numChannels = 1;
+  PVideoInputDevice * grabber = PVideoInputDevice::CreateOpenedDevice(PString::Empty(), device);
+  if (grabber != NULL) {
+    numChannels = grabber->GetNumChannels()+1;
+    delete grabber;
+  }
+
+  while (m_videoSourceChoice->GetCount() > numChannels)
+    m_videoSourceChoice->Delete(m_videoSourceChoice->GetCount()-1);
+  while (m_videoSourceChoice->GetCount() < numChannels)
+    m_videoSourceChoice->Append(wxString((wxChar)(m_videoSourceChoice->GetCount()+'A'-1)));
+}
+
+
+void OptionsDialog::ChangeVideoGrabber(wxCommandEvent & /*event*/)
+{
+  AdjustVideoControls(m_videoGrabDevice->GetValue());
+}
+
 
 void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
 {
