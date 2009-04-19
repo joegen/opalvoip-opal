@@ -723,7 +723,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
       if (rtpSession == NULL) {
 
         // Not already there, so create one
-        rtpSession = CreateSession(GetTransport(), rtpSessionId, false);
+        rtpSession = CreateSession(GetTransport(), rtpSessionId, mediaType, NULL);
         if (rtpSession == NULL) {
           PTRACE(1, "SIP\tCould not create RTP session " << rtpSessionId << " for media type " << mediaType << ", released " << *this);
           Release(OpalConnection::EndedByTransportFail);

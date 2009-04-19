@@ -573,15 +573,6 @@ PBoolean H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capabilit
            << ", channel->OnSendingPDU() failed");
     return PFalse;
   }
-  
-  // ensure the correct (external) session ID is used
-  if (open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
-    H245_H2250LogicalChannelParameters & param = open.m_reverseLogicalChannelParameters.m_multiplexParameters;
-    param.m_sessionID = connection.GetExternalSessionID(sessionID, capability.GetMediaFormat().GetMediaType());
-  } else {
-    H245_H2250LogicalChannelParameters & param = open.m_forwardLogicalChannelParameters.m_multiplexParameters;
-    param.m_sessionID = connection.GetExternalSessionID(sessionID, capability.GetMediaFormat().GetMediaType());
-  }
 
   if (replacementFor > 0) {
     if (open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {

@@ -420,6 +420,9 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     }
   }
 
+  if (sessionID == 0)
+    sessionID = connection.GetNextSessionID(mediaType, true);
+
   PTRACE(3, "Call\tOpenSourceMediaStreams " << (sourceStream != NULL ? "replacing" : "opening")
          << ' ' << mediaType << " session " << sessionID << " on " << connection);
   sourceStream.SetNULL();
@@ -473,8 +476,10 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
                             sinkFormat))
       return false;
 
-    if (sessionID == 0)
-      sessionID = mediaType.GetDefinition()->GetDefaultSessionId();
+    if (sessionID == 0) {
+      sessionID = otherConnection->GetNextSessionID(mediaType, false);
+      PTRACE(3, "Call\tOpenSourceMediaStreams using session " << sessionID << " on " << connection);
+    }
 
     // Finally have the negotiated formats, open the streams
     if (sourceStream == NULL) {

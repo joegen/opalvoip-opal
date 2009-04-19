@@ -1515,6 +1515,16 @@ bool OpalVideoFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
   return true;
 }
 
+
+void OpalMediaFormat::AdjustVideoArgs(PVideoDevice::OpenArgs & args) const
+{
+  args.width = GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
+  args.height = GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
+  unsigned maxRate = GetClockRate()/GetFrameTime();
+  if (args.rate > maxRate)
+    args.rate = maxRate;
+}
+
 #endif // OPAL_VIDEO
 
 ///////////////////////////////////////////////////////////////////////////////
