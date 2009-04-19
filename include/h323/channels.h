@@ -149,6 +149,16 @@ class H323Channel : public PObject
      */
     virtual unsigned GetSessionID() const;
 
+    /**Set the session number of the channel.
+       During OLC negotations teh master may change the session number being
+       used for the logical channel.
+
+       Returns false if the sesion could not be renumbered.
+      */
+    virtual bool SetSessionID(
+      unsigned sessionID   ///< New session ID
+    );
+
     /**Get the media transport address for the connection.
        This is primarily used to determine if media bypass is possible for the
        call between two connections.
@@ -526,14 +536,14 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
      */
     virtual PBoolean OnSendingPDU(
       H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
-    ) const = 0;
+    ) const;
 
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
     virtual void OnSendOpenAck(
       H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
-    ) const = 0;
+    ) const;
 
     /**This is called after a request to create a channel occurs from the
        local machine via the H245LogicalChannelDict::Open() function, and
@@ -544,7 +554,7 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
     virtual PBoolean OnReceivedPDU(
       const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
       unsigned & errorCode                              ///<  Error on failure
-    ) = 0;
+    );
 
     /**This is called after a request to create a channel occurs from the
        local machine via the H245LogicalChannelDict::Open() function, and
@@ -554,7 +564,7 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
      */
     virtual PBoolean OnReceivedAckPDU(
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
-    ) = 0;
+    );
 
     /**Set the dynamic payload type used by this channel.
       */
@@ -601,6 +611,16 @@ class H323_RTPChannel : public H323_RealTimeChannel
        RTP_Session member variable.
      */
     virtual unsigned GetSessionID() const;
+
+    /**Set the session number of the channel.
+       During OLC negotations teh master may change the session number being
+       used for the logical channel.
+
+       Returns false if the sesion could not be renumbered.
+      */
+    virtual bool SetSessionID(
+      unsigned sessionID   ///< New session ID
+    );
   //@}
 
   /**@name Overrides from class H323_RealTimeChannel */

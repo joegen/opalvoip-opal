@@ -845,7 +845,19 @@ class OpalConnection : public PSafeObject
     virtual void AdjustMediaFormats(
       OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
-    
+
+    /**Get next available session ID for the media type.
+
+       Default behaviour returns zero indicating that this connection type
+       does not care what the session ID is, and the other connection in the
+       call should be asked. If neither care, then teh default of the media
+       type is used.
+      */
+    virtual unsigned GetNextSessionID(
+      const OpalMediaType & mediaType,   ///< Media type of stream being opened
+      bool isSource                      ///< Stream is a source/sink
+    );
+
     /**Open source or sink media stream for session.
       */
     virtual OpalMediaStreamPtr OpenMediaStream(
@@ -931,13 +943,16 @@ class OpalConnection : public PSafeObject
     ) const;
 
     /**Get a media stream.
-       Locates a stream given a media type. Each session would usually
-       have two media streams associated with it, so the source flag
-       may be used to distinguish which channel to return.
+       Locates a stream given a media type. The source flag may be used to
+       distinguish which stream durection to return.
+
+       The previous parameter may be used to enumerate multiple stream of the
+       same type and direction. If NULL then the first stream is returned.
       */
     OpalMediaStreamPtr GetMediaStream(
-      const OpalMediaType & mediaType,  ///<  Media type to search for.
-      bool source          ///<  Indicates the direction of stream.
+      const OpalMediaType & mediaType,    ///<  Media type to search for.
+      bool source,                        ///<  Indicates the direction of stream.
+      OpalMediaStreamPtr previous = NULL  ///< Previous stream to start search from
     ) const;
 
     /**Call back when opening a media stream.

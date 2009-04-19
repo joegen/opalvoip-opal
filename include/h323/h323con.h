@@ -268,6 +268,13 @@ class H323Connection : public OpalRTPConnection
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
+    /**Get next available session ID for the media type.
+      */
+    virtual unsigned GetNextSessionID(
+      const OpalMediaType & mediaType,   ///< Media type of stream being opened
+      bool isSource                      ///< Stream is a source/sink
+    );
+
     /**Open source or sink media stream for session.
       */
     virtual OpalMediaStreamPtr OpenMediaStream(
@@ -1942,12 +1949,6 @@ class H323Connection : public OpalRTPConnection
 
     virtual void OnMediaCommand(OpalMediaCommand & note, INT extra);
     
-    // H.245 - compliant handling of session IDs
-    // if no internal session ID is found, zero is returned
-    unsigned GetExternalSessionID(unsigned internalSessionID) const;
-    unsigned GetExternalSessionID(unsigned internalSessionID, const OpalMediaType & mediaType);
-    unsigned GetInternalSessionID(unsigned externalSessionID, const OpalMediaType & mediaType);
-
   protected:
     /**Internal function to check if call established.
        This checks all the criteria for establishing a call an initiating the
@@ -2044,15 +2045,6 @@ class H323Connection : public OpalRTPConnection
     H323LogicalChannelList fastStartChannels;
     OpalMediaStreamPtr     fastStartMediaStream;
     
-    // H.245 - compliant handling of session IDs
-    PBoolean defaultAudioSessionIDAssigned, defaultVideoSessionIDAssigned;
-    unsigned nextSessionID;
-    typedef std::map<unsigned, unsigned> InternalToExternalSessionIDMap;
-    typedef std::map<OpalMediaType, unsigned> MediaTypeToInternalSessionIDMap;
-    InternalToExternalSessionIDMap internalToExternalSessionIDMap;
-    MediaTypeToInternalSessionIDMap mediaTypeToInternalSessionIDMap;
-    PMutex sessionIDHandlingMutex;
-
 #if PTRACING
     static const char * GetConnectionStatesName(ConnectionStates s);
     friend ostream & operator<<(ostream & o, ConnectionStates s) { return o << GetConnectionStatesName(s); }

@@ -283,6 +283,10 @@ class OpalMediaStream : public PSafeObject
      */
     unsigned GetSessionID() const { return sessionID; }
 
+    /**Get the session number of the stream.
+     */
+    void SetSessionID(unsigned id) { sessionID = id; }
+
     /**  Get the ID associated with this stream. Used for detecting two 
       *  the streams associated with a bidirectional media channel
       */

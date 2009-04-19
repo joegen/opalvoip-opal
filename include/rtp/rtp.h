@@ -582,6 +582,10 @@ class RTP_Session : public PObject
       */
     unsigned GetSessionID() const { return sessionID; }
 
+    /**Set the ID for the RTP session.
+      */
+    void SetSessionID(unsigned id) { sessionID = id; }
+
     /**Get flag for is audio RTP.
       */
     bool IsAudio() const { return isAudio; }
