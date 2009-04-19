@@ -493,8 +493,8 @@ RTP_Session::RTP_Session(const Params & params)
   , reportTimer(reportTimeInterval)
   , failed(false)
 {
-  PAssert(params.id > 0 && params.id < 256, PInvalidParameter);
-  sessionID = (BYTE)params.id;
+  PAssert(params.id > 0, PInvalidParameter);
+  sessionID = params.id;
   isAudio = params.isAudio;
 
   userData = params.userData;

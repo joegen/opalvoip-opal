@@ -45,8 +45,11 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediatype.h>
-
 #include <rtp/rtp.h>
+
+#if OPAL_VIDEO
+#include <ptlib/videoio.h>
+#endif
 
 #include <limits>
 
@@ -1044,6 +1047,14 @@ class OpalMediaFormat : public PContainer
         strm << setw(-1) << *m_info;
       return strm;
     }
+
+#if OPAL_VIDEO
+    /** Adjust the video device arguments from the media format.
+     */
+    void AdjustVideoArgs(
+      PVideoDevice::OpenArgs & args  /// Videoo device arguments to adjust
+    ) const;
+#endif
 
     // Backward compatibility
     virtual PBoolean IsEmpty() const { PWaitAndSignal m(_mutex); return m_info == NULL || !m_info->IsValid(); }

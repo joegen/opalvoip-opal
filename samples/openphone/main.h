@@ -192,6 +192,19 @@ class VideoControlDialog : public wxDialog
 };
 
 
+class SecondaryVideoDialog : public wxDialog
+{
+  public:
+    SecondaryVideoDialog(MyManager * manager);
+
+    PwxString m_device;
+    bool      m_preview;
+
+  private:
+    DECLARE_EVENT_TABLE()
+};
+
+
 class CallDialog : public wxDialog
 {
   public:
@@ -832,6 +845,12 @@ class MyManager : public wxFrame, public OpalManager
       unsigned lastDigitTimeout = 4,      ///<  Timeout on last digit in string
       unsigned firstDigitTimeout = 30     ///<  Timeout on receiving any digits
     );
+    virtual PBoolean CreateVideoInputDevice(
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      PVideoInputDevice * & device,         ///<  Created device
+      PBoolean & autoDelete                     ///<  Flag for auto delete device
+    );
     virtual PBoolean CreateVideoOutputDevice(
       const OpalConnection & connection,    ///<  Connection needing created video device
       const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
@@ -997,6 +1016,11 @@ class MyManager : public wxFrame, public OpalManager
     int  m_localVideoFrameY;
     int  m_remoteVideoFrameX;
     int  m_remoteVideoFrameY;
+
+    PVideoDevice::OpenArgs m_SecondaryVideoGrabber;
+    bool                   m_SecondaryVideoGrabPreview;
+    bool                   m_SecondaryVideoOpening;
+
     PwxString m_VideoGrabFrameSize;
     PwxString m_VideoMinFrameSize;
     PwxString m_VideoMaxFrameSize;

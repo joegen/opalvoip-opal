@@ -755,11 +755,7 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection
 {
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = videoInputDevice;
-  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
-  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
-  unsigned maxRate = mediaFormat.GetClockRate()/mediaFormat.GetFrameTime();
-  if (args.rate > maxRate)
-    args.rate = maxRate;
+  mediaFormat.AdjustVideoArgs(args);
 
   autoDelete = true;
   device = PVideoInputDevice::CreateOpenedDevice(args, false);
@@ -783,9 +779,7 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
 
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
-  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
-  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
-  args.rate = mediaFormat.GetClockRate()/mediaFormat.GetFrameTime();
+  mediaFormat.AdjustVideoArgs(args);
 
   PINDEX start = args.deviceName.Find("TITLE=\"");
   if (start != P_MAX_INDEX) {

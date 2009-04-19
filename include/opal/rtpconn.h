@@ -113,7 +113,12 @@ class OpalRTPMediaSession : public OpalMediaSession
 {
   PCLASSINFO(OpalRTPMediaSession, OpalMediaSession);
   public:
-    OpalRTPMediaSession(OpalConnection & conn, const OpalMediaType & mediaType, unsigned sessionId);
+    OpalRTPMediaSession(
+      OpalConnection & conn,
+      const OpalMediaType & mediaType,
+      unsigned sessionId,
+      RTP_Session * rtpSession
+    );
     OpalRTPMediaSession(const OpalRTPMediaSession & obj);
 
     PObject * Clone() const { return new OpalRTPMediaSession(*this); }
@@ -161,6 +166,10 @@ class OpalRTPSessionManager : public PObject
 
   /**@name Operations */
   //@{
+    /**Get next available session ID for the media type.
+      */
+    unsigned GetNextSessionID();
+
     /**Add an RTP session for the specified ID.
 
        This function MUST be called only after the UseSession() function has
@@ -191,6 +200,16 @@ class OpalRTPSessionManager : public PObject
     OpalMediaSession * GetMediaSession(
       unsigned sessionID
     ) const;
+
+    /**Change the sessionID for an existing session.
+       This will adjust the RTP session and media streams.
+
+       Return false if no such session exists.
+      */
+    bool ChangeSessionID(
+      unsigned fromSessionID,   ///< Session ID to search for
+      unsigned toSessionID      ///< Session ID to change to
+    );
   //@}
 
     PMutex & GetMutex() { return m_mutex; }
@@ -233,6 +252,13 @@ class OpalRTPConnection : public OpalConnection
 
   /**@name RTP Session Management */
   //@{
+    /**Get next available session ID for the media type.
+      */
+    virtual unsigned GetNextSessionID(
+      const OpalMediaType & mediaType,   ///< Media type of stream being opened
+      bool isSource                      ///< Stream is a source/sink
+    );
+
     /**Get an RTP session for the specified ID.
        If there is no session of the specified ID, NULL is returned.
       */
@@ -272,6 +298,7 @@ class OpalRTPConnection : public OpalConnection
     virtual RTP_Session * CreateSession(
       const OpalTransport & transport,
       unsigned sessionID,
+      const OpalMediaType & mediaType,
       RTP_QOS * rtpqos
     );
 
@@ -279,7 +306,18 @@ class OpalRTPConnection : public OpalConnection
       */
     virtual RTP_UDP * CreateRTPSession(
       unsigned sessionId,
+      const OpalMediaType & mediaType,
       bool remoteIsNat
+    );
+
+    /**Change the sessionID for an existing session.
+       This will adjust the RTP session and media streams.
+
+       Return false if no such session exists.
+      */
+    virtual bool ChangeSessionID(
+      unsigned fromSessionID,   ///< Session ID to search for
+      unsigned toSessionID      ///< Session ID to change to
     );
   //@}
 

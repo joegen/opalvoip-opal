@@ -554,6 +554,8 @@ MyManager::MyManager()
   , m_localVideoFrameY(INT_MIN)
   , m_remoteVideoFrameX(INT_MIN)
   , m_remoteVideoFrameY(INT_MIN)
+  , m_SecondaryVideoGrabPreview(false)
+  , m_SecondaryVideoOpening(false)
 #if PTRACING
   , m_enableTracing(false)
 #endif
@@ -833,6 +835,7 @@ bool MyManager::Initialise()
     videoArgs.rate = value1;
   config->Read(VideoFlipLocalKey, &videoArgs.flip);
   SetVideoInputDevice(videoArgs);
+  m_SecondaryVideoGrabber = videoArgs;
 
   config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize,  wxT("CIF"));
   config->Read(VideoMinFrameSizeKey,  &m_VideoMinFrameSize, wxT("SQCIF"));
@@ -1402,7 +1405,6 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
       item->Check(item->GetLabel() == videoFormat);
   }
 
-  menubar->Enable(XRCID("MenuStartVideo"), hasStartVideo);
   menubar->Enable(XRCID("MenuStopVideo"), hasStopVideo);
   menubar->Enable(XRCID("MenuSendVFU"), hasRxVideo);
   menubar->Enable(XRCID("MenuVideoControl"), hasStopVideo);
@@ -2136,7 +2138,7 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
 
   if (PIsDescendant(&stream, OpalVideoMediaStream)) {
     PVideoOutputDevice * device = ((const OpalVideoMediaStream &)stream).GetVideoOutputDevice();
-    if (device != NULL) {
+    if (device != NULL && device->GetDeviceName().FindRegEx(" ([0-9])\"") == P_MAX_INDEX) {
       int x, y;
       if (device->GetPosition(x, y)) {
         wxConfigBase * config = wxConfig::Get();
@@ -2408,13 +2410,24 @@ void MyManager::OnNewCodec(wxCommandEvent& theEvent)
 void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
 {
   PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
-  if (connection != NULL) {
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
-    if (stream == NULL) {
-      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaType::Video()))
-        LogWindow << "Could not open video to remote!" << endl;
-    }
+  if (connection == NULL)
+    return;
+
+  OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
+  if (stream != NULL) {
+    SecondaryVideoDialog dlg(this);
+    dlg.m_device = m_SecondaryVideoGrabber.deviceName;
+    dlg.m_preview = m_SecondaryVideoGrabPreview;
+    if (dlg.ShowModal() != wxID_OK)
+      return;
+
+    m_SecondaryVideoGrabber.deviceName = dlg.m_device;
+    m_SecondaryVideoGrabPreview = dlg.m_preview;
+    m_SecondaryVideoOpening = true;
   }
+
+  if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaType::Video()))
+    LogWindow << "Could not open video to remote!" << endl;
 }
 
 
@@ -2512,11 +2525,25 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
 }
 
 
-static const PVideoDevice::OpenArgs & AdjustVideoArgs(PVideoDevice::OpenArgs & videoArgs, const char * title, int x, int y)
+PBoolean MyManager::CreateVideoInputDevice(const OpalConnection & connection,
+                                           const OpalMediaFormat & mediaFormat,
+                                           PVideoInputDevice * & device,
+                                           PBoolean & autoDelete)
 {
-  videoArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"%s\" X=%i Y=%i", title, x, y);
-  return videoArgs;
+  if (!m_SecondaryVideoOpening)
+    return OpalManager::CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
+
+  mediaFormat.AdjustVideoArgs(m_SecondaryVideoGrabber);
+
+  autoDelete = true;
+  device = PVideoInputDevice::CreateOpenedDevice(m_SecondaryVideoGrabber, false);
+  PTRACE_IF(2, device == NULL, "OpenPhone\tCould not open secondary video device \"" << m_SecondaryVideoGrabber.deviceName << '"');
+
+  m_SecondaryVideoOpening = false;
+
+  return device != NULL;
 }
+
 
 PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
                                         const OpalMediaFormat & mediaFormat,
@@ -2524,24 +2551,51 @@ PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
                                         PVideoOutputDevice * & device,
                                         PBoolean & autoDelete)
 {
-  if (preview && !m_VideoGrabPreview)
+  unsigned openChannelCount = 0;
+  OpalMediaStreamPtr mediaStream;
+  while ((mediaStream = connection.GetMediaStream(OpalMediaType::Video(), preview, mediaStream)) != NULL)
+    ++openChannelCount;
+
+  if (preview && !(openChannelCount > 0 ? m_SecondaryVideoGrabPreview : m_VideoGrabPreview))
     return false;
+
+  unsigned deltaX = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
 
   if (m_localVideoFrameX == INT_MIN) {
     wxRect rect(GetPosition(), GetSize());
-    m_localVideoFrameX = rect.GetLeft() + mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
+    m_localVideoFrameX = rect.GetLeft() + deltaX;
     m_localVideoFrameY = rect.GetBottom();
     m_remoteVideoFrameX = rect.GetLeft();
     m_remoteVideoFrameY = rect.GetBottom();
   }
 
   PVideoDevice::OpenArgs videoArgs;
-  if (preview)
-    SetVideoPreviewDevice(AdjustVideoArgs(videoArgs = GetVideoPreviewDevice(), "Local", m_localVideoFrameX, m_localVideoFrameY));
-  else
-    SetVideoOutputDevice(AdjustVideoArgs(videoArgs = GetVideoOutputDevice(), "Remote", m_remoteVideoFrameX, m_remoteVideoFrameY));
+  PString title;
+  int x, y;
+  if (preview) {
+    videoArgs = GetVideoPreviewDevice();
+    title = "Preview";
+    x = m_localVideoFrameX;
+    y = m_localVideoFrameY;
+  }
+  else {
+    videoArgs = GetVideoOutputDevice();
+    title = connection.GetRemotePartyName();
+    x = m_remoteVideoFrameX;
+    y = m_remoteVideoFrameY;
+  }
 
-  return OpalManager::CreateVideoOutputDevice(connection, mediaFormat, preview, device, autoDelete);
+  if (openChannelCount > 0)
+    title.sprintf(" (%u)", openChannelCount);
+
+  x += deltaX*openChannelCount;
+
+  videoArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"%s\" X=%i Y=%i", (const char *)title, x, y);
+  mediaFormat.AdjustVideoArgs(videoArgs);
+
+  autoDelete = true;
+  device = PVideoOutputDevice::CreateOpenedDevice(videoArgs, false);
+  return device != NULL;
 }
 
 
@@ -4964,6 +5018,25 @@ bool VideoControlDialog::TransferDataFromWindow()
   }
 
   return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(SecondaryVideoDialog, wxDialog)
+END_EVENT_TABLE()
+
+SecondaryVideoDialog::SecondaryVideoDialog(MyManager * manager)
+{
+  wxXmlResource::Get()->LoadDialog(this, manager, wxT("SecondaryVideoDialog"));
+
+  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, wxT("SecondaryVideoGrabber"));
+  PStringArray devices = PVideoInputDevice::GetDriversDeviceNames("*");
+  for (PINDEX i = 0; i < devices.GetSize(); i++)
+    combo->Append(PwxString(devices[i]));
+  combo->SetValidator(wxGenericValidator(&m_device));
+
+  FindWindowByName(wxT("SecondaryVideoPreview"))->SetValidator(wxGenericValidator(&m_preview));
 }
 
 

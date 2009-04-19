@@ -592,6 +592,12 @@ void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) cons
 }
 
 
+unsigned OpalConnection::GetNextSessionID(const OpalMediaType & /*mediaType*/, bool /*isSource*/)
+{
+  return 0;
+}
+
+
 OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
   PSafeLockReadWrite safeLock(*this);
@@ -877,11 +883,19 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(unsigned sessionId, bool sourc
 }
 
 
-OpalMediaStreamPtr OpalConnection::GetMediaStream(const OpalMediaType & mediaType, bool source) const
+OpalMediaStreamPtr OpalConnection::GetMediaStream(const OpalMediaType & mediaType,
+                                                  bool source,
+                                                  OpalMediaStreamPtr mediaStream) const
 {
-  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+  if (mediaStream == NULL)
+    mediaStream = OpalMediaStreamPtr(mediaStreams, PSafeReference);
+  else
+    ++mediaStream;
+
+  while (mediaStream != NULL) {
     if (mediaStream->GetMediaFormat().GetMediaType() == mediaType && mediaStream->IsSource() == source)
       return mediaStream;
+    ++mediaStream;
   }
 
   return NULL;
