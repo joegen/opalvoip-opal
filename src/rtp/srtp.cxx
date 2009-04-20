@@ -75,9 +75,6 @@ OpalSRTP_UDP::OpalSRTP_UDP(const Params & params)
 //  implement SRTP via libSRTP
 //
 
-namespace PWLibStupidLinkerHacks {
-  int libSRTPLoader;
-};
 
 #ifdef LIBSRTP_LIBRARY
 #pragma comment(lib, LIBSRTP_LIBRARY)
@@ -220,7 +217,7 @@ class LibSRTPSecurityMode_##name : public LibSRTPSecurityMode_Base \
       Init(); \
     } \
 }; \
-static PFactory<OpalSecurityMode>::Worker<LibSRTPSecurityMode_##name> factoryLibSRTPSecurityMode_##name("SRTP|" #name); \
+PFACTORY_CREATE(PFactory<OpalSecurityMode>, LibSRTPSecurityMode_##name, "SRTP|" #name, false)
 
 DECLARE_LIBSRTP_CRYPTO_ALG(AES_CM_128_HMAC_SHA1_80,  crypto_policy_set_aes_cm_128_hmac_sha1_80);
 DECLARE_LIBSRTP_CRYPTO_ALG(AES_CM_128_HMAC_SHA1_32,  crypto_policy_set_aes_cm_128_hmac_sha1_32);

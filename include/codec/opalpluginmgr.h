@@ -73,6 +73,8 @@ typedef PFactory<H323StaticPluginCodec> H323StaticPluginCodecFactory;
 
 class OpalPluginCodecManager;
 
+PFACTORY_LOAD(OpalPluginCodecManager);
+
 class OpalPluginCodecHandler : public PObject
 {
   PCLASSINFO(OpalPluginCodecHandler, PObject);
@@ -122,8 +124,6 @@ class OpalPluginCodecManager : public PPluginModuleManager
     void OnLoadPlugin(PDynaLink & dll, INT code);
 
     virtual void OnShutdown();
-
-    static void Bootstrap();
 
 #if OPAL_H323
     H323Capability * CreateCapability(

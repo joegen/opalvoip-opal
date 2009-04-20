@@ -39,15 +39,14 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_RFC4175
+
 #include <ptclib/random.h>
 
 #include <opal/transcoders.h>
 #include <codec/opalplugin.h>
 #include <codec/vidcodec.h>
 
-namespace PWLibStupidLinkerHacks {
-  extern int rfc4175Loader;
-};
 
 #define OPAL_RFC4175_YCbCr420  "RFC4175_YCbCr-4:2:0"
 extern const OpalVideoFormat & GetOpalRFC4175_YCbCr420();
@@ -229,6 +228,13 @@ class Opal_RGB24_to_RFC4175RGB : public OpalRFC4175Encoder
   OPAL_REGISTER_TRANSCODER(Opal_RFC4175##rformat##_to_##oformat, OpalRFC4175##rformat, Opal##oformat); \
   OPAL_REGISTER_TRANSCODER(Opal_##oformat##_to_RFC4175##rformat, Opal##oformat, OpalRFC4175##rformat);
 
+#define OPAL_REGISTER_RFC4175() \
+  OPAL_REGISTER_RFC4175_VIDEO(YUV420P, YCbCr420); \
+  OPAL_REGISTER_RFC4175_VIDEO(RGB24, RGB)
+
+
 /////////////////////////////////////////////////////////////////////////////
+
+#endif // OPAL_RFC4175
 
 #endif // OPAL_CODEC_RFC4175_H

@@ -53,17 +53,6 @@
 
 #define new PNEW
 
-static class PAuthInitialiseInstantiateMe
-{
-  public:
-    PAuthInitialiseInstantiateMe()
-    {
-      PWLibStupidLinkerHacks::h235AuthLoader = 1;
-#if OPAL_PTLIB_SSL
-      PWLibStupidLinkerHacks::h235AuthProcedure1Loader = 1;
-#endif
-    }
-} instance;
 
 static PTimeInterval AdjustTimeout(unsigned seconds)
 {

@@ -49,9 +49,6 @@
 
 #if OPAL_SRTP
 
-namespace PWLibStupidLinkerHacks {
-  extern int libSRTPLoader;
-};
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -138,6 +135,8 @@ class LibSRTP_UDP : public OpalSRTP_UDP
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 };
+
+PFACTORY_LOAD(LibSRTPSecurityMode_STRONGHOLD);
 
 
 #endif // OPAL_SRTP

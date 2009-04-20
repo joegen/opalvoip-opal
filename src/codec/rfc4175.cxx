@@ -43,9 +43,6 @@
 #include <codec/rfc4175.h>
 #include <codec/opalplugin.h>
 
-namespace PWLibStupidLinkerHacks {
-  int rfc4175Loader;
-};
 
 #define   FRAME_WIDTH   1920
 #define   FRAME_HEIGHT  1080
@@ -70,7 +67,6 @@ const OpalVideoFormat & GetOpalRFC4175_YCbCr420()
   return RFC4175_YCbCr420;
 }
 
-OPAL_REGISTER_RFC4175_VIDEO(YUV420P, YCbCr420)
 
 const OpalVideoFormat & GetOpalRFC4175_RGB()
 {
@@ -78,7 +74,6 @@ const OpalVideoFormat & GetOpalRFC4175_RGB()
   return RFC4175_RGB;
 }
 
-OPAL_REGISTER_RFC4175_VIDEO(RGB24, RGB)
 
 /////////////////////////////////////////////////////////////////////////////
 

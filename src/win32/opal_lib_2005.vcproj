@@ -2565,10 +2565,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\opal\opalglobalstatics.cxx"
-					>
-				</File>
-				<File
 					RelativePath="..\opal\opalmixer.cxx"
 					>
 				</File>
@@ -10698,10 +10694,6 @@
 			<Filter
 				Name="Codec Headers"
 				>
-				<File
-					RelativePath="..\..\include\codec\allcodecs.h"
-					>
-				</File>
 				<File
 					RelativePath="..\..\include\codec\echocancel.h"
 					>

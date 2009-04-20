@@ -286,7 +286,7 @@ class OpalZrtpSecurityMode_##name : public LibZrtpSecurityMode_Base \
 		if (profile) delete profile; \
 	} \
 }; \
-static PFactory<OpalSecurityMode>::Worker<OpalZrtpSecurityMode_##name> factoryZrtpSecurityMode_##name("ZRTP|" #name);
+PFACTORY_CREATE(PFactory<OpalSecurityMode>, OpalZrtpSecurityMode_##name, "ZRTP|" #name, false);
 
 DECLARE_LIBZRTP_CRYPTO_ALG( DEFAULT, NULL, NULL, NULL, NULL, NULL);
 #if 0

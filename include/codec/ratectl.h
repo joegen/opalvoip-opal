@@ -220,9 +220,8 @@ class OpalVideoRateController
     std::deque<PacketEntry> m_packets;
 };
 
-namespace PWLibStupidLinkerHacks {
-  extern int rateControlKickerVal;
-//  static class RateControlKicker { public: RateControlKicker() { rateControlKickerVal = 1; } } rateControlKicker;
-};
+
+PFACTORY_LOAD(OpalStandardVideoRateController);
+
 
 #endif // OPAL_RATE_CONTROL_H

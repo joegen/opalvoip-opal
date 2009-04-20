@@ -37,6 +37,8 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_LID
+
 #include <opal/transcoders.h>
 #include <codec/opalpluginmgr.h>
 #include <codec/opalplugin.h>
@@ -51,6 +53,9 @@
 #include <ptlib/videoio.h>
 #include <codec/vidcodec.h>
 #endif
+
+
+PFACTORY_CREATE(PFactory<PPluginModuleManager>, OpalPluginCodecManager, "OpalPluginCodecManager", true);
 
 
 #if OPAL_VIDEO
@@ -93,6 +98,24 @@ inline static bool IsValidMPI(int mpi)
 #endif // OPAL_H323
 #endif // OPAL_VIDEO
 
+
+/////////////////////////////////////////////////////////////////////////////
+
+#ifdef OPAL_PLUGIN_DIR
+
+class OpalPluginLoader : public PProcessStartup
+{
+  PCLASSINFO(OpalPluginLoader, PProcessStartup);
+  public:
+    void OnStartup()
+    { 
+      PPluginManager::AddPluginDirs(OPAL_PLUGIN_DIR);
+    }
+};
+
+static PFactory<PProcessStartup>::Worker<PluginLoader> opalpluginStartupFactory("OpalPluginLoader", true);
+
+#endif // OPAL_PLUGIN_DIR
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2502,16 +2525,6 @@ void OpalPluginCodecManager::RegisterCapability(const PluginCodec_Definition * c
 
 /////////////////////////////////////////////////////////////////////////////
 
-static PAtomicInteger bootStrapCount;
-
-void OpalPluginCodecManager::Bootstrap()
-{
-  if (++bootStrapCount != 1)
-    return;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
 #define INCLUDE_STATIC_CODEC(name) \
 extern "C" { \
 extern unsigned int Opal_StaticCodec_##name##_GetAPIVersion(); \
@@ -2533,3 +2546,4 @@ INCLUDE_STATIC_CODEC(GSM_0610)
 
 #endif
 
+#endif // OPAL_LID
