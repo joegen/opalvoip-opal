@@ -1130,6 +1130,9 @@ class RTP_Encoding
     RTP_UDP     * rtpUDP;
 };
 
+PFACTORY_LOAD(RTP_Encoding);
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 class SecureRTP_UDP : public RTP_UDP

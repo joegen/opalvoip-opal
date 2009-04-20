@@ -30,6 +30,17 @@
 
 #include <ptlib.h>
 
+// Include header files for everything that uses factories or plugins
+#include <opal/recording.h>
+#include <h323/h235auth.h>
+#include <rtp/rtp.h>
+#include <rtp/srtp.h>
+#include <codec/opalwavfile.h>
+#include <codec/ratectl.h>
+#include <codec/opalpluginmgr.h>
+#include <lids/lidpluginmgr.h>
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 

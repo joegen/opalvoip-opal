@@ -37,6 +37,9 @@
 
 #include <opal/buildopts.h>
 
+#include <ptlib/pfactory.h>
+
+
 class H323TransactionPDU;
 class H225_CryptoH323Token;
 class H225_ArrayOf_AuthenticationMechanism;
@@ -47,9 +50,6 @@ class PASN_ObjectId;
 class PASN_Sequence;
 class PASN_Array;
 
-namespace PWLibStupidLinkerHacks {
-extern int h235AuthLoader;
-};
 
 /** This abtract class embodies an H.235 authentication mechanism.
     NOTE: descendants must have a Clone() function for correct operation.
@@ -220,6 +220,8 @@ class H235AuthSimpleMD5 : public H235Authenticator
     ) const;
 };
 
+PFACTORY_LOAD(H235AuthSimpleMD5);
+
 
 /** This class embodies a RADIUS compatible based authentication (aka Cisco
     Access Token or CAT).
@@ -259,12 +261,10 @@ class H235AuthCAT : public H235Authenticator
     ) const;
 };
 
+PFACTORY_LOAD(H235AuthCAT);
+
 
 #if OPAL_PTLIB_SSL
-
-namespace PWLibStupidLinkerHacks {
-  extern int h235AuthProcedure1Loader;
-};
 
 /** This class embodies the H.235 "base line Procedure 1" from Annex D.
 */
@@ -301,6 +301,8 @@ class H235AuthProcedure1 : public H235Authenticator
 
     virtual PBoolean UseGkAndEpIdentifiers() const;
 };
+
+PFACTORY_LOAD(H235AuthProcedure1);
 
 #endif
 

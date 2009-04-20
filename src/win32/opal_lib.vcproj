@@ -400,9 +400,6 @@
 					RelativePath="..\opal\opal_c.cxx">
 				</File>
 				<File
-					RelativePath="..\opal\opalglobalstatics.cxx">
-				</File>
-				<File
 					RelativePath="..\opal\opalmixer.cxx">
 				</File>
 				<File

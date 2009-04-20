@@ -46,9 +46,6 @@
 
 #define new PNEW
 
-namespace PWLibStupidLinkerHacks {
-  int h235AuthLoader;
-};
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -316,7 +313,7 @@ H235Authenticator::ValidationResult
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PFactory<H235Authenticator>::Worker<H235AuthSimpleMD5> factoryH235AuthSimpleMD5("SimpleMD5");
+PFACTORY_CREATE(PFactory<H235Authenticator>, H235AuthSimpleMD5, "SimpleMD5", false);
 
 static const char OID_MD5[] = "1.2.840.113549.2.5";
 
@@ -486,7 +483,7 @@ PBoolean H235AuthSimpleMD5::IsSecuredPDU(unsigned rasPDU, PBoolean received) con
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PFactory<H235Authenticator>::Worker<H235AuthCAT> factoryH235AuthCAT("SimpleCAT");
+PFACTORY_CREATE(PFactory<H235Authenticator>, H235AuthCAT, "SimpleCAT", false);
 
 static const char OID_CAT[] = "1.2.840.113548.10.1.2.1";
 

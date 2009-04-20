@@ -41,6 +41,8 @@
 #include <ptclib/dtmf.h>
 
 
+PFACTORY_CREATE(PFactory<PPluginModuleManager>, OpalPluginLIDManager, "OpalPluginLIDManager", true);
+
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalPluginLIDManager::OpalPluginLIDManager(PPluginManager * mgr)

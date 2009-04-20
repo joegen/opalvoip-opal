@@ -40,9 +40,6 @@
 #include <h323/h235auth.h>
 #include <h323/h323pdu.h>
 
-namespace PWLibStupidLinkerHacks {
-  int h235AuthProcedure1Loader;
-};
 
 #ifdef _MSC_VER
 #pragma comment(lib, P_SSL_LIB1)
@@ -162,7 +159,7 @@ static void hmac_sha (const unsigned char*    k,      /* secret key */
 
 /////////////////////////////////////////////////////////////////////////////
 
-static PFactory<H235Authenticator>::Worker<H235AuthProcedure1> factoryH235AuthProcedure1("H235Procedure1");
+PFACTORY_CREATE(PFactory<H235Authenticator>, H235AuthProcedure1, "H235Procedure1", false);
 
 H235AuthProcedure1::H235AuthProcedure1()
 {

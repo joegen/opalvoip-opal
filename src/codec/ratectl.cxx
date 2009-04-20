@@ -41,9 +41,6 @@ using namespace std;
 #include <codec/ratectl.h>
 #include <opal/mediafmt.h>
 
-namespace PWLibStupidLinkerHacks {
-  int rateControlKickerVal = 0;
-};
 
 //
 // 20 bytes for nominal TCP header
@@ -57,6 +54,7 @@ namespace PWLibStupidLinkerHacks {
 #define PACKET_HISTORY_SIZE   5
 
 #define new PNEW
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -325,6 +323,9 @@ class OpalStandardVideoRateController : public OpalVideoRateController
 };
 
 
+PFACTORY_CREATE(PFactory<OpalVideoRateController>, OpalStandardVideoRateController, "Standard", false);
+
+
 OpalStandardVideoRateController::OpalStandardVideoRateController()
 {
 }
@@ -446,6 +447,4 @@ bool OpalStandardVideoRateController::Pop(RTP_DataFrameList & outputPackets, boo
   return true;
 }
 
-
-static PFactory<OpalVideoRateController>::Worker<OpalStandardVideoRateController> opalStandardVideoRateController("Standard");
 

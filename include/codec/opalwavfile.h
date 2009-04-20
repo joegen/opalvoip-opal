@@ -37,9 +37,6 @@
 
 #include <ptclib/pwavfile.h>
 
-namespace PWLibStupidLinkerHacks {
-  extern int opalwavfileLoader;
-};
 
 /**This class is similar to the PWavFile class found in the PWlib
    components library. However, it will tranparently convert all data
@@ -91,6 +88,10 @@ class OpalWAVFile : public PWAVFile
       unsigned format = fmt_PCM ///<  Type of WAV File to create
     );
 };
+
+
+PFACTORY_LOAD(PWAVFileConverterULaw);
+
 
 #endif // OPAL_CODEC_OPALWAVFILE_H
 

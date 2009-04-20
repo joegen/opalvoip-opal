@@ -42,10 +42,10 @@
 #include <opal/call.h>
 #include <opal/patch.h>
 #include <opal/mediastrm.h>
-
-#if OPAL_VIDEO
+#include <codec/g711codec.h>
 #include <codec/vidcodec.h>
-#endif
+#include <codec/rfc4175.h>
+#include <codec/opalpluginmgr.h>
 
 #if OPAL_HAS_H224
 #include <h224/h224.h>
@@ -73,6 +73,17 @@ static const char * const DefaultMediaFormatOrder[] = {
   OPAL_H263,
   OPAL_H261
 };
+
+// G.711 is *always* available
+// Yes, it would make more sense for this to be in g711codec.cxx, but on 
+// Linux it would not get loaded due to static initialisation optimisation
+OPAL_REGISTER_G711();
+
+// Same deal for RC4175 video
+#if OPAL_RFC4175
+OPAL_REGISTER_RFC4175();
+#endif
+
 
 #define new PNEW
 

@@ -47,10 +47,6 @@
 
 #define new PNEW
 
-namespace PWLibStupidLinkerHacks {
-  int t38Loader;
-};
-
 
 static const char TIFF_File_FormatName[] = "TIFF-File";
 
