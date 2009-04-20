@@ -58,22 +58,9 @@ const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
 #define UDP_BUFFER_SIZE 8192
 #endif
 
-namespace PWLibStupidLinkerHacks {
-extern int opalLoader;
 
-static class InstantiateMe
-{
-  public:
-    InstantiateMe()
-    {
-      opalLoader = 1;
-    }
-} instance;
+PFACTORY_CREATE(PFactory<RTP_Encoding>, RTP_Encoding, "rtp/avp", false);
 
-}; // namespace PWLibStupidLinkerHacks
-
-
-static PFactory<RTP_Encoding>::Worker<RTP_Encoding> rtpAVPHandler("rtp/avp");
 
 /////////////////////////////////////////////////////////////////////////////
 

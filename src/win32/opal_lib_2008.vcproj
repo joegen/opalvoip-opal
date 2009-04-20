@@ -1556,10 +1556,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\opal\opalglobalstatics.cxx"
-					>
-				</File>
-				<File
 					RelativePath="..\opal\opalmixer.cxx"
 					>
 				</File>

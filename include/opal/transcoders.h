@@ -125,7 +125,7 @@ __inline OpalTranscoderKey MakeOpalTranscoderKey(const char * from, const char *
 }
 
 #define OPAL_REGISTER_TRANSCODER(cls, input, output) \
-  OpalTranscoderFactory::Worker<cls> OpalTranscoder_##cls(MakeOpalTranscoderKey(input, output))
+  PFACTORY_CREATE(OpalTranscoderFactory, cls, MakeOpalTranscoderKey(input, output), false)
 
 
 /**This class embodies the implementation of a specific transcoder instance

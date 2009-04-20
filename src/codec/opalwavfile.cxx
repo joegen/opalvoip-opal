@@ -152,12 +152,9 @@ class PWAVFileConverterALaw : public PWAVFileConverterXLaw
     { return (short)Opal_G711_ALaw_PCM::ConvertSample(sample);}
 };
 
-PWAVFileConverterFactory::Worker<PWAVFileConverterULaw> uLawConverter(PWAVFile::fmt_uLaw, true);
+PFACTORY_CREATE(PWAVFileConverterFactory, PWAVFileConverterULaw, PWAVFile::fmt_uLaw, true);
 PWAVFileConverterFactory::Worker<PWAVFileConverterALaw> ALawConverter(PWAVFile::fmt_ALaw, true);
 
-namespace PWLibStupidLinkerHacks {
-  int opalwavfileLoader;
-};
 
 ///////////////////////////////////////////////////////////////////////
 

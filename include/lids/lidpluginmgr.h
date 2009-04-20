@@ -663,4 +663,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
 };
 
 
+PFACTORY_LOAD(OpalPluginLIDManager);
+
+
 #endif // OPAL_LIDS_LIDPLUGINMGR_H

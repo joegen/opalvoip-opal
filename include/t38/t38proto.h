@@ -53,11 +53,6 @@ class PASN_OctetString;
 class OpalFaxConnection;
 
 
-namespace PWLibStupidLinkerHacks {
-  extern int t38Loader;
-};
-
-
 ///////////////////////////////////////////////////////////////////////////////
 
 class OpalFaxConnection;

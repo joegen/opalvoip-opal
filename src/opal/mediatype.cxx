@@ -44,10 +44,6 @@
 #include <h323/channels.h>
 #endif
 
-namespace PWLibStupidLinkerHacks {
-  int mediaTypeLoader;
-}; // namespace PWLibStupidLinkerHacks
-
 
 OPAL_INSTANTIATE_MEDIATYPE(audio, OpalAudioMediaType);
 
@@ -58,9 +54,6 @@ OPAL_INSTANTIATE_MEDIATYPE(video, OpalVideoMediaType);
 OPAL_INSTANTIATE_SIMPLE_MEDIATYPE_NO_SDP(userinput); 
 
 ///////////////////////////////////////////////////////////////////////////////
-
-ostream & operator << (ostream & strm, const OpalMediaType & mediaType)
-{ mediaType.PrintOn(strm); return strm; }
 
 const OpalMediaType & OpalMediaType::Audio()     { static const OpalMediaType type = "audio";     return type; }
 const OpalMediaType & OpalMediaType::Video()     { static const OpalMediaType type = "video";     return type; }
