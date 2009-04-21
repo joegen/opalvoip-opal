@@ -673,6 +673,7 @@ bool OpalConnection::CloseMediaStream(OpalMediaStream & stream)
 PBoolean OpalConnection::RemoveMediaStream(OpalMediaStream & stream)
 {
   stream.Close();
+  PTRACE(3, "OpalCon\tRemoved media stream " << stream);
   return mediaStreams.Remove(&stream);
 }
 
@@ -864,7 +865,7 @@ void OpalConnection::AttachRFC2833HandlerToPatch(PBoolean /*isSource*/, OpalMedi
 OpalMediaStreamPtr OpalConnection::GetMediaStream(const PString & streamID, bool source) const
 {
   for (PSafePtr<OpalMediaStream> mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    if (mediaStream->GetID() == streamID && mediaStream->IsSource() == source)
+    if ((streamID.IsEmpty() || mediaStream->GetID() == streamID) && mediaStream->IsSource() == source)
       return mediaStream;
   }
 
