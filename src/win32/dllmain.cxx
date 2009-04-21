@@ -31,7 +31,6 @@
 #include <ptlib.h>
 
 // Include header files for everything that uses factories or plugins
-#include <opal/recording.h>
 #include <h323/h235auth.h>
 #include <rtp/rtp.h>
 #include <rtp/srtp.h>
