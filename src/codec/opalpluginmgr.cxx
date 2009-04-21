@@ -113,7 +113,7 @@ class OpalPluginLoader : public PProcessStartup
     }
 };
 
-static PFactory<PProcessStartup>::Worker<PluginLoader> opalpluginStartupFactory("OpalPluginLoader", true);
+static PFactory<PProcessStartup>::Worker<OpalPluginLoader> opalpluginStartupFactory("OpalPluginLoader", true);
 
 #endif // OPAL_PLUGIN_DIR
 
