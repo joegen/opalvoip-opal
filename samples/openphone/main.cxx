@@ -4334,7 +4334,7 @@ void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
 void OptionsDialog::AdjustVideoControls(const PwxString & device)
 {
   unsigned numChannels = 1;
-  PVideoInputDevice * grabber = PVideoInputDevice::CreateOpenedDevice(PString::Empty(), device);
+  PVideoInputDevice * grabber = PVideoInputDevice::CreateDeviceByName(device);
   if (grabber != NULL) {
     numChannels = grabber->GetNumChannels()+1;
     delete grabber;
