@@ -123,7 +123,6 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/opal/transports.cxx \
            $(OPAL_SRCDIR)/opal/guid.cxx \
            $(OPAL_SRCDIR)/opal/opalmixer.cxx \
-	   $(OPAL_SRCDIR)/opal/opalglobalstatics.cxx \
            $(OPAL_SRCDIR)/rtp/rtp.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
 	   $(OPAL_SRCDIR)/opal/opal_c.cxx \
