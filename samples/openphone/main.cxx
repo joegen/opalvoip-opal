@@ -2421,7 +2421,7 @@ void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
     if (dlg.ShowModal() != wxID_OK)
       return;
 
-    m_SecondaryVideoGrabber.deviceName = dlg.m_device;
+    m_SecondaryVideoGrabber.deviceName = dlg.m_device.p_str();
     m_SecondaryVideoGrabPreview = dlg.m_preview;
     m_SecondaryVideoOpening = true;
   }
