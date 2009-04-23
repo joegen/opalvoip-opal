@@ -2864,6 +2864,8 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, cons
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
   m_SDP = new SDPSessionDescription();
+  m_SDP->SetSessionName(mime.GetUserAgent());
+
   if (!connection.OnSendSDP(false, rtpSessions, *m_SDP)) {
     delete m_SDP;
     m_SDP = NULL;
