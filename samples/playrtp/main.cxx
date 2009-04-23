@@ -269,6 +269,7 @@ void PlayRTP::Play(const PFilePath & filename)
   cout << "Playing PCAP v" << pcap_hdr.version_major << '.' << pcap_hdr.version_minor << " file \"" << filename << '"' << endl;
 
   PBYTEArray packetData(pcap_hdr.snaplen); // Every packet is smaller than this
+  PBYTEArray fragments;
 
   RTP_DataFrame::PayloadTypes rtpStreamPayloadType = RTP_DataFrame::IllegalPayloadType;
   RTP_DataFrame::PayloadTypes lastUnsupportedPayloadType = RTP_DataFrame::IllegalPayloadType;
@@ -294,7 +295,7 @@ void PlayRTP::Play(const PFilePath & filename)
       REVERSE(pcaprec_hdr.orig_len);
     }
 
-    if (!pcap.Read(packetData.GetPointer(), pcaprec_hdr.incl_len)) {
+    if (!pcap.Read(packetData.GetPointer(pcaprec_hdr.incl_len), pcaprec_hdr.incl_len)) {
       cout << "Truncated file \"" << filename << '"' << endl;
       return;
     }
@@ -313,8 +314,13 @@ void PlayRTP::Play(const PFilePath & filename)
         return;
     }
 
+    // Check for fragmentation bit
+    packet += 6;
+    bool isFragment = (*packet & 0x20) != 0;
+    int fragmentOffset = (((packet[0]&0x1f)<<8)+packet[1])*8;
+
     // Skip first bit of IP header
-    packet += 9;
+    packet += 3;
     if (*packet != 0x11)
       continue; // Not UDP
 
@@ -328,6 +334,28 @@ void PlayRTP::Play(const PFilePath & filename)
 
     // On to the UDP header
     packet += 4;
+
+    // As we are past IP header, handle fragmentation now
+    PINDEX fragmentsSize = fragments.GetSize();
+    if (isFragment || fragmentsSize > 0) {
+      if (fragmentsSize != fragmentOffset) {
+        cout << "Missing IP fragment in \"" << filename << '"' << endl;
+        fragments.SetSize(0);
+        continue;
+      }
+
+      fragments.Concatenate(PBYTEArray(packet, pcaprec_hdr.incl_len - (packet - packetData), false));
+
+      if (isFragment)
+        continue;
+
+      packetData = fragments;
+      pcaprec_hdr.incl_len = packetData.GetSize();
+      fragments.SetSize(0);
+      packet = packetData;
+    }
+
+    // Check UDP ports
     if (m_srcPort != 0 && m_srcPort != *(PUInt16b *)packet)
       continue;
 
