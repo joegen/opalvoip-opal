@@ -2398,6 +2398,9 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
   response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
   response.SetAllow(endpoint.GetAllowedMethods());
 
+  if (sdp != NULL)
+    response.GetSDP()->SetSessionName(response.GetMIME().GetUserAgent());
+
   if (response.GetStatusCode() == SIP_PDU::Information_Ringing)
     response.GetMIME().SetAlertInfo(m_alertInfo, m_appearanceCode);
 
