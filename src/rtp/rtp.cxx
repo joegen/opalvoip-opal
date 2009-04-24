@@ -485,7 +485,6 @@ void RTP_UserData::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 RTP_Session::RTP_Session(const Params & params)
   : canonicalName(PProcess::Current().GetUserName())
   , toolName(PProcess::Current().GetName())
-  , m_jitter(NULL)
   , reportTimeInterval(0, 12)  // Seconds
   , reportTimer(reportTimeInterval)
   , failed(false)
@@ -496,6 +495,7 @@ RTP_Session::RTP_Session(const Params & params)
 
   userData = params.userData;
   autoDeleteUserData = params.autoDelete;
+  jitter = NULL;
 
   ignoreOutOfOrderPackets = true;
   ignorePayloadTypeChanges = true;
@@ -551,7 +551,7 @@ RTP_Session::~RTP_Session()
       "    averageJitter     = " << (jitterLevel >> 7) << "\n"
       "    maximumJitter     = " << (maximumJitterLevel >> 7)
      );
-  delete m_jitter;
+  delete jitter;
   if (autoDeleteUserData)
     delete userData;
   delete m_encodingHandler;
@@ -687,46 +687,39 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
                                       unsigned timeUnits,
                                         PINDEX stackSize)
 {
-  m_jitterMutex.Wait();
-
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
     PTRACE(4, "InfLID\tSwitching off jitter buffer.");
-    if (m_jitter != NULL) {
-      delete m_jitter;
-      m_jitter = NULL;
+    if (jitter != NULL) {
+      delete jitter;
+      jitter = NULL;
     }
   }
   else {
     PTRACE(4, "InfLID\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
     SetIgnoreOutOfOrderPackets(false);
-    if (m_jitter != NULL) 
-      m_jitter->SetDelay(minJitterDelay, maxJitterDelay);
+    if (jitter != NULL) 
+      jitter->SetDelay(minJitterDelay, maxJitterDelay);
     else
-      m_jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
-    m_jitter->Resume();
+      jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
+    jitter->Resume();
   }
-
-  m_jitterMutex.Signal();
 }
 
 
 unsigned RTP_Session::GetJitterBufferSize() const
 {
-  PWaitAndSignal mutex(m_jitterMutex);
-  return m_jitter != NULL ? m_jitter->GetJitterTime() : 0;
+  return jitter != NULL ? jitter->GetJitterTime() : 0;
 }
 
 unsigned RTP_Session::GetJitterTimeUnits() const
 {
-  PWaitAndSignal mutex(m_jitterMutex);
-  return m_jitter != NULL ? m_jitter->GetTimeUnits() : 0;
+  return jitter != NULL ? jitter->GetTimeUnits() : 0;
 }
 
 
 PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
 {
-  PWaitAndSignal mutex(m_jitterMutex);
-  return m_jitter != NULL ? m_jitter->ReadData(frame) : ReadData(frame, true);
+  return jitter != NULL ? jitter->ReadData(frame) : ReadData(frame, true);
 }
 
 
@@ -1461,15 +1454,13 @@ void RTP_Session::SourceDescription::PrintOn(ostream & strm) const
 
 DWORD RTP_Session::GetPacketsTooLate() const
 {
-  PWaitAndSignal mutex(m_jitterMutex);
-  return m_jitter != NULL ? m_jitter->GetPacketsTooLate() : 0;
+  return jitter != NULL ? jitter->GetPacketsTooLate() : 0;
 }
 
 
 DWORD RTP_Session::GetPacketOverruns() const
 {
-  PWaitAndSignal mutex(m_jitterMutex);
-  return m_jitter != NULL ? m_jitter->GetBufferOverruns() : 0;
+  return jitter != NULL ? jitter->GetBufferOverruns() : 0;
 }
 
 
@@ -1537,7 +1528,8 @@ RTP_UDP::~RTP_UDP()
   // We need to do this to make sure that the sockets are not
   // deleted before select decides there is no more data coming
   // over them and exits the reading thread.
-  SetJitterBufferSize(0, 0);
+  if (jitter)
+    PAssert(jitter->WaitForTermination(20000), "Jitter buffer thread did not terminate");
 
   delete dataSocket;
   delete controlSocket;
@@ -1703,8 +1695,9 @@ void RTP_UDP::Close(PBoolean reading)
 {
   //SendBYE();
 
+  PWaitAndSignal mutex(dataMutex);
+
   if (reading) {
-    dataMutex.Wait();
     if (!shutdownRead) {
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down read.");
       syncSourceIn = 0;
@@ -1717,8 +1710,6 @@ void RTP_UDP::Close(PBoolean reading)
         dataSocket->WriteTo("", 1, addr, controlSocket->GetPort());
       }
     }
-    dataMutex.Signal();
-    SetJitterBufferSize(0, 0); // Kill jitter buffer too
   }
   else {
     PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down write.");
