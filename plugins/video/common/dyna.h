@@ -46,6 +46,7 @@
 #include <codec/opalplugin.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #if defined(_WIN32) || defined(_WIN32_WCE)
   #include <windows.h>
