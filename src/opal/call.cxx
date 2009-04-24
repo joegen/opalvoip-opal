@@ -383,7 +383,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
                                                   unsigned sessionID, 
                                    const OpalMediaFormat & preselectedFormat)
 {
-  PSafeLockReadOnly lock(*this);
+  PSafeLockReadWrite lock(*this);
   if (isClearing || !lock.IsLocked())
     return false;
 
