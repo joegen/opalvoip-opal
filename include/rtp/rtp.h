@@ -841,8 +841,7 @@ class RTP_Session : public PObject
     PString            toolName;
     RTP_UserData     * userData;
     PBoolean           autoDeleteUserData;
-    RTP_JitterBuffer * m_jitter;
-    PMutex             m_jitterMutex;
+    RTP_JitterBuffer * jitter;
 
     PBoolean      ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;
