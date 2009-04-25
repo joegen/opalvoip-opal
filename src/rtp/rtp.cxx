@@ -1791,7 +1791,6 @@ PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame, PBoolean loop)
       PWaitAndSignal mutex(dataMutex);
       if (shutdownRead) {
         PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
-        shutdownRead = false;
         return false;
       }
     }
@@ -2056,7 +2055,6 @@ PBoolean RTP_UDP::Internal_WriteData(RTP_DataFrame & frame)
     PWaitAndSignal mutex(dataMutex);
     if (shutdownWrite) {
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", write shutdown.");
-      shutdownWrite = false;
       return false;
     }
   }
