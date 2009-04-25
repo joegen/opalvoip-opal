@@ -1047,15 +1047,15 @@ class OpalMediaFormat : public PContainer
     operator PString() const { PWaitAndSignal m(_mutex); return m_info == NULL ? "" : m_info->formatName; }
     operator const char *() const { PWaitAndSignal m(_mutex); return m_info == NULL ? "" : m_info->formatName; }
     bool operator==(const char * other) const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->formatName == other; }
-    bool operator!=(const char * other) const { PWaitAndSignal m(_mutex); return m_info == NULL || m_info->formatName == other; }
+    bool operator!=(const char * other) const { PWaitAndSignal m(_mutex); return m_info == NULL || m_info->formatName != other; }
     bool operator==(const PString & other) const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->formatName == other; }
-    bool operator!=(const PString & other) const { PWaitAndSignal m(_mutex); return m_info == NULL || m_info->formatName == other; }
+    bool operator!=(const PString & other) const { PWaitAndSignal m(_mutex); return m_info == NULL || m_info->formatName != other; }
     bool operator==(const OpalMediaFormat & other) const { PWaitAndSignal m(_mutex); return Compare(other) == EqualTo; }
     bool operator!=(const OpalMediaFormat & other) const { PWaitAndSignal m(_mutex); return Compare(other) != EqualTo; }
     friend bool operator==(const char * other, const OpalMediaFormat & fmt) { return fmt.m_info != NULL && fmt.m_info->formatName == other; }
-    friend bool operator!=(const char * other, const OpalMediaFormat & fmt) { return fmt.m_info == NULL || fmt.m_info->formatName == other; }
+    friend bool operator!=(const char * other, const OpalMediaFormat & fmt) { return fmt.m_info == NULL || fmt.m_info->formatName != other; }
     friend bool operator==(const PString & other, const OpalMediaFormat & fmt) { return fmt.m_info != NULL && fmt.m_info->formatName == other; }
-    friend bool operator!=(const PString & other, const OpalMediaFormat & fmt) { return fmt.m_info == NULL || fmt.m_info->formatName == other; }
+    friend bool operator!=(const PString & other, const OpalMediaFormat & fmt) { return fmt.m_info == NULL || fmt.m_info->formatName != other; }
 
 #if OPAL_H323
     static const PString & MediaPacketizationOption();
