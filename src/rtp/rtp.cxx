@@ -677,7 +677,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
                                         PINDEX stackSize)
 {
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
-    PTRACE(4, "InfLID\tSwitching off jitter buffer.");
+    PTRACE_IF(4, m_jitterBuffer != NULL, "InfLID\tSwitching off jitter buffer.");
     m_jitterBuffer.SetNULL();
   }
   else {
@@ -694,20 +694,21 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
 
 unsigned RTP_Session::GetJitterBufferSize() const
 {
-  PSafePtr<RTP_JitterBuffer> jitter = m_jitterBuffer; // Increase reference count
+  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   return jitter != NULL ? jitter->GetJitterTime() : 0;
 }
 
+
 unsigned RTP_Session::GetJitterTimeUnits() const
 {
-  PSafePtr<RTP_JitterBuffer> jitter = m_jitterBuffer; // Increase reference count
+  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   return jitter != NULL ? jitter->GetTimeUnits() : 0;
 }
 
 
 PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
 {
-  PSafePtr<RTP_JitterBuffer> jitter = m_jitterBuffer; // Increase reference count
+  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   return jitter != NULL ? jitter->ReadData(frame) : ReadData(frame, true);
 }
 
@@ -1443,14 +1444,14 @@ void RTP_Session::SourceDescription::PrintOn(ostream & strm) const
 
 DWORD RTP_Session::GetPacketsTooLate() const
 {
-  PSafePtr<RTP_JitterBuffer> jitter = m_jitterBuffer; // Increase reference count
+  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   return jitter != NULL ? jitter->GetPacketsTooLate() : 0;
 }
 
 
 DWORD RTP_Session::GetPacketOverruns() const
 {
-  PSafePtr<RTP_JitterBuffer> jitter = m_jitterBuffer; // Increase reference count
+  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   return jitter != NULL ? jitter->GetBufferOverruns() : 0;
 }
 
