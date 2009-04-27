@@ -1072,6 +1072,16 @@ class H323EndPoint : public OpalRTPEndPoint
      */
     void SetInitialBandwidth(unsigned bandwidth) { initialBandwidth = bandwidth; }
 
+#ifdef OPAL_H239
+    /**Get the default H.239 options.
+     */
+    const H323H239Options & GetDefaultH239Options() const { return m_defaultH239Options; }
+
+    /**Set the default H.239 options.
+     */
+    void SetDefaultH239Options(const H323H239Options & options) { m_defaultH239Options = options; }
+#endif
+
     /**Called when an outgoing PDU requires a feature set
      */
     virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet &);
@@ -1337,12 +1347,16 @@ class H323EndPoint : public OpalRTPEndPoint
     PBoolean        canDisplayAmountString;
     PBoolean        canEnforceDurationLimit;
 #if OPAL_H450
-    unsigned    callIntrusionProtectionLevel;
+    unsigned        callIntrusionProtectionLevel;
 #endif
 
-    TerminalTypes terminalType;
+    TerminalTypes   terminalType;
 
-    PBoolean          clearCallOnRoundTripFail;
+#ifdef OPAL_H239
+    H323H239Options m_defaultH239Options;
+#endif
+
+    PBoolean        clearCallOnRoundTripFail;
 
     // Some more configuration variables, rarely changed.
     PTimeInterval signallingChannelCallTimeout;

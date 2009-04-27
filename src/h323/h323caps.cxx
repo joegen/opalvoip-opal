@@ -164,7 +164,7 @@ PBoolean H323Capability::IsMatch(const PASN_Choice & subTypePDU) const
 
 PBoolean H323Capability::OnSendingPDU(H245_DataType & /*pdu*/) const
 {
-  return mediaFormat.ToCustomisedOptions();
+  return GetWritableMediaFormat().ToCustomisedOptions();
 }
 
 
@@ -206,7 +206,7 @@ PBoolean H323Capability::OnReceivedPDU(const H245_Capability & cap)
 
 PBoolean H323Capability::OnReceivedPDU(const H245_DataType & /*pdu*/, PBoolean /*receiver*/)
 {
-  return mediaFormat.ToNormalisedOptions();
+  return GetWritableMediaFormat().ToNormalisedOptions();
 }
 
 
@@ -218,12 +218,13 @@ PBoolean H323Capability::IsUsable(const H323Connection &) const
 
 OpalMediaFormat H323Capability::GetMediaFormat() const
 {
-  return mediaFormat.IsValid() ? mediaFormat : OpalMediaFormat(GetFormatName());
+  return m_mediaFormat.IsValid() ? m_mediaFormat : OpalMediaFormat(GetFormatName());
 }
 
 
 bool H323Capability::SetMediaFormatOptions(const OpalMediaFormat &format)
 {
+  OpalMediaFormat & mediaFormat = GetWritableMediaFormat();
   if (mediaFormat != format)
     return false;
 
@@ -242,11 +243,11 @@ bool H323Capability::SetMediaFormatOptions(const OpalMediaFormat &format)
 }
 
 
-OpalMediaFormat & H323Capability::GetWritableMediaFormat()
+OpalMediaFormat & H323Capability::GetWritableMediaFormat() const
 {
-  if (!mediaFormat.IsValid())
-    mediaFormat = GetFormatName();
-  return mediaFormat;
+  if (!m_mediaFormat.IsValid())
+    m_mediaFormat = GetFormatName();
+  return m_mediaFormat;
 }
 
 
@@ -497,8 +498,8 @@ PObject::Comparison H323NonStandardCapabilityInfo::CompareData(const PBYTEArray 
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323GenericCapabilityInfo::H323GenericCapabilityInfo(const PString & standardId, PINDEX maxBitRate)
-  : maxBitRate(maxBitRate)
+H323GenericCapabilityInfo::H323GenericCapabilityInfo(const PString & standardId, unsigned bitRate)
+  : maxBitRate(bitRate)
 {
   identifier = new H245_CapabilityIdentifier(H245_CapabilityIdentifier::e_standard);
   PASN_ObjectId & object_id = *identifier;
@@ -695,7 +696,7 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
           }
         }
 
-        PTRACE(2, "Invalid generic parameter type (" << param.m_parameterValue.GetTagName()
+        PTRACE(2, "H323\tInvalid generic parameter type (" << param.m_parameterValue.GetTagName()
                << ") for option \"" << option.GetName() << "\" (" << option.GetClass() << ')');
       }
     }
@@ -1103,7 +1104,7 @@ PBoolean H323VideoCapability::OnReceivedPDU(const H245_Capability & cap)
 PBoolean H323VideoCapability::OnReceivedPDU(const H245_DataType & dataType, PBoolean receiver)
 {
   if (dataType.GetTag() != H245_DataType::e_videoData) {
-    PTRACE(5, "dataType.GetTag() " << dataType.GetTag() << " != H245_DataType::e_videoData");
+    PTRACE(5, "H323\tdataType.GetTag() " << dataType.GetTag() << " != H245_DataType::e_videoData");
     return PFalse;
   }
 
@@ -1259,6 +1260,302 @@ PBoolean H323GenericVideoCapability::IsMatch(const PASN_Choice & subTypePDU) con
          H323GenericCapabilityInfo::IsMatch((const H245_GenericCapability &)subTypePDU.GetObject());
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+
+#ifdef OPAL_H239
+
+H323ExtendedVideoCapability::H323ExtendedVideoCapability(const PString & identifier)
+  : H323GenericVideoCapability(identifier)
+{
+}
+
+
+unsigned H323ExtendedVideoCapability::GetSubType() const
+{
+  return H245_VideoCapability::e_extendedVideoCapability;
+}
+
+
+PBoolean H323ExtendedVideoCapability::OnSendingPDU(H245_VideoCapability & pdu, CommandType type) const
+{
+  pdu.SetTag(H245_VideoCapability::e_extendedVideoCapability);
+  H245_ExtendedVideoCapability & extcap = pdu;
+
+  OpalMediaFormat mediaFormat = GetMediaFormat();
+
+  for (OpalMediaFormatList::const_iterator videoFormat = m_videoFormats.begin(); videoFormat != m_videoFormats.end(); ++videoFormat) {
+    if (videoFormat->GetMediaType() == OpalMediaType::Video()) {
+      H323Capability * capability = H323Capability::Create(videoFormat->GetName());
+      if (capability != NULL) {
+        H245_Capability h245Cap;
+        if (capability->OnSendingPDU(h245Cap)) {
+          PINDEX size = extcap.m_videoCapability.GetSize();
+          extcap.m_videoCapability.SetSize(size+1);
+          extcap.m_videoCapability[size] = h245Cap;
+        }
+        delete capability;
+      }
+    }
+  }
+  if (extcap.m_videoCapability.GetSize() == 0) {
+    PTRACE(2, "H323\tCannot encode H.239 video capability, no extended video codecs available");
+    return false;
+  }
+
+  extcap.IncludeOptionalField(H245_ExtendedVideoCapability::e_videoCapabilityExtension);
+  extcap.m_videoCapabilityExtension.SetSize(1);
+  return OnSendingGenericPDU(extcap.m_videoCapabilityExtension[0], mediaFormat, type);
+}
+
+
+PBoolean H323ExtendedVideoCapability::OnSendingPDU(H245_VideoMode &) const
+{
+  return false;
+}
+
+
+PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability & pdu, CommandType type)
+{
+  if (pdu.GetTag() != H245_VideoCapability::e_extendedVideoCapability)
+    return false;
+
+  const H245_ExtendedVideoCapability & extcap = pdu;
+  if (!extcap.HasOptionalField(H245_ExtendedVideoCapability::e_videoCapabilityExtension)) {
+    PTRACE(2, "H323\tNo H.239 video capability extension");
+    return false;
+  }
+
+  PINDEX i = 0;
+  for (;;) {
+    if (i >= extcap.m_videoCapabilityExtension.GetSize()) {
+      PTRACE(2, "H323\tNo H.239 video capability extension for " << *identifier);
+      return false;
+    }
+
+    if (H323GenericCapabilityInfo::IsMatch(extcap.m_videoCapabilityExtension[i]))
+      break;
+
+    ++i;
+  }
+
+  if (!OnReceivedGenericPDU(GetWritableMediaFormat(), extcap.m_videoCapabilityExtension[i], type))
+    return false;
+
+  H323Capabilities allVideoCapabilities;
+  H323CapabilityFactory::KeyList_T stdCaps = H323CapabilityFactory::GetKeyList();
+
+  for (H323CapabilityFactory::KeyList_T::const_iterator iterCap = stdCaps.begin(); iterCap != stdCaps.end(); ++iterCap) {
+    H323Capability * capability = H323Capability::Create(*iterCap);
+    if (capability->GetMainType() == H323Capability::e_Video)
+      allVideoCapabilities.Add(capability);
+    else
+      delete capability;
+  }
+
+  m_videoFormats.RemoveAll();
+
+  for (i = 0; i < extcap.m_videoCapability.GetSize(); ++i) {
+    for (PINDEX c = 0; c < allVideoCapabilities.GetSize(); c++) {
+      H323VideoCapability & capability = (H323VideoCapability &)allVideoCapabilities[c];
+      if (capability.IsMatch(extcap.m_videoCapability[i]) &&
+          capability.OnReceivedPDU(extcap.m_videoCapability[i])) {
+        OpalMediaFormat mediaFormat = capability.GetMediaFormat();
+        if (mediaFormat.ToNormalisedOptions())
+          m_videoFormats += mediaFormat;
+      }
+    }
+  }
+
+  PTRACE(4, "H323\tExtended video: " << setfill(',') << m_videoFormats);
+  return !m_videoFormats.IsEmpty();
+}
+
+
+PBoolean H323ExtendedVideoCapability::IsMatch(const PASN_Choice & subTypePDU) const
+{
+  if (!H323Capability::IsMatch(subTypePDU))
+    return false;
+
+  const H245_ExtendedVideoCapability & extcap = (const H245_ExtendedVideoCapability &)subTypePDU.GetObject();
+  if (!extcap.HasOptionalField(H245_ExtendedVideoCapability::e_videoCapabilityExtension))
+    return false;
+
+  for (PINDEX i = 0; i < extcap.m_videoCapabilityExtension.GetSize(); ++i) {
+    if (H323GenericCapabilityInfo::IsMatch(extcap.m_videoCapabilityExtension[i]))
+      return true;
+  }
+
+  return false;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+H323GenericControlCapability::H323GenericControlCapability(const PString & identifier)
+  : H323GenericCapabilityInfo(identifier)
+{
+}
+
+
+H323Capability::MainTypes H323GenericControlCapability::GetMainType() const
+{
+  return e_GenericControl;
+}
+
+
+unsigned H323GenericControlCapability::GetSubType() const
+{
+  return 0; // Unused
+}
+
+
+PBoolean H323GenericControlCapability::OnSendingPDU(H245_Capability & pdu) const
+{
+  pdu.SetTag(H245_Capability::e_genericControlCapability);
+  return OnSendingGenericPDU(pdu, GetMediaFormat(), e_OLC);
+}
+
+
+PBoolean H323GenericControlCapability::OnSendingPDU(H245_ModeElement &) const
+{
+  PTRACE(1, "H323\tCannot create GenericControlCapability mode");
+  return false; // Can't be in mode request.
+}
+
+
+PBoolean H323GenericControlCapability::OnReceivedPDU(const H245_Capability & pdu)
+{
+  if (pdu.GetTag() != H245_Capability::e_genericControlCapability)
+    return false;
+  return OnReceivedGenericPDU(GetWritableMediaFormat(), pdu, e_OLC);
+}
+
+
+PBoolean H323GenericControlCapability::IsMatch(const PASN_Choice & subTypePDU) const
+{
+  return H323GenericCapabilityInfo::IsMatch((const H245_GenericCapability &)subTypePDU.GetObject());
+}
+
+
+H323Channel * H323GenericControlCapability::CreateChannel(H323Connection &,
+                                                          H323Channel::Directions,
+                                                          unsigned,
+                                                          const H245_H2250LogicalChannelParameters *) const
+{
+  PTRACE(1, "H323\tCannot create GenericControlCapability channel");
+  return NULL;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+const char H239MediaType[] = "H.239";
+const char H239RolesMaskOption[] = "Roles Mask";
+
+class OpalH239MediaType : public OpalMediaTypeDefinition 
+{
+  public:
+    OpalH239MediaType()
+      : OpalMediaTypeDefinition(H239MediaType, NULL, 0)
+    {}
+    virtual PString GetRTPEncoding() const { return PString::Empty(); }
+#if OPAL_SIP
+    virtual SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress &) { return NULL; }
+#endif
+};
+
+OPAL_INSTANTIATE_MEDIATYPE2(H239, H239MediaType, OpalH239MediaType);
+
+
+
+H323H239VideoCapability::H323H239VideoCapability(const H323H239Options & options)
+  : H323ExtendedVideoCapability("0.0.8.239.1.2")
+  , m_options(options)
+{
+  m_videoFormats = m_options.m_videoFormats;
+}
+
+
+PObject * H323H239VideoCapability::Clone() const
+{
+  return new H323H239VideoCapability(*this);
+}
+
+
+PString H323H239VideoCapability::GetFormatName() const
+{
+  static class H239VideoMediaFormat : public OpalMediaFormat { 
+    public: 
+      H239VideoMediaFormat() 
+        : OpalMediaFormat("H.239-Video", H239MediaType, RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0)
+      {
+        OpalMediaOption * option = new OpalMediaOptionUnsigned(H239RolesMaskOption, true, OpalMediaOption::AndMerge, 1, 1, 3);
+
+        OpalMediaOption::H245GenericInfo genericInfo;
+        genericInfo.ordinal = 1;
+        genericInfo.mode = OpalMediaOption::H245GenericInfo::Collapsing;
+        genericInfo.integerType = OpalMediaOption::H245GenericInfo::BooleanArray;
+        genericInfo.excludeTCS = false;
+        genericInfo.excludeOLC = true;
+        genericInfo.excludeReqMode = true;
+        option->SetH245Generic(genericInfo);
+
+        AddOption(option);
+      } 
+  } const name; 
+  return name;
+}
+
+
+PBoolean H323H239VideoCapability::OnSendingPDU(H245_VideoCapability & pdu, CommandType type) const
+{
+  unsigned roles = 0;
+  if (m_options.m_hasPresentationRole)
+    roles |= 1;
+  if (m_options.m_hasLiveRole)
+    roles |= 2;
+  GetWritableMediaFormat().SetOptionInteger(H239RolesMaskOption, roles);
+
+  return H323ExtendedVideoCapability::OnSendingPDU(pdu, type);
+}
+
+
+PBoolean H323H239VideoCapability::OnReceivedPDU(const H245_VideoCapability & pdu, CommandType type)
+{
+  if (!H323ExtendedVideoCapability::OnReceivedPDU(pdu, type))
+    return false;
+
+  unsigned roles = GetMediaFormat().GetOptionInteger(H239RolesMaskOption);
+  m_options.m_hasPresentationRole = (roles&1) != 0;
+  m_options.m_hasLiveRole = (roles&2) != 0;
+  m_options.m_videoFormats = m_videoFormats;
+  return true;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+H323H239ControlCapability::H323H239ControlCapability()
+  : H323GenericControlCapability("0.0.8.239.1.1")
+{
+}
+
+
+PObject * H323H239ControlCapability::Clone() const
+{
+  return new H323H239ControlCapability(*this);
+}
+
+
+PString H323H239ControlCapability::GetFormatName() const
+{
+  static const OpalMediaFormat name("H.239-Control", H239MediaType, RTP_DataFrame::IllegalPayloadType, NULL, false, 0, 0, 0, 0);
+  return name;
+}
+
+
+#endif  // OPAL_H239
 
 #endif // OPAL_VIDEO
 
@@ -1503,7 +1800,7 @@ class H323_UserInputCapability_##type : public H323_UserInputCapability \
   DECLARE_USER_INPUT_CLASS(type) \
   const OpalMediaFormat UserInput_##type( \
     UIISubTypeNames[H323_UserInputCapability::type], \
-    "userinput", RTP_DataFrame::IllegalPayloadType, NULL, PFalse, 1, 0, 0, 0 \
+    OpalMediaType::UserInput(), RTP_DataFrame::IllegalPayloadType, NULL, PFalse, 1, 0, 0, 0 \
   ); \
   H323_REGISTER_CAPABILITY(H323_UserInputCapability_##type, UIISubTypeNames[H323_UserInputCapability::type]) \
 
@@ -1563,7 +1860,7 @@ H323Channel * H323_UserInputCapability::CreateChannel(H323Connection &,
                                                       unsigned,
                                                       const H245_H2250LogicalChannelParameters *) const
 {
-  PTRACE(1, "Codec\tCannot create UserInputCapability channel");
+  PTRACE(1, "H323\tCannot create UserInputCapability channel");
   return NULL;
 }
 
@@ -1587,14 +1884,14 @@ PBoolean H323_UserInputCapability::OnSendingPDU(H245_Capability & pdu) const
 
 PBoolean H323_UserInputCapability::OnSendingPDU(H245_DataType &) const
 {
-  PTRACE(1, "Codec\tCannot have UserInputCapability in DataType");
+  PTRACE(1, "H323\tCannot have UserInputCapability in DataType");
   return PFalse;
 }
 
 
 PBoolean H323_UserInputCapability::OnSendingPDU(H245_ModeElement &) const
 {
-  PTRACE(1, "Codec\tCannot have UserInputCapability in ModeElement");
+  PTRACE(1, "H323\tCannot have UserInputCapability in ModeElement");
   return PFalse;
 }
 
@@ -1622,7 +1919,7 @@ PBoolean H323_UserInputCapability::OnReceivedPDU(const H245_Capability & pdu)
 
 PBoolean H323_UserInputCapability::OnReceivedPDU(const H245_DataType &, PBoolean)
 {
-  PTRACE(1, "Codec\tCannot have UserInputCapability in DataType");
+  PTRACE(1, "H323\tCannot have UserInputCapability in DataType");
   return PFalse;
 }
 
@@ -1734,13 +2031,15 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
 
   // Decode out of the PDU, the list of known codecs.
   if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_capabilityTable)) {
-    H323Capabilities allCapabilities;
-    const H323Capabilities & localCapabilities = connection.GetLocalCapabilities();
-    for (PINDEX c = 0; c < localCapabilities.GetSize(); c++)
-      allCapabilities.Add(allCapabilities.Copy(localCapabilities[c]));
-    allCapabilities.AddAllCapabilities(connection.GetEndPoint(), 0, 0, "*");
+    H323Capabilities allCapabilities(connection.GetLocalCapabilities());
+    allCapabilities.AddAllCapabilities(0, 0, "*");
     H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
+#ifdef OPAL_H239
+    allCapabilities.Add(new H323H239VideoCapability(connection.GetLocalH239Options()));
+    allCapabilities.Add(new H323H239ControlCapability());
+#endif
     allCapabilities.SetMediaPacketizations(mediaPacketizations);
+    PTRACE(4, "H323\tParsing remote capabilities");
 
     for (PINDEX i = 0; i < pdu.m_capabilityTable.GetSize(); i++) {
       if (pdu.m_capabilityTable[i].HasOptionalField(H245_CapabilityTableEntry::e_capability)) {
@@ -2171,6 +2470,11 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
 
       case H245_Capability::e_receiveRTPAudioTelephonyEventCapability :
         return FindCapability(H323Capability::e_UserInput, SignalToneRFC2833_SubType);
+
+      case H245_Capability::e_genericControlCapability :
+        if (capability.GetMainType() == H323Capability::e_GenericControl)
+          found = capability.IsMatch(cap);
+        break;
     }
 
     if (found) {
@@ -2198,6 +2502,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       }
 
       PTRACE(4, "H323\tUnsupported media packetization " << packetizationString << ", not using capability " << cap);
+      return NULL;
     }
   }
 
@@ -2411,10 +2716,11 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
       entry.m_capabilityTableEntryNumber = capability.GetCapabilityNumber();
       entry.IncludeOptionalField(H245_CapabilityTableEntry::e_capability);
       capability.GetWritableMediaFormat().ToCustomisedOptions();
-      capability.OnSendingPDU(entry.m_capability);
-
-      H323SetRTPPacketization(h225_0.m_mediaPacketizationCapability.m_rtpPayloadType, rtpPacketizationCount,
-                              capability.GetMediaFormat(), RTP_DataFrame::IllegalPayloadType);
+      if (capability.OnSendingPDU(entry.m_capability))
+        H323SetRTPPacketization(h225_0.m_mediaPacketizationCapability.m_rtpPayloadType, rtpPacketizationCount,
+                                capability.GetMediaFormat(), RTP_DataFrame::IllegalPayloadType);
+      else
+        pdu.m_capabilityTable.SetSize(count);
     }
   }
 
@@ -2453,7 +2759,7 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
 
 PBoolean H323Capabilities::Merge(const H323Capabilities & newCaps)
 {
-  PTRACE_IF(4, !table.IsEmpty(), "H245\tCapability merge of:\n" << newCaps << "\nInto:\n" << *this);
+  PTRACE_IF(4, !table.IsEmpty(), "H323\tCapability merge of:\n" << newCaps << "\nInto:\n" << *this);
 
   // Add any new capabilities not already in set.
   PINDEX i;
@@ -2480,8 +2786,8 @@ PBoolean H323Capabilities::Merge(const H323Capabilities & newCaps)
     }
   }
 
-  PTRACE_IF(4, !table.IsEmpty(), "H245\tCapability merge result:\n" << *this);
-  PTRACE(3, "H245\tReceived capability set, is " << (table.IsEmpty() ? "rejected" : "accepted"));
+  PTRACE_IF(4, !table.IsEmpty(), "H323\tCapability merge result:\n" << *this);
+  PTRACE(3, "H323\tReceived capability set, is " << (table.IsEmpty() ? "rejected" : "accepted"));
   return !table.IsEmpty();
 }
 

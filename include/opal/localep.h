@@ -67,6 +67,18 @@ class OpalLocalEndPoint : public OpalEndPoint
 
   /**@name Overrides from OpalEndPoint */
   //@{
+    /**Get the data formats this endpoint is capable of operating.
+       This provides a list of media data format names that may be used by an
+       OpalMediaStream may be created by a connection from this endpoint.
+
+       Note that a specific connection may not actually support all of the
+       media formats returned here, but should return no more.
+
+       The default behaviour returns the most basic media formats, PCM audio
+       and YUV420P video.
+      */
+    virtual OpalMediaFormatList GetMediaFormats() const;
+
     /**Set up a connection to a remote party.
        This is called from the OpalManager::MakeConnection() function once
        it has determined that this is the endpoint for the protocol.

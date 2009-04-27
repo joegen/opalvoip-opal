@@ -678,6 +678,8 @@ class OptionsDialog : public wxDialog
     bool         m_DisableFastStart;
     bool         m_DisableH245Tunneling;
     bool         m_DisableH245inSETUP;
+    bool         m_EnableH239Video;
+    bool         m_EnableH239Control;
     wxListBox  * m_Aliases;
     wxTextCtrl * m_NewAlias;
     wxButton   * m_AddAlias;
