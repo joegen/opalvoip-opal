@@ -199,6 +199,9 @@ DEF_FIELD(CallIntrusionProtectionLevel);
 DEF_FIELD(DisableFastStart);
 DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
+DEF_FIELD(EnableH239Video);
+DEF_FIELD(EnableH239Control);
+
 
 static const wxChar H323AliasesGroup[] = wxT("/H.323/Aliases");
 
@@ -1001,6 +1004,13 @@ bool MyManager::Initialise()
     h323EP->DisableH245Tunneling(onoff);
   if (config->Read(DisableH245inSETUPKey, &onoff))
     h323EP->DisableH245inSetup(onoff);
+
+  H323H239Options h239 = h323EP->GetDefaultH239Options();
+  if (config->Read(EnableH239VideoKey, &onoff))
+    h239.m_hasLiveRole = h239.m_hasPresentationRole = onoff;
+  h239.m_hasPresentationRole = onoff;
+  config->Read(EnableH239ControlKey, &h239.m_hasControl);
+  h323EP->SetDefaultH239Options(h239);
 
   config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
   if (m_gatekeeperMode > 0) {
@@ -3695,6 +3705,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(DisableFastStart, m_manager.h323EP->IsFastStartDisabled() != false);
   INIT_FIELD(DisableH245Tunneling, m_manager.h323EP->IsH245TunnelingDisabled() != false);
   INIT_FIELD(DisableH245inSETUP, m_manager.h323EP->IsH245inSetupDisabled() != false);
+
+  H323H239Options h239 = m_manager.h323EP->GetDefaultH239Options();
+  INIT_FIELD(EnableH239Video, h239.m_hasLiveRole);
+  INIT_FIELD(EnableH239Control, h239.m_hasControl);
+
   INIT_FIELD(GatekeeperMode, m_manager.m_gatekeeperMode);
   INIT_FIELD(GatekeeperAddress, m_manager.m_gatekeeperAddress);
   INIT_FIELD(GatekeeperIdentifier, m_manager.m_gatekeeperIdentifier);
@@ -4036,6 +4051,12 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(DisableFastStart, m_manager.h323EP->DisableFastStart);
   SAVE_FIELD(DisableH245Tunneling, m_manager.h323EP->DisableH245Tunneling);
   SAVE_FIELD(DisableH245inSETUP, m_manager.h323EP->DisableH245inSetup);
+
+  H323H239Options h239 = m_manager.h323EP->GetDefaultH239Options();
+  SAVE_FIELD(EnableH239Video, h239.m_hasLiveRole = );
+  SAVE_FIELD(EnableH239Control, h239.m_hasControl = );
+  h239.m_hasPresentationRole = h239.m_hasLiveRole;
+  m_manager.h323EP->SetDefaultH239Options(h239);
 
   config->Write(GatekeeperTTLKey, m_GatekeeperTTL);
   m_manager.h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, m_GatekeeperTTL));

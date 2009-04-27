@@ -124,6 +124,7 @@
 #endif
 
 #if OPAL_H323
+  #undef  OPAL_H239
   #undef  OPAL_H501
   
   #undef  OPAL_H450

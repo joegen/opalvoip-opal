@@ -174,6 +174,9 @@ H323Connection::H323Connection(OpalCall & call,
   : OpalRTPConnection(call, ep, token, options, stringOptions)
   , endpoint(ep)
   , gkAccessTokenOID(ep.GetGkAccessTokenOID())
+#ifdef OPAL_H239
+  , m_h239Options(ep.GetDefaultH239Options())
+#endif
 #if OPAL_H460
   , features(ep.GetFeatureSet())
 #endif
@@ -3467,6 +3470,21 @@ void H323Connection::OnSetLocalCapabilities()
 
   H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX);
 
+#ifdef OPAL_H239
+  if (m_h239Options.m_hasControl)
+    localCapabilities.Add(new H323H239ControlCapability());
+
+  if (m_h239Options.m_hasLiveRole || m_h239Options.m_hasPresentationRole) {
+    if (m_h239Options.m_videoFormats.IsEmpty()) {
+      for (OpalMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+        if (format->GetMediaType() == OpalMediaType::Video())
+          m_h239Options.m_videoFormats += *format;
+      }
+    }
+    localCapabilities.SetCapability(0, P_MAX_INDEX, new H323H239VideoCapability(m_h239Options));
+  }
+#endif
+
   // Special test for the RFC2833 capability to get the correct dynamic payload type
   H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
   if (capability != NULL) {
@@ -3478,6 +3496,22 @@ void H323Connection::OnSetLocalCapabilities()
 
   PTRACE(3, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
 }
+
+
+#ifdef OPAL_H239
+void H323Connection::GetRemoteH239Options(H323H239Options & options) const
+{
+  options.m_hasControl = remoteCapabilities.FindCapability(H323H239ControlCapability()) != NULL;
+
+  const H323H239VideoCapability * cap = dynamic_cast<const H323H239VideoCapability *>(remoteCapabilities.FindCapability(H323H239VideoCapability(options)));
+  if (cap != NULL)
+    options = cap->GetOptions();
+  else {
+    options.m_hasLiveRole = options.m_hasPresentationRole = false;
+    options.m_videoFormats.RemoveAll();
+  }
+}
+#endif
 
 
 PBoolean H323Connection::IsH245Master() const
@@ -3577,6 +3611,8 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
     list = fastStartMediaStream->GetMediaFormat();
   else {
     list = remoteCapabilities.GetMediaFormats();
+    // Note we do NOT use AdjustMediaFormats here as we are supposed to
+    // use the ordering dictated by the remote.
     list.Remove(endpoint.GetManager().GetMediaFormatMask());
   }
 
@@ -3661,10 +3697,14 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
         return NULL;
     }
 
-    PTRACE(3, "H323\tOpenMediaStream using channel " << channel->GetNumber() << " for session " << sessionID);
     stream = channel->GetMediaStream();
-    if (PAssertNULL(stream) == NULL)
+    if (stream == NULL) {
+      PTRACE(2, "H323\tCould not stream for open logical channel " << channel->GetNumber());
+      channel->Close();
       return NULL;
+    }
+
+    PTRACE(3, "H323\tOpenMediaStream using channel " << channel->GetNumber() << " for session " << sessionID);
   }
 
   if (stream->Open()) {
