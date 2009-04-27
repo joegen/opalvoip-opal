@@ -1987,6 +1987,24 @@ H323H263PluginCapability::H323H263PluginCapability(const PluginCodec_Definition 
 { 
 }
 
+
+static bool GetCustomMPI(const OpalMediaFormat & mediaFormat, unsigned & width, unsigned & height, unsigned & mpi)
+{
+  PStringArray custom = mediaFormat.GetOptionString(PLUGINCODEC_CUSTOM_MPI).Tokenise(',');
+  if (custom.GetSize() == 3) {
+    width  = custom[0].AsUnsigned();
+    height = custom[1].AsUnsigned();
+    mpi    = custom[2].AsUnsigned();
+    if (width > 15 && height > 15 && mpi > 1)
+      return true;
+  }
+
+  width = height = 0;
+  mpi = PLUGINCODEC_MPI_DISABLED;
+  return false;
+}
+
+
 PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
 {
   if (!PIsDescendant(&obj, H323H263PluginCapability)) {
@@ -2009,6 +2027,8 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
   int cifMPI   = mediaFormat.GetOptionInteger(cifMPI_tag);
   int cif4MPI  = mediaFormat.GetOptionInteger(cif4MPI_tag);
   int cif16MPI = mediaFormat.GetOptionInteger(cif16MPI_tag);
+  unsigned customWidth, customHeight, customMPI;
+  GetCustomMPI(mediaFormat, customWidth, customHeight, customMPI);
 
   const OpalMediaFormat & otherFormat = other.GetMediaFormat();
   int other_sqcifMPI = otherFormat.GetOptionInteger(sqcifMPI_tag);
@@ -2016,12 +2036,17 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
   int other_cifMPI   = otherFormat.GetOptionInteger(cifMPI_tag);
   int other_cif4MPI  = otherFormat.GetOptionInteger(cif4MPI_tag);
   int other_cif16MPI = otherFormat.GetOptionInteger(cif16MPI_tag);
+  unsigned other_customWidth, other_customHeight, other_customMPI;
+  GetCustomMPI(otherFormat, other_customWidth, other_customHeight, other_customMPI);
 
-  if ((IsValidMPI(sqcifMPI) && IsValidMPI(other_sqcifMPI)) ||
-      (IsValidMPI( qcifMPI) && IsValidMPI( other_qcifMPI)) ||
-      (IsValidMPI(  cifMPI) && IsValidMPI(  other_cifMPI)) ||
-      (IsValidMPI( cif4MPI) && IsValidMPI( other_cif4MPI)) ||
-      (IsValidMPI(cif16MPI) && IsValidMPI(other_cif16MPI))) {
+  if ((IsValidMPI( sqcifMPI) && IsValidMPI( other_sqcifMPI)) ||
+      (IsValidMPI(  qcifMPI) && IsValidMPI(  other_qcifMPI)) ||
+      (IsValidMPI(   cifMPI) && IsValidMPI(   other_cifMPI)) ||
+      (IsValidMPI(  cif4MPI) && IsValidMPI(  other_cif4MPI)) ||
+      (IsValidMPI( cif16MPI) && IsValidMPI( other_cif16MPI)) ||
+      (IsValidMPI(customMPI) && IsValidMPI(other_customMPI) &&
+                  customWidth  == other_customWidth &&
+                  customHeight == other_customHeight)) {
     PTRACE(5, "H.263\t" << *this << " == " << other);
     return EqualTo;
   }
@@ -2055,6 +2080,19 @@ static void SetTransmittedCap(const OpalMediaFormat & mediaFormat,
   }
 }
 
+
+static void OnSendingCustomMPI(H245_H263Options & h263options, unsigned width, unsigned height, unsigned mpi)
+{
+  h263options.IncludeOptionalField(H245_H263Options::e_customPictureFormat);
+  h263options.m_customPictureFormat.SetSize(1);
+  H245_CustomPictureFormat & customPicture = h263options.m_customPictureFormat[0];
+  customPicture.m_minCustomPictureWidth = width;
+  customPicture.m_minCustomPictureHeight = height;
+  customPicture.m_maxCustomPictureWidth = width;
+  customPicture.m_maxCustomPictureHeight = height;
+  customPicture.m_mPI.IncludeOptionalField(H245_CustomPictureFormat_mPI::e_standardMPI);
+  customPicture.m_mPI.m_standardMPI = mpi;
+}
 
 PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
 {
@@ -2092,11 +2130,16 @@ PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) cons
     h263.m_bppMaxKb = bppMaxKb;
   }
 
+  unsigned customWidth, customHeight, customMPI;
+  bool custom = GetCustomMPI(mediaFormat, customWidth, customHeight, customMPI);
+
   bool annexI = mediaFormat.GetOptionBoolean(H263_ANNEX_I);
   bool annexJ = mediaFormat.GetOptionBoolean(H263_ANNEX_J);
   bool annexT = mediaFormat.GetOptionBoolean(H263_ANNEX_T);
-  if (annexI || annexJ || annexT) {
+  if (custom || annexI || annexJ || annexT) {
     h263.IncludeOptionalField(H245_H263VideoCapability::e_h263Options);
+    if (custom)
+      OnSendingCustomMPI(h263.m_h263Options, customWidth, customHeight, customMPI);
     h263.m_h263Options.m_advancedIntraCodingMode  = annexI;
     h263.m_h263Options.m_deblockingFilterMode     = annexJ;
     h263.m_h263Options.m_modifiedQuantizationMode = annexT;
@@ -2131,11 +2174,16 @@ PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
   mode.m_pbFrames             = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, false);
   mode.m_errorCompensation    = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, false);
 
+  unsigned customWidth, customHeight, customMPI;
+  bool custom = GetCustomMPI(mediaFormat, customWidth, customHeight, customMPI);
+
   bool annexI = mediaFormat.GetOptionBoolean(H263_ANNEX_I);
   bool annexJ = mediaFormat.GetOptionBoolean(H263_ANNEX_J);
   bool annexT = mediaFormat.GetOptionBoolean(H263_ANNEX_T);
-  if (annexI || annexJ || annexT) {
+  if (custom || annexI || annexJ || annexT) {
     mode.IncludeOptionalField(H245_H263VideoMode::e_h263Options);
+    if (custom)
+      OnSendingCustomMPI(mode.m_h263Options, customWidth, customHeight, customMPI);
     mode.m_h263Options.m_advancedIntraCodingMode  = annexI;
     mode.m_h263Options.m_deblockingFilterMode     = annexJ;
     mode.m_h263Options.m_modifiedQuantizationMode = annexT;
@@ -2167,6 +2215,49 @@ static bool SetReceivedH263Cap(OpalMediaFormat & mediaFormat,
   return true;
 }
 
+
+static bool OnReceivedCustomMPI(const H245_H263VideoCapability & h263,
+                                int & minWidth, int & minHeight,
+                                int & maxWidth, int & maxHeight,
+                                int & mpi)
+{
+  if (!h263.HasOptionalField(H245_H263VideoCapability::e_h263Options))
+    return false;
+
+  if (!h263.m_h263Options.HasOptionalField(H245_H263Options::e_customPictureFormat))
+    return false;
+
+  if (h263.m_h263Options.m_customPictureFormat.GetSize() == 0)
+    return false;
+
+  const H245_CustomPictureFormat & customPicture = h263.m_h263Options.m_customPictureFormat[0];
+  if (!customPicture.m_mPI.HasOptionalField(H245_CustomPictureFormat_mPI::e_standardMPI))
+    return false;
+
+  mpi = customPicture.m_mPI.m_standardMPI;
+  if (!IsValidMPI(mpi))
+    return false;
+
+  minWidth  = customPicture.m_minCustomPictureWidth;
+  if (minWidth < 16)
+    return false;
+
+  minHeight = customPicture.m_minCustomPictureHeight;
+  if (minHeight < 16)
+    return false;
+
+  maxWidth  = customPicture.m_maxCustomPictureWidth;
+  if (maxWidth < minWidth)
+    return false;
+
+  maxHeight = customPicture.m_maxCustomPictureHeight;
+  if (maxHeight < minHeight)
+    return false;
+
+  return true;
+}
+
+
 PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU) const
 {
   if (!H323Capability::IsMatch(subTypePDU))
@@ -2176,31 +2267,49 @@ PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU) const
   H245_H263VideoCapability & h263 = (H245_H263VideoCapability &)video;
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
+  int minWidth  = mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption());
+  int minHeight = mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption());
+  int maxWidth  = mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption());
+  int maxHeight = mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption());
 
-  int sqcifMPI = mediaFormat.GetOptionInteger(sqcifMPI_tag);
-  int qcifMPI  = mediaFormat.GetOptionInteger(qcifMPI_tag);
-  int cifMPI   = mediaFormat.GetOptionInteger(cifMPI_tag);
-  int cif4MPI  = mediaFormat.GetOptionInteger(cif4MPI_tag);
-  int cif16MPI = mediaFormat.GetOptionInteger(cif16MPI_tag);
-
-  int other_sqcifMPI = h263.HasOptionalField(H245_H263VideoCapability::e_sqcifMPI) ? (int)h263.m_sqcifMPI : 0;
-  int other_qcifMPI  = h263.HasOptionalField(H245_H263VideoCapability::e_qcifMPI)  ? (int)h263.m_qcifMPI : 0;
-  int other_cifMPI   = h263.HasOptionalField(H245_H263VideoCapability::e_cifMPI)   ? (int)h263.m_cifMPI : 0;
-  int other_cif4MPI  = h263.HasOptionalField(H245_H263VideoCapability::e_cif4MPI)  ? (int)h263.m_cif4MPI : 0;
-  int other_cif16MPI = h263.HasOptionalField(H245_H263VideoCapability::e_cif16MPI) ? (int)h263.m_cif16MPI : 0;
-
-  if ((sqcifMPI && other_sqcifMPI) ||
-      (qcifMPI && other_qcifMPI) ||
-      (cifMPI && other_cifMPI) ||
-      (cif4MPI && other_cif4MPI) ||
-      (cif16MPI && other_cif16MPI)) {
-    PTRACE(5, "H.263\t" << *this << " == " << h263);
-    return true;
+  int other_minWidth, other_minHeight, other_maxWidth, other_maxHeight, other_customMPI;
+  if (!OnReceivedCustomMPI(h263, other_minWidth, other_minHeight, other_maxWidth, other_maxHeight, other_customMPI)) {
+    other_minWidth = other_minHeight = INT_MAX;
+    other_maxWidth = other_maxHeight = 0;
   }
 
-  PTRACE(5, "H.263\t" << *this << " != " << h263);
+  static struct {
+    int tag;
+    int width;
+    int height;
+  } const Table[] = {
+    { H245_H263VideoCapability::e_sqcifMPI, PVideoFrameInfo::SQCIFWidth, PVideoFrameInfo::SQCIFHeight },
+    { H245_H263VideoCapability::e_qcifMPI,  PVideoFrameInfo::QCIFWidth,  PVideoFrameInfo::QCIFHeight  },
+    { H245_H263VideoCapability::e_cifMPI,   PVideoFrameInfo::CIFWidth,   PVideoFrameInfo::CIFHeight   },
+    { H245_H263VideoCapability::e_cif4MPI,  PVideoFrameInfo::CIF4Width,  PVideoFrameInfo::CIF4Height  },
+    { H245_H263VideoCapability::e_cif16MPI, PVideoFrameInfo::CIF16Width, PVideoFrameInfo::CIF16Height }
+  };
+  for (PINDEX i = 0; i < PARRAYSIZE(Table); ++i) {
+    if (h263.HasOptionalField(Table[i].tag)) {
+      if (other_minWidth > Table[i].width)
+        other_minWidth = Table[i].width;
+      if (other_maxWidth < Table[i].width)
+        other_maxWidth = Table[i].width;
+      if (other_minHeight > Table[i].height)
+        other_minHeight = Table[i].height;
+      if (other_maxHeight < Table[i].height)
+        other_maxHeight = Table[i].height;
+    }
+  }
 
-  return false;
+  if (other_maxWidth  < minWidth  || other_minWidth  > maxWidth  || other_maxWidth  < other_minWidth ||
+      other_maxHeight < minHeight || other_minHeight > maxHeight || other_maxHeight < other_minHeight) {
+    PTRACE(5, "H.263\tNo match:\n" << setw(-1) << *this << '\n' << h263);
+    return false;
+  }
+
+  PTRACE(5, "H.263\tIsMatch for plug in");
+  return true;
 }
 
 
@@ -2238,6 +2347,17 @@ PBoolean H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & ca
   if (!SetReceivedH263Cap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, PVideoFrameInfo::CIF16Width, PVideoFrameInfo::CIF16Height, formatDefined)) {
     PTRACE(5, "H263\tSetReceivedH263Cap CIF16 failed");
     return false;
+  }
+
+  int minWidth, minHeight, maxWidth, maxHeight, mpi;
+  if (OnReceivedCustomMPI(h263, minWidth, minHeight, maxWidth, maxHeight, mpi)) {
+    formatDefined = true;
+    SET_OR_CREATE_PARM(MaxRxFrameWidthOption, maxWidth, <);
+    SET_OR_CREATE_PARM(MinRxFrameWidthOption, minWidth, >);
+    SET_OR_CREATE_PARM(MaxRxFrameHeightOption, maxHeight, <);
+    SET_OR_CREATE_PARM(MinRxFrameHeightOption, minHeight, >);
+    mediaFormat.SetOptionInteger(OpalVideoFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * mpi / 2997);
+    mediaFormat.SetOptionString(PLUGINCODEC_CUSTOM_MPI, psprintf("%u,%u,%u", maxWidth, maxHeight, mpi));
   }
 
   if (!formatDefined) {
