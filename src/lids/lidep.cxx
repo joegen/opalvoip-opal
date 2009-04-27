@@ -130,10 +130,7 @@ PBoolean OpalLineEndPoint::MakeConnection(OpalCall & call,
 
 OpalMediaFormatList OpalLineEndPoint::GetMediaFormats() const
 {
-  OpalMediaFormatList mediaFormats;
-#if OPAL_VIDEO
-  AddVideoMediaFormats(mediaFormats);
-#endif
+  OpalMediaFormatList mediaFormats = manager.GetCommonMediaFormats(false, false);
 
   PWaitAndSignal mutex(linesMutex);
 
@@ -575,10 +572,8 @@ PBoolean OpalLineConnection::SetConnected()
 
 OpalMediaFormatList OpalLineConnection::GetMediaFormats() const
 {
-  OpalMediaFormatList formats = line.GetDevice().GetMediaFormats();
-#if OPAL_VIDEO
-  AddVideoMediaFormats(formats);
-#endif
+  OpalMediaFormatList formats = endpoint.GetManager().GetCommonMediaFormats(false, false);
+  formats += line.GetDevice().GetMediaFormats();
   return formats;
 }
 
