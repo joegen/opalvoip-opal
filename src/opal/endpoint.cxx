@@ -513,27 +513,6 @@ void OpalEndPoint::ClearAllCalls(OpalConnection::CallEndReason reason, PBoolean 
 }
 
 
-OpalMediaFormatList OpalEndPoint::GetMediaFormats() const
-{
-  OpalMediaFormatList formats;
-
-  // Sound cards can only do 16 bit PCM, but at various sample rates
-  // The following will be in order of preference, so lets do wideband first
-  formats += OpalPCM16_48KHZ;
-  formats += OpalPCM16_32KHZ;
-  formats += OpalPCM16_16KHZ;
-  formats += OpalPCM16;
-
-#if OPAL_VIDEO
-  AddVideoMediaFormats(formats);
-#endif
-
-  AddIMMediaFormats(formats);
-
-  return formats;
-}
-
-
 void OpalEndPoint::AdjustMediaFormats(const OpalConnection & connection,
                                       OpalMediaFormatList & mediaFormats) const
 {
@@ -554,13 +533,6 @@ void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 #if OPAL_VIDEO
-void OpalEndPoint::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
-                                        const OpalConnection * connection) const
-{
-  manager.AddVideoMediaFormats(mediaFormats, connection);
-}
-
-
 PBoolean OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
                                           const OpalMediaFormat & mediaFormat,
                                           PVideoInputDevice * & device,
@@ -634,11 +606,6 @@ PString OpalEndPoint::GetSSLCertificate() const
   return "server.pem";
 }
 #endif
-
-void OpalEndPoint::AddIMMediaFormats(OpalMediaFormatList & mediaFormats, const OpalConnection * connection) const
-{
-  manager.AddIMMediaFormats(mediaFormats, connection);
-}
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -708,6 +708,53 @@ PBoolean OpalManager::OnForwarded(OpalConnection & PTRACE_PARAM(connection),
 }
 
 
+OpalMediaFormatList OpalManager::GetCommonMediaFormats(bool transportable, bool pcmAudio) const
+{
+  OpalMediaFormatList formats;
+
+  if (transportable) {
+    OpalMediaFormatList allFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+    for (OpalMediaFormatList::iterator iter = allFormats.begin(); iter != allFormats.end(); ++iter) {
+      if (iter->IsTransportable())
+        formats += *iter;
+    }
+  }
+
+  if (pcmAudio) {
+    // Sound cards can only do 16 bit PCM, but at various sample rates
+    // The following will be in order of preference, so lets do wideband first
+    formats += OpalPCM16_48KHZ;
+    formats += OpalPCM16_32KHZ;
+    formats += OpalPCM16_16KHZ;
+    formats += OpalPCM16;
+  }
+
+#if OPAL_VIDEO
+  if (!videoInputDevice.deviceName.IsEmpty())
+    formats += OpalYUV420P;
+#endif
+
+#if OPAL_HAS_MSRP
+  formats += OpalMSRP;
+#endif
+
+#if OPAL_HAS_SIPIM
+  formats += OpalSIPIM;
+#endif
+
+#if OPAL_HAS_RFC4103
+  formats += OpalT140;
+#endif
+
+#if OPAL_HAS_H224
+  formats += OpalH224AnnexQ;
+  formats += OpalH224Tunnelled;
+#endif
+
+  return formats;
+}
+
+
 void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
                                      OpalMediaFormatList & mediaFormats) const
 {
@@ -746,18 +793,6 @@ void OpalManager::OnClosedMediaStream(const OpalMediaStream & /*channel*/)
 }
 
 #if OPAL_VIDEO
-
-void OpalManager::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
-                                       const OpalConnection * /*connection*/) const
-{
-  if (videoInputDevice.deviceName.IsEmpty())
-      return;
-
-  mediaFormats += OpalYUV420P;
-  mediaFormats += OpalRGB32;
-  mediaFormats += OpalRGB24;
-}
-
 
 PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
                                          const OpalMediaFormat & mediaFormat,
@@ -1588,30 +1623,11 @@ bool OpalManager::StopRecording(const PString & callToken)
 }
 
 
-void OpalManager::AddIMMediaFormats(OpalMediaFormatList & mediaFormats, const OpalConnection * /*connection*/) const
-{
-#if OPAL_HAS_MSRP
-  mediaFormats += OpalMSRP;
-#endif
-#if OPAL_HAS_SIPIM
-  mediaFormats += OpalSIPIM;
-#endif
-#if OPAL_HAS_RFC4103
-  mediaFormats += OpalT140;
-#endif
-#if OPAL_HAS_H224
-  mediaFormats += OpalH224AnnexQ;
-  mediaFormats += OpalH224Tunnelled;
-#endif
-}
-
-void OpalManager::OnApplyStringOptions(
-  OpalConnection & conn,
-  OpalConnection::StringOptions & stringOptions
-)
+void OpalManager::OnApplyStringOptions(OpalConnection & conn, OpalConnection::StringOptions & stringOptions)
 {
   conn.ApplyStringOptions(stringOptions);
 }
+
 
 /////////////////////////////////////////////////////////////////////////////
 

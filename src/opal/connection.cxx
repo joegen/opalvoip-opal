@@ -909,13 +909,8 @@ PBoolean OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
   return false;
 }
 
+
 #if OPAL_VIDEO
-
-void OpalConnection::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats) const
-{
-  endpoint.AddVideoMediaFormats(mediaFormats, this);
-}
-
 
 PBoolean OpalConnection::CreateVideoInputDevice(const OpalMediaFormat & mediaFormat,
                                             PVideoInputDevice * & device,

@@ -133,7 +133,7 @@ OpalPCSSEndPoint::~OpalPCSSEndPoint()
 
 OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
 {
-  OpalMediaFormatList list = OpalEndPoint::GetMediaFormats();
+  OpalMediaFormatList list = manager.GetCommonMediaFormats(false, true);
   list += OpalL16_STEREO_48KHZ;
   return list;
 }

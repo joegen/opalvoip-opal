@@ -58,6 +58,12 @@ OpalLocalEndPoint::~OpalLocalEndPoint()
 }
 
 
+OpalMediaFormatList OpalLocalEndPoint::GetMediaFormats() const
+{
+  return manager.GetCommonMediaFormats(false, true);
+}
+
+
 PBoolean OpalLocalEndPoint::MakeConnection(OpalCall & call,
                                       const PString & /*remoteParty*/,
                                                void * userData,

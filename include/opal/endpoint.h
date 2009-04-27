@@ -491,10 +491,9 @@ class OpalEndPoint : public PObject
        Note that a specific connection may not actually support all of the
        media formats returned here, but should return no more.
 
-       The default behaviour returns the most basic media formats, PCM audio
-       and YUV420P video.
+       The default behaviour is pure.
       */
-    virtual OpalMediaFormatList GetMediaFormats() const;
+    virtual OpalMediaFormatList GetMediaFormats() const = 0;
 
     /**Adjust media formats available on a connection.
        This is called by a connection after it has called
@@ -534,15 +533,6 @@ class OpalEndPoint : public PObject
     );
 
 #if OPAL_VIDEO
-    /**Add video media formats available on a connection.
-
-       The default behaviour calls the OpalEndPoint function of the same name.
-      */
-    virtual void AddVideoMediaFormats(
-      OpalMediaFormatList & mediaFormats, ///<  Media formats to use
-      const OpalConnection * connection = NULL  ///<  Optional connection that is using formats
-    ) const;
-
     /**Create an PVideoInputDevice for a source media stream.
       */
     virtual PBoolean CreateVideoInputDevice(
@@ -714,13 +704,6 @@ class OpalEndPoint : public PObject
      */
     bool FindListenerForProtocol(const char * protoPrefix, OpalTransportAddress & addr);
 
-    /**Add IM media formats available on a connection.
-       The default behaviour calls the OpalEndPoint function of the same name.
-      */
-    virtual void AddIMMediaFormats(
-      OpalMediaFormatList & mediaFormats, ///<  Media formats to use
-      const OpalConnection * connection = NULL  ///<  Optional connection that is using formats
-    ) const;
 
   protected:
     OpalManager   & manager;
