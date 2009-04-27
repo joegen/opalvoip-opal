@@ -1927,10 +1927,28 @@ class H323Connection : public OpalRTPConnection
       unsigned seconds  ///<  max duration of call in seconds
     );
   //@}
-	
+    
+#ifdef OPAL_H239
+    /**Get the local H.239 options.
+     */
+    const H323H239Options & GetLocalH239Options() const { return m_h239Options; }
+
+    /**Set the local H.239 options.
+     */
+    void SetLocalH239Options(
+      const H323H239Options & options   ///< H.239 options to send to remote
+    ) { m_h239Options = options; }
+
+    /**Get the remote H.239 options.
+     */
+    void GetRemoteH239Options(
+      H323H239Options & options   ///< H.239 options received from remote
+    ) const;
+#endif
+
     virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet &) const;
-	
-	virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const;
+    
+    virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const;
 
 #if OPAL_H460
     /** Get the connection FeatureSet
@@ -2061,13 +2079,17 @@ class H323Connection : public OpalRTPConnection
     H245NegRequestMode               * requestModeProcedure;
     H245NegRoundTripDelay            * roundTripDelayProcedure;
 
+#ifdef OPAL_H239
+    H323H239Options m_h239Options;
+#endif
+
 #if OPAL_H450
-    H450xDispatcher                  * h450dispatcher;
-    H4502Handler                     * h4502handler;
-    H4504Handler                     * h4504handler;
-    H4506Handler                     * h4506handler;
-    H4507Handler                     * h4507handler;
-    H45011Handler                    * h45011handler;
+    H450xDispatcher * h450dispatcher;
+    H4502Handler    * h4502handler;
+    H4504Handler    * h4504handler;
+    H4506Handler    * h4506handler;
+    H4507Handler    * h4507handler;
+    H45011Handler   * h45011handler;
 #endif
 
 #if OPAL_H460

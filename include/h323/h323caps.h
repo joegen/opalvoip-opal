@@ -121,6 +121,8 @@ class H323Capability : public PObject
       e_Data,
       /// User Input capability
       e_UserInput,
+      /// Generic Control
+      e_GenericControl,
       /// Count of main types
       e_NumMainTypes
     };
@@ -346,14 +348,14 @@ class H323Capability : public PObject
 #endif
 
   protected:
-    OpalMediaFormat & GetWritableMediaFormat();
+    OpalMediaFormat & GetWritableMediaFormat() const;
 
     unsigned            assignedCapabilityNumber;  /// Unique ID assigned to capability
     CapabilityDirection capabilityDirection;
     RTP_DataFrame::PayloadTypes rtpPayloadType;
 
   private:
-    mutable OpalMediaFormat mediaFormat;
+    mutable OpalMediaFormat m_mediaFormat;
 
   friend class H323Capabilities;
 };
@@ -479,7 +481,7 @@ class H323GenericCapabilityInfo
   public:
     H323GenericCapabilityInfo(
       const PString & id,     ///< generic codec identifier
-      PINDEX maxBitRate = 0   ///< maxBitRate parameter for the GenericCapability
+      unsigned maxBitRate = 0   ///< maxBitRate parameter for the GenericCapability
     );
     H323GenericCapabilityInfo(const H323GenericCapabilityInfo & obj);
     virtual ~H323GenericCapabilityInfo();
@@ -862,7 +864,7 @@ class H323GenericAudioCapability : public H323AudioCapability,
       */
     H323GenericAudioCapability(
       const PString & capabilityId,    ///< generic codec identifier
-      PINDEX maxBitRate = 0	           ///< maxBitRate parameter for the GenericCapability
+      PINDEX maxBitRate = 0               ///< maxBitRate parameter for the GenericCapability
     );
   //@}
 
@@ -1213,7 +1215,7 @@ class H323GenericVideoCapability : public H323VideoCapability,
       */
     H323GenericVideoCapability(
       const PString & capabilityId,    ///< generic codec identifier (OID)
-      PINDEX maxBitRate = 0	       ///< maxBitRate parameter for the GenericCapability
+      PINDEX maxBitRate = 0           ///< maxBitRate parameter for the GenericCapability
     );
   //@}
 
@@ -1274,16 +1276,311 @@ class H323GenericVideoCapability : public H323VideoCapability,
       const H245_VideoCapability & pdu,  ///< PDU to get information from
       CommandType type                   ///<  Type of PDU to send in
     );
-  //@}
 
     /**Compare the generic part of the capability, if applicable.
      */
     virtual PBoolean IsMatch(
       const PASN_Choice & subTypePDU  ///<  sub-type PDU of H323Capability
     ) const;
+  //@}
 };
 
+
+#ifdef OPAL_H239
+
+/**This class descibes an extended ideo capability, as used in H.239.
+  */
+class H323ExtendedVideoCapability : public H323GenericVideoCapability
+{
+  PCLASSINFO(H323ExtendedVideoCapability, H323GenericVideoCapability);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new Extended Video capability.
+      */
+    H323ExtendedVideoCapability(
+      const PString & identifier   ///< generic codec identifier (OID)
+    );
+  //@}
+
+  /**@name Identification functions */
+  //@{
+    /**Get the sub-type of the capability. This is a code dependent on the
+       main type of the capability.
+
+       This returns H245_VideoCapability::e_extendedVideoCapability.
+     */
+    virtual unsigned GetSubType() const;
+  //@}
+    
+  /**@name Protocol manipulation */
+  //@{
+    /**This function is called whenever and outgoing TerminalCapabilitySet
+       or OpenLogicalChannel PDU is being constructed for the control channel.
+       It allows the capability to set the PDU fields from information in
+       members specific to the class.
+
+       The default behaviour calls H323GenericCapabilityinfo::OnSendingPDU()
+       to handle the PDU.
+     */
+    virtual PBoolean OnSendingPDU(
+      H245_VideoCapability & pdu,  ///<  PDU to set information on
+      CommandType type             ///<  Type of PDU to send in
+    ) const;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour sets the PDUs tag according to the GetSubType()
+       function (translated to different enum).
+     */
+    virtual PBoolean OnSendingPDU(
+      H245_VideoMode & pdu  ///<  PDU to set information on
+    ) const;
+
+    /**This function is called whenever and incoming TerminalCapabilitySet
+       or OpenLogicalChannel PDU has been used to construct the control
+       channel. It allows the capability to set from the PDU fields,
+       information in members specific to the class.
+
+       The default behaviour calls H323GenericCapabilityinfo::OnReceivedPDU()
+       to handle the provided PDU.
+     */
+    virtual PBoolean OnReceivedPDU(
+      const H245_VideoCapability & pdu,  ///< PDU to get information from
+      CommandType type                   ///<  Type of PDU to send in
+    );
+
+    /**Compare the generic part of the capability, if applicable.
+     */
+    virtual PBoolean IsMatch(
+      const PASN_Choice & subTypePDU  ///<  sub-type PDU of H323Capability
+    ) const;
+  //@}
+
+  protected:
+    OpalMediaFormatList m_videoFormats;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+/**This class describes a generic control capability, as used in H.239
+ */
+class H323GenericControlCapability : public H323Capability,
+                                     public H323GenericCapabilityInfo
+{
+  PCLASSINFO(H323GenericControlCapability, H323Capability);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new data capability.
+      */
+    H323GenericControlCapability(
+      const PString & identifier  ///< Indentifer (OID) for generic control
+    );
+  //@}
+
+  /**@name Identification functions */
+  //@{
+    /**Get the main type of the capability.
+       Always returns e_Data.
+     */
+    virtual MainTypes GetMainType() const;
+
+    /**Get the sub-type of the capability. This is a code dependent on the
+       main type of the capability.
+
+       This returns H245_VideoCapability::e_extendedVideoCapability.
+     */
+    virtual unsigned GetSubType() const;
+  //@}
+
+  /**@name Protocol manipulation */
+  //@{
+    /**This function is called whenever and outgoing TerminalCapabilitySet
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour calls the OnSendingPDU() function with a more
+       specific PDU type.
+     */
+    virtual PBoolean OnSendingPDU(
+      H245_Capability & pdu  ///<  PDU to set information on
+    ) const;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour is pure.
+     */
+    virtual PBoolean OnSendingPDU(
+      H245_ModeElement & pdu  ///<  PDU to set information on
+    ) const;
+
+    /**This function is called whenever and incoming TerminalCapabilitySet
+       PDU is received on the control channel, and a new H323Capability
+       descendent was created. This completes reading fields from the PDU
+       into the classes members.
+
+       If the function returns PFalse then the received PDU codec description
+       is not supported, so will be ignored. The default behaviour simply
+       returns PTrue.
+     */
+    virtual PBoolean OnReceivedPDU(
+      const H245_Capability & pdu  ///<  PDU to get information from
+    );
+
+    /**Compare the generic part of the capability, if applicable.
+     */
+    virtual PBoolean IsMatch(
+      const PASN_Choice & subTypePDU  ///<  sub-type PDU of H323Capability
+    ) const;
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Create the channel instance, allocating resources as required.
+       This creates a logical channel object appropriate for the parameters
+       provided. Not if param is NULL, sessionID must be provided, otherwise
+       this is taken from the fields in param.
+     */
+    virtual H323Channel * CreateChannel(
+      H323Connection & connection,    ///<  Owner connection for channel
+      H323Channel::Directions dir,    ///<  Direction of channel
+      unsigned sessionID,             ///<  Session ID for RTP channel
+      const H245_H2250LogicalChannelParameters * param
+                                      ///<  Parameters for channel
+    ) const;
+  //@}
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+struct H323H239Options
+{
+  H323H239Options(
+    bool hasLiveRole = false,
+    bool hasPresentationRole = false,
+    bool hasControl = false
+  ) : m_hasLiveRole(hasLiveRole)
+    , m_hasPresentationRole(hasPresentationRole)
+    , m_hasControl(hasControl)
+  { }
+
+  bool                m_hasLiveRole;
+  bool                m_hasPresentationRole;
+  bool                m_hasControl;
+  OpalMediaFormatList m_videoFormats;
+};
+
+
+class H323H239VideoCapability : public H323ExtendedVideoCapability
+{
+  PCLASSINFO(H323H239VideoCapability, H323ExtendedVideoCapability);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new Extended Video capability.
+      */
+    H323H239VideoCapability(
+      const H323H239Options & options
+    );
+  //@}
+
+  /**@name Overrides from class PObject */
+  //@{
+    /**Create a copy of the object.
+      */
+    virtual PObject * Clone() const;
+  //@}
+
+  /**@name Identification functions */
+  //@{
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
+  //@}
+
+  /**@name Identification functions */
+  //@{
+    /**This function is called whenever and outgoing TerminalCapabilitySet
+       or OpenLogicalChannel PDU is being constructed for the control channel.
+       It allows the capability to set the PDU fields from information in
+       members specific to the class.
+
+       The default behaviour calls H323GenericCapabilityinfo::OnSendingPDU()
+       to handle the PDU.
+     */
+    virtual PBoolean OnSendingPDU(
+      H245_VideoCapability & pdu,  ///<  PDU to set information on
+      CommandType type             ///<  Type of PDU to send in
+    ) const;
+
+    /**This function is called whenever and incoming TerminalCapabilitySet
+       or OpenLogicalChannel PDU has been used to construct the control
+       channel. It allows the capability to set from the PDU fields,
+       information in members specific to the class.
+
+       The default behaviour calls H323GenericCapabilityinfo::OnReceivedPDU()
+       to handle the provided PDU.
+     */
+    virtual PBoolean OnReceivedPDU(
+      const H245_VideoCapability & pdu,  ///< PDU to get information from
+      CommandType type                   ///<  Type of PDU to send in
+    );
+  //@}
+
+    const H323H239Options & GetOptions() const { return m_options; }
+
+  protected:
+    H323H239Options m_options;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class H323H239ControlCapability : public H323GenericControlCapability
+{
+  PCLASSINFO(H323H239ControlCapability, H323GenericControlCapability);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new Extended Video capability.
+      */
+    H323H239ControlCapability();
+  //@}
+
+  /**@name Overrides from class PObject */
+  //@{
+    /**Create a copy of the object.
+      */
+    virtual PObject * Clone() const;
+  //@}
+
+  /**@name Identification functions */
+  //@{
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
+  //@}
+};
+
+
+#endif  // OPAL_H239
+
 #endif  // OPAL_VIDEO
+
 
 /**This class describes the interface to a data channel used to transfer data
    via the logical channels opened and managed by the H323 control channel.
