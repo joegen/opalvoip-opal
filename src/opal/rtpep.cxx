@@ -58,18 +58,20 @@ PBoolean OpalRTPEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddr
 
 
 PBoolean OpalRTPEndPoint::IsRTPNATEnabled(OpalConnection & conn, 
-                         const PIPSocket::Address & localAddr, 
-                         const PIPSocket::Address & peerAddr,
-                         const PIPSocket::Address & sigAddr,
-                                               PBoolean incoming)
+                                const PIPSocket::Address & localAddr, 
+                                const PIPSocket::Address & peerAddr,
+                                const PIPSocket::Address & sigAddr,
+                                                PBoolean   incoming)
 {
   return GetManager().IsRTPNATEnabled(conn, localAddr, peerAddr, sigAddr, incoming);
 }
 
+
 OpalMediaFormatList OpalRTPEndPoint::GetMediaFormats() const
 {
-  return OpalMediaFormat::GetAllRegisteredMediaFormats();
+  return manager.GetCommonMediaFormats(true, false);
 }
+
 
 #ifdef OPAL_ZRTP
 

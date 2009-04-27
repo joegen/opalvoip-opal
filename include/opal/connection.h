@@ -1003,15 +1003,6 @@ class OpalConnection : public PSafeObject
     ) const;
 
 #if OPAL_VIDEO
-
-    /**Add video media formats available on a connection.
-
-       The default behaviour calls the OpalEndPoint function of the same name.
-      */
-    virtual void AddVideoMediaFormats(
-      OpalMediaFormatList & mediaFormats  ///<  Media formats to use
-    ) const;
-
     /**Create an PVideoInputDevice for a source media stream.
       */
     virtual PBoolean CreateVideoInputDevice(

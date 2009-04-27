@@ -506,6 +506,18 @@ class OpalManager : public PObject
 
   /**@name Media Streams management */
   //@{
+    /**Get common media formats.
+       This is called by various places to get common media formats for the
+       basic connection classes.
+
+       The default behaviour uses the mediaFormatOrder and mediaFormatMask
+       member variables to adjust the mediaFormats list.
+      */
+    virtual OpalMediaFormatList GetCommonMediaFormats(
+      bool transportable,  ///< Include transportable media formats
+      bool pcmAudio        ///< Include raw PCM audio media formats
+    ) const;
+
     /**Adjust media formats available on a connection.
        This is called by a connection after it has called
        OpalCall::GetMediaFormats() to get all media formats that it can use so
@@ -569,16 +581,6 @@ class OpalManager : public PObject
     );
 
 #if OPAL_VIDEO
-
-    /**Add video media formats available on a connection.
-
-       The default behaviour calls the OpalEndPoint function of the same name.
-      */
-    virtual void AddVideoMediaFormats(
-      OpalMediaFormatList & mediaFormats, ///<  Media formats to use
-      const OpalConnection * connection = NULL  ///<  Optional connection that is using formats
-    ) const;
-
     /**Create a PVideoInputDevice for a source media stream.
       */
     virtual PBoolean CreateVideoInputDevice(
@@ -1264,11 +1266,6 @@ class OpalManager : public PObject
 #ifdef OPAL_ZRTP
     virtual bool GetZRTPEnabled() const;
 #endif
-
-    virtual void AddIMMediaFormats(
-      OpalMediaFormatList & mediaFormats,       ///<  Media formats to use
-      const OpalConnection * connection = NULL  ///<  Optional connection that is using formats
-    ) const;
 
     virtual void OnApplyStringOptions(
       OpalConnection & conn,
