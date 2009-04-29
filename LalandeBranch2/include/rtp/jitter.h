@@ -52,9 +52,9 @@ class RTP_JitterBufferAnalyser;
    application. The user is required to use a descendant of this class, and
    provide a "OnReadPacket" method, so that network packets can be placed in
    this class instance */
-class OpalJitterBuffer : public PObject
+class OpalJitterBuffer : public PSafeObject
 {
-  PCLASSINFO(OpalJitterBuffer, PObject);
+  PCLASSINFO(OpalJitterBuffer, PSafeObject);
 
   public:
     /**Constructor for this jitter buffer. The size of this buffer can be

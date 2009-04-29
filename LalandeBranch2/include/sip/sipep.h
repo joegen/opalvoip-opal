@@ -56,6 +56,8 @@
 
 class SIPRegisterHandler;
 
+//#define	OPAL_SIP_USE_THREAD_POOL  1
+
 
 //
 //  provide flag so applications know if presence is available
@@ -848,6 +850,8 @@ class SIPEndPoint : public OpalRTPEndPoint
         SIP_PDU     * m_pdu;
     };
 
+#ifdef OPAL_SIP_USE_THREAD_POOL
+
     typedef std::queue<SIP_PDU_Work *> SIP_PDUWorkQueue;
 
     class SIP_PDU_Thread : public PThreadPoolWorkerBase
@@ -868,6 +872,10 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     typedef PThreadPool<SIP_PDU_Work, SIP_PDU_Thread> SIPMainThreadPool;
     SIPMainThreadPool threadPool;
+
+#endif
+
+    void AddWork(SIP_PDU_Work * work);
 
     enum {
       HighPriority = 80,

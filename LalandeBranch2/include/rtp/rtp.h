@@ -41,6 +41,8 @@
 #include <opal/buildopts.h>
 
 #include <ptlib/sockets.h>
+#include <ptlib/safecoll.h>
+
 
 class RTP_JitterBuffer;
 class PNatMethod;
@@ -841,7 +843,9 @@ class RTP_Session : public PObject
     PString            toolName;
     RTP_UserData     * userData;
     PBoolean           autoDeleteUserData;
-    RTP_JitterBuffer * jitter;
+
+    typedef PSafePtr<RTP_JitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
+    JitterBufferPtr m_jitterBuffer;
 
     PBoolean      ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;

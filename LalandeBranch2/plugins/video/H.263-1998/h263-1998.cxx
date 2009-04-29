@@ -1249,8 +1249,9 @@ static int codec_encoder(const struct PluginCodec_Definition * ,
                                        unsigned * toLen,
                                    unsigned int * flag)
 {
-  H263_Base_EncoderContext * context = (H263_Base_EncoderContext *)_context;
-  return context->EncodeFrames((const BYTE *)from, *fromLen, (BYTE *)to, *toLen, *flag);
+  return 1;
+  //H263_Base_EncoderContext * context = (H263_Base_EncoderContext *)_context;
+  //return context->EncodeFrames((const BYTE *)from, *fromLen, (BYTE *)to, *toLen, *flag);
 }
 
 #define PMAX(a,b) ((a)>=(b)?(a):(b))

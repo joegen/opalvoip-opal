@@ -465,6 +465,16 @@ PBoolean SIPEndPoint::ForwardConnection(SIPConnection & connection, const PStrin
   return PTrue;
 }
 
+void SIPEndPoint::AddWork(SIP_PDU_Work * work)
+{
+#ifdef OPAL_SIP_USE_THREAD_POOL
+  threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+#else
+  work->OnReceivedPDU();
+  delete work;
+#endif
+}
+
 PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
   if (PAssertNULL(pdu) == NULL)
@@ -488,7 +498,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     case SIP_PDU::Method_CANCEL :
       token = m_receivedConnectionTokens(mime.GetCallID());
       if (!token.IsEmpty()) {
-        threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+        AddWork(new SIP_PDU_Work(*this, token, pdu));
         return true;
       }
       break;
@@ -497,7 +507,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       if (toToken.IsEmpty()) {
         token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
-          threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+          AddWork(new SIP_PDU_Work(*this, token, pdu));
           return true;
         }
 
@@ -542,7 +552,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   else
     return OnReceivedConnectionlessPDU(transport, pdu);
 
-  threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+  AddWork(new SIP_PDU_Work(*this, token, pdu));
   return true;
 }
 
@@ -835,7 +845,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   m_receivedConnectionTokens.SetAt(mime.GetCallID(), connection->GetToken());
 
   // Get the connection to handle the rest of the INVITE in the thread pool
-  threadPool.AddWork(new SIP_PDU_Work(*this, connection->GetToken(), request));
+  AddWork(new SIP_PDU_Work(*this, connection->GetToken(), request));
 
   return PTrue;
 }
@@ -1528,6 +1538,8 @@ void SIPEndPoint::OnRTPStatistics(const SIPConnection & connection,
   manager.OnRTPStatistics(connection, session);
 }
 
+#ifdef OPAL_SIP_USE_THREAD_POOL
+
 SIPEndPoint::SIP_PDU_Thread::SIP_PDU_Thread(PThreadPoolBase & _pool)
   : PThreadPoolWorkerBase(_pool)
 {
@@ -1572,6 +1584,8 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
     delete work;
   }
 }
+
+#endif
 
 
 SIPEndPoint::SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu)
