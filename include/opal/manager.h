@@ -41,7 +41,6 @@
 #include <opal/call.h>
 #include <opal/connection.h> //OpalConnection::AnswerCallResponse
 #include <opal/guid.h>
-#include <opal/audiorecord.h>
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
 #include <ptclib/pstun.h>
@@ -52,6 +51,7 @@
 
 class OpalEndPoint;
 class OpalMediaPatch;
+
 
 /**This class is the central manager for OPAL.
    The OpalManager embodies the root of the tree of objects that constitute an
@@ -1232,9 +1232,6 @@ class OpalManager : public PObject
       OpalConnection & connection   ///< New connection just created
     );
 
-    OpalRecordManager & GetRecordManager() const
-    { return *m_recordManager; }
-
     /**Start recording a call.
        Current version saves to a WAV file. It may either mix the receive and
        transmit audio stream to a single mono file, or the streams are placed
@@ -1246,7 +1243,7 @@ class OpalManager : public PObject
     virtual PBoolean StartRecording(
       const PString & callToken,  ///< Call token for call to record
       const PFilePath & filename, ///< File into which to record
-      bool mono = false           ///< Record as mono/stereo
+      const OpalRecordManager::Options & options = false ///< Record mixing options
     );
 
     /**Indicate if recording is currently active on call.
@@ -1368,8 +1365,6 @@ class OpalManager : public PObject
 #ifdef OPAL_ZRTP
     bool zrtpEnabled;
 #endif
-
-    OpalRecordManager * m_recordManager;
 
     friend OpalCall::OpalCall(OpalManager & mgr);
     friend void OpalCall::OnReleased(OpalConnection & connection);

@@ -3145,6 +3145,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\opal\recording.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\opal\rtpconn.cxx"
 					>
 				</File>
@@ -10531,10 +10535,6 @@
 				Name="Opal Headers"
 				>
 				<File
-					RelativePath="..\..\include\opal\audiorecord.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\include\opal\call.h"
 					>
 				</File>
@@ -10596,6 +10596,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\pcss.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\opal\recording.h"
 					>
 				</File>
 				<File

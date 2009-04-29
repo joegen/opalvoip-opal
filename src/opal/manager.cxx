@@ -177,8 +177,6 @@ OpalManager::OpalManager()
   , zrtpEnabled(false)
 #endif
 {
-  m_recordManager = new OpalWAVRecordManager();
-
   rtpIpPorts.current = rtpIpPorts.base = 5000;
   rtpIpPorts.max = 5999;
 
@@ -232,7 +230,6 @@ OpalManager::~OpalManager()
   delete garbageCollector;
 
   delete stun;
-  delete m_recordManager;
   delete interfaceMonitor;
 
   PTRACE(4, "OpalMan\tDeleted manager.");
@@ -1595,13 +1592,15 @@ void OpalManager::OnNewConnection(OpalConnection & /*conn*/)
 {
 }
 
-bool OpalManager::StartRecording(const PString & callToken, const PFilePath & fn, bool mono)
+bool OpalManager::StartRecording(const PString & callToken,
+                                 const PFilePath & fn,
+                                 const OpalRecordManager::Options & options)
 {
   PSafePtr<OpalCall> call = activeCalls.FindWithLock(callToken, PSafeReadWrite);
   if (call == NULL)
     return false;
 
-  return call->StartRecording(fn, mono);
+  return call->StartRecording(fn, options);
 }
 
 
@@ -1659,159 +1658,3 @@ bool OpalManager::GetZRTPEnabled() const
 
 
 /////////////////////////////////////////////////////////////////////////////
-
-OpalWAVRecordManager::Mixer_T::Mixer_T()
-  :	OpalAudioMixer(true)
-  ,	m_mono(false)
-  ,	m_started(false)
-{
-}
-
-bool OpalWAVRecordManager::Mixer_T::Open(const PFilePath & fn, bool mono)
-{
-  PWaitAndSignal mut(mutex);
-
-  if (m_started) {
-    PTRACE(2, "OPAL\tCannot open mixer after it has started.");
-    return false;
-  }
-
-  m_file.SetFormat(OpalWAVFile::fmt_PCM);
-  if (!m_file.Open(fn, PFile::ReadWrite, PFile::Create|PFile::Truncate)) {
-    PTRACE(2, "OPAL\tCould not open file \"" << fn << '"');
-    return false;
-  }
-
-  m_mono = mono;
-  if (!mono)
-    m_file.SetChannels(2);
-
-  m_started = true;
-  PTRACE(4, "OPAL\t" << (mono ? "Mono" : "Stereo") << " mixer opened for file \"" << fn << '"');
-  return true;
-}
-
-bool OpalWAVRecordManager::Mixer_T::Close()
-{
-  RemoveAllStreams();
-
-  PWaitAndSignal mut(mutex);
-  m_started = false;
-  m_file.Close();
-
-  return true;
-}
-
-PBoolean OpalWAVRecordManager::Mixer_T::OnWriteAudio(const MixerFrame & mixerFrame)
-{
-  if (!m_file.IsOpen())
-    return false;
-
-  OpalAudioMixerStream::StreamFrame frame;
-  if (m_mono)
-    mixerFrame.GetMixedFrame(frame);
-  else
-    mixerFrame.GetStereoFrame(frame);
-  m_file.Write(frame.GetPointerAndLock(), frame.GetSize());
-  frame.Unlock();
-
-  return true;
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-
-OpalWAVRecordManager::OpalWAVRecordManager()
-{
-}
-
-
-OpalWAVRecordManager::~OpalWAVRecordManager()
-{
-  for (MixerMap_T::iterator mixer = m_mixers.begin(); mixer != m_mixers.end(); ++mixer)
-    delete mixer->second;
-}
-
-
-bool OpalWAVRecordManager::Open(const PString & callToken, const PFilePath & fn, bool mono)
-{
-  PWaitAndSignal mutex(m_mutex);
-
-  if (callToken.IsEmpty())
-    return false;
-
-  if (m_mixers.find(callToken) != m_mixers.end()) {
-    PTRACE(2, "OPAL\tAttempting to record for call " << callToken << " when already recording.");
-    return false;
-  }
-
-  Mixer_T * mixer = new Mixer_T;
-  if (mixer->Open(fn, mono)) {
-    m_mixers[callToken] = mixer;
-    PTRACE(4, "OPAL\tOpened recorder on call " << callToken);
-    return true;
-  }
-
-  delete mixer;
-  return false;
-}
-
-
-bool OpalWAVRecordManager::IsOpen(const PString & callToken) const
-{
-  PWaitAndSignal mutex(m_mutex);
-
-  MixerMap_T::const_iterator mixer = m_mixers.find(callToken);
-  if (mixer == m_mixers.end())
-    return false;
-
-  return mixer->second->IsOpen();
-}
-
-
-bool OpalWAVRecordManager::CloseStream(const PString & callToken, const std::string & streamId)
-{
-  PWaitAndSignal mutex(m_mutex);
-
-  MixerMap_T::iterator mixer = m_mixers.find(callToken);
-  if (mixer == m_mixers.end()) {
-    PTRACE(2, "OPAL\tAttempting to close stream on call " << callToken << " when not recording.");
-    return false;
-  }
-
-  mixer->second->RemoveStream(streamId);
-  PTRACE(4, "OPAL\tClosed stream " << streamId << " on call " << callToken);
-  return true;
-}
-
-
-bool OpalWAVRecordManager::Close(const PString & callToken)
-{
-  PWaitAndSignal mutex(m_mutex);
-
-  MixerMap_T::iterator mixer = m_mixers.find(callToken);
-  if (mixer == m_mixers.end()) {
-    PTRACE(2, "OPAL\tAttempting to close recording on call " << callToken << " when not recording.");
-    return false;
-  }
-
-  PTRACE(4, "OPAL\tClosed recorder on call " << callToken);
-  mixer->second->Close();
-  delete mixer->second;
-  m_mixers.erase(mixer);
-  return true;
-}
-
-
-bool OpalWAVRecordManager::WriteAudio(const PString & callToken, const std::string & strm, const RTP_DataFrame & rtp)
-{ 
-  PWaitAndSignal mutex(m_mutex);
-
-  MixerMap_T::iterator mixer = m_mixers.find(callToken);
-  if (mixer == m_mixers.end()) {
-    PTRACE(4, "OPAL\tAttempt to write to call " << callToken << " when not recording.");
-    return false;
-  }
-
-  return mixer->second->Write(strm, rtp);
-}

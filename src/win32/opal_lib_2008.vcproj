@@ -1560,6 +1560,9 @@
 					>
 				</File>
 				<File
+					RelativePath="..\opal\recording.cxx">
+				</File>
+				<File
 					RelativePath="..\opal\opalvxml.cxx"
 					>
 					<FileConfiguration
@@ -6327,7 +6330,7 @@
 				Name="Opal Headers"
 				>
 				<File
-					RelativePath="..\..\include\opal\audiorecord.h"
+					RelativePath="..\..\include\opal\recording.h"
 					>
 				</File>
 				<File

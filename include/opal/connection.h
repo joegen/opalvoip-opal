@@ -1499,6 +1499,9 @@ class OpalConnection : public PSafeObject
 
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
+    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordVideo);
+    void OnStartRecording(OpalMediaPatch * patch);
+    void OnStopRecording(OpalMediaPatch * patch);
 
   // Member variables
     OpalCall             & ownerCall;
@@ -1568,8 +1571,10 @@ class OpalConnection : public PSafeObject
 #endif
 
     StringOptions m_connStringOptions;
-    PString recordAudioFilename;
-    PNotifier recordNotifier;
+
+    PString       m_recordingFilename;
+    PNotifier     m_recordAudioNotifier;
+    PNotifier     m_recordVideoNotifier;
 
 #if OPAL_STATISTICS
     unsigned m_VideoUpdateRequestsSent;
