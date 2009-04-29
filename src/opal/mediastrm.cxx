@@ -1139,7 +1139,7 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
     return false;
 
   PTimeInterval currentGrabTime = PTimer::Tick();
-  timestamp += ((lastGrabTime - currentGrabTime)*1000/OpalMediaFormat::VideoClockRate).GetInterval();
+  timestamp += (int)((currentGrabTime - lastGrabTime).GetMilliSeconds()*OpalMediaFormat::VideoClockRate/1000);
   lastGrabTime = currentGrabTime;
 
   marker = true;
