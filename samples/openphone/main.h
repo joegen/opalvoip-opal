@@ -634,6 +634,9 @@ class OptionsDialog : public wxDialog
 #if OPAL_IVR
     PwxString m_IVRScript;
 #endif
+    int       m_AudioRecordingMode;
+    int       m_VideoRecordingMode;
+    PwxString m_VideoRecordingSize;
 
     ////////////////////////////////////////
     // Codec fields
@@ -1088,7 +1091,8 @@ class MyManager : public wxFrame, public OpalManager
     };
     list<CallsOnHold>    m_callsOnHold;
 
-    PwxString m_lastRecordFile;
+    OpalRecordManager::Options m_recordingOptions;
+    PwxString                  m_lastRecordFile;
 
     DECLARE_EVENT_TABLE()
 

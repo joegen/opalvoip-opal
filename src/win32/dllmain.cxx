@@ -38,6 +38,7 @@
 #include <codec/ratectl.h>
 #include <codec/opalpluginmgr.h>
 #include <lids/lidpluginmgr.h>
+#include <opal/recording.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////

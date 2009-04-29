@@ -39,6 +39,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/connection.h>
+#include <opal/recording.h>
 #include <opal/guid.h>
 
 #include <ptlib/safecoll.h>
@@ -503,7 +504,7 @@ class OpalCall : public PSafeObject
       */
     bool StartRecording(
       const PFilePath & filename, ///< File into which to record
-      bool mono = false           ///< Record as mono/stereo
+      const OpalRecordManager::Options & options = false ///< Record mixing options
     );
 
     /**Indicate if recording is currently active on call.
@@ -515,13 +516,32 @@ class OpalCall : public PSafeObject
       */
     void StopRecording();
 
-    /** Call back for having a frame of audio to record.
+    /** Call back on recording started.
       */
-    virtual void OnRecordAudio(const PString & streamId, const RTP_DataFrame & frame);
+    virtual bool OnStartRecording(
+      const PString & streamId,       ///< Unique ID for stream within call
+      const OpalMediaFormat & format  ///< Media format for stream
+    );
 
     /** Call back on recording stopped.
       */
-    virtual void OnStopRecordAudio(const PString & streamId);
+    virtual void OnStopRecording(
+      const PString & streamId       ///< Unique ID for stream within call
+    );
+
+    /** Call back for having a frame of audio to record.
+      */
+    virtual void OnRecordAudio(
+      const PString & streamId,       ///< Unique ID for stream within call
+      const RTP_DataFrame & frame     ///< Media data
+    );
+
+    /** Call back for having a frame of video to record.
+      */
+    virtual void OnRecordVideo(
+      const PString & streamId,       ///< Unique ID for stream within call
+      const RTP_DataFrame & frame     ///< Media data
+    );
 
   protected:
     void SetPartyNames();
@@ -543,12 +563,12 @@ class OpalCall : public PSafeObject
     bool    isClearing;
 
     OpalConnection::CallEndReason callEndReason;
+    PSyncPoint                  * endCallSyncPoint;
 
     PSafeList<OpalConnection> connectionsActive;
 
-    PSyncPoint * endCallSyncPoint;
+    OpalRecordManager * m_recordManager;
 
-    
   //use to add the connection to the call's connection list
   friend OpalConnection::OpalConnection(OpalCall &, OpalEndPoint &, const PString &, unsigned int, OpalConnection::StringOptions *);
   //use to remove the connection from the call's connection list

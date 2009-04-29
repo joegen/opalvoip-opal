@@ -1,474 +1,574 @@
+/*
+ * opalmixer.cxx
+ *
+ * OPAL media mixers
+ *
+ * Open Phone Abstraction Library (OPAL)
+ * Formally known as the Open H323 project.
+ *
+ * Copyright (C) 2007 Post Increment
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is Open Phone Abstraction Library.
+ *
+ * The Initial Developer of the Original Code is Post Increment
+ *
+ * Contributor(s): Craig Southeren (craigs@postincrement.com)
+ *                 Robert Jongbloed (robertj@voxlucida.com.au)
+ *
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
+
+
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
 
 #include <opal/opalmixer.h>
+#include <ptlib/vconvert.h>
 
-#define MS_TO_BYTES(ms)         (ms*16)
-#define MS_TO_SAMPLES(ms)       (ms*8)
-
-#define BYTES_TO_MS(bytes)      (bytes/16)
-#define BYTES_TO_SAMPLES(bytes) (bytes/2)
-
-OpalAudioMixerStream::StreamFrame::StreamFrame(const RTP_DataFrame & rtp)
-  :	PMemBuffer<PMutex>(rtp.GetPayloadPtr(), rtp.GetPayloadSize()), timestamp(rtp.GetTimestamp())
-  ,	channelNumber(0)
-{
-}
-
-OpalAudioMixerStream::OpalAudioMixerStream()
-{ 
-  active = PFalse; 
-  first  = PTrue;
-  cacheTimeStamp = 80000000;
-}
-
-void OpalAudioMixerStream::WriteFrame(const StreamFrame & frame)
-{
-  PWaitAndSignal m(mutex);
-  if (frame.GetSize() != 0)
-    frameQueue.push(frame);
-}
-
-void OpalAudioMixerStream::FillSilence(StreamFrame & retFrame, PINDEX ms)
-{
-  retFrame.SetSize(MS_TO_BYTES(ms));
-  memset(retFrame.GetPointerAndLock(), 0, MS_TO_BYTES(ms));
-  retFrame.Unlock();
-}
-
-void OpalAudioMixerStream::PopFrame(StreamFrame & retFrame, PINDEX ms)
-{
-  PAssert(frameQueue.size() > 0, "attempt to pop from empty queue");
-
-  // get the top frame
-  StreamFrame & frame = frameQueue.front();
-
-  // if we want the entire frame, return all of it
-  // otherwise return partial frame and put the rest into the cache
-  if (BYTES_TO_MS(frame.GetSize()) == ms) {
-
-    // zerocopy cached frame to the returned frame
-    retFrame = frame;
-
-    // clear the current frame cache
-    frameCache.SetSize(0);
-  }
-  else
-  {
-    // zerocopy current frame into cache and returned frame
-    frameCache = frame;
-    retFrame = frameCache;
-
-    // data length is shorter of what we want, or what we got
-    PINDEX len = PMIN(MS_TO_BYTES(ms), frameCache.GetSize());
-    PAssert(len == MS_TO_BYTES(ms), "attempt to copy partial frame");
-
-    // adjust to correct length
-    retFrame.SetSize(len);
-
-    // rebase cache to reflect removed data
-    frameCache.Rebase(len);
-//    frameCache.SetSize(frameCache.GetSize() - len);
-  }
-
-  // remove the frame from the queue
-  frameQueue.pop();
-}
-
-PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
-{
-  mutex.Wait();
-
-  // always return silence until first frame arrives
-  if (first) {
-    if (frameQueue.size() == 0) {
-      mutex.Signal();
-      return PFalse;
-    }
-    cacheTimeStamp = frameQueue.front().timestamp;
-    first = PFalse;
-  }
-
-  // if there is data in the cache, return it
-  if (frameCache.GetSize() > 0) {
-
-    // zercopy cache into returned frame
-    retFrame = frameCache;
-
-    // return lesser of cached data size and what we requested
-    PINDEX len = PMIN(MS_TO_BYTES(ms), frameCache.GetSize());
-    PAssert(len == MS_TO_BYTES(ms), "attempt to copy partial frame");
-
-    // zero out data if needed (we don't do partial frames)
-    if (len < MS_TO_BYTES(ms)) {
-      memset(retFrame.GetPointerAndLock()+len, 0, MS_TO_BYTES(ms) - len);
-      retFrame.Unlock();
-    }
-
-    // set the timestamp on the returned data
-    retFrame.timestamp = cacheTimeStamp;
-
-    // rebase cache to reflect removed data
-    frameCache.Rebase(len);
-    //frameCache.SetSize(frameCache.GetSize()-len);
-    cacheTimeStamp += BYTES_TO_SAMPLES(len);
-
-    mutex.Signal();
-
-    return PTrue;
-  }
-
-  // invariant: no data in the "cache" buffer
-
-  // if the stream is not active, check if there are two frames
-  // if not, return silence
-  // if there are, activate the stream and return from the first frame
-  if (!active) {
-    if (frameQueue.size() == 0) {
-      cacheTimeStamp += MS_TO_SAMPLES(ms);
-      mutex.Signal();
-      return PFalse;
-    }
-
-    // the stream is now active
-    active = PTrue;
-
-    // get from the first frame
-    PopFrame(retFrame, ms);
-
-    retFrame.timestamp = cacheTimeStamp;
-    cacheTimeStamp += MS_TO_SAMPLES(ms);
-
-    mutex.Signal();
-
-    return PTrue;
-  }
-
-  // invariant: stream is active and cacheTimeStamp is valid
-
-  // if no data available, deactivate the stream and return silence
-  if (frameQueue.size() == 0) {
-    cacheTimeStamp += MS_TO_SAMPLES(ms);
-    active = PFalse;
-    mutex.Signal();
-    return PFalse;
-  }
-
-  // invariant: the queue contains one or more frames of data
-
-  // check timestamp on the top frame 
-  StreamFrame & frame = frameQueue.front();
-
-  // if looking for data before the queue, fill with silence and return
-  if (cacheTimeStamp < frame.timestamp) {
-    cacheTimeStamp += MS_TO_SAMPLES(ms);
-    mutex.Signal();
-    return PFalse;
-  }
-
-  // get cached data
-  PopFrame(retFrame, ms);
-
-  // realign to current timestamp
-  cacheTimeStamp = frame.timestamp;
-  cacheTimeStamp += MS_TO_SAMPLES(ms);
-
-  mutex.Signal();
-
-  return PTrue;
-}
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalAudioMixer::MixerFrame::MixerFrame(PINDEX _frameLengthSamples)
-  : frameLengthSamples(_frameLengthSamples)
+OpalBaseMixer::OpalBaseMixer(bool pushThread, unsigned periodMS, unsigned periodTS)
+  : m_pushThread(pushThread)
+  , m_periodMS(periodMS)
+  , m_periodTS(periodTS)
+  , m_workerThread(NULL)
+  , m_threadRunning(false)
+  , m_outputTimestamp(10000000)
 {
 }
 
-void OpalAudioMixer::MixerFrame::CreateMixedData() const
+
+void OpalBaseMixer::RemoveStream(const Key_T & key)
 {
-  PWaitAndSignal m(mutex);
-  if (mixedData.GetSize() != 0)
+  PWaitAndSignal mutex(m_mutex);
+  StreamMap_T::iterator iter = m_streams.find(key);
+  if (iter == m_streams.end())
     return;
 
-  mixedData.SetSize(frameLengthSamples);
-  memset(mixedData.GetPointer(), 0, frameLengthSamples*sizeof(int));
-
-  MixerPCMMap_T::const_iterator r;
-  for (r = channelData.begin(); r != channelData.end(); ++r) {
-    PINDEX i;
-    const short * src = (short *)r->second.GetPointerAndLock();
-    int * dst = mixedData.GetPointer();
-    for (i = 0; i < frameLengthSamples; ++i)
-      *dst++ += *src++;
-    r->second.Unlock();
-  }
-}
-
-PBoolean OpalAudioMixer::MixerFrame::GetMixedFrame(OpalAudioMixerStream::StreamFrame & frame) const
-{
-  CreateMixedData();
-
-  frame.SetSize(frameLengthSamples * 2);
-  PINDEX i;
-  int *   src = mixedData.GetPointer();
-  short * dst  = (short *)frame.GetPointerAndLock();
-  for (i = 0; i < frameLengthSamples; ++i) {
-    int v = *src++;
-    if (v < -32765)
-      v = -32765;
-    else if (v > 32765)
-      v = 32765;
-    *dst++ = (short)v;
-  }
-  frame.Unlock();
-  return PTrue;
-}
-
-PBoolean OpalAudioMixer::MixerFrame::GetStereoFrame(OpalAudioMixerStream::StreamFrame & frame) const
-{
-  frame.SetSize(frameLengthSamples * 2 * 2);
-
-  PWaitAndSignal m(mutex);
-
-  if (channelData.size() == 0 || channelData.size() > 2)
-    return PFalse;
-
-  short * dst = (short *)frame.GetPointerAndLock();
-
-  if (channelData.size() == 1) {
-    const OpalAudioMixerStream::StreamFrame & srcFrame = channelData.begin()->second;
-    const short * src = (const short *)srcFrame.GetPointerAndLock();
-    PINDEX i = frameLengthSamples;
-    PINDEX offs = srcFrame.channelNumber;
-    PAssert(offs < 2, "cannot create stereo with more than 2 sources");
-    while (i-- > 0) {
-      dst[offs]     = *src++;
-      dst[offs ^ 1] = 0;
-      dst += 2;
-    }
-    srcFrame.Unlock();
-  }
-  else {
-    MixerPCMMap_T::const_iterator r = channelData.begin();
-    const OpalAudioMixerStream::StreamFrame & srcFrame1 = (r++)->second;
-    const OpalAudioMixerStream::StreamFrame & srcFrame2 = (r++)->second;
-    const short * src1 = (const short *)srcFrame1.GetPointerAndLock();
-    const short * src2 = (const short *)srcFrame2.GetPointerAndLock();
-    PINDEX i = frameLengthSamples;
-    PINDEX offs1 = srcFrame1.channelNumber;
-    PINDEX offs2 = srcFrame2.channelNumber;
-    PAssert(offs1 < 2 && offs2 < 2, "cannot create stereo with more than 2 sources");
-    while (i-- > 0) {
-      dst[offs1] = *src1++;
-      dst[offs2] = *src2++;
-      dst += 2;
-    }
-    srcFrame2.Unlock();
-    srcFrame1.Unlock();
-  }
-
-  frame.Unlock();
-
-  return PTrue;
-}
-
-PBoolean OpalAudioMixer::MixerFrame::GetChannelFrame(Key_T key, OpalAudioMixerStream::StreamFrame & frame) const
-{
-  MixerPCMMap_T::const_iterator r = channelData.find(key);
-  if (r == channelData.end())
-    return PFalse;
-
-  CreateMixedData();
-
-  frame.SetSize(frameLengthSamples * 2);
-  PINDEX i;
-  int *   src1 = mixedData.GetPointer();
-  short * src2 = (short *)r->second.GetPointerAndLock();
-  short * dst  = (short *)frame.GetPointerAndLock();
-  for (i = 0; i < frameLengthSamples; ++i) {
-    int v = *src1++ - *src2++;
-    if (v < -32765)
-      v = -32765;
-    else if (v > 32765)
-      v = 32765;
-    *dst++ = (short)v;
-  }
-
-  r->second.Unlock();
-  frame.Unlock();
-
-  return PTrue;
-}
-
-void OpalAudioMixer::MixerFrame::InsertFrame(Key_T key, OpalAudioMixerStream::StreamFrame &frame)
-{
-	channelData.insert(MixerPCMMap_T::value_type(key, frame));
-}
-
-OpalAudioMixer::OpalAudioMixer(PBoolean _realTime, PBoolean _pushThread)
-  : frameLengthMs(10)
-  , channelNumber(0)
-  , realTime(_realTime)
-  , pushThread(_pushThread)
-  , mixerWorkerThread(NULL)
-  , threadRunning(false)
-  , audioStarted(false)
-  , firstRead(true)
-  , outputTimestamp(10000000)
-{
+  delete iter->second;
+  m_streams.erase(iter);
 }
 
 
-PBoolean OpalAudioMixer::OnWriteAudio(const MixerFrame &)
+void OpalBaseMixer::RemoveAllStreams()
 {
+  PWaitAndSignal mutex(m_mutex);
+
+  for (StreamMap_T::iterator iter = m_streams.begin(); iter != m_streams.end(); ++iter)
+    delete iter->second;
+  m_streams.clear();
+}
+
+
+bool OpalBaseMixer::AddStream(const Key_T & key)
+{
+  PWaitAndSignal mutex(m_mutex);
+
+  StreamMap_T::iterator iter = m_streams.find(key);
+  if (iter != m_streams.end()) 
+    return false;
+
+  m_streams[key] = CreateStream();
+  StartPushThread();
   return true;
 }
 
-void OpalAudioMixer::AddStream(const Key_T & key, OpalAudioMixerStream *stream)
+
+bool OpalBaseMixer::WriteStream(const Key_T & key, const RTP_DataFrame & rtp)
 {
-  PWaitAndSignal m(mutex);
-  stream->channelNumber = channelNumber++;
-  streamInfoMap.insert(StreamInfoMap_T::value_type(key, stream));
-  StartThread();
+  if (rtp.GetPayloadSize() == 0)
+    return true;
+
+  PWaitAndSignal mutex(m_mutex);
+
+  StreamMap_T::iterator iter = m_streams.find(key);
+  if (iter == m_streams.end())
+    return true; // Yes, true, writing a stream not yet up is non-fatal
+
+  iter->second->m_queue.push(rtp);
+  iter->second->m_queue.back().MakeUnique();
+  return iter->second->m_queue.back().GetSize() > 0;
+}
+
+
+RTP_DataFrame * OpalBaseMixer::ReadMixed(const Key_T & streamToIgnore)
+{
+  // create output frame
+  RTP_DataFrame * mixed = new RTP_DataFrame(GetOutputSize());
+
+  PWaitAndSignal mutex(m_mutex);
+
+  if (!MixStreams(streamToIgnore, *mixed)) {
+    delete mixed;
+    return NULL;
+  }
+
+  mixed->SetTimestamp(m_outputTimestamp);
+  m_outputTimestamp += m_periodTS;
+
+  return mixed;
+}
+
+
+void OpalBaseMixer::StartPushThread()
+{
+  if (m_pushThread) {
+    PWaitAndSignal mutex(m_mutex);
+    if (m_workerThread == NULL) {
+      m_threadRunning = true;
+      m_workerThread = new PThreadObj<OpalBaseMixer>(*this, &OpalBaseMixer::PushThreadMain);
+    }
+  }
+}
+
+
+void OpalBaseMixer::StopPushThread()
+{
+  m_mutex.Wait();
+
+  m_threadRunning = false;
+  if (m_workerThread != NULL) {
+    m_mutex.Signal();
+    m_workerThread->WaitForTermination();
+    m_mutex.Wait();
+    delete m_workerThread;
+    m_workerThread = NULL;
+  }
+
+  m_mutex.Signal();
+}
+
+
+void OpalBaseMixer::PushThreadMain()
+{
+  PAdaptiveDelay delay;
+  while (m_threadRunning) {
+    RTP_DataFrame * mixed = ReadMixed(Key_T());
+    if (mixed != NULL) {
+      OnMixed(mixed);
+      delete mixed;
+    }
+
+    delay.Delay(m_periodMS);
+  }
+}
+
+
+bool OpalBaseMixer::OnMixed(RTP_DataFrame * & /*mixed*/)
+{
+  return false;
+}
+
+
+OpalBaseMixer::Stream::Stream(OpalBaseMixer & mixer)
+  : m_mixer(mixer)
+  , m_nextTimeStamp(UINT_MAX)
+{
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalAudioMixer::OpalAudioMixer(bool stereo, unsigned sampleRate, bool pushThread, unsigned period)
+  : OpalBaseMixer(pushThread, period, period*sampleRate/1000)
+  , m_stereo(stereo)
+  , m_sampleRate(sampleRate)
+  , m_left(NULL)
+  , m_right(NULL)
+{
+}
+
+
+OpalBaseMixer::Stream * OpalAudioMixer::CreateStream()
+{
+  AudioStream * stream = new AudioStream(*this);
+
+  if (m_stereo) {
+    if (m_left == NULL)
+      m_left = stream;
+    else if (m_right == NULL)
+      m_right = stream;
+    else {
+      PTRACE(2, "Mixer\tCannot have more than two streams for stereo mode!");
+      delete stream;
+      return NULL;
+    }
+  }
+
+  return stream;
 }
 
 
 void OpalAudioMixer::RemoveStream(const Key_T & key)
 {
-  PWaitAndSignal m(mutex);
-  StreamInfoMap_T::iterator r = streamInfoMap.find(key);
-  if (r != streamInfoMap.end()) {
-    delete r->second;
-    streamInfoMap.erase(r);
+  if (m_stereo) {
+    StreamMap_T::iterator iter = m_streams.find(key);
+    if (iter == m_streams.end())
+      return;
+    if (m_left == iter->second)
+      m_left = NULL;
+    else if (m_right == iter->second)
+      m_right = NULL;
   }
+
+  OpalBaseMixer::RemoveStream(key);
 }
 
 
 void OpalAudioMixer::RemoveAllStreams()
 {
-  threadRunning = false;
-  if (mixerWorkerThread != NULL) {
-    mixerWorkerThread->WaitForTermination();
-    delete mixerWorkerThread;
-    mixerWorkerThread = NULL;
-  }
-
-  while (streamInfoMap.size() > 0)
-    RemoveStream(streamInfoMap.begin()->first);
-
-  channelNumber = 0;
+  OpalBaseMixer::RemoveAllStreams();
+  m_left = m_right = NULL;
 }
 
-void OpalAudioMixer::StartThread()
+
+bool OpalAudioMixer::SetSampleRate(unsigned rate)
 {
-  if (pushThread) {
-    PWaitAndSignal m(mutex);
-    if (mixerWorkerThread == NULL) {
-  	  threadRunning = true;
-      mixerWorkerThread = new PThreadObj<OpalAudioMixer>(*this, &OpalAudioMixer::ThreadMain);
-	}
-  }
+  if (m_streams.size() > 0)
+    return rate == m_sampleRate;
+
+  m_sampleRate = rate;
+  m_periodTS = m_periodMS*rate/1000;
+  return true;
 }
 
-void OpalAudioMixer::ThreadMain()
-{
-  PAdaptiveDelay delay;
 
-  while (threadRunning) {
-    delay.Delay(frameLengthMs);
-    ReadRoutine();
-  }
+bool OpalAudioMixer::MixStreams(const Key_T & streamToIgnore, RTP_DataFrame & mixed)
+{
+  return m_stereo ? MixStereo(mixed) : MixAdditive(streamToIgnore, mixed);
 }
 
-//
-// read a block of mixed audio from the mixer
-//
-void OpalAudioMixer::ReadRoutine()
+
+size_t OpalAudioMixer::GetOutputSize() const
 {
-  PTime now;
+  return m_periodTS*(m_stereo ? (sizeof(short) * 2) : sizeof(short));
+}
 
-  PWaitAndSignal m(mutex);
 
-  // if this is the first read, set the first read time
-  if (firstRead) {
-    timeOfNextRead = PTime() + 5 * frameLengthMs;
-    firstRead = PFalse;
+bool OpalAudioMixer::MixStereo(RTP_DataFrame & mixed)
+{
+  if (m_left != NULL) {
+    const short * src = m_left->GetAudioDataPtr();
+    short * dst = (short *)mixed.GetPayloadPtr();
+    for (unsigned i = 0; i < m_periodTS; ++i) {
+      *dst++ = *src++;
+      dst++;
+    }
+  }
+
+  if (m_right != NULL) {
+    const short * src = m_right->GetAudioDataPtr();
+    short * dst = (short *)mixed.GetPayloadPtr();
+    for (unsigned i = 0; i < m_periodTS; ++i) {
+      dst++;
+      *dst++ = *src++;
+    }
+  }
+
+  return true;
+}
+
+
+bool OpalAudioMixer::MixAdditive(const Key_T & streamToIgnore, RTP_DataFrame & mixed)
+{
+  short * silence = (short *)_alloca(m_periodTS*sizeof(short));
+  memset(silence, 0, m_periodTS*sizeof(short));
+
+  size_t streamCount = m_streams.size();
+  const short ** buffers = (const short **)_alloca(streamCount*sizeof(short *));
+
+  size_t i = 0;
+  for (StreamMap_T::iterator iter = m_streams.begin(); iter != m_streams.end(); ++iter, ++i) {
+    if (iter->first == streamToIgnore)
+      buffers[i] = silence;
+    else
+      buffers[i] = ((AudioStream *)iter->second)->GetAudioDataPtr();
+  }
+
+  short * dst  = (short *)mixed.GetPayloadPtr();
+  for (unsigned samp = 0; samp < m_periodTS; ++samp) {
+    int v = 0;
+    for (size_t strm = 0; strm < streamCount; ++strm)
+      v += *(buffers[strm])++;
+    if (v < -32765)
+      v = -32765;
+    else if (v > 32765)
+      v = 32765;
+    *dst++ = (short)v;
+  }
+
+  return true;
+}
+
+
+OpalAudioMixer::AudioStream::AudioStream(OpalAudioMixer & mixer)
+  : Stream(mixer)
+  , m_samplesUsed(0)
+{
+}
+
+
+const short * OpalAudioMixer::AudioStream::GetAudioDataPtr()
+{
+  size_t samplesLeft = m_mixer.GetPeriodTS();
+  short * cachePtr = m_cacheSamples.GetPointer(samplesLeft);
+
+  while (samplesLeft > 0 && !m_queue.empty()) {
+    RTP_DataFrame * frame = &m_queue.front();
+    if (m_nextTimeStamp == UINT_MAX)
+      m_nextTimeStamp = frame->GetTimestamp();
+    else {
+      if (frame->GetTimestamp() > m_nextTimeStamp)
+        break;
+      while (frame->GetTimestamp()+frame->GetPayloadSize()/sizeof(short) < m_nextTimeStamp) {
+        m_queue.pop();
+        if (m_queue.empty())
+          break;
+        frame = &m_queue.front();
+      }
+      if (m_queue.empty())
+        break;
+    }
+
+    size_t payloadSamples = frame->GetPayloadSize()/sizeof(short);
+    size_t samplesToCopy = payloadSamples - m_samplesUsed;
+    if (samplesToCopy > samplesLeft)
+      samplesToCopy = samplesLeft;
+
+    memcpy(cachePtr, ((const short *)frame->GetPayloadPtr())+m_samplesUsed, samplesToCopy*sizeof(short));
+
+    cachePtr += samplesToCopy;
+    samplesLeft -= samplesToCopy;
+    m_nextTimeStamp += samplesToCopy;
+
+    m_samplesUsed += samplesToCopy;
+    if (m_samplesUsed >= payloadSamples) {
+      m_queue.pop();
+      m_samplesUsed = 0;
+    }
+  }
+
+  if (samplesLeft > 0) {
+    memset(cachePtr, 0, samplesLeft*sizeof(short)); // Silence
+    if (m_nextTimeStamp != UINT_MAX)
+      m_nextTimeStamp += samplesLeft;
+  }
+
+  return m_cacheSamples;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_VIDEO
+
+OpalVideoMixer::OpalVideoMixer(Styles style, unsigned width, unsigned height, unsigned rate, bool pushThread)
+  : OpalBaseMixer(pushThread, 1000/rate, OpalMediaFormat::VideoClockRate/rate)
+  , m_style(style)
+{
+  SetFrameSize(width, height);
+}
+
+
+bool OpalVideoMixer::SetFrameRate(unsigned rate)
+{
+  if (rate == 0 || rate > 100)
+    return false;
+
+  m_mutex.Wait();
+  m_periodMS = 1000/rate;
+  m_periodTS = OpalMediaFormat::VideoClockRate/rate;
+  m_mutex.Signal();
+
+  return true;
+}
+
+
+bool OpalVideoMixer::SetFrameSize(unsigned width, unsigned height)
+{
+  m_mutex.Wait();
+
+  m_width = width;
+  m_height = height;
+  PColourConverter::FillYUV420P(0, 0, m_width, m_height, m_width, m_height,
+                                m_frameStore.GetPointer(m_width*m_height*3/2),
+                                0, 0, 0);
+
+  m_mutex.Signal();
+  return true;
+}
+
+
+OpalBaseMixer::Stream * OpalVideoMixer::CreateStream()
+{
+  return new VideoStream(*this);
+}
+
+
+bool OpalVideoMixer::MixStreams(const Key_T & streamToIgnore, RTP_DataFrame & mixed)
+{
+  // create output frame
+  unsigned left, x, y, w, h;
+  switch (m_style) {
+    case eSideBySideLetterbox :
+      x = left = 0;
+      y = m_height/4;
+      w = m_width/2;
+      h = m_height/2;
+      break;
+
+    case eSideBySideScaled :
+      x = left = 0;
+      y = 0;
+      w = m_width/2;
+      h = m_height;
+      break;
+
+    case eStackedPillarbox :
+      x = left = m_width/4;
+      y = 0;
+      w = m_width/2;
+      h = m_height/2;
+      break;
+
+    case eStackedScaled :
+      x = left = 0;
+      y = 0;
+      w = m_width;
+      h = m_height/2;
+      break;
+
+    case eGrid2x2 :
+      x = left = 0;
+      y = 0;
+      w = m_width/2;
+      h = m_height/2;
+      break;
+
+    case eGrid3x3 :
+      x = left = 0;
+      y = 0;
+      w = m_width/3;
+      h = m_height/3;
+      break;
+
+    case eGrid4x4 :
+      x = left = 0;
+      y = 0;
+      w = m_width/4;
+      h = m_height/4;
+      break;
+
+    default :
+      return false;
+  }
+
+  for (StreamMap_T::iterator iter = m_streams.begin(); iter != m_streams.end(); ++iter) {
+    if (iter->first == streamToIgnore)
+      continue;
+
+    ((VideoStream *)iter->second)->InsertVideoFrame(x, y, w, h);
+
+    x += w;
+    if (x+w > m_width) {
+      x = left;
+      y += h;
+      if (y+h > m_height)
+        break;
+    }
+  }
+
+  PluginCodec_Video_FrameHeader * video = (PluginCodec_Video_FrameHeader *)mixed.GetPayloadPtr();
+  video->width = m_width;
+  video->height = m_height;
+  memcpy(OPAL_VIDEO_FRAME_DATA_PTR(video), m_frameStore, m_frameStore.GetSize());
+
+  return true;
+}
+
+
+size_t OpalVideoMixer::GetOutputSize() const
+{
+  return m_frameStore.GetSize() + sizeof(PluginCodec_Video_FrameHeader);
+}
+
+
+OpalVideoMixer::VideoStream::VideoStream(OpalVideoMixer & mixer)
+  : Stream(mixer)
+  , m_mixer(mixer)
+{
+}
+
+
+void OpalVideoMixer::VideoStream::InsertVideoFrame(unsigned x, unsigned y, unsigned w, unsigned h)
+{
+  if (m_queue.empty()) {
+    IncrementTimestamp();
     return;
   }
 
-  // output as many frames as needed
-  while (now >= timeOfNextRead) {
-    WriteMixedFrame();
-    timeOfNextRead += frameLengthMs;
-  }
-}
+  RTP_DataFrame * frame = &m_queue.front();
 
-void OpalAudioMixer::WriteMixedFrame()
-{
-  // create output frame
-  MixerFrame * mixerFrame = new MixerFrame(MS_TO_SAMPLES(frameLengthMs));
-
-  // lock the mixer
-  PWaitAndSignal m(mutex);
-
-  // iterate through the streams and get an unmixed frame from each one
-  StreamInfoMap_T::iterator r;
-  OpalAudioMixerStream::StreamFrame tempFrame;
-  for (r = streamInfoMap.begin(); r != streamInfoMap.end(); ++r) {
-    OpalAudioMixerStream & stream = *r->second;
-    if (stream.ReadFrame(tempFrame, frameLengthMs)) {
-      tempFrame.timestamp = outputTimestamp;
-      tempFrame.channelNumber = stream.channelNumber;
-      mixerFrame->InsertFrame(r->first, tempFrame);
-    }
-  }
-
-  // increment the output timestamp
-  outputTimestamp += MS_TO_SAMPLES(frameLengthMs);
-
-  if (!pushThread) {
-    //outputQueue.push_back(mixerFrame);
-  }
+  if (m_nextTimeStamp == UINT_MAX)
+    m_nextTimeStamp = frame->GetTimestamp();
   else {
-    OnWriteAudio(*mixerFrame);
-    delete mixerFrame;
-  }
-}
-
-//
-// write a frame of data to a named stream of the mixer
-//
-PBoolean OpalAudioMixer::Write(const Key_T & key, const RTP_DataFrame & rtp)
-{
-  if (rtp.GetPayloadSize() == 0)
-    return PTrue;
-
-  // copy the data to PMembuffer
-  OpalAudioMixerStream::StreamFrame frame(rtp);
-
-  {
-    PWaitAndSignal m(mutex);
-
-    // find or create the stream we writing to
-    StreamInfoMap_T::iterator r = streamInfoMap.find(key);
-    OpalAudioMixerStream * stream;
-    if (r != streamInfoMap.end()) 
-      stream = r->second;
-    else {
-      stream = new OpalAudioMixerStream();
-      AddStream(key, stream);
+    if (frame->GetTimestamp() > m_nextTimeStamp) {
+      PTRACE(6, "Mixer\tLeaving frame @" << frame->GetTimestamp() << " (" << m_nextTimeStamp << ')');
+      IncrementTimestamp();
+      return;
     }
 
-    // write the data
-    stream->WriteFrame(frame);
+    while (frame->GetTimestamp()+m_mixer.GetPeriodTS() < m_nextTimeStamp) {
+      PTRACE(5, "Mixer\tDropping frame @" << frame->GetTimestamp() << " (" << m_nextTimeStamp << ')');
 
-    // and tag the stream as started
-    audioStarted = PTrue;
+      m_queue.pop();
+      if (m_queue.empty()) {
+        IncrementTimestamp();
+        return;
+      }
+
+      frame = &m_queue.front();
+    }
   }
 
-  // trigger reading of mixed data
-  ReadRoutine();
-  return PTrue;
+  PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)frame->GetPayloadPtr();
+
+  PTRACE(6, "Mixer\tCopying video: " << header->width << 'x' << header->height
+         << " -> " << x << ',' << y << '/' << w << 'x' << h << " @"
+         << frame->GetTimestamp() << " (" << m_nextTimeStamp << ')');
+
+  PColourConverter::CopyYUV420P(0, 0, header->width, header->height,
+                                header->width, header->height, OPAL_VIDEO_FRAME_DATA_PTR(header),
+                                x, y, w, h,
+                                m_mixer.m_width, m_mixer.m_height, m_mixer.m_frameStore.GetPointer(),
+                                PVideoFrameInfo::eScale);
+
+  IncrementTimestamp();
+  m_queue.pop();
 }
+
+
+void OpalVideoMixer::VideoStream::IncrementTimestamp()
+{
+  if (m_nextTimeStamp != UINT_MAX)
+    m_nextTimeStamp += m_mixer.GetPeriodTS();
+}
+
+
+#endif // OPAL_VIDEO
+
+//////////////////////////////////////////////////////////////////////////////
