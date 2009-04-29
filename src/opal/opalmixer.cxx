@@ -285,11 +285,11 @@ bool OpalAudioMixer::MixStereo(RTP_DataFrame & mixed)
 
 bool OpalAudioMixer::MixAdditive(const Key_T & streamToIgnore, RTP_DataFrame & mixed)
 {
-  short * silence = (short *)_alloca(m_periodTS*sizeof(short));
+  short * silence = (short *)alloca(m_periodTS*sizeof(short));
   memset(silence, 0, m_periodTS*sizeof(short));
 
   size_t streamCount = m_streams.size();
-  const short ** buffers = (const short **)_alloca(streamCount*sizeof(short *));
+  const short ** buffers = (const short **)alloca(streamCount*sizeof(short *));
 
   size_t i = 0;
   for (StreamMap_T::iterator iter = m_streams.begin(); iter != m_streams.end(); ++iter, ++i) {
