@@ -28,9 +28,7 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
 				RuntimeTypeInfo="TRUE"
-				UsePrecompiledHeader="3"
-				PrecompiledHeaderThrough="ptlib.h"
-				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
+				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
@@ -94,7 +92,6 @@
 				PreprocessorDefinitions="_DEBUG;_DLL;PTRACING=1"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="TRUE"
-				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
 				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
@@ -158,9 +155,7 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
 				RuntimeTypeInfo="TRUE"
-				UsePrecompiledHeader="3"
-				PrecompiledHeaderThrough="ptlib.h"
-				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
+				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
@@ -168,8 +163,7 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Extracting debug symbols"
-				CommandLine="rebase -b 0x30000000 -x . &quot;$(TargetPath)&quot;
-"
+				CommandLine="rebase -b 0x30000000 -x . &quot;$(TargetPath)&quot;"
 				Outputs="$(OutDir)\$(TargetName).dbg"/>
 			<Tool
 				Name="VCLinkerTool"
@@ -341,7 +335,13 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\lib\no trace\opaln.def">
+			RelativePath="..\..\lib\NoTrace\opaln.def">
+			<FileConfiguration
+				Name="No Trace|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCCustomBuildTool"/>
+			</FileConfiguration>
 			<FileConfiguration
 				Name="Debug|Win32"
 				ExcludedFromBuild="TRUE">
@@ -356,13 +356,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\lib\NoTrace\opaln.def">
-			<FileConfiguration
-				Name="No Trace|Win32"
-				ExcludedFromBuild="TRUE">
-				<Tool
-					Name="VCCustomBuildTool"/>
-			</FileConfiguration>
+			RelativePath="..\..\lib\no trace\opaln.def">
 			<FileConfiguration
 				Name="Debug|Win32"
 				ExcludedFromBuild="TRUE">
