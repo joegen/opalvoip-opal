@@ -1,7 +1,7 @@
 /*
  * opalmixer.h
  *
- * OPAL audio mixer
+ * OPAL media mixers
  *
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
@@ -22,7 +22,8 @@
  *
  * The Initial Developer of the Original Code is Post Increment
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Craig Southeren (craigs@postincrement.com)
+ *                 Robert Jongbloed (robertj@voxlucida.com.au)
  *
  * $Revision$
  * $Author$
@@ -46,327 +47,301 @@
 
 #include <rtp/rtp.h>
 #include <codec/opalwavfile.h>
+#include <codec/vidcodec.h>
 
-template <typename Locker_T = PSyncNULL>
-class PMemBuffer
+
+///////////////////////////////////////////////////////////////////////////////
+
+/** Class base for a media mixer.
+
+    The mixer operates by re-buffering the input media into chunks each with an
+    associated timestamp. A main mixer thread then reads from each  stream at
+    regular intervals, mixes the media and creates the output buffer.
+ 
+    Note the timestamps of the input media are extremely important as they are
+    used so that breaks or too fast data in the input media is dealt with correctly.
+  */
+class OpalBaseMixer
 {
   public:
-    struct Common {
-      Common(size_t size)
-        : base(size)
-      { 
-        refCount = 1; 
-      }
+    OpalBaseMixer(
+      bool pushThread,    ///< Indicate if the push thread should be started
+      unsigned periodMS,  ///< The output buffer time in milliseconds
+      unsigned periodTS   ///< The output buffer time in RTP timestamp units
+    );
 
-      Common(BYTE * ptr, size_t size)
-        : base(ptr, size)
-      { 
-        refCount = 1; 
-      }
+    virtual ~OpalBaseMixer() { }
 
-      mutable int refCount;
-      mutable Locker_T mutex;
-      mutable PBYTEArray base;
-    };
-
-    Common * common;
-
-  protected:
-    BYTE * data;
-    PINDEX dataLen;
-
-  public:
-    PMemBuffer()
-    { 
-      common  = NULL;
-      data    = NULL;
-      dataLen = 0;
-    }
-
-    PMemBuffer(PINDEX size)
-    { 
-      common = new Common(size);
-      data    = common->base.GetPointer();
-      dataLen = size;
-    }
-
-    PMemBuffer(BYTE * ptr, size_t size)
-    { 
-      common = new Common(ptr, size);
-      data    = common->base.GetPointer();
-      dataLen = size;
-    }
-
-    PMemBuffer(const PBYTEArray & obj)
-    { 
-      common = new Common(obj.GetPointer(), obj.GetSize());
-      data    = common->base.GetPointer();
-      dataLen = obj.GetSize();
-    }
-
-    PMemBuffer(const PMemBuffer & obj)
-    { 
-      PWaitAndSignal m(obj.common->mutex);
-      common = obj.common;
-      ++common->refCount;
-      data    = obj.data;
-      dataLen = obj.dataLen;
-    }
-
-    ~PMemBuffer()
-    {
-      if (common != NULL) {
-        common->mutex.Wait();
-        PBoolean last = common->refCount == 1;
-        if (last) {
-          common->mutex.Signal();
-          delete common;
-        } 
-        else {
-          --common->refCount;
-          common->mutex.Signal();
-        }
-        common = NULL;
-        data    = NULL;
-        dataLen = 0;
-      }
-    }
-
-    PMemBuffer & operator = (const PMemBuffer & obj)
-    {
-      if (&obj == this)
-        return *this;
-
-      if (common != NULL) {
-        common->mutex.Wait();
-        PBoolean last = common->refCount == 1;
-        if (last) {
-          common->mutex.Signal();
-          delete common;
-        }
-        else
-        {
-          --common->refCount;
-          common->mutex.Signal();
-        }
-        common = NULL;
-        data    = NULL;
-        dataLen = 0;
-      }
-      {
-        PWaitAndSignal m(obj.common->mutex);
-        common = obj.common;
-        ++common->refCount;
-        data    = obj.data;
-        dataLen = obj.dataLen;
-      }
-
-      return *this;
-    }
-
-    void MakeUnique()
-    {
-      PWaitAndSignal m(common->mutex);
-      if (common->refCount == 1) 
-        return;
-
-      Common * newCommon = new Common(common->base.GetPointer(), common->base.GetSize());
-      data = newCommon->base.GetPointer() + (data - common->base.GetPointer());
-      --common->refCount;
-      common = newCommon;
-    }
-
-    // set absolute base of data
-    // length is unchanged
-    void SetBase(PINDEX offs)
-    { 
-      PWaitAndSignal m(common->mutex);
-      data = common->base.GetPointer() + offs;
-      if (offs + dataLen > common->base.GetSize())
-        dataLen = common->base.GetSize() - offs;
-    }
-
-    // adjust base of data relative to current base
-    // length is unchanged
-    void Rebase(PINDEX offs)
-    { 
-      PWaitAndSignal m(common->mutex);
-      SetBase(offs + data - common->base.GetPointer());
-    }
-
-    // set the sbsolute length of the data
-    void SetSize(PINDEX size)
-    { 
-      if (common == NULL) {
-        common = new Common(size);
-        data    = common->base.GetPointer();
-        dataLen = size;
-      }
-      else {
-        PWaitAndSignal m(common->mutex);
-        if (size < dataLen)
-          dataLen = size;
-        else {
-          PINDEX offs = data - common->base.GetPointer();
-          if (offs + size < common->base.GetSize())
-            dataLen = size;
-          else
-            dataLen = common->base.GetSize() - offs;
-        }
-      }
-    }
-
-    BYTE * GetPointerAndLock()
-    { 
-      PAssert(common != NULL, "NULL pointer");
-      common->mutex.Wait();
-      return data; 
-    }
-
-    inline const BYTE * GetPointerAndLock() const
-    { 
-      PAssert(common != NULL, "NULL pointer");
-      common->mutex.Wait();
-      return data; 
-    }
-
-    inline PINDEX GetSize() const
-    { return dataLen; }
-
-    inline void Lock() const
-    {
-      common->mutex.Wait();
-    }
-
-    inline void Unlock() const
-    {
-      common->mutex.Signal();
-    }
-
-    inline PSync & GetMutex()
-    {
-      return common->mutex;
-    }
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  the mixer operates by re-buffering the input streams into 10ms chunks
-//  each with an associated timestamp. A main mixer thread then reads from each 
-//  stream at regular intervals, mixes the audio and creates the output
-//
-//  There are several complications:
-//
-//    1) the timestamps must be used so that breaks in the input audio are 
-//       dealt with correctly
-//
-//    2) Using a single worker thread to read all of the streams doesn't work because
-//       it tends to get starved of CPU time and the output either gets behind or has
-//       breaks in it. To avoid this, the creation of the output data is triggered 
-//       by whatever thread (write or read) occurs after each 10ms interval
-//
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  define a class that encapsulates an audio stream for the purposes of the mixer
-//
-
-class OpalAudioMixerStream {
-  public:
-    class StreamFrame : public PMemBuffer<PMutex> {
-      public:
-        DWORD timestamp;
-        unsigned channelNumber;
-
-        StreamFrame()
-          : timestamp(0)
-          , channelNumber(0)
-        { }
-
-        StreamFrame(const RTP_DataFrame & rtp);
-    };
-    typedef std::queue<StreamFrame> StreamFrameQueue_T;
-
-    PMutex mutex;
-    StreamFrameQueue_T frameQueue;
-    StreamFrame frameCache;
-    DWORD cacheTimeStamp;
-
-    PBoolean active;
-    PBoolean first;
-    unsigned channelNumber;
-
-    OpalAudioMixerStream();
-    void WriteFrame(const StreamFrame & frame);
-    void FillSilence(StreamFrame & retFrame, PINDEX ms);
-    void PopFrame(StreamFrame & retFrame, PINDEX ms);
-    PBoolean ReadFrame(StreamFrame & retFrame, PINDEX ms);
-};
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  Define the audio mixer. This class extracts audio from a list of 
-//  OpalAudioMixerStream instances
-//
-
-class OpalAudioMixer
-{
-  public:
     typedef std::string Key_T;
-    typedef std::map<Key_T, OpalAudioMixerStream *> StreamInfoMap_T;
-    typedef std::map<Key_T, OpalAudioMixerStream::StreamFrame> MixerPCMMap_T;
 
-    class MixerFrame
-    {
-      protected:
-        MixerPCMMap_T channelData;
+    /**Add a stream to mixer using the specified key.
+      */
+    virtual bool AddStream(
+      const Key_T & key   ///< key for mixer stream
+    );
 
-        PINDEX frameLengthSamples;
-        mutable PIntArray mixedData;
-        mutable PMutex mutex;
+    /** Remove an input stream from mixer.
+      */
+    virtual void RemoveStream(
+      const Key_T & key   ///< key for mixer stream
+    );
 
-      public:
-		MixerFrame(PINDEX _frameLength);
-        void CreateMixedData() const;
-        PBoolean GetMixedFrame(OpalAudioMixerStream::StreamFrame & frame) const;
-        PBoolean GetStereoFrame(OpalAudioMixerStream::StreamFrame & frame) const;
-        PBoolean GetChannelFrame(Key_T key, OpalAudioMixerStream::StreamFrame & frame) const;
-        void InsertFrame(Key_T key, OpalAudioMixerStream::StreamFrame & frame);
-	};
+    /** Remove all input streams from mixer.
+      */
+    virtual void RemoveAllStreams();
+
+    /**Write an RTP data frame to mixer.
+       A copy of the RTP data frame is created. This function is generally
+       quite fast as the actual mixing is done in a different thread so
+       minimal interference with the normal media stream processing occurs.
+      */
+    virtual bool WriteStream(
+      const Key_T & key,          ///< key for mixer stream
+      const RTP_DataFrame & input ///< Input RTP data for media
+    );
+
+    /**Read media from mixer.
+       A pull model system would call this function to get the mixed media
+       from the mixer. Note the stream indicated by the streamToIgnore key is
+       not included in the mixing operation, allowing for example, the member
+       of a conference to not hear themselves.
+
+       Note this function is the one that does all the "heavy lifting" for the
+       mixer.
+      */
+    virtual RTP_DataFrame * ReadMixed(
+      const Key_T & streamToIgnore = Key_T()  ///< Stream to not include in mixing
+    );
+
+    /**Mixed data is now available.
+       For a push model system, this is called with mixed data as returned by
+       ReadMixed().
+
+       The "mixed" parameter is a reference to a pointer, so if the consumer
+       wishes to take responsibility for deleting the pointer to an RTP data
+       frame, then they can set it to NULL.
+
+       If false is returned then the push thread is exited.
+      */
+    virtual bool OnMixed(
+      RTP_DataFrame * & mixed   ///, Poitner to mixed media.
+    );
+
+    /**Start the push thread.
+       Normally called internally.
+      */
+    void StartPushThread();
+
+    /**Stop the push thread.
+       This will wait for th epush thread to terminate, so care must be taken
+       to avoid deadlocks when calling.
+      */
+    void StopPushThread();
+
+    /**Get the period for mxiing in RTP timestamp units.
+      */
+    unsigned GetPeriodTS() const { return m_periodTS; }
 
   protected:
-    PINDEX frameLengthMs;                  ///< size of each audio chunk in milliseconds
+    struct Stream {
+      Stream(OpalBaseMixer & mixer);
 
-    PMutex mutex;                          ///< mutex for list of streams and thread handle
-    StreamInfoMap_T streamInfoMap;         ///< list of streams
-    unsigned channelNumber;                ///< counter for channels
+      OpalBaseMixer      & m_mixer;
+      queue<RTP_DataFrame> m_queue;
+      unsigned             m_nextTimeStamp;
+    };
+    typedef std::map<Key_T, Stream *> StreamMap_T;
 
-    PBoolean realTime;                         ///< PTrue if realtime mixing
-    PBoolean pushThread;                       ///< PTrue if to use a thread to push data out
-    PThread * mixerWorkerThread;                      ///< reader thread handle
-    PBoolean threadRunning;                    ///< used to stop reader thread
+    virtual Stream * CreateStream() = 0;
+    virtual bool MixStreams(const Key_T & streamToIgnore, RTP_DataFrame & frame) = 0;
+    virtual size_t GetOutputSize() const = 0;
+    void PushThreadMain();
 
-    PBoolean audioStarted;                     ///< PTrue if output audio is running
-    PBoolean firstRead;                        ///< PTrue if first use of CheckForRead
+    bool      m_pushThread;      ///< true if to use a thread to push data out
+    unsigned  m_periodMS;        ///< Mixing interval in milliseconds
+    unsigned  m_periodTS;        ///< Mixing interval in timestamp units
 
-    PTime timeOfNextRead;                  ///< absolute timestamp for next scheduled read
-    DWORD outputTimestamp;                 ///< RTP timestamp for output data
+    PThread * m_workerThread;    ///< reader thread handle
+    bool      m_threadRunning;   ///< used to stop reader thread
+    unsigned  m_outputTimestamp; ///< RTP timestamp for output data
 
-  public:
-    OpalAudioMixer(PBoolean realTime = PTrue, PBoolean _pushThread = PTrue);
-    virtual ~OpalAudioMixer() { }
-    virtual PBoolean OnWriteAudio(const MixerFrame &);
-    void AddStream(const Key_T & key, OpalAudioMixerStream * stream);
-    void RemoveStream(const Key_T & key);
-    void RemoveAllStreams();
-    void StartThread();
-    void ThreadMain();
-    void ReadRoutine();
-    void WriteMixedFrame();
-    PBoolean Write(const Key_T & key, const RTP_DataFrame & rtp);
+    StreamMap_T m_streams;
+    PMutex      m_mutex;          ///< mutex for list of streams and thread handle
 };
+
+///////////////////////////////////////////////////////////////////////////////
+
+/** Class for an audio mixer.
+    This takes raw PCM-16 data and sums all the input data streams to produce
+    a single PCM-16 sample value.
+
+    For 2 or less channels, they may be mixed as stereo where 16 bit PCM
+    samples are placed in adjacent pairs in the output, rather than summing
+    them.
+  */
+class OpalAudioMixer : public OpalBaseMixer
+{
+  public:
+    OpalAudioMixer(
+      bool stereo = false,
+      unsigned sampleRate = 8000,
+      bool pushThread = true,
+      unsigned period = 10
+    );
+
+    ~OpalAudioMixer() { StopPushThread(); }
+
+    /** Remove an input stream from mixer.
+      */
+    virtual void RemoveStream(
+      const Key_T & key   ///< key for mixer stream
+    );
+
+    /** Remove all input streams from mixer.
+      */
+    virtual void RemoveAllStreams();
+
+    /**Return flag for mixing stereo audio data.
+      */
+    bool IsStereo() const { return m_stereo; }
+
+    /**Get sample rate for audio.
+      */
+    unsigned GetSampleRate() const { return m_sampleRate; }
+
+    /**Set sample rate for audio data.
+       Note that all streams must have the same sample rate.
+
+       Returns false if attempts to set sample rate to something different to
+       existing streams.
+      */
+    bool SetSampleRate(
+      unsigned rate   ///< New rate
+    );
+
+  protected:
+    struct AudioStream : public Stream
+    {
+      AudioStream(OpalAudioMixer & mixer);
+      const short * GetAudioDataPtr();
+
+      PShortArray m_cacheSamples;
+      size_t      m_samplesUsed;
+    };
+
+    virtual Stream * CreateStream();
+    virtual bool MixStreams(const Key_T & streamToIgnore, RTP_DataFrame & frame);
+    virtual size_t GetOutputSize() const;
+
+    bool MixStereo(RTP_DataFrame & frame);
+    bool MixAdditive(const Key_T & streamToIgnore, RTP_DataFrame & frame);
+
+  protected:
+    bool     m_stereo;
+    unsigned m_sampleRate;
+
+    AudioStream * m_left;
+    AudioStream * m_right;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_VIDEO
+
+/**Video mixer.
+   This takes raw YUV420P frames with a PluginCodec_Video_FrameHeader in the
+   RTP data frames, scales them and places them in particular positions of the
+   output data frame. A number of different patterns for positioning the sub
+   images are available in the Styles enum.
+  */
+class OpalVideoMixer : public OpalBaseMixer
+{
+  public:
+    enum Styles {
+      eSideBySideLetterbox, /**< Two images side by side with black bars top and bottom.
+                                 It is expected that the input frames and output are all
+                                 the same aspect ratio, e.g. 4:3. Works well if inputs
+                                 are QCIF and output is CIF for example. */
+      eSideBySideScaled,    /**< Two images side by side, scaled to fit halves of output
+                                 frame. It is expected that the output frame be double
+                                 the width of the input data to maintain aspect ratio.
+                                 e.g. for CIF inputs, output would be 704x288. */
+      eStackedPillarbox,    /**< Two images, one on top of the other with black bars down
+                                 the sides. It is expected that the input frames and output
+                                 are all the same aspect ratio, e.g. 4:3. Works well if
+                                 inputs are QCIF and output is CIF for example. */
+      eStackedScaled,       /**< Two images, one on top of the other, scaled to fit halves
+                                 of output frame. It is expected that the output frame be
+                                 double the height of the input data to maintain aspect
+                                 ratio. e.g. for CIF inputs, output would be 352x576. */
+      eGrid2x2,             /**< Up to four images scaled into quarters of the output frame. */
+      eGrid3x3,             /**< Up to nine images scaled into a 3x3 grid. */
+      eGrid4x4              /**< Up to sixteen images scaled into 4x4 grid. */
+    };
+
+    OpalVideoMixer(
+      Styles style,           ///< Style for mixing video
+      unsigned width,         ///< Width of output frame
+      unsigned height,        ///< Height of output frame
+      unsigned rate = 15,     ///< Frames per second for output
+      bool pushThread = true  ///< A push thread is to be created
+    );
+
+    ~OpalVideoMixer() { StopPushThread(); }
+
+    /**Get output video frame width.
+      */
+    unsigned GetFrameWidth() const { return m_width; }
+
+    /**Get output video frame height.
+      */
+    unsigned GetFrameHeight() const { return m_height; }
+
+    /**Get output video frame rate (frames per second)
+      */
+    unsigned GetFrameRate() const { return 1000/m_periodMS; }
+
+    /**Set output video frame rate.
+       May be dynamically changed at any time.
+      */
+    bool SetFrameRate(
+      unsigned rate   // New frames per second.
+    );
+
+    /**Set the output video frame width and height.
+       May be dynamically changed at any time.
+      */
+    bool SetFrameSize(
+      unsigned width,   ///< New width
+      unsigned height   ///< new height
+    );
+
+  protected:
+    struct VideoStream : public Stream
+    {
+      VideoStream(OpalVideoMixer & mixer);
+      void InsertVideoFrame(unsigned x, unsigned y, unsigned w, unsigned h);
+      void IncrementTimestamp();
+
+      OpalVideoMixer & m_mixer;
+    };
+
+    friend struct VideoStream;
+
+    virtual Stream * CreateStream();
+    virtual bool MixStreams(const Key_T & streamToIgnore, RTP_DataFrame & frame);
+    virtual size_t GetOutputSize() const;
+
+  protected:
+    Styles     m_style;
+    unsigned   m_width, m_height;
+    PBYTEArray m_frameStore;
+};
+
+#endif // OPAL_VIDEO
 
 #endif // OPAL_OPAL_OPAL_MIXER
 
+
+///////////////////////////////////////////////////////////////////////////////

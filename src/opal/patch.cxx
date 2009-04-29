@@ -342,7 +342,10 @@ OpalMediaPatch::Sink::~Sink()
 void OpalMediaPatch::AddFilter(const PNotifier & filter, const OpalMediaFormat & stage)
 {
   PWriteWaitAndSignal mutex(inUse);
-  
+
+  if (source.GetMediaFormat().GetMediaType() != stage.GetMediaType())
+    return;
+
   // ensures that a filter is added only once
   for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) {
     if (f->notifier == filter && f->stage == stage)

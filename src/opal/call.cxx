@@ -61,6 +61,7 @@ OpalCall::OpalCall(OpalManager & mgr)
   , isClearing(PFalse)
   , callEndReason(OpalConnection::NumCallEndReasons)
   , endCallSyncPoint(NULL)
+  , m_recordManager(NULL)
 {
   manager.activeCalls.SetAt(myToken, this);
 
@@ -76,6 +77,8 @@ OpalCall::OpalCall(OpalManager & mgr)
 
 OpalCall::~OpalCall()
 {
+  delete m_recordManager;
+
   PTRACE(3, "Call\t" << *this << " destroyed.");
 }
 
@@ -131,7 +134,7 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 void OpalCall::OnCleared()
 {
   manager.OnClearedCall(*this);
-  manager.GetRecordManager().Close(myToken);
+  StopRecording();
 
   if (!LockReadWrite())
     return;
@@ -619,48 +622,85 @@ void OpalCall::OnHold(OpalConnection & /*connection*/,
 }
 
 
-PBoolean OpalCall::StartRecording(const PFilePath & fn, bool mono)
+bool OpalCall::StartRecording(const PFilePath & fn, const OpalRecordManager::Options & options)
 {
+  StopRecording();
+
+  OpalRecordManager * newManager = OpalRecordManager::Factory::CreateInstance(fn.GetType());
+  if (newManager == NULL) {
+    PTRACE(2, "OPAL\tCannot record to file type " << fn);
+    return false;
+  }
+
   // create the mixer entry
-  if (!manager.GetRecordManager().Open(myToken, fn, mono))
-    return PFalse;
+  if (!newManager->Open(fn, options)) {
+    delete newManager;
+    return false;
+  }
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return false;
+
+  m_recordManager = newManager;
 
   // tell each connection to start sending data
   PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadWrite))
     connection->EnableRecording();
 
-  return PTrue;
+  return true;
 }
 
 
 bool OpalCall::IsRecording() const
 {
-  return manager.GetRecordManager().IsOpen(myToken);
+  PSafeLockReadOnly lock(*this);
+  return m_recordManager != NULL && m_recordManager->IsOpen();
 }
 
 
 void OpalCall::StopRecording()
 {
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked() || m_recordManager == NULL)
+    return;
+
   // tell each connection to stop sending data
   PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadWrite))
     connection->DisableRecording();
 
-  manager.GetRecordManager().Close(myToken);
+  m_recordManager->Close();
+  delete m_recordManager;
+  m_recordManager = NULL;
+}
+
+
+bool OpalCall::OnStartRecording(const PString & streamId, const OpalMediaFormat & format)
+{
+  return m_recordManager != NULL && m_recordManager->OpenStream(streamId, format);
+}
+
+
+void OpalCall::OnStopRecording(const PString & streamId)
+{
+  if (m_recordManager != NULL)
+    m_recordManager->CloseStream(streamId);
 }
 
 
 void OpalCall::OnRecordAudio(const PString & streamId, const RTP_DataFrame & frame)
 {
-  if (!manager.GetRecordManager().WriteAudio(myToken, streamId, frame))
-    StopRecording();
+  if (m_recordManager != NULL && !m_recordManager->WriteAudio(streamId, frame))
+    m_recordManager->CloseStream(streamId);
 }
 
 
-void OpalCall::OnStopRecordAudio(const PString & streamId)
+void OpalCall::OnRecordVideo(const PString & streamId, const RTP_DataFrame & frame)
 {
-  manager.GetRecordManager().CloseStream(myToken, streamId);
+  if (m_recordManager != NULL && !m_recordManager->WriteVideo(streamId, frame))
+    m_recordManager->CloseStream(streamId);
 }
 
 

@@ -403,6 +403,9 @@
 					RelativePath="..\opal\opalmixer.cxx">
 				</File>
 				<File
+					RelativePath="..\opal\recording.cxx">
+				</File>
+				<File
 					RelativePath="..\opal\opalvxml.cxx">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -1906,7 +1909,7 @@
 				Name="Opal Headers"
 				Filter="">
 				<File
-					RelativePath="..\..\include\opal\audiorecord.h">
+					RelativePath="..\..\include\opal\recording.h">
 				</File>
 				<File
 					RelativePath="..\..\include\opal\call.h">

@@ -116,6 +116,9 @@ DEF_FIELD(VendorName);
 DEF_FIELD(ProductName);
 DEF_FIELD(ProductVersion);
 DEF_FIELD(IVRScript);
+DEF_FIELD(AudioRecordingMode);
+DEF_FIELD(VideoRecordingMode);
+DEF_FIELD(VideoRecordingSize);
 DEF_FIELD(SpeakerVolume);
 DEF_FIELD(MicrophoneVolume);
 DEF_FIELD(SpeakerMute);
@@ -748,6 +751,13 @@ bool MyManager::Initialise()
   if (config->Read(IVRScriptKey, &str))
     ivrEP->SetDefaultVXML(str);
 #endif
+
+  config->Read(AudioRecordingModeKey, &m_recordingOptions.m_stereo);
+  value1 = m_recordingOptions.m_videoMixing;
+  if (config->Read(VideoRecordingModeKey, &value1) && value1 >= 0 && value1 < OpalRecordManager::NumVideoMixingModes)
+    m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode)value1;
+  if (config->Read(VideoRecordingSizeKey, &str))
+    PVideoFrameInfo::ParseSize(str, m_recordingOptions.m_videoWidth, m_recordingOptions.m_videoHeight);
 
   ////////////////////////////////////////
   // Networking fields
@@ -2367,11 +2377,13 @@ void MyManager::OnStartRecording(wxCommandEvent & /*event*/)
                    wxT("Save call to file"),
                    wxEmptyString,
                    m_lastRecordFile,
-                   wxT("*.wav"),
-                   wxFD_SAVE);
+                   wxT("WAV Files (*.wav)|*.wav|AVI Files (*.avi)|*.avi"),
+                   wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
   if (dlg.ShowModal() == wxID_OK && m_activeCall != NULL) {
     m_lastRecordFile = dlg.GetPath();
-    m_activeCall->StartRecording(m_lastRecordFile);
+    if (!m_activeCall->StartRecording(m_lastRecordFile, m_recordingOptions))
+      wxMessageBox(wxT("Cannot record to ")+m_lastRecordFile,
+                   wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
   }
 }
 
@@ -3286,7 +3298,7 @@ public:
       return true;
 
     wxMessageBox(wxT("Illegal value \"") + size + wxT("\" for video size."),
-                 wxT("Error"), wxCANCEL|wxICON_EXCLAMATION);
+                 wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
     return false;
   }
 };
@@ -3296,6 +3308,7 @@ public:
 
 void MyManager::OnOptions(wxCommandEvent& /*event*/)
 {
+  PTRACE(4, "OpenPhone\tOpening options dialog");
   OptionsDialog dlg(this);
   dlg.ShowModal();
 }
@@ -3395,6 +3408,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   SetExtraStyle(GetExtraStyle() | wxWS_EX_VALIDATE_RECURSIVELY);
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("OptionsDialog"));
+
+  PTRACE(4, "OpenPhone\tLoaded options dialog");
 
   ////////////////////////////////////////
   // General fields
@@ -3615,6 +3630,12 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(IVRScript, m_manager.ivrEP->GetDefaultVXML());
 #endif
 
+  INIT_FIELD(AudioRecordingMode, m_manager.m_recordingOptions.m_stereo);
+  INIT_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing);
+  m_VideoRecordingSize = PVideoFrameInfo::AsString(m_manager.m_recordingOptions.m_videoWidth,
+                                                   m_manager.m_recordingOptions.m_videoHeight);
+  FindWindowByName(VideoRecordingSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoRecordingSize));
+
   ////////////////////////////////////////
   // Codec fields
   m_AddCodec = FindWindowByNameAs<wxButton>(this, wxT("AddCodec"));
@@ -3812,6 +3833,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 #else
   RemoveNotebookPage(this, wxT("Tracing"));
 #endif // PTRACING
+
+  PTRACE(4, "OpenPhone\tInitialised options dialog");
 }
 
 
@@ -3865,6 +3888,13 @@ bool OptionsDialog::TransferDataFromWindow()
 #if OPAL_IVR
   SAVE_FIELD(IVRScript, m_manager.ivrEP->SetDefaultVXML);
 #endif
+
+  SAVE_FIELD(AudioRecordingMode, m_manager.m_recordingOptions.m_stereo = 0 != );
+  SAVE_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode));
+  PVideoFrameInfo::ParseSize(m_VideoRecordingSize,
+                             m_manager.m_recordingOptions.m_videoWidth,
+                             m_manager.m_recordingOptions.m_videoHeight);
+  config->Write(VideoRecordingSizeKey, m_VideoRecordingSize);
 
   ////////////////////////////////////////
   // Networking fields
@@ -4389,7 +4419,7 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
 
   PVideoInputDevice * grabber = PVideoInputDevice::CreateOpenedDevice(grabberArgs);
   if (grabber == NULL) {
-    wxMessageBox(wxT("Could not open video capture."), wxT("Video Test"), wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not open video capture."), wxT("OpenPhone Video Test"), wxCANCEL|wxICON_EXCLAMATION);
     return;
   }
 
@@ -4408,7 +4438,7 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
   }
 
   if (!grabber->Start())
-    wxMessageBox(wxT("Could not start video capture."), wxT("Video Test"), wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not start video capture."), wxT("OpenPhone Video Test"), wxCANCEL|wxICON_EXCLAMATION);
   else {
     PBYTEArray frame;
     unsigned frameCount = 0;
