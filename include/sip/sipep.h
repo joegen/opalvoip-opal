@@ -842,36 +842,37 @@ class SIPEndPoint : public OpalRTPEndPoint
 
         void OnReceivedPDU();
 
-      private:
         SIPEndPoint & m_endpoint;
         PString       m_token;
         SIP_PDU     * m_pdu;
     };
 
+    class PDUThreadPool : public PThreadPool<SIP_PDU_Work>
+    {
+      public:
+        virtual WorkerThreadBase * CreateWorkerThread();
+    } threadPool;
+
     typedef std::queue<SIP_PDU_Work *> SIP_PDUWorkQueue;
 
-    class SIP_PDU_Thread : public PThreadPoolWorkerBase
+    class SIP_PDU_Thread : public PDUThreadPool::WorkerThread
     {
       public:
-        SIP_PDU_Thread(PThreadPoolBase & _pool);
+        SIP_PDU_Thread(PDUThreadPool & pool_);
+
+        void AddWork(SIP_PDU_Work * work);
+        void RemoveWork(SIP_PDU_Work * work);
         unsigned GetWorkSize() const;
-        void OnAddWork(SIP_PDU_Work * work);
-        void OnRemoveWork(SIP_PDU_Work *);
-        void Shutdown();
+
         void Main();
+        void Shutdown();
 
       protected:
-        PMutex mutex;
-        PSyncPoint sync;
-        SIP_PDUWorkQueue pduQueue;
+        PSyncPoint m_sync;
+        SIP_PDUWorkQueue m_pduQueue;
     };
 
-    class SIPMainThreadPool : public PThreadPool<SIP_PDU_Work, SIP_PDU_Thread>
-    {
-      public:
-        virtual PThreadPoolWorkerBase * CreateWorkerThread()
-        { return new SIP_PDU_Thread(*this); }
-    } threadPool;
+    virtual void AddWork(SIP_PDU_Work * work);
 
     enum {
       HighPriority = 80,
