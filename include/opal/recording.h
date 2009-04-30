@@ -177,7 +177,7 @@ class OpalRecordManager
 
 // Force linking of modules
 PFACTORY_LOAD(OpalWAVRecordManager);
-#ifdef _WIN32
+#ifdef P_VFW_CAPTURE
 PFACTORY_LOAD(OpalAVIRecordManager);
 #endif
 
