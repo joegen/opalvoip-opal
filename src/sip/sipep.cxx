@@ -518,27 +518,17 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
     case SIP_PDU::Method_ACK :
       pdu->AdjustVia(transport);
-      // Do next case
+      break;
 
     case SIP_PDU::NumMethods :
-      break;
+      threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+      return true;
   }
 
-  if (hasFromConnection && hasToConnection) {
-    switch (pdu->GetMethod()) {
-      case SIP_PDU::Method_ACK :
-      case SIP_PDU::NumMethods :
-        token = toToken;
-        break;
-
-      default :
-        token = fromToken;
-    }
-  }
+  if (hasToConnection)
+    token = toToken;
   else if (hasFromConnection)
     token = fromToken;
-  else if (hasToConnection)
-    token = toToken;
   else
     return OnReceivedConnectionlessPDU(transport, pdu);
 
@@ -1594,19 +1584,25 @@ void SIPEndPoint::SIP_PDU_Work::OnReceivedPDU()
     return;
 
   if (m_pdu->GetMethod() == SIP_PDU::NumMethods) {
-    PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(m_pdu->GetTransactionID(), PSafeReference);
+    PString transactionID = m_pdu->GetTransactionID();
+    PTRACE(4, "SIP\tHandling PDU \"" << *m_pdu << "\" for transaction=" << transactionID);
+    PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(transactionID, PSafeReference);
     if (transaction != NULL)
       transaction->OnReceivedResponse(*m_pdu);
     else {
-      PTRACE(3, "SIP\tCannot find transaction for response");
+      PTRACE(2, "SIP\tCannot find transaction " << transactionID << " for response PDU \"" << *m_pdu << '"');
     }
     return;
   }
 
   if (PAssert(!m_token.IsEmpty(), PInvalidParameter)) {
+    PTRACE(4, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
     PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReference);
     if (connection != NULL) 
       connection->OnReceivedPDU(*m_pdu);
+    else {
+      PTRACE(2, "SIP\tCannot find connection for PDU \"" << *m_pdu << "\" using token=" << m_token);
+    }
   }
 }
 
