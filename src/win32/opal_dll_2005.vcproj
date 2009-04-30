@@ -1754,8 +1754,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -I &quot;$(_ACP_LIB)&quot; -x &quot;$(ConfigurationName)\ptlib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;$(SolutionDir)\..\ptlib\lib\$(ConfigurationName)\PTLib.def"
+						CommandLine="MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\$(ConfigurationName)\PTLib.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
@@ -1964,8 +1964,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -I &quot;$(_ACP_LIB)&quot; -x &quot;$(ConfigurationName)\ptlibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;$(SolutionDir)\..\ptlib\lib\$(ConfigurationName)\PTLibd.def"
+						CommandLine="MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\$(ConfigurationName)\PTLibd.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
@@ -2174,8 +2174,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -I &quot;$(_ACP_LIB)&quot; -x &quot;$(ConfigurationName)\ptlibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;$(SolutionDir)\..\ptlib\lib\$(ConfigurationName)\PTLibn.def"
+						CommandLine="MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\$(ConfigurationName)\PTLibn.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
