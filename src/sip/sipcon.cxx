@@ -1416,8 +1416,6 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
   }
   m_lastRxCSeq[method] = sequenceNumber;
 
-  PTRACE(4, "SIP\tHandling PDU " << pdu);
-
   switch (method) {
     case SIP_PDU::Method_INVITE :
       OnReceivedINVITE(pdu);
