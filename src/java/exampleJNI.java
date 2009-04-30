@@ -167,6 +167,8 @@ class exampleJNI {
   public final static native String OpalParamSetUpCall_m_callToken_get(long jarg1, OpalParamSetUpCall jarg1_);
   public final static native void OpalParamSetUpCall_m_alertingType_set(long jarg1, OpalParamSetUpCall jarg1_, String jarg2);
   public final static native String OpalParamSetUpCall_m_alertingType_get(long jarg1, OpalParamSetUpCall jarg1_);
+  public final static native void OpalParamSetUpCall_m_protocolCallId_set(long jarg1, OpalParamSetUpCall jarg1_, String jarg2);
+  public final static native String OpalParamSetUpCall_m_protocolCallId_get(long jarg1, OpalParamSetUpCall jarg1_);
   public final static native long new_OpalParamSetUpCall();
   public final static native void delete_OpalParamSetUpCall(long jarg1);
   public final static native void OpalStatusIncomingCall_m_callToken_set(long jarg1, OpalStatusIncomingCall jarg1_, String jarg2);
@@ -187,6 +189,8 @@ class exampleJNI {
   public final static native long OpalStatusIncomingCall_m_product_get(long jarg1, OpalStatusIncomingCall jarg1_);
   public final static native void OpalStatusIncomingCall_m_alertingType_set(long jarg1, OpalStatusIncomingCall jarg1_, String jarg2);
   public final static native String OpalStatusIncomingCall_m_alertingType_get(long jarg1, OpalStatusIncomingCall jarg1_);
+  public final static native void OpalStatusIncomingCall_m_protocolCallId_set(long jarg1, OpalStatusIncomingCall jarg1_, String jarg2);
+  public final static native String OpalStatusIncomingCall_m_protocolCallId_get(long jarg1, OpalStatusIncomingCall jarg1_);
   public final static native long new_OpalStatusIncomingCall();
   public final static native void delete_OpalStatusIncomingCall(long jarg1);
   public final static native void OpalStatusMediaStream_m_callToken_set(long jarg1, OpalStatusMediaStream jarg1_, String jarg2);
