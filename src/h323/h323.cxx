@@ -3610,10 +3610,28 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
   if (fastStartMediaStream != NULL)
     list = fastStartMediaStream->GetMediaFormat();
   else {
-    list = remoteCapabilities.GetMediaFormats();
-    // Note we do NOT use AdjustMediaFormats here as we are supposed to
-    // use the ordering dictated by the remote.
-    list.Remove(endpoint.GetManager().GetMediaFormatMask());
+      list = remoteCapabilities.GetMediaFormats();
+      // Note we do NOT use AdjustMediaFormats here as we are supposed to
+      // use the ordering dictated by the remote.
+      list.Remove(endpoint.GetManager().GetMediaFormatMask());
+
+#if OPAL_H239
+    H323H239Options h239;
+    GetRemoteH239Options(h239);
+
+    unsigned roleMask = 0;
+    if (h239.m_hasPresentationRole)
+      roleMask |= OpalVideoFormat::ContentRoleBit(OpalVideoFormat::ePresentation);
+    if (h239.m_hasLiveRole)
+      roleMask |= OpalVideoFormat::ContentRoleMask & ~OpalVideoFormat::ContentRoleBit(OpalVideoFormat::ePresentation);
+
+    if (roleMask != 0 && !h239.m_videoFormats.IsEmpty()) {
+      for (OpalMediaFormatList::iterator format = list.begin(); format != list.end(); ++format) {
+        if (h239.m_videoFormats.HasFormat(*format))
+          format->SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), roleMask);
+      }
+    }
+#endif
   }
 
   return list;
@@ -3688,10 +3706,14 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
         PTRACE(2, "H323\tOpenMediaStream could not find capability for " << mediaFormat);
         return NULL;
       }
+
+      capability->UpdateMediaFormat(mediaFormat);
+
       if (!OpenLogicalChannel(*capability, sessionID, H323Channel::IsTransmitter)) {
         PTRACE(2, "H323\tOpenMediaStream could not open logical channel for " << mediaFormat);
         return NULL;
       }
+
       channel = FindChannel(sessionID, isSource);
       if (PAssertNULL(channel) == NULL)
         return NULL;

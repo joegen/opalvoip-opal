@@ -93,12 +93,11 @@ class SDPMediaFormat : public PObject
     void SetPacketTime(const PString & optionName, unsigned ptime);
 
     const OpalMediaFormat & GetMediaFormat() const;
+    OpalMediaFormat & GetWritableMediaFormat() const;
 
     bool ToNormalisedOptions();
 
   protected:
-    virtual void UpdateMediaFormat() const;
-
     mutable OpalMediaFormat mediaFormat;
 
     SDPMediaDescription & m_parent;
@@ -241,6 +240,8 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
   public:
     SDPVideoMediaDescription(const OpalTransportAddress & address);
     virtual PString GetSDPMediaType() const;
+    virtual bool PrintOn(ostream & str, const PString & connectString) const;
+    void SetAttribute(const PString & attr, const PString & value);
 };
 
 /////////////////////////////////////////////////////////

@@ -1176,6 +1176,29 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & RateControlEnableOption();
     static const PString & RateControllerOption();
     static const PString & RateControllerBitRateScalerOption();
+
+    /**The "role" of the content in the video stream based on this media
+       format. This is based on RFC4796 and H.239 semantics and is an
+       enumeration consisting of:
+          Value          H.239                RFC4796
+          NoRole         Live (0x02)          (not populated)
+          Main           Live (0x02)          main
+          Presentation   Presentation (0x01)  slides
+          Speaker        Live (0x02)          speaker
+          SignLanguage   Live (0x02)          sl
+      */
+    enum ContentRole {
+      eNoRole,
+      eMainRole,
+      ePresentation,
+      eSpeaker,
+      eSignLanguage,
+      eNumRoles
+    };
+    enum { ContentRoleMask = 15 };
+    __inline static unsigned ContentRoleBit(ContentRole contentRole) { return contentRole != eNoRole ? (1<<(contentRole-1)) : 0; }
+    static const PString & ContentRoleOption();
+    static const PString & ContentRoleMaskOption();
 };
 #endif
 

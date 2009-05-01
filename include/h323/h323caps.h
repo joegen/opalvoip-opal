@@ -328,7 +328,7 @@ class H323Capability : public PObject
 
     /** Set media format option for the media data this class represents.
       */
-    bool SetMediaFormatOptions(
+    bool UpdateMediaFormat(
       const OpalMediaFormat & format
     );
 

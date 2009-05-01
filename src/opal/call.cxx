@@ -399,7 +399,11 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
 PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, 
                                      const OpalMediaType & mediaType,
                                                   unsigned sessionID, 
-                                   const OpalMediaFormat & preselectedFormat)
+                                   const OpalMediaFormat & preselectedFormat
+#if OPAL_VIDEO
+                            , OpalVideoFormat::ContentRole contentRole
+#endif
+                                   )
 {
   PSafeLockReadOnly lock(*this);
   if (isClearing || !lock.IsLocked())
@@ -471,6 +475,28 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       sinkMediaFormats.Reorder(priorityFormat);
     }
 
+#if OPAL_VIDEO
+    if (contentRole != OpalVideoFormat::eNoRole) {
+      // Remove all media formats no supporting the role
+      OpalMediaFormatList * lists[2] = { &sourceMediaFormats, &sinkMediaFormats };
+      for (PINDEX i = 0; i < 2; i++) {
+        OpalMediaFormatList::iterator format = lists[i]->begin();
+        while (format != lists[i]->end()) {
+          if ( format->IsTransportable() &&
+               format->GetMediaType() == OpalMediaType::Video() &&
+              (format->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption())&OpalVideoFormat::ContentRoleBit(contentRole)) == 0)
+            *lists[i] -= *format++;
+          else
+            ++format;
+        }
+        if (lists[i]->IsEmpty()) {
+          PTRACE(3, "Call\tUnsupported Content Role " << contentRole << " for session " << sessionID << " on " << connection);
+          return false;
+        }
+      }
+    }
+#endif
+
     if (!SelectMediaFormats(mediaType,
                             sourceMediaFormats,
                             sinkMediaFormats,
@@ -478,6 +504,11 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
                             sourceFormat,
                             sinkFormat))
       return false;
+
+#if OPAL_VIDEO
+    sourceFormat.SetOptionEnum(OpalVideoFormat::ContentRoleOption(), contentRole);
+    sinkFormat.SetOptionEnum(OpalVideoFormat::ContentRoleOption(), contentRole);
+#endif
 
     if (sessionID == 0) {
       sessionID = otherConnection->GetNextSessionID(mediaType, false);
