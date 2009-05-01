@@ -308,18 +308,20 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
   }
 }
 
-void SDPMediaFormat::UpdateMediaFormat() const
-{
-  mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
-  if (mediaFormat.IsEmpty())
-    mediaFormat = OpalMediaFormat(encodingName);
-}
 
 const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 {
+  return GetWritableMediaFormat();
+}
+
+
+OpalMediaFormat & SDPMediaFormat::GetWritableMediaFormat() const
+{
   if (mediaFormat.IsEmpty()) {
 
-    UpdateMediaFormat();
+    mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+    if (mediaFormat.IsEmpty())
+      mediaFormat = OpalMediaFormat(encodingName);
 
     PTRACE_IF(2, mediaFormat.IsEmpty(), "SDP\tCould not find media format for \""
               << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
@@ -949,6 +951,7 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
   return true;
 }
 
+
 void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
   if (attr *= "ptime") {
@@ -964,6 +967,7 @@ void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString 
   return SDPRTPAVPMediaDescription::SetAttribute(attr, value);
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 
 SDPVideoMediaDescription::SDPVideoMediaDescription(const OpalTransportAddress & address)
@@ -971,10 +975,55 @@ SDPVideoMediaDescription::SDPVideoMediaDescription(const OpalTransportAddress & 
 {
 }
 
+
 PString SDPVideoMediaDescription::GetSDPMediaType() const 
 { 
   return "video"; 
 }
+
+
+static const char * const ContentRoleNames[] = { NULL, "main", "slides", "speaker", "sl" };
+
+
+bool SDPVideoMediaDescription::PrintOn(ostream & str, const PString & connectString) const
+{
+  // call ancestor
+  if (!SDPRTPAVPMediaDescription::PrintOn(str, connectString))
+    return false;
+
+  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
+    PINDEX role = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption());
+    if (role > 0) {
+      str << "a=content:" << ContentRoleNames[role] << "\r\n";
+      break;
+    }
+  }
+
+  return true;
+}
+
+
+void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString & value)
+{
+  if (attr *= "content") {
+    PINDEX role = 0;
+    PStringArray tokens = value.Tokenise(',');
+    for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
+      for (role = PARRAYSIZE(ContentRoleNames)-1; role > 0; --role) {
+        if (tokens[i] *= ContentRoleNames[role])
+          break;
+      }
+      if (role > 0)
+        break;
+    }
+    for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format)
+      format->GetWritableMediaFormat().SetOptionEnum(OpalVideoFormat::ContentRoleOption(), role);
+    return;
+  }
+
+  return SDPRTPAVPMediaDescription::SetAttribute(attr, value);
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -982,6 +1031,7 @@ SDPApplicationMediaDescription::SDPApplicationMediaDescription(const OpalTranspo
   : SDPMediaDescription(address)
 {
 }
+
 
 PCaselessString SDPApplicationMediaDescription::GetSDPTransportType() const
 { 
@@ -994,10 +1044,12 @@ PString SDPApplicationMediaDescription::GetSDPMediaType() const
   return "application"; 
 }
 
+
 SDPMediaFormat * SDPApplicationMediaDescription::CreateSDPMediaFormat(const PString & portString)
 {
   return new SDPMediaFormat(*this, RTP_DataFrame::DynamicBase, portString);
 }
+
 
 PString SDPApplicationMediaDescription::GetSDPPortList() const
 {

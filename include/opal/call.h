@@ -387,6 +387,9 @@ class OpalCall : public PSafeObject
       const OpalMediaType & mediaType,          ///<  Media type of channel to open
       unsigned sessionID = 0,                   ///<  Session to start streams on
       const OpalMediaFormat & preselectedFormat = OpalMediaFormat()  ///< Format for source stream to choose from
+#if OPAL_VIDEO
+      , OpalVideoFormat::ContentRole contentRole = OpalVideoFormat::eNoRole ///< Content role for video
+#endif
     );
 
     /**Select media format pair from the source/destination list.

@@ -2435,9 +2435,11 @@ void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
   if (connection == NULL)
     return;
 
+  OpalVideoFormat::ContentRole contentRole = OpalVideoFormat::eNoRole;
+
   OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
   if (stream != NULL) {
-    SecondaryVideoDialog dlg(this);
+    StartVideoDialog dlg(this, true);
     dlg.m_device = m_SecondaryVideoGrabber.deviceName;
     dlg.m_preview = m_SecondaryVideoGrabPreview;
     if (dlg.ShowModal() != wxID_OK)
@@ -2446,9 +2448,24 @@ void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
     m_SecondaryVideoGrabber.deviceName = dlg.m_device.p_str();
     m_SecondaryVideoGrabPreview = dlg.m_preview;
     m_SecondaryVideoOpening = true;
+    contentRole = (OpalVideoFormat::ContentRole)dlg.m_contentRole;
+  }
+  else {
+    StartVideoDialog dlg(this, false);
+    dlg.m_device = videoInputDevice.deviceName;
+    dlg.m_preview = m_VideoGrabPreview;
+    if (dlg.ShowModal() != wxID_OK)
+      return;
+
+    videoInputDevice.deviceName = dlg.m_device.p_str();
+    m_VideoGrabPreview = dlg.m_preview;
   }
 
-  if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaType::Video()))
+  if (!connection->GetCall().OpenSourceMediaStreams(*connection,
+                                                    OpalMediaType::Video(),
+                                                    0, // Allocate session automatically
+                                                    OpalMediaFormat(),
+                                                    contentRole))
     LogWindow << "Could not open video to remote!" << endl;
 }
 
@@ -5102,20 +5119,26 @@ bool VideoControlDialog::TransferDataFromWindow()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(SecondaryVideoDialog, wxDialog)
+BEGIN_EVENT_TABLE(StartVideoDialog, wxDialog)
 END_EVENT_TABLE()
 
-SecondaryVideoDialog::SecondaryVideoDialog(MyManager * manager)
+StartVideoDialog::StartVideoDialog(MyManager * manager, bool secondary)
+  : m_preview(true)
+  , m_contentRole(OpalVideoFormat::eNoRole)
 {
-  wxXmlResource::Get()->LoadDialog(this, manager, wxT("SecondaryVideoDialog"));
+  wxXmlResource::Get()->LoadDialog(this, manager, wxT("StartVideoDialog"));
 
-  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, wxT("SecondaryVideoGrabber"));
+  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, wxT("VideoGrabber"));
   PStringArray devices = PVideoInputDevice::GetDriversDeviceNames("*");
   for (PINDEX i = 0; i < devices.GetSize(); i++)
     combo->Append(PwxString(devices[i]));
   combo->SetValidator(wxGenericValidator(&m_device));
 
-  FindWindowByName(wxT("SecondaryVideoPreview"))->SetValidator(wxGenericValidator(&m_preview));
+  FindWindowByName(wxT("VideoPreview"))->SetValidator(wxGenericValidator(&m_preview));
+
+  wxChoice * choice = FindWindowByNameAs<wxChoice>(this, wxT("VideoContentRole"));
+  choice->SetValidator(wxGenericValidator(&m_contentRole));
+  choice->Enable(secondary);
 }
 
 

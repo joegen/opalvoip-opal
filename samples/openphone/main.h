@@ -192,13 +192,14 @@ class VideoControlDialog : public wxDialog
 };
 
 
-class SecondaryVideoDialog : public wxDialog
+class StartVideoDialog : public wxDialog
 {
   public:
-    SecondaryVideoDialog(MyManager * manager);
+    StartVideoDialog(MyManager * manager, bool secondary);
 
     PwxString m_device;
     bool      m_preview;
+    int       m_contentRole;
 
   private:
     DECLARE_EVENT_TABLE()

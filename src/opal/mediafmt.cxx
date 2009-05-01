@@ -1419,6 +1419,8 @@ const PString & OpalVideoFormat::TemporalSpatialTradeOffOption()  { static PStri
 const PString & OpalVideoFormat::TxKeyFramePeriodOption()         { static PString s = PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD;       return s; }
 const PString & OpalVideoFormat::RateControlEnableOption()        { static PString s = "Rate Control Enable";                        return s; }
 const PString & OpalVideoFormat::RateControllerOption()           { static PString s = "Rate Controller";                            return s; }
+const PString & OpalVideoFormat::ContentRoleOption()              { static PString s = "Content Role";                               return s; }
+const PString & OpalVideoFormat::ContentRoleMaskOption()          { static PString s = "Content Role Mask";                          return s; }
 
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1474,7 +1476,22 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
     opt->SetMerge(OpalMediaOption::NoMerge);
     AddOption(opt);
   }
-								
+
+  static const char * const RoleEnumerations[OpalVideoFormat::eNumRoles] = {
+    "No Role",
+    "Main",
+    "Presentation",
+    "Speaker",
+    "Sign Language"
+  };
+  AddOption(new OpalMediaOptionEnum(OpalVideoFormat::ContentRoleOption(), false,
+                                    RoleEnumerations, PARRAYSIZE(RoleEnumerations),
+                                    OpalMediaOption::NoMerge));
+
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
+                                        false, OpalMediaOption::AndMerge,
+                                        0, 0, OpalVideoFormat::ContentRoleMask));
+
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
   FindOption(OpalVideoFormat::FrameTimeOption())->SetReadOnly(false);
