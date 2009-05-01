@@ -243,7 +243,7 @@ class OpalAVIRecordManager : public OpalRecordManager
     virtual bool OnMixedVideo(const RTP_DataFrame & frame);
 
     #if PTRACING
-      bool OpalAVIRecordManager::IsResultError(HRESULT result, const char * msg)
+      bool IsResultError(HRESULT result, const char * msg)
       {
         if (result == AVIERR_OK)
           return false;
