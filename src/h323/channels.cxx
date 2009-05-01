@@ -358,7 +358,7 @@ PBoolean H323UnidirectionalChannel::Open()
   }
 
   if (ok) {
-    capability->SetMediaFormatOptions(mediaStream->GetMediaFormat());
+    capability->UpdateMediaFormat(mediaStream->GetMediaFormat());
     return H323Channel::Open();
   }
 
