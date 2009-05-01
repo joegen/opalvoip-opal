@@ -252,9 +252,6 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
     outputFrame.SetTimestamp(timestamp);
     fragment frag = *currFrag++;
 
-    // get ptr to payload that is about to be created
-    unsigned char * ptr = outputFrame.GetPayloadPtr();
-    size_t offs = 0;
 
     // if this fragment starts with a GBSC, then output as Mode A else output as Mode B
     bool modeA = ((frag.length >= 3) &&
@@ -265,7 +262,7 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
     int payloadRemaining = outputFrame.GetFrameLen() - outputFrame.GetHeaderSize();
 
     // offset of the data
-    offs = modeA ? 4 : 8;
+    size_t offs = modeA ? 4 : 8;
 
     // make sure RTP storage is sufficient
     if ((frag.length + offs) > payloadRemaining) {
@@ -275,6 +272,9 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
 
     // set size of final frame
     outputFrame.SetPayloadSize(offs + frag.length);
+
+    // get ptr to payload that is about to be created
+    unsigned char * ptr = outputFrame.GetPayloadPtr();
 
     if (modeA) {
       int sBit = 0;

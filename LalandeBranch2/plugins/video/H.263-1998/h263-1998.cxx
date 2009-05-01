@@ -1090,11 +1090,20 @@ H263_RFC2190_DecoderContext::~H263_RFC2190_DecoderContext()
 
 bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags)
 {
+  if (dstLen < sizeof(PluginCodec_Video_FrameHeader)) {
+    TRACE_AND_LOG(tracer, 1, "Destination buffer " << dstLen << " insufficient for video header");
+    return false;
+  }
+
   if (!FFMPEGLibraryInstance.IsLoaded())
-    return 0;
+    return false;
 
   // create RTP frame from source buffer
   RTPFrame srcRTP(src, srcLen);
+
+  // create RTP frame from destination
+  RTPFrame dstRTP(dst, dstLen, 0);
+  dstLen = 0;
 
   CODEC_TRACER_RTP(tracer, "Rx frame:", srcRTP, RFC2190Dump);
 
@@ -1114,7 +1123,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   if (!gotPicture) {
     TRACE_AND_LOG(tracer, 1, "Decoded "<< bytesDecoded << " bytes without getting a Picture"); 
     flags = PluginCodec_ReturnCoderRequestIFrame;
-    return 1;
+    return true;
   }
 
   TRACE_AND_LOG(tracer, 4, "Decoder processed " << bytesDecoded << " bytes, creating frame at " << _context->width << "x" << _context->height);
@@ -1122,28 +1131,45 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
   if (bytesDecoded < 0) {
     flags = PluginCodec_ReturnCoderRequestIFrame;
-    return 1;
+    return true;
   }
 
   // if decoded frame size is not legal, request an I-Frame
-  if (_context->width == 0 || _context->height == 0) {
+  if ((_context->width <= 0) ||
+      (_context->height <= 0) ||
+      (_context->width > CIF4_WIDTH) ||
+      (_context->height > CIF4_HEIGHT) ||
+      (_context->height * _context->width > (CIF4_WIDTH * CIF4_HEIGHT))) {
     TRACE_AND_LOG(tracer, 1, "Received frame with invalid size");
     flags = PluginCodec_ReturnCoderRequestIFrame;
-    return 1;
+    return true;
   }
 
   // create RTP frame from destination buffer
-  RTPFrame dstRTP(dst, dstLen, 0);
-  dstLen = 0;
-
   int frameBytes = (_context->width * _context->height * 12) / 8;
+  if (dstRTP.GetPayloadSize() - sizeof(PluginCodec_Video_FrameHeader) < frameBytes) {
+    TRACE_AND_LOG(tracer, 1, "Destination buffer size " << dstRTP.GetPayloadSize() << " too small for frame of size " << _context->width  << "x" <<  _context->height);
+    flags = PluginCodec_ReturnCoderRequestIFrame;
+    return true;
+  }
+
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)dstRTP.GetPayloadPtr();
-  header->x = header->y = 0;
-  header->width = _context->width;
+  header->x      = header->y = 0;
+  header->width  = _context->width;
   header->height = _context->height;
   int size = _context->width * _context->height;
-  if (_outputFrame->data[1] == _outputFrame->data[0] + size
-      && _outputFrame->data[2] == _outputFrame->data[1] + (size >> 2)) {
+
+  if (dstLen < (frameBytes + sizeof(PluginCodec_Video_FrameHeader))) {
+    TRACE_AND_LOG(tracer, 1, "Destination buffer " << dstLen << " insufficient for decoded data size " << header->width << "x" << header->height);
+    return 0;
+  }
+
+  dstLen = sizeof(PluginCodec_Video_FrameHeader) + frameBytes;
+
+  if (
+       (_outputFrame->data[1] == (_outputFrame->data[0] + size)) &&
+       (_outputFrame->data[2] == (_outputFrame->data[1] + (size >> 2)))
+     ) {
     memcpy(OPAL_VIDEO_FRAME_DATA_PTR(header), _outputFrame->data[0], frameBytes);
   } else {
     unsigned char *dst = OPAL_VIDEO_FRAME_DATA_PTR(header);
@@ -1157,7 +1183,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
         memcpy(dst, src, dst_stride*h);
         dst += dst_stride*h;
       } else {
-        while (h--) {
+        while (h-- > 0) {
           memcpy(dst, src, dst_stride);
           dst += dst_stride;
           src += src_stride;
@@ -1166,11 +1192,9 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
     }
   }
 
-  dstRTP.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + frameBytes);
+  dstRTP.SetPayloadSize(dstLen);
   dstRTP.SetTimestamp(srcRTP.GetTimestamp());
   dstRTP.SetMarker(true);
-
-  dstLen = dstRTP.GetFrameLen();
 
   flags = PluginCodec_ReturnCoderLastFrame |
           (isIFrame ? PluginCodec_ReturnCoderIFrame : 0) |
