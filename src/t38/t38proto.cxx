@@ -53,9 +53,6 @@ namespace PWLibStupidLinkerHacks {
 
 #define SPANDSP_AUDIO_SIZE    320
 
-#define VERBOSE_SPANDSP " -v"
-//#define VERBOSE_SPANDSP
-
 static PAtomicInteger faxCallIndex;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -445,27 +442,35 @@ PBoolean OpalFaxMediaStream::Close()
 
   OpalFaxCallInfo * faxCallInfo;
   {
-    PWaitAndSignal m1(infoMutex);
+    {
+      PWaitAndSignal m1(infoMutex);
 
-    if (m_faxCallInfo == NULL || sessionToken.IsEmpty()) {
-      PTRACE(1, "Fax\tCannot close unknown media stream");
-      return true;
+      if (m_faxCallInfo == NULL || sessionToken.IsEmpty()) {
+        PTRACE(1, "Fax\tCannot close unknown media stream");
+        return true;
+      }
+
+      faxCallInfo = m_faxCallInfo;
+      m_faxCallInfo = NULL;
     }
 
-    faxCallInfo = m_faxCallInfo;
-    m_faxCallInfo = NULL;
-
-    PWaitAndSignal m2(faxMapMutex);
+    // Give the spandsp sub-process a second to tidy up and exit with
+    // some statistics.
+    if (faxCallInfo->stdoutThread != NULL)
+      faxCallInfo->stdoutThread->WaitForTermination(1000);
 
     // shutdown whatever is running
     faxCallInfo->socket.Close();
     faxCallInfo->spanDSP.Close();
 
+    // If didn't exit thread already, the above will make it exit now
     if (faxCallInfo->stdoutThread != NULL) {
       faxCallInfo->stdoutThread->WaitForTermination();
       delete faxCallInfo->stdoutThread;
       faxCallInfo->stdoutThread = NULL;
     }
+
+    PWaitAndSignal m2(faxMapMutex);
 
     OpalFaxCallInfoMap_T::iterator r = faxCallInfoMap.find(sessionToken);
     if (r == faxCallInfoMap.end()) {
@@ -598,8 +603,7 @@ PString OpalFaxMediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
   PIPSocket::Address dummy; WORD port;
   info.socket.GetLocalAddress(dummy, port);
 
-  cmdline << ((OpalFaxEndPoint &)connection.GetEndPoint()).GetSpanDSP()
-          << VERBOSE_SPANDSP " -m ";
+  cmdline << ((OpalFaxEndPoint &)connection.GetEndPoint()).GetSpanDSP() << " -m ";
   if (m_receive)
     cmdline << "fax_to_tiff";
   else {
@@ -607,6 +611,10 @@ PString OpalFaxMediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
     if (!m_stationId.IsEmpty())
       cmdline << " -s '" << m_stationId << "'";
   }
+#if PTRACING
+  if (PTrace::CanTrace(5))
+    cmdline << " -v";
+#endif
   cmdline << " -V 0 -n '" << m_filename << "' -f 127.0.0.1:" << port;
 
   return cmdline;
@@ -636,8 +644,7 @@ PString OpalT38MediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
   PIPSocket::Address dummy; WORD port;
   info.socket.GetLocalAddress(dummy, port);
 
-  cmdline << ((OpalFaxEndPoint &)connection.GetEndPoint()).GetSpanDSP()
-          << VERBOSE_SPANDSP " -m ";
+  cmdline << ((OpalFaxEndPoint &)connection.GetEndPoint()).GetSpanDSP() << " -m ";
   if (m_receive)
     cmdline << "t38_to_tiff";
   else {
@@ -645,6 +652,10 @@ PString OpalT38MediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
     if (!m_stationId.IsEmpty())
       cmdline << " -s '" << m_stationId << "'";
   }
+#if PTRACING
+  if (PTrace::CanTrace(5))
+    cmdline << " -v";
+#endif
   cmdline << " -V 0 -n '" << m_filename << "' -t 127.0.0.1:" << port;
 
   return cmdline;
