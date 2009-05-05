@@ -5765,6 +5765,10 @@ STATISTICS_FIELD_BEG(RxFax, Packets)
   value.sprintf(m_printFormat, statistics.m_totalPackets);
 STATISTICS_FIELD_END(RxFax, Packets)
 
+STATISTICS_FIELD_BEG(RxFax, Pages)
+  value.sprintf(m_printFormat, statistics.m_fax.m_rxPages);
+STATISTICS_FIELD_END(RxFax, Pages)
+
 STATISTICS_FIELD_BEG(TxFax, Bandwidth)
   value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
 STATISTICS_FIELD_END(TxFax, Bandwidth)
@@ -5776,6 +5780,11 @@ STATISTICS_FIELD_END(TxFax, Bytes)
 STATISTICS_FIELD_BEG(TxFax, Packets)
   value.sprintf(m_printFormat, statistics.m_totalPackets);
 STATISTICS_FIELD_END(TxFax, Packets)
+
+STATISTICS_FIELD_BEG(TxFax, Pages)
+  value.sprintf(m_printFormat, statistics.m_fax.m_txPages, statistics.m_fax.m_totalPages);
+STATISTICS_FIELD_END(TxFax, Pages)
+
 
 #ifdef _MSC_VER
 #pragma warning(default:4100)

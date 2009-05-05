@@ -23,12 +23,14 @@
  * $Id: spandsp_util.cpp,v 1.2 2007/05/10 05:28:49 csoutheren Exp $
  */
 
+#include "spandsp_if.h"
+
+#include <tiff.h>
+#include <fcntl.h>
+
 #include <iostream>
 using namespace std;
 
-#include "spandsp_if.h"
-#include <tiff.h>
-#include <fcntl.h>
 
 //////////////////////////////////////////////////////////////////////////////////
 // 
@@ -97,13 +99,13 @@ static bool ParseAddressAndPort(const char * _str, sockaddr_in & addr)
   }
 
   if (stat)
-    addr.sin_port = htons(atoi(pos+1));
+    addr.sin_port = htons((u_short)atoi(pos+1));
 
   free(str);
   return stat;
 }
 
-void tiffWarningHandler(const char* module, const char* fmt, va_list ap)
+void tiffWarningHandler(const char* /*module*/, const char* /*fmt*/, va_list /*ap*/)
 {
 }
 
@@ -204,7 +206,7 @@ int main(int argc, char* argv[])
           cerr << SpanDSP::progname << ": -F option requires argument" << endl;
           return Usage();
         }
-        faxPort = atoi(argv[argIndex++]);
+        faxPort = (u_short)atoi(argv[argIndex++]);
         break;
 
       case 't':
@@ -224,7 +226,7 @@ int main(int argc, char* argv[])
           cerr << SpanDSP::progname << ": -T option requires argument" << endl;
           return Usage();
         }
-        t38Port = atoi(argv[argIndex++]);
+        t38Port = (u_short)atoi(argv[argIndex++]);
         break;
 
       case 'm':
@@ -345,7 +347,7 @@ int main(int argc, char* argv[])
     terminal.Serve(fd, faxAddress, listen);
   }
 
-  else if ((mode == "fax_to_t38") || ("t38_to_fax")) {
+  else if ((mode == "fax_to_t38") || (mode == "t38_to_fax")) {
     if (!listen && ((faxAddress.sin_port == 0) || (faxAddress.sin_addr.s_addr == 0) ||
                     (t38Address.sin_port == 0) || (t38Address.sin_addr.s_addr == 0))) {
       cerr << SpanDSP::progname << ": must set remote address using -f and -t options or specify -l" << endl;

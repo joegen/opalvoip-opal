@@ -91,6 +91,7 @@ class OpalFaxCallInfo {
     OpalFaxCallInfo();
     PUDPSocket socket;
     PPipeChannel spanDSP;
+    PThread * stdoutThread;
     unsigned refCount;
     PIPSocket::Address spanDSPAddr;
     WORD spanDSPPort;
@@ -153,11 +154,16 @@ class OpalFaxMediaStream : public OpalMediaStream
       */
     virtual PBoolean IsSynchronous() const;
 
-    virtual PString GetSpanDSPCommandLine(OpalFaxCallInfo &);
-
+#if OPAL_STATISTICS
+    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+#endif
   //@}
 
+    virtual PString GetSpanDSPCommandLine(OpalFaxCallInfo &);
+
   protected:
+    PDECLARE_NOTIFIER(PThread, OpalFaxMediaStream, ReadStdOut);
+
     OpalFaxConnection & m_connection;
     PMutex              infoMutex;
     PString             sessionToken;
@@ -167,6 +173,8 @@ class OpalFaxMediaStream : public OpalMediaStream
     BYTE                writeBuffer[320];
     PINDEX              writeBufferLen;
     PString             m_stationId;
+
+    OpalMediaStatistics::Fax m_statistics;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -269,7 +277,7 @@ class OpalFaxEndPoint : public OpalEndPoint
       */
     virtual void OnFaxCompleted(
       OpalFaxConnection & connection, ///< Connection that completed.
-      bool timeout                    ///< Fax timed out rather than orderly completion
+      bool failed   ///< Fax ended with failure
     );
   //@}
 
@@ -388,22 +396,19 @@ class OpalFaxConnection : public OpalConnection
        Default behaviour calls equivalent function on OpalFaxEndPoint.
       */
     virtual void OnFaxCompleted(
-      bool timeout   ///< Fax timed out rather than orderly completion
+      bool failed   ///< Fax ended with failure
     );
 
-    /** Check for no more I/O which means fax stopped.
+    /**Get receive fax flag.
       */
-    void CheckFaxStopped();
+    bool IsReceive() const { return m_receive; }
   //@}
 
   protected:
-    PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnFaxStoppedTimeout);
-
     OpalFaxEndPoint & m_endpoint;
     PString           m_filename;
     bool              m_receive;
     PString           m_stationId;
-    PTimer            m_faxStopped;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

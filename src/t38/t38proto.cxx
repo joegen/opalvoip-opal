@@ -53,6 +53,9 @@ namespace PWLibStupidLinkerHacks {
 
 #define SPANDSP_AUDIO_SIZE    320
 
+#define VERBOSE_SPANDSP " -v"
+//#define VERBOSE_SPANDSP
+
 static PAtomicInteger faxCallIndex;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -227,9 +230,10 @@ typedef std::map<std::string, OpalFaxCallInfo *> OpalFaxCallInfoMap_T;
 static OpalFaxCallInfoMap_T faxCallInfoMap;
 
 OpalFaxCallInfo::OpalFaxCallInfo()
-{ 
-  refCount = 1; 
-  spanDSPPort = 0; 
+  : stdoutThread(NULL)
+  , refCount(1)
+  , spanDSPPort(0)
+{
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -256,7 +260,7 @@ OpalFaxMediaStream::OpalFaxMediaStream(OpalFaxConnection & conn,
 PBoolean OpalFaxMediaStream::Open()
 {
   if (sessionToken.IsEmpty()) {
-    PTRACE(1, "T38\tCannot open unknown media stream");
+    PTRACE(1, "Fax\tCannot open unknown media stream");
     return false;
   }
 
@@ -296,20 +300,14 @@ PBoolean OpalFaxMediaStream::Open()
 #if _WIN32
     cmdLine.Replace("\\", "\\\\", true);
 #endif
-    
+
     PTRACE(1, "Fax\tExecuting '" << cmdLine << "'");
 
     // open connection to spandsp
-    if (!m_faxCallInfo->spanDSP.Open(cmdLine, PPipeChannel::ReadOnly, false, true)) {
+    if (!m_faxCallInfo->spanDSP.Open(cmdLine, PPipeChannel::ReadOnly, false, false)) {
       PTRACE(1, "Fax\tCannot open SpanDSP: " << m_faxCallInfo->spanDSP.GetErrorText());
       return false;
     }
-
-#if PTRACING
-    PString errmsg;
-    while (m_faxCallInfo->spanDSP.ReadStandardError(errmsg, false))
-      PTRACE(1, "Fax\tspandsp_util: " << errmsg);
-#endif
 
     if (!m_faxCallInfo->spanDSP.Execute()) {
       PTRACE(1, "Fax\tCannot execute SpanDSP: return code=" << m_faxCallInfo->spanDSP.GetReturnCode());
@@ -317,17 +315,15 @@ PBoolean OpalFaxMediaStream::Open()
     }
   }
 
+  if (IsSource() && m_faxCallInfo->stdoutThread == NULL)
+    m_faxCallInfo->stdoutThread = PThread::Create(PCREATE_NOTIFIER(ReadStdOut), "SpanDSP Output");
+
   return OpalMediaStream::Open();
 }
 
+
 PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
-#if PTRACING
-    PString errmsg;
-    while (m_faxCallInfo->spanDSP.ReadStandardError(errmsg, false))
-      PTRACE(1, "Fax\tspandsp_util: " << errmsg);
-#endif
-
   // it is possible for ReadPacket to be called before the media stream has been opened, so deal with that case
   PWaitAndSignal m(infoMutex);
   if ((m_faxCallInfo == NULL) || !m_faxCallInfo->spanDSP.IsRunning()) {
@@ -354,9 +350,6 @@ PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
     PINDEX len = m_faxCallInfo->socket.GetLastReadCount();
     packet.SetPayloadType(RTP_DataFrame::MaxPayloadType);
     packet.SetPayloadSize(len);
-
-    if (len > 0)
-      m_connection.CheckFaxStopped();
 
 #if WRITE_PCM_FILE
     static int file = _open("t38_audio_in.pcm", _O_BINARY | _O_CREAT | _O_TRUNC | _O_WRONLY, _S_IREAD | _S_IWRITE);
@@ -439,8 +432,6 @@ PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
         }
         writeBufferLen = 0;
       }
-
-      m_connection.CheckFaxStopped();
     }
   }
 
@@ -469,6 +460,12 @@ PBoolean OpalFaxMediaStream::Close()
     // shutdown whatever is running
     faxCallInfo->socket.Close();
     faxCallInfo->spanDSP.Close();
+
+    if (faxCallInfo->stdoutThread != NULL) {
+      faxCallInfo->stdoutThread->WaitForTermination();
+      delete faxCallInfo->stdoutThread;
+      faxCallInfo->stdoutThread = NULL;
+    }
 
     OpalFaxCallInfoMap_T::iterator r = faxCallInfoMap.find(sessionToken);
     if (r == faxCallInfoMap.end()) {
@@ -508,6 +505,92 @@ PBoolean OpalFaxMediaStream::IsSynchronous() const
   return IsSource();
 }
 
+
+void OpalFaxMediaStream::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  OpalMediaStream::GetStatistics(statistics);
+  statistics.m_fax = m_statistics;
+}
+
+
+static bool ExtractValue(const PString & msg, PINDEX & position, int & value, char sep = '=')
+{
+  position = msg.Find(sep, position+1);
+  if (position == P_MAX_INDEX)
+    return false;
+
+  PINDEX eol = msg.Find('\n', position);
+  if (eol == P_MAX_INDEX)
+    return false;
+
+  value = msg(position+1, eol-1).AsInteger();
+  return true;
+}
+
+
+void OpalFaxMediaStream::ReadStdOut(PThread &, INT)
+{
+  PTRACE(4, "Fax\tSpanDSP stdout reading thread started");
+
+  PString msg;
+  bool notInStats = true;
+
+  for (;;) {
+    int c = m_faxCallInfo->spanDSP.ReadChar();
+    if (c < 0) {
+      PTRACE(2, "Fax\tError reading from " << m_faxCallInfo->spanDSP.GetName()
+             << ": " << m_faxCallInfo->spanDSP.GetErrorText(PChannel::LastReadError));
+      m_connection.OnFaxCompleted(m_statistics.m_result != 0);
+      return;
+    }
+
+    if (c != '\r' && c != '\n') {
+      msg += (char)c;
+      continue;
+    }
+
+    if (notInStats) {
+      notInStats = msg.Find("statistics") == P_MAX_INDEX;
+      if (notInStats) {
+        PTRACE_IF(4, !msg.IsEmpty(), "Fax\tSpanDSP Output: \"" << msg << '"');
+        msg.MakeEmpty();
+        continue;
+      }
+    }
+
+    if (msg.Find("----------") == P_MAX_INDEX) {
+      msg += (char)c;
+      continue;
+    }
+
+    int result, errorCorrection;
+    PINDEX position = 0;
+    if (ExtractValue(msg, position, result) &&
+        ExtractValue(msg, position, m_statistics.m_bitRate) &&
+        ExtractValue(msg, position, m_statistics.m_compression) &&
+        ExtractValue(msg, position, errorCorrection) &&
+        ExtractValue(msg, position, m_statistics.m_txPages) &&
+        ExtractValue(msg, position, m_statistics.m_rxPages) &&
+        ExtractValue(msg, position, m_statistics.m_totalPages) &&
+        ExtractValue(msg, position, m_statistics.m_imageSize) &&
+        ExtractValue(msg, position, m_statistics.m_resolutionX) &&
+        ExtractValue(msg, position, m_statistics.m_resolutionY, 'x') &&
+        ExtractValue(msg, position, m_statistics.m_pageWidth) &&
+        ExtractValue(msg, position, m_statistics.m_pageHeight, 'x') &&
+        ExtractValue(msg, position, m_statistics.m_badRows) &&
+        ExtractValue(msg, position, m_statistics.m_mostBadRows) &&
+        ExtractValue(msg, position, m_statistics.m_errorCorrectionRetries))
+    {
+      m_statistics.m_result = result; // Only set this if everything parsed correctly
+      m_statistics.m_errorCorrection = errorCorrection != 0;
+    }
+    PTRACE(4, "Fax\tSpanDSP Output:\n" << msg);
+    notInStats = true;
+    msg.MakeEmpty();
+  }
+}
+
+
 PString OpalFaxMediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
 {
   PStringStream cmdline;
@@ -515,11 +598,15 @@ PString OpalFaxMediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
   PIPSocket::Address dummy; WORD port;
   info.socket.GetLocalAddress(dummy, port);
 
-  cmdline << ((OpalFaxEndPoint &)connection.GetEndPoint()).GetSpanDSP() << " -m ";
+  cmdline << ((OpalFaxEndPoint &)connection.GetEndPoint()).GetSpanDSP()
+          << VERBOSE_SPANDSP " -m ";
   if (m_receive)
     cmdline << "fax_to_tiff";
-  else
+  else {
     cmdline << "tiff_to_fax";
+    if (!m_stationId.IsEmpty())
+      cmdline << " -s '" << m_stationId << "'";
+  }
   cmdline << " -V 0 -n '" << m_filename << "' -f 127.0.0.1:" << port;
 
   return cmdline;
@@ -549,7 +636,8 @@ PString OpalT38MediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
   PIPSocket::Address dummy; WORD port;
   info.socket.GetLocalAddress(dummy, port);
 
-  cmdline << ((OpalFaxEndPoint &)connection.GetEndPoint()).GetSpanDSP() << " -V 0 -m ";
+  cmdline << ((OpalFaxEndPoint &)connection.GetEndPoint()).GetSpanDSP()
+          << VERBOSE_SPANDSP " -m ";
   if (m_receive)
     cmdline << "t38_to_tiff";
   else {
@@ -557,7 +645,7 @@ PString OpalT38MediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
     if (!m_stationId.IsEmpty())
       cmdline << " -s '" << m_stationId << "'";
   }
-  cmdline << " -v -n '" << m_filename << "' -t 127.0.0.1:" << port;
+  cmdline << " -V 0 -n '" << m_filename << "' -t 127.0.0.1:" << port;
 
   return cmdline;
 }
@@ -583,15 +671,14 @@ PBoolean OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
       stat = m_faxCallInfo->socket.Read(packet.GetPointer(), packet.GetSize());
     else {
       stat = m_faxCallInfo->socket.ReadFrom(packet.GetPointer(), packet.GetSize(), m_faxCallInfo->spanDSPAddr, m_faxCallInfo->spanDSPPort);
-      PTRACE(2, "Fax\tRemote spandsp address set to " << m_faxCallInfo->spanDSPAddr << ":" << m_faxCallInfo->spanDSPPort);
+      PTRACE_IF(2, stat, "Fax\tRemote spandsp address set to " << m_faxCallInfo->spanDSPAddr << ":" << m_faxCallInfo->spanDSPPort);
     }
 
     if (!stat) {
-      if (m_faxCallInfo->socket.GetErrorCode(PChannel::LastReadError) == PChannel::Timeout) {
-        packet.SetPayloadSize(0);
-        return true;
-      }
-      return false;
+      if (m_faxCallInfo->socket.GetErrorCode(PChannel::LastReadError) != PChannel::Timeout)
+        return false;
+      packet.SetPayloadSize(0);
+      return true;
     }
 
     PINDEX len = m_faxCallInfo->socket.GetLastReadCount();
@@ -600,7 +687,6 @@ PBoolean OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
 
     packet.SetSize(len);
     packet.SetPayloadSize(len - RTP_DataFrame::MinHeaderSize);
-    m_connection.CheckFaxStopped();
   }
 
   return true;
@@ -631,7 +717,6 @@ PBoolean OpalT38MediaStream::WritePacket(RTP_DataFrame & packet)
       PTRACE(2, "T38_UDP\tSocket write error - " << m_faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
       return false;
     }
-    m_connection.CheckFaxStopped();
   }
 
   return true;
@@ -684,6 +769,7 @@ OpalMediaFormatList OpalFaxEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
   formats += OpalPCM16;
+  formats += OpalT38;
   return formats;
 }
 
@@ -696,10 +782,10 @@ void OpalFaxEndPoint::AcceptIncomingConnection(const PString & token)
 }
 
 
-void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool timeout)
+void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
 {
-  PTRACE(3, "FAX\tFax completed " << (timeout ? "with timeout" : "normally") << " on connection: " << connection);
-  connection.Release(timeout ? OpalConnection::EndedByRemoteUser : OpalConnection::EndedByLocalUser);
+  PTRACE(3, "FAX\tFax " << (failed ? "failed" : "completed") << " on connection: " << connection);
+  connection.Release(failed ? OpalConnection::EndedByCapabilityExchange : OpalConnection::EndedByLocalUser);
 }
 
 
@@ -762,9 +848,8 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_filename(filename)
   , m_receive(receive)
 {
+  synchronousOnRelease = false;
   PTRACE(3, "FAX\tCreated FAX connection with token \"" << callToken << '"');
-
-  m_faxStopped.SetNotifier(PCREATE_NOTIFIER(OnFaxStoppedTimeout));
 }
 
 
@@ -858,22 +943,9 @@ void OpalFaxConnection::AcceptIncoming()
 }
 
 
-void OpalFaxConnection::OnFaxCompleted(bool timeout)
+void OpalFaxConnection::OnFaxCompleted(bool failed)
 {
-  m_endpoint.OnFaxCompleted(*this, timeout);
-}
-
-
-void OpalFaxConnection::CheckFaxStopped()
-{
-  m_faxStopped.SetInterval(0, 30);
-}
-
-
-void OpalFaxConnection::OnFaxStoppedTimeout(PTimer &, INT)
-{
-  PTRACE(3, "FAX\tTimeout on fax connection: " << GetToken());
-  OnFaxCompleted(true);
+  m_endpoint.OnFaxCompleted(*this, failed);
 }
 
 
@@ -957,12 +1029,6 @@ void OpalT38Connection::OnMediaPatchStop(unsigned sessionId, bool isSource)
   if (m_faxMode != newMode) {
     m_faxTimer.Stop();
     m_faxMode = newMode;
-
-    // If was fax media, must have finished sending/receiving
-    if (!m_faxMode) {
-      synchronousOnRelease = false; // Get deadlock if OnRelease() from patch thread.
-      OnFaxCompleted(false);
-    }
   }
 
   OpalConnection::OnMediaPatchStop(sessionId, isSource);
@@ -1031,6 +1097,7 @@ void OpalT38Connection::OpenFaxStreams(PThread &, INT)
   }
   else if (!ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, 1, format)) {
     PTRACE(1, "T38\tMode change request to " << mediaType << " failed");
+    OnFaxCompleted(true);
   }
 
   UnlockReadWrite();
