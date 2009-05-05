@@ -183,7 +183,7 @@ void FaxOPAL::Main()
 #endif // OPAL_H323
 
   // Create audio or T.38 fax endpoint.
-  OpalFaxEndPoint * fax  = new OpalFaxEndPoint(*m_manager);
+  MyFaxEndPoint * fax  = new MyFaxEndPoint(*m_manager);
   if (args.HasOption('d'))
     fax->SetDefaultDirectory(args.GetOptionString('d'));
   if (args.HasOption('s'))
@@ -206,19 +206,19 @@ void FaxOPAL::Main()
   m_manager->DisableDetectInBandDTMF(args.HasOption('I'));
 
   if (args.GetCount() == 1)
-    cout << "Awaiting incoming fax, saving as " << args[0] << " ..." << flush;
+    cout << "Awaiting incoming fax, saving as " << args[0] << " ... " << flush;
   else {
     PString token;
     if (!m_manager->SetUpCall(prefix + ":" + args[0], args[1], token)) {
       cerr << "Could not start call to \"" << args[1] << '"' << endl;
       return;
     }
-    cout << "Sending " << args[0] << " to " << args[1] << " ..." << flush;
+    cout << "Sending " << args[0] << " to " << args[1] << " ... " << flush;
   }
 
   // Wait for call to come in and finish
   m_manager->m_completed.Wait();
-  cout << " completed.";
+  cout << " ... completed.";
 }
 
 
@@ -233,6 +233,38 @@ void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
   SIPEndPoint::OnRegistrationStatus(status);
   if (status.m_reason >= SIP_PDU::Successful_OK)
     m_completed.Signal();
+}
+
+
+void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool timeout)
+{
+  OpalMediaStatistics stats;
+  OpalMediaStreamPtr stream = connection.GetMediaStream(OpalMediaType::Fax(), true);
+  if (stream != NULL)
+    stream->GetStatistics(stats);
+  switch (stats.m_fax.m_result) {
+    case -2 :
+      cout << " failed to establish ";
+      break;
+    case 0 :
+      cout << " successful "
+           << (connection.IsReceive() ? stats.m_fax.m_rxPages : stats.m_fax.m_txPages)
+           << " of " << stats.m_fax.m_totalPages << ' ';
+      break;
+    case 41 :
+      cout << " failed to open TIFF file ";
+      break;
+    case 42 :
+    case 43 :
+    case 44 :
+    case 45 :
+    case 46 :
+      cout << " illegal TIFF file ";
+      break;
+    default :
+      cout << " T.30 error " << stats.m_fax.m_result << ' ';
+  }
+  OpalFaxEndPoint::OnFaxCompleted(connection, timeout);
 }
 
 

@@ -53,6 +53,16 @@ class MySIPEndPoint : public SIPEndPoint
 };
 
 
+class MyFaxEndPoint : public OpalFaxEndPoint
+{
+    PCLASSINFO(MyFaxEndPoint, OpalFaxEndPoint)
+
+  public:
+    MyFaxEndPoint(OpalManager & manager) : OpalFaxEndPoint(manager) { }
+    virtual void OnFaxCompleted(OpalFaxConnection & connection, bool timeout);
+};
+
+
 class FaxOPAL : public PProcess
 {
     PCLASSINFO(FaxOPAL, PProcess)

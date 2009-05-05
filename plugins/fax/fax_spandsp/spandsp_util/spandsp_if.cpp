@@ -23,36 +23,16 @@
  * $Id: spandsp_if.cpp,v 1.7 2007/07/24 04:39:44 csoutheren Exp $
  */
 
+#include "spandsp_if.h"
+
 #include <iostream>
 
-#if defined (_WIN32) || defined (_WIN32_WCE)
-  #pragma warning(disable: 4996)
-  #include <winsock2.h>
-  #include <Ws2tcpip.h>
-  #include <io.h>
-  #include <sys/types.h>
-  #include <sys/stat.h>
-#else
-  #include <unistd.h>
-  #include <sys/time.h>
-  #include <sys/socket.h>
-  #include <stdint.h>
-  #include <netinet/in.h>
-  #include <sys/ioctl.h>
-#endif
-
-#include <sys/types.h>
 #include <errno.h>
 #include <string.h>
-#include <tiffio.h>
 #include <fcntl.h>
 
-#include <string>
-#include <queue>
-#include <string>
 using namespace std;
 
-#include "spandsp_if.h"
 
 namespace SpanDSP {
 char * progname = "(no mode)";
@@ -112,7 +92,7 @@ ostream & __socket_error(ostream & strm) { int err = __socket_getlasterror(); st
 
 inline bool __socket_iseagain(int code) { return code == WSAEWOULDBLOCK || code == WSAECONNRESET; }
 
-int __socket_sendmsg(socket_t fd, const struct msghdr *msg, int flags)
+int __socket_sendmsg(socket_t fd, const struct msghdr *msg, int /*flags*/)
 {
   if (msg == NULL)
     return -1;
@@ -191,9 +171,39 @@ inline void __sleep(int len)  { if (len > 0) usleep(len * 1000); }
 
 #endif
 
+
+static void PrintStatistics(t30_state_t * state, int result)
+{
+  t30_stats_t stats;
+  t30_get_transfer_statistics(state, &stats);
+
+  static const char * const CompressionNames[4] = { "N/A", "T.4 1d", "T.4 2d", "T.6" };
+  /* Do not change the order of the following, the equal sign before the
+     numeric value, or the dashes at the end of the output. This is important
+     for opal/src/t38/t38proto.cxx module parsing of the text to extract all
+     this information. */
+  cout << SpanDSP::progmode << ": statistics:\n"
+          "Status=" << result << ' ' << t30_completion_code_to_str(result) << "\n"
+          "Bit Rate=" << stats.bit_rate << "\n"
+          "Encoding=" << stats.encoding << ' ' << CompressionNames[stats.encoding&3] << "\n"
+          "Error Correction=" << stats.error_correcting_mode << "\n"
+          "Tx Pages=" << stats.pages_tx << "\n"
+          "Rx Pages=" << stats.pages_rx << "\n"
+          "Total Pages=" << stats.pages_in_file << "\n"
+          "Image Bytes=" << stats.image_size << "\n"
+          "Resolution=" << stats.x_resolution << 'x' << stats.y_resolution << "\n"
+          "Page Size=" << stats.width << 'x' << stats.length << "\n"
+          "Bad Rows=" << stats.bad_rows << "\n"
+          "Most Bad Rows=" << stats.longest_bad_row_run << "\n"
+          "Correction Retries=" << stats.error_correcting_mode_retries << "\n"
+          "----------------------------------------"
+       << endl;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////
 // 
-//  Implement an adpative delay that allows approximation of a real timer
+//  Implement an adaptive delay that allows approximation of a real timer
 //
 
 SpanDSP::AdaptiveDelay::__time_t SpanDSP::AdaptiveDelay::GetTime()
@@ -254,8 +264,6 @@ int SpanDSP::AdaptiveDelay::Calculate(int delay)
     else if (accumulator > 4*delay)
       accumulator = delay*4;
 
-//cerr << "accum  = " << accumulator << "(actual " << actual << ")" << endl;
-
     lastTime = now;
 
     if (accumulator > 0)
@@ -292,20 +300,21 @@ static bool ReadAudioPacket(socket_t fd, short * data, int & len, sockaddr_in & 
 
   if (len > 0) {
     if (verbose && firstAudioRead) {
-      cout << SpanDSP::progmode << " first read from audio socket" << endl;
+      cout << SpanDSP::progmode << ": first read from audio socket" << endl;
       firstAudioRead = false;
     }
 
     if (listen) {
-      if (verbose)
+      if (verbose) {
         cout << "info: remote address set to ";
-      PrintSocketAddr(address, cout);
-      cout << endl;
+        PrintSocketAddr(address, cout);
+        cout << endl;
+      }
       listen = false;
       int cmd = 0;
       if (__socket_ioctl(fd, FIONBIO, &cmd) != 0) {
         cerr << SpanDSP::progmode << ": cannot set socket into blocking mode" << endl;
-         return false;
+        return false;
       }
       while (len < SAMPLES_PER_CHUNK*2) {
         data[len/2] = 0;
@@ -322,7 +331,6 @@ static bool ReadAudioPacket(socket_t fd, short * data, int & len, sockaddr_in & 
     if (listen)
       len = 0;
     else {
-//      cerr << progmode << " missed audio packet" << endl;
       memset(data, 0, SAMPLES_PER_CHUNK*2);
       len = SAMPLES_PER_CHUNK*2;
     }
@@ -343,44 +351,64 @@ SpanDSP::FaxElement::FaxElement(bool _transmitter, bool _verbose)
   useECM   = false;
 }
 
-void SpanDSP::FaxElement::phase_b_handler(t30_state_t *s, void *user_data, int result)
+int SpanDSP::FaxElement::phase_b_handler(t30_state_t * state, void *user_data, int result)
 {
   FaxElement * element = (FaxElement *)user_data;
   if (element != NULL)
-    element->PhaseBHandler(result);
+    element->PhaseBHandler(state, result);
+  return T30_ERR_OK;
 }
 
-void SpanDSP::FaxElement::phase_d_handler(t30_state_t *s, void *user_data, int result)
+int SpanDSP::FaxElement::phase_d_handler(t30_state_t * state, void *user_data, int result)
 {
   FaxElement * element = (FaxElement *)user_data;
   if (element != NULL)
-    element->PhaseDHandler(result);
+    element->PhaseDHandler(state, result);
+  return T30_ERR_OK;
 }
 
-void SpanDSP::FaxElement::phase_e_handler(t30_state_t *s, void *user_data, int result)
+void SpanDSP::FaxElement::phase_e_handler(t30_state_t * state, void *user_data, int result)
 {
   FaxElement * element = (FaxElement *)user_data;
   if (element != NULL)
-    element->PhaseEHandler(result);
+    element->PhaseEHandler(state, result);
 }
 
-void SpanDSP::FaxElement::PhaseBHandler(int)
-{ }
 
-void SpanDSP::FaxElement::PhaseDHandler(int)
-{ }
+void SpanDSP::FaxElement::PhaseBHandler(t30_state_t * state, int)
+{
+  PrintStatistics(state, -1); // Progress
+}
 
-void SpanDSP::FaxElement::PhaseEHandler(int)
-{ } 
+
+void SpanDSP::FaxElement::PhaseDHandler(t30_state_t *, int)
+{
+}
+
+
+void SpanDSP::FaxElement::PhaseEHandler(t30_state_t * state, int result)
+{
+  PrintStatistics(state, result);
+  finished = true;
+}
 
 void SpanDSP::FaxElement::SetLocalStationID(const std::string & str)
-{ localStationID = str; }
+{
+  localStationID = str;
+}
+
 
 void SpanDSP::FaxElement::SetECM(bool v)
-{ useECM = v; }
+{
+  useECM = v;
+}
+
 
 bool SpanDSP::FaxElement::GetECM() const
-{ return useECM; }
+{
+  return useECM;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////
 // 
@@ -389,32 +417,40 @@ bool SpanDSP::FaxElement::GetECM() const
 
 SpanDSP::FaxTerminal::FaxTerminal(bool _transmitter, bool _verbose)
   : FaxElement(_transmitter, _verbose)
-{ }
+  , faxState(NULL)
+{
+}
+
 
 SpanDSP::FaxTerminal::~FaxTerminal()
 {
-  ::fax_release(&faxState);
+  if (faxState != NULL) {
+    fax_release(faxState);
+    fax_free(faxState);
+  }
 }
+
 
 void SpanDSP::FaxTerminal::Start()
 {
-  ::fax_init(&faxState, transmitter ? 1 : 0);
-                    faxState.logging.level = verbose ? SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG : 0;
-  //::t30_set_ecm_capability(&faxState.t30_state, useECM ? 1 : 0);
-  if (localStationID.length() != 0)
-    ::t30_set_local_ident(&faxState.t30_state, localStationID.c_str());
-  else
-    ::t30_set_local_ident(&faxState.t30_state, " ");
+  faxState = ::fax_init(NULL, transmitter);
+
+  span_log_set_level(fax_get_logging_state(faxState),
+                     verbose ? (SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG) : 0);
+  //::t30_set_ecm_capability(fax_get_t30_state(faxState), useECM ? 1 : 0);
+  t30_set_tx_ident(fax_get_t30_state(faxState), localStationID.empty() ? " " : localStationID.c_str());
 }
+
 
 bool SpanDSP::FaxTerminal::PutPCMData(const short * pcm, unsigned sampleCount)
 {
-  return (::fax_rx(&faxState, (int16_t *)pcm, sampleCount) != 0) ? false : true;
+  return fax_rx(faxState, (int16_t *)pcm, sampleCount) == 0;
 }
+
 
 unsigned SpanDSP::FaxTerminal::GetPCMData(short * pcm, unsigned sampleCount)
 {
-  unsigned len = ::fax_tx(&faxState, pcm, sampleCount);
+  unsigned len = ::fax_tx(faxState, pcm, sampleCount);
   if (len < sampleCount) {
     memset(pcm + len, 0, (sampleCount - len)*2);
     len = sampleCount;
@@ -422,68 +458,31 @@ unsigned SpanDSP::FaxTerminal::GetPCMData(short * pcm, unsigned sampleCount)
   return len;
 }
 
-void SpanDSP::FaxTerminal::tx_data_handler(t30_state_t *s, void *user_data, unsigned code, unsigned len)
+
+void SpanDSP::FaxTerminal::tx_data_handler(t30_state_t *, void *user_data, unsigned code, unsigned len)
 {
   FaxTerminal * terminal = (FaxTerminal *)user_data;
   if (terminal != NULL)
     terminal->TXDataHandler(code, len);
 }
 
-void SpanDSP::FaxTerminal::TXDataHandler(unsigned code, unsigned len)
+
+void SpanDSP::FaxTerminal::TXDataHandler(unsigned /*code*/, unsigned /*len*/)
 {
-//#if 0
-  switch (code) {
-    case T30_MODEM_NONE:
-      printf("SILENCE %i\n", len);
-      break;
-    case T30_MODEM_PAUSE:
-      printf("T30_MODEM_PAUSE %i\n", len);
-      break;
-    case T30_MODEM_CED:
-      printf("T30_MODEM_CED %i\n", len);
-      break;
-    case T30_MODEM_CNG:
-      printf("T30_MODEM_CNG %i\n", len);
-      break;
-    case T30_MODEM_V21:
-      printf("T30_MODEM_V21 %i\n", len);
-      break;
-    case T30_MODEM_V27TER_2400:
-      printf("T30_MODEM_V27TER_2400 %i\n", len);
-      break;
-    case T30_MODEM_V27TER_4800:
-      printf("T30_MODEM_V27TER_4800 %i\n", len);
-      break;
-    case T30_MODEM_V29_7200:
-      printf("T30_MODEM_V29_7200 %i\n", len);
-      break;
-    case T30_MODEM_V29_9600:
-      printf("T30_MODEM_V29_9600 %i\n", len);
-      break;
-    case T30_MODEM_V17_7200:
-      printf("T30_MODEM_V17_7200 %i\n", len);
-      break;
-    case T30_MODEM_V17_9600:
-      printf("T30_MODEM_V17_9600 %i\n", len);
-      break;
-    case T30_MODEM_V17_12000:
-      printf("T30_MODEM_V17_12000 %i\n", len);
-      break;
-    case T30_MODEM_V17_14400:
-      printf("T30_MODEM_V17_14400 %i\n", len);
-      break;
-    default:
-      printf("unknown %i\n", code, len);
-      break;
-  }
-//#endif
 }
 
+
 void SpanDSP::FaxTerminal::SetLocalStationID(const std::string & str)
-{ localStationID = str; }
+{
+  localStationID = str;
+}
+
 
 bool SpanDSP::FaxTerminal::SendFiller() const
-{ return false; }
+{
+  return false;
+}
+
 
 bool SpanDSP::FaxTerminal::Serve(socket_t fd)
 {
@@ -506,7 +505,7 @@ bool SpanDSP::FaxTerminal::Serve(socket_t fd, sockaddr_in & address, bool listen
     }
     port = ntohs(local.sin_port);
     if (verbose)
-      cout << progmode << " local fax port = " << port << endl;
+      cout << progmode << ": local fax port = " << port << endl;
   }
 
   // set socket into non-blocking mode
@@ -557,7 +556,7 @@ bool SpanDSP::FaxTerminal::Serve(socket_t fd, sockaddr_in & address, bool listen
     // get audio data from terminal and send to socket
     {
       short data[SAMPLES_PER_CHUNK];
-      unsigned len = GetPCMData(data, sizeof(data)/2) * 2;
+      int len = GetPCMData(data, sizeof(data)/2) * 2;
       if (!listen) {
 #if WRITE_PCM_FILES      	
         if (outFile >= 0) {
@@ -576,7 +575,7 @@ bool SpanDSP::FaxTerminal::Serve(socket_t fd, sockaddr_in & address, bool listen
             break;
           }
         } else if (verbose && firstAudioWrite) {
-          cout << progmode << " first send from audio socket" << endl;
+          cout << progmode << ": first send from audio socket" << endl;
           firstAudioWrite = false;
         }
       }
@@ -604,8 +603,7 @@ bool SpanDSP::FaxTerminal::Serve(socket_t fd, sockaddr_in & address, bool listen
     }
   }
 
-  if (verbose)
-    cout << progmode << ": fax terminal serve finished" << endl;
+  cout << progmode << ": finished." << endl;
 
   // keep sending silence until the UDP socket closed
   if (SendFiller()) {
@@ -634,31 +632,18 @@ SpanDSP::FaxTerminalSender::FaxTerminalSender(bool verbose)
 
 bool SpanDSP::FaxTerminalSender::Start(const std::string & filename)
 {
+  if (verbose)
+    cout << progmode << ": starting PCM sender" << endl;
+
   FaxTerminal::Start();
-  ::t30_set_tx_file(&faxState.t30_state, filename.c_str(), -1, -1);
-  ::t30_set_phase_e_handler(&faxState.t30_state, &FaxElement::phase_e_handler, this);
-  //::t30_set_tx_data_handler(&faxState.t30_state, &FaxSoftModemSender::tx_data_handler, this);
+
+  t30_state_t * t30 = fax_get_t30_state(faxState);
+  t30_set_tx_file(t30, filename.c_str(), -1, -1);
+  t30_set_phase_e_handler(t30, &FaxElement::phase_e_handler, this);
+  //::t30_set_tx_data_handler(t30, &FaxSoftModemSender::tx_data_handler, this);
   return true;
 }
 
-void SpanDSP::FaxTerminalSender::PhaseEHandler(int result)
-{
-  //struct ast_channel *chan;
-  char far_ident[21];
-  
-  //chan = (struct ast_channel *) user_data;
-  if (result == T30_ERR_OK) {
-    ::t30_get_far_ident(&faxState.t30_state, far_ident);
-    if (verbose)
-      cout << progmode << ": fax transmission successful" << endl;
-  }
-  else {
-    if (verbose)
-      cout << progmode << ": fax transmission was not successful " << t30_completion_code_to_str(result) << endl;
-    // fax was not successful
-  }
-  finished = true;
-}
 
 //////////////////////////////////////////////////////////////////////////////////
 // 
@@ -672,31 +657,17 @@ SpanDSP::FaxTerminalReceiver::FaxTerminalReceiver(bool verbose)
 
 bool SpanDSP::FaxTerminalReceiver::Start(const std::string & filename)
 {
+  if (verbose)
+    cout << progmode << ": starting PCM receiver" << endl;
+
   FaxTerminal::Start();
-  ::t30_set_rx_file(&faxState.t30_state, filename.c_str(), -1);
-  ::t30_set_phase_e_handler(&faxState.t30_state, FaxElement::phase_e_handler, this);
-  //::t30_set_tx_data_handler(&faxState.t30_state, FaxSoftModemReceiver::tx_data_handler, this);
+
+  ::t30_set_rx_file(fax_get_t30_state(faxState), filename.c_str(), -1);
+  ::t30_set_phase_e_handler(fax_get_t30_state(faxState), FaxElement::phase_e_handler, this);
+  //::t30_set_tx_data_handler(fax_get_t30_state(faxState), FaxSoftModemReceiver::tx_data_handler, this);
   return true;
 }
 
-void SpanDSP::FaxTerminalReceiver::PhaseEHandler(int result)
-{
-  if (result == T30_ERR_OK)
-  {
-    char local_ident[21];
-    char far_ident[21];
-    t30_stats_t t;
-    t30_get_transfer_statistics(&faxState.t30_state, &t);
-    t30_get_far_ident(&faxState.t30_state, far_ident);
-    t30_get_local_ident(&faxState.t30_state, local_ident);
-    if (verbose)
-      cout << progmode << ": fax receive completed" << endl;
-  }
-  else if (verbose)
-    cout << progmode << ": fax receive not successful " <<  t30_completion_code_to_str(result) << endl;
-
-  finished = true;
-}
 
 bool SpanDSP::FaxTerminalReceiver::SendFiller() const
 {
@@ -710,9 +681,9 @@ bool SpanDSP::FaxTerminalReceiver::SendFiller() const
 
 SpanDSP::T38Element::T38Element(bool _transmitter, bool _verbose)
   : FaxElement(_transmitter, _verbose)
-{ 
+{
   txTimestamp = 0;
-  txFd = -1;
+  txFd = (socket_t)-1;
   version = T38_VERSION;
 }
 
@@ -726,16 +697,16 @@ unsigned SpanDSP::T38Element::GetVersion()
   return version;
 }
 
-int SpanDSP::T38Element::tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t *buf, int len, int count)
+int SpanDSP::T38Element::tx_packet_handler(t38_core_state_t *, void *user_data, const uint8_t *buf, int len, int count)
 {
   T38Element * terminal = (T38Element *)user_data;
   if (terminal == NULL)
     return 0;
-  return terminal->TXPacketHandler(buf, len, s->tx_seq_no);
+  return terminal->TXPacketHandler(buf, len, (uint16_t)count);
 }
 
-int SpanDSP::T38Element::TXPacketHandler(const uint8_t * buf, int len, int sequence)
-{ 
+int SpanDSP::T38Element::TXPacketHandler(const uint8_t * buf, int len, uint16_t sequence)
+{
   if (txFd >= 0) 
     SendT38Packet(txFd, T38Packet(buf, len, sequence), (const sockaddr *)&txAddr);
 
@@ -773,9 +744,8 @@ bool SpanDSP::T38Element::SendT38Packet(socket_t fd, const T38Packet & pkt, cons
   msg.msg_namelen = sizeof(sockaddr);
 
   static int counter = 0;
-  if (verbose && (++counter % 25 == 0)) {
-    cout << progmode << " " << counter << "t38 writes" << endl;
-  }
+  if (verbose && (++counter % 25 == 0))
+    cout << progmode << ": " << counter << " t38 writes" << endl;
 
   if (__socket_sendmsg(fd, &msg, 0) <= 0) {
     cerr << progmode << ": sendmsg failed - " ; __socket_error(cerr) << endl;
@@ -783,7 +753,7 @@ bool SpanDSP::T38Element::SendT38Packet(socket_t fd, const T38Packet & pkt, cons
   }
 
   if (verbose && firstT38Write) {
-    cout << progmode << " first write from t38 socket to port " << htons(((sockaddr_in *)address)->sin_port) << endl;
+    cout << progmode << ": first write from t38 socket to port " << htons(((sockaddr_in *)address)->sin_port) << endl;
     firstT38Write = false;
   }
 
@@ -835,9 +805,8 @@ bool SpanDSP::T38Element::ReceiveT38Packet(socket_t fd, SpanDSP::T38Terminal::T3
   }
 
   static int counter = 0;
-  if (verbose && (++counter % 25 == 0)) {
-    cout << progmode << " " << counter << "t38 reads" << endl;
-  }
+  if (verbose && (++counter % 25 == 0))
+    cout << progmode << ": " << counter << " t38 reads" << endl;
 
   pkt.sequence = ntohs(rtpHeader.sequence);
   pkt.resize(len -  sizeof(rtpHeader));
@@ -854,7 +823,7 @@ bool SpanDSP::T38Element::ReceiveT38Packet(socket_t fd, SpanDSP::T38Terminal::T3
   }
 
   if (verbose && firstT38Read) {
-    cout << progmode << " first read from t38 socket" << endl;
+    cout << progmode << ": first read from t38 socket" << endl;
     firstT38Read = false;
   }
 
@@ -868,62 +837,68 @@ bool SpanDSP::T38Element::ReceiveT38Packet(socket_t fd, SpanDSP::T38Terminal::T3
 
 SpanDSP::T38Terminal::T38Terminal(bool _transmitter, bool _verbose)
   : T38Element(_transmitter, _verbose)
+  , t38TerminalState(NULL)
 {
 }
+
 
 SpanDSP::T38Terminal::~T38Terminal()
 {
+  if (t38TerminalState != NULL) {
+    t38_terminal_release(t38TerminalState);
+    t38_terminal_free(t38TerminalState);
+  }
 }
 
+
 bool SpanDSP::T38Terminal::PutPCMData(const short *, unsigned)
-{ return false; }
+{
+  return false;
+}
+
 
 unsigned SpanDSP::T38Terminal::GetPCMData(short *, unsigned)
-{ return 0; }
-
-bool SpanDSP::T38Terminal::Start(const std::string & filename)
 {
-  if (::t38_terminal_init(&t38TerminalState, transmitter ? TRUE : FALSE, T38Element::tx_packet_handler, this) == NULL)
+  return 0;
+}
+
+
+bool SpanDSP::T38Terminal::Start(const std::string & /*filename*/)
+{
+  t38TerminalState = t38_terminal_init(NULL, transmitter ? TRUE : FALSE, T38Element::tx_packet_handler, this);
+  if (t38TerminalState == NULL)
     return false;
 
-  if (verbose)
-    cout << "starting T.38 terminal with version " << version << endl;
+  span_log_set_level(t38_terminal_get_logging_state(t38TerminalState),
+                     verbose ? (SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG) : 0);
 
-  ::t38_set_t38_version(&t38TerminalState.t38, version);
+  t38_core_state_t * t38 = t38_terminal_get_t38_core_state(t38TerminalState);
+  span_log_set_level(t38_core_get_logging_state(t38),
+                     verbose ? (SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG) : 0);
+
+  t38_set_t38_version(t38, version);
 #ifdef USE_PACING
   ::t38_terminal_set_config(&t38TerminalState, 0);      // enable "pacing"
 #endif
 
-  ::span_log_set_level(&t38TerminalState.logging, SPAN_LOG_DEBUG);
-#if 0
-  ::span_log_set_tag  (&t38TerminalState.logging, "T.38-A");
-  ::span_log_set_level(&t38TerminalState.t38.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
-  ::span_log_set_tag  (&t38TerminalState.t38.logging, "T.38-A");
-  ::span_log_set_level(&t38TerminalState.t30_state.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
-  ::span_log_set_tag  (&t38TerminalState.t30_state.logging, "T.38-A");
-#endif
+  t30_state_t * t30 = t38_terminal_get_t30_state(t38TerminalState);
+  t30_set_tx_ident(t30, localStationID.empty() ? " " : localStationID.c_str());
 
-  if (localStationID.length() != 0)
-    ::t30_set_local_ident(&t38TerminalState.t30_state, localStationID.c_str());
-  else
-    ::t30_set_local_ident(&t38TerminalState.t30_state, " ");
+  t30_set_ecm_capability(t30, useECM ? 1 : 0);
 
-  ::t30_set_ecm_capability(&t38TerminalState.t30_state, useECM ? 1 : 0);
+  t30_set_phase_b_handler(t30, FaxElement::phase_b_handler, this);
+  t30_set_phase_d_handler(t30, FaxElement::phase_d_handler, this);
+  t30_set_phase_e_handler(t30, FaxElement::phase_e_handler, this);
 
-  ::t30_set_phase_b_handler(&t38TerminalState.t30_state, FaxElement::phase_b_handler, this);
-  ::t30_set_phase_d_handler(&t38TerminalState.t30_state, FaxElement::phase_d_handler, this);
-  ::t30_set_phase_e_handler(&t38TerminalState.t30_state, FaxElement::phase_e_handler, this);
+  span_log_set_level(t30_get_logging_state(t30),
+                     verbose ? (SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG) : 0);
 
   return true;
 }
 
 void SpanDSP::T38Terminal::QueuePacket(const T38Packet & pkt)
 {
-#if SPANDSP_VER3
-  ::t38_core_rx_ifp_packet(&t38TerminalState.t38, pkt.sequence, &pkt[0], pkt.size());
-#else
-  ::t38_core_rx_ifp_packet(&t38TerminalState.t38, &pkt[0], pkt.size(), pkt.sequence);
-#endif
+  t38_core_rx_ifp_packet(t38_terminal_get_t38_core_state(t38TerminalState), &pkt[0], pkt.size(), pkt.sequence);
 }
 
 
@@ -960,16 +935,16 @@ bool SpanDSP::T38Terminal::Serve(socket_t fd, sockaddr_in & address, bool listen
   }
 
   int done = 0;
-  int started = 0;
 
-#ifndef USE_PACING
+#ifdef USE_PACING
+  int started = 0;
+#else
   AdaptiveDelay delay;
 #endif
 
   while (!finished) {
 
-    //if (started)
-      done = ::t38_terminal_send_timeout(&t38TerminalState, SAMPLES_PER_CHUNK);
+    done = t38_terminal_send_timeout(t38TerminalState, SAMPLES_PER_CHUNK);
 
     SpanDSP::T38Terminal::T38Packet pkt;
 
@@ -979,7 +954,9 @@ bool SpanDSP::T38Terminal::Serve(socket_t fd, sockaddr_in & address, bool listen
     if (!ReceiveT38Packet(fd, pkt, address, listen)) {
       finished = true;
       break;
-    } else if (pkt.size() != 0) 
+    }
+
+    if (pkt.size() != 0) 
       QueuePacket(pkt);
 
     if (finished || done)
@@ -1021,7 +998,7 @@ bool SpanDSP::T38Terminal::Serve(socket_t fd, sockaddr_in & address, bool listen
 #endif
   }
 
-  cout << "finished" << endl;
+  cout << progmode << ": finished." << endl;
 
   return true;
 }
@@ -1036,32 +1013,20 @@ SpanDSP::T38TerminalSender::T38TerminalSender(bool verbose)
 {
 }
 
+
 bool SpanDSP::T38TerminalSender::Start(const std::string & filename)
 {
+  if (verbose)
+    cout << progmode << ": starting T.38 sender with version " << version << endl;
+
   if (!T38Terminal::Start(filename))
     return false;
 
-  ::t30_set_tx_file(&t38TerminalState.t30_state, filename.c_str(), -1, -1);
+  ::t30_set_tx_file(t38_terminal_get_t30_state(t38TerminalState), filename.c_str(), -1, -1);
 
   return true;
 }
 
-void SpanDSP::T38TerminalSender::PhaseEHandler(int result)
-{
-  //struct ast_channel *chan;
-  char far_ident[21];
-  
-  //chan = (struct ast_channel *) user_data;
-  if (result == T30_ERR_OK) {
-    ::t30_get_far_ident(&t38TerminalState.t30_state, far_ident);
-    cout << "fax transmission successful" << endl;
-  }
-  else {
-    cout << "fax transmission was not successful " << t30_completion_code_to_str(result) << endl;
-    // fax was not successfuE
-  }
-  //finished = true;
-}
 
 //////////////////////////////////////////////////////////////////////////////////
 // 
@@ -1075,31 +1040,16 @@ SpanDSP::T38TerminalReceiver::T38TerminalReceiver(bool verbose)
 
 bool SpanDSP::T38TerminalReceiver::Start(const std::string & filename)
 {
+  if (verbose)
+    cout << progmode << ": starting T.38 receiver with version " << version << endl;
+
   if (!T38Terminal::Start(filename))
     return false;
 
-  ::t30_set_rx_file(&t38TerminalState.t30_state, filename.c_str(), -1);
+  ::t30_set_rx_file(t38_terminal_get_t30_state(t38TerminalState), filename.c_str(), -1);
   return true;
 }
 
-void SpanDSP::T38TerminalReceiver::PhaseEHandler(int result)
-{
-  if (result == T30_ERR_OK)
-  {
-    char local_ident[21];
-    char far_ident[21];
-    t30_stats_t t;
-    t30_get_transfer_statistics(&t38TerminalState.t30_state, &t);
-    t30_get_far_ident(&t38TerminalState.t30_state, far_ident);
-    t30_get_local_ident(&t38TerminalState.t30_state, local_ident);
-    cout << "fax receive completed" << endl;
-  }
-  else
-  {
-    cout << "fax receive not successful " <<  t30_completion_code_to_str(result) << endl;
-  }
-  //finished = true;
-}
 
 //////////////////////////////////////////////////////////////////////////////////
 // 
@@ -1108,21 +1058,29 @@ void SpanDSP::T38TerminalReceiver::PhaseEHandler(int result)
 
 SpanDSP::T38Gateway::T38Gateway(bool _verbose)
   : T38Element(false, _verbose)
+  , t38GatewayState(NULL)
 {
 }
+
 
 SpanDSP::T38Gateway::~T38Gateway()
 {
+  if (t38GatewayState != NULL) {
+    t38_gateway_release(t38GatewayState);
+    t38_gateway_free(t38GatewayState);
+  }
 }
+
 
 bool SpanDSP::T38Gateway::PutPCMData(const short * pcm, unsigned sampleCount)
 {
- return (::t38_gateway_rx(&t38GatewayState, (int16_t *)pcm, sampleCount) != 0) ? false : true;
+ return t38_gateway_rx(t38GatewayState, (int16_t *)pcm, sampleCount) == 0;
 }
+
 
 unsigned SpanDSP::T38Gateway::GetPCMData(short * pcm, unsigned sampleCount)
 {
-  unsigned len = ::t38_gateway_tx(&t38GatewayState, pcm, sampleCount);
+  unsigned len = ::t38_gateway_tx(t38GatewayState, pcm, sampleCount);
   if (len < sampleCount) {
     memset(pcm + len, 0, (sampleCount - len)*2);
     len = sampleCount;
@@ -1130,27 +1088,27 @@ unsigned SpanDSP::T38Gateway::GetPCMData(short * pcm, unsigned sampleCount)
   return len;
 }
 
+
 bool SpanDSP::T38Gateway::Start()
 {
-  if (::t38_gateway_init(&t38GatewayState, tx_packet_handler, this) == NULL)
+  if (verbose)
+    cout << progmode << ": starting T.38 gateway with version " << version << endl;
+
+  t38GatewayState = t38_gateway_init(NULL, tx_packet_handler, this);
+  if (t38GatewayState == NULL)
     return false;
 
-  ::t38_set_t38_version(&t38GatewayState.t38, version);
+  span_log_set_level(t38_gateway_get_logging_state(t38GatewayState),
+                     verbose ? (SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG) : 0);
 
-#if SPANDSP_VER3
-  ::t38_gateway_ecm_control(&t38GatewayState, useECM ? 1 : 0);
-#endif
+  t38_set_t38_version(t38_gateway_get_t38_core_state(t38GatewayState), version);
 
   return true;
 }
 
 void SpanDSP::T38Gateway::QueuePacket(const T38Packet & pkt)
 {
-#if SPANDSP_VER3
-  ::t38_core_rx_ifp_packet(&t38GatewayState.t38, pkt.sequence, &pkt[0], pkt.size());
-#else
-  ::t38_core_rx_ifp_packet(&t38GatewayState.t38, &pkt[0], pkt.size(), pkt.sequence);
-#endif
+  t38_core_rx_ifp_packet(t38_gateway_get_t38_core_state(t38GatewayState), &pkt[0], pkt.size(), pkt.sequence);
 }
 
 
@@ -1184,7 +1142,7 @@ bool SpanDSP::T38Gateway::Serve(socket_t fax, sockaddr_in & faxAddress, socket_t
       return false;
     }
     if (verbose)
-      cout << progmode << " local fax port = " << ntohs(local.sin_port) << endl;
+      cout << progmode << ": local fax port = " << ntohs(local.sin_port) << endl;
   }
 
   {
@@ -1195,7 +1153,7 @@ bool SpanDSP::T38Gateway::Serve(socket_t fax, sockaddr_in & faxAddress, socket_t
       return false;
     }
     if (verbose)
-      cout << progmode << " local t38 port = " << ntohs(local.sin_port) << endl;
+      cout << progmode << ": local t38 port = " << ntohs(local.sin_port) << endl;
   }
 
   // set sockets into non-blocking mode
@@ -1294,7 +1252,7 @@ bool SpanDSP::T38Gateway::Serve(socket_t fax, sockaddr_in & faxAddress, socket_t
         }
       }
       if (verbose && firstAudioWrite) {
-        cout << progmode << " first send from audio socket " << len << endl;
+        cout << progmode << ": first send from audio socket " << len << endl;
         firstAudioWrite = false;
       }
 #if WRITE_PCM_FILES
@@ -1309,24 +1267,25 @@ bool SpanDSP::T38Gateway::Serve(socket_t fax, sockaddr_in & faxAddress, socket_t
 
     if (finished) {
       if (verbose)
-        cout << progmode << " finished" << endl;
+        cout << progmode << ": finished." << endl;
       break;
     }
 
     // read any T38 packets received and send to the gateway
     T38Packet pkt;
-    do { //for (;;) {
+    for (;;) {
       if (!ReceiveT38Packet(t38, pkt, t38Address, t38Listen)) {
-        cerr << progmode << " receive failed" << endl;
+        cerr << progmode << ": receive failed" << endl;
         finished = true;
         break;
       }
       if (pkt.size() == 0) 
         break;
       QueuePacket(pkt);
-    } while (0);
-
+    }
   }
+
+  cout << progmode << ": finished." << endl;
 
   // keep sending silence until the UDP socket closed
   {
@@ -1339,9 +1298,6 @@ bool SpanDSP::T38Gateway::Serve(socket_t fax, sockaddr_in & faxAddress, socket_t
       delay.Delay(20);
     }
   }
-
-  if (verbose)
-    cout << progmode << " t38gw thread ended" << endl;
 
   return true;
 }

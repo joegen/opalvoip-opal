@@ -308,6 +308,29 @@ class OpalMediaStatistics : public PObject
     // Video
     unsigned m_totalFrames;
     unsigned m_keyFrames;
+
+    // Fax
+#if OPAL_FAX
+    struct Fax {
+      Fax();
+
+      int  m_result;      // -2=not started, -1=progress, 0=success, >0=ended with error
+      int  m_bitRate;     // e.g. 14400, 9600
+      int  m_compression; // 0=N/A, 1=T.4 1d, 2=T.4 2d, 3=T.6
+      bool m_errorCorrection;
+      int  m_txPages;
+      int  m_rxPages;
+      int  m_totalPages;
+      int  m_imageSize;   // In bytes
+      int  m_resolutionX; // Pixels per inch
+      int  m_resolutionY; // Pixels per inch
+      int  m_pageWidth;
+      int  m_pageHeight;
+      int  m_badRows;     // Total number of bad rows
+      int  m_mostBadRows; // Longest run of bad rows
+      int  m_errorCorrectionRetries;
+    } m_fax;
+#endif
 };
 
 #endif

@@ -452,6 +452,14 @@ OpalMediaStatistics::OpalMediaStatistics()
 {
 }
 
+#if OPAL_FAX
+OpalMediaStatistics::Fax::Fax()
+{
+  memset(this, 0, sizeof(*this));
+  m_result = -2;
+}
+#endif
+
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
