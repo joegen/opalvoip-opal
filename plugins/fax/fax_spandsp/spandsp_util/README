@@ -28,8 +28,8 @@ library for TIFF file operations. Thus the first time you build it you should
 be connected to teh Internet so the download can proceed.
 
 Then copy the following two files from:
-	 opal/plugins/fax/fax_spandsp/Release/spandsp_util.exe
-	 opal/plugins/fax/fax_spandsp/spandsp_util/spandsp-0.0.6/src/Release/libspandsp.dll
+	 opal/plugins/fax/fax_spandsp/spandsp_util/Release/spandsp_util.exe
+	 opal/plugins/fax/fax_spandsp/spandsp_util/Release/libspandsp.dll
 
 to where you are installing your application.
 
