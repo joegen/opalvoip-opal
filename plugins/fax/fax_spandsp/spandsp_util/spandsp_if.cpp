@@ -172,6 +172,13 @@ inline void __sleep(int len)  { if (len > 0) usleep(len * 1000); }
 #endif
 
 
+static void MyMessageHandler(int /*level*/, const char *text)
+{
+  // Default version of this doesn't have the flush ...
+  printf("%s", text);
+  fflush(stdout);
+}
+
 static void PrintStatistics(t30_state_t * state, int result)
 {
   t30_stats_t stats;
@@ -349,6 +356,7 @@ SpanDSP::FaxElement::FaxElement(bool _transmitter, bool _verbose)
 {
   finished = false;
   useECM   = false;
+  span_set_message_handler(MyMessageHandler);
 }
 
 int SpanDSP::FaxElement::phase_b_handler(t30_state_t * state, void *user_data, int result)
