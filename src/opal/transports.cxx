@@ -202,33 +202,16 @@ OpalTransport * OpalTransportAddress::CreateTransport(OpalEndPoint & endpoint,
 }
 
 
-void OpalTransportAddress::SetInternalTransport(WORD port, const char * _proto)
+void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
 {
   transport = NULL;
   
   if (IsEmpty())
     return;
 
-  // check if proto has wrong port, i.e. proto = tcps$:5061, but port is 5060
-  PString proto;
-  if(_proto != NULL)
-  {
-    proto = _proto;
-	PINDEX colon = proto.Find(':');
-	if(colon != P_MAX_INDEX) 
-	{
-	  WORD newport = (WORD) proto.Mid(colon+1).AsUnsigned();
-	  if(newport != 0)
-	  {
-		  port = newport;
-		  proto = proto.Left(colon);
-	  }
-	}
-  }
-
   PINDEX dollar = Find('$');
   if (dollar == P_MAX_INDEX) {
-    PString prefix(proto.IsEmpty() ? TcpPrefix : proto);
+    PString prefix(proto == NULL ? TcpPrefix : proto);
     if (prefix.Find('$') == P_MAX_INDEX)
       prefix += '$';
 
