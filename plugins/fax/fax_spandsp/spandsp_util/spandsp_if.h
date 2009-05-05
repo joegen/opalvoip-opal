@@ -23,49 +23,52 @@
  * $Id: spandsp_if.h,v 1.1 2007/03/29 04:46:38 csoutheren Exp $
  */
 
-//#define SPANDSP_VER3  1
+extern "C" {
+#include "spandsp.h"
+};
+
 
 #include <string>
 #include <vector>
 #include <queue>
 #include <ostream>
-#include <math.h>
+
 
 #if defined (_WIN32) || defined (_WIN32_WCE)
 
   #pragma warning(disable: 4996)
 
+  #include <io.h>
+  #include <sys/types.h>
+  #include <sys/stat.h>
+
   #ifndef FD_SETSIZE
-  #include <winsock2.h>
-  #include <Ws2tcpip.h>
+    #include <winsock2.h>
+    #include <Ws2tcpip.h>
   #endif
 
   typedef SOCKET socket_t;
 
 #else
 
-  typedef int socket_t;
+  #include <unistd.h>
+  #include <stdint.h>
+  #include <sys/time.h>
+  #include <sys/ioctl.h>
   #include <sys/socket.h>
   #include <arpa/inet.h>
+  #include <netinet/in.h>
   #include <netdb.h>
 
+  typedef int socket_t;
+
 #endif
 
-
-extern "C" {
-#if defined (_WIN32) || defined (_WIN32_WCE)
-  #include <tgmath.h>
-#else
-  #define  INT16_MAX  SHRT_MAX
-  #define  INT16_MIN  SHRT_MIN
-#endif
-
-#include "spandsp.h"
-};
 
 std::ostream & __socket_error(std::ostream & strm);
 
 #define T38_VERSION   1
+
 
 namespace SpanDSP {
 
@@ -109,13 +112,13 @@ class FaxElement
     virtual bool PutPCMData(const short * pcm, unsigned sampleCount) = 0;
     virtual unsigned GetPCMData(short * pcm, unsigned sampleCount) = 0;
 
-    static void phase_b_handler(t30_state_t *s, void *user_data, int result);
-    static void phase_d_handler(t30_state_t *s, void *user_data, int result);
+    static int phase_b_handler(t30_state_t *s, void *user_data, int result);
+    static int phase_d_handler(t30_state_t *s, void *user_data, int result);
     static void phase_e_handler(t30_state_t *s, void *user_data, int result);
 
-    virtual void PhaseBHandler(int);
-    virtual void PhaseDHandler(int);
-    virtual void PhaseEHandler(int);
+    virtual void PhaseBHandler(t30_state_t * state, int);
+    virtual void PhaseDHandler(t30_state_t * state, int);
+    virtual void PhaseEHandler(t30_state_t * state, int result);
 
     void SetLocalStationID(const std::string & str);
 
@@ -156,7 +159,7 @@ class FaxTerminal : public FaxElement
     virtual bool SendFiller() const;
 
   protected:
-    ::fax_state_t faxState;
+    fax_state_t * faxState;
 };
 
 
@@ -171,7 +174,6 @@ class FaxTerminalSender : public FaxTerminal
     FaxTerminalSender(bool verbose = false);
 
     bool Start(const std::string & filename);
-    void PhaseEHandler(int result);
 };
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -185,7 +187,6 @@ class FaxTerminalReceiver : public FaxTerminal
     FaxTerminalReceiver(bool verbose = false);
 
     bool Start(const std::string & filename);
-    void PhaseEHandler(int result);
     virtual bool SendFiller() const;
 };
 
@@ -203,14 +204,14 @@ class T38Element : public FaxElement
         T38Packet()
         { }
 
-        T38Packet(const uint8_t * buf, int len, int _sequence)
+        T38Packet(const uint8_t * buf, int len, uint16_t seq)
         {
           resize(len);
           memcpy(&(operator[](0)), buf, len);
-          sequence = _sequence;
+          sequence = seq;
         }
 
-      int sequence;
+      uint16_t sequence;
     };
 
     typedef std::queue<T38Packet> T38PacketQueue;
@@ -221,7 +222,7 @@ class T38Element : public FaxElement
 
     static int tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t *buf, int len, int count);
 
-    virtual int TXPacketHandler(const uint8_t * buf, int len, int sequence);
+    virtual int TXPacketHandler(const uint8_t * buf, int len, uint16_t sequence);
 
     bool SendT38Packet(socket_t fd, const T38Packet & pkt, const sockaddr * address);
     bool ReceiveT38Packet(socket_t fd, T38Packet & pkt, sockaddr_in & address, bool & listen);
@@ -259,7 +260,7 @@ class T38Terminal : public T38Element
     bool Serve(socket_t fax);
     bool Serve(socket_t fd, sockaddr_in & address, bool listen);
 
-    t38_terminal_state_t t38TerminalState;
+    t38_terminal_state_t * t38TerminalState;
 };
 
 
@@ -274,7 +275,6 @@ class T38TerminalSender : public T38Terminal
   public:
     T38TerminalSender(bool verbose = false);
     bool Start(const std::string & filename);
-    void PhaseEHandler(int result);
 };
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -287,7 +287,6 @@ class T38TerminalReceiver : public T38Terminal
   public:
     T38TerminalReceiver(bool verbose = false);
     bool Start(const std::string & filename);
-    void PhaseEHandler(int result);
 };
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -308,7 +307,7 @@ class T38Gateway : public T38Element
     bool Serve(socket_t fax, socket_t t38);
 
   protected:
-    t38_gateway_state_t t38GatewayState;
+    t38_gateway_state_t * t38GatewayState;
 };
 
 };  // namespace SpanDSP

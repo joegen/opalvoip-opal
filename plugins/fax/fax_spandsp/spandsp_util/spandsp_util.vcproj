@@ -17,7 +17,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"
@@ -40,14 +40,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\spandsp\src;..\spandsp\src\msvc"
+				AdditionalIncludeDirectories=".\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
+				ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
+				WarningLevel="4"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -61,8 +60,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libspandsp.lib libtiff.lib"
+				AdditionalDependencies="spandsp.lib libtiff.lib ws2_32.lib"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories=".\spandsp-0.0.6\src\$(ConfigurationName);$(IntDir)"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -117,12 +117,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\spandsp\src;..\spandsp\src\msvc"
+				AdditionalIncludeDirectories=".\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;SPANDSP_VER3"
 				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
+				ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
+				WarningLevel="4"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -136,8 +135,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libspandsp.lib libtiff.lib"
+				AdditionalDependencies="spandsp.lib libtiff.lib ws2_32.lib"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories=".\spandsp-0.0.6\src\$(ConfigurationName);$(IntDir)"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
