@@ -1089,7 +1089,7 @@ public:
          << m_dialogNotifyVersion++ << "\" state=\"partial\" entity=\""
          << handler.GetAddressOfRecord() << "\">\r\n";
 
-    map<PString, SIPDialogNotification>::iterator iter;
+    std::map<PString, SIPDialogNotification>::iterator iter;
 
     const SIPDialogNotification * info = dynamic_cast<const SIPDialogNotification *>(data);
     if (info != NULL) {
@@ -1112,7 +1112,7 @@ public:
   }
 
   unsigned m_dialogNotifyVersion;
-  map<PString, SIPDialogNotification> m_activeDialogs;
+  std::map<PString, SIPDialogNotification> m_activeDialogs;
 };
 
 static SIPEventPackageFactory::Worker<SIPDialogEventPackageHandler> dialogEventPackageHandler(SIPSubscribe::Dialog);
