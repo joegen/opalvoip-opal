@@ -619,10 +619,6 @@ class OpalMediaFormat : public PContainer
   PCONTAINERINFO(OpalMediaFormat, PContainer);
 
   public:
-    static const PString & BandwidthTIASOption();
-    static const PString & MaxPacketRateOption();
-    static const PString & MaxTxPacketSizeOption();
-
     /**Default constructor creates a PCM-16 media format.
       */
     OpalMediaFormat(
@@ -813,11 +809,15 @@ class OpalMediaFormat : public PContainer
     static const PString & TargetBitRateOption();
 
     /**Get the maximum frame size in bytes. If this returns zero then the
-       media format has no intrinsic maximum frame size, eg G.711 would 
-       return zero but G.723.1 whoud return 24.
+       media format has no intrinsic maximum frame size, eg a video format
+       would return zero but G.723.1 would return 24.
       */
     PINDEX GetFrameSize() const { PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(MaxFrameSizeOption(), 0); }
     static const PString & MaxFrameSizeOption();
+
+    /**Get the name of the OpalMediaOption indicating the maximum RTP payload size.
+      */
+    static const PString & MaxTxPacketSizeOption();
 
     /**Get the frame time in RTP timestamp units. If this returns zero then
        the media format is not real time and has no intrinsic timing eg T.120
