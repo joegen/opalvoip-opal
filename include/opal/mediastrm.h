@@ -350,7 +350,7 @@ class OpalMediaStream : public PSafeObject
     bool RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage);
 
 #if OPAL_STATISTICS
-    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+    virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch = false) const;
 #endif
   //@}
 
@@ -532,7 +532,7 @@ class OpalRTPMediaStream : public OpalMediaStream
     { return rtpSession; }
 
 #if OPAL_STATISTICS
-    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+    virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch = false) const;
 #endif
   //@}
 

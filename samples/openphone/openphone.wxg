@@ -4475,7 +4475,7 @@
                                                         <option>0</option>
                                                         <object class="wxFlexGridSizer" name="grid_sizer_21" base="EditFlexGridSizer">
                                                             <hgap>5</hgap>
-                                                            <rows>4</rows>
+                                                            <rows>6</rows>
                                                             <cols>3</cols>
                                                             <vgap>0</vgap>
                                                             <object class="sizeritem">
@@ -4595,6 +4595,64 @@
                                                                     <style>wxST_NO_AUTORESIZE</style>
                                                                     <attribute>1</attribute>
                                                                     <label>%u</label>
+                                                                    <size>40, 9d</size>
+                                                                </object>
+                                                            </object>
+                                                            <object class="sizeritem">
+                                                                <flag>wxEXPAND</flag>
+                                                                <border>0</border>
+                                                                <option>0</option>
+                                                                <object class="spacer" name="spacer" base="EditSpacer">
+                                                                    <height>4</height>
+                                                                    <width>4</width>
+                                                                </object>
+                                                            </object>
+                                                            <object class="sizeritem">
+                                                                <flag>wxEXPAND</flag>
+                                                                <border>0</border>
+                                                                <option>0</option>
+                                                                <object class="spacer" name="spacer" base="EditSpacer">
+                                                                    <height>4</height>
+                                                                    <width>4</width>
+                                                                </object>
+                                                            </object>
+                                                            <object class="sizeritem">
+                                                                <flag>wxEXPAND</flag>
+                                                                <border>0</border>
+                                                                <option>0</option>
+                                                                <object class="spacer" name="spacer" base="EditSpacer">
+                                                                    <height>4</height>
+                                                                    <width>4</width>
+                                                                </object>
+                                                            </object>
+                                                            <object class="sizeritem">
+                                                                <flag>wxALIGN_RIGHT</flag>
+                                                                <border>0</border>
+                                                                <option>0</option>
+                                                                <object class="wxStaticText" name="label_96" base="EditStaticText">
+                                                                    <attribute>1</attribute>
+                                                                    <label>Page:</label>
+                                                                </object>
+                                                            </object>
+                                                            <object class="sizeritem">
+                                                                <flag>wxALIGN_CENTER_VERTICAL</flag>
+                                                                <border>0</border>
+                                                                <option>0</option>
+                                                                <object class="wxStaticText" name="RxFaxPages" base="EditStaticText">
+                                                                    <style>wxST_NO_AUTORESIZE</style>
+                                                                    <attribute>1</attribute>
+                                                                    <label>%u</label>
+                                                                    <size>40, 9d</size>
+                                                                </object>
+                                                            </object>
+                                                            <object class="sizeritem">
+                                                                <flag>wxALIGN_CENTER_VERTICAL</flag>
+                                                                <border>0</border>
+                                                                <option>0</option>
+                                                                <object class="wxStaticText" name="TxFaxPages" base="EditStaticText">
+                                                                    <style>wxST_NO_AUTORESIZE</style>
+                                                                    <attribute>1</attribute>
+                                                                    <label>%u of %u</label>
                                                                     <size>40, 9d</size>
                                                                 </object>
                                                             </object>
