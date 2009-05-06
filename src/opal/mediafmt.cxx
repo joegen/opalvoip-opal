@@ -631,8 +631,6 @@ const PString & OpalMediaFormat::FrameTimeOption()     { static PString s = PLUG
 const PString & OpalMediaFormat::ClockRateOption()     { static PString s = PLUGINCODEC_OPTION_CLOCK_RATE;      return s; }
 const PString & OpalMediaFormat::MaxBitRateOption()    { static PString s = PLUGINCODEC_OPTION_MAX_BIT_RATE;    return s; }
 const PString & OpalMediaFormat::TargetBitRateOption() { static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE; return s; }
-const PString & OpalMediaFormat::BandwidthTIASOption() { static PString s = PLUGINCODEC_OPTION_TIAS;            return s; }
-const PString & OpalMediaFormat::MaxPacketRateOption() { static PString s = PLUGINCODEC_OPTION_MAXPRATE;        return s; }
 
 #if OPAL_H323
 const PString & OpalMediaFormat::MediaPacketizationOption()  { static PString s = PLUGINCODEC_MEDIA_PACKETIZATION;  return s; }
@@ -902,8 +900,6 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
 
   if (cr > 0)
     AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::ClockRateOption(), true, OpalMediaOption::NoMerge, cr));
-
-  AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::BandwidthTIASOption(), false, OpalMediaOption::MinMerge, bw, 1, bw));
 
   // assume non-dynamic payload types are correct and do not need deconflicting
   if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType >= RTP_DataFrame::MaxPayloadType) {
