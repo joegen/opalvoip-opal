@@ -124,7 +124,7 @@ class OpalRTPMediaSession : public OpalMediaSession
 
     virtual bool IsRTP() const { return true; }
 
-    virtual bool HasFailed() const { return rtpSession != NULL && rtpSession->HasFailed(); }
+    virtual bool HasFailed() const { return (rtpSession != NULL) && (rtpSession->HasFailed() || (rtpSession->GetPacketsReceived() == 0)); }
 
     virtual OpalTransportAddress GetLocalMediaAddress() const;
 
