@@ -210,10 +210,16 @@ H263_Base_EncoderContext::H263_Base_EncoderContext(const char * _prefix)
   , tracer(_prefix, true)
 #endif
 { 
+#if USE_ALLOCED_FRAME
+  _inputFrameBuffer = NULL;
+#endif
 }
 
 H263_Base_EncoderContext::~H263_Base_EncoderContext()
 {
+#if USE_ALLOCED_FRAME
+  free(_inputFrameBuffer);
+#endif
 }
 
 bool H263_Base_EncoderContext::Open(CodecID codecId)
@@ -639,6 +645,17 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
       TRACE_AND_LOG(tracer, 1, "Reopening codec failed");
       return 0;
     }
+
+#if USE_ALLOCED_FRAME
+    if (_inputFrameBuffer != NULL)
+      free(_inputFrameBuffer);
+    void * p;
+    if (posix_memalign((void **)&_inputFrameBuffer, 64, header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2)) != 0) {
+      TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for frame buffer");
+      return 0;
+    }
+#endif
+
   }
 
   CODEC_TRACER(tracer, "Input:seq=" << _frameCount
@@ -651,11 +668,17 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
   int frameSize = (size * 3) >> 1;
  
   // we need FF_INPUT_BUFFER_PADDING_SIZE allocated bytes after the YVU420P image for the encoder
+#if USE_ALLOCED_FRAME
+  memcpy (_inputFrameBuffer, OPAL_VIDEO_FRAME_DATA_PTR(header), frameSize);
+  memset (_inputFrameBuffer + frameSize, 0 , FF_INPUT_BUFFER_PADDING_SIZE);
+  _inputFrame->data[0] = _inputFrameBuffer;
+#else
   memset (_inputFrameBuffer, 0 , FF_INPUT_BUFFER_PADDING_SIZE);
   memcpy (_inputFrameBuffer + FF_INPUT_BUFFER_PADDING_SIZE, OPAL_VIDEO_FRAME_DATA_PTR(header), frameSize);
   memset (_inputFrameBuffer + FF_INPUT_BUFFER_PADDING_SIZE + frameSize, 0 , FF_INPUT_BUFFER_PADDING_SIZE);
-
   _inputFrame->data[0] = _inputFrameBuffer + FF_INPUT_BUFFER_PADDING_SIZE;
+#endif
+
   _inputFrame->data[1] = _inputFrame->data[0] + size;
   _inputFrame->data[2] = _inputFrame->data[1] + (size / 4);
   _inputFrame->pict_type = (flags && forceIFrame) ? FF_I_TYPE : 0;
@@ -804,6 +827,14 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
       TRACE_AND_LOG(tracer, 1, "Reopening codec failed");
       return 0;
     }
+#if USE_ALLOCED_FRAME
+    if (_inputFrameBuffer != NULL)
+      free(_inputFrameBuffer);
+    if (posix_memalign((void **)&_inputFrameBuffer, 64, header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2)) != 0) {
+      TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for frame buffer");
+      return 0;
+    }
+#endif
   }
 
   CODEC_TRACER(tracer, "Input:seq=" << _frameCount
@@ -1289,8 +1320,8 @@ static void FindBoundingBox(const char * const * * parm,
                                              int & maxWidth,
                                              int & maxHeight,
                                              int & frameTime,
-                                             int & maxBitRate,
-                                             int & targetBitRate)
+                                             int & targetBitRate,
+                                             int & maxBitRate)
 {
   // initialise the MPI values to disabled
   int i;
@@ -1408,19 +1439,19 @@ static void FindBoundingBox(const char * const * * parm,
   }
 
   // find an appropriate max bit rate
-  if (maxBitRate != 0) {
-    if (maxBR != 0)
-      maxBitRate = PMIN(maxBitRate, maxBR * 100);
-  }
-  else
-  {
+  if (maxBitRate == 0) {
     if (maxBR != 0)
       maxBitRate = maxBR * 100;
-    else 
+    else if (targetBitRate != 0)
       maxBitRate = targetBitRate;
+    else
+      maxBitRate = 327000;
   }
+  else if (maxBR > 0)
+    maxBitRate = PMIN(maxBR * 100, maxBitRate);
 
-  targetBitRate = PMIN(targetBitRate, maxBitRate);
+  if (targetBitRate == 0)
+    targetBitRate = 327000;
 }
 
 static int to_normalised_options(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
@@ -1430,8 +1461,8 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
 
   // find bounding box enclosing all MPI values
   int mpi[5];
-  int minWidth, minHeight, maxHeight, maxWidth, frameTime, bitRate, maxBitRate, targetBitRate;
-  FindBoundingBox((const char * const * *)parm, mpi, minWidth, minHeight, maxWidth, maxHeight, frameTime, maxBitRate, targetBitRate);
+  int minWidth, minHeight, maxHeight, maxWidth, frameTime, targetBitRate, maxBitRate;
+  FindBoundingBox((const char * const * *)parm, mpi, minWidth, minHeight, maxWidth, maxHeight, frameTime, targetBitRate, maxBitRate);
 
   char ** options = (char **)calloc(16+(5*2)+2, sizeof(char *));
   *(char ***)parm = options;
@@ -1469,8 +1500,8 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
 
   // find bounding box enclosing all MPI values
   int mpi[5];
-  int minWidth, minHeight, maxHeight, maxWidth, frameTime, bitRate, maxBitRate, targetBitRate;
-  FindBoundingBox((const char * const * *)parm, mpi, minWidth, minHeight, maxWidth, maxHeight, frameTime, maxBitRate, targetBitRate);
+  int minWidth, minHeight, maxHeight, maxWidth, frameTime, targetBitRate, maxBitRate;
+  FindBoundingBox((const char * const * *)parm, mpi, minWidth, minHeight, maxWidth, maxHeight, frameTime, targetBitRate, maxBitRate);
 
   char ** options = (char **)calloc(14+5*2+2, sizeof(char *));
   *(char ***)parm = options;
