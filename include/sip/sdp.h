@@ -93,12 +93,15 @@ class SDPMediaFormat : public PObject
     void SetPacketTime(const PString & optionName, unsigned ptime);
 
     const OpalMediaFormat & GetMediaFormat() const;
-    OpalMediaFormat & GetWritableMediaFormat() const;
+    OpalMediaFormat & GetWritableMediaFormat();
 
-    bool ToNormalisedOptions();
+    bool PreEncode();
+    bool PostDecode(unsigned bandwidth);
 
   protected:
-    mutable OpalMediaFormat mediaFormat;
+    void InitialiseMediaFormat();
+
+    OpalMediaFormat mediaFormat;
 
     SDPMediaDescription & m_parent;
     RTP_DataFrame::PayloadTypes payloadType;
@@ -130,8 +133,9 @@ class SDPMediaDescription : public PObject
       const OpalTransportAddress & address
     );
 
-    virtual void PrintOn(ostream & strm) const;
-    virtual void PrintOn(const OpalTransportAddress & commonAddr, ostream & str) const;
+    virtual bool PreEncode();
+    virtual void Encode(const OpalTransportAddress & commonAddr, ostream & str) const;
+    virtual bool PrintOn(ostream & strm, const PString & str) const;
 
     virtual bool Decode(const PStringArray & tokens);
     virtual bool Decode(char key, const PString & value);
@@ -178,8 +182,6 @@ class SDPMediaDescription : public PObject
     virtual PString GetSDPPortList() const = 0;
 
     virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
-
-    virtual bool PrintOn(ostream & strm, const PString & str) const;
 
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
@@ -240,6 +242,7 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
   public:
     SDPVideoMediaDescription(const OpalTransportAddress & address);
     virtual PString GetSDPMediaType() const;
+    virtual bool PreEncode();
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
     void SetAttribute(const PString & attr, const PString & value);
 };
@@ -309,6 +312,7 @@ class SDPSessionDescription : public PObject
 
     static const PString & ConferenceTotalBandwidthType();
     static const PString & ApplicationSpecificBandwidthType();
+    static const PString & TransportIndependentBandwidthType(); // RFC3890
 
   protected:
     void ParseOwner(const PString & str);

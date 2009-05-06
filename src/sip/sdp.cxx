@@ -279,7 +279,6 @@ PString SDPMediaFormat::GetFMTP() const
 void SDPMediaFormat::PrintOn(ostream & strm) const
 {
   PAssert(!encodingName.IsEmpty(), "SDPMediaFormat encoding name is empty");
-  mediaFormat.ToCustomisedOptions();
 
   PINDEX i;
   for (i = 0; i < 2; ++i) {
@@ -311,45 +310,60 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
 
 const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 {
-  return GetWritableMediaFormat();
-}
-
-
-OpalMediaFormat & SDPMediaFormat::GetWritableMediaFormat() const
-{
-  if (mediaFormat.IsEmpty()) {
-
-    mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
-    if (mediaFormat.IsEmpty())
-      mediaFormat = OpalMediaFormat(encodingName);
-
-    PTRACE_IF(2, mediaFormat.IsEmpty(), "SDP\tCould not find media format for \""
-              << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
-
-    mediaFormat.MakeUnique();
-    mediaFormat.SetPayloadType(payloadType);
-
-    if (!parameters.IsEmpty() && (mediaFormat.GetMediaType() == OpalMediaType::Audio())) 
-      mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), parameters.AsUnsigned());
-    else
-      mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), 1);
-
-    // Fill in the default values for (possibly) missing FMTP options
-    for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
-      OpalMediaOption & option = const_cast<OpalMediaOption &>(mediaFormat.GetOption(i));
-      if (!option.GetFMTPName().IsEmpty() && !option.GetFMTPDefault().IsEmpty())
-        option.FromString(option.GetFMTPDefault());
-    }
-
-    for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) 
-      mediaFormat.AddOption(new OpalMediaOptionString("Bandwidth-" & r->first, false, r->second), PTrue);
-  }
-
+  if (mediaFormat.IsEmpty())
+    const_cast<SDPMediaFormat *>(this)->InitialiseMediaFormat();
   return mediaFormat;
 }
 
 
-bool SDPMediaFormat::ToNormalisedOptions()
+OpalMediaFormat & SDPMediaFormat::GetWritableMediaFormat()
+{
+  if (mediaFormat.IsEmpty())
+    InitialiseMediaFormat();
+  return mediaFormat;
+}
+
+
+void SDPMediaFormat::InitialiseMediaFormat()
+{
+  mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+  if (mediaFormat.IsEmpty())
+    mediaFormat = OpalMediaFormat(encodingName);
+  if (mediaFormat.IsEmpty()) {
+    PTRACE(2, "SDP\tCould not find media format for \""
+           << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
+    return;
+  }
+
+  mediaFormat.MakeUnique();
+  mediaFormat.SetPayloadType(payloadType);
+
+  if (!parameters.IsEmpty() && (mediaFormat.GetMediaType() == OpalMediaType::Audio())) 
+    mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), parameters.AsUnsigned());
+  else
+    mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), 1);
+
+  // Fill in the default values for (possibly) missing FMTP options
+  for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
+    OpalMediaOption & option = const_cast<OpalMediaOption &>(mediaFormat.GetOption(i));
+    if (!option.GetFMTPName().IsEmpty() && !option.GetFMTPDefault().IsEmpty())
+      option.FromString(option.GetFMTPDefault());
+  }
+
+  for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) {
+    if (r->second > 0)
+      mediaFormat.AddOption(new OpalMediaOptionString("Bandwidth-" + r->first, false, r->second), true);
+  }
+}
+
+
+bool SDPMediaFormat::PreEncode()
+{
+  return mediaFormat.ToCustomisedOptions();
+}
+
+
+bool SDPMediaFormat::PostDecode(unsigned bandwidth)
 {
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
     return false;
@@ -357,6 +371,11 @@ bool SDPMediaFormat::ToNormalisedOptions()
   // try to init encodingName from global list, to avoid PAssert when media has no rtpmap
   if (encodingName.IsEmpty())
     encodingName = mediaFormat.GetEncodingName();
+
+  if (bandwidth > 0) {
+    PTRACE(4, "SDP\tAdjusting format \"" << mediaFormat << "\" bandwidth to " << bandwidth);
+    mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bandwidth);
+  }
 
   if (mediaFormat.ToNormalisedOptions())
     return true;
@@ -551,9 +570,13 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
 
 bool SDPMediaDescription::PostDecode()
 {
+  unsigned bw = bandwidth[SDPSessionDescription::TransportIndependentBandwidthType()];
+  if (bw == 0)
+    bw = bandwidth[SDPSessionDescription::ApplicationSpecificBandwidthType()]*1000;
+
   SDPMediaFormatList::iterator format = formats.begin();
   while (format != formats.end()) {
-    if (format->ToNormalisedOptions())
+    if (format->PostDecode(bw))
       ++format;
     else
       formats.erase(format++);
@@ -655,20 +678,27 @@ void SDPMediaDescription::SetPacketTime(const PString & optionName, const PStrin
 }
 
 
-void SDPMediaDescription::PrintOn(const OpalTransportAddress & commonAddr, ostream & str) const
+bool SDPMediaDescription::PreEncode()
+{
+  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+    if (!format->PreEncode())
+      return false;
+  }
+  return true;
+}
+
+
+void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostream & strm) const
 {
   PString connectString;
   PIPSocket::Address commonIP, transportIP;
   if (transportAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
     connectString = GetConnectAddressString(transportAddress);
-
-  PrintOn(str, connectString);
+  if (connectString.IsEmpty())
+    connectString = GetConnectAddressString(transportAddress);
+  PrintOn(strm, connectString);
 }
 
-void SDPMediaDescription::PrintOn(ostream & str) const
-{
-  PrintOn(str, GetConnectAddressString(transportAddress));
-}
 
 bool SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) const
 {
@@ -1025,6 +1055,36 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
 }
 
 
+
+bool SDPVideoMediaDescription::PreEncode()
+{
+  if (!SDPRTPAVPMediaDescription::PreEncode())
+    return false;
+
+  /* Even though the bandwidth parameter COULD be used for audio, we don't
+     do it as it has very limited use. Variable bit rate audio codecs are
+     not common, and usually there is an fmtp value to select the different
+     bit rates. So, as it might cause interoperabity difficulties with the
+     dumber implementations out there we just don't.
+
+     As per RFC3890 we set both AS and TIAS parameters.
+  */
+  unsigned minBW = UINT_MAX;
+  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+    unsigned bw = format->GetMediaFormat().GetBandwidth();
+    if (minBW > bw)
+      minBW = bw;
+  }
+
+  if (minBW == 0)
+    return false;
+
+  bandwidth[SDPSessionDescription::TransportIndependentBandwidthType()] = minBW;
+  bandwidth[SDPSessionDescription::ApplicationSpecificBandwidthType()] = (minBW+999)/1000;
+  return true;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 SDPApplicationMediaDescription::SDPApplicationMediaDescription(const OpalTransportAddress & address)
@@ -1065,8 +1125,9 @@ PString SDPApplicationMediaDescription::GetSDPPortList() const
 
 //////////////////////////////////////////////////////////////////////////////
 
-const PString & SDPSessionDescription::ConferenceTotalBandwidthType()     { static PString s = "CT"; return s; }
-const PString & SDPSessionDescription::ApplicationSpecificBandwidthType() { static PString s = "AS"; return s; }
+const PString & SDPSessionDescription::ConferenceTotalBandwidthType()      { static PString s = "CT";   return s; }
+const PString & SDPSessionDescription::ApplicationSpecificBandwidthType()  { static PString s = "AS";   return s; }
+const PString & SDPSessionDescription::TransportIndependentBandwidthType() { static PString s = "TIAS"; return s; }
 
 SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & address)
   : sessionName(SIP_DEFAULT_SESSION_NAME),
@@ -1083,7 +1144,6 @@ SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & addres
 void SDPSessionDescription::PrintOn(ostream & str) const
 {
   OpalTransportAddress connectionAddress(defaultConnectAddress);
-  PBoolean useCommonConnect = PTrue;
 
   // see common connect address is needed
   {
@@ -1103,7 +1163,7 @@ void SDPSessionDescription::PrintOn(ostream & str) const
       if ((descrMatched > matched))
         connectionAddress = descrAddress;
       else
-        useCommonConnect = PFalse;
+        connectionAddress.MakeEmpty();
     }
   }
 
@@ -1117,7 +1177,7 @@ void SDPSessionDescription::PrintOn(ostream & str) const
       << "\r\n"
          "s=" << sessionName << "\r\n";
 
-  if (useCommonConnect)
+  if (!connectionAddress.IsEmpty())
     str << "c=" << GetConnectAddressString(connectionAddress) << "\r\n";
   
   str << bandwidth
@@ -1141,12 +1201,9 @@ void SDPSessionDescription::PrintOn(ostream & str) const
   }
 
   // encode media session information
-  PINDEX i;
-  for (i = 0; i < mediaDescriptions.GetSize(); i++) {
-    if (useCommonConnect) 
-      mediaDescriptions[i].PrintOn(connectionAddress, str);
-    else
-      str << mediaDescriptions[i];
+  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
+    if (mediaDescriptions[i].PreEncode())
+      mediaDescriptions[i].Encode(connectionAddress, str);
   }
 }
 
