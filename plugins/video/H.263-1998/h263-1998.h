@@ -59,6 +59,8 @@
 
 typedef unsigned char BYTE;
 
+#define USE_ALLOCED_FRAME 1
+
 #define H263P_CLOCKRATE        90000
 #define H263P_BITRATE         327600
 #define H263P_PAYLOAD_SIZE       600
@@ -133,7 +135,11 @@ class H263_Base_EncoderContext
   protected:
     virtual bool InitContext() = 0;
 
+#if USE_ALLOCED_FRAME
+    unsigned char * _inputFrameBuffer;
+#else
     unsigned char _inputFrameBuffer[MAX_YUV420P_FRAME_SIZE] __attribute__ ((aligned (16)));
+#endif
     AVCodec        *_codec;
     AVCodecContext *_context;
     AVFrame        *_inputFrame;
