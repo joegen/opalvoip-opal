@@ -206,7 +206,7 @@ class OpalMediaPatch : public PObject
     virtual void UnLockSinkTranscoder() const;
 
 #if OPAL_STATISTICS
-    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+    virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromSink) const;
 #endif
   //@}
 
@@ -228,7 +228,7 @@ class OpalMediaPatch : public PObject
         void SetCommandNotifier(const PNotifier & notifier);
         bool WriteFrame(RTP_DataFrame & sourceFrame);
 #if OPAL_STATISTICS
-        void GetStatistics(OpalMediaStatistics & statistics) const;
+        void GetStatistics(OpalMediaStatistics & statistics, bool fromSource) const;
 #endif
 
         OpalMediaPatch  &  patch;

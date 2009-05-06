@@ -1111,10 +1111,14 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
     return newStream;
   }
 
-  // Open other direction, if needed
-  if (makesymmetrical)
-    GetCall().OpenSourceMediaStreams(*(isSource ? GetCall().GetOtherPartyConnection(*this) : this),
-                                       mediaFormat.GetMediaType(), sessionID, mediaFormat);
+  // Open other direction, if needed (must be after above open)
+  if (makesymmetrical &&
+      !GetCall().OpenSourceMediaStreams(*(isSource ? GetCall().GetOtherPartyConnection(*this) : this),
+                                                  mediaFormat.GetMediaType(), sessionID, mediaFormat)) {
+    newStream->Close();
+    needReINVITE = oldReINVITE;
+    return NULL;
+  }
 
   needReINVITE = oldReINVITE;
 

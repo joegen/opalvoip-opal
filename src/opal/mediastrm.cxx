@@ -465,14 +465,14 @@ PBoolean OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMedia
 
 
 #if OPAL_STATISTICS
-void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics) const
+void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
 {
   PSafeLockReadOnly safeLock(*this);
   if (!safeLock.IsLocked())
     return;
 
-  if (mediaPatch != NULL)
-    mediaPatch->GetStatistics(statistics);
+  if (mediaPatch != NULL && !fromPatch)
+    mediaPatch->GetStatistics(statistics, IsSink());
 }
 #endif
 
@@ -694,10 +694,10 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
 
 
 #if OPAL_STATISTICS
-void OpalRTPMediaStream::GetStatistics(OpalMediaStatistics & statistics) const
+void OpalRTPMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
 {
   rtpSession.GetStatistics(statistics, IsSource());
-  OpalMediaStream::GetStatistics(statistics);
+  OpalMediaStream::GetStatistics(statistics, fromPatch);
 }
 #endif
 
