@@ -815,10 +815,6 @@ class OpalMediaFormat : public PContainer
     PINDEX GetFrameSize() const { PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(MaxFrameSizeOption(), 0); }
     static const PString & MaxFrameSizeOption();
 
-    /**Get the name of the OpalMediaOption indicating the maximum RTP payload size.
-      */
-    static const PString & MaxTxPacketSizeOption();
-
     /**Get the frame time in RTP timestamp units. If this returns zero then
        the media format is not real time and has no intrinsic timing eg T.120
       */
@@ -838,6 +834,14 @@ class OpalMediaFormat : public PContainer
       */
     unsigned GetClockRate() const { PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(ClockRateOption(), 1000); }
     static const PString & ClockRateOption();
+
+    /**Get the name of the OpalMediaOption indicating the protocol the format is being used on.
+      */
+    static const PString & ProtocolOption();
+
+    /**Get the name of the OpalMediaOption indicating the maximum RTP payload size.
+      */
+    static const PString & MaxTxPacketSizeOption();
 
     /**Get all of the option values of the format as a dictionary.
        Each entry is a name value pair.
