@@ -164,6 +164,7 @@ PBoolean H323Capability::IsMatch(const PASN_Choice & subTypePDU) const
 
 PBoolean H323Capability::OnSendingPDU(H245_DataType & /*pdu*/) const
 {
+  mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), "H.323");
   return mediaFormat.ToCustomisedOptions();
 }
 
@@ -200,12 +201,14 @@ PBoolean H323Capability::OnReceivedPDU(const H245_Capability & cap)
       capabilityDirection = e_NoDirection;
   }
 
-  return PTrue;
+  GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), "H.323");
+  return mediaFormat.ToNormalisedOptions();
 }
 
 
 PBoolean H323Capability::OnReceivedPDU(const H245_DataType & /*pdu*/, PBoolean /*receiver*/)
 {
+  GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), "H.323");
   return mediaFormat.ToNormalisedOptions();
 }
 
@@ -1775,8 +1778,7 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
               }
             }
           }
-          if (copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability) &&
-              copy->GetWritableMediaFormat().ToNormalisedOptions())
+          if (copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability))
             table.Append(copy);
           else
             delete copy;

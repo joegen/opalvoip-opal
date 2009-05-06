@@ -351,6 +351,7 @@ void SDPMediaFormat::InitialiseMediaFormat()
 
 bool SDPMediaFormat::PreEncode()
 {
+  mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), "SIP");
   return mediaFormat.ToCustomisedOptions();
 }
 
@@ -369,6 +370,7 @@ bool SDPMediaFormat::PostDecode(unsigned bandwidth)
     mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bandwidth);
   }
 
+  mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), "SIP");
   if (mediaFormat.ToNormalisedOptions())
     return true;
 
