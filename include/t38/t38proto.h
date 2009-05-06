@@ -155,7 +155,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     virtual PBoolean IsSynchronous() const;
 
 #if OPAL_STATISTICS
-    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+    virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch = false) const;
 #endif
   //@}
 

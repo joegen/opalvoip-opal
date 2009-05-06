@@ -312,7 +312,7 @@ PBoolean OpalFaxMediaStream::Open()
     }
   }
 
-  if (IsSource() && m_faxCallInfo->stdoutThread == NULL)
+  if (IsSink() && m_faxCallInfo->stdoutThread == NULL)
     m_faxCallInfo->stdoutThread = PThread::Create(PCREATE_NOTIFIER(ReadStdOut), "SpanDSP Output");
 
   return OpalMediaStream::Open();
@@ -511,9 +511,9 @@ PBoolean OpalFaxMediaStream::IsSynchronous() const
 }
 
 
-void OpalFaxMediaStream::GetStatistics(OpalMediaStatistics & statistics) const
+void OpalFaxMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
 {
-  OpalMediaStream::GetStatistics(statistics);
+  OpalMediaStream::GetStatistics(statistics, fromPatch);
   statistics.m_fax = m_statistics;
 }
 

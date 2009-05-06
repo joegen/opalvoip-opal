@@ -387,7 +387,7 @@ struct StatisticsField
   double CalculateBandwidth(DWORD bytes);
   double CalculateFrameRate(DWORD frames);
   virtual StatisticsField * Clone() const = 0;
-  virtual void Update(const OpalConnection & connection, const OpalMediaStream & stream);
+  virtual void Update(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics);
   virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) = 0;
 
   const wxChar    * m_name;
@@ -463,8 +463,6 @@ class InCallPanel : public CallPanelBase
     void SpeakerVolume(wxScrollEvent & event);
     void MicrophoneVolume(wxScrollEvent & event);
     void SetVolume(bool microphone, int value, bool muted);
-
-    bool GetConnections(bool user);
 
     wxButton  * m_Hold;
     wxButton  * m_SpeakerHandset;
