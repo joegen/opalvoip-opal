@@ -255,6 +255,10 @@ static const wxChar AllRouteSources[] = wxT("<ALL>");
 
 static const wxChar SpeedDialTabTitle[] = wxT("Speed Dials");
 
+
+static const wxChar NotAvailableString[] = wxT("N/A");
+
+
 enum IconStates {
   Icon_Unknown,
   Icon_Absent,
@@ -5526,7 +5530,7 @@ void StatisticsField::Init(wxWindow * panel)
 
 void StatisticsField::Clear()
 {
-  m_staticText->SetLabel(wxT("N/A"));
+  m_staticText->SetLabel(NotAvailableString);
   m_lastBandwidthTick = 0;
 }
 
@@ -5565,11 +5569,9 @@ double StatisticsField::CalculateFrameRate(DWORD frames)
 }
 
 
-void StatisticsField::Update(const OpalConnection & connection, const OpalMediaStream & stream)
+void StatisticsField::Update(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics)
 {
   wxString value;
-  OpalMediaStatistics statistics;
-  stream.GetStatistics(statistics);
   GetValue(connection, stream, statistics, value);
   m_staticText->SetLabel(value);
 }
@@ -5766,7 +5768,16 @@ STATISTICS_FIELD_BEG(RxFax, Packets)
 STATISTICS_FIELD_END(RxFax, Packets)
 
 STATISTICS_FIELD_BEG(RxFax, Pages)
-  value.sprintf(m_printFormat, statistics.m_fax.m_rxPages);
+  switch (statistics.m_fax.m_result) {
+    case -2 :
+      value = NotAvailableString;
+      break;
+    case -1 :
+      value.sprintf(m_printFormat, statistics.m_fax.m_rxPages+1);
+      break;
+    default :
+      value.sprintf(m_printFormat, statistics.m_fax.m_rxPages);
+  }
 STATISTICS_FIELD_END(RxFax, Pages)
 
 STATISTICS_FIELD_BEG(TxFax, Bandwidth)
@@ -5782,7 +5793,16 @@ STATISTICS_FIELD_BEG(TxFax, Packets)
 STATISTICS_FIELD_END(TxFax, Packets)
 
 STATISTICS_FIELD_BEG(TxFax, Pages)
-  value.sprintf(m_printFormat, statistics.m_fax.m_txPages, statistics.m_fax.m_totalPages);
+  switch (statistics.m_fax.m_result) {
+    case -2 :
+      value = NotAvailableString;
+      break;
+    case -1 :
+      value.sprintf(m_printFormat, statistics.m_fax.m_txPages+1, statistics.m_fax.m_totalPages);
+      break;
+    default :
+      value.sprintf(m_printFormat, statistics.m_fax.m_txPages, statistics.m_fax.m_totalPages);
+  }
 STATISTICS_FIELD_END(TxFax, Pages)
 
 
@@ -5838,8 +5858,10 @@ void StatisticsPage::UpdateSession(const OpalConnection * connection)
     OpalMediaStreamPtr stream = connection->GetMediaStream(m_mediaType, m_receiver);
     m_isActive = stream != NULL && stream->Open();
     if (m_isActive) {
+      OpalMediaStatistics statistics;
+      stream->GetStatistics(statistics);
       for (size_t i = 0; i < m_fields.size(); i++)
-        m_fields[i]->Update(*connection, *stream);
+        m_fields[i]->Update(*connection, *stream, statistics);
     }
   }
 

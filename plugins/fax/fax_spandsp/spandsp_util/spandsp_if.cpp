@@ -389,8 +389,9 @@ void SpanDSP::FaxElement::PhaseBHandler(t30_state_t * state, int)
 }
 
 
-void SpanDSP::FaxElement::PhaseDHandler(t30_state_t *, int)
+void SpanDSP::FaxElement::PhaseDHandler(t30_state_t * state, int)
 {
+  PrintStatistics(state, -1); // Progress
 }
 
 
