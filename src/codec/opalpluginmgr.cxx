@@ -879,10 +879,12 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
       lastFrameWasIFrame = (flags & PluginCodec_ReturnCoderIFrame) != 0;
 
-      if (toLen > 0) {
+      if ((toLen >= RTP_DataFrame::MinHeaderSize) && (toLen >= dst->GetHeaderSize())) {
         dst->SetPayloadSize(toLen - dst->GetHeaderSize());
         dstList.Append(dst);
       }
+      else
+        delete dst;
 
     } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
     PTRACE(5, "OpalPlugin\tEncoded video frame into " << dstList.GetSize() << " packets.");
