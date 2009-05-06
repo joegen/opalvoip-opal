@@ -209,10 +209,16 @@ H263_Base_EncoderContext::H263_Base_EncoderContext(const char * _prefix)
   , tracer(_prefix, true)
 #endif
 { 
+#if USE_ALLOCED_FRAME
+  _inputFrameBuffer = NULL;
+#endif
 }
 
 H263_Base_EncoderContext::~H263_Base_EncoderContext()
 {
+#if USE_ALLOCED_FRAME
+  free(_inputFrameBuffer);
+#endif
 }
 
 bool H263_Base_EncoderContext::Open(CodecID codecId)
@@ -637,6 +643,17 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
       TRACE_AND_LOG(tracer, 1, "Reopening codec failed");
       return 0;
     }
+
+#if USE_ALLOCED_FRAME
+    if (_inputFrameBuffer != NULL)
+      free(_inputFrameBuffer);
+    void * p;
+    if (posix_memalign((void **)&_inputFrameBuffer, 64, header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2)) != 0) {
+      TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for frame buffer");
+      return 0;
+    }
+#endif
+
   }
 
   CODEC_TRACER(tracer, "Input:seq=" << _frameCount
@@ -649,11 +666,17 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
   int frameSize = (size * 3) >> 1;
  
   // we need FF_INPUT_BUFFER_PADDING_SIZE allocated bytes after the YVU420P image for the encoder
+#if USE_ALLOCED_FRAME
+  memcpy (_inputFrameBuffer, OPAL_VIDEO_FRAME_DATA_PTR(header), frameSize);
+  memset (_inputFrameBuffer + frameSize, 0 , FF_INPUT_BUFFER_PADDING_SIZE);
+  _inputFrame->data[0] = _inputFrameBuffer;
+#else
   memset (_inputFrameBuffer, 0 , FF_INPUT_BUFFER_PADDING_SIZE);
   memcpy (_inputFrameBuffer + FF_INPUT_BUFFER_PADDING_SIZE, OPAL_VIDEO_FRAME_DATA_PTR(header), frameSize);
   memset (_inputFrameBuffer + FF_INPUT_BUFFER_PADDING_SIZE + frameSize, 0 , FF_INPUT_BUFFER_PADDING_SIZE);
-
   _inputFrame->data[0] = _inputFrameBuffer + FF_INPUT_BUFFER_PADDING_SIZE;
+#endif
+
   _inputFrame->data[1] = _inputFrame->data[0] + size;
   _inputFrame->data[2] = _inputFrame->data[1] + (size / 4);
   _inputFrame->pict_type = (flags && forceIFrame) ? FF_I_TYPE : 0;
@@ -802,6 +825,14 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
       TRACE_AND_LOG(tracer, 1, "Reopening codec failed");
       return 0;
     }
+#if USE_ALLOCED_FRAME
+    if (_inputFrameBuffer != NULL)
+      free(_inputFrameBuffer);
+    if (posix_memalign((void **)&_inputFrameBuffer, 64, header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2)) != 0) {
+      TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for frame buffer");
+      return 0;
+    }
+#endif
   }
 
   CODEC_TRACER(tracer, "Input:seq=" << _frameCount
