@@ -243,6 +243,10 @@ class OpalFaxConnection : public OpalConnection
     virtual void OnFaxCompleted(
       bool timeout   ///< Fax timed out rather than orderly completion
     );
+
+    /**Get receive fax flag.
+      */
+    bool IsReceive() const { return m_receiving; }
   //@}
 
   protected:
