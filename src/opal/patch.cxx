@@ -290,12 +290,16 @@ void OpalMediaPatch::UnLockSinkTranscoder() const
 
 
 #if OPAL_STATISTICS
-void OpalMediaPatch::GetStatistics(OpalMediaStatistics & statistics) const
+void OpalMediaPatch::GetStatistics(OpalMediaStatistics & statistics, bool fromSink) const
 {
   inUse.StartRead();
 
-  if (!sinks.IsEmpty())
-    sinks.front().GetStatistics(statistics);
+  if (fromSink)
+    source.GetStatistics(statistics, true);
+  else {
+    if (!sinks.IsEmpty())
+      sinks.front().GetStatistics(statistics);
+  }
 
   inUse.EndRead();
 }
@@ -303,8 +307,11 @@ void OpalMediaPatch::GetStatistics(OpalMediaStatistics & statistics) const
 
 void OpalMediaPatch::Sink::GetStatistics(OpalMediaStatistics & statistics) const
 {
+  stream->GetStatistics(statistics, true);
+
   if (primaryCodec != NULL)
     primaryCodec->GetStatistics(statistics);
+
   if (secondaryCodec != NULL)
     secondaryCodec->GetStatistics(statistics);
 }
