@@ -73,8 +73,17 @@ class OpalFaxMediaStream : public OpalNullMediaStream
       return OpalNullMediaStream::WriteData(data, length, written);
     }
 
+#if OPAL_STATISTICS
+    virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
+    {
+      OpalMediaStream::GetStatistics(statistics, fromPatch);
+      statistics.m_fax = m_statistics;
+    }
+#endif
+
   private:
-    OpalFaxConnection & m_connection;
+    OpalFaxConnection      & m_connection;
+    OpalMediaStatistics::Fax m_statistics;
 };
 
 
