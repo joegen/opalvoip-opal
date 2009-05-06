@@ -384,13 +384,13 @@ void OpalMediaOptionEnum::SetValue(PINDEX value)
 ///////////////////////////////////////
 
 OpalMediaOptionString::OpalMediaOptionString(const char * name, bool readOnly)
-  : OpalMediaOption(name, readOnly, MinMerge)
+  : OpalMediaOption(name, readOnly, NoMerge)
 {
 }
 
 
 OpalMediaOptionString::OpalMediaOptionString(const char * name, bool readOnly, const PString & value)
-  : OpalMediaOption(name, readOnly, MinMerge),
+  : OpalMediaOption(name, readOnly, NoMerge),
     m_value(value)
 {
 }
@@ -624,6 +624,7 @@ const PString & OpalMediaFormat::MediaPacketizationOption()  { static PString s 
 const PString & OpalMediaFormat::MediaPacketizationsOption() { static PString s = PLUGINCODEC_MEDIA_PACKETIZATIONS; return s; }
 #endif
 
+const PString & OpalMediaFormat::ProtocolOption()        { static PString s = "Protocol";           return s; }
 const PString & OpalMediaFormat::MaxTxPacketSizeOption() { static PString s = "Max Tx Packet Size"; return s; }
 
 OpalMediaFormat::OpalMediaFormat(OpalMediaFormatInternal * info)
@@ -888,6 +889,8 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
 
   if (cr > 0)
     AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::ClockRateOption(), true, OpalMediaOption::NoMerge, cr));
+
+  AddOption(new OpalMediaOptionString(OpalMediaFormat::ProtocolOption(), true));
 
   // assume non-dynamic payload types are correct and do not need deconflicting
   if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType >= RTP_DataFrame::MaxPayloadType) {
@@ -1466,12 +1469,9 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TargetBitRateOption(),            false, OpalMediaOption::AlwaysMerge, maxBitRate,                  1000      ));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TxKeyFramePeriodOption(),         false, OpalMediaOption::AlwaysMerge, 125,                         0,   1000));
   AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::RateControlEnableOption(),        false, OpalMediaOption::NoMerge,     false                                  ));
-  AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          false, OpalMediaOption::NoMerge,     2048,                        100,    2048));
-  {
-    OpalMediaOption * opt = new OpalMediaOptionString(OpalVideoFormat::RateControllerOption(), false);
-    opt->SetMerge(OpalMediaOption::NoMerge);
-    AddOption(opt);
-  }
+  AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          false, OpalMediaOption::NoMerge,     2048,                        100,  2048));
+  AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
+
 
   static const char * const RoleEnumerations[OpalVideoFormat::eNumRoles] = {
     "No Role",
