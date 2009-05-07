@@ -243,6 +243,19 @@ void OpalLocalConnection::AcceptIncoming()
 {
   if (LockReadWrite()) {
     OnConnectedInternal();
+    OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaType::GetList();
+    for (OpalMediaTypeFactory::KeyList_T::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
+      OpalMediaType mediaType = *iter;
+      switch (GetAutoStart(mediaType)) {
+        case OpalMediaType::Transmit :
+        case OpalMediaType::TransmitReceive :
+          if (GetMediaStream(mediaType, true) == NULL)
+            ownerCall.OpenSourceMediaStreams(*this, mediaType);
+
+        default :
+          break;
+      }
+    }
     UnlockReadWrite();
   }
 }
