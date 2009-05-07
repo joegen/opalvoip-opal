@@ -949,6 +949,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
     if (toLen > (unsigned)m_bufferRTP->GetHeaderSize() && (flags & PluginCodec_ReturnCoderLastFrame) != 0) {
       m_bufferRTP->SetPayloadSize(toLen);
       m_bufferRTP->SetTimestamp(src.GetTimestamp());
+      m_bufferRTP->SetPayloadType(GetPayloadType(false));
       dstList.Append(m_bufferRTP);
       m_bufferRTP = NULL;
 
