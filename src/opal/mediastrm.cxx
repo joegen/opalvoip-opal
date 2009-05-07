@@ -249,7 +249,7 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   unsigned oldTimestamp = timestamp;
 
-  PAssert(defaultDataSize >= (packet.GetSize() - RTP_DataFrame::MinHeaderSize), "buffer for media packet is too small");
+  PAssert(defaultDataSize <= (packet.GetSize() - packet.GetHeaderSize()), "default data size too large for packet");
 
   PINDEX lastReadCount;
   if (!ReadData(packet.GetPayloadPtr(), defaultDataSize, lastReadCount))

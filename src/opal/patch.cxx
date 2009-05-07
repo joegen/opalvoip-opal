@@ -459,11 +459,12 @@ void OpalMediaPatch::Main()
 	
   bool asynchronous = OnPatchStart();
 
-  RTP_DataFrame sourceFrame(source.GetDataSize());
-  sourceFrame.SetPayloadType(source.GetMediaFormat().GetPayloadType());
-
   while (source.IsOpen()) {
+
+    RTP_DataFrame sourceFrame(source.GetDataSize());
+    sourceFrame.SetPayloadType(source.GetMediaFormat().GetPayloadType());
     sourceFrame.SetPayloadSize(0); 
+
     if (!source.ReadPacket(sourceFrame)) {
       PTRACE(4, "Patch\tThread ended because source read failed");
       break;
@@ -577,8 +578,10 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
     return true;
   }
 
-  if (!codec.AcceptEmptyPayload() && frame.GetPayloadSize() == 0) 
+  if (!codec.AcceptEmptyPayload() && frame.GetPayloadSize() == 0) {
+    frame.SetPayloadType(codec.GetPayloadType(false));
     return true;
+  }
 
   return false;
 }

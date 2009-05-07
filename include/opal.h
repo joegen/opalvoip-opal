@@ -66,7 +66,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 16
+#define OPAL_C_API_VERSION 18
 
 
 ///////////////////////////////////////
@@ -827,6 +827,10 @@ typedef struct OpalParamSetUpCall {
                                    may emit.
 
                                    For other indications this field is NULL. */
+
+  const char * m_protocolCallId;  /**< ID assigned by the underlying protocol for the call. 
+                                       Only available in version 18 and above */
+
 } OpalParamSetUpCall;
 
 
@@ -854,6 +858,8 @@ typedef struct OpalStatusIncomingCall {
                                    For H.323 this must be a string representation of an
                                    integer from 0 to 7 which will be contained in the
                                    Q.931 SIGNAL (0x34) Information Element. */
+  const char * m_protocolCallId;  /**< ID assigned by the underlying protocol for the call. 
+                                       Only available in version 18 and above */
 } OpalStatusIncomingCall;
 
 

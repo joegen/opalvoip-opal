@@ -411,7 +411,8 @@ static void SetIncomingCall(OpalMessageBuffer & message, const OpalConnection & 
   message->m_param.m_incomingCall.m_product.m_t35Extension     = info.t35Extension;
   message->m_param.m_incomingCall.m_product.m_manufacturerCode = info.manufacturerCode;
 
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_alertingType, network->GetAlertingType());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_alertingType,   network->GetAlertingType());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_protocolCallId, connection.GetIdentifier());
 
   PTRACE(4, "OpalC API\tOpalIndIncomingCall: token=\""  << message->m_param.m_incomingCall.m_callToken << "\"\n"
             "  Local  - URL=\"" << message->m_param.m_incomingCall.m_localAddress << "\"\n"
@@ -420,7 +421,8 @@ static void SetIncomingCall(OpalMessageBuffer & message, const OpalConnection & 
                   " Display=\"" << message->m_param.m_incomingCall.m_remoteDisplayName << "\"\n"
             "  Dest.  - URL=\"" << message->m_param.m_incomingCall.m_calledAddress << "\""
                     " E.164=\"" << message->m_param.m_incomingCall.m_calledPartyNumber << "\"\n"
-            "  AlertingType=\"" << message->m_param.m_incomingCall.m_alertingType << '"');
+            "  AlertingType=\"" << message->m_param.m_incomingCall.m_alertingType << "\"\n"
+            "        CallID=\"" << message->m_param.m_incomingCall.m_protocolCallId << '"');
 }
 
 
@@ -1350,6 +1352,12 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
     SET_MESSAGE_STRING(response, m_param.m_callSetUp.m_partyA, partyA);
     SET_MESSAGE_STRING(response, m_param.m_callSetUp.m_partyB, command.m_param.m_callSetUp.m_partyB);
     SET_MESSAGE_STRING(response, m_param.m_callSetUp.m_callToken, token);
+    PSafePtr<OpalCall> call = FindCallWithLock(token);
+    if (call != NULL) {
+      PSafePtr<OpalConnection> other = call->GetConnection(1);
+      if (other != NULL)
+        SET_MESSAGE_STRING(response, m_param.m_callSetUp.m_protocolCallId, other->GetIdentifier());
+    }
   }
   else
     response.SetError("Call set up failed.");
