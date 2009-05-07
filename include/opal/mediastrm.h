@@ -321,7 +321,7 @@ class OpalMediaStream : public PSafeObject
 
     /**Returns true if the media stream is open.
       */
-    bool IsOpen() { return isOpen; }
+    bool IsOpen() const { return isOpen; }
     
     /**Set the patch thread that is using this stream.
       */
