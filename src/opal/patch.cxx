@@ -581,8 +581,10 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
     return true;
   }
 
-  if (!codec.AcceptEmptyPayload() && frame.GetPayloadSize() == 0) 
+  if (!codec.AcceptEmptyPayload() && frame.GetPayloadSize() == 0) {
+    frame.SetPayloadType(codec.GetPayloadType(false));
     return true;
+  }
 
   return false;
 }
