@@ -54,6 +54,7 @@ class SDPBandwidth : public std::map<PString, unsigned>
     unsigned operator[](const PString & type) const;
     friend ostream & operator<<(ostream & out, const SDPBandwidth & bw);
     bool Parse(const PString & param);
+    void SetMin(const PString & type, unsigned value);
 };
 
 /////////////////////////////////////////////////////////
