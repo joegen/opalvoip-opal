@@ -444,9 +444,7 @@ bool EchoConnection::OnReadMediaFrame(
   else if (fmt.GetMediaType() == OpalMediaType::Video())
     delay = fmt.GetFrameTime() / 90;
   else
-    delay = 500;
-
-  PTRACE(1, "Delay for " << fmt.GetMediaType() << " is " << delay);
+    delay = 100;
 
   info.m_delay.Delay(delay);
 
