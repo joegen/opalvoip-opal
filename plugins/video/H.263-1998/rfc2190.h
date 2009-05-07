@@ -41,6 +41,7 @@ class RFC2190Depacketizer {
     bool first;
     bool skipUntilEndOfFrame;
     unsigned lastEbit;
+    bool m_isFirstSequence;
 };
 
 class RFC2190Packetizer

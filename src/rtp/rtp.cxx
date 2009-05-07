@@ -503,7 +503,6 @@ RTP_Session::RTP_Session(const Params & params)
 
   userData = params.userData;
   autoDeleteUserData = params.autoDelete;
-  jitter = NULL;
 
   ignoreOutOfOrderPackets = true;
   ignorePayloadTypeChanges = true;
@@ -559,7 +558,6 @@ RTP_Session::~RTP_Session()
       "    averageJitter     = " << (jitterLevel >> 7) << "\n"
       "    maximumJitter     = " << (maximumJitterLevel >> 7)
      );
-  delete jitter;
   if (autoDeleteUserData)
     delete userData;
   delete m_encodingHandler;
@@ -696,37 +694,38 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
                                         PINDEX stackSize)
 {
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
-    PTRACE(4, "InfLID\tSwitching off jitter buffer.");
-    if (jitter != NULL) {
-      delete jitter;
-      jitter = NULL;
-    }
+    PTRACE_IF(4, m_jitterBuffer != NULL, "InfLID\tSwitching off jitter buffer.");
+    m_jitterBuffer.SetNULL();
   }
   else {
     PTRACE(4, "InfLID\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
     SetIgnoreOutOfOrderPackets(false);
-    if (jitter != NULL) 
-      jitter->SetDelay(minJitterDelay, maxJitterDelay);
+    if (m_jitterBuffer != NULL)
+      m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay);
     else
-      jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
-    jitter->Resume();
+      m_jitterBuffer = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
+    m_jitterBuffer->Resume();
   }
 }
 
 
 unsigned RTP_Session::GetJitterBufferSize() const
 {
+  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   return jitter != NULL ? jitter->GetJitterTime() : 0;
 }
 
+
 unsigned RTP_Session::GetJitterTimeUnits() const
 {
+  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   return jitter != NULL ? jitter->GetTimeUnits() : 0;
 }
 
 
 PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
 {
+  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   return jitter != NULL ? jitter->ReadData(frame) : ReadData(frame, true);
 }
 
@@ -1462,12 +1461,14 @@ void RTP_Session::SourceDescription::PrintOn(ostream & strm) const
 
 DWORD RTP_Session::GetPacketsTooLate() const
 {
+  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   return jitter != NULL ? jitter->GetPacketsTooLate() : 0;
 }
 
 
 DWORD RTP_Session::GetPacketOverruns() const
 {
+  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   return jitter != NULL ? jitter->GetBufferOverruns() : 0;
 }
 
@@ -1536,8 +1537,7 @@ RTP_UDP::~RTP_UDP()
   // We need to do this to make sure that the sockets are not
   // deleted before select decides there is no more data coming
   // over them and exits the reading thread.
-  if (jitter)
-    PAssert(jitter->WaitForTermination(20000), "Jitter buffer thread did not terminate");
+  SetJitterBufferSize(0, 0);
 
   delete dataSocket;
   delete controlSocket;
@@ -1798,7 +1798,6 @@ PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame, PBoolean loop)
       PWaitAndSignal mutex(dataMutex);
       if (shutdownRead) {
         PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
-        shutdownRead = false;
         return false;
       }
     }
@@ -2062,7 +2061,6 @@ PBoolean RTP_UDP::Internal_WriteData(RTP_DataFrame & frame)
     PWaitAndSignal mutex(dataMutex);
     if (shutdownWrite) {
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", write shutdown.");
-      shutdownWrite = false;
       return false;
     }
   }

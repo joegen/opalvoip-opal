@@ -322,6 +322,7 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
 
 RFC2190Depacketizer::RFC2190Depacketizer()
 {
+  m_isFirstSequence = true;
   NewFrame();
 }
 
@@ -345,6 +346,19 @@ int RFC2190Depacketizer::SetPacket(const RTPFrame & inputFrame, bool & requestIF
   requestIFrame = false;
   isIFrame      = false;
 
+  // check sequence number
+  if (m_isFirstSequence) {
+    m_isFirstSequence = false;
+    lastSequence = inputFrame.GetSequenceNumber();
+  }
+  else {
+    ++lastSequence;
+    if (inputFrame.GetSequenceNumber() != lastSequence) {
+      lastSequence = inputFrame.GetSequenceNumber();
+      return LostSync(requestIFrame, "missed frame");
+    }
+  }
+
   // ignore packets if required
   if (skipUntilEndOfFrame) {
     if (inputFrame.GetMarker()) 
@@ -356,13 +370,6 @@ int RFC2190Depacketizer::SetPacket(const RTPFrame & inputFrame, bool & requestIF
   if (first) {
     NewFrame();    // make sure this is called before "first = false"
     first = false;
-    lastSequence = inputFrame.GetSequenceNumber();
-  }
-  else {
-    ++lastSequence;
-    if (inputFrame.GetSequenceNumber() != lastSequence) {
-      return LostSync(requestIFrame, "missed frame");
-    }
   }
 
   unsigned payloadLen = inputFrame.GetPayloadSize();

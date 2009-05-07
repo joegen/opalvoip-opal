@@ -237,7 +237,6 @@ void OpalLocalConnection::AcceptIncoming()
 {
   if (LockReadWrite()) {
     OnConnectedInternal();
-    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
     UnlockReadWrite();
   }
 }

@@ -488,7 +488,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     case SIP_PDU::Method_CANCEL :
       token = m_receivedConnectionTokens(mime.GetCallID());
       if (!token.IsEmpty()) {
-        threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+        AddWork(new SIP_PDU_Work(*this, token, pdu));
         return true;
       }
       break;
@@ -497,7 +497,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       if (toToken.IsEmpty()) {
         token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
-          threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+          AddWork(new SIP_PDU_Work(*this, token, pdu));
           return true;
         }
 
@@ -532,10 +532,14 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   else
     return OnReceivedConnectionlessPDU(transport, pdu);
 
-  threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+  AddWork(new SIP_PDU_Work(*this, token, pdu));
   return true;
 }
 
+void SIPEndPoint::AddWork(SIP_PDU_Work * work)
+{
+  threadPool.AddWork(work, work->m_token);
+}
 
 bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
@@ -825,7 +829,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   m_receivedConnectionTokens.SetAt(mime.GetCallID(), connection->GetToken());
 
   // Get the connection to handle the rest of the INVITE in the thread pool
-  threadPool.AddWork(new SIP_PDU_Work(*this, connection->GetToken(), request));
+  AddWork(new SIP_PDU_Work(*this, connection->GetToken(), request));
 
   return PTrue;
 }
@@ -1518,51 +1522,77 @@ void SIPEndPoint::OnRTPStatistics(const SIPConnection & connection,
   manager.OnRTPStatistics(connection, session);
 }
 
-SIPEndPoint::SIP_PDU_Thread::SIP_PDU_Thread(PThreadPoolBase & _pool)
-  : PThreadPoolWorkerBase(_pool)
-{
-  SetPriority(HighestPriority);
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+SIPEndPoint::PDUThreadPool::WorkerThreadBase * SIPEndPoint::PDUThreadPool::CreateWorkerThread()
+{ 
+  return new SIP_PDU_Thread(*this); 
 }
 
-unsigned SIPEndPoint::SIP_PDU_Thread::GetWorkSize() const { return pduQueue.size(); }
 
-void SIPEndPoint::SIP_PDU_Thread::OnAddWork(SIP_PDU_Work * work)
+SIPEndPoint::SIP_PDU_Thread::SIP_PDU_Thread(PDUThreadPool & pool_)
+  : PDUThreadPool::WorkerThread(pool_)
 {
-  PWaitAndSignal m(mutex);
-  pduQueue.push(work);
-  if (pduQueue.size() == 1)
-    sync.Signal();
+  SetPriority(HighPriority);
 }
 
-void SIPEndPoint::SIP_PDU_Thread::OnRemoveWork(SIP_PDU_Work *) 
-{ }
+
+unsigned SIPEndPoint::SIP_PDU_Thread::GetWorkSize() const 
+{ 
+  return m_pduQueue.size(); 
+}
+
+
+void SIPEndPoint::SIP_PDU_Thread::AddWork(SIP_PDU_Work * work)
+{
+  PWaitAndSignal m(m_workerMutex);
+  m_pduQueue.push(work);
+  if (m_pduQueue.size() == 1)
+    m_sync.Signal();
+}
+
+
+void SIPEndPoint::SIP_PDU_Thread::RemoveWork(SIP_PDU_Work *)
+{
+}
+
 
 void SIPEndPoint::SIP_PDU_Thread::Shutdown()
 {
-  shutdown = true;
-  sync.Signal();
+  m_shutdown = true;
+  m_sync.Signal();
 }
 
 
 void SIPEndPoint::SIP_PDU_Thread::Main()
 {
-  while (!shutdown) {
-    mutex.Wait();
-    if (pduQueue.size() == 0) {
-      mutex.Signal();
-      sync.Wait();
+  while (!m_shutdown) {
+
+    // wait for work to become available
+    m_workerMutex.Wait();
+    if (m_pduQueue.size() == 0) {
+      m_workerMutex.Signal();
+      m_sync.Wait();
       continue;
     }
 
-    SIP_PDU_Work * work = pduQueue.front();
-    pduQueue.pop();
-    mutex.Signal();
+    // get the work
+    SIP_PDU_Work * work = m_pduQueue.front();
+    m_pduQueue.pop();
+    m_workerMutex.Signal();
 
+    // process the work
+    PTRACE(2, "SIP\tStarted processing PDU");
     work->OnReceivedPDU();
+    PTRACE(2, "SIP\tFinished processing PDU");
+
+    // indicate work is now free
+    m_pool.RemoveWork(work, false);
+
+    // delete the work
     delete work;
   }
 }
-
 
 SIPEndPoint::SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu)
   : m_endpoint(ep)
