@@ -87,7 +87,8 @@ class EchoConnection : public OpalLocalConnection
 
       PAdaptiveDelay m_delay;
       RTP_DataFrame * m_data;
-      PSyncPointAck m_sync;
+      PSyncPoint m_readSync;
+      PSyncPoint m_writeSync;
     };
 
     typedef std::map<std::string, MediaInfo> MediaMapType;
@@ -394,10 +395,12 @@ bool EchoConnection::OnReadMediaFrame(
 
   info.m_data = &frame;
 
+  info.m_readSync.Signal();
+
   while (info.m_data != NULL) {
    if (!mediaStream.IsOpen())
       return false;
-    info.m_sync.Signal(100);
+    info.m_writeSync.Wait(100);
   }
 
   if (fmt.GetMediaType() == OpalMediaType::Audio())
@@ -431,13 +434,13 @@ bool EchoConnection::OnWriteMediaFrame(
   while (info.m_data == NULL) {
     if (!mediaStream.IsOpen())
       return false;
-    info.m_sync.Wait(100);
+    info.m_readSync.Wait(100);
   }
 
   *info.m_data = frame;
   info.m_data->MakeUnique();
   info.m_data = NULL;
-  info.m_sync.Acknowledge();
+  info.m_writeSync.Signal();
 
   return true;
 }
