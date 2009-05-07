@@ -275,15 +275,15 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = allMediaFormats[i];
     if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
+#if 0
       PString sizeStr = "qcif";
       unsigned width, height;
       if (PVideoFrameInfo::ParseSize(sizeStr, width, height)) {
-        mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
-        mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
+cout << "setting frame size to " << width << "x" << height << endl;
+        mediaFormat.SetOptionInteger("Max Rx Frame Width", width);
+        mediaFormat.SetOptionInteger("Max Rx Frame Height", height);
       }
     }
-#if 0
-
     if (args.HasOption("video-rate")) {
       unsigned rate = args.GetOptionString("video-rate").AsUnsigned();
       unsigned frameTime = 90000 / rate;
@@ -296,7 +296,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     if (!rcOption.IsEmpty())
       mediaFormat.SetOptionString(OpalVideoFormat::RateControllerOption(), rcOption);
 #endif
-
+    }
     OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
   }
 
@@ -442,11 +442,12 @@ bool EchoConnection::OnReadMediaFrame(
       delay = 20;
   }
   else if (fmt.GetMediaType() == OpalMediaType::Video())
-    delay = fmt.GetFrameTime() / 90;
+    delay = 0; // fmt.GetFrameTime() / 90;
   else
     delay = 100;
 
-  info.m_delay.Delay(delay);
+  if (delay > 0)
+    info.m_delay.Delay(delay);
 
   return true;
 }
