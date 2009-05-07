@@ -870,6 +870,8 @@ class OpalUDPMediaStream : public OpalMediaStream
     );
   //@}
 
+    ~OpalUDPMediaStream();
+
   /**@name Overrides of OpalMediaStream class */
   //@{
 

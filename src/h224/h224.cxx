@@ -1137,6 +1137,7 @@ OpalH224MediaStream::OpalH224MediaStream(OpalConnection & connection,
 
 OpalH224MediaStream::~OpalH224MediaStream()
 {
+  Close();
 }
 
 void OpalH224MediaStream::OnPatchStart()

@@ -281,6 +281,7 @@ OpalSIPIMMediaStream::OpalSIPIMMediaStream(
 
 OpalSIPIMMediaStream::~OpalSIPIMMediaStream()
 {
+  Close();
 }
 
 bool OpalSIPIMMediaStream::Open()
