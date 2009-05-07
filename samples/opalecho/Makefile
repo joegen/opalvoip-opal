@@ -1,11 +1,9 @@
 #
 # Makefile
 #
-# Make file for opalgw
+# Make file for opalecho
 #
-# Open Phone Abstraction Lebrary Project
-#
-# Copyright (c) 2003 Equivalence Pty. Ltd.
+# Copyright (c) 2009 Post Increment
 #
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.0 (the "License"); you may not use this file except in
@@ -17,22 +15,16 @@
 # the License for the specific language governing rights and limitations
 # under the License.
 #
-# The Original Code is Portable Windows Library.
+# The Original Code is Opal
 #
-# The Initial Developer of the Original Code is Equivalence Pty. Ltd.
+# The Initial Developer of the Original Code is Post Increment
 #
 # Contributor(s): ______________________________________.
 #
-# $Log: Makefile,v $
-# Revision 1.2  2003/03/26 03:03:52  robertj
-# Set correct project name
-#
-# Revision 1.1  2003/03/26 02:49:00  robertj
-# Added service/daemon sample application.
 #
 
-PROG	= opalgw
-SOURCES	:= main.cxx custom.cxx gkserv.cxx
+PROG	= opalecho
+SOURCES	:= main.cxx custom.cxx 
 
 ifndef OPALDIR
 ifneq (,$(wildcard $(HOME)/opal))
