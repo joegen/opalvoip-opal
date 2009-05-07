@@ -167,6 +167,7 @@ PBoolean OpalEcho::Initialise(const char * initMsg)
     PTrace::SetLevel(0);
   PTrace::ClearOptions(PTrace::Timestamp);
   PTrace::SetOptions(PTrace::DateAndTime);
+  PTrace::SetOptions(PTrace::FileAndLine);
 #endif
 
   // Get the HTTP basic authentication info
@@ -268,6 +269,37 @@ MyManager::~MyManager()
 
 PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 {
+  OpalMediaFormatList allMediaFormats;
+
+  OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
+  for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
+    OpalMediaFormat mediaFormat = allMediaFormats[i];
+    if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
+      PString sizeStr = "qcif";
+      unsigned width, height;
+      if (PVideoFrameInfo::ParseSize(sizeStr, width, height)) {
+        mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
+        mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
+      }
+    }
+#if 0
+
+    if (args.HasOption("video-rate")) {
+      unsigned rate = args.GetOptionString("video-rate").AsUnsigned();
+      unsigned frameTime = 90000 / rate;
+      mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
+    }
+    if (args.HasOption("video-bitrate")) {
+      unsigned rate = args.GetOptionString("video-bitrate").AsUnsigned();
+      mediaFormat.SetOptionInteger(OpalMediaFormat::TargetBitRateOption(), rate);
+    }
+    if (!rcOption.IsEmpty())
+      mediaFormat.SetOptionString(OpalVideoFormat::RateControllerOption(), rcOption);
+#endif
+
+    OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
+  }
+
   PHTTPFieldArray * fieldArray;
 
   // Create all the endpoints
@@ -391,24 +423,32 @@ bool EchoConnection::OnReadMediaFrame(
 
   MediaInfo & info = r->second;
 
-  PAssert(info.m_data == NULL, "RTP copying out of sync");
-
   info.m_data = &frame;
 
   info.m_readSync.Signal();
 
   while (info.m_data != NULL) {
-   if (!mediaStream.IsOpen())
+   if (!mediaStream.IsOpen()) {
+      PTRACE(1, "Media stream not open");
       return false;
+    }
     info.m_writeSync.Wait(100);
   }
 
-  if (fmt.GetMediaType() == OpalMediaType::Audio())
-    info.m_delay.Delay(frame.GetPayloadSize() / (fmt.GetClockRate() / 500));
+  int delay;
+  if (fmt.GetMediaType() == OpalMediaType::Audio()) {
+    delay = frame.GetPayloadSize() / (fmt.GetClockRate() / 500);
+    if (delay == 0)
+      delay = 20;
+  }
   else if (fmt.GetMediaType() == OpalMediaType::Video())
-    info.m_delay.Delay(fmt.GetFrameTime() / 90);
+    delay = fmt.GetFrameTime() / 90;
   else
-    info.m_delay.Delay(100);
+    delay = 500;
+
+  PTRACE(1, "Delay for " << fmt.GetMediaType() << " is " << delay);
+
+  info.m_delay.Delay(delay);
 
   return true;
 }
