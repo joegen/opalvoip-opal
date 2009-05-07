@@ -1582,7 +1582,9 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
     m_workerMutex.Signal();
 
     // process the work
+    PTRACE(2, "SIP\tStarted processing PDU");
     work->OnReceivedPDU();
+    PTRACE(2, "SIP\tFinished processing PDU");
 
     // indicate work is now free
     m_pool.RemoveWork(work, false);
