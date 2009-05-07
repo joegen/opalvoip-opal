@@ -390,8 +390,15 @@ bool EchoConnection::OnReadMediaFrame(
 
   MediaInfo & info = r->second;
 
+  PAssert(info.m_data == NULL, "RTP copying out of sync");
+
   info.m_data = &frame;
-  info.m_sync.Signal(1000);
+
+  while (info.m_data != NULL) {
+   if (!mediaStream.IsOpen())
+      return false;
+    info.m_sync.Signal(100);
+  }
 
   if (fmt.GetMediaType() == OpalMediaType::Audio())
     info.m_delay.Delay(frame.GetPayloadSize() / 16);
@@ -421,7 +428,7 @@ bool EchoConnection::OnWriteMediaFrame(
 
   MediaInfo & info = r->second;
 
-  for (;;) {
+  while (info.m_data == NULL) {
     if (!mediaStream.IsOpen())
       return false;
     info.m_sync.Wait(100);
@@ -429,6 +436,7 @@ bool EchoConnection::OnWriteMediaFrame(
 
   *info.m_data = frame;
   info.m_data->MakeUnique();
+  info.m_data = NULL;
   info.m_sync.Acknowledge();
 
   return true;
