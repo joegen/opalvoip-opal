@@ -532,6 +532,9 @@ class OpalLineMediaStream : public OpalMediaStream
     );
   //@}
 
+    ~OpalLineMediaStream();
+
+
   /**@name Overrides of OpalMediaStream class */
   //@{
     /**Open the media stream.

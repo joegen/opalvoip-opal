@@ -602,6 +602,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
 
 OpalRTPMediaStream::~OpalRTPMediaStream()
 {
+  Close();
 }
 
 
@@ -1026,6 +1027,7 @@ OpalVideoMediaStream::OpalVideoMediaStream(OpalConnection & conn,
 
 OpalVideoMediaStream::~OpalVideoMediaStream()
 {
+  Close();
   if (autoDelete) {
     delete inputDevice;
     delete outputDevice;
@@ -1220,6 +1222,11 @@ OpalUDPMediaStream::OpalUDPMediaStream(OpalConnection & conn,
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource),
     udpTransport(transport)
 {
+}
+
+OpalUDPMediaStream::~OpalUDPMediaStream()
+{
+  Close();
 }
 
 

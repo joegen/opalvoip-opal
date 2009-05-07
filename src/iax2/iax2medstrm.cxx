@@ -66,13 +66,12 @@ OpalIAX2MediaStream::OpalIAX2MediaStream(IAX2Connection & conn,
     connection(conn)
 {
   PTRACE(6, "Media\tConstructor OpalIAX2MediaStream" << mediaFormat);
-    connection.SafeReference();
 }
  
 OpalIAX2MediaStream::~OpalIAX2MediaStream()
 {
+  Close();
   PTRACE(6, "Media\tDestructor OpalIAX2MediaStream");
-  connection.SafeDereference();
 }
  
 PBoolean OpalIAX2MediaStream::Open()

@@ -916,6 +916,11 @@ OpalLineMediaStream::OpalLineMediaStream(OpalLineConnection & conn,
   lastSID[0] = 2;
 }
 
+OpalLineMediaStream::~OpalLineMediaStream()
+{
+  Close();
+}
+
 
 PBoolean OpalLineMediaStream::Open()
 {
