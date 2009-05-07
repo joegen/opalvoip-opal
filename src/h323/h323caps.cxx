@@ -826,8 +826,6 @@ PBoolean H323AudioCapability::OnSendingPDU(H245_AudioMode & pdu) const
 
 PBoolean H323AudioCapability::OnReceivedPDU(const H245_Capability & cap)
 {
-  H323Capability::OnReceivedPDU(cap);
-
   if (cap.GetTag() != H245_Capability::e_receiveAudioCapability &&
       cap.GetTag() != H245_Capability::e_receiveAndTransmitAudioCapability)
     return PFalse;
@@ -848,7 +846,7 @@ PBoolean H323AudioCapability::OnReceivedPDU(const H245_Capability & cap)
            << txFramesInPacket << " as remote allows " << packetSize);
   }
 
-  return PTrue;
+  return H323Capability::OnReceivedPDU(cap);
 }
 
 
@@ -1098,13 +1096,11 @@ PBoolean H323VideoCapability::OnSendingPDU(H245_ModeElement & mode) const
 
 PBoolean H323VideoCapability::OnReceivedPDU(const H245_Capability & cap)
 {
-  H323Capability::OnReceivedPDU(cap);
-
   if (cap.GetTag() != H245_Capability::e_receiveVideoCapability &&
       cap.GetTag() != H245_Capability::e_receiveAndTransmitVideoCapability)
     return PFalse;
 
-  return OnReceivedPDU((const H245_VideoCapability &)cap, e_TCS);
+  return OnReceivedPDU((const H245_VideoCapability &)cap, e_TCS) && H323Capability::OnReceivedPDU(cap);
 }
 
 
@@ -1632,15 +1628,14 @@ PBoolean H323DataCapability::OnSendingPDU(H245_ModeElement & mode) const
 
 PBoolean H323DataCapability::OnReceivedPDU(const H245_Capability & cap)
 {
-  H323Capability::OnReceivedPDU(cap);
-
   if (cap.GetTag() != H245_Capability::e_receiveDataApplicationCapability &&
       cap.GetTag() != H245_Capability::e_receiveAndTransmitDataApplicationCapability)
     return PFalse;
 
   const H245_DataApplicationCapability & app = cap;
   maxBitRate = app.m_maxBitRate;
-  return OnReceivedPDU(app, e_TCS);
+
+  return OnReceivedPDU(app, e_TCS) && H323Capability::OnReceivedPDU(cap);
 }
 
 
@@ -1909,14 +1904,12 @@ PBoolean H323_UserInputCapability::OnSendingPDU(H245_ModeElement &) const
 
 PBoolean H323_UserInputCapability::OnReceivedPDU(const H245_Capability & pdu)
 {
-  H323Capability::OnReceivedPDU(pdu);
-
   if (pdu.GetTag() == H245_Capability::e_receiveRTPAudioTelephonyEventCapability) {
     subType = SignalToneRFC2833;
     const H245_AudioTelephonyEventCapability & atec = pdu;
     rtpPayloadType = (RTP_DataFrame::PayloadTypes)(int)atec.m_dynamicRTPPayloadType;
     // Really should verify atec.m_audioTelephoneEvent here
-    return PTrue;
+    return H323Capability::OnReceivedPDU(pdu);
   }
 
   if (pdu.GetTag() != H245_Capability::e_receiveUserInputCapability &&
@@ -1924,7 +1917,7 @@ PBoolean H323_UserInputCapability::OnReceivedPDU(const H245_Capability & pdu)
     return PFalse;
 
   const H245_UserInputCapability & ui = pdu;
-  return ui.GetTag() == UserInputCapabilitySubTypeCodes[subType];
+  return ui.GetTag() == UserInputCapabilitySubTypeCodes[subType] && H323Capability::OnReceivedPDU(pdu);
 }
 
 
