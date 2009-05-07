@@ -982,7 +982,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
       lastFrameWasIFrame = (flags & PluginCodec_ReturnCoderIFrame) != 0;
 
-      if ((toLen >= RTP_DataFrame::MinHeaderSize) && (toLen >= dst->GetHeaderSize())) {
+      if ((toLen >= RTP_DataFrame::MinHeaderSize) && ((PINDEX)toLen >= dst->GetHeaderSize())) {
         dst->SetPayloadSize(toLen - dst->GetHeaderSize());
         dstList.Append(dst);
       }
