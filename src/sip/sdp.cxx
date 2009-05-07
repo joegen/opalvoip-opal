@@ -46,6 +46,8 @@
 #define SIP_DEFAULT_SESSION_NAME    "Opal SIP Session"
 #define SDP_MEDIA_TRANSPORT_RTPAVP  "RTP/AVP"
 
+static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
+
 #define new PNEW
 
 //
@@ -344,7 +346,7 @@ void SDPMediaFormat::InitialiseMediaFormat()
 
   for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) {
     if (r->second > 0)
-      mediaFormat.AddOption(new OpalMediaOptionString("Bandwidth-" + r->first, false, r->second), true);
+      mediaFormat.AddOption(new OpalMediaOptionString(SDPBandwidthPrefix + r->first, false, r->second), true);
   }
 }
 
@@ -424,6 +426,16 @@ bool SDPBandwidth::Parse(const PString & param)
 
   (*this)[param.Left(pos)] = param.Mid(pos+1).AsUnsigned();
   return true;
+}
+
+
+void SDPBandwidth::SetMin(const PString & type, unsigned value)
+{
+  iterator it = find(type);
+  if (it == end())
+    (*this)[type] = value;
+  else if (it->second > value)
+    it->second = value;
 }
 
 
@@ -1001,18 +1013,21 @@ bool SDPVideoMediaDescription::PreEncode()
 
      As per RFC3890 we set both AS and TIAS parameters.
   */
-  unsigned minBW = UINT_MAX;
   for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
-    unsigned bw = format->GetMediaFormat().GetBandwidth();
-    if (minBW > bw)
-      minBW = bw;
+    const OpalMediaFormat & mediaFormat = format->GetMediaFormat();
+
+    for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
+      const OpalMediaOption & option = mediaFormat.GetOption(i);
+      PCaselessString name = option.GetName();
+      if (name.NumCompare(SDPBandwidthPrefix, sizeof(SDPBandwidthPrefix)-1) == EqualTo)
+        bandwidth.SetMin(name.Mid(sizeof(SDPBandwidthPrefix)-1), option.AsString().AsUnsigned());
+    }
+
+    unsigned bw = mediaFormat.GetBandwidth();
+    bandwidth.SetMin(SDPSessionDescription::TransportIndependentBandwidthType(), bw);
+    bandwidth.SetMin(SDPSessionDescription::ApplicationSpecificBandwidthType(), (bw+999)/1000);
   }
 
-  if (minBW == 0)
-    return false;
-
-  bandwidth[SDPSessionDescription::TransportIndependentBandwidthType()] = minBW;
-  bandwidth[SDPSessionDescription::ApplicationSpecificBandwidthType()] = (minBW+999)/1000;
   return true;
 }
 
