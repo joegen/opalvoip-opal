@@ -401,7 +401,7 @@ bool EchoConnection::OnReadMediaFrame(
   }
 
   if (fmt.GetMediaType() == OpalMediaType::Audio())
-    info.m_delay.Delay(frame.GetPayloadSize() / 16);
+    info.m_delay.Delay(frame.GetPayloadSize() / (fmt.GetClockRate() / 500));
   else if (fmt.GetMediaType() == OpalMediaType::Video())
     info.m_delay.Delay(fmt.GetFrameTime() / 90);
   else
