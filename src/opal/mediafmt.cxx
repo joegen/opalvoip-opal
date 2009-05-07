@@ -1543,6 +1543,7 @@ OpalMediaFormatList::OpalMediaFormatList(const OpalMediaFormat & format)
 
 OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormat & format)
 {
+  MakeUnique();
   if (format.IsValid() && !HasFormat(format))
     OpalMediaFormatBaseList::Append(format.Clone());
   return *this;
@@ -1551,6 +1552,7 @@ OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormat & fo
 
 OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormatList & formats)
 {
+  MakeUnique();
   for (OpalMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
     *this += *format;
   return *this;
@@ -1559,6 +1561,7 @@ OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormatList 
 
 OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormat & format)
 {
+  MakeUnique();
   OpalMediaFormatList::const_iterator fmt = FindFormat(format);
   if (fmt != end())
     erase(fmt);
@@ -1569,6 +1572,7 @@ OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormat & fo
 
 OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormatList & formats)
 {
+  MakeUnique();
   for (OpalMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
     *this -= *format;
   return *this;
@@ -1586,6 +1590,7 @@ void OpalMediaFormatList::Remove(const PStringArray & maskList)
       erase(fmt);
   }
 }
+
 
 OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol) const
 {
