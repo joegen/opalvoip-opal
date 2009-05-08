@@ -482,9 +482,9 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       for (PINDEX i = 0; i < 2; i++) {
         OpalMediaFormatList::iterator format = lists[i]->begin();
         while (format != lists[i]->end()) {
-          if ( format->IsTransportable() &&
-               format->GetMediaType() == OpalMediaType::Video() &&
-              (format->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption())&OpalVideoFormat::ContentRoleBit(contentRole)) == 0)
+          if ( format->GetMediaType() != mediaType ||
+              (format->IsTransportable() &&
+              (format->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption())&OpalVideoFormat::ContentRoleBit(contentRole)) == 0))
             *lists[i] -= *format++;
           else
             ++format;
@@ -563,7 +563,7 @@ bool OpalCall::SelectMediaFormats(const OpalMediaType & mediaType,
     return true;
   }
 
-  PTRACE(2, "Call\tSelectMediaFormats could not find compatible media format:\n"
+  PTRACE(2, "Call\tSelectMediaFormats could not find compatible " << mediaType << " format:\n"
             "  source formats=" << setfill(',') << srcFormats << "\n"
             "   sink  formats=" << dstFormats << setfill(' '));
   return false;

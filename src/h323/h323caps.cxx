@@ -1280,6 +1280,8 @@ PBoolean H323ExtendedVideoCapability::OnSendingPDU(H245_VideoCapability & pdu, C
   pdu.SetTag(H245_VideoCapability::e_extendedVideoCapability);
   H245_ExtendedVideoCapability & extcap = pdu;
 
+  unsigned roleMask = UINT_MAX;
+
   for (OpalMediaFormatList::const_iterator videoFormat = m_videoFormats.begin(); videoFormat != m_videoFormats.end(); ++videoFormat) {
     if (videoFormat->GetMediaType() == OpalMediaType::Video()) {
       H323Capability * capability = H323Capability::Create(videoFormat->GetName());
@@ -1289,6 +1291,7 @@ PBoolean H323ExtendedVideoCapability::OnSendingPDU(H245_VideoCapability & pdu, C
           PINDEX size = extcap.m_videoCapability.GetSize();
           extcap.m_videoCapability.SetSize(size+1);
           extcap.m_videoCapability[size] = h245Cap;
+          roleMask &= videoFormat->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
         }
         delete capability;
       }
@@ -1298,6 +1301,11 @@ PBoolean H323ExtendedVideoCapability::OnSendingPDU(H245_VideoCapability & pdu, C
     PTRACE(2, "H323\tCannot encode H.239 video capability, no extended video codecs available");
     return false;
   }
+
+  OpalMediaFormat videoCapExtMediaFormat(GetFormatName());
+  if ((roleMask&0xfffc) != 0)
+    roleMask = (roleMask&3)|2;
+  videoCapExtMediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), roleMask);
 
   extcap.IncludeOptionalField(H245_ExtendedVideoCapability::e_videoCapabilityExtension);
   extcap.m_videoCapabilityExtension.SetSize(1);
@@ -1339,8 +1347,7 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
   if (!OnReceivedGenericPDU(videoCapExtMediaFormat, extcap.m_videoCapabilityExtension[i], type))
     return false;
 
-  unsigned rolesMask = videoCapExtMediaFormat.GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
-
+  unsigned roleMask = videoCapExtMediaFormat.GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
 
   H323Capabilities allVideoCapabilities;
   H323CapabilityFactory::KeyList_T stdCaps = H323CapabilityFactory::GetKeyList();
@@ -1361,7 +1368,7 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
       H323VideoCapability & capability = (H323VideoCapability &)allVideoCapabilities[c];
       if (capability.IsMatch(vidCap) && capability.OnReceivedPDU(vidCap, type)) {
         OpalMediaFormat mediaFormat = capability.GetMediaFormat();
-        mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), rolesMask);
+        mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), roleMask);
         if (mediaFormat.ToNormalisedOptions())
           m_videoFormats += mediaFormat;
       }

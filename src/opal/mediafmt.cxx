@@ -1475,8 +1475,8 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
 
   static const char * const RoleEnumerations[OpalVideoFormat::eNumRoles] = {
     "No Role",
-    "Main",
     "Presentation",
+    "Main",
     "Speaker",
     "Sign Language"
   };
