@@ -40,6 +40,7 @@ class PlayRTP : public PProcess
 
     virtual void Main();
     void Play(const PFilePath & filename);
+    void Find(const PFilePath & filename);
 
     PDECLARE_NOTIFIER(OpalMediaCommand, PlayRTP, OnTranscoderCommand);
 
