@@ -1185,16 +1185,16 @@ class OpalVideoFormat : public OpalMediaFormat
        format. This is based on RFC4796 and H.239 semantics and is an
        enumeration consisting of:
           Value          H.239                RFC4796
-          NoRole         Live (0x02)          (not populated)
-          Main           Live (0x02)          main
+          NoRole         Not used             (not populated)
           Presentation   Presentation (0x01)  slides
+          Main           Live (0x02)          main
           Speaker        Live (0x02)          speaker
           SignLanguage   Live (0x02)          sl
       */
     enum ContentRole {
       eNoRole,
-      eMainRole,
       ePresentation,
+      eMainRole,
       eSpeaker,
       eSignLanguage,
       eNumRoles

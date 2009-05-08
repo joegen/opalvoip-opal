@@ -3551,8 +3551,8 @@
                                     <selection>0</selection>
                                     <content>
                                         <item>No Role</item>
-                                        <item>Main</item>
                                         <item>Presentation</item>
+                                        <item>Main (Live)</item>
                                         <item>Speaker</item>
                                         <item>Sign Language</item>
                                     </content>

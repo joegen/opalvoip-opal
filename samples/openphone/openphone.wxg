@@ -5728,8 +5728,8 @@
                                     <selection>0</selection>
                                     <choices>
                                         <choice>No Role</choice>
-                                        <choice>Main</choice>
                                         <choice>Presentation</choice>
+                                        <choice>Main (Live)</choice>
                                         <choice>Speaker</choice>
                                         <choice>Sign Language</choice>
                                     </choices>
