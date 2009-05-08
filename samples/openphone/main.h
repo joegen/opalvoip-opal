@@ -680,7 +680,7 @@ class OptionsDialog : public wxDialog
     bool         m_DisableFastStart;
     bool         m_DisableH245Tunneling;
     bool         m_DisableH245inSETUP;
-    bool         m_EnableH239Video;
+    int          m_ExtendedVideoRoles;
     bool         m_EnableH239Control;
     wxListBox  * m_Aliases;
     wxTextCtrl * m_NewAlias;
@@ -1033,7 +1033,14 @@ class MyManager : public wxFrame, public OpalManager
     PwxString m_VideoGrabFrameSize;
     PwxString m_VideoMinFrameSize;
     PwxString m_VideoMaxFrameSize;
-    bool AdjustFrameSize();
+    bool AdjustVideoFormats();
+
+    enum ExtendedVideoRoles {
+      e_DisabledExtendedVideoRoles,
+      e_ExtendedVideoRolePerOption,
+      e_ForcePresentationVideoRole,
+      e_ForceLiveVideoRole
+    } m_ExtendedVideoRoles;
 
     MyMediaList m_mediaInfo;
     void InitMediaInfo(const char * source, const OpalMediaFormatList & formats);

@@ -1074,12 +1074,7 @@ PBoolean H323VideoCapability::OnSendingPDU(H245_VideoCapability & pdu, CommandTy
   if (type != e_OLC || (role = GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption())) == 0)
     return OnSendingPDU(pdu);
 
-  H323H239Options opts;
-  opts.m_hasPresentationRole = role == OpalVideoFormat::ePresentation;
-  opts.m_hasLiveRole = role != OpalVideoFormat::ePresentation;
-  opts.m_videoFormats += GetMediaFormat();
-
-  H323H239VideoCapability h239(opts);
+  H323H239VideoCapability h239(GetMediaFormat());
   return h239.OnSendingPDU(pdu, type);
 #else
   return OnSendingPDU(pdu);
@@ -1306,7 +1301,7 @@ PBoolean H323ExtendedVideoCapability::OnSendingPDU(H245_VideoCapability & pdu, C
 
   extcap.IncludeOptionalField(H245_ExtendedVideoCapability::e_videoCapabilityExtension);
   extcap.m_videoCapabilityExtension.SetSize(1);
-  return OnSendingGenericPDU(extcap.m_videoCapabilityExtension[0], GetMediaFormat(), type);
+  return OnSendingGenericPDU(extcap.m_videoCapabilityExtension[0], OpalMediaFormat(GetFormatName()), type);
 }
 
 
@@ -1340,8 +1335,12 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
     ++i;
   }
 
-  if (!OnReceivedGenericPDU(GetWritableMediaFormat(), extcap.m_videoCapabilityExtension[i], type))
+  OpalMediaFormat videoCapExtMediaFormat(GetFormatName());
+  if (!OnReceivedGenericPDU(videoCapExtMediaFormat, extcap.m_videoCapabilityExtension[i], type))
     return false;
+
+  unsigned rolesMask = videoCapExtMediaFormat.GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
+
 
   H323Capabilities allVideoCapabilities;
   H323CapabilityFactory::KeyList_T stdCaps = H323CapabilityFactory::GetKeyList();
@@ -1357,11 +1356,12 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
   m_videoFormats.RemoveAll();
 
   for (i = 0; i < extcap.m_videoCapability.GetSize(); ++i) {
+    const H245_VideoCapability & vidCap = extcap.m_videoCapability[i];
     for (PINDEX c = 0; c < allVideoCapabilities.GetSize(); c++) {
       H323VideoCapability & capability = (H323VideoCapability &)allVideoCapabilities[c];
-      if (capability.IsMatch(extcap.m_videoCapability[i]) &&
-          capability.OnReceivedPDU(extcap.m_videoCapability[i])) {
+      if (capability.IsMatch(vidCap) && capability.OnReceivedPDU(vidCap, type)) {
         OpalMediaFormat mediaFormat = capability.GetMediaFormat();
+        mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), rolesMask);
         if (mediaFormat.ToNormalisedOptions())
           m_videoFormats += mediaFormat;
       }
@@ -1469,11 +1469,20 @@ OPAL_INSTANTIATE_MEDIATYPE2(H239, H239MediaType, OpalH239MediaType);
 
 
 
-H323H239VideoCapability::H323H239VideoCapability(const H323H239Options & options)
+H323H239VideoCapability::H323H239VideoCapability(const OpalMediaFormat & mediaFormat)
   : H323ExtendedVideoCapability("0.0.8.239.1.2")
-  , m_options(options)
 {
-  m_videoFormats = m_options.m_videoFormats;
+  GetWritableMediaFormat() = mediaFormat;
+}
+
+
+PObject::Comparison H323H239VideoCapability::Compare(const PObject & obj) const
+{
+  Comparison comparison = H323ExtendedVideoCapability::Compare(obj);
+  if (comparison != EqualTo)
+    return comparison;
+
+  return GetMediaFormat().Compare(((H323Capability &)obj).GetMediaFormat());
 }
 
 
@@ -1503,20 +1512,14 @@ PString H323H239VideoCapability::GetFormatName() const
 
         AddOption(option);
       } 
-  } const name; 
+  } const name;
   return name;
 }
 
 
 PBoolean H323H239VideoCapability::OnSendingPDU(H245_VideoCapability & pdu, CommandType type) const
 {
-  unsigned roles = 0;
-  if (m_options.m_hasPresentationRole)
-    roles |= 1;
-  if (m_options.m_hasLiveRole)
-    roles |= 2;
-  GetWritableMediaFormat().SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), roles);
-
+  const_cast<H323H239VideoCapability*>(this)->m_videoFormats += GetMediaFormat();
   return H323ExtendedVideoCapability::OnSendingPDU(pdu, type);
 }
 
@@ -1526,17 +1529,7 @@ PBoolean H323H239VideoCapability::OnReceivedPDU(const H245_VideoCapability & pdu
   if (!H323ExtendedVideoCapability::OnReceivedPDU(pdu, type))
     return false;
 
-  unsigned roles = GetMediaFormat().GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
-  m_options.m_hasPresentationRole = (roles&1) != 0;
-  m_options.m_hasLiveRole = (roles&2) != 0;
-  m_options.m_videoFormats = m_videoFormats;
-
-  if (type == e_OLC) {
-    m_videoFormats[0].SetOptionEnum(OpalVideoFormat::ContentRoleOption(),
-              m_options.m_hasPresentationRole ? OpalVideoFormat::ePresentation : OpalVideoFormat::eMainRole);
-    GetWritableMediaFormat() = m_videoFormats[0];
-  }
-
+  GetWritableMediaFormat() = m_videoFormats[0];
   return true;
 }
 
@@ -2039,7 +2032,7 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
     allCapabilities.AddAllCapabilities(0, 0, "*");
     H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
 #ifdef OPAL_H239
-    allCapabilities.Add(new H323H239VideoCapability(connection.GetLocalH239Options()));
+    allCapabilities.Add(new H323H239VideoCapability(OpalMediaFormat()));
     allCapabilities.Add(new H323H239ControlCapability());
 #endif
     allCapabilities.SetMediaPacketizations(mediaPacketizations);
