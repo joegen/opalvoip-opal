@@ -175,7 +175,7 @@ H323Connection::H323Connection(OpalCall & call,
   , endpoint(ep)
   , gkAccessTokenOID(ep.GetGkAccessTokenOID())
 #ifdef OPAL_H239
-  , m_h239Options(ep.GetDefaultH239Options())
+  , m_h239Control(ep.GetDefaultH239Control())
 #endif
 #if OPAL_H460
   , features(ep.GetFeatureSet())
@@ -3468,22 +3468,23 @@ void H323Connection::OnSetLocalCapabilities()
     }
   }
 
-  H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX);
-
 #ifdef OPAL_H239
-  if (m_h239Options.m_hasControl)
+  if (m_h239Control)
     localCapabilities.Add(new H323H239ControlCapability());
 
-  if (m_h239Options.m_hasLiveRole || m_h239Options.m_hasPresentationRole) {
-    if (m_h239Options.m_videoFormats.IsEmpty()) {
-      for (OpalMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
-        if (format->GetMediaType() == OpalMediaType::Video())
-          m_h239Options.m_videoFormats += *format;
-      }
+  simultaneous = P_MAX_INDEX;
+  for (OpalMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+    if (format->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption()) != 0) {
+      H323H239VideoCapability * newCap = new H323H239VideoCapability(*format);
+      if (localCapabilities.FindCapability(*newCap) == NULL)
+        simultaneous = localCapabilities.SetCapability(0, simultaneous, newCap);
+      else
+        delete newCap;
     }
-    localCapabilities.SetCapability(0, P_MAX_INDEX, new H323H239VideoCapability(m_h239Options));
   }
 #endif
+
+  H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX);
 
   // Special test for the RFC2833 capability to get the correct dynamic payload type
   H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
@@ -3499,17 +3500,24 @@ void H323Connection::OnSetLocalCapabilities()
 
 
 #ifdef OPAL_H239
-void H323Connection::GetRemoteH239Options(H323H239Options & options) const
+bool H323Connection::GetRemoteH239Control() const
 {
-  options.m_hasControl = remoteCapabilities.FindCapability(H323H239ControlCapability()) != NULL;
+  return remoteCapabilities.FindCapability(H323H239ControlCapability()) != NULL;
+}
 
-  const H323H239VideoCapability * cap = dynamic_cast<const H323H239VideoCapability *>(remoteCapabilities.FindCapability(H323H239VideoCapability(options)));
-  if (cap != NULL)
-    options = cap->GetOptions();
-  else {
-    options.m_hasLiveRole = options.m_hasPresentationRole = false;
-    options.m_videoFormats.RemoveAll();
+
+OpalMediaFormatList H323Connection::GetRemoteH239Formats() const
+{
+  OpalMediaFormatList formats;
+
+  for (PINDEX i = 0; i < remoteCapabilities.GetSize(); ++i) {
+    const H323Capability & capability = remoteCapabilities[i];
+    if (capability.GetMainType() == H323Capability::e_Video &&
+        capability.GetSubType() == H245_VideoCapability::e_extendedVideoCapability)
+      formats += capability.GetMediaFormat();
   }
+
+  return formats;
 }
 #endif
 
@@ -3610,28 +3618,17 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
   if (fastStartMediaStream != NULL)
     list = fastStartMediaStream->GetMediaFormat();
   else {
-      list = remoteCapabilities.GetMediaFormats();
-      // Note we do NOT use AdjustMediaFormats here as we are supposed to
-      // use the ordering dictated by the remote.
-      list.Remove(endpoint.GetManager().GetMediaFormatMask());
-
 #if OPAL_H239
-    H323H239Options h239;
-    GetRemoteH239Options(h239);
-
-    unsigned roleMask = 0;
-    if (h239.m_hasPresentationRole)
-      roleMask |= OpalVideoFormat::ContentRoleBit(OpalVideoFormat::ePresentation);
-    if (h239.m_hasLiveRole)
-      roleMask |= OpalVideoFormat::ContentRoleMask & ~OpalVideoFormat::ContentRoleBit(OpalVideoFormat::ePresentation);
-
-    if (roleMask != 0 && !h239.m_videoFormats.IsEmpty()) {
-      for (OpalMediaFormatList::iterator format = list.begin(); format != list.end(); ++format) {
-        if (h239.m_videoFormats.HasFormat(*format))
-          format->SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), roleMask);
-      }
-    }
+    OpalMediaFormatList h239 = GetRemoteH239Formats();
+    for (OpalMediaFormatList::iterator format = h239.begin(); format != h239.end(); ++format)
+      list += *format;
 #endif
+
+    list += remoteCapabilities.GetMediaFormats();
+
+    // Note we do NOT use AdjustMediaFormats here as we are supposed to
+    // use the ordering dictated by the remote.
+    list.Remove(endpoint.GetManager().GetMediaFormatMask());
   }
 
   return list;

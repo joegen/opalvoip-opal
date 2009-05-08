@@ -1929,21 +1929,23 @@ class H323Connection : public OpalRTPConnection
   //@}
     
 #ifdef OPAL_H239
-    /**Get the local H.239 options.
+    /**Get the local H.239 control capability.
      */
-    const H323H239Options & GetLocalH239Options() const { return m_h239Options; }
+    bool GetLocalH239Control() const { return m_h239Control; }
 
-    /**Set the local H.239 options.
+    /**Set the local H.239 control capability.
      */
-    void SetLocalH239Options(
-      const H323H239Options & options   ///< H.239 options to send to remote
-    ) { m_h239Options = options; }
+    void SetLocalH239Control(
+      bool on   ///< H.239 control capability is to be sent to remote
+    ) { m_h239Control = on; }
+
+    /**Get the remote H.239 control capability.
+     */
+    bool GetRemoteH239Control() const;
 
     /**Get the remote H.239 options.
      */
-    void GetRemoteH239Options(
-      H323H239Options & options   ///< H.239 options received from remote
-    ) const;
+    OpalMediaFormatList GetRemoteH239Formats() const;
 #endif
 
     virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet &) const;
@@ -2080,7 +2082,7 @@ class H323Connection : public OpalRTPConnection
     H245NegRoundTripDelay            * roundTripDelayProcedure;
 
 #ifdef OPAL_H239
-    H323H239Options m_h239Options;
+    bool m_h239Control;
 #endif
 
 #if OPAL_H450
