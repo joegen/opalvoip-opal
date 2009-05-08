@@ -111,7 +111,7 @@ PBoolean OpalLineInterfaceDevice::HookFlash(unsigned line, unsigned flashTime)
   if (!SetLineOnHook(line))
     return PFalse;
 
-  PThread::Current()->Sleep(flashTime);
+  PThread::Sleep(flashTime);
 
   return SetLineOffHook(line);
 }
@@ -459,7 +459,7 @@ OpalLineInterfaceDevice::CallProgressTones OpalLineInterfaceDevice::WaitForToneD
       return tones;
     }
 
-    PThread::Current()->Sleep(sampleRate);
+    PThread::Sleep(sampleRate);
     retry++;
   } while (retry < timeout);
 
@@ -627,7 +627,7 @@ OpalLineInterfaceDevice::CallProgressTones
   if (params.m_dialStartDelay > 0) {
     /* wait before dialing*/
     PTRACE(3, "LID\tDialOut wait " << params.m_dialStartDelay << "msec before dialing");
-    PThread::Current()->Sleep(params.m_dialStartDelay);
+    PThread::Sleep(params.m_dialStartDelay);
   }
 
   // Dial the string
@@ -651,7 +651,7 @@ OpalLineInterfaceDevice::CallProgressTones
         break;
 
       case ',' :
-        PThread::Current()->Sleep(params.m_commaDelay);
+        PThread::Sleep(params.m_commaDelay);
         break;
     }
   }
