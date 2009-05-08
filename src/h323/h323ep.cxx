@@ -57,65 +57,61 @@
 /////////////////////////////////////////////////////////////////////////////
 
 H323EndPoint::H323EndPoint(OpalManager & manager)
-  : OpalRTPEndPoint(manager, "h323", CanTerminateCall),
-    m_bH245Disabled(PFalse),
-    signallingChannelCallTimeout(0, 0, 1),  // Minutes
-    controlChannelStartTimeout(0, 0, 2),    // Minutes
-    endSessionTimeout(0, 10),               // Seconds
-    masterSlaveDeterminationTimeout(0, 30), // Seconds
-    capabilityExchangeTimeout(0, 30),       // Seconds
-    logicalChannelTimeout(0, 30),           // Seconds
-    requestModeTimeout(0, 30),              // Seconds
-    roundTripDelayTimeout(0, 10),           // Seconds
-    roundTripDelayRate(0, 0, 1),            // Minutes
-    gatekeeperRequestTimeout(0, 5),         // Seconds
-    rasRequestTimeout(0, 3),                // Seconds
-    callTransferT1(0,10),                   // Seconds
-    callTransferT2(0,10),                   // Seconds
-    callTransferT3(0,10),                   // Seconds
-    callTransferT4(0,10),                   // Seconds
-    callIntrusionT1(0,30),                  // Seconds
-    callIntrusionT2(0,30),                  // Seconds
-    callIntrusionT3(0,30),                  // Seconds
-    callIntrusionT4(0,30),                  // Seconds
-    callIntrusionT5(0,10),                  // Seconds
-    callIntrusionT6(0,10)                   // Seconds
+  : OpalRTPEndPoint(manager, "h323", CanTerminateCall)
+  , autoCallForward(true)
+  , disableFastStart(false)
+  , disableH245Tunneling(false)
+  , disableH245inSetup(false)
+  , m_bH245Disabled(false)
+  , canDisplayAmountString(false)
+  , canEnforceDurationLimit(true)
 #if OPAL_H450
-    ,nextH450CallIdentity(0)
+  , callIntrusionProtectionLevel(3) //H45011_CIProtectionLevel::e_fullProtection;
+#endif
+  , terminalType(e_TerminalOnly)
+#ifdef OPAL_H239
+  , m_defaultH239Control(false)
+#endif
+  , clearCallOnRoundTripFail(false)
+  , signallingChannelCallTimeout(0, 0, 1)  // Minutes
+  , controlChannelStartTimeout(0, 0, 2)    // Minutes
+  , endSessionTimeout(0, 10)               // Seconds
+  , masterSlaveDeterminationTimeout(0, 30) // Seconds
+  , masterSlaveDeterminationRetries(10)
+  , capabilityExchangeTimeout(0, 30)       // Seconds
+  , logicalChannelTimeout(0, 30)           // Seconds
+  , requestModeTimeout(0, 30)              // Seconds
+  , roundTripDelayTimeout(0, 10)           // Seconds
+  , roundTripDelayRate(0, 0, 1)            // Minutes
+  , gatekeeperRequestTimeout(0, 5)         // Seconds
+  , gatekeeperRequestRetries(2)
+  , rasRequestTimeout(0, 3)                // Seconds
+  , rasRequestRetries(2)
+  , registrationTimeToLive(0, 0, 10)       // Minutes
+  , sendGRQ(true)
+  , callTransferT1(0,10)                   // Seconds
+  , callTransferT2(0,10)                   // Seconds
+  , callTransferT3(0,10)                   // Seconds
+  , callTransferT4(0,10)                   // Seconds
+  , callIntrusionT1(0,30)                  // Seconds
+  , callIntrusionT2(0,30)                  // Seconds
+  , callIntrusionT3(0,30)                  // Seconds
+  , callIntrusionT4(0,30)                  // Seconds
+  , callIntrusionT5(0,10)                  // Seconds
+  , callIntrusionT6(0,10)                   // Seconds
+  , gatekeeper(NULL)
+#if OPAL_H450
+  , nextH450CallIdentity(0)
+#endif
+#if OPAL_H460
+  , disableH460(false)
 #endif
 {
-  // Set port in OpalEndPoint class
-  defaultSignalPort = 1720;
+  defaultSignalPort = 1720; // Set port in OpalEndPoint class
 
   localAliasNames.AppendString(defaultLocalPartyName);
 
-  m_bH245Disabled = PFalse;
-  autoCallForward = PTrue;
-  disableFastStart = PFalse;
-  disableH245Tunneling = PFalse;
-  disableH245inSetup = PFalse;
-  canDisplayAmountString = PFalse;
-  canEnforceDurationLimit = PTrue;
-
-#if OPAL_H450
-  callIntrusionProtectionLevel = 3; //H45011_CIProtectionLevel::e_fullProtection;
-#endif
-
-  terminalType = e_TerminalOnly;
-  clearCallOnRoundTripFail = PFalse;
-
-  masterSlaveDeterminationRetries = 10;
-  gatekeeperRequestRetries = 2;
-  rasRequestRetries = 2;
-  sendGRQ = PTrue;
-
-  gatekeeper = NULL;
-
   secondaryConnectionsActive.DisallowDeleteObjects();
-  
-#if OPAL_H460
-  disableH460 = FALSE;
-#endif
 
   manager.AttachEndPoint(this, "h323s");
 

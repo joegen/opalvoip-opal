@@ -202,7 +202,7 @@ DEF_FIELD(CallIntrusionProtectionLevel);
 DEF_FIELD(DisableFastStart);
 DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
-DEF_FIELD(EnableH239Video);
+DEF_FIELD(ExtendedVideoRoles);
 DEF_FIELD(EnableH239Control);
 
 
@@ -566,6 +566,7 @@ MyManager::MyManager()
   , m_remoteVideoFrameY(INT_MIN)
   , m_SecondaryVideoGrabPreview(false)
   , m_SecondaryVideoOpening(false)
+  , m_ExtendedVideoRoles(e_DisabledExtendedVideoRoles)
 #if PTRACING
   , m_enableTracing(false)
 #endif
@@ -963,7 +964,6 @@ bool MyManager::Initialise()
     }
     m_mediaInfo.sort();
   }
-  AdjustFrameSize();
 
 #if PTRACING
   mediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
@@ -1019,12 +1019,10 @@ bool MyManager::Initialise()
   if (config->Read(DisableH245inSETUPKey, &onoff))
     h323EP->DisableH245inSetup(onoff);
 
-  H323H239Options h239 = h323EP->GetDefaultH239Options();
-  if (config->Read(EnableH239VideoKey, &onoff))
-    h239.m_hasLiveRole = h239.m_hasPresentationRole = onoff;
-  h239.m_hasPresentationRole = onoff;
-  config->Read(EnableH239ControlKey, &h239.m_hasControl);
-  h323EP->SetDefaultH239Options(h239);
+  value1 = m_ExtendedVideoRoles;
+  config->Read(ExtendedVideoRolesKey, &value1);
+  m_ExtendedVideoRoles = (ExtendedVideoRoles)value1;
+  h323EP->SetDefaultH239Control(config->Read(EnableH239ControlKey, h323EP->GetDefaultH239Control()));
 
   config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
   if (m_gatekeeperMode > 0) {
@@ -1112,6 +1110,8 @@ bool MyManager::Initialise()
     for (PINDEX i = 0; i < PARRAYSIZE(DefaultRoutes); i++)
       AddRouteEntry(DefaultRoutes[i]);
   }
+
+  AdjustVideoFormats();
 
   return true;
 }
@@ -2995,7 +2995,7 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
 #endif // OPAL_SIP
 
 
-bool MyManager::AdjustFrameSize()
+bool MyManager::AdjustVideoFormats()
 {
   unsigned width, height;
   if (!PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, width, height)) {
@@ -3015,10 +3015,8 @@ bool MyManager::AdjustFrameSize()
     maxHeight = PVideoFrameInfo::CIF16Height;
   }
 
-  OpalMediaFormatList allMediaFormats;
-  OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
-  for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
-    OpalMediaFormat mediaFormat = allMediaFormats[i];
+  for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
+    OpalMediaFormat mediaFormat = mm->mediaFormat;
     if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
@@ -3026,6 +3024,26 @@ bool MyManager::AdjustFrameSize()
       mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption(), minHeight);
       mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), maxWidth);
       mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), maxHeight);
+
+      switch (m_ExtendedVideoRoles) {
+        case e_DisabledExtendedVideoRoles :
+          mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), 0);
+          break;
+
+        case e_ForcePresentationVideoRole :
+          mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(),
+                                       OpalVideoFormat::ContentRoleBit(OpalVideoFormat::ePresentation));
+          break;
+
+        case e_ForceLiveVideoRole :
+          mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(),
+                                       OpalVideoFormat::ContentRoleBit(OpalVideoFormat::eMainRole));
+          break;
+
+        default :
+          break;
+      }
+
       OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
     }
   }
@@ -3748,9 +3766,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(DisableH245Tunneling, m_manager.h323EP->IsH245TunnelingDisabled() != false);
   INIT_FIELD(DisableH245inSETUP, m_manager.h323EP->IsH245inSetupDisabled() != false);
 
-  H323H239Options h239 = m_manager.h323EP->GetDefaultH239Options();
-  INIT_FIELD(EnableH239Video, h239.m_hasLiveRole);
-  INIT_FIELD(EnableH239Control, h239.m_hasControl);
+  INIT_FIELD(ExtendedVideoRoles, m_manager.m_ExtendedVideoRoles);
+  INIT_FIELD(EnableH239Control, m_manager.h323EP->GetDefaultH239Control());
 
   INIT_FIELD(GatekeeperMode, m_manager.m_gatekeeperMode);
   INIT_FIELD(GatekeeperAddress, m_manager.m_gatekeeperAddress);
@@ -4000,7 +4017,6 @@ bool OptionsDialog::TransferDataFromWindow()
 //  SAVE_FIELD(VideoFlipRemote, );
   SAVE_FIELD(VideoMinFrameSize, m_manager.m_VideoMinFrameSize = );
   SAVE_FIELD(VideoMaxFrameSize, m_manager.m_VideoMaxFrameSize = );
-  m_manager.AdjustFrameSize();
 
   ////////////////////////////////////////
   // Fax fields
@@ -4103,11 +4119,8 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(DisableH245Tunneling, m_manager.h323EP->DisableH245Tunneling);
   SAVE_FIELD(DisableH245inSETUP, m_manager.h323EP->DisableH245inSetup);
 
-  H323H239Options h239 = m_manager.h323EP->GetDefaultH239Options();
-  SAVE_FIELD(EnableH239Video, h239.m_hasLiveRole = );
-  SAVE_FIELD(EnableH239Control, h239.m_hasControl = );
-  h239.m_hasPresentationRole = h239.m_hasLiveRole;
-  m_manager.h323EP->SetDefaultH239Options(h239);
+  SAVE_FIELD(ExtendedVideoRoles, m_manager.m_ExtendedVideoRoles = (MyManager::ExtendedVideoRoles));
+  SAVE_FIELD(EnableH239Control, m_manager.h323EP->SetDefaultH239Control);
 
   config->Write(GatekeeperTTLKey, m_GatekeeperTTL);
   m_manager.h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, m_GatekeeperTTL));
@@ -4240,6 +4253,8 @@ bool OptionsDialog::TransferDataFromWindow()
   m_manager.m_enableTracing = m_EnableTracing;
   m_manager.m_traceFileName = m_TraceFileName;
 #endif // PTRACING
+
+  m_manager.AdjustVideoFormats();
 
   ::wxEndBusyCursor();
 

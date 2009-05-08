@@ -1465,24 +1465,6 @@ class H323GenericControlCapability : public H323Capability,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-struct H323H239Options
-{
-  H323H239Options(
-    bool hasLiveRole = false,
-    bool hasPresentationRole = false,
-    bool hasControl = false
-  ) : m_hasLiveRole(hasLiveRole)
-    , m_hasPresentationRole(hasPresentationRole)
-    , m_hasControl(hasControl)
-  { }
-
-  bool                m_hasLiveRole;
-  bool                m_hasPresentationRole;
-  bool                m_hasControl;
-  OpalMediaFormatList m_videoFormats;
-};
-
-
 class H323H239VideoCapability : public H323ExtendedVideoCapability
 {
   PCLASSINFO(H323H239VideoCapability, H323ExtendedVideoCapability);
@@ -1493,12 +1475,17 @@ class H323H239VideoCapability : public H323ExtendedVideoCapability
     /**Create a new Extended Video capability.
       */
     H323H239VideoCapability(
-      const H323H239Options & options
+      const OpalMediaFormat & videoFormat
     );
   //@}
 
   /**@name Overrides from class PObject */
   //@{
+    /**Compare two capability instances. This compares the main and sub-types
+       of the capability.
+     */
+    Comparison Compare(const PObject & obj) const;
+
     /**Create a copy of the object.
       */
     virtual PObject * Clone() const;
@@ -1539,11 +1526,6 @@ class H323H239VideoCapability : public H323ExtendedVideoCapability
       CommandType type                   ///<  Type of PDU to send in
     );
   //@}
-
-    const H323H239Options & GetOptions() const { return m_options; }
-
-  protected:
-    H323H239Options m_options;
 };
 
 

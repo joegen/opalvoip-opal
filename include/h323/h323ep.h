@@ -1073,13 +1073,15 @@ class H323EndPoint : public OpalRTPEndPoint
     void SetInitialBandwidth(unsigned bandwidth) { initialBandwidth = bandwidth; }
 
 #ifdef OPAL_H239
-    /**Get the default H.239 options.
+    /**Get the default H.239 control capability.
      */
-    const H323H239Options & GetDefaultH239Options() const { return m_defaultH239Options; }
+    bool GetDefaultH239Control() const { return m_defaultH239Control; }
 
-    /**Set the default H.239 options.
+    /**Set the default H.239 control capability.
      */
-    void SetDefaultH239Options(const H323H239Options & options) { m_defaultH239Options = options; }
+    void SetDefaultH239Control(
+      bool on   ///< H.239 control capability is to be sent to remote
+    ) { m_defaultH239Control = on; }
 #endif
 
     /**Called when an outgoing PDU requires a feature set
@@ -1353,7 +1355,7 @@ class H323EndPoint : public OpalRTPEndPoint
     TerminalTypes   terminalType;
 
 #ifdef OPAL_H239
-    H323H239Options m_defaultH239Options;
+    bool            m_defaultH239Control;
 #endif
 
     PBoolean        clearCallOnRoundTripFail;
