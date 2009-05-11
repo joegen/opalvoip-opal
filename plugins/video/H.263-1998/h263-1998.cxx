@@ -1192,7 +1192,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   header->height = _context->height;
   int size = _context->width * _context->height;
 
-  if (dstLen < (frameBytes + sizeof(PluginCodec_Video_FrameHeader))) {
+  if (dstRTP.GetFrameLen() < (frameBytes + sizeof(PluginCodec_Video_FrameHeader))) {
     TRACE_AND_LOG(tracer, 1, "Destination buffer " << dstLen << " insufficient for decoded data size " << header->width << "x" << header->height);
     return 0;
   }
