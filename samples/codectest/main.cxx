@@ -162,6 +162,7 @@ void CodecTest::Main()
     PCaselessString cmd;
     cin >> cmd;
 
+    cout << "\n\n\nStopping tests." << endl;
     for (i = 0; i < threadCount; ++i)
       infos[i].Stop();
 
@@ -1123,8 +1124,10 @@ bool AudioThread::Write(const RTP_DataFrame & frame)
 
 void AudioThread::Stop()
 {
-  running = false;
-  WaitForTermination();
+  if (running) {
+    running = false;
+    WaitForTermination();
+  }
 }
 
 
