@@ -828,6 +828,12 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
       localMedia->AddMediaFormats(formats, rtpSessionId, rtpPayloadMap);
       localMedia->SetDirection(SDPMediaDescription::Inactive);
     }
+    if (m_holdToRemote >= eHoldOn && remoteProductInfo.name == "Cisco-SIPGateway" && remoteProductInfo.version == "IOS-12.x") {
+      PIPSocket::Address dummy;
+      WORD port;
+      localAddress.GetIpAndPort(dummy, port);
+      localMedia->SetTransportAddress(OpalTransportAddress("0.0.0.0", port, "udp"));
+    }
   }
   else {
     localMedia->AddMediaFormats(formats, rtpSessionId, rtpPayloadMap);
