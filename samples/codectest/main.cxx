@@ -79,6 +79,7 @@ void CodecTest::Main()
              "R-record-device:"
              "-record-driver:"
              "s-frame-size:"
+             "-single-step."
              "S-simultaneous:"
              "T-statistics."
              "-count:"
@@ -119,7 +120,7 @@ void CodecTest::Main()
               "  -r --frame-rate size    : video frame rate (frames/second)\n"
               "  -b --bit-rate size      : video bit rate (bits/second)\n"
               "  -O --option opt=val     : set media format option to value\n"
-              "  -S --single-step        : video single frame at a time mode\n"
+              "  --single-step           : video single frame at a time mode\n"
               "  -c --crop               : crop rather than scale if resizing\n"
               "  -m --suppress-marker    : suppress marker bits to decoder\n"
               "  -M --force-marker       : force marker bits to decoder\n"
@@ -676,7 +677,7 @@ bool VideoThread::Initialise(PArgList & args)
       encoder->SetMaxOutputSize(args.GetOptionString('p').AsUnsigned());
   }
 
-  singleStep = args.HasOption('S');
+  singleStep = args.HasOption("single-step");
 
   sumYSNR = sumCbSNR = sumCrSNR = 0.0;
   snrCount = 0;
