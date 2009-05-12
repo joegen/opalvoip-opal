@@ -1895,11 +1895,16 @@ PBoolean H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) cons
   */
 
   int qcifMPI = mediaFormat.GetOptionInteger(qcifMPI_tag, 0);
+  int cifMPI = mediaFormat.GetOptionInteger(cifMPI_tag);
+  if (!IsValidMPI(qcifMPI) && !IsValidMPI(cifMPI)) {
+    PTRACE(2, "OpalPlugin\tCannot encode H.261 without a resolution");
+    return false;
+  }
+
   if (IsValidMPI(qcifMPI)) {
     h261.IncludeOptionalField(H245_H261VideoCapability::e_qcifMPI);
     h261.m_qcifMPI = qcifMPI > 4 ? 4 : qcifMPI;
   }
-  int cifMPI = mediaFormat.GetOptionInteger(cifMPI_tag);
   if (IsValidMPI(cifMPI)) {
     h261.IncludeOptionalField(H245_H261VideoCapability::e_cifMPI);
     h261.m_cifMPI = cifMPI > 4 ? 4 : cifMPI;
@@ -1991,20 +1996,29 @@ H323H263PluginCapability::H323H263PluginCapability(const PluginCodec_Definition 
 }
 
 
-static bool GetCustomMPI(const OpalMediaFormat & mediaFormat, unsigned & width, unsigned & height, unsigned & mpi)
+struct H323H263CustomSize
 {
-  PStringArray custom = mediaFormat.GetOptionString(PLUGINCODEC_CUSTOM_MPI).Tokenise(',');
-  if (custom.GetSize() == 3) {
-    width  = custom[0].AsUnsigned();
-    height = custom[1].AsUnsigned();
-    mpi    = custom[2].AsUnsigned();
-    if (width > 15 && height > 15 && mpi > 1)
-      return true;
-  }
+  unsigned width;
+  unsigned height;
+  unsigned mpi;
+};
 
-  width = height = 0;
-  mpi = PLUGINCODEC_MPI_DISABLED;
-  return false;
+typedef std::list<H323H263CustomSize> H323H263CustomSizes;
+
+static void GetCustomMPI(const OpalMediaFormat & mediaFormat, H323H263CustomSizes & sizes)
+{
+  PStringArray customSizes = mediaFormat.GetOptionString(PLUGINCODEC_CUSTOM_MPI).Tokenise(';');
+  for (PINDEX i = 0; i < customSizes.GetSize(); ++i) {
+    PStringArray customSize = customSizes[i].Tokenise(',');
+    if (customSize.GetSize() == 3) {
+      H323H263CustomSize size;
+      size.width  = customSize[0].AsUnsigned();
+      size.height = customSize[1].AsUnsigned();
+      size.mpi    = customSize[2].AsUnsigned();
+      if (size.width > 15 && size.height > 15 && IsValidMPI(size.mpi))
+        sizes.push_back(size);
+    }
+  }
 }
 
 
@@ -2030,8 +2044,8 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
   int cifMPI   = mediaFormat.GetOptionInteger(cifMPI_tag);
   int cif4MPI  = mediaFormat.GetOptionInteger(cif4MPI_tag);
   int cif16MPI = mediaFormat.GetOptionInteger(cif16MPI_tag);
-  unsigned customWidth, customHeight, customMPI;
-  GetCustomMPI(mediaFormat, customWidth, customHeight, customMPI);
+  H323H263CustomSizes customSizes;
+  GetCustomMPI(mediaFormat, customSizes);
 
   const OpalMediaFormat & otherFormat = other.GetMediaFormat();
   int other_sqcifMPI = otherFormat.GetOptionInteger(sqcifMPI_tag);
@@ -2039,19 +2053,25 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
   int other_cifMPI   = otherFormat.GetOptionInteger(cifMPI_tag);
   int other_cif4MPI  = otherFormat.GetOptionInteger(cif4MPI_tag);
   int other_cif16MPI = otherFormat.GetOptionInteger(cif16MPI_tag);
-  unsigned other_customWidth, other_customHeight, other_customMPI;
-  GetCustomMPI(otherFormat, other_customWidth, other_customHeight, other_customMPI);
+  H323H263CustomSizes other_customSizes;
+  GetCustomMPI(otherFormat, other_customSizes);
 
   if ((IsValidMPI( sqcifMPI) && IsValidMPI( other_sqcifMPI)) ||
       (IsValidMPI(  qcifMPI) && IsValidMPI(  other_qcifMPI)) ||
       (IsValidMPI(   cifMPI) && IsValidMPI(   other_cifMPI)) ||
       (IsValidMPI(  cif4MPI) && IsValidMPI(  other_cif4MPI)) ||
-      (IsValidMPI( cif16MPI) && IsValidMPI( other_cif16MPI)) ||
-      (IsValidMPI(customMPI) && IsValidMPI(other_customMPI) &&
-                  customWidth  == other_customWidth &&
-                  customHeight == other_customHeight)) {
+      (IsValidMPI( cif16MPI) && IsValidMPI( other_cif16MPI))) {
     PTRACE(5, "H.263\t" << *this << " == " << other);
     return EqualTo;
+  }
+
+  for (H323H263CustomSizes::const_iterator mySize = customSizes.begin(); mySize != customSizes.end(); ++mySize) {
+    for (H323H263CustomSizes::const_iterator otherSize = other_customSizes.begin(); otherSize != other_customSizes.end(); ++otherSize) {
+      if (mySize->width == otherSize->width && mySize->height == otherSize->height) {
+        PTRACE(5, "H.263\t" << *this << " == " << other);
+        return EqualTo;
+      }
+    }
   }
 
   if ((!IsValidMPI(cif16MPI) && IsValidMPI(other_cif16MPI)) ||
@@ -2070,32 +2090,21 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
 PObject * H323H263PluginCapability::Clone() const
 { return new H323H263PluginCapability(*this); }
 
-static void SetTransmittedCap(const OpalMediaFormat & mediaFormat,
+static bool SetTransmittedCap(const OpalMediaFormat & mediaFormat,
                               H245_H263VideoCapability & h263,
                               const char * mpiTag,
                               int mpiEnum,
                               PASN_Integer & mpi)
 {
   int mpiVal = mediaFormat.GetOptionInteger(mpiTag);
-  if (IsValidMPI(mpiVal)) {
-    h263.IncludeOptionalField(mpiEnum);
-    mpi = mpiVal;
-  }
+  if (!IsValidMPI(mpiVal))
+    return false;
+
+  h263.IncludeOptionalField(mpiEnum);
+  mpi = mpiVal;
+  return true;
 }
 
-
-static void OnSendingCustomMPI(H245_H263Options & h263options, unsigned width, unsigned height, unsigned mpi)
-{
-  h263options.IncludeOptionalField(H245_H263Options::e_customPictureFormat);
-  h263options.m_customPictureFormat.SetSize(1);
-  H245_CustomPictureFormat & customPicture = h263options.m_customPictureFormat[0];
-  customPicture.m_minCustomPictureWidth = width;
-  customPicture.m_minCustomPictureHeight = height;
-  customPicture.m_maxCustomPictureWidth = width;
-  customPicture.m_maxCustomPictureHeight = height;
-  customPicture.m_mPI.IncludeOptionalField(H245_CustomPictureFormat_mPI::e_standardMPI);
-  customPicture.m_mPI.m_standardMPI = mpi;
-}
 
 PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
 {
@@ -2104,14 +2113,26 @@ PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) cons
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
 
-  //PStringStream str; mediaFormat.PrintOptions(str);
-  //PTRACE(5, "OpalPlugin\tCreating capability for " << mediaFormat << ", options=\n" << str);
+  H323H263CustomSizes customSizes;
+  GetCustomMPI(mediaFormat, customSizes);
 
-  SetTransmittedCap(mediaFormat, cap, sqcifMPI_tag, H245_H263VideoCapability::e_sqcifMPI, h263.m_sqcifMPI);
-  SetTransmittedCap(mediaFormat, cap, qcifMPI_tag,  H245_H263VideoCapability::e_qcifMPI,  h263.m_qcifMPI);
-  SetTransmittedCap(mediaFormat, cap, cifMPI_tag,   H245_H263VideoCapability::e_cifMPI,   h263.m_cifMPI);
-  SetTransmittedCap(mediaFormat, cap, cif4MPI_tag,  H245_H263VideoCapability::e_cif4MPI,  h263.m_cif4MPI);
-  SetTransmittedCap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI);
+  bool atLeastOneResolution = !customSizes.empty();
+
+  if (SetTransmittedCap(mediaFormat, cap, sqcifMPI_tag, H245_H263VideoCapability::e_sqcifMPI, h263.m_sqcifMPI))
+    atLeastOneResolution = true;
+  if (SetTransmittedCap(mediaFormat, cap, qcifMPI_tag,  H245_H263VideoCapability::e_qcifMPI,  h263.m_qcifMPI))
+    atLeastOneResolution = true;
+  if (SetTransmittedCap(mediaFormat, cap, cifMPI_tag,   H245_H263VideoCapability::e_cifMPI,   h263.m_cifMPI))
+    atLeastOneResolution = true;
+  if (SetTransmittedCap(mediaFormat, cap, cif4MPI_tag,  H245_H263VideoCapability::e_cif4MPI,  h263.m_cif4MPI))
+    atLeastOneResolution = true;
+  if (SetTransmittedCap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI))
+    atLeastOneResolution = true;
+
+  if (!atLeastOneResolution) {
+    PTRACE(2, "OpalPlugin\tCannot encode H.263 without a resolution");
+    return false;
+  }
 
   h263.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
   h263.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, false);
@@ -2133,19 +2154,29 @@ PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) cons
     h263.m_bppMaxKb = bppMaxKb;
   }
 
-  unsigned customWidth, customHeight, customMPI;
-  bool custom = GetCustomMPI(mediaFormat, customWidth, customHeight, customMPI);
-
   bool annexI = mediaFormat.GetOptionBoolean(H263_ANNEX_I);
   bool annexJ = mediaFormat.GetOptionBoolean(H263_ANNEX_J);
   bool annexT = mediaFormat.GetOptionBoolean(H263_ANNEX_T);
-  if (custom || annexI || annexJ || annexT) {
+  if (annexI || annexJ || annexT || !customSizes.empty()) {
     h263.IncludeOptionalField(H245_H263VideoCapability::e_h263Options);
-    if (custom)
-      OnSendingCustomMPI(h263.m_h263Options, customWidth, customHeight, customMPI);
     h263.m_h263Options.m_advancedIntraCodingMode  = annexI;
     h263.m_h263Options.m_deblockingFilterMode     = annexJ;
     h263.m_h263Options.m_modifiedQuantizationMode = annexT;
+
+    if (!customSizes.empty()) {
+      h263.m_h263Options.IncludeOptionalField(H245_H263Options::e_customPictureFormat);
+      h263.m_h263Options.m_customPictureFormat.SetSize(customSizes.size());
+      PINDEX count = 0;
+      for (H323H263CustomSizes::const_iterator it = customSizes.begin(); it != customSizes.end(); ++it) {
+        H245_CustomPictureFormat & customPicture = h263.m_h263Options.m_customPictureFormat[count++];
+        customPicture.m_minCustomPictureWidth = it->width;
+        customPicture.m_minCustomPictureHeight = it->height;
+        customPicture.m_maxCustomPictureWidth = it->width;
+        customPicture.m_maxCustomPictureHeight = it->height;
+        customPicture.m_mPI.IncludeOptionalField(H245_CustomPictureFormat_mPI::e_standardMPI);
+        customPicture.m_mPI.m_standardMPI = it->mpi;
+      }
+    }
   }
 
   return true;
@@ -2159,16 +2190,31 @@ PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
 
+  int sqcifMPI = mediaFormat.GetOptionInteger(sqcifMPI_tag);
   int qcifMPI  = mediaFormat.GetOptionInteger(qcifMPI_tag);
   int cifMPI   = mediaFormat.GetOptionInteger(cifMPI_tag);
   int cif4MPI  = mediaFormat.GetOptionInteger(cif4MPI_tag);
   int cif16MPI = mediaFormat.GetOptionInteger(cif16MPI_tag);
 
-  mode.m_resolution.SetTag(IsValidMPI(cif16MPI) ? H245_H263VideoMode_resolution::e_cif16
-			 : (IsValidMPI(cif4MPI) ? H245_H263VideoMode_resolution::e_cif4
-			 :  (IsValidMPI(cifMPI) ? H245_H263VideoMode_resolution::e_cif
-			 : (IsValidMPI(qcifMPI) ? H245_H263VideoMode_resolution::e_qcif
-                         :                        H245_H263VideoMode_resolution::e_sqcif))));
+  H323H263CustomSizes customSizes;
+  GetCustomMPI(mediaFormat, customSizes);
+
+  if (IsValidMPI(cif16MPI))
+    mode.m_resolution.SetTag(H245_H263VideoMode_resolution::e_cif16);
+  else if (IsValidMPI(cif4MPI))
+    mode.m_resolution.SetTag(H245_H263VideoMode_resolution::e_cif4);
+  else if (IsValidMPI(cifMPI))
+    mode.m_resolution.SetTag(H245_H263VideoMode_resolution::e_cif);
+  else if (IsValidMPI(qcifMPI))
+    mode.m_resolution.SetTag(H245_H263VideoMode_resolution::e_qcif);
+  else if (IsValidMPI(sqcifMPI))
+    mode.m_resolution.SetTag(H245_H263VideoMode_resolution::e_sqcif);
+  else if (!customSizes.empty())
+    mode.m_resolution.SetTag(H245_H263VideoMode_resolution::e_custom);
+  else {
+    PTRACE(2, "OpalPlugin\tCannot encode H.263 without a resolution");
+    return false;
+  }
 
   mode.m_bitRate              = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
   mode.m_unrestrictedVector   = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, false);
@@ -2177,19 +2223,26 @@ PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
   mode.m_pbFrames             = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, false);
   mode.m_errorCompensation    = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, false);
 
-  unsigned customWidth, customHeight, customMPI;
-  bool custom = GetCustomMPI(mediaFormat, customWidth, customHeight, customMPI);
-
   bool annexI = mediaFormat.GetOptionBoolean(H263_ANNEX_I);
   bool annexJ = mediaFormat.GetOptionBoolean(H263_ANNEX_J);
   bool annexT = mediaFormat.GetOptionBoolean(H263_ANNEX_T);
-  if (custom || annexI || annexJ || annexT) {
+  if (annexI || annexJ || annexT || !customSizes.empty()) {
     mode.IncludeOptionalField(H245_H263VideoMode::e_h263Options);
-    if (custom)
-      OnSendingCustomMPI(mode.m_h263Options, customWidth, customHeight, customMPI);
     mode.m_h263Options.m_advancedIntraCodingMode  = annexI;
     mode.m_h263Options.m_deblockingFilterMode     = annexJ;
     mode.m_h263Options.m_modifiedQuantizationMode = annexT;
+
+    if (!customSizes.empty()) {
+      mode.m_h263Options.IncludeOptionalField(H245_H263Options::e_customPictureFormat);
+      mode.m_h263Options.m_customPictureFormat.SetSize(1);
+      H245_CustomPictureFormat & customPicture = mode.m_h263Options.m_customPictureFormat[0];
+      customPicture.m_minCustomPictureWidth = customSizes.back().width;
+      customPicture.m_minCustomPictureHeight = customSizes.back().height;
+      customPicture.m_maxCustomPictureWidth = customSizes.back().width;
+      customPicture.m_maxCustomPictureHeight = customSizes.back().height;
+      customPicture.m_mPI.IncludeOptionalField(H245_CustomPictureFormat_mPI::e_standardMPI);
+      customPicture.m_mPI.m_standardMPI = customSizes.back().mpi;
+    }
   }
 
   return true;
@@ -2222,7 +2275,8 @@ static bool SetReceivedH263Cap(OpalMediaFormat & mediaFormat,
 static bool OnReceivedCustomMPI(const H245_H263VideoCapability & h263,
                                 int & minWidth, int & minHeight,
                                 int & maxWidth, int & maxHeight,
-                                int & mpi)
+                                int & maxMPI,
+                                PString & option)
 {
   if (!h263.HasOptionalField(H245_H263VideoCapability::e_h263Options))
     return false;
@@ -2233,31 +2287,42 @@ static bool OnReceivedCustomMPI(const H245_H263VideoCapability & h263,
   if (h263.m_h263Options.m_customPictureFormat.GetSize() == 0)
     return false;
 
-  const H245_CustomPictureFormat & customPicture = h263.m_h263Options.m_customPictureFormat[0];
-  if (!customPicture.m_mPI.HasOptionalField(H245_CustomPictureFormat_mPI::e_standardMPI))
-    return false;
+  minWidth = minHeight = INT_MAX;
+  maxWidth = maxHeight = maxMPI = 0;
 
-  mpi = customPicture.m_mPI.m_standardMPI;
-  if (!IsValidMPI(mpi))
-    return false;
+  for (PINDEX i = 0; i < h263.m_h263Options.m_customPictureFormat.GetSize(); ++i) {
+    const H245_CustomPictureFormat & customPicture = h263.m_h263Options.m_customPictureFormat[i];
+    if (!customPicture.m_mPI.HasOptionalField(H245_CustomPictureFormat_mPI::e_standardMPI))
+      continue;
 
-  minWidth  = customPicture.m_minCustomPictureWidth;
-  if (minWidth < 16)
-    return false;
+    int mpi = customPicture.m_mPI.m_standardMPI;
+    if (!IsValidMPI(mpi))
+      continue;
+    if (maxMPI < mpi)
+      maxMPI = mpi;
 
-  minHeight = customPicture.m_minCustomPictureHeight;
-  if (minHeight < 16)
-    return false;
+    int width  = customPicture.m_minCustomPictureWidth;
+    if (minWidth > width)
+      minWidth = width;
 
-  maxWidth  = customPicture.m_maxCustomPictureWidth;
-  if (maxWidth < minWidth)
-    return false;
+    int height = customPicture.m_minCustomPictureHeight;
+    if (minHeight > height)
+      minHeight = height;
 
-  maxHeight = customPicture.m_maxCustomPictureHeight;
-  if (maxHeight < minHeight)
-    return false;
+    width  = customPicture.m_maxCustomPictureWidth;
+    if (maxWidth < width)
+      maxWidth = width;
 
-  return true;
+    height = customPicture.m_maxCustomPictureHeight;
+    if (maxHeight < height)
+      maxHeight = height;
+
+    if (!option.IsEmpty())
+      option += ';';
+    option.sprintf("%u,%u,%u", width, height, mpi);
+  }
+
+  return !option.IsEmpty();
 }
 
 
@@ -2275,8 +2340,9 @@ PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU) const
   int maxWidth  = mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption());
   int maxHeight = mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption());
 
+  PString dummy;
   int other_minWidth, other_minHeight, other_maxWidth, other_maxHeight, other_customMPI;
-  if (!OnReceivedCustomMPI(h263, other_minWidth, other_minHeight, other_maxWidth, other_maxHeight, other_customMPI)) {
+  if (!OnReceivedCustomMPI(h263, other_minWidth, other_minHeight, other_maxWidth, other_maxHeight, other_customMPI, dummy)) {
     other_minWidth = other_minHeight = INT_MAX;
     other_maxWidth = other_maxHeight = 0;
   }
@@ -2352,15 +2418,17 @@ PBoolean H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & ca
     return false;
   }
 
+  PString optionValue;
   int minWidth, minHeight, maxWidth, maxHeight, mpi;
-  if (OnReceivedCustomMPI(h263, minWidth, minHeight, maxWidth, maxHeight, mpi)) {
+  if (OnReceivedCustomMPI(h263, minWidth, minHeight, maxWidth, maxHeight, mpi, optionValue)) {
     formatDefined = true;
     SET_OR_CREATE_PARM(MaxRxFrameWidthOption, maxWidth, <);
     SET_OR_CREATE_PARM(MinRxFrameWidthOption, minWidth, >);
     SET_OR_CREATE_PARM(MaxRxFrameHeightOption, maxHeight, <);
     SET_OR_CREATE_PARM(MinRxFrameHeightOption, minHeight, >);
     mediaFormat.SetOptionInteger(OpalVideoFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * mpi / 2997);
-    mediaFormat.SetOptionString(PLUGINCODEC_CUSTOM_MPI, psprintf("%u,%u,%u", maxWidth, maxHeight, mpi));
+    mediaFormat.SetOptionString(PLUGINCODEC_CUSTOM_MPI, optionValue);
+    PTRACE(4, "H263\tCustom sizes decoded: " << optionValue);
   }
 
   if (!formatDefined) {
