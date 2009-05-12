@@ -572,7 +572,8 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
     }
   }
 
-  needReINVITE = true;
+  if (isAnswerSDP)
+    needReINVITE = true;
 
   return sdpOK;
 }
@@ -2121,7 +2122,6 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   delete authentication;
   authentication = newAuth;
 
-  needReINVITE = false; // Is not actually a re-INVITE though it looks a little bit like one.
   transport->SetInterface(transaction.GetInterface());
   SIPTransaction * invite = new SIPInvite(*this, *transport, ((SIPInvite &)transaction).GetSessionManager());
 
@@ -2262,6 +2262,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
 #endif
 
   // create the RTPSession
+  bool remoteChanged = false;
   OpalTransportAddress localAddress;
   OpalTransportAddress address = mediaDescription->GetTransportAddress();
   if (!address.IsEmpty()) {
@@ -2283,10 +2284,18 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
       // set the remote address 
       PIPSocket::Address ip;
       WORD port = 0;
-      if (!address.GetIpAndPort(ip, port) || port == 0 || (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, true))) {
+      if (!address.GetIpAndPort(ip, port) || port == 0) {
+        PTRACE(1, "SIP\tCannot get remote ip/ports for RTP session");
+        return false;
+      }
+
+      // see if remote socket information has changed
+      remoteChanged = (rtpSession->GetRemoteAddress() != ip) || (rtpSession->GetRemoteDataPort() != port);
+      if (remoteChanged && !rtpSession->SetRemoteSocketInfo(ip, port, true)) {
         PTRACE(1, "SIP\tCannot set remote ports on RTP session");
         return false;
       }
+      PTRACE(4, "SIP\tRemote changed IP address");
     }
   }
 
@@ -2296,7 +2305,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
   if (sendStream != NULL && sendStream->IsOpen()) {
-    if (mediaFormatList.HasFormat(sendStream->GetMediaFormat()))
+    if (!remoteChanged && mediaFormatList.HasFormat(sendStream->GetMediaFormat()))
       sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
     else {
       sendStream->GetPatch()->GetSource().Close(); // Was removed from list so close channel
@@ -2306,7 +2315,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
 
   OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
   if (recvStream != NULL && recvStream->IsOpen()) {
-    if (mediaFormatList.HasFormat(recvStream->GetMediaFormat()))
+    if (!remoteChanged && mediaFormatList.HasFormat(recvStream->GetMediaFormat()))
       recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
     else {
       recvStream->Close(); // Was removed from list so close channel
