@@ -228,10 +228,12 @@ void SDPMediaFormat::SetFMTP(const PString & str)
     }
     if (option != NULL) {
       PString value = str(sep2pos+1, sep1next-1);
+
       if (dynamic_cast< OpalMediaOptionOctets * >(option) != NULL) {
         if (str.GetLength() % 2 != 0)
           value = value.Trim();
-      } else {
+      }
+      else {
         // for non-octet string parameters, check for mixed separators
         PINDEX brokenSep = str.Find(' ', sep2pos);
         if (brokenSep < sep1next) {
@@ -242,6 +244,13 @@ void SDPMediaFormat::SetFMTP(const PString & str)
         if (value.IsEmpty())
           value = "1"; // Assume it is a boolean
       }
+
+      if (dynamic_cast< OpalMediaOptionString * >(option) != NULL) {
+        PString previous = option->AsString();
+        if (!previous.IsEmpty())
+          value = previous + ';' + value;
+      }
+
       if (!option->FromString(value)) {
         PTRACE(2, "SDP\tCould not set FMTP parameter \"" << key << "\" to value \"" << value << '"');
       }
@@ -266,10 +275,18 @@ PString SDPMediaFormat::GetFMTP() const
     const PString & name = option.GetFMTPName();
     if (!name.IsEmpty()) {
       PString value = option.AsString();
-      if (value != option.GetFMTPDefault()) {
-        if (!str.IsEmpty())
-          str += ';';
-        str += name + '=' + value;
+      if (value.IsEmpty() && value != option.GetFMTPDefault())
+        str += name;
+      else {
+        PStringArray values = value.Tokenise(';', false);
+        for (PINDEX v = 0; v < values.GetSize(); ++v) {
+          value = values[v];
+          if (value != option.GetFMTPDefault()) {
+            if (!str.IsEmpty())
+              str += ';';
+            str += name + '=' + value;
+          }
+        }
       }
     }
   }
@@ -1026,7 +1043,7 @@ PString SDPVideoMediaDescription::GetSDPMediaType() const
 }
 
 
-static const char * const ContentRoleNames[] = { NULL, "main", "slides", "speaker", "sl" };
+static const char * const ContentRoleNames[] = { NULL, "slides", "main", "speaker", "sl" };
 
 
 bool SDPVideoMediaDescription::PrintOn(ostream & str, const PString & connectString) const
