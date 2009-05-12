@@ -1047,8 +1047,10 @@ void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
   PCaselessString str = GetUserAgent();
   if (str.IsEmpty()) {
     str = GetString("Server");
-    if (str.IsEmpty())
+    if (str.IsEmpty()) {
+      PTRACE(4, "SIP\tNo User-Agent or Server fields, Product Info unknown.");
       return; // Have nothing, change nothing
+    }
   }
 
   // This is not strictly correct according to he BNF, but we cheat
@@ -1062,6 +1064,7 @@ void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
     info.name = str;
     info.vendor = info.version = PString::Empty();
     info.manufacturerCode = info.t35Extension = info.t35CountryCode = 0;
+    PTRACE(4, "SIP\tProduct Info: name=\"" << str << '"');
     return;
   }
 
@@ -1073,6 +1076,10 @@ void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
   info.version = str(endFirstToken+1, endSecondToken);
   info.vendor = GetOrganization();
   info.comments = str.Mid(endSecondToken+1).Trim();
+  PTRACE(4, "SIP\tProduct Info: name=\"" << info.name << "\","
+                           " version=\"" << info.version << "\","
+                            " vendor=\"" << info.vendor << "\","
+                          " comments=\"" << info.comments << '"');
 }
 
 
