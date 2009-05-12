@@ -106,6 +106,14 @@ public class OpalStatusIncomingCall {
     return exampleJNI.OpalStatusIncomingCall_m_alertingType_get(swigCPtr, this);
   }
 
+  public void setM_protocolCallId(String value) {
+    exampleJNI.OpalStatusIncomingCall_m_protocolCallId_set(swigCPtr, this, value);
+  }
+
+  public String getM_protocolCallId() {
+    return exampleJNI.OpalStatusIncomingCall_m_protocolCallId_get(swigCPtr, this);
+  }
+
   public OpalStatusIncomingCall() {
     this(exampleJNI.new_OpalStatusIncomingCall(), true);
   }
