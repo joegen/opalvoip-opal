@@ -63,7 +63,7 @@ struct DiscoveredRTPInfo {
   PString m_type[2];
   PString m_format[2];
 
-  int m_index[2];
+  size_t m_index[2];
 };
 
 typedef std::map<std::string, DiscoveredRTPInfo> DiscoveredRTPMap;
@@ -265,13 +265,13 @@ void PlayRTP::Main()
     cout << "Select one of the following sessions:\n" << endl;
     DisplaySessions();
 
-    int num;
+    size_t num;
     for (;;) {
       cout << "Select (1-" << discoveredRTPMap.size()*2 << ") ? " << flush;
       PString line;
       cin >> line;
       line = line.Trim();
-      num = line.AsInteger();
+      num = line.AsUnsigned();
       if (num > 0 && num <= discoveredRTPMap.size()*2)
         break;
       cout << "Session " << num << " is not valid" << endl;
