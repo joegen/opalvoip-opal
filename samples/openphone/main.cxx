@@ -6206,6 +6206,16 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 }
 
 
+OpalMediaFormatList MyPCSSEndPoint::GetMediaFormats() const
+{
+  OpalMediaFormatList list = OpalPCSSEndPoint::GetMediaFormats();
+#if OPAL_FAX
+  list += OpalT38;  // We can deal with T.38 so include it in list
+#endif
+  return list;
+}
+
+
 #if OPAL_H323
 ///////////////////////////////////////////////////////////////////////////////
 
