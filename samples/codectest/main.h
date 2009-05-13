@@ -37,7 +37,7 @@ class TranscoderThread : public PThread
   public:
     TranscoderThread(unsigned _num, const char * name)
       : PThread(5000, NoAutoDeleteThread, NormalPriority, name)
-      , running(true)
+      , running(false)
       , encoder(NULL)
       , decoder(NULL)
       , num(_num)
@@ -59,6 +59,7 @@ class TranscoderThread : public PThread
 
     virtual bool Read(RTP_DataFrame & frame) = 0;
     virtual bool Write(const RTP_DataFrame & frame) = 0;
+    void Start() { if (running) Resume(); }
     virtual void Stop() = 0;
 
     virtual void UpdateStats(const RTP_DataFrame &) { }
@@ -191,10 +192,20 @@ class CodecTest : public PProcess
 
     virtual void Main();
 
-    class TestThreadInfo {
+    class TestThreadInfo : public PObject
+    {
       public:
-        TestThreadInfo(unsigned _num)
-          : audio(_num), video(_num) { }
+        TestThreadInfo(unsigned num)
+          : audio(num)
+          , video(num)
+        {
+        }
+
+        bool Initialise(PArgList & args) { return audio.Initialise(args) && video.Initialise(args); }
+        void Start() { audio.Start(); video.Start(); }
+        void Stop()  { audio.Stop(); video.Stop(); }
+        void Wait()  { audio.WaitForTermination(); video.WaitForTermination(); }
+
         AudioThread audio;
         VideoThread video;
     };
