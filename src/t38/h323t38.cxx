@@ -97,9 +97,9 @@ unsigned H323_T38Capability::GetSubType() const
 PString H323_T38Capability::GetFormatName() const
 {
   static const char * const modes[NumTransportModes] = {
-    "UDP", "TCP2", "TCP"
+    "", "-TCP2", "-TCP"
   };
-  return PString(OPAL_T38"{") + modes[mode] + '}';
+  return PString(OPAL_T38) + modes[mode];
 }
 
 
@@ -139,14 +139,20 @@ PBoolean H323_T38Capability::OnSendingPDU(H245_DataProtocolCapability & proto,
 {
   if (mode == e_UDP) {
     proto.SetTag(H245_DataProtocolCapability::e_udp);
-    profile.m_t38FaxRateManagement.SetTag(H245_T38FaxRateManagement::e_transferredTCF); // recommended for UDP
+    profile.m_t38FaxRateManagement.SetTag(
+                        GetMediaFormat().GetOptionEnum("T38FaxRateManagement", 1) == 0
+                              ? H245_T38FaxRateManagement::e_localTCF
+                              : H245_T38FaxRateManagement::e_transferredTCF);
 
     profile.IncludeOptionalField(H245_T38FaxProfile::e_t38FaxUdpOptions);
     profile.m_t38FaxUdpOptions.IncludeOptionalField(H245_T38FaxUdpOptions::e_t38FaxMaxBuffer);
-    profile.m_t38FaxUdpOptions.m_t38FaxMaxBuffer = 200;
+    profile.m_t38FaxUdpOptions.m_t38FaxMaxBuffer = GetMediaFormat().GetOptionInteger("T38FaxMaxBuffer", 200);
     profile.m_t38FaxUdpOptions.IncludeOptionalField(H245_T38FaxUdpOptions::e_t38FaxMaxDatagram);
-    profile.m_t38FaxUdpOptions.m_t38FaxMaxDatagram = 72;
-    profile.m_t38FaxUdpOptions.m_t38FaxUdpEC.SetTag(H245_T38FaxUdpOptions_t38FaxUdpEC::e_t38UDPRedundancy);
+    profile.m_t38FaxUdpOptions.m_t38FaxMaxDatagram = GetMediaFormat().GetOptionInteger("T38FaxMaxDatagram", 72);
+    profile.m_t38FaxUdpOptions.m_t38FaxUdpEC.SetTag(
+                        GetMediaFormat().GetOptionEnum("T38FaxUdpEC", 1) == 0
+                              ? H245_T38FaxUdpOptions_t38FaxUdpEC::e_t38UDPFEC
+                              : H245_T38FaxUdpOptions_t38FaxUdpEC::e_t38UDPRedundancy);
   }
   else {
     proto.SetTag(H245_DataProtocolCapability::e_tcp);

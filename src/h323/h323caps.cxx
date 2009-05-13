@@ -46,6 +46,7 @@
 #include <h323/h323con.h>
 #include <h323/h323pdu.h>
 #include <h323/transaddr.h>
+#include <t38/h323t38.h>
 
 
 #define DEFINE_G711_CAPABILITY(cls, code, capName) \
@@ -55,11 +56,15 @@ class cls : public H323_G711Capability { \
 }; \
 H323_REGISTER_CAPABILITY(cls, capName) \
 
-#ifndef NO_H323_AUDIO_CODECS
 
+#ifndef NO_H323_AUDIO_CODECS
 DEFINE_G711_CAPABILITY(H323_G711ALaw64Capability, H323_G711Capability::ALaw, OPAL_G711_ALAW_64K)
 DEFINE_G711_CAPABILITY(H323_G711uLaw64Capability, H323_G711Capability::muLaw, OPAL_G711_ULAW_64K)
+#endif
 
+
+#if OPAL_T38_CAPABILITY
+H323_REGISTER_CAPABILITY(H323_T38Capability, OPAL_T38);
 #endif
 
 
