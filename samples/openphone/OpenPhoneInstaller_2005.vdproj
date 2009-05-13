@@ -27,12 +27,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_36D1E6E697A347269D0417DA1A17B1B4"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_59CF82581CE64B9DA80E955E0FC7363E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -41,6 +35,48 @@
         {
         "MsmKey" = "8:_5FC42C08C99C42DB9D6A57C5CC0C5ED7"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_66BC6D8152E94A2F967280D80E9CB4AD"
+        "OwnerKey" = "8:_07E5FA3778C249FA84D6FFC23976DA6F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_66BC6D8152E94A2F967280D80E9CB4AD"
+        "OwnerKey" = "8:_CFD5FE0B100B47D8A087CBB976A20C9E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_66BC6D8152E94A2F967280D80E9CB4AD"
+        "OwnerKey" = "8:_7603C2A0F34E4B72B717A4DC9382222D"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_66BC6D8152E94A2F967280D80E9CB4AD"
+        "OwnerKey" = "8:_6D2FF0405B9E4B1390868B95B2DAB468"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_66BC6D8152E94A2F967280D80E9CB4AD"
+        "OwnerKey" = "8:_6BF62E2B726D47E3AE4432482B838E89"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_66BC6D8152E94A2F967280D80E9CB4AD"
+        "OwnerKey" = "8:_5FC42C08C99C42DB9D6A57C5CC0C5ED7"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_66BC6D8152E94A2F967280D80E9CB4AD"
+        "OwnerKey" = "8:_59CF82581CE64B9DA80E955E0FC7363E"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -65,12 +101,6 @@
         {
         "MsmKey" = "8:_7603C2A0F34E4B72B717A4DC9382222D"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_838104C26714413CAC12C2BFF11ED77E"
-        "OwnerKey" = "8:_D1D9549251BF4E37B75AC5E5D5A2EF9F"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -123,13 +153,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_B44BEA7EC14045ABB678778A4D8578A9"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_B3F63390659E4024980257EA95DC3480"
+        "OwnerKey" = "8:_66BC6D8152E94A2F967280D80E9CB4AD"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_B6733010140B4C73B9DAF1D37E018BE5"
+        "MsmKey" = "8:_B44BEA7EC14045ABB678778A4D8578A9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -137,54 +167,6 @@
         {
         "MsmKey" = "8:_CFD5FE0B100B47D8A087CBB976A20C9E"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D1D9549251BF4E37B75AC5E5D5A2EF9F"
-        "OwnerKey" = "8:_07E5FA3778C249FA84D6FFC23976DA6F"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D1D9549251BF4E37B75AC5E5D5A2EF9F"
-        "OwnerKey" = "8:_CFD5FE0B100B47D8A087CBB976A20C9E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D1D9549251BF4E37B75AC5E5D5A2EF9F"
-        "OwnerKey" = "8:_7603C2A0F34E4B72B717A4DC9382222D"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D1D9549251BF4E37B75AC5E5D5A2EF9F"
-        "OwnerKey" = "8:_6D2FF0405B9E4B1390868B95B2DAB468"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D1D9549251BF4E37B75AC5E5D5A2EF9F"
-        "OwnerKey" = "8:_6BF62E2B726D47E3AE4432482B838E89"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D1D9549251BF4E37B75AC5E5D5A2EF9F"
-        "OwnerKey" = "8:_5FC42C08C99C42DB9D6A57C5CC0C5ED7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D1D9549251BF4E37B75AC5E5D5A2EF9F"
-        "OwnerKey" = "8:_59CF82581CE64B9DA80E955E0FC7363E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D1D9549251BF4E37B75AC5E5D5A2EF9F"
-        "OwnerKey" = "8:_36D1E6E697A347269D0417DA1A17B1B4"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -457,26 +439,6 @@
             "Tag" = "8:"
             "Folder" = "8:_17710AB2ED2B4B0AAE334A19AC84FA5B"
             "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B6733010140B4C73B9DAF1D37E018BE5"
-            {
-            "SourcePath" = "8:..\\..\\plugins\\video\\H.263-ffmpeg\\ffmpeg\\libavcodec.dll"
-            "TargetName" = "8:libavcodec.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_17710AB2ED2B4B0AAE334A19AC84FA5B"
-            "Condition" = "8:INSTALLPLUGINS=1"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
             "ReadOnly" = "11:FALSE"
@@ -1526,11 +1488,11 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_838104C26714413CAC12C2BFF11ED77E"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_66BC6D8152E94A2F967280D80E9CB4AD"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
+            "SourcePath" = "8:Microsoft_VC80_CRT_x86.msm"
                 "Properties"
                 {
                 }
@@ -1540,11 +1502,11 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_D1D9549251BF4E37B75AC5E5D5A2EF9F"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_B3F63390659E4024980257EA95DC3480"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:Microsoft_VC80_CRT_x86.msm"
+            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
                 "Properties"
                 {
                 }
@@ -1580,34 +1542,6 @@
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
             "OutputProjectGuid" = "8:{4A1B92CB-CA8E-4511-A1D5-B0A322FDE67C}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_36D1E6E697A347269D0417DA1A17B1B4"
-            {
-            "SourcePath" = "8:..\\..\\plugins\\release\\h263ffmpeg_ptplugin.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_17710AB2ED2B4B0AAE334A19AC84FA5B"
-            "Condition" = "8:INSTALLPLUGINS=1"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{3716C952-D6E0-40C2-B132-4F6D1636D31B}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
