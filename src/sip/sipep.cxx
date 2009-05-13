@@ -46,6 +46,8 @@
 #include <opal/call.h>
 #include <sip/handlers.h>
 
+#define SIP_THREAD_POOL   1
+
 
 #define new PNEW
 
@@ -364,6 +366,8 @@ void SIPEndPoint::OnReleased(OpalConnection & connection)
 
 PBoolean SIPEndPoint::GarbageCollection()
 {
+  PTRACE(1, "SIP\tMONITOR:transactions=" << transactions.GetSize() << ",connections=" << connectionsActive.GetSize());
+
   PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly);
   while (transaction != NULL) {
     if (transaction->IsTerminated()) {
@@ -521,7 +525,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       break;
 
     case SIP_PDU::NumMethods :
-      threadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+      AddWork(new SIP_PDU_Work(*this, token, pdu));
       return true;
   }
 
@@ -538,7 +542,14 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
 void SIPEndPoint::AddWork(SIP_PDU_Work * work)
 {
+#if SIP_THREAD_POOL
   threadPool.AddWork(work, work->m_token);
+#else
+  PTRACE(2, "SIP\tStarted processing PDU");
+  work->OnReceivedPDU();
+  PTRACE(2, "SIP\tFinished processing PDU");
+  delete work;
+#endif
 }
 
 bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU * pdu)
