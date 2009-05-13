@@ -661,11 +661,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   if (packet.GetPayloadSize() == 0)
     return true;
 
-  PBoolean ret;
-  ret = rtpSession.WriteData(packet);
-
-  return ret;
-
+  return rtpSession.WriteData(packet);
 }
 
 
