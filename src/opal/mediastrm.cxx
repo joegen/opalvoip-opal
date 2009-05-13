@@ -602,6 +602,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
 
 OpalRTPMediaStream::~OpalRTPMediaStream()
 {
+  Close();
 }
 
 
@@ -660,11 +661,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   if (packet.GetPayloadSize() == 0)
     return true;
 
-  PBoolean ret;
-  ret = rtpSession.WriteData(packet);
-
-  return ret;
-
+  return rtpSession.WriteData(packet);
 }
 
 
@@ -1009,6 +1006,7 @@ OpalVideoMediaStream::OpalVideoMediaStream(OpalConnection & conn,
 
 OpalVideoMediaStream::~OpalVideoMediaStream()
 {
+  Close();
   if (autoDelete) {
     delete inputDevice;
     delete outputDevice;
