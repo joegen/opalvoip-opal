@@ -124,7 +124,16 @@ bool IdentifyMediaType(const RTP_DataFrame & rtp, PString & type, PString & form
         format = r->GetName();
     }
 
-    //cout << hex << (int)data[0] << " " << (int)data[1] << " " << (int)data[2] << dec << endl;
+    // 0x00 0x00 0x1b - MPEG4
+    else if (data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01) {
+      type = OpalMediaType::Video();
+      OpalMediaFormatList::const_iterator r = formats.FindFormat("*mpeg4*");
+      if (r != formats.end())
+        format = r->GetName();
+    }
+
+    else
+      cout << hex << (int)data[0] << " " << (int)data[1] << " " << (int)data[2] << dec << endl;
   }
 
   return false;
