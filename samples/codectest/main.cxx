@@ -35,10 +35,12 @@
 #include <opal/patch.h>
 
 #define OUTPUT_BPS(strm, rate) \
-  if (rate < 10000ULL) cout << rate << ' '; \
-  else if (rate < 10000000ULL) cout << rate/1000.0 << " k"; \
-  else if (rate < 10000000000ULL) cout << rate/1000000.0 << " M"; \
-  cout << "bps"; \
+  if (rate < 10000ULL) strm << rate << ' '; \
+  else if (rate < 10000000ULL) strm << rate/1000.0 << " k"; \
+  else if (rate < 10000000000ULL) strm << rate/1000000.0 << " M"; \
+  strm << "bps"; \
+
+PMutex coutMutex;
 
 PCREATE_PROCESS(CodecTest);
 
@@ -142,38 +144,42 @@ void CodecTest::Main()
 
   unsigned threadCount = args.GetOptionString('S').AsInteger();
   if (threadCount > 0) {
+    PList<TestThreadInfo> infos;
     unsigned i;
-    TestThreadInfo ** infos = (TestThreadInfo **)malloc(threadCount * sizeof(TestThreadInfo *));
     for (i = 0; i < threadCount; ++i) {
-      cout << "------------------------------" << endl
-           << "Starting thread " << i+1 << endl;
+      cout << "Creating thread " << i+1 << endl;
       TestThreadInfo * info = new TestThreadInfo(i+1);
-      if (!info->audio.Initialise(args) || !info->video.Initialise(args)) {
-        cout << "failed" << endl;
+      if (!info->Initialise(args)) {
+        cout << "Failed to create thread, aborting." << endl;
         return;
       }
-      info->audio.Resume();
-      info->video.Resume();
-      infos[i] = info;
+      infos.Append(info);
     }
-    cout << endl << "Tests running" << endl;
 
-    cout << "press return to stop" << endl;
+    cout << "Starting threads." << endl;
+    for (i = 0; i < threadCount; ++i)
+      infos[i].Start();
+
+    coutMutex.Wait();
+    cout << "\n\n\nTests running, press return to stop." << endl;
+    coutMutex.Signal();
+
     PCaselessString cmd;
     cin >> cmd;
 
-    for (i = 0; i < threadCount; ++i) {
-      infos[i]->audio.Stop();
-      infos[i]->video.Stop();
-    }
+    coutMutex.Wait();
+    cout << "\n\n\nStopping tests." << endl;
+    coutMutex.Signal();
+
+    for (i = 0; i < threadCount; ++i)
+      infos[i].Stop();
 
     return;
   }
 
-  AudioThread audio(0);
-  VideoThread video(0);
+  TestThreadInfo test(0);
 
-  if (!audio.Initialise(args) || !video.Initialise(args))
+  if (!test.Initialise(args))
     return;
 
 #if 0
@@ -186,14 +192,12 @@ void CodecTest::Main()
   }
 #endif
 
-  audio.Resume();
-  video.Resume();
+  test.Start();
 
   // command line
   if (args.HasOption("noprompt")) {
     cout << "Waiting for finish" << endl;
-    audio.WaitForTermination();
-    video.WaitForTermination();
+    test.Wait();
   }
   else {
     for (;;) {
@@ -209,47 +213,47 @@ void CodecTest::Main()
       if (cmd.NumCompare("n") == EqualTo) {
         int steps = cmd.Mid(1).AsUnsigned();
         do {
-          video.frameWait.Signal();
+          test.video.frameWait.Signal();
         } while (--steps > 0);
         continue;
       }
 
       if (cmd == "vfu") {
-        if (video.encoder == NULL)
+        if (test.video.encoder == NULL)
           cout << "\nNo video encoder running!" << endl;
         else
-          video.encoder->ExecuteCommand(OpalVideoUpdatePicture());
+          test.video.encoder->ExecuteCommand(OpalVideoUpdatePicture());
         continue;
       }
 
       if (cmd == "fg") {
-        if (video.grabber == NULL)
+        if (test.video.grabber == NULL)
           cout << "\nNo video grabber running!" << endl;
-        else if (!video.grabber->SetVFlipState(!video.grabber->GetVFlipState()))
+        else if (!test.video.grabber->SetVFlipState(!test.video.grabber->GetVFlipState()))
           cout << "\nCould not toggle Vflip state of video grabber device" << endl;
         continue;
       }
 
       if (cmd == "fd") {
-        if (video.display == NULL)
+        if (test.video.display == NULL)
           cout << "\nNo video display running!" << endl;
-        else if (!video.display->SetVFlipState(!video.display->GetVFlipState()))
+        else if (!test.video.display->SetVFlipState(!test.video.display->GetVFlipState()))
           cout << "\nCould not toggle Vflip state of video display device" << endl;
         continue;
       }
 
       unsigned width, height;
       if (PVideoFrameInfo::ParseSize(cmd, width, height)) {
-        video.pause.Signal();
-        if (video.grabber == NULL)
+        test.video.pause.Signal();
+        if (test.video.grabber == NULL)
           cout << "\nNo video grabber running!" << endl;
-        else if (!video.grabber->SetFrameSizeConverter(width, height))
+        else if (!test.video.grabber->SetFrameSizeConverter(width, height))
           cout << "Video grabber device could not be set to size " << width << 'x' << height << endl;
-        if (video.display == NULL)
+        if (test.video.display == NULL)
           cout << "\nNo video display running!" << endl;
-        else if (!video.display->SetFrameSizeConverter(width, height))
+        else if (!test.video.display->SetFrameSizeConverter(width, height))
           cout << "Video display device could not be set to size " << width << 'x' << height << endl;
-        video.resume.Signal();
+        test.video.resume.Signal();
         continue;
       }
 
@@ -265,8 +269,7 @@ void CodecTest::Main()
     } // end for
 
     cout << "Exiting." << endl;
-    audio.Stop();
-    video.Stop();
+    test.Stop();
   }
 }
 
@@ -464,6 +467,7 @@ bool AudioThread::Initialise(PArgList & args)
   }
 
   cout << "opened and initialised." << endl;
+  running = true;
 
   return true;
 }
@@ -669,13 +673,13 @@ bool VideoThread::Initialise(PArgList & args)
     if (rateController != NULL) {
       rateController->Open(mediaFormat);
       cout << "Video rate controller enabled for bit rate " << bitRate << " bps and frame rate " << frameRate << endl;
-  }
+    }
   }
 
   if (args.HasOption('T'))
     frameFn = "frame_stats.csv";
 
-    frameTime = mediaFormat.GetFrameTime();
+  frameTime = mediaFormat.GetFrameTime();
   if (encoder != NULL) {
     encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
     if (args.HasOption('p'))
@@ -686,6 +690,7 @@ bool VideoThread::Initialise(PArgList & args)
 
   sumYSNR = sumCbSNR = sumCrSNR = 0.0;
   snrCount = 0;
+  running = true;
 
   return true;
 }
@@ -721,12 +726,16 @@ void VideoThread::Main()
 void TranscoderThread::OnTranscoderCommand(OpalMediaCommand & cmd, INT)
 {
   if (PIsDescendant(&cmd, OpalVideoUpdatePicture)) {
+    coutMutex.Wait();
     cout << "decoder lost sync" << endl;
+    coutMutex.Signal();
     m_forceIFrame = true;
     ((OpalVideoTranscoder *)encoder)->ForceIFrame();
   }
   else {
+    coutMutex.Wait();
     cout << "unknown decoder command " << cmd.GetName() << endl;
+    coutMutex.Signal();
   }
 }
 
@@ -792,29 +801,39 @@ void VideoThread::CalcSNR(const RTP_DataFrame & src, const RTP_DataFrame & dst)
 
 void VideoThread::ReportSNR()
 {
+  coutMutex.Wait();
+
   /* The PSNR is the mean of the sum of squares of the differences,
      normalized to the range 0..1
   */
   double const yPsnr = sumYSNR / snrCount;
 
+  cout << "Y  color component ";
   if (yPsnr <= 1e-9)
-    cout << "Y  color component identical" << endl;
+    cout << "identical";
   else
-    printf("Y  color component avg SNR : %.2f dB\n", 10 * log10(1/yPsnr));
+    cout << setprecision(2) << (10 * log10(1/yPsnr)) << " dB";
+  cout << endl;
 
   double const cbPsnr = sumCbSNR / snrCount;
 
+  cout << "Cb color component ";
   if (cbPsnr <= 1e-9)
-    cout << "Cb color component identical" << endl;
+    cout << "identical";
   else
-    printf("Cb color component avg SNR : %.2f dB\n", 10 * log10(1/cbPsnr));
+    cout << setprecision(2) << (10 * log10(1/cbPsnr)) << " dB";
+  cout << endl;
 
   double const crPsnr = sumCrSNR / snrCount;
 
+  cout << "Cr color component ";
   if (crPsnr <= 1e-9)
-    cout << "Cr color component identical" << endl;
+    cout << "identical";
   else
-    printf("Cr color component avg SNR : %.2f dB\n", 10 * log10(1/crPsnr));
+    cout << setprecision(2) << (10 * log10(1/crPsnr)) << " dB";
+  cout << endl;
+
+  coutMutex.Signal();
 }
 
 struct FrameHistoryEntry {
@@ -870,9 +889,9 @@ void TranscoderThread::Main()
     RTP_DataFrame & srcFrame = *srcFrame_;
 
     {
-    bool state = Read(srcFrame);
-    if (oldSrcState != state) {
-      oldSrcState = state;
+      bool state = Read(srcFrame);
+      if (oldSrcState != state) {
+        oldSrcState = state;
         cerr << "Source " << (state ? "restor" : "fail") << "ed at frame " << totalInputFrameCount << endl;
         break;
       }
@@ -888,7 +907,9 @@ void TranscoderThread::Main()
     //
     bool rateControlForceIFrame = false;
     if (rateController != NULL && rateController->SkipFrame(rateControlForceIFrame)) {
-      cerr << "Packet pacer forced skip of input frame " << totalInputFrameCount-1 << endl;
+      coutMutex.Wait();
+      cout << "Packet pacer forced skip of input frame " << totalInputFrameCount-1 << endl;
+      coutMutex.Signal();
       ++skippedFrames;
     }
 
@@ -898,28 +919,37 @@ void TranscoderThread::Main()
       //
       //  push frames through encoder
       //
-    RTP_DataFrameList encFrames;
-    if (encoder == NULL) 
-      encFrames.Append(new RTP_DataFrame(srcFrame)); 
-    else {
+      RTP_DataFrameList encFrames;
+      if (encoder == NULL) 
+        encFrames.Append(new RTP_DataFrame(srcFrame)); 
+      else {
         if (isVideo) {
-          if (m_forceIFrame) 
-            cerr << "Decoder forced I-frame at input frame " << totalInputFrameCount-1 << endl;
-          if (rateControlForceIFrame)
-            cerr << "Rate controller forced I-frame at input frame " << totalInputFrameCount-1 << endl;
+          if (m_forceIFrame) {
+            coutMutex.Wait();
+            cout << "Decoder forced I-frame at input frame " << totalInputFrameCount-1 << endl;
+            coutMutex.Signal();
+          }
+          if (rateControlForceIFrame) {
+            coutMutex.Wait();
+            cout << "Rate controller forced I-frame at input frame " << totalInputFrameCount-1 << endl;
+            coutMutex.Signal();
+          }
           if (m_forceIFrame || rateControlForceIFrame)
             ((OpalVideoTranscoder *)encoder)->ForceIFrame();
         }
 
         bool state = encoder->ConvertFrames(srcFrame, encFrames);
-      if (oldEncState != state) {
-        oldEncState = state;
+        if (oldEncState != state) {
+          oldEncState = state;
           cerr << "Encoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
-        continue;
+          continue;
+        }
+        if (isVideo && ((OpalVideoTranscoder *)encoder)->WasLastFrameIFrame()) {
+          coutMutex.Wait();
+          cout << "Encoder returned I-Frame at input frame " << totalInputFrameCount-1 << endl;
+          coutMutex.Signal();
+        }
       }
-        if (isVideo && ((OpalVideoTranscoder *)encoder)->WasLastFrameIFrame())
-          cerr << "Encoder returned I-Frame at input frame " << totalInputFrameCount-1 << endl;
-    }
 
       totalEncodedPacketCount += encFrames.GetSize();
 
@@ -935,7 +965,7 @@ void TranscoderThread::Main()
       unsigned long encodedPayloadSize = 0;
       unsigned long encodedPacketCount = 0;
       unsigned long encodedDataSize    = 0;
-    for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+      for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
         encFrames[i].SetSequenceNumber(++sequenceNumber);
         ++encodedPacketCount;
         encodedPayloadSize += encFrames[i].GetPayloadSize();
@@ -983,16 +1013,19 @@ void TranscoderThread::Main()
         RTP_DataFrameList outFrames;
         for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
           bool state = decoder->ConvertFrames(encFrames[i], outFrames);
-        if (oldDecState != state) {
-          oldDecState = state;
+          if (oldDecState != state) {
+            oldDecState = state;
             cerr << "Decoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
-          continue;
-        }
+            continue;
+          }
           if (outFrames.GetSize() > 1) 
             cerr << "Non rate controlled video decoder returned != 1 output frame for input frame " << totalInputFrameCount-1 << endl;
           else if (outFrames.GetSize() == 1) {
-            if (isVideo && ((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame())
-              cerr << "Decoder returned I-Frame at output frame " << totalOutputFrameCount << endl;
+            if (isVideo && ((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame()) {
+              coutMutex.Wait();
+              cout << "Decoder returned I-Frame at output frame " << totalOutputFrameCount << endl;
+              coutMutex.Signal();
+            }
             bool state = Write(outFrames[0]);
             if (oldOutState != state) {
               oldOutState = state;
@@ -1036,11 +1069,14 @@ void TranscoderThread::Main()
           if (outFrames.GetSize() > 1) 
             cerr << "Rate controlled video decoder returned > 1 output frame for input frame " << totalInputFrameCount-1 << endl;
           else if (outFrames.GetSize() == 1) {
-            if (((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame())
-              cerr << "Decoder returned I-Frame at output frame " << totalOutputFrameCount << endl;
+            if (((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame()) {
+              coutMutex.Wait();
+              cout << "Decoder returned I-Frame at output frame " << totalOutputFrameCount << endl;
+              coutMutex.Signal();
+            }
             bool state = Write(outFrames[0]);
-        if (oldOutState != state) {
-          oldOutState = state;
+            if (oldOutState != state) {
+              oldOutState = state;
               cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
             }
             if (isVideo && calcSNR) 
@@ -1073,6 +1109,8 @@ void TranscoderThread::Main()
   ///////////////////////////////////////////////////////
 
   PTimeInterval duration = PTimer::Tick() - startTick;
+
+  coutMutex.Wait();
 
   cout << fixed << setprecision(1);
   if (totalEncodedByteCount < 10000ULL)
@@ -1107,6 +1145,8 @@ void TranscoderThread::Main()
   cout << "," << skippedFrames << " skipped frames (" << (skippedFrames * 100.0)/totalInputFrameCount << "%)";
   cout << endl;
 
+  coutMutex.Signal();
+
   if (calcSNR) 
     ReportSNR();
 }
@@ -1127,8 +1167,10 @@ bool AudioThread::Write(const RTP_DataFrame & frame)
 
 void AudioThread::Stop()
 {
-  running = false;
-  WaitForTermination();
+  if (running) {
+    running = false;
+    WaitForTermination();
+  }
 }
 
 
@@ -1164,9 +1206,11 @@ bool VideoThread::Write(const RTP_DataFrame & data)
 
 void VideoThread::Stop()
 {
-  running = false;
-  frameWait.Signal();
-  WaitForTermination();
+  if (running) {
+    running = false;
+    frameWait.Signal();
+    WaitForTermination();
+  }
 }
 
 
