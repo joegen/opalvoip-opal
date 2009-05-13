@@ -37,6 +37,8 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_T38_CAPABILITY
+
 #include <h323/h323caps.h>
 
 
@@ -64,7 +66,7 @@ class H323_T38Capability : public H323DataCapability
     /**Create a new capability.
      */
     H323_T38Capability(
-      TransportMode mode
+      TransportMode mode = e_UDP
     );
   //@}
 
@@ -295,6 +297,8 @@ class H323_T38Channel : public H323DataChannel
     OpalT38Protocol * t38handler;
 };
 
+
+#endif //OPAL_T38_CAPABILITY
 
 #endif // OPAL_T38_H323T38_H
 
