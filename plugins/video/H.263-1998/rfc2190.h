@@ -48,10 +48,14 @@ class RFC2190Packetizer
 {
   public:
     RFC2190Packetizer();
+    ~RFC2190Packetizer();
     int Open(unsigned long timeStamp, unsigned long maxLen);
     int GetPacket(RTPFrame & outputFrame, unsigned int & flags);
 
-    std::vector<unsigned char> buffer;
+    unsigned char * m_buffer;
+    size_t m_bufferSize;
+    size_t m_bufferLen;
+
     unsigned int TR;
     unsigned int frameSize;
     int iFrame;
