@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <string.h>
+#include <malloc.h>
 using namespace std;
 
 #include "rfc2190.h"
@@ -107,6 +108,12 @@ static int FindGBSC(const unsigned char * base, int len, int & sbit)
 
 RFC2190Packetizer::RFC2190Packetizer()
 {
+  m_buffer = NULL;
+}
+
+RFC2190Packetizer::~RFC2190Packetizer()
+{
+  free(m_buffer);
 }
 
 int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long maxLen)
@@ -125,8 +132,8 @@ int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long maxLen)
   // save timestamp
   timestamp = _timestamp;
 
-  const unsigned char * data = &buffer[0];
-  int dataLen = buffer.size();
+  const unsigned char * data = m_buffer;
+  size_t dataLen = m_bufferSize;
 
   // make sure data is at least long enough to contain PSC, TR & minimum PTYPE, PQUANT and CPM
   if (dataLen < 7)
@@ -239,7 +246,7 @@ int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long maxLen)
 
   // reset pointers to start of fragments
   currFrag = fragments.begin();
-  fragPtr = &buffer[0];
+  fragPtr = m_buffer;
 
   return 0;
 }
@@ -382,6 +389,15 @@ int RFC2190Depacketizer::SetPacket(const RTPFrame & inputFrame, bool & requestIF
     isIFrame = (payload[1] & 0x10) == 0;
     hdrLen = 4;
     mode = 'A';
+
+    // sanity check data
+    if (payloadLen < (hdrLen+3) ||
+        (payload[hdrLen+0] != 0x00) ||
+        (payload[hdrLen+1] != 0x00) ||
+        ((payload[hdrLen+2] & 0x80) != 0x80)
+       ) {
+      return LostSync(requestIFrame, "Mode A packet not starting with GBSC");
+    }
   }
 
   // handle mode B frames
