@@ -34,6 +34,8 @@
 #include <codec/ratectl.h>
 #include <opal/patch.h>
 
+#include <ptclib/random.h>
+
 #define OUTPUT_BPS(strm, rate) \
   if (rate < 10000ULL) strm << rate << ' '; \
   else if (rate < 10000000ULL) strm << rate/1000.0 << " k"; \
@@ -62,6 +64,7 @@ void CodecTest::Main()
   args.Parse("b-bit-rate:"
              "c-crop."
              "C-rate-control:"
+             "d-drop:"
              "D-display-device:"
              "-display-driver:"
              "F-audio-frames:"
@@ -130,6 +133,7 @@ void CodecTest::Main()
               "  -S --simultanoues n     : Number of simultaneous encode/decode threads\n"
               "  -T --statistics         : output statistics files\n"
               "  -C --rate-control       : enable rate control\n"
+              "  -d --drop N             : randomly drop N% of encoded packets\n"
               "  --count n               : set number of frames to transcode\n"
               "  --noprompt              : do not prompt for commands, i.e. exit when input closes\n"
               "  --snr                   : calculate signal-to-noise ratio between input and output\n"
@@ -692,6 +696,9 @@ bool VideoThread::Initialise(PArgList & args)
   snrCount = 0;
   running = true;
 
+  m_dropPercent = args.GetOptionString('d').AsInteger();
+  cout << "Dropping " << m_dropPercent << "% of encoded frames" << endl;
+
   return true;
 }
 
@@ -854,6 +861,7 @@ void TranscoderThread::Main()
   PUInt64 totalOutputFrameCount = 0;
   PUInt64 totalEncodedByteCount = 0;
   PUInt64 skippedFrames = 0;
+  PUInt64 totalDroppedPacketCount = 0;
 
   bool oldSrcState = true;
   bool oldOutState = true;
@@ -877,7 +885,7 @@ void TranscoderThread::Main()
 
   RTP_DataFrame * srcFrame_ = NULL;
 
-  while (running && framesToTranscode < 0 || (framesToTranscode-- > 0)) {
+  while ((running && framesToTranscode < 0) || (framesToTranscode-- > 0)) {
 
     //////////////////////////////////////////////
     //
@@ -979,6 +987,23 @@ void TranscoderThread::Main()
             break;
           default :
             break;
+        }
+      }
+
+      //////////////////////////////////////////////
+      //
+      //  drop encoded frames if required
+      //
+      if (m_dropPercent > 0) {
+        PINDEX i = 0;
+        while (i < encFrames.GetSize()) {
+          int n = PRandom::Number() % 100; 
+          if (n >= m_dropPercent) 
+            i++;
+          else {
+            ++totalDroppedPacketCount;
+            encFrames.RemoveAt(i);
+          }
         }
       }
 
@@ -1123,6 +1148,10 @@ void TranscoderThread::Main()
        << totalEncodedPacketCount << " packets,"
        << totalInputFrameCount << " frames over " << duration << " seconds at "
        << (totalInputFrameCount*1000.0/duration.GetMilliSeconds()) << " fps" << endl;
+
+  if (m_dropPercent > 0) {
+    cout << totalDroppedPacketCount << " dropped frames(" << totalDroppedPacketCount*100.0/totalEncodedPacketCount << "%)" << endl;
+  }
 
   cout << "Average bit rate = ";
   {
