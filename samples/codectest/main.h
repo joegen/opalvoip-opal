@@ -44,6 +44,7 @@ class TranscoderThread : public PThread
       , timestamp(0)
       , markerHandling(NormalMarkers)
       , rateController(NULL)
+      , m_dropPercent(0)
     {
     }
 
@@ -92,6 +93,7 @@ class TranscoderThread : public PThread
     int framesToTranscode;
     int frameTime;
     bool calcSNR;
+    int m_dropPercent;
 };
 
 
