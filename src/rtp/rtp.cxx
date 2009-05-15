@@ -1002,6 +1002,8 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
     else if (allowSequenceChange) {
       expectedSequenceNumber = (WORD) (sequenceNumber + 1);
       allowSequenceChange = false;
+      PTRACE(2, "RTP\tSession " << sessionID << ", adjusting sequence numbers to expect "
+             << expectedSequenceNumber << " ssrc=" << syncSourceIn);
     }
     else if (sequenceNumber < expectedSequenceNumber) {
       PTRACE(2, "RTP\tSession " << sessionID << ", out of order packet, received "
