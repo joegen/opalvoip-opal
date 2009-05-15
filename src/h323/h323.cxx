@@ -3777,40 +3777,47 @@ void H323Connection::OnSelectLogicalChannels()
     default : //FastStartDisabled :
       SelectDefaultLogicalChannel(OpalMediaType::Audio(), H323Capability::DefaultAudioSessionID);
 #if OPAL_VIDEO
-      if ((autoStartVideo&OpalMediaType::Transmit) != 0)
+      if (autoStartVideo != OpalMediaType::DontOffer && (autoStartVideo&OpalMediaType::Transmit) != 0)
         SelectDefaultLogicalChannel(OpalMediaType::Video(), H323Capability::DefaultVideoSessionID);
       else {
         PTRACE(4, "H245\tOnSelectLogicalChannels, video not auto-started");
       }
 #endif
 #if OPAL_T38_CAPABILITY
-      if ((autoStartFax&OpalMediaType::Transmit) != 0)
+      if (autoStartFax != OpalMediaType::DontOffer && (autoStartFax&OpalMediaType::Transmit) != 0)
         SelectDefaultLogicalChannel(OpalMediaType::Fax(), H323Capability::DefaultDataSessionID);
       else {
         PTRACE(4, "H245\tOnSelectLogicalChannels, fax not auto-started");
       }
 #endif
 #if OPAL_HAS_H224
-      SelectDefaultLogicalChannel(OpalH224MediaType::MediaType(), H323Capability::DefaultH224SessionID);
+      if (autoStartH224 != OpalMediaType::DontOffer && (autoStartH224&OpalMediaType::Transmit) != 0)
+        SelectDefaultLogicalChannel(OpalH224MediaType::MediaType(), H323Capability::DefaultH224SessionID);
+      else {
+        PTRACE(4, "H245\tOnSelectLogicalChannels, H.224 camera control not auto-started");
+      }
 #endif
       break;
 
     case FastStartInitiate :
       SelectFastStartChannels(H323Capability::DefaultAudioSessionID, PTrue, PTrue);
 #if OPAL_VIDEO
-      SelectFastStartChannels(H323Capability::DefaultVideoSessionID,
-                              (autoStartVideo&OpalMediaType::Transmit) != 0,
-                              (autoStartVideo&OpalMediaType::Receive) != 0);
+      if (autoStartVideo != OpalMediaType::DontOffer)
+        SelectFastStartChannels(H323Capability::DefaultVideoSessionID,
+                                (autoStartVideo&OpalMediaType::Transmit) != 0,
+                                (autoStartVideo&OpalMediaType::Receive) != 0);
 #endif
 #if OPAL_T38_CAPABILITY
-      SelectFastStartChannels(H323Capability::DefaultDataSessionID,
-                              (autoStartFax&OpalMediaType::Transmit) != 0,
-                              (autoStartFax&OpalMediaType::Receive) != 0);
+      if (autoStartFax != OpalMediaType::DontOffer)
+        SelectFastStartChannels(H323Capability::DefaultDataSessionID,
+                                (autoStartFax&OpalMediaType::Transmit) != 0,
+                                (autoStartFax&OpalMediaType::Receive) != 0);
 #endif
 #if OPAL_HAS_H224
-      SelectFastStartChannels(H323Capability::DefaultH224SessionID,
-                              (autoStartH224&OpalMediaType::Transmit) != 0,
-                              (autoStartH224&OpalMediaType::Receive) != 0);
+      if (autoStartH224 != OpalMediaType::DontOffer)
+        SelectFastStartChannels(H323Capability::DefaultH224SessionID,
+                                (autoStartH224&OpalMediaType::Transmit) != 0,
+                                (autoStartH224&OpalMediaType::Receive) != 0);
 #endif
       break;
 
