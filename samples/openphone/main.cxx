@@ -4282,7 +4282,10 @@ void OptionsDialog::BrowseSoundFile(wxCommandEvent & /*event*/)
 
 void OptionsDialog::PlaySoundFile(wxCommandEvent & /*event*/)
 {
-  PSoundChannel speaker(m_manager.m_RingSoundDeviceName, PSoundChannel::Player);
+  if (!wxDialog::TransferDataFromWindow())
+    return;
+
+  PSoundChannel speaker(m_RingSoundDeviceName, PSoundChannel::Player);
   speaker.PlayFile(m_RingSoundFileName);
 }
 
