@@ -101,7 +101,8 @@ static struct StdSizes {
 
 static FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H263P);
 
-static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg) {
+static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg)
+{
   char buffer[512];
   int severity = 0;
   if (v) {
@@ -257,15 +258,12 @@ bool H263_Base_EncoderContext::Open(CodecID codecId)
 
   _context->max_b_frames = 0;
   _context->pix_fmt = PIX_FMT_YUV420P;
-  //_context->rtp_mode = 1;
-  //_context->rtp_payload_size = 500;
 
   // X-Lite does not like Custom Picture frequency clocks...
   _context->time_base.num = 100; 
   _context->time_base.den = 2997;
   _context->gop_size      = 125;
 
-//  _context->flags = 0;
   // avoid copying input/output
   _context->flags |= CODEC_FLAG_INPUT_PRESERVED; // we guarantee to preserve input for max_b_frames+1 frames
   _context->flags |= CODEC_FLAG_EMU_EDGE;        // don't draw edges
@@ -315,7 +313,7 @@ void H263_Base_EncoderContext::SetTargetBitrate (unsigned rate)
      0-> clipping, 1-> use a nice continous function to limit qscale wthin qmin/qmax.
   */
   
-  _context->rc_qsquish = 0;                    // limit q by clipping 
+  _context->rc_qsquish = 0;            // limit q by clipping 
   _context->rc_eq = (char*) "1";       // rate control equation
   _context->rc_buffer_size = rate * 64;
 
@@ -377,7 +375,8 @@ void H263_Base_EncoderContext::EnableAnnex (Annex annex)
     case F:
       // Annex F: Advanced Prediction Mode
       // does not work with eyeBeam
-      _context->flags |= CODEC_FLAG_OBMC; 
+      // DO NOT ENABLE THIS FLAG. FFMPEG IS NOT THREAD_SAFE WHEN THIS FLAG IS SET
+      //_context->flags |= CODEC_FLAG_OBMC; 
       break;
     case I:
       // Annex I: Advanced Intra Coding
@@ -711,8 +710,8 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
       return 0;
     }
   }
-  
-  CODEC_TRACER(tracer, "Encoder called with " << frameSize << " bytes and frame type " << _inputFrame->pict_type << " at " << header->width << "x" << header->height);
+
+  //CODEC_TRACER(tracer, "Encoder called with " << frameSize << " bytes and frame type " << _inputFrame->pict_type << " at " << header->width << "x" << header->height);
 
   int encodedLen = FFMPEGLibraryInstance.AvcodecEncodeVideo(_context, packetizer.m_buffer, packetizer.m_bufferSize, _inputFrame);  
 
@@ -1387,7 +1386,7 @@ static void FindBoundingBox(const char * const * * parm,
                                              int & maxBitRate)
 { 
   // initialise the MPI values to disabled
-       int i;
+  int i;
   for (i = 0; i < 5; i++)
     mpi[i] = PLUGINCODEC_MPI_DISABLED;
 
