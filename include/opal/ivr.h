@@ -361,8 +361,6 @@ class OpalIVRMediaStream : public OpalRawMediaStream
        Returns PFalse for IVR streams.
       */
     virtual PBoolean IsSynchronous() const;
-
-    PBoolean ReadPacket(RTP_DataFrame & packet);
   //@}
 
   protected:
