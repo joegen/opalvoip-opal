@@ -656,8 +656,7 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
 #if USE_ALLOCED_FRAME
     if (_inputFrameBuffer != NULL)
       free(_inputFrameBuffer);
-    void * p;
-    if (posix_memalign((void **)&_inputFrameBuffer, 64, header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2)) != 0) {
+    if ((_inputFrameBuffer = (unsigned char *)malloc(header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2))) == NULL) {
       TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for frame buffer");
       return 0;
     }
@@ -705,7 +704,7 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
   }
   if (packetizer.m_buffer == NULL) {
     packetizer.m_bufferSize = newOutputSize;
-    if (posix_memalign((void **)&packetizer.m_buffer, 64, packetizer.m_bufferSize) != 0) {
+    if ((packetizer.m_buffer = (unsigned char *)malloc(packetizer.m_bufferSize)) == NULL) {
       TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for packet buffer");
       return 0;
     }
