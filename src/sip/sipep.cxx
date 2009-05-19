@@ -1406,7 +1406,12 @@ unsigned SIPEndPoint::GetAllowedMethods() const
 
 PBoolean SIPEndPoint::GetAuthentication(const PString & authRealm, PString & realm, PString & user, PString & password) 
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(authRealm, PString::Empty(), PSafeReadOnly);
+  PSafePtr<SIPHandler> handler;
+  
+  if (!user.IsEmpty()) 
+    handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(authRealm, user, PSafeReadOnly);
+  if (handler == NULL) 
+    handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(authRealm, PString::Empty(), PSafeReadOnly);
   if (handler == NULL)
     return PFalse;
 

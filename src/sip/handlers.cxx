@@ -532,6 +532,9 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   m_password = params.m_password;
   m_realm    = params.m_realm;
 
+  if (m_realm.IsEmpty())
+    m_realm = m_remoteAddress.GetHostName();
+
   if (m_username.IsEmpty())
     m_username = m_addressOfRecord.GetUserName();
 }
