@@ -37,6 +37,9 @@
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_VIDEO
+
 #include <rtp/rtp.h>
 
 extern double OpalCalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen);
@@ -223,5 +226,7 @@ class OpalVideoRateController
 
 PFACTORY_LOAD(OpalStandardVideoRateController);
 
+
+#endif // OPAL_VIDEO
 
 #endif // OPAL_RATE_CONTROL_H

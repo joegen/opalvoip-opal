@@ -39,6 +39,9 @@ using namespace std;
 
 #include <opal/buildopts.h>
 #include <codec/ratectl.h>
+
+#if OPAL_VIDEO
+
 #include <opal/mediafmt.h>
 
 
@@ -448,3 +451,5 @@ bool OpalStandardVideoRateController::Pop(RTP_DataFrameList & outputPackets, boo
 }
 
 
+
+#endif // OPAL_VIDEO
