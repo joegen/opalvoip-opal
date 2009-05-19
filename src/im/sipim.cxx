@@ -56,9 +56,6 @@ OpalSIPIMMediaType::OpalSIPIMMediaType()
 {
 }
 
-/////////////////////////////////////////////////////////////////////////////
-
-#if OPAL_SIP
 
 /////////////////////////////////////////////////////////
 //
@@ -186,9 +183,6 @@ void SDPSIPIMMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaForma
 }
 
 
-#endif // OPAL_SIP
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 OpalMediaSession * OpalSIPIMMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
@@ -196,10 +190,8 @@ OpalMediaSession * OpalSIPIMMediaType::CreateMediaSession(OpalConnection & conn,
   // as this is called in the constructor of an OpalConnection descendant, 
   // we can't use a virtual function on OpalConnection
 
-#if OPAL_SIP
   if (conn.GetPrefixName() *= "sip")
     return new OpalSIPIMMediaSession(conn, sessionID);
-#endif
 
   return NULL;
 }
@@ -229,14 +221,12 @@ OpalTransportAddress OpalSIPIMMediaSession::GetLocalMediaAddress() const
   return transportAddress;
 }
 
-#if OPAL_SIP
 
 SDPMediaDescription * OpalSIPIMMediaSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
 {
   return new SDPSIPIMMediaDescription(sdpContactAddress, transportAddress, localURL);
 }
 
-#endif
 
 OpalMediaStream * OpalSIPIMMediaSession::CreateMediaStream(const OpalMediaFormat & mediaFormat, 
                                                                          unsigned sessionID, 
@@ -329,8 +319,6 @@ PBoolean OpalSIPIMMediaStream::WriteData(
 
   bool stat = true;
 
-#if OPAL_SIP
-
   if (length != 0 && data != NULL) {
     // T.140 data has 3 bytes at the start of the data
     if (length > 4) {
@@ -339,8 +327,6 @@ PBoolean OpalSIPIMMediaStream::WriteData(
     }
     written = length;
   }
-
-#endif
 
   return stat;
 }

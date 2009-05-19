@@ -39,6 +39,9 @@ using namespace std;
 
 #include <opal/buildopts.h>
 #include <codec/ratectl.h>
+
+#if OPAL_VIDEO
+
 #include <opal/mediafmt.h>
 
 namespace PWLibStupidLinkerHacks {
@@ -450,3 +453,4 @@ bool OpalStandardVideoRateController::Pop(RTP_DataFrameList & outputPackets, boo
 
 static PFactory<OpalVideoRateController>::Worker<OpalStandardVideoRateController> opalStandardVideoRateController("Standard");
 
+#endif // OPAL_VIDEO

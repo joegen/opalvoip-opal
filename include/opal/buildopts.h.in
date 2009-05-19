@@ -115,12 +115,8 @@
 #undef  OPAL_LID
 #undef  OPAL_T120DATA
 
-#if OPAL_PTLIB_EXPAT
-
-#ifndef _WIN32_WCE
+#if P_VXML
   #undef  OPAL_IVR
-#endif
-
 #endif
 
 #if OPAL_H323
@@ -169,8 +165,10 @@
 #endif
 
 
-#undef  OPAL_HAS_H224
-#undef  OPAL_HAS_H281
+#if OPAL_H323
+  #undef  OPAL_HAS_H224
+  #undef  OPAL_HAS_H281
+#endif
 
 /////////////////////////////////////////////////
 //
@@ -189,7 +187,7 @@
 
 #undef  OPAL_G711PLC
 
-#ifdef P_VIDEO
+#if P_VIDEO
   #undef  OPAL_VIDEO
 #endif
 
@@ -211,7 +209,9 @@
 #endif
 
 #undef OPAL_HAS_MSRP
-#undef OPAL_HAS_SIPIM
+#if OPAL_SIP
+  #undef OPAL_HAS_SIPIM
+#endif
 #undef OPAL_HAS_RFC4103
 
 #define OPAL_HAS_IM    (OPAL_HAS_SIPIM || OPAL_HAS_MSRP || OPAL_HAS_RFC4103)
