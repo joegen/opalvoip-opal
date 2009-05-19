@@ -127,7 +127,7 @@ class OpalFaxEndPoint : public OpalEndPoint
       */
     virtual void OnFaxCompleted(
       OpalFaxConnection & connection, ///< Connection that completed.
-      bool timeout                    ///< Fax timed out rather than orderly completion
+      bool failed   ///< Fax ended with failure
     );
   //@}
 
@@ -241,7 +241,7 @@ class OpalFaxConnection : public OpalConnection
        Default behaviour calls equivalent function on OpalFaxEndPoint.
       */
     virtual void OnFaxCompleted(
-      bool timeout   ///< Fax timed out rather than orderly completion
+      bool failed   ///< Fax ended with failure
     );
 
     /**Get receive fax flag.
@@ -250,7 +250,6 @@ class OpalFaxConnection : public OpalConnection
   //@}
 
   protected:
-    PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnFaxStoppedTimeout);
     PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnSendCNGCED);
     PDECLARE_NOTIFIER(PThread, OpalFaxConnection, OpenFaxStreams);
     void RequestFax(bool toFax);

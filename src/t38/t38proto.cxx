@@ -69,7 +69,6 @@ class OpalFaxMediaStream : public OpalNullMediaStream
 
     virtual PBoolean WriteData(const BYTE * data, PINDEX length, PINDEX & written)
     {
-      m_connection.m_faxTimer.Reset();
       return OpalNullMediaStream::WriteData(data, length, written);
     }
 
@@ -387,10 +386,10 @@ void OpalFaxEndPoint::AcceptIncomingConnection(const PString & token)
 }
 
 
-void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool timeout)
+void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
 {
-  PTRACE(3, "FAX\tFax completed " << (timeout ? "with timeout" : "normally") << " on connection: " << connection);
-  connection.Release(timeout ? OpalConnection::EndedByRemoteUser : OpalConnection::EndedByLocalUser);
+  PTRACE(3, "FAX\tFax " << (failed ? "failed" : "completed") << " on connection: " << connection);
+  connection.Release(failed ? OpalConnection::EndedByCapabilityExchange : OpalConnection::EndedByLocalUser);
 }
 
 
@@ -582,15 +581,9 @@ void OpalFaxConnection::AcceptIncoming()
 }
 
 
-void OpalFaxConnection::OnFaxCompleted(bool timeout)
+void OpalFaxConnection::OnFaxCompleted(bool failed)
 {
-  m_endpoint.OnFaxCompleted(*this, timeout);
-}
-
-
-void OpalFaxConnection::OnFaxStoppedTimeout(PTimer &, INT)
-{
-  OnFaxCompleted(true);
+  m_endpoint.OnFaxCompleted(*this, failed);
 }
 
 
@@ -629,12 +622,12 @@ void OpalFaxConnection::OpenFaxStreams(PThread &, INT)
   OpalMediaFormat format = m_faxMode ? OpalT38 : OpalG711uLaw;
   OpalMediaType mediaType = format.GetMediaType();
 
-  PSafePtr<OpalConnection> otherParty = ownerCall.GetOtherPartyConnection(*this);
-  if (otherParty == NULL) {
-    PTRACE(1, "T38\tCannot get other party for " << mediaType << " trigger");
-  }
-  else if (!ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, 1, format)) {
+  PSafePtr<OpalConnection> other = ownerCall.GetOtherPartyConnection(*this);
+  if ( other == NULL ||
+      !ownerCall.OpenSourceMediaStreams(*other, mediaType, 1, format) ||
+      !ownerCall.OpenSourceMediaStreams(*this,  mediaType, 1, format)) {
     PTRACE(1, "T38\tMode change request to " << mediaType << " failed");
+    OnFaxCompleted(true);
   }
 
   UnlockReadWrite();
@@ -656,9 +649,6 @@ void OpalFaxConnection::RequestFax(bool toFax)
   PTRACE(1, "T38\tRequesting mode change to " << modeStr);
 
   m_faxMode = toFax;
-
-  m_faxTimer.SetNotifier(PCREATE_NOTIFIER(OnFaxStoppedTimeout));
-  m_faxTimer.SetInterval(0, 60); // No data received for a minute, give up and hang up
 
   PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
 }

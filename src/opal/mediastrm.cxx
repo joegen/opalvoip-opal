@@ -433,11 +433,8 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
   if (!safeLock.IsLocked())
     return false;
 
-  if (IsOpen()) {
-    mediaPatch = patch;
-    return true;
-  }
-  return false;
+  mediaPatch = patch;
+  return true;
 }
 
 
@@ -595,8 +592,6 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
      whatever the RTP sender throws at us. For sink, we set it to the
      maximum size based on MTU (or other criteria). */
   defaultDataSize = isSource ? 2048 : conn.GetMaxRtpPayloadSize();
-
-  rtp.SetEncoding(mediaFormat.GetMediaType().GetDefinition()->GetRTPEncoding());
 }
 
 
@@ -611,6 +606,7 @@ PBoolean OpalRTPMediaStream::Open()
   if (isOpen)
     return true;
 
+  rtpSession.SetEncoding(mediaFormat.GetMediaType().GetDefinition()->GetRTPEncoding());
   rtpSession.Reopen(IsSource());
 
   return OpalMediaStream::Open();

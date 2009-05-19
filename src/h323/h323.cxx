@@ -3665,8 +3665,23 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
       PTRACE(3, "H323\tOpenMediaStream (already opened) for session " << sessionID << " on " << *this);
       return stream;
     }
+
+    if (isSource) {
+      stream = CreateMediaStream(mediaFormat, sessionID, isSource);
+      if (stream == NULL) {
+        PTRACE(1, "H323\tCreateMediaStream returned NULL for session " << sessionID << " on " << *this);
+        return NULL;
+      }
+      mediaStreams.Append(stream);
+
+      // Channel from other side, do RequestModeChange
+      RequestModeChange(mediaFormat);
+      return stream;
+    }
+
     // Changing the media format, needs to close and re-open the stream
     stream->Close();
+    stream.SetNULL();
   }
 
   if ( isSource &&
@@ -3758,7 +3773,8 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
       H323Channel * channel = logicalChannels->GetNegLogicalChannelAt(i).GetChannel();
       if (channel != NULL && channel->GetMediaStream() == &stream) {
         const H323ChannelNumber & number = channel->GetNumber();
-        return logicalChannels->Close(number, number.IsFromRemote());
+        if (!logicalChannels->Close(number, number.IsFromRemote()))
+          return false;
       }
     }
   }
@@ -4632,15 +4648,22 @@ PBoolean H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
 
 void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 {
+  PTRACE(4, "H323\tOnModeChanged, closing channels");
+
   CloseAllLogicalChannels(PFalse);
+
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
+  if (otherConnection == NULL)
+    return;
+
+  PTRACE(4, "H323\tOnModeChanged, opening channels");
 
   // Start up the new ones
   for (PINDEX i = 0; i < newMode.GetSize(); i++) {
     H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
     if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
-      if (!OpenLogicalChannel(*capability,
-                              capability->GetDefaultSessionID(),
-                              H323Channel::IsTransmitter)) {
+      OpalMediaFormat mediaFormat = capability->GetMediaFormat();
+      if (!ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), i+1, mediaFormat)) {
         PTRACE(2, "H245\tCould not open channel after mode change: " << *capability);
       }
     }
@@ -4650,62 +4673,11 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 
 void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
 {
-  if (t38ModeChangeCapabilities.IsEmpty())
-    return;
-
-  PTRACE(3, "H323\tT.38 mode change accepted.");
-
-  // Now we have conviced the other side to send us T.38 data we should do the
-  // same assuming the RequestModeChangeT38() function provided a list of \n
-  // separaete capability names to start. Only one will be.
-
-  CloseAllLogicalChannels(PFalse);
-
-  PStringArray modes = t38ModeChangeCapabilities.Lines();
-
-  PINDEX first, last;
-  if (pdu.m_response.GetTag() == H245_RequestModeAck_response::e_willTransmitMostPreferredMode) {
-    first = 0;
-    last = 1;
-  }
-  else {
-    first = 1;
-    last = modes.GetSize();
-  }
-
-  for (PINDEX i = first; i < last; i++) {
-    H323Capability * capability = localCapabilities.FindCapability(modes[i]);
-    if (capability != NULL && OpenLogicalChannel(*capability,
-                                                 capability->GetDefaultSessionID(),
-                                                 H323Channel::IsTransmitter)) {
-      PTRACE(3, "H245\tOpened " << *capability << " after T.38 mode change");
-      break;
-    }
-
-    PTRACE(2, "H245\tCould not open channel after T.38 mode change");
-  }
-
-  t38ModeChangeCapabilities = PString::Empty();
 }
 
 
 void H323Connection::OnRefusedModeChange(const H245_RequestModeReject * /*pdu*/)
 {
-  if (!t38ModeChangeCapabilities) {
-    PTRACE(2, "H323\tT.38 mode change rejected.");
-    t38ModeChangeCapabilities = PString::Empty();
-  }
-}
-
-
-PBoolean H323Connection::RequestModeChangeT38(const char * capabilityNames)
-{
-  t38ModeChangeCapabilities = capabilityNames;
-  if (RequestModeChange(t38ModeChangeCapabilities))
-    return PTrue;
-
-  t38ModeChangeCapabilities = PString::Empty();
-  return PFalse;
 }
 
 
