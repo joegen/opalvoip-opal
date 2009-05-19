@@ -5547,6 +5547,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            ="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -5632,6 +5633,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            ="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -5717,6 +5719,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_SSL="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -5802,6 +5805,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_ASN="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -5887,6 +5891,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_EXPAT="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -5972,6 +5977,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_VIDEO="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -6057,6 +6063,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_WAVFILE="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -6142,6 +6149,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_VXML="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -6227,6 +6235,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_IPV6="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -6312,6 +6321,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_DTMF="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -6397,6 +6407,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_LDAP="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -6482,6 +6493,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_DNS="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -6567,6 +6579,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_AUDIO="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -6652,6 +6665,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            OPAL_PTLIB_CONFIG_FILE="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
@@ -10198,6 +10212,7 @@ echo "${ECHO_T}$opal_ptlib_option" >&6; }
               exit 1;
             fi
           else
+            ="$opal_ptlib_option"
 
 	    if test "x$opal_ptlib_option" = "xyes" ; then
 
