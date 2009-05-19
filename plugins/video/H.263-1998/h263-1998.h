@@ -53,6 +53,8 @@
 #include "rfc2190.h"
 #include "critsect.h"
 
+#include <stdio.h>
+
 #if TRACE_FILE
 #include "tracer.h"
 #endif
