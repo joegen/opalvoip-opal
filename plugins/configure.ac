@@ -402,6 +402,24 @@ fi
 
 AC_SUBST(HAVE_SPANDSP)
 AC_SUBST(SPANDSP_LIBS)
+
+dnl ########################################################################
+dnl Various checks
+dnl ########################################################################
+
+AC_MSG_CHECKING(for posix_memalign)
+AC_COMPILE_IFELSE([
+  AC_LANG_PROGRAM([[#include "stdlib.h"]], 
+                  [[
+                  void * p; posix_memalign(&p, 16, 16); return 0; 
+                  ]]
+                  )
+                  ],
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_POSIX_MEMALIGN, 1),
+  AC_MSG_RESULT(no)
+)
+
 dnl ########################################################################
 
 if test -d audio/G722 ; then

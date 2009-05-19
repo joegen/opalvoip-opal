@@ -176,3 +176,7 @@
 
 /* Define as `fork' if `vfork' does not work. */
 #undef vfork
+
+/* define if posix_memalign is available */
+#undef HAVE_POSIX_MEMALIGN
+
