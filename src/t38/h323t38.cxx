@@ -106,11 +106,9 @@ PString H323_T38Capability::GetFormatName() const
 H323Channel * H323_T38Capability::CreateChannel(H323Connection & connection,
                                                 H323Channel::Directions direction,
                                                 unsigned int sessionID,
-                             const H245_H2250LogicalChannelParameters * /*params*/) const
+                             const H245_H2250LogicalChannelParameters * params) const
 {
-  PTRACE(1, "H323T38\tCreateChannel, sessionID=" << sessionID << " direction=" << direction);
-
-  return new H323_T38Channel(connection, *this, direction, sessionID, mode);
+  return connection.CreateRealTimeLogicalChannel(*this, direction, sessionID, params, NULL);
 }
 
 
@@ -138,6 +136,8 @@ PBoolean H323_T38Capability::OnSendingPDU(H245_DataProtocolCapability & proto,
                                       H245_T38FaxProfile & profile) const
 {
   if (mode == e_UDP) {
+    const_cast<H323_T38Capability*>(this)->GetWritableMediaFormat().SetPayloadType(RTP_DataFrame::IllegalPayloadType);
+
     proto.SetTag(H245_DataProtocolCapability::e_udp);
     profile.m_t38FaxRateManagement.SetTag(
                         GetMediaFormat().GetOptionEnum("T38FaxRateManagement", 1) == 0
@@ -213,196 +213,18 @@ PObject * H323_T38NonStandardCapability::Clone() const
 
 PString H323_T38NonStandardCapability::GetFormatName() const
 {
-  return PString(OPAL_T38"{") + T38NonStandardCapabilityName + '}';
+  return PString(OPAL_T38"-") + T38NonStandardCapabilityName;
 }
 
 
 H323Channel * H323_T38NonStandardCapability::CreateChannel(H323Connection & connection,
                                                 H323Channel::Directions direction,
                                                 unsigned int sessionID,
-                             const H245_H2250LogicalChannelParameters * /*params*/) const
+                             const H245_H2250LogicalChannelParameters * params) const
 {
-  PTRACE(1, "H323T38\tCreateChannel, sessionID=" << sessionID << " direction=" << direction);
-
-  return new H323_T38Channel(connection, *this, direction, sessionID, H323_T38Capability::e_UDP);
+  return connection.CreateRealTimeLogicalChannel(*this, direction, sessionID, params, NULL);
 }
 
-
-//////////////////////////////////////////////////////////////
-
-H323_T38Channel::H323_T38Channel(H323Connection & connection,
-                                 const H323Capability & capability,
-                                 H323Channel::Directions dir,
-                                 unsigned sessionID,
-                                 H323_T38Capability::TransportMode mode)
-  : H323DataChannel(connection, capability, dir, sessionID)
-{
-  PTRACE(3, "H323T38\tH323 channel created");
-
-  // Transport will be owned by OpalT38Protocol
-  autoDeleteTransport = PFalse;
-
-  separateReverseChannel = mode != H323_T38Capability::e_SingleTCP;
-  usesTCP = mode != H323_T38Capability::e_UDP;
-
-  t38handler = NULL;
-
-  H323Channel * chan = connection.FindChannel(sessionID, dir == H323Channel::IsTransmitter);
-  if (chan != NULL) {
-    if (PIsDescendant(chan, H323_T38Channel)) {
-      PTRACE(3, "H323T38\tConnected to existing T.38 handler");
-      t38handler = ((H323_T38Channel *)chan)->GetHandler();
-    }
-    else
-      PTRACE(1, "H323T38\tCreateChannel, channel " << *chan << " is not H323_T38Channel");
-  }
-
-#if 0 // disabled
-
-  if (t38handler == NULL) {
-    PTRACE(3, "H323T38\tCreating new T.38 handler");
-    t38handler = connection.CreateT38ProtocolHandler();
-  }
-
-  if (t38handler != NULL) {
-    transport = t38handler->GetTransport();
-
-    if (transport == NULL && !usesTCP && CreateTransport())
-      t38handler->SetTransport(transport, PTrue);
-  }
-#endif // disabled
-}
-
-
-H323_T38Channel::~H323_T38Channel()
-{
-}
-
-void H323_T38Channel::Close()
-{
-  if (terminating)
-    return;
-
-  PTRACE(3, "H323T38\tCleanUpOnTermination");
-
-#if 0  // disabled
-  if (t38handler != NULL) 
-    t38handler->Close();
-#endif // disabled
-
-  H323DataChannel::Close();
-}
-
-
-PBoolean H323_T38Channel::OnSendingPDU(H245_OpenLogicalChannel & open) const
-{
-#if 0  // disabled
-  if (t38handler != NULL)
-    return H323DataChannel::OnSendingPDU(open);
-#endif
-
-  PTRACE(1, "H323T38\tNo protocol handler, aborting OpenLogicalChannel.");
-  return PFalse;
-}
-
-
-PBoolean H323_T38Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
-                                    unsigned & errorCode)
-{
-#if 0  // disabled
-  if (t38handler != NULL)
-    return H323DataChannel::OnReceivedPDU(open, errorCode);
-#endif
-
-  errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
-  PTRACE(1, "H323T38\tNo protocol handler, refusing OpenLogicalChannel.");
-  return PFalse;
-}
-
-
-void H323_T38Channel::Receive()
-{
-  PTRACE(2, "H323T38\tReceive thread started.");
-
-#if 0  // disabled
-  if (t38handler != NULL) {
-    if (listener != NULL) {
-      transport = listener->Accept(30000);  // 30 second wait for connect back
-      t38handler->SetTransport(transport);
-    }
-
-    if (transport != NULL)
-      t38handler->Answer();
-    else {
-      PTRACE(1, "H323T38\tNo transport, aborting thread.");
-    }
-  }
-  else {
-    PTRACE(1, "H323T38\tNo protocol handler, aborting thread.");
-  }
-#endif
-
-  if (!terminating)
-    connection.CloseLogicalChannelNumber(number);
-
-  PTRACE(2, "H323T38\tReceive thread ended");
-}
-
-
-void H323_T38Channel::Transmit()
-{
-  if (terminating)
-    return;
-
-  PTRACE(2, "H323T38\tTransmit thread starting");
-
-#if 0  // disabled
-  if (t38handler != NULL)
-    t38handler->Originate();
-  else {
-    PTRACE(1, "H323T38\tTransmit no proto handler");
-  }
-#endif
-
-  if (!terminating)
-    connection.CloseLogicalChannelNumber(number);
-
-  PTRACE(2, "H323T38\tTransmit thread terminating");
-}
-
-
-PBoolean H323_T38Channel::CreateTransport()
-{
-  if (transport != NULL)
-    return PTrue;
-
-  if (usesTCP)
-    return H323DataChannel::CreateTransport();
-
-  PIPSocket::Address ip;
-  if (!connection.GetControlChannel().GetLocalAddress().GetIpAddress(ip)) {
-    PTRACE(2, "H323T38\tTrying to use UDP when base transport is not IP");
-    PIPSocket::GetHostAddress(ip);
-  }
-
-  transport = new H323TransportUDP(connection.GetEndPoint(), ip);
-  PTRACE(3, "H323T38\tCreated transport: " << *transport);
-  return PTrue;
-}
-
-
-PBoolean H323_T38Channel::CreateListener()
-{
-  if (listener != NULL)
-    return PTrue;
-
-  if (usesTCP) {
-    return H323DataChannel::CreateListener();
-    PTRACE(3, "H323T38\tCreated listener " << *listener);
-  }
-
-  return CreateTransport();
-}
 
 #endif // OPAL_H323
 #endif // OPAL_FAX
