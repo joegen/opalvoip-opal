@@ -1030,6 +1030,7 @@ EXPORTS
     ??0?$Worker@VH323_GSM0610Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@QAA@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z @46155 NONAME
     ??0?$Worker@VH323_GSMAMRCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@QAA@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z @46156 NONAME
     ??0?$Worker@VH323_iLBCCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@QAA@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z @46157 NONAME
+    ??0?$Worker@VH323_T38Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@QAA@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z @49223 NONAME
     ??0?$Worker@VH323_UserInputCapability_BasicString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@QAA@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z @732 NONAME
     ??0?$Worker@VH323_UserInputCapability_GeneralString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@QAA@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z @733 NONAME
     ??0?$Worker@VH323_UserInputCapability_HookFlashH245@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@QAA@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z @734 NONAME
@@ -3594,7 +3595,6 @@ EXPORTS
     ??0H323_RTP_UDP@@QAA@ABVH323Connection@@AAVRTP_UDP@@@Z @3408 NONAME
     ??0H323_T38Capability@@QAA@ABV0@@Z @3409 NONAME
     ??0H323_T38Capability@@QAA@W4TransportMode@0@@Z @3410 NONAME
-    ??0H323_T38Channel@@QAA@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@IW4TransportMode@H323_T38Capability@@@Z @3411 NONAME
     ??0H323_T38NonStandardCapability@@QAA@ABV0@@Z @3412 NONAME
     ??0H323_T38NonStandardCapability@@QAA@EEG@Z @3413 NONAME
     ??0H323_UserInputCapability@@QAA@ABV0@@Z @3414 NONAME
@@ -5415,6 +5415,7 @@ EXPORTS
     ??1?$Worker@VH323_GSM0610Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@UAA@XZ @46451 NONAME
     ??1?$Worker@VH323_GSMAMRCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@UAA@XZ @46452 NONAME
     ??1?$Worker@VH323_iLBCCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@UAA@XZ @46453 NONAME
+    ??1?$Worker@VH323_T38Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@UAA@XZ @49224 NONAME
     ??1?$Worker@VH323_UserInputCapability_BasicString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@UAA@XZ @5045 NONAME
     ??1?$Worker@VH323_UserInputCapability_GeneralString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@UAA@XZ @5046 NONAME
     ??1?$Worker@VH323_UserInputCapability_HookFlashH245@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@UAA@XZ @5047 NONAME
@@ -6768,7 +6769,6 @@ EXPORTS
     ??1H323_RTP_Session@@UAA@XZ @6405 NONAME
     ??1H323_RTP_UDP@@UAA@XZ @6406 NONAME
     ??1H323_T38Capability@@UAA@XZ @6407 NONAME
-    ??1H323_T38Channel@@UAA@XZ @6408 NONAME
     ??1H323_T38NonStandardCapability@@UAA@XZ @6409 NONAME
     ??1H323_UserInputCapability@@UAA@XZ @6410 NONAME
     ??1H323_UserInputCapability_BasicString@@UAA@XZ @6411 NONAME
@@ -10534,6 +10534,7 @@ EXPORTS
     ??_7?$Worker@VH323_GSM0610Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @46753 NONAME
     ??_7?$Worker@VH323_GSMAMRCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @46754 NONAME
     ??_7?$Worker@VH323_iLBCCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @46755 NONAME
+    ??_7?$Worker@VH323_T38Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @49225 NONAME
     ??_7?$Worker@VH323_UserInputCapability_BasicString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @10107 NONAME
     ??_7?$Worker@VH323_UserInputCapability_GeneralString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @10108 NONAME
     ??_7?$Worker@VH323_UserInputCapability_HookFlashH245@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @10109 NONAME
@@ -11653,7 +11654,6 @@ EXPORTS
     ??_7H323_RTP_Session@@6B@ @11342 NONAME
     ??_7H323_RTP_UDP@@6B@ @11343 NONAME
     ??_7H323_T38Capability@@6B@ @11344 NONAME
-    ??_7H323_T38Channel@@6B@ @11345 NONAME
     ??_7H323_T38NonStandardCapability@@6BH323DataCapability@@@ @11346 NONAME
     ??_7H323_T38NonStandardCapability@@6BH323NonStandardCapabilityInfo@@@ @11347 NONAME
     ??_7H323_UserInputCapability@@6B@ @11348 NONAME
@@ -12657,6 +12657,7 @@ EXPORTS
     ??_R0?AV?$Worker@VH323_GSM0610Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@8 @46853 NONAME
     ??_R0?AV?$Worker@VH323_GSMAMRCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@8 @46854 NONAME
     ??_R0?AV?$Worker@VH323_iLBCCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@8 @46855 NONAME
+    ??_R0?AV?$Worker@VH323_T38Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@8 @49226 NONAME
     ??_R0?AV?$Worker@VH323_UserInputCapability_BasicString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@8 @12262 NONAME
     ??_R0?AV?$Worker@VH323_UserInputCapability_GeneralString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@8 @12263 NONAME
     ??_R0?AV?$Worker@VH323_UserInputCapability_HookFlashH245@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@8 @12264 NONAME
@@ -13764,7 +13765,6 @@ EXPORTS
     ??_R0?AVH323_RTP_Session@@@8 @13488 NONAME
     ??_R0?AVH323_RTP_UDP@@@8 @13489 NONAME
     ??_R0?AVH323_T38Capability@@@8 @13490 NONAME
-    ??_R0?AVH323_T38Channel@@@8 @13491 NONAME
     ??_R0?AVH323_T38NonStandardCapability@@@8 @13492 NONAME
     ??_R0?AVH323_UserInputCapability@@@8 @13493 NONAME
     ??_R0?AVH323_UserInputCapability_BasicString@@@8 @13494 NONAME
@@ -14742,6 +14742,7 @@ EXPORTS
     ??_R1A@?0A@EA@?$Worker@VH323_GSM0610Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @46941 NONAME
     ??_R1A@?0A@EA@?$Worker@VH323_GSMAMRCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @46942 NONAME
     ??_R1A@?0A@EA@?$Worker@VH323_iLBCCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @46943 NONAME
+    ??_R1A@?0A@EA@?$Worker@VH323_T38Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @49227 NONAME
     ??_R1A@?0A@EA@?$Worker@VH323_UserInputCapability_BasicString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @14383 NONAME
     ??_R1A@?0A@EA@?$Worker@VH323_UserInputCapability_GeneralString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @14384 NONAME
     ??_R1A@?0A@EA@?$Worker@VH323_UserInputCapability_HookFlashH245@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @14385 NONAME
@@ -15849,7 +15850,6 @@ EXPORTS
     ??_R1A@?0A@EA@H323_RTP_Session@@8 @15609 NONAME
     ??_R1A@?0A@EA@H323_RTP_UDP@@8 @15610 NONAME
     ??_R1A@?0A@EA@H323_T38Capability@@8 @15611 NONAME
-    ??_R1A@?0A@EA@H323_T38Channel@@8 @15612 NONAME
     ??_R1A@?0A@EA@H323_T38NonStandardCapability@@8 @15613 NONAME
     ??_R1A@?0A@EA@H323_UserInputCapability@@8 @15614 NONAME
     ??_R1A@?0A@EA@H323_UserInputCapability_BasicString@@8 @15615 NONAME
@@ -16850,6 +16850,7 @@ EXPORTS
     ??_R2?$Worker@VH323_GSM0610Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @47036 NONAME
     ??_R2?$Worker@VH323_GSMAMRCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @47037 NONAME
     ??_R2?$Worker@VH323_iLBCCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @47038 NONAME
+    ??_R2?$Worker@VH323_T38Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @49228 NONAME
     ??_R2?$Worker@VH323_UserInputCapability_BasicString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @16519 NONAME
     ??_R2?$Worker@VH323_UserInputCapability_GeneralString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @16520 NONAME
     ??_R2?$Worker@VH323_UserInputCapability_HookFlashH245@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @16521 NONAME
@@ -17957,7 +17958,6 @@ EXPORTS
     ??_R2H323_RTP_Session@@8 @17745 NONAME
     ??_R2H323_RTP_UDP@@8 @17746 NONAME
     ??_R2H323_T38Capability@@8 @17747 NONAME
-    ??_R2H323_T38Channel@@8 @17748 NONAME
     ??_R2H323_T38NonStandardCapability@@8 @17749 NONAME
     ??_R2H323_UserInputCapability@@8 @17750 NONAME
     ??_R2H323_UserInputCapability_BasicString@@8 @17751 NONAME
@@ -18935,6 +18935,7 @@ EXPORTS
     ??_R3?$Worker@VH323_GSM0610Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @47128 NONAME
     ??_R3?$Worker@VH323_GSMAMRCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @47129 NONAME
     ??_R3?$Worker@VH323_iLBCCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @47130 NONAME
+    ??_R3?$Worker@VH323_T38Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @49229 NONAME
     ??_R3?$Worker@VH323_UserInputCapability_BasicString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @18640 NONAME
     ??_R3?$Worker@VH323_UserInputCapability_GeneralString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @18641 NONAME
     ??_R3?$Worker@VH323_UserInputCapability_HookFlashH245@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @18642 NONAME
@@ -20042,7 +20043,6 @@ EXPORTS
     ??_R3H323_RTP_Session@@8 @19866 NONAME
     ??_R3H323_RTP_UDP@@8 @19867 NONAME
     ??_R3H323_T38Capability@@8 @19868 NONAME
-    ??_R3H323_T38Channel@@8 @19869 NONAME
     ??_R3H323_T38NonStandardCapability@@8 @19870 NONAME
     ??_R3H323_UserInputCapability@@8 @19871 NONAME
     ??_R3H323_UserInputCapability_BasicString@@8 @19872 NONAME
@@ -21023,6 +21023,7 @@ EXPORTS
     ??_R4?$Worker@VH323_GSM0610Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @47224 NONAME
     ??_R4?$Worker@VH323_GSMAMRCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @47225 NONAME
     ??_R4?$Worker@VH323_iLBCCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @47226 NONAME
+    ??_R4?$Worker@VH323_T38Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @49230 NONAME
     ??_R4?$Worker@VH323_UserInputCapability_BasicString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @20761 NONAME
     ??_R4?$Worker@VH323_UserInputCapability_GeneralString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @20762 NONAME
     ??_R4?$Worker@VH323_UserInputCapability_HookFlashH245@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @20763 NONAME
@@ -22142,7 +22143,6 @@ EXPORTS
     ??_R4H323_RTP_Session@@6B@ @21996 NONAME
     ??_R4H323_RTP_UDP@@6B@ @21997 NONAME
     ??_R4H323_T38Capability@@6B@ @21998 NONAME
-    ??_R4H323_T38Channel@@6B@ @21999 NONAME
     ??_R4H323_T38NonStandardCapability@@6BH323DataCapability@@@ @22000 NONAME
     ??_R4H323_T38NonStandardCapability@@6BH323NonStandardCapabilityInfo@@@ @22001 NONAME
     ??_R4H323_UserInputCapability@@6B@ @22002 NONAME
@@ -24651,7 +24651,6 @@ EXPORTS
     ?Class@H323_RTP_Session@@SAPBDXZ @24563 NONAME
     ?Class@H323_RTP_UDP@@SAPBDXZ @24564 NONAME
     ?Class@H323_T38Capability@@SAPBDXZ @24565 NONAME
-    ?Class@H323_T38Channel@@SAPBDXZ @24566 NONAME
     ?Class@H323_T38NonStandardCapability@@SAPBDXZ @24567 NONAME
     ?Class@H323_UserInputCapability@@SAPBDXZ @24568 NONAME
     ?Class@H45010_ArrayOf_MixedExtension@@SAPBDXZ @24569 NONAME
@@ -26768,7 +26767,6 @@ EXPORTS
     ?Close@H323Channel@@UAAXXZ @26860 NONAME
     ?Close@H323DataChannel@@UAAXXZ @26861 NONAME
     ?Close@H323UnidirectionalChannel@@UAAXXZ @26862 NONAME
-    ?Close@H323_T38Channel@@UAAXXZ @26864 NONAME
     ?Close@Mixer_T@OpalWAVRecordManager@@QAA_NXZ @47395 NONAME
     ?Close@OpalFaxMediaStream@@UAA_NXZ @26866 NONAME
     ?Close@OpalH224MediaStream@@UAA_NXZ @47396 NONAME
@@ -28618,7 +28616,6 @@ EXPORTS
     ?CompareObjectMemoryDirect@H323_RTP_Session@@UBA?AW4Comparison@PObject@@ABV3@@Z @28984 NONAME
     ?CompareObjectMemoryDirect@H323_RTP_UDP@@UBA?AW4Comparison@PObject@@ABV3@@Z @28985 NONAME
     ?CompareObjectMemoryDirect@H323_T38Capability@@UBA?AW4Comparison@PObject@@ABV3@@Z @28986 NONAME
-    ?CompareObjectMemoryDirect@H323_T38Channel@@UBA?AW4Comparison@PObject@@ABV3@@Z @28987 NONAME
     ?CompareObjectMemoryDirect@H323_T38NonStandardCapability@@UBA?AW4Comparison@PObject@@ABV3@@Z @28988 NONAME
     ?CompareObjectMemoryDirect@H323_UserInputCapability@@UBA?AW4Comparison@PObject@@ABV3@@Z @28989 NONAME
     ?CompareObjectMemoryDirect@H45010_ArrayOf_MixedExtension@@UBA?AW4Comparison@PObject@@ABV3@@Z @28990 NONAME
@@ -29399,6 +29396,7 @@ EXPORTS
     ?Create@?$Worker@VH323_GSM0610Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@MBAPAVH323Capability@@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z @47452 NONAME
     ?Create@?$Worker@VH323_GSMAMRCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@MBAPAVH323Capability@@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z @47453 NONAME
     ?Create@?$Worker@VH323_iLBCCapability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@MBAPAVH323Capability@@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z @47454 NONAME
+    ?Create@?$Worker@VH323_T38Capability@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@MBAPAVH323Capability@@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z @49231 NONAME
     ?Create@?$Worker@VH323_UserInputCapability_BasicString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@MBAPAVH323Capability@@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z @29750 NONAME
     ?Create@?$Worker@VH323_UserInputCapability_GeneralString@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@MBAPAVH323Capability@@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z @29751 NONAME
     ?Create@?$Worker@VH323_UserInputCapability_HookFlashH245@@@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@MBAPAVH323Capability@@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z @29752 NONAME
@@ -29519,7 +29517,6 @@ EXPORTS
     ?CreateListener@?$OpalInternalIPTransportTemplate@VOpalListenerUDP@@VOpalTransportUDP@@$02VOpalTransportTCP@@@@UBAPAVOpalListener@@ABVOpalTransportAddress@@AAVOpalEndPoint@@W4BindOptions@3@@Z @29848 NONAME
     ?CreateListener@H323DataChannel@@UAA_NXZ @29849 NONAME
     ?CreateListener@H323GatekeeperServer@@UAAPAVH323Transactor@@PAVOpalTransport@@@Z @29850 NONAME
-    ?CreateListener@H323_T38Channel@@UAA_NXZ @29851 NONAME
     ?CreateListener@OpalTransportAddress@@QBAPAVOpalListener@@AAVOpalEndPoint@@W4BindOptions@1@@Z @29852 NONAME
     ?CreateLogicalChannel@H323Connection@@UAAPAVH323Channel@@ABVH245_OpenLogicalChannel@@_NAAI@Z @29853 NONAME
     ?CreateMediaPatch@OpalManager@@UAAPAVOpalMediaPatch@@AAVOpalMediaStream@@_N@Z @29854 NONAME
@@ -30085,7 +30082,6 @@ EXPORTS
     ?CreateTransport@?$OpalInternalIPTransportTemplate@VOpalListenerUDP@@VOpalTransportUDP@@$02VOpalTransportTCP@@@@UBAPAVOpalTransport@@ABVOpalTransportAddress@@AAVOpalEndPoint@@W4BindOptions@3@@Z @30425 NONAME
     ?CreateTransport@H323DataChannel@@UAA_NXZ @30426 NONAME
     ?CreateTransport@H323Gatekeeper@@MAAPAVOpalTransport@@VAddress@PIPSocket@@G_N@Z @44558 NONAME
-    ?CreateTransport@H323_T38Channel@@UAA_NXZ @30427 NONAME
     ?CreateTransport@OpalListenerTCP@@UBAPAVOpalTransport@@ABVOpalTransportAddress@@0@Z @30428 NONAME
     ?CreateTransport@OpalListenerUDP@@UBAPAVOpalTransport@@ABVOpalTransportAddress@@0@Z @30429 NONAME
     ?CreateTransport@OpalTransportAddress@@UBAPAVOpalTransport@@AAVOpalEndPoint@@W4BindOptions@1@@Z @30430 NONAME
@@ -33231,7 +33227,6 @@ EXPORTS
     ?GetClass@H323_RTP_Session@@UBAPBDI@Z @33809 NONAME
     ?GetClass@H323_RTP_UDP@@UBAPBDI@Z @33810 NONAME
     ?GetClass@H323_T38Capability@@UBAPBDI@Z @33811 NONAME
-    ?GetClass@H323_T38Channel@@UBAPBDI@Z @33812 NONAME
     ?GetClass@H323_T38NonStandardCapability@@UBAPBDI@Z @33813 NONAME
     ?GetClass@H323_UserInputCapability@@UBAPBDI@Z @33814 NONAME
     ?GetClass@H45010_ArrayOf_MixedExtension@@UBAPBDI@Z @33815 NONAME
@@ -34807,7 +34802,6 @@ EXPORTS
     ?GetGkAccessTokenOID@H323Connection@@QBA?BVPString@@XZ @35480 NONAME
     ?GetGkAccessTokenOID@H323EndPoint@@QBAABVPString@@XZ @35481 NONAME
     ?GetH245Generic@OpalMediaOption@@QBAABUH245GenericInfo@1@XZ @35482 NONAME
-    ?GetHandler@H323_T38Channel@@QBAPAVOpalT38Protocol@@XZ @35483 NONAME
     ?GetHDLCEncodedSize@Q922_Frame@@QBAHXZ @47645 NONAME
     ?GetHeaderSize@H224_Frame@@ABAHXZ @47646 NONAME
     ?GetHeaderSize@RTP_DataFrame@@QBAHXZ @35484 NONAME
@@ -35181,6 +35175,7 @@ EXPORTS
     ?GetOptionBoolean@OpalMediaFormat@@QBA_NABVPString@@_N@Z @35795 NONAME
     ?GetOptionBoolean@OpalMediaFormatInternal@@UBA_NABVPString@@_N@Z @35796 NONAME
     ?GetOptionCount@OpalMediaFormat@@QBAHXZ @35797 NONAME
+    ?GetOptionEnum@OpalMediaFormat@@QBAHABVPString@@H@Z @49232 NONAME
     ?GetOptionEnum@OpalMediaFormatInternal@@UBAHABVPString@@H@Z @35798 NONAME
     ?GetOptionInteger@OpalMediaFormat@@QBAHABVPString@@H@Z @35799 NONAME
     ?GetOptionInteger@OpalMediaFormatInternal@@UBAHABVPString@@H@Z @35800 NONAME
@@ -37025,7 +37020,6 @@ EXPORTS
     ?InternalIsDescendant@H323_RTP_Session@@UBA_NPBD@Z @37683 NONAME
     ?InternalIsDescendant@H323_RTP_UDP@@UBA_NPBD@Z @37684 NONAME
     ?InternalIsDescendant@H323_T38Capability@@UBA_NPBD@Z @37685 NONAME
-    ?InternalIsDescendant@H323_T38Channel@@UBA_NPBD@Z @37686 NONAME
     ?InternalIsDescendant@H323_T38NonStandardCapability@@UBA_NPBD@Z @37687 NONAME
     ?InternalIsDescendant@H323_UserInputCapability@@UBA_NPBD@Z @37688 NONAME
     ?InternalIsDescendant@H45010_ArrayOf_MixedExtension@@UBA_NPBD@Z @37689 NONAME
@@ -37687,6 +37681,7 @@ EXPORTS
     ?IsAudioEnabled@OpalLineInterfaceDevice@@UBA_NI@Z @38358 NONAME
     ?IsAudioEnabled@OpalPluginLID@@UBA_NI@Z @38359 NONAME
     ?IsAuthReqFrame@IAX2FullFrame@@QAA_NXZ @38360 NONAME
+    ?IsAwaitingEstablishment@H245NegLogicalChannel@@QBA_NXZ @49233 NONAME
     ?IsBehindNAT@H323RegisteredEndPoint@@QBA_NXZ @38361 NONAME
     ?IsBehindNAT@H323Transaction@@QBA_NXZ @38362 NONAME
     ?IsCallAccepted@IAX2CallProcessor@@IAA_NXZ @38363 NONAME
@@ -37727,6 +37722,7 @@ EXPORTS
     ?IsEnabled@H281VideoSource@@QBA_NXZ @38393 NONAME
     ?IsEncrypted@IAX2Encryption@@QBA_NXZ @47785 NONAME
     ?IsEquivalent@OpalTransportAddress@@QBA_NABV1@_N@Z @48261 NONAME
+    ?IsEstablished@H245NegLogicalChannel@@QBA_NXZ @49234 NONAME
     ?IsEstablished@H323Connection@@QBA_NXZ @38396 NONAME
     ?IsEstablished@OpalCall@@QBA_NXZ @38397 NONAME
     ?IsEstablished@SIPDialogContext@@QBA_NXZ @47786 NONAME
@@ -38580,7 +38576,6 @@ EXPORTS
     ?OnReceivedPDU@H323_RTPChannel@@UAA_NABVH245_H2250LogicalChannelParameters@@AAI@Z @39123 NONAME
     ?OnReceivedPDU@H323_RTP_UDP@@UAA_NAAVH323_RTPChannel@@ABVH245_H2250LogicalChannelParameters@@AAI@Z @39124 NONAME
     ?OnReceivedPDU@H323_T38Capability@@UAA_NABVH245_DataApplicationCapability@@@Z @39125 NONAME
-    ?OnReceivedPDU@H323_T38Channel@@UAA_NABVH245_OpenLogicalChannel@@AAI@Z @39126 NONAME
     ?OnReceivedPDU@H323_UserInputCapability@@UAA_NABVH245_Capability@@@Z @39127 NONAME
     ?OnReceivedPDU@H323_UserInputCapability@@UAA_NABVH245_DataType@@_N@Z @39128 NONAME
     ?OnReceivedPDU@SIPConnection@@UAAXAAVSIP_PDU@@@Z @39129 NONAME
@@ -38929,7 +38924,6 @@ EXPORTS
     ?OnSendingPDU@H323_T38Capability@@UBA_NAAVH245_DataApplicationCapability@@@Z @39453 NONAME
     ?OnSendingPDU@H323_T38Capability@@UBA_NAAVH245_DataMode@@@Z @39454 NONAME
     ?OnSendingPDU@H323_T38Capability@@UBA_NAAVH245_DataProtocolCapability@@AAVH245_T38FaxProfile@@@Z @39455 NONAME
-    ?OnSendingPDU@H323_T38Channel@@UBA_NAAVH245_OpenLogicalChannel@@@Z @39456 NONAME
     ?OnSendingPDU@H323_UserInputCapability@@UBA_NAAVH245_Capability@@@Z @39457 NONAME
     ?OnSendingPDU@H323_UserInputCapability@@UBA_NAAVH245_DataType@@@Z @39458 NONAME
     ?OnSendingPDU@H323_UserInputCapability@@UBA_NAAVH245_ModeElement@@@Z @39459 NONAME
@@ -40182,7 +40176,6 @@ EXPORTS
     ?ReadUserInput@OpalManager@@UAA?AVPString@@AAVOpalConnection@@PBDII@Z @40752 NONAME
     ?Rebase@?$PMemBuffer@VPCriticalSection@@@@QAAXH@Z @40753 NONAME
     ?Receive@H323_ExternalRTPChannel@@UAAXXZ @40754 NONAME
-    ?Receive@H323_T38Channel@@UAAXXZ @40755 NONAME
     ?ReceivedHookFlash@IAX2CallProcessor@@IAAXXZ @40756 NONAME
     ?ReceivedPacket@OpalEchoCanceler@@MAAXAAVRTP_DataFrame@@H@Z @40757 NONAME
     ?ReceivedPacket@OpalRFC2833Proto@@MAAXAAVRTP_DataFrame@@H@Z @40758 NONAME
@@ -40340,7 +40333,6 @@ EXPORTS
     ?RequestFaxMode@OpalT38Connection@@IAAX_N@Z @45353 NONAME
     ?RequestModeChange@H323Connection@@UAA_NABVH245_ArrayOf_ModeDescription@@@Z @40894 NONAME
     ?RequestModeChange@H323Connection@@UAA_NABVPString@@@Z @40895 NONAME
-    ?RequestModeChangeT38@H323Connection@@UAA_NPBD@Z @40896 NONAME
     ?RequiresPatchThread@OpalH224MediaStream@@UBA_NXZ @47925 NONAME
     ?RequiresPatchThread@OpalIMMediaStream@@UBA_NXZ @47926 NONAME
     ?RequiresPatchThread@OpalLineMediaStream@@UBA_NPAVOpalMediaStream@@@Z @45354 NONAME
@@ -40998,7 +40990,6 @@ EXPORTS
     ?SetValue@PASN_BMPString@@QAAXABVPString@@@Z @41486 NONAME
     ?SetValue@PASN_Boolean@@QAAX_N@Z @41487 NONAME
     ?SetValue@PASN_Enumeration@@QAAXI@Z @41488 NONAME
-    ?SetValue@PAtomicInteger@@QAAXJ@Z @41489 NONAME
     ?SetVendorIdentifierInfo@H323EndPoint@@UBAXAAVH225_VendorIdentifier@@@Z @41490 NONAME
     ?SetVia@SIPMIMEInfo@@QAAXABVPString@@@Z @41491 NONAME
     ?SetViaList@SIPMIMEInfo@@QAAXABVPStringList@@@Z @41492 NONAME
@@ -41222,7 +41213,6 @@ EXPORTS
     ?TranslateIPAddress@OpalManager@@UAA_NAAVAddress@PIPSocket@@ABV23@@Z @41686 NONAME
     ?TranslateTCPAddress@H323EndPoint@@UAAXAAVAddress@PIPSocket@@ABV23@@Z @41687 NONAME
     ?Transmit@H323_ExternalRTPChannel@@UAAXXZ @41688 NONAME
-    ?Transmit@H323_T38Channel@@UAAXXZ @41689 NONAME
     ?TransmitClientFrame@OpalH224Handler@@QAA_NABVOpalH224Client@@AAVH224_Frame@@@Z @48020 NONAME
     ?TransmitFrame@OpalH224Handler@@AAAXAAVH224_Frame@@@Z @48021 NONAME
     ?TransmitFrameNow@IAX2Processor@@IAAXPAVIAX2Frame@@@Z @41692 NONAME
