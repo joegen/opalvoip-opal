@@ -1746,12 +1746,6 @@ class H323Connection : public OpalRTPConnection
 
   /**@name Other services */
   //@{
-    /**Request a mode change to T.38 data.
-      */
-    virtual PBoolean RequestModeChangeT38(
-      const char * capabilityNames = "T.38\nT38FaxUDP"
-    );
-
     /**Get separate H.235 authentication for the connection.
        This allows an individual ARQ to override the authentical credentials
        used in H.235 based RAS for this particular connection.
@@ -2019,7 +2013,6 @@ class H323Connection : public OpalRTPConnection
     PBoolean transmitterSidePaused;
     bool     remoteTransmitPaused;
     PBoolean earlyStart;
-    PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
     PBoolean       endSessionNeeded;
     PSyncPoint endSessionReceived;
@@ -2045,7 +2038,6 @@ class H323Connection : public OpalRTPConnection
     OpalMediaStreamPtr     fastStartMediaStream;
     
     // H.245 - compliant handling of session IDs
-    PBoolean defaultAudioSessionIDAssigned, defaultVideoSessionIDAssigned;
     unsigned nextSessionID;
     typedef std::map<unsigned, unsigned> InternalToExternalSessionIDMap;
     typedef std::map<OpalMediaType, unsigned> MediaTypeToInternalSessionIDMap;
