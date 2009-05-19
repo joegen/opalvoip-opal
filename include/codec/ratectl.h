@@ -37,6 +37,9 @@
 #endif
 
 #include <opal/buildopts.h>
+
+#if OPAL_VIDEO
+
 #include <rtp/rtp.h>
 
 extern double OpalCalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen);
@@ -224,5 +227,7 @@ namespace PWLibStupidLinkerHacks {
   extern int rateControlKickerVal;
 //  static class RateControlKicker { public: RateControlKicker() { rateControlKickerVal = 1; } } rateControlKicker;
 };
+
+#endif // OPAL_VIDEO
 
 #endif // OPAL_RATE_CONTROL_H
