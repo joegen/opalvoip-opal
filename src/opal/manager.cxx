@@ -712,7 +712,7 @@ PBoolean OpalManager::IsMediaBypassPossible(const OpalConnection & source,
 }
 
 
-PBoolean OpalManager::OnOpenMediaStream(OpalConnection & connection,
+PBoolean OpalManager::OnOpenMediaStream(OpalConnection & PTRACE_PARAM(connection),
                                         OpalMediaStream & PTRACE_PARAM(stream))
 {
   PTRACE(3, "OpalMan\tOnOpenMediaStream " << connection << ',' << stream);
