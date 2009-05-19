@@ -397,10 +397,10 @@ AC_DEFUN([OPAL_CHECK_PTLIB],
               exit 1; 
             fi
           else
-	    $4="$opal_ptlib_option"
-	    AC_SUBST($4)
+            tmp__=$4
+	    AC_SUBST(tmp__)
 	    if test "x$opal_ptlib_option" = "xyes" ; then
-	      AC_DEFINE([$4], [1], [$1])
+	      AC_DEFINE($tmp__, [1], [$1])
 	    fi
           fi
 	  
