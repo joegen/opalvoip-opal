@@ -369,7 +369,7 @@ bool OpalStandardVideoRateController::SkipFrame(bool & iFrame)
   return CheckBitRate(reporting, currentBitRate);
 }
 
-bool OpalStandardVideoRateController::CheckFrameRate(bool reporting)
+bool OpalStandardVideoRateController::CheckFrameRate(bool PTRACE_PARAM(reporting))
 {
   m_bitRateCalc.Flush();
 
@@ -413,7 +413,8 @@ bool OpalStandardVideoRateController::CheckFrameRate(bool reporting)
   return false;
 }
 
-bool OpalStandardVideoRateController::CheckBitRate(bool reporting, unsigned currentBitRate)
+bool OpalStandardVideoRateController::CheckBitRate(bool PTRACE_PARAM(reporting),
+                                                   unsigned PTRACE_PARAM(currentBitRate))
 {
   if (m_bitRateCalc.GetHistoryCount() == 0)
     return false;
