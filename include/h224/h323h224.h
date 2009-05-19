@@ -37,6 +37,8 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_HAS_H224
+
 #include <h323/h323caps.h>
 
 #include <h224/h224.h>
@@ -104,5 +106,8 @@ public:
 #define OPAL_REGISTER_H224_CAPABILITY() \
   H323_REGISTER_CAPABILITY(H323_H224_AnnexQCapability, GetOpalH224_H323AnnexQ().GetName()); \
   H323_REGISTER_CAPABILITY(H323_H224_HDLCTunnelingCapability, GetOpalH224_HDLCTunneling().GetName()); \
+
+
+#endif // OPAL_HAS_H224
 
 #endif // OPAL_H224_H323H224_H
