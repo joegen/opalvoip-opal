@@ -236,10 +236,10 @@ void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 }
 
 
-void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool timeout)
+void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
 {
   OpalMediaStatistics stats;
-  OpalMediaStreamPtr stream = connection.GetMediaStream(OpalMediaType::Fax(), true);
+  OpalMediaStreamPtr stream = connection.GetMediaStream(OpalMediaType::Fax(), false);
   if (stream != NULL)
     stream->GetStatistics(stats);
   switch (stats.m_fax.m_result) {
@@ -264,7 +264,7 @@ void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool timeout)
     default :
       cout << " T.30 error " << stats.m_fax.m_result << ' ';
   }
-  OpalFaxEndPoint::OnFaxCompleted(connection, timeout);
+  OpalFaxEndPoint::OnFaxCompleted(connection, failed);
 }
 
 

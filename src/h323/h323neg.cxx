@@ -633,6 +633,8 @@ PBoolean H245NegLogicalChannel::CloseWhileLocked()
   else {
     reply.BuildCloseLogicalChannel(channelNumber);
     state = e_AwaitingRelease;
+    if (channel != NULL)
+      channel->Close();
   }
 
   return connection.WriteControlPDU(reply);
@@ -1215,10 +1217,13 @@ H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId
   PINDEX i;
   H323Channel::Directions desiredDirection = fromRemote ? H323Channel::IsReceiver : H323Channel::IsTransmitter;
   for (i = 0; i < GetSize(); i++) {
-    H323Channel * channel = channels.GetDataAt(i).GetChannel();
-    if (channel != NULL && channel->GetSessionID() == rtpSessionId &&
-                           channel->GetDirection() == desiredDirection)
-      return channel;
+    H245NegLogicalChannel & logChan = channels.GetDataAt(i);
+    if (logChan.IsAwaitingEstablishment() || logChan.IsEstablished()) {
+      H323Channel * channel = logChan.GetChannel();
+      if (channel != NULL && channel->GetSessionID() == rtpSessionId &&
+                             channel->GetDirection() == desiredDirection)
+        return channel;
+    }
   }
 
   return NULL;
@@ -1256,8 +1261,10 @@ H245NegRequestMode::H245NegRequestMode(H323EndPoint & end, H323Connection & conn
 PBoolean H245NegRequestMode::StartRequest(const PString & newModes)
 {
   PStringArray modes = newModes.Lines();
-  if (modes.IsEmpty())
-    return PFalse;
+  if (modes.IsEmpty()) {
+    PTRACE(2, "H245\tNo new mode to request");
+    return false;
+  }
 
   H245_ArrayOf_ModeDescription descriptions;
   PINDEX modeCount = 0;
@@ -1285,8 +1292,10 @@ PBoolean H245NegRequestMode::StartRequest(const PString & newModes)
     }
   }
 
-  if (modeCount == 0)
-    return PFalse;
+  if (modeCount == 0) {
+    PTRACE(2, "H245\tUnsupported new mode to request");
+    return false;
+  }
 
   return StartRequest(descriptions);
 }
@@ -1297,8 +1306,10 @@ PBoolean H245NegRequestMode::StartRequest(const H245_ArrayOf_ModeDescription & n
   PTRACE(3, "H245\tStarted request mode: outSeq=" << outSequenceNumber
          << (awaitingResponse ? " awaitingResponse" : " idle"));
 
-  if (awaitingResponse)
-    return PFalse;
+  if (awaitingResponse) {
+    PTRACE(2, "H245\tAwaiting response to previous mode request");
+    return false;
+  }
 
   // Initiate a mode request
   outSequenceNumber = (outSequenceNumber+1)%256;
