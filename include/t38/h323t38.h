@@ -43,7 +43,6 @@
 
 
 class H245_T38FaxProfile;
-class OpalT38Protocol;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -209,92 +208,6 @@ class H323_T38NonStandardCapability : public H323NonStandardDataCapability
                                       ///<  Parameters for channel
     ) const;
   //@}
-};
-
-
-/**This class describes the T.38 logical channel.
- */
-class H323_T38Channel : public H323DataChannel
-{
-    PCLASSINFO(H323_T38Channel, H323DataChannel);
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new channel.
-     */
-    H323_T38Channel(
-      H323Connection & connection,       ///<  Connection to endpoint for channel
-      const H323Capability & capability, ///<  Capability channel is using
-      Directions direction,              ///<  Direction of channel
-      unsigned sessionID,                ///<  Session ID for channel
-      H323_T38Capability::TransportMode mode
-    );
-    ~H323_T38Channel();
-  //@}
-
-  /**@name Overrides from class H323Channel */
-  //@{
-    /**Fill out the OpenLogicalChannel PDU for the particular channel type.
-     */
-    virtual PBoolean OnSendingPDU(
-      H245_OpenLogicalChannel & openPDU  ///<  Open PDU to send. 
-    ) const;
-
-    /**This is called after a request to create a channel occurs from the
-       local machine via the H245LogicalChannelDict::Open() function, and
-       the request has been acknowledged by the remote endpoint.
-
-       The default makes sure the parameters are compatible and passes on
-       the PDU to the rtp session.
-     */
-    virtual PBoolean OnReceivedPDU(
-      const H245_OpenLogicalChannel & pdu,    ///<  Open PDU
-      unsigned & errorCode                    ///<  Error code on failure
-    );
-
-    /**This is called to clean up any threads on connection termination.
-     */
-    virtual void Close();
-
-    /**Handle channel data reception.
-
-       This is called by the thread started by the Start() function and is
-       a loop reading from the transport and calling HandlePacket() for each
-       PDU read.
-      */
-    virtual void Receive();
-
-    /**Handle channel data transmission.
-
-       This is called by the thread started by the Start() function and is
-       typically a loop reading from the codec and writing to the transport
-       (eg an RTP_session).
-      */
-    virtual void Transmit();
-
-    /**Create the H323Listener class to be used.
-       This is called on receipt of an OpenLogicalChannel request.
-
-       The default behaviour creates a compatible listener using the
-       connections control channel as a basis and returns PTrue if successful.
-      */
-    virtual PBoolean CreateListener();
-
-    /**Create the H323Transport class to be used.
-       This is called on receipt of an OpenLogicalChannelAck response. It
-       should not return PTrue unless the transport member variable is set.
-
-       The default behaviour uses the connection signalling channel to create
-       the transport and returns PTrue if successful.
-      */
-    virtual PBoolean CreateTransport();
-  //@}
-
-    OpalT38Protocol * GetHandler() const { return t38handler; }
-
-  protected:
-    PBoolean              usesTCP;
-    OpalT38Protocol * t38handler;
 };
 
 
