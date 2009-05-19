@@ -4493,6 +4493,9 @@ EXPORTS
     ??0OpalIMMediaType@@QAA@PBD0I@Z @45708 NONAME
     ??0OpalInternalIPTransport@@QAA@XZ @4357 NONAME
     ??0OpalInternalTransport@@QAA@XZ @4358 NONAME
+    ??0OpalIVRConnection@@QAA@AAVOpalCall@@AAVOpalIVREndPoint@@ABVPString@@PAX2PAVStringOptions@OpalConnection@@@Z @48462 NONAME
+    ??0OpalIVREndPoint@@QAA@AAVOpalManager@@PBD@Z @48463 NONAME
+    ??0OpalIVRMediaStream@@QAA@AAVOpalIVRConnection@@ABVOpalMediaFormat@@I_NAAVPVXMLSession@@@Z @48464 NONAME
     ??0OpalJitterBuffer@@QAA@IIIH@Z @4362 NONAME
     ??0OpalLIDRegistration@@QAA@PBD@Z @4364 NONAME
     ??0OpalLine@@QAA@AAVOpalLineInterfaceDevice@@IPBD@Z @4365 NONAME
@@ -4675,6 +4678,7 @@ EXPORTS
     ??0PCSSIMStream@@QAA@AAVOpalConnection@@ABVOpalMediaFormat@@I_N@Z @45739 NONAME
     ??0PDUThreadPool@SIPEndPoint@@QAA@XZ @47752 NONAME
     ??0PendingRtpDataFrames@@QAA@XZ @4507 NONAME
+    ??0PIPSocketAddressAndPort@@QAA@ABVPString@@GD@Z @48465 NONAME
     ??0PluginLoader@@QAA@XZ @4509 NONAME
     ??0POrdinalKey@@QAA@ABV0@@Z @4510 NONAME
     ??0PortInfo@OpalManager@@QAA@XZ @4511 NONAME
@@ -6848,6 +6852,9 @@ EXPORTS
     ??1OpalIMMediaType@@UAA@XZ @45876 NONAME
     ??1OpalInternalIPTransport@@UAA@XZ @6663 NONAME
     ??1OpalInternalTransport@@UAA@XZ @6664 NONAME
+    ??1OpalIVRConnection@@UAA@XZ @48466 NONAME
+    ??1OpalIVREndPoint@@UAA@XZ @48467 NONAME
+    ??1OpalIVRMediaStream@@UAA@XZ @48468 NONAME
     ??1OpalJitterBuffer@@UAA@XZ @6668 NONAME
     ??1OpalLIDRegistration@@UAA@XZ @6670 NONAME
     ??1OpalLine@@UAA@XZ @6671 NONAME
@@ -6973,6 +6980,7 @@ EXPORTS
     ??1PCSSIMStream@@UAA@XZ @45891 NONAME
     ??1PDUThreadPool@SIPEndPoint@@UAA@XZ @47803 NONAME
     ??1PendingRtpDataFrames@@UAA@XZ @6765 NONAME
+    ??1PIPSocketAddressAndPort@@QAA@XZ @48469 NONAME
     ??1PluginLoader@@UAA@XZ @6766 NONAME
     ??1PortInfo@OpalManager@@QAA@XZ @6767 NONAME
     ??1PProcess_C@@UAA@XZ @42572 NONAME
@@ -11588,6 +11596,9 @@ EXPORTS
     ??_7OpalIMMediaType@@6B@ @46093 NONAME
     ??_7OpalInternalIPTransport@@6B@ @11517 NONAME
     ??_7OpalInternalTransport@@6B@ @11518 NONAME
+    ??_7OpalIVRConnection@@6B@ @48470 NONAME
+    ??_7OpalIVREndPoint@@6B@ @48471 NONAME
+    ??_7OpalIVRMediaStream@@6B@ @48472 NONAME
     ??_7OpalJitterBuffer@@6B@ @11522 NONAME
     ??_7OpalLIDRegistration@@6B@ @11524 NONAME
     ??_7OpalLine@@6B@ @11525 NONAME
@@ -13696,6 +13707,9 @@ EXPORTS
     ??_R0?AVOpalIMMediaType@@@8 @46187 NONAME
     ??_R0?AVOpalInternalIPTransport@@@8 @13661 NONAME
     ??_R0?AVOpalInternalTransport@@@8 @13662 NONAME
+    ??_R0?AVOpalIVRConnection@@@8 @48473 NONAME
+    ??_R0?AVOpalIVREndPoint@@@8 @48474 NONAME
+    ??_R0?AVOpalIVRMediaStream@@@8 @48475 NONAME
     ??_R0?AVOpalJitterBuffer@@@8 @13666 NONAME
     ??_R0?AVOpalLIDRegistration@@@8 @13668 NONAME
     ??_R0?AVOpalLine@@@8 @13669 NONAME
@@ -15782,6 +15796,9 @@ EXPORTS
     ??_R1A@?0A@EA@OpalIMMediaType@@8 @46277 NONAME
     ??_R1A@?0A@EA@OpalInternalIPTransport@@8 @15782 NONAME
     ??_R1A@?0A@EA@OpalInternalTransport@@8 @15783 NONAME
+    ??_R1A@?0A@EA@OpalIVRConnection@@8 @48476 NONAME
+    ??_R1A@?0A@EA@OpalIVREndPoint@@8 @48477 NONAME
+    ??_R1A@?0A@EA@OpalIVRMediaStream@@8 @48478 NONAME
     ??_R1A@?0A@EA@OpalJitterBuffer@@8 @15787 NONAME
     ??_R1A@?0A@EA@OpalLIDRegistration@@8 @15789 NONAME
     ??_R1A@?0A@EA@OpalLine@@8 @15790 NONAME
@@ -17890,6 +17907,9 @@ EXPORTS
     ??_R2OpalIMMediaType@@8 @46372 NONAME
     ??_R2OpalInternalIPTransport@@8 @17918 NONAME
     ??_R2OpalInternalTransport@@8 @17919 NONAME
+    ??_R2OpalIVRConnection@@8 @48479 NONAME
+    ??_R2OpalIVREndPoint@@8 @48480 NONAME
+    ??_R2OpalIVRMediaStream@@8 @48481 NONAME
     ??_R2OpalJitterBuffer@@8 @17923 NONAME
     ??_R2OpalLIDRegistration@@8 @17925 NONAME
     ??_R2OpalLine@@8 @17926 NONAME
@@ -19975,6 +19995,9 @@ EXPORTS
     ??_R3OpalIMMediaType@@8 @46464 NONAME
     ??_R3OpalInternalIPTransport@@8 @20039 NONAME
     ??_R3OpalInternalTransport@@8 @20040 NONAME
+    ??_R3OpalIVRConnection@@8 @48482 NONAME
+    ??_R3OpalIVREndPoint@@8 @48483 NONAME
+    ??_R3OpalIVRMediaStream@@8 @48484 NONAME
     ??_R3OpalJitterBuffer@@8 @20044 NONAME
     ??_R3OpalLIDRegistration@@8 @20046 NONAME
     ??_R3OpalLine@@8 @20047 NONAME
@@ -22077,6 +22100,9 @@ EXPORTS
     ??_R4OpalIMMediaType@@6B@ @46564 NONAME
     ??_R4OpalInternalIPTransport@@6B@ @22171 NONAME
     ??_R4OpalInternalTransport@@6B@ @22172 NONAME
+    ??_R4OpalIVRConnection@@6B@ @48485 NONAME
+    ??_R4OpalIVREndPoint@@6B@ @48486 NONAME
+    ??_R4OpalIVRMediaStream@@6B@ @48487 NONAME
     ??_R4OpalJitterBuffer@@6B@ @22176 NONAME
     ??_R4OpalLIDRegistration@@6B@ @22178 NONAME
     ??_R4OpalLine@@6B@ @22179 NONAME
@@ -24519,6 +24545,9 @@ EXPORTS
     ?Class@OpalIAX2MediaStream@@SAPBDXZ @24687 NONAME
     ?Class@OpalInternalIPTransport@@SAPBDXZ @24688 NONAME
     ?Class@OpalInternalTransport@@SAPBDXZ @24689 NONAME
+    ?Class@OpalIVRConnection@@SAPBDXZ @48488 NONAME
+    ?Class@OpalIVREndPoint@@SAPBDXZ @48489 NONAME
+    ?Class@OpalIVRMediaStream@@SAPBDXZ @48490 NONAME
     ?Class@OpalJitterBuffer@@SAPBDXZ @24693 NONAME
     ?Class@OpalLIDRegistration@@SAPBDXZ @24695 NONAME
     ?Class@OpalLine@@SAPBDXZ @24696 NONAME
@@ -28483,6 +28512,9 @@ EXPORTS
     ?CompareObjectMemoryDirect@OpalIAX2MediaStream@@UBA?AW4Comparison@PObject@@ABV3@@Z @29107 NONAME
     ?CompareObjectMemoryDirect@OpalInternalIPTransport@@UBA?AW4Comparison@PObject@@ABV3@@Z @29108 NONAME
     ?CompareObjectMemoryDirect@OpalInternalTransport@@UBA?AW4Comparison@PObject@@ABV3@@Z @29109 NONAME
+    ?CompareObjectMemoryDirect@OpalIVRConnection@@UBA?AW4Comparison@PObject@@ABV3@@Z @48491 NONAME
+    ?CompareObjectMemoryDirect@OpalIVREndPoint@@UBA?AW4Comparison@PObject@@ABV3@@Z @48492 NONAME
+    ?CompareObjectMemoryDirect@OpalIVRMediaStream@@UBA?AW4Comparison@PObject@@ABV3@@Z @48493 NONAME
     ?CompareObjectMemoryDirect@OpalJitterBuffer@@UBA?AW4Comparison@PObject@@ABV3@@Z @29113 NONAME
     ?CompareObjectMemoryDirect@OpalLIDRegistration@@UBA?AW4Comparison@PObject@@ABV3@@Z @29115 NONAME
     ?CompareObjectMemoryDirect@OpalLine@@UBA?AW4Comparison@PObject@@ABV3@@Z @29116 NONAME
@@ -28882,11 +28914,13 @@ EXPORTS
     ?CreateConnection@H323EndPoint@@UAAPAVH323Connection@@AAVOpalCall@@ABVPString@@PAXAAVOpalTransport@@1ABVH323TransportAddress@@PAVH323SignalPDU@@IPAVStringOptions@OpalConnection@@@Z @29436 NONAME
     ?CreateConnection@IAX2EndPoint@@UAAPAVIAX2Connection@@AAVOpalCall@@ABVPString@@PAX11@Z @29437 NONAME
     ?CreateConnection@OpalFaxEndPoint@@UAAPAVOpalFaxConnection@@AAVOpalCall@@PAXPAVStringOptions@OpalConnection@@ABVPString@@_N4@Z @46760 NONAME
+    ?CreateConnection@OpalIVREndPoint@@UAAPAVOpalIVRConnection@@AAVOpalCall@@ABVPString@@PAX1PAVStringOptions@OpalConnection@@@Z @48494 NONAME
     ?CreateConnection@OpalLineEndPoint@@UAAPAVOpalLineConnection@@AAVOpalCall@@AAVOpalLine@@PAXABVPString@@@Z @43981 NONAME
     ?CreateConnection@OpalLocalEndPoint@@UAAPAVOpalLocalConnection@@AAVOpalCall@@PAX@Z @43982 NONAME
     ?CreateConnection@OpalPCSSEndPoint@@UAAPAVOpalPCSSConnection@@AAVOpalCall@@ABVPString@@1PAX@Z @29441 NONAME
     ?CreateConnection@OpalPCSSEndPoint@@UAAPAVOpalPCSSConnection@@AAVOpalCall@@ABVPString@@1PAXIPAVStringOptions@OpalConnection@@@Z @46761 NONAME
     ?CreateConnection@SIPEndPoint@@UAAPAVSIPConnection@@AAVOpalCall@@ABVPString@@PAXABVSIPURL@@PAVOpalTransport@@PAVSIP_PDU@@IPAVStringOptions@OpalConnection@@@Z @29443 NONAME
+    ?CreateConnectionToken@OpalIVREndPoint@@UAA?AVPString@@XZ @48495 NONAME
     ?CreateCryptoToken@H235Authenticator@@UAAPAVH225_CryptoH323Token@@XZ @29445 NONAME
     ?CreateCryptoToken@H235AuthSimpleMD5@@UAAPAVH225_CryptoH323Token@@XZ @29446 NONAME
     ?CreateDescriptor@H323PeerElement@@MAAPAVH323PeerElementDescriptor@@ABVPGloballyUniqueID@@@Z @29447 NONAME
@@ -28944,6 +28978,7 @@ EXPORTS
     ?CreateMediaStream@IAX2Connection@@UAAPAVOpalMediaStream@@ABVOpalMediaFormat@@I_N@Z @29495 NONAME
     ?CreateMediaStream@OpalConnection@@UAAPAVOpalMediaStream@@ABVOpalMediaFormat@@I_N@Z @29496 NONAME
     ?CreateMediaStream@OpalFaxConnection@@UAAPAVOpalMediaStream@@ABVOpalMediaFormat@@I_N@Z @29497 NONAME
+    ?CreateMediaStream@OpalIVRConnection@@UAAPAVOpalMediaStream@@ABVOpalMediaFormat@@I_N@Z @48496 NONAME
     ?CreateMediaStream@OpalLineConnection@@UAAPAVOpalMediaStream@@ABVOpalMediaFormat@@I_N@Z @29499 NONAME
     ?CreateMediaStream@OpalLocalConnection@@UAAPAVOpalMediaStream@@ABVOpalMediaFormat@@I_N@Z @43992 NONAME
     ?CreateMediaStream@OpalPCSSConnection@@UAAPAVOpalMediaStream@@ABVOpalMediaFormat@@I_N@Z @29500 NONAME
@@ -31359,6 +31394,7 @@ EXPORTS
     ?GetAcceptEncoding@SIPMIMEInfo@@QBA?AVPString@@XZ @32015 NONAME
     ?GetAcceptLanguage@SIPMIMEInfo@@QBA?AVPString@@XZ @32016 NONAME
     ?GetAckTimeout@SIPEndPoint@@QBAABVPTimeInterval@@XZ @32017 NONAME
+    ?GetAddress@PIPSocketAddressAndPort@@QBAABVAddress@PIPSocket@@XZ @48497 NONAME
     ?GetAddresses@SIPHandlersList@@QBA?AVPStringList@@_NW4Methods@SIP_PDU@@ABVPString@@@Z @46860 NONAME
     ?GetAddressOfRecord@SIPHandler@@UAAABVSIPURL@@XZ @46861 NONAME
     ?GetAdjustedIpAndPort@OpalInternalIPTransport@@SA_NABVOpalTransportAddress@@AAVOpalEndPoint@@W4BindOptions@2@AAVAddress@PIPSocket@@AAGAA_N@Z @32018 NONAME
@@ -31392,6 +31428,7 @@ EXPORTS
     ?GetAllTypes@OpalLineInterfaceDevice@@SA?AVPStringList@@XZ @32038 NONAME
     ?GetAndDelete@SafeString@@QAA?AVPString@@XZ @32039 NONAME
     ?GetAndLockSinkTranscoder@OpalMediaPatch@@UBAPAVOpalTranscoder@@H@Z @32040 NONAME
+    ?GetAndLockVXMLChannel@PVXMLSession@@QAAPAVPVXMLChannel@@XZ @48498 NONAME
     ?GetAnnexQEncodedSize@Q922_Frame@@QBAHXZ @46867 NONAME
     ?GetApplicationInfo@H323RegisteredEndPoint@@QBA?AVPCaselessString@@XZ @32042 NONAME
     ?GetAt@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UBAPAVH245NegLogicalChannel@@ABVH323ChannelNumber@@@Z @32043 NONAME
@@ -33094,6 +33131,9 @@ EXPORTS
     ?GetClass@OpalIAX2MediaStream@@UBAPBDI@Z @33932 NONAME
     ?GetClass@OpalInternalIPTransport@@UBAPBDI@Z @33933 NONAME
     ?GetClass@OpalInternalTransport@@UBAPBDI@Z @33934 NONAME
+    ?GetClass@OpalIVRConnection@@UBAPBDI@Z @48499 NONAME
+    ?GetClass@OpalIVREndPoint@@UBAPBDI@Z @48500 NONAME
+    ?GetClass@OpalIVRMediaStream@@UBAPBDI@Z @48501 NONAME
     ?GetClass@OpalJitterBuffer@@UBAPBDI@Z @33938 NONAME
     ?GetClass@OpalLIDRegistration@@UBAPBDI@Z @33940 NONAME
     ?GetClass@OpalLine@@UBAPBDI@Z @33941 NONAME
@@ -34026,11 +34066,13 @@ EXPORTS
     ?GetDefaultSessionId@OpalMediaTypeDefinition@@QBAIXZ @46908 NONAME
     ?GetDefaultSessionId@OpalMediaTypeDefinition@@SAIABVOpalMediaType@@@Z @44287 NONAME
     ?GetDefaultSignalPort@OpalEndPoint@@QBAGXZ @34957 NONAME
+    ?GetDefaultTextToSpeech@OpalIVREndPoint@@QBA?AVPString@@XZ @48502 NONAME
     ?GetDefaultTransport@H323EndPoint@@UBA?AVPString@@XZ @34959 NONAME
     ?GetDefaultTransport@OpalEndPoint@@UBA?AVPString@@XZ @34960 NONAME
     ?GetDefaultTransport@SIPEndPoint@@UBA?AVPString@@XZ @34961 NONAME
     ?GetDefaultUdpPort@H323GatekeeperServer@@UAAGXZ @34962 NONAME
     ?GetDefaultUserName@OpalManager@@QBAABVPString@@XZ @34963 NONAME
+    ?GetDefaultVXML@OpalIVREndPoint@@QBAABVPString@@XZ @48503 NONAME
     ?GetDefinition@OpalMediaType@@QBAPAVOpalMediaTypeDefinition@@XZ @44288 NONAME
     ?GetDefinition@OpalMediaType@@SAPAVOpalMediaTypeDefinition@@ABV1@@Z @44289 NONAME
     ?GetDescription@OpalPluginLID@@UBA?AVPString@@XZ @34966 NONAME
@@ -34395,6 +34437,7 @@ EXPORTS
     ?GetLocalNumber@IAX2EndPoint@@QAA?AVPString@@XZ @35274 NONAME
     ?GetLocalPartyName@OpalConnection@@QBAABVPString@@XZ @35276 NONAME
     ?GetLocalPartyURL@OpalConnection@@UBA?AVPString@@XZ @35277 NONAME
+    ?GetLocalPartyURL@OpalIVRConnection@@UBA?AVPString@@XZ @48504 NONAME
     ?GetLocalPartyURL@SIPConnection@@MBA?AVPString@@XZ @46956 NONAME
     ?GetLocalTag@SIPDialogContext@@QBAABVPString@@XZ @46957 NONAME
     ?GetLocalURI@SIPDialogContext@@QBAABVSIPURL@@XZ @46958 NONAME
@@ -34439,6 +34482,7 @@ EXPORTS
     ?GetMediaDescriptions@SDPSessionDescription@@QBAABV?$PArray@VSDPMediaDescription@@@@XZ @44323 NONAME
     ?GetMediaFormat@H323Capability@@QBA?AVOpalMediaFormat@@XZ @35308 NONAME
     ?GetMediaFormat@OpalMediaStream@@UBA?AVOpalMediaFormat@@XZ @35309 NONAME
+    ?GetMediaFormat@PVXMLChannel@@QBAABVPString@@XZ @48505 NONAME
     ?GetMediaFormat@SDPMediaFormat@@QBAABVOpalMediaFormat@@XZ @35311 NONAME
     ?GetMediaFormatMask@OpalManager@@QBAABVPStringArray@@XZ @35312 NONAME
     ?GetMediaFormatOrder@OpalManager@@QBAABVPStringArray@@XZ @35313 NONAME
@@ -34451,6 +34495,8 @@ EXPORTS
     ?GetMediaFormats@OpalEndPoint@@UBA?AVOpalMediaFormatList@@XZ @44325 NONAME
     ?GetMediaFormats@OpalFaxConnection@@UBA?AVOpalMediaFormatList@@XZ @35320 NONAME
     ?GetMediaFormats@OpalFaxEndPoint@@UBA?AVOpalMediaFormatList@@XZ @35321 NONAME
+    ?GetMediaFormats@OpalIVRConnection@@UBA?AVOpalMediaFormatList@@XZ @48506 NONAME
+    ?GetMediaFormats@OpalIVREndPoint@@UBA?AVOpalMediaFormatList@@XZ @48507 NONAME
     ?GetMediaFormats@OpalLineConnection@@UBA?AVOpalMediaFormatList@@XZ @35325 NONAME
     ?GetMediaFormats@OpalLineEndPoint@@UBA?AVOpalMediaFormatList@@XZ @44326 NONAME
     ?GetMediaFormats@OpalPCSSEndPoint@@UBA?AVOpalMediaFormatList@@XZ @35327 NONAME
@@ -34856,6 +34902,7 @@ EXPORTS
     ?GetSessionID@RTP_Session@@QBAIXZ @35661 NONAME
     ?GetSessionIDToMediaTypeMap@OpalMediaTypeDefinition@@KAAAV?$map@IVOpalMediaType@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIVOpalMediaType@@@std@@@3@@std@@XZ @44392 NONAME
     ?GetSessionManager@SIPInvite@@QBAABVOpalRTPSessionManager@@XZ @47004 NONAME
+    ?GetSessionVars@PVXMLSession@@QAAAAVPStringToString@@XZ @48508 NONAME
     ?GetSignalAddress@H323RegisteredEndPoint@@QBA?AVH323TransportAddress@@H@Z @35664 NONAME
     ?GetSignalAddressCount@H323RegisteredEndPoint@@QBAHXZ @35665 NONAME
     ?GetSignalAddresses@H323RegisteredEndPoint@@QBAABVH323TransportAddressArray@@XZ @35666 NONAME
@@ -34969,6 +35016,7 @@ EXPORTS
     ?GetTCPPortMax@OpalManager@@QBAGXZ @35748 NONAME
     ?GetTerminalType@H323EndPoint@@QBA?AW4TerminalTypes@1@XZ @35749 NONAME
     ?GetTextString@IAX2FullFrameText@@QBA?AVPString@@XZ @35750 NONAME
+    ?GetTextToSpeech@PVXMLSession@@QAAPAVPTextToSpeech@@XZ @48509 NONAME
     ?GetTiltDirection@H281_Frame@@QBA?AW4TiltDirection@1@XZ @35752 NONAME
     ?GetTimeout@H281_Frame@@QBAEXZ @35753 NONAME
     ?GetTimeStamp@IAX2Frame@@QAAKXZ @35754 NONAME
@@ -36887,6 +36935,9 @@ EXPORTS
     ?InternalIsDescendant@OpalIAX2MediaStream@@UBA_NPBD@Z @37806 NONAME
     ?InternalIsDescendant@OpalInternalIPTransport@@UBA_NPBD@Z @37807 NONAME
     ?InternalIsDescendant@OpalInternalTransport@@UBA_NPBD@Z @37808 NONAME
+    ?InternalIsDescendant@OpalIVRConnection@@UBA_NPBD@Z @48510 NONAME
+    ?InternalIsDescendant@OpalIVREndPoint@@UBA_NPBD@Z @48511 NONAME
+    ?InternalIsDescendant@OpalIVRMediaStream@@UBA_NPBD@Z @48512 NONAME
     ?InternalIsDescendant@OpalJitterBuffer@@UBA_NPBD@Z @37812 NONAME
     ?InternalIsDescendant@OpalLIDRegistration@@UBA_NPBD@Z @37814 NONAME
     ?InternalIsDescendant@OpalLine@@UBA_NPBD@Z @37815 NONAME
@@ -37199,6 +37250,7 @@ EXPORTS
     ?IsNetworkConnection@H323Connection@@UBA_NXZ @44554 NONAME
     ?IsNetworkConnection@IAX2Connection@@UBA_NXZ @44555 NONAME
     ?IsNetworkConnection@OpalFaxConnection@@UBA_NXZ @44556 NONAME
+    ?IsNetworkConnection@OpalIVRConnection@@UBA_NXZ @48513 NONAME
     ?IsNetworkConnection@OpalLineConnection@@UBA_NXZ @44558 NONAME
     ?IsNetworkConnection@OpalLocalConnection@@UBA_NXZ @44559 NONAME
     ?IsNetworkConnection@OpalPCSSConnection@@UBA_NXZ @44560 NONAME
@@ -37263,6 +37315,7 @@ EXPORTS
     ?IsSynchronous@OpalH224MediaStream@@UBA_NXZ @47092 NONAME
     ?IsSynchronous@OpalIAX2MediaStream@@UBA_NXZ @38135 NONAME
     ?IsSynchronous@OpalIMMediaStream@@UBA_NXZ @47093 NONAME
+    ?IsSynchronous@OpalIVRMediaStream@@UBA_NXZ @48514 NONAME
     ?IsSynchronous@OpalLineMediaStream@@UBA_NXZ @38137 NONAME
     ?IsSynchronous@OpalLocalEndPoint@@UBA_NXZ @44572 NONAME
     ?IsSynchronous@OpalLocalMediaStream@@UBA_NXZ @44573 NONAME
@@ -37386,6 +37439,7 @@ EXPORTS
     ?MakeConnection@H323EndPoint@@UAA_NAAVOpalCall@@ABVPString@@PAXIPAVStringOptions@OpalConnection@@@Z @38239 NONAME
     ?MakeConnection@IAX2EndPoint@@UAA_NAAVOpalCall@@ABVPString@@PAXIPAVStringOptions@OpalConnection@@@Z @38240 NONAME
     ?MakeConnection@OpalFaxEndPoint@@UAA_NAAVOpalCall@@ABVPString@@PAXIPAVStringOptions@OpalConnection@@@Z @38242 NONAME
+    ?MakeConnection@OpalIVREndPoint@@UAA_NAAVOpalCall@@ABVPString@@PAXIPAVStringOptions@OpalConnection@@@Z @48515 NONAME
     ?MakeConnection@OpalLineEndPoint@@UAA_NAAVOpalCall@@ABVPString@@PAXIPAVStringOptions@OpalConnection@@@Z @44588 NONAME
     ?MakeConnection@OpalLocalEndPoint@@UAA_NAAVOpalCall@@ABVPString@@PAXIPAVStringOptions@OpalConnection@@@Z @44589 NONAME
     ?MakeConnection@OpalManager@@UAA_NAAVOpalCall@@ABVPString@@PAXIPAVStringOptions@OpalConnection@@@Z @38245 NONAME
@@ -37655,6 +37709,7 @@ EXPORTS
     ?OnEstablished@OpalCall@@UAA_NAAVOpalConnection@@@Z @38466 NONAME
     ?OnEstablished@OpalConnection@@UAAXXZ @38467 NONAME
     ?OnEstablished@OpalEndPoint@@UAAXAAVOpalConnection@@@Z @38468 NONAME
+    ?OnEstablished@OpalIVRConnection@@UAAXXZ @48516 NONAME
     ?OnEstablished@OpalManager@@UAAXAAVOpalConnection@@@Z @38470 NONAME
     ?OnEstablished@OpalT38Connection@@UAAXXZ @47132 NONAME
     ?OnEstablishedCall@OpalCall@@UAAXXZ @38471 NONAME
@@ -37744,6 +37799,7 @@ EXPORTS
     ?OnMediaControlXML@SIPConnection@@UAA_NAAVSIP_PDU@@@Z @38541 NONAME
     ?OnMediaPatchStart@OpalConnection@@UAAXI_N@Z @44644 NONAME
     ?OnMediaPatchStop@OpalConnection@@UAAXI_N@Z @44645 NONAME
+    ?OnMediaPatchStop@OpalIVRConnection@@UAAXI_N@Z @48517 NONAME
     ?OnMediaPatchStop@OpalT38Connection@@UAAXI_N@Z @48323 NONAME
     ?OnMessageFailed@SIPEndPoint@@UAAXABVSIPURL@@W4StatusCodes@SIP_PDU@@@Z @38542 NONAME
     ?OnMessageReceived@SIPConnection@@UAAXABVSIPURL@@ABVSIP_PDU@@@Z @47135 NONAME
@@ -38500,6 +38556,7 @@ EXPORTS
     ?Open@Mixer_T@OpalWAVRecordManager@@QAA_NABVPFilePath@@_N@Z @47184 NONAME
     ?Open@OpalFaxMediaStream@@UAA_NXZ @39244 NONAME
     ?Open@OpalIAX2MediaStream@@UAA_NXZ @39245 NONAME
+    ?Open@OpalIVRMediaStream@@UAA_NXZ @48518 NONAME
     ?Open@OpalLineMediaStream@@UAA_NXZ @39247 NONAME
     ?Open@OpalListenerTCP@@UAA_NABVPNotifier@@W4ThreadMode@OpalListener@@@Z @39248 NONAME
     ?Open@OpalListenerUDP@@UAA_NABVPNotifier@@W4ThreadMode@OpalListener@@@Z @39249 NONAME
@@ -39876,6 +39933,7 @@ EXPORTS
     ?SendUserInputString@H323Connection@@UAA_NABVPString@@@Z @40640 NONAME
     ?SendUserInputString@IAX2Connection@@UAA_NABVPString@@@Z @40641 NONAME
     ?SendUserInputString@OpalConnection@@UAA_NABVPString@@@Z @40642 NONAME
+    ?SendUserInputString@OpalIVRConnection@@UAA_NABVPString@@@Z @48519 NONAME
     ?SendUserInputString@OpalLineConnection@@UAA_NABVPString@@@Z @40644 NONAME
     ?SendUserInputString@OpalLocalConnection@@UAA_NABVPString@@@Z @44843 NONAME
     ?SendUserInputString@OpalPCSSConnection@@UAA_NABVPString@@@Z @40645 NONAME
@@ -39913,6 +39971,7 @@ EXPORTS
     ?SetAlerting@IAX2CallProcessor@@UAA_NABVPString@@_N@Z @40671 NONAME
     ?SetAlerting@IAX2Connection@@UAA_NABVPString@@_N@Z @40672 NONAME
     ?SetAlerting@OpalFaxConnection@@UAA_NABVPString@@_N@Z @40673 NONAME
+    ?SetAlerting@OpalIVRConnection@@UAA_NABVPString@@_N@Z @48520 NONAME
     ?SetAlerting@OpalLineConnection@@UAA_NABVPString@@_N@Z @40675 NONAME
     ?SetAlerting@OpalLocalConnection@@UAA_NABVPString@@_N@Z @44846 NONAME
     ?SetAlerting@OpalPCSSConnection@@UAA_NABVPString@@_N@Z @40676 NONAME
@@ -40025,6 +40084,7 @@ EXPORTS
     ?SetConnected@H323Connection@@UAA_NXZ @40766 NONAME
     ?SetConnected@IAX2Connection@@UAA_NXZ @40768 NONAME
     ?SetConnected@OpalConnection@@UAA_NXZ @44859 NONAME
+    ?SetConnected@OpalIVRConnection@@UAA_NXZ @48521 NONAME
     ?SetConnected@OpalLine@@UAA_NXZ @44860 NONAME
     ?SetConnected@OpalLineConnection@@UAA_NXZ @40771 NONAME
     ?SetConnected@SIPConnection@@UAA_NXZ @40773 NONAME
@@ -40066,8 +40126,10 @@ EXPORTS
     ?SetDefaultLine@OpalLineEndPoint@@QAAXABVPString@@@Z @44862 NONAME
     ?SetDefaultLocalPartyName@H323EndPoint@@UAAXABVPString@@@Z @47263 NONAME
     ?SetDefaultLocalPartyName@OpalEndPoint@@UAAXABVPString@@@Z @47264 NONAME
+    ?SetDefaultMediaFormats@OpalIVREndPoint@@QAAXABVOpalMediaFormatList@@@Z @48522 NONAME
     ?SetDefaultTable@H460_Feature@@QAAXXZ @40814 NONAME
     ?SetDefaultUserName@OpalManager@@QAAXABVPString@@_N@Z @44864 NONAME
+    ?SetDefaultVXML@OpalIVREndPoint@@QAAXABVPString@@@Z @48523 NONAME
     ?SetDelay@OpalJitterBuffer@@QAAXII@Z @40817 NONAME
     ?SetDestCallNumber@IAX2Remote@@QAAXH@Z @40818 NONAME
     ?SetDestinationTerminalAddress@H224_Frame@@QAAXG@Z @40819 NONAME
@@ -40375,6 +40437,7 @@ EXPORTS
     ?SetUpConnection@IAX2CallProcessor@@UAA_NXZ @41095 NONAME
     ?SetUpConnection@IAX2Connection@@UAA_NXZ @41096 NONAME
     ?SetUpConnection@OpalFaxConnection@@UAA_NXZ @41097 NONAME
+    ?SetUpConnection@OpalIVRConnection@@UAA_NXZ @48524 NONAME
     ?SetUpConnection@OpalLineConnection@@UAA_NXZ @41099 NONAME
     ?SetUpConnection@OpalLocalConnection@@UAA_NXZ @44892 NONAME
     ?SetUpConnection@OpalPCSSConnection@@UAA_NXZ @41100 NONAME
@@ -40509,6 +40572,8 @@ EXPORTS
     ?StartThread@OpalListener@@IAA_NABVPNotifier@@W4ThreadMode@1@@Z @41210 NONAME
     ?StartTonePlayerThread@OpalPluginLID@@IAA_NH@Z @44912 NONAME
     ?StartTransmit@OpalH224Handler@@UAAXXZ @47308 NONAME
+    ?StartVXML@OpalIVRConnection@@UAA_NXZ @48525 NONAME
+    ?StartVXML@OpalIVREndPoint@@UAA_NXZ @48526 NONAME
     ?states@?1??Parse@VFUXML@@QAA_NABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z@4QBUstatedef@QDXML@@B @41214 NONAME
     ?Stop@H245NegMasterSlaveDetermination@@QAAXXZ @41215 NONAME
     ?Stop@H245NegTerminalCapabilitySet@@QAAX_N@Z @41216 NONAME
@@ -40649,6 +40714,7 @@ EXPORTS
     ?UnCompressSubClass@IAX2FullFrame@@IAAXE@Z @41344 NONAME
     ?Unlock@?$PMemBuffer@VPCriticalSection@@@@QBAXXZ @41345 NONAME
     ?UnLockSinkTranscoder@OpalMediaPatch@@UBAXXZ @41346 NONAME
+    ?UnLockVXMLChannel@PVXMLSession@@QAAXXZ @48527 NONAME
     ?Unregister@H323RegisteredEndPoint@@UAA_NH@Z @41349 NONAME
     ?Unregister@IAX2EndPoint@@QAAXABVPString@@0@Z @41350 NONAME
     ?Unregister@IAX2RegProcessor@@QAAXXZ @41351 NONAME
