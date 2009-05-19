@@ -293,8 +293,6 @@ H323Connection::H323Connection(OpalCall & call,
       break;
   }
   
-  defaultAudioSessionIDAssigned = PFalse;
-  defaultVideoSessionIDAssigned = PFalse;
   nextSessionID = 3; // 1 and 2 are 'reserved'
 
   masterSlaveDeterminationProcedure = new H245NegMasterSlaveDetermination(endpoint, *this);
@@ -3613,8 +3611,23 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
       PTRACE(3, "H323\tOpenMediaStream (already opened) for session " << sessionID << " on " << *this);
       return stream;
     }
+
+    if (isSource) {
+      stream = CreateMediaStream(mediaFormat, sessionID, isSource);
+      if (stream == NULL) {
+        PTRACE(1, "H323\tCreateMediaStream returned NULL for session " << sessionID << " on " << *this);
+        return NULL;
+      }
+      mediaStreams.Append(stream);
+
+      // Channel from other side, do RequestModeChange
+      RequestModeChange(mediaFormat);
+      return stream;
+    }
+
     // Changing the media format, needs to close and re-open the stream
     stream->Close();
+    stream.SetNULL();
   }
 
   if ( isSource &&
@@ -3698,7 +3711,8 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
       H323Channel * channel = logicalChannels->GetNegLogicalChannelAt(i).GetChannel();
       if (channel != NULL && channel->GetMediaStream() == &stream) {
         const H323ChannelNumber & number = channel->GetNumber();
-        return logicalChannels->Close(number, number.IsFromRemote());
+        if (!logicalChannels->Close(number, number.IsFromRemote()))
+          return false;
       }
     }
   }
@@ -4126,7 +4140,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
       return NULL;
 
     const H245_UnicastAddress & uaddr = param->m_mediaControlChannel;
-	unsigned int tag = uaddr.GetTag();
+    unsigned int tag = uaddr.GetTag();
     if ((tag != H245_UnicastAddress::e_iPAddress) && (tag != H245_UnicastAddress::e_iP6Address))
       return NULL;
   }
@@ -4571,15 +4585,22 @@ PBoolean H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
 
 void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 {
+  PTRACE(4, "H323\tOnModeChanged, closing channels");
+
   CloseAllLogicalChannels(PFalse);
+
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
+  if (otherConnection == NULL)
+    return;
+
+  PTRACE(4, "H323\tOnModeChanged, opening channels");
 
   // Start up the new ones
   for (PINDEX i = 0; i < newMode.GetSize(); i++) {
     H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
     if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
-      if (!OpenLogicalChannel(*capability,
-                              capability->GetDefaultSessionID(),
-                              H323Channel::IsTransmitter)) {
+      OpalMediaFormat mediaFormat = capability->GetMediaFormat();
+      if (!ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), i+1, mediaFormat)) {
         PTRACE(2, "H245\tCould not open channel after mode change: " << *capability);
       }
     }
@@ -4589,62 +4610,11 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 
 void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
 {
-  if (t38ModeChangeCapabilities.IsEmpty())
-    return;
-
-  PTRACE(3, "H323\tT.38 mode change accepted.");
-
-  // Now we have conviced the other side to send us T.38 data we should do the
-  // same assuming the RequestModeChangeT38() function provided a list of \n
-  // separaete capability names to start. Only one will be.
-
-  CloseAllLogicalChannels(PFalse);
-
-  PStringArray modes = t38ModeChangeCapabilities.Lines();
-
-  PINDEX first, last;
-  if (pdu.m_response.GetTag() == H245_RequestModeAck_response::e_willTransmitMostPreferredMode) {
-    first = 0;
-    last = 1;
-  }
-  else {
-    first = 1;
-    last = modes.GetSize();
-  }
-
-  for (PINDEX i = first; i < last; i++) {
-    H323Capability * capability = localCapabilities.FindCapability(modes[i]);
-    if (capability != NULL && OpenLogicalChannel(*capability,
-                                                 capability->GetDefaultSessionID(),
-                                                 H323Channel::IsTransmitter)) {
-      PTRACE(3, "H245\tOpened " << *capability << " after T.38 mode change");
-      break;
-    }
-
-    PTRACE(2, "H245\tCould not open channel after T.38 mode change");
-  }
-
-  t38ModeChangeCapabilities = PString::Empty();
 }
 
 
 void H323Connection::OnRefusedModeChange(const H245_RequestModeReject * /*pdu*/)
 {
-  if (!t38ModeChangeCapabilities) {
-    PTRACE(2, "H323\tT.38 mode change rejected.");
-    t38ModeChangeCapabilities = PString::Empty();
-  }
-}
-
-
-PBoolean H323Connection::RequestModeChangeT38(const char * capabilityNames)
-{
-  t38ModeChangeCapabilities = capabilityNames;
-  if (RequestModeChange(t38ModeChangeCapabilities))
-    return PTrue;
-
-  t38ModeChangeCapabilities = PString::Empty();
-  return PFalse;
 }
 
 
@@ -4739,6 +4709,11 @@ H460_FeatureSet * H323Connection::GetFeatureSet()
 
 unsigned H323Connection::GetExternalSessionID(unsigned internalSessionID) const
 {
+  if (internalSessionID == H323Capability::DefaultAudioSessionID ||
+      internalSessionID == H323Capability::DefaultVideoSessionID ||
+      internalSessionID == H323Capability::DefaultDataSessionID)
+    return internalSessionID;
+
   PWaitAndSignal m(sessionIDHandlingMutex);
   
   InternalToExternalSessionIDMap::const_iterator iter;
@@ -4752,32 +4727,21 @@ unsigned H323Connection::GetExternalSessionID(unsigned internalSessionID) const
 
 unsigned H323Connection::GetExternalSessionID(unsigned internalSessionID, const OpalMediaType & mediaType)
 {
+  if (internalSessionID == H323Capability::DefaultAudioSessionID ||
+      internalSessionID == H323Capability::DefaultVideoSessionID ||
+      internalSessionID == H323Capability::DefaultDataSessionID)
+    return internalSessionID;
+
   PWaitAndSignal m(sessionIDHandlingMutex);
-  
+
   // search if already assigned an external session ID
   InternalToExternalSessionIDMap::iterator iter;
   iter = internalToExternalSessionIDMap.find(internalSessionID);
-  if (iter != internalToExternalSessionIDMap.end()) {
+  if (iter != internalToExternalSessionIDMap.end())
     return iter->second;
-  }
   
   // store the mediaType <-> session ID association
   mediaTypeToInternalSessionIDMap[mediaType] = internalSessionID;
-  
-  // if a session ID 1&2 can be assigned, do it. See H.245 B.3.1, p. 112, H2250LogicalChannelParameters
-  if (!defaultAudioSessionIDAssigned && mediaType == OpalMediaType::Audio()) {
-    PTRACE(3, "H323\tMapping session ID " << internalSessionID << " to primary session ID 1");
-    defaultAudioSessionIDAssigned = PTrue;
-    internalToExternalSessionIDMap[internalSessionID] = 1;
-    return 1;
-  }
-
-  if (!defaultVideoSessionIDAssigned && mediaType == OpalMediaType::Video()) {
-    PTRACE(3, "H323\tMapping session ID " << internalSessionID << " to primary session ID 2");
-    defaultVideoSessionIDAssigned = PTrue;
-    internalToExternalSessionIDMap[internalSessionID] = 2;
-    return 2;
-  }
   
   // if we're H.245 master, directly assign the session ID. Otherwise, return zero
   if (IsH245Master()) {
@@ -4789,78 +4753,46 @@ unsigned H323Connection::GetExternalSessionID(unsigned internalSessionID, const 
     }
     return externalSessionID;
   }
-  PTRACE(3, "H323\tLocal EP is H.245 slave: Can't directly assign an external session ID to internal session ID " << internalSessionID);
+
+  PTRACE(2, "H323\tLocal EP is H.245 slave: can't directly assign an external session ID to internal session ID " << internalSessionID);
   return 0;
 }
 
 unsigned H323Connection::GetInternalSessionID(unsigned externalSessionID, const OpalMediaType & mediaType)
 {
+  if (externalSessionID == H323Capability::DefaultAudioSessionID ||
+      externalSessionID == H323Capability::DefaultVideoSessionID ||
+      externalSessionID == H323Capability::DefaultDataSessionID)
+    return externalSessionID;
+
   PWaitAndSignal m(sessionIDHandlingMutex);
-  unsigned internalSessionID = 0;
   
   // directly look up the internal session ID
   MediaTypeToInternalSessionIDMap::iterator iter = mediaTypeToInternalSessionIDMap.find(mediaType);
-  if (iter != mediaTypeToInternalSessionIDMap.end()) {
-    internalSessionID = iter->second;
-  }
+  if (iter != mediaTypeToInternalSessionIDMap.end())
+    return iter->second;
   
-  // if a session ID 1&2 can be assigned, do it. See H.245 B.3.1, p. 112, H2250LogicalChannelParameters
-  if (!defaultAudioSessionIDAssigned && mediaType == OpalMediaType::Audio()) {
-    PTRACE(3, "H323\tMapping session ID " << internalSessionID << " to primary session ID 1");
-    defaultAudioSessionIDAssigned = PTrue;
-    internalToExternalSessionIDMap[1] = 1;
-    mediaTypeToInternalSessionIDMap[mediaType] = 1;
-    return 1;
-  }
-  
-  if (!defaultVideoSessionIDAssigned && mediaType == OpalMediaType::Video()) {
-    PTRACE(3, "H323\tMapping session ID " << internalSessionID << " to primary session ID 2");
-    defaultVideoSessionIDAssigned = PTrue;
-    internalToExternalSessionIDMap[2] = 2;
-    mediaTypeToInternalSessionIDMap[mediaType] = 2;
-    return 2;
-  }
-
   // also update the internal <-> external session ID map
   if (IsH245Master()) {
-    if (externalSessionID != 0 && internalSessionID == 0) {
-      // remote requested a non-zero session ID which isn't assigned yet.
-      if (externalSessionID == 1 || externalSessionID == 2 || externalSessionID == 3) {
-        // remote requested primary session IDs, check if local did not already assign the requested session ID
-        InternalToExternalSessionIDMap::iterator iter;
-        if (internalToExternalSessionIDMap.find(externalSessionID) != internalToExternalSessionIDMap.end()) {
-          // session ID is already taken
-        } else {
-          // session ID is not taken
-          internalSessionID = externalSessionID;
-          internalToExternalSessionIDMap[internalSessionID] = externalSessionID;
-          mediaTypeToInternalSessionIDMap[mediaType] = internalSessionID;
-          PTRACE(3, "H323\tAssigning primary session ID " << internalSessionID << " for request by remote H.245 slave");
-        }
-      } else {
-        // remote sent a nonzero session ID which does not belong to the primary session IDs but is not
-        // present in the session ID map. Should not happen.
-      }
-    } else if (externalSessionID == 0 && internalSessionID == 0) {
-      // remote requested a new session ID for a media type which isn't assigned yet.
-      internalSessionID = nextSessionID;
-      internalToExternalSessionIDMap[internalSessionID] = nextSessionID;
-      mediaTypeToInternalSessionIDMap[mediaType] = internalSessionID;
-      nextSessionID++;
-      PTRACE(3, "H323\tAssigning internal session ID " << internalSessionID << " for request with media type " << mediaType);
+    if (externalSessionID != 0) {
+      PTRACE(2, "H323\tRemote EP is H.245 slave: can't assign an external session ID " << externalSessionID);
+      return 0; // remote requested a non-zero session ID which isn't assigned yet.
     }
-  } else { // H.245 slave
-    if (internalSessionID == 0) {
-      // have not yet assigned an internal session ID for the requested session ID
-      internalSessionID = nextSessionID;
-      internalToExternalSessionIDMap[internalSessionID] = externalSessionID;
-      mediaTypeToInternalSessionIDMap[mediaType] = internalSessionID;
-      nextSessionID++;
-      PTRACE(3, "H323\tAssigning internal session ID " << internalSessionID << " for external session ID " << externalSessionID);
-    }
+
+    // remote requested a new session ID for a media type which isn't assigned yet.
+    PTRACE(3, "H323\tAssigning internal session ID " << nextSessionID << " for request with media type " << mediaType);
+    internalToExternalSessionIDMap[nextSessionID] = nextSessionID;
   }
-  
-  return internalSessionID;
+  else {
+    // H.245 slave
+    PTRACE(3, "H323\tAssigning internal session ID " << nextSessionID << " for external session ID " << externalSessionID);
+
+    // have not yet assigned an internal session ID for the requested session ID
+    internalToExternalSessionIDMap[nextSessionID] = externalSessionID;
+  }
+
+  mediaTypeToInternalSessionIDMap[mediaType] = nextSessionID;
+  return nextSessionID++;
 }
 
 #endif // OPAL_H323

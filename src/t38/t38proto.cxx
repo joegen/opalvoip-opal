@@ -440,6 +440,17 @@ PBoolean OpalFaxMediaStream::Close()
   if (!OpalMediaStream::Close())
     return false;
 
+  // Give the spandsp sub-process a second to tidy up and exit with
+  // some statistics.
+  if (m_faxCallInfo->stdoutThread != NULL) {
+    PTRACE(4, "Fax\tAwaiting final statistics from SpanDSP");
+    if (!m_faxCallInfo->stdoutThread->WaitForTermination(2000)) {
+      // OK, force the issue
+      m_faxCallInfo->spanDSP.Close();
+      m_faxCallInfo->stdoutThread->WaitForTermination(1000);
+    }
+  }
+
   OpalFaxCallInfo * faxCallInfo;
   {
     {
@@ -454,18 +465,11 @@ PBoolean OpalFaxMediaStream::Close()
       m_faxCallInfo = NULL;
     }
 
-    // Give the spandsp sub-process a second to tidy up and exit with
-    // some statistics.
-    if (faxCallInfo->stdoutThread != NULL)
-      faxCallInfo->stdoutThread->WaitForTermination(1000);
-
     // shutdown whatever is running
     faxCallInfo->socket.Close();
     faxCallInfo->spanDSP.Close();
 
-    // If didn't exit thread already, the above will make it exit now
     if (faxCallInfo->stdoutThread != NULL) {
-      faxCallInfo->stdoutThread->WaitForTermination();
       delete faxCallInfo->stdoutThread;
       faxCallInfo->stdoutThread = NULL;
     }
@@ -1102,11 +1106,10 @@ void OpalT38Connection::OpenFaxStreams(PThread &, INT)
   OpalMediaFormat format = m_faxMode ? OpalT38 : OpalG711uLaw;
   OpalMediaType mediaType = format.GetMediaType();
 
-  PSafePtr<OpalConnection> otherParty = ownerCall.GetOtherPartyConnection(*this);
-  if (otherParty == NULL) {
-    PTRACE(1, "T38\tCannot get other party for " << mediaType << " trigger");
-  }
-  else if (!ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, 1, format)) {
+  PSafePtr<OpalConnection> other = ownerCall.GetOtherPartyConnection(*this);
+  if ( other == NULL ||
+      !ownerCall.OpenSourceMediaStreams(*other, mediaType, 1, format) ||
+      !ownerCall.OpenSourceMediaStreams(*this,  mediaType, 1, format)) {
     PTRACE(1, "T38\tMode change request to " << mediaType << " failed");
     OnFaxCompleted(true);
   }
