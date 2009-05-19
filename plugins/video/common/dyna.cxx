@@ -346,6 +346,8 @@ FFMPEGLibrary::~FFMPEGLibrary()
 
 AVCodec *FFMPEGLibrary::AvcodecFindEncoder(enum CodecID id)
 {
+  WaitAndSignal m(processLock);
+
   WITH_ALIGNED_STACK({
     AVCodec *res = Favcodec_find_encoder(id);
     return res;
@@ -354,6 +356,8 @@ AVCodec *FFMPEGLibrary::AvcodecFindEncoder(enum CodecID id)
 
 AVCodec *FFMPEGLibrary::AvcodecFindDecoder(enum CodecID id)
 {
+  WaitAndSignal m(processLock);
+
   WITH_ALIGNED_STACK({
     AVCodec *res = Favcodec_find_decoder(id);
     return res;
@@ -362,6 +366,8 @@ AVCodec *FFMPEGLibrary::AvcodecFindDecoder(enum CodecID id)
 
 AVCodecContext *FFMPEGLibrary::AvcodecAllocContext(void)
 {
+  WaitAndSignal m(processLock);
+
   WITH_ALIGNED_STACK({
     AVCodecContext *res = Favcodec_alloc_context();
     return res;
@@ -370,6 +376,8 @@ AVCodecContext *FFMPEGLibrary::AvcodecAllocContext(void)
 
 AVFrame *FFMPEGLibrary::AvcodecAllocFrame(void)
 {
+  WaitAndSignal m(processLock);
+
   WITH_ALIGNED_STACK({
     AVFrame *res = Favcodec_alloc_frame();
     return res;
@@ -396,8 +404,6 @@ int FFMPEGLibrary::AvcodecClose(AVCodecContext *ctx)
 
 int FFMPEGLibrary::AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict)
 {
-  WaitAndSignal m(processLock);
-
   WITH_ALIGNED_STACK({
     int res = Favcodec_encode_video(ctx, buf, buf_size, pict);
 
@@ -408,8 +414,6 @@ int FFMPEGLibrary::AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_si
 
 int FFMPEGLibrary::AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size)
 {
-  WaitAndSignal m(processLock);
-
   WITH_ALIGNED_STACK({
     int res = Favcodec_decode_video(ctx, pict, got_picture_ptr, buf, buf_size);
 
@@ -420,6 +424,8 @@ int FFMPEGLibrary::AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *g
 
 void FFMPEGLibrary::AvcodecFree(void * ptr)
 {
+  WaitAndSignal m(processLock);
+
   WITH_ALIGNED_STACK({
     Favcodec_free(ptr);
   });
@@ -427,6 +433,8 @@ void FFMPEGLibrary::AvcodecFree(void * ptr)
 
 void FFMPEGLibrary::AvSetDimensions(AVCodecContext *s, int width, int height)
 {
+  WaitAndSignal m(processLock);
+
   WITH_ALIGNED_STACK({
     Favcodec_set_dimensions(s, width, height);
   });
@@ -454,7 +462,7 @@ int FFMPEGLibrary::FFCheckAlignment(void)
     return 0;
   }
   else {
-    return (Fff_check_alignment());
+    return Fff_check_alignment();
   }
 }
 
