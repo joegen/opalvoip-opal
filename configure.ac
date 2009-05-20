@@ -38,11 +38,9 @@ AC_SUBST(GCC_HAS_CLZ)
 dnl Enable compiler warnings
 WFLAGS=
 if test "x$ac_cv_c_compiler_gnu" = xyes; then
-  if test ${GXX_MAJOR} -lt 4 ; then
-    WFLAGS="-Wall -Wextra -Wstrict-aliasing=2 -Wfloat-equal -Wno-comment -Wno-unused"
-  else
-    WFLAGS="-Wall -Wextra -Winit-self -Wstrict-aliasing=2 -Wfloat-equal -Wno-comment -Wno-missing-field-initializers -Wno-unused"
-
+  WFLAGS="-Wall -Wextra -Wstrict-aliasing -Wfloat-equal -Wno-comment -Wno-unused"
+  if test ${GXX_MAJOR} -ge 4 ; then
+    WFLAGS="$WFLAGS -Winit-self -Wno-missing-field-initializers"
   fi
 fi
 

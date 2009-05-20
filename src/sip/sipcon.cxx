@@ -840,7 +840,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
   bool remoteChanged = false;
 
-  OpalMediaSession * mediaSession;
+  OpalMediaSession * mediaSession = NULL;
 
   if (mediaAddress.IsEmpty()) {
     // Hold aka pause media, should only occur on a re-INVITE.
