@@ -532,9 +532,6 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   m_password = params.m_password;
   m_realm    = params.m_realm;
 
-  if (m_realm.IsEmpty())
-    m_realm = m_remoteAddress.GetHostName();
-
   if (m_username.IsEmpty())
     m_username = m_addressOfRecord.GetUserName();
 }
@@ -1595,13 +1592,33 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
 {
   PIPSocket::Address realmAddress;
 
+  // if username is specified, look for exact matches
+  if (!userName.IsEmpty()) {
+
+    // look for a match to exact user name and realm
+    for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
+      if ((userName == handler->GetUsername()) && (handler->GetRealm().IsEmpty() || (handler->GetRealm() == authRealm)))
+        return handler;
+    }
+
+    // look for a match to exact username and realm as hostname
+    for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
+      if (PIPSocket::GetHostAddress(handler->GetRealm(), realmAddress))
+        if ((userName == handler->GetUsername()) && (realmAddress == PIPSocket::Address(authRealm)))
+          return handler;
+    }
+  }
+
+  // look for a match to exact realm
   for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (authRealm == handler->GetRealm() && (userName.IsEmpty() || userName == handler->GetUsername()))
+    if (authRealm == handler->GetRealm())
       return handler;
   }
+
+  // look for a match to exact realm as hostname
   for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
     if (PIPSocket::GetHostAddress(handler->GetRealm(), realmAddress))
-      if (realmAddress == PIPSocket::Address(authRealm) && (userName.IsEmpty() || userName == handler->GetUsername()))
+      if (realmAddress == PIPSocket::Address(authRealm))
         return handler;
   }
   return NULL;
