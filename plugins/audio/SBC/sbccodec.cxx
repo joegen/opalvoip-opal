@@ -16,9 +16,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 20629 $
- * $Author: rjongbloed $
- * $Date: 2008-07-28 09:57:33 +0200 (Mon, 28 Jul 2008) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #define _CRT_NONSTDC_NO_DEPRECATE 1
