@@ -656,7 +656,7 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
 #if HAVE_POSIX_MEMALIGN
     if (posix_memalign((void **)&_inputFrameBuffer, 64, header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2)) != 0) 
 #else
-    if ((_inputFrameBuffer = malloc(header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2))) != NULL) 
+    if ((_inputFrameBuffer = (BYTE *)malloc(header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2))) != NULL) 
 #endif
     {
       TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for frame buffer");
@@ -700,7 +700,7 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
 #if HAVE_POSIX_MEMALIGN
     if (posix_memalign((void **)&packetizer.m_buffer, 64, packetizer.m_bufferSize) != 0) 
 #else
-    if ((packetizer.m_buffer = malloc(packetizer.m_bufferSize)) != NULL) 
+    if ((packetizer.m_buffer = (BYTE *)malloc(packetizer.m_bufferSize)) != NULL) 
 #endif
     {
       TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for packet buffer");
@@ -864,7 +864,7 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
 #if HAVE_POSIX_MEMALIGN
     if (posix_memalign((void **)&_inputFrameBuffer, 64, header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2)) != 0) {
 #else
-    if ((_inputFrameBuffer = malloc(header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2))) != NULL) {
+    if ((_inputFrameBuffer = (BYTE *)malloc(header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2))) != NULL) {
 #endif
       TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for frame buffer");
       return 0;
