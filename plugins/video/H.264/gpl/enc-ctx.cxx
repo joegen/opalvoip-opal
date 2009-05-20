@@ -25,6 +25,7 @@
 #include "trace.h"
 #include "rtpframe.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #if defined(_WIN32) || defined(_WIN32_WCE)
