@@ -24,9 +24,9 @@
  *
  * Contributor(s): Post Increment
  *
- * $Revision: 21293 $
- * $Author: rjongbloed $
- * $Date: 2008-10-13 10:24:41 +1100 (Mon, 13 Oct 2008) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef OPAL_RATE_CONTROL_H
