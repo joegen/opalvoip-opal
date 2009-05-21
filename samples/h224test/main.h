@@ -21,9 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 21831 $
- * $Author: rjongbloed $
- * $Date: 2008-12-18 14:29:17 +1100 (Thu, 18 Dec 2008) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef _H224Test_MAIN_H

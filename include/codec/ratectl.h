@@ -24,9 +24,9 @@
  *
  * Contributor(s): Post Increment
  *
- * $Revision: 21293 $
- * $Author: rjongbloed $
- * $Date: 2008-10-13 10:24:41 +1100 (Mon, 13 Oct 2008) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef OPAL_RATE_CONTROL_H
@@ -100,7 +100,7 @@ class OpalBitRateCalculator
 
     /** Return number of frames in history
     */
-    size_t GetHistoryCount() const
+    unsigned GetHistoryCount() const
     { return m_history.size(); }
 
     /** Return number of bytes in history
@@ -223,9 +223,10 @@ class OpalVideoRateController
     std::deque<PacketEntry> m_packets;
 };
 
-
-PFACTORY_LOAD(OpalStandardVideoRateController);
-
+namespace PWLibStupidLinkerHacks {
+  extern int rateControlKickerVal;
+//  static class RateControlKicker { public: RateControlKicker() { rateControlKickerVal = 1; } } rateControlKicker;
+};
 
 #endif // OPAL_VIDEO
 
