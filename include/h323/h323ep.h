@@ -535,34 +535,36 @@ class H323EndPoint : public OpalRTPEndPoint
                                    H323SignalPDU & setupPDU);
 
     /**Adjust call proceeding PDU being sent. This function is called from
-    the OnReceivedSignalSetup() function before it sends the Call
-    Proceeding PDU. It gives an opportunity for an application to alter
-    the request before transmission to the other endpoint. If this function
-    returns PFalse then the Call Proceeding PDU is not sent at all.
+       the OnReceivedSignalSetup() function before it sends the Call
+       Proceeding PDU. It gives an opportunity for an application to alter
+       the request before transmission to the other endpoint. If this function
+       returns PFalse then the Call Proceeding PDU is not sent at all.
 
-    The default behaviour simply returns PTrue.
-    @param connection the connection associated to the call proceeding
-    @param callProceedingPDU the call processding to modify
-    @return if false, do no send the connect pdu  
+       The default behaviour simply returns PTrue.
+       @param connection the connection associated to the call proceeding
+       @param callProceedingPDU the call processding to modify
+       @return if false, do no send the connect pdu  
      */
-    virtual PBoolean OnSendCallProceeding(H323Connection & connection,
-                                      H323SignalPDU & callProceedingPDU
-                                     );
-    
+    virtual PBoolean OnSendCallProceeding(
+      H323Connection & connection,
+      H323SignalPDU & callProceedingPDU
+    );
+
     /**Adjust call connect PDU being sent. This function is called from
-    the H323Connection::SetConnected function before it sends the connect  PDU. 
-    It gives an opportunity for an application to alter
-    the request before transmission to the other endpoint. If this function
-    returns PFalse then the connect PDU is not sent at all.
+       the H323Connection::SetConnected function before it sends the connect  PDU. 
+       It gives an opportunity for an application to alter
+       the request before transmission to the other endpoint. If this function
+       returns PFalse then the connect PDU is not sent at all.
 
-    The default behaviour simply returns PTrue.
-    @param connection the connection associated to the connect
-    @param connectPDU the connect to modify
-    @return if false, do no send the connect pdu  
+       The default behaviour simply returns PTrue.
+       @param connection the connection associated to the connect
+       @param connectPDU the connect to modify
+       @return if false, do no send the connect pdu  
      */
-    virtual PBoolean OnSendConnect(H323Connection & connection,
-                               H323SignalPDU & connectPDU
-                              );
+    virtual PBoolean OnSendConnect(
+      H323Connection & connection,
+      H323SignalPDU & connectPDU
+    );
     
     /**Call back for incoming call.
        This function is called from the OnReceivedSignalSetup() function
@@ -588,8 +590,8 @@ class H323EndPoint : public OpalRTPEndPoint
        The default behaviour simply returns PTrue.
       */
     virtual PBoolean OnOutgoingCall(
-        H323Connection & conn, 
-        const H323SignalPDU & connectPDU
+      H323Connection & conn, 
+      const H323SignalPDU & connectPDU
     );
 
     /**Handle a connection transfer.
@@ -656,19 +658,20 @@ class H323EndPoint : public OpalRTPEndPoint
         can be used by the application to alter the alerting Pdu
         @return if PFalse, then the alerting is not sent
      */
-      
-    virtual PBoolean OnSendAlerting(H323Connection & connection,  ///< onnection that was established
-                                H323SignalPDU & alerting,     ///< Alerting PDU to modify
-                                const PString & calleeName,   ///< Name of endpoint being alerted.
-                                PBoolean withMedia                ///< Open media with alerting
-                               );
-        
+    virtual PBoolean OnSendAlerting(
+      H323Connection & connection,  ///< onnection that was established
+      H323SignalPDU & alerting,     ///< Alerting PDU to modify
+      const PString & calleeName,   ///< Name of endpoint being alerted.
+      PBoolean withMedia                ///< Open media with alerting
+    );
+
     /** A call back function when the alerting has been sent, can be used by the application 
         to send the connect as soon as the alerting has been sent.
      */
-      
-    virtual PBoolean OnSentAlerting(H323Connection & connection);
-    
+    virtual PBoolean OnSentAlerting(
+      H323Connection & connection
+    );
+
     /**A call back function when a connection indicates it is to be forwarded.
        An H323 application may handle this call back so it can make
        complicated decisions on if the call forward ius to take place. If it

@@ -403,23 +403,9 @@ PBoolean OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connectio
 }
 
 
-PBoolean OpalEndPoint::OnIncomingConnection(OpalConnection & /*connection*/)
-{
-  return PTrue;
-}
-
-
-PBoolean OpalEndPoint::OnIncomingConnection(OpalConnection & /*connection*/, unsigned /*options*/)
-{
-  return PTrue;
-}
-
-
 PBoolean OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  return OnIncomingConnection(connection) &&
-         OnIncomingConnection(connection, options) &&
-         manager.OnIncomingConnection(connection, options, stringOptions);
+  return manager.OnIncomingConnection(connection, options, stringOptions);
 }
 
 

@@ -267,7 +267,6 @@ class OpalManager : public PObject
     virtual OpalCall * CreateCall(
       void * userData            ///<  user data passed to SetUpCall
     );
-    virtual OpalCall * CreateCall();
     OpalCall * InternalCreateCall();
 
     /**Destroy a call object.
@@ -362,13 +361,6 @@ class OpalManager : public PObject
       OpalConnection & connection,   ///<  Connection that is calling
       unsigned options,              ///<  options for new connection (can't use default as overrides will fail)
       OpalConnection::StringOptions * stringOptions
-    );
-    virtual PBoolean OnIncomingConnection(
-      OpalConnection & connection,   ///<  Connection that is calling
-      unsigned options               ///<  options for new connection (can't use default as overrides will fail)
-    );
-    virtual PBoolean OnIncomingConnection(
-      OpalConnection & connection   ///<  Connection that is calling
     );
 
     /**Route a connection to another connection from an endpoint.
@@ -1384,6 +1376,11 @@ class OpalManager : public PObject
 
     friend OpalCall::OpalCall(OpalManager & mgr);
     friend void OpalCall::OnReleased(OpalConnection & connection);
+
+  private:
+    P_DEPRECATED_VIRTUAL(OpalCall *,CreateCall(), 0);
+    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);
+    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
 };
 
 

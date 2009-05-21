@@ -494,14 +494,9 @@ OpalCall * OpalManager::InternalCreateCall()
 }
 
 
-OpalCall * OpalManager::CreateCall()
-{
-  return new OpalCall(*this);
-}
-
 OpalCall * OpalManager::CreateCall(void * /*userData*/)
 {
-  return CreateCall();
+  return new OpalCall(*this);
 }
 
 
@@ -550,27 +545,12 @@ PBoolean OpalManager::MakeConnection(OpalCall & call,
   return false;
 }
 
-PBoolean OpalManager::OnIncomingConnection(OpalConnection & /*connection*/)
-{
-  return true;
-}
-
-PBoolean OpalManager::OnIncomingConnection(OpalConnection & /*connection*/, unsigned /*options*/)
-{
-  return true;
-}
 
 PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tOnIncoming connection " << connection);
 
   connection.OnApplyStringOptions();
-
-  if (!OnIncomingConnection(connection))
-    return false;
-
-  if (!OnIncomingConnection(connection, options))
-    return false;
 
   // See if we already have a B-Party in the call. If not, make one.
   if (connection.GetOtherPartyConnection() != NULL)
