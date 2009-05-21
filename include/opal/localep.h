@@ -135,7 +135,9 @@ class OpalLocalEndPoint : public OpalEndPoint
       */
     virtual OpalLocalConnection * CreateConnection(
       OpalCall & call,    ///<  Owner of connection
-      void * userData     ///<  Arbitrary data to pass to connection
+      void * userData,    ///<  Arbitrary data to pass to connection
+      unsigned options,
+      OpalConnection::StringOptions * stringOptions
     );
 
     /**Call back to indicate that remote is ringing.
@@ -260,6 +262,9 @@ class OpalLocalEndPoint : public OpalEndPoint
 
   protected:
     bool m_deferredAlerting;
+
+  private:
+    P_DEPRECATED_VIRTUAL(OpalLocalConnection *, CreateConnection(OpalCall &, void *), 0);
 };
 
 
