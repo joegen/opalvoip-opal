@@ -971,6 +971,7 @@ class SIPRegister : public SIPTransaction
       unsigned      m_restoreTime;
       PTimeInterval m_minRetryTime;
       PTimeInterval m_maxRetryTime;
+      void          * m_userData;
     };
 
     SIPRegister(
@@ -1026,6 +1027,7 @@ class SIPSubscribe : public SIPTransaction
       unsigned      m_restoreTime;
       PTimeInterval m_minRetryTime;
       PTimeInterval m_maxRetryTime;
+      void          * m_userData;
     };
 
     SIPSubscribe(
