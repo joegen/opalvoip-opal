@@ -617,8 +617,6 @@ class OpalConnection : public PSafeObject
        descendants of OpalConnection - code that uses existing descendants will be unaffected
      */
     virtual PBoolean OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
-    virtual PBoolean OnIncomingConnection(unsigned int options);
-    virtual PBoolean OnIncomingConnection();
 
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
@@ -1604,6 +1602,9 @@ class OpalConnection : public PSafeObject
     mutable PList<PNotifier> m_imListeners;
 #endif
 
+  private:
+    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(unsigned int), false);
+    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(), false);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H
