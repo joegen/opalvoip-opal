@@ -122,12 +122,6 @@ class OpalPCSSEndPoint : public OpalEndPoint
       OpalCall & call,    ///<  Owner of connection
       const PString & playDevice, ///<  Sound channel play device
       const PString & recordDevice, ///<  Sound channel record device
-      void * userData     ///<  Arbitrary data to pass to connection
-    );
-    virtual OpalPCSSConnection * CreateConnection(
-      OpalCall & call,    ///<  Owner of connection
-      const PString & playDevice, ///<  Sound channel play device
-      const PString & recordDevice, ///<  Sound channel record device
       void * userData,    ///<  Arbitrary data to pass to connection
       unsigned options,
       OpalConnection::StringOptions * stringOptions
@@ -279,6 +273,14 @@ class OpalPCSSEndPoint : public OpalEndPoint
     PString  soundChannelRecordDevice;
     unsigned soundChannelBuffers;
     unsigned m_soundChannelBufferTime;
+
+  private:
+    virtual P_DEPRECATED OpalPCSSConnection * CreateConnection(
+      OpalCall & call,    ///<  Owner of connection
+      const PString & playDevice, ///<  Sound channel play device
+      const PString & recordDevice, ///<  Sound channel record device
+      void * userData     ///<  Arbitrary data to pass to connection
+    );
 };
 
 
