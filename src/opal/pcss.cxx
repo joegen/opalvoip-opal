@@ -46,10 +46,7 @@
 #endif
 
 #include <ptlib/sound.h>
-#include <codec/silencedetect.h>
-#include <codec/echocancel.h>
 #include <opal/call.h>
-#include <opal/patch.h>
 #include <opal/manager.h>
 
 #if OPAL_HAS_IM
@@ -106,7 +103,7 @@ class PCSSIMStream : public OpalIMMediaStream
 /////////////////////////////////////////////////////////////////////////////
 
 OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
-  : OpalEndPoint(mgr, prefix, CanTerminateCall),
+  : OpalLocalEndPoint(mgr, prefix),
     soundChannelPlayDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Player)),
     soundChannelRecordDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Recorder))
 {
@@ -131,12 +128,6 @@ OpalPCSSEndPoint::~OpalPCSSEndPoint()
   PTRACE(4, "PCSS\tDeleted PC sound system endpoint.");
 }
 
-OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
-{
-  OpalMediaFormatList list = manager.GetCommonMediaFormats(false, true);
-  list += OpalL16_STEREO_48KHZ;
-  return list;
-}
 
 static bool SetDeviceName(const PString & name,
                           PSoundChannel::Directions dir,
@@ -303,38 +294,39 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 }
 
 
+bool OpalPCSSEndPoint::OnOutgoingCall(const OpalLocalConnection & connection)
+{
+  return OnShowOutgoing(dynamic_cast<const OpalPCSSConnection &>(connection));
+}
+
+
+bool OpalPCSSEndPoint::OnIncomingCall(OpalLocalConnection & connection)
+{
+  return OnShowIncoming(dynamic_cast<const OpalPCSSConnection &>(connection));
+}
+
+
+bool OpalPCSSEndPoint::OnUserInput(const OpalLocalConnection & connection, const PString & indication)
+{
+  return OnShowUserInput(dynamic_cast<const OpalPCSSConnection &>(connection), indication);
+}
+
+
 PBoolean OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 {
-  PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token, PSafeReadOnly);
-  if (connection == NULL) {
-    PTRACE(2, "PCSS\tCould not find connection using token \"" << token << '"');
-    return false;
-  }
-
-  connection->AcceptIncoming();
-  return true;
+  return AcceptIncomingCall(token);
 }
 
 
 PBoolean OpalPCSSEndPoint::RejectIncomingConnection(const PString & token)
 {
-  PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token, PSafeReadOnly);
-  if (connection == NULL)
-    return false;
-
-  connection->Release(OpalConnection::EndedByAnswerDenied);
-  return true;
+  return RejectIncomingCall(token);
 }
 
 
 PBoolean OpalPCSSEndPoint::OnShowUserInput(const OpalPCSSConnection &, const PString &)
 {
   return PTrue;
-}
-
-
-void OpalPCSSEndPoint::OnPatchMediaStream(const OpalPCSSConnection & /*connection*/, PBoolean /*isSource*/, OpalMediaPatch & /*patch*/)
-{
 }
 
 
@@ -372,7 +364,7 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
                                        const PString & recordDevice,
                                        unsigned options,
                           OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, ep.GetManager().GetNextCallToken(), options, stringOptions)
+  : OpalLocalConnection(call, ep, NULL, options, stringOptions)
   , endpoint(ep)
   , soundChannelPlayDevice(playDevice)
   , soundChannelRecordDevice(recordDevice)
@@ -390,44 +382,6 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
 OpalPCSSConnection::~OpalPCSSConnection()
 {
   PTRACE(4, "PCSS\tDeleted PC sound system connection.");
-}
-
-
-PBoolean OpalPCSSConnection::SetUpConnection()
-{
-  originating = true;
-
-  // Check if we are A-Party in thsi call, so need to do things differently
-  if (ownerCall.GetConnection(0) == this) {
-    SetPhase(SetUpPhase);
-    if (!OnIncomingConnection(0, NULL)) {
-      Release(EndedByCallerAbort);
-      return PFalse;
-    }
-
-    PTRACE(3, "PCSS\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
-    if (!ownerCall.OnSetUp(*this)) {
-      Release(EndedByNoAccept);
-      return PFalse;
-    }
-
-    return PTrue;
-  }
-
-  PTRACE(3, "PCSS\tSetUpConnection(" << remotePartyName << ')');
-  SetPhase(AlertingPhase);
-  OnAlerting();
-
-  return endpoint.OnShowIncoming(*this);
-}
-
-
-PBoolean OpalPCSSConnection::SetAlerting(const PString & calleeName, PBoolean)
-{
-  PTRACE(3, "PCSS\tSetAlerting(" << calleeName << ')');
-  SetPhase(AlertingPhase);
-  remotePartyName = calleeName;
-  return endpoint.OnShowOutgoing(*this);
 }
 
 
@@ -481,40 +435,6 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
 }
 
 
-void OpalPCSSConnection::OnPatchMediaStream(PBoolean isSource,
-					    OpalMediaPatch & patch)
-{
-  endpoint.OnPatchMediaStream(*this, isSource, patch);
-
-  int clockRate;
-  if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
-    PTRACE(3, "PCSS\tAdding filters to patch");
-    if (isSource)
-      patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
-    clockRate = patch.GetSource().GetMediaFormat().GetClockRate();
-    echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
-    echoCanceler->SetClockRate(clockRate);
-    patch.AddFilter(isSource?echoCanceler->GetReceiveHandler():echoCanceler->GetSendHandler(), OpalPCM16);
-  }
-}
-
-
-OpalMediaStreamPtr OpalPCSSConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
-{
-#if OPAL_VIDEO
-  if ( isSource &&
-       mediaFormat.GetMediaType() == OpalMediaType::Video() &&
-      !ownerCall.IsEstablished() &&
-      !endpoint.GetManager().CanAutoStartTransmitVideo()) {
-    PTRACE(3, "PCSS\tOpenMediaStream auto start disabled, refusing video open");
-    return NULL;
-  }
-#endif
-
-  return OpalConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
-}
-
-
 PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage)
 {
   PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
@@ -542,13 +462,6 @@ unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
 PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & mediaFormat, PBoolean isSource)
 {
   return endpoint.CreateSoundChannel(*this, mediaFormat, isSource);
-}
-
-
-PBoolean OpalPCSSConnection::SendUserInputString(const PString & value)
-{
-  PTRACE(3, "PCSS\tSendUserInputString(" << value << ')');
-  return endpoint.OnShowUserInput(*this, value);
 }
 
 

@@ -425,9 +425,25 @@ class OpalManager : public PObject
       OpalConnection & connection   ///<  Connection that was established
     );
 
-    virtual OpalConnection::AnswerCallResponse
-       OnAnswerCall(OpalConnection & connection,
-                     const PString & caller
+    /**Call back for answering an incoming call.
+       This function is called after the connection has been acknowledged
+       but before the connection is established
+
+       This gives the application time to wait for some event before
+       signalling to the endpoint that the connection is to proceed. For
+       example the user pressing an "Answer call" button.
+
+       If AnswerCallDenied is returned the connection is aborted and the
+       connetion specific end call PDU is sent. If AnswerCallNow is returned 
+       then the connection proceeding, Finally if AnswerCallPending is returned then the
+       protocol negotiations are paused until the AnsweringCall() function is
+       called.
+
+       The default behaviour simply returns AnswerNow.
+     */
+    virtual OpalConnection::AnswerCallResponse OnAnswerCall(
+      OpalConnection & connection,    ///<  connection that is being answered
+       const PString & caller         ///<  caller
     );
 
     /**A call back function whenever a connection is "connected".

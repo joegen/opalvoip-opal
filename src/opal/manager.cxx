@@ -643,6 +643,7 @@ void OpalManager::OnProceeding(OpalConnection & connection)
   connection.GetCall().OnProceeding(connection);
 }
 
+
 void OpalManager::OnAlerting(OpalConnection & connection)
 {
   PTRACE(3, "OpalMan\tOnAlerting " << connection);
@@ -650,14 +651,13 @@ void OpalManager::OnAlerting(OpalConnection & connection)
   connection.GetCall().OnAlerting(connection);
 }
 
-OpalConnection::AnswerCallResponse
-       OpalManager::OnAnswerCall(OpalConnection & connection,
-                                  const PString & caller)
-{
-  PTRACE(3, "OpalMan\tOnAnswerCall " << connection);
 
+OpalConnection::AnswerCallResponse OpalManager::OnAnswerCall(OpalConnection & connection,
+                                                             const PString & caller)
+{
   return connection.GetCall().OnAnswerCall(connection, caller);
 }
+
 
 void OpalManager::OnConnected(OpalConnection & connection)
 {

@@ -66,7 +66,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 18
+#define OPAL_C_API_VERSION 19
 
 
 ///////////////////////////////////////
@@ -377,6 +377,8 @@ typedef enum OpalMessageType {
                                     level error, in which case another host may be tried, and that the
                                     responsibility for finalising the call has moved "upstream". See the
                                     OpalParamSetUpCall structure for more information. */
+  OpalCmdAlerting,              /**<Send an indication to the remote that we are "ringing". The OpalMessage
+                                    m_callToken field indicates which call is alerting.  */
   OpalMessageTypeCount
 } OpalMessageType;
 
@@ -551,6 +553,12 @@ typedef struct OpalParamGeneral {
   unsigned     m_audioBufferTime;     /**< Set the hardware sound buffers to use in milliseconds.
                                            Note the largest of m_audioBuffers and m_audioBufferTime/frametime
                                            will be used. */
+  unsigned m_manualAlerting;          /**< Indicate that an "alerting" message is automatically (value=1)
+                                           or manually (value=2) sent to the remote on receipt of an
+                                           OpalIndIncomingCall message. If set to manual then it is up
+                                           to the application to send a OpalCmdAlerting message to
+                                           indicate to the remote system that we are "ringing".
+                                           If zero then no change is made. */
 } OpalParamGeneral;
 
 
@@ -1067,7 +1075,7 @@ struct OpalMessage {
     OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
     OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistrationStatus
     OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndProceeding/OpalIndAlerting/OpalIndEstablished
-    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldcall/OpalCmdRetreiveCall/OpalCmdStopRecording
+    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldcall/OpalCmdRetreiveCall/OpalCmdStopRecording/OpalCmdAlerting
     OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
