@@ -50,9 +50,9 @@ else
 WX_CONFIG+=--debug=no
 endif
 
-CPPFLAGS	+= `$(WX_CONFIG) --cxxflags`
-STDCXXFLAGS	+= `$(WX_CONFIG) --cxxflags` -Wno-strict-aliasing
-LDFLAGS		+= `$(WX_CONFIG) --libs`
+CPPFLAGS += $(shell $(WX_CONFIG) --cxxflags)
+CFLAGS	 += $(shell $(WX_CONFIG) --cxxflags) -Wno-strict-aliasing -Wno-float-equal
+LDFLAGS  += $(shell $(WX_CONFIG) --libs)
 
 ifndef OPALDIR
 ifneq (,$(wildcard ../../version.h))

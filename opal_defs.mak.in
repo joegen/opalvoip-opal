@@ -82,12 +82,12 @@ DEBUG_OPAL_OBJDIR	        = @DEBUG_OPAL_OBJDIR@
 DEBUG_OPAL_DEPDIR	        = @DEBUG_OPAL_OBJDIR@
 
 # Compile and linker flags
-CFLAGS                  = @CFLAGS@
-CXXFLAGS                = @CXXFLAGS@
-CFLAGS                  = @CFLAGS@
-LIBS                    = @LIBS@
-LDSOOPTS                = @LDSOOPTS@
-HAVE_RANLIB             = @HAVE_RANLIB@
+CFLAGS           := @CFLAGS@ -I$(OPAL_INCDIR) $(CFLAGS)
+CXXFLAGS         := @CXXFLAGS@ -I$(OPAL_INCDIR) $(CXXFLAGS)
+LIBS             += @LIBS@
+LDSOOPTS         := @LDSOOPTS@ $(LDSOOPTS)
+
+HAVE_RANLIB      := @HAVE_RANLIB@
 
 OPAL_H323         = @OPAL_H323@
 OPAL_SIP          = @OPAL_SIP@
@@ -140,9 +140,6 @@ else
   LIBS     += $(RELEASE_LIBS)
   LIB_NAME  = $(RELEASE_LIB_NAME)
 endif
-
-CXXFLAGS   += -I$(OPAL_INCDIR)
-CFLAGS     += -I$(OPAL_INCDIR)
 
 
 # End of file
