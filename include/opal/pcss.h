@@ -48,16 +48,17 @@
 #else
 
 #include <ptlib/sound.h>
-#include <opal/endpoint.h>
+#include <opal/localep.h>
+
 
 class OpalPCSSConnection;
 
 
 /** PC Sound System endpoint.
  */
-class OpalPCSSEndPoint : public OpalEndPoint
+class OpalPCSSEndPoint : public OpalLocalEndPoint
 {
-    PCLASSINFO(OpalPCSSEndPoint, OpalEndPoint);
+    PCLASSINFO(OpalPCSSEndPoint, OpalLocalEndPoint);
   public:
   /**@name Construction */
   //@{
@@ -110,6 +111,37 @@ class OpalPCSSEndPoint : public OpalEndPoint
       void * userData = NULL,    ///<  Arbitrary data to pass to connection
       unsigned int options = 0,  ///<  options to pass to conneciton
       OpalConnection::StringOptions * stringOptions  = NULL
+    );
+  //@}
+
+  /**@name Overrides from OpalLocalEndPoint */
+  //@{
+    /**Call back to indicate that remote is ringing.
+       If false is returned the call is aborted.
+
+       The default implementation does nothing.
+      */
+    virtual bool OnOutgoingCall(
+      const OpalLocalConnection & connection ///<  Connection having event
+    );
+
+    /**Call back to indicate that remote is ringing.
+       If false is returned the call is aborted.
+
+       The default implementation answers the call immediately.
+      */
+    virtual bool OnIncomingCall(
+      OpalLocalConnection & connection ///<  Connection having event
+    );
+
+    /**Call back to indicate that the remote user has indicated something.
+       If false is returned the call is aborted.
+
+       The default implementation does nothing.
+      */
+    virtual bool OnUserInput(
+      const OpalLocalConnection & connection, ///<  Connection having event
+      const PString & indication
     );
   //@}
 
@@ -192,17 +224,6 @@ class OpalPCSSEndPoint : public OpalEndPoint
       const OpalPCSSConnection & connection, ///<  Connection having event
       const PString & indication
     );
-
-    
-    /**Call back when patching a media stream.
-       This function is called when a connection has created a new media
-       patch between two streams.
-      */
-    virtual void OnPatchMediaStream(
-      const OpalPCSSConnection & connection, ///<  Connection having new patch
-      PBoolean isSource,                         ///<  Source patch
-      OpalMediaPatch & patch                 ///<  New patch
-    );
   //@}
 
   /**@name Member variable access */
@@ -266,8 +287,6 @@ class OpalPCSSEndPoint : public OpalEndPoint
     );
   //@}
 
-    OpalMediaFormatList GetMediaFormats() const;
-
   protected:
     PString  soundChannelPlayDevice;
     PString  soundChannelRecordDevice;
@@ -286,9 +305,9 @@ class OpalPCSSEndPoint : public OpalEndPoint
 
 /** PC Sound System connection.
  */
-class OpalPCSSConnection : public OpalConnection
+class OpalPCSSConnection : public OpalLocalConnection
 {
-    PCLASSINFO(OpalPCSSConnection, OpalConnection);
+    PCLASSINFO(OpalPCSSConnection, OpalLocalConnection);
   public:
   /**@name Construction */
   //@{
@@ -310,39 +329,6 @@ class OpalPCSSConnection : public OpalConnection
 
   /**@name Overrides from OpalConnection */
   //@{
-    /**Get indication of connection being to a "network".
-       This indicates the if the connection may be regarded as a "network"
-       connection. The distinction is about if there is a concept of a "remote"
-       party being connected to and is best described by example: sip, h323,
-       iax and pstn are all "network" connections as they connect to something
-       "remote". While pc, pots and ivr are not as the entity being connected
-       to is intrinsically local.
-      */
-    virtual bool IsNetworkConnection() const { return false; }
-
-    /**Start an outgoing connection.
-       This function will initiate the connection to the remote entity, for
-       example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
-
-       The default behaviour does.
-      */
-    virtual PBoolean SetUpConnection();
-
-    /**Indicate to remote endpoint an alert is in progress.
-       If this is an incoming connection and the AnswerCallResponse is in a
-       AnswerCallDeferred or AnswerCallPending state, then this function is
-       used to indicate to that endpoint that an alert is in progress. This is
-       usually due to another connection which is in the call (the B party)
-       has received an OnAlerting() indicating that its remote endpoint is
-       "ringing".
-
-       The default behaviour does nothing.
-      */
-    virtual PBoolean SetAlerting(
-      const PString & calleeName,   ///<  Name of endpoint being alerted.
-      PBoolean withMedia                ///<  Open media with alerting
-    );
-
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
 
@@ -373,26 +359,6 @@ class OpalPCSSConnection : public OpalConnection
       PBoolean isSource                        ///<  Is a source stream
     );
 
-    /**Call back when patching a media stream.
-       This function is called when a connection has created a new media
-       patch between two streams.
-       Add the echo canceler patch and call the endpoint function of
-       the same name.
-       Add a PCM silence detector filter.
-      */
-    virtual void OnPatchMediaStream(
-      PBoolean isSource,
-      OpalMediaPatch & patch    ///<  New patch
-    );
-
-    /**Open source or sink media stream for session.
-      */
-    virtual OpalMediaStreamPtr OpenMediaStream(
-      const OpalMediaFormat & mediaFormat, ///<  Media format to open
-      unsigned sessionID,                  ///<  Session to start stream on
-      bool isSource                        ///< Stream is a source/sink
-    );
-
     /**Set  the volume (gain) for the audio media channel to the specified percentage.
       */
     virtual PBoolean SetAudioVolume(
@@ -405,17 +371,6 @@ class OpalPCSSConnection : public OpalConnection
       */
     virtual unsigned GetAudioSignalLevel(
       PBoolean source                   ///< true for source (microphone), false for sink (speaker)
-    );
-
-    /**Send a user input indication to the remote endpoint.
-       This sends an arbitrary string as a user indication. If DTMF tones in
-       particular are required to be sent then the SendIndicationTone()
-       function should be used.
-
-       The default behaviour plays the DTMF tones on the line.
-      */
-    virtual PBoolean SendUserInputString(
-      const PString & value                   ///<  String value of indication
     );
   //@}
 

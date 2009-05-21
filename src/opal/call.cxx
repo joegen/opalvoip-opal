@@ -208,7 +208,7 @@ OpalConnection::AnswerCallResponse OpalCall::OnAnswerCall(OpalConnection & PTRAC
                                                           const PString & PTRACE_PARAM(caller))
 {
   PTRACE(3, "Call\tOnAnswerCall " << connection << " caller \"" << caller << '"');
-  return OpalConnection::AnswerCallPending;
+  return OpalConnection::AnswerCallDeferred;
 }
 
 

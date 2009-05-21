@@ -162,6 +162,7 @@ class OpalManager_C : public OpalManager
       , pcssEP(NULL)
 #endif
       , m_apiVersion(version)
+      , m_manualAlerting(false)
       , m_messagesAvailable(0, INT_MAX)
     {
     }
@@ -186,11 +187,14 @@ class OpalManager_C : public OpalManager
     virtual void OnProceeding(OpalConnection & conenction);
     virtual void OnClearedCall(OpalCall & call);
 
+    bool IsManualAlerting() const { return m_manualAlerting; }
+
   private:
     void HandleSetGeneral    (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleSetProtocol   (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleRegistration  (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleSetUpCall     (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleAlerting      (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleAnswerCall    (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleUserInput     (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleClearCall     (const OpalMessage & message, OpalMessageBuffer & response);
@@ -212,6 +216,7 @@ class OpalManager_C : public OpalManager
 #endif
 
     unsigned                  m_apiVersion;
+    bool                      m_manualAlerting;
     std::queue<OpalMessage *> m_messageQueue;
     PMutex                    m_messageMutex;
     PSemaphore                m_messagesAvailable;
@@ -370,14 +375,13 @@ OpalLocalEndPoint_C::OpalLocalEndPoint_C(OpalManager_C & mgr)
   , m_mediaDataHeader(OpalMediaDataPayloadOnly)
   , m_manager(mgr)
 {
+  m_deferredAlerting = mgr.IsManualAlerting();
 }
 
 
-bool OpalLocalEndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
+static void SetOutgoingCallInfo(OpalMessageBuffer & message, const OpalConnection & connection)
 {
-  PTRACE(4, "OpalC\tOnOutgoingCall " << connection);
   const OpalCall & call = connection.GetCall();
-  OpalMessageBuffer message(OpalIndAlerting);
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
@@ -385,12 +389,19 @@ bool OpalLocalEndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
             " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
             " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
             " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
+}
+
+
+bool OpalLocalEndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
+{
+  OpalMessageBuffer message(OpalIndAlerting);
+  SetOutgoingCallInfo(message, connection);
   m_manager.PostMessage(message);
   return true;
 }
 
 
-static void SetIncomingCall(OpalMessageBuffer & message, const OpalConnection & connection)
+static void SetIncomingCallInfo(OpalMessageBuffer & message, const OpalConnection & connection)
 {
   PSafePtr<OpalConnection> network = connection.GetOtherPartyConnection();
   PAssert(network != NULL, PLogicError); // Should not happen!
@@ -429,9 +440,8 @@ static void SetIncomingCall(OpalMessageBuffer & message, const OpalConnection & 
 
 bool OpalLocalEndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
 {
-  PTRACE(4, "OpalC\tOnIncomingCall " << connection);
   OpalMessageBuffer message(OpalIndIncomingCall);
-  SetIncomingCall(message, connection);
+  SetIncomingCallInfo(message, connection);
   m_manager.PostMessage(message);
   return true;
 }
@@ -541,14 +551,14 @@ OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
   : OpalPCSSEndPoint(mgr)
   , m_manager(mgr)
 {
+  m_deferredAlerting = mgr.IsManualAlerting();
 }
 
 
 PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connection)
 {
-  PTRACE(4, "OpalC\tOnShowIncoming " << connection);
   OpalMessageBuffer message(OpalIndIncomingCall);
-  SetIncomingCall(message, connection);
+  SetIncomingCallInfo(message, connection);
   m_manager.PostMessage(message);
   return true;
 }
@@ -556,16 +566,8 @@ PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connectio
 
 PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
-  PTRACE(4, "OpalC\tOnShowOutgoing " << connection);
-  const OpalCall & call = connection.GetCall();
   OpalMessageBuffer message(OpalIndAlerting);
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
-  PTRACE(4, "OpalC API\tOnShowOutgoing:"
-            " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
-            " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
-            " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
+  SetOutgoingCallInfo(message, connection);
   m_manager.PostMessage(message);
   return true;
 }
@@ -1153,6 +1155,12 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   }
 #endif
 
+  if (m_apiVersion < 19)
+    return;
+
+  response->m_param.m_general.m_audioBufferTime = m_manualAlerting ? 2 : 1;
+  if (command.m_param.m_general.m_manualAlerting != 0)
+    m_manualAlerting = command.m_param.m_general.m_manualAlerting != 1;
 }
 
 
@@ -1402,6 +1410,34 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
 }
 
 
+void OpalManager_C::HandleAlerting(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  if (IsNullString(command.m_param.m_callToken)) {
+    response.SetError("No call token provided.");
+    return;
+  }
+
+  if (
+#if OPAL_PTLIB_AUDIO
+      pcssEP == NULL &&
+#endif
+      localEP == NULL) {
+    response.SetError("Can only control alerting from PC.");
+    return;
+  }
+
+#if OPAL_PTLIB_AUDIO
+  if (pcssEP != NULL && pcssEP->AlertingIncomingCall(command.m_param.m_callToken))
+    return;
+#endif
+
+  if (localEP != NULL && localEP->AlertingIncomingCall(command.m_param.m_callToken))
+    return;
+
+  response.SetError("No call found by the token provided.");
+}
+
+
 void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuffer & response)
 {
   if (IsNullString(command.m_param.m_callToken)) {
@@ -1419,7 +1455,7 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
   }
 
 #if OPAL_PTLIB_AUDIO
-  if (pcssEP != NULL && pcssEP->AcceptIncomingConnection(command.m_param.m_callToken))
+  if (pcssEP != NULL && pcssEP->AlertingIncomingCall(command.m_param.m_callToken))
     return;
 #endif
 
