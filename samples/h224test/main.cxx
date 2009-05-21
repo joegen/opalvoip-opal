@@ -21,9 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 21854 $
- * $Author: csoutheren $
- * $Date: 2008-12-22 13:18:40 +1100 (Mon, 22 Dec 2008) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include "main.h"

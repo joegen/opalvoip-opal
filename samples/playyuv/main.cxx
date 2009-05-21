@@ -23,9 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 20134 $
- * $Author: csoutheren $
- * $Date: 2008-04-28 13:45:00 +1000 (Mon, 28 Apr 2008) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include "precompile.h"
