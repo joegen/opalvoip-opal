@@ -263,7 +263,9 @@ class OpalLocalEndPoint : public OpalEndPoint
 };
 
 
-/** PC Sound System connection.
+/** Local connection.
+    This class represents a connection on the local machine that can receive
+    media via virtual functions.
  */
 class OpalLocalConnection : public OpalConnection
 {
@@ -271,17 +273,17 @@ class OpalLocalConnection : public OpalConnection
   public:
   /**@name Construction */
   //@{
-    /**Create a new endpoint.
+    /**Create a new connection.
      */
     OpalLocalConnection(
-      OpalCall & call,              ///<  Owner calll for connection
+      OpalCall & call,              ///<  Owner call for connection
       OpalLocalEndPoint & endpoint, ///<  Owner endpoint for connection
       void * userData,              ///<  Arbitrary data to pass to connection
       unsigned options = 0,
       OpalConnection::StringOptions * stringOptions = NULL
     );
 
-    /**Destroy endpoint.
+    /**Destroy connection.
      */
     ~OpalLocalConnection();
   //@}
@@ -392,8 +394,9 @@ class OpalLocalConnection : public OpalConnection
 };
 
 
-/**This class describes a media stream that transfers data to/from a Local
-   EndPoint or Connection.
+/**Local media stream.
+    This class represents a media stream on the local machine that can receive
+    media via virtual functions.
   */
 class OpalLocalMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
 {
@@ -401,10 +404,10 @@ class OpalLocalMediaStream : public OpalMediaStream, public OpalMediaStreamPacin
   public:
   /**@name Construction */
   //@{
-    /**Construct a new media stream for Line Interface Devices.
+    /**Construct a new media stream for local system.
       */
     OpalLocalMediaStream(
-      OpalLocalConnection & conn,
+      OpalLocalConnection & conn,          ///<  Connection for media stream
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       bool isSource,                       ///<  Is a source stream
