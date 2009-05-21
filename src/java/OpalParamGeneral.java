@@ -308,6 +308,14 @@ public class OpalParamGeneral {
     return exampleJNI.OpalParamGeneral_m_audioBufferTime_get(swigCPtr, this);
   }
 
+  public void setM_manualAlerting(long value) {
+    exampleJNI.OpalParamGeneral_m_manualAlerting_set(swigCPtr, this, value);
+  }
+
+  public long getM_manualAlerting() {
+    return exampleJNI.OpalParamGeneral_m_manualAlerting_get(swigCPtr, this);
+  }
+
   public OpalParamGeneral() {
     this(exampleJNI.new_OpalParamGeneral(), true);
   }

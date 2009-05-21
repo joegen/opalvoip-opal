@@ -156,6 +156,14 @@ class OpalLocalEndPoint : public OpalEndPoint
       OpalLocalConnection & connection ///<  Connection having event
     );
 
+    /**Indicate alerting for the incoming connection.
+       Returns false if the connection token does not correspond to a valid
+       connection.
+      */
+    virtual bool AlertingIncomingCall(
+      const PString & token ///<  Token of connection to accept call
+    );
+
     /**Accept the incoming connection.
        Returns false if the connection token does not correspond to a valid
        connection.
@@ -244,7 +252,14 @@ class OpalLocalEndPoint : public OpalEndPoint
        Default returns true.
       */
     virtual bool IsSynchronous() const;
+
+    /**Indicate OnAlerting() is be deferred or immediate.
+      */
+    bool IsDeferredAlerting() const { return m_deferredAlerting; }
   //@}
+
+  protected:
+    bool m_deferredAlerting;
 };
 
 
@@ -261,7 +276,9 @@ class OpalLocalConnection : public OpalConnection
     OpalLocalConnection(
       OpalCall & call,              ///<  Owner calll for connection
       OpalLocalEndPoint & endpoint, ///<  Owner endpoint for connection
-      void * userData               ///<  Arbitrary data to pass to connection
+      void * userData,              ///<  Arbitrary data to pass to connection
+      unsigned options = 0,
+      OpalConnection::StringOptions * stringOptions = NULL
     );
 
     /**Destroy endpoint.
@@ -324,6 +341,26 @@ class OpalLocalConnection : public OpalConnection
       PBoolean isSource                    ///<  Is a source stream
     );
 
+    /**Open source or sink media stream for session.
+      */
+    virtual OpalMediaStreamPtr OpenMediaStream(
+      const OpalMediaFormat & mediaFormat, ///<  Media format to open
+      unsigned sessionID,                  ///<  Session to start stream on
+      bool isSource                        ///< Stream is a source/sink
+    );
+
+    /**Call back when patching a media stream.
+       This function is called when a connection has created a new media
+       patch between two streams.
+       Add the echo canceler patch and call the endpoint function of
+       the same name.
+       Add a PCM silence detector filter.
+      */
+    virtual void OnPatchMediaStream(
+      PBoolean isSource,
+      OpalMediaPatch & patch    ///<  New patch
+    );
+
     /**Send a user input indication to the remote endpoint.
        This sends an arbitrary string as a user indication. If DTMF tones in
        particular are required to be sent then the SendIndicationTone()
@@ -338,6 +375,10 @@ class OpalLocalConnection : public OpalConnection
 
   /**@name New operations */
   //@{
+    /**Indicate alerting for the incoming connection.
+      */
+    virtual void AlertingIncoming();
+
     /**Accept the incoming connection.
       */
     virtual void AcceptIncoming();

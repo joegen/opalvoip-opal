@@ -38,6 +38,8 @@
 
 #include <opal/localep.h>
 #include <opal/call.h>
+#include <opal/patch.h>
+#include <codec/echocancel.h>
 
 
 #define new PNEW
@@ -47,6 +49,7 @@
 
 OpalLocalEndPoint::OpalLocalEndPoint(OpalManager & mgr, const char * prefix)
   : OpalEndPoint(mgr, prefix, CanTerminateCall)
+  , m_deferredAlerting(false)
 {
   PTRACE(3, "LocalEP\tCreated endpoint.\n");
 }
@@ -60,7 +63,9 @@ OpalLocalEndPoint::~OpalLocalEndPoint()
 
 OpalMediaFormatList OpalLocalEndPoint::GetMediaFormats() const
 {
-  return manager.GetCommonMediaFormats(false, true);
+  OpalMediaFormatList list = manager.GetCommonMediaFormats(false, true);
+  list += OpalL16_STEREO_48KHZ;
+  return list;
 }
 
 
@@ -89,6 +94,19 @@ bool OpalLocalEndPoint::OnOutgoingCall(const OpalLocalConnection & /*connection*
 bool OpalLocalEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 {
   connection.AcceptIncoming();
+  return true;
+}
+
+
+bool OpalLocalEndPoint::AlertingIncomingCall(const PString & token)
+{
+  PSafePtr<OpalLocalConnection> connection = GetLocalConnectionWithLock(token, PSafeReadOnly);
+  if (connection == NULL) {
+    PTRACE(2, "LocalEP\tCould not find connection using token \"" << token << '"');
+    return false;
+  }
+
+  connection->AlertingIncoming();
   return true;
 }
 
@@ -172,8 +190,12 @@ bool OpalLocalEndPoint::IsSynchronous() const
 
 static unsigned LastConnectionTokenID;
 
-OpalLocalConnection::OpalLocalConnection(OpalCall & call, OpalLocalEndPoint & ep, void * /*userData*/)
-  : OpalConnection(call, ep, psprintf("%u", ++LastConnectionTokenID))
+OpalLocalConnection::OpalLocalConnection(OpalCall & call,
+                                OpalLocalEndPoint & ep,
+                                             void * /*userData*/,
+                                           unsigned options,
+                    OpalConnection::StringOptions * stringOptions)
+  : OpalConnection(call, ep, psprintf("%u", ++LastConnectionTokenID), options, stringOptions)
   , endpoint(ep), userData(NULL)
 {
   PTRACE(4, "LocalCon\tCreated connection with token \"" << callToken << '"');
@@ -208,10 +230,17 @@ PBoolean OpalLocalConnection::SetUpConnection()
   }
 
   PTRACE(3, "LocalCon\tSetUpConnection(" << remotePartyName << ')');
+
+  if (!endpoint.OnIncomingCall(*this))
+    return false;
+
+  if (endpoint.IsDeferredAlerting())
+    return true;
+
   SetPhase(AlertingPhase);
   OnAlerting();
 
-  return endpoint.OnIncomingCall(*this);
+  return true;
 }
 
 
@@ -232,10 +261,51 @@ OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat &
 }
 
 
+OpalMediaStreamPtr OpalLocalConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
+{
+#if OPAL_VIDEO
+  if ( isSource &&
+       mediaFormat.GetMediaType() == OpalMediaType::Video() &&
+      !ownerCall.IsEstablished() &&
+      !endpoint.GetManager().CanAutoStartTransmitVideo()) {
+    PTRACE(3, "LocalCon\tOpenMediaStream auto start disabled, refusing video open");
+    return NULL;
+  }
+#endif
+
+  return OpalConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
+}
+
+
+void OpalLocalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
+{
+  int clockRate;
+  if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
+    PTRACE(3, "LocalCon\tAdding filters to patch");
+    if (isSource)
+      patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
+    clockRate = patch.GetSource().GetMediaFormat().GetClockRate();
+    echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
+    echoCanceler->SetClockRate(clockRate);
+    patch.AddFilter(isSource?echoCanceler->GetReceiveHandler():echoCanceler->GetSendHandler(), OpalPCM16);
+  }
+}
+
+
 bool OpalLocalConnection::SendUserInputString(const PString & value)
 {
   PTRACE(3, "LocalCon\tSendUserInputString(" << value << ')');
   return endpoint.OnUserInput(*this, value);
+}
+
+
+void OpalLocalConnection::AlertingIncoming()
+{
+  if (LockReadWrite()) {
+    SetPhase(AlertingPhase);
+    OnAlerting();
+    UnlockReadWrite();
+  }
 }
 
 
