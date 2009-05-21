@@ -63,25 +63,26 @@ OpalLocalEndPoint::~OpalLocalEndPoint()
 
 OpalMediaFormatList OpalLocalEndPoint::GetMediaFormats() const
 {
-  OpalMediaFormatList list = manager.GetCommonMediaFormats(false, true);
-  list += OpalL16_STEREO_48KHZ;
-  return list;
+  return manager.GetCommonMediaFormats(false, true);
 }
 
 
 PBoolean OpalLocalEndPoint::MakeConnection(OpalCall & call,
                                       const PString & /*remoteParty*/,
                                                void * userData,
-                                       unsigned int   /*options*/,
-                      OpalConnection::StringOptions * /* stringOptions*/)
+                                       unsigned int   options,
+                      OpalConnection::StringOptions * stringOptions)
 {
-  return AddConnection(CreateConnection(call, userData));
+  return AddConnection(CreateConnection(call, userData, options, stringOptions));
 }
 
 
-OpalLocalConnection * OpalLocalEndPoint::CreateConnection(OpalCall & call, void * userData)
+OpalLocalConnection * OpalLocalEndPoint::CreateConnection(OpalCall & call, 
+                                                              void * userData,
+                                                            unsigned options,
+                                     OpalConnection::StringOptions * stringOptions)
 {
-  return new OpalLocalConnection(call, *this, userData);
+  return new OpalLocalConnection(call, *this, userData, options, stringOptions);
 }
 
 
