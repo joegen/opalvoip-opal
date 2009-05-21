@@ -1033,7 +1033,7 @@ class H460_FeatureSet : public PObject
 
     /** Build a FeatureSet from the contents of a generic data field.
 	 */
-	H460_FeatureSet(const H225_ArrayOf_GenericData & generic);
+	H460_FeatureSet(const H225_ArrayOf_GenericData & genericData);
 
     /** Derive new Feature Set based on this Feature Set ie Clone this FeatureSet
 	  */

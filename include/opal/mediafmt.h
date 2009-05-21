@@ -304,7 +304,7 @@ class OpalMediaOption : public PObject
     };
 
     const H245GenericInfo & GetH245Generic() const { return m_H245Generic; }
-    void SetH245Generic(const H245GenericInfo & generic) { m_H245Generic = generic; }
+    void SetH245Generic(const H245GenericInfo & genericInfo) { m_H245Generic = genericInfo; }
 #endif // OPAL_H323
 
   protected:

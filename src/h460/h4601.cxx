@@ -1006,16 +1006,16 @@ H460_FeatureSet::H460_FeatureSet(const H225_FeatureSet & fs)
 	CreateFeatureSet(fs);
 }
 
-H460_FeatureSet::H460_FeatureSet(const H225_ArrayOf_GenericData & generic)
+H460_FeatureSet::H460_FeatureSet(const H225_ArrayOf_GenericData & genericData)
 {
-	Features.DisallowDeleteObjects();   // Built FeatureSet should not delete Objects.
-	ep = NULL;
-	baseSet = NULL;
+  Features.DisallowDeleteObjects();   // Built FeatureSet should not delete Objects.
+  ep = NULL;
+  baseSet = NULL;
 
-    for (PINDEX i=0; i < generic.GetSize(); i++) {
-	   AddFeature((H460_Feature *)&generic[i]);
-	}
+  for (PINDEX i=0; i < genericData.GetSize(); i++)
+    AddFeature((H460_Feature *)&genericData[i]);
 }
+
 
 PBoolean H460_FeatureSet::ProcessFirstPDU(const H225_FeatureSet & fs)
 {
