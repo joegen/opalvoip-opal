@@ -255,13 +255,6 @@ class OpalEndPoint : public PObject
       unsigned options,             ///<  options for new connection (can't use default value as overrides will fail)
       OpalConnection::StringOptions * stringOptions
     );
-    virtual PBoolean OnIncomingConnection(
-      OpalConnection & connection,  ///<  Connection that is calling
-      unsigned options              ///<  options for new connection (can't use default value as overrides will fail)
-    );
-    virtual PBoolean OnIncomingConnection(
-      OpalConnection & connection   ///<  Connection that is calling
-    );
 
     /**Call back for remote party is now responsible for completing the call.
        This function is called when the remote system has been contacted and it
@@ -730,6 +723,10 @@ class OpalEndPoint : public PObject
 
     friend void OpalManager::GarbageCollection();
     friend void OpalConnection::Release(CallEndReason reason);
+
+  private:
+    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);
+    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
 };
 
 

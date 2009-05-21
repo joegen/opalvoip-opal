@@ -452,23 +452,9 @@ void OpalConnection::OnReleased()
 }
 
 
-PBoolean OpalConnection::OnIncomingConnection()
-{
-  return PTrue;
-}
-
-
-PBoolean OpalConnection::OnIncomingConnection(unsigned int /*options*/)
-{
-  return PTrue;
-}
-
-
 PBoolean OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  return OnIncomingConnection() &&
-         OnIncomingConnection(options) &&
-         endpoint.OnIncomingConnection(*this, options, stringOptions);
+  return endpoint.OnIncomingConnection(*this, options, stringOptions);
 }
 
 
