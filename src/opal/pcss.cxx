@@ -250,14 +250,6 @@ OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
   return new OpalPCSSConnection(call, *this, playDevice, recordDevice, options, stringOptions);
 }
 
-OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
-                                                        const PString & playDevice,
-                                                        const PString & recordDevice,
-                                                        void * userData)
-{
-  return CreateConnection(call, playDevice, recordDevice, userData, 0, NULL);
-}
-
 
 PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
 						                                            const OpalMediaFormat & mediaFormat,
