@@ -189,14 +189,12 @@ bool OpalLocalEndPoint::IsSynchronous() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-static unsigned LastConnectionTokenID;
-
 OpalLocalConnection::OpalLocalConnection(OpalCall & call,
                                 OpalLocalEndPoint & ep,
                                              void * /*userData*/,
                                            unsigned options,
                     OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, psprintf("%u", ++LastConnectionTokenID), options, stringOptions)
+  : OpalConnection(call, ep, ep.GetManager().GetNextToken('L'), options, stringOptions)
   , endpoint(ep), userData(NULL)
 {
   PTRACE(4, "LocalCon\tCreated connection with token \"" << callToken << '"');

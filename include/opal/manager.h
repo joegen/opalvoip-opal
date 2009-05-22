@@ -281,10 +281,11 @@ class OpalManager : public PObject
       OpalCall * call
     );
 
-    /**Get next unique token ID for calls.
-       This is an internal function called by the OpalCall constructor.
+    /**Get next unique token ID for calls or connections.
+       This is an internal function called by the OpalCall and other
+       constructors.
       */
-    PString GetNextCallToken();
+    virtual PString GetNextToken(char prefix);
   //@}
 
   /**@name Connection management */

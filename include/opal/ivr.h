@@ -130,10 +130,6 @@ class OpalIVREndPoint : public OpalEndPoint
       const PString & vxml,   ///<  vxml to execute
       OpalConnection::StringOptions * stringOptions = NULL
     );
-
-    /**Create a unique token for a new conection.
-      */
-    virtual PString CreateConnectionToken();
   //@}
 
   /**@name Options and configuration */
@@ -179,7 +175,6 @@ class OpalIVREndPoint : public OpalEndPoint
   //@}
 
   protected:
-    unsigned            nextTokenNumber;
     PString             defaultVXML;
     OpalMediaFormatList defaultMediaFormats;
     PString             defaultTts;
