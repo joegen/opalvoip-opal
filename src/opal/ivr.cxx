@@ -59,8 +59,6 @@ OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
                 "  </form>\n"
                 "</vxml>\n")
 {
-  nextTokenNumber = 1;
-
   defaultMediaFormats += OpalPCM16;
 
   PTRACE(4, "IVR\tCreated endpoint.");
@@ -92,7 +90,7 @@ PBoolean OpalIVREndPoint::MakeConnection(OpalCall & call,
   if (vxml.IsEmpty() || vxml == "*")
     vxml = defaultVXML;
 
-  return AddConnection(CreateConnection(call, CreateConnectionToken(), userData, vxml, stringOptions));
+  return AddConnection(CreateConnection(call, manager.GetNextToken('I'), userData, vxml, stringOptions));
 }
 
 
@@ -110,15 +108,6 @@ OpalIVRConnection * OpalIVREndPoint::CreateConnection(OpalCall & call,
                                                       OpalConnection::StringOptions * stringOptions)
 {
   return new OpalIVRConnection(call, *this, token, userData, vxml, stringOptions);
-}
-
-
-PString OpalIVREndPoint::CreateConnectionToken()
-{
-  inUseFlag.Wait();
-  unsigned tokenNumber = nextTokenNumber++;
-  inUseFlag.Signal();
-  return psprintf("IVR/%u", tokenNumber);
 }
 
 

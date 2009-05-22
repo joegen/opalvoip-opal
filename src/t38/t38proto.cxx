@@ -50,8 +50,6 @@
 
 static const char TIFF_File_FormatName[] = "TIFF-File";
 
-static PAtomicInteger faxCallIndex;
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -401,7 +399,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
                                      bool              receiving,
                                      bool              disableT38,
                                      OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, psprintf("FC%u", ++faxCallIndex), 0, stringOptions)
+  : OpalConnection(call, ep, ep.GetManager().GetNextToken('F'), 0, stringOptions)
   , m_endpoint(ep)
   , m_filename(filename)
   , m_receiving(receiving)
