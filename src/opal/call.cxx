@@ -56,7 +56,7 @@
 
 OpalCall::OpalCall(OpalManager & mgr)
   : manager(mgr)
-  , myToken(mgr.GetNextCallToken())
+  , myToken(mgr.GetNextToken('C'))
   , isEstablished(PFalse)
   , isClearing(PFalse)
   , callEndReason(OpalConnection::NumCallEndReasons)

@@ -506,9 +506,9 @@ void OpalManager::DestroyCall(OpalCall * call)
 }
 
 
-PString OpalManager::GetNextCallToken()
+PString OpalManager::GetNextToken(char prefix)
 {
-  return psprintf("%c%08x%u", PRandom::Number('a', 'z'), PRandom::Number(), ++lastCallTokenID);
+  return psprintf("%c%08x%u", prefix, PRandom::Number(), ++lastCallTokenID);
 }
 
 PBoolean OpalManager::MakeConnection(OpalCall & call,
