@@ -1603,8 +1603,8 @@ class OpalConnection : public PSafeObject
 #endif
 
   private:
-    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(unsigned int), false);
-    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(unsigned int), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(), false);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H
