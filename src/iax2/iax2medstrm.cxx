@@ -65,29 +65,31 @@ OpalIAX2MediaStream::OpalIAX2MediaStream(IAX2Connection & conn,
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource),
     connection(conn)
 {
-  PTRACE(6, "Media\tConstructor OpalIAX2MediaStream" << mediaFormat);
+  PTRACE(6, "Media\tCreate OpalIAX2MediaStream-" 
+	 << mediaFormat 
+	 << (IsSource() ? "source" : "sink"));
 }
  
 OpalIAX2MediaStream::~OpalIAX2MediaStream()
 {
   Close();
-  PTRACE(6, "Media\tDestructor OpalIAX2MediaStream");
+  PTRACE(6, "Media\tDestroy OpalIAX2MediaStream");
 }
  
 PBoolean OpalIAX2MediaStream::Open()
 {
-  if (isOpen)
+  if (IsOpen())
     return PTrue;
 
   PBoolean res = OpalMediaStream::Open();
-  PTRACE(3, "Media\tOpalIAX2MediaStream set to " << mediaFormat << " is now open");
+  PTRACE(3, "Media\t" << *this << " is now open");
  
   return res;
 }
  
 PBoolean OpalIAX2MediaStream::Start()
 {
-  PTRACE(2, "Media\tOpalIAX2MediaStream is a " << PString(IsSink() ? "sink" : "source"));
+  PTRACE(2, "Media\t" << *this << " Run ::Start");
 
   return OpalMediaStream::Start();
 }
@@ -96,21 +98,21 @@ PBoolean OpalIAX2MediaStream::Close()
 {
   PBoolean res = OpalMediaStream::Close();
 
-  PTRACE(3, "Media\tOpalIAX2MediaStream of " << mediaFormat << " is now closed"); 
+  PTRACE(3, "Media\t" << *this << " is now closed"); 
   return res;
 }
  
  
 PBoolean OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
 {
-  PTRACE(3, "Media\tRead media comppressed audio packet from the iax2 connection");
+  PTRACE(5, "Media\tRead media compressed audio packet from the iax2 connection");
 
   if (IsSink()) {
     PTRACE(1, "Media\tTried to read from sink media stream");
     return PFalse;
   }
 
-  if (!isOpen) {
+  if (!IsOpen()) {
     PTRACE(3, "Media\tStream has been closed, so exit now");
     return PFalse;
   }
@@ -120,9 +122,10 @@ PBoolean OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
   return success;
 }
 
-
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
+PBoolean OpalIAX2MediaStream::IsSynchronous() const
+{
+  return IsSource();
+}
 /////////////////////////////////////////////////////////////////////////////
 
 // This routine takes data from the source (eg mic) and sends the data to the remote host.
@@ -133,7 +136,7 @@ PBoolean OpalIAX2MediaStream::WriteData(const BYTE * buffer, PINDEX length, PIND
     PTRACE(1, "Media\tTried to write to source media stream");
     return PFalse;
   }
-  PTRACE(3, "Media\tSend data to the network : have " 
+  PTRACE(5, "Media\tSend data to the network : have " 
 	 << length << " bytes to send to remote host");
   PBYTEArray *sound = new PBYTEArray(buffer, length);
   written = length;
@@ -142,17 +145,18 @@ PBoolean OpalIAX2MediaStream::WriteData(const BYTE * buffer, PINDEX length, PIND
   return PTrue;
 }
 
-PBoolean OpalIAX2MediaStream::IsSynchronous() const
-{
-  if (IsSource())
-    return PTrue;
-
-  /**We are reading from a sound card, which generates a frame at a regular rate*/
-  return PTrue;
-}
-
 
 #endif // OPAL_IAX2
 
 /////////////////////////////////////////////////////////////////////////////
 
+
+/* The comment below is magic for those who use emacs to edit this file. */
+/* With the comment below, the tab key does auto indent to 2 spaces.     */
+
+/*
+ * Local Variables:
+ * mode:c
+ * c-basic-offset:2
+ * End:
+ */

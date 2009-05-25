@@ -179,7 +179,7 @@ PBoolean IAX2Connection::SetConnected()
     PTRACE(3, "IAX2Con\t SET CONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
   ////if no media streams, try and start them
-
+    
   if (mediaStreams.IsEmpty()) {
     if (!IsOriginating())
       iax2Processor.SendAnswerMessageToRemoteNode();
@@ -372,6 +372,7 @@ void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, u
 
 void IAX2Connection::EndCallNow(CallEndReason reason)
 { 
+  PTRACE(4, "IAX2Con\tEndCallNow() - reason is " << reason);
   OpalConnection::ClearCall(reason); 
 }
 
@@ -521,6 +522,9 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
 
 PBoolean IAX2Connection::ReadSoundPacket(RTP_DataFrame & packet)
 { 
+  if (GetPhase() > EstablishedPhase)/*We are hanging up. */
+    return PFalse;            /* Sending sound now is meaningless */
+  
   PTRACE(6, "Iax2Con\t Start read from  jitter buffer"); 
   if (!jitterBuffer.ReadData(packet)) {
     PINDEX zeroBytes = packet.GetSize() - packet.GetHeaderSize();

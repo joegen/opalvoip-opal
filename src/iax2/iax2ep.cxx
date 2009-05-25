@@ -590,7 +590,8 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
     }
 
     if (!PIsDescendant(f, IAX2FullFrame)) {
-      PTRACE(3, "Distribution\tNO matching connection for incoming ethernet frame Sorry" << idString);
+      PTRACE(3, "Distribution\tNo matching connection for network frame."
+	     << " Deleting " << idString);
       delete f;
       continue;
     }

@@ -113,7 +113,7 @@ PString IAX2WaitingForAck::GetResponseAsString() const
 ////////////////////////////////////////////////////////////////////////////////
 
 IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
-  : PThread(1000, NoAutoDeleteThread, NormalPriority, "IAX Processor"),
+  : PThread(1000, NoAutoDeleteThread, NormalPriority, "IAX2 Processor"),
     endpoint(ep)
 {
   endThread = PFalse;
@@ -236,7 +236,8 @@ void IAX2Processor::Terminate()
   if (IsSuspended())
     Resume();
 
-  PTRACE(4, "Processor has been directed to end. " << (IsTerminated() ? "Has already ended" : "So end now."));
+  PTRACE(4, "IAX2\tProcessor has been directed to end. " 
+	 << (IsTerminated() ? "Has already ended" : "So end now."));
   
   Activate();
 }
@@ -250,7 +251,7 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   
   //check the frame has not already been built
   if (!PIsDescendant(frame, IAX2MiniFrame) && !PIsDescendant(frame, IAX2FullFrame)) {
-    PTRACE(5, "Iax2Connection\tUnknown  incoming frame " << frame->IdString());
+    PTRACE(5, "Procesor\tUnknown  incoming frame " << frame->IdString());
     IAX2Frame *af = frame->BuildAppropriateFrameType(encryption);
     delete frame;
     
@@ -267,7 +268,7 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   }
   
   IAX2FullFrame *f = (IAX2FullFrame *) frame;
-  PTRACE(5, "IaxConnection\tFullFrame incoming frame " << frame->IdString());
+  PTRACE(5, "Processor\tFullFrame incoming frame " << frame->IdString());
 
   if (IncomingMessageOutOfOrder(f))
     return PTrue;
@@ -278,7 +279,7 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   IncControlFramesRcvd();
 
   if (remote.DestCallNumber() == 0) {
-    PTRACE(3, "Set Destination call number to " << frame->GetRemoteInfo().SourceCallNumber());
+    PTRACE(3, "Processor\tSet Destination call number to " << frame->GetRemoteInfo().SourceCallNumber());
     remote.SetDestCallNumber(frame->GetRemoteInfo().SourceCallNumber());
   }
   
@@ -308,7 +309,7 @@ void IAX2Processor::TransmitFrameToRemoteEndpoint(IAX2FullFrameProtocol *src)
 
 void IAX2Processor::TransmitFrameToRemoteEndpoint(IAX2Frame *src)
 {
-  PTRACE(5, "Send frame " << src->GetClass() << " " << src->IdString() << " to remote endpoint");
+  PTRACE(5, "Processor\tSend frame " << src->GetClass() << " " << src->IdString() << " to remote endpoint");
   if (src->IsFullFrame()) {
     sequence.MassageSequenceForSending(*(IAX2FullFrame*)src);
     IncControlFramesSent();
@@ -337,16 +338,19 @@ PBoolean IAX2Processor::Authenticate(IAX2FullFrameProtocol *reply, PString & pas
     processed = PTrue;
     encryption.SetChallengeKey(ieData.challenge);
     encryption.SetEncryptionKey(password);
-  } else if (ie.IsPlainTextAuthentication()) {
-    /*TODO: in the future we might want a policy of only
-    allowing md5 passwords.  This would make
-    injecting plain auth IEs useless.*/
-    reply->AppendIe(new IAX2IePassword(password));
-    processed = PTrue;
-  } else if (ie.IsRsaAuthentication()) {
-    PTRACE(4, "DO NOT handle RSA authentication ");
-    reply->SetSubClass(IAX2FullFrameProtocol::cmdInval);
-    processed = PTrue;
+  } else  {
+    if (ie.IsPlainTextAuthentication()) {
+      /*TODO: in the future we might want a policy of only
+	allowing md5 passwords.  This would make
+	injecting plain auth IEs useless.*/
+      reply->AppendIe(new IAX2IePassword(password));
+      processed = PTrue;
+    } else 
+      if (ie.IsRsaAuthentication()) {
+	PTRACE(4, "Processor\tDO NOT handle RSA authentication ");
+	reply->SetSubClass(IAX2FullFrameProtocol::cmdInval);
+	processed = PTrue;
+      }
   }
   
   if (ieData.encryptionMethods == IAX2IeEncryption::encryptAes128) {
