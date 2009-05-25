@@ -468,7 +468,8 @@ PBoolean IAX2MiniFrame::ProcessNetworkPacket()
   Read2Bytes(dataWord);
   timeStamp = dataWord;
 
-  PTRACE(5, "Mini frame, header processed.  frame is audio" << PString(isAudio ? " PTrue " : " PFalse " ));
+  PTRACE(5, "Mini frame, header processed. frame is " 
+	 << PString(isAudio ? " audio" : "video"));
   return PTrue;
 }
 

@@ -114,11 +114,12 @@ class OpalIAX2MediaStream : public OpalMediaStream
       PINDEX & written     ///<Length of data actually written
     );
 
-    /**Indicate if the media stream is synchronous.
-       A synchronous stream is one that is regular, such as the sound frames
-       from a sound card.
+ /**Indicate if the media stream is synchronous.
+       @Return false if this stream is from the network.
+       @return true if this stream is from a sound card.
       */
     virtual PBoolean IsSynchronous() const;
+
   //@}
 
   protected:
