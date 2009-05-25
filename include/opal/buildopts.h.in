@@ -166,11 +166,6 @@
 #endif
 
 
-#if OPAL_H323
-  #undef  OPAL_HAS_H224
-  #undef  OPAL_HAS_H281
-#endif
-
 /////////////////////////////////////////////////
 //
 // Various options
@@ -186,17 +181,21 @@
 // Media support
 //
 
+// G.711 Packet Loss Concealment
 #undef  OPAL_G711PLC
 
+// Video
 #if P_VIDEO
   #undef  OPAL_VIDEO
 #endif
 
 #if OPAL_VIDEO
+  // Uncompressed video over RTP
   #undef  OPAL_RFC4175 
 #endif
 
 
+// T.38 Fax
 #undef  OPAL_T38_CAPABILITY
 
 #if OPAL_T38_CAPABILITY
@@ -209,6 +208,8 @@
   #define H323_DISABLE_T38 1
 #endif
 
+
+// Instant Messaging
 #undef OPAL_HAS_MSRP
 #if OPAL_SIP
   #undef OPAL_HAS_SIPIM
@@ -217,17 +218,21 @@
 
 #define OPAL_HAS_IM    (OPAL_HAS_SIPIM || OPAL_HAS_MSRP || OPAL_HAS_RFC4103)
 
-/////////////////////////////////////////////////
-//
-// use system Speex
 
+// Far end camera control
+#undef  OPAL_HAS_H224
+#undef  OPAL_HAS_H281
+
+
+// Use system Speex audio codec
 #undef	OPAL_SYSTEM_SPEEX
 #undef  OPAL_HAVE_SPEEX_SPEEX_H
 #undef  OPAL_SPEEX_FLOAT_NOISE
 
+
 /////////////////////////////////////////////////
 //
-// VoiceTronic VPB Support
+// VoiceTronic VPB Line Interface Devide support
 //
 
 #if OPAL_LID
@@ -303,6 +308,7 @@
 
   #endif
 #endif
+
 
 /////////////////////////////////////////////////
 //
