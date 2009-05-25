@@ -256,7 +256,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
     unsigned soundChannelBuffers;
 
   private:
-    P_DEPRECATED_VIRTUAL(OpalPCSSConnection *, CreateConnection(OpalCall &, const PString &, const PString &, void *), 0)
+    P_REMOVE_VIRTUAL(OpalPCSSConnection *, CreateConnection(OpalCall &, const PString &, const PString &, void *), 0)
 };
 
 
