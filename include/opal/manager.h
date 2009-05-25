@@ -1379,9 +1379,9 @@ class OpalManager : public PObject
     friend void OpalCall::OnReleased(OpalConnection & connection);
 
   private:
-    P_DEPRECATED_VIRTUAL(OpalCall *,CreateCall(), 0);
-    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);
-    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
+    P_REMOVE_VIRTUAL(OpalCall *,CreateCall(), 0);
+    P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
 };
 
 
