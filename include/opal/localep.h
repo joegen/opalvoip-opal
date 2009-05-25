@@ -264,7 +264,7 @@ class OpalLocalEndPoint : public OpalEndPoint
     bool m_deferredAlerting;
 
   private:
-    P_DEPRECATED_VIRTUAL(OpalLocalConnection *, CreateConnection(OpalCall &, void *), 0);
+    P_REMOVE_VIRTUAL(OpalLocalConnection *, CreateConnection(OpalCall &, void *), 0);
 };
 
 

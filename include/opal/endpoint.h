@@ -725,8 +725,8 @@ class OpalEndPoint : public PObject
     friend void OpalConnection::Release(CallEndReason reason);
 
   private:
-    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);
-    P_DEPRECATED_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
 };
 
 
