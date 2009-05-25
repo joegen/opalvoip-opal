@@ -31,18 +31,16 @@
 #pragma interface
 #endif
 
-#ifndef _PTLIB_H
-#include <ptlib.h>
-#endif
-
 #include <opal/buildopts.h>
 
 #if OPAL_HAS_H224
+#if OPAL_H323
 
 #include <h323/h323caps.h>
 
 #include <h224/h224.h>
 #include <h224/h224handler.h>
+
 
 /** This class describes the H.224 capability, using the H.323 Annex Q mode
 */
@@ -72,6 +70,7 @@ public:
   virtual PBoolean OnSendingPDU(H245_DataMode & pdu) const;
   virtual PBoolean OnReceivedPDU(const H245_DataApplicationCapability & pdu);
 };
+
 
 /** This class describes the H.224 capability, using the HDLC tunneling mode
  */
@@ -107,6 +106,8 @@ public:
   H323_REGISTER_CAPABILITY(H323_H224_AnnexQCapability, GetOpalH224_H323AnnexQ().GetName()); \
   H323_REGISTER_CAPABILITY(H323_H224_HDLCTunnelingCapability, GetOpalH224_HDLCTunneling().GetName()); \
 
+
+#endif // OPAL_H323
 
 #endif // OPAL_HAS_H224
 
