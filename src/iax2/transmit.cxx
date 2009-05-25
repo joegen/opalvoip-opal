@@ -43,7 +43,7 @@
 #define new PNEW
 
 IAX2Transmit::IAX2Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
-  : PThread(1000, NoAutoDeleteThread, NormalPriority, "IAX Transmitter"),
+  : PThread(1000, NoAutoDeleteThread, NormalPriority, "IAX2 Transmitter"),
      ep(_newEndpoint),
      sock(_newSocket)
 {
@@ -169,7 +169,7 @@ void IAX2Transmit::ProcessSendList()
     }
     
     if (!isFullFrame) {
-      PTRACE(4, "Delete this frame as it is a mini frame, and continue" << active->IdString());
+      PTRACE(5, "Delete this frame as it is a mini frame, and continue" << active->IdString());
       delete active;
       continue;
     }
