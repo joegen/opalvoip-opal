@@ -564,8 +564,7 @@ PBoolean OpalLineConnection::SetConnected()
     wasOffHook = true;
   }
 
-  if (GetMediaStream(OpalMediaType::Audio(), true) == NULL)
-    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
+  AutoStartMediaStreams();
   return OpalConnection::SetConnected();
 }
 
@@ -691,8 +690,7 @@ void OpalLineConnection::Monitor()
       else {
         // If we are in alerting state then we are B-Party
         OnConnectedInternal();
-        if (GetMediaStream(OpalMediaType::Audio(), true) == NULL)
-          ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
+        AutoStartMediaStreams();
       }
     }
   }
@@ -827,8 +825,7 @@ PBoolean OpalLineConnection::SetUpConnection()
 
     PTRACE(3, "LID Con\tNo remote party indicated, going off hook without dialing.");
     OnConnectedInternal();
-    if (GetMediaStream(OpalMediaType::Audio(), true) == NULL)
-      ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
+    AutoStartMediaStreams();
     return true;
   }
 
@@ -853,8 +850,7 @@ PBoolean OpalLineConnection::SetUpConnection()
 
   PTRACE(3, "LID Con\tGot ring back on " << line);
   // Start media before the OnAlerting to get progress tones (e.g. SIP 183 response)
-  if (GetMediaStream(OpalMediaType::Audio(), true) == NULL)
-    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
+  AutoStartMediaStreams();
   SetPhase(AlertingPhase);
   OnAlerting();
 

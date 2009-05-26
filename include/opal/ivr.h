@@ -41,16 +41,16 @@
 #if OPAL_IVR
 
 #include <opal/opalvxml.h>
-#include <opal/endpoint.h>
+#include <opal/localep.h>
 
 class OpalIVRConnection;
 
 
 /**Interactive Voice Response endpoint.
  */
-class OpalIVREndPoint : public OpalEndPoint
+class OpalIVREndPoint : public OpalLocalEndPoint
 {
-    PCLASSINFO(OpalIVREndPoint, OpalEndPoint);
+    PCLASSINFO(OpalIVREndPoint, OpalLocalEndPoint);
   public:
   /**@name Construction */
   //@{
@@ -125,9 +125,9 @@ class OpalIVREndPoint : public OpalEndPoint
       */
     virtual OpalIVRConnection * CreateConnection(
       OpalCall & call,        ///<  Owner of connection
-      const PString & token,  ///<  Call token for new connection
       void * userData,        ///<  Arbitrary data to pass to connection
       const PString & vxml,   ///<  vxml to execute
+      unsigned int options,
       OpalConnection::StringOptions * stringOptions = NULL
     );
   //@}
@@ -178,14 +178,17 @@ class OpalIVREndPoint : public OpalEndPoint
     PString             defaultVXML;
     OpalMediaFormatList defaultMediaFormats;
     PString             defaultTts;
+
+  private:
+    P_REMOVE_VIRTUAL(OpalIVRConnection *, CreateConnection(OpalCall &,const PString &,void *,const PString &,OpalConnection::StringOptions *),0);
 };
 
 
 /**Interactive Voice Response connection.
  */
-class OpalIVRConnection : public OpalConnection
+class OpalIVRConnection : public OpalLocalConnection
 {
-    PCLASSINFO(OpalIVRConnection, OpalConnection);
+    PCLASSINFO(OpalIVRConnection, OpalLocalConnection);
   public:
   /**@name Construction */
   //@{
@@ -194,9 +197,9 @@ class OpalIVRConnection : public OpalConnection
     OpalIVRConnection(
       OpalCall & call,            ///<  Owner calll for connection
       OpalIVREndPoint & endpoint, ///<  Owner endpoint for connection
-      const PString & token,      ///<  Token for connection
       void * userData,            ///<  Arbitrary data to pass to connection
       const PString & vxml,       ///<  vxml to execute
+      unsigned int options,
       OpalConnection::StringOptions * stringOptions = NULL
     );
 
@@ -220,35 +223,6 @@ class OpalIVRConnection : public OpalConnection
     /**Get the local name/alias.
       */
     virtual PString GetLocalPartyURL() const;
-
-    /**Start an outgoing connection.
-       This function will initiate the connection to the remote entity, for
-       example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
-
-       The default behaviour does.
-      */
-    virtual PBoolean SetUpConnection();
-
-    /**Indicate to remote endpoint an alert is in progress.
-       If this is an incoming connection and the AnswerCallResponse is in a
-       AnswerCallDeferred or AnswerCallPending state, then this function is
-       used to indicate to that endpoint that an alert is in progress. This is
-       usually due to another connection which is in the call (the B party)
-       has received an OnAlerting() indicating that its remote endpoint is
-       "ringing".
-
-       The default behaviour does nothing.
-      */
-    virtual PBoolean SetAlerting(
-      const PString & calleeName,   ///<  Name of endpoint being alerted.
-      PBoolean withMedia                ///<  Open media with alerting
-    );
-
-    /**Indicate to remote endpoint we are connected.
-
-       The default behaviour does nothing.
-      */
-    virtual PBoolean SetConnected();
 
     /**A call back function whenever a connection is "established".
        This indicates that a connection to an endpoint was established. This
