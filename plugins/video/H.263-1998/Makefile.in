@@ -34,9 +34,11 @@ COMMONDIR	=../common
 PLUGINDIR	=../../
 OBJDIR 		=./obj
 
+include 	../../../opal_defs.mak
+
 CC	 	=@CC@
-CFLAGS	 	=@CFLAGS@
-CXX	 	=@CXX@
+CFLAGS	 	=@CFLAGS@ $(PTLIB_CFLAGS)
+CXX	 	=@CXX@ 
 LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
