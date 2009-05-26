@@ -356,7 +356,7 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
                                        const PString & recordDevice,
                                        unsigned options,
                           OpalConnection::StringOptions * stringOptions)
-  : OpalLocalConnection(call, ep, NULL, options, stringOptions)
+  : OpalLocalConnection(call, ep, NULL, options, stringOptions, 'P')
   , endpoint(ep)
   , soundChannelPlayDevice(playDevice)
   , soundChannelRecordDevice(recordDevice)

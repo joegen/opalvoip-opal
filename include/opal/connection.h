@@ -856,6 +856,20 @@ class OpalConnection : public PSafeObject
       bool isSource                      ///< Stream is a source/sink
     );
 
+    /** Indicate whether a particular media type can auto-start.
+        This is typically used for things like video or fax to contol if on
+        initial connection, that media type is opened straight away. Streams
+        of that type may be opened later, during the call, by using the
+        OpalCall::OpenSourceMediaStreams() function.
+      */
+    virtual OpalMediaType::AutoStartMode GetAutoStart(
+      const OpalMediaType & mediaType  ///< media type to check
+    ) const;
+
+    /**Open source media streams, if needed.
+     */
+    virtual void AutoStartMediaStreams();
+
     /**Open source or sink media stream for session.
       */
     virtual OpalMediaStreamPtr OpenMediaStream(
@@ -985,6 +999,25 @@ class OpalConnection : public PSafeObject
       OpalMediaPatch & patch    ///<  New patch
     );
 	
+    /**Call back when media stream patch thread starts.
+      */
+    virtual void OnMediaPatchStart(
+      unsigned sessionId, 
+          bool isSource
+    );
+
+    /**Call back when media stream patch thread stops.
+      */
+    virtual void OnMediaPatchStop(
+      unsigned sessionId, 
+          bool isSource
+    );
+
+    /** Notifier function for OpalVideoUpdatePicture.
+        Calls the SendIntraFrameRequest on the rtp session
+      */
+    PDECLARE_NOTIFIER(OpalMediaCommand, OpalConnection, OnMediaCommand);
+
     /**Attaches the RFC 2833 handler to the media patch
        This method may be called from subclasses, e.g. within
        OnPatchMediaStream()
@@ -1451,30 +1484,6 @@ class OpalConnection : public PSafeObject
 
     virtual void EnableRecording();
     virtual void DisableRecording();
-
-    virtual void OnMediaPatchStart(
-      unsigned sessionId, 
-          bool isSource
-    );
-    virtual void OnMediaPatchStop(
-      unsigned sessionId, 
-          bool isSource
-    );
-
-    /** Notifier function for OpalVideoUpdatePicture.
-        Calls the SendIntraFrameRequest on the rtp session
-      */
-    PDECLARE_NOTIFIER(OpalMediaCommand, OpalConnection, OnMediaCommand);
-
-    /** Indicate whether a particular media type can auto-start.
-        This is typically used for things like video or fax to contol if on
-        initial connection, that media type is opened straight away. Streams
-        of that type may be opened later, during the call, by using the
-        OpalCall::OpenSourceMediaStreams() function.
-      */
-    virtual OpalMediaType::AutoStartMode GetAutoStart(
-      const OpalMediaType & mediaType  ///< media type to check
-    ) const;
 
 #if OPAL_HAS_IM
     struct IMInfo : public PObject {

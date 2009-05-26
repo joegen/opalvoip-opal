@@ -29,6 +29,8 @@
 #include "precompile.h"
 #include "main.h"
 
+// Debug: -ttttodebugstream file:../callgen/ogm.wav sip:10.0.1.12
+
 
 PCREATE_PROCESS(IvrOPAL);
 
