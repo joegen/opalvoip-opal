@@ -284,8 +284,9 @@ class OpalLocalConnection : public OpalConnection
       OpalCall & call,              ///<  Owner call for connection
       OpalLocalEndPoint & endpoint, ///<  Owner endpoint for connection
       void * userData,              ///<  Arbitrary data to pass to connection
-      unsigned options = 0,
-      OpalConnection::StringOptions * stringOptions = NULL
+      unsigned options,
+      OpalConnection::StringOptions * stringOptions,
+      char tokenPrefix = 'L'
     );
 
     /**Destroy connection.
@@ -328,6 +329,18 @@ class OpalLocalConnection : public OpalConnection
       PBoolean withMedia            ///<  Open media with alerting
     );
 
+    /**Indicate to remote endpoint we are connected.
+
+       The default behaviour sets the phase to ConnectedPhase, sets the
+       connection start time and then checks if there is any media channels
+       opened and if so, moves on to the established phase, calling
+       OnEstablished().
+
+       In other words, this method is used to handle incoming calls,
+       and is an indication that we have accepted the incoming call.
+      */
+    virtual PBoolean SetConnected();
+
     /**Open a new media stream.
        This will create a media stream of an appropriate subclass as required
        by the underlying connection protocol. For instance H.323 would create
@@ -356,18 +369,6 @@ class OpalLocalConnection : public OpalConnection
       bool isSource                        ///< Stream is a source/sink
     );
 
-    /**Call back when patching a media stream.
-       This function is called when a connection has created a new media
-       patch between two streams.
-       Add the echo canceler patch and call the endpoint function of
-       the same name.
-       Add a PCM silence detector filter.
-      */
-    virtual void OnPatchMediaStream(
-      PBoolean isSource,
-      OpalMediaPatch & patch    ///<  New patch
-    );
-
     /**Send a user input indication to the remote endpoint.
        This sends an arbitrary string as a user indication. If DTMF tones in
        particular are required to be sent then the SendIndicationTone()
@@ -390,8 +391,15 @@ class OpalLocalConnection : public OpalConnection
       */
     virtual void AcceptIncoming();
   //@}
+
+  /**@name Member variable access */
+  //@{
+    /// Get user data pointer.
     void * GetUserData() const  { return userData; }
+
+    /// Set user data pointer.
     void SetUserData(void * v)  { userData = v; }
+  //@}
 
   protected:
     OpalLocalEndPoint & endpoint;

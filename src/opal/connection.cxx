@@ -586,6 +586,24 @@ unsigned OpalConnection::GetNextSessionID(const OpalMediaType & /*mediaType*/, b
 }
 
 
+void OpalConnection::AutoStartMediaStreams()
+{
+  OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaType::GetList();
+  for (OpalMediaTypeFactory::KeyList_T::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
+    OpalMediaType mediaType = *iter;
+    switch (GetAutoStart(mediaType)) {
+      case OpalMediaType::Transmit :
+      case OpalMediaType::TransmitReceive :
+        if (GetMediaStream(mediaType, true) == NULL)
+          ownerCall.OpenSourceMediaStreams(*this, mediaType);
+
+      default :
+        break;
+    }
+  }
+}
+
+
 OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
   PSafeLockReadWrite safeLock(*this);
@@ -805,19 +823,32 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
 {
   patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
 
+  OpalMediaFormat mediaFormat = patch.GetSource().GetMediaFormat();
+  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
+    PTRACE(3, "OpalCon\tAdding audio filters to patch " << patch);
+
+    if (isSource && silenceDetector != NULL)
+      patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
+
+    if (echoCanceler) {
+      echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
+      echoCanceler->SetClockRate(mediaFormat.GetClockRate());
+      patch.AddFilter(isSource ? echoCanceler->GetReceiveHandler() : echoCanceler->GetSendHandler(), OpalPCM16);
+    }
+
 #if OPAL_PTLIB_DTMF
-  if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
     if (m_detectInBandDTMF && isSource) {
       patch.AddFilter(PCREATE_NOTIFIER(OnDetectInBandDTMF), OPAL_PCM16);
       PTRACE(4, "OpalCon\tAdded detect DTMF filter on connection " << *this << ", patch " << patch);
     }
+
     if (m_sendInBandDTMF && !isSource) {
       m_installedInBandDTMF = true;
       patch.AddFilter(PCREATE_NOTIFIER(OnSendInBandDTMF), OPAL_PCM16);
       PTRACE(4, "OpalCon\tAdded send DTMF filter on connection " << *this << ", patch " << patch);
     }
-  }
 #endif
+  }
 
   if (!m_recordingFilename.IsEmpty())
     ownerCall.StartRecording(m_recordingFilename);

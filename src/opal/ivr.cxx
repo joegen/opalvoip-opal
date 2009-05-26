@@ -48,7 +48,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
-  : OpalEndPoint(mgr, prefix, CanTerminateCall),
+  : OpalLocalEndPoint(mgr, prefix),
     defaultVXML("<?xml version=\"1.0\"?>\n"
                 "<vxml version=\"1.0\">\n"
                 "  <form id=\"root\">\n"
@@ -74,7 +74,7 @@ OpalIVREndPoint::~OpalIVREndPoint()
 PBoolean OpalIVREndPoint::MakeConnection(OpalCall & call,
                                      const PString & remoteParty,
                                      void * userData,
-                               unsigned int /*options*/,
+                               unsigned int options,
                                OpalConnection::StringOptions * stringOptions)
 {
   PString ivrString = remoteParty;
@@ -90,7 +90,7 @@ PBoolean OpalIVREndPoint::MakeConnection(OpalCall & call,
   if (vxml.IsEmpty() || vxml == "*")
     vxml = defaultVXML;
 
-  return AddConnection(CreateConnection(call, manager.GetNextToken('I'), userData, vxml, stringOptions));
+  return AddConnection(CreateConnection(call, userData, vxml, options, stringOptions));
 }
 
 
@@ -102,12 +102,12 @@ OpalMediaFormatList OpalIVREndPoint::GetMediaFormats() const
 
 
 OpalIVRConnection * OpalIVREndPoint::CreateConnection(OpalCall & call,
-                                                      const PString & token,
                                                       void * userData,
                                                       const PString & vxml,
+                                                      unsigned int options,
                                                       OpalConnection::StringOptions * stringOptions)
 {
-  return new OpalIVRConnection(call, *this, token, userData, vxml, stringOptions);
+  return new OpalIVRConnection(call, *this, userData, vxml, options, stringOptions);
 }
 
 
@@ -136,11 +136,11 @@ PBoolean OpalIVREndPoint::StartVXML()
 
 OpalIVRConnection::OpalIVRConnection(OpalCall & call,
                                      OpalIVREndPoint & ep,
-                                     const PString & token,
-                                     void * /*userData*/,
+                                     void * userData,
                                      const PString & vxml,
+                                     unsigned int options,
                                      OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, token, 0, stringOptions),
+  : OpalLocalConnection(call, ep, userData, options, stringOptions, 'I'),
     endpoint(ep),
     vxmlToLoad(vxml),
     vxmlMediaFormats(ep.GetMediaFormats()),
@@ -168,24 +168,6 @@ PString OpalIVRConnection::GetLocalPartyURL() const
   return GetPrefixName() + ':' + vxmlToLoad.Left(vxmlToLoad.FindOneOf("\r\n"));
 }
 
-
-PBoolean OpalIVRConnection::SetUpConnection()
-{
-  originating = false;
-
-  OnApplyStringOptions();
-
-  PTRACE(3, "IVR\tSetUpConnection(" << remotePartyName << ')');
-
-  SetPhase(AlertingPhase);
-  OnAlerting();
-
-  OnConnectedInternal();
-
-  StartMediaStreams();
-
-  return PTrue;
-}
 
 void OpalIVRConnection::OnEstablished()
 {
@@ -312,47 +294,6 @@ PBoolean OpalIVRConnection::StartVXML()
   vxmlSession.Trigger();
 
   return PTrue;
-}
-
-PBoolean OpalIVRConnection::SetAlerting(const PString & calleeName, PBoolean)
-{
-  PTRACE(3, "IVR\tSetAlerting(" << calleeName << ')');
-
-  if (!LockReadWrite())
-    return PFalse;
-
-  SetPhase(AlertingPhase);
-  remotePartyName = calleeName;
-  UnlockReadWrite();
-
-  return PTrue;
-}
-
-
-PBoolean OpalIVRConnection::SetConnected()
-{
-  PTRACE(3, "IVR\tSetConnected()");
-
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
-    return PFalse;
-
-  if (!StartVXML()) {
-    PTRACE(1, "IVR\tVXML session not loaded, aborting.");
-    Release(EndedByLocalUser);
-    return PFalse;
-  }
-
-  // if no media streams, try and start them
-  if (mediaStreams.IsEmpty()) {
-    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
-    PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
-    if (otherParty != NULL)
-      ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
-  }
-
-  // if we have media streams, move to Established straight away
-  return OpalConnection::SetConnected();
 }
 
 

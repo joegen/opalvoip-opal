@@ -38,8 +38,6 @@
 
 #include <opal/localep.h>
 #include <opal/call.h>
-#include <opal/patch.h>
-#include <codec/echocancel.h>
 
 
 #define new PNEW
@@ -193,8 +191,9 @@ OpalLocalConnection::OpalLocalConnection(OpalCall & call,
                                 OpalLocalEndPoint & ep,
                                              void * /*userData*/,
                                            unsigned options,
-                    OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, ep.GetManager().GetNextToken('L'), options, stringOptions)
+                    OpalConnection::StringOptions * stringOptions,
+                                               char tokenPrefix)
+  : OpalConnection(call, ep, ep.GetManager().GetNextToken(tokenPrefix), options, stringOptions)
   , endpoint(ep), userData(NULL)
 {
   PTRACE(4, "LocalCon\tCreated connection with token \"" << callToken << '"');
@@ -252,6 +251,17 @@ PBoolean OpalLocalConnection::SetAlerting(const PString & calleeName, PBoolean)
 }
 
 
+PBoolean OpalLocalConnection::SetConnected()
+{
+  PTRACE(3, "LocalCon\tSetConnected()");
+
+  if (!OpalConnection::SetConnected())
+    return false;
+
+  AutoStartMediaStreams(); // if no media streams, try and start them
+  return true;
+}
+
 OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                          unsigned sessionID,
                                                          PBoolean isSource)
@@ -276,21 +286,6 @@ OpalMediaStreamPtr OpalLocalConnection::OpenMediaStream(const OpalMediaFormat & 
 }
 
 
-void OpalLocalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
-{
-  int clockRate;
-  if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
-    PTRACE(3, "LocalCon\tAdding filters to patch");
-    if (isSource)
-      patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
-    clockRate = patch.GetSource().GetMediaFormat().GetClockRate();
-    echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
-    echoCanceler->SetClockRate(clockRate);
-    patch.AddFilter(isSource?echoCanceler->GetReceiveHandler():echoCanceler->GetSendHandler(), OpalPCM16);
-  }
-}
-
-
 bool OpalLocalConnection::SendUserInputString(const PString & value)
 {
   PTRACE(3, "LocalCon\tSendUserInputString(" << value << ')');
@@ -311,20 +306,10 @@ void OpalLocalConnection::AlertingIncoming()
 void OpalLocalConnection::AcceptIncoming()
 {
   if (LockReadWrite()) {
+    if (GetPhase() < AlertingPhase)
+      OnAlerting();
     OnConnectedInternal();
-    OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaType::GetList();
-    for (OpalMediaTypeFactory::KeyList_T::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
-      OpalMediaType mediaType = *iter;
-      switch (GetAutoStart(mediaType)) {
-        case OpalMediaType::Transmit :
-        case OpalMediaType::TransmitReceive :
-          if (GetMediaStream(mediaType, true) == NULL)
-            ownerCall.OpenSourceMediaStreams(*this, mediaType);
-
-        default :
-          break;
-      }
-    }
+    AutoStartMediaStreams();
     UnlockReadWrite();
   }
 }
