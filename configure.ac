@@ -291,8 +291,8 @@ PKG_REQUIRES="$PKG_REQUIRES ptlib"
 OPAL_MSG_CHECK([ptlib version], [$PTLIB_VERSION])
 
 OPAL_CHECK_PTLIB_EXISTS()
-OPAL_CHECK_PTLIB([URL],     [ptclib/url.h],  [PURL url;],                 [])
-OPAL_CHECK_PTLIB([STUN],    [ptclib/pstun.h],[PSTUNClient client;],       [])
+OPAL_CHECK_PTLIB_MANDATORY([URL],     [ptclib/url.h],  [PURL url;])
+OPAL_CHECK_PTLIB_MANDATORY([STUN],    [ptclib/pstun.h],[PSTUNClient client;])
 OPAL_CHECK_PTLIB([SSL],     [ptclib/pssl.h], [PSSLContext ctx;],          [OPAL_PTLIB_SSL])
 OPAL_CHECK_PTLIB([ASN.1],   [ptclib/pasn.h], [PASNInteger asnint(5);],    [OPAL_PTLIB_ASN])
 OPAL_CHECK_PTLIB([expat],   [ptclib/pxml.h], [PXMLParser parser;],        [OPAL_PTLIB_EXPAT])
@@ -439,7 +439,7 @@ dnl MSWIN_DEFINE  h323,OPAL_H323
 OPAL_SIMPLE_OPTION([h323],[OPAL_H323], [whether to enable H.323 protocol support])
 
 if test "x$OPAL_H323" = "xyes" ; then
-  OPAL_CHECK_PTLIB([ASN], [ptclib/asner.h],  [PPER_Stream per;], [])
+  OPAL_CHECK_PTLIB_MANDATORY([ASN], [ptclib/asner.h],  [PPER_Stream per;])
 fi
 
 dnl MSWIN_DISPLAY iax2,IAX2 support
