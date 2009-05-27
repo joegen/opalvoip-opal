@@ -1548,6 +1548,16 @@ SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 
 //////////////////////////////////////////////////////////////////
 
+/* All of the bwlow search loops run through the list with only
+   PSafeReference rather than PSafeReadOnly, even though they are
+   reading fields from the handler instances. We can get away with
+   this becuase the information being tested, e.g. AOR, is constant
+   for the life of the handler instance, once constructed.
+
+   We need to use PSafeReference as there are some cases where
+   deadlocks can occur when locked handlers look for information
+   from other handlers.
+ */
 unsigned SIPHandlersList::GetCount(SIP_PDU::Methods meth, const PString & eventPackage) const
 {
   unsigned count = 0;
@@ -1576,11 +1586,12 @@ PStringList SIPHandlersList::GetAddresses(bool includeOffline, SIP_PDU::Methods 
 /**
  * Find the SIPHandler object with the specified callID
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & callID, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & callID, PSafetyMode mode)
 {
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler)
-    if (callID == handler->GetCallID())
+  for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler) {
+    if (callID == handler->GetCallID() && handler.SetSafetyMode(mode))
       return handler;
+  }
   return NULL;
 }
 
@@ -1588,38 +1599,44 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & cal
 /**
  * Find the SIPHandler object with the specified authRealm
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode mode)
 {
-  PIPSocket::Address realmAddress;
+  PIPSocket::Address handlerRealmAddress;
+  PIPSocket::Address authRealmAddress(authRealm);
 
   // if username is specified, look for exact matches
   if (!userName.IsEmpty()) {
 
     // look for a match to exact user name and realm
-    for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-      if ((userName == handler->GetUsername()) && (handler->GetRealm().IsEmpty() || (handler->GetRealm() == authRealm)))
+    for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler) {
+      if ( handler->GetUsername() == userName &&
+          (handler->GetRealm().IsEmpty() || handler->GetRealm() == authRealm) &&
+           handler.SetSafetyMode(mode))
         return handler;
     }
 
     // look for a match to exact username and realm as hostname
-    for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-      if (PIPSocket::GetHostAddress(handler->GetRealm(), realmAddress))
-        if ((userName == handler->GetUsername()) && (realmAddress == PIPSocket::Address(authRealm)))
-          return handler;
+    for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler) {
+      if (PIPSocket::GetHostAddress(handler->GetRealm(), handlerRealmAddress) &&
+          handlerRealmAddress == authRealmAddress &&
+          handler->GetUsername() == userName &&
+          handler.SetSafetyMode(mode))
+        return handler;
     }
   }
 
   // look for a match to exact realm
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (authRealm == handler->GetRealm())
+  for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler) {
+    if (handler->GetRealm() == authRealm && handler.SetSafetyMode(mode))
       return handler;
   }
 
   // look for a match to exact realm as hostname
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (PIPSocket::GetHostAddress(handler->GetRealm(), realmAddress))
-      if (realmAddress == PIPSocket::Address(authRealm))
-        return handler;
+  for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler) {
+    if (PIPSocket::GetHostAddress(handler->GetRealm(), handlerRealmAddress) &&
+        handlerRealmAddress == authRealmAddress &&
+        handler.SetSafetyMode(mode))
+      return handler;
   }
   return NULL;
 }
@@ -1632,24 +1649,27 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
  * or 6001@seconix.com when registering 6001@seconix.com to
  * sip.seconix.com
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & remoteAddress, SIP_PDU::Methods meth, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & remoteAddress, SIP_PDU::Methods meth, PSafetyMode mode)
 {
   SIPURL remoteURL = remoteAddress;
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (meth == handler->GetMethod() && remoteURL == handler->GetAddressOfRecord())
+  for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler) {
+    if (handler->GetMethod() == meth &&
+        handler->GetAddressOfRecord() == remoteURL &&
+        handler.SetSafetyMode(mode))
       return handler;
   }
   return NULL;
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods meth, const PString & eventPackage, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods meth, const PString & eventPackage, PSafetyMode mode)
 {
   SIPURL aorURL = aor;
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (meth == handler->GetMethod() &&
+  for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler) {
+    if (handler->GetMethod() == meth &&
         handler->GetAddressOfRecord() == aorURL &&
-        handler->GetEventPackage() == eventPackage)
+        handler->GetEventPackage() == eventPackage &&
+        handler.SetSafetyMode(mode))
       return handler;
   }
   return NULL;
@@ -1661,14 +1681,14 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, S
  * For example, in the above case, the name parameter
  * could be "sip.seconix.com" or "seconix.com".
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode mode)
 {
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-
-    if ((handler->GetMethod() == meth) &&
-        (handler->GetState() != SIPHandler::Unsubscribed) &&
+  for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler) {
+    if ( handler->GetMethod() == meth &&
+         handler->GetState() != SIPHandler::Unsubscribed &&
         (handler->GetAddressOfRecord().GetHostName() == name ||
-        handler->GetAddressOfRecord().GetHostAddress().IsEquivalent(name)))
+         handler->GetAddressOfRecord().GetHostAddress().IsEquivalent(name)) &&
+         handler.SetSafetyMode(mode))
       return handler;
   }
   return NULL;
