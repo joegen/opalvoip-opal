@@ -30,7 +30,7 @@ libdir=@libdir@
 SRCDIR	= .
 PLUGINDIR=../..
 SONAME	= sbccodec
-SAMPLERATELIB = -Lsamplerate
+SAMPLERATE_LIB = -lsamplerate
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@ 

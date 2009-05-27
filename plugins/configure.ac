@@ -181,6 +181,14 @@ AC_SUBST(SPEEX_SYSTEM)
 AC_SUBST(SPEEX_CFLAGS)
 AC_SUBST(SPEEX_LIBS)
 
+dnl     ########################
+dnl     iLBC (system/local)
+dnl     ########################
+OPAL_DETERMINE_ILBC()
+AC_SUBST(ILBC_SYSTEM)
+AC_SUBST(ILBC_CFLAGS)
+AC_SUBST(ILBC_LIBS)
+
 dnl ########################################################################
 dnl sbc,Bluetooth SBC for telephony with CD quality
 
@@ -222,6 +230,7 @@ PKG_CHECK_MODULES([LIBAVCODEC],
                    AC_SUBST(LIBAVCODEC_CFLAGS)
                    AC_SUBST(LIBAVCODEC_LIBS)
                    AC_DEFINE([HAVE_LIBAVCODEC], [1], [ffmpeg])
+                   AC_SUBST(LIBAVCODEC_LIB_NAME)
                    HAVE_LIBAVCODEC=yes
                    OPAL_LIBAVCODEC_HACK
                    case "$target_os" in
@@ -232,15 +241,13 @@ PKG_CHECK_MODULES([LIBAVCODEC],
                                          HAVE_H264_DECODER=yes
                                          ;;
                                      * ) 
-                                         OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [$LIBAVCODEC_LIBS])
-                                         OPAL_CHECK_LIBAVCODEC([h263p_encoder], [HAVE_H263P=yes], [HAVE_H263P=no])
-                                         OPAL_CHECK_LIBAVCODEC([mpeg4_encoder], [HAVE_MPEG4=yes], [HAVE_MPEG4=no])
-                                         OPAL_CHECK_LIBAVCODEC([h264_decoder], [HAVE_H264_DECODER=yes], [HAVE_H264_DECODER=no])
+                                         AC_CHECK_LIB(avcodec, h263p_encoder, [HAVE_H263P=yes], [HAVE_H263P=no])
+                                         AC_CHECK_LIB(avcodec, mpeg4_encoder, [HAVE_MPEG4=yes], [HAVE_MPEG4=no])
+                                         AC_CHECK_LIB(avcodec, h264_decoder, [HAVE_H264_DECODER=yes], [HAVE_H264_DECODER=no])
                                          ;;
                    esac
                    AC_SUBST(HAVE_H263P)
                    AC_SUBST(HAVE_MPEG4)
-                   AC_SUBST(LIBAVCODEC_LIB_NAME)
                    OPAL_LIBAVCODEC_HEADER
                   ],
                   [
@@ -516,7 +523,12 @@ echo "                              GSM :  yes (internal)"
 fi
 
 echo "                          gsm-amr :  yes"
-echo "                             iLBC :  yes"
+if test "x${ILBC_SYSTEM}" = "xyes" ; then
+echo "                             iLBC :  yes (system)"
+else
+echo "                             iLBC :  yes (internal)"
+fi
+
 if test "x${SPEEX_SYSTEM}" = "xyes" ; then
 echo "                            Speex :  yes (system, version $SPEEX_SYSTEM_VERSION)"
 else
