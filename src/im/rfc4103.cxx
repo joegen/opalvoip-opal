@@ -28,14 +28,17 @@
  * $Date$
  */
 
-#include <ptlib.h>
-#include <opal/buildopts.h>
-
 #ifdef __GNUC__
 #pragma implementation "rfc4103.h"
 #endif
 
+#include <ptlib.h>
+#include <opal/buildopts.h>
+
 #include <im/rfc4103.h>
+
+#if OPAL_HAS_RFC4103
+
 #include <sip/sdp.h>
 
 /////////////////////////////////////////////////////////////////////////////
@@ -85,3 +88,4 @@ void RFC4103Frame::SetPayload(const T140String & t140)
   memcpy(GetPayloadPtr(), (const BYTE *)t140, t140.GetLength());
 }
 
+#endif // OPAL_HAS_RFC4103

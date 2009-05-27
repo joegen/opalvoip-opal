@@ -31,8 +31,9 @@
 #ifndef OPAL_IM_RFC4103_H
 #define OPAL_IM_RFC4103_H
 
-#include <ptlib.h>
 #include <opal/buildopts.h>
+
+#if OPAL_HAS_RFC4103
 
 #include <opal/mediafmt.h>
 #include <im/t140.h>
@@ -59,5 +60,8 @@ class RFC4103Context : public PObject
     DWORD  m_baseTimeStamp;
     PTime  m_baseTime;
 };
+
+
+#endif // OPAL_HAS_RFC4103
 
 #endif // OPAL_IM_RFC4103_H

@@ -702,7 +702,6 @@ LIBDIR
 PTLIBDIR
 PTLIB_CFLAGS
 PTLIB_LIBS
-
 OPAL_PTLIB_SSL
 OPAL_PTLIB_ASN
 OPAL_PTLIB_EXPAT
@@ -1985,6 +1984,10 @@ if test -z "$PKG_CONFIG" ; then
 echo "$as_me: error: OPAL must have pkg-config installed" >&2;}
    { (exit 1); exit 1; }; }
 fi
+
+
+
+
 
 
 
@@ -5078,7 +5081,7 @@ fi
 
            case "$target_os" in
                solaris*)
-                 opal_release_flags="-xO3 -DSOLARIS"
+                 opal_release_flags="-O3 -DSOLARIS"
                  opal_debug_flags="-g -D_DEBUG -DSOLARIS"
                ;;
                *)
@@ -5473,7 +5476,6 @@ echo "$as_me: error: Could not find a linkable ptlib in specified environment to
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -5539,27 +5541,14 @@ echo $ECHO_N "checking PTLIB has URL... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "x" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
+          if test "x$opal_ptlib_option" = "xno" ; then
               echo "  ERROR: compulsory feature from PTLib disabled.";
               exit 1;
-            fi
-          else
-            ="$opal_ptlib_option"
-
-	    if test "x$opal_ptlib_option" = "xyes" ; then
-
-cat >>confdefs.h <<\_ACEOF
-#define  1
-_ACEOF
-
-	    fi
           fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -5625,27 +5614,15 @@ echo $ECHO_N "checking PTLIB has STUN... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "x" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
+          if test "x$opal_ptlib_option" = "xno" ; then
               echo "  ERROR: compulsory feature from PTLib disabled.";
               exit 1;
-            fi
-          else
-            ="$opal_ptlib_option"
-
-	    if test "x$opal_ptlib_option" = "xyes" ; then
-
-cat >>confdefs.h <<\_ACEOF
-#define  1
-_ACEOF
-
-	    fi
           fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -5711,27 +5688,20 @@ echo $ECHO_N "checking PTLIB has SSL... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_SSL" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_SSL="$opal_ptlib_option"
+					OPAL_PTLIB_SSL="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_SSL 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -5797,27 +5767,20 @@ echo $ECHO_N "checking PTLIB has ASN.1... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_ASN" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_ASN="$opal_ptlib_option"
+					OPAL_PTLIB_ASN="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_ASN 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -5883,27 +5846,20 @@ echo $ECHO_N "checking PTLIB has expat... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_EXPAT" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_EXPAT="$opal_ptlib_option"
+					OPAL_PTLIB_EXPAT="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_EXPAT 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -5969,27 +5925,20 @@ echo $ECHO_N "checking PTLIB has video... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_VIDEO" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_VIDEO="$opal_ptlib_option"
+					OPAL_PTLIB_VIDEO="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_VIDEO 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -6055,27 +6004,20 @@ echo $ECHO_N "checking PTLIB has wavfile... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_WAVFILE" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_WAVFILE="$opal_ptlib_option"
+					OPAL_PTLIB_WAVFILE="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_WAVFILE 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -6141,27 +6083,20 @@ echo $ECHO_N "checking PTLIB has vxml... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_VXML" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_VXML="$opal_ptlib_option"
+					OPAL_PTLIB_VXML="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_VXML 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -6227,27 +6162,20 @@ echo $ECHO_N "checking PTLIB has ipv6... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_IPV6" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_IPV6="$opal_ptlib_option"
+					OPAL_PTLIB_IPV6="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_IPV6 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -6313,27 +6241,20 @@ echo $ECHO_N "checking PTLIB has dtmf... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_DTMF" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_DTMF="$opal_ptlib_option"
+					OPAL_PTLIB_DTMF="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_DTMF 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -6399,27 +6320,20 @@ echo $ECHO_N "checking PTLIB has ldap... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_LDAP" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_LDAP="$opal_ptlib_option"
+					OPAL_PTLIB_LDAP="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_LDAP 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -6485,27 +6399,20 @@ echo $ECHO_N "checking PTLIB has dns... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_DNS" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_DNS="$opal_ptlib_option"
+					OPAL_PTLIB_DNS="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_DNS 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -6571,27 +6478,20 @@ echo $ECHO_N "checking PTLIB has audio... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_AUDIO" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_AUDIO="$opal_ptlib_option"
+					OPAL_PTLIB_AUDIO="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_AUDIO 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -6657,22 +6557,15 @@ echo $ECHO_N "checking PTLIB has config... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "xOPAL_PTLIB_CONFIG_FILE" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1;
-            fi
-          else
-            OPAL_PTLIB_CONFIG_FILE="$opal_ptlib_option"
+					OPAL_PTLIB_CONFIG_FILE="$opal_ptlib_option"
 
-	    if test "x$opal_ptlib_option" = "xyes" ; then
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_PTLIB_CONFIG_FILE 1
 _ACEOF
 
-	    fi
-          fi
+	    		fi
 
 
 
@@ -10002,6 +9895,24 @@ fi
 
 
 
+case "$target_os" in
+        cygwin*|mingw**)
+
+          CFLAGS="$CFLAGS "
+          CXXFLAGS="$CXXFLAGS "
+          LIBS="$LIBS -lavifil32"
+
+          if test "x" = x; then
+            PKG_CFLAGS="$PKG_CFLAGS "
+            PKG_LIBS="$PKG_LIBS -lavifil32"
+          else
+            PKG_REQUIRES="$PKG_REQUIRES "
+          fi
+
+        ;;
+esac
+
+
 
 
           if test "x$OPAL_VIDEO" = "x"; then
@@ -10138,7 +10049,6 @@ _ACEOF
 if test "x$OPAL_H323" = "xyes" ; then
 
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -10204,21 +10114,9 @@ echo $ECHO_N "checking PTLIB has ASN... $ECHO_C" >&6; }
           { echo "$as_me:$LINENO: result: $opal_ptlib_option" >&5
 echo "${ECHO_T}$opal_ptlib_option" >&6; }
 
-          if test "x" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
+          if test "x$opal_ptlib_option" = "xno" ; then
               echo "  ERROR: compulsory feature from PTLib disabled.";
               exit 1;
-            fi
-          else
-            ="$opal_ptlib_option"
-
-	    if test "x$opal_ptlib_option" = "xyes" ; then
-
-cat >>confdefs.h <<\_ACEOF
-#define  1
-_ACEOF
-
-	    fi
           fi
 
 
