@@ -107,7 +107,7 @@ AC_DEFUN([OPAL_DETERMINE_DEBUG],
                         [DEBUG_BUILD=no])
            case "$target_os" in
                solaris*)
-                 opal_release_flags="-xO3 -DSOLARIS"
+                 opal_release_flags="-O3 -DSOLARIS"
                  opal_debug_flags="-g -D_DEBUG -DSOLARIS"
                ;;
                *)
