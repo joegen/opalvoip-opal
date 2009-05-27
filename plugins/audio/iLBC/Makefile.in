@@ -78,12 +78,25 @@ STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 EXTRACFLAGS     =-I$(PLUGINDIR)
 
-SRCS	= ilbccodec.c $(SRCDIR)/anaFilter.c $(SRCDIR)/constants.c $(SRCDIR)/createCB.c $(SRCDIR)/doCPLC.c \
+ILBC_CFLAGS=@ILBC_CFLAGS@
+ILBC_LIBS=@ILBC_LIBS@
+ILBC_SYSTEM=@ILBC_SYSTEM@
+
+SRCS	= ilbccodec.c
+
+ifeq ($(ILBC_SYSTEM),no)
+SRCS	+= $(SRCDIR)/anaFilter.c $(SRCDIR)/constants.c $(SRCDIR)/createCB.c $(SRCDIR)/doCPLC.c \
 	  $(SRCDIR)/enhancer.c $(SRCDIR)/filter.c $(SRCDIR)/FrameClassify.c $(SRCDIR)/gainquant.c \
 	  $(SRCDIR)/getCBvec.c $(SRCDIR)/helpfun.c $(SRCDIR)/hpInput.c $(SRCDIR)/hpOutput.c \
 	  $(SRCDIR)/iCBConstruct.c $(SRCDIR)/iCBSearch.c $(SRCDIR)/iLBC_decode.c $(SRCDIR)/iLBC_encode.c \
 	  $(SRCDIR)/LPCdecode.c $(SRCDIR)/LPCencode.c $(SRCDIR)/lsf.c $(SRCDIR)/packing.c \
 	  $(SRCDIR)/StateConstructW.c $(SRCDIR)/StateSearchW.c $(SRCDIR)/syntFilter.c
+
+EXTRALIBS =
+else
+EXTRACFLAGS += $(IBLC_CFLAGS)
+EXTRALIBS = $(ILBC_LIBS)
+endif
 
 OBJDIR	= ./obj
 
@@ -100,9 +113,9 @@ OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
 ifeq (solaris,$(findstring solaris,$(target_os)))
-	$(CC) $(LDSO) $@ -o $@ $^
+	$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
 else	
-	$(CC) $(LDSO) -o $@ $^
+	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 endif	
 
 install:

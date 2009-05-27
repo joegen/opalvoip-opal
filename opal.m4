@@ -107,7 +107,7 @@ AC_DEFUN([OPAL_DETERMINE_DEBUG],
                         [DEBUG_BUILD=no])
            case "$target_os" in
                solaris*)
-                 opal_release_flags="-xO3 -DSOLARIS"
+                 opal_release_flags="-O3 -DSOLARIS"
                  opal_debug_flags="-g -D_DEBUG -DSOLARIS"
                ;;
                *)
@@ -363,7 +363,7 @@ dnl Define:    $4
 AC_DEFUN([OPAL_CHECK_PTLIB],
          [
           old_CXXFLAGS="$CXXFLAGS"
-          old_LDFLAGS="$LDFLAGS"
+          old_LIBS="$LIBS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
@@ -391,20 +391,55 @@ AC_DEFUN([OPAL_CHECK_PTLIB],
           LIBS="$old_LIBS"
 
           OPAL_MSG_CHECK([PTLIB has $1], [$opal_ptlib_option])
-          if test "x$4" = "x" ; then
-	    if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1; 
-            fi
-          else
-            $4="$opal_ptlib_option"
-	    AC_SUBST($4)
-	    if test "x$opal_ptlib_option" = "xyes" ; then
-	      AC_DEFINE([$4], [1], [$1])
-	    fi
-          fi
+					$4="$opal_ptlib_option"
+	    		AC_SUBST($4)
+	    		if test "x$opal_ptlib_option" = "xyes" ; then
+	      		AC_DEFINE([$4], [1], [$1])
+	    		fi
 	  
          ])
+
+dnl OPAL_CHECK_PTLIB_MANDATORY
+dnl Check if ptlib was compiled with a specific mandatory feature
+dnl Arguments: $1 Name of feature
+dnl            $2 ptlib/pasn.h Header file to include
+dnl            $3 Code to test the feature
+AC_DEFUN([OPAL_CHECK_PTLIB_MANDATORY],
+         [
+          old_CXXFLAGS="$CXXFLAGS"
+          old_LIBS="$LIBS"
+
+          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
+          if test "x${DEBUG_BUILD}" = xyes; then
+            LIBS="$LIBS $DEBUG_LIBS"
+          else
+            LIBS="$LIBS $RELEASE_LIBS"
+          fi
+
+          AC_LANG(C++)
+          AC_LINK_IFELSE([
+                          #include <ptbuildopts.h>
+                          #include <ptlib.h>
+                          #include <$2>
+
+                          int main()
+                          {
+                            $3
+                          }
+                         ], 
+                         [opal_ptlib_option=yes],
+                         [opal_ptlib_option=no])
+
+          CXXFLAGS="$old_CXXFLAGS"
+          LIBS="$old_LIBS"
+
+          OPAL_MSG_CHECK([PTLIB has $1], [$opal_ptlib_option])
+          if test "x$opal_ptlib_option" = "xno" ; then
+              echo "  ERROR: compulsory feature from PTLib disabled.";
+              exit 1; 
+          fi
+
+					])
 
 AC_DEFUN([OPAL_CHECK_PTLIB_EXISTS],
          [
@@ -971,3 +1006,41 @@ AC_DEFUN([OPAL_FIND_JAVA],
            fi
            AS_IF([test AS_VAR_GET([opal_java]) = yes], [$1], [$2])[]
           ])
+
+dnl OPAL_DETERMINE_ILBC
+dnl Determine whether to use the system or internal iLBC (can be forced)
+dnl Arguments: none
+dnl Return:    $ILBC_SYSTEM whether system or internal iLBC shall be used
+dnl            $ILBC_CFLAGS system iLBC CFLAGS if using system iLBC
+dnl            $ILBC_LIBS   system iLBC LIBS if using system iLBC
+AC_DEFUN([OPAL_DETERMINE_ILBC],
+         [AC_ARG_ENABLE([localilbc],
+                        [AC_HELP_STRING([--enable-localilbc],[Force use local version of iLBC library rather than system version])],
+                        [localilbc=$enableval],
+                        [localilbc=])
+
+				if test "x${localilbc}" = "xyes" ; then
+					AC_MSG_NOTICE(forcing use of local iLBC sources)
+					ILBC_SYSTEM=no
+				else
+					AC_MSG_NOTICE(checking if iLBC is installed)
+
+          saved_LIBS="$LIBS"
+          LIBS="$LIBS -lilbc"
+          AC_CHECK_LIB(ilbc, iLBC_encode, [has_ilbc=yes], [has_ilbc=no])
+          LIBS=$saved_LIBS
+
+          if test "x${has_ilbc}" = "xyes"; then
+              AC_CHECK_HEADERS([ilbc/iLBC_decode.h ilbc/iLBC_define.h ilbc/iLBC_encode.h], [has_ilbc=yes], [has_ilbc=no])
+          fi
+
+					if test "x${has_ilbc}" = "xyes"; then
+						ILBC_CFLAGS=""
+						ILBC_LIBS="-lilbc"
+						ILBC_SYSTEM=yes
+					else
+						ILBC_SYSTEM=no
+					fi
+					OPAL_MSG_CHECK([System iLBC], [$has_ilbc])
+				fi
+      ])
