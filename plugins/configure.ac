@@ -414,9 +414,10 @@ dnl ########################################################################
 dnl Various checks
 dnl ########################################################################
 
+AC_LANG_PUSH([C++])
 AC_MSG_CHECKING(for posix_memalign)
 AC_COMPILE_IFELSE([
-  AC_LANG_PROGRAM([[#include "stdlib.h"]], 
+  AC_LANG_PROGRAM([[#include <stdlib.h>]], 
                   [[
                   void * p; posix_memalign(&p, 16, 16); return 0; 
                   ]]
@@ -426,6 +427,7 @@ AC_COMPILE_IFELSE([
   AC_DEFINE(HAVE_POSIX_MEMALIGN, 1),
   AC_MSG_RESULT(no)
 )
+AC_LANG_POP([C++])
 
 dnl ########################################################################
 
