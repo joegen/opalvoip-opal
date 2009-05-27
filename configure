@@ -9873,6 +9873,24 @@ fi
 
 
 
+case "$target_os" in
+        cygwin*|mingw**)
+
+          CFLAGS="$CFLAGS "
+          CXXFLAGS="$CXXFLAGS "
+          LIBS="$LIBS -lavifil32"
+
+          if test "x" = x; then
+            PKG_CFLAGS="$PKG_CFLAGS "
+            PKG_LIBS="$PKG_LIBS -lavifil32"
+          else
+            PKG_REQUIRES="$PKG_REQUIRES "
+          fi
+
+        ;;
+esac
+
+
 
 
           if test "x$OPAL_VIDEO" = "x"; then
