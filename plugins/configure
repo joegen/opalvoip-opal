@@ -699,14 +699,17 @@ SIZE32
 SPEEX_CFLAGS
 SPEEX_LIBS
 SPEEX_SYSTEM
+ILBC_SYSTEM
+ILBC_CFLAGS
+ILBC_LIBS
 HAVE_SBC
 HAVE_H263
 DEFAULT_TO_FULL_CAPABILITIES
 LIBAVCODEC_CFLAGS
 LIBAVCODEC_LIBS
+LIBAVCODEC_LIB_NAME
 HAVE_H263P
 HAVE_MPEG4
-LIBAVCODEC_LIB_NAME
 HAVE_LIBAVCODEC
 LIBAVCODEC_SOURCE_DIR
 HAVE_LIBAVCODEC_RTP_MODE
@@ -1332,6 +1335,8 @@ Optional Features:
   --enable-localgsm       Force use local version of GSM library rather than
                           system version
   --enable-localspeex     Force use local version of Speex library rather than
+                          system version
+  --enable-localilbc      Force use local version of iLBC library rather than
                           system version
   --enable-sbc            enable use of Bluetooth SBC for CD quality telephony
   --enable-ffmpeg-h263    enable plugin supporting H.263 via patched FFMPEG
@@ -2090,6 +2095,10 @@ test -n "$target_alias" &&
   test "$program_prefix$program_suffix$program_transform_name" = \
     NONENONEs,x,x, &&
   program_prefix=${target_alias}-
+
+
+
+
 
 
 
@@ -8986,11 +8995,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for SPEEX" >&5
 echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_CFLAGS"; then
-        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$SPEEX_CFLAGS"; then
+    pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex") 2>&5
   ac_status=$?
@@ -9000,15 +9008,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_LIBS"; then
-        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$SPEEX_LIBS"; then
+    pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex") 2>&5
   ac_status=$?
@@ -9018,9 +9024,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -9033,9 +9038,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex"`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "speex" 2>&1`
         else
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex"`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --print-errors "speex" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SPEEX_PKG_ERRORS" >&5
@@ -9070,11 +9075,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for SPEEX" >&5
 echo $ECHO_N "checking for SPEEX... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_CFLAGS"; then
-        pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$SPEEX_CFLAGS"; then
+    pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
   ac_status=$?
@@ -9084,15 +9088,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$SPEEX_LIBS"; then
-        pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$SPEEX_LIBS"; then
+    pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"speex >= \$SPEEX_INTERNAL_VERSION\"") >&5
   ($PKG_CONFIG --exists --print-errors "speex >= $SPEEX_INTERNAL_VERSION") 2>&5
   ac_status=$?
@@ -9102,9 +9104,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -9117,9 +9118,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "speex >= $SPEEX_INTERNAL_VERSION" 2>&1`
         else
-	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "speex >= $SPEEX_INTERNAL_VERSION"`
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --print-errors "speex >= $SPEEX_INTERNAL_VERSION" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SPEEX_PKG_ERRORS" >&5
@@ -9151,6 +9152,259 @@ fi
             { echo "$as_me:$LINENO: result: using system Speex version $SPEEX_SYSTEM_VERSION" >&5
 echo "${ECHO_T}using system Speex version $SPEEX_SYSTEM_VERSION" >&6; }
           fi
+
+
+
+
+
+# Check whether --enable-localilbc was given.
+if test "${enable_localilbc+set}" = set; then
+  enableval=$enable_localilbc; localilbc=$enableval
+else
+  localilbc=
+fi
+
+
+				if test "x${localilbc}" = "xyes" ; then
+					{ echo "$as_me:$LINENO: forcing use of local iLBC sources" >&5
+echo "$as_me: forcing use of local iLBC sources" >&6;}
+					ILBC_SYSTEM=no
+				else
+					{ echo "$as_me:$LINENO: checking if iLBC is installed" >&5
+echo "$as_me: checking if iLBC is installed" >&6;}
+
+          saved_LIBS="$LIBS"
+          LIBS="$LIBS -lilbc"
+          { echo "$as_me:$LINENO: checking for iLBC_encode in -lilbc" >&5
+echo $ECHO_N "checking for iLBC_encode in -lilbc... $ECHO_C" >&6; }
+if test "${ac_cv_lib_ilbc_iLBC_encode+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lilbc  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char iLBC_encode ();
+int
+main ()
+{
+return iLBC_encode ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_ilbc_iLBC_encode=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_ilbc_iLBC_encode=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_ilbc_iLBC_encode" >&5
+echo "${ECHO_T}$ac_cv_lib_ilbc_iLBC_encode" >&6; }
+if test $ac_cv_lib_ilbc_iLBC_encode = yes; then
+  has_ilbc=yes
+else
+  has_ilbc=no
+fi
+
+          LIBS=$saved_LIBS
+
+          if test "x${has_ilbc}" = "xyes"; then
+
+
+
+for ac_header in ilbc/iLBC_decode.h ilbc/iLBC_define.h ilbc/iLBC_encode.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ has_ilbc=yes
+else
+  has_ilbc=no
+fi
+
+done
+
+          fi
+
+					if test "x${has_ilbc}" = "xyes"; then
+						ILBC_CFLAGS=""
+						ILBC_LIBS="-lilbc"
+						ILBC_SYSTEM=yes
+					else
+						ILBC_SYSTEM=no
+					fi
+
+          { echo "$as_me:$LINENO: checking System iLBC" >&5
+echo $ECHO_N "checking System iLBC... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: result: $has_ilbc" >&5
+echo "${ECHO_T}$has_ilbc" >&6; }
+
+				fi
 
 
 
@@ -9340,11 +9594,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for LIBAVCODEC" >&5
 echo $ECHO_N "checking for LIBAVCODEC... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$LIBAVCODEC_CFLAGS"; then
-        pkg_cv_LIBAVCODEC_CFLAGS="$LIBAVCODEC_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$LIBAVCODEC_CFLAGS"; then
+    pkg_cv_LIBAVCODEC_CFLAGS="$LIBAVCODEC_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavcodec >= 51.11.0\"") >&5
   ($PKG_CONFIG --exists --print-errors "libavcodec >= 51.11.0") 2>&5
   ac_status=$?
@@ -9354,15 +9607,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$LIBAVCODEC_LIBS"; then
-        pkg_cv_LIBAVCODEC_LIBS="$LIBAVCODEC_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$LIBAVCODEC_LIBS"; then
+    pkg_cv_LIBAVCODEC_LIBS="$LIBAVCODEC_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavcodec >= 51.11.0\"") >&5
   ($PKG_CONFIG --exists --print-errors "libavcodec >= 51.11.0") 2>&5
   ac_status=$?
@@ -9372,9 +9623,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -9387,9 +9637,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBAVCODEC_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "libavcodec >= 51.11.0"`
+	        LIBAVCODEC_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libavcodec >= 51.11.0" 2>&1`
         else
-	        LIBAVCODEC_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "libavcodec >= 51.11.0"`
+	        LIBAVCODEC_PKG_ERRORS=`$PKG_CONFIG --print-errors "libavcodec >= 51.11.0" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBAVCODEC_PKG_ERRORS" >&5
@@ -9417,6 +9667,7 @@ echo "${ECHO_T}yes" >&6; }
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBAVCODEC 1
 _ACEOF
+
 
                    HAVE_LIBAVCODEC=yes
 
@@ -9446,117 +9697,209 @@ echo "$as_me: libavcodec stack align hack disabled" >&6;}
                                          HAVE_H264_DECODER=yes
                                          ;;
                                      * )
-
-          { echo "$as_me:$LINENO: checking filename of libavcodec library" >&5
-echo $ECHO_N "checking filename of libavcodec library... $ECHO_C" >&6; }
-          cat >conftest.$ac_ext <<_ACEOF
-int main () {}
+                                         { echo "$as_me:$LINENO: checking for h263p_encoder in -lavcodec" >&5
+echo $ECHO_N "checking for h263p_encoder in -lavcodec... $ECHO_C" >&6; }
+if test "${ac_cv_lib_avcodec_h263p_encoder+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lavcodec  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
 _ACEOF
-          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
-          if test \! -x conftest$ac_exeext ; then
-            { echo "$as_me:$LINENO: result: cannot determine - using defaults" >&5
-echo "${ECHO_T}cannot determine - using defaults" >&6; }
-          else
-            LIBAVCODEC_LIB_NAME=`$OBJDUMP -x ./conftest$ac_exeext | grep 'NEEDED.*libavcodec' | awk '{print $2; }'`
-            { echo "$as_me:$LINENO: result: $LIBAVCODEC_LIB_NAME" >&5
-echo "${ECHO_T}$LIBAVCODEC_LIB_NAME" >&6; }
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
 
-cat >>confdefs.h <<_ACEOF
-#define LIBAVCODEC_LIB_NAME "$LIBAVCODEC_LIB_NAME"
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char h263p_encoder ();
+int
+main ()
+{
+return h263p_encoder ();
+  ;
+  return 0;
+}
 _ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_avcodec_h263p_encoder=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-          fi
+	ac_cv_lib_avcodec_h263p_encoder=no
+fi
 
-
-          { echo "$as_me:$LINENO: checking if libavcodec has h263p_encoder" >&5
-echo $ECHO_N "checking if libavcodec has h263p_encoder... $ECHO_C" >&6; }
-  	  got_symbol=no
-          cat >conftest.$ac_ext <<_ACEOF
-int main () {}
-_ACEOF
-          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
-          if test -x conftest$ac_exeext ; then
-            libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print $3; }'`
-            if test "$libavcodec_libdir" = "not" ; then
-              { echo "$as_me:$LINENO: result: no, please check LD_LIBRARY_PATH" >&5
-echo "${ECHO_T}no, please check LD_LIBRARY_PATH" >&6; }
-            else
-              symbol=`$NM -D $libavcodec_libdir | grep h263p_encoder`
-              if test "x$symbol" != "x"; then
-                got_symbol=yes
-	      fi
-              { echo "$as_me:$LINENO: result: $got_symbol" >&5
-echo "${ECHO_T}$got_symbol" >&6; }
-            fi
-          fi
-          if test $got_symbol = yes; then
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_avcodec_h263p_encoder" >&5
+echo "${ECHO_T}$ac_cv_lib_avcodec_h263p_encoder" >&6; }
+if test $ac_cv_lib_avcodec_h263p_encoder = yes; then
   HAVE_H263P=yes
 else
   HAVE_H263P=no
 fi
 
-
-
-          { echo "$as_me:$LINENO: checking if libavcodec has mpeg4_encoder" >&5
-echo $ECHO_N "checking if libavcodec has mpeg4_encoder... $ECHO_C" >&6; }
-  	  got_symbol=no
-          cat >conftest.$ac_ext <<_ACEOF
-int main () {}
+                                         { echo "$as_me:$LINENO: checking for mpeg4_encoder in -lavcodec" >&5
+echo $ECHO_N "checking for mpeg4_encoder in -lavcodec... $ECHO_C" >&6; }
+if test "${ac_cv_lib_avcodec_mpeg4_encoder+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lavcodec  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
 _ACEOF
-          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
-          if test -x conftest$ac_exeext ; then
-            libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print $3; }'`
-            if test "$libavcodec_libdir" = "not" ; then
-              { echo "$as_me:$LINENO: result: no, please check LD_LIBRARY_PATH" >&5
-echo "${ECHO_T}no, please check LD_LIBRARY_PATH" >&6; }
-            else
-              symbol=`$NM -D $libavcodec_libdir | grep mpeg4_encoder`
-              if test "x$symbol" != "x"; then
-                got_symbol=yes
-	      fi
-              { echo "$as_me:$LINENO: result: $got_symbol" >&5
-echo "${ECHO_T}$got_symbol" >&6; }
-            fi
-          fi
-          if test $got_symbol = yes; then
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mpeg4_encoder ();
+int
+main ()
+{
+return mpeg4_encoder ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_avcodec_mpeg4_encoder=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_avcodec_mpeg4_encoder=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_avcodec_mpeg4_encoder" >&5
+echo "${ECHO_T}$ac_cv_lib_avcodec_mpeg4_encoder" >&6; }
+if test $ac_cv_lib_avcodec_mpeg4_encoder = yes; then
   HAVE_MPEG4=yes
 else
   HAVE_MPEG4=no
 fi
 
-
-
-          { echo "$as_me:$LINENO: checking if libavcodec has h264_decoder" >&5
-echo $ECHO_N "checking if libavcodec has h264_decoder... $ECHO_C" >&6; }
-  	  got_symbol=no
-          cat >conftest.$ac_ext <<_ACEOF
-int main () {}
+                                         { echo "$as_me:$LINENO: checking for h264_decoder in -lavcodec" >&5
+echo $ECHO_N "checking for h264_decoder in -lavcodec... $ECHO_C" >&6; }
+if test "${ac_cv_lib_avcodec_h264_decoder+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lavcodec  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
 _ACEOF
-          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&5
-          if test -x conftest$ac_exeext ; then
-            libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print $3; }'`
-            if test "$libavcodec_libdir" = "not" ; then
-              { echo "$as_me:$LINENO: result: no, please check LD_LIBRARY_PATH" >&5
-echo "${ECHO_T}no, please check LD_LIBRARY_PATH" >&6; }
-            else
-              symbol=`$NM -D $libavcodec_libdir | grep h264_decoder`
-              if test "x$symbol" != "x"; then
-                got_symbol=yes
-	      fi
-              { echo "$as_me:$LINENO: result: $got_symbol" >&5
-echo "${ECHO_T}$got_symbol" >&6; }
-            fi
-          fi
-          if test $got_symbol = yes; then
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char h264_decoder ();
+int
+main ()
+{
+return h264_decoder ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_avcodec_h264_decoder=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_avcodec_h264_decoder=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_avcodec_h264_decoder" >&5
+echo "${ECHO_T}$ac_cv_lib_avcodec_h264_decoder" >&6; }
+if test $ac_cv_lib_avcodec_h264_decoder = yes; then
   HAVE_H264_DECODER=yes
 else
   HAVE_H264_DECODER=no
 fi
 
-
                                          ;;
                    esac
-
 
 
                    LIBAVCODEC_HEADER=
@@ -9937,11 +10280,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for X264" >&5
 echo $ECHO_N "checking for X264... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$X264_CFLAGS"; then
-        pkg_cv_X264_CFLAGS="$X264_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$X264_CFLAGS"; then
+    pkg_cv_X264_CFLAGS="$X264_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"x264 >= 0.48\"") >&5
   ($PKG_CONFIG --exists --print-errors "x264 >= 0.48") 2>&5
   ac_status=$?
@@ -9951,15 +10293,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$X264_LIBS"; then
-        pkg_cv_X264_LIBS="$X264_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$X264_LIBS"; then
+    pkg_cv_X264_LIBS="$X264_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"x264 >= 0.48\"") >&5
   ($PKG_CONFIG --exists --print-errors "x264 >= 0.48") 2>&5
   ac_status=$?
@@ -9969,9 +10309,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -9984,9 +10323,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        X264_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "x264 >= 0.48"`
+	        X264_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "x264 >= 0.48" 2>&1`
         else
-	        X264_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "x264 >= 0.48"`
+	        X264_PKG_ERRORS=`$PKG_CONFIG --print-errors "x264 >= 0.48" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$X264_PKG_ERRORS" >&5
@@ -10062,11 +10401,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for THEORA" >&5
 echo $ECHO_N "checking for THEORA... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$THEORA_CFLAGS"; then
-        pkg_cv_THEORA_CFLAGS="$THEORA_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$THEORA_CFLAGS"; then
+    pkg_cv_THEORA_CFLAGS="$THEORA_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"theora\"") >&5
   ($PKG_CONFIG --exists --print-errors "theora") 2>&5
   ac_status=$?
@@ -10076,15 +10414,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$THEORA_LIBS"; then
-        pkg_cv_THEORA_LIBS="$THEORA_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$THEORA_LIBS"; then
+    pkg_cv_THEORA_LIBS="$THEORA_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"theora\"") >&5
   ($PKG_CONFIG --exists --print-errors "theora") 2>&5
   ac_status=$?
@@ -10094,9 +10430,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -10109,9 +10444,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        THEORA_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "theora"`
+	        THEORA_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "theora" 2>&1`
         else
-	        THEORA_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "theora"`
+	        THEORA_PKG_ERRORS=`$PKG_CONFIG --print-errors "theora" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$THEORA_PKG_ERRORS" >&5
@@ -10148,11 +10483,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for CELT" >&5
 echo $ECHO_N "checking for CELT... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$CELT_CFLAGS"; then
-        pkg_cv_CELT_CFLAGS="$CELT_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$CELT_CFLAGS"; then
+    pkg_cv_CELT_CFLAGS="$CELT_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"celt\"") >&5
   ($PKG_CONFIG --exists --print-errors "celt") 2>&5
   ac_status=$?
@@ -10162,15 +10496,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$CELT_LIBS"; then
-        pkg_cv_CELT_LIBS="$CELT_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$CELT_LIBS"; then
+    pkg_cv_CELT_LIBS="$CELT_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"celt\"") >&5
   ($PKG_CONFIG --exists --print-errors "celt") 2>&5
   ac_status=$?
@@ -10180,9 +10512,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -10195,9 +10526,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        CELT_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "celt"`
+	        CELT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "celt" 2>&1`
         else
-	        CELT_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "celt"`
+	        CELT_PKG_ERRORS=`$PKG_CONFIG --print-errors "celt" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$CELT_PKG_ERRORS" >&5
@@ -11448,8 +11779,15 @@ fi
 
 
 
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
 { echo "$as_me:$LINENO: checking for posix_memalign" >&5
 echo $ECHO_N "checking for posix_memalign... $ECHO_C" >&6; }
+
 cat >conftest.$ac_ext <<_ACEOF
 
   /* confdefs.h.  */
@@ -11457,7 +11795,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include "stdlib.h"
+#include <stdlib.h>
 int
 main ()
 {
@@ -11484,7 +11822,7 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
+	 test -z "$ac_cxx_werror_flag" ||
 	 test ! -s conftest.err
        } && test -s conftest.$ac_objext; then
   { echo "$as_me:$LINENO: result: yes" >&5
@@ -11503,6 +11841,12 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 
 if test -d audio/G722 ; then
@@ -12329,17 +12673,17 @@ SIZE32!$SIZE32$ac_delim
 SPEEX_CFLAGS!$SPEEX_CFLAGS$ac_delim
 SPEEX_LIBS!$SPEEX_LIBS$ac_delim
 SPEEX_SYSTEM!$SPEEX_SYSTEM$ac_delim
+ILBC_SYSTEM!$ILBC_SYSTEM$ac_delim
+ILBC_CFLAGS!$ILBC_CFLAGS$ac_delim
+ILBC_LIBS!$ILBC_LIBS$ac_delim
 HAVE_SBC!$HAVE_SBC$ac_delim
 HAVE_H263!$HAVE_H263$ac_delim
 DEFAULT_TO_FULL_CAPABILITIES!$DEFAULT_TO_FULL_CAPABILITIES$ac_delim
 LIBAVCODEC_CFLAGS!$LIBAVCODEC_CFLAGS$ac_delim
 LIBAVCODEC_LIBS!$LIBAVCODEC_LIBS$ac_delim
+LIBAVCODEC_LIB_NAME!$LIBAVCODEC_LIB_NAME$ac_delim
 HAVE_H263P!$HAVE_H263P$ac_delim
 HAVE_MPEG4!$HAVE_MPEG4$ac_delim
-LIBAVCODEC_LIB_NAME!$LIBAVCODEC_LIB_NAME$ac_delim
-HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
-LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
-HAVE_LIBAVCODEC_RTP_MODE!$HAVE_LIBAVCODEC_RTP_MODE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -12381,6 +12725,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
+LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
+HAVE_LIBAVCODEC_RTP_MODE!$HAVE_LIBAVCODEC_RTP_MODE$ac_delim
 X264_CFLAGS!$X264_CFLAGS$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
 X264_LIB_NAME!$X264_LIB_NAME$ac_delim
@@ -12404,7 +12751,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 21; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 24; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -13461,17 +13808,17 @@ SIZE32!$SIZE32$ac_delim
 SPEEX_CFLAGS!$SPEEX_CFLAGS$ac_delim
 SPEEX_LIBS!$SPEEX_LIBS$ac_delim
 SPEEX_SYSTEM!$SPEEX_SYSTEM$ac_delim
+ILBC_SYSTEM!$ILBC_SYSTEM$ac_delim
+ILBC_CFLAGS!$ILBC_CFLAGS$ac_delim
+ILBC_LIBS!$ILBC_LIBS$ac_delim
 HAVE_SBC!$HAVE_SBC$ac_delim
 HAVE_H263!$HAVE_H263$ac_delim
 DEFAULT_TO_FULL_CAPABILITIES!$DEFAULT_TO_FULL_CAPABILITIES$ac_delim
 LIBAVCODEC_CFLAGS!$LIBAVCODEC_CFLAGS$ac_delim
 LIBAVCODEC_LIBS!$LIBAVCODEC_LIBS$ac_delim
+LIBAVCODEC_LIB_NAME!$LIBAVCODEC_LIB_NAME$ac_delim
 HAVE_H263P!$HAVE_H263P$ac_delim
 HAVE_MPEG4!$HAVE_MPEG4$ac_delim
-LIBAVCODEC_LIB_NAME!$LIBAVCODEC_LIB_NAME$ac_delim
-HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
-LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
-HAVE_LIBAVCODEC_RTP_MODE!$HAVE_LIBAVCODEC_RTP_MODE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -13513,6 +13860,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
+LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
+HAVE_LIBAVCODEC_RTP_MODE!$HAVE_LIBAVCODEC_RTP_MODE$ac_delim
 X264_CFLAGS!$X264_CFLAGS$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
 X264_LIB_NAME!$X264_LIB_NAME$ac_delim
@@ -13536,7 +13886,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 21; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 24; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -13984,7 +14334,12 @@ echo "                              GSM :  yes (internal)"
 fi
 
 echo "                          gsm-amr :  yes"
-echo "                             iLBC :  yes"
+if test "x${ILBC_SYSTEM}" = "xyes" ; then
+echo "                             iLBC :  yes (system)"
+else
+echo "                             iLBC :  yes (internal)"
+fi
+
 if test "x${SPEEX_SYSTEM}" = "xyes" ; then
 echo "                            Speex :  yes (system, version $SPEEX_SYSTEM_VERSION)"
 else
