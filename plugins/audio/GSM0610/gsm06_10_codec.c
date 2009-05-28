@@ -68,7 +68,7 @@
 
 static void * create_codec(const struct PluginCodec_Definition * codec)
 {
-  int opt = (int)codec->userData;
+  int opt = codec->userData != 0;
   struct gsm_state * context = gsm_create();
   gsm_option(context, GSM_OPT_WAV49, &opt);
   return context;
