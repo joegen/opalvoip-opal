@@ -391,6 +391,7 @@ struct SIPPresenceInfo
   BasicStates m_basic;
   PString     m_note;
   PString     m_contact;
+  PString     m_to;
 
   PString AsString() const;
 };

@@ -715,8 +715,12 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
   // Default routeSet if there is a proxy
   m_dialog.UpdateRouteSet(m_proxy);
 
-  if (!m_dialog.IsEstablished())
-    m_dialog.SetLocalURI(endpoint.GetRegisteredPartyName(GetAddressOfRecord(), *m_transport));
+  if (!m_dialog.IsEstablished()) {
+    if (!m_parameters.m_from.IsEmpty())
+      m_dialog.SetLocalURI(m_parameters.m_from);
+    else
+      m_dialog.SetLocalURI(endpoint.GetRegisteredPartyName(GetAddressOfRecord(), *m_transport));
+  }
 
   m_parameters.m_expire = state != Unsubscribing ? expire : 0;
   return new SIPSubscribe(endpoint, trans, m_dialog, m_parameters);
@@ -921,8 +925,12 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
     SIPURL from = request.GetMIME().GetFrom();
     from.Sanitise(SIPURL::ExternalURI);
 
+    SIPURL to = request.GetMIME().GetTo();
+    to.Sanitise(SIPURL::ExternalURI);
+
     SIPPresenceInfo info;
     info.m_address = from.AsQuotedString();
+    info.m_to      = to.AsQuotedString();
 
     // Check for empty body, if so then is OK, just a ping ...
     if (request.GetEntityBody().IsEmpty()) {
