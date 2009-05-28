@@ -433,6 +433,7 @@ class SIPEndPoint : public OpalRTPEndPoint
       bool                 m_reRegistering;     ///< Was a registration refresh
       SIP_PDU::StatusCodes m_reason;            ///< Reason for status change
       OpalProductInfo      m_productInfo;       ///< Server product info from registrar if available.
+      void               * m_userData;          ///< User data corresponding to this registration
     };
 
     /**Callback called when a registration to a SIP registrar status.
