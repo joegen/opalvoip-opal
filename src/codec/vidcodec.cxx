@@ -104,6 +104,7 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   , m_keyFrames(0)
 #endif
 {
+  acceptEmptyPayload = true;
 }
 
 
