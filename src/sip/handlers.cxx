@@ -631,6 +631,7 @@ void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
   status.m_addressofRecord = GetAddressOfRecord().AsString();
   status.m_productInfo = m_productInfo;
   status.m_reason = code;
+  status.m_userData = m_parameters.m_userData;
 
   switch (state) {
     case Subscribing :
