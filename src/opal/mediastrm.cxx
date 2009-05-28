@@ -384,11 +384,8 @@ PBoolean OpalMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX &
 
 PBoolean OpalMediaStream::PushPacket(RTP_DataFrame & packet)
 {
-  if(mediaPatch == NULL) {
-    return false;
-  }
-	
-  return mediaPatch->PushFrame(packet);
+  PSafeLockReadOnly safeLock(*this);
+  return safeLock.IsLocked() && mediaPatch != NULL && mediaPatch->PushFrame(packet);
 }
 
 
@@ -441,10 +438,7 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 void OpalMediaStream::AddFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
 {
   PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
-    return;
-
-  if (mediaPatch != NULL)
+  if (safeLock.IsLocked() && mediaPatch != NULL)
     mediaPatch->AddFilter(Filter, Stage);
 }
 
@@ -452,12 +446,7 @@ void OpalMediaStream::AddFilter(const PNotifier & Filter, const OpalMediaFormat 
 PBoolean OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
 {
   PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
-    return false;
-
-  if (mediaPatch != NULL) return mediaPatch->RemoveFilter(Filter, Stage);
-
-  return false;
+  return safeLock.IsLocked() && mediaPatch != NULL && mediaPatch->RemoveFilter(Filter, Stage);
 }
 
 
@@ -465,10 +454,7 @@ PBoolean OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMedia
 void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
 {
   PSafeLockReadOnly safeLock(*this);
-  if (!safeLock.IsLocked())
-    return;
-
-  if (mediaPatch != NULL && !fromPatch)
+  if (safeLock.IsLocked() && mediaPatch != NULL && !fromPatch)
     mediaPatch->GetStatistics(statistics, IsSink());
 }
 #endif
