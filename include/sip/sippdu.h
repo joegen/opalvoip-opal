@@ -1027,6 +1027,7 @@ class SIPSubscribe : public SIPTransaction
       PTimeInterval m_minRetryTime;
       PTimeInterval m_maxRetryTime;
       void          * m_userData;
+      PString       m_from;
     };
 
     SIPSubscribe(
