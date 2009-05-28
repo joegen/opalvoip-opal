@@ -421,6 +421,7 @@ struct SIPPresenceInfo
   BasicStates m_basic;
   PString     m_note;
   PString     m_contact;
+  PString     m_to;
 
   // presence extensions defined by RFC 4480
   PStringArray m_activities;  // list of activities, seperated by newline
