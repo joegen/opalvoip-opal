@@ -4610,11 +4610,58 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 
 void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
 {
+  if (t38ModeChangeCapabilities.IsEmpty())
+    return;
+
+  PTRACE(3, "H323\tT.38 mode change accepted.");
+
+  // Now we have conviced the other side to send us T.38 data we should do the
+  // same assuming the RequestModeChangeT38() function provided a list of \n
+  // separaete capability names to start. Only one will be.
+
+  CloseAllLogicalChannels(PFalse);
+
+  PStringArray modes = t38ModeChangeCapabilities.Lines();
+
+  PINDEX first, last;
+  if (pdu.m_response.GetTag() == H245_RequestModeAck_response::e_willTransmitMostPreferredMode) {
+    first = 0;
+    last = 1;
+  }
+  else {
+    first = 1;
+    last = modes.GetSize();
+  }
+
+  for (PINDEX i = first; i < last; i++) {
+    H323Capability * capability = localCapabilities.FindCapability(modes[i]);
+    if (capability != NULL && OpenLogicalChannel(*capability,
+                                                 capability->GetDefaultSessionID(),
+                                                 H323Channel::IsTransmitter)) {
+      PTRACE(3, "H245\tOpened " << *capability << " after T.38 mode change");
+      break;
+    }
+
+    PTRACE(2, "H245\tCould not open channel after T.38 mode change");
+  }
+
+  t38ModeChangeCapabilities = PString::Empty();
 }
 
 
 void H323Connection::OnRefusedModeChange(const H245_RequestModeReject * /*pdu*/)
 {
+}
+
+
+PBoolean H323Connection::RequestModeChangeT38(const char * capabilityNames)
+{
+  t38ModeChangeCapabilities = capabilityNames;
+  if (RequestModeChange(t38ModeChangeCapabilities))
+    return PTrue;
+
+  t38ModeChangeCapabilities = PString::Empty();
+  return PFalse;
 }
 
 
