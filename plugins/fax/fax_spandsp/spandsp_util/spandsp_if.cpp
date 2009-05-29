@@ -446,8 +446,12 @@ void SpanDSP::FaxTerminal::Start()
 
   span_log_set_level(fax_get_logging_state(faxState),
                      verbose ? (SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG) : 0);
-  //::t30_set_ecm_capability(fax_get_t30_state(faxState), useECM ? 1 : 0);
-  t30_set_tx_ident(fax_get_t30_state(faxState), localStationID.empty() ? " " : localStationID.c_str());
+  t30_state_t * t30 = fax_get_t30_state(faxState);
+  //::t30_set_ecm_capability(t30, useECM ? 1 : 0);
+  t30_set_tx_ident(t30, localStationID.empty() ? " " : localStationID.c_str());
+
+  span_log_set_level(t30_get_logging_state(t30),
+                     verbose ? (SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG) : 0);
 }
 
 
@@ -1110,7 +1114,11 @@ bool SpanDSP::T38Gateway::Start()
   span_log_set_level(t38_gateway_get_logging_state(t38GatewayState),
                      verbose ? (SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG) : 0);
 
-  t38_set_t38_version(t38_gateway_get_t38_core_state(t38GatewayState), version);
+  t38_core_state_t * t38 = t38_gateway_get_t38_core_state(t38GatewayState);
+  t38_set_t38_version(t38, version);
+
+  span_log_set_level(t38_core_get_logging_state(t38),
+                     verbose ? (SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG) : 0);
 
   return true;
 }
