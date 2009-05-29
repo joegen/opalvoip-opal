@@ -64,6 +64,8 @@ static int FindByteAlignedCode(const unsigned char * base, int len, const unsign
 static int FindPSC(const unsigned char * base, int len)
 { return FindByteAlignedCode(base, len, PSC, PSC_Mask, sizeof(PSC)); }
 
+#if 0
+
 static int FindGBSC(const unsigned char * base, int len, int & sbit)
 {
   // a GBSC is the following bit sequence:
@@ -103,6 +105,8 @@ static int FindGBSC(const unsigned char * base, int len, int & sbit)
 
   return -1;
 }
+
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////////////3Y
 

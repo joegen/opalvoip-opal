@@ -23,12 +23,11 @@
 #ifndef __H263PFrame_H__
 #define __H263PFrame_H__ 1
 
-#include "plugin-config.h"
-
-#include <stdint.h>
 #include <vector>
 #include <string.h>
 #include "rtpframe.h"
+
+#include "../common/ffmpeg.h"
 
 extern "C" {
 #include LIBAVCODEC_HEADER
