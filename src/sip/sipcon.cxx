@@ -2058,9 +2058,9 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
 void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
-  m_dialog.Update(response);
-  UpdateRemoteAddresses();
-  endpoint.ForwardConnection (*this, GetRemotePartyURL());
+  PTRACE(4, "SIP\tReceived redirect");
+  SIPURL whereTo = response.GetMIME().GetContact();
+  endpoint.ForwardConnection(*this, whereTo.AsString());
 }
 
 
