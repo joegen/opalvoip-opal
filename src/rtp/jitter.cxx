@@ -201,12 +201,13 @@ void OpalJitterBuffer::Resume()
 {
   PWaitAndSignal m(bufferMutex);
   if (jitterThread != NULL) {
-    if (shuttingDown) {
-      jitterThread->WaitForTermination();
-      delete jitterThread;
-      jitterThread= NULL;
-    }
+    if (!shuttingDown)
+      return;
+
+    jitterThread->WaitForTermination();
+    delete jitterThread;
   }
+
   shuttingDown = false;
   jitterThread = PThread::Create(PCREATE_NOTIFIER(JitterThreadMain), "RTP Jitter");
   jitterThread->Resume();
