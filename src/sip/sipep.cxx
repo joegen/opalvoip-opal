@@ -320,14 +320,9 @@ static PString TranslateENUM(const PString & remoteParty)
   if (remoteParty.Find('@') == P_MAX_INDEX) {
 
     // make sure the number has only digits
-    PString e164 = remoteParty;
-    PINDEX pos = e164.Find(':');
-    if (pos != P_MAX_INDEX)
-      e164.Delete(0, pos+1);
-    pos = e164.FindSpan("0123456789*#", e164[0] != '+' ? 0 : 1);
-    e164.Delete(pos, P_MAX_INDEX);
-
-    if (!e164.IsEmpty()) {
+    PINDEX pos = remoteParty.Find(':');
+    PString e164 = pos != P_MAX_INDEX ? remoteParty.Mid(pos+1) : remoteParty;
+    if (e164.FindSpan("0123456789*#", e164[0] != '+' ? 0 : 1) == P_MAX_INDEX) {
       PString str;
       if (PDNS::ENUMLookup(e164, "E2U+SIP", str)) {
         PTRACE(4, "SIP\tENUM converted remote party " << remoteParty << " to " << str);
