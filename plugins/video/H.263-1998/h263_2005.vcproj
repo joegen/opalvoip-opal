@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="H.263-1998 Video Codec"
-	ProjectGUID="{E6897206-9765-4B73-9A98-DAC5787814CE}"
+	ProjectGUID="{E75AF717-C8A6-40E7-82CB-80D67CE01611}"
 	>
 	<Platforms>
 		<Platform
