@@ -169,9 +169,11 @@ PBoolean OpalGw::Initialise(const char * initMsg)
   PString username = cfg.GetString(UsernameKey);
   PString password = PHTTPPasswordField::Decrypt(cfg.GetString(PasswordKey));
 
+#if P_HAS_IPV6
   PString addressFamily = cfg.GetString(DefaultAddressFamilyKey, "IPV4");
   if(addressFamily *= "IPV6")
 	 PIPSocket::SetDefaultIpAddressFamilyV6();
+#endif
 
   PHTTPSimpleAuth authority(GetName(), username, password);
 
