@@ -324,7 +324,7 @@ uint32_t H263PFrame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen)
   
   bool PB  = false;
   bool CPM = false;
-  bool PEI = false;
+  //bool PEI = false;
   bool SS  = false;
   bool RPS = false;
   bool PCF = false;
