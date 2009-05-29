@@ -469,12 +469,12 @@ PBoolean OpalFaxMediaStream::Close()
     faxCallInfo->socket.Close();
     faxCallInfo->spanDSP.Close();
 
+    PWaitAndSignal m2(faxMapMutex);
+
     if (faxCallInfo->stdoutThread != NULL) {
       delete faxCallInfo->stdoutThread;
       faxCallInfo->stdoutThread = NULL;
     }
-
-    PWaitAndSignal m2(faxMapMutex);
 
     OpalFaxCallInfoMap_T::iterator r = faxCallInfoMap.find(sessionToken);
     if (r == faxCallInfoMap.end()) {
