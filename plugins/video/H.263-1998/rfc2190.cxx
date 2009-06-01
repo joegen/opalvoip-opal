@@ -120,7 +120,7 @@ RFC2190Packetizer::~RFC2190Packetizer()
   free(m_buffer);
 }
 
-int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long maxLen)
+int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long /*maxLen*/)
 {
   // do a sanity check on the fragment data - must be equal to maxLen
   {
@@ -270,7 +270,7 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
                   (fragPtr[1] == 0x00) &&
                   ((fragPtr[2] & 0x80) == 0x80));
 
-    int payloadRemaining = outputFrame.GetFrameLen() - outputFrame.GetHeaderSize();
+    size_t payloadRemaining = outputFrame.GetFrameLen() - outputFrame.GetHeaderSize();
 
     // offset of the data
     size_t offs = modeA ? 4 : 8;
@@ -290,8 +290,8 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
     if (modeA) {
       int sBit = 0;
       int eBit = 0;
-      ptr[0] = ((sBit & 7) << 3) | (eBit & 7);
-      ptr[1] = (frameSize << 5) | (iFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0);
+      ptr[0] = (unsigned char)(((sBit & 7) << 3) | (eBit & 7));
+      ptr[1] = (unsigned char)((frameSize << 5) | (iFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0));
       ptr[2] = ptr[3] = 0;
     }
     else
@@ -301,10 +301,10 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
       int eBit = 0;
       int gobn = frag.mbNum / macroblocksPerGOB;
       int mba  = frag.mbNum % macroblocksPerGOB;
-      ptr[0] = 0x80 | ((sBit & 7) << 3) | (eBit & 7);
-      ptr[1] = (frameSize << 5);
-      ptr[2] = ((gobn << 3) & 0xf8) | ((mba >> 6) & 0x7);
-      ptr[3] = (mba << 2) & 0xfc;
+      ptr[0] = (unsigned char)(0x80 | ((sBit & 7) << 3) | (eBit & 7));
+      ptr[1] = (unsigned char)(frameSize << 5);
+      ptr[2] = (unsigned char)(((gobn << 3) & 0xf8) | ((mba >> 6) & 0x7));
+      ptr[3] = (unsigned char)((mba << 2) & 0xfc);
       ptr[4] = (iFrame ? 0 : 0x80) | (annexD ? 0x40 : 0) | (annexE ? 0x20 : 0) | (annexF ? 0x010: 0);
       ptr[5] = ptr[6] = ptr[7] = 0;
     }
@@ -344,7 +344,7 @@ void RFC2190Depacketizer::NewFrame()
   lastEbit            = 8;
 }
 
-int RFC2190Depacketizer::LostSync(bool & requestIframe, const char * reason)
+int RFC2190Depacketizer::LostSync(bool & requestIframe, const char * /*reason*/)
 {
   skipUntilEndOfFrame = true;
   requestIframe = true;

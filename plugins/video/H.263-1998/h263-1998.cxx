@@ -792,7 +792,7 @@ void H263_RFC2429_EncoderContext::SetMaxRTPFrameSize (unsigned size)
     else  
     _context->rtp_payload_size = size;
 
-  _txH263PFrame->SetMaxPayloadSize(size);
+  _txH263PFrame->SetMaxPayloadSize((uint16_t)size);
 }
 
 
@@ -1214,7 +1214,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   }
 
   // create RTP frame from destination buffer
-  int frameBytes = (_context->width * _context->height * 12) / 8;
+  unsigned frameBytes = (_context->width * _context->height * 12) / 8;
   if (dstRTP.GetPayloadSize() - sizeof(PluginCodec_Video_FrameHeader) < frameBytes) {
     TRACE_AND_LOG(tracer, 1, "Destination buffer size " << dstRTP.GetPayloadSize() << " too small for frame of size " << _context->width  << "x" <<  _context->height);
     flags = PluginCodec_ReturnCoderRequestIFrame;
@@ -1227,7 +1227,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   header->height = _context->height;
   int size = _context->width * _context->height;
 
-  if (dstRTP.GetFrameLen() < (frameBytes + sizeof(PluginCodec_Video_FrameHeader))) {
+  if ((unsigned)dstRTP.GetFrameLen() < (frameBytes + sizeof(PluginCodec_Video_FrameHeader))) {
     flags = 0;
     TRACE_AND_LOG(tracer, 1, "Destination buffer " << dstLen << " insufficient for decoded data size " << header->width << "x" << header->height);
     return ReturnEmptyFrame(dstRTP, dstLen, flags);

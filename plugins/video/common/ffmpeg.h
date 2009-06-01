@@ -66,7 +66,8 @@ extern "C" {
 #ifdef _WIN32
 #include "vs-stdint.h"
 #define LIBAVCODEC_HEADER   "libavcodec\avcodec.h"
-#pragma warning(disable: 4996)
+#pragma warning(push)
+#pragma warning(disable:4244 4996)
 #define round(d)  ((int)((double)(d)+0.5))
 #define strdup(s) _strdup(s)
 #else
@@ -75,6 +76,10 @@ extern "C" {
 #endif
 
 #include LIBAVCODEC_HEADER
+
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
 };
 
 #ifndef LIBAVCODEC_VERSION_INT
