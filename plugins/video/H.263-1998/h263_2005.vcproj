@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="H.263-1998 Video Codec"
+	Name="H.263-1998 (FFMPEG) Video Codec"
 	ProjectGUID="{E75AF717-C8A6-40E7-82CB-80D67CE01611}"
 	>
 	<Platforms>
