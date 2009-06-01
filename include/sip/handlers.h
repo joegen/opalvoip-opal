@@ -196,7 +196,7 @@ public:
 
   void UpdateParameters(const SIPRegister::Params & params);
 
-private:
+protected:
   void SendStatus(SIP_PDU::StatusCodes code, State state);
 
   SIPRegister::Params m_parameters;
