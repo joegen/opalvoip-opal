@@ -2027,9 +2027,12 @@ void SIPConnection::OnStartTransaction(SIPTransaction & transaction)
   endpoint.OnStartTransaction(*this, transaction);
 }
 
+
 void SIPConnection::OnReceivedRinging(SIP_PDU & response)
 {
   PTRACE(3, "SIP\tReceived Ringing response");
+
+  OnReceivedSDP(response);
 
   response.GetMIME().GetAlertInfo(m_alertInfo, m_appearanceCode);
 
@@ -2037,6 +2040,9 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & response)
     SetPhase(AlertingPhase);
     OnAlerting();
   }
+
+  PTRACE_IF(4, response.GetSDP() != NULL, "SIP\tStarting receive media to annunciate remote alerting tone");
+  StartMediaStreams();
 }
 
 
