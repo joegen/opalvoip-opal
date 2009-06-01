@@ -655,6 +655,7 @@ void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
   status.m_addressofRecord = GetAddressOfRecord().AsString();
   status.m_productInfo = m_productInfo;
   status.m_reason = code;
+  status.m_userData = m_parameters.m_userData;
 
   switch (state) {
     case Subscribing :
@@ -1676,7 +1677,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & cal
 {
   PWaitAndSignal m(m_extraMutex);
 
-  StringToHandlerMap::iterator r = m_handlersByCallId.find(std::string(callID));
+  StringToHandlerMap::iterator r = m_handlersByCallId.find(std::string((const char *)callID));
   if (r == m_handlersByCallId.end())
     return NULL;
 
@@ -1762,7 +1763,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, S
 
   PWaitAndSignal m(m_extraMutex);
 
-  StringToHandlerMap::iterator r = m_handlersByUrl.find(std::string(key));
+  StringToHandlerMap::iterator r = m_handlersByUrl.find(std::string((const char *)key));
   if (r == m_handlersByUrl.end())
     return NULL;
 
@@ -1777,7 +1778,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, S
 
   PWaitAndSignal m(m_extraMutex);
 
-  StringToHandlerMap::iterator r = m_handlersByUrlAndPackage.find(std::string(key));
+  StringToHandlerMap::iterator r = m_handlersByUrlAndPackage.find(std::string((const char *)key));
   if (r == m_handlersByUrlAndPackage.end())
     return NULL;
 

@@ -1120,7 +1120,7 @@ PBoolean SIPEndPoint::Unregister(const PString & addressOfRecord, unsigned msecs
       default:
         break;
     }
-    Sleep(100);
+    PThread::Sleep(100);
   }
 
   return false;
