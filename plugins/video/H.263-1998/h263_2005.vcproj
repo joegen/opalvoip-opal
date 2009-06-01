@@ -48,7 +48,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories=".\inc"
+				AdditionalIncludeDirectories="..\common;.\ffmpeg\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -72,9 +72,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
+				AdditionalDependencies="avcodec-52.lib avutil-49.lib"
 				OutputFile="$(OutDir)/gsm0610_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".\ffmpeg\lib"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
 				TargetMachine="1"
 			/>
@@ -137,7 +139,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\inc;..\common"
+				AdditionalIncludeDirectories="..\common;.\ffmpeg\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -165,6 +167,7 @@
 				OutputFile="$(OutDir)/h263-1998_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".\ffmpeg\lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
