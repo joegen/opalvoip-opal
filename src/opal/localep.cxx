@@ -49,7 +49,7 @@ OpalLocalEndPoint::OpalLocalEndPoint(OpalManager & mgr, const char * prefix)
   : OpalEndPoint(mgr, prefix, CanTerminateCall)
   , m_deferredAlerting(false)
 {
-  PTRACE(3, "LocalEP\tCreated endpoint.\n");
+  PTRACE(3, "LocalEP\tCreated endpoint.");
 }
 
 
