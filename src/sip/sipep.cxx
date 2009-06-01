@@ -487,7 +487,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     case SIP_PDU::Method_CANCEL :
       token = m_receivedConnectionTokens(mime.GetCallID());
       if (!token.IsEmpty()) {
-        AddWork(new SIP_PDU_Work(*this, token, pdu));
+        AddWork(new SIPEndPoint::SIP_PDU_Work(*this, token, pdu));
         return true;
       }
       break;
@@ -496,7 +496,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       if (toToken.IsEmpty()) {
         token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
-          AddWork(new SIP_PDU_Work(*this, token, pdu));
+          AddWork(new SIPEndPoint::SIP_PDU_Work(*this, token, pdu));
           return true;
         }
 
@@ -520,7 +520,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       break;
 
     case SIP_PDU::NumMethods :
-      AddWork(new SIP_PDU_Work(*this, token, pdu));
+      AddWork(new SIPEndPoint::SIP_PDU_Work(*this, token, pdu));
       return true;
   }
 
@@ -531,14 +531,14 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   else
     return OnReceivedConnectionlessPDU(transport, pdu);
 
-  AddWork(new SIP_PDU_Work(*this, token, pdu));
+  AddWork(new SIPEndPoint::SIP_PDU_Work(*this, token, pdu));
   return true;
 }
 
-void SIPEndPoint::AddWork(SIP_PDU_Work * work)
+void SIPEndPoint::AddWork(SIP_Work * work)
 {
 #if SIP_THREAD_POOL
-  threadPool.AddWork(work, work->m_token);
+  work->Add(this->threadPool);
 #else
   PTRACE(2, "SIP\tStarted processing PDU");
   work->OnReceivedPDU();
@@ -551,9 +551,10 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
 {
   if (pdu->GetMethod() == SIP_PDU::NumMethods || pdu->GetMethod() == SIP_PDU::Method_CANCEL) {
     PSafePtr<SIPTransaction> transaction = GetTransaction(pdu->GetTransactionID(), PSafeReference);
-    if (transaction != NULL)
-      transaction->OnReceivedResponse(*pdu);
-    return false;
+    if (transaction == NULL)
+      return false;
+    AddWork(new SIPEndPoint::SIPResponseWork(*this, pdu->GetTransactionID(), pdu));
+    return true;
   }
 
   // Prevent any new INVITE/SUBSCRIBE etc etc while we are on the way out.
@@ -835,7 +836,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   m_receivedConnectionTokens.SetAt(mime.GetCallID(), connection->GetToken());
 
   // Get the connection to handle the rest of the INVITE in the thread pool
-  AddWork(new SIP_PDU_Work(*this, connection->GetToken(), request));
+  AddWork(new SIPEndPoint::SIP_PDU_Work(*this, connection->GetToken(), request));
 
   return PTrue;
 }
@@ -1060,13 +1061,14 @@ bool SIPEndPoint::Register(const SIPRegister::Params & params, PString & aor)
             "    restore=" << params.m_restoreTime << "\n"
             "   minRetry=" << params.m_minRetryTime << "\n"
             "   maxRetry=" << params.m_maxRetryTime);
-  PSafePtr<SIPRegisterHandler> handler = PSafePtrCast<SIPHandler, SIPRegisterHandler>(
-          activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadWrite));
+
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadWrite);
 
   // If there is already a request with this URL and method, 
   // then update it with the new information
-  if (handler != NULL)
-    handler->UpdateParameters(params);
+  if (handler != NULL) {
+    PSafePtrCast<SIPHandler, SIPRegisterHandler>(handler)->UpdateParameters(params);
+  }
   else {
     // Otherwise create a new request with this method type
     handler = CreateRegisterHandler(params);
@@ -1090,8 +1092,39 @@ SIPRegisterHandler * SIPEndPoint::CreateRegisterHandler(const SIPRegister::Param
 }
 
 
-PBoolean SIPEndPoint::Unregister(const PString & addressOfRecord)
+PBoolean SIPEndPoint::Unregister(const PString & addressOfRecord, unsigned msecs)
 {
+  PTimer timer(msecs);
+  while (timer.IsRunning()) {
+
+    PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+    if (handler == NULL) {
+      PTRACE(1, "SIP\tCould not find active REGISTER for " << addressOfRecord);
+      return false;
+    }
+
+    switch (handler->GetState()) {
+      case SIPHandler::Unavailable:      // The registration is offline and still being attempted
+        return false;
+
+      case SIPHandler::Unsubscribing:    // The unregistration is in process
+      case SIPHandler::Unsubscribed:     // The registrating is inactive
+        return true;
+
+      case SIPHandler::Subscribed:       // The registration is active
+        return handler->SendRequest(SIPHandler::Unsubscribing);
+
+      case SIPHandler::Subscribing:      // The registration is in process
+      case SIPHandler::Refreshing:       // The registration is being refreshed
+      case SIPHandler::Restoring:        // The registration is trying to be restored after being offline
+      default:
+        break;
+    }
+    Sleep(100);
+  }
+
+  return false;
+
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (handler == NULL) {
     PTRACE(1, "SIP\tCould not find active REGISTER for " << addressOfRecord);
@@ -1530,26 +1563,26 @@ void SIPEndPoint::OnRTPStatistics(const SIPConnection & connection,
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-SIPEndPoint::PDUThreadPool::WorkerThreadBase * SIPEndPoint::PDUThreadPool::CreateWorkerThread()
+SIPEndPoint::WorkThreadPool::WorkerThreadBase * SIPEndPoint::WorkThreadPool::CreateWorkerThread()
 { 
-  return new SIP_PDU_Thread(*this); 
+  return new SIP_Work_Thread(*this); 
 }
 
 
-SIPEndPoint::SIP_PDU_Thread::SIP_PDU_Thread(PDUThreadPool & pool_)
-  : PDUThreadPool::WorkerThread(pool_)
+SIPEndPoint::SIP_Work_Thread::SIP_Work_Thread(WorkThreadPool & pool_)
+  : WorkThreadPool::WorkerThread(pool_)
 {
   SetPriority(HighPriority);
 }
 
 
-unsigned SIPEndPoint::SIP_PDU_Thread::GetWorkSize() const 
+unsigned SIPEndPoint::SIP_Work_Thread::GetWorkSize() const 
 { 
   return m_pduQueue.size(); 
 }
 
 
-void SIPEndPoint::SIP_PDU_Thread::AddWork(SIP_PDU_Work * work)
+void SIPEndPoint::SIP_Work_Thread::AddWork(SIP_Work * work)
 {
   PWaitAndSignal m(m_workerMutex);
   m_pduQueue.push(work);
@@ -1558,19 +1591,19 @@ void SIPEndPoint::SIP_PDU_Thread::AddWork(SIP_PDU_Work * work)
 }
 
 
-void SIPEndPoint::SIP_PDU_Thread::RemoveWork(SIP_PDU_Work *)
+void SIPEndPoint::SIP_Work_Thread::RemoveWork(SIP_Work *)
 {
 }
 
 
-void SIPEndPoint::SIP_PDU_Thread::Shutdown()
+void SIPEndPoint::SIP_Work_Thread::Shutdown()
 {
   m_shutdown = true;
   m_sync.Signal();
 }
 
 
-void SIPEndPoint::SIP_PDU_Thread::Main()
+void SIPEndPoint::SIP_Work_Thread::Main()
 {
   while (!m_shutdown) {
 
@@ -1583,13 +1616,13 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
     }
 
     // get the work
-    SIP_PDU_Work * work = m_pduQueue.front();
+    SIP_Work * work = m_pduQueue.front();
     m_pduQueue.pop();
     m_workerMutex.Signal();
 
     // process the work
     PTRACE(2, "SIP\tStarted processing PDU");
-    work->OnReceivedPDU();
+    work->Process();
     PTRACE(2, "SIP\tFinished processing PDU");
 
     // indicate work is now free
@@ -1600,21 +1633,32 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
   }
 }
 
-SIPEndPoint::SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu)
+SIPEndPoint::SIP_Work::SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu)
   : m_endpoint(ep)
-  , m_token(token)
   , m_pdu(pdu)
 {
 }
 
 
-SIPEndPoint::SIP_PDU_Work::~SIP_PDU_Work()
+SIPEndPoint::SIP_Work::~SIP_Work()
 {
   delete m_pdu;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
 
-void SIPEndPoint::SIP_PDU_Work::OnReceivedPDU()
+SIPEndPoint::SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu)
+  : SIP_Work(ep, pdu), m_token(token)
+{ }
+
+
+void SIPEndPoint::SIP_PDU_Work::Add(SIPEndPoint::WorkThreadPool & pool)
+{
+  pool.AddWork(this, m_token);
+}
+
+
+void SIPEndPoint::SIP_PDU_Work::Process()
 {
   if (PAssertNULL(m_pdu) == NULL)
     return;
@@ -1642,6 +1686,25 @@ void SIPEndPoint::SIP_PDU_Work::OnReceivedPDU()
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+SIPEndPoint::SIPResponseWork::SIPResponseWork(SIPEndPoint & ep, const PString & transactionID, SIP_PDU * pdu)
+  : SIP_Work(ep, pdu), m_transactionID(transactionID)
+{ }
+
+void SIPEndPoint::SIPResponseWork::Add(SIPEndPoint::WorkThreadPool & pool)
+{
+  pool.AddWork(this);
+}
+
+void SIPEndPoint::SIPResponseWork::Process()
+{ 
+  PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(m_transactionID, PSafeReference);
+  if (transaction != NULL)
+    transaction->OnReceivedResponse(*m_pdu); 
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 SIPEndPoint::InterfaceMonitor::InterfaceMonitor(SIPEndPoint & ep, PINDEX priority)
   : PInterfaceMonitorClient(priority) 

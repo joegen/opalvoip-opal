@@ -399,7 +399,10 @@ class SIPEndPoint : public OpalRTPEndPoint
        This will unregister the specified address-of-record. If an empty
        string is provided then ALL registrations are removed.
      */
-    bool Unregister(const PString & aor);
+    bool Unregister(
+      const PString & aor,
+      unsigned msecs = 1000
+    );
 
     /**Unregister all current registrations.
       */
@@ -834,34 +837,58 @@ class SIPEndPoint : public OpalRTPEndPoint
     PAtomicInteger          lastSentCSeq;
     int                     m_defaultAppearanceCode;
 
-    struct SIP_PDU_Work
+  public:
+    class WorkThreadPool;
+    class SIP_Work
     {
       public:
-        SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu);
-        ~SIP_PDU_Work();
+        SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu);
+        ~SIP_Work();
 
-        void OnReceivedPDU();
+        virtual void Add(WorkThreadPool & pool) = 0; 
+
+        virtual void Process() = 0;
 
         SIPEndPoint & m_endpoint;
-        PString       m_token;
         SIP_PDU     * m_pdu;
     };
 
-    class PDUThreadPool : public PThreadPool<SIP_PDU_Work>
+    class SIP_PDU_Work : public SIP_Work
+    {
+      public:
+        SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu);
+        void Add(SIPEndPoint::WorkThreadPool & pool);
+        virtual void Process();
+        PString       m_token;
+    };
+
+    class SIPResponseWork : public SIP_Work
+    {
+      public:
+        SIPResponseWork(SIPEndPoint & ep, const PString & transactionID, SIP_PDU * pdu);
+        void Add(SIPEndPoint::WorkThreadPool & pool);
+        void Process();
+        PString m_transactionID;
+    };
+
+    class WorkThreadPool : public PThreadPool<SIP_Work>
     {
       public:
         virtual WorkerThreadBase * CreateWorkerThread();
     } threadPool;
 
-    typedef std::queue<SIP_PDU_Work *> SIP_PDUWorkQueue;
+    virtual void AddWork(SIP_Work * work);
 
-    class SIP_PDU_Thread : public PDUThreadPool::WorkerThread
+  protected:
+    typedef std::queue<SIP_Work *> SIP_WorkQueue;
+
+    class SIP_Work_Thread : public WorkThreadPool::WorkerThread
     {
       public:
-        SIP_PDU_Thread(PDUThreadPool & pool_);
+        SIP_Work_Thread(WorkThreadPool & pool_);
 
-        void AddWork(SIP_PDU_Work * work);
-        void RemoveWork(SIP_PDU_Work * work);
+        void AddWork(SIP_Work * work);
+        void RemoveWork(SIP_Work * work);
         unsigned GetWorkSize() const;
 
         void Main();
@@ -869,10 +896,8 @@ class SIPEndPoint : public OpalRTPEndPoint
 
       protected:
         PSyncPoint m_sync;
-        SIP_PDUWorkQueue m_pduQueue;
+        SIP_WorkQueue m_pduQueue;
     };
-
-    virtual void AddWork(SIP_PDU_Work * work);
 
     enum {
       HighPriority = 80,

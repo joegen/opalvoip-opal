@@ -162,6 +162,11 @@ protected:
   PTimeInterval               retryTimeoutMax; 
   SIPURL                      m_proxy;
   OpalProductInfo             m_productInfo;
+
+public:
+  std::string                 m_userNameAndRealmKey;
+  std::string                 m_urlKey;
+  std::string                 m_urlAndPackageKey;
 };
 
 #if PTRACING
@@ -335,6 +340,19 @@ class SIPHandlersList : public PSafeList<SIPHandler>
 {
   public:
     /**
+      *  Append a new handler to the list
+      */
+    virtual PSafePtr<SIPHandler> Append(
+      SIPHandler * obj,       ///< Object to add to safe collection.
+      PSafetyMode mode = PSafeReference
+    );
+
+    /**
+      * Called when a handler is removed
+      */
+    void Remove(PSafePtr<SIPHandler> handler);
+
+    /**
      * Return the number of registered accounts
      */
     unsigned GetCount(SIP_PDU::Methods meth, const PString & eventPackage = PString::Empty()) const;
@@ -370,6 +388,14 @@ class SIPHandlersList : public PSafeList<SIPHandler>
      * could be "sip.seconix.com" or "seconix.com".
      */
     PSafePtr <SIPHandler> FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode m);
+
+  protected:
+    PMutex m_extraMutex;
+    typedef std::map<std::string, PSafePtr<SIPHandler> > StringToHandlerMap;
+    StringToHandlerMap m_handlersByCallId;
+    StringToHandlerMap m_handlersByUserNameAndRealm;
+    StringToHandlerMap m_handlersByUrl;
+    StringToHandlerMap m_handlersByUrlAndPackage;
 };
 
 
@@ -380,7 +406,8 @@ struct SIPPresenceInfo
   enum BasicStates {
     Unknown,
     Open,
-    Closed
+    Closed,
+    Unchanged
   };
 
   enum ExtendedStates {
