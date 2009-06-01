@@ -27,7 +27,7 @@ Method 1
    * Copy the contents of ...\opal\plugins\video\H.263=1998\ffmpeg\bin to
      C:\PTLib_PlugIns
 
-   *
+   * Compile the H.263-1998 project in the Opal plugins solution
 
 Method 2
    
