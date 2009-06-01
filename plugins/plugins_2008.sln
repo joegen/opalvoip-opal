@@ -164,6 +164,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinXP USB HID Trainer", "LI
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "G.722 Audio Codec", "audio\G722\g722_2008.vcproj", "{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h263_2008", "video\H.263-1998\h263_2008.vcproj", "{E75AF717-C8A6-40E7-82CB-80D67CE01611}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -439,6 +441,15 @@ Global
 		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Release|Win32.ActiveCfg = Release|Win32
 		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Release|Win32.Build.0 = Release|Win32
 		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
+		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Debug|Win32.Build.0 = Debug|Win32
+		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.No Trace|Win32.ActiveCfg = Debug|Win32
+		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.No Trace|Win32.Build.0 = Debug|Win32
+		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Release|Win32.ActiveCfg = Release|Win32
+		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Release|Win32.Build.0 = Release|Win32
+		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
