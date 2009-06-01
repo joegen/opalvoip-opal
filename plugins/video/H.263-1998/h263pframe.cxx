@@ -60,7 +60,7 @@ uint32_t Bitstream::PeekBits(uint32_t numBits) {
     uint8_t i;
     uint32_t result = 0;
     uint32_t offset = _data.pos / 8;
-    uint8_t  offsetBits = _data.pos % 8;
+    uint8_t  offsetBits = (uint8_t)(_data.pos % 8);
     if (((_data.len << 3) -_ebits - _sbits) < (_data.pos  + numBits)) {
       TRACE(1, "H263+\tDeencap\tFrame too short, trying to read " << numBits << " bits at position " << _data.pos 
                            << " when frame is only " << ((_data.len << 3) -_ebits - _sbits) << " bits long");
@@ -89,7 +89,7 @@ void Bitstream::PutBits(uint32_t posBits, uint32_t numBits, uint32_t value) {
     uint8_t i;
     posBits += _sbits;
     uint32_t offset = _data.pos / 8;
-    uint8_t  offsetBits = _data.pos % 8;
+    uint8_t  offsetBits = (uint8_t)(_data.pos % 8);
     static const uint8_t maskClear[8] = {
       0x7f, 0xbf, 0xdf, 0xef,
       0xf7, 0xfb, 0xfd, 0xfe
@@ -157,9 +157,9 @@ void H263PFrame::GetRTPFrame (RTPFrame & frame, unsigned int & flags)
       }
     }  
     if (_encodedFrame.len > _maxPayloadSize)
-      _minPayloadSize = (uint32_t)(_encodedFrame.len / ceil((float)_encodedFrame.len / (float)_maxPayloadSize));
+      _minPayloadSize = (uint16_t)(_encodedFrame.len / ceil((float)_encodedFrame.len / (float)_maxPayloadSize));
     else
-      _minPayloadSize = _encodedFrame.len;
+      _minPayloadSize = (uint16_t)_encodedFrame.len;
     TRACE_UP(4, "H263+\tEncap\tSetting minimal packet size to " << _minPayloadSize
           << " considering " << ceil((float)_encodedFrame.len / (float)_maxPayloadSize) << " packets for this frame");
   }
@@ -188,7 +188,7 @@ void H263PFrame::GetRTPFrame (RTPFrame & frame, unsigned int & flags)
   // the packet boundary there, if not, use _maxPayloadSize
   if ((!_startCodes.empty()) 
    && ((_startCodes.front() - _encodedFrame.pos) > _minPayloadSize)
-   && ((_startCodes.front() - _encodedFrame.pos) < (_maxPayloadSize - 2))) {
+   && ((_startCodes.front() - _encodedFrame.pos) < (unsigned)(_maxPayloadSize - 2))) {
     frame.SetPayloadSize(_startCodes.front() - _encodedFrame.pos + 2);
     _startCodes.erase(_startCodes.begin());
   }
@@ -202,7 +202,7 @@ void H263PFrame::GetRTPFrame (RTPFrame & frame, unsigned int & flags)
   memcpy(frame.GetPayloadPtr() + 2, _encodedFrame.ptr + _encodedFrame.pos, frame.GetPayloadSize() - 2);
   _encodedFrame.pos += frame.GetPayloadSize() - 2;
 
-  frame.SetTimestamp(_timestamp);
+  frame.SetTimestamp((unsigned long)_timestamp);
   if (_encodedFrame.len == _encodedFrame.pos)  
      frame.SetMarker(1);
     else
@@ -213,7 +213,7 @@ void H263PFrame::GetRTPFrame (RTPFrame & frame, unsigned int & flags)
   flags |= IsIFrame() ? isIFrame : 0;
 }
 
-bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
+bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /*flags*/)
 {
 
   if (frame.GetPayloadSize()<3) {
@@ -236,7 +236,7 @@ bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
 
   if (headerV) dataPtr++; // We ignore the VRC
   if (headerPLEN > 0) {
-    if (frame.GetPayloadSize() < headerPLEN + headerV ? 3 : 2) {
+    if (frame.GetPayloadSize() < headerPLEN + (headerV ? 3U : 2U)) {
       TRACE(1, "H263+\tDeencap\tFrame too short (header)");
       return false;
     }
@@ -317,10 +317,10 @@ uint32_t H263PFrame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen)
   Bitstream headerBits;
   headerBits.SetBytes (headerPtr, headerMaxLen, 0, 0);
 
-  uint8_t PTYPEFormat = 0;
-  uint8_t PLUSPTYPEFormat = 0;
-  uint8_t PTCODE = 0;
-  uint8_t UFEP = 0;
+  unsigned PTYPEFormat = 0;
+  unsigned PLUSPTYPEFormat = 0;
+  unsigned PTCODE = 0;
+  unsigned UFEP = 0;
   
   bool PB  = false;
   bool CPM = false;
