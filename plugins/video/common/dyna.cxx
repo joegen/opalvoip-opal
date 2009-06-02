@@ -99,6 +99,10 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
     return false;
   }
 
+#ifndef _WIN32
+  strcat(path, ".so");
+#endif
+
   // Load the Libary
 #ifdef _WIN32
 # ifdef UNICODE
