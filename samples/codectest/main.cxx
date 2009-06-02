@@ -90,6 +90,7 @@ void CodecTest::Main()
              "-count:"
              "-noprompt."
              "-snr."
+             "-list."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -101,6 +102,43 @@ void CodecTest::Main()
                      args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
          PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
 #endif
+
+  if (args.HasOption("list")) {
+    OpalPluginCodecManager * codecMgr = PFactory<PPluginModuleManager>::CreateInstanceAs<OpalPluginCodecManager>("OpalPluginCodecManager");
+    if (codecMgr == NULL) {
+      cerr << "error: Cannot get codec manager" << endl;
+      return;
+    }
+    PPluginModuleManager::PluginListType pluginList = codecMgr->GetPluginList();
+
+    cout << "Plugin codecs:" << endl;
+    for (int i = 0; i < pluginList.GetSize(); i++) {
+      PDynaLink & plugin =  pluginList.GetDataAt(i);
+
+      PStringList codecNames;
+      PluginCodec_GetCodecFunction getCodecs;
+      if (plugin.GetFunction(PLUGIN_CODEC_GET_CODEC_FN_STR, (PDynaLink::Function &)getCodecs)) {
+        unsigned count = 0;
+        PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_OPTIONS);
+        while (count > 0) {
+          PString name(codecs->descr);
+          if (codecNames.GetStringsIndex(name) == P_MAX_INDEX)
+            codecNames.AppendString(name);
+          --count;
+          ++codecs;
+        }
+      }
+
+      cout << "   " << plugin.GetName(true) << endl;
+      if (codecNames.GetSize() == 0) 
+        cout << "      No codecs defined" << endl;
+      else
+        cout << "      " << setfill(',') << codecNames << setfill(' ') << endl;
+      
+    }
+    cout << "\n\n";
+    return;
+  }
 
   if (args.HasOption('h') || args.GetCount() == 0) {
     PError << "usage: " << GetFile().GetTitle() << " [ options ] fmtname [ fmtname ]\n"
@@ -137,6 +175,7 @@ void CodecTest::Main()
               "  --count n               : set number of frames to transcode\n"
               "  --noprompt              : do not prompt for commands, i.e. exit when input closes\n"
               "  --snr                   : calculate signal-to-noise ratio between input and output\n"
+              "  --list                  : list all available plugin codecs\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
               "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
