@@ -43,7 +43,7 @@ LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LIBAVCODEC_CFLAGS=@LIBAVCODEC_CFLAGS@
-LDFLAGS		=@LDFLAGS@
+LDFLAGS		=@LDFLAGS@ -lavcodec -lavutil
 HAVE_LIBAVCODEC_RTP_MODE=@HAVE_LIBAVCODEC_RTP_MODE@
 
 ifdef HAVE_LIBAVCODEC_RTP_MODE
@@ -76,9 +76,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
 ifeq (,$(findstring solaris,$(target_os)))
-	$(CXX) $(LDSO) $(DL_LIBS) -o $@ $^
+	$(CXX) $(LDSO) $(DL_LIBS) -o $@ $^ $(LDFLAGS)
 else	
-	$(CXX) $(LDSO) $(DL_LIBS) $@ -o $@ $^
+	$(CXX) $(LDSO) $(DL_LIBS) $@ -o $@ $^ $(LDFLAGS)
 endif
     
 install: $(PLUGIN)
