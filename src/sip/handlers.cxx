@@ -268,14 +268,26 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
   switch (newState) {
     case Unsubscribing:
       switch (state) {
-        case Unsubscribed :
-          return true;
-
         case Subscribed :
         case Unavailable :
-          break;
+          break;  // Can try and do Unsubscribe
 
-        default : // Are in the process of doing something
+        case Subscribing :
+        case Refreshing :
+        case Restoring :
+          PTRACE(2, "SIP\tCan't send " << newState << " request for " << GetMethod()
+                 << " handler while in " << state << " state, target="
+                 << GetAddressOfRecord() << ", id=" << GetCallID());
+          return false; // Are in the process of doing something
+
+        case Unsubscribed :
+        case Unsubscribing :
+          PTRACE(3, "SIP\tAlready doing " << state << " request for " << GetMethod()
+                 << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
+          return true;  // Already done or doing it
+
+        default :
+          PAssertAlways(PInvalidParameter);
           return false;
       }
       break;
@@ -283,6 +295,29 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
     case Subscribing :
     case Refreshing :
     case Restoring :
+      switch (state) {
+        case Subscribed :
+        case Unavailable :
+          break;  // Can do subscribe/refresh/restore
+
+        case Subscribing :
+        case Refreshing :
+        case Restoring :
+          PTRACE(3, "SIP\tAlready doing " << state << " request for " << GetMethod()
+                 << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
+          return true; // Already doing it
+
+        case Unsubscribing :
+        case Unsubscribed :
+          PTRACE(2, "SIP\tCan't send " << newState << " request for " << GetMethod()
+                 << " handler while in " << state << " state, target="
+                 << GetAddressOfRecord() << ", id=" << GetCallID());
+          return false; // Can't restart as are on the way out
+
+        default : // Are in the process of doing something
+          PAssertAlways(PInvalidParameter);
+          return false;
+      }
       break;
 
     default :
@@ -397,7 +432,9 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   CollapseFork(transaction);
 
   // Restart the transaction with new authentication handler
-  SendRequest(GetState());
+  State oldState = state;
+  state = Unavailable;
+  SendRequest(oldState);
 }
 
 
