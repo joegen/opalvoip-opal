@@ -41,18 +41,6 @@
 #include <rtp/jitter.h>
 #include <rtp/rtp.h>
 
-/** We use the IAX2 jitter buffer, as it is close to what we need, and has no
-    RTP session stuff to worry about. The iax2 jitter buffer is derived from
-    the OpalJitterBuffer, and demands OPAL library code newer than Jan 2007 */
-
-/**** Note, this code will only compile if you use an OPAL library code newer
-    than January 2007 */
-#include <iax2/iax2jitter.h>   
-/**** Note, this code will only compile if you use an OPAL library code newer
-    than January 2007 */
-
-
-
 #include <ptclib/delaychan.h>
 #include <ptclib/random.h>
 
@@ -63,9 +51,9 @@
 
 /////////////////////////////////////////////////////////////////////////////
 /**we use this class primarily to access variables in the OpalJitterBuffer*/
-class JesterJitterBuffer : public IAX2JitterBuffer
+class JesterJitterBuffer : public OpalJitterBuffer
 {
-    PCLASSINFO(JesterJitterBuffer, IAX2JitterBuffer);
+    PCLASSINFO(JesterJitterBuffer, OpalJitterBuffer);
  public:
     JesterJitterBuffer();
 
@@ -76,45 +64,6 @@ class JesterJitterBuffer : public IAX2JitterBuffer
 
     /**Report the current jitter depth */
     unsigned GetCurrentDepth() { return jitterBuffer.size(); }
-
-    /** repot on an internal variable */
-    DWORD GetCurrentJitterTime() { return currentJitterTime; }
-
-
-    virtual void Close(
-	PBoolean /*reading */   ///<  Closing the read side of the session
-	);
-
-   /**Reopens an existing session in the given direction.
-      */
-    virtual void Reopen(
-	PBoolean /*isReading */
-	) { }
-
-    /**Get the local host name as used in SDES packes.
-      */
-    virtual PString GetLocalHostName() { return PString("Jester"); }
-
-
-
- protected:
-    /**psuedo sequence number that we will put into the packets */
-    WORD psuedoSequenceNo;
-
-    /**psuedo timestamp that we will put into the packets. Timestamp goes up
-     * by the number of samples placed in the packet. So, 8khz, 30ms duration,
-     * means 240 increment for each packet. */
-    DWORD psuedoTimestamp;
-
-    /**Flag to indicate we have closed down */
-    PBoolean closedDown;
-
-    /**time at which this all started */
-    PTime startJester;
-
-    /**Number of times we have read a packet. This is required to determine the required time period
-       to sleep */
-    PINDEX readCount;
 };
 
 /////////////////////////////////////////////////////////////////////////////

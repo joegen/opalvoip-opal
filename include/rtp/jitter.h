@@ -57,32 +57,32 @@ class OpalJitterBuffer : public PSafeObject
   PCLASSINFO(OpalJitterBuffer, PSafeObject);
 
   public:
+  /**@name Construction */
+  //@{
     /**Constructor for this jitter buffer. The size of this buffer can be
-       altered later with the SetDelay method */
+       altered later with the SetDelay method
+      */
     OpalJitterBuffer(
       unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
       unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
-      unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
-      PINDEX stackSize = 30000 ///<  Stack size for jitter thread
+      unsigned timeUnits = 8   ///<  Time units, usually 8 or 16
     );
     
-    /**Destructor, which closes this down and deletes the internal list of frames */
+    /** Destructor, which closes this down and deletes the internal list of frames
+      */
     virtual ~OpalJitterBuffer();
+  //@}
 
+  /**@name Overrides from PObject */
+  //@{
     /**Report the statistics for this jitter instance */
-    void PrintOn(ostream & strm  ) const;
+    void PrintOn(
+      ostream & strm
+    ) const;
+  //@}
 
-    /**This method is where this OpalJitterBuffer collects data from the
-       outside world.  A descendant class of OpalJitterBuffer will override
-       this method
-
-    @return PTrue on successful read, PFalse on faulty read. */
-    virtual PBoolean OnReadPacket    (
-      RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-      PBoolean loop               ///<  If PTrue, loop as long as data is available, if PFalse, only process once
-    ) = 0;
-
-//    PINDEX GetSize() const { return bufferSize; }
+  /**@name Operations */
+  //@{
     /**Set the maximum delay the jitter buffer will operate to.
       */
     void SetDelay(
@@ -90,15 +90,23 @@ class OpalJitterBuffer : public PSafeObject
       unsigned maxJitterDelay  ///<  Maximum delay in RTP timestamp units
     );
 
-    void UseImmediateReduction(PBoolean state) { doJitterReductionImmediately = state; }
+    /** Reset jitter buffer.
+        Jitter buffer is cleared and "restocked" from input data.
+      */
+    void Reset() { m_resetJitterBufferNow = true; }
 
-    /**Read a data frame from the RTP channel.
-       Any control frames received are dispatched to callbacks and are not
-       returned by this function. It will block until a data frame is
-       available or an error occurs.
+    /**Write data frame from the RTP channel.
+      */
+    virtual PBoolean WriteData(
+      const RTP_DataFrame & frame   ///< Frame to feed into jitter buffer
+    );
+
+    /**Read a data frame from the jitter buffer.
+       This function never blocks. If no data is available, an RTP packet
+       with zero payload size is returned.
       */
     virtual PBoolean ReadData(
-      RTP_DataFrame & frame   ///<  Frame read from the RTP session
+      RTP_DataFrame & frame   ///<  Frame to extract from jitter buffer
     );
 
     /**Get current delay for jitter buffer.
@@ -124,51 +132,37 @@ class OpalJitterBuffer : public PSafeObject
     /**Set maximum consecutive marker bits before buffer starts to ignore them.
       */
     void SetMaxConsecutiveMarkerBits(DWORD max) { maxConsecutiveMarkerBits = max; }
-
-    /**Start jitter thread
-      */
-    virtual void Resume();
-
-    PDECLARE_NOTIFIER(PThread, OpalJitterBuffer, JitterThreadMain);
-
-    PBoolean WaitForTermination(const PTimeInterval & t)
-    { 
-      if (jitterThread == NULL) 
-        return PTrue;
-      shuttingDown = true;
-      return jitterThread->WaitForTermination(t); 
-    }
-
-    bool IsEmpty() { return jitterBuffer.size() == 0; }
+  //@}
 
   protected:
-    void Start(unsigned _minJitterTime, unsigned _maxJitterTime);
-
-    PINDEX        bufferSize;
-    DWORD         minJitterTime;
-    DWORD         maxJitterTime;
-    DWORD         maxConsecutiveMarkerBits;
-
-    unsigned      timeUnits;
-    DWORD         currentJitterTime;
-    DWORD         packetsTooLate;
-    unsigned      bufferOverruns;
-    unsigned      consecutiveBufferOverruns;
-    DWORD         consecutiveMarkerBits;
-    PTimeInterval consecutiveEarlyPacketStartTime;
-    DWORD         lastWriteTimestamp;
-    PTimeInterval lastWriteTick;
-    DWORD         jitterCalc;
-    DWORD         targetJitterTime;
-    unsigned      jitterCalcPacketCount;
-    bool          doJitterReductionImmediately;
-
     class Entry : public RTP_DataFrame
     {
       public:
         Entry() : RTP_DataFrame(0, 512) { } // Allocate enough for 250ms of L16 audio, zero payload size
         PTimeInterval tick;
     };
+    OpalJitterBuffer::Entry * GetAvailableEntry();
+    void InternalWriteData(OpalJitterBuffer::Entry * availableEntry);
+
+    DWORD         minJitterTime;
+    DWORD         maxJitterTime;
+    unsigned      timeUnits;
+    PINDEX        bufferSize;
+    DWORD         maxConsecutiveMarkerBits;
+
+    DWORD         currentJitterTime;
+    DWORD         packetsTooLate;
+    unsigned      bufferOverruns;
+    unsigned      consecutiveBufferOverruns;
+    DWORD         consecutiveMarkerBits;
+    bool          markerWarning;
+    PTimeInterval consecutiveEarlyPacketStartTime;
+    DWORD         lastWriteTimestamp;
+    PTimeInterval lastWriteTick;
+    DWORD         jitterCalc;
+    DWORD         targetJitterTime;
+    unsigned      jitterCalcPacketCount;
+    bool          m_resetJitterBufferNow;
 
     class FrameQueue : public std::deque<Entry *>
     {
@@ -200,23 +194,43 @@ class OpalJitterBuffer : public PSafeObject
     bool   firstReadData;
 
     RTP_JitterBufferAnalyser * analyser;
+};
+
+
+/**A descendant of the OpalJitterBuffer that starts a thread to read
+   from something continuously and feed it into the jitter buffer.
+  */
+class OpalJitterBufferThread : public OpalJitterBuffer
+{
+    PCLASSINFO(OpalJitterBufferThread, OpalJitterBuffer);
+ public:
+    OpalJitterBufferThread(
+      unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
+      unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
+      unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
+      PINDEX stackSize = 30000 ///<  Stack size for jitter thread
+    );
+    ~OpalJitterBufferThread();
+
+    virtual void Resume();
+
+    virtual PBoolean OnReadPacket(RTP_DataFrame & frame, PBoolean loop) = 0;
+
+  protected:
+    PDECLARE_NOTIFIER(PThread, OpalJitterBufferThread, JitterThreadMain);
 
     PThread * jitterThread;
     PINDEX    jitterStackSize;
-
-    PBoolean Init(Entry * & currentReadFrame, PBoolean & markerWarning);
-    PBoolean PreRead(Entry * & currentReadFrame, PBoolean & markerWarning);
-    PBoolean OnRead(Entry * & currentReadFrame, PBoolean & markerWarning, PBoolean loop);
-    void DeInit(Entry * & currentReadFrame, PBoolean & markerWarning);
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 /**A descendant of the OpalJitterBuffer that reads RTP_DataFrame instances
-   from the RTP_Sessions */
-class RTP_JitterBuffer : public OpalJitterBuffer
+   from the RTP_Sessions
+  */
+class RTP_JitterBuffer : public OpalJitterBufferThread
 {
-    PCLASSINFO(RTP_JitterBuffer, OpalJitterBuffer);
-
+    PCLASSINFO(RTP_JitterBuffer, OpalJitterBufferThread);
  public:
     RTP_JitterBuffer(
       RTP_Session & session,   ///<  Associated RTP session tor ead data from
