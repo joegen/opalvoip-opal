@@ -1764,9 +1764,6 @@
 					RelativePath="..\iax2\iax2ep.cxx">
 				</File>
 				<File
-					RelativePath="..\iax2\iax2jitter.cxx">
-				</File>
-				<File
 					RelativePath="..\iax2\iax2medstrm.cxx">
 				</File>
 				<File
@@ -2170,9 +2167,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\iax2\iax2ep.h">
-				</File>
-				<File
-					RelativePath="..\..\include\iax2\iax2jitter.h">
 				</File>
 				<File
 					RelativePath="..\..\include\iax2\iax2medstrm.h">

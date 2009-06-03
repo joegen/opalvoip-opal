@@ -49,7 +49,7 @@ PBoolean       keepRunning;
 
 ///////////////////////////////////////////////////////////////
 JesterJitterBuffer::JesterJitterBuffer():
-    IAX2JitterBuffer()
+    OpalJitterBuffer(400, 2000)
 {
 
 }
@@ -57,11 +57,6 @@ JesterJitterBuffer::JesterJitterBuffer():
 JesterJitterBuffer::~JesterJitterBuffer()
 {
 
-}
-
-void JesterJitterBuffer::Close(PBoolean /*reading */ )
-{
-CloseDown();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -193,7 +188,6 @@ void JesterProcess::Main()
   }
 
   jitterBuffer.SetDelay(8 * minJitterSize, 8 * maxJitterSize);
-  jitterBuffer.Resume();
 
   keepRunning = PTrue;
   generateTimestamp = 0;
@@ -226,65 +220,65 @@ void JesterProcess::Main()
 
 void JesterProcess::GenerateUdpPackets(PThread &, INT )
 {
-    PAdaptiveDelay delay;
-    PBoolean lastFrameWasSilence = PTrue;
-    PWAVFile soundFile(wavFile);
-    generateIndex = 0;
-    PINDEX talkSequenceCounter = 0;
+  PAdaptiveDelay delay;
+  PBoolean lastFrameWasSilence = PTrue;
+  PWAVFile soundFile(wavFile);
+  generateIndex = 0;
+  PINDEX talkSequenceCounter = 0;
 
-    while(keepRunning) {
-	generateTimestamp =  (bytesPerBlock * 2) + ((generateIndex  * bytesPerBlock) >> 1);
-	//Silence period, 10 seconds cycle, with 3 second on time.
-	if (silenceSuppression && ((generateIndex % 1000) > 200)) {
-	    PTRACE(3, "Don't send this frame - silence period");
-	    if (lastFrameWasSilence == PFalse) {
-		PTRACE(3, "Stop Audio here");
-		cout << "Stop audio at " << PTime() << endl;
-		talkSequenceCounter++;
-	    }
-	    lastFrameWasSilence = PTrue;
-	} else {
-	    RTP_DataFrame *frame = new RTP_DataFrame(bytesPerBlock);
-	    if (lastFrameWasSilence) {
-		PTRACE(3, "StartAudio here");
-		cout << "Start Audio at " << PTime() << endl;
-	    }
-	    frame->SetMarker(lastFrameWasSilence);
-	    lastFrameWasSilence = PFalse;
-	    frame->SetPayloadType(RTP_DataFrame::L16_Mono);
-	    frame->SetSyncSource(0x12345678);
-	    frame->SetSequenceNumber((WORD)(generateIndex + 100));
-	    
-	    frame->SetTimestamp(generateTimestamp);
-	    
-	    PTRACE(3, "GenerateUdpPacket    iteration " << generateIndex
-		   << " with time of " << frame->GetTimestamp() << " rtp time units");
-	    memset(frame->GetPayloadPtr(), 0, frame->GetPayloadSize());
-	    if (!soundFile.Read(frame->GetPayloadPtr(), frame->GetPayloadSize())) {
-		soundFile.Close();
-		soundFile.Open();
-		PTRACE(3, "Reopen the sound file, as have reached the end of it");
-	    }
-//	    cerr << " " << silenceSuppression << "  " << markerSuppression << "  " << frame->GetMarker() << "  " << (talkSequenceCounter & 1) << endl;
-	    if (silenceSuppression && markerSuppression && frame->GetMarker() && (talkSequenceCounter & 1))
-		cerr << "Suppress speech frame" << endl;
-	    else
-		jitterBuffer.NewFrameFromNetwork(frame);
-	}
+  while(keepRunning) {
+    generateTimestamp =  (bytesPerBlock * 2) + ((generateIndex  * bytesPerBlock) >> 1);
+    //Silence period, 10 seconds cycle, with 3 second on time.
+    if (silenceSuppression && ((generateIndex % 1000) > 200)) {
+      PTRACE(3, "Don't send this frame - silence period");
+      if (lastFrameWasSilence == PFalse) {
+        PTRACE(3, "Stop Audio here");
+        cout << "Stop audio at " << PTime() << endl;
+        talkSequenceCounter++;
+      }
+      lastFrameWasSilence = PTrue;
+    } else {
+      RTP_DataFrame frame(bytesPerBlock);
+      if (lastFrameWasSilence) {
+        PTRACE(3, "StartAudio here");
+        cout << "Start Audio at " << PTime() << endl;
+      }
+      frame.SetMarker(lastFrameWasSilence);
+      lastFrameWasSilence = PFalse;
+      frame.SetPayloadType(RTP_DataFrame::L16_Mono);
+      frame.SetSyncSource(0x12345678);
+      frame.SetSequenceNumber((WORD)(generateIndex + 100));
 
-	delay.Delay(30);
-#if 1
-	switch (generateIndex % 2) 
-	{
-	    case 0: 
-		break;
-	    case 1: PThread::Sleep(30);
-		break;
-	}
-#endif
-	generateIndex++;
+      frame.SetTimestamp(generateTimestamp);
+
+      PTRACE(3, "GenerateUdpPacket    iteration " << generateIndex
+        << " with time of " << frame.GetTimestamp() << " rtp time units");
+      memset(frame.GetPayloadPtr(), 0, frame.GetPayloadSize());
+      if (!soundFile.Read(frame.GetPayloadPtr(), frame.GetPayloadSize())) {
+        soundFile.Close();
+        soundFile.Open();
+        PTRACE(3, "Reopen the sound file, as have reached the end of it");
+      }
+      //	    cerr << " " << silenceSuppression << "  " << markerSuppression << "  " << frame.GetMarker() << "  " << (talkSequenceCounter & 1) << endl;
+      if (silenceSuppression && markerSuppression && frame.GetMarker() && (talkSequenceCounter & 1))
+        cerr << "Suppress speech frame" << endl;
+      else
+        jitterBuffer.WriteData(frame);
     }
-    PTRACE(3, "End of generate udp packets ");
+
+    delay.Delay(30);
+#if 1
+    switch (generateIndex % 2) 
+    {
+    case 0: 
+      break;
+    case 1: PThread::Sleep(30);
+      break;
+    }
+#endif
+    generateIndex++;
+  }
+  PTRACE(3, "End of generate udp packets ");
 }
 
 
@@ -317,8 +311,6 @@ void JesterProcess::ConsumeUdpPackets(PThread &, INT)
       consumeTimestamp += (bytesPerBlock / 2);
       consumeIndex++;
   }
-
-  jitterBuffer.CloseDown();
 
   PTRACE(3, "End of consume udp packets ");
 }
@@ -374,7 +366,7 @@ void JesterProcess::ManageUserInput()
 	case 'j' :
 	    cerr << "        Target Jitter Time is  " << jitterBuffer.GetTargetJitterTime() << endl;
 	    cerr << "        Current depth is       " << jitterBuffer.GetCurrentDepth() << endl;
-	    cerr << "        Current Jitter Time is " << jitterBuffer.GetCurrentJitterTime() << endl;
+	    cerr << "        Current Jitter Time is " << jitterBuffer.GetJitterTime() << endl;
 	    break;
         default:
             ;

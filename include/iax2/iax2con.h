@@ -41,9 +41,9 @@
 #if OPAL_IAX2
 
 #include <opal/connection.h>
+#include <rtp/jitter.h>
 
 #include <iax2/frame.h>
-#include <iax2/iax2jitter.h>
 #include <iax2/iedata.h>
 #include <iax2/processor.h>
 #include <iax2/callprocessor.h>
@@ -447,8 +447,8 @@ class IAX2Connection : public OpalConnection
 
   /**This jitter buffer smooths out the delivery times from the network, so
      that packets arrive in schedule at the far end. */
-  IAX2JitterBuffer jitterBuffer;
-  
+  OpalJitterBuffer jitterBuffer;
+
   /**The payload type, which we put on all RTP_DataFrame packets. This
      variable is placed on all RTP_DataFrame instances, prior to placing these
      frames into the jitter buffer.
