@@ -588,9 +588,13 @@ PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
                                        unsigned int options,
                                 OpalConnection::StringOptions * stringOptions)
 {
+  OpalConnection::StringOptions localStringOptions;
+  if (stringOptions == NULL)
+    stringOptions = &localStringOptions;
+
   PString alias;
   H323TransportAddress address;
-  if (!ParsePartyName(remoteParty, alias, address)) {
+  if (!ParsePartyName(remoteParty, alias, address, stringOptions)) {
     PTRACE(2, "H323\tCould not parse \"" << remoteParty << '"');
     return PFalse;
   }
@@ -601,7 +605,7 @@ PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
   if (gatekeeper != NULL)
     transport = gatekeeper->GetTransport().GetLocalAddress().CreateTransport(
                                           *this, OpalTransportAddress::Streamed);
-  else if (stringOptions == NULL || !stringOptions->Contains(OPAL_OPT_INTERFACE))
+  else if (!stringOptions->Contains(OPAL_OPT_INTERFACE))
     transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
   else {
     OpalTransportAddress localInterface = (*stringOptions)[OPAL_OPT_INTERFACE];
@@ -720,10 +724,14 @@ void H323EndPoint::OnReceivedInitiateReturnError()
 }
 
 PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
-                                  PString & alias,
-                                  H323TransportAddress & address)
+                                            PString & alias,
+                               H323TransportAddress & address,
+                       OpalConnection::StringOptions * stringOptions)
 {
   PURL url(remoteParty, GetPrefixName()); // Parses as per RFC3508
+
+  if (stringOptions != NULL)
+    stringOptions->ExtractFromURL(url);
 
 #if OPAL_PTLIB_DNS
 

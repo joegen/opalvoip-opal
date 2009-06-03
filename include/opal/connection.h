@@ -56,6 +56,7 @@ class OpalSilenceDetector;
 class OpalEchoCanceler;
 class OpalRFC2833Proto;
 class OpalRFC2833Info;
+class PURL;
 
 
 #define OPAL_OPT_AUTO_START           "AutoStart"             ///< String option for auto-started media types
@@ -77,7 +78,8 @@ class OpalRFC2833Info;
 #define OPAL_OPT_MAX_JITTER           "Max-Jitter"            ///< String option to set maximum jitter in milliseconds
 #define OPAL_OPT_MIN_JITTER           "Min-Jitter"            ///< String option to set minimum jitter in milliseconds
 #define OPAL_OPT_RECORD_AUDIO         "Record-Audio"          ///< String option to start recording to a file for call
-#define OPAL_OPT_ALERTING_TYPE        "Alerting-Type"         ///< String option to set teh alerting type string for call
+#define OPAL_OPT_ALERTING_TYPE        "Alerting-Type"         ///< String option to set the alerting type string for call
+#define OPAL_OPT_REMOVE_CODEC         "Remove-Codec"          ///< String option to remove codecs for this call
 
 
 /*! \page pageOpalConnections Connection handling in the OPAL library
@@ -432,6 +434,28 @@ class OpalConnection : public PSafeObject
 
     class StringOptions : public PStringToString 
     {
+      public:
+        // Make sure the key set in a StringOptions is caseless
+        PBoolean SetAt(const char * key, const PString & data)
+        {
+          return PStringToString::SetAt(PCaselessString(key), data);
+        }
+        PBoolean SetAt(const PString & key, const PString & data)
+        {
+          return PStringToString::SetAt(PCaselessString(key), data);
+        }
+        PBoolean SetAt(const PCaselessString & key, const PString & data)
+        {
+          return PStringToString::SetAt(key, data);
+        }
+
+        /** Extract the parameters that start with "OPAL-XXX" from the URL and
+            insert into the string options dictionary. The parameters are
+            removed from the URL.
+          */
+        void ExtractFromURL(
+          PURL & url
+        );
     };
 
   /**@name Construction */
