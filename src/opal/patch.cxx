@@ -461,6 +461,7 @@ void OpalMediaPatch::Main()
   PTRACE(4, "Patch\tThread started for " << *this);
 	
   bool asynchronous = OnPatchStart();
+  PTimeInterval lastTick;
 
   while (source.IsOpen()) {
 
@@ -482,11 +483,18 @@ void OpalMediaPatch::Main()
       break;
     }
  
-    // Don't starve the CPU if we have idle frames and the no source or destination is synchronous.
-    // Note that performing a Yield is not good enough, as the media patch threads are
-    // high priority and will consume all available CPU if allowed.
-    if (asynchronous)
-      PThread::Sleep(5);
+    /* Don't starve the CPU if we have idle frames and the no source or
+       destination is synchronous. Note that performing a Yield is not good
+       enough, as the media patch threads are high priority and will consume
+       all available CPU if allowed. Also just doing a sleep each time around
+       the loop slows down video where you get clusters of packets thrown at
+       us, want to clear them as quickly as possible out of the UDP OS buffers
+       or we overflow and lose some. Best compromise is to every 100ms, sleep
+       for 10ms so can not use more than about 90% of CPU. */
+    if (asynchronous && PTimer::Tick() - lastTick > 100) {
+      PThread::Sleep(10);
+      lastTick = PTimer::Tick();
+    }
   }
 
   source.OnPatchStop();
