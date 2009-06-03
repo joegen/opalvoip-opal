@@ -194,8 +194,10 @@ OpalLocalConnection::OpalLocalConnection(OpalCall & call,
                     OpalConnection::StringOptions * stringOptions,
                                                char tokenPrefix)
   : OpalConnection(call, ep, ep.GetManager().GetNextToken(tokenPrefix), options, stringOptions)
-  , endpoint(ep), userData(NULL)
+  , endpoint(ep)
+  , userData(NULL)
 {
+  m_sendInBandDTMF = m_detectInBandDTMF = false;
   PTRACE(4, "LocalCon\tCreated connection with token \"" << callToken << '"');
 }
 
