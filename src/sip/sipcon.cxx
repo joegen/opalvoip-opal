@@ -236,6 +236,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   synchronousOnRelease = false;
 
   SIPURL adjustedDestination = destination;
+  m_connStringOptions.ExtractFromURL(adjustedDestination);
+
   // Look for a "proxy" parameter to override default proxy
   PStringToString params = adjustedDestination.GetParamVars();
   SIPURL proxy;

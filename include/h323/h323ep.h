@@ -506,7 +506,8 @@ class H323EndPoint : public OpalRTPEndPoint
     PBoolean ParsePartyName(
       const PString & party,          ///<  Party name string.
       PString & alias,                ///<  Parsed alias name
-      H323TransportAddress & address  ///<  Parsed transport address
+      H323TransportAddress & address, ///<  Parsed transport address
+      OpalConnection::StringOptions * stringOptions = NULL ///< String options parsed from party name
     );
 
     /**Find a connection that uses the specified token.

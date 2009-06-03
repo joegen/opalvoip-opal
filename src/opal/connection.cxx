@@ -577,6 +577,7 @@ void OpalConnection::OnEstablished()
 void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const
 {
   endpoint.AdjustMediaFormats(*this, mediaFormats);
+  mediaFormats.Remove(m_connStringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
 }
 
 
@@ -1362,6 +1363,7 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
   }
 }
 
+
 void OpalConnection::PreviewPeerMediaFormats(const OpalMediaFormatList & /*fmts*/)
 {
 }
@@ -1378,11 +1380,16 @@ OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
   return ownerCall.GetMediaFormats(*this, FALSE);
 }
 
-void OpalConnection::OnMediaPatchStart(unsigned, bool)
-{ }
 
-void OpalConnection::OnMediaPatchStop(unsigned,  bool )
-{ }
+void OpalConnection::OnMediaPatchStart(unsigned, bool)
+{
+}
+
+
+void OpalConnection::OnMediaPatchStop(unsigned, bool)
+{
+}
+
 
 void OpalConnection::OnMediaCommand(OpalMediaCommand & /*command*/, INT /*extra*/)
 {
@@ -1545,5 +1552,19 @@ void OpalConnection::AddIMListener(const PNotifier & listener)
 }
 
 #endif
+
+
+void OpalConnection::StringOptions::ExtractFromURL(PURL & url)
+{
+  const PStringToString & params = url.GetParamVars();
+  for (PINDEX i = 0; i < params.GetSize(); ++i) {
+    PCaselessString key = params.GetKeyAt(i);
+    if (key.NumCompare("OPAL-") == EqualTo) {
+      SetAt(key.Mid(5), PURL::UntranslateString(params.GetDataAt(i), PURL::QueryTranslation));
+      url.SetParamVar(key, PString::Empty());
+    }
+  }
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
