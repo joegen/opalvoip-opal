@@ -844,7 +844,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     {
       public:
         SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu);
-        ~SIP_Work();
+        virtual ~SIP_Work();
 
         virtual void Add(WorkThreadPool & pool) = 0; 
 
