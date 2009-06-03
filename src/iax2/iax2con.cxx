@@ -64,9 +64,10 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
 			     void * /*userData */,
 			     const PString & inRemoteParty,
            const PString & inRemotePartyName)
-  : OpalConnection(call, ep, token), 
-endpoint(ep),
-iax2Processor(*new IAX2CallProcessor(ep))
+  : OpalConnection(call, ep, token)
+  , endpoint(ep)
+  , iax2Processor(*new IAX2CallProcessor(ep))
+  , jitterBuffer(400, 2000)
 {  
   opalPayloadType = RTP_DataFrame::IllegalPayloadType;
 
@@ -95,7 +96,6 @@ iax2Processor(*new IAX2CallProcessor(ep))
 
 IAX2Connection::~IAX2Connection()
 {
-  jitterBuffer.CloseDown();
   iax2Processor.Terminate();
   iax2Processor.WaitForTermination(1000);
   if (!iax2Processor.IsTerminated()) {
@@ -120,8 +120,6 @@ void IAX2Connection::Release( CallEndReason reason)
   iax2Processor.Hangup(GetCallEndReasonText(reason)); ///Send hangup frame
 
   iax2Processor.Release(reason); 
-
-  jitterBuffer.CloseDown();
 
   OpalConnection::Release(reason);
 }
@@ -193,7 +191,6 @@ PBoolean IAX2Connection::SetConnected()
     jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
 			  endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
     PTRACE(5, "Iax2Con\t Start jitter buffer");
-    jitterBuffer.Resume();
   }
 
   return OpalConnection::SetConnected();
@@ -232,11 +229,10 @@ void IAX2Connection::OnConnected()
     if (otherParty != NULL)
       ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
 
-   
+
     jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
 			  endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
     PTRACE(5, "Iax2Con\t Start jitter buffer");
-    jitterBuffer.Resume();
   }
 
     // Let OPAL do it's thing with the OnConnected callback.
@@ -507,15 +503,14 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
       return;
     }
 
-    RTP_DataFrame *mediaFrame = new RTP_DataFrame(soundFrame->GetMediaDataSize());
-    mediaFrame->SetTimestamp(soundFrame->GetTimeStamp() * 8);
-    mediaFrame->SetMarker(PFalse);
-    mediaFrame->SetPayloadType(opalPayloadType);
+    RTP_DataFrame mediaFrame(soundFrame->GetMediaDataSize());
+    mediaFrame.SetTimestamp(soundFrame->GetTimeStamp() * 8);
+    mediaFrame.SetMarker(PFalse);
+    mediaFrame.SetPayloadType(opalPayloadType);
 
-    mediaFrame->SetSize(mediaFrame->GetPayloadSize() + mediaFrame->GetHeaderSize());
-    memcpy(mediaFrame->GetPayloadPtr(), soundFrame->GetMediaDataPointer(), 
-	   soundFrame->GetMediaDataSize());
-    jitterBuffer.NewFrameFromNetwork(mediaFrame);
+    mediaFrame.SetSize(mediaFrame.GetPayloadSize() + mediaFrame.GetHeaderSize());
+    memcpy(mediaFrame.GetPayloadPtr(), soundFrame->GetMediaDataPointer(), soundFrame->GetMediaDataSize());
+    jitterBuffer.WriteData(mediaFrame);
     PTRACE(5, "RTP\tIAX2 frame now on jitter buffer (As a RTP frame)");
     delete soundFrame;
 }

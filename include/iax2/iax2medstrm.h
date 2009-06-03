@@ -43,7 +43,6 @@
 
 #include <opal/mediafmt.h>
 #include <iax2/iax2con.h>
-#include <iax2/iax2jitter.h>
 
 class RTP_Session;
 class OpalMediaPatch;
