@@ -439,12 +439,10 @@ class RTP_Session : public PObject
   /**@name Operations */
   //@{
     /**Sets the size of the jitter buffer to be used by this RTP session.
-       A session default to not having any jitter buffer enabled for reading
-       and the ReadBufferedData() function simply calls ReadData(). Once a
-       jitter buffer has been created it cannot be removed, though its size
-       may be adjusted.
-       
-       If the jitterDelay paramter is zero, it destroys the jitter buffer
+       A session defaults to not having any jitter buffer enabled for reading
+       and the ReadBufferedData() function simply calls ReadData().
+
+       If either jitter delay parameter is zero, it destroys the jitter buffer
        attached to this RTP session.
       */
     void SetJitterBufferSize(
