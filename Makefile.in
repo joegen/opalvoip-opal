@@ -231,7 +231,6 @@ SOURCES += \
            $(OPAL_SRCDIR)/iax2/frame.cxx \
            $(OPAL_SRCDIR)/iax2/iax2con.cxx \
            $(OPAL_SRCDIR)/iax2/iax2ep.cxx \
-           $(OPAL_SRCDIR)/iax2/iax2jitter.cxx \
            $(OPAL_SRCDIR)/iax2/iax2medstrm.cxx \
            $(OPAL_SRCDIR)/iax2/iedata.cxx \
            $(OPAL_SRCDIR)/iax2/ies.cxx \
