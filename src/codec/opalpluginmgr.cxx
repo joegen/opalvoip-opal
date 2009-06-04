@@ -824,6 +824,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
 #if PTRACING
   , m_consecutiveIntraFrames(0)
 #endif
+  , m_lastVideoFastUpdate(PTimer::Tick())
 { 
   acceptEmptyPayload = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_EmptyPayload;
   acceptOtherPayloads = (codecDef->flags & PluginCodec_OtherPayloadMask) == PluginCodec_OtherPayload;
