@@ -397,6 +397,7 @@ int RFC2190Depacketizer::SetPacket(const RTPFrame & inputFrame, bool & requestIF
     hdrLen = 4;
     mode = 'A';
 
+#if 0
     // sanity check data
     if (payloadLen < (hdrLen+3) ||
         (payload[hdrLen+0] != 0x00) ||
@@ -405,6 +406,7 @@ int RFC2190Depacketizer::SetPacket(const RTPFrame & inputFrame, bool & requestIF
        ) {
       return LostSync(requestIFrame, "Mode A packet not starting with GBSC");
     }
+#endif
   }
 
   // handle mode B frames
