@@ -2914,6 +2914,7 @@ SIPRegister::Params::Params()
   , m_restoreTime(30)
   , m_minRetryTime(PMaxTimeInterval)
   , m_maxRetryTime(PMaxTimeInterval)
+  , m_userData(NULL)
 {
 }
 
@@ -3010,6 +3011,7 @@ SIPSubscribe::Params::Params(PredefinedPackages pkg)
   , m_restoreTime(30)
   , m_minRetryTime(PMaxTimeInterval)
   , m_maxRetryTime(PMaxTimeInterval)
+  , m_userData(NULL)
 {
 }
 
