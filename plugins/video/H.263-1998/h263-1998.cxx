@@ -1164,7 +1164,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   bool requestIFrame, isIFrame;
   int code = depacketizer.SetPacket(srcRTP, requestIFrame, isIFrame);
   if (code <= 0) {
-    flags = 0;
+    flags = requestIFrame ? PluginCodec_ReturnCoderRequestIFrame : 0;
     return ReturnEmptyFrame(dstRTP, dstLen, flags);
   }
 
@@ -1228,7 +1228,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   int size = _context->width * _context->height;
 
   if ((unsigned)dstRTP.GetFrameLen() < (frameBytes + sizeof(PluginCodec_Video_FrameHeader))) {
-    flags = 0;
+    flags = PluginCodec_ReturnCoderRequestIFrame;
     TRACE_AND_LOG(tracer, 1, "Destination buffer " << dstLen << " insufficient for decoded data size " << header->width << "x" << header->height);
     return ReturnEmptyFrame(dstRTP, dstLen, flags);
   }
