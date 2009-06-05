@@ -39,6 +39,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FaxOPAL", "samples\faxopal\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IVR OPAL", "samples\ivropal\IvrOPAL_2008.vcproj", "{DE67266F-1A60-46D9-AA7A-DD24B742BB79}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL MCU", "samples\opalmcu\OPAL_MCU_2008.vcproj", "{4E21419A-B833-436D-A184-5C808A53992D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -134,6 +136,12 @@ Global
 		{DE67266F-1A60-46D9-AA7A-DD24B742BB79}.No Trace|Win32.Build.0 = Debug|Win32
 		{DE67266F-1A60-46D9-AA7A-DD24B742BB79}.Release|Win32.ActiveCfg = Release|Win32
 		{DE67266F-1A60-46D9-AA7A-DD24B742BB79}.Release|Win32.Build.0 = Release|Win32
+		{4E21419A-B833-436D-A184-5C808A53992D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4E21419A-B833-436D-A184-5C808A53992D}.Debug|Win32.Build.0 = Debug|Win32
+		{4E21419A-B833-436D-A184-5C808A53992D}.No Trace|Win32.ActiveCfg = Debug|Win32
+		{4E21419A-B833-436D-A184-5C808A53992D}.No Trace|Win32.Build.0 = Debug|Win32
+		{4E21419A-B833-436D-A184-5C808A53992D}.Release|Win32.ActiveCfg = Release|Win32
+		{4E21419A-B833-436D-A184-5C808A53992D}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
