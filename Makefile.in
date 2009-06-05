@@ -45,6 +45,7 @@ SUBDIRS += samples/simple \
            samples/codectest \
            samples/callgen \
            samples/opalecho \
+           samples/opalmcu \
            samples/ivropal \
            samples/faxopal \
            samples/c_api
