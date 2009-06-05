@@ -1581,7 +1581,7 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
         new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, IsEncoder(*codecDefn));
         break;
       case PluginCodec_MediaTypeAudioStreamed:
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, IsEncoder(*codecDefn));
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, IsEncoder(*codecDefn));
         break;
   #if OPAL_T38_CAPABILITY
       case PluginCodec_MediaTypeFax:
