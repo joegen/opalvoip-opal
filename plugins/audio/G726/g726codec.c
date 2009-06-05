@@ -44,7 +44,7 @@
 #define MAX_FRAMES_PER_PACKET   240 // Really milliseconds
 #define PREF_FRAMES_PER_PACKET  30  // Really milliseconds
 
-#define PAYLOAD_CODE            0  // used to be 2, uses dynamic payload type (RFC 3551)
+#define PAYLOAD_CODE            96  // used to be 2, now uses dynamic payload type (RFC 3551)
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -55,52 +55,37 @@ static void * create_codec(const struct PluginCodec_Definition * codec)
   return g726;
 }
 
-static void destroy_codec(const struct PluginCodec_Definition * codec, void * _context)
+static void destroy_codec(const struct PluginCodec_Definition * codec, void * context)
 {
-  free(_context);
+  free(context);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-#define define_encoder(func, coder) \
-static int func(const struct PluginCodec_Definition * codec, \
-                                           void * _context, \
-                                     const void * from, \
-                                       unsigned * fromLen, \
-                                           void * to, \
-                                       unsigned * toLen, \
-                                   unsigned int * flag) \
+#define define_coder(dir, bps) \
+static int dir##coder_##bps(const struct PluginCodec_Definition * codec, \
+                                                           void * context, \
+                                                     const void * from, \
+                                                       unsigned * fromLen, \
+                                                           void * to, \
+                                                       unsigned * toLen, \
+                                                   unsigned int * flag) \
 { \
-  int sample = *(short *)from; \
-  *(int *)to = coder(sample, AUDIO_ENCODING_LINEAR, (struct g726_state_s *)_context); \
+  *(int *)to = g726_##bps##_##dir##coder(*(int *)from, AUDIO_ENCODING_LINEAR, (struct g726_state_s *)context); \
   return 1; \
-} \
+}
 
-#define define_decoder(func, coder) \
-static int func(const struct PluginCodec_Definition * codec, \
-                                           void * _context, \
-                                     const void * from, \
-                                       unsigned * fromLen, \
-                                           void * to, \
-                                       unsigned * toLen, \
-                                   unsigned int * flag) \
-{ \
-  int sample = coder(*(int *)from, AUDIO_ENCODING_LINEAR, (struct g726_state_s *)_context); \
-  *(short *)to = (short)sample; \
-  return 1; \
-} \
+define_coder(en, 40)
+define_coder(de, 40)
 
-define_encoder(encoder_40, g726_40_encoder)
-define_decoder(decoder_40, g726_40_decoder)
+define_coder(en, 32)
+define_coder(de, 32)
 
-define_encoder(encoder_32, g726_32_encoder)
-define_decoder(decoder_32, g726_32_decoder)
+define_coder(en, 24)
+define_coder(de, 24)
 
-define_encoder(encoder_24, g726_24_encoder)
-define_decoder(decoder_24, g726_24_decoder)
-
-define_encoder(encoder_16, g726_16_encoder)
-define_decoder(decoder_16, g726_16_decoder)
+define_coder(en, 16)
+define_coder(de, 16)
 
 /////////////////////////////////////////////////////////////////////////////
 

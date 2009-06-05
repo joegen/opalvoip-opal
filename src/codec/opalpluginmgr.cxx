@@ -866,14 +866,14 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
 //
 
 OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(const PluginCodec_Definition * codecDefn,
-                                                                     bool isEncoder,
-                                                                     unsigned inputBits,
-                                                                     unsigned outputBits)
+                                                                     bool isEncoder)
   : OpalStreamedTranscoder(GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate),
                            GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate),
-                           inputBits, outputBits)
+                           16, 16)
   , OpalPluginTranscoder(codecDefn, isEncoder)
-{ 
+{
+  (isEncoder ? outputBitsPerSample : inputBitsPerSample) =
+                  (codecDefn->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos;
   comfortNoise       = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_ComfortNoise;
   acceptEmptyPayload = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_EmptyPayload;
   acceptOtherPayloads = (codecDef->flags & PluginCodec_OtherPayloadMask) == PluginCodec_OtherPayload;
@@ -884,39 +884,13 @@ PBoolean OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFo
   return OpalStreamedTranscoder::UpdateMediaFormats(input, output) && UpdateOptions(isEncoder ? output : input);
 }
 
-
-OpalPluginStreamedAudioEncoder::OpalPluginStreamedAudioEncoder(const PluginCodec_Definition * codecDefn, bool)
-  : OpalPluginStreamedAudioTranscoder(codecDefn, true,
-                                      16,
-                                      (codecDefn->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos)
+int OpalPluginStreamedAudioTranscoder::ConvertOne(int from) const
 {
-}
-
-int OpalPluginStreamedAudioEncoder::ConvertOne(int _sample) const
-{
-  short sample = (short)_sample;
-  unsigned int fromLen = sizeof(sample);
+  unsigned int fromLen = sizeof(from);
   int to;
   unsigned toLen = sizeof(to);
   unsigned flags = 0;
-  return Transcode(&sample, &fromLen, &to, &toLen, &flags) ? to : -1;
-}
-
-
-OpalPluginStreamedAudioDecoder::OpalPluginStreamedAudioDecoder(const PluginCodec_Definition * codecDefn, bool)
-  : OpalPluginStreamedAudioTranscoder(codecDefn, false,
-                                      (codecDefn->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos,
-                                      16)
-{
-}
-
-int OpalPluginStreamedAudioDecoder::ConvertOne(int codedSample) const
-{
-  unsigned int fromLen = sizeof(codedSample);
-  short to;
-  unsigned toLen = sizeof(to);
-  unsigned flags = 0;
-  return Transcode(&codedSample, &fromLen, &to, &toLen, &flags) ? to : -1;
+  return Transcode(&from, &fromLen, &to, &toLen, &flags) ? to : -1;
 }
 
 
