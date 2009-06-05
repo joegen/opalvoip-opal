@@ -595,8 +595,9 @@ void CallThread::Main()
 
 void CallThread::Stop()
 {
-  if (!IsTerminated())
+  if (!IsTerminated()) {
     OUTPUT(index, PString::Empty(), "Stopping.");
+  }
 
   exit.Signal();
 }
