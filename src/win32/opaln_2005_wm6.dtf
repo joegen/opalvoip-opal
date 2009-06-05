@@ -4579,9 +4579,7 @@ EXPORTS
     ??0OpalPluginLIDRegistration@@QAA@ABUPluginLID_Definition@@@Z @4429 NONAME
     ??0OpalPluginMediaFormat@@QAA@PAVOpalMediaFormatInternal@@@Z @4430 NONAME
     ??0OpalPluginMediaFormatInternal@@QAA@PBUPluginCodec_Definition@@@Z @4431 NONAME
-    ??0OpalPluginStreamedAudioDecoder@@QAA@PBUPluginCodec_Definition@@_N@Z @38659 NONAME
-    ??0OpalPluginStreamedAudioEncoder@@QAA@PBUPluginCodec_Definition@@_N@Z @38660 NONAME
-    ??0OpalPluginStreamedAudioTranscoder@@QAA@PBUPluginCodec_Definition@@_NII@Z @38661 NONAME
+    ??0OpalPluginStreamedAudioTranscoder@@QAA@PBUPluginCodec_Definition@@_N@Z @41472 NONAME
     ??0OpalPluginTranscoder@@QAA@PBUPluginCodec_Definition@@_N@Z @4435 NONAME
     ??0OpalPluginVideoFormatInternal@@QAA@ABV0@@Z @4436 NONAME
     ??0OpalPluginVideoFormatInternal@@QAA@PBUPluginCodec_Definition@@PBDK@Z @4437 NONAME
@@ -4861,7 +4859,7 @@ EXPORTS
     ??0VFUXML@@QAA@XZ @4652 NONAME
     ??0Worker@?$OpalPluginTranscoderFactory@VOpalFaxAudioTranscoder@@@@QAA@ABU?$pair@VPString@@V1@@std@@PBUPluginCodec_Definition@@_N@Z @38726 NONAME
     ??0Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@QAA@ABU?$pair@VPString@@V1@@std@@PBUPluginCodec_Definition@@_N@Z @38727 NONAME
-    ??0Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioEncoder@@@@QAA@ABU?$pair@VPString@@V1@@std@@PBUPluginCodec_Definition@@_N@Z @38728 NONAME
+    ??0Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioTranscoder@@@@QAA@ABU?$pair@VPString@@V1@@std@@PBUPluginCodec_Definition@@_N@Z @41473 NONAME
     ??0Worker@?$OpalPluginTranscoderFactory@VOpalPluginVideoTranscoder@@@@QAA@ABU?$pair@VPString@@V1@@std@@PBUPluginCodec_Definition@@_N@Z @38729 NONAME
     ??0WorkerBase@?$PFactory@VH235Authenticator@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@IAA@_N@Z @4658 NONAME
     ??0WorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@IAA@PAVH323Capability@@_N@Z @4659 NONAME
@@ -6905,8 +6903,6 @@ EXPORTS
     ??1OpalPluginLIDManager@@UAA@XZ @6707 NONAME
     ??1OpalPluginLIDRegistration@@UAA@XZ @6708 NONAME
     ??1OpalPluginMediaFormat@@UAA@XZ @6709 NONAME
-    ??1OpalPluginStreamedAudioDecoder@@UAA@XZ @6710 NONAME
-    ??1OpalPluginStreamedAudioEncoder@@UAA@XZ @6711 NONAME
     ??1OpalPluginStreamedAudioTranscoder@@UAA@XZ @6712 NONAME
     ??1OpalPluginTranscoder@@QAA@XZ @6713 NONAME
     ??1OpalPluginVideoFormatInternal@@UAA@XZ @6714 NONAME
@@ -7103,7 +7099,7 @@ EXPORTS
     ??1VFUXML@@UAA@XZ @6861 NONAME
     ??1Worker@?$OpalPluginTranscoderFactory@VOpalFaxAudioTranscoder@@@@UAA@XZ @6862 NONAME
     ??1Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@UAA@XZ @6863 NONAME
-    ??1Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioEncoder@@@@UAA@XZ @6865 NONAME
+    ??1Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioTranscoder@@@@UAA@XZ @41474 NONAME
     ??1Worker@?$OpalPluginTranscoderFactory@VOpalPluginVideoTranscoder@@@@UAA@XZ @6866 NONAME
     ??1WorkerBase@?$PFactory@VH235Authenticator@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@MAA@XZ @6867 NONAME
     ??1WorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@MAA@XZ @6868 NONAME
@@ -11624,8 +11620,6 @@ EXPORTS
     ??_7OpalPluginLIDManager@@6B@ @11537 NONAME
     ??_7OpalPluginLIDRegistration@@6B@ @11538 NONAME
     ??_7OpalPluginMediaFormat@@6B@ @11539 NONAME
-    ??_7OpalPluginStreamedAudioDecoder@@6B@ @11540 NONAME
-    ??_7OpalPluginStreamedAudioEncoder@@6B@ @11541 NONAME
     ??_7OpalPluginStreamedAudioTranscoder@@6B@ @11542 NONAME
     ??_7OpalPluginVideoFormatInternal@@6B@ @11543 NONAME
     ??_7OpalPluginVideoTranscoder@@6B@ @11544 NONAME
@@ -11815,7 +11809,7 @@ EXPORTS
     ??_7VFUXML@@6B@ @11691 NONAME
     ??_7Worker@?$OpalPluginTranscoderFactory@VOpalFaxAudioTranscoder@@@@6B@ @11692 NONAME
     ??_7Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@6B@ @11693 NONAME
-    ??_7Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioEncoder@@@@6B@ @11695 NONAME
+    ??_7Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioTranscoder@@@@6B@ @41475 NONAME
     ??_7Worker@?$OpalPluginTranscoderFactory@VOpalPluginVideoTranscoder@@@@6B@ @11696 NONAME
     ??_7WorkerBase@?$PFactory@VH235Authenticator@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @11697 NONAME
     ??_7WorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @11698 NONAME
@@ -13736,8 +13730,6 @@ EXPORTS
     ??_R0?AVOpalPluginLIDRegistration@@@8 @13681 NONAME
     ??_R0?AVOpalPluginMediaFormat@@@8 @13682 NONAME
     ??_R0?AVOpalPluginMediaFormatInternal@@@8 @13683 NONAME
-    ??_R0?AVOpalPluginStreamedAudioDecoder@@@8 @13684 NONAME
-    ??_R0?AVOpalPluginStreamedAudioEncoder@@@8 @13685 NONAME
     ??_R0?AVOpalPluginStreamedAudioTranscoder@@@8 @13686 NONAME
     ??_R0?AVOpalPluginTranscoder@@@8 @13687 NONAME
     ??_R0?AVOpalPluginVideoFormatInternal@@@8 @13688 NONAME
@@ -13919,7 +13911,7 @@ EXPORTS
     ??_R0?AVVFUXML@@@8 @13829 NONAME
     ??_R0?AVWorker@?$OpalPluginTranscoderFactory@VOpalFaxAudioTranscoder@@@@@8 @13830 NONAME
     ??_R0?AVWorker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@@8 @13831 NONAME
-    ??_R0?AVWorker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioEncoder@@@@@8 @13833 NONAME
+    ??_R0?AVWorker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioTranscoder@@@@@8 @41476 NONAME
     ??_R0?AVWorker@?$OpalPluginTranscoderFactory@VOpalPluginVideoTranscoder@@@@@8 @13834 NONAME
     ??_R0?AVWorkerBase@?$PFactory@VH235Authenticator@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@8 @13835 NONAME
     ??_R0?AVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@8 @13836 NONAME
@@ -15824,8 +15816,6 @@ EXPORTS
     ??_R1A@?0A@EA@OpalPluginLIDRegistration@@8 @15801 NONAME
     ??_R1A@?0A@EA@OpalPluginMediaFormat@@8 @15802 NONAME
     ??_R1A@?0A@EA@OpalPluginMediaFormatInternal@@8 @15803 NONAME
-    ??_R1A@?0A@EA@OpalPluginStreamedAudioDecoder@@8 @15804 NONAME
-    ??_R1A@?0A@EA@OpalPluginStreamedAudioEncoder@@8 @15805 NONAME
     ??_R1A@?0A@EA@OpalPluginStreamedAudioTranscoder@@8 @15806 NONAME
     ??_R1A@?0A@EA@OpalPluginTranscoder@@8 @15807 NONAME
     ??_R1A@?0A@EA@OpalPluginVideoFormatInternal@@8 @15808 NONAME
@@ -16009,7 +15999,7 @@ EXPORTS
     ??_R1A@?0A@EA@VFUXML@@8 @15949 NONAME
     ??_R1A@?0A@EA@Worker@?$OpalPluginTranscoderFactory@VOpalFaxAudioTranscoder@@@@8 @15950 NONAME
     ??_R1A@?0A@EA@Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@8 @15951 NONAME
-    ??_R1A@?0A@EA@Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioEncoder@@@@8 @15953 NONAME
+    ??_R1A@?0A@EA@Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioTranscoder@@@@8 @41477 NONAME
     ??_R1A@?0A@EA@Worker@?$OpalPluginTranscoderFactory@VOpalPluginVideoTranscoder@@@@8 @15954 NONAME
     ??_R1A@?0A@EA@WorkerBase@?$PFactory@VH235Authenticator@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @15955 NONAME
     ??_R1A@?0A@EA@WorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @15956 NONAME
@@ -17934,8 +17924,6 @@ EXPORTS
     ??_R2OpalPluginLIDRegistration@@8 @17936 NONAME
     ??_R2OpalPluginMediaFormat@@8 @17937 NONAME
     ??_R2OpalPluginMediaFormatInternal@@8 @17938 NONAME
-    ??_R2OpalPluginStreamedAudioDecoder@@8 @17939 NONAME
-    ??_R2OpalPluginStreamedAudioEncoder@@8 @17940 NONAME
     ??_R2OpalPluginStreamedAudioTranscoder@@8 @17941 NONAME
     ??_R2OpalPluginTranscoder@@8 @17942 NONAME
     ??_R2OpalPluginVideoFormatInternal@@8 @17943 NONAME
@@ -18119,7 +18107,7 @@ EXPORTS
     ??_R2VFUXML@@8 @18084 NONAME
     ??_R2Worker@?$OpalPluginTranscoderFactory@VOpalFaxAudioTranscoder@@@@8 @18085 NONAME
     ??_R2Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@8 @18086 NONAME
-    ??_R2Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioEncoder@@@@8 @18088 NONAME
+    ??_R2Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioTranscoder@@@@8 @41478 NONAME
     ??_R2Worker@?$OpalPluginTranscoderFactory@VOpalPluginVideoTranscoder@@@@8 @18089 NONAME
     ??_R2WorkerBase@?$PFactory@VH235Authenticator@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @18090 NONAME
     ??_R2WorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @18091 NONAME
@@ -20021,8 +20009,6 @@ EXPORTS
     ??_R3OpalPluginLIDRegistration@@8 @20056 NONAME
     ??_R3OpalPluginMediaFormat@@8 @20057 NONAME
     ??_R3OpalPluginMediaFormatInternal@@8 @20058 NONAME
-    ??_R3OpalPluginStreamedAudioDecoder@@8 @20059 NONAME
-    ??_R3OpalPluginStreamedAudioEncoder@@8 @20060 NONAME
     ??_R3OpalPluginStreamedAudioTranscoder@@8 @20061 NONAME
     ??_R3OpalPluginTranscoder@@8 @20062 NONAME
     ??_R3OpalPluginVideoFormatInternal@@8 @20063 NONAME
@@ -20206,7 +20192,7 @@ EXPORTS
     ??_R3VFUXML@@8 @20204 NONAME
     ??_R3Worker@?$OpalPluginTranscoderFactory@VOpalFaxAudioTranscoder@@@@8 @20205 NONAME
     ??_R3Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@8 @20206 NONAME
-    ??_R3Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioEncoder@@@@8 @20208 NONAME
+    ??_R3Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioTranscoder@@@@8 @41479 NONAME
     ??_R3Worker@?$OpalPluginTranscoderFactory@VOpalPluginVideoTranscoder@@@@8 @20209 NONAME
     ??_R3WorkerBase@?$PFactory@VH235Authenticator@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @20210 NONAME
     ??_R3WorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @20211 NONAME
@@ -22123,8 +22109,6 @@ EXPORTS
     ??_R4OpalPluginLIDManager@@6B@ @22186 NONAME
     ??_R4OpalPluginLIDRegistration@@6B@ @22187 NONAME
     ??_R4OpalPluginMediaFormat@@6B@ @22188 NONAME
-    ??_R4OpalPluginStreamedAudioDecoder@@6B@ @22189 NONAME
-    ??_R4OpalPluginStreamedAudioEncoder@@6B@ @22190 NONAME
     ??_R4OpalPluginStreamedAudioTranscoder@@6B@ @22191 NONAME
     ??_R4OpalPluginVideoFormatInternal@@6B@ @22192 NONAME
     ??_R4OpalPluginVideoTranscoder@@6B@ @22193 NONAME
@@ -22314,7 +22298,7 @@ EXPORTS
     ??_R4VFUXML@@6B@ @22340 NONAME
     ??_R4Worker@?$OpalPluginTranscoderFactory@VOpalFaxAudioTranscoder@@@@6B@ @22341 NONAME
     ??_R4Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@6B@ @22342 NONAME
-    ??_R4Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioEncoder@@@@6B@ @22344 NONAME
+    ??_R4Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioTranscoder@@@@6B@ @41480 NONAME
     ??_R4Worker@?$OpalPluginTranscoderFactory@VOpalPluginVideoTranscoder@@@@6B@ @22345 NONAME
     ??_R4WorkerBase@?$PFactory@VH235Authenticator@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @22346 NONAME
     ??_R4WorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@6B@ @22347 NONAME
@@ -23278,8 +23262,6 @@ EXPORTS
     ?Class@OpalPluginFramedAudioTranscoder@@SAPBDXZ @23220 NONAME
     ?Class@OpalPluginLID@@SAPBDXZ @23221 NONAME
     ?Class@OpalPluginLIDManager@@SAPBDXZ @23222 NONAME
-    ?Class@OpalPluginStreamedAudioDecoder@@SAPBDXZ @23223 NONAME
-    ?Class@OpalPluginStreamedAudioEncoder@@SAPBDXZ @23224 NONAME
     ?Class@OpalPluginStreamedAudioTranscoder@@SAPBDXZ @23225 NONAME
     ?Class@OpalPluginVideoTranscoder@@SAPBDXZ @23226 NONAME
     ?Class@OpalRawMediaStream@@SAPBDXZ @23228 NONAME
@@ -25938,8 +25920,6 @@ EXPORTS
     ?CompareObjectMemoryDirect@OpalPluginFramedAudioTranscoder@@UBA?AW4Comparison@PObject@@ABV3@@Z @26137 NONAME
     ?CompareObjectMemoryDirect@OpalPluginLID@@UBA?AW4Comparison@PObject@@ABV3@@Z @26138 NONAME
     ?CompareObjectMemoryDirect@OpalPluginLIDManager@@UBA?AW4Comparison@PObject@@ABV3@@Z @26139 NONAME
-    ?CompareObjectMemoryDirect@OpalPluginStreamedAudioDecoder@@UBA?AW4Comparison@PObject@@ABV3@@Z @26140 NONAME
-    ?CompareObjectMemoryDirect@OpalPluginStreamedAudioEncoder@@UBA?AW4Comparison@PObject@@ABV3@@Z @26141 NONAME
     ?CompareObjectMemoryDirect@OpalPluginStreamedAudioTranscoder@@UBA?AW4Comparison@PObject@@ABV3@@Z @26142 NONAME
     ?CompareObjectMemoryDirect@OpalPluginVideoTranscoder@@UBA?AW4Comparison@PObject@@ABV3@@Z @26143 NONAME
     ?CompareObjectMemoryDirect@OpalRawMediaStream@@UBA?AW4Comparison@PObject@@ABV3@@Z @26146 NONAME
@@ -26147,8 +26127,7 @@ EXPORTS
     ?ConvertFrames@OpalRFC4175Encoder@@UAA_NABVRTP_DataFrame@@AAV?$PList@VRTP_DataFrame@@@@@Z @26320 NONAME
     ?ConvertFrames@OpalTranscoder@@UAA_NABVRTP_DataFrame@@AAV?$PList@VRTP_DataFrame@@@@@Z @26321 NONAME
     ?convertfs@OpalG711_PLC@@ABAXPANPAFH@Z @37022 NONAME
-    ?ConvertOne@OpalPluginStreamedAudioDecoder@@UBAHH@Z @26322 NONAME
-    ?ConvertOne@OpalPluginStreamedAudioEncoder@@UBAHH@Z @26323 NONAME
+    ?ConvertOne@OpalPluginStreamedAudioTranscoder@@UBAHH@Z @41481 NONAME
     ?ConvertOne@Opal_G711_ALaw_PCM@@UBAHH@Z @26324 NONAME
     ?ConvertOne@Opal_G711_uLaw_PCM@@UBAHH@Z @26325 NONAME
     ?ConvertOne@Opal_Linear16Mono_PCM@@UBAHH@Z @26326 NONAME
@@ -26235,7 +26214,7 @@ EXPORTS
     ?Create@OpalTranscoder@@SAPAV1@ABVOpalMediaFormat@@0PBEI@Z @26371 NONAME
     ?Create@Worker@?$OpalPluginTranscoderFactory@VOpalFaxAudioTranscoder@@@@MBAPAVOpalTranscoder@@ABU?$pair@VPString@@V1@@std@@@Z @26372 NONAME
     ?Create@Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@MBAPAVOpalTranscoder@@ABU?$pair@VPString@@V1@@std@@@Z @26373 NONAME
-    ?Create@Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioEncoder@@@@MBAPAVOpalTranscoder@@ABU?$pair@VPString@@V1@@std@@@Z @26375 NONAME
+    ?Create@Worker@?$OpalPluginTranscoderFactory@VOpalPluginStreamedAudioTranscoder@@@@MBAPAVOpalTranscoder@@ABU?$pair@VPString@@V1@@std@@@Z @41482 NONAME
     ?Create@Worker@?$OpalPluginTranscoderFactory@VOpalPluginVideoTranscoder@@@@MBAPAVOpalTranscoder@@ABU?$pair@VPString@@V1@@std@@@Z @26376 NONAME
     ?Create@Worker@?$PDevicePluginFactory@VH460_Feature@@VPString@@@@MBAPAVH460_Feature@@ABVPString@@@Z @26377 NONAME
     ?Create@WorkerBase@?$PFactory@VH235Authenticator@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@MBAPAVH235Authenticator@@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z @26378 NONAME
@@ -26268,7 +26247,7 @@ EXPORTS
     ?CreateConnection@OpalIVREndPoint@@UAAPAVOpalIVRConnection@@AAVOpalCall@@ABVPString@@PAX1PAVStringOptions@OpalConnection@@@Z @41438 NONAME
     ?CreateConnection@OpalLineEndPoint@@UAAPAVOpalLineConnection@@AAVOpalCall@@AAVOpalLine@@PAXABVPString@@@Z @37040 NONAME
     ?CreateConnection@OpalLocalEndPoint@@UAAPAVOpalLocalConnection@@AAVOpalCall@@PAX@Z @37041 NONAME
-    ?CreateConnection@OpalPCSSEndPoint@@UAAPAVOpalPCSSConnection@@AAVOpalCall@@ABVPString@@1PAX@Z @26401 NONAME
+    ?CreateConnection@OpalPCSSEndPoint@@EAAPAVOpalPCSSConnection@@AAVOpalCall@@ABVPString@@1PAX@Z @41483 NONAME
     ?CreateConnection@OpalPCSSEndPoint@@UAAPAVOpalPCSSConnection@@AAVOpalCall@@ABVPString@@1PAXIPAVStringOptions@OpalConnection@@@Z @39707 NONAME
     ?CreateConnection@SIPEndPoint@@UAAPAVSIPConnection@@AAVOpalCall@@ABVPString@@PAXABVSIPURL@@PAVOpalTransport@@PAVSIP_PDU@@IPAVStringOptions@OpalConnection@@@Z @26403 NONAME
     ?CreateConnectionToken@OpalIVREndPoint@@UAA?AVPString@@XZ @41439 NONAME
@@ -29249,8 +29228,6 @@ EXPORTS
     ?GetClass@OpalPluginFramedAudioTranscoder@@UBAPBDI@Z @29458 NONAME
     ?GetClass@OpalPluginLID@@UBAPBDI@Z @29459 NONAME
     ?GetClass@OpalPluginLIDManager@@UBAPBDI@Z @29460 NONAME
-    ?GetClass@OpalPluginStreamedAudioDecoder@@UBAPBDI@Z @29461 NONAME
-    ?GetClass@OpalPluginStreamedAudioEncoder@@UBAPBDI@Z @29462 NONAME
     ?GetClass@OpalPluginStreamedAudioTranscoder@@UBAPBDI@Z @29463 NONAME
     ?GetClass@OpalPluginVideoTranscoder@@UBAPBDI@Z @29464 NONAME
     ?GetClass@OpalRawMediaStream@@UBAPBDI@Z @29467 NONAME
@@ -31723,8 +31700,6 @@ EXPORTS
     ?InternalIsDescendant@OpalPluginFramedAudioTranscoder@@UBA_NPBD@Z @31805 NONAME
     ?InternalIsDescendant@OpalPluginLID@@UBA_NPBD@Z @31806 NONAME
     ?InternalIsDescendant@OpalPluginLIDManager@@UBA_NPBD@Z @31807 NONAME
-    ?InternalIsDescendant@OpalPluginStreamedAudioDecoder@@UBA_NPBD@Z @31808 NONAME
-    ?InternalIsDescendant@OpalPluginStreamedAudioEncoder@@UBA_NPBD@Z @31809 NONAME
     ?InternalIsDescendant@OpalPluginStreamedAudioTranscoder@@UBA_NPBD@Z @31810 NONAME
     ?InternalIsDescendant@OpalPluginVideoTranscoder@@UBA_NPBD@Z @31811 NONAME
     ?InternalIsDescendant@OpalRawMediaStream@@UBA_NPBD@Z @31814 NONAME
@@ -33849,6 +33824,7 @@ EXPORTS
     ?RequestFaxMode@OpalT38Connection@@IAAX_N@Z @37765 NONAME
     ?RequestModeChange@H323Connection@@UAA_NABVH245_ArrayOf_ModeDescription@@@Z @33679 NONAME
     ?RequestModeChange@H323Connection@@UAA_NABVPString@@@Z @33680 NONAME
+    ?RequestModeChangeT38@H323Connection@@UAA_NPBD@Z @41484 NONAME
     ?RequiresPatchThread@OpalH224MediaStream@@UBA_NXZ @40167 NONAME
     ?RequiresPatchThread@OpalIMMediaStream@@UBA_NXZ @40168 NONAME
     ?RequiresPatchThread@OpalLineMediaStream@@UBA_NPAVOpalMediaStream@@@Z @37766 NONAME
