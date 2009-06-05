@@ -70,3 +70,5 @@ $(OBJDIR)/$(PROG): $(OBJECTS)
 
 depend:
 
+clean:
+	rm $(OBJECTS) $(OBJDIR)/$(PROG)
