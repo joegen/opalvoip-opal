@@ -275,28 +275,12 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
 {
   PCLASSINFO(OpalPluginStreamedAudioTranscoder, OpalStreamedTranscoder);
   public:
-    OpalPluginStreamedAudioTranscoder(const PluginCodec_Definition * codec, bool isEncoder, unsigned inputBits, unsigned outputBits);
+    OpalPluginStreamedAudioTranscoder(const PluginCodec_Definition * codec, bool isEncoder);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
     virtual bool AcceptComfortNoise() const { return comfortNoise; }
+    virtual int ConvertOne(int from) const;
   protected:
     bool comfortNoise;
-};
-
-
-class OpalPluginStreamedAudioEncoder : public OpalPluginStreamedAudioTranscoder
-{
-  PCLASSINFO(OpalPluginStreamedAudioEncoder, OpalPluginStreamedAudioTranscoder);
-  public:
-    OpalPluginStreamedAudioEncoder(const PluginCodec_Definition * codec, bool);
-    int ConvertOne(int _sample) const;
-};
-
-class OpalPluginStreamedAudioDecoder : public OpalPluginStreamedAudioTranscoder
-{
-  PCLASSINFO(OpalPluginStreamedAudioDecoder, OpalPluginStreamedAudioTranscoder);
-  public:
-    OpalPluginStreamedAudioDecoder(const PluginCodec_Definition * codec, bool);
-    int ConvertOne(int codedSample) const;
 };
 
 
