@@ -41,7 +41,13 @@ SUBDIRS += plugins
 endif
 
 ifeq ($(OPAL_SAMPLES),yes)
-SUBDIRS += samples/simple samples/opalcodecinfo samples/callgen samples/c_api
+SUBDIRS += samples/simple \
+           samples/codectest \
+           samples/callgen \
+           samples/opalecho \
+           samples/ivropal \
+           samples/faxopal \
+           samples/c_api
 endif
 
 
