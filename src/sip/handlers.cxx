@@ -1694,11 +1694,13 @@ PSafePtr<SIPHandler> SIPHandlersList::Append(SIPHandler * obj, PSafetyMode mode)
   */
 void SIPHandlersList::Remove(PSafePtr<SIPHandler> handler)
 {
-  PWaitAndSignal m(m_extraMutex);
-  m_handlersByCallId.erase(handler->GetCallID());
-  m_handlersByUserNameAndRealm.erase       (handler->m_userNameAndRealmKey);
+  if (handler != NULL) {
+    PWaitAndSignal m(m_extraMutex);
+    m_handlersByCallId.erase(handler->GetCallID());
+    m_handlersByUserNameAndRealm.erase(handler->m_userNameAndRealmKey);
 
-  PSafeList<SIPHandler>::Remove(handler);
+    PSafeList<SIPHandler>::Remove(handler);
+  }
 }
 
 
