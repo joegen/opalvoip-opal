@@ -1231,7 +1231,13 @@ static bool LocateFieldParameter(const PString & fieldValue, const PString & par
   PINDEX semicolon = (PINDEX)-1;
   while ((semicolon = fieldValue.Find(';', semicolon+1)) != P_MAX_INDEX) {
     start = fieldValue.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.!%*_+`'~", semicolon+1);
-    if (start != P_MAX_INDEX && fieldValue[start] == '=' && (fieldValue(semicolon+1, start-1) *= paramName)) {
+    if (start > fieldValue.GetLength()) {
+      if (fieldValue(semicolon+1, start) *= paramName) {
+        end = start;
+        return true;
+      }
+    }
+    else if ((fieldValue[start] == '=') && (fieldValue(semicolon+1, start-1) *= paramName)) {
       start++;
       end = fieldValue.FindOneOf("()<>@,;:\\\"/[]?{}= \t", start)-1;
       return true;
@@ -1257,8 +1263,11 @@ PString SIPMIMEInfo::InsertFieldParameter(const PString & fieldValue,
 {
 
   PINDEX start, end;
-  if (LocateFieldParameter(fieldValue, paramName, start, end))
-    return fieldValue.Left(start) + newValue + fieldValue.Mid(end+1);
+  if (LocateFieldParameter(fieldValue, paramName, start, end)) {
+    if (start != end)
+      return fieldValue.Left(start) + newValue + fieldValue.Mid(end+1);
+    return fieldValue.Left(start) + "=" + newValue + fieldValue.Mid(end+1);
+  }
 
   PStringStream newField;
   newField << fieldValue << ';' << paramName << '=' << newValue;
@@ -1971,14 +1980,29 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
       viaAddress = param;
 
     // received is present
+    bool received = false;
     param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "received");
-    if (!param.IsEmpty()) 
+    if (!param.IsEmpty()) {
       viaAddress = param;
+      received = true;
+    }
 
-    // rport is present
-    param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "rport");
-    if (!param.IsEmpty()) 
-      viaPort = param;
+    // rport is present. be careful to distinguish between not present and empty
+    PIPSocket::Address remoteIp;
+    WORD remotePort;
+    transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort);
+    {
+      PINDEX start, end;
+      if (LocateFieldParameter(viaList.front(), "rport", start, end)) {
+        param = viaList.front()(start, end);
+        if (!param.IsEmpty()) 
+          viaPort = param;
+        else
+          viaPort = remotePort;
+        if (!received) 
+          viaAddress = remoteIp.AsString();
+      }
+    }
 
     newAddress = OpalTransportAddress(viaAddress+":"+viaPort, defaultPort, (proto *= "TCP") ? "tcp$" : "udp$");
   }
