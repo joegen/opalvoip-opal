@@ -351,7 +351,7 @@ void PlayRTP::Main()
   }
 
   m_singleStep = args.HasOption('p');
-  m_info       = args.HasOption('i');
+  m_info       = args.GetOptionCount('i');
 
   // Audio player
   {
@@ -732,6 +732,8 @@ void PlayRTP::Play(const PFilePath & filename)
   RTP_DataFrame::PayloadTypes lastUnsupportedPayloadType = RTP_DataFrame::IllegalPayloadType;
   DWORD lastTimeStamp = 0;
 
+  unsigned frameCount = 1;
+
   while (!pcap.IsEndOfFile()) {
     if (!pcap.Read(&pcaprec_hdr, sizeof(pcaprec_hdr))) {
       cout << "Truncated file \"" << filename << '"' << endl;
@@ -873,11 +875,38 @@ void PlayRTP::Play(const PFilePath & filename)
       lastTimeStamp = rtp.GetTimestamp();
     }
 
+    if (m_info > 0) {
+      if (m_info > 1) 
+        cout << "Frame #" << frameCount << ":pt=" << rtp.GetPayloadType() << ",psz=" << rtp.GetPayloadSize() << ",m=" << (rtp.GetMarker() ? "1" : "0") << ",";
+      cout << "ssrc=" << hex << rtp.GetSyncSource() << dec << ",ts=" << rtp.GetTimestamp() << ",seq = " << rtp.GetSequenceNumber();
+      if (m_info > 2) {
+        cout << "\n   data=";
+        cout << hex << setfill('0') << ::setw(2);
+        for (PINDEX i = 0; i < PMIN(30, rtp.GetPayloadSize()); ++i)
+          cout << (int)rtp.GetPayloadPtr()[i] << ' ';
+        cout << dec << setfill(' ') << ::setw(0);
+      }
+
+{
+//      RTP_DataFrame & rtp = output[0];
+      bool hasVop = false;
+      unsigned char * p = (unsigned char *)rtp.GetPayloadPtr();
+      size_t i;
+      for (i = 0; i < rtp.GetPayloadSize()-4; ++i) 
+        if (hasVop =
+           (p[i+0] == 0x00 &&
+            p[i+1] == 0x00 &&
+            p[i+2] == 0x01 &&
+            p[i+3] == 0xb6))
+          break;
+      if (hasVop && (m_info > 1))
+        cout << "  hasVop = " << hasVop << " at " << i << endl;
+}
+
+      cout << endl;
+    }
     if (m_singleStep) 
       cout << "Input packet of length " << rtp.GetPayloadSize() << (rtp.GetMarker() ? " with MARKER" : "") << " -> ";
-    else if (m_info)
-      cout << "ssrc=" << hex << rtp.GetSyncSource() << dec << ",ts=" << rtp.GetTimestamp() << ",seq = " << rtp.GetSequenceNumber() << endl;
-
 
     RTP_DataFrameList output;
     if (!m_transcoder->ConvertFrames(rtp, output)) {
@@ -901,13 +930,17 @@ void PlayRTP::Play(const PFilePath & filename)
         m_display->SetFrameData(frame->x, frame->y,
                                 frame->width, frame->height,
                                 OPAL_VIDEO_FRAME_DATA_PTR(frame), data.GetMarker());
+        if (m_info > 1)
+          cout << "  w=" << frame->width << ",h=" << frame->height << endl;
       }
     }
+
     if (m_singleStep) {
       char ch;
       cin >> ch;
     }
 
+    ++frameCount;
   }
 
   delete m_transcoder;
