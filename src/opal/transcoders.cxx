@@ -595,7 +595,7 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
 
   // The conversion algorithm for 5,3 & 2 bits per sample needs an extra
   // couple of bytes at the end of the buffer to avoid lots of conditionals
-  output.SetMinSize(outputSize+2);
+  output.SetMinSize(output.GetHeaderSize()+outputSize+2);
 
   const BYTE * inputBytes = input.GetPayloadPtr();
   const short * inputWords = (const short *)inputBytes;
