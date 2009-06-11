@@ -596,15 +596,19 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
 {
   PINDEX i, bit, mask;
 
+  PINDEX samples = input.GetPayloadSize()*8/inputBitsPerSample;
+  PINDEX outputSize = samples*outputBitsPerSample/8;
+  output.SetPayloadSize(outputSize);
+
+  // The conversion algorithm for 5,3 & 2 bits per sample needs an extra
+  // couple of bytes at the end of the buffer to avoid lots of conditionals
+  output.SetMinSize(outputSize+2);
+
   const BYTE * inputBytes = input.GetPayloadPtr();
   const short * inputWords = (const short *)inputBytes;
 
   BYTE * outputBytes = output.GetPayloadPtr();
   short * outputWords = (short *)outputBytes;
-
-  PINDEX samples = input.GetPayloadSize()*8/inputBitsPerSample;
-  PINDEX outputSize = samples*outputBitsPerSample/8;
-  output.SetPayloadSize(outputSize);
 
   switch (inputBitsPerSample) {
     case 16 :
