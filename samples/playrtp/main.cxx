@@ -887,21 +887,22 @@ void PlayRTP::Play(const PFilePath & filename)
         cout << dec << setfill(' ') << ::setw(0);
       }
 
-{
-//      RTP_DataFrame & rtp = output[0];
-      bool hasVop = false;
-      unsigned char * p = (unsigned char *)rtp.GetPayloadPtr();
-      size_t i;
-      for (i = 0; i < rtp.GetPayloadSize()-4; ++i) 
-        if (hasVop =
-           (p[i+0] == 0x00 &&
-            p[i+1] == 0x00 &&
-            p[i+2] == 0x01 &&
-            p[i+3] == 0xb6))
-          break;
-      if (hasVop && (m_info > 1))
-        cout << "  hasVop = " << hasVop << " at " << i << endl;
-}
+      {
+        bool hasVop = false;
+        unsigned char * p = (unsigned char *)rtp.GetPayloadPtr();
+        PINDEX i;
+        for (i = 0; i < rtp.GetPayloadSize()-4; ++i) {
+          if (p[i+0] == 0x00 &&
+              p[i+1] == 0x00 &&
+              p[i+2] == 0x01 &&
+              p[i+3] == 0xb6) {
+            hasVop = true;
+            break;
+          }
+        }
+        if (hasVop && (m_info > 1))
+          cout << "  hasVop = " << hasVop << " at " << i << endl;
+      }
 
       cout << endl;
     }
