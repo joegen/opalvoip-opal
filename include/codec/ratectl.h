@@ -100,7 +100,7 @@ class OpalBitRateCalculator
 
     /** Return number of frames in history
     */
-    unsigned GetHistoryCount() const
+    size_t GetHistoryCount() const
     { return m_history.size(); }
 
     /** Return number of bytes in history
