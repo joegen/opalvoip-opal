@@ -1754,12 +1754,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   if (replacedConnection != NULL) {
     PTRACE(3, "SIP\tConnection " << *replacedConnection << " replaced by " << *this);
 
+    // Do OnRelease for other connection synchronously or there is
+    // confusion with media streams still open
+    replacedConnection->synchronousOnRelease = false;
     replacedConnection->Release(OpalConnection::EndedByCallForwarded);
-
-    // Before proceeding with connection, wait for streams to all be closed
-    while (replacedConnection->GetMediaStream(PString::Empty(), true) != NULL &&
-           replacedConnection->GetMediaStream(PString::Empty(), false) != NULL)
-      PThread::Sleep(20);
 
     // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
     // before it knows what what formats can support. 
