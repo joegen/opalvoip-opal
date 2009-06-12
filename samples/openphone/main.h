@@ -82,20 +82,22 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 
     virtual OpalMediaFormatList GetMediaFormats() const;
 
+    MyManager & m_manager;
+
   private:
     virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
     virtual PBoolean OnShowOutgoing(const OpalPCSSConnection & connection);
-
-    MyManager & m_manager;
 };
 
 class IMDialog;
 
-struct MessageInfo {
-  PString callId;
-  SIPURL from;
-  PString remoteContact;
-  PString body;
+struct ReceivedMessageInfo {
+  PURL    m_localURL;
+  PURL    m_remoteURL;
+  PString m_remoteName;
+  PString m_callId;
+  PString m_contentType;
+  PString m_body;
 };
 
 struct PresenceInfo {
@@ -140,7 +142,6 @@ class MySIPEndPoint : public SIPEndPoint
     virtual void OnDialogInfoReceived(
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
-    virtual void OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu);
     virtual void OnPresenceInfoReceived(const SIPPresenceInfo & info);
 
     MyManager & m_manager;
@@ -249,13 +250,12 @@ class CallIMDialog : public wxDialog
 class IMDialog : public wxDialog
 {
   public:
-    IMDialog(MyManager * manager, const PString & callId, const SIPURL & them, const PString & remoteContact);
+    IMDialog(MyManager * manager, const PString & localName, const PURL & remoteAddress, const PString & remoteName);
     ~IMDialog();
 
     void AddTextToScreen(const wxString & text, bool fromUs);
 
     PString   m_callId;
-    PString   m_remoteContact;
 
   private:
     void OnSend(wxCommandEvent & event);
@@ -265,9 +265,11 @@ class IMDialog : public wxDialog
     void SendCurrentText();
 
     MyManager * m_manager;
+    PURL m_remoteAddress;
 
-    PwxString m_them;
-    PwxString m_us;
+    wxString m_them;
+    PString m_us;
+    PString m_remoteAddrStr;
 
     wxTextCtrl * m_enteredText;
     wxTextCtrl * m_textArea;
@@ -816,6 +818,14 @@ class MyManager : public wxFrame, public OpalManager
     } m_AnswerMode;
     void SwitchToFax();
 
+    void OnMessageReceived(
+      const PURL & from, 
+      const PString & fromName,
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      const PString & conversationId);
+
   private:
     // OpalManager overrides
     virtual PBoolean OnIncomingConnection(
@@ -888,6 +898,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnCallSpeedDialHandset(wxCommandEvent& event);
     void OnSendFax(wxCommandEvent& event);
     void OnSendFaxSpeedDial(wxCommandEvent& event);
+    void OnSendIMSpeedDial(wxCommandEvent& event);
     void OnStartIM(wxCommandEvent& event);
     void OnMenuAnswer(wxCommandEvent& event);
     void OnMenuHangUp(wxCommandEvent& event);
@@ -922,6 +933,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnMyPresence(wxCommandEvent& event);
 
     bool CanDoFax() const;
+    bool CanDoIM() const;
 
     enum SpeedDialViews {
       e_ViewLarge,
@@ -996,8 +1008,7 @@ class MyManager : public wxFrame, public OpalManager
     typedef std::map<std::string, IMDialog *> ConversationMapType;
     PMutex conversationMapMutex;
 
-    void OnMessageReceived(MessageInfo * info);
-    IMDialog * GetOrCreateConversation(const MessageInfo & messageInfo);
+    IMDialog * GetOrCreateConversation(const ReceivedMessageInfo & messageInfo);
 
     ConversationMapType conversationMap;
 
