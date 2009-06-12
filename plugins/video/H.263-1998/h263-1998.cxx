@@ -262,6 +262,9 @@ bool H263_Base_EncoderContext::Open(CodecID codecId)
   _context->flags |= CODEC_FLAG_EMU_EDGE;        // don't draw edges
   _context->flags |= CODEC_FLAG_PASS1;
 
+  _context->error_concealment = 3;
+  _context->error_recognition = 5;
+
   // debugging flags
   if (Trace::CanTraceUserPlane(4)) {
     _context->debug |= FF_DEBUG_RC;
@@ -1179,6 +1182,10 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
 
   TRACE_AND_LOG(tracer, 4, "Decoder called with " << depacketizer.frame.size()  << " bytes");
 
+#if FFMPEG_HAS_DECODE_ERROR_COUNT
+  unsigned error_before = _context->decode_error_count;
+#endif
+
   int gotPicture = 0;
   int bytesDecoded = avcodec_decode_video(_context, _outputFrame, &gotPicture, &depacketizer.frame[0], depacketizer.frame.size());
 
@@ -1193,7 +1200,11 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   TRACE_AND_LOG(tracer, 4, "Decoder processed " << bytesDecoded << " bytes, creating frame at " << _context->width << "x" << _context->height);
 
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
-  if (bytesDecoded < 0) {
+  if (bytesDecoded < 0
+#if FFMPEG_HAS_DECODE_ERROR_COUNT
+      || error_before != _context->decode_error_count
+#endif
+  ) {
     flags = PluginCodec_ReturnCoderRequestIFrame;
     return ReturnEmptyFrame(dstRTP, dstLen, flags);
   }
