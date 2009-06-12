@@ -466,6 +466,9 @@ void OpenPhoneApp::Main()
 
 bool OpenPhoneApp::OnInit()
 {
+  LoadLibrary(L"avcodec.dll");
+  LoadLibrary(L"avutil.dll");
+
   // make sure various URL types are registered to this application
   {
     PString urlTypes("sip\nh323\nsips\nh323s");
@@ -499,6 +502,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuSendFax"),         MyManager::OnSendFax)
   EVT_MENU(XRCID("MenuStartIM"),         MyManager::OnStartIM)
   EVT_MENU(XRCID("SendFaxSpeedDial"),    MyManager::OnSendFaxSpeedDial)
+  EVT_MENU(XRCID("SendIMSpeedDial"),     MyManager::OnSendIMSpeedDial)
   EVT_MENU(XRCID("MenuAnswer"),          MyManager::OnMenuAnswer)
   EVT_MENU(XRCID("MenuHangUp"),          MyManager::OnMenuHangUp)
   EVT_MENU(XRCID("NewSpeedDial"),        MyManager::OnNewSpeedDial)
@@ -1337,6 +1341,10 @@ bool MyManager::CanDoFax() const
 #endif
 }
 
+bool MyManager::CanDoIM() const
+{
+  return true;
+}
 
 void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
 {
@@ -1535,9 +1543,9 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
   int result = dlg.ShowModal();
   if (result == ID_IMPAGE) {
     PWaitAndSignal m(conversationMapMutex);
-    PString callId = SIPTransaction::GenerateCallID();
-    IMDialog * dialog = new IMDialog(this, callId, SIPURL(dlg.m_Address.p_str()), dlg.m_Address);
-    conversationMap.insert(ConversationMapType::value_type(callId, dialog));
+    PString remoteAddr(dlg.m_Address.p_str());
+    IMDialog * dialog = new IMDialog(this, "", remoteAddr, "");
+    conversationMap.insert(ConversationMapType::value_type(remoteAddr, dialog));
     dialog->Show();
     return;
   }
@@ -1557,6 +1565,23 @@ void MyManager::OnMyPresence(wxCommandEvent & /*event*/)
   dlg.ShowModal();
 }
 
+void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
+{
+  wxListItem item;
+  item.m_itemId = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  if (item.m_itemId < 0)
+    return;
+
+  item.m_col = e_AddressColumn;
+  item.m_mask = wxLIST_MASK_TEXT;
+  if (m_speedDials->GetItem(item)) {
+    PString addr(item.m_text);
+    PWaitAndSignal m(conversationMapMutex);
+    IMDialog * dialog = new IMDialog(this, "", addr, "");
+    conversationMap.insert(ConversationMapType::value_type(addr, dialog));
+    dialog->Show();
+  }
+}
 
 void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
 {
@@ -1812,6 +1837,7 @@ void MyManager::OnRightClick(wxListEvent& event)
   wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar(wxT("SpeedDialMenu"));
   menuBar->Enable(XRCID("CallSpeedDialHandset"), HasHandset());
   menuBar->Enable(XRCID("SendFaxSpeedDial"),     CanDoFax());
+  menuBar->Enable(XRCID("SendIMSpeedDial"),      CanDoIM());
   PopupMenu(menuBar->GetMenu(0), event.GetPoint());
   delete menuBar;
 }
@@ -2866,39 +2892,35 @@ void MyManager::ReplaceRegistrations(const RegistrationList & newRegistrations)
 }
 
 
-void MyManager::OnMessageReceived(MessageInfo * info)
-{
-  wxCommandEvent theEvent(wxEvtRxMessage, ID_RX_MESSAGE);
-  theEvent.SetEventObject(this);
-  theEvent.SetClientData(info);
-  GetEventHandler()->AddPendingEvent(theEvent);
-}
-
 void MyManager::OnRxMessage(wxCommandEvent & theEvent)
 {
-  MessageInfo * info = (MessageInfo*)theEvent.GetClientData();
+  ReceivedMessageInfo * info = (ReceivedMessageInfo*)theEvent.GetClientData();
 
   IMDialog * dialog = GetOrCreateConversation(*info);
-  dialog->AddTextToScreen(PwxString((const char *)info->body), false);
+  dialog->AddTextToScreen(PwxString((const char *)info->m_body), false);
 
-  LogWindow << "Received page mode IM from " << info->from << " (" << info->callId << ")" << endl;
+  LogWindow << "Received page mode IM from " << info->m_remoteURL << endl;
 
   delete(info);
 }
 
 
-IMDialog * MyManager::GetOrCreateConversation(const MessageInfo & messageInfo)
+IMDialog * MyManager::GetOrCreateConversation(const ReceivedMessageInfo & messageInfo)
 {
-  ConversationMapType::iterator r = conversationMap.find(messageInfo.callId);
-  if (r != conversationMap.end()) {
-    r->second->m_remoteContact = messageInfo.remoteContact;
+  PString remote(messageInfo.m_remoteURL.AsString());
+  ConversationMapType::iterator r = conversationMap.find(remote);
+  if (r != conversationMap.end()) 
     return r->second;
-  }
 
-  IMDialog * dialog = new IMDialog(this, messageInfo.callId, messageInfo.from, messageInfo.remoteContact);
-  conversationMap.insert(ConversationMapType::value_type(messageInfo.callId, dialog));
+  PString localName;
+  localName = messageInfo.m_localURL.GetUserName();
+  if (localName.IsEmpty())
+    localName = messageInfo.m_localURL.AsString();
+
+  IMDialog * dialog = new IMDialog(this, localName, messageInfo.m_remoteURL, messageInfo.m_remoteName);
+  conversationMap.insert(ConversationMapType::value_type(remote, dialog));
   dialog->Show();
-  return conversationMap.find(messageInfo.callId)->second;
+  return conversationMap.find(remote)->second;
 }
 
 
@@ -3123,6 +3145,32 @@ void MyManager::ApplyMediaInfo()
   }
 }
 
+
+void MyManager::OnMessageReceived(
+      const PURL    & remoteURL, 
+      const PString & remoteName,
+      const PURL    & localURL, 
+      const PString & contentType,
+      const PString & body,
+      const PString & conversationId
+)
+{
+  if (!(contentType *= "text/plain"))
+    return;
+
+  ReceivedMessageInfo * info  = new ReceivedMessageInfo;
+  info->m_localURL    = localURL;
+  info->m_remoteURL   = remoteURL;
+  info->m_remoteName  = remoteName;
+  info->m_contentType = contentType;
+  info->m_body        = body;
+  info->m_callId      = conversationId;
+
+  wxCommandEvent theEvent(wxEvtRxMessage, ID_RX_MESSAGE);
+  theEvent.SetEventObject(this);
+  theEvent.SetClientData(info);
+  GetEventHandler()->AddPendingEvent(theEvent);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -5297,24 +5345,39 @@ BEGIN_EVENT_TABLE(IMDialog, wxDialog)
   EVT_CLOSE(IMDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
-IMDialog::IMDialog(MyManager * manager, const PString & callId, const SIPURL & them, const PString & remoteContact)
-  : m_callId(callId)
-  , m_remoteContact(remoteContact)
-  , m_manager(manager)
-  , m_them(them.AsString())
-  , m_us(wxT("(local)"))
+IMDialog::IMDialog(MyManager * manager, const PString & localName, const PURL & remoteAddress, const PString & remoteName)
+  : m_manager(manager)
+  , m_remoteAddress(remoteAddress)
+  , m_us(localName)
+  , m_remoteAddrStr(remoteAddress.AsString())
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("IMDialog"));
-  {
-    PStringStream str;
-    str << "Conversation with ";
-    if (!them.GetDisplayName().IsEmpty())
-      str << them.GetDisplayName();
-    else
-      str << m_them;
-    str << " (" << m_callId << ')';
-    SetTitle(PwxString(str));
+
+  PStringStream str;
+  str << "Conversation with ";
+  bool addBrackets = true;
+  if (!remoteName.IsEmpty()) {
+    str << remoteName;
+    m_them = PwxString(remoteName);
   }
+  else {
+    PString user(remoteAddress.GetUserName());
+    if (!user.IsEmpty()) {
+      str << user;
+      m_them = PwxString(user);
+    }
+    else {
+      addBrackets = false;
+      m_them = PwxString(m_remoteAddrStr);
+    }
+  }
+
+  if (addBrackets) 
+    str << " (";
+  str << m_remoteAddrStr;
+  if (addBrackets) 
+    str << ")";
+  SetTitle(PwxString(str));
 
   m_textArea    = FindWindowByNameAs<wxTextCtrl>(this, wxT("TextArea"));
   m_enteredText = FindWindowByNameAs<wxTextCtrl>(this, wxT("EnteredText"));
@@ -5326,13 +5389,12 @@ IMDialog::IMDialog(MyManager * manager, const PString & callId, const SIPURL & t
   m_ourStyle.SetTextColour(*wxRED);
   m_theirStyle.SetTextColour(wxColour(0, 0xc0, 0));
 
-  manager->conversationMap.insert(MyManager::ConversationMapType::value_type((const char *)callId, this));
+  manager->conversationMap.insert(MyManager::ConversationMapType::value_type((const char *)m_remoteAddrStr, this));
 }
 
 IMDialog::~IMDialog()
 {
-  PString key = m_callId;
-  m_manager->conversationMap.erase((const char *)key);
+  m_manager->conversationMap.erase((const char *)m_remoteAddrStr);
 }
 
 void IMDialog::OnCloseWindow(wxCloseEvent & WXUNUSED(event))
@@ -5353,10 +5415,20 @@ void IMDialog::OnTextEnter(wxCommandEvent & WXUNUSED(event))
 void IMDialog::SendCurrentText()
 {
   PwxString text = m_enteredText->GetValue();
-  AddTextToScreen(text, true);
   m_enteredText->SetValue(wxT(""));
-  if (m_manager->sipEP->Message(m_them.p_str(), text.p_str(), m_remoteContact, m_callId)) {
-    LogWindow << "Sending page mode IM to " << m_them << " (" << m_callId << ")" << endl;
+
+  PURL fromAddress;
+  bool stat = m_manager->Message(m_remoteAddress, "text/plain", text.p_str(), fromAddress, m_callId);
+  if (m_us.IsEmpty()) {
+    m_us = fromAddress.GetUserName();
+    if (m_us.IsEmpty())
+      m_us = fromAddress.GetHostName();
+  }
+
+  AddTextToScreen(text, true);
+
+  if (stat) {
+    LogWindow << "Sending page mode IM to " << m_remoteAddress << endl;
   } else {
     LogWindow << "Page mode IM to " << m_them << " failed" << endl;
     m_textArea->SetDefaultStyle(m_theirStyle);
@@ -5369,16 +5441,22 @@ void IMDialog::SendCurrentText()
 void IMDialog::AddTextToScreen(const wxString & text, bool fromUs)
 {
   PTime now;
-  PwxString nowStr = PTime().AsString("yy/MM/dd hh:mm");
-  m_textArea->AppendText(nowStr);
-  m_textArea->AppendText(wxT(" "));
+  PwxString nowStr = PTime().AsString("[hh:mm] ");
+
   if (fromUs) {
     m_textArea->SetDefaultStyle(m_ourStyle);
-    m_textArea->AppendText(m_us);
   } else {
     m_textArea->SetDefaultStyle(m_theirStyle);
+  }
+
+  m_textArea->AppendText(nowStr);
+
+  if (fromUs) {
+    m_textArea->AppendText(PwxString(m_us));
+  } else {
     m_textArea->AppendText(m_them);
   }
+
   m_textArea->AppendText(wxT(": "));
   m_textArea->SetDefaultStyle(m_defaultStyle);
   m_textArea->AppendText(text);
@@ -6354,16 +6432,6 @@ void MySIPEndPoint::OnDialogInfoReceived(const SIPDialogNotification & info)
     default :
       break;
   }
-}
-
-void MySIPEndPoint::OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu)
-{
-  MessageInfo * info = new MessageInfo;
-  info->body          = pdu.GetEntityBody();
-  info->from          = from;
-  info->remoteContact = pdu.GetMIME().GetContact();
-  info->callId        = pdu.GetMIME().GetCallID();
-  m_manager.OnMessageReceived(info);
 }
 
 void MySIPEndPoint::OnPresenceInfoReceived(const SIPPresenceInfo & info)
