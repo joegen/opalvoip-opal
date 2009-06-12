@@ -57,11 +57,6 @@
 class SIPRegisterHandler;
 
 
-//
-//  provide flag so applications know if presence is available
-//
-#define OPAL_HAS_SIP_PRESENCE   1
-
 /////////////////////////////////////////////////////////////////////////
 
 /** Class to hold authentication information 
