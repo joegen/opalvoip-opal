@@ -1153,7 +1153,8 @@ class SIPMessage : public SIPTransaction
       const SIPURL & proxy,
       const SIPURL & to,
       const PString & id,
-      const PString & body
+      const PString & body,
+      SIPURL & m_localAddress
     );
 };
 

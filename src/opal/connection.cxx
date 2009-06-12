@@ -54,8 +54,11 @@
 #include <ptclib/url.h>
 
 #if OPAL_HAS_IM
-#include <im/sipim.h>
 #include <im/rfc4103.h>
+#if OPAL_SIP
+#include <im/sipim.h>
+#include <sip/sipcon.h>
+#endif
 #endif
 
 #define new PNEW
@@ -1497,58 +1500,30 @@ OpalMediaType::AutoStartMode OpalConnection::AutoStartMap::GetAutoStart(const Op
 
 #if OPAL_HAS_IM
 
-template <class DataType>
-bool SendIMHelper(OpalConnection & conn, const OpalMediaFormat & format, const DataType & data)
+bool OpalConnection::TransmitInternalIM(const OpalMediaFormat & format, RTP_DataFrame & frame)
 {
-  if (!conn.LockReadWrite())
-    return false;
-
-  bool stat = true;
-
-  OpalMediaStreamPtr strm = conn.GetMediaStream(format.GetMediaType(), true);
-  if (strm == NULL) 
-    stat = false;
-  else {
-    OpalIMMediaStream * imStream = dynamic_cast<OpalIMMediaStream *>(&*strm);
-    if (imStream != NULL) 
-      imStream->PushIM(data);
-  }
-  
-  conn.UnlockReadWrite();
-
-  return stat;
+  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+  if (other != NULL) 
+    other->OnReceiveInternalIM(format, frame);
+  return true;
 }
 
-bool OpalConnection::SendIM(const OpalMediaFormat & format, const T140String & text)
+
+void OpalConnection::OnReceiveInternalIM(const OpalMediaFormat & format, RTP_DataFrame & rtp)
 {
-  return SendIMHelper<T140String>(*this, format, text);
+  TransmitExternalIM(format, rtp);
 }
 
-bool OpalConnection::SendIM(const OpalMediaFormat & format, const RTP_DataFrame & frame)
+
+bool OpalConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_DataFrame & /*body*/)
 {
-  return SendIMHelper<RTP_DataFrame>(*this, format, frame);
+  return true;
 }
 
-void OpalConnection::OnReceiveIM(const IMInfo & im)
+
+bool OpalConnection::OnReceiveExternalIM(const OpalMediaFormat & format, RTP_DataFrame & body)
 {
-  if (!LockReadWrite())
-    return;
-
-  for (PList<PNotifier>::iterator f = m_imListeners.begin(); f != m_imListeners.end(); ++f) {
-    (*f)((IMInfo &)im, (INT)this);
-  }
-
-  UnlockReadWrite();
-}
-
-void OpalConnection::AddIMListener(const PNotifier & listener)
-{
-  if (!LockReadWrite())
-    return;
-
-  m_imListeners.Append(new PNotifier(listener));
-
-  UnlockReadWrite();
+  return TransmitInternalIM(format, body);
 }
 
 #endif

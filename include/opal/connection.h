@@ -1510,19 +1510,38 @@ class OpalConnection : public PSafeObject
     virtual void DisableRecording();
 
 #if OPAL_HAS_IM
-    struct IMInfo : public PObject {
-      unsigned sessionId;
-      OpalMediaFormat mediaFormat;
-      T140String body;
-    };
-
-    virtual bool SendIM(const OpalMediaFormat & format, const T140String & body);
-    virtual bool SendIM(const OpalMediaFormat & format, const RTP_DataFrame & body);
-    virtual void OnReceiveIM(const IMInfo & im);
-
-    void AddIMListener(
-      const PNotifier & listener
+    /**
+      * Called to transmit an IM to the other connection in the call
+      */
+    virtual bool TransmitInternalIM(
+      const OpalMediaFormat & format, 
+      RTP_DataFrame & body
     );
+
+    /**
+      * Called when this connection receives an IM from the other connection in the call
+      */
+    virtual void OnReceiveInternalIM(
+      const OpalMediaFormat & format, 
+      RTP_DataFrame & body
+    );
+
+    /**
+      * Called to transmit an IM to the other end of the connection
+      */
+    virtual bool TransmitExternalIM(
+      const OpalMediaFormat & format, 
+      RTP_DataFrame & body
+    );
+
+    /**
+      * Called when this connection receives an IM from the other end of the connection
+      */
+    virtual bool OnReceiveExternalIM(
+      const OpalMediaFormat & format, 
+      RTP_DataFrame & body
+    );
+
 #endif
 
   protected:
@@ -1630,10 +1649,6 @@ class OpalConnection : public PSafeObject
 
     };
     AutoStartMap m_autoStartInfo;
-
-#if OPAL_HAS_IM
-    mutable PList<PNotifier> m_imListeners;
-#endif
 
   private:
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(unsigned int), false);

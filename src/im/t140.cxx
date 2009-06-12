@@ -46,7 +46,7 @@
 
 /////////////////////////////////////////////////////////
 //
-//  SDP media description for audio media
+//  SDP media description for text media
 //
 
 class SDPT140MediaDescription : public SDPRTPAVPMediaDescription

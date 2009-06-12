@@ -3210,10 +3210,11 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
                        const SIPURL & proxy,
                        const SIPURL & address,
                        const PString & id,
-                       const PString & body)
+                       const PString & body,
+                       SIPURL & localAddress)
   : SIPTransaction(ep, trans)
 {
-  SIPURL myAddress = endpoint.GetRegisteredPartyName(address.GetHostName(), transport);
+  SIPURL myAddress = localAddress = endpoint.GetRegisteredPartyName(address.GetHostName(), transport);
   myAddress.SetTag();
 
   SIP_PDU::Construct(Method_MESSAGE,

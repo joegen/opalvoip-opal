@@ -77,19 +77,26 @@ class PCSSIMStream : public OpalIMMediaStream
     /**Write raw media data to the sink media stream.
        The default behaviour writes to the PChannel object.
       */
-    virtual PBoolean WritePacket(RTP_DataFrame & packet)
+    virtual PBoolean WritePacket(RTP_DataFrame & frame)
     {
       if (!IsOpen())
         return false;
 
-      OpalConnection::IMInfo info;
-      info.sessionId   = sessionID;
-      info.mediaFormat = mediaFormat;
-      info.body        = T140String(packet.GetPayloadPtr(), packet.GetPayloadSize());
+      bool stat = false;
 
-      connection.OnReceiveIM(info);
+      if (connection.LockReadWrite()) {
+        OpalMediaStreamPtr strm = connection.GetMediaStream(mediaFormat.GetMediaType(), true);
+        if (strm != NULL) {
+          OpalIMMediaStream * imStream = dynamic_cast<OpalIMMediaStream *>(&*strm);
+          if (imStream != NULL) {
+            imStream->PushIM(frame);
+            stat = true;
+          }
+        } 
+        connection.UnlockReadWrite();
+      }
 
-      return true;
+      return stat;
     }
 
     virtual PBoolean RequiresPatchThread() const   { return !isSource; }

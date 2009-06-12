@@ -232,6 +232,10 @@ SIPConnection::SIPConnection(OpalCall & call,
   , authentication(NULL)
   , ackReceived(false)
   , releaseMethod(ReleaseWithNothing)
+#if OPAL_HAS_IM
+  , rfc4103Context(OpalT140)
+#endif
+
 {
   synchronousOnRelease = false;
 
@@ -2522,29 +2526,19 @@ void SIPConnection::OnReceivedPING(SIP_PDU & request)
   request.SendResponse(*transport, SIP_PDU::Successful_OK);
 }
 
+
 void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 {
   PTRACE(3, "SIP\tReceived MESSAGE");
 
-  PString from = pdu.GetMIME().GetFrom();
-  PINDEX j = from.Find (';');
-  if (j != P_MAX_INDEX)
-    from = from.Left(j); // Remove all parameters
-  j = from.Find ('<');
-  if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
-    from += '>';
+  RTP_DataFrameList frames = rfc4103Context.ConvertToFrames(pdu.GetEntityBody());
 
-  OnMessageReceived(from, pdu);
+  for (PINDEX i = 0; i < frames.GetSize(); ++i)
+    OnReceiveExternalIM(OpalT140, frames[i]);
 
   pdu.SendResponse(*transport, SIP_PDU::Successful_OK);
 }
 
-void SIPConnection::OnMessageReceived(const SIPURL & /*from*/, const SIP_PDU & pdu)
-{
-#if OPAL_HAS_SIPIM
-  ((SIPEndPoint &)endpoint).GetSIPIMManager().OnReceivedMessage(pdu);
-#endif
-}
 
 OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() const
 {
@@ -2601,6 +2595,24 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
   return OpalRTPConnection::SendUserInputTone(tone, duration);
 }
 
+#if OPAL_HAS_IM
+
+bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_DataFrame & body)
+{
+  PTRACE(3, "SIP\tSending MESSAGE within call");
+  PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_MESSAGE);
+  SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
+  mimeInfo.SetContentType("text/plain");
+  infoTransaction->GetEntityBody() = PString((const char *)(const BYTE *)body.GetPayloadPtr(), body.GetPayloadSize());
+
+  // cannot wait for completion as this keeps the SIPConnection locked, thus preventing the response from being processed
+  //infoTransaction->WaitForCompletion();
+  //if (infoTransaction->IsFailed()) { }
+  infoTransaction->Start();
+  return true;
+}
+
+#endif
 
 void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
 {
@@ -2622,7 +2634,7 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
                    "</vc_primitive>"
                   "</media_control>"
                 ;
-    // cannot wait for completion as this keeps the SIPConnection locks, thus preventing the response from being processed
+    // cannot wait for completion as this keeps the SIPConnection locked, thus preventing the response from being processed
     //infoTransaction->WaitForCompletion();
     //if (infoTransaction->IsFailed()) { }
     infoTransaction->Start();
