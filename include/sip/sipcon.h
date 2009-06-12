@@ -458,6 +458,8 @@ class SIPConnection : public OpalRTPConnection
     );
 #endif
 
+    PString GetLocalPartyURL() const;
+
   protected:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);
@@ -552,8 +554,6 @@ class SIPConnection : public OpalRTPConnection
     } releaseMethod;
 
     OpalMediaFormatList remoteFormatList;
-
-    PString GetLocalPartyURL() const;
 
   protected:
     PTimer sessionTimer;
