@@ -263,6 +263,8 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
   SIPTransaction * transaction = CreateTransaction(transport);
 
   if (transaction != NULL) {
+    for (PINDEX i = 0; i < m_mime.GetSize(); ++i) 
+      transaction->GetMIME().SetAt(m_mime.GetKeyAt(i), PString(m_mime.GetDataAt(i)));
     if (state == Unsubscribing)
       transaction->GetMIME().SetExpires(0);
     if (authentication != NULL)
@@ -1601,7 +1603,7 @@ SIPMessageHandler::~SIPMessageHandler ()
 SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
 { 
   SetExpire(originalExpire);
-  return new SIPMessage(endpoint, transport, m_proxy, GetAddressOfRecord(), GetCallID(), body);
+  return new SIPMessage(endpoint, transport, m_proxy, GetAddressOfRecord(), GetCallID(), body, m_localAddress);
 }
 
 

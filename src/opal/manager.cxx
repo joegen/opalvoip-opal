@@ -52,6 +52,7 @@
 #endif
 
 #include <ptclib/random.h>
+#include <ptclib/url.h>
 
 #include "../../version.h"
 
@@ -1606,6 +1607,42 @@ void OpalManager::OnApplyStringOptions(OpalConnection & conn, OpalConnection::St
 {
   conn.ApplyStringOptions(stringOptions);
 }
+
+
+PBoolean OpalManager::Message(const PString & to, const PString & body)
+{
+  PURL url(to);
+
+  for (PList<OpalEndPoint>::iterator it = endpointList.begin(); it != endpointList.end(); ++it) {
+    if (url.GetScheme() *= it->GetPrefixName())
+      return it->Message(to, body);
+  }
+
+  return false;
+}
+
+
+PBoolean OpalManager::Message(const PURL & to, const PString & type, const PString & body, PURL & from, PString & conversationId)
+{
+  for (PList<OpalEndPoint>::iterator it = endpointList.begin(); it != endpointList.end(); ++it) {
+    if (to.GetScheme() *= it->GetPrefixName())
+      return it->Message(to, type, body, from, conversationId);
+  }
+
+  return false;
+}
+
+void OpalManager::OnMessageReceived(
+  const PURL & /*from*/, 
+  const PString & /*fromName*/,
+  const PURL & /*to*/, 
+  const PString & /*type*/,
+  const PString & /*body*/,
+  const PString & /*conversationId*/
+)
+{
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////

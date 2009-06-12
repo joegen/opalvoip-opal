@@ -168,6 +168,7 @@ public:
   std::string                 m_userNameAndRealmKey;
   std::string                 m_urlKey;
   std::string                 m_urlAndPackageKey;
+  SIPMIMEInfo                 m_mime;
 };
 
 #if PTRACING
@@ -317,6 +318,8 @@ public:
     { return SIP_PDU::Method_MESSAGE; }
   virtual void OnFailed (SIP_PDU::StatusCodes);
   virtual void SetBody(const PString & b);
+
+  SIPURL m_localAddress;
 
 private:
   virtual void OnExpireTimeout(PTimer &, INT);

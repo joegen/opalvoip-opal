@@ -360,11 +360,6 @@ class SIPEndPoint : public OpalRTPEndPoint
     virtual PBoolean IsAcceptedAddress(const SIPURL & toAddr);
 
 
-    /**Callback for SIP message received
-     */
-    virtual void OnMessageReceived (const SIPURL & from, const PString & body);
-    virtual void OnMessageReceived (const SIPURL & from, const SIP_PDU & pdu);
-
     /**Register to a registrar. This function is asynchronous to permit
        several registrations to occur at the same time. It can be
        called several times for different hosts and users.
@@ -565,20 +560,16 @@ class SIPEndPoint : public OpalRTPEndPoint
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
 
-
-    /**Send a message to the given URL.
+    /**Send SIP message
      */
-    PBoolean Message(
-      const PString & to, 
-      const PString & body
-    );
-    PBoolean Message(
-      const PString & to, 
+    virtual bool Message(
+      const PURL & to, 
+      const PString & type,
       const PString & body,
-      const PString & remoteContact, 
-      const PString & callID
+      PURL & from, 
+      PString & conversationId
     );
-    
+
     /**Callback called when a message sent by the endpoint didn't reach
      * its destination or when the proxy or remote endpoint returns
      * an error code.
