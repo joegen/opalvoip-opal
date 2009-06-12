@@ -1771,7 +1771,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
     // Do OnRelease for other connection synchronously or there is
     // confusion with media streams still open
-    replacedConnection->synchronousOnRelease = false;
+    replacedConnection->synchronousOnRelease = true;
     replacedConnection->Release(OpalConnection::EndedByCallForwarded);
 
     // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
