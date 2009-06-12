@@ -121,7 +121,7 @@ public:
   virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual void OnFailed(SIP_PDU::StatusCodes);
 
-  virtual PBoolean SendRequest(SIPHandler::State state);
+  bool ActivateState(SIPHandler::State state, unsigned msecs = 1000);
   virtual bool SendNotify(const PObject * /*body*/) { return false; }
 
   SIPEndPoint & GetEndPoint() const { return endpoint; }
@@ -134,6 +134,7 @@ public:
   const SIPURL & GetRemoteAddress() const { return m_remoteAddress; }
 
 protected:
+  virtual PBoolean SendRequest(SIPHandler::State state);
   void CollapseFork(SIPTransaction & transaction);
   PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
   static PBoolean WriteSIPHandler(OpalTransport & transport, void * info);
@@ -192,11 +193,11 @@ public:
     { return SIP_PDU::Method_REGISTER; }
 
   virtual void OnFailed(SIP_PDU::StatusCodes r);
-  virtual PBoolean SendRequest(SIPHandler::State state);
 
   void UpdateParameters(const SIPRegister::Params & params);
 
 protected:
+  virtual PBoolean SendRequest(SIPHandler::State state);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
 
   SIPRegister::Params m_parameters;
@@ -215,7 +216,6 @@ public:
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
   virtual void OnFailed(SIP_PDU::StatusCodes r);
-  virtual PBoolean SendRequest(SIPHandler::State state);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_SUBSCRIBE; }
   virtual SIPEventPackage GetEventPackage() const
@@ -225,7 +225,8 @@ public:
 
   virtual bool IsDuplicateCSeq(unsigned sequenceNumber) { return m_dialog.IsDuplicateCSeq(sequenceNumber); }
 
-private:
+protected:
+  virtual PBoolean SendRequest(SIPHandler::State state);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
 
   SIPSubscribe::Params     m_parameters;
@@ -248,7 +249,6 @@ public:
   ~SIPNotifyHandler();
 
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
-  virtual PBoolean SendRequest(SIPHandler::State state);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_NOTIFY; }
   virtual SIPEventPackage GetEventPackage() const
@@ -266,7 +266,9 @@ public:
     NoResource
   };
 
-private:
+protected:
+  virtual PBoolean SendRequest(SIPHandler::State state);
+
   SIPEventPackage          m_eventPackage;
   SIPDialogContext         m_dialog;
   Reasons                  m_reason;
@@ -336,21 +338,29 @@ public:
 /** This dictionary is used both to contain the active and successful
  * registrations, and subscriptions. 
  */
-class SIPHandlersList : public PSafeList<SIPHandler>
+class SIPHandlersList
 {
   public:
-    /**
-      *  Append a new handler to the list
+    /** Append a new handler to the list
       */
-    virtual PSafePtr<SIPHandler> Append(
-      SIPHandler * obj,       ///< Object to add to safe collection.
-      PSafetyMode mode = PSafeReference
-    );
+    void Append(SIPHandler * handler);
 
-    /**
-      * Called when a handler is removed
+    /** Remove a handler from the list.
+        Handler is not immediately deleted but marked for deletion later by
+        DeleteObjectsToBeRemoved() when all references are done with the handler.
       */
-    void Remove(PSafePtr<SIPHandler> handler);
+    void Remove(SIPHandler * handler);
+
+    /** Clean up lists of handler.
+      */
+    bool DeleteObjectsToBeRemoved()
+      { return m_handlersList.DeleteObjectsToBeRemoved(); }
+
+    /** Get the first handler in the list. Further enumeration may be done by
+        the ++operator on the safe pointer.
+     */
+    PSafePtr<SIPHandler> GetFirstHandler(PSafetyMode mode = PSafeReference) const
+      { return PSafePtr<SIPHandler>(m_handlersList, mode); }
 
     /**
      * Return the number of registered accounts
@@ -391,6 +401,7 @@ class SIPHandlersList : public PSafeList<SIPHandler>
 
   protected:
     PMutex m_extraMutex;
+    PSafeList<SIPHandler> m_handlersList;
     typedef std::map<std::string, PSafePtr<SIPHandler> > StringToHandlerMap;
     StringToHandlerMap m_handlersByCallId;
     StringToHandlerMap m_handlersByUserNameAndRealm;

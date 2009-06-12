@@ -396,8 +396,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     /**Unregister from a registrar.
-       This will unregister the specified address-of-record. If an empty
-       string is provided then ALL registrations are removed.
+       This will unregister the specified address-of-record.
      */
     bool Unregister(
       const PString & aor,
@@ -405,6 +404,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     /**Unregister all current registrations.
+       Returns true if at least one registrar is unregistered.
       */
     bool UnregisterAll();
 
@@ -484,7 +484,8 @@ class SIPEndPoint : public OpalRTPEndPoint
       PString & aor                        ///< Resultant address-of-record for unsubscribe
     );
 
-
+    /**Unsubscribe a current subscriptions.
+      */
     bool Unsubscribe(
       SIPSubscribe::PredefinedPackages eventPackage,  ///< Event package being unsubscribed
       const PString & aor                             ///< Address-of-record for subscription
@@ -495,6 +496,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     /**Unsubscribe all current subscriptions.
+       Returns true if at least one subscription is unsubscribed.
       */
     bool UnsubcribeAll(
       SIPSubscribe::PredefinedPackages eventPackage  ///< Event package being unsubscribed
