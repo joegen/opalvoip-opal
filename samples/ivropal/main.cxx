@@ -220,6 +220,10 @@ void IvrOPAL::Main()
   // Wait for call to come in and finish
   m_manager->m_completed.Wait();
   cout << " completed.";
+
+  MyManager * mgr = m_manager;
+  m_manager = NULL;
+  delete mgr;
 }
 
 
