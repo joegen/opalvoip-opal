@@ -43,6 +43,7 @@
   strm << "bps"; \
 
 PMutex coutMutex;
+static unsigned g_infoCount = 0;
 
 PCREATE_PROCESS(CodecTest);
 
@@ -73,6 +74,7 @@ void CodecTest::Main()
              "-grab-format:"
              "-grab-channel:"
              "h-help."
+             "i-info."
              "m-suppress-marker."
              "M-force-marker."
              "O-option:"
@@ -175,6 +177,7 @@ void CodecTest::Main()
               "  --count n               : set number of frames to transcode\n"
               "  --noprompt              : do not prompt for commands, i.e. exit when input closes\n"
               "  --snr                   : calculate signal-to-noise ratio between input and output\n"
+              "  -i --info               : display per-frame info (use multiple times for more info)\n"
               "  --list                  : list all available plugin codecs\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
@@ -184,6 +187,8 @@ void CodecTest::Main()
               "e.g. " << GetFile().GetTitle() << " --grab-device fake --grab-channel 2 GSM-AMR H.264\n\n";
     return;
   }
+
+  g_infoCount = args.GetOptionCount('i');
 
   unsigned threadCount = args.GetOptionString('S').AsInteger();
   if (threadCount > 0) {
@@ -998,13 +1003,6 @@ void TranscoderThread::Main()
         }
       }
 
-      totalEncodedPacketCount += encFrames.GetSize();
-
-      if (isVideo && calcSNR) {
-        ((VideoThread *)this)->SaveSNRFrame(srcFrame_);
-        srcFrame_ = NULL;
-      }
-
       //////////////////////////////////////////////
       //
       //  re-format encoded frames
@@ -1027,6 +1025,30 @@ void TranscoderThread::Main()
           default :
             break;
         }
+
+        if (g_infoCount > 0) {
+          RTP_DataFrame & rtp = encFrames[i];
+          coutMutex.Wait();
+          if (g_infoCount > 1) 
+            cout << "Inframe=" << totalInputFrameCount << ",outframe=#" << i << ":pt=" << rtp.GetPayloadType() << ",psz=" << rtp.GetPayloadSize() << ",m=" << (rtp.GetMarker() ? "1" : "0") << ",";
+          cout << "ssrc=" << hex << rtp.GetSyncSource() << dec << ",ts=" << rtp.GetTimestamp() << ",seq = " << rtp.GetSequenceNumber();
+          if (g_infoCount > 2) {
+            cout << "\n   data=";
+            cout << hex << setfill('0') << ::setw(2);
+            for (PINDEX i = 0; i < PMIN(10, rtp.GetPayloadSize()); ++i)
+              cout << (int)rtp.GetPayloadPtr()[i] << ' ';
+            cout << dec << setfill(' ') << ::setw(0);
+          }
+          cout << endl;
+          coutMutex.Signal();
+        }
+      }
+
+      totalEncodedPacketCount += encFrames.GetSize();
+
+      if (isVideo && calcSNR) {
+        ((VideoThread *)this)->SaveSNRFrame(srcFrame_);
+        srcFrame_ = NULL;
       }
 
       //////////////////////////////////////////////
@@ -1085,10 +1107,17 @@ void TranscoderThread::Main()
           if (outFrames.GetSize() > 1) 
             cerr << "Non rate controlled video decoder returned != 1 output frame for input frame " << totalInputFrameCount-1 << endl;
           else if (outFrames.GetSize() == 1) {
-            if (isVideo && ((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame()) {
-              coutMutex.Wait();
-              cout << "Decoder returned I-Frame at output frame " << totalOutputFrameCount << endl;
-              coutMutex.Signal();
+            if (isVideo) {
+              if (((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame()) {
+                coutMutex.Wait();
+                cout << "Decoder returned I-Frame at output frame " << totalOutputFrameCount << endl;
+                coutMutex.Signal();
+              } 
+              if (g_infoCount > 1) {
+                coutMutex.Wait();
+                cout << "Decoder generated payload of size " << outFrames[0].GetPayloadSize() << endl;
+                coutMutex.Signal();
+              }
             }
             bool state = Write(outFrames[0]);
             if (oldOutState != state) {
