@@ -1531,7 +1531,8 @@ bool OpalConnection::OnReceiveExternalIM(const OpalMediaFormat & format, RTP_Dat
 
 void OpalConnection::StringOptions::ExtractFromURL(PURL & url)
 {
-  const PStringToString & params = url.GetParamVars();
+  PStringToString params = url.GetParamVars();
+  params.MakeUnique();
   for (PINDEX i = 0; i < params.GetSize(); ++i) {
     PCaselessString key = params.GetKeyAt(i);
     if (key.NumCompare("OPAL-") == EqualTo) {
