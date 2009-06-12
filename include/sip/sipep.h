@@ -402,6 +402,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     bool Unregister(const PString & aor);
 
     /**Unregister all current registrations.
+       Returns true if at least one registra is unregistered.
       */
     bool UnregisterAll();
 
@@ -481,7 +482,8 @@ class SIPEndPoint : public OpalRTPEndPoint
       PString & aor                        ///< Resultant address-of-record for unsubscribe
     );
 
-
+    /**Unsubscribe a current subscriptions.
+      */
     bool Unsubscribe(
       SIPSubscribe::PredefinedPackages eventPackage,  ///< Event package being unsubscribed
       const PString & aor                             ///< Address-of-record for subscription
@@ -492,6 +494,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     /**Unsubscribe all current subscriptions.
+       Returns true if at least one subscription is unsubscribed.
       */
     bool UnsubcribeAll(
       SIPSubscribe::PredefinedPackages eventPackage  ///< Event package being unsubscribed
