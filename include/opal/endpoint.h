@@ -697,6 +697,30 @@ class OpalEndPoint : public PObject
      */
     bool FindListenerForProtocol(const char * protoPrefix, OpalTransportAddress & addr);
 
+    /**Send text message
+     */
+    virtual PBoolean Message(
+      const PString & to, 
+      const PString & body
+    );
+    virtual PBoolean Message(
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      PURL & from, 
+      PString & conversationId
+    );
+
+    /**Called when text message received
+     */
+    virtual void OnMessageReceived(
+      const PURL & from, 
+      const PString & fromName,
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      const PString & conversationId
+    );
 
   protected:
     OpalManager   & manager;

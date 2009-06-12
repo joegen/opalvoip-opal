@@ -169,20 +169,18 @@ OpalIMMediaStream::OpalIMMediaStream(
       bool isSource                        ///<  Is a source stream
     )
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
-  , rfc4103(mediaFormat)
 {
-
 }
 
-bool OpalIMMediaStream::PushIM(const T140String & text)
+bool OpalIMMediaStream::ReadPacket(RTP_DataFrame & /*packet*/)
 {
-  RTP_DataFrameList frames = rfc4103.ConvertToFrames(text);
-  for (PINDEX i = 0; i < frames.GetSize(); ++i)
-    if (!PushIM(frames[i]))
-      return false;
-  return true;
+  return false;
 }
 
+bool OpalIMMediaStream::WritePacket(RTP_DataFrame & /*packet*/)
+{
+  return false;
+}
 
 bool OpalIMMediaStream::PushIM(RTP_DataFrame & frame)
 {

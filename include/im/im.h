@@ -70,14 +70,13 @@ class OpalIMMediaStream : public OpalMediaStream
     virtual PBoolean IsSynchronous() const         { return false; }
     virtual PBoolean RequiresPatchThread() const   { return false; }
 
+    bool ReadPacket(RTP_DataFrame & packet);
+    bool WritePacket(RTP_DataFrame & packet);
+
     /*
      * called to send IM to remote connection
      */
-    virtual bool PushIM(const T140String & text);
     virtual bool PushIM(RTP_DataFrame & frame);
-
-  protected:
-    RFC4103Context rfc4103;
 };
 
 

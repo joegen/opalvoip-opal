@@ -44,6 +44,7 @@
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
 #include <ptclib/pstun.h>
+#include <ptclib/url.h>
 
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
@@ -1276,6 +1277,31 @@ class OpalManager : public PObject
     virtual void OnApplyStringOptions(
       OpalConnection & conn,
       OpalConnection::StringOptions & stringOptions
+    );
+
+    /**Send text message
+     */
+    virtual PBoolean Message(
+      const PString & to, 
+      const PString & body
+    );
+    virtual PBoolean Message(
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      PURL & from, 
+      PString & conversationId
+    );
+
+    /**Called when text message received
+     */
+    virtual void OnMessageReceived(
+      const PURL & from, 
+      const PString & fromName,
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      const PString & conversationId
     );
 
   protected:

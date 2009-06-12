@@ -233,104 +233,14 @@ OpalMediaStream * OpalSIPIMMediaSession::CreateMediaStream(const OpalMediaFormat
                                                                          PBoolean isSource)
 {
   PTRACE(2, "SIPIM\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with local " << localURL << " and remote " << remoteURL);
-  return new OpalSIPIMMediaStream(connection, mediaFormat, sessionID, isSource, *this);
+  return new OpalIMMediaStream(connection, mediaFormat, sessionID, isSource);
 }
+
 
 void OpalSIPIMMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList &)
 {
 }
 
-bool OpalSIPIMMediaSession::SendMessage(const PString & /*contentType*/, const PString & body)
-{
-  SIPEndPoint * ep = dynamic_cast<SIPEndPoint *>(&connection.GetEndPoint());
-  if (ep == NULL)
-    return false;
-
-  return ep->Message(remoteURL, body, localURL, callId);
-}
-
-bool OpalSIPIMMediaSession::SendIM(const PString & /*contentType*/, const PString & body)
-{
-  return connection.SendIM(OpalSIPIM, body);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-OpalSIPIMMediaStream::OpalSIPIMMediaStream(
-      OpalConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      bool isSource,                        ///<  Is a source stream
-      OpalSIPIMMediaSession & mediaSession
-)
-  : OpalIMMediaStream(conn, mediaFormat, sessionID, isSource)
-  , m_imSession(mediaSession)
-{
-}
-
-OpalSIPIMMediaStream::~OpalSIPIMMediaStream()
-{
-  Close();
-}
-
-bool OpalSIPIMMediaStream::Open()
-{
-  if (!OpalIMMediaStream::Open())
-    return false;
-
-  SIPEndPoint * ep = dynamic_cast<SIPEndPoint *>(&connection.GetEndPoint());
-  if (ep == NULL) 
-    return false;
-
-  ep->GetSIPIMManager().StartSession(&m_imSession);
-
-  return true;
-}
-
-
-PBoolean OpalSIPIMMediaStream::Close()
-{
-  if (!OpalIMMediaStream::Close())
-    return false;
-
-  SIPEndPoint * ep = dynamic_cast<SIPEndPoint *>(&connection.GetEndPoint());
-  if (ep == NULL) 
-    return false;
-
-  ep->GetSIPIMManager().EndSession(&m_imSession);
-
-  return true;
-}
-
-PBoolean OpalSIPIMMediaStream::ReadData(BYTE *,PINDEX,PINDEX &)
-{
-  PAssertAlways("Cannot ReadData from OpalSIPIMMediaStream");
-  return false;
-}
-
-PBoolean OpalSIPIMMediaStream::WriteData(
-      const BYTE * data,   ///<  Data to write
-            PINDEX length,       ///<  Length of data to read.
-          PINDEX & written     ///<  Length of data actually written
-    )
-{
-  if (!IsOpen())
-    return false;
-
-  bool stat = true;
-
-  if (length != 0 && data != NULL) {
-    // T.140 data has 3 bytes at the start of the data
-    if (length > 4) {
-      PString body((const char *)data + 3, length-3);
-      stat = m_imSession.SendMessage("", body);
-    }
-    written = length;
-  }
-
-  return stat;
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -339,8 +249,9 @@ OpalSIPIMManager::OpalSIPIMManager(SIPEndPoint & endpoint)
 {
 }
 
-void OpalSIPIMManager::OnReceivedMessage(const SIP_PDU & pdu)
+void OpalSIPIMManager::OnReceivedMessage(const SIP_PDU & /*pdu*/)
 {
+#if 0
   PString callId = pdu.GetMIME().GetCallID();
   if (!callId.IsEmpty()) {
     PWaitAndSignal m(m_mutex);
@@ -349,9 +260,12 @@ void OpalSIPIMManager::OnReceivedMessage(const SIP_PDU & pdu)
       r->second->SendIM(pdu.GetMIME().GetContentEncoding(), pdu.GetEntityBody());
     }
   }
+#endif
 }
 
-bool OpalSIPIMManager::StartSession(OpalSIPIMMediaSession * mediaSession)
+#if 0
+
+bool OpalSIPIMManager::StartSession(OpalSIPIMMediaSession * /*mediaSession*/)
 { 
   PWaitAndSignal m(m_mutex);
   PString callId(mediaSession->GetCallID());
@@ -359,7 +273,7 @@ bool OpalSIPIMManager::StartSession(OpalSIPIMMediaSession * mediaSession)
   return true;
 }
 
-bool OpalSIPIMManager::EndSession(OpalSIPIMMediaSession * mediaSession)
+bool OpalSIPIMManager::EndSession(OpalSIPIMMediaSession * /*mediaSession*/)
 { 
   PWaitAndSignal m(m_mutex);
   PString callId(mediaSession->GetCallID());
@@ -368,5 +282,7 @@ bool OpalSIPIMManager::EndSession(OpalSIPIMMediaSession * mediaSession)
     m_imSessionMap.erase(r);
   return true;
 }
+
+#endif
 
 #endif // OPAL_HAS_SIPIM

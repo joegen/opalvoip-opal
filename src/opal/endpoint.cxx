@@ -594,4 +594,37 @@ PString OpalEndPoint::GetSSLCertificate() const
 #endif
 
 
+bool OpalEndPoint::Message(const PString & to, const PString & body)
+{
+  PURL from;
+  PString conversationId;
+  return Message(to, "text/plain", body, from, conversationId);
+}
+
+
+PBoolean OpalEndPoint::Message(
+  const PURL & /*to*/, 
+  const PString & /*type*/,
+  const PString & /*body*/,
+  PURL & /*from*/, 
+  PString & /*conversationId*/
+)
+{
+  return false;
+}
+
+void OpalEndPoint::OnMessageReceived(
+  const PURL & from, 
+  const PString & fromName,
+  const PURL & to, 
+  const PString & type,
+  const PString & body,
+  const PString & conversationId
+)
+{
+  manager.OnMessageReceived(from, fromName, to, type, body, conversationId);
+}
+
+
+
 /////////////////////////////////////////////////////////////////////////////

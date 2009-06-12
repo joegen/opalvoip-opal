@@ -89,10 +89,6 @@ class OpalSIPIMMediaSession : public OpalMediaSession
       PBoolean isSource
     );
 
-    virtual bool SendMessage(const PString & contentType, const PString & body);
-
-    virtual bool SendIM(const PString & contentType, const PString & body);
-
     virtual PString GetCallID() const { return callId; }
 
   protected:
@@ -100,52 +96,6 @@ class OpalSIPIMMediaSession : public OpalMediaSession
     PString localURL;
     PString remoteURL;
     PString callId;
-};
-
-////////////////////////////////////////////////////////////////////////////
-
-class OpalSIPIMMediaStream : public OpalIMMediaStream
-{
-  public:
-    OpalSIPIMMediaStream(
-      OpalConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      bool isSource,                       ///<  Is a source stream
-      OpalSIPIMMediaSession & imSession
-    );
-
-    ~OpalSIPIMMediaStream();
-
-    virtual bool Open();
-
-    /**Read raw media data from the source media stream.
-       The default behaviour reads from the PChannel object.
-      */
-    virtual PBoolean ReadData(
-      BYTE * data,      ///<  Data buffer to read to
-      PINDEX size,      ///<  Size of buffer
-      PINDEX & length   ///<  Length of data actually read
-    );
-
-    /**Write raw media data to the sink media stream.
-       The default behaviour writes to the PChannel object.
-      */
-    virtual PBoolean WriteData(
-      const BYTE * data,   ///<  Data to write
-      PINDEX length,       ///<  Length of data to read.
-      PINDEX & written     ///<  Length of data actually written
-    );
-
-    /**Close the media stream.
-
-       Closes the associated PChannel.
-      */
-    virtual PBoolean Close();
-  //@}
-
-  protected:
-    OpalSIPIMMediaSession & m_imSession;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -160,16 +110,9 @@ class OpalSIPIMManager : public PObject
     OpalSIPIMManager(SIPEndPoint & endpoint);
     void OnReceivedMessage(const SIP_PDU & pdu);
 
-    bool StartSession(OpalSIPIMMediaSession * mediaSession);
-
-    bool EndSession(OpalSIPIMMediaSession * mediaSession);
-
   protected:
     SIPEndPoint & m_endpoint;
     PMutex m_mutex;
-
-    typedef std::map<std::string, OpalSIPIMMediaSession *> IMSessionMapType;
-    IMSessionMapType m_imSessionMap;
 };
 
 

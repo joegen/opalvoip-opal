@@ -918,15 +918,20 @@ PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
 
 bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
 {
-  PString from = pdu.GetMIME().GetFrom();
-  PINDEX j = from.Find (';');
-  if (j != P_MAX_INDEX)
-    from = from.Left(j); // Remove all parameters
-  j = from.Find ('<');
-  if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
-    from += '>';
+  SIPMIMEInfo & mime = pdu.GetMIME();
+  SIPURL fromURL = mime.GetFrom();
+  PString fromName = fromURL.GetDisplayName();
+  fromURL.Sanitise(SIPURL::ExternalURI);
+  SIPURL toURL = mime.GetTo();
+  toURL.Sanitise(SIPURL::ExternalURI);
 
-  OnMessageReceived(from, pdu);
+  OnMessageReceived(fromURL,
+                    fromName,
+                    toURL, 
+                    mime.GetContentType(), 
+                    pdu.GetEntityBody(), 
+                    mime.GetCallID()
+                    );
   pdu.SendResponse(transport, SIP_PDU::Successful_OK, this);
   return true;
 }
@@ -1209,51 +1214,27 @@ bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const
   return atLeastOne;
 }
 
-PBoolean SIPEndPoint::Message(const PString & to, const PString & body)
+PBoolean SIPEndPoint::Message(const PURL & to, const PString & type, const PString & body, PURL & from, PString & conversationId)
 {
-  // Create the SIPHandler structure
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_MESSAGE, PSafeReadWrite);
+  if (conversationId.IsEmpty()) 
+    conversationId = SIPTransaction::GenerateCallID();
 
-  // Otherwise create a new request with this method type
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to.AsString(), SIP_PDU::Method_MESSAGE, PSafeReadWrite);
+
   if (handler != NULL)
     handler->SetBody(body);
   else {
-    handler = new SIPMessageHandler(*this, to, body, "", SIPTransaction::GenerateCallID());
+    PString toString = to.AsString();
+    handler = new SIPMessageHandler(*this, toString, body, toString, conversationId);
     activeSIPHandlers.Append(handler);
   }
 
-  return handler->ActivateState(SIPHandler::Subscribing);
-}
+  handler->m_mime.SetContentType(type);
+  if (!handler->ActivateState(SIPHandler::Subscribing))
+    return false;
 
-PBoolean SIPEndPoint::Message(const PString & to, const PString & body, const PString & remoteContact, const PString & callId)
-{
-  // Create the SIPHandler structure
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(callId, PSafeReadWrite);
-  
-  // Otherwise create a new request with this method type
-  if (handler != NULL)
-    handler->SetBody(body);
-  else {
-    handler = new SIPMessageHandler(*this, to, body, remoteContact, callId);
-    activeSIPHandlers.Append(handler);
-  }
-
-  return handler->ActivateState(SIPHandler::Subscribing);
-}
-
-
-void SIPEndPoint::OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu)
-{
-  OnMessageReceived(from, pdu.GetEntityBody());
-
-#if OPAL_HAS_SIPIM
-  m_sipIMManager.OnReceivedMessage(pdu);
-#endif
-}
-
-
-void SIPEndPoint::OnMessageReceived (const SIPURL & /*from*/, const PString & /*body*/)
-{
+  from = ((SIPMessageHandler *)&*handler)->m_localAddress;
+  return true;
 }
 
 
@@ -1425,14 +1406,18 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
   WORD myPort = GetDefaultSignalPort();
   OpalTransportAddressArray interfaces = GetInterfaceAddresses();
 
+  // find interface that matches transport address
   PIPSocket::Address transportAddress;
-  if (transport.GetLocalAddress().GetIpAddress(transportAddress)) {
+  WORD transportPort;
+  if (transport.GetLocalAddress().GetIpAndPort(transportAddress, transportPort)) {
     for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
       PIPSocket::Address interfaceAddress;
-      WORD interfacePort = myPort;
-      if (interfaces[i].GetIpAddress(interfaceAddress) && interfaceAddress == transportAddress) {
+      WORD interfacePort;
+      if (interfaces[i].GetIpAndPort(interfaceAddress, interfacePort) && 
+          interfaceAddress == transportAddress &&
+          interfacePort == transportPort) {
         myAddress = interfaceAddress;
-        myPort = interfacePort;
+        myPort    = interfacePort;
         break;
       }
     }
