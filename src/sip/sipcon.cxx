@@ -1161,6 +1161,13 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   needReINVITE = false;
   SIPTransaction * invite = new SIPInvite(*this, transport, OpalRTPSessionManager(*this));
 
+  SIPURL contact = invite->GetMIME().GetContact();
+  if (!number.IsEmpty())
+    contact.SetDisplayName(name);
+  if (!domain.IsEmpty())
+    contact.SetHostName(domain);
+  invite->GetMIME().SetContact(contact);
+
   invite->GetMIME().SetAlertInfo(m_alertInfo, m_appearanceCode);
 
   // It may happen that constructing the INVITE causes the connection
