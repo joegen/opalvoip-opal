@@ -69,6 +69,10 @@ void ConfOPAL::Main()
              "t-trace."
              "u-user:"
              "V-no-video."
+             "-rtp-base:"
+             "-rtp-max:"
+             "-rtp-tos:"
+             "-rtp-size:"
              , FALSE);
 
 #if PTRACING
@@ -102,6 +106,10 @@ void ConfOPAL::Main()
             "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
 #endif
             "  -N or --stun server     : Set NAT traversal STUN server.\n"
+            "        --rtp-base port   : Set RTP port range base, default 5000.\n"
+            "        --rtp-max port    : Set RTP port range maximum, default 5999.\n"
+            "        --rtp-tos tos     : Set RTP Type Of Service (DiffServ code).\n"
+            "        --rtp-size size   : Set RTP maximum payload size in bytes.\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -121,6 +129,14 @@ void ConfOPAL::Main()
       cout << " with address " << externalAddress;
     cout << endl;
   }
+
+  if (args.HasOption("rtp-base") || args.HasOption("rtp-max"))
+    m_manager->SetRtpIpPorts(args.GetOptionString("rtp-base", psprintf("%u", m_manager->GetRtpIpPortBase())).AsUnsigned(),
+                             args.GetOptionString("rtp-max").AsUnsigned());
+  if (args.HasOption("rtp-tos"))
+    m_manager->SetRtpIpTypeofService(args.GetOptionString("rtp-tos").AsUnsigned());
+  if (args.HasOption("rtp-size"))
+    m_manager->SetMaxRtpPayloadSize(args.GetOptionString("rtp-size").AsUnsigned());
 
   if (args.HasOption('u'))
     m_manager->SetDefaultUserName(args.GetOptionString('u'));
@@ -202,12 +218,29 @@ void ConfOPAL::Main()
   cli.SetCommand("conf remove", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfRemove),
                  "Remove conferance:",
                  "{ <name> | <guid> }");
+
+#if PTRACING
+  cli.SetCommand("trace", PCREATE_NOTIFIER(CmdTrace), "Set trace level (1..6) and filename", "<n> [ <filename> ]");
+#endif
   cli.SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),"Quit application");
 
   cli.Start(false); // Do not spawn thread, wait till end of input
 
   cout << "\nExiting ..." << endl;
 }
+
+
+#if PTRACING
+void ConfOPAL::CmdTrace(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() == 0)
+    args.WriteUsage();
+  else
+    PTrace::Initialise(args[0].AsUnsigned(),
+                       args.GetCount() > 1 ? (const char *)args[1] : NULL,
+                       PTrace::GetOptions());
+}
+#endif // PTRACING
 
 
 void ConfOPAL::CmdQuit(PCLI::Arguments & args, INT)
@@ -363,6 +396,10 @@ bool MyMixerConnection::SendUserInputString(const PString & value)
   else if (m_endpoint.GetModeratorPIN() == m_userInput) {
     m_userInput.MakeEmpty();
     SetListenOnly(false);
+    cout << "Connection " << GetToken() << ' '
+         << GetRemotePartyURL() << " \""
+         << GetRemotePartyName() << "\""
+            " promoted to moderator.";
   }
 
   return true;

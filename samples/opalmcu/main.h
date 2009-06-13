@@ -100,6 +100,7 @@ class ConfOPAL : public PProcess
     virtual void Main();
 
   private:
+    PDECLARE_NOTIFIER(PCLI::Arguments, ConfOPAL, CmdTrace);
     PDECLARE_NOTIFIER(PCLI::Arguments, ConfOPAL, CmdQuit);
 
     MyManager * m_manager;
