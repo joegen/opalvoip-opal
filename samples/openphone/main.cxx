@@ -466,9 +466,6 @@ void OpenPhoneApp::Main()
 
 bool OpenPhoneApp::OnInit()
 {
-  LoadLibrary(L"avcodec.dll");
-  LoadLibrary(L"avutil.dll");
-
   // make sure various URL types are registered to this application
   {
     PString urlTypes("sip\nh323\nsips\nh323s");
