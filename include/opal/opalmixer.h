@@ -234,6 +234,8 @@ class OpalAudioMixer : public OpalBaseMixer
     struct AudioStream : public Stream
     {
       AudioStream(OpalAudioMixer & mixer);
+      ~AudioStream();
+
       virtual void QueuePacket(const RTP_DataFrame & rtp);
       const short * GetAudioDataPtr();
 
