@@ -639,6 +639,9 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   if (!writeSuccessful)
     return false;
   
+  if (stream->IsPaused())
+    return true;
+
 #if OPAL_VIDEO
   if (rateController != NULL) {
     bool forceIFrame = false;
