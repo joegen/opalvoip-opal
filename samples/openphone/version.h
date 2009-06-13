@@ -39,7 +39,7 @@
 
 
 #define MAJOR_VERSION 3
-#define MINOR_VERSION 5
+#define MINOR_VERSION 7
 #define BUILD_TYPE    BetaCode
 #define BUILD_NUMBER 0
 
