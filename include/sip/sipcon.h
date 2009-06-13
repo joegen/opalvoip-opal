@@ -444,6 +444,8 @@ class SIPConnection : public OpalRTPConnection
     virtual void OnReceivedMESSAGE(SIP_PDU & pdu);
     virtual void OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu);
 
+    PString GetLocalPartyURL() const;
+
   protected:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);
@@ -538,8 +540,6 @@ class SIPConnection : public OpalRTPConnection
     } releaseMethod;
 
     OpalMediaFormatList remoteFormatList;
-
-    PString GetLocalPartyURL() const;
 
   protected:
     PTimer sessionTimer;
