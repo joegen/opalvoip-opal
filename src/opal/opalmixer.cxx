@@ -420,6 +420,12 @@ OpalAudioMixer::AudioStream::AudioStream(OpalAudioMixer & mixer)
 }
 
 
+OpalAudioMixer::AudioStream::~AudioStream()
+{
+  delete m_jitter;
+}
+
+
 void OpalAudioMixer::AudioStream::QueuePacket(const RTP_DataFrame & rtp)
 {
   if (m_jitter == NULL)
