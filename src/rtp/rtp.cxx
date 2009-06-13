@@ -68,7 +68,8 @@ RTP_DataFrame::RTP_DataFrame(PINDEX payloadSz, PINDEX bufferSz)
   : PBYTEArray(std::max(bufferSz, MinHeaderSize+payloadSz))
 {
   payloadSize = payloadSz;
-  theArray[0] = '\x80';
+  theArray[0] = '\x80'; // Default to version 2
+  theArray[1] = '\x7f'; // Default to MaxPayloadType
 }
 
 
