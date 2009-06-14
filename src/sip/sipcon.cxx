@@ -981,14 +981,10 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     }
   }
 
-  // After (possibly) closing streams, we now open them again if necessary
-  // OpenSourceMediaStreams will just return true if they are already open
-  if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0 &&
-      recvStream == NULL &&
-      ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId) &&
-      (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
-    newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
-
+  /* After (possibly) closing streams, we now open them again if necessary,
+     OpenSourceMediaStreams will just return true if they are already open.
+     We open tx (other party source) side first so we follow the remote
+     endpoints preferences. */
   PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
   if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0 &&
        otherParty != NULL &&
@@ -996,6 +992,12 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
        ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId) &&
        (sendStream = GetMediaStream(rtpSessionId, false)) != NULL)
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
+
+  if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0 &&
+      recvStream == NULL &&
+      ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId) &&
+      (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
+    newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
 
   if (newDirection == SDPMediaDescription::SendRecv) {
     // If we are sendrecv we will receive the same payload type as we transmit.
