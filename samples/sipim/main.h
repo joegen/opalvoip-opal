@@ -61,8 +61,13 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 
     virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
     virtual PBoolean OnShowOutgoing(const OpalPCSSConnection & connection);
-
-    PDECLARE_NOTIFIER(OpalConnection::IMInfo, MyPCSSEndPoint, OnReceiveIM);
+    void OnMessageReceived(
+      const PURL & from,
+      const PString & fromName,
+      const PURL & to,
+      const PString & type,
+      const PString & body,
+      const PString & conversationId);
 };
 
 class SipIM : public PProcess
