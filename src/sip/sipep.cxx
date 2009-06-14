@@ -1565,9 +1565,9 @@ void SIPEndPoint::SIP_Work_Thread::Main()
     m_workerMutex.Signal();
 
     // process the work
-    PTRACE(2, "SIP\tStarted processing PDU");
+    PTRACE(4, "SIP\tStarted processing PDU");
     work->Process();
-    PTRACE(2, "SIP\tFinished processing PDU");
+    PTRACE(4, "SIP\tFinished processing PDU");
 
     // indicate work is now free
     m_pool.RemoveWork(work, false);
@@ -1609,7 +1609,7 @@ void SIPEndPoint::SIP_PDU_Work::Process()
 
   if (m_pdu->GetMethod() == SIP_PDU::NumMethods) {
     PString transactionID = m_pdu->GetTransactionID();
-    PTRACE(4, "SIP\tHandling PDU \"" << *m_pdu << "\" for transaction=" << transactionID);
+    PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for transaction=" << transactionID);
     PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(transactionID, PSafeReference);
     if (transaction != NULL)
       transaction->OnReceivedResponse(*m_pdu);
@@ -1620,7 +1620,7 @@ void SIPEndPoint::SIP_PDU_Work::Process()
   }
 
   if (PAssert(!m_token.IsEmpty(), PInvalidParameter)) {
-    PTRACE(4, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
+    PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
     PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReference);
     if (connection != NULL) 
       connection->OnReceivedPDU(*m_pdu);
