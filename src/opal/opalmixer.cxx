@@ -119,18 +119,20 @@ bool OpalBaseMixer::WriteStream(const Key_T & key, const RTP_DataFrame & rtp)
   if (rtp.GetPayloadSize() == 0)
     return true;
 
-  PWaitAndSignal mutex(m_mutex);
-
-  StreamMap_T::iterator iter = m_inputStreams.find(key);
-  if (iter == m_inputStreams.end())
-    return true; // Yes, true, writing a stream not yet up is non-fatal
-
   RTP_DataFrame uniqueRTP = rtp;
   uniqueRTP.MakeUnique();
   if (uniqueRTP.IsEmpty())
     return false;
 
-  iter->second->QueuePacket(uniqueRTP);
+  m_mutex.Wait();
+
+  // Search for stream, note: writing a stream not yet attached is non-fatal
+  StreamMap_T::iterator iter = m_inputStreams.find(key);
+  if (iter != m_inputStreams.end())
+    iter->second->QueuePacket(uniqueRTP);
+
+  m_mutex.Signal();
+
   return true;
 }
 
@@ -168,7 +170,11 @@ void OpalBaseMixer::StartPushThread()
     PWaitAndSignal mutex(m_mutex);
     if (m_workerThread == NULL) {
       m_threadRunning = true;
-      m_workerThread = new PThreadObj<OpalBaseMixer>(*this, &OpalBaseMixer::PushThreadMain);
+      m_workerThread = new PThreadObj<OpalBaseMixer>(*this,
+                                                     &OpalBaseMixer::PushThreadMain,
+                                                     false,
+                                                     "OpalMixer",
+                                                     PThread::HighestPriority);
     }
   }
 }
@@ -291,6 +297,8 @@ bool OpalAudioMixer::SetSampleRate(unsigned rate)
   m_periodTS = m_periodMS*rate/1000;
   m_sampleRate = rate;
   m_mixedAudio.resize(m_periodTS);
+  for (StreamMap_T::iterator iter = m_inputStreams.begin(); iter != m_inputStreams.end(); ++iter)
+    ((AudioStream *)iter->second)->m_cacheSamples.SetSize(m_periodTS);
   return true;
 }
 
@@ -415,6 +423,7 @@ OpalAudioMixer::AudioStream::AudioStream(OpalAudioMixer & mixer)
   : m_mixer(mixer)
   , m_jitter(NULL)
   , m_nextTimestamp(0)
+  , m_cacheSamples(mixer.GetPeriodTS())
   , m_samplesUsed(0)
 {
 }
@@ -796,10 +805,10 @@ void OpalMixerConnection::OnReleased()
 
 OpalMediaFormatList OpalMixerConnection::GetMediaFormats() const
 {
-  OpalMediaFormatList list = OpalLocalConnection::GetMediaFormats();
+  OpalMediaFormatList list = OpalTranscoder::GetPossibleFormats(OpalPCM16);
 #if OPAL_VIDEO
-  if (m_node->GetNodeInfo().m_audioOnly)
-    list.Remove(PString("@video"));
+  if (!m_node->GetNodeInfo().m_audioOnly)
+    list += OpalTranscoder::GetPossibleFormats(OpalYUV420P);
 #endif
   return list;
 }
@@ -820,8 +829,14 @@ void OpalMixerConnection::SetListenOnly(bool listenOnly)
   m_listenOnly = listenOnly;
 
   for (PSafePtr<OpalMediaStream> mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    if (mediaStream->IsSink())
-      mediaStream->SetPaused(listenOnly);
+    OpalMixerMediaStream * mixerStream = dynamic_cast<OpalMixerMediaStream *>(&*mediaStream);
+    if (mixerStream != NULL && mixerStream->IsSink()) {
+      mixerStream->SetPaused(listenOnly);
+      if (listenOnly)
+        m_node->DetachStream(mixerStream);
+      else
+        m_node->AttachStream(mixerStream);
+    }
   }
 }
 
@@ -829,19 +844,34 @@ void OpalMixerConnection::SetListenOnly(bool listenOnly)
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMixerMediaStream::OpalMixerMediaStream(OpalMixerConnection & conn,
-                                         const OpalMediaFormat & mediaFormat,
+                                         const OpalMediaFormat & format,
                                                         unsigned sessionID,
                                                             bool isSource,
                                          PSafePtr<OpalMixerNode> node,
                                                             bool listenOnly)
-  : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
+  : OpalMediaStream(conn, format, sessionID, isSource)
   , m_node(node)
-  , m_rawAudio(0)
 #if OPAL_VIDEO
   , m_video(mediaFormat.GetMediaType() == OpalMediaType::Video())
 #endif
 {
-  paused = !isSource && listenOnly;
+  paused = IsSink() && listenOnly;
+
+  /* We are a bit sneaky here. OpalCall::OpenSourceMediaStream will have
+     selected the network codec (e.g. G.723.1) anbd passed it to us, but for
+     the case of incoming media to the mixer (sink), we switch it to the raw
+     codec type so the OpalPatch system creates the codec for us. With the
+     transmitter (source) we keep the required media format so the mixed data
+     thread can cache and optimise an encoded frame across multiple remote
+     connections. */
+  if (IsSink()) {
+#if OPAL_VIDEO
+    if (m_video)
+      mediaFormat = OpalYUV420P;
+    else
+#endif
+      mediaFormat = OpalPCM16;
+  }
 }
 
 
@@ -865,10 +895,9 @@ PBoolean OpalMixerMediaStream::Open()
     return false;
   }
 
-  if (isSource) {
-    if (!m_node->AttachStream(this))
-      return false;
-  }
+  if (!paused && !m_node->AttachStream(this))
+    return false;
+
   return OpalMediaStream::Open();
 }
 
@@ -878,8 +907,7 @@ PBoolean OpalMixerMediaStream::Close()
   if (!isOpen)
     return false;
 
-  if (isSource)
-    m_node->DetachStream(this);
+  m_node->DetachStream(this);
 
   return OpalMediaStream::Close();
 }
@@ -1007,17 +1035,20 @@ void OpalMixerNode::DetachConnection(OpalMixerConnection * connection)
 bool OpalMixerNode::AttachStream(OpalMixerMediaStream * stream)
 {
   PTRACE(4, "MixerNode\tAttaching " << stream->GetMediaFormat()
-         << " stream id " << stream->GetID() << " to " << m_guid);
+         << ' ' << (stream->IsSource() ? "source" : "sink")
+         << " stream with id " << stream->GetID() << " to " << m_guid);
 
 #if OPAL_VIDEO
   if (stream->GetMediaFormat().GetMediaType() == OpalMediaType::Video()) {
+    if (stream->IsSink())
+      return m_videoMixer.AddStream(stream->GetID());
     m_videoMixer.m_outputStreams.Append(stream);
-    return m_videoMixer.AddStream(stream->GetID());
+    return true;
   }
 #endif
 
-  if (!m_audioMixer.AddStream(stream->GetID()))
-    return false;
+  if (stream->IsSink())
+    return m_audioMixer.AddStream(stream->GetID());
 
   OpalConnection & connection = stream->GetConnection();
   m_audioMixer.SetJitterBufferSize(stream->GetID(),
@@ -1031,18 +1062,23 @@ bool OpalMixerNode::AttachStream(OpalMixerMediaStream * stream)
 void OpalMixerNode::DetachStream(OpalMixerMediaStream * stream)
 {
   PTRACE(4, "MixerNode\tDetaching " << stream->GetMediaFormat()
-         << " stream id " << stream->GetID() << " to " << m_guid);
+         << ' ' << (stream->IsSource() ? "source" : "sink")
+         << " stream with id " << stream->GetID() << " from " << m_guid);
 
 #if OPAL_VIDEO
   if (stream->GetMediaFormat().GetMediaType() == OpalMediaType::Video()) {
-    m_videoMixer.RemoveStream(stream->GetID());
-    m_videoMixer.m_outputStreams.Remove(stream);
+    if (stream->IsSource())
+      m_videoMixer.m_outputStreams.Remove(stream);
+    else
+      m_videoMixer.RemoveStream(stream->GetID());
     return;
   }
 #endif
 
-  m_audioMixer.RemoveStream(stream->GetID());
-  m_audioMixer.m_outputStreams.Remove(stream);
+  if (stream->IsSource())
+    m_audioMixer.m_outputStreams.Remove(stream);
+  else
+    m_audioMixer.RemoveStream(stream->GetID());
 }
 
 
@@ -1098,30 +1134,53 @@ OpalMixerNode::AudioMixer::~AudioMixer()
 }
 
 
-RTP_DataFrame * OpalMixerNode::AudioMixer::EncodeAudio(OpalMixerMediaStream & stream,
-                                                       RTP_DataFrame & rawAudio,
-                                                       RTP_DataFrame & encodedAudio)
+void OpalMixerNode::AudioMixer::PushOne(OpalMixerMediaStream & stream,
+                                        CachedAudio & cache,
+                                        const short * audioToSubtract)
 {
-  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+  switch (cache.m_state) {
+    case CachedAudio::Collecting :
+      MixAdditive(cache.m_raw, audioToSubtract);
+      cache.m_state = CachedAudio::Collected;
+      m_mutex.Signal();
+      break;
 
-  if (mediaFormat == OpalPCM16)
-    return rawAudio.GetPayloadSize() >= stream.GetDataSize() ? &rawAudio : NULL;
+    case CachedAudio::Collected :
+      m_mutex.Signal();
+      return;
 
-  OpalTranscoder & transcoder = GetTranscoder(OpalPCM16, mediaFormat);
-  if (rawAudio.GetPayloadSize() < transcoder.GetOptimalDataFrameSize(true))
-    return NULL;
-
-  if (encodedAudio.SetPayloadSize(transcoder.GetOptimalDataFrameSize(false)) &&
-      transcoder.Convert(rawAudio, encodedAudio)) {
-    encodedAudio.SetTimestamp(rawAudio.GetTimestamp());
-    rawAudio.SetPayloadSize(0);
-    return &encodedAudio;
+    case CachedAudio::Completed :
+      m_mutex.Signal();
+      stream.PushPacket(cache.m_encoded);
+      return;
   }
 
-  PTRACE(2, "MixerNode\tCould not convert audio to "
-         << mediaFormat << " for stream id " << stream.GetID());
-  stream.Close();
-  return NULL;
+  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+  if (mediaFormat == OpalPCM16) {
+    if (cache.m_raw.GetPayloadSize() < stream.GetDataSize())
+      return;
+
+    cache.m_state = CachedAudio::Completed;
+    stream.PushPacket(cache.m_raw);
+    return;
+  }
+
+  OpalTranscoder & transcoder = GetTranscoder(OpalPCM16, mediaFormat);
+  if (cache.m_raw.GetPayloadSize() < transcoder.GetOptimalDataFrameSize(true))
+    return;
+
+  if (cache.m_encoded.SetPayloadSize(transcoder.GetOptimalDataFrameSize(false)) &&
+      transcoder.Convert(cache.m_raw, cache.m_encoded)) {
+    cache.m_encoded.SetPayloadType(transcoder.GetPayloadType(false));
+    cache.m_encoded.SetTimestamp(cache.m_raw.GetTimestamp());
+    cache.m_state = CachedAudio::Completed;
+    stream.PushPacket(cache.m_encoded);
+  }
+  else {
+    PTRACE(2, "MixerNode\tCould not convert audio to "
+           << mediaFormat << " for stream id " << stream.GetID());
+    stream.Close();
+  }
 }
 
 
@@ -1131,50 +1190,37 @@ bool OpalMixerNode::AudioMixer::OnPush()
   PreMixStreams();
   m_mutex.Signal();
 
-  std::map<PString, RTP_DataFrame> cachedAudio;
-  RTP_DataFrame encodedStreamAudio;
-
   for (PSafePtr<OpalMixerMediaStream> stream = m_outputStreams; stream != NULL; ++stream) {
     OpalMediaFormat mediaFormat = stream->GetMediaFormat();
-    RTP_DataFrame * frameToPush = NULL;
 
-    m_mutex.Wait(); // Signal must be after MixAdditive in various paths below
+    m_mutex.Wait(); // Signal() call for this mutex is inside PushOne()
 
+    // Check for full participant, so can subtract their signal
     StreamMap_T::iterator inputStream = m_inputStreams.find(stream->GetID());
-    if (inputStream != m_inputStreams.end()) {
-      // Full participant, so have to subtract their signal
-      RTP_DataFrame & rawAudio = stream->GetRawAudio();
-      MixAdditive(rawAudio, &((AudioStream *)inputStream->second)->m_cacheSamples[0]);
-
-      m_mutex.Signal();
-
-      frameToPush = EncodeAudio(*stream, rawAudio, encodedStreamAudio);
-    }
+    if (inputStream != m_inputStreams.end())
+      PushOne(*stream, m_cache[stream->GetID()], ((AudioStream *)inputStream->second)->m_cacheSamples);
     else {
       // Listen only participant, can use cached encoded audio
       PString encodedFrameKey = mediaFormat;
-      encodedFrameKey.sprintf(":%u", mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1));
-
-      RTP_DataFrame & encodedAudio = cachedAudio[encodedFrameKey];
-      if (encodedAudio.GetPayloadSize() > 0) {
-        m_mutex.Signal();
-
-        frameToPush = &encodedAudio;
-      }
-      else {
-        RTP_DataFrame & rawAudio = m_rawAudio[encodedFrameKey];
-        MixAdditive(rawAudio, NULL);
-
-        m_mutex.Signal();
-
-        frameToPush = EncodeAudio(*stream, rawAudio, encodedAudio);
-      }
+      encodedFrameKey.sprintf(":%u", stream->GetDataSize());
+      PushOne(*stream, m_cache[encodedFrameKey], NULL);
     }
+  }
 
-    if (frameToPush != NULL) {
-      stream->PushPacket(*frameToPush);
-      if (frameToPush == &stream->GetRawAudio())
-        frameToPush->SetPayloadSize(0);
+  for (std::map<PString, CachedAudio>::iterator iterCache = m_cache.begin(); iterCache != m_cache.end(); ++iterCache) {
+    switch (iterCache->second.m_state) {
+      case CachedAudio::Collected :
+        iterCache->second.m_state = CachedAudio::Collecting;
+        break;
+
+      case CachedAudio::Completed :
+        iterCache->second.m_raw.SetPayloadSize(0);
+        iterCache->second.m_encoded.SetPayloadSize(0);
+        iterCache->second.m_state = CachedAudio::Collecting;
+        break;
+
+      default :
+        break;
     }
   }
 
