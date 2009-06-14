@@ -715,14 +715,13 @@ class OpalMixerMediaStream : public OpalMediaStream
 
   /**@name Member variable access */
   //@{
-    /**Get the raw audio accumulation buffer.
+    /**Get the mixer node for this stream.
      */
-    RTP_DataFrame & GetRawAudio() { return m_rawAudio; }
+    PSafePtr<OpalMixerNode> GetNode() { return m_node; }
   //@}
 
   protected:
     PSafePtr<OpalMixerNode> m_node;
-    RTP_DataFrame           m_rawAudio;
 #if OPAL_VIDEO
     bool m_video;
 #endif
@@ -866,12 +865,19 @@ class OpalMixerNode : public PSafeObject
 
       virtual bool OnPush();
 
-      RTP_DataFrame * EncodeAudio(
+      struct CachedAudio {
+        CachedAudio() : m_state(Collecting) { }
+        enum { Collecting, Collected, Completed } m_state;
+        RTP_DataFrame m_raw;
+        RTP_DataFrame m_encoded;
+      };
+      std::map<PString, CachedAudio> m_cache;
+
+      void PushOne(
         OpalMixerMediaStream & stream,
-        RTP_DataFrame & rawAudio,
-        RTP_DataFrame & encodedAudio
+        CachedAudio & cache,
+        const short * audioToSubtract
       );
-      std::map<PString, RTP_DataFrame> m_rawAudio;
     };
     AudioMixer m_audioMixer;
 
