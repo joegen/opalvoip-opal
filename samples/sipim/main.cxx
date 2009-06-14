@@ -160,6 +160,8 @@ void SipIM::Main()
 
   m_manager.m_connected.Wait();
 
+  RFC4103Context rfc4103(m_manager.m_imFormat);
+
   for (;;) {
     PThread::Sleep(1000);
     const char * textData = "Hello, world";
@@ -167,8 +169,11 @@ void SipIM::Main()
     PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_manager.m_callToken);
     if (call != NULL) {
       PSafePtr<OpalPCSSConnection> conn = call->GetConnectionAs<OpalPCSSConnection>();
-      if (conn != NULL)
-        conn->SendIM(m_manager.m_imFormat, T140String(textData));
+      if (conn != NULL) {
+        RTP_DataFrameList frameList = rfc4103.ConvertToFrames(textData);
+        for (PINDEX i = 0; i < frameList.GetSize(); ++i)
+          conn->TransmitInternalIM(m_manager.m_imFormat, frameList[i]);
+      }
     }
   }
 
@@ -197,8 +202,6 @@ PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
   mgr.m_connected.Signal();
   cout << "Incoming call connected" << endl;
 
-  ((OpalConnection &)connection).AddIMListener(PCREATE_NOTIFIER(OnReceiveIM));
-
   return PTrue;
 }
 
@@ -207,16 +210,21 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
   MyManager & mgr = (MyManager &)manager;
 
-  ((OpalConnection &)connection).AddIMListener(PCREATE_NOTIFIER(OnReceiveIM));
-
   cout << "Outgoing call connected" << endl;
   mgr.m_connected.Signal();
   return PTrue;
 }
 
-void MyPCSSEndPoint::OnReceiveIM(OpalConnection::IMInfo & im, INT)
+
+void MyPCSSEndPoint::OnMessageReceived(
+      const PURL & from,
+      const PString & fromName,
+      const PURL & to,
+      const PString & type,
+      const PString & body,
+      const PString & conversationId)
 {
-  cout << "Received IM: " << im.body << endl;
+  cout << "Received IM: " << body << endl;
 }
 
 
