@@ -391,10 +391,7 @@ void SIPConnection::OnReleased()
   // Wait until all INVITEs have completed
   for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
     PTRACE(4, "SIP\tAwaiting forked INVITE transaction completion.");
-    // only wait for forked INVITE to complete if it ever returned anything
-    // this avoid waiting for responses to CANCELs that will never arrive
-    if (invitation->IsProceeding())
-      invitation->WaitForCompletion();
+    invitation->WaitForCompletion();
   }
   forkedInvitations.RemoveAll();
 
@@ -1256,7 +1253,7 @@ PBoolean SIPConnection::SetUpConnection()
 
   if (deleteTransport)
     delete transport;
-  transport = endpoint.CreateTransport(transportAddress, m_connStringOptions(OPAL_OPT_INTERFACE));
+  transport = endpoint.CreateTransport(transportAddress);
   if (transport == NULL) {
     Release(EndedByUnreachable);
     return PFalse;
@@ -2885,19 +2882,6 @@ PString SIPConnection::GetLocalPartyURL() const
 {
   SIPURL url = m_dialog.GetLocalURI();
   url.Sanitise(SIPURL::ExternalURI);
-
-  PString number(m_connStringOptions(OPAL_OPT_CALLING_PARTY_NUMBER));
-  if (!number.IsEmpty())
-    url.SetUserName(number);
-
-  PString name(m_connStringOptions(OPAL_OPT_CALLING_PARTY_NAME));
-  if (!name.IsEmpty())
-    url.SetDisplayName(name);
-
-  PString domain(m_connStringOptions(OPAL_OPT_CALLING_PARTY_DOMAIN));
-  if (!domain.IsEmpty())
-    url.SetHostName(domain);
-
   return url.AsString();
 }
 

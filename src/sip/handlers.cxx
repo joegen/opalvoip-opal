@@ -1590,7 +1590,7 @@ SIPMessageHandler::SIPMessageHandler (SIPEndPoint & endpoint, const PString & to
 {
   body   = b;
   callID = id;
-//  SetState(Subscribed);
+  SetState(Subscribed);
 }
 
 
