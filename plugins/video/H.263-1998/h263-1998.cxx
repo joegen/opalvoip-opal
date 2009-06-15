@@ -103,6 +103,21 @@ static struct StdSizes {
 
 static FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H263P);
 
+#if HAVE_POSIX_MEMALIGN
+__inline unsigned char * malloc_aligned(size_t size)
+{
+  void * buffer;
+  if (posix_memalign(&buffer, 64, header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2)) != 0)
+    return NULL;
+  return (unsigned char *)buffer;
+}
+#else
+__inline unsigned char * malloc_aligned(size_t size)
+{
+  return (unsigned char *)malloc(size);
+}
+#endif
+
 static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg)
 {
   char buffer[512];
@@ -119,13 +134,10 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
     vsprintf(buffer + strlen(buffer), fmt, arg);
     if (strlen(buffer) > 0)
       buffer[strlen(buffer)-1] = 0;
-printf("%s\n", buffer);
-/*
-    if (severity = 4) 
+    if (severity == 4) 
       { TRACE_UP (severity, buffer); }
     else
       { TRACE (severity, buffer); }
-*/
   }
 }
 
@@ -656,12 +668,7 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
 
     if (_inputFrameBuffer != NULL)
       free(_inputFrameBuffer);
-#if HAVE_POSIX_MEMALIGN
-    if (posix_memalign((void **)&_inputFrameBuffer, 64, header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2)) != 0) 
-#else
-    if ((_inputFrameBuffer = (unsigned char *)malloc(header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2))) != NULL) 
-#endif
-    {
+    if ((_inputFrameBuffer = malloc_aligned(header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2))) == NULL) {
       TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for frame buffer");
       return 0;
     }
@@ -700,12 +707,7 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
   }
   if (packetizer.m_buffer == NULL) {
     packetizer.m_bufferSize = newOutputSize;
-#if HAVE_POSIX_MEMALIGN
-    if (posix_memalign((void **)&packetizer.m_buffer, 64, packetizer.m_bufferSize) != 0) 
-#else
-    if ((packetizer.m_buffer = (unsigned char *)malloc(packetizer.m_bufferSize)) != NULL) 
-#endif
-    {
+    if ((packetizer.m_buffer = malloc_aligned(packetizer.m_bufferSize)) == NULL) {
       TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for packet buffer");
       return 0;
     }
@@ -864,11 +866,7 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
     }
     if (_inputFrameBuffer != NULL)
       free(_inputFrameBuffer);
-#if HAVE_POSIX_MEMALIGN
-    if (posix_memalign((void **)&_inputFrameBuffer, 64, header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2)) != 0) {
-#else
-    if ((_inputFrameBuffer = (unsigned char *)malloc(header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2))) != NULL) {
-#endif
+    if ((_inputFrameBuffer = malloc_aligned(header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2))) == NULL) {
       TRACE_AND_LOG(tracer, 1, "Unable to allocate memory for frame buffer");
       return 0;
     }
