@@ -1590,23 +1590,15 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
 
 void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
-
   // Break out to virtual functions for some special cases.
   switch (response.GetStatusCode()) {
-    case SIP_PDU::Information_Trying :
-      OnReceivedTrying(response);
-      break;
-
     case SIP_PDU::Information_Ringing :
       OnReceivedRinging(response);
-      break;
+      return;
 
     case SIP_PDU::Information_Session_Progress :
       OnReceivedSessionProgress(response);
-      break;
+      return;
 
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
@@ -1614,29 +1606,29 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
         return;
       break;
 
-    case SIP_PDU::Redirection_MovedTemporarily :
-      OnReceivedRedirection(response);
-      break;
-
     default :
-      break;
-  }
+      switch (response.GetStatusCode()/100) {
+        case 1 : // Treat all other provisional responses like a Trying.
+          OnReceivedTrying(response);
+          return;
 
-  switch (response.GetStatusCode()/100) {
-    case 1 : // Do nothing for Provisional responses
-      return;
+        case 2 : // Successful response - there really is only 200 OK
+          OnReceivedOK(transaction, response);
+          return;
 
-    case 2 : // Successful response - there really is only 200 OK
-      OnReceivedOK(transaction, response);
-      return;
-
-    case 3 : // Redirection response
-      return;
+        case 3 : // Redirection response
+          OnReceivedRedirection(response);
+          return;
+      }
   }
 
   // We don't always release the connection, eg not till all forked invites have completed
   // This INVITE is from a different "dialog", any errors do not cause a release
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
+    return;
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
     return;
 
   // If we are doing a local hold, and it failed, we do not release the connection
@@ -1813,8 +1805,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     Release();
     return;
   }
-
-  NotifyDialogState(SIPDialogNotification::Proceeding);
 
   AnsweringCall(OnAnswerCall(remotePartyAddress));
 }
@@ -2036,8 +2026,15 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 }
 
 
-void SIPConnection::OnReceivedTrying(SIP_PDU & /*response*/)
+void SIPConnection::OnReceivedTrying(SIP_PDU & response)
 {
+  if (response.GetMethod() != SIP_PDU::Method_INVITE)
+    return;
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   PTRACE(3, "SIP\tReceived Trying response");
   NotifyDialogState(SIPDialogNotification::Proceeding);
 
@@ -2056,6 +2053,13 @@ void SIPConnection::OnStartTransaction(SIPTransaction & transaction)
 
 void SIPConnection::OnReceivedRinging(SIP_PDU & response)
 {
+  if (response.GetMethod() != SIP_PDU::Method_INVITE)
+    return;
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   PTRACE(3, "SIP\tReceived Ringing response");
 
   OnReceivedSDP(response);
@@ -2065,6 +2069,7 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & response)
   if (GetPhase() < AlertingPhase) {
     SetPhase(AlertingPhase);
     OnAlerting();
+    NotifyDialogState(SIPDialogNotification::Early);
   }
 
   PTRACE_IF(4, response.GetSDP() != NULL, "SIP\tStarting receive media to annunciate remote alerting tone");
@@ -2074,6 +2079,13 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & response)
 
 void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 {
+  if (response.GetMethod() != SIP_PDU::Method_INVITE)
+    return;
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   PTRACE(3, "SIP\tReceived Session Progress response");
 
   OnReceivedSDP(response);
@@ -2081,6 +2093,7 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
   if (GetPhase() < AlertingPhase) {
     SetPhase(AlertingPhase);
     OnAlerting();
+    NotifyDialogState(SIPDialogNotification::Early);
   }
 
   PTRACE(4, "SIP\tStarting receive media to annunciate remote progress tones");
@@ -2090,6 +2103,13 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
 void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
+  if (response.GetMethod() != SIP_PDU::Method_INVITE)
+    return;
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   PTRACE(4, "SIP\tReceived redirect");
   SIPURL whereTo = response.GetMIME().GetContact();
   endpoint.ForwardConnection(*this, whereTo.AsString());
@@ -2103,11 +2123,15 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 #if PTRACING
   const char * proxyTrace = isProxy ? "Proxy " : "";
 #endif
-  
+
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
     PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for non INVITE");
     return PFalse;
   }
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return false;
 
   PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response");
 
@@ -2175,6 +2199,23 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
 void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
+  switch (transaction.GetMethod()) {
+    case SIP_PDU::Method_INVITE :
+      break;
+
+    case SIP_PDU::Method_REFER :
+      if (response.GetMIME()("Refer-Sub") == "false")
+        referTransaction.SetNULL(); // Used RFC4488 to indicate we are NOT doing NOTIFYs
+      // Do next case
+
+    default :
+      return;
+  }
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   PTRACE(3, "SIP\tHandling " << response.GetStatusCode() << " response for " << transaction.GetMethod());
 
   // see if the contact address provided in the response changes the transport type
@@ -2188,19 +2229,6 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
         delete transport;
       transport = newTransport;
     }
-  }
-
-  switch (transaction.GetMethod()) {
-    case SIP_PDU::Method_INVITE :
-      break;
-
-    case SIP_PDU::Method_REFER :
-      if (response.GetMIME()("Refer-Sub") == "false")
-        referTransaction.SetNULL(); // Used RFC4488 to indicate we are NOT doing NOTIFYs
-      // Do next case
-
-    default :
-      return;
   }
 
   PTRACE(3, "SIP\tReceived INVITE OK response");
