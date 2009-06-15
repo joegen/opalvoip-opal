@@ -121,7 +121,7 @@ public:
   virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual void OnFailed(SIP_PDU::StatusCodes);
 
-  bool ActivateState(SIPHandler::State state);
+  bool ActivateState(SIPHandler::State state, unsigned msecs = 1000);
   virtual bool SendNotify(const PObject * /*body*/) { return false; }
 
   SIPEndPoint & GetEndPoint() const { return endpoint; }
