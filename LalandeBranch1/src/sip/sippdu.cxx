@@ -1226,20 +1226,28 @@ void SIPMIMEInfo::SetAlertInfo(const PString & info, int appearance)
 }
 
 
-static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & end)
+static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & val, PINDEX & end)
 {
   PINDEX semicolon = (PINDEX)-1;
   while ((semicolon = fieldValue.Find(';', semicolon+1)) != P_MAX_INDEX) {
-    start = fieldValue.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.!%*_+`'~", semicolon+1);
-    if (start > fieldValue.GetLength()) {
-      if (fieldValue(semicolon+1, start) *= paramName) {
-        end = start;
+    start = semicolon+1;
+    val = fieldValue.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.!%*_+`'~", semicolon+1);
+    if (val == P_MAX_INDEX) {
+      end = val;
+      if (fieldValue.Mid(start) *= paramName) {
+        return true;
+      }
+      break;
+    }
+    else if (fieldValue[val] != '=') {
+      if (fieldValue(start, val-1) *= paramName) {
+        end = val;
         return true;
       }
     }
-    else if ((fieldValue[start] == '=') && (fieldValue(semicolon+1, start-1) *= paramName)) {
-      start++;
-      end = fieldValue.FindOneOf("()<>@,;:\\\"/[]?{}= \t", start)-1;
+    else if ((fieldValue(start, val-1) *= paramName)) {
+      val++;
+      end = fieldValue.FindOneOf("()<>@,;:\\\"/[]?{}= \t", val)-1;
       return true;
     }
   }
@@ -1252,8 +1260,10 @@ PString SIPMIMEInfo::ExtractFieldParameter(const PString & fieldValue,
                                            const PString & paramName,
                                            const PString & defaultValue)
 {
-  PINDEX start, end;
-  return LocateFieldParameter(fieldValue, paramName, start, end) ? fieldValue(start, end) : defaultValue;
+  PINDEX start, val, end;
+  if (!LocateFieldParameter(fieldValue, paramName, start, val, end))
+    return PString::Empty();
+  return (val == end) ? defaultValue : fieldValue(val, end);
 }
 
 
@@ -1261,17 +1271,18 @@ PString SIPMIMEInfo::InsertFieldParameter(const PString & fieldValue,
                                           const PString & paramName,
                                           const PString & newValue)
 {
-
-  PINDEX start, end;
-  if (LocateFieldParameter(fieldValue, paramName, start, end)) {
-    if (start != end)
-      return fieldValue.Left(start) + newValue + fieldValue.Mid(end+1);
-    return fieldValue.Left(start) + "=" + newValue + fieldValue.Mid(end+1);
-  }
-
   PStringStream newField;
-  newField << fieldValue << ';' << paramName << '=' << newValue;
-  return newField;
+  newField << paramName;
+  if (!newValue.IsEmpty())
+    newField << '=' << newValue;
+
+  PINDEX start, val, end;
+  PString str;
+  if (!LocateFieldParameter(fieldValue, paramName, start, val, end)) 
+    str = fieldValue + ";" + newField;
+  else
+    str = fieldValue.Left(start) + newField + fieldValue.Mid(end+1);
+  return str;
 }
 
 
@@ -1900,7 +1911,8 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   if (viaList.GetSize() == 0)
     return;
 
-  PString via = viaList.front();
+  PString viaFront = viaList.front();
+  PString via = viaFront;
   PString port, ip;
   PINDEX j = 0;
   
@@ -1909,7 +1921,6 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   if ((j = via.Find (';')) != P_MAX_INDEX)
     via = via.Left(j);
   if ((j = via.Find (':')) != P_MAX_INDEX) {
-
     ip = via.Left(j);
     port = via.Mid(j+1);
   }
@@ -1920,20 +1931,23 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   PIPSocket::Address remoteIp;
   WORD remotePort;
   if (transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort)) {
-    PString rport = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "rport");
+    PString rport = SIPMIMEInfo::ExtractFieldParameter(viaFront, "rport");
     if (rport.IsEmpty()) {
       // fill in empty rport and received for RFC 3581
-      mime.SetFieldParameter("rport", viaList.front(), remotePort);
-      mime.SetFieldParameter("received", viaList.front(), remoteIp);
+      viaFront = SIPMIMEInfo::InsertFieldParameter(viaFront, "rport", remotePort);
+      viaFront = SIPMIMEInfo::InsertFieldParameter(viaFront, "received", remoteIp);
     }
-    else if (remoteIp != a ) // set received when remote transport address different from Via address
-      mime.SetFieldParameter("received", viaList.front(), remoteIp);
+    else if (remoteIp != a ) // set received when remote transport address different from Via address 
+    {
+      viaFront = SIPMIMEInfo::InsertFieldParameter(viaFront, "received", remoteIp);
+    }
   }
   else if (!a.IsValid()) {
     // Via address given has domain name
-    mime.SetFieldParameter("received", viaList.front(), via);
+    viaFront = SIPMIMEInfo::InsertFieldParameter(viaFront, "received", via);
   }
 
+  viaList.front() = viaFront;
   mime.SetViaList(viaList);
 }
 
@@ -1992,9 +2006,9 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
     WORD remotePort;
     transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort);
     {
-      PINDEX start, end;
-      if (LocateFieldParameter(viaList.front(), "rport", start, end)) {
-        param = viaList.front()(start, end);
+      PINDEX start, val, end;
+      if (LocateFieldParameter(viaList.front(), "rport", start, val, end)) {
+        param = viaList.front()(val, end);
         if (!param.IsEmpty()) 
           viaPort = param;
         else
