@@ -381,6 +381,8 @@ struct OpalMixerNodeInfo
 #endif
   { }
 
+  virtual ~OpalMixerNodeInfo() { }
+
   virtual OpalMixerNodeInfo * Clone() const { return new OpalMixerNodeInfo(*this); }
 
   PString  m_name;
