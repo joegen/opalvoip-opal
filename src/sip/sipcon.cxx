@@ -391,7 +391,10 @@ void SIPConnection::OnReleased()
   // Wait until all INVITEs have completed
   for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
     PTRACE(4, "SIP\tAwaiting forked INVITE transaction completion.");
-    invitation->WaitForCompletion();
+    // only wait for forked INVITE to complete if it ever returned anything
+    // this avoid waiting for responses to CANCELs that will never arrive
+    if (invitation->IsProceeding())
+      invitation->WaitForCompletion();
   }
   forkedInvitations.RemoveAll();
 
@@ -1253,7 +1256,7 @@ PBoolean SIPConnection::SetUpConnection()
 
   if (deleteTransport)
     delete transport;
-  transport = endpoint.CreateTransport(transportAddress);
+  transport = endpoint.CreateTransport(transportAddress, m_connStringOptions(OPAL_OPT_INTERFACE));
   if (transport == NULL) {
     Release(EndedByUnreachable);
     return PFalse;
