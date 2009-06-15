@@ -258,10 +258,24 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
 }
 
 
-bool SIPHandler::ActivateState(SIPHandler::State newState)
+bool SIPHandler::ActivateState(SIPHandler::State newState, unsigned msecs)
 {
-  PSafeLockReadWrite mutex(*this);
-  return mutex.IsLocked() && SendRequest(newState);
+  PTimer timer(msecs);
+  for (;;) {
+    {
+      PSafeLockReadWrite mutex(*this);
+      if (!mutex.IsLocked())
+        return false;
+
+      if (SendRequest(newState))
+        return true;
+    }
+
+    if (!timer.IsRunning())
+      return false;
+
+    PThread::Sleep(100);
+  }
 }
 
 
