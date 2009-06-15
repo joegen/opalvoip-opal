@@ -483,6 +483,8 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   PString token;
 
   // Adjust the Via list and send a trying in case it takes us a while to process request
+  pdu->AdjustVia(transport);
+
   switch (pdu->GetMethod()) {
     case SIP_PDU::Method_CANCEL :
       token = m_receivedConnectionTokens(mime.GetCallID());
@@ -516,7 +518,6 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       // Do next case
 
     case SIP_PDU::Method_ACK :
-      pdu->AdjustVia(transport);
       break;
 
     case SIP_PDU::NumMethods :
