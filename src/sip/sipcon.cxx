@@ -433,6 +433,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   }
 
   SetPhase(AlertingPhase);
+  NotifyDialogState(SIPDialogNotification::Early);
 
   return PTrue;
 }
