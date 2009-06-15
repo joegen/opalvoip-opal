@@ -103,20 +103,18 @@ static struct StdSizes {
 
 static FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H263P);
 
-#if HAVE_POSIX_MEMALIGN
 __inline unsigned char * malloc_aligned(size_t size)
 {
+#if HAVE_POSIX_MEMALIGN
   void * buffer;
-  if (posix_memalign(&buffer, 64, header->width*header->height*3/2 + (FF_INPUT_BUFFER_PADDING_SIZE*2)) != 0)
+  if (posix_memalign(&buffer, 64, size) != 0)
     return NULL;
   return (unsigned char *)buffer;
-}
 #else
-__inline unsigned char * malloc_aligned(size_t size)
-{
   return (unsigned char *)malloc(size);
-}
 #endif
+}
+
 
 static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg)
 {
