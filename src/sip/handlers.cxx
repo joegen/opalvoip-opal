@@ -1350,8 +1350,7 @@ PBoolean SIPNotifyHandler::SendRequest(SIPHandler::State state)
 
 bool SIPNotifyHandler::SendNotify(const PObject * body)
 {
-  PSafeLockReadWrite mutex(*this);
-  if (!mutex.IsLocked())
+  if (!LockReadWrite())
     return false;
 
   if (m_packageHandler != NULL)
@@ -1364,7 +1363,9 @@ bool SIPNotifyHandler::SendNotify(const PObject * body)
     SetBody(str);
   }
 
-  return SendRequest(Subscribing);
+  UnlockReadWrite();
+
+  return ActivateState(Subscribing, endpoint.GetNonInviteTimeout().GetInterval());
 }
 
 
