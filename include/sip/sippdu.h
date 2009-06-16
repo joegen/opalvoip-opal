@@ -743,6 +743,7 @@ class SIP_PDU : public PSafeObject
           SIPMIMEInfo & GetMIME()            { return mime; }
     void SetURI(const SIPURL & newuri)       { uri = newuri; }
     SDPSessionDescription * GetSDP();
+    void SetSDP(SDPSessionDescription * sdp);
 
   protected:
     Methods     method;                 // Request type, ==NumMethods for Response
@@ -946,6 +947,7 @@ class SIPInvite : public SIPTransaction
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
 
     const OpalRTPSessionManager & GetSessionManager() const { return rtpSessions; }
+          OpalRTPSessionManager & GetSessionManager()       { return rtpSessions; }
 
   protected:
     OpalRTPSessionManager rtpSessions;

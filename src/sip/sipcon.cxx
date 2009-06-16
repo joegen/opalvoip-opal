@@ -227,6 +227,9 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_holdToRemote(eHoldOff)
   , m_holdFromRemote(false)
   , originalInvite(NULL)
+  , originalInviteTime(0)
+  , m_sdpSessionId(PTime().GetTimeInSeconds())
+  , m_sdpVersion(0)
   , needReINVITE(false)
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , authentication(NULL)
@@ -463,7 +466,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   if (!withMedia) 
     SendInviteResponse(SIP_PDU::Information_Ringing);
   else {
-    SDPSessionDescription sdpOut(GetDefaultSDPConnectAddress());
+    SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
     if (!OnSendSDP(true, m_rtpSessions, sdpOut)) {
       Release(EndedByCapabilityExchange);
       return PFalse;
@@ -502,7 +505,7 @@ PBoolean SIPConnection::SetConnected()
   
   PTRACE(3, "SIP\tSetConnected");
 
-  SDPSessionDescription sdpOut(GetDefaultSDPConnectAddress());
+  SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
   if (!OnSendSDP(true, m_rtpSessions, sdpOut)) {
     Release(EndedByCapabilityExchange);
     return PFalse;
@@ -1263,6 +1266,8 @@ PBoolean SIPConnection::SetUpConnection()
     return PFalse;
   }
 
+  ++m_sdpVersion;
+
   bool ok;
   if (!transport->GetInterface().IsEmpty())
     ok = WriteINVITE(*transport);
@@ -1825,7 +1830,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   PTRACE(3, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
 
   remoteFormatList.RemoveAll();
-  SDPSessionDescription sdpOut(GetDefaultSDPConnectAddress());
+  SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
 
   // get the remote media formats, if any
   SDPSessionDescription * sdpIn = originalInvite->GetSDP();
@@ -2403,7 +2408,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
 }
 
 
-void SIPConnection::OnCreatingINVITE(SIP_PDU & request)
+void SIPConnection::OnCreatingINVITE(SIPInvite & request)
 {
   PTRACE(3, "SIP\tCreating INVITE request");
 
@@ -2420,9 +2425,18 @@ void SIPConnection::OnCreatingINVITE(SIP_PDU & request)
     }
   }
 
-  if (!request.GetSDP() || request.GetSDP()->GetMediaDescriptions().GetSize () == 0)
+  if (needReINVITE)
+    ++m_sdpVersion;
+
+  SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
+  if (OnSendSDP(false, request.GetSessionManager(), *sdp) && !sdp->GetMediaDescriptions().IsEmpty())
+    request.SetSDP(sdp);
+  else {
+    delete sdp;
     Release(EndedByCapabilityExchange);
+  }
 }
+
 
 PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
 {
