@@ -403,7 +403,7 @@ class SIPConnection : public OpalRTPConnection
   
     /**Handle a sending INVITE request
       */
-    virtual void OnCreatingINVITE(SIP_PDU & pdu);
+    virtual void OnCreatingINVITE(SIPInvite & pdu);
 
     /**Send a "200 OK" response for the received INVITE message.
      */
@@ -515,7 +515,8 @@ class SIPConnection : public OpalRTPConnection
 
     SIP_PDU             * originalInvite;
     PTime                 originalInviteTime;
-
+    time_t                m_sdpSessionId;
+    unsigned              m_sdpVersion; // Really a sequence number
     bool                  needReINVITE;
     SIPDialogContext      m_dialog;
     OpalGloballyUniqueID  m_dialogNotifyId;
@@ -545,6 +546,9 @@ class SIPConnection : public OpalRTPConnection
     PTimer sessionTimer;
   public:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
+
+  private:
+    P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));
 };
 
 
