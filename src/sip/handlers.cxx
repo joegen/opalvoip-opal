@@ -321,13 +321,13 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
         case Unavailable :
           break;  // Can do subscribe/refresh/restore
 
-        case Subscribing :
         case Refreshing :
         case Restoring :
           PTRACE(3, "SIP\tAlready doing " << state << " request for " << GetMethod()
                  << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
           return true; // Already doing it
 
+        case Subscribing :
         case Unsubscribing :
         case Unsubscribed :
           PTRACE(2, "SIP\tCan't send " << newState << " request for " << GetMethod()
