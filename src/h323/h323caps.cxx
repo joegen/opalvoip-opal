@@ -1291,6 +1291,7 @@ PBoolean H323ExtendedVideoCapability::OnSendingPDU(H245_VideoCapability & pdu, C
     if (videoFormat->GetMediaType() == OpalMediaType::Video()) {
       H323Capability * capability = H323Capability::Create(videoFormat->GetName());
       if (capability != NULL) {
+        capability->UpdateMediaFormat(*videoFormat);
         H245_Capability h245Cap;
         if (capability->OnSendingPDU(h245Cap)) {
           PINDEX size = extcap.m_videoCapability.GetSize();
