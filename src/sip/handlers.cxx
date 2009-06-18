@@ -260,7 +260,7 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
 
 bool SIPHandler::ActivateState(SIPHandler::State newState, unsigned msecs)
 {
-  PTimer timer(msecs);
+  PTimeInterval startTick = PTimer::Tick();
   for (;;) {
     {
       PSafeLockReadWrite mutex(*this);
@@ -271,7 +271,7 @@ bool SIPHandler::ActivateState(SIPHandler::State newState, unsigned msecs)
         return true;
     }
 
-    if (!timer.IsRunning())
+    if ((PTimer::Tick() - startTick) > msecs)
       return false;
 
     PThread::Sleep(100);
