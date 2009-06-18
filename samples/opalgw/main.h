@@ -78,6 +78,9 @@ class MyGatekeeperServer : public H323GatekeeperServer
 
     // new functions
     PBoolean Initialise(PConfig & cfg, PConfigPage * rsrc);
+    PBoolean OnPostControl(const PStringToString & data, PHTML & msg);
+    PString OnLoadEndPointStatus(const PString & htmlBlock);
+    PString OnLoadCallStatus(const PString & htmlBlock);
 
 #ifdef H323_TRANSNEXUS_OSP
     OpalOSP::Provider * GetOSPProvider() const
@@ -141,11 +144,6 @@ class MyManager : public OpalManager
     ~MyManager();
 
     PBoolean Initialise(PConfig & cfg, PConfigPage * rsrc);
-#if OPAL_H323
-    PBoolean OnPostControl(const PStringToString & data, PHTML & msg);
-    PString OnLoadEndPointStatus(const PString & htmlBlock);
-    PString OnLoadCallStatus(const PString & htmlBlock);
-#endif
 
   protected:
 #if OPAL_H323
@@ -179,8 +177,8 @@ class OpalGw : public OpalGwProcessAncestor
     virtual void OnConfigChanged();
     virtual PBoolean Initialise(const char * initMsg);
 
-    static OpalGw & Current() { return (OpalGw &)PProcess::Current(); }
 
+  protected:
     MyManager manager;
 };
 
@@ -192,16 +190,15 @@ class MainStatusPage : public PServiceHTTPString
   PCLASSINFO(MainStatusPage, PServiceHTTPString);
 
   public:
-    MainStatusPage(OpalGw & app, PHTTPAuthority & auth);
-    
+    MainStatusPage(OpalGw & app, MyGatekeeperServer & gk, PHTTPAuthority & auth);
+
     virtual PBoolean Post(
       PHTTPRequest & request,
       const PStringToString &,
       PHTML & msg
     );
   
-  private:
-    OpalGw & app;
+    MyGatekeeperServer & m_gkServer;
 };
 
 #endif // OPAL_H323

@@ -218,7 +218,7 @@ PBoolean OpalGw::Initialise(const char * initMsg)
 
 #if OPAL_H323
   // Create the status page
-  httpNameSpace.AddResource(new MainStatusPage(*this, authority), PHTTPSpace::Overwrite);
+  httpNameSpace.AddResource(new MainStatusPage(*this, *manager.gkServer, authority), PHTTPSpace::Overwrite);
 #endif // OPAL_H323
 
 
