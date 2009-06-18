@@ -514,12 +514,19 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
        This should create the new instance of the OpalMixerNode as required
        by the derived class, if any.
       */
-    OpalMixerNode * CreateNode(
+    virtual OpalMixerNode * CreateNode(
       OpalMixerNodeInfo * info ///< Initial info for node
     );
 
+    /**Get the first node.
+       The active nodes may be enumerated by the ++ operator on the PSafePtr.
+      */
+    PSafePtr<OpalMixerNode> GetFirstNode(
+      PSafetyMode mode = PSafeReference ///< Lock mode for returned pointer
+    ) const { return PSafePtr<OpalMixerNode>(m_nodesByUID, mode); }
+
     /**Find a new node.
-       This will search for the moxer node using GUID and then name.
+       This will search for the mixer node using GUID and then name.
       */
     PSafePtr<OpalMixerNode> FindNode(
       const PString & name,             ///< GUID or alias name for node
@@ -532,26 +539,45 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
     void RemoveNode(
       OpalMixerNode & node ///< Initial info for node
     );
+  //@}
 
+  /**@name Member variable access */
+  //@{
     /**Set default ad hoc node information.
+       The pointer is passed to the CreateNode() function, so may be a
+       reference to derived class, which a derived class of OpalMixerNode
+       could use.
+
+       Note if NULL, then ad hoc nodes are not created and incoming
+       connections are refused. A user must ex[icitly call AddNode() to create
+       a name that can be conected to.
+
+       The version that takes a reference will utilise the CLone() function
+       to create a copy of the mixer info.
       */
     void SetAdHocNodeInfo(
       const OpalMixerNodeInfo & info
-    ) { m_adHocNodeInfo = info; }
+    );
+    void SetAdHocNodeInfo(
+      OpalMixerNodeInfo * info
+    );
 
     /**Get default ad hoc mode information.
-       The reference returned from this function is passed to the CreateNode()
+       The pointer returned from this function is passed to the CreateNode()
        function, so may be a reference to derived class, which a derived class
        of OpalMixerNode could use.
 
+       Note if NULL, then ad hoc nodes are not created and incoming
+       connections are refused. A user must ex[icitly call AddNode() to create
+       a name that can be conected to.
+
        Default bahaviour returns member variable m_adHocNodeInfo.
       */
-    virtual const OpalMixerNodeInfo & GetAdHocNodeInfo() { return m_adHocNodeInfo; }
+    OpalMixerNodeInfo * GetAdHocNodeInfo() { return m_adHocNodeInfo; }
   //@}
 
   protected:
-    bool              m_createAdHoc;
-    OpalMixerNodeInfo m_adHocNodeInfo;
+    OpalMixerNodeInfo * m_adHocNodeInfo;
 
     PSafeDictionary<PGloballyUniqueID, OpalMixerNode> m_nodesByUID;
     PDictionary<PString, OpalMixerNode>               m_nodesByName;
@@ -643,6 +669,10 @@ class OpalMixerConnection : public OpalLocalConnection
     void SetListenOnly(
       bool listenOnly   ///< New listen only state.
     );
+
+    /**Get flag for this connection is in listen only mode.
+      */
+    bool GetListenOnly() const { return m_listenOnly; }
   //@}
 
   protected:
@@ -833,13 +863,26 @@ class OpalMixerNode : public PSafeObject
       const PString & name
     );
 
+    /**Get count of connections.
+       Note that as this value can change ata any moent, it is really not
+       that useful and should definitely not be used for enumeration of the
+       connections.
+      */
+    PINDEX GetConnectionCount() const { return m_connections.GetSize(); }
+
     /**Get first connection in the connections list.
       */
-    PSafePtr<OpalMixerConnection> GetFirstConnection() const { return m_connections; }
+    PSafePtr<OpalMixerConnection> GetFirstConnection(
+      PSafetyMode mode = PSafeReference
+    ) const { return PSafePtr<OpalMixerConnection>(m_connections, mode); }
 
     /**Get the raw audio accumulation buffer.
      */
     const OpalMixerNodeInfo & GetNodeInfo() { return *m_info; }
+
+    /**Get the creation time of the node.
+     */
+    const PTime & GetCreationTime() const { return m_creationTime; }
   //@}
 
   protected:
@@ -847,6 +890,7 @@ class OpalMixerNode : public PSafeObject
     PGloballyUniqueID   m_guid;
     PStringList         m_names;
     OpalMixerNodeInfo * m_info;
+    PTime               m_creationTime;
 
     PSafeList<OpalMixerConnection> m_connections;
 

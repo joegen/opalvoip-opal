@@ -673,7 +673,7 @@ void OpalVideoMixer::VideoStream::InsertVideoFrame(unsigned x, unsigned y, unsig
 
 OpalMixerEndPoint::OpalMixerEndPoint(OpalManager & manager, const char * prefix)
   : OpalLocalEndPoint(manager, prefix)
-  , m_createAdHoc(true)
+  , m_adHocNodeInfo(NULL)
 {
   m_nodesByName.DisallowDeleteObjects();
   PTRACE(4, "MixerEP\tConstructed");
@@ -706,12 +706,15 @@ PBoolean OpalMixerEndPoint::MakeConnection(OpalCall & call,
   PTRACE(4, "MixerEP\tMaking connection to \"" << party << '"');
 
   PString name = party.Mid(party.Find(':')+1);
-  if (name.IsEmpty() || name == "*")
-    name = GetAdHocNodeInfo().m_name;
+  if (name.IsEmpty() || name == "*") {
+    if (m_adHocNodeInfo == NULL)
+      return false;
+    name = m_adHocNodeInfo->m_name;
+  }
 
   PSafePtr<OpalMixerNode> node = FindNode(name);
-  if (node == NULL && m_createAdHoc) {
-    OpalMixerNodeInfo * info = GetAdHocNodeInfo().Clone();
+  if (node == NULL && m_adHocNodeInfo != NULL) {
+    OpalMixerNodeInfo * info = m_adHocNodeInfo->Clone();
     info->m_name = name;
     node = AddNode(info);
   }
@@ -769,6 +772,19 @@ void OpalMixerEndPoint::RemoveNode(OpalMixerNode & node)
 {
   node.ShutDown();
   m_nodesByUID.RemoveAt(node.GetGUID());
+}
+
+
+void OpalMixerEndPoint::SetAdHocNodeInfo(const OpalMixerNodeInfo & info)
+{
+  SetAdHocNodeInfo(info.Clone());
+}
+
+
+void OpalMixerEndPoint::SetAdHocNodeInfo(OpalMixerNodeInfo * info)
+{
+  delete m_adHocNodeInfo;
+  m_adHocNodeInfo = info;
 }
 
 
@@ -1190,7 +1206,7 @@ bool OpalMixerNode::AudioMixer::OnPush()
   PreMixStreams();
   m_mutex.Signal();
 
-  for (PSafePtr<OpalMixerMediaStream> stream = m_outputStreams; stream != NULL; ++stream) {
+  for (PSafePtr<OpalMixerMediaStream> stream(m_outputStreams, PSafeReadOnly); stream != NULL; ++stream) {
     OpalMediaFormat mediaFormat = stream->GetMediaFormat();
 
     m_mutex.Wait(); // Signal() call for this mutex is inside PushOne()
@@ -1249,7 +1265,7 @@ bool OpalMixerNode::VideoMixer::OnMixed(RTP_DataFrame * & output)
 {
   std::map<OpalMediaFormat, RTP_DataFrameList> cachedVideo;
 
-  for (PSafePtr<OpalMixerMediaStream> stream = m_outputStreams; stream != NULL; ++stream) {
+  for (PSafePtr<OpalMixerMediaStream> stream(m_outputStreams, PSafeReadOnly); stream != NULL; ++stream) {
     OpalMediaFormat mediaFormat = stream->GetMediaFormat();
     if (mediaFormat == OpalYUV420P)
       stream->PushPacket(*output);
