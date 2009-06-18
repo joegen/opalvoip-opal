@@ -69,9 +69,9 @@ static const char OSPServerKeyFileKey[] = "OSP Server Key";
 
 ///////////////////////////////////////////////////////////////
 
-MainStatusPage::MainStatusPage(OpalGw & _app, PHTTPAuthority & auth)
-  : PServiceHTTPString("Status", "", "text/html; charset=UTF-8", auth),
-    app(_app)
+MainStatusPage::MainStatusPage(OpalGw & app, MyGatekeeperServer & gk, PHTTPAuthority & auth)
+  : PServiceHTTPString("Status", "", "text/html; charset=UTF-8", auth)
+  , m_gkServer(gk)
 {
   PHTML html;
 
@@ -164,7 +164,7 @@ PBoolean MainStatusPage::Post(PHTTPRequest & request,
   msg << PHTML::Title() << "Accepted Control Command" << PHTML::Body()
       << PHTML::Heading(1) << "Accepted Control Command" << PHTML::Heading(1);
 
-  if (!app.manager.OnPostControl(data, msg))
+  if (!m_gkServer.OnPostControl(data, msg))
     msg << PHTML::Heading(2) << "No calls or endpoints!" << PHTML::Heading(2);
 
   msg << PHTML::Paragraph()
@@ -178,7 +178,7 @@ PBoolean MainStatusPage::Post(PHTTPRequest & request,
 }
 
 
-PBoolean MyManager::OnPostControl(const PStringToString & data, PHTML & msg)
+PBoolean MyGatekeeperServer::OnPostControl(const PStringToString & data, PHTML & msg)
 {
   bool gotOne = FALSE;
 
@@ -186,7 +186,7 @@ PBoolean MyManager::OnPostControl(const PStringToString & data, PHTML & msg)
     PString key = data.GetKeyAt(i);
     PString value = data.GetDataAt(i);
     if (value == "Unregister") {
-      PSafePtr<H323RegisteredEndPoint> ep = gkServer->FindEndPointByIdentifier(key);
+      PSafePtr<H323RegisteredEndPoint> ep = FindEndPointByIdentifier(key);
       if (ep != NULL) {
         msg << PHTML::Heading(2) << "Unregistered endpoint " << *ep << PHTML::Heading(2);
         ep->Unregister();
@@ -194,7 +194,7 @@ PBoolean MyManager::OnPostControl(const PStringToString & data, PHTML & msg)
       }
     }
     else if (value == "Clear") {
-      PSafePtr<H323GatekeeperCall> call = gkServer->FindCall(key);
+      PSafePtr<H323GatekeeperCall> call = FindCall(key);
       if (call != NULL) {
         msg << PHTML::Heading(2) << "Cleared call " << *call << PHTML::Heading(2);
         call->Disengage();
@@ -207,26 +207,16 @@ PBoolean MyManager::OnPostControl(const PStringToString & data, PHTML & msg)
 }
 
 
-static void SpliceMacro(PString & text, const PString & token, const PString & value)
-{
-  PRegularExpression RegEx("<?!--#status[ \t\r\n]+" + token + "[ \t\r\n]*-->?",
-                           PRegularExpression::Extended|PRegularExpression::IgnoreCase);
-  PINDEX pos, len;
-  while (text.FindRegEx(RegEx, pos, len))
-    text.Splice(value, pos, len);
-}
-
-
-PString MyManager::OnLoadEndPointStatus(const PString & htmlBlock)
+PString MyGatekeeperServer::OnLoadEndPointStatus(const PString & htmlBlock)
 {
   PINDEX i;
   PString substitution;
 
-  for (PSafePtr<H323RegisteredEndPoint> ep = gkServer->GetFirstEndPoint(PSafeReadOnly); ep != NULL; ep++) {
+  for (PSafePtr<H323RegisteredEndPoint> ep = GetFirstEndPoint(PSafeReadOnly); ep != NULL; ep++) {
     // make a copy of the repeating html chunk
     PString insert = htmlBlock;
 
-    SpliceMacro(insert, "EndPointIdentifier", ep->GetIdentifier());
+    PServiceHTML::SpliceMacro(insert, "status EndPointIdentifier", ep->GetIdentifier());
 
     PStringStream addresses;
     for (i = 0; i < ep->GetSignalAddressCount(); i++) {
@@ -234,7 +224,7 @@ PString MyManager::OnLoadEndPointStatus(const PString & htmlBlock)
         addresses << "<br>";
       addresses << ep->GetSignalAddress(i);
     }
-    SpliceMacro(insert, "CallSignalAddresses", addresses);
+    PServiceHTML::SpliceMacro(insert, "status CallSignalAddresses", addresses);
 
     PStringStream aliases;
     for (i = 0; i < ep->GetAliasCount(); i++) {
@@ -242,14 +232,14 @@ PString MyManager::OnLoadEndPointStatus(const PString & htmlBlock)
         aliases << "<br>";
       aliases << ep->GetAlias(i);
     }
-    SpliceMacro(insert, "EndPointAliases", aliases);
+    PServiceHTML::SpliceMacro(insert, "status EndPointAliases", aliases);
 
     PString str = "<i>Name:</i> " + ep->GetApplicationInfo();
     str.Replace("\t", "<BR><i>Version:</i> ");
     str.Replace("\t", " <i>Vendor:</i> ");
-    SpliceMacro(insert, "Application", str);
+    PServiceHTML::SpliceMacro(insert, "status Application", str);
 
-    SpliceMacro(insert, "ActiveCalls", ep->GetCallCount());
+    PServiceHTML::SpliceMacro(insert, "status ActiveCalls", ep->GetCallCount());
 
     // Then put it into the page, moving insertion point along after it.
     substitution += insert;
@@ -259,21 +249,21 @@ PString MyManager::OnLoadEndPointStatus(const PString & htmlBlock)
 }
 
 
-PString MyManager::OnLoadCallStatus(const PString & htmlBlock)
+PString MyGatekeeperServer::OnLoadCallStatus(const PString & htmlBlock)
 {
   PString substitution;
 
-  for (PSafePtr<H323GatekeeperCall> call = gkServer->GetFirstCall(PSafeReadOnly); call != NULL; call++) {
+  for (PSafePtr<H323GatekeeperCall> call = GetFirstCall(PSafeReadOnly); call != NULL; call++) {
     // make a copy of the repeating html chunk
     PString insert = htmlBlock;
 
-    SpliceMacro(insert, "CallIdentifier",     call->GetCallIdentifier().AsString());
-    SpliceMacro(insert, "EndPointIdentifier", call->GetEndPoint().GetIdentifier());
-    SpliceMacro(insert, "SourceAddress",      call->GetSourceAddress());
-    SpliceMacro(insert, "DestinationAddress", call->GetDestinationAddress());
-    SpliceMacro(insert, "LastIRR",            call->GetLastInfoResponseTime().AsString("hh:mm:ss"));
+    PServiceHTML::SpliceMacro(insert, "status CallIdentifier",     call->GetCallIdentifier().AsString());
+    PServiceHTML::SpliceMacro(insert, "status EndPointIdentifier", call->GetEndPoint().GetIdentifier());
+    PServiceHTML::SpliceMacro(insert, "status SourceAddress",      call->GetSourceAddress());
+    PServiceHTML::SpliceMacro(insert, "status DestinationAddress", call->GetDestinationAddress());
+    PServiceHTML::SpliceMacro(insert, "status LastIRR",            call->GetLastInfoResponseTime().AsString("hh:mm:ss"));
     if (call->GetConnectedTime().GetTimeInSeconds() != 0)
-      SpliceMacro(insert, "ConnectedTime",    call->GetConnectedTime().AsString("hh:mm:ss"));
+      PServiceHTML::SpliceMacro(insert, "status ConnectedTime",    call->GetConnectedTime().AsString("hh:mm:ss"));
 
     // Then put it into the page, moving insertion point along after it.
     substitution += insert;
@@ -283,15 +273,17 @@ PString MyManager::OnLoadCallStatus(const PString & htmlBlock)
 }
 
 
-PCREATE_SERVICE_MACRO_BLOCK(EndPointStatus,P_EMPTY,P_EMPTY,block)
+PCREATE_SERVICE_MACRO_BLOCK(EndPointStatus,resource,P_EMPTY,block)
 {
-  return OpalGw::Current().manager.OnLoadEndPointStatus(block);
+  MainStatusPage * status = dynamic_cast<MainStatusPage *>(resource.m_resource);
+  return PAssertNULL(status)->m_gkServer.OnLoadEndPointStatus(block);
 }
 
 
-PCREATE_SERVICE_MACRO_BLOCK(CallStatus,P_EMPTY,P_EMPTY,block)
+PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,block)
 {
-  return OpalGw::Current().manager.OnLoadCallStatus(block);
+  MainStatusPage * status = dynamic_cast<MainStatusPage *>(resource.m_resource);
+  return PAssertNULL(status)->m_gkServer.OnLoadCallStatus(block);
 }
 
 
