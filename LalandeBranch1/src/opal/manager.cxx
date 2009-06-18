@@ -365,14 +365,26 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
   // go through the routing engine via OnIncomingConnection. If we were the
   // B-Party then SetUpConnection() gets called in the context of the A-party
   // thread.
-  if (MakeConnection(*call, partyA, userData, options, stringOptions) && call->GetConnection(0)->SetUpConnection()) {
-    PTRACE(3, "OpalMan\tSetUpCall succeeded, call=" << *call);
-    return true;
+  bool r = MakeConnection(*call, partyA, userData, options, stringOptions);
+  PSafePtr<OpalConnection> connection = call->GetConnection(0);
+  OpalConnection::CallEndReason endReason = OpalConnection::NumCallEndReasons;
+
+  if (r) {
+    if (connection == NULL) {
+      PTRACE(3, "OpalMan\tSetUpCall failed because call was shutdown");
+      endReason = call->GetCallEndReason();
+    }
+    else if (connection->SetUpConnection()) {
+      PTRACE(3, "OpalMan\tSetUpCall succeeded, call=" << *call);
+      return true;
+    }
+    else 
+      endReason = connection->GetCallEndReason();
   }
 
-  PSafePtr<OpalConnection> connection = call->GetConnection(0);
-  OpalConnection::CallEndReason endReason = connection != NULL ? connection->GetCallEndReason() : OpalConnection::NumCallEndReasons;
-  call->Clear(endReason != OpalConnection::NumCallEndReasons ? endReason : OpalConnection::EndedByTemporaryFailure);
+  if (endReason == OpalConnection::NumCallEndReasons)
+    endReason = OpalConnection::EndedByTemporaryFailure;
+  call->Clear(endReason);
 
   token.MakeEmpty();
 
