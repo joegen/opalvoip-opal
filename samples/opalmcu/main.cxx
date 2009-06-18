@@ -267,13 +267,14 @@ MyMixerEndPoint::MyMixerEndPoint(OpalManager & manager, PArgList & args)
   : OpalMixerEndPoint(manager, "mcu")
   , m_moderatorPIN(args.GetOptionString('m'))
 {
-  m_adHocNodeInfo.m_name = args.GetOptionString('n', "room101");
-  m_adHocNodeInfo.m_listenOnly = !m_moderatorPIN.IsEmpty();
+  m_adHocNodeInfo = new OpalMixerNodeInfo;
+  m_adHocNodeInfo->m_name = args.GetOptionString('n', "room101");
+  m_adHocNodeInfo->m_listenOnly = !m_moderatorPIN.IsEmpty();
 
 #if OPAL_VIDEO
-  m_adHocNodeInfo.m_audioOnly = args.HasOption('V');
+  m_adHocNodeInfo->m_audioOnly = args.HasOption('V');
   if (args.HasOption('s'))
-    PVideoFrameInfo::ParseSize(args.GetOptionString('s'), m_adHocNodeInfo.m_width, m_adHocNodeInfo.m_height);
+    PVideoFrameInfo::ParseSize(args.GetOptionString('s'), m_adHocNodeInfo->m_width, m_adHocNodeInfo->m_height);
 #endif
 }
 
