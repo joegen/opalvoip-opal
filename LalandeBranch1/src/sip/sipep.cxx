@@ -526,7 +526,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       break;
 
     case SIP_PDU::NumMethods :
-      AddWork(new SIP_PDU_Work(*this, token, pdu));
+      AddWork(new SIPResponseWork(*this, pdu->GetTransactionID(), pdu));
       return true;
   }
 
@@ -541,10 +541,10 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   return true;
 }
 
-void SIPEndPoint::AddWork(SIP_PDU_Work * work)
+void SIPEndPoint::AddWork(SIP_Work * work)
 {
 #if SIP_THREAD_POOL
-  threadPool.AddWork(work, work->m_token);
+  work->Add(this->threadPool);
 #else
   PTRACE(2, "SIP\tStarted processing PDU");
   work->OnReceivedPDU();
@@ -557,9 +557,10 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
 {
   if (pdu->GetMethod() == SIP_PDU::NumMethods || pdu->GetMethod() == SIP_PDU::Method_CANCEL) {
     PSafePtr<SIPTransaction> transaction = GetTransaction(pdu->GetTransactionID(), PSafeReference);
-    if (transaction != NULL)
-      transaction->OnReceivedResponse(*pdu);
-    return false;
+    if (transaction == NULL)
+      return false;
+    AddWork(new SIPEndPoint::SIPResponseWork(*this, pdu->GetTransactionID(), pdu));
+    return true;
   }
 
   // Prevent any new INVITE/SUBSCRIBE etc etc while we are on the way out.
@@ -1555,7 +1556,7 @@ unsigned SIPEndPoint::SIP_PDU_Thread::GetWorkSize() const
 }
 
 
-void SIPEndPoint::SIP_PDU_Thread::AddWork(SIP_PDU_Work * work)
+void SIPEndPoint::SIP_PDU_Thread::AddWork(SIP_Work * work)
 {
   PWaitAndSignal m(m_workerMutex);
   m_pduQueue.push(work);
@@ -1564,7 +1565,7 @@ void SIPEndPoint::SIP_PDU_Thread::AddWork(SIP_PDU_Work * work)
 }
 
 
-void SIPEndPoint::SIP_PDU_Thread::RemoveWork(SIP_PDU_Work *)
+void SIPEndPoint::SIP_PDU_Thread::RemoveWork(SIP_Work *)
 {
 }
 
@@ -1589,13 +1590,13 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
     }
 
     // get the work
-    SIP_PDU_Work * work = m_pduQueue.front();
+    SIP_Work * work = m_pduQueue.front();
     m_pduQueue.pop();
     m_workerMutex.Signal();
 
     // process the work
     PTRACE(2, "SIP\tStarted processing PDU");
-    work->OnReceivedPDU();
+    work->Process();
     PTRACE(2, "SIP\tFinished processing PDU");
 
     // indicate work is now free
@@ -1606,21 +1607,32 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
   }
 }
 
-SIPEndPoint::SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu)
+SIPEndPoint::SIP_Work::SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu)
   : m_endpoint(ep)
-  , m_token(token)
   , m_pdu(pdu)
 {
 }
 
 
-SIPEndPoint::SIP_PDU_Work::~SIP_PDU_Work()
+SIPEndPoint::SIP_Work::~SIP_Work()
 {
   delete m_pdu;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 
-void SIPEndPoint::SIP_PDU_Work::OnReceivedPDU()
+SIPEndPoint::SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu)
+  : SIP_Work(ep, pdu), m_token(token)
+{
+}
+
+void SIPEndPoint::SIP_PDU_Work::Add(SIPEndPoint::PDUThreadPool & pool)
+{
+PTRACE(4, "SIP\tAllocating PDU work by group ID '" << m_token << "'");
+  pool.AddWork(this, m_token);
+}
+
+void SIPEndPoint::SIP_PDU_Work::Process()
 {
   if (PAssertNULL(m_pdu) == NULL)
     return;
@@ -1648,6 +1660,26 @@ void SIPEndPoint::SIP_PDU_Work::OnReceivedPDU()
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+SIPEndPoint::SIPResponseWork::SIPResponseWork(SIPEndPoint & ep, const PString & transactionID, SIP_PDU * pdu)
+  : SIP_Work(ep, pdu), m_transactionID(transactionID)
+{ }
+
+void SIPEndPoint::SIPResponseWork::Add(SIPEndPoint::PDUThreadPool & pool)
+{
+PTRACE(4, "SIP\tAllocating response work");
+  pool.AddWork(this, m_transactionID);
+}
+
+void SIPEndPoint::SIPResponseWork::Process()
+{ 
+  PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(m_transactionID, PSafeReference);
+  if (transaction != NULL)
+    transaction->OnReceivedResponse(*m_pdu); 
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 SIPEndPoint::InterfaceMonitor::InterfaceMonitor(SIPEndPoint & ep, PINDEX priority)
   : PInterfaceMonitorClient(priority) 
