@@ -387,7 +387,8 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
       PTRACE(3, "OpalMan\tSetUpCall succeeded, call=" << *call);
       return true;
     }
-    endReason = connection->GetCallEndReason();
+    else 
+      endReason = connection->GetCallEndReason();
   }
 
   if (endReason == OpalConnection::NumCallEndReasons)
