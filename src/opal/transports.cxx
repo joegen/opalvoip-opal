@@ -295,29 +295,72 @@ PBoolean OpalInternalTransport::GetIpAndPort(const OpalTransportAddress &,
 static PBoolean SplitAddress(const PString & addr, PString & host, PString & device, PString & service)
 {
   // skip transport identifier
-  PINDEX dollar = addr.Find('$');
-  if (dollar == P_MAX_INDEX)
+  PINDEX i = addr.Find('$');
+  if (i == P_MAX_INDEX) {
+    //PTRACE(1, "Address " << addr << " has no dollar");
     return false;
+  }
+
+  host.MakeEmpty();
+  device.MakeEmpty();
+  service.MakeEmpty();
+
+  PINDEX j = ++i;
+
+  // parse interface/host
+  bool isInterface = (addr[j] == '%') || (addr[j] == '[' && addr[j+1] == '%');
+
+  if (j == '\0') {
+    //PTRACE(1, "Address " << addr << " has empty host");
+    return false;
+  }
+  i = j;
+  bool bracketed = addr[j] == '[';
+  for (;;) {
+    if (addr[j] == '\0')
+      break;
+    if (!bracketed) {
+      if (addr[j] == ':')
+        break;
+    } else if (addr[j] == ']') {
+      ++j;
+      break;
+    }
+    j++;
+  }
+  if (i == j) {
+    //PTRACE(1, "Address " << addr << " has invalid host " << i);
+    return false;
+  }
+
+  if (!isInterface)
+    host = addr(i, j-1);
+  else {
+    if (addr[i] == '[' && addr[i+1] == '%') {
+      device = '%';
+      device += addr(i+2, j-2);
+    }
+    else
+      device = addr(i, j-1);
+  }
   
-  PINDEX length = addr.GetLength();
-  if (addr[length-1] == '+')
-    length--;
+  // parse optional service
+  if (addr[j] == ':') {
+    i = ++j;
+    for (;;) {
+      if (addr[j] == '\0')
+        break;
+      j++;
+    }
+    // cannot have zero length service
+    if (i == j) {
+      //PTRACE(1, "Address " << addr << " has invalid service " << i << " " << j);
+      return false;
+    }
+    service = addr(i, j-1);
+  }
 
-  PINDEX bracket = addr.FindLast(']');
-  if (bracket == P_MAX_INDEX)
-    bracket = 0;
-
-  PINDEX colon = addr.FindLast(':');
-  if (colon == P_MAX_INDEX || colon < bracket)
-    colon = length;
-
-  PINDEX percent = addr.Find('%', dollar);
-  if (percent == P_MAX_INDEX)
-    percent = colon;
-
-  host = addr(dollar+1, percent-1);
-  device = addr(percent, colon - (bracket ? 2 : 1));
-  service = addr(colon+1, length-1);
+  //PTRACE(1, "Split " << addr << " into host='" << host << "',dev='" << device << "',service='" << service << "'");
 
   return true;
 }
