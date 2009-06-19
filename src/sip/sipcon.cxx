@@ -2018,7 +2018,7 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 }
 
 
-void SIPConnection::OnReceivedTrying(SIPTransaction & transaction, SIP_PDU & response)
+void SIPConnection::OnReceivedTrying(SIPTransaction & transaction, SIP_PDU & /*response*/)
 {
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
     return;
