@@ -940,7 +940,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
 class SIPMwiEventPackageHandler : public SIPEventPackageHandler
 {
-  virtual PString GetContentType() const
+  virtual PCaselessString GetContentType() const
   {
     return "application/simple-message-summary";
   }
@@ -994,7 +994,7 @@ static SIPEventPackageFactory::Worker<SIPMwiEventPackageHandler> mwiEventPackage
 
 class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
 {
-  virtual PString GetContentType() const
+  virtual PCaselessString GetContentType() const
   {
     return "application/pidf+xml";
   }
@@ -1166,7 +1166,7 @@ public:
   {
   }
 
-  virtual PString GetContentType() const
+  virtual PCaselessString GetContentType() const
   {
     return "application/dialog-info+xml";
   }
