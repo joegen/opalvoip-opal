@@ -35,6 +35,7 @@
 #include <sip/sip.h>
 
 #include <opal/localep.h>
+#include <opal/buildopts.h>
 
 
 // End of File ///////////////////////////////////////////////////////////////
