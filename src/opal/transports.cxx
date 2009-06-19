@@ -316,7 +316,7 @@ static PBoolean SplitAddress(const PString & addr, PString & host, PString & dev
     percent = colon;
 
   host = addr(dollar+1, percent-1);
-  device = addr(percent, colon-1);
+  device = addr(percent, colon - (bracket ? 2 : 1));
   service = addr(colon+1, length-1);
 
   return true;
