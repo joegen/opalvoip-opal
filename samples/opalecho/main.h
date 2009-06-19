@@ -27,6 +27,14 @@
 #ifndef _OpalEcho_MAIN_H
 #define _OpalEcho_MAIN_H
 
+#define	NEW_API		((OPAL_MAJOR >=3) && (OPAL_MINOR >= 7))
+
+#if NEW_API
+#warning "using new api"
+#else
+#warning "using old api"
+#endif
+
 class EchoConnection;
 
 class EchoEndPoint : public OpalLocalEndPoint
@@ -41,7 +49,7 @@ class EchoEndPoint : public OpalLocalEndPoint
       OpalCall & call,    ///<  Owner of connection
       void * userData     ///<  Arbitrary data to pass to connection
 #if NEW_API
-'
+      ,
       unsigned options,
       OpalConnection::StringOptions * stringOptions
 #endif

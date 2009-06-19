@@ -28,9 +28,6 @@
 #include "main.h"
 #include "custom.h"
 
-#define	NEW_API		((OPAL_MAJOR >=3) && (OPAL_MINOR >= 7))
-
-
 
 PCREATE_PROCESS(OpalEcho);
 
@@ -93,10 +90,10 @@ class EchoConnection : public OpalLocalConnection
       { }
 
       PAdaptiveDelay m_readDelay;
+      bool m_hasBeenOpen;
       RTP_DataFrame m_data;
       PSyncPoint m_readSync;
       PSyncPointAck m_writeSync;
-      bool m_hasBeenOpen;
     };
 
     typedef std::map<std::string, MediaInfo> MediaMapType;
@@ -417,7 +414,11 @@ EchoConnection::EchoConnection(OpalCall & call,
           OpalConnection::StringOptions * stringOptions
 #endif
 )
-  : OpalLocalConnection(call, endpoint, userData /*, options, stringOptions*/)
+  : OpalLocalConnection(call, endpoint, userData
+#if NEW_API
+, options, stringOptions
+#endif
+)
   , m_endpoint(endpoint)
 {
 }
