@@ -371,7 +371,10 @@ class SIPConnection : public OpalRTPConnection
 
     /**Handle an incoming Trying response PDU
       */
-    virtual void OnReceivedTrying(SIP_PDU & pdu);
+    virtual void OnReceivedTrying(
+      SIPTransaction & transaction,
+      SIP_PDU & response
+    );
   
     /**Handle an incoming Ringing response PDU
       */
@@ -549,6 +552,7 @@ class SIPConnection : public OpalRTPConnection
 
   private:
     P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));
+    P_REMOVE_VIRTUAL_VOID(OnReceivedTrying(SIP_PDU &));
 };
 
 

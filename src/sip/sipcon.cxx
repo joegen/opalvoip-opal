@@ -1572,11 +1572,13 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   // Break out to virtual functions for some special cases.
   switch (response.GetStatusCode()) {
     case SIP_PDU::Information_Ringing :
-      OnReceivedRinging(response);
+      if (transaction.GetMethod() == SIP_PDU::Method_INVITE)
+        OnReceivedRinging(response);
       return;
 
     case SIP_PDU::Information_Session_Progress :
-      OnReceivedSessionProgress(response);
+      if (transaction.GetMethod() == SIP_PDU::Method_INVITE)
+        OnReceivedSessionProgress(response);
       return;
 
     case SIP_PDU::Failure_UnAuthorised :
@@ -1588,7 +1590,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     default :
       switch (response.GetStatusCode()/100) {
         case 1 : // Treat all other provisional responses like a Trying.
-          OnReceivedTrying(response);
+          OnReceivedTrying(transaction, response);
           return;
 
         case 2 : // Successful response - there really is only 200 OK
@@ -1596,7 +1598,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           return;
 
         case 3 : // Redirection response
-          OnReceivedRedirection(response);
+          if (transaction.GetMethod() == SIP_PDU::Method_INVITE)
+            OnReceivedRedirection(response);
           return;
       }
   }
@@ -2015,9 +2018,9 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 }
 
 
-void SIPConnection::OnReceivedTrying(SIP_PDU & response)
+void SIPConnection::OnReceivedTrying(SIPTransaction & transaction, SIP_PDU & response)
 {
-  if (response.GetMethod() != SIP_PDU::Method_INVITE)
+  if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
     return;
 
   PSafeLockReadWrite lock(*this);
@@ -2042,9 +2045,6 @@ void SIPConnection::OnStartTransaction(SIPTransaction & transaction)
 
 void SIPConnection::OnReceivedRinging(SIP_PDU & response)
 {
-  if (response.GetMethod() != SIP_PDU::Method_INVITE)
-    return;
-
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return;
@@ -2068,9 +2068,6 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & response)
 
 void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 {
-  if (response.GetMethod() != SIP_PDU::Method_INVITE)
-    return;
-
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return;
@@ -2092,9 +2089,6 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
 void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
-  if (response.GetMethod() != SIP_PDU::Method_INVITE)
-    return;
-
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return;
