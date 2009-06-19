@@ -30,9 +30,17 @@
 #define	NEW_API		((OPAL_MAJOR >=3) && (OPAL_MINOR >= 7))
 
 #if NEW_API
-#warning "using new api"
+  #ifdef __GNUC__
+    #warning "using new api"
+  #else
+    #pragma message("using new api")
+  #endif
 #else
-#warning "using old api"
+  #ifdef __GNUC__
+    #warning "using new api"
+  #else
+    #pragma message("using old api")
+  #endif
 #endif
 
 class EchoConnection;
