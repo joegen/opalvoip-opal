@@ -483,8 +483,6 @@ class H323GenericCapabilityInfo
       const PString & id,     ///< generic codec identifier
       unsigned maxBitRate = 0   ///< maxBitRate parameter for the GenericCapability
     );
-    H323GenericCapabilityInfo(const H323GenericCapabilityInfo & obj);
-    virtual ~H323GenericCapabilityInfo();
 
   protected:
     virtual PBoolean OnSendingGenericPDU(
@@ -506,8 +504,8 @@ class H323GenericCapabilityInfo
     ) const;
 
 
-    H245_CapabilityIdentifier * identifier;
-    unsigned                    maxBitRate;
+    PString  m_identifier;
+    unsigned maxBitRate;
 };
 
 /**This class describes the interface to a codec that has channels based on
@@ -1286,7 +1284,7 @@ class H323GenericVideoCapability : public H323VideoCapability,
 };
 
 
-#ifdef OPAL_H239
+#if OPAL_H239
 
 /**This class descibes an extended ideo capability, as used in H.239.
   */

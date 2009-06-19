@@ -70,6 +70,10 @@
 
 const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
 
+#if OPAL_H239
+static const PString & H239MessageOID = "0.0.8.239.2";
+#endif
+
 #define new PNEW
 
 
@@ -174,7 +178,7 @@ H323Connection::H323Connection(OpalCall & call,
   : OpalRTPConnection(call, ep, token, options, stringOptions)
   , endpoint(ep)
   , gkAccessTokenOID(ep.GetGkAccessTokenOID())
-#ifdef OPAL_H239
+#if OPAL_H239
   , m_h239Control(ep.GetDefaultH239Control())
 #endif
 #if OPAL_H460
@@ -2790,6 +2794,15 @@ PBoolean H323Connection::OnH245Request(const H323ControlPDU & pdu)
 
     case H245_RequestMessage::e_roundTripDelayRequest :
       return roundTripDelayProcedure->HandleRequest(request);
+
+#if OPAL_H239
+    case H245_RequestMessage::e_genericRequest :
+    {
+      const H245_GenericMessage & gen = request;
+      if (H323GetCapabilityIdentifier(gen.m_messageIdentifier) == H239MessageOID)
+        return OnH239Message(gen.m_subMessageIdentifier, gen.m_messageContent);
+    }
+#endif
   }
 
   return OnUnknownControlPDU(pdu);
@@ -2836,6 +2849,15 @@ PBoolean H323Connection::OnH245Response(const H323ControlPDU & pdu)
 
     case H245_ResponseMessage::e_roundTripDelayResponse :
       return roundTripDelayProcedure->HandleResponse(response);
+
+#if OPAL_H239
+    case H245_ResponseMessage::e_genericResponse :
+    {
+      const H245_GenericMessage & gen = response;
+      if (H323GetCapabilityIdentifier(gen.m_messageIdentifier) == H239MessageOID)
+        return OnH239Message(gen.m_subMessageIdentifier, gen.m_messageContent);
+    }
+#endif
   }
 
   return OnUnknownControlPDU(pdu);
@@ -2870,6 +2892,15 @@ PBoolean H323Connection::OnH245Command(const H323ControlPDU & pdu)
           Release(EndedByRefusal);
       }
       return PFalse;
+
+#if OPAL_H239
+    case H245_CommandMessage::e_genericCommand :
+    {
+      const H245_GenericMessage & gen = command;
+      if (H323GetCapabilityIdentifier(gen.m_messageIdentifier) == H239MessageOID)
+        return OnH239Message(gen.m_subMessageIdentifier, gen.m_messageContent);
+    }
+#endif
   }
 
   return OnUnknownControlPDU(pdu);
@@ -2905,6 +2936,15 @@ PBoolean H323Connection::OnH245Indication(const H323ControlPDU & pdu)
     case H245_IndicationMessage::e_userInput :
       OnUserInputIndication(indication);
       break;
+
+#if OPAL_H239
+    case H245_IndicationMessage::e_genericIndication :
+    {
+      const H245_GenericMessage & gen = indication;
+      if (H323GetCapabilityIdentifier(gen.m_messageIdentifier) == H239MessageOID)
+        return OnH239Message(gen.m_subMessageIdentifier, gen.m_messageContent);
+    }
+#endif
   }
 
   return PTrue; // Do NOT call OnUnknownControlPDU for indications
@@ -3011,6 +3051,93 @@ PBoolean H323Connection::OnH245_JitterIndication(
 
   return PTrue;
 }
+
+
+#if OPAL_H239
+bool H323Connection::OnH239Message(unsigned subMessage, const H245_ArrayOf_GenericParameter & params)
+{
+  switch (subMessage) {
+    case 1 : // flowControlReleaseRequest GenericRequest
+      return OnH239FlowControlRequest(H323GetGenericParameterInteger(params, 42),
+                                      H323GetGenericParameterInteger(params, 41));
+
+    case 2 : // flowControlReleaseResponse GenericResponse
+      return OnH239FlowControlResponse(H323GetGenericParameterInteger(params, 42),
+                                       H323GetGenericParameterBoolean(params, 127));
+
+    case 3 : // presentationTokenRequest GenericRequest
+      return OnH239PresentationRequest(H323GetGenericParameterInteger(params, 42),
+                                       H323GetGenericParameterInteger(params, 43),
+                                       H323GetGenericParameterInteger(params, 44));
+
+    case 4 : // presentationTokenResponse GenericResponse
+      return OnH239PresentationResponse(H323GetGenericParameterInteger(params, 42),
+                                        H323GetGenericParameterInteger(params, 44),
+                                        H323GetGenericParameterBoolean(params, 127));
+
+    case 5 : // presentationTokenRelease GenericCommand
+      return OnH239PresentationRelease(H323GetGenericParameterInteger(params, 42),
+                                       H323GetGenericParameterInteger(params, 44));
+
+    case 6 : // presentationTokenIndicateOwner GenericIndication 
+      return OnH239PresentationIndication(H323GetGenericParameterInteger(params, 42),
+                                          H323GetGenericParameterInteger(params, 44));
+  }
+  return true;
+}
+
+
+bool H323Connection::OnH239FlowControlRequest(unsigned logicalChannel, unsigned bitRate)
+{
+  H323ControlPDU pdu;
+  H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 2).m_messageContent;
+  H323AddGenericParameterInteger(params, 42, logicalChannel);
+  H323AddGenericParameterBoolean(params, 126); // Acknowledge
+  return WriteControlPDU(pdu);
+}
+
+
+bool H323Connection::OnH239FlowControlResponse(unsigned /*logicalChannel*/, bool /*rejected*/)
+{
+  return true;
+}
+
+
+bool H323Connection::OnH239PresentationRequest(unsigned logicalChannel, unsigned symmetryBreaking, unsigned terminalLabel)
+{
+  H323ControlPDU pdu;
+  H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 4).m_messageContent;
+  H323AddGenericParameterInteger(params, 42, logicalChannel);
+  H323AddGenericParameterInteger(params, 44, terminalLabel);
+  H323AddGenericParameterBoolean(params, 126); // Acknowledge
+  return WriteControlPDU(pdu);
+}
+
+
+bool H323Connection::OnH239PresentationResponse(unsigned logicalChannel, unsigned terminalLabel, bool rejected)
+{
+  if (rejected)
+    return true;
+
+  H323ControlPDU pdu;
+  H245_ArrayOf_GenericParameter & params = pdu.BuildGenericCommand(H239MessageOID, 5).m_messageContent;
+  H323AddGenericParameterInteger(params, 42, logicalChannel);
+  H323AddGenericParameterInteger(params, 44, terminalLabel);
+  return WriteControlPDU(pdu);
+}
+
+
+bool H323Connection::OnH239PresentationRelease(unsigned /*logicalChannel*/, unsigned /*terminalLabel*/)
+{
+  return true;
+}
+
+
+bool H323Connection::OnH239PresentationIndication(unsigned /*logicalChannel*/, unsigned /*terminalLabel*/)
+{
+  return true;
+}
+#endif
 
 
 H323Channel * H323Connection::GetLogicalChannel(unsigned number, PBoolean fromRemote) const
@@ -3468,7 +3595,7 @@ void H323Connection::OnSetLocalCapabilities()
     }
   }
 
-#ifdef OPAL_H239
+#if OPAL_H239
   if (m_h239Control)
     localCapabilities.Add(new H323H239ControlCapability());
 
@@ -3499,7 +3626,7 @@ void H323Connection::OnSetLocalCapabilities()
 }
 
 
-#ifdef OPAL_H239
+#if OPAL_H239
 bool H323Connection::GetRemoteH239Control() const
 {
   return remoteCapabilities.FindCapability(H323H239ControlCapability()) != NULL;

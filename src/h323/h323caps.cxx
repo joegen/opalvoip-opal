@@ -497,24 +497,9 @@ PObject::Comparison H323NonStandardCapabilityInfo::CompareData(const PBYTEArray 
 /////////////////////////////////////////////////////////////////////////////
 
 H323GenericCapabilityInfo::H323GenericCapabilityInfo(const PString & standardId, unsigned bitRate)
-  : maxBitRate(bitRate)
+  : m_identifier(standardId)
+  , maxBitRate(bitRate)
 {
-  identifier = new H245_CapabilityIdentifier(H245_CapabilityIdentifier::e_standard);
-  PASN_ObjectId & object_id = *identifier;
-  object_id = standardId;
-}
-
-
-H323GenericCapabilityInfo::H323GenericCapabilityInfo(const H323GenericCapabilityInfo & obj)
-  : maxBitRate(obj.maxBitRate)
-{
-  identifier = new H245_CapabilityIdentifier(*obj.identifier);
-}
-
-
-H323GenericCapabilityInfo::~H323GenericCapabilityInfo()
-{
-  delete identifier;
 }
 
 
@@ -522,7 +507,7 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
                                                     const OpalMediaFormat & mediaFormat,
                                                     H323Capability::CommandType type) const
 {
-  pdu.m_capabilityIdentifier = *identifier;
+  H323SetCapabilityIdentifier(m_identifier, pdu.m_capabilityIdentifier);
 
   unsigned bitRate = maxBitRate != 0 ? maxBitRate : ((mediaFormat.GetBandwidth()+99)/100);
   if (bitRate != 0) {
@@ -550,20 +535,13 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
         break;
     }
 
-    H245_GenericParameter * param = new H245_GenericParameter;
+    H245_ArrayOf_GenericParameter & params =
+            genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing ? pdu.m_collapsing : pdu.m_nonCollapsing;
 
-    param->m_parameterIdentifier.SetTag(H245_ParameterIdentifier::e_standard);
-    (PASN_Integer &)param->m_parameterIdentifier = genericInfo.ordinal;
-
-    if (PIsDescendant(&option, OpalMediaOptionBoolean)) {
-      if (!((const OpalMediaOptionBoolean &)option).GetValue()) {
-        delete param;
-        continue; // Do not include a logical at all if it is false
-      }
-      param->m_parameterValue.SetTag(H245_ParameterValue::e_logical);
-    }
+    if (PIsDescendant(&option, OpalMediaOptionBoolean))
+      H323AddGenericParameterBoolean(params, genericInfo.ordinal, ((const OpalMediaOptionBoolean &)option).GetValue());
     else if (PIsDescendant(&option, OpalMediaOptionUnsigned)) {
-      unsigned tag;
+      H245_ParameterValue::Choices tag;
       switch (genericInfo.integerType) {
         default :
         case OpalMediaOption::H245GenericInfo::UnsignedInt :
@@ -579,27 +557,19 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
           break;
       }
 
-      param->m_parameterValue.SetTag(tag);
-      (PASN_Integer &)param->m_parameterValue = ((const OpalMediaOptionUnsigned &)option).GetValue();
+      H323AddGenericParameterInteger(params, genericInfo.ordinal, ((const OpalMediaOptionUnsigned &)option).GetValue(), tag);
     }
-    else {
-      param->m_parameterValue.SetTag(H245_ParameterValue::e_octetString);
-      PASN_OctetString & octetString = param->m_parameterValue;
-      if (PIsDescendant(&option, OpalMediaOptionOctets))
-        octetString = ((const OpalMediaOptionOctets &)option).GetValue();
-      else
-        octetString = option.AsString();
-    }
-
-    if (genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing) {
-      pdu.IncludeOptionalField(H245_GenericCapability::e_collapsing);
-      pdu.m_collapsing.Append(param);
-    }
-    else {
-      pdu.IncludeOptionalField(H245_GenericCapability::e_nonCollapsing);
-      pdu.m_nonCollapsing.Append(param);
-    }
+    else if (PIsDescendant(&option, OpalMediaOptionOctets))
+      H323AddGenericParameterOctets(params, genericInfo.ordinal, ((const OpalMediaOptionOctets &)option).GetValue());
+    else
+      H323AddGenericParameterString(params, genericInfo.ordinal, option.AsString());
   }
+
+  if (pdu.m_collapsing.GetSize() > 0)
+    pdu.IncludeOptionalField(H245_GenericCapability::e_collapsing);
+
+  if (pdu.m_nonCollapsing.GetSize() > 0)
+    pdu.IncludeOptionalField(H245_GenericCapability::e_nonCollapsing);
 
   return PTrue;
 }
@@ -608,8 +578,8 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
                                                      const H245_GenericCapability & pdu,
                                                      H323Capability::CommandType type)
 {
-  if (pdu.m_capabilityIdentifier != *identifier)
-    return PFalse;
+  if (H323GetCapabilityIdentifier(pdu.m_capabilityIdentifier) != m_identifier)
+    return false;
 
   if (pdu.HasOptionalField(H245_GenericCapability::e_maxBitRate)) {
     maxBitRate = pdu.m_maxBitRate;
@@ -636,68 +606,65 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
         break;
     }
 
-    const H245_ArrayOf_GenericParameter * params;
+    const H245_ParameterValue * param;
     if (genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing) {
       if (!pdu.HasOptionalField(H245_GenericCapability::e_collapsing))
         continue;
-      params = &pdu.m_collapsing;
+      param = H323GetGenericParameter(pdu.m_collapsing, genericInfo.ordinal);
     }
     else {
       if (!pdu.HasOptionalField(H245_GenericCapability::e_nonCollapsing))
         continue;
-      params = &pdu.m_nonCollapsing;
+      param = H323GetGenericParameter(pdu.m_nonCollapsing, genericInfo.ordinal);
     }
 
     if (PIsDescendant(&option, OpalMediaOptionBoolean))
       ((OpalMediaOptionBoolean &)option).SetValue(false);
 
-    for (PINDEX j = 0; j < params->GetSize(); j++) {
-      const H245_GenericParameter & param = (*params)[j];
-      if (param.m_parameterIdentifier.GetTag() == H245_ParameterIdentifier::e_standard &&
-                         (const PASN_Integer &)param.m_parameterIdentifier == genericInfo.ordinal) {
-        if (PIsDescendant(&option, OpalMediaOptionBoolean)) {
-          if (param.m_parameterValue.GetTag() == H245_ParameterValue::e_logical) {
-            ((OpalMediaOptionBoolean &)option).SetValue(true);
-            break;
-          }
-        }
-        else if (PIsDescendant(&option, OpalMediaOptionUnsigned)) {
-          unsigned tag;
-          switch (genericInfo.integerType) {
-            default :
-            case OpalMediaOption::H245GenericInfo::UnsignedInt :
-              tag = option.GetMerge() == OpalMediaOption::MinMerge ? H245_ParameterValue::e_unsignedMin : H245_ParameterValue::e_unsignedMax;
-              break;
- 
-            case OpalMediaOption::H245GenericInfo::Unsigned32 :
-              tag = option.GetMerge() == OpalMediaOption::MinMerge ? H245_ParameterValue::e_unsigned32Min : H245_ParameterValue::e_unsigned32Max;
-              break;
- 
-            case OpalMediaOption::H245GenericInfo::BooleanArray :
-              tag = H245_ParameterValue::e_booleanArray;
-              break;
-          }
- 
-          if (param.m_parameterValue.GetTag() == tag) {
-            ((OpalMediaOptionUnsigned &)option).SetValue((const PASN_Integer &)param.m_parameterValue);
-            break;
-          }
-        }
-        else {
-          if (param.m_parameterValue.GetTag() == H245_ParameterValue::e_octetString) {
-            const PASN_OctetString & octetString = param.m_parameterValue;
-            if (PIsDescendant(&option, OpalMediaOptionOctets))
-              ((OpalMediaOptionOctets &)option).SetValue(octetString);
-            else
-              ((OpalMediaOption &)option).FromString(octetString.AsString());
-            break;
-          }
-        }
+    if (param == NULL)
+      continue;
 
-        PTRACE(2, "H323\tInvalid generic parameter type (" << param.m_parameterValue.GetTagName()
-               << ") for option \"" << option.GetName() << "\" (" << option.GetClass() << ')');
+    if (PIsDescendant(&option, OpalMediaOptionBoolean)) {
+      if (param->GetTag() == H245_ParameterValue::e_logical) {
+        ((OpalMediaOptionBoolean &)option).SetValue(true);
+        break;
       }
     }
+    else if (PIsDescendant(&option, OpalMediaOptionUnsigned)) {
+      unsigned tag;
+      switch (genericInfo.integerType) {
+        default :
+        case OpalMediaOption::H245GenericInfo::UnsignedInt :
+          tag = option.GetMerge() == OpalMediaOption::MinMerge ? H245_ParameterValue::e_unsignedMin : H245_ParameterValue::e_unsignedMax;
+          break;
+
+        case OpalMediaOption::H245GenericInfo::Unsigned32 :
+          tag = option.GetMerge() == OpalMediaOption::MinMerge ? H245_ParameterValue::e_unsigned32Min : H245_ParameterValue::e_unsigned32Max;
+          break;
+
+        case OpalMediaOption::H245GenericInfo::BooleanArray :
+          tag = H245_ParameterValue::e_booleanArray;
+          break;
+      }
+
+      if (param->GetTag() == tag) {
+        ((OpalMediaOptionUnsigned &)option).SetValue((const PASN_Integer &)*param);
+        break;
+      }
+    }
+    else {
+      if (param->GetTag() == H245_ParameterValue::e_octetString) {
+        const PASN_OctetString & octetString = *param;
+        if (PIsDescendant(&option, OpalMediaOptionOctets))
+          ((OpalMediaOptionOctets &)option).SetValue(octetString);
+        else
+          ((OpalMediaOption &)option).FromString(octetString.AsString());
+        break;
+      }
+    }
+
+    PTRACE(2, "H323\tInvalid generic parameter type (" << param->GetTagName()
+           << ") for option \"" << option.GetName() << "\" (" << option.GetClass() << ')');
   }
 
   return PTrue;
@@ -705,12 +672,12 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
 
 PBoolean H323GenericCapabilityInfo::IsMatch(const H245_GenericCapability & param) const
 {
-  return param.m_capabilityIdentifier == *identifier;
+  return H323GetCapabilityIdentifier(param.m_capabilityIdentifier) == m_identifier;
 }
 
 PObject::Comparison H323GenericCapabilityInfo::CompareInfo(const H323GenericCapabilityInfo & obj) const
 {
-  return identifier->Compare(*obj.identifier);
+  return m_identifier.Compare(obj.m_identifier);
 }
 
 
@@ -1266,7 +1233,7 @@ PBoolean H323GenericVideoCapability::IsMatch(const PASN_Choice & subTypePDU) con
 
 /////////////////////////////////////////////////////////////////////////////
 
-#ifdef OPAL_H239
+#if OPAL_H239
 
 H323ExtendedVideoCapability::H323ExtendedVideoCapability(const PString & identifier)
   : H323GenericVideoCapability(identifier)
@@ -1339,7 +1306,7 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
   PINDEX i = 0;
   for (;;) {
     if (i >= extcap.m_videoCapabilityExtension.GetSize()) {
-      PTRACE(2, "H323\tNo H.239 video capability extension for " << *identifier);
+      PTRACE(2, "H323\tNo H.239 video capability extension for " << m_identifier);
       return false;
     }
 
@@ -2044,7 +2011,7 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
     H323Capabilities allCapabilities(connection.GetLocalCapabilities());
     allCapabilities.AddAllCapabilities(0, 0, "*");
     H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
-#ifdef OPAL_H239
+#if OPAL_H239
     allCapabilities.Add(new H323H239VideoCapability(OpalMediaFormat()));
     allCapabilities.Add(new H323H239ControlCapability());
 #endif

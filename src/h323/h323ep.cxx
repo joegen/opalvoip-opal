@@ -69,7 +69,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , callIntrusionProtectionLevel(3) //H45011_CIProtectionLevel::e_fullProtection;
 #endif
   , terminalType(e_TerminalOnly)
-#ifdef OPAL_H239
+#if OPAL_H239
   , m_defaultH239Control(false)
 #endif
   , clearCallOnRoundTripFail(false)
