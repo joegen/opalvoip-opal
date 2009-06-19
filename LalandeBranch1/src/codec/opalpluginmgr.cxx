@@ -1042,7 +1042,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
     if ((commandNotifier != PNotifier()) && (flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
       PTimeInterval tick = PTimer::Tick();
       // Don't send lots of consecutive VideoFastUpdate commands
-      if (tick - m_lastVideoFastUpdate < 2000)
+      if (tick - m_lastVideoFastUpdate < 4000)
         PTRACE(4, "OpalPlugin\tCould not decode frame, but a recent VideoUpdatePicture was sent.");
       else {
         m_lastVideoFastUpdate = PTimer::Tick();
