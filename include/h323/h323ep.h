@@ -1076,7 +1076,7 @@ class H323EndPoint : public OpalRTPEndPoint
      */
     void SetInitialBandwidth(unsigned bandwidth) { initialBandwidth = bandwidth; }
 
-#ifdef OPAL_H239
+#if OPAL_H239
     /**Get the default H.239 control capability.
      */
     bool GetDefaultH239Control() const { return m_defaultH239Control; }
@@ -1358,7 +1358,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
     TerminalTypes   terminalType;
 
-#ifdef OPAL_H239
+#if OPAL_H239
     bool            m_defaultH239Control;
 #endif
 

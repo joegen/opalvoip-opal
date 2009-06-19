@@ -85,6 +85,7 @@ class H245_FlowControlCommand;
 class H245_MiscellaneousCommand;
 class H245_MiscellaneousIndication;
 class H245_JitterIndication;
+class H245_ArrayOf_GenericParameter;
 
 class H323SignalPDU;
 class H323ControlPDU;
@@ -1130,6 +1131,65 @@ class H323Connection : public OpalRTPConnection
       const H245_JitterIndication & pdu  ///<  Received PDU
     );
 
+#if OPAL_H239
+    /**Handle a H.239 message from remote.
+     */
+    virtual bool OnH239Message(
+      unsigned subMessage,
+      const H245_ArrayOf_GenericParameter & params
+    );
+
+    /**Handle a H.239 flow control request.
+       Default behaviour simply sends an acknowedge response.
+      */
+    virtual bool OnH239FlowControlRequest(
+      unsigned logicalChannel,
+      unsigned bitRate
+    );
+
+    /**Handle a H.239 flow control ack/reject response.
+       Default behaviour does nothing
+      */
+    virtual bool OnH239FlowControlResponse(
+      unsigned logicalChannel,
+      bool rejected
+    );
+
+    /**Handle a H.239 presentation token request.
+       Default behaviour simply sends an acknowedge response.
+      */
+    virtual bool OnH239PresentationRequest(
+      unsigned logicalChannel,
+      unsigned symmetryBreaking,
+      unsigned terminalLabel
+    );
+
+    /**Handle a H.239 presentation token ack/reject response.
+       Default behaviour simply sends a release command.
+      */
+    virtual bool OnH239PresentationResponse(
+      unsigned logicalChannel,
+      unsigned terminalLabel,
+      bool rejected
+    );
+
+    /**Handle a H.239 presentation token release command.
+       Default behaviour does nothing.
+      */
+    virtual bool OnH239PresentationRelease(
+      unsigned logicalChannel,
+      unsigned terminalLabel
+    );
+
+    /**Handle a H.239 presentation token owner indication.
+       Default behaviour does nothing.
+      */
+    virtual bool OnH239PresentationIndication(
+      unsigned logicalChannel,
+      unsigned terminalLabel
+    );
+#endif
+
     /**Error discriminator for the OnControlProtocolError() function.
       */
     enum ControlProtocolErrors {
@@ -1931,7 +1991,7 @@ class H323Connection : public OpalRTPConnection
     );
   //@}
     
-#ifdef OPAL_H239
+#if OPAL_H239
     /**Get the local H.239 control capability.
      */
     bool GetLocalH239Control() const { return m_h239Control; }
@@ -2084,7 +2144,7 @@ class H323Connection : public OpalRTPConnection
     H245NegRequestMode               * requestModeProcedure;
     H245NegRoundTripDelay            * roundTripDelayProcedure;
 
-#ifdef OPAL_H239
+#if OPAL_H239
     bool m_h239Control;
 #endif
 

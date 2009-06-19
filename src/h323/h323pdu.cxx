@@ -478,6 +478,183 @@ bool H323GetRTPPacketization(OpalMediaFormat & mediaFormat, const H245_RTPPayloa
 }
 
 
+PString H323GetCapabilityIdentifier(const H245_CapabilityIdentifier & capId)
+{
+  switch (capId.GetTag()) {
+    case H245_CapabilityIdentifier::e_standard :
+      return ((const PASN_ObjectId &)capId).AsString();
+
+    case H245_CapabilityIdentifier::e_h221NonStandard :
+    {
+      PString str;
+      const H245_NonStandardParameter & nonStd = capId;
+      if (nonStd.m_nonStandardIdentifier.GetTag() == H245_NonStandardIdentifier::e_object)
+        str = ((const PASN_ObjectId &)nonStd.m_nonStandardIdentifier).AsString();
+      else {
+        const H245_NonStandardIdentifier_h221NonStandard & h221 = nonStd.m_nonStandardIdentifier;
+        str.sprintf("c=%u,cx=%u,o=%u",
+                    h221.m_t35CountryCode.GetValue(),
+                    h221.m_t35Extension.GetValue(),
+                    h221.m_manufacturerCode.GetValue());
+      }
+      if (nonStd.m_data.GetSize() > 0)
+        str += ':' + nonStd.m_data.AsString();
+      return str;
+    }
+  }
+
+  return PString::Empty();
+}
+
+
+static int ExtractVar(const PString & str, const PString & var)
+{
+  PRegularExpression regex("(^|[ \t\n,]+)" + var + "[ \t\n]*=[ \t\n]*[0-9]",
+                           PRegularExpression::IgnoreCase|PRegularExpression::Extended);
+
+  PINDEX pos, len;
+  if (!str.FindRegEx(regex, pos, len))
+    return -1;
+
+  return str.Mid(pos+len-1).AsUnsigned();
+}
+
+
+bool H323SetCapabilityIdentifier(const PString & str, H245_CapabilityIdentifier & capId)
+{
+  PASN_ObjectId oid;
+  oid.SetValue(str);
+  if (oid.AsString() == str) {
+    capId.SetTag(H245_CapabilityIdentifier::e_standard);
+    ((PASN_ObjectId &)capId) = oid;
+    return true;
+  }
+
+  PINDEX colon = str.Find(':');
+  if (colon == 0)
+    return false;
+
+  if (colon != P_MAX_INDEX && oid.AsString() == str.Left(colon)) {
+    capId.SetTag(H245_CapabilityIdentifier::e_h221NonStandard);
+    H245_NonStandardParameter & nonStd = capId;
+    nonStd.m_nonStandardIdentifier.SetTag(H245_NonStandardIdentifier::e_object);
+    ((PASN_ObjectId &)nonStd.m_nonStandardIdentifier) = oid;
+    nonStd.m_data = str.Mid(colon+1);
+    return true;
+  }
+
+  int country = ExtractVar(str, 'c');
+  int manufacturer = ExtractVar(str, 'o');
+  if (country >= 0 && manufacturer >= 0) {
+    capId.SetTag(H245_CapabilityIdentifier::e_h221NonStandard);
+    H245_NonStandardParameter & nonStd = capId;
+    nonStd.m_nonStandardIdentifier.SetTag(H245_NonStandardIdentifier::e_h221NonStandard);
+    H245_NonStandardIdentifier_h221NonStandard & h221 = nonStd.m_nonStandardIdentifier;
+
+    h221.m_t35CountryCode = country;
+    h221.m_manufacturerCode = manufacturer;
+
+    int extension = ExtractVar(str, "cx");
+    if (extension >= 0)
+      h221.m_t35Extension = extension;
+
+    if (colon != P_MAX_INDEX)
+      nonStd.m_data = str.Mid(colon+1);
+    return true;
+  }
+
+  return false;
+}
+
+
+const H245_ParameterValue * H323GetGenericParameter(const H245_ArrayOf_GenericParameter & params, unsigned ordinal)
+{
+  for (PINDEX i = 0; i < params.GetSize(); i++) {
+    const H245_GenericParameter & param = params[i];
+    if (param.m_parameterIdentifier.GetTag() == H245_ParameterIdentifier::e_standard &&
+                         ((const PASN_Integer &)param.m_parameterIdentifier) == ordinal)
+      return &param.m_parameterValue;
+  }
+
+  return NULL;
+}
+
+
+bool H323GetGenericParameterBoolean(const H245_ArrayOf_GenericParameter & params, unsigned ordinal)
+{
+  const H245_ParameterValue * param = H323GetGenericParameter(params, ordinal);
+  return param != NULL && param->GetTag() == H245_ParameterValue::e_logical;
+}
+
+
+unsigned H323GetGenericParameterInteger(const H245_ArrayOf_GenericParameter & params,
+                                        unsigned ordinal,
+                                        unsigned defValue,
+                                        H245_ParameterValue::Choices subType)
+{
+  const H245_ParameterValue * param = H323GetGenericParameter(params, ordinal);
+  if (param == NULL || param->GetTag() != (unsigned)subType)
+    return defValue;
+  return (const PASN_Integer &)*param;
+}
+
+
+H245_ParameterValue * H323AddGenericParameter(H245_ArrayOf_GenericParameter & params, unsigned ordinal)
+{
+  PINDEX size = params.GetSize();
+  params.SetSize(size+1);
+
+  PINDEX pos;
+  for (pos = size; pos > 0; pos--) {
+    const H245_GenericParameter & param = params[pos-1];
+    if (param.m_parameterIdentifier.GetTag() == H245_ParameterIdentifier::e_standard &&
+                          ((const PASN_Integer &)param.m_parameterIdentifier) < ordinal)
+      break;
+    params[pos] = param;
+  }
+
+  H245_GenericParameter & param = params[pos];
+  param.m_parameterIdentifier.SetTag(H245_ParameterIdentifier::e_standard);
+  (PASN_Integer &)param.m_parameterIdentifier = ordinal;
+  return &param.m_parameterValue;
+}
+
+
+void H323AddGenericParameterBoolean(H245_ArrayOf_GenericParameter & params, unsigned ordinal, bool value)
+{
+  // Do not include a logical at all if it is false
+  if (value)
+    H323AddGenericParameter(params, ordinal)->SetTag(H245_ParameterValue::e_logical);
+}
+
+
+void H323AddGenericParameterInteger(H245_ArrayOf_GenericParameter & params,
+                                    unsigned ordinal,
+                                    unsigned value,
+                                    H245_ParameterValue::Choices subType)
+{
+  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
+  param->SetTag(subType);
+  (PASN_Integer &)*param = value;
+}
+
+
+void H323AddGenericParameterString(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PString & value)
+{
+  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
+  param->SetTag(H245_ParameterValue::e_octetString);
+  (PASN_OctetString &)*param = value;
+}
+
+
+void H323AddGenericParameterOctets(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PBYTEArray & value)
+{
+  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
+  param->SetTag(H245_ParameterValue::e_octetString);
+  (PASN_OctetString &)*param = value;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_H460
@@ -1650,6 +1827,42 @@ H245_MiscellaneousIndication & H323ControlPDU::BuildMiscellaneousIndication(unsi
   miscIndication.m_logicalChannelNumber = channelNumber;
   miscIndication.m_type.SetTag(type);
   return miscIndication;
+}
+
+
+H245_GenericMessage & H323ControlPDU::BuildGenericRequest(const PString & identifier, unsigned subMsgId)
+{
+  H245_GenericMessage & msg = Build(H245_RequestMessage::e_genericRequest);
+  H323SetCapabilityIdentifier(identifier, msg.m_messageIdentifier);
+  msg.m_subMessageIdentifier = subMsgId;
+  return msg;
+}
+
+
+H245_GenericMessage & H323ControlPDU::BuildGenericResponse(const PString & identifier, unsigned subMsgId)
+{
+  H245_GenericMessage & msg = Build(H245_ResponseMessage::e_genericResponse);
+  H323SetCapabilityIdentifier(identifier, msg.m_messageIdentifier);
+  msg.m_subMessageIdentifier = subMsgId;
+  return msg;
+}
+
+
+H245_GenericMessage & H323ControlPDU::BuildGenericCommand(const PString & identifier, unsigned subMsgId)
+{
+  H245_GenericMessage & msg = Build(H245_CommandMessage::e_genericCommand);
+  H323SetCapabilityIdentifier(identifier, msg.m_messageIdentifier);
+  msg.m_subMessageIdentifier = subMsgId;
+  return msg;
+}
+
+
+H245_GenericMessage & H323ControlPDU::BuildGenericIndication(const PString & identifier, unsigned subMsgId)
+{
+  H245_GenericMessage & msg = Build(H245_IndicationMessage::e_genericIndication);
+  H323SetCapabilityIdentifier(identifier, msg.m_messageIdentifier);
+  msg.m_subMessageIdentifier = subMsgId;
+  return msg;
 }
 
 
