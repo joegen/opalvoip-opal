@@ -39,9 +39,12 @@ class EchoEndPoint : public OpalLocalEndPoint
 
     virtual OpalLocalConnection * CreateConnection(
       OpalCall & call,    ///<  Owner of connection
-      void * userData,    ///<  Arbitrary data to pass to connection
+      void * userData     ///<  Arbitrary data to pass to connection
+#if NEW_API
+'
       unsigned options,
       OpalConnection::StringOptions * stringOptions
+#endif
     );
 
     bool OnReadMediaFrame(
