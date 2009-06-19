@@ -584,7 +584,7 @@ PBoolean SIPMIMEInfo::IsContentLengthPresent() const
 }
 
 
-PString SIPMIMEInfo::GetContentType() const
+PCaselessString SIPMIMEInfo::GetContentType() const
 {
   return GetString("Content-Type");
 }
@@ -596,7 +596,7 @@ void SIPMIMEInfo::SetContentType(const PString & v)
 }
 
 
-PString SIPMIMEInfo::GetContentEncoding() const
+PCaselessString SIPMIMEInfo::GetContentEncoding() const
 {
   return GetString("Content-Encoding");
 }
@@ -2318,7 +2318,7 @@ PString SIP_PDU::GetTransactionID() const
 
 SDPSessionDescription * SIP_PDU::GetSDP()
 {
-  if (m_SDP == NULL && (mime.GetContentType() *= "application/sdp")) {
+  if (m_SDP == NULL && mime.GetContentType() == "application/sdp") {
     m_SDP = new SDPSessionDescription(0, 0, OpalTransportAddress());
     if (!m_SDP->Decode(entityBody)) {
       delete m_SDP;

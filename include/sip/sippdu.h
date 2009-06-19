@@ -248,10 +248,10 @@ class SIPMIMEInfo : public PMIMEInfo
 
     void SetCompactForm(bool form) { compactForm = form; }
 
-    PString GetContentType() const;
+    PCaselessString GetContentType() const;
     void SetContentType(const PString & v);
 
-    PString GetContentEncoding() const;
+    PCaselessString GetContentEncoding() const;
     void SetContentEncoding(const PString & v);
 
     PString GetFrom() const;
@@ -1052,7 +1052,7 @@ class SIPEventPackageHandler
 {
 public:
   virtual ~SIPEventPackageHandler() { }
-  virtual PString GetContentType() const = 0;
+  virtual PCaselessString GetContentType() const = 0;
   virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request) = 0;
   virtual PString OnSendNOTIFY(SIPHandler & /*handler*/, const PObject * /*body*/) { return PString::Empty(); }
 };

@@ -2502,9 +2502,9 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
 {
   SIP_PDU::StatusCodes status = SIP_PDU::Failure_UnsupportedMediaType;
   SIPMIMEInfo & mimeInfo = request.GetMIME();
-  PString contentType = mimeInfo.GetContentType();
+  PCaselessString contentType = mimeInfo.GetContentType();
 
-  if (contentType *= ApplicationDTMFRelayKey) {
+  if (contentType == ApplicationDTMFRelayKey) {
     PStringArray lines = request.GetEntityBody().Lines();
     PINDEX i;
     char tone = -1;
@@ -2526,13 +2526,13 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
     status = SIP_PDU::Successful_OK;
   }
 
-  else if (contentType *= ApplicationDTMFKey) {
+  else if (contentType == ApplicationDTMFKey) {
     OnUserInputString(request.GetEntityBody().Trim());
     status = SIP_PDU::Successful_OK;
   }
 
 #if OPAL_VIDEO
-  else if (contentType *= ApplicationMediaControlXMLKey) {
+  else if (contentType == ApplicationMediaControlXMLKey) {
     if (OnMediaControlXML(request))
       return;
     status = SIP_PDU::Failure_UnsupportedMediaType;
