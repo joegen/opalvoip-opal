@@ -384,6 +384,23 @@ class H323ControlPDU : public H245_MultimediaSystemControlMessage
       unsigned type
     );
 
+    H245_GenericMessage & BuildGenericRequest(
+      const PString & identifier,
+      unsigned subMsgId
+    );
+    H245_GenericMessage & BuildGenericResponse(
+      const PString & identifier,
+      unsigned subMsgId
+    );
+    H245_GenericMessage & BuildGenericCommand(
+      const PString & identifier,
+      unsigned subMsgId
+    );
+    H245_GenericMessage & BuildGenericIndication(
+      const PString & identifier,
+      unsigned subMsgId
+    );
+
     H245_FunctionNotUnderstood & BuildFunctionNotUnderstood(
       const H323ControlPDU & pdu
     );
@@ -503,6 +520,54 @@ PString H323GetRTPPacketization(
 bool H323GetRTPPacketization(
   OpalMediaFormat & mediaFormat,
   const H245_RTPPayloadType & rtpPacketization
+);
+
+PString H323GetCapabilityIdentifier(
+  const H245_CapabilityIdentifier & capId
+);
+bool H323SetCapabilityIdentifier(
+  const PString & str,
+  H245_CapabilityIdentifier & capId
+);
+
+const H245_ParameterValue * H323GetGenericParameter(
+  const H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal
+);
+bool H323GetGenericParameterBoolean(
+  const H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal
+);
+unsigned H323GetGenericParameterInteger(
+  const H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal,
+  unsigned defValue = 0,
+  H245_ParameterValue::Choices subType = H245_ParameterValue::e_unsignedMin
+);
+H245_ParameterValue * H323AddGenericParameter(
+  H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal
+);
+void H323AddGenericParameterBoolean(
+  H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal,
+  bool value = true
+);
+void H323AddGenericParameterInteger(
+  H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal,
+  unsigned value,
+  H245_ParameterValue::Choices subType = H245_ParameterValue::e_unsignedMin
+);
+void H323AddGenericParameterString(
+  H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal,
+  const PString & value
+);
+void H323AddGenericParameterOctets(
+  H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal,
+  const PBYTEArray & value
 );
 
 #if PTRACING
