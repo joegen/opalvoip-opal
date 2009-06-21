@@ -802,6 +802,13 @@ OpalMixerConnection::OpalMixerConnection(PSafePtr<OpalMixerNode> node,
   , m_listenOnly(node->GetNodeInfo().m_listenOnly)
 {
   m_node->AttachConnection(this);
+
+  const PStringList & names = node->GetNames();
+  if (names.IsEmpty())
+    localPartyName = node->GetGUID().AsString();
+  else
+    localPartyName = names[0];
+
   PTRACE(4, "MixerCon\tConstructed");
 }
 
