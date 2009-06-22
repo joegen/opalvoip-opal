@@ -917,7 +917,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
         PTRACE(4, "OpalPlugin\tCould not decode frame, but a recent VideoUpdatePicture was sent.");
       else {
         m_lastVideoFastUpdate = PTimer::Tick();
-        OpalVideoUpdatePicture updatePictureCommand;
+        OpalVideoUpdatePicture2 updatePictureCommand(src.GetSequenceNumber(), src.GetTimestamp());
         commandNotifier(updatePictureCommand, 0);
         PTRACE(3, "OpalPlugin\tCould not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
       }

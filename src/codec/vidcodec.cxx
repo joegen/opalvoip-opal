@@ -180,6 +180,11 @@ PString OpalVideoUpdatePicture::GetName() const
   return "Update Picture";
 }
 
+PString OpalVideoUpdatePicture2::GetName() const
+{
+  return "Update Picture 2";
+}
+
 PString OpalTemporalSpatialTradeOff::GetName() const
 {
   return "Temporal Spatial Trade Off";
