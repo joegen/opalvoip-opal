@@ -499,11 +499,12 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     if (sip != NULL) {
       PStringStream referTo;
       referTo << sip->GetRemotePartyCallbackURL()
-              << "?Replaces=" << sip->GetToken()
+              << "?Replaces=" << PURL::TranslateString(sip->GetToken(), PURL::QueryTranslation)
               << "%3Bto-tag%3D" << ExtractTag(sip->GetDialogFrom()) // "to/from" is from the other sides perspective
               << "%3Bfrom-tag%3D" << ExtractTag(sip->GetDialogTo());
-      referTransaction = new SIPRefer(*this, *transport, referTo, GetLocalPartyURL());
+      referTransaction = new SIPRefer(*this, *transport, referTo, endpoint.GetLocalURL(*transport, GetLocalPartyName()));
       referTransaction->GetMIME().SetAt("Refer-Sub", "false"); // Use RFC4488 to indicate we are NOT doing NOTIFYs
+      referTransaction->GetMIME().SetAt("Supported", "replaces");
       return referTransaction->Start();
     }
   }
