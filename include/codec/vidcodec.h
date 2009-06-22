@@ -189,6 +189,22 @@ class OpalVideoUpdatePicture : public OpalMediaCommand
     int m_numBlocks;
 };
 
+class OpalVideoUpdatePicture2 : public OpalVideoUpdatePicture
+{
+  PCLASSINFO(OpalVideoUpdatePicture2, OpalVideoUpdatePicture);
+  public:
+    OpalVideoUpdatePicture2(WORD seq, DWORD ts, int firstGOB = -1, int firstMB = -1, int numBlocks = 0)
+      : OpalVideoUpdatePicture(firstGOB, firstMB, numBlocks), m_seq(seq), m_ts(ts)  { }
+
+    virtual PString GetName() const;
+
+    WORD GetSequenceNumber() const { return m_seq; }
+    DWORD GetTimestamp() const     { return m_ts; }
+
+  protected:
+    WORD m_seq;
+    DWORD m_ts;
+};
 
 class OpalTemporalSpatialTradeOff : public OpalMediaCommand
 {

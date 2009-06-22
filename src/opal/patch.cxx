@@ -647,7 +647,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     bool forceIFrame = false;
     bool s = RateControlExceeded(forceIFrame);
     if (forceIFrame)
-      stream->ExecuteCommand(OpalVideoUpdatePicture());
+      stream->ExecuteCommand(OpalVideoUpdatePicture2(sourceFrame.GetSequenceNumber(), sourceFrame.GetTimestamp()));
     if (s) {
       if (secondaryCodec == NULL) {
         bool wasIFrame = false;
