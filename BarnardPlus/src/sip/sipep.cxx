@@ -561,9 +561,21 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   // parse the incoming To field, and check if we accept incoming calls for this address
   SIPURL toAddr(mime.GetTo());
   if (!IsAcceptedAddress(toAddr)) {
-    PTRACE(2, "SIP\tIncoming INVITE from " << request->GetURI() << " for unknown address " << toAddr);
+    PTRACE(2, "SIP\tIncoming INVITE for " << request->GetURI() << " with unacceptable address " << toAddr);
     SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
-    return PFalse;
+    return false;
+  }
+
+  if (!request->GetEntityBody().IsEmpty() &&
+         (!mime.GetContentEncoding().IsEmpty() ||
+           mime.GetContentType() != "application/sdp")) {
+    // Do not currently support anything other than SDP, in particular multipart stuff.
+    PTRACE(2, "SIP\tIncoming INVITE for " << request->GetURI() << " does not contain SDP");
+    SIP_PDU response(*request, SIP_PDU::Failure_UnsupportedMediaType);
+    response.GetMIME().SetAccept("application/sdp");
+    response.GetMIME().SetAcceptEncoding("identity");
+    response.SetAllow();
+    response.Write(transport, request->GetViaAddress(*this));
   }
 
   // See if we are replacing an existing call.
@@ -589,7 +601,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
 
     PString callid = replaces.Left(replaces.Find(';')).Trim();
     if (callid.IsEmpty() || to.IsEmpty() || from.IsEmpty()) {
-      PTRACE(2, "SIP\tBad Replaces header in INVITE from " << request->GetURI());
+      PTRACE(2, "SIP\tBad Replaces header in INVITE for " << request->GetURI());
       SendResponse(SIP_PDU::Failure_BadRequest, transport, *request);
       return false;
     }
@@ -599,7 +611,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
         replacedConnection->GetDialogTo().Find(to) == P_MAX_INDEX ||
         replacedConnection->GetDialogFrom().Find(from) == P_MAX_INDEX) {
       PTRACE(2, "SIP\tUnknown " << (replacedConnection != NULL ? "to/from" : "call-id")
-             << " in Replaces header of INVITE from " << request->GetURI());
+             << " in Replaces header of INVITE for " << request->GetURI());
       SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, *request);
       return false;
     }
@@ -612,7 +624,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   // create and check transport
   OpalTransport * newTransport = CreateTransport(transport.GetRemoteAddress(), transport.GetInterface());
   if (newTransport == NULL) {
-    PTRACE(1, "SIP\tFailed to create transport for SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
+    PTRACE(1, "SIP\tFailed to create transport for SIPConnection in response to INVITE for " << request->GetURI() << " to " << toAddr);
     SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
     return PFalse;
   }
@@ -634,7 +646,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
                                                newTransport,
                                                request);
   if (!AddConnection(connection)) {
-    PTRACE(1, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
+    PTRACE(1, "SIP\tFailed to create SIPConnection for INVITE for " << request->GetURI() << " to " << toAddr);
     SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
     return PFalse;
   }
