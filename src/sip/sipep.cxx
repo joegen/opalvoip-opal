@@ -549,11 +549,24 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   // parse the incoming To field, and check if we accept incoming calls for this address
   SIPURL toAddr(mime.GetTo());
   if (!IsAcceptedAddress(toAddr)) {
-    PTRACE(2, "SIP\tIncoming INVITE from " << request->GetURI() << " for unknown address " << toAddr);
+    PTRACE(2, "SIP\tIncoming INVITE for " << request->GetURI() << " with unacceptable address " << toAddr);
     SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
-    return PFalse;
+    return false;
   }
-  
+
+  if (!request->GetEntityBody().IsEmpty() &&
+         (!mime.GetContentEncoding().IsEmpty() ||
+           mime.GetContentType() != "application/sdp")) {
+    // Do not currently support anything other than SDP, in particular multipart stuff.
+    PTRACE(2, "SIP\tIncoming INVITE for " << request->GetURI() << " does not contain SDP");
+    SIP_PDU response(*request, SIP_PDU::Failure_UnsupportedMediaType);
+    response.GetMIME().SetAccept("application/sdp");
+    response.GetMIME().SetAcceptEncoding("identity");
+    response.SetAllow();
+    response.Write(transport, request->GetViaAddress(*this));
+    return false;
+  }
+
   // Get new instance of a call, abort if none created
   OpalCall * call = manager.InternalCreateCall();
   if (call == NULL) {
@@ -577,7 +590,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
                                                newTransport,
                                                request);
   if (!AddConnection(connection)) {
-    PTRACE(1, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
+    PTRACE(1, "SIP\tFailed to create SIPConnection for INVITE for " << request->GetURI() << " to " << toAddr);
     SendResponse(SIP_PDU::Failure_NotFound, transport, *request);
     return PFalse;
   }

@@ -189,10 +189,10 @@ class SIPMIMEInfo : public PMIMEInfo
 
     void SetForm(PBoolean v) { compactForm = v; }
 
-    PString GetContentType() const;
+    PCaselessString GetContentType() const;
     void SetContentType(const PString & v);
 
-    PString GetContentEncoding() const;
+    PCaselessString GetContentEncoding() const;
     void SetContentEncoding(const PString & v);
 
     PString GetFrom() const;
