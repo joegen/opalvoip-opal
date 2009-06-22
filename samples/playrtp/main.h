@@ -29,6 +29,8 @@
 #ifndef _PlayRTP_MAIN_H
 #define _PlayRTP_MAIN_H
 
+#include <ptclib/pvidfile.h>
+
 
 class PlayRTP : public PProcess
 {
@@ -57,6 +59,21 @@ class PlayRTP : public PProcess
     OpalTranscoder     * m_transcoder;
     PSoundChannel      * m_player;
     PVideoOutputDevice * m_display;
+
+    unsigned m_frameCount;
+    bool m_extendedInfo;
+    bool m_vfu;
+    bool m_videoError;
+    PFilePath m_yuvFileName;
+    PFilePath m_finalVideoFn;
+    PYUVFile m_yuvFile;
+    bool m_noDelay;
+    bool m_writeYUV;
+    bool m_writeNonYUV;
+    bool m_writeEventLog;
+    PTextFile m_eventLog;
+    PString m_extraText;
+    int m_extraHeight;
 };
 
 
