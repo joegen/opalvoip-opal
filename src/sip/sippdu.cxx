@@ -416,7 +416,7 @@ PBoolean SIPMIMEInfo::IsContentLengthPresent() const
 }
 
 
-PString SIPMIMEInfo::GetContentType() const
+PCaselessString SIPMIMEInfo::GetContentType() const
 {
   return GetFullOrCompact("Content-Type", 'c');
 }
@@ -428,7 +428,7 @@ void SIPMIMEInfo::SetContentType(const PString & v)
 }
 
 
-PString SIPMIMEInfo::GetContentEncoding() const
+PCaselessString SIPMIMEInfo::GetContentEncoding() const
 {
   return GetFullOrCompact("Content-Encoding", 'e');
 }
@@ -1731,9 +1731,7 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
 
   PBoolean removeSDP = PTrue;
 
-  // 'application/' is case sensitive, 'sdp' is not
-  PString ContentType = mime.GetContentType();
-  if ((ContentType.Left(12) == "application/") && (ContentType.Mid(12) *= "sdp")) {
+  if (mime.GetContentType() == "application/sdp") {
     sdp = new SDPSessionDescription();
     removeSDP = !sdp->Decode(entityBody);
   }
