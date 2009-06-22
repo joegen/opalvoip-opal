@@ -2935,13 +2935,18 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 
       if (response.GetStatusCode() < 300) {
         // Need to update where the ACK goes to when have 2xx response as per 13.2.2.4
-        SIPURL dest;
+        if (!connection->LockReadOnly())
+          return false;
+
         SIPDialogContext & dialog = connection->GetDialog();
         const PStringList & routeSet = dialog.GetRouteSet();
+        SIPURL dest;
         if (routeSet.IsEmpty())
           dest = dialog.GetRequestURI();
         else
           dest = routeSet.front();
+        connection->UnlockReadOnly();
+
         m_remoteAddress = dest.GetHostAddress();
         PTRACE(4, "SIP\tTransaction remote address changed to " << m_remoteAddress);
       }
