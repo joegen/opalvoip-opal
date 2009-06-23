@@ -120,6 +120,7 @@ PBoolean OpalGw::OnStart()
 
 void OpalGw::OnStop()
 {
+  manager.ShutDownEndpoints();
   PHTTPServiceProcess::OnStop();
 }
 
@@ -294,12 +295,6 @@ MyManager::MyManager()
 
 MyManager::~MyManager()
 {
-#if OPAL_LID
-  // Must do this before we destroy the manager or a crash will result
-  if (potsEP != NULL)
-    potsEP->RemoveAllLines();
-#endif
-
 #if OPAL_H323
   delete gkServer;
 #endif
