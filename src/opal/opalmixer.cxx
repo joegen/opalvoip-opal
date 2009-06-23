@@ -84,7 +84,7 @@ void OpalBaseMixer::RemoveStream(const Key_T & key)
 
 void OpalBaseMixer::RemoveAllStreams()
 {
-  PTRACE(4, "Mixer\tRemoved all streams");
+  PTRACE(4, "Mixer\tRemoving all streams");
 
   m_mutex.Wait();
 
@@ -189,6 +189,7 @@ void OpalBaseMixer::StopPushThread(bool lock)
   if (m_workerThread != NULL) {
     m_mutex.Signal();
 
+    PTRACE(4, "Mixer\tWaiting for push thread to terminate");
     m_workerThread->WaitForTermination();
 
     m_mutex.Wait();
@@ -682,17 +683,21 @@ OpalMixerEndPoint::OpalMixerEndPoint(OpalManager & manager, const char * prefix)
 
 OpalMixerEndPoint::~OpalMixerEndPoint()
 {
-  PTRACE(4, "MixerEP\tDestroyed");
+  delete m_adHocNodeInfo;
+  PTRACE(4, "MixerEP\tDestroyed " << m_nodesByUID.GetSize() << ' ' << m_nodesByName.GetSize());
 }
 
 
 void OpalMixerEndPoint::ShutDown()
 {
+  PTRACE(4, "MixerEP\tShutting down");
+
   while (!m_nodesByUID.IsEmpty()) {
     PSafePtr<OpalMixerNode> node = m_nodesByUID.GetAt(0);
     node->ShutDown();
     m_nodesByUID.RemoveAt(node->GetGUID());
   }
+  m_nodesByUID.DeleteObjectsToBeRemoved();
 
   OpalLocalEndPoint::ShutDown();
 }
@@ -1003,6 +1008,8 @@ OpalMixerNode::~OpalMixerNode()
 
 void OpalMixerNode::ShutDown()
 {
+  PTRACE(4, "MixerNode\tShutting down " << m_guid);
+
   for (PSafePtr<OpalMixerConnection> connection = GetFirstConnection(); connection != NULL; ++connection)
     connection->Release();
 
@@ -1013,6 +1020,7 @@ void OpalMixerNode::ShutDown()
 
   for (PStringList::iterator iter = m_names.begin(); iter != m_names.end(); ++iter)
     m_endpoint.m_nodesByName.RemoveAt(*iter);
+  m_names.RemoveAll();
 }
 
 
@@ -1165,7 +1173,7 @@ OpalMixerNode::AudioMixer::AudioMixer(const OpalMixerNodeInfo & info)
 
 OpalMixerNode::AudioMixer::~AudioMixer()
 {
-  RemoveAllStreams();
+  StopPushThread();
 }
 
 
@@ -1276,7 +1284,7 @@ OpalMixerNode::VideoMixer::VideoMixer(const OpalMixerNodeInfo & info)
 
 OpalMixerNode::VideoMixer::~VideoMixer()
 {
-  RemoveAllStreams();
+  StopPushThread();
 }
 
 
