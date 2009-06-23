@@ -686,6 +686,18 @@ OpalMixerEndPoint::~OpalMixerEndPoint()
 }
 
 
+void OpalMixerEndPoint::ShutDown()
+{
+  while (!m_nodesByUID.IsEmpty()) {
+    PSafePtr<OpalMixerNode> node = m_nodesByUID.GetAt(0);
+    node->ShutDown();
+    m_nodesByUID.RemoveAt(node->GetGUID());
+  }
+
+  OpalLocalEndPoint::ShutDown();
+}
+
+
 OpalMediaFormatList OpalMixerEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
@@ -1153,7 +1165,7 @@ OpalMixerNode::AudioMixer::AudioMixer(const OpalMixerNodeInfo & info)
 
 OpalMixerNode::AudioMixer::~AudioMixer()
 {
-  StopPushThread();
+  RemoveAllStreams();
 }
 
 
@@ -1264,7 +1276,7 @@ OpalMixerNode::VideoMixer::VideoMixer(const OpalMixerNodeInfo & info)
 
 OpalMixerNode::VideoMixer::~VideoMixer()
 {
-  StopPushThread();
+  RemoveAllStreams();
 }
 
 
