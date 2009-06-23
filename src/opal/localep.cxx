@@ -234,11 +234,8 @@ PBoolean OpalLocalConnection::SetUpConnection()
   if (!endpoint.OnIncomingCall(*this))
     return false;
 
-  if (endpoint.IsDeferredAlerting())
-    return true;
-
-  SetPhase(AlertingPhase);
-  OnAlerting();
+  if (!endpoint.IsDeferredAlerting())
+    AlertingIncoming();
 
   return true;
 }
@@ -298,8 +295,10 @@ bool OpalLocalConnection::SendUserInputString(const PString & value)
 void OpalLocalConnection::AlertingIncoming()
 {
   if (LockReadWrite()) {
-    SetPhase(AlertingPhase);
-    OnAlerting();
+    if (GetPhase() < AlertingPhase) {
+      SetPhase(AlertingPhase);
+      OnAlerting();
+    }
     UnlockReadWrite();
   }
 }
@@ -308,8 +307,7 @@ void OpalLocalConnection::AlertingIncoming()
 void OpalLocalConnection::AcceptIncoming()
 {
   if (LockReadWrite()) {
-    if (GetPhase() < AlertingPhase)
-      OnAlerting();
+    AlertingIncoming();
     OnConnectedInternal();
     AutoStartMediaStreams();
     UnlockReadWrite();
