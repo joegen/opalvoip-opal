@@ -1293,7 +1293,11 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
     return true;
   }
 
-  if (stun != NULL && stun->GetNatType() != PSTUNClient::BlockedNat)
+  PIPSocket::Address stunInterface;
+  if (stun != NULL &&
+      stun->GetNatType() != PSTUNClient::BlockedNat &&
+      stun->GetInterfaceAddress(stunInterface) &&
+      stunInterface == localAddress)
     return stun->GetExternalAddress(localAddress); // Translate it!
 
   return false; // Have nothing to translate it to
