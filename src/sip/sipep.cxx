@@ -538,11 +538,11 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 void SIPEndPoint::AddWork(SIP_PDU_Work * work)
 {
 #if SIP_THREAD_POOL
+  PTRACE(4, "SIP\tQueueing PDU \"" << work->m_pdu << "\", transaction="
+         << work->m_pdu->GetTransactionID() << ", token=" << work->m_token);
   threadPool.AddWork(work, work->m_token);
 #else
-  PTRACE(2, "SIP\tStarted processing PDU");
   work->OnReceivedPDU();
-  PTRACE(2, "SIP\tFinished processing PDU");
   delete work;
 #endif
 }
@@ -689,8 +689,7 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
       break;
 
     case SIP_PDU::Failure_RequestTimeout :
-      if (handler != NULL)
-        handler->OnTransactionFailed(transaction);
+      OnTransactionFailed(transaction);
       break;
 
     default :
@@ -704,9 +703,12 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
           break;
 
         default :
-          // Failure for a SUBSCRIBE/REGISTER/PUBLISH/MESSAGE 
-          if (handler != NULL)
+          PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
+          if (handler != NULL) 
             handler->OnFailed(response.GetStatusCode());
+          else {
+            PTRACE(2, "SIP\tResponse received for unknown handler ID: " << response.GetMIME().GetCallID());
+          }
           break;
       }
   }
@@ -858,8 +860,10 @@ void SIPEndPoint::OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_P
 {
   const SIPMIMEInfo & responseMIME = response.GetMIME();
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(responseMIME.GetCallID(), PSafeReadWrite);
-  if (handler == NULL)
+  if (handler == NULL) {
+    PTRACE(2, "SIP\tInterval too brief received for unknown handler ID: " << response.GetMIME().GetCallID());
     return;
+  }
 
   SIPTransaction *newTransaction = handler->CreateTransaction(transaction.GetTransport());
   if (newTransaction) {
@@ -880,6 +884,9 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
   if (handler != NULL)
     handler->OnReceivedAuthenticationRequired(transaction, response);
+  else {
+    PTRACE(2, "SIP\tAuthentication required received for unknown handler ID: " << response.GetMIME().GetCallID());
+  }
 }
 
 
@@ -888,6 +895,9 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
   if (handler != NULL) 
     handler->OnReceivedOK(transaction, response);
+  else {
+    PTRACE(2, "SIP\tOK received for unknown handler ID: " << response.GetMIME().GetCallID());
+  }
 }
     
 
@@ -896,6 +906,9 @@ void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(transaction.GetMIME().GetCallID(), PSafeReadWrite);
   if (handler != NULL) 
     handler->OnTransactionFailed(transaction);
+  else {
+    PTRACE(2, "SIP\tResponse received for unknown handler ID: " << transaction.GetMIME().GetCallID());
+  }
 }
 
 
@@ -1591,9 +1604,7 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
     m_workerMutex.Signal();
 
     // process the work
-    PTRACE(2, "SIP\tStarted processing PDU");
     work->OnReceivedPDU();
-    PTRACE(2, "SIP\tFinished processing PDU");
 
     // indicate work is now free
     m_pool.RemoveWork(work, false);
