@@ -38,7 +38,7 @@
 
 #include <opal/opalvxml.h>
 
-#include <opal/connection.h>
+#include <opal/call.h>
 #include <codec/opalwavfile.h>
 
 
@@ -79,6 +79,12 @@ PBoolean OpalVXMLSession::Close()
 void OpalVXMLSession::OnEndSession()
 {
   conn->Release();
+}
+
+
+void OpalVXMLSession::OnTransfer(const PString & destination, bool bridged)
+{
+  conn->GetCall().Transfer(destination, bridged ? conn->GetOtherPartyConnection() : conn);
 }
 
 
