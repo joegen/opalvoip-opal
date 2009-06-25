@@ -66,26 +66,6 @@ ostream & operator<<(ostream & strm, SIPHandler::State state)
 #endif
 
 
-class SIPHandlerWork : public SIPEndPoint::SIP_Work
-{
-  public:
-    SIPHandlerWork(SIPEndPoint & ep, SIPHandler * handler, SIPHandler::State newState)
-      : SIPEndPoint::SIP_Work(ep, NULL), m_handler(handler), m_newState(newState)
-    { m_handler->SafeReference(); }
-
-    void Add(SIPEndPoint::WorkThreadPool & pool)
-    { pool.AddWork(this); }
-
-    virtual void Process()
-    {
-      m_handler->ActivateState(m_newState);
-      m_handler->SafeDereference();
-    }
-
-    SIPHandler * m_handler;
-    SIPHandler::State m_newState;
-};
-
 ////////////////////////////////////////////////////////////////////////////
 
 SIPHandler::SIPHandler(SIPEndPoint & ep,
@@ -477,7 +457,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   // Restart the transaction with new authentication handler
   State oldState = state;
   state = Unavailable;
-  endpoint.AddWork(new SIPHandlerWork(endpoint, this, oldState));
+  SendRequest(oldState);
 }
 
 

@@ -836,33 +836,14 @@ class SIPEndPoint : public OpalRTPEndPoint
     class SIP_Work
     {
       public:
-        SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu);
+        SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu, const PString & token);
         virtual ~SIP_Work();
 
-        virtual void Add(WorkThreadPool & pool) = 0; 
-
-        virtual void Process() = 0;
+        virtual void Process();
 
         SIPEndPoint & m_endpoint;
         SIP_PDU     * m_pdu;
-    };
-
-    class SIP_PDU_Work : public SIP_Work
-    {
-      public:
-        SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu);
-        void Add(SIPEndPoint::WorkThreadPool & pool);
-        virtual void Process();
         PString       m_token;
-    };
-
-    class SIPResponseWork : public SIP_Work
-    {
-      public:
-        SIPResponseWork(SIPEndPoint & ep, const PString & transactionID, SIP_PDU * pdu);
-        void Add(SIPEndPoint::WorkThreadPool & pool);
-        void Process();
-        PString m_transactionID;
     };
 
     class WorkThreadPool : public PThreadPool<SIP_Work>
@@ -871,7 +852,7 @@ class SIPEndPoint : public OpalRTPEndPoint
         virtual WorkerThreadBase * CreateWorkerThread();
     } threadPool;
 
-    virtual void AddWork(SIP_Work * work);
+    virtual void QueuePDU(SIP_PDU * pdu, const PString & token);
 
   protected:
     typedef std::queue<SIP_Work *> SIP_WorkQueue;
