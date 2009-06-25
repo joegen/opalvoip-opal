@@ -1051,6 +1051,7 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
     RouteEntry & entry = routeTable[routeIndex++];
     PINDEX pos;
     if (entry.regex.Execute(search, pos)) {
+      PTRACE(4, "OpalMan\tMatched regex \"" << entry.pattern << '"');
       if (entry.destination.NumCompare("label:") != EqualTo) {
         destination = entry.destination;
         break;
@@ -1059,6 +1060,9 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
       // restart search in table using label.
       search = entry.destination;
       routeIndex = 0;
+    }
+    else {
+      PTRACE(4, "OpalMan\tDid not match regex \"" << entry.pattern << '"');
     }
   }
 
