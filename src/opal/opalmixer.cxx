@@ -41,7 +41,7 @@
 #include <ptlib/vconvert.h>
 
 
-#define DETAIL_LOG_LEVEL 4
+#define DETAIL_LOG_LEVEL 6
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1167,6 +1167,9 @@ OpalTranscoder & OpalMixerNode::MediaMixer::GetTranscoder(const OpalMediaFormat 
 
 OpalMixerNode::AudioMixer::AudioMixer(const OpalMixerNodeInfo & info)
   : OpalAudioMixer(false, info.m_sampleRate)
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+  , m_audioDebug("MixerDebug-"+info.m_name+".csv", PFile::WriteOnly)
+#endif
 {
 }
 
@@ -1181,6 +1184,10 @@ void OpalMixerNode::AudioMixer::PushOne(OpalMixerMediaStream & stream,
                                         CachedAudio & cache,
                                         const short * audioToSubtract)
 {
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+  m_audioDebug << stream.GetID() << ',';
+#endif
+
   switch (cache.m_state) {
     case CachedAudio::Collecting :
       MixAdditive(cache.m_raw, audioToSubtract);
@@ -1190,27 +1197,52 @@ void OpalMixerNode::AudioMixer::PushOne(OpalMixerMediaStream & stream,
 
     case CachedAudio::Collected :
       m_mutex.Signal();
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+      m_audioDebug << ",,,";
+#endif
       return;
 
     case CachedAudio::Completed :
       m_mutex.Signal();
       stream.PushPacket(cache.m_encoded);
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+      m_audioDebug << cache.m_encoded.GetPayloadType() << ','
+                   << cache.m_encoded.GetTimestamp() << ','
+                   << cache.m_encoded.GetPayloadSize() << ',';
+#endif
       return;
   }
 
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
   if (mediaFormat == OpalPCM16) {
-    if (cache.m_raw.GetPayloadSize() < stream.GetDataSize())
+    if (cache.m_raw.GetPayloadSize() < stream.GetDataSize()) {
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+      m_audioDebug << ','
+                 << cache.m_raw.GetTimestamp() << ','
+                   << cache.m_raw.GetPayloadSize() << ',';
+#endif
       return;
+    }
 
     cache.m_state = CachedAudio::Completed;
     stream.PushPacket(cache.m_raw);
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+    m_audioDebug << "PCM-16,"
+                 << cache.m_raw.GetTimestamp() << ','
+                 << cache.m_raw.GetPayloadSize() << ',';
+#endif
     return;
   }
 
   OpalTranscoder & transcoder = GetTranscoder(OpalPCM16, mediaFormat);
-  if (cache.m_raw.GetPayloadSize() < transcoder.GetOptimalDataFrameSize(true))
+  if (cache.m_raw.GetPayloadSize() < transcoder.GetOptimalDataFrameSize(true)) {
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+    m_audioDebug << ','
+                 << cache.m_raw.GetTimestamp() << ','
+                 << cache.m_raw.GetPayloadSize() << ',';
+#endif
     return;
+  }
 
   if (cache.m_encoded.SetPayloadSize(transcoder.GetOptimalDataFrameSize(false)) &&
       transcoder.Convert(cache.m_raw, cache.m_encoded)) {
@@ -1218,6 +1250,11 @@ void OpalMixerNode::AudioMixer::PushOne(OpalMixerMediaStream & stream,
     cache.m_encoded.SetTimestamp(cache.m_raw.GetTimestamp());
     cache.m_state = CachedAudio::Completed;
     stream.PushPacket(cache.m_encoded);
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+    m_audioDebug << cache.m_encoded.GetPayloadType() << ','
+                 << cache.m_encoded.GetTimestamp() << ','
+                 << cache.m_encoded.GetPayloadSize() << ',';
+#endif
   }
   else {
     PTRACE(2, "MixerNode\tCould not convert audio to "
@@ -1229,13 +1266,14 @@ void OpalMixerNode::AudioMixer::PushOne(OpalMixerMediaStream & stream,
 
 bool OpalMixerNode::AudioMixer::OnPush()
 {
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+  m_audioDebug << PTimer::Tick().GetMilliSeconds() << ',' << m_outputTimestamp << ',';
+#endif
   m_mutex.Wait();
   PreMixStreams();
   m_mutex.Signal();
 
   for (PSafePtr<OpalMixerMediaStream> stream(m_outputStreams, PSafeReadOnly); stream != NULL; ++stream) {
-    OpalMediaFormat mediaFormat = stream->GetMediaFormat();
-
     m_mutex.Wait(); // Signal() call for this mutex is inside PushOne()
 
     // Check for full participant, so can subtract their signal
@@ -1244,7 +1282,7 @@ bool OpalMixerNode::AudioMixer::OnPush()
       PushOne(*stream, m_cache[stream->GetID()], ((AudioStream *)inputStream->second)->m_cacheSamples);
     else {
       // Listen only participant, can use cached encoded audio
-      PString encodedFrameKey = mediaFormat;
+      PString encodedFrameKey = stream->GetMediaFormat();
       encodedFrameKey.sprintf(":%u", stream->GetDataSize());
       PushOne(*stream, m_cache[encodedFrameKey], NULL);
     }
@@ -1266,6 +1304,10 @@ bool OpalMixerNode::AudioMixer::OnPush()
         break;
     }
   }
+
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+  m_audioDebug << endl;
+#endif
 
   m_outputTimestamp += m_periodTS;
 
