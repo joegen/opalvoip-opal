@@ -52,10 +52,10 @@ OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
     defaultVXML("<?xml version=\"1.0\"?>\n"
                 "<vxml version=\"1.0\">\n"
                 "  <form id=\"root\">\n"
-                "    <audio src=\"welcome.wav\">\n"
+                "    <audio src=\"file:welcome.wav\">\n"
                 "      This is the OPAL, V X M L test program, please speak after the tone.\n"
                 "    </audio>\n"
-                "    <record name=\"msg\" beep=\"true\" dtmfterm=\"true\" dest=\"recording.wav\" maxtime=\"10s\"/>\n"
+                "    <record name=\"msg\" beep=\"true\" dtmfterm=\"true\" dest=\"file:recording.wav\" maxtime=\"10s\"/>\n"
                 "  </form>\n"
                 "</vxml>\n")
 {
