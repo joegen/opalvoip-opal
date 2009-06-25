@@ -50,6 +50,9 @@ class RTP_DataFrame;
 class OpalJitterBuffer;
 
 
+//#define OPAL_MIXER_AUDIO_DEBUG 1
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /** Class base for a media mixer.
@@ -930,6 +933,9 @@ class OpalMixerNode : public PSafeObject
         CachedAudio & cache,
         const short * audioToSubtract
       );
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+      PTextFile m_audioDebug;
+#endif
     };
     AudioMixer m_audioMixer;
 
