@@ -899,6 +899,8 @@ class SIPEndPoint : public OpalRTPEndPoint
 #if OPAL_HAS_SIPIM
     OpalSIPIMManager m_sipIMManager;
 #endif
+
+    bool m_disableTrying;
 };
 
 
