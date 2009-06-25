@@ -666,18 +666,6 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  PSafePtr<SIPHandler> handler = NULL;
- 
-  if (   transaction.GetMethod() == SIP_PDU::Method_REGISTER
-      || transaction.GetMethod() == SIP_PDU::Method_SUBSCRIBE
-      || transaction.GetMethod() == SIP_PDU::Method_PUBLISH
-      || transaction.GetMethod() == SIP_PDU::Method_MESSAGE) {
-    // Have a response to various non-INVITE messages
-    handler = activeSIPHandlers.FindSIPHandlerByCallID(transaction.GetMIME().GetCallID(), PSafeReadWrite);
-    if (handler == NULL) 
-      return;
-  }
-
   switch (response.GetStatusCode()) {
     case SIP_PDU::Failure_IntervalTooBrief :
       OnReceivedIntervalTooBrief(transaction, response);
