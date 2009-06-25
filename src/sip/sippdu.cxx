@@ -2478,7 +2478,7 @@ SIPTransaction::SIPTransaction(SIPEndPoint & ep,
   , transport(trans)
 {
   Construct(minRetryTime, maxRetryTime);
-  PTRACE(4, "SIP\tTransaction id=" << GetTransactionID() << " created.");
+  PTRACE(4, "SIP\tTransaction created.");
 }
 
 
