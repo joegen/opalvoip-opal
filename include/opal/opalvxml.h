@@ -62,6 +62,7 @@ class OpalVXMLSession : public PVXMLSession
 
     virtual PBoolean Close();
     virtual void OnEndSession();
+    virtual void OnTransfer(const PString & destination, bool bridged);
 
     virtual PWAVFile * CreateWAVFile(
       const PFilePath & fn,
