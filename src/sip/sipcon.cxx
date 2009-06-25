@@ -366,21 +366,21 @@ void SIPConnection::OnReleased()
 
   // Sent a BYE, wait for it to complete
   if (byeTransaction != NULL) {
-    PTRACE(4, "SIP\tAwaiting BYE transaction completion.");
+    PTRACE(4, "SIP\tAwaiting BYE transaction completion, id=" << byeTransaction->GetTransactionID());
     byeTransaction->WaitForCompletion();
     byeTransaction.SetNULL();
   }
 
   // Wait until all INVITEs have completed
   for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
-    PTRACE(4, "SIP\tAwaiting forked INVITE transaction completion.");
+    PTRACE(4, "SIP\tAwaiting forked INVITE transaction completion, id=" << invitation->GetTransactionID());
     invitation->WaitForCompletion();
   }
   forkedInvitations.RemoveAll();
 
   // Sent a REFER, wait for it to complete
   if (referTransaction != NULL) {
-    PTRACE(4, "SIP\tAwaiting REFER transaction completion.");
+    PTRACE(4, "SIP\tAwaiting REFER transaction completion, id=" << referTransaction->GetTransactionID());
     referTransaction->WaitForCompletion();
     referTransaction.SetNULL();
   }

@@ -2478,7 +2478,7 @@ SIPTransaction::SIPTransaction(SIPEndPoint & ep,
   , transport(trans)
 {
   Construct(minRetryTime, maxRetryTime);
-  PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " created.");
+  PTRACE(4, "SIP\tTransaction id=" << GetTransactionID() << " created.");
 }
 
 
@@ -2491,7 +2491,7 @@ SIPTransaction::SIPTransaction(SIPConnection & conn,
 {
   connection = &conn;
   Construct();
-  PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " created.");
+  PTRACE(4, "SIP\t" << meth << " transaction id=" << GetTransactionID() << " created.");
 }
 
 
@@ -2523,8 +2523,9 @@ void SIPTransaction::Construct(Methods method, SIPDialogContext & dialog)
 
 SIPTransaction::~SIPTransaction()
 {
-  PTRACE_IF(1, state < Terminated_Success, "SIP\tDestroying transaction " << mime.GetCSeq() << " which is not yet terminated.");
-  PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
+  PTRACE_IF(1, state < Terminated_Success, "SIP\tDestroying transaction id="
+            << GetTransactionID() << " which is not yet terminated.");
+  PTRACE(4, "SIP\tTransaction id=" << GetTransactionID() << " destroyed.");
 }
 
 
@@ -2605,11 +2606,14 @@ PBoolean SIPTransaction::Cancel()
   PSafeLockReadWrite lock(*this);
 
   if (state == NotStarted || state >= Cancelling) {
-    PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " cannot be cancelled as in state " << state);
+    PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " cannot be cancelled as in state " << state);
     return PFalse;
   }
 
-  PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " cancelled.");
+  PTRACE(4, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " cancelled.");
+  state = Cancelling;
+  retry = 0;
+  retryTimer = retryTimeoutMin;
   completionTimer = endpoint.GetPduCleanUpTimeout();
   return ResendCANCEL();
 }
@@ -2618,6 +2622,7 @@ PBoolean SIPTransaction::Cancel()
 void SIPTransaction::Abort()
 {
   if (LockReadWrite()) {
+    PTRACE(4, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " aborted.");
     SetTerminated(Terminated_Aborted);
     UnlockReadWrite();
   }
@@ -2647,16 +2652,7 @@ bool SIPTransaction::ResendCANCEL()
   PStringList viaList = mime.GetViaList();
   cancel.GetMIME().SetVia(viaList.front());
 
-  if (!SendPDU(cancel))
-    return false;
-
-  if (state < Cancelling) {
-    state = Cancelling;
-    retry = 0;
-    retryTimer = retryTimeoutMin;
-  }
-
-  return true;
+  return SendPDU(cancel);
 }
 
 
@@ -2694,7 +2690,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
      */
   if (IsInProgress()) {
     if (response.GetStatusCode()/100 == 1) {
-      PTRACE(3, "SIP\tTransaction " << cseq << " proceeding.");
+      PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " proceeding.");
 
       if (state == Trying)
         state = Proceeding;
@@ -2711,7 +2707,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
         completionTimer = endpoint.GetNonInviteTimeout();
     }
     else {
-      PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
+      PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " completed.");
       state = Completed;
       statusCode = response.GetStatusCode();
     }
@@ -2754,15 +2750,6 @@ void SIPTransaction::OnRetry(PTimer &, INT)
     return;
   }
 
-  if (state == Cancelling) {
-    if (!ResendCANCEL())
-      return;
-  }
-  else {
-    if (!SendPDU(*this))
-      return;
-  }
-
   if (state > Trying)
     retryTimer = retryTimeoutMax;
   else {
@@ -2772,7 +2759,13 @@ void SIPTransaction::OnRetry(PTimer &, INT)
     retryTimer = timeout;
   }
 
-  PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " timeout, making retry " << retry << ", timeout " << retryTimer);
+  PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID()
+         << " timeout, making retry " << retry << ", timeout " << retryTimer);
+
+  if (state == Cancelling)
+    ResendCANCEL();
+  else
+    SendPDU(*this);
 }
 
 
@@ -2836,7 +2829,7 @@ void SIPTransaction::SetTerminated(States newState)
 
   if (state >= Terminated_Success) {
     PTRACE_IF(3, newState != Terminated_Success, "SIP\tTried to set state " << StateNames[newState] 
-              << " for transaction " << mime.GetCSeq()
+              << " for " << GetMethod() << " transaction id=" << GetTransactionID()
               << " but already terminated ( " << StateNames[state] << ')');
     return;
   }
@@ -2844,7 +2837,8 @@ void SIPTransaction::SetTerminated(States newState)
   States oldState = state;
   
   state = newState;
-  PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for transaction " << mime.GetCSeq());
+  PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for "
+         << GetMethod() << " transaction id=" << GetTransactionID());
 
   // Transaction failed, tell the endpoint
   if (state > Terminated_Success) {
