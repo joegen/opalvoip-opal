@@ -918,6 +918,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnTransfer(wxCommandEvent& event);
     void OnStartRecording(wxCommandEvent& event);
     void OnStopRecording(wxCommandEvent& event);
+    void OnSendAudioFile(wxCommandEvent& event);
     void OnAudioDevicePair(wxCommandEvent& event);
     void OnAudioDevicePreset(wxCommandEvent& event);
     void OnNewCodec(wxCommandEvent& event);
@@ -1112,6 +1113,7 @@ class MyManager : public wxFrame, public OpalManager
 
     OpalRecordManager::Options m_recordingOptions;
     PwxString                  m_lastRecordFile;
+    PwxString                  m_lastPlayFile;
 
     DECLARE_EVENT_TABLE()
 

@@ -519,7 +519,8 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,ID_TRANSFER_MENU_TOP, MyManager::OnTransfer)
   EVT_MENU(XRCID("MenuStartRecording"),  MyManager::OnStartRecording)
   EVT_MENU(XRCID("MenuStopRecording"),   MyManager::OnStopRecording)
-  EVT_MENU(XRCID("MenuAudioDevice"),   MyManager::OnAudioDevicePair)
+  EVT_MENU(XRCID("MenuSendAudioFile"),   MyManager::OnSendAudioFile)
+  EVT_MENU(XRCID("MenuAudioDevice"),     MyManager::OnAudioDevicePair)
   EVT_MENU_RANGE(ID_AUDIO_DEVICE_MENU_BASE, ID_AUDIO_DEVICE_MENU_TOP, MyManager::OnAudioDevicePreset)
   EVT_MENU_RANGE(ID_AUDIO_CODEC_MENU_BASE, ID_AUDIO_CODEC_MENU_TOP, MyManager::OnNewCodec)
   EVT_MENU_RANGE(ID_VIDEO_CODEC_MENU_BASE, ID_VIDEO_CODEC_MENU_TOP, MyManager::OnNewCodec)
@@ -1357,6 +1358,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuTransfer"),        m_callState == InCallState);
   menubar->Enable(XRCID("MenuStartRecording"),  m_callState == InCallState && !m_activeCall->IsRecording());
   menubar->Enable(XRCID("MenuStopRecording"),   m_callState == InCallState &&  m_activeCall->IsRecording());
+  menubar->Enable(XRCID("MenuSendAudioFile"),   m_callState == InCallState);
 
   menubar->Enable(XRCID("MenuSendFax"),         CanDoFax());
 
@@ -2419,6 +2421,36 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 {
   if (m_activeCall != NULL)
     m_activeCall->StopRecording();
+}
+
+
+void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
+{
+  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReadOnly));
+  if (connection == NULL)
+    return;
+
+  wxFileDialog dlg(this,
+                   wxT("File to send"),
+                   wxEmptyString,
+                   m_lastPlayFile,
+                   wxT("WAV Files (*.wav)|*.wav"),
+                   wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+  if (dlg.ShowModal() == wxID_OK && m_activeCall != NULL) {
+    m_lastPlayFile = dlg.GetPath();
+    PStringStream ivrXML;
+    ivrXML << "ivr:<?xml version=\"1.0\"?>"
+                  "<vxml version=\"1.0\">"
+                    "<form id=\"PlayFile\">"
+                      "<transfer bridge=\"false\" dest=\"" << connection->GetLocalPartyURL() << "\">"
+                        "<audio src=\"" << PURL(PFilePath(m_lastPlayFile)) << "\"/>"
+                      "</transfer>"
+                    "</form>"
+                  "</vxml>";
+    if (!m_activeCall->Transfer(ivrXML, connection))
+      wxMessageBox(wxT("Cannot send ")+m_lastPlayFile,
+                   wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
+  }
 }
 
 
