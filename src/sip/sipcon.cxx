@@ -286,8 +286,14 @@ void SIPConnection::OnReleased()
 
   switch (releaseMethod) {
     case ReleaseWithNothing :
-      if (!forkedInvitations.IsEmpty())
+      for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+        /* If we never even received a "100 Trying" from a remote, then just abort
+           the transaction, do not wait, it is probably on an interface that the
+           remote is not physically on. */
+        if (!invitation->IsCompleted())
+          invitation->Abort();
         notifyDialogEvent = SIPDialogNotification::Timeout;
+      }
       break;
 
     case ReleaseWithResponse :
@@ -321,8 +327,15 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithCANCEL :
       PTRACE(3, "SIP\tCancelling " << forkedInvitations.GetSize() << " transactions.");
-      for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation)
-        invitation->Cancel();
+      for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+        /* If we never even received a "100 Trying" from a remote, then just abort
+           the transaction, do not wait, it is probably on an interface that the
+           remote is not physically on, otherwise we have to CANCEL and wait. */
+        if (invitation->IsTrying())
+          invitation->Abort();
+        else
+          invitation->Cancel();
+      }
       notifyDialogEvent = SIPDialogNotification::Cancelled;
   }
 
@@ -347,6 +360,10 @@ void SIPConnection::OnReleased()
   // Close media
   CloseMediaStreams();
 
+  /* Note we wait for various transactions to complete as the transport they
+     rely on may be owned by the connection, and would be deleted once we exit
+     from OnRelease() causing a crash in the transaction processing. */
+
   // Sent a BYE, wait for it to complete
   if (byeTransaction != NULL) {
     PTRACE(4, "SIP\tAwaiting BYE transaction completion.");
@@ -361,6 +378,7 @@ void SIPConnection::OnReleased()
   }
   forkedInvitations.RemoveAll();
 
+  // Sent a REFER, wait for it to complete
   if (referTransaction != NULL) {
     PTRACE(4, "SIP\tAwaiting REFER transaction completion.");
     referTransaction->WaitForCompletion();
