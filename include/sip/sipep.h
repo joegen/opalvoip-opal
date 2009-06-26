@@ -850,9 +850,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     {
       public:
         virtual WorkerThreadBase * CreateWorkerThread();
-    } threadPool;
-
-    virtual void QueuePDU(SIP_PDU * pdu, const PString & token);
+    } m_connectionThreadPool, m_handlerThreadPool;
 
   protected:
     typedef std::queue<SIP_Work *> SIP_WorkQueue;

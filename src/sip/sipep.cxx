@@ -46,8 +46,6 @@
 #include <opal/call.h>
 #include <sip/handlers.h>
 
-#define SIP_THREAD_POOL   1
-
 
 #define new PNEW
 
@@ -490,7 +488,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     case SIP_PDU::Method_CANCEL :
       token = m_receivedConnectionTokens(mime.GetCallID());
       if (!token.IsEmpty()) {
-        QueuePDU(pdu, token);
+        m_connectionThreadPool.AddWork(new SIP_Work(*this, pdu, token), token);
         return true;
       }
       break;
@@ -499,7 +497,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       if (toToken.IsEmpty()) {
         token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
-          QueuePDU(pdu, token);
+          m_connectionThreadPool.AddWork(new SIP_Work(*this, pdu, token), token);
           return true;
         }
 
@@ -533,20 +531,8 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   else
     return OnReceivedConnectionlessPDU(transport, pdu);
 
-  QueuePDU(pdu, token);
+  m_connectionThreadPool.AddWork(new SIP_Work(*this, pdu, token), token);
   return true;
-}
-
-
-void SIPEndPoint::QueuePDU(SIP_PDU * pdu, const PString & token)
-{
-#if SIP_THREAD_POOL
-  PTRACE(4, "SIP\tQueueing PDU \"" << *pdu << "\", transaction=" << pdu->GetTransactionID());
-  threadPool.AddWork(new SIP_Work(*this, pdu, token), token);
-#else
-  work->OnReceivedPDU();
-  delete work;
-#endif
 }
 
 
@@ -556,7 +542,7 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
     PString id;
     if (activeSIPHandlers.FindSIPHandlerByCallID(id = pdu->GetMIME().GetCallID(), PSafeReference) != NULL ||
         GetTransaction(id = pdu->GetTransactionID(), PSafeReference) != NULL) {
-      QueuePDU(pdu, id);
+      m_handlerThreadPool.AddWork(new SIP_Work(*this, pdu, id), id);
       return true;
     }
 
@@ -844,10 +830,11 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return PFalse;
   }
 
-  m_receivedConnectionTokens.SetAt(mime.GetCallID(), connection->GetToken());
+  PString token = connection->GetToken();
+  m_receivedConnectionTokens.SetAt(mime.GetCallID(), token);
 
   // Get the connection to handle the rest of the INVITE in the thread pool
-  QueuePDU(request, connection->GetToken());
+  m_connectionThreadPool.AddWork(new SIP_Work(*this, request, token), token);
 
   return PTrue;
 }
@@ -1604,6 +1591,8 @@ SIPEndPoint::SIP_Work::SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu, const PString &
   , m_pdu(pdu)
   , m_token(token)
 {
+  PTRACE(4, "SIP\tQueueing PDU \"" << *m_pdu << "\", transaction="
+         << m_pdu->GetTransactionID() << ", token=" << m_token);
 }
 
 
