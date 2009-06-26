@@ -84,7 +84,7 @@ void OpalVXMLSession::OnEndSession()
 
 void OpalVXMLSession::OnTransfer(const PString & destination, bool bridged)
 {
-  conn->GetCall().Transfer(destination, bridged ? conn->GetOtherPartyConnection() : conn);
+  conn->GetCall().Transfer(destination, bridged ? &*conn->GetOtherPartyConnection() : &*conn);
 }
 
 
