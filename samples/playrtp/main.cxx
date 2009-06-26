@@ -429,8 +429,8 @@ void PlayRTP::Main()
   m_singleStep = args.HasOption('p');
   m_info       = args.GetOptionCount('i');
 
-  bool m_writeYUV = false;
-  bool m_writeNonYUV = false;
+  m_writeYUV = false;
+  m_writeNonYUV = false;
   if (args.HasOption('Y')) {
     m_writeYUV = true;
     m_yuvFileName = args.GetOptionString('Y');
@@ -458,9 +458,14 @@ void PlayRTP::Main()
   {
     PString driverName = args.GetOptionString('A');
     PString deviceName = args.GetOptionString('a');
-    PStringList devices = PSoundChannel::GetDriversDeviceNames("*", PSoundChannel::Player);
     m_player = PSoundChannel::CreateOpenedChannel(driverName, deviceName, PSoundChannel::Player);
     if (m_player == NULL) {
+      PStringList devices = PSoundChannel::GetDriversDeviceNames("*", PSoundChannel::Player);
+      if (devices.IsEmpty()) {
+        cerr << "No audio devices in the system!" << endl;
+        return;
+      }
+
       if (!driverName.IsEmpty() || !deviceName.IsEmpty()) {
         cerr << "Cannot use ";
         if (driverName.IsEmpty() && deviceName.IsEmpty())
@@ -471,26 +476,17 @@ void PlayRTP::Main()
         if (!deviceName)
           cerr << ", device \"" << deviceName << '"';
         cerr << ", must be one of:\n";
-        PStringList devices = PSoundChannel::GetDriversDeviceNames("*", PSoundChannel::Player);
         for (PINDEX i = 0; i < devices.GetSize(); i++)
           cerr << "   " << devices[i] << '\n';
         cerr << endl;
         return;
       }
-      else {
-        PString lastTried = "default";
-        PINDEX i = 0;
-        for (i = 0;m_player == NULL && i < devices.GetSize();++i) {
-          deviceName = devices[i];
-          if (deviceName *= lastTried) {
-            ++i;
-            continue;
-          }
-          cerr << "Cannot use " << lastTried << " audio device - trying " << deviceName << endl;
-          m_player = PSoundChannel::CreateOpenedChannel(driverName, deviceName, PSoundChannel::Player);
-        }
-        if (m_player == NULL) {
-          cerr << "Unable to find available sound device" << endl;
+
+      PStringList::iterator it = devices.begin();
+      while ((m_player = PSoundChannel::CreateOpenedChannel(driverName, *it, PSoundChannel::Player)) == NULL) {
+        cerr << "Cannot use audio device \"" << *it << '"' << endl;
+        if (++it == devices.end()) {
+          cerr << "Unable to find an available sound device." << endl;
           return;
         }
       }
