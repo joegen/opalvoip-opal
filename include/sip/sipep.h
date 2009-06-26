@@ -850,7 +850,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     {
       public:
         virtual WorkerThreadBase * CreateWorkerThread();
-    } threadPool;
+    } m_connectionThreadPool, m_handlerThreadPool;
 
     typedef std::queue<SIP_PDU_Work *> SIP_PDUWorkQueue;
 
@@ -870,8 +870,6 @@ class SIPEndPoint : public OpalRTPEndPoint
         PSyncPoint m_sync;
         SIP_PDUWorkQueue m_pduQueue;
     };
-
-    virtual void AddWork(SIP_PDU_Work * work);
 
     enum {
       HighPriority = 80,
