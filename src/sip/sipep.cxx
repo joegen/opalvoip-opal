@@ -485,7 +485,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     case SIP_PDU::Method_CANCEL :
       token = m_receivedConnectionTokens(mime.GetCallID());
       if (!token.IsEmpty()) {
-        m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+        m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, pdu), token);
         return true;
       }
       break;
@@ -494,7 +494,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       if (toToken.IsEmpty()) {
         token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
-          m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+          m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, pdu), token);
           return true;
         }
 
@@ -528,7 +528,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   else
     return OnReceivedConnectionlessPDU(transport, pdu);
 
-  m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, pdu));
+  m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, pdu), token);
   return true;
 }
 
@@ -539,7 +539,7 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
     PString id;
     if (activeSIPHandlers.FindSIPHandlerByCallID(id = pdu->GetMIME().GetCallID(), PSafeReference) != NULL ||
         GetTransaction(id = pdu->GetTransactionID(), PSafeReference) != NULL) {
-      m_handlerThreadPool.AddWork(new SIP_PDU_Work(*this, id, pdu));
+      m_handlerThreadPool.AddWork(new SIP_PDU_Work(*this, id, pdu), id);
       return true;
     }
 
@@ -827,10 +827,11 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return PFalse;
   }
 
-  m_receivedConnectionTokens.SetAt(mime.GetCallID(), connection->GetToken());
+  PString token = connection->GetToken();
+  m_receivedConnectionTokens.SetAt(mime.GetCallID(), token);
 
   // Get the connection to handle the rest of the INVITE in the thread pool
-  m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, connection->GetToken(), request));
+  m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, request), token);
 
   return PTrue;
 }
