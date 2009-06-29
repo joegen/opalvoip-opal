@@ -335,17 +335,14 @@ static PString TranslateENUM(const PString & remoteParty)
 }
 
 
-PBoolean SIPEndPoint::MakeConnection(OpalCall & call,
-                                 const PString & remoteParty,
-                                 void * userData,
-                                 unsigned int options,
-                                 OpalConnection::StringOptions * stringOptions)
+PSafePtr<OpalConnection> SIPEndPoint::MakeConnection(OpalCall & call,
+                                                const PString & remoteParty,
+                                                         void * userData,
+                                                   unsigned int options,
+                                OpalConnection::StringOptions * stringOptions)
 {
-  if ((remoteParty.NumCompare("sip:") != EqualTo) && (remoteParty.NumCompare("sips:") != EqualTo))
-    return false;
-
   if (listeners.IsEmpty())
-    return false;
+    return NULL;
 
   return AddConnection(CreateConnection(call, SIPURL::GenerateTag(), userData, TranslateENUM(remoteParty), NULL, NULL, options, stringOptions));
 }
@@ -360,7 +357,7 @@ void SIPEndPoint::OnReleased(OpalConnection & connection)
 
 PBoolean SIPEndPoint::GarbageCollection()
 {
-  PTRACE(5, "SIP\tMONITOR:transactions=" << transactions.GetSize() << ",connections=" << connectionsActive.GetSize());
+  PTRACE(6, "SIP\tGarbage collection: transactions=" << transactions.GetSize() << ", connections=" << connectionsActive.GetSize());
 
   PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly);
   while (transaction != NULL) {

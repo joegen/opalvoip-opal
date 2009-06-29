@@ -354,19 +354,34 @@ OpalEndPoint * OpalManager::FindEndPoint(const PString & prefix)
 
 
 PBoolean OpalManager::SetUpCall(const PString & partyA,
-                            const PString & partyB,
-                            PString & token,
-                            void * userData,
-                            unsigned int options,
-                            OpalConnection::StringOptions * stringOptions)
+                                const PString & partyB,
+                                      PString & token,
+                                         void * userData,
+                                   unsigned int options,
+                OpalConnection::StringOptions * stringOptions)
+{
+  token.MakeEmpty();
+
+  PSafePtr<OpalCall> call = SetUpCall(partyA, partyB, userData, options, stringOptions);
+  if (call == NULL)
+    return false;
+
+  token = call->GetToken();
+  return true;
+}
+
+
+PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
+                                          const PString & partyB,
+                                                   void * userData,
+                                             unsigned int options,
+                          OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tSet up call from " << partyA << " to " << partyB);
 
   OpalCall * call = CreateCall(userData);
   if (call == NULL)
-    return false;
-
-  token = call->GetToken();
+    return NULL;
 
   call->SetPartyB(partyB);
 
@@ -374,30 +389,20 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
   // go through the routing engine via OnIncomingConnection. If we were the
   // B-Party then SetUpConnection() gets called in the context of the A-party
   // thread.
-  bool r = MakeConnection(*call, partyA, userData, options, stringOptions);
-  PSafePtr<OpalConnection> connection = call->GetConnection(0);
-  OpalConnection::CallEndReason endReason = OpalConnection::NumCallEndReasons;
-
-  if (r) {
-    if (connection == NULL) {
-      PTRACE(3, "OpalMan\tSetUpCall failed because call was shutdown");
-      endReason = call->GetCallEndReason();
-    }
-    else if (connection->SetUpConnection()) {
-      PTRACE(3, "OpalMan\tSetUpCall succeeded, call=" << *call);
-      return true;
-    }
-    else 
-      endReason = connection->GetCallEndReason();
+  PSafePtr<OpalConnection> connection = MakeConnection(*call, partyA, userData, options, stringOptions);
+  if (connection != NULL && connection->SetUpConnection()) {
+    PTRACE(4, "OpalMan\tSetUpCall succeeded, call=" << *call);
+    return call;
   }
 
+  PTRACE_IF(2, connection == NULL, "OpalMan\tCould not create connection for \"" << partyA << '"');
+
+  OpalConnection::CallEndReason endReason = endReason = call->GetCallEndReason();
   if (endReason == OpalConnection::NumCallEndReasons)
     endReason = OpalConnection::EndedByTemporaryFailure;
   call->Clear(endReason);
 
-  token.MakeEmpty();
-
-  return false;
+  return NULL;
 }
 
 
@@ -520,16 +525,16 @@ PString OpalManager::GetNextToken(char prefix)
   return psprintf("%c%08x%u", prefix, PRandom::Number(), ++lastCallTokenID);
 }
 
-PBoolean OpalManager::MakeConnection(OpalCall & call,
-                                     const PString & remoteParty,
-                                     void * userData,
-                                     unsigned int options,
-                                     OpalConnection::StringOptions * stringOptions)
+PSafePtr<OpalConnection> OpalManager::MakeConnection(OpalCall & call,
+                                                const PString & remoteParty,
+                                                         void * userData,
+                                                   unsigned int options,
+                                OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
 
   if (remoteParty.IsEmpty())
-    return false;
+    return NULL;
 
   PCaselessString epname = remoteParty.Left(remoteParty.Find(':'));
 
@@ -543,15 +548,11 @@ PBoolean OpalManager::MakeConnection(OpalCall & call,
   else
     ep = FindEndPoint(epname);
 
-  if (ep != NULL) {
-    if (ep->MakeConnection(call, remoteParty, userData, options, stringOptions))
-      return true;
-    PTRACE(1, "OpalMan\tCould not use endpoint for protocol \"" << epname << '"');
-  }
-  else {
-    PTRACE(1, "OpalMan\tCould not find endpoint to handle protocol \"" << epname << '"');
-  }
-  return false;
+  if (ep != NULL)
+    return ep->MakeConnection(call, remoteParty, userData, options, stringOptions);
+
+  PTRACE(1, "OpalMan\tCould not find endpoint to handle protocol \"" << epname << '"');
+  return NULL;
 }
 
 
@@ -603,7 +604,7 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
     if (route.IsEmpty()) {
       // Check for if B-Party is an explicit address
       if (FindEndPoint(b_party.Left(b_party.Find(':'))) != NULL)
-        return MakeConnection(call, b_party, NULL, options, stringOptions);
+        return MakeConnection(call, b_party, NULL, options, stringOptions) != NULL;
 
       PTRACE(3, "OpalMan\tCould not route a=\"" << a_party << "\", b=\"" << b_party << ", call=" << call);
       return false;
@@ -615,7 +616,7 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
     routesTried += route;
 
     // See if this route can be connected
-    if (MakeConnection(call, route, NULL, options, stringOptions))
+    if (MakeConnection(call, route, NULL, options, stringOptions) != NULL)
       return true;
 
     // Recursively call with translated route

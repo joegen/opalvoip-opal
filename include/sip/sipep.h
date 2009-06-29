@@ -151,7 +151,7 @@ class SIPEndPoint : public OpalRTPEndPoint
 
        The default behaviour is pure.
      */
-    virtual PBoolean MakeConnection(
+    virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,                         ///<  Owner of connection
       const PString & party,                   ///<  Remote party to call
       void * userData,                         ///<  Arbitrary data to pass to connection

@@ -116,7 +116,8 @@ void OpalMediaPatch::Close()
 
   inUse.StartWrite();
   filters.RemoveAll();
-  source.Close();
+  if (source.GetPatch() == this)
+    source.Close();
 
   while (sinks.GetSize() > 0) {
     OpalMediaStreamPtr stream = sinks.front().stream;

@@ -140,7 +140,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
        The default behaviour is pure.
      */
-    virtual PBoolean MakeConnection(
+    virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,                  ///<  Owner of connection
       const PString & party,            ///<  Remote party to call
       void * userData  = NULL,          ///<  Arbitrary data to pass to connection
@@ -1331,7 +1331,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
   protected:
     bool InternalCreateGatekeeper(H323Transport * transport);
-    PBoolean InternalMakeCall(
+    H323Connection * InternalMakeCall(
       OpalCall & call,
       const PString & existingToken,           ///<  Existing connection to be transferred
       const PString & callIdentity,            ///<  Call identity of the secondary call (if it exists)

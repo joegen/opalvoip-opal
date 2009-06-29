@@ -71,11 +71,11 @@ OpalIVREndPoint::~OpalIVREndPoint()
 }
 
 
-PBoolean OpalIVREndPoint::MakeConnection(OpalCall & call,
-                                     const PString & remoteParty,
-                                     void * userData,
-                               unsigned int options,
-                               OpalConnection::StringOptions * stringOptions)
+PSafePtr<OpalConnection> OpalIVREndPoint::MakeConnection(OpalCall & call,
+                                                    const PString & remoteParty,
+                                                             void * userData,
+                                                       unsigned int options,
+                                    OpalConnection::StringOptions * stringOptions)
 {
   PString ivrString = remoteParty;
 

@@ -65,11 +65,11 @@ OpalMediaFormatList OpalLocalEndPoint::GetMediaFormats() const
 }
 
 
-PBoolean OpalLocalEndPoint::MakeConnection(OpalCall & call,
-                                      const PString & /*remoteParty*/,
-                                               void * userData,
-                                       unsigned int   options,
-                      OpalConnection::StringOptions * stringOptions)
+PSafePtr<OpalConnection> OpalLocalEndPoint::MakeConnection(OpalCall & call,
+                                                      const PString & /*remoteParty*/,
+                                                               void * userData,
+                                                         unsigned int options,
+                                      OpalConnection::StringOptions * stringOptions)
 {
   return AddConnection(CreateConnection(call, userData, options, stringOptions));
 }

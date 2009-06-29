@@ -465,7 +465,7 @@ void IAX2Connection::RemoteRetrieveConnection()
 bool IAX2Connection::TransferConnection(const PString & remoteParty)
 {
   //The call identity is not used because we do not handle supervised transfers yet.  
-  PTRACE(3, "Transfer call to " + remoteParty);
+  PTRACE(3, "IAX2\tTransfer call to \"" + remoteParty << '"');
   
   PStringArray rpList = IAX2EndPoint::DissectRemoteParty(remoteParty);
   PString remoteAddress = GetRemoteInfo().RemoteAddress();
@@ -517,7 +517,7 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
 
 PBoolean IAX2Connection::ReadSoundPacket(RTP_DataFrame & packet)
 { 
-  if (GetPhase() > EstablishedPhase)/*We are hanging up. */
+  if (GetPhase() >= ReleasingPhase)/*We are hanging up. */
     return PFalse;            /* Sending sound now is meaningless */
   
   PTRACE(6, "Iax2Con\t Start read from  jitter buffer"); 

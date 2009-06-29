@@ -105,7 +105,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
 
        The default behaviour is pure.
      */
-    virtual PBoolean MakeConnection(
+    virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,           ///<  Owner of connection
       const PString & party,     ///<  Remote party to call
       void * userData = NULL,    ///<  Arbitrary data to pass to connection
@@ -371,10 +371,6 @@ class OpalPCSSConnection : public OpalLocalConnection
 
   /**@name New operations */
   //@{
-    /**Accept the incoming connection.
-      */
-    virtual void AcceptIncoming();
-
     /**Create an PSoundChannel based media stream.
       */
     virtual PSoundChannel * CreateSoundChannel(

@@ -375,10 +375,10 @@ PBoolean OpalEndPoint::HasConnection(const PString & token)
 }
 
 
-PBoolean OpalEndPoint::AddConnection(OpalConnection * connection)
+OpalConnection * OpalEndPoint::AddConnection(OpalConnection * connection)
 {
   if (connection == NULL)
-    return PFalse;
+    return NULL;
 
   connection->SetStringOptions(m_defaultStringOptions, false);
 
@@ -386,7 +386,7 @@ PBoolean OpalEndPoint::AddConnection(OpalConnection * connection)
 
   connectionsActive.SetAt(connection->GetToken(), connection);
 
-  return PTrue;
+  return connection;
 }
 
 
