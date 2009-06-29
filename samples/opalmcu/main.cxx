@@ -53,7 +53,8 @@ void ConfOPAL::Main()
 {
   PArgList & args = GetArguments();
 
-  args.Parse("g-gk-host:"
+  args.Parse("c-cli:"
+             "g-gk-host:"
              "G-gk-id:"
              "h-help."
              "H-h323:"
@@ -152,6 +153,7 @@ void ConfOPAL::Main()
       cerr << "Could not start SIP listeners." << endl;
       return;
     }
+    cout << "SIP listening on:\n" << setfill('\n') << sip->GetListeners() << setfill(' ') << endl;
 
     if (args.HasOption('P'))
       sip->SetProxy(args.GetOptionString('P'), args.GetOptionString('u'), args.GetOptionString('p'));
@@ -170,7 +172,6 @@ void ConfOPAL::Main()
     }
 
     m_manager->AddRouteEntry("sip.*:.* = mcu:<du>");
-    m_manager->AddRouteEntry("mcu:.* = sip:<da>");
   }
 #endif // OPAL_SIP
 
@@ -184,49 +185,115 @@ void ConfOPAL::Main()
       cerr << "Could not start H.323 listeners." << endl;
       return;
     }
+    cout << "H.323 listening on:\n" << setfill('\n') << h323->GetListeners() << setfill(' ') << endl;
 
     if (args.HasOption('g') || args.HasOption('G'))
       h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'));
 
     m_manager->AddRouteEntry("h323.*:.* = mcu:<du>");
-    m_manager->AddRouteEntry("mcu:.* = h323:<da>");
   }
 #endif // OPAL_H323
 
+  // Set up IVR to do recording or WAV file play
+  new OpalIVREndPoint(*m_manager);
 
-  // Set up IVR
+  // Set up PCSS to do speaker playback
+  new MyPCSSEndPoint(*m_manager);
+
+  // Set up conference mixer
   MyMixerEndPoint * mixer = new MyMixerEndPoint(*m_manager, args);
 
   // Wait for call to come in and finish
-  PCLIStandard cli("MCU> ");
+  if (args.HasOption('c')) {
+    unsigned port = args.GetOptionString('c').AsUnsigned();
+    if (port == 0 || port > 65535) {
+      cerr << "Illegal CLI port " << port << endl;
+      return;
+    }
+    m_manager->m_cli = new PCLISocket((WORD)port);
+    m_manager->m_cli->StartContext(new PConsoleChannel(PConsoleChannel::StandardInput),
+                                   new PConsoleChannel(PConsoleChannel::StandardOutput));
+  }
+  else
+    m_manager->m_cli = new PCLIStandard();
 
-  cli.SetCommand("conf add", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfAdd),
-                 "Add a new conferance:",
+  m_manager->m_cli->SetPrompt("MCU> ");
+
+  m_manager->m_cli->SetCommand("conf add", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfAdd),
+                               "Add a new conferance:",
 #if OPAL_VIDEO
-                 "[ -V ] [ -s size ] <name> [ <name> ... ]\n"
-                 "  -V or --no-video : Disable video\n"
-                 "  -s or --size     : Set video size"
+                               "[ -V ] [ -s size ] [ -m pin ] <name> [ <name> ... ]\n"
+                               "  -V or --no-video       : Disable video\n"
+                               "  -s or --size           : Set video size"
 #else
-                 "conf add <name>"
+                               "[ -m pin ] <name>"
 #endif
-                 );
-  cli.SetCommand("conf list", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfList),
-                 "List conferances");
-  cli.SetCommand("conf members", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfMembers),
-                 "List members in conferance:",
-                 "{ <name> | <guid> }");
-  cli.SetCommand("conf remove", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfRemove),
-                 "Remove conferance:",
-                 "{ <name> | <guid> }");
+                               "\n"
+                               "  -m or --moderator pin  : PIN to allow to become a moderator and have talk rights\n"
+                               "                         : if absent, all participants are moderators.\n"
+                              );
+  m_manager->m_cli->SetCommand("conf list", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfList),
+                               "List conferances");
+  m_manager->m_cli->SetCommand("conf remove", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfRemove),
+                               "Remove conferance:",
+                               "<name> | <guid>");
+  m_manager->m_cli->SetCommand("conf listen", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfListen),
+                               "Toggle listening to conferance:",
+                               "{ <conf-name> | <guid> }");
+  m_manager->m_cli->SetCommand("conf record", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfRecord),
+                               "Record conferance:",
+                               "{ <conf-name> | <guid> } { <filename> | stop }");
+  m_manager->m_cli->SetCommand("conf play", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfPlay),
+                               "Play file to conferance:",
+                               "{ <conf-name> | <guid> } <filename>");
 
+  m_manager->m_cli->SetCommand("member add", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdMemberAdd),
+                               "Add a member to conferance:",
+                               "{ <name> | <guid> } <address>");
+  m_manager->m_cli->SetCommand("member list", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdMemberList),
+                               "List members in conferance:",
+                               "<name> | <guid>");
+  m_manager->m_cli->SetCommand("member remove", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdMemberRemove),
+                               "Remove conferance member:",
+                               "{ <conf-name> | <guid> } <member-name>\n"
+                               "member remove <call-token>");
+
+  m_manager->m_cli->SetCommand("list codecs", PCREATE_NOTIFIER(CmdListCodecs),
+                               "List available codecs");
 #if PTRACING
-  cli.SetCommand("trace", PCREATE_NOTIFIER(CmdTrace), "Set trace level (1..6) and filename", "<n> [ <filename> ]");
+  m_manager->m_cli->SetCommand("trace", PCREATE_NOTIFIER(CmdTrace),
+                               "Set trace level (1..6) and filename",
+                               "<n> [ <filename> ]");
 #endif
-  cli.SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),"Quit application");
+  m_manager->m_cli->SetCommand("shutdown", PCREATE_NOTIFIER(CmdShutDown),
+                               "Shut down the application");
+  m_manager->m_cli->SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),
+                               "Quit command line interpreter, note quitting from console also shuts down application.");
 
-  cli.Start(false); // Do not spawn thread, wait till end of input
+  m_manager->m_cli->Start(false); // Do not spawn thread, wait till end of input
 
   cout << "\nExiting ..." << endl;
+}
+
+
+void ConfOPAL::CmdListCodecs(PCLI::Arguments & args, INT)
+{
+  OpalMediaFormatList formats;
+  OpalMediaFormat::GetAllRegisteredMediaFormats(formats);
+
+  PCLI::Context & out = args.GetContext();
+  OpalMediaFormatList::iterator format;
+  for (format = formats.begin(); format != formats.end(); ++format) {
+    if (format->GetMediaType() == OpalMediaType::Audio() && format->IsTransportable())
+      out << *format << '\n';
+  }
+#if OPAL_VIDEO
+  for (format = formats.begin(); format != formats.end(); ++format) {
+    if (format->GetMediaType() == OpalMediaType::Video() && format->IsTransportable())
+      out << *format << '\n';
+  }
+#endif
+  out.flush();
 }
 
 
@@ -243,39 +310,69 @@ void ConfOPAL::CmdTrace(PCLI::Arguments & args, INT)
 #endif // PTRACING
 
 
+void ConfOPAL::CmdShutDown(PCLI::Arguments & args, INT)
+{
+  m_manager->m_cli->Stop();
+}
+
+
 void ConfOPAL::CmdQuit(PCLI::Arguments & args, INT)
 {
-  args.GetContext().Stop();
-}
-
-
-void MyManager::OnEstablishedCall(OpalCall & call)
-{
-  cout << "Call from " << call.GetPartyA() << " entered conference at " << call.GetPartyB() << endl;
-}
-
-
-void MyManager::OnClearedCall(OpalCall & call)
-{
-  cout << "Call from " << call.GetPartyA() << " left conference at " << call.GetPartyB() << endl;
+  if (PIsDescendant(args.GetContext().GetBaseReadChannel(), PConsoleChannel))
+    m_manager->m_cli->Stop();
+  else
+    args.GetContext().Stop();
 }
 
 
 ///////////////////////////////////////////////////////////////
 
-MyMixerEndPoint::MyMixerEndPoint(OpalManager & manager, PArgList & args)
-  : OpalMixerEndPoint(manager, "mcu")
-  , m_moderatorPIN(args.GetOptionString('m'))
+MyManager::MyManager()
+  : m_cli(NULL)
 {
-  m_adHocNodeInfo = new OpalMixerNodeInfo;
-  m_adHocNodeInfo->m_name = args.GetOptionString('n', "room101");
-  m_adHocNodeInfo->m_listenOnly = !m_moderatorPIN.IsEmpty();
+}
+
+
+MyManager::~MyManager()
+{
+  delete m_cli;
+}
+
+
+void MyManager::OnEstablishedCall(OpalCall & call)
+{
+  PStringStream strm;
+  strm << "Call from " << call.GetPartyA() << " entered conference at " << call.GetPartyB() << '\n';
+  m_cli->Broadcast(strm);
+}
+
+
+void MyManager::OnClearedCall(OpalCall & call)
+{
+  PStringStream strm;
+  strm << "Call from " << call.GetPartyA() << " left conference at " << call.GetPartyB() << '\n';
+  m_cli->Broadcast(strm);
+}
+
+
+///////////////////////////////////////////////////////////////
+
+MyMixerEndPoint::MyMixerEndPoint(MyManager & manager, PArgList & args)
+  : OpalMixerEndPoint(manager, "mcu")
+  , m_manager(manager)
+{
+  MyMixerNodeInfo * info = new MyMixerNodeInfo;
+  info->m_name = args.GetOptionString('n', "room101");
+  info->m_moderatorPIN = args.GetOptionString('m');
+  info->m_listenOnly = !info->m_moderatorPIN.IsEmpty();
 
 #if OPAL_VIDEO
-  m_adHocNodeInfo->m_audioOnly = args.HasOption('V');
+  info->m_audioOnly = args.HasOption('V');
   if (args.HasOption('s'))
-    PVideoFrameInfo::ParseSize(args.GetOptionString('s'), m_adHocNodeInfo->m_width, m_adHocNodeInfo->m_height);
+    PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info->m_width, info->m_height);
 #endif
+
+  m_adHocNodeInfo = info;
 }
 
 
@@ -291,7 +388,7 @@ OpalMixerConnection * MyMixerEndPoint::CreateConnection(PSafePtr<OpalMixerNode> 
 
 void MyMixerEndPoint::CmdConfAdd(PCLI::Arguments & args, INT)
 {
-  args.Parse("s-size:V-no-video.");
+  args.Parse("s-size:V-no-video.-m-moderator:");
   if (args.GetCount() == 0) {
     args.WriteUsage();
     return;
@@ -299,78 +396,207 @@ void MyMixerEndPoint::CmdConfAdd(PCLI::Arguments & args, INT)
 
   for (PINDEX i = 0; i < args.GetCount(); ++i) {
     if (m_nodesByName.Contains(args[i])) {
-      args.WriteError("conference name already exists");
+      args.WriteError() << "Conference name \"" << args[i] << "\" already exists." << endl;
       return;
     }
   }
 
-  OpalMixerNodeInfo * info = new OpalMixerNodeInfo();
+  MyMixerNodeInfo * info = new MyMixerNodeInfo();
   info->m_name = args[0];
   info->m_audioOnly = args.HasOption('V');
   if (args.HasOption('s'))
     PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info->m_width, info->m_height);
+  info->m_moderatorPIN = args.GetOptionString('m');
 
   PSafePtr<OpalMixerNode> node = AddNode(info);
 
   if (node == NULL)
-    args.WriteError("could not create conference");
+    args.WriteError() << "Could not create conference \"" << args[0] << '"' << endl;
   else {
     for (PINDEX i = 1; i < args.GetCount(); ++i)
       node->AddName(args[i]);
-    PCLI::Context & out = args.GetContext();
-    out << "Added conference " << *node << out.GetNewLine() << flush;
+    args.GetContext() << "Added conference " << *node << endl;
   }
 }
 
 
 void MyMixerEndPoint::CmdConfList(PCLI::Arguments & args, INT)
 {
-  PCLI::Context & out = args.GetContext();
+  ostream & out = args.GetContext();
   for (PSafePtr<OpalMixerNode> node(m_nodesByUID, PSafeReadOnly); node != NULL; ++node)
-    out << *node << out.GetNewLine();
+    out << *node << '\n';
   out.flush();
 }
 
 
-void MyMixerEndPoint::CmdConfMembers(PCLI::Arguments & args, INT)
+bool MyMixerEndPoint::CmdConfXXX(PCLI::Arguments & args, PSafePtr<OpalMixerNode> & node, PINDEX argCount)
 {
-  if (args.GetCount() == 0) {
+  if (args.GetCount() < argCount) {
     args.WriteUsage();
-    return;
+    return false;
   }
 
-  PSafePtr<OpalMixerNode> node = FindNode(args[0]);
+  node = FindNode(args[0]);
   if (node == NULL) {
-    args.WriteError("conference does not exist");
-    return;
+    args.WriteError() << "Conference \"" << args[0] << "\" does not exist" << endl;
+    return false;
   }
 
-  PCLI::Context & out = args.GetContext();
-  for (PSafePtr<OpalMixerConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection)
-    out << connection->GetToken() << ' '
-        << connection->GetRemotePartyURL() << " \""
-        << connection->GetRemotePartyName() << '"' << out.GetNewLine();
-  out.flush();
+  return true;
 }
 
 
 void MyMixerEndPoint::CmdConfRemove(PCLI::Arguments & args, INT)
 {
-  if (args.GetCount() == 0) {
-    args.WriteUsage();
+  PSafePtr<OpalMixerNode> node;
+  if (!CmdConfXXX(args, node, 1))
     return;
-  }
-
-  PSafePtr<OpalMixerNode> node = FindNode(args[0]);
-  if (node == NULL) {
-    args.WriteError("conference does not exist");
-    return;
-  }
-
-  PCLI::Context & out = args.GetContext();
-  out << "Removed conference " << *node << out.GetNewLine() << flush;
 
   RemoveNode(*node);
+  args.GetContext() << "Removed conference " << *node << endl;
+}
+
+
+void MyMixerEndPoint::CmdConfListen(PCLI::Arguments & args, INT)
+{
+  PSafePtr<OpalMixerNode> node;
+  if (!CmdConfXXX(args, node, 2))
+    return;
+
+  for (PSafePtr<OpalMixerConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection) {
+    if (connection->GetCall().GetPartyB().NumCompare("pc:") == EqualTo) {
+      connection->Release();
+      args.GetContext() << "Stopped listening to conference " << *node << endl;
+      return;
+    }
+  }
+
+  PString token;
+  if (manager.SetUpCall("mcu:"+node->GetGUID().AsString()+";Listen-Only=1", "pc:*", token))
+    args.GetContext() << "Started";
+  else
+    args.WriteError() << "Could not start";
+  args.GetContext() << " listening to conference " << *node << endl;
+}
+
+
+void MyMixerEndPoint::CmdConfRecord(PCLI::Arguments & args, INT)
+{
+  PSafePtr<OpalMixerNode> node;
+  if (!CmdConfXXX(args, node, 2))
+    return;
+
+  for (PSafePtr<OpalMixerConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection) {
+    if (connection->GetCall().GetPartyB().NumCompare("ivr:") == EqualTo)
+      connection->Release();
+  }
+
+  if (args[1] *= "stop")
+    return;
+
+  PFilePath path = args[1];
+  if (!PFile::Access(path, PFile::WriteOnly)) {
+    args.WriteError() << "Cannot write to file \"" << path << '"' << endl;
+    return;
+  }
+
+  PString token;
+  if (manager.SetUpCall("mcu:"+node->GetGUID().AsString()+";Listen-Only",
+                        "ivr:<vxml>"
+                              "<form>"
+                                "<record name=\"msg\" dtmfterm=\"false\" dest=\"" + PURL(path).AsString() + "\"/>"
+                              "</form>"
+                            "</vxml>",
+                        token))
+    args.GetContext() << "Started";
+  else
+    args.WriteError() << "Could not start";
+  args.GetContext() << " recording conference " << *node << " to \"" << path << '"' << endl;
+}
+
+
+void MyMixerEndPoint::CmdConfPlay(PCLI::Arguments & args, INT)
+{
+  PSafePtr<OpalMixerNode> node;
+  if (!CmdConfXXX(args, node, 2))
+    return;
+
+  PFilePath path = args[1];
+  if (!PFile::Access(path, PFile::ReadOnly)) {
+    args.WriteError() << "Cannot read from file \"" << path << '"' << endl;
+    return;
+  }
+
+  PString token;
+  if (manager.SetUpCall("mcu:"+node->GetGUID().AsString()+";Listen-Only=0",
+                        "ivr:<vxml>"
+                              "<form>"
+                                "<audio src=\"" + PURL(path).AsString() + "\"/>"
+                              "</form>"
+                            "</vxml>",
+                        token))
+    args.GetContext() << "Started";
+  else
+    args.WriteError() << "Could not start";
+  args.GetContext() << " playing \"" << path << "\" to conference " << *node << endl;
+}
+
+
+void MyMixerEndPoint::CmdMemberAdd(PCLI::Arguments & args, INT)
+{
+  PSafePtr<OpalMixerNode> node;
+  if (!CmdConfXXX(args, node, 2))
+    return;
+
+  PString token;
+  if (manager.SetUpCall("mcu:"+node->GetGUID().AsString(), args[1], token))
+    args.GetContext() << "Adding";
+  else
+    args.WriteError() << "Could not add";
+  args.GetContext() << " new member \"" << args[1] << "\" to conference " << *node << endl;
+}
+
+
+void MyMixerEndPoint::CmdMemberList(PCLI::Arguments & args, INT)
+{
+  PSafePtr<OpalMixerNode> node;
+  if (!CmdConfXXX(args, node, 1))
+    return;
+
+  ostream & out = args.GetContext();
+  for (PSafePtr<OpalMixerConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection)
+    out << connection->GetToken() << ' '
+        << connection->GetRemotePartyURL() << " \""
+        << connection->GetRemotePartyName() << '"' << '\n';
+  out.flush();
+}
+
+
+void MyMixerEndPoint::CmdMemberRemove(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() == 1) {
+    if (ClearCall(args[0]))
+      args.GetContext() << "Removed member";
+    else
+      args.WriteError() << "Member does not exist";
+    args.GetContext() << " using token " << args[0] << endl;
+    return;
+  }
+
+  PSafePtr<OpalMixerNode> node;
+  if (!CmdConfXXX(args, node, 2))
+    return;
+
+  PCaselessString name = args[1];
+  for (PSafePtr<OpalMixerConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection) {
+    if (name == connection->GetRemotePartyName()) {
+      connection->ClearCall();
+      args.GetContext() << "Removed member using name \"" << name << '"' << endl;
+      return;
+    }
+  }
+
+  args.WriteError() << "No member in conference " << *node << " with name \"" << name << '"' << endl;
 }
 
 
@@ -392,15 +618,20 @@ bool MyMixerConnection::SendUserInputString(const PString & value)
 {
   m_userInput += value;
 
-  if (m_endpoint.GetModeratorPIN().NumCompare(m_userInput) != EqualTo)
+  PString pin = ((const MyMixerNodeInfo &)m_node->GetNodeInfo()).m_moderatorPIN;
+  if (pin.NumCompare(m_userInput) != EqualTo)
     m_userInput.MakeEmpty();
-  else if (m_endpoint.GetModeratorPIN() == m_userInput) {
+  else if (pin == m_userInput) {
     m_userInput.MakeEmpty();
     SetListenOnly(false);
-    cout << "Connection " << GetToken() << ' '
+
+    PStringStream strm;
+    strm << "Connection " << GetToken() << ' '
          << GetRemotePartyURL() << " \""
          << GetRemotePartyName() << "\""
-            " promoted to moderator.";
+            " promoted to moderator.\n";
+
+    m_endpoint.m_manager.m_cli->Broadcast(strm);
   }
 
   return true;

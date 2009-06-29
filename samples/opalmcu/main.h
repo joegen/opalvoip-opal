@@ -30,7 +30,17 @@
 #define _OPAL_MCU_MAIN_H
 
 
+class MyManager;
 class MyMixerEndPoint;
+
+
+struct MyMixerNodeInfo : public OpalMixerNodeInfo
+{
+  virtual OpalMixerNodeInfo * Clone() const { return new MyMixerNodeInfo(*this); }
+
+  PString m_moderatorPIN;
+};
+
 
 class MyMixerConnection : public OpalMixerConnection
 {
@@ -57,7 +67,7 @@ class MyMixerEndPoint : public OpalMixerEndPoint
 {
     PCLASSINFO(MyMixerEndPoint, OpalMixerEndPoint);
   public:
-    MyMixerEndPoint(OpalManager & manager, PArgList & args);
+    MyMixerEndPoint(MyManager & manager, PArgList & args);
 
     virtual OpalMixerConnection * CreateConnection(
       PSafePtr<OpalMixerNode> node,
@@ -67,15 +77,40 @@ class MyMixerEndPoint : public OpalMixerEndPoint
       OpalConnection::StringOptions * stringOptions
     );
 
-    const PString & GetModeratorPIN() const { return m_moderatorPIN; }
-
     PDECLARE_NOTIFIER(PCLI::Arguments, MyMixerEndPoint, CmdConfAdd);
     PDECLARE_NOTIFIER(PCLI::Arguments, MyMixerEndPoint, CmdConfList);
-    PDECLARE_NOTIFIER(PCLI::Arguments, MyMixerEndPoint, CmdConfMembers);
     PDECLARE_NOTIFIER(PCLI::Arguments, MyMixerEndPoint, CmdConfRemove);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyMixerEndPoint, CmdConfRecord);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyMixerEndPoint, CmdConfPlay);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyMixerEndPoint, CmdConfListen);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyMixerEndPoint, CmdMemberAdd);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyMixerEndPoint, CmdMemberList);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyMixerEndPoint, CmdMemberRemove);
 
-  protected:
-    PString m_moderatorPIN;
+    bool CmdConfXXX(PCLI::Arguments & args, PSafePtr<OpalMixerNode> & node, PINDEX argCount);
+
+    MyManager & m_manager;
+};
+
+
+class MyPCSSEndPoint : public OpalPCSSEndPoint
+{
+    PCLASSINFO(MyPCSSEndPoint, OpalPCSSEndPoint);
+  public:
+    MyPCSSEndPoint(OpalManager & manager)
+      : OpalPCSSEndPoint(manager)
+    {
+    }
+
+    virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection)
+    {
+      return AcceptIncomingCall(connection.GetToken());
+    }
+
+    virtual PBoolean OnShowOutgoing(const OpalPCSSConnection &)
+    {
+      return true;
+    }
 };
 
 
@@ -84,8 +119,13 @@ class MyManager : public OpalManager
     PCLASSINFO(MyManager, OpalManager)
 
   public:
+    MyManager();
+    ~MyManager();
+
     virtual void OnEstablishedCall(OpalCall & call);
     virtual void OnClearedCall(OpalCall & call);
+
+    PCLI * m_cli;
 };
 
 
@@ -100,7 +140,11 @@ class ConfOPAL : public PProcess
     virtual void Main();
 
   private:
+    PDECLARE_NOTIFIER(PCLI::Arguments, ConfOPAL, CmdListCodecs);
+#if PTRACING
     PDECLARE_NOTIFIER(PCLI::Arguments, ConfOPAL, CmdTrace);
+#endif
+    PDECLARE_NOTIFIER(PCLI::Arguments, ConfOPAL, CmdShutDown);
     PDECLARE_NOTIFIER(PCLI::Arguments, ConfOPAL, CmdQuit);
 
     MyManager * m_manager;
