@@ -669,6 +669,8 @@ class OpalMixerConnection : public OpalLocalConnection
       unsigned sessionID,                  ///<  Session number for stream
       PBoolean isSource                    ///<  Is a source stream
     );
+
+    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
   //@}
 
   /**@name Operations */

@@ -44,6 +44,9 @@
 #define DETAIL_LOG_LEVEL 6
 
 
+const char ListenOnlyStringOption[] = "Listen-Only";
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalBaseMixer::OpalBaseMixer(bool pushThread, unsigned periodMS, unsigned periodTS)
@@ -722,7 +725,8 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
 {
   PTRACE(4, "MixerEP\tMaking connection to \"" << party << '"');
 
-  PString name = party.Mid(party.Find(':')+1);
+  PINDEX semicolon = party.Find(';');
+  PString name = party(party.Find(':')+1, semicolon-1);
   if (name.IsEmpty() || name == "*") {
     if (m_adHocNodeInfo == NULL)
       return NULL;
@@ -735,8 +739,20 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
     info->m_name = name;
     node = AddNode(info);
   }
+
   if (node == NULL)
     return NULL;
+
+  OpalConnection::StringOptions localStringOptions;
+  if (semicolon != P_MAX_INDEX) {
+    if (stringOptions == NULL)
+      stringOptions = &localStringOptions;
+
+    PStringToString params;
+    PURL::SplitVars(party.Mid(semicolon), params, ';', '=');
+    for (PINDEX i = 0; i < params.GetSize(); ++i)
+      stringOptions->SetAt(params.GetKeyAt(i), params.GetDataAt(i));
+  }
 
   return AddConnection(CreateConnection(node, call, userData, options, stringOptions));
 }
@@ -862,6 +878,15 @@ OpalMediaStream * OpalMixerConnection::CreateMediaStream(const OpalMediaFormat &
                                                          PBoolean isSource)
 {
   return new OpalMixerMediaStream(*this, mediaFormat, sessionID, isSource, m_node, m_listenOnly);
+}
+
+
+void OpalMixerConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
+{
+  if (stringOptions.Contains(ListenOnlyStringOption))
+    SetListenOnly(stringOptions[ListenOnlyStringOption].AsUnsigned() != 0);
+
+  OpalLocalConnection::ApplyStringOptions(stringOptions);
 }
 
 
@@ -1029,7 +1054,8 @@ void OpalMixerNode::ShutDown()
 
 void OpalMixerNode::PrintOn(ostream & strm) const
 {
-  strm << m_guid << " (" << setfill(',') << m_names << ')';
+  char prevfill = strm.fill();
+  strm << m_guid << " (" << setfill(',') << m_names << ')' << setfill(prevfill);
 }
 
 
