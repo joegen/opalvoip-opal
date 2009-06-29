@@ -225,17 +225,18 @@ PBoolean OpalLocalConnection::SetUpConnection()
       Release(EndedByNoAccept);
       return false;
     }
-
-    return true;
   }
+  else {
+    PTRACE(3, "LocalCon\tSetUpConnection(" << remotePartyName << ')');
 
-  PTRACE(3, "LocalCon\tSetUpConnection(" << remotePartyName << ')');
+    OnApplyStringOptions();
 
-  if (!endpoint.OnIncomingCall(*this))
-    return false;
+    if (!endpoint.OnIncomingCall(*this))
+      return false;
 
-  if (!endpoint.IsDeferredAlerting())
-    AlertingIncoming();
+    if (!endpoint.IsDeferredAlerting())
+      AlertingIncoming();
+  }
 
   return true;
 }
