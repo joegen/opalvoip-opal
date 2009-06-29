@@ -714,18 +714,18 @@ OpalMediaFormatList OpalMixerEndPoint::GetMediaFormats() const
 }
 
 
-PBoolean OpalMixerEndPoint::MakeConnection(OpalCall & call,
-                                            const PString & party,
-                                            void * userData,
-                                            unsigned int options,
-                                            OpalConnection::StringOptions * stringOptions)
+PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
+                                                      const PString & party,
+                                                               void * userData,
+                                                         unsigned int options,
+                                      OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(4, "MixerEP\tMaking connection to \"" << party << '"');
 
   PString name = party.Mid(party.Find(':')+1);
   if (name.IsEmpty() || name == "*") {
     if (m_adHocNodeInfo == NULL)
-      return false;
+      return NULL;
     name = m_adHocNodeInfo->m_name;
   }
 
@@ -735,7 +735,10 @@ PBoolean OpalMixerEndPoint::MakeConnection(OpalCall & call,
     info->m_name = name;
     node = AddNode(info);
   }
-  return node != NULL && AddConnection(CreateConnection(node, call, userData, options, stringOptions));
+  if (node == NULL)
+    return NULL;
+
+  return AddConnection(CreateConnection(node, call, userData, options, stringOptions));
 }
 
 

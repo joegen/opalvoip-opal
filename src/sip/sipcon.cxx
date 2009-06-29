@@ -431,8 +431,12 @@ void SIPConnection::OnReleased()
 bool SIPConnection::TransferConnection(const PString & remoteParty)
 {
   // There is still an ongoing REFER transaction 
-  if (referTransaction != NULL) 
+  if (referTransaction != NULL) {
+    PTRACE(2, "SIP\tTransfer already in progress for " << *this);
     return false;
+  }
+
+  PTRACE(3, "SIP\tTransferring " << *this << " to " << remoteParty);
 
   SIPURL localPartyURL = endpoint.GetRegisteredPartyName(remoteParty, *transport);
   localPartyURL.Sanitise(SIPURL::RequestURI);
@@ -1140,6 +1144,8 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
       otherStream->Close();
   }
 
+  OpalMediaStreamPtr oldStream = GetMediaStream(sessionID, isSource);
+
   // Open forward side
   OpalMediaStreamPtr newStream = OpalRTPConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
   if (newStream == NULL) {
@@ -1158,7 +1164,8 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
   needReINVITE = oldReINVITE;
 
-  if (GetPhase() == EstablishedPhase && needReINVITE) {
+  if (needReINVITE && GetPhase() == EstablishedPhase &&
+        (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream)) {
     PTRACE(3, "SIP\tStarting re-INVITE to open channel.");
     SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
     invite->Start();
@@ -1599,7 +1606,7 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
   info.m_eventType = eventType;
   info.m_eventCode = eventCode;
 
-  if (GetPhase() >= EstablishedPhase)
+  if (GetPhase() == EstablishedPhase)
     info.m_local.m_rendering = info.m_remote.m_rendering = SIPDialogNotification::NotRenderingMedia;
 
   for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {

@@ -82,11 +82,11 @@ OpalLineEndPoint::~OpalLineEndPoint()
 }
 
 
-PBoolean OpalLineEndPoint::MakeConnection(OpalCall & call,
-                                     const PString & remoteParty,
-                                     void * userData,
-                                     unsigned int /*options*/,
-                                     OpalConnection::StringOptions *)
+PSafePtr<OpalConnection> OpalLineEndPoint::MakeConnection(OpalCall & call,
+                                                     const PString & remoteParty,
+                                                              void * userData,
+                                                        unsigned int /*options*/,
+                                     OpalConnection::StringOptions * /*stringOptions*/)
 {
   PTRACE(3, "LID EP\tMakeConnection to " << remoteParty);  
 
@@ -120,7 +120,7 @@ PBoolean OpalLineEndPoint::MakeConnection(OpalCall & call,
   }  
   if (line == NULL){
     PTRACE(1,"LID EP\tMakeConnection cannot find the default line " << defaultLine);
-    return false;
+    return NULL;
 
   }
 

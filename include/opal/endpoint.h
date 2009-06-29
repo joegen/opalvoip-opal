@@ -216,7 +216,7 @@ class OpalEndPoint : public PObject
 
        The default behaviour is pure.
      */
-    virtual PBoolean MakeConnection(
+    virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
       void * userData = NULL,          ///<  Arbitrary data to pass to connection
@@ -741,7 +741,7 @@ class OpalEndPoint : public PObject
     {
         virtual void DeleteObject(PObject * object) const;
     } connectionsActive;
-    PBoolean AddConnection(OpalConnection * connection);
+    OpalConnection * AddConnection(OpalConnection * connection);
 
     PMutex inUseFlag;
 

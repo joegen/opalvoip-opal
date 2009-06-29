@@ -219,17 +219,20 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
   if (isClearing || !LockReadOnly())
     return false;
 
-  bool ok = connectionsActive.GetSize() == 1 && !m_partyB.IsEmpty();
+  bool havePartyB = connectionsActive.GetSize() == 1 && !m_partyB.IsEmpty();
 
   UnlockReadOnly();
 
-  if (ok) {
-    if (!manager.MakeConnection(*this, m_partyB, NULL, 0,
-                                const_cast<OpalConnection::StringOptions *>(&connection.GetStringOptions())))
-      connection.Release(OpalConnection::EndedByNoUser);
-    return OnSetUp(connection);
+  if (havePartyB) {
+    if (manager.MakeConnection(*this, m_partyB, NULL, 0,
+                                const_cast<OpalConnection::StringOptions *>(&connection.GetStringOptions())) != NULL)
+      return OnSetUp(connection);
+
+    connection.Release(OpalConnection::EndedByNoUser);
+    return false;
   }
 
+  bool ok = false;
   PSafePtr<OpalConnection> otherConnection;
   while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
     if (otherConnection->GetPhase() >= OpalConnection::ConnectedPhase ||
@@ -335,6 +338,7 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
         return conn->TransferConnection(newAddress);
     }
 
+    PTRACE(2, "Call\tUnable to resolve transfer to \"" << newAddress << '"');
     return false;
   }
 
@@ -344,20 +348,30 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
   if (prefix == connection->GetPrefixName())
     return connection->TransferConnection(newAddress);
 
+  PTRACE(3, "Call\tTransferring " << *connection << " to \"" << newAddress << '"');
+
   PSafePtr<OpalConnection> connectionToKeep = GetOtherPartyConnection(*connection);
   if (connectionToKeep == NULL)
     return false;
 
-  if (!manager.MakeConnection(*this, newAddress))
+  PSafePtr<OpalConnection> newConnection = manager.MakeConnection(*this, newAddress);
+  if (newConnection == NULL)
     return false;
 
-  connection->Release(OpalConnection::EndedByCallForwarded);
-
-  // Close streams, but as we Released above should not do re-INVITE/OLC
-  connection->CloseMediaStreams();
+  OpalConnection::Phases oldPhase = connection->GetPhase();
+  connection->SetPhase(OpalConnection::ForwardingPhase);
 
   // Restart with new connection
-  return OnSetUp(*connectionToKeep);
+  if (newConnection->SetUpConnection() && newConnection->OnSetUpConnection()) {
+    connectionToKeep->AutoStartMediaStreams(true);
+    connection->Release(OpalConnection::EndedByCallForwarded);
+    newConnection->StartMediaStreams();
+    return true;
+  }
+
+  newConnection->Release(OpalConnection::EndedByTemporaryFailure);
+  connection->SetPhase(oldPhase);
+  return false;
 }
 
 
@@ -791,7 +805,7 @@ bool OpalCall::EnumerateConnections(PSafePtr<OpalConnection> & connection,
 
   while (connection != NULL) {
     if (connection != skipConnection &&
-        connection->GetPhase() < OpalConnection::ReleasingPhase &&
+        connection->GetPhase() <= OpalConnection::EstablishedPhase &&
         connection.SetSafetyMode(mode))
       return true;
     ++connection;

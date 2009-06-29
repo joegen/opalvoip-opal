@@ -514,6 +514,7 @@ class OpalConnection : public PSafeObject
       AlertingPhase,        //!< The remote says there is a phone ringing, somewhere
       ConnectedPhase,       //!< There is agreement on having a call, usually means billing will apply
       EstablishedPhase,     //!< Media is flowing, control streams  are all operational
+      ForwardingPhase,      //!< Connection is in the process of being forwarded
       ReleasingPhase,       //!< Hangup packet has been sent/received, media and control not yet stopped
       ReleasedPhase,        //!< Media and control streams have been terminated
       NumPhases             //!< Number of available phases. Can be used to indicate an unknown phase
@@ -524,6 +525,14 @@ class OpalConnection : public PSafeObject
        all phases and the transitions between phases is protocol dependent.
       */
     inline Phases GetPhase() const { return phase; }
+
+    /**Set the phase of the connection.
+       Note that this is primarily for internal use and calling from user code
+       is likely to have very strange results.
+      */
+    void SetPhase(
+      Phases phaseToSet  ///< phaseToSet the phase to set
+    );
 
     /**Get the reason for this connection shutting down.
        Note that this function is only generally useful in the
@@ -892,7 +901,9 @@ class OpalConnection : public PSafeObject
 
     /**Open source media streams, if needed.
      */
-    virtual void AutoStartMediaStreams();
+    virtual void AutoStartMediaStreams(
+      bool force = false ///< Force re-open even if already open
+    );
 
     /**Open source or sink media stream for session.
       */
@@ -1610,11 +1621,6 @@ class OpalConnection : public PSafeObject
     PMutex       m_inBandMutex;
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnSendInBandDTMF);
 #endif
-
-    /**Set the phase of the connection.
-       @param phaseToSet the phase to set
-      */
-    void SetPhase(Phases phaseToSet);
 
 #if PTRACING
     friend ostream & operator<<(ostream & o, Phases p);

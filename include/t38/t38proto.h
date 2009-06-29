@@ -87,7 +87,7 @@ class OpalFaxEndPoint : public OpalEndPoint
     ~OpalFaxEndPoint();
   //@}
 
-    virtual PBoolean MakeConnection(
+    virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
       void * userData = NULL,          ///<  Arbitrary data to pass to connection

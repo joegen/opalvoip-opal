@@ -366,12 +366,11 @@ void IAX2EndPoint::OnReleased(OpalConnection & opalCon)
   OpalEndPoint::OnReleased(opalCon);
 }
 
-PBoolean IAX2EndPoint::MakeConnection(
-				 OpalCall & call,
-				 const PString & rParty, 
-				 void * userData,
-				 unsigned int /*options*/,
-         OpalConnection::StringOptions * /*stringOptions*/)
+PSafePtr<OpalConnection> IAX2EndPoint::MakeConnection(OpalCall & call,
+				                                         const PString & rParty, 
+				                                                  void * userData,
+				                                            unsigned int /*options*/,
+                                 OpalConnection::StringOptions * /*stringOptions*/)
 {
   /* This method is called as Step 1 of making an IAX call to some remote destination 
     this method is invoked by the OpalManager, who controls everything, in response by a 
@@ -382,7 +381,7 @@ PBoolean IAX2EndPoint::MakeConnection(
 	 << "\"  and party B=\"" <<  call.GetPartyB() << "\"");  
   PStringArray remoteInfo = DissectRemoteParty(rParty);
   if(remoteInfo[protoIndex] != PString("iax2"))
-    return PFalse;
+    return NULL;
 
   PString remotePartyName = rParty.Mid(5);    
 
@@ -390,14 +389,14 @@ PBoolean IAX2EndPoint::MakeConnection(
   if (!PIPSocket::GetHostAddress(remoteInfo[addressIndex], ip)) {
     PTRACE(3, "Could not make a iax2 call to " << remoteInfo[addressIndex] 
 	   << " as IP resolution failed");
-    return PFalse;
+    return NULL;
   }
 
   PStringStream callId;
   callId << "iax2:" <<  ip.AsString() << "OutgoingCall" << PString(++callsEstablished);
   IAX2Connection * connection = CreateConnection(call, callId, userData, remotePartyName);
-  if (!AddConnection(connection))
-    return PFalse;
+  if (AddConnection(connection) == NULL)
+    return NULL;
 
   connection->StartOperation();
   //search through the register srcProcessors to see if there is a relevant userName
@@ -421,7 +420,7 @@ PBoolean IAX2EndPoint::MakeConnection(
     }
   }
 
-  return PTrue;
+  return connection;
 }
 
 IAX2Connection * IAX2EndPoint::CreateConnection(
