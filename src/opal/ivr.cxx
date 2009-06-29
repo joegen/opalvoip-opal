@@ -201,7 +201,8 @@ PBoolean OpalIVRConnection::StartVXML()
   if (vxmlToLoad.IsEmpty())
     return endpoint.StartVXML();
 
-  if (vxmlToLoad.Find("<?xml") == 0) {
+  PCaselessString vxmlHead = vxmlToLoad.LeftTrim().Left(5);
+  if (vxmlHead == "<?xml" || vxmlHead == "<vxml") {
     PTRACE(4, "IVR\tStartVXML:\n" << vxmlToLoad);
     return vxmlSession.LoadVXML(vxmlToLoad);
   }
