@@ -1961,15 +1961,14 @@ void MyManager::MakeCall(const PwxString & address, const PwxString & local, Opa
   if (from.empty())
     from = "pc:*";
 
-  PString token;
-  if (SetUpCall(from, address, token, NULL, 0, options)) {
+  m_activeCall = SetUpCall(from, address, NULL, 0, options);
+  if (m_activeCall != NULL) {
     LogWindow << "Calling \"" << address << '"' << endl;
-    m_activeCall = FindCallWithLock(token, PSafeReference);
-    SetState(CallingState, token);
+    SetState(CallingState, m_activeCall->GetToken());
   }
   else {
     LogWindow << "Could not call \"" << address << '"' << endl;
-    SetState(IdleState, token);
+    SetState(IdleState, PString::Empty());
   }
 }
 
@@ -2009,6 +2008,11 @@ void MyManager::HangUpCall()
 
 void MyManager::OnRinging(const OpalPCSSConnection & connection)
 {
+  if (connection.GetStringOptions().Contains("Auto-Answer")) {
+    pcssEP->AcceptIncomingConnection(connection.GetToken());
+    return;
+  }
+
   m_incomingToken = connection.GetCall().GetToken();
 
   PString alertingType;
@@ -2438,11 +2442,13 @@ void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
                    wxFD_OPEN|wxFD_FILE_MUST_EXIST);
   if (dlg.ShowModal() == wxID_OK && m_activeCall != NULL) {
     m_lastPlayFile = dlg.GetPath();
+    LogWindow << "Playing " << m_lastPlayFile << ", please wait ..." << endl;
+
     PStringStream ivrXML;
     ivrXML << "ivr:<?xml version=\"1.0\"?>"
                   "<vxml version=\"1.0\">"
                     "<form id=\"PlayFile\">"
-                      "<transfer bridge=\"false\" dest=\"" << connection->GetLocalPartyURL() << "\">"
+                      "<transfer bridge=\"false\" dest=\"pc:*;Auto-Answer=1\">"
                         "<audio src=\"" << PURL(PFilePath(m_lastPlayFile)) << "\"/>"
                       "</transfer>"
                     "</form>"
