@@ -3196,6 +3196,8 @@ PBoolean H323Connection::IsConnectionOnHold()
 
 bool H323Connection::TransferConnection(const PString & remoteParty)
 {
+  PTRACE(3, "H323\tTransferring " << *this << " to " << remoteParty);
+
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
   if (call == NULL) {
 #if OPAL_H450

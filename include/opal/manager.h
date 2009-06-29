@@ -147,6 +147,13 @@ class OpalManager : public PObject
        deleted) at any time due to the multithreaded nature of the OPAL
        system. 
      */
+    virtual PSafePtr<OpalCall> SetUpCall(
+      const PString & partyA,       ///<  The A party of call
+      const PString & partyB,       ///<  The B party of call
+      void * userData = NULL,       ///<  user data passed to Call and Connection
+      unsigned options = 0,         ///<  options passed to connection
+      OpalConnection::StringOptions * stringOptions = NULL   ///<  complex string options passed to call
+    );
     virtual PBoolean SetUpCall(
       const PString & partyA,       ///<  The A party of call
       const PString & partyB,       ///<  The B party of call
@@ -325,7 +332,7 @@ class OpalManager : public PObject
 
        The default behaviour is pure.
      */
-    virtual PBoolean MakeConnection(
+    virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,                   ///<  Owner of connection
       const PString & party,             ///<  Party to call
       void * userData = NULL,            ///<  user data to pass to connections

@@ -430,7 +430,21 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
   if (!safeLock.IsLocked())
     return false;
 
+  if (mediaPatch == NULL) {
+    mediaPatch = patch;
+    return true;
+  }
+
+  OpalMediaPatch * oldPatch = mediaPatch;
   mediaPatch = patch;
+
+  if (IsSink())
+    oldPatch->RemoveSink(this);
+  else {
+    oldPatch->Close();
+    connection.GetEndPoint().GetManager().DestroyMediaPatch(oldPatch);
+  }
+
   return true;
 }
 

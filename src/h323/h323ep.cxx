@@ -436,17 +436,14 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
 }
 
 
-PBoolean H323EndPoint::MakeConnection(OpalCall & call,
-                                  const PString & remoteParty,
-                                  void * userData,
-                            unsigned int options,
-                            OpalConnection::StringOptions * stringOptions)
+PSafePtr<OpalConnection> H323EndPoint::MakeConnection(OpalCall & call,
+                                                 const PString & remoteParty,
+                                                          void * userData,
+                                                    unsigned int options,
+                                 OpalConnection::StringOptions * stringOptions)
 {
-  if ((remoteParty.NumCompare("h323:") != EqualTo) && (remoteParty.NumCompare("h323s") != EqualTo))
-    return false;
-
   if (listeners.IsEmpty())
-    return false;
+    return NULL;
 
   PTRACE(3, "H323\tMaking call to: " << remoteParty);
   return InternalMakeCall(call,
@@ -561,12 +558,7 @@ PBoolean H323EndPoint::SetupTransfer(const PString & oldToken,
   call.CloseMediaStreams();
 
   PTRACE(3, "H323\tTransferring call to: " << remoteParty);
-  PBoolean ok = InternalMakeCall(call,
-			     oldToken,
-			     callIdentity,
-			     UINT_MAX,
-			     remoteParty,
-			     userData);
+  PBoolean ok = InternalMakeCall(call, oldToken, callIdentity, UINT_MAX, remoteParty, userData) != NULL;
   call.OnReleased(*otherConnection);
   otherConnection->Release(OpalConnection::EndedByCallForwarded);
 
@@ -574,19 +566,19 @@ PBoolean H323EndPoint::SetupTransfer(const PString & oldToken,
 }
 
 
-PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
-                                    const PString & existingToken,
+H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
+                                           const PString & existingToken,
 #if OPAL_H450
-                                    const PString & callIdentity,
-                                           unsigned capabilityLevel,
+                                           const PString & callIdentity,
+                                                  unsigned capabilityLevel,
 #else
-                                    const PString & ,
-                                           unsigned ,
+                                           const PString & ,
+                                                  unsigned ,
 #endif
-                                    const PString & remoteParty,
-                                             void * userData,
-                                       unsigned int options,
-                                OpalConnection::StringOptions * stringOptions)
+                                           const PString & remoteParty,
+                                                    void * userData,
+                                              unsigned int options,
+                           OpalConnection::StringOptions * stringOptions)
 {
   OpalConnection::StringOptions localStringOptions;
   if (stringOptions == NULL)
@@ -596,7 +588,7 @@ PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
   H323TransportAddress address;
   if (!ParsePartyName(remoteParty, alias, address, stringOptions)) {
     PTRACE(2, "H323\tCould not parse \"" << remoteParty << '"');
-    return PFalse;
+    return NULL;
   }
 
   // Restriction: the call must be made on the same local interface as the one
@@ -614,7 +606,7 @@ PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
 
   if (transport == NULL) {
     PTRACE(1, "H323\tInvalid transport in \"" << remoteParty << '"');
-    return PFalse;
+    return NULL;
   }
 
   inUseFlag.Wait();
@@ -629,7 +621,7 @@ PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
   H323Connection * connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL, options, stringOptions);
   if (!AddConnection(connection)) {
     PTRACE(1, "H225\tEndpoint could not create connection, aborting setup.");
-    return PFalse;
+    return NULL;
   }
 
   inUseFlag.Signal();
@@ -653,7 +645,7 @@ PBoolean H323EndPoint::InternalMakeCall(OpalCall & call,
   if (call.GetConnection(0) == (OpalConnection*)connection || !existingToken.IsEmpty())
     connection->SetUpConnection();
 
-  return PTrue;
+  return connection;
 }
 
 
@@ -695,7 +687,7 @@ PBoolean H323EndPoint::IntrudeCall(const PString & remoteParty,
   if (call == NULL)
     return false;
 
-  return InternalMakeCall(*call, PString::Empty(), PString::Empty(), capabilityLevel, remoteParty, userData);
+  return InternalMakeCall(*call, PString::Empty(), PString::Empty(), capabilityLevel, remoteParty, userData) != NULL;
 }
 
 #endif
@@ -1021,12 +1013,12 @@ PBoolean H323EndPoint::ForwardConnection(H323Connection & connection,
                                      const PString & forwardParty,
                                      const H323SignalPDU & /*pdu*/)
 {
-  if (!InternalMakeCall(connection.GetCall(),
-                        connection.GetCallToken(),
-                        PString::Empty(),
-                        UINT_MAX,
-                        forwardParty,
-                        NULL))
+  if (InternalMakeCall(connection.GetCall(),
+                       connection.GetCallToken(),
+                       PString::Empty(),
+                       UINT_MAX,
+                       forwardParty,
+                       NULL) == NULL)
     return PFalse;
 
   connection.SetCallEndReason(H323Connection::EndedByCallForwarded);

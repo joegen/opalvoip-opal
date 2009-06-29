@@ -307,11 +307,11 @@ OpalFaxEndPoint::~OpalFaxEndPoint()
 }
 
 
-PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
-                                const PString & remoteParty,
-                                         void * userData,
-                                 unsigned int /*options*/,
-                OpalConnection::StringOptions * stringOptions)
+PSafePtr<OpalConnection> OpalFaxEndPoint::MakeConnection(OpalCall & call,
+                                                    const PString & remoteParty,
+                                                             void * userData,
+                                                       unsigned int /*options*/,
+                                    OpalConnection::StringOptions * stringOptions)
 {
   if (!OpalMediaFormat(TIFF_File_FormatName).IsValid())
     return false;
@@ -320,7 +320,7 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
   PStringArray tokens = remoteParty.Mid(prefixLength+1).Tokenise(";", true);
   if (tokens.IsEmpty()) {
     PTRACE(2, "Fax\tNo filename specified!");
-    return false;
+    return NULL;
   }
 
   bool receiving = false;
@@ -339,7 +339,7 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
 
   if (!receiving && !PFile::Exists(filename)) {
     PTRACE(2, "Fax\tCannot find filename '" << filename << "'");
-    return false;
+    return NULL;
   }
 
   OpalConnection::StringOptions localOptions;

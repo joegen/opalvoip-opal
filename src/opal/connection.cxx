@@ -74,6 +74,7 @@ ostream & operator<<(ostream & out, OpalConnection::Phases phase)
     "AlertingPhase",
     "ConnectedPhase",
     "EstablishedPhase",
+    "ForwardingPhase",
     "ReleasingPhase",
     "ReleasedPhase"
   };
@@ -590,7 +591,7 @@ unsigned OpalConnection::GetNextSessionID(const OpalMediaType & /*mediaType*/, b
 }
 
 
-void OpalConnection::AutoStartMediaStreams()
+void OpalConnection::AutoStartMediaStreams(bool force)
 {
   OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaType::GetList();
   for (OpalMediaTypeFactory::KeyList_T::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
@@ -598,8 +599,8 @@ void OpalConnection::AutoStartMediaStreams()
     switch (GetAutoStart(mediaType)) {
       case OpalMediaType::Transmit :
       case OpalMediaType::TransmitReceive :
-        if (GetMediaStream(mediaType, true) == NULL)
-          ownerCall.OpenSourceMediaStreams(*this, mediaType);
+        if (force || GetMediaStream(mediaType, true) == NULL)
+          ownerCall.OpenSourceMediaStreams(*this, mediaType, mediaType.GetDefinition()->GetDefaultSessionId());
 
       default :
         break;

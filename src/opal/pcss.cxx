@@ -196,7 +196,9 @@ static bool SetDeviceNames(const PString & remoteParty, PString & playResult, PS
   PINDEX prefixLength = remoteParty.Find(':')+1;
 
   PString playDevice, recordDevice;
-  PINDEX separator = remoteParty.FindOneOf("\n\\", prefixLength);
+  PINDEX separator = remoteParty.Find('|', prefixLength);
+  if (separator == P_MAX_INDEX)
+    separator = remoteParty.Find('\\', prefixLength);
   if (separator == P_MAX_INDEX)
     playDevice = recordDevice = remoteParty.Mid(prefixLength);
   else {
@@ -222,17 +224,33 @@ static bool SetDeviceNames(const PString & remoteParty, PString & playResult, PS
 }
 
 
-PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
-                                      const PString & remoteParty,
-                                      void * userData,
-                               unsigned int options,
-                               OpalConnection::StringOptions * stringOptions)
+PSafePtr<OpalConnection> OpalPCSSEndPoint::MakeConnection(OpalCall & call,
+                                                     const PString & remoteParty,
+                                                              void * userData,
+                                                        unsigned int options,
+                                     OpalConnection::StringOptions * stringOptions)
 {
+  PString deviceNames = remoteParty;
+  OpalConnection::StringOptions localStringOptions;
+
+  PINDEX semicolon = remoteParty.Find(';');
+  if (semicolon != P_MAX_INDEX) {
+    if (stringOptions == NULL)
+      stringOptions = &localStringOptions;
+
+    PStringToString params;
+    PURL::SplitVars(remoteParty.Mid(semicolon), params, ';', '=');
+    for (PINDEX i = 0; i < params.GetSize(); ++i)
+      stringOptions->SetAt(params.GetKeyAt(i), params.GetDataAt(i));
+
+    deviceNames.Delete(semicolon, P_MAX_INDEX);
+  }
+
   PString playDevice = soundChannelPlayDevice;
   PString recordDevice = soundChannelRecordDevice;
-  if (!SetDeviceNames(remoteParty, playDevice, recordDevice, "call")) {
+  if (!SetDeviceNames(deviceNames, playDevice, recordDevice, "call")) {
     call.Clear(OpalConnection::EndedByLocalBusy);
-    return false;
+    return NULL;
   }
 
   return AddConnection(CreateConnection(call, playDevice, recordDevice, userData, options, stringOptions));
@@ -463,14 +481,6 @@ PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & m
   return endpoint.CreateSoundChannel(*this, mediaFormat, isSource);
 }
 
-
-void OpalPCSSConnection::AcceptIncoming()
-{
-  if (LockReadWrite()) {
-    OnConnectedInternal();
-    UnlockReadWrite();
-  }
-}
 
 #endif // OPAL_PTLIB_AUDIO
 
