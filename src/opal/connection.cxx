@@ -606,6 +606,7 @@ void OpalConnection::AutoStartMediaStreams(bool force)
         break;
     }
   }
+  StartMediaStreams();
 }
 
 
