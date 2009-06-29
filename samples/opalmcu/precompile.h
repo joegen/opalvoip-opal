@@ -30,6 +30,8 @@
 #include <ptclib/cli.h>
 #include <opal/manager.h>
 #include <opal/opalmixer.h>
+#include <opal/ivr.h>
+#include <opal/pcss.h>
 #include <sip/sipep.h>
 #include <h323/h323ep.h>
 
