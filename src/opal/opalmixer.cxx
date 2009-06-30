@@ -26,8 +26,10 @@ OpalAudioMixerStream::OpalAudioMixerStream()
 void OpalAudioMixerStream::WriteFrame(const StreamFrame & frame)
 {
   PWaitAndSignal m(mutex);
-  if (frame.GetSize() != 0)
+  if (frame.GetSize() != 0) {
     frameQueue.push(frame);
+    PTRACE(6, "Mixer\tWrite TS=" << frame.timestamp);
+  }
 }
 
 void OpalAudioMixerStream::FillSilence(StreamFrame & retFrame, PINDEX ms)
@@ -53,6 +55,7 @@ void OpalAudioMixerStream::PopFrame(StreamFrame & retFrame, PINDEX ms)
 
     // clear the current frame cache
     frameCache.SetSize(0);
+    PTRACE(6, "Mixer\tPop full TS=" << frame.timestamp);
   }
   else
   {
@@ -70,6 +73,7 @@ void OpalAudioMixerStream::PopFrame(StreamFrame & retFrame, PINDEX ms)
     // rebase cache to reflect removed data
     frameCache.Rebase(len);
 //    frameCache.SetSize(frameCache.GetSize() - len);
+    PTRACE(6, "Mixer\tPop part TS=" << frame.timestamp << ", SZ=" << len);
   }
 
   // remove the frame from the queue
@@ -84,6 +88,7 @@ PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
   if (first) {
     if (frameQueue.size() == 0) {
       mutex.Signal();
+      PTRACE(6, "Mixer\tRead queue empty 1");
       return PFalse;
     }
     cacheTimeStamp = frameQueue.front().timestamp;
@@ -116,6 +121,7 @@ PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
 
     mutex.Signal();
 
+    PTRACE(6, "Mixer\tRead cached TS=" << retFrame.timestamp << ", SZ=" << len);
     return PTrue;
   }
 
@@ -128,6 +134,7 @@ PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
     if (frameQueue.size() == 0) {
       cacheTimeStamp += MS_TO_SAMPLES(ms);
       mutex.Signal();
+      PTRACE(6, "Mixer\tRead queue empty 2");
       return PFalse;
     }
 
@@ -152,6 +159,7 @@ PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
     cacheTimeStamp += MS_TO_SAMPLES(ms);
     active = PFalse;
     mutex.Signal();
+    PTRACE(6, "Mixer\tRead queue empty 3");
     return PFalse;
   }
 
@@ -164,6 +172,7 @@ PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
   if (cacheTimeStamp < frame.timestamp) {
     cacheTimeStamp += MS_TO_SAMPLES(ms);
     mutex.Signal();
+    PTRACE(6, "Mixer\tRead early TS " << cacheTimeStamp << " < " << frame.timestamp);
     return PFalse;
   }
 
