@@ -2449,7 +2449,7 @@ void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
                   "<vxml version=\"1.0\">"
                     "<form id=\"PlayFile\">"
                       "<transfer bridge=\"false\" dest=\"pc:*;Auto-Answer=1\">"
-                        "<audio src=\"" << PURL(PFilePath(m_lastPlayFile)) << "\"/>"
+                        "<audio src=\"" << PURL(PFilePath(m_lastPlayFile.p_str())) << "\"/>"
                       "</transfer>"
                     "</form>"
                   "</vxml>";
