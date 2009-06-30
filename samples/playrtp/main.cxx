@@ -888,6 +888,9 @@ void PlayRTP::Play(const PFilePath & filename)
   RTP_DataFrame extendedData;
   m_videoError = false;
 
+  bool isAudio = false;
+  bool needInfoHeader = true;
+
   while (!pcap.IsEndOfFile()) {
     if (!pcap.Read(&pcaprec_hdr, sizeof(pcaprec_hdr))) {
       cout << "Truncated file \"" << filename << '"' << endl;
@@ -996,8 +999,15 @@ void PlayRTP::Play(const PFilePath & filename)
 
       OpalMediaFormat srcFmt = m_payloadType2mediaFormat[rtpStreamPayloadType];
       OpalMediaFormat dstFmt;
-      if (srcFmt.GetMediaType() == OpalMediaType::Audio())
+      if (srcFmt.GetMediaType() == OpalMediaType::Audio()) {
         dstFmt = OpalPCM16;
+        m_noDelay = true; // Will be paced by output device.
+        isAudio = true;
+        unsigned frame = srcFmt.GetFrameTime();
+        if (frame < 160)
+          frame = 160;
+        m_player->SetBuffers(frame*2, 2000/frame); // 250ms of buffering of Vista goes funny
+      }
       else if (srcFmt.GetMediaType() == OpalMediaType::Video()) {
         dstFmt = OpalYUV420P;
         m_display->Start();
@@ -1032,16 +1042,32 @@ void PlayRTP::Play(const PFilePath & filename)
     }
 
     if (m_info > 0) {
-      if (m_info > 1) 
-        cout << "Frame #" << m_frameCount << ":pt=" << rtp.GetPayloadType() << ",psz=" << rtp.GetPayloadSize() << ",m=" << (rtp.GetMarker() ? "1" : "0") << ",";
-      cout << "ssrc=" << hex << rtp.GetSyncSource() << dec << ",ts=" << rtp.GetTimestamp() << ",seq = " << rtp.GetSequenceNumber();
-      if (m_info > 2) {
-        cout << "\n   data=";
-        cout << hex << setfill('0') << ::setw(2);
-        for (PINDEX i = 0; i < PMIN(30, rtp.GetPayloadSize()); ++i)
-          cout << (int)rtp.GetPayloadPtr()[i] << ' ';
-        cout << dec << setfill(' ') << ::setw(0);
+      if (needInfoHeader) {
+        needInfoHeader = false;
+        if (m_info > 0) {
+          if (m_info > 1)
+            cout << "Frame,RealTime,CaptureTime,";
+          cout << "SSRC,SequenceNumber,TimeStamp";
+          if (m_info > 1) {
+            cout << ",Marker,PayloadType,payloadSize";
+            if (isAudio)
+              cout << ",DecodedSize";
+            else
+              cout << ",Width,Height";
+            if (m_info > 2)
+              cout << ",Data";
+          }
+          cout << '\n';
+        }
       }
+
+      if (m_info > 1)
+        cout << m_frameCount << ','
+             << PTimer::Tick().GetMilliSeconds() << ','
+             << pcaprec_hdr.ts_sec << '.' << setfill('0') << setw(6) << pcaprec_hdr.ts_usec << setfill(' ') << ',';
+      cout << "0x" << hex << rtp.GetSyncSource() << dec << ',' << rtp.GetSequenceNumber() << ',' << rtp.GetTimestamp();
+      if (m_info > 1)
+        cout << ',' << rtp.GetMarker() << ',' << rtp.GetPayloadType() << ',' << rtp.GetPayloadSize();
     }
 
     if (m_singleStep) 
@@ -1062,9 +1088,12 @@ void PlayRTP::Play(const PFilePath & filename)
       if (m_singleStep)
         cout << output.GetSize() << " packets" << endl;
       const RTP_DataFrame & data = output[i];
-      if (inputFmt.GetMediaType() == OpalMediaType::Audio())
+      if (isAudio) {
         m_player->Write(data.GetPayloadPtr(), data.GetPayloadSize());
-      else if (inputFmt.GetMediaType() == OpalMediaType::Video()) {
+        if (m_info > 1)
+          cout << ',' << data.GetPayloadSize();
+      }
+      else {
         OpalVideoTranscoder * video = (OpalVideoTranscoder *)m_transcoder;
         const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
         if (frame->width > 1000 || frame->height > 1000) {
@@ -1140,11 +1169,26 @@ void PlayRTP::Play(const PFilePath & filename)
         //  m_singleStep = true;
 
         if (m_info > 1)
-          cout << "  w=" << frame->width << ",h=" << frame->height << endl;
+          cout << ',' << frame->width << ',' << frame->height;
       }
     }
 
+    if (m_info > 0) {
+      if (m_info > 2) {
+        PINDEX psz = rtp.GetPayloadSize();
+        if (m_info == 2 && psz > 30)
+          psz = 30;
+        cout << ',' << hex << setfill('0');
+        const BYTE * ptr = rtp.GetPayloadPtr();
+        for (PINDEX i = 0; i < psz; ++i)
+          cout << setw(2) << (unsigned)*ptr++;
+        cout << dec << setfill(' ');
+      }
+      cout << '\n';
+    }
+
     if (m_singleStep) {
+      cout.flush();
       char ch;
       cin >> ch;
       if (ch == 'c')
