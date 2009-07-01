@@ -20,15 +20,16 @@ OpalAudioMixerStream::OpalAudioMixerStream()
 { 
   active = PFalse; 
   first  = PTrue;
-  cacheTimeStamp = 80000000;
+  writtenTimeStamp = cacheTimeStamp = 80000000;
 }
 
 void OpalAudioMixerStream::WriteFrame(const StreamFrame & frame)
 {
   PWaitAndSignal m(mutex);
-  if (frame.GetSize() != 0) {
+  if (frame.GetSize() != 0 && frame.timestamp != writtenTimeStamp) {
+    writtenTimeStamp = frame.timestamp;
     frameQueue.push(frame);
-    PTRACE(6, "Mixer\tWrite TS=" << frame.timestamp);
+    PTRACE(6, "Mixer\tWrite CH=" << channelNumber << " TS=" << frame.timestamp << " SZ=" << frame.GetSize());
   }
 }
 
@@ -55,7 +56,7 @@ void OpalAudioMixerStream::PopFrame(StreamFrame & retFrame, PINDEX ms)
 
     // clear the current frame cache
     frameCache.SetSize(0);
-    PTRACE(6, "Mixer\tPop full TS=" << frame.timestamp);
+    PTRACE(6, "Mixer\tPop full CH=" << channelNumber << " TS=" << frame.timestamp);
   }
   else
   {
@@ -73,7 +74,7 @@ void OpalAudioMixerStream::PopFrame(StreamFrame & retFrame, PINDEX ms)
     // rebase cache to reflect removed data
     frameCache.Rebase(len);
 //    frameCache.SetSize(frameCache.GetSize() - len);
-    PTRACE(6, "Mixer\tPop part TS=" << frame.timestamp << ", SZ=" << len);
+    PTRACE(6, "Mixer\tPop part CH=" << channelNumber << " TS=" << frame.timestamp << " SZ=" << len);
   }
 
   // remove the frame from the queue
@@ -88,7 +89,7 @@ PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
   if (first) {
     if (frameQueue.size() == 0) {
       mutex.Signal();
-      PTRACE(6, "Mixer\tRead queue empty 1");
+      PTRACE(6, "Mixer\tRead queue empty 1 CH=" << channelNumber);
       return PFalse;
     }
     cacheTimeStamp = frameQueue.front().timestamp;
@@ -121,7 +122,7 @@ PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
 
     mutex.Signal();
 
-    PTRACE(6, "Mixer\tRead cached TS=" << retFrame.timestamp << ", SZ=" << len);
+    PTRACE(6, "Mixer\tRead cached CH=" << channelNumber << " TS=" << retFrame.timestamp << " SZ=" << len);
     return PTrue;
   }
 
@@ -134,7 +135,7 @@ PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
     if (frameQueue.size() == 0) {
       cacheTimeStamp += MS_TO_SAMPLES(ms);
       mutex.Signal();
-      PTRACE(6, "Mixer\tRead queue empty 2");
+      PTRACE(6, "Mixer\tRead queue empty 2 CH=" << channelNumber);
       return PFalse;
     }
 
@@ -159,7 +160,7 @@ PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
     cacheTimeStamp += MS_TO_SAMPLES(ms);
     active = PFalse;
     mutex.Signal();
-    PTRACE(6, "Mixer\tRead queue empty 3");
+    PTRACE(6, "Mixer\tRead queue empty 3 CH=" << channelNumber);
     return PFalse;
   }
 
@@ -172,7 +173,7 @@ PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
   if (cacheTimeStamp < frame.timestamp) {
     cacheTimeStamp += MS_TO_SAMPLES(ms);
     mutex.Signal();
-    PTRACE(6, "Mixer\tRead early TS " << cacheTimeStamp << " < " << frame.timestamp);
+    PTRACE(6, "Mixer\tRead early CH=" << channelNumber << " TS " << cacheTimeStamp << " < " << frame.timestamp);
     return PFalse;
   }
 
@@ -377,7 +378,8 @@ void OpalAudioMixer::StartThread()
     if (mixerWorkerThread == NULL) {
   	  threadRunning = true;
       mixerWorkerThread = new PThreadObj<OpalAudioMixer>(*this, &OpalAudioMixer::ThreadMain);
-	}
+      mixerWorkerThread->SetThreadName("Mixer");
+    }
   }
 }
 
@@ -477,7 +479,5 @@ PBoolean OpalAudioMixer::Write(const Key_T & key, const RTP_DataFrame & rtp)
     audioStarted = PTrue;
   }
 
-  // trigger reading of mixed data
-  ReadRoutine();
   return PTrue;
 }

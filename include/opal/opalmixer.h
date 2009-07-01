@@ -293,6 +293,7 @@ class OpalAudioMixerStream {
     StreamFrameQueue_T frameQueue;
     StreamFrame frameCache;
     DWORD cacheTimeStamp;
+    DWORD writtenTimeStamp;
 
     PBoolean active;
     PBoolean first;
