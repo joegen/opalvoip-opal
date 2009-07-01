@@ -936,7 +936,7 @@ class OpalMixerNode : public PSafeObject
         const short * audioToSubtract
       );
 #ifdef OPAL_MIXER_AUDIO_DEBUG
-      PTextFile m_audioDebug;
+      class PAudioMixerDebug * m_audioDebug;
 #endif
     };
     AudioMixer m_audioMixer;
