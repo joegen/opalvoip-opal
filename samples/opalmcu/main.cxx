@@ -54,12 +54,12 @@ void ConfOPAL::Main()
   PArgList & args = GetArguments();
 
   args.Parse("c-cli:"
+             "d-default:"
              "g-gk-host:"
              "G-gk-id:"
              "h-help."
              "H-h323:"
              "m-moderator:"
-             "n-name:"
              "N-stun:"
              "o-output:"
              "p-password:"
@@ -87,7 +87,8 @@ void ConfOPAL::Main()
             "\n"
             "Available options are:\n"
             "  -h or --help            : print this help message.\n"
-            "  -n or --name alias      : Name of default conference\n"
+            "  -d or --default alias   : What to do if incoming call has no name, may be the name\n"
+            "                          : of a default conference, or a VXML script.\n"
             "  -m or --moderator pin   : PIN to allow to become a moderator and have talk rights\n"
             "                          : if absent, all participants are moderators.\n"
 #if OPAL_VIDEO
@@ -121,6 +122,37 @@ void ConfOPAL::Main()
   }
 
   m_manager = new MyManager();
+
+  // Set up PCSS to do speaker playback
+  new MyPCSSEndPoint(*m_manager);
+
+  // Set up IVR to do recording or WAV file play
+  OpalIVREndPoint * ivr = new OpalIVREndPoint(*m_manager);
+
+  // Set up conference mixer
+  MyMixerNodeInfo * info = new MyMixerNodeInfo;
+  info->m_name = "room101";
+  info->m_moderatorPIN = args.GetOptionString('m');
+  info->m_listenOnly = !info->m_moderatorPIN.IsEmpty();
+
+#if OPAL_VIDEO
+  info->m_audioOnly = args.HasOption('V');
+  if (args.HasOption('s'))
+    PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info->m_width, info->m_height);
+#endif
+  MyMixerEndPoint * mixer = new MyMixerEndPoint(*m_manager, info);
+
+  // Determine default action
+  if (args.HasOption('d')) {
+    PString defRoom = args.GetOptionString('d');
+    PFilePath vxmlFile = defRoom;
+    if (vxmlFile.GetType() != ".vxml")
+      info->m_name = defRoom;
+    else {
+      ivr->SetDefaultVXML(vxmlFile);
+      m_manager->AddRouteEntry(".*:.*\t.*:[^@]*$ = ivr:*");
+    }
+  }
 
   if (args.HasOption('N')) {
     PSTUNClient::NatTypes nat = m_manager->SetSTUNServer(args.GetOptionString('N'));
@@ -193,15 +225,6 @@ void ConfOPAL::Main()
     m_manager->AddRouteEntry("h323.*:.* = mcu:<du>");
   }
 #endif // OPAL_H323
-
-  // Set up IVR to do recording or WAV file play
-  new OpalIVREndPoint(*m_manager);
-
-  // Set up PCSS to do speaker playback
-  new MyPCSSEndPoint(*m_manager);
-
-  // Set up conference mixer
-  MyMixerEndPoint * mixer = new MyMixerEndPoint(*m_manager, args);
 
   // Wait for call to come in and finish
   if (args.HasOption('c')) {
@@ -342,7 +365,7 @@ MyManager::~MyManager()
 void MyManager::OnEstablishedCall(OpalCall & call)
 {
   PStringStream strm;
-  strm << "Call from " << call.GetPartyA() << " entered conference at " << call.GetPartyB() << '\n';
+  strm << "Call from " << call.GetPartyA() << " entered conference at " << call.GetPartyB();
   m_cli->Broadcast(strm);
 }
 
@@ -350,28 +373,17 @@ void MyManager::OnEstablishedCall(OpalCall & call)
 void MyManager::OnClearedCall(OpalCall & call)
 {
   PStringStream strm;
-  strm << "Call from " << call.GetPartyA() << " left conference at " << call.GetPartyB() << '\n';
+  strm << "Call from " << call.GetPartyA() << " left conference at " << call.GetPartyB();
   m_cli->Broadcast(strm);
 }
 
 
 ///////////////////////////////////////////////////////////////
 
-MyMixerEndPoint::MyMixerEndPoint(MyManager & manager, PArgList & args)
+MyMixerEndPoint::MyMixerEndPoint(MyManager & manager, MyMixerNodeInfo * info)
   : OpalMixerEndPoint(manager, "mcu")
   , m_manager(manager)
 {
-  MyMixerNodeInfo * info = new MyMixerNodeInfo;
-  info->m_name = args.GetOptionString('n', "room101");
-  info->m_moderatorPIN = args.GetOptionString('m');
-  info->m_listenOnly = !info->m_moderatorPIN.IsEmpty();
-
-#if OPAL_VIDEO
-  info->m_audioOnly = args.HasOption('V');
-  if (args.HasOption('s'))
-    PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info->m_width, info->m_height);
-#endif
-
   m_adHocNodeInfo = info;
 }
 
@@ -383,6 +395,16 @@ OpalMixerConnection * MyMixerEndPoint::CreateConnection(PSafePtr<OpalMixerNode> 
                                                         OpalConnection::StringOptions * stringOptions)
 {
   return new MyMixerConnection(node, call, *this, userData, options, stringOptions);
+}
+
+
+OpalMixerNode * MyMixerEndPoint::CreateNode(OpalMixerNodeInfo * info)
+{
+  PStringStream strm;
+  strm << "Created new conference \"" << info->m_name << '"';
+  m_manager.m_cli->Broadcast(strm);
+
+  return OpalMixerEndPoint::CreateNode(info);
 }
 
 

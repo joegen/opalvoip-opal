@@ -67,7 +67,7 @@ class MyMixerEndPoint : public OpalMixerEndPoint
 {
     PCLASSINFO(MyMixerEndPoint, OpalMixerEndPoint);
   public:
-    MyMixerEndPoint(MyManager & manager, PArgList & args);
+    MyMixerEndPoint(MyManager & manager, MyMixerNodeInfo * info);
 
     virtual OpalMixerConnection * CreateConnection(
       PSafePtr<OpalMixerNode> node,
@@ -75,6 +75,10 @@ class MyMixerEndPoint : public OpalMixerEndPoint
       void * userData,
       unsigned options,
       OpalConnection::StringOptions * stringOptions
+    );
+
+    virtual OpalMixerNode * CreateNode(
+      OpalMixerNodeInfo * info ///< Initial info for node
     );
 
     PDECLARE_NOTIFIER(PCLI::Arguments, MyMixerEndPoint, CmdConfAdd);
