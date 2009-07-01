@@ -207,7 +207,11 @@ PBoolean OpalIVRConnection::StartVXML()
     return vxmlSession.LoadVXML(vxmlToLoad);
   }
 
-  PFilePath vxmlFile = PURL(vxmlToLoad).AsFilePath();
+  PURL vxmlURL(vxmlToLoad, NULL);
+  if (!vxmlURL.IsEmpty())
+    return vxmlSession.LoadURL(vxmlURL);
+
+  PFilePath vxmlFile = vxmlToLoad;
   if (vxmlFile.GetType() *= ".vxml")
     return vxmlSession.LoadFile(vxmlFile);
 
