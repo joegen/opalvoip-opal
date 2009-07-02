@@ -119,6 +119,8 @@ public:
   virtual void OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
+
+  virtual void OnFailed(const SIP_PDU & response);
   virtual void OnFailed(SIP_PDU::StatusCodes);
 
   virtual PBoolean SendRequest(SIPHandler::State state);
@@ -210,7 +212,7 @@ public:
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
-  virtual void OnFailed(SIP_PDU::StatusCodes r);
+  virtual void OnFailed(const SIP_PDU & response);
   virtual PBoolean SendRequest(SIPHandler::State state);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_SUBSCRIBE; }
