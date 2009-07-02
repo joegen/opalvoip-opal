@@ -129,7 +129,8 @@ class MyManager : public OpalManager
     virtual void OnEstablishedCall(OpalCall & call);
     virtual void OnClearedCall(OpalCall & call);
 
-    PCLI * m_cli;
+    MyMixerEndPoint * m_mixer;
+    PCLI            * m_cli;
 };
 
 
