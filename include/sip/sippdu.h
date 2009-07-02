@@ -758,6 +758,8 @@ class SIP_PDU : public PSafeObject
     SDPSessionDescription * m_SDP;
 
     mutable PString transactionID;
+
+    bool m_usePeerTransportAddress;
 };
 
 
@@ -811,6 +813,8 @@ class SIPDialogContext
 
     bool IsEstablished() const { return !m_remoteTag.IsEmpty(); }
 
+    bool UsePeerTransportAddress() const { return m_usePeerTransportAddress; }
+
   protected:
     PString     m_callId;
     SIPURL      m_requestURI;
@@ -821,6 +825,7 @@ class SIPDialogContext
     PStringList m_routeSet;
     unsigned    m_lastSentCSeq;
     unsigned    m_lastReceivedCSeq;
+    bool        m_usePeerTransportAddress;
 };
 
 

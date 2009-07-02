@@ -119,6 +119,8 @@ public:
   virtual void OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
+
+  virtual void OnFailed(const SIP_PDU & response);
   virtual void OnFailed(SIP_PDU::StatusCodes);
 
   bool ActivateState(SIPHandler::State state, unsigned msecs = 1000);
@@ -216,7 +218,7 @@ public:
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
-  virtual void OnFailed(SIP_PDU::StatusCodes r);
+  virtual void OnFailed(const SIP_PDU & response);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_SUBSCRIBE; }
   virtual SIPEventPackage GetEventPackage() const
@@ -467,6 +469,9 @@ struct SIPPresenceInfo
   // presence extensions defined by RFC 4480
   PStringArray m_activities;  // list of activities, seperated by newline
   ExtendedStates m_activity;  // primary activity
+
+  // presence agent
+  PString m_presenceAgent;
 
   PString AsXML() const;
 
