@@ -1679,6 +1679,7 @@ SIP_PDU::SIP_PDU(Methods method,
                  const PString & callID,
                  unsigned cseq,
                  const OpalTransportAddress & via)
+  : m_usePeerTransportAddress(false)
 {
   Construct(method, dest, to, from, callID, cseq, via);
 }
@@ -1687,6 +1688,7 @@ SIP_PDU::SIP_PDU(Methods method,
 SIP_PDU::SIP_PDU(Methods method,
                  SIPConnection & connection,
                  const OpalTransport & transport)
+  : m_usePeerTransportAddress(false)
 {
   Construct(method, connection, transport);
 }
@@ -1697,6 +1699,7 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
                  const char * contact,
                  const char * extra,
                  const SDPSessionDescription * sdp)
+  : m_usePeerTransportAddress(false)
 {
   method       = NumMethods;
   statusCode   = code;
@@ -1743,6 +1746,7 @@ SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
   , mime(pdu.mime)
   , entityBody(pdu.entityBody)
   , m_SDP(pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL)
+  , m_usePeerTransportAddress(pdu.m_usePeerTransportAddress)
 {
 }
 
@@ -1752,6 +1756,8 @@ SIP_PDU & SIP_PDU::operator=(const SIP_PDU & pdu)
   method = pdu.method;
   statusCode = pdu.statusCode;
   uri = pdu.uri;
+  m_usePeerTransportAddress = pdu.m_usePeerTransportAddress;
+
   versionMajor = pdu.versionMajor;
   versionMinor = pdu.versionMinor;
   info = pdu.info;
@@ -1858,6 +1864,8 @@ void SIP_PDU::Construct(Methods meth,
             via.GetHostAddress());
 
   SetRoute(dialog.GetRouteSet()); // Possibly adjust the URI and the route
+
+  m_usePeerTransportAddress = dialog.UsePeerTransportAddress();
 }
 
 
@@ -2364,6 +2372,7 @@ SIPDialogContext::SIPDialogContext()
   : m_callId(SIPTransaction::GenerateCallID())
   , m_lastSentCSeq(0)
   , m_lastReceivedCSeq(0)
+  , m_usePeerTransportAddress(false)
 {
 }
 
@@ -2466,6 +2475,14 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
   else {
     SetLocalURI(mime.GetTo()); // Will add a tag
     SetRemoteURI(mime.GetFrom());
+  }
+
+  /* Update target address, if required */
+  if (pdu.GetMethod() == SIP_PDU::Method_INVITE || pdu.GetMethod() == SIP_PDU::Method_SUBSCRIBE) {
+    PINDEX start, val, end;
+    PStringList viaList = mime.GetViaList();
+    if (viaList.GetSize() > 0)
+      m_usePeerTransportAddress = LocateFieldParameter(viaList.front(), "rport", start, val, end);
   }
 }
 
@@ -2577,20 +2594,26 @@ PBoolean SIPTransaction::Start()
     m_localInterface = transport.GetInterface();
 
   /* Get the address to which the request PDU should be sent, according to
-     the RFC, for a request in a dialog. */
-  SIPURL destination = uri;
+     the RFC, for a request in a dialog. 
+     handle case where address changed using rport
+   */
+  if (m_usePeerTransportAddress)
+    m_remoteAddress = transport.GetLastReceivedAddress();
+  else {
+    SIPURL destination;
+    destination = uri;
+    PStringList routeSet = GetMIME().GetRoute();
+    if (!routeSet.IsEmpty()) {
+      SIPURL firstRoute = routeSet.front();
+      if (firstRoute.GetParamVars().Contains("lr"))
+        destination = firstRoute;
+    }
 
-  PStringList routeSet = GetMIME().GetRoute();
-  if (!routeSet.IsEmpty()) {
-    SIPURL firstRoute = routeSet.front();
-    if (firstRoute.GetParamVars().Contains("lr"))
-      destination = firstRoute;
+    // Do a DNS SRV lookup
+    destination.AdjustToDNS();
+    m_remoteAddress = destination.GetHostAddress();
   }
 
-  // Do a DNS SRV lookup
-  destination.AdjustToDNS();
-
-  m_remoteAddress = destination.GetHostAddress();
   PTRACE(3, "SIP\tTransaction remote address is " << m_remoteAddress);
 
   // Use the connection transport to send the request

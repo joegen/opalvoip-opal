@@ -684,7 +684,7 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
         default :
           PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
           if (handler != NULL) 
-            handler->OnFailed(response.GetStatusCode());
+            handler->OnFailed(response);
           else {
             PTRACE(2, "SIP\tResponse received for unknown handler ID: " << response.GetMIME().GetCallID());
           }
@@ -1282,7 +1282,13 @@ bool SIPEndPoint::Publish(const PString & to, const PString & body, unsigned exp
 
 bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
 {
-  return Publish(info.m_address, info.AsXML(), expire);
+  SIPSubscribe::Params params(SIPSubscribe::Presence);
+  params.m_addressOfRecord = info.m_address;
+  params.m_expire          = expire;
+  params.m_agentAddress    = info.m_presenceAgent;
+
+  PString aor;
+  return Publish(params, info.AsXML(), aor);
 }
 
 

@@ -520,6 +520,12 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
 }
 
 
+void SIPHandler::OnFailed(const SIP_PDU & response)
+{
+  OnFailed(response.GetStatusCode());
+}
+
+
 void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
 {
   switch (code) {
@@ -786,17 +792,36 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 }
 
 
-void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes r)
+void SIPSubscribeHandler::OnFailed(const SIP_PDU & response)
 {
+  SIP_PDU::StatusCodes r = response.GetStatusCode();
+
   SendStatus(r, GetState());
-  SIPHandler::OnFailed(r);
+
+  int newExpires = 0;
+  PString dummy;
   
-  if (r == SIP_PDU::Failure_TransactionDoesNotExist) {
-    // Resubscribe as previous subscription totally lost, but dialog processing
-    // may have altered the target so restore the original target address
-    m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
-    PString dummy;
-    endpoint.Subscribe(m_parameters, dummy);
+  switch (r) {
+    case SIP_PDU::Failure_TransactionDoesNotExist:
+      // Resubscribe as previous subscription totally lost, but dialog processing
+      // may have altered the target so restore the original target address
+      m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
+      endpoint.Subscribe(m_parameters, dummy);
+      break;
+
+    case SIP_PDU::Failure_IntervalTooBrief:
+      // Resubscribe with altered expiry
+      newExpires = response.GetMIME().GetExpires();
+      if (newExpires > 0) {
+        m_parameters.m_expire = newExpires;
+        PString dummy;
+        endpoint.Subscribe(m_parameters, dummy);
+      }
+      break;
+
+    default:
+      // fall through
+      SIPHandler::OnFailed(r);
   }
 }
 
@@ -1526,17 +1551,24 @@ PString SIPPresenceInfo::AsXML() const
   xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
          "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"";
 
-  if (m_entity.IsEmpty()) {
-    PCaselessString entity = m_address;
-    if (entity.NumCompare("sip:") == PObject::EqualTo)
-      entity.Delete(0, 4);
-    xml << "pres:" << entity;
-  }
-  else
-    xml << m_entity;
+  PCaselessString entity = m_entity;
+  if (entity.IsEmpty()) 
+    entity = m_address;
+
+#if 1
+  if (entity.NumCompare("sip:") == PObject::EqualTo)
+    entity.Delete(0, 4);
+  if (entity.NumCompare("pres:") != PObject::EqualTo)
+    entity = "pres:" + entity;
+#else
+  if (entity.NumCompare("sip:") != PObject::EqualTo)
+    entity = "sip:" + entity;
+#endif
+
+  xml << entity;
 
   xml << "\">\r\n"
-         "  <tuple id=\"" << OpalGloballyUniqueID() << "\">\r\n";
+         "  <tuple id=\"id_" << OpalGloballyUniqueID() << "\">\r\n";
 
   if (!m_note.IsEmpty())
     xml << "    <note>" << m_note << "</note>\r\n";
@@ -1556,7 +1588,7 @@ PString SIPPresenceInfo::AsXML() const
       break;
   }
   xml << "    </status>\r\n"
-         "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? m_address : m_contact) << "</contact>\r\n"
+  //       "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? m_address : m_contact) << "</contact>\r\n"
          "  </tuple>\r\n"
          "</presence>\r\n";
 
