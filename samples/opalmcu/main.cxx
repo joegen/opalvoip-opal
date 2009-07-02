@@ -53,13 +53,14 @@ void ConfOPAL::Main()
 {
   PArgList & args = GetArguments();
 
-  args.Parse("c-cli:"
-             "d-default:"
+  args.Parse("a-attendant:"
+             "c-cli:"
              "g-gk-host:"
              "G-gk-id:"
              "h-help."
              "H-h323:"
              "m-moderator:"
+             "n-name:"
              "N-stun:"
              "o-output:"
              "p-password:"
@@ -87,23 +88,28 @@ void ConfOPAL::Main()
             "\n"
             "Available options are:\n"
             "  -h or --help            : print this help message.\n"
-            "  -d or --default alias   : What to do if incoming call has no name, may be the name\n"
-            "                          : of a default conference, or a VXML script.\n"
-            "  -m or --moderator pin   : PIN to allow to become a moderator and have talk rights\n"
-            "                          : if absent, all participants are moderators.\n"
+            "  -a or --attendant vxml  : VXML script to run for incoming calls not directed.\n"
+            "                          : to a specific conference. If absent, then ad-hoc\n"
+            "                          : conferences are created.\n"
+            "  -m or --moderator pin   : PIN to allow to become a moderator and have talk\n"
+            "                          : rights if absent, all participants are moderators.\n"
+            "  -n or --name alias      : Default name for ad-hoc conference.\n"
 #if OPAL_VIDEO
-            "  -V or --no-video        : Disable video\n"
-            "  -s or --size            : Set default video size\n"
+            "  -V or --no-video        : Disable video for ad-hoc conference.\n"
+            "  -s or --size            : Set default video size for ad-hoc conference.\n"
 #endif
-            "  -u or --user name       : Set local username, defaults to OS username.\n"
+            "  -u or --user name       : Set local username for registration, defaults to\n"
+            "                          : Operating System username.\n"
             "  -p or --password pwd    : Set password for authentication.\n"
 #if OPAL_SIP
-            "  -S or --sip interface   : SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
+            "  -S or --sip interface   : SIP interface to listen on, defaults to udp$*:5060,\n"
+            "                          : 'x' disables SIP.\n"
             "  -r or --register server : SIP registration to server.\n"
             "  -P or --proxy url       : SIP outbound proxy.\n"
 #endif
 #if OPAL_H323
-            "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
+            "  -H or --h323 interface  : H.323 interface to listen on, defaults to tcp$*:1720,\n"
+            "                          : 'x' disables H.323.\n"
             "  -g or --gk-host host    : H.323 gatekeeper host.\n"
             "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
 #endif
@@ -113,8 +119,8 @@ void ConfOPAL::Main()
             "        --rtp-tos tos     : Set RTP Type Of Service (DiffServ code).\n"
             "        --rtp-size size   : Set RTP maximum payload size in bytes.\n"
 #if PTRACING
-            "  -o or --output file     : file name for output of log messages\n"       
-            "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
+            "  -o or --output file     : file name for output of log messages\n"
+            "  -t or --trace           : verbosity of error log (more times for more detail)\n"
 #endif
             "\n"
             "\n";
@@ -123,36 +129,10 @@ void ConfOPAL::Main()
 
   m_manager = new MyManager();
 
-  // Set up PCSS to do speaker playback
-  new MyPCSSEndPoint(*m_manager);
-
-  // Set up IVR to do recording or WAV file play
-  OpalIVREndPoint * ivr = new OpalIVREndPoint(*m_manager);
-
-  // Set up conference mixer
-  MyMixerNodeInfo * info = new MyMixerNodeInfo;
-  info->m_name = "room101";
-  info->m_moderatorPIN = args.GetOptionString('m');
-  info->m_listenOnly = !info->m_moderatorPIN.IsEmpty();
-
-#if OPAL_VIDEO
-  info->m_audioOnly = args.HasOption('V');
-  if (args.HasOption('s'))
-    PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info->m_width, info->m_height);
-#endif
-  MyMixerEndPoint * mixer = new MyMixerEndPoint(*m_manager, info);
-
-  // Determine default action
-  if (args.HasOption('d')) {
-    PString defRoom = args.GetOptionString('d');
-    PFilePath vxmlFile = defRoom;
-    if (vxmlFile.GetType() != ".vxml")
-      info->m_name = defRoom;
-    else {
-      ivr->SetDefaultVXML(vxmlFile);
-      m_manager->AddRouteEntry(".*:.*\t.*:[^@]*$ = ivr:*");
-    }
-  }
+  PIPSocket::InterfaceTable interfaceTable;
+  if (PIPSocket::GetInterfaceTable(interfaceTable))
+    cout << "Detected " << interfaceTable.GetSize() << " network interfaces:\n"
+              << setfill('\n') << interfaceTable << setfill(' ') << endl;
 
   if (args.HasOption('N')) {
     PSTUNClient::NatTypes nat = m_manager->SetSTUNServer(args.GetOptionString('N'));
@@ -226,74 +206,106 @@ void ConfOPAL::Main()
   }
 #endif // OPAL_H323
 
+  // Set up PCSS to do speaker playback
+  new MyPCSSEndPoint(*m_manager);
+
+  // Set up IVR to do recording or WAV file play
+  OpalIVREndPoint * ivr = new OpalIVREndPoint(*m_manager);
+
+  // Set up conference mixer
+  MyMixerNodeInfo * info = NULL;
+  if (args.HasOption('a')) {
+    PFilePath path = args.GetOptionString('a');
+    ivr->SetDefaultVXML(path);
+    m_manager->AddRouteEntry(".*:.* = ivr:");
+    cout << "Using attendant IVR " << path << endl;
+  }
+  else {
+    info = new MyMixerNodeInfo;
+    info->m_name = args.GetOptionString('n', "room101");
+    info->m_moderatorPIN = args.GetOptionString('m');
+    info->m_listenOnly = !info->m_moderatorPIN.IsEmpty();
+
+#if OPAL_VIDEO
+    info->m_audioOnly = args.HasOption('V');
+    if (args.HasOption('s'))
+      PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info->m_width, info->m_height);
+#endif
+    cout << "Using ad-hoc conference, default name: " << info->m_name << endl;
+  }
+
+  MyMixerEndPoint * mixer = m_manager->m_mixer = new MyMixerEndPoint(*m_manager, info);
+
   // Wait for call to come in and finish
+  PCLI * cli;
   if (args.HasOption('c')) {
     unsigned port = args.GetOptionString('c').AsUnsigned();
     if (port == 0 || port > 65535) {
       cerr << "Illegal CLI port " << port << endl;
       return;
     }
-    m_manager->m_cli = new PCLISocket((WORD)port);
-    m_manager->m_cli->StartContext(new PConsoleChannel(PConsoleChannel::StandardInput),
-                                   new PConsoleChannel(PConsoleChannel::StandardOutput));
+    cli = new PCLISocket((WORD)port);
+    cli->StartContext(new PConsoleChannel(PConsoleChannel::StandardInput),
+                      new PConsoleChannel(PConsoleChannel::StandardOutput));
   }
   else
-    m_manager->m_cli = new PCLIStandard();
+    cli = new PCLIStandard();
 
-  m_manager->m_cli->SetPrompt("MCU> ");
+  cli->SetPrompt("MCU> ");
 
-  m_manager->m_cli->SetCommand("conf add", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfAdd),
-                               "Add a new conferance:",
+  cli->SetCommand("conf add", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfAdd),
+                  "Add a new conferance:",
 #if OPAL_VIDEO
-                               "[ -V ] [ -s size ] [ -m pin ] <name> [ <name> ... ]\n"
-                               "  -V or --no-video       : Disable video\n"
-                               "  -s or --size           : Set video size"
+                  "[ -V ] [ -s size ] [ -m pin ] <name> [ <name> ... ]\n"
+                  "  -V or --no-video       : Disable video\n"
+                  "  -s or --size           : Set video size"
 #else
-                               "[ -m pin ] <name>"
+                  "[ -m pin ] <name>"
 #endif
-                               "\n"
-                               "  -m or --moderator pin  : PIN to allow to become a moderator and have talk rights\n"
-                               "                         : if absent, all participants are moderators.\n"
-                              );
-  m_manager->m_cli->SetCommand("conf list", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfList),
-                               "List conferances");
-  m_manager->m_cli->SetCommand("conf remove", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfRemove),
-                               "Remove conferance:",
-                               "<name> | <guid>");
-  m_manager->m_cli->SetCommand("conf listen", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfListen),
-                               "Toggle listening to conferance:",
-                               "{ <conf-name> | <guid> }");
-  m_manager->m_cli->SetCommand("conf record", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfRecord),
-                               "Record conferance:",
-                               "{ <conf-name> | <guid> } { <filename> | stop }");
-  m_manager->m_cli->SetCommand("conf play", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfPlay),
-                               "Play file to conferance:",
-                               "{ <conf-name> | <guid> } <filename>");
+                  "\n"
+                  "  -m or --moderator pin  : PIN to allow to become a moderator and have talk rights\n"
+                  "                         : if absent, all participants are moderators.\n"
+                 );
+  cli->SetCommand("conf list", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfList),
+                  "List conferances");
+  cli->SetCommand("conf remove", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfRemove),
+                  "Remove conferance:",
+                  "<name> | <guid>");
+  cli->SetCommand("conf listen", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfListen),
+                  "Toggle listening to conferance:",
+                  "{ <conf-name> | <guid> }");
+  cli->SetCommand("conf record", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfRecord),
+                  "Record conferance:",
+                  "{ <conf-name> | <guid> } { <filename> | stop }");
+  cli->SetCommand("conf play", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfPlay),
+                  "Play file to conferance:",
+                  "{ <conf-name> | <guid> } <filename>");
 
-  m_manager->m_cli->SetCommand("member add", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdMemberAdd),
-                               "Add a member to conferance:",
-                               "{ <name> | <guid> } <address>");
-  m_manager->m_cli->SetCommand("member list", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdMemberList),
-                               "List members in conferance:",
-                               "<name> | <guid>");
-  m_manager->m_cli->SetCommand("member remove", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdMemberRemove),
-                               "Remove conferance member:",
-                               "{ <conf-name> | <guid> } <member-name>\n"
-                               "member remove <call-token>");
+  cli->SetCommand("member add", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdMemberAdd),
+                  "Add a member to conferance:",
+                  "{ <name> | <guid> } <address>");
+  cli->SetCommand("member list", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdMemberList),
+                  "List members in conferance:",
+                  "<name> | <guid>");
+  cli->SetCommand("member remove", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdMemberRemove),
+                  "Remove conferance member:",
+                  "{ <conf-name> | <guid> } <member-name>\n"
+                  "member remove <call-token>");
 
-  m_manager->m_cli->SetCommand("list codecs", PCREATE_NOTIFIER(CmdListCodecs),
-                               "List available codecs");
+  cli->SetCommand("list codecs", PCREATE_NOTIFIER(CmdListCodecs),
+                  "List available codecs");
 #if PTRACING
-  m_manager->m_cli->SetCommand("trace", PCREATE_NOTIFIER(CmdTrace),
-                               "Set trace level (1..6) and filename",
-                               "<n> [ <filename> ]");
+  cli->SetCommand("trace", PCREATE_NOTIFIER(CmdTrace),
+                  "Set trace level (1..6) and filename",
+                  "<n> [ <filename> ]");
 #endif
-  m_manager->m_cli->SetCommand("shutdown", PCREATE_NOTIFIER(CmdShutDown),
-                               "Shut down the application");
-  m_manager->m_cli->SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),
-                               "Quit command line interpreter, note quitting from console also shuts down application.");
+  cli->SetCommand("shutdown", PCREATE_NOTIFIER(CmdShutDown),
+                  "Shut down the application");
+  cli->SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),
+                  "Quit command line interpreter, note quitting from console also shuts down application.");
 
-  m_manager->m_cli->Start(false); // Do not spawn thread, wait till end of input
+  m_manager->m_cli = cli;
+  cli->Start(false); // Do not spawn thread, wait till end of input
 
   cout << "\nExiting ..." << endl;
 }
@@ -351,7 +363,8 @@ void ConfOPAL::CmdQuit(PCLI::Arguments & args, INT)
 ///////////////////////////////////////////////////////////////
 
 MyManager::MyManager()
-  : m_cli(NULL)
+  : m_mixer(NULL)
+  , m_cli(NULL)
 {
 }
 
