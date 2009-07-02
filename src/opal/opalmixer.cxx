@@ -761,8 +761,10 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
   PINDEX semicolon = party.Find(';');
   PString name = party(party.Find(':')+1, semicolon-1);
   if (name.IsEmpty() || name == "*") {
-    if (m_adHocNodeInfo == NULL)
+    if (m_adHocNodeInfo == NULL) {
+      PTRACE(2, "MixerEP\tCannot make ad-hoc node for default alias");
       return NULL;
+    }
     name = m_adHocNodeInfo->m_name;
   }
 
@@ -773,8 +775,10 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
     node = AddNode(info);
   }
 
-  if (node == NULL)
+  if (node == NULL) {
+    PTRACE(2, "MixerEP\tNode alias \"" << party << "\" does not exist and cannot make ad-hoc node.");
     return NULL;
+  }
 
   OpalConnection::StringOptions localStringOptions;
   if (semicolon != P_MAX_INDEX) {
@@ -1189,39 +1193,9 @@ void OpalMixerNode::DetachStream(OpalMixerMediaStream * stream)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// This dummy transcoder is so we don't try (and fail) to create a
-// transcoder for every frame coming out of the mixer.
-class OpalDummyTranscoder : public OpalTranscoder
-{
-    PCLASSINFO(OpalDummyTranscoder, OpalTranscoder);
-  public:
-    OpalDummyTranscoder(
-      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
-      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
-    ) : OpalTranscoder(inputMediaFormat, outputMediaFormat) { }
-    virtual PINDEX GetOptimalDataFrameSize(PBoolean) const { return 0; }
-    virtual PBoolean ConvertFrames(const RTP_DataFrame &, RTP_DataFrameList &) { return false; }
-    virtual PBoolean Convert(const RTP_DataFrame &, RTP_DataFrame &) { return false; }
-};
-
-
 OpalMixerNode::MediaMixer::MediaMixer()
 {
   m_outputStreams.DisallowDeleteObjects();
-}
-
-
-OpalTranscoder & OpalMixerNode::MediaMixer::GetTranscoder(const OpalMediaFormat & src,
-                                                          const OpalMediaFormat & dst)
-{
-  OpalTranscoder * transcoder = m_transcoders.GetAt(dst);
-  if (transcoder == NULL) {
-    transcoder = OpalTranscoder::Create(src, dst);
-    if (transcoder == NULL)
-      transcoder = new OpalDummyTranscoder(src, dst);
-    m_transcoders.SetAt(dst, transcoder);
-  }
-  return *transcoder;
 }
 
 
@@ -1287,17 +1261,26 @@ void OpalMixerNode::AudioMixer::PushOne(OpalMixerMediaStream & stream,
     return;
   }
 
-  OpalTranscoder & transcoder = GetTranscoder(OpalPCM16, mediaFormat);
-  if (cache.m_raw.GetPayloadSize() < transcoder.GetOptimalDataFrameSize(true)) {
+  if (cache.m_transcoder == NULL) {
+    cache.m_transcoder = OpalTranscoder::Create(OpalPCM16, mediaFormat);
+    if (cache.m_transcoder == NULL) {
+      PTRACE(2, "MixerNode\tCould not create transcoder to "
+             << mediaFormat << " for stream id " << stream.GetID());
+      stream.Close();
+      return;
+    }
+  }
+
+  if (cache.m_raw.GetPayloadSize() < cache.m_transcoder->GetOptimalDataFrameSize(true)) {
     MIXER_DEBUG_OUT(','
                  << cache.m_raw.GetTimestamp() << ','
                  << cache.m_raw.GetPayloadSize() << ',');
     return;
   }
 
-  if (cache.m_encoded.SetPayloadSize(transcoder.GetOptimalDataFrameSize(false)) &&
-      transcoder.Convert(cache.m_raw, cache.m_encoded)) {
-    cache.m_encoded.SetPayloadType(transcoder.GetPayloadType(false));
+  if (cache.m_encoded.SetPayloadSize(cache.m_transcoder->GetOptimalDataFrameSize(false)) &&
+      cache.m_transcoder->Convert(cache.m_raw, cache.m_encoded)) {
+    cache.m_encoded.SetPayloadType(cache.m_transcoder->GetPayloadType(false));
     cache.m_encoded.SetTimestamp(cache.m_raw.GetTimestamp());
     cache.m_state = CachedAudio::Completed;
     stream.PushPacket(cache.m_encoded);
@@ -1362,6 +1345,19 @@ bool OpalMixerNode::AudioMixer::OnPush()
 }
 
 
+OpalMixerNode::AudioMixer::CachedAudio::CachedAudio()
+  : m_state(Collecting)
+  , m_transcoder(NULL)
+{
+}
+
+
+OpalMixerNode::AudioMixer::CachedAudio::~CachedAudio()
+{
+  delete m_transcoder;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_VIDEO
@@ -1387,8 +1383,18 @@ bool OpalMixerNode::VideoMixer::OnMixed(RTP_DataFrame * & output)
       stream->PushPacket(*output);
     else {
       if (cachedVideo.find(mediaFormat) == cachedVideo.end()) {
-        OpalTranscoder & transcoder = GetTranscoder(OpalYUV420P, mediaFormat);
-        if (!transcoder.ConvertFrames(*output, cachedVideo[mediaFormat])) {
+        OpalTranscoder * transcoder = m_transcoders.GetAt(mediaFormat);
+        if (transcoder == NULL) {
+          transcoder = OpalTranscoder::Create(OpalYUV420P, mediaFormat);
+          if (transcoder == NULL) {
+            PTRACE(2, "MixerNode\tCould not create transcoder to "
+                   << mediaFormat << " for stream id " << stream->GetID());
+            stream->Close();
+            continue;
+          }
+          m_transcoders.SetAt(mediaFormat, transcoder);
+        }
+        if (!transcoder->ConvertFrames(*output, cachedVideo[mediaFormat])) {
           PTRACE(2, "MixerNode\tCould not convert video to "
                  << mediaFormat << " for stream id " << stream->GetID());
           stream->Close();
