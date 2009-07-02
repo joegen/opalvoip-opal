@@ -909,10 +909,7 @@ class OpalMixerNode : public PSafeObject
     {
       MediaMixer();
 
-      OpalTranscoder & GetTranscoder(const OpalMediaFormat & src, const OpalMediaFormat & dst);
-
-      PSafeList<OpalMixerMediaStream>              m_outputStreams;
-      PDictionary<OpalMediaFormat, OpalTranscoder> m_transcoders;
+      PSafeList<OpalMixerMediaStream> m_outputStreams;
     };
 
     struct AudioMixer : public OpalAudioMixer, public MediaMixer
@@ -923,10 +920,12 @@ class OpalMixerNode : public PSafeObject
       virtual bool OnPush();
 
       struct CachedAudio {
-        CachedAudio() : m_state(Collecting) { }
+        CachedAudio();
+        ~CachedAudio();
         enum { Collecting, Collected, Completed } m_state;
-        RTP_DataFrame m_raw;
-        RTP_DataFrame m_encoded;
+        RTP_DataFrame    m_raw;
+        RTP_DataFrame    m_encoded;
+        OpalTranscoder * m_transcoder;
       };
       std::map<PString, CachedAudio> m_cache;
 
@@ -948,6 +947,8 @@ class OpalMixerNode : public PSafeObject
       ~VideoMixer();
 
       virtual bool OnMixed(RTP_DataFrame * & output);
+
+      PDictionary<OpalMediaFormat, OpalTranscoder> m_transcoders;
     };
     VideoMixer m_videoMixer;
 #endif // OPAL_VIDEO
