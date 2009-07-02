@@ -1106,16 +1106,22 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
   while ((pos = digits.FindOneOf("+-.()")) != P_MAX_INDEX)
     digits.Delete(pos, 1);
 
+  PString user = b_party(colon, at-1);
+
   destination.Replace("<da>", b_party, true);
-  destination.Replace("<db>",  b_party.Mid(colon), true);
+  destination.Replace("<db>", user, true);
 
   if (at != P_MAX_INDEX) {
-    destination.Replace("<du>", b_party(colon, at-1), true);
+    destination.Replace("<du>", user, true);
     ReplaceNDU(destination, b_party.Mid(at));
   }
+  else if (PIPSocket::IsLocalHost(user.Left(user.Find(':')))) {
+    destination.Replace("<du>", "", true);
+    ReplaceNDU(destination, user);
+  }
   else {
-    destination.Replace("<du>", digits, true);
-    ReplaceNDU(destination, b_party.Mid(nonDigitPos));
+    destination.Replace("<du>", user, true);
+    ReplaceNDU(destination, "");
   }
 
   destination.Replace("<dn>", digits, true);
