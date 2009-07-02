@@ -680,7 +680,7 @@
                                                         <border>8</border>
                                                         <object class="wxSpinCtrl" name="SoundBuffers">
                                                             <min>1</min>
-                                                            <max> 10</max>
+                                                            <max> 20</max>
                                                             <size>30,12d</size>
                                                         </object>
                                                     </object>

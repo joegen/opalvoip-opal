@@ -179,7 +179,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
   if (sink->primaryCodec != NULL) {
     PTRACE(4, "Patch\tCreated primary codec " << sourceFormat << "->" << destinationFormat << " with ID " << id);
 
-    if (!sinkStream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(false))) {
+    if (!sinkStream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(false), destinationFormat.GetFrameSize())) {
       PTRACE(1, "Patch\tSink stream " << *sinkStream << " cannot support data size "
               << sink->primaryCodec->GetOptimalDataFrameSize(PFalse));
       return false;
@@ -202,7 +202,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
 
     PTRACE(4, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 
-    if (!sinkStream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(PFalse))) {
+    if (!sinkStream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(false), destinationFormat.GetFrameSize())) {
       PTRACE(1, "Patch\tSink stream " << *sinkStream << " cannot support data size "
               << sink->secondaryCodec->GetOptimalDataFrameSize(PFalse));
       return false;
@@ -214,7 +214,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
            << " and " << *sink->secondaryCodec << ", data size=" << sinkStream->GetDataSize());
   }
 
-  source.SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(true));
+  source.SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(true), sourceFormat.GetFrameSize());
   return true;
 }
 
@@ -459,11 +459,22 @@ void OpalMediaPatch::Main()
 	
   bool asynchronous = OnPatchStart();
 
-  while (source.IsOpen()) {
+  /* Note the RTP frame is outside loop so that a) it is more efficient
+     for memory usage, the buffer is only ever increased and not allocated
+     on the heap ever time, and b) the timestamp value embedded into the
+     sourceFrame is needed for correct operation of the jitter buffer and
+     silence frames. It is adjusted by DispatchFrame (really Sink::WriteFrame)
+     each time and passed back in to source.Read() (and eventually the JB) so
+     it knows where it is up to in extracting data from the JB. */
+  RTP_DataFrame sourceFrame(0);
 
-    RTP_DataFrame sourceFrame(source.GetDataSize());
+  while (source.IsOpen()) {
     sourceFrame.SetPayloadType(source.GetMediaFormat().GetPayloadType());
-    sourceFrame.SetPayloadSize(0); 
+
+    // We do the following to make sure that the buffer size is large enough,
+    // in case something in previous loop adjusted it
+    sourceFrame.SetPayloadSize(source.GetDataSize());
+    sourceFrame.SetPayloadSize(0);
 
     if (!source.ReadPacket(sourceFrame)) {
       PTRACE(4, "Patch\tThread ended because source read failed");
