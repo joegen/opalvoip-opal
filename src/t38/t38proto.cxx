@@ -251,7 +251,7 @@ OpalFaxMediaStream::OpalFaxMediaStream(OpalFaxConnection & conn,
   , m_receive(receive)
   , m_stationId(stationId)
 {
-  SetDataSize(RTP_DataFrame::MaxMtuPayloadSize);
+  SetDataSize(RTP_DataFrame::MaxMtuPayloadSize, 1);
 }
 
 PBoolean OpalFaxMediaStream::Open()

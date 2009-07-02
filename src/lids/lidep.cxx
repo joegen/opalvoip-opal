@@ -936,7 +936,7 @@ PBoolean OpalLineMediaStream::Open()
       return false;
   }
 
-  SetDataSize(GetDataSize());
+  SetDataSize(GetDataSize(), GetDataSize());
   PTRACE(3, "LineMedia\tStream opened for " << mediaFormat << ", using "
          << (notUsingRTP ? (useDeblocking ? "reblocked audio" : "audio frames") : "direct RTP"));
 
@@ -1105,13 +1105,13 @@ PBoolean OpalLineMediaStream::WriteData(const BYTE * buffer, PINDEX length, PIND
 }
 
 
-PBoolean OpalLineMediaStream::SetDataSize(PINDEX dataSize)
+PBoolean OpalLineMediaStream::SetDataSize(PINDEX /*dataSize*/, PINDEX frameSize)
 {
   if (notUsingRTP) {
     if (IsSource())
-      useDeblocking = !line.SetReadFrameSize(dataSize) || line.GetReadFrameSize() != dataSize;
+      useDeblocking = !line.SetReadFrameSize(frameSize) || line.GetReadFrameSize() != frameSize;
     else
-      useDeblocking = !line.SetWriteFrameSize(dataSize) || line.GetWriteFrameSize() != dataSize;
+      useDeblocking = !line.SetWriteFrameSize(frameSize) || line.GetWriteFrameSize() != frameSize;
 
     PTRACE(3, "LineMedia\tStream frame size: rd="
            << line.GetReadFrameSize() << " wr="
@@ -1119,7 +1119,8 @@ PBoolean OpalLineMediaStream::SetDataSize(PINDEX dataSize)
            << (useDeblocking ? "needs" : "no") << " reblocking.");
   }
 
-  return OpalMediaStream::SetDataSize(dataSize);
+  // Yes we set BOTH to frameSize, and ignore the dataSize parameter
+  return OpalMediaStream::SetDataSize(frameSize, frameSize);
 }
 
 

@@ -1137,7 +1137,7 @@
                                                         <border>8</border>
                                                         <option>0</option>
                                                         <object class="wxSpinCtrl" name="SoundBuffers" base="EditSpinCtrl">
-                                                            <range>1, 10</range>
+                                                            <range>1, 20</range>
                                                             <size>30,12d</size>
                                                         </object>
                                                     </object>
