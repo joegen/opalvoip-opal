@@ -102,7 +102,7 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
   }
 
   // if transmittter is ever in this state, then stop the duration timer
-  if (m_payloadType == RTP_DataFrame::IllegalPayloadType) {
+  if (payloadType == RTP_DataFrame::IllegalPayloadType) {
     PTRACE(2, "RFC2833\tNo payload type, cannot send packet.");
     return false;
   }
@@ -129,19 +129,19 @@ void OpalRFC2833Proto::SendAsyncFrame()
   // be thread safe
   PWaitAndSignal m(mutex);
 
-  if (m_rtpSession == NULL) {
+  if (rtpSession == NULL) {
     PTRACE(2, "RFC2833\tCannot send as not RTP session attached");
-    m_transmitState = TransmitIdle;
+    transmitState = TransmitIdle;
   }
 
   // if transmittter is ever in this state, then stop the duration timer
-  if (m_payloadType == RTP_DataFrame::IllegalPayloadType) {
+  if (payloadType == RTP_DataFrame::IllegalPayloadType) {
     PTRACE(2, "RFC2833\tNo payload type for sent packet.");
-    m_transmitState = TransmitIdle;
+    transmitState = TransmitIdle;
   }
 
-  if (m_transmitState == TransmitIdle) {
-    m_asyncDurationTimer.Stop(false);
+  if (transmitState == TransmitIdle) {
+    asyncDurationTimer.Stop(false);
     return;
   }
 
