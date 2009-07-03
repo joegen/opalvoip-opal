@@ -758,6 +758,8 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
 {
   PTRACE(4, "MixerEP\tMaking connection to \"" << party << '"');
 
+  PWaitAndSignal mutex(inUseFlag);
+
   PINDEX semicolon = party.Find(';');
   PString name = party(party.Find(':')+1, semicolon-1);
   if (name.IsEmpty() || name == "*") {
@@ -856,8 +858,10 @@ void OpalMixerEndPoint::SetAdHocNodeInfo(const OpalMixerNodeInfo & info)
 
 void OpalMixerEndPoint::SetAdHocNodeInfo(OpalMixerNodeInfo * info)
 {
+  inUseFlag.Wait();
   delete m_adHocNodeInfo;
   m_adHocNodeInfo = info;
+  inUseFlag.Signal();
 }
 
 
