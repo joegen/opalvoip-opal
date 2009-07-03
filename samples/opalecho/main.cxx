@@ -222,7 +222,7 @@ PBoolean OpalEcho::Initialise(const char * initMsg)
          << PHTML::HotLink("Parameters") << "Parameters" << PHTML::HotLink()
          << PHTML::Paragraph();
 
-    if (!systemLogFileName && systemLogFileName != "-")
+    if (PIsDescendant(&PSystemLog::GetTarget(), PSystemLogToFile))
       html << PHTML::HotLink("logfile.txt") << "Full Log File" << PHTML::HotLink()
            << PHTML::BreakLine()
            << PHTML::HotLink("tail_logfile") << "Tail Log File" << PHTML::HotLink()
