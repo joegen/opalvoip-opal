@@ -208,12 +208,15 @@ PBoolean OpalIVRConnection::StartVXML()
   }
 
   PURL vxmlURL(vxmlToLoad, NULL);
-  if (!vxmlURL.IsEmpty())
-    return vxmlSession.LoadURL(vxmlURL);
-
-  PFilePath vxmlFile = vxmlToLoad;
-  if (vxmlFile.GetType() *= ".vxml")
-    return vxmlSession.LoadFile(vxmlFile);
+  if (vxmlURL.IsEmpty()) {
+    PFilePath vxmlFile = vxmlToLoad;
+    if (vxmlFile.GetType() *= ".vxml")
+      return vxmlSession.LoadFile(vxmlFile);
+  }
+  else {
+    if (vxmlURL.GetScheme() != "file" || (vxmlURL.AsFilePath().GetType() *= ".vxml"))
+      return vxmlSession.LoadURL(vxmlURL);
+  }
 
   ////////////////////////////////
 
