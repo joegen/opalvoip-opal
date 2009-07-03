@@ -1699,11 +1699,8 @@ PString SIPPresenceInfo::AsXML() const
       break;
 
     case Closed :
-      xml << "      <impp:basic>closed</impp:basic>\r\n";
-      break;
-
     default:
-      xml << "      <impp:basic>unknown</impp:basic>\r\n";
+      xml << "      <impp:basic>closed</impp:basic>\r\n";
       break;
   }
   xml << "    </impp:status>\r\n"
