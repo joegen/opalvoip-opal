@@ -1029,7 +1029,7 @@ class SIPSubscribe : public SIPTransaction
     };
 
     struct Params {
-      Params(PredefinedPackages pkg = NumPredefinedPackages);
+      Params(unsigned pkg = NumPredefinedPackages);
 
       EventPackage  m_eventPackage;
       PString       m_agentAddress;
