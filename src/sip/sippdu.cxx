@@ -3094,7 +3094,7 @@ PObject::Comparison SIPSubscribe::EventPackage::InternalCompare(PINDEX offset, P
 }
 
 
-SIPSubscribe::Params::Params(PredefinedPackages pkg)
+SIPSubscribe::Params::Params(unsigned pkg)
   : m_eventPackage(pkg)
   , m_expire(0)
   , m_restoreTime(30)
