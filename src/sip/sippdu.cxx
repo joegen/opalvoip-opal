@@ -3024,18 +3024,35 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
 static const char * const KnownEventPackage[SIPSubscribe::NumPredefinedPackages] = {
   "message-summary",
   "presence",
-  "dialog;sla;ma" // sla is the old version ma is the new for Line Appearance extension
+  "dialog;sla;ma", // sla is the old version ma is the new for Line Appearance extension
 };
 
-SIPSubscribe::EventPackage::EventPackage(PredefinedPackages pkg)
-  : PCaselessString(pkg < NumPredefinedPackages ? KnownEventPackage[pkg] : "")
+SIPSubscribe::EventPackage::EventPackage(unsigned pkg)
+ : PCaselessString((pkg & PackageMask) < NumPredefinedPackages ? KnownEventPackage[(pkg & PackageMask)] : "")
+  , m_isWatcher((pkg & Watcher) != 0)
 {
+  if (m_isWatcher)
+    *this += ".winfo";
 }
 
 
+SIPSubscribe::EventPackage::EventPackage(const PString & str)
+  : PCaselessString(str)
+{ 
+  m_isWatcher = (Right(6) == ".winfo");
+}
+
+
+SIPSubscribe::EventPackage::EventPackage(const char * cstr)
+  : PCaselessString(cstr)
+{ 
+  m_isWatcher = (Right(6) == ".winfo");
+}
+
 bool SIPSubscribe::EventPackage::operator==(PredefinedPackages pkg) const
 {
-  return InternalCompare(0, P_MAX_INDEX, pkg < NumPredefinedPackages ? KnownEventPackage[pkg] : "") == EqualTo;
+  return (m_isWatcher == ((pkg & Watcher) != 0)) &&
+          (InternalCompare(0, P_MAX_INDEX, (pkg & PackageMask) < NumPredefinedPackages ? KnownEventPackage[(pkg & PackageMask)] : "") == EqualTo);
 }
 
 
