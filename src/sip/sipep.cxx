@@ -76,7 +76,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 #if OPAL_HAS_SIPIM
   , m_sipIMManager(*this)
 #endif
-  , m_disableTrying(false)
+  , m_disableTrying(true)
 
 #ifdef _MSC_VER
 #pragma warning(default:4355)
@@ -1288,7 +1288,7 @@ bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
   params.m_agentAddress    = info.m_presenceAgent;
 
   PString aor;
-  return Publish(params, info.AsXML(), aor);
+  return Publish(params, expire == 0 ? PString::Empty() : info.AsXML(), aor);
 }
 
 
