@@ -228,7 +228,8 @@ class OpalMediaStream : public PSafeObject
        The default behaviour does nothing.
       */
     virtual PBoolean SetDataSize(
-      PINDEX dataSize  ///<  New data size
+      PINDEX dataSize,  ///< New data size (in total)
+      PINDEX frameSize  ///< Individual frame size (if applicable)
     );
 
     /**Get the data size in bytes that is expected to be used. Some media
@@ -512,7 +513,8 @@ class OpalRTPMediaStream : public OpalMediaStream
     /**Set the data size in bytes that is expected to be used.
       */
     virtual PBoolean SetDataSize(
-      PINDEX dataSize  ///<  New data size
+      PINDEX dataSize,  ///< New data size (in total)
+      PINDEX frameSize  ///< Individual frame size (if applicable)
     );
 
     /**Indicate if the media stream is synchronous.
@@ -732,7 +734,8 @@ class OpalAudioMediaStream : public OpalRawMediaStream
        The defafault simply sets teh member variable defaultDataSize.
       */
     virtual PBoolean SetDataSize(
-      PINDEX dataSize  ///<  New data size
+      PINDEX dataSize,  ///< New data size (in total)
+      PINDEX frameSize  ///< Individual frame size (if applicable)
     );
 
     /**Indicate if the media stream is synchronous.
@@ -823,7 +826,8 @@ class OpalVideoMediaStream : public OpalMediaStream
     /** Override size of frame header is included
       */
     virtual PBoolean SetDataSize(
-     PINDEX dataSize  ///<  New data size
+      PINDEX dataSize,  ///< New data size (in total)
+      PINDEX frameSize  ///< Individual frame size (if applicable)
     );
 
     /** Get the input device (e.g. for statistics)
