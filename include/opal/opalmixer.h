@@ -684,6 +684,10 @@ class OpalMixerConnection : public OpalLocalConnection
     /**Get flag for this connection is in listen only mode.
       */
     bool GetListenOnly() const { return m_listenOnly; }
+
+    /**Get the node that this connection is being mxied in.
+      */
+    PSafePtr<OpalMixerNode> GetNode() const { return m_node; }
   //@}
 
   protected:
