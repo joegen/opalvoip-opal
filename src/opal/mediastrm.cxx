@@ -389,10 +389,14 @@ PBoolean OpalMediaStream::PushPacket(RTP_DataFrame & packet)
 }
 
 
-PBoolean OpalMediaStream::SetDataSize(PINDEX dataSize)
+PBoolean OpalMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameSize)
 {
   if (dataSize <= 0)
     return false;
+
+  // Quantise data size
+  if (frameSize > 1)
+    dataSize = (dataSize+frameSize-1)/frameSize * frameSize;
 
   PTRACE_IF(4, defaultDataSize != dataSize, "Media\tSet data size from " << defaultDataSize << " to " << dataSize);
   defaultDataSize = dataSize;
@@ -661,11 +665,8 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 }
 
 
-PBoolean OpalRTPMediaStream::SetDataSize(PINDEX dataSize)
+PBoolean OpalRTPMediaStream::SetDataSize(PINDEX PTRACE_PARAM(dataSize), PINDEX /*frameSize*/)
 {
-  if (dataSize <= 0)
-    return false;
-
   PTRACE(3, "Media\tRTP data size cannot be changed to " << dataSize << ", fixed at " << defaultDataSize);
   return true;
 }
@@ -812,7 +813,7 @@ bool OpalRawMediaStream::SetChannel(PChannel * chan, bool autoDelete)
   m_channel = chan;
   m_autoDelete = autoDelete;
 
-  SetDataSize(GetDataSize());
+  SetDataSize(GetDataSize(), sizeof(short));
 
   m_channelMutex.Signal();
 
@@ -958,16 +959,16 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
 }
 
 
-PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize)
+PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameSize)
 {
   /* For efficiency reasons we will not accept a packet size that is too small.
      We move it up to the next even multiple, which has a danger of the remote not
      sending an even number of our multiplier. */
-  const unsigned MinTime = 10;
-  PINDEX minSize = mediaFormat.GetClockRate()/(1000/MinTime)*sizeof(short);
-  if (dataSize < minSize) {
-    PTRACE(1, "Media\tClamping audio stream data size from " << dataSize << " to minimum " << minSize);
-    dataSize = ((minSize+dataSize-1)/dataSize)*dataSize;
+  const unsigned MinTimeMilliseconds = 10;
+  PINDEX minSize = mediaFormat.GetClockRate()/(1000/MinTimeMilliseconds)*sizeof(short);
+  if (frameSize < minSize) {
+    PTRACE(1, "Media\tClamping audio stream frame size from " << frameSize << " to minimum " << minSize);
+    frameSize = minSize;
   }
 
   unsigned dataTime = ((dataSize/sizeof(short))*1000)/mediaFormat.GetClockRate();
@@ -984,9 +985,9 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize)
   }
 
   PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
-         << dataSize << " bytes and " << soundChannelBuffers << " buffers.");
-  return OpalMediaStream::SetDataSize(dataSize) &&
-         ((PSoundChannel *)m_channel)->SetBuffers(dataSize, soundChannelBuffers);
+         << frameSize << " bytes and " << soundChannelBuffers << " buffers.");
+  return OpalMediaStream::SetDataSize(dataSize, frameSize) &&
+         ((PSoundChannel *)m_channel)->SetBuffers(frameSize, soundChannelBuffers);
 }
 
 
@@ -1027,7 +1028,7 @@ OpalVideoMediaStream::~OpalVideoMediaStream()
 }
 
 
-PBoolean OpalVideoMediaStream::SetDataSize(PINDEX dataSize)
+PBoolean OpalVideoMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameSize)
 {
   if (inputDevice != NULL) {
     PINDEX minDataSize = inputDevice->GetMaxFrameBytes();
@@ -1040,7 +1041,7 @@ PBoolean OpalVideoMediaStream::SetDataSize(PINDEX dataSize)
       dataSize = minDataSize;
   }
 
-  return OpalMediaStream::SetDataSize(sizeof(PluginCodec_Video_FrameHeader) + dataSize); 
+  return OpalMediaStream::SetDataSize(sizeof(PluginCodec_Video_FrameHeader) + dataSize, frameSize);
 }
 
 
@@ -1079,7 +1080,7 @@ PBoolean OpalVideoMediaStream::Open()
     }
   }
 
-  SetDataSize(0); // Gets set to minimum of device buffer requirements
+  SetDataSize(1, 1); // Gets set to minimum of device buffer requirements
 
   return OpalMediaStream::Open();
 }
