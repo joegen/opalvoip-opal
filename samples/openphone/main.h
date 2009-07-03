@@ -476,12 +476,15 @@ class SpeedDialDialog : public wxDialog
 class RegistrationInfo
 {
   public:
+    // these must match the drop-down box
+    // on the Registration/Subcription dialog box
     enum Types {
       Register,
       SubscribeMWI,
-      SusbcribePresence,
+      SubcribePresence,
       SubscribeMLA,
-      PublishPresence
+      PublishPresence,
+      WatchPresence
     };
 
     RegistrationInfo();

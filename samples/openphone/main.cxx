@@ -3266,12 +3266,14 @@ void RegistrationInfo::Write(wxConfigBase & config)
   config.Write(RegistrarTimeToLiveKey, m_TimeToLive);
 }
 
-
+// these must match the drop-down box on the Registration/Subcription dialog box
 static SIPSubscribe::PredefinedPackages const EventPackageMapping[] = {
-  SIPSubscribe::NumPredefinedPackages, // Skip Register enum
-  SIPSubscribe::MessageSummary,
-  SIPSubscribe::Presence,
-  SIPSubscribe::Dialog
+  SIPSubscribe::NumPredefinedPackages,             // Skip Register enum
+  SIPSubscribe::MessageSummary,                    // MWI
+  SIPSubscribe::Presence,                          // presence
+  SIPSubscribe::Dialog,                            // line appearance
+  SIPSubscribe::NumPredefinedPackages,             // Skip PublishPresence enum
+  (SIPSubscribe::PredefinedPackages)(SIPSubscribe::Presence | SIPSubscribe::Watcher)   // watch presence
 };
 
 
@@ -3304,9 +3306,11 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
         m_aor += '@' + m_Domain.p_str();
 
       SIPPresenceInfo param;
-      param.m_address = m_aor;
-      param.m_basic = SIPPresenceInfo::Open;
-      param.m_contact = m_Contact.p_str();
+      param.m_address       = m_aor;
+      param.m_basic         = SIPPresenceInfo::Open;
+      param.m_contact       = m_Contact.p_str();
+      param.m_presenceAgent = m_Domain.p_str();
+
       status = sipEP.PublishPresence(param, m_TimeToLive) ? 0 : 2;
       break;
     }
@@ -3334,7 +3338,8 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
     "MWI subscribe",
     "Presence subscribe",
     "Appearance subscribe",
-    "Presence publish"
+    "Presence publish",
+    "Presence watcher"
   };
   LogWindow << "SIP " << TypeNames[m_Type] << ' ' << (status == 1 ? "start" : "fail") << "ed for " << m_aor << endl;
   return status != 2;
@@ -4818,7 +4823,8 @@ void OptionsDialog::RegistrationToList(bool create, RegistrationInfo * registrat
     wxT("Message Waiting"),
     wxT("Others Presence"),
     wxT("Line Appearance"),
-    wxT("My Presence")
+    wxT("My Presence"),
+    wxT("Presence Watcher")
   };
   m_Registrations->SetItem(position, 1, TypeNames[registration->m_Type]);
   m_Registrations->SetItem(position, 2, registration->m_User);
