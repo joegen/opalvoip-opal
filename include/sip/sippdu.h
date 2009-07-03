@@ -998,26 +998,34 @@ class SIPSubscribe : public SIPTransaction
 {
     PCLASSINFO(SIPSubscribe, SIPTransaction);
   public:
-    /** Valid types for a presence event
+    /** Valid types for an event package
      */
     enum PredefinedPackages {
       MessageSummary,
       Presence,
       Dialog,
-      NumPredefinedPackages
+      NumPredefinedPackages,
+
+      PackageMask = 0x7fff,
+      Watcher     = 0x8000
     };
 
     class EventPackage : public PCaselessString
     {
-        PCLASSINFO(EventPackage, PCaselessString);
+      PCLASSINFO(EventPackage, PCaselessString);
       public:
-        EventPackage(PredefinedPackages);
-        EventPackage(const PString & str) : PCaselessString(str) { }
-        EventPackage(const char * cstr) : PCaselessString(cstr) { }
+        EventPackage(unsigned int);
+        EventPackage(const PString & str);
+        EventPackage(const char * cstr);
         bool operator==(PredefinedPackages) const;
         bool operator==(const PString & str) const { return Compare(str) == EqualTo; }
         bool operator==(const char * cstr) const { return InternalCompare(0, P_MAX_INDEX, cstr) == EqualTo; }
         virtual Comparison InternalCompare(PINDEX offset, PINDEX length, const char * cstr) const;
+
+        bool IsWatcher() const   { return m_isWatcher; }
+
+      protected:
+        bool m_isWatcher;
     };
 
     struct Params {
