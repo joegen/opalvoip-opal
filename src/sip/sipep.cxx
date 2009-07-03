@@ -113,7 +113,7 @@ void SIPEndPoint::ShutDown()
   bool shuttingDown = true;
   while (shuttingDown) {
     shuttingDown = false;
-    PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReference);
+    PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler();
     while (handler != NULL) {
       if (handler->ShutDown())
         activeSIPHandlers.Remove(handler++);
@@ -180,7 +180,7 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
   PTRACE(5, "SIP\tNAT Binding refresh started.");
 
   if (natMethod != None) {
-    for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+    for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
 
       OpalTransport * transport = NULL;
       if (handler->GetState () != SIPHandler::Subscribed ||
@@ -344,7 +344,7 @@ PBoolean SIPEndPoint::GarbageCollection()
 
   transactions.DeleteObjectsToBeRemoved();
 
-  PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReference);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler();
   while (handler != NULL) {
     if (handler->GetState() == SIPHandler::Unsubscribed && handler->ShutDown())
       activeSIPHandlers.Remove(handler++);
@@ -944,7 +944,7 @@ bool SIPEndPoint::UnregisterAll()
 {
   bool ok = true;
 
-  for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+  for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
     if (handler->GetMethod() == SIP_PDU::Method_REGISTER) {
       if (!handler->SendRequest(SIPHandler::Unsubscribing))
         ok = false;
@@ -1018,7 +1018,7 @@ bool SIPEndPoint::UnsubcribeAll(const PString & eventPackage)
 {
   bool ok = true;
 
-  for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+  for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
     if (handler->GetMethod() == SIP_PDU::Method_SUBSCRIBE && handler->GetEventPackage() == eventPackage) {
       if (!handler->SendRequest(SIPHandler::Unsubscribing))
         ok = false;
@@ -1159,9 +1159,9 @@ PBoolean SIPEndPoint::GetAuthentication(const PString & authRealm, PString & rea
   if (handler == NULL)
     return PFalse;
 
-  realm    = handler->authenticationAuthRealm;
-  user     = handler->authenticationUsername;
-  password = handler->authenticationPassword;
+  realm    = handler->GetRealm();
+  user     = handler->GetUsername();
+  password = handler->GetPassword();
 
   return PTrue;
 }
@@ -1334,7 +1334,7 @@ SIPEndPoint::InterfaceMonitor::InterfaceMonitor(SIPEndPoint & ep, PINDEX priorit
 void SIPEndPoint::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry &)
 {
   if (priority == SIPEndPoint::LowPriority) {
-    for (PSafePtr<SIPHandler> handler(m_endpoint.activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+    for (PSafePtr<SIPHandler> handler = m_endpoint.activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
       if (handler->GetState() == SIPHandler::Unavailable)
         handler->SendRequest(SIPHandler::Restoring);
     }
@@ -1347,7 +1347,7 @@ void SIPEndPoint::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEnt
     // the transport will still listen on the old interface only. Therefore, clear the
     // socket binding BEFORE the monitored sockets update their interfaces.
     if (PInterfaceMonitor::GetInstance().HasInterfaceFilter()) {
-      for (PSafePtr<SIPHandler> handler(m_endpoint.activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+      for (PSafePtr<SIPHandler> handler = m_endpoint.activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
         OpalTransport *transport = handler->GetTransport();
         if (transport != NULL) {
           PString iface = transport->GetInterface();
@@ -1357,7 +1357,7 @@ void SIPEndPoint::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEnt
           PIPSocket::Address addr;
           if (!transport->GetRemoteAddress().GetIpAddress(addr))
             continue;
-          
+
           PStringArray ifaces = GetInterfaces(PFalse, addr);
           
           if (ifaces.GetStringsIndex(iface) == P_MAX_INDEX) { // original interface no longer available
@@ -1374,7 +1374,7 @@ void SIPEndPoint::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEnt
 void SIPEndPoint::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
 {
   if (priority == SIPEndPoint::LowPriority) {
-    for (PSafePtr<SIPHandler> handler(m_endpoint.activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+    for (PSafePtr<SIPHandler> handler = m_endpoint.activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
       if (handler->GetState() == SIPHandler::Subscribed &&
           handler->GetTransport() != NULL &&
           handler->GetTransport()->GetInterface().Find(entry.GetName()) != P_MAX_INDEX) {

@@ -127,9 +127,9 @@ public:
 
   const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
-  PString                     authenticationUsername;
-  PString                     authenticationPassword;
-  PString                     authenticationAuthRealm;
+  const PString & GetUsername() const     { return authenticationUsername; }
+  const PString & GetPassword() const     { return authenticationPassword; }
+  const PString & GetRealm() const        { return authenticationAuthRealm; }
 
 protected:
   void CollapseFork(SIPTransaction & transaction);
@@ -158,6 +158,9 @@ protected:
   PString remotePartyAddress;
   SIPURL proxy;
   OpalProductInfo             m_productInfo;
+  PString                     authenticationUsername;
+  PString                     authenticationPassword;
+  PString                     authenticationAuthRealm;
 };
 
 #if PTRACING
@@ -289,16 +292,43 @@ public:
 
 
 /** This dictionary is used both to contain the active and successful
- * registrations, and subscriptions. Currently, only MWI subscriptions
- * are supported.
+ * registrations, and subscriptions. 
  */
-class SIPHandlersList : public PSafeList<SIPHandler>
+class SIPHandlersList
 {
   public:
+    /** Append a new handler to the list
+      */
+    void Append(SIPHandler * handler)
+      { m_handlersList.Append(handler); }
+
+    /** Remove a handler from the list.
+        Handler is not immediately deleted but marked for deletion later by
+        DeleteObjectsToBeRemoved() when all references are done with the handler.
+      */
+    void Remove(SIPHandler * handler)
+      { m_handlersList.Remove(handler); }
+
+    /** Clean up lists of handler.
+      */
+    bool DeleteObjectsToBeRemoved()
+      { return m_handlersList.DeleteObjectsToBeRemoved(); }
+
+    /** Get the first handler in the list. Further enumeration may be done by
+        the ++operator on the safe pointer.
+     */
+    PSafePtr<SIPHandler> GetFirstHandler(PSafetyMode mode = PSafeReference) const
+      { return PSafePtr<SIPHandler>(m_handlersList, mode); }
+
     /**
      * Return the number of registered accounts
      */
     unsigned GetCount(SIP_PDU::Methods meth, const PString & eventPackage = PString::Empty()) const;
+
+    /**
+     * Return a list of the active address of records for each handler.
+     */
+    PStringList GetAddresses(bool includeOffline, SIP_PDU::Methods meth, const PString & eventPackage = PString::Empty()) const;
 
     /**
      * Find the SIPHandler object with the specified callID
@@ -326,6 +356,9 @@ class SIPHandlersList : public PSafeList<SIPHandler>
      * could be "sip.seconix.com" or "seconix.com".
      */
     PSafePtr <SIPHandler> FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode m);
+
+  protected:
+    PSafeList<SIPHandler> m_handlersList;
 };
 
 
