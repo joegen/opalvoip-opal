@@ -761,7 +761,7 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
   PINDEX semicolon = party.Find(';');
   PString name = party(party.Find(':')+1, semicolon-1);
   if (name.IsEmpty() || name == "*") {
-    if (m_adHocNodeInfo == NULL) {
+    if (m_adHocNodeInfo == NULL || m_adHocNodeInfo->m_name.IsEmpty()) {
       PTRACE(2, "MixerEP\tCannot make ad-hoc node for default alias");
       return NULL;
     }

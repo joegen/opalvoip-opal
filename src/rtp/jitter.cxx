@@ -60,26 +60,124 @@ jitter buffer target */
 
 
 
-#if PTRACING && !defined(NO_ANALYSER)
+#if !PTRACING && !defined(NO_ANALYSER)
+#define NO_ANALYSER 1
+#endif
 
-class RTP_JitterBufferAnalyser : public PObject
-{
-    PCLASSINFO(RTP_JitterBufferAnalyser, PObject);
-  public:
-    RTP_JitterBufferAnalyser();
-    void In(DWORD time, unsigned depth, const char * extra);
-    void Out(DWORD time, unsigned depth, const char * extra);
-    void PrintOn(ostream & strm) const;
+#ifdef NO_ANALYSER
+  #define ANALYSE(inout, time, extra)
+#else
+  #define ANALYSE(inout, time, extra) analyser->inout(time, jitterBuffer.size(), extra)
 
-    struct Info {
-      Info() { }
-      DWORD         time;
-      PTimeInterval tick;
-      int           depth;
-      const char *  extra;
-    } in[1000], out[1000];
-    PINDEX inPos, outPos;
-};
+  class RTP_JitterBufferAnalyser : public PObject
+  {
+      PCLASSINFO(RTP_JitterBufferAnalyser, PObject);
+
+    protected:
+      struct Info {
+        Info() { }
+        DWORD         time;
+        PTimeInterval tick;
+        int           depth;
+        const char *  extra;
+      } in[1000], out[1000];
+      PINDEX inPos, outPos;
+
+    public:
+      RTP_JitterBufferAnalyser()
+      {
+        inPos = outPos = 1;
+        in[0].time = out[0].time = 0;
+        in[0].tick = out[0].tick = PTimer::Tick();
+        in[0].depth = out[0].depth = 0;
+      }
+
+      void In(DWORD time, unsigned depth, const char * extra)
+      {
+        if (inPos < PARRAYSIZE(in)) {
+          in[inPos].tick = PTimer::Tick();
+          in[inPos].time = time;
+          in[inPos].depth = depth;
+          in[inPos++].extra = extra;
+        }
+      }
+
+      void Out(DWORD time, unsigned depth, const char * extra)
+      {
+        if (outPos < PARRAYSIZE(out)) {
+          out[outPos].tick = PTimer::Tick();
+          if (time == 0 && outPos > 0)
+            out[outPos].time = out[outPos-1].time;
+          else
+            out[outPos].time = time;
+          out[outPos].depth = depth;
+          out[outPos++].extra = extra;
+        }
+      }
+
+      void PrintOn(ostream & strm) const
+      {
+        strm << "Input samples: " << inPos << " Output samples: " << outPos << "\n"
+                "Dir\tRTPTime\tInDiff\tOutDiff\tInMode\tOutMode\t"
+                "InDepth\tOutDep\tInTick\tInDelay\tOutTick\tOutDel\tIODelay\n";
+        PINDEX ix = 1;
+        PINDEX ox = 1;
+        while (ix < inPos || ox < outPos) {
+          while (ix < inPos && (ox >= outPos || in[ix].time < out[ox].time)) {
+            strm << "In\t"
+                 << in[ix].time << '\t'
+                 << (in[ix].time - in[ix-1].time) << "\t"
+                    "\t"
+                 << in[ix].extra << "\t"
+                    "\t"
+                 << in[ix].depth << "\t"
+                    "\t"
+                 << (in[ix].tick - in[0].tick) << '\t'
+                 << (in[ix].tick - in[ix-1].tick) << "\t"
+                    "\t"
+                    "\t"
+                    "\n";
+            ix++;
+          }
+
+          while (ox < outPos && (ix >= inPos || out[ox].time < in[ix].time)) {
+            strm << "Out\t"
+                 << out[ox].time << "\t"
+                    "\t"
+                 << (out[ox].time - out[ox-1].time) << "\t"
+                    "\t"
+                 << out[ox].extra << "\t"
+                    "\t"
+                 << out[ox].depth << "\t"
+                    "\t"
+                    "\t"
+                 << (out[ox].tick - out[0].tick) << '\t'
+                 << (out[ox].tick - out[ox-1].tick) << "\t"
+                    "\n";
+            ox++;
+          }
+
+          while (ix < inPos && ox < outPos && in[ix].time == out[ox].time) {
+            strm << "I/O\t"
+                 << in[ix].time << '\t'
+                 << (in[ix].time - in[ix-1].time) << '\t'
+                 << (out[ox].time - out[ox-1].time) << '\t'
+                 << in[ix].extra << '\t'
+                 << out[ox].extra << '\t'
+                 << in[ix].depth << '\t'
+                 << out[ox].depth << '\t'
+                 << (in[ix].tick - in[0].tick) << '\t'
+                 << (in[ix].tick - in[ix-1].tick) << '\t'
+                 << (out[ox].tick - out[0].tick) << '\t'
+                 << (out[ox].tick - out[ox-1].tick) << '\t'
+                 << (out[ox].tick - in[ix].tick)
+                 << '\n';
+            ox++;
+            ix++;
+          }
+        }
+      }
+  };
 
 #endif
 
@@ -99,10 +197,10 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned minJitter,
   , m_resetJitterBufferNow(false)
   , currentFrame(NULL)
   , shuttingDown(false)
-#if PTRACING && !defined(NO_ANALYSER)
-  , analyser(new RTP_JitterBufferAnalyser)
-#else
+#ifdef NO_ANALYSER
   , analyser(NULL)
+#else
+  , analyser(new RTP_JitterBufferAnalyser)
 #endif
 {
   SetDelay(minJitter, maxJitter);
@@ -120,7 +218,7 @@ OpalJitterBuffer::~OpalJitterBuffer()
   delete currentFrame;
   currentFrame = NULL;
 
-#if PTRACING && !defined(NO_ANALYSER)
+#ifndef NO_ANALYSER
   PTRACE(5, "RTP\tJitter buffer analysis: size=" << bufferSize
          << " time=" << currentJitterTime << '\n' << *analyser);
   delete analyser;
@@ -238,6 +336,7 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame)
 
 void OpalJitterBuffer::InternalWriteData(OpalJitterBuffer::Entry * availableEntry)
 {
+  PAssertNULL(availableEntry);
   availableEntry->tick = PTimer::Tick();
 
   if (consecutiveMarkerBits < maxConsecutiveMarkerBits) {
@@ -258,34 +357,21 @@ void OpalJitterBuffer::InternalWriteData(OpalJitterBuffer::Entry * availableEntr
     }
   }
 
-#if PTRACING && !defined(NO_ANALYSER)
-  analyser->In(availableEntry->GetTimestamp(), jitterBuffer.size(), preBuffering ? "PreBuf" : "");
-#endif
-
   // Have been reading a frame, put it into the queue now, at correct position
-  if (jitterBuffer.size() == 0) {
-    PAssertNULL(availableEntry);
-    jitterBuffer.push_front(availableEntry);
-  }
-  else {
-    DWORD time = availableEntry->GetTimestamp();
+  DWORD time = availableEntry->GetTimestamp();
 
-    // add the entry to the jitter buffer
-    FrameQueue::iterator r;
-    bool inserted = false;
-    for (r = jitterBuffer.begin(); r != jitterBuffer.end(); ++r) {
-      if (time < (*r)->GetTimestamp() || ((time == (*r)->GetTimestamp()) && (availableEntry->GetSequenceNumber() < (*r)->GetSequenceNumber()))) {
-        PAssertNULL(availableEntry);
-        jitterBuffer.insert(r, availableEntry);
-        inserted = true;
-        break;
-      }
-    }
-    if (!inserted) {
+  // add the entry to the jitter buffer
+  for (FrameQueue::iterator r = jitterBuffer.begin(); r != jitterBuffer.end(); ++r) {
+    if (time < (*r)->GetTimestamp() || ((time == (*r)->GetTimestamp()) && (availableEntry->GetSequenceNumber() < (*r)->GetSequenceNumber()))) {
       PAssertNULL(availableEntry);
-      jitterBuffer.push_back(availableEntry);
+      jitterBuffer.insert(r, availableEntry);
+      ANALYSE(In, time, "OutOfOrder");
+      return;
     }
   }
+
+  jitterBuffer.push_back(availableEntry);
+  ANALYSE(In, time, preBuffering ? "PreBuf" : "");
 }
 
 
@@ -322,9 +408,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
     preBuffering = true;
     currentJitterTime = targetJitterTime;
 
-#if PTRACING && !defined(NO_ANALYSER)
-    analyser->Out(0, jitterBuffer.size(), "Empty");
-#endif
+    ANALYSE(Out, 0, "Empty");
     return true;
   }
 
@@ -359,9 +443,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
 
     // If oldest frame has not been in the buffer long enough, don't return anything yet
     if ((PTimer::Tick() - GetOldest(false)->tick).GetInterval() * timeUnits < currentJitterTime/2) {
-#if PTRACING && !defined(NO_ANALYSER)
-      analyser->Out(oldestTimestamp, jitterBuffer.size(), "PreBuf");
-#endif
+      ANALYSE(Out, oldestTimestamp, "PreBuf");
       return true;
     }
 
@@ -381,18 +463,13 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
   
   if (shortSilence) {
     // It is not yet time for something in the buffer
-#if PTRACING && !defined(NO_ANALYSER)
-    analyser->Out(oldestTimestamp, jitterBuffer.size(), "Wait");
-#endif
+    ANALYSE(Out, oldestTimestamp, "Wait");
     lastWriteTimestamp = 0;
     lastWriteTick = 0;
     return true;
   }
 
   // Detach oldest packet from the list, put into parking space
-#if PTRACING && !defined(NO_ANALYSER)
-  analyser->Out(oldestTimestamp, jitterBuffer.size(), requestedTimestamp >= oldestTimestamp ? "" : "Late");
-#endif
   currentFrame = GetOldest(true);
 
   // Calculate the jitter contribution of this frame
@@ -467,13 +544,14 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
       if (firstReadData) {
         PTRACE(4, "RTP\tJitter buffer length exceed was prior to first write. Not increasing buffer size");
         while ((newestTimestamp - currentFrame->GetTimestamp()) > currentJitterTime) {
-          PAssertNULL(currentFrame);
+          ANALYSE(Out, currentFrame->GetTimestamp(), "Overrun");
           freeFrames.push_back(currentFrame);
           currentFrame = GetOldest(true);
         }
-        
+
         firstReadData = false;
         frame = *currentFrame;
+        ANALYSE(Out, currentFrame->GetTimestamp(), "");
         return true;
       }
 
@@ -490,7 +568,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
         currentJitterTime = maxJitterTime;
       
         // Throw away the oldest frame and move everything up
-        PAssertNULL(currentFrame);
+        ANALYSE(Out, currentFrame->GetTimestamp(), "Late");
         freeFrames.push_back(currentFrame);
         currentFrame = jitterBuffer.front();
         jitterBuffer.pop_front();
@@ -542,6 +620,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
 
   firstReadData = false;
   frame = *currentFrame;
+  ANALYSE(Out, currentFrame->GetTimestamp(), "");
   return true;
 }
 
@@ -640,112 +719,6 @@ PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame, PBoolean loop)
   PTRACE(8, "RTP\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
   return success;
 }
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-
-#if PTRACING && !defined(NO_ANALYSER)
-
-RTP_JitterBufferAnalyser::RTP_JitterBufferAnalyser()
-{
-  inPos = outPos = 1;
-  in[0].time = out[0].time = 0;
-  in[0].tick = out[0].tick = PTimer::Tick();
-  in[0].depth = out[0].depth = 0;
-}
-
-
-void RTP_JitterBufferAnalyser::In(DWORD time, unsigned depth, const char * extra)
-{
-  if (inPos < PARRAYSIZE(in)) {
-    in[inPos].tick = PTimer::Tick();
-    in[inPos].time = time;
-    in[inPos].depth = depth;
-    in[inPos++].extra = extra;
-  }
-}
-
-
-void RTP_JitterBufferAnalyser::Out(DWORD time, unsigned depth, const char * extra)
-{
-  if (outPos < PARRAYSIZE(out)) {
-    out[outPos].tick = PTimer::Tick();
-    if (time == 0 && outPos > 0)
-      out[outPos].time = out[outPos-1].time;
-    else
-      out[outPos].time = time;
-    out[outPos].depth = depth;
-    out[outPos++].extra = extra;
-  }
-}
-
-
-void RTP_JitterBufferAnalyser::PrintOn(ostream & strm) const
-{
-  strm << "Input samples: " << inPos << " Output samples: " << outPos << "\n"
-          "Dir\tRTPTime\tInDiff\tOutDiff\tInMode\tOutMode\t"
-          "InDepth\tOutDep\tInTick\tInDelay\tOutTick\tOutDel\tIODelay\n";
-  PINDEX ix = 1;
-  PINDEX ox = 1;
-  while (ix < inPos || ox < outPos) {
-    while (ix < inPos && (ox >= outPos || in[ix].time < out[ox].time)) {
-      strm << "In\t"
-           << in[ix].time << '\t'
-           << (in[ix].time - in[ix-1].time) << "\t"
-              "\t"
-           << in[ix].extra << "\t"
-              "\t"
-           << in[ix].depth << "\t"
-              "\t"
-           << (in[ix].tick - in[0].tick) << '\t'
-           << (in[ix].tick - in[ix-1].tick) << "\t"
-              "\t"
-              "\t"
-              "\n";
-      ix++;
-    }
-
-    while (ox < outPos && (ix >= inPos || out[ox].time < in[ix].time)) {
-      strm << "Out\t"
-           << out[ox].time << "\t"
-              "\t"
-           << (out[ox].time - out[ox-1].time) << "\t"
-              "\t"
-           << out[ox].extra << "\t"
-              "\t"
-           << out[ox].depth << "\t"
-              "\t"
-              "\t"
-           << (out[ox].tick - out[0].tick) << '\t'
-           << (out[ox].tick - out[ox-1].tick) << "\t"
-              "\n";
-      ox++;
-    }
-
-    while (ix < inPos && ox < outPos && in[ix].time == out[ox].time) {
-      strm << "I/O\t"
-           << in[ix].time << '\t'
-           << (in[ix].time - in[ix-1].time) << '\t'
-           << (out[ox].time - out[ox-1].time) << '\t'
-           << in[ix].extra << '\t'
-           << out[ox].extra << '\t'
-           << in[ix].depth << '\t'
-           << out[ox].depth << '\t'
-           << (in[ix].tick - in[0].tick) << '\t'
-           << (in[ix].tick - in[ix-1].tick) << '\t'
-           << (out[ox].tick - out[0].tick) << '\t'
-           << (out[ox].tick - out[ox-1].tick) << '\t'
-           << (out[ox].tick - in[ix].tick)
-           << '\n';
-      ox++;
-      ix++;
-    }
-  }
-}
-
-
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
