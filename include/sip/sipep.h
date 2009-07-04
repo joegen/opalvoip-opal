@@ -90,7 +90,8 @@ class SIPEndPoint : public OpalRTPEndPoint
     /**Create a new endpoint.
      */
     SIPEndPoint(
-      OpalManager & manager
+      OpalManager & manager,
+      const PString & prefix = "sip"
     );
 
     /**Destroy endpoint.

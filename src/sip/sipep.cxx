@@ -52,8 +52,8 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
-SIPEndPoint::SIPEndPoint(OpalManager & mgr)
-  : OpalRTPEndPoint(mgr, "sip", CanTerminateCall)
+SIPEndPoint::SIPEndPoint(OpalManager & mgr, const PString & prefix)
+  : OpalRTPEndPoint(mgr, prefix, CanTerminateCall)
   , retryTimeoutMin(500)             // 0.5 seconds
   , retryTimeoutMax(0, 4)            // 4 seconds
   , nonInviteTimeout(0, 16)          // 16 seconds
@@ -90,7 +90,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 #endif
 
 #if OPAL_PTLIB_SSL
-  manager.AttachEndPoint(this, "sips");
+  manager.AttachEndPoint(this, prefix+'s');
 #endif
 
   PTRACE(4, "SIP\tCreated endpoint.");
