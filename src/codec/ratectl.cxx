@@ -408,7 +408,7 @@ bool OpalStandardVideoRateController::CheckFrameRate(bool PTRACE_PARAM(reporting
                  "out="     << ((m_outputFrameCount-0) * 1000) / (now - startTime) << " fps,"
                  "target="  << (1000 / m_outputFrameTime) << " fps");
 
-    if ((frameRateHistoryDuration + outputFrameTime) <= (m_bitRateCalc.GetHistoryFrames()+1) * outputFrameTime) {
+    if ((frameRateHistoryDuration + outputFrameTime) > (m_bitRateCalc.GetHistoryFrames()+1) * outputFrameTime) {
       PTRACE(3, "RateController\tSkipping frame to enforce frame rate");
       return true;
     }
