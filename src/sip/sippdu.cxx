@@ -2623,7 +2623,8 @@ void SIPTransaction::Abort()
 {
   if (LockReadWrite()) {
     PTRACE(4, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " aborted.");
-    SetTerminated(Terminated_Aborted);
+    if (!IsCompleted())
+      SetTerminated(Terminated_Aborted);
     UnlockReadWrite();
   }
 }
