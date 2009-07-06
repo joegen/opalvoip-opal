@@ -843,26 +843,26 @@ void SIPSubscribeHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
 {
   switch (state) {
     case Subscribing :
-      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, GetAddressOfRecord(), true, false, code);
+      endpoint.OnSubscriptionStatus(*this, GetAddressOfRecord(), true, false, code);
       break;
 
     case Subscribed :
       if (m_unconfirmed)
-        endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, GetAddressOfRecord(), true, false, code);
+        endpoint.OnSubscriptionStatus(*this, GetAddressOfRecord(), true, false, code);
       // Do next state
 
     case Refreshing :
-      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, GetAddressOfRecord(), true, true, code);
+      endpoint.OnSubscriptionStatus(*this, GetAddressOfRecord(), true, true, code);
       break;
 
     case Unsubscribed :
     case Unavailable :
     case Restoring :
-      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, GetAddressOfRecord(), true, code/100 != 2, code);
+      endpoint.OnSubscriptionStatus(*this, GetAddressOfRecord(), true, code/100 != 2, code);
       break;
 
     case Unsubscribing :
-      endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, GetAddressOfRecord(), false, false, code);
+      endpoint.OnSubscriptionStatus(*this, GetAddressOfRecord(), false, false, code);
       break;
   }
 }

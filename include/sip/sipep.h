@@ -526,6 +526,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     ) const { return activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_REGISTER, eventPackage); }
 
     /**Callback called when a subscription to a SIP UA status changes.
+       Now deprecated - called by OnSubscriptionStatus that accepts SIPHandler
      */
     virtual void OnSubscriptionStatus(
       const PString & eventPackage, ///< Event package subscribed to
@@ -533,6 +534,14 @@ class SIPEndPoint : public OpalRTPEndPoint
       bool wasSubscribing,          ///< Indication the subscribing or unsubscribing
       bool reSubscribing,           ///< If subscribing then indication was refeshing subscription
       SIP_PDU::StatusCodes reason   ///< Status of subscription
+    );
+
+    virtual void OnSubscriptionStatus(
+      SIPSubscribeHandler & handler, /// event subscription paramaters
+      const SIPURL & uri,            ///< Target URI for the subscription.
+      bool wasSubscribing,           ///< Indication the subscribing or unsubscribing
+      bool reSubscribing,            ///< If subscribing then indication was refeshing subscription
+      SIP_PDU::StatusCodes reason    ///< Status of subscription
     );
 
     /** Indicate notifications for the specified event package are supported.
