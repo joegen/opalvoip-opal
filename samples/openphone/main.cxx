@@ -3267,13 +3267,13 @@ void RegistrationInfo::Write(wxConfigBase & config)
 }
 
 // these must match the drop-down box on the Registration/Subcription dialog box
-static SIPSubscribe::PredefinedPackages const EventPackageMapping[] = {
+static unsigned const EventPackageMapping[] = {
   SIPSubscribe::NumPredefinedPackages,             // Skip Register enum
   SIPSubscribe::MessageSummary,                    // MWI
   SIPSubscribe::Presence,                          // presence
   SIPSubscribe::Dialog,                            // line appearance
   SIPSubscribe::NumPredefinedPackages,             // Skip PublishPresence enum
-  (SIPSubscribe::PredefinedPackages)(SIPSubscribe::Presence | SIPSubscribe::Watcher)   // watch presence
+  SIPSubscribe::Presence | SIPSubscribe::Watcher   // watch presence
 };
 
 
