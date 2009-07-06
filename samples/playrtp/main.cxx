@@ -102,6 +102,7 @@ bool IdentifyMediaType(const RTP_DataFrame & rtp, PString & type, PString & form
       format = r->GetName();
       return true;
     }
+    return false;
   }
 
   // look for known video types
@@ -112,6 +113,7 @@ bool IdentifyMediaType(const RTP_DataFrame & rtp, PString & type, PString & form
       format = r->GetName();
       return true;
     }
+    return false;
   }
 
   // try and identify media by inspection
@@ -1211,12 +1213,13 @@ void PlayRTP::Play(const PFilePath & filename)
 
   if (m_writeNonYUV) {
     PStringStream args; 
-    args << "ffmpeg -r 10 -y -s " << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight() << " -i " << m_yuvFileName << " " << m_finalVideoFn;
+    args << "ffmpeg -r 10 -y -s " << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight() << " -i '" << m_yuvFileName << "' '" << m_finalVideoFn << "'";
     cout << "Executing command '" << args << "'" << endl;
     PPipeChannel cmd;
     if (!cmd.Open(args, PPipeChannel::ReadWriteStd, true)) 
       cout << "failed";
     cmd.Execute();
+    cmd.WaitForTermination();
     cout << "done" << endl;
   }
 }
