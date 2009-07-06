@@ -1013,6 +1013,24 @@ void SIPEndPoint::OnSubscriptionStatus(const PString & /*eventPackage*/,
 }
 
 
+
+void SIPEndPoint::OnSubscriptionStatus(SIPSubscribeHandler & handler,
+                                       const SIPURL & aor,
+                                       bool wasSubscribing,
+                                       bool reSubscribing,
+                                       SIP_PDU::StatusCodes reason)
+{
+  SIPSubscribe::Params & params = handler.GetParams();
+
+  // backwards compatiblity
+  OnSubscriptionStatus(params.m_eventPackage, 
+                       aor, 
+                       wasSubscribing, 
+                       reSubscribing, 
+                       reason);
+}
+
+
 bool SIPEndPoint::Register(const PString & host,
                            const PString & user,
                            const PString & authName,

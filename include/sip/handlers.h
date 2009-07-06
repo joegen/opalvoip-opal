@@ -228,6 +228,8 @@ public:
 
   virtual bool IsDuplicateCSeq(unsigned sequenceNumber) { return m_dialog.IsDuplicateCSeq(sequenceNumber); }
 
+  SIPSubscribe::Params & GetParams() { return m_parameters; }
+
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
