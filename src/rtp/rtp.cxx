@@ -2084,11 +2084,21 @@ bool RTP_UDP::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSize, boo
   PUDPSocket & socket = *(toDataChannel ? dataSocket : controlSocket);
   WORD port = toDataChannel ? remoteDataPort : remoteControlPort;
 
+  unsigned retry = 0;
   while (!socket.WriteTo(framePtr, frameSize, remoteAddress, port)) {
-    switch (socket.GetErrorNumber()) {
+    switch (socket.GetErrorNumber(PChannel::LastWriteError)) {
       case ECONNRESET :
       case ECONNREFUSED :
         PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << (toDataChannel ? "data" : "control") << " port on remote not ready.");
+        break;
+
+      case ENOBUFS :
+        if (++retry > 10) {
+          PTRACE(2, "RTP_UDP\tSession " << sessionID
+                 << ", write error on " << (toDataChannel ? "data" : "control") << " port: "
+                 << socket.GetErrorText(PChannel::LastWriteError));
+          return true;
+        }
         break;
 
       default:
@@ -2100,6 +2110,9 @@ bool RTP_UDP::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSize, boo
     }
   }
 
+  PTRACE_IF(2, retry != 0, "RTP_UDP\tSession " << sessionID << ", "
+            << (toDataChannel ? "data" : "control") << " write retried "
+            << retry << " times due to no UDP buffers.");
   return true;
 }
 
