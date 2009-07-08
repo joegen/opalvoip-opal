@@ -1870,13 +1870,18 @@ void SIPHandlersList::Remove(SIPHandler * handler)
  */
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & callID, PSafetyMode mode)
 {
-  PWaitAndSignal m(m_extraMutex);
+  PSafePtr<SIPHandler> ptr;
+  {
+    PWaitAndSignal m(m_extraMutex);
 
-  StringToHandlerMap::iterator r = m_handlersByCallId.find(std::string((const char *)callID));
-  if (r == m_handlersByCallId.end())
-    return NULL;
+    StringToHandlerMap::iterator r = m_handlersByCallId.find(std::string((const char *)callID));
+    if (r == m_handlersByCallId.end())
+      return NULL;
 
-  return PSafePtr<SIPHandler>(r->second, mode);
+    ptr = r->second;
+  }
+
+  return ptr.SetSafetyMode(mode) ? ptr : NULL;
 }
 
 
@@ -1885,7 +1890,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & cal
  */
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode mode)
 {
-  PWaitAndSignal m(m_extraMutex);
+  m_extraMutex.Wait();
 
   // if username is specified, look for exact matches
   if (!userName.IsEmpty()) {
@@ -1895,6 +1900,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
     StringToHandlerMap::iterator r = m_handlersByUserNameAndRealm.find((const char *)key);
     if (r != m_handlersByUserNameAndRealm.end()) {
       PSafePtr<SIPHandler> handler = r->second;
+      m_extraMutex.Signal();
       handler.SetSafetyMode(mode);
       return handler;
     }
@@ -1904,6 +1910,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
     r = m_handlersByUserNameAndRealm.find((const char *)key);
     if (r != m_handlersByUserNameAndRealm.end()) {
       PSafePtr<SIPHandler> handler = r->second;
+      m_extraMutex.Signal();
       handler.SetSafetyMode(mode);
       return handler;
     }
@@ -1916,12 +1923,15 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
       r = m_handlersByUserNameAndRealmAddress.find(std::string(key));
       if (r != m_handlersByUserNameAndRealmAddress.end()) {
         PSafePtr<SIPHandler> handler = r->second;
+        m_extraMutex.Signal();
         handler.SetSafetyMode(mode);
         return handler;
       }
     }
 #endif
   }
+
+  m_extraMutex.Signal();
 
   // look for a match to exact realm
   for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
@@ -1953,31 +1963,41 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
  */
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, PSafetyMode mode)
 {
-  PString key;
-  key.sprintf("%i\n%s", method, (const char *)aor);
+  PStringStream key;
+  key << method << '\n' << aor;
 
-  PWaitAndSignal m(m_extraMutex);
+  PSafePtr<SIPHandler> ptr;
+  {
+    PWaitAndSignal m(m_extraMutex);
 
-  StringToHandlerMap::iterator r = m_handlersByUrl.find(std::string((const char *)key));
-  if (r == m_handlersByUrl.end())
-    return NULL;
+    StringToHandlerMap::iterator r = m_handlersByUrl.find(std::string((const char *)key));
+    if (r == m_handlersByUrl.end())
+      return NULL;
 
-  return PSafePtr<SIPHandler>(r->second, mode);
+    ptr = r->second;
+  }
+
+  return ptr.SetSafetyMode(mode) ? ptr : NULL;
 }
 
 
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, const PString & eventPackage, PSafetyMode mode)
 {
-  PString key;
-  key.sprintf("%i\n%s\n%s", method, (const char *)aor, (const char *)eventPackage);
+  PStringStream key;
+  key << method << '\n' << aor << '\n' << eventPackage;
 
-  PWaitAndSignal m(m_extraMutex);
+  PSafePtr<SIPHandler> ptr;
+  {
+    PWaitAndSignal m(m_extraMutex);
 
-  StringToHandlerMap::iterator r = m_handlersByUrlAndPackage.find(std::string((const char *)key));
-  if (r == m_handlersByUrlAndPackage.end())
-    return NULL;
+    StringToHandlerMap::iterator r = m_handlersByUrlAndPackage.find(std::string((const char *)key));
+    if (r == m_handlersByUrlAndPackage.end())
+      return NULL;
 
-  return PSafePtr<SIPHandler>(r->second, mode);
+    ptr = r->second;
+  }
+
+  return ptr.SetSafetyMode(mode) ? ptr : NULL;
 }
 
 
