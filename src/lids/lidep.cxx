@@ -107,9 +107,13 @@ PBoolean OpalLineEndPoint::MakeConnection(OpalCall & call,
       number = remoteParty.Mid(prefixLength + 1);
   }
 
-  if (lineName.IsEmpty())
+  if (lineName.IsEmpty()) {
+    m_linesMutex.StartRead();
     lineName = defaultLine;
-  
+    lineName.MakeUnique();
+    m_linesMutex.EndRead();
+  }
+
   PTRACE(3,"LID EP\tMakeConnection line = \"" << lineName << "\", number = \"" << number << '"');
   
   // Locate a line
@@ -128,10 +132,12 @@ OpalMediaFormatList OpalLineEndPoint::GetMediaFormats() const
   AddVideoMediaFormats(mediaFormats);
 #endif
 
-  PWaitAndSignal mutex(linesMutex);
+  m_linesMutex.StartRead();
 
   for (OpalLineList::const_iterator line = lines.begin(); line != lines.end(); ++line)
     mediaFormats += line->GetDevice().GetMediaFormats();
+
+  m_linesMutex.EndRead();
 
   return mediaFormats;
 }
@@ -178,9 +184,9 @@ PBoolean OpalLineEndPoint::AddLine(OpalLine * line)
   if (!InitialiseLine(line))
     return false;
 
-  linesMutex.Wait();
+  m_linesMutex.StartWrite();
   lines.Append(line);
-  linesMutex.Signal();
+  m_linesMutex.EndWrite();
 
   return true;
 }
@@ -188,15 +194,15 @@ PBoolean OpalLineEndPoint::AddLine(OpalLine * line)
 
 void OpalLineEndPoint::RemoveLine(OpalLine * line)
 {
-  linesMutex.Wait();
+  m_linesMutex.StartWrite();
   lines.Remove(line);
-  linesMutex.Signal();
+  m_linesMutex.EndWrite();
 }
 
 
 void OpalLineEndPoint::RemoveLine(const PString & token)
 {
-  linesMutex.Wait();
+  m_linesMutex.StartWrite();
   OpalLineList::iterator line = lines.begin();
   while (line != lines.end()) {
     if (line->GetToken() *= token)
@@ -204,16 +210,16 @@ void OpalLineEndPoint::RemoveLine(const PString & token)
     else
       ++line;
   }
-  linesMutex.Signal();
+  m_linesMutex.EndWrite();
 }
 
 
 void OpalLineEndPoint::RemoveAllLines()
 {
-  linesMutex.Wait();
+  m_linesMutex.StartWrite();
   lines.RemoveAll();
   devices.RemoveAll();
-  linesMutex.Signal();
+  m_linesMutex.EndWrite();
 }   
     
 PBoolean OpalLineEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
@@ -234,9 +240,9 @@ PBoolean OpalLineEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
     OpalLine * newLine = new OpalLine(device, line);
     if (InitialiseLine(newLine)) {
       atLeastOne = true;
-      linesMutex.Wait();
+      m_linesMutex.StartWrite();
       lines.Append(newLine);
-      linesMutex.Signal();
+      m_linesMutex.EndWrite();
       PTRACE(3, "LID EP\tAdded line  " << line << ", " << (device.IsLineTerminal(line) ? "terminal" : "network"));
     }
     else {
@@ -251,7 +257,7 @@ PBoolean OpalLineEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
 
 void OpalLineEndPoint::RemoveLinesFromDevice(OpalLineInterfaceDevice & device)
 {
-  linesMutex.Wait();
+  m_linesMutex.StartWrite();
   OpalLineList::iterator line = lines.begin();
   while (line != lines.end()) {
     if (line->GetToken().Find(device.GetDeviceName()) == 0)
@@ -259,7 +265,7 @@ void OpalLineEndPoint::RemoveLinesFromDevice(OpalLineInterfaceDevice & device)
     else
       ++line;
   }
-  linesMutex.Signal();
+  m_linesMutex.EndWrite();
 }
 
 
@@ -292,7 +298,7 @@ const OpalLineInterfaceDevice * OpalLineEndPoint::GetDeviceByName(const PString 
   }
 
   // Make sure not already there.
-  PWaitAndSignal mutex(linesMutex);
+  PReadWaitAndSignal mutex(m_linesMutex);
   for (OpalLIDList::iterator iterDev = devices.begin(); iterDev != devices.end(); ++iterDev) {
     if (iterDev->GetDeviceType() == deviceType && iterDev->GetDeviceName() == deviceName) {
       PTRACE(3, "LID EP\tDevice " << deviceType << ':' << deviceName << " is loaded.");
@@ -324,9 +330,9 @@ PBoolean OpalLineEndPoint::AddDevice(OpalLineInterfaceDevice * device)
   if (PAssertNULL(device) == NULL)
     return false;
 
-  linesMutex.Wait();
+  m_linesMutex.StartWrite();
   devices.Append(device);
-  linesMutex.Signal();
+  m_linesMutex.EndWrite();
   return AddLinesFromDevice(*device);
 }
 
@@ -337,15 +343,15 @@ void OpalLineEndPoint::RemoveDevice(OpalLineInterfaceDevice * device)
     return;
 
   RemoveLinesFromDevice(*device);
-  linesMutex.Wait();
+  m_linesMutex.StartWrite();
   devices.Remove(device);
-  linesMutex.Signal();
+  m_linesMutex.EndWrite();
 }
 
 
 OpalLine * OpalLineEndPoint::GetLine(const PString & lineName, bool enableAudio, bool terminating)
 {
-  PWaitAndSignal mutex(linesMutex);
+  PReadWaitAndSignal mutex(m_linesMutex);
 
   PTRACE(4, "LID EP\tGetLine " << lineName << ", enableAudio=" << enableAudio << ", terminating=" << terminating);
   for (OpalLineList::iterator line = lines.begin(); line != lines.end(); ++line) {
@@ -372,9 +378,9 @@ OpalLine * OpalLineEndPoint::GetLine(const PString & lineName, bool enableAudio,
 void OpalLineEndPoint::SetDefaultLine(const PString & lineName)
 {
   PTRACE(3, "LID EP\tSetDefaultLine " << lineName);
-  linesMutex.Wait();
+  m_linesMutex.StartWrite();
   defaultLine = lineName;
-  linesMutex.Signal();
+  m_linesMutex.EndWrite();
 }
 
 
@@ -383,10 +389,10 @@ void OpalLineEndPoint::MonitorLines(PThread &, INT)
   PTRACE(4, "LID EP\tMonitor thread started for " << GetPrefixName());
 
   while (!exitFlag.Wait(100)) {
-    linesMutex.Wait();
+    m_linesMutex.StartRead();
     for (OpalLineList::iterator line = lines.begin(); line != lines.end(); ++line)
       MonitorLine(*line);
-    linesMutex.Signal();
+    m_linesMutex.EndRead();
   }
 
   PTRACE(4, "LID EP\tMonitor thread stopped for " << GetPrefixName());
