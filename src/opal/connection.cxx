@@ -342,26 +342,25 @@ void OpalConnection::Release(CallEndReason reason)
     SetPhase(ReleasingPhase);
   }
 
-  {
-    PSafeLockReadWrite safeLock(*this);
-    if (!safeLock.IsLocked()) {
-      PTRACE(2, "OpalCon\tAlready released " << *this);
-      return;
-    }
-
-    PTRACE(3, "OpalCon\tReleasing " << *this);
-
-    // Now set reason for the connection close
-    SetCallEndReason(reason);
-
-    if (synchronousOnRelease) {
-      OnReleased();
-      return;
-    }
-
-    // Add a reference for the thread we are about to start
-    SafeReference();
+  if (!LockReadWrite()) {
+    PTRACE(2, "OpalCon\tAlready released " << *this);
+    return;
   }
+
+  PTRACE(3, "OpalCon\tReleasing " << *this);
+
+  // Now set reason for the connection close
+  SetCallEndReason(reason);
+
+  if (synchronousOnRelease) {
+    UnlockReadWrite();
+    OnReleased();
+    return;
+  }
+
+  // Add a reference for the thread we are about to start
+  SafeReference();
+  UnlockReadWrite();
 
   PThread::Create(PCREATE_NOTIFIER(OnReleaseThreadMain), 0,
                   PThread::AutoDeleteThread,
