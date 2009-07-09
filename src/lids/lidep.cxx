@@ -676,12 +676,14 @@ void OpalLineConnection::Monitor()
 {
   bool offHook = !line.IsDisconnected();
   if (wasOffHook != offHook) {
-    PSafeLockReadWrite mutex(*this);
+    if (!LockReadWrite())
+      return;
 
     wasOffHook = offHook;
     PTRACE(3, "LID Con\tConnection " << callToken << " " << (offHook ? "off" : "on") << " hook: phase=" << GetPhase());
 
     if (!offHook) {
+      UnlockReadWrite();
       Release(EndedByRemoteUser);
       return;
     }
@@ -699,6 +701,8 @@ void OpalLineConnection::Monitor()
           ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
       }
     }
+
+    UnlockReadWrite();
   }
 
   // If we are off hook, we continually suck out DTMF tones plus various other tones and signals and pass them up
