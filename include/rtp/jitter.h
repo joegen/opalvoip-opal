@@ -65,7 +65,8 @@ class OpalJitterBuffer : public PSafeObject
     OpalJitterBuffer(
       unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
       unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
-      unsigned timeUnits = 8   ///<  Time units, usually 8 or 16
+      unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
+      PINDEX packetSize = 2048 ///<  Max RTP packet size
     );
     
     /** Destructor, which closes this down and deletes the internal list of frames
@@ -87,7 +88,8 @@ class OpalJitterBuffer : public PSafeObject
       */
     void SetDelay(
       unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
-      unsigned maxJitterDelay  ///<  Maximum delay in RTP timestamp units
+      unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
+      PINDEX packetSize = 2048 ///<  Max RTP packet size
     );
 
     /** Reset jitter buffer.
@@ -138,7 +140,7 @@ class OpalJitterBuffer : public PSafeObject
     class Entry : public RTP_DataFrame
     {
       public:
-        Entry() : RTP_DataFrame(0, 512) { } // Allocate enough for 250ms of L16 audio, zero payload size
+        Entry(PINDEX sz) : RTP_DataFrame(0, sz) { }
         PTimeInterval tick;
     };
     OpalJitterBuffer::Entry * GetAvailableEntry();
@@ -167,10 +169,10 @@ class OpalJitterBuffer : public PSafeObject
     class FrameQueue : public std::deque<Entry *>
     {
       public:
-        void resize(size_type _Newsize)
+        void resize(size_type _Newsize, PINDEX packetSize)
         { 
           while (size() < (size_t)_Newsize)
-            push_back(new Entry);
+            push_back(new Entry(packetSize));
           while (size() > (size_t)_Newsize) {
             delete front();
             pop_front();
@@ -178,7 +180,7 @@ class OpalJitterBuffer : public PSafeObject
         }
 
         ~FrameQueue()
-        { resize(0); }
+        { resize(0, 0); }
     };
 
     FrameQueue freeFrames;
@@ -208,7 +210,7 @@ class OpalJitterBufferThread : public OpalJitterBuffer
       unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
       unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
       unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
-      PINDEX stackSize = 30000 ///<  Stack size for jitter thread
+      PINDEX packetSize = 2048 ///<  Max RTP packet size
     );
     ~OpalJitterBufferThread();
 
@@ -220,7 +222,6 @@ class OpalJitterBufferThread : public OpalJitterBuffer
     PDECLARE_NOTIFIER(PThread, OpalJitterBufferThread, JitterThreadMain);
 
     PThread * jitterThread;
-    PINDEX    jitterStackSize;
 };
 
 
@@ -237,7 +238,7 @@ class RTP_JitterBuffer : public OpalJitterBufferThread
       unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
       unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
       unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
-      PINDEX stackSize = 30000 ///<  Stack size for jitter thread
+      PINDEX packetSize = 2048 ///<  Max RTP packet size
     );
 
     /**This class instance collects data from the outside world in this

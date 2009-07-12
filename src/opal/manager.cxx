@@ -165,6 +165,7 @@ OpalManager::OpalManager()
   , defaultDisplayName(defaultUserName)
   , rtpIpTypeofService(0xb8)  // New DiffServ value for Expidited Forwarding as per RFC3246
   , rtpPayloadSizeMax(576-20-16-12) // Max safe MTU size (576 bytes as per RFC879) minus IP, UDP an RTP headers
+  , rtpPacketSizeMax(2048)
   , minAudioJitterDelay(50)  // milliseconds
   , maxAudioJitterDelay(250) // milliseconds
   , mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)

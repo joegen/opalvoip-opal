@@ -595,7 +595,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
      practical UDP packet size. This means we have a buffer that can accept
      whatever the RTP sender throws at us. For sink, we set it to the
      maximum size based on MTU (or other criteria). */
-  defaultDataSize = isSource ? 2048 : conn.GetMaxRtpPayloadSize();
+  defaultDataSize = isSource ? conn.GetEndPoint().GetManager().GetMaxRtpPacketSize() : conn.GetMaxRtpPayloadSize();
 }
 
 
@@ -683,7 +683,8 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
   if (mediaFormat.NeedsJitterBuffer())
     rtpSession.SetJitterBufferSize(minAudioJitterDelay*mediaFormat.GetTimeUnits(),
                                    maxAudioJitterDelay*mediaFormat.GetTimeUnits(),
-				                       mediaFormat.GetTimeUnits());
+                                   mediaFormat.GetTimeUnits(),
+                                   connection.GetEndPoint().GetManager().GetMaxRtpPacketSize());
 }
 
 

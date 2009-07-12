@@ -449,7 +449,7 @@ class RTP_Session : public PObject
       unsigned minJitterDelay, ///<  Minimum jitter buffer delay in RTP timestamp units
       unsigned maxJitterDelay, ///<  Maximum jitter buffer delay in RTP timestamp units
       unsigned timeUnits = 8,  ///<  Time Units
-      PINDEX stackSize = 30000 ///<  Stack size for jitter thread
+      PINDEX packetSize = 2048 ///<  Rcceive RTP packet size
     );
 
     /**Get current size of the jitter buffer.
