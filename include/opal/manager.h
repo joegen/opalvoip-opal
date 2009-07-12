@@ -1076,13 +1076,13 @@ class OpalManager : public PObject
      */
     void SetRtpIpTypeofService(unsigned tos) { rtpIpTypeofService = (BYTE)tos; }
 
-    /**Get the maximum RTP payload size.
+    /**Get the maximum transmitted RTP payload size.
        Defaults to maximum safe MTU size (576 bytes as per RFC879) minus the
        typical size of the IP, UDP an RTP headers.
       */
     PINDEX GetMaxRtpPayloadSize() const { return rtpPayloadSizeMax; }
 
-    /**Get the maximum RTP payload size.
+    /**Get the maximum transmitted RTP payload size.
        Defaults to maximum safe MTU size (576 bytes as per RFC879) minus the
        typical size of the IP, UDP an RTP headers.
       */
@@ -1090,6 +1090,18 @@ class OpalManager : public PObject
       PINDEX size,
       bool mtu = false
     ) { rtpPayloadSizeMax = size - (mtu ? (20+16+12) : 0); }
+
+    /**Get the maximum received RTP packet size.
+       Defaults to 2048.
+      */
+    PINDEX GetMaxRtpPacketSize() const { return rtpPacketSizeMax; }
+
+    /**Get the maximum transmitted RTP payload size.
+       Defaults to 2048.
+      */
+    void SetMaxRtpPacketSize(
+      PINDEX size
+    ) { rtpPacketSizeMax = size; }
 
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
@@ -1320,6 +1332,7 @@ class OpalManager : public PObject
 
     BYTE          rtpIpTypeofService;
     PINDEX        rtpPayloadSizeMax;
+    PINDEX        rtpPacketSizeMax;
     unsigned      minAudioJitterDelay;
     unsigned      maxAudioJitterDelay;
     PStringArray  mediaFormatOrder;
