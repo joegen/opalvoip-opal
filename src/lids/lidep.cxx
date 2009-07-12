@@ -356,7 +356,7 @@ OpalLine * OpalLineEndPoint::GetLine(const PString & lineName, bool enableAudio,
     PString lineToken = line->GetToken();
     if (lineName != defaultLine && lineToken != lineName)
       PTRACE(4, "LID EP\tNo match to line name=\"" << lineToken << "\", default=" << defaultLine);
-    else if (line->IsTerminal() == terminating)
+    else if (line->IsTerminal() != terminating)
       PTRACE(4, "LID EP\tNo match to line name=\"" << lineToken << "\", terminating=" << line->IsTerminal());
     else if (!line->IsPresent())
       PTRACE(4, "LID EP\tNo match to line name=\"" << lineToken << "\", not present");
