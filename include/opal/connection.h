@@ -1479,10 +1479,10 @@ class OpalConnection : public PSafeObject
      */
     virtual PString GetIdentifier() const;
 
-    /**Get the maximum RTP payload size. This function allows a user to
-       override the value returned on a connection by connection basis, for
-       example knowing the connection is on a LAN with ethernet MTU the
-       payload size could be increased.
+    /**Get the maximum transmitted RTP payload size.
+       This function allows a user to override the value returned on a
+       connection by connection basis, for example knowing the connection is
+       on a LAN with ethernet MTU the payload size could be increased.
 
        Defaults to the value returned by the OpalManager function of the same
        name.

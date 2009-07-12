@@ -188,7 +188,8 @@ jitter buffer target */
 
 OpalJitterBuffer::OpalJitterBuffer(unsigned minJitter,
                                    unsigned maxJitter,
-                                   unsigned units)
+                                   unsigned units,
+                                     PINDEX packetSize)
   : timeUnits(units)
   , maxConsecutiveMarkerBits(10)
   , lastWriteTimestamp(0)
@@ -203,7 +204,7 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned minJitter,
   , analyser(new RTP_JitterBufferAnalyser)
 #endif
 {
-  SetDelay(minJitter, maxJitter);
+  SetDelay(minJitter, maxJitter, packetSize);
 
   PTRACE(4, "RTP\tOpal jitter buffer created:" << *this << " obj=" << this);
 
@@ -234,7 +235,7 @@ void OpalJitterBuffer::PrintOn(ostream & strm) const
 }
 
 
-void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay)
+void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay, PINDEX packetSize)
 {
   bufferMutex.Wait();
 
@@ -272,7 +273,7 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
   bufferSize = PMAX(MAX_BUFFER_OVERRUNS, bufferSize);
 
   // resize the free queue for the new buffer size
-  freeFrames.resize(bufferSize);
+  freeFrames.resize(bufferSize, packetSize);
 
   PTRACE(3, "RTP\tJitter buffer restarted:" << *this);
 
@@ -630,10 +631,9 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
 OpalJitterBufferThread::OpalJitterBufferThread(unsigned minJitterDelay,
                                                unsigned maxJitterDelay,
                                                unsigned timeUnits,
-                                               PINDEX stackSize)
-  : OpalJitterBuffer(minJitterDelay, maxJitterDelay, timeUnits)
+                                                 PINDEX packetSize)
+  : OpalJitterBuffer(minJitterDelay, maxJitterDelay, timeUnits, packetSize)
   , jitterThread(NULL)
-  , jitterStackSize(stackSize)
 {
 }
 
@@ -706,8 +706,8 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
                                         unsigned minJitterDelay,
                                         unsigned maxJitterDelay,
                                         unsigned time,
-                                          PINDEX stackSize)
-  : OpalJitterBufferThread(minJitterDelay, maxJitterDelay, time, stackSize),
+                                          PINDEX packetSize)
+  : OpalJitterBufferThread(minJitterDelay, maxJitterDelay, time, packetSize),
     session(sess)
 {
     PTRACE(6, "RTP_JitterBuffer\tConstructor" << *this);

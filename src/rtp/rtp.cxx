@@ -683,7 +683,7 @@ void RTP_Session::SetUserData(RTP_UserData * data, PBoolean autoDelete)
 void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
                                       unsigned maxJitterDelay,
                                       unsigned timeUnits,
-                                        PINDEX stackSize)
+                                        PINDEX packetSize)
 {
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
     PTRACE_IF(4, m_jitterBuffer != NULL, "InfLID\tSwitching off jitter buffer.");
@@ -693,9 +693,9 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
     PTRACE(4, "InfLID\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
     SetIgnoreOutOfOrderPackets(false);
     if (m_jitterBuffer != NULL)
-      m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay);
+      m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);
     else
-      m_jitterBuffer = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
+      m_jitterBuffer = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, packetSize);
     m_jitterBuffer->Resume();
   }
 }
