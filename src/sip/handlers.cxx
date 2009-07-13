@@ -620,19 +620,30 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
   else {
     params.m_expire = expire;
 
-    if (params.m_contactAddress.IsEmpty()) {
-      // Nothing explicit, put in all the bound interfaces.
+    if (params.m_contactAddress.IsEmpty() || (params.m_contactAddress *= "%LIMITED")) {
+      /* If nothing explicit, put into the contact field all the bound
+         interfaces. If special contact name then we only put into the contact
+         listeners that are on the same interface. If translated by STUN then
+         only the external address of the interface is used. */
+      OpalTransportAddress localAddress;
+      if (!params.m_contactAddress.IsEmpty()) {
+        localAddress = trans.GetLocalAddress();
+        params.m_contactAddress.MakeEmpty();
+      }
+
       unsigned qvalue = 1000;
       PString userName = SIPURL(params.m_addressOfRecord).GetUserName();
       OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses(true, &trans);
       for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
-        if (!params.m_contactAddress.IsEmpty())
-          params.m_contactAddress += ", ";
-        SIPURL contact(userName, interfaces[i]);
-        contact.Sanitise(SIPURL::ContactURI);
-        params.m_contactAddress += contact.AsQuotedString();
-        params.m_contactAddress.sprintf(qvalue < 1000 ? ";q=0.%03u" : ";q=1", qvalue);
-        qvalue -= 1000/interfaces.GetSize();
+        if (localAddress.IsEquivalent(interfaces[i], true)) {
+          if (!params.m_contactAddress.IsEmpty())
+            params.m_contactAddress += ", ";
+          SIPURL contact(userName, interfaces[i]);
+          contact.Sanitise(SIPURL::ContactURI);
+          params.m_contactAddress += contact.AsQuotedString();
+          params.m_contactAddress.sprintf(qvalue < 1000 ? ";q=0.%03u" : ";q=1", qvalue);
+          qvalue -= 1000/interfaces.GetSize();
+        }
       }
     }
     else {
