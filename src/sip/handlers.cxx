@@ -635,7 +635,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
       PString userName = SIPURL(params.m_addressOfRecord).GetUserName();
       OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses(true, &trans);
       for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
-        if (localAddress.IsEquivalent(interfaces[i], true)) {
+        if (localAddress.IsEmpty() || localAddress.IsEquivalent(interfaces[i], true)) {
           if (!params.m_contactAddress.IsEmpty())
             params.m_contactAddress += ", ";
           SIPURL contact(userName, interfaces[i]);
