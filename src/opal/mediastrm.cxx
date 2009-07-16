@@ -674,7 +674,7 @@ PBoolean OpalRTPMediaStream::SetDataSize(PINDEX PTRACE_PARAM(dataSize), PINDEX /
 
 PBoolean OpalRTPMediaStream::IsSynchronous() const
 {
-  return IsSource() && !mediaFormat.NeedsJitterBuffer();
+  return false;
 }
 
 

@@ -441,14 +441,11 @@ bool OpalMediaPatch::OnPatchStart()
   if (source.IsSynchronous())
     return false;
 
-  bool isAudio = source.GetMediaFormat().GetMediaType() == OpalMediaType::Audio();
-
   PReadWaitAndSignal mutex(inUse);
 
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
     if (s->stream->IsSynchronous()) {
-      if (isAudio) 
-        source.EnableJitterBuffer();
+      source.EnableJitterBuffer();
       return false;
     }
   }
