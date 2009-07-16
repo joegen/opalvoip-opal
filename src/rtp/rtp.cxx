@@ -53,10 +53,12 @@
 const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
 
 #ifndef _WIN32_WCE
-#define UDP_BUFFER_SIZE 32768
+#define RTP_DATA_RX_BUFFER_SIZE 65536
 #else
-#define UDP_BUFFER_SIZE 8192
+#define RTP_DATA_RX_BUFFER_SIZE 8192
 #endif
+#define RTP_DATA_TX_BUFFER_SIZE 8192
+#define RTP_CTRL_BUFFER_SIZE 4096
 
 
 PFACTORY_CREATE(PFactory<RTP_Encoding>, RTP_Encoding, "rtp/avp", false);
@@ -1485,22 +1487,23 @@ void RTP_Session::AddFilter(const PNotifier & filter)
 
 /////////////////////////////////////////////////////////////////////////////
 
-static void SetMinBufferSize(PUDPSocket & sock, int buftype)
+static void SetMinBufferSize(PUDPSocket & sock, int buftype, int bufsz)
 {
   int sz = 0;
   if (sock.GetOption(buftype, sz)) {
-    if (sz >= UDP_BUFFER_SIZE)
+    if (sz >= bufsz)
       return;
   }
   else {
     PTRACE(1, "RTP_UDP\tGetOption(" << buftype << ") failed: " << sock.GetErrorText());
   }
 
-  if (!sock.SetOption(buftype, UDP_BUFFER_SIZE)) {
+  if (!sock.SetOption(buftype, bufsz)) {
     PTRACE(1, "RTP_UDP\tSetOption(" << buftype << ") failed: " << sock.GetErrorText());
   }
 
-  PTRACE_IF(1, !sock.GetOption(buftype, sz) && sz < UDP_BUFFER_SIZE, "RTP_UDP\tSetOption(" << buftype << ") failed, even though it said it succeeded!");
+  PTRACE_IF(1, !sock.GetOption(buftype, sz) && sz < bufsz,
+            "RTP_UDP\tSetOption(" << buftype << ',' << bufsz << ") failed, even though it said it succeeded!");
 }
 
 
@@ -1565,7 +1568,7 @@ PBoolean RTP_UDP::ModifyQOS(RTP_QOS * rtpqos)
   return retval;
 }
 
-PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
+PBoolean RTP_UDP::Open(PIPSocket::Address transportLocalAddress,
                    WORD portBase, WORD portMax,
                    BYTE tos,
                    PNatMethod * natMethod,
@@ -1575,7 +1578,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
 
   first = true;
   // save local address 
-  localAddress = _localAddress;
+  localAddress = transportLocalAddress;
 
   localDataPort    = (WORD)(portBase&0xfffe);
   localControlPort = (WORD)(localDataPort + 1);
@@ -1660,10 +1663,10 @@ PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
     }
 
     // Increase internal buffer size on media UDP sockets
-    SetMinBufferSize(*dataSocket,    SO_RCVBUF);
-    SetMinBufferSize(*dataSocket,    SO_SNDBUF);
-    SetMinBufferSize(*controlSocket, SO_RCVBUF);
-    SetMinBufferSize(*controlSocket, SO_SNDBUF);
+    SetMinBufferSize(*dataSocket,    SO_RCVBUF, RTP_DATA_RX_BUFFER_SIZE);
+    SetMinBufferSize(*dataSocket,    SO_SNDBUF, RTP_DATA_TX_BUFFER_SIZE);
+    SetMinBufferSize(*controlSocket, SO_RCVBUF, RTP_CTRL_BUFFER_SIZE);
+    SetMinBufferSize(*controlSocket, SO_SNDBUF, RTP_CTRL_BUFFER_SIZE);
 #   endif
   }
 
