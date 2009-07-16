@@ -96,13 +96,13 @@ const OpalMediaFormat & GetOpalH224_H323AnnexQ()
   static class H224_AnnexQ_MediaFormat : public OpalH224MediaFormat { 
     public: 
       H224_AnnexQ_MediaFormat() 
-        : OpalH224MediaFormat("H.224/H323AnnexQ", (RTP_DataFrame::PayloadTypes)100)  // Most other implementations seem to use this payload code
+        : OpalH224MediaFormat("H.224/H323AnnexQ", RTP_DataFrame::DynamicBase)
       { 
         OpalMediaOption * option = new OpalMediaOptionBoolean("HDLC Tunneling", true, OpalMediaOption::MinMerge, false);
         AddOption(option);
       } 
-  } const f; 
-  return f; 
+  } const h224q; 
+  return h224q; 
 };
 
 const OpalMediaFormat & GetOpalH224_HDLCTunneling()
@@ -115,8 +115,8 @@ const OpalMediaFormat & GetOpalH224_HDLCTunneling()
         OpalMediaOption * option = new OpalMediaOptionBoolean("HDLC Tunneling", true, OpalMediaOption::MinMerge, true);
         AddOption(option);
       } 
-  } const f; 
-  return f; 
+  } const h224h; 
+  return h224h; 
 }
 
 OpalH224MediaFormat::OpalH224MediaFormat(
