@@ -134,20 +134,19 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   if (!transport.IsCompatibleTransport("ip$127.0.0.1")) 
     return NULL;
 
-  PIPSocket::Address localAddress;
- 
-  transport.GetLocalAddress().GetIpAddress(localAddress);
-
-  OpalManager & manager = GetEndPoint().GetManager();
-
-  PIPSocket::Address remoteAddress;
-  transport.GetRemoteAddress().GetIpAddress(remoteAddress);
-  PNatMethod * natMethod = manager.GetNatMethod(remoteAddress);
-
   // create an RTP session
   RTP_UDP * rtpSession = CreateRTPSession(sessionID, mediaType, remoteIsNAT);
   if (rtpSession == NULL) 
     return NULL;
+
+  PIPSocket::Address localAddress; 
+  transport.GetLocalAddress(false).GetIpAddress(localAddress);
+
+  PIPSocket::Address remoteAddress;
+  transport.GetRemoteAddress().GetIpAddress(remoteAddress);
+
+  OpalManager & manager = GetEndPoint().GetManager();
+  PNatMethod * natMethod = manager.GetNatMethod(remoteAddress);
 
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;
