@@ -158,29 +158,62 @@ PString SIPEndPoint::GetDefaultTransport() const
 
 PBoolean SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
 {
-  PTRACE_IF(2, transport->IsReliable(), "SIP\tListening thread started.");
-
   transport->SetBufferSize(SIP_PDU::MaxSize);
 
-  do {
-    HandlePDU(*transport);
-  } while (transport->IsOpen() && transport->IsReliable() && !transport->bad() && !transport->eof());
+  if (transport->IsReliable()) {
+    // TCP connection, read until closed
+    TransportReadLoop(transport);
+    return false; // Do not delete the transport!
+  }
 
-  PTRACE_IF(2, transport->IsReliable(), "SIP\tListening thread finished.");
-
-  return PTrue;
+  // UDP packet, handle it and return
+  HandlePDU(*transport);
+  return true;
 }
 
 
 void SIPEndPoint::TransportThreadMain(PThread &, INT param)
 {
+  TransportReadLoop((OpalTransport *)param);
+}
+
+
+void SIPEndPoint::TransportReadLoop(OpalTransport * transport)
+{
   PTRACE(4, "SIP\tRead thread started.");
-  OpalTransport * transport = (OpalTransport *)param;
 
   do {
     HandlePDU(*transport);
   } while (transport->IsOpen() && !transport->bad() && !transport->eof());
-  
+
+  /* This is increadibly ugly, but a true fix requires quite a substantial rewrite.
+
+     The problem is that a TCP connection is SIP could be associated with multiple
+     SIP connection objects, that is INVITEs to different calls could come down
+     the same TCP connection. At present there is a pointer to the TCP transport
+     in each SIPConnection instance and we have to wait for all of this connections
+     to finish with the pointer before we delete the transport.
+
+     This clearly requires a reference counting system, or better yet removal of the
+     pointer to the transport completely so all writes of PDU's to a remote are done
+     via a function on the endpoint which automatically selects the appropriate
+     transport from a poll it has.
+   */
+
+  PTRACE(4, "SIP\tRead transport closed, checking connections that use it.");
+  PSafePtr<SIPConnection> connection = PSafePtrCast<OpalConnection, SIPConnection>(connectionsActive.GetAt(0, PSafeReference));
+  while (connection != NULL) {
+    if (&connection->GetTransport() == transport) {
+      connection->Release(OpalConnection::EndedByTransportFail);
+      while (&connection->GetTransport() == transport)
+        PThread::Sleep(100);
+    }
+
+    ++connection;
+  }
+
+  delete connection;
+
   PTRACE(4, "SIP\tRead thread finished.");
 }
 

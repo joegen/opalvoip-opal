@@ -257,11 +257,10 @@ SIPConnection::~SIPConnection()
   delete authentication;
   delete originalInvite;
 
-  if (transport != NULL)
+  if (deleteTransport && transport != NULL) {
     transport->CloseWait();
-
-  if (deleteTransport)
     delete transport;
+  }
 
   PTRACE(4, "SIP\tDeleted connection.");
 }
@@ -388,6 +387,10 @@ void SIPConnection::OnReleased()
   SetPhase(ReleasedPhase);
 
   OpalRTPConnection::OnReleased();
+
+  // For TCP we need to just set the pointer to NULL and let the endpoint delete it
+  if (transport != NULL && transport->IsReliable())
+    transport = NULL;
 }
 
 
