@@ -804,6 +804,7 @@ class SIPEndPoint : public OpalRTPEndPoint
 #endif
 
   protected:
+    void TransportReadLoop(OpalTransport * transport);
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);
 
