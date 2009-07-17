@@ -484,6 +484,8 @@ class H323GenericCapabilityInfo
       unsigned maxBitRate = 0   ///< maxBitRate parameter for the GenericCapability
     );
 
+    virtual ~H323GenericCapabilityInfo() { }
+
   protected:
     virtual PBoolean OnSendingGenericPDU(
       H245_GenericCapability & pdu,
