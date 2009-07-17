@@ -144,7 +144,7 @@ static int codec_encoder(const struct PluginCodec_Definition * /*defn*/,
   HACMSTREAM hStream = (HACMSTREAM)context;
 
   if (hStream == NULL)
-    return PFalse;
+    return false;
 
   ACMSTREAMHEADER header;
   memset(&header, 0, sizeof(header));
@@ -158,19 +158,19 @@ static int codec_encoder(const struct PluginCodec_Definition * /*defn*/,
   MMRESULT result = acmStreamPrepareHeader(hStream, &header, 0);
   if (result != 0) {
     //PTRACE(1, "Codec\tError in encode acmStreamPrepareHeader: error=" << result);
-    return PFalse;
+    return false;
   }
 
   result = acmStreamConvert(hStream, &header, 0);
   if (result != 0) {
     //PTRACE(1, "Codec\tError in encode acmStreamConvert: error=" << result);
-    return PFalse;
+    return false;
   }
 
   *fromLen = 240*2;
   *toLen   = G7231PacketSizes[((unsigned char *)to)[0]&3];
 
-  return PTrue;
+  return true;
 
 }
 
@@ -215,45 +215,44 @@ static int codec_decoder(const struct PluginCodec_Definition * /*defn*/,
   HACMSTREAM hStream = (HACMSTREAM)context;
 
   if (hStream == NULL)
-    return PFalse;
+    return false;
+
+  unsigned frameSize = G7231PacketSizes[((unsigned char *)from)[0]&3];
 
   ACMSTREAMHEADER header;
   memset(&header, 0, sizeof(header));
   header.cbStruct = sizeof(header);
-  header.pbSrc = (BYTE *)from;
-
-  *fromLen = header.cbSrcLength = G7231PacketSizes[((unsigned char *)from)[0]&3];
-
-  if (header.cbSrcLength > *fromLen)
-    header.cbSrcLength = *fromLen;
 
   header.pbDst       = (unsigned char *)to;
   header.cbDstLength = *toLen;
 
-  // make sure all frames are 24 bytes long
-  static BYTE frameBuffer[24];
-  if (header.cbSrcLength < 24) {
-    memcpy(frameBuffer, header.pbSrc, header.cbSrcLength);
-    header.cbSrcLength = 24;
-    header.pbSrc       = frameBuffer;
+  header.pbSrc = (BYTE *)from;
+  header.cbSrcLength = 24;  // Must always be 24 regardless of the actual size
+
+  BYTE frameBuffer[24];
+  if (frameSize < 24) {
+    // Copy to another buffer in case buffer being provided isn't actually 24 bytes long
+    memcpy(frameBuffer, from, frameSize);
+    header.pbSrc = frameBuffer;
   }
 
   // prep the header
   MMRESULT result = acmStreamPrepareHeader(hStream, &header, 0); 
   if (result != 0) {
     //PTRACE(1, "Codec\tError in decode acmStreamPrepareHeader: error=" << result);
-    return PFalse;
+    return false;
   }
 
   result = acmStreamConvert(hStream, &header, 0);
   if (result != 0) {
     //PTRACE(1, "Codec\tError in decode acmStreamConvert: error=" << result);
-    return PFalse;
+    return false;
   }
 
-  *toLen = header.cbSrcLength;
+  *fromLen = frameSize;
+  *toLen = 240*2;
 
-  return PTrue;
+  return true;
 
 }
 
