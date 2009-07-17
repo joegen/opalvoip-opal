@@ -1928,7 +1928,7 @@ void MyManager::RejectCall()
 
 void MyManager::HangUpCall()
 {
-  if (PAssert(m_callState != IdleState && m_callState != AnsweringState && m_activeCall != NULL, PLogicError)) {
+  if (PAssert(m_activeCall != NULL, PLogicError)) {
     LogWindow << "Hanging up \"" << *m_activeCall << '"' << endl;
     m_activeCall->Clear();
   }
@@ -2570,6 +2570,16 @@ void MyManager::SetState(CallState newState, const PString & token)
 }
 
 
+static void RemovePanelByToken(wxNotebook * tabs, const PwxString & token)
+{
+  for (size_t i = 0; i < tabs->GetPageCount(); ++i) {
+    CallPanelBase * panel = dynamic_cast<CallPanelBase *>(tabs->GetPage(i));
+    if (panel != NULL && panel->GetToken() == token)
+      tabs->DeletePage(i--);
+  }
+}
+
+
 void MyManager::OnStateChange(wxCommandEvent & theEvent)
 {
   CallState newState = (CallState)theEvent.GetInt();
@@ -2605,6 +2615,8 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
       // Do next state
 
     case AnsweringState :
+      // Remove the answer panel if present
+      RemovePanelByToken(m_tabs, token);
       m_tabs->AddPage(new CallingPanel(*this, token, m_tabs), wxT("Answering"), true);
       break;
 
@@ -2614,11 +2626,7 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
 
     case ClearingCallState :
       // Call gone away, get rid of any panels associated with it
-      for (size_t i = 0; i < m_tabs->GetPageCount(); ++i) {
-        CallPanelBase * panel = dynamic_cast<CallPanelBase *>(m_tabs->GetPage(i));
-        if (panel != NULL && panel->GetToken() == token)
-          m_tabs->DeletePage(i--);
-      }
+      RemovePanelByToken(m_tabs, token);
 
       if (m_activeCall == NULL || token != m_activeCall->GetToken()) {
         // A call on hold got cleared
