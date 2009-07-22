@@ -112,8 +112,11 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
         else if (tokens[offset+2] == "0.0.0.0") {
           PTRACE(3, "SDP\tConnection address of 0.0.0.0 specified for HOLD request.");
         }
-        else
-          return OpalTransportAddress(tokens[offset+2], port, "udp");
+        else {
+          OpalTransportAddress address(tokens[offset+2], port, "udp");
+          PTRACE(4, "SDP\tParsed connection address " << address);
+          return address;
+        }
       }
       else
       {
