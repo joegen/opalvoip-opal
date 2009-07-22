@@ -168,6 +168,19 @@ class H323EndPoint : public OpalRTPEndPoint
     virtual void SetH221NonStandardInfo(
       H225_H221NonStandard & info
     ) const;
+
+    /**Set the Gateway supported protocol default always H.323
+      */
+    virtual bool SetGatewaySupportedProtocol(
+      H225_ArrayOf_SupportedProtocols & protocols
+    ) const;
+
+    /**Set the gateway prefixes 
+       Override this to set the acceptable prefixes to the gatekeeper
+      */
+    virtual bool OnSetGatewayPrefixes(
+      PStringList & prefixes
+    ) const;
   //@}
 
 
