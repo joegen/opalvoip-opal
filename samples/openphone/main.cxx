@@ -1316,6 +1316,7 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
   potsEP = NULL;
   m_activeCall.SetNULL();
   m_callsOnHold.clear();
+  m_registrations.clear();
   ShutDownEndpoints();
 
   Destroy();
