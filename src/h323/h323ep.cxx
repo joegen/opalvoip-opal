@@ -156,25 +156,32 @@ void H323EndPoint::SetEndpointTypeInfo(H225_EndpointType & info) const
     case e_TerminalAndMC :
       info.IncludeOptionalField(H225_EndpointType::e_terminal);
       break;
+
     case e_GatewayOnly :
     case e_GatewayAndMC :
     case e_GatewayAndMCWithDataMP :
     case e_GatewayAndMCWithAudioMP :
     case e_GatewayAndMCWithAVMP :
       info.IncludeOptionalField(H225_EndpointType::e_gateway);
+      if (SetGatewaySupportedProtocol(info.m_gateway.m_protocol))
+        info.m_gateway.IncludeOptionalField(H225_GatewayInfo::e_protocol);
       break;
+
     case e_GatekeeperOnly :
     case e_GatekeeperWithDataMP :
     case e_GatekeeperWithAudioMP :
     case e_GatekeeperWithAVMP :
       info.IncludeOptionalField(H225_EndpointType::e_gatekeeper);
       break;
+
     case e_MCUOnly :
     case e_MCUWithDataMP :
     case e_MCUWithAudioMP :
     case e_MCUWithAVMP :
       info.IncludeOptionalField(H225_EndpointType::e_mcu);
-      info.m_mc = PTrue;
+      info.m_mc = true;
+      if (SetGatewaySupportedProtocol(info.m_mcu.m_protocol))
+        info.m_mcu.IncludeOptionalField(H225_McuInfo::e_protocol);
   }
 }
 
@@ -198,6 +205,36 @@ void H323EndPoint::SetH221NonStandardInfo(H225_H221NonStandard & info) const
   info.m_t35CountryCode = productInfo.t35CountryCode;
   info.m_t35Extension = productInfo.t35Extension;
   info.m_manufacturerCode = productInfo.manufacturerCode;
+}
+
+
+bool H323EndPoint::SetGatewaySupportedProtocol(H225_ArrayOf_SupportedProtocols & protocols) const
+{
+  PStringList prefixes;
+
+  if (!OnSetGatewayPrefixes(prefixes))
+    return false;
+
+  PINDEX count = protocols.GetSize();
+  protocols.SetSize(count+1);
+
+  protocols[count].SetTag(H225_SupportedProtocols::e_h323);
+  H225_H323Caps & caps = protocols[count];
+
+  caps.IncludeOptionalField(H225_H323Caps::e_supportedPrefixes);
+  H225_ArrayOf_SupportedPrefix & supportedPrefixes = caps.m_supportedPrefixes;	
+  supportedPrefixes.SetSize(prefixes.GetSize());
+
+  for (PINDEX i = 0; i < prefixes.GetSize(); i++)
+    H323SetAliasAddress(prefixes[i], supportedPrefixes[i].m_prefix);
+
+  return true;
+}
+
+
+bool H323EndPoint::OnSetGatewayPrefixes(PStringList & prefixes) const
+{
+	return false;
 }
 
 
