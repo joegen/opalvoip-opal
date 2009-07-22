@@ -873,7 +873,9 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
         if (remoteSet)
           remoteChanged = (rtpSession->GetRemoteAddress() != ip) || (rtpSession->GetRemoteDataPort() != port);
         if (remoteChanged || !remoteSet) {
-          PTRACE_IF(3, remoteChanged, "SIP\tRemote changed IP address");
+          PTRACE_IF(3, remoteChanged, "SIP\tRemote changed IP address: "
+                    << rtpSession->GetRemoteAddress() << "!=" << ip
+                    << " || " << rtpSession->GetRemoteDataPort() << "!=" << port);
           if (!rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
             PTRACE(1, "SIP\tCannot set remote ports on RTP session");
             return false;
