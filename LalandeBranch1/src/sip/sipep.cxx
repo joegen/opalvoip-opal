@@ -470,6 +470,27 @@ PBoolean SIPEndPoint::ForwardConnection(SIPConnection & connection, const PStrin
   return PTrue;
 }
 
+
+bool SIPEndPoint::ClearDialogContext(const PString & descriptor)
+{
+  SIPDialogContext context;
+  return context.FromString(descriptor) && ClearDialogContext(context);
+}
+
+
+bool SIPEndPoint::ClearDialogContext(SIPDialogContext & context)
+{
+  if (!context.IsEstablished())
+    return false;
+
+  std::auto_ptr<OpalTransport> transport(CreateTransport(context.GetRemoteURI(), context.GetLocalURI().GetHostName()));
+  PSafePtr<SIPTransaction> byeTransaction = new SIPTransaction(*this, *transport);
+  byeTransaction->Construct(SIP_PDU::Method_BYE, context);
+  byeTransaction->WaitForCompletion();
+  return !byeTransaction->IsFailed();
+}
+
+
 PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
   if (PAssertNULL(pdu) == NULL)

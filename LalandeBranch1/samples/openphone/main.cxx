@@ -120,6 +120,7 @@ DEF_FIELD(SpeakerMute);
 DEF_FIELD(MicrophoneMute);
 DEF_FIELD(LastDialed);
 DEF_FIELD(LastReceived);
+DEF_FIELD(CurrentSIPConnection);
 
 static const wxChar NetworkingGroup[] = wxT("/Networking");
 DEF_FIELD(Bandwidth);
@@ -1016,6 +1017,12 @@ bool MyManager::Initialise()
 #if OPAL_SIP
   ////////////////////////////////////////
   // SIP fields
+  config->SetPath(GeneralGroup);
+  if (config->Read(CurrentSIPConnectionKey, &str)) {
+    if (sipEP->ClearDialogContext(str))
+      config->DeleteEntry(CurrentSIPConnectionKey);
+  }
+
   config->SetPath(SIPGroup);
   const SIPURL & proxy = sipEP->GetProxy();
   PwxString hostname;
@@ -2009,6 +2016,15 @@ void MyManager::OnEstablishedCall(OpalCall & call)
 
   if (m_AnswerMode == AnswerFax)
     SwitchToFax();
+
+#if OPAL_SIP
+  PSafePtr<SIPConnection> connection = call.GetConnectionAs<SIPConnection>(0);
+  if (connection != NULL) {
+    wxConfigBase * config = wxConfig::Get();
+    config->SetPath(GeneralGroup);
+    config->Write(CurrentSIPConnectionKey, PwxString(connection->GetDialog().AsString()));
+  }
+#endif // OPAL_SIP
 }
 
 
@@ -2070,6 +2086,12 @@ void MyManager::OnClearedCall(OpalCall & call)
             << "s." << endl;
 
   SetState(ClearingCallState, call.GetToken());
+
+#if OPAL_SIP
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(GeneralGroup);
+  config->DeleteEntry(CurrentSIPConnectionKey);
+#endif // OPAL_SIP
 }
 
 
