@@ -222,6 +222,22 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PString & forwardParty    ///<  Remote party to forward to
     );
 
+    /**Clear a SIP connection by dialog identifer informataion.
+       This function does not require an OPAL connection to operate, it will
+       attempt to send a BYE to the dialog identified by the information in
+       the SIPDialogContext structure.
+
+       This feature can be useful for servers that had an "unexpected exit"
+       and various clients it was talking to at the time do not implement the
+       RFC4028 session timers, so continue to try and send media forever. They
+       need to be told to cease and desist.
+      */
+    bool ClearDialogContext(
+      const PString & descriptor  ///< Descriptor string for call clearance
+    );
+    bool ClearDialogContext(
+      SIPDialogContext & context  ///< Context for call clearance
+    );
   //@}
   
   /**@name Protocol handling routines */
