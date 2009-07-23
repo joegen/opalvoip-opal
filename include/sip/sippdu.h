@@ -781,6 +781,11 @@ class SIPDialogContext
   public:
     SIPDialogContext();
 
+    PString AsString() const;
+    bool FromString(
+      const PString & str
+    );
+
     const PString & GetCallID() const { return m_callId; }
     void SetCallID(const PString & id) { m_callId = id; }
 
@@ -811,7 +816,13 @@ class SIPDialogContext
     unsigned GetNextCSeq() { return ++m_lastSentCSeq; }
     bool IsDuplicateCSeq(unsigned sequenceNumber);
 
-    bool IsEstablished() const { return !m_remoteTag.IsEmpty(); }
+    bool IsEstablished() const
+    {
+      return !m_callId.IsEmpty() &&
+             !m_requestURI.IsEmpty() &&
+             !m_localTag.IsEmpty() &&
+             !m_remoteTag.IsEmpty();
+    }
 
     bool UsePeerTransportAddress() const { return m_usePeerTransportAddress; }
 
@@ -862,6 +873,15 @@ class SIPTransaction : public SIP_PDU
     );
     ~SIPTransaction();
 
+    void Construct(
+      const PTimeInterval & minRetryTime = PMaxTimeInterval,
+      const PTimeInterval & maxRetryTime = PMaxTimeInterval
+    );
+    void Construct(
+      Methods method, 
+      SIPDialogContext & dialog
+    );
+
     PBoolean Start();
     bool IsTrying()     const { return state == Trying; }
     bool IsProceeding() const { return state == Proceeding; }
@@ -885,14 +905,6 @@ class SIPTransaction : public SIP_PDU
     static PString GenerateCallID();
     
   protected:
-    void Construct(
-      const PTimeInterval & minRetryTime = PMaxTimeInterval,
-      const PTimeInterval & maxRetryTime = PMaxTimeInterval
-    );
-    void Construct(
-      Methods method, 
-      SIPDialogContext & dialog
-    );
     bool SendPDU(SIP_PDU & pdu);
     bool ResendCANCEL();
 
