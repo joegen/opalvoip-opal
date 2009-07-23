@@ -2363,6 +2363,49 @@ SIPDialogContext::SIPDialogContext()
 }
 
 
+PString SIPDialogContext::AsString() const
+{
+  PStringStream str;
+  SIPURL url = m_requestURI;
+  url.SetParamVar("call-id",   m_callId);
+  url.SetParamVar("local-uri", m_localURI.AsQuotedString());
+  url.SetParamVar("remote-uri",m_remoteURI.AsQuotedString());
+  url.SetParamVar("tx-cseq",   m_lastSentCSeq);
+  url.SetParamVar("rx-cseq",   m_lastReceivedCSeq);
+
+  unsigned index = 0;
+  for (PStringList::const_iterator it = m_routeSet.begin(); it != m_routeSet.end(); ++it)
+    url.SetParamVar(psprintf("route-set-%u", ++index), *it);
+
+  return url.AsString();
+}
+
+
+bool SIPDialogContext::FromString(const PString & str)
+{
+  SIPURL url;
+  if (!url.Parse(str))
+    return false;
+
+  m_requestURI = url;
+  m_requestURI.SetParamVars(PStringToString());
+
+  const PStringToString & params = url.GetParamVars();
+  SetCallID(params("call-id"));
+  SetLocalURI(params("local-uri"));
+  SetRemoteURI(params("remote-uri"));
+  m_lastSentCSeq = params("tx-cseq").AsUnsigned();
+  m_lastReceivedCSeq = params("rx-cseq").AsUnsigned();
+
+  PString route;
+  unsigned index = 0;
+  while (!(route = params(psprintf("route-set-%u", ++index))).IsEmpty())
+    m_routeSet.AppendString(route);
+
+  return IsEstablished();
+}
+
+
 static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool generate)
 {
   uri = url;
