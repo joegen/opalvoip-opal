@@ -248,7 +248,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
     void SetCompactForm(bool form) { compactForm = form; }
 
-    PCaselessString GetContentType() const;
+    PCaselessString GetContentType(bool includeParameters = false) const;
     void SetContentType(const PString & v);
 
     PCaselessString GetContentEncoding() const;
