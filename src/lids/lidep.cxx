@@ -455,9 +455,13 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
                                        OpalLineEndPoint & ep,
                                        OpalLine & ln,
                                        const PString & number)
-  : OpalConnection(call, ep, ln.GetToken()),
-    endpoint(ep),
-    line(ln)
+  : OpalConnection(call, ep, ln.GetToken())
+  , endpoint(ep)
+  , line(ln)
+  , wasOffHook(false)
+  , minimumRingCount(2)
+  , m_promptTone(OpalLineInterfaceDevice::DialTone)
+  , handlerThread(NULL)
 {
   localPartyName = ln.GetToken();
   remotePartyNumber = number.Right(number.FindSpan("0123456789*#,"));
@@ -469,11 +473,6 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
   remotePartyAddress += GetToken();
 
   silenceDetector = new OpalLineSilenceDetector(line, (endpoint.GetManager().GetSilenceDetectParams()));
-
-  minimumRingCount = 2;
-
-  wasOffHook = false;
-  handlerThread = NULL;
 
   PTRACE(3, "LID Con\tConnection " << callToken << " created to " << (number.IsEmpty() ? "local" : number));
   
@@ -647,7 +646,7 @@ PBoolean OpalLineConnection::PromptUserInput(PBoolean play)
   PTRACE(3, "LID Con\tConnection " << callToken << " dial tone " << (play ? "started" : "stopped"));
 
   if (play) {
-    if (line.PlayTone(OpalLineInterfaceDevice::DialTone)) {
+    if (line.PlayTone(m_promptTone)) {
       PTRACE(3, "LID Con\tPlaying dial tone");
       return true;
     }
