@@ -229,7 +229,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
     void SetCompactForm(bool form) { compactForm = form; }
 
-    PString GetContentType() const;
+    PCaselessString GetContentType(bool includeParameters = false) const;
     void SetContentType(const PString & v);
 
     PString GetContentEncoding() const;

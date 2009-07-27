@@ -542,9 +542,10 @@ PBoolean SIPMIMEInfo::IsContentLengthPresent() const
 }
 
 
-PString SIPMIMEInfo::GetContentType() const
+PCaselessString SIPMIMEInfo::GetContentType(bool includeParameters) const
 {
-  return GetString("Content-Type");
+  PCaselessString str = GetString("Content-Type");
+  return str.Left(includeParameters ? P_MAX_INDEX : str.Find(';')).Trim();
 }
 
 
