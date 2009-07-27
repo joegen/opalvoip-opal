@@ -489,6 +489,15 @@ class OpalLineConnection : public OpalConnection
       */
     OpalLine & GetLine() { return line; }
 
+    /** Get the prompt tone used on POTS lines.
+        Defaults to OpalLineInterfaceDevice::DialTone.
+      */
+    OpalLineInterfaceDevice::CallProgressTones GetPromptTone() const { return m_promptTone; }
+
+    /** Set the prompt tone used on POTS lines.
+      */
+    void SetPromptTone(OpalLineInterfaceDevice::CallProgressTones tone) { m_promptTone = tone; }
+
     /** delay in msec to wait between the dial tone detection and dialing the dtmf 
       * @param uiDial the dial delay to set
      */
@@ -506,6 +515,7 @@ class OpalLineConnection : public OpalConnection
     bool              wasOffHook;
     unsigned          minimumRingCount;
     OpalLineInterfaceDevice::DialParams m_dialParams;
+    OpalLineInterfaceDevice::CallProgressTones m_promptTone;
 
     PDECLARE_NOTIFIER(PThread, OpalLineConnection, HandleIncoming);
     PThread         * handlerThread;
