@@ -229,24 +229,66 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
 }
 
 
-PBoolean SIPHandler::SendRequest(SIPHandler::State s)
+PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
 {
   expireTimer.Stop(false); // Stop automatic retry
-  bool retryLater = false;
 
-  switch (s) {
+  if (expire == 0)
+    newState = Unsubscribing;
+
+  switch (newState) {
     case Unsubscribing:
-      if (state != Subscribed)
+      switch (state) {
+        case Subscribed :
+        case Unavailable :
+          break;  // Can try and do Unsubscribe
+
+        case Subscribing :
+        case Refreshing :
+        case Restoring :
+          PTRACE(2, "SIP\tCan't send " << newState << " request for " << GetMethod()
+                 << " handler while in " << state << " state, target="
+                 << GetTargetAddress() << ", id=" << GetCallID());
+          return false; // Are in the process of doing something
+
+        case Unsubscribed :
+        case Unsubscribing :
+          PTRACE(3, "SIP\tAlready doing " << state << " request for " << GetMethod()
+                 << " handler, target=" << GetTargetAddress() << ", id=" << GetCallID());
+          return true;  // Already done or doing it
+
+        default :
+          PAssertAlways(PInvalidParameter);
         return false;
-      SetState(s);
+      }
       break;
 
     case Subscribing :
     case Refreshing :
     case Restoring :
-      SetState(s);
-      if (GetTransport() == NULL) 
-        retryLater = true;
+      switch (state) {
+        case Subscribed :
+        case Unavailable :
+          break;  // Can do subscribe/refresh/restore
+
+        case Refreshing :
+        case Restoring :
+          PTRACE(3, "SIP\tAlready doing " << state << " request for " << GetMethod()
+                 << " handler, target=" << GetTargetAddress() << ", id=" << GetCallID());
+          return true; // Already doing it
+
+        case Subscribing :
+        case Unsubscribing :
+        case Unsubscribed :
+          PTRACE(2, "SIP\tCan't send " << newState << " request for " << GetMethod()
+                 << " handler while in " << state << " state, target="
+                 << GetTargetAddress() << ", id=" << GetCallID());
+          return false; // Can't restart as are on the way out
+
+        default : // Are in the process of doing something
+          PAssertAlways(PInvalidParameter);
+          return false;
+      }
       break;
 
     default :
@@ -254,11 +296,13 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
       return false;
   }
 
-  if (!retryLater) {
+  SetState(newState);
+
+  if (GetTransport() != NULL) {
     // Restoring or first time, try every interface
-    if (s == Restoring || transport->GetInterface().IsEmpty()) {
+    if (newState == Restoring || transport->GetInterface().IsEmpty()) {
       PWaitAndSignal mutex(transport->GetWriteMutex());
-      if(transport->WriteConnect(WriteSIPHandler, this))
+      if (transport->WriteConnect(WriteSIPHandler, this))
         return true;
     }
     else {
@@ -266,18 +310,21 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
       if (WriteSIPHandler(*transport))
         return true;
     }
-    retryLater = true;
+
+    OnFailed(SIP_PDU::Local_TransportError);
   }
 
-  if (retryLater) {
+  if (newState == Unsubscribing) {
+    // Transport level error, probably never going to get the unsubscribe through
+    SetState(Unsubscribed);
+    return true;
+  }
+
     PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
     OnFailed(SIP_PDU::Local_BadTransportAddress);
     expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
     SetState(Unavailable);
     return true;
-  }
-
-  return false;
 }
 
 
@@ -356,7 +403,9 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   CollapseFork(transaction);
 
   // Restart the transaction with new authentication handler
-  SendRequest(GetState());
+  State oldState = state;
+  state = Unavailable;
+  SendRequest(oldState);
 }
 
 
@@ -810,12 +859,6 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
 PBoolean SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
 {
-  PString body = request.GetEntityBody();
-  PString msgs;
-
-  // Extract the string describing the number of new messages
-  if (!body.IsEmpty ()) {
-
     static struct {
       const char * name;
       OpalManager::MessageWaitingType type;
@@ -827,28 +870,41 @@ PBoolean SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
       { "text-message",       OpalManager::TextMessageWaiting       },
       { "none",               OpalManager::NoMessageWaiting         }
     };
-    PStringArray bodylines = body.Lines ();
-    for (PINDEX z = 0 ; z < PARRAYSIZE(validMessageClasses); z++) {
 
-      for (int i = 0 ; i < bodylines.GetSize () ; i++) {
+  bool sendDefault = false;
 
-        PCaselessString line (bodylines [i]);
-        PINDEX j = line.FindLast(validMessageClasses[z].name);
-        if (j != P_MAX_INDEX) {
-          line.Replace(validMessageClasses[z].name, "");
-          line.Replace (":", "");
-          msgs = line.Trim ();
-          endpoint.OnMWIReceived(GetRemotePartyAddress(), validMessageClasses[z].type, msgs);
-          return PTrue;
+  // Extract the string describing the number of new messages
+  PStringArray lines = request.GetEntityBody().Lines();
+  for (int ln = 0; ln < lines.GetSize(); ln++) {
+    PCaselessString line = lines[ln].Trim();
+
+    // If old style "simple boolean" form
+    if (line.NumCompare("Messages-Waiting") == EqualTo) {
+      if (line.Find("no") != P_MAX_INDEX) {
+        endpoint.OnMWIReceived(GetRemotePartyAddress(), OpalManager::NoMessageWaiting, PString::Empty());
+        return true;
+      }
+      sendDefault = true;
         }
+
+    for (PINDEX cls = 0; cls < PARRAYSIZE(validMessageClasses); cls++) {
+      if (line.NumCompare(validMessageClasses[cls].name) == EqualTo) {
+        PINDEX colon = line.Find(':');
+        if (colon == P_MAX_INDEX)
+          colon = strlen(validMessageClasses[cls].name);
+        endpoint.OnMWIReceived(GetRemotePartyAddress(), validMessageClasses[cls].type, line.Mid(colon+1).LeftTrim());
+        sendDefault = false;
       }
     }
 
     // Received MWI, unknown messages number
-    endpoint.OnMWIReceived(GetRemotePartyAddress(), OpalManager::NumMessageWaitingTypes, "1/0");
+    endpoint.OnMWIReceived(GetRemotePartyAddress(), OpalManager::NumMessageWaitingTypes, line);
   } 
 
-  return PTrue;
+  if (sendDefault)
+    endpoint.OnMWIReceived(GetRemotePartyAddress(), OpalManager::VoiceMessageWaiting, PString::Empty());
+
+  return true;
 }
 
 
