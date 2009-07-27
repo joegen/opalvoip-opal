@@ -285,12 +285,9 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
   }
 
   if (transport == NULL) {
-    // No compatible listeners, can't use their binding
-    transport = remoteAddress.CreateTransport(*this, OpalTransportAddress::NoBinding);
-    if (transport == NULL) {
-      PTRACE(1, "SIP\tCould not create transport for " << remoteAddress);
+    // No compatible listeners, can't create a transport to send if we cannot hear the responses!
+    PTRACE(2, "SIP\tNo compatible listener to create transport for " << remoteAddress);
       return NULL;
-    }
   }
 
   if (!transport->SetRemoteAddress(remoteAddress)) {
