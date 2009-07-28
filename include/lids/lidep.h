@@ -603,7 +603,7 @@ class OpalLineMediaStream : public OpalMediaStream
       */
     virtual PBoolean SetDataSize(
       PINDEX dataSize,  ///< New data size (in total)
-      PINDEX frameSize  ///< Individual frame size (if applicable)
+      PINDEX frameTime  ///< Individual frame time (if applicable)
     );
 
     /**Indicate if the media stream is synchronous.

@@ -171,6 +171,12 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
             "Destination format:\n" << setw(-1) << destinationFormat);
 
   if (sourceFormat == destinationFormat) {
+    PINDEX framesPerPacket = destinationFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(),
+                                  sourceFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1));
+    PINDEX packetSize = sourceFormat.GetFrameSize()*framesPerPacket;
+    PINDEX packetTime = sourceFormat.GetFrameTime()*framesPerPacket;
+    source.SetDataSize(packetSize, packetTime);
+    sinkStream->SetDataSize(packetSize, packetTime);
     PTRACE(3, "Patch\tAdded direct media stream sink " << *sinkStream);
     return true;
   }
@@ -180,7 +186,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
   if (sink->primaryCodec != NULL) {
     PTRACE(4, "Patch\tCreated primary codec " << sourceFormat << "->" << destinationFormat << " with ID " << id);
 
-    if (!sinkStream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(false), destinationFormat.GetFrameSize())) {
+    if (!sinkStream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
       PTRACE(1, "Patch\tSink stream " << *sinkStream << " cannot support data size "
               << sink->primaryCodec->GetOptimalDataFrameSize(PFalse));
       return false;
@@ -203,7 +209,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
 
     PTRACE(4, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 
-    if (!sinkStream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(false), destinationFormat.GetFrameSize())) {
+    if (!sinkStream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
       PTRACE(1, "Patch\tSink stream " << *sinkStream << " cannot support data size "
               << sink->secondaryCodec->GetOptimalDataFrameSize(PFalse));
       return false;
@@ -215,7 +221,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
            << " and " << *sink->secondaryCodec << ", data size=" << sinkStream->GetDataSize());
   }
 
-  source.SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(true), sourceFormat.GetFrameSize());
+  source.SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
   return true;
 }
 
