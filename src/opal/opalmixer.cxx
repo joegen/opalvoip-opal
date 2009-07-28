@@ -1079,7 +1079,8 @@ void OpalMixerNode::ShutDown()
 {
   PTRACE(4, "MixerNode\tShutting down " << m_guid);
 
-  for (PSafePtr<OpalMixerConnection> connection = GetFirstConnection(); connection != NULL; ++connection)
+  PSafePtr<OpalMixerConnection> connection;
+  while ((connection = GetFirstConnection()) != NULL)
     connection->Release();
 
   m_audioMixer.RemoveAllStreams();
