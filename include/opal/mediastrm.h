@@ -229,7 +229,7 @@ class OpalMediaStream : public PSafeObject
       */
     virtual PBoolean SetDataSize(
       PINDEX dataSize,  ///< New data size (in total)
-      PINDEX frameSize  ///< Individual frame size (if applicable)
+      PINDEX frameTime  ///< Individual frame time (if applicable)
     );
 
     /**Get the data size in bytes that is expected to be used. Some media
@@ -510,7 +510,7 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     virtual PBoolean SetDataSize(
       PINDEX dataSize,  ///< New data size (in total)
-      PINDEX frameSize  ///< Individual frame size (if applicable)
+      PINDEX frameTime  ///< Individual frame time (if applicable)
     );
 
     /**Indicate if the media stream is synchronous.
@@ -729,7 +729,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
       */
     virtual PBoolean SetDataSize(
       PINDEX dataSize,  ///< New data size (in total)
-      PINDEX frameSize  ///< Individual frame size (if applicable)
+      PINDEX frameTime  ///< Individual frame time (if applicable)
     );
 
     /**Indicate if the media stream is synchronous.
@@ -820,7 +820,7 @@ class OpalVideoMediaStream : public OpalMediaStream
       */
     virtual PBoolean SetDataSize(
       PINDEX dataSize,  ///< New data size (in total)
-      PINDEX frameSize  ///< Individual frame size (if applicable)
+      PINDEX frameTime  ///< Individual frame time (if applicable)
     );
 
     /** Get the input device (e.g. for statistics)
