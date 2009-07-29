@@ -46,6 +46,10 @@
 
  */
 
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
+#include "plugin-config.h"
+#endif
+
 #define _CRT_SECURE_NO_DEPRECATE
 
 #include "h263-1998.h"
