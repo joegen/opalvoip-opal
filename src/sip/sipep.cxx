@@ -76,6 +76,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 #if OPAL_HAS_SIPIM
   , m_sipIMManager(*this)
 #endif
+  , m_disableTrying(true)
 
 #ifdef _MSC_VER
 #pragma warning(default:4355)
@@ -540,7 +541,8 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       // Do next case
 
     default :
-      pdu->SendResponse(transport, SIP_PDU::Information_Trying, this);
+      if (!m_disableTrying || (pdu->GetMethod() == SIP_PDU::Method_INVITE))
+        pdu->SendResponse(transport, SIP_PDU::Information_Trying, this);
       // Do next case
 
     case SIP_PDU::Method_ACK :
