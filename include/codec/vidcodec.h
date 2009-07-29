@@ -159,10 +159,8 @@ class OpalVideoTranscoder : public OpalTranscoder
     bool   forceIFrame;
     bool   lastFrameWasIFrame;
 
-#if OPAL_STATISTICS
     DWORD m_totalFrames;
     DWORD m_keyFrames;
-#endif
 };
 
 
