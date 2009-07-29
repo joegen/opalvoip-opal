@@ -2035,7 +2035,9 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 
   PTRACE(3, "SIP\tCancel received for " << *this);
 
-  request.SendResponse(*transport, SIP_PDU::Successful_OK);
+  SIP_PDU response(request, SIP_PDU::Successful_OK);
+  response.GetMIME().SetTo(m_dialog.GetLocalURI().AsQuotedString());
+  request.SendResponse(*transport, response);
   
   if (!IsOriginating())
     Release(EndedByCallerAbort);
