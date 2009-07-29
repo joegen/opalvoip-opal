@@ -9810,6 +9810,10 @@ done
 
 
           if test "x$opal_java" = "xno" ; then
+            if test "x${JDK_ROOT}" = "x" ; then
+              JDK_ROOT=${JDK_HOME}
+            fi
+
             if test "x${JDK_ROOT}" != "x" ; then
               as_ac_File=`echo "ac_cv_file_${JDK_ROOT}/include/jni.h" | $as_tr_sh`
 { echo "$as_me:$LINENO: checking for ${JDK_ROOT}/include/jni.h" >&5
