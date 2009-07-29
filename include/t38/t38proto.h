@@ -174,7 +174,11 @@ class OpalFaxMediaStream : public OpalMediaStream
     PINDEX              writeBufferLen;
     PString             m_stationId;
 
+#if OPAL_STATISTICS
     OpalMediaStatistics::Fax m_statistics;
+#else
+    int m_result;
+#endif
 };
 
 ///////////////////////////////////////////////////////////////////////////////
