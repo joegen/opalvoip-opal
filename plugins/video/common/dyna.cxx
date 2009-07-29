@@ -223,7 +223,7 @@ bool FFMPEGLibrary::Load(int ver)
     return false;
   }
 
-  if (seperateLibAvutil && !libAvutil.Open("avutil-49")) {
+  if (seperateLibAvutil && !(libAvutil.Open("avutil-50") || libAvutil.Open("avutil-49")) ) {
     TRACE (1, _codecString << "\tDYNA\tFailed to load FFMPEG libavutil library");
     return false;
   }
