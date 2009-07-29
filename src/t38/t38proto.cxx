@@ -515,11 +515,13 @@ PBoolean OpalFaxMediaStream::IsSynchronous() const
 }
 
 
+#if OPAL_STATISTICS
 void OpalFaxMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
 {
   OpalMediaStream::GetStatistics(statistics, fromPatch);
   statistics.m_fax = m_statistics;
 }
+#endif
 
 
 static bool ExtractValue(const PString & msg, PINDEX & position, int & value, char sep = '=')
@@ -549,7 +551,11 @@ void OpalFaxMediaStream::ReadStdOut(PThread &, INT)
     if (c < 0) {
       PTRACE(2, "Fax\tError reading from " << m_faxCallInfo->spanDSP.GetName()
              << ": " << m_faxCallInfo->spanDSP.GetErrorText(PChannel::LastReadError));
+#if OPAL_STATISTICS
       m_connection.OnFaxCompleted(m_statistics.m_result != 0);
+#else
+      m_connection.OnFaxCompleted(m_result != 0);
+#endif
       return;
     }
 
@@ -572,8 +578,9 @@ void OpalFaxMediaStream::ReadStdOut(PThread &, INT)
       continue;
     }
 
-    int result, errorCorrection;
     PINDEX position = 0;
+#if OPAL_STATISTICS
+    int result, errorCorrection;
     if (ExtractValue(msg, position, result) &&
         ExtractValue(msg, position, m_statistics.m_bitRate) &&
         ExtractValue(msg, position, m_statistics.m_compression) &&
@@ -593,6 +600,9 @@ void OpalFaxMediaStream::ReadStdOut(PThread &, INT)
       m_statistics.m_result = result; // Only set this if everything parsed correctly
       m_statistics.m_errorCorrection = errorCorrection != 0;
     }
+#else
+    ExtractValue(msg, position, m_result);
+#endif
     PTRACE(4, "Fax\tSpanDSP Output:\n" << msg);
     notInStats = true;
     msg.MakeEmpty();
