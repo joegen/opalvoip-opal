@@ -99,10 +99,8 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   , videoEncoderMaxOutputSize(10*1024)
   , forceIFrame(true)
   , lastFrameWasIFrame(false)
-#if OPAL_STATISTICS
   , m_totalFrames(0)
   , m_keyFrames(0)
-#endif
 {
   acceptEmptyPayload = true;
 }

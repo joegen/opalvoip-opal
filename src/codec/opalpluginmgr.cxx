@@ -864,11 +864,9 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
     } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
     PTRACE(5, "OpalPlugin\tEncoded video frame into " << dstList.GetSize() << " packets.");
 
-#if OPAL_STATISTICS
     m_totalFrames++;
     if (lastFrameWasIFrame)
       m_keyFrames++;
-#endif
 
 #if PTRACING
     if (!lastFrameWasIFrame)
@@ -945,11 +943,9 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
             PTRACE(5, "OpalPlugin\tVideo decoder returned I-frame");
           }
 
-#if OPAL_STATISTICS
           m_totalFrames++;
           if (lastFrameWasIFrame)
             m_keyFrames++;
-#endif
         }
       }
     }
