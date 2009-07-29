@@ -1009,7 +1009,7 @@ void SIPMIMEInfo::SetEvent(const PString & v)
 }
 
 
-PString SIPMIMEInfo::GetSubscriptionState() const
+PCaselessString SIPMIMEInfo::GetSubscriptionState() const
 {
   return GetString("Subscription-State");       // no compact form
 }
@@ -3177,14 +3177,12 @@ void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport
 SIPReferNotify::SIPReferNotify(SIPConnection & connection, OpalTransport & transport, StatusCodes code)
   : SIPTransaction(connection, transport, Method_NOTIFY)
 {
-  PStringStream str;
-  
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
-  mime.SetSubscriptionState("terminated;reason=noresource"); // Do not keep an internal state
+  mime.SetSubscriptionState(code < Successful_OK ? "active" : "terminated;reason=noresource");
   mime.SetEvent("refer");
-  mime.SetContentType("message/sipfrag;version=2.0");
+  mime.SetContentType("message/sipfrag");
 
-
+  PStringStream str;
   str << "SIP/" << versionMajor << '.' << versionMinor << " " << code << " " << GetStatusCodeDescription(code);
   entityBody = str;
 }
