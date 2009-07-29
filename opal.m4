@@ -996,6 +996,10 @@ AC_DEFUN([OPAL_FIND_JAVA],
           AC_CHECK_HEADERS([jni.h], [opal_java=yes])
 
           if test "x$opal_java" = "xno" ; then
+            if test "x${JDK_ROOT}" = "x" ; then
+              JDK_ROOT=${JDK_HOME}
+            fi
+
             if test "x${JDK_ROOT}" != "x" ; then
               AC_CHECK_FILE([${JDK_ROOT}/include/jni.h], 
                             [
