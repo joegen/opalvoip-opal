@@ -125,7 +125,7 @@ SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & ad
 
 void SDPMSRPMediaDescription::CreateSDPMediaFormats(const PStringArray &)
 {
-  formats.Append(new SDPMediaFormat(OpalMSRP, RTP_DataFrame::MaxPayloadType));
+  formats.Append(new SDPMediaFormat(*this, RTP_DataFrame::MaxPayloadType));
 }
 
 
@@ -176,7 +176,7 @@ void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat
     return;
   }
 
-  SDPMediaFormat * sdpFormat = new SDPMediaFormat(mediaFormat, mediaFormat.GetPayloadType());
+  SDPMediaFormat * sdpFormat = new SDPMediaFormat(*this, mediaFormat.GetPayloadType());
   ProcessMediaOptions(*sdpFormat, mediaFormat);
   AddSDPMediaFormat(sdpFormat);
 }
