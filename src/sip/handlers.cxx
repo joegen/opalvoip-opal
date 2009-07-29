@@ -141,6 +141,8 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
 
 SIPHandler::~SIPHandler() 
 {
+  expireTimer.Stop();
+
   if (m_transport) {
     m_transport->CloseWait();
     delete m_transport;
