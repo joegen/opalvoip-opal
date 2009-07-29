@@ -63,7 +63,7 @@
 
 
 extern "C" {
-#ifdef _WIN32
+#if defined (_WIN32) && defined (_MSC_VER)
 #include "vs-stdint.h"
 #define LIBAVCODEC_HEADER   "libavcodec\avcodec.h"
 #pragma warning(push)
