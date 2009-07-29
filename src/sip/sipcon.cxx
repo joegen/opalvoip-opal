@@ -1950,40 +1950,54 @@ void SIPConnection::OnReceivedOPTIONS(SIP_PDU & /*request*/)
 
 void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 {
-  PCaselessString event, state;
-  
-  if (referTransaction == NULL){
-    PTRACE(2, "SIP\tNOTIFY in a connection only supported for REFER requests");
-    return;
-  }
-  
-  event = request.GetMIME().GetEvent();
-  
-  // We could also compare the To and From tags
-  if (request.GetMIME().GetCallID() != referTransaction->GetMIME().GetCallID()
-      || event.Find("refer") == P_MAX_INDEX) {
+  const SIPMIMEInfo & mime = request.GetMIME();
 
+  SIPSubscribe::EventPackage package = mime.GetEvent();
+  if (package != "refer") {
+    PTRACE(2, "SIP\tNOTIFY in a connection only supported for REFER requests");
     request.SendResponse(*transport, SIP_PDU::Failure_BadEvent);
     return;
   }
 
-  state = request.GetMIME().GetSubscriptionState();
-  
-  request.SendResponse(*transport, SIP_PDU::Successful_OK);
-  
-  // The REFER is over
-  if (state.Find("terminated") != P_MAX_INDEX) {
-    referTransaction->WaitForCompletion();
-    referTransaction.SetNULL();
-
-    // Release the connection
-    if (GetPhase() < ReleasingPhase) {
-      releaseMethod = ReleaseWithBYE;
-      Release(OpalConnection::EndedByCallForwarded);
-    }
+  if (referTransaction == NULL) {
+    PTRACE(2, "SIP\tNOTIFY for REFER we never sent.");
+    request.SendResponse(*transport, SIP_PDU::Failure_TransactionDoesNotExist);
+    return;
   }
 
-  // The REFER is not over yet, ignore the state of the REFER for now
+  if (mime.GetContentType() != "message/sipfrag") {
+    PTRACE(2, "SIP\tNOTIFY for REFER has incorrect Content-Type");
+    request.SendResponse(*transport, SIP_PDU::Failure_BadRequest);
+    return;
+  }
+
+  PCaselessString body = request.GetEntityBody();
+  unsigned code = body.Mid(body.Find(' ')).AsUnsigned();
+  if (body.NumCompare("SIP/") != EqualTo || code < 100) {
+    PTRACE(2, "SIP\tNOTIFY for REFER has incorrect body");
+    request.SendResponse(*transport, SIP_PDU::Failure_BadRequest);
+    return;
+  }
+
+  request.SendResponse(*transport, SIP_PDU::Successful_OK);
+
+  if (mime.GetSubscriptionState().Find("terminated") == P_MAX_INDEX)
+    return; // The REFER is not over yet, ignore
+
+  referTransaction->WaitForCompletion();
+  referTransaction.SetNULL();
+
+  // The REFER is over, see if successful
+  if (code >= 300) {
+    PTRACE(2, "SIP\tNOTIFY indicated REFER did not proceed, taking call back");
+    return;
+  }
+
+  // Release the connection
+  if (GetPhase() < ReleasingPhase) {
+    releaseMethod = ReleaseWithBYE;
+    Release(OpalConnection::EndedByCallForwarded);
+  }
 }
 
 
@@ -2025,7 +2039,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   // send NOTIFY if transfer succeeded, but only if allowed by RFC4488
   // Strictly speaking, we shouldn't send this until the the 200 OK, but.....
   if (!(request.GetMIME()("Refer-Sub") *= "false")) {
-    SIPReferNotify * notify = new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
+    SIPReferNotify * notify = new SIPReferNotify(*this, *transport, SIP_PDU::Successful_OK);
     notify->Start();
   }
 }
