@@ -703,7 +703,6 @@ ILBC_SYSTEM
 ILBC_CFLAGS
 ILBC_LIBS
 HAVE_SBC
-HAVE_H263
 DEFAULT_TO_FULL_CAPABILITIES
 LIBAVCODEC_CFLAGS
 LIBAVCODEC_LIBS
@@ -1339,7 +1338,6 @@ Optional Features:
   --enable-localilbc      Force use local version of iLBC library rather than
                           system version
   --enable-sbc            enable use of Bluetooth SBC for CD quality telephony
-  --enable-ffmpeg-h263    enable plugin supporting H.263 via patched FFMPEG
   --enable-default-to-full-capabilties
                           default to full capabilities at empty fmtp lines
   --enable-libavcodec-stackalign-hack
@@ -2194,7 +2192,7 @@ fi
 
            case "$target_os" in
                solaris*)
-                 opal_release_flags="-xO3 -DSOLARIS"
+                 opal_release_flags="-O3 -DSOLARIS"
                  opal_debug_flags="-g -D_DEBUG -DSOLARIS"
                ;;
                *)
@@ -6944,7 +6942,7 @@ esac
 HAVE_VPB=yes
 HAVE_CAPI=yes
 HAVE_IXJ=no
-HAVE_H263=no
+HAVE_H263P=no
 HAVE_H264=yes
 HAVE_CELT=no
 HAVE_SPANDSP=yes
@@ -9502,50 +9500,6 @@ fi
 
 
 
-          if test "x$HAVE_H263" = "x"; then
-            { { echo "$as_me:$LINENO: error: No default specified for HAVE_H263, please correct configure.ac" >&5
-echo "$as_me: error: No default specified for HAVE_H263, please correct configure.ac" >&2;}
-   { (exit 1); exit 1; }; }
-	  fi
-          # Check whether --enable-ffmpeg-h263 was given.
-if test "${enable_ffmpeg_h263+set}" = set; then
-  enableval=$enable_ffmpeg_h263; HAVE_H263=$enableval
-fi
-
-
-          if test "x" != "x"; then
-            if test "x$" != "xyes"; then
-              { echo "$as_me:$LINENO: ffmpeg-h263 support disabled due to disabled dependency " >&5
-echo "$as_me: ffmpeg-h263 support disabled due to disabled dependency " >&6;}
-	      HAVE_H263=no
-	    fi
-	  fi
-
-          if test "x" != "x"; then
-            if test "x$" != "xyes"; then
-              { echo "$as_me:$LINENO: ffmpeg-h263 support disabled due to disabled dependency " >&5
-echo "$as_me: ffmpeg-h263 support disabled due to disabled dependency " >&6;}
-	      HAVE_H263=no
-	    fi
-	  fi
-
-
-          { echo "$as_me:$LINENO: checking enable plugin supporting H.263 via patched FFMPEG" >&5
-echo $ECHO_N "checking enable plugin supporting H.263 via patched FFMPEG... $ECHO_C" >&6; }
-          { echo "$as_me:$LINENO: result: $HAVE_H263" >&5
-echo "${ECHO_T}$HAVE_H263" >&6; }
-
-
-          if test "x$HAVE_H263" = "xyes"; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_H263 1
-_ACEOF
-
-          fi
-
-
-
           if test "x$DEFAULT_TO_FULL_CAPABILITIES" = "x"; then
             { { echo "$as_me:$LINENO: error: No default specified for DEFAULT_TO_FULL_CAPABILITIES, please correct configure.ac" >&5
 echo "$as_me: error: No default specified for DEFAULT_TO_FULL_CAPABILITIES, please correct configure.ac" >&2;}
@@ -9598,12 +9552,12 @@ if test -n "$LIBAVCODEC_CFLAGS"; then
     pkg_cv_LIBAVCODEC_CFLAGS="$LIBAVCODEC_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavcodec >= 51.11.0\"") >&5
-  ($PKG_CONFIG --exists --print-errors "libavcodec >= 51.11.0") 2>&5
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavcodec >= 52.20.0\"") >&5
+  ($PKG_CONFIG --exists --print-errors "libavcodec >= 52.20.0") 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; then
-  pkg_cv_LIBAVCODEC_CFLAGS=`$PKG_CONFIG --cflags "libavcodec >= 51.11.0" 2>/dev/null`
+  pkg_cv_LIBAVCODEC_CFLAGS=`$PKG_CONFIG --cflags "libavcodec >= 52.20.0" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -9614,12 +9568,12 @@ if test -n "$LIBAVCODEC_LIBS"; then
     pkg_cv_LIBAVCODEC_LIBS="$LIBAVCODEC_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavcodec >= 51.11.0\"") >&5
-  ($PKG_CONFIG --exists --print-errors "libavcodec >= 51.11.0") 2>&5
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavcodec >= 52.20.0\"") >&5
+  ($PKG_CONFIG --exists --print-errors "libavcodec >= 52.20.0") 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; then
-  pkg_cv_LIBAVCODEC_LIBS=`$PKG_CONFIG --libs "libavcodec >= 51.11.0" 2>/dev/null`
+  pkg_cv_LIBAVCODEC_LIBS=`$PKG_CONFIG --libs "libavcodec >= 52.20.0" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -9637,9 +9591,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBAVCODEC_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libavcodec >= 51.11.0" 2>&1`
+	        LIBAVCODEC_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libavcodec >= 52.20.0" 2>&1`
         else
-	        LIBAVCODEC_PKG_ERRORS=`$PKG_CONFIG --print-errors "libavcodec >= 51.11.0" 2>&1`
+	        LIBAVCODEC_PKG_ERRORS=`$PKG_CONFIG --print-errors "libavcodec >= 52.20.0" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBAVCODEC_PKG_ERRORS" >&5
@@ -12677,13 +12631,13 @@ ILBC_SYSTEM!$ILBC_SYSTEM$ac_delim
 ILBC_CFLAGS!$ILBC_CFLAGS$ac_delim
 ILBC_LIBS!$ILBC_LIBS$ac_delim
 HAVE_SBC!$HAVE_SBC$ac_delim
-HAVE_H263!$HAVE_H263$ac_delim
 DEFAULT_TO_FULL_CAPABILITIES!$DEFAULT_TO_FULL_CAPABILITIES$ac_delim
 LIBAVCODEC_CFLAGS!$LIBAVCODEC_CFLAGS$ac_delim
 LIBAVCODEC_LIBS!$LIBAVCODEC_LIBS$ac_delim
 LIBAVCODEC_LIB_NAME!$LIBAVCODEC_LIB_NAME$ac_delim
 HAVE_H263P!$HAVE_H263P$ac_delim
 HAVE_MPEG4!$HAVE_MPEG4$ac_delim
+HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -12725,7 +12679,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
 LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
 HAVE_LIBAVCODEC_RTP_MODE!$HAVE_LIBAVCODEC_RTP_MODE$ac_delim
 X264_CFLAGS!$X264_CFLAGS$ac_delim
@@ -12751,7 +12704,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 24; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 23; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -13812,13 +13765,13 @@ ILBC_SYSTEM!$ILBC_SYSTEM$ac_delim
 ILBC_CFLAGS!$ILBC_CFLAGS$ac_delim
 ILBC_LIBS!$ILBC_LIBS$ac_delim
 HAVE_SBC!$HAVE_SBC$ac_delim
-HAVE_H263!$HAVE_H263$ac_delim
 DEFAULT_TO_FULL_CAPABILITIES!$DEFAULT_TO_FULL_CAPABILITIES$ac_delim
 LIBAVCODEC_CFLAGS!$LIBAVCODEC_CFLAGS$ac_delim
 LIBAVCODEC_LIBS!$LIBAVCODEC_LIBS$ac_delim
 LIBAVCODEC_LIB_NAME!$LIBAVCODEC_LIB_NAME$ac_delim
 HAVE_H263P!$HAVE_H263P$ac_delim
 HAVE_MPEG4!$HAVE_MPEG4$ac_delim
+HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -13860,7 +13813,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-HAVE_LIBAVCODEC!$HAVE_LIBAVCODEC$ac_delim
 LIBAVCODEC_SOURCE_DIR!$LIBAVCODEC_SOURCE_DIR$ac_delim
 HAVE_LIBAVCODEC_RTP_MODE!$HAVE_LIBAVCODEC_RTP_MODE$ac_delim
 X264_CFLAGS!$X264_CFLAGS$ac_delim
@@ -13886,7 +13838,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 24; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 23; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
