@@ -109,7 +109,7 @@ dnl ########################################################################
 HAVE_VPB=yes
 HAVE_CAPI=yes
 HAVE_IXJ=no
-HAVE_H263=no
+HAVE_H263P=no
 HAVE_H264=yes
 HAVE_CELT=no
 HAVE_SPANDSP=yes
@@ -212,11 +212,6 @@ dnl Video Codecs
 dnl ########################################################################
 
 dnl     ########################
-dnl     ffmpeg for H.263
-dnl     #######################
-OPAL_SIMPLE_OPTION([ffmpeg-h263],[HAVE_H263], [enable plugin supporting H.263 via patched FFMPEG])
-
-dnl     ########################
 dnl     Capabilities option
 dnl     ########################
 OPAL_SIMPLE_OPTION([default-to-full-capabilties],[DEFAULT_TO_FULL_CAPABILITIES], [default to full capabilities at empty fmtp lines])
@@ -225,7 +220,7 @@ dnl     ########################
 dnl     libavcodec (ffmpeg)
 dnl     ########################
 PKG_CHECK_MODULES([LIBAVCODEC],
-                  [libavcodec >= 51.11.0],
+                  [libavcodec >= 52.20.0],
                   [
                    AC_SUBST(LIBAVCODEC_CFLAGS)
                    AC_SUBST(LIBAVCODEC_LIBS)
