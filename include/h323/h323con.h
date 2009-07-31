@@ -276,6 +276,14 @@ class H323Connection : public OpalRTPConnection
       bool isSource                      ///< Stream is a source/sink
     );
 
+#if OPAL_FAX
+    /**Switch to/from FAX mode.
+      */
+    virtual bool SwitchFaxMediaStreams(
+      bool enableFax  ///< Enable FAX or return to audio mode
+    );
+#endif
+
     /**Open source or sink media stream for session.
       */
     virtual OpalMediaStreamPtr OpenMediaStream(
@@ -1818,7 +1826,7 @@ class H323Connection : public OpalRTPConnection
        OPAL media stream model. It is maintained for backward compatibility
        with older applications only.
       */
-    virtual PBoolean P_DEPRECATED RequestModeChangeT38(
+    virtual PBoolean RequestModeChangeT38(
       const char * capabilityNames = "T.38\nT38FaxUDP"
     );
 
