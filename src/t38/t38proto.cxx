@@ -617,14 +617,9 @@ void OpalFaxConnection::OpenFaxStreams(PThread &, INT)
   if (!LockReadWrite())
     return;
 
-  OpalMediaFormat format = m_faxMode ? OpalT38 : OpalG711uLaw;
-  OpalMediaType mediaType = format.GetMediaType();
-
-  PSafePtr<OpalConnection> other = ownerCall.GetOtherPartyConnection(*this);
-  if ( other == NULL ||
-      !ownerCall.OpenSourceMediaStreams(*other, mediaType, 1, format) ||
-      !ownerCall.OpenSourceMediaStreams(*this,  mediaType, 1, format)) {
-    PTRACE(1, "T38\tMode change request to " << mediaType << " failed");
+  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+  if (other == NULL || !other->SwitchFaxMediaStreams(m_faxMode)) {
+    PTRACE(1, "T38\tMode change request to " << (m_faxMode ? "fax" : "audio") << " failed");
     OnFaxCompleted(true);
   }
 

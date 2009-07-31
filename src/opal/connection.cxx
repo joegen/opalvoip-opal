@@ -610,6 +610,15 @@ void OpalConnection::AutoStartMediaStreams(bool force)
 }
 
 
+#if OPAL_FAX
+bool OpalConnection::SwitchFaxMediaStreams(bool enableFax)
+{
+  OpalMediaFormat format = enableFax ? OpalT38 : OpalG711uLaw;
+  return ownerCall.OpenSourceMediaStreams(*this, format.GetMediaType(), 1, format);
+}
+#endif
+
+
 OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
   PSafeLockReadWrite safeLock(*this);

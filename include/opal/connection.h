@@ -905,6 +905,14 @@ class OpalConnection : public PSafeObject
       bool force = false ///< Force re-open even if already open
     );
 
+#if OPAL_FAX
+    /**Switch to/from FAX mode.
+      */
+    virtual bool SwitchFaxMediaStreams(
+      bool enableFax  ///< Enable FAX or return to audio mode
+    );
+#endif
+
     /**Open source or sink media stream for session.
       */
     virtual OpalMediaStreamPtr OpenMediaStream(

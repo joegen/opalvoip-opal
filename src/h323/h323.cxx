@@ -3785,6 +3785,14 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
 }
 
 
+#if OPAL_FAX
+bool H323Connection::SwitchFaxMediaStreams(bool enableFax)
+{
+  return RequestModeChangeT38(enableFax ? OpalT38 : OpalG711uLaw);
+}
+#endif
+
+
 OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
   // See if already opened
@@ -4807,37 +4815,35 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
 
   PTRACE(3, "H323\tT.38 mode change accepted.");
 
-  // Now we have conviced the other side to send us T.38 data we should do the
-  // same assuming the RequestModeChangeT38() function provided a list of \n
-  // separaete capability names to start. Only one will be.
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
+  if (otherConnection == NULL)
+    return;
 
-  CloseAllLogicalChannels(PFalse);
+  /* This is a spescial case for a T.38 switch over. Normally a H.245 Mode
+     Request is completely independent of what WE are transmitting. But not
+     in the case .f T.38, we need to swutch our side to the same mode as well.
+     So, now we have conviced the other side to send us T.38 data we should
+     do the T.38 and the RequestModeChangeT38() function provided a list of \n
+     separated capability names to start, we use that to start our
+     transmitters to teh same formats. After we close exiting ones, of course!
+   */
+  CloseAllLogicalChannels(false);
 
   PStringArray modes = t38ModeChangeCapabilities.Lines();
-
-  PINDEX first, last;
-  if (pdu.m_response.GetTag() == H245_RequestModeAck_response::e_willTransmitMostPreferredMode) {
-    first = 0;
-    last = 1;
-  }
-  else {
-    first = 1;
-    last = modes.GetSize();
-  }
-
-  for (PINDEX i = first; i < last; i++) {
-    H323Capability * capability = localCapabilities.FindCapability(modes[i]);
-    if (capability != NULL && OpenLogicalChannel(*capability,
-                                                 capability->GetDefaultSessionID(),
-                                                 H323Channel::IsTransmitter)) {
-      PTRACE(3, "H245\tOpened " << *capability << " after T.38 mode change");
-      break;
-    }
-
-    PTRACE(2, "H245\tCould not open channel after T.38 mode change");
-  }
-
   t38ModeChangeCapabilities = PString::Empty();
+
+  PStringArray formats = modes[pdu.m_response.GetTag() != H245_RequestModeAck_response::e_willTransmitMostPreferredMode
+									 && modes.GetSize() > 1 ? 1 : 0].Tokenise('\t');
+
+  for (PINDEX i = 0; i < formats.GetSize(); i++) {
+    H323Capability * capability = localCapabilities.FindCapability(formats[i]);
+    if (PAssertNULL(capability) != NULL) { // Should not occur!
+      OpalMediaFormat mediaFormat = capability->GetMediaFormat();
+      if (!ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), 0, mediaFormat)) {
+        PTRACE(2, "H245\tCould not open channel after T.38 mode change: " << *capability);
+      }
+    }
+  }
 }
 
 
