@@ -84,19 +84,47 @@ class EchoConnection : public OpalLocalConnection
 
     PMutex m_mediaMutex;
 
-    struct MediaInfo {
-      MediaInfo()
-        : m_hasBeenOpen(false), m_data(2048)
-      { }
+    class MediaInfo {
+      public:
+        MediaInfo(const OpalMediaType & type)
+          : m_type(type)
+          , m_hasBeenOpen(false)
+          , m_data(2048)
+          , m_firstRead(true)
+          , m_readCount(0)
+          , m_droppedFrames(0)
+        { }
 
-      PAdaptiveDelay m_readDelay;
-      bool m_hasBeenOpen;
-      RTP_DataFrame m_data;
-      PSyncPoint m_readSync;
-      PSyncPointAck m_writeSync;
+        ~MediaInfo()
+        {
+          if (m_firstRead) {
+            PTRACE(1, "No statistics for frame rate on " << m_type);
+          } else {
+            PInt64 msecs = (m_lastReadTime - m_firstReadTime).GetMilliSeconds();
+            if (msecs == 0 || m_readCount == 0) {
+              PTRACE(1, "Unable to calc frame rate for " << m_type);
+            }
+            else {
+              PTRACE(1, m_type << " frame rate = " << (m_readCount-1) * 1000.0 / msecs << " fps");
+              cout << m_type << " frame rate = " << (m_readCount-1) * 1000.0 / msecs << " fps" << endl;
+            }
+          }
+        }
+
+        OpalMediaType m_type;
+        PAdaptiveDelay m_readDelay;
+        bool m_hasBeenOpen;
+        RTP_DataFrame m_data;
+        PSyncPoint m_readSync;
+        PSyncPointAck m_writeSync;
+        bool m_firstRead;
+        PTime m_firstReadTime, m_lastReadTime;
+        unsigned m_readCount;
+        unsigned m_droppedFrames;
+        WORD m_lastSequenceNumber;
     };
 
-    typedef std::map<std::string, MediaInfo> MediaMapType;
+    typedef std::map<std::string, MediaInfo *> MediaMapType;
     MediaMapType m_mediaMap;
 };
 
@@ -425,6 +453,12 @@ EchoConnection::EchoConnection(OpalCall & call,
 
 EchoConnection::~EchoConnection()
 {
+PTRACE(1, "Deleting connection");
+    PWaitAndSignal m(m_mediaMutex);
+  while (m_mediaMap.size() > 0) {
+    delete m_mediaMap.begin()->second;
+    m_mediaMap.erase(m_mediaMap.begin());
+  }
 }
 
 
@@ -435,53 +469,82 @@ bool EchoConnection::OnReadMediaFrame(
 {
   OpalMediaFormat fmt = mediaStream.GetMediaFormat();
   OpalMediaType mediaType = fmt.GetMediaType();
+
   MediaMapType::iterator r;
 
   {
     PWaitAndSignal m(m_mediaMutex);
     r = m_mediaMap.find(mediaType);
     if (r == m_mediaMap.end()) 
-      r = m_mediaMap.insert(MediaMapType::value_type(mediaType, MediaInfo())).first;
+      r = m_mediaMap.insert(MediaMapType::value_type(mediaType, new MediaInfo(mediaType))).first;
   }
 
-  MediaInfo & info = r->second;
+  MediaInfo & info = *r->second;
 
   info.m_readSync.Signal();
 
-  PTimer timer(1000);
-
-  while (!info.m_writeSync.Wait(20)) {
-    if (!mediaStream.IsOpen()) {
-      if (info.m_hasBeenOpen) {
-        PTRACE(1, "Read media stream closed");
-        return false;
-      }
-      if (timer == 0) {
-        PTRACE(1, "Read media stream won't open");
-        return false;
-      }
-    }
-  }
-
-  info.m_hasBeenOpen = true;
-
-  frame = info.m_data;
-
-  info.m_writeSync.Acknowledge();
+  if (!mediaStream.IsOpen()) 
+    return false;
 
   int delay;
-  if (fmt.GetMediaType() == OpalMediaType::Audio()) {
-    delay = frame.GetPayloadSize() / (fmt.GetClockRate() / 500);
-    if (delay == 0)
-      delay = 20;
-  }
-  else if (fmt.GetMediaType() == OpalMediaType::Video()) {
+#if 0
+  if (mediaType == OpalMediaType::Video()) {
+
+    int w = 176;
+    int h = 144;
+    frame.SetPayloadSize(sizeof(OpalVideoTranscoder::FrameHeader) + w * h * 3 / 2);
+    
     OpalVideoTranscoder::FrameHeader * hdr = (OpalVideoTranscoder::FrameHeader *)frame.GetPayloadPtr();
-PTRACE(1, "Read frame " << hdr->width << "x" << hdr->height << ",ts=" << frame.GetTimestamp() << ",seq=" << frame.GetSequenceNumber() << ",psz=" << frame.GetPayloadSize());
-    delay = 0; // fmt.GetFrameTime() / 90;
+    hdr->width = w;
+    hdr->height = h;
+    hdr->x      = 0;
+    hdr->y      = 0;
+
+    BYTE * p = frame.GetPayloadPtr() + sizeof(OpalVideoTranscoder::FrameHeader);
+    memset(p, 0x00, w*h);
+    p += w*h;
+    memset(p, 0x80, w*h/2);
+    
+    delay = 100;
   }
   else
-    delay = 100;
+#endif
+  {
+
+    PTimer timer(1000);
+
+    while (!info.m_writeSync.Wait(20)) {
+      if (!mediaStream.IsOpen()) {
+        if (info.m_hasBeenOpen) {
+          PTRACE(1, "Read media stream closed");
+          return false;
+        }
+        if (timer == 0) {
+          PTRACE(1, "Read media stream won't open");
+          return false;
+        }
+      }
+    } 
+
+    info.m_hasBeenOpen = true;
+
+    frame = info.m_data;
+
+    info.m_writeSync.Acknowledge();
+
+    if (fmt.GetMediaType() == OpalMediaType::Audio()) {
+      delay = frame.GetPayloadSize() / (fmt.GetClockRate() / 500);
+      if (delay == 0)
+        delay = 20;
+    }
+    else if (fmt.GetMediaType() == OpalMediaType::Video()) {
+      //OpalVideoTranscoder::FrameHeader * hdr = (OpalVideoTranscoder::FrameHeader *)frame.GetPayloadPtr();
+//PTRACE(1, "Read frame " << hdr->width << "x" << hdr->height << ",ts=" << frame.GetTimestamp() << ",seq=" << frame.GetSequenceNumber() << ",psz=" << frame.GetPayloadSize());
+      delay = 0; // fmt.GetFrameTime() / 90;
+    }
+    else
+      delay = 100;
+  }
 
   if (delay > 0)
     info.m_readDelay.Delay(delay);
@@ -502,34 +565,54 @@ bool EchoConnection::OnWriteMediaFrame(
     PWaitAndSignal m(m_mediaMutex);
     r = m_mediaMap.find(mediaType);
     if (r == m_mediaMap.end()) 
-      r = m_mediaMap.insert(MediaMapType::value_type(mediaType, MediaInfo())).first;
+      r = m_mediaMap.insert(MediaMapType::value_type(mediaType, new MediaInfo(mediaType))).first;
   }
 
-  if (fmt.GetMediaType() == OpalMediaType::Video()) {
-    OpalVideoTranscoder::FrameHeader * hdr = (OpalVideoTranscoder::FrameHeader *)frame.GetPayloadPtr();
-PTRACE(1, "Writing frame " << hdr->width << "x" << hdr->height << ",ts=" << frame.GetTimestamp() << ",seq=" << frame.GetSequenceNumber() << ",psz=" << frame.GetPayloadSize());
+  //if (fmt.GetMediaType() == OpalMediaType::Video()) {
+  //  OpalVideoTranscoder::FrameHeader * hdr = (OpalVideoTranscoder::FrameHeader *)frame.GetPayloadPtr();
+//PTRACE(1, "Writing frame " << hdr->width << "x" << hdr->height << ",ts=" << frame.GetTimestamp() << ",seq=" << frame.GetSequenceNumber() << ",psz=" << frame.GetPayloadSize());
+  //}
+
+  MediaInfo & info = *r->second;
+
+  if (!info.m_firstRead)
+    ++info.m_lastSequenceNumber;
+  else {
+    info.m_firstRead = false;
+    info.m_firstReadTime = PTime();
+    info.m_lastSequenceNumber = frame.GetSequenceNumber();
   }
 
-  MediaInfo & info = r->second;
+  WORD newSeq = frame.GetSequenceNumber();
+
+  if (info.m_lastSequenceNumber != newSeq) {
+    int dropped = (int)newSeq - (int)info.m_lastSequenceNumber;
+    if (dropped < 0)
+      dropped += 0x10000;
+    //PTRACE(1, info.m_type << " media stream dropped " << dropped << " frames");
+    info.m_droppedFrames += dropped;
+    info.m_lastSequenceNumber = newSeq;
+  }
+
+  info.m_readCount++;
+  info.m_lastReadTime = PTime();
 
   PTimer timer(1000);
   while (!info.m_readSync.Wait(20)) {
-    if (!mediaStream.IsOpen()) {
-      if (info.m_hasBeenOpen) {
-        PTRACE(1, "Write media stream closed");
-        return false;
-      }
-      if (timer > 1000) {
-        PTRACE(1, "Write media stream won't open");
-        return false;
-      }
+    if (!mediaStream.IsOpen() && info.m_hasBeenOpen) {
+      PTRACE(1, "Write media stream closed");
+      return false;
+    }
+    if (!timer.IsRunning()) {
+      PTRACE(1, "Write media stream won't open or has stopped");
+      return false;
     }
   }
   info.m_hasBeenOpen = true;
 
   info.m_data = frame;
 
-  info.m_writeSync.Signal();
+  info.m_writeSync.Signal(1000);
 
   return true;
 }
