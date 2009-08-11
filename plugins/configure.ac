@@ -257,6 +257,9 @@ else
                     ],
                     [
                      HAVE_LIBAVCODEC=no
+                     HAVE_H263P=no
+                     HAVE_MPEG4=no
+                     HAVE_H264_DECODER=no
                     ]
                    )
 fi
