@@ -9619,11 +9619,17 @@ fi
 echo "${ECHO_T}no" >&6; }
 
                      HAVE_LIBAVCODEC=no
+                     HAVE_H263P=no
+                     HAVE_MPEG4=no
+                     HAVE_H264_DECODER=no
 
 
 elif test $pkg_failed = untried; then
 
                      HAVE_LIBAVCODEC=no
+                     HAVE_H263P=no
+                     HAVE_MPEG4=no
+                     HAVE_H264_DECODER=no
 
 
 else
