@@ -247,9 +247,15 @@ inline static unsigned CalculateTimestamp(PINDEX size, const OpalMediaFormat & m
 
 PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
+  if (!isOpen)
+    return false;
+
   unsigned oldTimestamp = timestamp;
 
-  PAssert(defaultDataSize >= (packet.GetSize() - RTP_DataFrame::MinHeaderSize), "buffer for media packet is too small");
+  {
+  stringstream str; str << "buffer " << (packet.GetSize() - RTP_DataFrame::MinHeaderSize) << " too small for media packet " << defaultDataSize;
+  PAssert(defaultDataSize >= (packet.GetSize() - RTP_DataFrame::MinHeaderSize), str.str().c_str());
+  }
 
   PINDEX lastReadCount;
   if (!ReadData(packet.GetPayloadPtr(), defaultDataSize, lastReadCount))
@@ -275,6 +281,9 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
 
 PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
 {
+  if (!isOpen)
+    return false;
+
   if (paused)
     packet.SetPayloadSize(0);
 
