@@ -669,7 +669,7 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
 
   CODEC_TRACER(tracer, "Input:seq=" << _frameCount
                        << ",size=" << header->width << "x" << header->height
-                       << ",I=" << ((flags && forceIFrame) ? "yes" : "no"));
+                       << ",I forced=" << ((flags && forceIFrame) ? "yes" : "no") << (int)flags);
 
   ++_frameCount;
 
@@ -1937,8 +1937,8 @@ static struct PluginCodec_Definition h263CodecDefn[] = {
   H263P_BITRATE,                      // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF4_WIDTH,                         // frame width
-  CIF4_HEIGHT,                        // frame height
+  CIF_WIDTH,                         // frame width
+  CIF_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
   0,                                  // IANA RTP payload code
@@ -1971,8 +1971,8 @@ static struct PluginCodec_Definition h263CodecDefn[] = {
   H263P_BITRATE,                      // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF4_WIDTH,                         // frame width
-  CIF4_HEIGHT,                        // frame height
+  CIF_WIDTH,                         // frame width
+  CIF_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
   0,                                  // IANA RTP payload code
@@ -2007,8 +2007,8 @@ static struct PluginCodec_Definition h263CodecDefn[] = {
   20000,                              // nanoseconds per frame
 
   {{
-    CIF16_WIDTH,                        // frame width
-    CIF16_HEIGHT,                       // frame height
+    CIF_WIDTH,                        // frame width
+    CIF_HEIGHT,                       // frame height
     10,                                 // recommended frame rate
     60,                                 // maximum frame rate
   }},
@@ -2044,8 +2044,8 @@ static struct PluginCodec_Definition h263CodecDefn[] = {
   20000,                              // nanoseconds per frame
 
   {{
-    CIF16_WIDTH,                        // frame width
-    CIF16_HEIGHT,                       // frame height
+    CIF_WIDTH,                        // frame width
+    CIF_HEIGHT,                       // frame height
     10,                                 // recommended frame rate
     60,                                 // maximum frame rate
   }},
