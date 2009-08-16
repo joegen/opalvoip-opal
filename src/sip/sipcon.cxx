@@ -1177,6 +1177,7 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   PString name(m_connStringOptions(OPAL_OPT_CALLING_PARTY_NAME));
   if (!name.IsEmpty())
     myAddress.SetDisplayName(name);
+  std::cout << name << std::endl << std::flush;
 
   PString domain(m_connStringOptions(OPAL_OPT_CALLING_PARTY_DOMAIN));
   if (!domain.IsEmpty())
@@ -1194,6 +1195,7 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   SIPTransaction * invite = new SIPInvite(*this, transport, OpalRTPSessionManager(*this));
 
   SIPURL contact = invite->GetMIME().GetContact();
+  contact.SetUserName(myAddress.GetUserName());
   if (!number.IsEmpty())
     contact.SetDisplayName(name);
   if (!domain.IsEmpty())
@@ -2204,6 +2206,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
   transport->SetInterface(transaction.GetInterface());
   SIPTransaction * invite = new SIPInvite(*this, *transport, ((SIPInvite &)transaction).GetSessionManager());
+  invite->GetMIME().SetContact(transaction.GetMIME().GetContact ());
 
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.
