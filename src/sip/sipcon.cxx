@@ -1177,7 +1177,6 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   PString name(m_connStringOptions(OPAL_OPT_CALLING_PARTY_NAME));
   if (!name.IsEmpty())
     myAddress.SetDisplayName(name);
-  std::cout << name << std::endl << std::flush;
 
   PString domain(m_connStringOptions(OPAL_OPT_CALLING_PARTY_DOMAIN));
   if (!domain.IsEmpty())
