@@ -2387,27 +2387,31 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
 
       // set the remote address 
       mediaSession->SetRemoteMediaAddress(address, mediaDescription->GetMediaFormats());
-
-    } else {
+    }
+    else {
       RTP_UDP *rtpSession = OnUseRTPSession(rtpSessionId, mediaType, address, localAddress);
-      if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId))
-        return false;
-
-      // set the remote address 
-      PIPSocket::Address ip;
-      WORD port = 0;
-      if (!address.GetIpAndPort(ip, port) || port == 0) {
-        PTRACE(1, "SIP\tCannot get remote ip/ports for RTP session");
-        return false;
+      if (rtpSession == NULL) {
+        if (localAddress.IsEmpty())
+          return false;
+        // If have a local address, it means we have media bypass enabled
       }
+      else {
+        // set the remote address 
+        PIPSocket::Address ip;
+        WORD port = 0;
+        if (!address.GetIpAndPort(ip, port) || port == 0) {
+          PTRACE(1, "SIP\tCannot get remote ip/ports for RTP session");
+          return false;
+        }
 
-      // see if remote socket information has changed
-      remoteChanged = (rtpSession->GetRemoteAddress() != ip) || (rtpSession->GetRemoteDataPort() != port);
-      if (remoteChanged && !rtpSession->SetRemoteSocketInfo(ip, port, true)) {
-        PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-        return false;
+        // see if remote socket information has changed
+        remoteChanged = (rtpSession->GetRemoteAddress() != ip) || (rtpSession->GetRemoteDataPort() != port);
+        if (remoteChanged && !rtpSession->SetRemoteSocketInfo(ip, port, true)) {
+          PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+          return false;
+        }
+        PTRACE(4, "SIP\tRemote changed IP address");
       }
-      PTRACE(4, "SIP\tRemote changed IP address");
     }
   }
 
