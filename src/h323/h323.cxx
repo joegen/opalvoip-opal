@@ -4819,13 +4819,13 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
   if (otherConnection == NULL)
     return;
 
-  /* This is a spescial case for a T.38 switch over. Normally a H.245 Mode
+  /* This is a special case for a T.38 switch over. Normally a H.245 Mode
      Request is completely independent of what WE are transmitting. But not
-     in the case .f T.38, we need to swutch our side to the same mode as well.
-     So, now we have conviced the other side to send us T.38 data we should
-     do the T.38 and the RequestModeChangeT38() function provided a list of \n
-     separated capability names to start, we use that to start our
-     transmitters to teh same formats. After we close exiting ones, of course!
+     in the case of T.38, we need to switch our side to the same mode as well.
+     So, now we have convinced the other side to send us T.38 data we should
+     do the T.38 switch locally, the RequestModeChangeT38() function provided
+     a list of \n separated capability names to start, we use that to start
+     our transmitters to the same formats. After we close the existing ones!
    */
   CloseAllLogicalChannels(false);
 
