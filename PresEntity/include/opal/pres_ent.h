@@ -50,6 +50,8 @@ class OpalPresEntity : public PSafeObject
     static const char * TimeToLiveKey;
 
     enum State {
+      NoPresence      = -1,    // remove presence status - not the same as NotAvailable or Away
+
       // basic states (from RFC 3863) - must be same order as SIPPresenceInfo::BasicStates
       Unknown         = SIPPresenceInfo::Unknown,
       Available,
@@ -109,8 +111,6 @@ class OpalPresEntity : public PSafeObject
       const PString & note = PString::Empty()
     ) = 0;
 
-    virtual bool RemovePresence() = 0;
-  
     virtual bool HasAttribute(const PString & key) const
     { return m_attributes.Contains(key); }
 

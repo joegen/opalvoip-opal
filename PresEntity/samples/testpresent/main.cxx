@@ -105,6 +105,17 @@ void TestPresEnt::Main()
     return;
   }
 
+  if (args.GetCount() < 5) {
+    cerr << "error: insufficient arguments" << endl;
+    return;
+  }
+
+  const char * server = args[0];
+  const char * pres1  = args[1];
+  const char * pass1  = args[2];
+  const char * pres2  = args[3];
+  const char * pass2  = args[4];
+
   MyManager m_manager;
   SIPEndPoint * sip  = new SIPEndPoint(m_manager);
   if (!sip->StartListener("udp$192.168.2.2")) {
@@ -114,15 +125,14 @@ void TestPresEnt::Main()
 
   OpalPresEntity * sipEntity1;
   {
-    const char * pres1 = "sip:requestec1@colibria.com";
     sipEntity1 = OpalPresEntity::Create(pres1);
       if (sipEntity1 == NULL) {
       cerr << "error: cannot create presentity for '" << pres1 << "'" << endl;
       return;
     }
 
-    sipEntity1->SetAttribute(SIP_PresEntity::DefaultPresenceServerKey, "siptest.colibria.com:5061");
-    sipEntity1->SetAttribute(SIP_PresEntity::AuthPasswordKey,          "requestec1");
+    sipEntity1->SetAttribute(SIP_PresEntity::DefaultPresenceServerKey, server);
+    sipEntity1->SetAttribute(SIP_PresEntity::AuthPasswordKey,          pass1);
 
     if (!sipEntity1->Open(m_manager)) {
       cerr << "error: cannot open presentity '" << pres1 << endl;
@@ -134,15 +144,14 @@ void TestPresEnt::Main()
 
   OpalPresEntity * sipEntity2;
   {
-    const char * pres1 = "sip:requestec2@colibria.com";
-    sipEntity2 = OpalPresEntity::Create(pres1);
+    sipEntity2 = OpalPresEntity::Create(pres2);
     if (sipEntity2 == NULL) {
-      cerr << "error: cannot create presentity for '" << pres1 << "'" << endl;
+      cerr << "error: cannot create presentity for '" << pres2 << "'" << endl;
       return;
     }
 
-    sipEntity2->SetAttribute(SIP_PresEntity::DefaultPresenceServerKey, "siptest.colibria.com:5061");
-    sipEntity2->SetAttribute(SIP_PresEntity::AuthPasswordKey,          "requestec2");
+    sipEntity2->SetAttribute(SIP_PresEntity::DefaultPresenceServerKey, server);
+    sipEntity2->SetAttribute(SIP_PresEntity::AuthPasswordKey,          pass2);
 
     if (!sipEntity2->Open(m_manager)) {
       cerr << "error: cannot open presentity '" << pres1 << endl;
@@ -156,7 +165,7 @@ void TestPresEnt::Main()
 
   Sleep(10000);
 
-  sipEntity1->RemovePresence();
+  sipEntity1->SetPresence(OpalPresEntity::NoPresence);
 
   Sleep(2000);
 

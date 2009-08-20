@@ -73,7 +73,7 @@ bool SIP_PresEntity::Open(OpalManager & manager, const OpalGloballyUniqueID & ui
 
   m_guid = uid;
 
-  // ask profile to send notifies
+  // subscribe to our own watcher information
   if (!SetNotifySubscriptions(true))
     return false;
 
@@ -118,11 +118,6 @@ bool SIPLocal_PresEntity::SetPresence(SIP_PresEntity::State state_, const PStrin
   return false;
 }
 
-
-bool SIPLocal_PresEntity::RemovePresence()
-{
-  return false;
-}
 
 //////////////////////////////////////////////////////////////
 
@@ -205,6 +200,9 @@ bool SIPXCAP_PresEntity::SetPresence(SIP_PresEntity::State state_, const PString
   info.m_presenceAgent = m_presenceServer.GetAddress().AsString();
   info.m_address       = GetSIPAOR().AsString();
 
+  if (state_ == NoPresence)
+    return m_endpoint->PublishPresence(info, 0);
+
   int state = state_;
 
   if (0 <= state && state <= SIPPresenceInfo::Unchanged)
@@ -215,15 +213,4 @@ bool SIPXCAP_PresEntity::SetPresence(SIP_PresEntity::State state_, const PString
   info.m_note = note;
 
   return m_endpoint->PublishPresence(info);
-}
-
-bool SIPXCAP_PresEntity::RemovePresence()
-{
-  SIPPresenceInfo info;
-
-  info.m_presenceAgent = m_presenceServer.GetAddress().AsString();
-  info.m_address       = GetSIPAOR().AsString();
-  info.m_basic         = SIPPresenceInfo::Unknown;
-
-  return m_endpoint->PublishPresence(info, 0);
 }
