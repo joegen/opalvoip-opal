@@ -126,10 +126,12 @@ H323EndPoint::~H323EndPoint()
 
 void H323EndPoint::ShutDown()
 {
-  OpalEndPoint::ShutDown();
-
-  // And shut down the gatekeeper (if there was one)
+  /* Unregister request needs/depends OpalEndpoint listeners object, so shut
+     down the gatekeeper (if there was one) before cleaning up the OpalEndpoint
+     object which kills the listeners. */
   RemoveGatekeeper();
+
+  OpalEndPoint::ShutDown();
 }
 
 
