@@ -56,8 +56,6 @@ class SIP_PresEntity : public OpalPresEntity
       const PString & note = PString::Empty()
     ) = 0;
 
-    virtual bool RemovePresence() = 0;
-  
   protected:
     SIPURL GetSIPAOR() const { return SIPURL(GetAttribute(AddressOfRecordKey));  }
     virtual bool SetNotifySubscriptions(bool on) = 0;
@@ -81,8 +79,6 @@ class SIPLocal_PresEntity : public SIP_PresEntity
       const PString & note = PString::Empty()
     );
 
-    virtual bool RemovePresence();
-
     virtual bool SetNotifySubscriptions(bool on);
 
   protected:
@@ -101,8 +97,6 @@ class SIPXCAP_PresEntity : public SIP_PresEntity
       State state,
       const PString & note = PString::Empty()
     );
-
-    virtual bool RemovePresence();
 
     virtual bool SetNotifySubscriptions(bool on);
 
