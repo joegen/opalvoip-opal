@@ -285,43 +285,104 @@ void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & a
 
 PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
 {
-  PString defaultScheme = p_defaultScheme != NULL ? p_defaultScheme : "sip";
+  /* This will try to parse an SIP URI according to the RFC3261 EBNF
 
-  displayName = PString::Empty();
-  fieldParameters = PString::Empty();
+        Contact        =  ("Contact" / "m" ) HCOLON
+                          ( STAR / (contact-param *(COMMA contact-param)))
+        contact-param  =  (name-addr / addr-spec) *(SEMI contact-params)
 
+        From           =  ( "From" / "f" ) HCOLON from-spec
+        from-spec      =  ( name-addr / addr-spec ) *( SEMI from-param )
+
+        Record-Route   =  "Record-Route" HCOLON rec-route *(COMMA rec-route)
+        rec-route      =  name-addr *( SEMI rr-param )
+
+        Reply-To       =  "Reply-To" HCOLON rplyto-spec
+        rplyto-spec    =  ( name-addr / addr-spec ) *( SEMI rplyto-param )
+
+        Route          =  "Route" HCOLON route-param *(COMMA route-param)
+        route-param    =  name-addr *( SEMI rr-param )
+
+        To             =  ( "To" / "t" ) HCOLON
+                          ( name-addr / addr-spec ) *( SEMI to-param )
+
+
+     For all of the above the field parameters (contact-params, to-param etc)
+     all degenerate into special cases of the generic-param production. The
+     generic-param is always included as an option for all these fields as
+     well, so for general parsing we just need to parse the EBNF:
+
+        generic-param  =  token [ EQUAL gen-value ]
+        gen-value      =  token / host / quoted-string
+
+     The URI is then embedded in:
+
+        name-addr      =  [ display-name ] LAQUOT addr-spec RAQUOT
+        addr-spec      =  SIP-URI / SIPS-URI / absoluteURI
+        display-name   =  *(token LWS) / quoted-string
+
+        token          =  1*(alphanum / "-" / "." / "!" / "%" / "*"
+                             / "_" / "+" / "`" / "'" / "~" )
+
+        quoted-string  =  SWS DQUOTE *(qdtext / quoted-pair ) DQUOTE
+        qdtext         =  LWS / %x21 / %x23-5B / %x5D-7E
+                                / UTF8-NONASCII
+        quoted-pair    =  "\" (%x00-09 / %x0B-0C / %x0E-7F)
+
+
+     So, what all that means is we distinguish between name-addr and addr-spec
+     by the '<' character, but we can't just search for it if there is a
+     quoted-string before it in the optional display-name field. So check for
+     that and remove it first, then look for the the '<' which tells us if
+     there COULD be a generic-param later.
+   */
+
+  displayName.MakeEmpty();
+  fieldParameters.MakeEmpty();
+
+  while (isspace(*cstr))
+    cstr++;
   PString str = cstr;
 
+  PINDEX endQuote = 0;
+  if (str[0] == '"') {
+    do {
+      endQuote = str.Find('"', endQuote+1);
+      if (endQuote == P_MAX_INDEX) {
+        PTRACE(1, "SIP\tNo closing double quote in URI: " << str);
+        return false; // No close quote!
+      }
+    } while (str[endQuote-1] == '\\');
+
+    displayName = str(1, endQuote-1);
+
+    PINDEX backslash;
+    while ((backslash = displayName.Find('\\')) != P_MAX_INDEX)
+      displayName.Delete(backslash, 1);
+  }
+
   // see if URL is just a URI or it contains a display address as well
-  PINDEX startBracket = str.FindLast('<');
+  PINDEX startBracket = str.Find('<', endQuote);
   PINDEX endBracket = str.Find('>', startBracket);
+
+  const char * defaultScheme = p_defaultScheme != NULL ? p_defaultScheme : "sip";
 
   // see if URL is just a URI or it contains a display address as well
   if (startBracket == P_MAX_INDEX || endBracket == P_MAX_INDEX) {
     if (!PURL::InternalParse(cstr, defaultScheme))
       return false;
-    }
+  }
   else {
     // get the URI from between the angle brackets
     if (!PURL::InternalParse(str(startBracket+1, endBracket-1), defaultScheme))
-      return PFalse;
+      return false;
 
     fieldParameters = str.Mid(endBracket+1).Trim();
 
-    // See if display address quoted
-    PINDEX endQuote = str.FindLast('"', startBracket);
-    PINDEX startQuote = str.Find('"');
-    if (startQuote == P_MAX_INDEX || endQuote == P_MAX_INDEX || startQuote >= endQuote) {
-      // There are no double quotes around the display name, so take
-      // everything before the start angle bracket
+    if (endQuote == 0) {
+      // There were no double quotes around the display name, take
+      // everything before the start angle bracket, sans whitespace
       displayName = str.Left(startBracket).Trim();
-      }
-    else {
-      // Trim quotes off
-      displayName = str(startQuote+1, endQuote-1);
-      PINDEX backslash;
-      while ((backslash = displayName.Find('\\')) != P_MAX_INDEX)
-        displayName.Delete(backslash, 1);
     }
     }
 
