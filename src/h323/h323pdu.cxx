@@ -599,18 +599,20 @@ unsigned H323GetGenericParameterInteger(const H245_ArrayOf_GenericParameter & pa
 }
 
 
-H245_ParameterValue * H323AddGenericParameter(H245_ArrayOf_GenericParameter & params, unsigned ordinal)
+H245_ParameterValue * H323AddGenericParameter(H245_ArrayOf_GenericParameter & params, unsigned ordinal, bool reorder)
 {
   PINDEX size = params.GetSize();
   params.SetSize(size+1);
 
-  PINDEX pos;
-  for (pos = size; pos > 0; pos--) {
-    const H245_GenericParameter & param = params[pos-1];
-    if (param.m_parameterIdentifier.GetTag() == H245_ParameterIdentifier::e_standard &&
-                          ((const PASN_Integer &)param.m_parameterIdentifier) < ordinal)
-      break;
-    params[pos] = param;
+  PINDEX pos = size;
+  if (reorder) {
+    for (pos = size; pos > 0; pos--) {
+      const H245_GenericParameter & param = params[pos-1];
+      if (param.m_parameterIdentifier.GetTag() == H245_ParameterIdentifier::e_standard &&
+                            ((const PASN_Integer &)param.m_parameterIdentifier) < ordinal)
+        break;
+      params[pos] = param;
+    }
   }
 
   H245_GenericParameter & param = params[pos];
@@ -620,36 +622,37 @@ H245_ParameterValue * H323AddGenericParameter(H245_ArrayOf_GenericParameter & pa
 }
 
 
-void H323AddGenericParameterBoolean(H245_ArrayOf_GenericParameter & params, unsigned ordinal, bool value)
+void H323AddGenericParameterBoolean(H245_ArrayOf_GenericParameter & params, unsigned ordinal, bool value, bool reorder)
 {
   // Do not include a logical at all if it is false
   if (value)
-    H323AddGenericParameter(params, ordinal)->SetTag(H245_ParameterValue::e_logical);
+    H323AddGenericParameter(params, ordinal, reorder)->SetTag(H245_ParameterValue::e_logical);
 }
 
 
 void H323AddGenericParameterInteger(H245_ArrayOf_GenericParameter & params,
                                     unsigned ordinal,
                                     unsigned value,
-                                    H245_ParameterValue::Choices subType)
+                                    H245_ParameterValue::Choices subType,
+                                    bool reorder)
 {
-  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
+  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal, reorder);
   param->SetTag(subType);
   (PASN_Integer &)*param = value;
 }
 
 
-void H323AddGenericParameterString(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PString & value)
+void H323AddGenericParameterString(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PString & value, bool reorder)
 {
-  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
+  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal, reorder);
   param->SetTag(H245_ParameterValue::e_octetString);
   (PASN_OctetString &)*param = value;
 }
 
 
-void H323AddGenericParameterOctets(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PBYTEArray & value)
+void H323AddGenericParameterOctets(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PBYTEArray & value, bool reorder)
 {
-  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
+  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal, reorder);
   param->SetTag(H245_ParameterValue::e_octetString);
   (PASN_OctetString &)*param = value;
 }
@@ -1843,7 +1846,12 @@ H245_GenericMessage & H323ControlPDU::BuildGenericResponse(const PString & ident
 {
   H245_GenericMessage & msg = Build(H245_ResponseMessage::e_genericResponse);
   H323SetCapabilityIdentifier(identifier, msg.m_messageIdentifier);
+
+  msg.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
   msg.m_subMessageIdentifier = subMsgId;
+
+// Assume always have a content
+  msg.IncludeOptionalField(H245_GenericMessage::e_messageContent);
   return msg;
 }
 

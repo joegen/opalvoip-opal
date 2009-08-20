@@ -3091,8 +3091,9 @@ bool H323Connection::OnH239FlowControlRequest(unsigned logicalChannel, unsigned 
 {
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 2).m_messageContent;
-  H323AddGenericParameterInteger(params, 42, logicalChannel);
-  H323AddGenericParameterBoolean(params, 126); // Acknowledge
+  //Viji    08/05/2009 Fix the order of the generic parameters as per Table 11 of H.239 ITU spec
+  H323AddGenericParameterBoolean(params, 126, true, false); // Acknowledge
+  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin, false);
   return WriteControlPDU(pdu);
 }
 
@@ -3107,9 +3108,13 @@ bool H323Connection::OnH239PresentationRequest(unsigned logicalChannel, unsigned
 {
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 4).m_messageContent;
-  H323AddGenericParameterInteger(params, 42, logicalChannel);
-  H323AddGenericParameterInteger(params, 44, terminalLabel);
-  H323AddGenericParameterBoolean(params, 126); // Acknowledge
+  //Viji    08/05/2009 Fix the order of the generic parameters as per 
+  //Table 13/H.239  - presentationTokenResponse syntax in the H.239 ITU spec
+  //Added a flag in H323AddGenericParameter to prevent reordering of the generic parameters
+  H323AddGenericParameterBoolean(params, 126, true, false); // Acknowledge
+  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin, false);
+  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin, false);
+
   return WriteControlPDU(pdu);
 }
 
@@ -3121,8 +3126,9 @@ bool H323Connection::OnH239PresentationResponse(unsigned logicalChannel, unsigne
 
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericCommand(H239MessageOID, 5).m_messageContent;
-  H323AddGenericParameterInteger(params, 42, logicalChannel);
-  H323AddGenericParameterInteger(params, 44, terminalLabel);
+  //Viji    08/05/2009 Fix the order of the generic parameters as per Table 14 of H.239 ITU spec
+  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin, false);
+  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin, false);
   return WriteControlPDU(pdu);
 }
 
