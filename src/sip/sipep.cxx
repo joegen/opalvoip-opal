@@ -680,39 +680,11 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  switch (response.GetStatusCode()) {
-    case SIP_PDU::Failure_IntervalTooBrief :
-      OnReceivedIntervalTooBrief(transaction, response);
-      break;
-
-    case SIP_PDU::Failure_UnAuthorised :
-    case SIP_PDU::Failure_ProxyAuthenticationRequired :
-      OnReceivedAuthenticationRequired(transaction, response);
-      break;
-
-    case SIP_PDU::Failure_RequestTimeout :
-      OnTransactionFailed(transaction);
-      break;
-
-    default :
-      switch (response.GetStatusCode()/100) {
-        case 1 :
-          // Do nothing on 1xx
-          break;
-
-        case 2 :
-          OnReceivedOK(transaction, response);
-          break;
-
-        default :
-          PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
-          if (handler != NULL) 
-            handler->OnFailed(response);
-          else {
-            PTRACE(2, "SIP\tResponse received for unknown handler ID: " << response.GetMIME().GetCallID());
-          }
-          break;
-      }
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
+  if (handler != NULL)
+    handler->OnReceivedResponse(transaction, response);
+  else {
+    PTRACE(2, "SIP\tResponse received for unknown handler ID: " << response.GetMIME().GetCallID());
   }
 }
 
@@ -859,50 +831,6 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   return PTrue;
 }
 
-void SIPEndPoint::OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response)
-{
-  const SIPMIMEInfo & responseMIME = response.GetMIME();
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(responseMIME.GetCallID(), PSafeReadWrite);
-  if (handler == NULL) {
-    PTRACE(2, "SIP\tInterval too brief received for unknown handler ID: " << response.GetMIME().GetCallID());
-    return;
-  }
-
-  SIPTransaction *newTransaction = handler->CreateTransaction(transaction.GetTransport());
-  if (newTransaction) {
-    handler->SetExpire(responseMIME.GetMinExpires());
-    newTransaction->GetMIME().SetExpires(responseMIME.GetMinExpires());
-    newTransaction->GetMIME().SetCallID(handler->GetCallID());
-    if (newTransaction->Start())
-      return;
-  }
-
-  PTRACE(1, "SIP\t Could not restart REGISTER after IntervalTooBrief error!");
-  handler->OnFailed(SIP_PDU::Failure_IntervalTooBrief);
-}
-
-void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
-{
-  // Try to find authentication information for the given call ID
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
-  if (handler != NULL)
-    handler->OnReceivedAuthenticationRequired(transaction, response);
-  else {
-    PTRACE(2, "SIP\tAuthentication required received for unknown handler ID: " << response.GetMIME().GetCallID());
-  }
-}
-
-
-void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
-{
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
-  if (handler != NULL) 
-    handler->OnReceivedOK(transaction, response);
-  else {
-    PTRACE(2, "SIP\tOK received for unknown handler ID: " << response.GetMIME().GetCallID());
-  }
-}
-    
 
 void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
 {
