@@ -3071,6 +3071,12 @@ PObject::Comparison SIPSubscribe::EventPackage::InternalCompare(PINDEX offset, P
   if (myIdPtr == NULL && theirIdPtr == NULL)
     return EqualTo;
 
+  if (myIdPtr == NULL)
+    return LessThan;
+
+  if (theirIdPtr == NULL)
+    return GreaterThan;
+
   const char * myIdEnd = strchr(myIdPtr, ';');
   PINDEX myIdLen = myIdEnd != NULL ? myIdEnd - myIdPtr : strlen(myIdPtr);
 
