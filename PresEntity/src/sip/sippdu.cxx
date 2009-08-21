@@ -3008,6 +3008,8 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
           dest = routeSet.front();
         connection->UnlockReadOnly();
 
+        dest.AdjustToDNS();
+
         m_remoteAddress = dest.GetHostAddress();
         PTRACE(4, "SIP\tTransaction remote address changed to " << m_remoteAddress);
       }

@@ -209,7 +209,9 @@ OpalTransport * SIPHandler::GetTransport()
     m_proxy = endpoint.GetProxy();
 
   // Must specify a network interface or get infinite recursion
-  m_transport = endpoint.CreateTransport(m_proxy.IsEmpty() ? GetAddressOfRecord() : m_proxy, "*");
+  SIPURL url(m_proxy.IsEmpty() ? GetAddressOfRecord() : m_proxy);
+  url.AdjustToDNS();
+  m_transport = endpoint.CreateTransport(url, "*");
   return m_transport;
 }
 

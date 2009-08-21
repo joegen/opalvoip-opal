@@ -35,34 +35,42 @@
 #include <sip/sippres.h>
 #include <ptclib/pdns.h>
 
-const char * SIP_PresEntity::DefaultPresenceServerKey = "default_presence_server";
-const char * SIP_PresEntity::PresenceServerKey        = "presence_server";
+const char * SIP_Presentity::DefaultPresenceServerKey = "default_presence_server";
+const char * SIP_Presentity::PresenceServerKey        = "presence_server";
 
-static PFactory<OpalPresEntity>::Worker<SIPLocal_PresEntity> sip_local_presentityWorker("sip-local");
-static PFactory<OpalPresEntity>::Worker<SIPXCAP_PresEntity>  sip_xcap_presentityWorker1("sip-xcap");
-static PFactory<OpalPresEntity>::Worker<SIPXCAP_PresEntity>  sip_xcap_presentityWorker2("sip");
+static PFactory<OpalPresentity>::Worker<SIPLocal_Presentity> sip_local_PresentityWorker("sip-local");
+static PFactory<OpalPresentity>::Worker<SIPXCAP_Presentity>  sip_xcap_PresentityWorker1("sip-xcap");
+static PFactory<OpalPresentity>::Worker<SIPXCAP_Presentity>  sip_xcap_PresentityWorker2("sip");
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-SIP_PresEntity::SIP_PresEntity()
-  : m_endpoint(NULL)
+SIP_Presentity::SIP_Presentity()
+  : m_manager(NULL)
+  , m_endpoint(NULL)
 { 
 }
 
-SIP_PresEntity::~SIP_PresEntity()
+SIP_Presentity::~SIP_Presentity()
 {
 }
 
-bool SIP_PresEntity::Open(OpalManager & manager, const OpalGloballyUniqueID & uid)
+bool SIP_Presentity::Open(OpalManager * manager)
 {
   // if we have an endpoint, then close the entity
   if (m_endpoint != NULL)
     Close();
 
+  // save the manager
+  m_manager = manager;
+
+  // call the ancestor
+  if (!OpalPresentity::Open())
+    return false;
+
   // find the endpoint
-  m_endpoint = dynamic_cast<SIPEndPoint *>(manager.FindEndPoint("sip"));
+  m_endpoint = dynamic_cast<SIPEndPoint *>(m_manager->FindEndPoint("sip"));
   if (m_endpoint == NULL) {
-    PTRACE(1, "OpalPres\tCannot open SIP_PresEntity without sip endpoint");
+    PTRACE(1, "OpalPres\tCannot open SIP_Presentity without sip endpoint");
     return false;
   }
 
@@ -71,8 +79,6 @@ bool SIP_PresEntity::Open(OpalManager & manager, const OpalGloballyUniqueID & ui
     return false;
   }
 
-  m_guid = uid;
-
   // subscribe to our own watcher information
   if (!SetNotifySubscriptions(true))
     return false;
@@ -80,7 +86,7 @@ bool SIP_PresEntity::Open(OpalManager & manager, const OpalGloballyUniqueID & ui
   return true;
 }
 
-bool SIP_PresEntity::Close()
+bool SIP_Presentity::Close()
 {
   SetNotifySubscriptions(false);
   InternalClose();
@@ -90,30 +96,41 @@ bool SIP_PresEntity::Close()
   return true;
 }
 
+
+bool SIP_Presentity::Save(OpalPresentityStore * store)
+{
+  return false;
+}
+
+bool SIP_Presentity::Restore(OpalPresentityStore * store)
+{
+  return false;
+}
+
 //////////////////////////////////////////////////////////////
 
-SIPLocal_PresEntity::~SIPLocal_PresEntity()
+SIPLocal_Presentity::~SIPLocal_Presentity()
 {
   Close();
 }
 
-bool SIPLocal_PresEntity::InternalOpen()
+bool SIPLocal_Presentity::InternalOpen()
 {
   return true;
 }
 
-bool SIPLocal_PresEntity::InternalClose()
+bool SIPLocal_Presentity::InternalClose()
 {
   return true;
 }
 
-bool SIPLocal_PresEntity::SetNotifySubscriptions(bool start)
+bool SIPLocal_Presentity::SetNotifySubscriptions(bool start)
 {
   return false;
 }
 
 
-bool SIPLocal_PresEntity::SetPresence(SIP_PresEntity::State state_, const PString & note)
+bool SIPLocal_Presentity::SetPresence(SIP_Presentity::State state_, const PString & note)
 {
   return false;
 }
@@ -121,20 +138,20 @@ bool SIPLocal_PresEntity::SetPresence(SIP_PresEntity::State state_, const PStrin
 
 //////////////////////////////////////////////////////////////
 
-SIPXCAP_PresEntity::SIPXCAP_PresEntity()
+SIPXCAP_Presentity::SIPXCAP_Presentity()
 {
 }
 
 
-SIPXCAP_PresEntity::~SIPXCAP_PresEntity()
+SIPXCAP_Presentity::~SIPXCAP_Presentity()
 {
   Close();
 }
 
 
-bool SIPXCAP_PresEntity::InternalOpen()
+bool SIPXCAP_Presentity::InternalOpen()
 {
-  // find presence server for presentity as per RFC 3861
+  // find presence server for Presentity as per RFC 3861
   // if not found, look for default presence server setting
   // if none, use hostname portion of domain name
   SIPURL sipAOR(GetSIPAOR());
@@ -143,8 +160,8 @@ bool SIPXCAP_PresEntity::InternalOpen()
     PTRACE(1, "OpalPres\tSRV lookup for '" << sipAOR.GetHostName() << "_pres._sip' succeeded");
     m_presenceServer = addrs[0];
   }
-  else if (HasAttribute(SIP_PresEntity::DefaultPresenceServerKey)) {
-    m_presenceServer = GetAttribute(SIP_PresEntity::DefaultPresenceServerKey);
+  else if (HasAttribute(SIP_Presentity::DefaultPresenceServerKey)) {
+    m_presenceServer = GetAttribute(SIP_Presentity::DefaultPresenceServerKey);
   } 
   else
     m_presenceServer = PIPSocketAddressAndPort(sipAOR.GetHostName(), sipAOR.GetPort());
@@ -154,17 +171,17 @@ bool SIPXCAP_PresEntity::InternalOpen()
     return false;
   }
 
-  SetAttribute(SIP_PresEntity::PresenceServerKey, m_presenceServer.AsString());
+  SetAttribute(SIP_Presentity::PresenceServerKey, m_presenceServer.AsString());
 
   return true;
 }
 
-bool SIPXCAP_PresEntity::InternalClose()
+bool SIPXCAP_Presentity::InternalClose()
 {
   return true;
 }
 
-bool SIPXCAP_PresEntity::SetNotifySubscriptions(bool start)
+bool SIPXCAP_Presentity::SetNotifySubscriptions(bool start)
 {
   // subscribe to the presence.winfo event on the presence server
   unsigned type = SIPSubscribe::Presence | SIPSubscribe::Watcher;
@@ -178,9 +195,9 @@ bool SIPXCAP_PresEntity::SetNotifySubscriptions(bool start)
     SIPSubscribe::Params param(type);
     param.m_addressOfRecord   = aorStr;
     param.m_agentAddress      = m_presenceServer.GetAddress().AsString();
-    param.m_authID            = GetAttribute(OpalPresEntity::AuthNameKey, aor.GetUserName() + '@' + aor.GetHostAddress());
-    param.m_password          = GetAttribute(OpalPresEntity::AuthPasswordKey);
-    unsigned ttl = GetAttribute(OpalPresEntity::TimeToLiveKey, "30").AsInteger();
+    param.m_authID            = GetAttribute(OpalPresentity::AuthNameKey, aor.GetUserName() + '@' + aor.GetHostAddress());
+    param.m_password          = GetAttribute(OpalPresentity::AuthPasswordKey);
+    unsigned ttl = GetAttribute(OpalPresentity::TimeToLiveKey, "30").AsInteger();
     if (ttl == 0)
       ttl = 300;
     param.m_expire            = start ? ttl : 0;
@@ -193,7 +210,7 @@ bool SIPXCAP_PresEntity::SetNotifySubscriptions(bool start)
 }
 
 
-bool SIPXCAP_PresEntity::SetPresence(SIP_PresEntity::State state_, const PString & note)
+bool SIPXCAP_Presentity::SetPresence(SIP_Presentity::State state_, const PString & note)
 {
   SIPPresenceInfo info;
 
