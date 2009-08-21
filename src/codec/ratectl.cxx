@@ -119,7 +119,7 @@ unsigned OpalBitRateCalculator::GetTrialBitRate(PINDEX size)
   unsigned trialBitRate = 0;
 
   if (m_history.size() > 0) 
-    trialBitRate = (unsigned)((size + m_historySize) * 8 * 1000 / (m_quanta + (now - m_history.front().m_timeStamp)));
+    trialBitRate = (unsigned)((size + (PInt64)m_historySize) * 8 * 1000 / (m_quanta + (now - m_history.front().m_timeStamp)));
 
   return trialBitRate;
 }
@@ -130,7 +130,7 @@ unsigned OpalBitRateCalculator::GetBitRate()
   Flush(now);
 
   if (m_history.size() > 0) 
-    m_bitRate = (unsigned)((m_historySize * 8 * 1000) / (m_quanta + (now - m_history.front().m_timeStamp)));
+    m_bitRate = (unsigned)(((PInt64)m_historySize * 8 * 1000) / (m_quanta + (now - m_history.front().m_timeStamp)));
 
   return m_bitRate;
 }
