@@ -36,18 +36,28 @@
 
 #include <opal/pres_ent.h>
 
-class SIP_PresEntity : public OpalPresEntity
+class SIP_Presentity : public OpalPresentity
 {
   public:
     static const char * DefaultPresenceServerKey;
     static const char * PresenceServerKey;
 
-    SIP_PresEntity();
-    ~SIP_PresEntity();
+    SIP_Presentity();
+    ~SIP_Presentity();
+
+    virtual bool Open(
+      OpalManager * manager = NULL
+    );
 
     virtual bool IsOpen() const { return m_endpoint != NULL; }
 
-    virtual bool Open(OpalManager & manager, const OpalGloballyUniqueID & uid);
+    virtual bool Save(
+      OpalPresentityStore * store
+    );
+
+    virtual bool Restore(
+      OpalPresentityStore * store
+    );
 
     virtual bool Close();
 
@@ -65,14 +75,15 @@ class SIP_PresEntity : public OpalPresEntity
     virtual bool InternalOpen() = 0;
     virtual bool InternalClose() = 0;
 
+    OpalManager * m_manager;
     SIPEndPoint * m_endpoint;
 };
 
 
-class SIPLocal_PresEntity : public SIP_PresEntity
+class SIPLocal_Presentity : public SIP_Presentity
 {
   public:
-    ~SIPLocal_PresEntity();
+    ~SIPLocal_Presentity();
 
     virtual bool SetPresence(
       State state,
@@ -87,11 +98,11 @@ class SIPLocal_PresEntity : public SIP_PresEntity
 };
 
 
-class SIPXCAP_PresEntity : public SIP_PresEntity
+class SIPXCAP_Presentity : public SIP_Presentity
 {
   public:
-    SIPXCAP_PresEntity();
-    ~SIPXCAP_PresEntity();
+    SIPXCAP_Presentity();
+    ~SIPXCAP_Presentity();
 
     virtual bool SetPresence(
       State state,

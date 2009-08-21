@@ -123,49 +123,52 @@ void TestPresEnt::Main()
     return;
   }
 
-  OpalPresEntity * sipEntity1;
+  OpalPresentity * sipEntity1;
   {
-    sipEntity1 = OpalPresEntity::Create(pres1);
+    sipEntity1 = OpalPresentity::Restore(pres1);
+    if (sipEntity1 == NULL) {
+      sipEntity1 = OpalPresentity::Create(pres1);
       if (sipEntity1 == NULL) {
-      cerr << "error: cannot create presentity for '" << pres1 << "'" << endl;
-      return;
+        cerr << "error: cannot create presentity for '" << pres1 << "'" << endl;
+        return;
+      }
+
+      sipEntity1->SetAttribute(SIP_Presentity::DefaultPresenceServerKey, server);
+      sipEntity1->SetAttribute(SIP_Presentity::AuthPasswordKey,          pass1);
     }
 
-    sipEntity1->SetAttribute(SIP_PresEntity::DefaultPresenceServerKey, server);
-    sipEntity1->SetAttribute(SIP_PresEntity::AuthPasswordKey,          pass1);
-
-    if (!sipEntity1->Open(m_manager)) {
+    if (!sipEntity1->Open(&m_manager)) {
       cerr << "error: cannot open presentity '" << pres1 << endl;
       return;
     }
 
-    cout << "Opened '" << pres1 << " using presence server '" << sipEntity1->GetAttribute(SIP_PresEntity::PresenceServerKey) << "'" << endl;
+    cout << "Opened '" << pres1 << " using presence server '" << sipEntity1->GetAttribute(SIP_Presentity::PresenceServerKey) << "'" << endl;
   }
 
-  OpalPresEntity * sipEntity2;
+  OpalPresentity * sipEntity2;
   {
-    sipEntity2 = OpalPresEntity::Create(pres2);
+    sipEntity2 = OpalPresentity::Create(pres2);
     if (sipEntity2 == NULL) {
       cerr << "error: cannot create presentity for '" << pres2 << "'" << endl;
       return;
     }
 
-    sipEntity2->SetAttribute(SIP_PresEntity::DefaultPresenceServerKey, server);
-    sipEntity2->SetAttribute(SIP_PresEntity::AuthPasswordKey,          pass2);
+    sipEntity2->SetAttribute(SIP_Presentity::DefaultPresenceServerKey, server);
+    sipEntity2->SetAttribute(SIP_Presentity::AuthPasswordKey,          pass2);
 
-    if (!sipEntity2->Open(m_manager)) {
+    if (!sipEntity2->Open(&m_manager)) {
       cerr << "error: cannot open presentity '" << pres1 << endl;
       return;
     }
 
-    cout << "Opened '" << pres1 << " using presence server '" << sipEntity2->GetAttribute(SIP_PresEntity::PresenceServerKey) << "'" << endl;
+    cout << "Opened '" << pres1 << " using presence server '" << sipEntity2->GetAttribute(SIP_Presentity::PresenceServerKey) << "'" << endl;
   }
 
-  sipEntity1->SetPresence(OpalPresEntity::Available);
+  sipEntity1->SetPresence(OpalPresentity::Available);
 
   Sleep(10000);
 
-  sipEntity1->SetPresence(OpalPresEntity::NoPresence);
+  sipEntity1->SetPresence(OpalPresentity::NoPresence);
 
   Sleep(2000);
 
