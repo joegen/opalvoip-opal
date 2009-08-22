@@ -315,6 +315,9 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
 
   protected:
+    bool EncodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
+    bool DecodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
+
     RTP_DataFrame * m_bufferRTP;
     PTimeInterval   m_lastVideoFastUpdate;
 
