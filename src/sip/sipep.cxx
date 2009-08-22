@@ -933,6 +933,59 @@ void SIPEndPoint::OnRegistered(const PString & /*aor*/,
 }
 
 
+void SIPEndPoint::NormaliseAddresses(const PString & user,
+                                     const PString & host,
+                                     SIPURL & aor,
+                                     SIPURL & server)
+{
+  /* Try to be intelligent about what we got in the two fields target/remote,
+     we have several scenarios depending on which is a partial or full URL.
+   */
+
+  if (user.IsEmpty()) {
+    if (host.IsEmpty())
+      aor = server = GetDefaultLocalPartyName() + '@' + PIPSocket::GetHostName();
+    else if (host.Find('@') == P_MAX_INDEX)
+      aor = server = GetDefaultLocalPartyName() + '@' + host;
+    else
+      aor = server = host;
+  }
+  else if (user.Find('@') == P_MAX_INDEX) {
+    if (host.IsEmpty())
+      aor = server = GetDefaultLocalPartyName() + '@' + user;
+    else if (host.Find('@') == P_MAX_INDEX)
+      aor = server = user + '@' + host;
+    else {
+      server = host;
+      aor = user + '@' + server.GetHostName();
+    }
+  }
+  else {
+    aor = user;
+    if (host.IsEmpty())
+      server = aor;
+    else if (host.Find('@') != P_MAX_INDEX)
+      server = host; // For third party registrations
+    else {
+      SIPURL remoteURL = host;
+      if (aor.GetHostAddress().IsEquivalent(remoteURL.GetHostAddress()))
+        server = aor;
+      else {
+        /* Note this sets the proxy field because the user has given a full AOR
+           with a domain for "user" and then specified a specific host name
+           which as far as we are concered is the host to talk to. Setting the
+           proxy will prevent SRV lookups or other things that might stop uis
+           from going to that very specific host.
+         */
+        server = remoteURL;
+        server.SetUserName(aor.GetUserName());
+        server.SetParamVar("proxy", host);
+      }
+    }
+  }
+}
+
+
 PBoolean SIPEndPoint::IsRegistered(const PString & url, bool includeOffline) 
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
@@ -971,10 +1024,8 @@ void SIPEndPoint::OnSubscriptionStatus(SIPSubscribeHandler & handler,
                                        bool reSubscribing,
                                        SIP_PDU::StatusCodes reason)
 {
-  SIPSubscribe::Params & params = handler.GetParams();
-
   // backwards compatiblity
-  OnSubscriptionStatus(params.m_eventPackage, 
+  OnSubscriptionStatus(handler.GetParams().m_eventPackage, 
                        aor, 
                        wasSubscribing, 
                        reSubscribing, 
@@ -992,23 +1043,12 @@ bool SIPEndPoint::Register(const PString & host,
                            const PTimeInterval & maxRetryTime)
 {
   SIPRegister::Params params;
-
-  if (user.Find('@') == P_MAX_INDEX) {
-    if (user.IsEmpty())
-      params.m_addressOfRecord = GetDefaultLocalPartyName() + '@' + host;
-    else
-      params.m_addressOfRecord = user + '@' + host;
-  }
-  else {
-    params.m_addressOfRecord = user;
-    if (!host.IsEmpty())
-      params.m_addressOfRecord += ";proxy=" + host;
-  }
-
+  params.m_addressOfRecord = user;
+  params.m_registrarAddress = host;
   params.m_authID = authName;
   params.m_password = password;
   params.m_realm = realm;
-  params.m_expire = expire != 0 ? expire : GetRegistrarTimeToLive().GetSeconds();
+  params.m_expire = expire;
   params.m_minRetryTime = minRetryTime;
   params.m_maxRetryTime = maxRetryTime;
 
@@ -1019,14 +1059,9 @@ bool SIPEndPoint::Register(const PString & host,
 
 bool SIPEndPoint::Register(const SIPRegister::Params & params, PString & aor)
 {
-  if (params.m_expire == 0) {
-    aor = params.m_addressOfRecord;
-    return Unregister(params.m_addressOfRecord);
-  }
-
   PTRACE(4, "SIP\tStart REGISTER\n"
             "        aor=" << params.m_addressOfRecord << "\n"
-            "  registrar=" << params.m_registrarAddress << "\n"
+            "  registrar=" << params.m_addressOfRecord << "\n"
             "    contact=" << params.m_contactAddress << "\n"
             "     authID=" << params.m_authID << "\n"
             "      realm=" << params.m_realm << "\n"
@@ -1035,7 +1070,9 @@ bool SIPEndPoint::Register(const SIPRegister::Params & params, PString & aor)
             "   minRetry=" << params.m_minRetryTime << "\n"
             "   maxRetry=" << params.m_maxRetryTime);
 
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadWrite);
+  SIPURL searchAOR, dummy;
+  NormaliseAddresses(params.m_addressOfRecord, params.m_addressOfRecord, searchAOR, dummy);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(searchAOR, SIP_PDU::Method_REGISTER, PSafeReadWrite);
 
   // If there is already a request with this URL and method, 
   // then update it with the new information
@@ -1102,20 +1139,14 @@ bool SIPEndPoint::Subscribe(SIPSubscribe::PredefinedPackages eventPackage, unsig
 
 bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & params, PString & aor)
 {
-  // Zero is special case of unsubscribe
-  if (params.m_expire == 0) {
-    aor = params.m_addressOfRecord;
-    return Unsubscribe(params.m_eventPackage, params.m_addressOfRecord);
-  }
+  SIPURL searchAOR, dummy;
+  NormaliseAddresses(params.m_addressOfRecord, params.m_agentAddress, searchAOR, dummy);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(searchAOR, SIP_PDU::Method_SUBSCRIBE, params.m_eventPackage, PSafeReadWrite);
 
-  // Create the SIPHandler structure
-  PSafePtr<SIPSubscribeHandler> handler = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(
-          activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_SUBSCRIBE, params.m_eventPackage, PSafeReadWrite));
-  
   // If there is already a request with this URL and method, 
   // then update it with the new information
   if (handler != NULL && handler->GetState() != SIPHandler::Unsubscribed)
-    handler->UpdateParameters(params);
+    PSafePtrCast<SIPHandler, SIPSubscribeHandler>(handler)->UpdateParameters(params);
   else {
     // Otherwise create a new request with this method type
     handler = new SIPSubscribeHandler(*this, params);
@@ -1188,6 +1219,7 @@ bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const
   return atLeastOne;
 }
 
+
 PBoolean SIPEndPoint::Message(const PURL & to, const PString & type, const PString & body, PURL & from, PString & conversationId)
 {
   if (conversationId.IsEmpty()) 
@@ -1212,11 +1244,13 @@ PBoolean SIPEndPoint::Message(const PURL & to, const PString & type, const PStri
 }
 
 
-PBoolean SIPEndPoint::Ping(const PString & to)
+PBoolean SIPEndPoint::Ping(const PURL & to)
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_PING, PSafeReference);
-  if (handler == NULL)
+  if (handler == NULL) {
     handler = new SIPPingHandler(*this, to);
+    activeSIPHandlers.Append(handler);
+  }
 
   return handler->ActivateState(SIPHandler::Subscribing);
 }
@@ -1224,7 +1258,9 @@ PBoolean SIPEndPoint::Ping(const PString & to)
 
 bool SIPEndPoint::Publish(const SIPSubscribe::Params & params, const PString & body, PString & aor)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_PUBLISH, PSafeReadWrite);
+  SIPURL searchAOR, dummy;
+  NormaliseAddresses(params.m_addressOfRecord, params.m_agentAddress, searchAOR, dummy);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(searchAOR, SIP_PDU::Method_PUBLISH, PSafeReadWrite);
   if (handler != NULL)
     handler->SetBody(body);
   else {
@@ -1368,7 +1404,7 @@ PBoolean SIPEndPoint::GetAuthentication(const PString & authRealm, PString & rea
 SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url, const OpalTransport & transport)
 {
   // Look up by the full URL first in case of multiple registrations to the same domain.
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(url.AsString(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (handler == NULL) {
     // Precise AOR not found, locate the name used for the domain.
     handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
@@ -1430,7 +1466,7 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
 
 SIPURL SIPEndPoint::GetContactURL(const OpalTransport &transport, const SIPURL & localURI)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(localURI.AsString(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(localURI, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (handler == NULL) {
     // Precise AOR not found, locate the name used for the domain.
     handler = activeSIPHandlers.FindSIPHandlerByDomain(localURI.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
