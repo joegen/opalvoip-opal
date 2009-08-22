@@ -1818,6 +1818,19 @@ PStringList SIPHandlersList::GetAddresses(bool includeOffline, SIP_PDU::Methods 
 }
 
 
+static std::string MakeUrlKey(const PURL & aor, SIP_PDU::Methods method, const PString & eventPackage = PString::Empty())
+{
+  PStringStream key;
+
+  key << method << '\n' << aor;
+
+  if (!eventPackage.IsEmpty())
+    key << '\n' << eventPackage;
+
+  return key;
+}
+
+
 /**
   * called when a handler is added
   */
@@ -1842,16 +1855,11 @@ void SIPHandlersList::Append(SIPHandler * obj)
   }
 
   // add entry to url map
-  PString url(handler->GetAddressOfRecord().AsString());
-  PString key;
-  key.sprintf("%i\n%s", handler->GetMethod(), (const char *)url);
-  handler->m_urlKey = (const char *)key;
+  handler->m_urlKey = MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod());
   m_handlersByUrl.insert(StringToHandlerMap::value_type(handler->m_urlKey, handler));
 
   // add entry to url and package map
-  PString pkg(handler->GetEventPackage());
-  key.sprintf("%i\n%s\n%s", handler->GetMethod(), (const char *)url, (const char *)pkg);
-  handler->m_urlAndPackageKey = (const char *)key;
+  handler->m_urlAndPackageKey = MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod(), handler->GetEventPackage());
   m_handlersByUrlAndPackage.insert(StringToHandlerMap::value_type(handler->m_urlAndPackageKey, handler));
 }
 
@@ -1971,14 +1979,11 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
  */
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_PDU::Methods method, PSafetyMode mode)
 {
-  PStringStream key;
-  key << method << '\n' << aor;
-
   PSafePtr<SIPHandler> ptr;
   {
     PWaitAndSignal m(m_extraMutex);
 
-    StringToHandlerMap::iterator r = m_handlersByUrl.find(std::string((const char *)key));
+    StringToHandlerMap::iterator r = m_handlersByUrl.find(MakeUrlKey(aor, method));
     if (r == m_handlersByUrl.end())
       return NULL;
 
@@ -1991,14 +1996,11 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_
 
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_PDU::Methods method, const PString & eventPackage, PSafetyMode mode)
 {
-  PStringStream key;
-  key << method << '\n' << aor << '\n' << eventPackage;
-
   PSafePtr<SIPHandler> ptr;
   {
     PWaitAndSignal m(m_extraMutex);
 
-    StringToHandlerMap::iterator r = m_handlersByUrlAndPackage.find(std::string((const char *)key));
+    StringToHandlerMap::iterator r = m_handlersByUrlAndPackage.find(MakeUrlKey(aor, method, eventPackage));
     if (r == m_handlersByUrlAndPackage.end())
       return NULL;
 
