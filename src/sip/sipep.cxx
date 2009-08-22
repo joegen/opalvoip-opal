@@ -1061,7 +1061,7 @@ bool SIPEndPoint::Register(const SIPRegister::Params & params, PString & aor)
 {
   PTRACE(4, "SIP\tStart REGISTER\n"
             "        aor=" << params.m_addressOfRecord << "\n"
-            "  registrar=" << params.m_addressOfRecord << "\n"
+            "  registrar=" << params.m_registrarAddress << "\n"
             "    contact=" << params.m_contactAddress << "\n"
             "     authID=" << params.m_authID << "\n"
             "      realm=" << params.m_realm << "\n"
@@ -1071,7 +1071,7 @@ bool SIPEndPoint::Register(const SIPRegister::Params & params, PString & aor)
             "   maxRetry=" << params.m_maxRetryTime);
 
   SIPURL searchAOR, dummy;
-  NormaliseAddresses(params.m_addressOfRecord, params.m_addressOfRecord, searchAOR, dummy);
+  NormaliseAddresses(params.m_addressOfRecord, params.m_registrarAddress, searchAOR, dummy);
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(searchAOR, SIP_PDU::Method_REGISTER, PSafeReadWrite);
 
   // If there is already a request with this URL and method, 
