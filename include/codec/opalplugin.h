@@ -169,9 +169,11 @@ enum PluginCodec_CoderFlags {
 };
 
 enum PluginCodec_ReturnCoderFlags {
-  PluginCodec_ReturnCoderLastFrame     = 1,    // indicates when video codec returns last data for frame
-  PluginCodec_ReturnCoderIFrame        = 2,    // indicates when video returns I frame
-  PluginCodec_ReturnCoderRequestIFrame = 4     // indicates when video decoder request I frame for resync
+  PluginCodec_ReturnCoderLastFrame      = 1,    // indicates when video codec returns last data for frame
+  PluginCodec_ReturnCoderIFrame         = 2,    // indicates when video returns I frame
+  PluginCodec_ReturnCoderRequestIFrame  = 4,    // indicates when video decoder request I frame for resync
+  PluginCodec_ReturnCoderBufferTooSmall = 8     // indicates when output buffer is not large enough to receive
+                                                // the data, another call to get_output_data_size is required
 };
 
 struct PluginCodec_Definition;
