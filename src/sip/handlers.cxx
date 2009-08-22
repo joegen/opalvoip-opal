@@ -78,8 +78,8 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
   : endpoint(ep)
   , m_transport(NULL)
   , callID(SIPTransaction::GenerateCallID())
-  , expire(expireTime > 0 ? expireTime : endpoint.GetNotifierTimeToLive().GetSeconds())
-  , originalExpire(expire)
+  , expire(expireTime)
+  , originalExpire(expireTime)
   , offlineExpire(offlineExpireTime)
   , state(Unavailable)
   , retryTimeoutMin(retryMin)
@@ -87,50 +87,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
 {
   transactions.DisallowDeleteObjects();
 
-  /* Try to be intelligent about what we got in the two fields target/remote,
-     we have several scenarios depending on which is a partial or full URL.
-   */
-
-  if (target.IsEmpty()) {
-    if (remote.IsEmpty())
-      m_addressOfRecord = m_remoteAddress = ep.GetDefaultLocalPartyName() + '@' + PIPSocket::GetHostName();
-    else if (remote.Find('@') == P_MAX_INDEX)
-      m_addressOfRecord = m_remoteAddress = ep.GetDefaultLocalPartyName() + '@' + remote;
-    else
-      m_addressOfRecord = m_remoteAddress = remote;
-  }
-  else if (target.Find('@') == P_MAX_INDEX) {
-    if (remote.IsEmpty())
-      m_addressOfRecord = m_remoteAddress = ep.GetDefaultLocalPartyName() + '@' + target;
-    else if (remote.Find('@') == P_MAX_INDEX)
-      m_addressOfRecord = m_remoteAddress = target + '@' + remote;
-    else {
-      m_remoteAddress = remote;
-      m_addressOfRecord = target + '@' + m_remoteAddress.GetHostName();
-    }
-  }
-  else {
-    m_addressOfRecord = target;
-    if (remote.IsEmpty())
-      m_remoteAddress = m_addressOfRecord;
-    else if (remote.Find('@') != P_MAX_INDEX)
-      m_remoteAddress = remote; // For third party registrations
-    else {
-      SIPURL remoteURL = remote;
-      if (m_addressOfRecord.GetHostAddress().IsEquivalent(remoteURL.GetHostAddress()))
-        m_remoteAddress = m_addressOfRecord;
-      else {
-        /* Note this sets the proxy field because the user has givena full AOR
-           with a domain for "target" and then specified a specific host name
-           which as far as we are concered is the host to talk to. Setting the
-           proxy will prevent SRV lookups or other things that might stop uis
-           from going to that very specific host.
-         */
-        m_remoteAddress = m_proxy = remoteURL;
-        m_remoteAddress.SetUserName(m_addressOfRecord.GetUserName());
-      }
-    }
-  }
+  endpoint.NormaliseAddresses(target, remote, m_addressOfRecord, m_remoteAddress);
 
   authenticationAttempts = 0;
   authentication = NULL;
@@ -435,7 +392,7 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
 }
 
 
-void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   SetExpire(response.GetMIME().GetMinExpires());
 
@@ -518,7 +475,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction
 }
 
 
-void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   response.GetMIME().GetProductInfo(m_productInfo);
 
@@ -620,7 +577,7 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   : SIPHandler(endpoint,
                params.m_addressOfRecord,
                params.m_registrarAddress,
-               params.m_expire,
+               params.m_expire > 0 ? params.m_expire : endpoint.GetRegistrarTimeToLive().GetSeconds(),
                params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
   , m_parameters(params)
   , m_sequenceNumber(0)
@@ -796,7 +753,7 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
   : SIPHandler(endpoint,
                params.m_addressOfRecord,
                params.m_agentAddress,
-               params.m_expire,
+               params.m_expire > 0 ? params.m_expire : endpoint.GetNotifierTimeToLive().GetSeconds(),
                params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
   , m_parameters(params)
   , m_unconfirmed(true)
@@ -1178,6 +1135,7 @@ static PFactory<PURLScheme>::Worker<SIPPresenceURL> presenceURL("pres", true);
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if 0
 class SIPPresenceWatcherEventPackageHandler : public SIPEventPackageHandler
 {
   virtual PCaselessString GetContentType() const
@@ -1187,7 +1145,6 @@ class SIPPresenceWatcherEventPackageHandler : public SIPEventPackageHandler
 
   virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
   {
-#if 0
     SIPURL from = request.GetMIME().GetFrom();
     from.Sanitise(SIPURL::ExternalURI);
 
@@ -1285,12 +1242,12 @@ class SIPPresenceWatcherEventPackageHandler : public SIPEventPackageHandler
     }
 
     handler.GetEndPoint().OnPresenceInfoReceived(info);
-#endif
     return true;
   }
 };
 
 static SIPEventPackageFactory::Worker<SIPPresenceWatcherEventPackageHandler> presenceWatcherEventPackageHandler(SIPSubscribe::Presence | SIPSubscribe::Watcher);
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1554,7 +1511,10 @@ SIPNotifyHandler::SIPNotifyHandler(SIPEndPoint & endpoint,
                                    const PString & targetAddress,
                                    const SIPEventPackage & eventPackage,
                                    const SIPDialogContext & dialog)
-  : SIPHandler(endpoint, targetAddress, dialog.GetRemoteURI().AsString())
+  : SIPHandler(endpoint,
+               targetAddress,
+               dialog.GetRemoteURI().AsString(),
+               endpoint.GetNotifierTimeToLive().GetSeconds())
   , m_eventPackage(eventPackage)
   , m_dialog(dialog)
   , m_reason(Deactivated)
@@ -1631,7 +1591,7 @@ SIPPublishHandler::SIPPublishHandler(SIPEndPoint & endpoint,
   : SIPHandler(endpoint,
                params.m_addressOfRecord,
                params.m_agentAddress,
-               params.m_expire,
+               params.m_expire > 0 ? params.m_expire : 60,
                params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
   , m_parameters(params)
   , m_stateChanged(false)
@@ -1768,7 +1728,7 @@ PString SIPPresenceInfo::AsXML() const
 /////////////////////////////////////////////////////////////////////////
 
 SIPMessageHandler::SIPMessageHandler (SIPEndPoint & endpoint, const PString & to, const PString & b, const PString & c, const PString & id)
-  : SIPHandler(endpoint, to, c)
+  : SIPHandler(endpoint, to, c, 60)
 {
   body   = b;
   callID = id;
@@ -1809,9 +1769,8 @@ void SIPMessageHandler::SetBody(const PString & b)
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPPingHandler::SIPPingHandler (SIPEndPoint & endpoint, 
-                                const PString & to)
-  : SIPHandler(endpoint, to, "")
+SIPPingHandler::SIPPingHandler(SIPEndPoint & endpoint, const PURL & to)
+: SIPHandler(endpoint, to.AsString(), PString::Empty(), 60)
 {
 }
 
@@ -2010,7 +1969,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
  * or 6001@seconix.com when registering 6001@seconix.com to
  * sip.seconix.com
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_PDU::Methods method, PSafetyMode mode)
 {
   PStringStream key;
   key << method << '\n' << aor;
@@ -2030,7 +1989,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, S
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, const PString & eventPackage, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_PDU::Methods method, const PString & eventPackage, PSafetyMode mode)
 {
   PStringStream key;
   key << method << '\n' << aor << '\n' << eventPackage;

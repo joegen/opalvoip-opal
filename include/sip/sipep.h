@@ -373,7 +373,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     /// Registration function for backward compatibility.
-    bool Register(
+    bool P_DEPRECATED Register(
       const PString & host,
       const PString & user = PString::Empty(),
       const PString & autName = PString::Empty(),
@@ -569,7 +569,7 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PURL & to, 
       const PString & type,
       const PString & body,
-      PURL & from, 
+      PURL & from,
       PString & conversationId
     );
 
@@ -628,7 +628,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     /**Send a SIP PING to the remote host
       */
     PBoolean Ping(
-      const PString & to
+      const PURL & to
     );
 
 
@@ -803,6 +803,16 @@ class SIPEndPoint : public OpalRTPEndPoint
 #if OPAL_HAS_SIPIM
     virtual OpalSIPIMManager & GetSIPIMManager() { return m_sipIMManager; }
 #endif
+
+    /**This function takes some combinations of addresses and generates normalised
+       address-of-record and server host addresses.
+      */
+    void NormaliseAddresses(
+      const PString & user,
+      const PString & host,
+      SIPURL & aor,
+      SIPURL & server
+    );
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);

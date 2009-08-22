@@ -61,7 +61,7 @@ protected:
     SIPEndPoint & ep, 
     const PString & target,
     const PString & remote,
-    int expireTime = 0,
+    int expireTime,
     int offlineExpire = 30,
     const PTimeInterval & retryMin = PMaxTimeInterval,
     const PTimeInterval & retryMax = PMaxTimeInterval
@@ -229,7 +229,7 @@ public:
 
   virtual bool IsDuplicateCSeq(unsigned sequenceNumber) { return m_dialog.IsDuplicateCSeq(sequenceNumber); }
 
-  SIPSubscribe::Params & GetParams() { return m_parameters; }
+  const SIPSubscribe::Params & GetParams() const { return m_parameters; }
 
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
@@ -335,8 +335,7 @@ class SIPPingHandler : public SIPHandler
 {
   PCLASSINFO(SIPPingHandler, SIPHandler);
 public:
-  SIPPingHandler(SIPEndPoint & ep, 
-                 const PString & to);
+  SIPPingHandler(SIPEndPoint & ep, const PURL & to);
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_MESSAGE; }
@@ -397,8 +396,8 @@ class SIPHandlersList
      * or 6001@seconix.com when registering 6001@seconix.com to
      * sip.seconix.com
      */
-    PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PString & url, SIP_PDU::Methods meth, PSafetyMode m);
-    PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PString & url, SIP_PDU::Methods meth, const PString & eventPackage, PSafetyMode m);
+    PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PURL & url, SIP_PDU::Methods meth, PSafetyMode m);
+    PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PURL & url, SIP_PDU::Methods meth, const PString & eventPackage, PSafetyMode m);
 
     /**
      * Find the SIPHandler object with the specified registration host.

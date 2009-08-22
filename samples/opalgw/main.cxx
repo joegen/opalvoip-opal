@@ -447,8 +447,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   sipEP->SetProxy(cfg.GetString(SIPProxyKey, proxy));
   rsrc->Add(new PHTTPStringField(SIPProxyKey, 25, proxy));
 
-  PString registrar = cfg.GetString(SIPRegistrarKey);
-  rsrc->Add(new PHTTPStringField(SIPRegistrarKey, 25, registrar));
+  SIPRegister::Params registrar;
+  registrar.m_registrarAddress = cfg.GetString(SIPRegistrarKey);
+  rsrc->Add(new PHTTPStringField(SIPRegistrarKey, 25, registrar.m_registrarAddress));
 
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(SIPListenersKey, 25), PFalse);
   if (!sipEP->StartListeners(fieldArray->GetStrings(cfg))) {
@@ -456,9 +457,10 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
   rsrc->Add(fieldArray);
 
-  if (!registrar) {
-    if (sipEP->Register(registrar)) {
-      PSYSTEMLOG(Info, "Registered with registrar " << registrar);
+  if (!registrar.m_registrarAddress) {
+    PString aor;
+    if (sipEP->Register(registrar, aor)) {
+      PSYSTEMLOG(Info, "Registered " << aor);
     }
     else {
       PSYSTEMLOG(Error, "Could not register with registrar!");

@@ -668,13 +668,16 @@ PBoolean MyManager::Initialise(PArgList & args)
     cout <<  "SIP started on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
 
     if (args.HasOption('r')) {
-      PString registrar = args.GetOptionString('r');
-      cout << "Using SIP registrar " << registrar << " ... " << flush;
-      if (sipEP->Register(registrar, args.GetOptionString('u'), args.GetOptionString('u'), args.GetOptionString('p'), args.GetOptionString("sip-domain")))
-        cout << "done.";
+      SIPRegister::Params params;
+      params.m_registrarAddress = args.GetOptionString('r');
+      params.m_addressOfRecord = args.GetOptionString('u');
+      params.m_password = args.GetOptionString('p');
+      params.m_realm = args.GetOptionString("sip-domain");
+      PString aor;
+      if (sipEP->Register(params, aor))
+        cout << "Using SIP registrar " << params.m_registrarAddress << " for " << aor << endl;
       else
-        cout << "failed!";
-      cout << endl;
+        cout << "Could not use SIP registrar " << params.m_registrarAddress << endl;
       pauseBeforeDialing = PTrue;
     }
   }
