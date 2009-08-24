@@ -1876,6 +1876,8 @@ void SIPHandlersList::Remove(SIPHandler * handler)
 
   m_handlersByCallId.erase(handler->GetCallID());
   m_handlersByUserNameAndRealm.erase(handler->m_userNameAndRealmKey);
+  m_handlersByUrl.erase(handler->m_urlKey);
+  m_handlersByUrlAndPackage.erase(handler->m_urlAndPackageKey);
 
   m_handlersList.Remove(handler);
 }
