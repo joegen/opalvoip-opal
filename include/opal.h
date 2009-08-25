@@ -66,7 +66,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 19
+#define OPAL_C_API_VERSION 20
 
 
 ///////////////////////////////////////
@@ -408,6 +408,13 @@ typedef enum OpalEchoCancelMode {
     Returns size of data actually read or written, or -1 if there is an error
     and the media stream should be shut down.
 
+    The "write" function, which is taking data from a remote and providing it
+    to the "C" application for writing, should not be assumed to have a one to
+    one correspondence with RTP packets. The OPAL jiter buffer may insert
+    "silence" data for missing or too late packets. In this case the function
+    is called with the size parameter equal to zero. It is up to the
+    application what it does in that circumstance.
+
     Note that this function will be called in the context of different threads
     so the user must take care of any mutex and synchonisation issues.
  */
@@ -447,7 +454,11 @@ typedef int (*OpalMessageAvailableFunction)(
 
 
 /**Type code the media data call back functions data type.
-   This is used by the OpalCmdSetGeneralParameters command in the OpalParamGeneral structure.
+   This is used by the OpalCmdSetGeneralParameters command in the
+   OpalParamGeneral structure.
+
+   This controls if the whole RTP data frame or just the paylaod part
+   is passed to the read/write function.
   */
 typedef enum OpalMediaDataType {
   OpalMediaDataNoChange,      /**< No change to the media data type. */
@@ -456,6 +467,32 @@ typedef enum OpalMediaDataType {
   OpalMediaDataWithHeader     /**< Indicate the whole RTP frame including header is
                                    passed to the read/write function */
 } OpalMediaDataType;
+
+
+/**Timing mode for the media data call back functions data type.
+   This is used by the OpalCmdSetGeneralParameters command in the
+   OpalParamGeneral structure.
+
+   This controls if the read/write function is in control of the real time
+   aspects of the media flow. If synchronous then the read/write function
+   is expected to handle the real time "pacing" of the read or written data.
+
+   Note this is important both for reads and writes. For example in
+   synchronous mode you cannot simply read from a file and send, or you will
+   likely overrun the remotes buffers. Similarly for writing to a file, the
+   correct operation of the OPAL jitter buffer is dependent on it not being
+   drained too fast by the "write" function.
+
+   If marked as asynchroous then the OPAL stack itself will take care of the
+   timing and things like read/write to a disk file will work correctly.
+  */
+typedef enum OpalMediaTiming {
+  OpalMediaTimingNoChange,      /**< No change to the media data type. */
+  OpalMediaTimingSynchronous,   /**< Indicate the read/write function is going to handle
+                                     all real time aspects of the media flow. */
+  OpalMediaTimingAsynchronous   /**< Indicate the read/write function does not handle
+                                     the real time aspects of the media flow. */
+} OpalMediaTiming;
 
 
 /**General parameters for the OpalCmdSetGeneralParameters command.
@@ -559,6 +596,9 @@ typedef struct OpalParamGeneral {
                                            to the application to send a OpalCmdAlerting message to
                                            indicate to the remote system that we are "ringing".
                                            If zero then no change is made. */
+  OpalMediaTiming m_mediaTiming;      /**< Indicate that the media read/write callback function
+                                           handles the real time aspects of the media flow.
+                                           0=no change, 1=synchronous, 2=asynchronous. */
 } OpalParamGeneral;
 
 
