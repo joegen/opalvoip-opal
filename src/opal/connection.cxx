@@ -1395,13 +1395,15 @@ OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 }
 
 
-void OpalConnection::OnMediaPatchStart(unsigned, bool)
+void OpalConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 {
+  GetEndPoint().GetManager().OnStartMediaPatch(*this, patch);
 }
 
 
-void OpalConnection::OnMediaPatchStop(unsigned, bool)
+void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 {
+  GetEndPoint().GetManager().OnStopMediaPatch(*this, patch);
 }
 
 

@@ -489,14 +489,14 @@ void OpalMediaStream::RemovePatch(OpalMediaPatch * /*patch*/ )
 }
 
 
-void OpalMediaStream::OnPatchStart() 
+void OpalMediaStream::OnStartMediaPatch() 
 { 
-  connection.OnMediaPatchStart(sessionID, isSource);
+  connection.OnStartMediaPatch(*mediaPatch);
 }
 
-void OpalMediaStream::OnPatchStop() 
+void OpalMediaStream::OnStopMediaPatch() 
 { 
-  connection.OnMediaPatchStop(sessionID, isSource);
+  connection.OnStopMediaPatch(*mediaPatch);
 }
 
 
