@@ -37,6 +37,7 @@
 #include <opal/buildopts.h>
 
 #include <t38/t38proto.h>
+#include <opal/patch.h>
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -543,10 +544,9 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
 }
 
 
-void OpalFaxConnection::OnMediaPatchStop(unsigned sessionId, bool isSource)
+void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 {
-  OpalMediaStreamPtr stream = GetMediaStream(sessionId, isSource);
-  bool newMode = stream->GetMediaFormat().GetMediaType() != OpalMediaType::Fax();
+  bool newMode = patch.GetSource().GetMediaFormat().GetMediaType() != OpalMediaType::Fax();
   if (m_faxMode != newMode) {
     m_faxTimer.Stop();
     m_faxMode = newMode;
@@ -558,7 +558,7 @@ void OpalFaxConnection::OnMediaPatchStop(unsigned sessionId, bool isSource)
     }
   }
 
-  OpalConnection::OnMediaPatchStop(sessionId, isSource);
+  OpalConnection::OnStopMediaPatch(patch);
 }
 
 
