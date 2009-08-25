@@ -458,12 +458,24 @@ void OpalMediaPatch::Main()
   PTRACE(4, "Patch\tThread started for " << *this);
 	
   bool asynchronous = OnPatchStart();
+  PTimeInterval lastTick;
+
+  /* Note the RTP frame is outside loop so that a) it is more efficient
+     for memory usage, the buffer is only ever increased and not allocated
+     on the heap ever time, and b) the timestamp value embedded into the
+     sourceFrame is needed for correct operation of the jitter buffer and
+     silence frames. It is adjusted by DispatchFrame (really Sink::WriteFrame)
+     each time and passed back in to source.Read() (and eventually the JB) so
+     it knows where it is up to in extracting data from the JB. */
+  RTP_DataFrame sourceFrame(0);
 
   while (source.IsOpen()) {
-
-    RTP_DataFrame sourceFrame(source.GetDataSize());
     sourceFrame.SetPayloadType(source.GetMediaFormat().GetPayloadType());
-    sourceFrame.SetPayloadSize(0); 
+
+    // We do the following to make sure that the buffer size is large enough,
+    // in case something in previous loop adjusted it
+    sourceFrame.SetPayloadSize(source.GetDataSize());
+    sourceFrame.SetPayloadSize(0);
 
     if (!source.ReadPacket(sourceFrame)) {
       PTRACE(4, "Patch\tThread ended because source read failed");
@@ -479,11 +491,18 @@ void OpalMediaPatch::Main()
       break;
     }
  
-    // Don't starve the CPU if we have idle frames and the no source or destination is synchronous.
-    // Note that performing a Yield is not good enough, as the media patch threads are
-    // high priority and will consume all available CPU if allowed.
-    if (asynchronous)
-      PThread::Sleep(5);
+    /* Don't starve the CPU if we have idle frames and the no source or
+       destination is synchronous. Note that performing a Yield is not good
+       enough, as the media patch threads are high priority and will consume
+       all available CPU if allowed. Also just doing a sleep each time around
+       the loop slows down video where you get clusters of packets thrown at
+       us, want to clear them as quickly as possible out of the UDP OS buffers
+       or we overflow and lose some. Best compromise is to every 100ms, sleep
+       for 10ms so can not use more than about 90% of CPU. */
+    if (asynchronous && PTimer::Tick() - lastTick > 100) {
+      PThread::Sleep(10);
+      lastTick = PTimer::Tick();
+    }
   }
 
   source.OnPatchStop();
