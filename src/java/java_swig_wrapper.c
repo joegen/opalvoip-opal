@@ -270,7 +270,7 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OPAL_1C_1API_1VERSION_1get(
   
   (void)jenv;
   (void)jcls;
-  result = (int) 19;
+  result = (int) 20;
   jresult = (jint)result; 
   return jresult;
 }
@@ -1600,6 +1600,34 @@ SWIGEXPORT jlong JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1manua
   arg1 = *(OpalParamGeneral **)&jarg1; 
   result = (unsigned int) ((arg1)->m_manualAlerting);
   jresult = (jlong)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaTiming_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+  OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
+  OpalMediaTiming arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamGeneral **)&jarg1; 
+  arg2 = (OpalMediaTiming)jarg2; 
+  if (arg1) (arg1)->m_mediaTiming = arg2;
+}
+
+
+SWIGEXPORT jint JNICALL Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaTiming_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jint jresult = 0 ;
+  OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
+  OpalMediaTiming result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamGeneral **)&jarg1; 
+  result = (OpalMediaTiming) ((arg1)->m_mediaTiming);
+  jresult = (jint)result; 
   return jresult;
 }
 

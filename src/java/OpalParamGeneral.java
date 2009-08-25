@@ -316,6 +316,14 @@ public class OpalParamGeneral {
     return exampleJNI.OpalParamGeneral_m_manualAlerting_get(swigCPtr, this);
   }
 
+  public void setM_mediaTiming(OpalMediaTiming value) {
+    exampleJNI.OpalParamGeneral_m_mediaTiming_set(swigCPtr, this, value.swigValue());
+  }
+
+  public OpalMediaTiming getM_mediaTiming() {
+    return OpalMediaTiming.swigToEnum(exampleJNI.OpalParamGeneral_m_mediaTiming_get(swigCPtr, this));
+  }
+
   public OpalParamGeneral() {
     this(exampleJNI.new_OpalParamGeneral(), true);
   }
