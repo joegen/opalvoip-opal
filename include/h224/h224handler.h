@@ -229,7 +229,7 @@ public:
                       PBoolean isSource);
   ~OpalH224MediaStream();
   
-  virtual void OnPatchStart();
+  virtual void OnStartMediaPatch();
   virtual PBoolean Close();
   virtual PBoolean ReadPacket(RTP_DataFrame & packet);
   virtual PBoolean WritePacket(RTP_DataFrame & packet);

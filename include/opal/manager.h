@@ -641,13 +641,20 @@ class OpalManager : public PObject
 
     /**Call back for a media patch thread starting.
        This function is called within the context of the thread associated
-       with the media patch. It may be used to do any last checks on if the
-       patch should proceed.
+       with the media patch.
 
-       The default behaviour simply returns PTrue.
+       The default behaviour does nothing
       */
-    virtual PBoolean OnStartMediaPatch(
-      const OpalMediaPatch & patch     ///<  Media patch being started
+    virtual void OnStartMediaPatch(
+      OpalConnection & connection,  ///< Connection patch is in
+      OpalMediaPatch & patch        ///< Media patch being started
+    );
+
+    /**Call back when media stream patch thread stops.
+      */
+    virtual void OnStopMediaPatch(
+      OpalConnection & connection,  ///< Connection patch is in
+      OpalMediaPatch & patch        ///< Media Patch being stopped
     );
   //@}
 
@@ -1428,6 +1435,7 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL(OpalCall *,CreateCall(), 0);
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnStartMediaPatch(const OpalMediaPatch &), false);
 };
 
 

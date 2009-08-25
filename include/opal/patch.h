@@ -101,7 +101,7 @@ class OpalMediaPatch : public PObject
        Returns bool indicating all media streams are asynchronous so the patch
                should assure no thread startvation
       */
-    virtual bool OnPatchStart();
+    virtual bool OnStartMediaPatch();
 
     /**Close the patch.
       This is an internal function that closes all of the sink streams and
@@ -267,6 +267,9 @@ class OpalMediaPatch : public PObject
     Thread * patchThread;
     PMutex patchThreadMutex;
     mutable PReadWriteMutex inUse;
+
+  private:
+    P_REMOVE_VIRTUAL(bool, OnPatchStart(), false);
 };
 
 /**Passive Media Patch

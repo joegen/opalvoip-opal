@@ -1140,9 +1140,10 @@ OpalH224MediaStream::~OpalH224MediaStream()
   Close();
 }
 
-void OpalH224MediaStream::OnPatchStart()
+void OpalH224MediaStream::OnStartMediaPatch()
 {	
   h224Handler.StartTransmit();
+  OpalMediaStream::OnStartMediaPatch();
 }
 
 PBoolean OpalH224MediaStream::Close()

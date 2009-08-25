@@ -846,9 +846,13 @@ void OpalManager::DestroyMediaPatch(OpalMediaPatch * patch)
 }
 
 
-PBoolean OpalManager::OnStartMediaPatch(const OpalMediaPatch & /*patch*/)
+void OpalManager::OnStartMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & /*patch*/)
 {
-  return true;
+}
+
+
+void OpalManager::OnStopMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & /*patch*/)
+{
 }
 
 

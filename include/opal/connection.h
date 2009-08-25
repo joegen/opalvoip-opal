@@ -1035,25 +1035,27 @@ class OpalConnection : public PSafeObject
     
     /**Call back when patching a media stream.
        This function is called when a connection has created a new media
-       patch between two streams.
+       patch between two streams. This is usually called twice per media patch,
+       once for the source stream and once for the sink stream.
+
+       Note this is not called within the context of the patch thread and is
+       called before that thread has started.
       */
     virtual void OnPatchMediaStream(
-      PBoolean isSource,
+      PBoolean isSource,        ///< Is source/sink call
       OpalMediaPatch & patch    ///<  New patch
     );
-	
+
     /**Call back when media stream patch thread starts.
       */
-    virtual void OnMediaPatchStart(
-      unsigned sessionId, 
-          bool isSource
+    virtual void OnStartMediaPatch(
+      OpalMediaPatch & patch    ///< Patch being started
     );
 
     /**Call back when media stream patch thread stops.
       */
-    virtual void OnMediaPatchStop(
-      unsigned sessionId, 
-          bool isSource
+    virtual void OnStopMediaPatch(
+      OpalMediaPatch & patch    ///< Patch being stopped
     );
 
     /** Notifier function for OpalVideoUpdatePicture.
@@ -1667,6 +1669,8 @@ class OpalConnection : public PSafeObject
   private:
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(unsigned int), false);
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(), false);
+    P_REMOVE_VIRTUAL_VOID(OnMediaPatchStart(unsigned, bool));
+    P_REMOVE_VIRTUAL_VOID(OnMediaPatchStop(unsigned, bool));
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

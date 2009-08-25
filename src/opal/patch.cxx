@@ -459,9 +459,9 @@ void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, PBoolean fro
 }
 
 
-bool OpalMediaPatch::OnPatchStart()
+bool OpalMediaPatch::OnStartMediaPatch()
 {
-  source.OnPatchStart();
+  source.OnStartMediaPatch();
 
   if (source.IsSynchronous())
     return false;
@@ -483,7 +483,7 @@ void OpalMediaPatch::Main()
 {
   PTRACE(4, "Patch\tThread started for " << *this);
 	
-  bool asynchronous = OnPatchStart();
+  bool asynchronous = OnStartMediaPatch();
   PTimeInterval lastTick;
 
   /* Note the RTP frame is outside loop so that a) it is more efficient
@@ -531,7 +531,7 @@ void OpalMediaPatch::Main()
     }
   }
 
-  source.OnPatchStop();
+  source.OnStopMediaPatch();
 
   PTRACE(4, "Patch\tThread ended for " << *this);
 }
@@ -784,14 +784,14 @@ OpalMediaPatch::Thread::Thread(OpalMediaPatch & p)
 
 
 OpalPassiveMediaPatch::OpalPassiveMediaPatch(OpalMediaStream & source)
-: OpalMediaPatch(source)
+  : OpalMediaPatch(source)
 {
 }
 
 
 void OpalPassiveMediaPatch::Start()
 {
-  source.OnPatchStart();
+  OnStartMediaPatch();
 }
 
 
