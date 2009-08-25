@@ -34,6 +34,8 @@
 #include "VoIPCodecs/g722.h"
 
 
+#define INCLUDE_SDP_16000_VERSION 0
+
 /* Due to a spec error, clock rate is 8kHz even though this is 16kHz codec,
    see RFC3551/4.5.2. So some of these values have to be lied about so that
    the OPAL system gets it right.
@@ -49,6 +51,10 @@
 static const char L16Desc[]  = "PCM-16-16kHz"; // Cannot use "L16" as usual, force 16kHz PCM
 static const char g722[]     = "G.722-64k";
 static const char sdpG722[]  = "G722";
+
+#if INCLUDE_SDP_16000_VERSION
+static const char g722_16[]  = "G.722-16kHz";
+#endif
 
 #define PAYLOAD_CODE 9
 
@@ -141,6 +147,82 @@ static struct PluginCodec_information licenseInfo = {
 
 static struct PluginCodec_Definition g722CodecDefn[] =
 {
+#if INCLUDE_SDP_16000_VERSION
+  // Include a version for SIP/SDP that indicates the more logical, though
+  // incorrect by RFC3551/4.5.2, 16000Hz version of G.722. We use dynamic
+  // payload types to avoid conflict with the compliant 8000Hz version.
+  { 
+    // encoder 
+    PLUGIN_CODEC_VERSION_WIDEBAND,        // codec API version
+    &licenseInfo,                         // license information
+
+    PluginCodec_MediaTypeAudio |          // audio codec
+    PluginCodec_InputTypeRaw |            // raw input data
+    PluginCodec_OutputTypeRaw |           // raw output data
+    PluginCodec_RTPTypeDynamic,           // specified RTP type
+
+    g722_16,                              // text decription
+    L16Desc,                              // source format
+    g722_16,                              // destination format
+
+    0,                                    // user data
+
+    16000,                                // samples per second
+    BITS_PER_SECOND,                      // raw bits per second
+    FRAME_TIME,                           // microseconds per frame
+    SAMPLES_PER_FRAME,                    // samples per frame
+    BYTES_PER_FRAME,                      // bytes per frame
+    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    PAYLOAD_CODE,                         // IANA RTP payload code
+    sdpG722,                              // RTP payload name
+
+    create_encoder,                       // create codec function
+    destroy_encoder,                      // destroy codec
+    encode,                               // encode/decode
+    NULL,                                 // codec controls
+
+    0,                                    // h323CapabilityType 
+    NULL                                  // h323CapabilityData
+  },
+
+  { 
+    // decoder 
+    PLUGIN_CODEC_VERSION_WIDEBAND,        // codec API version
+    &licenseInfo,                         // license information
+
+    PluginCodec_MediaTypeAudio |          // audio codec
+    PluginCodec_InputTypeRaw |            // raw input data
+    PluginCodec_OutputTypeRaw |           // raw output data
+    PluginCodec_RTPTypeDynamic,           // specified RTP type
+
+    g722_16,                              // text decription
+    g722_16,                              // source format
+    L16Desc,                              // destination format
+
+    0,                                    // user data
+
+    16000,                                // samples per second
+    BITS_PER_SECOND,                      // raw bits per second
+    FRAME_TIME,                           // microseconds per frame
+    SAMPLES_PER_FRAME,                    // samples per frame
+    BYTES_PER_FRAME,                      // bytes per frame
+    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
+    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    PAYLOAD_CODE,                         // IANA RTP payload code
+    sdpG722,                              // RTP payload name
+
+    create_decoder,                       // create codec function
+    destroy_decoder,                      // destroy codec
+    decode,                               // encode/decode
+    NULL,                                 // codec controls
+
+    0,                                    // h323CapabilityType 
+    NULL                                  // h323CapabilityData
+  },
+#endif
+
+  // Standards compliant version
   { 
     // encoder 
     PLUGIN_CODEC_VERSION_WIDEBAND,        // codec API version
