@@ -1087,11 +1087,7 @@ bool SIPEndPoint::Register(const SIPRegister::Params & params, PString & aor)
 
   aor = handler->GetAddressOfRecord().AsString();
 
-  if (handler->ActivateState(SIPHandler::Subscribing))
-    return true;
-
-  activeSIPHandlers.Remove(handler);
-  return false;
+  return handler->ActivateState(SIPHandler::Subscribing);
 }
 
 
