@@ -137,8 +137,15 @@ class OpalRTPEndPoint : public OpalEndPoint
 #ifdef OPAL_ZRTP
     bool zrtpEnabled;
 #endif
-    typedef std::map<WORD, OpalConnection *> RtpPortMap;
-    RtpPortMap m_connectionsByRtpLocalPort;
+
+    struct LocalRtpInfo {
+      LocalRtpInfo(OpalConnection & connection) : m_connection(connection), m_previousResult(-1) { }
+
+      OpalConnection & m_connection;
+      int              m_previousResult;
+    };
+    typedef std::map<WORD, LocalRtpInfo> LocalRtpInfoMap;
+    LocalRtpInfoMap m_connectionsByRtpLocalPort;
 };
 
 
