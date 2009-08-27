@@ -194,10 +194,7 @@ PBoolean OpalEcho::Initialise(const char * initMsg)
   // Sert log level as early as possible
   SetLogLevel((PSystemLog::Level)cfg.GetInteger(LogLevelKey, GetLogLevel()));
 #if PTRACING
-  if (GetLogLevel() >= PSystemLog::Warning)
-    PTrace::SetLevel(GetLogLevel()-PSystemLog::Warning);
-  else
-    PTrace::SetLevel(0);
+  PTrace::SetLevel(GetLogLevel());
   PTrace::ClearOptions(PTrace::Timestamp);
   PTrace::SetOptions(PTrace::DateAndTime);
   PTrace::SetOptions(PTrace::FileAndLine);
