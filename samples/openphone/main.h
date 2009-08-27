@@ -81,6 +81,7 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
     MyPCSSEndPoint(MyManager & manager);
 
     virtual OpalMediaFormatList GetMediaFormats() const;
+    virtual PSoundChannel * CreateSoundChannel(const OpalPCSSConnection & connection, const OpalMediaFormat & mediaFormat, PBoolean isSource);
 
     MyManager & m_manager;
 
