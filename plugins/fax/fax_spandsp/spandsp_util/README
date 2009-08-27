@@ -6,7 +6,14 @@ This plugin requires an external source code project, SpanDSP.
 Spandsp is a LGPL library and suite of programs that implement a faxmodem. A
 known version, compatible with OPAL, is available from the following URL:
 
-    http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6pre7.tgz
+    http://www.soft-switch.org/downloads/snapshots/spandsp/spandsp-20090624.tar.gz
+
+there may be later snapshots that would likely work equally well. Eventually
+there will be a more formal release:
+
+    http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6pre13.tgz
+
+Note the pre12 release in that directory is broken for Windows, don't use it!
 
 
 After getting the spandsp tar file, unpack it so it is called "spandsp" in
