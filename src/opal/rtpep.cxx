@@ -50,12 +50,6 @@ OpalRTPEndPoint::~OpalRTPEndPoint()
 {
 }
 
-PBoolean OpalRTPEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddress*/, 
-                                        PIPSocket::InterfaceTable & /*interfaceTable*/)
-{
-  return PTrue;
-}
-
 
 PBoolean OpalRTPEndPoint::IsRTPNATEnabled(OpalConnection & conn, 
                                 const PIPSocket::Address & localAddr, 
@@ -82,3 +76,53 @@ bool OpalRTPEndPoint::GetZRTPEnabled() const
 
 #endif
 
+
+static RTP_UDP * GetRTPFromStream(const OpalMediaStream & stream)
+{
+  const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
+  if (rtpStream == NULL)
+    return NULL;
+
+  return dynamic_cast<RTP_UDP *>(&rtpStream->GetRtpSession());
+}
+
+
+void OpalRTPEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
+{
+  RTP_UDP * rtp = GetRTPFromStream(stream);
+  if (rtp != NULL) {
+    RtpPortMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
+    if (it != m_connectionsByRtpLocalPort.end())
+      OnLocalRTP(stream.GetConnection(), *it->second, rtp->GetSessionID(), false);
+
+    it = m_connectionsByRtpLocalPort.find(rtp->GetLocalDataPort());
+    if (it != m_connectionsByRtpLocalPort.end())
+      m_connectionsByRtpLocalPort.erase(it);
+  }
+
+  OpalEndPoint::OnClosedMediaStream(stream);
+}
+
+
+bool OpalRTPEndPoint::OnLocalRTP(OpalConnection & connection1,
+                                 OpalConnection & connection2,
+                                 unsigned         sessionID,
+                                 bool             opened) const
+{
+  return manager.OnLocalRTP(connection1, connection2, sessionID, opened);
+}
+
+
+bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
+{
+  RTP_UDP * rtp = GetRTPFromStream(stream);
+  if (rtp == NULL)
+    return false;
+
+  m_connectionsByRtpLocalPort[rtp->GetLocalDataPort()] = &stream.GetConnection();
+  RtpPortMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
+  if (it == m_connectionsByRtpLocalPort.end())
+    return false;
+
+  return OnLocalRTP(stream.GetConnection(), *it->second, rtp->GetSessionID(), true);
+}

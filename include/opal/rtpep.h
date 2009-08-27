@@ -54,13 +54,33 @@ class OpalRTPEndPoint : public OpalEndPoint
     /**Destroy the endpoint.
      */
     ~OpalRTPEndPoint();
+  //@}
 
-    /**Callback to allow interface adjustments before connecting to the remote party
-       The default implementation does nothing and returns PTrue
+  /**@name Overrides from OpalEndPoint */
+  //@{
+    /**Get the data formats this endpoint is capable of operating.
+       This provides a list of media data format names that may be used by an
+       OpalMediaStream may be created by a connection from this endpoint.
+
+       Note that a specific connection may not actually support all of the
+       media formats returned here, but should return no more.
+
+       The default behaviour is pure.
       */
-    virtual PBoolean AdjustInterfaceTable(PIPSocket::Address & remoteAddress,
-                                      PIPSocket::InterfaceTable & interfaceTable);
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
+    /**Call back for closed a media stream.
+
+       The default behaviour checks for local RTP session then calls the
+       OpalManager function of the same name.
+      */
+    virtual void OnClosedMediaStream(
+      const OpalMediaStream & stream     ///<  Media stream being closed
+    );
+  //@}
+
+  /**@name RTP handling */
+  //@{
     /**Determine if the RTP session needs to accommodate a NAT router.
        For endpoints that do not use STUN or something similar to set up all the
        correct protocol embeddded addresses correctly when a NAT router is between
@@ -90,24 +110,35 @@ class OpalRTPEndPoint : public OpalEndPoint
     virtual bool GetZRTPEnabled() const;
 #endif
 
-    /**Get the data formats this endpoint is capable of operating.
-       This provides a list of media data format names that may be used by an
-       OpalMediaStream may be created by a connection from this endpoint.
+    /**Indicate is a local RTP connection.
+       This is called when a new media stream has been created and it has been
+       detected that media will be flowing between two RTP sessions within the
+       same process. An application could take advantage of this by optimising
+       the transfer in some way, rather than the full media path of codecs and
+       sockets whcih might not be necessary.
 
-       Note that a specific connection may not actually support all of the
-       media formats returned here, but should return no more.
+       The return value is true if the application is going to execute some
+       form of bypass, and the media patch threads should not be started.
 
-       The default behaviour is pure.
+       The default behaviour calls the OpanManager function of the same name.
       */
-    virtual OpalMediaFormatList GetMediaFormats() const;
+    virtual bool OnLocalRTP(
+      OpalConnection & connection1, ///< First connection
+      OpalConnection & connection2, ///< Second connection
+      unsigned sessionID,           ///< Session ID of RTP session
+      bool opened                   ///< Media streams are opened/closed
+    ) const;
+
+    // Check for local RTP connection. Internal function.
+    bool CheckForLocalRTP(const OpalRTPMediaStream & stream);
   //@}
-    
+
   protected:
 #ifdef OPAL_ZRTP
     bool zrtpEnabled;
 #endif
-
-  //@}
+    typedef std::map<WORD, OpalConnection *> RtpPortMap;
+    RtpPortMap m_connectionsByRtpLocalPort;
 };
 
 

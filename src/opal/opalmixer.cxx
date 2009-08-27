@@ -1042,7 +1042,7 @@ PBoolean OpalMixerMediaStream::IsSynchronous() const
 }
 
 
-PBoolean OpalMixerMediaStream::RequiresPatchThread(OpalMediaStream *) const
+PBoolean OpalMixerMediaStream::RequiresPatchThread() const
 {
   return !isSource;
 }
