@@ -48,7 +48,8 @@ SUBDIRS += samples/simple \
            samples/opalmcu \
            samples/ivropal \
            samples/faxopal \
-           samples/c_api
+           samples/c_api \
+           samples/testpresent
 endif
 
 
@@ -134,7 +135,8 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/rtp/rtp.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
 	   $(OPAL_SRCDIR)/opal/opal_c.cxx \
-	   $(OPAL_SRCDIR)/opal/pcss.cxx 
+	   $(OPAL_SRCDIR)/opal/pcss.cxx \
+           $(OPAL_SRCDIR)/opal/pres_ent.cxx
 
 ifeq ($(OPAL_IVR), yes)
 SOURCES += $(OPAL_SRCDIR)/opal/ivr.cxx \
@@ -276,6 +278,7 @@ SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
            $(OPAL_SRCDIR)/sip/sippdu.cxx \
            $(OPAL_SRCDIR)/sip/sdp.cxx \
            $(OPAL_SRCDIR)/sip/handlers.cxx \
+           $(OPAL_SRCDIR)/sip/sippres.cxx
 
 ifeq ($(OPAL_T38_CAP), yes)
 SOURCES += $(OPAL_SRCDIR)/t38/sipt38.cxx

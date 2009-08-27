@@ -40,16 +40,22 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class OpalPresEntity : public PSafeObject
+class OpalPresentityStore;
+
+class OpalPresentity : public PSafeObject
 {
   public:
     static const char * AddressOfRecordKey;
     static const char * AuthNameKey;
     static const char * AuthPasswordKey;
     static const char * FullNameKey;
+    static const char * GUIDKey;
+    static const char * SchemeKey;
     static const char * TimeToLiveKey;
 
     enum State {
+      NoPresence      = -1,    // remove presence status - not the same as NotAvailable or Away
+
       // basic states (from RFC 3863) - must be same order as SIPPresenceInfo::BasicStates
       Unknown         = SIPPresenceInfo::Unknown,
       Available,
@@ -87,18 +93,28 @@ class OpalPresEntity : public PSafeObject
       Worship
     };
 
-    static OpalPresEntity * Create(
+    static OpalPresentity * Create(
       const PString & url
     );
 
-    virtual bool Open(
-      OpalManager & manager
+    static OpalPresentity * Restore(
+      const PGloballyUniqueID & guid,
+      const PString & storeType = PString::Empty()
     );
 
-    virtual bool Open(
-      OpalManager & manager,
-      const OpalGloballyUniqueID & uid
+    OpalPresentity();
+
+    virtual bool Save(
+      OpalPresentityStore * store
     ) = 0;
+
+    virtual bool Restore(
+      OpalPresentityStore * store
+    ) = 0;
+
+    virtual bool Open(
+      OpalManager * manager = NULL
+    );
 
     virtual bool IsOpen() const = 0;
 
@@ -109,8 +125,6 @@ class OpalPresEntity : public PSafeObject
       const PString & note = PString::Empty()
     ) = 0;
 
-    virtual bool RemovePresence() = 0;
-  
     virtual bool HasAttribute(const PString & key) const
     { return m_attributes.Contains(key); }
 
@@ -123,9 +137,26 @@ class OpalPresEntity : public PSafeObject
 
   protected:
     OpalGloballyUniqueID m_guid;
-
     PStringToString m_attributes;
 };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class OpalPresentityStore : public PObject
+{
+  public:
+    OpalPresentityStore();
+    virtual bool Contains(const OpalGloballyUniqueID & guid) const;
+    virtual bool GetAttribute(const OpalGloballyUniqueID & guid, const char * key, const PString & value) const;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+class OpalPresentityStore : public OpalPresentityStore
+{
+}
+*/
 
 #endif  // OPAL_IM_PRES_ENT_H
 
