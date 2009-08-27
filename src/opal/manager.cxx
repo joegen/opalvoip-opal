@@ -776,6 +776,16 @@ void OpalManager::OnRTPStatistics(const OpalConnection & connection, const RTP_S
 }
 
 
+bool OpalManager::OnLocalRTP(OpalConnection & PTRACE_PARAM(connection1),
+                             OpalConnection & PTRACE_PARAM(connection2),
+                             unsigned         PTRACE_PARAM(sessionID),
+                             bool             PTRACE_PARAM(started)) const
+{
+  PTRACE(3, "OpalMan\tOnLocalRTP(" << connection1 << ',' << connection2 << ',' << sessionID << ',' << started);
+  return false;
+}
+
+
 void OpalManager::OnClosedMediaStream(const OpalMediaStream & /*channel*/)
 {
 }
