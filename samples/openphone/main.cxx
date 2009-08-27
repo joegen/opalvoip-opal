@@ -6361,6 +6361,25 @@ OpalMediaFormatList MyPCSSEndPoint::GetMediaFormats() const
 }
 
 
+PSoundChannel * MyPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
+                                                   const OpalMediaFormat & mediaFormat,
+                                                   PBoolean isSource)
+{
+  PSoundChannel * channel = OpalPCSSEndPoint::CreateSoundChannel(connection, mediaFormat, isSource);
+  if (channel != NULL)
+    return channel;
+
+  LogWindow << "Could not open ";
+  if (isSource)
+    LogWindow << "record device \"" << connection.GetSoundChannelRecordDevice();
+  else
+    LogWindow << "player device \"" << connection.GetSoundChannelPlayDevice();
+  LogWindow << '"' << endl;
+
+  return NULL;
+}
+
+
 #if OPAL_H323
 ///////////////////////////////////////////////////////////////////////////////
 
