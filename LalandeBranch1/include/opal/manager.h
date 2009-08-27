@@ -560,6 +560,25 @@ class OpalManager : public PObject
       const RTP_Session & session         ///<  Session with statistics
     );
 
+    /**Indicate is a local RTP connection.
+       This is called when a new media stream has been created and it has been
+       detected that media will be flowing between two RTP sessions within the
+       same process. An application could take advantage of this by optimising
+       the transfer in some way, rather than the full media path of codecs and
+       sockets whcih might not be necessary.
+
+       The return value is true if teh application is going to execute some
+       form of bypass, and the media patch threads should not be started.
+
+       The default behaviour returns false.
+      */
+    virtual bool OnLocalRTP(
+      OpalConnection & connection1, ///< First connection
+      OpalConnection & connection2, ///< Second connection
+      unsigned sessionID,           ///< Session ID of RTP session
+      bool opened                   ///< Media streams are opened/closed
+    ) const;
+
     /**Call back for closed a media stream.
 
        The default behaviour does nothing.

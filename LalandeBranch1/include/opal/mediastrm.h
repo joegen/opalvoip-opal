@@ -245,16 +245,16 @@ class OpalMediaStream : public PSafeObject
     virtual PBoolean IsSynchronous() const = 0;
 
     /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
-       This is called on the source stream and is passed the sink stream that the
-       patch will initially be using. The function could conditionally require
-       the patch thread to execute a thread reading and writing data, or prevent
-       it from doing so as it can do so in hardware in some way, e.g. if both
-       streams where on the same OpalLineInterfaceDevice.
+       This is called on the source/sink stream and is passed the sink/source
+       stream that the patch will initially be using. The function could
+       conditionally require the patch thread to execute a thread reading and
+       writing data, or prevent  it from doing so as it can do so in hardware
+       in some way, e.g. both streams are on the same OpalLineInterfaceDevice.
 
        The default behaviour simply returns true.
       */
     virtual PBoolean RequiresPatchThread(
-      OpalMediaStream * sinkStream  ///< Sink stream for this source
+      OpalMediaStream * stream  ///< Other stream in patch
     ) const;
     virtual PBoolean RequiresPatchThread() const; // For backward compatibility
 
@@ -435,18 +435,18 @@ class OpalNullMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
     );
 	
     /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
-       The default behaviour returns false.
+       The default behaviour returns the value of m_isSynchronous.
       */
     virtual PBoolean RequiresPatchThread() const;
 
     /**Indicate if the media stream is synchronous.
-       Returns false.
+       Returns m_isSynchronous.
       */
     virtual PBoolean IsSynchronous() const;
   //@}
 
   protected:
-    bool           m_isSynchronous;
+    bool m_isSynchronous;
 };
 
 
@@ -515,6 +515,15 @@ class OpalRTPMediaStream : public OpalMediaStream
        Returns false for RTP streams.
       */
     virtual PBoolean IsSynchronous() const;
+
+    /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
+       The default behaviour dermines if the media will be flowing between two
+       RTP sessions within the same process. If so the
+       OpalRTPConnection::OnLocalRTP() is called, and if it returns true
+       indicating local handling then this function returns faklse to disable
+       the patch thread.
+      */
+    virtual PBoolean RequiresPatchThread() const;
 
     /**Enable jitter buffer for the media stream.
 
