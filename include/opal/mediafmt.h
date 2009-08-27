@@ -356,7 +356,7 @@ class OpalMediaOptionValue : public OpalMediaOption
 
     virtual void ReadFrom(istream & strm)
     {
-      T temp;
+      T temp = 0;
       strm >> temp;
       if (temp >= m_minimum && temp <= m_maximum)
         m_value = temp;
