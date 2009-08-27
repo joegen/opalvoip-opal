@@ -38,28 +38,40 @@
 #include <ptclib/url.h>
 #include <sip/sipep.h>
 
-const char * OpalPresEntity::AddressOfRecordKey = "address_of_record";
-const char * OpalPresEntity::AuthNameKey        = "auth_name";
-const char * OpalPresEntity::AuthPasswordKey    = "auth_password";
-const char * OpalPresEntity::FullNameKey        = "full_name";
-const char * OpalPresEntity::TimeToLiveKey      = "time_to_live";
+const char * OpalPresentity::AddressOfRecordKey = "address_of_record";
+const char * OpalPresentity::AuthNameKey        = "auth_name";
+const char * OpalPresentity::AuthPasswordKey    = "auth_password";
+const char * OpalPresentity::FullNameKey        = "full_name";
+const char * OpalPresentity::GUIDKey            = "guid";
+const char * OpalPresentity::SchemeKey          = "scheme";
+const char * OpalPresentity::TimeToLiveKey      = "time_to_live";
 
-bool OpalPresEntity::Open(OpalManager & manager)
+
+OpalPresentity::OpalPresentity()
 {
-  return Open(manager, OpalGloballyUniqueID()); 
 }
 
 
-bool OpalPresEntity::Close()
+bool OpalPresentity::Open(OpalManager *)
+{
+  m_guid = OpalGloballyUniqueID();
+  SetAttribute(GUIDKey, m_guid.AsString());
+  return true;
+}
+
+
+bool OpalPresentity::Close()
 {
   return false;
 }
 
-OpalPresEntity * OpalPresEntity::Create(const PString & url)
+/////////////////////////////////////////////////////////////////////////////
+
+OpalPresentity * OpalPresentity::Create(const PString & url)
 {
   PString scheme = PURL(url).GetScheme();
 
-  OpalPresEntity * presEntity = PFactory<OpalPresEntity>::CreateInstance(scheme);
+  OpalPresentity * presEntity = PFactory<OpalPresentity>::CreateInstance(scheme);
   if (presEntity == NULL) 
     return NULL;
 
@@ -67,4 +79,31 @@ OpalPresEntity * OpalPresEntity::Create(const PString & url)
 
   return presEntity;
 }
+
+
+OpalPresentity * OpalPresentity::Restore(const OpalGloballyUniqueID & guid, const PString & storeType)
+{
+  OpalPresentityStore * store = PFactory<OpalPresentityStore>::CreateInstance(storeType);
+  if (store == NULL)
+    return NULL;
+
+  if (!store->Contains(guid))
+    return NULL;
+
+  PString scheme;
+  PAssert(store->GetAttribute(guid, SchemeKey, scheme), "Presentity store does not contain 'scheme'");
+
+  OpalPresentity * presEntity = PFactory<OpalPresentity>::CreateInstance(scheme);
+  if (presEntity == NULL) 
+    return NULL;
+
+  if (!presEntity->Restore(store)) {
+    delete presEntity;
+    return NULL;
+  }
+
+  return presEntity;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 

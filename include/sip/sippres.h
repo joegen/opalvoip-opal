@@ -36,54 +36,87 @@
 
 #include <opal/pres_ent.h>
 
-class SIP_PresEntity : public OpalPresEntity
+class SIP_Presentity : public OpalPresentity
 {
   public:
     static const char * DefaultPresenceServerKey;
     static const char * PresenceServerKey;
-    static const char * ProfileKey;
 
-    class Profile {
-      public:
-        Profile();
+    SIP_Presentity();
+    ~SIP_Presentity();
 
-        virtual bool Open(SIP_PresEntity * presEntity);
-
-        virtual bool Close() = 0;
-
-        virtual bool SetNotifySubscriptions(bool on) = 0;
-
-        virtual bool SetPresence(State state, const PString & note) = 0;
-
-        virtual bool RemovePresence() = 0;
-  
-      protected:
-        SIP_PresEntity * m_presEntity;
-    };
-
-    SIP_PresEntity();
-    ~SIP_PresEntity();
+    virtual bool Open(
+      OpalManager * manager = NULL
+    );
 
     virtual bool IsOpen() const { return m_endpoint != NULL; }
 
-    virtual bool Open(OpalManager & manager, const OpalGloballyUniqueID & uid);
+    virtual bool Save(
+      OpalPresentityStore * store
+    );
+
+    virtual bool Restore(
+      OpalPresentityStore * store
+    );
 
     virtual bool Close();
 
     virtual bool SetPresence(
       State state,
       const PString & note = PString::Empty()
-    );
+    ) = 0;
 
-    virtual bool RemovePresence();
-  
+  protected:
     SIPURL GetSIPAOR() const { return SIPURL(GetAttribute(AddressOfRecordKey));  }
+    virtual bool SetNotifySubscriptions(bool on) = 0;
 
     SIPEndPoint & GetEndpoint() { return *m_endpoint; }
 
-  protected:
+    virtual bool InternalOpen() = 0;
+    virtual bool InternalClose() = 0;
+
+    OpalManager * m_manager;
     SIPEndPoint * m_endpoint;
-    Profile * m_profile;
 };
+
+
+class SIPLocal_Presentity : public SIP_Presentity
+{
+  public:
+    ~SIPLocal_Presentity();
+
+    virtual bool SetPresence(
+      State state,
+      const PString & note = PString::Empty()
+    );
+
+    virtual bool SetNotifySubscriptions(bool on);
+
+  protected:
+    virtual bool InternalOpen();
+    virtual bool InternalClose();
+};
+
+
+class SIPXCAP_Presentity : public SIP_Presentity
+{
+  public:
+    SIPXCAP_Presentity();
+    ~SIPXCAP_Presentity();
+
+    virtual bool SetPresence(
+      State state,
+      const PString & note = PString::Empty()
+    );
+
+    virtual bool SetNotifySubscriptions(bool on);
+
+  protected:
+    virtual bool InternalOpen();
+    virtual bool InternalClose();
+
+    PIPSocketAddressAndPort m_presenceServer;
+};
+
 
 #endif // OPAL_SIP_SIPPRES_H
