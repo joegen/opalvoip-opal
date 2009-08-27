@@ -49,7 +49,7 @@
 #include <rtp/rtp.h>
 #include <opal/transports.h>
 #include <opal/rtpconn.h>
-#include <opal/endpoint.h>
+#include <opal/rtpep.h>
 #include <opal/call.h>
 
 #define MAX_PAYLOAD_TYPE_MISMATCHES 10
@@ -674,6 +674,12 @@ PBoolean OpalRTPMediaStream::SetDataSize(PINDEX dataSize)
 PBoolean OpalRTPMediaStream::IsSynchronous() const
 {
   return IsSource() && !mediaFormat.NeedsJitterBuffer();
+}
+
+
+PBoolean OpalRTPMediaStream::RequiresPatchThread() const
+{
+  return !dynamic_cast<OpalRTPEndPoint &>(connection.GetEndPoint()).CheckForLocalRTP(*this);
 }
 
 

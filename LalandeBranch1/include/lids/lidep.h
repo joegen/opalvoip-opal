@@ -598,16 +598,17 @@ class OpalLineMediaStream : public OpalMediaStream
     virtual PBoolean IsSynchronous() const;
 
     /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
-       This is called on the source stream and is passed the sink stream that the
-       patch will initially be using. The function could conditionally require
-       the patch thread to execute a thread reading and writing data, or prevent
-       it from doing so as it can do so in hardware in some way, e.g. if both
-       streams where on the same OpalLineInterfaceDevice.
+       This is called on the source/sink stream and is passed the sink/source
+       stream that the patch will initially be using. The function could
+       conditionally require the patch thread to execute a thread reading and
+       writing data, or prevent  it from doing so as it can do so in hardware
+       in some way.
 
-       The default behaviour simply returns true.
+       The default behaviour here determines if both streams are on the same
+       OpalLineInterfaceDevice and returns false if so.
       */
     virtual PBoolean RequiresPatchThread(
-      OpalMediaStream * sinkStream  ///< Sink stream for this source
+      OpalMediaStream * stream  ///< Other stream in patch
     ) const;
   //@}
 

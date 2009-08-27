@@ -1129,23 +1129,23 @@ PBoolean OpalLineMediaStream::IsSynchronous() const
 }
 
 
-PBoolean OpalLineMediaStream::RequiresPatchThread(OpalMediaStream * sinkStream) const
+PBoolean OpalLineMediaStream::RequiresPatchThread(OpalMediaStream * stream) const
 {
-  OpalLineMediaStream * sinkLine = dynamic_cast<OpalLineMediaStream *>(sinkStream);
-  if (sinkLine != NULL && &line.GetDevice() == &sinkLine->line.GetDevice()) {
-    if (line.GetDevice().SetLineToLineDirect(line.GetLineNumber(), sinkLine->line.GetLineNumber(), true)) {
+  OpalLineMediaStream * lineStream = dynamic_cast<OpalLineMediaStream *>(stream);
+  if (lineStream != NULL && &line.GetDevice() == &lineStream->line.GetDevice()) {
+    if (line.GetDevice().SetLineToLineDirect(line.GetLineNumber(), lineStream->line.GetLineNumber(), true)) {
       PTRACE(3, "LineMedia\tDirect line connection between "
-             << line.GetLineNumber() << " and " << sinkLine->line.GetLineNumber()
+             << line.GetLineNumber() << " and " << lineStream->line.GetLineNumber()
              << " on device " << line.GetDevice());
-      const_cast<OpalLineMediaStream *>(this)->directLineNumber = sinkLine->line.GetLineNumber();
-      sinkLine->directLineNumber = line.GetLineNumber();
+      const_cast<OpalLineMediaStream *>(this)->directLineNumber = lineStream->line.GetLineNumber();
+      lineStream->directLineNumber = line.GetLineNumber();
       return false; // Do not start threads
     }
     PTRACE(2, "LineMedia\tCould not do direct line connection between "
-           << line.GetLineNumber() << " and " << sinkLine->line.GetLineNumber()
+           << line.GetLineNumber() << " and " << lineStream->line.GetLineNumber()
            << " on device " << line.GetDevice());
   }
-  return OpalMediaStream::RequiresPatchThread(sinkStream);
+  return OpalMediaStream::RequiresPatchThread(stream);
 }
 
 
