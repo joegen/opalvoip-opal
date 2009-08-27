@@ -91,13 +91,14 @@ void OpalRTPEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   RTP_UDP * rtp = GetRTPFromStream(stream);
   if (rtp != NULL) {
-    RtpPortMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
-    if (it != m_connectionsByRtpLocalPort.end())
-      OnLocalRTP(stream.GetConnection(), *it->second, rtp->GetSessionID(), false);
-
-    it = m_connectionsByRtpLocalPort.find(rtp->GetLocalDataPort());
-    if (it != m_connectionsByRtpLocalPort.end())
+    LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetLocalDataPort());
+    if (it != m_connectionsByRtpLocalPort.end()) {
       m_connectionsByRtpLocalPort.erase(it);
+
+      it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
+      if (it != m_connectionsByRtpLocalPort.end())
+        OnLocalRTP(stream.GetConnection(), it->second.m_connection, rtp->GetSessionID(), false);
+    }
   }
 
   OpalEndPoint::OnClosedMediaStream(stream);
@@ -119,10 +120,13 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
   if (rtp == NULL)
     return false;
 
-  m_connectionsByRtpLocalPort[rtp->GetLocalDataPort()] = &stream.GetConnection();
-  RtpPortMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
+  m_connectionsByRtpLocalPort.insert(LocalRtpInfoMap::value_type(rtp->GetLocalDataPort(), stream.GetConnection()));
+  LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
   if (it == m_connectionsByRtpLocalPort.end())
     return false;
 
-  return OnLocalRTP(stream.GetConnection(), *it->second, rtp->GetSessionID(), true);
+  if (it->second.m_previousResult < 0)
+    it->second.m_previousResult = OnLocalRTP(stream.GetConnection(), it->second.m_connection, rtp->GetSessionID(), true);
+
+  return it->second.m_previousResult != 0;
 }
