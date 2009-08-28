@@ -153,12 +153,12 @@ class IAX2Ie : public PObject
   
   /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
       This is done on processing an incoming frame which contains IAX2Ie in the data section. */
-  virtual void StoreDataIn(IAX2IeData &/*res*/) { PTRACE(0, "UNIMPLEMENTED FUNCTION"); }     
+  virtual void StoreDataIn(IAX2IeData &/*res*/) { PAssertAlways(PUnimplementedFunction); }     
   //@}
   
  protected:
   /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
-  virtual void WriteBinary(BYTE * /*data*/) { PTRACE(0, "UNIMPLEMENTED FUNCTION"); }
+  virtual void WriteBinary(BYTE * /*data*/) { PAssertAlways(PUnimplementedFunction); }
   
   /**A flag indicating if the data was read from the supplied bytes
      correctly, or if this structure is yet to be initialised */
