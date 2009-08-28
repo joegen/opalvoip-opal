@@ -241,7 +241,7 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
     
   PIPSocket::Address ip;
   if (!PIPSocket::GetHostAddress(res[IAX2EndPoint::addressIndex], ip)) {
-    PTRACE(1, "Conection\t Failed to make call to " << res[IAX2EndPoint::addressIndex]);
+    PTRACE(1, "Conection\tFailed to make call to " << res[IAX2EndPoint::addressIndex]);
       cout << "Could not make a call to " << res[IAX2EndPoint::addressIndex] 
      << " as IP resolution failed" << endl;
       return;

@@ -381,12 +381,12 @@ unsigned int IAX2Connection::ChooseCodec()
   PTRACE(4, "remote codecs are " << remoteMediaFormats);
   
   if (remoteMediaFormats.GetSize() == 0) {
-    PTRACE(0, "No remote media formats supported. Exit now ");
+    PTRACE(2, "No remote media formats supported. Exit now ");
     return 0;
   }
 
   if (localMediaFormats.GetSize() == 0) {
-    PTRACE(0, "No local media formats supported. Exit now ");
+    PTRACE(2, "No local media formats supported. Exit now ");
     return 0;
   }
 
@@ -411,8 +411,7 @@ unsigned int IAX2Connection::ChooseCodec()
     }
   }
 
-  PTRACE(0, "Connection. Failed to select a codec " );
-  cerr << "Failed to select a codec" << endl;
+  PTRACE(2, "Connection. Failed to select a codec " );
   return 0;
 }
 
