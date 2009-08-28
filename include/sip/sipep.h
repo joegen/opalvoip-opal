@@ -283,28 +283,6 @@ class SIPEndPoint : public OpalRTPEndPoint
       SIP_PDU * pdu
     );
 
-    /**Handle an incoming IntervalTooBrief response PDU
-      */
-    virtual void OnReceivedIntervalTooBrief(
-      SIPTransaction & transaction, 
-      SIP_PDU & response)
-    ;
-  
-    /**Handle an incoming Proxy Authentication Required response PDU
-      */
-    virtual void OnReceivedAuthenticationRequired(
-      SIPTransaction & transaction,
-      SIP_PDU & response
-    );
-
-    /**Handle an incoming OK response PDU.
-       This actually gets any PDU of the class 2xx not just 200.
-      */
-    virtual void OnReceivedOK(
-      SIPTransaction & transaction,
-      SIP_PDU & response
-    );
-    
     /**Handle an incoming NOTIFY PDU.
       */
     virtual PBoolean OnReceivedNOTIFY(
@@ -924,6 +902,10 @@ class SIPEndPoint : public OpalRTPEndPoint
 #endif
 
     bool m_disableTrying;
+
+    P_REMOVE_VIRTUAL_VOID(OnReceivedIntervalTooBrief(SIPTransaction &, SIP_PDU &));
+    P_REMOVE_VIRTUAL_VOID(OnReceivedAuthenticationRequired(SIPTransaction &, SIP_PDU &));
+    P_REMOVE_VIRTUAL_VOID(OnReceivedOK(SIPTransaction &, SIP_PDU &));
 };
 
 
