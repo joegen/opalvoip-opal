@@ -320,11 +320,11 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
     return true;
   }
 
-    PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
-    OnFailed(SIP_PDU::Local_BadTransportAddress);
-    expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
-    SetState(Unavailable);
-    return true;
+  OnFailed(SIP_PDU::Local_BadTransportAddress);
+
+  PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
+  expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
+  return true;
 }
 
 
@@ -360,6 +360,10 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
       OnReceivedIntervalTooBrief(transaction, response);
       break;
 
+    case SIP_PDU::Failure_TemporarilyUnavailable:
+      OnReceivedTemporarilyUnavailable(transaction, response);
+      break;
+
     case SIP_PDU::Failure_RequestTimeout :
       OnTransactionFailed(transaction);
       break;
@@ -389,6 +393,16 @@ void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SI
   State oldState = state;
   state = Unavailable;
   SendRequest(oldState);
+}
+
+
+void SIPHandler::OnReceivedTemporarilyUnavailable(SIPTransaction & /*transaction*/, SIP_PDU & response)
+{
+  OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
+
+  unsigned retryAfter = response.GetMIME().GetInteger("Retry-After", offlineExpire);
+  PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << retryAfter << " seconds.");
+  expireTimer.SetInterval(0, retryAfter); // Have another go in a little bit
 }
 
 
@@ -514,6 +528,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
     case SIP_PDU::Local_TransportError :
     case SIP_PDU::Failure_RequestTimeout :
     case SIP_PDU::Local_BadTransportAddress :
+    case SIP_PDU::Failure_TemporarilyUnavailable:
       SetState(Unavailable);
       break;
 
@@ -524,7 +539,6 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
       SetState(Unsubscribed);
       ShutDown();
   }
-
 }
 
 
