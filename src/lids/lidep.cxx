@@ -550,13 +550,13 @@ PBoolean OpalLineConnection::SetConnected()
 
   if (line.IsTerminal()) {
     if (!line.SetConnected()) {
-      PTRACE(1, "LID Con\tCould set line to connected mode on " << *this);
+      PTRACE(1, "LID Con\tCould not set line to connected mode on " << *this);
       return false;
     }
   }
   else {
     if (!line.SetOffHook()) {
-      PTRACE(1, "LID Con\tCould set line off hook on " << *this);
+      PTRACE(1, "LID Con\tCould not set line off hook on " << *this);
       return false;
     }
     PTRACE(4, "LID Con\tAnswered call - gone off hook.");
