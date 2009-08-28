@@ -116,6 +116,8 @@ public:
   virtual PCaselessString GetEventPackage() const
   { return PString::Empty(); }
 
+  virtual void OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response);
+  virtual void OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
@@ -132,7 +134,6 @@ public:
   const PString & GetRealm() const        { return authenticationAuthRealm; }
 
 protected:
-  void CollapseFork(SIPTransaction & transaction);
   PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
   static PBoolean WriteSIPHandler(OpalTransport & transport, void * info);
   bool WriteSIPHandler(OpalTransport & transport);

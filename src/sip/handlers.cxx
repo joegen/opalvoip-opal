@@ -334,7 +334,65 @@ PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 }
 
 
-void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
+{
+  // Received a response, so collapse the foking on multiple interfaces.
+
+  transactions.Remove(&transaction); // Take this transaction out of list
+
+  // And kill all the rest
+  PSafePtr<SIPTransaction> transToGo;
+  while ((transToGo = transactions.GetAt(0)) != NULL) {
+    transactions.Remove(transToGo);
+    transToGo->Abort();
+  }
+
+  // Finally end connect mode on the transport
+  transport->SetInterface(transaction.GetInterface());
+
+  switch (response.GetStatusCode()) {
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Failure_ProxyAuthenticationRequired :
+      OnReceivedAuthenticationRequired(transaction, response);
+      break;
+
+    case SIP_PDU::Failure_IntervalTooBrief :
+      OnReceivedIntervalTooBrief(transaction, response);
+      break;
+
+    case SIP_PDU::Failure_RequestTimeout :
+      OnTransactionFailed(transaction);
+      break;
+
+    default :
+      switch (response.GetStatusCode()/100) {
+        case 1 :
+          // Do nothing on 1xx
+          break;
+
+        case 2 :
+          OnReceivedOK(transaction, response);
+          break;
+
+        default :
+          OnFailed(response.GetStatusCode());
+      }
+  }
+}
+
+
+void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SIP_PDU & response)
+{
+  SetExpire(response.GetMIME().GetMinExpires());
+
+  // Restart the transaction with new authentication handler
+  State oldState = state;
+  state = Unavailable;
+  SendRequest(oldState);
+}
+
+
+void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   bool isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
 
@@ -399,9 +457,6 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   authenticationUsername = username;
   authenticationPassword = password;
 
-  // And end connect mode on the transport
-  CollapseFork(transaction);
-
   // Restart the transaction with new authentication handler
   State oldState = state;
   state = Unavailable;
@@ -409,7 +464,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
 }
 
 
-void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   response.GetMIME().GetProductInfo(m_productInfo);
 
@@ -433,25 +488,6 @@ void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 
   // reset the number of unsuccesful authentication attempts
   authenticationAttempts = 0;
-
-  CollapseFork(transaction);
-}
-
-
-void SIPHandler::CollapseFork(SIPTransaction & transaction)
-{
-  // Take this transaction out
-  transactions.Remove(&transaction);
-
-  // And kill all the rest
-  PSafePtr<SIPTransaction> transToGo;
-  while ((transToGo = transactions.GetAt(0)) != NULL) {
-    transactions.Remove(transToGo);
-    transToGo->Abort();
-  }
-
-  // Finally end connect mode on the transport
-  transport->SetInterface(transaction.GetInterface());
 }
 
 
