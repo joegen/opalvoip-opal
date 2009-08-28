@@ -427,7 +427,7 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
           break;
 
         default :
-          OnFailed(response);
+          OnFailed(response.GetStatusCode());
       }
   }
 }
