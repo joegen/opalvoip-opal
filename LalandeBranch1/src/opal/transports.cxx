@@ -1489,7 +1489,7 @@ static PBoolean SetSSLCertificate(PSSLContext & sslContext,
            << "/CN=" << PProcess::Current().GetName() << '@' << PIPSocket::GetHostName();
     }
     if (!certificate.CreateRoot(name, key)) {
-      PTRACE(0, "MTGW\tCould not create certificate");
+      PTRACE(1, "MTGW\tCould not create certificate");
       return PFalse;
     }
     certificate.Save(certificateFile);
