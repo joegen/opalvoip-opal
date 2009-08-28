@@ -284,14 +284,14 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix
   PWriteWaitAndSignal mutex(endpointsMutex);
 
   if (endpointMap.find(thePrefix) != endpointMap.end()) {
-    PTRACE(1, "OpalMan\tCannot re-register endpoint prefix " << thePrefix);
+    PTRACE(1, "OpalMan\tCannot re-attach endpoint prefix " << thePrefix);
     return;
   }
 
   if (endpointList.GetObjectsIndex(endpoint) == P_MAX_INDEX)
     endpointList.Append(endpoint);
   endpointMap[thePrefix] = endpoint;
-  PTRACE(1, "OpalMan\tRegistered endpoint with prefix " << thePrefix);
+  PTRACE(3, "OpalMan\tAttached endpoint with prefix " << thePrefix);
 }
 
 

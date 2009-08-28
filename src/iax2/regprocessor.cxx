@@ -70,7 +70,7 @@ IAX2RegProcessor::IAX2RegProcessor(
   
   PIPSocket::Address ip;
   if (!PIPSocket::GetHostAddress(host, ip)) {
-     PTRACE(0, "Failed to lookup " << host);
+     PTRACE(2, "Failed to lookup " << host);
   }
 
   remote.SetRemoteAddress(ip);
