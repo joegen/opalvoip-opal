@@ -118,6 +118,7 @@ public:
 
   virtual void OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response);
+  virtual void OnReceivedTemporarilyUnavailable(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
