@@ -1623,9 +1623,7 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
     m_workerMutex.Signal();
 
     // process the work
-    PTRACE(2, "SIP\tStarted processing PDU");
     work->Process();
-    PTRACE(2, "SIP\tFinished processing PDU");
 
     // indicate work is now free
     m_pool.RemoveWork(work, false);
@@ -1674,10 +1672,9 @@ void SIPEndPoint::SIP_PDU_Work::Process()
     else {
       PTRACE(2, "SIP\tCannot find transaction " << transactionID << " for response PDU \"" << *m_pdu << '"');
     }
-    return;
   }
 
-  if (PAssert(!m_token.IsEmpty(), PInvalidParameter)) {
+  else if (PAssert(!m_token.IsEmpty(), PInvalidParameter)) {
     PTRACE(4, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
     PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReference);
     if (connection != NULL) 
@@ -1686,7 +1683,10 @@ void SIPEndPoint::SIP_PDU_Work::Process()
       PTRACE(2, "SIP\tCannot find connection for PDU \"" << *m_pdu << "\" using token=" << m_token);
     }
   }
+
+  PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
