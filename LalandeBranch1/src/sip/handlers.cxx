@@ -381,7 +381,7 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
 }
 
 
-void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   SetExpire(response.GetMIME().GetMinExpires());
 
@@ -472,7 +472,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction
 }
 
 
-void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   response.GetMIME().GetProductInfo(m_productInfo);
 
@@ -787,25 +787,15 @@ void SIPSubscribeHandler::OnFailed(const SIP_PDU & response)
 
   SendStatus(r, GetState());
 
-  int newExpires = 0;
-  PString dummy;
-  
+  State oldState = state;
+
   switch (r) {
     case SIP_PDU::Failure_TransactionDoesNotExist:
       // Resubscribe as previous subscription totally lost, but dialog processing
       // may have altered the target so restore the original target address
       m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
-      endpoint.Subscribe(m_parameters, dummy);
-      break;
-
-    case SIP_PDU::Failure_IntervalTooBrief:
-      // Resubscribe with altered expiry
-      newExpires = response.GetMIME().GetExpires();
-      if (newExpires > 0) {
-        m_parameters.m_expire = newExpires;
-        PString dummy;
-        endpoint.Subscribe(m_parameters, dummy);
-      }
+      state = Unavailable;
+      SendRequest(oldState);
       break;
 
     default:
