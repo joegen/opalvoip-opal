@@ -214,8 +214,10 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
       transaction->GetMIME().SetAt(m_mime.GetKeyAt(i), PString(m_mime.GetDataAt(i)));
     if (state == Unsubscribing)
       transaction->GetMIME().SetExpires(0);
-    if (authentication != NULL)
-      authentication->Authorise(*transaction); // If already have info from last time, use it!
+    if (authentication != NULL) {
+      SIPAuthenticator auth(*transaction);
+      authentication->Authorise(auth); // If already have info from last time, use it!
+    }
     if (transaction->Start()) {
       transactions.Append(transaction);
       return true;
@@ -446,9 +448,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction
 
   // authenticate 
   PString errorMsg;
-  SIPAuthentication * newAuth = SIPAuthentication::ParseAuthenticationRequired(isProxy, 
-                                                                               response.GetMIME()(isProxy ? "Proxy-Authenticate" : "WWW-Authenticate"),
-                                                                               errorMsg);
+  SIPAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(isProxy, response.GetMIME(), errorMsg);
   if (newAuth == NULL) {
     PTRACE(2, "SIP\t" << errorMsg);
     OnFailed(SIP_PDU::Failure_Forbidden);
