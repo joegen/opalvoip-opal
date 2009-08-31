@@ -166,9 +166,6 @@ OpalTransport * SIPHandler::GetTransport()
     m_proxy = endpoint.GetProxy();
 
   SIPURL url;
-  if (m_proxy.IsEmpty())
-    m_proxy = endpoint.GetProxy();
-
   if (!m_proxy.IsEmpty())
     url = m_proxy;
   else {
