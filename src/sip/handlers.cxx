@@ -349,7 +349,7 @@ PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 
 void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  // Received a response, so collapse the foking on multiple interfaces.
+  // Received a response, so collapse the forking on multiple interfaces.
 
   transactions.Remove(&transaction); // Take this transaction out of list
 
