@@ -918,10 +918,6 @@ class SIPEndPoint : public OpalRTPEndPoint
 #endif
 
     bool m_disableTrying;
-
-    P_REMOVE_VIRTUAL_VOID(OnReceivedIntervalTooBrief(SIPTransaction &, SIP_PDU &));
-    P_REMOVE_VIRTUAL_VOID(OnReceivedAuthenticationRequired(SIPTransaction &, SIP_PDU &));
-    P_REMOVE_VIRTUAL_VOID(OnReceivedOK(SIPTransaction &, SIP_PDU &));
 };
 
 
