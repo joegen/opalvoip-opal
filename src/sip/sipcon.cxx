@@ -2188,15 +2188,13 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
   // determine the authentication type
   PString errorMsg;
-  SIPAuthentication * newAuth = SIPAuthentication::ParseAuthenticationRequired(isProxy, 
-                                                                               response.GetMIME()(isProxy ? "Proxy-Authenticate" : "WWW-Authenticate"),
-                                                                               errorMsg);
+  SIPAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(isProxy, response.GetMIME(), errorMsg);
   if (newAuth == NULL) {
     PTRACE(1, "SIP\t" << errorMsg);
     return false;
   }
 
-   // Try to find authentication parameters for the given realm,
+  // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
   PString realm, password;
   PString username = m_dialog.GetLocalURI().GetUserName();

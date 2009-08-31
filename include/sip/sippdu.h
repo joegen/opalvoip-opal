@@ -42,6 +42,7 @@
 
 #include <ptclib/mime.h>
 #include <ptclib/url.h>
+#include <ptclib/http.h>
 #include <sip/sdp.h>
 #include <opal/rtpconn.h>
 
@@ -424,99 +425,22 @@ class SIPMIMEInfo : public PMIMEInfo
 /////////////////////////////////////////////////////////////////////////
 // SIPAuthentication
 
-class SIPAuthentication : public PObject
+typedef PHTTPClientAuthentication SIPAuthentication;
+
+class SIPAuthenticator : public PHTTPClientAuthentication::AuthObject
 {
-  PCLASSINFO(SIPAuthentication, PObject);
   public:
-    SIPAuthentication();
+    SIPAuthenticator(SIP_PDU & pdu);
+    virtual PMIMEInfo & GetMIME();
+    virtual PString GetURI();
+    virtual PString GetEntityBody();
+    virtual PString GetMethod();
 
-    virtual Comparison Compare(
-      const PObject & other
-    ) const;
-
-    virtual PBoolean Parse(
-      const PString & auth,
-      PBoolean proxy
-    ) = 0;
-
-    virtual PBoolean Authorise(
-      SIP_PDU & pdu
-    ) const =  0;
-
-    virtual PBoolean IsProxy() const               { return isProxy; }
-
-    virtual PString GetUsername() const   { return username; }
-    virtual PString GetPassword() const   { return password; }
-    virtual PString GetAuthRealm() const  { return PString::Empty(); }
-
-    virtual void SetUsername(const PString & user) { username = user; }
-    virtual void SetPassword(const PString & pass) { password = pass; }
-    virtual void SetAuthRealm(const PString &)     { }
-
-    PString GetAuthParam(const PString & auth, const char * name) const;
-    PString AsHex(PMessageDigest5::Code & digest) const;
-    PString AsHex(const PBYTEArray & data) const;
-
-    static SIPAuthentication * ParseAuthenticationRequired(bool isProxy,
-                                                const PString & line,
-                                                      PString & errorMsg);
-
-  protected:
-    PBoolean  isProxy;
-
-    PString   username;
-    PString   password;
+  protected:  
+    SIP_PDU & m_pdu;
 };
 
-typedef PFactory<SIPAuthentication> SIPAuthenticationFactory;
 
-/////////////////////////////////////////////////////////////////////////
-
-class SIPDigestAuthentication : public SIPAuthentication
-{
-  PCLASSINFO(SIPDigestAuthentication, SIPAuthentication);
-  public:
-    SIPDigestAuthentication();
-
-    SIPDigestAuthentication & operator =(
-      const SIPDigestAuthentication & auth
-    );
-
-    virtual Comparison Compare(
-      const PObject & other
-    ) const;
-
-    virtual PBoolean Parse(
-      const PString & auth,
-      PBoolean proxy
-    );
-
-    virtual PBoolean Authorise(
-      SIP_PDU & pdu
-    ) const;
-
-    virtual PString GetAuthRealm() const         { return authRealm; }
-    virtual void SetAuthRealm(const PString & r) { authRealm = r; }
-
-    enum Algorithm {
-      Algorithm_MD5,
-      NumAlgorithms
-    };
-    const PString & GetNonce() const       { return nonce; }
-    Algorithm GetAlgorithm() const         { return algorithm; }
-    const PString & GetOpaque() const      { return opaque; }
-
-  protected:
-    PString   authRealm;
-    PString   nonce;
-    Algorithm algorithm;
-    PString   opaque;
-
-    PBoolean qopAuth;
-    PBoolean qopAuthInt;
-    PString cnonce;
-    mutable PAtomicInteger nonceCount;
-};
 
 /////////////////////////////////////////////////////////////////////////
 // SIP_PDU
