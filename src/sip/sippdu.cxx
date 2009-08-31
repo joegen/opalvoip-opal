@@ -1741,7 +1741,6 @@ SIP_PDU::SIP_PDU(Methods method,
                  const PString & callID,
                  unsigned cseq,
                  const OpalTransportAddress & via)
-  : m_usePeerTransportAddress(false)
 {
   Construct(method, dest, to, from, callID, cseq, via);
 }
@@ -1750,7 +1749,6 @@ SIP_PDU::SIP_PDU(Methods method,
 SIP_PDU::SIP_PDU(Methods method,
                  SIPConnection & connection,
                  const OpalTransport & transport)
-  : m_usePeerTransportAddress(false)
 {
   Construct(method, connection, transport);
 }
@@ -1848,6 +1846,8 @@ void SIP_PDU::Construct(Methods meth)
   versionMinor = SIP_VER_MINOR;
 
   m_SDP = NULL;
+
+  m_usePeerTransportAddress = false;
 }
 
 
