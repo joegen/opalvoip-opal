@@ -165,9 +165,18 @@ OpalTransport * SIPHandler::GetTransport()
   if (m_proxy.IsEmpty())
     m_proxy = endpoint.GetProxy();
 
+  SIPURL url;
+  if (m_proxy.IsEmpty())
+    m_proxy = endpoint.GetProxy();
+
+  if (!m_proxy.IsEmpty())
+    url = m_proxy;
+  else {
+    url = GetAddressOfRecord();
+    url.AdjustToDNS();
+  }
+
   // Must specify a network interface or get infinite recursion
-  SIPURL url(m_proxy.IsEmpty() ? GetAddressOfRecord() : m_proxy);
-  url.AdjustToDNS();
   m_transport = endpoint.CreateTransport(url, "*");
   return m_transport;
 }
@@ -794,6 +803,10 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
   m_username = params.m_authID;
   m_password = params.m_password;
   m_realm    = params.m_realm;
+
+  // having an agent is the same as having a proxy....near enough
+  if (!params.m_agentAddress.IsEmpty())
+    m_proxy = params.m_agentAddress;
 }
 
 
@@ -1633,7 +1646,7 @@ SIPPublishHandler::~SIPPublishHandler()
 
 SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
 {
-  SetExpire(originalExpire);
+  m_parameters.m_expire = expire;
   return new SIPPublish(endpoint,
                         t, 
                         GetCallID(),
