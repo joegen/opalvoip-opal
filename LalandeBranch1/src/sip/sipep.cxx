@@ -700,49 +700,11 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  PSafePtr<SIPHandler> handler = NULL;
- 
-  if (transaction.GetMethod() == SIP_PDU::Method_REGISTER
-      || transaction.GetMethod() == SIP_PDU::Method_SUBSCRIBE
-      || transaction.GetMethod() == SIP_PDU::Method_PUBLISH
-      || transaction.GetMethod() == SIP_PDU::Method_MESSAGE) {
-    // Have a response to various non-INVITE messages
-    handler = activeSIPHandlers.FindSIPHandlerByCallID(transaction.GetMIME().GetCallID(), PSafeReadWrite);
-    if (handler == NULL) 
-      return;
-  }
-
-  switch (response.GetStatusCode()) {
-    case SIP_PDU::Failure_IntervalTooBrief :
-      OnReceivedIntervalTooBrief(transaction, response);
-      break;
-
-    case SIP_PDU::Failure_UnAuthorised :
-    case SIP_PDU::Failure_ProxyAuthenticationRequired :
-      OnReceivedAuthenticationRequired(transaction, response);
-      break;
-
-    case SIP_PDU::Failure_RequestTimeout :
-      if (handler != NULL)
-        handler->OnTransactionFailed(transaction);
-      break;
-
-    default :
-      switch (response.GetStatusCode()/100) {
-        case 1 :
-          // Do nothing on 1xx
-          break;
-
-        case 2 :
-          OnReceivedOK(transaction, response);
-          break;
-
-        default :
-          // Failure for a SUBSCRIBE/REGISTER/PUBLISH/MESSAGE 
-          if (handler != NULL)
-            handler->OnFailed(response);
-          break;
-      }
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
+  if (handler != NULL)
+    handler->OnReceivedResponse(transaction, response);
+  else {
+    PTRACE(2, "SIP\tResponse received for unknown handler ID: " << response.GetMIME().GetCallID());
   }
 }
 
@@ -875,47 +837,6 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   return PTrue;
 }
 
-void SIPEndPoint::OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response)
-{
-  const SIPMIMEInfo & responseMIME = response.GetMIME();
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(responseMIME.GetCallID(), PSafeReadOnly);
-  if (handler == NULL)
-    return;
-
-  SIPTransaction *newTransaction = handler->CreateTransaction(transaction.GetTransport());
-  if (newTransaction) {
-    handler->SetExpire(responseMIME.GetMinExpires());
-    newTransaction->GetMIME().SetExpires(responseMIME.GetMinExpires());
-    newTransaction->GetMIME().SetCallID(handler->GetCallID());
-    if (newTransaction->Start())
-      return;
-  }
-
-  PTRACE(1, "SIP\t Could not restart REGISTER after IntervalTooBrief error!");
-  handler->OnFailed(SIP_PDU::Failure_IntervalTooBrief);
-  return;
-}
-
-void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
-{
-  // Try to find authentication information for the given call ID
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadOnly);
-  if (handler == NULL)
-    return;
-  
-  handler->OnReceivedAuthenticationRequired(transaction, response);
-}
-
-
-void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
-{
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadOnly);
-  if (handler == NULL) 
-    return;
-  
-  handler->OnReceivedOK(transaction, response);
-}
-    
 
 void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
 {
