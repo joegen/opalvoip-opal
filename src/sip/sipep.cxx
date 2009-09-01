@@ -899,6 +899,104 @@ bool SIPEndPoint::OnReceivedOPTIONS(OpalTransport & transport, SIP_PDU & pdu)
 }
 
 
+bool SIPEndPoint::Register(const PString & host,
+                           const PString & user,
+                           const PString & authName,
+                           const PString & password,
+                           const PString & realm,
+                           unsigned expire,
+                           const PTimeInterval & minRetryTime,
+                           const PTimeInterval & maxRetryTime)
+{
+  SIPRegister::Params params;
+  params.m_addressOfRecord = user;
+  params.m_registrarAddress = host;
+  params.m_authID = authName;
+  params.m_password = password;
+  params.m_realm = realm;
+  params.m_expire = expire;
+  params.m_minRetryTime = minRetryTime;
+  params.m_maxRetryTime = maxRetryTime;
+
+  PString dummy;
+  return Register(params, dummy);
+}
+
+
+bool SIPEndPoint::Register(const SIPRegister::Params & newParams, PString & aor)
+{
+  PTRACE(4, "SIP\tStart REGISTER\n" << newParams);
+
+  SIPRegister::Params params(newParams);
+  params.Normalise(GetDefaultLocalPartyName(), GetRegistrarTimeToLive());
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadWrite);
+
+  // If there is already a request with this URL and method, 
+  // then update it with the new information
+  if (handler != NULL) {
+    PSafePtrCast<SIPHandler, SIPRegisterHandler>(handler)->UpdateParameters(params);
+  }
+  else {
+    // Otherwise create a new request with this method type
+    handler = CreateRegisterHandler(params);
+    activeSIPHandlers.Append(handler);
+  }
+
+  aor = handler->GetAddressOfRecord().AsString();
+
+  return handler->ActivateState(SIPHandler::Subscribing);
+}
+
+
+SIPRegisterHandler * SIPEndPoint::CreateRegisterHandler(const SIPRegister::Params & params)
+{
+  return new SIPRegisterHandler(*this, params);
+}
+
+
+PBoolean SIPEndPoint::IsRegistered(const PString & token, bool includeOffline) 
+{
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
+  if (handler == NULL)
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_REGISTER, PSafeReference);
+
+  if (handler != NULL)
+    return includeOffline ? (handler->GetState() != SIPHandler::Unsubscribed)
+                          : (handler->GetState() == SIPHandler::Subscribed);
+
+  PTRACE(1, "SIP\tCould not find active REGISTER for " << token);
+  return false;
+}
+
+
+PBoolean SIPEndPoint::Unregister(const PString & token, unsigned msecs)
+{
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
+  if (handler == NULL)
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_REGISTER, PSafeReference);
+
+  if (handler != NULL)
+    return handler->ActivateState(SIPHandler::Unsubscribing, msecs);
+
+  PTRACE(1, "SIP\tCould not find active REGISTER for " << token);
+  return false;
+}
+
+
+bool SIPEndPoint::UnregisterAll()
+{
+  bool atLeastOne = false;
+
+  for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
+    if (handler->GetMethod() == SIP_PDU::Method_REGISTER &&
+        handler->ActivateState(SIPHandler::Unsubscribing))
+      atLeastOne = true;
+  }
+
+  return atLeastOne;
+}
+
+
 void SIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 {
   OnRegistrationStatus(status.m_addressofRecord, status.m_wasRegistering, status.m_reRegistering, status.m_reason);
@@ -933,195 +1031,6 @@ void SIPEndPoint::OnRegistered(const PString & /*aor*/,
 }
 
 
-void SIPEndPoint::NormaliseAddresses(const PString & user,
-                                     const PString & host,
-                                     SIPURL & aor,
-                                     SIPURL & server)
-{
-  /* Try to be intelligent about what we got in the two fields target/remote,
-     we have several scenarios depending on which is a partial or full URL.
-   */
-
-  if (user.IsEmpty()) {
-    if (host.IsEmpty())
-      aor = server = GetDefaultLocalPartyName() + '@' + PIPSocket::GetHostName();
-    else if (host.Find('@') == P_MAX_INDEX)
-      aor = server = GetDefaultLocalPartyName() + '@' + host;
-    else
-      aor = server = host;
-  }
-  else if (user.Find('@') == P_MAX_INDEX) {
-    if (host.IsEmpty())
-      aor = server = GetDefaultLocalPartyName() + '@' + user;
-    else if (host.Find('@') == P_MAX_INDEX)
-      aor = server = user + '@' + host;
-    else {
-      server = host;
-      aor = user + '@' + server.GetHostName();
-    }
-  }
-  else {
-    aor = user;
-    if (host.IsEmpty())
-      server = aor;
-    else if (host.Find('@') != P_MAX_INDEX)
-      server = host; // For third party registrations
-    else {
-      SIPURL remoteURL = host;
-      if (aor.GetHostAddress().IsEquivalent(remoteURL.GetHostAddress()))
-        server = aor;
-      else {
-        /* Note this sets the proxy field because the user has given a full AOR
-           with a domain for "user" and then specified a specific host name
-           which as far as we are concered is the host to talk to. Setting the
-           proxy will prevent SRV lookups or other things that might stop uis
-           from going to that very specific host.
-         */
-        server = remoteURL;
-        server.SetUserName(aor.GetUserName());
-        server.SetParamVar("proxy", host);
-      }
-    }
-  }
-}
-
-
-PBoolean SIPEndPoint::IsRegistered(const PString & url, bool includeOffline) 
-{
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  if (handler == NULL)
-    return PFalse;
-
-  return includeOffline ? (handler->GetState() != SIPHandler::Unsubscribed)
-                        : (handler->GetState() == SIPHandler::Subscribed);
-}
-
-
-PBoolean SIPEndPoint::IsSubscribed(const PString & eventPackage, const PString & to, bool includeOffline) 
-{
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);
-  if (handler == NULL)
-    return PFalse;
-
-  return includeOffline ? (handler->GetState() != SIPHandler::Unsubscribed)
-                        : (handler->GetState() == SIPHandler::Subscribed);
-}
-
-
-void SIPEndPoint::OnSubscriptionStatus(const PString & /*eventPackage*/,
-                                       const SIPURL & /*aor*/,
-                                       bool /*wasSubscribing*/,
-                                       bool /*reSubscribing*/,
-                                       SIP_PDU::StatusCodes /*reason*/)
-{
-}
-
-
-
-void SIPEndPoint::OnSubscriptionStatus(SIPSubscribeHandler & handler,
-                                       const SIPURL & aor,
-                                       bool wasSubscribing,
-                                       bool reSubscribing,
-                                       SIP_PDU::StatusCodes reason)
-{
-  // backwards compatiblity
-  OnSubscriptionStatus(handler.GetParams().m_eventPackage, 
-                       aor, 
-                       wasSubscribing, 
-                       reSubscribing, 
-                       reason);
-}
-
-
-bool SIPEndPoint::Register(const PString & host,
-                           const PString & user,
-                           const PString & authName,
-                           const PString & password,
-                           const PString & realm,
-                           unsigned expire,
-                           const PTimeInterval & minRetryTime,
-                           const PTimeInterval & maxRetryTime)
-{
-  SIPRegister::Params params;
-  params.m_addressOfRecord = user;
-  params.m_registrarAddress = host;
-  params.m_authID = authName;
-  params.m_password = password;
-  params.m_realm = realm;
-  params.m_expire = expire;
-  params.m_minRetryTime = minRetryTime;
-  params.m_maxRetryTime = maxRetryTime;
-
-  PString dummy;
-  return Register(params, dummy);
-}
-
-
-bool SIPEndPoint::Register(const SIPRegister::Params & params, PString & aor)
-{
-  PTRACE(4, "SIP\tStart REGISTER\n"
-            "        aor=" << params.m_addressOfRecord << "\n"
-            "  registrar=" << params.m_registrarAddress << "\n"
-            "    contact=" << params.m_contactAddress << "\n"
-            "     authID=" << params.m_authID << "\n"
-            "      realm=" << params.m_realm << "\n"
-            "     expire=" << params.m_expire << "\n"
-            "    restore=" << params.m_restoreTime << "\n"
-            "   minRetry=" << params.m_minRetryTime << "\n"
-            "   maxRetry=" << params.m_maxRetryTime);
-
-  SIPURL searchAOR, dummy;
-  NormaliseAddresses(params.m_addressOfRecord, params.m_registrarAddress, searchAOR, dummy);
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(searchAOR, SIP_PDU::Method_REGISTER, PSafeReadWrite);
-
-  // If there is already a request with this URL and method, 
-  // then update it with the new information
-  if (handler != NULL) {
-    PSafePtrCast<SIPHandler, SIPRegisterHandler>(handler)->UpdateParameters(params);
-  }
-  else {
-    // Otherwise create a new request with this method type
-    handler = CreateRegisterHandler(params);
-    activeSIPHandlers.Append(handler);
-  }
-
-  aor = handler->GetAddressOfRecord().AsString();
-
-  return handler->ActivateState(SIPHandler::Subscribing);
-}
-
-
-SIPRegisterHandler * SIPEndPoint::CreateRegisterHandler(const SIPRegister::Params & params)
-{
-  return new SIPRegisterHandler(*this, params);
-}
-
-
-PBoolean SIPEndPoint::Unregister(const PString & addressOfRecord, unsigned msecs)
-{
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReference);
-  if (handler != NULL)
-    return handler->ActivateState(SIPHandler::Unsubscribing, msecs);
-
-  PTRACE(1, "SIP\tCould not find active REGISTER for " << addressOfRecord);
-  return false;
-}
-
-
-bool SIPEndPoint::UnregisterAll()
-{
-  bool atLeastOne = false;
-
-  for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
-    if (handler->GetMethod() == SIP_PDU::Method_REGISTER &&
-        handler->ActivateState(SIPHandler::Unsubscribing))
-      atLeastOne = true;
-  }
-
-  return atLeastOne;
-}
-
-
 bool SIPEndPoint::Subscribe(SIPSubscribe::PredefinedPackages eventPackage, unsigned expire, const PString & to)
 {
   SIPSubscribe::Params params(eventPackage);
@@ -1133,11 +1042,13 @@ bool SIPEndPoint::Subscribe(SIPSubscribe::PredefinedPackages eventPackage, unsig
 }
 
 
-bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & params, PString & aor)
+bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & newParams, PString & aor)
 {
-  SIPURL searchAOR, dummy;
-  NormaliseAddresses(params.m_addressOfRecord, params.m_agentAddress, searchAOR, dummy);
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(searchAOR, SIP_PDU::Method_SUBSCRIBE, params.m_eventPackage, PSafeReadWrite);
+  PTRACE(4, "SIP\tStart SUBSCRIBE\n" << newParams);
+
+  SIPSubscribe::Params params(newParams);
+  params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_SUBSCRIBE, params.m_eventPackage, PSafeReadWrite);
 
   // If there is already a request with this URL and method, 
   // then update it with the new information
@@ -1155,6 +1066,39 @@ bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & params, PString & aor)
 }
 
 
+bool SIPEndPoint::IsSubscribed(const PString & token, bool includeOffline) 
+{
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReadOnly);
+  if (handler == NULL)
+    return false;
+
+  return includeOffline ? (handler->GetState() != SIPHandler::Unsubscribed)
+                        : (handler->GetState() == SIPHandler::Subscribed);
+}
+
+
+bool SIPEndPoint::IsSubscribed(const PString & eventPackage, const PString & to, bool includeOffline) 
+{
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);
+  if (handler == NULL)
+    return false;
+
+  return includeOffline ? (handler->GetState() != SIPHandler::Unsubscribed)
+                        : (handler->GetState() == SIPHandler::Subscribed);
+}
+
+
+bool SIPEndPoint::Unsubscribe(const PString & token)
+{
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
+  if (handler != NULL)
+    return handler->ActivateState(SIPHandler::Unsubscribing);
+
+  PTRACE(1, "SIP\tCould not find active SUBSCRIBE of id " << token);
+  return PFalse;
+}
+
+
 bool SIPEndPoint::Unsubscribe(SIPSubscribe::PredefinedPackages eventPackage, const PString & to)
 {
   return Unsubscribe(SIPEventPackage(eventPackage), to);
@@ -1163,8 +1107,14 @@ bool SIPEndPoint::Unsubscribe(SIPSubscribe::PredefinedPackages eventPackage, con
 
 bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & to)
 {
-  // Create the SIPHandler structure
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(to, PSafeReference);
+  if (handler == NULL)
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference);
+  else {
+    if (handler->GetEventPackage() != eventPackage)
+      handler.SetNULL();
+  }
+
   if (handler != NULL)
     return handler->ActivateState(SIPHandler::Unsubscribing);
 
@@ -1191,6 +1141,41 @@ bool SIPEndPoint::UnsubcribeAll(const PString & eventPackage)
   }
 
   return atLeastOne;
+}
+
+
+void SIPEndPoint::OnSubscriptionStatus(const SubscriptionStatus & status)
+{
+  // backwards compatiblity
+  OnSubscriptionStatus(*status.m_handler,
+                        status.m_addressofRecord,
+                        status.m_wasSubscribing,
+                        status.m_reSubscribing,
+                        status.m_reason);
+}
+
+
+void SIPEndPoint::OnSubscriptionStatus(const PString & /*eventPackage*/,
+                                       const SIPURL & /*aor*/,
+                                       bool /*wasSubscribing*/,
+                                       bool /*reSubscribing*/,
+                                       SIP_PDU::StatusCodes /*reason*/)
+{
+}
+
+
+void SIPEndPoint::OnSubscriptionStatus(SIPSubscribeHandler & handler,
+                                       const SIPURL & aor,
+                                       bool wasSubscribing,
+                                       bool reSubscribing,
+                                       SIP_PDU::StatusCodes reason)
+{
+  // backwards compatiblity
+  OnSubscriptionStatus(handler.GetParams().m_eventPackage, 
+                       aor, 
+                       wasSubscribing, 
+                       reSubscribing, 
+                       reason);
 }
 
 
@@ -1252,11 +1237,13 @@ PBoolean SIPEndPoint::Ping(const PURL & to)
 }
 
 
-bool SIPEndPoint::Publish(const SIPSubscribe::Params & params, const PString & body, PString & aor)
+bool SIPEndPoint::Publish(const SIPSubscribe::Params & newParams, const PString & body, PString & aor)
 {
-  SIPURL searchAOR, dummy;
-  NormaliseAddresses(params.m_addressOfRecord, params.m_agentAddress, searchAOR, dummy);
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(searchAOR, SIP_PDU::Method_PUBLISH, PSafeReadWrite);
+  PTRACE(4, "SIP\tStart PUBLISH\n" << newParams);
+
+  SIPSubscribe::Params params(newParams);
+  params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_PUBLISH, PSafeReadWrite);
   if (handler != NULL)
     handler->SetBody(body);
   else {

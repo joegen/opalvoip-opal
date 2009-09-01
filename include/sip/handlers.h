@@ -58,13 +58,8 @@ class SIPHandler : public PSafeObject
 
 protected:
   SIPHandler(
-    SIPEndPoint & ep, 
-    const PString & target,
-    const PString & remote,
-    int expireTime,
-    int offlineExpire = 30,
-    const PTimeInterval & retryMin = PMaxTimeInterval,
-    const PTimeInterval & retryMax = PMaxTimeInterval
+    SIPEndPoint & ep,
+    const SIPParameters & params
   );
 
 public:
