@@ -771,11 +771,6 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
     m_parameters.m_localAddress = GetAddressOfRecord().AsString();
   }
 
-  if (m_parameters.m_localAddress != m_parameters.m_addressOfRecord)
-    m_dialog.SetLocalURI(m_parameters.m_localAddress);
-  else
-    m_dialog.SetLocalURI(endpoint.GetRegisteredPartyName(m_parameters.m_addressOfRecord, *m_transport));
-
   m_dialog.SetRemoteURI(m_parameters.m_addressOfRecord);
 
   callID = m_dialog.GetCallID();
@@ -794,6 +789,13 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
   // Default routeSet if there is a proxy, do this now rather in ctor as we
   // need to have called GetTransport() to have m_proxy set correctly.
   m_dialog.UpdateRouteSet(m_proxy);
+
+  if (!m_dialog.IsEstablished()) {
+    if (m_parameters.m_localAddress != m_parameters.m_addressOfRecord)
+      m_dialog.SetLocalURI(m_parameters.m_localAddress);
+    else
+      m_dialog.SetLocalURI(endpoint.GetRegisteredPartyName(m_parameters.m_addressOfRecord, *m_transport));
+  }
 
   m_parameters.m_expire = state != Unsubscribing ? expire : 0;
   return new SIPSubscribe(endpoint, trans, m_dialog, m_parameters);
