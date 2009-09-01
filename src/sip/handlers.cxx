@@ -600,7 +600,7 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
 {
   // Foer some bizarre reason, even though REGISTER does not create a dialog,
   // some registrars insist that you have a from tag ...
-  SIPURL local = m_parameters.m_localAddress;
+  SIPURL local = params.m_localAddress.IsEmpty() ? params.m_addressOfRecord : params.m_localAddress;
   local.SetTag();
   m_parameters.m_localAddress = local.AsQuotedString();
 }
@@ -791,10 +791,10 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
   m_dialog.UpdateRouteSet(m_proxy);
 
   if (!m_dialog.IsEstablished()) {
-    if (m_parameters.m_localAddress != m_parameters.m_addressOfRecord)
-      m_dialog.SetLocalURI(m_parameters.m_localAddress);
-    else
+    if (m_parameters.m_localAddress.IsEmpty())
       m_dialog.SetLocalURI(endpoint.GetRegisteredPartyName(m_parameters.m_addressOfRecord, *m_transport));
+    else
+      m_dialog.SetLocalURI(m_parameters.m_localAddress);
   }
 
   m_parameters.m_expire = state != Unsubscribing ? expire : 0;

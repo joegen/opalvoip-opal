@@ -478,6 +478,8 @@ OpalTransportAddress SIPURL::GetHostAddress() const
 
 void SIPURL::Sanitise(UsageContext context)
 {
+  PINDEX i;
+
   // RFC3261, 19.1.1 Table 1
   static struct {
     const char * name;
@@ -491,9 +493,15 @@ void SIPURL::Sanitise(UsageContext context)
     { "tag",       (1<<RequestURI)|                        (1<<ContactURI)|(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) }
   };
 
-  for (PINDEX i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
+  for (i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
     if (SanitaryFields[i].contexts&(1<<context))
       paramVars.RemoveAt(PCaselessString(SanitaryFields[i].name));
+  }
+
+  for (i = 0; i < paramVars.GetSize(); ++i) {
+    PCaselessString key = paramVars.GetKeyAt(i);
+    if (key.NumCompare("OPAL-") == EqualTo)
+      paramVars.RemoveAt(key);
   }
 
   if (context != ContactURI && context != ExternalURI)
@@ -2213,7 +2221,7 @@ bool SIPDialogContext::FromString(const PString & str)
 }
 
 
-static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool generate)
+static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool local)
 {
   uri = url;
 
@@ -2228,21 +2236,23 @@ static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool gen
     tag = newTag;
   }
 
-  if (tag.IsEmpty() && generate)
+  if (tag.IsEmpty() && local)
     tag = SIPURL::GenerateTag();
 
   if (!tag.IsEmpty())
     uri.SetFieldParameters("tag="+tag);
+
+  uri.Sanitise(local ? SIPURL::FromURI : SIPURL::ToURI);
 }
 
 
-static bool SetWithTag(const PString & str, SIPURL & uri, PString & tag, bool generate)
+static bool SetWithTag(const PString & str, SIPURL & uri, PString & tag, bool local)
 {
   SIPURL url;
   if (!url.Parse(str))
     return false;
 
-  SetWithTag(url, uri, tag, generate);
+  SetWithTag(url, uri, tag, local);
   return true;
 }
 
@@ -2823,9 +2833,7 @@ void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval &
     }
   }
 
-  if (m_localAddress.IsEmpty())
-    m_localAddress = aor.AsString();
-  else {
+  if (!m_localAddress.IsEmpty()) {
     SIPURL local(m_localAddress);
     m_localAddress = local.AsString();
     aor.SetParamVar(OPAL_LOCAL_ID_PARAM, m_localAddress);
@@ -2932,7 +2940,6 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
 
   SIPURL to = params.m_addressOfRecord;
   to.Sanitise(SIPURL::ToURI);
-  to.SetParamVar(OPAL_LOCAL_ID_PARAM, PString::Empty());
 
   SIPURL from = params.m_localAddress;
   from.Sanitise(SIPURL::FromURI);
@@ -3108,7 +3115,10 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   SIPURL toAddress = params.m_addressOfRecord;
+  toAddress.Sanitise(SIPURL::ToURI);
+
   SIPURL fromAddress = toAddress;
+  fromAddress.Sanitise(SIPURL::FromURI);
   fromAddress.SetTag();
 
   SIP_PDU::Construct(Method_PUBLISH,
@@ -3127,7 +3137,7 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
 
   if (!sipIfMatch.IsEmpty())
     mime.SetSIPIfMatch(sipIfMatch);
-  
+
   mime.SetEvent(params.m_eventPackage);
   SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
   if (packageHandler != NULL) {
@@ -3198,10 +3208,11 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   SIPURL myAddress = localAddress = endpoint.GetRegisteredPartyName(address.GetHostName(), transport);
+  myAddress.Sanitise(SIPURL::FromURI);
   myAddress.SetTag();
 
   SIP_PDU::Construct(Method_MESSAGE,
-                     address.AsQuotedString(),
+                     address,
                      address.AsQuotedString(),
                      myAddress.AsQuotedString(),
                      id,
@@ -3222,7 +3233,7 @@ SIPPing::SIPPing(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   SIP_PDU::Construct(Method_PING,
-                     address.AsQuotedString(),
+                     address,
                      address.AsQuotedString(),
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                      GenerateCallID(),
