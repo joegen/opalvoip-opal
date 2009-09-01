@@ -68,31 +68,28 @@ ostream & operator<<(ostream & strm, SIPHandler::State state)
 
 ////////////////////////////////////////////////////////////////////////////
 
-SIPHandler::SIPHandler(SIPEndPoint & ep,
-                       const PString & target,
-                       const PString & remote,
-                       int expireTime,
-                       int offlineExpireTime,
-                       const PTimeInterval & retryMin,
-                       const PTimeInterval & retryMax)
+SIPHandler::SIPHandler(SIPEndPoint & ep, const SIPParameters & params)
   : endpoint(ep)
+  , authentication(NULL)
+  , m_username(params.m_authID)
+  , m_password(params.m_password)
+  , m_realm(params.m_realm)
   , m_transport(NULL)
+  , m_addressOfRecord(params.m_addressOfRecord)
+  , m_remoteAddress(params.m_remoteAddress)
   , callID(SIPTransaction::GenerateCallID())
-  , expire(expireTime)
-  , originalExpire(expireTime)
-  , offlineExpire(offlineExpireTime)
+  , expire(params.m_expire)
+  , originalExpire(params.m_expire)
+  , offlineExpire(params.m_restoreTime)
+  , authenticationAttempts(0)
   , state(Unavailable)
-  , retryTimeoutMin(retryMin)
-  , retryTimeoutMax(retryMax)
+  , retryTimeoutMin(params.m_minRetryTime)
+  , retryTimeoutMax(params.m_maxRetryTime)
 {
   transactions.DisallowDeleteObjects();
-
-  endpoint.NormaliseAddresses(target, remote, m_addressOfRecord, m_remoteAddress);
-
-  authenticationAttempts = 0;
-  authentication = NULL;
-
   expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
+
+  PTRACE(4, "SIP\tConstructed handler\n" << params);
 }
 
 
@@ -155,7 +152,7 @@ OpalTransport * SIPHandler::GetTransport()
 
   if (m_proxy.IsEmpty()) {
     // Look for a "proxy" parameter to override default proxy
-    const PStringToString & params = m_addressOfRecord.GetParamVars();
+    const PStringToString & params = GetAddressOfRecord().GetParamVars();
     if (params.Contains("proxy")) {
       m_proxy.Parse(params("proxy"));
       m_addressOfRecord.SetParamVar("proxy", PString::Empty());
@@ -597,27 +594,15 @@ void SIPHandler::OnExpireTimeout(PTimer &, INT)
 ///////////////////////////////////////////////////////////////////////////////
 
 SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister::Params & params)
-  : SIPHandler(endpoint,
-               params.m_addressOfRecord,
-               params.m_registrarAddress,
-               params.m_expire > 0 ? params.m_expire : endpoint.GetRegistrarTimeToLive().GetSeconds(),
-               params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
+  : SIPHandler(endpoint, params)
   , m_parameters(params)
   , m_sequenceNumber(0)
 {
-  // Put adjusted values back
-  SIPURL aor = GetAddressOfRecord();
-  aor.SetTag();
-  m_parameters.m_addressOfRecord = aor.AsQuotedString();
-  m_parameters.m_registrarAddress = m_remoteAddress.AsQuotedString();
-  m_parameters.m_expire = expire;
-
-  m_username = params.m_authID;
-  m_password = params.m_password;
-  m_realm    = params.m_realm;
-
-  if (m_username.IsEmpty())
-    m_username = m_addressOfRecord.GetUserName();
+  // Foer some bizarre reason, even though REGISTER does not create a dialog,
+  // some registrars insist that you have a from tag ...
+  SIPURL local = m_parameters.m_localAddress;
+  local.SetTag();
+  m_parameters.m_localAddress = local.AsQuotedString();
 }
 
 
@@ -722,6 +707,7 @@ PBoolean SIPRegisterHandler::SendRequest(SIPHandler::State s)
 void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
 {
   SIPEndPoint::RegistrationStatus status;
+  status.m_handler = this;
   status.m_addressofRecord = GetAddressOfRecord().AsString();
   status.m_productInfo = m_productInfo;
   status.m_reason = code;
@@ -773,37 +759,26 @@ void SIPRegisterHandler::UpdateParameters(const SIPRegister::Params & params)
 /////////////////////////////////////////////////////////////////////////
 
 SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscribe::Params & params)
-  : SIPHandler(endpoint,
-               params.m_addressOfRecord,
-               params.m_agentAddress,
-               params.m_expire > 0 ? params.m_expire : endpoint.GetNotifierTimeToLive().GetSeconds(),
-               params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
+  : SIPHandler(endpoint, params)
   , m_parameters(params)
   , m_unconfirmed(true)
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(params.m_eventPackage))
 {
-  // Put possibly adjusted value back
-  m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
-  m_parameters.m_expire = expire;
-
-  m_dialog.SetRemoteURI(m_addressOfRecord);
-  if (!params.m_eventPackage.IsWatcher()) {
+  if (!params.m_eventPackage.IsWatcher())
     m_dialog.SetRequestURI(m_remoteAddress);
-  }
   else {
-    m_dialog.SetRequestURI(m_addressOfRecord);
-    m_parameters.m_from = m_addressOfRecord.AsString();
+    m_dialog.SetRequestURI(GetAddressOfRecord());
+    m_parameters.m_localAddress = GetAddressOfRecord().AsString();
   }
+
+  if (m_parameters.m_localAddress != m_parameters.m_addressOfRecord)
+    m_dialog.SetLocalURI(m_parameters.m_localAddress);
+  else
+    m_dialog.SetLocalURI(endpoint.GetRegisteredPartyName(m_parameters.m_addressOfRecord, *m_transport));
+
+  m_dialog.SetRemoteURI(m_parameters.m_addressOfRecord);
 
   callID = m_dialog.GetCallID();
-
-  m_username = params.m_authID;
-  m_password = params.m_password;
-  m_realm    = params.m_realm;
-
-  // having an agent is the same as having a proxy....near enough
-  if (!params.m_agentAddress.IsEmpty())
-    m_proxy = params.m_agentAddress;
 }
 
 
@@ -816,15 +791,9 @@ SIPSubscribeHandler::~SIPSubscribeHandler()
 
 SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 { 
-  // Default routeSet if there is a proxy
+  // Default routeSet if there is a proxy, do this now rather in ctor as we
+  // need to have called GetTransport() to have m_proxy set correctly.
   m_dialog.UpdateRouteSet(m_proxy);
-
-  if (!m_dialog.IsEstablished()) {
-    if (!m_parameters.m_from.IsEmpty())
-      m_dialog.SetLocalURI(m_parameters.m_from);
-    else
-      m_dialog.SetLocalURI(endpoint.GetRegisteredPartyName(GetAddressOfRecord(), *m_transport));
-  }
 
   m_parameters.m_expire = state != Unsubscribing ? expire : 0;
   return new SIPSubscribe(endpoint, trans, m_dialog, m_parameters);
@@ -874,30 +843,46 @@ PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
 
 void SIPSubscribeHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
 {
+  SIPEndPoint::SubscriptionStatus status;
+  status.m_handler = this;
+  status.m_addressofRecord = GetAddressOfRecord().AsString();
+  status.m_productInfo = m_productInfo;
+  status.m_reason = code;
+  status.m_userData = m_parameters.m_userData;
+
   switch (state) {
     case Subscribing :
-      endpoint.OnSubscriptionStatus(*this, GetAddressOfRecord(), true, false, code);
+      status.m_wasSubscribing = true;
+      status.m_reSubscribing = false;
       break;
 
     case Subscribed :
-      if (m_unconfirmed)
-        endpoint.OnSubscriptionStatus(*this, GetAddressOfRecord(), true, false, code);
+      if (m_unconfirmed) {
+        status.m_wasSubscribing = true;
+        status.m_reSubscribing = false;
+        endpoint.OnSubscriptionStatus(status);
+      }
       // Do next state
 
     case Refreshing :
-      endpoint.OnSubscriptionStatus(*this, GetAddressOfRecord(), true, true, code);
+      status.m_wasSubscribing = true;
+      status.m_reSubscribing = true;
       break;
 
     case Unsubscribed :
     case Unavailable :
     case Restoring :
-      endpoint.OnSubscriptionStatus(*this, GetAddressOfRecord(), true, code/100 != 2, code);
+      status.m_wasSubscribing = true;
+      status.m_reSubscribing = code/100 != 2;
       break;
 
     case Unsubscribing :
-      endpoint.OnSubscriptionStatus(*this, GetAddressOfRecord(), false, false, code);
+      status.m_wasSubscribing = false;
+      status.m_reSubscribing = false;
       break;
   }
+
+  endpoint.OnSubscriptionStatus(status);
 }
 
 
@@ -1538,10 +1523,7 @@ SIPNotifyHandler::SIPNotifyHandler(SIPEndPoint & endpoint,
                                    const PString & targetAddress,
                                    const SIPEventPackage & eventPackage,
                                    const SIPDialogContext & dialog)
-  : SIPHandler(endpoint,
-               targetAddress,
-               dialog.GetRemoteURI().AsString(),
-               endpoint.GetNotifierTimeToLive().GetSeconds())
+  : SIPHandler(endpoint, SIPParameters(targetAddress, dialog.GetRemoteURI().AsString()))
   , m_eventPackage(eventPackage)
   , m_dialog(dialog)
   , m_reason(Deactivated)
@@ -1615,22 +1597,10 @@ bool SIPNotifyHandler::SendNotify(const PObject * body)
 SIPPublishHandler::SIPPublishHandler(SIPEndPoint & endpoint,
                                      const SIPSubscribe::Params & params,
                                      const PString & b)
-  : SIPHandler(endpoint,
-               params.m_addressOfRecord,
-               params.m_agentAddress,
-               params.m_expire > 0 ? params.m_expire : 60,
-               params.m_restoreTime, params.m_minRetryTime, params.m_maxRetryTime)
+  : SIPHandler(endpoint, params)
   , m_parameters(params)
   , m_stateChanged(false)
 {
-  // Put possibly adjusted value back
-  m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
-  m_parameters.m_expire = expire;
-
-  m_username = params.m_authID;
-  m_password = params.m_password;
-  m_realm    = params.m_realm;
-
   body = b;
 }
 
@@ -1755,7 +1725,7 @@ PString SIPPresenceInfo::AsXML() const
 /////////////////////////////////////////////////////////////////////////
 
 SIPMessageHandler::SIPMessageHandler (SIPEndPoint & endpoint, const PString & to, const PString & b, const PString & c, const PString & id)
-  : SIPHandler(endpoint, to, c, 60)
+  : SIPHandler(endpoint, SIPParameters(to, c))
 {
   body   = b;
   callID = id;
@@ -1797,7 +1767,7 @@ void SIPMessageHandler::SetBody(const PString & b)
 /////////////////////////////////////////////////////////////////////////
 
 SIPPingHandler::SIPPingHandler(SIPEndPoint & endpoint, const PURL & to)
-: SIPHandler(endpoint, to.AsString(), PString::Empty(), 60)
+: SIPHandler(endpoint, SIPParameters(to.AsString()))
 {
 }
 

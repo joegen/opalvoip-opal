@@ -354,21 +354,42 @@ class SIPEndPoint : public OpalRTPEndPoint
     virtual PBoolean IsAcceptedAddress(const SIPURL & toAddr);
 
 
-    /**Register to a registrar. This function is asynchronous to permit
-       several registrations to occur at the same time. It can be
-       called several times for different hosts and users.
-       
-       The username can be of the form user@domain. In that case,
-       the address-of-record field will be set to that value. If not then
-       the address-of-record is constructed from the user and host fields.
-       
-       The realm can be specified when registering, this will
+    /**Register an entity to a registrar.
+       This function is asynchronous to permit several registrations to occur
+       at the same time. It can be called several times for different hosts
+       and users.
+
+       The params.m_addressOfRecord field is the only field required, though
+       typically params.m_password is also required. A registration for the
+       user part of params.m_addressOfRecord is made to the a registrar
+       associated with the domain part of the field. The authentication
+       identity is the same as the user field, though this may be set to
+       soemthing different via the params.m_authID field.
+
+       The params.m_registrarAddress may indicate the specific hostname to use
+       for the registrar rather than using the domain part of
+       params.m_addressOfRecord field.
+
+       To aid in flexbility if the params.m_addressOfRecord does not contain
+       a domain and the params.m_registrarAddress does, the the AOR is
+       constructed from them.
+
+       The params.m_realm can be specified when registering, this will
        allow to find the correct authentication information when being
        requested. If no realm is specified, authentication will
        occur with the "best guess" of authentication parameters.
+
+       The Contact address is normally constructed from the listeners active
+       on the SIPEndPoint. This may be overridden to an explicit value via the
+       params.m_contactAddress field.
+
+       The returned "token" is a string that can be used in functions
+       such as Unregister() or IsRegistered(). While it possible to use the
+       AOR for those functions, it is not recommended as a) there may be more
+       than one registration for an AOR and b) the AOR may be constructed from
      */
     bool Register(
-      const SIPRegister::Params & params, ///< Registration paarameters
+      const SIPRegister::Params & params, ///< Registration parameters
       PString & aor                       ///< Resultant address-of-record for unregister
     );
 
@@ -384,11 +405,36 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
 
-    /**Unregister from a registrar.
-       This will unregister the specified address-of-record.
+    /**Determine if there is a registration for the entity.
+       The "token" parameter string is typically the string returned by the
+       Register() function which is guaranteed to uniquely identify the
+       specific registration.
+
+       For backward compatibility, the AOR can also be used, but as it is
+       possible to have two registrations to the same AOR, this should be
+       avoided.
+
+       The includeOffline parameter indicates if the caller is interested in
+       if we are, to the best of our knowledge, currently registered (have
+       had recent confirmation) or we are not sure if we are registered or
+       not, but are continually re-trying.
+     */
+    PBoolean IsRegistered(
+      const PString & aor,          ///< AOR returned by Register()
+      bool includeOffline = false   ///< Include offline registrations
+    );
+
+    /**Unregister the address-of-record from a registrar.
+       The "token" parameter string is typically the string returned by the
+       Register() function which is guaranteed to uniquely identify the
+       specific registration.
+
+       For backward compatibility, the AOR can also be used, but as it is
+       possible to have two registrations to the same AOR, this should be
+       avoided.
      */
     bool Unregister(
-      const PString & aor,
+      const PString & aor,    ///< AOR returned by Register()
       unsigned msecs = 1000
     );
 
@@ -396,17 +442,6 @@ class SIPEndPoint : public OpalRTPEndPoint
        Returns true if at least one registrar is unregistered.
       */
     bool UnregisterAll();
-
-    /**Returns PTrue if the given URL has been registered 
-     * (e.g.: 6001@seconix.com). The includeOffline parameter indicates
-       if the caller is interested in if we are, to the best of our knowlegde,
-       currently registered (have had recent confirmation) or we are not sure
-       if we are registered or not, but are continually re-trying.
-     */
-    PBoolean IsRegistered(
-      const PString & aor,          ///< Address of record to check
-      bool includeOffline = false   ///< Include offline registrations
-    );
 
     /** Returns the number of registered accounts.
      */
@@ -420,12 +455,13 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /** Information provided on the registration status. */
     struct RegistrationStatus {
+      SIPRegisterHandler * m_handler;           ///< Handler for registration
       PString              m_addressofRecord;   ///< Address of record for registration
       bool                 m_wasRegistering;    ///< Was registering or unregistering
       bool                 m_reRegistering;     ///< Was a registration refresh
       SIP_PDU::StatusCodes m_reason;            ///< Reason for status change
       OpalProductInfo      m_productInfo;       ///< Server product info from registrar if available.
-      void                 * m_userData;        ///< User data corresponding to this registration
+      void               * m_userData;          ///< User data corresponding to this registration
     };
 
     /**Callback called when a registration to a SIP registrar status.
@@ -460,21 +496,79 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
 
-    /**Subscribe to a notifier. This function is asynchronous to permit
-     * several subscriptions to occur at the same time.
+    /**Subscribe to an agent to get event notifications.
+       This function is asynchronous to permit several subscriptions to occur
+       at the same time. It can be called several times for different hosts
+       and users.
+
+       The params.m_eventPackage and params.m_addressOfRecord field are the
+       only field required, though typically params.m_password is also
+       required. A subscription for the user part of params.m_addressOfRecord
+       is made to the an agent associated with the domain part of the field.
+       The authentication identity is the same as the user field, though this
+       may be set to soemthing different via the params.m_authID field.
+
+       The params.m_agentAddress may indicate the specific hostname to use
+       for the registrar rather than using the domain part of
+       params.m_addressOfRecord field.
+
+       To aid in flexbility if the params.m_addressOfRecord does not contain
+       a domain and the params.m_agentAddress does, the the AOR is
+       constructed from them.
+
+       The params.m_realm can be specified when subcribing, this will
+       allow to find the correct authentication information when being
+       requested. If no realm is specified, authentication will
+       occur with the "best guess" of authentication parameters.
+
+       The Contact address is normally constructed from the SIPEndPoint local
+       identity.
+
+       The returned "token" is a string that can be used in functions
+       such as Unregister() or IsRegistered(). While it possible to use the
+       AOR for those functions, it is not recommended as a) there may be more
+       than one registration for an AOR and b) teh AOR may be constructed from
      */
+    bool Subscribe(
+      const SIPSubscribe::Params & params, ///< Subscription parameters
+      PString & aor                        ///< Resultant address-of-record for unsubscribe
+    );
+
+    // For backward compatibility
     bool Subscribe(
       SIPSubscribe::PredefinedPackages eventPackage, ///< Event package being unsubscribed
       unsigned expire,                               ///< Expiry time in seconds
       const PString & aor                            ///< Address-of-record for subscription
     );
-    bool Subscribe(
-      const SIPSubscribe::Params & params, ///< Subscription paarameters
-      PString & aor                        ///< Resultant address-of-record for unsubscribe
+
+    /**Returns true if the endpoint is subscribed to some
+       event for the given to address. The includeOffline parameter indicates
+       if the caller is interested in if we are, to the best of our knowlegde,
+       currently subscribed (have had recent confirmation) or we are not sure
+       if we are subscribed or not, but are continually re-trying.
+     */
+    bool IsSubscribed(
+      const PString & aor,           ///< AOR returned by Subscribe()
+      bool includeOffline = false    ///< Include offline subscription
+    );
+    bool IsSubscribed(
+      const PString & eventPackage,  ///< Event package being unsubscribed
+      const PString & aor,           ///< Address-of-record for subscription
+      bool includeOffline = false    ///< Include offline subscription
     );
 
     /**Unsubscribe a current subscriptions.
+       The "token" parameter string is typically the string returned by the
+       Subscribe() function which is guaranteed to uniquely identify the
+       specific registration.
+
+       For backward compatibility, the AOR can also be used, but as it is
+       possible to have two susbcriptions to the same AOR, this should be
+       avoided.
       */
+    bool Unsubscribe(
+      const PString & aor          ///< Unique token for registration
+    );
     bool Unsubscribe(
       SIPSubscribe::PredefinedPackages eventPackage,  ///< Event package being unsubscribed
       const PString & aor                             ///< Address-of-record for subscription
@@ -494,18 +588,6 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PString & eventPackage  ///< Event package being unsubscribed
     );
 
-    /**Returns true if the endpoint is subscribed to some
-       event for the given to address. The includeOffline parameter indicates
-       if the caller is interested in if we are, to the best of our knowlegde,
-       currently subscribed (have had recent confirmation) or we are not sure
-       if we are subscribed or not, but are continually re-trying.
-     */
-    PBoolean IsSubscribed(
-      const PString & eventPackage,  ///< Event package being unsubscribed
-      const PString & aor,           ///< Address-of-record for subscription
-      bool includeOffline = false    ///< Include offline subscriptions
-    );
-
     /** Returns the number of registered accounts.
      */
     unsigned GetSubscriptionCount(
@@ -518,6 +600,23 @@ class SIPEndPoint : public OpalRTPEndPoint
       const SIPSubscribe::EventPackage & eventPackage, ///< Event package of subscription
       bool includeOffline = false   ///< Include offline subscriptions
     ) const { return activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_REGISTER, eventPackage); }
+
+    /** Information provided on the subscription status. */
+    struct SubscriptionStatus {
+      SIPSubscribeHandler * m_handler;           ///< Handler for subscription
+      PString               m_addressofRecord;   ///< Address of record for registration
+      bool                  m_wasSubscribing;    ///< Was registering or unregistering
+      bool                  m_reSubscribing;     ///< Was a registration refresh
+      SIP_PDU::StatusCodes  m_reason;            ///< Reason for status change
+      OpalProductInfo       m_productInfo;       ///< Server product info from registrar if available.
+      void                * m_userData;          ///< User data corresponding to this registration
+    };
+
+    /**Callback called when a subscription to a SIP UA status changes.
+     */
+    virtual void OnSubscriptionStatus(
+      const SubscriptionStatus & status   ///< Status of subscription request
+    );
 
     /**Callback called when a subscription to a SIP UA status changes.
        Now deprecated - called by OnSubscriptionStatus that accepts SIPHandler
@@ -803,16 +902,6 @@ class SIPEndPoint : public OpalRTPEndPoint
 #if OPAL_HAS_SIPIM
     virtual OpalSIPIMManager & GetSIPIMManager() { return m_sipIMManager; }
 #endif
-
-    /**This function takes some combinations of addresses and generates normalised
-       address-of-record and server host addresses.
-      */
-    void NormaliseAddresses(
-      const PString & user,
-      const PString & host,
-      SIPURL & aor,
-      SIPURL & server
-    );
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);

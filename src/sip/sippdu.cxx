@@ -2762,6 +2762,104 @@ PString SIPTransaction::GenerateCallID()
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+SIPParameters::SIPParameters(const PString & aor, const PString & remote)
+  : m_remoteAddress(remote)
+  , m_addressOfRecord(aor)
+  , m_expire(0)
+  , m_restoreTime(30)
+  , m_minRetryTime(PMaxTimeInterval)
+  , m_maxRetryTime(PMaxTimeInterval)
+  , m_userData(NULL)
+{
+}
+
+
+void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval & defaultExpire)
+{
+  /* Try to be intelligent about what we got in the two fields target/remote,
+     we have several scenarios depending on which is a partial or full URL.
+   */
+
+  SIPURL aor, server;
+  if (m_addressOfRecord.IsEmpty()) {
+    if (m_remoteAddress.IsEmpty())
+      aor = server = defaultUser + '@' + PIPSocket::GetHostName();
+    else if (m_remoteAddress.Find('@') == P_MAX_INDEX)
+      aor = server = defaultUser + '@' + m_remoteAddress;
+    else
+      aor = server = m_remoteAddress;
+  }
+  else if (m_addressOfRecord.Find('@') == P_MAX_INDEX) {
+    if (m_remoteAddress.IsEmpty())
+      aor = server = defaultUser + '@' + m_addressOfRecord;
+    else if (m_remoteAddress.Find('@') == P_MAX_INDEX)
+      aor = server = m_addressOfRecord + '@' + m_remoteAddress;
+    else {
+      server = m_remoteAddress;
+      aor = m_addressOfRecord + '@' + server.GetHostName();
+    }
+  }
+  else {
+    aor = m_addressOfRecord;
+    if (m_remoteAddress.IsEmpty())
+      server = aor;
+    else if (m_remoteAddress.Find('@') != P_MAX_INDEX)
+      server = m_remoteAddress; // For third party registrations
+    else {
+      SIPURL remoteURL = m_remoteAddress;
+      if (aor.GetHostAddress().IsEquivalent(remoteURL.GetHostAddress()))
+        server = aor;
+      else {
+        /* Note this sets the proxy field because the user has given a full AOR
+           with a domain for "user" and then specified a specific host name
+           which as far as we are concered is the host to talk to. Setting the
+           proxy will prevent SRV lookups or other things that might stop uis
+           from going to that very specific host.
+         */
+        server = remoteURL;
+        server.SetUserName(aor.GetUserName());
+        server.SetParamVar("proxy", m_remoteAddress);
+      }
+    }
+  }
+
+  if (m_localAddress.IsEmpty())
+    m_localAddress = aor.AsString();
+  else {
+    SIPURL local(m_localAddress);
+    m_localAddress = local.AsString();
+    aor.SetParamVar(OPAL_LOCAL_ID_PARAM, m_localAddress);
+  }
+
+  m_remoteAddress = server.AsString();
+  m_addressOfRecord = aor.AsString();
+
+  if (m_authID.IsEmpty())
+    m_authID = aor.GetUserName();
+
+  if (m_expire == 0)
+    m_expire = defaultExpire.GetSeconds();
+}
+
+
+ostream & operator<<(ostream & strm, const SIPParameters & params)
+{
+  strm << "        aor=" << params.m_addressOfRecord << "\n"
+          "     remote=" << params.m_remoteAddress << "\n"
+          "      local=" << params.m_localAddress << "\n"
+          "    contact=" << params.m_contactAddress << "\n"
+          "     authID=" << params.m_authID << "\n"
+          "      realm=" << params.m_realm << "\n"
+          "     expire=" << params.m_expire << "\n"
+          "    restore=" << params.m_restoreTime << "\n"
+          "   minRetry=" << params.m_minRetryTime << "\n"
+          "   maxRetry=" << params.m_maxRetryTime;
+  return strm;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
 SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, const OpalRTPSessionManager & sm)
   : SIPTransaction(connection, transport, Method_INVITE)
   , rtpSessions(sm)
@@ -2821,16 +2919,6 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPRegister::Params::Params()
-  : m_expire(0)
-  , m_restoreTime(30)
-  , m_minRetryTime(PMaxTimeInterval)
-  , m_maxRetryTime(PMaxTimeInterval)
-  , m_userData(NULL)
-{
-}
-
-
 SIPRegister::SIPRegister(SIPEndPoint & ep,
                          OpalTransport & trans,
                          const SIPURL & proxy,
@@ -2840,12 +2928,19 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   : SIPTransaction(ep, trans, params.m_minRetryTime, params.m_maxRetryTime)
 {
   SIPURL uri = params.m_registrarAddress;
-  PString to = uri.GetUserName().IsEmpty() ? params.m_addressOfRecord : params.m_registrarAddress;
   uri.Sanitise(SIPURL::RegisterURI);
+
+  SIPURL to = params.m_addressOfRecord;
+  to.Sanitise(SIPURL::ToURI);
+  to.SetParamVar(OPAL_LOCAL_ID_PARAM, PString::Empty());
+
+  SIPURL from = params.m_localAddress;
+  from.Sanitise(SIPURL::FromURI);
+
   SIP_PDU::Construct(Method_REGISTER,
                      uri.AsString(),
-                     to,
-                     params.m_addressOfRecord,
+                     to.AsQuotedString(),
+                     from.AsQuotedString(),
                      id,
                      cseq,
                      ep.GetLocalURL(transport).GetHostAddress());
@@ -2940,17 +3035,6 @@ PObject::Comparison SIPSubscribe::EventPackage::InternalCompare(PINDEX offset, P
 }
 
 
-SIPSubscribe::Params::Params(unsigned pkg)
-  : m_eventPackage(pkg)
-  , m_expire(0)
-  , m_restoreTime(30)
-  , m_minRetryTime(PMaxTimeInterval)
-  , m_maxRetryTime(PMaxTimeInterval)
-  , m_userData(NULL)
-{
-}
-
-
 SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                            OpalTransport & trans,
                            SIPDialogContext & dialog,
@@ -3019,7 +3103,7 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
                        OpalTransport & trans,
                        const PString & id,
                        const PString & sipIfMatch,
-                       SIPSubscribe::Params & params,
+                       const SIPSubscribe::Params & params,
                        const PString & body)
   : SIPTransaction(ep, trans)
 {
