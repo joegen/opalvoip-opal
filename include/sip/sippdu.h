@@ -867,6 +867,37 @@ class SIPTransaction : public SIP_PDU
 };
 
 
+#define OPAL_LOCAL_ID_PARAM "OPAL-local-id"
+
+struct SIPParameters
+{
+  SIPParameters(
+    const PString & aor = PString::Empty(),
+    const PString & remote = PString::Empty()
+  );
+
+  void Normalise(
+    const PString & defaultUser,
+    const PTimeInterval & defaultExpire
+  );
+
+  PString       m_remoteAddress;
+  PString       m_localAddress;
+  PString       m_addressOfRecord;
+  PString       m_contactAddress;
+  PString       m_authID;
+  PString       m_password;
+  PString       m_realm;
+  unsigned      m_expire;
+  unsigned      m_restoreTime;
+  PTimeInterval m_minRetryTime;
+  PTimeInterval m_maxRetryTime;
+  void        * m_userData;
+};
+
+ostream & operator<<(ostream & strm, const SIPParameters & params);
+
+
 /////////////////////////////////////////////////////////////////////////
 // SIPInvite
 
@@ -901,20 +932,17 @@ class SIPRegister : public SIPTransaction
 {
     PCLASSINFO(SIPRegister, SIPTransaction);
   public:
-    struct Params {
-      Params();
+    struct Params : public SIPParameters {
+      Params()
+        : m_registrarAddress(m_remoteAddress)
+      { }
 
-      PString       m_addressOfRecord;
-      PString       m_registrarAddress;
-      PString       m_contactAddress;
-      PString       m_authID;
-      PString       m_password;
-      PString       m_realm;
-      unsigned      m_expire;
-      unsigned      m_restoreTime;
-      PTimeInterval m_minRetryTime;
-      PTimeInterval m_maxRetryTime;
-      void          * m_userData;
+      Params(const Params & param)
+        : SIPParameters(param)
+        , m_registrarAddress(m_remoteAddress)
+      { }
+
+      PString & m_registrarAddress; // For backward compatibility
     };
 
     SIPRegister(
@@ -964,22 +992,21 @@ class SIPSubscribe : public SIPTransaction
         bool m_isWatcher;
     };
 
-    struct Params {
-      Params(unsigned pkg = NumPredefinedPackages);
+    struct Params : public SIPParameters
+    {
+      Params(unsigned pkg = NumPredefinedPackages)
+        : m_eventPackage(pkg)
+        , m_agentAddress(m_remoteAddress)
+      { }
 
-      EventPackage  m_eventPackage;
-      PString       m_agentAddress;
-      PString       m_addressOfRecord;
-      PString       m_contactAddress;
-      PString       m_authID;
-      PString       m_password;
-      PString       m_realm;
-      unsigned      m_expire;
-      unsigned      m_restoreTime;
-      PTimeInterval m_minRetryTime;
-      PTimeInterval m_maxRetryTime;
-      void          * m_userData;
-      PString       m_from;
+      Params(const Params & param)
+        : SIPParameters(param)
+        , m_eventPackage(param.m_eventPackage)
+        , m_agentAddress(m_remoteAddress)
+      { }
+
+      EventPackage m_eventPackage;
+      PString    & m_agentAddress; // For backward compatibility
     };
 
     SIPSubscribe(
@@ -1039,7 +1066,7 @@ class SIPPublish : public SIPTransaction
       OpalTransport & trans,
       const PString & id,
       const PString & sipIfMatch,
-      SIPSubscribe::Params & params,
+      const SIPSubscribe::Params & params,
       const PString & body
     );
 };
