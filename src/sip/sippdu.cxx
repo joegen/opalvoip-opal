@@ -2343,7 +2343,7 @@ bool SIPDialogContext::IsDuplicateCSeq(unsigned requestCSeq)
 
   PTRACE_IF(4, m_lastReceivedCSeq == 0, "SIP\tDialog initial sequence number " << requestCSeq);
   PTRACE_IF(3, duplicate, "SIP\tReceived duplicate sequence number " << requestCSeq);
-  PTRACE_IF(2, !duplicate && requestCSeq != m_lastReceivedCSeq+1,
+  PTRACE_IF(2, !duplicate && m_lastReceivedCSeq != 0 && requestCSeq != m_lastReceivedCSeq+1,
             "SIP\tReceived unexpected sequence number " << requestCSeq << ", expecting " << m_lastReceivedCSeq+1);
 
   m_lastReceivedCSeq = requestCSeq;
