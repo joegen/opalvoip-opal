@@ -152,10 +152,10 @@ OpalTransport * SIPHandler::GetTransport()
 
   if (m_proxy.IsEmpty()) {
     // Look for a "proxy" parameter to override default proxy
-    const PStringToString & params = GetAddressOfRecord().GetParamVars();
-    if (params.Contains("proxy")) {
-      m_proxy.Parse(params("proxy"));
-      m_addressOfRecord.SetParamVar("proxy", PString::Empty());
+    const PStringToString & params = m_remoteAddress.GetParamVars();
+    if (params.Contains(OPAL_PROXY_PARAM)) {
+      m_proxy.Parse(params(OPAL_PROXY_PARAM));
+      m_remoteAddress.SetParamVar(OPAL_PROXY_PARAM, PString::Empty());
     }
   }
 
@@ -166,7 +166,7 @@ OpalTransport * SIPHandler::GetTransport()
   if (!m_proxy.IsEmpty())
     url = m_proxy;
   else {
-    url = GetAddressOfRecord();
+    url = m_remoteAddress;
     url.AdjustToDNS();
   }
 
@@ -764,15 +764,6 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
   , m_unconfirmed(true)
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(params.m_eventPackage))
 {
-  if (!params.m_eventPackage.IsWatcher())
-    m_dialog.SetRequestURI(m_remoteAddress);
-  else {
-    m_dialog.SetRequestURI(GetAddressOfRecord());
-    m_parameters.m_localAddress = GetAddressOfRecord().AsString();
-  }
-
-  m_dialog.SetRemoteURI(m_parameters.m_addressOfRecord);
-
   callID = m_dialog.GetCallID();
 }
 
@@ -786,15 +777,24 @@ SIPSubscribeHandler::~SIPSubscribeHandler()
 
 SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 { 
-  // Default routeSet if there is a proxy, do this now rather in ctor as we
-  // need to have called GetTransport() to have m_proxy set correctly.
-  m_dialog.UpdateRouteSet(m_proxy);
-
+  // Do all the following here as must be after we have called GetTransport()
+  // which sets various fields correctly for transmission
   if (!m_dialog.IsEstablished()) {
+    if (!m_parameters.m_eventPackage.IsWatcher())
+      m_dialog.SetRequestURI(m_remoteAddress);
+    else {
+      m_dialog.SetRequestURI(GetAddressOfRecord());
+      m_parameters.m_localAddress = GetAddressOfRecord().AsString();
+    }
+
+    m_dialog.SetRemoteURI(m_parameters.m_addressOfRecord);
+
     if (m_parameters.m_localAddress.IsEmpty())
       m_dialog.SetLocalURI(endpoint.GetRegisteredPartyName(m_parameters.m_addressOfRecord, *m_transport));
     else
       m_dialog.SetLocalURI(m_parameters.m_localAddress);
+
+    m_dialog.UpdateRouteSet(m_proxy);
   }
 
   m_parameters.m_expire = state != Unsubscribing ? expire : 0;
