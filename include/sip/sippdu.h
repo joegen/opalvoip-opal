@@ -867,6 +867,7 @@ class SIPTransaction : public SIP_PDU
 };
 
 
+#define OPAL_PROXY_PARAM    "OPAL-proxy"
 #define OPAL_LOCAL_ID_PARAM "OPAL-local-id"
 
 struct SIPParameters

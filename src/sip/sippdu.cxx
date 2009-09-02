@@ -2823,12 +2823,12 @@ void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval &
         /* Note this sets the proxy field because the user has given a full AOR
            with a domain for "user" and then specified a specific host name
            which as far as we are concered is the host to talk to. Setting the
-           proxy will prevent SRV lookups or other things that might stop uis
+           proxy will prevent SRV lookups or other things that might stop us
            from going to that very specific host.
          */
         server = remoteURL;
         server.SetUserName(aor.GetUserName());
-        server.SetParamVar("proxy", m_remoteAddress);
+        server.SetParamVar(OPAL_PROXY_PARAM, m_remoteAddress);
       }
     }
   }
