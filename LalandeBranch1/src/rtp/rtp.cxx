@@ -862,8 +862,6 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendData(RTP_DataFrame & 
   if (!SendReport())
     return e_AbortTransport;
 
-  frame.SetSize(frame.GetHeaderSize()+frame.GetPayloadSize());
-
   if (txStatisticsCount < txStatisticsInterval)
     return e_ProcessPacket;
 
@@ -2238,7 +2236,7 @@ RTP_Session::SendReceiveStatus RTP_Encoding::OnSendControl(RTP_ControlFrame & fr
 
 bool RTP_Encoding::WriteDataPDU(RTP_DataFrame & frame)
 {
-  return rtpUDP->WriteDataOrControlPDU(frame.GetPointer(), frame.GetSize(), true);
+  return rtpUDP->WriteDataOrControlPDU(frame.GetPointer(), frame.GetHeaderSize()+frame.GetPayloadSize(), true);
 }
 
 RTP_Session::SendReceiveStatus RTP_Encoding::ReadDataPDU(RTP_DataFrame & frame)

@@ -75,7 +75,7 @@ class JesterJitterBuffer : public IAX2JitterBuffer
     DWORD GetTargetJitterTime() { return targetJitterTime; }
 
     /**Report the current jitter depth */
-    unsigned GetCurrentDepth() { return jitterBuffer.size(); }
+    unsigned GetCurrentDepth() { return jitterBuffer.GetSize(); }
 
     /** repot on an internal variable */
     DWORD GetCurrentJitterTime() { return currentJitterTime; }

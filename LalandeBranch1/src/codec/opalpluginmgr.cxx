@@ -848,7 +848,8 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
   else {
     length = codecDef->parm.audio.bytesPerFrame;
     if ((codecDef->flags & PluginCodec_EncodeSilence) == 0) {
-      PBYTEArray silence(inputBytesPerFrame);
+      void * silence = alloca(inputBytesPerFrame);
+      memset(silence, 0, inputBytesPerFrame);
       unsigned silenceLen = inputBytesPerFrame;
       unsigned flags = 0;
       return Transcode(silence, &silenceLen, buffer, &length, &flags);
@@ -957,8 +958,6 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
 bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
-  dstList.RemoveAll();
-
   // get the size of the output buffer
   int outputDataSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
   int optimalDataSize = GetOptimalDataFrameSize(false);
@@ -970,12 +969,22 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     outputDataSize = maxEncoderSize;
 
   unsigned flags;
+  PINDEX packetCount = 0;
 
   do {
     // While we set the payload size to that indicated, some badly behaved plug ins
     // use more memory that indicated, so make sure the output RTP data frame is
     // at least 2k of actual memory.
-    RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize, 2048);
+    RTP_DataFrame * dst;
+    if (packetCount < dstList.GetSize()) {
+      dst = &dstList[packetCount];
+      dst->SetPayloadSize(outputDataSize);
+    }
+    else {
+      dst = new RTP_DataFrame(outputDataSize, 2048);
+      dstList.Append(dst);
+    }
+
     dst->SetPayloadType(GetPayloadType(false));
     dst->SetTimestamp(src.GetTimestamp());
 
@@ -993,13 +1002,14 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 
     if ((toLen >= RTP_DataFrame::MinHeaderSize) && ((PINDEX)toLen >= dst->GetHeaderSize())) {
       dst->SetPayloadSize(toLen - dst->GetHeaderSize());
-      dstList.Append(dst);
+      ++packetCount;
     }
-    else
-      delete dst;
-
   } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
   PTRACE(5, "OpalPlugin\tEncoded video frame into " << dstList.GetSize() << " packets.");
+
+  // Clear out extra packets
+  while (dstList.GetSize() > packetCount)
+    dstList.RemoveAt(packetCount);
 
 #if OPAL_STATISTICS
   m_totalFrames++;
