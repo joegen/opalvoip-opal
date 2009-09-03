@@ -63,7 +63,7 @@ class JesterJitterBuffer : public OpalJitterBuffer
     DWORD GetTargetJitterTime() { return targetJitterTime; }
 
     /**Report the current jitter depth */
-    unsigned GetCurrentDepth() { return jitterBuffer.size(); }
+    PINDEX GetCurrentDepth() { return jitterBuffer.GetSize(); }
 };
 
 /////////////////////////////////////////////////////////////////////////////

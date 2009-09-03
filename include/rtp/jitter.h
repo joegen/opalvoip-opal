@@ -166,27 +166,15 @@ class OpalJitterBuffer : public PSafeObject
     unsigned      jitterCalcPacketCount;
     bool          m_resetJitterBufferNow;
 
-    class FrameQueue : public std::deque<Entry *>
+    struct FrameQueue : public PList<Entry>
     {
-      public:
-        void resize(size_type _Newsize, PINDEX packetSize)
-        { 
-          while (size() < (size_t)_Newsize)
-            push_back(new Entry(packetSize));
-          while (size() > (size_t)_Newsize) {
-            delete front();
-            pop_front();
-          }
-        }
-
-        ~FrameQueue()
-        { resize(0, 0); }
+      FrameQueue() { DisallowDeleteObjects(); }
+      ~FrameQueue() { AllowDeleteObjects(); }
     };
-
     FrameQueue freeFrames;
     FrameQueue jitterBuffer;
-    inline Entry * GetNewest(bool pop) { Entry * e = jitterBuffer.back(); if (pop) jitterBuffer.pop_back(); return e; }
-    inline Entry * GetOldest(bool pop) { Entry * e = jitterBuffer.front(); if (pop) jitterBuffer.pop_front(); return e; }
+    Entry * GetNewest(bool pop);
+    Entry * GetOldest(bool pop);
 
     Entry * currentFrame;    // storage of current frame
 
