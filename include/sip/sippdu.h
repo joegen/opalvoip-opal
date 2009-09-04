@@ -657,12 +657,14 @@ class SIP_PDU : public PSafeObject
 
     Methods GetMethod() const                { return method; }
     StatusCodes GetStatusCode () const       { return statusCode; }
+    void SetStatusCode (StatusCodes c)       { statusCode = c; }
     const SIPURL & GetURI() const            { return uri; }
     unsigned GetVersionMajor() const         { return versionMajor; }
     unsigned GetVersionMinor() const         { return versionMinor; }
     const PString & GetEntityBody() const    { return entityBody; }
           PString & GetEntityBody()          { return entityBody; }
     const PString & GetInfo() const          { return info; }
+          PString & GetInfo()                { return info; }
     const SIPMIMEInfo & GetMIME() const      { return mime; }
           SIPMIMEInfo & GetMIME()            { return mime; }
     void SetURI(const SIPURL & newuri)       { uri = newuri; }
@@ -993,6 +995,15 @@ class SIPSubscribe : public SIPTransaction
         bool m_isWatcher;
     };
 
+    struct NotifyCallbackInfo {
+      NotifyCallbackInfo(SIP_PDU & notify, SIP_PDU & response)
+        : m_notify(notify), m_response(response), m_sendResponse(true)
+      { }
+      SIP_PDU & m_notify;
+      SIP_PDU & m_response;
+      bool m_sendResponse;
+    };
+
     struct Params : public SIPParameters
     {
       Params(unsigned pkg = NumPredefinedPackages)
@@ -1004,10 +1015,14 @@ class SIPSubscribe : public SIPTransaction
         : SIPParameters(param)
         , m_eventPackage(param.m_eventPackage)
         , m_agentAddress(m_remoteAddress)
+        , m_onSubcribeStatus(param.m_onSubcribeStatus)
+        , m_onNotify(param.m_onNotify)
       { }
 
       EventPackage m_eventPackage;
       PString    & m_agentAddress; // For backward compatibility
+      PNotifier     m_onSubcribeStatus;
+      PNotifier     m_onNotify;
     };
 
     SIPSubscribe(

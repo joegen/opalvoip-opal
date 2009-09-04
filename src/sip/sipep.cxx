@@ -248,8 +248,9 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
   OpalTransport * transport = NULL;
 
   for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
-    if ((transport = listener->CreateTransport(localAddress, remoteAddress)) != NULL)
-      break;
+    if (listener->GetLocalAddress().GetProto() *= remoteAddress.GetProto())
+      if ((transport = listener->CreateTransport(localAddress, remoteAddress)) != NULL)
+        break;
   }
 
   if (transport == NULL) {
@@ -501,9 +502,6 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
   PString token;
 
-  // Adjust the Via list and send a trying in case it takes us a while to process request
-  pdu->AdjustVia(transport);
-
   switch (pdu->GetMethod()) {
     case SIP_PDU::Method_CANCEL :
       token = m_receivedConnectionTokens(mime.GetCallID());
@@ -514,6 +512,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       break;
 
     case SIP_PDU::Method_INVITE :
+      pdu->AdjustVia(transport);   // // Adjust the Via list
       if (toToken.IsEmpty()) {
         token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
@@ -530,17 +529,19 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
         pdu->SendResponse(transport, SIP_PDU::Failure_TransactionDoesNotExist);
         return false;
       }
-      // Do next case
-
-    default :
-      if (!m_disableTrying || (pdu->GetMethod() == SIP_PDU::Method_INVITE))
-        pdu->SendResponse(transport, SIP_PDU::Information_Trying, this);
-      // Do next case
-
-    case SIP_PDU::Method_ACK :
+      pdu->SendResponse(transport, SIP_PDU::Information_Trying, this);
       break;
 
-    case SIP_PDU::NumMethods :
+    case SIP_PDU::Method_ACK :
+      pdu->AdjustVia(transport);   // // Adjust the Via list
+      break;
+
+    case SIP_PDU::NumMethods :  // unknown method
+      break;
+
+    default :   // any known method other than INVITE, CANCEL and ACK
+      if (!m_disableTrying)
+        pdu->SendResponse(transport, SIP_PDU::Information_Trying, this);
       break;
   }
 
@@ -578,29 +579,35 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
 
   switch (pdu->GetMethod()) {
     case SIP_PDU::Method_INVITE :
+      pdu->AdjustVia(transport);   // // Adjust the Via list
       return OnReceivedINVITE(transport, pdu);
 
     case SIP_PDU::Method_REGISTER :
+      pdu->AdjustVia(transport);   // // Adjust the Via list
       if (OnReceivedREGISTER(transport, *pdu))
         return false;
       break;
 
     case SIP_PDU::Method_SUBSCRIBE :
+      pdu->AdjustVia(transport);   // // Adjust the Via list
       if (OnReceivedSUBSCRIBE(transport, *pdu))
         return false;
       break;
 
     case SIP_PDU::Method_NOTIFY :
+      pdu->AdjustVia(transport);   // // Adjust the Via list
        if (OnReceivedNOTIFY(transport, *pdu))
          return false;
        break;
 
     case SIP_PDU::Method_MESSAGE :
+      pdu->AdjustVia(transport);   // // Adjust the Via list
       if (OnReceivedMESSAGE(transport, *pdu))
         return false;
       break;
    
     case SIP_PDU::Method_OPTIONS :
+      pdu->AdjustVia(transport);   // // Adjust the Via list
       if (OnReceivedOPTIONS(transport, *pdu))
         return false;
       break;
