@@ -1051,8 +1051,6 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 
 OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
-  PTRACE(1, "SIPConnection::OpenMediaStream called with " << mediaFormat << ", " << sessionID << ", " << isSource);
-
   // Disable send of re-INVITE if the ancestor OpenMediaStream has to close
   // the media stream, so don't get two re-INVITEs in quick succession.
   bool oldReINVITE = needReINVITE;
