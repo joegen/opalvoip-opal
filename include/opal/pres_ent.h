@@ -40,8 +40,6 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class OpalPresentityStore;
-
 class OpalPresentity : public PSafeObject
 {
   public:
@@ -97,20 +95,7 @@ class OpalPresentity : public PSafeObject
       const PString & url
     );
 
-    static OpalPresentity * Restore(
-      const PGloballyUniqueID & guid,
-      const PString & storeType = PString::Empty()
-    );
-
     OpalPresentity();
-
-    virtual bool Save(
-      OpalPresentityStore * store
-    ) = 0;
-
-    virtual bool Restore(
-      OpalPresentityStore * store
-    ) = 0;
 
     virtual bool Open(
       OpalManager * manager = NULL
@@ -119,11 +104,6 @@ class OpalPresentity : public PSafeObject
     virtual bool IsOpen() const = 0;
 
     virtual bool Close() = 0;
-
-    virtual bool SetPresence(
-      State state,
-      const PString & note = PString::Empty()
-    ) = 0;
 
     virtual bool HasAttribute(const PString & key) const
     { return m_attributes.Contains(key); }
@@ -134,29 +114,61 @@ class OpalPresentity : public PSafeObject
     virtual void SetAttribute(const PString & key, const PString & value)
     { m_attributes.SetAt(key, value); }
 
+    enum {
+      e_SetPresenceState         = 1,
+      e_SubscribeToPresence,
+      e_UnsubscribeFromPresence,
+      e_ProtocolSpecificCommand  = 10000
+    };
+
+    virtual bool SetPresence(
+      State state, 
+      const PString & note = PString::Empty()
+    );
+
+    virtual bool SubscribeToPresence(
+      const PString & presentity
+    );
+
+    typedef PAtomicInteger::IntegerType CmdSeqType;
+
+    class Command {
+      public:
+        Command(unsigned c, bool responseNeeded = false) 
+          : m_cmd(c), m_responseNeeded(responseNeeded)
+        { }
+        virtual ~Command() { }
+        unsigned m_cmd;
+        bool m_responseNeeded;
+        CmdSeqType m_sequence;
+    };
+
+    class SetPresenceCommand : public Command {
+      public:
+        SetPresenceCommand(State state, const PString & note = PString::Empty()) 
+          : Command(e_SetPresenceState), m_state(state), m_note(note)
+        { }
+        State m_state;
+        PString m_note;
+    };
+
+
+    class SimpleCommand : public Command {
+      public:
+        SimpleCommand(unsigned c, const PString & e, bool responseNeeded = false) 
+          : Command(c, responseNeeded), m_presEntity(e)
+        { }
+        PString m_presEntity;
+    };
+
+    virtual CmdSeqType SendCommand(
+      Command * cmd
+    ) = 0;
 
   protected:
     OpalGloballyUniqueID m_guid;
     PStringToString m_attributes;
 };
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class OpalPresentityStore : public PObject
-{
-  public:
-    OpalPresentityStore();
-    virtual bool Contains(const OpalGloballyUniqueID & guid) const;
-    virtual bool GetAttribute(const OpalGloballyUniqueID & guid, const char * key, const PString & value) const;
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/*
-class OpalPresentityStore : public OpalPresentityStore
-{
-}
-*/
 
 #endif  // OPAL_IM_PRES_ENT_H
 

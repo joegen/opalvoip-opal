@@ -780,12 +780,9 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
   // Do all the following here as must be after we have called GetTransport()
   // which sets various fields correctly for transmission
   if (!m_dialog.IsEstablished()) {
-    if (!m_parameters.m_eventPackage.IsWatcher())
-      m_dialog.SetRequestURI(m_remoteAddress);
-    else {
-      m_dialog.SetRequestURI(GetAddressOfRecord());
+    m_dialog.SetRequestURI(GetAddressOfRecord());
+    if (m_parameters.m_eventPackage.IsWatcher())
       m_parameters.m_localAddress = GetAddressOfRecord().AsString();
-    }
 
     m_dialog.SetRemoteURI(m_parameters.m_addressOfRecord);
 
@@ -884,6 +881,9 @@ void SIPSubscribeHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
       break;
   }
 
+  if (!m_parameters.m_onSubcribeStatus.IsNULL()) 
+    m_parameters.m_onSubcribeStatus(*this, (INT)&status);
+
   endpoint.OnSubscriptionStatus(status);
 }
 
@@ -952,15 +952,20 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     ShutDown();
   }
   else if (state.Find("active") != P_MAX_INDEX || state.Find("pending") != P_MAX_INDEX) {
-
     PTRACE(3, "SIP\tSubscription is " << state);
     PString expire = SIPMIMEInfo::ExtractFieldParameter(state, "expire");
     if (!expire.IsEmpty())
       SetExpire(expire.AsUnsigned());
   }
 
-  if (m_packageHandler == NULL)
-    request.SendResponse(*m_transport, SIP_PDU::Failure_BadEvent, &endpoint);
+  if (m_packageHandler == NULL) {
+    SIP_PDU response(request, SIP_PDU::Failure_BadEvent);
+    SIPSubscribe::NotifyCallbackInfo s(request, response);
+    if (!m_parameters.m_onNotify.IsNULL()) 
+      m_parameters.m_onNotify(*this, (INT)&s);
+    if (s.m_sendResponse)
+      request.SendResponse(*m_transport, response, &endpoint);
+  }
   else if (m_packageHandler->OnReceivedNOTIFY(*this, request))
     request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
   else
@@ -1021,250 +1026,7 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
 
 static SIPEventPackageFactory::Worker<SIPMwiEventPackageHandler> mwiEventPackageHandler(SIPSubscribe::MessageSummary);
 
-#if OPAL_PTLIB_EXPAT
-
-class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
-{
-  virtual PCaselessString GetContentType() const
-  {
-    return "application/pidf+xml";
-  }
-
-  virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
-  {
-    SIPURL from = request.GetMIME().GetFrom();
-    from.Sanitise(SIPURL::ExternalURI);
-
-    SIPURL to = request.GetMIME().GetTo();
-    to.Sanitise(SIPURL::ExternalURI);
-
-    SIPPresenceInfo info;
-    info.m_address = from.AsQuotedString();
-    info.m_to      = to.AsQuotedString();
-
-    // Check for empty body, if so then is OK, just a ping ...
-    if (request.GetEntityBody().IsEmpty()) {
-      info.m_basic = SIPPresenceInfo::Unchanged;
-      handler.GetEndPoint().OnPresenceInfoReceived(info);
-      return true;
-    }
-
-    PXML xml;
-    if (!xml.Load(request.GetEntityBody()))
-      return false;
-
-    PXMLElement * rootElement = xml.GetRootElement();
-    if (rootElement == NULL || rootElement->GetName() != "presence")
-      return false;
-
-    {
-      PXMLElement * tupleElement = rootElement->GetElement("tuple");
-      if (tupleElement == NULL)
-        return false;
-
-      {
-        PXMLElement * statusElement = tupleElement->GetElement("status");
-        if (statusElement == NULL)
-          return false;
-        {
-          PXMLElement * basicElement = statusElement->GetElement("basic");
-          if (basicElement != NULL) {
-            PCaselessString value = basicElement->GetData();
-            if (value == "open")
-              info.m_basic = SIPPresenceInfo::Open;
-            else if (value == "closed")
-              info.m_basic = SIPPresenceInfo::Closed;
-          }
-        }
-        {
-          PXMLElement * noteElement = statusElement->GetElement("note");
-          if (!noteElement)
-            noteElement = rootElement->GetElement("note");
-          if (!noteElement)
-            noteElement = tupleElement->GetElement("note");
-          if (noteElement)
-            info.m_note = noteElement->GetData();
-        }
-      }
-      {
-        PXMLElement * contactElement = tupleElement->GetElement("contact");
-        if (contactElement != NULL)
-          info.m_contact = contactElement->GetData();
-      }
-    }
-    {
-      info.m_activity = SIPPresenceInfo::UnknownExtended;
-      PXMLElement * personElement = rootElement->GetElement("dm:person");
-      if (personElement != NULL) {
-        PXMLElement * activitiesElement = personElement->GetElement("rpid:activities");
-        if (activitiesElement != NULL) {
-          PINDEX index = 0;
-          PXMLObject * activity = activitiesElement->GetElement(index);
-          while (activity != NULL) {
-            if (activity->IsElement()) {
-              PXMLElement * activityElement = (PXMLElement *)activity;
-              PString state = activityElement->GetName();
-              if (state.Left(5) *= "rpid:") 
-                state = state.Mid(5);
-
-              if (state *= "working")
-                info.m_activity = SIPPresenceInfo::Working;
-              else if (state *= "on-the-phone")
-                info.m_activity = SIPPresenceInfo::OnThePhone;
-              else if (state *= "busy")
-                info.m_activity = SIPPresenceInfo::Busy;
-              else if (state *= "away")
-                info.m_activity = SIPPresenceInfo::Away;
-              else if (state *= "vacation")
-                info.m_activity = SIPPresenceInfo::Vacation;
-              else if (state *= "holiday")
-                info.m_activity = SIPPresenceInfo::Holiday;
-
-              info.m_activities.AppendString(state);
-            }
-            activity = activitiesElement->GetElement(++index);
-          }
-        }
-      }
-    }
-
-    handler.GetEndPoint().OnPresenceInfoReceived(info);
-    return true;
-  }
-};
-
-static SIPEventPackageFactory::Worker<SIPPresenceEventPackageHandler> presenceEventPackageHandler(SIPSubscribe::Presence);
-
-
-class SIPPresenceURL : public PURLLegacyScheme
-{
-  public:
-    SIPPresenceURL()
-      : PURLLegacyScheme("pres", true, false, true, false, false, false, false, false, false, false, 5060)
-    {
-    }
-};
-
-static PFactory<PURLScheme>::Worker<SIPPresenceURL> presenceURL("pres", true);
-
 ///////////////////////////////////////////////////////////////////////////////
-
-#if 0
-class SIPPresenceWatcherEventPackageHandler : public SIPEventPackageHandler
-{
-  virtual PCaselessString GetContentType() const
-  {
-    return "application/watcherinfo+xml";
-  }
-
-  virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
-  {
-    SIPURL from = request.GetMIME().GetFrom();
-    from.Sanitise(SIPURL::ExternalURI);
-
-    SIPURL to = request.GetMIME().GetTo();
-    to.Sanitise(SIPURL::ExternalURI);
-
-    SIPPresenceInfo info;
-    info.m_address = from.AsQuotedString();
-    info.m_to      = to.AsQuotedString();
-
-    // Check for empty body, if so then is OK, just a ping ...
-    if (request.GetEntityBody().IsEmpty()) {
-      info.m_basic = SIPPresenceInfo::Unchanged;
-      handler.GetEndPoint().OnPresenceInfoReceived(info);
-      return true;
-    }
-
-    PXML xml;
-    if (!xml.Load(request.GetEntityBody()))
-      return false;
-
-    PXMLElement * rootElement = xml.GetRootElement();
-    if (rootElement == NULL || rootElement->GetName() != "presence")
-      return false;
-
-    {
-      PXMLElement * tupleElement = rootElement->GetElement("tuple");
-      if (tupleElement == NULL)
-        return false;
-
-      {
-        PXMLElement * statusElement = tupleElement->GetElement("status");
-        if (statusElement == NULL)
-          return false;
-        {
-          PXMLElement * basicElement = statusElement->GetElement("basic");
-          if (basicElement != NULL) {
-            PCaselessString value = basicElement->GetData();
-            if (value == "open")
-              info.m_basic = SIPPresenceInfo::Open;
-            else if (value == "closed")
-              info.m_basic = SIPPresenceInfo::Closed;
-          }
-        }
-        {
-          PXMLElement * noteElement = statusElement->GetElement("note");
-          if (!noteElement)
-            noteElement = rootElement->GetElement("note");
-          if (!noteElement)
-            noteElement = tupleElement->GetElement("note");
-          if (noteElement)
-            info.m_note = noteElement->GetData();
-        }
-      }
-      {
-        PXMLElement * contactElement = tupleElement->GetElement("contact");
-        if (contactElement != NULL)
-          info.m_contact = contactElement->GetData();
-      }
-    }
-    {
-      info.m_activity = SIPPresenceInfo::UnknownExtended;
-      PXMLElement * personElement = rootElement->GetElement("dm:person");
-      if (personElement != NULL) {
-        PXMLElement * activitiesElement = personElement->GetElement("rpid:activities");
-        if (activitiesElement != NULL) {
-          PINDEX index = 0;
-          PXMLObject * activity = activitiesElement->GetElement(index);
-          while (activity != NULL) {
-            if (activity->IsElement()) {
-              PXMLElement * activityElement = (PXMLElement *)activity;
-              PString state = activityElement->GetName();
-              if (state.Left(5) *= "rpid:") 
-                state = state.Mid(5);
-
-              if (state *= "working")
-                info.m_activity = SIPPresenceInfo::Working;
-              else if (state *= "on-the-phone")
-                info.m_activity = SIPPresenceInfo::OnThePhone;
-              else if (state *= "busy")
-                info.m_activity = SIPPresenceInfo::Busy;
-              else if (state *= "away")
-                info.m_activity = SIPPresenceInfo::Away;
-              else if (state *= "vacation")
-                info.m_activity = SIPPresenceInfo::Vacation;
-              else if (state *= "holiday")
-                info.m_activity = SIPPresenceInfo::Holiday;
-
-              info.m_activities.AppendString(state);
-            }
-            activity = activitiesElement->GetElement(++index);
-          }
-        }
-      }
-    }
-
-    handler.GetEndPoint().OnPresenceInfoReceived(info);
-    return true;
-  }
-};
-
-static SIPEventPackageFactory::Worker<SIPPresenceWatcherEventPackageHandler> presenceWatcherEventPackageHandler(SIPSubscribe::Presence | SIPSubscribe::Watcher);
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-
 
 static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotification::Participant & participant)
 {
@@ -1409,7 +1171,6 @@ public:
 
 static SIPEventPackageFactory::Worker<SIPDialogEventPackageHandler> dialogEventPackageHandler(SIPSubscribe::Dialog);
 
-#endif // P_EXPAT
 
 
 SIPDialogNotification::SIPDialogNotification(const PString & entity)

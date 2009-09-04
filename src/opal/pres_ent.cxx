@@ -51,7 +51,6 @@ OpalPresentity::OpalPresentity()
 {
 }
 
-
 bool OpalPresentity::Open(OpalManager *)
 {
   m_guid = OpalGloballyUniqueID();
@@ -64,8 +63,6 @@ bool OpalPresentity::Close()
 {
   return false;
 }
-
-/////////////////////////////////////////////////////////////////////////////
 
 OpalPresentity * OpalPresentity::Create(const PString & url)
 {
@@ -80,30 +77,20 @@ OpalPresentity * OpalPresentity::Create(const PString & url)
   return presEntity;
 }
 
-
-OpalPresentity * OpalPresentity::Restore(const OpalGloballyUniqueID & guid, const PString & storeType)
+bool OpalPresentity::SetPresence(State state, const PString & note)
 {
-  OpalPresentityStore * store = PFactory<OpalPresentityStore>::CreateInstance(storeType);
-  if (store == NULL)
-    return NULL;
-
-  if (!store->Contains(guid))
-    return NULL;
-
-  PString scheme;
-  PAssert(store->GetAttribute(guid, SchemeKey, scheme), "Presentity store does not contain 'scheme'");
-
-  OpalPresentity * presEntity = PFactory<OpalPresentity>::CreateInstance(scheme);
-  if (presEntity == NULL) 
-    return NULL;
-
-  if (!presEntity->Restore(store)) {
-    delete presEntity;
-    return NULL;
-  }
-
-  return presEntity;
+  Command * cmd = new SetPresenceCommand(state, note);
+  SendCommand(cmd);
+  return true;
 }
+
+bool OpalPresentity::SubscribeToPresence(const PString & presentity)
+{
+  Command * cmd = new SimpleCommand(e_SubscribeToPresence, presentity);
+  SendCommand(cmd);
+  return true;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
