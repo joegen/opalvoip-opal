@@ -35,6 +35,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/pres_ent.h>
+#include <ptclib/pxml.h>
 
 class SIP_Presentity : public OpalPresentity
 {
@@ -51,24 +52,18 @@ class SIP_Presentity : public OpalPresentity
 
     virtual bool IsOpen() const { return m_endpoint != NULL; }
 
-    virtual bool Save(
-      OpalPresentityStore * store
-    );
-
-    virtual bool Restore(
-      OpalPresentityStore * store
-    );
-
     virtual bool Close();
 
-    virtual bool SetPresence(
-      State state,
-      const PString & note = PString::Empty()
-    ) = 0;
+    OpalPresentity::CmdSeqType SendCommand(Command * cmd);
+
+    enum {
+      e_Start                   = e_ProtocolSpecificCommand - 1,
+      e_StartWatcherInfo,
+      e_StopWatcherInfo
+    };
 
   protected:
     SIPURL GetSIPAOR() const { return SIPURL(GetAttribute(AddressOfRecordKey));  }
-    virtual bool SetNotifySubscriptions(bool on) = 0;
 
     SIPEndPoint & GetEndpoint() { return *m_endpoint; }
 
@@ -77,6 +72,17 @@ class SIP_Presentity : public OpalPresentity
 
     OpalManager * m_manager;
     SIPEndPoint * m_endpoint;
+
+    PMutex m_commandQueueMutex;
+    std::queue<Command *> m_commandQueue;
+    PAtomicInteger m_commandSequence;
+    PSyncPoint m_commandQueueSync;
+
+    bool m_threadRunning;
+    PThread * m_thread;
+
+    State m_localPresence;
+    PString m_localPresenceNote;
 };
 
 
@@ -84,13 +90,6 @@ class SIPLocal_Presentity : public SIP_Presentity
 {
   public:
     ~SIPLocal_Presentity();
-
-    virtual bool SetPresence(
-      State state,
-      const PString & note = PString::Empty()
-    );
-
-    virtual bool SetNotifySubscriptions(bool on);
 
   protected:
     virtual bool InternalOpen();
@@ -104,18 +103,45 @@ class SIPXCAP_Presentity : public SIP_Presentity
     SIPXCAP_Presentity();
     ~SIPXCAP_Presentity();
 
-    virtual bool SetPresence(
-      State state,
-      const PString & note = PString::Empty()
-    );
+    PDECLARE_NOTIFIER(SIPSubscribeHandler, SIPXCAP_Presentity, OnWatcherInfoSubscriptionStatus);
+    PDECLARE_NOTIFIER(SIPSubscribeHandler, SIPXCAP_Presentity, OnWatcherInfoNotify);
 
-    virtual bool SetNotifySubscriptions(bool on);
+    PDECLARE_NOTIFIER(SIPSubscribeHandler, SIPXCAP_Presentity, OnPresenceNotify);
+
+    void Thread();
+
+    virtual void OnReceivedWatcherStatus(PXMLElement * watcher);
 
   protected:
     virtual bool InternalOpen();
     virtual bool InternalClose();
 
+    void SubscribeToWatcherInfo(bool on);
+    void Internal_SendLocalPresence();
+    void Internal_SubscribeToPresence(const PString & presentity, bool start);
+
     PIPSocketAddressAndPort m_presenceServer;
+    bool m_watcherInfoSubscribed;
+
+    struct PresenceInfo {
+      enum SubscriptionState {
+        e_Unsubscribed,
+        e_Subscribing,
+        e_Subscribed,
+        e_Unsubscribing
+      };
+
+      PresenceInfo()
+        : m_subscriptionState(e_Unsubscribed)
+      { }
+
+      SubscriptionState m_subscriptionState;
+      State   m_presenceState;
+      PString m_note;
+      PString m_id;
+    };
+    typedef std::map<std::string, PresenceInfo> PresenceInfoMap;
+    PresenceInfoMap m_presenceInfo;
 };
 
 
