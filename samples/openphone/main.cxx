@@ -226,6 +226,7 @@ DEF_FIELD(RegistrarAuthID);
 DEF_FIELD(RegistrarUsername);
 DEF_FIELD(RegistrarPassword);
 DEF_FIELD(RegistrarTimeToLive);
+DEF_FIELD(RegistrarCompatibility);
 
 static const wxChar RoutingGroup[] = wxT("/Routes");
 DEF_FIELD(ForwardingAddress);
@@ -3236,21 +3237,23 @@ RegistrationInfo::RegistrationInfo()
   : m_Type(Register)
   , m_Active(true)
   , m_TimeToLive(300)
+  , m_Compatibility(SIPRegister::e_FullyCompliant)
 {
 }
 
 
 bool RegistrationInfo::operator==(const RegistrationInfo & other) const
 {
-  return m_Type       == other.m_Type &&
-         m_Active     == other.m_Active &&
-         m_User       == other.m_User &&
-         m_Domain     == other.m_Domain &&
-         m_Contact    == other.m_Contact &&
-         m_AuthID     == other.m_AuthID &&
-         m_Password   == other.m_Password &&
-         m_TimeToLive == other.m_TimeToLive &&
-         m_Proxy      == other.m_Proxy;
+  return m_Type          == other.m_Type &&
+         m_Active        == other.m_Active &&
+         m_User          == other.m_User &&
+         m_Domain        == other.m_Domain &&
+         m_Contact       == other.m_Contact &&
+         m_AuthID        == other.m_AuthID &&
+         m_Password      == other.m_Password &&
+         m_TimeToLive    == other.m_TimeToLive &&
+         m_Proxy         == other.m_Proxy &&
+         m_Compatibility == other.m_Compatibility;
 }
 
 
@@ -3273,6 +3276,9 @@ bool RegistrationInfo::Read(wxConfigBase & config)
   config.Read(RegistrarAuthIDKey, &m_AuthID);
   config.Read(RegistrarPasswordKey, &m_Password);
   config.Read(RegistrarTimeToLiveKey, &m_TimeToLive);
+  if (config.Read(RegistrarCompatibilityKey, &iType, SIPRegister::e_FullyCompliant))
+    m_Compatibility = (SIPRegister::CompatibilityModes)iType;
+
   return true;
 }
 
@@ -3287,6 +3293,7 @@ void RegistrationInfo::Write(wxConfigBase & config)
   config.Write(RegistrarAuthIDKey, m_AuthID);
   config.Write(RegistrarPasswordKey, m_Password);
   config.Write(RegistrarTimeToLiveKey, m_TimeToLive);
+  config.Write(RegistrarCompatibilityKey, m_Compatibility);
 }
 
 // these must match the drop-down box on the Registration/Subcription dialog box
@@ -3319,6 +3326,7 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
         param.m_authID = m_AuthID.p_str();
         param.m_password = m_Password.p_str();
         param.m_expire = m_TimeToLive;
+        param.m_compatibility = m_Compatibility;
         status = sipEP.Register(param, m_aor) ? 1 : 2;
       }
       break;
@@ -5279,6 +5287,8 @@ StartVideoDialog::StartVideoDialog(MyManager * manager, bool secondary)
 ///////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(RegistrationDialog, wxDialog)
+  EVT_CHOICE(wxXmlResource::GetXRCID(RegistrationTypeKey), RegistrationDialog::Changed)
+  EVT_CHOICE(wxXmlResource::GetXRCID(RegistrarCompatibilityKey), RegistrationDialog::Changed)
   EVT_TEXT(wxXmlResource::GetXRCID(RegistrarUsernameKey), RegistrationDialog::Changed)
   EVT_TEXT(wxXmlResource::GetXRCID(RegistrarDomainKey), RegistrationDialog::Changed)
   EVT_TEXT(wxXmlResource::GetXRCID(RegistrarContactKey), RegistrationDialog::Changed)
@@ -5303,12 +5313,13 @@ RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo
   m_domain = FindWindowByNameAs<wxTextCtrl>(this, RegistrarDomainKey);
   m_domain->SetValidator(wxGenericValidator(&m_info.m_Domain));
 
-  FindWindowByNameAs<wxChoice  >(this, RegistrationTypeKey   )->SetValidator(wxGenericValidator((int *)&m_info.m_Type));
-  FindWindowByNameAs<wxCheckBox>(this, RegistrarUsedKey      )->SetValidator(wxGenericValidator(&m_info.m_Active));
-  FindWindowByNameAs<wxTextCtrl>(this, RegistrarContactKey   )->SetValidator(wxGenericValidator(&m_info.m_Contact));
-  FindWindowByNameAs<wxTextCtrl>(this, RegistrarAuthIDKey    )->SetValidator(wxGenericValidator(&m_info.m_AuthID));
-  FindWindowByNameAs<wxTextCtrl>(this, RegistrarPasswordKey  )->SetValidator(wxGenericValidator(&m_info.m_Password));
-  FindWindowByNameAs<wxSpinCtrl>(this, RegistrarTimeToLiveKey)->SetValidator(wxGenericValidator(&m_info.m_TimeToLive));
+  FindWindowByNameAs<wxChoice  >(this, RegistrationTypeKey      )->SetValidator(wxGenericValidator((int *)&m_info.m_Type));
+  FindWindowByNameAs<wxCheckBox>(this, RegistrarUsedKey         )->SetValidator(wxGenericValidator(&m_info.m_Active));
+  FindWindowByNameAs<wxTextCtrl>(this, RegistrarContactKey      )->SetValidator(wxGenericValidator(&m_info.m_Contact));
+  FindWindowByNameAs<wxTextCtrl>(this, RegistrarAuthIDKey       )->SetValidator(wxGenericValidator(&m_info.m_AuthID));
+  FindWindowByNameAs<wxTextCtrl>(this, RegistrarPasswordKey     )->SetValidator(wxGenericValidator(&m_info.m_Password));
+  FindWindowByNameAs<wxSpinCtrl>(this, RegistrarTimeToLiveKey   )->SetValidator(wxGenericValidator(&m_info.m_TimeToLive));
+  FindWindowByNameAs<wxChoice  >(this, RegistrarCompatibilityKey)->SetValidator(wxGenericValidator((int *)&m_info.m_Compatibility));
 }
 
 

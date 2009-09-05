@@ -935,17 +935,35 @@ class SIPRegister : public SIPTransaction
 {
     PCLASSINFO(SIPRegister, SIPTransaction);
   public:
+    enum CompatibilityModes {
+      e_FullyCompliant,                 /**< Registrar is fully compliant, we will register
+                                             all listeners of all types (e.g. sip, sips etc)
+                                             in the Contact field. */
+      e_CannotRegisterMultipleContacts, /**< Registrar refuses to register more than one
+                                             contact field. Correct behaviour is to return
+                                             a contact with the fields it can accept in
+                                             the 200 OK */
+      e_CannotRegisterPrivateContacts   /**< Registrar refuses to register any RFC
+                                             contact field. Correct behaviour is to return
+                                             a contact with the fields it can accept in
+                                             the 200 OK */
+    };
+
+    /// Registrar parameters
     struct Params : public SIPParameters {
       Params()
         : m_registrarAddress(m_remoteAddress)
+        , m_compatibility(SIPRegister::e_FullyCompliant)
       { }
 
       Params(const Params & param)
         : SIPParameters(param)
         , m_registrarAddress(m_remoteAddress)
+        , m_compatibility(param.m_compatibility)
       { }
 
       PString & m_registrarAddress; // For backward compatibility
+      CompatibilityModes m_compatibility;
     };
 
     SIPRegister(
