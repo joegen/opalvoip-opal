@@ -541,6 +541,8 @@ class RegistrationInfo
     PwxString m_Password;
     int       m_TimeToLive;
     PwxString m_Proxy;
+    SIPRegister::CompatibilityModes m_Compatibility;
+
     PString   m_aor;
 };
 
