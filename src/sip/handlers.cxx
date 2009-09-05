@@ -445,7 +445,7 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
 }
 
 
-void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   SetExpire(response.GetMIME().GetMinExpires());
 
@@ -538,7 +538,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction
 }
 
 
-void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   response.GetMIME().GetProductInfo(m_productInfo);
 
