@@ -133,14 +133,14 @@ class DynaLink
     virtual void Close();
     bool GetFunction(const char * name, Function & func);
     
+    char _codecString [32];
+
   protected:
 #if defined(_WIN32)
     HINSTANCE _hDLL;
 #else
     void * _hDLL;
 #endif /* _WIN32 */
-    CodecID _codec;
-    char _codecString [32];
 };
 
 /////////////////////////////////////////////////////////////////
@@ -148,7 +148,7 @@ class DynaLink
 // define a class to interface to the FFMpeg library
 
 
-class FFMPEGLibrary : public DynaLink
+class FFMPEGLibrary 
 {
   public:
     FFMPEGLibrary(CodecID codec);
@@ -167,6 +167,9 @@ class FFMPEGLibrary : public DynaLink
     void AvcodecFree(void * ptr);
     void AvSetDimensions(AVCodecContext *s, int width, int height);
 
+    void * AvMalloc(int size);
+    void AvFree(void * ptr);
+
     void AvLogSetLevel(int level);
     void AvLogSetCallback(void (*callback)(void*, int, const char*, va_list));
     int FFCheckAlignment(void);
@@ -175,6 +178,12 @@ class FFMPEGLibrary : public DynaLink
     CriticalSection processLock;
 
   protected:
+    DynaLink libAvcodec;
+    DynaLink libAvutil;
+
+    CodecID _codec;
+    char _codecString [32];
+
     void (*Favcodec_init)(void);
     AVCodec *Favcodec_h263_encoder;
     AVCodec *Favcodec_h263p_encoder;
@@ -187,7 +196,6 @@ class FFMPEGLibrary : public DynaLink
     AVCodec *(*Favcodec_find_encoder)(enum CodecID id);
     AVCodec *(*Favcodec_find_decoder)(enum CodecID id);
     AVCodecContext *(*Favcodec_alloc_context)(void);
-    void (*Favcodec_free)(void *);
     AVFrame *(*Favcodec_alloc_frame)(void);
     int (*Favcodec_open)(AVCodecContext *ctx, AVCodec *codec);
     int (*Favcodec_close)(AVCodecContext *ctx);
@@ -196,6 +204,9 @@ class FFMPEGLibrary : public DynaLink
     unsigned (*Favcodec_version)(void);
     unsigned (*Favcodec_build)(void);
     void (*Favcodec_set_dimensions)(AVCodecContext *ctx, int width, int height);
+
+    void * (*Favcodec_malloc)(int size);
+    void (*Favcodec_free)(void *);
 
     void (*FAv_log_set_level)(int level);
     void (*FAv_log_set_callback)(void (*callback)(void*, int, const char*, va_list));
