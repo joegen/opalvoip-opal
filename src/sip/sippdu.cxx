@@ -2997,6 +2997,7 @@ SIPRegister::Params::Params()
   , m_minRetryTime(PMaxTimeInterval)
   , m_maxRetryTime(PMaxTimeInterval)
   , m_userData(NULL)
+  , m_compatibility(SIPRegister::e_FullyCompliant)
 {
 }
 
