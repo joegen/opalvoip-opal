@@ -466,7 +466,7 @@ void SIPHandler::OnReceivedTemporarilyUnavailable(SIPTransaction & /*transaction
 }
 
 
-void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction*/, SIP_PDU & response)
+void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
   bool isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
 
@@ -510,6 +510,16 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction
       PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
       username = proxy.GetUserName();
       password = proxy.GetPassword();
+    }
+    else {
+      delete newAuth;
+      PTRACE(1, "SIP\tAuthentication not possible yet.");
+      OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
+      if (expire > 0 && !transaction.IsCanceled()) {
+        PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
+        expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
+      }
+      return;
     }
   }
 
