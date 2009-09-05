@@ -197,7 +197,9 @@ OpalLocalConnection::OpalLocalConnection(OpalCall & call,
   , endpoint(ep)
   , userData(NULL)
 {
+#if OPAL_PTLIB_DTMF
   m_sendInBandDTMF = m_detectInBandDTMF = false;
+#endif
   PTRACE(4, "LocalCon\tCreated connection with token \"" << callToken << '"');
 }
 
