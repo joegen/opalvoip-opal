@@ -728,8 +728,6 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
   PIPSocket::Address commonIP, transportIP;
   if (transportAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
     connectString = GetConnectAddressString(transportAddress);
-  if (connectString.IsEmpty())
-    connectString = GetConnectAddressString(transportAddress);
   PrintOn(strm, connectString);
 }
 
@@ -1181,30 +1179,6 @@ SDPSessionDescription::SDPSessionDescription(time_t sessionId, unsigned version,
 
 void SDPSessionDescription::PrintOn(ostream & str) const
 {
-  OpalTransportAddress connectionAddress(defaultConnectAddress);
-
-  // see common connect address is needed
-  {
-    OpalTransportAddress descrAddress;
-    PINDEX matched = 0;
-    PINDEX descrMatched = 0;
-    PINDEX i;
-    for (i = 0; i < mediaDescriptions.GetSize(); i++) {
-      if (i == 0)
-        descrAddress = mediaDescriptions[i].GetTransportAddress();
-      if (mediaDescriptions[i].GetTransportAddress() == connectionAddress)
-        ++matched;
-      if (mediaDescriptions[i].GetTransportAddress() == descrAddress)
-        ++descrMatched;
-    }
-    if (connectionAddress != descrAddress) {
-      if ((descrMatched > matched))
-        connectionAddress = descrAddress;
-      else
-        connectionAddress.MakeEmpty();
-    }
-  }
-
   /* encode mandatory session information, note the order is important according to RFC!
      Must be vosiuepcbzkatrm and within the m it is icbka */
   str << "v=" << protocolVersion << "\r\n"
@@ -1215,8 +1189,8 @@ void SDPSessionDescription::PrintOn(ostream & str) const
       << "\r\n"
          "s=" << sessionName << "\r\n";
 
-  if (!connectionAddress.IsEmpty())
-    str << "c=" << GetConnectAddressString(connectionAddress) << "\r\n";
+  if (!defaultConnectAddress.IsEmpty())
+    str << "c=" << GetConnectAddressString(defaultConnectAddress) << "\r\n";
   
   str << bandwidth
       << "t=" << "0 0" << "\r\n";
@@ -1241,7 +1215,7 @@ void SDPSessionDescription::PrintOn(ostream & str) const
   // encode media session information
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
     if (mediaDescriptions[i].PreEncode())
-      mediaDescriptions[i].Encode(connectionAddress, str);
+      mediaDescriptions[i].Encode(defaultConnectAddress, str);
   }
 }
 
