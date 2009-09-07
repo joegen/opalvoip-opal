@@ -51,6 +51,19 @@ class OpalPresentity : public PSafeObject
     static const char * SchemeKey;
     static const char * TimeToLiveKey;
 
+    class Attributes :  public PStringToString
+    {
+      public:
+        virtual bool Has(const PString & key) const
+        { return Contains(key); }
+
+        virtual PString Get(const PString & key, const PString & deflt = PString::Empty()) const
+        { return (*this)(key, deflt); }
+
+        virtual void Set(const PString & key, const PString & value)
+        { SetAt(key, value); }
+    };
+
     enum State {
       NoPresence      = -1,    // remove presence status - not the same as NotAvailable or Away
 
@@ -105,30 +118,52 @@ class OpalPresentity : public PSafeObject
 
     virtual bool Close() = 0;
 
-    virtual bool HasAttribute(const PString & key) const
-    { return m_attributes.Contains(key); }
-
-    virtual PString GetAttribute(const PString & key, const PString & deflt = PString::Empty()) const
-    { return m_attributes(key, deflt); }
-
-    virtual void SetAttribute(const PString & key, const PString & value)
-    { m_attributes.SetAt(key, value); }
+    PString GetAOR() const { return m_attributes.Get(AddressOfRecordKey); }
 
     enum {
       e_SetPresenceState         = 1,
       e_SubscribeToPresence,
       e_UnsubscribeFromPresence,
+      e_AuthorisePresence,
+      e_DenyPresence,
+      e_PoliteDenyPresence,
       e_ProtocolSpecificCommand  = 10000
     };
 
+    //
+    //  Set our presence state
+    // 
     virtual bool SetPresence(
       State state, 
       const PString & note = PString::Empty()
     );
 
+
+    //
+    //  Subscribe to presence state of another presentity
+    // 
     virtual bool SubscribeToPresence(
       const PString & presentity
     );
+
+
+    //
+    //  Called when another presentity requests access to our presence information
+    // 
+    virtual bool OnRequestPresence(
+      const PString & presentity
+    );
+
+
+    //
+    //  Called to allow/deny another presentity access to our presence information
+    //
+    virtual bool SetPresenceAuthorisation(
+      const PString & presentity,
+      int authoriseMode
+    );
+
+    Attributes & GetAttributes() { return m_attributes; }
 
     typedef PAtomicInteger::IntegerType CmdSeqType;
 
@@ -138,6 +173,7 @@ class OpalPresentity : public PSafeObject
           : m_cmd(c), m_responseNeeded(responseNeeded)
         { }
         virtual ~Command() { }
+
         unsigned m_cmd;
         bool m_responseNeeded;
         CmdSeqType m_sequence;
@@ -165,9 +201,15 @@ class OpalPresentity : public PSafeObject
       Command * cmd
     ) = 0;
 
+    void SetRequestPresenceNotifier(const PNotifier2 & n)
+    { PWaitAndSignal m(m_onRequestPresenceNotifierMutex); m_onRequestPresenceNotifier = n; }
+
   protected:
+    Attributes m_attributes;
     OpalGloballyUniqueID m_guid;
-    PStringToString m_attributes;
+
+    PNotifier2 m_onRequestPresenceNotifier;
+    PMutex m_onRequestPresenceNotifierMutex;
 };
 
 #endif  // OPAL_IM_PRES_ENT_H
