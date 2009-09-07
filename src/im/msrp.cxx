@@ -176,7 +176,7 @@ void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat
     return;
   }
 
-  SDPMediaFormat * sdpFormat = new SDPMediaFormat(*this, mediaFormat.GetPayloadType(), mediaFormat);
+  SDPMediaFormat * sdpFormat = new SDPMediaFormat(*this, mediaFormat);
   ProcessMediaOptions(*sdpFormat, mediaFormat);
   AddSDPMediaFormat(sdpFormat);
 }

@@ -71,7 +71,7 @@ OpalMediaType OpalMediaType::GetMediaTypeFromSDP(const std::string & sdp, const 
       return OpalMediaType(*r);
   }
 
-  std::string s = sdp +"|" + transport;
+  std::string s = sdp + "|" + transport;
 
   for (r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
     if (OpalMediaType::GetDefinition(*r)->GetSDPType() == s)
