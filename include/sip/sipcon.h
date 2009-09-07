@@ -467,13 +467,6 @@ class SIPConnection : public OpalRTPConnection
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);
 
-    virtual RTP_UDP *OnUseRTPSession(
-      const unsigned rtpSessionId,
-      const OpalMediaType & mediaType,
-      const OpalTransportAddress & mediaAddress,
-      OpalTransportAddress & localAddress
-    );
-
     virtual bool OnSendSDP(
       bool isAnswerSDP,
       OpalRTPSessionManager & rtpSessions,
@@ -498,6 +491,15 @@ class SIPConnection : public OpalRTPConnection
       SDPSessionDescription & sdp,
       unsigned sessionId
     );
+
+    virtual OpalMediaSession * SetUpMediaSession(
+      const unsigned rtpSessionId,
+      const OpalMediaType & mediaType,
+      SDPMediaDescription * mediaDescription,
+      OpalTransportAddress & localAddress,
+      bool & remoteChanged
+    );
+
     friend class SIPInvite;
     static PBoolean WriteINVITE(OpalTransport & transport, void * param);
     bool WriteINVITE(OpalTransport & transport);
