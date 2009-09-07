@@ -480,7 +480,7 @@ void SIPXCAP_Presentity::Internal_SendLocalPresence()
 
   unsigned expire = m_attributes.Get(OpalPresentity::TimeToLiveKey, "30").AsInteger();
 
-  if (0 <= m_localPresence && m_localPresence <= SIPPresenceInfo::Unchanged)
+  if ((0 <= m_localPresence) && ((int)m_localPresence <= SIPPresenceInfo::Unchanged))
     info.m_basic = (SIPPresenceInfo::BasicStates)m_localPresence;
   else
     info.m_basic = SIPPresenceInfo::Unknown;
@@ -561,14 +561,18 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, INT s)
     return;
   }
 
-  if (params[0] *= "active")
+  if (params[0] *= "active") {
     ;
-  else if (params[0] *= "pending")
+  }
+  else if (params[0] *= "pending") {
     ;
-  else if (params[0] *= "terminated")
+  }
+  else if (params[0] *= "terminated") {
     ;
-  else
+  }
+  else {
     ;
+  }
 
   // get entity requesting access to presence information
   PString fromStr = status.m_notify.GetMIME().GetFrom();
