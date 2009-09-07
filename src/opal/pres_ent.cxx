@@ -54,7 +54,7 @@ OpalPresentity::OpalPresentity()
 bool OpalPresentity::Open(OpalManager *)
 {
   m_guid = OpalGloballyUniqueID();
-  SetAttribute(GUIDKey, m_guid.AsString());
+  m_attributes.Set(GUIDKey, m_guid.AsString());
   return true;
 }
 
@@ -72,10 +72,11 @@ OpalPresentity * OpalPresentity::Create(const PString & url)
   if (presEntity == NULL) 
     return NULL;
 
-  presEntity->SetAttribute(AddressOfRecordKey, url);
+  presEntity->GetAttributes().Set(AddressOfRecordKey, url);
 
   return presEntity;
 }
+
 
 bool OpalPresentity::SetPresence(State state, const PString & note)
 {
@@ -84,9 +85,28 @@ bool OpalPresentity::SetPresence(State state, const PString & note)
   return true;
 }
 
+
 bool OpalPresentity::SubscribeToPresence(const PString & presentity)
 {
   Command * cmd = new SimpleCommand(e_SubscribeToPresence, presentity);
+  SendCommand(cmd);
+  return true;
+}
+
+
+bool OpalPresentity::OnRequestPresence(const PString & presentity)
+{
+  PWaitAndSignal m(m_onRequestPresenceNotifierMutex);
+  if (!m_onRequestPresenceNotifier.IsNULL())
+    m_onRequestPresenceNotifier(*this, (void *)&presentity);
+
+  return true;
+}
+
+
+bool OpalPresentity::SetPresenceAuthorisation(const PString & presentity, int mode)
+{
+  Command * cmd = new SimpleCommand(mode, presentity);
   SendCommand(cmd);
   return true;
 }
