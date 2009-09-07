@@ -63,8 +63,6 @@ class SIP_Presentity : public OpalPresentity
     };
 
   protected:
-    SIPURL GetSIPAOR() const { return SIPURL(GetAttribute(AddressOfRecordKey));  }
-
     SIPEndPoint & GetEndpoint() { return *m_endpoint; }
 
     virtual bool InternalOpen() = 0;
@@ -81,8 +79,15 @@ class SIP_Presentity : public OpalPresentity
     bool m_threadRunning;
     PThread * m_thread;
 
+    unsigned int m_watcherInfoVersion;
+
     State m_localPresence;
     PString m_localPresenceNote;
+
+    typedef std::map<std::string, PString> IdToAorMap;
+    typedef std::map<std::string, PString> AorToIdMap;
+    IdToAorMap m_idToAorMap;
+    AorToIdMap m_aorToIdMap;
 };
 
 
@@ -119,6 +124,7 @@ class SIPXCAP_Presentity : public SIP_Presentity
     void SubscribeToWatcherInfo(bool on);
     void Internal_SendLocalPresence();
     void Internal_SubscribeToPresence(const PString & presentity, bool start);
+    void Internal_AuthorisePresence(const PString & presentity);
 
     PIPSocketAddressAndPort m_presenceServer;
     bool m_watcherInfoSubscribed;
