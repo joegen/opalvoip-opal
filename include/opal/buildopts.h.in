@@ -210,8 +210,8 @@
 
 
 // Instant Messaging
-#undef OPAL_HAS_MSRP
 #if OPAL_SIP
+  #undef OPAL_HAS_MSRP
   #undef OPAL_HAS_SIPIM
 #endif
 #undef OPAL_HAS_RFC4103
