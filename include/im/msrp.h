@@ -228,6 +228,7 @@ class OpalMSRPManager : public PObject
       PString   m_transactionId;
       PMIMEInfo m_mime;
       PString   m_body;
+      PSafePtr<Connection> m_connection;
     };
 
   protected:
@@ -314,6 +315,7 @@ class OpalMSRPMediaSession : public OpalMediaSession
     OpalMSRPManager & GetManager() { return m_manager; }
 
     bool OpenMSRP(const PURL & remoteUrl);
+    void SetConnection(PSafePtr<OpalMSRPManager::Connection> & conn);
 
     OpalMSRPManager & m_manager;
     bool m_isOriginating;
