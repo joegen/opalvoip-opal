@@ -38,6 +38,7 @@
 #include <opal/mediastrm.h>
 #include <opal/mediatype.h>
 #include <im/im.h>
+#include <ptclib/inetprot.h>
 
 #if OPAL_SIP
 #include <sip/sdp.h>
@@ -56,12 +57,33 @@ class OpalMSRPMediaType : public OpalIMMediaType
 #endif
 };
 
+
 ////////////////////////////////////////////////////////////////////////////
 //
 //  Ancestor for all MSRP encoding types
 //
 
 class OpalMSRPEncoding {
+};
+
+
+////////////////////////////////////////////////////////////////////////////
+//
+//  Ancestor for MSRP protocol
+//
+
+class MSRPProtocol : public PInternetProtocol
+{
+  public:
+    enum Commands {
+      SEND,  
+      REPORT, 
+      NumCommands
+    };
+
+    MSRPProtocol();
+
+    bool SendCommand(Commands cmd, const PURL & from, const PURL & to);
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -95,71 +117,62 @@ class OpalMSRPManager : public PObject
     //
     //  Allocate a new MSRP session ID
     //
-    std::string OpenSession();
+    std::string CreateSession();
 
     //
     //  Dellocate an existing MSRP session ID
     //
-    void CloseSession(const std::string & id);
+    void DestroySession(const std::string & id);
 
     //
     //  return session ID as a path
     //
-    std::string SessionIDToPath(const std::string & id);
+    PURL SessionIDToURL(const std::string & id);
 
     //
-    //  Main listening thread
+    // map of connections to other MSRP managers
+    // indexed by scheme://remote:port;transport
     //
-    void ThreadMain();
-    OpalManager & GetOpalManager() { return opalManager; }
+    class Connection : public PSafeObject {
+      public:
+        Connection(MSRPProtocol * protocol = NULL);
+        ~Connection();
+
+        MSRPProtocol * m_protocol;
+        bool m_running;
+        PThread * m_handlerThread;
+        bool m_originating;
+    };
+
+    PSafePtr<Connection> OpenConnection(const PURL & localURL, const PURL & remoteURL);
+
+    //
+    //  Main listening thread for new connections
+    //
+    void ListenerThread();
+
+    //
+    //  Handler thread for a connection
+    //
+    void HandlerThread(PSafePtr<Connection> connection);
+
+
+    //OpalManager & GetOpalManager() { return opalManager; }
 
   protected:
     OpalManager & opalManager;
-    WORD listeningPort;
+    WORD m_listenerPort;
     PMutex mutex;
     PAtomicInteger lastID;
-    PTCPSocket listeningSocket;
-    PThread * listeningThread;
-    OpalTransportAddress listeningAddress;
+    PTCPSocket m_listenerSocket;
+    PThread * m_listenerThread;
+    OpalTransportAddress m_listenerAddress;
 
-    struct SessionInfo {
-    };
-
-    typedef std::map<std::string, SessionInfo> SessionInfoMap;
-    SessionInfoMap sessionInfoMap;
-
-#if 0
-    struct ConnectionInfo {
-      PTCPSocket * socket;
-    };
-    typedef std::map<std::string, ConnectionInfo> ConnectionInfoMap;
-    ConnectionInfoMap connectionInfoMap;
-#endif
+    PMutex m_connectionInfoMapAddMutex;
+    PSafeDictionary<PString, Connection> m_connectionInfoMap;
 
   private:
     static OpalMSRPManager * msrp;
-};
-
-////////////////////////////////////////////////////////////////////////////
-
-class MSRPSession 
-{
-  public:
-    MSRPSession(OpalMSRPManager & _manager);
-    ~MSRPSession();
-
-#if OPAL_SIP
-    virtual SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
-#endif
-
-    OpalMSRPManager & GetManager() { return manager; }
-
-    PString GetURL() const { return url; }
-
-  protected:
-    OpalMSRPManager & manager;
-    std::string msrpSessionId;
-    PString url;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -173,11 +186,13 @@ class OpalMSRPMediaSession : public OpalMediaSession
     OpalMSRPMediaSession(OpalConnection & connection, unsigned sessionId);
     OpalMSRPMediaSession(const OpalMSRPMediaSession & _obj);
 
+    bool Open(const PURL & remoteParty);
+
     virtual void Close();
 
     virtual PObject * Clone() const { return new OpalMSRPMediaSession(*this); }
 
-    virtual bool IsActive() const { return msrpSession != NULL; }
+    virtual bool IsActive() const { return true; }
 
     virtual bool IsRTP() const { return false; }
 
@@ -185,7 +200,7 @@ class OpalMSRPMediaSession : public OpalMediaSession
 
     virtual OpalTransportAddress GetLocalMediaAddress() const;
 
-    PString GetLocalURL() const { return msrpSession->GetURL(); }
+    PURL GetLocalURL() const { return m_localUrl; }
 
     virtual void SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & );
 
@@ -213,7 +228,15 @@ class OpalMSRPMediaSession : public OpalMediaSession
       PBoolean isSource
     );
 
-    MSRPSession * msrpSession;
+    OpalMSRPManager & GetManager() { return m_manager; }
+
+    bool OpenMSRP(const PURL & remoteUrl);
+
+    OpalMSRPManager & m_manager;
+    bool m_isOriginating;
+    std::string m_localMSRPSessionId;
+    PURL m_localUrl, m_remoteUrl;
+    PSafePtr<OpalMSRPManager::Connection> m_connectionPtr;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -258,6 +281,8 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
     OpalMSRPMediaSession & m_msrpSession;
     PString m_remoteParty;
 };
+
+//                       schemeName,user,   passwd, host,   defUser,defhost, query,  params, frags,  path,   rel,    port
 
 #endif // OPAL_HAS_MSRP
 
