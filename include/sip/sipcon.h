@@ -500,6 +500,8 @@ class SIPConnection : public OpalRTPConnection
       bool & remoteChanged
     );
 
+    bool SendReINVITE(PTRACE_PARAM(const char * msg));
+
     friend class SIPInvite;
     static PBoolean WriteINVITE(OpalTransport & transport, void * param);
     bool WriteINVITE(OpalTransport & transport);
@@ -551,6 +553,7 @@ class SIPConnection : public OpalRTPConnection
     bool                      ackReceived;
     PSafePtr<SIPTransaction>  referTransaction;
     PSafeList<SIPTransaction> forkedInvitations; // Not for re-INVITE
+    PSafeList<SIPTransaction> pendingInvitations; // For re-INVITE
 
     enum {
       ReleaseWithBYE,
