@@ -2671,6 +2671,7 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 
 bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_DataFrame & body)
 {
+#if OPAL_HAS_MSRP
   // if the call contains an MSRP connection, then use that
   for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
     if (mediaStream->IsSink() && (mediaStream->GetMediaFormat() == OpalMSRP)) {
@@ -2680,6 +2681,7 @@ bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_D
       return mediaStream->WriteData(body.GetPayloadPtr(), body.GetPayloadSize(), written);
     }
   }
+#endif
 
   PTRACE(3, "SIP\tSending MESSAGE within call");
 
