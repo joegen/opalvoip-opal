@@ -586,6 +586,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
       break;
 
     case SIP_PDU::Local_TransportError :
+    case SIP_PDU::Local_Timeout :
     case SIP_PDU::Failure_RequestTimeout :
     case SIP_PDU::Local_BadTransportAddress :
     case SIP_PDU::Failure_TemporarilyUnavailable:
