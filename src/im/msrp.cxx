@@ -431,12 +431,15 @@ OpalMediaSession * OpalMSRPMediaType::CreateMediaSession(OpalConnection & conn, 
 {
   // as this is called in the constructor of an OpalConnection descendant, 
   // we can't use a virtual function on OpalConnection
-
 #if OPAL_SIP
-  if (conn.GetPrefixName() *= "sip")
+  if (conn.GetPrefixName() *= "sip") {
+    PTRACE(2, "MSRP\tCreating MSRP media session for SIP connection");
     return new OpalMSRPMediaSession(conn, sessionID);
+  }
 #endif
 
+  PTRACE(2, "MSRP\tCannot create MSRP media session for unknown connection type " << conn.GetPrefixName());
+  
   return NULL;
 }
 
@@ -451,7 +454,9 @@ OpalMSRPMediaStream::OpalMSRPMediaStream(
 )
   : OpalIMMediaStream(conn, mediaFormat, sessionID, isSource)
   , m_msrpSession(msrpSession)
+  , m_remoteParty(mediaFormat.GetOptionString("Path"))
 {
+  PTRACE(3, "MSRP\tOpening MSRP connection from " << m_msrpSession.GetLocalURL() << " to " << m_remoteParty);
 }
 
 OpalMSRPMediaStream::~OpalMSRPMediaStream()

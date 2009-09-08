@@ -156,12 +156,6 @@ class MSRPSession
 
     PString GetURL() const { return url; }
 
-    virtual bool WriteData(      
-      const BYTE * data,   ///<  Data to write
-      PINDEX length,       ///<  Length of data to read.
-      PINDEX & written     ///<  Length of data actually written
-    );
-
   protected:
     OpalMSRPManager & manager;
     std::string msrpSessionId;
@@ -190,6 +184,8 @@ class OpalMSRPMediaSession : public OpalMediaSession
     virtual bool HasFailed() const { return false; }
 
     virtual OpalTransportAddress GetLocalMediaAddress() const;
+
+    PString GetLocalURL() const { return msrpSession->GetURL(); }
 
     virtual void SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & );
 
@@ -260,6 +256,7 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
   //@}
   protected:
     OpalMSRPMediaSession & m_msrpSession;
+    PString m_remoteParty;
 };
 
 #endif // OPAL_HAS_MSRP

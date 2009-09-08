@@ -2645,16 +2645,17 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 
 bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_DataFrame & body)
 {
-  PTRACE(3, "SIP\tSending MESSAGE within call");
-
   // if the call contains an MSRP connection, then use that
   for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
     if (mediaStream->IsSink() && (mediaStream->GetMediaFormat() == OpalMSRP)) {
+      PTRACE(3, "SIP\tSending MSRP packet within call");
       mediaStream.SetSafetyMode(PSafeReadWrite);
       int written;
-      mediaStream->WriteData(body.GetPayloadPtr(), body.GetPayloadSize(), written);
+      return mediaStream->WriteData(body.GetPayloadPtr(), body.GetPayloadSize(), written);
     }
   }
+
+  PTRACE(3, "SIP\tSending MESSAGE within call");
 
   // else send as MESSAGE
   PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_MESSAGE);
