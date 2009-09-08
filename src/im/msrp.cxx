@@ -315,6 +315,13 @@ bool OpalMSRPMediaSession::OpenMSRP(const PURL & remoteUrl)
   return true;
 }
 
+void OpalMSRPMediaSession::SetConnection(PSafePtr<OpalMSRPManager::Connection> & conn)
+{
+  if (m_connectionPtr == NULL)
+    m_connectionPtr = conn;
+}
+
+
 
 ////////////////////////////////////////////////////////
 
@@ -393,6 +400,8 @@ PBoolean OpalMSRPMediaStream::Close()
 void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, void * d)
 {
   OpalMSRPManager::IncomingMSRP & incomingMSRP = *(OpalMSRPManager::IncomingMSRP *)d;
+
+  m_msrpSession.SetConnection(incomingMSRP.m_connection);
 
   if (incomingMSRP.m_command == MSRPProtocol::SEND) {
     T140String t140(incomingMSRP.m_body);
@@ -609,15 +618,19 @@ PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL
   // create a connection to the remote
   connection = new Connection();
   if (!connection->m_protocol->Connect(ip, port)) {
-    PTRACE(2, "MSRP\tUnable to make new connection connection to " << ip << ":" << port);
+    PTRACE(2, "MSRP\tUnable to make new connection to " << ip << ":" << port);
     return false;
   }
+
+  PTRACE(2, "MSRP\tConnection established to to " << ip << ":" << port);
 
   PString key(ip.AsString() + ":" + PString(PString::Unsigned, port));
   m_connectionInfoMap.SetAt(key, connection);
 
   PString uid;
   connection->m_protocol->SendMessage(localURL, remoteURL, "", "", uid);
+
+  connection->m_handlerThread = new PThreadObj1Arg<OpalMSRPManager, PSafePtr<Connection> >(*this, connection, &OpalMSRPManager::HandlerThread);
 
   return connection;
 }
