@@ -280,9 +280,13 @@ bool OpalMSRPMediaSession::WriteData(
   PINDEX & written     ///<  Length of data actually written
 )
 {
-  PString messageId;
-  PString text((const char *)data, length);
-  m_connectionPtr->m_protocol->SendMessage(m_localUrl, m_remoteUrl, text, "text/plain", messageId);
+  if (m_connectionPtr == NULL) {
+    PTRACE(2, "MSRP\tCannot send MSRP message as no connection has been established");
+  } else {
+    PString messageId;
+    PString text((const char *)data, length);
+    m_connectionPtr->m_protocol->SendMessage(m_localUrl, m_remoteUrl, text, "text/plain", messageId);
+  }
   written = length;
   return true;
 }
@@ -513,9 +517,11 @@ void OpalMSRPManager::ListenerThread()
   for (;;) {
     MSRPProtocol * protocol = new MSRPProtocol;
     if (!protocol->Accept(m_listenerSocket)) {
+      PTRACE(2, "MSRP\tListener accept failed");
       delete protocol;
       break;
     }
+    PTRACE(2, "MSRP\tListener accepted new incoming connection");
     PSafePtr<Connection> connection = new Connection(protocol);
     connection->m_handlerThread = new PThreadObj1Arg<OpalMSRPManager, PSafePtr<Connection> >(*this, connection, &OpalMSRPManager::HandlerThread);
   }
@@ -538,10 +544,10 @@ void OpalMSRPManager::HandlerThread(PSafePtr<Connection> connection)
 
     if (sockets.GetSize() != 0) {
 
-      connection.SetSafetyMode(PSafeReadOnly);
+      PTRACE(3, "MSRP\tMSRP message received");
+
       IncomingMSRP incomingMsg;
       bool stat = protocol.ReadMessage(incomingMsg.m_command, incomingMsg.m_transactionId, incomingMsg.m_mime, incomingMsg.m_body);
-      connection.SetSafetyMode(PSafeReadWrite);
 
       if (!stat)
         break;
@@ -549,6 +555,7 @@ void OpalMSRPManager::HandlerThread(PSafePtr<Connection> connection)
       if (incomingMsg.m_command == MSRPProtocol::SEND) {
         PString fromUrl(incomingMsg.m_mime("From-Path"));
         PString toUrl  (incomingMsg.m_mime("To-Path"));
+        PTRACE(3, "MSRP\tMSRP SEND received from=" << fromUrl << ",to=" << toUrl);
         if (!toUrl.IsEmpty() && !fromUrl.IsEmpty()) {
           PString key(toUrl + '\t' + fromUrl);
           PWaitAndSignal m(m_callBacksMutex);
@@ -739,7 +746,7 @@ bool MSRPProtocol::SendMessage(const PString & transactionId, const PMIMEInfo & 
 {
   PStringStream strm;
   strm << "MSRP " << transactionId << " " << MSRPCommands[SEND] << CRLF;
-  if (!WriteLine(strm) || mime.Write(*this))
+  if (!WriteLine(strm) || !mime.Write(*this))
     return false;
   return (body.GetLength() == 0) || Write((const char *)body, body.GetLength());
 }
