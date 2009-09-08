@@ -2390,12 +2390,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
     }
     else {
       RTP_UDP *rtpSession = OnUseRTPSession(rtpSessionId, mediaType, address, localAddress);
-      if (rtpSession == NULL) {
-        if (localAddress.IsEmpty())
-          return false;
-        // If have a local address, it means we have media bypass enabled
-      }
-      else {
+      if (rtpSession != NULL) {
         // set the remote address 
         PIPSocket::Address ip;
         WORD port = 0;
