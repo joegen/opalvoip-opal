@@ -243,7 +243,7 @@ static PFactory<PProcessStartup>::Worker<MSRPInitialiser> opalpluginStartupFacto
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 OpalMSRPMediaSession::OpalMSRPMediaSession(OpalConnection & _conn, unsigned _sessionId)
-: OpalMediaSession(_conn, "msrp", _sessionId)
+  : OpalMediaSession(_conn, "msrp", _sessionId)
 {
   msrpSession = new MSRPSession(MSRPInitialiser::KickStart(_conn.GetEndPoint().GetManager()));
 }
@@ -288,9 +288,22 @@ OpalMediaStream * OpalMSRPMediaSession::CreateMediaStream(const OpalMediaFormat 
   return new OpalMSRPMediaStream(connection, mediaFormat, sessionID, isSource, *this);
 }
 
-void OpalMSRPMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & )
+void OpalMSRPMediaSession::SetRemoteMediaAddress(const OpalTransportAddress & transportAddress, const OpalMediaFormatList & )
 {
+  PTRACE(2, "MSRP\tSetting remote media address to " << transportAddress);
 }
+
+bool OpalMSRPMediaSession::WriteData(      
+  const BYTE * data,   ///<  Data to write
+  PINDEX length,       ///<  Length of data to read.
+  PINDEX & written     ///<  Length of data actually written
+)
+{
+  PTRACE(2, "MSRP\tWriting " << length << " bytes");
+  written = length;
+  return true;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -312,13 +325,21 @@ OpalMSRPManager::~OpalMSRPManager()
 
 std::string OpalMSRPManager::OpenSession()
 {
-  PWaitAndSignal m(mutex);
-
-  std::string id = psprintf("%c%08x%u", PRandom::Number('a', 'z'), PRandom::Number(), ++lastID);
-  SessionInfo sessionInfo;
-  sessionInfoMap.insert(SessionInfoMap::value_type(id, sessionInfo));
-
-  PTRACE(2, "MSRP\tSession opened - " << sessionInfoMap.size() << " sessions now in progress");
+  std::string id;
+  for (;;) {
+    mutex.Wait();
+    PString s = psprintf("%c%08x%u", PRandom::Number('a', 'z'), PRandom::Number(), ++lastID);
+    id = (const char *)s;
+    if (sessionInfoMap.find(id) != sessionInfoMap.end()) {
+      mutex.Signal();
+      continue;
+    }
+    SessionInfo sessionInfo;
+    sessionInfoMap.insert(SessionInfoMap::value_type(id, sessionInfo));
+    PTRACE(2, "MSRP\tSession opened - " << sessionInfoMap.size() << " sessions now in progress");
+    mutex.Signal();
+    break;
+  }
 
   return id;
 }
@@ -352,7 +373,7 @@ void OpalMSRPManager::CloseSession(const std::string & id)
   if (r != sessionInfoMap.end())
     sessionInfoMap.erase(r);
 
-  PTRACE(2, "MSRP\tSession opened - " << sessionInfoMap.size() << " sessions now in progress");
+  PTRACE(2, "MSRP\tSession " << id << " opened - " << sessionInfoMap.size() << " sessions now in progress");
 }
 
 bool OpalMSRPManager::GetLocalAddress(OpalTransportAddress & addr)
@@ -437,6 +458,11 @@ OpalMSRPMediaStream::~OpalMSRPMediaStream()
 {
 }
 
+bool OpalMSRPMediaStream::Open()
+{
+  return OpalMediaStream::Open();
+}
+
 PBoolean OpalMSRPMediaStream::ReadData(
       BYTE *,
       PINDEX,
@@ -448,18 +474,15 @@ PBoolean OpalMSRPMediaStream::ReadData(
 }
 
 PBoolean OpalMSRPMediaStream::WriteData(
-      const BYTE * /*data*/,   ///<  Data to write
-      PINDEX /*length*/,       ///<  Length of data to read.
-      PINDEX & /*written*/     ///<  Length of data actually written
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
     )
 {
   if (!isOpen)
     return false;
 
-  // TODO: write MSRP frame via MSRP manager
-  // m_msrpSession.xxxxxx
-
-  return true;
+  return m_msrpSession.WriteData(data, length, written);
 }
 
 PBoolean OpalMSRPMediaStream::Close()

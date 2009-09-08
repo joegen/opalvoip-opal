@@ -128,11 +128,13 @@ class OpalMSRPManager : public PObject
     typedef std::map<std::string, SessionInfo> SessionInfoMap;
     SessionInfoMap sessionInfoMap;
 
+#if 0
     struct ConnectionInfo {
       PTCPSocket * socket;
     };
     typedef std::map<std::string, ConnectionInfo> ConnectionInfoMap;
     ConnectionInfoMap connectionInfoMap;
+#endif
 
   private:
     static OpalMSRPManager * msrp;
@@ -153,6 +155,12 @@ class MSRPSession
     OpalMSRPManager & GetManager() { return manager; }
 
     PString GetURL() const { return url; }
+
+    virtual bool WriteData(      
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
+    );
 
   protected:
     OpalMSRPManager & manager;
@@ -184,6 +192,18 @@ class OpalMSRPMediaSession : public OpalMediaSession
     virtual OpalTransportAddress GetLocalMediaAddress() const;
 
     virtual void SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & );
+
+    virtual bool WriteData(      
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
+    );
+
+    PBoolean ReadData(
+      BYTE * data,
+      PINDEX length,
+      PINDEX & read
+    );
 
 #if OPAL_SIP
     virtual SDPMediaDescription * CreateSDPMediaDescription(
@@ -234,11 +254,9 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
       PINDEX & written     ///<  Length of data actually written
     );
 
-    /**Close the media stream.
+    virtual bool Open();
 
-       Closes the associated PChannel.
-      */
-    virtual PBoolean Close();
+    virtual bool Close();
   //@}
   protected:
     OpalMSRPMediaSession & m_msrpSession;
