@@ -128,6 +128,8 @@ void SipIM::Main()
 
   MyPCSSEndPoint * pcss = new MyPCSSEndPoint(m_manager);
   allMediaFormats += pcss->GetMediaFormats();
+  pcss->SetSoundChannelPlayDevice("NULL");
+  pcss->SetSoundChannelRecordDevice("NULL");
 
   allMediaFormats = OpalTranscoder::GetPossibleFormats(allMediaFormats); // Add transcoders
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
@@ -135,8 +137,9 @@ void SipIM::Main()
       allMediaFormats.RemoveAt(i--); // Don't show media formats that are not used over the wire
   }
 
-  m_manager.AddRouteEntry("sip:.*  = pc:<du>");
-  m_manager.AddRouteEntry("pc:.*   = sip:<da>");
+
+  m_manager.AddRouteEntry("sip:.*\t.*=pc:*");
+  m_manager.AddRouteEntry("pc:.*\t.*=sip:<da>");
 
   cout << "Available codecs: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
 
