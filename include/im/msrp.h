@@ -201,6 +201,7 @@ class OpalMSRPMediaSession : public OpalMediaSession
     virtual OpalTransportAddress GetLocalMediaAddress() const;
 
     PURL GetLocalURL() const { return m_localUrl; }
+    PURL GetRemoteURL() const { return m_remoteUrl; }
 
     virtual void SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & );
 
@@ -276,6 +277,8 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
     virtual bool Open();
 
     virtual bool Close();
+
+    PURL GetRemoteURL() const { return m_msrpSession.GetRemoteURL(); }
   //@}
   protected:
     OpalMSRPMediaSession & m_msrpSession;
