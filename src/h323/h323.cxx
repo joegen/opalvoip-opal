@@ -177,6 +177,7 @@ H323Connection::H323Connection(OpalCall & call,
                                OpalConnection::StringOptions * stringOptions)
   : OpalRTPConnection(call, ep, token, options, stringOptions)
   , endpoint(ep)
+  , m_remoteConnectAddress(address)
   , gkAccessTokenOID(ep.GetGkAccessTokenOID())
 #if OPAL_H239
   , m_h239Control(ep.GetDefaultH239Control())
@@ -1539,37 +1540,41 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
     return CreateOutgoingControlChannel(fac.m_h245Address);
   }
 
-  if (fac.m_reason.GetTag() != H225_FacilityReason::e_callForwarded)
+  if (fac.m_reason.GetTag() != H225_FacilityReason::e_callForwarded && 
+      fac.m_reason.GetTag() != H225_FacilityReason::e_routeCallToGatekeeper)
     return PTrue;
 
-  PString address;
+  PURL addrURL = remotePartyAddress;
   if (fac.HasOptionalField(H225_Facility_UUIE::e_alternativeAliasAddress) &&
       fac.m_alternativeAliasAddress.GetSize() > 0)
-    address = H323GetAliasAddressString(fac.m_alternativeAliasAddress[0]);
+    addrURL.SetUserName(H323GetAliasAddressString(fac.m_alternativeAliasAddress[0]));
 
   if (fac.HasOptionalField(H225_Facility_UUIE::e_alternativeAddress)) {
-    if (!address)
-      address += '@';
-    address += H323TransportAddress(fac.m_alternativeAddress);
+    // Handle routeCallToGatekeeper and send correct destCallSignalAddress 
+    // in the H.225 setup message
+    if (fac.m_reason.GetTag() == H225_FacilityReason::e_routeCallToGatekeeper)
+      addrURL.SetUserName(addrURL.GetUserName()+'@'+addrURL.GetHostName());
+
+    addrURL.SetHostName(H323TransportAddress(fac.m_alternativeAddress));
   }
+
+  PString address = addrURL.AsString();
 
   if (endpoint.OnConnectionForwarded(*this, address, pdu)) {
     Release(EndedByCallForwarded);
     return PFalse;
   }
-  
+
   if (!endpoint.OnForwarded(*this, address)) {
     Release(EndedByCallForwarded);
     return PFalse;
   }
 
   if (!endpoint.CanAutoCallForward())
-    return PTrue;
+    return true;
 
-  if (!endpoint.ForwardConnection(*this, address, pdu))
-    return PTrue;
-
-  return PFalse;
+  // If forward is successful, then return false to terminate THIS call.
+  return !endpoint.ForwardConnection(*this, address, pdu);
 }
 
 
@@ -1782,17 +1787,11 @@ void H323Connection::StartOutgoing(PThread &, INT)
   if (!SafeReference())
     return;
 
-  PString alias, address;
-  PINDEX at = remotePartyAddress.Find('@');
-  if (at == P_MAX_INDEX)
-    address = remotePartyAddress;
-  else {
-    alias = remotePartyAddress.Left(at);
-    address = remotePartyAddress.Mid(at+1);
-  }
+  PString alias;
+  if (remotePartyName != m_remoteConnectAddress)
+    alias = remotePartyName;
 
-  H323TransportAddress h323addr(address, endpoint.GetDefaultSignalPort());
-  CallEndReason reason = SendSignalSetup(alias, h323addr);
+  CallEndReason reason = SendSignalSetup(alias, m_remoteConnectAddress);
 
   // Check if had an error, clear call if so
   if (reason != NumCallEndReasons)
@@ -1815,9 +1814,23 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   connectionState = AwaitingGatekeeperAdmission;
   SetPhase(SetUpPhase);
 
+  // See if we are "proxied" that is the destCallSignalAddress is different
+  // from the transport connection address
+  H323TransportAddress destCallSignalAddress = address;
+  PINDEX atInAlias = alias.Find('@');
+  if (atInAlias != P_MAX_INDEX)
+    destCallSignalAddress = H323TransportAddress(alias.Mid(atInAlias+1), endpoint.GetDefaultSignalPort());
+
+  // Initial value for alias in SETUP, could be overridden by gatekeeper
+  H225_ArrayOf_AliasAddress newAliasAddresses;
+  if (!alias.IsEmpty() && atInAlias > 0) {
+    newAliasAddresses.SetSize(1);
+    H323SetAliasAddress(alias.Left(atInAlias), newAliasAddresses[0]);
+  }
+
   // Start building the setup PDU to get various ID's
   H323SignalPDU setupPDU;
-  H225_Setup_UUIE & setup = setupPDU.BuildSetup(*this, address);
+  H225_Setup_UUIE & setup = setupPDU.BuildSetup(*this, destCallSignalAddress);
 
 #if OPAL_H450
   h450dispatcher->AttachToSetup(setupPDU);
@@ -1832,7 +1845,6 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   // Check for gatekeeper and do admission check if have one
   H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
-  H225_ArrayOf_AliasAddress newAliasAddresses;
   if (gatekeeper != NULL) {
     H323Gatekeeper::AdmissionResponse response;
     response.transportAddress = &gatekeeperRoute;
