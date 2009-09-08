@@ -352,7 +352,7 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetOrganization() const;
     void SetOrganization(const PString & v);
 
-    void GetProductInfo(OpalProductInfo & info);
+    void GetProductInfo(OpalProductInfo & info) const;
     void SetProductInfo(const PString & ua, const OpalProductInfo & info);
 
     PString GetWWWAuthenticate() const;
@@ -551,6 +551,7 @@ class SIP_PDU : public PSafeObject
       IllegalStatusCode,
       Local_TransportError,
       Local_BadTransportAddress,
+      Local_Timeout,
 
       Information_Trying                  = 100,
       Information_Ringing                 = 180,
