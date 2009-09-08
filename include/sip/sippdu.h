@@ -551,6 +551,7 @@ class SIP_PDU : public PSafeObject
       IllegalStatusCode,
       Local_TransportError,
       Local_BadTransportAddress,
+      Local_Timeout,
 
       Information_Trying                  = 100,
       Information_Ringing                 = 180,

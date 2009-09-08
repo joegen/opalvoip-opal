@@ -1090,6 +1090,8 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
       otherStream->Close();
   }
 
+  OpalMediaStreamPtr oldStream = GetMediaStream(sessionID, isSource);
+
   // Open forward side
   OpalMediaStreamPtr newStream = OpalRTPConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
   if (newStream == NULL) {
