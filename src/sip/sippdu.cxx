@@ -1108,7 +1108,7 @@ void SIPMIMEInfo::SetOrganization(const PString & v)
 
 static const char UserAgentTokenChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.!%*_+`'~";
 
-void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
+void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info) const
 {
   PCaselessString str = GetUserAgent();
   if (str.IsEmpty()) {
@@ -2593,16 +2593,16 @@ SIPTransaction::~SIPTransaction()
 
 PBoolean SIPTransaction::Start()
 {
-  if (state == Completed)
+    if (state == Completed)
     return PTrue;
 
-  if (connection != NULL)
-    connection->OnStartTransaction(*this);
+    if (connection != NULL)
+      connection->OnStartTransaction(*this);
 
-  endpoint.AddTransaction(this);
+    endpoint.AddTransaction(this);
 
-  if (state != NotStarted) {
-    PAssertAlways(PLogicError);
+    if (state != NotStarted) {
+      PAssertAlways(PLogicError);
     return PFalse;
   }
 
