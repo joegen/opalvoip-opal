@@ -348,9 +348,11 @@ OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & m
       return mediaStream;
   }
 
-  if (UseSession(GetTransport(), sessionID, mediaFormat.GetMediaType(), NULL) == NULL) {
-    PTRACE(1, "RTPCon\tCreateMediaStream could not find/create session " << sessionID);
-    return NULL;
+  if (mediaFormat.GetMediaType().GetDefinition()->UsesRTP()) {
+    if (UseSession(GetTransport(), sessionID, mediaFormat.GetMediaType(), NULL) == NULL) {
+      PTRACE(1, "RTPCon\tCreateMediaStream could not find/create session " << sessionID);
+      return NULL;
+    }
   }
 
   OpalMediaSession * mediaSession = GetMediaSession(sessionID);
