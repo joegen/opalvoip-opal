@@ -39,6 +39,8 @@
 #include <opal/mediatype.h>
 #include <im/im.h>
 #include <ptclib/inetprot.h>
+#include <ptclib/guid.h>
+#include <ptclib/mime.h>
 
 #if OPAL_SIP
 #include <sip/sdp.h>
@@ -81,9 +83,61 @@ class MSRPProtocol : public PInternetProtocol
       NumCommands
     };
 
+    static const int MaximumMessageLength = 1024;
+
+    class Message
+    {
+      public: 
+        struct Chunk {
+          Chunk(const PString & id, unsigned f, unsigned t)
+            : m_chunkId(id), m_rangeFrom(f), m_rangeTo(t) { }
+
+          PString m_chunkId;
+          unsigned m_rangeFrom;
+          unsigned m_rangeTo;
+        };
+        typedef std::vector<Chunk> ChunkList;
+        ChunkList m_chunks;
+
+        PString m_id;
+        PURL    m_fromURL;
+        PURL    m_toURL;
+        PString m_contentType;
+        unsigned m_length;
+    };
+
     MSRPProtocol();
 
-    bool SendCommand(Commands cmd, const PURL & from, const PURL & to);
+    bool SendMessage(
+      const PURL & from, 
+      const PURL & to,
+      const PString & text,
+      const PString & contentType,
+      PString & messageId
+    );
+
+    bool SendMessage(
+      const Message & message, 
+      const PString & text, 
+      const PString & contentType
+    );
+
+    bool SendMessage(
+      const PString & transactionId, 
+      const PMIMEInfo & mime, 
+      const PString & body
+    );
+
+    bool ReadMessage(
+      int & command, 
+      PString & transactionId, 
+      PMIMEInfo & mime, 
+      PString & body
+    );
+
+    //typedef std::map<std::string, Message> MessageMap;
+    //MessageMap m_messageMap;
+    PMutex m_mutex;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -156,8 +210,25 @@ class OpalMSRPManager : public PObject
     //
     void HandlerThread(PSafePtr<Connection> connection);
 
+    void SetNotifier(
+      const PURL & localUrl, 
+      const PURL & remoteURL, 
+      const PNotifier2 & notifier
+    );
+
+    void RemoveNotifier(
+      const PURL & localUrl, 
+      const PURL & remoteURL
+    );
 
     //OpalManager & GetOpalManager() { return opalManager; }
+
+    struct IncomingMSRP {
+      int       m_command;
+      PString   m_transactionId;
+      PMIMEInfo m_mime;
+      PString   m_body;
+    };
 
   protected:
     OpalManager & opalManager;
@@ -170,6 +241,16 @@ class OpalMSRPManager : public PObject
 
     PMutex m_connectionInfoMapAddMutex;
     PSafeDictionary<PString, Connection> m_connectionInfoMap;
+
+    class CallBack : public PObject {
+      PCLASSINFO(CallBack, PObject);
+      public:
+        CallBack(const PNotifier2 & n) : m_notifier(n) { }
+        PNotifier2 m_notifier;
+    };
+    typedef std::map<std::string, CallBack> CallBackMap;
+    CallBackMap m_callBacks;
+    PMutex m_callBacksMutex;
 
   private:
     static OpalMSRPManager * msrp;
@@ -202,6 +283,7 @@ class OpalMSRPMediaSession : public OpalMediaSession
 
     PURL GetLocalURL() const { return m_localUrl; }
     PURL GetRemoteURL() const { return m_remoteUrl; }
+    void SetRemoteURL(const PURL & url) { m_remoteUrl = url; }
 
     virtual void SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & );
 
@@ -278,11 +360,16 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
 
     virtual bool Close();
 
-    PURL GetRemoteURL() const { return m_msrpSession.GetRemoteURL(); }
+    PURL GetRemoteURL() const           { return m_msrpSession.GetRemoteURL(); }
+    void SetRemoteURL(const PURL & url) { m_msrpSession.SetRemoteURL(url); }
+
+    PDECLARE_NOTIFIER2(OpalMSRPManager, OpalMSRPMediaStream, OnReceiveMSRP);
+
   //@}
   protected:
     OpalMSRPMediaSession & m_msrpSession;
     PString m_remoteParty;
+    RFC4103Context m_rfc4103Context;
 };
 
 //                       schemeName,user,   passwd, host,   defUser,defhost, query,  params, frags,  path,   rel,    port
