@@ -2908,7 +2908,7 @@ void SIPTransaction::SetTerminated(States newState)
     switch (state) {
       case Terminated_Timeout :
       case Terminated_RetriesExceeded:
-        statusCode = SIP_PDU::Failure_RequestTimeout;
+        statusCode = SIP_PDU::Local_Timeout;
         break;
 
       case Terminated_TransportError :
