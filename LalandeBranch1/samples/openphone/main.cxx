@@ -5382,6 +5382,8 @@ void InCallPanel::OnStreamsChanged()
   m_SpeakerHandset->Enable(m_manager.HasHandset());
 
   PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
+  if (connection == NULL)
+    return;
 
   for (PINDEX i = 0; i < NumPages; i++)
     m_pages[i].UpdateSession(connection);
