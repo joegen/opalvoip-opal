@@ -91,11 +91,11 @@ const OpalMediaFormat & GetOpalMSRP()
         }
         
         OpalMediaOption * option = new OpalMediaOptionString("Accept Types", false, acceptTypes);
-        option->SetMerge(OpalMediaOption::NoMerge);
+        option->SetMerge(OpalMediaOption::AlwaysMerge);
         AddOption(option);
 
         option = new OpalMediaOptionString("Path", false, "");
-        option->SetMerge(OpalMediaOption::NoMerge);
+        option->SetMerge(OpalMediaOption::MaxMerge);
         AddOption(option);
       } 
   } const f; 
