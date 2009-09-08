@@ -234,6 +234,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   m_dialog.UpdateRouteSet(proxy); // Default routeSet if there is a proxy
   
   forkedInvitations.DisallowDeleteObjects();
+  pendingInvitations.DisallowDeleteObjects();
 
   ackTimer.SetNotifier(PCREATE_NOTIFIER(OnAckTimeout));
   ackRetry.SetNotifier(PCREATE_NOTIFIER(OnInviteResponseRetry));
@@ -913,7 +914,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   }
 
   SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(rtpSessionId);
-  if (GetPhase() < EstablishedPhase) {
+  if (GetPhase() < ConnectedPhase) {
     // If processing initial INVITE and video, obey the auto-start flags
     OpalMediaType::AutoStartMode autoStart = GetAutoStart(mediaType);
     if ((autoStart&OpalMediaType::Transmit) == 0)
@@ -1107,11 +1108,8 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
   needReINVITE = oldReINVITE;
 
-  if (GetPhase() == EstablishedPhase && needReINVITE) {
-    PTRACE(3, "SIP\tStarting re-INVITE to open channel.");
-    SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
-    invite->Start();
-  }
+  if (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream)
+    SendReINVITE(PTRACE_PARAM("open channel"));
 
   return newStream;
 }
@@ -1119,15 +1117,29 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
 bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
 {
-  bool ok = OpalConnection::CloseMediaStream(stream);
+  return OpalConnection::CloseMediaStream(stream) && SendReINVITE(PTRACE_PARAM("close channel"));
+}
 
-  if (GetPhase() == EstablishedPhase && needReINVITE) {
-    PTRACE(3, "SIP\tStarting re-INVITE to close channel.");
-    SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
-    invite->Start();
+
+bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
+{
+  if (!needReINVITE || GetPhase() != EstablishedPhase)
+    return false;
+
+  PTRACE(3, "SIP\t" << (pendingInvitations.IsEmpty() ? "Start" : "Queue") << "ing re-INVITE to " << msg);
+
+  SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
+
+  // To avoid overlapping INVITE transactions, we place the new transaction
+  // in a queue, if queue is empty we can start immediately, otherwise
+  // it waits till we get a response.
+  if (pendingInvitations.IsEmpty()) {
+    if (!invite->Start())
+      return false;
   }
 
-  return ok;
+  pendingInvitations.Append(invite);
+  return true;
 }
 
 
@@ -1291,12 +1303,9 @@ bool SIPConnection::HoldConnection()
   if (m_holdToRemote != eHoldOff)
     return true;
 
-  PTRACE(3, "SIP\tStarting re-INVITE to put connection on hold");
-
   m_holdToRemote = eHoldInProgress;
 
-  SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
-  if (invite->Start())
+  if (SendReINVITE(PTRACE_PARAM("put connection on hold")))
     return true;
 
   m_holdToRemote = eHoldOff;
@@ -1322,10 +1331,7 @@ bool SIPConnection::RetrieveConnection()
 
   m_holdToRemote = eRetrieveInProgress;
 
-  PTRACE(3, "SIP\tStarting re-INVITE to retrieve connection from hold");
-
-  SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
-  if (invite->Start())
+  if (SendReINVITE(PTRACE_PARAM("retrieve connection from hold")))
     return true;
 
   m_holdToRemote = eHoldOn;
@@ -1575,16 +1581,48 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
 
 void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
+  if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
+    switch (response.GetStatusCode()) {
+      case SIP_PDU::Failure_UnAuthorised :
+      case SIP_PDU::Failure_ProxyAuthenticationRequired :
+        OnReceivedAuthenticationRequired(transaction, response);
+        break;
+
+      default :
+        switch (response.GetStatusCode()/100) {
+          case 1 : // Treat all other provisional responses like a Trying.
+            OnReceivedTrying(transaction, response);
+            break;
+
+          case 2 : // Successful response - there really is only 200 OK
+            OnReceivedOK(transaction, response);
+            break;
+        }
+    }
+    return;
+  }
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
+  // To avoid overlapping INVITE transactions, wait till here before
+  // starting the next one.
+  pendingInvitations.Remove(&transaction);
+  while (!pendingInvitations.IsEmpty()) {
+    if (pendingInvitations.GetAt(0, PSafeReadWrite)->Start())
+      break;
+    pendingInvitations.RemoveAt(0);
+  }
+
   // Break out to virtual functions for some special cases.
   switch (response.GetStatusCode()) {
     case SIP_PDU::Information_Ringing :
-      if (transaction.GetMethod() == SIP_PDU::Method_INVITE)
-        OnReceivedRinging(response);
+      OnReceivedRinging(response);
       return;
 
     case SIP_PDU::Information_Session_Progress :
-      if (transaction.GetMethod() == SIP_PDU::Method_INVITE)
-        OnReceivedSessionProgress(response);
+      OnReceivedSessionProgress(response);
       return;
 
     case SIP_PDU::Failure_UnAuthorised :
@@ -1592,6 +1630,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       if (OnReceivedAuthenticationRequired(transaction, response))
         return;
       break;
+
+    case SIP_PDU::Failure_RequestPending :
+      SendReINVITE(PTRACE_PARAM("retry after getting 491 Request Pending"));
+      return;
 
     default :
       switch (response.GetStatusCode()/100) {
@@ -1604,20 +1646,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           return;
 
         case 3 : // Redirection response
-          if (transaction.GetMethod() == SIP_PDU::Method_INVITE)
-            OnReceivedRedirection(response);
+          OnReceivedRedirection(response);
           return;
       }
   }
-
-  // We don't always release the connection, eg not till all forked invites have completed
-  // This INVITE is from a different "dialog", any errors do not cause a release
-  if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
-    return;
-
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
 
   // If we are doing a local hold, and it failed, we do not release the connection
   switch (m_holdToRemote) {
@@ -1634,6 +1666,9 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     default :
       break;
   }
+
+  // We don't always release the connection, eg not till all forked invites have completed
+  // This INVITE is from a different "dialog", any errors do not cause a release
 
   if (GetPhase() < ConnectedPhase) {
     // Final check to see if we have forked INVITEs still running, don't
@@ -1810,9 +1845,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
 void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 {
-  if (GetPhase() != EstablishedPhase) {
+  if (GetPhase() < ConnectedPhase) {
     PTRACE(2, "SIP\tRe-INVITE from " << request.GetURI() << " received before initial INVITE completed on " << *this);
-    request.SendResponse(*transport, SIP_PDU::Failure_NotAcceptableHere);
+    request.SendResponse(*transport, SIP_PDU::Failure_RequestPending);
     return;
   }
 
@@ -1882,17 +1917,17 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
   
   OnReceivedSDP(response);
 
-  // If we receive an ACK in established phase, it is a re-INVITE
-  if (GetPhase() == EstablishedPhase) {
-    StartMediaStreams();
-    return;
+  switch (GetPhase()) {
+    case ConnectedPhase :
+      SetPhase(EstablishedPhase);
+      OnEstablished();
+      break;
+
+    case EstablishedPhase :
+      // If we receive an ACK in established phase, it is a re-INVITE
+      StartMediaStreams();
+      break;
   }
-  
-  if (GetPhase() != ConnectedPhase)  
-    return;
-  
-  SetPhase(EstablishedPhase);
-  OnEstablished();
 }
 
 
@@ -2067,10 +2102,6 @@ void SIPConnection::OnStartTransaction(SIPTransaction & transaction)
 
 void SIPConnection::OnReceivedRinging(SIP_PDU & response)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
-
   PTRACE(3, "SIP\tReceived Ringing response");
 
   OnReceivedSDP(response);
@@ -2090,10 +2121,6 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & response)
 
 void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
-
   PTRACE(3, "SIP\tReceived Session Progress response");
 
   OnReceivedSDP(response);
