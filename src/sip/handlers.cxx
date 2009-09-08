@@ -439,7 +439,7 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
 }
 
 
-void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   SetExpire(response.GetMIME().GetMinExpires());
 
@@ -532,7 +532,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction
 }
 
 
-void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   response.GetMIME().GetProductInfo(m_productInfo);
 
@@ -1193,6 +1193,7 @@ static PFactory<PURLScheme>::Worker<SIPPresenceURL> presenceURL("pres", true);
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if 0
 class SIPPresenceWatcherEventPackageHandler : public SIPEventPackageHandler
 {
   virtual PCaselessString GetContentType() const
@@ -1202,7 +1203,6 @@ class SIPPresenceWatcherEventPackageHandler : public SIPEventPackageHandler
 
   virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
   {
-#if 0
     SIPURL from = request.GetMIME().GetFrom();
     from.Sanitise(SIPURL::ExternalURI);
 
@@ -1300,12 +1300,12 @@ class SIPPresenceWatcherEventPackageHandler : public SIPEventPackageHandler
     }
 
     handler.GetEndPoint().OnPresenceInfoReceived(info);
-#endif
     return true;
   }
 };
 
 static SIPEventPackageFactory::Worker<SIPPresenceWatcherEventPackageHandler> presenceWatcherEventPackageHandler(SIPSubscribe::Presence | SIPSubscribe::Watcher);
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
