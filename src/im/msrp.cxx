@@ -404,10 +404,14 @@ void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, void * d)
   m_msrpSession.SetConnection(incomingMSRP.m_connection);
 
   if (incomingMSRP.m_command == MSRPProtocol::SEND) {
+    PTRACE(3, "MSRP\tMediaStream " << *this << " received SEND");
     T140String t140(incomingMSRP.m_body);
     RTP_DataFrameList frames = m_rfc4103Context.ConvertToFrames(t140);
     for (PINDEX i = 0; i < frames.GetSize(); ++i)
       connection.TransmitInternalIM(m_rfc4103Context.m_mediaFormat, frames[i]);
+  }
+  else {
+    PTRACE(3, "MSRP\tMediaStream " << *this << " receiving unknown MSRP message");
   }
 }
 
@@ -556,6 +560,7 @@ void OpalMSRPManager::HandlerThread(PSafePtr<Connection> connection)
       PTRACE(3, "MSRP\tMSRP message received");
 
       IncomingMSRP incomingMsg;
+      incomingMsg.m_connection = connection;
       bool stat = protocol.ReadMessage(incomingMsg.m_command, incomingMsg.m_transactionId, incomingMsg.m_mime, incomingMsg.m_body);
 
       if (!stat)
@@ -569,8 +574,13 @@ void OpalMSRPManager::HandlerThread(PSafePtr<Connection> connection)
           PString key(toUrl + '\t' + fromUrl);
           PWaitAndSignal m(m_callBacksMutex);
           CallBackMap::iterator r = m_callBacks.find(key);
-          if (r != m_callBacks.end())
+          if (r == m_callBacks.end()) {
+            PTRACE(2, "MSRP\tNo registered callbacks with '" << key << "'");
+          } else {
+            PTRACE(2, "MSRP\tCalling registered callbacks for '" << key << "'");
             r->second.m_notifier(*this, (void *)&incomingMsg);
+          }
+           
         }
       }
     }
@@ -643,6 +653,7 @@ void OpalMSRPManager::SetNotifier(
 )
 {
   PString key(localUrl.AsString() + '\t' + remoteUrl.AsString());
+  PTRACE(2, "MSRP\tRegistering callback for incoming MSRP messages with '" << key << "'");
   PWaitAndSignal m(m_callBacksMutex);
   m_callBacks.insert(CallBackMap::value_type(key, CallBack(notifier)));
 }
