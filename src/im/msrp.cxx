@@ -37,6 +37,8 @@
 
 #include <ptlib/socket.h>
 #include <ptclib/random.h>
+#include <ptclib/pdns.h>
+#include <ptclib/mime.h>
 
 #include <opal/transports.h>
 #include <opal/mediatype.h>
@@ -47,6 +49,8 @@
 #include <im/msrp.h>
 
 #if OPAL_HAS_MSRP
+
+#define CRLF "\r\n"
 
 OpalMSRPMediaType::OpalMSRPMediaType()
   : OpalIMMediaType("msrp", "message|tcp/msrp", 5)
@@ -186,30 +190,6 @@ void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-MSRPSession::MSRPSession(OpalMSRPManager & _manager)
-  : manager(_manager)
-{
-  // sessionIDs are supposed to unguessable
-  msrpSessionId = manager.OpenSession();
-  url           = manager.SessionIDToPath(msrpSessionId);
-}
-
-MSRPSession::~MSRPSession()
-{
-  manager.CloseSession(msrpSessionId);
-}
-
-#if OPAL_SIP
-
-SDPMediaDescription * MSRPSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
-{
-  return new SDPMSRPMediaDescription(sdpContactAddress, url);
-}
-
-#endif
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
 class MSRPInitialiser : public PProcessStartup
 {
   PCLASSINFO(MSRPInitialiser, PProcessStartup)
@@ -244,28 +224,29 @@ static PFactory<PProcessStartup>::Worker<MSRPInitialiser> opalpluginStartupFacto
 
 OpalMSRPMediaSession::OpalMSRPMediaSession(OpalConnection & _conn, unsigned _sessionId)
   : OpalMediaSession(_conn, "msrp", _sessionId)
+  , m_manager(MSRPInitialiser::KickStart(_conn.GetEndPoint().GetManager()))
 {
-  msrpSession = new MSRPSession(MSRPInitialiser::KickStart(_conn.GetEndPoint().GetManager()));
+  // sessionIDs are supposed to unguessable
+  m_localMSRPSessionId = m_manager.CreateSession();
+  m_localUrl           = m_manager.SessionIDToURL(m_localMSRPSessionId);
 }
 
 OpalMSRPMediaSession::OpalMSRPMediaSession(const OpalMSRPMediaSession & _obj)
   : OpalMediaSession(_obj)
-  , msrpSession(_obj.msrpSession)
+  , m_manager(_obj.m_manager)
+  , m_connectionPtr(_obj.m_connectionPtr)
 {
 }
 
 void OpalMSRPMediaSession::Close()
 {
-  if (msrpSession != NULL) {
-    delete msrpSession;
-    msrpSession = NULL;
-  }
+  m_manager.DestroySession(m_localMSRPSessionId);
 }
 
 OpalTransportAddress OpalMSRPMediaSession::GetLocalMediaAddress() const
 {
   OpalTransportAddress addr;
-  if (msrpSession->GetManager().GetLocalAddress(addr))
+  if (m_manager.GetLocalAddress(addr))
     return addr;
 
   return OpalTransportAddress();
@@ -275,7 +256,7 @@ OpalTransportAddress OpalMSRPMediaSession::GetLocalMediaAddress() const
 
 SDPMediaDescription * OpalMSRPMediaSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
 {
-  return msrpSession->CreateSDPMediaDescription(sdpContactAddress);
+  return new SDPMSRPMediaDescription(sdpContactAddress, m_localUrl.AsString());
 }
 
 #endif
@@ -284,7 +265,7 @@ OpalMediaStream * OpalMSRPMediaSession::CreateMediaStream(const OpalMediaFormat 
                                                                          unsigned sessionID, 
                                                                          PBoolean isSource)
 {
-  PTRACE(2, "MSRP\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with " << msrpSession->GetURL());
+  PTRACE(2, "MSRP\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with " << m_localUrl);
   return new OpalMSRPMediaStream(connection, mediaFormat, sessionID, isSource, *this);
 }
 
@@ -294,7 +275,7 @@ void OpalMSRPMediaSession::SetRemoteMediaAddress(const OpalTransportAddress & tr
 }
 
 bool OpalMSRPMediaSession::WriteData(      
-  const BYTE * data,   ///<  Data to write
+  const BYTE * /*data*/,   ///<  Data to write
   PINDEX length,       ///<  Length of data to read.
   PINDEX & written     ///<  Length of data actually written
 )
@@ -305,125 +286,30 @@ bool OpalMSRPMediaSession::WriteData(
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////
-
-OpalMSRPManager::OpalMSRPManager(OpalManager & _opalManager, WORD _port)
-  : opalManager(_opalManager), listeningPort(_port), listeningThread(NULL)
+bool OpalMSRPMediaSession::OpenMSRP(const PURL & remoteUrl)
 {
-}
+  if (m_connectionPtr != NULL)
+    return true;
 
-OpalMSRPManager::~OpalMSRPManager()
-{
-  PWaitAndSignal m(mutex);
+  if (remoteUrl.IsEmpty())
+    return false;
 
-  if (listeningThread != NULL) {
-    listeningSocket.Close();
-    listeningThread->WaitForTermination();
-    delete listeningThread;
+  m_remoteUrl = remoteUrl;
+
+  // only create connections when originating the call
+  if (!m_isOriginating)
+    return true;
+
+  // create connection to remote 
+  m_connectionPtr = m_manager.OpenConnection(m_localUrl, m_remoteUrl);
+  if (m_connectionPtr == NULL) {
+    PTRACE(3, "MSRP\tCannot create connection to remote URL '" << m_remoteUrl << "'");
+    return false;
   }
-}
-
-std::string OpalMSRPManager::OpenSession()
-{
-  std::string id;
-  for (;;) {
-    mutex.Wait();
-    PString s = psprintf("%c%08x%u", PRandom::Number('a', 'z'), PRandom::Number(), ++lastID);
-    id = (const char *)s;
-    if (sessionInfoMap.find(id) != sessionInfoMap.end()) {
-      mutex.Signal();
-      continue;
-    }
-    SessionInfo sessionInfo;
-    sessionInfoMap.insert(SessionInfoMap::value_type(id, sessionInfo));
-    PTRACE(2, "MSRP\tSession opened - " << sessionInfoMap.size() << " sessions now in progress");
-    mutex.Signal();
-    break;
-  }
-
-  return id;
-}
-
-std::string OpalMSRPManager::SessionIDToPath(const std::string & id)
-{
-  PIPSocket::Address addr;
-  PString hostname;
-  if (!PIPSocket::GetHostAddress(addr))
-    hostname = PIPSocket::GetHostName();
-  else
-    hostname = addr.AsString();
-
-  PStringStream str;
-  str << "msrp://"
-      << hostname
-      << ":"
-      << listeningPort
-      << "/"
-      << id
-      << ";tcp";
-
-  return str;
-}
-
-void OpalMSRPManager::CloseSession(const std::string & id)
-{
-  PWaitAndSignal m(mutex);
-
-  SessionInfoMap::iterator r = sessionInfoMap.find(id);
-  if (r != sessionInfoMap.end())
-    sessionInfoMap.erase(r);
-
-  PTRACE(2, "MSRP\tSession " << id << " opened - " << sessionInfoMap.size() << " sessions now in progress");
-}
-
-bool OpalMSRPManager::GetLocalAddress(OpalTransportAddress & addr)
-{
-  PWaitAndSignal m(mutex);
-
-  if (!listeningSocket.IsOpen()) {
-    if (!listeningSocket.Listen(5, listeningPort)) {
-      PTRACE(2, "MSRP\tCannot start MSRP listener on port " << listeningPort);
-      return false;
-    }
-
-    listeningThread = new PThreadObj<OpalMSRPManager>(*this, &OpalMSRPManager::ThreadMain);
-
-    PIPSocket::Address ip; WORD port;
-    listeningSocket.GetLocalAddress(ip, port);
-    if (ip.IsAny()) {
-      if (!PIPSocket::GetNetworkInterface(ip)) {
-        PTRACE(2, "MSRP\tUnable to get specific IP address for MSRP listener");
-        return false;
-      }
-    }
-
-    listeningAddress = OpalTransportAddress(ip, port);
-    PTRACE(2, "MSRP\tListener started on " << listeningAddress);
-  }
-
-  addr = listeningAddress;
 
   return true;
 }
 
-bool OpalMSRPManager::GetLocalPort(WORD & port)
-{
-  port = listeningPort;
-  return true;
-}
-
-void OpalMSRPManager::ThreadMain()
-{
-  PTRACE(2, "MSRP\tListener thread started");
-  for (;;) {
-    PTCPSocket * socket = new PTCPSocket;
-    if (!socket->Accept(listeningSocket)) {
-      delete socket;
-      break;
-    }
-  }
-  PTRACE(2, "MSRP\tListener thread ended");
-}
 
 ////////////////////////////////////////////////////////
 
@@ -465,7 +351,7 @@ OpalMSRPMediaStream::~OpalMSRPMediaStream()
 
 bool OpalMSRPMediaStream::Open()
 {
-  return OpalMediaStream::Open();
+  return m_msrpSession.OpenMSRP(m_remoteParty) && OpalMediaStream::Open();
 }
 
 PBoolean OpalMSRPMediaStream::ReadData(
@@ -494,6 +380,273 @@ PBoolean OpalMSRPMediaStream::Close()
 {
   return OpalIMMediaStream::Close();
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+OpalMSRPManager::OpalMSRPManager(OpalManager & _opalManager, WORD _port)
+  : opalManager(_opalManager), m_listenerPort(_port), m_listenerThread(NULL)
+{
+}
+
+OpalMSRPManager::~OpalMSRPManager()
+{
+  PWaitAndSignal m(mutex);
+
+  if (m_listenerThread != NULL) {
+    m_listenerSocket.Close();
+    m_listenerThread->WaitForTermination();
+    delete m_listenerThread;
+  }
+}
+
+std::string OpalMSRPManager::CreateSession()
+{
+  std::string id;
+  for (;;) {
+    mutex.Wait();
+    PString s = psprintf("%c%08x%u", PRandom::Number('a', 'z'), PRandom::Number(), ++lastID);
+    id = (const char *)s;
+    //if (m_sessionInfoMap.find(id) != m_sessionInfoMap.end()) {
+    //  mutex.Signal();
+    //  continue;
+    //}
+    //SessionInfo sessionInfo;
+    //m_sessionInfoMap.insert(SessionInfoMap::value_type(id, sessionInfo));
+    //PTRACE(2, "MSRP\tSession opened - " << m_sessionInfoMap.size() << " sessions now in progress");
+    mutex.Signal();
+    break;
+  }
+
+  return id;
+}
+
+PURL OpalMSRPManager::SessionIDToURL(const std::string & id)
+{
+  PIPSocket::Address addr;
+  PString hostname;
+  if (!PIPSocket::GetHostAddress(addr))
+    hostname = PIPSocket::GetHostName();
+  else
+    hostname = addr.AsString();
+
+  PStringStream str;
+  str << "msrp://"
+      << hostname
+      << ":"
+      << m_listenerPort
+      << "/"
+      << id
+      << ";tcp";
+
+  return PURL(str);
+}
+
+void OpalMSRPManager::DestroySession(const std::string & /*id*/)
+{
+  //PWaitAndSignal m(mutex);
+
+  //SessionInfoMap::iterator r = m_sessionInfoMap.find(id);
+  //if (r != m_sessionInfoMap.end())
+  //  m_sessionInfoMap.erase(r);
+
+  //PTRACE(2, "MSRP\tSession " << id << " closed - " << m_sessionInfoMap.size() << " sessions now in progress");
+}
+
+bool OpalMSRPManager::GetLocalAddress(OpalTransportAddress & addr)
+{
+  PWaitAndSignal m(mutex);
+
+  if (!m_listenerSocket.IsOpen()) {
+    if (!m_listenerSocket.Listen(5, m_listenerPort)) {
+      PTRACE(2, "MSRP\tCannot start MSRP listener on port " << m_listenerPort);
+      return false;
+    }
+
+    m_listenerThread = new PThreadObj<OpalMSRPManager>(*this, &OpalMSRPManager::ListenerThread);
+
+    PIPSocket::Address ip; WORD port;
+    m_listenerSocket.GetLocalAddress(ip, port);
+    if (ip.IsAny()) {
+      if (!PIPSocket::GetNetworkInterface(ip)) {
+        PTRACE(2, "MSRP\tUnable to get specific IP address for MSRP listener");
+        return false;
+      }
+    }
+
+    m_listenerAddress = OpalTransportAddress(ip, port);
+    PTRACE(2, "MSRP\tListener started on " << m_listenerAddress);
+  }
+
+  addr = m_listenerAddress;
+
+  return true;
+}
+
+bool OpalMSRPManager::GetLocalPort(WORD & port)
+{
+  port = m_listenerPort;
+  return true;
+}
+
+void OpalMSRPManager::ListenerThread()
+{
+  PTRACE(2, "MSRP\tListener thread started");
+
+  for (;;) {
+    MSRPProtocol * protocol = new MSRPProtocol;
+    if (!protocol->Accept(m_listenerSocket)) {
+      delete protocol;
+      break;
+    }
+    PSafePtr<Connection> connection = new Connection(protocol);
+    connection->m_handlerThread = new PThreadObj1Arg<OpalMSRPManager, PSafePtr<Connection> >(*this, connection, &OpalMSRPManager::HandlerThread);
+  }
+  PTRACE(2, "MSRP\tListener thread ended");
+}
+
+void OpalMSRPManager::HandlerThread(PSafePtr<Connection> connection)
+{
+  PTRACE(2, "MSRP\tMSRP protocol thread started");
+
+  MSRPProtocol & protocol = *(connection->m_protocol);
+  protocol.SetReadTimeout(1000);
+
+  for (;;) {
+    connection.SetSafetyMode(PSafeReadOnly);
+
+    PString line;
+    if (!protocol.ReadLine(line, false)) {
+      if (protocol.GetErrorCode() == PChannel::Timeout)
+        continue;
+      PTRACE(2, "MSRP\tMSRP protocol socket returned error " << protocol.GetErrorText());
+      break;
+    }
+
+    PMIMEInfo mime(protocol);
+
+    connection.SetSafetyMode(PSafeReadWrite);
+
+    PTRACE(2, "MSRP\tMSRP protocol socket returned " << line);
+
+/*
+    switch (cmd) {
+      case MSRPProtocol::SEND:
+        PTRACE(2, "MSRP\tMSRP protocol socket returned SEND");
+        break;
+
+      case MSRPProtocol::REPORT:
+        PTRACE(2, "MSRP\tMSRP protocol socket returned REPORT");
+        break;
+    }
+*/
+  }
+
+  PTRACE(2, "MSRP\tMSRP protocol thread finished");
+}
+
+PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL & localURL, const PURL & remoteURL)
+{
+  // get hostname of remote 
+  PIPSocket::Address ip = remoteURL.GetHostName();
+  WORD port             = remoteURL.GetPort();
+  if (!ip.IsValid()) {
+    if (remoteURL.GetPortSupplied()) {
+      if (!PIPSocket::GetHostAddress(remoteURL.GetHostName(), ip)) {
+        PTRACE(2, "MSRP\tUnable to resolve MSRP URL '" << remoteURL << "' with explicit port");
+        return NULL;
+      }
+    }
+    else {
+      PIPSocketAddressAndPortVector addresses;
+      if (PDNS::LookupSRV(remoteURL.GetHostName(), "_im._msrp", remoteURL.GetPort(), addresses) && !addresses.empty()) {
+        ip   = addresses[0].GetAddress(); // Only use first entry
+        port = addresses[0].GetPort();
+      } 
+      else if (!PIPSocket::GetHostAddress(remoteURL.GetHostName(), ip)) {
+        PTRACE(2, "MSRP\tUnable to resolve MSRP URL hostname '" << remoteURL << "' ");
+        return false;
+      }
+    }
+  }
+
+  PString connectionKey(ip.AsString() + ":" + PString(PString::Unsigned, port));
+
+  PWaitAndSignal m(m_connectionInfoMapAddMutex);
+
+  // see if we already have a connection to that remote
+  PSafePtr<Connection> connection = NULL;
+  if (m_connectionInfoMap.FindWithLock(connectionKey) != NULL) {
+    PTRACE(2, "MSRP\tReusing existing connection to " << ip << ":" << port);
+    return connection;
+  }
+  
+  // create a connection to the remote
+  connection = new Connection();
+  if (!connection->m_protocol->Connect(ip, port)) {
+    PTRACE(2, "MSRP\tUnable to make new connection connection to " << ip << ":" << port);
+    return false;
+  }
+
+  PString key(ip.AsString() + ":" + PString(PString::Unsigned, port));
+  m_connectionInfoMap.SetAt(key, connection);
+
+  connection->m_protocol->SendCommand(MSRPProtocol::SEND, localURL, remoteURL);
+
+  return connection;
+}
+
+////////////////////////////////////////////////////////
+
+OpalMSRPManager::Connection::Connection(MSRPProtocol * protocol)
+  : m_handlerThread(NULL)
+  , m_running(false)
+  , m_protocol(protocol)
+{
+  PTRACE(3, "MSRP\tCreating connection");
+  if (m_protocol == NULL)
+    m_protocol = new MSRPProtocol();
+}
+
+OpalMSRPManager::Connection::~Connection()
+{
+  if (m_handlerThread != NULL) {
+    m_running = false;
+    m_handlerThread->WaitForTermination();
+    delete m_handlerThread;
+    m_handlerThread = NULL;
+  }
+  delete m_protocol;
+  m_protocol = NULL;
+  PTRACE(3, "MSRP\tDestroying connection");
+}
+
+////////////////////////////////////////////////////////
+
+static char const * const MSRPCommands[MSRPProtocol::NumCommands] = {
+  "SEND", "REPORT"
+};
+
+MSRPProtocol::MSRPProtocol()
+: PInternetProtocol("msrp 2855", NumCommands, MSRPCommands)
+{ }
+
+bool MSRPProtocol::SendCommand(Commands cmd, const PURL & from, const PURL & to)
+{
+  PString tag("xxxxx");
+
+  PMIMEInfo mime;
+  mime.SetAt("To-Path", to.AsString());
+  mime.SetAt("From-Path", from.AsString());
+  mime.SetAt("Content-Type", "text/plain");
+
+  PStringStream strm;
+  strm << "MSRP " << tag << " " << MSRPCommands[cmd] << CRLF;
+  if (!WriteLine(strm) || !mime.Write(*this))
+    return false;
+
+  return true;
+}
+
 
 ////////////////////////////////////////////////////////
 
