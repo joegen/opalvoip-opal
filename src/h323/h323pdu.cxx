@@ -1850,7 +1850,7 @@ H245_GenericMessage & H323ControlPDU::BuildGenericResponse(const PString & ident
   msg.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
   msg.m_subMessageIdentifier = subMsgId;
 
-// Assume always have a content
+  // Assume always have a content
   msg.IncludeOptionalField(H245_GenericMessage::e_messageContent);
   return msg;
 }
@@ -1860,7 +1860,10 @@ H245_GenericMessage & H323ControlPDU::BuildGenericCommand(const PString & identi
 {
   H245_GenericMessage & msg = Build(H245_CommandMessage::e_genericCommand);
   H323SetCapabilityIdentifier(identifier, msg.m_messageIdentifier);
+
+  msg.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
   msg.m_subMessageIdentifier = subMsgId;
+
   return msg;
 }
 
@@ -1869,7 +1872,10 @@ H245_GenericMessage & H323ControlPDU::BuildGenericIndication(const PString & ide
 {
   H245_GenericMessage & msg = Build(H245_IndicationMessage::e_genericIndication);
   H323SetCapabilityIdentifier(identifier, msg.m_messageIdentifier);
+
+  msg.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
   msg.m_subMessageIdentifier = subMsgId;
+
   return msg;
 }
 
