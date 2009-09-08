@@ -342,6 +342,17 @@ OpalMSRPMediaStream::OpalMSRPMediaStream(
   , m_msrpSession(msrpSession)
   , m_remoteParty(mediaFormat.GetOptionString("Path"))
 {
+  // for source streams, we need to get the remote URL from the matching sink stream
+  if (!isSource) 
+    m_remoteParty = mediaFormat.GetOptionString("Path");
+  else {
+    PString id(this->GetID());
+    OpalMediaStreamPtr otherStrm = conn.GetMediaStream(id, false);
+    if (otherStrm == NULL) {
+      PTRACE(3, "MSRP\tCannot find matching sink stream MSRP source stream");
+    }
+    m_remoteParty = ((OpalMSRPMediaStream *)&*otherStrm)->GetRemoteURL().AsString();
+  }
   PTRACE(3, "MSRP\tOpening MSRP connection from " << m_msrpSession.GetLocalURL() << " to " << m_remoteParty);
 }
 
