@@ -268,7 +268,9 @@ class SDPSessionDescription : public PObject
   PCLASSINFO(SDPSessionDescription, PObject);
   public:
     SDPSessionDescription(
-      const OpalTransportAddress & address = OpalTransportAddress()
+      time_t sessionId,
+      unsigned version,
+      const OpalTransportAddress & address
     );
 
     void PrintOn(ostream & strm) const;
@@ -296,8 +298,8 @@ class SDPSessionDescription : public PObject
       const OpalTransportAddress & address
     );
 	
-    PINDEX GetOwnerSessionId() const { return ownerSessionId; }
-    void SetOwnerSessionId(PINDEX value) { ownerSessionId = value; }
+    time_t GetOwnerSessionId() const { return ownerSessionId; }
+    void SetOwnerSessionId(time_t value) { ownerSessionId = value; }
 
     PINDEX GetOwnerVersion() const { return ownerVersion; }
     void SetOwnerVersion(PINDEX value) { ownerVersion = value; }
@@ -322,7 +324,7 @@ class SDPSessionDescription : public PObject
     PString sessionName;
 
     PString ownerUsername;
-    unsigned ownerSessionId;
+    time_t ownerSessionId;
     unsigned ownerVersion;
     OpalTransportAddress ownerAddress;
     OpalTransportAddress defaultConnectAddress;
