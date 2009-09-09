@@ -223,3 +223,23 @@ PINDEX T140String::GetUTF(const BYTE * ptr, PINDEX len, WORD & ch)
 
   return 3;
 }
+
+bool T140String::AsString(PString & str)
+{
+  PINDEX pos = 0;
+  while (pos < GetSize()) {
+    WORD ch;
+    PINDEX len = GetUTF(pos, ch);
+    if (len == 0)
+      return false;
+    if (len == 1)
+      str += (char)(ch & 0xff);
+    else if (ch == UTF_NEWLINE)
+      str += '\n';
+    else // if (ch == ZERO_WIDTH_NO_BREAK) {
+      ;
+    pos += len;
+  }
+
+  return true;
+}
