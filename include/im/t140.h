@@ -71,6 +71,8 @@ class T140String : public PBYTEArray
     PINDEX AppendUnicode16(WORD c);
     PINDEX AppendUTF(const BYTE * utf, PINDEX utfLen);
 
+    bool AsString(PString & str);
+
   protected:
     PINDEX SetUTF(BYTE * ptr, WORD c);
     PINDEX length;
