@@ -1515,9 +1515,20 @@ OpalMediaType::AutoStartMode OpalConnection::AutoStartMap::GetAutoStart(const Op
 
 bool OpalConnection::TransmitInternalIM(const OpalMediaFormat & format, RTP_DataFrame & frame)
 {
+  // if the call contains any compatible IM stream, use it
+  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+    if (mediaStream->IsSource() && (mediaStream->GetMediaFormat() == format)) {
+      PTRACE(3, "OpalCon\tSending " << format << " IM message within call");
+      return mediaStream->GetPatch()->PushFrame(frame);
+    }
+  }
+
+  // otherwise push the frame directly to the other connection
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-  if (other != NULL) 
+  if (other != NULL) {
+    PTRACE(3, "OpalCon\tSending " << format << " IM message directly to other connection");
     other->OnReceiveInternalIM(format, frame);
+  }
   return true;
 }
 
@@ -1528,8 +1539,15 @@ void OpalConnection::OnReceiveInternalIM(const OpalMediaFormat & format, RTP_Dat
 }
 
 
-bool OpalConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_DataFrame & /*body*/)
+bool OpalConnection::TransmitExternalIM(const OpalMediaFormat & format, RTP_DataFrame & frame)
 {
+  endpoint.GetManager().OnMessageReceived(GetRemotePartyURL(), 
+                                          GetRemotePartyName(), 
+                                          GetLocalPartyURL(), 
+                                          format.GetOptionString("Content-Type", "text/plain"),
+                                          PString((char *)frame.GetPayloadPtr(), frame.GetPayloadSize()),
+                                          GetIdentifier());
+
   return true;
 }
 

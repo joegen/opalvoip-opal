@@ -72,11 +72,6 @@ class OpalIMMediaStream : public OpalMediaStream
 
     bool ReadPacket(RTP_DataFrame & packet);
     bool WritePacket(RTP_DataFrame & packet);
-
-    /*
-     * called to send IM to remote connection
-     */
-    virtual bool PushIM(RTP_DataFrame & frame);
 };
 
 

@@ -288,10 +288,8 @@ class OpalMSRPMediaSession : public OpalMediaSession
 
     virtual void SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & );
 
-    virtual bool WriteData(      
-      const BYTE * data,   ///<  Data to write
-      PINDEX length,       ///<  Length of data to read.
-      PINDEX & written     ///<  Length of data actually written
+    virtual bool WritePacket(      
+      RTP_DataFrame & frame
     );
 
     PBoolean ReadData(
@@ -340,32 +338,30 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
 
     ~OpalMSRPMediaStream();
 
+    virtual PBoolean RequiresPatchThread() const   { return !isSource; }
+
     /**Read raw media data from the source media stream.
        The default behaviour reads from the PChannel object.
       */
-    virtual PBoolean ReadData(
-      BYTE * data,      ///<  Data buffer to read to
-      PINDEX size,      ///<  Size of buffer
-      PINDEX & length   ///<  Length of data actually read
+    virtual PBoolean ReadPacket(
+      RTP_DataFrame & frame
     );
 
     /**Write raw media data to the sink media stream.
        The default behaviour writes to the PChannel object.
       */
-    virtual PBoolean WriteData(
-      const BYTE * data,   ///<  Data to write
-      PINDEX length,       ///<  Length of data to read.
-      PINDEX & written     ///<  Length of data actually written
+    virtual PBoolean WritePacket(
+      RTP_DataFrame & frame
     );
 
     virtual bool Open();
-
     virtual bool Close();
 
     PURL GetRemoteURL() const           { return m_msrpSession.GetRemoteURL(); }
     void SetRemoteURL(const PURL & url) { m_msrpSession.SetRemoteURL(url); }
 
     PDECLARE_NOTIFIER2(OpalMSRPManager, OpalMSRPMediaStream, OnReceiveMSRP);
+
 
   //@}
   protected:
