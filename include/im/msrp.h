@@ -108,7 +108,7 @@ class MSRPProtocol : public PInternetProtocol
 
     MSRPProtocol();
 
-    bool SendMessage(
+    bool SendSEND(
       const PURL & from, 
       const PURL & to,
       const PString & text,
@@ -116,21 +116,28 @@ class MSRPProtocol : public PInternetProtocol
       PString & messageId
     );
 
-    bool SendMessage(
-      const Message & message, 
-      const PString & text, 
-      const PString & contentType
-    );
-
-    bool SendMessage(
+    bool SendChunk(
       const PString & transactionId, 
+      const PString toUrl,
+      const PString fromUrl,
       const PMIMEInfo & mime, 
       const PString & body
     );
 
+    bool SendResponse(const PString & chunkId, 
+                             unsigned response,
+                      const PString & text,
+                      const PString & toUrl,
+                      const PString & fromUrl);
+
+    bool SendREPORT(const PString & chunkId, 
+                    const PString & toUrl,
+                    const PString & fromUrl,
+                  const PMIMEInfo & mime);
+
     bool ReadMessage(
-      int & command, 
-      PString & transactionId, 
+      int & command,
+      PString & chunkId,
       PMIMEInfo & mime, 
       PString & body
     );
@@ -225,7 +232,7 @@ class OpalMSRPManager : public PObject
 
     struct IncomingMSRP {
       int       m_command;
-      PString   m_transactionId;
+      PString   m_chunkId;
       PMIMEInfo m_mime;
       PString   m_body;
       PSafePtr<Connection> m_connection;
