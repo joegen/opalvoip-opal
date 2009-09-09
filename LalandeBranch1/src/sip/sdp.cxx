@@ -1073,14 +1073,15 @@ const PString & SDPSessionDescription::ConferenceTotalBandwidthType()      { sta
 const PString & SDPSessionDescription::ApplicationSpecificBandwidthType()  { static PString s = "AS";   return s; }
 const PString & SDPSessionDescription::TransportIndependentBandwidthType() { static PString s = "TIAS"; return s; }
 
-SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & address)
-  : sessionName(SIP_DEFAULT_SESSION_NAME),
-    ownerUsername('-'),
-    ownerAddress(address),
-    defaultConnectAddress(address)
+SDPSessionDescription::SDPSessionDescription(time_t sessionId, unsigned version, const OpalTransportAddress & address)
+  : sessionName(SIP_DEFAULT_SESSION_NAME)
+  , ownerUsername('-')
+  , ownerSessionId(sessionId)
+  , ownerVersion(version)
+  , ownerAddress(address)
+  , defaultConnectAddress(address)
 {
   protocolVersion  = 0;
-  ownerSessionId  = ownerVersion = (unsigned)PTime().GetTimeInSeconds();
   direction = SDPMediaDescription::Undefined;
 }
 

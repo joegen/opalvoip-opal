@@ -2341,7 +2341,7 @@ PString SIP_PDU::GetTransactionID() const
 SDPSessionDescription * SIP_PDU::GetSDP()
 {
   if (m_SDP == NULL && (mime.GetContentType() *= "application/sdp")) {
-    m_SDP = new SDPSessionDescription();
+    m_SDP = new SDPSessionDescription(0, 0, OpalTransportAddress());
     if (!m_SDP->Decode(entityBody)) {
       delete m_SDP;
       m_SDP = NULL;
@@ -2349,6 +2349,13 @@ SDPSessionDescription * SIP_PDU::GetSDP()
   }
 
   return m_SDP;
+}
+
+
+void SIP_PDU::SetSDP(SDPSessionDescription * sdp)
+{
+  delete m_SDP;
+  m_SDP = sdp;
 }
 
 
@@ -2966,13 +2973,10 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, cons
   SetAllow(connection.GetEndPoint().GetAllowedMethods());
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
-  m_SDP = new SDPSessionDescription();
-  if (!connection.OnSendSDP(false, rtpSessions, *m_SDP)) {
-    delete m_SDP;
-    m_SDP = NULL;
-  }
-
   connection.OnCreatingINVITE(*this);
+  
+  if (m_SDP != NULL)
+    m_SDP->SetSessionName(mime.GetUserAgent());
 }
 
 
