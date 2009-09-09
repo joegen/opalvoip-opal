@@ -287,7 +287,7 @@ bool OpalMSRPMediaSession::WritePacket(RTP_DataFrame & frame)
       PTRACE(2, "MSRP\tCannot convert T.140 string to text");
     }
     else {
-      m_connectionPtr->m_protocol->SendMessage(m_localUrl, m_remoteUrl, str, "text/plain", messageId);
+      m_connectionPtr->m_protocol->SendSEND(m_localUrl, m_remoteUrl, str, "text/plain", messageId);
     }
   }
   return true;
@@ -557,14 +557,14 @@ void OpalMSRPManager::HandlerThread(PSafePtr<Connection> connection)
 
       IncomingMSRP incomingMsg;
       incomingMsg.m_connection = connection;
-      bool stat = protocol.ReadMessage(incomingMsg.m_command, incomingMsg.m_transactionId, incomingMsg.m_mime, incomingMsg.m_body);
-
-      if (!stat)
+      if (!protocol.ReadMessage(incomingMsg.m_command, incomingMsg.m_chunkId, incomingMsg.m_mime, incomingMsg.m_body))
         break;
 
+      PString fromUrl(incomingMsg.m_mime("From-Path"));
+      PString toUrl  (incomingMsg.m_mime("To-Path"));
+
       if (incomingMsg.m_command == MSRPProtocol::SEND) {
-        PString fromUrl(incomingMsg.m_mime("From-Path"));
-        PString toUrl  (incomingMsg.m_mime("To-Path"));
+        protocol.SendResponse(incomingMsg.m_chunkId, 200, "OK", toUrl, fromUrl);
         PTRACE(3, "MSRP\tMSRP SEND received from=" << fromUrl << ",to=" << toUrl);
         if (!toUrl.IsEmpty() && !fromUrl.IsEmpty()) {
           PString key(toUrl + '\t' + fromUrl);
@@ -575,8 +575,14 @@ void OpalMSRPManager::HandlerThread(PSafePtr<Connection> connection)
           } else {
             PTRACE(2, "MSRP\tCalling registered callbacks for '" << key << "'");
             r->second.m_notifier(*this, (void *)&incomingMsg);
-          }
-           
+          }           
+        }
+        if (incomingMsg.m_mime("Success-Report") *= "yes") {
+          PMIMEInfo mime;
+          mime.SetAt("Message-ID", incomingMsg.m_mime("Message-ID"));
+          mime.SetAt("Byte-Range", incomingMsg.m_mime("Byte-Range"));
+          mime.SetAt("Status",     "000 200 OK");
+          protocol.SendREPORT(incomingMsg.m_chunkId, toUrl, fromUrl, mime);
         }
       }
     }
@@ -638,7 +644,7 @@ PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL
   m_connectionInfoMap.SetAt(key, connection);
 
   PString uid;
-  connection->m_protocol->SendMessage(localURL, remoteURL, "", "", uid);
+  connection->m_protocol->SendSEND(localURL, remoteURL, "", "", uid);
 
   connection->m_handlerThread = new PThreadObj1Arg<OpalMSRPManager, PSafePtr<Connection> >(*this, connection, &OpalMSRPManager::HandlerThread);
 
@@ -703,8 +709,8 @@ MSRPProtocol::MSRPProtocol()
 : PInternetProtocol("msrp 2855", NumCommands, MSRPCommands)
 { }
 
-bool MSRPProtocol::SendMessage(const PURL & from, 
-                               const PURL & to,
+bool MSRPProtocol::SendSEND(const PURL & from, 
+                            const PURL & to,
                             const PString & text,
                             const PString & contentType,
                                   PString & messageId)
@@ -733,54 +739,97 @@ bool MSRPProtocol::SendMessage(const PURL & from,
     message.m_chunks.push_back(chunk);
   }
 
-  return SendMessage(message, text, contentType);
-}
-
-bool MSRPProtocol::SendMessage(const Message & message, const PString & text, const PString & contentType)
-{
-  PWaitAndSignal m(m_mutex);
-
   // add message to the message map
   //m_messageMap.insert(MessageMap::value_type(message.m_id, message));
 
   // send the chunks
   for (Message::ChunkList::const_iterator r = message.m_chunks.begin(); r != message.m_chunks.end(); ++r) {
     PMIMEInfo mime;
-    mime.SetAt("From-Path",    message.m_fromURL.AsString());
-    mime.SetAt("To-Path",      message.m_toURL.AsString());
     mime.SetAt("Message-ID",   message.m_id);
     bool isLast = ((r+1) == message.m_chunks.end());
 
     PString body;
     if (message.m_length != 0) {
-      mime.SetAt("Content-Type", contentType);
+      mime.SetAt("Success-Report", "yes");
       mime.SetAt("Byte-Range",   psprintf("%u-%u/%u", r->m_rangeFrom, r->m_rangeTo, message.m_length));
-
-      body = text.Mid(r->m_rangeFrom-1, r->m_rangeTo - r->m_rangeFrom + 1);
-      body += CRLF "-------" + r->m_chunkId + (isLast ? '$' : '+') + CRLF;
+      mime.SetAt("Content-Type", message.m_contentType);
+      body = PString(CRLF) + text.Mid(r->m_rangeFrom-1, r->m_rangeTo - r->m_rangeFrom + 1) + CRLF;
     }
 
-    if (!SendMessage(r->m_chunkId, mime, body))
+    body += PString("-------") + r->m_chunkId + (isLast ? '$' : '+') + CRLF;   // note that RFC 4975 mandates a CRLF before the terminator
+
+    if (!SendChunk(r->m_chunkId, 
+                   message.m_toURL.AsString(),
+                   message.m_fromURL.AsString(),
+                   mime, 
+                   body))
       return false;
   }
   return true;
 }
 
 
-bool MSRPProtocol::SendMessage(const PString & chunkId, const PMIMEInfo & mime, const PString & body)
+bool MSRPProtocol::SendChunk(const PString & chunkId, 
+                             const PString toUrl,
+                             const PString fromUrl,
+                             const PMIMEInfo & mime, 
+                             const PString & body)
 {
+  // Note that RFC 4975 mandates the order and position of of To-Path and From-Path
   *this << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF
-        << ::setfill('\r') << mime
+        << "To-Path: " << toUrl << CRLF
+        << "From-Path: "<< fromUrl << CRLF
+        << ::setfill('\r') << mime.PrintContents(*this)
         << body;
   flush();
 
-  PTRACE(4, "Sending MSRP message\n" << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF << ::setfill('\r') << mime << body);
+  PTRACE(4, "Sending MSRP message\n" << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF << ::setfill('\r') << mime.PrintContents(*this) << body);
 
   return true;
 }
 
-bool MSRPProtocol::ReadMessage(int & command, PString & transactionId, PMIMEInfo & mime, PString & body)
+bool MSRPProtocol::SendREPORT(const PString & chunkId, 
+                              const PString & toUrl,
+                              const PString & fromUrl,
+                            const PMIMEInfo & mime)
 {
+  // Note that RFC 4975 mandates the order and position of of To-Path and From-Path
+  *this << "MSRP " << chunkId << " " << MSRPCommands[REPORT] << CRLF
+        << "To-Path: " << toUrl << CRLF
+        << "From-Path: "<< fromUrl << CRLF
+        << ::setfill('\r') << mime.PrintContents(*this)
+        << "-------" << chunkId << "$" << CRLF;
+  flush();
+
+  PTRACE(4, "Sending MSRP REPORT \n" << "MSRP " << chunkId << " " << MSRPCommands[REPORT] << CRLF << ::setfill('\r') << mime.PrintContents(*this) << "-------" << chunkId << "$");
+
+  return true;
+}
+
+bool MSRPProtocol::SendResponse(const PString & chunkId, 
+                                unsigned response,
+                                const PString & text,
+                                const PString & toUrl,
+                                const PString & fromUrl)
+{
+  // Note that RFC 4975 mandates the order and position of of To-Path and From-Path
+  *this << "MSRP " << chunkId << " " << response << (text.IsEmpty() ? "" : " ") << text << CRLF
+        << "To-Path: " << toUrl << CRLF
+        << "From-Path: "<< fromUrl << CRLF
+        << "-------" << chunkId << "$" << CRLF;
+  flush();
+
+  PTRACE(4, "Sending MSRP response\n" << "MSRP " << chunkId << " " << response << (text.IsEmpty() ? "" : " ") << CRLF << "-------" << chunkId << "$");
+
+  return true;
+}
+
+bool MSRPProtocol::ReadMessage(int & command, 
+                           PString & chunkId,
+                         PMIMEInfo & mime, 
+                           PString & body)
+{
+  // get the MSRP start line
   PString line;
   do {
     if (!ReadLine(line, false)) {
@@ -789,6 +838,7 @@ bool MSRPProtocol::ReadMessage(int & command, PString & transactionId, PMIMEInfo
     }
   } while (line.IsEmpty());
 
+  // get tokens
   PStringArray tokens = line.Tokenise(' ', false);
   if (tokens.GetSize() < 3) {
     PTRACE(2, "MSRP\tReceived malformed MSRP command line with " << tokens.GetSize() << " tokens");
@@ -800,18 +850,44 @@ bool MSRPProtocol::ReadMessage(int & command, PString & transactionId, PMIMEInfo
     return false;
   }
 
-  if (!mime.Read(*this)) {
-    PTRACE(2, "MSRP\tError reading MIME");
-    return false;
+  chunkId = tokens[1];
+  PString terminator = "-------" + chunkId;
+  body.MakeEmpty();
+
+  // read MIME until empty line or terminator
+  bool terminated = false;
+  {
+    mime.RemoveAll();
+    PString line;
+    while (ReadLine(line, PTrue)) {
+      if (line.IsEmpty())
+        break;
+      if (line.Find(terminator) == 0) {
+        terminated = true;
+        break;
+      }
+      mime.AddMIME(line);
+    }
   }
 
-  transactionId = mime("Message-ID");
+  // determine what command was given
+  command = NumCommands;
+  for (PINDEX i = 0; i < NumCommands; ++i) {
+    if (tokens[2] *= MSRPCommands[i]) {
+      command = i; 
+      break;
+    }
+  }
+  if (command == NumCommands) {
+    unsigned code = tokens[2].AsUnsigned();
+    if (code > NumCommands)
+      command = code;
+  }
 
-  body.MakeEmpty();
-  PString byteRange = mime("Byte-Range");
-  if (!byteRange.IsEmpty()) {
-    PString terminator = "-------" + tokens[1];
+  // handle SEND bodies
+  if (command == SEND && mime.Contains("Content-Type")) {
     for (;;) {
+      PString line;
       if (!ReadLine(line)) {
         PTRACE(2, "MSRP\tError while reading MSRP command body");
         return false;
@@ -824,14 +900,6 @@ bool MSRPProtocol::ReadMessage(int & command, PString & transactionId, PMIMEInfo
         return false;
       }
       body += line;
-    }
-  }
-
-  command = NumCommands;
-  for (PINDEX i = 0; i < NumCommands; ++i) {
-    if (tokens[2] *= MSRPCommands[i]) {
-      command = i; 
-      break;
     }
   }
 
