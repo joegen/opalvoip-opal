@@ -750,28 +750,50 @@ bool MSRPProtocol::SendMessage(const Message & message, const PString & text, co
     if (message.m_length != 0) {
       mime.SetAt("Content-Type", contentType);
       mime.SetAt("Byte-Range",   psprintf("%u-%u/%u", r->m_rangeFrom, r->m_rangeTo, message.m_length));
+
       body = text.Mid(r->m_rangeFrom, r->m_rangeTo-1);
-      body += CRLF "-------" + r->m_chunkId + (isLast ? '$' : '+');
+      body += CRLF "-------" + r->m_chunkId + (isLast ? '$' : '+') + CRLF;
     }
 
-    if (!SendMessage(message.m_id, mime, body))
+    if (!SendMessage(r->m_chunkId, mime, body))
       return false;
   }
   return true;
 }
 
 
-bool MSRPProtocol::SendMessage(const PString & transactionId, const PMIMEInfo & mime, const PString & body)
+bool MSRPProtocol::SendMessage(const PString & chunkId, const PMIMEInfo & mime, const PString & body)
 {
-  PStringStream strm;
-  strm << "MSRP " << transactionId << " " << MSRPCommands[SEND] << CRLF 
-       << mime;
-  if (body.GetLength() > 0)
-    strm << body;
+  PStringStream debug;
+  {
+    PStringStream strm;
+    strm << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF;
+    strm.flush();
+    if (!Write(strm.GetPointer(), strm.GetLength()))
+      return false;
+    debug << strm;
+  }
 
-  PTRACE(4, "Sending MSRP message\n" << body);
+  {
+    PStringStream strm;
+    strm << ::setfill('\r') << mime;
+    if (!Write(strm.GetPointer(), strm.GetLength()))
+      return false;
+    strm.flush();
+    debug << strm;
+  }
 
-  return Write((const char *)body, body.GetLength());
+  if (body.GetLength() > 0) { 
+    if (!Write((const char *)body, body.GetLength()))
+      return false;
+    debug << body;
+  }
+
+  flush();
+
+  PTRACE(4, "Sending MSRP message\n" << debug);
+
+  return true;
 }
 
 bool MSRPProtocol::ReadMessage(int & command, PString & transactionId, PMIMEInfo & mime, PString & body)
