@@ -725,11 +725,11 @@ bool MSRPProtocol::SendMessage(const PURL & from,
   else {
     PINDEX offs = 0;
     while ((message.m_length - offs) > MaximumMessageLength) {
-      Message::Chunk chunk(PGloballyUniqueID().AsString(), offs, offs + MaximumMessageLength - 1);
+      Message::Chunk chunk(PGloballyUniqueID().AsString(), offs, MaximumMessageLength);
       message.m_chunks.push_back(chunk);
       offs += MaximumMessageLength;
     }
-    Message::Chunk chunk(PGloballyUniqueID().AsString(), offs, message.m_length - offs + 1);
+    Message::Chunk chunk(PGloballyUniqueID().AsString(), offs, message.m_length - offs);
     message.m_chunks.push_back(chunk);
   }
 
@@ -754,7 +754,7 @@ bool MSRPProtocol::SendMessage(const Message & message, const PString & text, co
     PString body;
     if (message.m_length != 0) {
       mime.SetAt("Content-Type", contentType);
-      mime.SetAt("Byte-Range",   psprintf("%u-%u/%u", r->m_rangeFrom+1, r->m_rangeTo+1, message.m_length+1));
+      mime.SetAt("Byte-Range",   psprintf("%u-%u/%u", r->m_rangeFrom, r->m_rangeTo, message.m_length));
       body = text.Mid(r->m_rangeFrom, r->m_rangeTo-1);
       body += CRLF "-------" + r->m_chunkId + (isLast ? '$' : '+');
     }
