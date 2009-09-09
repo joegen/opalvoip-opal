@@ -89,8 +89,8 @@ class MSRPProtocol : public PInternetProtocol
     {
       public: 
         struct Chunk {
-          Chunk(const PString & id, unsigned f, unsigned t)
-            : m_chunkId(id), m_rangeFrom(f), m_rangeTo(t) { }
+          Chunk(const PString & id, unsigned from, unsigned len)
+            : m_chunkId(id), m_rangeFrom(from + 1), m_rangeTo(from + len) { }
 
           PString m_chunkId;
           unsigned m_rangeFrom;
