@@ -274,16 +274,21 @@ void OpalMSRPMediaSession::SetRemoteMediaAddress(const OpalTransportAddress & tr
   PTRACE(2, "MSRP\tSetting remote media address to " << transportAddress);
 }
 
-bool OpalMSRPMediaSession::WritePacket(
-  RTP_DataFrame & frame
-)
+bool OpalMSRPMediaSession::WritePacket(RTP_DataFrame & frame)
 {
   if (m_connectionPtr == NULL) {
     PTRACE(2, "MSRP\tCannot send MSRP message as no connection has been established");
-  } else {
+  } 
+  else {
     PString messageId;
-    PString text((const char *)frame.GetPayloadPtr(), frame.GetPayloadSize());
-    m_connectionPtr->m_protocol->SendMessage(m_localUrl, m_remoteUrl, text, "text/plain", messageId);
+    T140String text((const BYTE *)frame.GetPayloadPtr(), frame.GetPayloadSize());
+    PString str;
+    if (!text.AsString(str)) {
+      PTRACE(2, "MSRP\tCannot convert T.140 string to text");
+    }
+    else {
+      m_connectionPtr->m_protocol->SendMessage(m_localUrl, m_remoteUrl, str, "text/plain", messageId);
+    }
   }
   return true;
 }
@@ -764,34 +769,12 @@ bool MSRPProtocol::SendMessage(const Message & message, const PString & text, co
 
 bool MSRPProtocol::SendMessage(const PString & chunkId, const PMIMEInfo & mime, const PString & body)
 {
-  PStringStream debug;
-  {
-    PStringStream strm;
-    strm << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF;
-    strm.flush();
-    if (!Write(strm.GetPointer(), strm.GetLength()))
-      return false;
-    debug << strm;
-  }
-
-  {
-    PStringStream strm;
-    strm << ::setfill('\r') << mime;
-    if (!Write(strm.GetPointer(), strm.GetLength()))
-      return false;
-    strm.flush();
-    debug << strm;
-  }
-
-  if (body.GetLength() > 0) { 
-    if (!Write((const char *)body, body.GetLength()))
-      return false;
-    debug << body;
-  }
-
+  *this << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF
+        << ::setfill('\r') << mime
+        << body;
   flush();
 
-  PTRACE(4, "Sending MSRP message\n" << debug);
+  PTRACE(4, "Sending MSRP message\n" << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF << ::setfill('\r') << mime << body);
 
   return true;
 }
@@ -799,10 +782,12 @@ bool MSRPProtocol::SendMessage(const PString & chunkId, const PMIMEInfo & mime, 
 bool MSRPProtocol::ReadMessage(int & command, PString & transactionId, PMIMEInfo & mime, PString & body)
 {
   PString line;
-  if (!ReadLine(line, false)) {
-    PTRACE(2, "MSRP\tError while reading MSRP command");
-    return false;
-  }
+  do {
+    if (!ReadLine(line, false)) {
+      PTRACE(2, "MSRP\tError while reading MSRP command");
+      return PFalse;
+    }
+  } while (line.IsEmpty());
 
   PStringArray tokens = line.Tokenise(' ', false);
   if (tokens.GetSize() < 3) {
@@ -815,7 +800,10 @@ bool MSRPProtocol::ReadMessage(int & command, PString & transactionId, PMIMEInfo
     return false;
   }
 
-  mime.ReadFrom(*this);
+  if (!mime.Read(*this)) {
+    PTRACE(2, "MSRP\tError reading MIME");
+    return false;
+  }
 
   transactionId = mime("Message-ID");
 
