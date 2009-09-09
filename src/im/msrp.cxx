@@ -752,8 +752,8 @@ bool MSRPProtocol::SendSEND(const PURL & from,
     if (message.m_length != 0) {
       mime.SetAt("Success-Report", "yes");
       mime.SetAt("Byte-Range",   psprintf("%u-%u/%u", r->m_rangeFrom, r->m_rangeTo, message.m_length));
-      mime.SetAt("Content-Type", message.m_contentType);
-      body = PString(CRLF) + text.Mid(r->m_rangeFrom-1, r->m_rangeTo - r->m_rangeFrom + 1) + CRLF;
+      body = PString("Content-Type: ") & message.m_contentType + CRLF CRLF +
+             text.Mid(r->m_rangeFrom-1, r->m_rangeTo - r->m_rangeFrom + 1) + CRLF;
     }
 
     body += PString("-------") + r->m_chunkId + (isLast ? '$' : '+') + CRLF;   // note that RFC 4975 mandates a CRLF before the terminator
@@ -779,11 +779,20 @@ bool MSRPProtocol::SendChunk(const PString & chunkId,
   *this << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF
         << "To-Path: " << toUrl << CRLF
         << "From-Path: "<< fromUrl << CRLF
-        << ::setfill('\r') << mime.PrintContents(*this)
-        << body;
+        << ::setfill('\r');
+  mime.PrintContents(*this);
+  *this << body;
   flush();
 
-  PTRACE(4, "Sending MSRP message\n" << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF << ::setfill('\r') << mime.PrintContents(*this) << body);
+  {
+    PStringStream str; str << ::setfill('\r');
+    mime.PrintContents(str);
+    PTRACE(4, "Sending MSRP message\n" << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF 
+                                       << "To-Path: " << toUrl << CRLF 
+                                       << "From-Path: "<< fromUrl << CRLF 
+                                       << str 
+                                       << body);
+  }
 
   return true;
 }
@@ -797,11 +806,19 @@ bool MSRPProtocol::SendREPORT(const PString & chunkId,
   *this << "MSRP " << chunkId << " " << MSRPCommands[REPORT] << CRLF
         << "To-Path: " << toUrl << CRLF
         << "From-Path: "<< fromUrl << CRLF
-        << ::setfill('\r') << mime.PrintContents(*this)
-        << "-------" << chunkId << "$" << CRLF;
+        << ::setfill('\r');
+  mime.PrintContents(*this);
+  *this << "-------" << chunkId << "$" << CRLF;
   flush();
 
-  PTRACE(4, "Sending MSRP REPORT \n" << "MSRP " << chunkId << " " << MSRPCommands[REPORT] << CRLF << ::setfill('\r') << mime.PrintContents(*this) << "-------" << chunkId << "$");
+  {
+    PStringStream str; str << ::setfill('\r') << mime.PrintContents(str);
+    PTRACE(4, "Sending MSRP REPORT\n" << "MSRP " << chunkId << " " << MSRPCommands[REPORT] << CRLF 
+                                                 << "To-Path: " << toUrl << CRLF 
+                                                 << "From-Path: "<< fromUrl << CRLF 
+                                                 << str 
+                                                 << "-------" << chunkId << "$");
+  }
 
   return true;
 }
@@ -819,7 +836,10 @@ bool MSRPProtocol::SendResponse(const PString & chunkId,
         << "-------" << chunkId << "$" << CRLF;
   flush();
 
-  PTRACE(4, "Sending MSRP response\n" << "MSRP " << chunkId << " " << response << (text.IsEmpty() ? "" : " ") << CRLF << "-------" << chunkId << "$");
+  PTRACE(4, "Sending MSRP response\n" << "MSRP " << chunkId << " " << response << (text.IsEmpty() ? "" : " ") << CRLF 
+                                                 << "To-Path: " << toUrl << CRLF
+                                                 << "From-Path: "<< fromUrl << CRLF
+                                                 << "-------" << chunkId << "$");
 
   return true;
 }
@@ -859,7 +879,7 @@ bool MSRPProtocol::ReadMessage(int & command,
   {
     mime.RemoveAll();
     PString line;
-    while (ReadLine(line, PTrue)) {
+    while (ReadLine(line, false)) {
       if (line.IsEmpty())
         break;
       if (line.Find(terminator) == 0) {
@@ -885,7 +905,7 @@ bool MSRPProtocol::ReadMessage(int & command,
   }
 
   // handle SEND bodies
-  if (command == SEND && mime.Contains("Content-Type")) {
+  if ((command == SEND) && mime.Contains("Content-Type")) {
     for (;;) {
       PString line;
       if (!ReadLine(line)) {
