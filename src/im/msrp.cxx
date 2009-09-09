@@ -923,7 +923,11 @@ bool MSRPProtocol::ReadMessage(int & command,
     }
   }
 
-  PTRACE(4, "Received MSRP message\n" << line << "\n" << mime << body);
+  {
+    PStringStream str; str << ::setfill('\r');
+    mime.PrintContents(str);
+    PTRACE(4, "Received MSRP message\n" << line << "\n" << str << body << terminator);
+  }
 
   return true;
 }
