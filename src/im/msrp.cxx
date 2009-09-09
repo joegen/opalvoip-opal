@@ -756,7 +756,7 @@ bool MSRPProtocol::SendMessage(const Message & message, const PString & text, co
       mime.SetAt("Content-Type", contentType);
       mime.SetAt("Byte-Range",   psprintf("%u-%u/%u", r->m_rangeFrom, r->m_rangeTo, message.m_length));
 
-      body = text.Mid(r->m_rangeFrom, r->m_rangeTo-1);
+      body = text.Mid(r->m_rangeFrom-1, r->m_rangeTo - r->m_rangeFrom + 1);
       body += CRLF "-------" + r->m_chunkId + (isLast ? '$' : '+') + CRLF;
     }
 

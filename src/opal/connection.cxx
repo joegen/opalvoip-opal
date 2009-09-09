@@ -1541,11 +1541,14 @@ void OpalConnection::OnReceiveInternalIM(const OpalMediaFormat & format, RTP_Dat
 
 bool OpalConnection::TransmitExternalIM(const OpalMediaFormat & format, RTP_DataFrame & frame)
 {
+  T140String t140((const BYTE *)frame.GetPayloadPtr(), frame.GetPayloadSize());
+  PString str;
+  t140.AsString(str);
   endpoint.GetManager().OnMessageReceived(GetRemotePartyURL(), 
                                           GetRemotePartyName(), 
                                           GetLocalPartyURL(), 
                                           format.GetOptionString("Content-Type", "text/plain"),
-                                          PString((char *)frame.GetPayloadPtr(), frame.GetPayloadSize()),
+                                          str,
                                           GetIdentifier());
 
   return true;
