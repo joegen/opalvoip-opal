@@ -174,8 +174,11 @@ void SipIM::Main()
       PSafePtr<OpalPCSSConnection> conn = call->GetConnectionAs<OpalPCSSConnection>();
       if (conn != NULL) {
         RTP_DataFrameList frameList = rfc4103.ConvertToFrames(textData);
-        for (PINDEX i = 0; i < frameList.GetSize(); ++i)
-          conn->TransmitInternalIM(m_manager.m_imFormat, frameList[i]);
+        OpalMediaFormat fmt(m_manager.m_imFormat);
+        fmt.SetOptionString("Content-Type", "text/plain");
+        for (PINDEX i = 0; i < frameList.GetSize(); ++i) {
+          conn->TransmitInternalIM(fmt, frameList[i]);
+        }
       }
     }
   }
