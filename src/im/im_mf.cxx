@@ -89,8 +89,11 @@ const OpalMediaFormat & GetOpalMSRP()
             acceptTypes += " ";
           acceptTypes += *r;
         }
+
+        OpalMediaOption * option = new OpalMediaOptionString("Content-Type", false, "text/plain");
+        AddOption(option);
         
-        OpalMediaOption * option = new OpalMediaOptionString("Accept Types", false, acceptTypes);
+        option = new OpalMediaOptionString("Accept Types", false, acceptTypes);
         option->SetMerge(OpalMediaOption::AlwaysMerge);
         AddOption(option);
 
@@ -126,7 +129,10 @@ const OpalMediaFormat & GetOpalSIPIM()
                           0, 
                           1000)     // as defined in RFC 4103 - good as anything else
       { 
-        OpalMediaOption * option = new OpalMediaOptionString("URL", false, "");
+        OpalMediaOption * option = new OpalMediaOptionString("Content-Type", false, "text/plain");
+        AddOption(option);
+
+        option = new OpalMediaOptionString("URL", false, "");
         option->SetMerge(OpalMediaOption::NoMerge);
         AddOption(option);
       } 
@@ -153,6 +159,8 @@ const OpalMediaFormat & GetOpalT140()
                           0, 
                           1000)    // as defined in RFC 4103
       { 
+        OpalMediaOption * option = new OpalMediaOptionString("Content-Type", false, "text/plain");
+        AddOption(option);
       } 
   } const f; 
   return f; 
@@ -174,18 +182,14 @@ OpalIMMediaStream::OpalIMMediaStream(
 
 bool OpalIMMediaStream::ReadPacket(RTP_DataFrame & /*packet*/)
 {
+  PAssertAlways("Cannot ReadData from OpalIMMediaStream");
   return false;
 }
 
-bool OpalIMMediaStream::WritePacket(RTP_DataFrame & /*packet*/)
+bool OpalIMMediaStream::WritePacket(RTP_DataFrame & frame)
 {
-  return false;
+  connection.OnReceiveInternalIM(mediaFormat, frame);
+  return true;
 }
-
-bool OpalIMMediaStream::PushIM(RTP_DataFrame & frame)
-{
-  return GetPatch()->PushFrame(frame);
-}
-
 
 #endif // OPAL_HAS_IM
