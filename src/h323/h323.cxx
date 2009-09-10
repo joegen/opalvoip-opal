@@ -3202,13 +3202,14 @@ bool H323Connection::RetrieveConnection()
 }
 
 
-PBoolean H323Connection::IsConnectionOnHold() 
+PBoolean H323Connection::IsConnectionOnHold(bool fromRemote) 
 {
-  return 
 #if OPAL_H450
-         IsLocalHold() ||
+  // Yes this looks around the wrong way, it isn't!
+  return fromRemote ? (transmitterSidePaused || IsLocalHold()) : (remoteTransmitPaused || IsRemoteHold());
+#else
+  return fromRemote ? transmitterSidePaused : remoteTransmitPaused;
 #endif
-         remoteTransmitPaused;
 }
 
 

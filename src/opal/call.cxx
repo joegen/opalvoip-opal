@@ -320,7 +320,7 @@ bool OpalCall::IsOnHold() const
 {
   PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadOnly)) {
-    if (connection->IsConnectionOnHold())
+    if (connection->IsConnectionOnHold(false) || connection->IsConnectionOnHold(true))
       return true;
   }
 
@@ -422,6 +422,11 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   PSafeLockReadOnly lock(*this);
   if (isClearing || !lock.IsLocked())
     return false;
+
+  if (IsOnHold()) {
+    PTRACE(3, "Call\tOpenSourceMediaStreams (call on hold) " << mediaType << " session " << sessionID << " on " << connection);
+    return false;
+  }
 
   // Check if already done
   OpalMediaStreamPtr sinkStream;
