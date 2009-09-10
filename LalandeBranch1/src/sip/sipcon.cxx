@@ -1310,9 +1310,9 @@ bool SIPConnection::RetrieveConnection()
 }
 
 
-PBoolean SIPConnection::IsConnectionOnHold()
+PBoolean SIPConnection::IsConnectionOnHold(bool fromRemote)
 {
-  return m_holdToRemote != eHoldOff;
+  return fromRemote ? m_holdFromRemote : (m_holdToRemote != eHoldOff);
 }
 
 

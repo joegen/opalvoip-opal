@@ -415,9 +415,9 @@ unsigned int IAX2Connection::ChooseCodec()
   return 0;
 }
 
-PBoolean IAX2Connection::IsConnectionOnHold()
+PBoolean IAX2Connection::IsConnectionOnHold(bool fromRemote)
 {
-  return (local_hold || remote_hold);
+  return fromRemote ? remote_hold : local_hold;
 }
 
 bool IAX2Connection::HoldConnection()
