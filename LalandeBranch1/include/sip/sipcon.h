@@ -520,6 +520,7 @@ class SIPConnection : public OpalRTPConnection
     time_t                m_sdpSessionId;
     unsigned              m_sdpVersion; // Really a sequence number
     bool                  needReINVITE;
+    bool                  m_handlingINVITE;
     SIPDialogContext      m_dialog;
     OpalGloballyUniqueID  m_dialogNotifyId;
     int                   m_appearanceCode;
