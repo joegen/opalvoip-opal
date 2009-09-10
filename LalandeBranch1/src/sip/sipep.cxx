@@ -1617,15 +1617,17 @@ SIPEndPoint::SIPResponseWork::SIPResponseWork(SIPEndPoint & ep, const PString & 
 
 void SIPEndPoint::SIPResponseWork::Add(SIPEndPoint::PDUThreadPool & pool)
 {
-PTRACE(4, "SIP\tAllocating response work");
+  PTRACE(4, "SIP\tAllocating response work for transaction " << m_transactionID);
   pool.AddWork(this, m_transactionID);
 }
 
 void SIPEndPoint::SIPResponseWork::Process()
 { 
+  PTRACE(4, "SIP\tHandling response for transaction " << m_transactionID);
   PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(m_transactionID, PSafeReference);
   if (transaction != NULL)
     transaction->OnReceivedResponse(*m_pdu); 
+  PTRACE(4, "SIP\tHandled response for transaction " << m_transactionID);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
