@@ -187,9 +187,13 @@ class SIPConnection : public OpalRTPConnection
      */
     virtual bool RetrieveConnection();
 
-    /**Return PTrue if the current connection is on hold.
+    /**Return true if the current connection is on hold.
+       The bool parameter indicates if we are testing if the remote system
+       has us on hold, or we have them on hold.
      */
-    virtual PBoolean IsConnectionOnHold();
+    virtual bool IsConnectionOnHold(
+      bool fromRemote  ///< Test if remote has us on hold, or we have them
+    );
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a

@@ -294,9 +294,9 @@ bool OpalConnection::RetrieveConnection()
 }
 
 
-PBoolean OpalConnection::IsConnectionOnHold()
+PBoolean OpalConnection::IsConnectionOnHold(bool /*fromRemote*/)
 {
-  return PFalse;
+  return false;
 }
 
 
