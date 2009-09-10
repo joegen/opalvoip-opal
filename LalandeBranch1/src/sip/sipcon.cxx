@@ -191,6 +191,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_sdpSessionId(PTime().GetTimeInSeconds())
   , m_sdpVersion(0)
   , needReINVITE(false)
+  , m_handlingINVITE(false)
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , authentication(NULL)
   , ackReceived(false)
@@ -1099,17 +1100,19 @@ bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
 
 bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
 {
-  if (!needReINVITE || GetPhase() != EstablishedPhase)
+  if (GetPhase() != EstablishedPhase)
     return false;
 
-  PTRACE(3, "SIP\t" << (pendingInvitations.IsEmpty() ? "Start" : "Queue") << "ing re-INVITE to " << msg);
+  bool startImmediate = !m_handlingINVITE && pendingInvitations.IsEmpty();
+
+  PTRACE(3, "SIP\t" << (startImmediate ? "Start" : "Queue") << "ing re-INVITE to " << msg);
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
 
   // To avoid overlapping INVITE transactions, we place the new transaction
   // in a queue, if queue is empty we can start immediately, otherwise
   // it waits till we get a response.
-  if (pendingInvitations.IsEmpty()) {
+  if (startImmediate) {
     if (!invite->Start())
       return false;
   }
@@ -1760,6 +1763,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, PTrue);
 
   releaseMethod = ReleaseWithResponse;
+  m_handlingINVITE = true;
 
   SetPhase(SetUpPhase);
 
@@ -1810,13 +1814,15 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
 void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 {
-  if (GetPhase() < ConnectedPhase) {
-    PTRACE(2, "SIP\tRe-INVITE from " << request.GetURI() << " received before initial INVITE completed on " << *this);
+  if (m_handlingINVITE || GetPhase() < ConnectedPhase) {
+    PTRACE(2, "SIP\tRe-INVITE from " << request.GetURI() << " received while INVITE in progress on " << *this);
     request.SendResponse(*transport, SIP_PDU::Failure_RequestPending);
     return;
   }
 
   PTRACE(3, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
+
+  m_handlingINVITE = true;
 
   remoteFormatList.RemoveAll();
   SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
@@ -1876,6 +1882,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 
   PTRACE(3, "SIP\tACK received: " << GetPhase());
 
+  m_handlingINVITE = false;
   ackReceived = true;
   ackTimer.Stop(false); // Asynchornous stop to avoid deadlock
   ackRetry.Stop(false);
@@ -2426,6 +2433,7 @@ void SIPConnection::OnAckTimeout(PTimer &, INT)
     PTRACE(1, "SIP\tFailed to receive ACK!");
     ackRetry.Stop();
     ackReceived = true;
+    m_handlingINVITE = false;
     if (GetPhase() < ReleasingPhase) {
       releaseMethod = ReleaseWithBYE;
       Release(EndedByTemporaryFailure);
