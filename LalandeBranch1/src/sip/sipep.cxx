@@ -46,8 +46,6 @@
 #include <opal/call.h>
 #include <sip/handlers.h>
 
-#define SIP_THREAD_POOL   1
-
 
 #define new PNEW
 
@@ -521,7 +519,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     case SIP_PDU::Method_CANCEL :
       token = m_receivedConnectionTokens(mime.GetCallID());
       if (!token.IsEmpty()) {
-        AddWork(new SIP_PDU_Work(*this, token, pdu));
+        m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, pdu), token);
         return true;
       }
       break;
@@ -530,7 +528,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       if (toToken.IsEmpty()) {
         token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
-          AddWork(new SIP_PDU_Work(*this, token, pdu));
+          m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, pdu), token);
           return true;
         }
 
@@ -554,8 +552,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       break;
 
     case SIP_PDU::NumMethods :
-      AddWork(new SIPResponseWork(*this, pdu->GetTransactionID(), pdu));
-      return true;
+      break;
   }
 
   if (hasToConnection)
@@ -565,30 +562,23 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   else
     return OnReceivedConnectionlessPDU(transport, pdu);
 
-  AddWork(new SIP_PDU_Work(*this, token, pdu));
+  m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, pdu), token);
   return true;
 }
 
-void SIPEndPoint::AddWork(SIP_Work * work)
-{
-#if SIP_THREAD_POOL
-  work->Add(this->threadPool);
-#else
-  PTRACE(2, "SIP\tStarted processing PDU");
-  work->OnReceivedPDU();
-  PTRACE(2, "SIP\tFinished processing PDU");
-  delete work;
-#endif
-}
 
 bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
   if (pdu->GetMethod() == SIP_PDU::NumMethods || pdu->GetMethod() == SIP_PDU::Method_CANCEL) {
-    PSafePtr<SIPTransaction> transaction = GetTransaction(pdu->GetTransactionID(), PSafeReference);
-    if (transaction == NULL)
-      return false;
-    AddWork(new SIPEndPoint::SIPResponseWork(*this, pdu->GetTransactionID(), pdu));
-    return true;
+    PString id;
+    if (activeSIPHandlers.FindSIPHandlerByCallID(id = pdu->GetMIME().GetCallID(), PSafeReference) != NULL ||
+        GetTransaction(id = pdu->GetTransactionID(), PSafeReference) != NULL) {
+      m_handlerThreadPool.AddWork(new SIP_PDU_Work(*this, id, pdu), id);
+      return true;
+    }
+
+    PTRACE(2, "SIP\tReceived response for unmatched transaction, id=" << id);
+    return false;
   }
 
   // Prevent any new INVITE/SUBSCRIBE etc etc while we are on the way out.
@@ -829,10 +819,11 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return PFalse;
   }
 
-  m_receivedConnectionTokens.SetAt(mime.GetCallID(), connection->GetToken());
+  PString token = connection->GetToken();
+  m_receivedConnectionTokens.SetAt(mime.GetCallID(), token);
 
   // Get the connection to handle the rest of the INVITE in the thread pool
-  AddWork(new SIP_PDU_Work(*this, connection->GetToken(), request));
+  m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, request), token);
 
   return PTrue;
 }
@@ -1505,7 +1496,7 @@ unsigned SIPEndPoint::SIP_PDU_Thread::GetWorkSize() const
 }
 
 
-void SIPEndPoint::SIP_PDU_Thread::AddWork(SIP_Work * work)
+void SIPEndPoint::SIP_PDU_Thread::AddWork(SIP_PDU_Work * work)
 {
   PWaitAndSignal m(m_workerMutex);
   m_pduQueue.push(work);
@@ -1514,8 +1505,13 @@ void SIPEndPoint::SIP_PDU_Thread::AddWork(SIP_Work * work)
 }
 
 
-void SIPEndPoint::SIP_PDU_Thread::RemoveWork(SIP_Work *)
+void SIPEndPoint::SIP_PDU_Thread::RemoveWork(SIP_PDU_Work * work)
 {
+  m_workerMutex.Wait();
+  m_pduQueue.pop();
+  m_workerMutex.Signal();
+
+  delete work;
 }
 
 
@@ -1530,56 +1526,42 @@ void SIPEndPoint::SIP_PDU_Thread::Main()
 {
   while (!m_shutdown) {
 
-    // wait for work to become available
+    // get the work
     m_workerMutex.Wait();
-    if (m_pduQueue.size() == 0) {
-      m_workerMutex.Signal();
+    SIP_PDU_Work * work = m_pduQueue.size() > 0 ? m_pduQueue.front() : NULL;
+    m_workerMutex.Signal();
+
+    // wait for work to become available
+    if (work == NULL) {
       m_sync.Wait();
       continue;
     }
 
-    // get the work
-    SIP_Work * work = m_pduQueue.front();
-    m_pduQueue.pop();
-    m_workerMutex.Signal();
-
     // process the work
-    work->Process();
+    work->OnReceivedPDU();
 
     // indicate work is now free
-    m_pool.RemoveWork(work, false);
-
-    // delete the work
-    delete work;
+    m_pool.RemoveWork(work);
   }
 }
 
-SIPEndPoint::SIP_Work::SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu)
+SIPEndPoint::SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu)
   : m_endpoint(ep)
+  , m_token(token)
   , m_pdu(pdu)
 {
+  PTRACE(4, "SIP\tQueueing PDU \"" << *m_pdu << "\", transaction="
+         << m_pdu->GetTransactionID() << ", token=" << m_token);
 }
 
 
-SIPEndPoint::SIP_Work::~SIP_Work()
+SIPEndPoint::SIP_PDU_Work::~SIP_PDU_Work()
 {
   delete m_pdu;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 
-SIPEndPoint::SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu)
-  : SIP_Work(ep, pdu), m_token(token)
-{
-}
-
-void SIPEndPoint::SIP_PDU_Work::Add(SIPEndPoint::PDUThreadPool & pool)
-{
-PTRACE(4, "SIP\tAllocating PDU work by group ID '" << m_token << "'");
-  pool.AddWork(this, m_token);
-}
-
-void SIPEndPoint::SIP_PDU_Work::Process()
+void SIPEndPoint::SIP_PDU_Work::OnReceivedPDU()
 {
   if (PAssertNULL(m_pdu) == NULL)
     return;
@@ -1608,27 +1590,6 @@ void SIPEndPoint::SIP_PDU_Work::Process()
   PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-
-SIPEndPoint::SIPResponseWork::SIPResponseWork(SIPEndPoint & ep, const PString & transactionID, SIP_PDU * pdu)
-  : SIP_Work(ep, pdu), m_transactionID(transactionID)
-{ }
-
-void SIPEndPoint::SIPResponseWork::Add(SIPEndPoint::PDUThreadPool & pool)
-{
-  PTRACE(4, "SIP\tAllocating response work for transaction " << m_transactionID);
-  pool.AddWork(this, m_transactionID);
-}
-
-void SIPEndPoint::SIPResponseWork::Process()
-{ 
-  PTRACE(4, "SIP\tHandling response for transaction " << m_transactionID);
-  PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(m_transactionID, PSafeReference);
-  if (transaction != NULL)
-    transaction->OnReceivedResponse(*m_pdu); 
-  PTRACE(4, "SIP\tHandled response for transaction " << m_transactionID);
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 
