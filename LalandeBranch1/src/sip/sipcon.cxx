@@ -1570,13 +1570,17 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   if (!lock.IsLocked())
     return;
 
-  // To avoid overlapping INVITE transactions, wait till here before
-  // starting the next one.
-  pendingInvitations.Remove(&transaction);
-  while (!pendingInvitations.IsEmpty()) {
-    if (pendingInvitations.GetAt(0, PSafeReadWrite)->Start())
-      break;
-    pendingInvitations.RemoveAt(0);
+  if (response.GetStatusCode()/100 != 1) {
+    // To avoid overlapping INVITE transactions, we waited until here before
+    // starting the next one.
+    pendingInvitations.Remove(&transaction);
+    while (!pendingInvitations.IsEmpty()) {
+      PSafePtr<SIPTransaction> invite = pendingInvitations.GetAt(0, PSafeReadWrite);
+      PTRACE(4, "SIP\tStarting queued transaction " << *invite);
+      if (invite->Start())
+        break;
+      pendingInvitations.RemoveAt(0);
+    }
   }
 
   // Break out to virtual functions for some special cases.
@@ -2237,6 +2241,8 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & request)
   remoteFormatList += OpalRFC2833;
 
   needReINVITE = true;
+
+  m_holdFromRemote = sdp->IsHold();
 
   if (GetPhase() == EstablishedPhase) // re-INVITE
     StartMediaStreams();
