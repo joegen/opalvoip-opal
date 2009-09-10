@@ -829,56 +829,34 @@ class SIPEndPoint : public OpalRTPEndPoint
     PAtomicInteger          lastSentCSeq;
     int                     m_defaultAppearanceCode;
 
-    class PDUThreadPool;
-
-    class SIP_Work
-    {
-      public:
-        SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu);
-        virtual ~SIP_Work();
-
-        virtual void Add(SIPEndPoint::PDUThreadPool & pool) = 0; 
-
-        virtual void Process() = 0;
-
-        SIPEndPoint & m_endpoint;
-        SIP_PDU     * m_pdu;
-    };
-
-    class SIP_PDU_Work : public SIP_Work
+    struct SIP_PDU_Work
     {
       public:
         SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu);
-        void Add(SIPEndPoint::PDUThreadPool & pool);
-        virtual void Process();
+        ~SIP_PDU_Work();
+
+        void OnReceivedPDU();
+
+        SIPEndPoint & m_endpoint;
         PString       m_token;
+        SIP_PDU     * m_pdu;
     };
 
-    class SIPResponseWork : public SIP_Work
-    {
-      public:
-        SIPResponseWork(SIPEndPoint & ep, const PString & transactionID, SIP_PDU * pdu);
-        void Add(SIPEndPoint::PDUThreadPool & pool);
-        void Process();
-        PString m_transactionID;
-    };
-
-
-    class PDUThreadPool : public PThreadPool<SIP_Work>
+    class PDUThreadPool : public PThreadPool<SIP_PDU_Work>
     {
       public:
         virtual WorkerThreadBase * CreateWorkerThread();
-    } threadPool;
+    } m_connectionThreadPool, m_handlerThreadPool;
 
-    typedef std::queue<SIP_Work *> SIP_PDUWorkQueue;
+    typedef std::queue<SIP_PDU_Work *> SIP_PDUWorkQueue;
 
     class SIP_PDU_Thread : public PDUThreadPool::WorkerThread
     {
       public:
         SIP_PDU_Thread(PDUThreadPool & pool_);
 
-        void AddWork(SIP_Work * work);
-        void RemoveWork(SIP_Work * work);
+        void AddWork(SIP_PDU_Work * work);
+        void RemoveWork(SIP_PDU_Work * work);
         unsigned GetWorkSize() const;
 
         void Main();
@@ -888,8 +866,6 @@ class SIPEndPoint : public OpalRTPEndPoint
         PSyncPoint m_sync;
         SIP_PDUWorkQueue m_pduQueue;
     };
-
-    virtual void AddWork(SIP_Work * work);
 
     enum {
       HighPriority = 80,
