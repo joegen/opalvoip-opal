@@ -1312,7 +1312,7 @@ bool SIPConnection::RetrieveConnection()
 
 PBoolean SIPConnection::IsConnectionOnHold(bool fromRemote)
 {
-  return fromRemote ? m_holdFromRemote : (m_holdToRemote != eHoldOff);
+  return fromRemote ? m_holdFromRemote : (m_holdToRemote >= eHoldOn);
 }
 
 
