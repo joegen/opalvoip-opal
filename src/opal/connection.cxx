@@ -1570,7 +1570,7 @@ void OpalConnection::StringOptions::ExtractFromURL(PURL & url)
   for (PINDEX i = 0; i < params.GetSize(); ++i) {
     PCaselessString key = params.GetKeyAt(i);
     if (key.NumCompare("OPAL-") == EqualTo) {
-      SetAt(key.Mid(5), PURL::UntranslateString(params.GetDataAt(i), PURL::QueryTranslation));
+      SetAt(key.Mid(5), params.GetDataAt(i));
       url.SetParamVar(key, PString::Empty());
     }
   }
