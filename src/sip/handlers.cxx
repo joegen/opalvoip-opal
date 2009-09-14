@@ -896,7 +896,7 @@ void SIPSubscribeHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
   }
 
   if (!m_parameters.m_onSubcribeStatus.IsNULL()) 
-    m_parameters.m_onSubcribeStatus(*this, (INT)&status);
+    m_parameters.m_onSubcribeStatus(*this, status);
 
   endpoint.OnSubscriptionStatus(status);
 }
@@ -974,10 +974,10 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   if (m_packageHandler == NULL) {
     SIP_PDU response(request, SIP_PDU::Failure_BadEvent);
-    SIPSubscribe::NotifyCallbackInfo s(request, response);
+    SIPSubscribe::NotifyCallbackInfo status(request, response);
     if (!m_parameters.m_onNotify.IsNULL()) 
-      m_parameters.m_onNotify(*this, (INT)&s);
-    if (s.m_sendResponse)
+      m_parameters.m_onNotify(*this, status);
+    if (status.m_sendResponse)
       request.SendResponse(*m_transport, response, &endpoint);
   }
   else if (m_packageHandler->OnReceivedNOTIFY(*this, request))
@@ -1040,7 +1040,10 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
 
 static SIPEventPackageFactory::Worker<SIPMwiEventPackageHandler> mwiEventPackageHandler(SIPSubscribe::MessageSummary);
 
+
 ///////////////////////////////////////////////////////////////////////////////
+
+#if P_EXPAT
 
 static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotification::Participant & participant)
 {
@@ -1185,7 +1188,10 @@ public:
 
 static SIPEventPackageFactory::Worker<SIPDialogEventPackageHandler> dialogEventPackageHandler(SIPSubscribe::Dialog);
 
+#endif // P_EXPAT
 
+
+///////////////////////////////////////////////////////////////////////////////
 
 SIPDialogNotification::SIPDialogNotification(const PString & entity)
   : m_entity(entity)

@@ -54,6 +54,7 @@ class OpalProductInfo;
 class SIPEndPoint;
 class SIPConnection;
 class SIP_PDU;
+class SIPSubscribeHandler;
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -1013,6 +1014,17 @@ class SIPSubscribe : public SIPTransaction
         bool m_isWatcher;
     };
 
+    /** Information provided on the subscription status. */
+    struct SubscriptionStatus {
+      SIPSubscribeHandler * m_handler;           ///< Handler for subscription
+      PString               m_addressofRecord;   ///< Address of record for registration
+      bool                  m_wasSubscribing;    ///< Was registering or unregistering
+      bool                  m_reSubscribing;     ///< Was a registration refresh
+      SIP_PDU::StatusCodes  m_reason;            ///< Reason for status change
+      OpalProductInfo       m_productInfo;       ///< Server product info from registrar if available.
+      void                * m_userData;          ///< User data corresponding to this registration
+    };
+
     struct NotifyCallbackInfo {
       NotifyCallbackInfo(SIP_PDU & notify, SIP_PDU & response)
         : m_notify(notify), m_response(response), m_sendResponse(true)
@@ -1039,8 +1051,9 @@ class SIPSubscribe : public SIPTransaction
 
       EventPackage m_eventPackage;
       PString    & m_agentAddress; // For backward compatibility
-      PNotifier     m_onSubcribeStatus;
-      PNotifier     m_onNotify;
+
+      PNotifierTemplate<const SubscriptionStatus &> m_onSubcribeStatus;
+      PNotifierTemplate<NotifyCallbackInfo &> m_onNotify;
     };
 
     SIPSubscribe(

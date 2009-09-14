@@ -38,33 +38,23 @@
 #include <ptclib/url.h>
 #include <sip/sipep.h>
 
-const char * OpalPresentity::AddressOfRecordKey = "address_of_record";
-const char * OpalPresentity::AuthNameKey        = "auth_name";
-const char * OpalPresentity::AuthPasswordKey    = "auth_password";
-const char * OpalPresentity::FullNameKey        = "full_name";
-const char * OpalPresentity::GUIDKey            = "guid";
-const char * OpalPresentity::SchemeKey          = "scheme";
-const char * OpalPresentity::TimeToLiveKey      = "time_to_live";
+const PString & OpalPresentity::AddressOfRecordKey() { static const PString s = "address_of_record"; return s; }
+const PString & OpalPresentity::AuthNameKey()        { static const PString s = "auth_name";         return s; }
+const PString & OpalPresentity::AuthPasswordKey()    { static const PString s = "auth_password";     return s; }
+const PString & OpalPresentity::FullNameKey()        { static const PString s = "full_name";         return s; }
+const PString & OpalPresentity::GUIDKey()            { static const PString s = "guid";              return s; }
+const PString & OpalPresentity::SchemeKey()          { static const PString s = "scheme";            return s; }
+const PString & OpalPresentity::TimeToLiveKey()      { static const PString s = "time_to_live";      return s; }
 
 
 OpalPresentity::OpalPresentity()
+  : m_manager(NULL)
 {
-}
-
-bool OpalPresentity::Open(OpalManager *)
-{
-  m_guid = OpalGloballyUniqueID();
   m_attributes.Set(GUIDKey, m_guid.AsString());
-  return true;
 }
 
 
-bool OpalPresentity::Close()
-{
-  return false;
-}
-
-OpalPresentity * OpalPresentity::Create(const PString & url)
+OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PString & url)
 {
   PString scheme = PURL(url).GetScheme();
 
@@ -72,23 +62,33 @@ OpalPresentity * OpalPresentity::Create(const PString & url)
   if (presEntity == NULL) 
     return NULL;
 
+  presEntity->m_manager = &manager;
   presEntity->GetAttributes().Set(AddressOfRecordKey, url);
 
   return presEntity;
 }
 
 
-bool OpalPresentity::SetPresence(State state, const PString & note)
+bool OpalPresentity::SubscribeToPresence(const PString & presentity)
 {
-  Command * cmd = new SetPresenceCommand(state, note);
+  OpalSubscribeToPresenceCommand * cmd = CreateCommand<OpalSubscribeToPresenceCommand>();
+  if (cmd == NULL)
+    return false;
+
+  cmd->m_presentity = presentity;
   SendCommand(cmd);
   return true;
 }
 
 
-bool OpalPresentity::SubscribeToPresence(const PString & presentity)
+bool OpalPresentity::UnsubscribeFromPresence(const PString & presentity)
 {
-  Command * cmd = new SimpleCommand(e_SubscribeToPresence, presentity);
+  OpalSubscribeToPresenceCommand * cmd = CreateCommand<OpalSubscribeToPresenceCommand>();
+  if (cmd == NULL)
+    return false;
+
+  cmd->m_presentity = presentity;
+  cmd->m_subscribe = false;
   SendCommand(cmd);
   return true;
 }
@@ -96,21 +96,125 @@ bool OpalPresentity::SubscribeToPresence(const PString & presentity)
 
 bool OpalPresentity::OnRequestPresence(const PString & presentity)
 {
-  PWaitAndSignal m(m_onRequestPresenceNotifierMutex);
+  PWaitAndSignal mutex(m_onRequestPresenceNotifierMutex);
+
   if (!m_onRequestPresenceNotifier.IsNULL())
-    m_onRequestPresenceNotifier(*this, (void *)&presentity);
+    m_onRequestPresenceNotifier(*this, presentity);
 
   return true;
 }
 
 
-bool OpalPresentity::SetPresenceAuthorisation(const PString & presentity, int mode)
+bool OpalPresentity::SetPresenceAuthorisation(const PString & presentity, Authorisation authorisation)
 {
-  Command * cmd = new SimpleCommand(mode, presentity);
+  OpalAuthorisePresenceCommand * cmd = CreateCommand<OpalAuthorisePresenceCommand>();
+  if (cmd == NULL)
+    return false;
+
+  cmd->m_presentity = presentity;
+  cmd->m_authorisation = authorisation;
   SendCommand(cmd);
   return true;
 }
 
 
+bool OpalPresentity::SetPresence(State state, const PString & note)
+{
+  OpalSetPresenceCommand * cmd = CreateCommand<OpalSetPresenceCommand>();
+  if (cmd == NULL)
+    return false;
+
+  cmd->m_state = state;
+  cmd->m_note = note;
+  SendCommand(cmd);
+  return true;
+}
+
+
+void OpalPresentity::SetRequestPresenceNotifier(const RequestPresenceNotifier & n)
+{
+  PWaitAndSignal mutex(m_onRequestPresenceNotifierMutex);
+  m_onRequestPresenceNotifier = n;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
+OpalPresentityWithCommandThread::OpalPresentityWithCommandThread()
+  : m_threadRunning(false)
+  , m_thread(NULL)
+{
+}
+
+
+OpalPresentityWithCommandThread::~OpalPresentityWithCommandThread()
+{
+  StopThread();
+
+  while (!m_commandQueue.empty())
+    delete m_commandQueue.front();
+}
+
+
+void OpalPresentityWithCommandThread::StartThread()
+{
+  if (m_threadRunning)
+    return;
+
+  // start handler thread
+  m_threadRunning = true;
+  m_thread = new PThreadObj<OpalPresentityWithCommandThread>(*this, &OpalPresentityWithCommandThread::ThreadMain);
+}
+
+
+void OpalPresentityWithCommandThread::StopThread()
+{
+  if (m_threadRunning && m_thread != NULL) {
+    m_threadRunning = false;
+    m_commandQueueSync.Signal();
+    m_thread->WaitForTermination();
+    delete m_thread;
+    m_thread = NULL;
+  }
+}
+
+
+bool OpalPresentityWithCommandThread::SendCommand(OpalPresentityCommand * cmd)
+{
+  {
+    PWaitAndSignal m(m_commandQueueMutex);
+    cmd->m_sequence = ++m_commandSequence;
+    m_commandQueue.push(cmd);
+  }
+
+  m_commandQueueSync.Signal();
+
+  return true;
+}
+
+
+
+void OpalPresentityWithCommandThread::ThreadMain()
+{
+  while (m_threadRunning) {
+    OpalPresentityCommand * cmd = NULL;
+
+    {
+      PWaitAndSignal mutex(m_commandQueueMutex);
+      if (!m_commandQueue.empty()) {
+        cmd = m_commandQueue.front();
+        m_commandQueue.pop();
+      }
+    }
+
+    if (cmd != NULL) {
+      cmd->Process(*this);
+      delete cmd;
+    }
+
+    m_commandQueueSync.Wait(1000);
+  }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
