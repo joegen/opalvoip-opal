@@ -602,15 +602,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     ) const { return activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_REGISTER, eventPackage); }
 
     /** Information provided on the subscription status. */
-    struct SubscriptionStatus {
-      SIPSubscribeHandler * m_handler;           ///< Handler for subscription
-      PString               m_addressofRecord;   ///< Address of record for registration
-      bool                  m_wasSubscribing;    ///< Was registering or unregistering
-      bool                  m_reSubscribing;     ///< Was a registration refresh
-      SIP_PDU::StatusCodes  m_reason;            ///< Reason for status change
-      OpalProductInfo       m_productInfo;       ///< Server product info from registrar if available.
-      void                * m_userData;          ///< User data corresponding to this registration
-    };
+    typedef SIPSubscribe::SubscriptionStatus SubscriptionStatus;
 
     /**Callback called when a subscription to a SIP UA status changes.
      */
