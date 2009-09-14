@@ -34,50 +34,39 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#if P_EXPAT
+
 #include <opal/pres_ent.h>
 #include <ptclib/pxml.h>
 
-class SIP_Presentity : public OpalPresentity
+
+class SIPWatcherInfoCommand : public OpalPresentityCommand {
+  public:
+    SIPWatcherInfoCommand(bool subscribe = true) : m_subscribe(subscribe) { }
+
+    bool m_subscribe;
+};
+
+
+class SIP_Presentity : public OpalPresentityWithCommandThread
 {
   public:
-    static const char * DefaultPresenceServerKey;
-    static const char * PresenceServerKey;
+    static const PString & DefaultPresenceServerKey();
+    static const PString & PresenceServerKey();
 
-    SIP_Presentity();
     ~SIP_Presentity();
 
-    virtual bool Open(
-      OpalManager * manager = NULL
-    );
+    virtual bool Open();
+    virtual bool IsOpen() const;
 
-    virtual bool IsOpen() const { return m_endpoint != NULL; }
-
-    virtual bool Close();
-
-    OpalPresentity::CmdSeqType SendCommand(Command * cmd);
-
-    enum {
-      e_Start                   = e_ProtocolSpecificCommand - 1,
-      e_StartWatcherInfo,
-      e_StopWatcherInfo
-    };
-
-  protected:
     SIPEndPoint & GetEndpoint() { return *m_endpoint; }
 
+  protected:
+    SIP_Presentity();
+
     virtual bool InternalOpen() = 0;
-    virtual bool InternalClose() = 0;
 
-    OpalManager * m_manager;
     SIPEndPoint * m_endpoint;
-
-    PMutex m_commandQueueMutex;
-    std::queue<Command *> m_commandQueue;
-    PAtomicInteger m_commandSequence;
-    PSyncPoint m_commandQueueSync;
-
-    bool m_threadRunning;
-    PThread * m_thread;
 
     unsigned int m_watcherInfoVersion;
 
@@ -96,9 +85,10 @@ class SIPLocal_Presentity : public SIP_Presentity
   public:
     ~SIPLocal_Presentity();
 
+    virtual bool Close();
+
   protected:
     virtual bool InternalOpen();
-    virtual bool InternalClose();
 };
 
 
@@ -108,23 +98,22 @@ class SIPXCAP_Presentity : public SIP_Presentity
     SIPXCAP_Presentity();
     ~SIPXCAP_Presentity();
 
-    PDECLARE_NOTIFIER(SIPSubscribeHandler, SIPXCAP_Presentity, OnWatcherInfoSubscriptionStatus);
-    PDECLARE_NOTIFIER(SIPSubscribeHandler, SIPXCAP_Presentity, OnWatcherInfoNotify);
-
-    PDECLARE_NOTIFIER(SIPSubscribeHandler, SIPXCAP_Presentity, OnPresenceNotify);
-
-    void Thread();
+    virtual bool Close();
 
     virtual void OnReceivedWatcherStatus(PXMLElement * watcher);
 
-  protected:
-    virtual bool InternalOpen();
-    virtual bool InternalClose();
+    void Internal_SendLocalPresence(const OpalSetPresenceCommand & cmd);
+    void Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd);
+    void Internal_AuthorisePresence(const OpalAuthorisePresenceCommand & cmd);
+    void Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd);
 
-    void SubscribeToWatcherInfo(bool on);
-    void Internal_SendLocalPresence();
-    void Internal_SubscribeToPresence(const PString & presentity, bool start);
-    void Internal_AuthorisePresence(const PString & presentity);
+  protected:
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPXCAP_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPXCAP_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPXCAP_Presentity, OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
+
+    virtual bool InternalOpen();
+    unsigned GetExpiryTime(bool subscribing) const;
 
     PIPSocketAddressAndPort m_presenceServer;
     bool m_watcherInfoSubscribed;
@@ -150,5 +139,6 @@ class SIPXCAP_Presentity : public SIP_Presentity
     PresenceInfoMap m_presenceInfo;
 };
 
+#endif // P_EXPAT
 
 #endif // OPAL_SIP_SIPPRES_H

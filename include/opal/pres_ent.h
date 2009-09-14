@@ -38,32 +38,132 @@
 #include <ptclib/url.h>
 #include <sip/sipep.h>
 
+
+class OpalPresentityCommand;
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**Representation of a presence identity.
+   This class contains an abstraction of the functionality for "presence"
+   using a URL string as the "identity". The concrete class depends on the
+   scheme of the identity URL.
+
+   The general architecture is that commands will be sent to the preentity
+   concrete class via concrete versions of OpalPresentityCommand class. These
+   may be protocol specific or one of the abstracted versions.
+  */
 class OpalPresentity : public PSafeObject
 {
-  public:
-    static const char * AddressOfRecordKey;
-    static const char * AuthNameKey;
-    static const char * AuthPasswordKey;
-    static const char * FullNameKey;
-    static const char * GUIDKey;
-    static const char * SchemeKey;
-    static const char * TimeToLiveKey;
+    PCLASSINFO(OpalPresentity, PSafeObject);
 
+  /**@name Construction */
+  //@{
+  protected:
+    /// Construct the presentity class
+    OpalPresentity();
+
+  public:
+    /**Create a concrete class based on the scheme of the URL provided.
+      */
+    static OpalPresentity * Create(
+      OpalManager & manager, ///< Manager for presentity
+      const PString & url   ///< URL for presence identity
+    );
+  //@}
+
+  /**@name Initialisation */
+  //@{
+    /** Open the presentity handler.
+        This will perform whatever is required to allow this presentity
+        to access servers etc for the underlying protocol. It may start open
+        network channels, start threads etc.
+
+        Note that a return value of true does not necessarily mean that the
+        presentity has successfully been indicated as "present" on the server
+        only that the underlying system can do so at some time.
+      */
+    virtual bool Open() = 0;
+
+    /** Indicate if the presentity has been successfully opened.
+      */
+    virtual bool IsOpen() const = 0;
+
+    /**Close the presentity.
+      */
+    virtual bool Close() = 0;
+  //@}
+
+  /**@name Attributes */
+  //@{
+    /**Dictionary of attributes associated with this presentity.
+      */
     class Attributes :  public PStringToString
     {
       public:
-        virtual bool Has(const PString & key) const
-        { return Contains(key); }
+        /// Determine of the attribute exists.
+        virtual bool Has(const PString &   key   ) const { return Contains(key  ); }
+        virtual bool Has(const PString & (*key)()) const { return Contains(key()); }
 
-        virtual PString Get(const PString & key, const PString & deflt = PString::Empty()) const
-        { return (*this)(key, deflt); }
+        /// Get the attribute value.
+        virtual PString Get(const PString &   key   , const PString & deflt = PString::Empty()) const { return (*this)(key  , deflt); }
+                PString Get(const PString & (*key)(), const PString & deflt = PString::Empty()) const { return (*this)(key(), deflt); }
 
-        virtual void Set(const PString & key, const PString & value)
-        { SetAt(key, value); }
+        /// Set the attribute value.
+        virtual void Set(const PString &   key   , const PString & value) { SetAt(key  , value); }
+                void Set(const PString & (*key)(), const PString & value) { SetAt(key(), value); }
     };
 
+    ///< Get the attributes for this presentity.
+    Attributes & GetAttributes() { return m_attributes; }
+
+    static const PString & AddressOfRecordKey();  ///< Key for address-of-record attribute
+    static const PString & AuthNameKey();         ///< Key for authentication name attribute
+    static const PString & AuthPasswordKey();     ///< Key for authentication password attribute
+    static const PString & FullNameKey();         ///< Key for full name attribute
+    static const PString & GUIDKey();             ///< Key for globally unique identififer attribute
+    static const PString & SchemeKey();           ///< Key for scheme used attribute
+    static const PString & TimeToLiveKey();       ///< Key for Time-To-Live attribute, in seconds for underlying protocol
+
+    /** Get the address-of-record for the presentity.
+        This is typically a URL which represents our local identity in the
+        presense system.
+      */
+    PString GetAOR() const { return m_attributes.Get(AddressOfRecordKey()); }
+  //@}
+
+  /**@name Commands */
+  //@{
+    /** Subscribe to presence state of another presentity.
+        This function is a wrapper and the OpalSubscribeToPresenceCommand command.
+      */
+    virtual bool SubscribeToPresence(
+      const PString & presentity    ///< Other presentity to monitor
+    );
+
+    /** Unsubscribe to presence state of another presentity.
+        This function is a wrapper and the OpalSubscribeToPresenceCommand command.
+      */
+    virtual bool UnsubscribeFromPresence(
+      const PString & presentity    ///< Other presentity to monitor
+    );
+
+    /// Authorisation modes for SetPresenceAuthorisation()
+    enum Authorisation {
+      AuthorisationPermitted,
+      AuthorisationDenied,
+      AuthorisationDeniedPolitely
+    };
+
+    /** Called to allow/deny another presentity access to our presence information.
+        This function is a wrapper and the OpalAuthorisePresenceCommand command.
+      */
+    virtual bool SetPresenceAuthorisation(
+      const PString & presentity,
+      Authorisation authorisation
+    );
+
+    /// Presence states.
     enum State {
       NoPresence      = -1,    // remove presence status - not the same as NotAvailable or Away
 
@@ -104,113 +204,200 @@ class OpalPresentity : public PSafeObject
       Worship
     };
 
-    static OpalPresentity * Create(
-      const PString & url
-    );
-
-    OpalPresentity();
-
-    virtual bool Open(
-      OpalManager * manager = NULL
-    );
-
-    virtual bool IsOpen() const = 0;
-
-    virtual bool Close() = 0;
-
-    PString GetAOR() const { return m_attributes.Get(AddressOfRecordKey); }
-
-    enum {
-      e_SetPresenceState         = 1,
-      e_SubscribeToPresence,
-      e_UnsubscribeFromPresence,
-      e_AuthorisePresence,
-      e_DenyPresence,
-      e_PoliteDenyPresence,
-      e_ProtocolSpecificCommand  = 10000
-    };
-
-    //
-    //  Set our presence state
-    // 
+    /** Set our presence state.
+        This function is a wrapper and the OpalSetPresenceCommand command
+      */
     virtual bool SetPresence(
-      State state, 
-      const PString & note = PString::Empty()
+      State state,                              ///< New state for our presentity
+      const PString & note = PString::Empty()   ///< Additional note attached to the state change
     );
 
+    /** Low level function to create a command.
+        As commands have protocol specific implementations, we use a factory
+        to create them.
+      */
+    template <class cls>
+    cls * CreateCommand()
+    {
+      cls * p = dynamic_cast<cls *>(PFactory<OpalPresentityCommand>::CreateInstance(
+                       PDefaultPFactoryKey(typeid(*this).name())+typeid(cls).name()));
+      return PAssertNULL(p);
+    }
 
-    //
-    //  Subscribe to presence state of another presentity
-    // 
-    virtual bool SubscribeToPresence(
-      const PString & presentity
-    );
+    /** Lowlevel function to send a command to the presentity handler.
+        All commands are asynchronous. They will usually initiate an action
+        for which an indication (callback) will give a result.
 
-
-    //
-    //  Called when another presentity requests access to our presence information
-    // 
-    virtual bool OnRequestPresence(
-      const PString & presentity
-    );
-
-
-    //
-    //  Called to allow/deny another presentity access to our presence information
-    //
-    virtual bool SetPresenceAuthorisation(
-      const PString & presentity,
-      int authoriseMode
-    );
-
-    Attributes & GetAttributes() { return m_attributes; }
-
-    typedef PAtomicInteger::IntegerType CmdSeqType;
-
-    class Command {
-      public:
-        Command(unsigned c, bool responseNeeded = false) 
-          : m_cmd(c), m_responseNeeded(responseNeeded)
-        { }
-        virtual ~Command() { }
-
-        unsigned m_cmd;
-        bool m_responseNeeded;
-        CmdSeqType m_sequence;
-    };
-
-    class SetPresenceCommand : public Command {
-      public:
-        SetPresenceCommand(State state, const PString & note = PString::Empty()) 
-          : Command(e_SetPresenceState), m_state(state), m_note(note)
-        { }
-        State m_state;
-        PString m_note;
-    };
-
-
-    class SimpleCommand : public Command {
-      public:
-        SimpleCommand(unsigned c, const PString & e, bool responseNeeded = false) 
-          : Command(c, responseNeeded), m_presEntity(e)
-        { }
-        PString m_presEntity;
-    };
-
-    virtual CmdSeqType SendCommand(
-      Command * cmd
+        Note that the command is typically created by the CreateCommand()
+        function and is deleted by this function.
+      */
+    virtual bool SendCommand(
+      OpalPresentityCommand * cmd   ///< Command to be processed
     ) = 0;
+  //@}
 
-    void SetRequestPresenceNotifier(const PNotifier2 & n)
-    { PWaitAndSignal m(m_onRequestPresenceNotifierMutex); m_onRequestPresenceNotifier = n; }
+  /**@name Indications (callbacks) */
+  //@{
+    /** Callback when another presentity requests access to our presence.
+        Default implementation calls m_onRequestPresenceNotifier.
+      */
+    virtual bool OnRequestPresence(
+      const PString & presentity    ///< Other presentity to monitor
+    );
+
+    typedef PNotifierTemplate<const PString &> RequestPresenceNotifier;
+
+    /// Set the notifier for the OnRequestPresence() function.
+    void SetRequestPresenceNotifier(
+      const RequestPresenceNotifier & notifier   ///< Notifier to be called by OnRequestPresence()
+    );
+  //@}
 
   protected:
-    Attributes m_attributes;
+    OpalManager        * m_manager;
     OpalGloballyUniqueID m_guid;
+    Attributes           m_attributes;
 
-    PNotifier2 m_onRequestPresenceNotifier;
-    PMutex m_onRequestPresenceNotifierMutex;
+    RequestPresenceNotifier m_onRequestPresenceNotifier;
+    PMutex                  m_onRequestPresenceNotifierMutex;
 };
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**Representation of a presence identity that uses a background thread to
+   process commands.
+  */
+class OpalPresentityWithCommandThread : public OpalPresentity
+{
+  /**@name Construction */
+  //@{
+  protected:
+    /// Construct the presentity class that uses a command thread.
+    OpalPresentityWithCommandThread();
+
+  public:
+    /** Destory the presentity class that uses a command thread.
+        Note this will block until the background thread has stopped.
+      */
+    ~OpalPresentityWithCommandThread();
+  //@}
+
+  /**@name Overrides from OpalPresentity */
+  //@{
+    /** Lowlevel function to send a command to the presentity handler.
+        All commands are asynchronous. They will usually initiate an action
+        for which an indication (callback) will give a result.
+
+        The default implementation queues the command for the background
+        thread to handle.
+      */
+    virtual bool SendCommand(
+      OpalPresentityCommand * cmd
+    );
+  //@}
+
+  /**@name Overrides from OpalPresentity */
+  //@{
+    /**Start the background thread to handle commands.
+       This is typically called from the concrete classes Open() function.
+      */
+    void StartThread();
+
+    /**Stop the background thread to handle commands.
+       This is typically called from the concrete classes Close() function.
+       It is also called fro the destructor to be sure the thread has stopped
+       before the object is destroyed.
+      */
+    void StopThread();
+  //@}
+
+  protected:
+    void ThreadMain();
+
+    typedef std::queue<OpalPresentityCommand *> CommandQueue;
+    CommandQueue   m_commandQueue;
+    PMutex         m_commandQueueMutex;
+    PAtomicInteger m_commandSequence;
+    PSyncPoint     m_commandQueueSync;
+
+    bool      m_threadRunning;
+    PThread * m_thread;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**Abstract class for all OpelPresentity commands.
+  */
+class OpalPresentityCommand {
+  public:
+    OpalPresentityCommand(bool responseNeeded = false) 
+      : m_responseNeeded(responseNeeded)
+    { }
+    virtual ~OpalPresentityCommand() { }
+
+    /**Function to process the command.
+       This typically calls functions on the concrete OpalPresentity class.
+      */
+    virtual void Process(
+      OpalPresentity & presentity
+    ) = 0;
+
+    typedef PAtomicInteger::IntegerType CmdSeqType;
+    CmdSeqType m_sequence;
+    bool       m_responseNeeded;
+    PString    m_presentity;
+};
+
+/** Macro to define the factory that creates a concrete command class.
+  */
+#define OPAL_DEFINE_COMMAND(command, entity, func) \
+  class entity##_##command : public command \
+  { \
+    public: virtual void Process(OpalPresentity & presentity) { dynamic_cast<entity &>(presentity).func(*this); } \
+  }; \
+  static PFactory<OpalPresentityCommand>::Worker<entity##_##command> \
+        s_entity##_##command(PDefaultPFactoryKey(typeid(entity).name())+typeid(command).name())
+
+
+/** Command for subscribing to the status of another presentity.
+  */
+class OpalSubscribeToPresenceCommand : public OpalPresentityCommand {
+  public:
+    OpalSubscribeToPresenceCommand(bool subscribe = true) : m_subscribe(subscribe) { }
+
+    bool m_subscribe;   ///< Flag to indicate subscribing/unsubscribing
+};
+
+
+/** Command for authorising a request by some other presentity to see our status.
+    This action is typically due to some other presentity doing the equivalent
+    of a OpalSubscribeToPresenceCommand. The mechanism by which this happens
+    is dependent on the concrete OpalPresentity class and it's underlying
+    protocol.
+  */
+class OpalAuthorisePresenceCommand : public OpalPresentityCommand {
+  public:
+    OpalAuthorisePresenceCommand() : m_authorisation(OpalPresentity::AuthorisationPermitted) { }
+
+    OpalPresentity::Authorisation m_authorisation;  ///< Authorisation mode to indicate to remote
+};
+
+
+/** Command for adusting our current status.
+    This action typically causes all presentities to be notified of the
+    change. The mechanism by which this happens is dependent on the concrete
+    OpalPresentity class and it's underlying protocol.
+  */
+class OpalSetPresenceCommand : public OpalPresentityCommand {
+  public:
+    OpalSetPresenceCommand() : m_state(OpalPresentity::NoPresence) { }
+
+    OpalPresentity::State m_state;    ///< New state to move to.
+    PString               m_note;     ///< Additional note attached to the state change
+};
+
 
 #endif  // OPAL_IM_PRES_ENT_H
 

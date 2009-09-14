@@ -1,7 +1,7 @@
 /*
- * main.h
+ * main.cxx
  *
- * OPAL application source file for testing Opal presentities
+ * OPAL application source file for testing OPAL presentities
  *
  * Copyright (c) 2009 Post Increment
  *
@@ -58,7 +58,7 @@ class TestPresEnt : public PProcess
 PCREATE_PROCESS(TestPresEnt);
 
 TestPresEnt::TestPresEnt()
-  : PProcess("OPAL Test Presentity", "TestPresEnt", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
+  : PProcess("Open Phone Abstraction Library", "Presentity Test", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
   , m_manager(NULL)
 {
 }
@@ -77,6 +77,7 @@ void TestPresEnt::Main()
   args.Parse(
              "u-user:"
              "h-help."
+             "-listener:"
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -90,11 +91,12 @@ void TestPresEnt::Main()
 #endif
 
   if (args.HasOption('h')) {
-    cerr << "usage: " << GetFile().GetTitle() << " [ options ] [url]\n"
+    cerr << "usage: " << GetFile().GetTitle() << " [ options ] server pres1 pass1 pres2 pass2\n"
             "\n"
             "Available options are:\n"
             "  -u or --user            : set local username.\n"
-            "  --help                  : print this help message.\n"
+            "  -h or --help            : print this help message.\n"
+            "  --listen <iface>        : SIP listens on this interface/port.\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -116,52 +118,49 @@ void TestPresEnt::Main()
   const char * pres2  = args[3];
   const char * pass2  = args[4];
 
-  MyManager m_manager;
-  SIPEndPoint * sip  = new SIPEndPoint(m_manager);
-  if (!sip->StartListener("udp$192.168.2.2")) {
+  MyManager manager;
+  SIPEndPoint * sip  = new SIPEndPoint(manager);
+  if (!sip->StartListeners(args.GetOptionString("listener").Lines())) {
     cerr << "Could not start SIP listeners." << endl;
     return;
   }
 
   OpalPresentity * sipEntity1;
   {
-    sipEntity1 = OpalPresentity::Restore(pres1);
+    sipEntity1 = OpalPresentity::Create(manager, pres1);
     if (sipEntity1 == NULL) {
-      sipEntity1 = OpalPresentity::Create(pres1);
-      if (sipEntity1 == NULL) {
-        cerr << "error: cannot create presentity for '" << pres1 << "'" << endl;
-        return;
-      }
-
-      sipEntity1->SetAttribute(SIP_Presentity::DefaultPresenceServerKey, server);
-      sipEntity1->SetAttribute(SIP_Presentity::AuthPasswordKey,          pass1);
+      cerr << "error: cannot create presentity for '" << pres1 << "'" << endl;
+      return;
     }
 
-    if (!sipEntity1->Open(&m_manager)) {
+    sipEntity1->GetAttributes().Set(SIP_Presentity::DefaultPresenceServerKey, server);
+    sipEntity1->GetAttributes().Set(SIP_Presentity::AuthPasswordKey,          pass1);
+
+    if (!sipEntity1->Open()) {
       cerr << "error: cannot open presentity '" << pres1 << endl;
       return;
     }
 
-    cout << "Opened '" << pres1 << " using presence server '" << sipEntity1->GetAttribute(SIP_Presentity::PresenceServerKey) << "'" << endl;
+    cout << "Opened '" << pres1 << " using presence server '" << sipEntity1->GetAttributes().Get(SIP_Presentity::PresenceServerKey) << "'" << endl;
   }
 
   OpalPresentity * sipEntity2;
   {
-    sipEntity2 = OpalPresentity::Create(pres2);
+    sipEntity2 = OpalPresentity::Create(manager, pres2);
     if (sipEntity2 == NULL) {
       cerr << "error: cannot create presentity for '" << pres2 << "'" << endl;
       return;
     }
 
-    sipEntity2->SetAttribute(SIP_Presentity::DefaultPresenceServerKey, server);
-    sipEntity2->SetAttribute(SIP_Presentity::AuthPasswordKey,          pass2);
+    sipEntity2->GetAttributes().Set(SIP_Presentity::DefaultPresenceServerKey, server);
+    sipEntity2->GetAttributes().Set(SIP_Presentity::AuthPasswordKey,          pass2);
 
-    if (!sipEntity2->Open(&m_manager)) {
+    if (!sipEntity2->Open()) {
       cerr << "error: cannot open presentity '" << pres1 << endl;
       return;
     }
 
-    cout << "Opened '" << pres1 << " using presence server '" << sipEntity2->GetAttribute(SIP_Presentity::PresenceServerKey) << "'" << endl;
+    cout << "Opened '" << pres1 << " using presence server '" << sipEntity2->GetAttributes().Get(SIP_Presentity::PresenceServerKey) << "'" << endl;
   }
 
   sipEntity1->SetPresence(OpalPresentity::Available);
@@ -170,7 +169,7 @@ void TestPresEnt::Main()
 
   sipEntity1->SetPresence(OpalPresentity::NoPresence);
 
-  Sleep(2000);
+  Sleep(10000);
 
   delete sipEntity1;
   delete sipEntity2;

@@ -317,7 +317,7 @@ bool OpalMSRPMediaSession::OpenMSRP(const PURL & remoteUrl)
   return true;
 }
 
-void OpalMSRPMediaSession::SetConnection(PSafePtr<OpalMSRPManager::Connection> & conn)
+void OpalMSRPMediaSession::SetConnection(const PSafePtr<OpalMSRPManager::Connection> & conn)
 {
   if (m_connectionPtr == NULL)
     m_connectionPtr = conn;
@@ -359,7 +359,8 @@ OpalMSRPMediaStream::OpalMSRPMediaStream(
 {
   PTRACE(3, "MSRP\tOpening MSRP connection from " << m_msrpSession.GetLocalURL() << " to " << m_remoteParty);
   if (isSource) 
-    m_msrpSession.GetManager().SetNotifier(m_msrpSession.GetLocalURL(), m_remoteParty, PCREATE_NOTIFIER2(OnReceiveMSRP));
+    m_msrpSession.GetManager().SetNotifier(m_msrpSession.GetLocalURL(), m_remoteParty,
+                                           PCREATE_NOTIFIER2(OnReceiveMSRP, const OpalMSRPManager::IncomingMSRP &));
 }
 
 OpalMSRPMediaStream::~OpalMSRPMediaStream()
@@ -391,10 +392,8 @@ PBoolean OpalMSRPMediaStream::Close()
   return OpalIMMediaStream::Close();
 }
 
-void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, void * d)
+void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, const OpalMSRPManager::IncomingMSRP & incomingMSRP)
 {
-  OpalMSRPManager::IncomingMSRP & incomingMSRP = *(OpalMSRPManager::IncomingMSRP *)d;
-
   m_msrpSession.SetConnection(incomingMSRP.m_connection);
 
   if (incomingMSRP.m_command == MSRPProtocol::SEND) {
@@ -574,7 +573,7 @@ void OpalMSRPManager::HandlerThread(PSafePtr<Connection> connection)
             PTRACE(2, "MSRP\tNo registered callbacks with '" << key << "'");
           } else {
             PTRACE(2, "MSRP\tCalling registered callbacks for '" << key << "'");
-            r->second.m_notifier(*this, (void *)&incomingMsg);
+            r->second(*this, incomingMsg);
           }           
         }
         if (incomingMsg.m_mime("Success-Report") *= "yes") {
@@ -652,11 +651,9 @@ PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL
 }
 
 
-void OpalMSRPManager::SetNotifier(
-  const PURL & localUrl, 
-  const PURL & remoteUrl, 
-  const PNotifier2 & notifier
-)
+void OpalMSRPManager::SetNotifier(const PURL & localUrl,
+                                  const PURL & remoteUrl,
+                                  const CallBack & notifier)
 {
   PString key(localUrl.AsString() + '\t' + remoteUrl.AsString());
   PTRACE(2, "MSRP\tRegistering callback for incoming MSRP messages with '" << key << "'");
@@ -664,15 +661,14 @@ void OpalMSRPManager::SetNotifier(
   m_callBacks.insert(CallBackMap::value_type(key, CallBack(notifier)));
 }
 
-void OpalMSRPManager::RemoveNotifier(
-  const PURL & localUrl, 
-  const PURL & remoteUrl 
-)
+
+void OpalMSRPManager::RemoveNotifier(const PURL & localUrl, const PURL & remoteUrl)
 {
   PString key(localUrl.AsString() + '\t' + remoteUrl.AsString());
   PWaitAndSignal m(m_callBacksMutex);
   m_callBacks.erase(key);
 }
+
 
 ////////////////////////////////////////////////////////
 

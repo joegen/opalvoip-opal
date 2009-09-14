@@ -217,10 +217,20 @@ class OpalMSRPManager : public PObject
     //
     void HandlerThread(PSafePtr<Connection> connection);
 
+    struct IncomingMSRP {
+      int       m_command;
+      PString   m_chunkId;
+      PMIMEInfo m_mime;
+      PString   m_body;
+      PSafePtr<Connection> m_connection;
+    };
+
+    typedef PNotifierTemplate<const IncomingMSRP &> CallBack;
+
     void SetNotifier(
       const PURL & localUrl, 
       const PURL & remoteURL, 
-      const PNotifier2 & notifier
+      const CallBack & notifier
     );
 
     void RemoveNotifier(
@@ -229,14 +239,6 @@ class OpalMSRPManager : public PObject
     );
 
     //OpalManager & GetOpalManager() { return opalManager; }
-
-    struct IncomingMSRP {
-      int       m_command;
-      PString   m_chunkId;
-      PMIMEInfo m_mime;
-      PString   m_body;
-      PSafePtr<Connection> m_connection;
-    };
 
   protected:
     OpalManager & opalManager;
@@ -250,12 +252,6 @@ class OpalMSRPManager : public PObject
     PMutex m_connectionInfoMapAddMutex;
     PSafeDictionary<PString, Connection> m_connectionInfoMap;
 
-    class CallBack : public PObject {
-      PCLASSINFO(CallBack, PObject);
-      public:
-        CallBack(const PNotifier2 & n) : m_notifier(n) { }
-        PNotifier2 m_notifier;
-    };
     typedef std::map<std::string, CallBack> CallBackMap;
     CallBackMap m_callBacks;
     PMutex m_callBacksMutex;
@@ -320,7 +316,7 @@ class OpalMSRPMediaSession : public OpalMediaSession
     OpalMSRPManager & GetManager() { return m_manager; }
 
     bool OpenMSRP(const PURL & remoteUrl);
-    void SetConnection(PSafePtr<OpalMSRPManager::Connection> & conn);
+    void SetConnection(const PSafePtr<OpalMSRPManager::Connection> & conn);
 
     OpalMSRPManager & m_manager;
     bool m_isOriginating;
@@ -367,7 +363,7 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
     PURL GetRemoteURL() const           { return m_msrpSession.GetRemoteURL(); }
     void SetRemoteURL(const PURL & url) { m_msrpSession.SetRemoteURL(url); }
 
-    PDECLARE_NOTIFIER2(OpalMSRPManager, OpalMSRPMediaStream, OnReceiveMSRP);
+    PDECLARE_NOTIFIER2(OpalMSRPManager, OpalMSRPMediaStream, OnReceiveMSRP, const OpalMSRPManager::IncomingMSRP &);
 
 
   //@}
