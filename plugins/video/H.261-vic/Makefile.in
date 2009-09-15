@@ -95,13 +95,18 @@ SRCS	+= h261vic.cxx \
            $(SRCDIR)/huffcode.c \
            $(SRCDIR)/bv.c \
 
+ifeq ($(VERBOSE),)
+Q = @echo $@ ;
+endif
+
+
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q)$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q)$(CC) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./$(BASENAME)_video_pwplugin.$(PLUGINEXT)
 STATIC	= ./lib$(BASENAME)_video_s.a
@@ -110,9 +115,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 
 $(PLUGIN): $(OBJECTS)
 ifeq (,$(findstring solaris,$(target_os)))
-	$(CXX) $(LDSO) -o $@ $^
+	$(Q)$(CXX) $(LDSO) -o $@ $^
 else	
-	$(CXX) $(LDSO) $@ -o $@ $^
+	$(Q)$(CXX) $(LDSO) $@ -o $@ $^
 endif
 
 install:
