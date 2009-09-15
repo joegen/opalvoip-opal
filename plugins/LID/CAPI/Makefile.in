@@ -52,9 +52,14 @@ SRCS	+= CAPI.cxx
 vpath	%.o $(OBJDIR)
 vpath	%.cxx $(SRCDIR)
 
+ifeq ($(VERBOSE),)
+Q = @echo $@ ;
+endif
+
+
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CXXFLAGS) -c $< -o $@
+	$(Q)$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CXXFLAGS) -c $< -o $@
 
 PLUGIN	= ./ixj_lid_pwplugin.so
 
