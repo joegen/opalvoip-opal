@@ -197,6 +197,12 @@ OPAL_DEFINE_COMMAND(SIPWatcherInfoCommand,          SIPXCAP_Presentity, Internal
 
 void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd)
 {
+  Internal_SubscribeToWatcherInfo(cmd.m_subscribe);
+}
+
+
+void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(bool subscribe)
+{
   // don't bother checking if already subscribed - this allows resubscribe
   //if (m_watcherInfoSubscribed == start)
   //  return true;
@@ -213,7 +219,7 @@ void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCom
   param.m_remoteAddress   = PString("sip:") + m_presenceServer.AsString();
   param.m_authID          = m_attributes.Get(OpalPresentity::AuthNameKey, aor);
   param.m_password        = m_attributes.Get(OpalPresentity::AuthPasswordKey);
-  param.m_expire          = GetExpiryTime(cmd.m_subscribe);
+  param.m_expire          = GetExpiryTime(subscribe);
   param.m_onSubcribeStatus = PCREATE_NOTIFIER2(OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
   param.m_onNotify         = PCREATE_NOTIFIER2(OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
 
