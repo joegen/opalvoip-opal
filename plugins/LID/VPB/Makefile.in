@@ -61,9 +61,14 @@ SRCS	+= vpb.cpp
 vpath	%.o $(OBJDIR)
 vpath	%.cpp $(SRCDIR)
 
+ifeq ($(VERBOSE),)
+Q = @echo $@ ;
+endif
+
+
 $(OBJDIR)/%.o : %.cpp
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) -I../../../include $(CXXFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) -c $< -o $@
+	$(Q)$(CXX) -I../../../include $(CXXFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) -c $< -o $@
 
 PLUGIN	= ./vpb_lid_pwplugin.$(PLUGINEXT)
 
