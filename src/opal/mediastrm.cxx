@@ -1154,12 +1154,13 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   timestamp += (int)((currentGrabTime - lastGrabTime).GetMilliSeconds()*OpalMediaFormat::VideoClockRate/1000);
   lastGrabTime = currentGrabTime;
 
-  marker = true;
-  length = bytesReturned + sizeof(PluginCodec_Video_FrameHeader);
-
-  if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
+  if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0)
     ExecuteCommand(OpalVideoUpdatePicture());
-  }
+
+  marker = true;
+  length = bytesReturned;
+  if (length > 0)
+    length += sizeof(PluginCodec_Video_FrameHeader);
 
   if (outputDevice == NULL)
     return true;

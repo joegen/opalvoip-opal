@@ -825,6 +825,11 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
 bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
+  if (src.GetPayloadSize() == 0) {
+    dstList.RemoveAll();
+    return true;
+  }
+
   // get the size of the output buffer
   int outputDataSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
   int optimalDataSize = GetOptimalDataFrameSize(false);
