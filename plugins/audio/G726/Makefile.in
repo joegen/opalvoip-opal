@@ -83,9 +83,14 @@ SRCS	+= g726codec.c \
 vpath	%.o $(OBJDIR)
 vpath	%.c $(SRCDIR)
 
+ifeq ($(VERBOSE),)
+Q = @echo $@ ;
+endif
+
+
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include -I./g726 $(STDCCFLAGS) $(OPTCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q)$(CC) -I../../../include -I./g726 $(STDCCFLAGS) $(OPTCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./g726_audio_pwplugin.$(PLUGINEXT)
 
