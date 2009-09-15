@@ -106,6 +106,7 @@ class SIPXCAP_Presentity : public SIP_Presentity
     void Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd);
     void Internal_AuthorisePresence(const OpalAuthorisePresenceCommand & cmd);
     void Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd);
+    void Internal_SubscribeToWatcherInfo(bool subscribe);
 
   protected:
     PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPXCAP_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
