@@ -583,8 +583,18 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
   SDPSessionDescription * sdp;
   if (isAnswerSDP && originalInvite != NULL && (sdp = originalInvite->GetSDP()) != NULL) {
     const SDPMediaDescriptionArray & mediaDescriptions = sdp->GetMediaDescriptions();
+
+    /* Shut down any media that is in a session not mentioned in a re-INVITE.
+       While the SIP/SDP specification says this shouldn't happen, it does
+       anyway so we need to deal. */
+    for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
+      if (stream->GetSessionID() > (unsigned)mediaDescriptions.GetSize())
+        stream->Close();
+    }
+
     for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) 
       sdpOK |= AnswerSDPMediaDescription(*sdp, i+1, sdpOut);
+
     // If all was OK, but we have no media streams, then remote started us up in HOLD.
     m_holdFromRemote = sdpOK && mediaStreams.IsEmpty();
   }
@@ -1085,7 +1095,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
   needReINVITE = oldReINVITE;
 
-  if (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream)
+  if (!m_handlingINVITE && (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream))
     SendReINVITE(PTRACE_PARAM("open channel"));
 
   return newStream;
@@ -1281,8 +1291,10 @@ bool SIPConnection::HoldConnection()
   if (transport == NULL)
     return false;
 
-  if (m_holdToRemote != eHoldOff)
+  if (m_holdToRemote != eHoldOff) {
+    PTRACE(4, "SIP\tHold request ignored as already in hold or in progress on " << *this);
     return true;
+  }
 
   m_holdToRemote = eHoldInProgress;
 
@@ -1301,12 +1313,14 @@ bool SIPConnection::RetrieveConnection()
 
   switch (m_holdToRemote) {
     case eHoldOff :
+      PTRACE(4, "SIP\tRetrieve request ignored as not in hold on " << *this);
       return true;
 
     case eHoldOn :
       break;
 
     default :
+      PTRACE(4, "SIP\tRetrieve request ignored as in progress on " << *this);
       return false;
   }
 
@@ -1626,11 +1640,13 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   // If we are doing a local hold, and it failed, we do not release the connection
   switch (m_holdToRemote) {
     case eHoldInProgress :
+      PTRACE(4, "SIP\tHold request failed on " << *this);
       m_holdToRemote = eHoldOff;  // Did not go into hold
       OnHold(false, false);   // Signal the manager that there is no more hold
       return;
 
     case eRetrieveInProgress :
+      PTRACE(4, "SIP\tRetrieve request failed on " << *this);
       m_holdToRemote = eHoldOn;  // Did not go out of hold
       OnHold(false, true);   // Signal the manager that hold is still active
       return;
@@ -1890,11 +1906,13 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 
   PTRACE(3, "SIP\tACK received: " << GetPhase());
 
-  m_handlingINVITE = false;
   ackReceived = true;
   ackTimer.Stop(false); // Asynchronous stop to avoid deadlock
   ackRetry.Stop(false);
+
   OnReceivedSDP(response);
+
+  m_handlingINVITE = false;
 
   switch (GetPhase()) {
     case ConnectedPhase :
@@ -2237,6 +2255,8 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & request)
   if (sdp == NULL)
     return;
 
+  m_holdFromRemote = sdp->IsHold();
+
   needReINVITE = false;
 
   bool ok = false;
@@ -2246,8 +2266,6 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & request)
   remoteFormatList += OpalRFC2833;
 
   needReINVITE = true;
-
-  m_holdFromRemote = sdp->IsHold();
 
   if (GetPhase() == EstablishedPhase) // re-INVITE
     StartMediaStreams();
