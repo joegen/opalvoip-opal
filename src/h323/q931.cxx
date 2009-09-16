@@ -813,6 +813,9 @@ PBoolean Q931::GetProgressIndicator(unsigned & description,
 
 void Q931::SetDisplayName(const PString & name)
 {
+  if (name.IsEmpty())
+    return;
+
   PBYTEArray bytes((const BYTE *)(const char *)name, name.GetLength()+1);
   SetIE(DisplayIE, bytes);
 }
