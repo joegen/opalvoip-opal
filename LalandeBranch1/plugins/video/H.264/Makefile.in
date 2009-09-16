@@ -112,9 +112,15 @@ SRCS    += h264pipe_unix.cxx
 endif
 
 
+ifeq ($(VERBOSE),)
+Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
+Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
+endif
+
+
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./$(BASENAME)_video_pwplugin.$(PLUGINEXT)
 STATIC	= ./lib$(BASENAME)_video_s.a
@@ -124,9 +130,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 $(PLUGIN): $(OBJECTS)
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
 ifeq (,$(findstring solaris,$(target_os)))
-	$(CXX) $(LDSO) $(LDFLAGS) $(DL_LIBS) -o $@ $^
+	$(Q_LD)$(CXX) $(LDSO) $(LDFLAGS) $(DL_LIBS) -o $@ $^
 else
-	$(CXX) $(LDSO) $(LDFLAGS) $(DL_LIBS) $@ -o $@ $^
+	$(Q_LD)$(CXX) $(LDSO) $(LDFLAGS) $(DL_LIBS) $@ -o $@ $^
 endif
 
 
