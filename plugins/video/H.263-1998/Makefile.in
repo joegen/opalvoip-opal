@@ -59,6 +59,12 @@ EXTRACCFLAGS    += $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -I$(PLUGINDIR)
 vpath   %.cxx $(COMMONDIR)
 vpath   %.o   $(OBJDIR)
 
+
+ifeq ($(VERBOSE),)
+Q = @echo $@ ;
+endif
+
+
 SRCS	+= h263-1998.cxx \
 	   h263pframe.cxx \
 	   rfc2190.cxx \
@@ -68,7 +74,7 @@ SRCS	+= h263-1998.cxx \
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q)$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./$(BASENAME)_video_pwplugin.$(PLUGINEXT)
 STATIC	= ./lib$(BASENAME)_video_s.a
