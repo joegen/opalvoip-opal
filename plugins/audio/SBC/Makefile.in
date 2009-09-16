@@ -60,27 +60,28 @@ vpath	%.c $(SRCDIR)
 vpath	%.cxx $(SRCDIR)
 
 ifeq ($(VERBOSE),)
-Q = @echo $@ ;
+Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
+Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
 endif
 
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q)$(CC) -c $(STDCCFLAGS) $(EXTRACCFLAGS) $(CFLAGS) -o $@ $<
+	$(Q_CC)$(CC) -c $(STDCCFLAGS) $(EXTRACCFLAGS) $(CFLAGS) -o $@ $<
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q)$(CXX) -c -I../../../include $(STDCCFLAGS) $(CXXFLAGS) $(EXTRACCFLAGS) -o $@ $<
+	$(Q_CC)$(CXX) -c -I../../../include $(STDCCFLAGS) $(CXXFLAGS) $(EXTRACCFLAGS) -o $@ $<
 
 PLUGIN	= ./sbc_audio_ptplugin.$(PLUGINEXT)
 
 OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.c,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 $(SRCDIR)/g711a1_plc.cxx: ../../../src/codec/g711a1_plc.cxx
-	ln -s ../../../src/codec/g711a1_plc.cxx $(SRCDIR)/g711a1_plc.cxx
+	@ln -s ../../../src/codec/g711a1_plc.cxx $(SRCDIR)/g711a1_plc.cxx
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
