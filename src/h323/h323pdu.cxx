@@ -1230,23 +1230,8 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
 
   {
     const OpalConnection::StringOptions & stringOptions = connection.GetStringOptions();
-    PString strLocal, strDisplay;
-    strLocal   = stringOptions(OPAL_OPT_CALLING_PARTY_NAME);
-    strDisplay = stringOptions(OPAL_OPT_CALLING_DISPLAY_NAME);
-    if (strDisplay.IsEmpty())
-      strDisplay = strLocal;
-
-    if (!strLocal.IsEmpty())
-      localName = strLocal;
-    else
-      localName = connection.GetLocalPartyName();
-
-    if (!strDisplay.IsEmpty())
-      displayName = strDisplay;
-    else if (!strLocal.IsEmpty())
-      displayName = localName;
-    else
-      displayName = connection.GetDisplayName();
+    localName   = stringOptions(OPAL_OPT_CALLING_PARTY_NAME, connection.GetLocalPartyName());
+    displayName = stringOptions(OPAL_OPT_CALLING_DISPLAY_NAME, connection.GetDisplayName());
   }
 
   if (IsE164(localName)) {
@@ -1261,7 +1246,7 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
     }
   }
   else {
-    if (!localName && displayName.IsEmpty())
+    if (displayName.IsEmpty())
       displayName = localName;
     for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias) {
       if (IsE164(*alias)) {
@@ -1271,8 +1256,6 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
     }
   }
 
-  if (displayName.IsEmpty())
-    displayName = number;
   q931pdu.SetDisplayName(displayName);
 
   if (insertPartyNumbers) {
