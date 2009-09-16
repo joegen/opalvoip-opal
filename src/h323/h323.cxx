@@ -511,6 +511,8 @@ PBoolean H323Connection::WriteSignalPDU(H323SignalPDU & pdu)
     if (gk != NULL)
       gk->InfoRequestResponse(*this, pdu.m_h323_uu_pdu, PTrue);
 
+    pdu.SetQ931Fields(*this); // Make sure display name is the final value
+
     if (pdu.Write(*signallingChannel))
       return PTrue;
   }
