@@ -166,7 +166,7 @@ void SipIM::Main()
   RFC4103Context rfc4103(m_manager.m_imFormat);
 
   for (;;) {
-    PThread::Sleep(1000);
+    PThread::Sleep(5000);
     const char * textData = "Hello, world";
 
     PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_manager.m_callToken);

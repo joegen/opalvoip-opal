@@ -86,13 +86,14 @@ EXTRACCFLAGS=-DOPAL_STATIC_CODEC
 endif
 
 ifeq ($(VERBOSE),)
-Q = @echo $@ ;
+Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
+Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
 endif
 
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q)$(CC) -I../../../include  $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(GSM_CFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CC) -I../../../include  $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(GSM_CFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./gsm0610_audio_pwplugin.$(PLUGINEXT)
 STATIC	= ./libgsm0610_audio_s.a
@@ -114,9 +115,9 @@ $(PLUGIN): $(OBJECTS)
 
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
 else 
-	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 endif
 

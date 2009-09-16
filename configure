@@ -4383,7 +4383,7 @@ OPAL_SAMPLES=no
 OPAL_ZRTP=no
 OPAL_SHARED_LIB=yes
 OPAL_JAVA=yes
-OPAL_HAS_MSRP=no
+OPAL_HAS_MSRP=yes
 OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
 PTLIB_REC_VERSION="2.0.0"
@@ -10345,10 +10345,7 @@ _ACEOF
 
           fi
 
-if test "x$OPAL_HAS_MSRP" = "xyes" ; then
-  { echo "$as_me:$LINENO: WARNING: MSRP is highly experimental and is recommended for developers only. Please don't complain if this does not compile or breaks your system" >&5
-echo "$as_me: WARNING: MSRP is highly experimental and is recommended for developers only. Please don't complain if this does not compile or breaks your system" >&6;}
-fi
+
 
 
           if test "x$OPAL_HAS_SIPIM" = "x"; then
