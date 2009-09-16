@@ -90,9 +90,15 @@ OBJDIR	= ./obj
 vpath	%.o $(OBJDIR)
 vpath	%.c $(SRCDIR)
 
+ifeq ($(VERBOSE),)
+Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
+Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
+endif
+
+
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -c -I../../../include $(STDCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -o $@ $<
+	$(Q_CC)$(CC) -c -I../../../include $(STDCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -o $@ $<
 
 PLUGIN	= ./ilbc_audio_pwplugin.$(PLUGINEXT)
 
@@ -100,9 +106,9 @@ OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
 ifeq (solaris,$(findstring solaris,$(target_os)))
-	$(CC) $(LDSO) $@ -o $@ $^
+	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
 else	
-	$(CC) $(LDSO) -o $@ $^
+	$(Q_LD)$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 endif	
 
 install:

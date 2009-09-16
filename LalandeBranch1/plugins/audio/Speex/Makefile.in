@@ -142,17 +142,23 @@ endif
 
 OBJDIR	= ./obj
 
+ifeq ($(VERBOSE),)
+Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
+Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
+endif
+
+
 vpath	%.o $(OBJDIR)
 vpath	%.c $(SRCDIR)
 vpath	%.cxx $(SRCDIR)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -c $(STDCCFLAGS) $(EXTRACCFLAGS) $(CFLAGS) -o $@ $<
+	$(Q_CC)$(CC) -c $(STDCCFLAGS) $(EXTRACCFLAGS) $(CFLAGS) -o $@ $<
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) -c -I../../../include $(STDCCFLAGS) $(CXXFLAGS) $(EXTRACCFLAGS) -o $@ $<
+	$(Q_LD)$(CXX) -c -I../../../include $(STDCCFLAGS) $(CXXFLAGS) $(EXTRACCFLAGS) -o $@ $<
 
 PLUGIN	= ./speex_audio_pwplugin.$(PLUGINEXT)
 
@@ -161,9 +167,9 @@ OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.c,%.o,$(notdi
 $(PLUGIN): $(OBJECTS)
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(CXX) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
 else	
-	$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 endif
 
