@@ -84,13 +84,14 @@ vpath	%.o $(OBJDIR)
 vpath	%.c $(SRCDIR)
 
 ifeq ($(VERBOSE),)
-Q = @echo $@ ;
+Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
+Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
 endif
 
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q)$(CC) -I../../../include -I./g726 $(STDCCFLAGS) $(OPTCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CC) -I../../../include -I./g726 $(STDCCFLAGS) $(OPTCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./g726_audio_pwplugin.$(PLUGINEXT)
 
@@ -100,9 +101,9 @@ $(PLUGIN): $(OBJECTS)
 
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
 else	
-	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 endif	
 

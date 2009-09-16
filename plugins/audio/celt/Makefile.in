@@ -34,19 +34,23 @@ LIBS        += @CELT_LIBS@
 
 PLUGIN	= ./$(BASENAME)_pwplugin.$(PLUGINEXT)
 
+ifeq ($(VERBOSE),)
+Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
+Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
+endif
+
 %.o : %.c
-	$(CC) -c $(STDCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -o $@ $<
+	$(Q_CC)$(CC) -c $(STDCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -o $@ $<
 
 OBJECTS	= $(patsubst %.c,%.o,$(notdir $(SRCS)))
-
 
 $(PLUGIN): $(OBJECTS)
 
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(CC) $(LDSO) $@ -o $@ $^ $(LIBS)
+	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ $(LIBS)
 else	
-	$(CC) $(LDSO) -o $@ $^ $(LIBS)
+	$(Q_LD)$(CC) $(LDSO) -o $@ $^ $(LIBS)
 
 endif
 
