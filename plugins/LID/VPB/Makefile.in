@@ -62,13 +62,14 @@ vpath	%.o $(OBJDIR)
 vpath	%.cpp $(SRCDIR)
 
 ifeq ($(VERBOSE),)
-Q = @echo $@ ;
+Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ; 
+Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ; 
 endif
 
 
 $(OBJDIR)/%.o : %.cpp
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q)$(CXX) -I../../../include $(CXXFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) -c $< -o $@
+	$(Q_CC)$(CXX) -I../../../include $(CXXFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) -c $< -o $@
 
 PLUGIN	= ./vpb_lid_pwplugin.$(PLUGINEXT)
 
@@ -78,9 +79,9 @@ $(PLUGIN): $(OBJECTS)
 
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
 else	
-	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 endif	
 

@@ -124,27 +124,28 @@ endif
 
 
 ifeq ($(VERBOSE),)
-Q = @echo $@ ;
+Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
+Q_LD = @echo [CC] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
 endif
 
 
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q)$(CXX) -I../../../include -I.. $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CXX) -I../../../include -I.. $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q)$(CC) -I../../../include  -I.. $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CC) -I../../../include  -I.. $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
 ifeq (,$(findstring solaris,$(target_os)))
-	$(CXX) -o $@ $^ $(LDFLAGS) $(X264_LIBS)
+	$(Q_LD)$(CXX) -o $@ $^ $(LDFLAGS) $(X264_LIBS)
 else
-	$(CXX) $@ -o $@ $^ $(LDFLAGS) $(X264_LIBS)
+	$(Q_LD)$(CXX) $@ -o $@ $^ $(LDFLAGS) $(X264_LIBS)
 endif
 
 install:
