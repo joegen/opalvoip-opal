@@ -505,6 +505,7 @@ class SIPConnection : public OpalRTPConnection
     );
 
     bool SendReINVITE(PTRACE_PARAM(const char * msg));
+    void StartPendingReINVITE();
 
     friend class SIPInvite;
     static PBoolean WriteINVITE(OpalTransport & transport, void * param);
