@@ -1122,6 +1122,16 @@ bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
 }
 
 
+void SIPConnection::StartPendingReINVITE()
+{
+  while (!pendingInvitations.IsEmpty()) {
+    if (pendingInvitations.GetAt(0, PSafeReadWrite)->Start())
+      break;
+    pendingInvitations.RemoveAt(0);
+  }
+}
+
+
 PBoolean SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 {
   return ((SIPConnection *)param)->WriteINVITE(transport);
@@ -1570,17 +1580,11 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   if (!lock.IsLocked())
     return;
 
+  // To avoid overlapping INVITE transactions, wait till here before
+  // starting the next one.
   if (response.GetStatusCode()/100 != 1) {
-    // To avoid overlapping INVITE transactions, we waited until here before
-    // starting the next one.
     pendingInvitations.Remove(&transaction);
-    while (!pendingInvitations.IsEmpty()) {
-      PSafePtr<SIPTransaction> invite = pendingInvitations.GetAt(0, PSafeReadWrite);
-      PTRACE(4, "SIP\tStarting queued transaction " << *invite);
-      if (invite->Start())
-        break;
-      pendingInvitations.RemoveAt(0);
-    }
+    StartPendingReINVITE();
   }
 
   // Break out to virtual functions for some special cases.
@@ -1888,9 +1892,8 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 
   m_handlingINVITE = false;
   ackReceived = true;
-  ackTimer.Stop(false); // Asynchornous stop to avoid deadlock
+  ackTimer.Stop(false); // Asynchronous stop to avoid deadlock
   ackRetry.Stop(false);
-  
   OnReceivedSDP(response);
 
   switch (GetPhase()) {
@@ -1907,6 +1910,8 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
     default :
       break;
   }
+
+  StartPendingReINVITE();
 }
 
 
