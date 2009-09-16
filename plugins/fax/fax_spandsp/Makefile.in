@@ -61,9 +61,14 @@ vpath	%.o $(OBJDIR)
 vpath	%.cpp $(SRCDIR)
 vpath	%.cpp spandsp_util
 
+ifeq ($(VERBOSE),)
+Q = @echo $@ ;
+endif
+
+
 $(OBJDIR)/%.o : %.cpp
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) -I ../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CXXFLAGS) -c $< -o $@
+	$(Q)$(CXX) -I ../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CXXFLAGS) -c $< -o $@
 
 PLUGIN	= ./spandsp_fax_pwplugin.$(PLUGINEXT)
 

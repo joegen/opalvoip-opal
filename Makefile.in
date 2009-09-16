@@ -449,13 +449,20 @@ DEPS	 := $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(notdir $(SRC_DEPS) $(DEPS)))
 #
 # define rule for .cxx, .cpp and .c files
 #
+
+
+ifeq ($(VERBOSE),)
+Q = @echo $@ ;
+endif
+
+
 $(OPAL_OBJDIR)/%.o : %.cxx
 	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(Q)$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(OPAL_OBJDIR)/%.o :  %.c 
 	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(Q)$(CC) $(CFLAGS) -c $< -o $@
 
 #
 # define rule for .dep files
@@ -463,12 +470,12 @@ $(OPAL_OBJDIR)/%.o :  %.c
 $(OPAL_DEPDIR)/%.dep : %.cxx 
 	@if [ ! -d $(OPAL_DEPDIR) ] ; then mkdir -p $(OPAL_DEPDIR) ; fi
 	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(CXX) $(CXXFLAGS:-g=) -M $< >> $@
+	$(Q)$(CXX) $(CXXFLAGS:-g=) -M $< >> $@
 
 $(OPAL_DEPDIR)/%.dep : %.c 
 	@if [ ! -d $(OPAL_DEPDIR) ] ; then mkdir -p $(OPAL_DEPDIR) ; fi
 	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(CC) $(CFLAGS:-g=) -M $< >> $@
+	$(Q)$(CC) $(CFLAGS:-g=) -M $< >> $@
 
 
 #####################################################################
@@ -514,7 +521,7 @@ endif
 
 $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC): $(OBJS) 
 	@if [ ! -d $(OPAL_LIBDIR) ] ; then mkdir $(OPAL_LIBDIR) ; fi
-	$(ARCHIVE) $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) $(OBJS)
+	$(Q)$(ARCHIVE) $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) $(OBJS)
 ifeq ($(HAVE_RANLIB),yes)
 	$(RANLIB) $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
 endif
@@ -530,7 +537,7 @@ ifeq ($(OPAL_SHARED_LIB),yes)
 	@echo EXTLIBS = $(EXTLIBS)
 	@echo SYSLIBS = $(SYSLIBS)
 	@if [ ! -d $(OPAL_LIBDIR) ] ; then mkdir $(OPAL_LIBDIR) ; fi
-	$(LD) $(LDSOOPTS) -o $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(LDFLAGS) $(EXTLIBS) $(OBJS) $(LIBS)
+	$(Q)$(LD) $(LDSOOPTS) -o $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(LDFLAGS) $(EXTLIBS) $(OBJS) $(LIBS)
 
 endif # OPAL_SHARED_LIB
 

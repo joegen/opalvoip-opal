@@ -103,9 +103,14 @@ OBJDIR	= ./obj
 vpath	%.o $(OBJDIR)
 vpath	%.c $(SRCDIR)
 
+ifeq ($(VERBOSE),)
+Q = @echo $@ ;
+endif
+
+
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -c -I../../../include $(STDCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -o $@ $<
+	$(Q)$(CC) -c -I../../../include $(STDCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -o $@ $<
 
 PLUGIN	= ./ilbc_audio_pwplugin.$(PLUGINEXT)
 
