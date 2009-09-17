@@ -620,7 +620,7 @@ both: opt debug
 all: optdepend opt debugdepend debug
 
 update:
-	svn -q update
+	svn update
 	$(MAKE) all
 
 distclean: clean
