@@ -454,8 +454,8 @@ DEPS	 := $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(notdir $(SRC_DEPS) $(DEPS)))
 ifeq ($(VERBOSE),)
 Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ; 
 Q_DEP= @echo [DEP] `echo $< | sed s^@OPALDIR@/^^` ; 
-Q_AR = @echo [AR] `echo $(TARGET) | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $(TARGET) | sed s^@OPALDIR@/^^` ;
+Q_AR = @echo [AR] `echo $@ | sed s^@OPALDIR@/^^` ;
+Q_LD = @echo [LD] `echo $@ | sed s^@OPALDIR@/^^` ;
 endif
 
 
@@ -537,8 +537,6 @@ ifeq ($(OPAL_SHARED_LIB),yes)
 	rm -f $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED) ; ln -sf  $(LIB_FILENAME_SHARED_PAT) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
 
   $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT): $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
-	@echo EXTLIBS = $(EXTLIBS)
-	@echo SYSLIBS = $(SYSLIBS)
 	@if [ ! -d $(OPAL_LIBDIR) ] ; then mkdir $(OPAL_LIBDIR) ; fi
 	$(Q_LD)$(LD) $(LDSOOPTS) -o $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(LDFLAGS) $(EXTLIBS) $(OBJS) $(LIBS)
 
