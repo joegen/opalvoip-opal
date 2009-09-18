@@ -115,6 +115,7 @@ ostream & operator<<(ostream & out, OpalConnection::CallEndReason reason)
     "EndedByNoRingBackTone",    /// Call cleared due to missing ringback tone    
     "EndedByOutOfService",      /// Call cleared because the line is out of service, 
     "EndedByAcceptingCallWaiting", /// Call cleared because another call is answered
+    "EndedByGkAdmissionFailed", /// Call cleared because gatekeeper admission request failed.
   };
   PAssert((PINDEX)(reason & 0xff) < PARRAYSIZE(names), "Invalid reason");
   return out << names[reason & 0xff];
@@ -194,7 +195,8 @@ static POrdinalToString::Initialiser const CallEndReasonStringsInitialiser[] = {
   { OpalConnection::EndedByNoDialTone,           "Call cleared due to missing dial tone" },
   { OpalConnection::EndedByNoRingBackTone,       "Call cleared due to missing ringback tone" },
   { OpalConnection::EndedByOutOfService,         "Call cleared because the line is out of service" },
-  { OpalConnection::EndedByAcceptingCallWaiting, "Call cleared because another call is answered" }
+  { OpalConnection::EndedByAcceptingCallWaiting, "Call cleared because another call is answered" },
+  { OpalConnection::EndedByGkAdmissionFailed,    "Call cleared because gatekeeper admission request failed." },
 };
 
 static POrdinalToString CallEndReasonStrings(PARRAYSIZE(CallEndReasonStringsInitialiser), CallEndReasonStringsInitialiser);
