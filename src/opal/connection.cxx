@@ -110,6 +110,7 @@ ostream & operator<<(ostream & out, OpalConnection::CallEndReason reason)
     "EndedByNoRingBackTone",    /// Call cleared due to missing ringback tone    
     "EndedByOutOfService",      /// Call cleared because the line is out of service, 
     "EndedByAcceptingCallWaiting", /// Call cleared because another call is answered
+    "EndedByGkAdmissionFailed", /// Call cleared because gatekeeper admission request failed.
   };
   PAssert((PINDEX)(reason & 0xff) < PARRAYSIZE(names), "Invalid reason");
   return out << names[reason & 0xff];
