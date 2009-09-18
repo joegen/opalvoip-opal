@@ -368,6 +368,7 @@ class OpalConnection : public PSafeObject
       EndedByNoRingBackTone,       /// Call cleared due to missing ringback tone
       EndedByOutOfService,         /// Call cleared because the line is out of service, 
       EndedByAcceptingCallWaiting, /// Call cleared because another call is answered
+      EndedByGkAdmissionFailed,    /// Call cleared because gatekeeper admission request failed.
       NumCallEndReasons
     };
 

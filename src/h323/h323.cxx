@@ -1117,7 +1117,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
             Release(EndedByRemoteBusy);
             break;
           default :
-            Release(EndedByGatekeeper);
+            Release(EndedByGkAdmissionFailed);
         }
         return PFalse;
       }
