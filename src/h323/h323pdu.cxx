@@ -1019,6 +1019,12 @@ Q931::CauseValues H323TranslateFromCallEndReason(H323Connection::CallEndReason c
     Q931::TemporaryFailure,                                 /// EndedByTemporaryFailure   The remote failed temporarily app may retry
     Q931::UnknownCauseIE,                                   /// EndedByQ931Cause,         The remote ended the call with unmapped Q.931 cause code
     Q931::NormalUnspecified,                                /// EndedByDurationLimit,     Call cleared due to an enforced duration limit
+    Q931::InvalidCallReference,                             /// EndedByInvalidConferenceID,  Call cleared due to invalid conference ID
+    Q931::NoResponse,                                       /// EndedByNoDialTone,           Call cleared due to missing dial tone
+    Q931::NoResponse,                                       /// EndedByNoRingBackTone,       Call cleared due to missing ringback tone
+    Q931::DestinationOutOfOrder,                            /// EndedByOutOfService,         Call cleared because the line is out of service, 
+    Q931::Redirection,                                      /// EndedByAcceptingCallWaiting, Call cleared because another call is answered
+    Q931::ExchangeRoutingError,                             /// EndedByGkAdmissionFailed,    Call cleared because gatekeeper admission request failed.
   };
 
   if (callEndReason.q931 != Q931::UnknownCauseIE)
