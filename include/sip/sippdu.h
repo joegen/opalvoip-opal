@@ -806,7 +806,7 @@ class SIPDialogContext
 
     void Update(const SIP_PDU & response);
 
-    unsigned GetNextCSeq() { return ++m_lastSentCSeq; }
+    unsigned GetNextCSeq(unsigned inc = 1) { return m_lastSentCSeq += inc; }
     bool IsDuplicateCSeq(unsigned sequenceNumber);
 
     bool IsEstablished() const { return !m_remoteTag.IsEmpty(); }
