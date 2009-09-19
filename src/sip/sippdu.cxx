@@ -1898,7 +1898,7 @@ void SIP_PDU::Construct(Methods meth,
             dialog.GetRemoteURI().AsQuotedString(),
             dialog.GetLocalURI().AsQuotedString(),
             dialog.GetCallID(),
-            dialog.GetNextCSeq(),
+            dialog.GetNextCSeq(dialog.IsEstablished() && meth != Method_ACK ? 1 : 0),
             via.GetHostAddress());
 
   SetRoute(dialog.GetRouteSet()); // Possibly adjust the URI and the route
@@ -2403,7 +2403,7 @@ void SIP_PDU::SetSDP(SDPSessionDescription * sdp)
 
 SIPDialogContext::SIPDialogContext()
   : m_callId(SIPTransaction::GenerateCallID())
-  , m_lastSentCSeq(0)
+  , m_lastSentCSeq(1)
   , m_lastReceivedCSeq(0)
 {
 }
