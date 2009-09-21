@@ -189,10 +189,10 @@ bool SIPXCAP_Presentity::Close()
 }
 
 
-OPAL_DEFINE_COMMAND(OpalSetPresenceCommand,         SIPXCAP_Presentity, Internal_SendLocalPresence);
-OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand, SIPXCAP_Presentity, Internal_SubscribeToPresence);
-OPAL_DEFINE_COMMAND(OpalAuthorisePresenceCommand,   SIPXCAP_Presentity, Internal_AuthorisePresence);
-OPAL_DEFINE_COMMAND(SIPWatcherInfoCommand,          SIPXCAP_Presentity, Internal_SubscribeToWatcherInfo);
+OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     SIPXCAP_Presentity, Internal_SendLocalPresence);
+OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIPXCAP_Presentity, Internal_SubscribeToPresence);
+OPAL_DEFINE_COMMAND(OpalAuthorisationRequestCommand, SIPXCAP_Presentity, Internal_AuthorisationRequest);
+OPAL_DEFINE_COMMAND(SIPWatcherInfoCommand,           SIPXCAP_Presentity, Internal_SubscribeToWatcherInfo);
 
 
 void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd)
@@ -312,7 +312,7 @@ void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler & handler, SIPS
 
   unsigned version = rootElement->GetAttribute("version").AsUnsigned();
 
-  PWaitAndSignal m(m_onRequestPresenceNotifierMutex);
+  PWaitAndSignal mutex(m_notificationMutex);
 
   // check version number
   bool sendRefresh = false;
@@ -373,7 +373,7 @@ void SIPXCAP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
       m_idToAorMap.insert(IdToAorMap::value_type(id, aor));
       m_aorToIdMap.insert(AorToIdMap::value_type(aor, id));
       PTRACE(3, "SIPPres\t'" << aor << "' has requested access to presence information of '" << GetAOR() << "'");
-      OnRequestPresence(aor);
+      OnAuthorisationRequest(aor);
     }
   }
   else {
@@ -382,7 +382,7 @@ void SIPXCAP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
 }
 
 
-void SIPXCAP_Presentity::Internal_SendLocalPresence(const OpalSetPresenceCommand & cmd)
+void SIPXCAP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd)
 {
   m_localPresence     = cmd.m_state;
   m_localPresenceNote = cmd.m_note;
@@ -513,7 +513,7 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::N
 }
 
 
-void SIPXCAP_Presentity::Internal_AuthorisePresence(const OpalAuthorisePresenceCommand & cmd)
+void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd)
 {
   // send command to XCAP server
   PStringStream xml;

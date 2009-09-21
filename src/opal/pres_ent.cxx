@@ -94,20 +94,9 @@ bool OpalPresentity::UnsubscribeFromPresence(const PString & presentity)
 }
 
 
-bool OpalPresentity::OnRequestPresence(const PString & presentity)
-{
-  PWaitAndSignal mutex(m_onRequestPresenceNotifierMutex);
-
-  if (!m_onRequestPresenceNotifier.IsNULL())
-    m_onRequestPresenceNotifier(*this, presentity);
-
-  return true;
-}
-
-
 bool OpalPresentity::SetPresenceAuthorisation(const PString & presentity, Authorisation authorisation)
 {
-  OpalAuthorisePresenceCommand * cmd = CreateCommand<OpalAuthorisePresenceCommand>();
+  OpalAuthorisationRequestCommand * cmd = CreateCommand<OpalAuthorisationRequestCommand>();
   if (cmd == NULL)
     return false;
 
@@ -118,9 +107,9 @@ bool OpalPresentity::SetPresenceAuthorisation(const PString & presentity, Author
 }
 
 
-bool OpalPresentity::SetPresence(State state, const PString & note)
+bool OpalPresentity::SetLocalPresence(State state, const PString & note)
 {
-  OpalSetPresenceCommand * cmd = CreateCommand<OpalSetPresenceCommand>();
+  OpalSetLocalPresenceCommand * cmd = CreateCommand<OpalSetLocalPresenceCommand>();
   if (cmd == NULL)
     return false;
 
@@ -131,10 +120,39 @@ bool OpalPresentity::SetPresence(State state, const PString & note)
 }
 
 
-void OpalPresentity::SetRequestPresenceNotifier(const RequestPresenceNotifier & n)
+void OpalPresentity::OnAuthorisationRequest(const PString & presentity)
 {
-  PWaitAndSignal mutex(m_onRequestPresenceNotifierMutex);
-  m_onRequestPresenceNotifier = n;
+  PWaitAndSignal mutex(m_notificationMutex);
+
+  if (m_onAuthorisationRequestNotifier.IsNULL())
+    SetPresenceAuthorisation(presentity, AuthorisationPermitted);
+  else
+    m_onAuthorisationRequestNotifier(*this, presentity);
+}
+
+
+void OpalPresentity::SetAuthorisationRequestNotifier(const AuthorisationRequestNotifier & notifier)
+{
+  PWaitAndSignal mutex(m_notificationMutex);
+
+  m_onAuthorisationRequestNotifier = notifier;
+}
+
+
+void OpalPresentity::OnPresenceChange(const SIPPresenceInfo & info)
+{
+  PWaitAndSignal mutex(m_notificationMutex);
+
+  if (!m_onPresenceChangeNotifier.IsNULL())
+    m_onPresenceChangeNotifier(*this, info);
+}
+
+
+void OpalPresentity::SetPresenceChangeNotifier(const PresenceChangeNotifier & notifier)
+{
+  PWaitAndSignal mutex(m_notificationMutex);
+
+  m_onPresenceChangeNotifier = notifier;
 }
 
 
