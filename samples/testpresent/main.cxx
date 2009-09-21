@@ -1,7 +1,7 @@
 /*
- * main.cxx
+ * main.h
  *
- * OPAL application source file for testing OPAL presentities
+ * OPAL application source file for testing Opal presentities
  *
  * Copyright (c) 2009 Post Increment
  *
@@ -34,6 +34,16 @@
 
 //////////////////////////////////////////////////////////////
 
+#include <ptclib/http.h>
+
+class XCAPClient : public PHTTPClient
+{
+  public:
+};
+
+
+//////////////////////////////////////////////////////////////
+
 class MyManager : public OpalManager
 {
   PCLASSINFO(MyManager, OpalManager)
@@ -48,17 +58,21 @@ class TestPresEnt : public PProcess
     TestPresEnt();
     ~TestPresEnt();
 
+    PDECLARE_NOTIFIER2(OpalPresentity, TestPresEnt, OnRequestPresenceNotifier, const PString &);
+
     virtual void Main();
 
   private:
     MyManager * m_manager;
+    OpalPresentity * sipEntity1;
+    OpalPresentity * sipEntity2;
 };
 
 
 PCREATE_PROCESS(TestPresEnt);
 
 TestPresEnt::TestPresEnt()
-  : PProcess("Open Phone Abstraction Library", "Presentity Test", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
+  : PProcess("OPAL Test Presentity", "TestPresEnt", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
   , m_manager(NULL)
 {
 }
@@ -70,6 +84,7 @@ TestPresEnt::~TestPresEnt()
 }
 
 
+
 void TestPresEnt::Main()
 {
   PArgList & args = GetArguments();
@@ -77,7 +92,6 @@ void TestPresEnt::Main()
   args.Parse(
              "u-user:"
              "h-help."
-             "-listener:"
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -91,12 +105,11 @@ void TestPresEnt::Main()
 #endif
 
   if (args.HasOption('h')) {
-    cerr << "usage: " << GetFile().GetTitle() << " [ options ] server pres1 pass1 pres2 pass2\n"
+    cerr << "usage: " << GetFile().GetTitle() << " [ options ] [url]\n"
             "\n"
             "Available options are:\n"
             "  -u or --user            : set local username.\n"
-            "  -h or --help            : print this help message.\n"
-            "  --listen <iface>        : SIP listens on this interface/port.\n"
+            "  --help                  : print this help message.\n"
 #if PTRACING
             "  -o or --output file     : file name for output of log messages\n"       
             "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
@@ -106,6 +119,56 @@ void TestPresEnt::Main()
             ;
     return;
   }
+
+  XCAPClient xcap;
+
+#if 0
+
+  PString uri = "http://192.168.1.1/";
+  xcap.SetAuthenticationInfo("admin", "adsl4me");
+
+  PMIMEInfo outMime, inMime;
+  PBYTEArray body;
+  if (!xcap.GetDocument(uri, outMime, inMime) || !xcap.ReadContentBody(inMime, body))
+    cout << "Read failed:" << xcap.GetLastResponseCode() << " " << xcap.GetLastResponseInfo() << endl;
+  else {
+    cout << "Read document" << endl;
+    cout << PString((const char *)body.GetPointer(), body.GetSize());
+  }
+
+#endif
+ 
+#if 0
+
+  PString server   = "siptest.colibria.com:8080/services";
+  PString auid     = "pres-rules";
+  PString subtree  = "users";
+  PString xui      = "requestec1";
+  PString document = "index~~*";
+
+  xcap.SetAuthenticationInfo("requestec1", "req1ec1");
+
+  PString uri("http://");
+  uri += server + '/' 
+      + auid + '/' 
+      + subtree + '/' 
+      + xui + '/' 
+      + document;
+
+  PMIMEInfo outMime, inMime;
+  PBYTEArray body;
+  if (!xcap.GetDocument(uri, outMime, inMime) || !xcap.ReadContentBody(inMime, body)) {
+    cout << "Read failed:" << xcap.GetLastResponseCode() << " " << xcap.GetLastResponseInfo() << endl;
+    cout << PString((const char *)body.GetPointer(), body.GetSize());
+  }
+  else {
+    cout << "Read document" << endl;
+    cout << PString((const char *)body.GetPointer(), body.GetSize());
+  }
+
+#endif
+
+#if 1
 
   if (args.GetCount() < 5) {
     cerr << "error: insufficient arguments" << endl;
@@ -118,16 +181,19 @@ void TestPresEnt::Main()
   const char * pres2  = args[3];
   const char * pass2  = args[4];
 
-  MyManager manager;
-  SIPEndPoint * sip  = new SIPEndPoint(manager);
-  if (!sip->StartListeners(args.GetOptionString("listener").Lines())) {
+  MyManager m_manager;
+  //m_manager.SetTranslationAddress(PIPSocket::Address("115.64.157.126"));
+  SIPEndPoint * sip  = new SIPEndPoint(m_manager);
+  if (!sip->StartListener("")) { //udp$192.168.2.2:7777")) {
     cerr << "Could not start SIP listeners." << endl;
     return;
   }
 
-  OpalPresentity * sipEntity1;
+  // create presentity #1
   {
-    sipEntity1 = OpalPresentity::Create(manager, pres1);
+    sipEntity1 = OpalPresentity::Create(m_manager, pres1);
+    sipEntity1->SetRequestPresenceNotifier(OpalPresentity::RequestPresenceNotifier(&TestPresEnt::OnRequestPresenceNotifier));
+
     if (sipEntity1 == NULL) {
       cerr << "error: cannot create presentity for '" << pres1 << "'" << endl;
       return;
@@ -135,18 +201,23 @@ void TestPresEnt::Main()
 
     sipEntity1->GetAttributes().Set(SIP_Presentity::DefaultPresenceServerKey, server);
     sipEntity1->GetAttributes().Set(SIP_Presentity::AuthPasswordKey,          pass1);
+    sipEntity1->GetAttributes().Set(OpalPresentity::TimeToLiveKey,            "1200");
 
     if (!sipEntity1->Open()) {
       cerr << "error: cannot open presentity '" << pres1 << endl;
       return;
     }
 
-    cout << "Opened '" << pres1 << " using presence server '" << sipEntity1->GetAttributes().Get(SIP_Presentity::PresenceServerKey) << "'" << endl;
+    cout << "Opened '" << pres1 << "' using presence server '" << sipEntity1->GetAttributes().Get(SIP_Presentity::PresenceServerKey) << "'" << endl;
+
+    cout << "Setting presence for '" << pres1 << "'" << endl;
+    sipEntity1->SetPresence(OpalPresentity::Available);
+
   }
 
-  OpalPresentity * sipEntity2;
+  // create presentity #2
   {
-    sipEntity2 = OpalPresentity::Create(manager, pres2);
+    sipEntity2 = OpalPresentity::Create(m_manager, pres2);
     if (sipEntity2 == NULL) {
       cerr << "error: cannot create presentity for '" << pres2 << "'" << endl;
       return;
@@ -154,27 +225,36 @@ void TestPresEnt::Main()
 
     sipEntity2->GetAttributes().Set(SIP_Presentity::DefaultPresenceServerKey, server);
     sipEntity2->GetAttributes().Set(SIP_Presentity::AuthPasswordKey,          pass2);
+    sipEntity2->GetAttributes().Set(OpalPresentity::TimeToLiveKey,            "1200");
 
     if (!sipEntity2->Open()) {
       cerr << "error: cannot open presentity '" << pres1 << endl;
       return;
     }
 
-    cout << "Opened '" << pres1 << " using presence server '" << sipEntity2->GetAttributes().Get(SIP_Presentity::PresenceServerKey) << "'" << endl;
+    cout << "Opened '" << pres2 << " using presence server '" << sipEntity2->GetAttributes().Get(SIP_Presentity::PresenceServerKey) << "'" << endl;
   }
 
-  sipEntity1->SetPresence(OpalPresentity::Available);
+  // presentity #2 asks for access to presentity #1's presence information
+  sipEntity2->SubscribeToPresence(pres1);
 
-  Sleep(10000);
-
-  sipEntity1->SetPresence(OpalPresentity::NoPresence);
-
-  Sleep(10000);
+  for (int i = 0;i < 10000; ++i) {
+    Sleep(1000);
+  }
 
   delete sipEntity1;
   delete sipEntity2;
 
+#endif
+
   return;
+}
+
+void TestPresEnt::OnRequestPresenceNotifier(OpalPresentity & presentity, const PString & aor)
+{
+  cout << aor << " requesting access to presence for " << presentity.GetAOR() << endl;
+
+  presentity.SetPresenceAuthorisation(aor, OpalPresentity::AuthorisationPermitted);
 }
 
 
