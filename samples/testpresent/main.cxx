@@ -58,7 +58,8 @@ class TestPresEnt : public PProcess
     TestPresEnt();
     ~TestPresEnt();
 
-    PDECLARE_NOTIFIER2(OpalPresentity, TestPresEnt, OnRequestPresenceNotifier, const PString &);
+    PDECLARE_AuthorisationRequestNotifier(TestPresEnt, AuthorisationRequest);
+    PDECLARE_PresenceChangeNotifier(TestPresEnt, PresenceChange);
 
     virtual void Main();
 
@@ -192,7 +193,8 @@ void TestPresEnt::Main()
   // create presentity #1
   {
     sipEntity1 = OpalPresentity::Create(m_manager, pres1);
-    sipEntity1->SetRequestPresenceNotifier(OpalPresentity::RequestPresenceNotifier(&TestPresEnt::OnRequestPresenceNotifier));
+    sipEntity1->SetAuthorisationRequestNotifier(PCREATE_AuthorisationRequestNotifier(AuthorisationRequest));
+    sipEntity1->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(PresenceChange));
 
     if (sipEntity1 == NULL) {
       cerr << "error: cannot create presentity for '" << pres1 << "'" << endl;
@@ -211,7 +213,7 @@ void TestPresEnt::Main()
     cout << "Opened '" << pres1 << "' using presence server '" << sipEntity1->GetAttributes().Get(SIP_Presentity::PresenceServerKey) << "'" << endl;
 
     cout << "Setting presence for '" << pres1 << "'" << endl;
-    sipEntity1->SetPresence(OpalPresentity::Available);
+    sipEntity1->SetLocalPresence(OpalPresentity::Available);
 
   }
 
@@ -250,11 +252,18 @@ void TestPresEnt::Main()
   return;
 }
 
-void TestPresEnt::OnRequestPresenceNotifier(OpalPresentity & presentity, const PString & aor)
+
+void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, const PString & aor)
 {
   cout << aor << " requesting access to presence for " << presentity.GetAOR() << endl;
 
   presentity.SetPresenceAuthorisation(aor, OpalPresentity::AuthorisationPermitted);
+}
+
+
+void TestPresEnt::PresenceChange(OpalPresentity & presentity, const SIPPresenceInfo & info)
+{
+  cout << "Presence for " << info.m_entity << " changed to " << info.m_basic << endl;
 }
 
 

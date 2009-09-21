@@ -156,11 +156,11 @@ class OpalPresentity : public PSafeObject
     };
 
     /** Called to allow/deny another presentity access to our presence information.
-        This function is a wrapper and the OpalAuthorisePresenceCommand command.
+        This function is a wrapper and the OpalAuthorisationRequestCommand command.
       */
     virtual bool SetPresenceAuthorisation(
-      const PString & presentity,
-      Authorisation authorisation
+      const PString & presentity,     ///< Remote presentity to be authorised
+      Authorisation authorisation     ///< Authorisation mode
     );
 
     /// Presence states.
@@ -205,9 +205,9 @@ class OpalPresentity : public PSafeObject
     };
 
     /** Set our presence state.
-        This function is a wrapper and the OpalSetPresenceCommand command
+        This function is a wrapper and the OpalSetLocalPresenceCommand command
       */
-    virtual bool SetPresence(
+    virtual bool SetLocalPresence(
       State state,                              ///< New state for our presentity
       const PString & note = PString::Empty()   ///< Additional note attached to the state change
     );
@@ -239,17 +239,39 @@ class OpalPresentity : public PSafeObject
   /**@name Indications (callbacks) */
   //@{
     /** Callback when another presentity requests access to our presence.
-        Default implementation calls m_onRequestPresenceNotifier.
+        It is expected that the handler will call SetPresenceAuthorisation
+        with whatever policy is appropriate.
+
+        Default implementation calls m_onRequestPresenceNotifier if non-NULL
+        otherwise will authorise the request.
       */
-    virtual bool OnRequestPresence(
-      const PString & presentity    ///< Other presentity to monitor
+    virtual void OnAuthorisationRequest(
+      const PString & presentity    ///< Other presentity requesting our presence
     );
 
-    typedef PNotifierTemplate<const PString &> RequestPresenceNotifier;
+    typedef PNotifierTemplate<const PString &> AuthorisationRequestNotifier;
+    #define PDECLARE_AuthorisationRequestNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const PString &)
+    #define PCREATE_AuthorisationRequestNotifier(fn) PCREATE_NOTIFIER2(fn, const PString &)
 
-    /// Set the notifier for the OnRequestPresence() function.
-    void SetRequestPresenceNotifier(
-      const RequestPresenceNotifier & notifier   ///< Notifier to be called by OnRequestPresence()
+    /// Set the notifier for the OnAuthorisationRequest() function.
+    void SetAuthorisationRequestNotifier(
+      const AuthorisationRequestNotifier & notifier   ///< Notifier to be called by OnAuthorisationRequest()
+    );
+
+    /** Callback when another presentity has changed its state.
+        Default implementation calls m_onPresenceChangeNotifier.
+      */
+    virtual void OnPresenceChange(
+      const SIPPresenceInfo & info ///< Info on other presentity that changed state
+    );
+
+    typedef PNotifierTemplate<const SIPPresenceInfo &> PresenceChangeNotifier;
+    #define PDECLARE_PresenceChangeNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const SIPPresenceInfo &)
+    #define PCREATE_PresenceChangeNotifier(fn) PCREATE_NOTIFIER2(fn, const SIPPresenceInfo &)
+
+    /// Set the notifier for the OnPresenceChange() function.
+    void SetPresenceChangeNotifier(
+      const PresenceChangeNotifier & notifier   ///< Notifier to be called by OnPresenceChange()
     );
   //@}
 
@@ -258,8 +280,10 @@ class OpalPresentity : public PSafeObject
     OpalGloballyUniqueID m_guid;
     Attributes           m_attributes;
 
-    RequestPresenceNotifier m_onRequestPresenceNotifier;
-    PMutex                  m_onRequestPresenceNotifierMutex;
+    AuthorisationRequestNotifier m_onAuthorisationRequestNotifier;
+    PresenceChangeNotifier       m_onPresenceChangeNotifier;
+
+    PMutex m_notificationMutex;
 };
 
 
@@ -377,9 +401,9 @@ class OpalSubscribeToPresenceCommand : public OpalPresentityCommand {
     is dependent on the concrete OpalPresentity class and it's underlying
     protocol.
   */
-class OpalAuthorisePresenceCommand : public OpalPresentityCommand {
+class OpalAuthorisationRequestCommand : public OpalPresentityCommand {
   public:
-    OpalAuthorisePresenceCommand() : m_authorisation(OpalPresentity::AuthorisationPermitted) { }
+    OpalAuthorisationRequestCommand() : m_authorisation(OpalPresentity::AuthorisationPermitted) { }
 
     OpalPresentity::Authorisation m_authorisation;  ///< Authorisation mode to indicate to remote
 };
@@ -390,9 +414,9 @@ class OpalAuthorisePresenceCommand : public OpalPresentityCommand {
     change. The mechanism by which this happens is dependent on the concrete
     OpalPresentity class and it's underlying protocol.
   */
-class OpalSetPresenceCommand : public OpalPresentityCommand {
+class OpalSetLocalPresenceCommand : public OpalPresentityCommand {
   public:
-    OpalSetPresenceCommand() : m_state(OpalPresentity::NoPresence) { }
+    OpalSetLocalPresenceCommand() : m_state(OpalPresentity::NoPresence) { }
 
     OpalPresentity::State m_state;    ///< New state to move to.
     PString               m_note;     ///< Additional note attached to the state change
