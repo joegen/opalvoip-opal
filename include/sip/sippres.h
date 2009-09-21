@@ -102,9 +102,9 @@ class SIPXCAP_Presentity : public SIP_Presentity
 
     virtual void OnReceivedWatcherStatus(PXMLElement * watcher);
 
-    void Internal_SendLocalPresence(const OpalSetPresenceCommand & cmd);
+    void Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd);
     void Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd);
-    void Internal_AuthorisePresence(const OpalAuthorisePresenceCommand & cmd);
+    void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
     void Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd);
     void Internal_SubscribeToWatcherInfo(bool subscribe);
 
