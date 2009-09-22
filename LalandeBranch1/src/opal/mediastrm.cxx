@@ -627,6 +627,19 @@ PBoolean OpalRTPMediaStream::Close()
 }
 
 
+void OpalRTPMediaStream::SetPaused(bool pause)
+{
+  OpalMediaStream::SetPaused(pause);
+
+  if (IsSource()) {
+    if (pause)
+      rtpSession.SetJitterBufferSize(0, 0);
+    else
+      EnableJitterBuffer();
+  }
+}
+
+
 PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   if (IsSink()) {
