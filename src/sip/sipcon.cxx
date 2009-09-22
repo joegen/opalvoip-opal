@@ -2266,6 +2266,10 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   delete authentication;
   authentication = newAuth;
 
+  // Make sure we increment sequence number as the call inside SIPInvite ctor
+  // will not do so due to prevention to increment on "interface forked" INVITEs
+  m_dialog.GetNextCSeq();
+
   transport->SetInterface(transaction.GetInterface());
   SIPTransaction * invite = new SIPInvite(*this, *transport, ((SIPInvite &)transaction).GetSessionManager());
 
