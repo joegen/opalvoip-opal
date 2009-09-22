@@ -168,6 +168,20 @@ void OpalJitterBuffer::Start(unsigned _minJitterTime, unsigned _maxJitterTime)
 
 OpalJitterBuffer::~OpalJitterBuffer()
 {
+  Stop();
+
+#if PTRACING && !defined(NO_ANALYSER)
+  PTRACE(5, "RTP\tJitter buffer analysis: size=" << bufferSize
+         << " time=" << currentJitterTime << '\n' << *analyser);
+  delete analyser;
+#endif
+}
+
+void OpalJitterBuffer::Stop()
+{
+  if (shuttingDown)
+    return;
+
   shuttingDown = true;
 
   if (jitterThread != NULL) {
@@ -180,12 +194,6 @@ OpalJitterBuffer::~OpalJitterBuffer()
   // Free up all the memory allocated (jitterBuffer and freeFrames will self delete)
   delete currentFrame;
   currentFrame = NULL;
-
-#if PTRACING && !defined(NO_ANALYSER)
-  PTRACE(5, "RTP\tJitter buffer analysis: size=" << bufferSize
-         << " time=" << currentJitterTime << '\n' << *analyser);
-  delete analyser;
-#endif
 }
 
 void OpalJitterBuffer::PrintOn(ostream & strm) const
@@ -646,6 +654,22 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
     session(sess)
 {
     PTRACE(6, "RTP_JitterBuffer\tConstructor" << *this);
+}
+
+RTP_JitterBuffer::~RTP_JitterBuffer()
+{
+  Stop();
+}
+
+
+void RTP_JitterBuffer::Stop()
+{
+  if (shuttingDown)
+    return;
+
+  session.Close(true);
+  OpalJitterBuffer::Stop();
+  session.Reopen(true);
 }
 
 PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame, PBoolean loop)

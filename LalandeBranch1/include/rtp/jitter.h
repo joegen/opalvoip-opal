@@ -143,6 +143,7 @@ class OpalJitterBuffer : public PSafeObject
 
   protected:
     void Start(unsigned _minJitterTime, unsigned _maxJitterTime);
+    virtual void Stop();
 
     PINDEX        bufferSize;
     DWORD         minJitterTime;
@@ -213,6 +214,9 @@ class RTP_JitterBuffer : public OpalJitterBuffer
       unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
       PINDEX stackSize = 30000 ///<  Stack size for jitter thread
     );
+    ~RTP_JitterBuffer();
+
+    virtual void Stop();
 
     /**This class instance collects data from the outside world in this
        method.
