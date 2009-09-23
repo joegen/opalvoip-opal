@@ -929,10 +929,10 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   : OpalVideoTranscoder(codecDefn->sourceFormat, codecDefn->destFormat)
   , OpalPluginTranscoder(codecDefn, isEncoder)
   , m_bufferRTP(NULL)
+  , m_lastVideoFastUpdate(PTimer::Tick())
 #if PTRACING
   , m_consecutiveIntraFrames(0)
 #endif
-  , m_lastVideoFastUpdate(PTimer::Tick())
 { 
   acceptEmptyPayload = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_EmptyPayload;
   acceptOtherPayloads = (codecDef->flags & PluginCodec_OtherPayloadMask) == PluginCodec_OtherPayload;
@@ -958,10 +958,10 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
 bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
-  if (src.GetPayloadSize() == 0) {
-    dstList.RemoveAll();
+  dstList.RemoveAll();
+
+  if (src.GetPayloadSize() == 0)
     return true;
-  }
 
   // get the size of the output buffer
   int outputDataSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
@@ -974,22 +974,12 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     outputDataSize = maxEncoderSize;
 
   unsigned flags;
-  PINDEX packetCount = 0;
 
   do {
-    // While we set the payload size to that indicated, some badly behaved plug ins
-    // use more memory that indicated, so make sure the output RTP data frame is
-    // at least 2k of actual memory.
-    RTP_DataFrame * dst;
-    if (packetCount < dstList.GetSize()) {
-      dst = &dstList[packetCount];
-      dst->SetPayloadSize(outputDataSize);
-    }
-    else {
-      dst = new RTP_DataFrame(outputDataSize, 2048);
-      dstList.Append(dst);
-    }
-
+    // While we set the payload size to that indicated, some badly behaved plugins
+    // use more memory than indicated in toLen, so make sure the output RTP data
+    // frame is at least 2k of actual memory.
+    RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize, 2048);
     dst->SetPayloadType(GetPayloadType(false));
     dst->SetTimestamp(src.GetTimestamp());
 
@@ -1007,14 +997,13 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 
     if ((toLen >= RTP_DataFrame::MinHeaderSize) && ((PINDEX)toLen >= dst->GetHeaderSize())) {
       dst->SetPayloadSize(toLen - dst->GetHeaderSize());
-      ++packetCount;
+      dstList.Append(dst);
     }
+    else
+      delete dst;
+
   } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
   PTRACE(5, "OpalPlugin\tEncoded video frame into " << dstList.GetSize() << " packets.");
-
-  // Clear out extra packets
-  while (dstList.GetSize() > packetCount)
-    dstList.RemoveAt(packetCount);
 
 #if OPAL_STATISTICS
   m_totalFrames++;
