@@ -1102,6 +1102,17 @@ void SIPMIMEInfo::SetOrganization(const PString & v)
 }
 
 
+PString SIPMIMEInfo::GetAllowEvents() const
+{
+  return GetString("Allow-Events");     // no compact form
+}
+
+
+void SIPMIMEInfo::SetAllowEvents(const PString & v)
+{
+  SetAt("Allow-Events", v);   // no compact form
+}
+
 static const char UserAgentTokenChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.!%*_+`'~";
 
 void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info) const
