@@ -203,6 +203,7 @@ class OpalJitterBufferThread : public OpalJitterBuffer
     ~OpalJitterBufferThread();
 
     virtual void Resume();
+    virtual void Stop();
 
     virtual PBoolean OnReadPacket(RTP_DataFrame & frame, PBoolean loop) = 0;
 
@@ -228,6 +229,9 @@ class RTP_JitterBuffer : public OpalJitterBufferThread
       unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
       PINDEX packetSize = 2048 ///<  Max RTP packet size
     );
+    ~RTP_JitterBuffer();
+
+    virtual void Stop();
 
     /**This class instance collects data from the outside world in this
        method.

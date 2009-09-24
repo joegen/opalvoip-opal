@@ -500,6 +500,13 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     virtual PBoolean Close();
 
+    /**Set the paused state for stream.
+       This will stop reading/writing data from the stream.
+      */
+    virtual void SetPaused(
+      bool pause    ///< Indicate that the stream should be paused
+    );
+
     /**Read an RTP frame of data from the source media stream.
        The new behaviour simply calls RTP_Session::ReadData().
       */
