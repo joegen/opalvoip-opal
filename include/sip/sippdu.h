@@ -372,6 +372,9 @@ class SIPMIMEInfo : public PMIMEInfo
     void GetAlertInfo(PString & info, int & appearance);
     void SetAlertInfo(const PString & info, int appearance);
 
+    PString GetAllowEvents() const;
+    void SetAllowEvents(const PString & v);
+
     /** return the value of a header field parameter, empty if none
      */
     PString GetFieldParameter(
