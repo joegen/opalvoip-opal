@@ -673,9 +673,9 @@ void OpalMSRPManager::RemoveNotifier(const PURL & localUrl, const PURL & remoteU
 ////////////////////////////////////////////////////////
 
 OpalMSRPManager::Connection::Connection(MSRPProtocol * protocol)
-  : m_handlerThread(NULL)
+  : m_protocol(protocol)
   , m_running(false)
-  , m_protocol(protocol)
+  , m_handlerThread(NULL)
 {
   PTRACE(3, "MSRP\tCreating connection");
   if (m_protocol == NULL)
@@ -725,7 +725,7 @@ bool MSRPProtocol::SendSEND(const PURL & from,
     message.m_chunks.push_back(chunk);
   }
   else {
-    PINDEX offs = 0;
+    unsigned offs = 0;
     while ((message.m_length - offs) > MaximumMessageLength) {
       Message::Chunk chunk(PGloballyUniqueID().AsString(), offs, MaximumMessageLength);
       message.m_chunks.push_back(chunk);
@@ -748,7 +748,7 @@ bool MSRPProtocol::SendSEND(const PURL & from,
     if (message.m_length != 0) {
       mime.SetAt("Success-Report", "yes");
       mime.SetAt("Byte-Range",   psprintf("%u-%u/%u", r->m_rangeFrom, r->m_rangeTo, message.m_length));
-      body = PString("Content-Type: ") & message.m_contentType + CRLF CRLF +
+      body = (PString("Content-Type: ") & message.m_contentType) + CRLF CRLF +
              text.Mid(r->m_rangeFrom-1, r->m_rangeTo - r->m_rangeFrom + 1) + CRLF;
     }
 
