@@ -1203,6 +1203,9 @@ void TranscoderThread::Main()
 
   PTimeInterval duration = PTimer::Tick() - startTick;
 
+  PProcess::Times cpuTimes;
+  GetTimes(cpuTimes);
+
   coutMutex.Wait();
 
   cout << fixed << setprecision(1);
@@ -1241,6 +1244,8 @@ void TranscoderThread::Main()
 
   cout << "," << skippedFrames << " skipped frames (" << (skippedFrames * 100.0)/totalInputFrameCount << "%)";
   cout << endl;
+
+  cout << "CPU used: " << cpuTimes << endl;
 
   coutMutex.Signal();
 
