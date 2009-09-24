@@ -662,6 +662,15 @@ OpalJitterBufferThread::OpalJitterBufferThread(unsigned minJitterDelay,
 
 OpalJitterBufferThread::~OpalJitterBufferThread()
 {
+  Stop();
+}
+
+
+void OpalJitterBufferThread::Stop()
+{
+  if (shuttingDown)
+    return;
+
   shuttingDown = true;
 
   if (jitterThread != NULL) {
@@ -734,6 +743,23 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
 {
     PTRACE(6, "RTP_JitterBuffer\tConstructor" << *this);
 }
+
+RTP_JitterBuffer::~RTP_JitterBuffer()
+{
+  Stop();
+}
+
+
+void RTP_JitterBuffer::Stop()
+{
+  if (shuttingDown)
+    return;
+
+  session.Close(true);
+  OpalJitterBufferThread::Stop();
+  session.Reopen(true);
+}
+
 
 PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame, PBoolean loop)
 {
