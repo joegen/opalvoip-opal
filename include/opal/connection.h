@@ -1485,9 +1485,11 @@ class OpalConnection : public PSafeObject
      */
     OpalSilenceDetector * GetSilenceDetector() const { return silenceDetector; }
     
+#if OPAL_AEC
     /**Get the echo canceler active on connection.
     */
     OpalEchoCanceler * GetEchoCanceler() const { return echoCanceler; }
+#endif
 
     /**Get the protocol-specific unique identifier for this connection.
        Default behaviour just returns the connection token.
@@ -1618,7 +1620,9 @@ class OpalConnection : public PSafeObject
     PSyncPoint            userInputAvailable;
 
     OpalSilenceDetector * silenceDetector;
+#if OPAL_AEC
     OpalEchoCanceler    * echoCanceler;
+#endif
 
     MediaAddressesDict         mediaTransportAddresses;
     PSafeList<OpalMediaStream> mediaStreams;
