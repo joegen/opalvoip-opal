@@ -263,26 +263,5 @@ void OpalSIPIMManager::OnReceivedMessage(const SIP_PDU & /*pdu*/)
 #endif
 }
 
-#if 0
-
-bool OpalSIPIMManager::StartSession(OpalSIPIMMediaSession * /*mediaSession*/)
-{ 
-  PWaitAndSignal m(m_mutex);
-  PString callId(mediaSession->GetCallID());
-  m_imSessionMap.insert(IMSessionMapType::value_type((const char *)callId, mediaSession));
-  return true;
-}
-
-bool OpalSIPIMManager::EndSession(OpalSIPIMMediaSession * /*mediaSession*/)
-{ 
-  PWaitAndSignal m(m_mutex);
-  PString callId(mediaSession->GetCallID());
-  IMSessionMapType::iterator r = m_imSessionMap.find((const char *)callId);
-  if (r != m_imSessionMap.end())
-    m_imSessionMap.erase(r);
-  return true;
-}
-
-#endif
 
 #endif // OPAL_HAS_SIPIM
