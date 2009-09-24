@@ -2534,8 +2534,13 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
   if (sdp != NULL)
     response.GetSDP()->SetSessionName(response.GetMIME().GetUserAgent());
 
-  if (response.GetStatusCode() == SIP_PDU::Information_Ringing)
+  if (response.GetStatusCode() == SIP_PDU::Information_Ringing) {
+    if (m_allowedEvents.GetSize() > 0) {
+      PStringStream strm; strm << setfill(',') << m_allowedEvents;
+      response.GetMIME().SetAllowEvents(strm);
+    }
     response.GetMIME().SetAlertInfo(m_alertInfo, m_appearanceCode);
+  }
 
   if (response.GetStatusCode() >= 200) {
     ackPacket = response;

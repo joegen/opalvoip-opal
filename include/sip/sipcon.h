@@ -587,6 +587,7 @@ class SIPConnection : public OpalRTPConnection
 #if OPAL_HAS_IM
     RFC4103Context rfc4103Context;
 #endif
+    PStringList m_allowedEvents;
 
   public:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
