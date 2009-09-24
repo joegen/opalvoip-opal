@@ -76,6 +76,7 @@ OPAL_H450=yes
 OPAL_H460=yes
 OPAL_H239=yes
 OPAL_H501=yes
+OPAL_T120DATA=no
 OPAL_LID=yes
 OPAL_STATISTICS=yes
 OPAL_AEC=yes
@@ -90,6 +91,7 @@ OPAL_JAVA=yes
 OPAL_HAS_MSRP=yes
 OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
+OPAL_HAS_MIXER=yes
 PTLIB_REC_VERSION="2.0.0"
 
 dnl ########################################################################
@@ -514,6 +516,11 @@ dnl MSWIN_DEFINE     h501,OPAL_H501
 dnl MSWIN_IF_FEATURE h501,h323
 OPAL_SIMPLE_OPTION([h501],[OPAL_H501], [whether to enable H.501], [OPAL_H323])
 
+dnl MSWIN_DISPLAY    t120,T.120
+dnl MSWIN_DEFINE     t120,OPAL_T120DATA
+dnl MSWIN_IF_FEATURE t120,h323
+OPAL_SIMPLE_OPTION([t120],[OPAL_T120DATA], [whether to enable T.120], [OPAL_H323])
+
 dnl MSWIN_DISPLAY lids,Line Interface Device
 dnl MSWIN_DEFINE  lids,OPAL_LID
 OPAL_SIMPLE_OPTION([lid],[OPAL_LID], [whether to enable LID support])
@@ -537,6 +544,10 @@ OPAL_SIMPLE_OPTION([g711plc],[OPAL_G711PLC], [whether to enable Packet Loss Conc
 dnl MSWIN_DISPLAY statistics,Statistics gathering support
 dnl MSWIN_DEFINE  statistics,OPAL_STATISTICS
 OPAL_SIMPLE_OPTION([statistics],[OPAL_STATISTICS], [whether to enable statistics gathering support])
+
+dnl MSWIN_DISPLAY mixer,Media mixing
+dnl MSWIN_DEFINE  mixer,OPAL_HAS_MIXER
+OPAL_SIMPLE_OPTION([mixer],[OPAL_HAS_MIXER], [whether to enable media mixing support])
 
 
 dnl ########################################################################

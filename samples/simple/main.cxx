@@ -1110,6 +1110,7 @@ void MyManager::Main(PArgList & args)
         cout << help ;
         break;
 
+#if OPAL_HAS_MIXER
       case 'z':
         if (currentCallToken.IsEmpty())
          cout << "Cannot stop or start record whilst no call in progress.\n";
@@ -1122,6 +1123,7 @@ void MyManager::Main(PArgList & args)
           cout << "Recording stopped.\n";
         }
         break;
+#endif
         
       case 'y' :
         if ( pcssEP != NULL &&
@@ -1255,10 +1257,14 @@ void MyManager::TransferCall(const PString & dest)
   }
 
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
-    if (!PIsDescendant(&(*connection), OpalPCSSConnection) && !PIsDescendant(&(*connection), OpalLineConnection)) {
-      connection->TransferConnection(dest.IsEmpty() ? heldCallToken : dest);
+    if (PIsDescendant(&(*connection), OpalPCSSConnection))
       break;
-    }
+#if OPAL_LID
+    if (PIsDescendant(&(*connection), OpalLineConnection))
+      break;
+#endif
+    connection->TransferConnection(dest.IsEmpty() ? heldCallToken : dest);
+    break;
   }
 }
 

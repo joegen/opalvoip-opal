@@ -49,6 +49,7 @@
 #include <h323/h323con.h>
 #include <h323/h323caps.h>
 #include <h323/h235auth.h>
+#include <asn/h225.h>
 
 #if OPAL_H460
 #include <h460/h4601.h>

@@ -1611,6 +1611,8 @@ void OpalManager::OnNewConnection(OpalConnection & /*conn*/)
 {
 }
 
+#if OPAL_HAS_MIXER
+
 bool OpalManager::StartRecording(const PString & callToken,
                                  const PFilePath & fn,
                                  const OpalRecordManager::Options & options)
@@ -1639,6 +1641,8 @@ bool OpalManager::StopRecording(const PString & callToken)
   call->StopRecording();
   return true;
 }
+
+#endif
 
 
 void OpalManager::OnApplyStringOptions(OpalConnection & conn, OpalConnection::StringOptions & stringOptions)

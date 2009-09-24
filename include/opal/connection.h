@@ -1532,8 +1532,12 @@ class OpalConnection : public PSafeObject
 
     virtual void PreviewPeerMediaFormats(const OpalMediaFormatList & fmts);
 
+#if OPAL_HAS_MIXER
+
     virtual void EnableRecording();
     virtual void DisableRecording();
+
+#endif
 
 #if OPAL_HAS_IM
     /**
@@ -1574,10 +1578,13 @@ class OpalConnection : public PSafeObject
     void OnConnectedInternal();
 
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
+
+#if OPAL_HAS_MIXER
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordVideo);
     void OnStartRecording(OpalMediaPatch * patch);
     void OnStopRecording(OpalMediaPatch * patch);
+#endif
 
   // Member variables
     OpalCall             & ownerCall;
@@ -1643,9 +1650,11 @@ class OpalConnection : public PSafeObject
 
     StringOptions m_connStringOptions;
 
+#if OPAL_HAS_MIXER
     PString       m_recordingFilename;
     PNotifier     m_recordAudioNotifier;
     PNotifier     m_recordVideoNotifier;
+#endif
 
 #if OPAL_STATISTICS
     unsigned m_VideoUpdateRequestsSent;

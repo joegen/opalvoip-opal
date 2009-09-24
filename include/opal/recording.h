@@ -36,6 +36,8 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_HAS_MIXER
+
 
 /** This is an abstract class for recording OPAL calls.
     A factory is used to created concrete classes based on the file extension
@@ -180,6 +182,8 @@ PFACTORY_LOAD(OpalWAVRecordManager);
 #ifdef P_VFW_CAPTURE
 PFACTORY_LOAD(OpalAVIRecordManager);
 #endif
+
+#endif // OPAL_HAS_MIXER
 
 
 #endif // OPAL_OPAL_AUDIORECORD_H

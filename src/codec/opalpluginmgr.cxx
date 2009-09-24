@@ -37,8 +37,6 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_LID
-
 #include <opal/transcoders.h>
 #include <codec/opalpluginmgr.h>
 #include <codec/opalplugin.h>
@@ -897,8 +895,9 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
       PTRACE(4, "OpalPlugin\tEncoder sending I-Frame at " << m_totalFrames);
     else
       PTRACE(4, "OpalPlugin\tEncoder sending " << ((m_consecutiveIntraFrames == 0) ? "" : "consecutive ") << "I-Frame at " << m_totalFrames);
-    if (++m_consecutiveIntraFrames >= 10)
+    if (++m_consecutiveIntraFrames >= 10) {
       PTRACE(3, "OpalPlugin\tEncoder has sent too many consecutive I-Frames - assume codec cannot do P-Frames");
+    }
   }
 #endif
 
@@ -2774,4 +2773,3 @@ INCLUDE_STATIC_CODEC(GSM_0610)
 
 #endif
 
-#endif // OPAL_LID

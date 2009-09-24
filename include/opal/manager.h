@@ -1287,6 +1287,8 @@ class OpalManager : public PObject
       OpalConnection & connection   ///< New connection just created
     );
 
+#if OPAL_HAS_MIXER
+
     /**Start recording a call.
        Current version saves to a WAV file. It may either mix the receive and
        transmit audio stream to a single mono file, or the streams are placed
@@ -1314,6 +1316,8 @@ class OpalManager : public PObject
     virtual bool StopRecording(
       const PString & callToken   ///< Call token for call to stop recording
     );
+
+#endif
 
 #ifdef OPAL_ZRTP
     virtual bool GetZRTPEnabled() const;
