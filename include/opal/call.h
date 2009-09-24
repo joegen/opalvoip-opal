@@ -499,7 +499,7 @@ class OpalCall : public PSafeObject
     const PTime & GetStartTime() const { return startTime; }
   //@}
 
-
+#if OPAL_HAS_MIXER
     /**Start recording a call.
        Current version saves to a WAV file. It may either mix the receive and
        transmit audio stream to a single mono file, or the streams are placed
@@ -545,6 +545,7 @@ class OpalCall : public PSafeObject
       const PString & streamId,       ///< Unique ID for stream within call
       const RTP_DataFrame & frame     ///< Media data
     );
+#endif // OPAL_HAS_MIXER
 
   protected:
     void SetPartyNames();
@@ -570,7 +571,9 @@ class OpalCall : public PSafeObject
 
     PSafeList<OpalConnection> connectionsActive;
 
+#if OPAL_HAS_MIXER
     OpalRecordManager * m_recordManager;
+#endif
 
   //use to add the connection to the call's connection list
   friend OpalConnection::OpalConnection(OpalCall &, OpalEndPoint &, const PString &, unsigned int, OpalConnection::StringOptions *);

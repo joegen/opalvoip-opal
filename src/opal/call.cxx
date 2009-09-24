@@ -61,7 +61,9 @@ OpalCall::OpalCall(OpalManager & mgr)
   , isClearing(PFalse)
   , callEndReason(OpalConnection::NumCallEndReasons)
   , endCallSyncPoint(NULL)
+#if OPAL_HAS_MIXER
   , m_recordManager(NULL)
+#endif
 {
   manager.activeCalls.SetAt(myToken, this);
 
@@ -77,7 +79,9 @@ OpalCall::OpalCall(OpalManager & mgr)
 
 OpalCall::~OpalCall()
 {
+#if OPAL_HAS_MIXER
   delete m_recordManager;
+#endif
 
   PTRACE(3, "Call\t" << *this << " destroyed.");
 }
@@ -134,7 +138,10 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 void OpalCall::OnCleared()
 {
   manager.OnClearedCall(*this);
+
+#if OPAL_HAS_MIXER
   StopRecording();
+#endif
 
   if (!LockReadWrite())
     return;
@@ -671,6 +678,7 @@ void OpalCall::OnHold(OpalConnection & /*connection*/,
 {
 }
 
+#if OPAL_HAS_MIXER
 
 bool OpalCall::StartRecording(const PFilePath & fn, const OpalRecordManager::Options & options)
 {
@@ -701,7 +709,6 @@ bool OpalCall::StartRecording(const PFilePath & fn, const OpalRecordManager::Opt
 
   return true;
 }
-
 
 bool OpalCall::IsRecording() const
 {
@@ -752,6 +759,8 @@ void OpalCall::OnRecordVideo(const PString & streamId, const RTP_DataFrame & fra
   if (m_recordManager != NULL && !m_recordManager->WriteVideo(streamId, frame))
     m_recordManager->CloseStream(streamId);
 }
+
+#endif
 
 
 bool OpalCall::IsNetworkOriginated() const

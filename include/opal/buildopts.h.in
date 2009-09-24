@@ -175,6 +175,8 @@
 //#define OPAL_RTP_AGGREGATE   1
 #undef GCC_HAS_CLZ
 
+#undef OPAL_HAS_MIXER
+
 
 /////////////////////////////////////////////////
 //
