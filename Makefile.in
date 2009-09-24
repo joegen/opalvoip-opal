@@ -130,8 +130,6 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/opal/transcoders.cxx \
            $(OPAL_SRCDIR)/opal/transports.cxx \
            $(OPAL_SRCDIR)/opal/guid.cxx \
-           $(OPAL_SRCDIR)/opal/recording.cxx \
-           $(OPAL_SRCDIR)/opal/opalmixer.cxx \
            $(OPAL_SRCDIR)/rtp/rtp.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
 	   $(OPAL_SRCDIR)/opal/opal_c.cxx \
@@ -144,6 +142,11 @@ SOURCES += $(OPAL_SRCDIR)/opal/ivr.cxx \
 endif
 
 
+ifeq ($(OPAL_HAS_MIXER), yes)
+SOURCES += $(OPAL_SRCDIR)/opal/recording.cxx \
+           $(OPAL_SRCDIR)/opal/opalmixer.cxx 
+endif
+
 ########################################
 
 # H.323 files
@@ -151,8 +154,12 @@ endif
 ifeq ($(OPAL_H323),yes)
 ifdef H323_AVAIL
 
-H450_ASN_FILES := h4501 h4502 h4503 h4504 h4505 h4506 h4507 h4508 h4509 h45010 h45011
-SIMPLE_ASN_FILES := x880 $(H450_ASN_FILES) mcs gcc
+SIMPLE_ASN_FILES := x880 mcs gcc
+
+ifeq ($(OPAL_H450),yes)
+SIMPLE_ASN_FILES += h4501 h4502 h4503 h4504 h4505 h4506 h4507 h4508 h4509 h45010 h45011
+SOURCES		 += $(OPAL_SRCDIR)/h323/h450pdu.cxx 
+endif
 
 ASN_H_FILES   := $(addprefix $(ASN_INCDIR)/,$(addsuffix .h,  $(SIMPLE_ASN_FILES)))
 ASN_CXX_FILES := $(addprefix $(ASN_SRCDIR)/,$(addsuffix .cxx,$(SIMPLE_ASN_FILES)))
@@ -169,8 +176,10 @@ ASN_CXX_FILES += $(ASN_SRCDIR)/h245_1.cxx $(ASN_SRCDIR)/h245_2.cxx $(ASN_SRCDIR)
 ASN_H_FILES   += $(ASN_INCDIR)/h248.h
 ASN_CXX_FILES += $(ASN_SRCDIR)/h248.cxx
 
+ifeq ($(OPAL_H501),yes)
 ASN_H_FILES   += $(ASN_INCDIR)/h501.h
 ASN_CXX_FILES += $(ASN_SRCDIR)/h501.cxx
+endif
 
 .PRECIOUS: $(ASN_CXX_FILES) $(ASN_H_FILES)
 
@@ -184,7 +193,6 @@ SOURCES += $(ASN_CXX_FILES) \
            $(OPAL_SRCDIR)/h323/h323rtp.cxx \
            $(OPAL_SRCDIR)/h323/channels.cxx \
            $(OPAL_SRCDIR)/h323/svcctrl.cxx \
-           $(OPAL_SRCDIR)/h323/h450pdu.cxx \
            $(OPAL_SRCDIR)/h323/q931.cxx \
            $(OPAL_SRCDIR)/h323/transaddr.cxx \
            $(OPAL_SRCDIR)/h323/gkclient.cxx \
@@ -192,9 +200,12 @@ SOURCES += $(ASN_CXX_FILES) \
            $(OPAL_SRCDIR)/h323/h225ras.cxx \
            $(OPAL_SRCDIR)/h323/h323trans.cxx \
            $(OPAL_SRCDIR)/h323/h235auth.cxx \
-           $(OPAL_SRCDIR)/h323/h501pdu.cxx \
+
+ifeq ($(OPAL_H501),yes)
+SOURCES += $(OPAL_SRCDIR)/h323/h501pdu.cxx \
            $(OPAL_SRCDIR)/h323/h323annexg.cxx \
-           $(OPAL_SRCDIR)/h323/peclient.cxx \
+           $(OPAL_SRCDIR)/h323/peclient.cxx 
+endif
 
 ifeq ($(OPAL_H460), yes)
 ifdef H460_AVAIL
@@ -212,9 +223,11 @@ ifdef OPAL_PTLIB_SSL
 SOURCES += $(OPAL_SRCDIR)/h235auth1.cxx
 endif
 
+ifeq ($(OPAL_T120DATA), yes)
 SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
-           $(OPAL_SRCDIR)/t120/h323t120.cxx \
-           $(OPAL_SRCDIR)/t120/x224.cxx 
+	   $(OPAL_SRCDIR)/t120/h323t120.cxx 
+	   $(OPAL_SRCDIR)/t120/x224.cxx 
+endif
 
 ifeq ($(OPAL_T38_CAP), yes)
 SOURCES += $(OPAL_SRCDIR)/t38/h323t38.cxx

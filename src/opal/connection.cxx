@@ -236,8 +236,10 @@ OpalConnection::OpalConnection(OpalCall & call,
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
+#if OPAL_HAS_MIXER
   , m_recordAudioNotifier(PCREATE_NOTIFIER(OnRecordAudio))
   , m_recordVideoNotifier(PCREATE_NOTIFIER(OnRecordVideo))
+#endif
 #ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
@@ -794,10 +796,13 @@ PBoolean OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
 
 void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
+#if OPAL_HAS_MIXER
   OnStopRecording(stream.GetPatch());
+#endif
   endpoint.OnClosedMediaStream(stream);
 }
 
+#if OPAL_HAS_MIXER
 
 static PString MakeRecordingKey(const OpalMediaPatch & patch)
 {
@@ -835,6 +840,7 @@ void OpalConnection::OnStopRecording(OpalMediaPatch * patch)
   PTRACE(4, "OpalCon\tRemoved record filter on " << *patch);
 }
 
+#endif
 
 void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
@@ -867,15 +873,18 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
 #endif
   }
 
+#if OPAL_HAS_MIXER
   if (!m_recordingFilename.IsEmpty())
     ownerCall.StartRecording(m_recordingFilename);
   else if (ownerCall.IsRecording())
     OnStartRecording(&patch);
+#endif
 
   PTRACE(3, "OpalCon\t" << (isSource ? "Source" : "Sink") << " stream of connection " << *this << " uses patch " << patch);
 }
 
 
+#if OPAL_HAS_MIXER
 void OpalConnection::EnableRecording()
 {
   OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
@@ -912,6 +921,8 @@ void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, INT param)
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
   ownerCall.OnRecordVideo(MakeRecordingKey(*patch), frame);
 }
+
+#endif
 
 
 void OpalConnection::AttachRFC2833HandlerToPatch(PBoolean /*isSource*/, OpalMediaPatch & /*patch*/)
@@ -1368,8 +1379,11 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
     str = stringOptions(OPAL_OPT_MIN_JITTER);
     if (!str.IsEmpty())
       minAudioJitterDelay = str.AsUnsigned();
+
+#if OPAL_HAS_MIXER
     if (stringOptions.Contains(OPAL_OPT_RECORD_AUDIO))
       m_recordingFilename = m_connStringOptions(OPAL_OPT_RECORD_AUDIO);
+#endif
 
     str = stringOptions(OPAL_OPT_ALERTING_TYPE);
     if (!str.IsEmpty())
