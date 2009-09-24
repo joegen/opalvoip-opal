@@ -361,7 +361,9 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   , m_soundChannelBufferTime(ep.GetSoundChannelBufferTime())
 {
   silenceDetector = new OpalPCM16SilenceDetector(endpoint.GetManager().GetSilenceDetectParams());
+#if OPAL_AEC
   echoCanceler = new OpalEchoCanceler;
+#endif
 
   PTRACE(4, "PCSS\tCreated PC sound system connection: token=\"" << callToken << "\" "
             "player=\"" << playDevice << "\" recorder=\"" << recordDevice << '"');

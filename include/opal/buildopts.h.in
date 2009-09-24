@@ -58,6 +58,7 @@
 #undef  OPAL_PTLIB_LDAP
 #undef  OPAL_PTLIB_VXML
 #undef  OPAL_PTLIB_CONFIG_FILE
+#undef  OPAL_AEC
 
 
 // If a "configure" did not set these variables above then they get set from PTlib variables
