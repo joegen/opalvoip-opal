@@ -636,6 +636,19 @@ PBoolean OpalRTPMediaStream::Close()
 }
 
 
+void OpalRTPMediaStream::SetPaused(bool pause)
+{
+  OpalMediaStream::SetPaused(pause);
+
+  if (IsSource()) {
+    if (pause)
+      rtpSession.SetJitterBufferSize(0, 0);
+    else
+      EnableJitterBuffer();
+  }
+}
+
+
 PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   if (IsSink()) {
@@ -643,8 +656,12 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
   }
 
-  if (!rtpSession.ReadBufferedData(packet))
-    return false;
+  if (paused)
+    packet.SetPayloadSize(0);
+  else {
+    if (!rtpSession.ReadBufferedData(packet))
+      return false;
+  }
 
   timestamp = packet.GetTimestamp();
   return true;
@@ -653,9 +670,6 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 
 PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 {
-  if (paused)
-    packet.SetPayloadSize(0);
-  
   if (IsSource()) {
     PTRACE(1, "Media\tTried to write to source media stream");
     return false;
@@ -663,7 +677,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 
   timestamp = packet.GetTimestamp();
 
-  if (packet.GetPayloadSize() == 0)
+  if (paused || packet.GetPayloadSize() == 0)
     return true;
 
   return rtpSession.WriteData(packet);
