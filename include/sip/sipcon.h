@@ -420,6 +420,18 @@ class SIPConnection : public OpalRTPConnection
       const char * extra = NULL,
       const SDPSessionDescription * sdp = NULL
     );
+
+    enum TypeOfINVITE {
+      IsNewINVITE,
+      IsDuplicateINVITE,
+      IsReINVITE,
+      IsLoopedINVITE
+    };
+
+    /// Indicate if this is a duplicate or multi-path INVITE
+    TypeOfINVITE CheckINVITE(
+      const SIP_PDU & pdu
+    ) const;
   //@}
 
     OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;

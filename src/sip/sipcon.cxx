@@ -622,7 +622,8 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
       sdpOK |= AnswerSDPMediaDescription(*sdp, i+1, sdpOut);
 
     // If all was OK, but we have no media streams, then remote started us up in HOLD.
-    m_holdFromRemote = sdpOK && mediaStreams.IsEmpty();
+    if (sdpOK && mediaStreams.IsEmpty())
+      m_holdFromRemote = true;
   }
   else if (needReINVITE && !mediaStreams.IsEmpty()) {
     std::vector<bool> sessions;
@@ -1728,58 +1729,57 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 }
 
 
-void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
+SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) const
 {
-  PBoolean isReinvite;
-
   const SIPMIMEInfo & requestMIME = request.GetMIME();
   PString requestFromTag = requestMIME.GetFieldParameter("From", "tag");
   PString requestToTag   = requestMIME.GetFieldParameter("To",   "tag");
 
+  // Criteria for our existing dialog.
+  if (!requestToTag.IsEmpty() &&
+       m_dialog.GetCallID() == requestMIME.GetCallID() &&
+       m_dialog.GetRemoteTag() == requestFromTag &&
+       m_dialog.GetLocalTag() == requestToTag)
+    return IsReINVITE;
+
   if (IsOriginating()) {
-    // Check for in the same dialog
-    if (m_dialog.GetRemoteTag() != requestFromTag || m_dialog.GetLocalTag() != requestToTag) {
-      /* Weird, got incoming INVITE for a call we originated, however it is not in
-         the same dialog. Send back a refusal as this just isn't handled. */
-      PTRACE(2, "SIP\tIgnoring INVITE from " << request.GetURI() << " when originated call.");
-      request.SendResponse(*transport, SIP_PDU::Failure_LoopDetected);
-      return;
-    }
-
-    // We originated the call, same dialog, so any INVITE must be a re-INVITE, 
-    isReinvite = PTrue;
+    /* Weird, got incoming INVITE for a call we originated, however it is not in
+       the same dialog. Send back a refusal as this just isn't handled. */
+    PTRACE(2, "SIP\tIgnoring INVITE from " << request.GetURI() << " when originated call.");
+    return IsLoopedINVITE;
   }
-  else {
-    if (originalInvite == NULL) {
-      isReinvite = PFalse; // First time incoming call
-      PTRACE(4, "SIP\tInitial INVITE from " << request.GetURI());
-    }
-    else {
-      /* If we have same transaction ID, it means it is a retransmission
-         of the original INVITE, probably should re-transmit last sent response
-         but we just ignore it. Still should work. */
-      if (originalInvite->GetTransactionID() == request.GetTransactionID()) {
-        PTimeInterval timeSinceInvite = PTime() - originalInviteTime;
-        PTRACE(3, "SIP\tIgnoring duplicate INVITE from " << request.GetURI() << " after " << timeSinceInvite);
-        return;
-      }
 
-      /* Same transaction but different "dialog" determined by the tags in the to
-         and from fields probably indicate forking request or request arriving via
-         multiple IP paths. This will also include the RFC3261/8.2.2.2 case relating
-         to merged requests. */
-      if (m_dialog.GetRemoteTag() != requestFromTag || m_dialog.GetLocalTag() != requestToTag) {
-        PTRACE(3, "SIP\tIgnoring forked INVITE from " << request.GetURI());
-        SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
-        response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
-        request.SendResponse(*transport, response);
-        return;
-      }
+  // No original INVITE, so must be first time
+  if (originalInvite == NULL)
+    return IsNewINVITE;
 
-      // Different transaction but same dialog, must be a re-INVITE
-      isReinvite = PTrue;
-    }
+  /* If we have same transaction ID, it means it is a retransmission
+     of the original INVITE, probably should re-transmit last sent response
+     but we just ignore it. Still should work. */
+  if (originalInvite->GetTransactionID() == request.GetTransactionID()) {
+    PTimeInterval timeSinceInvite = PTime() - originalInviteTime;
+    PTRACE(3, "SIP\tIgnoring duplicate INVITE from " << request.GetURI() << " after " << timeSinceInvite);
+    return IsDuplicateINVITE;
   }
+
+  // Check if is RFC3261/8.2.2.2 case relating to merged requests.
+  if (requestToTag.IsEmpty() && requestMIME.GetCSeqIndex() > originalInvite->GetMIME().GetCSeqIndex())
+    return IsNewINVITE; // No it isn't
+
+  /* This is either a merged request or a brand new "dialog" to the same call.
+     Probably indicates forking request or request arriving via multiple IP
+     paths. In both cases we refuse the INVITE. The first because we don't
+     support multiple dialogs on one call, the second because the RFC says
+     we should! */
+  PTRACE(3, "SIP\tIgnoring forked INVITE from " << request.GetURI());
+  return IsLoopedINVITE;
+}
+
+
+void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
+{
+  bool isReinvite = IsOriginating() || originalInvite != NULL;
+  PTRACE_IF(4, !isReinvite, "SIP\tInitial INVITE from " << request.GetURI());
 
   // originalInvite should contain the first received INVITE for
   // this connection

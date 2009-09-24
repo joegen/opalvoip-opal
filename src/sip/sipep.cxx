@@ -525,8 +525,26 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       if (toToken.IsEmpty()) {
         token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
-          m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, pdu), token);
-          return true;
+          PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(token, PSafeReference);
+          if (connection != NULL) {
+            switch (connection->CheckINVITE(*pdu)) {
+              case SIPConnection::IsNewINVITE : // Process new INVITE
+                break;
+
+              case SIPConnection::IsDuplicateINVITE : // Completely ignore duplicate INVITE
+                return true;
+
+              case SIPConnection::IsReINVITE : // Pass on to worker thread if re-INVITE
+                m_connectionThreadPool.AddWork(new SIP_PDU_Work(*this, token, pdu), token);
+                return true;
+
+              case SIPConnection::IsLoopedINVITE : // Send back error if looped INVITE
+                SIP_PDU response(*pdu, SIP_PDU::Failure_LoopDetected);
+                response.GetMIME().SetProductInfo(GetUserAgent(), connection->GetProductInfo());
+                pdu->SendResponse(transport, response);
+                return true;
+            }
+          }
         }
 
         pdu->SendResponse(transport, SIP_PDU::Information_Trying, this);
