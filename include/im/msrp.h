@@ -83,7 +83,7 @@ class MSRPProtocol : public PInternetProtocol
       NumCommands
     };
 
-    static const int MaximumMessageLength = 1024;
+    static const unsigned MaximumMessageLength = 1024;
 
     class Message
     {
