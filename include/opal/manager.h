@@ -1183,6 +1183,7 @@ class OpalManager : public PObject
      */
     const OpalSilenceDetector::Params & GetSilenceDetectParams() const { return silenceDetectParams; }
     
+#if OPAL_AEC
     /**Set the default parameters for the echo cancelation.
      */
     virtual void SetEchoCancelParams(
@@ -1192,6 +1193,7 @@ class OpalManager : public PObject
     /**Get the default parameters for the silence detector.
      */
     const OpalEchoCanceler::Params & GetEchoCancelParams() const { return echoCancelParams; }
+#endif
 
 #if OPAL_VIDEO
 
@@ -1372,7 +1374,9 @@ class OpalManager : public PObject
     PString       ilsServer;
 
     OpalSilenceDetector::Params silenceDetectParams;
+#if OPAL_AEC
     OpalEchoCanceler::Params echoCancelParams;
+#endif
 
 #if OPAL_VIDEO
     PVideoDevice::OpenArgs videoInputDevice;

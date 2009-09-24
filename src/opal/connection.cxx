@@ -225,7 +225,9 @@ OpalConnection::OpalConnection(OpalCall & call,
   , callEndReason(NumCallEndReasons)
   , synchronousOnRelease(true)
   , silenceDetector(NULL)
+#if OPAL_AEC
   , echoCanceler(NULL)
+#endif
 #if OPAL_PTLIB_DTMF
   , m_dtmfScaleMultiplier(1)
   , m_dtmfScaleDivisor(1)
@@ -298,7 +300,9 @@ OpalConnection::~OpalConnection()
   mediaStreams.RemoveAll();
 
   delete silenceDetector;
+#if OPAL_AEC
   delete echoCanceler;
+#endif
 #if OPAL_T120DATA
   delete t120handler;
 #endif
@@ -853,11 +857,13 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
     if (isSource && silenceDetector != NULL)
       patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
 
+#if OPAL_AEC
     if (echoCanceler) {
       echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
       echoCanceler->SetClockRate(mediaFormat.GetClockRate());
       patch.AddFilter(isSource ? echoCanceler->GetReceiveHandler() : echoCanceler->GetSendHandler(), OpalPCM16);
     }
+#endif
 
 #if OPAL_PTLIB_DTMF
     if (m_detectInBandDTMF && isSource) {

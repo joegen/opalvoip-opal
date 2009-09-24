@@ -1057,11 +1057,13 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     silenceDetectParams.m_adaptivePeriod = command.m_param.m_general.m_silenceAdaptPeriod;
   SetSilenceDetectParams(silenceDetectParams);
 
+#if OPAL_AEC
   OpalEchoCanceler::Params echoCancelParams = GetEchoCancelParams();
   response->m_param.m_general.m_echoCancellation = (OpalEchoCancelMode)(echoCancelParams.m_mode+1);
   if (command.m_param.m_general.m_echoCancellation != 0)
     echoCancelParams.m_mode = (OpalEchoCanceler::Mode)(command.m_param.m_general.m_echoCancellation-1);
   SetEchoCancelParams(echoCancelParams);
+#endif
 
   if (m_apiVersion < 3)
     return;
