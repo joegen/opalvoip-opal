@@ -494,9 +494,9 @@ void OpalMediaStream::OnStartMediaPatch()
   connection.OnStartMediaPatch(*mediaPatch);
 }
 
-void OpalMediaStream::OnStopMediaPatch() 
+void OpalMediaStream::OnStopMediaPatch(OpalMediaPatch & patch)
 { 
-  connection.OnStopMediaPatch(*mediaPatch);
+  connection.OnStopMediaPatch(patch);
 }
 
 
