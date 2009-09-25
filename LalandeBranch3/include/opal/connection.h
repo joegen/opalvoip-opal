@@ -56,6 +56,7 @@ class OpalSilenceDetector;
 class OpalEchoCanceler;
 class OpalRFC2833Proto;
 class OpalRFC2833Info;
+class PURL;
 
 
 #define OPAL_OPT_AUTO_START           "AutoStart"             ///< String option for auto-started media types
@@ -334,40 +335,51 @@ class OpalConnection : public PSafeObject
        NOTE: if anything is added to this, you also need to add the field to
        the tables in connection.cxx and h323pdu.cxx.
       */
-    enum CallEndReason {
-      EndedByLocalUser,         /// Local endpoint application cleared call
-      EndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=PFalse
-      EndedByAnswerDenied,      /// Local endpoint declined to answer call
-      EndedByRemoteUser,        /// Remote endpoint application cleared call
-      EndedByRefusal,           /// Remote endpoint refused call
-      EndedByNoAnswer,          /// Remote endpoint did not answer in required time
-      EndedByCallerAbort,       /// Remote endpoint stopped calling
-      EndedByTransportFail,     /// Transport error cleared call
-      EndedByConnectFail,       /// Transport connection failed to establish call
-      EndedByGatekeeper,        /// Gatekeeper has cleared call
-      EndedByNoUser,            /// Call failed as could not find user (in GK)
-      EndedByNoBandwidth,       /// Call failed as could not get enough bandwidth
-      EndedByCapabilityExchange,/// Could not find common capabilities
-      EndedByCallForwarded,     /// Call was forwarded using FACILITY message
-      EndedBySecurityDenial,    /// Call failed a security check and was ended
-      EndedByLocalBusy,         /// Local endpoint busy
-      EndedByLocalCongestion,   /// Local endpoint congested
-      EndedByRemoteBusy,        /// Remote endpoint busy
-      EndedByRemoteCongestion,  /// Remote endpoint congested
-      EndedByUnreachable,       /// Could not reach the remote party
-      EndedByNoEndPoint,        /// The remote party is not running an endpoint
-      EndedByHostOffline,       /// The remote party host off line
-      EndedByTemporaryFailure,  /// The remote failed temporarily app may retry
-      EndedByQ931Cause,         /// The remote ended the call with unmapped Q.931 cause code
-      EndedByDurationLimit,     /// Call cleared due to an enforced duration limit
-      EndedByInvalidConferenceID, /// Call cleared due to invalid conference ID
-      EndedByNoDialTone,        /// Call cleared due to missing dial tone
-      EndedByNoRingBackTone,    /// Call cleared due to missing ringback tone
-      EndedByOutOfService,      /// Call cleared because the line is out of service, 
+    enum CallEndReasonCodes {
+      EndedByLocalUser,            /// Local endpoint application cleared call
+      EndedByNoAccept,             /// Local endpoint did not accept call OnIncomingCall()=PFalse
+      EndedByAnswerDenied,         /// Local endpoint declined to answer call
+      EndedByRemoteUser,           /// Remote endpoint application cleared call
+      EndedByRefusal,              /// Remote endpoint refused call
+      EndedByNoAnswer,             /// Remote endpoint did not answer in required time
+      EndedByCallerAbort,          /// Remote endpoint stopped calling
+      EndedByTransportFail,        /// Transport error cleared call
+      EndedByConnectFail,          /// Transport connection failed to establish call
+      EndedByGatekeeper,           /// Gatekeeper has cleared call
+      EndedByNoUser,               /// Call failed as could not find user (in GK)
+      EndedByNoBandwidth,          /// Call failed as could not get enough bandwidth
+      EndedByCapabilityExchange,   /// Could not find common capabilities
+      EndedByCallForwarded,        /// Call was forwarded using FACILITY message
+      EndedBySecurityDenial,       /// Call failed a security check and was ended
+      EndedByLocalBusy,            /// Local endpoint busy
+      EndedByLocalCongestion,      /// Local endpoint congested
+      EndedByRemoteBusy,           /// Remote endpoint busy
+      EndedByRemoteCongestion,     /// Remote endpoint congested
+      EndedByUnreachable,          /// Could not reach the remote party
+      EndedByNoEndPoint,           /// The remote party is not running an endpoint
+      EndedByHostOffline,          /// The remote party host off line
+      EndedByTemporaryFailure,     /// The remote failed temporarily app may retry
+      EndedByQ931Cause,            /// The remote ended the call with unmapped Q.931 cause code
+      EndedByDurationLimit,        /// Call cleared due to an enforced duration limit
+      EndedByInvalidConferenceID,  /// Call cleared due to invalid conference ID
+      EndedByNoDialTone,           /// Call cleared due to missing dial tone
+      EndedByNoRingBackTone,       /// Call cleared due to missing ringback tone
+      EndedByOutOfService,         /// Call cleared because the line is out of service, 
       EndedByAcceptingCallWaiting, /// Call cleared because another call is answered
-      NumCallEndReasons,
+      EndedByGkAdmissionFailed,    /// Call cleared because gatekeeper admission request failed.
+      NumCallEndReasons
+    };
 
-      EndedWithQ931Code = 0x100  /// Q931 code specified in MS byte
+    struct CallEndReason {
+      CallEndReason(
+        CallEndReasonCodes reason = NumCallEndReasons,
+        unsigned cause = 0
+      ) : code(reason), q931(cause) { }
+
+      operator CallEndReasonCodes() const { return code; }
+
+      CallEndReasonCodes code:8; // Normalised OPAL code
+      unsigned           q931:8; // PSTN Interworking code, actually Q.850
     };
 
 #if PTRACING
@@ -500,6 +512,15 @@ class OpalConnection : public PSafeObject
       */
     CallEndReason GetCallEndReason() const { return callEndReason; }
 
+    /**Get the reason for this connection shutting down as text.
+      */
+    static PString GetCallEndReasonText(CallEndReason reason);
+    PString GetCallEndReasonText() const { return GetCallEndReasonText(callEndReason); }
+
+    /**Get the reason for this connection shutting down as text.
+      */
+    static void SetCallEndReasonText(CallEndReasonCodes reasonCode, const PString & newText);
+
     /**Set the call clearance reason.
        An application should have no cause to use this function. It is present
        for the H323EndPoint::ClearCall() function to set the clearance reason.
@@ -529,12 +550,12 @@ class OpalConnection : public PSafeObject
     /**Get the Q.931 cause code (Q.850) that terminated this call.
        See Q931::CauseValues for common values.
      */
-    unsigned GetQ931Cause() const { return q931Cause; }
+    unsigned GetQ931Cause() const { return callEndReason.q931; }
 
     /**Set the outgoing Q.931 cause code (Q.850) that is sent for this call
        See Q931::CauseValues for common values.
      */
-    void SetQ931Cause(unsigned v) { q931Cause = v; }
+    void SetQ931Cause(unsigned v) { callEndReason.q931 = v; }
 
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
@@ -1461,19 +1482,38 @@ class OpalConnection : public PSafeObject
     ) const;
 
 #if OPAL_HAS_IM
-    struct IMInfo : public PObject {
-      unsigned sessionId;
-      OpalMediaFormat mediaFormat;
-      T140String body;
-    };
-
-    virtual bool SendIM(const OpalMediaFormat & format, const T140String & body);
-    virtual bool SendIM(const OpalMediaFormat & format, const RTP_DataFrame & body);
-    virtual void OnReceiveIM(const IMInfo & im);
-
-    void AddIMListener(
-      const PNotifier & listener
+    /**
+      * Called to transmit an IM to the other connection in the call
+      */
+    virtual bool TransmitInternalIM(
+      const OpalMediaFormat & format, 
+      RTP_DataFrame & body
     );
+
+    /**
+      * Called when this connection receives an IM from the other connection in the call
+      */
+    virtual void OnReceiveInternalIM(
+      const OpalMediaFormat & format, 
+      RTP_DataFrame & body
+    );
+
+    /**
+      * Called to transmit an IM to the other end of the connection
+      */
+    virtual bool TransmitExternalIM(
+      const OpalMediaFormat & format, 
+      RTP_DataFrame & body
+    );
+
+    /**
+      * Called when this connection receives an IM from the other end of the connection
+      */
+    virtual bool OnReceiveExternalIM(
+      const OpalMediaFormat & format, 
+      RTP_DataFrame & body
+    );
+
 #endif
 
   protected:
@@ -1515,7 +1555,6 @@ class OpalConnection : public PSafeObject
     SendUserInputModes    sendUserInputMode;
     PString               userInputString;
     PSyncPoint            userInputAvailable;
-    unsigned              q931Cause;
 
     OpalSilenceDetector * silenceDetector;
 #if OPAL_AEC
@@ -1583,11 +1622,6 @@ class OpalConnection : public PSafeObject
 
     };
     AutoStartMap m_autoStartInfo;
-
-#if OPAL_HAS_IM
-    mutable PList<PNotifier> m_imListeners;
-#endif
-
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

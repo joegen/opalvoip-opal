@@ -56,8 +56,6 @@
 
 #define new PNEW
 
-static SIPAuthenticationFactory::Worker<SIPDigestAuthentication> sip_md5Authenticator("digest");
-
 ////////////////////////////////////////////////////////////////////////////
 
 static const char * const MethodNames[SIP_PDU::NumMethods] = {
@@ -196,12 +194,6 @@ static struct {
   { 'k', "Supported" },
   { 'o', "Event" }
 };
-
-
-static const char * const AlgorithmNames[SIPDigestAuthentication::NumAlgorithms] = {
-  "MD5"
-};
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -584,9 +576,10 @@ PBoolean SIPMIMEInfo::IsContentLengthPresent() const
 }
 
 
-PString SIPMIMEInfo::GetContentType() const
+PCaselessString SIPMIMEInfo::GetContentType(bool includeParameters) const
 {
-  return GetString("Content-Type");
+  PCaselessString str = GetString("Content-Type");
+  return str.Left(includeParameters ? P_MAX_INDEX : str.Find(';')).Trim();
 }
 
 
@@ -596,7 +589,7 @@ void SIPMIMEInfo::SetContentType(const PString & v)
 }
 
 
-PString SIPMIMEInfo::GetContentEncoding() const
+PCaselessString SIPMIMEInfo::GetContentEncoding() const
 {
   return GetString("Content-Encoding");
 }
@@ -1008,7 +1001,7 @@ void SIPMIMEInfo::SetEvent(const PString & v)
 }
 
 
-PString SIPMIMEInfo::GetSubscriptionState() const
+PCaselessString SIPMIMEInfo::GetSubscriptionState() const
 {
   return GetString("Subscription-State");       // no compact form
 }
@@ -1288,286 +1281,25 @@ PString SIPMIMEInfo::InsertFieldParameter(const PString & fieldValue,
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPAuthentication::SIPAuthentication()
-{
-  isProxy = PFalse;
-}
+SIPAuthenticator::SIPAuthenticator(SIP_PDU & pdu)
+: m_pdu(pdu)
+{ }
 
+PMIMEInfo & SIPAuthenticator::GetMIME()
+{ return m_pdu.GetMIME(); }
 
-PObject::Comparison SIPAuthentication::Compare(const PObject & other) const
-{
-  const SIPAuthentication * otherAuth = dynamic_cast<const SIPAuthentication *>(&other);
-  if (otherAuth == NULL)
-    return LessThan;
+PString SIPAuthenticator::GetURI()
+{ return m_pdu.GetURI().AsString(); }
 
-  Comparison result = GetUsername().Compare(otherAuth->GetUsername());
-  if (result != EqualTo)
-    return result;
+PString SIPAuthenticator::GetEntityBody()
+{ return m_pdu.GetEntityBody(); }
 
-  return GetPassword().Compare(otherAuth->GetPassword());
-}
-
-
-PString SIPAuthentication::GetAuthParam(const PString & auth, const char * name) const
-{
-  PString value;
-
-  PINDEX pos = auth.Find(name);
-  if (pos != P_MAX_INDEX)  {
-    pos += strlen(name);
-    while (isspace(auth[pos]) || (auth[pos] == ','))
-      pos++;
-    if (auth[pos] == '=') {
-      pos++;
-      while (isspace(auth[pos]))
-        pos++;
-      if (auth[pos] == '"') {
-        pos++;
-        value = auth(pos, auth.Find('"', pos)-1);
-      }
-      else {
-        PINDEX base = pos;
-        while (auth[pos] != '\0' && !isspace(auth[pos]) && (auth[pos] != ','))
-          pos++;
-        value = auth(base, pos-1);
-      }
-    }
-  }
-
-  return value;
-}
-
-PString SIPAuthentication::AsHex(PMessageDigest5::Code & digest) const
-{
-  PStringStream out;
-  out << hex << setfill('0');
-  for (PINDEX i = 0; i < 16; i++)
-    out << setw(2) << (unsigned)((BYTE *)&digest)[i];
-  return out;
-}
-
-PString SIPAuthentication::AsHex(const PBYTEArray & data) const
-{
-  PStringStream out;
-  out << hex << setfill('0');
-  for (PINDEX i = 0; i < data.GetSize(); i++)
-    out << setw(2) << (unsigned)data[i];
-  return out;
-}
-
-SIPAuthentication * SIPAuthentication::ParseAuthenticationRequired(bool isProxy,
-                                                        const PString & line,
-                                                              PString & errorMsg)
-{
-  // determine the authentication scheme
-  PINDEX pos = line.Find(' ');
-  PString scheme = line.Left(pos).Trim().ToLower();
-  SIPAuthentication * newAuth = SIPAuthenticationFactory::CreateInstance(scheme);
-  if (newAuth == NULL) {
-    errorMsg = "Unknown authentication scheme " + scheme;
-    return NULL;
-  }
-
-  // parse the new authentication scheme
-  if (!newAuth->Parse(line, isProxy)) {
-    delete newAuth;
-    errorMsg = "Failed to parse authentication for scheme " + scheme;
-    return NULL;
-  }
-
-  // switch authentication schemes
-  return newAuth;
-}
+PString SIPAuthenticator::GetMethod()
+{ return MethodNames[m_pdu.GetMethod()]; }
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPDigestAuthentication::SIPDigestAuthentication()
-{
-  algorithm = NumAlgorithms;
-}
-
-SIPDigestAuthentication & SIPDigestAuthentication::operator =(const SIPDigestAuthentication & auth)
-{
-  isProxy   = auth.isProxy;
-  authRealm = auth.authRealm;
-  username  = auth.username;
-  password  = auth.password;
-  nonce     = auth.nonce;
-  opaque    = auth.opaque;
-          
-  qopAuth    = auth.qopAuth;
-  qopAuthInt = auth.qopAuthInt;
-  cnonce     = auth.cnonce;
-  nonceCount.SetValue(auth.nonceCount);
-
-  return *this;
-}
-
-PObject::Comparison SIPDigestAuthentication::Compare(const PObject & other) const
-{
-  const SIPDigestAuthentication * otherAuth = dynamic_cast<const SIPDigestAuthentication *>(&other);
-  if (otherAuth == NULL)
-    return LessThan;
-
-  Comparison result = GetAuthRealm().Compare(otherAuth->GetAuthRealm());
-  if (result != EqualTo)
-    return result;
-
-  if (GetAlgorithm() != otherAuth->GetAlgorithm())
-    return GetAlgorithm() < otherAuth->GetAlgorithm() ? LessThan : GreaterThan;
-
-  return SIPAuthentication::Compare(other);
-}
-
-PBoolean SIPDigestAuthentication::Parse(const PString & _auth, PBoolean proxy)
-{
-  PCaselessString auth =_auth;
-
-  authRealm.MakeEmpty();
-  nonce.MakeEmpty();
-  opaque.MakeEmpty();
-  algorithm = NumAlgorithms;
-
-  qopAuth = qopAuthInt = PFalse;
-  cnonce.MakeEmpty();
-  nonceCount.SetValue(1);
-
-  if (auth.Find("digest") == P_MAX_INDEX) {
-    PTRACE(1, "SIP\tDigest auth does not contian digest keyword");
-    return false;
-  }
-
-  algorithm = Algorithm_MD5;  // default
-  PCaselessString str = GetAuthParam(auth, "algorithm");
-  if (!str.IsEmpty()) {
-    while (str != AlgorithmNames[algorithm]) {
-      algorithm = (Algorithm)(algorithm+1);
-      if (algorithm >= SIPDigestAuthentication::NumAlgorithms) {
-        PTRACE(1, "SIP\tUnknown digest algorithm " << str);
-        return PFalse;
-      }
-    }
-  }
-
-  authRealm = GetAuthParam(auth, "realm");
-  if (authRealm.IsEmpty()) {
-    PTRACE(1, "SIP\tNo realm in authentication");
-    return PFalse;
-  }
-
-  nonce = GetAuthParam(auth, "nonce");
-  if (nonce.IsEmpty()) {
-    PTRACE(1, "SIP\tNo nonce in authentication");
-    return PFalse;
-  }
-
-  opaque = GetAuthParam(auth, "opaque");
-  if (!opaque.IsEmpty()) {
-    PTRACE(2, "SIP\tAuthentication contains opaque data");
-  }
-
-  PString qopStr = GetAuthParam(auth, "qop");
-  if (!qopStr.IsEmpty()) {
-    PTRACE(3, "SIP\tAuthentication contains qop-options " << qopStr);
-    PStringList options = qopStr.Tokenise(',', PTrue);
-    qopAuth    = options.GetStringsIndex("auth") != P_MAX_INDEX;
-    qopAuthInt = options.GetStringsIndex("auth-int") != P_MAX_INDEX;
-    cnonce = OpalGloballyUniqueID().AsString();
-  }
-
-  isProxy = proxy;
-  return PTrue;
-}
-
-
-PBoolean SIPDigestAuthentication::Authorise(SIP_PDU & pdu) const
-{
-  PTRACE(3, "SIP\tAdding authentication information");
-
-  PMessageDigest5 digestor;
-  PMessageDigest5::Code a1, a2, entityBodyCode, response;
-
-  PString uriText = pdu.GetURI().AsString();
-  PINDEX pos = uriText.Find(";");
-  if (pos != P_MAX_INDEX)
-    uriText = uriText.Left(pos);
-
-  digestor.Start();
-  digestor.Process(username);
-  digestor.Process(":");
-  digestor.Process(authRealm);
-  digestor.Process(":");
-  digestor.Process(password);
-  digestor.Complete(a1);
-
-  if (qopAuthInt) {
-    digestor.Start();
-    digestor.Process(pdu.GetEntityBody());
-    digestor.Complete(entityBodyCode);
-  }
-
-  digestor.Start();
-  digestor.Process(MethodNames[pdu.GetMethod()]);
-  digestor.Process(":");
-  digestor.Process(uriText);
-  if (qopAuthInt) {
-    digestor.Process(":");
-    digestor.Process(AsHex(entityBodyCode));
-  }
-  digestor.Complete(a2);
-
-  PStringStream auth;
-  auth << "Digest "
-          "username=\"" << username << "\", "
-          "realm=\"" << authRealm << "\", "
-          "nonce=\"" << nonce << "\", "
-          "uri=\"" << uriText << "\", "
-          "algorithm=" << AlgorithmNames[algorithm];
-
-  digestor.Start();
-  digestor.Process(AsHex(a1));
-  digestor.Process(":");
-  digestor.Process(nonce);
-  digestor.Process(":");
-
-  if (qopAuthInt || qopAuth) {
-    PString nc(psprintf("%08x", (unsigned int)nonceCount));
-    ++nonceCount;
-    PString qop;
-    if (qopAuthInt)
-      qop = "auth-int";
-    else
-      qop = "auth";
-    digestor.Process(nc);
-    digestor.Process(":");
-    digestor.Process(cnonce);
-    digestor.Process(":");
-    digestor.Process(qop);
-    digestor.Process(":");
-    digestor.Process(AsHex(a2));
-    digestor.Complete(response);
-    auth << ", "
-         << "response=\"" << AsHex(response) << "\", "
-         << "cnonce=\"" << cnonce << "\", "
-         << "nc=" << nc << ", "
-         << "qop=" << qop;
-  }
-  else {
-    digestor.Process(AsHex(a2));
-    digestor.Complete(response);
-    auth << ", response=\"" << AsHex(response) << "\"";
-  }
-
-  if (!opaque.IsEmpty())
-    auth << ", opaque=\"" << opaque << "\"";
-
-  pdu.GetMIME().SetAt(isProxy ? "Proxy-Authorization" : "Authorization", auth);
-  return PTrue;
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-
-class SIPNTLMAuthentication : public SIPAuthentication
+class SIPNTLMAuthentication : public PHTTPClientAuthentication
 {
   public: 
     SIPNTLMAuthentication();
@@ -1632,7 +1364,7 @@ PObject::Comparison SIPNTLMAuthentication::Compare(const PObject & other) const
   if (result != EqualTo)
     return result;
 
-  return SIPAuthentication::Compare(other);
+  return PHTTPClientAuthentication::Compare(other);
 }
 
 PBoolean SIPNTLMAuthentication::Parse(const PString & /*auth*/, PBoolean /*proxy*/)
@@ -1683,7 +1415,6 @@ SIP_PDU::SIP_PDU(Methods method,
                  const PString & callID,
                  unsigned cseq,
                  const OpalTransportAddress & via)
-  : m_usePeerTransportAddress(false)
 {
   Construct(method, dest, to, from, callID, cseq, via);
 }
@@ -1692,7 +1423,6 @@ SIP_PDU::SIP_PDU(Methods method,
 SIP_PDU::SIP_PDU(Methods method,
                  SIPConnection & connection,
                  const OpalTransport & transport)
-  : m_usePeerTransportAddress(false)
 {
   Construct(method, connection, transport);
 }
@@ -1790,6 +1520,8 @@ void SIP_PDU::Construct(Methods meth)
   versionMinor = SIP_VER_MINOR;
 
   m_SDP = NULL;
+
+  m_usePeerTransportAddress = false;
 }
 
 
@@ -2340,7 +2072,7 @@ PString SIP_PDU::GetTransactionID() const
 
 SDPSessionDescription * SIP_PDU::GetSDP()
 {
-  if (m_SDP == NULL && (mime.GetContentType() *= "application/sdp")) {
+  if (m_SDP == NULL && mime.GetContentType() == "application/sdp") {
     m_SDP = new SDPSessionDescription(0, 0, OpalTransportAddress());
     if (!m_SDP->Decode(entityBody)) {
       delete m_SDP;
@@ -2363,7 +2095,7 @@ void SIP_PDU::SetSDP(SDPSessionDescription * sdp)
 
 SIPDialogContext::SIPDialogContext()
   : m_callId(SIPTransaction::GenerateCallID())
-  , m_lastSentCSeq(0)
+  , m_lastSentCSeq(1)
   , m_lastReceivedCSeq(0)
   , m_usePeerTransportAddress(false)
 {
@@ -2617,8 +2349,10 @@ PBoolean SIPTransaction::Start()
     return PFalse;
   }
 
-  if (connection != NULL && connection->GetAuthenticator() != NULL)
-    connection->GetAuthenticator()->Authorise(*this); 
+  if (connection != NULL && connection->GetAuthenticator() != NULL) {
+    SIPAuthenticator auth(*this);
+    connection->GetAuthenticator()->Authorise(auth); 
+  }
 
   PSafeLockReadWrite lock(*this);
 
@@ -3062,18 +2796,35 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
 static const char * const KnownEventPackage[SIPSubscribe::NumPredefinedPackages] = {
   "message-summary",
   "presence",
-  "dialog;sla;ma" // sla is the old version ma is the new for Line Appearance extension
+  "dialog;sla;ma", // sla is the old version ma is the new for Line Appearance extension
 };
 
-SIPSubscribe::EventPackage::EventPackage(PredefinedPackages pkg)
-  : PCaselessString(pkg < NumPredefinedPackages ? KnownEventPackage[pkg] : "")
+SIPSubscribe::EventPackage::EventPackage(unsigned pkg)
+ : PCaselessString((pkg & PackageMask) < NumPredefinedPackages ? KnownEventPackage[(pkg & PackageMask)] : "")
+  , m_isWatcher((pkg & Watcher) != 0)
 {
+  if (m_isWatcher)
+    *this += ".winfo";
 }
 
 
+SIPSubscribe::EventPackage::EventPackage(const PString & str)
+  : PCaselessString(str)
+{ 
+  m_isWatcher = (Right(6) == ".winfo");
+}
+
+
+SIPSubscribe::EventPackage::EventPackage(const char * cstr)
+  : PCaselessString(cstr)
+{ 
+  m_isWatcher = (Right(6) == ".winfo");
+}
+
 bool SIPSubscribe::EventPackage::operator==(PredefinedPackages pkg) const
 {
-  return InternalCompare(0, P_MAX_INDEX, pkg < NumPredefinedPackages ? KnownEventPackage[pkg] : "") == EqualTo;
+  return (m_isWatcher == ((pkg & Watcher) != 0)) &&
+          (InternalCompare(0, P_MAX_INDEX, (pkg & PackageMask) < NumPredefinedPackages ? KnownEventPackage[(pkg & PackageMask)] : "") == EqualTo);
 }
 
 
@@ -3098,6 +2849,12 @@ PObject::Comparison SIPSubscribe::EventPackage::InternalCompare(PINDEX offset, P
   const char * theirIdPtr = strstr(cstr+offset, "id");
   if (myIdPtr == NULL && theirIdPtr == NULL)
     return EqualTo;
+
+  if (myIdPtr == NULL)
+    return LessThan;
+
+  if (theirIdPtr == NULL)
+    return GreaterThan;
 
   const char * myIdEnd = strchr(myIdPtr, ';');
   PINDEX myIdLen = myIdEnd != NULL ? myIdEnd - myIdPtr : strlen(myIdPtr);
@@ -3194,7 +2951,7 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
                        OpalTransport & trans,
                        const PString & id,
                        const PString & sipIfMatch,
-                       SIPSubscribe::Params & params,
+                       const SIPSubscribe::Params & params,
                        const PString & body)
   : SIPTransaction(ep, trans)
 {
@@ -3218,7 +2975,7 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
 
   if (!sipIfMatch.IsEmpty())
     mime.SetSIPIfMatch(sipIfMatch);
-  
+
   mime.SetEvent(params.m_eventPackage);
   SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
   if (packageHandler != NULL) {
@@ -3266,14 +3023,12 @@ void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport
 SIPReferNotify::SIPReferNotify(SIPConnection & connection, OpalTransport & transport, StatusCodes code)
   : SIPTransaction(connection, transport, Method_NOTIFY)
 {
-  PStringStream str;
-  
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
-  mime.SetSubscriptionState("terminated;reason=noresource"); // Do not keep an internal state
+  mime.SetSubscriptionState(code < Successful_OK ? "active" : "terminated;reason=noresource");
   mime.SetEvent("refer");
-  mime.SetContentType("message/sipfrag;version=2.0");
+  mime.SetContentType("message/sipfrag");
 
-
+  PStringStream str;
   str << "SIP/" << versionMajor << '.' << versionMinor << " " << code << " " << GetStatusCodeDescription(code);
   entityBody = str;
 }
@@ -3354,8 +3109,10 @@ SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
   }
 
   // Add authentication if had any on INVITE
-  if (invite.GetMIME().Contains("Proxy-Authorization") || invite.GetMIME().Contains("Authorization"))
-    invite.GetConnection()->GetAuthenticator()->Authorise(*this);
+  if (invite.GetMIME().Contains("Proxy-Authorization") || invite.GetMIME().Contains("Authorization")) {
+    SIPAuthenticator auth(*this);
+    invite.GetConnection()->GetAuthenticator()->Authorise(auth);
+  }
 }
 
 
