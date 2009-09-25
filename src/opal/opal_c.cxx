@@ -37,7 +37,11 @@
 
 #include <opal.h>
 #include <opal/manager.h>
+
+#if OPAL_HAS_PCSS
 #include <opal/pcss.h>
+#endif
+
 #include <opal/localep.h>
 #include <h323/h323ep.h>
 #include <sip/sipep.h>
@@ -90,6 +94,7 @@ class OpalMessageBuffer
 
 
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
 
 class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
 {
@@ -103,6 +108,7 @@ class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
     OpalManager_C & m_manager;
 };
 
+#endif
 #endif // OPAL_PTLIB_AUDIO
 
 
@@ -161,7 +167,9 @@ class OpalManager_C : public OpalManager
     OpalManager_C(unsigned version)
       : localEP(NULL)
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
       , pcssEP(NULL)
+#endif
 #endif
       , m_apiVersion(version)
       , m_manualAlerting(false)
@@ -214,7 +222,9 @@ class OpalManager_C : public OpalManager
 
     OpalLocalEndPoint_C * localEP;
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
     OpalPCSSEndPoint_C  * pcssEP;
+#endif
 #endif
 
     unsigned                  m_apiVersion;
@@ -555,6 +565,7 @@ bool OpalLocalEndPoint_C::IsSynchronous() const
 ///////////////////////////////////////
 
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
 
 OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
   : OpalPCSSEndPoint(mgr)
@@ -581,6 +592,7 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
   return true;
 }
 
+#endif
 #endif // OPAL_PTLIB_AUDIO
 
 
@@ -820,10 +832,12 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
 #endif
 
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
   if (pcPos != P_MAX_INDEX) {
     pcssEP = new OpalPCSSEndPoint_C(*this);
     AddRouteEntry("pc:.*=" + defProto + ":<da>");
   }
+#endif
 #endif
 
   if (localPos != P_MAX_INDEX) {
@@ -926,6 +940,7 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
 void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuffer & response)
 {
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
   if (pcssEP != NULL) {
     SET_MESSAGE_STRING(response, m_param.m_general.m_audioRecordDevice, pcssEP->GetSoundChannelRecordDevice());
     if (!IsNullString(command.m_param.m_general.m_audioRecordDevice))
@@ -935,6 +950,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     if (!IsNullString(command.m_param.m_general.m_audioPlayerDevice))
       pcssEP->SetSoundChannelPlayDevice(command.m_param.m_general.m_audioPlayerDevice);
   }
+#endif
 #endif // OPAL_PTLIB_AUDIO
 
 #if OPAL_VIDEO
@@ -1069,11 +1085,13 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     return;
 
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
   if (pcssEP != NULL) {
     response->m_param.m_general.m_audioBuffers = pcssEP->GetSoundChannelBufferDepth();
     if (command.m_param.m_general.m_audioBuffers != 0)
       pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
   }
+#endif
 #endif
 
   if (m_apiVersion < 5)
@@ -1165,11 +1183,13 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     return;
 
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
   if (pcssEP != NULL) {
     response->m_param.m_general.m_audioBufferTime = pcssEP->GetSoundChannelBufferTime();
     if (command.m_param.m_general.m_audioBufferTime != 0)
       pcssEP->SetSoundChannelBufferTime(command.m_param.m_general.m_audioBufferTime);
   }
+#endif
 #endif
 
   if (m_apiVersion < 19)
@@ -1396,9 +1416,11 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
   PString partyA = command.m_param.m_callSetUp.m_partyA;
   if (partyA.IsEmpty()) {
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
     if (pcssEP != NULL)
       partyA = "pc:*";
     else
+#endif
 #endif
     if (localEP != NULL)
       partyA = "local:*";
@@ -1436,7 +1458,9 @@ void OpalManager_C::HandleAlerting(const OpalMessage & command, OpalMessageBuffe
 
   if (
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
       pcssEP == NULL &&
+#endif
 #endif
       localEP == NULL) {
     response.SetError("Can only control alerting from PC.");
@@ -1444,8 +1468,10 @@ void OpalManager_C::HandleAlerting(const OpalMessage & command, OpalMessageBuffe
   }
 
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
   if (pcssEP != NULL && pcssEP->AlertingIncomingCall(command.m_param.m_callToken))
     return;
+#endif
 #endif
 
   if (localEP != NULL && localEP->AlertingIncomingCall(command.m_param.m_callToken))
@@ -1464,7 +1490,9 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
 
   if (
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
       pcssEP == NULL &&
+#endif
 #endif
       localEP == NULL) {
     response.SetError("Can only answer calls to PC.");
@@ -1472,8 +1500,10 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
   }
 
 #if OPAL_PTLIB_AUDIO
+#if OPAL_HAS_PCSS
   if (pcssEP != NULL && pcssEP->AlertingIncomingCall(command.m_param.m_callToken))
     return;
+#endif
 #endif
 
   if (localEP != NULL && localEP->AcceptIncomingCall(command.m_param.m_callToken))
@@ -1876,7 +1906,11 @@ extern "C" {
 
   OpalHandle OPAL_EXPORT OpalInitialise(unsigned * version, const char * options)
   {
-    PCaselessString optionsString = IsNullString(options) ? "pcss h323 sip iax2 pots pstn fax t38 ivr" : options;
+    PCaselessString optionsString = IsNullString(options) ?
+#if OPAL_HAS_PCSS
+            "pcss "
+#endif
+            "h323 sip iax2 pots pstn fax t38 ivr" : options;
 
     unsigned callerVersion = 1;
     if (version != NULL) {

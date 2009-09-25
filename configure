@@ -744,7 +744,6 @@ OPAL_H450
 OPAL_H460
 OPAL_H239
 OPAL_H501
-OPAL_T120DATA
 OPAL_LID
 OPAL_IVR
 OPAL_RFC4175
@@ -752,6 +751,7 @@ OPAL_AEC
 OPAL_G711PLC
 OPAL_STATISTICS
 OPAL_HAS_MIXER
+OPAL_HAS_PCSS
 OPAL_PLUGINS
 subdirs
 OPAL_SAMPLES
@@ -1388,7 +1388,6 @@ Optional Features:
   --enable-h460           whether to enable H.460
   --enable-h239           whether to enable H.239
   --enable-h501           whether to enable H.501
-  --enable-t120           whether to enable T.120
   --enable-lid            whether to enable LID support
   --enable-ivr            whether to enable IVR support
   --enable-rfc4175        whether to enable RFC4175 support
@@ -1397,6 +1396,7 @@ Optional Features:
   --enable-g711plc        whether to enable Packet Loss Concealment for G.711
   --enable-statistics     whether to enable statistics gathering support
   --enable-mixer          whether to enable media mixing support
+  --enable-pcss           whether to enable PC sound system support
   --enable-plugins        whether to enable plugin support
   --enable-samples        whether to enable samples build
 
@@ -4392,6 +4392,7 @@ OPAL_HAS_MSRP=yes
 OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
 OPAL_HAS_MIXER=yes
+OPAL_HAS_PCSS=yes
 PTLIB_REC_VERSION="2.0.0"
 
 
@@ -10662,49 +10663,6 @@ _ACEOF
 
 
 
-          if test "x$OPAL_T120DATA" = "x"; then
-            { { echo "$as_me:$LINENO: error: No default specified for OPAL_T120DATA, please correct configure.ac" >&5
-echo "$as_me: error: No default specified for OPAL_T120DATA, please correct configure.ac" >&2;}
-   { (exit 1); exit 1; }; }
-	  fi
-          # Check whether --enable-t120 was given.
-if test "${enable_t120+set}" = set; then
-  enableval=$enable_t120; OPAL_T120DATA=$enableval
-fi
-
-
-          if test "xOPAL_H323" != "x"; then
-            if test "x$OPAL_H323" != "xyes"; then
-              { echo "$as_me:$LINENO: t120 support disabled due to disabled dependency OPAL_H323" >&5
-echo "$as_me: t120 support disabled due to disabled dependency OPAL_H323" >&6;}
-	      OPAL_T120DATA=no
-	    fi
-	  fi
-
-          if test "x" != "x"; then
-            if test "x$" != "xyes"; then
-              { echo "$as_me:$LINENO: t120 support disabled due to disabled dependency " >&5
-echo "$as_me: t120 support disabled due to disabled dependency " >&6;}
-	      OPAL_T120DATA=no
-	    fi
-	  fi
-
-
-          { echo "$as_me:$LINENO: checking whether to enable T.120" >&5
-echo $ECHO_N "checking whether to enable T.120... $ECHO_C" >&6; }
-          { echo "$as_me:$LINENO: result: $OPAL_T120DATA" >&5
-echo "${ECHO_T}$OPAL_T120DATA" >&6; }
-
-
-          if test "x$OPAL_T120DATA" = "xyes"; then
-
-cat >>confdefs.h <<\_ACEOF
-#define OPAL_T120DATA 1
-_ACEOF
-
-          fi
-
-
 
           if test "x$OPAL_LID" = "x"; then
             { { echo "$as_me:$LINENO: error: No default specified for OPAL_LID, please correct configure.ac" >&5
@@ -11008,6 +10966,50 @@ echo "${ECHO_T}$OPAL_HAS_MIXER" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_HAS_MIXER 1
+_ACEOF
+
+          fi
+
+
+
+          if test "x$OPAL_HAS_PCSS" = "x"; then
+            { { echo "$as_me:$LINENO: error: No default specified for OPAL_HAS_PCSS, please correct configure.ac" >&5
+echo "$as_me: error: No default specified for OPAL_HAS_PCSS, please correct configure.ac" >&2;}
+   { (exit 1); exit 1; }; }
+	  fi
+          # Check whether --enable-pcss was given.
+if test "${enable_pcss+set}" = set; then
+  enableval=$enable_pcss; OPAL_HAS_PCSS=$enableval
+fi
+
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: pcss support disabled due to disabled dependency " >&5
+echo "$as_me: pcss support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_PCSS=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { echo "$as_me:$LINENO: pcss support disabled due to disabled dependency " >&5
+echo "$as_me: pcss support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_PCSS=no
+	    fi
+	  fi
+
+
+          { echo "$as_me:$LINENO: checking whether to enable PC sound system support" >&5
+echo $ECHO_N "checking whether to enable PC sound system support... $ECHO_C" >&6; }
+          { echo "$as_me:$LINENO: result: $OPAL_HAS_PCSS" >&5
+echo "${ECHO_T}$OPAL_HAS_PCSS" >&6; }
+
+
+          if test "x$OPAL_HAS_PCSS" = "xyes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define OPAL_HAS_PCSS 1
 _ACEOF
 
           fi
@@ -11941,7 +11943,6 @@ OPAL_H450!$OPAL_H450$ac_delim
 OPAL_H460!$OPAL_H460$ac_delim
 OPAL_H239!$OPAL_H239$ac_delim
 OPAL_H501!$OPAL_H501$ac_delim
-OPAL_T120DATA!$OPAL_T120DATA$ac_delim
 OPAL_LID!$OPAL_LID$ac_delim
 OPAL_IVR!$OPAL_IVR$ac_delim
 OPAL_RFC4175!$OPAL_RFC4175$ac_delim
@@ -11949,6 +11950,7 @@ OPAL_AEC!$OPAL_AEC$ac_delim
 OPAL_G711PLC!$OPAL_G711PLC$ac_delim
 OPAL_STATISTICS!$OPAL_STATISTICS$ac_delim
 OPAL_HAS_MIXER!$OPAL_HAS_MIXER$ac_delim
+OPAL_HAS_PCSS!$OPAL_HAS_PCSS$ac_delim
 OPAL_PLUGINS!$OPAL_PLUGINS$ac_delim
 subdirs!$subdirs$ac_delim
 OPAL_SAMPLES!$OPAL_SAMPLES$ac_delim
