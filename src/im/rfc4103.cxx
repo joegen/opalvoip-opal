@@ -43,12 +43,24 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+RFC4103Context::RFC4103Context()
+  : m_sequence(0)
+  , m_baseTimeStamp(0)
+{
+}
+
 RFC4103Context::RFC4103Context(const OpalMediaFormat & fmt)
   : m_mediaFormat(fmt)
   , m_sequence(0)
   , m_baseTimeStamp(0)
 {
 }
+
+void RFC4103Context::SetMediaFormat(const OpalMediaFormat & fmt)
+{
+  m_mediaFormat = fmt;
+}
+
 
 RTP_DataFrameList RFC4103Context::ConvertToFrames(const T140String & body)
 {
