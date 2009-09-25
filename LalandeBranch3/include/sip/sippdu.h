@@ -42,6 +42,7 @@
 
 #include <ptclib/mime.h>
 #include <ptclib/url.h>
+#include <ptclib/http.h>
 #include <sip/sdp.h>
 #include <opal/rtpconn.h>
 
@@ -248,10 +249,10 @@ class SIPMIMEInfo : public PMIMEInfo
 
     void SetCompactForm(bool form) { compactForm = form; }
 
-    PString GetContentType() const;
+    PCaselessString GetContentType(bool includeParameters = false) const;
     void SetContentType(const PString & v);
 
-    PString GetContentEncoding() const;
+    PCaselessString GetContentEncoding() const;
     void SetContentEncoding(const PString & v);
 
     PString GetFrom() const;
@@ -343,7 +344,7 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetEvent() const;
     void SetEvent(const PString & v);
     
-    PString GetSubscriptionState() const;
+    PCaselessString GetSubscriptionState() const;
     void SetSubscriptionState(const PString & v);
     
     PString GetUserAgent() const;
@@ -424,99 +425,22 @@ class SIPMIMEInfo : public PMIMEInfo
 /////////////////////////////////////////////////////////////////////////
 // SIPAuthentication
 
-class SIPAuthentication : public PObject
+typedef PHTTPClientAuthentication SIPAuthentication;
+
+class SIPAuthenticator : public PHTTPClientAuthentication::AuthObject
 {
-  PCLASSINFO(SIPAuthentication, PObject);
   public:
-    SIPAuthentication();
+    SIPAuthenticator(SIP_PDU & pdu);
+    virtual PMIMEInfo & GetMIME();
+    virtual PString GetURI();
+    virtual PString GetEntityBody();
+    virtual PString GetMethod();
 
-    virtual Comparison Compare(
-      const PObject & other
-    ) const;
-
-    virtual PBoolean Parse(
-      const PString & auth,
-      PBoolean proxy
-    ) = 0;
-
-    virtual PBoolean Authorise(
-      SIP_PDU & pdu
-    ) const =  0;
-
-    virtual PBoolean IsProxy() const               { return isProxy; }
-
-    virtual PString GetUsername() const   { return username; }
-    virtual PString GetPassword() const   { return password; }
-    virtual PString GetAuthRealm() const  { return PString::Empty(); }
-
-    virtual void SetUsername(const PString & user) { username = user; }
-    virtual void SetPassword(const PString & pass) { password = pass; }
-    virtual void SetAuthRealm(const PString &)     { }
-
-    PString GetAuthParam(const PString & auth, const char * name) const;
-    PString AsHex(PMessageDigest5::Code & digest) const;
-    PString AsHex(const PBYTEArray & data) const;
-
-    static SIPAuthentication * ParseAuthenticationRequired(bool isProxy,
-                                                const PString & line,
-                                                      PString & errorMsg);
-
-  protected:
-    PBoolean  isProxy;
-
-    PString   username;
-    PString   password;
+  protected:  
+    SIP_PDU & m_pdu;
 };
 
-typedef PFactory<SIPAuthentication> SIPAuthenticationFactory;
 
-/////////////////////////////////////////////////////////////////////////
-
-class SIPDigestAuthentication : public SIPAuthentication
-{
-  PCLASSINFO(SIPDigestAuthentication, SIPAuthentication);
-  public:
-    SIPDigestAuthentication();
-
-    SIPDigestAuthentication & operator =(
-      const SIPDigestAuthentication & auth
-    );
-
-    virtual Comparison Compare(
-      const PObject & other
-    ) const;
-
-    virtual PBoolean Parse(
-      const PString & auth,
-      PBoolean proxy
-    );
-
-    virtual PBoolean Authorise(
-      SIP_PDU & pdu
-    ) const;
-
-    virtual PString GetAuthRealm() const         { return authRealm; }
-    virtual void SetAuthRealm(const PString & r) { authRealm = r; }
-
-    enum Algorithm {
-      Algorithm_MD5,
-      NumAlgorithms
-    };
-    const PString & GetNonce() const       { return nonce; }
-    Algorithm GetAlgorithm() const         { return algorithm; }
-    const PString & GetOpaque() const      { return opaque; }
-
-  protected:
-    PString   authRealm;
-    PString   nonce;
-    Algorithm algorithm;
-    PString   opaque;
-
-    PBoolean qopAuth;
-    PBoolean qopAuthInt;
-    PString cnonce;
-    mutable PAtomicInteger nonceCount;
-};
 
 /////////////////////////////////////////////////////////////////////////
 // SIP_PDU
@@ -733,12 +657,14 @@ class SIP_PDU : public PSafeObject
 
     Methods GetMethod() const                { return method; }
     StatusCodes GetStatusCode () const       { return statusCode; }
+    void SetStatusCode (StatusCodes c)       { statusCode = c; }
     const SIPURL & GetURI() const            { return uri; }
     unsigned GetVersionMajor() const         { return versionMajor; }
     unsigned GetVersionMinor() const         { return versionMinor; }
     const PString & GetEntityBody() const    { return entityBody; }
           PString & GetEntityBody()          { return entityBody; }
     const PString & GetInfo() const          { return info; }
+          PString & GetInfo()                { return info; }
     const SIPMIMEInfo & GetMIME() const      { return mime; }
           SIPMIMEInfo & GetMIME()            { return mime; }
     void SetURI(const SIPURL & newuri)       { uri = newuri; }
@@ -1010,26 +936,34 @@ class SIPSubscribe : public SIPTransaction
 {
     PCLASSINFO(SIPSubscribe, SIPTransaction);
   public:
-    /** Valid types for a presence event
+    /** Valid types for an event package
      */
     enum PredefinedPackages {
       MessageSummary,
       Presence,
       Dialog,
-      NumPredefinedPackages
+      NumPredefinedPackages,
+
+      PackageMask = 0x7fff,
+      Watcher     = 0x8000
     };
 
     class EventPackage : public PCaselessString
     {
         PCLASSINFO(EventPackage, PCaselessString);
       public:
-        EventPackage(PredefinedPackages);
-        EventPackage(const PString & str) : PCaselessString(str) { }
-        EventPackage(const char * cstr) : PCaselessString(cstr) { }
+        EventPackage(unsigned int);
+        EventPackage(const PString & str);
+        EventPackage(const char * cstr);
         bool operator==(PredefinedPackages) const;
         bool operator==(const PString & str) const { return Compare(str) == EqualTo; }
         bool operator==(const char * cstr) const { return InternalCompare(0, P_MAX_INDEX, cstr) == EqualTo; }
         virtual Comparison InternalCompare(PINDEX offset, PINDEX length, const char * cstr) const;
+
+        bool IsWatcher() const   { return m_isWatcher; }
+
+      protected:
+        bool m_isWatcher;
     };
 
     struct Params {
@@ -1069,7 +1003,7 @@ class SIPEventPackageHandler
 {
 public:
   virtual ~SIPEventPackageHandler() { }
-  virtual PString GetContentType() const = 0;
+  virtual PCaselessString GetContentType() const = 0;
   virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request) = 0;
   virtual PString OnSendNOTIFY(SIPHandler & /*handler*/, const PObject * /*body*/) { return PString::Empty(); }
 };
@@ -1106,7 +1040,7 @@ class SIPPublish : public SIPTransaction
       OpalTransport & trans,
       const PString & id,
       const PString & sipIfMatch,
-      SIPSubscribe::Params & params,
+      const SIPSubscribe::Params & params,
       const PString & body
     );
 };

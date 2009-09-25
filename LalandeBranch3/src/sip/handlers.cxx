@@ -247,8 +247,10 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
   if (transaction != NULL) {
     if (state == Unsubscribing)
       transaction->GetMIME().SetExpires(0);
-    if (authentication != NULL)
-      authentication->Authorise(*transaction); // If already have info from last time, use it!
+    if (authentication != NULL) {
+      SIPAuthenticator auth(*transaction);
+      authentication->Authorise(auth); // If already have info from last time, use it!
+    }
     if (transaction->Start()) {
       transactions.Append(transaction);
       return true;
@@ -332,7 +334,7 @@ PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 
 void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  // Received a response, so collapse the foking on multiple interfaces.
+  // Received a response, so collapse the forking on multiple interfaces.
 
   transactions.Remove(&transaction); // Take this transaction out of list
 
@@ -402,7 +404,7 @@ void SIPHandler::OnReceivedTemporarilyUnavailable(SIPTransaction & /*transaction
 }
 
 
-void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction*/, SIP_PDU & response)
+void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
   bool isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
 
@@ -423,9 +425,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction
 
   // authenticate 
   PString errorMsg;
-  SIPAuthentication * newAuth = SIPAuthentication::ParseAuthenticationRequired(isProxy, 
-                                                                               response.GetMIME()(isProxy ? "Proxy-Authenticate" : "WWW-Authenticate"),
-                                                                               errorMsg);
+  SIPAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(isProxy, response.GetMIME(), errorMsg);
   if (newAuth == NULL) {
     PTRACE(2, "SIP\t" << errorMsg);
     OnFailed(SIP_PDU::Failure_Forbidden);
@@ -446,6 +446,16 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction
       PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
       username = proxy.GetUserName();
       password = proxy.GetPassword();
+    }
+    else {
+      delete newAuth;
+      PTRACE(1, "SIP\tAuthentication not possible yet.");
+      OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
+      if (expire > 0 && !transaction.IsCanceled()) {
+        PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
+        expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
+      }
+      return;
     }
   }
 
@@ -468,7 +478,9 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction
   m_password = password;
 
   // Restart the transaction with new authentication handler
-  SendRequest(GetState());
+  State oldState = state;
+  state = Unavailable;
+  SendRequest(oldState);
 }
 
 
@@ -906,7 +918,6 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     ShutDown();
   }
   else if (state.Find("active") != P_MAX_INDEX || state.Find("pending") != P_MAX_INDEX) {
-
     PTRACE(3, "SIP\tSubscription is " << state);
     PString expire = SIPMIMEInfo::ExtractFieldParameter(state, "expire");
     if (!expire.IsEmpty())
@@ -925,7 +936,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
 class SIPMwiEventPackageHandler : public SIPEventPackageHandler
 {
-  virtual PString GetContentType() const
+  virtual PCaselessString GetContentType() const
   {
     return "application/simple-message-summary";
   }
@@ -1090,7 +1101,7 @@ public:
   {
   }
 
-  virtual PString GetContentType() const
+  virtual PCaselessString GetContentType() const
   {
     return "application/dialog-info+xml";
   }
@@ -1188,6 +1199,8 @@ static SIPEventPackageFactory::Worker<SIPDialogEventPackageHandler> dialogEventP
 
 #endif // P_EXPAT
 
+
+///////////////////////////////////////////////////////////////////////////////
 
 SIPDialogNotification::SIPDialogNotification(const PString & entity)
   : m_entity(entity)
@@ -1358,7 +1371,7 @@ bool SIPNotifyHandler::SendNotify(const PObject * body)
     SetBody(PString::Empty());
   else {
     PStringStream str;
-    str << body;
+    str << *body;
     SetBody(str);
   }
 
@@ -1435,7 +1448,7 @@ PString SIPPresenceInfo::AsString() const
   PStringStream xml;
 
   xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-         "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"";
+    "<impp:presence xmlns:impp=\"urn:ietf:params:xml:ns:pidf\" entity=\"";
 
   PCaselessString entity = m_entity;
   if (entity.IsEmpty()) 
@@ -1454,29 +1467,27 @@ PString SIPPresenceInfo::AsString() const
   xml << entity;
 
   xml << "\">\r\n"
-         "  <tuple id=\"id_" << OpalGloballyUniqueID() << "\">\r\n";
+    "  <impp:tuple id=\"id_" << OpalGloballyUniqueID() << "\">\r\n";
 
-  if (!m_note.IsEmpty())
-    xml << "  <note>" << m_note << "</note>\r\n";
-
-  xml << "    <status>\r\n";
+  xml << "    <impp:status>\r\n";
   switch (m_basic) {
     case Open :
-      xml << "      <basic>open</basic>\r\n";
+      xml << "      <impp:basic>open</impp:basic>\r\n";
       break;
 
     case Closed :
-      xml << "      <basic>closed</basic>\r\n";
-      break;
-
     default:
-      xml << "      <basic>unknown</basic>\r\n";
+      xml << "      <impp:basic>closed</impp:basic>\r\n";
       break;
   }
-  xml << "    </status>\r\n"
+  xml << "    </impp:status>\r\n"
+
+  //if (!m_note.IsEmpty())
+  //  xml << "    <impp:note xml:lang=\"en\">" << m_note << "</impp:note>\r\n";
+
   //       "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? m_address : m_contact) << "</contact>\r\n"
-         "  </tuple>\r\n"
-         "</presence>\r\n";
+         "  </impp:tuple>\r\n"
+         "</impp:presence>\r\n";
 
   return xml;
 }

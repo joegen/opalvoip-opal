@@ -216,7 +216,7 @@ class OpalEndPoint : public PObject
 
        The default behaviour is pure.
      */
-    virtual PBoolean MakeConnection(
+    virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
       void * userData = NULL,          ///<  Arbitrary data to pass to connection
@@ -254,13 +254,6 @@ class OpalEndPoint : public PObject
       OpalConnection & connection,  ///<  Connection that is calling
       unsigned options,             ///<  options for new connection (can't use default value as overrides will fail)
       OpalConnection::StringOptions * stringOptions
-    );
-    virtual PBoolean OnIncomingConnection(
-      OpalConnection & connection,  ///<  Connection that is calling
-      unsigned options              ///<  options for new connection (can't use default value as overrides will fail)
-    );
-    virtual PBoolean OnIncomingConnection(
-      OpalConnection & connection   ///<  Connection that is calling
     );
 
     /**Call back for remote party is now responsible for completing the call.
@@ -491,10 +484,9 @@ class OpalEndPoint : public PObject
        Note that a specific connection may not actually support all of the
        media formats returned here, but should return no more.
 
-       The default behaviour returns the most basic media formats, PCM audio
-       and YUV420P video.
+       The default behaviour is pure.
       */
-    virtual OpalMediaFormatList GetMediaFormats() const;
+    virtual OpalMediaFormatList GetMediaFormats() const = 0;
 
     /**Adjust media formats available on a connection.
        This is called by a connection after it has called
@@ -534,15 +526,6 @@ class OpalEndPoint : public PObject
     );
 
 #if OPAL_VIDEO
-    /**Add video media formats available on a connection.
-
-       The default behaviour calls the OpalEndPoint function of the same name.
-      */
-    virtual void AddVideoMediaFormats(
-      OpalMediaFormatList & mediaFormats, ///<  Media formats to use
-      const OpalConnection * connection = NULL  ///<  Optional connection that is using formats
-    ) const;
-
     /**Create an PVideoInputDevice for a source media stream.
       */
     virtual PBoolean CreateVideoInputDevice(
@@ -714,13 +697,30 @@ class OpalEndPoint : public PObject
      */
     bool FindListenerForProtocol(const char * protoPrefix, OpalTransportAddress & addr);
 
-    /**Add IM media formats available on a connection.
-       The default behaviour calls the OpalEndPoint function of the same name.
-      */
-    virtual void AddIMMediaFormats(
-      OpalMediaFormatList & mediaFormats, ///<  Media formats to use
-      const OpalConnection * connection = NULL  ///<  Optional connection that is using formats
-    ) const;
+    /**Send text message
+     */
+    virtual PBoolean Message(
+      const PString & to, 
+      const PString & body
+    );
+    virtual PBoolean Message(
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      PURL & from, 
+      PString & conversationId
+    );
+
+    /**Called when text message received
+     */
+    virtual void OnMessageReceived(
+      const PURL & from, 
+      const PString & fromName,
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      const PString & conversationId
+    );
 
   protected:
     OpalManager   & manager;
@@ -741,12 +741,16 @@ class OpalEndPoint : public PObject
     {
         virtual void DeleteObject(PObject * object) const;
     } connectionsActive;
-    PBoolean AddConnection(OpalConnection * connection);
+    OpalConnection * AddConnection(OpalConnection * connection);
 
     PMutex inUseFlag;
 
     friend void OpalManager::GarbageCollection();
     friend void OpalConnection::Release(CallEndReason reason);
+
+  private:
+    P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
 };
 
 

@@ -76,6 +76,7 @@ OPAL_HAS_H224=no
 OPAL_HAS_H281=no
 OPAL_H450=no
 OPAL_H460=no
+OPAL_H239=no
 OPAL_H501=no
 OPAL_T120DATA=no
 OPAL_LID=no
@@ -93,6 +94,7 @@ OPAL_HAS_MSRP=no
 OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
 OPAL_HAS_MIXER=no
+OPAL_HAS_PCSS=no
 PTLIB_REC_VERSION="2.0.0"
 
 dnl ########################################################################
@@ -293,8 +295,8 @@ PKG_REQUIRES="$PKG_REQUIRES ptlib"
 OPAL_MSG_CHECK([ptlib version], [$PTLIB_VERSION])
 
 OPAL_CHECK_PTLIB_EXISTS()
-OPAL_CHECK_PTLIB([URL],     [ptclib/url.h],  [PURL url;],                 [])
-OPAL_CHECK_PTLIB([STUN],    [ptclib/pstun.h],[PSTUNClient client;],       [])
+OPAL_CHECK_PTLIB_MANDATORY([URL],     [ptclib/url.h],  [PURL url;])
+OPAL_CHECK_PTLIB_MANDATORY([STUN],    [ptclib/pstun.h],[PSTUNClient client;])
 OPAL_CHECK_PTLIB([SSL],     [ptclib/pssl.h], [PSSLContext ctx;],          [OPAL_PTLIB_SSL])
 OPAL_CHECK_PTLIB([ASN.1],   [ptclib/pasn.h], [PASNInteger asnint(5);],    [OPAL_PTLIB_ASN])
 OPAL_CHECK_PTLIB([expat],   [ptclib/pxml.h], [PXMLParser parser;],        [OPAL_PTLIB_EXPAT])
@@ -354,7 +356,6 @@ dnl XMSWIN_DIR_SYMBOL  libzrtp,LIBZRTP_DIR
 AC_ARG_ENABLE([zrtp],
               [AC_HELP_STRING([--enable-zrtp],[enable ZRTP protocol support])],
               [OPAL_ZRTP=$enableval])
-
 
 if test "x$OPAL_ZRTP" = "xyes" ; then
   if test "x$OPAL_SIP" != "xyes" ; then
@@ -441,7 +442,7 @@ dnl MSWIN_DEFINE  h323,OPAL_H323
 OPAL_SIMPLE_OPTION([h323],[OPAL_H323], [whether to enable H.323 protocol support])
 
 if test "x$OPAL_H323" = "xyes" ; then
-  OPAL_CHECK_PTLIB([ASN], [ptclib/asner.h],  [PPER_Stream per;], [])
+  OPAL_CHECK_PTLIB_MANDATORY([ASN], [ptclib/asner.h],  [PPER_Stream per;])
 fi
 
 dnl MSWIN_DISPLAY iax2,IAX2 support
@@ -486,6 +487,11 @@ dnl MSWIN_DEFINE     h460,OPAL_H460
 dnl MSWIN_IF_FEATURE h460,h323
 OPAL_SIMPLE_OPTION([h460],[OPAL_H460], [whether to enable H.460], [OPAL_H323])
 
+dnl MSWIN_DISPLAY    h239,H.239
+dnl MSWIN_DEFINE     h239,OPAL_H239
+dnl MSWIN_IF_FEATURE h239,h323
+OPAL_SIMPLE_OPTION([h239],[OPAL_H239], [whether to enable H.239], [OPAL_H323])
+
 dnl MSWIN_DISPLAY    h501,H.501
 dnl MSWIN_DEFINE     h501,OPAL_H501
 dnl MSWIN_IF_FEATURE h501,h323
@@ -523,6 +529,10 @@ OPAL_SIMPLE_OPTION([statistics],[OPAL_STATISTICS], [whether to enable statistics
 dnl MSWIN_DISPLAY mixer,Media mixing
 dnl MSWIN_DEFINE  mixer,OPAL_HAS_MIXER
 OPAL_SIMPLE_OPTION([mixer],[OPAL_HAS_MIXER], [whether to enable media mixing support])
+
+dnl MSWIN_DISPLAY pcss,PC sound system support
+dnl MSWIN_DEFINE  pcss,OPAL_HAS_PCSS
+OPAL_SIMPLE_OPTION([pcss],[OPAL_HAS_PCSS], [whether to enable PC sound system support])
 
 
 dnl ########################################################################

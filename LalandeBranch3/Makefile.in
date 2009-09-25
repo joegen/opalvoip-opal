@@ -122,11 +122,10 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/opal/transcoders.cxx \
            $(OPAL_SRCDIR)/opal/transports.cxx \
            $(OPAL_SRCDIR)/opal/guid.cxx \
-	   $(OPAL_SRCDIR)/opal/opalglobalstatics.cxx \
            $(OPAL_SRCDIR)/rtp/rtp.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
 	   $(OPAL_SRCDIR)/opal/opal_c.cxx \
-	   $(OPAL_SRCDIR)/opal/pcss.cxx 
+           $(OPAL_SRCDIR)/opal/pres_ent.cxx
 
 ifeq ($(OPAL_IVR), yes)
 SOURCES += $(OPAL_SRCDIR)/opal/ivr.cxx \
@@ -137,6 +136,10 @@ endif
 ifeq ($(OPAL_HAS_MIXER), yes)
 SOURCES += $(OPAL_SRCDIR)/opal/recording.cxx \
            $(OPAL_SRCDIR)/opal/opalmixer.cxx 
+endif
+
+ifeq ($(OPAL_HAS_PCSS), yes)
+SOURCES += $(OPAL_SRCDIR)/opal/pcss.cxx
 endif
 
 ########################################
@@ -245,7 +248,6 @@ SOURCES += \
            $(OPAL_SRCDIR)/iax2/frame.cxx \
            $(OPAL_SRCDIR)/iax2/iax2con.cxx \
            $(OPAL_SRCDIR)/iax2/iax2ep.cxx \
-           $(OPAL_SRCDIR)/iax2/iax2jitter.cxx \
            $(OPAL_SRCDIR)/iax2/iax2medstrm.cxx \
            $(OPAL_SRCDIR)/iax2/iedata.cxx \
            $(OPAL_SRCDIR)/iax2/ies.cxx \
@@ -284,6 +286,7 @@ SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
            $(OPAL_SRCDIR)/sip/sippdu.cxx \
            $(OPAL_SRCDIR)/sip/sdp.cxx \
            $(OPAL_SRCDIR)/sip/handlers.cxx \
+           $(OPAL_SRCDIR)/sip/sippres.cxx
 
 ifeq ($(OPAL_T38_CAP), yes)
 SOURCES += $(OPAL_SRCDIR)/t38/sipt38.cxx
@@ -397,7 +400,7 @@ endif
 
 ifeq ($(OPAL_AEC), yes)
 
-ifeq ($(SPEEXDSP_SYSTEM), yes)
+ifeq ($(SPEEXDSP_SYSTEM), no)
 
 SPEEXDSP_SRCDIR    = $(OPAL_SRCDIR)/codec/speex/libspeex
 
@@ -625,7 +628,7 @@ both: opt debug
 all: optdepend opt debugdepend debug
 
 update:
-	svn -q update
+	svn update
 	$(MAKE) all
 
 distclean: clean

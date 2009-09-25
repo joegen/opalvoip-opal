@@ -44,9 +44,16 @@
 #include <opal/rtpconn.h>
 #include <sip/sippdu.h>
 #include <sip/handlers.h>
+
 #if OPAL_VIDEO
+#if OPAL_HAS_PCSS
 #include <opal/pcss.h>                  // for OpalPCSSConnection
+#endif
 #include <codec/vidcodec.h>             // for OpalVideoUpdatePicture command
+#endif
+
+#if OPAL_HAS_IM
+#include <im/rfc4103.h>
 #endif
 
 class OpalCall;
@@ -60,7 +67,7 @@ class SIPEndPoint;
 
 /**Session Initiation Protocol connection.
  */
-//class SIPConnection : public OpalConnection
+
 class SIPConnection : public OpalRTPConnection
 {
   PCLASSINFO(SIPConnection, OpalRTPConnection);
@@ -447,6 +454,12 @@ class SIPConnection : public OpalRTPConnection
 
     virtual void OnReceivedMESSAGE(SIP_PDU & pdu);
     virtual void OnMessageReceived(const SIPURL & from, const SIP_PDU & pdu);
+#if OPAL_HAS_IM
+    virtual bool TransmitExternalIM(
+      const OpalMediaFormat & format, 
+      RTP_DataFrame & body
+    );
+#endif
 
   protected:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
@@ -555,6 +568,10 @@ class SIPConnection : public OpalRTPConnection
 
   protected:
     PTimer sessionTimer;
+#if OPAL_HAS_IM
+    RFC4103Context rfc4103Context;
+#endif
+
   public:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
 };
