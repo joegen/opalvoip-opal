@@ -177,6 +177,7 @@
 #undef GCC_HAS_CLZ
 
 #undef OPAL_HAS_MIXER
+#undef OPAL_HAS_PCSS
 
 
 /////////////////////////////////////////////////
