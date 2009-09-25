@@ -51,7 +51,9 @@ class RFC4103Frame : public RTP_DataFrame
 class RFC4103Context : public PObject
 {
   public:
+    RFC4103Context();
     RFC4103Context(const OpalMediaFormat & fmt);
+    void SetMediaFormat(const OpalMediaFormat & fmt);
     RTP_DataFrameList ConvertToFrames(const T140String & body);
 
     OpalMediaFormat m_mediaFormat;

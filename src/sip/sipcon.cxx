@@ -236,10 +236,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   , authentication(NULL)
   , ackReceived(false)
   , releaseMethod(ReleaseWithNothing)
-#if OPAL_HAS_IM
-  , rfc4103Context(OpalT140)
-#endif
-
 {
   synchronousOnRelease = false;
 
@@ -2644,7 +2640,7 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 {
   PTRACE(3, "SIP\tReceived MESSAGE");
 
-  RTP_DataFrameList frames = rfc4103Context.ConvertToFrames(pdu.GetEntityBody());
+  RTP_DataFrameList frames = m_rfc4103Context[0].ConvertToFrames(pdu.GetEntityBody());
 
   for (PINDEX i = 0; i < frames.GetSize(); ++i)
     OnReceiveExternalIM(OpalT140, frames[i]);

@@ -293,6 +293,11 @@ OpalConnection::OpalConnection(OpalCall & call,
       sendUserInputMode = ep.GetSendUserInputMode();
       break;
   }
+
+#if OPAL_HAS_IM
+  m_rfc4103Context[0].SetMediaFormat(OpalT140);
+  m_rfc4103Context[1].SetMediaFormat(OpalT140);
+#endif
 }
 
 OpalConnection::~OpalConnection()

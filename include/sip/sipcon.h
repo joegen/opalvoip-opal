@@ -584,9 +584,6 @@ class SIPConnection : public OpalRTPConnection
 
   protected:
     PTimer sessionTimer;
-#if OPAL_HAS_IM
-    RFC4103Context rfc4103Context;
-#endif
     PStringList m_allowedEvents;
 
   public:

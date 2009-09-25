@@ -49,6 +49,7 @@
 #include <ptlib/safecoll.h>
 #include <rtp/rtp.h>
 #include <im/t140.h>
+#include <im/rfc4103.h>
 
 class OpalEndPoint;
 class OpalCall;
@@ -1573,6 +1574,15 @@ class OpalConnection : public PSafeObject
       const OpalMediaFormat & format, 
       RTP_DataFrame & body
     );
+
+    /**  Used for creating IM messages. 
+      *  0 = used for sending internal
+      *  1 = used for sending external
+      */
+    RFC4103Context & GetRFC4103Context(PINDEX i) { return m_rfc4103Context[i]; };
+
+  protected:
+    RFC4103Context m_rfc4103Context[2];
 
 #endif
 
