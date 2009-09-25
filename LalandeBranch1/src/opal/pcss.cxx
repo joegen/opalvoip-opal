@@ -370,6 +370,9 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
     soundChannelRecordDevice(recordDevice),
     soundChannelBuffers(ep.GetSoundChannelBufferDepth())
 {
+#if OPAL_PTLIB_DTMF
+  m_sendInBandDTMF = m_detectInBandDTMF = false;
+#endif
   silenceDetector = new OpalPCM16SilenceDetector(endpoint.GetManager().GetSilenceDetectParams());
   echoCanceler = new OpalEchoCanceler;
 
