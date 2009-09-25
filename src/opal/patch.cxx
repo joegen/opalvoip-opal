@@ -531,7 +531,7 @@ void OpalMediaPatch::Main()
     }
   }
 
-  source.OnStopMediaPatch();
+  source.OnStopMediaPatch(*this);
 
   PTRACE(4, "Patch\tThread ended for " << *this);
 }

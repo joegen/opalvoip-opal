@@ -166,7 +166,9 @@ class OpalMediaStream : public PSafeObject
     /**Callback that is called on the source stream once the media patch has started.
        The default behaviour calls OpalConnection::OnMediaPatchStop()
       */
-    virtual void OnStopMediaPatch();
+    virtual void OnStopMediaPatch(
+      OpalMediaPatch & patch    ///< Media patch that is stopping
+    );
 
     /**Write a list of RTP frames of data to the sink media stream.
        The default behaviour simply calls WritePacket() on each of the
@@ -374,6 +376,7 @@ class OpalMediaStream : public PSafeObject
   private:
     P_REMOVE_VIRTUAL_VOID(OnPatchStart());
     P_REMOVE_VIRTUAL_VOID(OnPatchStop());
+    P_REMOVE_VIRTUAL_VOID(OnStopMediaPatch());
 };
 
 typedef PSafePtr<OpalMediaStream> OpalMediaStreamPtr;
