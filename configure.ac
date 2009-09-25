@@ -92,6 +92,7 @@ OPAL_HAS_MSRP=yes
 OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
 OPAL_HAS_MIXER=yes
+OPAL_HAS_PCSS=yes
 PTLIB_REC_VERSION="2.0.0"
 
 dnl ########################################################################
@@ -549,6 +550,10 @@ OPAL_SIMPLE_OPTION([statistics],[OPAL_STATISTICS], [whether to enable statistics
 dnl MSWIN_DISPLAY mixer,Media mixing
 dnl MSWIN_DEFINE  mixer,OPAL_HAS_MIXER
 OPAL_SIMPLE_OPTION([mixer],[OPAL_HAS_MIXER], [whether to enable media mixing support])
+
+dnl MSWIN_DISPLAY pcss
+dnl MSWIN_DEFINE  pcss,OPAL_HAS_PCSS
+OPAL_SIMPLE_OPTION([pcss],[OPAL_HAS_PCSS], [whether to enable PC sound system support])
 
 
 dnl ########################################################################

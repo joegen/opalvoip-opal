@@ -133,7 +133,6 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/rtp/rtp.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
 	   $(OPAL_SRCDIR)/opal/opal_c.cxx \
-	   $(OPAL_SRCDIR)/opal/pcss.cxx \
            $(OPAL_SRCDIR)/opal/pres_ent.cxx
 
 ifeq ($(OPAL_IVR), yes)
@@ -145,6 +144,10 @@ endif
 ifeq ($(OPAL_HAS_MIXER), yes)
 SOURCES += $(OPAL_SRCDIR)/opal/recording.cxx \
            $(OPAL_SRCDIR)/opal/opalmixer.cxx 
+endif
+
+ifeq ($(OPAL_HAS_PCSS), yes)
+SOURCES += $(OPAL_SRCDIR)/opal/pcss.cxx
 endif
 
 ########################################
