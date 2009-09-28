@@ -1938,17 +1938,29 @@ void SIPConnection::OnReceivedOPTIONS(SIP_PDU & /*request*/)
   PTRACE(2, "SIP\tOPTIONS not yet supported");
 }
 
+void SIPConnection::OnAllowedEventNotify(const PString & /* eventStr */)
+{
+}
+
 
 void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 {
   PCaselessString event, state;
   
-  if (referTransaction == NULL){
-    PTRACE(2, "SIP\tNOTIFY in a connection only supported for REFER requests");
+  event = request.GetMIME().GetEvent();
+
+  if (m_allowedEvents.GetStringsIndex(event) != P_MAX_INDEX) {
+    PTRACE(2, "SIP\tReceived Notify for allowed event " << event);
+    request.SendResponse(*transport, SIP_PDU::Successful_OK);
+    OnAllowedEventNotify(event);
     return;
   }
-  
-  event = request.GetMIME().GetEvent();
+
+  if (referTransaction == NULL){
+    PTRACE(2, "SIP\tNOTIFY in a connection only supported for REFER requests");
+    request.SendResponse(*transport, SIP_PDU::Failure_BadEvent);
+    return;
+  }
   
   // We could also compare the To and From tags
   if (request.GetMIME().GetCallID() != referTransaction->GetMIME().GetCallID()
@@ -2431,8 +2443,13 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
   response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
   response.SetAllow(endpoint.GetAllowedMethods());
 
-  if (response.GetStatusCode() == SIP_PDU::Information_Ringing)
+  if (response.GetStatusCode() == SIP_PDU::Information_Ringing) {
+    if (m_allowedEvents.GetSize() > 0) {
+      PStringStream strm; strm << setfill(',') << m_allowedEvents;
+      response.GetMIME().SetAllowEvents(strm);
+    }
     response.GetMIME().SetAlertInfo(m_alertInfo, m_appearanceCode);
+  }
 
   if (response.GetStatusCode() >= 200) {
     ackPacket = response;
