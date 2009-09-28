@@ -587,6 +587,7 @@ class SIPConnection : public OpalRTPConnection
     PStringList m_allowedEvents;
 
   public:
+    void OnAllowedEventNotify(const PString & eventName);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
 
   private:
