@@ -1997,11 +1997,23 @@ void SIPConnection::OnReceivedOPTIONS(SIP_PDU & /*request*/)
 }
 
 
+void SIPConnection::OnAllowedEventNotify(const PString & /* eventStr */)
+{
+}
+
+
 void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 {
   const SIPMIMEInfo & mime = request.GetMIME();
 
   SIPSubscribe::EventPackage package = mime.GetEvent();
+  if (m_allowedEvents.GetStringsIndex(package) != P_MAX_INDEX) {
+    PTRACE(2, "SIP\tReceived Notify for allowed event " << package);
+    request.SendResponse(*transport, SIP_PDU::Successful_OK);
+    OnAllowedEventNotify(package);
+    return;
+  }
+
   if (package != "refer") {
     PTRACE(2, "SIP\tNOTIFY in a connection only supported for REFER requests");
     request.SendResponse(*transport, SIP_PDU::Failure_BadEvent);
