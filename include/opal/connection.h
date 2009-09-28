@@ -378,6 +378,9 @@ class OpalConnection : public PSafeObject
         CallEndReasonCodes reason = NumCallEndReasons,
         unsigned cause = 0
       ) : code(reason), q931(cause) { }
+      explicit CallEndReason(
+        long reason
+      ) : code((CallEndReasonCodes)reason), q931(0) { }
 
       operator CallEndReasonCodes() const { return code; }
 
