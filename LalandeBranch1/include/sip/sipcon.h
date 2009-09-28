@@ -555,8 +555,11 @@ class SIPConnection : public OpalRTPConnection
 
   protected:
     PTimer sessionTimer;
+    PStringList m_allowedEvents;
+
   public:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
+    virtual void OnAllowedEventNotify(const PString & /* eventStr */);
 };
 
 
