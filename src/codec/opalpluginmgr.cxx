@@ -40,6 +40,7 @@
 #include <opal/transcoders.h>
 #include <codec/opalpluginmgr.h>
 #include <codec/opalplugin.h>
+#include <codec/opalwavfile.h>
 
 #if OPAL_H323
 #include <h323/h323caps.h>
@@ -1449,21 +1450,23 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
     // Create transcoder factories for the codecs
     OpalMediaFormat src = GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate);
     OpalMediaFormat dst = GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate);
+    bool isEncoder = IsEncoder(*codecDefn);
     switch (codecDefn->flags & PluginCodec_MediaTypeMask) {
   #if OPAL_VIDEO
       case PluginCodec_MediaTypeVideo:
-        handler->RegisterVideoTranscoder(src, dst, codecDefn, IsEncoder(*codecDefn));
+        handler->RegisterVideoTranscoder(src, dst, codecDefn, isEncoder);
         break;
   #endif
       case PluginCodec_MediaTypeAudio:
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, IsEncoder(*codecDefn));
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, isEncoder);
+        OpalWAVFile::AddMediaFormat(isEncoder ? dst : src);
         break;
       case PluginCodec_MediaTypeAudioStreamed:
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, IsEncoder(*codecDefn));
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, isEncoder);
         break;
   #if OPAL_T38_CAPABILITY
       case PluginCodec_MediaTypeFax:
-        new OpalPluginTranscoderFactory<OpalFaxTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, IsEncoder(*codecDefn));
+        new OpalPluginTranscoderFactory<OpalFaxTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, isEncoder);
         break;
   #endif
       default:
