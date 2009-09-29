@@ -252,6 +252,18 @@ class exampleJNI {
   public final static native String OpalParamRecording_m_file_get(long jarg1, OpalParamRecording jarg1_);
   public final static native void OpalParamRecording_m_channels_set(long jarg1, OpalParamRecording jarg1_, long jarg2);
   public final static native long OpalParamRecording_m_channels_get(long jarg1, OpalParamRecording jarg1_);
+  public final static native void OpalParamRecording_m_audioFormat_set(long jarg1, OpalParamRecording jarg1_, String jarg2);
+  public final static native String OpalParamRecording_m_audioFormat_get(long jarg1, OpalParamRecording jarg1_);
+  public final static native void OpalParamRecording_m_videoFormat_set(long jarg1, OpalParamRecording jarg1_, String jarg2);
+  public final static native String OpalParamRecording_m_videoFormat_get(long jarg1, OpalParamRecording jarg1_);
+  public final static native void OpalParamRecording_m_videoWidth_set(long jarg1, OpalParamRecording jarg1_, long jarg2);
+  public final static native long OpalParamRecording_m_videoWidth_get(long jarg1, OpalParamRecording jarg1_);
+  public final static native void OpalParamRecording_m_videoHeight_set(long jarg1, OpalParamRecording jarg1_, long jarg2);
+  public final static native long OpalParamRecording_m_videoHeight_get(long jarg1, OpalParamRecording jarg1_);
+  public final static native void OpalParamRecording_m_videoRate_set(long jarg1, OpalParamRecording jarg1_, long jarg2);
+  public final static native long OpalParamRecording_m_videoRate_get(long jarg1, OpalParamRecording jarg1_);
+  public final static native void OpalParamRecording_m_videoMixing_set(long jarg1, OpalParamRecording jarg1_, int jarg2);
+  public final static native int OpalParamRecording_m_videoMixing_get(long jarg1, OpalParamRecording jarg1_);
   public final static native long new_OpalParamRecording();
   public final static native void delete_OpalParamRecording(long jarg1);
   public final static native void OpalStatusCallCleared_m_callToken_set(long jarg1, OpalStatusCallCleared jarg1_, String jarg2);

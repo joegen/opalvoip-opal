@@ -66,7 +66,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 
-#define OPAL_C_API_VERSION 20
+#define OPAL_C_API_VERSION 21
 
 
 ///////////////////////////////////////
@@ -1030,6 +1030,29 @@ typedef struct OpalStatusLineAppearance {
 } OpalStatusLineAppearance;
 
 
+/**Type of mixing for video when recording.
+   This is used by the OpalCmdStartRecording command in the OpalParamRecording structure.
+  */
+typedef enum OpalVideoRecordMixMode {
+  OpalSideBySideLetterbox, /**< Two images side by side with black bars top and bottom.
+                                It is expected that the input frames and output are all
+                                the same aspect ratio, e.g. 4:3. Works well if inputs
+                                are QCIF and output is CIF for example. */
+  OpalSideBySideScaled,    /**< Two images side by side, scaled to fit halves of output
+                                frame. It is expected that the output frame be double
+                                the width of the input data to maintain aspect ratio.
+                                e.g. for CIF inputs, output would be 704x288. */
+  OpalStackedPillarbox,    /**< Two images, one on top of the other with black bars down
+                                the sides. It is expected that the input frames and output
+                                are all the same aspect ratio, e.g. 4:3. Works well if
+                                inputs are QCIF and output is CIF for example. */
+  OpalStackedScaled,       /**< Two images, one on top of the other, scaled to fit halves
+                                of output frame. It is expected that the output frame be
+                                double the height of the input data to maintain aspect
+                                ratio. e.g. for CIF inputs, output would be 352x576. */
+} OpalVideoRecordMixMode;
+
+
 /**Call recording information for the OpalCmdStartRecording command.
   */
 typedef struct OpalParamRecording {
@@ -1039,6 +1062,18 @@ typedef struct OpalParamRecording {
   unsigned     m_channels;   /**< Number of channels in WAV file, 1 for mono (default) or 2 for
                                   stereo where incoming & outgoing audio are in individual
                                   channels. */
+  const char * m_audioFormat; /**< Audio recording format. This is generally an OpalMediaFormat
+                                   name which will be used in the recording file. The exact
+                                   values possible is dependent on many factors including the
+                                   specific file type and what codecs are loaded as plug ins. */
+  const char * m_videoFormat; /**< Video recording format. This is generally an OpalMediaFormat
+                                   name which will be used in the recording file. The exact
+                                   values possible is dependent on many factors including the
+                                   specific file type and what codecs are loaded as plug ins. */
+  unsigned     m_videoWidth;  /**< Width of image for recording video. */
+  unsigned     m_videoHeight; /**< Height of image for recording video. */
+  unsigned     m_videoRate;   /**< Frame rate for recording video. */
+  OpalVideoRecordMixMode m_videoMixing; /**< How the two images are saved in video recording. */
 } OpalParamRecording;
 
 
