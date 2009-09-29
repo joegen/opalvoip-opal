@@ -38,12 +38,13 @@
 #include <ptclib/pwavfile.h>
 
 
+class OpalMediaFormat;
+
+
 /**This class is similar to the PWavFile class found in the PWlib
-   components library. However, it will tranparently convert all data
+   components library. However, it will transparently convert all data
    to/from PCM format, allowing applications to be unconcerned with 
-   the underlying data format. Note that this will only work with
-   sample-based formats that can be converted to/from PCM data, such as
-   uLaw and aLaw
+   the underlying data format.
   */
 
 class OpalWAVFile : public PWAVFile
@@ -86,6 +87,11 @@ class OpalWAVFile : public PWAVFile
       OpenMode mode = ReadWrite,  ///<  Mode in which to open the file.
       int opts = ModeDefault,     ///<  #OpenOptions enum# for open operation.
       unsigned format = fmt_PCM ///<  Type of WAV File to create
+    );
+
+
+    static bool AddMediaFormat(
+      const OpalMediaFormat & mediaFormat
     );
 };
 

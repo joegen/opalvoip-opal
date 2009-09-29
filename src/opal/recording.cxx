@@ -88,10 +88,6 @@ bool OpalWAVRecordManager::OpenFile(const PFilePath & fn)
 {
   if (m_options.m_audioFormat.IsEmpty())
     m_options.m_audioFormat = OpalPCM16.GetName();
-  else if (m_options.m_audioFormat != OpalPCM16) {
-    PTRACE(2, "OpalRecord\tWAV file recording does not (yet) support format " << m_options.m_audioFormat);
-    return false;
-  }
 
   PWaitAndSignal mutex(m_mutex);
 
@@ -102,7 +98,13 @@ bool OpalWAVRecordManager::OpenFile(const PFilePath & fn)
 
   m_mixer = new Mixer(m_options.m_stereo);
 
-  m_mixer->m_file.SetFormat(m_options.m_audioFormat);
+  if (!m_mixer->m_file.SetFormat(m_options.m_audioFormat)) {
+    PTRACE(2, "OpalRecord\tWAV file recording does not support format " << m_options.m_audioFormat);
+    delete m_mixer;
+    m_mixer = NULL;
+    return false;
+  }
+
   if (!m_mixer->m_file.Open(fn, PFile::ReadWrite, PFile::Create|PFile::Truncate)) {
     PTRACE(2, "OpalRecord\tCould not open file \"" << fn << '"');
     delete m_mixer;
