@@ -1555,7 +1555,18 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
     if (fac.m_reason.GetTag() == H225_FacilityReason::e_routeCallToGatekeeper)
       addrURL.SetUserName(addrURL.GetUserName()+'@'+addrURL.GetHostName());
 
-    addrURL.SetHostName(H323TransportAddress(fac.m_alternativeAddress));
+    // Set the new host/port in URL from alternative address
+    H323TransportAddress alternative(fac.m_alternativeAddress);
+    if (!alternative.IsEmpty()) {
+      PIPSocket::Address ip;
+      WORD port = endpoint.GetDefaultSignalPort();
+      if (!alternative.GetIpAndPort(ip, port))
+        addrURL.SetHostName(alternative.Mid(alternative.Find('$')+1));
+      else {
+        addrURL.SetHostName(ip.AsString(true));
+        addrURL.SetPort(port);
+      }
+    }
   }
 
   PString address = addrURL.AsString();
