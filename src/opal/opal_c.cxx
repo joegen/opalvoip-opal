@@ -1725,8 +1725,18 @@ void OpalManager_C::HandleStartRecording(const OpalMessage & command, OpalMessag
     return;
   }
 
-  if (!call->StartRecording(command.m_param.m_recording.m_file,
-                            command.m_param.m_recording.m_channels < 2))
+  OpalRecordManager::Options options;
+  options.m_stereo = command.m_param.m_recording.m_channels == 2;
+  if (m_apiVersion >= 21) {
+    options.m_audioFormat = command.m_param.m_recording.m_audioFormat;
+    options.m_videoFormat = command.m_param.m_recording.m_videoFormat;
+    options.m_videoWidth  = command.m_param.m_recording.m_videoWidth;
+    options.m_videoHeight = command.m_param.m_recording.m_videoHeight;
+    options.m_videoRate   = command.m_param.m_recording.m_videoRate;
+    options.m_videoMixing = (OpalRecordManager::VideoMode)command.m_param.m_recording.m_videoMixing;
+  }
+
+  if (!call->StartRecording(command.m_param.m_recording.m_file, options))
 #endif
     response.SetError("Could not start recording for call.");
 }

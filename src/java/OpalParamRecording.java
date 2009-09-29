@@ -57,6 +57,54 @@ public class OpalParamRecording {
     return exampleJNI.OpalParamRecording_m_channels_get(swigCPtr, this);
   }
 
+  public void setM_audioFormat(String value) {
+    exampleJNI.OpalParamRecording_m_audioFormat_set(swigCPtr, this, value);
+  }
+
+  public String getM_audioFormat() {
+    return exampleJNI.OpalParamRecording_m_audioFormat_get(swigCPtr, this);
+  }
+
+  public void setM_videoFormat(String value) {
+    exampleJNI.OpalParamRecording_m_videoFormat_set(swigCPtr, this, value);
+  }
+
+  public String getM_videoFormat() {
+    return exampleJNI.OpalParamRecording_m_videoFormat_get(swigCPtr, this);
+  }
+
+  public void setM_videoWidth(long value) {
+    exampleJNI.OpalParamRecording_m_videoWidth_set(swigCPtr, this, value);
+  }
+
+  public long getM_videoWidth() {
+    return exampleJNI.OpalParamRecording_m_videoWidth_get(swigCPtr, this);
+  }
+
+  public void setM_videoHeight(long value) {
+    exampleJNI.OpalParamRecording_m_videoHeight_set(swigCPtr, this, value);
+  }
+
+  public long getM_videoHeight() {
+    return exampleJNI.OpalParamRecording_m_videoHeight_get(swigCPtr, this);
+  }
+
+  public void setM_videoRate(long value) {
+    exampleJNI.OpalParamRecording_m_videoRate_set(swigCPtr, this, value);
+  }
+
+  public long getM_videoRate() {
+    return exampleJNI.OpalParamRecording_m_videoRate_get(swigCPtr, this);
+  }
+
+  public void setM_videoMixing(OpalVideoRecordMixMode value) {
+    exampleJNI.OpalParamRecording_m_videoMixing_set(swigCPtr, this, value.swigValue());
+  }
+
+  public OpalVideoRecordMixMode getM_videoMixing() {
+    return OpalVideoRecordMixMode.swigToEnum(exampleJNI.OpalParamRecording_m_videoMixing_get(swigCPtr, this));
+  }
+
   public OpalParamRecording() {
     this(exampleJNI.new_OpalParamRecording(), true);
   }
