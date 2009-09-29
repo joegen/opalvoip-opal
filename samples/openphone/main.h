@@ -644,6 +644,7 @@ class OptionsDialog : public wxDialog
     PwxString m_IVRScript;
 #endif
     int       m_AudioRecordingMode;
+    PwxString m_AudioRecordingFormat;
     int       m_VideoRecordingMode;
     PwxString m_VideoRecordingSize;
 

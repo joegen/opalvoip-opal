@@ -117,6 +117,7 @@ DEF_FIELD(ProductName);
 DEF_FIELD(ProductVersion);
 DEF_FIELD(IVRScript);
 DEF_FIELD(AudioRecordingMode);
+DEF_FIELD(AudioRecordingFormat);
 DEF_FIELD(VideoRecordingMode);
 DEF_FIELD(VideoRecordingSize);
 DEF_FIELD(SpeakerVolume);
@@ -762,6 +763,8 @@ bool MyManager::Initialise()
 #endif
 
   config->Read(AudioRecordingModeKey, &m_recordingOptions.m_stereo);
+  if (config->Read(AudioRecordingFormatKey, &str))
+    m_recordingOptions.m_audioFormat = str;
   value1 = m_recordingOptions.m_videoMixing;
   if (config->Read(VideoRecordingModeKey, &value1) && value1 >= 0 && value1 < OpalRecordManager::NumVideoMixingModes)
     m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode)value1;
@@ -3789,10 +3792,16 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 #endif
 
   INIT_FIELD(AudioRecordingMode, m_manager.m_recordingOptions.m_stereo);
+  INIT_FIELD(AudioRecordingFormat, m_manager.m_recordingOptions.m_audioFormat);
   INIT_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing);
   m_VideoRecordingSize = PVideoFrameInfo::AsString(m_manager.m_recordingOptions.m_videoWidth,
                                                    m_manager.m_recordingOptions.m_videoHeight);
   FindWindowByName(VideoRecordingSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoRecordingSize));
+
+  choice = FindWindowByNameAs<wxChoice>(this, AudioRecordingFormatKey);
+  PWAVFileFormatByFormatFactory::KeyList_T wavFileFormats = PWAVFileFormatByFormatFactory::GetKeyList();
+  for (PWAVFileFormatByFormatFactory::KeyList_T::iterator iterFmt = wavFileFormats.begin(); iterFmt != wavFileFormats.end(); ++iterFmt)
+    choice->Append(PwxString(*iterFmt));
 
   ////////////////////////////////////////
   // Codec fields
@@ -4047,6 +4056,7 @@ bool OptionsDialog::TransferDataFromWindow()
 #endif
 
   SAVE_FIELD(AudioRecordingMode, m_manager.m_recordingOptions.m_stereo = 0 != );
+  SAVE_FIELD(AudioRecordingFormat, m_manager.m_recordingOptions.m_audioFormat = );
   SAVE_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode));
   PVideoFrameInfo::ParseSize(m_VideoRecordingSize,
                              m_manager.m_recordingOptions.m_videoWidth,
