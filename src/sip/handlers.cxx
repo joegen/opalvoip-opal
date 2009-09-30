@@ -1651,13 +1651,13 @@ void SIPHandlersList::Remove(SIPHandler * handler)
 
   PWaitAndSignal m(m_extraMutex);
 
-  m_byCallID.erase(handler->m_byCallID);
-  m_byAOR.erase(handler->m_byAOR);
-  m_byAorAndPackage.erase(handler->m_byAorAndPackage);
-  m_byAuthIdAndRealm.erase(handler->m_byAuthIdAndRealm);
-  m_byAorUserAndRealm.erase(handler->m_byAorUserAndRealm);
-
-  m_handlersList.Remove(handler);
+  if (m_handlersList.Remove(handler)) {
+    m_byCallID.erase(handler->m_byCallID);
+    m_byAOR.erase(handler->m_byAOR);
+    m_byAorAndPackage.erase(handler->m_byAorAndPackage);
+    m_byAuthIdAndRealm.erase(handler->m_byAuthIdAndRealm);
+    m_byAorUserAndRealm.erase(handler->m_byAorUserAndRealm);
+  }
 }
 
 
