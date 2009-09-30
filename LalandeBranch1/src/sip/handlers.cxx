@@ -1583,36 +1583,53 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & cal
  */
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
 {
-  PIPSocket::Address realmAddress;
+  PIPSocket::Address authRealmAddress, realmAddress;
+  PIPSocket::GetHostAddress(authRealm, authRealmAddress);
 
   // if username is specified, look for exact matches
   if (!userName.IsEmpty()) {
 
     // look for a match to exact user name and realm
     for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-      if ((userName == handler->GetUsername()) && (handler->GetRealm().IsEmpty() || (handler->GetRealm() == authRealm)))
+      if ((handler->GetRealm().IsEmpty() || handler->GetRealm() == authRealm) && userName == handler->GetUsername()) {
+        PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
         return handler;
+      }
+    }
+
+    // look for a match to exact AOR name and realm
+    for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
+      if ((handler->GetRealm().IsEmpty() || handler->GetRealm() == authRealm) && userName == handler->GetAddressOfRecord().GetUserName()) {
+        PTRACE(4, "SIP\tLocated existing credentials for AOR user \"" << userName << "\" at realm \"" << authRealm << '"');
+        return handler;
+      }
     }
 
     // look for a match to exact username and realm as hostname
     for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-      if (PIPSocket::GetHostAddress(handler->GetRealm(), realmAddress))
-        if ((userName == handler->GetUsername()) && (realmAddress == PIPSocket::Address(authRealm)))
-          return handler;
+      if (userName == handler->GetUsername() &&
+          PIPSocket::GetHostAddress(handler->GetRealm(), realmAddress) &&
+          realmAddress == authRealmAddress) {
+        PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at host/address \"" << authRealm << '"');
+        return handler;
+      }
     }
   }
 
   // look for a match to exact realm
   for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (authRealm == handler->GetRealm())
+    if (authRealm == handler->GetRealm()) {
+      PTRACE(4, "SIP\tLocated existing credentials for realm \"" << authRealm << '"');
       return handler;
+    }
   }
 
   // look for a match to exact realm as hostname
   for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (PIPSocket::GetHostAddress(handler->GetRealm(), realmAddress))
-      if (realmAddress == PIPSocket::Address(authRealm))
-        return handler;
+    if (PIPSocket::GetHostAddress(handler->GetRealm(), realmAddress) && realmAddress == authRealmAddress) {
+      PTRACE(4, "SIP\tLocated existing credentials for host/address \"" << authRealm << '"');
+      return handler;
+    }
   }
   return NULL;
 }
