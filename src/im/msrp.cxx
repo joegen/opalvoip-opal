@@ -225,16 +225,21 @@ static PFactory<PProcessStartup>::Worker<MSRPInitialiser> opalpluginStartupFacto
 OpalMSRPMediaSession::OpalMSRPMediaSession(OpalConnection & _conn, unsigned _sessionId)
   : OpalMediaSession(_conn, "msrp", _sessionId)
   , m_manager(MSRPInitialiser::KickStart(_conn.GetEndPoint().GetManager()))
+  , m_localMSRPSessionId(m_manager.CreateSession())
+  , m_localUrl(m_manager.SessionIDToURL(connection.GetTransport().GetLocalAddress(), m_localMSRPSessionId))
 {
-  // sessionIDs are supposed to unguessable
-  m_localMSRPSessionId = m_manager.CreateSession();
-  m_localUrl           = m_manager.SessionIDToURL(m_localMSRPSessionId);
+  // set the local URL
 }
 
 OpalMSRPMediaSession::OpalMSRPMediaSession(const OpalMSRPMediaSession & _obj)
   : OpalMediaSession(_obj)
   , m_manager(_obj.m_manager)
+  , m_isOriginating(_obj.m_isOriginating)
+  , m_localMSRPSessionId(_obj.m_localMSRPSessionId)
+  , m_localUrl(_obj.m_localUrl)
+  , m_remoteUrl(_obj.m_remoteUrl)
   , m_connectionPtr(_obj.m_connectionPtr)
+  , m_remoteAddress(_obj.m_remoteAddress)
 {
 }
 
@@ -245,11 +250,7 @@ void OpalMSRPMediaSession::Close()
 
 OpalTransportAddress OpalMSRPMediaSession::GetLocalMediaAddress() const
 {
-  OpalTransportAddress addr;
-  if (m_manager.GetLocalAddress(addr))
-    return addr;
-
-  return OpalTransportAddress();
+  return OpalTransportAddress(m_localUrl.GetHostName(), m_localUrl.GetPort());
 }
 
 #if OPAL_SIP
@@ -272,6 +273,7 @@ OpalMediaStream * OpalMSRPMediaSession::CreateMediaStream(const OpalMediaFormat 
 void OpalMSRPMediaSession::SetRemoteMediaAddress(const OpalTransportAddress & transportAddress, const OpalMediaFormatList & )
 {
   PTRACE(2, "MSRP\tSetting remote media address to " << transportAddress);
+  m_remoteAddress = transportAddress;
 }
 
 bool OpalMSRPMediaSession::WritePacket(RTP_DataFrame & frame)
@@ -396,7 +398,10 @@ void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, const OpalMSRPManager
 {
   m_msrpSession.SetConnection(incomingMSRP.m_connection);
 
-  if (incomingMSRP.m_command == MSRPProtocol::SEND) {
+  if (connection.GetPhase() != OpalConnection::EstablishedPhase) {
+    PTRACE(3, "MSRP\tMediaStream " << *this << " receiving MSRP message in non-Established phase");
+  } 
+  else if (incomingMSRP.m_command == MSRPProtocol::SEND) {
     PTRACE(3, "MSRP\tMediaStream " << *this << " received SEND");
     T140String t140(incomingMSRP.m_body);
     RTP_DataFrameList frames = m_rfc4103Context.ConvertToFrames(t140);
@@ -450,18 +455,14 @@ std::string OpalMSRPManager::CreateSession()
   return id;
 }
 
-PURL OpalMSRPManager::SessionIDToURL(const std::string & id)
+PURL OpalMSRPManager::SessionIDToURL(const OpalTransportAddress & taddr, const std::string & id)
 {
   PIPSocket::Address addr;
-  PString hostname;
-  if (!PIPSocket::GetHostAddress(addr))
-    hostname = PIPSocket::GetHostName();
-  else
-    hostname = addr.AsString();
+  taddr.GetIpAddress(addr);
 
   PStringStream str;
   str << "msrp://"
-      << hostname
+      << addr.AsString()
       << ":"
       << m_listenerPort
       << "/"
@@ -487,7 +488,7 @@ bool OpalMSRPManager::GetLocalAddress(OpalTransportAddress & addr)
   PWaitAndSignal m(mutex);
 
   if (!m_listenerSocket.IsOpen()) {
-    if (!m_listenerSocket.Listen(5, m_listenerPort)) {
+    if (!m_listenerSocket.Listen(5, m_listenerPort, PSocket::CanReuseAddress)) {
       PTRACE(2, "MSRP\tCannot start MSRP listener on port " << m_listenerPort);
       return false;
     }
