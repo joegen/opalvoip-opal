@@ -133,6 +133,8 @@ public:
   const PString & GetRealm() const        { return m_realm; }
   const SIPURL & GetRemoteAddress() const { return m_remoteAddress; }
 
+  SIPMIMEInfo m_mime;
+
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
   PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
@@ -163,11 +165,15 @@ protected:
   SIPURL                      m_proxy;
   OpalProductInfo             m_productInfo;
 
-public:
-  std::string                 m_userNameAndRealmKey;
-  std::string                 m_urlKey;
-  std::string                 m_urlAndPackageKey;
-  SIPMIMEInfo                 m_mime;
+  // Keep a copy of the keys used for easy removal on destruction
+  typedef std::map<PString, PSafePtr<SIPHandler> > IndexMap;
+  IndexMap::iterator m_byCallID;
+  IndexMap::iterator m_byAOR;
+  IndexMap::iterator m_byAorAndPackage;
+  IndexMap::iterator m_byAuthIdAndRealm;
+  IndexMap::iterator m_byAorUserAndRealm;
+
+  friend class SIPHandlersList;
 };
 
 #if PTRACING
@@ -407,11 +413,15 @@ class SIPHandlersList
   protected:
     PMutex m_extraMutex;
     PSafeList<SIPHandler> m_handlersList;
-    typedef std::map<std::string, PSafePtr<SIPHandler> > StringToHandlerMap;
-    StringToHandlerMap m_handlersByCallId;
-    StringToHandlerMap m_handlersByUserNameAndRealm;
-    StringToHandlerMap m_handlersByUrl;
-    StringToHandlerMap m_handlersByUrlAndPackage;
+
+    typedef SIPHandler::IndexMap IndexMap;
+    PSafePtr<SIPHandler> FindBy(IndexMap & by, const PString & key, PSafetyMode m);
+
+    IndexMap m_byCallID;
+    IndexMap m_byAOR;
+    IndexMap m_byAorAndPackage;
+    IndexMap m_byAuthIdAndRealm;
+    IndexMap m_byAorUserAndRealm;
 };
 
 

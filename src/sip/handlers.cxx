@@ -1598,7 +1598,7 @@ PStringList SIPHandlersList::GetAddresses(bool includeOffline, SIP_PDU::Methods 
 }
 
 
-static std::string MakeUrlKey(const PURL & aor, SIP_PDU::Methods method, const PString & eventPackage = PString::Empty())
+static PString MakeUrlKey(const PURL & aor, SIP_PDU::Methods method, const PString & eventPackage = PString::Empty())
 {
   PStringStream key;
 
@@ -1625,22 +1625,19 @@ void SIPHandlersList::Append(SIPHandler * obj)
   PSafePtr<SIPHandler> handler = m_handlersList.Append(obj, PSafeReference);
 
   // add entry to call to handler map
-  m_handlersByCallId.insert(StringToHandlerMap::value_type(handler->GetCallID(), handler));
-
-  // add entry to username/realm map
-  if (!handler->GetUsername().IsEmpty()) {
-    PString key(handler->GetUsername() + '\n' + handler->GetRealm());
-    handler->m_userNameAndRealmKey = (const char *)key;
-    m_handlersByUserNameAndRealm.insert(StringToHandlerMap::value_type(handler->m_userNameAndRealmKey, handler));
-  }
+  handler->m_byCallID = m_byCallID.insert(IndexMap::value_type(handler->GetCallID(), handler)).first;
 
   // add entry to url map
-  handler->m_urlKey = MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod());
-  m_handlersByUrl.insert(StringToHandlerMap::value_type(handler->m_urlKey, handler));
+  handler->m_byAOR = m_byAOR.insert(IndexMap::value_type(MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod()), handler)).first;
 
   // add entry to url and package map
-  handler->m_urlAndPackageKey = MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod(), handler->GetEventPackage());
-  m_handlersByUrlAndPackage.insert(StringToHandlerMap::value_type(handler->m_urlAndPackageKey, handler));
+  handler->m_byAorAndPackage = m_byAorAndPackage.insert(IndexMap::value_type(MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod(), handler->GetEventPackage()), handler)).first;
+
+  // add entry to username/realm map
+  if (!handler->GetUsername().IsEmpty())
+    handler->m_byAuthIdAndRealm = m_byAuthIdAndRealm.insert(IndexMap::value_type(handler->GetUsername() + '\n' + handler->GetRealm(), handler)).first;
+
+  handler->m_byAorUserAndRealm = m_byAorUserAndRealm.insert(IndexMap::value_type(handler->GetAddressOfRecord().GetUserName() + '\n' + handler->GetRealm(), handler)).first;
 }
 
 
@@ -1654,32 +1651,48 @@ void SIPHandlersList::Remove(SIPHandler * handler)
 
   PWaitAndSignal m(m_extraMutex);
 
-  m_handlersByCallId.erase(handler->GetCallID());
-  m_handlersByUserNameAndRealm.erase(handler->m_userNameAndRealmKey);
-  m_handlersByUrl.erase(handler->m_urlKey);
-  m_handlersByUrlAndPackage.erase(handler->m_urlAndPackageKey);
+  m_byCallID.erase(handler->m_byCallID);
+  m_byAOR.erase(handler->m_byAOR);
+  m_byAorAndPackage.erase(handler->m_byAorAndPackage);
+  m_byAuthIdAndRealm.erase(handler->m_byAuthIdAndRealm);
+  m_byAorUserAndRealm.erase(handler->m_byAorUserAndRealm);
 
   m_handlersList.Remove(handler);
 }
 
 
-/**
- * Find the SIPHandler object with the specified callID
- */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & callID, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlersList::FindBy(IndexMap & by, const PString & key, PSafetyMode mode)
 {
   PSafePtr<SIPHandler> ptr;
   {
     PWaitAndSignal m(m_extraMutex);
 
-    StringToHandlerMap::iterator r = m_handlersByCallId.find(std::string((const char *)callID));
-    if (r == m_handlersByCallId.end())
+    IndexMap::iterator r = by.find(key);
+    if (r == by.end())
       return NULL;
 
     ptr = r->second;
   }
 
   return ptr.SetSafetyMode(mode) ? ptr : NULL;
+}
+
+
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & callID, PSafetyMode mode)
+{
+  return FindBy(m_byCallID, callID, mode);
+}
+
+
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_PDU::Methods method, PSafetyMode mode)
+{
+  return FindBy(m_byAOR, MakeUrlKey(aor, method), mode);
+}
+
+
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_PDU::Methods method, const PString & eventPackage, PSafetyMode mode)
+{
+  return FindBy(m_byAorAndPackage, MakeUrlKey(aor, method, eventPackage), mode);
 }
 
 
@@ -1688,108 +1701,43 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & cal
  */
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode mode)
 {
-  m_extraMutex.Wait();
+  PSafePtr<SIPHandler> ptr;
 
-  // if username is specified, look for exact matches
   if (!userName.IsEmpty()) {
+    // look for a match to exact user name and realm
+    if ((ptr = FindBy(m_byAuthIdAndRealm, userName + '\n' + authRealm, mode)) != NULL) {
+      PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
+      return ptr;
+    }
+
+      // look for a match to exact user name and empty realm
+    if ((ptr = FindBy(m_byAuthIdAndRealm, userName + '\n', mode)) != NULL) {
+      PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" without realm");
+      return ptr;
+    }
 
     // look for a match to exact user name and realm
-    PString key(userName + '\n' + authRealm);
-    StringToHandlerMap::iterator r = m_handlersByUserNameAndRealm.find((const char *)key);
-    if (r != m_handlersByUserNameAndRealm.end()) {
-      PSafePtr<SIPHandler> handler = r->second;
-      m_extraMutex.Signal();
-      handler.SetSafetyMode(mode);
-      return handler;
+    if ((ptr = FindBy(m_byAorUserAndRealm, userName + '\n' + authRealm, mode)) != NULL) {
+      PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
+      return ptr;
     }
 
-    // look for a match to exact user name and empty realm
-    key = PString(userName + '\n');
-    r = m_handlersByUserNameAndRealm.find((const char *)key);
-    if (r != m_handlersByUserNameAndRealm.end()) {
-      PSafePtr<SIPHandler> handler = r->second;
-      m_extraMutex.Signal();
-      handler.SetSafetyMode(mode);
-      return handler;
+      // look for a match to exact user name and empty realm
+    if ((ptr = FindBy(m_byAorUserAndRealm, userName + '\n', mode)) != NULL) {
+      PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" without realm");
+      return ptr;
     }
-
-#if 0
-    // look for a match to exact username and realm as hostname
-    PIPSocket::Address addr;
-    if (PIPSocket::GetHostAddress(authRealm, addr)) {
-      key = PString(userName + '\n' + addr.AsString());
-      r = m_handlersByUserNameAndRealmAddress.find(std::string(key));
-      if (r != m_handlersByUserNameAndRealmAddress.end()) {
-        PSafePtr<SIPHandler> handler = r->second;
-        m_extraMutex.Signal();
-        handler.SetSafetyMode(mode);
-        return handler;
-      }
-    }
-#endif
   }
 
-  m_extraMutex.Signal();
-
-  // look for a match to exact realm
+  // look for a match to realm without users
   for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
-    if (handler->GetRealm() == authRealm && handler.SetSafetyMode(mode))
+    if (handler->GetRealm() == authRealm && handler.SetSafetyMode(mode)) {
+      PTRACE(4, "SIP\tLocated existing credentials for realm \"" << authRealm << '"');
       return handler;
+    }
   }
-
-#if 0
-  // look for a match to exact realm as hostname
-  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
-    PIPSocket::Address addr;
-    if (PIPSocket::GetHostAddress(handler->GetRealm(), addr) &&
-        handlerRealmAddress == authRealmAddress &&
-        handler.SetSafetyMode(mode))
-      return handler;
-  }
-#endif
 
   return NULL;
-}
-
-
-/**
- * Find the SIPHandler object with the specified URL. The url is
- * the registration address, for example, 6001@sip.seconix.com
- * when registering 6001 to sip.seconix.com with realm seconix.com
- * or 6001@seconix.com when registering 6001@seconix.com to
- * sip.seconix.com
- */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_PDU::Methods method, PSafetyMode mode)
-{
-  PSafePtr<SIPHandler> ptr;
-  {
-    PWaitAndSignal m(m_extraMutex);
-
-    StringToHandlerMap::iterator r = m_handlersByUrl.find(MakeUrlKey(aor, method));
-    if (r == m_handlersByUrl.end())
-      return NULL;
-
-    ptr = r->second;
-  }
-
-  return ptr.SetSafetyMode(mode) ? ptr : NULL;
-}
-
-
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_PDU::Methods method, const PString & eventPackage, PSafetyMode mode)
-{
-  PSafePtr<SIPHandler> ptr;
-  {
-    PWaitAndSignal m(m_extraMutex);
-
-    StringToHandlerMap::iterator r = m_handlersByUrlAndPackage.find(MakeUrlKey(aor, method, eventPackage));
-    if (r == m_handlersByUrlAndPackage.end())
-      return NULL;
-
-    ptr = r->second;
-  }
-
-  return ptr.SetSafetyMode(mode) ? ptr : NULL;
 }
 
 
