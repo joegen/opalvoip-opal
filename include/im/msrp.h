@@ -188,7 +188,7 @@ class OpalMSRPManager : public PObject
     //
     //  return session ID as a path
     //
-    PURL SessionIDToURL(const std::string & id);
+    PURL SessionIDToURL(const OpalTransportAddress & addr, const std::string & id);
 
     //
     // map of connections to other MSRP managers
@@ -238,7 +238,7 @@ class OpalMSRPManager : public PObject
       const PURL & remoteURL
     );
 
-    //OpalManager & GetOpalManager() { return opalManager; }
+    OpalManager & GetOpalManager() { return opalManager; }
 
   protected:
     OpalManager & opalManager;
@@ -321,8 +321,10 @@ class OpalMSRPMediaSession : public OpalMediaSession
     OpalMSRPManager & m_manager;
     bool m_isOriginating;
     std::string m_localMSRPSessionId;
-    PURL m_localUrl, m_remoteUrl;
+    PURL m_localUrl;
+    PURL m_remoteUrl;
     PSafePtr<OpalMSRPManager::Connection> m_connectionPtr;
+    OpalTransportAddress m_remoteAddress;
 };
 
 ////////////////////////////////////////////////////////////////////////////
