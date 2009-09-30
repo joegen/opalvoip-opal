@@ -96,7 +96,7 @@ class PWAVFileConverterXLaw : public PWAVFileConverter
     {
       // read the xLaw data
       PINDEX samples = (len / 2);
-      BYTE * xlaw = (BYTE *)_alloca(samples);
+      BYTE * xlaw = (BYTE *)alloca(samples);
       if (!file.PFile::Read(xlaw, samples))
         return false;
 
@@ -116,7 +116,7 @@ class PWAVFileConverterXLaw : public PWAVFileConverter
     PBoolean Write(PWAVFile & file, const void * buf, PINDEX len)
     {
       PINDEX samples = (len / 2);
-      BYTE * xlaw = (BYTE *)_alloca(samples);
+      BYTE * xlaw = (BYTE *)alloca(samples);
 
       // convert from PCM
       short * pcmPtr = (short *)buf;
@@ -334,7 +334,7 @@ class PWAVFileFormatPlugin : public PWAVFileFormat
       UpdateHeader(wavFmtChunk, extendedHeader);
     }
 
-    void UpdateHeader(PWAV::FMTChunk & wavFmtChunk, PBYTEArray & extendedHeader)
+    void UpdateHeader(PWAV::FMTChunk & wavFmtChunk, PBYTEArray & /*extendedHeader*/)
     {
       wavFmtChunk.bytesPerSample = (WORD)(wavFmtChunk.numChannels*m_mediaFormat.GetFrameSize());
       wavFmtChunk.bytesPerSec    = m_mediaFormat.GetFrameSize()*wavFmtChunk.sampleRate/m_mediaFormat.GetFrameTime();
