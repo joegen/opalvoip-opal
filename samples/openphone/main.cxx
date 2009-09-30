@@ -2089,7 +2089,7 @@ void MyManager::OnEstablishedCall(OpalCall & call)
   SetState(InCallState, call.GetToken());
 
   if (m_AnswerMode == AnswerFax)
-    SwitchToFax();
+    new PThreadObj<MyManager>(*this, &MyManager::SwitchToFax, true, "SwitchToFax");
 
 #if OPAL_SIP
   PSafePtr<SIPConnection> connection = call.GetConnectionAs<SIPConnection>(0);
@@ -2364,7 +2364,7 @@ void MyManager::OnUserInputString(OpalConnection & connection, const PString & v
 void MyManager::OnUserInputTone(OpalConnection & connection, char tone, int duration)
 {
   if (toupper(tone) == 'X' && m_AnswerMode == AnswerDetect)
-    SwitchToFax();
+    new PThreadObj<MyManager>(*this, &MyManager::SwitchToFax, true, "SwitchToFax");
 
   OpalManager::OnUserInputTone(connection, tone, duration);
 }
