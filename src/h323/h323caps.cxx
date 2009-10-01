@@ -1437,8 +1437,8 @@ class OpalH239MediaType : public OpalMediaTypeDefinition
 {
   public:
     OpalH239MediaType()
-      : OpalMediaTypeDefinition(H239MediaType, NULL, 4)
-    {}
+      : OpalMediaTypeDefinition(H239MediaType, NULL)
+    { }
     virtual PString GetRTPEncoding() const { return PString::Empty(); }
 #if OPAL_SIP
     virtual SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress &) { return NULL; }

@@ -79,6 +79,7 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
 
     OpalMediaTypeDefinition * GetDefinition() const;
     static OpalMediaTypeDefinition * GetDefinition(const OpalMediaType & key);
+    static OpalMediaTypeDefinition * GetDefinition(unsigned sessionId);
 
     static OpalMediaTypeFactory::KeyList_T GetList() { return OpalMediaTypeFactory::GetKeyList(); }
 
@@ -127,7 +128,7 @@ class OpalMediaTypeDefinition
     OpalMediaTypeDefinition(
       const char * mediaType,          ///< name of the media type (audio, video etc)
       const char * sdpType,            ///< name of the SDP type 
-      unsigned     preferredSessionId, ///< preferred session ID
+      unsigned requiredSessionId = 0,  ///< Session ID to use, asserts if already in use
       OpalMediaType::AutoStartMode autoStart = OpalMediaType::DontOffer   ///< Default value for auto-start transmit & receive
     );
 
@@ -171,34 +172,16 @@ class OpalMediaTypeDefinition
     virtual RTP_UDP * CreateRTPSession(
       OpalRTPConnection & conn,
       unsigned sessionID, 
-      bool remoteIsNAT);
+      bool remoteIsNAT
+    );
 
     /** Return the default session ID for this media type.
       */
-    unsigned GetDefaultSessionId() const { return GetDefaultSessionId(m_mediaType); }
-
-    /** Return the default session ID for a specified media type.
-      */
-    static unsigned GetDefaultSessionId(
-      const OpalMediaType & mediaType   ///< Media type to get default session ID for
-    );
-
-    /** Return the media type associated with a default media type
-      */
-    static OpalMediaType GetMediaTypeForSessionId(
-      unsigned sessionId      ///< Session ID to search for media type.
-    );
+    unsigned GetDefaultSessionId() const { return m_defaultSessionId; }
 
   protected:
-    static PMutex & GetMapMutex();
-
-    typedef std::map<OpalMediaType, unsigned> MediaTypeToSessionIDMap_T;
-    static MediaTypeToSessionIDMap_T & GetMediaTypeToSessionIDMap();
-
-    typedef std::map<unsigned, OpalMediaType> SessionIDToMediaTypeMap_T;
-    static SessionIDToMediaTypeMap_T & GetSessionIDToMediaTypeMap();
-
     std::string m_mediaType;
+    unsigned    m_defaultSessionId;
     OpalMediaType::AutoStartMode m_autoStart;
 
 #if OPAL_SIP
@@ -281,7 +264,7 @@ class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
     OpalRTPAVPMediaType(
       const char * mediaType, 
       const char * sdpType, 
-      unsigned     preferredSessionId,
+      unsigned     requiredSessionId = 0,
       OpalMediaType::AutoStartMode autoStart = OpalMediaType::DontOffer
     );
 

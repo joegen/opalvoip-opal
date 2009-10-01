@@ -76,11 +76,16 @@ const OpalMediaFormat & GetOpalT38()
 /////////////////////////////////////////////////////////////////////////////
 
 OpalFaxMediaType::OpalFaxMediaType()
-  : OpalMediaTypeDefinition("fax", "image", 3)
-{ }
+  : OpalMediaTypeDefinition("fax", "image", 3) // Must be 3 for H.323 operation
+{
+}
+
 
 PString OpalFaxMediaType::GetRTPEncoding() const
-{ return "udptl"; }
+{
+  return "udptl";
+}
+
 
 RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &, unsigned sessionID, bool remoteIsNAT)
 {
@@ -90,6 +95,7 @@ RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &, unsigned sessi
   params.remoteIsNAT = remoteIsNAT;
   return new RTP_UDP(params);
 }
+
 
 OpalMediaSession * OpalFaxMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
 {
