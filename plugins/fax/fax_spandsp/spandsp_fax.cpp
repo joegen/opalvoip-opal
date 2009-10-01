@@ -404,7 +404,12 @@ class FaxSpanDSP
     bool SetOption(const char * option, const char * value)
     {
       if (strcasecmp(option, TiffFileNameOption.m_name) == 0) {
-        m_tiffFileName = value;
+        if (m_tiffFileName.empty())
+          m_tiffFileName = value;
+#if LOGGING
+        else if (*value != '\0' && m_tiffFileName != value)
+          PTRACE(2, "Cannot change filename in mid stream from \"" << m_tiffFileName << "\" to \"" << value << '"');
+#endif
         return true;
       }
 
