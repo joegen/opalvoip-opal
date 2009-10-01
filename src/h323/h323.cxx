@@ -1544,7 +1544,7 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
       fac.m_reason.GetTag() != H225_FacilityReason::e_routeCallToGatekeeper)
     return PTrue;
 
-  PURL addrURL = remotePartyAddress;
+  PURL addrURL = GetRemotePartyURL();
   if (fac.HasOptionalField(H225_Facility_UUIE::e_alternativeAliasAddress) &&
       fac.m_alternativeAliasAddress.GetSize() > 0)
     addrURL.SetUserName(H323GetAliasAddressString(fac.m_alternativeAliasAddress[0]));
