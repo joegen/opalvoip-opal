@@ -1568,12 +1568,24 @@ void OpalConnection::OnReceiveInternalIM(const OpalMediaFormat & format, RTP_Dat
 
 bool OpalConnection::TransmitExternalIM(const OpalMediaFormat & format, RTP_DataFrame & frame)
 {
+  PURL remotePartyURL, localPartyURL;
+  PString remotePartyName;
+
+  // get information about sender
+  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnectionAs<OpalConnection>();
+  if (otherParty != NULL) {
+    remotePartyURL  = otherParty->GetRemotePartyURL();
+    remotePartyName = otherParty->GetRemotePartyName();
+    localPartyURL   = otherParty->GetLocalPartyURL();
+  }
+
+  // pass information up the chain
   T140String t140((const BYTE *)frame.GetPayloadPtr(), frame.GetPayloadSize());
   PString str;
   t140.AsString(str);
-  endpoint.GetManager().OnMessageReceived(GetRemotePartyURL(), 
-                                          GetRemotePartyName(), 
-                                          GetLocalPartyURL(), 
+  endpoint.GetManager().OnMessageReceived(remotePartyURL, 
+                                          remotePartyName, 
+                                          localPartyURL, 
                                           format.GetOptionString("Content-Type", "text/plain"),
                                           str,
                                           GetIdentifier());
