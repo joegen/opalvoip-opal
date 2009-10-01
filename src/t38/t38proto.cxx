@@ -471,11 +471,6 @@ PBoolean OpalFaxMediaStream::Close()
 
     PWaitAndSignal m2(faxMapMutex);
 
-    if (faxCallInfo->stdoutThread != NULL) {
-      delete faxCallInfo->stdoutThread;
-      faxCallInfo->stdoutThread = NULL;
-    }
-
     OpalFaxCallInfoMap_T::iterator r = faxCallInfoMap.find(sessionToken);
     if (r == faxCallInfoMap.end()) {
       PTRACE(1, "Fax\tError: media stream not found in T38 session list");
@@ -499,6 +494,11 @@ PBoolean OpalFaxMediaStream::Close()
 
     // remove info from map
     faxCallInfoMap.erase(sessionToken);
+  }
+
+  if (faxCallInfo->stdoutThread != NULL) {
+    delete faxCallInfo->stdoutThread;
+    faxCallInfo->stdoutThread = NULL;
   }
 
   // delete the object
