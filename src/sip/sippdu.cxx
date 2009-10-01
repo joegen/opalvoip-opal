@@ -1533,7 +1533,7 @@ PBoolean SIPDigestAuthentication::Parse(const PString & _auth, PBoolean proxy)
 
 PBoolean SIPDigestAuthentication::Authorise(SIP_PDU & pdu) const
 {
-  PTRACE(3, "SIP\tAdding authentication information");
+  PTRACE(3, "SIP\tAdding authentication information for user \"" << username << "\" at realm \"" << authRealm << '"');
 
   PMessageDigest5 digestor;
   PMessageDigest5::Code a1, a2, entityBodyCode, response;
