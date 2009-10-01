@@ -2218,7 +2218,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   PString realm, password;
   PString username = m_dialog.GetLocalURI().GetUserName();
   if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), realm, username, password)) {
-    PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
+    PTRACE (3, "SIP\tFound auth info for realm \"" << newAuth->GetAuthRealm() << "\", user \"" << username << '"');
   }
   else {
     SIPURL proxy = endpoint.GetProxy();
