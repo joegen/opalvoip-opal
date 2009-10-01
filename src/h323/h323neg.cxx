@@ -117,7 +117,7 @@ void H245NegMasterSlaveDetermination::Stop()
   if (state == e_Idle)
     return;
 
-  replyTimer.Stop();
+  replyTimer.Stop(false);
   state = e_Idle;
 }
 
@@ -129,7 +129,7 @@ PBoolean H245NegMasterSlaveDetermination::HandleIncoming(const H245_MasterSlaveD
   PTRACE(3, "H245\tReceived MasterSlaveDetermination: state=" << state);
 
   if (state == e_Incoming) {
-    replyTimer.Stop();
+    replyTimer.Stop(false);
     state = e_Idle;
     return connection.OnControlProtocolError(H323Connection::e_MasterSlaveDetermination,
                                              "Duplicate MasterSlaveDetermination");
@@ -167,7 +167,7 @@ PBoolean H245NegMasterSlaveDetermination::HandleIncoming(const H245_MasterSlaveD
     if (retryCount < endpoint.GetMasterSlaveDeterminationRetries())
       return Restart(); // Try again
 
-    replyTimer.Stop();
+    replyTimer.Stop(false);
     state = e_Idle;
     return connection.OnControlProtocolError(H323Connection::e_MasterSlaveDetermination,
                                              "Retries exceeded");
@@ -207,7 +207,7 @@ PBoolean H245NegMasterSlaveDetermination::HandleAck(const H245_MasterSlaveDeterm
       return PFalse;
   }
 
-  replyTimer.Stop();
+  replyTimer.Stop(false);
   state = e_Idle;
 
   if (status != newStatus)
@@ -239,7 +239,7 @@ PBoolean H245NegMasterSlaveDetermination::HandleReject(const H245_MasterSlaveDet
       break;
   }
 
-  replyTimer.Stop();
+  replyTimer.Stop(false);
   state = e_Idle;
 
   return connection.OnControlProtocolError(H323Connection::e_MasterSlaveDetermination,
@@ -256,7 +256,7 @@ PBoolean H245NegMasterSlaveDetermination::HandleRelease(const H245_MasterSlaveDe
   if (state == e_Idle)
     return PTrue;
 
-  replyTimer.Stop();
+  replyTimer.Stop(false);
   state = e_Idle;
 
   return connection.OnControlProtocolError(H323Connection::e_MasterSlaveDetermination,
@@ -267,6 +267,9 @@ PBoolean H245NegMasterSlaveDetermination::HandleRelease(const H245_MasterSlaveDe
 void H245NegMasterSlaveDetermination::HandleTimeout(PTimer &, INT)
 {
   PWaitAndSignal wait(mutex);
+
+  if (state == e_Idle)
+    return;
 
   PTRACE(3, "H245\tTimeout on MasterSlaveDetermination: state=" << state);
 
@@ -352,7 +355,7 @@ void H245NegTerminalCapabilitySet::Stop(PBoolean dec)
   if (state == e_Idle)
     return;
 
-  replyTimer.Stop();
+  replyTimer.Stop(false);
   state = e_Idle;
   receivedCapabilites = PFalse;
 
@@ -421,7 +424,7 @@ PBoolean H245NegTerminalCapabilitySet::HandleAck(const H245_TerminalCapabilitySe
   if (pdu.m_sequenceNumber != outSequenceNumber)
     return PTrue;
 
-  replyTimer.Stop();
+  replyTimer.Stop(false);
   state = e_Confirmed;
   PTRACE(3, "H245\tTerminalCapabilitySet Sent.");
   return PTrue;
@@ -444,7 +447,7 @@ PBoolean H245NegTerminalCapabilitySet::HandleReject(const H245_TerminalCapabilit
     return PTrue;
 
   state = e_Idle;
-  replyTimer.Stop();
+  replyTimer.Stop(false);
   return connection.OnControlProtocolError(H323Connection::e_CapabilityExchange,
                                            "Rejected");
 }
@@ -465,6 +468,9 @@ PBoolean H245NegTerminalCapabilitySet::HandleRelease(const H245_TerminalCapabili
 void H245NegTerminalCapabilitySet::HandleTimeout(PTimer &, INT)
 {
   PWaitAndSignal wait(mutex);
+
+  if (state == e_Idle)
+    return;
 
   PTRACE(3, "H245\tTimeout on TerminalCapabilitySet: state=" << state);
 
@@ -704,7 +710,7 @@ PBoolean H245NegLogicalChannel::HandleOpenAck(const H245_OpenLogicalChannelAck &
                                                "Ack unknown channel");
     case e_AwaitingEstablishment :
       state = e_Established;
-      replyTimer.Stop();
+      replyTimer.Stop(false);
 
       if (!channel->OnReceivedAckPDU(pdu)) {
         if (connection.GetRemoteProductInfo().name != "Cisco IOS")
@@ -747,7 +753,7 @@ PBoolean H245NegLogicalChannel::HandleOpenConfirm(const H245_OpenLogicalChannelC
       return connection.OnControlProtocolError(H323Connection::e_LogicalChannel,
                                                "Confirm established channel");
     case e_AwaitingConfirmation :
-      replyTimer.Stop();
+      replyTimer.Stop(false);
       state = e_Established;
       // Channel was already opened when OLC sent, if have error here it is
       // somthing other than an asymmetric codec conflict, so close it down.
@@ -951,7 +957,7 @@ void H245NegLogicalChannel::Release()
   channel = NULL;
   mutex.Signal();
 
-  replyTimer.Stop();
+  replyTimer.Stop(false);
 
   if (chan != NULL) {
     chan->Close();
@@ -1352,7 +1358,7 @@ PBoolean H245NegRequestMode::HandleAck(const H245_RequestModeAck & pdu)
 
   if (awaitingResponse && pdu.m_sequenceNumber == outSequenceNumber) {
     awaitingResponse = PFalse;
-    replyTimer.Stop();
+    replyTimer.Stop(false);
     connection.OnAcceptModeChange(pdu);
   }
 
@@ -1366,7 +1372,7 @@ PBoolean H245NegRequestMode::HandleReject(const H245_RequestModeReject & pdu)
 
   if (awaitingResponse && pdu.m_sequenceNumber == outSequenceNumber) {
     awaitingResponse = PFalse;
-    replyTimer.Stop();
+    replyTimer.Stop(false);
     connection.OnRefusedModeChange(&pdu);
   }
 
@@ -1392,9 +1398,8 @@ void H245NegRequestMode::HandleTimeout(PTimer &, INT)
     pdu.Build(H245_IndicationMessage::e_requestModeRelease);
     connection.WriteControlPDU(pdu);
     connection.OnRefusedModeChange(NULL);
+    connection.OnControlProtocolError(H323Connection::e_ModeRequest, "Timeout");
   }
-
-  connection.OnControlProtocolError(H323Connection::e_ModeRequest, "Timeout");
 }
 
 
@@ -1456,7 +1461,7 @@ PBoolean H245NegRoundTripDelay::HandleResponse(const H245_RoundTripDelayResponse
          << (awaitingResponse ? " awaitingResponse" : " idle"));
 
   if (awaitingResponse && pdu.m_sequenceNumber == sequenceNumber) {
-    replyTimer.Stop();
+    replyTimer.Stop(false);
     awaitingResponse = PFalse;
     roundTripTime = tripEndTime - tripStartTime;
     retryCount = 3;
