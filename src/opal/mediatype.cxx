@@ -53,12 +53,29 @@ OPAL_INSTANTIATE_MEDIATYPE(video, OpalVideoMediaType);
 
 OPAL_INSTANTIATE_SIMPLE_MEDIATYPE_NO_SDP(userinput); 
 
+
+typedef std::map<unsigned, OpalMediaTypeDefinition *> SessionIDToMediaTypeMap_T;
+static SessionIDToMediaTypeMap_T & GetSessionIDToMediaTypeMap()
+{
+  static SessionIDToMediaTypeMap_T map;
+  return map;
+}
+
+static PMutex & GetMapMutex()
+{
+  static PMutex mutex;
+  return mutex;
+}
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 const OpalMediaType & OpalMediaType::Audio()     { static const OpalMediaType type = "audio";     return type; }
 const OpalMediaType & OpalMediaType::Video()     { static const OpalMediaType type = "video";     return type; }
 const OpalMediaType & OpalMediaType::Fax()       { static const OpalMediaType type = "fax";       return type; };
 const OpalMediaType & OpalMediaType::UserInput() { static const OpalMediaType type = "userinput"; return type; };
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -73,6 +90,16 @@ OpalMediaTypeDefinition * OpalMediaType::GetDefinition(const OpalMediaType & key
   return OpalMediaTypeFactory::CreateInstance(key);
 }
 
+
+OpalMediaTypeDefinition * OpalMediaType::GetDefinition(unsigned sessionId)
+{
+  PWaitAndSignal mutex(GetMapMutex());
+  SessionIDToMediaTypeMap_T & typeMap = GetSessionIDToMediaTypeMap();
+  SessionIDToMediaTypeMap_T::iterator iter = typeMap.find(sessionId);
+  return iter != typeMap.end() ? iter->second : NULL;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType,
@@ -81,7 +108,7 @@ OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType,
 #else
                                                  const char *,
 #endif
-                                                 unsigned preferredSessionId,
+                                                 unsigned requiredSessionId,
                                                  OpalMediaType::AutoStartMode autoStart)
   : m_mediaType(mediaType)
   , m_autoStart(autoStart)
@@ -89,76 +116,28 @@ OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType,
   , m_sdpType(sdpType != NULL ? sdpType : "")
 #endif
 {
-  PWaitAndSignal m(GetMapMutex());
+  PWaitAndSignal mutex(GetMapMutex());
 
   SessionIDToMediaTypeMap_T & typeMap = GetSessionIDToMediaTypeMap();
 
-  // if the preferred session ID is already taken, then find a new one
-  if (typeMap.find(preferredSessionId) != typeMap.end())
-    preferredSessionId = 0;
-
-  // if no preferred session Id 
-  if (preferredSessionId == 0) {
-    preferredSessionId = 1;
-    while (typeMap.find(preferredSessionId) != typeMap.end())
-      ++preferredSessionId;
+  if (requiredSessionId != 0 &&
+      PAssert(typeMap.find(requiredSessionId) == typeMap.end(),
+              "Cannot have multiple media types with same session ID"))
+    m_defaultSessionId = requiredSessionId;
+  else {
+    // Allocate session ID
+    m_defaultSessionId = 4; // Start after audio, video and data that are "special"
+    while (typeMap.find(m_defaultSessionId) != typeMap.end())
+      ++m_defaultSessionId;
   }
 
-  typeMap.insert(SessionIDToMediaTypeMap_T::value_type(preferredSessionId, mediaType));
-  GetMediaTypeToSessionIDMap().insert(MediaTypeToSessionIDMap_T::value_type(mediaType, preferredSessionId));
+  typeMap[m_defaultSessionId] = this;
 }
 
 
 OpalMediaSession * OpalMediaTypeDefinition::CreateMediaSession(OpalConnection & /*conn*/, unsigned /* sessionID*/) const
 { 
   return NULL; 
-}
-
-
-unsigned OpalMediaTypeDefinition::GetDefaultSessionId(const OpalMediaType & mediaType)
-{
-  PWaitAndSignal m(GetMapMutex());
-
-  MediaTypeToSessionIDMap_T::iterator r = GetMediaTypeToSessionIDMap().find(mediaType);
-  if (r != GetMediaTypeToSessionIDMap().end())
-    return r->second;
-
-  return 0;
-}
-
-
-OpalMediaType OpalMediaTypeDefinition::GetMediaTypeForSessionId(unsigned sessionId)
-{
-  PWaitAndSignal m(GetMapMutex());
-
-  SessionIDToMediaTypeMap_T::iterator r = GetSessionIDToMediaTypeMap().find(sessionId);
-  if (r != GetSessionIDToMediaTypeMap().end())
-    return r->second;
-
-  return OpalMediaType();
-}
-
-
-OpalMediaTypeDefinition::SessionIDToMediaTypeMap_T & OpalMediaTypeDefinition::GetSessionIDToMediaTypeMap()
-{
-  PWaitAndSignal m(GetMapMutex());
-  static SessionIDToMediaTypeMap_T map;
-  return map;
-}
-
-
-OpalMediaTypeDefinition::MediaTypeToSessionIDMap_T & OpalMediaTypeDefinition::GetMediaTypeToSessionIDMap()
-{
-  PWaitAndSignal m(GetMapMutex());
-  static MediaTypeToSessionIDMap_T map;
-  return map;
-}
-
-
-PMutex & OpalMediaTypeDefinition::GetMapMutex()
-{
-  static PMutex mutex;
-  return mutex;
 }
 
 
@@ -180,9 +159,9 @@ RTP_UDP * OpalMediaTypeDefinition::CreateRTPSession(OpalRTPConnection & /*connec
 
 OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType,
                                          const char * sdpType,
-                                         unsigned preferredSessionId,
+                                         unsigned requiredSessionId,
                                          OpalMediaType::AutoStartMode autoStart)
-  : OpalMediaTypeDefinition(mediaType, sdpType, preferredSessionId, autoStart)
+  : OpalMediaTypeDefinition(mediaType, sdpType, requiredSessionId, autoStart)
 {
 }
 

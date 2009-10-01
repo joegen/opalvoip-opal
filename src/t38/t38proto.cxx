@@ -440,8 +440,10 @@ OpalMediaFormatList OpalFaxConnection::GetMediaFormats() const
   OpalMediaFormatList formats;
   if (m_faxMode)
     formats += m_tiffFileFormat;
-  else
+  else {
     formats += OpalPCM16;
+    formats += OpalT38;
+  }
   return formats;
 }
 
@@ -526,7 +528,7 @@ void OpalFaxConnection::OnEstablished()
     return;
 
   m_faxTimer.SetNotifier(PCREATE_NOTIFIER(OnSendCNGCED));
-  m_faxTimer.SetInterval(0, 1);
+  m_faxTimer.SetInterval(0, m_receiving ? 5 : 1);
   PTRACE(1, "T38\tStarting timer for CNG/CED tone");
 }
 
@@ -570,6 +572,14 @@ PBoolean OpalFaxConnection::SendUserInputTone(char tone, unsigned /*duration*/)
 }
 
 
+void OpalFaxConnection::OnUserInputTone(char tone, unsigned /*duration*/)
+{
+  // This is called when the PCM in-band tone detector detects tones
+  if (!m_faxMode && toupper(tone) == (m_receiving ? 'X' : 'Y'))
+    RequestFax(true);
+}
+
+
 void OpalFaxConnection::AcceptIncoming()
 {
   if (LockReadWrite()) {
@@ -587,7 +597,7 @@ void OpalFaxConnection::OnFaxCompleted(bool failed)
 
 void OpalFaxConnection::OnSendCNGCED(PTimer & timer, INT)
 {
-  if (LockReadOnly() && !m_faxMode) {
+  if (!m_faxMode && LockReadOnly()) {
     PTimeInterval elapsed = PTime() - connectedTime;
     if (m_releaseTimeout > 0 && elapsed > m_releaseTimeout) {
       PTRACE(2, "T38\tDid not switch to T.38 mode, releasing connection");
@@ -599,12 +609,12 @@ void OpalFaxConnection::OnSendCNGCED(PTimer & timer, INT)
     }
     else if (m_receiving) {
       // Cadence for CED is single tone, but we repeat just in case
-      OnUserInputTone('Y', 3600);
+      OpalConnection::OnUserInputTone('Y', 3600);
       timer = 5000;
     }
     else {
       // Cadence for CNG is 500ms on 3 seconds off
-      OnUserInputTone('X', 500);
+      OpalConnection::OnUserInputTone('X', 500);
       timer = 3500;
     }
     UnlockReadOnly();

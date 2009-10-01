@@ -52,7 +52,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 OpalSIPIMMediaType::OpalSIPIMMediaType()
-  : OpalIMMediaType("sip-im", "message|sip", 6)
+  : OpalIMMediaType("sip-im", "message|sip")
 {
 }
 
