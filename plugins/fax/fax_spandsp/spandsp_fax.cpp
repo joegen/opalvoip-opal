@@ -483,7 +483,7 @@ class FaxSpanDSP
         return true;
 
       if (m_usingT38) {
-        PTRACE(3, "Opening SpanDSP for T.38");
+        PTRACE(3, "Opening SpanDSP for T.38 for " << (m_receiving ? "receive" : "transmit"));
         if ((m_t38State = t38_terminal_init(NULL, !m_receiving, T38Packets, this)) == NULL)
           return false;
 
@@ -497,7 +497,7 @@ class FaxSpanDSP
         m_t30state = t38_terminal_get_t30_state(m_t38State);
       }
       else {
-        PTRACE(3, "Opening SpanDSP for PCM");
+        PTRACE(3, "Opening SpanDSP for PCM for " << (m_receiving ? "receive" : "transmit"));
         if ((m_faxState = fax_init(NULL, !m_receiving)) == NULL)
           return false;
 
@@ -505,6 +505,8 @@ class FaxSpanDSP
 
         m_t30state = fax_get_t30_state(m_faxState);
       }
+
+      InitLogging(t30_get_logging_state(m_t30state));
 
       if (!m_tiffFileName.empty()) {
         if (m_receiving) {
