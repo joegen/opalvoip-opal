@@ -223,10 +223,8 @@ class OpalFaxConnection : public OpalConnection
     virtual void OnReleased();
     virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
     virtual void OnStopMediaPatch(OpalMediaPatch & patch);
-    virtual PBoolean SendUserInputTone(
-      char tone,
-      unsigned duration
-    );
+    virtual PBoolean SendUserInputTone(char tone, unsigned duration);
+    virtual void OnUserInputTone(char tone, unsigned duration);
 
   /**@name New operations */
   //@{

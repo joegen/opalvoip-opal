@@ -53,7 +53,7 @@
 #define CRLF "\r\n"
 
 OpalMSRPMediaType::OpalMSRPMediaType()
-  : OpalIMMediaType("msrp", "message|tcp/msrp", 5)
+  : OpalIMMediaType("msrp", "message|tcp/msrp")
 {
 }
 

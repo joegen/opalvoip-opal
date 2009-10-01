@@ -3806,7 +3806,7 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
   unsigned sessionID = 1000000;
   if (IsH245Master()) {
     sessionID = 4;
-    while (!OpalMediaTypeDefinition::GetMediaTypeForSessionId(sessionID).empty())
+    while (OpalMediaType::GetDefinition(sessionID) == NULL)
       ++sessionID;
   }
 
@@ -4832,7 +4832,7 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
     H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
     if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
       OpalMediaFormat mediaFormat = capability->GetMediaFormat();
-      if (!ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), i+1, mediaFormat)) {
+      if (!ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), 0, mediaFormat)) {
         PTRACE(2, "H245\tCould not open channel after mode change: " << *capability);
       }
     }
