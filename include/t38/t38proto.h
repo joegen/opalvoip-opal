@@ -239,6 +239,10 @@ class OpalFaxConnection : public OpalConnection
       bool failed   ///< Fax ended with failure
     );
 
+    /**Get the file to send/receive
+      */
+    const PString & GetFileName() const { return m_filename; }
+
     /**Get receive fax flag.
       */
     bool IsReceive() const { return m_receiving; }
