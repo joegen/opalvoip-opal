@@ -356,6 +356,11 @@ OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & m
   }
 
   OpalMediaSession * mediaSession = GetMediaSession(sessionID);
+  if (mediaSession == NULL) {
+    PTRACE(1, "RTPCon\tUnable to create media stream for session " << sessionID);
+    return NULL;
+  }
+
   return PAssertNULL(mediaSession)->CreateMediaStream(mediaFormat, sessionID, isSource);
 }
 
