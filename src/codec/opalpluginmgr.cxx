@@ -1060,7 +1060,8 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 
   public:
     OpalFaxTranscoder(const PluginCodec_Definition * codecDefn, bool isEncoder)
-      : OpalTranscoder(codecDefn->sourceFormat, codecDefn->destFormat)
+      : OpalTranscoder(GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate),
+                       GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate))
       , OpalPluginTranscoder(codecDefn, isEncoder) 
     { 
       bufferRTP = NULL;
