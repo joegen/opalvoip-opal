@@ -562,7 +562,7 @@ class FaxSpanDSP
 
     bool ReadPCM(void * toPtr, unsigned & toLen, unsigned & flags)
     {
-      int samplesGenerated = fax_tx(m_faxState, (int16_t *)PluginCodec_RTP_GetPayloadPtr(toPtr), toLen/2);
+      int samplesGenerated = fax_tx(m_faxState, (int16_t *)toPtr, toLen/2);
       if (samplesGenerated < 0)
         return false;
 
