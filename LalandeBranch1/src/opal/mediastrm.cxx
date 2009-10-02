@@ -1178,9 +1178,12 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
   // Assume we are writing the exact amount (check?)
   written = length;
 
-  // Check for missing packets, we do nothing at this level, just ignore it
-  if (data == NULL)
+  /* Check for missing packets or paused, we do nothing at this level,
+     just ignore it, but try and avoid a busy loop */
+  if (data == NULL || length == 0) {
+    PThread::Sleep(50);
     return true;
+  }
 
   const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data;
 
