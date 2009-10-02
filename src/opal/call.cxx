@@ -477,6 +477,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     order += '@' + mediaType;        // And media of the same type
 
     OpalMediaFormatList sinkMediaFormats = otherConnection->GetMediaFormats();
+    otherConnection->AdjustMediaFormats(sinkMediaFormats);
+    connection.AdjustMediaFormats(sinkMediaFormats);
     if (preselectedFormat.IsValid() && sinkMediaFormats.HasFormat(preselectedFormat))
       sinkMediaFormats = preselectedFormat;
     else
@@ -487,6 +489,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       sourceMediaFormats = sourceFormat; // Use the source format already established
     else {
       sourceMediaFormats = connection.GetMediaFormats();
+      otherConnection->AdjustMediaFormats(sourceMediaFormats);
+      connection.AdjustMediaFormats(sourceMediaFormats);
       if (preselectedFormat.IsValid() && sourceMediaFormats.HasFormat(preselectedFormat))
         sourceMediaFormats = preselectedFormat;
       else
