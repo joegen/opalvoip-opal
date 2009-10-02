@@ -438,7 +438,7 @@ void OpalFaxConnection::ApplyStringOptions(OpalConnection::StringOptions & strin
 OpalMediaFormatList OpalFaxConnection::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
-  if (m_faxMode)
+  if (m_faxMode || m_disableT38)
     formats += m_tiffFileFormat;
   else {
     formats += OpalPCM16;
@@ -455,7 +455,7 @@ void OpalFaxConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) c
   while (i != mediaFormats.end()) {
     if (*i == OpalG711_ULAW_64K || *i == OpalG711_ALAW_64K)
       ++i;
-    else if (i->GetMediaType() != OpalMediaType::Fax())
+    else if (i->GetMediaType() != OpalMediaType::Fax() && i->GetMediaType() != m_tiffFileFormat)
       mediaFormats -= *i++;
     else {
       i->SetOptionString("TIFF-File-Name", m_filename);
@@ -652,6 +652,9 @@ void OpalFaxConnection::RequestFax(bool toFax)
   PTRACE(1, "T38\tRequesting mode change to " << modeStr);
 
   m_faxMode = toFax;
+
+  if (m_disableT38)
+    return;
 
   PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
 }
