@@ -424,6 +424,14 @@ class OpalNullMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
       bool isSource,                       ///<  Is a source stream
       bool isSynchronous = false           ///<  Can accept data and block accordingly
     );
+    OpalNullMediaStream(
+      OpalConnection & conn,
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      bool isSource,                       ///<  Is a source stream
+      bool usePacingDelay,                 ///<  Use delay to pace stream I/O
+      bool requiresPatchThread             ///<  Requires a patch thread to execute
+    );
   //@}
 
   /**@name Overrides of OpalMediaStream class */
@@ -459,6 +467,7 @@ class OpalNullMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
 
   protected:
     bool m_isSynchronous;
+    bool m_requiresPatchThread;
 };
 
 
