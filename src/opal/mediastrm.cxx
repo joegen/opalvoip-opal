@@ -539,6 +539,21 @@ OpalNullMediaStream::OpalNullMediaStream(OpalConnection & conn,
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
   , OpalMediaStreamPacing(mediaFormat)
   , m_isSynchronous(isSyncronous)
+  , m_requiresPatchThread(isSyncronous)
+{
+}
+
+
+OpalNullMediaStream::OpalNullMediaStream(OpalConnection & conn,
+                                         const OpalMediaFormat & mediaFormat,
+                                         unsigned sessionID,
+                                         bool isSource,
+                                         bool usePacingDelay,
+                                         bool requiresPatchThread)
+  : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
+  , OpalMediaStreamPacing(mediaFormat)
+  , m_isSynchronous(usePacingDelay)
+  , m_requiresPatchThread(requiresPatchThread)
 {
 }
 
@@ -551,7 +566,8 @@ PBoolean OpalNullMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & leng
   memset(buffer, 0, size);
   length = size;
 
-  Pace(true, size, marker);
+  if (m_isSynchronous)
+    Pace(true, size, marker);
   return true;
 }
 
@@ -563,14 +579,15 @@ PBoolean OpalNullMediaStream::WriteData(const BYTE * /*buffer*/, PINDEX length, 
 
   written = length != 0 ? length : defaultDataSize;
 
-  Pace(false, written, marker);
+  if (m_isSynchronous)
+    Pace(false, written, marker);
   return true;
 }
 
 
 PBoolean OpalNullMediaStream::RequiresPatchThread() const
 {
-  return m_isSynchronous;
+  return m_requiresPatchThread;
 }
 
 

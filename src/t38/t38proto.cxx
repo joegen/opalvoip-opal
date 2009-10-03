@@ -61,7 +61,7 @@ class OpalFaxMediaStream : public OpalNullMediaStream
                        const OpalMediaFormat & mediaFormat,
                        unsigned sessionID,
                        bool isSource)
-      : OpalNullMediaStream(conn, mediaFormat, sessionID, isSource, isSource)
+      : OpalNullMediaStream(conn, mediaFormat, sessionID, isSource, isSource, true)
       , m_connection(conn)
     {
       m_isAudio = true; // Even though we are not REALLY audio, act like we are
