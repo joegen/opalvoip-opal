@@ -61,14 +61,10 @@ class OpalFaxMediaStream : public OpalNullMediaStream
                        const OpalMediaFormat & mediaFormat,
                        unsigned sessionID,
                        bool isSource)
-      : OpalNullMediaStream(conn, mediaFormat, sessionID, isSource, true)
+      : OpalNullMediaStream(conn, mediaFormat, sessionID, isSource, isSource)
       , m_connection(conn)
     {
-    }
-
-    virtual PBoolean WriteData(const BYTE * data, PINDEX length, PINDEX & written)
-    {
-      return OpalNullMediaStream::WriteData(data, length, written);
+      m_isAudio = true; // Even though we are not REALLY audio, act like we are
     }
 
 #if OPAL_STATISTICS
@@ -455,7 +451,7 @@ void OpalFaxConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) c
   while (i != mediaFormats.end()) {
     if (*i == OpalG711_ULAW_64K || *i == OpalG711_ALAW_64K)
       ++i;
-    else if (i->GetMediaType() != OpalMediaType::Fax() && i->GetMediaType() != m_tiffFileFormat)
+    else if (i->GetMediaType() != OpalMediaType::Fax() || (m_disableT38 && *i == OpalT38))
       mediaFormats -= *i++;
     else {
       i->SetOptionString("TIFF-File-Name", m_filename);
