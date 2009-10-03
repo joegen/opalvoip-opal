@@ -60,7 +60,7 @@ extern "C" {
 #define   BITS_PER_SECOND           14400
 #define   MICROSECONDS_PER_FRAME    20000
 #define   SAMPLES_PER_FRAME         160
-#define   BYTES_PER_FRAME           100
+#define   BYTES_PER_FRAME           320
 #define   PREF_FRAMES_PER_PACKET    1
 #define   MAX_FRAMES_PER_PACKET     1
 
@@ -686,16 +686,16 @@ class TIFF_PCM : public FaxSpanDSP
       PTRACE(4, "Created TIFF_PCM");
     }
 
-    virtual bool Encode(const void * /*fromPtr*/, unsigned & /*fromLen*/, void * toPtr, unsigned & toLen, unsigned & flags)
-    {
-      return Open() && ReadPCM(toPtr, toLen, flags);
-    }
-
-    virtual bool Decode(const void * fromPtr, unsigned & fromLen, void * /*toPtr*/, unsigned & toLen, unsigned & flags)
+    virtual bool Encode(const void * fromPtr, unsigned & fromLen, void * /*toPtr*/, unsigned & toLen, unsigned & flags)
     {
       toLen = 0;
       flags = PluginCodec_ReturnCoderLastFrame;
       return Open() && WritePCM(fromPtr, fromLen);
+    }
+
+    virtual bool Decode(const void * /*fromPtr*/, unsigned & /*fromLen*/, void * toPtr, unsigned & toLen, unsigned & flags)
+    {
+      return Open() && ReadPCM(toPtr, toLen, flags);
     }
 };
 
