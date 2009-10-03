@@ -493,6 +493,11 @@ PBoolean OpalFaxConnection::SetUpConnection()
   OnAlerting();
 
   OnConnectedInternal();
+
+  // Do not need to do audio mode initially if not going to T.38, already there!
+  if (m_disableT38)
+    return true;
+
   if (GetMediaStream(OpalMediaType::Audio(), true) == NULL)
     ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
 
