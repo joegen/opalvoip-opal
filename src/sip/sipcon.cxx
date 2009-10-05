@@ -1961,6 +1961,9 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
       // If we receive an ACK in established phase, it is a re-INVITE
       StartMediaStreams();
       break;
+
+    default :
+      break;
   }
 
   StartPendingReINVITE();
