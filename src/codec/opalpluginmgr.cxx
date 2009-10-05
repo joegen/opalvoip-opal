@@ -1117,6 +1117,8 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
         fromLen = src.GetPayloadSize();
       }
 
+      bool outputRTP = (codecDef->flags&PluginCodec_OutputTypeMask) == PluginCodec_OutputTypeRTP;
+
       do {
         if (bufferRTP == NULL)
           bufferRTP = new RTP_DataFrame(outputDataSize);
@@ -1127,7 +1129,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
         // call the codec function
         void * toPtr;
         unsigned toLen;
-        if ((codecDef->flags&PluginCodec_OutputTypeMask) == PluginCodec_OutputTypeRTP) {
+        if (outputRTP) {
           toPtr = bufferRTP->GetPointer();
           toLen = bufferRTP->GetSize();
         }
@@ -1140,8 +1142,9 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
         if (!Transcode(fromPtr, &fromLen, toPtr, &toLen, &flags))
           return false;
 
-        if (toLen > (unsigned)bufferRTP->GetHeaderSize()) {
-          bufferRTP->SetPayloadSize(toLen - bufferRTP->GetHeaderSize());
+        unsigned hdrSize = outputRTP ? (unsigned)bufferRTP->GetHeaderSize() : 0;
+        if (toLen > hdrSize) {
+          bufferRTP->SetPayloadSize(toLen - hdrSize);
           dstList.Append(bufferRTP);
           bufferRTP = NULL;
         }
@@ -1151,7 +1154,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
       } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
 
       return true;
-    };
+    }
 
     virtual PBoolean Convert(const RTP_DataFrame &, RTP_DataFrame &)
     {
