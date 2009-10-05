@@ -507,6 +507,7 @@ class FaxSpanDSP
           return false;
 
         InitLogging(fax_get_logging_state(m_faxState));
+        fax_set_transmit_on_idle(m_faxState, true);
 
         m_t30state = fax_get_t30_state(m_faxState);
       }
