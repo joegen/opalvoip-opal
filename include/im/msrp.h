@@ -166,24 +166,56 @@ class OpalMSRPManager : public PObject
     ~OpalMSRPManager();
 
     //
-    //  Get the local address of the MSRP manager
-    //
-    bool GetLocalAddress(OpalTransportAddress & addr);
-
-    //
     //  Get the local port for the MSRP manager
     //
     bool GetLocalPort(WORD & port);
 
     //
-    //  Allocate a new MSRP session ID
+    // Information about a connection to another MSRP manager
     //
-    std::string CreateSession();
+    class Connection : public PSafeObject {
+      public:
+        Connection(OpalMSRPManager & manager, const std::string & key, MSRPProtocol * protocol = NULL);
+        ~Connection();
+
+        //
+        //  Start handler thread for a connection
+        //
+        void StartHandler();
+
+        //
+        //  Handler thread for a connection
+        //
+        void HandlerThread();
+
+        OpalMSRPManager & m_manager;
+        std::string m_key;
+        MSRPProtocol * m_protocol;
+        bool m_running;
+        PThread * m_handlerThread;
+        bool m_originating;
+        PAtomicInteger m_refCount;
+    };
 
     //
-    //  Dellocate an existing MSRP session ID
+    //  Get the connection to use for communicating with a remote URL
     //
-    void DestroySession(const std::string & id);
+    PSafePtr<Connection> OpenConnection(
+      const PURL & localURL, 
+      const PURL & remoteURL
+    );
+
+    //
+    //  close a connection
+    //
+    bool CloseConnection(
+      PSafePtr<OpalMSRPManager::Connection> & connection
+    );
+
+    //
+    //  Create a new MSRP session ID
+    //
+    std::string CreateSessionID();
 
     //
     //  return session ID as a path
@@ -191,31 +223,9 @@ class OpalMSRPManager : public PObject
     PURL SessionIDToURL(const OpalTransportAddress & addr, const std::string & id);
 
     //
-    // map of connections to other MSRP managers
-    // indexed by scheme://remote:port;transport
-    //
-    class Connection : public PSafeObject {
-      public:
-        Connection(MSRPProtocol * protocol = NULL);
-        ~Connection();
-
-        MSRPProtocol * m_protocol;
-        bool m_running;
-        PThread * m_handlerThread;
-        bool m_originating;
-    };
-
-    PSafePtr<Connection> OpenConnection(const PURL & localURL, const PURL & remoteURL);
-
-    //
     //  Main listening thread for new connections
     //
     void ListenerThread();
-
-    //
-    //  Handler thread for a connection
-    //
-    void HandlerThread(PSafePtr<Connection> connection);
 
     struct IncomingMSRP {
       int       m_command;
@@ -225,7 +235,14 @@ class OpalMSRPManager : public PObject
       PSafePtr<Connection> m_connection;
     };
 
-    typedef PNotifierTemplate<const IncomingMSRP &> CallBack;
+    //
+    // dispatch an incoming MSRP message to the correct callback
+    //
+    void DispatchMessage(
+      IncomingMSRP & incomingMsg
+    );
+
+    typedef PNotifierTemplate<IncomingMSRP &> CallBack;
 
     void SetNotifier(
       const PURL & localUrl, 
@@ -247,10 +264,10 @@ class OpalMSRPManager : public PObject
     PAtomicInteger lastID;
     PTCPSocket m_listenerSocket;
     PThread * m_listenerThread;
-    OpalTransportAddress m_listenerAddress;
 
     PMutex m_connectionInfoMapAddMutex;
-    PSafeDictionary<PString, Connection> m_connectionInfoMap;
+    typedef std::map<std::string, PSafePtr<Connection> > ConnectionInfoMapType;
+    ConnectionInfoMapType m_connectionInfoMap;
 
     typedef std::map<std::string, CallBack> CallBackMap;
     CallBackMap m_callBacks;
@@ -270,6 +287,7 @@ class OpalMSRPMediaSession : public OpalMediaSession
   public:
     OpalMSRPMediaSession(OpalConnection & connection, unsigned sessionId);
     OpalMSRPMediaSession(const OpalMSRPMediaSession & _obj);
+    ~OpalMSRPMediaSession();
 
     bool Open(const PURL & remoteParty);
 
@@ -316,7 +334,9 @@ class OpalMSRPMediaSession : public OpalMediaSession
     OpalMSRPManager & GetManager() { return m_manager; }
 
     bool OpenMSRP(const PURL & remoteUrl);
-    void SetConnection(const PSafePtr<OpalMSRPManager::Connection> & conn);
+    void CloseMSRP();
+
+    void SetConnection(PSafePtr<OpalMSRPManager::Connection> & conn);
 
     OpalMSRPManager & m_manager;
     bool m_isOriginating;
@@ -365,7 +385,7 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
     PURL GetRemoteURL() const           { return m_msrpSession.GetRemoteURL(); }
     void SetRemoteURL(const PURL & url) { m_msrpSession.SetRemoteURL(url); }
 
-    PDECLARE_NOTIFIER2(OpalMSRPManager, OpalMSRPMediaStream, OnReceiveMSRP, const OpalMSRPManager::IncomingMSRP &);
+    PDECLARE_NOTIFIER2(OpalMSRPManager, OpalMSRPMediaStream, OnReceiveMSRP, OpalMSRPManager::IncomingMSRP &);
 
 
   //@}
