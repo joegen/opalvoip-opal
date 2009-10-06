@@ -492,7 +492,8 @@ class SIPConnection : public OpalRTPConnection
       const OpalMediaType & mediaType,
       unsigned sessionID,
       OpalRTPSessionManager & rtpSessions,
-      SDPSessionDescription & sdpOut
+      SDPSessionDescription & sdpOut,
+      bool isReINVITE
     );
     virtual bool AnswerSDPMediaDescription(
       const SDPSessionDescription & sdpIn,
@@ -555,7 +556,7 @@ class SIPConnection : public OpalRTPConnection
     PTime                 originalInviteTime;
     time_t                m_sdpSessionId;
     unsigned              m_sdpVersion; // Really a sequence number
-    bool                  needReINVITE;
+    bool                  m_needReINVITE;
     bool                  m_handlingINVITE;
     SIPDialogContext      m_dialog;
     OpalGloballyUniqueID  m_dialogNotifyId;
