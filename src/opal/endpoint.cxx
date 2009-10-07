@@ -241,7 +241,7 @@ static void AddTransportAddress(OpalTransportAddressArray & interfaceAddresses,
                                 WORD port,
                                 const PString & proto)
 {
-  if (ip == natInterfaceIP && ip != natExternalIP)
+  if (ip != natExternalIP && (natInterfaceIP.IsAny() || ip == natInterfaceIP))
     AddTransportAddress(interfaceAddresses, natInterfaceIP, natExternalIP, natExternalIP, port, proto);
 
   OpalTransportAddress addr(ip, port, proto);
@@ -296,7 +296,7 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
   OpalTransportAddressArray interfaceAddresses;
 
   OpalTransportAddress associatedLocalAddress, associatedRemoteAddress;
-  PIPSocket::Address natInterfaceIP = PIPSocket::GetDefaultIpAny();
+  PIPSocket::Address natInterfaceIP;
   PIPSocket::Address natExternalIP;
   if (associatedTransport != NULL) {
     associatedLocalAddress = associatedTransport->GetLocalAddress();
@@ -309,6 +309,10 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
     if (natMethod != NULL) {
       natMethod->GetInterfaceAddress(natInterfaceIP);
       natMethod->GetExternalAddress(natExternalIP);
+    }
+    else if (manager.GetTranslationAddress().IsValid()) {
+      natInterfaceIP = PIPSocket::GetDefaultIpAny();
+      natExternalIP = manager.GetTranslationAddress();
     }
   }
 
