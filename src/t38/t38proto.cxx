@@ -647,13 +647,13 @@ void OpalFaxConnection::RequestFax(bool toFax)
     return;
   }
 
-  // definitely changing mode
-  PTRACE(1, "T38\tRequesting mode change to " << modeStr);
-
   m_faxMode = toFax;
 
   if (m_disableT38)
     return;
+
+  // definitely changing mode
+  PTRACE(1, "T38\tRequesting mode change to " << modeStr);
 
   PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
 }
