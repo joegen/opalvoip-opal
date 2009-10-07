@@ -79,6 +79,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H.263-1998 (FFMPEG) Video C
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpanDSP Fax Codec", "..\..\plugins\fax\fax_spandsp\spandsp_fax_2005.vcproj", "{D875EC01-6BBF-48EE-93F8-800BD6D76443}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -300,6 +306,18 @@ Global
 		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Release|Win32.Build.0 = Release|Win32
 		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
 		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Release|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug|Win32.Build.0 = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.No Trace|Win32.ActiveCfg = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.No Trace|Win32.Build.0 = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.No Trace|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|Win32.ActiveCfg = Release|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|Win32.Build.0 = Release|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
