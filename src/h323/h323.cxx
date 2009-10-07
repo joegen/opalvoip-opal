@@ -4817,23 +4817,52 @@ PBoolean H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
 
 void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 {
-  PTRACE(4, "H323\tOnModeChanged, closing channels");
-
-  CloseAllLogicalChannels(PFalse);
-
   PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
   if (otherConnection == NULL)
     return;
 
-  PTRACE(4, "H323\tOnModeChanged, opening channels");
+  PTRACE(4, "H323\tOnModeChanged, closing channels");
 
-  // Start up the new ones
-  for (PINDEX i = 0; i < newMode.GetSize(); i++) {
-    H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
-    if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
-      OpalMediaFormat mediaFormat = capability->GetMediaFormat();
-      if (!ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), 0, mediaFormat)) {
-        PTRACE(2, "H245\tCould not open channel after mode change: " << *capability);
+  bool closedSomething = false;
+
+  for (PINDEX c = 0; c < logicalChannels->GetSize(); c++) {
+    H245NegLogicalChannel & negChannel = logicalChannels->GetNegLogicalChannelAt(c);
+    H323Channel * channel = negChannel.GetChannel();
+    if (channel != NULL && !channel->GetNumber().IsFromRemote()) {
+      bool closeOne = true;
+
+      for (PINDEX m = 0; m < newMode.GetSize(); m++) {
+        H323Capability * capability = localCapabilities.FindCapability(newMode[m]);
+        if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
+          OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
+          if (mediaStream != NULL || capability->GetMediaFormat() == mediaStream->GetMediaFormat()) {
+            closeOne = false;
+            break;
+          }
+        }
+      }
+
+      if (closeOne) {
+        negChannel.Close();
+        closedSomething = true;
+      }
+      else {
+        PTRACE(4, "H323\tLeaving channel " << channel->GetNumber() << " open, as mode request has not changed it.");
+      }
+    }
+  }
+
+  if (closedSomething) {
+    PTRACE(4, "H323\tOnModeChanged, opening channels");
+
+    // Start up the new ones
+    for (PINDEX i = 0; i < newMode.GetSize(); i++) {
+      H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
+      if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
+        OpalMediaFormat mediaFormat = capability->GetMediaFormat();
+        if (!ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), 0, mediaFormat)) {
+          PTRACE(2, "H245\tCould not open channel after mode change: " << *capability);
+        }
       }
     }
   }
