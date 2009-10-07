@@ -984,7 +984,7 @@ void PlayRTP::Play(const PFilePath & filename)
     if (rtpStreamPayloadType != rtp.GetPayloadType()) {
       if (rtpStreamPayloadType != RTP_DataFrame::IllegalPayloadType) {
         cout << "Payload type changed in mid file \"" << filename << '"' << endl;
-        return;
+        continue;
       }
       rtpStreamPayloadType = rtp.GetPayloadType();
     }
