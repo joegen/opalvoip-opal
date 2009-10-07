@@ -209,7 +209,7 @@ static struct PluginCodec_Option const T38FaxUdpEC =
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
-  "t38UDPRedundancy:t38UDPFEC"// enum values
+  "t38UDPFEC:t38UDPRedundancy"// enum values
 };
 
 static struct PluginCodec_Option const T38FaxFillBitRemoval =
