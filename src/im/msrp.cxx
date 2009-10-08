@@ -287,14 +287,16 @@ bool OpalMSRPMediaSession::WritePacket(RTP_DataFrame & frame)
     PTRACE(2, "MSRP\tCannot send MSRP message as no connection has been established");
   } 
   else {
-    PString messageId;
-    T140String text((const BYTE *)frame.GetPayloadPtr(), frame.GetPayloadSize());
-    PString str;
-    if (!text.AsString(str)) {
-      PTRACE(2, "MSRP\tCannot convert T.140 string to text");
-    }
-    else {
-      m_connectionPtr->m_protocol->SendSEND(m_localUrl, m_remoteUrl, str, "text/plain", messageId);
+    RTP_IMFrame * imFrame = dynamic_cast<RTP_IMFrame *>(&frame);
+    if (imFrame != NULL) {
+      PString messageId;
+      T140String content;
+      PString str;
+      if (imFrame->GetContent(content) || !content.AsString(str))
+        m_connectionPtr->m_protocol->SendSEND(m_localUrl, m_remoteUrl, str, imFrame->GetContentType(), messageId);
+      else {
+        PTRACE(1, "MSRP\tCannot convert IM message to string");
+      }
     }
   }
   return true;
@@ -417,11 +419,10 @@ void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, OpalMSRPManager::Inco
   else if (incomingMSRP.m_command == MSRPProtocol::SEND) {
     PTRACE(3, "MSRP\tMediaStream " << *this << " received SEND");
     T140String t140(incomingMSRP.m_body);
-    RTP_DataFrameList frames = m_rfc4103Context.ConvertToFrames(t140);
+    RTP_DataFrameList frames = m_rfc4103Context.ConvertToFrames(incomingMSRP.m_mime.GetString("Content-Type", "text/plain"), t140);
     OpalMediaFormat fmt(m_rfc4103Context.m_mediaFormat);
-    incomingMSRP.m_mime.GetString("Content-Type", "text/plain");
     for (PINDEX i = 0; i < frames.GetSize(); ++i)
-      connection.OnReceiveExternalIM(m_rfc4103Context.m_mediaFormat, frames[i]);
+      connection.OnReceiveExternalIM(m_rfc4103Context.m_mediaFormat, (RTP_IMFrame &)frames[i]);
   }
   else {
     PTRACE(3, "MSRP\tMediaStream " << *this << " receiving unknown MSRP message");
@@ -805,7 +806,7 @@ bool MSRPProtocol::SendChunk(const PString & chunkId,
     PTRACE(4, "Sending MSRP message\n" << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF 
                                        << "To-Path: " << toUrl << CRLF 
                                        << "From-Path: "<< fromUrl << CRLF 
-                                       << str 
+                                       << str << CRLF
                                        << body);
   }
 
@@ -831,7 +832,7 @@ bool MSRPProtocol::SendREPORT(const PString & chunkId,
     PTRACE(4, "Sending MSRP REPORT\n" << "MSRP " << chunkId << " " << MSRPCommands[REPORT] << CRLF 
                                                  << "To-Path: " << toUrl << CRLF 
                                                  << "From-Path: "<< fromUrl << CRLF 
-                                                 << str 
+                                                 << str << CRLF
                                                  << "-------" << chunkId << "$");
   }
 

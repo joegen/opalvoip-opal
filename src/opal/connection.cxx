@@ -1540,7 +1540,7 @@ OpalMediaType::AutoStartMode OpalConnection::AutoStartMap::GetAutoStart(const Op
 
 #if OPAL_HAS_IM
 
-bool OpalConnection::TransmitInternalIM(const OpalMediaFormat & format, RTP_DataFrame & frame)
+bool OpalConnection::TransmitInternalIM(const OpalMediaFormat & format, RTP_IMFrame & frame)
 {
   // if the call contains any compatible IM stream, use it
   for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
@@ -1560,13 +1560,13 @@ bool OpalConnection::TransmitInternalIM(const OpalMediaFormat & format, RTP_Data
 }
 
 
-void OpalConnection::OnReceiveInternalIM(const OpalMediaFormat & format, RTP_DataFrame & rtp)
+void OpalConnection::OnReceiveInternalIM(const OpalMediaFormat & format, RTP_IMFrame & rtp)
 {
   TransmitExternalIM(format, rtp);
 }
 
 
-bool OpalConnection::TransmitExternalIM(const OpalMediaFormat & format, RTP_DataFrame & frame)
+bool OpalConnection::TransmitExternalIM(const OpalMediaFormat & format, RTP_IMFrame & frame)
 {
   PURL remotePartyURL, localPartyURL;
   PString remotePartyName;
@@ -1579,22 +1579,26 @@ bool OpalConnection::TransmitExternalIM(const OpalMediaFormat & format, RTP_Data
     localPartyURL   = otherParty->GetLocalPartyURL();
   }
 
+  // get ID
+  PString id = format.GetOptionString("Path", GetIdentifier());
+
   // pass information up the chain
-  T140String t140((const BYTE *)frame.GetPayloadPtr(), frame.GetPayloadSize());
+  T140String t140;
   PString str;
+  frame.GetContent(t140);
   t140.AsString(str);
-  endpoint.GetManager().OnMessageReceived(remotePartyURL, 
+  endpoint.GetManager().OnMessageReceived(format.GetOptionString("Path", GetIdentifier()), 
                                           remotePartyName, 
                                           localPartyURL, 
-                                          format.GetOptionString("Content-Type", "text/plain"),
+                                          frame.GetContentType(),
                                           str,
-                                          GetIdentifier());
+                                          id);
 
   return true;
 }
 
 
-bool OpalConnection::OnReceiveExternalIM(const OpalMediaFormat & format, RTP_DataFrame & body)
+bool OpalConnection::OnReceiveExternalIM(const OpalMediaFormat & format, RTP_IMFrame & body)
 {
   return TransmitInternalIM(format, body);
 }
