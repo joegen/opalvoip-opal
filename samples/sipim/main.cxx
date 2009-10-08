@@ -165,21 +165,24 @@ void SipIM::Main()
 
   RFC4103Context rfc4103(m_manager.m_imFormat);
 
+  int count = 1;
   for (;;) {
     PThread::Sleep(5000);
-    const char * textData = "Hello, world";
+    const char * textData = "<b>Hello, worldi</b>";
 
-    PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_manager.m_callToken);
-    if (call != NULL) {
-      PSafePtr<OpalPCSSConnection> conn = call->GetConnectionAs<OpalPCSSConnection>();
-      if (conn != NULL) {
-        RTP_DataFrameList frameList = rfc4103.ConvertToFrames(textData);
-        OpalMediaFormat fmt(m_manager.m_imFormat);
-        fmt.SetOptionString("Content-Type", "text/plain");
-        for (PINDEX i = 0; i < frameList.GetSize(); ++i) {
-          conn->TransmitInternalIM(fmt, frameList[i]);
+    if (count > 0) {
+      PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_manager.m_callToken);
+      if (call != NULL) {
+        PSafePtr<OpalPCSSConnection> conn = call->GetConnectionAs<OpalPCSSConnection>();
+        if (conn != NULL) {
+          RTP_DataFrameList frameList = rfc4103.ConvertToFrames("text/plain", textData);
+          OpalMediaFormat fmt(m_manager.m_imFormat);
+          for (PINDEX i = 0; i < frameList.GetSize(); ++i) {
+            conn->TransmitInternalIM(fmt, (RTP_IMFrame &)frameList[i]);
+          }
         }
       }
+      --count;
     }
   }
 
