@@ -631,6 +631,11 @@ void OpalRTPMediaStream::SetPaused(bool pause)
 {
   OpalMediaStream::SetPaused(pause);
 
+  // If coming out of pause, reopen the RTP session, even though it is probably
+  // still open, to make sure any pending error/statistic conditions are reset.
+  if (!paused)
+    rtpSession.Reopen(IsSource());
+
   if (IsSource()) {
     if (pause)
       rtpSession.SetJitterBufferSize(0, 0);
