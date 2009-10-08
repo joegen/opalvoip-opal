@@ -292,7 +292,7 @@ bool OpalMSRPMediaSession::WritePacket(RTP_DataFrame & frame)
       PString messageId;
       T140String content;
       PString str;
-      if (imFrame->GetContent(content) || !content.AsString(str))
+      if (imFrame->GetContent(content) && content.AsString(str))
         m_connectionPtr->m_protocol->SendSEND(m_localUrl, m_remoteUrl, str, imFrame->GetContentType(), messageId);
       else {
         PTRACE(1, "MSRP\tCannot convert IM message to string");

@@ -168,7 +168,7 @@ void SipIM::Main()
   int count = 1;
   for (;;) {
     PThread::Sleep(5000);
-    const char * textData = "<b>Hello, worldi</b>";
+    const char * textData = "Hello, world";
 
     if (count > 0) {
       PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_manager.m_callToken);
