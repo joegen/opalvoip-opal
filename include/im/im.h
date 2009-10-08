@@ -55,6 +55,20 @@ class OpalIMMediaType : public OpalMediaTypeDefinition
     virtual bool UsesRTP() const { return false; }
 };
 
+class RTP_IMFrame : public RTP_DataFrame
+{
+  public:
+    RTP_IMFrame();
+    RTP_IMFrame(const PString & contentType);
+    RTP_IMFrame(const PString & contentType, const T140String & content);
+    RTP_IMFrame(const BYTE * data, PINDEX len, PBoolean dynamic = PTrue);
+
+    void SetContentType(const PString & contentType);
+    PString GetContentType() const;
+
+    void SetContent(const T140String & text);
+    bool GetContent(T140String & text) const;
+};
 
 class OpalIMMediaStream : public OpalMediaStream
 {
@@ -72,7 +86,6 @@ class OpalIMMediaStream : public OpalMediaStream
     bool ReadPacket(RTP_DataFrame & packet);
     bool WritePacket(RTP_DataFrame & packet);
 };
-
 
 #endif // OPAL_HAS_IM
 

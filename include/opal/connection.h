@@ -48,8 +48,12 @@
 #include <ptclib/dtmf.h>
 #include <ptlib/safecoll.h>
 #include <rtp/rtp.h>
+
+#if OPAL_HAS_IM
 #include <im/t140.h>
 #include <im/rfc4103.h>
+#include <im/im.h>
+#endif
 
 class OpalEndPoint;
 class OpalCall;
@@ -1551,7 +1555,7 @@ class OpalConnection : public PSafeObject
       */
     virtual bool TransmitInternalIM(
       const OpalMediaFormat & format, 
-      RTP_DataFrame & body
+      RTP_IMFrame & body
     );
 
     /**
@@ -1559,7 +1563,7 @@ class OpalConnection : public PSafeObject
       */
     virtual void OnReceiveInternalIM(
       const OpalMediaFormat & format, 
-      RTP_DataFrame & body
+      RTP_IMFrame & body
     );
 
     /**
@@ -1567,7 +1571,7 @@ class OpalConnection : public PSafeObject
       */
     virtual bool TransmitExternalIM(
       const OpalMediaFormat & format, 
-      RTP_DataFrame & body
+      RTP_IMFrame & body
     );
 
     /**
@@ -1575,7 +1579,7 @@ class OpalConnection : public PSafeObject
       */
     virtual bool OnReceiveExternalIM(
       const OpalMediaFormat & format, 
-      RTP_DataFrame & body
+      RTP_IMFrame & body
     );
 
     /**  Used for creating IM messages. 
