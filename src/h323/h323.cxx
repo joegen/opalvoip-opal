@@ -4835,7 +4835,7 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
         H323Capability * capability = localCapabilities.FindCapability(newMode[m]);
         if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
           OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
-          if (mediaStream != NULL || capability->GetMediaFormat() == mediaStream->GetMediaFormat()) {
+          if (mediaStream != NULL && capability->GetMediaFormat() == mediaStream->GetMediaFormat()) {
             closeOne = false;
             break;
           }
