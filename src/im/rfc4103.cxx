@@ -62,19 +62,18 @@ void RFC4103Context::SetMediaFormat(const OpalMediaFormat & fmt)
 }
 
 
-RTP_DataFrameList RFC4103Context::ConvertToFrames(const T140String & body)
+RTP_DataFrameList RFC4103Context::ConvertToFrames(const PString & contentType, const T140String & content)
 {
   DWORD ts = m_baseTimeStamp;
   ts += (DWORD)((PTime() - m_baseTime).GetMilliSeconds());
 
   RTP_DataFrameList frames;
-  RFC4103Frame * frame = new RFC4103Frame();
+  RTP_IMFrame * frame = new RTP_IMFrame(contentType, content);
 
   frame->SetPayloadType(m_mediaFormat.GetPayloadType());
   frame->SetMarker(true);
   frame->SetTimestamp(ts);
   frame->SetSequenceNumber(++m_sequence);
-  frame->SetPayload(body);
 
   frames.Append(frame);
 
@@ -83,21 +82,5 @@ RTP_DataFrameList RFC4103Context::ConvertToFrames(const T140String & body)
 
 /////////////////////////////////////////////////////////////////////////////
 
-RFC4103Frame::RFC4103Frame()
-  : RTP_DataFrame(0)
-{ 
-}
-
-RFC4103Frame::RFC4103Frame(const T140String & t140)
-  : RTP_DataFrame(0)
-{
-  SetPayload(t140);
-}
-
-void RFC4103Frame::SetPayload(const T140String & t140)
-{
-  SetPayloadSize(t140.GetSize());
-  memcpy(GetPayloadPtr(), (const BYTE *)t140, t140.GetLength());
-}
 
 #endif // OPAL_HAS_RFC4103

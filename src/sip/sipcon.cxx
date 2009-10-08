@@ -2635,10 +2635,13 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 {
   PTRACE(3, "SIP\tReceived MESSAGE");
 
-  RTP_DataFrameList frames = m_rfc4103Context[0].ConvertToFrames(pdu.GetEntityBody());
+  PString contentType = pdu.GetMIME().GetContentType();
+  if (contentType.IsEmpty())
+    contentType = "text/plain";
+  RTP_DataFrameList frames = m_rfc4103Context[0].ConvertToFrames(contentType, pdu.GetEntityBody());
 
   for (PINDEX i = 0; i < frames.GetSize(); ++i)
-    OnReceiveExternalIM(OpalT140, frames[i]);
+    OnReceiveExternalIM(OpalT140, (RTP_IMFrame &)frames[i]);
 
   pdu.SendResponse(*transport, SIP_PDU::Successful_OK);
 }
@@ -2701,7 +2704,7 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 
 #if OPAL_HAS_IM
 
-bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_DataFrame & body)
+bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_IMFrame & body)
 {
 #if OPAL_HAS_MSRP
   // if the call contains an MSRP connection, then use that

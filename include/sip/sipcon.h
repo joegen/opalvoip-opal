@@ -473,7 +473,7 @@ class SIPConnection : public OpalRTPConnection
 #if OPAL_HAS_IM
     virtual bool TransmitExternalIM(
       const OpalMediaFormat & format, 
-      RTP_DataFrame & body
+      RTP_IMFrame & body
     );
 #endif
 

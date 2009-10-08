@@ -90,10 +90,7 @@ const OpalMediaFormat & GetOpalMSRP()
           acceptTypes += *r;
         }
 
-        OpalMediaOption * option = new OpalMediaOptionString("Content-Type", false, "text/plain");
-        AddOption(option);
-        
-        option = new OpalMediaOptionString("Accept Types", false, acceptTypes);
+        OpalMediaOptionString * option = new OpalMediaOptionString("Accept Types", false, acceptTypes);
         option->SetMerge(OpalMediaOption::AlwaysMerge);
         AddOption(option);
 
@@ -129,10 +126,7 @@ const OpalMediaFormat & GetOpalSIPIM()
                           0, 
                           1000)     // as defined in RFC 4103 - good as anything else
       { 
-        OpalMediaOption * option = new OpalMediaOptionString("Content-Type", false, "text/plain");
-        AddOption(option);
-
-        option = new OpalMediaOptionString("URL", false, "");
+        OpalMediaOptionString * option = new OpalMediaOptionString("URL", false, "");
         option->SetMerge(OpalMediaOption::NoMerge);
         AddOption(option);
       } 
@@ -159,14 +153,78 @@ const OpalMediaFormat & GetOpalT140()
                           0, 
                           1000)    // as defined in RFC 4103
       { 
-        OpalMediaOption * option = new OpalMediaOptionString("Content-Type", false, "text/plain");
-        AddOption(option);
       } 
   } const f; 
   return f; 
 } 
 
 OPAL_INSTANTIATE_MEDIATYPE(t140, OpalT140MediaType);
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+RTP_IMFrame::RTP_IMFrame(const BYTE * data, PINDEX len, bool dynamic)
+  : RTP_DataFrame(data, len, dynamic)
+{
+}
+
+
+RTP_IMFrame::RTP_IMFrame()
+{
+  SetExtension(true);
+  SetExtensionSize(0);
+  SetPayloadSize(0);
+}
+
+RTP_IMFrame::RTP_IMFrame(const PString & contentType)
+{
+  SetExtension(true);
+  SetExtensionSize(0);
+  SetPayloadSize(0);
+  SetContentType(contentType);
+}
+
+RTP_IMFrame::RTP_IMFrame(const PString & contentType, const T140String & content)
+{
+  SetExtension(true);
+  SetExtensionSize(0);
+  SetPayloadSize(0);
+  SetContentType(contentType);
+  SetContent(content);
+}
+
+void RTP_IMFrame::SetContentType(const PString & contentType)
+{
+  if (GetContentType() == contentType) 
+    return;
+
+  SetExtension(true);
+  SetExtensionSize(contentType.GetLength());
+  memcpy(GetExtensionPtr(), (const char *)contentType, contentType.GetLength());
+}
+
+
+PString RTP_IMFrame::GetContentType() const
+{
+  if (!GetExtension() || (GetExtensionSize() == 0))
+    return PString::Empty();
+
+  return PString((const char *)GetExtensionPtr(), GetExtensionSize());
+}
+
+void RTP_IMFrame::SetContent(const T140String & text)
+{
+  SetPayloadSize(text.GetSize());
+  memcpy(GetPayloadPtr(), (const BYTE *)text, text.GetSize());
+}
+
+bool RTP_IMFrame::GetContent(T140String & text) const
+{
+  if (GetPayloadSize() == 0) 
+    text.SetSize(0);
+  else 
+    text = T140String((const BYTE *)GetPayloadPtr(), GetPayloadSize());
+  return true;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -188,7 +246,8 @@ bool OpalIMMediaStream::ReadPacket(RTP_DataFrame & /*packet*/)
 
 bool OpalIMMediaStream::WritePacket(RTP_DataFrame & frame)
 {
-  connection.OnReceiveInternalIM(mediaFormat, frame);
+  RTP_IMFrame imFrame(frame.GetPointer(), frame.GetSize());
+  connection.OnReceiveInternalIM(mediaFormat, imFrame);
   return true;
 }
 
