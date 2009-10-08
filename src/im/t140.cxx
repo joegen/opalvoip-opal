@@ -236,8 +236,10 @@ bool T140String::AsString(PString & str)
       str += (char)(ch & 0xff);
     else if (ch == UTF_NEWLINE)
       str += '\n';
-    else // if (ch == ZERO_WIDTH_NO_BREAK) {
+    else // if (ch == ZERO_WIDTH_NO_BREAK) 
+    {
       ;
+    }
     pos += len;
   }
 
