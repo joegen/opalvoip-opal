@@ -150,8 +150,8 @@ class RTP_DataFrame : public PBYTEArray
 
     int GetExtensionType() const; // -1 is no extension
     void   SetExtensionType(int type);
-    PINDEX GetExtensionSize() const;          // get the number of bytes in the extension (excluding the header). Always a multiple of 4
-    PBoolean   SetExtensionSize(PINDEX sz);   // set the number of 32 bit words in the extension (excluding the header)
+    PINDEX GetExtensionSizeDWORDs() const;      // get the number of 32 bit words in the extension (excluding the header).
+    bool   SetExtensionSizeDWORDs(PINDEX sz);   // set the number of 32 bit words in the extension (excluding the header)
     BYTE * GetExtensionPtr() const;
 
     PINDEX GetPayloadSize() const { return payloadSize - GetPaddingSize(); }
