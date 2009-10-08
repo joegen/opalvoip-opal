@@ -1691,6 +1691,8 @@ void RTP_UDP::Reopen(PBoolean reading)
   else
     shutdownWrite = false;
 
+  badTransmitCounter = 0;
+
   PTRACE(3, "RTP_UDP\tSession " << sessionID << " reopened for " << (reading ? "reading" : "writing"));
 }
 
@@ -1938,9 +1940,9 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(BYTE * framePtr,
       if (++badTransmitCounter == 1) 
         badTransmitStart = PTime();
       else {
-        if ((PTime()- badTransmitStart).GetMilliSeconds() < BAD_TRANSMIT_TIME_MAX * 1000)
+        if (badTransmitCounter < 5 || (PTime()- badTransmitStart).GetSeconds() < BAD_TRANSMIT_TIME_MAX)
           return RTP_Session::e_IgnorePacket;
-        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName << " " << BAD_TRANSMIT_TIME_MAX << "s of transmit fails - informing connection");
+        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName << " " << BAD_TRANSMIT_TIME_MAX << " seconds of transmit fails - informing connection");
         userData->SessionFailing(*this);
       }
       return RTP_Session::e_IgnorePacket;
