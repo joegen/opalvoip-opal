@@ -136,7 +136,7 @@ PINDEX RTP_DataFrame::GetHeaderSize() const
   PINDEX sz = MinHeaderSize + 4*GetContribSrcCount();
 
   if (GetExtension())
-    sz += 4 + GetExtensionSize();
+    sz += 4 + GetExtensionSizeDWORDs()*4;
 
   return sz;
 }
@@ -157,22 +157,22 @@ void RTP_DataFrame::SetExtensionType(int type)
     SetExtension(false);
   else {
     if (!GetExtension())
-      SetExtensionSize(0);
+      SetExtensionSizeDWORDs(0);
     *(PUInt16b *)&theArray[MinHeaderSize + 4*GetContribSrcCount()] = (WORD)type;
   }
 }
 
 
-PINDEX RTP_DataFrame::GetExtensionSize() const
+PINDEX RTP_DataFrame::GetExtensionSizeDWORDs() const
 {
   if (GetExtension())
-    return *(PUInt16b *)&theArray[MinHeaderSize + 4*GetContribSrcCount() + 2] * 4;
+    return *(PUInt16b *)&theArray[MinHeaderSize + 4*GetContribSrcCount() + 2];
 
   return 0;
 }
 
 
-PBoolean RTP_DataFrame::SetExtensionSize(PINDEX sz)
+PBoolean RTP_DataFrame::SetExtensionSizeDWORDs(PINDEX sz)
 {
   if (!SetMinSize(MinHeaderSize + 4*GetContribSrcCount() + 4+4*sz + payloadSize))
     return false;
@@ -217,7 +217,7 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
 
   if (GetExtension())
     strm << "  Header Extension Type: " << GetExtensionType() << '\n'
-         << hex << setfill('0') << PBYTEArray(GetExtensionPtr(), GetExtensionSize(), false) << setfill(' ') << dec << '\n';
+         << hex << setfill('0') << PBYTEArray(GetExtensionPtr(), GetExtensionSizeDWORDs()*4, false) << setfill(' ') << dec << '\n';
 
   strm << hex << setfill('0') << PBYTEArray(GetPayloadPtr(), GetPayloadSize(), false) << setfill(' ') << dec;
 }

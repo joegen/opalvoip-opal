@@ -171,14 +171,14 @@ RTP_IMFrame::RTP_IMFrame(const BYTE * data, PINDEX len, bool dynamic)
 RTP_IMFrame::RTP_IMFrame()
 {
   SetExtension(true);
-  SetExtensionSize(0);
+  SetExtensionSizeDWORDs(0);
   SetPayloadSize(0);
 }
 
 RTP_IMFrame::RTP_IMFrame(const PString & contentType)
 {
   SetExtension(true);
-  SetExtensionSize(0);
+  SetExtensionSizeDWORDs(0);
   SetPayloadSize(0);
   SetContentType(contentType);
 }
@@ -186,7 +186,7 @@ RTP_IMFrame::RTP_IMFrame(const PString & contentType)
 RTP_IMFrame::RTP_IMFrame(const PString & contentType, const T140String & content)
 {
   SetExtension(true);
-  SetExtensionSize(0);
+  SetExtensionSizeDWORDs(0);
   SetPayloadSize(0);
   SetContentType(contentType);
   SetContent(content);
@@ -212,7 +212,7 @@ void RTP_IMFrame::SetContentType(const PString & contentType)
 
   // otherwise copy the new extension in
   else {
-    PINDEX oldExtensionDWORDs = (GetExtensionSize() + 3) / 4;
+    PINDEX oldExtensionDWORDs = GetExtensionSizeDWORDs();
     if (oldPayloadSize != 0) {
       if (newExtensionDWORDs <= oldExtensionDWORDs) {
         memcpy(GetExtensionPtr() + newExtensionBytes, GetPayloadPtr(), oldPayloadSize);
@@ -225,7 +225,7 @@ void RTP_IMFrame::SetContentType(const PString & contentType)
   }
   
   // reset lengths
-  SetExtensionSize(newExtensionDWORDs);
+  SetExtensionSizeDWORDs(newExtensionDWORDs);
   memcpy(GetExtensionPtr(), (const char *)contentType, newExtensionBytes);
   SetPayloadSize(oldPayloadSize);
   if (newExtensionDWORDs*4 > newExtensionBytes)
@@ -235,7 +235,7 @@ void RTP_IMFrame::SetContentType(const PString & contentType)
 
 PString RTP_IMFrame::GetContentType() const
 {
-  if (!GetExtension() || (GetExtensionSize() == 0))
+  if (!GetExtension() || (GetExtensionSizeDWORDs() == 0))
     return PString::Empty();
 
   const char * p = (const char *)GetExtensionPtr();
