@@ -194,12 +194,42 @@ RTP_IMFrame::RTP_IMFrame(const PString & contentType, const T140String & content
 
 void RTP_IMFrame::SetContentType(const PString & contentType)
 {
-  if (GetContentType() == contentType) 
+  PINDEX newExtensionBytes  = contentType.GetLength();
+  PINDEX newExtensionDWORDs = (newExtensionBytes + 3) / 4;
+  PINDEX oldPayloadSize = GetPayloadSize();
+
+  // adding an extension adds 4 bytes to the header,
+  //  plus the number of 32 bit words needed to hold the extension
+  if (!GetExtension()) {
+    SetPayloadSize(4 + newExtensionDWORDs + oldPayloadSize);
+    if (oldPayloadSize > 0)
+      memcpy(GetPayloadPtr() + newExtensionBytes + 4, GetPayloadPtr(), oldPayloadSize);
+  }
+
+  // if content type has not changed, nothing to do
+  else if (GetContentType() == contentType) 
     return;
 
-  SetExtension(true);
-  SetExtensionSize(contentType.GetLength());
-  memcpy(GetExtensionPtr(), (const char *)contentType, contentType.GetLength());
+  // otherwise copy the new extension in
+  else {
+    PINDEX oldExtensionDWORDs = (GetExtensionSize() + 3) / 4;
+    if (oldPayloadSize != 0) {
+      if (newExtensionDWORDs <= oldExtensionDWORDs) {
+        memcpy(GetExtensionPtr() + newExtensionBytes, GetPayloadPtr(), oldPayloadSize);
+      }
+      else {
+        SetPayloadSize((newExtensionDWORDs - oldExtensionDWORDs)*4 + oldPayloadSize);
+        memcpy(GetExtensionPtr() + newExtensionDWORDs*4, GetPayloadPtr(), oldPayloadSize);
+      }
+    }
+  }
+  
+  // reset lengths
+  SetExtensionSize(newExtensionDWORDs);
+  memcpy(GetExtensionPtr(), (const char *)contentType, newExtensionBytes);
+  SetPayloadSize(oldPayloadSize);
+  if (newExtensionDWORDs*4 > newExtensionBytes)
+    memset(GetExtensionPtr() + newExtensionBytes, 0, newExtensionDWORDs*4 - newExtensionBytes);
 }
 
 
@@ -208,7 +238,8 @@ PString RTP_IMFrame::GetContentType() const
   if (!GetExtension() || (GetExtensionSize() == 0))
     return PString::Empty();
 
-  return PString((const char *)GetExtensionPtr(), GetExtensionSize());
+  const char * p = (const char *)GetExtensionPtr();
+  return PString(p, strlen(p));
 }
 
 void RTP_IMFrame::SetContent(const T140String & text)
