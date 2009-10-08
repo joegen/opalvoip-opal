@@ -803,7 +803,7 @@ bool MSRPProtocol::SendChunk(const PString & chunkId,
   {
     PStringStream str; str << ::setfill('\r');
     mime.PrintContents(str);
-    PTRACE(4, "Sending MSRP message\n" << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF 
+    PTRACE(4, "Sending MSRP chunk\n" << "MSRP " << chunkId << " " << MSRPCommands[SEND] << CRLF 
                                        << "To-Path: " << toUrl << CRLF 
                                        << "From-Path: "<< fromUrl << CRLF 
                                        << str << CRLF
