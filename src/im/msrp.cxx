@@ -571,7 +571,7 @@ PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL
     PTRACE(2, "MSRP\tUnable to make new connection to " << ip << ":" << port);
     PWaitAndSignal m(m_connectionInfoMapAddMutex);
     m_connectionInfoMap.erase(connectionKey);
-    connectionPtr = NULL;
+    connectionPtr.SetNULL();
     return NULL;
   }
 
@@ -591,7 +591,7 @@ bool OpalMSRPManager::CloseConnection(PSafePtr<OpalMSRPManager::Connection> & co
   PWaitAndSignal m(m_connectionInfoMapAddMutex);
   if (--connection->m_refCount == 0) {
     m_connectionInfoMap.erase(connection->m_key);
-    connection = NULL;
+    connection.SetNULL();
   }
   return true;
 }
