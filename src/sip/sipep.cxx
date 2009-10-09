@@ -1077,7 +1077,7 @@ bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & newParams, PString & ao
 
   // If there is already a request with this URL and method, 
   // then update it with the new information
-  if (handler != NULL && handler->GetState() != SIPHandler::Unsubscribed)
+  if (handler != NULL)
     PSafePtrCast<SIPHandler, SIPSubscribeHandler>(handler)->UpdateParameters(params);
   else {
     // Otherwise create a new request with this method type

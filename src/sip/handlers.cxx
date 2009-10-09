@@ -1670,7 +1670,15 @@ PSafePtr<SIPHandler> SIPHandlersList::FindBy(IndexMap & by, const PString & key,
     ptr = r->second;
   }
 
-  return ptr.SetSafetyMode(mode) ? ptr : NULL;
+  if (ptr->GetState() != SIPHandler::Unsubscribed)
+    return ptr.SetSafetyMode(mode) ? ptr : NULL;
+
+  PTRACE(3, "SIP\tHandler " << *ptr << " unsubscribed, awaiting shutdown.");
+  while (!ptr->ShutDown())
+    PThread::Sleep(100);
+
+  Remove(ptr);
+  return NULL;
 }
 
 
