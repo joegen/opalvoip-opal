@@ -168,7 +168,6 @@ protected:
   // Keep a copy of the keys used for easy removal on destruction
   typedef std::map<PString, PSafePtr<SIPHandler> > IndexMap;
   IndexMap::iterator m_byCallID;
-  IndexMap::iterator m_byAOR;
   IndexMap::iterator m_byAorAndPackage;
   IndexMap::iterator m_byAuthIdAndRealm;
   IndexMap::iterator m_byAorUserAndRealm;
@@ -418,7 +417,6 @@ class SIPHandlersList
     PSafePtr<SIPHandler> FindBy(IndexMap & by, const PString & key, PSafetyMode m);
 
     IndexMap m_byCallID;
-    IndexMap m_byAOR;
     IndexMap m_byAorAndPackage;
     IndexMap m_byAuthIdAndRealm;
     IndexMap m_byAorUserAndRealm;
