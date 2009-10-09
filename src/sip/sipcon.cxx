@@ -2002,7 +2002,9 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
     return;
   }
 
-  if (package != "refer") {
+  // Do not include the id parameter in this comparison, may need to
+  // do it later if we ever support multiple simultaneous REFERs
+  if (package.Find("refer") == P_MAX_INDEX) {
     PTRACE(2, "SIP\tNOTIFY in a connection only supported for REFER requests");
     request.SendResponse(*transport, SIP_PDU::Failure_BadEvent);
     return;
