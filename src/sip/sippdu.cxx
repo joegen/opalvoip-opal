@@ -2861,20 +2861,22 @@ void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval &
 }
 
 
+#if PTRACING
 ostream & operator<<(ostream & strm, const SIPParameters & params)
 {
-  strm << "        aor=" << params.m_addressOfRecord << "\n"
-          "     remote=" << params.m_remoteAddress << "\n"
-          "      local=" << params.m_localAddress << "\n"
-          "    contact=" << params.m_contactAddress << "\n"
-          "     authID=" << params.m_authID << "\n"
-          "      realm=" << params.m_realm << "\n"
-          "     expire=" << params.m_expire << "\n"
-          "    restore=" << params.m_restoreTime << "\n"
-          "   minRetry=" << params.m_minRetryTime << "\n"
-          "   maxRetry=" << params.m_maxRetryTime;
+  strm << "          aor=" << params.m_addressOfRecord << "\n"
+          "       remote=" << params.m_remoteAddress << "\n"
+          "        local=" << params.m_localAddress << "\n"
+          "      contact=" << params.m_contactAddress << "\n"
+          "       authID=" << params.m_authID << "\n"
+          "        realm=" << params.m_realm << "\n"
+          "       expire=" << params.m_expire << "\n"
+          "      restore=" << params.m_restoreTime << "\n"
+          "     minRetry=" << params.m_minRetryTime << "\n"
+          "     maxRetry=" << params.m_maxRetryTime;
   return strm;
 }
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -2970,6 +2972,29 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   SetAllow(ep.GetAllowedMethods());
   SetRoute(proxy);
 }
+
+
+#if PTRACING
+ostream & operator<<(ostream & strm, SIPRegister::CompatibilityModes mode)
+{
+  static const char * const Names[] = {
+    "FullyCompliant",
+    "CannotRegisterMultipleContacts",
+    "CannotRegisterPrivateContacts"
+  };
+  if (mode < PARRAYSIZE(Names) && Names[mode] != NULL)
+    strm << Names[mode];
+  else
+    strm << '<' << (unsigned)mode << '>';
+  return strm;
+}
+
+ostream & operator<<(ostream & strm, const SIPRegister::Params & params)
+{
+  return strm << (const SIPParameters &)params << "\n"
+                 "compatibility=" << params.m_compatibility;
+}
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -3084,6 +3109,14 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
 
   SetAllow(ep.GetAllowedMethods());
 }
+
+
+#if PTRACING
+ostream & operator<<(ostream & strm, const SIPSubscribe::Params & params)
+{
+  return strm << " eventPackage=" << params.m_eventPackage << '\n' << (const SIPParameters &)params;
+}
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////////
