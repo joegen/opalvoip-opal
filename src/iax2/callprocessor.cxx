@@ -167,7 +167,7 @@ void IAX2CallProcessor::PutSoundPacketToNetwork(PBYTEArray *sound)
 
 void IAX2CallProcessor::CallStopSounds()
 {
-  cout << "We have received a call stop sounds packet " << endl;
+  //cout << "We have received a call stop sounds packet " << endl;
 }
 
 void IAX2CallProcessor::ReceivedHookFlash() 
@@ -242,10 +242,8 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
   PIPSocket::Address ip;
   if (!PIPSocket::GetHostAddress(res[IAX2EndPoint::addressIndex], ip)) {
     PTRACE(1, "Conection\tFailed to make call to " << res[IAX2EndPoint::addressIndex]);
-      cout << "Could not make a call to " << res[IAX2EndPoint::addressIndex] 
-     << " as IP resolution failed" << endl;
-      return;
-    }
+    return;
+  }
   PTRACE(4, "Resolve " << res[IAX2EndPoint::addressIndex]  << " as ip address " << ip);
     
   remote.SetRemotePort(con->GetEndPoint().ListenPortNumber());
@@ -287,6 +285,7 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
 
 void IAX2CallProcessor::ReportStatistics()
 {
+#if 0
   cout << "  Call has been up for " << setprecision(0) << setw(8)
        << (PTimer::Tick() - callStartTick) << " milliseconds" << endl
        << "  Control frames sent " << controlFramesSent  << endl
@@ -295,6 +294,7 @@ void IAX2CallProcessor::ReportStatistics()
        << "  Audio frames rcvd   " << audioFramesRcvd      << endl
        << "  Video frames sent   " << videoFramesSent      << endl
        << "  Video frames rcvd   " << videoFramesRcvd      << endl;
+#endif
 }
 
 void IAX2CallProcessor::ProcessFullFrame(IAX2FullFrame & fullFrame)
@@ -625,7 +625,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameSessionControl * src)
   switch(src->GetSubClass()) {
   case IAX2FullFrameSessionControl::hangup:          // Other end has hungup
     SetCallTerminating(PTrue);
-    cout << "Other end has hungup, so exit" << endl;
+    //cout << "Other end has hungup, so exit" << endl;
     con->EndCallNow();
     break;
     
@@ -1020,8 +1020,8 @@ void IAX2CallProcessor::ProcessIaxCmdHangup(IAX2FullFrameProtocol *src)
 void IAX2CallProcessor::ProcessIaxCmdReject(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "Processor\tProcessIaxCmdReject(IAX2FullFrameProtocol *src)");
-  cout << "Remote endpoint has rejected our call " << endl;
-  cout << "Cause \"" << ieData.cause << "\"" << endl;
+  //cout << "Remote endpoint has rejected our call " << endl;
+  //cout << "Cause \"" << ieData.cause << "\"" << endl;
   SendAckFrame(src);
   con->EndCallNow(OpalConnection::EndedByRefusal);
 
