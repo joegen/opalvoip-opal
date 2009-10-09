@@ -1195,24 +1195,27 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   progressPDU = new H323SignalPDU;
   progressPDU->BuildProgress(*this);
 
+  connectionState = AwaitingLocalAnswer;
+
   // OK are now ready to send SETUP to remote protocol
   ownerCall.OnSetUp(*this);
 
-  if (connectionState == NoConnectionActive) {
 #if OPAL_H450
-    /** If Call Intrusion is allowed we must answer the call*/
+  if (connectionState == AwaitingLocalAnswer) {
+    // If Call Intrusion is allowed we must answer the call
     if (IsCallIntrusion()) {
       AnsweringCall(AnswerCallDeferred);
+      return connectionState != ShuttingDownConnection;
     }
-    else {
-      if (isConsultationTransfer)
-        AnsweringCall(AnswerCallNow);
+
+    if (isConsultationTransfer) {
+      AnsweringCall(AnswerCallNow);
+      return connectionState != ShuttingDownConnection;
     }
-#endif
   }
+#endif
 
   // call the application callback to determine if to answer the call or not
-  connectionState = AwaitingLocalAnswer;
   AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
 
   return connectionState != ShuttingDownConnection;
