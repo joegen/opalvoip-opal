@@ -233,7 +233,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_needReINVITE(false)
   , m_handlingINVITE(false)
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
-  , authentication(NULL)
+  , m_authentication(NULL)
+  , m_authenticatedCseq(0)
   , ackReceived(false)
   , releaseMethod(ReleaseWithNothing)
 {
@@ -298,7 +299,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 
 SIPConnection::~SIPConnection()
 {
-  delete authentication;
+  delete m_authentication;
   delete originalInvite;
 
   if (transport != NULL)
@@ -2251,15 +2252,17 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   newAuth->SetPassword(password);
 
   // check to see if this is a follow-on from the last authentication scheme used
-  if (authentication != NULL && *newAuth == *authentication) {
+  unsigned cseq = transaction.GetMIME().GetCSeqIndex();
+  if (m_authenticatedCseq != cseq && m_authentication != NULL && *newAuth == *m_authentication) {
     PTRACE(1, "SIP\tAuthentication already performed using current credentials, not trying again.");
     delete newAuth;
     return false;
   }
 
   // Restart the transaction with new authentication info
-  delete authentication;
-  authentication = newAuth;
+  delete m_authentication;
+  m_authentication = newAuth;
+  m_authenticatedCseq = cseq;
 
   // Make sure we increment sequence number as the call inside SIPInvite ctor
   // will not do so due to prevention to increment on "interface forked" INVITEs
