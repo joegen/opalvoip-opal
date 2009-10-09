@@ -591,10 +591,6 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
 void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
 {
   switch (code) {
-    case SIP_PDU::Failure_UnAuthorised :
-    case SIP_PDU::Failure_ProxyAuthenticationRequired :
-      expireTimer.Stop(false); // Don't keep trying to get it back
-
     case SIP_PDU::Local_TransportError :
     case SIP_PDU::Local_Timeout :
     case SIP_PDU::Failure_RequestTimeout :
