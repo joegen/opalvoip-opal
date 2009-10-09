@@ -89,7 +89,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep, const SIPParameters & params)
   transactions.DisallowDeleteObjects();
   expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 
-  PTRACE(4, "SIP\tConstructed handler\n" << params);
+  PTRACE(4, "SIP\tConstructed handler for " << params.m_addressOfRecord);
 }
 
 
@@ -1627,9 +1627,6 @@ void SIPHandlersList::Append(SIPHandler * obj)
   // add entry to call to handler map
   handler->m_byCallID = m_byCallID.insert(IndexMap::value_type(handler->GetCallID(), handler)).first;
 
-  // add entry to url map
-  handler->m_byAOR = m_byAOR.insert(IndexMap::value_type(MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod()), handler)).first;
-
   // add entry to url and package map
   handler->m_byAorAndPackage = m_byAorAndPackage.insert(IndexMap::value_type(MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod(), handler->GetEventPackage()), handler)).first;
 
@@ -1653,7 +1650,6 @@ void SIPHandlersList::Remove(SIPHandler * handler)
 
   if (m_handlersList.Remove(handler)) {
     m_byCallID.erase(handler->m_byCallID);
-    m_byAOR.erase(handler->m_byAOR);
     m_byAorAndPackage.erase(handler->m_byAorAndPackage);
     m_byAuthIdAndRealm.erase(handler->m_byAuthIdAndRealm);
     m_byAorUserAndRealm.erase(handler->m_byAorUserAndRealm);
@@ -1686,7 +1682,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & cal
 
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_PDU::Methods method, PSafetyMode mode)
 {
-  return FindBy(m_byAOR, MakeUrlKey(aor, method), mode);
+  return FindBy(m_byAorAndPackage, MakeUrlKey(aor, method), mode);
 }
 
 
