@@ -70,8 +70,6 @@ RTP_DataFrameList RFC4103Context::ConvertToFrames(const PString & contentType, c
   RTP_DataFrameList frames;
   RTP_IMFrame * frame = new RTP_IMFrame(contentType, content);
 
-cout << "Converted T140 of size " << content.GetLength() << " to RTP with payload size " << frame->GetPayloadSize() << endl;
-
   frame->SetPayloadType(m_mediaFormat.GetPayloadType());
   frame->SetMarker(true);
   frame->SetTimestamp(ts);

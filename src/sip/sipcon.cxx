@@ -2812,17 +2812,14 @@ class QDXML
       state = 0;
       std::string str;
       while ((state >= 0) && ExtractNextElement(str)) {
-        //cout << state << "  " << str << endl;
         unsigned i;
         for (i = 0; i < numStates; ++i) {
-          //cout << "comparing '" << str << "' to '" << states[i].str << "'" << endl;
           if ((state == states[i].currState) && (str.compare(0, strlen(states[i].str), states[i].str) == 0)) {
             state = states[i].newState;
             break;
           }
         }
         if (i == numStates) {
-          //cout << "unknown string " << str << " in state " << state << endl;
           state = -1;
           break;
         }
