@@ -441,7 +441,7 @@ class SIPConnection : public OpalRTPConnection
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     SIPDialogContext & GetDialog() { return m_dialog; }
     const SIPDialogContext & GetDialog() const { return m_dialog; }
-    SIPAuthentication * GetAuthenticator() const { return authentication; }
+    SIPAuthentication * GetAuthenticator() const { return m_authentication; }
 
 #if OPAL_VIDEO
     /**Call when SIP INFO of type application/media_control+xml is received.
@@ -543,7 +543,8 @@ class SIPConnection : public OpalRTPConnection
     OpalGloballyUniqueID  m_dialogNotifyId;
     int                   m_appearanceCode;
     PString               m_alertInfo;
-    SIPAuthentication   * authentication;
+    SIPAuthentication   * m_authentication;
+    unsigned              m_authenticatedCseq;
 
     std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
 
