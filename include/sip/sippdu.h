@@ -902,7 +902,10 @@ struct SIPParameters
   void        * m_userData;
 };
 
+
+#if PTRACING
 ostream & operator<<(ostream & strm, const SIPParameters & params);
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -979,6 +982,12 @@ class SIPRegister : public SIPTransaction
       const Params & params
     );
 };
+
+
+#if PTRACING
+ostream & operator<<(ostream & strm, SIPRegister::CompatibilityModes mode);
+ostream & operator<<(ostream & strm, const SIPRegister::Params & params);
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -1066,6 +1075,11 @@ class SIPSubscribe : public SIPTransaction
         const Params & params
     );
 };
+
+
+#if PTRACING
+ostream & operator<<(ostream & strm, const SIPSubscribe::Params & params);
+#endif
 
 
 typedef SIPSubscribe::EventPackage SIPEventPackage;
