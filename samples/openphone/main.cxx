@@ -60,6 +60,7 @@
 #include <ptclib/pstun.h>
 #include <t38/t38proto.h>
 #include <codec/vidcodec.h>
+#include <ptclib/pwavfile.h>
 
 #include <algorithm>
 
