@@ -215,22 +215,20 @@ SIPURL::SIPURL(const PString & str, const char * defaultScheme)
 
 
 SIPURL::SIPURL(const PString & name,
-               const OpalTransportAddress & _address,
+               const OpalTransportAddress & address,
                WORD listenerPort)
 {
   if (strncmp(name, "sip:", 4) == 0 || strncmp(name, "sips:", 5) == 0)
     Parse(name);
-  else {
-    OpalTransportAddress address(_address);
-    if (address.IsEmpty() && (name.Find('$') != P_MAX_INDEX)) 
-      address = name;
+  else if (address.IsEmpty() && (name.Find('$') != P_MAX_INDEX)) 
+    ParseAsAddress(PString::Empty(), name, listenerPort);
+  else
     ParseAsAddress(name, address, listenerPort);
-  }
 }
 
-SIPURL::SIPURL(const OpalTransportAddress & _address, WORD listenerPort)
+SIPURL::SIPURL(const OpalTransportAddress & address, WORD listenerPort)
 {
-  ParseAsAddress("", _address, listenerPort);
+  ParseAsAddress(PString::Empty(), address, listenerPort);
 }
   
 void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & address, WORD listenerPort)
@@ -257,10 +255,7 @@ void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & a
     s << ':';
     if (!name.IsEmpty())
       s << name << '@';
-    if (ip.GetVersion() == 6)
-      s << '[' << ip << ']';
-    else
-      s << ip;
+    s << ip.AsString(true);
 
     if (listenerPort == 0)
       listenerPort = port;
@@ -1654,13 +1649,7 @@ void SIP_PDU::Construct(Methods meth,
   if (pos != P_MAX_INDEX)
     localPartyName.Replace(" ", "_", PTrue);
 
-  PString remotePartyAddress = connection.GetRemotePartyAddress();
-  PINDEX prefix = remotePartyAddress.Find("sip:");
-  if(prefix != P_MAX_INDEX)
-    remotePartyAddress = remotePartyAddress.Mid(prefix + 4);
-
-  SIPURL localPartyURL(localPartyName, remotePartyAddress, endpoint.GetDefaultSignalPort());
-  SIPURL contact = endpoint.GetContactURL(transport, localPartyURL);
+  SIPURL contact = endpoint.GetContactURL(transport, connection.GetDialog().GetLocalURI());
   contact.Sanitise(meth != Method_INVITE ? SIPURL::ContactURI : SIPURL::RouteURI);
   mime.SetContact(contact);
 
