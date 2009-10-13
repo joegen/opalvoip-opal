@@ -477,7 +477,7 @@ dnl MSWIN_DISPLAY    t38,T.38 capability
 dnl MSWIN_DEFINE     t38,OPAL_T38_CAPABILITY
 OPAL_SIMPLE_OPTION([t38],[OPAL_T38_CAPABILITY], [whether to enable T.38 capability support])
 
-dnl SWIN_DISPLAY    msrp,MSRP capability
+dnl MSWIN_DISPLAY   msrp,MSRP capability
 dnl MSWIN_DEFINE    msrp,OPAL_HAS_MSRP
 OPAL_SIMPLE_OPTION([msrp],[OPAL_HAS_MSRP], [whether to enable MSRP support])
 
