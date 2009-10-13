@@ -99,10 +99,14 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 class IMDialog;
 
 struct ReceivedMessageInfo {
+  ReceivedMessageInfo(const std::string & connId_, const OpalMediaFormat & fmt_)
+    : m_connId(connId_), m_mediaFormat(fmt_) { }
+
+  std::string m_connId;
+  OpalMediaFormat m_mediaFormat;
   PURL    m_localURL;
   PURL    m_remoteURL;
   PString m_remoteName;
-  PString m_callId;
   PString m_contentType;
   PString m_body;
 };
@@ -257,12 +261,17 @@ class CallIMDialog : public wxDialog
 class IMDialog : public wxDialog
 {
   public:
-    IMDialog(MyManager * manager, const PString & localName, const PURL & remoteAddress, const PString & remoteName);
+    IMDialog(MyManager * manager, 
+     const std::string & callId,
+ const OpalMediaFormat & m_format,
+         const PString & localName, 
+            const PURL & remoteAddress, 
+         const PString & remoteName);
     ~IMDialog();
 
     void AddTextToScreen(const wxString & text, bool fromUs);
 
-    PString   m_callId;
+    std::string m_connId;
 
   private:
     void OnSend(wxCommandEvent & event);
@@ -277,6 +286,7 @@ class IMDialog : public wxDialog
     wxString m_them;
     PString m_us;
     PString m_remoteAddrStr;
+    OpalMediaFormat m_mediaFormat;
 
     wxTextCtrl * m_enteredText;
     wxTextCtrl * m_textArea;
@@ -831,6 +841,8 @@ class MyManager : public wxFrame, public OpalManager
     } m_AnswerMode;
     void SwitchToFax();
 
+    MyPCSSEndPoint & GetPCSSEP() { return *pcssEP; }
+
   private:
     // OpalManager overrides
     virtual PBoolean OnIncomingConnection(
@@ -937,6 +949,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnRightClick(wxListEvent& event);
 
     void OnMyPresence(wxCommandEvent& event);
+    void OnStartMessage(wxCommandEvent& event);
 
     bool CanDoFax() const;
     bool CanDoIM() const;

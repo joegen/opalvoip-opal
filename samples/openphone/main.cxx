@@ -535,6 +535,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuVideoControl"),    MyManager::OnVideoControl)
 
   EVT_MENU(XRCID("MenuPresence"),        MyManager::OnMyPresence)
+  EVT_MENU(XRCID("MenuStartMessage"),    MyManager::OnStartMessage)
 
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyManager::OnSashPositioned)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyManager::OnSpeedDialActivated)
@@ -1373,6 +1374,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuStartRecording"),  m_callState == InCallState && !m_activeCall->IsRecording());
   menubar->Enable(XRCID("MenuStopRecording"),   m_callState == InCallState &&  m_activeCall->IsRecording());
   menubar->Enable(XRCID("MenuSendAudioFile"),   m_callState == InCallState);
+  menubar->Enable(XRCID("MenuStartMessage"),    m_callState == InCallState);
 
   menubar->Enable(XRCID("MenuSendFax"),         CanDoFax());
 
@@ -1554,20 +1556,11 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
 {
   CallIMDialog dlg(this);
   int result = dlg.ShowModal();
-  if (result == ID_IMPAGE) {
-    PWaitAndSignal m(conversationMapMutex);
-    PString remoteAddr(dlg.m_Address.p_str());
-    IMDialog * dialog = new IMDialog(this, "", remoteAddr, "");
-    conversationMap.insert(ConversationMapType::value_type(remoteAddr, dialog));
-    dialog->Show();
-    return;
-  }
-  if (result == ID_IMSESSION) {
-    OpalConnection::StringOptions * options = new OpalConnection::StringOptions;
-    options->SetAt(OPAL_OPT_AUTO_START, "im");
-    MakeCall(dlg.m_Address, wxEmptyString, options);
 
-    return;
+  if (result == ID_IMPAGE) {
+  }
+
+  if (result == ID_IMSESSION) {
   }
 }
 
@@ -1578,8 +1571,35 @@ void MyManager::OnMyPresence(wxCommandEvent & /*event*/)
   dlg.ShowModal();
 }
 
+
+void MyManager::OnStartMessage(wxCommandEvent & /*event*/)
+{
+  if (m_callState != IdleState && m_callState != AnsweringState && m_activeCall != NULL) {
+    PSafePtr<OpalPCSSConnection> pcss = m_activeCall->GetConnectionAs<OpalPCSSConnection>(0, PSafeReference);
+    if (pcss != NULL) {
+      std::string callId((const char *)pcss->GetToken());
+      PSafePtr<OpalConnection> conn = pcss->GetOtherPartyConnection();
+      if (conn != NULL) {
+        PWaitAndSignal m(conversationMapMutex);
+        ConversationMapType::iterator r = conversationMap.find(callId);
+        if (r != conversationMap.end()) {
+          r->second->Show(true);  // bring window to front
+          return;
+        }
+        PString remoteAddress(conn->GetRemotePartyCallbackURL());
+        PString localName(conn->GetLocalPartyName());
+        PString remoteName(conn->GetRemotePartyName());
+        IMDialog * dialog = new IMDialog(this, callId, OpalMSRP, localName, remoteAddress, remoteName);
+        conversationMap.insert(ConversationMapType::value_type(callId, dialog));
+        dialog->Show();
+      }
+    }
+  }
+}
+
 void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
 {
+#if 0
   wxListItem item;
   item.m_itemId = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
   if (item.m_itemId < 0)
@@ -1594,6 +1614,7 @@ void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
     conversationMap.insert(ConversationMapType::value_type(addr, dialog));
     dialog->Show();
   }
+#endif
 }
 
 void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
@@ -2971,20 +2992,24 @@ void MyManager::OnRxMessage(wxCommandEvent & theEvent)
 
 IMDialog * MyManager::GetOrCreateConversation(const ReceivedMessageInfo & messageInfo)
 {
-  PString remote(messageInfo.m_remoteURL.AsString());
-  ConversationMapType::iterator r = conversationMap.find(remote);
+  ConversationMapType::iterator r = conversationMap.find(messageInfo.m_connId);
   if (r != conversationMap.end()) 
     return r->second;
 
-  PString localName;
-  localName = messageInfo.m_localURL.GetUserName();
+  PString remote(messageInfo.m_remoteURL.AsString());
+  PString localName(messageInfo.m_localURL.GetUserName());
   if (localName.IsEmpty())
     localName = messageInfo.m_localURL.AsString();
 
-  IMDialog * dialog = new IMDialog(this, localName, messageInfo.m_remoteURL, messageInfo.m_remoteName);
-  conversationMap.insert(ConversationMapType::value_type(remote, dialog));
+  IMDialog * dialog = new IMDialog(this, 
+                                   messageInfo.m_connId, 
+                                   messageInfo.m_mediaFormat,
+                                   localName, 
+                                   messageInfo.m_remoteURL, 
+                                   messageInfo.m_remoteName);
+  conversationMap.insert(ConversationMapType::value_type(messageInfo.m_connId, dialog));
   dialog->Show();
-  return conversationMap.find(remote)->second;
+  return conversationMap.find(messageInfo.m_connId)->second;
 }
 
 
@@ -5406,8 +5431,15 @@ BEGIN_EVENT_TABLE(IMDialog, wxDialog)
   EVT_CLOSE(IMDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
-IMDialog::IMDialog(MyManager * manager, const PString & localName, const PURL & remoteAddress, const PString & remoteName)
-  : m_manager(manager)
+IMDialog::IMDialog(MyManager * manager, 
+           const std::string & connId,
+       const OpalMediaFormat & m_format,
+               const PString & localName, 
+                  const PURL & remoteAddress, 
+               const PString & remoteName)
+  : m_connId(connId) 
+  , m_mediaFormat(m_format)
+  , m_manager(manager)
   , m_remoteAddress(remoteAddress)
   , m_us(localName)
   , m_remoteAddrStr(remoteAddress.AsString())
@@ -5450,12 +5482,12 @@ IMDialog::IMDialog(MyManager * manager, const PString & localName, const PURL & 
   m_ourStyle.SetTextColour(*wxRED);
   m_theirStyle.SetTextColour(wxColour(0, 0xc0, 0));
 
-  manager->conversationMap.insert(MyManager::ConversationMapType::value_type((const char *)m_remoteAddrStr, this));
+  manager->conversationMap.insert(MyManager::ConversationMapType::value_type(m_connId, this));
 }
 
 IMDialog::~IMDialog()
 {
-  m_manager->conversationMap.erase((const char *)m_remoteAddrStr);
+  m_manager->conversationMap.erase(m_connId);
 }
 
 void IMDialog::OnCloseWindow(wxCloseEvent & WXUNUSED(event))
@@ -5473,31 +5505,22 @@ void IMDialog::OnTextEnter(wxCommandEvent & WXUNUSED(event))
   SendCurrentText();
 }
 
+
 void IMDialog::SendCurrentText()
 {
   PwxString text = m_enteredText->GetValue();
   m_enteredText->SetValue(wxT(""));
 
-  PURL fromAddress;
-  bool stat = m_manager->Message(m_remoteAddress, "text/plain", text.p_str(), fromAddress, m_callId);
-  if (m_us.IsEmpty()) {
-    m_us = fromAddress.GetUserName();
-    if (m_us.IsEmpty())
-      m_us = fromAddress.GetHostName();
+  PSafePtr<OpalConnection> conn = m_manager->GetPCSSEP().GetConnectionWithLock(m_connId);
+  if (conn != NULL) {
+    RTP_DataFrameList frames = conn->GetRFC4103Context(0).ConvertToFrames(m_mediaFormat, T140String(text));
+    for (PINDEX i = 0; i < frames.GetSize(); ++i) 
+      conn->OnReceiveExternalIM(m_mediaFormat, (RTP_IMFrame &)frames[i]);
   }
 
   AddTextToScreen(text, true);
-
-  if (stat) {
-    LogWindow << "Sending page mode IM to " << m_remoteAddress << endl;
-  } else {
-    LogWindow << "Page mode IM to " << m_them << " failed" << endl;
-    m_textArea->SetDefaultStyle(m_theirStyle);
-    m_textArea->AppendText(wxT("ERROR: Message could not be delivered"));
-    m_textArea->SetDefaultStyle(m_defaultStyle);
-    m_textArea->AppendText(wxT("\n"));
-  }
 }
+
 
 void IMDialog::AddTextToScreen(const wxString & text, bool fromUs)
 {
@@ -6378,9 +6401,9 @@ PSoundChannel * MyPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & co
   return NULL;
 }
 
-bool MyPCSSEndPoint::TransmitExternalIM(OpalConnection & conn, const OpalMediaFormat & /*format*/, RTP_IMFrame & frame)
+bool MyPCSSEndPoint::TransmitExternalIM(OpalConnection & conn, const OpalMediaFormat & format, RTP_IMFrame & frame)
 {
-  ReceivedMessageInfo * info  = new ReceivedMessageInfo;
+  ReceivedMessageInfo * info  = new ReceivedMessageInfo((const char *)conn.GetToken(), format);
 
   T140String t140;
   if (!frame.GetContent(t140)) {
