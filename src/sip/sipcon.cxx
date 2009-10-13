@@ -2639,7 +2639,7 @@ void SIPConnection::OnReceivedPING(SIP_PDU & request)
 
 void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 {
-  PTRACE(3, "SIP\tReceived MESSAGE");
+  PTRACE(3, "SIP\tReceived MESSAGE in the context of a call");
 
   PString contentType = pdu.GetMIME().GetContentType();
   if (contentType.IsEmpty())
