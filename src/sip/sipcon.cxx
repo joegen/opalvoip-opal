@@ -241,14 +241,13 @@ SIPConnection::SIPConnection(OpalCall & call,
   synchronousOnRelease = false;
 
   SIPURL adjustedDestination = destination;
-  m_connStringOptions.ExtractFromURL(adjustedDestination);
 
   // Look for a "proxy" parameter to override default proxy
   PStringToString params = adjustedDestination.GetParamVars();
   SIPURL proxy;
-  if (params.Contains("proxy")) {
-    proxy.Parse(params["proxy"]);
-    adjustedDestination.SetParamVar("proxy", PString::Empty());
+  if (params.Contains(OPAL_PROXY_PARAM)) {
+    proxy.Parse(params[OPAL_PROXY_PARAM]);
+    adjustedDestination.SetParamVar(OPAL_PROXY_PARAM, PString::Empty());
   }
 
   if (params.Contains("x-line-id")) {
@@ -265,6 +264,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   for (PINDEX i = 0; i < query.GetSize(); ++i)
     m_connStringOptions.SetAt(HeaderPrefix+query.GetKeyAt(i), query.GetDataAt(i));
   adjustedDestination.SetQuery(PString::Empty());
+
+  m_connStringOptions.ExtractFromURL(adjustedDestination);
 
   m_dialog.SetRequestURI(adjustedDestination);
   m_dialog.SetRemoteURI(adjustedDestination);
