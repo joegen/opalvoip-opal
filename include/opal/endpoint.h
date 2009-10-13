@@ -722,6 +722,14 @@ class OpalEndPoint : public PObject
       const PString & conversationId
     );
 
+    /** Called when text message to be sent to remote end of a connection
+      */
+    virtual bool TransmitExternalIM(
+      OpalConnection & conn, 
+      const OpalMediaFormat & format, 
+      RTP_IMFrame & frame
+    );
+
   protected:
     OpalManager   & manager;
     PCaselessString prefixName;

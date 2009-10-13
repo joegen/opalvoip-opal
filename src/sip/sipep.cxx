@@ -899,20 +899,11 @@ PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
 
 bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
 {
-  SIPMIMEInfo & mime = pdu.GetMIME();
-  SIPURL fromURL = mime.GetFrom();
-  PString fromName = fromURL.GetDisplayName();
-  fromURL.Sanitise(SIPURL::ExternalURI);
-  SIPURL toURL = mime.GetTo();
-  toURL.Sanitise(SIPURL::ExternalURI);
+  // handle a MESSAGE received outside the context of a call
+  PTRACE(3, "SIP\tReceived MESSAGE outside the context of a call");
 
-  OnMessageReceived(fromURL,
-                    fromName,
-                    toURL, 
-                    mime.GetContentType(), 
-                    pdu.GetEntityBody(), 
-                    mime.GetCallID()
-                    );
+  // TODO - not sure how to handler this.....
+
   pdu.SendResponse(transport, SIP_PDU::Successful_OK, this);
   return true;
 }
