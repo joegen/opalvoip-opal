@@ -225,6 +225,7 @@ static PFactory<PProcessStartup>::Worker<MSRPInitialiser> opalpluginStartupFacto
 OpalMSRPMediaSession::OpalMSRPMediaSession(OpalConnection & _conn, unsigned _sessionId)
   : OpalMediaSession(_conn, "msrp", _sessionId)
   , m_manager(MSRPInitialiser::KickStart(_conn.GetEndPoint().GetManager()))
+  , m_isOriginating(_conn.IsOriginating())
   , m_localMSRPSessionId(m_manager.CreateSessionID())
   , m_localUrl(m_manager.SessionIDToURL(connection.GetTransport().GetLocalAddress(), m_localMSRPSessionId))
 {
@@ -554,19 +555,20 @@ PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL
     if (r != m_connectionInfoMap.end()) {
       PTRACE(2, "MSRP\tReusing existing connection to " << ip << ":" << port);
       connectionPtr = r->second;
+      connectionPtr.SetSafetyMode(PSafeReadWrite);
       ++connectionPtr->m_refCount;
       return connectionPtr;
     }
 
     connectionPtr = PSafePtr<Connection>(new Connection(*this, connectionKey));
-    connectionPtr.SetSafetyMode(PSafeReference);
     m_connectionInfoMap.insert(ConnectionInfoMapType::value_type(connectionKey, connectionPtr));
-    connectionPtr.SetSafetyMode(PSafeReadWrite);
-    ++connectionPtr->m_refCount;
   }
+
+  connectionPtr.SetSafetyMode(PSafeReadWrite);
   
   // create a connection to the remote
   // if cannot, remove it from connection map
+  connectionPtr->m_protocol->SetReadTimeout(2000);
   if (!connectionPtr->m_protocol->Connect(ip, port)) {
     PTRACE(2, "MSRP\tUnable to make new connection to " << ip << ":" << port);
     PWaitAndSignal m(m_connectionInfoMapAddMutex);
