@@ -85,6 +85,12 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 
     MyManager & m_manager;
 
+    bool TransmitExternalIM(
+      OpalConnection & conn, 
+      const OpalMediaFormat & format, 
+      RTP_IMFrame & frame
+    );
+
   private:
     virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
     virtual PBoolean OnShowOutgoing(const OpalPCSSConnection & connection);
@@ -824,14 +830,6 @@ class MyManager : public wxFrame, public OpalManager
       AnswerDetect
     } m_AnswerMode;
     void SwitchToFax();
-
-    void OnMessageReceived(
-      const PURL & from, 
-      const PString & fromName,
-      const PURL & to, 
-      const PString & type,
-      const PString & body,
-      const PString & conversationId);
 
   private:
     // OpalManager overrides

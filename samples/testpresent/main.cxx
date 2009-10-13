@@ -183,9 +183,9 @@ void TestPresEnt::Main()
   const char * pass2  = args[4];
 
   MyManager m_manager;
-  //m_manager.SetTranslationAddress(PIPSocket::Address("115.64.157.126"));
+  m_manager.SetTranslationAddress(PIPSocket::Address("115.64.157.126"));
   SIPEndPoint * sip  = new SIPEndPoint(m_manager);
-  if (!sip->StartListener("")) { //udp$192.168.2.2:7777")) {
+  if (!sip->StartListener("udp$192.168.2.2:7777")) {
     cerr << "Could not start SIP listeners." << endl;
     return;
   }

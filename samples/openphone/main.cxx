@@ -3209,32 +3209,6 @@ void MyManager::ApplyMediaInfo()
 }
 
 
-void MyManager::OnMessageReceived(
-      const PURL    & remoteURL, 
-      const PString & remoteName,
-      const PURL    & localURL, 
-      const PString & contentType,
-      const PString & body,
-      const PString & conversationId
-)
-{
-  if (!(contentType *= "text/plain"))
-    return;
-
-  ReceivedMessageInfo * info  = new ReceivedMessageInfo;
-  info->m_localURL    = localURL;
-  info->m_remoteURL   = remoteURL;
-  info->m_remoteName  = remoteName;
-  info->m_contentType = contentType;
-  info->m_body        = body;
-  info->m_callId      = conversationId;
-
-  wxCommandEvent theEvent(wxEvtRxMessage, ID_RX_MESSAGE);
-  theEvent.SetEventObject(this);
-  theEvent.SetClientData(info);
-  GetEventHandler()->AddPendingEvent(theEvent);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 
 RegistrationInfo::RegistrationInfo()
@@ -6403,6 +6377,37 @@ PSoundChannel * MyPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & co
   return NULL;
 }
 
+bool MyPCSSEndPoint::TransmitExternalIM(OpalConnection & conn, const OpalMediaFormat & /*format*/, RTP_IMFrame & frame)
+{
+  ReceivedMessageInfo * info  = new ReceivedMessageInfo;
+
+  T140String t140;
+  if (!frame.GetContent(t140)) {
+    info->m_contentType = "text/plain";
+    info->m_body        = "(unable to decode)";
+  }
+  else {
+    info->m_contentType = frame.GetContentType();
+    t140.AsString(info->m_body);
+  }
+
+  PSafePtr<OpalConnection> otherParty = conn.GetOtherPartyConnectionAs<OpalConnection>();
+  if (otherParty != NULL) {
+    info->m_remoteURL  = otherParty->GetRemotePartyCallbackURL();
+    info->m_remoteName = otherParty->GetRemotePartyName();
+    info->m_localURL   = otherParty->GetLocalPartyURL();
+  }
+
+  if (!(info->m_contentType *= "text/plain")) 
+    info->m_body = info->m_contentType + "   " + info->m_body;
+
+  wxCommandEvent theEvent(wxEvtRxMessage, ID_RX_MESSAGE);
+  theEvent.SetEventObject(&m_manager);
+  theEvent.SetClientData(info);
+  m_manager.GetEventHandler()->AddPendingEvent(theEvent);
+
+  return true;
+}
 
 #if OPAL_H323
 ///////////////////////////////////////////////////////////////////////////////
