@@ -225,17 +225,4 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 }
 
 
-void MyPCSSEndPoint::OnMessageReceived(
-      const PURL & from,
-      const PString & fromName,
-      const PURL & to,
-      const PString & type,
-      const PString & body,
-      const PString & conversationId)
-{
-  cout << "Received IM: " << body << endl;
-}
-
-
-
 // End of File ///////////////////////////////////////////////////////////////
