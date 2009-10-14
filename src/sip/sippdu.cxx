@@ -2994,32 +2994,22 @@ static const char * const KnownEventPackage[SIPSubscribe::NumPredefinedPackages]
   "dialog;sla;ma", // sla is the old version ma is the new for Line Appearance extension
 };
 
-SIPSubscribe::EventPackage::EventPackage(unsigned pkg)
- : PCaselessString((pkg & PackageMask) < NumPredefinedPackages ? KnownEventPackage[(pkg & PackageMask)] : "")
-  , m_isWatcher((pkg & Watcher) != 0)
+SIPSubscribe::EventPackage::EventPackage(PredefinedPackages pkg)
+  : PCaselessString((pkg & PackageMask) < NumPredefinedPackages ? KnownEventPackage[(pkg & PackageMask)] : PString::Empty())
 {
-  if (m_isWatcher)
+  if ((pkg & Watcher) != 0)
     *this += ".winfo";
 }
 
 
-SIPSubscribe::EventPackage::EventPackage(const PString & str)
-  : PCaselessString(str)
-{ 
-  m_isWatcher = (Right(6) == ".winfo");
-}
-
-
-SIPSubscribe::EventPackage::EventPackage(const char * cstr)
-  : PCaselessString(cstr)
-{ 
-  m_isWatcher = (Right(6) == ".winfo");
-}
-
-bool SIPSubscribe::EventPackage::operator==(PredefinedPackages pkg) const
+SIPSubscribe::EventPackage & SIPSubscribe::EventPackage::operator=(PredefinedPackages pkg)
 {
-  return (m_isWatcher == ((pkg & Watcher) != 0)) &&
-          (InternalCompare(0, P_MAX_INDEX, (pkg & PackageMask) < NumPredefinedPackages ? KnownEventPackage[(pkg & PackageMask)] : "") == EqualTo);
+  if ((pkg & PackageMask) < NumPredefinedPackages) {
+    PCaselessString::operator=(KnownEventPackage[(pkg & PackageMask)]);
+    if ((pkg & Watcher) != 0)
+      *this += ".winfo";
+  }
+  return *this;
 }
 
 
@@ -3027,21 +3017,22 @@ PObject::Comparison SIPSubscribe::EventPackage::InternalCompare(PINDEX offset, P
 {
   // Special rules for comparing event package strings, only up to the ';', if present
 
+  PINDEX idx = 0;
   for (;;) {
     if (length-- == 0)
       return EqualTo;
-    if (theArray[offset] == '\0' && cstr[offset] == '\0')
+    if (theArray[idx+offset] == '\0' && cstr[idx] == '\0')
       return EqualTo;
-    if (theArray[offset] == ';' || cstr[offset] == ';')
+    if (theArray[idx+offset] == ';' || cstr[idx] == ';')
       break;
-    Comparison c = PCaselessString::InternalCompare(offset, cstr[offset]);
+    Comparison c = PCaselessString::InternalCompare(idx+offset, cstr[idx]);
     if (c != EqualTo)
       return c;
-    offset++;
+    idx++;
   }
 
-  const char * myIdPtr = strstr(theArray+offset, "id");
-  const char * theirIdPtr = strstr(cstr+offset, "id");
+  const char * myIdPtr = strstr(theArray+idx+offset, "id");
+  const char * theirIdPtr = strstr(cstr+idx, "id");
   if (myIdPtr == NULL && theirIdPtr == NULL)
     return EqualTo;
 
@@ -3064,6 +3055,13 @@ PObject::Comparison SIPSubscribe::EventPackage::InternalCompare(PINDEX offset, P
     return GreaterThan;
 
   return (Comparison)strncmp(myIdPtr, theirIdPtr, theirIdLen);
+}
+
+
+bool SIPSubscribe::EventPackage::IsWatcher() const
+{
+  static const char Suffix[] = ".winfo";
+  return NumCompare(Suffix, sizeof(Suffix)-1, GetLength()-(sizeof(Suffix)-1)) == EqualTo;
 }
 
 

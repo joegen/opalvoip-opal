@@ -1002,28 +1002,37 @@ class SIPSubscribe : public SIPTransaction
       MessageSummary,
       Presence,
       Dialog,
+
       NumPredefinedPackages,
 
-      PackageMask = 0x7fff,
-      Watcher     = 0x8000
+      Watcher = 0x8000,
+
+      MessageSummaryWatcher = Watcher|MessageSummary,
+      PresenceWatcher       = Watcher|Presence,
+      DialogWatcher         = Watcher|Dialog,
+
+      PackageMask = Watcher-1
     };
+    friend PredefinedPackages operator|(PredefinedPackages p1, PredefinedPackages p2) { return (PredefinedPackages)((int)p1|(int)p2); }
 
     class EventPackage : public PCaselessString
     {
       PCLASSINFO(EventPackage, PCaselessString);
       public:
-        EventPackage(unsigned int);
-        EventPackage(const PString & str);
-        EventPackage(const char * cstr);
-        bool operator==(PredefinedPackages) const;
+        EventPackage(PredefinedPackages = NumPredefinedPackages);
+        explicit EventPackage(const PString & str) : PCaselessString(str) { }
+        explicit EventPackage(const char   *  str) : PCaselessString(str) { }
+
+        EventPackage & operator=(PredefinedPackages pkg);
+        EventPackage & operator=(const PString & str) { PCaselessString::operator=(str); return *this; }
+        EventPackage & operator=(const char   *  str) { PCaselessString::operator=(str); return *this; }
+
+        bool operator==(PredefinedPackages pkg) const { return Compare(EventPackage(pkg)) == EqualTo; }
         bool operator==(const PString & str) const { return Compare(str) == EqualTo; }
         bool operator==(const char * cstr) const { return InternalCompare(0, P_MAX_INDEX, cstr) == EqualTo; }
         virtual Comparison InternalCompare(PINDEX offset, PINDEX length, const char * cstr) const;
 
-        bool IsWatcher() const   { return m_isWatcher; }
-
-      protected:
-        bool m_isWatcher;
+        bool IsWatcher() const;
     };
 
     /** Information provided on the subscription status. */
@@ -1048,7 +1057,7 @@ class SIPSubscribe : public SIPTransaction
 
     struct Params : public SIPParameters
     {
-      Params(unsigned pkg = NumPredefinedPackages)
+      Params(PredefinedPackages pkg = NumPredefinedPackages)
         : m_eventPackage(pkg)
         , m_agentAddress(m_remoteAddress)
       { }
