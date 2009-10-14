@@ -68,6 +68,7 @@ class TestPresEnt : public PProcess
     PString     m_xcapRoot;
     PString     m_xcapAuthID;
     PString     m_xcapPassword;
+    PList<OpalPresentity> m_presentitiyList;
     PDictionary<PString, OpalPresentity> m_presentities;
 };
 
@@ -78,12 +79,14 @@ TestPresEnt::TestPresEnt()
   : PProcess("OPAL Test Presentity", "TestPresEnt", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
   , m_manager(NULL)
 {
+  m_presentities.DisallowDeleteObjects();
 }
 
 
 TestPresEnt::~TestPresEnt()
 {
-  m_presentities.RemoveAll(); // Must do this before killing the manager.
+  m_presentities.RemoveAll();
+  m_presentitiyList.RemoveAll(); // Must do this before killing the manager.
   delete m_manager; 
 }
 
@@ -112,6 +115,7 @@ void TestPresEnt::AddPresentity(PArgList & args)
     presentity->GetAttributes().Set(SIPXCAP_Presentity::XcapPasswordKey,    m_xcapPassword);
 
   if (presentity->Open()) {
+    m_presentitiyList.Append(presentity);
     m_presentities.SetAt(psprintf("#%u", m_presentities.GetSize()/2+1), presentity);
     m_presentities.SetAt(PCaselessString(presentity->GetAOR().AsString()), presentity);
   }
