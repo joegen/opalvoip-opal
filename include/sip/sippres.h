@@ -42,9 +42,9 @@
 
 class SIPWatcherInfoCommand : public OpalPresentityCommand {
   public:
-    SIPWatcherInfoCommand(bool subscribe = true) : m_subscribe(subscribe) { }
+    SIPWatcherInfoCommand(bool unsubscribe = false) : m_unsubscribe(unsubscribe) { }
 
-    bool m_subscribe;
+    bool m_unsubscribe;
 };
 
 
@@ -68,7 +68,7 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
 
     SIPEndPoint * m_endpoint;
 
-    unsigned int m_watcherInfoVersion;
+    int m_watcherInfoVersion;
 
     State m_localPresence;
     PString m_localPresenceNote;
@@ -110,7 +110,7 @@ class SIPXCAP_Presentity : public SIP_Presentity
     void Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd);
     void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
     void Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd);
-    void Internal_SubscribeToWatcherInfo(bool subscribe);
+    void Internal_SubscribeToWatcherInfo(bool unsubscribe);
 
   protected:
     PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPXCAP_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
@@ -118,27 +118,15 @@ class SIPXCAP_Presentity : public SIP_Presentity
     PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPXCAP_Presentity, OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
 
     virtual bool InternalOpen();
-    unsigned GetExpiryTime(bool subscribing) const;
+    unsigned GetExpiryTime() const;
 
     PIPSocketAddressAndPort m_presenceServer;
-    bool m_watcherInfoSubscribed;
+    PString                 m_watcherSubscriptionAOR;
 
     struct PresenceInfo {
-      enum SubscriptionState {
-        e_Unsubscribed,
-        e_Subscribing,
-        e_Subscribed,
-        e_Unsubscribing
-      };
-
-      PresenceInfo()
-        : m_subscriptionState(e_Unsubscribed)
-      { }
-
-      SubscriptionState m_subscriptionState;
+      PString m_subscriptionAOR;
       State   m_presenceState;
       PString m_note;
-      PString m_id;
     };
     typedef std::map<std::string, PresenceInfo> PresenceInfoMap;
     PresenceInfoMap m_presenceInfo;
