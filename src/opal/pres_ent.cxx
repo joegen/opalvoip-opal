@@ -38,11 +38,9 @@
 #include <ptclib/url.h>
 #include <sip/sipep.h>
 
-const PString & OpalPresentity::AddressOfRecordKey() { static const PString s = "address_of_record"; return s; }
 const PString & OpalPresentity::AuthNameKey()        { static const PString s = "auth_name";         return s; }
 const PString & OpalPresentity::AuthPasswordKey()    { static const PString s = "auth_password";     return s; }
 const PString & OpalPresentity::FullNameKey()        { static const PString s = "full_name";         return s; }
-const PString & OpalPresentity::GUIDKey()            { static const PString s = "guid";              return s; }
 const PString & OpalPresentity::SchemeKey()          { static const PString s = "scheme";            return s; }
 const PString & OpalPresentity::TimeToLiveKey()      { static const PString s = "time_to_live";      return s; }
 
@@ -50,20 +48,19 @@ const PString & OpalPresentity::TimeToLiveKey()      { static const PString s = 
 OpalPresentity::OpalPresentity()
   : m_manager(NULL)
 {
-  m_attributes.Set(GUIDKey, m_guid.AsString());
 }
 
 
 OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PString & url)
 {
-  PString scheme = PURL(url).GetScheme();
+  PURL aor = url;
 
-  OpalPresentity * presEntity = PFactory<OpalPresentity>::CreateInstance(scheme);
+  OpalPresentity * presEntity = PFactory<OpalPresentity>::CreateInstance(aor.GetScheme());
   if (presEntity == NULL) 
     return NULL;
 
   presEntity->m_manager = &manager;
-  presEntity->GetAttributes().Set(AddressOfRecordKey, url);
+  presEntity->m_aor = aor;
 
   return presEntity;
 }
