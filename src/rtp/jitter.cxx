@@ -746,6 +746,7 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
 
 RTP_JitterBuffer::~RTP_JitterBuffer()
 {
+  shuttingDown = true;
   Stop();
 }
 
