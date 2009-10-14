@@ -698,9 +698,10 @@ void OpalMSRPManager::Connection::HandlerThread()
       if (incomingMsg.m_command == MSRPProtocol::SEND) {
         m_protocol->SendResponse(incomingMsg.m_chunkId, 200, "OK", toUrl, fromUrl);
         PTRACE(3, "MSRP\tMSRP SEND received from=" << fromUrl << ",to=" << toUrl);
-        incomingMsg.m_connection = PSafePtr<Connection>(this);
-        m_manager.DispatchMessage(incomingMsg);
-
+        if (incomingMsg.m_mime.Contains("Content-Type")) {
+          incomingMsg.m_connection = PSafePtr<Connection>(this);
+          m_manager.DispatchMessage(incomingMsg);
+        }
         if (incomingMsg.m_mime("Success-Report") *= "yes") {
           PMIMEInfo mime;
           PString fromUrl(incomingMsg.m_mime("From-Path"));
