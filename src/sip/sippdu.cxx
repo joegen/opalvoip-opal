@@ -2995,7 +2995,7 @@ static const char * const KnownEventPackage[SIPSubscribe::NumPredefinedPackages]
 };
 
 SIPSubscribe::EventPackage::EventPackage(PredefinedPackages pkg)
-  : PCaselessString((pkg & PackageMask) < NumPredefinedPackages ? KnownEventPackage[(pkg & PackageMask)] : PString::Empty())
+  : PCaselessString((pkg & PackageMask) < NumPredefinedPackages ? KnownEventPackage[(pkg & PackageMask)] : "")
 {
   if ((pkg & Watcher) != 0)
     *this += ".winfo";
