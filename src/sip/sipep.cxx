@@ -656,7 +656,7 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
 {
   SIPMIMEInfo & mime = pdu.GetMIME();
 
-  SIPSubscribe::EventPackage eventPackage = mime.GetEvent();
+  SIPSubscribe::EventPackage eventPackage(mime.GetEvent());
   if (!CanNotify(eventPackage))
     return false;
 
@@ -870,7 +870,7 @@ void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
 
 PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
 {
-  SIPEventPackage eventPackage = pdu.GetMIME().GetEvent();
+  SIPEventPackage eventPackage(pdu.GetMIME().GetEvent());
 
   PTRACE(3, "SIP\tReceived NOTIFY " << eventPackage);
   
