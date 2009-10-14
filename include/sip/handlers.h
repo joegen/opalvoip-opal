@@ -109,7 +109,7 @@ public:
 
   virtual SIP_PDU::Methods GetMethod() = 0;
   virtual SIPSubscribe::EventPackage GetEventPackage() const
-  { return PString::Empty(); }
+  { return SIPEventPackage(); }
 
   virtual void OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response);

@@ -1995,7 +1995,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 {
   const SIPMIMEInfo & mime = request.GetMIME();
 
-  SIPSubscribe::EventPackage package = mime.GetEvent();
+  SIPSubscribe::EventPackage package(mime.GetEvent());
   if (m_allowedEvents.GetStringsIndex(package) != P_MAX_INDEX) {
     PTRACE(2, "SIP\tReceived Notify for allowed event " << package);
     request.SendResponse(*transport, SIP_PDU::Successful_OK);
