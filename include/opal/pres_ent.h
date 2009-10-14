@@ -117,11 +117,9 @@ class OpalPresentity : public PSafeObject
     ///< Get the attributes for this presentity.
     Attributes & GetAttributes() { return m_attributes; }
 
-    static const PString & AddressOfRecordKey();  ///< Key for address-of-record attribute
     static const PString & AuthNameKey();         ///< Key for authentication name attribute
     static const PString & AuthPasswordKey();     ///< Key for authentication password attribute
     static const PString & FullNameKey();         ///< Key for full name attribute
-    static const PString & GUIDKey();             ///< Key for globally unique identififer attribute
     static const PString & SchemeKey();           ///< Key for scheme used attribute
     static const PString & TimeToLiveKey();       ///< Key for Time-To-Live attribute, in seconds for underlying protocol
 
@@ -129,7 +127,7 @@ class OpalPresentity : public PSafeObject
         This is typically a URL which represents our local identity in the
         presense system.
       */
-    PString GetAOR() const { return m_attributes.Get(AddressOfRecordKey()); }
+    const PURL & GetAOR() const { return m_aor; }
   //@}
 
   /**@name Commands */
@@ -278,6 +276,7 @@ class OpalPresentity : public PSafeObject
   protected:
     OpalManager        * m_manager;
     OpalGloballyUniqueID m_guid;
+    PURL                 m_aor;
     Attributes           m_attributes;
 
     AuthorisationRequestNotifier m_onAuthorisationRequestNotifier;

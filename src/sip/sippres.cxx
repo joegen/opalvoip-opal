@@ -123,6 +123,10 @@ bool SIPLocal_Presentity::Close()
 
 //////////////////////////////////////////////////////////////
 
+const PString & SIPXCAP_Presentity::XcapRootKey()     { static const PString s = "xcap_root";     return s; }
+const PString & SIPXCAP_Presentity::XcapAuthIdKey()   { static const PString s = "xcap_auth_id";  return s; }
+const PString & SIPXCAP_Presentity::XcapPasswordKey() { static const PString s = "xcap_password"; return s; }
+
 SIPXCAP_Presentity::SIPXCAP_Presentity()
 {
 }
@@ -140,11 +144,10 @@ bool SIPXCAP_Presentity::InternalOpen()
   // if not found, look for default presence server setting
   // if none, use hostname portion of domain name
   if (!m_attributes.Has(SIP_Presentity::PresenceServerKey)) {
-    SIPURL sipAOR(GetAOR());
 #if P_DNS
     PIPSocketAddressAndPortVector addrs;
-    if (PDNS::LookupSRV(sipAOR.GetHostName(), "_pres._sip", sipAOR.GetPort(), addrs) && addrs.size() > 0) {
-      PTRACE(1, "SIPPres\tSRV lookup for '" << sipAOR.GetHostName() << "_pres._sip' succeeded");
+    if (PDNS::LookupSRV(m_aor.GetHostName(), "_pres._sip", m_aor.GetPort(), addrs) && addrs.size() > 0) {
+      PTRACE(1, "SIPPres\tSRV lookup for '" << m_aor.GetHostName() << "_pres._sip' succeeded");
       m_presenceServer = addrs[0];
     }
     else
@@ -152,7 +155,7 @@ bool SIPXCAP_Presentity::InternalOpen()
       if (m_attributes.Has(SIP_Presentity::DefaultPresenceServerKey)) 
         m_presenceServer.Parse(m_attributes.Get(SIP_Presentity::DefaultPresenceServerKey), m_endpoint->GetDefaultSignalPort());
       else
-        m_presenceServer.Parse(sipAOR.GetHostName(), sipAOR.GetPort());
+        m_presenceServer.Parse(m_aor.GetHostName(), m_aor.GetPort());
 
     // set presence server
     m_attributes.Set(SIP_Presentity::PresenceServerKey, m_presenceServer.AsString());
@@ -210,14 +213,14 @@ void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(bool subscribe)
   // subscribe to the presence.winfo event on the presence server
   SIPSubscribe::Params param(SIPSubscribe::Presence | SIPSubscribe::Watcher);
 
-  PString aor(GetAOR());
+  PString aorStr = m_aor.AsString();
 
-  PTRACE(3, "SIPPres\t'" << aor << "' sending subscribe for own presence.watcherinfo");
+  PTRACE(3, "SIPPres\t'" << aorStr << "' sending subscribe for own presence.watcherinfo");
 
-  param.m_localAddress    = aor;
-  param.m_addressOfRecord = aor;
+  param.m_localAddress    = aorStr;
+  param.m_addressOfRecord = aorStr;
   param.m_remoteAddress   = PString("sip:") + m_presenceServer.AsString();
-  param.m_authID          = m_attributes.Get(OpalPresentity::AuthNameKey, aor);
+  param.m_authID          = m_attributes.Get(OpalPresentity::AuthNameKey, aorStr);
   param.m_password        = m_attributes.Get(OpalPresentity::AuthPasswordKey);
   param.m_expire          = GetExpiryTime(subscribe);
   param.m_onSubcribeStatus = PCREATE_NOTIFIER2(OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
@@ -225,7 +228,7 @@ void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(bool subscribe)
 
   m_watcherInfoSubscribed = false;
 
-  m_endpoint->Subscribe(param, aor);
+  m_endpoint->Subscribe(param, aorStr);
 }
 
 static PXMLValidator::ElementInfo watcherValidation[] = {
@@ -306,7 +309,7 @@ void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler & handler, SIPS
   status.m_response.GetInfo() = "OK";
   status.m_response.SendResponse(*handler.GetTransport(), status.m_response, &handler.GetEndPoint());
 
-  PTRACE(3, "SIPPres\t'" << GetAOR() << "' received NOTIFY for own presence.watcherinfo");
+  PTRACE(3, "SIPPres\t'" << m_aor << "' received NOTIFY for own presence.watcherinfo");
 
   PXMLElement * rootElement = xml.GetRootElement();
 
@@ -326,7 +329,7 @@ void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler & handler, SIPS
 
   // if this is a full list of watcher info, we can empty out our pending lists
   if (rootElement->GetAttribute("state") *= "full") {
-    PTRACE(3, "SIPPres\t'" << GetAOR() << "' received full watcher list");
+    PTRACE(3, "SIPPres\t'" << m_aor << "' received full watcher list");
     m_idToAorMap.clear();
     m_aorToIdMap.clear();
   }
@@ -351,7 +354,7 @@ void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler & handler, SIPS
 
   // send refresh, if needed
   if (sendRefresh) {
-    PTRACE(3, "SIPPres\t'" << GetAOR() << "' received NOTIFY for own presence.watcherinfo without out of sequence version");
+    PTRACE(3, "SIPPres\t'" << m_aor << "' received NOTIFY for own presence.watcherinfo without out of sequence version");
     // TODO
   }
 }
@@ -361,23 +364,23 @@ void SIPXCAP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
   PString id       = watcher->GetAttribute("id");
   PString status   = watcher->GetAttribute("status");
   PString eventStr = watcher->GetAttribute("event");
-  PString aor      = watcher->GetData().Trim();
+  PString otherAOR = watcher->GetData().Trim();
   IdToAorMap::iterator r = m_idToAorMap.find(id);
 
   // save pending subscription status from this user
   if (status == "pending") {
     if (r != m_idToAorMap.end()) {
-      PTRACE(3, "SIPPres\t'" << GetAOR() << "' received followup to request from '" << aor << "' for access to presence information");
+      PTRACE(3, "SIPPres\t'" << m_aor << "' received followup to request from '" << otherAOR << "' for access to presence information");
     } 
     else {
-      m_idToAorMap.insert(IdToAorMap::value_type(id, aor));
-      m_aorToIdMap.insert(AorToIdMap::value_type(aor, id));
-      PTRACE(3, "SIPPres\t'" << aor << "' has requested access to presence information of '" << GetAOR() << "'");
-      OnAuthorisationRequest(aor);
+      m_idToAorMap.insert(IdToAorMap::value_type(id, otherAOR));
+      m_aorToIdMap.insert(AorToIdMap::value_type(otherAOR, id));
+      PTRACE(3, "SIPPres\t'" << otherAOR << "' has requested access to presence information of '" << m_aor << "'");
+      OnAuthorisationRequest(otherAOR);
     }
   }
   else {
-    PTRACE(3, "SIPPres\t'" << GetAOR() << "' has received presence status '" << status << "' for '" << aor << "'");
+    PTRACE(3, "SIPPres\t'" << m_aor << "' has received presence status '" << status << "' for '" << otherAOR << "'");
   }
 }
 
@@ -387,13 +390,13 @@ void SIPXCAP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCo
   m_localPresence     = cmd.m_state;
   m_localPresenceNote = cmd.m_note;
 
-  PTRACE(3, "SIPPres\t'" << GetAOR() << "' sending own presence " << m_localPresence << "/" << m_localPresenceNote);
+  PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << m_localPresence << "/" << m_localPresenceNote);
 
   // send presence
   SIPPresenceInfo info;
 
   info.m_presenceAgent = m_presenceServer.GetAddress().AsString();
-  info.m_address       = GetAOR();
+  info.m_address       = m_aor.AsString();
 
   if (m_localPresence == NoPresence) {
     m_endpoint->PublishPresence(info, 0);
@@ -428,27 +431,24 @@ void SIPXCAP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPrese
   {
     PresenceInfoMap::iterator r = m_presenceInfo.find(cmd.m_presentity);
     if (cmd.m_subscribe && (r != m_presenceInfo.end())) {
-      PTRACE(3, "SIPPres\t'" << GetAOR() << "' already subscribed to presence of '" << cmd.m_presentity << "'");
+      PTRACE(3, "SIPPres\t'" << m_aor << "' already subscribed to presence of '" << cmd.m_presentity << "'");
       return;
     }
     else if (!cmd.m_subscribe && (r == m_presenceInfo.end())) {
-      PTRACE(3, "SIPPres\t'" << GetAOR() << "' already unsubscribed to presence of '" << cmd.m_presentity << "'");
+      PTRACE(3, "SIPPres\t'" << m_aor << "' already unsubscribed to presence of '" << cmd.m_presentity << "'");
       return;
     }
   }
 
-  PTRACE(3, "SIPPres\t'" << GetAOR() << "' " << (cmd.m_subscribe ? "" : "un") << "subscribing to presence of '" << cmd.m_presentity << "'");
+  PTRACE(3, "SIPPres\t'" << m_aor << "' " << (cmd.m_subscribe ? "" : "un") << "subscribing to presence of '" << cmd.m_presentity << "'");
 
   // subscribe to the presence event on the presence server
   SIPSubscribe::Params param(SIPSubscribe::Presence);
 
-  SIPURL aor(GetAOR());
-  PString aorStr(aor.AsString());
-
-  param.m_localAddress    = aorStr;
+  param.m_localAddress    = m_aor.AsString();
   param.m_addressOfRecord = cmd.m_presentity;
   param.m_remoteAddress   = PString("sip:") + m_presenceServer.AsString();
-  param.m_authID            = m_attributes.Get(OpalPresentity::AuthNameKey, aor.GetUserName() + '@' + aor.GetHostAddress());
+  param.m_authID            = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
   param.m_password          = m_attributes.Get(OpalPresentity::AuthPasswordKey);
   param.m_expire            = GetExpiryTime(cmd.m_subscribe);
 
@@ -505,7 +505,7 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::N
   // get entity requesting access to presence information
   PString fromStr = status.m_notify.GetMIME().GetFrom();
 
-  PTRACE(3, "SIPPres\t'" << fromStr << "' request for presence of '" << GetAOR() << "' is " << params[0]);
+  PTRACE(3, "SIPPres\t'" << fromStr << "' request for presence of '" << m_aor << "' is " << params[0]);
 
   // return OK;
   status.m_response.SetStatusCode(SIP_PDU::Successful_OK);
@@ -515,33 +515,94 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::N
 
 void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd)
 {
-  // send command to XCAP server
-  PStringStream xml;
-  xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-         "<cr:ruleset xmlns=\"urn:ietf:params:xml:ns:pres-rules\""
-                     "xmlns:pr=\"urn:ietf:params:xml:ns:pres-rules\""
-                     "xmlns:cr=\"urn:ietf:params:xml:ns:common-policy\">"
-           "<cr:rule id=\"" << m_guid << "\">"
-             "<cr:conditions>"
-               "<cr:identity>"
-                 "<cr:one id=\"" << cmd.m_presentity << "\"/>"
-               "</cr:identity>"
-             "</cr:conditions>"
-             "<cr:actions>"
-               "<pr:sub-handling>allow</pr:sub-handling>"
-             "</cr:actions>"
-             "<cr:transformations>"
-               "<pr:provide-services>"
-                 "<pr:service-uri-scheme>sip</pr:service-uri-scheme>"
-               "</pr:provide-services>"
-               "<pr:provide-persons>"
-                 "<pr:all-persons/>"
-               "</pr:provide-persons>"
-               "<pr:provide-activities>true</pr:provide-activities>"
-               "<pr:provide-user-input>bare</pr:provide-user-input>"
-             "</cr:transformations>"
-           "</cr:rule>"
-         "</cr:ruleset>";
+  PString aorStr = m_aor.AsString();
+
+  XCAPClient xcap;
+  xcap.SetRoot(m_attributes.Get(SIPXCAP_Presentity::XcapRootKey));
+  xcap.SetApplicationUniqueID("pres-rules");            // As per RFC5025/9.1
+  xcap.SetContentType("application/auth-policy+xml");   // As per RFC5025/9.4
+  xcap.SetUserIdentifier(aorStr);                       // As per RFC5025/9.7
+  xcap.SetAuthenticationInfo(m_attributes.Get(SIPXCAP_Presentity::XcapAuthIdKey, m_attributes.Get(OpalPresentity::AuthNameKey, aorStr)),
+                             m_attributes.Get(SIPXCAP_Presentity::XcapPasswordKey, m_attributes.Get(OpalPresentity::AuthPasswordKey)));
+
+  PXML xml;
+  xcap.GetXmlDocument("index", xml); // See if already have a rule
+
+  if (!xml.IsLoaded())
+    xml.Load("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+             "<cr:ruleset xmlns=\"urn:ietf:params:xml:ns:pres-rules\""
+                        " xmlns:pr=\"urn:ietf:params:xml:ns:pres-rules\""
+                        " xmlns:cr=\"urn:ietf:params:xml:ns:common-policy\">"
+               "<cr:rule>"
+                 "<cr:conditions>"
+                   "<cr:identity>"
+                     "<cr:one/>"
+                   "</cr:identity>"
+                 "</cr:conditions>"
+                 "<cr:actions>"
+                   "<pr:sub-handling></pr:sub-handling>"
+                 "</cr:actions>"
+                 "<cr:transformations>"
+                   "<pr:provide-services>"
+                     "<pr:service-uri-scheme></pr:service-uri-scheme>"
+                   "</pr:provide-services>"
+                   "<pr:provide-persons>"
+                     "<pr:all-persons/>"
+                   "</pr:provide-persons>"
+                   "<pr:provide-activities>true</pr:provide-activities>"
+                   "<pr:provide-user-input>bare</pr:provide-user-input>"
+                 "</cr:transformations>"
+               "</cr:rule>"
+             "</cr:ruleset>");
+
+  PXMLElement * rule = xml.GetElement("cr:rule");
+  rule->SetAttribute("id", "A12345");  // As per http://www.w3.org/TR/1999/REC-xml-names-19990114/#NT-NCName
+  rule->GetElement("cr:conditions")->GetElement("cr:identity")->GetElement("cr:one")->SetAttribute("id", cmd.m_presentity);
+  static const char * const AuthNames[] = { "allow", "block", "polite-block" };
+  rule->GetElement("cr:actions")->GetElement("pr:sub-handling")->SetData(AuthNames[cmd.m_authorisation]);
+  rule->GetElement("cr:transformations")->GetElement("pr:provide-services")->GetElement("pr:service-uri-scheme")->SetData(m_aor.GetScheme());
+
+  xcap.PutXmlDocument("index", xml);
 }
+
+
+//////////////////////////////////////////////////////////////
+
+XCAPClient::XCAPClient()
+  : m_global(false)
+{
+}
+
+
+PURL XCAPClient::BuildURL(const PString & name)
+{
+  PURL uri(m_root);                              // XCAP root
+  uri.AppendPath(m_auid);                        // Application Unique ID
+  uri.AppendPath(m_global ? "global" : "users"); // RFC4825/6.2, The path segment after the AUID MUST either be "global" or "users".
+  if (!m_global)
+    uri.AppendPath(m_xui);                       // XCAP User Identifier
+  if (!name.IsEmpty())
+    uri.AppendPath(name);                        // Final resource name
+  return uri;
+}
+
+
+bool XCAPClient::GetXmlDocument(const PString & name, PXML & xml)
+{
+  PString str;
+  if (!GetTextDocument(BuildURL(name), str, m_contentType))
+    return false;
+
+  return xml.Load(str);
+}
+
+
+bool XCAPClient::PutXmlDocument(const PString & name, const PXML & xml)
+{
+  PStringStream strm;
+  strm << xml;
+  return PutTextDocument(BuildURL(name), strm, m_contentType);
+}
+
 
 #endif // P_EXPAT
