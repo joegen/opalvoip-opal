@@ -70,13 +70,8 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
 
     int m_watcherInfoVersion;
 
-    State m_localPresence;
+    State   m_localPresence;
     PString m_localPresenceNote;
-
-    typedef std::map<std::string, PString> IdToAorMap;
-    typedef std::map<std::string, PString> AorToIdMap;
-    IdToAorMap m_idToAorMap;
-    AorToIdMap m_aorToIdMap;
 };
 
 
@@ -110,11 +105,11 @@ class SIPXCAP_Presentity : public SIP_Presentity
     void Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd);
     void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
     void Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd);
-    void Internal_SubscribeToWatcherInfo(bool unsubscribe);
 
   protected:
     PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPXCAP_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
     PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPXCAP_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPXCAP_Presentity, OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
     PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPXCAP_Presentity, OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
 
     virtual bool InternalOpen();
@@ -123,13 +118,10 @@ class SIPXCAP_Presentity : public SIP_Presentity
     PIPSocketAddressAndPort m_presenceServer;
     PString                 m_watcherSubscriptionAOR;
 
-    struct PresenceInfo {
-      PString m_subscriptionAOR;
-      State   m_presenceState;
-      PString m_note;
-    };
-    typedef std::map<std::string, PresenceInfo> PresenceInfoMap;
-    PresenceInfoMap m_presenceInfo;
+    typedef std::map<PString, PString> StringMap;
+    StringMap m_watcherAorById;
+    StringMap m_presenceIdByAor;
+    StringMap m_presenceAorById;
 };
 
 
