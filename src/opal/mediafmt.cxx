@@ -1732,7 +1732,7 @@ bool OpalMediaFormatList::HasType(const OpalMediaType & type, bool mustBeTranspo
 {
   OpalMediaFormatList::const_iterator format;
   for (format = begin(); format != end(); ++format) {
-    if (format->GetMediaType() == type && (mustBeTransportable || format->IsTransportable()))
+    if (format->GetMediaType() == type && (!mustBeTransportable || format->IsTransportable()))
       return true;
   }
 
