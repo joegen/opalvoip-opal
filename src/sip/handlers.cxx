@@ -1392,6 +1392,9 @@ SIPPublishHandler::~SIPPublishHandler()
 
 SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
 {
+  if (state == Unsubscribing)
+    return NULL;
+
   m_parameters.m_expire = expire;
   return new SIPPublish(endpoint,
                         t, 
@@ -1520,6 +1523,9 @@ SIPMessageHandler::~SIPMessageHandler ()
 
 SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
 { 
+  if (state == Unsubscribing)
+    return NULL;
+
   SetExpire(originalExpire);
   return new SIPMessage(endpoint, transport, m_proxy, GetAddressOfRecord(), GetCallID(), body, m_localAddress);
 }
@@ -1553,6 +1559,9 @@ SIPPingHandler::SIPPingHandler(SIPEndPoint & endpoint, const PURL & to)
 
 SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 {
+  if (state == Unsubscribing)
+    return NULL;
+
   return new SIPPing(endpoint, t, GetAddressOfRecord(), body);
 }
 
