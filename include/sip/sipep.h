@@ -526,12 +526,19 @@ class SIPEndPoint : public OpalRTPEndPoint
 
        The returned "token" is a string that can be used in functions
        such as Unregister() or IsRegistered(). While it possible to use the
-       AOR for those functions, it is not recommended as a) there may be more
-       than one registration for an AOR and b) teh AOR may be constructed from
+       user supplied AOR for those functions, it is not recommended as a) there
+       may be more than one registration for an AOR and b) the AOR may be
+       constructed from fields in the params argument and not be what the user
+       expects.
+
+       The tokenIsAOR can also be used, if false, to return the globally unique
+       ID used for the handler. This is the preferred method, even though the
+       default is to not use it, that is for backward compatibility reasons.
      */
     bool Subscribe(
       const SIPSubscribe::Params & params, ///< Subscription parameters
-      PString & aor                        ///< Resultant address-of-record for unsubscribe
+      PString & token,                     ///< Resultant token for unsubscribe
+      bool tokenIsAOR = true               ///< Token is the address-of-record
     );
 
     // For backward compatibility

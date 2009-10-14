@@ -1058,7 +1058,7 @@ bool SIPEndPoint::Subscribe(SIPSubscribe::PredefinedPackages eventPackage, unsig
 }
 
 
-bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & newParams, PString & aor)
+bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & newParams, PString & token, bool tokenIsAOR)
 {
   PTRACE(4, "SIP\tStart SUBSCRIBE\n" << newParams);
 
@@ -1076,7 +1076,7 @@ bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & newParams, PString & ao
     activeSIPHandlers.Append(handler);
   }
 
-  aor = handler->GetAddressOfRecord().AsString();
+  token = tokenIsAOR ? handler->GetAddressOfRecord().AsString() : handler->GetCallID();
 
   return handler->ActivateState(SIPHandler::Subscribing);
 }
@@ -1093,14 +1093,19 @@ bool SIPEndPoint::IsSubscribed(const PString & token, bool includeOffline)
 }
 
 
-bool SIPEndPoint::IsSubscribed(const PString & eventPackage, const PString & to, bool includeOffline) 
+bool SIPEndPoint::IsSubscribed(const PString & eventPackage, const PString & token, bool includeOffline) 
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
   if (handler == NULL)
-    return false;
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference);
+  else {
+    if (handler->GetEventPackage() != eventPackage)
+      handler.SetNULL();
+  }
 
-  return includeOffline ? (handler->GetState() != SIPHandler::Unsubscribed)
-                        : (handler->GetState() == SIPHandler::Subscribed);
+  return handler != NULL &&
+         (includeOffline ? (handler->GetState() != SIPHandler::Unsubscribed)
+                         : (handler->GetState() == SIPHandler::Subscribed));
 }
 
 
@@ -1115,17 +1120,17 @@ bool SIPEndPoint::Unsubscribe(const PString & token)
 }
 
 
-bool SIPEndPoint::Unsubscribe(SIPSubscribe::PredefinedPackages eventPackage, const PString & to)
+bool SIPEndPoint::Unsubscribe(SIPSubscribe::PredefinedPackages eventPackage, const PString & token)
 {
-  return Unsubscribe(SIPEventPackage(eventPackage), to);
+  return Unsubscribe(SIPEventPackage(eventPackage), token);
 }
 
 
-bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & to)
+bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & token)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(to, PSafeReference);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
   if (handler == NULL)
-    handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference);
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference);
   else {
     if (handler->GetEventPackage() != eventPackage)
       handler.SetNULL();
@@ -1134,7 +1139,7 @@ bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & to)
   if (handler != NULL)
     return handler->ActivateState(SIPHandler::Unsubscribing);
 
-  PTRACE(1, "SIP\tCould not find active SUBSCRIBE of " << eventPackage << " package to " << to);
+  PTRACE(1, "SIP\tCould not find active SUBSCRIBE of " << eventPackage << " package to " << token);
   return PFalse;
 }
 
