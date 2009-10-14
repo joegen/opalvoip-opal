@@ -5513,7 +5513,7 @@ void IMDialog::SendCurrentText()
 
   PSafePtr<OpalConnection> conn = m_manager->GetPCSSEP().GetConnectionWithLock(m_connId);
   if (conn != NULL) {
-    RTP_DataFrameList frames = conn->GetRFC4103Context(0).ConvertToFrames(m_mediaFormat, T140String(text));
+    RTP_DataFrameList frames = conn->GetRFC4103Context(0).ConvertToFrames("text/plain", T140String(text));
     for (PINDEX i = 0; i < frames.GetSize(); ++i) 
       conn->OnReceiveExternalIM(m_mediaFormat, (RTP_IMFrame &)frames[i]);
   }
