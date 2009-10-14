@@ -95,6 +95,10 @@ class SIPLocal_Presentity : public SIP_Presentity
 class SIPXCAP_Presentity : public SIP_Presentity
 {
   public:
+    static const PString & XcapRootKey();
+    static const PString & XcapAuthIdKey();
+    static const PString & XcapPasswordKey();
+
     SIPXCAP_Presentity();
     ~SIPXCAP_Presentity();
 
@@ -139,6 +143,50 @@ class SIPXCAP_Presentity : public SIP_Presentity
     typedef std::map<std::string, PresenceInfo> PresenceInfoMap;
     PresenceInfoMap m_presenceInfo;
 };
+
+
+class XCAPClient : public PHTTPClient
+{
+  public:
+    XCAPClient();
+
+    bool GetXmlDocument(
+      const PString & name,
+      PXML & xml
+    );
+    bool PutXmlDocument(
+      const PString & name,
+      const PXML & xml
+    );
+
+    void SetRoot(
+      const PString & server
+    ) { m_root = server; }
+
+    void SetApplicationUniqueID(
+      const PString & id
+    ) { m_auid = id; }
+
+    void SetGlobal() { m_global = true; }
+
+    void SetUserIdentifier(
+      const PString & id
+    ) { m_global = false; m_xui = id; }
+
+    void SetContentType(
+      const PString & type
+    ) { m_contentType = type; }
+
+  protected:
+    PURL BuildURL(const PString & name);
+
+    PString m_root;
+    PString m_auid;
+    bool    m_global;
+    PString m_xui;
+    PString m_contentType;
+};
+
 
 #endif // P_EXPAT
 

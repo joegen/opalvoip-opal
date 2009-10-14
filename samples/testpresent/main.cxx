@@ -28,18 +28,8 @@
 
 #include <ptlib.h>
 
+#include <ptclib/cli.h>
 #include <sip/sippres.h>
-
-
-
-//////////////////////////////////////////////////////////////
-
-#include <ptclib/http.h>
-
-class XCAPClient : public PHTTPClient
-{
-  public:
-};
 
 
 //////////////////////////////////////////////////////////////
@@ -49,6 +39,7 @@ class MyManager : public OpalManager
   PCLASSINFO(MyManager, OpalManager)
   public:
 };
+
 
 class TestPresEnt : public PProcess
 {
@@ -63,10 +54,21 @@ class TestPresEnt : public PProcess
 
     virtual void Main();
 
+    void AddPresentity(PArgList & args);
+
   private:
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdCreate);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSubscribeToPresence);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdPresenceAuthorisation);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSetLocalPresence);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdQuit);
+
     MyManager * m_manager;
-    OpalPresentity * sipEntity1;
-    OpalPresentity * sipEntity2;
+    PString     m_presenceAgent;
+    PString     m_xcapRoot;
+    PString     m_xcapAuthID;
+    PString     m_xcapPassword;
+    PDictionary<PString, OpalPresentity> m_presentities;
 };
 
 
@@ -81,23 +83,65 @@ TestPresEnt::TestPresEnt()
 
 TestPresEnt::~TestPresEnt()
 {
+  m_presentities.RemoveAll(); // Must do this before killing the manager.
   delete m_manager; 
 }
 
+
+void TestPresEnt::AddPresentity(PArgList & args)
+{
+  OpalPresentity * presentity = OpalPresentity::Create(*m_manager, args[0]);
+  if (presentity == NULL) {
+    cerr << "error: cannot create presentity for \"" << args[0] << '"' << endl;
+    return;
+  }
+
+  presentity->SetAuthorisationRequestNotifier(PCREATE_AuthorisationRequestNotifier(AuthorisationRequest));
+  presentity->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(PresenceChange));
+
+  presentity->GetAttributes().Set(OpalPresentity::TimeToLiveKey,            "1200");
+  if (args.HasOption('a'))
+    presentity->GetAttributes().Set(SIP_Presentity::AuthNameKey,            args.GetOptionString('a'));
+  if (args.HasOption('p'))
+    presentity->GetAttributes().Set(SIP_Presentity::AuthPasswordKey,        args.GetOptionString('p'));
+  presentity->GetAttributes().Set(SIP_Presentity::DefaultPresenceServerKey, m_presenceAgent);
+  presentity->GetAttributes().Set(SIPXCAP_Presentity::XcapRootKey,          m_xcapRoot);
+  if (!m_xcapAuthID)
+    presentity->GetAttributes().Set(SIPXCAP_Presentity::XcapAuthIdKey,      m_xcapAuthID);
+  if (!m_xcapPassword)
+    presentity->GetAttributes().Set(SIPXCAP_Presentity::XcapPasswordKey,    m_xcapPassword);
+
+  if (presentity->Open()) {
+    m_presentities.SetAt(psprintf("#%u", m_presentities.GetSize()/2+1), presentity);
+    m_presentities.SetAt(PCaselessString(presentity->GetAOR().AsString()), presentity);
+  }
+  else {
+    cerr << "error: cannot open presentity \"" << args[0] << '"' << endl;
+    delete presentity;
+  }
+}
 
 
 void TestPresEnt::Main()
 {
   PArgList & args = GetArguments();
-
-  args.Parse(
-             "u-user:"
-             "h-help."
+#define URL_OPTIONS "a-auth-id:" \
+                    "p-password:"
+  args.Parse("h-help."
+             "L-listener:"
+             "P-presence-agent:"
 #if PTRACING
-             "o-output:"             "-no-output."
-             "t-trace."              "-no-trace."
+             "o-output:"
 #endif
-             , FALSE);
+             "S-stun:"
+             "T-translation:"
+#if PTRACING
+             "t-trace."
+#endif
+             "X-xcap-server:"
+             "-xcap-auth-id:"
+             "-xcap-password:"
+             URL_OPTIONS);
 
 #if PTRACING
   PTrace::Initialise(args.GetOptionCount('t'),
@@ -106,150 +150,129 @@ void TestPresEnt::Main()
 #endif
 
   if (args.HasOption('h')) {
-    cerr << "usage: " << GetFile().GetTitle() << " [ options ] [url]\n"
+    cerr << "usage: " << GetFile().GetTitle() << " [ global-options ] { [ url-options ] url } ...\n"
             "\n"
-            "Available options are:\n"
-            "  -u or --user            : set local username.\n"
-            "  --help                  : print this help message.\n"
+            "Available global options are:\n"
+            "  -L or --listener addr        : set listener address:port.\n"
+            "  -T or --translation addr     : set NAT translation address.\n"
+            "  -S or --stun addr            : set STUN server address.\n"
+            "  -P or --presence-agent addr  : set presence agent default address.\n"
+            "  -X or --xcap-root url        : set XCAP server root URL.\n"
+            "        --xcap-auth-id name    : set XCAP server authorisation ID.\n"
+            "        --xcap-password pwd    : set XCAP server authorisation password.\n"
 #if PTRACING
-            "  -o or --output file     : file name for output of log messages\n"       
-            "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
+            "  -o or --output file          : file name for output of log messages\n"       
+            "  -t or --trace                : degree of verbosity in error log (more times for more detail)\n"     
 #endif
+            "  -h or --help                 : print this help message.\n"
             "\n"
-            "e.g. " << GetFile().GetTitle() << " sip:fred@bloggs.com\n"
+            "Available URL options are:\n"
+            "  -a or --auth-id              : Authirisation ID, default to URL username.\n"
+            "  -p or --password             : Authorisation password.\n"
+            "\n"
+            "e.g. " << GetFile().GetTitle() << " -X http://xcap.bloggs.com -p passone sip:fred1@bloggs.com -p passtwo sip:fred2@bloggs.com\n"
             ;
     return;
   }
 
-  XCAPClient xcap;
+  m_manager = new MyManager();
 
-#if 0
+  if (args.HasOption('T'))
+    m_manager->SetTranslationHost(args.GetOptionString('T'));
 
-  PString uri = "http://192.168.1.1/";
-  xcap.SetAuthenticationInfo("admin", "adsl4me");
+  if (args.HasOption('S'))
+    m_manager->SetSTUNServer(args.GetOptionString('S'));
 
-  PMIMEInfo outMime, inMime;
-  PBYTEArray body;
-  if (!xcap.GetDocument(uri, outMime, inMime) || !xcap.ReadContentBody(inMime, body))
-    cout << "Read failed:" << xcap.GetLastResponseCode() << " " << xcap.GetLastResponseInfo() << endl;
-  else {
-    cout << "Read document" << endl;
-    cout << PString((const char *)body.GetPointer(), body.GetSize());
-  }
+  m_presenceAgent = args.GetOptionString('P');
+  m_xcapRoot = args.GetOptionString('X');
+  m_xcapAuthID = args.GetOptionString("xcap-auth-id");
+  m_xcapPassword = args.GetOptionString("xcap-password");
 
-#endif
- 
-#if 0
-
-  PString server   = "siptest.colibria.com:8080/services";
-  PString auid     = "pres-rules";
-  PString subtree  = "users";
-  PString xui      = "requestec1";
-  PString document = "index~~*";
-
-  xcap.SetAuthenticationInfo("requestec1", "req1ec1");
-
-  PString uri("http://");
-  uri += server + '/' 
-      + auid + '/' 
-      + subtree + '/' 
-      + xui + '/' 
-      + document;
-
-  PMIMEInfo outMime, inMime;
-  PBYTEArray body;
-  if (!xcap.GetDocument(uri, outMime, inMime) || !xcap.ReadContentBody(inMime, body)) {
-    cout << "Read failed:" << xcap.GetLastResponseCode() << " " << xcap.GetLastResponseInfo() << endl;
-    cout << PString((const char *)body.GetPointer(), body.GetSize());
-  }
-  else {
-    cout << "Read document" << endl;
-    cout << PString((const char *)body.GetPointer(), body.GetSize());
-  }
-
-#endif
-
-#if 1
-
-  if (args.GetCount() < 5) {
-    cerr << "error: insufficient arguments" << endl;
-    return;
-  }
-
-  const char * server = args[0];
-  const char * pres1  = args[1];
-  const char * pass1  = args[2];
-  const char * pres2  = args[3];
-  const char * pass2  = args[4];
-
-  MyManager m_manager;
-  m_manager.SetTranslationAddress(PIPSocket::Address("115.64.157.126"));
-  SIPEndPoint * sip  = new SIPEndPoint(m_manager);
-  if (!sip->StartListener("udp$192.168.2.2:7777")) {
+  SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
+  if (!sip->StartListeners(args.GetOptionString('L').Lines())) {
     cerr << "Could not start SIP listeners." << endl;
     return;
   }
 
-  // create presentity #1
-  {
-    sipEntity1 = OpalPresentity::Create(m_manager, pres1);
-    sipEntity1->SetAuthorisationRequestNotifier(PCREATE_AuthorisationRequestNotifier(AuthorisationRequest));
-    sipEntity1->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(PresenceChange));
+  do {
+    AddPresentity(args);
+  } while (args.Parse(URL_OPTIONS));
 
-    if (sipEntity1 == NULL) {
-      cerr << "error: cannot create presentity for '" << pres1 << "'" << endl;
-      return;
-    }
-
-    sipEntity1->GetAttributes().Set(SIP_Presentity::DefaultPresenceServerKey, server);
-    sipEntity1->GetAttributes().Set(SIP_Presentity::AuthPasswordKey,          pass1);
-    sipEntity1->GetAttributes().Set(OpalPresentity::TimeToLiveKey,            "1200");
-
-    if (!sipEntity1->Open()) {
-      cerr << "error: cannot open presentity '" << pres1 << endl;
-      return;
-    }
-
-    cout << "Opened '" << pres1 << "' using presence server '" << sipEntity1->GetAttributes().Get(SIP_Presentity::PresenceServerKey) << "'" << endl;
-
-    cout << "Setting presence for '" << pres1 << "'" << endl;
-    sipEntity1->SetLocalPresence(OpalPresentity::Available);
-
+  if (m_presentities.GetSize() == 0) {
+    cerr << "error: no presentities available" << endl;
+    return;
   }
 
-  // create presentity #2
-  {
-    sipEntity2 = OpalPresentity::Create(m_manager, pres2);
-    if (sipEntity2 == NULL) {
-      cerr << "error: cannot create presentity for '" << pres2 << "'" << endl;
-      return;
-    }
+  PCLIStandard cli;
+  cli.SetPrompt("PRES> ");
+  cli.SetCommand("create", PCREATE_NOTIFIER(CmdCreate),
+                 "Create presentity.",
+                 "[ -p ] <url>");
+  cli.SetCommand("subscribe", PCREATE_NOTIFIER(CmdSubscribeToPresence),
+                 "Subscribe to presence state for presentity.",
+                 "<url-watcher> <url-watched>");
+  cli.SetCommand("authorise", PCREATE_NOTIFIER(CmdPresenceAuthorisation),
+                 "Authorise a presentity to see local presence.",
+                 "<url-watched> <url-watcher>");
+  cli.SetCommand("publish", PCREATE_NOTIFIER(CmdSetLocalPresence),
+                 "Publish local presence state for presentity.",
+                 "<url> { available | unavailable | busy } [ <note> ]");
+  cli.SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),
+                  "Quit command line interpreter, note quitting from console also shuts down application.");
 
-    sipEntity2->GetAttributes().Set(SIP_Presentity::DefaultPresenceServerKey, server);
-    sipEntity2->GetAttributes().Set(SIP_Presentity::AuthPasswordKey,          pass2);
-    sipEntity2->GetAttributes().Set(OpalPresentity::TimeToLiveKey,            "1200");
+  cli.Start(false); // Do not spawn thread, wait till end of input
 
-    if (!sipEntity2->Open()) {
-      cerr << "error: cannot open presentity '" << pres1 << endl;
-      return;
-    }
+  cout << "\nExiting ..." << endl;
+}
 
-    cout << "Opened '" << pres2 << " using presence server '" << sipEntity2->GetAttributes().Get(SIP_Presentity::PresenceServerKey) << "'" << endl;
-  }
 
-  // presentity #2 asks for access to presentity #1's presence information
-  sipEntity2->SubscribeToPresence(pres1);
+void TestPresEnt::CmdCreate(PCLI::Arguments & args, INT)
+{
+  if (!args.Parse(URL_OPTIONS))
+    args.WriteUsage();
+  else if (m_presentities.Contains(args[0]))
+    args.WriteError() << "Presentity \"" << args[0] << "\" already exists." << endl;
+  else
+    AddPresentity(args);
+}
 
-  for (int i = 0;i < 10000; ++i) {
-    Sleep(1000);
-  }
 
-  delete sipEntity1;
-  delete sipEntity2;
+void TestPresEnt::CmdSubscribeToPresence(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() < 2)
+    args.WriteUsage();
+  else if (!m_presentities.Contains(args[0]))
+    args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
+  else
+    m_presentities[args[0]].SubscribeToPresence(args[1]);
+}
 
-#endif
 
-  return;
+void TestPresEnt::CmdPresenceAuthorisation(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() < 2)
+    args.WriteUsage();
+  else if (!m_presentities.Contains(args[0]))
+    args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
+  else
+    m_presentities[args[0]].SetPresenceAuthorisation(args[1], OpalPresentity::AuthorisationPermitted);
+}
+
+
+void TestPresEnt::CmdSetLocalPresence(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() == 0)
+    args.WriteUsage();
+  else if (!m_presentities.Contains(args[0]))
+    args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
+  else
+    m_presentities[args[0]].SetLocalPresence(OpalPresentity::Available);
+}
+
+
+void TestPresEnt::CmdQuit(PCLI::Arguments & args, INT)
+{
+  args.GetContext().Stop();
 }
 
 
