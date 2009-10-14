@@ -1621,16 +1621,16 @@ void SIPHandlersList::Append(SIPHandler * obj)
   PSafePtr<SIPHandler> handler = m_handlersList.Append(obj, PSafeReference);
 
   // add entry to call to handler map
-  handler->m_byCallID = m_byCallID.insert(IndexMap::value_type(handler->GetCallID(), handler)).first;
+  handler->m_byCallID = m_byCallID.insert(IndexMap::value_type(handler->GetCallID(), handler));
 
   // add entry to url and package map
-  handler->m_byAorAndPackage = m_byAorAndPackage.insert(IndexMap::value_type(MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod(), handler->GetEventPackage()), handler)).first;
+  handler->m_byAorAndPackage = m_byAorAndPackage.insert(IndexMap::value_type(MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod(), handler->GetEventPackage()), handler));
 
   // add entry to username/realm map
   if (!handler->GetUsername().IsEmpty())
-    handler->m_byAuthIdAndRealm = m_byAuthIdAndRealm.insert(IndexMap::value_type(handler->GetUsername() + '\n' + handler->GetRealm(), handler)).first;
+    handler->m_byAuthIdAndRealm = m_byAuthIdAndRealm.insert(IndexMap::value_type(handler->GetUsername() + '\n' + handler->GetRealm(), handler));
 
-  handler->m_byAorUserAndRealm = m_byAorUserAndRealm.insert(IndexMap::value_type(handler->GetAddressOfRecord().GetUserName() + '\n' + handler->GetRealm(), handler)).first;
+  handler->m_byAorUserAndRealm = m_byAorUserAndRealm.insert(IndexMap::value_type(handler->GetAddressOfRecord().GetUserName() + '\n' + handler->GetRealm(), handler));
 }
 
 
@@ -1645,10 +1645,17 @@ void SIPHandlersList::Remove(SIPHandler * handler)
   PWaitAndSignal m(m_extraMutex);
 
   if (m_handlersList.Remove(handler)) {
-    m_byCallID.erase(handler->m_byCallID);
-    m_byAorAndPackage.erase(handler->m_byAorAndPackage);
-    m_byAuthIdAndRealm.erase(handler->m_byAuthIdAndRealm);
-    m_byAorUserAndRealm.erase(handler->m_byAorUserAndRealm);
+    if (handler->m_byAorUserAndRealm.second)
+      m_byAorUserAndRealm.erase(handler->m_byAorUserAndRealm.first);
+
+    if (handler->m_byAuthIdAndRealm.second)
+      m_byAuthIdAndRealm.erase(handler->m_byAuthIdAndRealm.first);
+
+    if (handler->m_byAorAndPackage.second)
+      m_byAorAndPackage.erase(handler->m_byAorAndPackage.first);
+
+    if (handler->m_byCallID.second)
+      m_byCallID.erase(handler->m_byCallID.first);
   }
 }
 
