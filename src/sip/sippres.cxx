@@ -186,10 +186,16 @@ bool SIPXCAP_Presentity::Close()
 
   StopThread();
 
-  Internal_SubscribeToWatcherInfo(true);
+  if (!m_watcherSubscriptionAOR.IsEmpty()) {
+    PTRACE(3, "SIPPres\t'" << m_aor << "' sending unsubscribe for own presence watcher");
+    m_endpoint->Unsubscribe(SIPSubscribe::Presence | SIPSubscribe::Watcher, m_watcherSubscriptionAOR);
+  }
+
+  for (StringMap::iterator subs = m_presenceIdByAor.begin(); subs != m_presenceIdByAor.end(); ++subs)
+    m_endpoint->Unsubscribe(SIPSubscribe::Presence, subs->second);
 
   m_notificationMutex.Wait();
-  while (!m_watcherSubscriptionAOR.IsEmpty()) {
+  while (!m_watcherSubscriptionAOR.IsEmpty() || !m_presenceIdByAor.empty()) {
     m_notificationMutex.Signal();
     PThread::Sleep(100);
     m_notificationMutex.Wait();
@@ -210,14 +216,8 @@ OPAL_DEFINE_COMMAND(SIPWatcherInfoCommand,           SIPXCAP_Presentity, Interna
 
 void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd)
 {
-  Internal_SubscribeToWatcherInfo(cmd.m_unsubscribe);
-}
 
-
-void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(bool unsubscribe)
-{
-
-  if (unsubscribe) {
+  if (cmd.m_unsubscribe) {
     if (m_watcherSubscriptionAOR.IsEmpty()) {
       PTRACE(3, "SIPPres\tAlredy unsubscribed presence watcher for " << m_aor);
       return;
@@ -234,12 +234,12 @@ void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(bool unsubscribe)
   PString aorStr = m_aor.AsString();
   PTRACE(3, "SIPPres\t'" << aorStr << "' sending subscribe for own presence.watcherinfo");
 
-  param.m_localAddress    = aorStr;
-  param.m_addressOfRecord = aorStr;
-  param.m_remoteAddress   = m_presenceServer.AsString();
-  param.m_authID          = m_attributes.Get(OpalPresentity::AuthNameKey, aorStr);
-  param.m_password        = m_attributes.Get(OpalPresentity::AuthPasswordKey);
-  param.m_expire          = GetExpiryTime();
+  param.m_localAddress     = aorStr;
+  param.m_addressOfRecord  = aorStr;
+  param.m_remoteAddress    = m_presenceServer.AsString();
+  param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, aorStr);
+  param.m_password         = m_attributes.Get(OpalPresentity::AuthPasswordKey);
+  param.m_expire           = GetExpiryTime();
   param.m_onSubcribeStatus = PCREATE_NOTIFIER2(OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
   param.m_onNotify         = PCREATE_NOTIFIER2(OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
 
@@ -271,6 +271,7 @@ static PXMLValidator::ElementInfo watcherInfoValidation[] = {
   { 0 }
 };
 
+
 void SIPXCAP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
   m_notificationMutex.Wait();
@@ -278,6 +279,7 @@ void SIPXCAP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, 
     m_watcherSubscriptionAOR.MakeEmpty();
   m_notificationMutex.Signal();
 }
+
 
 void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler & handler, SIPSubscribe::NotifyCallbackInfo & status)
 {
@@ -348,8 +350,7 @@ void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler & handler, SIPS
   // if this is a full list of watcher info, we can empty out our pending lists
   if (rootElement->GetAttribute("state") *= "full") {
     PTRACE(3, "SIPPres\t'" << m_aor << "' received full watcher list");
-    m_idToAorMap.clear();
-    m_aorToIdMap.clear();
+    m_watcherAorById.clear();
   }
 
   // go through list of watcher information
@@ -383,16 +384,16 @@ void SIPXCAP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
   PString status   = watcher->GetAttribute("status");
   PString eventStr = watcher->GetAttribute("event");
   PString otherAOR = watcher->GetData().Trim();
-  IdToAorMap::iterator r = m_idToAorMap.find(id);
+
+  StringMap::iterator existingAOR = m_watcherAorById.find(id);
 
   // save pending subscription status from this user
   if (status == "pending") {
-    if (r != m_idToAorMap.end()) {
+    if (existingAOR != m_watcherAorById.end()) {
       PTRACE(3, "SIPPres\t'" << m_aor << "' received followup to request from '" << otherAOR << "' for access to presence information");
     } 
     else {
-      m_idToAorMap.insert(IdToAorMap::value_type(id, otherAOR));
-      m_aorToIdMap.insert(AorToIdMap::value_type(otherAOR, id));
+      m_watcherAorById[id] = otherAOR;
       PTRACE(3, "SIPPres\t'" << otherAOR << "' has requested access to presence information of '" << m_aor << "'");
       OnAuthorisationRequest(otherAOR);
     }
@@ -444,7 +445,7 @@ unsigned SIPXCAP_Presentity::GetExpiryTime() const
 void SIPXCAP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd)
 {
   if (cmd.m_subscribe) {
-    if (m_presenceInfo.find(cmd.m_presentity) != m_presenceInfo.end()) {
+    if (m_presenceIdByAor.find(cmd.m_presentity) != m_presenceIdByAor.end()) {
       PTRACE(3, "SIPPres\t'" << m_aor << "' already subscribed to presence of '" << cmd.m_presentity << "'");
       return;
     }
@@ -461,31 +462,50 @@ void SIPXCAP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPrese
     param.m_password        = m_attributes.Get(OpalPresentity::AuthPasswordKey);
     param.m_expire          = GetExpiryTime();
 
-    //param.m_onSubcribeStatus = PCREATE_NOTIFIER2(OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
+    param.m_onSubcribeStatus = PCREATE_NOTIFIER2(OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
     param.m_onNotify         = PCREATE_NOTIFIER2(OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
 
-    m_endpoint->Subscribe(param, m_presenceInfo[cmd.m_presentity].m_subscriptionAOR);
+    PString id;
+    if (m_endpoint->Subscribe(param, id, false)) {
+      m_presenceIdByAor[cmd.m_presentity] = id;
+      m_presenceAorById[id] = cmd.m_presentity;
+    }
   }
   else {
-    PresenceInfoMap::iterator info = m_presenceInfo.find(cmd.m_presentity);
-    if (info == m_presenceInfo.end()) {
+    StringMap::iterator id = m_presenceIdByAor.find(cmd.m_presentity);
+    if (id == m_presenceIdByAor.end()) {
       PTRACE(3, "SIPPres\t'" << m_aor << "' already unsubscribed to presence of '" << cmd.m_presentity << "'");
       return;
     }
 
     PTRACE(3, "SIPPres\t'" << m_aor << "' unsubscribing to presence of '" << cmd.m_presentity << "'");
-    m_endpoint->Unsubscribe(SIPSubscribe::Presence, info->second.m_subscriptionAOR);
-    m_presenceInfo.erase(info);
+    m_endpoint->Unsubscribe(SIPSubscribe::Presence, id->second);
   }
+}
+
+
+void SIPXCAP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
+{
+  m_notificationMutex.Wait();
+  if (!status.m_wasSubscribing) {
+    PString id = status.m_handler->GetCallID();
+    StringMap::iterator aor = m_presenceAorById.find(id);
+    if (aor != m_presenceAorById.end()) {
+      PTRACE(3, "SIPPres\t'" << m_aor << "' unsubscribed to presence of '" << aor->second << "'");
+      m_presenceIdByAor.erase(aor->second);
+      m_presenceAorById.erase(aor);
+    }
+    else {
+      PTRACE(2, "SIPPres\tA;ready unsubscribed for id " << id);
+    }
+  }
+  m_notificationMutex.Signal();
 }
 
 
 void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
 {
-  SIPMIMEInfo & sipMime(status.m_notify.GetMIME());
-
-  if (sipMime.GetEvent() != "event")
-    return;
+  const SIPMIMEInfo & sipMime = status.m_notify.GetMIME();
 
   if (!sipMime.Contains("Subscription-State")) {
     status.m_response.GetEntityBody() = "No Subscription-State field";
@@ -493,8 +513,7 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::N
     return;
   }
 
-  PString subscriptionState = sipMime("Subscription-State");
-  PStringArray params = subscriptionState.Tokenise(';', false);
+  PStringArray params = sipMime["Subscription-State"].Tokenise(';', false);
   if (params.GetSize() == 0) {
     status.m_response.GetEntityBody() = "Subscription-State field malformed";
     PTRACE(3, "SIPPres\tNOTIFY received for presence subscribe with malformed Subscription-State header");
