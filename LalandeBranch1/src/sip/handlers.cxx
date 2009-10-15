@@ -294,7 +294,9 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
 
   SetState(newState);
 
-  if (GetTransport() != NULL) {
+  if (GetTransport() == NULL)
+    OnFailed(SIP_PDU::Local_BadTransportAddress);
+  else {
     // Restoring or first time, try every interface
     if (newState == Restoring || m_transport->GetInterface().IsEmpty()) {
       PWaitAndSignal mutex(m_transport->GetWriteMutex());
@@ -315,8 +317,6 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
     SetState(Unsubscribed);
     return true;
   }
-
-  OnFailed(SIP_PDU::Local_BadTransportAddress);
 
   PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
   expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
@@ -526,8 +526,11 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
     case SIP_PDU::Failure_RequestTimeout :
     case SIP_PDU::Local_BadTransportAddress :
     case SIP_PDU::Failure_TemporarilyUnavailable:
-      SetState(Unavailable);
-      break;
+      if (GetState() != Unsubscribing) {
+        SetState(Unavailable);
+        break;
+      }
+      // Do next case to finalise Unsubscribe even though there was an error
 
     default :
       PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response " << code);
@@ -674,7 +677,7 @@ void SIPRegisterHandler::OnFailed(SIP_PDU::StatusCodes r)
 
 PBoolean SIPRegisterHandler::SendRequest(SIPHandler::State s)
 {
-  SendStatus(SIP_PDU::Information_Trying, GetState());
+  SendStatus(SIP_PDU::Information_Trying, s);
   m_sequenceNumber = endpoint.GetNextCSeq();
   return SIPHandler::SendRequest(s);
 }
@@ -804,7 +807,7 @@ void SIPSubscribeHandler::OnFailed(const SIP_PDU & response)
 
 PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
 {
-  SendStatus(SIP_PDU::Information_Trying, GetState());
+  SendStatus(SIP_PDU::Information_Trying, s);
   return SIPHandler::SendRequest(s);
 }
 
