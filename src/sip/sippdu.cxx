@@ -154,6 +154,7 @@ const char * SIP_PDU::GetStatusCodeDescription(int code)
 
     { SIP_PDU::Local_TransportError,                "Transport Error" },
     { SIP_PDU::Local_BadTransportAddress,           "Invalid Address/Hostname" },
+    { SIP_PDU::Local_Timeout,                       "Timeout or retries exceeded" },
 
     { 0 }
   };
