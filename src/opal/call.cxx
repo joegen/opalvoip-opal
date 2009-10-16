@@ -430,8 +430,18 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   if (isClearing || !lock.IsLocked())
     return false;
 
+#if PTRACING
+  PStringStream traceText;
+  if (PTrace::CanTrace(2)) {
+    traceText << " for " << mediaType << " session " << sessionID;
+    if (preselectedFormat.IsValid())
+      traceText << " (" << preselectedFormat << ')';
+    traceText << " on " << connection;
+  }
+#endif
+
   if (IsOnHold()) {
-    PTRACE(3, "Call\tOpenSourceMediaStreams (call on hold) " << mediaType << " session " << sessionID << " on " << connection);
+    PTRACE(3, "Call\tOpenSourceMediaStreams (call on hold)" << traceText);
     return false;
   }
 
@@ -444,11 +454,11 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       sinkStream = patch->GetSink();
     if (sourceStream->GetMediaFormat() == preselectedFormat ||
         (sinkStream != NULL && sinkStream->GetMediaFormat() == preselectedFormat)) {
-      PTRACE(3, "Call\tOpenSourceMediaStreams (already opened) for session " << sessionID << " on " << connection);
+      PTRACE(3, "Call\tOpenSourceMediaStreams (already opened)" << traceText);
       return true;
     }
     if (sinkStream == NULL && sourceStream->IsOpen()) {
-      PTRACE(3, "Call\tOpenSourceMediaStreams (is opening) for session " << sessionID << " on " << connection);
+      PTRACE(3, "Call\tOpenSourceMediaStreams (is opening)" << traceText);
       return true;
     }
   }
@@ -456,8 +466,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   if (sessionID == 0)
     sessionID = connection.GetNextSessionID(mediaType, true);
 
-  PTRACE(3, "Call\tOpenSourceMediaStreams " << (sourceStream != NULL ? "replacing" : "opening")
-         << ' ' << mediaType << " session " << sessionID << " on " << connection);
+  PTRACE(3, "Call\tOpenSourceMediaStreams " << (sourceStream != NULL ? "replace" : "open") << traceText);
   sourceStream.SetNULL();
 
   // Create the sinks and patch if needed
@@ -479,6 +488,11 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     OpalMediaFormatList sinkMediaFormats = otherConnection->GetMediaFormats();
     otherConnection->AdjustMediaFormats(sinkMediaFormats);
     connection.AdjustMediaFormats(sinkMediaFormats);
+    if (sinkMediaFormats.IsEmpty()) {
+      PTRACE(2, "Call\tOpenSourceMediaStreams failed with no sink formats" << traceText);
+      return false;
+    }
+
     if (preselectedFormat.IsValid() && sinkMediaFormats.HasFormat(preselectedFormat))
       sinkMediaFormats = preselectedFormat;
     else
@@ -491,6 +505,11 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       sourceMediaFormats = connection.GetMediaFormats();
       otherConnection->AdjustMediaFormats(sourceMediaFormats);
       connection.AdjustMediaFormats(sourceMediaFormats);
+      if (sourceMediaFormats.IsEmpty()) {
+        PTRACE(2, "Call\tOpenSourceMediaStreams failed with no source formats" << traceText);
+        return false;
+      }
+
       if (preselectedFormat.IsValid() && sourceMediaFormats.HasFormat(preselectedFormat))
         sourceMediaFormats = preselectedFormat;
       else
@@ -520,7 +539,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
             ++format;
         }
         if (lists[i]->IsEmpty()) {
-          PTRACE(3, "Call\tUnsupported Content Role " << contentRole << " for session " << sessionID << " on " << connection);
+          PTRACE(2, "Call\tUnsupported Content Role " << contentRole << traceText);
           return false;
         }
       }
