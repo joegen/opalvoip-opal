@@ -1581,10 +1581,12 @@ OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormatList 
 
 void OpalMediaFormatList::Remove(const PStringArray & maskList)
 {
+  if (maskList.IsEmpty())
+    return;
+
   PTRACE(4,"MediaFormat\tRemoving codecs " << setfill(',') << maskList);
 
-  PINDEX i;
-  for (i = 0; i < maskList.GetSize(); i++) {
+  for (PINDEX i = 0; i < maskList.GetSize(); i++) {
     OpalMediaFormatList::const_iterator fmt;
     while ((fmt = FindFormat(maskList[i])) != end())
       erase(fmt);
