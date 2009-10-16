@@ -551,7 +551,7 @@ dnl MSWIN_DISPLAY mixer,Media mixing
 dnl MSWIN_DEFINE  mixer,OPAL_HAS_MIXER
 OPAL_SIMPLE_OPTION([mixer],[OPAL_HAS_MIXER], [whether to enable media mixing support])
 
-dnl MSWIN_DISPLAY pcss
+dnl MSWIN_DISPLAY pcss,PC Sound System Endpoint
 dnl MSWIN_DEFINE  pcss,OPAL_HAS_PCSS
 OPAL_SIMPLE_OPTION([pcss],[OPAL_HAS_PCSS], [whether to enable PC sound system support])
 
