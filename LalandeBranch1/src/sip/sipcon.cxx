@@ -243,14 +243,6 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   sessionTimer.SetNotifier(PCREATE_NOTIFIER(OnSessionTimeout));
 
-#if OPAL_T38_CAPABILITY
-  /* We default to having T.38 included as most UAs do not actually
-     tell you that they support it or not. For the re-INVITE mechanism
-     to work correctly, the rest ofthe system ahs to assume that the
-     UA is capable of it, even it it isn't. */
-  remoteFormatList += OpalT38;
-#endif
-
   PTRACE(4, "SIP\tCreated connection.");
 }
 
@@ -1039,6 +1031,14 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
     for (PINDEX sessionID = 1; sessionID <= sdp->GetMediaDescriptions().GetSize(); ++sessionID)
       writableThis->remoteFormatList += sdp->GetMediaDescriptionByIndex(sessionID)->GetMediaFormats();
     writableThis->remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
+
+#if OPAL_T38_CAPABILITY
+    /* We default to having T.38 included as most UAs do not actually
+       tell you that they support it or not. For the re-INVITE mechanism
+       to work correctly, the rest ofthe system has to assume that the
+       UA is capable of it, even it it isn't. */
+    writableThis->remoteFormatList += OpalT38;
+#endif
   }
 
   return remoteFormatList;
@@ -2286,6 +2286,14 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & request)
     ok |= OnReceivedSDPMediaDescription(*sdp, i+1);
 
   remoteFormatList += OpalRFC2833;
+
+#if OPAL_T38_CAPABILITY
+  /* We default to having T.38 included as most UAs do not actually
+     tell you that they support it or not. For the re-INVITE mechanism
+     to work correctly, the rest ofthe system has to assume that the
+     UA is capable of it, even it it isn't. */
+  remoteFormatList += OpalT38;
+#endif
 
   needReINVITE = true;
 
