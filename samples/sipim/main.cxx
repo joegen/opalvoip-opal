@@ -149,13 +149,13 @@ void SipIM::Main()
   
   cout << "Codecs to be used: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
 
-  OpalConnection::StringOptions * options = new OpalConnection::StringOptions();
-  options->SetAt(OPAL_OPT_AUTO_START, m_manager.m_imFormat.GetMediaType() + ":exclusive");
+  OpalConnection::StringOptions options;
+  options.SetAt(OPAL_OPT_AUTO_START, m_manager.m_imFormat.GetMediaType() + ":exclusive");
 
   if (args.GetCount() == 0)
     cout << "Awaiting incoming call ..." << flush;
   else {
-    if (!m_manager.SetUpCall("pc:", args[0], m_manager.m_callToken, NULL, 0, options)) {
+    if (!m_manager.SetUpCall("pc:", args[0], m_manager.m_callToken, NULL, 0, &options)) {
       cerr << "Could not start IM to \"" << args[0] << '"' << endl;
       return;
     }
