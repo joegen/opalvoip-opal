@@ -263,7 +263,7 @@ class OpalFaxConnection : public OpalConnection
     PTimeInterval     m_switchTimeout;
     OpalMediaFormat   m_tiffFileFormat;
 
-    bool     m_faxMode;  // false if audio preamble, true if in TIFF->fax mode
+    bool     m_switchedToT38;
     PTimer   m_faxTimer;
 
   friend class OpalFaxMediaStream;
