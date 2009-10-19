@@ -385,7 +385,7 @@ void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SI
 {
   SetExpire(response.GetMIME().GetMinExpires());
 
-  // Restart the transaction with new authentication handler
+  // Start new transaction with adjusted Expires time
   State oldState = state;
   state = Unavailable;
   SendRequest(oldState);
@@ -467,8 +467,10 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction
   m_username = username;
   m_password = password;
 
-  // Restart the transaction with new authentication handler
-  SendRequest(GetState());
+  // Start new transaction with new authentication handler
+  State oldState = state;
+  state = Unavailable;
+  SendRequest(oldState);
 }
 
 
