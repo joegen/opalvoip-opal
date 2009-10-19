@@ -286,14 +286,6 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   sessionTimer.SetNotifier(PCREATE_NOTIFIER(OnSessionTimeout));
 
-#if OPAL_T38_CAPABILITY
-  /* We default to having T.38 included as most UAs do not actually
-     tell you that they support it or not. For the re-INVITE mechanism
-     to work correctly, the rest ofthe system ahs to assume that the
-     UA is capable of it, even it it isn't. */
-  remoteFormatList += OpalT38;
-#endif
-
   PTRACE(4, "SIP\tCreated connection.");
 }
 
@@ -916,14 +908,6 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   OpalMediaType mediaType = incomingMedia->GetMediaType();
 
-  // Find the payload type and capabilities used for telephone-event, if present
-  OpalMediaFormat nteFormat = GetNxECapabilities(rfc2833Handler, incomingMedia, OpalRFC2833);
-  remoteFormatList += nteFormat;
-#if OPAL_T38_CAPABILITY
-  OpalMediaFormat nseFormat = GetNxECapabilities(ciscoNSEHandler, incomingMedia, OpalCiscoNSE);
-  remoteFormatList += nseFormat;
-#endif
-
   OpalTransportAddress localAddress;
   bool remoteChanged = false;
   OpalMediaSession * mediaSession = SetUpMediaSession(rtpSessionId, mediaType, incomingMedia, localAddress, remoteChanged);
@@ -951,11 +935,6 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     return PFalse;
   }
   
-  // Create the list of Opal format names for the remote end.
-  // We will answer with the media format that will be opened.
-  // When sending an answer SDP, remove media formats that we do not support.
-  remoteFormatList += sdpFormats;
-
   // construct a new media session list 
   if ((localMedia = mediaSession->CreateSDPMediaDescription(localAddress)) == NULL) {
     PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
@@ -1039,7 +1018,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     // Add all possible formats
     bool empty = true;
     OpalMediaFormatList localFormatList = GetLocalMediaFormats();
-    for (OpalMediaFormatList::iterator remoteFormat = remoteFormatList.begin(); remoteFormat != remoteFormatList.end(); ++remoteFormat) {
+    for (OpalMediaFormatList::iterator remoteFormat = m_remoteFormatList.begin(); remoteFormat != m_remoteFormatList.end(); ++remoteFormat) {
       if (remoteFormat->GetMediaType() == mediaType) {
         for (OpalMediaFormatList::iterator localFormat = localFormatList.begin(); localFormat != localFormatList.end(); ++localFormat) {
           if (localFormat->GetMediaType() == mediaType) {
@@ -1066,9 +1045,9 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   }
 
   // Set format if we have an RTP payload type for RFC2833 and/or NSE
-  SetNxECapabilities(localMedia, nteFormat, rfc2833Handler);
+  SetNxECapabilities(localMedia, GetNxECapabilities(rfc2833Handler, incomingMedia, OpalRFC2833), rfc2833Handler);
 #if OPAL_T38_CAPABILITY
-  SetNxECapabilities(localMedia, nseFormat, ciscoNSEHandler);
+  SetNxECapabilities(localMedia, GetNxECapabilities(ciscoNSEHandler, incomingMedia, OpalCiscoNSE), ciscoNSEHandler);
 #endif
 
   sdpOut.AddMediaDescription(localMedia);
@@ -1099,15 +1078,42 @@ OpalTransportAddress SIPConnection::GetDefaultSDPConnectAddress(WORD port) const
 OpalMediaFormatList SIPConnection::GetMediaFormats() const
 {
   SDPSessionDescription * sdp;
-  if (remoteFormatList.IsEmpty() && originalInvite != NULL && (sdp = originalInvite->GetSDP()) != NULL) {
-    SIPConnection * writableThis = const_cast<SIPConnection *>(this);
-    // Extract the media from SDP into our remote capabilities list
-    for (PINDEX sessionID = 1; sessionID <= sdp->GetMediaDescriptions().GetSize(); ++sessionID)
-      writableThis->remoteFormatList += sdp->GetMediaDescriptionByIndex(sessionID)->GetMediaFormats();
-    writableThis->remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
+  if (m_remoteFormatList.IsEmpty() && originalInvite != NULL && (sdp = originalInvite->GetSDP()) != NULL)
+    const_cast<SIPConnection *>(this)->SetRemoteMediaFormats(*sdp);
+
+  return m_remoteFormatList;
+}
+
+
+void SIPConnection::SetRemoteMediaFormats(SDPSessionDescription & sdp)
+{
+  // Extract the media from SDP into our remote capabilities list
+  for (PINDEX sessionID = 1; sessionID <= sdp.GetMediaDescriptions().GetSize(); ++sessionID) {
+    SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByIndex(sessionID);
+
+    m_remoteFormatList += mediaDescription->GetMediaFormats();
+
+    // Find the payload type and capabilities used for telephone-event, if present
+    m_remoteFormatList += GetNxECapabilities(rfc2833Handler, mediaDescription, OpalRFC2833);
+#if OPAL_T38_CAPABILITY
+    m_remoteFormatList += GetNxECapabilities(ciscoNSEHandler, mediaDescription, OpalCiscoNSE);
+#endif
   }
 
-  return remoteFormatList;
+#if OPAL_T38_CAPABILITY
+  /* We default to having T.38 included as most UAs do not actually
+     tell you that they support it or not. For the re-INVITE mechanism
+     to work correctly, the rest ofthe system has to assume that the
+     UA is capable of it, even it it isn't. */
+  m_remoteFormatList += OpalT38;
+#endif
+
+  // Finally make sure RFC2833 there even if not in remote SDP, some implementations forget ...
+  m_remoteFormatList += OpalRFC2833;
+
+  m_remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
+
+  PTRACE(4, "SIP\tRemote media formats set to " << setfill(',') << m_remoteFormatList << setfill(' '));
 }
 
 
@@ -1895,7 +1901,6 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
   m_handlingINVITE = true;
 
-  remoteFormatList.RemoveAll();
   SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
 
   // get the remote media formats, if any
@@ -2356,13 +2361,13 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & request)
   if (sdp == NULL)
     return;
 
+  SetRemoteMediaFormats(*sdp);
+
   m_holdFromRemote = sdp->IsHold();
 
   bool ok = false;
   for (PINDEX i = 0; i < sdp->GetMediaDescriptions().GetSize(); ++i) 
     ok |= OnReceivedSDPMediaDescription(*sdp, i+1);
-
-  remoteFormatList += OpalRFC2833;
 
   if (GetPhase() == EstablishedPhase) // re-INVITE
     StartMediaStreams();
@@ -2402,15 +2407,6 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
     PTRACE(2, "SIP\tCould not find supported media formats in SDP media description for session " << rtpSessionId);
     return false;
   }
-
-  // When receiving an answer SDP, keep the remote SDP media formats order
-  remoteFormatList += mediaFormatList;
-
-  // Find the payload type and capabilities used for telephone-event, if present
-  remoteFormatList += GetNxECapabilities(rfc2833Handler, mediaDescription, OpalRFC2833);
-#if OPAL_T38_CAPABILITY
-  remoteFormatList += GetNxECapabilities(ciscoNSEHandler, mediaDescription, OpalCiscoNSE);
-#endif
 
   // Set up the media session, e.g. RTP
   bool remoteChanged = false;
