@@ -582,7 +582,8 @@ class SIPConnection : public OpalRTPConnection
       ReleaseWithNothing,
     } releaseMethod;
 
-    OpalMediaFormatList remoteFormatList;
+    OpalMediaFormatList m_remoteFormatList;
+    void SetRemoteMediaFormats(SDPSessionDescription & sdp);
 
   protected:
     PTimer sessionTimer;
