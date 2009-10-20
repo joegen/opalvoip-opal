@@ -1065,10 +1065,16 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
       , OpalPluginTranscoder(codecDefn, isEncoder) 
     { 
       bufferRTP = NULL;
+
+      inputIsRTP          = (codecDef->flags & PluginCodec_InputTypeMask)  == PluginCodec_InputTypeRTP;
+      outputIsRTP         = (codecDef->flags & PluginCodec_OutputTypeMask) == PluginCodec_OutputTypeRTP;
+      acceptEmptyPayload  = (codecDef->flags & PluginCodec_EmptyPayloadMask) == PluginCodec_EmptyPayload;
+      acceptOtherPayloads = (codecDef->flags & PluginCodec_OtherPayloadMask) == PluginCodec_OtherPayload;
     }
 
     ~OpalFaxTranscoder()
     { 
+      delete bufferRTP;
     }
 
     virtual void SetInstanceID(const BYTE * instance, unsigned instanceLen)
@@ -1108,7 +1114,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 
       const void * fromPtr;
       unsigned fromLen;
-      if ((codecDef->flags&PluginCodec_InputTypeMask) == PluginCodec_InputTypeRTP) {
+      if (inputIsRTP) {
         fromPtr = (const BYTE *)src;
         fromLen = src.GetHeaderSize() + src.GetPayloadSize();
       }
@@ -1116,8 +1122,6 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
         fromPtr = src.GetPayloadPtr();
         fromLen = src.GetPayloadSize();
       }
-
-      bool outputRTP = (codecDef->flags&PluginCodec_OutputTypeMask) == PluginCodec_OutputTypeRTP;
 
       do {
         if (bufferRTP == NULL)
@@ -1129,7 +1133,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
         // call the codec function
         void * toPtr;
         unsigned toLen;
-        if (outputRTP) {
+        if (outputIsRTP) {
           toPtr = bufferRTP->GetPointer();
           toLen = bufferRTP->GetSize();
         }
@@ -1142,9 +1146,19 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
         if (!Transcode(fromPtr, &fromLen, toPtr, &toLen, &flags))
           return false;
 
-        unsigned hdrSize = outputRTP ? (unsigned)bufferRTP->GetHeaderSize() : 0;
+        unsigned hdrSize = outputIsRTP ? (unsigned)bufferRTP->GetHeaderSize() : 0;
         if (toLen > hdrSize) {
           bufferRTP->SetPayloadSize(toLen - hdrSize);
+
+          // set the output timestamp
+          unsigned timestamp = src.GetTimestamp();
+          unsigned inClockRate = inputMediaFormat.GetClockRate();
+          unsigned outClockRate = outputMediaFormat.GetClockRate();
+
+          if (inClockRate != outClockRate)
+            timestamp = (unsigned)((PUInt64)timestamp*outClockRate/inClockRate);
+          bufferRTP->SetTimestamp(timestamp);
+
           dstList.Append(bufferRTP);
           bufferRTP = NULL;
         }
