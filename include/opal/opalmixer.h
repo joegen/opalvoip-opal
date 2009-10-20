@@ -366,9 +366,6 @@ class OpalVideoMixer : public OpalBaseMixer
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class OpalMixerConnection;
-class OpalMixerNode;
-
 
 struct OpalMixerNodeInfo
 {
@@ -400,6 +397,121 @@ struct OpalMixerNodeInfo
 #endif
 };
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+class OpalMixerNode;
+
+
+/** Mixer node manager.
+    This class is a collection of OpalMixerNodes.
+	It provides access to nodes by GUID or name.
+  */
+class OpalMixerNodeManager : public PObject
+{
+    PCLASSINFO(OpalMixerNodeManager, PObject);
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new mixer node manager.
+     */
+    OpalMixerNodeManager();
+
+    /**Destroy all mixer nodes.
+       Calls ShutDown.
+     */
+	virtual ~OpalMixerNodeManager();
+
+    /**Shuts down, removes and destroys all mixer nodes.
+      */
+    virtual void ShutDown();
+
+    /** Execute garbage collection of nodes.
+        Returns PTrue if all garbage has been collected.
+        Default behaviour deletes the objects that have been
+		removed from the m_nodesByUID list.
+      */
+    virtual PBoolean GarbageCollection();
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Create a new node.
+       This should create the new instance of the OpalMixerNode as required
+       by the derived class, if any.
+       The info variable should be created on the heap and it is subsequently
+       owned by the node. NULL can be passed if defaults are to be used.
+      */
+    virtual OpalMixerNode * CreateNode(
+      OpalMixerNodeInfo * info ///< Initial info for node
+    );
+
+	/**Add a new node.
+       The info variable should be created on the heap and it is subsequently
+       owned by the node. NULL can be passed if defaults are to be used.
+	   Calls CreateNode.
+      */
+    virtual PSafePtr<OpalMixerNode> AddNode(
+      OpalMixerNodeInfo * info ///< Initial info for node
+    );
+
+    /**Add an existing node.
+      */
+    void AddNode(OpalMixerNode * node);
+
+    /**Get the first node.
+       The active nodes may be enumerated by the ++ operator on the PSafePtr.
+      */
+    PSafePtr<OpalMixerNode> GetFirstNode(
+      PSafetyMode mode = PSafeReference ///< Lock mode for returned pointer
+    ) const { return PSafePtr<OpalMixerNode>(m_nodesByUID, mode); }
+
+    /**Find a new node.
+       This will search for the mixer node using GUID and then name.
+      */
+    virtual PSafePtr<OpalMixerNode> FindNode(
+      const PString & name,             ///< GUID or alias name for node
+      PSafetyMode mode = PSafeReference ///< Lock mode for returned pointer
+    );
+
+    /**Remove a node.
+       Shut down all active connections with node, remove its name 
+	   associations and delete it.
+      */
+    virtual void RemoveNode(
+      OpalMixerNode & node
+    );
+
+    /**Add node name to association list.
+      */
+    void AddNodeName(
+      PString name,        ///< alias name for node
+      OpalMixerNode * node ///< node associated with name
+    );
+
+    /**Remove node's name from association list.
+      */
+    void RemoveNodeName(
+      PString name        ///< alias name for node
+    );
+
+    /**Remove list of node names from association list.
+       Commonly used when node destroyed.
+      */
+    void RemoveNodeNames(
+      PStringList names   ///< list of alias names for nodes
+    );
+  //@}
+
+  protected:
+    PSafeDictionary<PGloballyUniqueID, OpalMixerNode> m_nodesByUID;
+    PDictionary<PString, OpalMixerNode>               m_nodesByName;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class OpalMixerConnection;
 
 /** Mixer EndPoint.
     This class represents an endpoint that mixes media. It can be used as the
@@ -510,10 +622,14 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
       unsigned options,
       OpalConnection::StringOptions * stringOptions
     );
+  //@}
 
+  /**@name Mixer Operations */
+  //@{
     /**Add a new node.
        The info variable should be created on the heap and it is subsequently
        owned by the node. NULL can be passed if defaults are to be used.
+	   Calls CreateNode.
       */
     PSafePtr<OpalMixerNode> AddNode(
       OpalMixerNodeInfo * info ///< Initial info for node
@@ -522,19 +638,14 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
     /**Create a new node.
        This should create the new instance of the OpalMixerNode as required
        by the derived class, if any.
+       The info variable should be created on the heap and it is subsequently
+       owned by the node. NULL can be passed if defaults are to be used.
       */
     virtual OpalMixerNode * CreateNode(
       OpalMixerNodeInfo * info ///< Initial info for node
     );
 
-    /**Get the first node.
-       The active nodes may be enumerated by the ++ operator on the PSafePtr.
-      */
-    PSafePtr<OpalMixerNode> GetFirstNode(
-      PSafetyMode mode = PSafeReference ///< Lock mode for returned pointer
-    ) const { return PSafePtr<OpalMixerNode>(m_nodesByUID, mode); }
-
-    /**Find a new node.
+    /**Find an existing node.
        This will search for the mixer node using GUID and then name.
       */
     PSafePtr<OpalMixerNode> FindNode(
@@ -543,7 +654,8 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
     );
 
     /**Remove a node.
-       Shut down all active connections with node, and delete it.
+       Shut down all active connections with node, remove its name 
+	   associations and delete it.
       */
     void RemoveNode(
       OpalMixerNode & node ///< Initial info for node
@@ -587,11 +699,7 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
 
   protected:
     OpalMixerNodeInfo * m_adHocNodeInfo;
-
-    PSafeDictionary<PGloballyUniqueID, OpalMixerNode> m_nodesByUID;
-    PDictionary<PString, OpalMixerNode>               m_nodesByName;
-
-  friend class OpalMixerNode;
+    OpalMixerNodeManager m_nodeManager;
 };
 
 
@@ -709,7 +817,7 @@ class OpalMixerMediaStream : public OpalMediaStream
     /**Construct a new media stream for mixer.
       */
     OpalMixerMediaStream(
-      OpalMixerConnection & conn,          ///<  Connection for media stream
+      OpalConnection & conn,               ///<  Connection for media stream
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       bool isSource,                       ///<  Is a source stream
@@ -786,7 +894,7 @@ class OpalMixerNode : public PSafeObject
     /**Create a new node.
      */
     OpalMixerNode(
-      OpalMixerEndPoint & endpoint,   ///< Endpoint that owns this node
+      OpalMixerNodeManager & manager, ///< Manager for this node
       OpalMixerNodeInfo * info        ///< Configuration information
     );
 
@@ -817,13 +925,13 @@ class OpalMixerNode : public PSafeObject
     /**Attach a connection.
       */
     void AttachConnection(
-      OpalMixerConnection * connection  ///< Connection to attach
+      OpalConnection * connection  ///< Connection to attach
     );
 
     /**Detach a connection.
       */
     void DetachConnection(
-      OpalMixerConnection * connection  ///< Connection to detach
+      OpalConnection * connection  ///< Connection to detach
     );
 
     /**Attach a stream for output.
@@ -886,9 +994,9 @@ class OpalMixerNode : public PSafeObject
 
     /**Get first connection in the connections list.
       */
-    PSafePtr<OpalMixerConnection> GetFirstConnection(
+    PSafePtr<OpalConnection> GetFirstConnection(
       PSafetyMode mode = PSafeReference
-    ) const { return PSafePtr<OpalMixerConnection>(m_connections, mode); }
+    ) const { return PSafePtr<OpalConnection>(m_connections, mode); }
 
     /**Get the raw audio accumulation buffer.
      */
@@ -900,13 +1008,13 @@ class OpalMixerNode : public PSafeObject
   //@}
 
   protected:
-    OpalMixerEndPoint & m_endpoint;
+    OpalMixerNodeManager & m_manager;
     PGloballyUniqueID   m_guid;
     PStringList         m_names;
     OpalMixerNodeInfo * m_info;
     PTime               m_creationTime;
 
-    PSafeList<OpalMixerConnection> m_connections;
+    PSafeList<OpalConnection> m_connections;
 
     struct MediaMixer
     {
