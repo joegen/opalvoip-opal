@@ -770,6 +770,12 @@ PBoolean OpalManager::OnOpenMediaStream(OpalConnection & PTRACE_PARAM(connection
 }
 
 
+RTP_UDP * OpalManager::CreateRTPSession (const RTP_Session::Params & params)
+{
+  return new RTP_UDP(params);
+}
+
+
 void OpalManager::OnRTPStatistics(const OpalConnection & connection, const RTP_Session & session)
 {
   connection.GetCall().OnRTPStatistics(connection, session);
