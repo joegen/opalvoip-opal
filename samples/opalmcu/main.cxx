@@ -430,7 +430,7 @@ void MyMixerEndPoint::CmdConfAdd(PCLI::Arguments & args, INT)
   }
 
   for (PINDEX i = 0; i < args.GetCount(); ++i) {
-    if (m_nodesByName.Contains(args[i])) {
+    if (m_nodeManager.FindNode(args[i]) != NULL) {
       args.WriteError() << "Conference name \"" << args[i] << "\" already exists." << endl;
       return;
     }
@@ -458,7 +458,7 @@ void MyMixerEndPoint::CmdConfAdd(PCLI::Arguments & args, INT)
 void MyMixerEndPoint::CmdConfList(PCLI::Arguments & args, INT)
 {
   ostream & out = args.GetContext();
-  for (PSafePtr<OpalMixerNode> node(m_nodesByUID, PSafeReadOnly); node != NULL; ++node)
+  for (PSafePtr<OpalMixerNode> node = m_nodeManager.GetFirstNode(PSafeReadOnly); node != NULL; ++node)
     out << *node << '\n';
   out.flush();
 }
@@ -498,7 +498,7 @@ void MyMixerEndPoint::CmdConfListen(PCLI::Arguments & args, INT)
   if (!CmdConfXXX(args, node, 2))
     return;
 
-  for (PSafePtr<OpalMixerConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection) {
+  for (PSafePtr<OpalConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection) {
     if (connection->GetCall().GetPartyB().NumCompare("pc:") == EqualTo) {
       connection->Release();
       args.GetContext() << "Stopped listening to conference " << *node << endl;
@@ -521,7 +521,7 @@ void MyMixerEndPoint::CmdConfRecord(PCLI::Arguments & args, INT)
   if (!CmdConfXXX(args, node, 2))
     return;
 
-  for (PSafePtr<OpalMixerConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection) {
+  for (PSafePtr<OpalConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection) {
     if (connection->GetCall().GetPartyB().NumCompare("ivr:") == EqualTo)
       connection->Release();
   }
@@ -599,7 +599,7 @@ void MyMixerEndPoint::CmdMemberList(PCLI::Arguments & args, INT)
     return;
 
   ostream & out = args.GetContext();
-  for (PSafePtr<OpalMixerConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection)
+  for (PSafePtr<OpalConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection)
     out << connection->GetToken() << ' '
         << connection->GetRemotePartyURL() << " \""
         << connection->GetRemotePartyName() << '"' << '\n';
@@ -623,7 +623,7 @@ void MyMixerEndPoint::CmdMemberRemove(PCLI::Arguments & args, INT)
     return;
 
   PCaselessString name = args[1];
-  for (PSafePtr<OpalMixerConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection) {
+  for (PSafePtr<OpalConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection) {
     if (name == connection->GetRemotePartyName()) {
       connection->ClearCall();
       args.GetContext() << "Removed member using name \"" << name << '"' << endl;
