@@ -39,6 +39,8 @@
 #include <opal/mediatype.h>
 #include <opal/rtpconn.h>
 #include <opal/call.h>
+#include <opal/endpoint.h>
+#include <opal/manager.h>
 
 #if OPAL_H323
 #include <h323/channels.h>
@@ -141,7 +143,7 @@ OpalMediaSession * OpalMediaTypeDefinition::CreateMediaSession(OpalConnection & 
 }
 
 
-RTP_UDP * OpalMediaTypeDefinition::CreateRTPSession(OpalRTPConnection & /*connection*/,
+RTP_UDP * OpalMediaTypeDefinition::CreateRTPSession(OpalRTPConnection & connection,
                                                     unsigned sessionID,
                                                     bool remoteIsNAT)
 {
@@ -151,7 +153,7 @@ RTP_UDP * OpalMediaTypeDefinition::CreateRTPSession(OpalRTPConnection & /*connec
   params.isAudio = m_mediaType == OpalMediaType::Audio();
   params.remoteIsNAT = remoteIsNAT;
 
-  return new RTP_UDP(params);
+  return connection.GetEndPoint().GetManager().CreateRTPSession(params);
 }
 
 
