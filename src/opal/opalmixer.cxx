@@ -143,7 +143,7 @@ bool OpalBaseMixer::AddStream(const Key_T & key)
     return false;
 
   m_inputStreams[key] = CreateStream();
-  PTRACE(4, "Mixer\tAdded stream at key " << key);
+  PTRACE(4, "Mixer\tAdded input stream at key " << key);
 
   StartPushThread();
   return true;
@@ -241,9 +241,12 @@ void OpalBaseMixer::StopPushThread(bool lock)
 
 void OpalBaseMixer::PushThreadMain()
 {
+  PTRACE(4, "Mixer\tPushThread start " << m_periodMS << " ms");
   PAdaptiveDelay delay;
   while (m_threadRunning && OnPush())
     delay.Delay(m_periodMS);
+
+  PTRACE(4, "Mixer\tPushThread end");
 }
 
 
@@ -353,13 +356,17 @@ bool OpalAudioMixer::SetJitterBufferSize(const Key_T & key, unsigned minJitterDe
     if (minJitterDelay != 0 && maxJitterDelay != 0)
       jitter->SetDelay(minJitterDelay, maxJitterDelay);
     else {
+      PTRACE(4, "AudioMix\tJitter buffer disabled");
       delete jitter;
       jitter = NULL;
     }
   }
   else {
     if (minJitterDelay != 0 && maxJitterDelay != 0)
+	{
+      PTRACE(4, "AudioMix\tJitter buffer enabled");
       jitter = new OpalJitterBuffer(minJitterDelay, maxJitterDelay, m_sampleRate/1000);
+	}
   }
 
   return true;
@@ -712,7 +719,6 @@ OpalMixerEndPoint::OpalMixerEndPoint(OpalManager & manager, const char * prefix)
   : OpalLocalEndPoint(manager, prefix)
   , m_adHocNodeInfo(NULL)
 {
-  m_nodesByName.DisallowDeleteObjects();
   PTRACE(4, "MixerEP\tConstructed");
 }
 
@@ -720,7 +726,7 @@ OpalMixerEndPoint::OpalMixerEndPoint(OpalManager & manager, const char * prefix)
 OpalMixerEndPoint::~OpalMixerEndPoint()
 {
   delete m_adHocNodeInfo;
-  PTRACE(4, "MixerEP\tDestroyed " << m_nodesByUID.GetSize() << ' ' << m_nodesByName.GetSize());
+  PTRACE(4, "MixerEP\tDestroyed");
 }
 
 
@@ -728,12 +734,7 @@ void OpalMixerEndPoint::ShutDown()
 {
   PTRACE(4, "MixerEP\tShutting down");
 
-  while (!m_nodesByUID.IsEmpty()) {
-    PSafePtr<OpalMixerNode> node = m_nodesByUID.GetAt(0);
-    node->ShutDown();
-    m_nodesByUID.RemoveAt(node->GetGUID());
-  }
-  m_nodesByUID.DeleteObjectsToBeRemoved();
+  m_nodeManager.ShutDown();
 
   OpalLocalEndPoint::ShutDown();
 }
@@ -760,6 +761,7 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
 
   PWaitAndSignal mutex(inUseFlag);
 
+  // Specify mixer node to use after endpoint name (':') and delimit it with ';'
   PINDEX semicolon = party.Find(';');
   PString name = party(party.Find(':')+1, semicolon-1);
   if (name.IsEmpty() || name == "*") {
@@ -800,7 +802,7 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
 PBoolean OpalMixerEndPoint::GarbageCollection()
 {
   // Use bitwise | not boolean || so both get executed
-  return m_nodesByUID.DeleteObjectsToBeRemoved() | OpalEndPoint::GarbageCollection();
+  return m_nodeManager.GarbageCollection() | OpalEndPoint::GarbageCollection();
 }
 
 
@@ -817,10 +819,9 @@ OpalMixerConnection * OpalMixerEndPoint::CreateConnection(PSafePtr<OpalMixerNode
 PSafePtr<OpalMixerNode> OpalMixerEndPoint::AddNode(OpalMixerNodeInfo * info)
 {
   PSafePtr<OpalMixerNode> node(CreateNode(info), PSafeReference);
-  if (node == NULL)
-    delete info;
-  else {
-    m_nodesByUID.SetAt(node->GetGUID(), node);
+  if (node != NULL)
+  {
+	m_nodeManager.AddNode(node);
     PTRACE(3, "MixerEP\tAdded new node, id=" << node->GetGUID());
   }
   return node;
@@ -829,24 +830,19 @@ PSafePtr<OpalMixerNode> OpalMixerEndPoint::AddNode(OpalMixerNodeInfo * info)
 
 OpalMixerNode * OpalMixerEndPoint::CreateNode(OpalMixerNodeInfo * info)
 {
-  return new OpalMixerNode(*this, info);
+  return m_nodeManager.CreateNode(info);
 }
 
 
 PSafePtr<OpalMixerNode> OpalMixerEndPoint::FindNode(const PString & name, PSafetyMode mode)
 {
-  PGloballyUniqueID guid(name);
-  if (!guid.IsNULL())
-    return m_nodesByUID.FindWithLock(guid, mode);
-
-  return PSafePtr<OpalMixerNode>(m_nodesByName.GetAt(name), mode);
+  return m_nodeManager.FindNode(name, mode);
 }
 
 
 void OpalMixerEndPoint::RemoveNode(OpalMixerNode & node)
 {
-  node.ShutDown();
-  m_nodesByUID.RemoveAt(node.GetGUID());
+  m_nodeManager.RemoveNode(node);
 }
 
 
@@ -952,7 +948,7 @@ void OpalMixerConnection::SetListenOnly(bool listenOnly)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalMixerMediaStream::OpalMixerMediaStream(OpalMixerConnection & conn,
+OpalMixerMediaStream::OpalMixerMediaStream(OpalConnection & conn,
                                          const OpalMediaFormat & format,
                                                         unsigned sessionID,
                                                             bool isSource,
@@ -1050,8 +1046,9 @@ PBoolean OpalMixerMediaStream::RequiresPatchThread() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalMixerNode::OpalMixerNode(OpalMixerEndPoint & endpoint, OpalMixerNodeInfo * info)
-  : m_endpoint(endpoint)
+OpalMixerNode::OpalMixerNode(OpalMixerNodeManager & manager,
+                                OpalMixerNodeInfo * info)
+  : m_manager(manager)
   , m_info(info != NULL ? info : new OpalMixerNodeInfo)
   , m_audioMixer(*m_info)
 #if OPAL_VIDEO
@@ -1062,7 +1059,7 @@ OpalMixerNode::OpalMixerNode(OpalMixerEndPoint & endpoint, OpalMixerNodeInfo * i
 
   AddName(m_info->m_name);
 
-  PTRACE(4, "MixerNode\tConstructed " << m_guid);
+  PTRACE(4, "MixerNode\tConstructed " << *this);
 }
 
 
@@ -1071,15 +1068,15 @@ OpalMixerNode::~OpalMixerNode()
   ShutDown(); // Fail safe
 
   delete m_info;
-  PTRACE(4, "MixerNode\tDestroyed " << m_guid);
+  PTRACE(4, "MixerNode\tDestroyed " << *this);
 }
 
 
 void OpalMixerNode::ShutDown()
 {
-  PTRACE(4, "MixerNode\tShutting down " << m_guid);
+  PTRACE(4, "MixerNode\tShutting down " << *this);
 
-  PSafePtr<OpalMixerConnection> connection;
+  PSafePtr<OpalConnection> connection;
   while ((connection = GetFirstConnection()) != NULL)
     connection->Release();
 
@@ -1087,9 +1084,7 @@ void OpalMixerNode::ShutDown()
 #if OPAL_VIDEO
   m_videoMixer.RemoveAllStreams();
 #endif
-
-  for (PStringList::iterator iter = m_names.begin(); iter != m_names.end(); ++iter)
-    m_endpoint.m_nodesByName.RemoveAt(*iter);
+  m_manager.RemoveNodeNames(GetNames());
   m_names.RemoveAll();
 }
 
@@ -1107,13 +1102,13 @@ void OpalMixerNode::AddName(const PString & name)
     return;
 
   if (m_names.GetValuesIndex(name) != P_MAX_INDEX) {
-    PTRACE(4, "MixerNode\tName \"" << name << "\" already added to " << m_guid);
+    PTRACE(4, "MixerNode\tName \"" << name << "\" already added to " << *this);
     return;
   }
 
-  PTRACE(4, "MixerNode\tAdding name \"" << name << "\" to " << m_guid);
+  PTRACE(4, "MixerNode\tAdding name \"" << name << "\" to " << *this);
   m_names.AppendString(name);
-  m_endpoint.m_nodesByName.SetAt(name, this);
+  m_manager.AddNodeName(name, this);
 }
 
 
@@ -1124,23 +1119,23 @@ void OpalMixerNode::RemoveName(const PString & name)
 
   PINDEX index = m_names.GetValuesIndex(name);
   if (index == P_MAX_INDEX) {
-    PTRACE(4, "MixerNode\tName \"" << name << "\" not present in " << m_guid);
+    PTRACE(4, "MixerNode\tName \"" << name << "\" not present in " << *this);
     return;
   }
 
-  PTRACE(4, "MixerNode\tRemoving name \"" << name << "\" from " << m_guid);
+  PTRACE(4, "MixerNode\tRemoving name \"" << name << "\" from " << *this);
   m_names.RemoveAt(index);
-  m_endpoint.m_nodesByName.RemoveAt(name);
+  m_manager.RemoveNodeName(name);
 }
 
 
-void OpalMixerNode::AttachConnection(OpalMixerConnection * connection)
+void OpalMixerNode::AttachConnection(OpalConnection * connection)
 {
   m_connections.Append(connection);
 }
 
 
-void OpalMixerNode::DetachConnection(OpalMixerConnection * connection)
+void OpalMixerNode::DetachConnection(OpalConnection * connection)
 {
   m_connections.Remove(connection);
 }
@@ -1150,7 +1145,7 @@ bool OpalMixerNode::AttachStream(OpalMixerMediaStream * stream)
 {
   PTRACE(4, "MixerNode\tAttaching " << stream->GetMediaFormat()
          << ' ' << (stream->IsSource() ? "source" : "sink")
-         << " stream with id " << stream->GetID() << " to " << m_guid);
+         << " stream with id " << stream->GetID() << " to " << *this);
 
 #if OPAL_VIDEO
   if (stream->GetMediaFormat().GetMediaType() == OpalMediaType::Video()) {
@@ -1177,7 +1172,7 @@ void OpalMixerNode::DetachStream(OpalMixerMediaStream * stream)
 {
   PTRACE(4, "MixerNode\tDetaching " << stream->GetMediaFormat()
          << ' ' << (stream->IsSource() ? "source" : "sink")
-         << " stream with id " << stream->GetID() << " from " << m_guid);
+         << " stream with id " << stream->GetID() << " from " << *this);
 
 #if OPAL_VIDEO
   if (stream->GetMediaFormat().GetMediaType() == OpalMediaType::Video()) {
@@ -1419,3 +1414,101 @@ bool OpalMixerNode::VideoMixer::OnMixed(RTP_DataFrame * & output)
 
 
 //////////////////////////////////////////////////////////////////////////////
+
+
+OpalMixerNodeManager::OpalMixerNodeManager()
+{
+  m_nodesByName.DisallowDeleteObjects();
+}
+
+
+OpalMixerNodeManager::~OpalMixerNodeManager()
+{
+  ShutDown(); // just in case
+}
+
+
+void OpalMixerNodeManager::ShutDown()
+{
+  PTRACE(4, "Mixer\tDestroying " << m_nodesByUID.GetSize() << ' ' << m_nodesByName.GetSize() << " nodes");
+  while (!m_nodesByUID.IsEmpty()) {
+    PSafePtr<OpalMixerNode> node = m_nodesByUID.GetAt(0);
+    node->ShutDown();
+    m_nodesByUID.RemoveAt(node->GetGUID());
+  }
+  GarbageCollection();
+}
+
+
+PBoolean OpalMixerNodeManager::GarbageCollection()
+{
+  return m_nodesByUID.DeleteObjectsToBeRemoved();
+}
+
+
+OpalMixerNode * OpalMixerNodeManager::CreateNode(OpalMixerNodeInfo * info)
+{
+  return new OpalMixerNode(*this, info);
+}
+
+
+PSafePtr<OpalMixerNode> OpalMixerNodeManager::AddNode(OpalMixerNodeInfo * info)
+{
+  PSafePtr<OpalMixerNode> node(CreateNode(info), PSafeReference);
+  if (node == NULL)
+    delete info;
+  else
+    m_nodesByUID.SetAt(node->GetGUID(), node);
+
+  return node;
+}
+
+
+void OpalMixerNodeManager::AddNode(OpalMixerNode * node)
+{
+  if (node != NULL)
+    m_nodesByUID.SetAt(node->GetGUID(), node);
+}
+
+
+PSafePtr<OpalMixerNode> OpalMixerNodeManager::FindNode(const PString & name, PSafetyMode mode)
+{
+  PGloballyUniqueID guid(name);
+  if (!guid.IsNULL())
+    return m_nodesByUID.FindWithLock(guid, mode);
+
+  return PSafePtr<OpalMixerNode>(m_nodesByName.GetAt(name), mode);
+}
+
+
+void OpalMixerNodeManager::RemoveNode(OpalMixerNode & node)
+{
+  node.ShutDown();
+  m_nodesByUID.RemoveAt(node.GetGUID());
+}
+
+
+void OpalMixerNodeManager::AddNodeName(PString name,
+                               OpalMixerNode * node)
+{
+  m_nodesByName.SetAt(name, node);
+}
+
+
+void OpalMixerNodeManager::RemoveNodeName(PString name)
+{
+  m_nodesByName.RemoveAt(name);
+}
+
+
+void OpalMixerNodeManager::RemoveNodeNames(PStringList names)
+{
+  PStringList::iterator iter = names.begin();
+  while (iter != names.end())
+    m_nodesByName.RemoveAt(*iter++);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+
