@@ -34,7 +34,9 @@ COMMONDIR	=../common
 PLUGINDIR	=../../
 OBJDIR 		=./obj
 
+ifneq ($(wildcard ../../../opal_defs.mak),)
 include 	../../../opal_defs.mak
+endif
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@ $(PTLIB_CFLAGS)
