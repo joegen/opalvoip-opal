@@ -1065,12 +1065,14 @@ class SIPSubscribe : public SIPTransaction
       Params(const Params & param)
         : SIPParameters(param)
         , m_eventPackage(param.m_eventPackage)
+        , m_contentType(param.m_contentType)
         , m_agentAddress(m_remoteAddress)
         , m_onSubcribeStatus(param.m_onSubcribeStatus)
         , m_onNotify(param.m_onNotify)
       { }
 
       EventPackage m_eventPackage;
+      PString      m_contentType;
       PString    & m_agentAddress; // For backward compatibility
 
       PNotifierTemplate<const SubscriptionStatus &> m_onSubcribeStatus;
