@@ -464,9 +464,10 @@ struct SIPPresenceInfo
     Worship
   };
 
-  SIPPresenceInfo() : m_basic(Unknown) { }
+  SIPPresenceInfo();
 
   // basic presence defined by RFC 3863
+  PString     m_tupleId;
   PString     m_address;
   PString     m_entity;
   BasicStates m_basic;

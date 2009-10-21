@@ -924,15 +924,8 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
    * An answer can only shorten the expires time.
    */
   SetExpire(response.GetMIME().GetExpires(originalExpire));
-
   SIPHandler::OnReceivedOK(transaction, response);
-
   m_dialog.Update(response);
-
-  response.GetMIME().GetProductInfo(m_productInfo);
-
-  if (GetState() == Unsubscribed)
-    SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
 }
 
 
@@ -952,19 +945,17 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     return request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
   }
 
-  // We received a NOTIFY corresponding to an active SUBSCRIBE
-  // for which we have just unSUBSCRIBEd. That is the final NOTIFY.
-  // We can remove the SUBSCRIBE from the list.
-  PTRACE_IF(3, GetState() != SIPHandler::Subscribed && expire == 0, "SIP\tFinal NOTIFY received");
-
   PString state = request.GetMIME().GetSubscriptionState();
 
   // Check the susbscription state
   if (state.Find("terminated") != P_MAX_INDEX) {
-    PTRACE(3, "SIP\tSubscription is terminated");
+    PTRACE(3, "SIP\tSubscription is terminated, state=" << GetState());
+    request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
     ShutDown();
+    return true;
   }
-  else if (state.Find("active") != P_MAX_INDEX || state.Find("pending") != P_MAX_INDEX) {
+
+  if (state.Find("active") != P_MAX_INDEX || state.Find("pending") != P_MAX_INDEX) {
     PTRACE(3, "SIP\tSubscription is " << state);
     PString expire = SIPMIMEInfo::ExtractFieldParameter(state, "expire");
     if (!expire.IsEmpty())
@@ -1426,6 +1417,16 @@ void SIPPublishHandler::SetBody(const PString & b)
 }
 
 
+static PAtomicInteger DefaultTupleIdentifier;
+
+SIPPresenceInfo::SIPPresenceInfo()
+  : m_tupleId(PString::Printf, "%08X", ++DefaultTupleIdentifier)
+  , m_basic(Unknown)
+  , m_activity(UnknownExtended)
+{
+}
+
+
 void SIPPresenceInfo::PrintOn(ostream & strm) const
 {
   if (m_address.IsEmpty())
@@ -1456,50 +1457,30 @@ void SIPPresenceInfo::PrintOn(ostream & strm) const
 
 PString SIPPresenceInfo::AsXML() const
 {
-  if (m_address.IsEmpty())
+  if (m_address.IsEmpty() || m_tupleId.IsEmpty()) {
+    PTRACE(1, "SIP\tCannot encode Presence XML as no address or no id.");
     return PString::Empty();
-
-  PStringStream xml;
-
-  xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<impp:presence xmlns:impp=\"urn:ietf:params:xml:ns:pidf\" entity=\"";
+  }
 
   PCaselessString entity = m_entity;
   if (entity.IsEmpty()) 
     entity = m_address;
+  if (entity.NumCompare("sip:") != PObject::EqualTo && entity.NumCompare("pres:") != PObject::EqualTo)
+    entity.Splice("pres:", 0);
 
-#if 1
-  if (entity.NumCompare("sip:") == PObject::EqualTo)
-    entity.Delete(0, 4);
-  if (entity.NumCompare("pres:") != PObject::EqualTo)
-    entity = "pres:" + entity;
-#else
-  if (entity.NumCompare("sip:") != PObject::EqualTo)
-    entity = "sip:" + entity;
-#endif
+  PStringStream xml;
 
-  xml << entity;
+  xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+         "<impp:presence xmlns:impp=\"urn:ietf:params:xml:ns:pidf\" entity=\"" << entity << "\">\r\n"
+         "  <impp:tuple id=\"" << m_tupleId << "\">\r\n"
+         "    <impp:status>\r\n"
+         "      <impp:basic>" << (m_basic == Open ? "open" : "closed") << "</impp:basic>\r\n";
+         "    </impp:status>\r\n";
 
-  xml << "\">\r\n"
-    "  <impp:tuple id=\"id_" << OpalGloballyUniqueID() << "\">\r\n";
+  if (!m_note.IsEmpty())
+    xml << "    <impp:note xml:lang=\"en\">" << m_note << "</impp:note>\r\n";
 
-  xml << "    <impp:status>\r\n";
-  switch (m_basic) {
-    case Open :
-      xml << "      <impp:basic>open</impp:basic>\r\n";
-      break;
-
-    case Closed :
-    default:
-      xml << "      <impp:basic>closed</impp:basic>\r\n";
-      break;
-  }
-  xml << "    </impp:status>\r\n"
-
-  //if (!m_note.IsEmpty())
-  //  xml << "    <impp:note xml:lang=\"en\">" << m_note << "</impp:note>\r\n";
-
-  //       "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? m_address : m_contact) << "</contact>\r\n"
+  xml << "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? m_address : m_contact) << "</contact>\r\n"
          "  </impp:tuple>\r\n"
          "</impp:presence>\r\n";
 
