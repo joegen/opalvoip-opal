@@ -1420,7 +1420,7 @@ void SIPPublishHandler::SetBody(const PString & b)
 static PAtomicInteger DefaultTupleIdentifier;
 
 SIPPresenceInfo::SIPPresenceInfo()
-  : m_tupleId(PString::Printf, "%08X", ++DefaultTupleIdentifier)
+  : m_tupleId(PString::Printf, "T%08X", ++DefaultTupleIdentifier)
   , m_basic(Unknown)
   , m_activity(UnknownExtended)
 {
@@ -1471,18 +1471,23 @@ PString SIPPresenceInfo::AsXML() const
   PStringStream xml;
 
   xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-         "<impp:presence xmlns:impp=\"urn:ietf:params:xml:ns:pidf\" entity=\"" << entity << "\">\r\n"
-         "  <impp:tuple id=\"" << m_tupleId << "\">\r\n"
-         "    <impp:status>\r\n"
-         "      <impp:basic>" << (m_basic == Open ? "open" : "closed") << "</impp:basic>\r\n";
-         "    </impp:status>\r\n";
+         "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"" << entity << "\">\r\n"
+         "  <tuple id=\"" << m_tupleId << "\">\r\n"
+         "    <status>\r\n"
+         "      <basic>" << (m_basic == Open ? "open" : "closed") << "</basic>\r\n"
+         "    </status>\r\n";
 
-  if (!m_note.IsEmpty())
-    xml << "    <impp:note xml:lang=\"en\">" << m_note << "</impp:note>\r\n";
+  if (!m_note.IsEmpty()) {
+    PString note = m_note;
+    note.Replace("<", "&lt;");
+    note.Replace(">", "&gt;");
+    note.Replace("&", "&amp;");
+    xml << "    <note xml:lang=\"en\">" << note << "</note>\r\n";
+  }
 
   xml << "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? m_address : m_contact) << "</contact>\r\n"
-         "  </impp:tuple>\r\n"
-         "</impp:presence>\r\n";
+         "  </tuple>\r\n"
+         "</presence>\r\n";
 
   return xml;
 }
