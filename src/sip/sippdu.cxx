@@ -3165,22 +3165,30 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
   SIPURL contact = endpoint.GetLocalURL(trans, toAddress.GetUserName());
   contact.Sanitise(SIPURL::ContactURI);
   mime.SetContact(contact);
+  SetRoute(SIPURL(params.m_agentAddress));
+
   mime.SetExpires(params.m_expire);
 
   if (!sipIfMatch.IsEmpty())
     mime.SetSIPIfMatch(sipIfMatch);
 
   mime.SetEvent(params.m_eventPackage);
-  SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
-  if (packageHandler != NULL) {
-    mime.SetContentType(packageHandler->GetContentType());
-    delete packageHandler;
-  }
 
-  SetRoute(SIPURL(params.m_agentAddress));
-
-  if (!body.IsEmpty())
+  if (!body.IsEmpty()) {
     entityBody = body;
+
+    if (!params.m_contentType.IsEmpty())
+      mime.SetContentType(params.m_contentType);
+    else {
+      SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
+      if (packageHandler == NULL)
+        mime.SetContentType("text/plain");
+      else {
+        mime.SetContentType(packageHandler->GetContentType());
+        delete packageHandler;
+      }
+    }
+  }
 }
 
 

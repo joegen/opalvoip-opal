@@ -1295,6 +1295,7 @@ bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
   params.m_addressOfRecord = info.m_address;
   params.m_expire          = expire;
   params.m_agentAddress    = info.m_presenceAgent;
+  params.m_contentType     = "application/pidf+xml";
 
   PString aor;
   return Publish(params, expire == 0 ? PString::Empty() : info.AsXML(), aor);
