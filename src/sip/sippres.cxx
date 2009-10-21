@@ -414,7 +414,7 @@ void SIPXCAP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCo
   // send presence
   SIPPresenceInfo info;
 
-  info.m_presenceAgent = m_presenceServer.GetAddress().AsString();
+  info.m_presenceAgent = m_presenceServer.AsString();
   info.m_address       = m_aor.AsString();
 
   if (m_localPresence == NoPresence) {
