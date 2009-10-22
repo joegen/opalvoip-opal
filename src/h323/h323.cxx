@@ -4899,15 +4899,22 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
   PStringArray formats = modes[pdu.m_response.GetTag() != H245_RequestModeAck_response::e_willTransmitMostPreferredMode
 									 && modes.GetSize() > 1 ? 1 : 0].Tokenise('\t');
 
+  bool switched = false;
   for (PINDEX i = 0; i < formats.GetSize(); i++) {
     H323Capability * capability = localCapabilities.FindCapability(formats[i]);
     if (PAssertNULL(capability) != NULL) { // Should not occur!
       OpalMediaFormat mediaFormat = capability->GetMediaFormat();
-      if (!ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), 0, mediaFormat)) {
+      if (ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), 0, mediaFormat))
+        switched = true;
+      else {
         PTRACE(2, "H245\tCould not open channel after T.38 mode change: " << *capability);
       }
     }
   }
+
+#if OPAL_FAX
+  OnSwitchedFaxMediaStreams(switched);
+#endif
 }
 
 
