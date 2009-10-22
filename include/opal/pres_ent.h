@@ -166,14 +166,13 @@ class OpalPresentity : public PSafeObject
       NoPresence      = -1,    // remove presence status - not the same as NotAvailable or Away
 
       // basic states (from RFC 3863) - must be same order as SIPPresenceInfo::BasicStates
-      Unknown         = SIPPresenceInfo::Unknown,
-      Available,
-      NotAvailable,
-      Unchanged,
+      Unchanged       = SIPPresenceInfo::Unchanged,
+      Available       = SIPPresenceInfo::Open,
+      NotAvailable    = SIPPresenceInfo::Closed,
 
       // extended states (from RFC 4480) - must be same order as SIPPresenceInfo::ExtendedStates
       ExtendedBase    = 100,
-      UnknownExtended = ExtendedBase + SIPPresenceInfo::UnknownExtended,
+      UnknownExtended = ExtendedBase + SIPPresenceInfo::UnknownActivity,
       Appointment,
       Away,
       Breakfast,

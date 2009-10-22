@@ -1421,8 +1421,8 @@ static PAtomicInteger DefaultTupleIdentifier;
 
 SIPPresenceInfo::SIPPresenceInfo()
   : m_tupleId(PString::Printf, "T%08X", ++DefaultTupleIdentifier)
-  , m_basic(Unknown)
-  , m_activity(UnknownExtended)
+  , m_basic(Unchanged)
+  , m_activity(UnknownActivity)
 {
 }
 
@@ -1447,9 +1447,8 @@ void SIPPresenceInfo::PrintOn(ostream & strm) const
         strm << "Closed";
         break;
 
-      case SIPPresenceInfo::Unknown :
       default:
-        strm << "Unknown";
+        strm << "Unchanged";
     }
   }
 }
@@ -1471,11 +1470,13 @@ PString SIPPresenceInfo::AsXML() const
   PStringStream xml;
 
   xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-         "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"" << entity << "\">\r\n"
+    "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"" << entity << "\">\r\n"
          "  <tuple id=\"" << m_tupleId << "\">\r\n"
-         "    <status>\r\n"
-         "      <basic>" << (m_basic == Open ? "open" : "closed") << "</basic>\r\n"
-         "    </status>\r\n";
+         "    <status>\r\n";
+  if (m_basic != Unchanged)
+    xml << "      <basic>" << (m_basic == Open ? "open" : "closed") << "</basic>\r\n";
+  xml << "    </status>\r\n"
+         "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? m_address : m_contact) << "</contact>\r\n";
 
   if (!m_note.IsEmpty()) {
     PString note = m_note;
@@ -1485,8 +1486,7 @@ PString SIPPresenceInfo::AsXML() const
     xml << "    <note xml:lang=\"en\">" << note << "</note>\r\n";
   }
 
-  xml << "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? m_address : m_contact) << "</contact>\r\n"
-         "  </tuple>\r\n"
+  xml << "  </tuple>\r\n"
          "</presence>\r\n";
 
   return xml;
