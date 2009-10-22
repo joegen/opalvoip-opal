@@ -98,14 +98,16 @@ void SipIM::Main()
     m_manager.SetDefaultUserName(args.GetOptionString('u'));
 
   Mode mode;
-  if (args.HasOption("sipim")) {
-    mode = Use_SIPIM;
-    m_manager.m_imFormat = OpalSIPIM;
-  }
-  else if (args.HasOption("t140")) {
+  if (args.HasOption("t140")) {
     mode = Use_T140;
     m_manager.m_imFormat = OpalT140;
   }
+#if OPAL_HAS_SIPIM
+  else if (args.HasOption("sipim")) {
+    mode = Use_SIPIM;
+    m_manager.m_imFormat = OpalSIPIM;
+  }
+#endif
 #if OPAL_HAS_MSRP
   else if (args.HasOption("msrp")) {
     mode = Use_MSRP;
