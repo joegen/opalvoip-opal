@@ -105,6 +105,12 @@
 
 #undef  OPAL_PLUGIN_DIR
 
+// Video
+#if P_VIDEO
+  #undef  OPAL_VIDEO
+#endif
+
+
 /////////////////////////////////////////////////
 //
 // Protocol support
@@ -190,11 +196,6 @@
 // G.711 Packet Loss Concealment
 #undef  OPAL_G711PLC
 
-// Video
-#if P_VIDEO
-  #undef  OPAL_VIDEO
-#endif
-
 #if OPAL_VIDEO
   // Uncompressed video over RTP
   #undef  OPAL_RFC4175 
@@ -216,8 +217,8 @@
 
 
 // Instant Messaging
+#undef OPAL_HAS_MSRP
 #if OPAL_SIP
-  #undef OPAL_HAS_MSRP
   #undef OPAL_HAS_SIPIM
 #endif
 #undef OPAL_HAS_RFC4103

@@ -1029,10 +1029,12 @@ bool MyManager::Initialise()
   if (config->Read(DisableH245inSETUPKey, &onoff))
     h323EP->DisableH245inSetup(onoff);
 
+#if OPAL_H239
   value1 = m_ExtendedVideoRoles;
   config->Read(ExtendedVideoRolesKey, &value1);
   m_ExtendedVideoRoles = (ExtendedVideoRoles)value1;
   h323EP->SetDefaultH239Control(config->Read(EnableH239ControlKey, h323EP->GetDefaultH239Control()));
+#endif
 
   config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
   if (m_gatekeeperMode > 0) {
@@ -1589,7 +1591,15 @@ void MyManager::OnStartMessage(wxCommandEvent & /*event*/)
         PString remoteAddress(conn->GetRemotePartyCallbackURL());
         PString localName(conn->GetLocalPartyName());
         PString remoteName(conn->GetRemotePartyName());
-        IMDialog * dialog = new IMDialog(this, callId, OpalMSRP, localName, remoteAddress, remoteName);
+        OpalMediaFormat mediaFormat;
+#if OPAL_HAS_MSRP
+        mediaFormat = OpalMSRP;
+#elif OPAL_HAS_SIPIM
+        mediaFormat = OpalSIPIM;
+#else
+        mediaFormat = OpalT140;
+#endif
+        IMDialog * dialog = new IMDialog(this, callId, mediaFormat, localName, remoteAddress, remoteName);
         conversationMap.insert(ConversationMapType::value_type(callId, dialog));
         dialog->Show();
       }
