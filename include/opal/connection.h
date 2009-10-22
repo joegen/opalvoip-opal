@@ -924,6 +924,14 @@ class OpalConnection : public PSafeObject
     virtual bool SwitchFaxMediaStreams(
       bool enableFax  ///< Enable FAX or return to audio mode
     );
+
+    /**Indicate status of switch to/from FAX mode.
+
+       Default behaviour does nothing.
+      */
+    virtual void OnSwitchedFaxMediaStreams(
+      bool enabledFax  ///< Enabled FAX or audio mode
+    );
 #endif
 
     /**Open source or sink media stream for session.

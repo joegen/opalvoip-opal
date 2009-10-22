@@ -575,6 +575,10 @@ class SIPConnection : public OpalRTPConnection
     PSafeList<SIPTransaction> forkedInvitations; // Not for re-INVITE
     PSafeList<SIPTransaction> pendingInvitations; // For re-INVITE
 
+#if OPAL_FAX
+    bool m_switchingToFaxMode;
+#endif
+
     enum {
       ReleaseWithBYE,
       ReleaseWithCANCEL,
