@@ -418,16 +418,20 @@ void SIPXCAP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCo
   info.m_address       = m_aor.AsString();
 
   if (m_localPresence == NoPresence) {
+    info.m_basic = SIPPresenceInfo::Closed;
     m_endpoint->PublishPresence(info, 0);
     return;
   }
 
   unsigned expire = m_attributes.Get(OpalPresentity::TimeToLiveKey, "30").AsInteger();
 
-  if ((0 <= m_localPresence) && ((int)m_localPresence <= SIPPresenceInfo::Unchanged))
+  if (m_localPresence < SIPPresenceInfo::NumBasicStates)
     info.m_basic = (SIPPresenceInfo::BasicStates)m_localPresence;
   else
-    info.m_basic = SIPPresenceInfo::Unknown;
+    info.m_basic = SIPPresenceInfo::Open;
+
+  if (m_localPresence > ExtendedBase)
+    info.m_activity = (SIPPresenceInfo::Activities)(m_localPresence - ExtendedBase);
 
   info.m_note = m_localPresenceNote;
 
