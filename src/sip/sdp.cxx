@@ -1053,6 +1053,7 @@ bool SDPVideoMediaDescription::PrintOn(ostream & str, const PString & connectStr
   if (!SDPRTPAVPMediaDescription::PrintOn(str, connectString))
     return false;
 
+#if OPAL_VIDEO
   for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
     PINDEX role = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption());
     if (role > 0) {
@@ -1060,6 +1061,7 @@ bool SDPVideoMediaDescription::PrintOn(ostream & str, const PString & connectStr
       break;
     }
   }
+#endif
 
   return true;
 }
@@ -1078,8 +1080,12 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
       if (role > 0)
         break;
     }
+
+#if OPAL_VIDEO
     for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format)
       format->GetWritableMediaFormat().SetOptionEnum(OpalVideoFormat::ContentRoleOption(), role);
+#endif
+
     return;
   }
 

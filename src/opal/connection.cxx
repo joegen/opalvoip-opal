@@ -830,7 +830,9 @@ void OpalConnection::OnStartRecording(OpalMediaPatch * patch)
   }
 
   patch->AddFilter(m_recordAudioNotifier, OPAL_PCM16);
+#if OPAL_VIDEO
   patch->AddFilter(m_recordVideoNotifier, OPAL_YUV420P);
+#endif
 
   PTRACE(4, "OpalCon\tAdded record filter on connection " << *this << ", patch " << *patch);
 }
@@ -844,7 +846,9 @@ void OpalConnection::OnStopRecording(OpalMediaPatch * patch)
   ownerCall.OnStopRecording(MakeRecordingKey(*patch));
 
   patch->RemoveFilter(m_recordAudioNotifier, OPAL_PCM16);
+#if OPAL_VIDEO
   patch->RemoveFilter(m_recordVideoNotifier, OPAL_YUV420P);
+#endif
 
   PTRACE(4, "OpalCon\tRemoved record filter on " << *patch);
 }
@@ -927,11 +931,15 @@ void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT param)
 }
 
 
+#if OPAL_VIDEO
+
 void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, INT param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
   ownerCall.OnRecordVideo(MakeRecordingKey(*patch), frame);
 }
+
+#endif
 
 #endif
 

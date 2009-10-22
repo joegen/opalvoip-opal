@@ -777,11 +777,15 @@ void OpalCall::OnRecordAudio(const PString & streamId, const RTP_DataFrame & fra
 }
 
 
+#if OPAL_VIDEO
+
 void OpalCall::OnRecordVideo(const PString & streamId, const RTP_DataFrame & frame)
 {
   if (m_recordManager != NULL && !m_recordManager->WriteVideo(streamId, frame))
     m_recordManager->CloseStream(streamId);
 }
+
+#endif
 
 #endif
 
