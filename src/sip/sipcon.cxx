@@ -1739,9 +1739,11 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     }
   }
 
-  // All other responses are errors, set Q931 code if available
-  releaseMethod = ReleaseWithNothing;
-  Release(GetCallEndReasonFromResponse(response));
+  if (GetPhase() < EstablishedPhase) {
+    // All other responses are errors, set Q931 code if available
+    releaseMethod = ReleaseWithNothing;
+    Release(GetCallEndReasonFromResponse(response));
+  }
 }
 
 
