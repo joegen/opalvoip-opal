@@ -427,15 +427,15 @@ class SIPHandlersList
   */
 struct SIPPresenceInfo
 {
-  enum BasicStates {
-    Unknown,
-    Open,
+  enum BasicStates { // from RFC 3863
+    Unchanged,
     Closed,
-    Unchanged
+    Open,
+    NumBasicStates
   };
 
-  enum ExtendedStates {
-    UnknownExtended,
+  enum Activities { // from RFC 4480
+    UnknownActivity,
     Appointment,
     Away,
     Breakfast,
@@ -461,7 +461,8 @@ struct SIPPresenceInfo
     TV,
     Vacation,
     Working,
-    Worship
+    Worship,
+    NumActivities
   };
 
   SIPPresenceInfo();
@@ -477,7 +478,7 @@ struct SIPPresenceInfo
 
   // presence extensions defined by RFC 4480
   PStringArray m_activities;  // list of activities, seperated by newline
-  ExtendedStates m_activity;  // primary activity
+  Activities   m_activity;  // primary activity
 
   // presence agent
   PString m_presenceAgent;
