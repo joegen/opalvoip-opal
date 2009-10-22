@@ -45,7 +45,7 @@ STDCCFLAGS += -fPIC @STDCCFLAGS@
 SRCDIR	= .
 OBJDIR	= ./obj
 
-# CXXFLAGS += -DSPANDSP_VER3
+CXXFLAGS += -D__STDC_LIMIT_MACROS
 
 CC		=@CC@
 CXX		=@CXX@
@@ -55,11 +55,10 @@ STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 EXTRALIBS       = -lspandsp -ltiff
 
-SRCS	+= spandsp_fax.cpp spandsp_util/spandsp_if.cpp
+SRCS	+= spandsp_fax.cpp
 
 vpath	%.o $(OBJDIR)
 vpath	%.cpp $(SRCDIR)
-vpath	%.cpp spandsp_util
 
 ifeq ($(VERBOSE),)
 Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
