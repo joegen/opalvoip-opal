@@ -48,6 +48,7 @@ class OpalRecordManager
   public:
     typedef PFactory<OpalRecordManager, PCaselessString> Factory;
 
+#if OPAL_VIDEO
     enum VideoMode {
       eSideBySideLetterbox, /**< Two images side by side with black bars top and bottom.
                                  It is expected that the input frames and output are all
@@ -68,32 +69,42 @@ class OpalRecordManager
       eSeparateStreams,     ///< Unsupported
       NumVideoMixingModes
     };
+#endif
 
     struct Options {
       bool      m_stereo;
       PString   m_audioFormat;
 
+#if OPAL_VIDEO
       VideoMode m_videoMixing;
       PString   m_videoFormat;
       unsigned  m_videoWidth;
       unsigned  m_videoHeight;
       unsigned  m_videoRate;
+#endif
 
       Options(
         bool         stereo = true,
+#if OPAL_VIDEO
         VideoMode    videoMixing = eSideBySideLetterbox,
-        const char * audioFormat = NULL,
+#endif
+        const char * audioFormat = NULL
+#if OPAL_VIDEO
+        ,
         const char * videoFormat = NULL,
         unsigned width = PVideoFrameInfo::CIFWidth,
         unsigned height = PVideoFrameInfo::CIFHeight,
         unsigned rate = 15
+#endif
       ) : m_stereo(stereo)
         , m_audioFormat(audioFormat)
+#if OPAL_VIDEO
         , m_videoMixing(videoMixing)
         , m_videoFormat(videoFormat)
         , m_videoWidth(width)
         , m_videoHeight(height)
         , m_videoRate(rate)
+#endif
       {
       }
     };
@@ -153,12 +164,14 @@ class OpalRecordManager
       const RTP_DataFrame & rtp   ///< RTP data containing PCM-16 data
     ) = 0;
 
+#if OPAL_VIDEO
     /**Write video to the recording file.
       */
     virtual bool WriteVideo(
       const PString & strmId,     ///< Identifier for media stream.
       const RTP_DataFrame & rtp   ///< RTP data containing a YUV420P frame
     ) = 0;
+#endif
 
     /**Get the options for this recording.
       */
