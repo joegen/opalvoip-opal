@@ -236,6 +236,9 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_authentication(NULL)
   , m_authenticatedCseq(0)
   , ackReceived(false)
+#if OPAL_FAX
+  , m_switchingToFaxMode(false)
+#endif
   , releaseMethod(ReleaseWithNothing)
 {
   synchronousOnRelease = false;
@@ -1157,8 +1160,10 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
     return NULL;
   }
 
-  if (!m_handlingINVITE && (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream))
+  if (!m_handlingINVITE && (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream)) {
+    m_switchingToFaxMode = mediaFormat.GetMediaType() == OpalMediaType::Fax();
     SendReINVITE(PTRACE_PARAM("open channel"));
+  }
 
   return newStream;
 }
@@ -1711,16 +1716,25 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       PTRACE(4, "SIP\tHold request failed on " << *this);
       m_holdToRemote = eHoldOff;  // Did not go into hold
       OnHold(false, false);   // Signal the manager that there is no more hold
-      return;
+      break;
 
     case eRetrieveInProgress :
       PTRACE(4, "SIP\tRetrieve request failed on " << *this);
       m_holdToRemote = eHoldOn;  // Did not go out of hold
       OnHold(false, true);   // Signal the manager that hold is still active
-      return;
+      break;
 
     default :
       break;
+  }
+
+  if (GetPhase() == EstablishedPhase) {
+    // Is a re-INVITE if in here, so don't kill the call becuase it failed.
+#if OPAL_FAX
+    if (m_switchingToFaxMode)
+      OnSwitchedFaxMediaStreams(false);
+#endif
+    return;
   }
 
   // We don't always release the connection, eg not till all forked invites have completed
@@ -1739,11 +1753,9 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     }
   }
 
-  if (GetPhase() < EstablishedPhase) {
-    // All other responses are errors, set Q931 code if available
-    releaseMethod = ReleaseWithNothing;
-    Release(GetCallEndReasonFromResponse(response));
-  }
+  // All other responses are errors, set Q931 code if available
+  releaseMethod = ReleaseWithNothing;
+  Release(GetCallEndReasonFromResponse(response));
 }
 
 
@@ -2337,6 +2349,11 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   NotifyDialogState(SIPDialogNotification::Confirmed);
 
   OnReceivedSDP(response);
+
+#if OPAL_FAX
+  if (GetPhase() == EstablishedPhase)
+    OnSwitchedFaxMediaStreams(m_switchingToFaxMode);
+#endif
 
   switch (m_holdToRemote) {
     case eHoldInProgress :

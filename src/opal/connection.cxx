@@ -626,8 +626,15 @@ void OpalConnection::AutoStartMediaStreams(bool force)
 #if OPAL_FAX
 bool OpalConnection::SwitchFaxMediaStreams(bool enableFax)
 {
+  PTRACE(3, "OpalCon\tSwitchFaxMediaStreams to " << (enableFax ? "fax" : "audio") << " on " << *this);
   OpalMediaFormat format = enableFax ? OpalT38 : OpalG711uLaw;
   return ownerCall.OpenSourceMediaStreams(*this, format.GetMediaType(), 1, format);
+}
+
+
+void OpalConnection::OnSwitchedFaxMediaStreams(bool PTRACE_PARAM(enabledFax))
+{
+  PTRACE(3, "OpalCon\tOnSwitchedFaxMediaStreams to " << (enabledFax ? "fax" : "audio") << " on " << *this);
 }
 #endif
 
