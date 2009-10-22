@@ -539,12 +539,14 @@ class OpalCall : public PSafeObject
       const RTP_DataFrame & frame     ///< Media data
     );
 
+#if OPAL_VIDEO
     /** Call back for having a frame of video to record.
       */
     virtual void OnRecordVideo(
       const PString & streamId,       ///< Unique ID for stream within call
       const RTP_DataFrame & frame     ///< Media data
     );
+#endif
 #endif // OPAL_HAS_MIXER
 
   protected:
