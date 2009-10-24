@@ -32,7 +32,7 @@ not supported.
 
 Note, this will automatically try and download libtiff, another open source
 library for TIFF file operations. Thus the first time you build it you should
-be connected to teh Internet so the download can proceed.
+be connected to the Internet so the download can proceed.
 
 Then copy the following two files from:
 	 opal/plugins/Release/SpanDSPFax_pwplugin.dll
@@ -40,6 +40,10 @@ Then copy the following two files from:
 
 to C:\PTLib_Plugins, or wherever you have set the PTPLUGINDIR environment
 variable. It should work in the smae directory as your application as well.
+
+Additional note: If with Visual Studio 2008 you get errors building libtiff,
+you may need to edit tiff-3.8.2\libtiff\tiffconf.h and disable JPEG_SUPPORT,
+LZW_SUPPORT, PIXARLOG_SUPPORT and ZIP_SUPPORT.
 
 
 Building on Linux
