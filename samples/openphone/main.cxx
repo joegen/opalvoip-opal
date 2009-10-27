@@ -752,11 +752,11 @@ bool MyManager::Initialise()
   config->Read(AutoAnswerKey, &m_autoAnswer);
 
   OpalProductInfo productInfo = GetProductInfo();
-  if (config->Read(VendorNameKey, &str) && !str.IsEmpty())
+  if (config->Read(VendorNameKey, &str))
     productInfo.vendor = str.p_str();
   if (config->Read(ProductNameKey, &str) && !str.IsEmpty())
     productInfo.name = str.p_str();
-  if (config->Read(ProductVersionKey, &str) && !str.IsEmpty())
+  if (config->Read(ProductVersionKey, &str))
     productInfo.version = str.p_str();
   SetProductInfo(productInfo);
 
@@ -1071,7 +1071,7 @@ bool MyManager::Initialise()
   if (m_SIPProxyUsed)
     sipEP->SetProxy(hostname, username, password);
 
-  if (config->Read(LineAppearanceCodeKey, value1))
+  if (config->Read(LineAppearanceCodeKey, &value1))
     sipEP->SetDefaultAppearanceCode(value1);
 
   if (config->Read(RegistrarTimeToLiveKey, &value1))
