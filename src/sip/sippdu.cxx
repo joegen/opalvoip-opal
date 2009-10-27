@@ -1633,7 +1633,7 @@ void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via)
                     dialog.GetRemoteURI().AsQuotedString(),
                     dialog.GetLocalURI().AsQuotedString(),
                     dialog.GetCallID(),
-                    dialog.GetNextCSeq(),
+                    dialog.GetNextCSeq(dialog.IsEstablished() && m_method != Method_ACK ? 1 : 0),
                     via);
   SetRoute(dialog.GetRouteSet());
   m_usePeerTransportAddress = dialog.UsePeerTransportAddress();
@@ -2868,7 +2868,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, const OpalRTPSessionManager & s
   : SIPTransaction(Method_INVITE, connection)
   , m_rtpSessions(sm)
 {
-  m_mime.SetDate(); // now
+  //m_mime.SetDate(); // now
   SetAllow(m_endpoint.GetAllowedMethods());
 
   connection.OnCreatingINVITE(*this);
