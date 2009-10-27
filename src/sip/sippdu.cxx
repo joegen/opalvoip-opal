@@ -454,19 +454,23 @@ PString SIPURL::GetDisplayName (PBoolean useDefault) const
 
 OpalTransportAddress SIPURL::GetHostAddress() const
 {
-  PString addr;
+  if (IsEmpty())
+    return PString::Empty();
+
+  PStringStream addr;
+
   if (scheme *= "sips")
-    addr = "tcps$";
+    addr << "tcps$";
   else
-    addr  = paramVars("transport", "udp") + '$';
+    addr << paramVars("transport", "udp") << '$';
 
   if (paramVars.Contains("maddr"))
-    addr += paramVars["maddr"];
+    addr << paramVars["maddr"];
   else
-    addr += hostname;
+    addr << hostname;
 
   if (port > 0)
-    addr.sprintf(":%u", port);
+    addr << ':' << port;
 
   return addr;
 }
