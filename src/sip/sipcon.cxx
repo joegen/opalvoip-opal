@@ -279,7 +279,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (proxy.IsEmpty())
     proxy = endpoint.GetProxy();
 
-  m_dialog.UpdateRouteSet(proxy); // Default routeSet if there is a proxy
+  m_dialog.SetProxy(proxy, false); // No default routeSet if there is a proxy for INVITE
   
   forkedInvitations.DisallowDeleteObjects();
   pendingInvitations.DisallowDeleteObjects();
@@ -353,7 +353,7 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithBYE :
       // create BYE now & delete it later to prevent memory access errors
-      byeTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE);
+      byeTransaction = new SIPTransaction(SIP_PDU::Method_BYE, *this);
       for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
         /* If we never even received a "100 Trying" from a remote, then just abort
            the transaction, do not wait, it is probably on an interface that the
@@ -444,7 +444,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
   if (call == NULL) {
-    referTransaction = new SIPRefer(*this, *transport, remoteParty, localPartyURL);
+    referTransaction = new SIPRefer(*this, remoteParty, localPartyURL);
     return referTransaction->Start();
   }
 
@@ -456,7 +456,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
               << "?Replaces="     << PURL::TranslateString(sip->GetDialog().GetCallID(),    PURL::QueryTranslation)
               << "%3Bto-tag%3D"   << PURL::TranslateString(sip->GetDialog().GetLocalTag(),  PURL::QueryTranslation) // "to/from" is from the other sides perspective
               << "%3Bfrom-tag%3D" << PURL::TranslateString(sip->GetDialog().GetRemoteTag(), PURL::QueryTranslation);
-      referTransaction = new SIPRefer(*this, *transport, referTo, endpoint.GetLocalURL(*transport, GetLocalPartyName()));
+      referTransaction = new SIPRefer(*this, referTo, endpoint.GetLocalURL(*transport, GetLocalPartyName()));
       referTransaction->GetMIME().SetAt("Refer-Sub", "false"); // Use RFC4488 to indicate we are NOT doing NOTIFYs
       referTransaction->GetMIME().SetAt("Supported", "replaces");
       return referTransaction->Start();
@@ -1186,7 +1186,7 @@ bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
 
   m_needReINVITE = true;
 
-  SIPTransaction * invite = new SIPInvite(*this, *transport, m_rtpSessions);
+  SIPTransaction * invite = new SIPInvite(*this, m_rtpSessions);
 
   // To avoid overlapping INVITE transactions, we place the new transaction
   // in a queue, if queue is empty we can start immediately, otherwise
@@ -1211,18 +1211,18 @@ void SIPConnection::StartPendingReINVITE()
 }
 
 
-PBoolean SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
+PBoolean SIPConnection::WriteINVITE(OpalTransport &, void * param)
 {
-  return ((SIPConnection *)param)->WriteINVITE(transport);
+  return ((SIPConnection *)param)->WriteINVITE();
 }
 
 
-bool SIPConnection::WriteINVITE(OpalTransport & transport)
+bool SIPConnection::WriteINVITE()
 {
   const SIPURL & requestURI = m_dialog.GetRequestURI();
   SIPURL myAddress = m_connStringOptions(OPAL_OPT_CALLING_PARTY_URL);
   if (myAddress.IsEmpty())
-    myAddress = endpoint.GetRegisteredPartyName(requestURI, transport);
+    myAddress = endpoint.GetRegisteredPartyName(requestURI, *transport);
 
   PString transportProtocol = requestURI.GetParamVars()("transport");
   if (!transportProtocol.IsEmpty())
@@ -1252,7 +1252,7 @@ bool SIPConnection::WriteINVITE(OpalTransport & transport)
   NotifyDialogState(SIPDialogNotification::Trying);
 
   m_needReINVITE = false;
-  SIPTransaction * invite = new SIPInvite(*this, transport, OpalRTPSessionManager(*this));
+  SIPTransaction * invite = new SIPInvite(*this, OpalRTPSessionManager(*this));
 
   SIPURL contact = invite->GetMIME().GetContact();
   if (!number.IsEmpty())
@@ -1315,7 +1315,7 @@ PBoolean SIPConnection::SetUpConnection()
 
   bool ok;
   if (!transport->GetInterface().IsEmpty())
-    ok = WriteINVITE(*transport);
+    ok = WriteINVITE();
   else {
     PWaitAndSignal mutex(transport->GetWriteMutex());
     ok = transport->WriteConnect(WriteINVITE, this);
@@ -2103,7 +2103,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 
   // send NOTIFY if transfer failed, but only if allowed by RFC4488
   if (referSub) {
-    SIPReferNotify * notify = new SIPReferNotify(*this, *transport, ok ? SIP_PDU::Successful_OK : SIP_PDU::GlobalFailure_Decline);
+    SIPReferNotify * notify = new SIPReferNotify(*this, ok ? SIP_PDU::Successful_OK : SIP_PDU::GlobalFailure_Decline);
     notify->Start();
   }
 }
@@ -2291,7 +2291,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   m_dialog.GetNextCSeq();
 
   transport->SetInterface(transaction.GetInterface());
-  SIPTransaction * invite = new SIPInvite(*this, *transport, ((SIPInvite &)transaction).GetSessionManager());
+  SIPTransaction * invite = new SIPInvite(*this, ((SIPInvite &)transaction).GetSessionManager());
 
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.
@@ -2695,7 +2695,7 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
     case SendUserInputAsTone:
     case SendUserInputAsString:
       {
-        PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_INFO);
+        PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(SIP_PDU::Method_INFO, *this);
         SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
         PStringStream str;
         if (mode == SendUserInputAsTone) {
@@ -2742,7 +2742,7 @@ bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_I
   PTRACE(3, "SIP\tSending MESSAGE within call");
 
   // else send as MESSAGE
-  PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_MESSAGE);
+  PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(SIP_PDU::Method_MESSAGE, *this);
   SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
   mimeInfo.SetContentType("text/plain");
   infoTransaction->GetEntityBody() = PString((const char *)(const BYTE *)body.GetPayloadPtr(), body.GetPayloadSize());
@@ -2761,7 +2761,7 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     PTRACE(3, "SIP\tSending PictureFastUpdate");
-    PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_INFO);
+    PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(SIP_PDU::Method_INFO, *this);
     SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
     mimeInfo.SetContentType(ApplicationMediaControlXMLKey);
     PStringStream str;
