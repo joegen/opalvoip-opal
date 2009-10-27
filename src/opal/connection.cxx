@@ -240,7 +240,9 @@ OpalConnection::OpalConnection(OpalCall & call,
 #endif
 #if OPAL_HAS_MIXER
   , m_recordAudioNotifier(PCREATE_NOTIFIER(OnRecordAudio))
+#if OPAL_VIDEO
   , m_recordVideoNotifier(PCREATE_NOTIFIER(OnRecordVideo))
+#endif
 #endif
 #ifdef _MSC_VER
 #pragma warning(default:4355)
