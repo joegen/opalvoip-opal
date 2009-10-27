@@ -408,6 +408,8 @@ endif
 
 ifeq ($(OPAL_AEC), yes)
 
+SOURCES		+= $(OPAL_SRCDIR)/codec/echocancel.cxx
+
 ifeq ($(SPEEXDSP_SYSTEM), no)
 
 SPEEXDSP_SRCDIR    = $(OPAL_SRCDIR)/codec/speex/libspeex
@@ -415,8 +417,7 @@ SPEEXDSP_SRCDIR    = $(OPAL_SRCDIR)/codec/speex/libspeex
 VPATH_C         += $(SPEEXDSP_SRCDIR)
 VPATH_CXX       += $(SPEEXDSP_SRCDIR)
 
-SOURCES         += $(OPAL_SRCDIR)/codec/echocancel.cxx \
-		   $(SPEEXDSP_SRCDIR)/speex_preprocess.c \
+SOURCES         += $(SPEEXDSP_SRCDIR)/speex_preprocess.c \
 		   $(SPEEXDSP_SRCDIR)/smallft.c \
                    $(SPEEXDSP_SRCDIR)/misc.c \
                    $(SPEEXDSP_SRCDIR)/mdf.c \
