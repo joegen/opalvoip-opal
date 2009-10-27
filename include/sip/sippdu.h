@@ -55,6 +55,7 @@ class SIPEndPoint;
 class SIPConnection;
 class SIP_PDU;
 class SIPSubscribeHandler;
+class SIPDialogContext;
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -551,25 +552,8 @@ class SIP_PDU : public PSafeObject
       MaxSize = 65535
     };
 
-    SIP_PDU();
-
-    /** Construct a Request message
-     */
     SIP_PDU(
-      Methods method,
-      const SIPURL & dest,
-      const PString & to,
-      const PString & from,
-      const PString & callID,
-      unsigned cseq,
-      const OpalTransportAddress & via
-    );
-    /** Construct a Request message for requests in a dialog
-     */
-    SIP_PDU(
-      Methods method,
-      SIPConnection & connection,
-      const OpalTransport & transport
+      Methods method = SIP_PDU::NumMethods
     );
 
     /** Construct a Response message
@@ -582,6 +566,7 @@ class SIP_PDU : public PSafeObject
       const char * extra = NULL,
       const SDPSessionDescription * sdp = NULL
     );
+
     SIP_PDU(const SIP_PDU &);
     SIP_PDU & operator=(const SIP_PDU &);
     ~SIP_PDU();
@@ -590,20 +575,19 @@ class SIP_PDU : public PSafeObject
       ostream & strm
     ) const;
 
-    void Construct(
-      Methods method
-    );
-    void Construct(
-      Methods method,
+    void InitialiseHeaders(
       const SIPURL & dest,
-      const PString & to,
-      const PString & from,
+      const SIPURL & to,
+      const SIPURL & from,
       const PString & callID,
       unsigned cseq,
-      const OpalTransportAddress & via
+      const PString & via
     );
-    void Construct(
-      Methods method,
+    void InitialiseHeaders(
+      SIPDialogContext & dialog,
+      const PString & via = PString::Empty()
+    );
+    void InitialiseHeaders(
       SIPConnection & connection,
       const OpalTransport & transport
     );
@@ -622,7 +606,13 @@ class SIP_PDU : public PSafeObject
     /**Update the VIA field following RFC3261, 18.2.1 and RFC3581.
       */
     void AdjustVia(OpalTransport & transport);
-    
+
+    PString CreateVia(
+      SIPEndPoint & endpoint,
+      const OpalTransport & transport,
+      SIPConnection * connection = NULL
+    );
+
     /**Read PDU from the specified transport.
       */
     PBoolean Read(
@@ -659,35 +649,35 @@ class SIP_PDU : public PSafeObject
 
     PString GetTransactionID() const;
 
-    Methods GetMethod() const                { return method; }
-    StatusCodes GetStatusCode () const       { return statusCode; }
-    void SetStatusCode (StatusCodes c)       { statusCode = c; }
-    const SIPURL & GetURI() const            { return uri; }
-    unsigned GetVersionMajor() const         { return versionMajor; }
-    unsigned GetVersionMinor() const         { return versionMinor; }
-    const PString & GetEntityBody() const    { return entityBody; }
-          PString & GetEntityBody()          { return entityBody; }
-    const PString & GetInfo() const          { return info; }
-          PString & GetInfo()                { return info; }
-    const SIPMIMEInfo & GetMIME() const      { return mime; }
-          SIPMIMEInfo & GetMIME()            { return mime; }
-    void SetURI(const SIPURL & newuri)       { uri = newuri; }
+    Methods GetMethod() const                { return m_method; }
+    StatusCodes GetStatusCode () const       { return m_statusCode; }
+    void SetStatusCode (StatusCodes c)       { m_statusCode = c; }
+    const SIPURL & GetURI() const            { return m_uri; }
+    unsigned GetVersionMajor() const         { return m_versionMajor; }
+    unsigned GetVersionMinor() const         { return m_versionMinor; }
+    const PString & GetEntityBody() const    { return m_entityBody; }
+          PString & GetEntityBody()          { return m_entityBody; }
+    const PString & GetInfo() const          { return m_info; }
+          PString & GetInfo()                { return m_info; }
+    const SIPMIMEInfo & GetMIME() const      { return m_mime; }
+          SIPMIMEInfo & GetMIME()            { return m_mime; }
+    void SetURI(const SIPURL & newuri)       { m_uri = newuri; }
     SDPSessionDescription * GetSDP();
     void SetSDP(SDPSessionDescription * sdp);
 
   protected:
-    Methods     method;                 // Request type, ==NumMethods for Response
-    StatusCodes statusCode;
-    SIPURL      uri;                    // display name & URI, no tag
-    unsigned    versionMajor;
-    unsigned    versionMinor;
-    PString     info;
-    SIPMIMEInfo mime;
-    PString     entityBody;
+    Methods     m_method;                 // Request type, ==NumMethods for Response
+    StatusCodes m_statusCode;
+    SIPURL      m_uri;                    // display name & URI, no tag
+    unsigned    m_versionMajor;
+    unsigned    m_versionMinor;
+    PString     m_info;
+    SIPMIMEInfo m_mime;
+    PString     m_entityBody;
 
     SDPSessionDescription * m_SDP;
 
-    mutable PString transactionID;
+    mutable PString m_transactionID;
 
     bool m_usePeerTransportAddress;
 };
@@ -739,7 +729,9 @@ class SIPDialogContext
 
     const PStringList & GetRouteSet() const { return m_routeSet; }
     void SetRouteSet(const PStringList & routes) { m_routeSet = routes; }
-    void UpdateRouteSet(const SIPURL & proxy);
+
+    const SIPURL & GetProxy() const { return m_proxy; }
+    void SetProxy(const SIPURL & proxy, bool addToRouteSet);
 
     void Update(const SIP_PDU & response);
 
@@ -767,114 +759,11 @@ class SIPDialogContext
     unsigned    m_lastSentCSeq;
     unsigned    m_lastReceivedCSeq;
     bool        m_usePeerTransportAddress;
+    SIPURL      m_proxy;
 };
 
 
 /////////////////////////////////////////////////////////////////////////
-// SIPTransaction
-
-/** Session Initiation Protocol transaction.
-    A transaction is a stateful independent entity that provides services to
-    a connection (Transaction User). Transactions are contained within 
-    connections.
-    A client transaction handles sending a request and receiving its
-    responses.
-    A server transaction handles sending responses to a received request.
-    In either case the SIP_PDU ancestor is the sent or received request.
- */
-
-class SIPTransaction : public SIP_PDU
-{
-    PCLASSINFO(SIPTransaction, SIP_PDU);
-  public:
-    SIPTransaction(
-      SIPEndPoint   & endpoint,
-      OpalTransport & transport,
-      const PTimeInterval & minRetryTime = PMaxTimeInterval, 
-      const PTimeInterval & maxRetryTime = PMaxTimeInterval
-    );
-    /** Construct a transaction for requests in a dialog.
-     *  The transport is used to determine the local address
-     */
-    SIPTransaction(
-      SIPConnection & connection,
-      OpalTransport & transport,
-      Methods method = NumMethods
-    );
-    ~SIPTransaction();
-
-    void Construct(
-      const PTimeInterval & minRetryTime = PMaxTimeInterval,
-      const PTimeInterval & maxRetryTime = PMaxTimeInterval
-    );
-    void Construct(
-      Methods method, 
-      SIPDialogContext & dialog
-    );
-
-    PBoolean Start();
-    bool IsTrying()     const { return state == Trying; }
-    bool IsProceeding() const { return state == Proceeding; }
-    bool IsInProgress() const { return state == Trying || state == Proceeding; }
-    bool IsFailed()     const { return state > Terminated_Success; }
-    bool IsCompleted()  const { return state >= Completed; }
-    bool IsCanceled()   const { return state == Cancelling || state == Terminated_Cancelled || state == Terminated_Aborted; }
-    bool IsTerminated() const { return state >= Terminated_Success; }
-
-    void WaitForCompletion();
-    PBoolean Cancel();
-    void Abort();
-
-    virtual PBoolean OnReceivedResponse(SIP_PDU & response);
-    virtual PBoolean OnCompleted(SIP_PDU & response);
-
-    OpalTransport & GetTransport() const  { return transport; }
-    SIPConnection * GetConnection() const { return connection; }
-    PString         GetInterface() const { return m_localInterface; }
-
-    static PString GenerateCallID();
-    
-  protected:
-    bool SendPDU(SIP_PDU & pdu);
-    bool ResendCANCEL();
-
-    PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnRetry);
-    PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnTimeout);
-
-    enum States {
-      NotStarted,
-      Trying,
-      Proceeding,
-      Cancelling,
-      Completed,
-      Terminated_Success,
-      Terminated_Timeout,
-      Terminated_RetriesExceeded,
-      Terminated_TransportError,
-      Terminated_Cancelled,
-      Terminated_Aborted,
-      NumStates
-    };
-    virtual void SetTerminated(States newState);
-
-    SIPEndPoint           & endpoint;
-    OpalTransport         & transport;
-    PSafePtr<SIPConnection> connection;
-    PTimeInterval           retryTimeoutMin; 
-    PTimeInterval           retryTimeoutMax; 
-
-    States     state;
-    unsigned   retry;
-    PTimer     retryTimer;
-    PTimer     completionTimer;
-    PSyncPoint completed;
-    PString              m_localInterface;
-    OpalTransportAddress m_remoteAddress;
-};
-
-
-#define OPAL_PROXY_PARAM    "OPAL-proxy"
-#define OPAL_LOCAL_ID_PARAM "OPAL-local-id"
 
 struct SIPParameters
 {
@@ -909,6 +798,105 @@ ostream & operator<<(ostream & strm, const SIPParameters & params);
 
 
 /////////////////////////////////////////////////////////////////////////
+// SIPTransaction
+
+/** Session Initiation Protocol transaction.
+    A transaction is a stateful independent entity that provides services to
+    a connection (Transaction User). Transactions are contained within 
+    connections.
+    A client transaction handles sending a request and receiving its
+    responses.
+    A server transaction handles sending responses to a received request.
+    In either case the SIP_PDU ancestor is the sent or received request.
+ */
+
+class SIPTransaction : public SIP_PDU
+{
+    PCLASSINFO(SIPTransaction, SIP_PDU);
+  public:
+    SIPTransaction(
+      Methods method,
+      SIPEndPoint   & endpoint,
+      OpalTransport & transport
+    );
+    /** Construct a transaction for requests in a dialog.
+     *  The transport is used to determine the local address
+     */
+    SIPTransaction(
+      Methods method,
+      SIPConnection & connection
+    );
+    ~SIPTransaction();
+
+    PBoolean Start();
+    bool IsTrying()     const { return m_state == Trying; }
+    bool IsProceeding() const { return m_state == Proceeding; }
+    bool IsInProgress() const { return m_state == Trying || m_state == Proceeding; }
+    bool IsFailed()     const { return m_state > Terminated_Success; }
+    bool IsCompleted()  const { return m_state >= Completed; }
+    bool IsCanceled()   const { return m_state == Cancelling || m_state == Terminated_Cancelled || m_state == Terminated_Aborted; }
+    bool IsTerminated() const { return m_state >= Terminated_Success; }
+
+    void WaitForCompletion();
+    PBoolean Cancel();
+    void Abort();
+
+    virtual PBoolean OnReceivedResponse(SIP_PDU & response);
+    virtual PBoolean OnCompleted(SIP_PDU & response);
+
+    OpalTransport & GetTransport()  const { return m_transport; }
+    SIPConnection * GetConnection() const { return m_connection; }
+    PString         GetInterface()  const { return m_localInterface; }
+
+    static PString GenerateCallID();
+    
+  protected:
+    bool SendPDU(SIP_PDU & pdu);
+    bool ResendCANCEL();
+    void SetParameters(const SIPParameters & params);
+    void SetContact(const SIPURL & uri);
+
+    PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnRetry);
+    PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnTimeout);
+
+    enum States {
+      NotStarted,
+      Trying,
+      Proceeding,
+      Cancelling,
+      Completed,
+      Terminated_Success,
+      Terminated_Timeout,
+      Terminated_RetriesExceeded,
+      Terminated_TransportError,
+      Terminated_Cancelled,
+      Terminated_Aborted,
+      NumStates
+    };
+    virtual void SetTerminated(States newState);
+
+    SIPEndPoint           & m_endpoint;
+    OpalTransport         & m_transport;
+    PSafePtr<SIPConnection> m_connection;
+    PTimeInterval           m_retryTimeoutMin; 
+    PTimeInterval           m_retryTimeoutMax; 
+
+    States     m_state;
+    unsigned   m_retry;
+    PTimer     m_retryTimer;
+    PTimer     m_completionTimer;
+    PSyncPoint m_completed;
+
+    PString              m_localInterface;
+    OpalTransportAddress m_remoteAddress;
+};
+
+
+#define OPAL_PROXY_PARAM    "OPAL-proxy"
+#define OPAL_LOCAL_ID_PARAM "OPAL-local-id"
+
+
+/////////////////////////////////////////////////////////////////////////
 // SIPInvite
 
 /** Session Initiation Protocol transaction for INVITE
@@ -922,17 +910,16 @@ class SIPInvite : public SIPTransaction
   public:
     SIPInvite(
       SIPConnection & connection,
-      OpalTransport & transport,
       const OpalRTPSessionManager & sm
     );
 
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
 
-    const OpalRTPSessionManager & GetSessionManager() const { return rtpSessions; }
-          OpalRTPSessionManager & GetSessionManager()       { return rtpSessions; }
+    const OpalRTPSessionManager & GetSessionManager() const { return m_rtpSessions; }
+          OpalRTPSessionManager & GetSessionManager()       { return m_rtpSessions; }
 
   protected:
-    OpalRTPSessionManager rtpSessions;
+    OpalRTPSessionManager m_rtpSessions;
 };
 
 
@@ -1155,21 +1142,8 @@ class SIPRefer : public SIPTransaction
   public:
     SIPRefer(
       SIPConnection & connection,
-      OpalTransport & transport,
-      const SIPURL & refer
-    );
-    SIPRefer(
-      SIPConnection & connection,
-      OpalTransport & transport,
       const SIPURL & refer,
-      const SIPURL & referred_by
-    );
-  protected:
-    void Construct(
-      SIPConnection & connection,
-      OpalTransport & transport,
-      const SIPURL & refer,
-      const SIPURL & referred_by
+      const SIPURL & referred_by = SIPURL()
     );
 };
 
@@ -1185,7 +1159,6 @@ class SIPReferNotify : public SIPTransaction
   public:
     SIPReferNotify(
       SIPConnection & connection,
-      OpalTransport & transport,
       StatusCodes code
     );
 };
@@ -1255,11 +1228,11 @@ class SIPPing : public SIPTransaction
 
   public:
     SIPPing(
-               SIPEndPoint & ep,
-             OpalTransport & trans,
-              const SIPURL & address,
-              const PString & body = PString::Empty()
-   );
+      SIPEndPoint & ep,
+      OpalTransport & trans,
+      const SIPURL & address,
+      const PString & body = PString::Empty()
+    );
 };
 
 

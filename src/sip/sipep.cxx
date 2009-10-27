@@ -477,8 +477,8 @@ bool SIPEndPoint::ClearDialogContext(SIPDialogContext & context)
   context.GetNextCSeq(1000000);
 
   std::auto_ptr<OpalTransport> transport(CreateTransport(context.GetRemoteURI(), context.GetLocalURI().GetHostName()));
-  PSafePtr<SIPTransaction> byeTransaction = new SIPTransaction(*this, *transport);
-  byeTransaction->Construct(SIP_PDU::Method_BYE, context);
+  PSafePtr<SIPTransaction> byeTransaction = new SIPTransaction(SIP_PDU::Method_BYE, *this, *transport);
+  byeTransaction->InitialiseHeaders(context);
   byeTransaction->WaitForCompletion();
   return !byeTransaction->IsFailed();
 }

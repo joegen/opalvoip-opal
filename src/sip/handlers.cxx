@@ -804,7 +804,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
     else
       m_dialog.SetLocalURI(m_parameters.m_localAddress);
 
-    m_dialog.UpdateRouteSet(m_proxy);
+    m_dialog.SetProxy(m_proxy, true);
   }
 
   m_parameters.m_expire = state != Unsubscribing ? expire : 0;

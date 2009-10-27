@@ -527,14 +527,14 @@ PBoolean SIPURL::AdjustToDNS(PINDEX entry)
   // Or it is a valid IP address, not a domain name
   PIPSocket::Address ip = GetHostName();
   if (ip.IsValid())
-    return PTrue;
+    return true;
 
   // Do the SRV lookup, if fails, then we actually return TRUE so outer loops
   // can use the original host name value.
   PIPSocketAddressAndPortVector addrs;
   if (!PDNS::LookupSRV(GetHostName(), "_sip._" + paramVars("transport", "udp"), GetPort(), addrs)) {
     PTRACE(4, "SIP\tNo SRV record found.");
-    return PTrue;
+    return true;
   }
 
   // Got the SRV list, return FALSE if outer loop has got to the end of it
@@ -548,12 +548,12 @@ PBoolean SIPURL::AdjustToDNS(PINDEX entry)
   // Adjust our host and port to what the DNS SRV record says
   SetHostName(addrs[entry].GetAddress().AsString());
   SetPort(addrs[entry].GetPort());
-  return PTrue;
+  return true;
 }
 #else
 PBoolean SIPURL::AdjustToDNS(PINDEX)
 {
-  return PTrue;
+  return true;
 }
 #endif
 
@@ -732,7 +732,9 @@ void SIPMIMEInfo::SetContact(const PString & v)
 
 void SIPMIMEInfo::SetContact(const SIPURL & url)
 {
-  SetContact(url.AsQuotedString());
+  SIPURL cleaned = url;
+  cleaned.Sanitise(SIPURL::ContactURI);
+  SetContact(cleaned.AsQuotedString());
 }
 
 
@@ -1474,29 +1476,14 @@ void SIPNTLMAuthentication::ConstructType1Message(PBYTEArray & buffer) const
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIP_PDU::SIP_PDU()
+SIP_PDU::SIP_PDU(Methods meth)
+  : m_method(meth)
+  , m_statusCode(IllegalStatusCode)
+  , m_versionMajor(SIP_VER_MAJOR)
+  , m_versionMinor(SIP_VER_MINOR)
+  , m_SDP(NULL)
+  , m_usePeerTransportAddress(false)
 {
-  Construct(NumMethods);
-}
-
-
-SIP_PDU::SIP_PDU(Methods method,
-                 const SIPURL & dest,
-                 const PString & to,
-                 const PString & from,
-                 const PString & callID,
-                 unsigned cseq,
-                 const OpalTransportAddress & via)
-{
-  Construct(method, dest, to, from, callID, cseq, via);
-}
-
-
-SIP_PDU::SIP_PDU(Methods method,
-                 SIPConnection & connection,
-                 const OpalTransport & transport)
-{
-  Construct(method, connection, transport);
 }
 
 
@@ -1505,52 +1492,49 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
                  const char * contact,
                  const char * extra,
                  const SDPSessionDescription * sdp)
-  : m_usePeerTransportAddress(false)
+  : m_method(NumMethods)
+  , m_statusCode(code)
+  , m_versionMajor(request.GetVersionMajor())
+  , m_versionMinor(request.GetVersionMinor())
+  , m_SDP(sdp != NULL ? new SDPSessionDescription(*sdp) : NULL)
+  , m_usePeerTransportAddress(false)
 {
-  method       = NumMethods;
-  statusCode   = code;
-  versionMajor = request.GetVersionMajor();
-  versionMinor = request.GetVersionMinor();
-  m_SDP = sdp != NULL ? new SDPSessionDescription(*sdp) : NULL;
-
   // add mandatory fields to response (RFC 2543, 11.2)
   const SIPMIMEInfo & requestMIME = request.GetMIME();
-  mime.SetTo(requestMIME.GetTo());
-  mime.SetFrom(requestMIME.GetFrom());
-  mime.SetCallID(requestMIME.GetCallID());
-  mime.SetCSeq(requestMIME.GetCSeq());
-  mime.SetVia(requestMIME.GetVia());
-  mime.SetRecordRoute(requestMIME.GetRecordRoute(false));
+  m_mime.SetTo(requestMIME.GetTo());
+  m_mime.SetFrom(requestMIME.GetFrom());
+  m_mime.SetCallID(requestMIME.GetCallID());
+  m_mime.SetCSeq(requestMIME.GetCSeq());
+  m_mime.SetVia(requestMIME.GetVia());
+  m_mime.SetRecordRoute(requestMIME.GetRecordRoute(false));
 
   /* Use extra parameter as redirection URL in case of 302 */
   if (code == SIP_PDU::Redirection_MovedTemporarily) {
-    SIPURL contact(extra);
-    contact.Sanitise(SIPURL::ContactURI);
-    mime.SetContact(contact);
+    m_mime.SetContact(SIPURL(extra));
     extra = NULL;
   }
   else if (contact != NULL) {
-    mime.SetContact(PString(contact));
+    m_mime.SetContact(PString(contact));
   }
     
   // format response
   if (extra != NULL)
-    info = extra;
+    m_info = extra;
   else
-    info = GetStatusCodeDescription(code);
+    m_info = GetStatusCodeDescription(code);
 }
 
 
 SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
   : PSafeObject(pdu)
-  , method(pdu.method)
-  , statusCode(pdu.statusCode)
-  , uri(pdu.uri)
-  , versionMajor(pdu.versionMajor)
-  , versionMinor(pdu.versionMinor)
-  , info(pdu.info)
-  , mime(pdu.mime)
-  , entityBody(pdu.entityBody)
+  , m_method(pdu.m_method)
+  , m_statusCode(pdu.m_statusCode)
+  , m_uri(pdu.m_uri)
+  , m_versionMajor(pdu.m_versionMajor)
+  , m_versionMinor(pdu.m_versionMinor)
+  , m_info(pdu.m_info)
+  , m_mime(pdu.m_mime)
+  , m_entityBody(pdu.m_entityBody)
   , m_SDP(pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL)
   , m_usePeerTransportAddress(pdu.m_usePeerTransportAddress)
 {
@@ -1559,16 +1543,16 @@ SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
 
 SIP_PDU & SIP_PDU::operator=(const SIP_PDU & pdu)
 {
-  method = pdu.method;
-  statusCode = pdu.statusCode;
-  uri = pdu.uri;
+  m_method = pdu.m_method;
+  m_statusCode = pdu.m_statusCode;
+  m_uri = pdu.m_uri;
   m_usePeerTransportAddress = pdu.m_usePeerTransportAddress;
 
-  versionMajor = pdu.versionMajor;
-  versionMinor = pdu.versionMinor;
-  info = pdu.info;
-  mime = pdu.mime;
-  entityBody = pdu.entityBody;
+  m_versionMajor = pdu.m_versionMajor;
+  m_versionMinor = pdu.m_versionMinor;
+  m_info = pdu.m_info;
+  m_mime = pdu.m_mime;
+  m_entityBody = pdu.m_entityBody;
 
   delete m_SDP;
   m_SDP = pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL;
@@ -1583,46 +1567,54 @@ SIP_PDU::~SIP_PDU()
 }
 
 
-void SIP_PDU::Construct(Methods meth)
+void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
+                                const SIPURL & to,
+                                const SIPURL & from,
+                                const PString & callID,
+                                unsigned cseq,
+                                const PString & via)
 {
-  method = meth;
-  statusCode = IllegalStatusCode;
+  m_uri = dest;
+  m_uri.Sanitise(SIPURL::RequestURI);
 
-  versionMajor = SIP_VER_MAJOR;
-  versionMinor = SIP_VER_MINOR;
+  SIPURL tmp = to;
+  tmp.Sanitise(SIPURL::ToURI);
+  m_mime.SetTo(tmp.AsQuotedString());
 
-  m_SDP = NULL;
+  tmp = from;
+  tmp.Sanitise(SIPURL::FromURI);
+  m_mime.SetFrom(tmp.AsQuotedString());
 
-  m_usePeerTransportAddress = false;
+  m_mime.SetCallID(callID);
+  m_mime.SetCSeq(PString(cseq) & MethodNames[m_method]);
+  m_mime.SetMaxForwards(70);
+  m_mime.SetVia(via);
 }
 
 
-void SIP_PDU::Construct(Methods meth,
-                        const SIPURL & dest,
-                        const PString & to,
-                        const PString & from,
-                        const PString & callID,
-                        unsigned cseq,
-                        const OpalTransportAddress & via)
+PString SIP_PDU::CreateVia(SIPEndPoint & endpoint, const OpalTransport & transport, SIPConnection * connection)
 {
-  PString allMethods;
-  
-  Construct(meth);
+  PString localPartyName;
 
-  uri = dest;
-  uri.Sanitise(SIPURL::RequestURI);
+  if (connection != NULL) {
+    localPartyName = connection->GetLocalPartyName();
 
-  mime.SetTo(to);
-  mime.SetFrom(from);
-  mime.SetCallID(callID);
-  mime.SetCSeq(PString(cseq) & MethodNames[method]);
-  mime.SetMaxForwards(70);  
+    PINDEX pos = localPartyName.Find('@');
+    if (pos != P_MAX_INDEX)
+      localPartyName = localPartyName.Left(pos);
+
+    pos = localPartyName.Find(' ');
+    if (pos != P_MAX_INDEX)
+      localPartyName.Replace(" ", "_", true);
+  }
+
+  OpalTransportAddress via = endpoint.GetLocalURL(transport, localPartyName).GetHostAddress();
 
   // construct Via:
   PINDEX dollar = via.Find('$');
 
   PStringStream str;
-  str << "SIP/" << versionMajor << '.' << versionMinor << '/'
+  str << "SIP/" << m_versionMajor << '.' << m_versionMinor << '/'
       << via.Left(dollar).ToUpper() << ' ';
   PIPSocket::Address ip;
   WORD port = 5060;
@@ -1631,43 +1623,31 @@ void SIP_PDU::Construct(Methods meth,
   else
     str << via.Mid(dollar+1);
   str << ";branch=z9hG4bK" << OpalGloballyUniqueID() << ";rport";
-
-  mime.SetVia(str);
+  return str;
 }
 
 
-void SIP_PDU::Construct(Methods meth,
-                        SIPConnection & connection,
-                        const OpalTransport & transport)
+void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via)
 {
-  SIPEndPoint & endpoint = connection.GetEndPoint();
-  PString localPartyName = connection.GetLocalPartyName();
-  PINDEX pos = localPartyName.Find('@');
-  if (pos != P_MAX_INDEX)
-    localPartyName = localPartyName.Left(pos);
-
-  pos = localPartyName.Find(' ');
-  if (pos != P_MAX_INDEX)
-    localPartyName.Replace(" ", "_", PTrue);
-
-  SIPURL contact = endpoint.GetContactURL(transport, connection.GetDialog().GetLocalURI());
-  contact.Sanitise(meth != Method_INVITE ? SIPURL::ContactURI : SIPURL::RouteURI);
-  mime.SetContact(contact);
-
-  SIPURL via = endpoint.GetLocalURL(transport, localPartyName);
-
-  SIPDialogContext & dialog = connection.GetDialog();
-  Construct(meth,
-            dialog.GetRequestURI(),
-            dialog.GetRemoteURI().AsQuotedString(),
-            dialog.GetLocalURI().AsQuotedString(),
-            dialog.GetCallID(),
-            dialog.GetNextCSeq(dialog.IsEstablished() && meth != Method_ACK ? 1 : 0),
-            via.GetHostAddress());
-
-  SetRoute(dialog.GetRouteSet()); // Possibly adjust the URI and the route
-
+  InitialiseHeaders(dialog.GetRequestURI(),
+                    dialog.GetRemoteURI().AsQuotedString(),
+                    dialog.GetLocalURI().AsQuotedString(),
+                    dialog.GetCallID(),
+                    dialog.GetNextCSeq(),
+                    via);
+  SetRoute(dialog.GetRouteSet());
   m_usePeerTransportAddress = dialog.UsePeerTransportAddress();
+}
+
+
+void SIP_PDU::InitialiseHeaders(SIPConnection & connection,
+                                const OpalTransport & transport)
+{
+  InitialiseHeaders(connection.GetDialog(), CreateVia(connection.GetEndPoint(), transport));
+
+  SIPURL contact = connection.GetEndPoint().GetContactURL(transport, connection.GetDialog().GetLocalURI());
+  contact.Sanitise(m_method != Method_INVITE ? SIPURL::ContactURI : SIPURL::RouteURI);
+  m_mime.SetContact(contact.AsQuotedString());
 }
 
 
@@ -1683,12 +1663,12 @@ bool SIP_PDU::SetRoute(const PStringList & set)
     // this procedure is specified in RFC3261:12.2.1.1 for backwards compatibility with RFC2543
     routeSet.MakeUnique();
     routeSet.RemoveAt(0);
-    routeSet.AppendString(uri.AsString());
-    uri = firstRoute;
-    uri.Sanitise(SIPURL::RouteURI);
+    routeSet.AppendString(m_uri.AsString());
+    m_uri = firstRoute;
+    m_uri.Sanitise(SIPURL::RouteURI);
   }
 
-  mime.SetRoute(routeSet);
+  m_mime.SetRoute(routeSet);
   return true;
 }
 
@@ -1700,7 +1680,7 @@ bool SIP_PDU::SetRoute(const SIPURL & proxy)
 
   PStringStream str;
   str << "<sip:" << proxy.GetHostName() << ':'  << proxy.GetPort() << ";lr>";
-  mime.SetRoute(str);
+  m_mime.SetRoute(str);
   return true;
 }
 
@@ -1717,14 +1697,14 @@ void SIP_PDU::SetAllow(unsigned bitmask)
     }
   }
   
-  mime.SetAllow(str);
+  m_mime.SetAllow(str);
 }
 
 
 void SIP_PDU::AdjustVia(OpalTransport & transport)
 {
   // Update the VIA field following RFC3261, 18.2.1 and RFC3581
-  PStringList viaList = mime.GetViaList();
+  PStringList viaList = m_mime.GetViaList();
   if (viaList.GetSize() == 0)
     return;
 
@@ -1765,7 +1745,7 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   }
 
   viaList.front() = viaFront;
-  mime.SetViaList(viaList);
+  m_mime.SetViaList(viaList);
 }
 
 
@@ -1782,7 +1762,7 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
 
   WORD defaultPort = transport.GetEndPoint().GetDefaultSignalPort();
 
-  PStringList viaList = mime.GetViaList();
+  PStringList viaList = m_mime.GetViaList();
   if (viaList.GetSize() > 0) {
     PString viaAddress = viaList.front();
     PString proto = viaList.front();
@@ -1839,7 +1819,7 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
   }
   else {
     // get Via from From field
-    PString from = mime.GetFrom();
+    PString from = m_mime.GetFrom();
     if (!from.IsEmpty()) {
       PINDEX j = from.Find (';');
       if (j != P_MAX_INDEX)
@@ -1856,10 +1836,7 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
 
   if (endpoint != NULL && response.GetMIME().GetContact().IsEmpty()) {
     SIPURL to = GetMIME().GetTo();
-    PString username = to.GetUserName();
-    SIPURL contact = endpoint->GetLocalURL(transport, username);
-    contact.Sanitise(SIPURL::ContactURI);
-    response.GetMIME().SetContact(contact);
+    response.GetMIME().SetContact(endpoint->GetLocalURL(transport, to.GetUserName()));
   }
 
   return response.Write(transport, newAddress);
@@ -1868,11 +1845,11 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
 
 void SIP_PDU::PrintOn(ostream & strm) const
 {
-  strm << mime.GetCSeq() << ' ';
-  if (method != NumMethods)
-    strm << uri;
-  else if (statusCode != IllegalStatusCode)
-    strm << '<' << (unsigned)statusCode << '>';
+  strm << m_mime.GetCSeq() << ' ';
+  if (m_method != NumMethods)
+    strm << m_uri;
+  else if (m_statusCode != IllegalStatusCode)
+    strm << '<' << (unsigned)m_statusCode << '>';
   else
     strm << "<<Uninitialised>>";
 }
@@ -1921,11 +1898,11 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
       return PFalse;
     }
 
-    versionMajor = cmd.Mid(4).AsUnsigned();
-    versionMinor = cmd(cmd.Find('.')+1, space).AsUnsigned();
-    statusCode = (StatusCodes)cmd.Mid(++space).AsUnsigned();
-    info    = cmd.Mid(cmd.Find(' ', space));
-    uri     = PString();
+    m_versionMajor = cmd.Mid(4).AsUnsigned();
+    m_versionMinor = cmd(cmd.Find('.')+1, space).AsUnsigned();
+    m_statusCode = (StatusCodes)cmd.Mid(++space).AsUnsigned();
+    m_info    = cmd.Mid(cmd.Find(' ', space));
+    m_uri     = PString();
   }
   else {
     // parse the method, URI and version
@@ -1943,22 +1920,22 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
         return PFalse;
       }
     }
-    method = (Methods)i;
+    m_method = (Methods)i;
 
-    uri = cmds[1];
-    versionMajor = cmds[2].Mid(4).AsUnsigned();
-    versionMinor = cmds[2].Mid(cmds[2].Find('.')+1).AsUnsigned();
-    info = PString();
+    m_uri = cmds[1];
+    m_versionMajor = cmds[2].Mid(4).AsUnsigned();
+    m_versionMinor = cmds[2].Mid(cmds[2].Find('.')+1).AsUnsigned();
+    m_info = PString();
   }
 
-  if (versionMajor < 2) {
-    PTRACE(2, "SIP\tInvalid version (" << versionMajor << ") received on " << transport);
+  if (m_versionMajor < 2) {
+    PTRACE(2, "SIP\tInvalid version (" << m_versionMajor << ") received on " << transport);
     return PFalse;
   }
 
   // Getthe MIME fields
-  *stream >> mime;
-  if (!stream->good() || mime.IsEmpty()) {
+  *stream >> m_mime;
+  if (!stream->good() || m_mime.IsEmpty()) {
     PTRACE(2, "SIP\tInvalid MIME received on " << transport);
     transport.clear(); // Clear flags so BadRequest response is sent by caller
     return PFalse;
@@ -1969,8 +1946,8 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   // if a content length is specified, read that length
   // if no content length is specified (which is not the same as zero length)
   // then read until end of datagram or stream
-  PINDEX contentLength = mime.GetContentLength();
-  bool contentLengthPresent = mime.IsContentLengthPresent();
+  PINDEX contentLength = m_mime.GetContentLength();
+  bool contentLengthPresent = m_mime.IsContentLengthPresent();
 
   if (!contentLengthPresent) {
     PTRACE(2, "SIP\tNo Content-Length present from " << transport << ", reading till end of datagram/stream.");
@@ -1986,19 +1963,19 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
 
   if (contentLengthPresent) {
     if (contentLength > 0)
-      stream->read(entityBody.GetPointer(contentLength+1), contentLength);
+      stream->read(m_entityBody.GetPointer(contentLength+1), contentLength);
   }
   else {
     contentLength = 0;
     int c;
     while ((c = stream->get()) != EOF) {
-      entityBody.SetMinSize((++contentLength/1000+1)*1000);
-      entityBody += (char)c;
+      m_entityBody.SetMinSize((++contentLength/1000+1)*1000);
+      m_entityBody += (char)c;
     }
   }
 
   ////////////////
-  entityBody[contentLength] = '\0';
+  m_entityBody[contentLength] = '\0';
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
@@ -2007,10 +1984,10 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
     trace << "SIP\tPDU ";
 
     if (!PTrace::CanTrace(4)) {
-      if (method != NumMethods)
-        trace << MethodNames[method] << ' ' << uri;
+      if (m_method != NumMethods)
+        trace << MethodNames[m_method] << ' ' << m_uri;
       else
-        trace << (unsigned)statusCode << ' ' << info;
+        trace << (unsigned)m_statusCode << ' ' << m_info;
       trace << ' ';
     }
 
@@ -2019,13 +1996,13 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
           << ",if=" << transport.GetLastReceivedInterface();
 
     if (PTrace::CanTrace(4))
-      trace << '\n' << cmd << '\n' << mime << entityBody;
+      trace << '\n' << cmd << '\n' << m_mime << m_entityBody;
 
     trace << PTrace::End;
   }
 #endif
 
-  return PTrue;
+  return true;
 }
 
 
@@ -2056,11 +2033,11 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
     PTRACE(4, "SIP\tSet new interface " << localInterface << " for transport " << transport);
   }
 
-  mime.SetCompactForm(false);
+  m_mime.SetCompactForm(false);
   PString strPDU = Build();
   if (!transport.IsReliable() && strPDU.GetLength() > 1450) {
     PTRACE(4, "SIP\tPDU is too large (" << strPDU.GetLength() << " bytes) trying compact form.");
-    mime.SetCompactForm(true);
+    m_mime.SetCompactForm(true);
     strPDU = Build();
     PTRACE_IF(2, strPDU.GetLength() > 1450,
               "SIP\tPDU is likely too large (" << strPDU.GetLength() << " bytes) for UDP datagram.");
@@ -2073,10 +2050,10 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
     trace << "SIP\tSending PDU ";
 
     if (!PTrace::CanTrace(4)) {
-      if (method != NumMethods)
-        trace << MethodNames[method] << ' ' << uri;
+      if (m_method != NumMethods)
+        trace << MethodNames[m_method] << ' ' << m_uri;
       else
-        trace << (unsigned)statusCode << ' ' << info;
+        trace << (unsigned)m_statusCode << ' ' << m_info;
       trace << ' ';
     }
 
@@ -2107,51 +2084,51 @@ PString SIP_PDU::Build()
   PStringStream str;
 
   if (m_SDP != NULL) {
-    entityBody = m_SDP->Encode();
-    mime.SetContentType("application/sdp");
+    m_entityBody = m_SDP->Encode();
+    m_mime.SetContentType("application/sdp");
   }
 
-  mime.SetContentLength(entityBody.GetLength());
+  m_mime.SetContentLength(m_entityBody.GetLength());
 
-  if (method != NumMethods)
-    str << MethodNames[method] << ' ' << uri << ' ';
+  if (m_method != NumMethods)
+    str << MethodNames[m_method] << ' ' << m_uri << ' ';
 
-  str << "SIP/" << versionMajor << '.' << versionMinor;
+  str << "SIP/" << m_versionMajor << '.' << m_versionMinor;
 
-  if (method == NumMethods)
-    str << ' ' << (unsigned)statusCode << ' ' << info;
+  if (m_method == NumMethods)
+    str << ' ' << (unsigned)m_statusCode << ' ' << m_info;
 
-  str << "\r\n" << mime << entityBody;
+  str << "\r\n" << m_mime << m_entityBody;
   return str;
 }
 
 
 PString SIP_PDU::GetTransactionID() const
 {
-  if (transactionID.IsEmpty()) {
+  if (m_transactionID.IsEmpty()) {
     /* RFC3261 Sections 8.1.1.7 & 17.1.3 transactions are identified by the
        branch paranmeter in the top most Via and CSeq. We do NOT include the
        CSeq in our id as we want the CANCEL messages directed at out
        transaction structure.
      */
-    PStringList vias = mime.GetViaList();
+    PStringList vias = m_mime.GetViaList();
     if (!vias.IsEmpty())
-      transactionID = SIPMIMEInfo::ExtractFieldParameter(vias.front(), "branch");
-    if (transactionID.IsEmpty()) {
-      PTRACE(2, "SIP\tTransaction " << mime.GetCSeq() << " has no branch parameter!");
-      transactionID = mime.GetCallID() + mime.GetCSeq(); // Fail safe ...
+      m_transactionID = SIPMIMEInfo::ExtractFieldParameter(vias.front(), "branch");
+    if (m_transactionID.IsEmpty()) {
+      PTRACE(2, "SIP\tTransaction " << m_mime.GetCSeq() << " has no branch parameter!");
+      m_transactionID = m_mime.GetCallID() + m_mime.GetCSeq(); // Fail safe ...
     }
   }
 
-  return transactionID;
+  return m_transactionID;
 }
 
 
 SDPSessionDescription * SIP_PDU::GetSDP()
 {
-  if (m_SDP == NULL && mime.GetContentType() == "application/sdp") {
+  if (m_SDP == NULL && m_mime.GetContentType() == "application/sdp") {
     m_SDP = new SDPSessionDescription(0, 0, OpalTransportAddress());
-    if (!m_SDP->Decode(entityBody)) {
+    if (!m_SDP->Decode(m_entityBody)) {
       delete m_SDP;
       m_SDP = NULL;
     }
@@ -2282,10 +2259,12 @@ bool SIPDialogContext::SetRemoteURI(const PString & uri)
 }
 
 
-void SIPDialogContext::UpdateRouteSet(const SIPURL & proxy)
+void SIPDialogContext::SetProxy(const SIPURL & proxy, bool addToRouteSet)
 {
+  m_proxy = proxy;
+
   // Default routeSet if there is a proxy
-  if (m_routeSet.IsEmpty() && !proxy.IsEmpty()) {
+  if (addToRouteSet && m_routeSet.IsEmpty() && !proxy.IsEmpty()) {
     PStringStream str;
     str << "sip:" << proxy.GetHostName() << ':'  << proxy.GetPort() << ";lr";
     m_routeSet += str;
@@ -2355,102 +2334,109 @@ bool SIPDialogContext::IsDuplicateCSeq(unsigned requestCSeq)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPTransaction::SIPTransaction(SIPEndPoint & ep,
-                               OpalTransport & trans,
-                               const PTimeInterval & minRetryTime,
-                               const PTimeInterval & maxRetryTime)
-  : endpoint(ep)
-  , transport(trans)
+SIPTransaction::SIPTransaction(Methods method, SIPEndPoint & ep, OpalTransport & trans)
+  : SIP_PDU(method)
+  , m_endpoint(ep)
+  , m_transport(trans)
+  , m_retryTimeoutMin(ep.GetRetryTimeoutMin())
+  , m_retryTimeoutMax(ep.GetRetryTimeoutMax())
+  , m_state(NotStarted)
+  , m_retry(1)
 {
-  Construct(minRetryTime, maxRetryTime);
+  m_retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
+  m_completionTimer.SetNotifier(PCREATE_NOTIFIER(OnTimeout));
+
+  m_mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
+
   PTRACE(4, "SIP\tTransaction created.");
 }
 
 
-SIPTransaction::SIPTransaction(SIPConnection & conn,
-                               OpalTransport & trans,
-                               Methods meth)
-  : SIP_PDU(meth, conn, trans),
-    endpoint(conn.GetEndPoint()),
-    transport(trans)
+SIPTransaction::SIPTransaction(Methods meth, SIPConnection & conn)
+  : SIP_PDU(meth)
+  , m_endpoint(conn.GetEndPoint())
+  , m_transport(conn.GetTransport())
+  , m_connection(&conn)
+  , m_retryTimeoutMin(m_endpoint.GetRetryTimeoutMin())
+  , m_retryTimeoutMax(m_endpoint.GetRetryTimeoutMax())
+  , m_state(NotStarted)
+  , m_retry(1)
+  , m_remoteAddress(conn.GetDialog().GetProxy().GetHostAddress())
 {
-  connection = &conn;
-  Construct();
+  m_retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
+  m_completionTimer.SetNotifier(PCREATE_NOTIFIER(OnTimeout));
+
+  InitialiseHeaders(conn, m_transport);
+  m_mime.SetProductInfo(m_endpoint.GetUserAgent(), conn.GetProductInfo());
+
   PTRACE(4, "SIP\t" << meth << " transaction id=" << GetTransactionID() << " created.");
-}
-
-
-void SIPTransaction::Construct(const PTimeInterval & minRetryTime, const PTimeInterval & maxRetryTime)
-{
-  retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
-  completionTimer.SetNotifier(PCREATE_NOTIFIER(OnTimeout));
-
-  retry = 1;
-  state = NotStarted;
-
-  retryTimeoutMin = ((minRetryTime != PMaxTimeInterval) && (minRetryTime != 0)) ? minRetryTime : endpoint.GetRetryTimeoutMin(); 
-  retryTimeoutMax = ((maxRetryTime != PMaxTimeInterval) && (maxRetryTime != 0)) ? maxRetryTime : endpoint.GetRetryTimeoutMax();
-}
-
-
-void SIPTransaction::Construct(Methods method, SIPDialogContext & dialog)
-{
-  SIP_PDU::Construct(method,
-                     dialog.GetRequestURI(),
-                     dialog.GetRemoteURI().AsQuotedString(),
-                     dialog.GetLocalURI().AsQuotedString(),
-                     dialog.GetCallID(),
-                     dialog.GetNextCSeq(),
-                     endpoint.GetLocalURL(transport).GetHostAddress());
-  SetRoute(dialog.GetRouteSet());
 }
 
 
 SIPTransaction::~SIPTransaction()
 {
-  PTRACE_IF(1, state < Terminated_Success, "SIP\tDestroying transaction id="
+  PTRACE_IF(1, m_state < Terminated_Success, "SIP\tDestroying transaction id="
             << GetTransactionID() << " which is not yet terminated.");
   PTRACE(4, "SIP\tTransaction id=" << GetTransactionID() << " destroyed.");
 }
 
 
+void SIPTransaction::SetParameters(const SIPParameters & params)
+{
+  if (params.m_minRetryTime != PMaxTimeInterval)
+    m_retryTimeoutMin = params.m_minRetryTime;
+  if (params.m_maxRetryTime != PMaxTimeInterval)
+    m_retryTimeoutMax = params.m_maxRetryTime;
+
+  m_mime.SetExpires(params.m_expire);
+  m_mime.SetContact(params.m_contactAddress);
+}
+
+
+void SIPTransaction::SetContact(const SIPURL & uri)
+{
+  m_mime.SetContact(m_endpoint.GetLocalURL(m_transport, uri.GetUserName()));
+}
+
+
 PBoolean SIPTransaction::Start()
 {
-    if (state == Completed)
-    return PTrue;
+  if (m_state == Completed)
+    return true;
 
-    if (connection != NULL)
-      connection->OnStartTransaction(*this);
+  m_endpoint.AddTransaction(this);
 
-    endpoint.AddTransaction(this);
-
-    if (state != NotStarted) {
-      PAssertAlways(PLogicError);
+  if (m_state != NotStarted) {
+    PAssertAlways(PLogicError);
     return PFalse;
   }
 
-  if (connection != NULL && connection->GetAuthenticator() != NULL) {
-    SIPAuthenticator auth(*this);
-    connection->GetAuthenticator()->Authorise(auth); 
+  if (m_connection != NULL) {
+    m_connection->OnStartTransaction(*this);
+
+    if (m_connection->GetAuthenticator() != NULL) {
+      SIPAuthenticator auth(*this);
+      m_connection->GetAuthenticator()->Authorise(auth);
+    }
   }
 
   PSafeLockReadWrite lock(*this);
 
-  state = Trying;
-  retry = 0;
+  m_state = Trying;
+  m_retry = 0;
 
   if (m_localInterface.IsEmpty())
-    m_localInterface = transport.GetInterface();
+    m_localInterface = m_transport.GetInterface();
 
   /* Get the address to which the request PDU should be sent, according to
      the RFC, for a request in a dialog. 
      handle case where address changed using rport
    */
   if (m_usePeerTransportAddress)
-    m_remoteAddress = transport.GetLastReceivedAddress();
-  else {
+    m_remoteAddress = m_transport.GetLastReceivedAddress();
+  else if (m_remoteAddress.IsEmpty()) {
     SIPURL destination;
-    destination = uri;
+    destination = m_uri;
     PStringList routeSet = GetMIME().GetRoute();
     if (!routeSet.IsEmpty()) {
       SIPURL firstRoute = routeSet.front();
@@ -2466,31 +2452,31 @@ PBoolean SIPTransaction::Start()
   PTRACE(3, "SIP\tTransaction remote address is " << m_remoteAddress);
 
   // Use the connection transport to send the request
-  if (!Write(transport, m_remoteAddress, m_localInterface)) {
+  if (!Write(m_transport, m_remoteAddress, m_localInterface)) {
     SetTerminated(Terminated_TransportError);
     return PFalse;
   }
 
-  retryTimer = retryTimeoutMin;
-  if (method == Method_INVITE)
-    completionTimer = endpoint.GetInviteTimeout();
+  m_retryTimer = m_retryTimeoutMin;
+  if (m_method == Method_INVITE)
+    m_completionTimer = m_endpoint.GetInviteTimeout();
   else
-    completionTimer = endpoint.GetNonInviteTimeout();
+    m_completionTimer = m_endpoint.GetNonInviteTimeout();
 
-  PTRACE(4, "SIP\tTransaction timers set: retry=" << retryTimer << ", completion=" << completionTimer);
+  PTRACE(4, "SIP\tTransaction timers set: retry=" << m_retryTimer << ", completion=" << m_completionTimer);
   return true;
 }
 
 
 void SIPTransaction::WaitForCompletion()
 {
-  if (state >= Completed)
+  if (m_state >= Completed)
     return;
 
-  if (state == NotStarted)
+  if (m_state == NotStarted)
     Start();
 
-  completed.Wait();
+  m_completed.Wait();
 }
 
 
@@ -2498,16 +2484,16 @@ PBoolean SIPTransaction::Cancel()
 {
   PSafeLockReadWrite lock(*this);
 
-  if (state == NotStarted || state >= Cancelling) {
-    PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " cannot be cancelled as in state " << state);
+  if (m_state == NotStarted || m_state >= Cancelling) {
+    PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " cannot be cancelled as in state " << m_state);
     return PFalse;
   }
 
   PTRACE(4, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " cancelled.");
-  state = Cancelling;
-  retry = 0;
-  retryTimer = retryTimeoutMin;
-  completionTimer = endpoint.GetPduCleanUpTimeout();
+  m_state = Cancelling;
+  m_retry = 0;
+  m_retryTimer = m_retryTimeoutMin;
+  m_completionTimer = m_endpoint.GetPduCleanUpTimeout();
   return ResendCANCEL();
 }
 
@@ -2525,7 +2511,7 @@ void SIPTransaction::Abort()
 
 bool SIPTransaction::SendPDU(SIP_PDU & pdu)
 {
-  if (pdu.Write(transport, m_remoteAddress, m_localInterface))
+  if (pdu.Write(m_transport, m_remoteAddress, m_localInterface))
     return true;
 
   SetTerminated(Terminated_TransportError);
@@ -2535,16 +2521,14 @@ bool SIPTransaction::SendPDU(SIP_PDU & pdu)
 
 bool SIPTransaction::ResendCANCEL()
 {
-  SIP_PDU cancel(Method_CANCEL,
-                 uri,
-                 mime.GetTo(),
-                 mime.GetFrom(),
-                 mime.GetCallID(),
-                 mime.GetCSeqIndex(),
-                 m_localInterface);
   // Use the topmost via header from the INVITE we cancel as per 9.1. 
-  PStringList viaList = mime.GetViaList();
-  cancel.GetMIME().SetVia(viaList.front());
+  SIP_PDU cancel(Method_CANCEL);
+  cancel.InitialiseHeaders(m_uri,
+                           m_mime.GetTo(),
+                           m_mime.GetFrom(),
+                           m_mime.GetCallID(),
+                           m_mime.GetCSeqIndex(),
+                           m_mime.GetViaList().front());
 
   return SendPDU(cancel);
 }
@@ -2553,23 +2537,23 @@ bool SIPTransaction::ResendCANCEL()
 PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
   // Stop the timers with asynchronous flag to avoid deadlock
-  retryTimer.Stop(false);
+  m_retryTimer.Stop(false);
 
   PString cseq = response.GetMIME().GetCSeq();
 
   /* If is the response to a CANCEL we sent, then we stop retransmissions
      and wait for the 487 Request Terminated to come in */
   if (cseq.Find(MethodNames[Method_CANCEL]) != P_MAX_INDEX) {
-    completionTimer = endpoint.GetPduCleanUpTimeout();
+    m_completionTimer = m_endpoint.GetPduCleanUpTimeout();
     return PFalse;
   }
 
   // Something wrong here, response is not for the request we made!
-  if (cseq.Find(MethodNames[method]) == P_MAX_INDEX) {
+  if (cseq.Find(MethodNames[m_method]) == P_MAX_INDEX) {
     PTRACE(2, "SIP\tTransaction " << cseq << " response not for " << *this);
     // Restart timer as haven't finished yet
-    retryTimer = retryTimer.GetResetTime();
-    completionTimer = completionTimer.GetResetTime();
+    m_retryTimer = m_retryTimer.GetResetTime();
+    m_completionTimer = m_completionTimer.GetResetTime();
     return PFalse;
   }
 
@@ -2586,47 +2570,47 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     if (response.GetStatusCode()/100 == 1) {
       PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " proceeding.");
 
-      if (state == Trying)
-        state = Proceeding;
+      if (m_state == Trying)
+        m_state = Proceeding;
 
-      retry = 0;
-      retryTimer = retryTimeoutMax;
+      m_retry = 0;
+      m_retryTimer = m_retryTimeoutMax;
 
-      int expiry = mime.GetExpires();
+      int expiry = m_mime.GetExpires();
       if (expiry > 0)
-        completionTimer.SetInterval(0, expiry);
-      else if (method == Method_INVITE)
-        completionTimer = endpoint.GetInviteTimeout();
+        m_completionTimer.SetInterval(0, expiry);
+      else if (m_method == Method_INVITE)
+        m_completionTimer = m_endpoint.GetInviteTimeout();
       else
-        completionTimer = endpoint.GetNonInviteTimeout();
+        m_completionTimer = m_endpoint.GetNonInviteTimeout();
     }
     else {
       PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " completed.");
-      state = Completed;
-      statusCode = response.GetStatusCode();
+      m_state = Completed;
+      m_statusCode = response.GetStatusCode();
     }
 
-    if (connection != NULL)
-      connection->OnReceivedResponse(*this, response);
+    if (m_connection != NULL)
+      m_connection->OnReceivedResponse(*this, response);
     else
-      endpoint.OnReceivedResponse(*this, response);
+      m_endpoint.OnReceivedResponse(*this, response);
 
-    if (state == Completed)
+    if (m_state == Completed)
       OnCompleted(response);
   }
 
   if (response.GetStatusCode() >= 200) {
-    completionTimer = endpoint.GetPduCleanUpTimeout();
-    completed.Signal();
+    m_completionTimer = m_endpoint.GetPduCleanUpTimeout();
+    m_completed.Signal();
   }
 
-  return PTrue;
+  return true;
 }
 
 
 PBoolean SIPTransaction::OnCompleted(SIP_PDU & /*response*/)
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -2634,29 +2618,29 @@ void SIPTransaction::OnRetry(PTimer &, INT)
 {
   PSafeLockReadWrite lock(*this);
 
-  if (!lock.IsLocked() || state > Cancelling || (state == Proceeding && method == Method_INVITE))
+  if (!lock.IsLocked() || m_state > Cancelling || (m_state == Proceeding && m_method == Method_INVITE))
     return;
 
-  retry++;
+  m_retry++;
 
-  if (retry >= endpoint.GetMaxRetries()) {
+  if (m_retry >= m_endpoint.GetMaxRetries()) {
     SetTerminated(Terminated_RetriesExceeded);
     return;
   }
 
-  if (state > Trying)
-    retryTimer = retryTimeoutMax;
+  if (m_state > Trying)
+    m_retryTimer = m_retryTimeoutMax;
   else {
-    PTimeInterval timeout = retryTimeoutMin*(1<<retry);
-    if (timeout > retryTimeoutMax)
-      timeout = retryTimeoutMax;
-    retryTimer = timeout;
+    PTimeInterval timeout = m_retryTimeoutMin*(1<<m_retry);
+    if (timeout > m_retryTimeoutMax)
+      timeout = m_retryTimeoutMax;
+    m_retryTimer = timeout;
   }
 
   PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID()
-         << " timeout, making retry " << retry << ", timeout " << retryTimer);
+         << " timeout, making retry " << m_retry << ", timeout " << m_retryTimer);
 
-  if (state == Cancelling)
+  if (m_state == Cancelling)
     ResendCANCEL();
   else
     SendPDU(*this);
@@ -2668,7 +2652,7 @@ void SIPTransaction::OnTimeout(PTimer &, INT)
   PSafeLockReadWrite lock(*this);
 
   if (lock.IsLocked()) {
-    switch (state) {
+    switch (m_state) {
       case Trying :
         // Sent initial command and got nothin'
         SetTerminated(Terminated_Timeout);
@@ -2718,50 +2702,50 @@ void SIPTransaction::SetTerminated(States newState)
 #endif
 
   // Terminated, so finished with timers
-  retryTimer.Stop(false);
-  completionTimer.Stop(false);
+  m_retryTimer.Stop(false);
+  m_completionTimer.Stop(false);
 
-  if (state >= Terminated_Success) {
+  if (m_state >= Terminated_Success) {
     PTRACE_IF(3, newState != Terminated_Success, "SIP\tTried to set state " << StateNames[newState] 
               << " for " << GetMethod() << " transaction id=" << GetTransactionID()
-              << " but already terminated ( " << StateNames[state] << ')');
+              << " but already terminated ( " << StateNames[m_state] << ')');
     return;
   }
   
-  States oldState = state;
+  States oldState = m_state;
   
-  state = newState;
+  m_state = newState;
   PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for "
          << GetMethod() << " transaction id=" << GetTransactionID());
 
   // Transaction failed, tell the endpoint
-  if (state > Terminated_Success) {
-    switch (state) {
+  if (m_state > Terminated_Success) {
+    switch (m_state) {
       case Terminated_Timeout :
       case Terminated_RetriesExceeded:
-        statusCode = SIP_PDU::Local_Timeout;
+        m_statusCode = SIP_PDU::Local_Timeout;
         break;
 
       case Terminated_TransportError :
-        statusCode = SIP_PDU::Local_TransportError;
+        m_statusCode = SIP_PDU::Local_TransportError;
         break;
 
       case Terminated_Aborted :
       case Terminated_Cancelled :
-        statusCode = SIP_PDU::Failure_RequestTerminated;
+        m_statusCode = SIP_PDU::Failure_RequestTerminated;
         break;
 
       default :// Prevent GNU warning
         break;
     }
 
-    endpoint.OnTransactionFailed(*this);
-    if (connection != NULL)
-      connection->OnTransactionFailed(*this);
+    m_endpoint.OnTransactionFailed(*this);
+    if (m_connection != NULL)
+      m_connection->OnTransactionFailed(*this);
   }
 
   if (oldState != Completed)
-    completed.Signal();
+    m_completed.Signal();
 }
 
 
@@ -2862,8 +2846,17 @@ ostream & operator<<(ostream & strm, const SIPParameters & params)
           "        realm=" << params.m_realm << "\n"
           "       expire=" << params.m_expire << "\n"
           "      restore=" << params.m_restoreTime << "\n"
-          "     minRetry=" << params.m_minRetryTime << "\n"
-          "     maxRetry=" << params.m_maxRetryTime;
+          "     minRetry=";
+  if (params.m_minRetryTime != PMaxTimeInterval)
+    strm << params.m_minRetryTime;
+  else
+    strm << "default";
+  strm << "\n"
+          "     maxRetry=";
+  if (params.m_minRetryTime != PMaxTimeInterval)
+    strm << params.m_maxRetryTime;
+  else
+    strm << "default";
   return strm;
 }
 #endif
@@ -2871,18 +2864,17 @@ ostream & operator<<(ostream & strm, const SIPParameters & params)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, const OpalRTPSessionManager & sm)
-  : SIPTransaction(connection, transport, Method_INVITE)
-  , rtpSessions(sm)
+SIPInvite::SIPInvite(SIPConnection & connection, const OpalRTPSessionManager & sm)
+  : SIPTransaction(Method_INVITE, connection)
+  , m_rtpSessions(sm)
 {
-  mime.SetDate(); // now
-  SetAllow(connection.GetEndPoint().GetAllowedMethods());
-  mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
+  m_mime.SetDate(); // now
+  SetAllow(m_endpoint.GetAllowedMethods());
 
   connection.OnCreatingINVITE(*this);
   
   if (m_SDP != NULL)
-    m_SDP->SetSessionName(mime.GetUserAgent());
+    m_SDP->SetSessionName(m_mime.GetUserAgent());
 }
 
 
@@ -2890,7 +2882,7 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
   if (response.GetMIME().GetCSeq().Find(MethodNames[Method_INVITE]) != P_MAX_INDEX) {
     if (IsInProgress())
-      connection->OnReceivedResponseToINVITE(*this, response);
+      m_connection->OnReceivedResponseToINVITE(*this, response);
 
     if (response.GetStatusCode() >= 200) {
       PSafeLockReadWrite lock(*this);
@@ -2899,17 +2891,17 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 
       if (response.GetStatusCode() < 300) {
         // Need to update where the ACK goes to when have 2xx response as per 13.2.2.4
-        if (!connection->LockReadOnly())
+        if (!m_connection->LockReadOnly())
           return false;
 
-        SIPDialogContext & dialog = connection->GetDialog();
+        SIPDialogContext & dialog = m_connection->GetDialog();
         const PStringList & routeSet = dialog.GetRouteSet();
         SIPURL dest;
         if (routeSet.IsEmpty())
           dest = dialog.GetRequestURI();
         else
           dest = routeSet.front();
-        connection->UnlockReadOnly();
+        m_connection->UnlockReadOnly();
 
         dest.AdjustToDNS();
 
@@ -2936,28 +2928,14 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                          const PString & id,
                          unsigned cseq,
                          const Params & params)
-  : SIPTransaction(ep, trans, params.m_minRetryTime, params.m_maxRetryTime)
+  : SIPTransaction(Method_REGISTER, ep, trans)
 {
+  SetParameters(params);
+
   SIPURL uri = params.m_registrarAddress;
   uri.Sanitise(SIPURL::RegisterURI);
 
-  SIPURL to = params.m_addressOfRecord;
-  to.Sanitise(SIPURL::ToURI);
-
-  SIPURL from = params.m_localAddress;
-  from.Sanitise(SIPURL::FromURI);
-
-  SIP_PDU::Construct(Method_REGISTER,
-                     uri.AsString(),
-                     to.AsQuotedString(),
-                     from.AsQuotedString(),
-                     id,
-                     cseq,
-                     ep.GetLocalURL(transport).GetHostAddress());
-
-  mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
-  mime.SetContact(params.m_contactAddress);
-  mime.SetExpires(params.m_expire);
+  InitialiseHeaders(uri, params.m_addressOfRecord, params.m_localAddress, id, cseq, CreateVia(ep, trans));
 
   SetAllow(ep.GetAllowedMethods());
   SetRoute(proxy);
@@ -3070,28 +3048,21 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                            OpalTransport & trans,
                            SIPDialogContext & dialog,
                            const Params & params)
-  : SIPTransaction(ep, trans)
+  : SIPTransaction(Method_SUBSCRIBE, ep, trans)
 {
-  Construct(Method_SUBSCRIBE, dialog);
+  SetParameters(params);
 
-  SIPURL contact;
-  if (params.m_contactAddress.IsEmpty()) {
-    // I have no idea why this is necessary, but it is the way OpenSIPS works ....
-    const SIPURL & userURI = params.m_eventPackage == SIPSubscribe::Dialog ? dialog.GetRemoteURI() : dialog.GetLocalURI();
-    contact = endpoint.GetLocalURL(trans, userURI.GetUserName());
-  }
-  else
-    contact = params.m_contactAddress;
-  contact.Sanitise(SIPURL::ContactURI);
-  mime.SetContact(contact);
+  InitialiseHeaders(dialog, CreateVia(ep, trans));
 
-  mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
-  mime.SetEvent(params.m_eventPackage);
-  mime.SetExpires(params.m_expire);
+  // I have no idea why this is necessary, but it is the way OpenSIPS works ....
+  if (params.m_contactAddress.IsEmpty())
+    SetContact(params.m_eventPackage == SIPSubscribe::Dialog ? dialog.GetRemoteURI() : dialog.GetLocalURI());
+
+  m_mime.SetEvent(params.m_eventPackage);
 
   SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
   if (packageHandler != NULL) {
-    mime.SetAccept(packageHandler->GetContentType());
+    m_mime.SetAccept(packageHandler->GetContentType());
     delete packageHandler;
   }
 
@@ -3115,24 +3086,21 @@ SIPNotify::SIPNotify(SIPEndPoint & ep,
                      const SIPEventPackage & eventPackage,
                      const PString & state,
                      const PString & body)
-  : SIPTransaction(ep, trans)
+  : SIPTransaction(Method_NOTIFY, ep, trans)
 {
-  Construct(Method_NOTIFY, dialog);
+  InitialiseHeaders(dialog, CreateVia(ep, trans));
 
-  SIPURL contact = endpoint.GetLocalURL(trans, dialog.GetLocalURI().GetUserName());
-  contact.Sanitise(SIPURL::ContactURI);
-  mime.SetContact(contact);
-  mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
-  mime.SetEvent(eventPackage);
-  mime.SetSubscriptionState(state);
+  SetContact(dialog.GetLocalURI());
+  m_mime.SetEvent(eventPackage);
+  m_mime.SetSubscriptionState(state);
 
   SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(eventPackage);
   if (packageHandler != NULL) {
-    mime.SetContentType(packageHandler->GetContentType());
+    m_mime.SetContentType(packageHandler->GetContentType());
     delete packageHandler;
   }
 
-  entityBody = body;
+  m_entityBody = body;
 }
 
 
@@ -3144,47 +3112,32 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
                        const PString & sipIfMatch,
                        const SIPSubscribe::Params & params,
                        const PString & body)
-  : SIPTransaction(ep, trans)
+  : SIPTransaction(Method_PUBLISH, ep, trans)
 {
-  SIPURL toAddress = params.m_addressOfRecord;
-  toAddress.Sanitise(SIPURL::ToURI);
+  SetParameters(params);
 
-  SIPURL fromAddress = toAddress;
-  fromAddress.Sanitise(SIPURL::FromURI);
-  fromAddress.SetTag();
+  SIPURL addr = params.m_addressOfRecord;
+  InitialiseHeaders(addr, addr, addr, id, ep.GetNextCSeq(), CreateVia(ep, trans));
 
-  SIP_PDU::Construct(Method_PUBLISH,
-                     toAddress,
-                     toAddress.AsQuotedString(),
-                     fromAddress.AsQuotedString(),
-                     id,
-                     endpoint.GetNextCSeq(),
-                     ep.GetLocalURL(transport).GetHostAddress());
-
-  mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
-  SIPURL contact = endpoint.GetLocalURL(trans, toAddress.GetUserName());
-  contact.Sanitise(SIPURL::ContactURI);
-  mime.SetContact(contact);
+  SetContact(addr);
   SetRoute(SIPURL(params.m_agentAddress));
 
-  mime.SetExpires(params.m_expire);
-
   if (!sipIfMatch.IsEmpty())
-    mime.SetSIPIfMatch(sipIfMatch);
+    m_mime.SetSIPIfMatch(sipIfMatch);
 
-  mime.SetEvent(params.m_eventPackage);
+  m_mime.SetEvent(params.m_eventPackage);
 
   if (!body.IsEmpty()) {
-    entityBody = body;
+    m_entityBody = body;
 
     if (!params.m_contentType.IsEmpty())
-      mime.SetContentType(params.m_contentType);
+      m_mime.SetContentType(params.m_contentType);
     else {
       SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
       if (packageHandler == NULL)
-        mime.SetContentType("text/plain");
+        m_mime.SetContentType("text/plain");
       else {
-        mime.SetContentType(packageHandler->GetContentType());
+        m_mime.SetContentType(packageHandler->GetContentType());
         delete packageHandler;
       }
     }
@@ -3194,45 +3147,31 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const SIPURL & refer, const SIPURL & referred_by)
-  : SIPTransaction(connection, transport, Method_REFER)
+SIPRefer::SIPRefer(SIPConnection & connection, const SIPURL & refer, const SIPURL & referred_by)
+  : SIPTransaction(Method_REFER, connection)
 {
-  Construct(connection, transport, refer, referred_by);
-}
+  m_mime.SetReferTo(refer.AsQuotedString());
 
-SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const SIPURL & refer)
-  : SIPTransaction(connection, transport, Method_REFER)
-{
-  Construct(connection, transport, refer, SIPURL());
-}
-
-
-void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport*/, const SIPURL & refer, const SIPURL & _referred_by)
-{
-  SIPURL referred_by = _referred_by;
-
-  mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
-  mime.SetReferTo(refer.AsQuotedString());
   if(!referred_by.IsEmpty()) {
-    referred_by.SetDisplayName(PString::Empty());
-    mime.SetReferredBy(referred_by.AsQuotedString());
+    SIPURL adjusted_referred_by = referred_by;
+    adjusted_referred_by.SetDisplayName(PString::Empty());
+    m_mime.SetReferredBy(adjusted_referred_by.AsQuotedString());
   }
 }
 
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPReferNotify::SIPReferNotify(SIPConnection & connection, OpalTransport & transport, StatusCodes code)
-  : SIPTransaction(connection, transport, Method_NOTIFY)
+SIPReferNotify::SIPReferNotify(SIPConnection & connection, StatusCodes code)
+  : SIPTransaction(Method_NOTIFY, connection)
 {
-  mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
-  mime.SetSubscriptionState(code < Successful_OK ? "active" : "terminated;reason=noresource");
-  mime.SetEvent("refer");
-  mime.SetContentType("message/sipfrag");
+  m_mime.SetSubscriptionState(code < Successful_OK ? "active" : "terminated;reason=noresource");
+  m_mime.SetEvent("refer");
+  m_mime.SetContentType("message/sipfrag");
 
   PStringStream str;
-  str << "SIP/" << versionMajor << '.' << versionMinor << " " << code << " " << GetStatusCodeDescription(code);
-  entityBody = str;
+  str << "SIP/" << m_versionMajor << '.' << m_versionMinor << " " << code << " " << GetStatusCodeDescription(code);
+  m_entityBody = str;
 }
 
 
@@ -3245,24 +3184,17 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
                        const PString & id,
                        const PString & body,
                        SIPURL & localAddress)
-  : SIPTransaction(ep, trans)
+  : SIPTransaction(Method_MESSAGE, ep, trans)
 {
-  SIPURL myAddress = localAddress = endpoint.GetRegisteredPartyName(address.GetHostName(), transport);
-  myAddress.Sanitise(SIPURL::FromURI);
-  myAddress.SetTag();
+  localAddress = ep.GetRegisteredPartyName(address.GetHostName(), trans);
 
-  SIP_PDU::Construct(Method_MESSAGE,
-                     address,
-                     address.AsQuotedString(),
-                     myAddress.AsQuotedString(),
-                     id,
-                     endpoint.GetNextCSeq(),
-                     ep.GetLocalURL(transport).GetHostAddress());
-  mime.SetContentType("text/plain;charset=UTF-8");
+  InitialiseHeaders(address, address, localAddress, id, ep.GetNextCSeq(), CreateVia(ep, trans));
+  m_mime.SetContentType("text/plain;charset=UTF-8");
   SetRoute(proxy);
 
-  entityBody = body;
+  m_entityBody = body;
 }
+
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -3270,46 +3202,45 @@ SIPPing::SIPPing(SIPEndPoint & ep,
                  OpalTransport & trans,
                  const SIPURL & address,
                  const PString & body)
-  : SIPTransaction(ep, trans)
+  : SIPTransaction(Method_PING, ep, trans)
 {
-  SIP_PDU::Construct(Method_PING,
-                     address,
-                     address.AsQuotedString(),
-                     "sip:"+address.GetUserName()+"@"+address.GetHostName(),
-                     GenerateCallID(),
-                     endpoint.GetNextCSeq(),
-                     ep.GetLocalURL(transport).GetHostAddress());
-  mime.SetContentType("text/plain;charset=UTF-8");
+  InitialiseHeaders(address,
+                    address,
+                    "sip:"+address.GetUserName()+"@"+address.GetHostName(),
+                    GenerateCallID(),
+                    ep.GetNextCSeq(),
+                    CreateVia(ep, trans));
+  m_mime.SetContentType("text/plain;charset=UTF-8");
 
-  entityBody = body;
+  m_entityBody = body;
 }
 
 
 /////////////////////////////////////////////////////////////////////////
 
 SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
+  : SIP_PDU(Method_ACK)
 {
   if (response.GetStatusCode() < 300) {
-    Construct(Method_ACK, *invite.GetConnection(), invite.GetTransport());
-    mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
+    InitialiseHeaders(*invite.GetConnection(), invite.GetTransport());
+    m_mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
   }
   else {
-    Construct(Method_ACK,
-              invite.GetURI(),
-              response.GetMIME().GetTo(),
-              invite.GetMIME().GetFrom(),
-              invite.GetMIME().GetCallID(),
-              invite.GetMIME().GetCSeqIndex(),
-              invite.GetConnection()->GetEndPoint().GetLocalURL(invite.GetTransport()).GetHostAddress());
+    InitialiseHeaders(invite.GetURI(),
+                      response.GetMIME().GetTo(),
+                      invite.GetMIME().GetFrom(),
+                      invite.GetMIME().GetCallID(),
+                      invite.GetMIME().GetCSeqIndex(),
+                      CreateVia(invite.GetConnection()->GetEndPoint(), invite.GetTransport()));
 
     // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
     // as well as the initial Route
     PStringList viaList = invite.GetMIME().GetViaList();
     if (viaList.GetSize() > 0)
-      mime.SetVia(viaList.front());
+      m_mime.SetVia(viaList.front());
 
     if (invite.GetMIME().GetRoute().GetSize() > 0)
-      mime.SetRoute(invite.GetMIME().GetRoute());
+      m_mime.SetRoute(invite.GetMIME().GetRoute());
   }
 
   // Add authentication if had any on INVITE
@@ -3325,20 +3256,14 @@ SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
 SIPOptions::SIPOptions(SIPEndPoint & ep,
                        OpalTransport & trans,
                        const SIPURL & address)
-  : SIPTransaction(ep, trans)
+  : SIPTransaction(Method_OPTIONS, ep, trans)
 {
   // Build the correct From field
-  SIPURL myAddress = endpoint.GetRegisteredPartyName(address.GetHostName(), transport);
+  SIPURL myAddress = ep.GetRegisteredPartyName(address.GetHostName(), trans);
   myAddress.SetTag();
 
-  SIP_PDU::Construct(Method_OPTIONS,
-                     address,
-                     address.AsQuotedString(),
-                     myAddress.AsQuotedString(),
-                     GenerateCallID(),
-                     endpoint.GetNextCSeq(),
-                     ep.GetLocalURL(transport).GetHostAddress());
-  mime.SetAccept("application/sdp, application/media_control+xml, application/dtmf, application/dtmf-relay");
+  InitialiseHeaders(address, address, myAddress, GenerateCallID(), ep.GetNextCSeq(), CreateVia(ep, trans));
+  m_mime.SetAccept("application/sdp, application/media_control+xml, application/dtmf, application/dtmf-relay");
 
   SetAllow(ep.GetAllowedMethods());
 }
