@@ -522,7 +522,7 @@ class SIPConnection : public OpalRTPConnection
 
     friend class SIPInvite;
     static PBoolean WriteINVITE(OpalTransport & transport, void * param);
-    bool WriteINVITE(OpalTransport & transport);
+    bool WriteINVITE();
 
     OpalTransport * CreateTransport(const OpalTransportAddress & address, PBoolean isLocalAddress = PFalse);
 
