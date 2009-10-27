@@ -884,10 +884,15 @@ class OpalConnection : public PSafeObject
        that an application may remove or reorder the media formats before they
        are used to open media streams.
 
+       This function may also be executed to adjust the media format list for
+       other connections in the call. If this happens then the "otherConnection"
+       parameter will be non-NULL.
+
        The default behaviour calls the OpalEndPoint function of the same name.
       */
     virtual void AdjustMediaFormats(
-      OpalMediaFormatList & mediaFormats  ///<  Media formats to use
+      OpalMediaFormatList & mediaFormats,  ///<  Media formats to use
+      OpalConnection * otherConnection     ///<  Other connection we are adjusting media for
     ) const;
 
     /**Get next available session ID for the media type.
@@ -1719,6 +1724,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(PBoolean, IsConnectionOnHold(), false);
     P_REMOVE_VIRTUAL_VOID(OnMediaPatchStart(unsigned, bool));
     P_REMOVE_VIRTUAL_VOID(OnMediaPatchStop(unsigned, bool));
+    P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(OpalMediaFormatList &) const);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H
