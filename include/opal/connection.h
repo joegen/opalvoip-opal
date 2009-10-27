@@ -1608,7 +1608,9 @@ class OpalConnection : public PSafeObject
 
 #if OPAL_HAS_MIXER
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
+#if OPAL_VIDEO
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordVideo);
+#endif
     void OnStartRecording(OpalMediaPatch * patch);
     void OnStopRecording(OpalMediaPatch * patch);
 #endif
@@ -1682,7 +1684,9 @@ class OpalConnection : public PSafeObject
 #if OPAL_HAS_MIXER
     PString       m_recordingFilename;
     PNotifier     m_recordAudioNotifier;
+#if OPAL_VIDEO
     PNotifier     m_recordVideoNotifier;
+#endif
 #endif
 
 #if OPAL_STATISTICS
