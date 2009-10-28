@@ -150,7 +150,9 @@ class OpalPresentity : public PSafeObject
     enum Authorisation {
       AuthorisationPermitted,
       AuthorisationDenied,
-      AuthorisationDeniedPolitely
+      AuthorisationDeniedPolitely,
+      AuthorisationConfirming,
+      NumAuthorisations
     };
 
     /** Called to allow/deny another presentity access to our presence information.

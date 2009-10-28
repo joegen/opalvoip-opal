@@ -122,6 +122,7 @@ class SIPXCAP_Presentity : public SIP_Presentity
     StringMap m_watcherAorById;
     StringMap m_presenceIdByAor;
     StringMap m_presenceAorById;
+    StringMap m_authorisationIdByAor;
 };
 
 
@@ -136,6 +137,17 @@ class XCAPClient : public PHTTPClient
     );
     bool PutXmlDocument(
       const PString & name,
+      const PXML & xml
+    );
+
+    bool GetXmlNode(
+      const PString & docname,
+      const PString & node,
+      PXML & xml
+    );
+    bool PutXmlNode(
+      const PString & docname,
+      const PString & node,
       const PXML & xml
     );
 
@@ -158,7 +170,7 @@ class XCAPClient : public PHTTPClient
     ) { m_contentType = type; }
 
   protected:
-    PURL BuildURL(const PString & name);
+    PURL BuildURL(const PString & name, const PString & node = PString::Empty());
 
     PString m_root;
     PString m_auid;
