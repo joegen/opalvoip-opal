@@ -919,13 +919,19 @@ void SIPSubscribeHandler::UpdateParameters(const SIPSubscribe::Params & params)
 
 void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
+  State oldState = GetState();
+
   /* An "expire" parameter in the Contact header has no semantics
    * for SUBSCRIBE. RFC3265, 3.1.1.
    * An answer can only shorten the expires time.
    */
   SetExpire(response.GetMIME().GetExpires(originalExpire));
+
   SIPHandler::OnReceivedOK(transaction, response);
+
   m_dialog.Update(response);
+
+  SendStatus(SIP_PDU::Successful_OK, oldState);
 }
 
 
