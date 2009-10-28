@@ -265,16 +265,20 @@ void TestPresEnt::CmdPresenceAuthorisation(PCLI::Arguments & args, INT)
 
 void TestPresEnt::CmdSetLocalPresence(PCLI::Arguments & args, INT)
 {
+  PString note;
+  if (args.GetCount > 2)
+    note = args[2];
+
   if (args.GetCount() < 2)
     args.WriteUsage();
   else if (!m_presentities.Contains(args[0]))
     args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
   else if (args[1] *= "available")
-    m_presentities[args[0]].SetLocalPresence(OpalPresentity::Available, args[2]);
+    m_presentities[args[0]].SetLocalPresence(OpalPresentity::Available, note);
   else if (args[1] *= "unavailable")
-    m_presentities[args[0]].SetLocalPresence(OpalPresentity::NotAvailable, args[2]);
+    m_presentities[args[0]].SetLocalPresence(OpalPresentity::NotAvailable, note);
   else if (args[1] *= "busy")
-    m_presentities[args[0]].SetLocalPresence(OpalPresentity::Busy, args[2]);
+    m_presentities[args[0]].SetLocalPresence(OpalPresentity::Busy, note);
   else
     args.WriteUsage();
 }
