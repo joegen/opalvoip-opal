@@ -186,20 +186,24 @@ bool SIPXCAP_Presentity::Close()
 
   StopThread();
 
+  m_notificationMutex.Wait();
+
   if (!m_watcherSubscriptionAOR.IsEmpty()) {
     PTRACE(3, "SIPPres\t'" << m_aor << "' sending unsubscribe for own presence watcher");
     m_endpoint->Unsubscribe(SIPSubscribe::Presence | SIPSubscribe::Watcher, m_watcherSubscriptionAOR);
   }
 
-  for (StringMap::iterator subs = m_presenceIdByAor.begin(); subs != m_presenceIdByAor.end(); ++subs)
+  for (StringMap::iterator subs = m_presenceIdByAor.begin(); subs != m_presenceIdByAor.end(); ++subs) {
+    PTRACE(3, "SIPPres\t'" << m_aor << "' sending unsubscribe to " << subs->first);
     m_endpoint->Unsubscribe(SIPSubscribe::Presence, subs->second);
+  }
 
-  m_notificationMutex.Wait();
   while (!m_watcherSubscriptionAOR.IsEmpty() || !m_presenceIdByAor.empty()) {
     m_notificationMutex.Signal();
     PThread::Sleep(100);
     m_notificationMutex.Wait();
   }
+
   m_notificationMutex.Signal();
 
   m_endpoint = NULL;
@@ -274,6 +278,9 @@ static PXMLValidator::ElementInfo watcherInfoValidation[] = {
 
 void SIPXCAP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
+  if (status.m_reason == SIP_PDU::Information_Trying)
+    return;
+
   m_notificationMutex.Wait();
   if (!status.m_wasSubscribing)
     m_watcherSubscriptionAOR.MakeEmpty();
@@ -490,6 +497,9 @@ void SIPXCAP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPrese
 
 void SIPXCAP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
+  if (status.m_reason == SIP_PDU::Information_Trying)
+    return;
+
   m_notificationMutex.Wait();
   if (!status.m_wasSubscribing) {
     PString id = status.m_handler->GetCallID();
@@ -500,7 +510,7 @@ void SIPXCAP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, con
       m_presenceAorById.erase(aor);
     }
     else {
-      PTRACE(2, "SIPPres\tA;ready unsubscribed for id " << id);
+      PTRACE(2, "SIPPres\tAlready unsubscribed for id " << id);
     }
   }
   m_notificationMutex.Signal();
@@ -550,54 +560,129 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::N
 
 void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd)
 {
+  static const char * const AuthNames[NumAuthorisations] = { "allow", "block", "polite-block", "confirm" };
+  static const char AuthDocName[] = "pres-rules";
+
   PString aorStr = m_aor.AsString();
 
   XCAPClient xcap;
   xcap.SetRoot(m_attributes.Get(SIPXCAP_Presentity::XcapRootKey));
-  xcap.SetApplicationUniqueID("pres-rules");            // As per RFC5025/9.1
+  xcap.SetApplicationUniqueID("org.openmobilealliance.pres-rules");            // As per RFC5025/9.1
   xcap.SetContentType("application/auth-policy+xml");   // As per RFC5025/9.4
   xcap.SetUserIdentifier(aorStr);                       // As per RFC5025/9.7
   xcap.SetAuthenticationInfo(m_attributes.Get(SIPXCAP_Presentity::XcapAuthIdKey, m_attributes.Get(OpalPresentity::AuthNameKey, aorStr)),
                              m_attributes.Get(SIPXCAP_Presentity::XcapPasswordKey, m_attributes.Get(OpalPresentity::AuthPasswordKey)));
 
   PXML xml;
-  xcap.GetXmlDocument("index", xml); // See if already have a rule
+  PXMLElement * element;
 
-  if (!xml.IsLoaded())
-    xml.Load("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-             "<cr:ruleset xmlns=\"urn:ietf:params:xml:ns:pres-rules\""
-                        " xmlns:pr=\"urn:ietf:params:xml:ns:pres-rules\""
-                        " xmlns:cr=\"urn:ietf:params:xml:ns:common-policy\">"
-               "<cr:rule>"
-                 "<cr:conditions>"
-                   "<cr:identity>"
-                     "<cr:one/>"
-                   "</cr:identity>"
-                 "</cr:conditions>"
-                 "<cr:actions>"
-                   "<pr:sub-handling></pr:sub-handling>"
-                 "</cr:actions>"
-                 "<cr:transformations>"
-                   "<pr:provide-services>"
-                     "<pr:service-uri-scheme></pr:service-uri-scheme>"
-                   "</pr:provide-services>"
-                   "<pr:provide-persons>"
-                     "<pr:all-persons/>"
-                   "</pr:provide-persons>"
-                   "<pr:provide-activities>true</pr:provide-activities>"
-                   "<pr:provide-user-input>bare</pr:provide-user-input>"
-                 "</cr:transformations>"
-               "</cr:rule>"
-             "</cr:ruleset>");
+  if (m_authorisationIdByAor.find(cmd.m_presentity) != m_authorisationIdByAor.end()) {
+    PString node = "cr:ruleset\ncr:rule[@id=" + m_authorisationIdByAor[cmd.m_presentity] + ']';
+    if (xcap.GetXmlNode(AuthDocName, node, xml)) {
+      if ((element = xml.GetRootElement()) != NULL &&
+          (element = element->GetElement("cr:actions")) != NULL &&
+          (element = element->GetElement("pr:sub-handling")) != NULL) {
+        if (element->GetData() *= AuthNames[cmd.m_authorisation]) {
+          PTRACE(3, "SIPPres\tRule already set to " << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+        }
+        else {
+          element->SetData(AuthNames[cmd.m_authorisation]);
+          if (xcap.PutXmlNode(AuthDocName, node, xml)) {
+            PTRACE(3, "SIPPres\tRule changed to" << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+            return;
+          }
+          PTRACE(3, "SIPPres\tCould not change existing rule for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+        }
+      }
 
+      PTRACE(3, "SIPPres\tInvalid XML in existing rule for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+    }
+    else {
+      PTRACE(3, "SIPPres\tCould not locate existing rule for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+    }
+
+    m_authorisationIdByAor.erase(cmd.m_presentity); // Something wrong get rid of old data
+  }
+
+  // Could not find rule element, try and insert a new one
+
+  static PAtomicInteger NextRuleId;
+  PString newRuleId(PString::Printf, "R%08X", ++NextRuleId);  // As per http://www.w3.org/TR/1999/REC-xml-names-19990114/#NT-NCName
+
+  xml.Load("<cr:rule>"
+             "<cr:conditions>"
+               "<cr:identity>"
+                 "<cr:one/>"
+               "</cr:identity>"
+             "</cr:conditions>"
+             "<cr:actions>"
+               "<pr:sub-handling></pr:sub-handling>"
+             "</cr:actions>"
+             "<cr:transformations>"
+               "<pr:provide-services>"
+                 "<pr:service-uri-scheme></pr:service-uri-scheme>"
+               "</pr:provide-services>"
+               "<pr:provide-persons>"
+                 "<pr:all-persons/>"
+               "</pr:provide-persons>"
+               "<pr:provide-activities>true</pr:provide-activities>"
+               "<pr:provide-user-input>bare</pr:provide-user-input>"
+             "</cr:transformations>"
+           "</cr:rule>",
+           PXML::FragmentOnly);
+  element = xml.GetRootElement();
+  element->SetAttribute("id", newRuleId);
+  element->GetElement("cr:conditions")->GetElement("cr:identity")->GetElement("cr:one")->SetAttribute("id", cmd.m_presentity);
+  element->GetElement("cr:actions")->GetElement("pr:sub-handling")->SetData(AuthNames[cmd.m_authorisation]);
+  element->GetElement("cr:transformations")->GetElement("pr:provide-services")->GetElement("pr:service-uri-scheme")->SetData(m_aor.GetScheme());
+
+  if (xcap.PutXmlNode(AuthDocName, "cr:ruleset\ncr:rule[@id="+newRuleId+']', xml)) {
+    PTRACE(3, "SIPPres\tNew rule set to" << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+    m_authorisationIdByAor[cmd.m_presentity] = newRuleId;
+    return;
+  }
+
+  PTRACE(4, "SIPPres\tCould not add new rule for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+
+  // Could not insert an element, whole file must not exist
+  xml.Load("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+           "<cr:ruleset xmlns=\"urn:ietf:params:xml:ns:pres-rules\""
+                      " xmlns:pr=\"urn:ietf:params:xml:ns:pres-rules\""
+                      " xmlns:cr=\"urn:ietf:params:xml:ns:common-policy\">"
+             "<cr:rule>"
+               "<cr:conditions>"
+                 "<cr:identity>"
+                   "<cr:one/>"
+                 "</cr:identity>"
+               "</cr:conditions>"
+               "<cr:actions>"
+                 "<pr:sub-handling></pr:sub-handling>"
+               "</cr:actions>"
+               "<cr:transformations>"
+                 "<pr:provide-services>"
+                   "<pr:service-uri-scheme></pr:service-uri-scheme>"
+                 "</pr:provide-services>"
+                 "<pr:provide-persons>"
+                   "<pr:all-persons/>"
+                 "</pr:provide-persons>"
+                 "<pr:provide-activities>true</pr:provide-activities>"
+                 "<pr:provide-user-input>bare</pr:provide-user-input>"
+               "</cr:transformations>"
+             "</cr:rule>"
+           "</cr:ruleset>");
   PXMLElement * rule = xml.GetElement("cr:rule");
-  rule->SetAttribute("id", "A12345");  // As per http://www.w3.org/TR/1999/REC-xml-names-19990114/#NT-NCName
+  rule->SetAttribute("id", newRuleId);
   rule->GetElement("cr:conditions")->GetElement("cr:identity")->GetElement("cr:one")->SetAttribute("id", cmd.m_presentity);
-  static const char * const AuthNames[] = { "allow", "block", "polite-block" };
   rule->GetElement("cr:actions")->GetElement("pr:sub-handling")->SetData(AuthNames[cmd.m_authorisation]);
   rule->GetElement("cr:transformations")->GetElement("pr:provide-services")->GetElement("pr:service-uri-scheme")->SetData(m_aor.GetScheme());
 
-  xcap.PutXmlDocument("index", xml);
+  if (xcap.PutXmlDocument(AuthDocName, xml)) {
+    PTRACE(3, "SIPPres\tNew rule file set to " << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+    m_authorisationIdByAor[cmd.m_presentity] = newRuleId;
+  }
+  else {
+    PTRACE(2, "SIPPres\tCould not add new rule file for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+  }
 }
 
 
@@ -609,15 +694,29 @@ XCAPClient::XCAPClient()
 }
 
 
-PURL XCAPClient::BuildURL(const PString & name)
+PURL XCAPClient::BuildURL(const PString & name, const PString & node)
 {
   PURL uri(m_root);                              // XCAP root
+
   uri.AppendPath(m_auid);                        // Application Unique ID
+
   uri.AppendPath(m_global ? "global" : "users"); // RFC4825/6.2, The path segment after the AUID MUST either be "global" or "users".
+
   if (!m_global)
     uri.AppendPath(m_xui);                       // XCAP User Identifier
-  if (!name.IsEmpty())
+
+  if (!name.IsEmpty()) {
     uri.AppendPath(name);                        // Final resource name
+
+    if (!node.IsEmpty()) {
+      uri.AppendPath("~~");                      // Node selector
+
+      PStringArray nodes = node.Lines();
+      for (PINDEX i = 0; i < nodes.GetSize(); ++i)
+        uri.AppendPath(nodes[i]);
+    }
+  }
+
   return uri;
 }
 
@@ -637,6 +736,24 @@ bool XCAPClient::PutXmlDocument(const PString & name, const PXML & xml)
   PStringStream strm;
   strm << xml;
   return PutTextDocument(BuildURL(name), strm, m_contentType);
+}
+
+
+bool XCAPClient::GetXmlNode(const PString & docname, const PString & node, PXML & xml)
+{
+  PString str;
+  if (!GetTextDocument(BuildURL(docname, node), str, "application/xcap-el+xml"))
+    return false;
+
+  return xml.Load(str, PXML::FragmentOnly);
+}
+
+
+bool XCAPClient::PutXmlNode(const PString & docname, const PString & node, const PXML & xml)
+{
+  PStringStream strm;
+  strm << xml;
+  return PutTextDocument(BuildURL(docname, node), strm, "application/xcap-el+xml");
 }
 
 
