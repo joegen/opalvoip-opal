@@ -217,7 +217,7 @@ void TestPresEnt::Main()
                  "<url-watcher> <url-watched>");
   cli.SetCommand("authorise", PCREATE_NOTIFIER(CmdPresenceAuthorisation),
                  "Authorise a presentity to see local presence.",
-                 "<url-watched> <url-watcher>");
+                 "<url-watched> <url-watcher> [ deny | deny-politely ]");
   cli.SetCommand("publish", PCREATE_NOTIFIER(CmdSetLocalPresence),
                  "Publish local presence state for presentity.",
                  "<url> { available | unavailable | busy } [ <note> ]");
@@ -254,19 +254,31 @@ void TestPresEnt::CmdSubscribeToPresence(PCLI::Arguments & args, INT)
 
 void TestPresEnt::CmdPresenceAuthorisation(PCLI::Arguments & args, INT)
 {
+  OpalPresentity::Authorisation auth = OpalPresentity::AuthorisationPermitted;
+  if (args.GetCount() > 2) {
+    if (args[2] *= "deny")
+      auth = OpalPresentity::AuthorisationDenied;
+    else if (args[2] *= "deny-politely")
+      auth = OpalPresentity::AuthorisationDeniedPolitely;
+    else {
+      args.WriteUsage();
+      return;
+    }
+  }
+
   if (args.GetCount() < 2)
     args.WriteUsage();
   else if (!m_presentities.Contains(args[0]))
     args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
   else
-    m_presentities[args[0]].SetPresenceAuthorisation(args[1], OpalPresentity::AuthorisationPermitted);
+    m_presentities[args[0]].SetPresenceAuthorisation(args[1], auth);
 }
 
 
 void TestPresEnt::CmdSetLocalPresence(PCLI::Arguments & args, INT)
 {
   PString note;
-  if (args.GetCount > 2)
+  if (args.GetCount() > 2)
     note = args[2];
 
   if (args.GetCount() < 2)
