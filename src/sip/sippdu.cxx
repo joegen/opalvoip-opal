@@ -1634,8 +1634,8 @@ PString SIP_PDU::CreateVia(SIPEndPoint & endpoint, const OpalTransport & transpo
 void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via)
 {
   InitialiseHeaders(dialog.GetRequestURI(),
-                    dialog.GetRemoteURI().AsQuotedString(),
-                    dialog.GetLocalURI().AsQuotedString(),
+                    dialog.GetRemoteURI(),
+                    dialog.GetLocalURI(),
                     dialog.GetCallID(),
                     dialog.GetNextCSeq(dialog.IsEstablished() && m_method != Method_ACK ? 1 : 0),
                     via);
