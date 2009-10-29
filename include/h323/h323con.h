@@ -2081,7 +2081,6 @@ class H323Connection : public OpalRTPConnection
     PString            gkAccessTokenOID;
     PBYTEArray         gkAccessTokenData;
     PBoolean               addAccessTokenToSetup;
-    PBoolean               alertDone;
 
     H323Transport * signallingChannel;
     H323Transport * controlChannel;
