@@ -301,8 +301,6 @@ H323Connection::H323Connection(OpalCall & call,
   h45011handler = new H45011Handler(*this, *h450dispatcher);
 #endif
 
-  alertDone   = PFalse;
-  
 #if OPAL_H460
   features->LoadFeatureSet(H460_Feature::FeatureSignal, this);
 #endif
@@ -1367,10 +1365,13 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
 {
   if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_alerting)
     return PFalse;
-  const H225_Alerting_UUIE & alert = pdu.m_h323_uu_pdu.m_h323_message_body;
 
-  if (alertDone) 
-    return PTrue;
+  if (GetPhase() >= AlertingPhase)
+    return true;
+
+  SetPhase(AlertingPhase);
+
+  const H225_Alerting_UUIE & alert = pdu.m_h323_uu_pdu.m_h323_message_body;
 
   SetRemoteVersions(alert.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
@@ -1389,7 +1390,6 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
     if (!CreateOutgoingControlChannel(alert.m_h245Address))
       return PFalse;
 
-  alertDone = PTrue;
   alertingTime = PTime();
 
   return OnAlerting(pdu, remotePartyName);
@@ -1398,8 +1398,9 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
 
 PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 {
-  if (!alertDone) {
-    alertDone = PTrue;
+  if (GetPhase() < AlertingPhase) {
+    // Never actually got the ALERTING, fake it as some things get upset
+    // if the sequence is not strictly followed.
     alertingTime = PTime();
     if (!OnAlerting(pdu, remotePartyName))
       return PFalse;
@@ -2082,7 +2083,6 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   signallingChannel->SetReadTimeout(endpoint.GetSignallingChannelCallTimeout());
 
   connectionState = AwaitingSignalConnect;
-  SetPhase(AlertingPhase);
 
   return NumCallEndReasons;
 }
