@@ -655,6 +655,9 @@ PBoolean OpalRTPMediaStream::Close()
 
 void OpalRTPMediaStream::SetPaused(bool pause)
 {
+  if (paused == pause)
+    return;
+
   OpalMediaStream::SetPaused(pause);
 
   // If coming out of pause, reopen the RTP session, even though it is probably
