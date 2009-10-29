@@ -1216,7 +1216,7 @@ void OpalConnection::OnDetectInBandDTMF(RTP_DataFrame & frame, INT)
   if (!tones.IsEmpty()) {
     PTRACE(3, "OPAL\tDTMF detected: \"" << tones << '"');
     for (PINDEX i = 0; i < tones.GetLength(); i++)
-      OnUserInputTone(tones[i], 0);
+      OnUserInputTone(tones[i], PDTMFDecoder::DetectTime);
   }
 }
 
