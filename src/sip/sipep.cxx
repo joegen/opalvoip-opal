@@ -1292,7 +1292,7 @@ bool SIPEndPoint::Publish(const PString & to, const PString & body, unsigned exp
 bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
 {
   SIPSubscribe::Params params(SIPSubscribe::Presence);
-  params.m_addressOfRecord = info.m_address;
+  params.m_addressOfRecord = info.m_entity; // As required by OMA-TS-Presence_SIMPLE-V2_0-20090917-C
   params.m_expire          = expire;
   params.m_agentAddress    = info.m_presenceAgent;
   params.m_contentType     = "application/pidf+xml";
@@ -1307,18 +1307,18 @@ void SIPEndPoint::OnPresenceInfoReceived(const SIPPresenceInfo & info)
   // For backward compatibility
   switch (info.m_basic) {
     case SIPPresenceInfo::Open :
-      OnPresenceInfoReceived(info.m_address, "open", info.m_note);
+      OnPresenceInfoReceived(info.m_entity, "open", info.m_note);
       break;
     case SIPPresenceInfo::Closed :
-      OnPresenceInfoReceived(info.m_address, "closed", info.m_note);
+      OnPresenceInfoReceived(info.m_entity, "closed", info.m_note);
       break;
     default :
-      OnPresenceInfoReceived(info.m_address, PString::Empty(), info.m_note);
+      OnPresenceInfoReceived(info.m_entity, PString::Empty(), info.m_note);
   }
 }
 
 
-void SIPEndPoint::OnPresenceInfoReceived(const PString & /*user*/,
+void SIPEndPoint::OnPresenceInfoReceived(const PString & /*entity*/,
                                          const PString & /*basic*/,
                                          const PString & /*note*/)
 {

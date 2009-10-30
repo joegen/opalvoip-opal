@@ -51,16 +51,14 @@ OpalPresentity::OpalPresentity()
 }
 
 
-OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PString & url)
+OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PURL & url, const PString & scheme)
 {
-  PURL aor = url;
-
-  OpalPresentity * presEntity = PFactory<OpalPresentity>::CreateInstance(aor.GetScheme());
+  OpalPresentity * presEntity = PFactory<OpalPresentity>::CreateInstance(scheme.IsEmpty() ? url.GetScheme() : scheme);
   if (presEntity == NULL) 
     return NULL;
 
   presEntity->m_manager = &manager;
-  presEntity->m_aor = aor;
+  presEntity->m_aor = url;
 
   return presEntity;
 }
@@ -150,6 +148,22 @@ void OpalPresentity::SetPresenceChangeNotifier(const PresenceChangeNotifier & no
   PWaitAndSignal mutex(m_notificationMutex);
 
   m_onPresenceChangeNotifier = notifier;
+}
+
+
+OpalPresentityCommand * OpalPresentity::InternalCreateCommand(const char * cmdName)
+{
+  PDefaultPFactoryKey partialKey(cmdName);
+  const char * className;
+
+  for (unsigned ancestor = 0; *(className = GetClass(ancestor)) != '\0'; ++ancestor) {
+    OpalPresentityCommand * cmd = PFactory<OpalPresentityCommand>::CreateInstance(className+partialKey);
+    if (cmd != NULL)
+      return cmd;
+  }
+
+  PAssertAlways(PUnimplementedFunction);
+  return NULL;
 }
 
 
