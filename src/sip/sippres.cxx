@@ -58,21 +58,35 @@ const PString & SIP_Presentity::DefaultPresenceServerKey() { static const PStrin
 const PString & SIP_Presentity::PresenceServerKey()        { static const PString s = "presence_server";         return s; }
 
 static PFactory<OpalPresentity>::Worker<SIPLocal_Presentity> sip_local_PresentityWorker("sip-local");
-static PFactory<OpalPresentity>::Worker<SIPXCAP_Presentity>  sip_xcap_PresentityWorker1("sip-xcap");
-static PFactory<OpalPresentity>::Worker<SIPXCAP_Presentity>  sip_xcap_PresentityWorker2("sip");
+static PFactory<OpalPresentity>::Worker<SIPXCAP_Presentity>  sip_xcap_PresentityWorker("sip-xcap");
+static PFactory<OpalPresentity>::Worker<SIPOMA_Presentity>   sip_oma_PresentityWorker("sip-oma");
+static bool sip_default_PresentityWorker = PFactory<OpalPresentity>::RegisterAs("sip", "sip-oma");
+
+static const char * const AuthNames[OpalPresentity::NumAuthorisations] = { "allow", "block", "polite-block", "confirm" };
 
 
 //////////////////////////////////////////////////////////////////////////////////////
 
 SIP_Presentity::SIP_Presentity()
   : m_endpoint(NULL)
-  , m_localPresence(NoPresence)
-{ 
+{
 }
+
 
 SIP_Presentity::~SIP_Presentity()
 {
 }
+
+
+bool SIP_Presentity::SetDefaultPresentity(const PString & prefix)
+{
+  if (PFactory<OpalPresentity>::RegisterAs("sip", prefix))
+    return true;
+
+  PTRACE(1, "SIPPres\tCannot set default 'sip' presentity handler to '" << prefix << '\'');
+  return false;
+}
+
 
 bool SIP_Presentity::Open()
 {
@@ -126,9 +140,13 @@ bool SIPLocal_Presentity::Close()
 const PString & SIPXCAP_Presentity::XcapRootKey()     { static const PString s = "xcap_root";     return s; }
 const PString & SIPXCAP_Presentity::XcapAuthIdKey()   { static const PString s = "xcap_auth_id";  return s; }
 const PString & SIPXCAP_Presentity::XcapPasswordKey() { static const PString s = "xcap_password"; return s; }
+const PString & SIPXCAP_Presentity::XcapAuthAuidKey() { static const PString s = "xcap_auid";     return s; }
+const PString & SIPXCAP_Presentity::XcapAuthFileKey() { static const PString s = "xcap_authfile"; return s; }
 
 SIPXCAP_Presentity::SIPXCAP_Presentity()
 {
+  m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey, "pres-rules");
+  m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey, "index");
 }
 
 
@@ -413,42 +431,34 @@ void SIPXCAP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
 
 void SIPXCAP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd)
 {
-  m_localPresence     = cmd.m_state;
-  m_localPresenceNote = cmd.m_note;
+  PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
 
-  PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << m_localPresence << "/" << m_localPresenceNote);
+  m_localPresence.m_presenceAgent = m_presenceServer.AsString();
+  m_localPresence.m_entity = m_aor.AsString();
 
-  // send presence
-  SIPPresenceInfo info;
-
-  info.m_presenceAgent = m_presenceServer.AsString();
-  info.m_address       = m_aor.AsString();
-
-  if (m_localPresence == NoPresence) {
-    info.m_basic = SIPPresenceInfo::Closed;
-    m_endpoint->PublishPresence(info, 0);
+  if (cmd.m_state == NoPresence) {
+    m_localPresence.m_basic = SIPPresenceInfo::Closed;
+    m_endpoint->PublishPresence(m_localPresence, 0);
     return;
   }
 
-  unsigned expire = m_attributes.Get(OpalPresentity::TimeToLiveKey, "30").AsInteger();
-
-  if (m_localPresence < SIPPresenceInfo::NumBasicStates)
-    info.m_basic = (SIPPresenceInfo::BasicStates)m_localPresence;
+  if (cmd.m_state < (unsigned)SIPPresenceInfo::NumBasicStates)
+    m_localPresence.m_basic = (SIPPresenceInfo::BasicStates)cmd.m_state;
   else
-    info.m_basic = SIPPresenceInfo::Open;
+    m_localPresence.m_basic = SIPPresenceInfo::Open;
 
-  if (m_localPresence > ExtendedBase)
-    info.m_activity = (SIPPresenceInfo::Activities)(m_localPresence - ExtendedBase);
+  if (cmd.m_state > ExtendedBase)
+    m_localPresence.m_activity = (SIPPresenceInfo::Activities)(cmd.m_state - ExtendedBase);
 
-  info.m_note = m_localPresenceNote;
+  m_localPresence.m_note = cmd.m_note;
 
-  m_endpoint->PublishPresence(info, expire);
+  m_endpoint->PublishPresence(m_localPresence, GetExpiryTime());
 }
 
 
 unsigned SIPXCAP_Presentity::GetExpiryTime() const
 {
-  int ttl = m_attributes.Get(OpalPresentity::TimeToLiveKey, "30").AsInteger();
+  int ttl = m_attributes.Get(OpalPresentity::TimeToLiveKey, "300").AsInteger();
   return ttl > 0 ? ttl : 300;
 }
 
@@ -558,58 +568,155 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::N
 }
 
 
+bool SIPXCAP_Presentity::ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisationRequestCommand & cmd)
+{
+  PString ruleId = m_authorisationIdByAor[cmd.m_presentity];
+
+  XCAPClient::NodeSelector node;
+  node.SetNamespace("urn:ietf:params:xml:ns:pres-rules", "pr");
+  node.SetNamespace("urn:ietf:params:xml:ns:common-policy", "cr");
+  node.SetElement("cr:ruleset");
+  node.SetElement("cr:rule", "id", ruleId);
+
+  PXML xml;
+  if (!xcap.GetXmlNode(node, xml)) {
+    PTRACE(4, "SIPPres\tCould not locate existing rule id=" << ruleId
+           << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+    return false;
+  }
+
+  PXMLElement * root, * actions, * subHandling = NULL;
+  if ((root = xml.GetRootElement()) == NULL ||
+      (actions = root->GetElement("cr:actions")) == NULL ||
+      (subHandling = actions->GetElement("pr:sub-handling")) == NULL) {
+    PTRACE(2, "SIPPres\tInvalid XML in existing rule id=" << ruleId
+           << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+    return false;
+  }
+
+  if (subHandling->GetData() *= AuthNames[cmd.m_authorisation]) {
+    PTRACE(3, "SIPPres\tRule id=" << ruleId << " already set to "
+           << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+    return true;
+  }
+
+  // Adjust the authorisation
+  subHandling->SetData(AuthNames[cmd.m_authorisation]);
+
+  if (xcap.PutXmlNode(node, xml)) {
+    PTRACE(3, "SIPPres\tRule id=" << ruleId << " changed to"
+           << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+    return true;
+  }
+
+  PTRACE(3, "SIPPres\tCould not change existing rule id=" << ruleId
+         << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+  return false;
+}
+
+
+static PString GetNewRuleId()
+{
+  static PAtomicInteger NextRuleId(PRandom::Number());
+  return PString(PString::Printf, "R%08X", ++NextRuleId);  // As per http://www.w3.org/TR/1999/REC-xml-names-19990114/#NT-NCName
+}
+
+
 void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd)
 {
-  static const char * const AuthNames[NumAuthorisations] = { "allow", "block", "polite-block", "confirm" };
-  static const char AuthDocName[] = "pres-rules";
-
-  PString aorStr = m_aor.AsString();
-
   XCAPClient xcap;
   xcap.SetRoot(m_attributes.Get(SIPXCAP_Presentity::XcapRootKey));
-  xcap.SetApplicationUniqueID("org.openmobilealliance.pres-rules");            // As per RFC5025/9.1
+  xcap.SetApplicationUniqueID(m_attributes.Get(SIPXCAP_Presentity::XcapAuthAuidKey)); // As per RFC5025/9.1
   xcap.SetContentType("application/auth-policy+xml");   // As per RFC5025/9.4
-  xcap.SetUserIdentifier(aorStr);                       // As per RFC5025/9.7
-  xcap.SetAuthenticationInfo(m_attributes.Get(SIPXCAP_Presentity::XcapAuthIdKey, m_attributes.Get(OpalPresentity::AuthNameKey, aorStr)),
+  xcap.SetUserIdentifier(m_aor.AsString());             // As per RFC5025/9.7
+  xcap.SetAuthenticationInfo(m_attributes.Get(SIPXCAP_Presentity::XcapAuthIdKey, m_attributes.Get(OpalPresentity::AuthNameKey, xcap.GetUserIdentifier())),
                              m_attributes.Get(SIPXCAP_Presentity::XcapPasswordKey, m_attributes.Get(OpalPresentity::AuthPasswordKey)));
+  xcap.SetDefaultFilename(m_attributes.Get(SIPXCAP_Presentity::XcapAuthFileKey));
+
+  // See if we can use teh quick method
+  if (m_authorisationIdByAor.find(cmd.m_presentity) != m_authorisationIdByAor.end()) {
+    if (ChangeAuthNode(xcap, cmd))
+      return;
+  }
 
   PXML xml;
   PXMLElement * element;
 
-  if (m_authorisationIdByAor.find(cmd.m_presentity) != m_authorisationIdByAor.end()) {
-    PString node = "cr:ruleset\ncr:rule[@id=" + m_authorisationIdByAor[cmd.m_presentity] + ']';
-    if (xcap.GetXmlNode(AuthDocName, node, xml)) {
-      if ((element = xml.GetRootElement()) != NULL &&
-          (element = element->GetElement("cr:actions")) != NULL &&
-          (element = element->GetElement("pr:sub-handling")) != NULL) {
-        if (element->GetData() *= AuthNames[cmd.m_authorisation]) {
-          PTRACE(3, "SIPPres\tRule already set to " << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
-        }
-        else {
-          element->SetData(AuthNames[cmd.m_authorisation]);
-          if (xcap.PutXmlNode(AuthDocName, node, xml)) {
-            PTRACE(3, "SIPPres\tRule changed to" << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
-            return;
-          }
-          PTRACE(3, "SIPPres\tCould not change existing rule for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
-        }
-      }
+  // Could not find rule element quickly, get the whole document
+  if (!xcap.GetXmlDocument(xml)) {
+    PString newRuleId = GetNewRuleId();
+    // No whole document, create a fresh one
+    xml.Load("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+             "<cr:ruleset xmlns:pr=\"urn:ietf:params:xml:ns:pres-rules\""
+                        " xmlns:cr=\"urn:ietf:params:xml:ns:common-policy\">"
+               "<cr:rule>"
+                 "<cr:conditions>"
+                   "<cr:identity>"
+                     "<cr:one/>"
+                   "</cr:identity>"
+                 "</cr:conditions>"
+                 "<cr:actions>"
+                   "<pr:sub-handling></pr:sub-handling>"
+                 "</cr:actions>"
+                 "<cr:transformations>"
+                   "<pr:provide-services>"
+                     "<pr:service-uri-scheme></pr:service-uri-scheme>"
+                   "</pr:provide-services>"
+                   "<pr:provide-persons>"
+                     "<pr:all-persons/>"
+                   "</pr:provide-persons>"
+                   "<pr:provide-activities>true</pr:provide-activities>"
+                   "<pr:provide-user-input>bare</pr:provide-user-input>"
+                 "</cr:transformations>"
+               "</cr:rule>"
+             "</cr:ruleset>");
+    element = xml.GetElement("cr:rule");
+    element->SetAttribute("id", newRuleId);
+    element->GetElement("cr:conditions")->GetElement("cr:identity")->GetElement("cr:one")->SetAttribute("id", cmd.m_presentity);
+    element->GetElement("cr:actions")->GetElement("pr:sub-handling")->SetData(AuthNames[cmd.m_authorisation]);
+    element->GetElement("cr:transformations")->GetElement("pr:provide-services")->GetElement("pr:service-uri-scheme")->SetData(m_aor.GetScheme());
 
-      PTRACE(3, "SIPPres\tInvalid XML in existing rule for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+    if (xcap.PutXmlDocument(xml)) {
+      PTRACE(3, "SIPPres\tNew rule file set to " << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+      m_authorisationIdByAor[cmd.m_presentity] = newRuleId;
     }
     else {
-      PTRACE(3, "SIPPres\tCould not locate existing rule for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+      PTRACE(2, "SIPPres\tCould not add new rule file for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
     }
 
-    m_authorisationIdByAor.erase(cmd.m_presentity); // Something wrong get rid of old data
+    return;
   }
 
-  // Could not find rule element, try and insert a new one
+  // Extract all the rules from it
+  m_authorisationIdByAor.clear();
 
-  static PAtomicInteger NextRuleId;
-  PString newRuleId(PString::Printf, "R%08X", ++NextRuleId);  // As per http://www.w3.org/TR/1999/REC-xml-names-19990114/#NT-NCName
+  bool existingRuleForWatcher = false;
 
-  xml.Load("<cr:rule>"
+  PINDEX ruleIndex = 0;
+  while ((element = xml.GetElement("cr:rule", ruleIndex++)) != NULL) {
+    PString ruleId = element->GetAttribute("id");
+    if ((element = element->GetElement("cr:conditions")) != NULL &&
+        (element = element->GetElement("cr:identity")) != NULL &&
+        (element = element->GetElement("cr:one")) != NULL) {
+      PString watcher = element->GetAttribute("id");
+
+      m_authorisationIdByAor[watcher] = ruleId;
+      PTRACE(4, "SIPPres\tGetting rule id=" << ruleId << " for '" << watcher << "' at '" << m_aor << '\'');
+
+      if (watcher == cmd.m_presentity)
+        existingRuleForWatcher = true;
+    }
+  }
+
+  if (existingRuleForWatcher) {
+    ChangeAuthNode(xcap, cmd);
+    return;
+  }
+
+  // Create new rule
+  PString newRuleId = GetNewRuleId();
+  xml.Load("<cr:rule xmlns:pr=\"urn:ietf:params:xml:ns:pres-rules\""
+                   " xmlns:cr=\"urn:ietf:params:xml:ns:common-policy\">"
              "<cr:conditions>"
                "<cr:identity>"
                  "<cr:one/>"
@@ -631,58 +738,33 @@ void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRe
            "</cr:rule>",
            PXML::FragmentOnly);
   element = xml.GetRootElement();
-  element->SetAttribute("id", newRuleId);
+  element->SetAttribute("id", GetNewRuleId());
   element->GetElement("cr:conditions")->GetElement("cr:identity")->GetElement("cr:one")->SetAttribute("id", cmd.m_presentity);
   element->GetElement("cr:actions")->GetElement("pr:sub-handling")->SetData(AuthNames[cmd.m_authorisation]);
   element->GetElement("cr:transformations")->GetElement("pr:provide-services")->GetElement("pr:service-uri-scheme")->SetData(m_aor.GetScheme());
 
-  if (xcap.PutXmlNode(AuthDocName, "cr:ruleset\ncr:rule[@id="+newRuleId+']', xml)) {
+  XCAPClient::NodeSelector node;
+  node.SetNamespace("urn:ietf:params:xml:ns:pres-rules", "pr");
+  node.SetNamespace("urn:ietf:params:xml:ns:common-policy", "cr");
+  node.SetElement("cr:ruleset");
+  node.SetElement("cr:rule", "id", newRuleId);
+
+  if (xcap.PutXmlNode(node, xml)) {
     PTRACE(3, "SIPPres\tNew rule set to" << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
     m_authorisationIdByAor[cmd.m_presentity] = newRuleId;
     return;
   }
 
   PTRACE(4, "SIPPres\tCould not add new rule for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+}
 
-  // Could not insert an element, whole file must not exist
-  xml.Load("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-           "<cr:ruleset xmlns=\"urn:ietf:params:xml:ns:pres-rules\""
-                      " xmlns:pr=\"urn:ietf:params:xml:ns:pres-rules\""
-                      " xmlns:cr=\"urn:ietf:params:xml:ns:common-policy\">"
-             "<cr:rule>"
-               "<cr:conditions>"
-                 "<cr:identity>"
-                   "<cr:one/>"
-                 "</cr:identity>"
-               "</cr:conditions>"
-               "<cr:actions>"
-                 "<pr:sub-handling></pr:sub-handling>"
-               "</cr:actions>"
-               "<cr:transformations>"
-                 "<pr:provide-services>"
-                   "<pr:service-uri-scheme></pr:service-uri-scheme>"
-                 "</pr:provide-services>"
-                 "<pr:provide-persons>"
-                   "<pr:all-persons/>"
-                 "</pr:provide-persons>"
-                 "<pr:provide-activities>true</pr:provide-activities>"
-                 "<pr:provide-user-input>bare</pr:provide-user-input>"
-               "</cr:transformations>"
-             "</cr:rule>"
-           "</cr:ruleset>");
-  PXMLElement * rule = xml.GetElement("cr:rule");
-  rule->SetAttribute("id", newRuleId);
-  rule->GetElement("cr:conditions")->GetElement("cr:identity")->GetElement("cr:one")->SetAttribute("id", cmd.m_presentity);
-  rule->GetElement("cr:actions")->GetElement("pr:sub-handling")->SetData(AuthNames[cmd.m_authorisation]);
-  rule->GetElement("cr:transformations")->GetElement("pr:provide-services")->GetElement("pr:service-uri-scheme")->SetData(m_aor.GetScheme());
 
-  if (xcap.PutXmlDocument(AuthDocName, xml)) {
-    PTRACE(3, "SIPPres\tNew rule file set to " << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
-    m_authorisationIdByAor[cmd.m_presentity] = newRuleId;
-  }
-  else {
-    PTRACE(2, "SIPPres\tCould not add new rule file for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
-  }
+//////////////////////////////////////////////////////////////
+
+SIPOMA_Presentity::SIPOMA_Presentity()
+{
+  m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey, "org.openmobilealliance.pres-rules");
+  m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey, "pres-rules");
 }
 
 
@@ -694,7 +776,7 @@ XCAPClient::XCAPClient()
 }
 
 
-PURL XCAPClient::BuildURL(const PString & name, const PString & node)
+PURL XCAPClient::BuildURL(const PString & name, const NodeSelector & node)
 {
   PURL uri(m_root);                              // XCAP root
 
@@ -707,14 +789,7 @@ PURL XCAPClient::BuildURL(const PString & name, const PString & node)
 
   if (!name.IsEmpty()) {
     uri.AppendPath(name);                        // Final resource name
-
-    if (!node.IsEmpty()) {
-      uri.AppendPath("~~");                      // Node selector
-
-      PStringArray nodes = node.Lines();
-      for (PINDEX i = 0; i < nodes.GetSize(); ++i)
-        uri.AppendPath(nodes[i]);
-    }
+    node.AddToURL(uri);
   }
 
   return uri;
@@ -724,7 +799,7 @@ PURL XCAPClient::BuildURL(const PString & name, const PString & node)
 bool XCAPClient::GetXmlDocument(const PString & name, PXML & xml)
 {
   PString str;
-  if (!GetTextDocument(BuildURL(name), str, m_contentType))
+  if (!GetTextDocument(BuildURL(name, NodeSelector()), str, m_contentType))
     return false;
 
   return xml.Load(str);
@@ -735,11 +810,17 @@ bool XCAPClient::PutXmlDocument(const PString & name, const PXML & xml)
 {
   PStringStream strm;
   strm << xml;
-  return PutTextDocument(BuildURL(name), strm, m_contentType);
+  return PutTextDocument(BuildURL(name, NodeSelector()), strm, m_contentType);
 }
 
 
-bool XCAPClient::GetXmlNode(const PString & docname, const PString & node, PXML & xml)
+bool XCAPClient::DeleteXmlDocument(const PString & name)
+{
+  return DeleteDocument(BuildURL(name, NodeSelector()));
+}
+
+
+bool XCAPClient::GetXmlNode(const PString & docname, const NodeSelector & node, PXML & xml)
 {
   PString str;
   if (!GetTextDocument(BuildURL(docname, node), str, "application/xcap-el+xml"))
@@ -749,11 +830,54 @@ bool XCAPClient::GetXmlNode(const PString & docname, const PString & node, PXML 
 }
 
 
-bool XCAPClient::PutXmlNode(const PString & docname, const PString & node, const PXML & xml)
+bool XCAPClient::PutXmlNode(const PString & docname, const NodeSelector & node, const PXML & xml)
 {
   PStringStream strm;
   strm << xml;
   return PutTextDocument(BuildURL(docname, node), strm, "application/xcap-el+xml");
+}
+
+
+PString XCAPClient::ElementSelector::AsString() const
+{
+  PStringStream strm;
+
+  strm << m_name;
+
+  if (!m_position.IsEmpty())
+    strm << '[' << m_position << ']';
+
+  if (!m_attribute.IsEmpty())
+    strm << "[@" << m_attribute << "=\"" << m_value << "\"]";
+
+  return strm;
+}
+
+
+void XCAPClient::NodeSelector::AddToURL(PURL & uri) const
+{
+  if (empty())
+    return;
+
+  uri.AppendPath("~~");                      // Node selector
+
+  for (const_iterator it = begin(); it != end(); ++it)
+    uri.AppendPath(it->AsString());
+
+  if (m_namespaces.empty())
+    return;
+
+  PStringStream query;
+  for (std::map<PString, PString>::const_iterator it = m_namespaces.begin(); it != m_namespaces.end(); ++it) {
+    query << "xmlns(";
+    if (!it->first.IsEmpty())
+      query << it->first << '=';
+    query << it->second << ')';
+  }
+
+  // Non-standard format query parameter, we fake that by having one
+  // dictionary element at key value empty string
+  uri.SetQueryVar(PString::Empty(), query);
 }
 
 

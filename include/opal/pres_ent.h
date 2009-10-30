@@ -68,7 +68,8 @@ class OpalPresentity : public PSafeObject
       */
     static OpalPresentity * Create(
       OpalManager & manager, ///< Manager for presentity
-      const PString & url   ///< URL for presence identity
+      const PURL & url,      ///< URL for presence identity
+      const PString & scheme = PString::Empty() ///< Overide the url scheme
     );
   //@}
 
@@ -216,11 +217,9 @@ class OpalPresentity : public PSafeObject
         to create them.
       */
     template <class cls>
-    cls * CreateCommand()
+    __inline cls * CreateCommand()
     {
-      cls * p = dynamic_cast<cls *>(PFactory<OpalPresentityCommand>::CreateInstance(
-                       PDefaultPFactoryKey(typeid(*this).name())+typeid(cls).name()));
-      return PAssertNULL(p);
+      return dynamic_cast<cls *>(InternalCreateCommand(typeid(cls).name()));
     }
 
     /** Lowlevel function to send a command to the presentity handler.
@@ -275,6 +274,8 @@ class OpalPresentity : public PSafeObject
   //@}
 
   protected:
+    OpalPresentityCommand * InternalCreateCommand(const char * cmdName);
+
     OpalManager        * m_manager;
     OpalGloballyUniqueID m_guid;
     PURL                 m_aor;
@@ -294,6 +295,8 @@ class OpalPresentity : public PSafeObject
   */
 class OpalPresentityWithCommandThread : public OpalPresentity
 {
+    PCLASSINFO(OpalPresentityWithCommandThread, OpalPresentity);
+
   /**@name Construction */
   //@{
   protected:
@@ -317,7 +320,7 @@ class OpalPresentityWithCommandThread : public OpalPresentity
         thread to handle.
       */
     virtual bool SendCommand(
-      OpalPresentityCommand * cmd
+      OpalPresentityCommand * cmd   ///< Command to execute
     );
   //@}
 
@@ -382,7 +385,7 @@ class OpalPresentityCommand {
     public: virtual void Process(OpalPresentity & presentity) { dynamic_cast<entity &>(presentity).func(*this); } \
   }; \
   static PFactory<OpalPresentityCommand>::Worker<entity##_##command> \
-        s_entity##_##command(PDefaultPFactoryKey(typeid(entity).name())+typeid(command).name())
+  s_entity##_##command(PDefaultPFactoryKey(entity::Class())+typeid(command).name())
 
 
 /** Command for subscribing to the status of another presentity.
