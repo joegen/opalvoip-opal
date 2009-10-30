@@ -3056,9 +3056,9 @@ bool MyManager::SubscribePresence(wxString & uri)
 void MyManager::OnPresence(wxCommandEvent & theEvent)
 {
   SIPPresenceInfo * info = (SIPPresenceInfo *)theEvent.GetClientData();
-  LogWindow << "Presence NOTIFY received for " << info->m_address << ": " << *info << endl;
+  LogWindow << "Presence NOTIFY received for " << info->m_entity << ": " << *info << endl;
 
-  SIPURL incomingURL(info->m_address);
+  SIPURL incomingURL(info->m_entity);
 
   int count = m_speedDials->GetItemCount();
   wxListItem item;
@@ -3351,7 +3351,7 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
         m_aor += '@' + m_Domain.p_str();
 
       SIPPresenceInfo param;
-      param.m_address       = m_aor;
+      param.m_entity        = m_aor;
       param.m_basic         = SIPPresenceInfo::Open;
       param.m_contact       = m_Contact.p_str();
       param.m_presenceAgent = m_Domain.p_str();
@@ -3403,7 +3403,7 @@ bool RegistrationInfo::Stop(SIPEndPoint & sipEP)
 
     case PublishPresence : {
       SIPPresenceInfo info;
-      info.m_address = m_aor;
+      info.m_entity = m_aor;
       info.m_basic = SIPPresenceInfo::Closed;
       sipEP.PublishPresence(info);
       break;
@@ -5195,7 +5195,7 @@ bool PresenceDialog::TransferDataFromWindow()
     return false;
 
   SIPPresenceInfo info;
-  info.m_address = m_address.p_str();
+  info.m_entity = m_address.p_str();
   if (m_status == "Invisible")
     info.m_basic = SIPPresenceInfo::Closed;
   else {

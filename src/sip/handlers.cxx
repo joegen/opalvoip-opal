@@ -1435,7 +1435,7 @@ SIPPresenceInfo::SIPPresenceInfo()
 
 void SIPPresenceInfo::PrintOn(ostream & strm) const
 {
-  if (m_address.IsEmpty())
+  if (m_entity.IsEmpty())
     return;
 
   if (m_activities.GetSize() > 0)
@@ -1462,14 +1462,12 @@ void SIPPresenceInfo::PrintOn(ostream & strm) const
 
 PString SIPPresenceInfo::AsXML() const
 {
-  if (m_address.IsEmpty() || m_tupleId.IsEmpty()) {
+  if (m_entity.IsEmpty() || m_tupleId.IsEmpty()) {
     PTRACE(1, "SIP\tCannot encode Presence XML as no address or no id.");
     return PString::Empty();
   }
 
   PCaselessString entity = m_entity;
-  if (entity.IsEmpty()) 
-    entity = m_address;
   if (entity.NumCompare("sip:") != PObject::EqualTo && entity.NumCompare("pres:") != PObject::EqualTo)
     entity.Splice("pres:", 0);
 
@@ -1482,7 +1480,7 @@ PString SIPPresenceInfo::AsXML() const
   if (m_basic != Unchanged)
     xml << "      <basic>" << (m_basic == Open ? "open" : "closed") << "</basic>\r\n";
   xml << "    </status>\r\n"
-         "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? m_address : m_contact) << "</contact>\r\n";
+         "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? entity : m_contact) << "</contact>\r\n";
 
   if (!m_note.IsEmpty()) {
     PString note = m_note;

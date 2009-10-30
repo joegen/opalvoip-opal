@@ -40,6 +40,9 @@
 #include <ptclib/pxml.h>
 
 
+class XCAPClient;
+
+
 class SIPWatcherInfoCommand : public OpalPresentityCommand {
   public:
     SIPWatcherInfoCommand(bool unsubscribe = false) : m_unsubscribe(unsubscribe) { }
@@ -50,6 +53,8 @@ class SIPWatcherInfoCommand : public OpalPresentityCommand {
 
 class SIP_Presentity : public OpalPresentityWithCommandThread
 {
+    PCLASSINFO(SIP_Presentity, OpalPresentityWithCommandThread);
+
   public:
     static const PString & DefaultPresenceServerKey();
     static const PString & PresenceServerKey();
@@ -61,6 +66,15 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
 
     SIPEndPoint & GetEndpoint() { return *m_endpoint; }
 
+    /** Set the default presentity class for "sip" scheme.
+        When OpalPresentity::Create() is called with a URI containing the "sip"
+        scheme several different preentity protocols could be used. This
+        determines which, for example "sip-local", "sip-xcap", "sip-oma".
+        */
+    static bool SetDefaultPresentity(
+      const PString & prefix
+    );
+
   protected:
     SIP_Presentity();
 
@@ -70,13 +84,14 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
 
     int m_watcherInfoVersion;
 
-    State   m_localPresence;
-    PString m_localPresenceNote;
+    SIPPresenceInfo m_localPresence;
 };
 
 
 class SIPLocal_Presentity : public SIP_Presentity
 {
+    PCLASSINFO(SIPLocal_Presentity, SIP_Presentity);
+
   public:
     ~SIPLocal_Presentity();
 
@@ -89,10 +104,14 @@ class SIPLocal_Presentity : public SIP_Presentity
 
 class SIPXCAP_Presentity : public SIP_Presentity
 {
+    PCLASSINFO(SIPXCAP_Presentity, SIP_Presentity);
+
   public:
     static const PString & XcapRootKey();
     static const PString & XcapAuthIdKey();
     static const PString & XcapPasswordKey();
+    static const PString & XcapAuthAuidKey();
+    static const PString & XcapAuthFileKey();
 
     SIPXCAP_Presentity();
     ~SIPXCAP_Presentity();
@@ -114,6 +133,7 @@ class SIPXCAP_Presentity : public SIP_Presentity
 
     virtual bool InternalOpen();
     unsigned GetExpiryTime() const;
+    bool ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisationRequestCommand & cmd);
 
     PIPSocketAddressAndPort m_presenceServer;
     PString                 m_watcherSubscriptionAOR;
@@ -126,28 +146,150 @@ class SIPXCAP_Presentity : public SIP_Presentity
 };
 
 
+class SIPOMA_Presentity : public SIPXCAP_Presentity
+{
+    PCLASSINFO(SIPOMA_Presentity, SIPXCAP_Presentity);
+
+  public:
+    SIPOMA_Presentity();
+};
+
+
 class XCAPClient : public PHTTPClient
 {
   public:
     XCAPClient();
 
     bool GetXmlDocument(
+      PXML & xml
+    ) { return GetXmlDocument(m_defaultFilename, xml); }
+
+    bool GetXmlDocument(
       const PString & name,
       PXML & xml
     );
+
+    bool PutXmlDocument(
+      const PXML & xml
+    ) { return PutXmlDocument(m_defaultFilename, xml); }
+
     bool PutXmlDocument(
       const PString & name,
       const PXML & xml
     );
 
+    bool DeleteXmlDocument()
+    { return PutXmlDocument(m_defaultFilename); }
+
+    bool DeleteXmlDocument(
+      const PString & name
+    );
+
+
+    struct ElementSelector {
+      ElementSelector(
+        const PString & name = PString::Empty(),
+        const PString & position = PString::Empty()
+      ) : m_name(name)
+        , m_position(position)
+      { PAssert(!m_name.IsEmpty(), PInvalidParameter); }
+
+      ElementSelector(
+        const PString & name,
+        const PString & attribute,
+        const PString & value
+      ) : m_name(name)
+        , m_attribute(attribute)
+        , m_value(value)
+      { PAssert(!m_name.IsEmpty(), PInvalidParameter); }
+
+      ElementSelector(
+        const PString & name,
+        const PString & position,
+        const PString & attribute,
+        const PString & value
+      ) : m_name(name)
+        , m_position(position)
+        , m_attribute(attribute)
+        , m_value(value)
+      { PAssert(!m_name.IsEmpty(), PInvalidParameter); }
+
+      PString AsString() const;
+
+      PString m_name;
+      PString m_position;
+      PString m_attribute;
+      PString m_value;
+    };
+
+    class NodeSelector : public std::list<ElementSelector>
+    {
+      public:
+        NodeSelector()
+          { }
+        NodeSelector(
+          const ElementSelector & selector
+        ) { push_back(selector); }
+        NodeSelector(
+          const ElementSelector & selector1,
+          const ElementSelector & selector2
+        ) { push_back(selector1); push_back(selector2); }
+        NodeSelector(
+          const ElementSelector & selector1,
+          const ElementSelector & selector2,
+          const ElementSelector & selector3
+        ) { push_back(selector1); push_back(selector2); push_back(selector3); }
+
+        void SetElement(
+          const PString & name,
+          const PString & position = PString::Empty()
+        ) { push_back(ElementSelector(name, position)); }
+
+        void SetElement(
+          const PString & name,
+          const PString & attribute,
+          const PString & value
+        ) { push_back(ElementSelector(name, attribute, value)); }
+
+        void SetElement(
+          const PString & name,
+          const PString & position,
+          const PString & attribute,
+          const PString & value
+        ) { push_back(ElementSelector(name, position, attribute, value)); }
+
+        void SetNamespace(
+          const PString & space,
+          const PString & alias = PString::Empty()
+        ) { PAssert(!space.IsEmpty(), PInvalidParameter); m_namespaces[alias] = space; }
+
+        void AddToURL(
+          PURL & url
+        ) const;
+
+      protected:
+        std::map<PString, PString> m_namespaces;
+    };
+
+    bool GetXmlNode(
+      const NodeSelector & node,
+      PXML & xml
+    ) { return GetXmlNode(m_defaultFilename, node, xml); }
+
     bool GetXmlNode(
       const PString & docname,
-      const PString & node,
+      const NodeSelector & node,
       PXML & xml
     );
+
+    bool PutXmlNode(
+      const NodeSelector & node,
+      const PXML & xml
+    ) { return PutXmlNode(m_defaultFilename, node, xml); }
+
     bool PutXmlNode(
       const PString & docname,
-      const PString & node,
+      const NodeSelector & node,
       const PXML & xml
     );
 
@@ -164,18 +306,24 @@ class XCAPClient : public PHTTPClient
     void SetUserIdentifier(
       const PString & id
     ) { m_global = false; m_xui = id; }
+    const PString & GetUserIdentifier() const { return m_xui; }
+
+    void SetDefaultFilename(
+      const PString & fn
+    ) { m_defaultFilename = fn; }
 
     void SetContentType(
       const PString & type
     ) { m_contentType = type; }
 
   protected:
-    PURL BuildURL(const PString & name, const PString & node = PString::Empty());
+    PURL BuildURL(const PString & name, const NodeSelector & node);
 
     PString m_root;
     PString m_auid;
     bool    m_global;
     PString m_xui;
+    PString m_defaultFilename;
     PString m_contentType;
 };
 
