@@ -837,9 +837,9 @@ bool MyManager::Initialise()
   if (config->Read(SilenceThresholdKey, &value1))
     silenceParams.m_threshold = value1;
   if (config->Read(SignalDeadbandKey, &value1))
-    silenceParams.m_signalDeadband = value1*8;
+    silenceParams.m_signalDeadband = value1;
   if (config->Read(SilenceDeadbandKey, &value1))
-    silenceParams.m_silenceDeadband = value1*8;
+    silenceParams.m_silenceDeadband = value1;
   SetSilenceDetectParams(silenceParams);
 
   if (config->Read(DisableDetectInBandDTMFKey, &onoff))
@@ -3685,8 +3685,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(MaxJitter, m_manager.GetMaxAudioJitterDelay());
   INIT_FIELD(SilenceSuppression, m_manager.GetSilenceDetectParams().m_mode);
   INIT_FIELD(SilenceThreshold, m_manager.GetSilenceDetectParams().m_threshold);
-  INIT_FIELD(SignalDeadband, m_manager.GetSilenceDetectParams().m_signalDeadband/8);
-  INIT_FIELD(SilenceDeadband, m_manager.GetSilenceDetectParams().m_silenceDeadband/8);
+  INIT_FIELD(SignalDeadband, m_manager.GetSilenceDetectParams().m_signalDeadband);
+  INIT_FIELD(SilenceDeadband, m_manager.GetSilenceDetectParams().m_silenceDeadband);
   INIT_FIELD(DisableDetectInBandDTMF, m_manager.DetectInBandDTMFDisabled());
 
   // Fill sound player combo box with available devices and set selection
@@ -4126,8 +4126,8 @@ bool OptionsDialog::TransferDataFromWindow()
   OpalSilenceDetector::Params silenceParams;
   SAVE_FIELD(SilenceSuppression, silenceParams.m_mode=(OpalSilenceDetector::Mode));
   SAVE_FIELD(SilenceThreshold, silenceParams.m_threshold=);
-  SAVE_FIELD(SignalDeadband, silenceParams.m_signalDeadband=8*);
-  SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=8*);
+  SAVE_FIELD(SignalDeadband, silenceParams.m_signalDeadband=);
+  SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=);
   m_manager.SetSilenceDetectParams(silenceParams);
 
   SAVE_FIELD(DisableDetectInBandDTMF, m_manager.DisableDetectInBandDTMF);

@@ -55,9 +55,9 @@ class OpalSilenceDetector : public PObject
       Params(
         Mode mode = AdaptiveSilenceDetection, ///<  New silence detection mode
         unsigned threshold = 0,               ///<  Threshold value if FixedSilenceDetection
-        unsigned signalDeadband = 80,         ///<  10 milliseconds of signal needed
-        unsigned silenceDeadband = 3200,      ///<  400 milliseconds of silence needed
-        unsigned adaptivePeriod = 4800        ///<  600 millisecond window for adaptive threshold
+        unsigned signalDeadband = 10,         ///<  10 milliseconds of signal needed
+        unsigned silenceDeadband = 400,       ///<  400 milliseconds of silence needed
+        unsigned adaptivePeriod = 600         ///<  600 millisecond window for adaptive threshold
       )
         : m_mode(mode),
           m_threshold(threshold),
@@ -68,14 +68,14 @@ class OpalSilenceDetector : public PObject
 
       Mode     m_mode;             /// Silence detection mode
       unsigned m_threshold;        /// Threshold value if FixedSilenceDetection
-      unsigned m_signalDeadband;   /// 10 milliseconds of signal needed
-      unsigned m_silenceDeadband;  /// 400 milliseconds of silence needed
-      unsigned m_adaptivePeriod;   /// 600 millisecond window for adaptive threshold
+      unsigned m_signalDeadband;   /// milliseconds of signal needed
+      unsigned m_silenceDeadband;  /// milliseconds of silence needed
+      unsigned m_adaptivePeriod;   /// millisecond window for adaptive threshold
     };
 
   /**@name Construction */
   //@{
-    /**Create a new connection.
+    /**Create a new detector. Default clock rate is 8000.
      */
     OpalSilenceDetector(
       const Params & newParam ///<  New parameters for silence detector
@@ -87,12 +87,29 @@ class OpalSilenceDetector : public PObject
     const PNotifier & GetReceiveHandler() const { return receiveHandler; }
 
     /**Set the silence detector parameters.
-       This enables, disables the silence detector as well as adjusting its
-       "agression". The deadband periods are in audio samples of 8kHz.
+       This adjusts the silence detector "agression". The deadband and 
+       adaptive periods are in ms units to work for any clock rate.
+	   The clock rate value is optional: 0 leaves value unchanged.
+       This may be called while audio is being transferred, but if in
+       adaptive mode calling this will reset the filter.
       */
     void SetParameters(
-      const Params & newParam ///<  New parameters for silence detector
+      const Params & params,  ///< New parameters for silence detector
+      const int clockRate = 0 ///< Sampling clock rate for the preprocessor
     );
+
+    /**Set the sampling clock rate for the preprocessor.
+       Adusts the interpretation of time values.
+       This may be called while audio is being transferred, but if in
+       adaptive mode calling this will reset the filter.
+     */
+    void SetClockRate(
+      const int clockRate     ///< Sampling clock rate for the preprocessor
+    );
+
+    /**Get the cyrrent sampling clock rate.
+      */
+    int GetClockRate() const { return clockRate; }
 
     /**Get silence detection status
 
@@ -120,12 +137,21 @@ class OpalSilenceDetector : public PObject
       PINDEX size           ///<  Size of payload buffer
     ) = 0;
 
+  private:
+    /**Reset the adaptive filter
+     */
+    void AdaptiveReset();
+
   protected:
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalSilenceDetector, ReceivedPacket);
 
     PNotifier receiveHandler;
 
-    Params param;
+    Mode mode;
+    unsigned signalDeadband;        // #samples of signal needed
+    unsigned silenceDeadband;       // #samples of silence needed
+    unsigned adaptivePeriod;        // #samples window for adaptive threshold
+    int clockRate;                  // audio sampling rate
 
     unsigned lastTimestamp;         // Last timestamp received
     unsigned receivedTime;          // Signal/Silence duration received so far.
@@ -135,6 +161,7 @@ class OpalSilenceDetector : public PObject
     unsigned signalReceivedTime;    // Duration of signal received
     unsigned silenceReceivedTime;   // Duration of silence received
     bool     inTalkBurst;           // Currently sending RTP data
+    PMutex   inUse;                 // Protects values to allow change while running
 };
 
 
@@ -142,7 +169,7 @@ class OpalPCM16SilenceDetector : public OpalSilenceDetector
 {
     PCLASSINFO(OpalPCM16SilenceDetector, OpalSilenceDetector);
   public:
-    /** Construct new silence detector for PCM-16
+    /** Construct new silence detector for PCM-16/8000
       */
     OpalPCM16SilenceDetector(
       const Params & newParam ///<  New parameters for silence detector
