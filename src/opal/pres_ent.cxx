@@ -151,6 +151,93 @@ void OpalPresentity::SetPresenceChangeNotifier(const PresenceChangeNotifier & no
 }
 
 
+bool OpalPresentity::GetBuddyList(BuddyList &)
+{
+  return false;
+}
+
+
+bool OpalPresentity::SetBuddyList(const BuddyList &)
+{
+  return false;
+}
+
+
+bool OpalPresentity::DeleteBuddyList()
+{
+  return false;
+}
+
+
+bool OpalPresentity::GetBuddy(BuddyInfo & buddy)
+{
+  if (buddy.m_presentity.IsEmpty())
+    return false;
+
+  BuddyList buddies;
+  if (!GetBuddyList(buddies))
+    return false;
+
+  for (BuddyList::iterator it = buddies.begin(); it != buddies.end(); ++it) {
+    if (it->m_presentity == buddy.m_presentity) {
+      buddy = *it;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+bool OpalPresentity::SetBuddy(const BuddyInfo & buddy)
+{
+  if (buddy.m_presentity.IsEmpty())
+    return false;
+
+  BuddyList buddies;
+  if (!GetBuddyList(buddies))
+    return false;
+
+  buddies.push_back(buddy);
+  return SetBuddyList(buddies);
+}
+
+
+bool OpalPresentity::DeleteBuddy(const PString & presentity)
+{
+  if (presentity.IsEmpty())
+    return false;
+
+  BuddyList buddies;
+  if (!GetBuddyList(buddies))
+    return false;
+
+  for (BuddyList::iterator it = buddies.begin(); it != buddies.end(); ++it) {
+    if (it->m_presentity == presentity) {
+      buddies.erase(it);
+      return SetBuddyList(buddies);
+    }
+  }
+
+  return false;
+}
+
+
+bool OpalPresentity::SubscribeBuddyList()
+{
+  BuddyList buddies;
+  if (!GetBuddyList(buddies))
+    return false;
+
+  for (BuddyList::iterator it = buddies.begin(); it != buddies.end(); ++it) {
+    if (!SubscribeToPresence(it->m_presentity))
+      return false;
+  }
+
+  return true;
+}
+
+
 OpalPresentityCommand * OpalPresentity::InternalCreateCommand(const char * cmdName)
 {
   PDefaultPFactoryKey partialKey(cmdName);
@@ -210,6 +297,11 @@ void OpalPresentityWithCommandThread::StopThread()
 
 bool OpalPresentityWithCommandThread::SendCommand(OpalPresentityCommand * cmd)
 {
+  if (!m_threadRunning) {
+    delete cmd;
+    return false;
+  }
+
   {
     PWaitAndSignal m(m_commandQueueMutex);
     cmd->m_sequence = ++m_commandSequence;

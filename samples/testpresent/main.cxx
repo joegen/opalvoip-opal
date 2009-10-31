@@ -61,6 +61,9 @@ class TestPresEnt : public PProcess
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSubscribeToPresence);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdPresenceAuthorisation);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSetLocalPresence);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdShowBuddies);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdAddBuddy);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdDelBuddy);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdQuit);
 
     MyManager * m_manager;
@@ -221,6 +224,15 @@ void TestPresEnt::Main()
   cli.SetCommand("publish", PCREATE_NOTIFIER(CmdSetLocalPresence),
                  "Publish local presence state for presentity.",
                  "<url> { available | unavailable | busy } [ <note> ]");
+  cli.SetCommand("show buddies", PCREATE_NOTIFIER(CmdShowBuddies),
+                 "Show buddy list for presentity.",
+                 "<url>");
+  cli.SetCommand("add buddy", PCREATE_NOTIFIER(CmdAddBuddy),
+                 "Add buddy to list for presentity.",
+                 "<presentity> <url-buddy> <display-name>");
+  cli.SetCommand("del buddy", PCREATE_NOTIFIER(CmdDelBuddy),
+                 "Delete buddy from list for presentity.",
+                 "<presentity> <url-buddy>");
   cli.SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),
                   "Quit command line interpreter, note quitting from console also shuts down application.");
 
@@ -293,6 +305,53 @@ void TestPresEnt::CmdSetLocalPresence(PCLI::Arguments & args, INT)
     m_presentities[args[0]].SetLocalPresence(OpalPresentity::Busy, note);
   else
     args.WriteUsage();
+}
+
+
+void TestPresEnt::CmdShowBuddies(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() < 1)
+    args.WriteUsage();
+  else if (!m_presentities.Contains(args[0]))
+    args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
+  else {
+    OpalPresentity::BuddyList buddies;
+    if (!m_presentities[args[0]].GetBuddyList(buddies))
+      args.WriteError() << "Presentity \"" << args[0] << "\" does not support buddy lists." << endl;
+    else if (buddies.empty())
+      args.GetContext() << "Presentity \"" << args[0] << "\" has no buddies." << endl;
+    else {
+      for (OpalPresentity::BuddyList::iterator it = buddies.begin(); it != buddies.end(); ++it)
+        args.GetContext() << it->m_presentity << "\t\"" << it->m_displayName << '"' << endl;
+    }
+  }
+}
+
+
+void TestPresEnt::CmdAddBuddy(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() < 2)
+    args.WriteUsage();
+  else if (!m_presentities.Contains(args[0]))
+    args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
+  else {
+    OpalPresentity::BuddyInfo buddy(args[1]);
+    for (PINDEX arg = 2; arg < args.GetCount(); ++arg)
+      buddy.m_displayName &= args[arg];
+    if (!m_presentities[args[0]].SetBuddy(buddy))
+      args.WriteError() << "Presentity \"" << args[0] << "\" does not have a buddy list." << endl;
+  }
+}
+
+
+void TestPresEnt::CmdDelBuddy(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() < 2)
+    args.WriteUsage();
+  else if (!m_presentities.Contains(args[0]))
+    args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
+  else if (!m_presentities[args[0]].DeleteBuddy(args[1]))
+    args.WriteError() << "Could not delete \"" << args[1] << "\" for presentity \"" << args[0] << '"' << endl;
 }
 
 
