@@ -706,11 +706,16 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
-  if (handler != NULL)
+  if (handler != NULL) {
+    bool noAuthYet = false;
+    if (handler->GetRealm().IsEmpty())
+      noAuthYet = true;
     handler->OnReceivedResponse(transaction, response);
-  else {
-    PTRACE(2, "SIP\tResponse received for unknown handler ID: " << response.GetMIME().GetCallID());
+    if (noAuthYet && (response.GetStatusCode() == SIP_PDU::Failure_UnAuthorised || response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired))
+      activeSIPHandlers.Append(handler);
   }
+  else
+    PTRACE(2, "SIP\tResponse received for unknown handler ID: " << response.GetMIME().GetCallID());
 }
 
 
