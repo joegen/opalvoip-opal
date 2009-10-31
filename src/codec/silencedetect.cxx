@@ -68,10 +68,11 @@ OpalSilenceDetector::OpalSilenceDetector(const Params & theParam)
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
-  : receiveHandler(PCREATE_NOTIFIER(ReceivedPacket))
+  : receiveHandler(PCREATE_NOTIFIER(ReceivedPacket)),
 #ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
+  clockRate (8000)
 {
   // Initialise the adaptive threshold variables.
   SetParameters(theParam);
@@ -80,22 +81,9 @@ OpalSilenceDetector::OpalSilenceDetector(const Params & theParam)
 }
 
 
-void OpalSilenceDetector::SetParameters(const Params & newParam)
+void OpalSilenceDetector::AdaptiveReset()
 {
-  param = newParam;
-
-  PTRACE(4, "Silence\tParameters set: "
-            "mode=" << param.m_mode << ", "
-            "threshold=" << param.m_threshold << ", "
-            "silencedb=" << param.m_silenceDeadband << ", "
-            "signaldb=" << param.m_signalDeadband << ", "
-            "period=" << param.m_adaptivePeriod);
-  if (param.m_mode != AdaptiveSilenceDetection) {
-    levelThreshold = param.m_threshold;
-    return;
-  }
-
-  // Initials threshold levels
+  // Initialise threshold level
   levelThreshold = 0;
 
   // Initialise the adaptive threshold variables.
@@ -111,6 +99,41 @@ void OpalSilenceDetector::SetParameters(const Params & newParam)
 }
 
 
+void OpalSilenceDetector::SetParameters(const Params & newParam, const int rate /*= 0*/)
+{
+  PWaitAndSignal mutex(inUse);
+  if (rate)
+    clockRate = rate;
+  mode = newParam.m_mode;
+  signalDeadband = newParam.m_signalDeadband * clockRate / 1000;
+  silenceDeadband = newParam.m_silenceDeadband * clockRate / 1000;
+  adaptivePeriod = newParam.m_adaptivePeriod * clockRate / 1000;
+  if (mode == FixedSilenceDetection)
+    levelThreshold = newParam.m_threshold;// note: this value compared to uLaw encoded signal level
+  else
+    AdaptiveReset();
+
+  PTRACE(4, "Silence\tParameters set: "
+            "mode=" << mode << ", "
+            "threshold=" << levelThreshold << ", "
+            "silencedb=" << silenceDeadband << " samples, "
+            "signaldb=" << signalDeadband << " samples, "
+            "period=" << adaptivePeriod << " samples");
+}
+
+
+void OpalSilenceDetector::SetClockRate(const int rate)
+{
+  PWaitAndSignal mutex(inUse);
+  signalDeadband = signalDeadband * 1000 / clockRate * rate / 1000;
+  silenceDeadband = silenceDeadband * 1000 / clockRate * rate / 1000;
+  adaptivePeriod = adaptivePeriod * 1000 / clockRate * rate / 1000;
+  clockRate = rate;
+  if (mode == AdaptiveSilenceDetection)
+    AdaptiveReset();
+}
+
+
 OpalSilenceDetector::Mode OpalSilenceDetector::GetStatus(PBoolean * isInTalkBurst,
                                                        unsigned * currentThreshold) const
 {
@@ -120,7 +143,7 @@ OpalSilenceDetector::Mode OpalSilenceDetector::GetStatus(PBoolean * isInTalkBurs
   if (currentThreshold != NULL)
     *currentThreshold = ulaw2linear((BYTE)(levelThreshold ^ 0xff));
 
-  return param.m_mode;
+  return mode;
 }
 
 
@@ -130,8 +153,10 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
   if (frame.GetPayloadSize() == 0)
     return;
 
+  PWaitAndSignal mutex(inUse);
+
   // Can never have silence if NoSilenceDetection
-  if (param.m_mode == NoSilenceDetection)
+  if (mode == NoSilenceDetection)
     return;
 
   unsigned thisTimestamp = frame.GetTimestamp();
@@ -143,9 +168,11 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
   unsigned timeSinceLastFrame = thisTimestamp - lastTimestamp;
   lastTimestamp = thisTimestamp;
 
+  // Average is absolute value up to 32767
+  unsigned level = GetAverageSignalLevel(frame.GetPayloadPtr(), frame.GetPayloadSize());
+
   // Can never have average signal level that high, this indicates that the
   // hardware cannot do silence detection.
-  unsigned level = GetAverageSignalLevel(frame.GetPayloadPtr(), frame.GetPayloadSize());
   if (level == UINT_MAX)
     return;
 
@@ -155,13 +182,13 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
   // Now if signal level above threshold we are "talking"
   PBoolean haveSignal = level > levelThreshold;
 
-  // If no change ie still talking or still silent, resent frame counter
+  // If no change ie still talking or still silent, reset frame counter
   if (inTalkBurst == haveSignal)
     receivedTime = 0;
   else {
     receivedTime += timeSinceLastFrame;
     // If have had enough consecutive frames talking/silent, swap modes.
-    if (receivedTime >= (inTalkBurst ? param.m_silenceDeadband : param.m_signalDeadband)) {
+    if (receivedTime >= (inTalkBurst ? silenceDeadband : signalDeadband)) {
       inTalkBurst = !inTalkBurst;
       PTRACE(4, "Silence\tDetector transition: "
              << (inTalkBurst ? "Talk" : "Silent")
@@ -179,12 +206,13 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
     }
   }
 
-  if (param.m_mode == FixedSilenceDetection) {
+  if (mode == FixedSilenceDetection) {
     if (!inTalkBurst)
       frame.SetPayloadSize(0); // Not in talk burst so silence the frame
     return;
   }
 
+  // Adaptive silence detection
   if (levelThreshold == 0) {
     if (level > 1) {
       // Bootstrap condition, use first frame level as silence level
@@ -209,12 +237,12 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
   }
 
   // See if we have had enough frames to look at proportions of silence/signal
-  if ((signalReceivedTime + silenceReceivedTime) > param.m_adaptivePeriod) {
+  if ((signalReceivedTime + silenceReceivedTime) > adaptivePeriod) {
 
     /* Now we have had a period of time to look at some average values we can
        make some adjustments to the threshold. There are four cases:
      */
-    if (signalReceivedTime >= param.m_adaptivePeriod) {
+    if (signalReceivedTime >= adaptivePeriod) {
       /* If every frame was noisy, move threshold up. Don't want to move too
          fast so only go a quarter of the way to minimum signal value over the
          period. This avoids oscillations, and time will continue to make the
@@ -226,7 +254,7 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
         PTRACE(4, "Silence\tThreshold increased to: " << levelThreshold);
       }
     }
-    else if (silenceReceivedTime >= param.m_adaptivePeriod) {
+    else if (silenceReceivedTime >= adaptivePeriod) {
       /* If every frame was silent, move threshold down. Again do not want to
          move too quickly, but we do want it to move faster down than up, so
          move to halfway to maximum value of the quiet period. As a rule the
