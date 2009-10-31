@@ -874,9 +874,10 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
     PTRACE(3, "OpalCon\tAdding audio filters to patch " << patch);
 
-    if (isSource && silenceDetector != NULL)
-      patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
-
+    if (isSource && silenceDetector != NULL) {
+      silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams(), mediaFormat.GetClockRate());
+      patch.AddFilter(silenceDetector->GetReceiveHandler(), mediaFormat);
+    }
 #if OPAL_AEC
     if (echoCanceler) {
       echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
