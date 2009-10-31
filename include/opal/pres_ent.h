@@ -134,14 +134,24 @@ class OpalPresentity : public PSafeObject
   /**@name Commands */
   //@{
     /** Subscribe to presence state of another presentity.
-        This function is a wrapper and the OpalSubscribeToPresenceCommand command.
+        This function is a wrapper and the OpalSubscribeToPresenceCommand
+        command.
+
+        Returns true if the command was queued. Note that this does not
+        mean the command succeeded, only that the underlying protocol is
+        capabable of the action.
       */
     virtual bool SubscribeToPresence(
       const PString & presentity    ///< Other presentity to monitor
     );
 
     /** Unsubscribe to presence state of another presentity.
-        This function is a wrapper and the OpalSubscribeToPresenceCommand command.
+        This function is a wrapper and the OpalSubscribeToPresenceCommand
+        command.
+
+        Returns true if the command was queued. Note that this does not
+        mean the command succeeded, only that the underlying protocol is
+        capabable of the action.
       */
     virtual bool UnsubscribeFromPresence(
       const PString & presentity    ///< Other presentity to monitor
@@ -156,8 +166,15 @@ class OpalPresentity : public PSafeObject
       NumAuthorisations
     };
 
-    /** Called to allow/deny another presentity access to our presence information.
-        This function is a wrapper and the OpalAuthorisationRequestCommand command.
+    /** Called to allow/deny another presentity access to our presence
+        information.
+
+        This function is a wrapper and the OpalAuthorisationRequestCommand
+        command.
+
+        Returns true if the command was queued. Note that this does not
+        mean the command succeeded, only that the underlying protocol is
+        capabable of the action.
       */
     virtual bool SetPresenceAuthorisation(
       const PString & presentity,     ///< Remote presentity to be authorised
@@ -205,7 +222,11 @@ class OpalPresentity : public PSafeObject
     };
 
     /** Set our presence state.
-        This function is a wrapper and the OpalSetLocalPresenceCommand command
+        This function is a wrapper and the OpalSetLocalPresenceCommand command.
+
+        Returns true if the command was queued. Note that this does not
+        mean the command succeeded, only that the underlying protocol is
+        capabable of the action.
       */
     virtual bool SetLocalPresence(
       State state,                              ///< New state for our presentity
@@ -227,7 +248,11 @@ class OpalPresentity : public PSafeObject
         for which an indication (callback) will give a result.
 
         Note that the command is typically created by the CreateCommand()
-        function and is deleted by this function.
+        function and is subsequently deleted by this function.
+
+        Returns true if the command was queued. Note that this does not
+        mean the command succeeded, only that the underlying protocol is
+        processing commands.
       */
     virtual bool SendCommand(
       OpalPresentityCommand * cmd   ///< Command to be processed
@@ -271,6 +296,73 @@ class OpalPresentity : public PSafeObject
     void SetPresenceChangeNotifier(
       const PresenceChangeNotifier & notifier   ///< Notifier to be called by OnPresenceChange()
     );
+  //@}
+
+  /**@name Buddy Lists */
+  //@{
+    /**Buddy list entry.
+       The buddy list is a list of presentities that the application is
+       expecting to get presence status for.
+      */
+    struct BuddyInfo {
+      BuddyInfo(
+        const PString & presentity = PString::Empty(),
+        const PString & displayName = PString::Empty()
+      ) : m_presentity(presentity)
+        , m_displayName(displayName)
+      { }
+
+      PString m_presentity;   ///< Typicall URI address-of-record
+      PString m_displayName;  ///< Human readable name
+
+      PString m_contentType;  ///< MIME type code for XML
+      PString m_rawXML;       ///< Raw XML of buddy list entry
+    };
+
+    typedef std::list<BuddyInfo> BuddyList;
+
+    /**Get complete buddy list.
+      */
+    virtual bool GetBuddyList(
+      BuddyList & buddies   ///< List of buddies
+    );
+
+    /**Set complete buddy list.
+      */
+    virtual bool SetBuddyList(
+      const BuddyList & buddies   ///< List of buddies
+    );
+
+    /**Delete the buddy list.
+      */
+    virtual bool DeleteBuddyList();
+
+    /**Get a specific buddy from the buddy list.
+       Note the buddy.m_presentity field must be preset to the URI to search
+       the buddy list for.
+      */
+    virtual bool GetBuddy(
+      BuddyInfo & buddy
+    );
+
+    /**Set/Add a buddy to the buddy list.
+      */
+    virtual bool SetBuddy(
+      const BuddyInfo & buddy
+    );
+
+    /**Delete a buddy to the buddy list.
+      */
+    virtual bool DeleteBuddy(
+      const PString & presentity
+    );
+
+    /**Subscribe to buddy list.
+       Send a subscription for the presence of every presentity in the current
+       buddy list. This might cause multiple calls to SubscribeToPresence() or
+       if the underlying protocol allows a single call for all.
+      */
+    virtual bool SubscribeBuddyList();
   //@}
 
   protected:
@@ -318,6 +410,10 @@ class OpalPresentityWithCommandThread : public OpalPresentity
 
         The default implementation queues the command for the background
         thread to handle.
+
+        Returns true if the command was queued. Note that this does not
+        mean the command succeeded, only that the underlying protocol is
+        processing commands, that is the backgrund thread is running
       */
     virtual bool SendCommand(
       OpalPresentityCommand * cmd   ///< Command to execute

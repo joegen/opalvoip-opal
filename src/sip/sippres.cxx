@@ -69,6 +69,7 @@ static const char * const AuthNames[OpalPresentity::NumAuthorisations] = { "allo
 
 SIP_Presentity::SIP_Presentity()
   : m_endpoint(NULL)
+  , m_watcherInfoVersion(-1)
 {
 }
 
@@ -99,10 +100,7 @@ bool SIP_Presentity::Open()
     return false;
   }
 
-  if (!InternalOpen()) {
-    PTRACE(1, "SIPPres\tCannot open presence client");
-    return false;
-  }
+  m_watcherInfoVersion = -1;
 
   return true;
 }
@@ -114,21 +112,7 @@ bool SIP_Presentity::IsOpen() const
 }
 
 
-//////////////////////////////////////////////////////////////
-
-SIPLocal_Presentity::~SIPLocal_Presentity()
-{
-  Close();
-}
-
-
-bool SIPLocal_Presentity::InternalOpen()
-{
-  return true;
-}
-
-
-bool SIPLocal_Presentity::Close()
+bool SIP_Presentity::Close()
 {
   m_endpoint = NULL;
   return true;
@@ -137,16 +121,26 @@ bool SIPLocal_Presentity::Close()
 
 //////////////////////////////////////////////////////////////
 
-const PString & SIPXCAP_Presentity::XcapRootKey()     { static const PString s = "xcap_root";     return s; }
-const PString & SIPXCAP_Presentity::XcapAuthIdKey()   { static const PString s = "xcap_auth_id";  return s; }
-const PString & SIPXCAP_Presentity::XcapPasswordKey() { static const PString s = "xcap_password"; return s; }
-const PString & SIPXCAP_Presentity::XcapAuthAuidKey() { static const PString s = "xcap_auid";     return s; }
-const PString & SIPXCAP_Presentity::XcapAuthFileKey() { static const PString s = "xcap_authfile"; return s; }
+SIPLocal_Presentity::~SIPLocal_Presentity()
+{
+  Close();
+}
+
+
+//////////////////////////////////////////////////////////////
+
+const PString & SIPXCAP_Presentity::XcapRootKey()      { static const PString s = "xcap_root";      return s; }
+const PString & SIPXCAP_Presentity::XcapAuthIdKey()    { static const PString s = "xcap_auth_id";   return s; }
+const PString & SIPXCAP_Presentity::XcapPasswordKey()  { static const PString s = "xcap_password";  return s; }
+const PString & SIPXCAP_Presentity::XcapAuthAuidKey()  { static const PString s = "xcap_auid";      return s; }
+const PString & SIPXCAP_Presentity::XcapAuthFileKey()  { static const PString s = "xcap_authfile";  return s; }
+const PString & SIPXCAP_Presentity::XcapBuddyListKey() { static const PString s = "xcap_buddylist"; return s; }
 
 SIPXCAP_Presentity::SIPXCAP_Presentity()
 {
-  m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey, "pres-rules");
-  m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey, "index");
+  m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey,  "pres-rules");
+  m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey,  "index");
+  m_attributes.Set(SIPXCAP_Presentity::XcapBuddyListKey, "buddylist");
 }
 
 
@@ -156,8 +150,11 @@ SIPXCAP_Presentity::~SIPXCAP_Presentity()
 }
 
 
-bool SIPXCAP_Presentity::InternalOpen()
+bool SIPXCAP_Presentity::Open()
 {
+  if (!SIP_Presentity::Open())
+    return false;
+
   // find presence server for Presentity as per RFC 3861
   // if not found, look for default presence server setting
   // if none, use hostname portion of domain name
@@ -184,22 +181,20 @@ bool SIPXCAP_Presentity::InternalOpen()
     return false;
   }
 
-  // initialised variables
   m_watcherSubscriptionAOR.MakeEmpty();
-  m_watcherInfoVersion = -1;
 
   StartThread();
 
   // subscribe to presence watcher infoformation
   SendCommand(CreateCommand<SIPWatcherInfoCommand>());
 
-
   return true;
 }
 
+
 bool SIPXCAP_Presentity::Close()
 {
-  if (m_endpoint == NULL)
+  if (!IsOpen())
     return false;
 
   StopThread();
@@ -224,9 +219,7 @@ bool SIPXCAP_Presentity::Close()
 
   m_notificationMutex.Signal();
 
-  m_endpoint = NULL;
-
-  return true;
+  return SIP_Presentity::Close();
 }
 
 
@@ -403,6 +396,7 @@ void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler & handler, SIPS
   }
 }
 
+
 void SIPXCAP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
 {
   PString id       = watcher->GetAttribute("id");
@@ -575,13 +569,14 @@ bool SIPXCAP_Presentity::ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisati
   XCAPClient::NodeSelector node;
   node.SetNamespace("urn:ietf:params:xml:ns:pres-rules", "pr");
   node.SetNamespace("urn:ietf:params:xml:ns:common-policy", "cr");
-  node.SetElement("cr:ruleset");
-  node.SetElement("cr:rule", "id", ruleId);
+  node.AddElement("cr:ruleset");
+  node.AddElement("cr:rule", "id", ruleId);
 
   PXML xml;
   if (!xcap.GetXmlNode(node, xml)) {
     PTRACE(4, "SIPPres\tCould not locate existing rule id=" << ruleId
-           << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+           << " for '" << cmd.m_presentity << "' at '" << m_aor << "\'\n"
+           << xcap.GetLastResponseCode() << ' ' << xcap.GetLastResponseInfo());
     return false;
   }
 
@@ -610,7 +605,8 @@ bool SIPXCAP_Presentity::ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisati
   }
 
   PTRACE(3, "SIPPres\tCould not change existing rule id=" << ruleId
-         << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+         << " for '" << cmd.m_presentity << "' at '" << m_aor << "\'\n"
+         << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
   return false;
 }
 
@@ -644,6 +640,13 @@ void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRe
 
   // Could not find rule element quickly, get the whole document
   if (!xcap.GetXmlDocument(xml)) {
+    if (xcap.GetLastResponseCode() != PHTTP::NotFound) {
+      PTRACE(2, "SIPPres\tUnexpected error getting rule file for '"
+             << cmd.m_presentity << "' at '" << m_aor << "\'\n"
+             << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+      return;
+    }
+
     PString newRuleId = GetNewRuleId();
     // No whole document, create a fresh one
     xml.Load("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -681,7 +684,8 @@ void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRe
       m_authorisationIdByAor[cmd.m_presentity] = newRuleId;
     }
     else {
-      PTRACE(2, "SIPPres\tCould not add new rule file for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+      PTRACE(2, "SIPPres\tCould not add new rule file for '" << cmd.m_presentity << "' at '" << m_aor << "\'\n"
+             << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
     }
 
     return;
@@ -746,8 +750,8 @@ void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRe
   XCAPClient::NodeSelector node;
   node.SetNamespace("urn:ietf:params:xml:ns:pres-rules", "pr");
   node.SetNamespace("urn:ietf:params:xml:ns:common-policy", "cr");
-  node.SetElement("cr:ruleset");
-  node.SetElement("cr:rule", "id", newRuleId);
+  node.AddElement("cr:ruleset");
+  node.AddElement("cr:rule", "id", newRuleId);
 
   if (xcap.PutXmlNode(node, xml)) {
     PTRACE(3, "SIPPres\tNew rule set to" << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
@@ -755,7 +759,210 @@ void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRe
     return;
   }
 
-  PTRACE(4, "SIPPres\tCould not add new rule for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+  PTRACE(2, "SIPPres\tCould not add new rule for '" << cmd.m_presentity << "' at '" << m_aor << "\'\n"
+         << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+}
+
+
+void SIPXCAP_Presentity::InitBuddyXcap(XCAPClient & xcap, XCAPClient::NodeSelector & node, const PString & entry)
+{
+  xcap.SetRoot(m_attributes.Get(SIPXCAP_Presentity::XcapRootKey));
+  xcap.SetApplicationUniqueID("resource-lists");            // As per RFC5025/9.1
+  xcap.SetContentType("application/resource-lists+xml");    // As per RFC5025/9.4
+  xcap.SetUserIdentifier(m_aor.AsString());                 // As per RFC5025/9.7
+  xcap.SetAuthenticationInfo(m_attributes.Get(SIPXCAP_Presentity::XcapAuthIdKey, m_attributes.Get(OpalPresentity::AuthNameKey, xcap.GetUserIdentifier())),
+                             m_attributes.Get(SIPXCAP_Presentity::XcapPasswordKey, m_attributes.Get(OpalPresentity::AuthPasswordKey)));
+  xcap.SetDefaultFilename("index");
+
+  node.SetNamespace("urn:ietf:params:xml:ns:resource-lists");
+  node.AddElement("resource-lists");
+  node.AddElement("list", "name", m_attributes.Get(SIPXCAP_Presentity::XcapBuddyListKey));
+
+  if (!entry.IsEmpty())
+    node.AddElement("entry", "uri", entry);
+}
+
+
+static PXMLElement * BuddyInfoToXML(const OpalPresentity::BuddyInfo & buddy, PXMLElement * parent)
+{
+  PXMLElement * element = new PXMLElement(parent, "entry");
+  element->SetAttribute("uri", buddy.m_presentity);
+
+  if (!buddy.m_displayName.IsEmpty())
+    element->AddChild(new PXMLElement(element, "display-name", buddy.m_displayName));
+
+  return element;
+}
+
+
+static bool XMLToBuddyInfo(const PXMLElement * element, OpalPresentity::BuddyInfo & buddy)
+{
+  if (element == NULL || element->GetName() != "entry")
+    return false;
+
+  buddy.m_presentity = element->GetAttribute("uri");
+
+  PXMLElement * displayName = element->GetElement("display-name");
+  if (displayName != NULL)
+    buddy.m_displayName = displayName->GetData();
+
+  buddy.m_contentType = "application/resource-lists+xml";
+  buddy.m_rawXML = element->AsString();
+  return true;
+}
+
+
+bool SIPXCAP_Presentity::GetBuddyList(BuddyList & buddies)
+{
+  XCAPClient xcap;
+  XCAPClient::NodeSelector node;
+
+  InitBuddyXcap(xcap, node, PString::Empty());
+
+  PXML xml;
+  if (!xcap.GetXmlNode(node, xml)) {
+    PTRACE(2, "SIPPres\tError getting buddy list of '" << m_aor << "\'\n"
+           << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+    return false;
+  }
+
+  PXMLElement * element;
+  PINDEX idx = 0;
+  while ((element = xml.GetElement("entry", idx++)) != NULL) {
+    BuddyInfo buddy;
+    if (XMLToBuddyInfo(element, buddy))
+      buddies.push_back(buddy);
+  }
+
+  return true;
+}
+
+
+bool SIPXCAP_Presentity::SetBuddyList(const BuddyList & buddies)
+{
+  PXMLElement * root = new PXMLElement(NULL, "list");
+  root->SetAttribute("xmlns", "urn:ietf:params:xml:ns:resource-lists");
+  root->SetAttribute("name", m_attributes.Get(SIPXCAP_Presentity::XcapBuddyListKey));
+
+  for (BuddyList::const_iterator it = buddies.begin(); it != buddies.end(); ++it)
+    root->AddChild(BuddyInfoToXML(*it, root));
+
+  PXML xml(PXML::FragmentOnly);
+  xml.SetRootElement(root);
+
+  XCAPClient xcap;
+  XCAPClient::NodeSelector node;
+
+  InitBuddyXcap(xcap, node, PString::Empty());
+
+  if (xcap.PutXmlNode(node, xml))
+    return true;
+
+  if (xcap.GetLastResponseCode() == PHTTP::Conflict && xcap.GetLastResponseInfo().Find("Parent") != P_MAX_INDEX) {
+    // Got "Parent does not exist" error, so need to add whole file
+    root = new PXMLElement(NULL, "resource-lists");
+    root->SetAttribute("xmlns", "urn:ietf:params:xml:ns:resource-lists");
+
+    PXMLElement * listElement = root->AddChild(new PXMLElement(root, "list"));
+    listElement->SetAttribute("name", m_attributes.Get(SIPXCAP_Presentity::XcapBuddyListKey));
+
+    for (BuddyList::const_iterator it = buddies.begin(); it != buddies.end(); ++it)
+      listElement->AddChild(BuddyInfoToXML(*it, root));
+
+    xml.SetRootElement(root);
+    xml.SetOptions(PXML::NoOptions);
+    if (xcap.PutXmlDocument(xml))
+      return true;
+  }
+
+  PTRACE(2, "SIPPres\tError setting buddy list of '" << m_aor << "\'\n"
+         << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+  return false;
+}
+
+
+bool SIPXCAP_Presentity::DeleteBuddyList()
+{
+  XCAPClient xcap;
+  XCAPClient::NodeSelector node;
+
+  InitBuddyXcap(xcap, node, PString::Empty());
+
+  if (xcap.DeleteXmlNode(node))
+    return true;
+
+  PTRACE(2, "SIPPres\tError deleting buddy list of '" << m_aor << "\'\n"
+         << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+  return false;
+}
+
+
+bool SIPXCAP_Presentity::GetBuddy(BuddyInfo & buddy)
+{
+  XCAPClient xcap;
+  XCAPClient::NodeSelector node;
+
+  InitBuddyXcap(xcap, node, buddy.m_presentity);
+
+  PXML xml(PXML::FragmentOnly);
+  if (xcap.GetXmlNode(node, xml))
+    return XMLToBuddyInfo(xml.GetRootElement(), buddy);
+
+  PTRACE(2, "SIPPres\tError getting buddy '" << buddy.m_presentity << "' of '" << m_aor << "\'\n"
+         << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+  return false;
+}
+
+
+bool SIPXCAP_Presentity::SetBuddy(const BuddyInfo & buddy)
+{
+  if (buddy.m_presentity.IsEmpty())
+    return false;
+
+  XCAPClient xcap;
+  XCAPClient::NodeSelector node;
+
+  InitBuddyXcap(xcap, node, buddy.m_presentity);
+
+  PXML xml(PXML::FragmentOnly);
+  xml.SetRootElement(BuddyInfoToXML(buddy, NULL));
+
+  if (xcap.PutXmlNode(node, xml))
+    return true;
+
+  if (xcap.GetLastResponseCode() != PHTTP::Conflict || xcap.GetLastResponseInfo().Find("Parent") == P_MAX_INDEX) {
+    PTRACE(2, "SIPPres\tError setting buddy '" << buddy.m_presentity << "' of '" << m_aor << "\'\n"
+           << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+    return false;
+  }
+
+  // Got "Parent does not exist" error, so need to add whole list
+  BuddyList buddies;
+  buddies.push_back(buddy);
+  return SetBuddyList(buddies);
+}
+
+
+bool SIPXCAP_Presentity::DeleteBuddy(const PString & presentity)
+{
+  PXML xml;
+  XCAPClient xcap;
+  XCAPClient::NodeSelector node;
+
+  InitBuddyXcap(xcap, node, presentity);
+
+  if (xcap.DeleteXmlNode(node))
+    return true;
+
+  PTRACE(2, "SIPPres\tError deleting buddy '" << presentity << "' of '" << m_aor << "\'\n"
+         << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+  return false;
+}
+
+
+bool SIPXCAP_Presentity::SubscribeBuddyList()
+{
+  return false;
 }
 
 
@@ -763,8 +970,9 @@ void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRe
 
 SIPOMA_Presentity::SIPOMA_Presentity()
 {
-  m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey, "org.openmobilealliance.pres-rules");
-  m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey, "pres-rules");
+  m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey,  "org.openmobilealliance.pres-rules");
+  m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey,  "pres-rules");
+  m_attributes.Set(SIPXCAP_Presentity::XcapBuddyListKey, "oma_buddylist");
 }
 
 
@@ -835,6 +1043,12 @@ bool XCAPClient::PutXmlNode(const PString & docname, const NodeSelector & node, 
   PStringStream strm;
   strm << xml;
   return PutTextDocument(BuildURL(docname, node), strm, "application/xcap-el+xml");
+}
+
+
+bool XCAPClient::DeleteXmlNode(const PString & docname, const NodeSelector & node)
+{
+  return DeleteDocument(BuildURL(docname, node));
 }
 
 
