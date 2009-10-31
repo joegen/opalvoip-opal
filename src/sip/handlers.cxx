@@ -1620,7 +1620,9 @@ void SIPHandlersList::Append(SIPHandler * obj)
 
   PWaitAndSignal m(m_extraMutex);
 
-  PSafePtr<SIPHandler> handler = m_handlersList.Append(obj, PSafeReference);
+  PSafePtr<SIPHandler> handler = m_handlersList.FindWithLock(*obj, PSafeReference);
+  if (handler == NULL)
+    handler = m_handlersList.Append(obj, PSafeReference);
 
   // add entry to call to handler map
   handler->m_byCallID = m_byCallID.insert(IndexMap::value_type(handler->GetCallID(), handler));
