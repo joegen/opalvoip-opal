@@ -3050,11 +3050,13 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   : SIPTransaction(ep, trans, params.m_minRetryTime, params.m_maxRetryTime)
 {
   SIPURL uri = params.m_registrarAddress;
-  PString to = uri.GetUserName().IsEmpty() ? params.m_addressOfRecord : params.m_registrarAddress;
+  SIPURL to = uri;
+  if (uri.GetUserName().IsEmpty())
+    to = uri = params.m_addressOfRecord;
   uri.Sanitise(SIPURL::RegisterURI);
   SIP_PDU::Construct(Method_REGISTER,
                      uri.AsString(),
-                     to,
+                     to.AsQuotedString(),
                      params.m_addressOfRecord,
                      id,
                      cseq,
