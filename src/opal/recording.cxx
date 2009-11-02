@@ -33,6 +33,8 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_HAS_MIXER
+
 #include <opal/opalmixer.h>
 #include <opal/recording.h>
 #include <codec/opalwavfile.h>
@@ -630,6 +632,8 @@ bool OpalAVIRecordManager::OnMixedVideo(const RTP_DataFrame & frame)
 
 
 #endif // _WIN32
+
+#endif // OPAL_HAS_MIXER
 
 
 /////////////////////////////////////////////////////////////////////////////
