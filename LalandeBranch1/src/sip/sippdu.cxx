@@ -57,6 +57,8 @@
 #define new PNEW
 
 static SIPAuthenticationFactory::Worker<SIPDigestAuthentication> sip_md5Authenticator("digest");
+static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & val, PINDEX & end);
+
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -444,9 +446,16 @@ void SIPURL::Sanitise(UsageContext context)
   };
 
   for (PINDEX i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
-    if (SanitaryFields[i].contexts&(1<<context))
+    if (SanitaryFields[i].contexts&(1<<context)) {
       paramVars.RemoveAt(PCaselessString(SanitaryFields[i].name));
+      PINDEX start, val, end;
+      if (LocateFieldParameter(fieldParameters, SanitaryFields[i].name, start, val, end))
+        fieldParameters.Delete(start, end-start);
+    }
   }
+
+  if (fieldParameters == ";")
+    fieldParameters.MakeEmpty();
 
   if (context != ContactURI && context != ExternalURI)
     queryVars.RemoveAll();
