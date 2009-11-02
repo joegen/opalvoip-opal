@@ -3054,6 +3054,7 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   if (uri.GetUserName().IsEmpty())
     to = uri = params.m_addressOfRecord;
   uri.Sanitise(SIPURL::RegisterURI);
+  to.Sanitise(SIPURL::RequestURI); // to field should not have tag, more like a request URI in a REGISTER.
   SIP_PDU::Construct(Method_REGISTER,
                      uri.AsString(),
                      to.AsQuotedString(),
