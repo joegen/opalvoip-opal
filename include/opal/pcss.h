@@ -39,13 +39,9 @@
 
 #include <opal/buildopts.h>
 
-#ifndef OPAL_PTLIB_AUDIO
-#ifdef _MSC_VER
-#pragma message("PTLib soundcard support not available")
-#else
-#warning "PTLib soundcard support not available"
-#endif
-#else
+#if OPAL_HAS_PCSS
+
+#if OPAL_PTLIB_AUDIO
 
 #include <ptlib/sound.h>
 #include <opal/localep.h>
@@ -415,7 +411,17 @@ class OpalPCSSConnection : public OpalLocalConnection
     unsigned           m_soundChannelBufferTime;
 };
 
+#else
+
+#ifdef _MSC_VER
+#pragma message("PTLib soundcard support not available")
+#else
+#warning "PTLib soundcard support not available"
+#endif
+
 #endif // OPAL_PTLIB_AUDIO
+
+#endif // OPAL_HAS_PCSS
 
 #endif // OPAL_OPAL_PCSS_H
 
