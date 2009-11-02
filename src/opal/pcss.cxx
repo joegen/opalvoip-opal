@@ -38,6 +38,8 @@
 
 #include <opal/pcss.h>
 
+#if OPAL_HAS_PCSS
+
 #if OPAL_PTLIB_AUDIO
 
 #if OPAL_VIDEO
@@ -457,6 +459,8 @@ PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & m
 
 
 #endif // OPAL_PTLIB_AUDIO
+
+#endif // OPAL_HAS_PCSS
 
 
 /////////////////////////////////////////////////////////////////////////////
