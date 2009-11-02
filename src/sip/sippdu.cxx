@@ -56,6 +56,8 @@
 
 #define new PNEW
 
+static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & val, PINDEX & end);
+
 ////////////////////////////////////////////////////////////////////////////
 
 static const char * const MethodNames[SIP_PDU::NumMethods] = {
@@ -494,9 +496,16 @@ void SIPURL::Sanitise(UsageContext context)
   };
 
   for (i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
-    if (SanitaryFields[i].contexts&(1<<context))
+    if (SanitaryFields[i].contexts&(1<<context)) {
       paramVars.RemoveAt(PCaselessString(SanitaryFields[i].name));
+      PINDEX start, val, end;
+      if (LocateFieldParameter(fieldParameters, SanitaryFields[i].name, start, val, end))
+        fieldParameters.Delete(start, end-start);
+    }
   }
+
+  if (fieldParameters == ";")
+    fieldParameters.MakeEmpty();
 
   for (i = 0; i < paramVars.GetSize(); ++i) {
     PCaselessString key = paramVars.GetKeyAt(i);
