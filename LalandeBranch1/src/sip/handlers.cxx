@@ -120,14 +120,13 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
       if (m_addressOfRecord.GetHostAddress().IsEquivalent(remoteURL.GetHostAddress()))
         m_remoteAddress = m_addressOfRecord;
       else {
-        /* Note this sets the proxy field because the user has givena full AOR
+        /* Note this sets the proxy field because the user has given a full AOR
            with a domain for "target" and then specified a specific host name
            which as far as we are concered is the host to talk to. Setting the
            proxy will prevent SRV lookups or other things that might stop uis
            from going to that very specific host.
          */
         m_remoteAddress = m_proxy = remoteURL;
-        m_remoteAddress.SetUserName(m_addressOfRecord.GetUserName());
       }
     }
   }
