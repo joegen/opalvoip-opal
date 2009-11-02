@@ -436,7 +436,7 @@ void SIPXCAP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCo
     return;
   }
 
-  if (cmd.m_state < (unsigned)SIPPresenceInfo::NumBasicStates)
+  if (cmd.m_state < (int)SIPPresenceInfo::NumBasicStates)
     m_localPresence.m_basic = (SIPPresenceInfo::BasicStates)cmd.m_state;
   else
     m_localPresence.m_basic = SIPPresenceInfo::Open;
