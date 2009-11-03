@@ -137,6 +137,7 @@ public:
   const PString & GetPassword() const     { return m_password; }
   const PString & GetRealm() const        { return m_realm; }
   const SIPURL & GetRemoteAddress() const { return m_remoteAddress; }
+  const SIPURL & GetProxy() const         { return m_proxy; }
 
 protected:
   PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);

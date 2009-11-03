@@ -233,8 +233,11 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (proxy.IsEmpty())
     proxy = endpoint.GetProxy();
 
+  if (proxy.IsEmpty())
+    proxy = endpoint.GetRegisteredProxy(adjustedDestination);
+
   m_dialog.UpdateRouteSet(proxy); // Default routeSet if there is a proxy
-  
+
   forkedInvitations.DisallowDeleteObjects();
   pendingInvitations.DisallowDeleteObjects();
 
