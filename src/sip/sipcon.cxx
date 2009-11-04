@@ -1111,8 +1111,10 @@ void SIPConnection::SetRemoteMediaFormats(SDPSessionDescription & sdp)
   m_remoteFormatList += OpalT38;
 #endif
 
-  // Finally make sure RFC2833 there even if not in remote SDP, some implementations forget ...
-  m_remoteFormatList += OpalRFC2833;
+  if (m_remoteFormatList.HasFormat(OpalRFC2833))
+    m_detectInBandDTMF = false; // Have RFC2833 user input, disable the in-band tone detcetor to avoid double detection
+  else
+    m_remoteFormatList += OpalRFC2833; // Finally make sure RFC2833 there even if not in remote SDP, some implementations forget ...
 
   m_remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
 
@@ -2603,7 +2605,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
   SIPMIMEInfo & mimeInfo = request.GetMIME();
   PCaselessString contentType = mimeInfo.GetContentType();
 
-  if (contentType == ApplicationDTMFRelayKey) {
+  if (contentType.NumCompare(ApplicationDTMFRelayKey) == EqualTo) {
     PStringArray lines = request.GetEntityBody().Lines();
     PINDEX i;
     char tone = -1;
@@ -2621,17 +2623,21 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
       }
     }
     if (tone != -1)
-      OnUserInputTone(tone, duration == 0 ? 100 : tone);
+      OnUserInputTone(tone, duration == 0 ? 100 : duration);
     status = SIP_PDU::Successful_OK;
   }
 
-  else if (contentType == ApplicationDTMFKey) {
-    OnUserInputString(request.GetEntityBody().Trim());
+  else if (contentType.NumCompare(ApplicationDTMFKey) == EqualTo) {
+    PString tones = request.GetEntityBody().Trim();
+    if (tones.GetLength() == 1)
+      OnUserInputTone(tones[0], 100);
+    else
+      OnUserInputString(tones);
     status = SIP_PDU::Successful_OK;
   }
 
 #if OPAL_VIDEO
-  else if (contentType == ApplicationMediaControlXMLKey) {
+  else if (contentType.NumCompare(ApplicationMediaControlXMLKey) == EqualTo) {
     if (OnMediaControlXML(request))
       return;
     status = SIP_PDU::Failure_UnsupportedMediaType;
@@ -2642,6 +2648,20 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
     status = SIP_PDU::Failure_UnsupportedMediaType;
 
   request.SendResponse(*transport, status);
+
+  if (status == SIP_PDU::Successful_OK) {
+    // Have INFO user input, disable the in-band tone detcetor to avoid double detection
+    m_detectInBandDTMF = false;
+
+    OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
+    if (stream != NULL) {
+      OpalMediaPatch * patch = stream->GetPatch();
+      if (patch != NULL) {
+        patch->RemoveFilter(PCREATE_NOTIFIER(OnDetectInBandDTMF), OPAL_PCM16);
+        PTRACE(4, "OpalCon\tRemoved detect DTMF filter on connection " << *this << ", patch " << *patch);
+      }
+    }
+  }
 }
 
 
