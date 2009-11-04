@@ -793,6 +793,10 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     PBoolean GetAuthentication(const PString & authRealm, PString & realm, PString & user, PString & password); 
     
+    /**Return the registered proxy URL for the given host.
+     */
+    virtual SIPURL GetRegisteredProxy(const SIPURL & remoteURL);
+
     /**Return the registered party name URL for the given host.
      *
      * That URL can be used in the FORM field of the PDU's. 

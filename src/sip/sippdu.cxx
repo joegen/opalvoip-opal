@@ -2945,10 +2945,12 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
 {
   SetParameters(params);
 
-  SIPURL uri = params.m_registrarAddress;
-  uri.Sanitise(SIPURL::RegisterURI);
-
-  InitialiseHeaders(uri, params.m_addressOfRecord, params.m_localAddress, id, cseq, CreateVia(ep, trans));
+  InitialiseHeaders(params.m_registrarAddress,
+                    params.m_addressOfRecord,
+                    params.m_localAddress,
+                    id,
+                    cseq,
+                    CreateVia(ep, trans));
 
   SetAllow(ep.GetAllowedMethods());
   SetRoute(proxy);
