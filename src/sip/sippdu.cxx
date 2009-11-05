@@ -1588,7 +1588,7 @@ void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
                                 const PString & via)
 {
   m_uri = dest;
-  m_uri.Sanitise(SIPURL::RequestURI);
+  m_uri.Sanitise(m_method == Method_REGISTER ? SIPURL::RegisterURI : SIPURL::RequestURI);
 
   SIPURL tmp = to;
   tmp.Sanitise(SIPURL::ToURI);
@@ -2815,17 +2815,14 @@ void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval &
       server = m_remoteAddress; // For third party registrations
     else {
       SIPURL remoteURL = m_remoteAddress;
-      if (aor.GetHostAddress().IsEquivalent(remoteURL.GetHostAddress()))
-        server = aor;
-      else {
+      server = aor;
+      if (!aor.GetHostAddress().IsEquivalent(remoteURL.GetHostAddress())) {
         /* Note this sets the proxy field because the user has given a full AOR
            with a domain for "user" and then specified a specific host name
            which as far as we are concered is the host to talk to. Setting the
            proxy will prevent SRV lookups or other things that might stop us
            from going to that very specific host.
          */
-        server = remoteURL;
-        server.SetUserName(aor.GetUserName());
         server.SetParamVar(OPAL_PROXY_PARAM, m_remoteAddress);
       }
     }
