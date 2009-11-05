@@ -574,6 +574,7 @@ class SIPConnection : public OpalRTPConnection
     PSafePtr<SIPTransaction>  referTransaction;
     PSafeList<SIPTransaction> forkedInvitations; // Not for re-INVITE
     PSafeList<SIPTransaction> pendingInvitations; // For re-INVITE
+    PSafeList<SIPTransaction> m_pendingTransactions;
 
 #if OPAL_FAX
     bool m_switchingToFaxMode;
@@ -600,6 +601,8 @@ class SIPConnection : public OpalRTPConnection
   private:
     P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));
     P_REMOVE_VIRTUAL_VOID(OnReceivedTrying(SIP_PDU &));
+
+  friend class SIPTransaction;
 };
 
 

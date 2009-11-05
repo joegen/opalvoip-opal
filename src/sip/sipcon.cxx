@@ -286,6 +286,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   forkedInvitations.DisallowDeleteObjects();
   pendingInvitations.DisallowDeleteObjects();
+  m_pendingTransactions.DisallowDeleteObjects();
 
   ackTimer.SetNotifier(PCREATE_NOTIFIER(OnAckTimeout));
   ackRetry.SetNotifier(PCREATE_NOTIFIER(OnInviteResponseRetry));
@@ -324,7 +325,6 @@ void SIPConnection::OnReleased()
 
   SetPhase(ReleasingPhase);
 
-  PSafePtr<SIPTransaction> byeTransaction;
   SIPDialogNotification::Events notifyDialogEvent = SIPDialogNotification::NoEvent;
   SIP_PDU::StatusCodes sipCode = SIP_PDU::IllegalStatusCode;
 
@@ -356,7 +356,7 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithBYE :
       // create BYE now & delete it later to prevent memory access errors
-      byeTransaction = new SIPTransaction(SIP_PDU::Method_BYE, *this);
+      new SIPTransaction(SIP_PDU::Method_BYE, *this);
       for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
         /* If we never even received a "100 Trying" from a remote, then just abort
            the transaction, do not wait, it is probably on an interface that the
@@ -404,27 +404,17 @@ void SIPConnection::OnReleased()
   /* Note we wait for various transactions to complete as the transport they
      rely on may be owned by the connection, and would be deleted once we exit
      from OnRelease() causing a crash in the transaction processing. */
-
-  // Sent a BYE, wait for it to complete
-  if (byeTransaction != NULL) {
-    PTRACE(4, "SIP\tAwaiting BYE transaction completion, id=" << byeTransaction->GetTransactionID());
-    byeTransaction->WaitForCompletion();
-    byeTransaction.SetNULL();
+  PSafePtr<SIPTransaction> transaction;
+  while ((transaction = m_pendingTransactions.GetAt(0, PSafeReference)) != NULL) {
+    PTRACE(4, "SIP\tAwaiting transaction completion, id=" << transaction->GetTransactionID());
+    transaction->WaitForCompletion();
+    m_pendingTransactions.Remove(transaction);
   }
 
-  // Wait until all INVITEs have completed
-  for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
-    PTRACE(4, "SIP\tAwaiting forked INVITE transaction completion, id=" << invitation->GetTransactionID());
-    invitation->WaitForCompletion();
-  }
+  // Remove all the references to the transactions so garbage can be collected
+  pendingInvitations.RemoveAll();
   forkedInvitations.RemoveAll();
-
-  // Sent a REFER, wait for it to complete
-  if (referTransaction != NULL) {
-    PTRACE(4, "SIP\tAwaiting REFER transaction completion, id=" << referTransaction->GetTransactionID());
-    referTransaction->WaitForCompletion();
-    referTransaction.SetNULL();
-  }
+  referTransaction.SetNULL();
 
   SetPhase(ReleasedPhase);
 
@@ -2300,6 +2290,10 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
     case SIP_PDU::Method_REFER :
       newTransaction = new SIPRefer(*this, transaction.GetMIME().GetReferTo(), transaction.GetMIME().GetReferredBy());
+      break;
+
+    case SIP_PDU::Method_BYE :
+      newTransaction = new SIPTransaction(SIP_PDU::Method_BYE, *this);
       break;
 
     default:
