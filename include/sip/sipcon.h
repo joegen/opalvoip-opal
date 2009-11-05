@@ -571,7 +571,7 @@ class SIPConnection : public OpalRTPConnection
     PTimer                    ackRetry;
     SIP_PDU                   ackPacket;
     bool                      ackReceived;
-    PSafePtr<SIPTransaction>  referTransaction;
+    bool                      m_referInProgress;
     PSafeList<SIPTransaction> forkedInvitations; // Not for re-INVITE
     PSafeList<SIPTransaction> pendingInvitations; // For re-INVITE
     PSafeList<SIPTransaction> m_pendingTransactions;
