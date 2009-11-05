@@ -236,6 +236,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_authentication(NULL)
   , m_authenticatedCseq(0)
   , ackReceived(false)
+  , m_referInProgress(false)
 #if OPAL_FAX
   , m_switchingToFaxMode(false)
 #endif
@@ -414,7 +415,6 @@ void SIPConnection::OnReleased()
   // Remove all the references to the transactions so garbage can be collected
   pendingInvitations.RemoveAll();
   forkedInvitations.RemoveAll();
-  referTransaction.SetNULL();
 
   SetPhase(ReleasedPhase);
 
@@ -425,7 +425,7 @@ void SIPConnection::OnReleased()
 bool SIPConnection::TransferConnection(const PString & remoteParty)
 {
   // There is still an ongoing REFER transaction 
-  if (referTransaction != NULL) {
+  if (m_referInProgress) {
     PTRACE(2, "SIP\tTransfer already in progress for " << *this);
     return false;
   }
@@ -437,7 +437,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
   if (call == NULL) {
-    referTransaction = new SIPRefer(*this, remoteParty, localPartyURL);
+    SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, localPartyURL);
     return referTransaction->Start();
   }
 
@@ -449,7 +449,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
               << "?Replaces="     << PURL::TranslateString(sip->GetDialog().GetCallID(),    PURL::QueryTranslation)
               << "%3Bto-tag%3D"   << PURL::TranslateString(sip->GetDialog().GetLocalTag(),  PURL::QueryTranslation) // "to/from" is from the other sides perspective
               << "%3Bfrom-tag%3D" << PURL::TranslateString(sip->GetDialog().GetRemoteTag(), PURL::QueryTranslation);
-      referTransaction = new SIPRefer(*this, referTo, endpoint.GetLocalURL(*transport, GetLocalPartyName()));
+      SIPRefer * referTransaction = new SIPRefer(*this, referTo, endpoint.GetLocalURL(*transport, GetLocalPartyName()));
       referTransaction->GetMIME().SetAt("Refer-Sub", "false"); // Use RFC4488 to indicate we are NOT doing NOTIFYs
       referTransaction->GetMIME().SetAt("Supported", "replaces");
       return referTransaction->Start();
@@ -1438,7 +1438,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
       break;
 
     case SIP_PDU::Method_REFER :
-      referTransaction.SetNULL();
+      m_referInProgress = false;
       // Do next case
 
     default :
@@ -2025,7 +2025,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
     return;
   }
 
-  if (referTransaction == NULL) {
+  if (!m_referInProgress) {
     PTRACE(2, "SIP\tNOTIFY for REFER we never sent.");
     request.SendResponse(*transport, SIP_PDU::Failure_TransactionDoesNotExist);
     return;
@@ -2050,8 +2050,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   if (mime.GetSubscriptionState().Find("terminated") == P_MAX_INDEX)
     return; // The REFER is not over yet, ignore
 
-  referTransaction->WaitForCompletion();
-  referTransaction.SetNULL();
+  m_referInProgress = false;
 
   // The REFER is over, see if successful
   if (code >= 300) {
@@ -2320,8 +2319,11 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
       break;
 
     case SIP_PDU::Method_REFER :
-      if (response.GetMIME()("Refer-Sub") == "false")
-        referTransaction.SetNULL(); // Used RFC4488 to indicate we are NOT doing NOTIFYs
+      if (response.GetMIME()("Refer-Sub") == "false") {
+        // Used RFC4488 to indicate we are NOT doing NOTIFYs, release now
+        PTRACE(3, "SIP\tBlind transfer accepted, without NOTIFY so ending local call.");
+        Release(OpalConnection::EndedByCallForwarded);
+      }
       // Do next case
 
     default :
