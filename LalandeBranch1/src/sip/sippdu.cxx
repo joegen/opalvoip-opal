@@ -2585,6 +2585,8 @@ SIPTransaction::SIPTransaction(SIPConnection & conn,
     transport(trans)
 {
   connection = &conn;
+  conn.m_pendingTransactions.Append(this);
+
   Construct();
   PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " created.");
 }
@@ -2934,6 +2936,9 @@ void SIPTransaction::SetTerminated(States newState)
   // Terminated, so finished with timers
   retryTimer.Stop(false);
   completionTimer.Stop(false);
+
+  if (connection != NULL)
+    connection->m_pendingTransactions.Remove(this);
 
   if (state >= Terminated_Success) {
     PTRACE_IF(3, newState != Terminated_Success, "SIP\tTried to set state " << StateNames[newState] 
