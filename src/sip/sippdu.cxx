@@ -2382,6 +2382,8 @@ SIPTransaction::SIPTransaction(Methods meth, SIPConnection & conn)
   InitialiseHeaders(conn, m_transport);
   m_mime.SetProductInfo(m_endpoint.GetUserAgent(), conn.GetProductInfo());
 
+  conn.m_pendingTransactions.Append(this);
+
   PTRACE(4, "SIP\t" << meth << " transaction id=" << GetTransactionID() << " created.");
 }
 
@@ -2717,6 +2719,9 @@ void SIPTransaction::SetTerminated(States newState)
   // Terminated, so finished with timers
   m_retryTimer.Stop(false);
   m_completionTimer.Stop(false);
+
+  if (m_connection != NULL)
+    m_connection->m_pendingTransactions.Remove(this);
 
   if (m_state >= Terminated_Success) {
     PTRACE_IF(3, newState != Terminated_Success, "SIP\tTried to set state " << StateNames[newState] 
