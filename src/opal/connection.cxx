@@ -231,6 +231,13 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_PTLIB_DTMF
   , m_dtmfScaleMultiplier(1)
   , m_dtmfScaleDivisor(1)
+#ifdef _MSC_VER
+#pragma warning(disable:4355)
+#endif
+  , m_dtmfNotifier(PCREATE_NOTIFIER(OnDetectInBandDTMF))
+#ifdef _MSC_VER
+#pragma warning(default:4355)
+#endif
   , m_sendInBandDTMF(true)
   , m_installedInBandDTMF(false)
   , m_emittedInBandDTMF(0)
@@ -888,7 +895,7 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
 
 #if OPAL_PTLIB_DTMF
     if (m_detectInBandDTMF && isSource) {
-      patch.AddFilter(PCREATE_NOTIFIER(OnDetectInBandDTMF), OPAL_PCM16);
+      patch.AddFilter(m_dtmfNotifier, OPAL_PCM16);
       PTRACE(4, "OpalCon\tAdded detect DTMF filter on connection " << *this << ", patch " << patch);
     }
 
