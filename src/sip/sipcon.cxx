@@ -2236,16 +2236,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   const char * proxyTrace = isProxy ? "Proxy " : "";
 #endif
 
-  if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
-    PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for non INVITE");
-    return PFalse;
-  }
-
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return false;
-
-  PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response");
+  PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response for " << transaction);
 
   // determine the authentication type
   PString errorMsg;
@@ -2296,20 +2287,35 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   m_dialog.GetNextCSeq();
 
   transport->SetInterface(transaction.GetInterface());
-  SIPTransaction * invite = new SIPInvite(*this, ((SIPInvite &)transaction).GetSessionManager());
 
-  // Section 8.1.3.5 of RFC3261 tells that the authenticated
-  // request SHOULD have the same value of the Call-ID, To and From.
-  // For Asterisk this is not merely SHOULD, but SHALL ....
-  invite->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
+  SIPTransaction * newTransaction;
+  switch (transaction.GetMethod()) {
+    case SIP_PDU::Method_INVITE :
+      newTransaction = new SIPInvite(*this, ((SIPInvite &)transaction).GetSessionManager());
+      // Section 8.1.3.5 of RFC3261 tells that the authenticated
+      // request SHOULD have the same value of the Call-ID, To and From.
+      // For Asterisk this is not merely SHOULD, but SHALL ....
+      newTransaction->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
+      break;
 
-  if (!invite->Start()) {
-    PTRACE(2, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
-    return PFalse;
+    case SIP_PDU::Method_REFER :
+      newTransaction = new SIPRefer(*this, transaction.GetMIME().GetReferTo(), transaction.GetMIME().GetReferredBy());
+      break;
+
+    default:
+      PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for " << transaction);
+      return false;
   }
 
-  forkedInvitations.Append(invite);
-  return PTrue;
+  if (!newTransaction->Start()) {
+    PTRACE(2, "SIP\tCould not restart " << transaction << " for " << proxyTrace << "Authentication Required");
+    return false;
+  }
+
+  if (transaction.GetMethod() == SIP_PDU::Method_INVITE)
+    forkedInvitations.Append(newTransaction);
+
+  return true;
 }
 
 
