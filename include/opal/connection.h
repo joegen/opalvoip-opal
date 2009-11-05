@@ -1670,6 +1670,7 @@ class OpalConnection : public PSafeObject
     bool         m_detectInBandDTMF;
     unsigned     m_dtmfScaleMultiplier;
     unsigned     m_dtmfScaleDivisor;
+    PNotifier    m_dtmfNotifier;
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnDetectInBandDTMF);
 
     bool         m_sendInBandDTMF;
