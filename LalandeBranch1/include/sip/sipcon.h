@@ -541,6 +541,7 @@ class SIPConnection : public OpalRTPConnection
     PSafePtr<SIPTransaction>  referTransaction;
     PSafeList<SIPTransaction> forkedInvitations; // Not for re-INVITE
     PSafeList<SIPTransaction> pendingInvitations; // For re-INVITE
+    PSafeList<SIPTransaction> m_pendingTransactions;
 
     enum {
       ReleaseWithBYE,
@@ -560,6 +561,8 @@ class SIPConnection : public OpalRTPConnection
   public:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
     virtual void OnAllowedEventNotify(const PString & /* eventStr */);
+
+  friend class SIPTransaction;
 };
 
 

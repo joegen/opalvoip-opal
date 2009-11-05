@@ -240,6 +240,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   forkedInvitations.DisallowDeleteObjects();
   pendingInvitations.DisallowDeleteObjects();
+  m_pendingTransactions.DisallowDeleteObjects();
 
   ackTimer.SetNotifier(PCREATE_NOTIFIER(OnAckTimeout));
   ackRetry.SetNotifier(PCREATE_NOTIFIER(OnInviteResponseRetry));
@@ -278,7 +279,6 @@ void SIPConnection::OnReleased()
 
   SetPhase(ReleasingPhase);
 
-  PSafePtr<SIPTransaction> byeTransaction;
   SIPDialogNotification::Events notifyDialogEvent = SIPDialogNotification::NoEvent;
   SIP_PDU::StatusCodes sipCode = SIP_PDU::IllegalStatusCode;
 
@@ -313,8 +313,8 @@ void SIPConnection::OnReleased()
       break;
 
     case ReleaseWithBYE :
-      // create BYE now & delete it later to prevent memory access errors
-      byeTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE);
+      // create BYE now & delete it later (in garbage collection thread)
+      new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE);
       break;
 
     case ReleaseWithCANCEL :
@@ -345,21 +345,18 @@ void SIPConnection::OnReleased()
   // Close media
   CloseMediaStreams();
 
-  // Sent a BYE, wait for it to complete
-  if (byeTransaction != NULL) {
-    byeTransaction->WaitForCompletion();
-    byeTransaction.SetNULL();
+  // Wait until all transactions for this connection have completed to avoid crash
+  // due to underlying OpalTransport being deleted while transactions using them.
+  PSafePtr<SIPTransaction> transaction;
+  while ((transaction = m_pendingTransactions.GetAt(0, PSafeReference)) != NULL) {
+    transaction->WaitForCompletion();
+    m_pendingTransactions.Remove(transaction);
   }
 
-  // Wait until all INVITEs have completed
-  for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation)
-    invitation->WaitForCompletion();
+  // Remove all the references to the transactions so garbage can be collected
+  pendingInvitations.RemoveAll();
   forkedInvitations.RemoveAll();
-
-  if (referTransaction != NULL) {
-    referTransaction->WaitForCompletion();
-    referTransaction.SetNULL();
-  }
+  referTransaction.SetNULL();
 
   SetPhase(ReleasedPhase);
 
@@ -1953,7 +1950,7 @@ void SIPConnection::OnAllowedEventNotify(const PString & /* eventStr */)
 void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 {
   PCaselessString event, state;
-  
+
   event = request.GetMIME().GetEvent();
 
   if (m_allowedEvents.GetStringsIndex(event) != P_MAX_INDEX) {
@@ -1968,7 +1965,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
     request.SendResponse(*transport, SIP_PDU::Failure_BadEvent);
     return;
   }
-  
+
   // We could also compare the To and From tags
   if (request.GetMIME().GetCallID() != referTransaction->GetMIME().GetCallID()
       || event.Find("refer") == P_MAX_INDEX) {
@@ -2202,6 +2199,10 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
     case SIP_PDU::Method_REFER :
       newTransaction = new SIPRefer(*this, *transport, transaction.GetMIME().GetReferTo(), transaction.GetMIME().GetReferredBy());
+      break;
+
+    case SIP_PDU::Method_BYE :
+      newTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE);
       break;
 
     default:
