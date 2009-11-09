@@ -846,11 +846,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   // Find the payload type and capabilities used for telephone-event, if present
   OpalMediaFormat nteFormat = GetNxECapabilities(rfc2833Handler, incomingMedia, OpalRFC2833);
-  if (nteFormat.IsValid()) {
-    // Have RFC2833 user input, disable the in-band tone detcetor to avoid double detection
-    m_detectInBandDTMF = false;
-    remoteFormatList += nteFormat;
-  }
+  remoteFormatList += nteFormat;
 #if OPAL_T38_CAPABILITY
   OpalMediaFormat nseFormat = GetNxECapabilities(ciscoNSEHandler, incomingMedia, OpalCiscoNSE);
   remoteFormatList += nseFormat;
@@ -2348,12 +2344,7 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
   remoteFormatList += mediaFormatList;
 
   // Find the payload type and capabilities used for telephone-event, if present
-  OpalMediaFormat nteFormat = GetNxECapabilities(rfc2833Handler, mediaDescription, OpalRFC2833);
-  if (nteFormat.IsValid()) {
-    // Have RFC2833 user input, disable the in-band tone detcetor to avoid double detection
-    m_detectInBandDTMF = false;
-    remoteFormatList += nteFormat;
-  }
+  remoteFormatList += GetNxECapabilities(rfc2833Handler, mediaDescription, OpalRFC2833);
 #if OPAL_T38_CAPABILITY
   remoteFormatList += GetNxECapabilities(ciscoNSEHandler, mediaDescription, OpalCiscoNSE);
 #endif
