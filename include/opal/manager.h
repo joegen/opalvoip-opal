@@ -38,6 +38,7 @@
 
 #include <opal/buildopts.h>
 
+#include <opal/pres_ent.h>
 #include <opal/call.h>
 #include <opal/connection.h> //OpalConnection::AnswerCallResponse
 #include <opal/guid.h>
@@ -296,6 +297,62 @@ class OpalManager : public PObject
     virtual PString GetNextToken(char prefix);
   //@}
 
+  /**@name Presence & Instant Messaging management */
+  //@{
+    /**Add a presentity.
+       Returns a Read/Write locked pointer to presentity.
+      */
+    virtual PSafePtr<OpalPresentity> AddPresentity(
+      const PString & presentity  ///< Presentity URI
+    );
+
+    /**Get a presentity.
+      */
+    virtual PSafePtr<OpalPresentity> GetPresentity(
+      const PString & presentity,         ///< Presentity URI
+      PSafetyMode mode = PSafeReference   ///< Safety mode for presentity
+    );
+
+    /**Remove a presentity.
+      */
+    virtual bool RemovePresentity(
+      const PString & presentity  ///< Presentity URI
+    );
+
+    /**Send text message
+     */
+    virtual PBoolean Message(
+      const PString & to, 
+      const PString & body
+    );
+    virtual PBoolean Message(
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      PURL & from, 
+      PString & conversationId
+    );
+
+    /**Called when text message received
+     */
+    virtual void OnMessageReceived(
+      const PURL & from, 
+      const PString & fromName,
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      const PString & conversationId
+    );
+
+    /** Called when text message to be sent to remote end of a connection
+      */
+    virtual bool TransmitExternalIM(
+      OpalConnection & conn, 
+      const OpalMediaFormat & format, 
+      RTP_IMFrame & frame
+    );
+  //@}
+
   /**@name Connection management */
   //@{
     /**Set up a connection to a remote party.
@@ -338,6 +395,15 @@ class OpalManager : public PObject
       void * userData = NULL,            ///<  user data to pass to connections
       unsigned int options = 0,          ///<  options to pass to conneciton
       OpalConnection::StringOptions * stringOptions = NULL
+    );
+
+    /**Call back for a new connection has been constructed.
+       This is called after CreateConnection has returned a new connection.
+       It allows an application to make any custom adjustments to the
+       connection before it begins to process the protocol. behind it.
+      */
+    virtual void OnNewConnection(
+      OpalConnection & connection   ///< New connection just created
     );
 
     /**Call back for answering an incoming call.
@@ -904,6 +970,40 @@ class OpalManager : public PObject
     );
   //@}
 
+#if OPAL_HAS_MIXER
+  /**@name Call recording */
+  //@{
+    /**Start recording a call.
+       Current version saves to a WAV file. It may either mix the receive and
+       transmit audio stream to a single mono file, or the streams are placed
+       into the left and right channels of a stereo WAV file.
+
+       Returns true if the call exists and there is no recording in progress
+               for the call.
+      */
+    virtual PBoolean StartRecording(
+      const PString & callToken,  ///< Call token for call to record
+      const PFilePath & filename, ///< File into which to record
+      const OpalRecordManager::Options & options = false ///< Record mixing options
+    );
+
+    /**Indicate if recording is currently active on call.
+      */
+    virtual bool IsRecording(
+      const PString & callToken   ///< Call token for call to check if recording
+    );
+
+    /** Stop a recording.
+        Returns true if the call does exists, that recording is active is
+                not indicated.
+      */
+    virtual bool StopRecording(
+      const PString & callToken   ///< Call token for call to stop recording
+    );
+
+  //@}
+#endif
+
   /**@name Member variable access */
   //@{
     /**Get the product info for all endpoints.
@@ -1290,47 +1390,6 @@ class OpalManager : public PObject
     // needs to be public for gcc 3.4
     void GarbageCollection();
 
-    /**Call back for a new connection has been constructed.
-       This is called after CreateConnection has returned a new connection.
-       It allows an application to make any custom adjustments to the
-       connection before it begins to process the protocol. behind it.
-      */
-    virtual void OnNewConnection(
-      OpalConnection & connection   ///< New connection just created
-    );
-
-#if OPAL_HAS_MIXER
-
-    /**Start recording a call.
-       Current version saves to a WAV file. It may either mix the receive and
-       transmit audio stream to a single mono file, or the streams are placed
-       into the left and right channels of a stereo WAV file.
-
-       Returns true if the call exists and there is no recording in progress
-               for the call.
-      */
-    virtual PBoolean StartRecording(
-      const PString & callToken,  ///< Call token for call to record
-      const PFilePath & filename, ///< File into which to record
-      const OpalRecordManager::Options & options = false ///< Record mixing options
-    );
-
-    /**Indicate if recording is currently active on call.
-      */
-    virtual bool IsRecording(
-      const PString & callToken   ///< Call token for call to check if recording
-    );
-
-    /** Stop a recording.
-        Returns true if the call does exists, that recording is active is
-                not indicated.
-      */
-    virtual bool StopRecording(
-      const PString & callToken   ///< Call token for call to stop recording
-    );
-
-#endif
-
 #ifdef OPAL_ZRTP
     virtual bool GetZRTPEnabled() const;
 #endif
@@ -1338,39 +1397,6 @@ class OpalManager : public PObject
     virtual void OnApplyStringOptions(
       OpalConnection & conn,
       OpalConnection::StringOptions & stringOptions
-    );
-
-    /**Send text message
-     */
-    virtual PBoolean Message(
-      const PString & to, 
-      const PString & body
-    );
-    virtual PBoolean Message(
-      const PURL & to, 
-      const PString & type,
-      const PString & body,
-      PURL & from, 
-      PString & conversationId
-    );
-
-    /**Called when text message received
-     */
-    virtual void OnMessageReceived(
-      const PURL & from, 
-      const PString & fromName,
-      const PURL & to, 
-      const PString & type,
-      const PString & body,
-      const PString & conversationId
-    );
-
-    /** Called when text message to be sent to remote end of a connection
-      */
-    virtual bool TransmitExternalIM(
-      OpalConnection & conn, 
-      const OpalMediaFormat & format, 
-      RTP_IMFrame & frame
     );
 
   protected:
@@ -1459,6 +1485,8 @@ class OpalManager : public PObject
         virtual void DeleteObject(PObject * object) const;
         OpalManager & manager;
     } activeCalls;
+
+    PSafeDictionary<PString, OpalPresentity> m_presentities;
 
     PAtomicInteger m_clearingAllCallsCount;
     PMutex         m_clearingAllCallsMutex;

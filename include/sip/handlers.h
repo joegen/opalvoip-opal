@@ -43,8 +43,7 @@
 
 #if OPAL_SIP
 
-#include <ptlib/safecoll.h>
-
+#include <opal/pres_ent.h>
 #include <opal/connection.h>
 #include <sip/sippdu.h>
 
@@ -426,59 +425,18 @@ class SIPHandlersList
 
 /** Information for SIP "presence" event package notification messages.
   */
-struct SIPPresenceInfo
+class SIPPresenceInfo : public OpalPresenceInfo
 {
-  enum BasicStates { // from RFC 3863
-    Unchanged,
-    Closed,
-    Open,
-    NumBasicStates
-  };
-
-  enum Activities { // from RFC 4480
-    UnknownActivity,
-    Appointment,
-    Away,
-    Breakfast,
-    Busy,
-    Dinner,
-    Holiday,
-    InTransit,
-    LookingForWork,
-    Lunch,
-    Meal,
-    Meeting,
-    OnThePhone,
-    Other,
-    Performance,
-    PermanentAbsence,
-    Playing,
-    Presentation,
-    Shopping,
-    Sleeping,
-    Spectator,
-    Steering,
-    Travel,
-    TV,
-    Vacation,
-    Working,
-    Worship,
-    NumActivities
-  };
-
+public:
   SIPPresenceInfo();
 
   // basic presence defined by RFC 3863
   PString     m_tupleId;
-  PString     m_entity;
-  BasicStates m_basic;
-  PString     m_note;
   PString     m_contact;
   PString     m_to;
 
   // presence extensions defined by RFC 4480
   PStringArray m_activities;  // list of activities, seperated by newline
-  Activities   m_activity;  // primary activity
 
   // presence agent
   PString m_presenceAgent;

@@ -34,12 +34,70 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
-#include <opal/manager.h>
+#include <ptlib/safecoll.h>
 #include <ptclib/url.h>
-#include <sip/sipep.h>
+#include <ptclib/guid.h>
+
+#include <list>
 
 
+class OpalManager;
 class OpalPresentityCommand;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**Presencu state information
+  */
+class OpalPresenceInfo
+{
+  public:
+    /// Presence states.
+    enum State {
+      NoPresence = -1,    // remove presence status - not the same as Unavailable or Away
+
+      // basic states (from RFC 3863)
+      Unchanged,
+      Available,
+      Unavailable,
+
+      // extended states (from RFC 4480)
+      ExtendedBase    = 100,
+      UnknownExtended = ExtendedBase,
+      Appointment,
+      Away,
+      Breakfast,
+      Busy,
+      Dinner,
+      Holiday,
+      InTransit,
+      LookingForWork,
+      Lunch,
+      Meal,
+      Meeting,
+      OnThePhone,
+      Other,
+      Performance,
+      PermanentAbsence,
+      Playing,
+      Presentation,
+      Shopping,
+      Sleeping,
+      Spectator,
+      Steering,
+      Travel,
+      TV,
+      Vacation,
+      Working,
+      Worship
+    };
+
+    State   m_state;
+    PString m_entity;
+    PString m_note;
+
+    OpalPresenceInfo(State state = NoPresence) : m_state(state) { }
+};
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -181,46 +239,6 @@ class OpalPresentity : public PSafeObject
       Authorisation authorisation     ///< Authorisation mode
     );
 
-    /// Presence states.
-    enum State {
-      NoPresence      = -1,    // remove presence status - not the same as NotAvailable or Away
-
-      // basic states (from RFC 3863) - must be same order as SIPPresenceInfo::BasicStates
-      Unchanged       = SIPPresenceInfo::Unchanged,
-      Available       = SIPPresenceInfo::Open,
-      NotAvailable    = SIPPresenceInfo::Closed,
-
-      // extended states (from RFC 4480) - must be same order as SIPPresenceInfo::ExtendedStates
-      ExtendedBase    = 100,
-      UnknownExtended = ExtendedBase + SIPPresenceInfo::UnknownActivity,
-      Appointment,
-      Away,
-      Breakfast,
-      Busy,
-      Dinner,
-      Holiday,
-      InTransit,
-      LookingForWork,
-      Lunch,
-      Meal,
-      Meeting,
-      OnThePhone,
-      Other,
-      Performance,
-      PermanentAbsence,
-      Playing,
-      Presentation,
-      Shopping,
-      Sleeping,
-      Spectator,
-      Steering,
-      Travel,
-      TV,
-      Vacation,
-      Working,
-      Worship
-    };
-
     /** Set our presence state.
         This function is a wrapper and the OpalSetLocalPresenceCommand command.
 
@@ -229,7 +247,7 @@ class OpalPresentity : public PSafeObject
         capabable of the action.
       */
     virtual bool SetLocalPresence(
-      State state,                              ///< New state for our presentity
+      OpalPresenceInfo::State state,            ///< New state for our presentity
       const PString & note = PString::Empty()   ///< Additional note attached to the state change
     );
 
@@ -285,12 +303,12 @@ class OpalPresentity : public PSafeObject
         Default implementation calls m_onPresenceChangeNotifier.
       */
     virtual void OnPresenceChange(
-      const SIPPresenceInfo & info ///< Info on other presentity that changed state
+      const OpalPresenceInfo & info ///< Info on other presentity that changed state
     );
 
-    typedef PNotifierTemplate<const SIPPresenceInfo &> PresenceChangeNotifier;
-    #define PDECLARE_PresenceChangeNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const SIPPresenceInfo &)
-    #define PCREATE_PresenceChangeNotifier(fn) PCREATE_NOTIFIER2(fn, const SIPPresenceInfo &)
+    typedef PNotifierTemplate<const OpalPresenceInfo &> PresenceChangeNotifier;
+    #define PDECLARE_PresenceChangeNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const OpalPresenceInfo &)
+    #define PCREATE_PresenceChangeNotifier(fn) PCREATE_NOTIFIER2(fn, const OpalPresenceInfo &)
 
     /// Set the notifier for the OnPresenceChange() function.
     void SetPresenceChangeNotifier(
@@ -369,7 +387,7 @@ class OpalPresentity : public PSafeObject
     OpalPresentityCommand * InternalCreateCommand(const char * cmdName);
 
     OpalManager        * m_manager;
-    OpalGloballyUniqueID m_guid;
+    PGloballyUniqueID    m_guid;
     PURL                 m_aor;
     Attributes           m_attributes;
 
@@ -513,12 +531,9 @@ class OpalAuthorisationRequestCommand : public OpalPresentityCommand {
     change. The mechanism by which this happens is dependent on the concrete
     OpalPresentity class and it's underlying protocol.
   */
-class OpalSetLocalPresenceCommand : public OpalPresentityCommand {
+class OpalSetLocalPresenceCommand : public OpalPresentityCommand, public OpalPresenceInfo {
   public:
-    OpalSetLocalPresenceCommand() : m_state(OpalPresentity::NoPresence) { }
-
-    OpalPresentity::State m_state;    ///< New state to move to.
-    PString               m_note;     ///< Additional note attached to the state change
+    OpalSetLocalPresenceCommand(State state = NoPresence) : OpalPresenceInfo(state) { }
 };
 
 

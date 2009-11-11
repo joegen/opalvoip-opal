@@ -71,7 +71,6 @@ class TestPresEnt : public PProcess
     PString     m_xcapRoot;
     PString     m_xcapAuthID;
     PString     m_xcapPassword;
-    PList<OpalPresentity> m_presentitiyList;
     PDictionary<PString, OpalPresentity> m_presentities;
 };
 
@@ -89,14 +88,13 @@ TestPresEnt::TestPresEnt()
 TestPresEnt::~TestPresEnt()
 {
   m_presentities.RemoveAll();
-  m_presentitiyList.RemoveAll(); // Must do this before killing the manager.
   delete m_manager; 
 }
 
 
 void TestPresEnt::AddPresentity(PArgList & args)
 {
-  OpalPresentity * presentity = OpalPresentity::Create(*m_manager, args[0]);
+  PSafePtr<OpalPresentity> presentity = m_manager->AddPresentity(args[0]);
   if (presentity == NULL) {
     cerr << "error: cannot create presentity for \"" << args[0] << '"' << endl;
     return;
@@ -118,13 +116,12 @@ void TestPresEnt::AddPresentity(PArgList & args)
     presentity->GetAttributes().Set(SIPXCAP_Presentity::XcapPasswordKey,    m_xcapPassword);
 
   if (presentity->Open()) {
-    m_presentitiyList.Append(presentity);
     m_presentities.SetAt(psprintf("#%u", m_presentities.GetSize()/2+1), presentity);
     m_presentities.SetAt(PCaselessString(presentity->GetAOR().AsString()), presentity);
   }
   else {
     cerr << "error: cannot open presentity \"" << args[0] << '"' << endl;
-    delete presentity;
+    m_manager->RemovePresentity(args[0]);
   }
 }
 
@@ -298,11 +295,11 @@ void TestPresEnt::CmdSetLocalPresence(PCLI::Arguments & args, INT)
   else if (!m_presentities.Contains(args[0]))
     args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
   else if (args[1] *= "available")
-    m_presentities[args[0]].SetLocalPresence(OpalPresentity::Available, note);
+    m_presentities[args[0]].SetLocalPresence(OpalPresenceInfo::Available, note);
   else if (args[1] *= "unavailable")
-    m_presentities[args[0]].SetLocalPresence(OpalPresentity::NotAvailable, note);
+    m_presentities[args[0]].SetLocalPresence(OpalPresenceInfo::NoPresence, note);
   else if (args[1] *= "busy")
-    m_presentities[args[0]].SetLocalPresence(OpalPresentity::Busy, note);
+    m_presentities[args[0]].SetLocalPresence(OpalPresenceInfo::Busy, note);
   else
     args.WriteUsage();
 }
@@ -367,9 +364,9 @@ void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, const PStrin
 }
 
 
-void TestPresEnt::PresenceChange(OpalPresentity & presentity, const SIPPresenceInfo & info)
+void TestPresEnt::PresenceChange(OpalPresentity & presentity, const OpalPresenceInfo & info)
 {
-  cout << "Presence for " << info.m_entity << " changed to " << info.m_basic << endl;
+  cout << "Presence for " << info.m_entity << " changed to " << info.m_state << endl;
 }
 
 

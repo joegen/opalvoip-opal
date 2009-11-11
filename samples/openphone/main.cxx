@@ -3071,33 +3071,27 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
         PwxString status = info->m_note;
 
         IconStates icon;
-        switch (info->m_basic) {
-          case SIPPresenceInfo::Open :
-            switch (info->m_activity) {
-              case SIPPresenceInfo::Busy :
-                icon = Icon_Busy;
-                break;
-
-              case SIPPresenceInfo::Away :
-                icon = Icon_Absent;
-                break;
-
-              default :
-                if (status.CmpNoCase(wxT("busy")) == 0)
-                  icon = Icon_Busy;
-                else if (status.CmpNoCase(wxT("away")) == 0)
-                  icon = Icon_Absent;
-                else
-                  icon = Icon_Present;
-            }
+        switch (info->m_state) {
+          case SIPPresenceInfo::NoPresence :
+            icon = Icon_Absent;
             break;
 
-          case SIPPresenceInfo::Closed :
+          case SIPPresenceInfo::Busy :
+            icon = Icon_Busy;
+            break;
+
+          case SIPPresenceInfo::Away :
             icon = Icon_Absent;
             break;
 
           default :
-            icon = Icon_Unknown;
+            if (status.CmpNoCase(wxT("busy")) == 0)
+              icon = Icon_Busy;
+            else if (status.CmpNoCase(wxT("away")) == 0)
+              icon = Icon_Absent;
+            else
+              icon = Icon_Present;
+            break;
         }
 
         m_speedDials->SetItemImage(item.m_itemId, icon);
@@ -3352,7 +3346,7 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
 
       SIPPresenceInfo param;
       param.m_entity        = m_aor;
-      param.m_basic         = SIPPresenceInfo::Open;
+      param.m_state         = SIPPresenceInfo::Available;
       param.m_contact       = m_Contact.p_str();
       param.m_presenceAgent = m_Domain.p_str();
 
@@ -3404,7 +3398,7 @@ bool RegistrationInfo::Stop(SIPEndPoint & sipEP)
     case PublishPresence : {
       SIPPresenceInfo info;
       info.m_entity = m_aor;
-      info.m_basic = SIPPresenceInfo::Closed;
+      info.m_state = SIPPresenceInfo::NoPresence;
       sipEP.PublishPresence(info);
       break;
     }
@@ -5197,9 +5191,9 @@ bool PresenceDialog::TransferDataFromWindow()
   SIPPresenceInfo info;
   info.m_entity = m_address.p_str();
   if (m_status == "Invisible")
-    info.m_basic = SIPPresenceInfo::Closed;
+    info.m_state = OpalPresenceInfo::NoPresence;
   else {
-    info.m_basic = SIPPresenceInfo::Open;
+    info.m_state = OpalPresenceInfo::Available;
     info.m_note = m_status.p_str();
   }
 
