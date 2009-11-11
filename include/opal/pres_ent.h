@@ -39,7 +39,7 @@
 #include <ptclib/guid.h>
 
 #include <list>
-
+#include <queue>
 
 class OpalManager;
 class OpalPresentityCommand;
