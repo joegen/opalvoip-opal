@@ -1310,11 +1310,11 @@ bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
 void SIPEndPoint::OnPresenceInfoReceived(const SIPPresenceInfo & info)
 {
   // For backward compatibility
-  switch (info.m_basic) {
-    case SIPPresenceInfo::Open :
+  switch (info.m_state) {
+    case OpalPresenceInfo::Available :
       OnPresenceInfoReceived(info.m_entity, "open", info.m_note);
       break;
-    case SIPPresenceInfo::Closed :
+    case OpalPresenceInfo::NoPresence :
       OnPresenceInfoReceived(info.m_entity, "closed", info.m_note);
       break;
     default :
