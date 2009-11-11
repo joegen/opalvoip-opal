@@ -259,6 +259,9 @@ void OpalManager::ShutDownEndpoints()
   // Clear any pending calls, set flag so no calls can be received before endpoints removed
   InternalClearAllCalls(OpalConnection::EndedByLocalUser, true, m_clearingAllCallsCount++ == 0);
 
+  // Remove (and unsubscribe) all the presentities
+  m_presentities.RemoveAll();
+
   // Deregister the endpoints
   endpointsMutex.StartRead();
   for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
@@ -1654,6 +1657,29 @@ bool OpalManager::StopRecording(const PString & callToken)
 void OpalManager::OnApplyStringOptions(OpalConnection & conn, OpalConnection::StringOptions & stringOptions)
 {
   conn.ApplyStringOptions(stringOptions);
+}
+
+
+PSafePtr<OpalPresentity> OpalManager::AddPresentity(const PString & presentity)
+{
+  OpalPresentity * newPresentity = OpalPresentity::Create(*this, presentity);
+  if (newPresentity == NULL)
+    return NULL;
+
+  m_presentities.SetAt(presentity, newPresentity);
+  return PSafePtr<OpalPresentity>(newPresentity, PSafeReadWrite);
+}
+
+
+PSafePtr<OpalPresentity> OpalManager::GetPresentity(const PString & presentity, PSafetyMode mode)
+{
+  return m_presentities.FindWithLock(presentity, mode);
+}
+
+
+bool OpalManager::RemovePresentity(const PString & presentity)
+{
+  return m_presentities.RemoveAt(presentity);
 }
 
 

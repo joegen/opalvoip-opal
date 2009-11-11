@@ -427,26 +427,13 @@ void SIPXCAP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCo
 {
   PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
 
+  (OpalPresenceInfo)m_localPresence = (OpalPresenceInfo)cmd;
+
   m_localPresence.m_presenceAgent = m_presenceServer.AsString();
   m_localPresence.m_entity = m_aor.AsString();
 
-  if (cmd.m_state == NoPresence) {
-    m_localPresence.m_basic = SIPPresenceInfo::Closed;
-    m_endpoint->PublishPresence(m_localPresence, 0);
-    return;
-  }
-
-  if (cmd.m_state < (int)SIPPresenceInfo::NumBasicStates)
-    m_localPresence.m_basic = (SIPPresenceInfo::BasicStates)cmd.m_state;
-  else
-    m_localPresence.m_basic = SIPPresenceInfo::Open;
-
-  if (cmd.m_state > ExtendedBase)
-    m_localPresence.m_activity = (SIPPresenceInfo::Activities)(cmd.m_state - ExtendedBase);
-
-  m_localPresence.m_note = cmd.m_note;
-
-  m_endpoint->PublishPresence(m_localPresence, GetExpiryTime());
+  m_endpoint->PublishPresence(m_localPresence,
+            cmd.m_state == OpalPresenceInfo::NoPresence ? 0 : GetExpiryTime());
 }
 
 

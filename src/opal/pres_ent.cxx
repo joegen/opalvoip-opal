@@ -102,7 +102,7 @@ bool OpalPresentity::SetPresenceAuthorisation(const PString & presentity, Author
 }
 
 
-bool OpalPresentity::SetLocalPresence(State state, const PString & note)
+bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PString & note)
 {
   OpalSetLocalPresenceCommand * cmd = CreateCommand<OpalSetLocalPresenceCommand>();
   if (cmd == NULL)
@@ -134,7 +134,7 @@ void OpalPresentity::SetAuthorisationRequestNotifier(const AuthorisationRequestN
 }
 
 
-void OpalPresentity::OnPresenceChange(const SIPPresenceInfo & info)
+void OpalPresentity::OnPresenceChange(const OpalPresenceInfo & info)
 {
   PWaitAndSignal mutex(m_notificationMutex);
 
