@@ -1460,12 +1460,18 @@ PObject::Comparison SIPDigestAuthentication::Compare(const PObject & other) cons
   if (otherAuth == NULL)
     return LessThan;
 
-  Comparison result = GetAuthRealm().Compare(otherAuth->GetAuthRealm());
+  if (algorithm < otherAuth->algorithm)
+    return LessThan;
+  if (algorithm > otherAuth->algorithm)
+    return GreaterThan;
+
+  Comparison result = authRealm.Compare(otherAuth->authRealm);
   if (result != EqualTo)
     return result;
 
-  if (GetAlgorithm() != otherAuth->GetAlgorithm())
-    return GetAlgorithm() < otherAuth->GetAlgorithm() ? LessThan : GreaterThan;
+  result = nonce.Compare(otherAuth->nonce);
+  if (result != EqualTo)
+    return result;
 
   return SIPAuthentication::Compare(other);
 }
