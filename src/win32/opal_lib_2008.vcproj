@@ -1560,6 +1560,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\opal\pres_ent.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\opal\recording.cxx">
 				</File>
 				<File
@@ -6069,6 +6073,10 @@
 						/>
 					</FileConfiguration>
 				</File>
+				<File
+					RelativePath="..\sip\sippres.cxx"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="IAX2 Sources"
@@ -6394,6 +6402,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\opal\pres_ent.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\opal\rtpconn.h"
 					>
 				</File>
@@ -6643,6 +6655,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\sip\sippdu.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\sip\sippres.h"
 					>
 				</File>
 			</Filter>

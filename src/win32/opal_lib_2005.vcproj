@@ -10862,6 +10862,10 @@
 					RelativePath="..\..\include\t38\sipt38.h"
 					>
 				</File>
+				<File
+					RelativePath="..\..\include\sip\sippres.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="IAX2 Headers"
