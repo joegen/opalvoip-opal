@@ -444,6 +444,8 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
     return true;
   }
 
+  PTRACE(4, "Media\tOverwriting patch " << *mediaPatch << " with " << *patch << " on stream " << *this);
+
   OpalMediaPatch * oldPatch = mediaPatch;
   mediaPatch = patch;
 
