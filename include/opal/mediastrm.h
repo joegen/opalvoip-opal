@@ -560,6 +560,12 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     virtual void EnableJitterBuffer() const;
 
+    /**Set the patch thread that is using this stream.
+      */
+    virtual PBoolean SetPatch(
+      OpalMediaPatch * patch  ///<  Media patch thread
+    );
+
     /** Return current RTP session
       */
     virtual RTP_Session & GetRtpSession() const
