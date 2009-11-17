@@ -435,6 +435,19 @@ void OpalMediaStream::SetPaused(bool p)
 
 PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
+#if PTRACING
+  if (PTrace::CanTrace(4) && (patch != NULL || mediaPatch != NULL)) {
+    ostream & trace = PTrace::Begin(4, __FILE__, __LINE__);
+    if (patch == NULL)
+      trace << "Removing patch " << *mediaPatch;
+    else if (mediaPatch == NULL)
+      trace << "Adding patch " << *patch;
+    else
+      trace << "Overwriting patch " << *mediaPatch << " with " << *patch;
+    trace << " on stream " << *this << PTrace::End;
+  }
+#endif
+
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
     return false;
@@ -443,8 +456,6 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
     mediaPatch = patch;
     return true;
   }
-
-  PTRACE(4, "Media\tOverwriting patch " << *mediaPatch << " with " << *patch << " on stream " << *this);
 
   OpalMediaPatch * oldPatch = mediaPatch;
   mediaPatch = patch;
@@ -737,6 +748,18 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
                                    maxAudioJitterDelay*mediaFormat.GetTimeUnits(),
                                    mediaFormat.GetTimeUnits(),
                                    connection.GetEndPoint().GetManager().GetMaxRtpPacketSize());
+}
+
+
+PBoolean OpalRTPMediaStream::SetPatch(OpalMediaPatch * patch)
+{
+  if (!isOpen || IsSink())
+    return OpalMediaStream::SetPatch(patch);
+
+  rtpSession.Close(true);
+  bool ok = OpalMediaStream::SetPatch(patch);
+  rtpSession.Reopen(true);
+  return ok;
 }
 
 
