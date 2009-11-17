@@ -260,14 +260,16 @@ PBoolean H323Gatekeeper::WriteTo(H323TransactionPDU & pdu,
 {
   PWaitAndSignal mutex(transport->GetWriteMutex());
 
-  if (!discoveryComplete && pdu.GetPDU().GetTag() == H225_RasMessage::e_gatekeeperRequest) {
-    if (!transport->WriteConnect(WriteGRQ, &pdu.GetPDU())) {
-      PTRACE(1, "RAS\tError writing discovery PDU: " << transport->GetErrorText());
-      return PFalse;
-    }
-    return PTrue;
-  }
-  return H323Transactor::WriteTo(pdu, addresses, callback);
+  if (discoveryComplete || pdu.GetPDU().GetTag() != H225_RasMessage::e_gatekeeperRequest)
+    return H323Transactor::WriteTo(pdu, addresses, callback);
+
+  PString oldInterface = transport->GetInterface();
+  bool ok = transport->WriteConnect(WriteGRQ, &pdu.GetPDU());
+  transport->SetInterface(oldInterface);
+
+  PTRACE_IF(1, !ok, "RAS\tError writing discovery PDU: " << transport->GetErrorText());
+
+  return ok;
 }
 
 
