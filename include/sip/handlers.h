@@ -428,12 +428,11 @@ class SIPHandlersList
 class SIPPresenceInfo : public OpalPresenceInfo
 {
 public:
-  SIPPresenceInfo();
+  SIPPresenceInfo(State state = Unchanged);
 
   // basic presence defined by RFC 3863
-  PString     m_tupleId;
-  PString     m_contact;
-  PString     m_to;
+  PString m_tupleId;
+  PString m_contact;
 
   // presence extensions defined by RFC 4480
   PStringArray m_activities;  // list of activities, seperated by newline

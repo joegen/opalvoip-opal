@@ -656,9 +656,9 @@ class SIP_PDU : public PSafeObject
     unsigned GetVersionMajor() const         { return m_versionMajor; }
     unsigned GetVersionMinor() const         { return m_versionMinor; }
     const PString & GetEntityBody() const    { return m_entityBody; }
-          PString & GetEntityBody()          { return m_entityBody; }
+    void SetEntityBody(const PString & body) { m_entityBody = body; }
     const PString & GetInfo() const          { return m_info; }
-          PString & GetInfo()                { return m_info; }
+    void SetInfo(const PString & info)       { m_info = info; }
     const SIPMIMEInfo & GetMIME() const      { return m_mime; }
           SIPMIMEInfo & GetMIME()            { return m_mime; }
     void SetURI(const SIPURL & newuri)       { m_uri = newuri; }
@@ -779,6 +779,7 @@ struct SIPParameters
 
   PString       m_remoteAddress;
   PString       m_localAddress;
+  PString       m_proxyAddress;
   PString       m_addressOfRecord;
   PString       m_contactAddress;
   PString       m_authID;
@@ -963,7 +964,6 @@ class SIPRegister : public SIPTransaction
     SIPRegister(
       SIPEndPoint   & endpoint,
       OpalTransport & transport,
-      const SIPURL & proxy,
       const PString & callId,
       unsigned cseq,
       const Params & params
@@ -1034,12 +1034,23 @@ class SIPSubscribe : public SIPTransaction
     };
 
     struct NotifyCallbackInfo {
-      NotifyCallbackInfo(SIP_PDU & notify, SIP_PDU & response)
-        : m_notify(notify), m_response(response), m_sendResponse(true)
-      { }
-      SIP_PDU & m_notify;
-      SIP_PDU & m_response;
-      bool m_sendResponse;
+      NotifyCallbackInfo(
+        SIPEndPoint & ep,
+        OpalTransport & trans,
+        SIP_PDU & notify,
+        SIP_PDU & response
+      );
+
+      bool SendResponse(
+        SIP_PDU::StatusCodes status,
+        const char * extra = NULL
+      );
+
+      SIPEndPoint   & m_endpoint;
+      OpalTransport & m_transport;
+      SIP_PDU       & m_notify;
+      SIP_PDU       & m_response;
+      bool            m_sendResponse;
     };
 
     struct Params : public SIPParameters

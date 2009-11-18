@@ -67,6 +67,38 @@ static const char * const AuthNames[OpalPresentity::NumAuthorisations] = { "allo
 
 //////////////////////////////////////////////////////////////////////////////////////
 
+static bool ParseAndValidateXML(SIPSubscribe::NotifyCallbackInfo & status, PXML & xml, const PXML::ValidationInfo * validator)
+{
+  PString body = status.m_notify.GetEntityBody();
+
+  // Check for empty body, if so then is OK, just a ping ...
+  if (body.IsEmpty()) {
+    PTRACE(4, "SIPPres\tEmpty body on presence watcher NOTIFY, ignoring");
+    status.m_response.SetStatusCode(SIP_PDU::Successful_OK);
+    return false;
+  }
+
+  PStringStream err;
+
+  // load the XML
+  if (!xml.Load(body))
+    err << "XML parse";
+  else if (!xml.Validate(validator))
+    err << "XML validation";
+  else
+    return true;
+
+  err << " error\n"
+         "Error at line " << xml.GetErrorLine() << ", column " << xml.GetErrorColumn() << '\n'
+      << xml.GetErrorString() << '\n';
+  status.m_response.SetEntityBody(err);
+  PTRACE(3, "SIPPres\tError parsing XML in presence notify: " << err);
+  return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////
+
 SIP_Presentity::SIP_Presentity()
   : m_endpoint(NULL)
   , m_watcherInfoVersion(-1)
@@ -177,7 +209,7 @@ bool SIPXCAP_Presentity::Open()
   }
 
   if (!m_presenceServer.GetAddress().IsValid()) {
-    PTRACE(1, "SIPPres\tUnable to lookup hostname for '" << m_presenceServer.GetAddress() << "'");
+    PTRACE(1, "SIPPres\tUnable to lookup hostname for '" << m_presenceServer.GetAddress() << '\'');
     return false;
   }
 
@@ -243,12 +275,12 @@ void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCom
     return;
   }
 
-  // subscribe to the presence.winfo event on the presence server
-  SIPSubscribe::Params param(SIPSubscribe::Presence | SIPSubscribe::Watcher);
-
   PString aorStr = m_aor.AsString();
   PTRACE(3, "SIPPres\t'" << aorStr << "' sending subscribe for own presence.watcherinfo");
 
+  // subscribe to the presence.winfo event on the presence server
+  SIPSubscribe::Params param(SIPSubscribe::Presence | SIPSubscribe::Watcher);
+  param.m_contentType      = "application/watcherinfo+xml";
   param.m_localAddress     = aorStr;
   param.m_addressOfRecord  = aorStr;
   param.m_remoteAddress    = m_presenceServer.AsString();
@@ -261,92 +293,60 @@ void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCom
   m_endpoint->Subscribe(param, m_watcherSubscriptionAOR);
 }
 
-static PXMLValidator::ElementInfo watcherValidation[] = {
-  { PXMLValidator::RequiredNonEmptyAttribute,  "id"  },
-  { PXMLValidator::RequiredAttributeWithValue, "status",  "pending\nactive\nwaiting\nterminated" },
-  { PXMLValidator::RequiredAttributeWithValue, "event",   "subscribe\napproved\ndeactivated\nprobation\nrejected\ntimeout\ngiveup" },
-  { 0 }
-};
-
-static PXMLValidator::ElementInfo watcherListValidation[] = {
-  { PXMLValidator::RequiredNonEmptyAttribute,  "resource" },
-  { PXMLValidator::RequiredAttributeWithValue, "package", "presence" },
-
-  { PXMLValidator::Subtree,                    "watcher",  watcherValidation, "0" },
-  { 0 }
-};
-
-static PXMLValidator::ElementInfo watcherInfoValidation[] = {
-  { PXMLValidator::ElementName,                "watcherinfo", },
-  { PXMLValidator::RequiredAttributeWithValue, "xmlns",   "urn:ietf:params:xml:ns:watcherinfo" },
-  { PXMLValidator::RequiredNonEmptyAttribute,  "version"},
-  { PXMLValidator::RequiredAttributeWithValue, "state",   "full\npartial" },
-
-  { PXMLValidator::Subtree,                    "watcher-list", watcherListValidation, "0" },
-  { 0 }
-};
-
 
 void SIPXCAP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
   if (status.m_reason == SIP_PDU::Information_Trying)
     return;
 
+  OpalPresenceInfo info(status.m_wasSubscribing ? OpalPresenceInfo::Unchanged : OpalPresenceInfo::NoPresence);
+  info.m_target = info.m_entity = m_aor.AsString();
+
   m_notificationMutex.Wait();
+
+  if (status.m_reason/100 == 2)
+    OnPresenceChange(info);
+
   if (!status.m_wasSubscribing)
     m_watcherSubscriptionAOR.MakeEmpty();
+
   m_notificationMutex.Signal();
 }
 
 
-void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler & handler, SIPSubscribe::NotifyCallbackInfo & status)
+void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
 {
-  SIPMIMEInfo & sipMime(status.m_notify.GetMIME());
+  static PXML::ValidationInfo const WatcherValidation[] = {
+    { PXML::RequiredNonEmptyAttribute,  "id"  },
+    { PXML::RequiredAttributeWithValue, "status",  "pending\nactive\nwaiting\nterminated" },
+    { PXML::RequiredAttributeWithValue, "event",   "subscribe\napproved\ndeactivated\nprobation\nrejected\ntimeout\ngiveup" },
+    { PXML::EndOfValidationList }
+  };
 
-  if (sipMime.GetEvent() != "presence.winfo")
-    return;
+  static PXML::ValidationInfo const WatcherListValidation[] = {
+    { PXML::RequiredNonEmptyAttribute,  "resource" },
+    { PXML::RequiredAttributeWithValue, "package", "presence" },
 
-  // check the ContentType
-  if (sipMime.GetContentType() != "application/watcherinfo+xml") {
-    status.m_response.SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
-    status.m_response.GetMIME().SetAt("Accept", "application/watcherinfo+xml");
-    status.m_response.GetInfo() = "Unsupported media type";
-    PTRACE(3, "SIPPres\tReceived unsupported media type '" << status.m_notify.GetMIME().GetContentType() << "' for presence notify");
-    return;
-  }
+    { PXML::Subtree,                    "watcher",  WatcherValidation, 0 },
+    { PXML::EndOfValidationList }
+  };
 
-  // load the XML
+  static PXML::ValidationInfo const WatcherInfoValidation[] = {
+    { PXML::ElementName,                "watcherinfo", },
+    { PXML::RequiredAttributeWithValue, "xmlns",   "urn:ietf:params:xml:ns:watcherinfo" },
+    { PXML::RequiredNonEmptyAttribute,  "version"},
+    { PXML::RequiredAttributeWithValue, "state",   "full\npartial" },
+
+    { PXML::Subtree,                    "watcher-list", WatcherListValidation, 0 },
+    { PXML::EndOfValidationList }
+  };
+
   PXML xml;
-  if (!xml.Load(status.m_notify.GetEntityBody())) {
-    status.m_response.SetStatusCode(SIP_PDU::Failure_BadRequest);
-    PStringStream err;
-    err << "XML parse error\nSyntax error in line " << xml.GetErrorLine() << ", col " << xml.GetErrorColumn() << "\n"
-        << xml.GetErrorString() << endl;
-    status.m_response.GetEntityBody() = err;
-    PTRACE(3, "SIPPres\tError parsing XML in presence notify: " << err);
+  if (!ParseAndValidateXML(status, xml, WatcherInfoValidation))
     return;
-  }
 
-  // validate the XML
-  {
-    PString errorString;
-    PXMLValidator validator;
-    if (!validator.Elements(&xml, watcherInfoValidation, errorString)) {
-      status.m_response.SetStatusCode(SIP_PDU::Failure_BadRequest);
-      PStringStream err;
-      err << "XML parse error\nSyntax error in line " << xml.GetErrorLine() << ", col " << xml.GetErrorColumn() << "\n"
-          << xml.GetErrorString() << endl;
-      status.m_response.GetEntityBody() = err;
-      PTRACE(3, "SIPPres\tError parsing XML in presence notify: " << err);
-      return;
-    }
-  }
-
-  // send 200 OK now, and flag caller NOT to send 20o OK
-  status.m_sendResponse = false;
-  status.m_response.SetStatusCode(SIP_PDU::Successful_OK);
-  status.m_response.GetInfo() = "OK";
-  status.m_response.SendResponse(*handler.GetTransport(), status.m_response, &handler.GetEndPoint());
+  // send 200 OK now, and flag caller NOT to send the response
+  status.SendResponse(SIP_PDU::Successful_OK);
 
   PTRACE(3, "SIPPres\t'" << m_aor << "' received NOTIFY for own presence.watcherinfo");
 
@@ -401,7 +401,6 @@ void SIPXCAP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
 {
   PString id       = watcher->GetAttribute("id");
   PString status   = watcher->GetAttribute("status");
-  PString eventStr = watcher->GetAttribute("event");
   PString otherAOR = watcher->GetData().Trim();
 
   StringMap::iterator existingAOR = m_watcherAorById.find(id);
@@ -413,12 +412,13 @@ void SIPXCAP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
     } 
     else {
       m_watcherAorById[id] = otherAOR;
-      PTRACE(3, "SIPPres\t'" << otherAOR << "' has requested access to presence information of '" << m_aor << "'");
+      PTRACE(3, "SIPPres\t'" << otherAOR << "' has requested access to presence information of '" << m_aor << '\'');
       OnAuthorisationRequest(otherAOR);
     }
   }
   else {
-    PTRACE(3, "SIPPres\t'" << m_aor << "' has received presence status '" << status << "' for '" << otherAOR << "'");
+    PTRACE(3, "SIPPres\t'" << m_aor << "' has received event '" << watcher->GetAttribute("event")
+           << "', status '" << status << "', for '" << otherAOR << '\'');
   }
 }
 
@@ -427,12 +427,18 @@ void SIPXCAP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCo
 {
   PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
 
-  (OpalPresenceInfo)m_localPresence = (OpalPresenceInfo)cmd;
+  SIPPresenceInfo sipPresence;
+  sipPresence.m_entity = m_aor.AsString();
+  sipPresence.m_presenceAgent = m_presenceServer.AsString();
+  sipPresence.m_state = cmd.m_state;
+  sipPresence.m_note = cmd.m_note;
 
-  m_localPresence.m_presenceAgent = m_presenceServer.AsString();
-  m_localPresence.m_entity = m_aor.AsString();
+  if (m_publishedTupleId.IsEmpty())
+    m_publishedTupleId = sipPresence.m_tupleId;
+  else
+    sipPresence.m_tupleId = m_publishedTupleId;
 
-  m_endpoint->PublishPresence(m_localPresence,
+  m_endpoint->PublishPresence(sipPresence,
             cmd.m_state == OpalPresenceInfo::NoPresence ? 0 : GetExpiryTime());
 }
 
@@ -448,11 +454,11 @@ void SIPXCAP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPrese
 {
   if (cmd.m_subscribe) {
     if (m_presenceIdByAor.find(cmd.m_presentity) != m_presenceIdByAor.end()) {
-      PTRACE(3, "SIPPres\t'" << m_aor << "' already subscribed to presence of '" << cmd.m_presentity << "'");
+      PTRACE(3, "SIPPres\t'" << m_aor << "' already subscribed to presence of '" << cmd.m_presentity << '\'');
       return;
     }
 
-    PTRACE(3, "SIPPres\t'" << m_aor << "' subscribing to presence of '" << cmd.m_presentity << "'");
+    PTRACE(3, "SIPPres\t'" << m_aor << "' subscribing to presence of '" << cmd.m_presentity << '\'');
 
     // subscribe to the presence event on the presence server
     SIPSubscribe::Params param(SIPSubscribe::Presence);
@@ -476,11 +482,11 @@ void SIPXCAP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPrese
   else {
     StringMap::iterator id = m_presenceIdByAor.find(cmd.m_presentity);
     if (id == m_presenceIdByAor.end()) {
-      PTRACE(3, "SIPPres\t'" << m_aor << "' already unsubscribed to presence of '" << cmd.m_presentity << "'");
+      PTRACE(3, "SIPPres\t'" << m_aor << "' already unsubscribed to presence of '" << cmd.m_presentity << '\'');
       return;
     }
 
-    PTRACE(3, "SIPPres\t'" << m_aor << "' unsubscribing to presence of '" << cmd.m_presentity << "'");
+    PTRACE(3, "SIPPres\t'" << m_aor << "' unsubscribing to presence of '" << cmd.m_presentity << '\'');
     m_endpoint->Unsubscribe(SIPSubscribe::Presence, id->second);
   }
 }
@@ -496,7 +502,7 @@ void SIPXCAP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, con
     PString id = status.m_handler->GetCallID();
     StringMap::iterator aor = m_presenceAorById.find(id);
     if (aor != m_presenceAorById.end()) {
-      PTRACE(3, "SIPPres\t'" << m_aor << "' unsubscribed to presence of '" << aor->second << "'");
+      PTRACE(3, "SIPPres\t'" << m_aor << "' unsubscribed to presence of '" << aor->second << '\'');
       m_presenceIdByAor.erase(aor->second);
       m_presenceAorById.erase(aor);
     }
@@ -510,42 +516,65 @@ void SIPXCAP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, con
 
 void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
 {
-  const SIPMIMEInfo & sipMime = status.m_notify.GetMIME();
+  static PXML::ValidationInfo const StatusValidation[] = {
+    { PXML::RequiredElement,            "basic" },
+    { PXML::EndOfValidationList }
+  };
 
-  if (!sipMime.Contains("Subscription-State")) {
-    status.m_response.GetEntityBody() = "No Subscription-State field";
-    PTRACE(3, "SIPPres\tNOTIFY received for presence subscribe without Subscription-State header");
+  static PXML::ValidationInfo const TupleValidation[] = {
+    { PXML::RequiredNonEmptyAttribute,  "id" },
+    { PXML::Subtree,                    "status",  StatusValidation, 1 },
+    { PXML::EndOfValidationList }
+  };
+
+  static PXML::ValidationInfo const PresenceValidation[] = {
+    { PXML::ElementName,                "presence", },
+    { PXML::RequiredAttributeWithValue, "xmlns",   "urn:ietf:params:xml:ns:pidf" },
+    { PXML::RequiredNonEmptyAttribute,  "entity" },
+    { PXML::Subtree,                    "tuple", TupleValidation, 0 },
+    { PXML::EndOfValidationList }
+  };
+
+  PXML xml;
+  if (!ParseAndValidateXML(status, xml, PresenceValidation))
     return;
+
+  // send 200 OK now, and flag caller NOT to send the response
+  status.SendResponse(SIP_PDU::Successful_OK);
+
+  SIPPresenceInfo info(SIPPresenceInfo::Unchanged);
+
+  info.m_target = m_aor.AsString();
+
+  PXMLElement * rootElement = xml.GetRootElement();
+  info.m_entity = rootElement->GetAttribute("entity");
+
+  PXMLElement * tupleElement = rootElement->GetElement("tuple");
+  if (tupleElement != NULL) {
+    PXMLElement * statusElement = tupleElement->GetElement("status");
+
+    PCaselessString value = statusElement->GetElement("basic")->GetData();
+    if (value == "open")
+      info.m_state = SIPPresenceInfo::Available;
+    else if (value == "closed")
+      info.m_state = SIPPresenceInfo::NoPresence;
+
+    PXMLElement * noteElement;
+    if ((noteElement = statusElement->GetElement("note")) != NULL ||
+        (noteElement = rootElement->GetElement("note")) != NULL ||
+        (noteElement = tupleElement->GetElement("note")) != NULL)
+      info.m_note = noteElement->GetData();
+
+    PXMLElement * contactElement = tupleElement->GetElement("contact");
+    if (contactElement != NULL)
+      info.m_contact = contactElement->GetData();
   }
 
-  PStringArray params = sipMime["Subscription-State"].Tokenise(';', false);
-  if (params.GetSize() == 0) {
-    status.m_response.GetEntityBody() = "Subscription-State field malformed";
-    PTRACE(3, "SIPPres\tNOTIFY received for presence subscribe with malformed Subscription-State header");
-    return;
-  }
+  PTRACE(3, "SIPPres\t'" << info.m_entity << "' request for presence of '" << m_aor << "' is " << info.m_state);
 
-  if (params[0] *= "active") {
-    ;
-  }
-  else if (params[0] *= "pending") {
-    ;
-  }
-  else if (params[0] *= "terminated") {
-    ;
-  }
-  else {
-    ;
-  }
-
-  // get entity requesting access to presence information
-  PString fromStr = status.m_notify.GetMIME().GetFrom();
-
-  PTRACE(3, "SIPPres\t'" << fromStr << "' request for presence of '" << m_aor << "' is " << params[0]);
-
-  // return OK;
-  status.m_response.SetStatusCode(SIP_PDU::Successful_OK);
-  status.m_response.GetInfo() = "OK";
+  m_notificationMutex.Wait();
+  OnPresenceChange(info);
+  m_notificationMutex.Signal();
 }
 
 
