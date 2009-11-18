@@ -1533,8 +1533,6 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
   // format response
   if (extra != NULL)
     m_info = extra;
-  else
-    m_info = GetStatusCodeDescription(code);
 }
 
 
@@ -1938,7 +1936,7 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
     m_uri = cmds[1];
     m_versionMajor = cmds[2].Mid(4).AsUnsigned();
     m_versionMinor = cmds[2].Mid(cmds[2].Find('.')+1).AsUnsigned();
-    m_info = PString();
+    m_info.MakeEmpty();
   }
 
   if (m_versionMajor < 2) {
@@ -2108,8 +2106,11 @@ PString SIP_PDU::Build()
 
   str << "SIP/" << m_versionMajor << '.' << m_versionMinor;
 
-  if (m_method == NumMethods)
+  if (m_method == NumMethods) {
+    if (m_info.IsEmpty())
+      m_info = GetStatusCodeDescription(m_statusCode);
     str << ' ' << (unsigned)m_statusCode << ' ' << m_info;
+  }
 
   str << "\r\n" << m_mime << m_entityBody;
   return str;
@@ -2404,7 +2405,14 @@ void SIPTransaction::SetParameters(const SIPParameters & params)
     m_retryTimeoutMax = params.m_maxRetryTime;
 
   m_mime.SetExpires(params.m_expire);
-  m_mime.SetContact(params.m_contactAddress);
+
+  if (params.m_contactAddress.IsEmpty())
+    SetContact(params.m_addressOfRecord);
+  else
+    m_mime.SetContact(params.m_contactAddress);
+
+  if (!params.m_proxyAddress.IsEmpty())
+    SetRoute(SIPURL(params.m_proxyAddress));
 }
 
 
@@ -2794,6 +2802,8 @@ void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval &
    */
 
   SIPURL aor, server;
+  PString possibleProxy;
+
   if (m_addressOfRecord.IsEmpty()) {
     if (m_remoteAddress.IsEmpty())
       aor = server = defaultUser + '@' + PIPSocket::GetHostName();
@@ -2828,10 +2838,15 @@ void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval &
            proxy will prevent SRV lookups or other things that might stop us
            from going to that very specific host.
          */
-        server.SetParamVar(OPAL_PROXY_PARAM, m_remoteAddress);
+        possibleProxy = m_remoteAddress;
       }
     }
   }
+
+  if (m_proxyAddress.IsEmpty())
+    m_proxyAddress = server.GetParamVars()(OPAL_PROXY_PARAM, possibleProxy);
+  if (!m_proxyAddress.IsEmpty())
+    server.SetParamVar(OPAL_PROXY_PARAM, m_remoteAddress);
 
   if (!m_localAddress.IsEmpty()) {
     SIPURL local(m_localAddress);
@@ -2939,7 +2954,6 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 
 SIPRegister::SIPRegister(SIPEndPoint & ep,
                          OpalTransport & trans,
-                         const SIPURL & proxy,
                          const PString & id,
                          unsigned cseq,
                          const Params & params)
@@ -2955,7 +2969,6 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                     CreateVia(ep, trans));
 
   SetAllow(ep.GetAllowedMethods());
-  SetRoute(proxy);
 }
 
 
@@ -3061,6 +3074,31 @@ bool SIPSubscribe::EventPackage::IsWatcher() const
 }
 
 
+SIPSubscribe::NotifyCallbackInfo::NotifyCallbackInfo(SIPEndPoint & ep, OpalTransport & trans, SIP_PDU & notify, SIP_PDU & response)
+  : m_endpoint(ep)
+  , m_transport(trans)
+  , m_notify(notify)
+  , m_response(response)
+  , m_sendResponse(true)
+{
+}
+
+
+bool SIPSubscribe::NotifyCallbackInfo::SendResponse(SIP_PDU::StatusCodes status, const char * extra)
+{
+  m_response.SetStatusCode(status);
+
+  if (extra != NULL)
+    m_response.SetInfo(extra);
+
+  if (!m_notify.SendResponse(m_transport, m_response, &m_endpoint))
+    return false;
+
+  m_sendResponse = false;
+  return true;
+}
+
+
 SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                            OpalTransport & trans,
                            SIPDialogContext & dialog,
@@ -3072,8 +3110,8 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
   InitialiseHeaders(dialog, CreateVia(ep, trans));
 
   // I have no idea why this is necessary, but it is the way OpenSIPS works ....
-  if (params.m_contactAddress.IsEmpty())
-    SetContact(params.m_eventPackage == SIPSubscribe::Dialog ? dialog.GetRemoteURI() : dialog.GetLocalURI());
+  if (params.m_eventPackage == SIPSubscribe::Dialog && params.m_contactAddress.IsEmpty())
+    SetContact(dialog.GetRemoteURI());
 
   m_mime.SetEvent(params.m_eventPackage);
 
@@ -3135,9 +3173,6 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
 
   SIPURL addr = params.m_addressOfRecord;
   InitialiseHeaders(addr, addr, addr, id, ep.GetNextCSeq(), CreateVia(ep, trans));
-
-  SetContact(addr);
-  SetRoute(SIPURL(params.m_agentAddress));
 
   if (!sipIfMatch.IsEmpty())
     m_mime.SetSIPIfMatch(sipIfMatch);

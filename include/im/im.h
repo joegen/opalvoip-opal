@@ -68,6 +68,8 @@ class RTP_IMFrame : public RTP_DataFrame
 
     void SetContent(const T140String & text);
     bool GetContent(T140String & text) const;
+
+    PString AsString() const { return PString((const char *)GetPayloadPtr(), GetPayloadSize()); }
 };
 
 class OpalIMMediaStream : public OpalMediaStream

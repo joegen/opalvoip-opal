@@ -92,12 +92,15 @@ class OpalPresenceInfo
       Worship
     };
 
-    State   m_state;
-    PString m_entity;
-    PString m_note;
+    State   m_state;    ///< New state for presentity
+    PString m_note;     ///< Additional information about state change
+    PString m_entity;   ///< The presentity whose state had changed
+    PString m_target;   ///< The presentity that is being informed about the state change
 
-    OpalPresenceInfo(State state = NoPresence) : m_state(state) { }
+    OpalPresenceInfo(State state = Unchanged) : m_state(state) { }
 };
+
+ostream & operator<<(ostream & strm, OpalPresenceInfo::State state);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -299,7 +302,12 @@ class OpalPresentity : public PSafeObject
       const AuthorisationRequestNotifier & notifier   ///< Notifier to be called by OnAuthorisationRequest()
     );
 
-    /** Callback when another presentity has changed its state.
+    /** Callback when presentity has changed its state.
+        Note if the m_entity and m_target fields of the OpalPresenceInfo
+        structure are the same, then this indicates that the local presentity
+        itself has successfully "registered" itself with the presence agent
+        server.
+
         Default implementation calls m_onPresenceChangeNotifier.
       */
     virtual void OnPresenceChange(

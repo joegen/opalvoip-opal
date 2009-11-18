@@ -59,6 +59,7 @@ class TestPresEnt : public PProcess
   private:
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdCreate);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSubscribeToPresence);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdUnsubscribeToPresence);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdPresenceAuthorisation);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSetLocalPresence);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdShowBuddies);
@@ -215,6 +216,9 @@ void TestPresEnt::Main()
   cli.SetCommand("subscribe", PCREATE_NOTIFIER(CmdSubscribeToPresence),
                  "Subscribe to presence state for presentity.",
                  "<url-watcher> <url-watched>");
+  cli.SetCommand("unsubscribe", PCREATE_NOTIFIER(CmdUnsubscribeToPresence),
+                 "Subscribe to presence state for presentity.",
+                 "<url-watcher> <url-watched>");
   cli.SetCommand("authorise", PCREATE_NOTIFIER(CmdPresenceAuthorisation),
                  "Authorise a presentity to see local presence.",
                  "<url-watched> <url-watcher> [ deny | deny-politely ]");
@@ -258,6 +262,17 @@ void TestPresEnt::CmdSubscribeToPresence(PCLI::Arguments & args, INT)
     args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
   else
     m_presentities[args[0]].SubscribeToPresence(args[1]);
+}
+
+
+void TestPresEnt::CmdUnsubscribeToPresence(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() < 2)
+    args.WriteUsage();
+  else if (!m_presentities.Contains(args[0]))
+    args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
+  else
+    m_presentities[args[0]].UnsubscribeFromPresence(args[1]);
 }
 
 
@@ -366,7 +381,12 @@ void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, const PStrin
 
 void TestPresEnt::PresenceChange(OpalPresentity & presentity, const OpalPresenceInfo & info)
 {
-  cout << "Presence for " << info.m_entity << " changed to " << info.m_state << endl;
+  cout << "Presentity " << info.m_target;
+  if (info.m_entity != info.m_target)
+    cout << " received presence change from " << info.m_entity;
+  else
+    cout << " changed locally";
+  cout << " to " << info.m_state << endl;
 }
 
 

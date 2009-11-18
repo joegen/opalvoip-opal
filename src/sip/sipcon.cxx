@@ -2723,16 +2723,16 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
       {
         PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(SIP_PDU::Method_INFO, *this);
         SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
-        PStringStream str;
         if (mode == SendUserInputAsTone) {
           mimeInfo.SetContentType(ApplicationDTMFRelayKey);
-          str << "Signal= " << tone << "\r\n" << "Duration= " << duration << "\r\n";  // spaces are important. Who can guess why?
+          PStringStream strm;
+          strm << "Signal= " << tone << "\r\n" << "Duration= " << duration << "\r\n";  // spaces are important. Who can guess why?
+          infoTransaction->SetEntityBody(strm);
         }
         else {
           mimeInfo.SetContentType(ApplicationDTMFKey);
-          str << tone;
+          infoTransaction->SetEntityBody(tone);
         }
-        infoTransaction->GetEntityBody() = str;
 
         // cannot wait for completion as this keeps the SIPConnection locks, thus preventing the response from being processed
         //infoTransaction->WaitForCompletion();
@@ -2771,7 +2771,7 @@ bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_I
   PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(SIP_PDU::Method_MESSAGE, *this);
   SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
   mimeInfo.SetContentType("text/plain");
-  infoTransaction->GetEntityBody() = PString((const char *)(const BYTE *)body.GetPayloadPtr(), body.GetPayloadSize());
+  infoTransaction->SetEntityBody(body.AsString());
 
   // cannot wait for completion as this keeps the SIPConnection locked, thus preventing the response from being processed
   //infoTransaction->WaitForCompletion();
@@ -2791,7 +2791,7 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
     SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
     mimeInfo.SetContentType(ApplicationMediaControlXMLKey);
     PStringStream str;
-    infoTransaction->GetEntityBody() = 
+    infoTransaction->SetEntityBody(
                   "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
                   "<media_control>"
                    "<vc_primitive>"
@@ -2801,7 +2801,7 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
                     "</to_encoder>"
                    "</vc_primitive>"
                   "</media_control>"
-                ;
+                );
     // cannot wait for completion as this keeps the SIPConnection locked, thus preventing the response from being processed
     //infoTransaction->WaitForCompletion();
     //if (infoTransaction->IsFailed()) { }
@@ -2921,13 +2921,13 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
   if (!vfu.Parse(request.GetEntityBody()) || !vfu.vfu) {
     PTRACE(3, "SIP\tUnable to parse received PictureFastUpdate");
     SIP_PDU response(request, SIP_PDU::Failure_Undecipherable);
-    response.GetEntityBody() = 
+    response.SetEntityBody(
       "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
       "<media_control>\n"
       "  <general_error>\n"
       "  Unable to parse XML request\n"
       "   </general_error>\n"
-      "</media_control>\n";
+      "</media_control>\n");
     request.SendResponse(*transport, response);
   }
   else {
