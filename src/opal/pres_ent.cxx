@@ -38,12 +38,73 @@
 #include <ptclib/url.h>
 #include <sip/sipep.h>
 
+
+
+///////////////////////////////////////////////////////////////////////
+
 const PString & OpalPresentity::AuthNameKey()        { static const PString s = "auth_name";         return s; }
 const PString & OpalPresentity::AuthPasswordKey()    { static const PString s = "auth_password";     return s; }
 const PString & OpalPresentity::FullNameKey()        { static const PString s = "full_name";         return s; }
 const PString & OpalPresentity::SchemeKey()          { static const PString s = "scheme";            return s; }
 const PString & OpalPresentity::TimeToLiveKey()      { static const PString s = "time_to_live";      return s; }
 
+
+ostream & operator<<(ostream & strm, OpalPresenceInfo::State state)
+{
+  static const char * const BasicNames[] = {
+    "No Presence",
+    "Unchanged",
+    "Available",
+    "Unavailable"
+  };
+
+  if (state >= OpalPresenceInfo::NoPresence) {
+    PINDEX index = state - OpalPresenceInfo::NoPresence;
+    if (index < PARRAYSIZE(BasicNames))
+      return strm << BasicNames[index];
+  }
+
+  static const char * const ExtendedNames[] = {
+    "UnknownExtended",
+    "Appointment",
+    "Away",
+    "Breakfast",
+    "Busy",
+    "Dinner",
+    "Holiday",
+    "InTransit",
+    "LookingForWork",
+    "Lunch",
+    "Meal",
+    "Meeting",
+    "OnThePhone",
+    "Other",
+    "Performance",
+    "PermanentAbsence",
+    "Playing",
+    "Presentation",
+    "Shopping",
+    "Sleeping",
+    "Spectator",
+    "Steering",
+    "Travel",
+    "TV",
+    "Vacation",
+    "Working",
+    "Worship"
+  };
+
+  if (state >= OpalPresenceInfo::ExtendedBase) {
+    PINDEX index = state - OpalPresenceInfo::ExtendedBase;
+    if (index < PARRAYSIZE(ExtendedNames))
+      return strm << ExtendedNames[index];
+  }
+
+  return strm << "Presence<" << (unsigned)state << '>';
+}
+
+
+///////////////////////////////////////////////////////////////////////
 
 OpalPresentity::OpalPresentity()
   : m_manager(NULL)

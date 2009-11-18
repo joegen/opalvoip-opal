@@ -261,6 +261,7 @@ void OpalManager::ShutDownEndpoints()
 
   // Remove (and unsubscribe) all the presentities
   m_presentities.RemoveAll();
+  m_presentities.DeleteObjectsToBeRemoved();
 
   // Deregister the endpoints
   endpointsMutex.StartRead();

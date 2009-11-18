@@ -85,6 +85,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep, const SIPParameters & params)
   , state(Unavailable)
   , retryTimeoutMin(params.m_minRetryTime)
   , retryTimeoutMax(params.m_maxRetryTime)
+  , m_proxy(params.m_proxyAddress)
 {
   transactions.DisallowDeleteObjects();
   expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
@@ -670,7 +671,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
     }
   }
 
-  return new SIPRegister(endpoint, trans, m_proxy, GetCallID(), m_sequenceNumber, params);
+  return new SIPRegister(endpoint, trans, GetCallID(), m_sequenceNumber, params);
 }
 
 
@@ -931,7 +932,8 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
 
   m_dialog.Update(response);
 
-  SendStatus(SIP_PDU::Successful_OK, oldState);
+  if (oldState == Unsubscribing)
+    SendStatus(SIP_PDU::Successful_OK, oldState);
 }
 
 
@@ -951,35 +953,68 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     return request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
   }
 
-  PString state = request.GetMIME().GetSubscriptionState();
+  SIP_PDU response(request, SIP_PDU::Failure_BadRequest);
+
+  PString requestEvent = request.GetMIME().GetEvent();
+  if (m_parameters.m_eventPackage != requestEvent) {
+    PTRACE(2, "SIP\tNOTIFY received for incorrect event \"" << requestEvent << "\", requires \"" << m_parameters.m_eventPackage << '"');
+    response.SetStatusCode(SIP_PDU::Failure_BadEvent);
+    response.GetMIME().SetAt("Allow-Events", m_parameters.m_eventPackage);
+    return request.SendResponse(*m_transport, response, &endpoint);
+  }
+
+  // check the ContentType
+  PCaselessString requestContentType = request.GetMIME().GetContentType();
+  if (!m_parameters.m_contentType.IsEmpty() && requestContentType != m_parameters.m_contentType) {
+    PTRACE(2, "SIPPres\tNOTIFY contains unsupported Content-Type \""
+           << requestContentType << "\", expecting \"" << m_parameters.m_contentType << '"');
+    response.SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
+    response.GetMIME().SetAt("Accept", m_parameters.m_contentType);
+    response.SetInfo("Unsupported Content-Type");
+    return request.SendResponse(*m_transport, response, &endpoint);
+  }
+
+  PStringArray subscriptionStateInfo = request.GetMIME().GetSubscriptionState().Tokenise(';', false);
+  if (subscriptionStateInfo.IsEmpty()) {
+    PTRACE(2, "SIP\tNOTIFY received without Subscription-State");
+    return request.SendResponse(*m_transport, SIP_PDU::Failure_BadRequest, &endpoint, NULL, "No Subscription-State field");
+  }
 
   // Check the susbscription state
-  if (state.Find("terminated") != P_MAX_INDEX) {
+  PCaselessString subscriptionState = subscriptionStateInfo[0];
+  if (subscriptionState == "terminated") {
     PTRACE(3, "SIP\tSubscription is terminated, state=" << GetState());
     request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
     ShutDown();
     return true;
   }
 
-  if (state.Find("active") != P_MAX_INDEX || state.Find("pending") != P_MAX_INDEX) {
+  if (subscriptionState == "active" || subscriptionState == "pending") {
     PTRACE(3, "SIP\tSubscription is " << state);
     PString expire = SIPMIMEInfo::ExtractFieldParameter(state, "expire");
     if (!expire.IsEmpty())
       SetExpire(expire.AsUnsigned());
   }
 
-  if (m_packageHandler == NULL) {
-    SIP_PDU response(request, SIP_PDU::Failure_BadEvent);
-    SIPSubscribe::NotifyCallbackInfo status(request, response);
-    if (!m_parameters.m_onNotify.IsNULL()) 
-      m_parameters.m_onNotify(*this, status);
-    if (status.m_sendResponse)
-      request.SendResponse(*m_transport, response, &endpoint);
+  if (m_packageHandler != NULL)
+    return request.SendResponse(*m_transport,
+                                m_packageHandler->OnReceivedNOTIFY(*this, request)
+                                        ? SIP_PDU::Successful_OK
+                                        : SIP_PDU::Failure_BadRequest,
+                                &endpoint);
+
+  if (m_parameters.m_onNotify.IsNULL()) {
+    PTRACE(2, "SIP\tNo handler for NOTIFY received for event \"" << requestEvent << '"');
+    return request.SendResponse(*m_transport, SIP_PDU::Failure_BadEvent, &endpoint);
   }
-  else if (m_packageHandler->OnReceivedNOTIFY(*this, request))
-    request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
-  else
-    request.SendResponse(*m_transport, SIP_PDU::Failure_BadRequest, &endpoint);
+
+  SIPSubscribe::NotifyCallbackInfo status(endpoint, *m_transport, request, response);
+
+  m_parameters.m_onNotify(*this, status);
+
+  if (status.m_sendResponse)
+    request.SendResponse(*m_transport, response, &endpoint);
+
   return true;
 }
 
@@ -1390,14 +1425,14 @@ SIPPublishHandler::~SIPPublishHandler()
 }
 
 
-SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
+SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & transport)
 {
   if (state == Unsubscribing)
     return NULL;
 
   m_parameters.m_expire = expire;
   return new SIPPublish(endpoint,
-                        t, 
+                        transport,
                         GetCallID(),
                         m_sipETag,
                         m_parameters,
@@ -1425,8 +1460,9 @@ void SIPPublishHandler::SetBody(const PString & b)
 
 static PAtomicInteger DefaultTupleIdentifier;
 
-SIPPresenceInfo::SIPPresenceInfo()
-  : m_tupleId(PString::Printf, "T%08X", ++DefaultTupleIdentifier)
+SIPPresenceInfo::SIPPresenceInfo(State state)
+  : OpalPresenceInfo(state)
+  , m_tupleId(PString::Printf, "T%08X", ++DefaultTupleIdentifier)
 {
 }
 

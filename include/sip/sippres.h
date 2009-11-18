@@ -261,9 +261,9 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
   protected:
     SIP_Presentity();
 
-    SIPEndPoint *   m_endpoint;
-    int             m_watcherInfoVersion;
-    SIPPresenceInfo m_localPresence;
+    SIPEndPoint * m_endpoint;
+    int           m_watcherInfoVersion;
+    PString       m_publishedTupleId;
 };
 
 
