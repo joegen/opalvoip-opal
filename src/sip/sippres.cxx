@@ -53,6 +53,7 @@
 #include <sip/sippres.h>
 #include <ptclib/pdns.h>
 #include <ptclib/pxml.h>
+#include <ptclib/random.h>
 
 const PString & SIP_Presentity::DefaultPresenceServerKey() { static const PString s = "default_presence_server"; return s; }
 const PString & SIP_Presentity::PresenceServerKey()        { static const PString s = "presence_server";         return s; }
@@ -318,26 +319,26 @@ void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe
 {
   static PXML::ValidationInfo const WatcherValidation[] = {
     { PXML::RequiredNonEmptyAttribute,  "id"  },
-    { PXML::RequiredAttributeWithValue, "status",  "pending\nactive\nwaiting\nterminated" },
-    { PXML::RequiredAttributeWithValue, "event",   "subscribe\napproved\ndeactivated\nprobation\nrejected\ntimeout\ngiveup" },
+    { PXML::RequiredAttributeWithValue, "status",  { "pending\nactive\nwaiting\nterminated" } },
+    { PXML::RequiredAttributeWithValue, "event",   { "subscribe\napproved\ndeactivated\nprobation\nrejected\ntimeout\ngiveup" } },
     { PXML::EndOfValidationList }
   };
 
   static PXML::ValidationInfo const WatcherListValidation[] = {
     { PXML::RequiredNonEmptyAttribute,  "resource" },
-    { PXML::RequiredAttributeWithValue, "package", "presence" },
+    { PXML::RequiredAttributeWithValue, "package", { "presence" } },
 
-    { PXML::Subtree,                    "watcher",  WatcherValidation, 0 },
+    { PXML::Subtree,                    "watcher", { WatcherValidation } , 0 },
     { PXML::EndOfValidationList }
   };
 
   static PXML::ValidationInfo const WatcherInfoValidation[] = {
     { PXML::ElementName,                "watcherinfo", },
-    { PXML::RequiredAttributeWithValue, "xmlns",   "urn:ietf:params:xml:ns:watcherinfo" },
+    { PXML::RequiredAttributeWithValue, "xmlns",   { "urn:ietf:params:xml:ns:watcherinfo" } },
     { PXML::RequiredNonEmptyAttribute,  "version"},
-    { PXML::RequiredAttributeWithValue, "state",   "full\npartial" },
+    { PXML::RequiredAttributeWithValue, "state",   { "full\npartial" } },
 
-    { PXML::Subtree,                    "watcher-list", WatcherListValidation, 0 },
+    { PXML::Subtree,                    "watcher-list", { WatcherListValidation }, 0 },
     { PXML::EndOfValidationList }
   };
 
@@ -523,15 +524,15 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::N
 
   static PXML::ValidationInfo const TupleValidation[] = {
     { PXML::RequiredNonEmptyAttribute,  "id" },
-    { PXML::Subtree,                    "status",  StatusValidation, 1 },
+    { PXML::Subtree,                    "status", { StatusValidation }, 1 },
     { PXML::EndOfValidationList }
   };
 
   static PXML::ValidationInfo const PresenceValidation[] = {
     { PXML::ElementName,                "presence", },
-    { PXML::RequiredAttributeWithValue, "xmlns",   "urn:ietf:params:xml:ns:pidf" },
+    { PXML::RequiredAttributeWithValue, "xmlns", { "urn:ietf:params:xml:ns:pidf" } },
     { PXML::RequiredNonEmptyAttribute,  "entity" },
-    { PXML::Subtree,                    "tuple", TupleValidation, 0 },
+    { PXML::Subtree,                    "tuple", { TupleValidation }, 0 },
     { PXML::EndOfValidationList }
   };
 
