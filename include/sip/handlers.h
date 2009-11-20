@@ -301,12 +301,10 @@ public:
     { return SIP_PDU::Method_PUBLISH; }
   virtual SIPEventPackage GetEventPackage() const
     { return m_parameters.m_eventPackage; }
-  virtual void SetBody(const PString & body);
 
 private:
   SIPSubscribe::Params m_parameters;
   PString              m_sipETag;
-  bool                 m_stateChanged;
 };
 
 
