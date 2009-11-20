@@ -34,6 +34,7 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#include <ptlib/pfactory.h>
 #include <ptlib/safecoll.h>
 #include <ptclib/url.h>
 #include <ptclib/guid.h>
@@ -543,6 +544,16 @@ class OpalSetLocalPresenceCommand : public OpalPresentityCommand, public OpalPre
   public:
     OpalSetLocalPresenceCommand(State state = NoPresence) : OpalPresenceInfo(state) { }
 };
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+// Include concrete classes here so the factories are initialised
+#if OPAL_SIP
+PFACTORY_LOAD(SIPLocal_Presentity);
+PFACTORY_LOAD(SIPXCAP_Presentity);
+PFACTORY_LOAD(SIPOMA_Presentity);
+#endif
 
 
 #endif  // OPAL_IM_PRES_ENT_H
