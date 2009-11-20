@@ -629,9 +629,13 @@ void OpalEndPoint::OnMessageReceived(
   manager.OnMessageReceived(from, fromName, to, type, body, conversationId);
 }
 
+#if OPAL_HAS_IM
+
 bool OpalEndPoint::TransmitExternalIM(OpalConnection & conn, const OpalMediaFormat & format, RTP_IMFrame & frame)
 {
   return manager.TransmitExternalIM(conn, format, frame);
 }
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
