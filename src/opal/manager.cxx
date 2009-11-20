@@ -1718,6 +1718,8 @@ void OpalManager::OnMessageReceived(
 {
 }
 
+#if OPAL_HAS_IM
+
 bool OpalManager::TransmitExternalIM(OpalConnection & conn, const OpalMediaFormat & /*format*/, RTP_IMFrame & frame)
 {
   PURL remotePartyURL, localPartyURL;
@@ -1749,6 +1751,7 @@ bool OpalManager::TransmitExternalIM(OpalConnection & conn, const OpalMediaForma
   return true;
 }
 
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
