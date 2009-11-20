@@ -629,7 +629,8 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 
   if (expire == 0 || GetState() == Unsubscribing) {
     params.m_expire = 0;
-    params.m_contactAddress = "*";
+    if (params.m_contactAddress.IsEmpty())
+      params.m_contactAddress = "*";
   }
   else {
     params.m_expire = expire;
@@ -685,6 +686,8 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   transaction.GetMIME().GetContacts(requestContacts);
   response.GetMIME().GetContacts(replyContacts);
 
+  m_parameters.m_contactAddress.MakeEmpty();
+
   for (std::list<SIPURL>::iterator request = requestContacts.begin(); request != requestContacts.end(); ++request) {
     for (std::list<SIPURL>::iterator reply = replyContacts.begin(); reply != replyContacts.end(); ++reply) {
       if (*request == *reply) {
@@ -693,6 +696,10 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
           SetExpire(response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds()));
         else
           SetExpire(expires.AsUnsigned());
+
+        if (!m_parameters.m_contactAddress.IsEmpty())
+          m_parameters.m_contactAddress += ", ";
+        m_parameters.m_contactAddress += request->AsString();
       }
     }
   }
@@ -759,14 +766,16 @@ void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
 void SIPRegisterHandler::UpdateParameters(const SIPRegister::Params & params)
 {
   if (!params.m_authID.IsEmpty())
-    m_username = params.m_authID;   // Adjust the authUser if required 
+    m_username = m_parameters.m_authID = params.m_authID;   // Adjust the authUser if required 
   if (!params.m_realm.IsEmpty())
-    m_realm = params.m_realm;   // Adjust the realm if required 
+    m_realm = m_parameters.m_realm = params.m_realm;   // Adjust the realm if required 
   if (!params.m_password.IsEmpty())
-    m_password = params.m_password; // Adjust the password if required 
+    m_password = m_parameters.m_password = params.m_password; // Adjust the password if required 
 
   if (params.m_expire > 0)
-    SetExpire(params.m_expire);
+    SetExpire(m_parameters.m_expire = params.m_expire);
+
+  m_parameters.m_contactAddress = params.m_contactAddress;
 }
 
 
@@ -1413,7 +1422,6 @@ SIPPublishHandler::SIPPublishHandler(SIPEndPoint & endpoint,
                                      const PString & b)
   : SIPHandler(endpoint, params)
   , m_parameters(params)
-  , m_stateChanged(false)
 {
   body = b;
 }
@@ -1442,8 +1450,10 @@ SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & transport)
 
 void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  if (!response.GetMIME().GetSIPETag().IsEmpty())
-    m_sipETag = response.GetMIME().GetSIPETag();
+  PString newETag = response.GetMIME().GetSIPETag();
+
+  if (!newETag.IsEmpty())
+    m_sipETag = newETag;
 
   SetExpire(response.GetMIME().GetExpires(originalExpire));
 
@@ -1451,12 +1461,7 @@ void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & res
 }
 
 
-void SIPPublishHandler::SetBody(const PString & b)
-{
-  m_stateChanged = true;
-  SIPHandler::SetBody(b);
-}
-
+///////////////////////////////////////////////////////////////////////
 
 static PAtomicInteger DefaultTupleIdentifier;
 
