@@ -348,7 +348,7 @@ PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
     packet.SetPayloadType(RTP_DataFrame::MaxPayloadType);
     packet.SetPayloadSize(len);
     packet.SetTimestamp(timestamp);
-    timestamp += len/16;
+    timestamp += len/2;
 
 #if WRITE_PCM_FILE
     static int file = _open("t38_audio_in.pcm", _O_BINARY | _O_CREAT | _O_TRUNC | _O_WRONLY, _S_IREAD | _S_IWRITE);
