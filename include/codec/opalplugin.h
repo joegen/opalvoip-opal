@@ -189,6 +189,7 @@ struct PluginCodec_Definition;
 #define PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS "to_customised_options"
 #define PLUGINCODEC_CONTROL_SET_INSTANCE_ID       "set_instance_id"
 #define PLUGINCODEC_CONTROL_SET_LOG_FUNCTION      "set_log_function"
+#define PLUGINCODEC_CONTROL_GET_STATISTICS        "get_statistics"
 
 
 /* Log function, plug in gets a pointer to this function which allows

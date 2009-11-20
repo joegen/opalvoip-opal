@@ -317,6 +317,31 @@ class WaitAndSignal
 
 typedef std::vector<unsigned char> InstanceKey;
 
+struct FaxStats {
+  FaxStats()
+  {
+    memset(this, 0, sizeof(*this));
+    m_result = -2;
+  }
+
+  int  m_result;      // -2=not started, -1=progress, 0=success, >0=ended with error
+  int  m_bitRate;     // e.g. 14400, 9600
+  int  m_compression; // 0=N/A, 1=T.4 1d, 2=T.4 2d, 3=T.6
+  bool m_errorCorrection;
+  int  m_txPages;
+  int  m_rxPages;
+  int  m_totalPages;
+  int  m_imageSize;   // In bytes
+  int  m_resolutionX; // Pixels per inch
+  int  m_resolutionY; // Pixels per inch
+  int  m_pageWidth;
+  int  m_pageHeight;
+  int  m_badRows;     // Total number of bad rows
+  int  m_mostBadRows; // Longest run of bad rows
+  int  m_errorCorrectionRetries;
+};
+
+
 class FaxSpanDSP
 {
   protected:
@@ -334,6 +359,8 @@ class FaxSpanDSP
     fax_state_t          * m_faxState;
     t30_state_t          * m_t30state;
     int                    m_t30result;
+
+    FaxStats m_fax;
 
     struct T38Packet : public std::vector<unsigned char>
     {
@@ -354,6 +381,7 @@ class FaxSpanDSP
       , m_t30state(NULL)
       , m_t30result(-1)
     {
+        m_fax.m_result = -2;
     }
 
 
@@ -430,10 +458,29 @@ class FaxSpanDSP
     void PhaseE(t30_state_t * t30state, int result)
     {
       m_t30result = result;
+
+      t30_stats_t stats;
+      t30_get_transfer_statistics(t30state, &stats);
+
+      m_fax.m_result = result;
+
+      m_fax.m_badRows = stats.bad_rows;
+      m_fax.m_bitRate = stats.bit_rate;
+      m_fax.m_compression = stats.encoding;
+      m_fax.m_errorCorrection = stats.error_correcting_mode == 0 ? false : true;
+      m_fax.m_errorCorrectionRetries = stats.error_correcting_mode_retries;
+      m_fax.m_imageSize = stats.image_size;
+      m_fax.m_mostBadRows = stats.longest_bad_row_run;
+      m_fax.m_pageHeight = stats.length;
+      m_fax.m_pageWidth = stats.width;
+      m_fax.m_resolutionX = stats.x_resolution;
+      m_fax.m_resolutionY = stats.y_resolution;
+      m_fax.m_rxPages = stats.pages_rx;
+      m_fax.m_totalPages = stats.pages_in_file;
+      m_fax.m_txPages = stats.pages_tx;
+
 #if LOGGING
       if (LogFunction != NULL && LogFunction(3, NULL, 0, NULL, NULL)) { \
-        t30_stats_t stats;
-        t30_get_transfer_statistics(t30state, &stats);
 
         std::ostringstream strm;
         strm << "SpanDSP entered Phase E: " << t30_completion_code_to_str(result) << "\n"
@@ -619,6 +666,34 @@ class FaxSpanDSP
 
     virtual bool Encode(const void * fromPtr, unsigned & fromLen, void * toPtr, unsigned & toLen, unsigned & flags) = 0;
     virtual bool Decode(const void * fromPtr, unsigned & fromLen, void * toPtr, unsigned & toLen, unsigned & flags) = 0;
+
+    virtual bool GetStats(void *fromPtr)
+    {
+        if( m_t30state )
+        {
+            t30_stats_t stats;
+            t30_get_transfer_statistics(m_t30state, &stats);
+
+            m_fax.m_result = stats.current_status;
+            m_fax.m_badRows = stats.bad_rows;
+            m_fax.m_bitRate = stats.bit_rate;
+            m_fax.m_compression = stats.encoding;
+            m_fax.m_errorCorrection = stats.error_correcting_mode == 0 ? false : true;
+            m_fax.m_errorCorrectionRetries = stats.error_correcting_mode_retries;
+            m_fax.m_imageSize = stats.image_size;
+            m_fax.m_mostBadRows = stats.longest_bad_row_run;
+            m_fax.m_pageHeight = stats.length;
+            m_fax.m_pageWidth = stats.width;
+            m_fax.m_resolutionX = stats.x_resolution;
+            m_fax.m_resolutionY = stats.y_resolution;
+            m_fax.m_rxPages = stats.pages_rx;
+            m_fax.m_totalPages = stats.pages_in_file;
+            m_fax.m_txPages = stats.pages_tx;
+        }
+
+        memcpy( fromPtr, &m_fax, sizeof( FaxStats ) );
+        return true;
+    }
 };
 
 
@@ -790,10 +865,28 @@ class FaxCodecContext
     {
       return m_instance != NULL && m_instance->Decode(fromPtr, fromLen, toPtr, toLen, flags);
     }
+
+    bool GetStats(void *fromPtr)
+    {
+        return m_instance != NULL && m_instance->GetStats(fromPtr);
+    }
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+static int get_codec_stats(const PluginCodec_Definition * ,
+                                                     void * context,
+                                               const char * ,
+                                                     void * parm,
+                                                 unsigned * parmLen)
+{
+    if (parm == NULL || parmLen == NULL || *parmLen != sizeof( FaxStats ))
+        return false;
+
+    FaxCodecContext *FaxCC = ( FaxCodecContext * )context;
+    return FaxCC->GetStats( parm );
+}
 
 static int get_codec_options(const PluginCodec_Definition * ,
                                                      void * context,
@@ -854,6 +947,7 @@ static struct PluginCodec_ControlDefn Controls[] = {
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS, get_codec_options },
   { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS, set_codec_options },
   { PLUGINCODEC_CONTROL_SET_INSTANCE_ID,   set_instance_id },
+  { PLUGINCODEC_CONTROL_GET_STATISTICS,    get_codec_stats },
 #if LOGGING
   { PLUGINCODEC_CONTROL_SET_LOG_FUNCTION,  set_log_function },
 #endif

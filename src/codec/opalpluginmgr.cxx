@@ -1057,12 +1057,14 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
   PCLASSINFO(OpalFaxTranscoder, OpalTranscoder);
   protected:
     RTP_DataFrame * bufferRTP;
+    OpalPluginControl getCodecStatistics;
 
   public:
     OpalFaxTranscoder(const PluginCodec_Definition * codecDefn, bool isEncoder)
       : OpalTranscoder(GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate),
                        GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate))
-      , OpalPluginTranscoder(codecDefn, isEncoder) 
+      , OpalPluginTranscoder(codecDefn, isEncoder)
+      , getCodecStatistics(codecDefn, PLUGINCODEC_CONTROL_GET_STATISTICS)
     { 
       bufferRTP = NULL;
 
@@ -1174,6 +1176,12 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
     {
       // Dummy function, never called
       return false;
+    }
+
+    void GetStatistics(OpalMediaStatistics &statistics) const
+    {
+      if (getCodecStatistics.Call( &statistics.m_fax, sizeof( statistics.m_fax ), context) == 0)
+        statistics.m_fax.m_result = -2;
     }
 };
 
