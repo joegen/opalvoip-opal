@@ -67,17 +67,8 @@ class OpalFaxMediaStream : public OpalNullMediaStream
       m_isAudio = true; // Even though we are not REALLY audio, act like we are
     }
 
-#if OPAL_STATISTICS
-    virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
-    {
-      OpalMediaStream::GetStatistics(statistics, fromPatch);
-      statistics.m_fax = m_statistics;
-    }
-#endif
-
   private:
     OpalFaxConnection      & m_connection;
-    OpalMediaStatistics::Fax m_statistics;
 };
 
 
@@ -309,8 +300,10 @@ PSafePtr<OpalConnection> OpalFaxEndPoint::MakeConnection(OpalCall & call,
                                                        unsigned int /*options*/,
                                     OpalConnection::StringOptions * stringOptions)
 {
-  if (!OpalMediaFormat(TIFF_File_FormatName).IsValid())
+  if (!OpalMediaFormat(TIFF_File_FormatName).IsValid()) {
+    PTRACE(1, "TIFF File format not valid! Missing plugin?");
     return false;
+  }
 
   PINDEX prefixLength = remoteParty.Find(':');
   PStringArray tokens = remoteParty.Mid(prefixLength+1).Tokenise(";", true);
