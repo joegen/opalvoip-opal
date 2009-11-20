@@ -2685,11 +2685,12 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
   PString contentType = pdu.GetMIME().GetContentType();
   if (contentType.IsEmpty())
     contentType = "text/plain";
+#if OPAL_HAS_IM
   RTP_DataFrameList frames = m_rfc4103Context[0].ConvertToFrames(contentType, pdu.GetEntityBody());
 
   for (PINDEX i = 0; i < frames.GetSize(); ++i)
     OnReceiveExternalIM(OpalT140, (RTP_IMFrame &)frames[i]);
-
+#endif
   pdu.SendResponse(*transport, SIP_PDU::Successful_OK);
 }
 
