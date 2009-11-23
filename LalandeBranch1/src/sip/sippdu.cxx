@@ -460,12 +460,19 @@ void SIPURL::Sanitise(UsageContext context)
   if (context != ContactURI && context != ExternalURI)
     queryVars.RemoveAll();
 
-  if (context == ToURI || context == FromURI)
-    port = (scheme *= "sips") ? 5061 : 5060;
+  switch (context) {
+    case RequestURI :
+      SetDisplayName(PString::Empty());
+      break;
 
-  if (context == RegisterURI) {
-    username.MakeEmpty();
-    password.MakeEmpty();
+    case ToURI :
+    case FromURI :
+      port = (scheme *= "sips") ? 5061 : 5060;
+      break;
+
+    case RegisterURI :
+      username.MakeEmpty();
+      password.MakeEmpty();
   }
 
   Recalculate();
@@ -3264,28 +3271,15 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const SIPURL & refer, const SIPURL & referred_by)
+SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const SIPURL & referTo, const SIPURL & referredBy)
   : SIPTransaction(connection, transport, Method_REFER)
 {
-  Construct(connection, transport, refer, referred_by);
-}
-
-SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const SIPURL & refer)
-  : SIPTransaction(connection, transport, Method_REFER)
-{
-  Construct(connection, transport, refer, SIPURL());
-}
-
-
-void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport*/, const SIPURL & refer, const SIPURL & _referred_by)
-{
-  SIPURL referred_by = _referred_by;
-
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
-  mime.SetReferTo(refer.AsQuotedString());
-  if(!referred_by.IsEmpty()) {
-    referred_by.SetDisplayName(PString::Empty());
-    mime.SetReferredBy(referred_by.AsQuotedString());
+  mime.SetReferTo(referTo.AsQuotedString());
+  if(!referredBy.IsEmpty()) {
+    SIPURL adjustedReferredBy = referredBy;
+    adjustedReferredBy.Sanitise(SIPURL::RequestURI);
+    mime.SetReferredBy(adjustedReferredBy.AsQuotedString());
   }
 }
 
