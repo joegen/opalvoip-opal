@@ -432,12 +432,9 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
   PTRACE(3, "SIP\tTransferring " << *this << " to " << remoteParty);
 
-  SIPURL localPartyURL = endpoint.GetRegisteredPartyName(remoteParty, *transport);
-  localPartyURL.Sanitise(SIPURL::RequestURI);
-
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
   if (call == NULL) {
-    SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, localPartyURL);
+    SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI());
     return referTransaction->Start();
   }
 
@@ -449,7 +446,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
               << "?Replaces="     << PURL::TranslateString(sip->GetDialog().GetCallID(),    PURL::QueryTranslation)
               << "%3Bto-tag%3D"   << PURL::TranslateString(sip->GetDialog().GetLocalTag(),  PURL::QueryTranslation) // "to/from" is from the other sides perspective
               << "%3Bfrom-tag%3D" << PURL::TranslateString(sip->GetDialog().GetRemoteTag(), PURL::QueryTranslation);
-      SIPRefer * referTransaction = new SIPRefer(*this, referTo, endpoint.GetLocalURL(*transport, GetLocalPartyName()));
+      SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI());
       referTransaction->GetMIME().SetAt("Refer-Sub", "false"); // Use RFC4488 to indicate we are NOT doing NOTIFYs
       referTransaction->GetMIME().SetAt("Supported", "replaces");
       return referTransaction->Start();
@@ -2081,7 +2078,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   SIP_PDU response(request, SIP_PDU::Successful_Accepted);
 
   // Comply to RFC4488
-  bool referSub = false;
+  bool referSub = true;
   if (requestMIME.Contains("Refer-Sub")) {
     referSub = !(requestMIME["Refer-Sub"] *= "false");
     response.GetMIME().SetAt("Refer-Sub", referSub ? "true" : "false");
