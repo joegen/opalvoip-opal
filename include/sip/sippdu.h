@@ -1153,7 +1153,7 @@ class SIPRefer : public SIPTransaction
   public:
     SIPRefer(
       SIPConnection & connection,
-      const SIPURL & refer,
+      const SIPURL & referTo,
       const SIPURL & referred_by = SIPURL()
     );
 };

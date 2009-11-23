@@ -516,12 +516,19 @@ void SIPURL::Sanitise(UsageContext context)
   if (context != ContactURI && context != ExternalURI)
     queryVars.RemoveAll();
 
-  if (context == ToURI || context == FromURI)
-    port = (scheme *= "sips") ? 5061 : 5060;
+  switch (context) {
+    case RequestURI :
+      SetDisplayName(PString::Empty());
+      break;
 
-  if (context == RegisterURI) {
-    username.MakeEmpty();
-    password.MakeEmpty();
+    case ToURI :
+    case FromURI :
+      port = (scheme *= "sips") ? 5061 : 5060;
+      break;
+
+    case RegisterURI :
+      username.MakeEmpty();
+      password.MakeEmpty();
   }
 
   Recalculate();
@@ -3199,15 +3206,15 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPRefer::SIPRefer(SIPConnection & connection, const SIPURL & refer, const SIPURL & referred_by)
+SIPRefer::SIPRefer(SIPConnection & connection, const SIPURL & referTo, const SIPURL & referredBy)
   : SIPTransaction(Method_REFER, connection)
 {
-  m_mime.SetReferTo(refer.AsQuotedString());
-
-  if(!referred_by.IsEmpty()) {
-    SIPURL adjusted_referred_by = referred_by;
-    adjusted_referred_by.SetDisplayName(PString::Empty());
-    m_mime.SetReferredBy(adjusted_referred_by.AsQuotedString());
+  m_mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
+  m_mime.SetReferTo(referTo.AsQuotedString());
+  if(!referredBy.IsEmpty()) {
+    SIPURL adjustedReferredBy = referredBy;
+    adjustedReferredBy.Sanitise(SIPURL::RequestURI);
+    m_mime.SetReferredBy(adjustedReferredBy.AsQuotedString());
   }
 }
 
