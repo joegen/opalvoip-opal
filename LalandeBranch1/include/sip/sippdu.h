@@ -1124,20 +1124,8 @@ class SIPRefer : public SIPTransaction
     SIPRefer(
       SIPConnection & connection,
       OpalTransport & transport,
-      const SIPURL & refer
-    );
-    SIPRefer(
-      SIPConnection & connection,
-      OpalTransport & transport,
-      const SIPURL & refer,
-      const SIPURL & referred_by
-    );
-  protected:
-    void Construct(
-      SIPConnection & connection,
-      OpalTransport & transport,
-      const SIPURL & refer,
-      const SIPURL & referred_by
+      const SIPURL & referTo,
+      const SIPURL & referredBy = SIPURL()
     );
 };
 

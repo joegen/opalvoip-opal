@@ -370,12 +370,9 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   if (referTransaction != NULL) 
     return false;
 
-  SIPURL localPartyURL = endpoint.GetRegisteredPartyName(remoteParty, *transport);
-  localPartyURL.Sanitise(SIPURL::RequestURI);
-
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
   if (call == NULL) {
-    referTransaction = new SIPRefer(*this, *transport, remoteParty, localPartyURL);
+    referTransaction = new SIPRefer(*this, *transport, remoteParty, m_dialog.GetLocalURI());
     return referTransaction->Start();
   }
 
@@ -387,7 +384,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
               << "?Replaces=" << sip->GetDialog().GetCallID()
               << "%3Bto-tag%3D"   << sip->GetDialog().GetLocalTag() // "to/from" is from the other sides perspective
               << "%3Bfrom-tag%3D" << sip->GetDialog().GetRemoteTag();
-      referTransaction = new SIPRefer(*this, *transport, referTo, localPartyURL);
+      referTransaction = new SIPRefer(*this, *transport, referTo, m_dialog.GetLocalURI());
       referTransaction->GetMIME().SetAt("Refer-Sub", "false"); // Use RFC4488 to indicate we are NOT doing NOTIFYs
       return referTransaction->Start();
     }
@@ -1992,43 +1989,36 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 
 void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 {
+  const SIPMIMEInfo & requestMIME = request.GetMIME();
+
   PString referTo = request.GetMIME().GetReferTo();
   if (referTo.IsEmpty()) {
-    if (!request.SendResponse(*transport, SIP_PDU::Failure_BadRequest, NULL, "Missing refer-to header")) {
-      PTRACE(1, "SIP\tCould not send response to REFER 1");
-    }
+    request.SendResponse(*transport, SIP_PDU::Failure_BadRequest, NULL, "Missing refer-to header");
     return;
   }    
-
-  SIPURL to = referTo;
-  PString replaces = PURL::UntranslateString(to.GetQueryVars()("Replaces"), PURL::QueryTranslation);
-  to.SetQuery(PString::Empty());
 
   SIP_PDU response(request, SIP_PDU::Successful_Accepted);
 
   // Comply to RFC4488
-  if (request.GetMIME()("Refer-Sub") *= "false") 
-    response.GetMIME().SetAt("Refer-Sub", "false");
-
-  // send response before attempting the transfer
-  if (!request.SendResponse(*transport, response)) {
-    PTRACE(1, "SIP\tCould not send response to REFER 3");
-    return;
+  bool referSub = true;
+  if (requestMIME.Contains("Refer-Sub")) {
+    referSub = !(requestMIME["Refer-Sub"] *= "false");
+    response.GetMIME().SetAt("Refer-Sub", referSub ? "true" : "false");
   }
 
-  if (!endpoint.SetupTransfer(GetToken(), replaces, to.AsString(), NULL)) {
-    // send NOTIFY if transfer failed, but only if allowed by RFC4488
-    if (!(request.GetMIME()("Refer-Sub") *= "false")) {
-      SIPReferNotify * notify = new SIPReferNotify(*this, *transport, SIP_PDU::GlobalFailure_Decline);
-      notify->Start();
-    }
+  // send response before attempting the transfer
+  if (!request.SendResponse(*transport, response))
     return;
-  }    
 
-  // send NOTIFY if transfer succeeded, but only if allowed by RFC4488
-  // Strictly speaking, we shouldn't send this until the the 200 OK, but.....
-  if (!(request.GetMIME()("Refer-Sub") *= "false")) {
-    SIPReferNotify * notify = new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
+  SIPURL to = referTo;
+  PString replaces = to.GetQueryVars()("Replaces");
+  to.SetQuery(PString::Empty());
+
+  bool ok = endpoint.SetupTransfer(GetToken(), replaces, to.AsString(), NULL);
+
+  // send NOTIFY if transfer failed, but only if allowed by RFC4488
+  if (referSub) {
+    SIPReferNotify * notify = new SIPReferNotify(*this, *transport, ok ? SIP_PDU::Successful_OK : SIP_PDU::GlobalFailure_Decline);
     notify->Start();
   }
 }
