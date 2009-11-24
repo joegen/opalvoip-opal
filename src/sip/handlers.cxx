@@ -1521,13 +1521,8 @@ PString SIPPresenceInfo::AsXML() const
   xml << "    </status>\r\n"
          "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? entity : m_contact) << "</contact>\r\n";
 
-  if (!m_note.IsEmpty()) {
-    PString note = m_note;
-    note.Replace("<", "&lt;");
-    note.Replace(">", "&gt;");
-    note.Replace("&", "&amp;");
-    xml << "    <note xml:lang=\"en\">" << note << "</note>\r\n";
-  }
+  if (!m_note.IsEmpty())
+    xml << "    <note xml:lang=\"en\">" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
 
   xml << "  </tuple>\r\n"
          "</presence>\r\n";
