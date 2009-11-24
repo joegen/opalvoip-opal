@@ -907,10 +907,15 @@ bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
   // handle a MESSAGE received outside the context of a call
   PTRACE(3, "SIP\tReceived MESSAGE outside the context of a call");
 
-  // TODO - not sure how to handler this.....
+  if (m_onConnectionlessMessage.IsNULL()) {
+    pdu.SendResponse(transport, SIP_PDU::Successful_OK, this);
+    return true;
+  }
 
-  pdu.SendResponse(transport, SIP_PDU::Successful_OK, this);
-  return true;
+  ConnectionlessMessageInfo info(transport, pdu);
+  m_onConnectionlessMessage(*this, info);
+
+  return info.m_status;
 }
 
 bool SIPEndPoint::OnReceivedOPTIONS(OpalTransport & transport, SIP_PDU & pdu)
