@@ -44,34 +44,6 @@
 class XCAPClient : public PHTTPClient
 {
   public:
-    XCAPClient();
-
-    bool GetXmlDocument(
-      PXML & xml
-    ) { return GetXmlDocument(m_defaultFilename, xml); }
-
-    bool GetXmlDocument(
-      const PString & name,
-      PXML & xml
-    );
-
-    bool PutXmlDocument(
-      const PXML & xml
-    ) { return PutXmlDocument(m_defaultFilename, xml); }
-
-    bool PutXmlDocument(
-      const PString & name,
-      const PXML & xml
-    );
-
-    bool DeleteXmlDocument()
-    { return PutXmlDocument(m_defaultFilename); }
-
-    bool DeleteXmlDocument(
-      const PString & name
-    );
-
-
     struct ElementSelector {
       ElementSelector(
         const PString & name = PString::Empty(),
@@ -157,56 +129,51 @@ class XCAPClient : public PHTTPClient
         std::map<PString, PString> m_namespaces;
     };
 
-    bool GetXmlNode(
-      const NodeSelector & node,
-      PXML & xml
-    ) { return GetXmlNode(m_defaultFilename, node, xml); }
 
-    bool GetXmlNode(
-      const PString & docname,
-      const NodeSelector & node,
+    XCAPClient();
+
+    bool GetXml(
       PXML & xml
     );
 
-    bool PutXmlNode(
-      const NodeSelector & node,
-      const PXML & xml
-    ) { return PutXmlNode(m_defaultFilename, node, xml); }
-
-    bool PutXmlNode(
-      const PString & docname,
-      const NodeSelector & node,
+    bool PutXml(
       const PXML & xml
     );
 
-    bool DeleteXmlNode(
-      const NodeSelector & node
-    ) { return DeleteXmlNode(m_defaultFilename, node); }
+    bool DeleteXml();
 
-    bool DeleteXmlNode(
-      const PString & docname,
-      const NodeSelector & node
-    );
+
+    PURL BuildURL();
 
 
     void SetRoot(
       const PString & server
     ) { m_root = server; }
+    const PString & GetRoot() const { return m_root; }
 
     void SetApplicationUniqueID(
       const PString & id
     ) { m_auid = id; }
+    const PString & GetApplicationUniqueID() const { return m_auid; }
 
     void SetGlobal() { m_global = true; }
+    bool IsGlobal() const { return m_global; }
 
     void SetUserIdentifier(
       const PString & id
     ) { m_global = false; m_xui = id; }
     const PString & GetUserIdentifier() const { return m_xui; }
 
-    void SetDefaultFilename(
+    void SetFilename(
       const PString & fn
-    ) { m_defaultFilename = fn; }
+    ) { m_filename = fn; }
+    const PString & GetFilename() const { return m_filename; }
+
+    void SetNode(
+      const NodeSelector & node
+    ) { m_node = node; }
+    const NodeSelector & GetNode() const { return m_node; }
+    void ClearNode() { m_node.clear(); }
 
     void SetContentType(
       const PString & type
@@ -214,14 +181,13 @@ class XCAPClient : public PHTTPClient
     const PString & GetContentType() const { return m_contentType; }
 
   protected:
-    PURL BuildURL(const PString & name, const NodeSelector & node);
-
-    PString m_root;
-    PString m_auid;
-    bool    m_global;
-    PString m_xui;
-    PString m_defaultFilename;
-    PString m_contentType;
+    PString      m_root;
+    PString      m_auid;
+    bool         m_global;
+    PString      m_xui;
+    PString      m_filename;
+    NodeSelector m_node;
+    PString      m_contentType;
 };
 
 
@@ -317,8 +283,13 @@ class SIPXCAP_Presentity : public SIP_Presentity
 
     unsigned GetExpiryTime() const;
     virtual void OnReceivedWatcherStatus(PXMLElement * watcher);
+    virtual void InitRuleSet(PXML & xml);
     bool ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisationRequestCommand & cmd);
-    void InitBuddyXcap(XCAPClient & xcap, XCAPClient::NodeSelector & node, const PString & entry);
+    void InitBuddyXcap(
+      XCAPClient & xcap,
+      const PString & entryName = PString::Empty(),
+      const PString & listName = PString::Empty()
+    );
 
     PIPSocketAddressAndPort m_presenceServer;
     PString                 m_watcherSubscriptionAOR;
@@ -337,6 +308,9 @@ class SIPOMA_Presentity : public SIPXCAP_Presentity
 
   public:
     SIPOMA_Presentity();
+
+  protected:
+    virtual void InitRuleSet(PXML & xml);
 };
 
 
