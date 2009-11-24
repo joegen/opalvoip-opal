@@ -1015,8 +1015,8 @@ class SIPEndPoint : public OpalRTPEndPoint
         : m_pdu(pdu), m_transport(transport), m_status(true)
       { }
 
-      OpalTransport & m_transport;
       SIP_PDU & m_pdu;
+      OpalTransport & m_transport;
       bool m_status;
     };
 
