@@ -1539,6 +1539,7 @@ SIPMessageHandler::SIPMessageHandler (SIPEndPoint & endpoint, const PString & to
   body   = b;
   callID = id;
   SetState(Subscribed);
+  expire = 5000;   // anything but zero
 }
 
 

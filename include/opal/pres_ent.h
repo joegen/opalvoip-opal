@@ -55,7 +55,9 @@ class OpalPresenceInfo
   public:
     /// Presence states.
     enum State {
-      NoPresence = -1,    // remove presence status - not the same as Unavailable or Away
+      InternalError = -3,    // something bad happened
+      Forbidden     = -2,    // access to presence information was specifically forbidden
+      NoPresence    = -1,    // remove presence status - not the same as Unavailable or Away
 
       // basic states (from RFC 3863)
       Unchanged,
