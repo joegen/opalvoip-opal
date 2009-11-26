@@ -1158,6 +1158,8 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
   if (!m_handlingINVITE && (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream)) {
 #if OPAL_FAX
+    if (m_switchingToFaxMode)
+      return newStream; // Prevent two re-INVITE's going out
     m_switchingToFaxMode = mediaFormat.GetMediaType() == OpalMediaType::Fax();
 #endif
     SendReINVITE(PTRACE_PARAM("open channel"));
