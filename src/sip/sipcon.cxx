@@ -402,6 +402,10 @@ void SIPConnection::OnReleased()
   // Close media
   CloseMediaStreams();
 
+  // Abort the queued up re-INVITEs we never got a chance to send.
+  for (PSafePtr<SIPTransaction> invitation(pendingInvitations, PSafeReference); invitation != NULL; ++invitation)
+    invitation->Abort();
+
   /* Note we wait for various transactions to complete as the transport they
      rely on may be owned by the connection, and would be deleted once we exit
      from OnRelease() causing a crash in the transaction processing. */
