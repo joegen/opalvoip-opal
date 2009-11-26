@@ -298,7 +298,7 @@ void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCom
 
 void SIPXCAP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
-  if (status.m_reason == SIP_PDU::Information_Trying)
+   if (status.m_reason == SIP_PDU::Information_Trying)
     return;
 
   OpalPresenceInfo info(status.m_wasSubscribing ? OpalPresenceInfo::Unchanged : OpalPresenceInfo::NoPresence);
@@ -306,8 +306,12 @@ void SIPXCAP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, 
 
   m_notificationMutex.Wait();
 
-  if (status.m_reason/100 == 2)
-    OnPresenceChange(info);
+  if (status.m_reason/100 == 4)
+    info.m_state = OpalPresenceInfo::Forbidden;
+  else if (status.m_reason/100 != 2) 
+    info.m_state = OpalPresenceInfo::InternalError;
+
+  OnPresenceChange(info);
 
   if (!status.m_wasSubscribing)
     m_watcherSubscriptionAOR.MakeEmpty();

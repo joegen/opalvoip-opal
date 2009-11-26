@@ -52,14 +52,16 @@ const PString & OpalPresentity::TimeToLiveKey()      { static const PString s = 
 ostream & operator<<(ostream & strm, OpalPresenceInfo::State state)
 {
   static const char * const BasicNames[] = {
+    "Internal Error",
+    "Forbidden",
     "No Presence",
     "Unchanged",
     "Available",
     "Unavailable"
   };
 
-  if (state >= OpalPresenceInfo::NoPresence) {
-    PINDEX index = state - OpalPresenceInfo::NoPresence;
+  if (state >= OpalPresenceInfo::InternalError) {
+    PINDEX index = state - OpalPresenceInfo::InternalError;
     if (index < PARRAYSIZE(BasicNames))
       return strm << BasicNames[index];
   }
