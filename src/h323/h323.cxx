@@ -4820,6 +4820,11 @@ PBoolean H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
 
 void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 {
+  if (!t38ModeChangeCapabilities.IsEmpty()) {
+    PTRACE(4, "H323\tOnModeChanged ignored as T.38 Mode Change in progress");
+    return;
+  }
+
   PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
   if (otherConnection == NULL)
     return;
@@ -4831,7 +4836,8 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
   for (PINDEX c = 0; c < logicalChannels->GetSize(); c++) {
     H245NegLogicalChannel & negChannel = logicalChannels->GetNegLogicalChannelAt(c);
     H323Channel * channel = negChannel.GetChannel();
-    if (channel != NULL && !channel->GetNumber().IsFromRemote()) {
+    if (channel != NULL && !channel->GetNumber().IsFromRemote() &&
+          (negChannel.IsAwaitingEstablishment() || negChannel.IsEstablished())) {
       bool closeOne = true;
 
       for (PINDEX m = 0; m < newMode.GetSize(); m++) {
