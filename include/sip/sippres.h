@@ -134,13 +134,23 @@ class XCAPClient : public PHTTPClient
 
     bool GetXml(
       PXML & xml
+    ) { return GetXml(BuildURL(), xml); }
+
+    bool GetXml(
+      const PURL & url,
+      PXML & xml
     );
 
     bool PutXml(
       const PXML & xml
+    ) { return PutXml(BuildURL(), xml); }
+
+    bool PutXml(
+      const PURL & url,
+      const PXML & xml
     );
 
-    bool DeleteXml();
+    bool DeleteXml() { return DeleteDocument(BuildURL()); }
 
 
     PURL BuildURL();

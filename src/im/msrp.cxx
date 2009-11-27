@@ -420,7 +420,7 @@ void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, OpalMSRPManager::Inco
   else if (incomingMSRP.m_command == MSRPProtocol::SEND) {
     PTRACE(3, "MSRP\tMediaStream " << *this << " received SEND");
     T140String t140(incomingMSRP.m_body);
-    RTP_DataFrameList frames = m_rfc4103Context.ConvertToFrames(incomingMSRP.m_mime.GetString("Content-Type", "text/plain"), t140);
+    RTP_DataFrameList frames = m_rfc4103Context.ConvertToFrames(incomingMSRP.m_mime.GetString(PMIMEInfo::ContentTypeTag, "text/plain"), t140);
     OpalMediaFormat fmt(m_rfc4103Context.m_mediaFormat);
     for (PINDEX i = 0; i < frames.GetSize(); ++i)
       connection.OnReceiveExternalIM(m_rfc4103Context.m_mediaFormat, (RTP_IMFrame &)frames[i]);
@@ -698,7 +698,7 @@ void OpalMSRPManager::Connection::HandlerThread()
       if (incomingMsg.m_command == MSRPProtocol::SEND) {
         m_protocol->SendResponse(incomingMsg.m_chunkId, 200, "OK", toUrl, fromUrl);
         PTRACE(3, "MSRP\tMSRP SEND received from=" << fromUrl << ",to=" << toUrl);
-        if (incomingMsg.m_mime.Contains("Content-Type")) {
+        if (incomingMsg.m_mime.Contains(PMIMEInfo::ContentTypeTag)) {
           incomingMsg.m_connection = PSafePtr<Connection>(this);
           m_manager.DispatchMessage(incomingMsg);
         }
@@ -771,7 +771,7 @@ bool MSRPProtocol::SendSEND(const PURL & from,
     if (message.m_length != 0) {
       mime.SetAt("Success-Report", "yes");
       mime.SetAt("Byte-Range",   psprintf("%u-%u/%u", r->m_rangeFrom, r->m_rangeTo, message.m_length));
-      body = (PString("Content-Type: ") & message.m_contentType) + CRLF CRLF +
+      body = (PMIMEInfo::ContentTypeTag() & message.m_contentType) + CRLF CRLF +
              text.Mid(r->m_rangeFrom-1, r->m_rangeTo - r->m_rangeFrom + 1) + CRLF;
     }
 
@@ -924,7 +924,7 @@ bool MSRPProtocol::ReadMessage(int & command,
   }
 
   // handle SEND bodies
-  if ((command == SEND) && mime.Contains("Content-Type")) {
+  if ((command == SEND) && mime.Contains(PMIMEInfo::ContentTypeTag)) {
     for (;;) {
       PString line;
       if (!ReadLine(line)) {

@@ -662,14 +662,14 @@ PBoolean SIPMIMEInfo::IsContentLengthPresent() const
 
 PCaselessString SIPMIMEInfo::GetContentType(bool includeParameters) const
 {
-  PCaselessString str = GetString("Content-Type");
+  PCaselessString str = GetString(PMIMEInfo::ContentTypeTag);
   return str.Left(includeParameters ? P_MAX_INDEX : str.Find(';')).Trim();
 }
 
 
 void SIPMIMEInfo::SetContentType(const PString & v)
 {
-  SetAt("Content-Type",  v);
+  SetAt(PMIMEInfo::ContentTypeTag,  v);
 }
 
 
@@ -3096,6 +3096,10 @@ SIPSubscribe::NotifyCallbackInfo::NotifyCallbackInfo(SIPEndPoint & ep, OpalTrans
 
 bool SIPSubscribe::NotifyCallbackInfo::SendResponse(SIP_PDU::StatusCodes status, const char * extra)
 {
+  // See if already sent response, don't send another.
+  if (!m_sendResponse)
+    return true;
+
   m_response.SetStatusCode(status);
 
   if (extra != NULL)
@@ -3125,11 +3129,23 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
 
   m_mime.SetEvent(params.m_eventPackage);
 
-  SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
-  if (packageHandler != NULL) {
-    m_mime.SetAccept(packageHandler->GetContentType());
-    delete packageHandler;
+  PString acceptableContentTypes = params.m_contentType;
+  if (acceptableContentTypes.IsEmpty()) {
+    SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
+    if (packageHandler != NULL) {
+      acceptableContentTypes = packageHandler->GetContentType();
+      delete packageHandler;
+    }
   }
+
+  if (params.m_eventList) {
+    if (!acceptableContentTypes.IsEmpty())
+      acceptableContentTypes += '\n';
+    acceptableContentTypes += "multipart/related\napplication/rlmi+xml";
+    m_mime.SetSupported("eventlist");
+  }
+
+  m_mime.SetAccept(acceptableContentTypes);
 
   SetAllow(ep.GetAllowedMethods());
 }
