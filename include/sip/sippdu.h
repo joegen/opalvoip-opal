@@ -777,19 +777,19 @@ struct SIPParameters
     const PTimeInterval & defaultExpire
   );
 
-  PString       m_remoteAddress;
-  PString       m_localAddress;
-  PString       m_proxyAddress;
-  PString       m_addressOfRecord;
-  PString       m_contactAddress;
-  PString       m_authID;
-  PString       m_password;
-  PString       m_realm;
-  unsigned      m_expire;
-  unsigned      m_restoreTime;
-  PTimeInterval m_minRetryTime;
-  PTimeInterval m_maxRetryTime;
-  void        * m_userData;
+  PCaselessString m_remoteAddress;
+  PCaselessString m_localAddress;
+  PCaselessString m_proxyAddress;
+  PCaselessString m_addressOfRecord;
+  PCaselessString m_contactAddress;
+  PString         m_authID;
+  PString         m_password;
+  PString         m_realm;
+  unsigned        m_expire;
+  unsigned        m_restoreTime;
+  PTimeInterval   m_minRetryTime;
+  PTimeInterval   m_maxRetryTime;
+  void          * m_userData;
 };
 
 
@@ -957,7 +957,7 @@ class SIPRegister : public SIPTransaction
         , m_compatibility(param.m_compatibility)
       { }
 
-      PString & m_registrarAddress; // For backward compatibility
+      PCaselessString  & m_registrarAddress; // For backward compatibility
       CompatibilityModes m_compatibility;
     };
 
@@ -1056,22 +1056,25 @@ class SIPSubscribe : public SIPTransaction
     struct Params : public SIPParameters
     {
       Params(PredefinedPackages pkg = NumPredefinedPackages)
-        : m_eventPackage(pkg)
-        , m_agentAddress(m_remoteAddress)
+        : m_agentAddress(m_remoteAddress)
+        , m_eventPackage(pkg)
+        , m_eventList(false)
       { }
 
       Params(const Params & param)
         : SIPParameters(param)
-        , m_eventPackage(param.m_eventPackage)
-        , m_contentType(param.m_contentType)
         , m_agentAddress(m_remoteAddress)
+        , m_eventPackage(param.m_eventPackage)
+        , m_eventList(param.m_eventList)
+        , m_contentType(param.m_contentType)
         , m_onSubcribeStatus(param.m_onSubcribeStatus)
         , m_onNotify(param.m_onNotify)
       { }
 
-      EventPackage m_eventPackage;
-      PString      m_contentType;
-      PString    & m_agentAddress; // For backward compatibility
+      PCaselessString & m_agentAddress; // For backward compatibility
+      EventPackage      m_eventPackage;
+      PCaselessString   m_contentType;  // May be \n separated list of types
+      bool              m_eventList;    // Enable RFC4662
 
       PNotifierTemplate<const SubscriptionStatus &> m_onSubcribeStatus;
       PNotifierTemplate<NotifyCallbackInfo &> m_onNotify;

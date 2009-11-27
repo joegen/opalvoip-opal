@@ -475,6 +475,8 @@ void SIPXCAP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPrese
     param.m_authID          = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
     param.m_password        = m_attributes.Get(OpalPresentity::AuthPasswordKey);
     param.m_expire          = GetExpiryTime();
+    param.m_contentType     = "application/pidf+xml";
+    param.m_eventList       = true;
 
     param.m_onSubcribeStatus = PCREATE_NOTIFIER2(OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
     param.m_onNotify         = PCREATE_NOTIFIER2(OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
@@ -504,16 +506,15 @@ void SIPXCAP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, con
     return;
 
   m_notificationMutex.Wait();
-  if (!status.m_wasSubscribing) {
+  if (!status.m_wasSubscribing || status.m_reason >= 400) {
     PString id = status.m_handler->GetCallID();
     StringMap::iterator aor = m_presenceAorById.find(id);
     if (aor != m_presenceAorById.end()) {
-      PTRACE(3, "SIPPres\t'" << m_aor << "' unsubscribed to presence of '" << aor->second << '\'');
+      PTRACE(status.m_reason >= 400 ? 2 : 3, "SIPPres\t'" << m_aor << "' "
+             << (status.m_wasSubscribing ? "error " : "un")
+             << "subscribing to presence of '" << aor->second << '\'');
       m_presenceIdByAor.erase(aor->second);
       m_presenceAorById.erase(aor);
-    }
-    else {
-      PTRACE(2, "SIPPres\tAlready unsubscribed for id " << id);
     }
   }
   m_notificationMutex.Signal();
@@ -598,8 +599,7 @@ bool SIPXCAP_Presentity::ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisati
   PXML xml;
   if (!xcap.GetXml(xml)) {
     PTRACE(4, "SIPPres\tCould not locate existing rule id=" << ruleId
-           << " for '" << cmd.m_presentity << "' at '" << m_aor << "\'\n"
-           << xcap.GetLastResponseCode() << ' ' << xcap.GetLastResponseInfo());
+           << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
     return false;
   }
 
@@ -707,31 +707,18 @@ void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRe
                     cmd.m_authorisation == AuthorisationPermitted ? "_allow" : "",
                     ++NextRuleId);
 
-  xml.Load("<cr:rule xmlns:pr=\"urn:ietf:params:xml:ns:pres-rules\""
-                   " xmlns:cr=\"urn:ietf:params:xml:ns:common-policy\">"
-             "<cr:conditions>"
-               "<cr:identity>"
-                 "<cr:one/>"
-               "</cr:identity>"
-             "</cr:conditions>"
-             "<cr:actions>"
-               "<pr:sub-handling></pr:sub-handling>"
-             "</cr:actions>"
-             "<cr:transformations>"
-               "<pr:provide-services>"
-                 "<pr:all-services/>"
-               "</pr:provide-services>"
-               "<pr:provide-persons>"
-                 "<pr:all-persons/>"
-               "</pr:provide-persons>"
-               "<pr:provide-all-attributes/>"
-             "</cr:transformations>"
-           "</cr:rule>",
-           PXML::FragmentOnly);
-  element = xml.GetRootElement();
+  xml.SetOptions(PXML::FragmentOnly);
+  element = xml.SetRootElement("cr:rule");
+  element->SetAttribute("xmlns:pr", "urn:ietf:params:xml:ns:pres-rules");
+  element->SetAttribute("xmlns:cr", "urn:ietf:params:xml:ns:common-policy");
   element->SetAttribute("id", newRuleId);
-  element->GetElement("cr:conditions")->GetElement("cr:identity")->GetElement("cr:one")->SetAttribute("id", cmd.m_presentity);
-  element->GetElement("cr:actions")->GetElement("pr:sub-handling")->SetData(AuthNames[cmd.m_authorisation]);
+
+  element->AddElement("cr:conditions")->AddElement("cr:identity")->AddElement("cr:one")->SetAttribute("id", cmd.m_presentity);
+  element->AddElement("cr:actions")->AddElement("pr:sub-handling")->SetData(AuthNames[cmd.m_authorisation]);
+  element = element->AddElement("cr:transformations");
+  element->AddElement("pr:provide-services")->AddElement("pr:all-services");
+  element->AddElement("pr:provide-persons")->AddElement("pr:all-persons");
+  element->AddElement("pr:provide-all-attributes");
 
   XCAPClient::NodeSelector node;
   node.SetNamespace("urn:ietf:params:xml:ns:pres-rules", "pr");
@@ -753,34 +740,19 @@ void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRe
 
 void SIPXCAP_Presentity::InitRuleSet(PXML & xml)
 {
-  xml.Load("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-           "<cr:ruleset xmlns:pr=\"urn:ietf:params:xml:ns:pres-rules\""
-                      " xmlns:cr=\"urn:ietf:params:xml:ns:common-policy\">"
-             "<cr:rule id=\"presence_allow_own\">"
-               "<cr:conditions>"
-                 "<cr:identity>"
-                   "<cr:one/>"
-                 "</cr:identity>"
-               "</cr:conditions>"
-               "<cr:actions>"
-                 "<pr:sub-handling></pr:sub-handling>"
-               "</cr:actions>"
-               "<cr:transformations>"
-                 "<pr:provide-services>"
-                   "<pr:all-services/>"
-                 "</pr:provide-services>"
-                 "<pr:provide-persons>"
-                   "<pr:all-persons/>"
-                 "</pr:provide-persons>"
-                 "<pr:provide-all-attributes/>"
-               "</cr:transformations>"
-             "</cr:rule>"
-           "</cr:ruleset>");
-  xml.GetElement("cr:rule")
-    ->GetElement("cr:conditions")
-    ->GetElement("cr:identity")
-    ->GetElement("cr:one")
-    ->SetAttribute("id", m_aor.AsString());
+  xml.SetOptions(PXML::NoOptions);
+  PXMLElement * element = xml.SetRootElement("cr:ruleset");
+  element->SetAttribute("xmlns:pr", "urn:ietf:params:xml:ns:pres-rules");
+  element->SetAttribute("xmlns:cr", "urn:ietf:params:xml:ns:common-policy");
+
+  element = element->AddElement("rule", "id", "presence_allow_own");
+
+  element->AddElement("cr:conditions")->AddElement("cr:identity")->AddElement("cr:one")->SetAttribute("id", m_aor.AsString());
+  element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationPermitted]);
+  element = element->AddElement("cr:transformations");
+  element->AddElement("pr:provide-services")->AddElement("pr:all-services");
+  element->AddElement("pr:provide-persons")->AddElement("pr:all-persons");
+  element->AddElement("pr:provide-all-attributes");
 }
 
 
@@ -812,7 +784,7 @@ static PXMLElement * BuddyInfoToXML(const OpalPresentity::BuddyInfo & buddy, PXM
   element->SetAttribute("uri", buddy.m_presentity);
 
   if (!buddy.m_displayName.IsEmpty())
-    element->AddChild(new PXMLElement(element, "display-name", buddy.m_displayName));
+    element->AddElement("display-name", buddy.m_displayName);
 
   return element;
 }
@@ -835,41 +807,58 @@ static bool XMLToBuddyInfo(const PXMLElement * element, OpalPresentity::BuddyInf
 }
 
 
-bool SIPXCAP_Presentity::GetBuddyList(BuddyList & buddies)
+static bool RecursiveGetBuddyList(OpalPresentity::BuddyList & buddies, XCAPClient & xcap, const PURL & url)
 {
-  XCAPClient xcap;
-  InitBuddyXcap(xcap);
+  if (url.IsEmpty())
+    return false;
 
   PXML xml;
-  if (!xcap.GetXml(xml)) {
-    PTRACE(2, "SIPPres\tError getting buddy list of '" << m_aor << "\'\n"
-           << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+  if (!xcap.GetXml(url, xml))
     return false;
-  }
 
   PXMLElement * element;
   PINDEX idx = 0;
   while ((element = xml.GetElement("entry", idx++)) != NULL) {
-    BuddyInfo buddy;
+    OpalPresentity::BuddyInfo buddy;
     if (XMLToBuddyInfo(element, buddy))
       buddies.push_back(buddy);
+  }
+
+  idx = 0;
+  while ((element = xml.GetElement("external", idx++)) != NULL)
+    RecursiveGetBuddyList(buddies, xcap, element->GetAttribute("anchor"));
+
+  idx = 0;
+  while ((element = xml.GetElement("entry-ref", idx++)) != NULL) {
+    PURL url(xcap.GetRoot());
+    url.SetPathStr(url.GetPathStr() + element->GetAttribute("ref"));
+    RecursiveGetBuddyList(buddies, xcap, url);
   }
 
   return true;
 }
 
 
+bool SIPXCAP_Presentity::GetBuddyList(BuddyList & buddies)
+{
+  XCAPClient xcap;
+  InitBuddyXcap(xcap);
+  return RecursiveGetBuddyList(buddies, xcap, xcap.BuildURL()) ||
+         !buddies.empty() ||
+         xcap.GetLastResponseCode() == PHTTP::NotFound;
+}
+
+
 bool SIPXCAP_Presentity::SetBuddyList(const BuddyList & buddies)
 {
-  PXMLElement * root = new PXMLElement(NULL, "list");
+  PXML xml(PXML::FragmentOnly);
+
+  PXMLElement * root = xml.SetRootElement("list");
   root->SetAttribute("xmlns", "urn:ietf:params:xml:ns:resource-lists");
   root->SetAttribute("name", m_attributes.Get(SIPXCAP_Presentity::XcapBuddyListKey));
 
   for (BuddyList::const_iterator it = buddies.begin(); it != buddies.end(); ++it)
     root->AddChild(BuddyInfoToXML(*it, root));
-
-  PXML xml(PXML::FragmentOnly);
-  xml.SetRootElement(root);
 
   XCAPClient xcap;
   InitBuddyXcap(xcap);
@@ -879,17 +868,15 @@ bool SIPXCAP_Presentity::SetBuddyList(const BuddyList & buddies)
 
   if (xcap.GetLastResponseCode() == PHTTP::Conflict && xcap.GetLastResponseInfo().Find("Parent") != P_MAX_INDEX) {
     // Got "Parent does not exist" error, so need to add whole file
-    root = new PXMLElement(NULL, "resource-lists");
+    xml.SetOptions(PXML::NoOptions);
+    root = xml.SetRootElement("resource-lists");
     root->SetAttribute("xmlns", "urn:ietf:params:xml:ns:resource-lists");
 
-    PXMLElement * listElement = root->AddChild(new PXMLElement(root, "list"));
-    listElement->SetAttribute("name", m_attributes.Get(SIPXCAP_Presentity::XcapBuddyListKey));
+    PXMLElement * listElement = root->AddElement("list", "name", m_attributes.Get(SIPXCAP_Presentity::XcapBuddyListKey));
 
     for (BuddyList::const_iterator it = buddies.begin(); it != buddies.end(); ++it)
-      listElement->AddChild(BuddyInfoToXML(*it, root));
+      listElement->AddChild(BuddyInfoToXML(*it, listElement));
 
-    xml.SetRootElement(root);
-    xml.SetOptions(PXML::NoOptions);
     xcap.ClearNode();
     if (xcap.PutXml(xml))
       return true;
@@ -920,13 +907,8 @@ bool SIPXCAP_Presentity::GetBuddy(BuddyInfo & buddy)
   XCAPClient xcap;
   InitBuddyXcap(xcap, buddy.m_presentity);
 
-  PXML xml(PXML::FragmentOnly);
-  if (xcap.GetXml(xml))
-    return XMLToBuddyInfo(xml.GetRootElement(), buddy);
-
-  PTRACE(2, "SIPPres\tError getting buddy '" << buddy.m_presentity << "' of '" << m_aor << "\'\n"
-         << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
-  return false;
+  PXML xml;
+  return xcap.GetXml(xml) && XMLToBuddyInfo(xml.GetRootElement(), buddy);
 }
 
 
@@ -959,7 +941,6 @@ bool SIPXCAP_Presentity::SetBuddy(const BuddyInfo & buddy)
 
 bool SIPXCAP_Presentity::DeleteBuddy(const PString & presentity)
 {
-  PXML xml;
   XCAPClient xcap;
   InitBuddyXcap(xcap, presentity);
 
@@ -974,7 +955,57 @@ bool SIPXCAP_Presentity::DeleteBuddy(const PString & presentity)
 
 bool SIPXCAP_Presentity::SubscribeBuddyList()
 {
-  return false;
+  PXML xml;
+  XCAPClient xcap;
+  xcap.SetRoot(m_attributes.Get(SIPXCAP_Presentity::XcapRootKey));
+  xcap.SetApplicationUniqueID("rls-services");
+  xcap.SetContentType("application/rls-services+xml");
+  xcap.SetUserIdentifier(m_aor.AsString());
+  xcap.SetAuthenticationInfo(m_attributes.Get(SIPXCAP_Presentity::XcapAuthIdKey, m_attributes.Get(OpalPresentity::AuthNameKey, xcap.GetUserIdentifier())),
+                             m_attributes.Get(SIPXCAP_Presentity::XcapPasswordKey, m_attributes.Get(OpalPresentity::AuthPasswordKey)));
+  xcap.SetFilename("index");
+
+  PString serviceURI = xcap.GetUserIdentifier() + ";pres-list=oma_buddylist";
+
+  if (!xcap.GetXml(xml)) {
+    if (xcap.GetLastResponseCode() != PHTTP::NotFound) {
+      PTRACE(2, "SIPPres\tUnexpected error getting rls-services file for at '" << m_aor << "\'\n"
+             << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+      return OpalPresentity::SubscribeBuddyList(); // Do individual subscribes
+    }
+
+    // No file at all, add the root element.
+    xml.SetRootElement("rls-services")->SetAttribute("xmlns", "urn:ietf:params:xml:ns:rls-services");
+  }
+  else {
+    // Have file, see if have specific service
+    PXMLElement * element = xml.GetElement("service", "uri", serviceURI);
+    if (element != NULL) {
+      PTRACE(4, "SIPPres\tConfirmed rls-services entry for '" << serviceURI << "\' is\n" << xml);
+      return SubscribeToPresence(serviceURI);
+    }
+
+    // Nope, so add it
+  }
+
+  // Added service to existing XML or newly rooted one
+  PXMLElement * element = xml.GetRootElement()->AddElement("service");
+  element->SetAttribute("uri", serviceURI);
+
+  // Calculate the horrible URL using a temporary XCAP client
+  XCAPClient xcapTemp;
+  InitBuddyXcap(xcapTemp);
+  element->AddElement("resource-list")->SetData(xcapTemp.BuildURL().AsString());
+
+  element->AddElement("packages")->AddElement("package")->SetData("presence");
+
+  if (xcap.PutXml(xml))
+    return SubscribeToPresence(serviceURI);
+
+  PTRACE(2, "SIPPres\tCould not add new rls-services entry for '" << m_aor << "\'\n"
+         << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+
+  return OpalPresentity::SubscribeBuddyList(); // Do individual subscribes
 }
 
 
@@ -990,103 +1021,36 @@ SIPOMA_Presentity::SIPOMA_Presentity()
 
 void SIPOMA_Presentity::InitRuleSet(PXML & xml)
 {
-  xml.Load("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-           "<cr:ruleset xmlns:cr=\"urn:ietf:params:xml:ns:common-policy\""
-                      " xmlns:pr=\"urn:ietf:params:xml:ns:pres-rules\""
-                      " xmlns:ocp=\"urn:oma:xml:xdm:common-policy\">"
-             "<cr:rule id=\"wp_prs_allow_own\">"
-               "<cr:conditions>"
-                 "<cr:identity>"
-                   "<cr:one/>"
-                 "</cr:identity>"
-               "</cr:conditions>"
-               "<cr:actions>"
-                 "<pr:sub-handling>allow</pr:sub-handling>"
-               "</cr:actions>"
-               "<cr:transformations>"
-                 "<pr:provide-services>"
-                   "<pr:all-services/>"
-                 "</pr:provide-services>"
-                 "<pr:provide-persons>"
-                   "<pr:all-persons/>"
-                 "</pr:provide-persons>"
-                 "<pr:provide-devices>"
-                   "<pr:all-devices/>"
-                 "</pr:provide-devices>"
-                 "<pr:provide-all-attributes/>"
-               "</cr:transformations>"
-             "</cr:rule>"
-             "<cr:rule id=\"wp_prs_block_anonymous\">"
-               "<cr:conditions>"
-                 "<ocp:anonymous-request/>"
-               "</cr:conditions>"
-               "<cr:actions>"
-                 "<pr:sub-handling>block</pr:sub-handling>"
-               "</cr:actions>"
-             "</cr:rule>"
-             "<cr:rule id=\"wp_prs_unlisted\">"
-               "<cr:conditions>"
-                 "<ocp:other-identity/>"
-               "</cr:conditions>"
-               "<cr:actions>"
-                 "<pr:sub-handling>confirm</pr:sub-handling>"
-               "</cr:actions>"
-             "</cr:rule>"
-             "<cr:rule id=\"wp_prs_grantedcontacts\">"
-               "<cr:conditions>"
-                 "<ocp:external-list>"
-                   "<ocp:entry/>"
-                 "</ocp:external-list>"
-               "</cr:conditions>"
-               "<cr:actions>"
-                 "<pr:sub-handling>allow</pr:sub-handling>"
-               "</cr:actions>"
-               "<cr:transformations>"
-                 "<pr:provide-services>"
-                   "<pr:all-services/>"
-                 "</pr:provide-services>"
-                 "<pr:provide-persons>"
-                   "<pr:all-persons/>"
-                 "</pr:provide-persons>"
-                 "<pr:provide-devices>"
-                   "<pr:all-devices/>"
-                 "</pr:provide-devices>"
-                 "<pr:provide-all-attributes/>"
-               "</cr:transformations>"
-             "</cr:rule>"
-             "<cr:rule id=\"wp_prs_blockedcontacts\">"
-               "<cr:conditions>"
-                 "<ocp:external-list>"
-                   "<ocp:entry/>"
-                 "</ocp:external-list>"
-               "</cr:conditions>"
-               "<cr:actions>"
-                 "<pr:sub-handling>block</pr:sub-handling>"
-               "</cr:actions>"
-             "</cr:rule>"
-           "</cr:ruleset>");
-  xml.GetElement("cr:rule", "id", "wp_prs_allow_own")
-    ->GetElement("cr:conditions")
-    ->GetElement("cr:identity")
-    ->GetElement("cr:one")
-    ->SetAttribute("id", m_aor.AsString());
+  SIPXCAP_Presentity::InitRuleSet(xml);
 
+  PXMLElement * root = xml.GetRootElement();
+  root->SetAttribute("xmlns:ocp", "urn:oma:xml:xdm:common-policy");
+
+  PXMLElement * element = root->AddElement("cr:rule", "id", "wp_prs_block_anonymous");
+  element->AddElement("cr:conditions")->AddElement("ocp:anonymous-request");
+  element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationDenied]);
+
+  element = root->AddElement("cr:rule", "id", "wp_prs_unlisted");
+  element->AddElement("cr:conditions")->AddElement("ocp:other-identity");
+  element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationConfirming]);
+
+  // Use an xcap object to calculate horrible URL
   XCAPClient xcap;
   InitBuddyXcap(xcap, PString::Empty(), "oma_grantedcontacts");
 
-  xml.GetElement("cr:rule", "id", "wp_prs_grantedcontacts")
-    ->GetElement("cr:conditions")
-    ->GetElement("ocp:external-list")
-    ->GetElement("ocp:entry")
-    ->SetAttribute("anc", xcap.BuildURL().AsString());
+  element = root->AddElement("cr:rule", "id", "wp_prs_grantedcontacts");
+  element->AddElement("cr:conditions")->AddElement("ocp:external-list")->AddElement("ocp:entry", "anc", xcap.BuildURL().AsString());
+  element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationPermitted]);
+  element = element->AddElement("cr:transformations");
+  element->AddElement("pr:provide-services")->AddElement("pr:all-services");
+  element->AddElement("pr:provide-persons")->AddElement("pr:all-persons");
+  element->AddElement("pr:provide-all-attributes");
 
   InitBuddyXcap(xcap, PString::Empty(), "oma_blockedcontacts");
 
-  xml.GetElement("cr:rule", "id", "wp_prs_blockedcontacts")
-    ->GetElement("cr:conditions")
-    ->GetElement("ocp:external-list")
-    ->GetElement("ocp:entry")
-    ->SetAttribute("anc", xcap.BuildURL().AsString());
+  element = root->AddElement("cr:rule", "id", "wp_prs_blockedcontacts");
+  element->AddElement("cr:conditions")->AddElement("ocp:external-list")->AddElement("ocp:entry", "anc", xcap.BuildURL().AsString());
+  element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationDenied]);
 }
 
 
@@ -1094,6 +1058,7 @@ void SIPOMA_Presentity::InitRuleSet(PXML & xml)
 
 XCAPClient::XCAPClient()
   : m_global(false)
+  , m_filename("index")
 {
 }
 
@@ -1118,27 +1083,43 @@ PURL XCAPClient::BuildURL()
 }
 
 
-bool XCAPClient::GetXml(PXML & xml)
+static bool HasNode(const PURL & url)
 {
-  PString str;
-  if (!GetTextDocument(BuildURL(), str, m_node.empty() ? m_contentType : "application/xcap-el+xml"))
-    return false;
+  const PStringArray & path = url.GetPath();
+  for (PINDEX i = 0; i < path.GetSize(); ++i) {
+    if (path[i] == "~~")
+      return true;
+  }
 
-  return xml.Load(str, m_node.empty() ? PXML::NoOptions : PXML::FragmentOnly);
+  return false;
 }
 
 
-bool XCAPClient::PutXml(const PXML & xml)
+bool XCAPClient::GetXml(const PURL & url, PXML & xml)
+{
+  bool hasNode = HasNode(url);
+
+  PString body;
+  if (!GetTextDocument(url, body, hasNode ? "application/xcap-el+xml" : m_contentType)) {
+    PTRACE(3, "SIPPres\tError getting buddy list at '" << url << "\'\n"
+           << GetLastResponseCode() << ' '  << GetLastResponseInfo());
+    return false;
+  }
+
+  if (xml.Load(body, hasNode ? PXML::FragmentOnly : PXML::NoOptions))
+    return true;
+
+  PTRACE(2, "XCAP\tError parsing XML for '" << url << "\'\n"
+            "Line " << xml.GetErrorLine() << ", Column " << xml.GetErrorColumn() << ": " << xml.GetErrorString());
+  return false;
+}
+
+
+bool XCAPClient::PutXml(const PURL & url, const PXML & xml)
 {
   PStringStream strm;
   strm << xml;
-  return PutTextDocument(BuildURL(), strm, m_node.empty() ? m_contentType : "application/xcap-el+xml");
-}
-
-
-bool XCAPClient::DeleteXml()
-{
-  return DeleteDocument(BuildURL());
+  return PutTextDocument(url, strm, HasNode(url) ? "application/xcap-el+xml" : m_contentType);
 }
 
 

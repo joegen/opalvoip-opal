@@ -237,6 +237,7 @@ public:
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
+  bool DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response);
 
   SIPSubscribe::Params     m_parameters;
   SIPDialogContext         m_dialog;
