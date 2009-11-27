@@ -824,35 +824,38 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 
 void SIPSubscribeHandler::OnFailed(const SIP_PDU & response)
 {
-  SIP_PDU::StatusCodes r = response.GetStatusCode();
+  SIP_PDU::StatusCodes responseCode = response.GetStatusCode();
 
-  SendStatus(r, GetState());
+  SendStatus(responseCode, GetState());
 
-  int newExpires = 0;
-  PString dummy;
-  
-  switch (r) {
-    case SIP_PDU::Failure_TransactionDoesNotExist:
-      // Resubscribe as previous subscription totally lost, but dialog processing
-      // may have altered the target so restore the original target address
-      m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
-      endpoint.Subscribe(m_parameters, dummy);
-      break;
-
-    case SIP_PDU::Failure_IntervalTooBrief:
-      // Resubscribe with altered expiry
-      newExpires = response.GetMIME().GetExpires();
-      if (newExpires > 0) {
-        m_parameters.m_expire = newExpires;
-        PString dummy;
+  if (state != Unsubscribing) {
+    int newExpires = 0;
+    PString dummy;
+    
+    switch (responseCode) {
+      case SIP_PDU::Failure_TransactionDoesNotExist:
+        // Resubscribe as previous subscription totally lost, but dialog processing
+        // may have altered the target so restore the original target address
+        m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
         endpoint.Subscribe(m_parameters, dummy);
-      }
-      break;
+        break;
 
-    default:
-      // fall through
-      SIPHandler::OnFailed(r);
+      case SIP_PDU::Failure_IntervalTooBrief:
+        // Resubscribe with altered expiry
+        newExpires = response.GetMIME().GetExpires();
+        if (newExpires > 0) {
+          m_parameters.m_expire = newExpires;
+          PString dummy;
+          endpoint.Subscribe(m_parameters, dummy);
+        }
+        break;
+
+      default:
+        break;
+    }
   }
+
+  SIPHandler::OnFailed(responseCode);
 }
 
 
@@ -929,20 +932,15 @@ void SIPSubscribeHandler::UpdateParameters(const SIPSubscribe::Params & params)
 
 void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  State oldState = GetState();
-
   /* An "expire" parameter in the Contact header has no semantics
    * for SUBSCRIBE. RFC3265, 3.1.1.
    * An answer can only shorten the expires time.
    */
   SetExpire(response.GetMIME().GetExpires(originalExpire));
-
-  SIPHandler::OnReceivedOK(transaction, response);
-
   m_dialog.Update(response);
 
-  if (oldState == Unsubscribing)
-    SendStatus(SIP_PDU::Successful_OK, oldState);
+  if (GetState() != Unsubscribing)
+    SIPHandler::OnReceivedOK(transaction, response);
 }
 
 
@@ -956,15 +954,17 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     m_unconfirmed = false;
   }
 
+  SIPMIMEInfo & requestMIME = request.GetMIME();
+
   // If we received a NOTIFY before
-  if (m_dialog.IsDuplicateCSeq(request.GetMIME().GetCSeqIndex())) {
+  if (m_dialog.IsDuplicateCSeq(requestMIME.GetCSeqIndex())) {
     PTRACE(3, "SIP\tReceived duplicate NOTIFY");
     return request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
   }
 
   SIP_PDU response(request, SIP_PDU::Failure_BadRequest);
 
-  PString requestEvent = request.GetMIME().GetEvent();
+  PString requestEvent = requestMIME.GetEvent();
   if (m_parameters.m_eventPackage != requestEvent) {
     PTRACE(2, "SIP\tNOTIFY received for incorrect event \"" << requestEvent << "\", requires \"" << m_parameters.m_eventPackage << '"');
     response.SetStatusCode(SIP_PDU::Failure_BadEvent);
@@ -972,9 +972,19 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     return request.SendResponse(*m_transport, response, &endpoint);
   }
 
+  // Check any Requires field
+  PCaselessString require = requestMIME.GetRequire();
+  if (!require.IsEmpty() && !(m_parameters.m_eventList && require == "eventlist")) {
+    PTRACE(2, "SIPPres\tNOTIFY contains unsupported Require field \"" << require << '"');
+    response.SetStatusCode(SIP_PDU::Failure_BadExtension);
+    response.GetMIME().SetAt("Unsupported", require);
+    response.SetInfo("Unsupported Require");
+    return request.SendResponse(*m_transport, response, &endpoint);
+  }
+
   // check the ContentType
-  PCaselessString requestContentType = request.GetMIME().GetContentType();
-  if (!m_parameters.m_contentType.IsEmpty() && requestContentType != m_parameters.m_contentType) {
+  PCaselessString requestContentType = requestMIME.GetContentType();
+  if (!m_parameters.m_contentType.IsEmpty() && m_parameters.m_contentType.Find(requestContentType) == P_MAX_INDEX) {
     PTRACE(2, "SIPPres\tNOTIFY contains unsupported Content-Type \""
            << requestContentType << "\", expecting \"" << m_parameters.m_contentType << '"');
     response.SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
@@ -983,10 +993,11 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     return request.SendResponse(*m_transport, response, &endpoint);
   }
 
-  PStringArray subscriptionStateInfo = request.GetMIME().GetSubscriptionState().Tokenise(';', false);
+  PStringArray subscriptionStateInfo = requestMIME.GetSubscriptionState().Tokenise(';', false);
   if (subscriptionStateInfo.IsEmpty()) {
     PTRACE(2, "SIP\tNOTIFY received without Subscription-State");
-    return request.SendResponse(*m_transport, SIP_PDU::Failure_BadRequest, &endpoint, NULL, "No Subscription-State field");
+    response.SetInfo("No Subscription-State field");
+    return request.SendResponse(*m_transport, response, &endpoint);
   }
 
   // Check the susbscription state
@@ -994,10 +1005,19 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   if (subscriptionState == "terminated") {
     PTRACE(3, "SIP\tSubscription is terminated, state=" << GetState());
     request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
+    SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
     ShutDown();
     return true;
   }
 
+  // Check if we know how to deal with this event
+  if (m_packageHandler == NULL && m_parameters.m_onNotify.IsNULL()) {
+    PTRACE(2, "SIP\tNo handler for NOTIFY received for event \"" << requestEvent << '"');
+    response.SetStatusCode(SIP_PDU::Failure_InternalServerError);
+    return request.SendResponse(*m_transport, response, &endpoint);
+  }
+
+  // Adjust timeouts if state is a go
   if (subscriptionState == "active" || subscriptionState == "pending") {
     PTRACE(3, "SIP\tSubscription is " << state);
     PString expire = SIPMIMEInfo::ExtractFieldParameter(state, "expire");
@@ -1005,26 +1025,92 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       SetExpire(expire.AsUnsigned());
   }
 
-  if (m_packageHandler != NULL)
-    return request.SendResponse(*m_transport,
-                                m_packageHandler->OnReceivedNOTIFY(*this, request)
-                                        ? SIP_PDU::Successful_OK
-                                        : SIP_PDU::Failure_BadRequest,
-                                &endpoint);
+  bool sendResponse = true;
 
-  if (m_parameters.m_onNotify.IsNULL()) {
-    PTRACE(2, "SIP\tNo handler for NOTIFY received for event \"" << requestEvent << '"');
-    return request.SendResponse(*m_transport, SIP_PDU::Failure_BadEvent, &endpoint);
+  PMultiPartList parts;
+  if (!m_parameters.m_eventList || !requestMIME.DecodeMultiPartList(parts, request.GetEntityBody()))
+    sendResponse = DispatchNOTIFY(request, response);
+  else {
+    // If GetMultiParts() returns true there as at least one part and that
+    // part must be the meta list, guranteed by DecodeMultiPartList()
+    PMultiPartList::iterator iter = parts.begin();
+
+    // First part is always Meta Information
+    if (iter->m_mime.GetString(PMIMEInfo::ContentTypeTag) != "application/rlmi+xml") {
+      PTRACE(2, "SIP\tNOTIFY received without RLMI as first multipart body");
+      response.SetInfo("No Resource List Meta-Information");
+      return request.SendResponse(*m_transport, response, &endpoint);
+    }
+
+#if P_EXPAT
+    PXML xml;
+    if (!xml.Load(iter->m_textBody)) {
+      PTRACE(2, "SIP\tNOTIFY received with illegal RLMI\n"
+                "Line " << xml.GetErrorLine() << ", Column " << xml.GetErrorColumn() << ": " << xml.GetErrorString());
+      response.SetInfo("Bad Resource List Meta-Information");
+      return request.SendResponse(*m_transport, response, &endpoint);
+    }
+
+    while (++iter != parts.end()) {
+      SIP_PDU pdu(request.GetMethod());
+      SIPMIMEInfo & pduMIME = pdu.GetMIME();
+
+      pduMIME.AddMIME(iter->m_mime);
+      pdu.SetEntityBody(iter->m_textBody);
+
+      PString cid = iter->m_mime.GetString(PMIMEInfo::ContentIdTag);
+      if (!cid.IsEmpty()) {
+        PINDEX index = 0;
+        PXMLElement * resource = xml.GetElement("resource", index++);
+        while ((resource = xml.GetElement("resource", index++)) != NULL) {
+          SIPURL uri = resource->GetAttribute("uri");
+          if (!uri.IsEmpty()) {
+            PXMLElement * instance = resource->GetElement("instance");
+            if (instance != NULL && instance->GetAttribute("cid") == cid) {
+              pduMIME.SetSubscriptionState(instance->GetAttribute("state"));
+              PXMLElement * name = resource->GetElement("name");
+              if (name != NULL)
+                uri.SetDisplayName(name->GetData());
+              pduMIME.SetFrom(uri.AsQuotedString());
+              pduMIME.SetTo(uri.AsQuotedString());
+              break;
+            }
+          }
+        }
+      }
+
+      if (DispatchNOTIFY(pdu, response))
+        sendResponse = false;
+    }
+#else
+    for ( ; iter != parts.end(); ++iter) {
+      SIP_PDU pdu(request.GetMethod());
+      pdu.GetMIME().AddMIME(iter->m_mime);
+      pdu.SetEntityBody(iter->m_body);
+
+      if (!DispatchNOTIFY(pdu, response))
+        sendResponse = false;
+    }
+#endif
+  }
+
+  if (sendResponse)
+    request.SendResponse(*m_transport, response, &endpoint);
+  return true;
+}
+
+
+bool SIPSubscribeHandler::DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response)
+{
+  if (m_packageHandler != NULL) {
+    if (m_packageHandler->OnReceivedNOTIFY(*this, request))
+      response.SetStatusCode(SIP_PDU::Successful_OK);
+    return true;
   }
 
   SIPSubscribe::NotifyCallbackInfo status(endpoint, *m_transport, request, response);
-
   m_parameters.m_onNotify(*this, status);
-
-  if (status.m_sendResponse)
-    request.SendResponse(*m_transport, response, &endpoint);
-
-  return true;
+  return status.m_sendResponse;
 }
 
 

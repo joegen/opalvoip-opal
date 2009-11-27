@@ -62,9 +62,10 @@ class TestPresEnt : public PProcess
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdUnsubscribeToPresence);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdPresenceAuthorisation);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSetLocalPresence);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdShowBuddies);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdAddBuddy);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdDelBuddy);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddyList);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddyAdd);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddyRemove);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddySusbcribe);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdQuit);
 
     MyManager * m_manager;
@@ -225,15 +226,18 @@ void TestPresEnt::Main()
   cli.SetCommand("publish", PCREATE_NOTIFIER(CmdSetLocalPresence),
                  "Publish local presence state for presentity.",
                  "<url> { available | unavailable | busy } [ <note> ]");
-  cli.SetCommand("show buddies", PCREATE_NOTIFIER(CmdShowBuddies),
+  cli.SetCommand("buddy list\nshow buddies", PCREATE_NOTIFIER(CmdBuddyList),
                  "Show buddy list for presentity.",
-                 "<url>");
-  cli.SetCommand("add buddy", PCREATE_NOTIFIER(CmdAddBuddy),
+                 "<presentity>");
+  cli.SetCommand("buddy add\nadd buddy", PCREATE_NOTIFIER(CmdBuddyAdd),
                  "Add buddy to list for presentity.",
                  "<presentity> <url-buddy> <display-name>");
-  cli.SetCommand("del buddy", PCREATE_NOTIFIER(CmdDelBuddy),
+  cli.SetCommand("buddy remove\ndel buddy", PCREATE_NOTIFIER(CmdBuddyRemove),
                  "Delete buddy from list for presentity.",
                  "<presentity> <url-buddy>");
+  cli.SetCommand("buddy subscribe", PCREATE_NOTIFIER(CmdBuddySusbcribe),
+                 "Susbcribe to all URIs in the buddy list for presentity.",
+                 "<presentity>");
   cli.SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),
                   "Quit command line interpreter, note quitting from console also shuts down application.");
 
@@ -320,7 +324,7 @@ void TestPresEnt::CmdSetLocalPresence(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdShowBuddies(PCLI::Arguments & args, INT)
+void TestPresEnt::CmdBuddyList(PCLI::Arguments & args, INT)
 {
   if (args.GetCount() < 1)
     args.WriteUsage();
@@ -340,7 +344,7 @@ void TestPresEnt::CmdShowBuddies(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdAddBuddy(PCLI::Arguments & args, INT)
+void TestPresEnt::CmdBuddyAdd(PCLI::Arguments & args, INT)
 {
   if (args.GetCount() < 2)
     args.WriteUsage();
@@ -356,7 +360,7 @@ void TestPresEnt::CmdAddBuddy(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdDelBuddy(PCLI::Arguments & args, INT)
+void TestPresEnt::CmdBuddyRemove(PCLI::Arguments & args, INT)
 {
   if (args.GetCount() < 2)
     args.WriteUsage();
@@ -364,6 +368,17 @@ void TestPresEnt::CmdDelBuddy(PCLI::Arguments & args, INT)
     args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
   else if (!m_presentities[args[0]].DeleteBuddy(args[1]))
     args.WriteError() << "Could not delete \"" << args[1] << "\" for presentity \"" << args[0] << '"' << endl;
+}
+
+
+void TestPresEnt::CmdBuddySusbcribe(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() < 1)
+    args.WriteUsage();
+  else if (!m_presentities.Contains(args[0]))
+    args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
+  else if (!m_presentities[args[0]].SubscribeBuddyList())
+    args.WriteError() << "Could not subscribe all buddies for presentity \"" << args[0] << '"' << endl;
 }
 
 
