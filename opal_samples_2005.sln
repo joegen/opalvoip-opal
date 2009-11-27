@@ -108,8 +108,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenPhone", "samples\openph
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
-		{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8} = {ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}
 		{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D} = {D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}
+		{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8} = {ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL_dll", "src\win32\opal_dll_2005.vcproj", "{C7546C76-E010-4105-AEAE-48FCD6C09527}"
@@ -134,15 +134,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testpresent", "samples\test
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmlgw", "..\Users\craigs\Work\requestec\xmlgw\xmlgw.vcproj", "{AA8B96B4-D3C2-443A-AA56-941F76BC4050}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-	ProjectSection(ProjectDependencies) = postProject
-		{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8} = {ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}
 	EndProjectSection
 EndProject
 Global
@@ -651,24 +642,6 @@ Global
 		{1650298C-5F43-47B8-974E-155D1FA0D672}.Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I).ActiveCfg = Release|Win32
 		{1650298C-5F43-47B8-974E-155D1FA0D672}.Release|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
 		{1650298C-5F43-47B8-974E-155D1FA0D672}.Release|Windows Mobile 6 Standard SDK (ARMV4I).ActiveCfg = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Debug|Win32.ActiveCfg = Debug|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Debug|Win32.Build.0 = Debug|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I).ActiveCfg = Debug|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Debug|Windows Mobile 6 Standard SDK (ARMV4I).ActiveCfg = Debug|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.No Trace|Win32.ActiveCfg = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.No Trace|Win32.Build.0 = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I).ActiveCfg = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.No Trace|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.No Trace|Windows Mobile 6 Standard SDK (ARMV4I).ActiveCfg = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Release|Win32.ActiveCfg = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Release|Win32.Build.0 = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I).ActiveCfg = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Release|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
-		{AA8B96B4-D3C2-443A-AA56-941F76BC4050}.Release|Windows Mobile 6 Standard SDK (ARMV4I).ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
