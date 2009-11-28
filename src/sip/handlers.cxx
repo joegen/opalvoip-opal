@@ -42,10 +42,7 @@
 #include <ptclib/pdns.h>
 #include <ptclib/enum.h>
 #include <sip/sipep.h>
-
-#if OPAL_PTLIB_EXPAT
 #include <ptclib/pxml.h>
-#endif
 
 
 #define new PNEW
