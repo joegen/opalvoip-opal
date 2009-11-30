@@ -1204,8 +1204,15 @@ bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
 void SIPConnection::StartPendingReINVITE()
 {
   while (!pendingInvitations.IsEmpty()) {
-    if (pendingInvitations.GetAt(0, PSafeReadWrite)->Start())
+    PSafePtr<SIPTransaction> reInvite = pendingInvitations.GetAt(0, PSafeReadWrite);
+    if (reInvite->IsInProgress())
       break;
+
+    if (!reInvite->IsCompleted()) {
+      if (reInvite->Start())
+        break;
+    }
+
     pendingInvitations.RemoveAt(0);
   }
 }
@@ -1667,10 +1674,17 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   if (!lock.IsLocked())
     return;
 
+#if OPAL_FAX
+  bool switchingToFaxMode = m_switchingToFaxMode;
+#endif
+
   // To avoid overlapping INVITE transactions, wait till here before
   // starting the next one.
   if (response.GetStatusCode()/100 != 1) {
     pendingInvitations.Remove(&transaction);
+#if OPAL_FAX
+    m_switchingToFaxMode = false;
+#endif
     StartPendingReINVITE();
   }
 
@@ -1731,7 +1745,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   if (GetPhase() == EstablishedPhase) {
     // Is a re-INVITE if in here, so don't kill the call becuase it failed.
 #if OPAL_FAX
-    if (m_switchingToFaxMode)
+    if (switchingToFaxMode)
       OnSwitchedFaxMediaStreams(false);
 #endif
     return;
@@ -2366,6 +2380,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 #if OPAL_FAX
   if (GetPhase() == EstablishedPhase)
     OnSwitchedFaxMediaStreams(m_switchingToFaxMode);
+  m_switchingToFaxMode = false;
 #endif
 
   switch (m_holdToRemote) {
