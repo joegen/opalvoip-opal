@@ -2052,7 +2052,8 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 
   request.SendResponse(*transport, SIP_PDU::Successful_OK);
 
-  if (mime.GetSubscriptionState().Find("terminated") == P_MAX_INDEX)
+  PStringToString info;
+  if (mime.GetSubscriptionState(info) == "terminated")
     return; // The REFER is not over yet, ignore
 
   m_referInProgress = false;

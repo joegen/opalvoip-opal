@@ -1087,9 +1087,9 @@ void SIPMIMEInfo::SetEvent(const PString & v)
 }
 
 
-PCaselessString SIPMIMEInfo::GetSubscriptionState() const
+PCaselessString SIPMIMEInfo::GetSubscriptionState(PStringToString & info) const
 {
-  return GetString("Subscription-State");       // no compact form
+  return GetComplex("Subscription-State", info) ? info[PString::Empty()] : PString::Empty();
 }
 
 
@@ -1781,77 +1781,81 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
 {
   OpalTransportAddress newAddress;
 
-  WORD defaultPort = transport.GetEndPoint().GetDefaultSignalPort();
-
-  PStringList viaList = m_mime.GetViaList();
-  if (viaList.GetSize() > 0) {
-    PString viaAddress = viaList.front();
-    PString proto = viaList.front();
-    PString viaPort = defaultPort;
-
-    PINDEX j = 0;
-    // get the address specified in the Via
-    if ((j = viaAddress.FindLast (' ')) != P_MAX_INDEX)
-      viaAddress = viaAddress.Mid(j+1);
-    if ((j = viaAddress.Find (';')) != P_MAX_INDEX)
-      viaAddress = viaAddress.Left(j);
-    if ((j = viaAddress.Find (':')) != P_MAX_INDEX) {
-      viaPort = viaAddress.Mid(j+1);
-      viaAddress = viaAddress.Left(j);
-    }
-
-    // get the protocol type from Via header
-    if ((j = proto.FindLast (' ')) != P_MAX_INDEX)
-      proto = proto.Left(j);
-    if ((j = proto.FindLast('/')) != P_MAX_INDEX)
-      proto = proto.Mid(j+1);
-
-    // maddr is present, no support for multicast yet
-    PString param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "maddr");
-    if (!param.IsEmpty()) 
-      viaAddress = param;
-
-    // received is present
-    bool received = false;
-    param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "received");
-    if (!param.IsEmpty()) {
-      viaAddress = param;
-      received = true;
-    }
-
-    // rport is present. be careful to distinguish between not present and empty
-    PIPSocket::Address remoteIp;
-    WORD remotePort;
-    transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort);
-    {
-      PINDEX start, val, end;
-      if (LocateFieldParameter(viaList.front(), "rport", start, val, end)) {
-        param = viaList.front()(val, end);
-        if (!param.IsEmpty()) 
-          viaPort = param;
-        else
-          viaPort = remotePort;
-        if (!received) 
-          viaAddress = remoteIp.AsString();
-      }
-    }
-
-    newAddress = OpalTransportAddress(viaAddress+":"+viaPort, defaultPort, (proto *= "TCP") ? "tcp$" : "udp$");
-  }
+  if (transport.IsReliable() && transport.IsOpen())
+    newAddress = transport.GetRemoteAddress();
   else {
-    // get Via from From field
-    PString from = m_mime.GetFrom();
-    if (!from.IsEmpty()) {
-      PINDEX j = from.Find (';');
-      if (j != P_MAX_INDEX)
-        from = from.Left(j); // Remove all parameters
-      j = from.Find ('<');
-      if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
-        from += '>';
+    WORD defaultPort = transport.GetEndPoint().GetDefaultSignalPort();
 
-      SIPURL url(from);
+    PStringList viaList = m_mime.GetViaList();
+    if (viaList.GetSize() > 0) {
+      PString viaAddress = viaList.front();
+      PString proto = viaList.front();
+      PString viaPort = defaultPort;
 
-      newAddress = OpalTransportAddress(url.GetHostName()+ ":" + PString(PString::Unsigned, url.GetPort()), defaultPort, "udp$");
+      PINDEX j = 0;
+      // get the address specified in the Via
+      if ((j = viaAddress.FindLast (' ')) != P_MAX_INDEX)
+        viaAddress = viaAddress.Mid(j+1);
+      if ((j = viaAddress.Find (';')) != P_MAX_INDEX)
+        viaAddress = viaAddress.Left(j);
+      if ((j = viaAddress.Find (':')) != P_MAX_INDEX) {
+        viaPort = viaAddress.Mid(j+1);
+        viaAddress = viaAddress.Left(j);
+      }
+
+      // get the protocol type from Via header
+      if ((j = proto.FindLast (' ')) != P_MAX_INDEX)
+        proto = proto.Left(j);
+      if ((j = proto.FindLast('/')) != P_MAX_INDEX)
+        proto = proto.Mid(j+1);
+
+      // maddr is present, no support for multicast yet
+      PString param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "maddr");
+      if (!param.IsEmpty()) 
+        viaAddress = param;
+
+      // received is present
+      bool received = false;
+      param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "received");
+      if (!param.IsEmpty()) {
+        viaAddress = param;
+        received = true;
+      }
+
+      // rport is present. be careful to distinguish between not present and empty
+      PIPSocket::Address remoteIp;
+      WORD remotePort;
+      transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort);
+      {
+        PINDEX start, val, end;
+        if (LocateFieldParameter(viaList.front(), "rport", start, val, end)) {
+          param = viaList.front()(val, end);
+          if (!param.IsEmpty()) 
+            viaPort = param;
+          else
+            viaPort = remotePort;
+          if (!received) 
+            viaAddress = remoteIp.AsString();
+        }
+      }
+
+      newAddress = OpalTransportAddress(viaAddress+":"+viaPort, defaultPort, (proto *= "TCP") ? "tcp$" : "udp$");
+    }
+    else {
+      // get Via from From field
+      PString from = m_mime.GetFrom();
+      if (!from.IsEmpty()) {
+        PINDEX j = from.Find (';');
+        if (j != P_MAX_INDEX)
+          from = from.Left(j); // Remove all parameters
+        j = from.Find ('<');
+        if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
+          from += '>';
+
+        SIPURL url(from);
+
+        newAddress = OpalTransportAddress(url.GetHostName()+ ":" + PString(PString::Unsigned, url.GetPort()), defaultPort, "udp$");
+      }
     }
   }
 

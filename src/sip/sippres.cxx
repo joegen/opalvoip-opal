@@ -245,9 +245,16 @@ bool SIPXCAP_Presentity::Close()
     m_endpoint->Unsubscribe(SIPSubscribe::Presence, subs->second);
   }
 
+  const PTimeInterval LoopSleepTime(100);
+  const PTimeInterval LoopWaitTime(0, 10); // Seconds
+  int count = LoopWaitTime/LoopSleepTime;
   while (!m_watcherSubscriptionAOR.IsEmpty() || !m_presenceIdByAor.empty()) {
+    if (--count <= 0) {
+      PTRACE(1, "SIPPres\t'" << m_aor << "' did not unsubscribe to everything.");
+      break;
+    }
     m_notificationMutex.Signal();
-    PThread::Sleep(100);
+    PThread::Sleep(LoopSleepTime);
     m_notificationMutex.Wait();
   }
 
@@ -471,7 +478,7 @@ void SIPXCAP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPrese
 
     param.m_localAddress    = m_aor.AsString();
     param.m_addressOfRecord = cmd.m_presentity;
-    param.m_remoteAddress   = m_presenceServer.AsString();
+    param.m_remoteAddress   = m_presenceServer.AsString()+";transport=tcp";
     param.m_authID          = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
     param.m_password        = m_attributes.Get(OpalPresentity::AuthPasswordKey);
     param.m_expire          = GetExpiryTime();
