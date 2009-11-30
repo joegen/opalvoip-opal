@@ -1065,8 +1065,8 @@ class SIPSubscribe : public SIPTransaction
         : SIPParameters(param)
         , m_agentAddress(m_remoteAddress)
         , m_eventPackage(param.m_eventPackage)
-        , m_eventList(param.m_eventList)
         , m_contentType(param.m_contentType)
+        , m_eventList(param.m_eventList)
         , m_onSubcribeStatus(param.m_onSubcribeStatus)
         , m_onNotify(param.m_onNotify)
       { }
