@@ -953,13 +953,34 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   SIPMIMEInfo & requestMIME = request.GetMIME();
 
+  SIP_PDU response(request, SIP_PDU::Failure_BadRequest);
+
+  PStringToString subscriptionStateInfo;
+  PCaselessString subscriptionState = requestMIME.GetSubscriptionState(subscriptionStateInfo);
+  if (subscriptionState.IsEmpty()) {
+    PTRACE(2, "SIP\tNOTIFY received without Subscription-State");
+    response.SetInfo("No Subscription-State field");
+    return request.SendResponse(*m_transport, response, &endpoint);
+  }
+
+  // Check the susbscription state
+  if (subscriptionState == "terminated") {
+    PTRACE(3, "SIP\tSubscription is terminated, state=" << GetState());
+    request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
+    if (GetState() != Unsubscribing)
+      ShutDown();
+    else {
+      SetState(Unsubscribed);
+      SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
+    }
+    return true;
+  }
+
   // If we received a NOTIFY before
   if (m_dialog.IsDuplicateCSeq(requestMIME.GetCSeqIndex())) {
     PTRACE(3, "SIP\tReceived duplicate NOTIFY");
     return request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
   }
-
-  SIP_PDU response(request, SIP_PDU::Failure_BadRequest);
 
   PString requestEvent = requestMIME.GetEvent();
   if (m_parameters.m_eventPackage != requestEvent) {
@@ -981,30 +1002,14 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   // check the ContentType
   PCaselessString requestContentType = requestMIME.GetContentType();
-  if (!m_parameters.m_contentType.IsEmpty() && m_parameters.m_contentType.Find(requestContentType) == P_MAX_INDEX) {
+  if (m_parameters.m_contentType.Find(requestContentType) == P_MAX_INDEX &&
+        !(m_parameters.m_eventList && requestContentType == "multipart/related")) {
     PTRACE(2, "SIPPres\tNOTIFY contains unsupported Content-Type \""
            << requestContentType << "\", expecting \"" << m_parameters.m_contentType << '"');
     response.SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
     response.GetMIME().SetAt("Accept", m_parameters.m_contentType);
     response.SetInfo("Unsupported Content-Type");
     return request.SendResponse(*m_transport, response, &endpoint);
-  }
-
-  PStringArray subscriptionStateInfo = requestMIME.GetSubscriptionState().Tokenise(';', false);
-  if (subscriptionStateInfo.IsEmpty()) {
-    PTRACE(2, "SIP\tNOTIFY received without Subscription-State");
-    response.SetInfo("No Subscription-State field");
-    return request.SendResponse(*m_transport, response, &endpoint);
-  }
-
-  // Check the susbscription state
-  PCaselessString subscriptionState = subscriptionStateInfo[0];
-  if (subscriptionState == "terminated") {
-    PTRACE(3, "SIP\tSubscription is terminated, state=" << GetState());
-    request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
-    SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
-    ShutDown();
-    return true;
   }
 
   // Check if we know how to deal with this event
@@ -1048,36 +1053,40 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       return request.SendResponse(*m_transport, response, &endpoint);
     }
 
-    while (++iter != parts.end()) {
-      SIP_PDU pdu(request.GetMethod());
-      SIPMIMEInfo & pduMIME = pdu.GetMIME();
+    if (parts.GetSize() == 1)
+      response.SetStatusCode(SIP_PDU::Successful_OK);
+    else {
+      while (++iter != parts.end()) {
+        SIP_PDU pdu(request.GetMethod());
+        SIPMIMEInfo & pduMIME = pdu.GetMIME();
 
-      pduMIME.AddMIME(iter->m_mime);
-      pdu.SetEntityBody(iter->m_textBody);
+        pduMIME.AddMIME(iter->m_mime);
+        pdu.SetEntityBody(iter->m_textBody);
 
-      PString cid = iter->m_mime.GetString(PMIMEInfo::ContentIdTag);
-      if (!cid.IsEmpty()) {
-        PINDEX index = 0;
-        PXMLElement * resource = xml.GetElement("resource", index++);
-        while ((resource = xml.GetElement("resource", index++)) != NULL) {
-          SIPURL uri = resource->GetAttribute("uri");
-          if (!uri.IsEmpty()) {
-            PXMLElement * instance = resource->GetElement("instance");
-            if (instance != NULL && instance->GetAttribute("cid") == cid) {
-              pduMIME.SetSubscriptionState(instance->GetAttribute("state"));
-              PXMLElement * name = resource->GetElement("name");
-              if (name != NULL)
-                uri.SetDisplayName(name->GetData());
-              pduMIME.SetFrom(uri.AsQuotedString());
-              pduMIME.SetTo(uri.AsQuotedString());
-              break;
+        PStringToString cid;
+        if (iter->m_mime.GetComplex(PMIMEInfo::ContentIdTag, cid)) {
+          PINDEX index = 0;
+          PXMLElement * resource;
+          while ((resource = xml.GetElement("resource", index++)) != NULL) {
+            SIPURL uri = resource->GetAttribute("uri");
+            if (!uri.IsEmpty()) {
+              PXMLElement * instance = resource->GetElement("instance");
+              if (instance != NULL && instance->GetAttribute("cid") == cid[PString::Empty()]) {
+                pduMIME.SetSubscriptionState(instance->GetAttribute("state"));
+                PXMLElement * name = resource->GetElement("name");
+                if (name != NULL)
+                  uri.SetDisplayName(name->GetData());
+                pduMIME.SetFrom(uri.AsQuotedString());
+                pduMIME.SetTo(uri.AsQuotedString());
+                break;
+              }
             }
           }
         }
-      }
 
-      if (DispatchNOTIFY(pdu, response))
-        sendResponse = false;
+        if (DispatchNOTIFY(pdu, response))
+          sendResponse = false;
+      }
     }
 #else
     for ( ; iter != parts.end(); ++iter) {

@@ -346,7 +346,7 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetEvent() const;
     void SetEvent(const PString & v);
     
-    PCaselessString GetSubscriptionState() const;
+    PCaselessString GetSubscriptionState(PStringToString & info) const;
     void SetSubscriptionState(const PString & v);
     
     PString GetUserAgent() const;
