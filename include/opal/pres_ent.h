@@ -551,7 +551,7 @@ class OpalSetLocalPresenceCommand : public OpalPresentityCommand, public OpalPre
 ///////////////////////////////////////////////////////////////////////////////
 
 // Include concrete classes here so the factories are initialised
-#if OPAL_SIP
+#if OPAL_SIP && OPAL_PTLIB_EXPAT
 PFACTORY_LOAD(SIPLocal_Presentity);
 PFACTORY_LOAD(SIPXCAP_Presentity);
 PFACTORY_LOAD(SIPOMA_Presentity);

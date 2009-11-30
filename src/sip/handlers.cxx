@@ -1092,7 +1092,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     for ( ; iter != parts.end(); ++iter) {
       SIP_PDU pdu(request.GetMethod());
       pdu.GetMIME().AddMIME(iter->m_mime);
-      pdu.SetEntityBody(iter->m_body);
+      pdu.SetEntityBody(iter->m_textBody);
 
       if (!DispatchNOTIFY(pdu, response))
         sendResponse = false;
