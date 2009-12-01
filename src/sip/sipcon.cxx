@@ -232,13 +232,14 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_sdpVersion(0)
   , m_needReINVITE(false)
   , m_handlingINVITE(false)
+  , m_symmetricOpenStream(false)
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , m_authentication(NULL)
   , m_authenticatedCseq(0)
   , ackReceived(false)
   , m_referInProgress(false)
 #if OPAL_FAX
-  , m_switchingToFaxMode(false)
+  , m_switchedToFaxMode(false)
 #endif
   , releaseMethod(ReleaseWithNothing)
 {
@@ -1125,7 +1126,8 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
   // Make sure stream is symmetrical, if codec changed, close and re-open it
   OpalMediaStreamPtr otherStream = GetMediaStream(sessionID, !isSource);
-  bool makesymmetrical = otherStream != NULL &&
+  bool makesymmetrical = !m_symmetricOpenStream &&
+                          otherStream != NULL &&
                           otherStream->IsOpen() &&
                           otherStream->GetMediaFormat() != mediaFormat;
   if (makesymmetrical) {
@@ -1149,21 +1151,19 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
     return newStream;
 
   // Open other direction, if needed (must be after above open)
-  if (makesymmetrical &&
-      !GetCall().OpenSourceMediaStreams(*(isSource ? GetCall().GetOtherPartyConnection(*this) : this),
-                                                  mediaFormat.GetMediaType(), sessionID, mediaFormat)) {
-    newStream->Close();
-    return NULL;
+  if (makesymmetrical) {
+    m_symmetricOpenStream = true;
+    bool ok = GetCall().OpenSourceMediaStreams(*(isSource ? GetCall().GetOtherPartyConnection(*this) : this),
+                                                          mediaFormat.GetMediaType(), sessionID, mediaFormat);
+    m_symmetricOpenStream = false;
+    if (!ok) {
+      newStream->Close();
+      return NULL;
+    }
   }
 
-  if (!m_handlingINVITE && (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream)) {
-#if OPAL_FAX
-    if (m_switchingToFaxMode)
-      return newStream; // Prevent two re-INVITE's going out
-    m_switchingToFaxMode = mediaFormat.GetMediaType() == OpalMediaType::Fax();
-#endif
+  if (!m_symmetricOpenStream && !m_handlingINVITE && (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream))
     SendReINVITE(PTRACE_PARAM("open channel"));
-  }
 
   return newStream;
 }
@@ -1674,17 +1674,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   if (!lock.IsLocked())
     return;
 
-#if OPAL_FAX
-  bool switchingToFaxMode = m_switchingToFaxMode;
-#endif
-
   // To avoid overlapping INVITE transactions, wait till here before
   // starting the next one.
   if (response.GetStatusCode()/100 != 1) {
     pendingInvitations.Remove(&transaction);
-#if OPAL_FAX
-    m_switchingToFaxMode = false;
-#endif
     StartPendingReINVITE();
   }
 
@@ -1745,8 +1738,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   if (GetPhase() == EstablishedPhase) {
     // Is a re-INVITE if in here, so don't kill the call becuase it failed.
 #if OPAL_FAX
-    if (switchingToFaxMode)
-      OnSwitchedFaxMediaStreams(false);
+    SDPSessionDescription * sdp = transaction.GetSDP();
+    bool switchingToFax = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
+    if (m_switchedToFaxMode != switchingToFax)
+      OnSwitchedFaxMediaStreams(m_switchedToFaxMode);
 #endif
     return;
   }
@@ -2377,12 +2372,6 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   OnReceivedSDP(response);
 
-#if OPAL_FAX
-  if (GetPhase() == EstablishedPhase)
-    OnSwitchedFaxMediaStreams(m_switchingToFaxMode);
-  m_switchingToFaxMode = false;
-#endif
-
   switch (m_holdToRemote) {
     case eHoldInProgress :
       m_holdToRemote = eHoldOn;
@@ -2416,10 +2405,23 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & request)
   for (PINDEX i = 0; i < sdp->GetMediaDescriptions().GetSize(); ++i) 
     ok |= OnReceivedSDPMediaDescription(*sdp, i+1);
 
-  if (GetPhase() == EstablishedPhase) // re-INVITE
+  if (GetPhase() != EstablishedPhase) {
+    if (!ok)
+      Release(EndedByCapabilityExchange);
+  }
+  else {
+    // re-INVITE
     StartMediaStreams();
-  else if (!ok)
-    Release(EndedByCapabilityExchange);
+
+#if OPAL_FAX
+    bool switchingToFax = sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
+    if (m_switchedToFaxMode != switchingToFax) {
+      if (ok)
+        m_switchedToFaxMode = switchingToFax;
+      OnSwitchedFaxMediaStreams(m_switchedToFaxMode);
+    }
+#endif
+  }
 }
 
 
