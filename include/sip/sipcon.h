@@ -558,6 +558,7 @@ class SIPConnection : public OpalRTPConnection
     unsigned              m_sdpVersion; // Really a sequence number
     bool                  m_needReINVITE;
     bool                  m_handlingINVITE;
+    bool                  m_symmetricOpenStream;
     SIPDialogContext      m_dialog;
     OpalGloballyUniqueID  m_dialogNotifyId;
     int                   m_appearanceCode;
@@ -577,7 +578,7 @@ class SIPConnection : public OpalRTPConnection
     PSafeList<SIPTransaction> m_pendingTransactions;
 
 #if OPAL_FAX
-    bool m_switchingToFaxMode;
+    bool m_switchedToFaxMode;
 #endif
 
     enum {
