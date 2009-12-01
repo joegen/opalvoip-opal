@@ -6,7 +6,7 @@ This plugin requires an external source code project, SpanDSP.
 Spandsp is a LGPL library and suite of programs that implement a faxmodem. A
 known version, compatible with OPAL, is available from the following URL:
 
-    http://www.soft-switch.org/downloads/snapshots/spandsp/spandsp-20090624.tar.gz
+    http://www.soft-switch.org/downloads/snapshots/spandsp/spandsp-20091107.tar.gz
 
 there may be later snapshots that would likely work equally well. Eventually
 there will be a more formal release:
@@ -39,7 +39,7 @@ Then copy the following two files from:
 	 opal/plugins/fax/fax_spandsp/spandsp-0.0.6/src/Release/libspandsp.dll
 
 to C:\PTLib_Plugins, or wherever you have set the PTPLUGINDIR environment
-variable. It should work in the smae directory as your application as well.
+variable. It should work in the same directory as your application as well.
 
 Additional note: If with Visual Studio 2008 you get errors building libtiff,
 you may need to edit tiff-3.8.2\libtiff\tiffconf.h and disable JPEG_SUPPORT,
