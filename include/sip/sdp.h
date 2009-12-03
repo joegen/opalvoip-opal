@@ -131,7 +131,8 @@ class SDPMediaDescription : public PObject
     };
 
     SDPMediaDescription(
-      const OpalTransportAddress & address
+      const OpalTransportAddress & address,
+      const OpalMediaType & mediaType
     );
 
     virtual bool PreEncode();
@@ -209,7 +210,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 {
   PCLASSINFO(SDPRTPAVPMediaDescription, SDPMediaDescription);
   public:
-    SDPRTPAVPMediaDescription(const OpalTransportAddress & address);
+    SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType);
     virtual PCaselessString GetSDPTransportType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
     virtual PString GetSDPPortList() const;

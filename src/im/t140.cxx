@@ -44,6 +44,9 @@
 
 #if OPAL_SIP
 
+const char T140[] = "t140";
+
+
 /////////////////////////////////////////////////////////
 //
 //  SDP media description for text media
@@ -54,7 +57,7 @@ class SDPT140MediaDescription : public SDPRTPAVPMediaDescription
   PCLASSINFO(SDPT140MediaDescription, SDPRTPAVPMediaDescription);
   public:
     SDPT140MediaDescription(const OpalTransportAddress & address)
-      : SDPRTPAVPMediaDescription(address)
+      : SDPRTPAVPMediaDescription(address, T140)
     { }
 
     virtual PString GetSDPMediaType() const
@@ -66,7 +69,7 @@ class SDPT140MediaDescription : public SDPRTPAVPMediaDescription
 /////////////////////////////////////////////////////////////////////////////
 
 OpalT140MediaType::OpalT140MediaType()
-  : OpalRTPAVPMediaType("t140", "text")
+  : OpalRTPAVPMediaType(T140, "text")
 {
 }
 
