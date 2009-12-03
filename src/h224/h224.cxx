@@ -78,7 +78,7 @@ SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTra
 }
 
 SDPH224MediaDescription::SDPH224MediaDescription(const OpalTransportAddress & address)
-: SDPRTPAVPMediaDescription(address)
+  : SDPRTPAVPMediaDescription(address, OpalH224MediaType::MediaType())
 {
 }
 

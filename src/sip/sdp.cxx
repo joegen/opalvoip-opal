@@ -470,8 +470,9 @@ void SDPBandwidth::SetMin(const PString & type, unsigned value)
 
 //////////////////////////////////////////////////////////////////////////////
 
-SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address)
+SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & type)
   : transportAddress(address)
+  , mediaType(type)
 {
   direction = Undefined;
   port      = 0;
@@ -874,8 +875,8 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
 
 //////////////////////////////////////////////////////////////////////////////
 
-SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address)
+SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType)
+  : SDPMediaDescription(address, mediaType)
 {
 }
 
@@ -947,7 +948,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 //////////////////////////////////////////////////////////////////////////////
 
 SDPAudioMediaDescription::SDPAudioMediaDescription(const OpalTransportAddress & address)
-  : SDPRTPAVPMediaDescription(address)
+  : SDPRTPAVPMediaDescription(address, OpalMediaType::Audio())
 {
 }
 
@@ -1033,7 +1034,7 @@ void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString 
 //////////////////////////////////////////////////////////////////////////////
 
 SDPVideoMediaDescription::SDPVideoMediaDescription(const OpalTransportAddress & address)
-  : SDPRTPAVPMediaDescription(address)
+  : SDPRTPAVPMediaDescription(address, OpalMediaType::Video())
 {
 }
 
@@ -1129,7 +1130,7 @@ bool SDPVideoMediaDescription::PreEncode()
 //////////////////////////////////////////////////////////////////////////////
 
 SDPApplicationMediaDescription::SDPApplicationMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address)
+  : SDPMediaDescription(address, "")
 {
 }
 
