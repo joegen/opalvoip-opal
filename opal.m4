@@ -302,6 +302,12 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
             export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
 
+            # Should not need to set PKG_CONFIG_PATH, but some systems find the
+            # installed versions before the explicit version even though that
+            # is what PKG_CONFIG_LIBDIR is supposed to override.
+            old_PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
+            export PKG_CONFIG_PATH="${PTLIBDIR}"
+
             if ! AC_RUN_LOG([$PKG_CONFIG ptlib --exists]); then
               AC_MSG_ERROR([No PTLIB library found in ${PTLIBDIR}])
             fi
@@ -323,6 +329,7 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
             	    
             export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
+            export PKG_CONFIG_PATH="${old_PKG_CONFIG_PATH}"
 
           dnl This segment looks for PTLIB on the system
           else
