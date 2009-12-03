@@ -72,7 +72,7 @@ SDPMediaDescription * OpalFaxMediaType::CreateSDPMediaDescription(const OpalTran
 /////////////////////////////////////////////////////////////////////////////
 
 SDPFaxMediaDescription::SDPFaxMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address)
+  : SDPMediaDescription(address, OpalMediaType::Fax())
 {
   t38Attributes.SetAt("T38FaxRateManagement", "transferredTCF");
   t38Attributes.SetAt("T38FaxVersion",        "0");

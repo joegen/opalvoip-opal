@@ -53,8 +53,10 @@
 
 #define CRLF "\r\n"
 
+const char MSRP[] = "msrp";
+
 OpalMSRPMediaType::OpalMSRPMediaType()
-  : OpalIMMediaType("msrp", "message|tcp/msrp")
+  : OpalIMMediaType(MSRP, "message|tcp/msrp")
 {
 }
 
@@ -117,13 +119,14 @@ SDPMediaDescription * OpalMSRPMediaType::CreateSDPMediaDescription(const OpalTra
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address)
+  : SDPMediaDescription(address, MSRP)
 {
   SetDirection(SDPMediaDescription::SendRecv);
 }
 
 SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & address, const PString & _path)
-  : SDPMediaDescription(address), path(_path)
+  : SDPMediaDescription(address, MSRP)
+  , path(_path)
 {
   SetDirection(SDPMediaDescription::SendRecv);
 }
@@ -157,7 +160,7 @@ void SDPMSRPMediaDescription::SetAttribute(const PString & attr, const PString &
 
 void SDPMSRPMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & mediaFormat)
 {
-  if (mediaFormat.GetMediaType() == "msrp") 
+  if (mediaFormat.GetMediaType() == MSRP) 
     types = mediaFormat.GetOptionString("Accept Types").Trim();
 }
 
@@ -176,7 +179,7 @@ OpalMediaFormatList SDPMSRPMediaDescription::GetMediaFormats() const
 
 void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != "msrp") {
+  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != MSRP) {
     PTRACE(4, "MSRP\tSDP not including " << mediaFormat << " as it is not a valid MSRP format");
     return;
   }
@@ -224,7 +227,7 @@ static PFactory<PProcessStartup>::Worker<MSRPInitialiser> opalpluginStartupFacto
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 OpalMSRPMediaSession::OpalMSRPMediaSession(OpalConnection & _conn, unsigned _sessionId)
-  : OpalMediaSession(_conn, "msrp", _sessionId)
+  : OpalMediaSession(_conn, MSRP, _sessionId)
   , m_manager(MSRPInitialiser::KickStart(_conn.GetEndPoint().GetManager()))
   , m_isOriginating(_conn.IsOriginating())
   , m_localMSRPSessionId(m_manager.CreateSessionID())

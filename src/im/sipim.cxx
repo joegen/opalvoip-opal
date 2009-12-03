@@ -49,10 +49,12 @@
 
 #if OPAL_HAS_SIPIM
 
+const char SIP_IM[] = "sip-im";
+
 ////////////////////////////////////////////////////////////////////////////
 
 OpalSIPIMMediaType::OpalSIPIMMediaType()
-  : OpalIMMediaType("sip-im", "message|sip")
+  : OpalIMMediaType(SIP_IM, "message|sip")
 {
 }
 
@@ -112,13 +114,15 @@ SDPMediaDescription * OpalSIPIMMediaType::CreateSDPMediaDescription(const OpalTr
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address)
+  : SDPMediaDescription(address, SIP_IM)
 {
   SetDirection(SDPMediaDescription::SendRecv);
 }
 
 SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & address, const OpalTransportAddress & _transportAddr, const PString & _fromURL)
-  : SDPMediaDescription(address), transportAddress(_transportAddr), fromURL(_fromURL)
+  : SDPMediaDescription(address, SIP_IM)
+  , transportAddress(_transportAddr)
+  , fromURL(_fromURL)
 {
   SetDirection(SDPMediaDescription::SendRecv);
 }
@@ -172,7 +176,7 @@ OpalMediaFormatList SDPSIPIMMediaDescription::GetMediaFormats() const
 
 void SDPSIPIMMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != "sip-im") {
+  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != SIP_IM) {
     PTRACE(4, "SIPIM\tSDP not including " << mediaFormat << " as it is not a valid SIPIM format");
     return;
   }
@@ -199,7 +203,7 @@ OpalMediaSession * OpalSIPIMMediaType::CreateMediaSession(OpalConnection & conn,
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 OpalSIPIMMediaSession::OpalSIPIMMediaSession(OpalConnection & _conn, unsigned _sessionId)
-: OpalMediaSession(_conn, "sip-im", _sessionId)
+: OpalMediaSession(_conn, SIP_IM, _sessionId)
 {
   transportAddress = connection.GetTransport().GetLocalAddress();
   localURL         = connection.GetLocalPartyURL();
