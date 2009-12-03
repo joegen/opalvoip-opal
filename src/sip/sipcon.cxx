@@ -2372,6 +2372,26 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   OnReceivedSDP(response);
 
+#if OPAL_FAX
+  SDPSessionDescription * sdp = transaction.GetSDP();
+  bool switchingToFax = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
+
+  sdp = response.GetSDP();
+  bool switchedToFax = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
+
+  // Attempted to change fax state, but the remote rudely ignored it!
+  if (switchingToFax != switchedToFax)
+    OnSwitchedFaxMediaStreams(m_switchedToFaxMode); // iIndicate no change of existing state
+  else {
+    // We asked for fax/audio, we got fax/audio
+    if (m_switchedToFaxMode != switchedToFax) {
+      // And wasn't a repeat ...
+      m_switchedToFaxMode = switchedToFax;
+      OnSwitchedFaxMediaStreams(m_switchedToFaxMode);
+    }
+  }
+#endif
+
   switch (m_holdToRemote) {
     case eHoldInProgress :
       m_holdToRemote = eHoldOn;
@@ -2391,9 +2411,9 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 }
 
 
-void SIPConnection::OnReceivedSDP(SIP_PDU & request)
+void SIPConnection::OnReceivedSDP(SIP_PDU & response)
 {
-  SDPSessionDescription * sdp = request.GetSDP();
+  SDPSessionDescription * sdp = response.GetSDP();
   if (sdp == NULL)
     return;
 
@@ -2405,22 +2425,11 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & request)
   for (PINDEX i = 0; i < sdp->GetMediaDescriptions().GetSize(); ++i) 
     ok |= OnReceivedSDPMediaDescription(*sdp, i+1);
 
-  if (GetPhase() != EstablishedPhase) {
+  if (GetPhase() == EstablishedPhase)
+    StartMediaStreams(); // re-INVITE
+  else {
     if (!ok)
       Release(EndedByCapabilityExchange);
-  }
-  else {
-    // re-INVITE
-    StartMediaStreams();
-
-#if OPAL_FAX
-    bool switchingToFax = sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
-    if (m_switchedToFaxMode != switchingToFax) {
-      if (ok)
-        m_switchedToFaxMode = switchingToFax;
-      OnSwitchedFaxMediaStreams(m_switchedToFaxMode);
-    }
-#endif
   }
 }
 
