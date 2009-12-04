@@ -427,7 +427,10 @@ class SIPHandlersList
 class SIPPresenceInfo : public OpalPresenceInfo
 {
 public:
-  SIPPresenceInfo(const PString & id, State state = Unchanged);
+  SIPPresenceInfo(
+    const PString & personId = PString::Empty(),
+    State state = Unchanged
+  );
 
   // basic presence defined by RFC 3863
   PString m_tupleId;
@@ -449,7 +452,7 @@ public:
   static bool AsSIPActivityString(State state, PString & str);
   bool AsSIPActivityString(PString & str) const;
 
-  PString m_idString;
+  PString m_personId;
 };
 
 

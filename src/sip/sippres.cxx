@@ -65,7 +65,7 @@ PFACTORY_CREATE(PFactory<OpalPresentity>, SIPOMA_Presentity,   "sip-oma", false)
 
 static bool sip_default_PresentityWorker = PFactory<OpalPresentity>::RegisterAs("sip", "sip-oma");
 
-static const char * const AuthNames[OpalPresentity::NumAuthorisations] = { "allow", "block", "polite-block", "confirm" };
+static const char * const AuthNames[OpalPresentity::NumAuthorisations] = { "allow", "block", "polite-block", "confirm", "remove" };
 
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -387,20 +387,12 @@ void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe
 
   // go through list of watcher information
   PINDEX watcherListIndex = 0;
-  PXMLElement * watcherList = rootElement->GetElement("watcher-list", watcherListIndex++);
-
-  // scan through the watcher list
-  while (watcherList != NULL) {
-    if (watcherList != NULL) {
-      PString aor = watcherList->GetAttribute("resource");
-      PINDEX watcherIndex = 0;
-      PXMLElement * watcher = watcherList->GetElement("watcher", watcherIndex++);
-      while (watcher != NULL) {
-        OnReceivedWatcherStatus(watcher);
-        watcher = watcherList->GetElement("watcher", watcherIndex++);
-      }
-    }
-    watcherList = rootElement->GetElement("watcher-list", watcherListIndex++);
+  PXMLElement * watcherList;
+  while ((watcherList = rootElement->GetElement("watcher-list", watcherListIndex++)) != NULL) {
+    PINDEX watcherIndex = 0;
+    PXMLElement * watcher;
+    while ((watcher = watcherList->GetElement("watcher", watcherIndex++)) != NULL)
+      OnReceivedWatcherStatus(watcher);
   }
 
   // send refresh, if needed
@@ -643,9 +635,21 @@ bool SIPXCAP_Presentity::ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisati
   node.AddElement("cr:rule", "id", ruleId);
   xcap.SetNode(node);
 
+  if (cmd.m_authorisation == AuthorisationRemove) {
+    if (xcap.DeleteXml()) {
+      PTRACE(3, "SIPPres\tRule id=" << ruleId << " removed for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
+    }
+    else {
+      PTRACE(3, "SIPPres\tCould not remove rule id=" << ruleId
+             << " for '" << cmd.m_presentity << "' at '" << m_aor << "\'\n"
+             << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+    }
+    return true;
+  }
+
   PXML xml;
   if (!xcap.GetXml(xml)) {
-    PTRACE(4, "SIPPres\tCould not locate existing rule id=" << ruleId
+    PTRACE(3, "SIPPres\tCould not locate existing rule id=" << ruleId
            << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
     return false;
   }

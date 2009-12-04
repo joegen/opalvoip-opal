@@ -222,7 +222,7 @@ void TestPresEnt::Main()
                  "<url-watcher> <url-watched>");
   cli.SetCommand("authorise", PCREATE_NOTIFIER(CmdPresenceAuthorisation),
                  "Authorise a presentity to see local presence.",
-                 "<url-watched> <url-watcher> [ deny | deny-politely ]");
+                 "<url-watched> <url-watcher> [ deny | deny-politely | remove ]");
   cli.SetCommand("publish", PCREATE_NOTIFIER(CmdSetLocalPresence),
                  "Publish local presence state for presentity.",
                  "<url> { available | unavailable | busy } [ <note> ]");
@@ -288,6 +288,8 @@ void TestPresEnt::CmdPresenceAuthorisation(PCLI::Arguments & args, INT)
       auth = OpalPresentity::AuthorisationDenied;
     else if (args[2] *= "deny-politely")
       auth = OpalPresentity::AuthorisationDeniedPolitely;
+    else if (args[2] *= "remove")
+      auth = OpalPresentity::AuthorisationRemove;
     else {
       args.WriteUsage();
       return;

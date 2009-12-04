@@ -233,6 +233,7 @@ class OpalPresentity : public PSafeObject
       AuthorisationDenied,
       AuthorisationDeniedPolitely,
       AuthorisationConfirming,
+      AuthorisationRemove,
       NumAuthorisations
     };
 
