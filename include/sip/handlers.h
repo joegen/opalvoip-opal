@@ -427,7 +427,7 @@ class SIPHandlersList
 class SIPPresenceInfo : public OpalPresenceInfo
 {
 public:
-  SIPPresenceInfo(State state = Unchanged);
+  SIPPresenceInfo(const PString & id, State state = Unchanged);
 
   // basic presence defined by RFC 3863
   PString m_tupleId;
@@ -443,6 +443,13 @@ public:
 
   void PrintOn(ostream & strm) const;
   friend ostream & operator<<(ostream & strm, const SIPPresenceInfo & info) { info.PrintOn(strm); return strm; }
+
+  static State FromSIPActivityString(const PString & str);
+
+  static bool AsSIPActivityString(State state, PString & str);
+  bool AsSIPActivityString(PString & str) const;
+
+  PString m_idString;
 };
 
 

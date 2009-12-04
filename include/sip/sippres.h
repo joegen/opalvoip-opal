@@ -277,7 +277,7 @@ class SIPXCAP_Presentity : public SIP_Presentity
     virtual bool GetBuddy(BuddyInfo & buddy);
     virtual bool SetBuddy(const BuddyInfo & buddy);
     virtual bool DeleteBuddy(const PString & presentity);
-    virtual bool SubscribeBuddyList();
+    virtual bool SubscribeBuddyList(bool subscribe = true);
   //@}
 
     void Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd);
