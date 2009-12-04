@@ -65,6 +65,7 @@ class OpalPresenceInfo
       Unavailable,
 
       // extended states (from RFC 4480)
+      // if this is changed, also change the tables in sippres.cxx and handlers.cxx - look for RFC 4480
       ExtendedBase    = 100,
       UnknownExtended = ExtendedBase,
       Appointment,
@@ -101,6 +102,10 @@ class OpalPresenceInfo
     PString m_target;   ///< The presentity that is being informed about the state change
 
     OpalPresenceInfo(State state = Unchanged) : m_state(state) { }
+
+    static PString AsString(State state);
+    static State FromString(const PString & str);
+    PString AsString() const;
 };
 
 ostream & operator<<(ostream & strm, OpalPresenceInfo::State state);
@@ -206,7 +211,8 @@ class OpalPresentity : public PSafeObject
         capabable of the action.
       */
     virtual bool SubscribeToPresence(
-      const PString & presentity    ///< Other presentity to monitor
+      const PString & presentity,   ///< Other presentity to monitor
+      bool subscribe                ///< true if to subscribe, else unsubscribe
     );
 
     /** Unsubscribe to presence state of another presentity.
@@ -391,7 +397,18 @@ class OpalPresentity : public PSafeObject
        buddy list. This might cause multiple calls to SubscribeToPresence() or
        if the underlying protocol allows a single call for all.
       */
-    virtual bool SubscribeBuddyList();
+    virtual bool SubscribeBuddyList(
+      bool subscribe = true
+    );
+
+    /**Unsubscribe to buddy list.
+       Send an unsubscription for the presence of every presentity in the current
+       buddy list. This might cause multiple calls to UnsubscribeFromPresence() or
+       if the underlying protocol allows a single call for all.
+      */
+    virtual bool UnsubscribeBuddyList();
+
+    virtual PString GetID() const;
   //@}
 
   protected:
@@ -406,6 +423,7 @@ class OpalPresentity : public PSafeObject
     PresenceChangeNotifier       m_onPresenceChangeNotifier;
 
     PMutex m_notificationMutex;
+    PAtomicInteger::IntegerType m_idNumber;
 };
 
 

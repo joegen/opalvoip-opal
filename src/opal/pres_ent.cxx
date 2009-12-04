@@ -38,8 +38,6 @@
 #include <ptclib/url.h>
 #include <sip/sipep.h>
 
-
-
 ///////////////////////////////////////////////////////////////////////
 
 const PString & OpalPresentity::AuthNameKey()        { static const PString s = "auth_name";         return s; }
@@ -49,67 +47,106 @@ const PString & OpalPresentity::SchemeKey()          { static const PString s = 
 const PString & OpalPresentity::TimeToLiveKey()      { static const PString s = "time_to_live";      return s; }
 
 
+PString OpalPresenceInfo::AsString() const
+{
+  return AsString(m_state);
+}
+
 ostream & operator<<(ostream & strm, OpalPresenceInfo::State state)
 {
-  static const char * const BasicNames[] = {
-    "Internal Error",
-    "Forbidden",
-    "No Presence",
-    "Unchanged",
-    "Available",
-    "Unavailable"
-  };
+  return strm << OpalPresenceInfo::AsString(state);
+}
 
+//
+//  defined in RFC 3856
+//
+static const char * const BasicNames[] = {
+  "Internal Error",
+  "Forbidden",
+  "No Presence",
+  "Unchanged",
+  "Available",
+  "Unavailable"
+};
+
+//
+// defined in RFC 4480 as "activities"
+//
+static const char * const ExtendedNames[] = {
+  "UnknownExtended",
+  "Appointment",
+  "Away",
+  "Breakfast",
+  "Busy",
+  "Dinner",
+  "Holiday",
+  "InTransit",
+  "LookingForWork",
+  "Lunch",
+  "Meal",
+  "Meeting",
+  "OnThePhone",
+  "Other",
+  "Performance",
+  "PermanentAbsence",
+  "Playing",
+  "Presentation",
+  "Shopping",
+  "Sleeping",
+  "Spectator",
+  "Steering",
+  "Travel",
+  "TV",
+  "Vacation",
+  "Working",
+  "Worship"
+};
+
+PString OpalPresenceInfo::AsString(State state)
+{
   if (state >= OpalPresenceInfo::InternalError) {
     PINDEX index = state - OpalPresenceInfo::InternalError;
-    if (index < PARRAYSIZE(BasicNames))
-      return strm << BasicNames[index];
+    if (index < PARRAYSIZE(BasicNames)) 
+      return BasicNames[index];
   }
-
-  static const char * const ExtendedNames[] = {
-    "UnknownExtended",
-    "Appointment",
-    "Away",
-    "Breakfast",
-    "Busy",
-    "Dinner",
-    "Holiday",
-    "InTransit",
-    "LookingForWork",
-    "Lunch",
-    "Meal",
-    "Meeting",
-    "OnThePhone",
-    "Other",
-    "Performance",
-    "PermanentAbsence",
-    "Playing",
-    "Presentation",
-    "Shopping",
-    "Sleeping",
-    "Spectator",
-    "Steering",
-    "Travel",
-    "TV",
-    "Vacation",
-    "Working",
-    "Worship"
-  };
 
   if (state >= OpalPresenceInfo::ExtendedBase) {
     PINDEX index = state - OpalPresenceInfo::ExtendedBase;
     if (index < PARRAYSIZE(ExtendedNames))
-      return strm << ExtendedNames[index];
+      return ExtendedNames[index];
   }
 
-  return strm << "Presence<" << (unsigned)state << '>';
+  PStringStream strm;
+  strm << "Presence<" << (unsigned)state << '>';
+  return strm;
 }
 
 
+OpalPresenceInfo::State OpalPresenceInfo::FromString(const PString & stateString)
+{
+  if (stateString *= "Unchanged")
+    return OpalPresenceInfo::Unchanged;
+  if (stateString *= "Available")
+    return OpalPresenceInfo::Available;
+  if (stateString *= "Unavailable")
+    return OpalPresenceInfo::Unavailable;
+
+  for (size_t k = 0; k < sizeof(ExtendedNames)/sizeof(ExtendedNames[0]); ++k) {
+    if (stateString *= ExtendedNames[k]) 
+      return (OpalPresenceInfo::State)(ExtendedBase + k);
+  }
+
+  return NoPresence;
+}
+
 ///////////////////////////////////////////////////////////////////////
+
+static PAtomicInteger::IntegerType g_idNumber = 1;
+
 
 OpalPresentity::OpalPresentity()
   : m_manager(NULL)
+  , m_idNumber(g_idNumber++)
 {
 }
 
@@ -127,13 +164,14 @@ OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PURL & url,
 }
 
 
-bool OpalPresentity::SubscribeToPresence(const PString & presentity)
+bool OpalPresentity::SubscribeToPresence(const PString & presentity, bool subscribe)
 {
   OpalSubscribeToPresenceCommand * cmd = CreateCommand<OpalSubscribeToPresenceCommand>();
   if (cmd == NULL)
     return false;
 
   cmd->m_presentity = presentity;
+  cmd->m_subscribe  = subscribe;
   SendCommand(cmd);
   return true;
 }
@@ -141,14 +179,7 @@ bool OpalPresentity::SubscribeToPresence(const PString & presentity)
 
 bool OpalPresentity::UnsubscribeFromPresence(const PString & presentity)
 {
-  OpalSubscribeToPresenceCommand * cmd = CreateCommand<OpalSubscribeToPresenceCommand>();
-  if (cmd == NULL)
-    return false;
-
-  cmd->m_presentity = presentity;
-  cmd->m_subscribe = false;
-  SendCommand(cmd);
-  return true;
+  return SubscribeToPresence(presentity, false);
 }
 
 
@@ -286,20 +317,24 @@ bool OpalPresentity::DeleteBuddy(const PString & presentity)
 }
 
 
-bool OpalPresentity::SubscribeBuddyList()
+bool OpalPresentity::SubscribeBuddyList(bool subscribe)
 {
   BuddyList buddies;
   if (!GetBuddyList(buddies))
     return false;
 
   for (BuddyList::iterator it = buddies.begin(); it != buddies.end(); ++it) {
-    if (!SubscribeToPresence(it->m_presentity))
+    if (!SubscribeToPresence(it->m_presentity, subscribe))
       return false;
   }
 
   return true;
 }
 
+bool OpalPresentity::UnsubscribeBuddyList()
+{
+  return SubscribeBuddyList(false);
+}
 
 OpalPresentityCommand * OpalPresentity::InternalCreateCommand(const char * cmdName)
 {
@@ -316,6 +351,12 @@ OpalPresentityCommand * OpalPresentity::InternalCreateCommand(const char * cmdNa
   return NULL;
 }
 
+PString OpalPresentity::GetID() const 
+{ 
+  PStringStream strm;
+  strm << "id" << (unsigned)m_idNumber;
+  return strm;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

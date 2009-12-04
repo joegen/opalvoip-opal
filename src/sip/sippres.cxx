@@ -34,6 +34,7 @@
  * RFC 3856 "A Presence Event Package for the Session Initiation Protocol (SIP)"
  * RFC 3857 "A Watcher Information Event Template-Package for the Session Initiation Protocol (SIP)"
  * RFC 3858 "An Extensible Markup Language (XML) Based Format for Watcher Information"
+ * RFC 3863 "Presence Information Data Format (PIDF)"
  * RFC 4825 "The Extensible Markup Language (XML) Configuration Access Protocol (XCAP)"
  * RFC 4827 "An Extensible Markup Language (XML) Configuration Access Protocol (XCAP) Usage for Manipulating Presence Document Contents"
  * RFC 5025 "Presence Authorization Rules"
@@ -83,7 +84,7 @@ static bool ParseAndValidateXML(SIPSubscribe::NotifyCallbackInfo & status, PXML 
   PStringStream err;
 
   // load the XML
-  if (!xml.Load(body))
+  if (!xml.Load(body, PXML::WithNS))
     err << "XML parse";
   else if (!xml.Validate(validator))
     err << "XML validation";
@@ -345,8 +346,8 @@ void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe
   };
 
   static PXML::ValidationInfo const WatcherInfoValidation[] = {
+    { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:watcherinfo" },
     { PXML::ElementName,                "watcherinfo", },
-    { PXML::RequiredAttributeWithValue, "xmlns",   { "urn:ietf:params:xml:ns:watcherinfo" } },
     { PXML::RequiredNonEmptyAttribute,  "version"},
     { PXML::RequiredAttributeWithValue, "state",   { "full\npartial" } },
 
@@ -440,7 +441,7 @@ void SIPXCAP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCo
 {
   PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
 
-  SIPPresenceInfo sipPresence;
+  SIPPresenceInfo sipPresence(GetID());
   sipPresence.m_entity = m_aor.AsString();
   sipPresence.m_presenceAgent = m_presenceServer.AsString();
   sipPresence.m_state = cmd.m_state;
@@ -541,16 +542,29 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::N
     { PXML::EndOfValidationList }
   };
 
+  static PXML::ValidationInfo const ActivitiesValidation[] = {
+    { PXML::OptionalElement,            "rpid:busy" },
+    { PXML::EndOfValidationList }
+  };
+
+  static PXML::ValidationInfo const PersonValidation[] = {
+    { PXML::Subtree,                    "rpid:activities", { ActivitiesValidation }, 0, 1 },
+    { PXML::EndOfValidationList }
+  };
+
   static PXML::ValidationInfo const PresenceValidation[] = {
-    { PXML::ElementName,                "presence", },
-    { PXML::RequiredAttributeWithValue, "xmlns", { "urn:ietf:params:xml:ns:pidf" } },
+    { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:pidf" },
+    { PXML::SetNamespace,               "dm",   { "urn:ietf:params:xml:ns:pidf:data-model" } },
+    { PXML::SetNamespace,               "rpid", { "urn:ietf:params:xml:ns:pidf:rpid" } },
+    { PXML::ElementName,                "presence" },
     { PXML::RequiredNonEmptyAttribute,  "entity" },
-    { PXML::Subtree,                    "tuple", { TupleValidation }, 0 },
+    { PXML::Subtree,                    "tuple",  { TupleValidation }, 0 },
+    { PXML::Subtree,                    "dm:person", { PersonValidation }, 0, 1 },
     { PXML::EndOfValidationList }
   };
 
   PXML xml;
-  if (!ParseAndValidateXML(status, xml, PresenceValidation))
+  if (!ParseAndValidateXML(status, xml, PresenceValidation)) 
     return;
 
   // send 200 OK now, and flag caller NOT to send the response
@@ -563,6 +577,7 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::N
   PXMLElement * rootElement = xml.GetRootElement();
   info.m_entity = rootElement->GetAttribute("entity");
 
+  PCaselessString pidf;
   PXMLElement * tupleElement = rootElement->GetElement("tuple");
   if (tupleElement != NULL) {
     PXMLElement * statusElement = tupleElement->GetElement("status");
@@ -582,6 +597,31 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::N
     PXMLElement * contactElement = tupleElement->GetElement("contact");
     if (contactElement != NULL)
       info.m_contact = contactElement->GetData();
+  }
+
+  static PCaselessString rpid("urn:ietf:params:xml:ns:pidf:rpid|");
+  static PCaselessString dm  ("urn:ietf:params:xml:ns:pidf:data-model|");
+  static const int rpidLen = rpid.GetLength();
+
+  PXMLElement * person = xml.GetElement(dm + "person");
+  if (person != NULL) {
+    PXMLElement * activities = person->GetElement(rpid + "activities");
+    if (activities != NULL) {
+      for (PINDEX i = 0; i < activities->GetSize(); ++i) {
+        if (!activities->GetElement(i)->IsElement())
+          continue;
+        PString name(((PXMLElement *)activities->GetElement(i))->GetName());
+        if (name.GetLength() < (rpidLen+1) || !(name.Left(rpidLen) *= rpid) || (name[rpidLen] != '|'))
+          continue;
+        SIPPresenceInfo::State state = SIPPresenceInfo::FromSIPActivityString(name.Mid(rpidLen+1));
+        if (state == SIPPresenceInfo::NoPresence)
+          continue;
+        if ((info.m_activities.GetSize() == 0) && (info.m_state == SIPPresenceInfo::Available))
+          info.m_state = state;
+        else
+          info.m_activities.AppendString(OpalPresenceInfo::AsString(state));
+      }
+    }
   }
 
   PTRACE(3, "SIPPres\t'" << info.m_entity << "' request for presence of '" << m_aor << "' is " << info.m_state);
@@ -960,7 +1000,7 @@ bool SIPXCAP_Presentity::DeleteBuddy(const PString & presentity)
 }
 
 
-bool SIPXCAP_Presentity::SubscribeBuddyList()
+bool SIPXCAP_Presentity::SubscribeBuddyList(bool subscribe)
 {
   PXML xml;
   XCAPClient xcap;
@@ -978,7 +1018,7 @@ bool SIPXCAP_Presentity::SubscribeBuddyList()
     if (xcap.GetLastResponseCode() != PHTTP::NotFound) {
       PTRACE(2, "SIPPres\tUnexpected error getting rls-services file for at '" << m_aor << "\'\n"
              << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
-      return OpalPresentity::SubscribeBuddyList(); // Do individual subscribes
+      return OpalPresentity::SubscribeBuddyList(subscribe); // Do individual subscribes
     }
 
     // No file at all, add the root element.
@@ -989,7 +1029,7 @@ bool SIPXCAP_Presentity::SubscribeBuddyList()
     PXMLElement * element = xml.GetElement("service", "uri", serviceURI);
     if (element != NULL) {
       PTRACE(4, "SIPPres\tConfirmed rls-services entry for '" << serviceURI << "\' is\n" << xml);
-      return SubscribeToPresence(serviceURI);
+      return SubscribeToPresence(serviceURI, subscribe);
     }
 
     // Nope, so add it
@@ -1007,12 +1047,12 @@ bool SIPXCAP_Presentity::SubscribeBuddyList()
   element->AddElement("packages")->AddElement("package")->SetData("presence");
 
   if (xcap.PutXml(xml))
-    return SubscribeToPresence(serviceURI);
+    return SubscribeToPresence(serviceURI, subscribe);
 
   PTRACE(2, "SIPPres\tCould not add new rls-services entry for '" << m_aor << "\'\n"
          << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
 
-  return OpalPresentity::SubscribeBuddyList(); // Do individual subscribes
+  return OpalPresentity::SubscribeBuddyList(subscribe); // Do individual subscribes
 }
 
 
