@@ -1562,10 +1562,10 @@ void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & res
 
 static PAtomicInteger DefaultTupleIdentifier;
 
-SIPPresenceInfo::SIPPresenceInfo(const PString & id, State state)
+SIPPresenceInfo::SIPPresenceInfo(const PString & personId, State state)
   : OpalPresenceInfo(state)
   , m_tupleId(PString::Printf, "T%08X", ++DefaultTupleIdentifier)
-  , m_idString(id)
+  , m_personId(personId)
 {
 }
 
@@ -1682,8 +1682,8 @@ PString SIPPresenceInfo::AsXML() const
   }
 
   xml << "  </tuple>\r\n";
-  if (((m_state >= Appointment) && (m_state <= Worship)) || (m_activities.GetSize() > 0)) {
-    xml << "  <dm:person id=\"p" << m_idString << "\">\r\n"
+  if (!m_personId.IsEmpty() && (((m_state >= Appointment) && (m_state <= Worship)) || (m_activities.GetSize() > 0))) {
+    xml << "  <dm:person id=\"p" << m_personId << "\">\r\n"
            "    <rpid:activities>\r\n";
     bool doneState = false;
     for (PINDEX i = 0; i < m_activities.GetSize(); ++i) {
