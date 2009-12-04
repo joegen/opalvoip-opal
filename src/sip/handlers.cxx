@@ -26,6 +26,11 @@
  * $Revision$
  * $Author$
  * $Date$
+ *
+ * This code implements all or part of the following RFCs
+ *
+ * RFC 4479 "A Data Model for Presence"
+ * RFC 4480 "RPID: Rich Presence Extensions to the Presence Information Data Format (PIDF)"
  */
 
 #include <ptlib.h>
@@ -1557,9 +1562,10 @@ void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & res
 
 static PAtomicInteger DefaultTupleIdentifier;
 
-SIPPresenceInfo::SIPPresenceInfo(State state)
+SIPPresenceInfo::SIPPresenceInfo(const PString & id, State state)
   : OpalPresenceInfo(state)
   , m_tupleId(PString::Printf, "T%08X", ++DefaultTupleIdentifier)
+  , m_idString(id)
 {
 }
 
@@ -1590,6 +1596,60 @@ void SIPPresenceInfo::PrintOn(ostream & strm) const
   }
 }
 
+// defined in RFC 4480
+static const char * const ExtendedSIPActivities[] = {
+      "appointment",
+      "away",
+      "breakfast",
+      "busy",
+      "dinner",
+      "holiday",
+      "in-transit",
+      "looking-for-work",
+      "lunch",
+      "meal",
+      "meeting",
+      "on-the-phone",
+      "other",
+      "performance",
+      "permanent-absence",
+      "playing",
+      "presentation",
+      "shopping",
+      "sleeping",
+      "spectator",
+      "steering",
+      "travel",
+      "tv",
+      "vacation",
+      "working",
+      "worship"
+};
+
+bool SIPPresenceInfo::AsSIPActivityString(State state, PString & str)
+{
+  if ((state >= Appointment) && (state <= Worship)) {
+    str = PString(ExtendedSIPActivities[state - Appointment]);
+    return true;
+  }
+
+  return false;
+}
+
+bool SIPPresenceInfo::AsSIPActivityString(PString & str) const
+{
+  return AsSIPActivityString(m_state, str);
+}
+
+OpalPresenceInfo::State SIPPresenceInfo::FromSIPActivityString(const PString & str)
+{
+  for (size_t i = 0; i < sizeof(ExtendedSIPActivities)/sizeof(ExtendedSIPActivities[0]);++i) {
+    if (str == ExtendedSIPActivities[i])
+      return (State)(Appointment + i);
+  }
+
+  return NoPresence;
+}
 
 PString SIPPresenceInfo::AsXML() const
 {
@@ -1605,7 +1665,10 @@ PString SIPPresenceInfo::AsXML() const
   PStringStream xml;
 
   xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-    "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" entity=\"" << entity << "\">\r\n"
+         "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" "
+                  " xmlns:dm=\"urn:ietf:params:xml:ns:pidf:data-model\""
+                  " xmlns:rpid=\"urn:ietf:params:xml:ns:pidf:rpid\""
+                  " entity=\"" << entity << "\">\r\n"
          "  <tuple id=\"" << m_tupleId << "\">\r\n"
          "    <status>\r\n";
   if (m_state != Unchanged)
@@ -1613,11 +1676,32 @@ PString SIPPresenceInfo::AsXML() const
   xml << "    </status>\r\n"
          "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? entity : m_contact) << "</contact>\r\n";
 
-  if (!m_note.IsEmpty())
-    xml << "    <note xml:lang=\"en\">" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
+  if (!m_note.IsEmpty()) {
+    //xml << "    <note xml:lang=\"en\">" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
+    xml << "    <note>" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
+  }
 
-  xml << "  </tuple>\r\n"
-         "</presence>\r\n";
+  xml << "  </tuple>\r\n";
+  if (((m_state >= Appointment) && (m_state <= Worship)) || (m_activities.GetSize() > 0)) {
+    xml << "  <dm:person id=\"p" << m_idString << "\">\r\n"
+           "    <rpid:activities>\r\n";
+    bool doneState = false;
+    for (PINDEX i = 0; i < m_activities.GetSize(); ++i) {
+      State s = FromString(m_activities[i]);
+      if (s >= Appointment) {
+        if (s == m_state)
+          doneState = true;
+        xml << "      <rpid:" << ExtendedSIPActivities[s - Appointment] <<"/>\r\n";
+      }
+    }
+    if (!doneState)
+      xml << "      <rpid:" << ExtendedSIPActivities[m_state - Appointment] <<"/>\r\n";
+
+    xml << "    </rpid:activities>\r\n"
+           "  </dm:person>\r\n";
+  }
+
+  xml << "</presence>\r\n";
 
   return xml;
 }
