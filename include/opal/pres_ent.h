@@ -212,7 +212,7 @@ class OpalPresentity : public PSafeObject
       */
     virtual bool SubscribeToPresence(
       const PString & presentity,   ///< Other presentity to monitor
-      bool subscribe                ///< true if to subscribe, else unsubscribe
+      bool subscribe = true         ///< true if to subscribe, else unsubscribe
     );
 
     /** Unsubscribe to presence state of another presentity.
