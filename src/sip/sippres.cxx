@@ -293,7 +293,7 @@ void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCom
   param.m_contentType      = "application/watcherinfo+xml";
   param.m_localAddress     = aorStr;
   param.m_addressOfRecord  = aorStr;
-  param.m_remoteAddress    = m_presenceServer.AsString();
+  param.m_remoteAddress    = m_presenceServer.AsString() + ";transport=tcp";
   param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, aorStr);
   param.m_password         = m_attributes.Get(OpalPresentity::AuthPasswordKey);
   param.m_expire           = GetExpiryTime();
