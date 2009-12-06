@@ -1886,6 +1886,9 @@ PSafePtr<SIPHandler> SIPHandlersList::FindBy(IndexMap & by, const PString & key,
       return NULL;
 
     ptr = r->second;
+    // If above assignement ends up NULL, then entry in IndexMap was deleted
+    if (ptr == NULL)
+      return NULL;
   }
 
   if (ptr->GetState() != SIPHandler::Unsubscribed)
