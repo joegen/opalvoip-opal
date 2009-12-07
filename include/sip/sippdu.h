@@ -1065,16 +1065,16 @@ class SIPSubscribe : public SIPTransaction
         : SIPParameters(param)
         , m_agentAddress(m_remoteAddress)
         , m_eventPackage(param.m_eventPackage)
-        , m_contentType(param.m_contentType)
         , m_eventList(param.m_eventList)
+        , m_contentType(param.m_contentType)
         , m_onSubcribeStatus(param.m_onSubcribeStatus)
         , m_onNotify(param.m_onNotify)
       { }
 
       PCaselessString & m_agentAddress; // For backward compatibility
       EventPackage      m_eventPackage;
-      PCaselessString   m_contentType;  // May be \n separated list of types
       bool              m_eventList;    // Enable RFC4662
+      PCaselessString   m_contentType;  // May be \n separated list of types
 
       PNotifierTemplate<const SubscriptionStatus &> m_onSubcribeStatus;
       PNotifierTemplate<NotifyCallbackInfo &> m_onNotify;
