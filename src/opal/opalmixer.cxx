@@ -422,7 +422,7 @@ void OpalAudioMixer::WriteMixedFrame()
   MixerFrame * mixerFrame = new MixerFrame(MS_TO_SAMPLES(frameLengthMs));
 
   // lock the mixer
-  PWaitAndSignal m(mutex);
+  mutex.Wait();
 
   // iterate through the streams and get an unmixed frame from each one
   StreamInfoMap_T::iterator r;
@@ -438,6 +438,9 @@ void OpalAudioMixer::WriteMixedFrame()
 
   // increment the output timestamp
   outputTimestamp += MS_TO_SAMPLES(frameLengthMs);
+
+  // Unlock the mixer before calling the possibly time consuming OnWriteAudio() function
+  mutex.Signal();
 
   if (!pushThread) {
     //outputQueue.push_back(mixerFrame);
