@@ -395,12 +395,17 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_disableT38(disableT38)
   , m_releaseTimeout(0, 0, 1)
   , m_tiffFileFormat(TIFF_File_FormatName)
-  , m_switchedToT38(false)
+  , m_awaitingSwitchToT38(!disableT38)
 {
   m_tiffFileFormat.SetOptionString("TIFF-File-Name", filename);
   m_tiffFileFormat.SetOptionBoolean("Receiving", receiving);
 
-  PTRACE(3, "FAX\tCreated FAX connection with token \"" << callToken << '"');
+  m_faxTimer.SetNotifier(PCREATE_NOTIFIER(OnSendCNGCED));
+
+  PTRACE(3, "FAX\tCreated FAX connection with token \"" << callToken << "\","
+            " receiving=" << receiving << ","
+            " disabledT38=" << disableT38 << ","
+            " filename=\"" << filename << '"');
 }
 
 
@@ -426,10 +431,15 @@ void OpalFaxConnection::ApplyStringOptions(OpalConnection::StringOptions & strin
 OpalMediaFormatList OpalFaxConnection::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
-  if (m_switchedToT38 || m_disableT38)
-    formats += m_tiffFileFormat;
-  else
-    formats += OpalPCM16;
+
+  formats += m_tiffFileFormat;
+  formats += OpalPCM16;
+
+  if (!m_disableT38) {
+    formats += OpalRFC2833;
+    formats += OpalCiscoNSE;
+  }
+
   return formats;
 }
 
@@ -439,7 +449,8 @@ void OpalFaxConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats, O
   // Remove everything but G.711 or fax stuff
   OpalMediaFormatList::iterator i = mediaFormats.begin();
   while (i != mediaFormats.end()) {
-    if ((m_disableT38 || !m_switchedToT38) && (*i == OpalPCM16 || *i == OpalG711_ULAW_64K || *i == OpalG711_ALAW_64K))
+    if ((m_awaitingSwitchToT38 && *i == OpalPCM16) ||
+        (*i == OpalG711_ULAW_64K || *i == OpalG711_ALAW_64K || *i == OpalRFC2833 || *i == OpalCiscoNSE))
       ++i;
     else if (i->GetMediaType() != OpalMediaType::Fax() || (m_disableT38 && *i == OpalT38))
       mediaFormats -= *i++;
@@ -484,7 +495,7 @@ PBoolean OpalFaxConnection::SetUpConnection()
   if (m_disableT38)
     return true;
 
-  if (GetMediaStream(OpalMediaType::Audio(), true) == NULL)
+  if (GetMediaStream(PString::Empty(), true) == NULL)
     ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
 
   return true;
@@ -502,7 +513,7 @@ PBoolean OpalFaxConnection::SetAlerting(const PString & calleeName, PBoolean)
 
 PBoolean OpalFaxConnection::SetConnected()
 {
-  if (GetMediaStream(OpalMediaType::Audio(), true) == NULL)
+  if (GetMediaStream(PString::Empty(), true) == NULL)
     ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
   return OpalConnection::SetConnected();
 }
@@ -512,12 +523,12 @@ void OpalFaxConnection::OnEstablished()
 {
   OpalConnection::OnEstablished();
 
-  if (m_switchedToT38 || m_disableT38)
-    return;
-
-  m_faxTimer.SetNotifier(PCREATE_NOTIFIER(OnSendCNGCED));
-  m_faxTimer.SetInterval(0, m_receiving ? 5 : 1);
-  PTRACE(1, "T38\tStarting timer for CNG/CED tone");
+  // If switched and we don't need to do CNG/CED any more, or T.38 is disabled
+  // in which case the SpanDSP will deal with CNG/CED stuff.
+  if (m_awaitingSwitchToT38) {
+    m_faxTimer.SetInterval(0, m_receiving ? 5 : 1);
+    PTRACE(3, "T38\tStarting timer for CNG/CED tone");
+  }
 }
 
 
@@ -534,34 +545,49 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
 }
 
 
+void OpalFaxConnection::OnStartMediaPatch(OpalMediaPatch & patch)
+{
+  // Have switched to T.38 mode
+  if (patch.GetSink()->GetMediaFormat() == OpalT38) {
+    m_faxTimer.Stop(false);
+    m_awaitingSwitchToT38 = false;
+  }
+
+  OpalConnection::OnStartMediaPatch(patch);
+}
+
+
 void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 {
-  if (m_switchedToT38 && patch.GetSource().GetMediaFormat() == OpalT38) {
+  // Finished the fax transmission, look for TIFF
+  if (patch.GetSource().GetMediaFormat() == m_tiffFileFormat) {
     m_faxTimer.Stop();
-    m_switchedToT38 = false;
 
-    // Was T.38 media, must have finished sending/receiving
-    synchronousOnRelease = false; // Get deadlock if OnRelease() from patch thread.
-    OnFaxCompleted(false);
+    // Not an explicit switch, so fax plug in indicated end of fax
+    if (m_faxMediaStreamsSwitchState == e_NotSwitchingFaxMediaStreams) {
+      synchronousOnRelease = false; // Get deadlock if OnRelease() from patch thread.
+      OnFaxCompleted(false);
+    }
   }
 
   OpalConnection::OnStopMediaPatch(patch);
 }
 
 
-PBoolean OpalFaxConnection::SendUserInputTone(char tone, unsigned /*duration*/)
+PBoolean OpalFaxConnection::SendUserInputTone(char tone, unsigned duration)
 {
-  if (!m_switchedToT38 && toupper(tone) == (m_receiving ? 'X' : 'Y'))
-    RequestFax(true);
+  OnUserInputTone(tone, duration);
   return true;
 }
 
 
 void OpalFaxConnection::OnUserInputTone(char tone, unsigned /*duration*/)
 {
-  // This is called when the PCM in-band tone detector detects tones
-  if (!m_switchedToT38 && toupper(tone) == (m_receiving ? 'X' : 'Y'))
-    RequestFax(true);
+  // Not yet switched and got a CNG/CED from the remote system, start switch
+  if (m_awaitingSwitchToT38 && toupper(tone) == (m_receiving ? 'X' : 'Y')) {
+    PTRACE(3, "T38\tRequesting mode change in response to " << (m_receiving ? "CNG" : "CED"));
+    PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
+  }
 }
 
 
@@ -580,9 +606,9 @@ void OpalFaxConnection::OnFaxCompleted(bool failed)
 }
 
 
-void OpalFaxConnection::OnSendCNGCED(PTimer & timer, INT)
+void OpalFaxConnection::OnSendCNGCED(PTimer &, INT)
 {
-  if (!m_disableT38 && !m_switchedToT38 && LockReadOnly()) {
+  if (m_awaitingSwitchToT38 && LockReadOnly()) {
     PTimeInterval elapsed = PTime() - connectedTime;
     if (m_releaseTimeout > 0 && elapsed > m_releaseTimeout) {
       PTRACE(2, "T38\tDid not switch to T.38 mode, releasing connection");
@@ -590,58 +616,56 @@ void OpalFaxConnection::OnSendCNGCED(PTimer & timer, INT)
     }
     if (m_switchTimeout > 0 && elapsed > m_switchTimeout) {
       PTRACE(2, "T38\tDid not switch to T.38 mode, forcing switch");
-      RequestFax(true);
+      PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
     }
     else if (m_receiving) {
       // Cadence for CED is single tone, but we repeat just in case
       OpalConnection::OnUserInputTone('Y', 3600);
-      timer = 5000;
+      m_faxTimer = 5000;
     }
     else {
       // Cadence for CNG is 500ms on 3 seconds off
       OpalConnection::OnUserInputTone('X', 500);
-      timer = 3500;
+      m_faxTimer = 3500;
     }
     UnlockReadOnly();
   }
 }
 
 
-void OpalFaxConnection::OpenFaxStreams(PThread &, INT)
+bool OpalFaxConnection::SwitchFaxMediaStreams(bool enableFax)
 {
-  if (!LockReadWrite())
-    return;
-
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-  if (other == NULL || !other->SwitchFaxMediaStreams(m_switchedToT38)) {
-    PTRACE(1, "T38\tMode change request to " << (m_switchedToT38 ? "fax" : "audio") << " failed");
-    OnFaxCompleted(true);
-  }
+  if (other != NULL && other->SwitchFaxMediaStreams(enableFax))
+    return true;
 
-  UnlockReadWrite();
+  PTRACE(1, "T38\tMode change request to " << (enableFax ? "fax" : "audio") << " failed");
+  return false;
 }
 
 
-void OpalFaxConnection::RequestFax(bool toT38)
+void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool enabledFax)
 {
-  if (m_disableT38)
-    return;
+  m_awaitingSwitchToT38 = false;
 
-#if PTRACING
-  const char * modeStr = toT38 ? "T.38" : "audio";
-#endif
-
-  if (toT38 == m_switchedToT38) {
-    PTRACE(2, "T38\tAlready in mode " << modeStr);
-    return;
+  if (enabledFax) {
+    PTRACE(3, "T38\tMode change request to fax succeeded");
   }
+  else {
+    PTRACE(4, "T38\tMode change request to fax failed, falling back to G.711");
+    m_disableT38 = true;
+    SwitchFaxMediaStreams(false);
+  }
+}
 
-  m_switchedToT38 = toT38;
 
-  // definitely changing mode
-  PTRACE(2, "T38\tRequesting mode change to " << modeStr);
-
-  PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
+void OpalFaxConnection::OpenFaxStreams(PThread &, INT)
+{
+  if (LockReadWrite()) {
+    if (!SwitchFaxMediaStreams(true))
+      OnFaxCompleted(true);
+    UnlockReadWrite();
+  }
 }
 
 

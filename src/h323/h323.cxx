@@ -3823,7 +3823,16 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
 #if OPAL_FAX
 bool H323Connection::SwitchFaxMediaStreams(bool enableFax)
 {
-  return RequestModeChangeT38(enableFax ? OpalT38 : OpalG711uLaw);
+  if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
+    PTRACE(2, "OpalCon\tNested call to SwitchFaxMediaStreams on " << *this);
+    return false;
+  }
+
+  if (!RequestModeChangeT38(enableFax ? OpalT38 : OpalG711uLaw))
+    return false;
+
+  m_faxMediaStreamsSwitchState = enableFax ? e_SwitchingToFaxMediaStreams : e_SwitchingFromFaxMediaStreams;
+  return true;
 }
 #endif
 
@@ -4900,7 +4909,7 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
   CloseAllLogicalChannels(false);
 
   PStringArray modes = t38ModeChangeCapabilities.Lines();
-  t38ModeChangeCapabilities = PString::Empty();
+  t38ModeChangeCapabilities.MakeEmpty();
 
   PStringArray formats = modes[pdu.m_response.GetTag() != H245_RequestModeAck_response::e_willTransmitMostPreferredMode
 									 && modes.GetSize() > 1 ? 1 : 0].Tokenise('\t');
@@ -4926,6 +4935,12 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
 
 void H323Connection::OnRefusedModeChange(const H245_RequestModeReject * /*pdu*/)
 {
+#if OPAL_FAX
+  if (!t38ModeChangeCapabilities.IsEmpty()) {
+    t38ModeChangeCapabilities.MakeEmpty();
+    OnSwitchedFaxMediaStreams(false);
+  }
+#endif
 }
 
 
