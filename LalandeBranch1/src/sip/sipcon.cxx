@@ -1827,8 +1827,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     return;
   }
 
-  NotifyDialogState(SIPDialogNotification::Proceeding);
-
   AnsweringCall(OnAnswerCall(remotePartyAddress));
 }
 
@@ -2089,6 +2087,7 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & response)
   if (GetPhase() < AlertingPhase) {
     SetPhase(AlertingPhase);
     OnAlerting();
+    NotifyDialogState(SIPDialogNotification::Early);
   }
 }
 
@@ -2102,6 +2101,7 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
   if (GetPhase() < AlertingPhase) {
     SetPhase(AlertingPhase);
     OnAlerting();
+    NotifyDialogState(SIPDialogNotification::Early);
   }
 
   PTRACE(4, "SIP\tStarting receive media to annunciate remote progress tones");
@@ -2111,9 +2111,9 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
 void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
-  m_dialog.Update(response);
-  UpdateRemoteAddresses();
-  endpoint.ForwardConnection (*this, GetRemotePartyURL());
+  SIPURL whereTo = response.GetMIME().GetContact();
+  PTRACE(3, "SIP\tReceived redirect to " << whereTo);
+  endpoint.ForwardConnection(*this, whereTo.AsString());
 }
 
 
@@ -2124,7 +2124,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 #if PTRACING
   const char * proxyTrace = isProxy ? "Proxy " : "";
 #endif
-  
+
   PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response for " << transaction);
 
   // determine the authentication type
@@ -2210,6 +2210,19 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
 void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
+  switch (transaction.GetMethod()) {
+    case SIP_PDU::Method_INVITE :
+      break;
+
+    case SIP_PDU::Method_REFER :
+      if (response.GetMIME()("Refer-Sub") == "false")
+        referTransaction.SetNULL(); // Used RFC4488 to indicate we are NOT doing NOTIFYs
+      // Do next case
+
+    default :
+      return;
+  }
+
   PTRACE(3, "SIP\tHandling " << response.GetStatusCode() << " response for " << transaction.GetMethod());
 
   // see if the contact address provided in the response changes the transport type
@@ -2223,19 +2236,6 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
         delete transport;
       transport = newTransport;
     }
-  }
-
-  switch (transaction.GetMethod()) {
-    case SIP_PDU::Method_INVITE :
-      break;
-
-    case SIP_PDU::Method_REFER :
-      if (response.GetMIME()("Refer-Sub") == "false")
-        referTransaction.SetNULL(); // Used RFC4488 to indicate we are NOT doing NOTIFYs
-      // Do next case
-
-    default :
-      return;
   }
 
   PTRACE(3, "SIP\tReceived INVITE OK response");
