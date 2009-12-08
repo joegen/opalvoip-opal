@@ -2592,7 +2592,6 @@ SIPTransaction::SIPTransaction(SIPConnection & conn,
     transport(trans)
 {
   connection = &conn;
-  conn.m_pendingTransactions.Append(this);
 
   Construct();
   PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " created.");
@@ -2634,16 +2633,18 @@ SIPTransaction::~SIPTransaction()
 
 PBoolean SIPTransaction::Start()
 {
-    if (state == Completed)
-    return PTrue;
+  if (state == Completed)
+    return true;
 
-    if (connection != NULL)
-      connection->OnStartTransaction(*this);
+  if (connection != NULL) {
+    connection->m_pendingTransactions.Append(this);
+    connection->OnStartTransaction(*this);
+  }
 
-    endpoint.AddTransaction(this);
+  endpoint.AddTransaction(this);
 
-    if (state != NotStarted) {
-      PAssertAlways(PLogicError);
+  if (state != NotStarted) {
+    PAssertAlways(PLogicError);
     return PFalse;
   }
 
