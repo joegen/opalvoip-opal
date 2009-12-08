@@ -2397,8 +2397,6 @@ SIPTransaction::SIPTransaction(Methods meth, SIPConnection & conn)
   InitialiseHeaders(conn, m_transport);
   m_mime.SetProductInfo(m_endpoint.GetUserAgent(), conn.GetProductInfo());
 
-  conn.m_pendingTransactions.Append(this);
-
   PTRACE(4, "SIP\t" << meth << " transaction id=" << GetTransactionID() << " created.");
 }
 
@@ -2449,6 +2447,7 @@ PBoolean SIPTransaction::Start()
   }
 
   if (m_connection != NULL) {
+    m_connection->m_pendingTransactions.Append(this);
     m_connection->OnStartTransaction(*this);
 
     if (m_connection->GetAuthenticator() != NULL) {
