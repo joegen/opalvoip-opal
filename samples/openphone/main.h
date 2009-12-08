@@ -443,6 +443,7 @@ class InCallPanel : public CallPanelBase
     void SpeakerVolume(wxScrollEvent & event);
     void MicrophoneVolume(wxScrollEvent & event);
     void SetVolume(bool microphone, int value, bool muted);
+    void UpdateStatistics();
 
     wxButton  * m_Hold;
     wxButton  * m_SpeakerHandset;

@@ -1007,6 +1007,9 @@ class OpalConnection : public PSafeObject
 
     /**Get a media stream.
        Locates a stream given an identifier string.
+
+       If streamID is an empty string, then the first source/sink stream
+       of any type, session or id is returned.
       */
     OpalMediaStreamPtr GetMediaStream(
       const PString & streamID,  ///<  Stream ID to search for.
@@ -1718,6 +1721,14 @@ class OpalConnection : public PSafeObject
 
     };
     AutoStartMap m_autoStartInfo;
+
+#if OPAL_FAX
+    enum {
+      e_NotSwitchingFaxMediaStreams,
+      e_SwitchingToFaxMediaStreams,
+      e_SwitchingFromFaxMediaStreams
+    } m_faxMediaStreamsSwitchState;
+#endif
 
   private:
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(unsigned int), false);

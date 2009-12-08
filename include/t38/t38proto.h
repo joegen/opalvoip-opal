@@ -153,7 +153,21 @@ class OpalFaxEndPoint : public OpalEndPoint
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/** Fax Connection
+/** Fax Connection.
+    There are six modes of operation:
+        Mode            receiving     disableT38    filename
+        TIFF -> T.38      false         false       "something.tif"
+        T.38 -> TIFF      true          false       "something.tif"
+        TIFF -> G.711     false         true        "something.tif"
+        G.711 ->TIFF      true          true        "something.tif"
+        T.38  -> G.711    false       don't care    PString::Empty()
+        G.711 -> T.38     true        don't care    PString::Empty()
+
+    If T.38 is involved then there is generally two stages to the setup, as
+    indicated by the m_switchedToT38 flag. When false then we are in audio
+    mode looking for CNG/CED tones. When true, then we are switching, or have
+    switched, to T.38 operation. If the switch fails, then the m_disableT38
+    is set and we proceed in fall back mode.
  */
 class OpalFaxConnection : public OpalConnection
 {
@@ -222,9 +236,12 @@ class OpalFaxConnection : public OpalConnection
     virtual void OnEstablished();
     virtual void OnReleased();
     virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
+    virtual void OnStartMediaPatch(OpalMediaPatch & patch);
     virtual void OnStopMediaPatch(OpalMediaPatch & patch);
     virtual PBoolean SendUserInputTone(char tone, unsigned duration);
     virtual void OnUserInputTone(char tone, unsigned duration);
+    virtual bool SwitchFaxMediaStreams(bool enableFax);
+    virtual void OnSwitchedFaxMediaStreams(bool enabledFax);
 
   /**@name New operations */
   //@{
@@ -251,7 +268,6 @@ class OpalFaxConnection : public OpalConnection
   protected:
     PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnSendCNGCED);
     PDECLARE_NOTIFIER(PThread, OpalFaxConnection, OpenFaxStreams);
-    void RequestFax(bool toFax);
 
 
     OpalFaxEndPoint & m_endpoint;
@@ -263,7 +279,7 @@ class OpalFaxConnection : public OpalConnection
     PTimeInterval     m_switchTimeout;
     OpalMediaFormat   m_tiffFileFormat;
 
-    bool     m_switchedToT38;
+    bool     m_awaitingSwitchToT38;
     PTimer   m_faxTimer;
 
   friend class OpalFaxMediaStream;
