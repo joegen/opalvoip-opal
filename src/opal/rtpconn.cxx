@@ -153,7 +153,11 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   while (!rtpSession->Open(localAddress, nextPort, nextPort, manager.GetRtpIpTypeofService(), natMethod, rtpqos)) {
     nextPort = manager.GetRtpIpPortPair();
     if (nextPort == firstPort) {
-      PTRACE(1, "RTPCon\tNo ports available for RTP session " << sessionID << " for " << *this);
+      PTRACE(1, "RTPCon\tNo ports available for RTP session " << sessionID << ","
+                " base=" << manager.GetRtpIpPortBase() << ","
+                " max=" << manager.GetRtpIpPortMax() << ","
+                " bind=" << localAddress << ","
+                " for " << *this);
       delete rtpSession;
       return NULL;
     }
