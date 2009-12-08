@@ -5745,8 +5745,8 @@ InCallPanel::InCallPanel(MyManager & manager, const PwxString & token, wxWindow 
   m_pages[TxAudio].Init(this, TxAudio, OpalMediaType::Audio(), false);
   m_pages[RxVideo].Init(this, RxVideo, OpalMediaType::Video(), true );
   m_pages[TxVideo].Init(this, TxVideo, OpalMediaType::Video(), false);
-  m_pages[RxFax  ].Init(this, RxFax  , OpalMediaType::Fax(),   true);
-  m_pages[TxFax  ].Init(this, TxFax  , OpalMediaType::Fax(),   false);
+  m_pages[RxFax  ].Init(this, RxFax  , OpalMediaType::Fax(),   false);
+  m_pages[TxFax  ].Init(this, TxFax  , OpalMediaType::Fax(),   true);
 
   m_FirstTime = true;
 }
@@ -5786,14 +5786,10 @@ void InCallPanel::OnStreamsChanged()
   // Must do this before getting lock on OpalCall to avoid deadlock
   m_SpeakerHandset->Enable(m_manager.HasHandset());
 
-  PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
-  if (connection == NULL)
-    return;
+  UpdateStatistics();
 
-  for (PINDEX i = 0; i < NumPages; i++)
-    m_pages[i].UpdateSession(connection);
-
-  if (connection->GetMediaStream(OpalMediaType::Fax(), true) != NULL)
+  PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadOnly);
+  if (connection != NULL && connection->GetMediaStream(OpalMediaType::Fax(), true) != NULL)
     FindWindowByNameAs<wxNotebook>(this, wxT("Statistics"))->SetSelection(RxFax);
 }
 
@@ -5919,9 +5915,7 @@ void InCallPanel::OnUpdateVU(wxTimerEvent& WXUNUSED(event))
 {
   if (IsShown()) {
     if (++m_updateStatistics > 8) {
-      PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
-      for (PINDEX i = 0; i < NumPages; i++)
-        m_pages[i].UpdateSession(connection);
+      UpdateStatistics();
       m_updateStatistics = 0;
     }
 
@@ -5936,6 +5930,25 @@ void InCallPanel::OnUpdateVU(wxTimerEvent& WXUNUSED(event))
     SetGauge(m_vuSpeaker, spkLevel);
     SetGauge(m_vuMicrophone, micLevel);
   }
+}
+
+
+void InCallPanel::UpdateStatistics()
+{
+  PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
+  if (connection == NULL)
+    return;
+
+  PINDEX i;
+  for (i = 0; i < RxFax; i++)
+    m_pages[i].UpdateSession(connection);
+
+  connection = m_manager.GetConnection(true, PSafeReadOnly);
+  if (connection == NULL)
+    return;
+
+  for (; i < NumPages; i++)
+    m_pages[i].UpdateSession(connection);
 }
 
 

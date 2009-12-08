@@ -257,6 +257,9 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
 #endif
+#if OPAL_FAX
+  , m_faxMediaStreamsSwitchState(e_NotSwitchingFaxMediaStreams)
+#endif
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
@@ -637,15 +640,35 @@ void OpalConnection::AutoStartMediaStreams(bool force)
 #if OPAL_FAX
 bool OpalConnection::SwitchFaxMediaStreams(bool enableFax)
 {
+  if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
+    PTRACE(2, "OpalCon\tNested call to SwitchFaxMediaStreams on " << *this);
+    return false;
+  }
+
   PTRACE(3, "OpalCon\tSwitchFaxMediaStreams to " << (enableFax ? "fax" : "audio") << " on " << *this);
   OpalMediaFormat format = enableFax ? OpalT38 : OpalG711uLaw;
-  return ownerCall.OpenSourceMediaStreams(*this, format.GetMediaType(), 1, format);
+  if (!ownerCall.OpenSourceMediaStreams(*this, format.GetMediaType(), 1, format))
+    return false;
+
+  m_faxMediaStreamsSwitchState = enableFax ? e_SwitchingToFaxMediaStreams : e_SwitchingFromFaxMediaStreams;
+  return true;
 }
 
 
-void OpalConnection::OnSwitchedFaxMediaStreams(bool PTRACE_PARAM(enabledFax))
+void OpalConnection::OnSwitchedFaxMediaStreams(bool enabledFax)
 {
-  PTRACE(3, "OpalCon\tOnSwitchedFaxMediaStreams to " << (enabledFax ? "fax" : "audio") << " on " << *this);
+  if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
+    PTRACE(3, "OpalCon\tSwitch of media streams to "
+           << (m_faxMediaStreamsSwitchState == e_SwitchingToFaxMediaStreams ? "fax" : "audio") << ' '
+           << (enabledFax != (m_faxMediaStreamsSwitchState == e_SwitchingToFaxMediaStreams) ? "failed" : "succeeded")
+           << " on " << *this);
+
+    m_faxMediaStreamsSwitchState = e_NotSwitchingFaxMediaStreams;
+
+    PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+    if (other != NULL)
+      other->OnSwitchedFaxMediaStreams(enabledFax);
+  }
 }
 #endif
 

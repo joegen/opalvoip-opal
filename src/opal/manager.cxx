@@ -719,6 +719,10 @@ OpalMediaFormatList OpalManager::GetCommonMediaFormats(bool transportable, bool 
     formats += OpalPCM16_32KHZ;
     formats += OpalPCM16_16KHZ;
     formats += OpalPCM16;
+    formats += OpalRFC2833;
+#if OPAL_T38_CAPABILITY
+    formats += OpalCiscoNSE;
+#endif
   }
 
 #if OPAL_VIDEO

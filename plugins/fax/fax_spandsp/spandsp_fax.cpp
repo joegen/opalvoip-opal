@@ -375,7 +375,7 @@ class FaxSpanDSP
     unsigned        m_referenceCount;
 
   protected:
-    bool            m_valid;
+    bool            m_completed;
     CriticalSection m_mutex;
 
     bool            m_useECM;
@@ -384,7 +384,7 @@ class FaxSpanDSP
   public:
     FaxSpanDSP()
       : m_referenceCount(1)
-      , m_valid(true)
+      , m_completed(false)
       , m_useECM(USE_ECM)
       , m_supported_modems(SUPPORTED_MODEMS_PCM)
     {
@@ -433,6 +433,19 @@ class FaxSpanDSP
     {
       PTRACE(3, m_tag << " SetOption: " << option << "=" << value);
 
+      return true;
+    }
+
+    bool HasError(bool retval)
+    {
+      if (m_completed)
+        return true;
+
+      if (retval)
+        return false;
+
+      /// Error exit
+      m_completed = true;
       return true;
     }
 };
@@ -589,10 +602,10 @@ struct FaxStats {
   FaxStats()
   {
     memset(this, 0, sizeof(*this));
-    m_result = -2;
+    m_result = -1;
   }
 
-  int  m_result;      // -2=not started, -1=progress, 0=success, >0=ended with error
+  int  m_result;      // -1=progress, 0=success, >0=ended with error
   int  m_bitRate;     // e.g. 14400, 9600
   int  m_compression; // 0=N/A, 1=T.4 1d, 2=T.4 2d, 3=T.6
   bool m_errorCorrection;
@@ -701,6 +714,8 @@ class FaxTIFF : public FaxSpanDSP
         PTRACE(3, m_tag << " Set transmit TIFF file to \"" << m_tiffFileName << '"');
       }
 
+      t30_set_phase_b_handler(t30state, PhaseB, this);
+      t30_set_phase_d_handler(t30state, PhaseD, this);
       t30_set_phase_e_handler(t30state, PhaseE, this);
       t30_set_tx_ident(t30state, m_stationIdentifer.c_str());
       t30_set_ecm_capability(t30state, m_useECM);
@@ -716,7 +731,6 @@ class FaxTIFF : public FaxSpanDSP
         return false;
 
       UpdateStats(t30state);
-
       *(FaxStats *)fromPtr = m_faxStats;
 
       PTRACE(LOG_LEVEL_DEBUG, "SpanDSP statistics:\n" << *(FaxStats *)fromPtr);
@@ -728,6 +742,20 @@ class FaxTIFF : public FaxSpanDSP
     bool IsReceiving() const { return m_receiving; }
 
 
+    static int PhaseB(t30_state_t * t30state, void * user_data, int result)
+    {
+      if (user_data != NULL)
+        ((FaxTIFF *)user_data)->PhaseB(t30state, result);
+      return T30_ERR_OK;
+    }
+
+    static int PhaseD(t30_state_t * t30state, void * user_data, int result)
+    {
+      if (user_data != NULL)
+        ((FaxTIFF *)user_data)->PhaseD(t30state, result);
+      return T30_ERR_OK;
+    }
+
     static void PhaseE(t30_state_t * t30state, void * user_data, int result)
     {
       if (user_data != NULL)
@@ -736,13 +764,24 @@ class FaxTIFF : public FaxSpanDSP
 
 
   private:
+    void PhaseB(t30_state_t * t30state, int)
+    {
+      UpdateStats(t30state);
+      PTRACE(3, "SpanDSP entered Phase B:\n" << m_faxStats);
+    }
+
+    void PhaseD(t30_state_t * t30state, int)
+    {
+      UpdateStats(t30state);
+      PTRACE(3, "SpanDSP entered Phase D:\n" << m_faxStats);
+    }
+
     void PhaseE(t30_state_t * t30state, int result)
     {
       if (result >= 0)
-        m_valid = false; // Finished, exit codec loops
+        m_completed = true; // Finished, exit codec loops
 
       UpdateStats(t30state);
-
       PTRACE(3, "SpanDSP entered Phase E:\n" << m_faxStats);
     }
 
@@ -751,11 +790,11 @@ class FaxTIFF : public FaxSpanDSP
       t30_stats_t stats;
       t30_get_transfer_statistics(t30state, &stats);
 
-      m_faxStats.m_result = stats.current_status;
+      m_faxStats.m_result = m_completed ? stats.current_status : -1;
       m_faxStats.m_badRows = stats.bad_rows;
       m_faxStats.m_bitRate = stats.bit_rate;
       m_faxStats.m_compression = stats.encoding;
-      m_faxStats.m_errorCorrection = stats.error_correcting_mode == 0 ? false : true;
+      m_faxStats.m_errorCorrection = stats.error_correcting_mode != 0;
       m_faxStats.m_errorCorrectionRetries = stats.error_correcting_mode_retries;
       m_faxStats.m_imageSize = stats.image_size;
       m_faxStats.m_mostBadRows = stats.longest_bad_row_run;
@@ -886,7 +925,7 @@ class T38_PCM : public FaxSpanDSP, public FaxT38, public FaxPCM
 
     bool Open()
     {
-      if (!m_valid)
+      if (m_completed)
         return false;
 
       if (m_t38State != NULL)
@@ -894,8 +933,12 @@ class T38_PCM : public FaxSpanDSP, public FaxT38, public FaxPCM
 
       PTRACE(3, m_tag << " Opening T38_PCM/SpanDSP");
   
-      if ((m_t38State = t38_gateway_init(NULL, FaxT38::QueueT38, (FaxT38 *)this)) == NULL)
-        return m_valid = false;
+      m_t38State = t38_gateway_init(NULL, FaxT38::QueueT38, (FaxT38 *)this);
+      if (HasError(m_t38State != NULL))
+        return false;
+
+      if (HasError(FaxT38::Open(t38_gateway_get_t38_core_state(m_t38State))))
+        return false;
 
       InitLogging(t38_gateway_get_logging_state(m_t38State), m_tag);
 
@@ -903,9 +946,6 @@ class T38_PCM : public FaxSpanDSP, public FaxT38, public FaxPCM
       t38_gateway_set_ecm_capability(m_t38State, m_useECM);
       t38_gateway_set_supported_modems(m_t38State, m_supported_modems);
       //t38_gateway_set_nsx_suppression(m_t38State, NULL, 0, NULL, 0);
-
-      if (!FaxT38::Open(t38_gateway_get_t38_core_state(m_t38State)))
-        return m_valid = false;
 
       return true;
     }
@@ -1014,7 +1054,7 @@ class TIFF_T38 : public FaxTIFF, public FaxT38
 
     bool Open()
     {
-      if (!m_valid)
+      if (m_completed)
         return false;
 
       if (m_t38State != NULL)
@@ -1022,17 +1062,18 @@ class TIFF_T38 : public FaxTIFF, public FaxT38
 
       PTRACE(3, m_tag << " Opening TIFF_T38/SpanDSP for " << (IsReceiving() ? "receive" : "transmit"));
 
-      if ((m_t38State = t38_terminal_init(NULL, !IsReceiving(), FaxT38::QueueT38, (FaxT38 *)this)) == NULL)
-        return m_valid = false;
+      m_t38State = t38_terminal_init(NULL, !IsReceiving(), FaxT38::QueueT38, (FaxT38 *)this);
+      if (HasError(m_t38State != NULL))
+        return false;
+
+      if (HasError(FaxTIFF::Open(t38_terminal_get_t30_state(m_t38State))))
+        return false;
+
+      if (HasError(FaxT38::Open(t38_terminal_get_t38_core_state(m_t38State))))
+        return false;
 
       InitLogging(t38_terminal_get_logging_state(m_t38State), m_tag);
       t38_terminal_set_config(m_t38State, false);
-
-      if (!FaxTIFF::Open(t38_terminal_get_t30_state(m_t38State)))
-        return m_valid = false;
-
-      if (!FaxT38::Open(t38_terminal_get_t38_core_state(m_t38State)))
-        return m_valid = false;
 
       return true;
     }
@@ -1141,7 +1182,7 @@ class TIFF_PCM : public FaxTIFF, public FaxPCM
 
     bool Open()
     {
-      if (!m_valid)
+      if (m_completed)
         return false;
 
       if (m_faxState != NULL)
@@ -1149,14 +1190,15 @@ class TIFF_PCM : public FaxTIFF, public FaxPCM
 
       PTRACE(3, m_tag << " Opening TIFF_PCM/SpanDSP for " << (IsReceiving() ? "receive" : "transmit"));
 
-      if ((m_faxState = fax_init(NULL, !IsReceiving())) == NULL)
-        return m_valid = false;
+      m_faxState = fax_init(NULL, !IsReceiving());
+      if (HasError(m_faxState != NULL))
+        return false;
+
+      if (HasError(FaxTIFF::Open(fax_get_t30_state(m_faxState))))
+        return false;
 
       InitLogging(fax_get_logging_state(m_faxState), m_tag);
       fax_set_transmit_on_idle(m_faxState, TransmitOnIdle());
-
-      if (!FaxTIFF::Open(fax_get_t30_state(m_faxState)))
-        return m_valid = false;
 
       return true;
     }

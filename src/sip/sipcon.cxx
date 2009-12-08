@@ -550,22 +550,16 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned rtpSessionId,
 
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
     PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
-    if (otherParty == NULL) {
+    if (otherParty != NULL) {
+      MediaInformation gatewayInfo;
+      if (otherParty->GetMediaInformation(rtpSessionId, gatewayInfo)) {
+        PTRACE(1, "SIP\tMedia bypass unimplemented for media type " << mediaType << " in session " << rtpSessionId);
+        return NULL;
+      }
+    }
+    else {
       PTRACE(2, "SIP\tCowardly refusing to media bypass with only one RTP connection");
-      return NULL;
     }
-
-    MediaInformation info;
-    RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
-    if (otherParty->GetMediaInformation(rtpSessionId, info)) {
-      localAddress = info.data;
-      ntePayloadCode = info.rfc2833;
-    }
-
-    mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(remoteMediaAddress));
-
-    PTRACE(1, "SIP\tMedia bypass unimplemented for media type " << mediaType << " in session " << rtpSessionId);
-    return NULL;
   }
 
   OpalMediaTypeDefinition * mediaDefinition = mediaType.GetDefinition();
@@ -694,20 +688,24 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
 
 static void SetNxECapabilities(SDPMediaDescription * localMedia,
                              const OpalMediaFormat & mediaFormat, 
-                            const OpalRFC2833Proto * handler,
+                                  OpalRFC2833Proto * handler,
                        RTP_DataFrame::PayloadTypes   nxePayloadCode = RTP_DataFrame::IllegalPayloadType)
 {
   if (mediaFormat.IsEmpty())
     return;
 
+  handler->SetRxCapability(mediaFormat.GetOptionString("FMTP", handler->GetRxCapability()));
+
   if (nxePayloadCode != RTP_DataFrame::IllegalPayloadType) {
     PTRACE(3, "SIP\tUsing bypass RTP payload " << nxePayloadCode << " for " << mediaFormat);
   }
+  else if (mediaFormat.GetPayloadType() != RTP_DataFrame::IllegalPayloadType) {
+    PTRACE(3, "SIP\tUsing default RTP payload " << nxePayloadCode << " for " << mediaFormat);
+    localMedia->AddSDPMediaFormat(new SDPMediaFormat(*localMedia, mediaFormat));
+    return;
+  }
   else if ((nxePayloadCode = handler->GetPayloadType()) != RTP_DataFrame::IllegalPayloadType) {
     PTRACE(3, "SIP\tUsing handler RTP payload " << nxePayloadCode << " for " << mediaFormat);
-  }
-  else if ((nxePayloadCode = mediaFormat.GetPayloadType()) != RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(3, "SIP\tUsing default RTP payload " << nxePayloadCode << " for " << mediaFormat);
   }
   else {
     PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for " << mediaFormat);
@@ -716,7 +714,6 @@ static void SetNxECapabilities(SDPMediaDescription * localMedia,
 
   OpalMediaFormat adjustedFormat = mediaFormat;
   adjustedFormat.SetPayloadType(nxePayloadCode);
-  adjustedFormat.SetOptionString("FMTP", handler->GetRxCapability());
   localMedia->AddSDPMediaFormat(new SDPMediaFormat(*localMedia, adjustedFormat));
 }
 
@@ -762,28 +759,19 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   if (rtpSessionId == 0)
     rtpSessionId = sdp.GetMediaDescriptions().GetSize()+1;
 
-  OpalTransportAddress localAddress;
-  RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
-  RTP_DataFrame::PayloadTypes nsePayloadCode = RTP_DataFrame::IllegalPayloadType;
-
+  MediaInformation gatewayInfo;
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
     PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
-    if (otherParty != NULL) {
-      MediaInformation info;
-      if (otherParty->GetMediaInformation(rtpSessionId, info)) {
-        localAddress = info.data;
-        ntePayloadCode = info.rfc2833;
-        nsePayloadCode = info.ciscoNSE;
-      }
-    }
+    if (otherParty != NULL)
+      otherParty->GetMediaInformation(rtpSessionId, gatewayInfo);
   }
 
   OpalMediaSession * mediaSession = rtpSessions.GetMediaSession(rtpSessionId);
 
   OpalTransportAddress sdpContactAddress;
 
-  if (!localAddress.IsEmpty())
-    sdpContactAddress = localAddress;
+  if (!gatewayInfo.data.IsEmpty())
+    sdpContactAddress = gatewayInfo.data;
   else {
 
     /* We are not doing media bypass, so must have some media session
@@ -881,12 +869,15 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
 
   // Set format if we have an RTP payload type for RFC2833 and/or NSE
   // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
-  if (mediaType == OpalMediaType::Audio()) {
-    SetNxECapabilities(localMedia, OpalRFC2833, rfc2833Handler,  ntePayloadCode);
+  OpalMediaFormatList::const_iterator fmt = formats.FindFormat(OpalRFC2833);
+  if (fmt != formats.end())
+    SetNxECapabilities(localMedia, *fmt, rfc2833Handler,  gatewayInfo.rfc2833);
+
 #if OPAL_T38_CAPABILITY
-    SetNxECapabilities(localMedia, OpalCiscoNSE, ciscoNSEHandler, nsePayloadCode);
+  fmt = formats.FindFormat(OpalCiscoNSE);
+  if (fmt != formats.end())
+    SetNxECapabilities(localMedia, *fmt, ciscoNSEHandler, gatewayInfo.ciscoNSE);
 #endif
-  }
 
   sdp.AddMediaDescription(localMedia);
 
@@ -906,6 +897,13 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   OpalMediaType mediaType = incomingMedia->GetMediaType();
 
+  OpalMediaFormatList localFormatList = GetLocalMediaFormats();
+  // See if any media formats of this session id, so don't create unused RTP session
+  if (!localFormatList.HasType(mediaType)) {
+    PTRACE(3, "SIP\tNo media formats of type " << mediaType << ", not adding SDP");
+    return false;
+  }
+
   OpalTransportAddress localAddress;
   bool remoteChanged = false;
   OpalMediaSession * mediaSession = SetUpMediaSession(rtpSessionId, mediaType, incomingMedia, localAddress, remoteChanged);
@@ -919,8 +917,11 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
 
   OpalMediaFormatList sdpFormats = incomingMedia->GetMediaFormats();
   sdpFormats.Remove(endpoint.GetManager().GetMediaFormatMask());
-  if (sdpFormats.GetSize() == 0) {
-    PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
+  while (!sdpFormats.IsEmpty() && localFormatList.FindFormat(sdpFormats.front()) == localFormatList.end())
+    sdpFormats.RemoveAt(0);
+
+  if (sdpFormats.IsEmpty()) {
+    PTRACE(1, "SIP\tNo available media formats in SDP media description for session " << rtpSessionId);
     // Send back a m= line with port value zero and the first entry of the offer payload types as per RFC3264
     localMedia = mediaSession->CreateSDPMediaDescription(OpalTransportAddress());
     if (localMedia  == NULL) {
@@ -930,7 +931,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     if (!incomingMedia->GetSDPMediaFormats().IsEmpty())
       localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
     sdpOut.AddMediaDescription(localMedia);
-    return PFalse;
+    return false;
   }
   
   // construct a new media session list 
@@ -1015,7 +1016,6 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   else {
     // Add all possible formats
     bool empty = true;
-    OpalMediaFormatList localFormatList = GetLocalMediaFormats();
     for (OpalMediaFormatList::iterator remoteFormat = m_remoteFormatList.begin(); remoteFormat != m_remoteFormatList.end(); ++remoteFormat) {
       if (remoteFormat->GetMediaType() == mediaType) {
         for (OpalMediaFormatList::iterator localFormat = localFormatList.begin(); localFormat != localFormatList.end(); ++localFormat) {
@@ -1043,9 +1043,14 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   }
 
   // Set format if we have an RTP payload type for RFC2833 and/or NSE
-  SetNxECapabilities(localMedia, GetNxECapabilities(rfc2833Handler, incomingMedia, OpalRFC2833), rfc2833Handler);
+  OpalMediaFormatList::const_iterator fmt = localFormatList.FindFormat(OpalRFC2833);
+  if (fmt != localFormatList.end())
+    SetNxECapabilities(localMedia, *fmt, rfc2833Handler);
+
 #if OPAL_T38_CAPABILITY
-  SetNxECapabilities(localMedia, GetNxECapabilities(ciscoNSEHandler, incomingMedia, OpalCiscoNSE), ciscoNSEHandler);
+  fmt = localFormatList.FindFormat(OpalCiscoNSE);
+  if (fmt != localFormatList.end())
+    SetNxECapabilities(localMedia, *fmt, ciscoNSEHandler);
 #endif
 
   sdpOut.AddMediaDescription(localMedia);
