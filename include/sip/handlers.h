@@ -73,13 +73,14 @@ public:
     Refreshing,       // The registration is being refreshed
     Restoring,        // The registration is trying to be restored after being offline
     Unsubscribing,    // The unregistration is in process
-    Unsubscribed      // The registrating is inactive
+    Unsubscribed,     // The registrating is inactive
+    NumStates
   };
 
   void SetState (SIPHandler::State s);
 
   inline SIPHandler::State GetState () 
-  { return state; }
+  { return m_state; }
 
   virtual OpalTransport * GetTransport();
 
@@ -120,7 +121,7 @@ public:
   virtual void OnFailed(const SIP_PDU & response);
   virtual void OnFailed(SIP_PDU::StatusCodes);
 
-  bool ActivateState(SIPHandler::State state, unsigned msecs = 1000);
+  bool ActivateState(SIPHandler::State state);
   virtual bool SendNotify(const PObject * /*body*/) { return false; }
 
   SIPEndPoint & GetEndPoint() const { return endpoint; }
@@ -158,7 +159,9 @@ protected:
   int                         offlineExpire;
   PString                     body;
   unsigned                    authenticationAttempts;
-  State                       state;
+  State                       m_state;
+  queue<State>                m_stateQueue;
+  bool                        m_receivedResponse;
   PTimer                      expireTimer; 
   PTimeInterval               retryTimeoutMin; 
   PTimeInterval               retryTimeoutMax; 
