@@ -2634,6 +2634,9 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     if (m_state == Completed)
       OnCompleted(response);
   }
+  else {
+    PTRACE(4, "SIP\tIgnoring duplicate response to " << GetMethod() << " transaction id=" << GetTransactionID());
+  }
 
   if (response.GetStatusCode() >= 200) {
     m_completionTimer = m_endpoint.GetPduCleanUpTimeout();
