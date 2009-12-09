@@ -995,14 +995,14 @@ PBoolean SIPEndPoint::IsRegistered(const PString & token, bool includeOffline)
 }
 
 
-PBoolean SIPEndPoint::Unregister(const PString & token, unsigned msecs)
+PBoolean SIPEndPoint::Unregister(const PString & token)
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
   if (handler == NULL)
     handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_REGISTER, PSafeReference);
 
   if (handler != NULL)
-    return handler->ActivateState(SIPHandler::Unsubscribing, msecs);
+    return handler->ActivateState(SIPHandler::Unsubscribing);
 
   PTRACE(1, "SIP\tCould not find active REGISTER for " << token);
   return false;
