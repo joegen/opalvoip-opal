@@ -434,8 +434,7 @@ class SIPEndPoint : public OpalRTPEndPoint
        avoided.
      */
     bool Unregister(
-      const PString & aor,    ///< AOR returned by Register()
-      unsigned msecs = 1000
+      const PString & aor    ///< AOR returned by Register()
     );
 
     /**Unregister all current registrations.

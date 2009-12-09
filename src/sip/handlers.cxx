@@ -84,7 +84,8 @@ SIPHandler::SIPHandler(SIPEndPoint & ep, const SIPParameters & params)
   , originalExpire(params.m_expire)
   , offlineExpire(params.m_restoreTime)
   , authenticationAttempts(0)
-  , state(Unavailable)
+  , m_state(Unavailable)
+  , m_receivedResponse(false)
   , retryTimeoutMin(params.m_minRetryTime)
   , retryTimeoutMax(params.m_maxRetryTime)
   , m_proxy(params.m_proxyAddress)
@@ -117,8 +118,12 @@ bool SIPHandler::ShutDown()
   if (!mutex.IsLocked())
     return true;
 
-  switch (state) {
+  while (!m_stateQueue.empty())
+    m_stateQueue.pop();
+
+  switch (GetState()) {
     case Subscribed :
+    case Unavailable :
       SendRequest(Unsubscribing);
     case Unsubscribing :
       return transactions.IsEmpty();
@@ -136,9 +141,131 @@ bool SIPHandler::ShutDown()
 
 void SIPHandler::SetState(SIPHandler::State newState) 
 {
-  PTRACE(4, "SIP\tChanging " << GetMethod() << " handler from " << state << " to " << newState
+  if (m_state == newState)
+    return;
+
+  PTRACE(4, "SIP\tChanging " << GetMethod() << " handler from " << GetState() << " to " << newState
          << ", target=" << GetAddressOfRecord() << ", id=" << GetCallID());
-  state = newState;
+
+  m_state = newState;
+
+  switch (m_state) {
+    case Subscribing :
+    case Refreshing :
+    case Restoring :
+    case Unsubscribing :
+      return;
+
+    default :
+      break;
+  }
+
+  if (m_stateQueue.empty())
+    return;
+
+  newState = m_stateQueue.front();
+  m_stateQueue.pop();
+  SendRequest(newState);
+}
+
+
+bool SIPHandler::ActivateState(SIPHandler::State newState)
+{
+  PSafeLockReadWrite mutex(*this);
+  if (!mutex.IsLocked())
+    return true;
+
+  // If subscribing with zero expiry time, is same as unsubscribe
+  if (newState == Subscribing && expire == 0)
+    newState = Unsubscribing;
+
+  // If unsubscribing and never got a response from server, rather than trying
+  // to send more unsuccessful packets, abort transactions and mark Unsubscribed
+  if (newState == Unsubscribing && !m_receivedResponse) {
+    ShutDown();
+    return true;
+  }
+
+  static const enum {
+    e_Invalid,
+    e_NoChange,
+    e_Execute,
+    e_Queue
+  } StateChangeActions[NumStates][NumStates] =
+  {
+    /* old-state
+           V      new-state-> Subscribed  Subscribing Unavailable Refreshing  Restoring   Unsubscribing Unsubscribed */
+    /* Subscribed        */ { e_NoChange, e_Execute,  e_Invalid,  e_Execute,  e_Execute,  e_Execute,    e_Invalid  },
+    /* Subscribing       */ { e_Invalid,  e_Queue,    e_Invalid,  e_NoChange, e_NoChange, e_Queue,      e_Invalid  },
+    /* Unavailable       */ { e_Invalid,  e_Execute,  e_NoChange, e_Execute,  e_Execute,  e_Execute,    e_Invalid  },
+    /* Refreshing        */ { e_Invalid,  e_Queue,    e_Invalid,  e_NoChange, e_NoChange, e_Queue,      e_Invalid  },
+    /* Restoring         */ { e_Invalid,  e_Queue,    e_Invalid,  e_NoChange, e_NoChange, e_Queue,      e_Invalid  },
+    /* Unsubscribing     */ { e_Invalid,  e_Invalid,  e_Invalid,  e_Invalid,  e_NoChange, e_NoChange,   e_Invalid  },
+    /* Unsubscribed      */ { e_Invalid,  e_Invalid,  e_Invalid,  e_Invalid,  e_Invalid,  e_NoChange,   e_NoChange }
+  };
+
+  switch (StateChangeActions[GetState()][newState]) {
+    case e_Invalid :
+      PTRACE(2, "SIP\tCannot change state to " << newState << " for " << GetMethod()
+             << " handler while in " << GetState() << " state, target="
+             << GetAddressOfRecord() << ", id=" << GetCallID());
+      return false;
+
+    case e_NoChange :
+      PTRACE(4, "SIP\tAlready in state " << GetState() << " for " << GetMethod()
+             << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
+      break;
+
+    case e_Execute :
+      PTRACE(4, "SIP\tExecuting state chage to " << newState << " for " << GetMethod()
+             << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
+      return SendRequest(newState);
+
+    case e_Queue :
+      PTRACE(3, "SIP\tQueueing state chage to " << newState << " for " << GetMethod()
+             << " handler while in " << GetState() << " state, target="
+             << GetAddressOfRecord() << ", id=" << GetCallID());
+      m_stateQueue.push(newState);
+      break;
+  }
+
+  return true;
+}
+
+
+PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
+{
+  expireTimer.Stop(false); // Stop automatic retry
+
+  SetState(newState);
+
+  if (GetTransport() == NULL)
+    OnFailed(SIP_PDU::Local_BadTransportAddress);
+  else {
+    // Restoring or first time, try every interface
+    if (newState == Restoring || m_transport->GetInterface().IsEmpty()) {
+      PWaitAndSignal mutex(m_transport->GetWriteMutex());
+      if (m_transport->WriteConnect(WriteSIPHandler, this))
+        return true;
+    }
+    else {
+      // We contacted the server on an interface last time, assume it still works!
+      if (WriteSIPHandler(*m_transport))
+        return true;
+    }
+
+    OnFailed(SIP_PDU::Local_TransportError);
+  }
+
+  if (newState == Unsubscribing) {
+    // Transport level error, probably never going to get the unsubscribe through
+    SetState(Unsubscribed);
+    return true;
+  }
+
+  PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
+  expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
+  return true;
 }
 
 
@@ -194,7 +321,7 @@ void SIPHandler::SetExpire(int e)
   // retry before the expire time.
   // if the expire time is more than 20 mins, retry 10mins before expiry
   // if the expire time is less than 20 mins, retry after half of the expiry time
-  if (expire > 0 && state < Unsubscribing)
+  if (expire > 0 && GetState() < Unsubscribing)
     expireTimer.SetInterval(0, (unsigned)(expire < 20*60 ? expire/2 : expire-10*60));
 }
 
@@ -212,7 +339,7 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
   if (transaction != NULL) {
     for (PINDEX i = 0; i < m_mime.GetSize(); ++i) 
       transaction->GetMIME().SetAt(m_mime.GetKeyAt(i), PString(m_mime.GetDataAt(i)));
-    if (state == Unsubscribing)
+    if (GetState() == Unsubscribing)
       transaction->GetMIME().SetExpires(0);
     if (authentication != NULL) {
       SIPAuthenticator auth(*transaction);
@@ -229,126 +356,6 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
 }
 
 
-bool SIPHandler::ActivateState(SIPHandler::State newState, unsigned msecs)
-{
-  PTimeInterval startTick = PTimer::Tick();
-  for (;;) {
-    {
-      PSafeLockReadWrite mutex(*this);
-      if (!mutex.IsLocked())
-        return false;
-
-      if (SendRequest(newState))
-        return true;
-    }
-
-    if ((PTimer::Tick() - startTick) > msecs)
-      return false;
-
-    PThread::Sleep(100);
-  }
-}
-
-
-PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
-{
-  expireTimer.Stop(false); // Stop automatic retry
-
-  if (expire == 0)
-    newState = Unsubscribing;
-
-  switch (newState) {
-    case Unsubscribing:
-      switch (state) {
-        case Subscribed :
-        case Unavailable :
-          break;  // Can try and do Unsubscribe
-
-        case Subscribing :
-        case Refreshing :
-        case Restoring :
-          PTRACE(2, "SIP\tCan't send " << newState << " request for " << GetMethod()
-                 << " handler while in " << state << " state, target="
-                 << GetAddressOfRecord() << ", id=" << GetCallID());
-          return false; // Are in the process of doing something
-
-        case Unsubscribed :
-        case Unsubscribing:
-          PTRACE(3, "SIP\tAlready doing " << state << " request for " << GetMethod()
-                 << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
-          return true;  // Already done or doing it
-
-        default :
-          PAssertAlways(PInvalidParameter);
-          return false;
-      }
-      break;
-
-    case Subscribing :
-    case Refreshing :
-    case Restoring :
-      switch (state) {
-        case Subscribed :
-        case Unavailable :
-          break;  // Can do subscribe/refresh/restore
-
-        case Refreshing :
-        case Restoring :
-          PTRACE(3, "SIP\tAlready doing " << state << " request for " << GetMethod()
-                 << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
-          return true; // Already doing it
-
-        case Subscribing :
-        case Unsubscribing :
-        case Unsubscribed :
-          PTRACE(2, "SIP\tCan't send " << newState << " request for " << GetMethod()
-                 << " handler while in " << state << " state, target="
-                 << GetAddressOfRecord() << ", id=" << GetCallID());
-          return false; // Can't restart as are on the way out
-
-        default : // Are in the process of doing something
-          PAssertAlways(PInvalidParameter);
-          return false;
-      }
-      break;
-
-    default :
-      PAssertAlways(PInvalidParameter);
-      return false;
-  }
-
-  SetState(newState);
-
-  if (GetTransport() == NULL)
-    OnFailed(SIP_PDU::Local_BadTransportAddress);
-  else {
-    // Restoring or first time, try every interface
-    if (newState == Restoring || m_transport->GetInterface().IsEmpty()) {
-      PWaitAndSignal mutex(m_transport->GetWriteMutex());
-      if (m_transport->WriteConnect(WriteSIPHandler, this))
-        return true;
-    }
-    else {
-      // We contacted the server on an interface last time, assume it still works!
-      if (WriteSIPHandler(*m_transport))
-        return true;
-    }
-
-    OnFailed(SIP_PDU::Local_TransportError);
-  }
-
-  if (newState == Unsubscribing) {
-    // Transport level error, probably never going to get the unsubscribe through
-    SetState(Unsubscribed);
-    return true;
-  }
-
-  PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
-  expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
-  return true;
-}
-
-
 PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 {
   return PFalse;
@@ -357,7 +364,8 @@ PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 
 void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  // Received a response, so collapse the forking on multiple interfaces.
+  // Received a response, so indicate that and collapse the forking on multiple interfaces.
+  m_receivedResponse = true;
 
   transactions.Remove(&transaction); // Take this transaction out of list
 
@@ -411,9 +419,7 @@ void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SI
   SetExpire(response.GetMIME().GetMinExpires());
 
   // Restart the transaction with new authentication handler
-  State oldState = state;
-  state = Unavailable;
-  SendRequest(oldState);
+  SendRequest(GetState());
 }
 
 
@@ -501,9 +507,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   m_password = password;
 
   // Restart the transaction with new authentication handler
-  State oldState = state;
-  state = Unavailable;
-  SendRequest(oldState);
+  SendRequest(GetState());
 }
 
 
@@ -526,7 +530,7 @@ void SIPHandler::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & respon
       break;
 
     default :
-      PTRACE(2, "SIP\tUnexpected 200 OK in handler with state " << state);
+      PTRACE(2, "SIP\tUnexpected 200 OK in handler with state " << GetState());
   }
 
   // reset the number of unsuccesful authentication attempts
@@ -759,6 +763,9 @@ void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
       status.m_wasRegistering = false;
       status.m_reRegistering = false;
       break;
+
+    default :
+      PAssertAlways(PInvalidParameter);
   }
 
   endpoint.OnRegistrationStatus(status);
@@ -800,7 +807,7 @@ SIPSubscribeHandler::~SIPSubscribeHandler()
 }
 
 
-SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
+SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport & trans)
 { 
   // Do all the following here as must be after we have called GetTransport()
   // which sets various fields correctly for transmission
@@ -819,7 +826,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
     m_dialog.SetProxy(m_proxy, true);
   }
 
-  m_parameters.m_expire = state != Unsubscribing ? expire : 0;
+  m_parameters.m_expire = GetState() != Unsubscribing ? expire : 0;
   return new SIPSubscribe(endpoint, trans, m_dialog, m_parameters);
 }
 
@@ -830,31 +837,12 @@ void SIPSubscribeHandler::OnFailed(const SIP_PDU & response)
 
   SendStatus(responseCode, GetState());
 
-  if (state != Unsubscribing) {
-    int newExpires = 0;
+  if (GetState() != Unsubscribing && responseCode == SIP_PDU::Failure_TransactionDoesNotExist) {
+    // Resubscribe as previous subscription totally lost, but dialog processing
+    // may have altered the target so restore the original target address
+    m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
     PString dummy;
-    
-    switch (responseCode) {
-      case SIP_PDU::Failure_TransactionDoesNotExist:
-        // Resubscribe as previous subscription totally lost, but dialog processing
-        // may have altered the target so restore the original target address
-        m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
-        endpoint.Subscribe(m_parameters, dummy);
-        break;
-
-      case SIP_PDU::Failure_IntervalTooBrief:
-        // Resubscribe with altered expiry
-        newExpires = response.GetMIME().GetExpires();
-        if (newExpires > 0) {
-          m_parameters.m_expire = newExpires;
-          PString dummy;
-          endpoint.Subscribe(m_parameters, dummy);
-        }
-        break;
-
-      default:
-        break;
-    }
+    endpoint.Subscribe(m_parameters, dummy);
   }
 
   SIPHandler::OnFailed(responseCode);
@@ -907,6 +895,9 @@ void SIPSubscribeHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
       status.m_wasSubscribing = false;
       status.m_reSubscribing = false;
       break;
+
+    default :
+      PAssertAlways(PInvalidParameter);
   }
 
   if (!m_parameters.m_onSubcribeStatus.IsNULL()) 
@@ -1026,8 +1017,8 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   // Adjust timeouts if state is a go
   if (subscriptionState == "active" || subscriptionState == "pending") {
-    PTRACE(3, "SIP\tSubscription is " << state);
-    PString expire = SIPMIMEInfo::ExtractFieldParameter(state, "expire");
+    PTRACE(3, "SIP\tSubscription is " << GetState());
+    PString expire = SIPMIMEInfo::ExtractFieldParameter(GetState(), "expire");
     if (!expire.IsEmpty())
       SetExpire(expire.AsUnsigned());
   }
@@ -1508,7 +1499,7 @@ bool SIPNotifyHandler::SendNotify(const PObject * body)
 
   UnlockReadWrite();
 
-  return ActivateState(Subscribing, endpoint.GetNonInviteTimeout().GetInterval());
+  return ActivateState(Subscribing);
 }
 
 
@@ -1532,7 +1523,7 @@ SIPPublishHandler::~SIPPublishHandler()
 
 SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & transport)
 {
-  if (state == Unsubscribing)
+  if (GetState() == Unsubscribing)
     return NULL;
 
   m_parameters.m_expire = expire;
@@ -1727,7 +1718,7 @@ SIPMessageHandler::~SIPMessageHandler ()
 
 SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
 { 
-  if (state == Unsubscribing)
+  if (GetState() == Unsubscribing)
     return NULL;
 
   SetExpire(originalExpire);
@@ -1763,7 +1754,7 @@ SIPPingHandler::SIPPingHandler(SIPEndPoint & endpoint, const PURL & to)
 
 SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 {
-  if (state == Unsubscribing)
+  if (GetState() == Unsubscribing)
     return NULL;
 
   return new SIPPing(endpoint, t, GetAddressOfRecord(), body);
