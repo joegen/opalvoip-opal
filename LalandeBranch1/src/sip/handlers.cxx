@@ -120,7 +120,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
       if (m_addressOfRecord.GetHostAddress().IsEquivalent(remoteURL.GetHostAddress()))
         m_remoteAddress = m_addressOfRecord;
       else {
-        /* Note this sets the proxy field because the user has given a full AOR
+        /* Note this sets the proxy field because the user has givena full AOR
            with a domain for "target" and then specified a specific host name
            which as far as we are concered is the host to talk to. Setting the
            proxy will prevent SRV lookups or other things that might stop uis
@@ -140,6 +140,8 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
 
 SIPHandler::~SIPHandler() 
 {
+  expireTimer.Stop();
+
   if (m_transport) {
     m_transport->CloseWait();
     delete m_transport;
@@ -205,9 +207,15 @@ OpalTransport * SIPHandler::GetTransport()
   if (m_proxy.IsEmpty())
     m_proxy = endpoint.GetProxy();
 
+  SIPURL url;
+  if (!m_proxy.IsEmpty())
+    url = m_proxy;
+  else {
+    url = GetAddressOfRecord();
+    url.AdjustToDNS();
+  }
+
   // Must specify a network interface or get infinite recursion
-  SIPURL url(m_proxy.IsEmpty() ? GetAddressOfRecord() : m_proxy);
-  url.AdjustToDNS();
   m_transport = endpoint.CreateTransport(url, "*");
   return m_transport;
 }
@@ -229,7 +237,7 @@ void SIPHandler::SetExpire(int e)
   // if the expire time is more than 20 mins, retry 10mins before expiry
   // if the expire time is less than 20 mins, retry after half of the expiry time
   if (expire > 0 && state < Unsubscribing)
-    expireTimer.SetInterval(0, (unsigned)(expire < 1200*1000 ? expire/2 : expire-600*1000));
+    expireTimer.SetInterval(0, (unsigned)(expire < 20*60 ? expire/2 : expire-10*60));
 }
 
 
@@ -259,6 +267,27 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
 }
 
 
+bool SIPHandler::ActivateState(SIPHandler::State newState, unsigned msecs)
+{
+  PTimeInterval startTick = PTimer::Tick();
+  for (;;) {
+    {
+      PSafeLockReadWrite mutex(*this);
+      if (!mutex.IsLocked())
+        return false;
+
+      if (SendRequest(newState))
+        return true;
+    }
+
+    if ((PTimer::Tick() - startTick) > msecs)
+      return false;
+
+    PThread::Sleep(100);
+  }
+}
+
+
 PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
 {
   expireTimer.Stop(false); // Stop automatic retry
@@ -269,14 +298,26 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
   switch (newState) {
     case Unsubscribing:
       switch (state) {
-        case Unsubscribed :
-          return true;
-
         case Subscribed :
         case Unavailable :
-          break;
+          break;  // Can try and do Unsubscribe
 
-        default : // Are in the process of doing something
+        case Subscribing :
+        case Refreshing :
+        case Restoring :
+          PTRACE(2, "SIP\tCan't send " << newState << " request for " << GetMethod()
+                 << " handler while in " << state << " state, target="
+                 << GetAddressOfRecord() << ", id=" << GetCallID());
+          return false; // Are in the process of doing something
+
+        case Unsubscribed :
+        case Unsubscribing :
+          PTRACE(3, "SIP\tAlready doing " << state << " request for " << GetMethod()
+                 << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
+          return true;  // Already done or doing it
+
+        default :
+          PAssertAlways(PInvalidParameter);
           return false;
       }
       break;
@@ -284,6 +325,29 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
     case Subscribing :
     case Refreshing :
     case Restoring :
+      switch (state) {
+        case Subscribed :
+        case Unavailable :
+          break;  // Can do subscribe/refresh/restore
+
+        case Refreshing :
+        case Restoring :
+          PTRACE(3, "SIP\tAlready doing " << state << " request for " << GetMethod()
+                 << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
+          return true; // Already doing it
+
+        case Subscribing :
+        case Unsubscribing :
+        case Unsubscribed :
+          PTRACE(2, "SIP\tCan't send " << newState << " request for " << GetMethod()
+                 << " handler while in " << state << " state, target="
+                 << GetAddressOfRecord() << ", id=" << GetCallID());
+          return false; // Can't restart as are on the way out
+
+        default : // Are in the process of doing something
+          PAssertAlways(PInvalidParameter);
+          return false;
+      }
       break;
 
     default :
@@ -331,7 +395,7 @@ PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 
 void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  // Received a response, so collapse the foking on multiple interfaces.
+  // Received a response, so collapse the forking on multiple interfaces.
 
   transactions.Remove(&transaction); // Take this transaction out of list
 
@@ -384,7 +448,7 @@ void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SI
 {
   SetExpire(response.GetMIME().GetMinExpires());
 
-  // Start new transaction with adjusted Expires time
+  // Restart the transaction with new authentication handler
   State oldState = state;
   state = Unavailable;
   SendRequest(oldState);
@@ -466,7 +530,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & /*transaction
   m_username = username;
   m_password = password;
 
-  // Start new transaction with new authentication handler
+  // Restart the transaction with new authentication handler
   State oldState = state;
   state = Unavailable;
   SendRequest(oldState);
@@ -685,7 +749,7 @@ void SIPRegisterHandler::OnFailed(SIP_PDU::StatusCodes r)
 
 PBoolean SIPRegisterHandler::SendRequest(SIPHandler::State s)
 {
-  SendStatus(SIP_PDU::Information_Trying, s);
+  SendStatus(SIP_PDU::Information_Trying, GetState());
   m_sequenceNumber = endpoint.GetNextCSeq();
   return SIPHandler::SendRequest(s);
 }
@@ -768,6 +832,10 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
   m_username = params.m_authID;
   m_password = params.m_password;
   m_realm    = params.m_realm;
+
+  // having an agent is the same as having a proxy....near enough
+  if (!params.m_agentAddress.IsEmpty())
+    m_proxy = params.m_agentAddress;
 }
 
 
@@ -817,7 +885,7 @@ void SIPSubscribeHandler::OnFailed(const SIP_PDU & response)
 
 PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
 {
-  SendStatus(SIP_PDU::Information_Trying, s);
+  SendStatus(SIP_PDU::Information_Trying, GetState());
   return SIPHandler::SendRequest(s);
 }
 
@@ -1361,17 +1429,22 @@ PBoolean SIPNotifyHandler::SendRequest(SIPHandler::State state)
 
 bool SIPNotifyHandler::SendNotify(const PObject * body)
 {
+  if (!LockReadWrite())
+    return false;
+
   if (m_packageHandler != NULL)
     SetBody(m_packageHandler->OnSendNOTIFY(*this, body));
   else if (body == NULL)
     SetBody(PString::Empty());
   else {
     PStringStream str;
-    str << body;
+    str << *body;
     SetBody(str);
   }
 
-  return SendRequest(Subscribing);
+  UnlockReadWrite();
+
+  return ActivateState(Subscribing, endpoint.GetNonInviteTimeout().GetInterval());
 }
 
 
@@ -1408,7 +1481,10 @@ SIPPublishHandler::~SIPPublishHandler()
 
 SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
 {
-  SetExpire(originalExpire);
+  if (state == Unsubscribing)
+    return NULL;
+
+  m_parameters.m_expire = expire;
   return new SIPPublish(endpoint,
                         t, 
                         GetCallID(),
@@ -1550,10 +1626,20 @@ SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 
 //////////////////////////////////////////////////////////////////
 
+/* All of the below search loops run through the list with only
+   PSafeReference rather than PSafeReadOnly, even though they are
+   reading fields from the handler instances. We can get away with
+   this becuase the information being tested, e.g. AOR, is constant
+   for the life of the handler instance, once constructed.
+
+   We need to use PSafeReference as there are some cases where
+   deadlocks can occur when locked handlers look for information
+   from other handlers.
+ */
 unsigned SIPHandlersList::GetCount(SIP_PDU::Methods meth, const PString & eventPackage) const
 {
   unsigned count = 0;
-  for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler)
+  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler)
     if (handler->GetState () == SIPHandler::Subscribed &&
         handler->GetMethod() == meth &&
         (eventPackage.IsEmpty() || handler->GetEventPackage() == eventPackage))
@@ -1565,7 +1651,7 @@ unsigned SIPHandlersList::GetCount(SIP_PDU::Methods meth, const PString & eventP
 PStringList SIPHandlersList::GetAddresses(bool includeOffline, SIP_PDU::Methods meth, const PString & eventPackage) const
 {
   PStringList addresses;
-  for (PSafePtr<SIPHandler> handler(*this, PSafeReference); handler != NULL; ++handler)
+  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler)
     if ((includeOffline ? handler->GetState () != SIPHandler::Unsubscribed
                         : handler->GetState () == SIPHandler::Subscribed) &&
         handler->GetMethod() == meth &&
@@ -1578,11 +1664,12 @@ PStringList SIPHandlersList::GetAddresses(bool includeOffline, SIP_PDU::Methods 
 /**
  * Find the SIPHandler object with the specified callID
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & callID, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & callID, PSafetyMode mode)
 {
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler)
-    if (callID == handler->GetCallID())
+  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
+    if (callID == handler->GetCallID() && handler.SetSafetyMode(mode))
       return handler;
+  }
   return NULL;
 }
 
@@ -1590,35 +1677,40 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & cal
 /**
  * Find the SIPHandler object with the specified authRealm
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode mode)
 {
-  PIPSocket::Address authRealmAddress, realmAddress;
+  PIPSocket::Address handlerRealmAddress, authRealmAddress;
   PIPSocket::GetHostAddress(authRealm, authRealmAddress);
 
   // if username is specified, look for exact matches
   if (!userName.IsEmpty()) {
 
     // look for a match to exact user name and realm
-    for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-      if ((handler->GetRealm().IsEmpty() || handler->GetRealm() == authRealm) && userName == handler->GetUsername()) {
+    for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
+      if ( handler->GetUsername() == userName &&
+          (handler->GetRealm().IsEmpty() || handler->GetRealm() == authRealm) &&
+           handler.SetSafetyMode(mode)) {
         PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
         return handler;
       }
     }
 
     // look for a match to exact AOR name and realm
-    for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-      if ((handler->GetRealm().IsEmpty() || handler->GetRealm() == authRealm) && userName == handler->GetAddressOfRecord().GetUserName()) {
+    for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
+      if ( handler->GetAddressOfRecord().GetUserName() == userName &&
+          (handler->GetRealm().IsEmpty() || handler->GetRealm() == authRealm) &&
+           handler.SetSafetyMode(mode)) {
         PTRACE(4, "SIP\tLocated existing credentials for AOR user \"" << userName << "\" at realm \"" << authRealm << '"');
         return handler;
       }
     }
 
     // look for a match to exact username and realm as hostname
-    for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
+    for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
       if (userName == handler->GetUsername() &&
-          PIPSocket::GetHostAddress(handler->GetRealm(), realmAddress) &&
-          realmAddress == authRealmAddress) {
+          PIPSocket::GetHostAddress(handler->GetRealm(), handlerRealmAddress) &&
+          handlerRealmAddress  == authRealmAddress &&
+          handler.SetSafetyMode(mode)) {
         PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at host/address \"" << authRealm << '"');
         return handler;
       }
@@ -1626,16 +1718,18 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
   }
 
   // look for a match to exact realm
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (authRealm == handler->GetRealm()) {
+  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
+    if (handler->GetRealm() == authRealm && handler.SetSafetyMode(mode)) {
       PTRACE(4, "SIP\tLocated existing credentials for realm \"" << authRealm << '"');
       return handler;
     }
   }
 
   // look for a match to exact realm as hostname
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (PIPSocket::GetHostAddress(handler->GetRealm(), realmAddress) && realmAddress == authRealmAddress) {
+  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
+    if (PIPSocket::GetHostAddress(handler->GetRealm(), handlerRealmAddress) &&
+        handlerRealmAddress == authRealmAddress &&
+        handler.SetSafetyMode(mode)) {
       PTRACE(4, "SIP\tLocated existing credentials for host/address \"" << authRealm << '"');
       return handler;
     }
@@ -1651,24 +1745,27 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
  * or 6001@seconix.com when registering 6001@seconix.com to
  * sip.seconix.com
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & remoteAddress, SIP_PDU::Methods meth, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & remoteAddress, SIP_PDU::Methods meth, PSafetyMode mode)
 {
   SIPURL remoteURL = remoteAddress;
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (meth == handler->GetMethod() && remoteURL == handler->GetAddressOfRecord())
+  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
+    if (handler->GetMethod() == meth &&
+        handler->GetAddressOfRecord() == remoteURL &&
+        handler.SetSafetyMode(mode))
       return handler;
   }
   return NULL;
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods meth, const PString & eventPackage, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods meth, const PString & eventPackage, PSafetyMode mode)
 {
   SIPURL aorURL = aor;
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-    if (meth == handler->GetMethod() &&
+  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
+    if (handler->GetMethod() == meth &&
         handler->GetAddressOfRecord() == aorURL &&
-        handler->GetEventPackage() == eventPackage)
+        handler->GetEventPackage() == eventPackage &&
+        handler.SetSafetyMode(mode))
       return handler;
   }
   return NULL;
@@ -1680,14 +1777,14 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, S
  * For example, in the above case, the name parameter
  * could be "sip.seconix.com" or "seconix.com".
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode mode)
 {
-  for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
-
-    if ((handler->GetMethod() == meth) &&
-        (handler->GetState() != SIPHandler::Unsubscribed) &&
+  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
+    if ( handler->GetMethod() == meth &&
+         handler->GetState() != SIPHandler::Unsubscribed &&
         (handler->GetAddressOfRecord().GetHostName() == name ||
-        handler->GetAddressOfRecord().GetHostAddress().IsEquivalent(name)))
+         handler->GetAddressOfRecord().GetHostAddress().IsEquivalent(name)) &&
+         handler.SetSafetyMode(mode))
       return handler;
   }
   return NULL;
