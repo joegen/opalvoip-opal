@@ -2227,12 +2227,8 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
 void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
-
-  PTRACE(4, "SIP\tReceived redirect");
   SIPURL whereTo = response.GetMIME().GetContact();
+  PTRACE(3, "SIP\tReceived redirect to " << whereTo);
   endpoint.ForwardConnection(*this, whereTo.AsString());
 }
 
@@ -2349,10 +2345,6 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
     default :
       return;
   }
-
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
 
   PTRACE(3, "SIP\tHandling " << response.GetStatusCode() << " response for " << transaction.GetMethod());
 
