@@ -473,6 +473,9 @@ void SIPURL::Sanitise(UsageContext context)
     case RegisterURI :
       username.MakeEmpty();
       password.MakeEmpty();
+
+    default :
+      break;
   }
 
   Recalculate();

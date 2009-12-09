@@ -790,6 +790,9 @@ void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
       status.m_wasRegistering = false;
       status.m_reRegistering = false;
       break;
+
+    default :
+      PAssertAlways(PInvalidParameter);
   }
 
   endpoint.OnRegistrationStatus(status);
@@ -916,6 +919,9 @@ void SIPSubscribeHandler::SendStatus(SIP_PDU::StatusCodes code, State state)
     case Unsubscribing :
       endpoint.OnSubscriptionStatus(m_parameters.m_eventPackage, GetAddressOfRecord(), false, false, code);
       break;
+
+    default :
+      PAssertAlways(PInvalidParameter);
   }
 }
 
