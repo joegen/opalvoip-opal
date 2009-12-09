@@ -196,11 +196,12 @@ public:
 
   void UpdateParameters(const SIPRegister::Params & params);
 
+  SIPRegister::Params m_parameters;
+
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
 
-  SIPRegister::Params m_parameters;
   unsigned            m_sequenceNumber;
 };
 
