@@ -48,8 +48,9 @@ static PString GetCapability(const std::vector<bool> & capabilitySet)
 {
   PStringStream str;
 
+  PINDEX last = capabilitySet.size()-1;
   PINDEX i = 0;
-  while (i < 255) {
+  while (i < last) {
     if (!capabilitySet[i])
       i++;
     else {
@@ -142,6 +143,7 @@ OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & r
   m_asyncTransmitTimer.SetNotifier(PCREATE_NOTIFIER(AsyncTimeout));
   m_asyncDurationTimer.SetNotifier(PCREATE_NOTIFIER(AsyncTimeout));
 
+  m_rxCapabilitySet.resize(256);
   SetRxCapability(fmt.GetOptionString("FMTP", "0-15"));
   m_txCapabilitySet = m_rxCapabilitySet;
 }
@@ -316,7 +318,7 @@ PString OpalRFC2833Proto::GetRxCapability() const
 
 void OpalRFC2833Proto::SetTxCapability(const PString & codes, bool merge)
 {
-  PTRACE(4, "RFC2833\tTx capability " << (merge ? "medied with" : "set to") << " \"" << codes << '"');
+  PTRACE(4, "RFC2833\tTx capability " << (merge ? "merged with" : "set to") << " \"" << codes << '"');
   SetCapability(codes, m_txCapabilitySet, merge);
 }
 
