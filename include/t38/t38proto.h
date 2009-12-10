@@ -256,6 +256,14 @@ class OpalFaxConnection : public OpalConnection
       bool failed   ///< Fax ended with failure
     );
 
+#if OPAL_STATISTICS
+    /**Get fax transmission/receipt statistics.
+      */
+    virtual void GetStatistics(
+      OpalMediaStatistics & statistics  ///< Statistics for call
+    ) const;
+#endif
+
     /**Get the file to send/receive
       */
     const PString & GetFileName() const { return m_filename; }
