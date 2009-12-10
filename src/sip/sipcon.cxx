@@ -708,11 +708,9 @@ static void SetNxECapabilities(OpalRFC2833Proto * handler,
   if (nxePayloadCode != RTP_DataFrame::IllegalPayloadType) {
     PTRACE(3, "SIP\tUsing bypass RTP payload " << nxePayloadCode << " for " << *fmt);
   }
-  else if (fmt->GetPayloadType() != RTP_DataFrame::IllegalPayloadType) {
+  else if ((nxePayloadCode = fmt->GetPayloadType()) != RTP_DataFrame::IllegalPayloadType) {
     PTRACE(3, "SIP\tUsing default RTP payload " << nxePayloadCode << " for " << *fmt);
-    if (localMedia != NULL)
-      localMedia->AddSDPMediaFormat(new SDPMediaFormat(*localMedia, *fmt));
-    return;
+
   }
   else if ((nxePayloadCode = handler->GetPayloadType()) != RTP_DataFrame::IllegalPayloadType) {
     PTRACE(3, "SIP\tUsing handler RTP payload " << nxePayloadCode << " for " << *fmt);
@@ -721,6 +719,8 @@ static void SetNxECapabilities(OpalRFC2833Proto * handler,
     PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for " << *fmt);
     return;
   }
+
+  handler->SetPayloadType(nxePayloadCode);
 
   if (localMedia != NULL) {
     OpalMediaFormat adjustedFormat = *fmt;
