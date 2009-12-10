@@ -51,6 +51,7 @@
 #include <h323/h323.h>
 #include <h323/gkclient.h>
 #include <sip/sip.h>
+#include <t38/t38proto.h>
 #include <ptlib/wxstring.h>
 
 
@@ -158,6 +159,18 @@ class MySIPEndPoint : public SIPEndPoint
     MyManager & m_manager;
 };
 #endif // OPAL_SIP
+
+
+#if OPAL_FAX
+class MyFaxEndPoint : public OpalFaxEndPoint
+{
+    PCLASSINFO(MyFaxEndPoint, OpalFaxEndPoint)
+
+  public:
+    MyFaxEndPoint(OpalManager & manager) : OpalFaxEndPoint(manager) { }
+    virtual void OnFaxCompleted(OpalFaxConnection & connection, bool timeout);
+};
+#endif // OPAL_FAX
 
 
 class PresenceDialog : public wxDialog
@@ -652,7 +665,7 @@ class OptionsDialog : public wxDialog
     // Fax fields
     PwxString m_FaxStationIdentifier;
     PwxString m_FaxReceiveDirectory;
-    int       m_FaxSyncMode;
+    int       m_FaxAutoAnswerMode;
     void BrowseFaxDirectory(wxCommandEvent & event);
 
     ////////////////////////////////////////
@@ -835,11 +848,13 @@ class MyManager : public wxFrame, public OpalManager
 
     bool HasHandset() const;
 
-    enum AnswerModes {
+    enum FaxAnswerModes {
       AnswerVoice,
       AnswerFax,
       AnswerDetect
-    } m_AnswerMode;
+    };
+    FaxAnswerModes m_currentAnswerMode;
+    FaxAnswerModes m_defaultAnswerMode;
     void SwitchToFax();
 
     MyPCSSEndPoint & GetPCSSEP() { return *pcssEP; }

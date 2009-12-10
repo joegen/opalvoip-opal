@@ -606,6 +606,25 @@ void OpalFaxConnection::OnFaxCompleted(bool failed)
 }
 
 
+void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  OpalMediaStreamPtr stream;
+  if ((stream = GetMediaStream(OpalMediaType::Fax(), false)) == NULL &&
+      (stream = GetMediaStream(OpalMediaType::Fax(), true )) == NULL) {
+
+    PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+    if (other == NULL)
+      return;
+
+    if ((stream = other->GetMediaStream(OpalMediaType::Fax(), false)) == NULL &&
+        (stream = other->GetMediaStream(OpalMediaType::Fax(), true )) == NULL)
+      return;
+  }
+
+  stream->GetStatistics(statistics);
+}
+
+
 void OpalFaxConnection::OnSendCNGCED(PTimer &, INT)
 {
   if (m_awaitingSwitchToT38 && LockReadOnly()) {
@@ -662,6 +681,7 @@ void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool enabledFax)
 void OpalFaxConnection::OpenFaxStreams(PThread &, INT)
 {
   if (LockReadWrite()) {
+    m_awaitingSwitchToT38 = false;
     if (!SwitchFaxMediaStreams(true))
       OnFaxCompleted(true);
     UnlockReadWrite();

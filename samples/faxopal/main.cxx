@@ -256,9 +256,7 @@ void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
 {
   OpalMediaStatistics stats;
-  OpalMediaStreamPtr stream = connection.GetMediaStream(OpalMediaType::Fax(), false);
-  if (stream != NULL)
-    stream->GetStatistics(stats);
+  connection.GetStatistics(stats);
   switch (stats.m_fax.m_result) {
     case -2 :
       cout << " failed to establish ";
