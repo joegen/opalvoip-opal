@@ -314,7 +314,7 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithBYE :
       // create BYE now & delete it later (in garbage collection thread)
-      new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE);
+      (new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE))->Start();
       break;
 
     case ReleaseWithCANCEL :
