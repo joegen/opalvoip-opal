@@ -58,7 +58,6 @@
 #include <opal/ivr.h>
 #include <lids/lidep.h>
 #include <ptclib/pstun.h>
-#include <t38/t38proto.h>
 #include <codec/vidcodec.h>
 #include <ptclib/pwavfile.h>
 
@@ -181,8 +180,7 @@ DEF_FIELD(RemoteVideoFrameY);
 static const wxChar FaxGroup[] = wxT("/Fax");
 DEF_FIELD(FaxStationIdentifier);
 DEF_FIELD(FaxReceiveDirectory);
-DEF_FIELD(FaxSyncMode);
-static const wxChar * FaxSyncModes[] = { wxT("Wait"), wxT("Timeout"), wxT("UserInput"), wxT("InBand") };
+DEF_FIELD(FaxAutoAnswerMode);
 
 static const wxChar CodecsGroup[] = wxT("/Codecs");
 static const wxChar CodecNameKey[] = wxT("Name");
@@ -552,7 +550,8 @@ END_EVENT_TABLE()
 
 MyManager::MyManager()
   : wxFrame(NULL, -1, wxT("OpenPhone"), wxDefaultPosition, wxSize(640, 480))
-  , m_AnswerMode(AnswerDetect)
+  , m_currentAnswerMode(AnswerDetect)
+  , m_defaultAnswerMode(AnswerDetect)
   , m_speedDials(NULL)
   , pcssEP(NULL)
   , potsEP(NULL)
@@ -727,7 +726,7 @@ bool MyManager::Initialise()
 #endif
 
 #if OPAL_FAX
-  m_faxEP = new OpalFaxEndPoint(*this);
+  m_faxEP = new MyFaxEndPoint(*this);
 #endif
 
   potsEP = new OpalLineEndPoint(*this);
@@ -897,8 +896,8 @@ bool MyManager::Initialise()
     m_faxEP->SetDefaultDisplayName(str);
   if (config->Read(FaxReceiveDirectoryKey, &str))
     m_faxEP->SetDefaultDirectory(str);
-  if (config->Read(FaxSyncModeKey, &str))
-    m_faxEP->SetDefaultStringOption("Fax-Sync-Mode", str);
+  if (config->Read(FaxAutoAnswerModeKey, &value1) && value1 >= AnswerVoice && value1 <= AnswerDetect)
+    m_defaultAnswerMode = (FaxAnswerModes)value1;
 #endif
 
   ////////////////////////////////////////
@@ -2121,7 +2120,7 @@ void MyManager::OnEstablishedCall(OpalCall & call)
   LogWindow << "Established call from " << call.GetPartyA() << " to " << call.GetPartyB() << endl;
   SetState(InCallState, call.GetToken());
 
-  if (m_AnswerMode == AnswerFax)
+  if (m_currentAnswerMode == AnswerFax)
     new PThreadObj<MyManager>(*this, &MyManager::SwitchToFax, true, "SwitchToFax");
 
 #if OPAL_SIP
@@ -2396,7 +2395,7 @@ void MyManager::OnUserInputString(OpalConnection & connection, const PString & v
 
 void MyManager::OnUserInputTone(OpalConnection & connection, char tone, int duration)
 {
-  if (toupper(tone) == 'X' && m_AnswerMode == AnswerDetect)
+  if (toupper(tone) == 'X' && m_currentAnswerMode == AnswerDetect)
     new PThreadObj<MyManager>(*this, &MyManager::SwitchToFax, true, "SwitchToFax");
 
   OpalManager::OnUserInputTone(connection, tone, duration);
@@ -2847,6 +2846,7 @@ void MyManager::OnStateChange(wxCommandEvent & theEvent)
       pcssEP->AcceptIncomingConnection(m_incomingToken);
       m_incomingToken.MakeEmpty();
 
+      m_currentAnswerMode = m_defaultAnswerMode;
       newState = AnsweringState;
       // Do next state
 
@@ -3777,15 +3777,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 #if OPAL_FAX
   INIT_FIELD(FaxStationIdentifier, m_manager.m_faxEP->GetDefaultDisplayName());
   INIT_FIELD(FaxReceiveDirectory, m_manager.m_faxEP->GetDefaultDirectory());
-
-  PwxString syncMode = m_manager.m_faxEP->GetDefaultStringOptions()("Fax-Sync-Mode");
-  for (m_FaxSyncMode = 0; m_FaxSyncMode < PARRAYSIZE(FaxSyncModes); ++m_FaxSyncMode) {
-    if (syncMode == FaxSyncModes[m_FaxSyncMode])
-      break;
-  }
-  if (m_FaxSyncMode >= PARRAYSIZE(FaxSyncModes))
-    m_FaxSyncMode = 2;
-  FindWindowByName(FaxSyncModeKey)->SetValidator(wxGenericValidator(&m_FaxSyncMode));
+  INIT_FIELD(FaxAutoAnswerMode, m_manager.m_defaultAnswerMode);
 #else
   RemoveNotebookPage(this, wxT("Fax"));
 #endif
@@ -4158,8 +4150,7 @@ bool OptionsDialog::TransferDataFromWindow()
   config->SetPath(FaxGroup);
   SAVE_FIELD(FaxStationIdentifier, m_manager.m_faxEP->SetDefaultDisplayName);
   SAVE_FIELD(FaxReceiveDirectory, m_manager.m_faxEP->SetDefaultDirectory);
-  m_manager.m_faxEP->SetDefaultStringOption("Fax-Sync-Mode", FaxSyncModes[m_FaxSyncMode]);
-  config->Write(FaxSyncModeKey, FaxSyncModes[m_FaxSyncMode]);
+  SAVE_FIELD(FaxAutoAnswerMode, m_manager.m_defaultAnswerMode = (MyManager::FaxAnswerModes));
 #endif
 
   ////////////////////////////////////////
@@ -5672,7 +5663,7 @@ void AnswerPanel::OnReject(wxCommandEvent & /*event*/)
 
 void AnswerPanel::OnChangeAnswerMode(wxCommandEvent & theEvent)
 {
-  m_manager.m_AnswerMode = (MyManager::AnswerModes)theEvent.GetSelection();
+  m_manager.m_currentAnswerMode = (MyManager::FaxAnswerModes)theEvent.GetSelection();
 }
 
 
@@ -6592,7 +6583,57 @@ void MySIPEndPoint::OnPresenceInfoReceived(const SIPPresenceInfo & info)
   m_manager.OnPresenceInfoReceived(info);
 }
 
-
 #endif // OPAL_SIP
+
+
+#if OPAL_FAX
+
+void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
+{
+  OpalMediaStatistics stats;
+  connection.GetStatistics(stats);
+
+  LogWindow << "FAX call ";
+  switch (stats.m_fax.m_result) {
+    case -2 :
+      LogWindow << "failed to establish.";
+      break;
+
+    case -1 :
+      LogWindow << "partially ";
+    case 0 :
+      LogWindow << "successful ";
+      if (connection.IsReceive())
+        LogWindow << "receipt, " << stats.m_fax.m_rxPages;
+      else
+        LogWindow << "send, " << stats.m_fax.m_txPages;
+      LogWindow << " of " << stats.m_fax.m_totalPages << " pages, "
+                << stats.m_fax.m_imageSize << " bytes";
+      if (connection.IsReceive())
+        LogWindow << ", " << stats.m_fax.m_badRows << " bad rows";
+      break;
+
+    case 41 :
+      LogWindow << "failed to open TIFF file " << connection.GetFileName();
+      break;
+
+    case 42 :
+    case 43 :
+    case 44 :
+    case 45 :
+    case 46 :
+      LogWindow << "illegal TIFF file " << connection.GetFileName();
+      break;
+
+    default :
+      LogWindow << "had T.30 error code " << stats.m_fax.m_result;
+  }
+  LogWindow << endl;
+
+  OpalFaxEndPoint::OnFaxCompleted(connection, failed);
+}
+
+#endif // OPAL_FAX
+
 
 // End of File ///////////////////////////////////////////////////////////////
