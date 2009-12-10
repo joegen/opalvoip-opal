@@ -358,7 +358,7 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithBYE :
       // create BYE now & delete it later to prevent memory access errors
-      new SIPTransaction(SIP_PDU::Method_BYE, *this);
+      (new SIPTransaction(SIP_PDU::Method_BYE, *this))->Start();
       for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
         /* If we never even received a "100 Trying" from a remote, then just abort
            the transaction, do not wait, it is probably on an interface that the
