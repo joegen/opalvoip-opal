@@ -68,29 +68,38 @@ static PString GetCapability(const std::vector<bool> & capabilitySet)
 }
 
 
-static void SetCapability(const PString & codes, std::vector<bool> & capabilitySet)
+static void SetCapability(const PString & codes, std::vector<bool> & xxCapabilitySet, bool merge)
 {
+  std::vector<bool> capabilitySet;
+  capabilitySet.resize(xxCapabilitySet.size());
+ 
   if (codes.IsEmpty()) {
-    SetCapability("0-15", capabilitySet); // RFC specified default
-    return;
+    // RFC specified default: 0-15
+    for (size_t i = 0; i < 15; ++i)
+      capabilitySet[i] = true;
   }
-
-  capabilitySet.resize(0);
-  capabilitySet.resize(256);
-
-  PStringArray tokens = codes.Tokenise(',');
-  for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
-    PString token = tokens[i];
-    unsigned code = token.AsUnsigned();
-    if (code < 256) {
-      PINDEX dash = token.Find('-');
-      unsigned end = dash == P_MAX_INDEX ? code : token.Mid(dash+1).AsUnsigned();
-      if (end > 255)
-        end = 255;
-      while (code <= end)
-        capabilitySet[code++] = true;
+  else if (codes != "-") {       // Allow for an empty set
+    PStringArray tokens = codes.Tokenise(',');
+    for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
+      PString token = tokens[i];
+      unsigned code = token.AsUnsigned();
+      if (code < capabilitySet.size()) {
+        PINDEX dash = token.Find('-');
+        unsigned end = dash == P_MAX_INDEX ? code : token.Mid(dash+1).AsUnsigned();
+        if (end >= capabilitySet.size())
+          end = capabilitySet.size()-1;
+        while (code <= end)
+          capabilitySet[code++] = true;
+      }
     }
   }
+
+  if (merge) {
+    for (size_t i = 0; i < capabilitySet.size(); ++i)
+      xxCapabilitySet[i] = xxCapabilitySet[i] && capabilitySet[i];
+  }
+  else
+    xxCapabilitySet = capabilitySet;
 }
 
 
@@ -305,15 +314,17 @@ PString OpalRFC2833Proto::GetRxCapability() const
 }
 
 
-void OpalRFC2833Proto::SetTxCapability(const PString & codes)
+void OpalRFC2833Proto::SetTxCapability(const PString & codes, bool merge)
 {
-  SetCapability(codes, m_txCapabilitySet);
+  PTRACE(4, "RFC2833\tTx capability " << (merge ? "medied with" : "set to") << " \"" << codes << '"');
+  SetCapability(codes, m_txCapabilitySet, merge);
 }
 
 
 void OpalRFC2833Proto::SetRxCapability(const PString & codes)
 {
-  SetCapability(codes, m_rxCapabilitySet);
+  PTRACE(4, "RFC2833\tRx capability set to \"" << codes << '"');
+  SetCapability(codes, m_rxCapabilitySet, false);
 }
 
 
