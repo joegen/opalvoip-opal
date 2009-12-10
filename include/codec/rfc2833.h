@@ -127,7 +127,7 @@ class OpalRFC2833Proto : public PObject {
 
     PString GetTxCapability() const;
     PString GetRxCapability() const;
-    void SetTxCapability(const PString & codes);
+    void SetTxCapability(const PString & codes, bool merge);
     void SetRxCapability(const PString & codes);
 
     static PINDEX ASCIIToRFC2833(char tone, bool hasNSE);
