@@ -448,9 +448,22 @@ OpalMediaStatistics::OpalMediaStatistics()
 
 #if OPAL_FAX
 OpalMediaStatistics::Fax::Fax()
+  : m_result(-2)
+  , m_bitRate(9600)
+  , m_compression(1)
+  , m_errorCorrection(false)
+  , m_txPages(-1)
+  , m_rxPages(-1)
+  , m_totalPages(0)
+  , m_imageSize(0)
+  , m_resolutionX(0)
+  , m_resolutionY(0)
+  , m_pageWidth(0)
+  , m_pageHeight(0)
+  , m_badRows(0)
+  , m_mostBadRows(0)
+  , m_errorCorrectionRetries(0)
 {
-  memset(this, 0, sizeof(*this));
-  m_result = -2;
 }
 #endif
 

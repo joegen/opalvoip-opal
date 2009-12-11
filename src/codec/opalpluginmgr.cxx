@@ -1079,6 +1079,18 @@ bool OpalPluginFaxFormatInternal::IsValidForProtocol(const PString & protocol) c
   return OpalPluginMediaFormatInternal::IsValidForProtocol(protocol);
 }
 
+
+static bool ExtractValue(const PString & msg, PINDEX & position, int & value, char sep = '=')
+{
+  position = msg.Find(sep, position);
+  if (position == P_MAX_INDEX)
+    return false;
+
+  value = msg.Mid(++position).AsInteger();
+  return true;
+}
+
+
 class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 {
   PCLASSINFO(OpalFaxTranscoder, OpalTranscoder);
@@ -1210,10 +1222,34 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
       return false;
     }
 
-    void GetStatistics(OpalMediaStatistics &statistics) const
+    void GetStatistics(OpalMediaStatistics & statistics) const
     {
-      if (getCodecStatistics.Call( &statistics.m_fax, sizeof( statistics.m_fax ), context) == 0)
-        statistics.m_fax.m_result = -2;
+      statistics.m_fax.m_result = -2;
+      PString msg;
+      if (getCodecStatistics.Call(msg.GetPointer(1000), 999, context) != 0) {
+        int result, errorCorrection;
+        PINDEX position = 0;
+        if (ExtractValue(msg, position, result) &&
+            ExtractValue(msg, position, statistics.m_fax.m_bitRate) &&
+            ExtractValue(msg, position, statistics.m_fax.m_compression) &&
+            ExtractValue(msg, position, errorCorrection) &&
+            ExtractValue(msg, position, statistics.m_fax.m_txPages) &&
+            ExtractValue(msg, position, statistics.m_fax.m_rxPages) &&
+            ExtractValue(msg, position, statistics.m_fax.m_totalPages) &&
+            ExtractValue(msg, position, statistics.m_fax.m_imageSize) &&
+            ExtractValue(msg, position, statistics.m_fax.m_resolutionX) &&
+            ExtractValue(msg, position, statistics.m_fax.m_resolutionY, 'x') &&
+            ExtractValue(msg, position, statistics.m_fax.m_pageWidth) &&
+            ExtractValue(msg, position, statistics.m_fax.m_pageHeight, 'x') &&
+            ExtractValue(msg, position, statistics.m_fax.m_badRows) &&
+            ExtractValue(msg, position, statistics.m_fax.m_mostBadRows) &&
+            ExtractValue(msg, position, statistics.m_fax.m_errorCorrectionRetries))
+        {
+          statistics.m_fax.m_result = result; // Only set this if everything parsed correctly
+          statistics.m_fax.m_errorCorrection = errorCorrection != 0;
+          statistics.m_fax.m_errorText = msg(msg.Find('(')+1, msg.Find(')')-1);
+        }
+      }
     }
 };
 
