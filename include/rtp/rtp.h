@@ -331,6 +331,8 @@ class OpalMediaStatistics : public PObject
       int  m_badRows;     // Total number of bad rows
       int  m_mostBadRows; // Longest run of bad rows
       int  m_errorCorrectionRetries;
+
+      PString m_errorText;
     } m_fax;
 #endif
 };

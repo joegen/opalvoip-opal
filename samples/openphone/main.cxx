@@ -6639,8 +6639,12 @@ void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
       break;
 
     default :
-      LogWindow << "had T.30 error code " << stats.m_fax.m_result;
+      LogWindow << "failed with T.30 error code " << stats.m_fax.m_result;
   }
+
+  if (stats.m_fax.m_result > 0 && !stats.m_fax.m_errorText.IsEmpty())
+    LogWindow << ": " << stats.m_fax.m_errorText;
+
   LogWindow << endl;
 
   OpalFaxEndPoint::OnFaxCompleted(connection, failed);
