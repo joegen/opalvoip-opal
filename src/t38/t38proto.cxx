@@ -38,6 +38,7 @@
 
 #include <t38/t38proto.h>
 #include <opal/patch.h>
+#include <codec/opalpluginmgr.h>
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -45,6 +46,8 @@
 #if OPAL_FAX
 
 #include <asn/t38.h>
+
+OPAL_DEFINE_MEDIA_COMMAND(OpalFaxTerminate, PLUGINCODEC_CONTROL_TERMINATE_CODEC);
 
 #define new PNEW
 
@@ -560,8 +563,16 @@ void OpalFaxConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 {
   // Finished the fax transmission, look for TIFF
-  if (patch.GetSource().GetMediaFormat() == m_tiffFileFormat) {
+  OpalMediaStream & source = patch.GetSource();
+  if (source.GetMediaFormat() == m_tiffFileFormat) {
     m_faxTimer.Stop();
+
+    // Look for other sink, not the one from this patch
+    OpalMediaStreamPtr sink = GetMediaStream(source.GetID(), !source.IsSource());
+    if (sink != NULL)
+      sink->ExecuteCommand(OpalFaxTerminate());
+    else
+      source.ExecuteCommand(OpalFaxTerminate());
 
     // Not an explicit switch, so fax plug in indicated end of fax
     if (m_faxMediaStreamsSwitchState == e_NotSwitchingFaxMediaStreams) {

@@ -426,7 +426,9 @@ class FaxSpanDSP
 
     virtual bool Encode(const void * fromPtr, unsigned & fromLen, void * toPtr, unsigned & toLen, unsigned & flags) = 0;
     virtual bool Decode(const void * fromPtr, unsigned & fromLen, void * toPtr, unsigned & toLen, unsigned & flags) = 0;
+    virtual bool Terminate() = 0;
     virtual bool GetStats(void * fromPtr, unsigned fromLen) = 0;
+
 
   protected:
     virtual bool SetOption(const char * PTRACE_PARAM(option), const char * PTRACE_PARAM(value))
@@ -899,6 +901,13 @@ class T38_PCM : public FaxSpanDSP, public FaxT38, public FaxPCM
     }
 
 
+    virtual bool Terminate()
+    {
+      PTRACE(LOG_LEVEL_DEBUG, m_tag << " T38_PCM::Terminate");
+      return Open();
+    }
+
+
     virtual bool GetStats(void * /*fromPtr*/, unsigned /*fromLen*/)
     {
       // WaitAndSignal mutex(m_mutex);
@@ -1031,6 +1040,18 @@ class TIFF_T38 : public FaxTIFF, public FaxT38
     }
 
 
+    virtual bool Terminate()
+    {
+      PTRACE(LOG_LEVEL_DEBUG, m_tag << " TIFF_T38::Terminate");
+
+      if (!Open())
+        return false;
+
+      t30_terminate(t38_terminal_get_t30_state(m_t38State));
+      return true;
+    }
+
+
     virtual bool GetStats(void * fromPtr, unsigned fromLen)
     {
       WaitAndSignal mutex(m_mutex);
@@ -1159,6 +1180,19 @@ class TIFF_PCM : public FaxTIFF, public FaxPCM
 
       return true;
     }
+
+
+    virtual bool Terminate()
+    {
+      PTRACE(LOG_LEVEL_DEBUG, m_tag << " TIFF_PCM::Terminate");
+
+      if (!Open())
+        return false;
+
+      t30_terminate(fax_get_t30_state(m_faxState));
+      return true;
+    }
+
 
     virtual bool GetStats(void * fromPtr, unsigned fromLen)
     {
@@ -1331,14 +1365,31 @@ class FaxCodecContext
       return m_instance != NULL && m_instance->Decode(fromPtr, fromLen, toPtr, toLen, flags);
     }
 
+
+    bool Terminate()
+    {
+      return m_instance != NULL && m_instance->Terminate();
+    }
+
+
     bool GetStats(void *fromPtr, unsigned fromLen)
     {
-        return m_instance != NULL && m_instance->GetStats(fromPtr, fromLen);
+      return m_instance != NULL && m_instance->GetStats(fromPtr, fromLen);
     }
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+static int terminate_codec(const PluginCodec_Definition * ,
+                                                   void * context,
+                                             const char * ,
+                                                   void *,
+                                               unsigned *)
+{
+  return context != NULL && ((FaxCodecContext *)context)->Terminate();
+}
+
 
 static int get_codec_stats(const PluginCodec_Definition * ,
                                                      void * context,
@@ -1425,6 +1476,7 @@ static struct PluginCodec_ControlDefn Controls[] = {
   { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS, set_codec_options },
   { PLUGINCODEC_CONTROL_SET_INSTANCE_ID,   set_instance_id },
   { PLUGINCODEC_CONTROL_GET_STATISTICS,    get_codec_stats },
+  { PLUGINCODEC_CONTROL_TERMINATE_CODEC,   terminate_codec },
 #if LOGGING
   { PLUGINCODEC_CONTROL_SET_LOG_FUNCTION,  set_log_function },
 #endif
