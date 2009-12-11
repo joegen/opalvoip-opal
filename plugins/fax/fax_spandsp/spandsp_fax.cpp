@@ -735,15 +735,15 @@ class FaxTIFF : public FaxSpanDSP
       strm << stats;
 
       std::string str = strm.str();
-      size_t len = str.length();
-      if (len >= fromLen) {
-        str[len-1] = '\0';
+      size_t len = str.length() + 1;
+      if (len > fromLen) {
         len = fromLen;
+        str[len-1] = '\0';
       }
 
       memcpy(fromPtr, str.c_str(), len);
 
-      PTRACE(LOG_LEVEL_DEBUG, "SpanDSP statistics:\n" << (char *)fromPtr);
+      PTRACE(LOG_LEVEL_DEBUG, m_tag << " SpanDSP statistics:\n" << (char *)fromPtr);
 
       return true;
     }
@@ -778,14 +778,14 @@ class FaxTIFF : public FaxSpanDSP
     {
       MyStats stats(m_completed, m_receiving);
       t30_get_transfer_statistics(t30state, &stats);
-      PTRACE(3, "SpanDSP entered Phase B:\n" << stats);
+      PTRACE(3, m_tag << " SpanDSP entered Phase B:\n" << stats);
     }
 
     void PhaseD(t30_state_t * t30state, int)
     {
       MyStats stats(m_completed, m_receiving);
       t30_get_transfer_statistics(t30state, &stats);
-      PTRACE(3, "SpanDSP entered Phase D:\n" << stats);
+      PTRACE(3, m_tag << " SpanDSP entered Phase D:\n" << stats);
     }
 
     void PhaseE(t30_state_t * t30state, int result)
@@ -795,7 +795,7 @@ class FaxTIFF : public FaxSpanDSP
 
       MyStats stats(m_completed, m_receiving);
       t30_get_transfer_statistics(t30state, &stats);
-      PTRACE(3, "SpanDSP entered Phase E:\n" << stats);
+      PTRACE(3, m_tag << " SpanDSP entered Phase E:\n" << stats);
     }
 };
 
@@ -892,6 +892,8 @@ class T38_PCM : public FaxSpanDSP, public FaxT38, public FaxPCM
 
     virtual bool Terminate()
     {
+      WaitAndSignal mutex(m_mutex);
+
       PTRACE(LOG_LEVEL_DEBUG, m_tag << " T38_PCM::Terminate");
       return Open();
     }
@@ -1031,6 +1033,8 @@ class TIFF_T38 : public FaxTIFF, public FaxT38
 
     virtual bool Terminate()
     {
+      WaitAndSignal mutex(m_mutex);
+
       PTRACE(LOG_LEVEL_DEBUG, m_tag << " TIFF_T38::Terminate");
 
       if (!Open())
@@ -1173,6 +1177,8 @@ class TIFF_PCM : public FaxTIFF, public FaxPCM
 
     virtual bool Terminate()
     {
+      WaitAndSignal mutex(m_mutex);
+
       PTRACE(LOG_LEVEL_DEBUG, m_tag << " TIFF_PCM::Terminate");
 
       if (!Open())
