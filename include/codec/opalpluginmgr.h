@@ -219,6 +219,7 @@ class OpalPluginTranscoder
     ~OpalPluginTranscoder();
 
     bool UpdateOptions(const OpalMediaFormat & fmt);
+    bool ExecuteCommand(const OpalMediaCommand & command);
     bool Transcode(const void * from, unsigned * fromLen, void * to, unsigned * toLen, unsigned * flags) const
     {
       return codecDef != NULL && codecDef->codecFunction != NULL &&
@@ -263,6 +264,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public Opal
   public:
     OpalPluginFramedAudioTranscoder(const PluginCodec_Definition * codecDefn, bool isEncoder);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
+    PBoolean ExecuteCommand(const OpalMediaCommand & command);
     PBoolean ConvertFrame(const BYTE * input, PINDEX & consumed, BYTE * output, PINDEX & created);
     virtual PBoolean ConvertSilentFrame(BYTE * buffer);
     virtual bool AcceptComfortNoise() const { return comfortNoise; }
@@ -277,6 +279,7 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
   public:
     OpalPluginStreamedAudioTranscoder(const PluginCodec_Definition * codec, bool isEncoder);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
+    PBoolean ExecuteCommand(const OpalMediaCommand & command);
     virtual bool AcceptComfortNoise() const { return comfortNoise; }
     virtual int ConvertOne(int from) const;
   protected:
@@ -313,6 +316,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
 
     PBoolean ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
+    PBoolean ExecuteCommand(const OpalMediaCommand & command);
 
   protected:
     bool EncodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
