@@ -804,9 +804,9 @@ class FaxTIFF : public FaxSpanDSP
       m_faxStats.m_pageWidth = stats.width;
       m_faxStats.m_resolutionX = stats.x_resolution;
       m_faxStats.m_resolutionY = stats.y_resolution;
-      m_faxStats.m_rxPages = stats.pages_rx;
+      m_faxStats.m_rxPages = m_receiving ? stats.pages_rx : -1;
       m_faxStats.m_totalPages = stats.pages_in_file;
-      m_faxStats.m_txPages = stats.pages_tx;
+      m_faxStats.m_txPages = m_receiving ? -1 : stats.pages_tx;
     }
 };
 
