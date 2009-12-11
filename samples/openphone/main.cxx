@@ -6204,15 +6204,19 @@ STATISTICS_FIELD_BEG(RxFax, Packets)
 STATISTICS_FIELD_END(RxFax, Packets)
 
 STATISTICS_FIELD_BEG(RxFax, Pages)
-  switch (statistics.m_fax.m_result) {
-    case -2 :
-      value = NotAvailableString;
-      break;
-    case -1 :
-      value.sprintf(m_printFormat, statistics.m_fax.m_rxPages+1);
-      break;
-    default :
-      value.sprintf(m_printFormat, statistics.m_fax.m_rxPages);
+  if (statistics.m_fax.m_rxPages < 0)
+    value.Empty();
+  else {
+    switch (statistics.m_fax.m_result) {
+      case -2 :
+        value = NotAvailableString;
+        break;
+      case -1 :
+        value.sprintf(m_printFormat, statistics.m_fax.m_rxPages+1);
+        break;
+      default :
+        value.sprintf(m_printFormat, statistics.m_fax.m_rxPages);
+    }
   }
 STATISTICS_FIELD_END(RxFax, Pages)
 
@@ -6229,15 +6233,24 @@ STATISTICS_FIELD_BEG(TxFax, Packets)
 STATISTICS_FIELD_END(TxFax, Packets)
 
 STATISTICS_FIELD_BEG(TxFax, Pages)
-  switch (statistics.m_fax.m_result) {
-    case -2 :
-      value = NotAvailableString;
-      break;
-    case -1 :
-      value.sprintf(m_printFormat, statistics.m_fax.m_txPages+1, statistics.m_fax.m_totalPages);
-      break;
-    default :
-      value.sprintf(m_printFormat, statistics.m_fax.m_txPages, statistics.m_fax.m_totalPages);
+  if (statistics.m_fax.m_txPages < 0)
+    value.Empty();
+  else {
+    switch (statistics.m_fax.m_result) {
+      case -2 :
+        value = NotAvailableString;
+        break;
+      case -1 :
+        if (statistics.m_fax.m_totalPages == 0)
+          value = NotAvailableString;
+        else if (statistics.m_fax.m_txPages >= statistics.m_fax.m_totalPages)
+          value.sprintf(m_printFormat, statistics.m_fax.m_totalPages, statistics.m_fax.m_totalPages);
+        else
+          value.sprintf(m_printFormat, statistics.m_fax.m_txPages+1, statistics.m_fax.m_totalPages);
+        break;
+      default :
+        value.sprintf(m_printFormat, statistics.m_fax.m_txPages, statistics.m_fax.m_totalPages);
+    }
   }
 STATISTICS_FIELD_END(TxFax, Pages)
 
