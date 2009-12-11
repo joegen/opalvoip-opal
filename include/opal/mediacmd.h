@@ -75,6 +75,14 @@ class OpalMediaCommand : public PObject
     /**Get the name of the command.
       */
     virtual PString GetName() const = 0;
+
+    /**Get data buffer pointer for transfer to/from codec plug-in.
+      */
+    virtual void * GetPlugInData() const { return NULL; }
+
+    /**Get data buffer size for transfer to/from codec plug-in.
+      */
+    virtual unsigned * GetPlugInSize() const { return NULL; }
   //@}
 };
 
