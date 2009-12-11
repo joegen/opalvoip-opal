@@ -600,52 +600,49 @@ class FaxPCM
 
 /////////////////////////////////////////////////////////////////
 
-struct FaxStats {
-  FaxStats()
+struct MyStats : public t30_stats_t
+{
+  MyStats(bool completed, bool receiving)
+    : m_completed(completed)
+    , m_receiving(receiving)
   {
-    memset(this, 0, sizeof(*this));
-    m_result = -1;
   }
 
-  int  m_result;      // -1=progress, 0=success, >0=ended with error
-  int  m_bitRate;     // e.g. 14400, 9600
-  int  m_compression; // 0=N/A, 1=T.4 1d, 2=T.4 2d, 3=T.6
-  bool m_errorCorrection;
-  int  m_txPages;
-  int  m_rxPages;
-  int  m_totalPages;
-  int  m_imageSize;   // In bytes
-  int  m_resolutionX; // Pixels per inch
-  int  m_resolutionY; // Pixels per inch
-  int  m_pageWidth;
-  int  m_pageHeight;
-  int  m_badRows;     // Total number of bad rows
-  int  m_mostBadRows; // Longest run of bad rows
-  int  m_errorCorrectionRetries;
+  bool m_completed;
+  bool m_receiving;
 };
 
-#if LOGGING
-static std::ostream & operator<<(std::ostream & strm, const FaxStats & stats)
+static std::ostream & operator<<(std::ostream & strm, const MyStats & stats)
 {
-  strm << "Status = " << stats.m_result << " (" << t30_completion_code_to_str(stats.m_result) << ")\n"
-          "Encoding: " << stats.m_compression << "\n"
-          "Bit rate: " << stats.m_bitRate << "\n"
-          "Bytes = " << stats.m_imageSize << "\n"
-          "Pages: tx=" << stats.m_txPages << " rx=" << stats.m_rxPages << " total=" << stats.m_totalPages << "\n"
-          "Resolution: x=" << stats.m_resolutionX << " y=" << stats.m_resolutionY << "\n"
-          "Pixel Width: " << stats.m_pageWidth << "\n"
-          "Pixel Rows: " << stats.m_pageHeight << " (bad=" << stats.m_badRows << ")\n"
-          "Error Correction Mode: " << stats.m_errorCorrection << " (retries=" << stats.m_errorCorrectionRetries << ")";
+  static const char * const CompressionNames[4] = { "N/A", "T.4 1d", "T.4 2d", "T.6" };
+
+  strm << "Status=";
+  if (stats.m_completed)
+    strm << stats.current_status << " (" << t30_completion_code_to_str(stats.current_status) << ')';
+  else
+    strm << "-1 (In progress)";
+  strm << "\n"
+          "Bit Rate=" << stats.bit_rate << "\n"
+          "Encoding=" << stats.encoding << ' ' << CompressionNames[stats.encoding&3] << "\n"
+          "Error Correction=" << stats.error_correcting_mode << "\n"
+          "Tx Pages=" << (stats.m_receiving ? -1 : stats.pages_tx) << "\n"
+          "Rx Pages=" << (stats.m_receiving ? stats.pages_rx : -1) << "\n"
+          "Total Pages=" << stats.pages_in_file << "\n"
+          "Image Bytes=" << stats.image_size << "\n"
+          "Resolution=" << stats.x_resolution << 'x' << stats.y_resolution << "\n"
+          "Page Size=" << stats.width << 'x' << stats.length << "\n"
+          "Bad Rows=" << stats.bad_rows << "\n"
+          "Most Bad Rows=" << stats.longest_bad_row_run << "\n"
+          "Correction Retries=" << stats.error_correcting_mode_retries;
 
   return strm;
 }
-#endif
+
 
 class FaxTIFF : public FaxSpanDSP
 {
   private:
     bool            m_receiving;
-    FaxStats        m_faxStats;
     std::string     m_tiffFileName;
     std::string     m_stationIdentifer;
 
@@ -729,13 +726,24 @@ class FaxTIFF : public FaxSpanDSP
 
     bool GetStats(t30_state_t * t30state, void * fromPtr, unsigned fromLen)
     {
-      if (t30state == NULL || fromLen != sizeof(m_faxStats))
+      if (t30state == NULL)
         return false;
 
-      UpdateStats(t30state);
-      *(FaxStats *)fromPtr = m_faxStats;
+      MyStats stats(m_completed, m_receiving);
+      t30_get_transfer_statistics(t30state, &stats);
+      std::stringstream strm;
+      strm << stats;
 
-      PTRACE(LOG_LEVEL_DEBUG, "SpanDSP statistics:\n" << *(FaxStats *)fromPtr);
+      std::string str = strm.str();
+      size_t len = str.length();
+      if (len >= fromLen) {
+        str[len-1] = '\0';
+        len = fromLen;
+      }
+
+      memcpy(fromPtr, str.c_str(), len);
+
+      PTRACE(LOG_LEVEL_DEBUG, "SpanDSP statistics:\n" << (char *)fromPtr);
 
       return true;
     }
@@ -768,14 +776,16 @@ class FaxTIFF : public FaxSpanDSP
   private:
     void PhaseB(t30_state_t * t30state, int)
     {
-      UpdateStats(t30state);
-      PTRACE(3, "SpanDSP entered Phase B:\n" << m_faxStats);
+      MyStats stats(m_completed, m_receiving);
+      t30_get_transfer_statistics(t30state, &stats);
+      PTRACE(3, "SpanDSP entered Phase B:\n" << stats);
     }
 
     void PhaseD(t30_state_t * t30state, int)
     {
-      UpdateStats(t30state);
-      PTRACE(3, "SpanDSP entered Phase D:\n" << m_faxStats);
+      MyStats stats(m_completed, m_receiving);
+      t30_get_transfer_statistics(t30state, &stats);
+      PTRACE(3, "SpanDSP entered Phase D:\n" << stats);
     }
 
     void PhaseE(t30_state_t * t30state, int result)
@@ -783,30 +793,9 @@ class FaxTIFF : public FaxSpanDSP
       if (result >= 0)
         m_completed = true; // Finished, exit codec loops
 
-      UpdateStats(t30state);
-      PTRACE(3, "SpanDSP entered Phase E:\n" << m_faxStats);
-    }
-
-    void UpdateStats(t30_state_t * t30state)
-    {
-      t30_stats_t stats;
+      MyStats stats(m_completed, m_receiving);
       t30_get_transfer_statistics(t30state, &stats);
-
-      m_faxStats.m_result = m_completed ? stats.current_status : -1;
-      m_faxStats.m_badRows = stats.bad_rows;
-      m_faxStats.m_bitRate = stats.bit_rate;
-      m_faxStats.m_compression = stats.encoding;
-      m_faxStats.m_errorCorrection = stats.error_correcting_mode != 0;
-      m_faxStats.m_errorCorrectionRetries = stats.error_correcting_mode_retries;
-      m_faxStats.m_imageSize = stats.image_size;
-      m_faxStats.m_mostBadRows = stats.longest_bad_row_run;
-      m_faxStats.m_pageHeight = stats.length;
-      m_faxStats.m_pageWidth = stats.width;
-      m_faxStats.m_resolutionX = stats.x_resolution;
-      m_faxStats.m_resolutionY = stats.y_resolution;
-      m_faxStats.m_rxPages = m_receiving ? stats.pages_rx : -1;
-      m_faxStats.m_totalPages = stats.pages_in_file;
-      m_faxStats.m_txPages = m_receiving ? -1 : stats.pages_tx;
+      PTRACE(3, "SpanDSP entered Phase E:\n" << stats);
     }
 };
 
