@@ -117,8 +117,8 @@ void SIPEndPoint::ShutDown()
   PTRACE(4, "SIP\tShutting down.");
   m_shuttingDown = true;
 
-  // Stop timers before compiler destroys member objects
-  natBindingTimer.Stop(false);
+  // Stop timers before compiler destroys member objects, must wait ...
+  natBindingTimer.Stop(true);
 
   // Clean up the handlers, wait for them to finish before destruction.
   bool shuttingDown = true;
