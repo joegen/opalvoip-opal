@@ -1114,8 +1114,6 @@ void SIPConnection::SetRemoteMediaFormats(SDPSessionDescription & sdp)
 
   if (m_remoteFormatList.HasFormat(OpalRFC2833))
     m_detectInBandDTMF = false; // Have RFC2833 user input, disable the in-band tone detector to avoid double detection
-  else
-    m_remoteFormatList += OpalRFC2833; // Finally make sure RFC2833 there even if not in remote SDP, some implementations forget ...
 
   m_remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
 
