@@ -694,16 +694,15 @@ static void SetNxECapabilities(OpalRFC2833Proto * handler,
                     RTP_DataFrame::PayloadTypes   nxePayloadCode = RTP_DataFrame::IllegalPayloadType)
 {
   OpalMediaFormatList::const_iterator fmt = localMediaFormats.FindFormat(baseMediaFormat);
+  OpalMediaFormatList::const_iterator remFmt = remoteMediaFormats.FindFormat(baseMediaFormat);
 
-  if (fmt == localMediaFormats.end()) {
+  if (fmt == localMediaFormats.end() || remFmt == remoteMediaFormats.end()) {
     // Not in our local list, disable transmitter
     handler->SetTxCapability("-", false);
     return;
   }
 
-  OpalMediaFormatList::const_iterator remFmt = remoteMediaFormats.FindFormat(baseMediaFormat);
-  if (remFmt != remoteMediaFormats.end() && remFmt->HasOption("FMTP"))
-    handler->SetTxCapability(remFmt->GetOptionString("FMTP", "0-15"), true);
+  handler->SetTxCapability(remFmt->GetOptionString("FMTP", "0-15"), true);
 
   if (nxePayloadCode != RTP_DataFrame::IllegalPayloadType) {
     PTRACE(3, "SIP\tUsing bypass RTP payload " << nxePayloadCode << " for " << *fmt);
