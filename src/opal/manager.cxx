@@ -1653,7 +1653,7 @@ bool OpalWAVRecordManager::Mixer_T::Open(const PFilePath & fn, bool mono)
 
   m_file.SetFormat(OpalWAVFile::fmt_PCM);
   if (!m_file.Open(fn, PFile::ReadWrite, PFile::Create|PFile::Truncate)) {
-    PTRACE(2, "OPAL\tCould not open file \"" << fn << '"');
+    PTRACE(2, "OPAL\tCould not open file \"" << fn << "\": " << m_file.GetErrorText());
     return false;
   }
 
