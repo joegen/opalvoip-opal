@@ -85,6 +85,7 @@ public:
   afx_msg void OnSelectedAddress();
   afx_msg void OnSpeakerphone();
   afx_msg void OnMenuOptionsGeneral();
+  afx_msg void OnMenuOptionsCodecs();
   afx_msg void OnMenuOptionsH323();
   afx_msg void OnMenuOptionsSIP();
   afx_msg void OnExit();

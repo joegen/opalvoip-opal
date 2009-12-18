@@ -60,5 +60,4 @@ public:
   CString m_strStunServer;
   CString m_interfaceAddress;
   CComboBox m_interfaceAddressCombo;
-  BOOL m_AutoStartTxVideo;
 };

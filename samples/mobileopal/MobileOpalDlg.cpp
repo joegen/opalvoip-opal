@@ -32,6 +32,7 @@
 #include "MobileOPAL.h"
 #include "MobileOpalDlg.h"
 #include "OptionsGeneral.h"
+#include "OptionsCodecs.h"
 #include "OptionsH323.h"
 #include "OptionsSIP.h"
 
@@ -59,6 +60,9 @@ static TCHAR const OptionsSection[]      = L"Options";
 static TCHAR const UserNameKey[]         = L"UserName";
 static TCHAR const DisplayNameKey[]      = L"DisplayName";
 static TCHAR const STUNServerKey[]       = L"STUNServer";
+static TCHAR const MediaOrderKey[]       = L"MediaOrder";
+static TCHAR const MediaMaskKey[]        = L"MediaMask";
+static TCHAR const MediaOptionsKey[]     = L"MediaOptions";
 static TCHAR const InterfaceAddressKey[] = L"InterfaceAddress";
 static TCHAR const AutoStartTxVideoKey[] = L"AutoStartTxVideo";
 static TCHAR const GkTypeKey[]           = L"GatekeeperType";
@@ -73,6 +77,9 @@ static TCHAR const RegistrarUserKey[]    = L"RegistrarUser";
 static TCHAR const RegistrarPassKey[]    = L"RegistrarPassword";
 static TCHAR const RegistrarRealmKey[]   = L"RegistrarRealm";
 
+static TCHAR const DefaultMediaOrder[]   = L"G.722.2\nGSM-AMR\nG.729\nG.729A\nG.723.1\nG.728\nG.711-uLaw-64k\nG.711-ALaw-64k\nH.264\nH.263\nH.261";
+static TCHAR const DefaultMediaMask[]    = L"RFC4175_RGB\nRFC4175_YCbCr-4\nMPEG4";
+static TCHAR const DefaultMediaOptions[] = L"H.264:Level=1b";
 
 
 static CString GetOptionString(LPCTSTR szKey, LPCTSTR szDefault = NULL)
@@ -386,6 +393,7 @@ BEGIN_MESSAGE_MAP(CMobileOpalDlg, CDialog)
   ON_CBN_EDITCHANGE(IDC_ADDRESS, &CMobileOpalDlg::OnChangedAddress)
   ON_CBN_SELENDOK(IDC_ADDRESS, &CMobileOpalDlg::OnSelectedAddress)
   ON_COMMAND(IDM_OPTIONS_GENERAL, &CMobileOpalDlg::OnMenuOptionsGeneral)
+  ON_COMMAND(IDM_OPTIONS_CODECS, &CMobileOpalDlg::OnMenuOptionsCodecs)
   ON_COMMAND(IDM_OPTIONS_H323, &CMobileOpalDlg::OnMenuOptionsH323)
   ON_COMMAND(IDM_OPTIONS_SIP, &CMobileOpalDlg::OnMenuOptionsSIP)
   ON_COMMAND(IDM_EXIT, &CMobileOpalDlg::OnExit)
@@ -531,30 +539,33 @@ void CMobileOpalDlg::InitialiseOPAL()
                                videoWidth+2, box.Height()-previewHeight,
                                previewWidth, previewHeight);
 
-  CStringA strMediaOptions;
-  strMediaOptions.Format("Video:Max Bit Rate=128000\n"
-                         "Video:Target Bit Rate=128000\n"
-                         "Video:Frame Time=9000\n" // 10 frames/second
-                         "Video:Frame Width=%u\n"
-                         "Video:Frame Height=%u\n"
-                         "Video:Max Rx Frame Width=%u\n"
-                         "Video:Max Rx Frame Height=%u\n"
-                         "H.264:Level=1b\n",
-                          videoWidth, videoHeight,
-                          videoWidth, videoHeight);
+  CStringA strMediaOptions = GetOptionStringA(MediaOptionsKey, DefaultMediaOptions);
+  strMediaOptions.AppendFormat("Video:Max Bit Rate=128000\n"
+                               "Video:Target Bit Rate=128000\n"
+                               "Video:Frame Time=9000\n" // 10 frames/second
+                               "Video:Frame Width=%u\n"
+                               "Video:Frame Height=%u\n"
+                               "Video:Max Rx Frame Width=%u\n"
+                               "Video:Max Rx Frame Height=%u\n",
+                                videoWidth, videoHeight,
+                                videoWidth, videoHeight);
+
+  CStringA strMediaOrder = GetOptionStringA(MediaOrderKey, DefaultMediaOrder);
+  CStringA strMediaMask = GetOptionStringA(MediaMaskKey, DefaultMediaMask);
+  CStringA strStunServer = GetOptionStringA(STUNServerKey);
 
   // General options
   memset(&command, 0, sizeof(command));
   command.m_type = OpalCmdSetGeneralParameters;
 
-  CStringA strStunServer = GetOptionStringA(STUNServerKey);
   command.m_param.m_general.m_stunServer = strStunServer;
   command.m_param.m_general.m_audioPlayerDevice = "Audio Output";
   command.m_param.m_general.m_audioRecordDevice = "Audio Input";
   command.m_param.m_general.m_videoInputDevice = "CAM1:";
   command.m_param.m_general.m_videoOutputDevice = strVideoOutputDevice;
   command.m_param.m_general.m_videoPreviewDevice = strVideoPreviewDevice;
-  command.m_param.m_general.m_mediaMask = "RFC4175*\nMPEG4";
+  command.m_param.m_general.m_mediaOrder = strMediaOrder;
+  command.m_param.m_general.m_mediaMask = strMediaMask;
   command.m_param.m_general.m_mediaOptions = strMediaOptions;
   command.m_param.m_general.m_autoTxMedia = GetOptionInt(AutoStartTxVideoKey, true) != 0 ? "audio video" : "audio";
   command.m_param.m_general.m_rtpMaxPayloadSize = 1400;
@@ -973,14 +984,38 @@ void CMobileOpalDlg::OnMenuOptionsGeneral()
   dlg.m_strDisplayName = GetOptionString(DisplayNameKey);
   dlg.m_strStunServer = GetOptionString(STUNServerKey);
   dlg.m_interfaceAddress = GetOptionString(InterfaceAddressKey, L"*");
-  dlg.m_AutoStartTxVideo = GetOptionInt(AutoStartTxVideoKey, true) != 0;
 
   if (dlg.DoModal() == IDOK) {
     SetOptionString(UserNameKey, dlg.m_strUsername);
     SetOptionString(DisplayNameKey, dlg.m_strDisplayName);
     SetOptionString(STUNServerKey, dlg.m_strStunServer);
     SetOptionString(InterfaceAddressKey, dlg.m_interfaceAddress);
+    InitialiseOPAL();
+  }
+}
+
+
+void CMobileOpalDlg::OnMenuOptionsCodecs()
+{
+  COptionsCodecs dlg;
+  dlg.m_AutoStartTxVideo = GetOptionInt(AutoStartTxVideoKey, true) != 0;
+  dlg.m_MediaOrder = GetOptionString(MediaOrderKey, DefaultMediaOrder);
+  dlg.m_MediaMask = GetOptionString(MediaMaskKey, DefaultMediaMask);
+  dlg.m_MediaOptions = GetOptionString(MediaOptionsKey, DefaultMediaOptions);
+
+  OpalMessage command;
+  OpalMessage * response;
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdSetGeneralParameters;
+  if ((response = OpalSendMessage(m_opal, &command)) != NULL && response->m_type != OpalIndCommandError)
+    dlg.m_AllMediaOptions = CString(response->m_param.m_general.m_mediaOptions);
+  OpalFreeMessage(response);
+
+  if (dlg.DoModal() == IDOK) {
     SetOptionInt(AutoStartTxVideoKey, dlg.m_AutoStartTxVideo);
+    SetOptionString(MediaOrderKey, dlg.m_MediaOrder);
+    SetOptionString(MediaMaskKey, dlg.m_MediaMask);
+    SetOptionString(MediaOptionsKey, dlg.m_MediaOptions);
     InitialiseOPAL();
   }
 }
