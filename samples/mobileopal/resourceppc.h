@@ -10,6 +10,7 @@
 #define IDD_OPTIONS_H323                131
 #define IDD_OPTIONS_SIP                 132
 #define IDR_MENU1                       133
+#define IDD_OPTIONS_CODECS              134
 #define IDC_STATIC_1                    200
 #define IDC_ADDRESS                     1000
 #define IDC_STATUS                      1001
@@ -33,6 +34,8 @@
 #define IDC_INTERFACE_ADDRESS           1023
 #define IDC_AUTO_START_VIDEO            1024
 #define IDC_AUTO_START_TX_VIDEO         1024
+#define IDC_CODEC_LIST                  1026
+#define IDC_TREE1                       1027
 #define IDS_CALL                        10000
 #define IDS_ANSWER                      10001
 #define IDS_READY                       10002
@@ -67,14 +70,15 @@
 #define ID_CANCEL                       32781
 #define ID_OPTIONS_SPEAKERPHONE         32782
 #define IDM_SPEAKERPHONE                32783
+#define IDM_OPTIONS_CODECS              32784
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        134
-#define _APS_NEXT_COMMAND_VALUE         32784
-#define _APS_NEXT_CONTROL_VALUE         1025
+#define _APS_NEXT_RESOURCE_VALUE        135
+#define _APS_NEXT_COMMAND_VALUE         32785
+#define _APS_NEXT_CONTROL_VALUE         1028
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

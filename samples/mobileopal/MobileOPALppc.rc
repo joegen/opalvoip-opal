@@ -97,8 +97,6 @@ BEGIN
     EDITTEXT        IDC_STUN_SERVER,7,72,135,12,ES_AUTOHSCROLL
     LTEXT           "Network Interface:",IDC_STATIC,9,89,143,8
     COMBOBOX        IDC_INTERFACE_ADDRESS,7,99,135,49,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Auto-start Transmit Video",IDC_AUTO_START_TX_VIDEO,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,119,135,11
 END
 
 IDD_OPTIONS_H323 DIALOG  0, 0, 160, 160
@@ -139,6 +137,16 @@ BEGIN
     GROUPBOX        "Authorisation",IDC_STATIC,7,64,146,67
 END
 
+IDD_OPTIONS_CODECS DIALOG  0, 0, 161, 160
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_VSCROLL | WS_SYSMENU
+CAPTION "Video Options"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL         "Auto-start Transmit Video",IDC_AUTO_START_TX_VIDEO,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,7,135,11
+    CONTROL         "",IDC_CODEC_LIST,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_EDITLABELS | WS_BORDER | WS_TABSTOP | 0x400,7,23,135,87
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -176,6 +184,14 @@ BEGIN
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 153
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 153
+    END
+
+    IDD_OPTIONS_CODECS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 142
         TOPMARGIN, 7
         BOTTOMMARGIN, 153
     END
@@ -235,6 +251,7 @@ BEGIN
         MENUITEM "Speakerphone",                IDM_SPEAKERPHONE
         MENUITEM SEPARATOR
         MENUITEM "General",                     IDM_OPTIONS_GENERAL
+        MENUITEM "Codecs",                      IDM_OPTIONS_CODECS
         MENUITEM "H.323",                       IDM_OPTIONS_H323
         MENUITEM "SIP",                         IDM_OPTIONS_SIP
         MENUITEM SEPARATOR
