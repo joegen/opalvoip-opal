@@ -43,7 +43,6 @@ COptionsGeneral::COptionsGeneral(CWnd* pParent /*=NULL*/)
   , m_strDisplayName(_T(""))
   , m_strStunServer(_T(""))
   , m_interfaceAddress(_T(""))
-  , m_AutoStartTxVideo(TRUE)
 {
 
 }
@@ -60,7 +59,6 @@ void COptionsGeneral::DoDataExchange(CDataExchange* pDX)
   DDX_Text(pDX, IDC_STUN_SERVER, m_strStunServer);
   DDX_CBString(pDX, IDC_INTERFACE_ADDRESS, m_interfaceAddress);
   DDX_Control(pDX, IDC_INTERFACE_ADDRESS, m_interfaceAddressCombo);
-  DDX_Check(pDX, IDC_AUTO_START_TX_VIDEO, m_AutoStartTxVideo);
 }
 
 

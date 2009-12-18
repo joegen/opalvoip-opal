@@ -1059,7 +1059,7 @@
 		<ProjectReference
 			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
 			UseInBuild="false"
-			RelativePathToProject=".\src\win32\opal_dll_2005.vcproj"
+			RelativePathToProject="..\..\src\win32\opal_dll_2005.vcproj"
 		/>
 	</References>
 	<Files>
@@ -1086,6 +1086,10 @@
 			</File>
 			<File
 				RelativePath=".\OptionsSIP.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\OptionsCodecs.cpp"
 				>
 			</File>
 			<File
@@ -1216,6 +1220,10 @@
 			</File>
 			<File
 				RelativePath=".\OptionsSIP.h"
+				>
+			</File>
+			<File
+				RelativePath=".\OptionsCodecs.h"
 				>
 			</File>
 			<File
