@@ -1128,6 +1128,20 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion < 14)
     return;
 
+  OpalMediaFormatList allCodecs = OpalMediaFormat::GetAllRegisteredMediaFormats();
+
+  PStringStream mediaOptions;
+  for (OpalMediaFormatList::iterator itMediaFormat = allCodecs.begin(); itMediaFormat != allCodecs.end(); ++itMediaFormat) {
+    if (itMediaFormat->IsTransportable()) {
+      mediaOptions << *itMediaFormat << ":Media Type#" << itMediaFormat->GetMediaType() << '\n';
+      for (PINDEX i = 0; i < itMediaFormat->GetOptionCount(); ++i) {
+        const OpalMediaOption & option = itMediaFormat->GetOption(i);
+        mediaOptions << *itMediaFormat << ':' << option.GetName() << (option.IsReadOnly() ? '#' : '=') << option << '\n';
+      }
+    }
+  }
+  SET_MESSAGE_STRING(response, m_param.m_general.m_mediaOptions, mediaOptions);
+
   PStringArray options = PString(command.m_param.m_general.m_mediaOptions).Lines();
   for (PINDEX i = 0; i < options.GetSize(); ++i) {
     PString optionSpec = options[i];
@@ -1144,7 +1158,6 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       OpalMediaType mediaType = mediaName.ToLower();
       if (OpalMediaTypeFactory::CreateInstance(mediaType) != NULL) {
         // Known media type name, change all codecs of that type
-        OpalMediaFormatList allCodecs = OpalMediaFormat::GetAllRegisteredMediaFormats();
         for (OpalMediaFormatList::iterator it = allCodecs.begin(); it != allCodecs.end(); ++it) {
           if (it->GetMediaType() == mediaType) {
             if (it->SetOptionValue(optionName, optionValue)) {
