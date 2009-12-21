@@ -88,6 +88,7 @@ OPAL_SAMPLES=no
 OPAL_ZRTP=no
 OPAL_SHARED_LIB=yes
 OPAL_JAVA=yes
+OPAL_RUBY=yes
 OPAL_HAS_MSRP=yes
 OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
@@ -405,6 +406,11 @@ fi
 AC_SUBST(OPAL_SRTP)
 
 
+dnl ########################################################################
+dnl We should use SWIG if it is there
+AC_PATH_PROG(SWIG, swig)
+
+
 dnl     ########################
 dnl     JAVA Support
 dnl     ########################
@@ -426,9 +432,40 @@ if test "x$OPAL_JAVA" = "xyes" ; then
 fi
 AC_SUBST(OPAL_JAVA)
 
-dnl ########################################################################
-dnl We should use SWIG if it is there
-AC_PATH_PROG(SWIG, swig)
+
+dnl     ########################
+dnl     Ruby Support
+dnl     ########################
+dnl MSWIN_DISPLAY     ruby,Ruby interface
+dnl MSWIN_CHECK_FILE  ruby,lib\ruby\1.8\i386-mswin32\ruby.h,OPAL_RUBY=1
+dnl MSWIN_DIR_SYMBOL  ruby,RUBY_DIR
+dnl MSWIN_CHECK_DIR   ruby,c:\Program Files\Ruby
+dnl MSWIN_CHECK_DIR   ruby,c:\Ruby
+dnl MSWIN_CHECK_DIR   ruby,c:\tools\Ruby
+
+AC_ARG_ENABLE([ruby],
+              [AC_HELP_STRING([--enable-ruby],[enable Ruby support])],
+              [OPAL_RUBY=$enableval])
+
+if test "x$OPAL_RUBY" = "xyes" ; then
+  AC_CHECK_PROG(HAS_RUBY,ruby,yes)
+  if test "x$HAS_RUBY" = "xyes" ; then
+    RUBY_CFLAGS=-I`ruby -e 'puts $:.join(" -I")'`
+    oldCFLAGS="$CFLAGS"
+    oldCPPFLAGS="$CPPFLAGS"
+    CFLAGS="$CFLAGS $RUBY_CFLAGS"
+    CPPFLAGS="$CFLAGS $RUBY_CFLAGS"
+    AC_CHECK_HEADER(ruby.h,HAS_RUBY=yes,HAS_RUBY=no)
+    CFLAGS="$oldCFLAGS"
+    CPPFLAGS="$oldCPPFLAGS"
+    
+    if test "x$HAS_RUBY" = "xyes" ; then
+      CFLAGS="$CFLAGS $RUBY_CFLAGS"
+      CXXFLAGS="$CXXFLAGS $RUBY_CFLAGS"
+    fi
+  fi
+fi
+AC_SUBST(OPAL_RUBY)
 
 
 dnl ########################################################################
