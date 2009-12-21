@@ -346,11 +346,6 @@ JAVA_WRAPPER     = $(JAVA_SRCDIR)/java_swig_wrapper.c
 VPATH_C         += $(JAVA_SRCDIR)
 SOURCES         += $(JAVA_WRAPPER)
 
-ifneq (,$(SWIG))
-$(JAVA_WRAPPER): $(JAVA_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
-	$(SWIG) -java -package org.opalvoip -w451 -I$(OPAL_INCDIR) -o $@ $<
-endif
-
 endif
 
 
@@ -364,11 +359,6 @@ RUBY_WRAPPER     = $(JAVA_SRCDIR)/ruby_swig_wrapper.c
 
 VPATH_C         += $(RUBY_SRCDIR)
 SOURCES         += $(RUBY_WRAPPER)
-
-ifneq (,$(SWIG))
-$(RUBY_WRAPPER): $(RUBY_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
-	$(SWIG) -ruby -w451 -I$(OPAL_INCDIR) -o $@ $<
-endif
 
 endif
 
@@ -584,6 +574,21 @@ ifeq ($(OPAL_SHARED_LIB),yes)
 	$(Q_LD)$(LD) $(LDSOOPTS) -o $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(LDFLAGS) $(EXTLIBS) $(OBJS) $(LIBS)
 
 endif # OPAL_SHARED_LIB
+
+
+ifneq (,$(SWIG))
+
+ifeq ($(OPAL_JAVA), yes)
+$(JAVA_WRAPPER): $(JAVA_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
+	$(SWIG) -java -package org.opalvoip -w451 -I$(OPAL_INCDIR) -o $@ $<
+endif
+
+ifeq ($(OPAL_RUBY), yes)
+$(RUBY_WRAPPER): $(RUBY_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
+	$(SWIG) -ruby -w451 -I$(OPAL_INCDIR) -o $@ $<
+endif
+
+endif
 
 
 #####################################################################
