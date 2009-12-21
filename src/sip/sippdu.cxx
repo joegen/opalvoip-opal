@@ -3263,22 +3263,33 @@ SIPReferNotify::SIPReferNotify(SIPConnection & connection, StatusCodes code)
 
 SIPMessage::SIPMessage(SIPEndPoint & ep,
                        OpalTransport & trans,
-                       const SIPURL & proxy,
-                       const SIPURL & address,
-                       const PString & id,
-                       const PString & body,
-                       SIPURL & localAddress)
+                       const Params & params,
+                       const PString & body)
   : SIPTransaction(Method_MESSAGE, ep, trans)
 {
-  localAddress = ep.GetRegisteredPartyName(address.GetHostName(), trans);
+  SetParameters(params);
 
-  InitialiseHeaders(address, address, localAddress, id, ep.GetNextCSeq(), CreateVia(ep, trans));
-  m_mime.SetContentType("text/plain;charset=UTF-8");
-  SetRoute(proxy);
+  SIPURL addr(params.m_remoteAddress);
+
+  if (!params.m_localAddress.IsEmpty())
+    m_localAddress = params.m_localAddress;
+  else {
+    if (!params.m_addressOfRecord.IsEmpty())
+      m_localAddress = params.m_addressOfRecord;
+    else
+      m_localAddress = ep.GetRegisteredPartyName(addr, trans);
+  }
+
+  PString contentType;
+  if (!params.m_contentType.IsEmpty())
+    m_mime.SetContentType(params.m_contentType);
+  else
+    m_mime.SetContentType("text/plain;charset=UTF-8");
+
+  InitialiseHeaders(addr, addr, m_localAddress, params.m_id, ep.GetNextCSeq(), CreateVia(ep, trans));
 
   m_entityBody = body;
 }
-
 
 /////////////////////////////////////////////////////////////////////////
 
