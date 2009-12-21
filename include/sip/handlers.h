@@ -317,10 +317,8 @@ class SIPMessageHandler : public SIPHandler
   PCLASSINFO(SIPMessageHandler, SIPHandler);
 public:
   SIPMessageHandler(SIPEndPoint & ep, 
-                    const PString & to,
-                    const PString & body,
-                    const PString & remoteContact,
-                    const PString & callId);
+                    const SIPMessage::Params & params,
+                    const PString & body);
   ~SIPMessageHandler();
 
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
@@ -329,10 +327,13 @@ public:
   virtual void OnFailed (SIP_PDU::StatusCodes);
   virtual void SetBody(const PString & b);
 
-  SIPURL m_localAddress;
+  PURL m_localAddress;
+  PString m_id;
 
 private:
+  SIPMessage::Params m_parameters;
   virtual void OnExpireTimeout(PTimer &, INT);
+  PString m_body;
 };
 
 
