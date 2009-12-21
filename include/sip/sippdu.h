@@ -1184,18 +1184,34 @@ class SIPReferNotify : public SIPTransaction
  */
 class SIPMessage : public SIPTransaction
 {
-    PCLASSINFO(SIPMessage, SIPTransaction);
-    
+  PCLASSINFO(SIPMessage, SIPTransaction);
+  public:
+    struct Params : public SIPParameters
+    {
+      Params()
+      { 
+        m_expire = 5000;
+      }
+
+      Params(const Params & param)
+        : SIPParameters(param)
+        , m_contentType(param.m_contentType)
+        , m_id(param.m_id)
+      { }
+
+      PCaselessString m_contentType;
+      PString m_id;
+    };
+
+
   public:
     SIPMessage(
-      SIPEndPoint & ep,
-      OpalTransport & trans,
-      const SIPURL & proxy,
-      const SIPURL & to,
-      const PString & id,
-      const PString & body,
-      SIPURL & m_localAddress
+        SIPEndPoint & ep,
+        OpalTransport & trans,
+        const Params & params,
+        const PString & body
     );
+    SIPURL m_localAddress;
 };
 
 

@@ -217,12 +217,12 @@ bool SIPHandler::ActivateState(SIPHandler::State newState)
       break;
 
     case e_Execute :
-      PTRACE(4, "SIP\tExecuting state chage to " << newState << " for " << GetMethod()
+      PTRACE(4, "SIP\tExecuting state change to " << newState << " for " << GetMethod()
              << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
       return SendRequest(newState);
 
     case e_Queue :
-      PTRACE(3, "SIP\tQueueing state chage to " << newState << " for " << GetMethod()
+      PTRACE(3, "SIP\tQueueing state change to " << newState << " for " << GetMethod()
              << " handler while in " << GetState() << " state, target="
              << GetAddressOfRecord() << ", id=" << GetCallID());
       m_stateQueue.push(newState);
@@ -1700,13 +1700,12 @@ PString SIPPresenceInfo::AsXML() const
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPMessageHandler::SIPMessageHandler (SIPEndPoint & endpoint, const PString & to, const PString & b, const PString & c, const PString & id)
-  : SIPHandler(endpoint, SIPParameters(to, c))
+SIPMessageHandler::SIPMessageHandler(SIPEndPoint & endpoint, const SIPMessage::Params & params, const PString & b)
+  : SIPHandler(endpoint, params)
+  , m_parameters(params)
 {
   body   = b;
-  callID = id;
   SetState(Subscribed);
-  expire = 5000;   // anything but zero
 }
 
 
@@ -1722,7 +1721,17 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
     return NULL;
 
   SetExpire(originalExpire);
-  return new SIPMessage(endpoint, transport, m_proxy, GetAddressOfRecord(), GetCallID(), body, m_localAddress);
+
+  if (m_parameters.m_id.IsEmpty())
+    m_parameters.m_id = GetCallID();
+
+  SIPMessage * msg = new SIPMessage(endpoint, transport, m_parameters, body);
+  if (msg != NULL) {
+    m_localAddress = msg->m_localAddress;
+    m_id           = m_parameters.m_id;
+  }
+
+  return msg;
 }
 
 

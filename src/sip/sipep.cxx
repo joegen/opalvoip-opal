@@ -1239,19 +1239,27 @@ PBoolean SIPEndPoint::Message(const PURL & to, const PString & type, const PStri
 
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to.AsString(), SIP_PDU::Method_MESSAGE, PSafeReadWrite);
 
-  if (handler != NULL)
+  if (handler != NULL) {
     handler->SetBody(body);
+  }
   else {
-    PString toString = to.AsString();
-    handler = new SIPMessageHandler(*this, toString, body, toString, conversationId);
+    SIPMessage::Params params;
+    params.m_localAddress    = from.AsString();
+    params.m_addressOfRecord = params.m_localAddress;
+    params.m_remoteAddress   = to.AsString();
+    params.m_id              = conversationId;
+    params.m_contentType     = type;
+
+    handler = new SIPMessageHandler(*this, params, body);
     activeSIPHandlers.Append(handler);
   }
 
-  handler->m_mime.SetContentType(type);
   if (!handler->ActivateState(SIPHandler::Subscribing))
     return false;
 
-  from = ((SIPMessageHandler *)&*handler)->m_localAddress;
+  from           = ((SIPMessageHandler *)&*handler)->m_localAddress;
+  conversationId = ((SIPMessageHandler *)&*handler)->m_id;
+
   return true;
 }
 
