@@ -33,6 +33,13 @@
 #include "OptionsCodecs.h"
 
 
+enum {
+  CanEditItem    = 1,
+  DragSourceItem = 2,
+  DragTargetItem = 4
+};
+
+
 // COptionsCodecs dialog
 
 IMPLEMENT_DYNAMIC(COptionsCodecs, CScrollableDialog)
@@ -43,7 +50,6 @@ COptionsCodecs::COptionsCodecs(CWnd* pParent /*=NULL*/)
   , m_hEnabledCodecs(NULL)
   , m_hDisabledCodecs(NULL)
   , m_hDraggedItem(NULL)
-  , m_bDraggingNow(false)
   , m_pDragImageList(NULL)
 {
 
@@ -65,6 +71,7 @@ BEGIN_MESSAGE_MAP(COptionsCodecs, CDialog)
   ON_NOTIFY(TVN_BEGINLABELEDIT, IDC_CODEC_LIST, &COptionsCodecs::OnTvnBeginlabeleditCodecList)
   ON_NOTIFY(TVN_ENDLABELEDIT, IDC_CODEC_LIST, &COptionsCodecs::OnTvnEndlabeleditCodecList)
   ON_NOTIFY(TVN_BEGINDRAG, IDC_CODEC_LIST, &COptionsCodecs::OnTvnBegindragCodecList)
+  ON_WM_CONTEXTMENU()
   ON_WM_MOUSEMOVE()
   ON_WM_LBUTTONUP()
 END_MESSAGE_MAP()
@@ -105,6 +112,9 @@ BOOL COptionsCodecs::OnInitDialog()
 
   m_hEnabledCodecs = m_CodecInfo.InsertItem(L"Enabled Codecs");
   m_hDisabledCodecs = m_CodecInfo.InsertItem(L"Disabled Codecs");
+
+  m_CodecInfo.SetItemData(m_hEnabledCodecs, DragTargetItem);
+  m_CodecInfo.SetItemData(m_hDisabledCodecs, DragTargetItem);
 
   CMediaInfoList order;
   SplitString(m_MediaOrder, order);
@@ -148,14 +158,14 @@ void COptionsCodecs::AddCodec(const CMediaInfo & info, const CMediaInfoList & ma
 
   HTREEITEM hFormat = m_CodecInfo.InsertItem(adjustedInfo,
                     std::find(mask.begin(), mask.end(), info) != mask.end() ? m_hDisabledCodecs : m_hEnabledCodecs);
-  m_CodecInfo.SetItemData(hFormat, 2);
+  m_CodecInfo.SetItemData(hFormat, DragSourceItem|DragTargetItem);
 
   for (CMediaInfo::OptionMap::const_iterator iter = adjustedInfo.m_options.begin(); iter != adjustedInfo.m_options.end(); ++iter) {
     HTREEITEM hOptVal = m_CodecInfo.InsertItem(iter->second.m_value, m_CodecInfo.InsertItem(iter->first, hFormat));
     if (iter->second.m_readOnly)
       m_CodecInfo.SetItemState(hOptVal, TVIS_BOLD, TVIS_BOLD);
     else
-      m_CodecInfo.SetItemData(hOptVal, 1);
+      m_CodecInfo.SetItemData(hOptVal, CanEditItem);
   }
 }
 
@@ -165,7 +175,7 @@ void COptionsCodecs::AddCodec(const CMediaInfo & info, const CMediaInfoList & ma
 void COptionsCodecs::OnTvnBeginlabeleditCodecList(NMHDR *pNMHDR, LRESULT *pResult)
 {
   LPNMTVDISPINFO pTVDispInfo = reinterpret_cast<LPNMTVDISPINFO>(pNMHDR);
-  *pResult = pTVDispInfo->item.cChildren != 0 || pTVDispInfo->item.lParam != 1;
+  *pResult = pTVDispInfo->item.cChildren != 0 || (pTVDispInfo->item.lParam&CanEditItem) == 0;
 }
 
 
@@ -204,18 +214,180 @@ void COptionsCodecs::OnTvnBegindragCodecList(NMHDR *pNMHDR, LRESULT *pResult)
   *pResult = 0;
   LPNMTREEVIEW pNMTreeView = reinterpret_cast<LPNMTREEVIEW>(pNMHDR);
 
-  if (m_bDraggingNow)
+  if (m_hDraggedItem != NULL)
     return;
 
-  if (pNMTreeView->itemNew.lParam != 2)
-    return;
-
+  if ((pNMTreeView->itemNew.lParam&DragSourceItem) != 0)
+    StartDrag(pNMTreeView->itemNew.hItem, pNMTreeView->ptDrag);
 }
 
 void COptionsCodecs::OnMouseMove(UINT nFlags, CPoint point)
 {
+  CScrollableDialog::OnMouseMove(nFlags, point);
+
+  if (m_hDraggedItem == NULL)
+    return;
+
+  if (m_pDragImageList != NULL) {
+    m_pDragImageList->DragMove(point);
+    m_pDragImageList->DragShowNolock(FALSE);
+  }
+
+  m_CodecInfo.SelectDropTarget(DragTest(point));
+
+  if (m_pDragImageList != NULL)
+    m_pDragImageList->DragShowNolock(TRUE);
 }
 
 void COptionsCodecs::OnLButtonUp(UINT nFlags, CPoint point)
 {
+  CScrollableDialog::OnLButtonUp(nFlags, point);
+
+  if (m_hDraggedItem == NULL)
+    return;
+
+  ReleaseCapture();
+
+  if (m_pDragImageList != NULL) {
+    m_pDragImageList->EndDrag();
+    delete m_pDragImageList;
+    m_pDragImageList = NULL;
+  }
+
+  m_CodecInfo.SelectDropTarget(NULL);
+
+  HTREEITEM hTargetItem = DragTest(point);
+  if (hTargetItem != NULL)
+    Move(m_hDraggedItem, hTargetItem);
+
+  m_hDraggedItem = NULL;
+}
+
+void COptionsCodecs::OnContextMenu(CWnd * pWnd, CPoint point)
+{
+  if (&m_CodecInfo != pWnd)
+    return;
+
+  CPoint local = point;
+  m_CodecInfo.ScreenToClient(&local);
+
+  UINT nFlags;
+  HTREEITEM hTargetItem = m_CodecInfo.HitTest(local, &nFlags);
+  if (hTargetItem == NULL)
+    return;
+
+  if ((m_CodecInfo.GetItemData(hTargetItem)&DragSourceItem) == 0)
+    return;
+
+  m_CodecInfo.Select(hTargetItem, TVGN_CARET);
+
+  CMenu menu;
+  menu.CreatePopupMenu();
+  menu.AppendMenu(MF_STRING, 1, L"Move");
+  if (m_CodecInfo.GetParentItem(hTargetItem) == m_hDisabledCodecs)
+    menu.AppendMenu(MF_STRING, 2, L"Enable");
+  else
+    menu.AppendMenu(MF_STRING, 3, L"Disable");
+
+  switch (menu.TrackPopupMenu(TPM_LEFTALIGN|TPM_RETURNCMD, point.x, point.y, this)) {
+    case 1 :
+      StartDrag(hTargetItem, point);
+      break;
+    case 2 :
+      Move(hTargetItem, m_hEnabledCodecs);
+      break;
+    case 3 :
+      Move(hTargetItem, m_hDisabledCodecs);
+      break;
+  }
+}
+
+void COptionsCodecs::StartDrag(HTREEITEM hItem, CPoint point)
+{
+  SetCapture();
+
+  m_hDraggedItem = hItem;
+  m_CodecInfo.Select(m_hDraggedItem, TVGN_CARET);
+
+  m_pDragImageList = m_CodecInfo.CreateDragImage(hItem);
+  if (m_pDragImageList == NULL)
+    return;
+
+  m_pDragImageList->DragEnter(&m_CodecInfo, point);
+  m_pDragImageList->BeginDrag(0, CPoint(0, 0));
+}
+
+HTREEITEM COptionsCodecs::DragTest(CPoint point)
+{
+  CRect dlgRect, treeRect;
+  GetWindowRect(&dlgRect);
+  m_CodecInfo.GetWindowRect(&treeRect);
+
+  point -= treeRect.TopLeft() - dlgRect.TopLeft();
+
+  UINT nFlags;
+  HTREEITEM hTargetItem = m_CodecInfo.HitTest(point, &nFlags);
+  if (hTargetItem == NULL)
+    return NULL;
+
+  if (hTargetItem == m_hDraggedItem)
+    return NULL;
+
+  if ((m_CodecInfo.GetItemData(hTargetItem)&DragTargetItem) == 0)
+    return NULL;
+
+  return hTargetItem;
+}
+
+void COptionsCodecs::Move(HTREEITEM hSource, HTREEITEM hDestination)
+{
+  CString formatName = m_CodecInfo.GetItemText(hSource);
+
+  HTREEITEM hParent, hAfter;
+  if (hDestination == m_hEnabledCodecs || hDestination == m_hDisabledCodecs) {
+    hParent = hDestination;
+    hAfter = TVI_FIRST;
+  }
+  else {
+    hParent = m_CodecInfo.GetParentItem(hDestination);
+    hAfter = hDestination;
+  }
+
+  HTREEITEM hNewFormat = m_CodecInfo.InsertItem(formatName, hParent, hAfter);
+  m_CodecInfo.SetItemData(hNewFormat, DragSourceItem|DragTargetItem);
+
+  for (HTREEITEM hOldOption = m_CodecInfo.GetChildItem(hSource);
+                 hOldOption != NULL;
+                 hOldOption = m_CodecInfo.GetNextItem(hOldOption, TVGN_NEXT)) {
+    HTREEITEM hNewOption = m_CodecInfo.InsertItem(m_CodecInfo.GetItemText(hOldOption), hNewFormat);
+
+    for (HTREEITEM hOldValue = m_CodecInfo.GetChildItem(hOldOption);
+                   hOldValue != NULL;
+                   hOldValue = m_CodecInfo.GetNextItem(hOldValue, TVGN_NEXT)) {
+      HTREEITEM hNewValue = m_CodecInfo.InsertItem(m_CodecInfo.GetItemText(hOldValue), hNewOption);
+      if ((m_CodecInfo.GetItemData(hOldValue)&CanEditItem) == 0)
+        m_CodecInfo.SetItemState(hNewValue, TVIS_BOLD, TVIS_BOLD);
+      else
+        m_CodecInfo.SetItemData(hNewValue, CanEditItem);
+    }
+  }
+
+  m_CodecInfo.DeleteItem(hSource);
+
+  if (m_MediaMask[m_MediaMask.GetLength()-1] != '\n')
+    m_MediaMask += '\n';
+
+  formatName += '\n';
+  int pos = m_MediaMask.Find(formatName);
+  if (pos >= 0)
+    m_MediaMask.Delete(pos, formatName.GetLength());
+
+  if (m_CodecInfo.GetParentItem(hNewFormat) == m_hDisabledCodecs)
+    m_MediaMask += formatName;
+
+  m_MediaOrder.Empty();
+  for (HTREEITEM hFormat = m_CodecInfo.GetChildItem(m_hEnabledCodecs);
+                 hFormat != NULL;
+                 hFormat = m_CodecInfo.GetNextItem(hFormat, TVGN_NEXT))
+    m_MediaOrder += m_CodecInfo.GetItemText(hFormat) + '\n';
 }

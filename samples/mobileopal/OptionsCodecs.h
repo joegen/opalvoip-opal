@@ -79,6 +79,9 @@ protected:
   virtual BOOL OnInitDialog();
 
   void AddCodec(const CMediaInfo & info, const CMediaInfoList & mask, const CMediaInfoList & options);
+  void StartDrag(HTREEITEM hItem, CPoint point);
+  HTREEITEM DragTest(CPoint point);
+  void Move(HTREEITEM hSource, HTREEITEM hDest);
 
 public:
   BOOL m_AutoStartTxVideo;
@@ -88,11 +91,10 @@ public:
   CString m_AllMediaOptions;
 
 protected:
-  CTreeCtrl m_CodecInfo;
-  HTREEITEM m_hEnabledCodecs;
-  HTREEITEM m_hDisabledCodecs;
-  HTREEITEM m_hDraggedItem;
-  bool      m_bDraggingNow;
+  CTreeCtrl    m_CodecInfo;
+  HTREEITEM    m_hEnabledCodecs;
+  HTREEITEM    m_hDisabledCodecs;
+  HTREEITEM    m_hDraggedItem;
   CImageList * m_pDragImageList;
 
 protected:
@@ -101,4 +103,5 @@ protected:
   afx_msg void OnTvnBegindragCodecList(NMHDR *pNMHDR, LRESULT *pResult);
   afx_msg void OnMouseMove(UINT nFlags, CPoint point);
   afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+  afx_msg void OnContextMenu(CWnd * pWnd, CPoint point);
 };
