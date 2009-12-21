@@ -362,6 +362,21 @@
 #endif
 
 
+/////////////////////////////////////////////////
+//
+// Ruby support
+//
+
+#undef OPAL_RUBY
+
+#if OPAL_RUBY
+  #if defined(_MSC_VER)
+    #pragma include_alias(<ruby.h>, <@RUBY_DIR@/lib/ruby/1.8/i386-mswin32/ruby.h>)
+    #pragma include_alias("rubyio.h", "@RUBY_DIR@/lib/ruby/1.8/i386-mswin32/rubyio.h")
+  #endif
+#endif
+
+
 #endif // OPAL_BUILDOPTS_H
 
 

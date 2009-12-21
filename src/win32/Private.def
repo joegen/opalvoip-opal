@@ -458,3 +458,4 @@ EXPORTS
     spx_ifft_float @41174 NONAME
     u2a @41175 NONAME
     _speex_putc @41178 NONAME
+    _Init_OPAL
