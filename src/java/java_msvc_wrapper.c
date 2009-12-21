@@ -1,5 +1,5 @@
 /*
- * opal_j.cxx
+ * java_msvc_wrapper.c
  *
  * Java interface for OPAL
  *

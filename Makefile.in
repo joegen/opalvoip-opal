@@ -346,6 +346,30 @@ JAVA_WRAPPER     = $(JAVA_SRCDIR)/java_swig_wrapper.c
 VPATH_C         += $(JAVA_SRCDIR)
 SOURCES         += $(JAVA_WRAPPER)
 
+ifneq (,$(SWIG))
+$(JAVA_WRAPPER): $(JAVA_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
+	$(SWIG) -java -package org.opalvoip -w451 -I$(OPAL_INCDIR) -o $@ $<
+endif
+
+endif
+
+
+####################################################
+# Ruby interface
+
+ifeq ($(OPAL_RUBY), yes)
+
+RUBY_SRCDIR      = $(OPAL_SRCDIR)/ruby
+RUBY_WRAPPER     = $(JAVA_SRCDIR)/ruby_swig_wrapper.c
+
+VPATH_C         += $(RUBY_SRCDIR)
+SOURCES         += $(RUBY_WRAPPER)
+
+ifneq (,$(SWIG))
+$(RUBY_WRAPPER): $(RUBY_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
+	$(SWIG) -ruby -w451 -I$(OPAL_INCDIR) -o $@ $<
+endif
+
 endif
 
 
@@ -536,13 +560,6 @@ Makefile: Makefile.in configure
 	@echo Makefile is not up to date, is a ./configure necessary?
 	@echo "*******************************************************"
 	@false
-
-ifdef JAVA_WRAPPER
-ifneq (,$(SWIG))
-$(JAVA_WRAPPER): $(JAVA_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
-	$(SWIG) -java -package org.opalvoip -w451 -I$(OPAL_INCDIR) -o $@ $<
-endif
-endif
 
 
 #####################################################################
