@@ -382,7 +382,7 @@
     #pragma include_alias("ruby/encoding.h", "@RUBY_DIR@/ruby/encoding.h")
     #pragma include_alias("ruby/oniguruma.h", "@RUBY_DIR@/ruby/oniguruma.h")
 
-    #define RUBY_LIBRARY "@RUBY_DIR@/../../wm/bin/msvcrt-ruby191.lib"
+    #define RUBY_LIBRARY "@RUBY_DIR@/../../lib/msvcrt-ruby191.lib"
   #endif
 
 #endif
