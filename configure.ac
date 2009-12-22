@@ -437,11 +437,11 @@ dnl     ########################
 dnl     Ruby Support
 dnl     ########################
 dnl MSWIN_DISPLAY     ruby,Ruby interface
-dnl MSWIN_CHECK_FILE  ruby,lib\ruby\1.8\i386-mswin32\ruby.h,OPAL_RUBY=1
+dnl MSWIN_CHECK_FILE  ruby,ruby.h,OPAL_RUBY=1
 dnl MSWIN_DIR_SYMBOL  ruby,RUBY_DIR
-dnl MSWIN_CHECK_DIR   ruby,c:\Program Files\Ruby
-dnl MSWIN_CHECK_DIR   ruby,c:\Ruby
-dnl MSWIN_CHECK_DIR   ruby,c:\tools\Ruby
+dnl MSWIN_CHECK_DIR   ruby,c:\Program Files\Ruby\include\*
+dnl MSWIN_CHECK_DIR   ruby,c:\Ruby\include\*
+dnl MSWIN_CHECK_DIR   ruby,c:\tools\Ruby\include\*
 
 AC_ARG_ENABLE([ruby],
               [AC_HELP_STRING([--enable-ruby],[enable Ruby support])],

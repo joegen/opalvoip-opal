@@ -41,6 +41,12 @@
 #include <opal/recording.h>
 
 
+#if OPAL_RUBY
+extern "C" void Init_OPAL();
+static void (*dummy)() = Init_OPAL;
+#endif
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 

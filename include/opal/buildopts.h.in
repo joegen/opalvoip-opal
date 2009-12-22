@@ -367,13 +367,24 @@
 // Ruby support
 //
 
+#if !defined(_WIN32_WCE)
 #undef OPAL_RUBY
+#endif
 
 #if OPAL_RUBY
+
   #if defined(_MSC_VER)
-    #pragma include_alias(<ruby.h>, <@RUBY_DIR@/lib/ruby/1.8/i386-mswin32/ruby.h>)
-    #pragma include_alias("rubyio.h", "@RUBY_DIR@/lib/ruby/1.8/i386-mswin32/rubyio.h")
+    #define RUBY_MSC_VER 1200
+
+    #pragma include_alias(<ruby.h>, <@RUBY_DIR@/ruby.h>)
+    #pragma include_alias("ruby/config.h", "@RUBY_DIR@/i386-mswin32/ruby/config.h")
+    #pragma include_alias("ruby/io.h", "@RUBY_DIR@/ruby/io.h")
+    #pragma include_alias("ruby/encoding.h", "@RUBY_DIR@/ruby/encoding.h")
+    #pragma include_alias("ruby/oniguruma.h", "@RUBY_DIR@/ruby/oniguruma.h")
+
+    #define RUBY_LIBRARY "@RUBY_DIR@/../../wm/bin/msvcrt-ruby191.lib"
   #endif
+
 #endif
 
 
