@@ -33,15 +33,24 @@
 
 #if OPAL_RUBY
 
-// What logic is there in requiring one specific version of the compiler?
-// And more so, a version that is now 4 major releases behind? Sheesh!
-#undef _MSC_VER
-#define _MSC_VER 1200
+#if _MSC_VER != RUBY_MSC_VER
+
+  #define MAKESTRING_(s) #s
+  #define MAKESTRING(s) MAKESTRING_(s)
+  #pragma message("Using MSVC " MAKESTRING(_MSC_VER) " while the Ruby interface is expecting MSVC " MAKESTRING(RUBY_MSC_VER) ", faking it!")
+  #undef MAKESTRING_
+  #undef MAKESTRING
+
+  #undef _MSC_VER
+  #define _MSC_VER RUBY_MSC_VER
+#endif
 
 #define NT 1
 #define IMPORT 1
 
-#pragma warning(disable:4054 4100 4115 4127 4305 4702)
+#pragma comment(lib, RUBY_LIBRARY)
+
+#pragma warning(disable:4005 4054 4100 4115 4127 4201 4214 4244 4273 4305 4702)
 
 #include "ruby_swig_wrapper.inc"
 
