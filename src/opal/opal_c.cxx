@@ -1994,10 +1994,10 @@ OpalContext::~OpalContext()
 }
 
 
-bool OpalContext::Initialise(unsigned & version, const char * options)
+unsigned OpalContext::Initialise(const char * options, unsigned version)
 {
   m_handle = OpalInitialise(&version, options);
-  return m_handle != NULL;
+  return m_handle != NULL ? version : 0;
 }
 
 

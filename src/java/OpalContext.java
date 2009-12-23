@@ -39,8 +39,12 @@ public class OpalContext {
     this(OPALJNI.new_OpalContext(), true);
   }
 
-  public boolean Initialise(SWIGTYPE_p_unsigned_int version, String options) {
-    return OPALJNI.OpalContext_Initialise(swigCPtr, this, SWIGTYPE_p_unsigned_int.getCPtr(version), options);
+  public long Initialise(String options, long version) {
+    return OPALJNI.OpalContext_Initialise__SWIG_0(swigCPtr, this, options, version);
+  }
+
+  public long Initialise(String options) {
+    return OPALJNI.OpalContext_Initialise__SWIG_1(swigCPtr, this, options);
   }
 
   public void ShutDown() {

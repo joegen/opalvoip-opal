@@ -1,4 +1,4 @@
-%module OPAL
+%module opal
 
   %{
     /* Includes the header in the wrapper code */
