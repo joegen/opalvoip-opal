@@ -1232,9 +1232,10 @@ class OpalContext
     virtual ~OpalContext();
 
     /// Calls OpalIntialise() to initialise the OPAL context.
-    bool Initialise(
-      unsigned & version,   ///< Returns version of API supported by library.
-      const char * options  ///< List of options to pass to OpalIntialise()
+    /// Returns version of API supported by library, zero if error.
+    unsigned Initialise(
+      const char * options,  ///< List of options to pass to OpalIntialise()
+      unsigned version = OPAL_C_API_VERSION ///< Version expected by application
     );
 
     /// Calls OpalShutDown() to dispose of the OPAL context.

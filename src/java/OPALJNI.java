@@ -342,7 +342,8 @@ class OPALJNI {
   public final static native long OpalMessagePtr_GetRecording(long jarg1, OpalMessagePtr jarg1_);
   public final static native long new_OpalContext();
   public final static native void delete_OpalContext(long jarg1);
-  public final static native boolean OpalContext_Initialise(long jarg1, OpalContext jarg1_, long jarg2, String jarg3);
+  public final static native long OpalContext_Initialise__SWIG_0(long jarg1, OpalContext jarg1_, String jarg2, long jarg3);
+  public final static native long OpalContext_Initialise__SWIG_1(long jarg1, OpalContext jarg1_, String jarg2);
   public final static native void OpalContext_ShutDown(long jarg1, OpalContext jarg1_);
   public final static native boolean OpalContext_GetMessage__SWIG_0(long jarg1, OpalContext jarg1_, long jarg2, OpalMessagePtr jarg2_, long jarg3);
   public final static native boolean OpalContext_GetMessage__SWIG_1(long jarg1, OpalContext jarg1_, long jarg2, OpalMessagePtr jarg2_);

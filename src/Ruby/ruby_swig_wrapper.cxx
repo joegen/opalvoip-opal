@@ -1852,10 +1852,10 @@ static swig_module_info swig_module = {swig_types, 35, 0, 0, 0, 0};
 
 /* -------- TYPES TABLE (END) -------- */
 
-#define SWIG_init    Init_OPAL
-#define SWIG_name    "OPAL"
+#define SWIG_init    Init_opal
+#define SWIG_name    "Opal"
 
-static VALUE mOPAL;
+static VALUE mOpal;
 
 #define SWIG_RUBY_THREAD_BEGIN_BLOCK
 #define SWIG_RUBY_THREAD_END_BLOCK
@@ -2142,7 +2142,7 @@ SWIG_From_bool  (bool value)
 
 
 /*
-  Document-method: OPAL.OpalInitialise
+  Document-method: Opal.OpalInitialise
 
   call-seq:
     OpalInitialise(unsigned int version, char options) -> OpalHandle
@@ -2187,7 +2187,7 @@ fail:
 
 
 /*
-  Document-method: OPAL.OpalShutDown
+  Document-method: Opal.OpalShutDown
 
   call-seq:
     OpalShutDown(OpalHandle opal)
@@ -2218,7 +2218,7 @@ fail:
 
 
 /*
-  Document-method: OPAL.OpalGetMessage
+  Document-method: Opal.OpalGetMessage
 
   call-seq:
     OpalGetMessage(OpalHandle opal, unsigned int timeout) -> OpalMessage
@@ -2260,7 +2260,7 @@ fail:
 
 
 /*
-  Document-method: OPAL.OpalSendMessage
+  Document-method: Opal.OpalSendMessage
 
   call-seq:
     OpalSendMessage(OpalHandle opal, OpalMessage message) -> OpalMessage
@@ -2302,7 +2302,7 @@ fail:
 
 
 /*
-  Document-method: OPAL.OpalFreeMessage
+  Document-method: Opal.OpalFreeMessage
 
   call-seq:
     OpalFreeMessage(OpalMessage message)
@@ -2333,9 +2333,9 @@ fail:
 
 
 /*
-  Document-class: OPAL::OpalParamGeneral
+  Document-class: Opal::OpalParamGeneral
 
-  Proxy of C++ OPAL::OpalParamGeneral class
+  Proxy of C++ Opal::OpalParamGeneral class
 
 
 */
@@ -2343,7 +2343,7 @@ swig_class SwigClassOpalParamGeneral;
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_audioRecordDevice
+  Document-method: Opal::OpalParamGeneral.m_audioRecordDevice
 
   call-seq:
     m_audioRecordDevice -> char
@@ -2353,7 +2353,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_audioRecordDevice=
+  Document-method: Opal::OpalParamGeneral.m_audioRecordDevice=
 
   call-seq:
     m_audioRecordDevice=(x) -> char
@@ -2424,7 +2424,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_audioPlayerDevice
+  Document-method: Opal::OpalParamGeneral.m_audioPlayerDevice
 
   call-seq:
     m_audioPlayerDevice -> char
@@ -2434,7 +2434,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_audioPlayerDevice=
+  Document-method: Opal::OpalParamGeneral.m_audioPlayerDevice=
 
   call-seq:
     m_audioPlayerDevice=(x) -> char
@@ -2505,7 +2505,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_videoInputDevice
+  Document-method: Opal::OpalParamGeneral.m_videoInputDevice
 
   call-seq:
     m_videoInputDevice -> char
@@ -2515,7 +2515,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_videoInputDevice=
+  Document-method: Opal::OpalParamGeneral.m_videoInputDevice=
 
   call-seq:
     m_videoInputDevice=(x) -> char
@@ -2586,7 +2586,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_videoOutputDevice
+  Document-method: Opal::OpalParamGeneral.m_videoOutputDevice
 
   call-seq:
     m_videoOutputDevice -> char
@@ -2596,7 +2596,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_videoOutputDevice=
+  Document-method: Opal::OpalParamGeneral.m_videoOutputDevice=
 
   call-seq:
     m_videoOutputDevice=(x) -> char
@@ -2667,7 +2667,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_videoPreviewDevice
+  Document-method: Opal::OpalParamGeneral.m_videoPreviewDevice
 
   call-seq:
     m_videoPreviewDevice -> char
@@ -2677,7 +2677,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_videoPreviewDevice=
+  Document-method: Opal::OpalParamGeneral.m_videoPreviewDevice=
 
   call-seq:
     m_videoPreviewDevice=(x) -> char
@@ -2748,7 +2748,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaOrder
+  Document-method: Opal::OpalParamGeneral.m_mediaOrder
 
   call-seq:
     m_mediaOrder -> char
@@ -2758,7 +2758,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaOrder=
+  Document-method: Opal::OpalParamGeneral.m_mediaOrder=
 
   call-seq:
     m_mediaOrder=(x) -> char
@@ -2829,7 +2829,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaMask
+  Document-method: Opal::OpalParamGeneral.m_mediaMask
 
   call-seq:
     m_mediaMask -> char
@@ -2839,7 +2839,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaMask=
+  Document-method: Opal::OpalParamGeneral.m_mediaMask=
 
   call-seq:
     m_mediaMask=(x) -> char
@@ -2910,7 +2910,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_autoRxMedia
+  Document-method: Opal::OpalParamGeneral.m_autoRxMedia
 
   call-seq:
     m_autoRxMedia -> char
@@ -2920,7 +2920,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_autoRxMedia=
+  Document-method: Opal::OpalParamGeneral.m_autoRxMedia=
 
   call-seq:
     m_autoRxMedia=(x) -> char
@@ -2991,7 +2991,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_autoTxMedia
+  Document-method: Opal::OpalParamGeneral.m_autoTxMedia
 
   call-seq:
     m_autoTxMedia -> char
@@ -3001,7 +3001,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_autoTxMedia=
+  Document-method: Opal::OpalParamGeneral.m_autoTxMedia=
 
   call-seq:
     m_autoTxMedia=(x) -> char
@@ -3072,7 +3072,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_natRouter
+  Document-method: Opal::OpalParamGeneral.m_natRouter
 
   call-seq:
     m_natRouter -> char
@@ -3082,7 +3082,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_natRouter=
+  Document-method: Opal::OpalParamGeneral.m_natRouter=
 
   call-seq:
     m_natRouter=(x) -> char
@@ -3153,7 +3153,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_stunServer
+  Document-method: Opal::OpalParamGeneral.m_stunServer
 
   call-seq:
     m_stunServer -> char
@@ -3163,7 +3163,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_stunServer=
+  Document-method: Opal::OpalParamGeneral.m_stunServer=
 
   call-seq:
     m_stunServer=(x) -> char
@@ -3234,7 +3234,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_tcpPortBase
+  Document-method: Opal::OpalParamGeneral.m_tcpPortBase
 
   call-seq:
     m_tcpPortBase -> unsigned int
@@ -3244,7 +3244,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_tcpPortBase=
+  Document-method: Opal::OpalParamGeneral.m_tcpPortBase=
 
   call-seq:
     m_tcpPortBase=(x) -> unsigned int
@@ -3307,7 +3307,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_tcpPortMax
+  Document-method: Opal::OpalParamGeneral.m_tcpPortMax
 
   call-seq:
     m_tcpPortMax -> unsigned int
@@ -3317,7 +3317,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_tcpPortMax=
+  Document-method: Opal::OpalParamGeneral.m_tcpPortMax=
 
   call-seq:
     m_tcpPortMax=(x) -> unsigned int
@@ -3380,7 +3380,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_udpPortBase
+  Document-method: Opal::OpalParamGeneral.m_udpPortBase
 
   call-seq:
     m_udpPortBase -> unsigned int
@@ -3390,7 +3390,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_udpPortBase=
+  Document-method: Opal::OpalParamGeneral.m_udpPortBase=
 
   call-seq:
     m_udpPortBase=(x) -> unsigned int
@@ -3453,7 +3453,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_udpPortMax
+  Document-method: Opal::OpalParamGeneral.m_udpPortMax
 
   call-seq:
     m_udpPortMax -> unsigned int
@@ -3463,7 +3463,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_udpPortMax=
+  Document-method: Opal::OpalParamGeneral.m_udpPortMax=
 
   call-seq:
     m_udpPortMax=(x) -> unsigned int
@@ -3526,7 +3526,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_rtpPortBase
+  Document-method: Opal::OpalParamGeneral.m_rtpPortBase
 
   call-seq:
     m_rtpPortBase -> unsigned int
@@ -3536,7 +3536,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_rtpPortBase=
+  Document-method: Opal::OpalParamGeneral.m_rtpPortBase=
 
   call-seq:
     m_rtpPortBase=(x) -> unsigned int
@@ -3599,7 +3599,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_rtpPortMax
+  Document-method: Opal::OpalParamGeneral.m_rtpPortMax
 
   call-seq:
     m_rtpPortMax -> unsigned int
@@ -3609,7 +3609,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_rtpPortMax=
+  Document-method: Opal::OpalParamGeneral.m_rtpPortMax=
 
   call-seq:
     m_rtpPortMax=(x) -> unsigned int
@@ -3672,7 +3672,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_rtpTypeOfService
+  Document-method: Opal::OpalParamGeneral.m_rtpTypeOfService
 
   call-seq:
     m_rtpTypeOfService -> unsigned int
@@ -3682,7 +3682,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_rtpTypeOfService=
+  Document-method: Opal::OpalParamGeneral.m_rtpTypeOfService=
 
   call-seq:
     m_rtpTypeOfService=(x) -> unsigned int
@@ -3745,7 +3745,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_rtpMaxPayloadSize
+  Document-method: Opal::OpalParamGeneral.m_rtpMaxPayloadSize
 
   call-seq:
     m_rtpMaxPayloadSize -> unsigned int
@@ -3755,7 +3755,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_rtpMaxPayloadSize=
+  Document-method: Opal::OpalParamGeneral.m_rtpMaxPayloadSize=
 
   call-seq:
     m_rtpMaxPayloadSize=(x) -> unsigned int
@@ -3818,7 +3818,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_minAudioJitter
+  Document-method: Opal::OpalParamGeneral.m_minAudioJitter
 
   call-seq:
     m_minAudioJitter -> unsigned int
@@ -3828,7 +3828,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_minAudioJitter=
+  Document-method: Opal::OpalParamGeneral.m_minAudioJitter=
 
   call-seq:
     m_minAudioJitter=(x) -> unsigned int
@@ -3891,7 +3891,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_maxAudioJitter
+  Document-method: Opal::OpalParamGeneral.m_maxAudioJitter
 
   call-seq:
     m_maxAudioJitter -> unsigned int
@@ -3901,7 +3901,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_maxAudioJitter=
+  Document-method: Opal::OpalParamGeneral.m_maxAudioJitter=
 
   call-seq:
     m_maxAudioJitter=(x) -> unsigned int
@@ -3964,7 +3964,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_silenceDetectMode
+  Document-method: Opal::OpalParamGeneral.m_silenceDetectMode
 
   call-seq:
     m_silenceDetectMode -> int
@@ -3974,7 +3974,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_silenceDetectMode=
+  Document-method: Opal::OpalParamGeneral.m_silenceDetectMode=
 
   call-seq:
     m_silenceDetectMode=(x) -> int
@@ -4037,7 +4037,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_silenceThreshold
+  Document-method: Opal::OpalParamGeneral.m_silenceThreshold
 
   call-seq:
     m_silenceThreshold -> unsigned int
@@ -4047,7 +4047,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_silenceThreshold=
+  Document-method: Opal::OpalParamGeneral.m_silenceThreshold=
 
   call-seq:
     m_silenceThreshold=(x) -> unsigned int
@@ -4110,7 +4110,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_signalDeadband
+  Document-method: Opal::OpalParamGeneral.m_signalDeadband
 
   call-seq:
     m_signalDeadband -> unsigned int
@@ -4120,7 +4120,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_signalDeadband=
+  Document-method: Opal::OpalParamGeneral.m_signalDeadband=
 
   call-seq:
     m_signalDeadband=(x) -> unsigned int
@@ -4183,7 +4183,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_silenceDeadband
+  Document-method: Opal::OpalParamGeneral.m_silenceDeadband
 
   call-seq:
     m_silenceDeadband -> unsigned int
@@ -4193,7 +4193,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_silenceDeadband=
+  Document-method: Opal::OpalParamGeneral.m_silenceDeadband=
 
   call-seq:
     m_silenceDeadband=(x) -> unsigned int
@@ -4256,7 +4256,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_silenceAdaptPeriod
+  Document-method: Opal::OpalParamGeneral.m_silenceAdaptPeriod
 
   call-seq:
     m_silenceAdaptPeriod -> unsigned int
@@ -4266,7 +4266,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_silenceAdaptPeriod=
+  Document-method: Opal::OpalParamGeneral.m_silenceAdaptPeriod=
 
   call-seq:
     m_silenceAdaptPeriod=(x) -> unsigned int
@@ -4329,7 +4329,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_echoCancellation
+  Document-method: Opal::OpalParamGeneral.m_echoCancellation
 
   call-seq:
     m_echoCancellation -> int
@@ -4339,7 +4339,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_echoCancellation=
+  Document-method: Opal::OpalParamGeneral.m_echoCancellation=
 
   call-seq:
     m_echoCancellation=(x) -> int
@@ -4402,7 +4402,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_audioBuffers
+  Document-method: Opal::OpalParamGeneral.m_audioBuffers
 
   call-seq:
     m_audioBuffers -> unsigned int
@@ -4412,7 +4412,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_audioBuffers=
+  Document-method: Opal::OpalParamGeneral.m_audioBuffers=
 
   call-seq:
     m_audioBuffers=(x) -> unsigned int
@@ -4475,7 +4475,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaReadData
+  Document-method: Opal::OpalParamGeneral.m_mediaReadData
 
   call-seq:
     m_mediaReadData -> OpalMediaDataFunction
@@ -4485,7 +4485,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaReadData=
+  Document-method: Opal::OpalParamGeneral.m_mediaReadData=
 
   call-seq:
     m_mediaReadData=(x) -> OpalMediaDataFunction
@@ -4547,7 +4547,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaWriteData
+  Document-method: Opal::OpalParamGeneral.m_mediaWriteData
 
   call-seq:
     m_mediaWriteData -> OpalMediaDataFunction
@@ -4557,7 +4557,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaWriteData=
+  Document-method: Opal::OpalParamGeneral.m_mediaWriteData=
 
   call-seq:
     m_mediaWriteData=(x) -> OpalMediaDataFunction
@@ -4619,7 +4619,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaDataHeader
+  Document-method: Opal::OpalParamGeneral.m_mediaDataHeader
 
   call-seq:
     m_mediaDataHeader -> int
@@ -4629,7 +4629,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaDataHeader=
+  Document-method: Opal::OpalParamGeneral.m_mediaDataHeader=
 
   call-seq:
     m_mediaDataHeader=(x) -> int
@@ -4692,7 +4692,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_messageAvailable
+  Document-method: Opal::OpalParamGeneral.m_messageAvailable
 
   call-seq:
     m_messageAvailable -> OpalMessageAvailableFunction
@@ -4702,7 +4702,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_messageAvailable=
+  Document-method: Opal::OpalParamGeneral.m_messageAvailable=
 
   call-seq:
     m_messageAvailable=(x) -> OpalMessageAvailableFunction
@@ -4764,7 +4764,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaOptions
+  Document-method: Opal::OpalParamGeneral.m_mediaOptions
 
   call-seq:
     m_mediaOptions -> char
@@ -4774,7 +4774,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaOptions=
+  Document-method: Opal::OpalParamGeneral.m_mediaOptions=
 
   call-seq:
     m_mediaOptions=(x) -> char
@@ -4845,7 +4845,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_audioBufferTime
+  Document-method: Opal::OpalParamGeneral.m_audioBufferTime
 
   call-seq:
     m_audioBufferTime -> unsigned int
@@ -4855,7 +4855,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_audioBufferTime=
+  Document-method: Opal::OpalParamGeneral.m_audioBufferTime=
 
   call-seq:
     m_audioBufferTime=(x) -> unsigned int
@@ -4918,7 +4918,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_manualAlerting
+  Document-method: Opal::OpalParamGeneral.m_manualAlerting
 
   call-seq:
     m_manualAlerting -> unsigned int
@@ -4928,7 +4928,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_manualAlerting=
+  Document-method: Opal::OpalParamGeneral.m_manualAlerting=
 
   call-seq:
     m_manualAlerting=(x) -> unsigned int
@@ -4991,7 +4991,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaTiming
+  Document-method: Opal::OpalParamGeneral.m_mediaTiming
 
   call-seq:
     m_mediaTiming -> int
@@ -5001,7 +5001,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamGeneral.m_mediaTiming=
+  Document-method: Opal::OpalParamGeneral.m_mediaTiming=
 
   call-seq:
     m_mediaTiming=(x) -> int
@@ -5081,7 +5081,7 @@ _wrap_OpalParamGeneral_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalParamGeneral.new
+  Document-method: Opal::OpalParamGeneral.new
 
   call-seq:
     OpalParamGeneral.new
@@ -5111,9 +5111,9 @@ free_OpalParamGeneral(OpalParamGeneral *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalProductDescription
+  Document-class: Opal::OpalProductDescription
 
-  Proxy of C++ OPAL::OpalProductDescription class
+  Proxy of C++ Opal::OpalProductDescription class
 
 
 */
@@ -5121,7 +5121,7 @@ swig_class SwigClassOpalProductDescription;
 
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_vendor
+  Document-method: Opal::OpalProductDescription.m_vendor
 
   call-seq:
     m_vendor -> char
@@ -5131,7 +5131,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_vendor=
+  Document-method: Opal::OpalProductDescription.m_vendor=
 
   call-seq:
     m_vendor=(x) -> char
@@ -5202,7 +5202,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_name
+  Document-method: Opal::OpalProductDescription.m_name
 
   call-seq:
     m_name -> char
@@ -5212,7 +5212,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_name=
+  Document-method: Opal::OpalProductDescription.m_name=
 
   call-seq:
     m_name=(x) -> char
@@ -5283,7 +5283,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_version
+  Document-method: Opal::OpalProductDescription.m_version
 
   call-seq:
     m_version -> char
@@ -5293,7 +5293,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_version=
+  Document-method: Opal::OpalProductDescription.m_version=
 
   call-seq:
     m_version=(x) -> char
@@ -5364,7 +5364,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_t35CountryCode
+  Document-method: Opal::OpalProductDescription.m_t35CountryCode
 
   call-seq:
     m_t35CountryCode -> unsigned int
@@ -5374,7 +5374,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_t35CountryCode=
+  Document-method: Opal::OpalProductDescription.m_t35CountryCode=
 
   call-seq:
     m_t35CountryCode=(x) -> unsigned int
@@ -5437,7 +5437,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_t35Extension
+  Document-method: Opal::OpalProductDescription.m_t35Extension
 
   call-seq:
     m_t35Extension -> unsigned int
@@ -5447,7 +5447,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_t35Extension=
+  Document-method: Opal::OpalProductDescription.m_t35Extension=
 
   call-seq:
     m_t35Extension=(x) -> unsigned int
@@ -5510,7 +5510,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_manufacturerCode
+  Document-method: Opal::OpalProductDescription.m_manufacturerCode
 
   call-seq:
     m_manufacturerCode -> unsigned int
@@ -5520,7 +5520,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalProductDescription.m_manufacturerCode=
+  Document-method: Opal::OpalProductDescription.m_manufacturerCode=
 
   call-seq:
     m_manufacturerCode=(x) -> unsigned int
@@ -5600,7 +5600,7 @@ _wrap_OpalProductDescription_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalProductDescription.new
+  Document-method: Opal::OpalProductDescription.new
 
   call-seq:
     OpalProductDescription.new
@@ -5630,9 +5630,9 @@ free_OpalProductDescription(OpalProductDescription *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalParamProtocol
+  Document-class: Opal::OpalParamProtocol
 
-  Proxy of C++ OPAL::OpalParamProtocol class
+  Proxy of C++ Opal::OpalParamProtocol class
 
 
 */
@@ -5640,7 +5640,7 @@ swig_class SwigClassOpalParamProtocol;
 
 
 /*
-  Document-method: OPAL::OpalParamProtocol.m_prefix
+  Document-method: Opal::OpalParamProtocol.m_prefix
 
   call-seq:
     m_prefix -> char
@@ -5650,7 +5650,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamProtocol.m_prefix=
+  Document-method: Opal::OpalParamProtocol.m_prefix=
 
   call-seq:
     m_prefix=(x) -> char
@@ -5721,7 +5721,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamProtocol.m_userName
+  Document-method: Opal::OpalParamProtocol.m_userName
 
   call-seq:
     m_userName -> char
@@ -5731,7 +5731,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamProtocol.m_userName=
+  Document-method: Opal::OpalParamProtocol.m_userName=
 
   call-seq:
     m_userName=(x) -> char
@@ -5802,7 +5802,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamProtocol.m_displayName
+  Document-method: Opal::OpalParamProtocol.m_displayName
 
   call-seq:
     m_displayName -> char
@@ -5812,7 +5812,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamProtocol.m_displayName=
+  Document-method: Opal::OpalParamProtocol.m_displayName=
 
   call-seq:
     m_displayName=(x) -> char
@@ -5883,7 +5883,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamProtocol.m_product
+  Document-method: Opal::OpalParamProtocol.m_product
 
   call-seq:
     m_product -> OpalProductDescription
@@ -5893,7 +5893,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamProtocol.m_product=
+  Document-method: Opal::OpalParamProtocol.m_product=
 
   call-seq:
     m_product=(x) -> OpalProductDescription
@@ -5956,7 +5956,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamProtocol.m_interfaceAddresses
+  Document-method: Opal::OpalParamProtocol.m_interfaceAddresses
 
   call-seq:
     m_interfaceAddresses -> char
@@ -5966,7 +5966,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamProtocol.m_interfaceAddresses=
+  Document-method: Opal::OpalParamProtocol.m_interfaceAddresses=
 
   call-seq:
     m_interfaceAddresses=(x) -> char
@@ -6054,7 +6054,7 @@ _wrap_OpalParamProtocol_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalParamProtocol.new
+  Document-method: Opal::OpalParamProtocol.new
 
   call-seq:
     OpalParamProtocol.new
@@ -6084,9 +6084,9 @@ free_OpalParamProtocol(OpalParamProtocol *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalParamRegistration
+  Document-class: Opal::OpalParamRegistration
 
-  Proxy of C++ OPAL::OpalParamRegistration class
+  Proxy of C++ Opal::OpalParamRegistration class
 
 
 */
@@ -6094,7 +6094,7 @@ swig_class SwigClassOpalParamRegistration;
 
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_protocol
+  Document-method: Opal::OpalParamRegistration.m_protocol
 
   call-seq:
     m_protocol -> char
@@ -6104,7 +6104,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_protocol=
+  Document-method: Opal::OpalParamRegistration.m_protocol=
 
   call-seq:
     m_protocol=(x) -> char
@@ -6175,7 +6175,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_identifier
+  Document-method: Opal::OpalParamRegistration.m_identifier
 
   call-seq:
     m_identifier -> char
@@ -6185,7 +6185,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_identifier=
+  Document-method: Opal::OpalParamRegistration.m_identifier=
 
   call-seq:
     m_identifier=(x) -> char
@@ -6256,7 +6256,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_hostName
+  Document-method: Opal::OpalParamRegistration.m_hostName
 
   call-seq:
     m_hostName -> char
@@ -6266,7 +6266,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_hostName=
+  Document-method: Opal::OpalParamRegistration.m_hostName=
 
   call-seq:
     m_hostName=(x) -> char
@@ -6337,7 +6337,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_authUserName
+  Document-method: Opal::OpalParamRegistration.m_authUserName
 
   call-seq:
     m_authUserName -> char
@@ -6347,7 +6347,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_authUserName=
+  Document-method: Opal::OpalParamRegistration.m_authUserName=
 
   call-seq:
     m_authUserName=(x) -> char
@@ -6418,7 +6418,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_password
+  Document-method: Opal::OpalParamRegistration.m_password
 
   call-seq:
     m_password -> char
@@ -6428,7 +6428,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_password=
+  Document-method: Opal::OpalParamRegistration.m_password=
 
   call-seq:
     m_password=(x) -> char
@@ -6499,7 +6499,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_adminEntity
+  Document-method: Opal::OpalParamRegistration.m_adminEntity
 
   call-seq:
     m_adminEntity -> char
@@ -6509,7 +6509,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_adminEntity=
+  Document-method: Opal::OpalParamRegistration.m_adminEntity=
 
   call-seq:
     m_adminEntity=(x) -> char
@@ -6580,7 +6580,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_timeToLive
+  Document-method: Opal::OpalParamRegistration.m_timeToLive
 
   call-seq:
     m_timeToLive -> unsigned int
@@ -6590,7 +6590,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_timeToLive=
+  Document-method: Opal::OpalParamRegistration.m_timeToLive=
 
   call-seq:
     m_timeToLive=(x) -> unsigned int
@@ -6653,7 +6653,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_restoreTime
+  Document-method: Opal::OpalParamRegistration.m_restoreTime
 
   call-seq:
     m_restoreTime -> unsigned int
@@ -6663,7 +6663,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_restoreTime=
+  Document-method: Opal::OpalParamRegistration.m_restoreTime=
 
   call-seq:
     m_restoreTime=(x) -> unsigned int
@@ -6726,7 +6726,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_eventPackage
+  Document-method: Opal::OpalParamRegistration.m_eventPackage
 
   call-seq:
     m_eventPackage -> char
@@ -6736,7 +6736,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRegistration.m_eventPackage=
+  Document-method: Opal::OpalParamRegistration.m_eventPackage=
 
   call-seq:
     m_eventPackage=(x) -> char
@@ -6824,7 +6824,7 @@ _wrap_OpalParamRegistration_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalParamRegistration.new
+  Document-method: Opal::OpalParamRegistration.new
 
   call-seq:
     OpalParamRegistration.new
@@ -6854,9 +6854,9 @@ free_OpalParamRegistration(OpalParamRegistration *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalStatusRegistration
+  Document-class: Opal::OpalStatusRegistration
 
-  Proxy of C++ OPAL::OpalStatusRegistration class
+  Proxy of C++ Opal::OpalStatusRegistration class
 
 
 */
@@ -6864,7 +6864,7 @@ swig_class SwigClassOpalStatusRegistration;
 
 
 /*
-  Document-method: OPAL::OpalStatusRegistration.m_protocol
+  Document-method: Opal::OpalStatusRegistration.m_protocol
 
   call-seq:
     m_protocol -> char
@@ -6874,7 +6874,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusRegistration.m_protocol=
+  Document-method: Opal::OpalStatusRegistration.m_protocol=
 
   call-seq:
     m_protocol=(x) -> char
@@ -6945,7 +6945,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusRegistration.m_serverName
+  Document-method: Opal::OpalStatusRegistration.m_serverName
 
   call-seq:
     m_serverName -> char
@@ -6955,7 +6955,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusRegistration.m_serverName=
+  Document-method: Opal::OpalStatusRegistration.m_serverName=
 
   call-seq:
     m_serverName=(x) -> char
@@ -7026,7 +7026,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusRegistration.m_error
+  Document-method: Opal::OpalStatusRegistration.m_error
 
   call-seq:
     m_error -> char
@@ -7036,7 +7036,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusRegistration.m_error=
+  Document-method: Opal::OpalStatusRegistration.m_error=
 
   call-seq:
     m_error=(x) -> char
@@ -7107,7 +7107,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusRegistration.m_status
+  Document-method: Opal::OpalStatusRegistration.m_status
 
   call-seq:
     m_status -> int
@@ -7117,7 +7117,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusRegistration.m_status=
+  Document-method: Opal::OpalStatusRegistration.m_status=
 
   call-seq:
     m_status=(x) -> int
@@ -7180,7 +7180,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusRegistration.m_product
+  Document-method: Opal::OpalStatusRegistration.m_product
 
   call-seq:
     m_product -> OpalProductDescription
@@ -7190,7 +7190,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusRegistration.m_product=
+  Document-method: Opal::OpalStatusRegistration.m_product=
 
   call-seq:
     m_product=(x) -> OpalProductDescription
@@ -7270,7 +7270,7 @@ _wrap_OpalStatusRegistration_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalStatusRegistration.new
+  Document-method: Opal::OpalStatusRegistration.new
 
   call-seq:
     OpalStatusRegistration.new
@@ -7300,9 +7300,9 @@ free_OpalStatusRegistration(OpalStatusRegistration *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalParamSetUpCall
+  Document-class: Opal::OpalParamSetUpCall
 
-  Proxy of C++ OPAL::OpalParamSetUpCall class
+  Proxy of C++ Opal::OpalParamSetUpCall class
 
 
 */
@@ -7310,7 +7310,7 @@ swig_class SwigClassOpalParamSetUpCall;
 
 
 /*
-  Document-method: OPAL::OpalParamSetUpCall.m_partyA
+  Document-method: Opal::OpalParamSetUpCall.m_partyA
 
   call-seq:
     m_partyA -> char
@@ -7320,7 +7320,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamSetUpCall.m_partyA=
+  Document-method: Opal::OpalParamSetUpCall.m_partyA=
 
   call-seq:
     m_partyA=(x) -> char
@@ -7391,7 +7391,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamSetUpCall.m_partyB
+  Document-method: Opal::OpalParamSetUpCall.m_partyB
 
   call-seq:
     m_partyB -> char
@@ -7401,7 +7401,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamSetUpCall.m_partyB=
+  Document-method: Opal::OpalParamSetUpCall.m_partyB=
 
   call-seq:
     m_partyB=(x) -> char
@@ -7472,7 +7472,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamSetUpCall.m_callToken
+  Document-method: Opal::OpalParamSetUpCall.m_callToken
 
   call-seq:
     m_callToken -> char
@@ -7482,7 +7482,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamSetUpCall.m_callToken=
+  Document-method: Opal::OpalParamSetUpCall.m_callToken=
 
   call-seq:
     m_callToken=(x) -> char
@@ -7553,7 +7553,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamSetUpCall.m_alertingType
+  Document-method: Opal::OpalParamSetUpCall.m_alertingType
 
   call-seq:
     m_alertingType -> char
@@ -7563,7 +7563,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamSetUpCall.m_alertingType=
+  Document-method: Opal::OpalParamSetUpCall.m_alertingType=
 
   call-seq:
     m_alertingType=(x) -> char
@@ -7634,7 +7634,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamSetUpCall.m_protocolCallId
+  Document-method: Opal::OpalParamSetUpCall.m_protocolCallId
 
   call-seq:
     m_protocolCallId -> char
@@ -7644,7 +7644,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamSetUpCall.m_protocolCallId=
+  Document-method: Opal::OpalParamSetUpCall.m_protocolCallId=
 
   call-seq:
     m_protocolCallId=(x) -> char
@@ -7732,7 +7732,7 @@ _wrap_OpalParamSetUpCall_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalParamSetUpCall.new
+  Document-method: Opal::OpalParamSetUpCall.new
 
   call-seq:
     OpalParamSetUpCall.new
@@ -7762,9 +7762,9 @@ free_OpalParamSetUpCall(OpalParamSetUpCall *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalStatusIncomingCall
+  Document-class: Opal::OpalStatusIncomingCall
 
-  Proxy of C++ OPAL::OpalStatusIncomingCall class
+  Proxy of C++ Opal::OpalStatusIncomingCall class
 
 
 */
@@ -7772,7 +7772,7 @@ swig_class SwigClassOpalStatusIncomingCall;
 
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_callToken
+  Document-method: Opal::OpalStatusIncomingCall.m_callToken
 
   call-seq:
     m_callToken -> char
@@ -7782,7 +7782,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_callToken=
+  Document-method: Opal::OpalStatusIncomingCall.m_callToken=
 
   call-seq:
     m_callToken=(x) -> char
@@ -7853,7 +7853,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_localAddress
+  Document-method: Opal::OpalStatusIncomingCall.m_localAddress
 
   call-seq:
     m_localAddress -> char
@@ -7863,7 +7863,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_localAddress=
+  Document-method: Opal::OpalStatusIncomingCall.m_localAddress=
 
   call-seq:
     m_localAddress=(x) -> char
@@ -7934,7 +7934,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_remoteAddress
+  Document-method: Opal::OpalStatusIncomingCall.m_remoteAddress
 
   call-seq:
     m_remoteAddress -> char
@@ -7944,7 +7944,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_remoteAddress=
+  Document-method: Opal::OpalStatusIncomingCall.m_remoteAddress=
 
   call-seq:
     m_remoteAddress=(x) -> char
@@ -8015,7 +8015,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_remotePartyNumber
+  Document-method: Opal::OpalStatusIncomingCall.m_remotePartyNumber
 
   call-seq:
     m_remotePartyNumber -> char
@@ -8025,7 +8025,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_remotePartyNumber=
+  Document-method: Opal::OpalStatusIncomingCall.m_remotePartyNumber=
 
   call-seq:
     m_remotePartyNumber=(x) -> char
@@ -8096,7 +8096,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_remoteDisplayName
+  Document-method: Opal::OpalStatusIncomingCall.m_remoteDisplayName
 
   call-seq:
     m_remoteDisplayName -> char
@@ -8106,7 +8106,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_remoteDisplayName=
+  Document-method: Opal::OpalStatusIncomingCall.m_remoteDisplayName=
 
   call-seq:
     m_remoteDisplayName=(x) -> char
@@ -8177,7 +8177,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_calledAddress
+  Document-method: Opal::OpalStatusIncomingCall.m_calledAddress
 
   call-seq:
     m_calledAddress -> char
@@ -8187,7 +8187,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_calledAddress=
+  Document-method: Opal::OpalStatusIncomingCall.m_calledAddress=
 
   call-seq:
     m_calledAddress=(x) -> char
@@ -8258,7 +8258,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_calledPartyNumber
+  Document-method: Opal::OpalStatusIncomingCall.m_calledPartyNumber
 
   call-seq:
     m_calledPartyNumber -> char
@@ -8268,7 +8268,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_calledPartyNumber=
+  Document-method: Opal::OpalStatusIncomingCall.m_calledPartyNumber=
 
   call-seq:
     m_calledPartyNumber=(x) -> char
@@ -8339,7 +8339,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_product
+  Document-method: Opal::OpalStatusIncomingCall.m_product
 
   call-seq:
     m_product -> OpalProductDescription
@@ -8349,7 +8349,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_product=
+  Document-method: Opal::OpalStatusIncomingCall.m_product=
 
   call-seq:
     m_product=(x) -> OpalProductDescription
@@ -8412,7 +8412,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_alertingType
+  Document-method: Opal::OpalStatusIncomingCall.m_alertingType
 
   call-seq:
     m_alertingType -> char
@@ -8422,7 +8422,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_alertingType=
+  Document-method: Opal::OpalStatusIncomingCall.m_alertingType=
 
   call-seq:
     m_alertingType=(x) -> char
@@ -8493,7 +8493,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_protocolCallId
+  Document-method: Opal::OpalStatusIncomingCall.m_protocolCallId
 
   call-seq:
     m_protocolCallId -> char
@@ -8503,7 +8503,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.m_protocolCallId=
+  Document-method: Opal::OpalStatusIncomingCall.m_protocolCallId=
 
   call-seq:
     m_protocolCallId=(x) -> char
@@ -8591,7 +8591,7 @@ _wrap_OpalStatusIncomingCall_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalStatusIncomingCall.new
+  Document-method: Opal::OpalStatusIncomingCall.new
 
   call-seq:
     OpalStatusIncomingCall.new
@@ -8621,9 +8621,9 @@ free_OpalStatusIncomingCall(OpalStatusIncomingCall *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalStatusMediaStream
+  Document-class: Opal::OpalStatusMediaStream
 
-  Proxy of C++ OPAL::OpalStatusMediaStream class
+  Proxy of C++ Opal::OpalStatusMediaStream class
 
 
 */
@@ -8631,7 +8631,7 @@ swig_class SwigClassOpalStatusMediaStream;
 
 
 /*
-  Document-method: OPAL::OpalStatusMediaStream.m_callToken
+  Document-method: Opal::OpalStatusMediaStream.m_callToken
 
   call-seq:
     m_callToken -> char
@@ -8641,7 +8641,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusMediaStream.m_callToken=
+  Document-method: Opal::OpalStatusMediaStream.m_callToken=
 
   call-seq:
     m_callToken=(x) -> char
@@ -8712,7 +8712,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusMediaStream.m_identifier
+  Document-method: Opal::OpalStatusMediaStream.m_identifier
 
   call-seq:
     m_identifier -> char
@@ -8722,7 +8722,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusMediaStream.m_identifier=
+  Document-method: Opal::OpalStatusMediaStream.m_identifier=
 
   call-seq:
     m_identifier=(x) -> char
@@ -8793,7 +8793,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusMediaStream.m_type
+  Document-method: Opal::OpalStatusMediaStream.m_type
 
   call-seq:
     m_type -> char
@@ -8803,7 +8803,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusMediaStream.m_type=
+  Document-method: Opal::OpalStatusMediaStream.m_type=
 
   call-seq:
     m_type=(x) -> char
@@ -8874,7 +8874,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusMediaStream.m_format
+  Document-method: Opal::OpalStatusMediaStream.m_format
 
   call-seq:
     m_format -> char
@@ -8884,7 +8884,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusMediaStream.m_format=
+  Document-method: Opal::OpalStatusMediaStream.m_format=
 
   call-seq:
     m_format=(x) -> char
@@ -8955,7 +8955,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusMediaStream.m_state
+  Document-method: Opal::OpalStatusMediaStream.m_state
 
   call-seq:
     m_state -> int
@@ -8965,7 +8965,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusMediaStream.m_state=
+  Document-method: Opal::OpalStatusMediaStream.m_state=
 
   call-seq:
     m_state=(x) -> int
@@ -9045,7 +9045,7 @@ _wrap_OpalStatusMediaStream_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalStatusMediaStream.new
+  Document-method: Opal::OpalStatusMediaStream.new
 
   call-seq:
     OpalStatusMediaStream.new
@@ -9075,9 +9075,9 @@ free_OpalStatusMediaStream(OpalStatusMediaStream *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalParamSetUserData
+  Document-class: Opal::OpalParamSetUserData
 
-  Proxy of C++ OPAL::OpalParamSetUserData class
+  Proxy of C++ Opal::OpalParamSetUserData class
 
 
 */
@@ -9085,7 +9085,7 @@ swig_class SwigClassOpalParamSetUserData;
 
 
 /*
-  Document-method: OPAL::OpalParamSetUserData.m_callToken
+  Document-method: Opal::OpalParamSetUserData.m_callToken
 
   call-seq:
     m_callToken -> char
@@ -9095,7 +9095,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamSetUserData.m_callToken=
+  Document-method: Opal::OpalParamSetUserData.m_callToken=
 
   call-seq:
     m_callToken=(x) -> char
@@ -9166,7 +9166,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamSetUserData.m_userData
+  Document-method: Opal::OpalParamSetUserData.m_userData
 
   call-seq:
     m_userData -> void
@@ -9176,7 +9176,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamSetUserData.m_userData=
+  Document-method: Opal::OpalParamSetUserData.m_userData=
 
   call-seq:
     m_userData=(x) -> void
@@ -9254,7 +9254,7 @@ _wrap_OpalParamSetUserData_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalParamSetUserData.new
+  Document-method: Opal::OpalParamSetUserData.new
 
   call-seq:
     OpalParamSetUserData.new
@@ -9284,9 +9284,9 @@ free_OpalParamSetUserData(OpalParamSetUserData *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalStatusUserInput
+  Document-class: Opal::OpalStatusUserInput
 
-  Proxy of C++ OPAL::OpalStatusUserInput class
+  Proxy of C++ Opal::OpalStatusUserInput class
 
 
 */
@@ -9294,7 +9294,7 @@ swig_class SwigClassOpalStatusUserInput;
 
 
 /*
-  Document-method: OPAL::OpalStatusUserInput.m_callToken
+  Document-method: Opal::OpalStatusUserInput.m_callToken
 
   call-seq:
     m_callToken -> char
@@ -9304,7 +9304,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusUserInput.m_callToken=
+  Document-method: Opal::OpalStatusUserInput.m_callToken=
 
   call-seq:
     m_callToken=(x) -> char
@@ -9375,7 +9375,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusUserInput.m_userInput
+  Document-method: Opal::OpalStatusUserInput.m_userInput
 
   call-seq:
     m_userInput -> char
@@ -9385,7 +9385,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusUserInput.m_userInput=
+  Document-method: Opal::OpalStatusUserInput.m_userInput=
 
   call-seq:
     m_userInput=(x) -> char
@@ -9456,7 +9456,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusUserInput.m_duration
+  Document-method: Opal::OpalStatusUserInput.m_duration
 
   call-seq:
     m_duration -> unsigned int
@@ -9466,7 +9466,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusUserInput.m_duration=
+  Document-method: Opal::OpalStatusUserInput.m_duration=
 
   call-seq:
     m_duration=(x) -> unsigned int
@@ -9546,7 +9546,7 @@ _wrap_OpalStatusUserInput_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalStatusUserInput.new
+  Document-method: Opal::OpalStatusUserInput.new
 
   call-seq:
     OpalStatusUserInput.new
@@ -9576,9 +9576,9 @@ free_OpalStatusUserInput(OpalStatusUserInput *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalStatusMessageWaiting
+  Document-class: Opal::OpalStatusMessageWaiting
 
-  Proxy of C++ OPAL::OpalStatusMessageWaiting class
+  Proxy of C++ Opal::OpalStatusMessageWaiting class
 
 
 */
@@ -9586,7 +9586,7 @@ swig_class SwigClassOpalStatusMessageWaiting;
 
 
 /*
-  Document-method: OPAL::OpalStatusMessageWaiting.m_party
+  Document-method: Opal::OpalStatusMessageWaiting.m_party
 
   call-seq:
     m_party -> char
@@ -9596,7 +9596,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusMessageWaiting.m_party=
+  Document-method: Opal::OpalStatusMessageWaiting.m_party=
 
   call-seq:
     m_party=(x) -> char
@@ -9667,7 +9667,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusMessageWaiting.m_type
+  Document-method: Opal::OpalStatusMessageWaiting.m_type
 
   call-seq:
     m_type -> char
@@ -9677,7 +9677,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusMessageWaiting.m_type=
+  Document-method: Opal::OpalStatusMessageWaiting.m_type=
 
   call-seq:
     m_type=(x) -> char
@@ -9748,7 +9748,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusMessageWaiting.m_extraInfo
+  Document-method: Opal::OpalStatusMessageWaiting.m_extraInfo
 
   call-seq:
     m_extraInfo -> char
@@ -9758,7 +9758,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusMessageWaiting.m_extraInfo=
+  Document-method: Opal::OpalStatusMessageWaiting.m_extraInfo=
 
   call-seq:
     m_extraInfo=(x) -> char
@@ -9846,7 +9846,7 @@ _wrap_OpalStatusMessageWaiting_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalStatusMessageWaiting.new
+  Document-method: Opal::OpalStatusMessageWaiting.new
 
   call-seq:
     OpalStatusMessageWaiting.new
@@ -9876,9 +9876,9 @@ free_OpalStatusMessageWaiting(OpalStatusMessageWaiting *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalStatusLineAppearance
+  Document-class: Opal::OpalStatusLineAppearance
 
-  Proxy of C++ OPAL::OpalStatusLineAppearance class
+  Proxy of C++ Opal::OpalStatusLineAppearance class
 
 
 */
@@ -9886,7 +9886,7 @@ swig_class SwigClassOpalStatusLineAppearance;
 
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_line
+  Document-method: Opal::OpalStatusLineAppearance.m_line
 
   call-seq:
     m_line -> char
@@ -9896,7 +9896,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_line=
+  Document-method: Opal::OpalStatusLineAppearance.m_line=
 
   call-seq:
     m_line=(x) -> char
@@ -9967,7 +9967,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_state
+  Document-method: Opal::OpalStatusLineAppearance.m_state
 
   call-seq:
     m_state -> int
@@ -9977,7 +9977,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_state=
+  Document-method: Opal::OpalStatusLineAppearance.m_state=
 
   call-seq:
     m_state=(x) -> int
@@ -10040,7 +10040,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_appearance
+  Document-method: Opal::OpalStatusLineAppearance.m_appearance
 
   call-seq:
     m_appearance -> int
@@ -10050,7 +10050,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_appearance=
+  Document-method: Opal::OpalStatusLineAppearance.m_appearance=
 
   call-seq:
     m_appearance=(x) -> int
@@ -10113,7 +10113,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_callId
+  Document-method: Opal::OpalStatusLineAppearance.m_callId
 
   call-seq:
     m_callId -> char
@@ -10123,7 +10123,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_callId=
+  Document-method: Opal::OpalStatusLineAppearance.m_callId=
 
   call-seq:
     m_callId=(x) -> char
@@ -10194,7 +10194,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_partyA
+  Document-method: Opal::OpalStatusLineAppearance.m_partyA
 
   call-seq:
     m_partyA -> char
@@ -10204,7 +10204,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_partyA=
+  Document-method: Opal::OpalStatusLineAppearance.m_partyA=
 
   call-seq:
     m_partyA=(x) -> char
@@ -10275,7 +10275,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_partyB
+  Document-method: Opal::OpalStatusLineAppearance.m_partyB
 
   call-seq:
     m_partyB -> char
@@ -10285,7 +10285,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.m_partyB=
+  Document-method: Opal::OpalStatusLineAppearance.m_partyB=
 
   call-seq:
     m_partyB=(x) -> char
@@ -10373,7 +10373,7 @@ _wrap_OpalStatusLineAppearance_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalStatusLineAppearance.new
+  Document-method: Opal::OpalStatusLineAppearance.new
 
   call-seq:
     OpalStatusLineAppearance.new
@@ -10403,9 +10403,9 @@ free_OpalStatusLineAppearance(OpalStatusLineAppearance *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalParamRecording
+  Document-class: Opal::OpalParamRecording
 
-  Proxy of C++ OPAL::OpalParamRecording class
+  Proxy of C++ Opal::OpalParamRecording class
 
 
 */
@@ -10413,7 +10413,7 @@ swig_class SwigClassOpalParamRecording;
 
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_callToken
+  Document-method: Opal::OpalParamRecording.m_callToken
 
   call-seq:
     m_callToken -> char
@@ -10423,7 +10423,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_callToken=
+  Document-method: Opal::OpalParamRecording.m_callToken=
 
   call-seq:
     m_callToken=(x) -> char
@@ -10494,7 +10494,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_file
+  Document-method: Opal::OpalParamRecording.m_file
 
   call-seq:
     m_file -> char
@@ -10504,7 +10504,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_file=
+  Document-method: Opal::OpalParamRecording.m_file=
 
   call-seq:
     m_file=(x) -> char
@@ -10575,7 +10575,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_channels
+  Document-method: Opal::OpalParamRecording.m_channels
 
   call-seq:
     m_channels -> unsigned int
@@ -10585,7 +10585,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_channels=
+  Document-method: Opal::OpalParamRecording.m_channels=
 
   call-seq:
     m_channels=(x) -> unsigned int
@@ -10648,7 +10648,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_audioFormat
+  Document-method: Opal::OpalParamRecording.m_audioFormat
 
   call-seq:
     m_audioFormat -> char
@@ -10658,7 +10658,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_audioFormat=
+  Document-method: Opal::OpalParamRecording.m_audioFormat=
 
   call-seq:
     m_audioFormat=(x) -> char
@@ -10729,7 +10729,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_videoFormat
+  Document-method: Opal::OpalParamRecording.m_videoFormat
 
   call-seq:
     m_videoFormat -> char
@@ -10739,7 +10739,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_videoFormat=
+  Document-method: Opal::OpalParamRecording.m_videoFormat=
 
   call-seq:
     m_videoFormat=(x) -> char
@@ -10810,7 +10810,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_videoWidth
+  Document-method: Opal::OpalParamRecording.m_videoWidth
 
   call-seq:
     m_videoWidth -> unsigned int
@@ -10820,7 +10820,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_videoWidth=
+  Document-method: Opal::OpalParamRecording.m_videoWidth=
 
   call-seq:
     m_videoWidth=(x) -> unsigned int
@@ -10883,7 +10883,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_videoHeight
+  Document-method: Opal::OpalParamRecording.m_videoHeight
 
   call-seq:
     m_videoHeight -> unsigned int
@@ -10893,7 +10893,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_videoHeight=
+  Document-method: Opal::OpalParamRecording.m_videoHeight=
 
   call-seq:
     m_videoHeight=(x) -> unsigned int
@@ -10956,7 +10956,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_videoRate
+  Document-method: Opal::OpalParamRecording.m_videoRate
 
   call-seq:
     m_videoRate -> unsigned int
@@ -10966,7 +10966,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_videoRate=
+  Document-method: Opal::OpalParamRecording.m_videoRate=
 
   call-seq:
     m_videoRate=(x) -> unsigned int
@@ -11029,7 +11029,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_videoMixing
+  Document-method: Opal::OpalParamRecording.m_videoMixing
 
   call-seq:
     m_videoMixing -> int
@@ -11039,7 +11039,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamRecording.m_videoMixing=
+  Document-method: Opal::OpalParamRecording.m_videoMixing=
 
   call-seq:
     m_videoMixing=(x) -> int
@@ -11119,7 +11119,7 @@ _wrap_OpalParamRecording_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalParamRecording.new
+  Document-method: Opal::OpalParamRecording.new
 
   call-seq:
     OpalParamRecording.new
@@ -11149,9 +11149,9 @@ free_OpalParamRecording(OpalParamRecording *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalStatusCallCleared
+  Document-class: Opal::OpalStatusCallCleared
 
-  Proxy of C++ OPAL::OpalStatusCallCleared class
+  Proxy of C++ Opal::OpalStatusCallCleared class
 
 
 */
@@ -11159,7 +11159,7 @@ swig_class SwigClassOpalStatusCallCleared;
 
 
 /*
-  Document-method: OPAL::OpalStatusCallCleared.m_callToken
+  Document-method: Opal::OpalStatusCallCleared.m_callToken
 
   call-seq:
     m_callToken -> char
@@ -11169,7 +11169,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusCallCleared.m_callToken=
+  Document-method: Opal::OpalStatusCallCleared.m_callToken=
 
   call-seq:
     m_callToken=(x) -> char
@@ -11240,7 +11240,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalStatusCallCleared.m_reason
+  Document-method: Opal::OpalStatusCallCleared.m_reason
 
   call-seq:
     m_reason -> char
@@ -11250,7 +11250,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalStatusCallCleared.m_reason=
+  Document-method: Opal::OpalStatusCallCleared.m_reason=
 
   call-seq:
     m_reason=(x) -> char
@@ -11338,7 +11338,7 @@ _wrap_OpalStatusCallCleared_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalStatusCallCleared.new
+  Document-method: Opal::OpalStatusCallCleared.new
 
   call-seq:
     OpalStatusCallCleared.new
@@ -11368,9 +11368,9 @@ free_OpalStatusCallCleared(OpalStatusCallCleared *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalParamCallCleared
+  Document-class: Opal::OpalParamCallCleared
 
-  Proxy of C++ OPAL::OpalParamCallCleared class
+  Proxy of C++ Opal::OpalParamCallCleared class
 
 
 */
@@ -11378,7 +11378,7 @@ swig_class SwigClassOpalParamCallCleared;
 
 
 /*
-  Document-method: OPAL::OpalParamCallCleared.m_callToken
+  Document-method: Opal::OpalParamCallCleared.m_callToken
 
   call-seq:
     m_callToken -> char
@@ -11388,7 +11388,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamCallCleared.m_callToken=
+  Document-method: Opal::OpalParamCallCleared.m_callToken=
 
   call-seq:
     m_callToken=(x) -> char
@@ -11459,7 +11459,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalParamCallCleared.m_reason
+  Document-method: Opal::OpalParamCallCleared.m_reason
 
   call-seq:
     m_reason -> int
@@ -11469,7 +11469,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalParamCallCleared.m_reason=
+  Document-method: Opal::OpalParamCallCleared.m_reason=
 
   call-seq:
     m_reason=(x) -> int
@@ -11549,7 +11549,7 @@ _wrap_OpalParamCallCleared_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalParamCallCleared.new
+  Document-method: Opal::OpalParamCallCleared.new
 
   call-seq:
     OpalParamCallCleared.new
@@ -11579,9 +11579,9 @@ free_OpalParamCallCleared(OpalParamCallCleared *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalMessage
+  Document-class: Opal::OpalMessage
 
-  Proxy of C++ OPAL::OpalMessage class
+  Proxy of C++ Opal::OpalMessage class
 
 
 */
@@ -11589,7 +11589,7 @@ swig_class SwigClassOpalMessage;
 
 
 /*
-  Document-method: OPAL::OpalMessage.m_type
+  Document-method: Opal::OpalMessage.m_type
 
   call-seq:
     m_type -> int
@@ -11599,7 +11599,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage.m_type=
+  Document-method: Opal::OpalMessage.m_type=
 
   call-seq:
     m_type=(x) -> int
@@ -11662,7 +11662,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage.m_param
+  Document-method: Opal::OpalMessage.m_param
 
   call-seq:
     m_param -> OpalMessage_m_param
@@ -11713,7 +11713,7 @@ _wrap_OpalMessage_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalMessage.new
+  Document-method: Opal::OpalMessage.new
 
   call-seq:
     OpalMessage.new
@@ -11743,9 +11743,9 @@ free_OpalMessage(OpalMessage *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalMessage_m_param
+  Document-class: Opal::OpalMessage_m_param
 
-  Proxy of C++ OPAL::OpalMessage_m_param class
+  Proxy of C++ Opal::OpalMessage_m_param class
 
 
 */
@@ -11753,7 +11753,7 @@ swig_class SwigClassOpalMessage_m_param;
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_commandError
+  Document-method: Opal::OpalMessage_m_param.m_commandError
 
   call-seq:
     m_commandError -> char
@@ -11763,7 +11763,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_commandError=
+  Document-method: Opal::OpalMessage_m_param.m_commandError=
 
   call-seq:
     m_commandError=(x) -> char
@@ -11834,7 +11834,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_general
+  Document-method: Opal::OpalMessage_m_param.m_general
 
   call-seq:
     m_general -> OpalParamGeneral
@@ -11844,7 +11844,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_general=
+  Document-method: Opal::OpalMessage_m_param.m_general=
 
   call-seq:
     m_general=(x) -> OpalParamGeneral
@@ -11907,7 +11907,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_protocol
+  Document-method: Opal::OpalMessage_m_param.m_protocol
 
   call-seq:
     m_protocol -> OpalParamProtocol
@@ -11917,7 +11917,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_protocol=
+  Document-method: Opal::OpalMessage_m_param.m_protocol=
 
   call-seq:
     m_protocol=(x) -> OpalParamProtocol
@@ -11980,7 +11980,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_registrationInfo
+  Document-method: Opal::OpalMessage_m_param.m_registrationInfo
 
   call-seq:
     m_registrationInfo -> OpalParamRegistration
@@ -11990,7 +11990,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_registrationInfo=
+  Document-method: Opal::OpalMessage_m_param.m_registrationInfo=
 
   call-seq:
     m_registrationInfo=(x) -> OpalParamRegistration
@@ -12053,7 +12053,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_registrationStatus
+  Document-method: Opal::OpalMessage_m_param.m_registrationStatus
 
   call-seq:
     m_registrationStatus -> OpalStatusRegistration
@@ -12063,7 +12063,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_registrationStatus=
+  Document-method: Opal::OpalMessage_m_param.m_registrationStatus=
 
   call-seq:
     m_registrationStatus=(x) -> OpalStatusRegistration
@@ -12126,7 +12126,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_callSetUp
+  Document-method: Opal::OpalMessage_m_param.m_callSetUp
 
   call-seq:
     m_callSetUp -> OpalParamSetUpCall
@@ -12136,7 +12136,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_callSetUp=
+  Document-method: Opal::OpalMessage_m_param.m_callSetUp=
 
   call-seq:
     m_callSetUp=(x) -> OpalParamSetUpCall
@@ -12199,7 +12199,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_callToken
+  Document-method: Opal::OpalMessage_m_param.m_callToken
 
   call-seq:
     m_callToken -> char
@@ -12209,7 +12209,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_callToken=
+  Document-method: Opal::OpalMessage_m_param.m_callToken=
 
   call-seq:
     m_callToken=(x) -> char
@@ -12280,7 +12280,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_incomingCall
+  Document-method: Opal::OpalMessage_m_param.m_incomingCall
 
   call-seq:
     m_incomingCall -> OpalStatusIncomingCall
@@ -12290,7 +12290,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_incomingCall=
+  Document-method: Opal::OpalMessage_m_param.m_incomingCall=
 
   call-seq:
     m_incomingCall=(x) -> OpalStatusIncomingCall
@@ -12353,7 +12353,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_userInput
+  Document-method: Opal::OpalMessage_m_param.m_userInput
 
   call-seq:
     m_userInput -> OpalStatusUserInput
@@ -12363,7 +12363,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_userInput=
+  Document-method: Opal::OpalMessage_m_param.m_userInput=
 
   call-seq:
     m_userInput=(x) -> OpalStatusUserInput
@@ -12426,7 +12426,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_messageWaiting
+  Document-method: Opal::OpalMessage_m_param.m_messageWaiting
 
   call-seq:
     m_messageWaiting -> OpalStatusMessageWaiting
@@ -12436,7 +12436,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_messageWaiting=
+  Document-method: Opal::OpalMessage_m_param.m_messageWaiting=
 
   call-seq:
     m_messageWaiting=(x) -> OpalStatusMessageWaiting
@@ -12499,7 +12499,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_lineAppearance
+  Document-method: Opal::OpalMessage_m_param.m_lineAppearance
 
   call-seq:
     m_lineAppearance -> OpalStatusLineAppearance
@@ -12509,7 +12509,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_lineAppearance=
+  Document-method: Opal::OpalMessage_m_param.m_lineAppearance=
 
   call-seq:
     m_lineAppearance=(x) -> OpalStatusLineAppearance
@@ -12572,7 +12572,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_callCleared
+  Document-method: Opal::OpalMessage_m_param.m_callCleared
 
   call-seq:
     m_callCleared -> OpalStatusCallCleared
@@ -12582,7 +12582,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_callCleared=
+  Document-method: Opal::OpalMessage_m_param.m_callCleared=
 
   call-seq:
     m_callCleared=(x) -> OpalStatusCallCleared
@@ -12645,7 +12645,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_clearCall
+  Document-method: Opal::OpalMessage_m_param.m_clearCall
 
   call-seq:
     m_clearCall -> OpalParamCallCleared
@@ -12655,7 +12655,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_clearCall=
+  Document-method: Opal::OpalMessage_m_param.m_clearCall=
 
   call-seq:
     m_clearCall=(x) -> OpalParamCallCleared
@@ -12718,7 +12718,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_mediaStream
+  Document-method: Opal::OpalMessage_m_param.m_mediaStream
 
   call-seq:
     m_mediaStream -> OpalStatusMediaStream
@@ -12728,7 +12728,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_mediaStream=
+  Document-method: Opal::OpalMessage_m_param.m_mediaStream=
 
   call-seq:
     m_mediaStream=(x) -> OpalStatusMediaStream
@@ -12791,7 +12791,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_setUserData
+  Document-method: Opal::OpalMessage_m_param.m_setUserData
 
   call-seq:
     m_setUserData -> OpalParamSetUserData
@@ -12801,7 +12801,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_setUserData=
+  Document-method: Opal::OpalMessage_m_param.m_setUserData=
 
   call-seq:
     m_setUserData=(x) -> OpalParamSetUserData
@@ -12864,7 +12864,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_recording
+  Document-method: Opal::OpalMessage_m_param.m_recording
 
   call-seq:
     m_recording -> OpalParamRecording
@@ -12874,7 +12874,7 @@ Get value of attribute.
 */
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.m_recording=
+  Document-method: Opal::OpalMessage_m_param.m_recording=
 
   call-seq:
     m_recording=(x) -> OpalParamRecording
@@ -12954,7 +12954,7 @@ _wrap_OpalMessage_m_param_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalMessage_m_param.new
+  Document-method: Opal::OpalMessage_m_param.new
 
   call-seq:
     OpalMessage_m_param.new
@@ -12984,9 +12984,9 @@ free_OpalMessage_m_param(OpalMessage_m_param *arg1) {
 
 
 /*
-  Document-class: OPAL::OpalMessagePtr
+  Document-class: Opal::OpalMessagePtr
 
-  Proxy of C++ OPAL::OpalMessagePtr class
+  Proxy of C++ Opal::OpalMessagePtr class
 
 
 */
@@ -12994,7 +12994,7 @@ swig_class SwigClassOpalMessagePtr;
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.new
+  Document-method: Opal::OpalMessagePtr.new
 
   call-seq:
     OpalMessagePtr.new(OpalMessageType type=OpalIndCommandError)
@@ -13098,7 +13098,7 @@ free_OpalMessagePtr(OpalMessagePtr *arg1) {
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetType
+  Document-method: Opal::OpalMessagePtr.GetType
 
   call-seq:
     GetType -> int
@@ -13132,7 +13132,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.SetType
+  Document-method: Opal::OpalMessagePtr.SetType
 
   call-seq:
     SetType(OpalMessageType type)
@@ -13171,7 +13171,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetCallToken
+  Document-method: Opal::OpalMessagePtr.GetCallToken
 
   call-seq:
     GetCallToken -> char
@@ -13205,7 +13205,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.SetCallToken
+  Document-method: Opal::OpalMessagePtr.SetCallToken
 
   call-seq:
     SetCallToken(char token)
@@ -13247,7 +13247,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetCommandError
+  Document-method: Opal::OpalMessagePtr.GetCommandError
 
   call-seq:
     GetCommandError -> char
@@ -13281,7 +13281,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetGeneralParams
+  Document-method: Opal::OpalMessagePtr.GetGeneralParams
 
   call-seq:
     GetGeneralParams -> OpalParamGeneral
@@ -13315,7 +13315,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetProtocolParams
+  Document-method: Opal::OpalMessagePtr.GetProtocolParams
 
   call-seq:
     GetProtocolParams -> OpalParamProtocol
@@ -13349,7 +13349,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetRegistrationInfo
+  Document-method: Opal::OpalMessagePtr.GetRegistrationInfo
 
   call-seq:
     GetRegistrationInfo -> OpalParamRegistration
@@ -13383,7 +13383,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetRegistrationStatus
+  Document-method: Opal::OpalMessagePtr.GetRegistrationStatus
 
   call-seq:
     GetRegistrationStatus -> OpalStatusRegistration
@@ -13417,7 +13417,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetCallSetUp
+  Document-method: Opal::OpalMessagePtr.GetCallSetUp
 
   call-seq:
     GetCallSetUp -> OpalParamSetUpCall
@@ -13451,7 +13451,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetIncomingCall
+  Document-method: Opal::OpalMessagePtr.GetIncomingCall
 
   call-seq:
     GetIncomingCall -> OpalStatusIncomingCall
@@ -13485,7 +13485,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetUserInput
+  Document-method: Opal::OpalMessagePtr.GetUserInput
 
   call-seq:
     GetUserInput -> OpalStatusUserInput
@@ -13519,7 +13519,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetMessageWaiting
+  Document-method: Opal::OpalMessagePtr.GetMessageWaiting
 
   call-seq:
     GetMessageWaiting -> OpalStatusMessageWaiting
@@ -13553,7 +13553,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetLineAppearance
+  Document-method: Opal::OpalMessagePtr.GetLineAppearance
 
   call-seq:
     GetLineAppearance -> OpalStatusLineAppearance
@@ -13587,7 +13587,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetCallCleared
+  Document-method: Opal::OpalMessagePtr.GetCallCleared
 
   call-seq:
     GetCallCleared -> OpalStatusCallCleared
@@ -13621,7 +13621,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetClearCall
+  Document-method: Opal::OpalMessagePtr.GetClearCall
 
   call-seq:
     GetClearCall -> OpalParamCallCleared
@@ -13655,7 +13655,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetMediaStream
+  Document-method: Opal::OpalMessagePtr.GetMediaStream
 
   call-seq:
     GetMediaStream -> OpalStatusMediaStream
@@ -13689,7 +13689,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetSetUserData
+  Document-method: Opal::OpalMessagePtr.GetSetUserData
 
   call-seq:
     GetSetUserData -> OpalParamSetUserData
@@ -13723,7 +13723,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalMessagePtr.GetRecording
+  Document-method: Opal::OpalMessagePtr.GetRecording
 
   call-seq:
     GetRecording -> OpalParamRecording
@@ -13757,9 +13757,9 @@ fail:
 
 
 /*
-  Document-class: OPAL::OpalContext
+  Document-class: Opal::OpalContext
 
-  Proxy of C++ OPAL::OpalContext class
+  Proxy of C++ Opal::OpalContext class
 
 
 */
@@ -13784,7 +13784,7 @@ _wrap_OpalContext_allocate(VALUE self) {
 
 
 /*
-  Document-method: OPAL::OpalContext.new
+  Document-method: Opal::OpalContext.new
 
   call-seq:
     OpalContext.new
@@ -13814,27 +13814,28 @@ free_OpalContext(OpalContext *arg1) {
 
 
 /*
-  Document-method: OPAL::OpalContext.Initialise
+  Document-method: Opal::OpalContext.Initialise
 
   call-seq:
-    Initialise(unsigned int version, char options) -> bool
+    Initialise(char options, unsigned int version=21) -> unsigned int
+    Initialise(char options) -> unsigned int
 
 An instance method.
 
 */
 SWIGINTERN VALUE
-_wrap_OpalContext_Initialise(int argc, VALUE *argv, VALUE self) {
+_wrap_OpalContext_Initialise__SWIG_0(int argc, VALUE *argv, VALUE self) {
   OpalContext *arg1 = (OpalContext *) 0 ;
-  unsigned int *arg2 = 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  unsigned int arg3 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  bool result;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  unsigned int val3 ;
+  int ecode3 = 0 ;
+  unsigned int result;
   VALUE vresult = Qnil;
   
   if ((argc < 2) || (argc > 2)) {
@@ -13845,32 +13846,117 @@ _wrap_OpalContext_Initialise(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalContext *","Initialise", 1, self )); 
   }
   arg1 = reinterpret_cast< OpalContext * >(argp1);
-  res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_unsigned_int,  0 );
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "unsigned int &","Initialise", 2, argv[0] )); 
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","Initialise", 2, argv[0] ));
   }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "unsigned int &","Initialise", 2, argv[0])); 
-  }
-  arg2 = reinterpret_cast< unsigned int * >(argp2);
-  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","Initialise", 3, argv[1] ));
-  }
-  arg3 = reinterpret_cast< char * >(buf3);
-  result = (bool)(arg1)->Initialise(*arg2,(char const *)arg3);
-  vresult = SWIG_From_bool(static_cast< bool >(result));
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  arg2 = reinterpret_cast< char * >(buf2);
+  ecode3 = SWIG_AsVal_unsigned_SS_int(argv[1], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError( "", "unsigned int","Initialise", 3, argv[1] ));
+  } 
+  arg3 = static_cast< unsigned int >(val3);
+  result = (unsigned int)(arg1)->Initialise((char const *)arg2,arg3);
+  vresult = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return vresult;
 fail:
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_OpalContext_Initialise__SWIG_1(int argc, VALUE *argv, VALUE self) {
+  OpalContext *arg1 = (OpalContext *) 0 ;
+  char *arg2 = (char *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  unsigned int result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalContext, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalContext *","Initialise", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalContext * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","Initialise", 2, argv[0] ));
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  result = (unsigned int)(arg1)->Initialise((char const *)arg2);
+  vresult = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return vresult;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE _wrap_OpalContext_Initialise(int nargs, VALUE *args, VALUE self) {
+  int argc;
+  VALUE argv[4];
+  int ii;
+  
+  argc = nargs + 1;
+  argv[0] = self;
+  if (argc > 4) SWIG_fail;
+  for (ii = 1; (ii < argc); ++ii) {
+    argv[ii] = args[ii-1];
+  }
+  if (argc == 2) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_OpalContext, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        return _wrap_OpalContext_Initialise__SWIG_1(nargs, args, self);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_OpalContext, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        {
+          int res = SWIG_AsVal_unsigned_SS_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          return _wrap_OpalContext_Initialise__SWIG_0(nargs, args, self);
+        }
+      }
+    }
+  }
+  
+fail:
+  Ruby_Format_OverloadedError( argc, 4, "OpalContext.Initialise", 
+    "    unsigned int OpalContext.Initialise(char const *options, unsigned int version)\n"
+    "    unsigned int OpalContext.Initialise(char const *options)\n");
+  
   return Qnil;
 }
 
 
 
 /*
-  Document-method: OPAL::OpalContext.ShutDown
+  Document-method: Opal::OpalContext.ShutDown
 
   call-seq:
     ShutDown
@@ -13901,7 +13987,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalContext.GetMessage
+  Document-method: Opal::OpalContext.GetMessage
 
   call-seq:
     GetMessage(OpalMessagePtr message, unsigned int timeout=0) -> bool
@@ -14045,7 +14131,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalContext.SendMessage
+  Document-method: Opal::OpalContext.SendMessage
 
   call-seq:
     SendMessage(OpalMessagePtr message, OpalMessagePtr response) -> bool
@@ -14101,7 +14187,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalContext.SetUpCall
+  Document-method: Opal::OpalContext.SetUpCall
 
   call-seq:
     SetUpCall(OpalMessagePtr response, char partyB, char partyA=nil, 
@@ -14373,7 +14459,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalContext.AnswerCall
+  Document-method: Opal::OpalContext.AnswerCall
 
   call-seq:
     AnswerCall(char callToken) -> bool
@@ -14418,7 +14504,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalContext.ClearCall
+  Document-method: Opal::OpalContext.ClearCall
 
   call-seq:
     ClearCall(char callToken, OpalCallEndReason reason=OpalCallEndedByLocalUser) -> bool
@@ -14560,7 +14646,7 @@ fail:
 
 
 /*
-  Document-method: OPAL::OpalContext.SendUserInput
+  Document-method: Opal::OpalContext.SendUserInput
 
   call-seq:
     SendUserInput(char callToken, char userInput, unsigned int duration=0) -> bool
@@ -15127,11 +15213,11 @@ SWIG_PropagateClientData(void) {
 #ifdef __cplusplus
 extern "C"
 #endif
-SWIGEXPORT void Init_OPAL(void) {
+SWIGEXPORT void Init_opal(void) {
   size_t i;
   
   SWIG_InitRuntime();
-  mOPAL = rb_define_module("OPAL");
+  mOpal = rb_define_module("Opal");
   
   SWIG_InitializeModule(0);
   for (i = 0; i < swig_module.size; i++) {
@@ -15139,68 +15225,68 @@ SWIGEXPORT void Init_OPAL(void) {
   }
   
   SWIG_RubyInitializeTrackings();
-  rb_define_const(mOPAL, "OPAL_C_API_VERSION", SWIG_From_int(static_cast< int >(21)));
-  rb_define_module_function(mOPAL, "OpalInitialise", VALUEFUNC(_wrap_OpalInitialise), -1);
-  rb_define_const(mOPAL, "OPAL_INITIALISE_FUNCTION", SWIG_FromCharPtr("OpalInitialise"));
-  rb_define_module_function(mOPAL, "OpalShutDown", VALUEFUNC(_wrap_OpalShutDown), -1);
-  rb_define_const(mOPAL, "OPAL_SHUTDOWN_FUNCTION", SWIG_FromCharPtr("OpalShutDown"));
-  rb_define_module_function(mOPAL, "OpalGetMessage", VALUEFUNC(_wrap_OpalGetMessage), -1);
-  rb_define_const(mOPAL, "OPAL_GET_MESSAGE_FUNCTION", SWIG_FromCharPtr("OpalGetMessage"));
-  rb_define_module_function(mOPAL, "OpalSendMessage", VALUEFUNC(_wrap_OpalSendMessage), -1);
-  rb_define_const(mOPAL, "OPAL_SEND_MESSAGE_FUNCTION", SWIG_FromCharPtr("OpalSendMessage"));
-  rb_define_module_function(mOPAL, "OpalFreeMessage", VALUEFUNC(_wrap_OpalFreeMessage), -1);
-  rb_define_const(mOPAL, "OPAL_FREE_MESSAGE_FUNCTION", SWIG_FromCharPtr("OpalFreeMessage"));
-  rb_define_const(mOPAL, "OPAL_PREFIX_H323", SWIG_FromCharPtr("h323"));
-  rb_define_const(mOPAL, "OPAL_PREFIX_SIP", SWIG_FromCharPtr("sip"));
-  rb_define_const(mOPAL, "OPAL_PREFIX_IAX2", SWIG_FromCharPtr("iax2"));
-  rb_define_const(mOPAL, "OPAL_PREFIX_PCSS", SWIG_FromCharPtr("pc"));
-  rb_define_const(mOPAL, "OPAL_PREFIX_LOCAL", SWIG_FromCharPtr("local"));
-  rb_define_const(mOPAL, "OPAL_PREFIX_POTS", SWIG_FromCharPtr("pots"));
-  rb_define_const(mOPAL, "OPAL_PREFIX_PSTN", SWIG_FromCharPtr("pstn"));
-  rb_define_const(mOPAL, "OPAL_PREFIX_IVR", SWIG_FromCharPtr("ivr"));
-  rb_define_const(mOPAL, "OPAL_PREFIX_ALL", SWIG_FromCharPtr("h323 sip iax2 pc local pots pstn ivr"));
-  rb_define_const(mOPAL, "OpalIndCommandError", SWIG_From_int(static_cast< int >(OpalIndCommandError)));
-  rb_define_const(mOPAL, "OpalCmdSetGeneralParameters", SWIG_From_int(static_cast< int >(OpalCmdSetGeneralParameters)));
-  rb_define_const(mOPAL, "OpalCmdSetProtocolParameters", SWIG_From_int(static_cast< int >(OpalCmdSetProtocolParameters)));
-  rb_define_const(mOPAL, "OpalCmdRegistration", SWIG_From_int(static_cast< int >(OpalCmdRegistration)));
-  rb_define_const(mOPAL, "OpalIndRegistration", SWIG_From_int(static_cast< int >(OpalIndRegistration)));
-  rb_define_const(mOPAL, "OpalCmdSetUpCall", SWIG_From_int(static_cast< int >(OpalCmdSetUpCall)));
-  rb_define_const(mOPAL, "OpalIndIncomingCall", SWIG_From_int(static_cast< int >(OpalIndIncomingCall)));
-  rb_define_const(mOPAL, "OpalCmdAnswerCall", SWIG_From_int(static_cast< int >(OpalCmdAnswerCall)));
-  rb_define_const(mOPAL, "OpalCmdClearCall", SWIG_From_int(static_cast< int >(OpalCmdClearCall)));
-  rb_define_const(mOPAL, "OpalIndAlerting", SWIG_From_int(static_cast< int >(OpalIndAlerting)));
-  rb_define_const(mOPAL, "OpalIndEstablished", SWIG_From_int(static_cast< int >(OpalIndEstablished)));
-  rb_define_const(mOPAL, "OpalIndUserInput", SWIG_From_int(static_cast< int >(OpalIndUserInput)));
-  rb_define_const(mOPAL, "OpalIndCallCleared", SWIG_From_int(static_cast< int >(OpalIndCallCleared)));
-  rb_define_const(mOPAL, "OpalCmdHoldCall", SWIG_From_int(static_cast< int >(OpalCmdHoldCall)));
-  rb_define_const(mOPAL, "OpalCmdRetrieveCall", SWIG_From_int(static_cast< int >(OpalCmdRetrieveCall)));
-  rb_define_const(mOPAL, "OpalCmdTransferCall", SWIG_From_int(static_cast< int >(OpalCmdTransferCall)));
-  rb_define_const(mOPAL, "OpalCmdUserInput", SWIG_From_int(static_cast< int >(OpalCmdUserInput)));
-  rb_define_const(mOPAL, "OpalIndMessageWaiting", SWIG_From_int(static_cast< int >(OpalIndMessageWaiting)));
-  rb_define_const(mOPAL, "OpalIndMediaStream", SWIG_From_int(static_cast< int >(OpalIndMediaStream)));
-  rb_define_const(mOPAL, "OpalCmdMediaStream", SWIG_From_int(static_cast< int >(OpalCmdMediaStream)));
-  rb_define_const(mOPAL, "OpalCmdSetUserData", SWIG_From_int(static_cast< int >(OpalCmdSetUserData)));
-  rb_define_const(mOPAL, "OpalIndLineAppearance", SWIG_From_int(static_cast< int >(OpalIndLineAppearance)));
-  rb_define_const(mOPAL, "OpalCmdStartRecording", SWIG_From_int(static_cast< int >(OpalCmdStartRecording)));
-  rb_define_const(mOPAL, "OpalCmdStopRecording", SWIG_From_int(static_cast< int >(OpalCmdStopRecording)));
-  rb_define_const(mOPAL, "OpalIndProceeding", SWIG_From_int(static_cast< int >(OpalIndProceeding)));
-  rb_define_const(mOPAL, "OpalCmdAlerting", SWIG_From_int(static_cast< int >(OpalCmdAlerting)));
-  rb_define_const(mOPAL, "OpalMessageTypeCount", SWIG_From_int(static_cast< int >(OpalMessageTypeCount)));
-  rb_define_const(mOPAL, "OpalSilenceDetectNoChange", SWIG_From_int(static_cast< int >(OpalSilenceDetectNoChange)));
-  rb_define_const(mOPAL, "OpalSilenceDetectDisabled", SWIG_From_int(static_cast< int >(OpalSilenceDetectDisabled)));
-  rb_define_const(mOPAL, "OpalSilenceDetectFixed", SWIG_From_int(static_cast< int >(OpalSilenceDetectFixed)));
-  rb_define_const(mOPAL, "OpalSilenceDetectAdaptive", SWIG_From_int(static_cast< int >(OpalSilenceDetectAdaptive)));
-  rb_define_const(mOPAL, "OpalEchoCancelNoChange", SWIG_From_int(static_cast< int >(OpalEchoCancelNoChange)));
-  rb_define_const(mOPAL, "OpalEchoCancelDisabled", SWIG_From_int(static_cast< int >(OpalEchoCancelDisabled)));
-  rb_define_const(mOPAL, "OpalEchoCancelEnabled", SWIG_From_int(static_cast< int >(OpalEchoCancelEnabled)));
-  rb_define_const(mOPAL, "OpalMediaDataNoChange", SWIG_From_int(static_cast< int >(OpalMediaDataNoChange)));
-  rb_define_const(mOPAL, "OpalMediaDataPayloadOnly", SWIG_From_int(static_cast< int >(OpalMediaDataPayloadOnly)));
-  rb_define_const(mOPAL, "OpalMediaDataWithHeader", SWIG_From_int(static_cast< int >(OpalMediaDataWithHeader)));
-  rb_define_const(mOPAL, "OpalMediaTimingNoChange", SWIG_From_int(static_cast< int >(OpalMediaTimingNoChange)));
-  rb_define_const(mOPAL, "OpalMediaTimingSynchronous", SWIG_From_int(static_cast< int >(OpalMediaTimingSynchronous)));
-  rb_define_const(mOPAL, "OpalMediaTimingAsynchronous", SWIG_From_int(static_cast< int >(OpalMediaTimingAsynchronous)));
+  rb_define_const(mOpal, "OPAL_C_API_VERSION", SWIG_From_int(static_cast< int >(21)));
+  rb_define_module_function(mOpal, "OpalInitialise", VALUEFUNC(_wrap_OpalInitialise), -1);
+  rb_define_const(mOpal, "OPAL_INITIALISE_FUNCTION", SWIG_FromCharPtr("OpalInitialise"));
+  rb_define_module_function(mOpal, "OpalShutDown", VALUEFUNC(_wrap_OpalShutDown), -1);
+  rb_define_const(mOpal, "OPAL_SHUTDOWN_FUNCTION", SWIG_FromCharPtr("OpalShutDown"));
+  rb_define_module_function(mOpal, "OpalGetMessage", VALUEFUNC(_wrap_OpalGetMessage), -1);
+  rb_define_const(mOpal, "OPAL_GET_MESSAGE_FUNCTION", SWIG_FromCharPtr("OpalGetMessage"));
+  rb_define_module_function(mOpal, "OpalSendMessage", VALUEFUNC(_wrap_OpalSendMessage), -1);
+  rb_define_const(mOpal, "OPAL_SEND_MESSAGE_FUNCTION", SWIG_FromCharPtr("OpalSendMessage"));
+  rb_define_module_function(mOpal, "OpalFreeMessage", VALUEFUNC(_wrap_OpalFreeMessage), -1);
+  rb_define_const(mOpal, "OPAL_FREE_MESSAGE_FUNCTION", SWIG_FromCharPtr("OpalFreeMessage"));
+  rb_define_const(mOpal, "OPAL_PREFIX_H323", SWIG_FromCharPtr("h323"));
+  rb_define_const(mOpal, "OPAL_PREFIX_SIP", SWIG_FromCharPtr("sip"));
+  rb_define_const(mOpal, "OPAL_PREFIX_IAX2", SWIG_FromCharPtr("iax2"));
+  rb_define_const(mOpal, "OPAL_PREFIX_PCSS", SWIG_FromCharPtr("pc"));
+  rb_define_const(mOpal, "OPAL_PREFIX_LOCAL", SWIG_FromCharPtr("local"));
+  rb_define_const(mOpal, "OPAL_PREFIX_POTS", SWIG_FromCharPtr("pots"));
+  rb_define_const(mOpal, "OPAL_PREFIX_PSTN", SWIG_FromCharPtr("pstn"));
+  rb_define_const(mOpal, "OPAL_PREFIX_IVR", SWIG_FromCharPtr("ivr"));
+  rb_define_const(mOpal, "OPAL_PREFIX_ALL", SWIG_FromCharPtr("h323 sip iax2 pc local pots pstn ivr"));
+  rb_define_const(mOpal, "OpalIndCommandError", SWIG_From_int(static_cast< int >(OpalIndCommandError)));
+  rb_define_const(mOpal, "OpalCmdSetGeneralParameters", SWIG_From_int(static_cast< int >(OpalCmdSetGeneralParameters)));
+  rb_define_const(mOpal, "OpalCmdSetProtocolParameters", SWIG_From_int(static_cast< int >(OpalCmdSetProtocolParameters)));
+  rb_define_const(mOpal, "OpalCmdRegistration", SWIG_From_int(static_cast< int >(OpalCmdRegistration)));
+  rb_define_const(mOpal, "OpalIndRegistration", SWIG_From_int(static_cast< int >(OpalIndRegistration)));
+  rb_define_const(mOpal, "OpalCmdSetUpCall", SWIG_From_int(static_cast< int >(OpalCmdSetUpCall)));
+  rb_define_const(mOpal, "OpalIndIncomingCall", SWIG_From_int(static_cast< int >(OpalIndIncomingCall)));
+  rb_define_const(mOpal, "OpalCmdAnswerCall", SWIG_From_int(static_cast< int >(OpalCmdAnswerCall)));
+  rb_define_const(mOpal, "OpalCmdClearCall", SWIG_From_int(static_cast< int >(OpalCmdClearCall)));
+  rb_define_const(mOpal, "OpalIndAlerting", SWIG_From_int(static_cast< int >(OpalIndAlerting)));
+  rb_define_const(mOpal, "OpalIndEstablished", SWIG_From_int(static_cast< int >(OpalIndEstablished)));
+  rb_define_const(mOpal, "OpalIndUserInput", SWIG_From_int(static_cast< int >(OpalIndUserInput)));
+  rb_define_const(mOpal, "OpalIndCallCleared", SWIG_From_int(static_cast< int >(OpalIndCallCleared)));
+  rb_define_const(mOpal, "OpalCmdHoldCall", SWIG_From_int(static_cast< int >(OpalCmdHoldCall)));
+  rb_define_const(mOpal, "OpalCmdRetrieveCall", SWIG_From_int(static_cast< int >(OpalCmdRetrieveCall)));
+  rb_define_const(mOpal, "OpalCmdTransferCall", SWIG_From_int(static_cast< int >(OpalCmdTransferCall)));
+  rb_define_const(mOpal, "OpalCmdUserInput", SWIG_From_int(static_cast< int >(OpalCmdUserInput)));
+  rb_define_const(mOpal, "OpalIndMessageWaiting", SWIG_From_int(static_cast< int >(OpalIndMessageWaiting)));
+  rb_define_const(mOpal, "OpalIndMediaStream", SWIG_From_int(static_cast< int >(OpalIndMediaStream)));
+  rb_define_const(mOpal, "OpalCmdMediaStream", SWIG_From_int(static_cast< int >(OpalCmdMediaStream)));
+  rb_define_const(mOpal, "OpalCmdSetUserData", SWIG_From_int(static_cast< int >(OpalCmdSetUserData)));
+  rb_define_const(mOpal, "OpalIndLineAppearance", SWIG_From_int(static_cast< int >(OpalIndLineAppearance)));
+  rb_define_const(mOpal, "OpalCmdStartRecording", SWIG_From_int(static_cast< int >(OpalCmdStartRecording)));
+  rb_define_const(mOpal, "OpalCmdStopRecording", SWIG_From_int(static_cast< int >(OpalCmdStopRecording)));
+  rb_define_const(mOpal, "OpalIndProceeding", SWIG_From_int(static_cast< int >(OpalIndProceeding)));
+  rb_define_const(mOpal, "OpalCmdAlerting", SWIG_From_int(static_cast< int >(OpalCmdAlerting)));
+  rb_define_const(mOpal, "OpalMessageTypeCount", SWIG_From_int(static_cast< int >(OpalMessageTypeCount)));
+  rb_define_const(mOpal, "OpalSilenceDetectNoChange", SWIG_From_int(static_cast< int >(OpalSilenceDetectNoChange)));
+  rb_define_const(mOpal, "OpalSilenceDetectDisabled", SWIG_From_int(static_cast< int >(OpalSilenceDetectDisabled)));
+  rb_define_const(mOpal, "OpalSilenceDetectFixed", SWIG_From_int(static_cast< int >(OpalSilenceDetectFixed)));
+  rb_define_const(mOpal, "OpalSilenceDetectAdaptive", SWIG_From_int(static_cast< int >(OpalSilenceDetectAdaptive)));
+  rb_define_const(mOpal, "OpalEchoCancelNoChange", SWIG_From_int(static_cast< int >(OpalEchoCancelNoChange)));
+  rb_define_const(mOpal, "OpalEchoCancelDisabled", SWIG_From_int(static_cast< int >(OpalEchoCancelDisabled)));
+  rb_define_const(mOpal, "OpalEchoCancelEnabled", SWIG_From_int(static_cast< int >(OpalEchoCancelEnabled)));
+  rb_define_const(mOpal, "OpalMediaDataNoChange", SWIG_From_int(static_cast< int >(OpalMediaDataNoChange)));
+  rb_define_const(mOpal, "OpalMediaDataPayloadOnly", SWIG_From_int(static_cast< int >(OpalMediaDataPayloadOnly)));
+  rb_define_const(mOpal, "OpalMediaDataWithHeader", SWIG_From_int(static_cast< int >(OpalMediaDataWithHeader)));
+  rb_define_const(mOpal, "OpalMediaTimingNoChange", SWIG_From_int(static_cast< int >(OpalMediaTimingNoChange)));
+  rb_define_const(mOpal, "OpalMediaTimingSynchronous", SWIG_From_int(static_cast< int >(OpalMediaTimingSynchronous)));
+  rb_define_const(mOpal, "OpalMediaTimingAsynchronous", SWIG_From_int(static_cast< int >(OpalMediaTimingAsynchronous)));
   
-  SwigClassOpalParamGeneral.klass = rb_define_class_under(mOPAL, "OpalParamGeneral", rb_cObject);
+  SwigClassOpalParamGeneral.klass = rb_define_class_under(mOpal, "OpalParamGeneral", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalParamGeneral, (void *) &SwigClassOpalParamGeneral);
   rb_define_alloc_func(SwigClassOpalParamGeneral.klass, _wrap_OpalParamGeneral_allocate);
   rb_define_method(SwigClassOpalParamGeneral.klass, "initialize", VALUEFUNC(_wrap_new_OpalParamGeneral), -1);
@@ -15280,7 +15366,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalParamGeneral.destroy = (void (*)(void *)) free_OpalParamGeneral;
   SwigClassOpalParamGeneral.trackObjects = 0;
   
-  SwigClassOpalProductDescription.klass = rb_define_class_under(mOPAL, "OpalProductDescription", rb_cObject);
+  SwigClassOpalProductDescription.klass = rb_define_class_under(mOpal, "OpalProductDescription", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalProductDescription, (void *) &SwigClassOpalProductDescription);
   rb_define_alloc_func(SwigClassOpalProductDescription.klass, _wrap_OpalProductDescription_allocate);
   rb_define_method(SwigClassOpalProductDescription.klass, "initialize", VALUEFUNC(_wrap_new_OpalProductDescription), -1);
@@ -15300,7 +15386,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalProductDescription.destroy = (void (*)(void *)) free_OpalProductDescription;
   SwigClassOpalProductDescription.trackObjects = 0;
   
-  SwigClassOpalParamProtocol.klass = rb_define_class_under(mOPAL, "OpalParamProtocol", rb_cObject);
+  SwigClassOpalParamProtocol.klass = rb_define_class_under(mOpal, "OpalParamProtocol", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalParamProtocol, (void *) &SwigClassOpalParamProtocol);
   rb_define_alloc_func(SwigClassOpalParamProtocol.klass, _wrap_OpalParamProtocol_allocate);
   rb_define_method(SwigClassOpalParamProtocol.klass, "initialize", VALUEFUNC(_wrap_new_OpalParamProtocol), -1);
@@ -15317,10 +15403,10 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalParamProtocol.mark = 0;
   SwigClassOpalParamProtocol.destroy = (void (*)(void *)) free_OpalParamProtocol;
   SwigClassOpalParamProtocol.trackObjects = 0;
-  rb_define_const(mOPAL, "OPAL_MWI_EVENT_PACKAGE", SWIG_FromCharPtr("message-summary"));
-  rb_define_const(mOPAL, "OPAL_LINE_APPEARANCE_EVENT_PACKAGE", SWIG_FromCharPtr("dialog;sla;ma"));
+  rb_define_const(mOpal, "OPAL_MWI_EVENT_PACKAGE", SWIG_FromCharPtr("message-summary"));
+  rb_define_const(mOpal, "OPAL_LINE_APPEARANCE_EVENT_PACKAGE", SWIG_FromCharPtr("dialog;sla;ma"));
   
-  SwigClassOpalParamRegistration.klass = rb_define_class_under(mOPAL, "OpalParamRegistration", rb_cObject);
+  SwigClassOpalParamRegistration.klass = rb_define_class_under(mOpal, "OpalParamRegistration", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalParamRegistration, (void *) &SwigClassOpalParamRegistration);
   rb_define_alloc_func(SwigClassOpalParamRegistration.klass, _wrap_OpalParamRegistration_allocate);
   rb_define_method(SwigClassOpalParamRegistration.klass, "initialize", VALUEFUNC(_wrap_new_OpalParamRegistration), -1);
@@ -15345,13 +15431,13 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalParamRegistration.mark = 0;
   SwigClassOpalParamRegistration.destroy = (void (*)(void *)) free_OpalParamRegistration;
   SwigClassOpalParamRegistration.trackObjects = 0;
-  rb_define_const(mOPAL, "OpalRegisterSuccessful", SWIG_From_int(static_cast< int >(OpalRegisterSuccessful)));
-  rb_define_const(mOPAL, "OpalRegisterRemoved", SWIG_From_int(static_cast< int >(OpalRegisterRemoved)));
-  rb_define_const(mOPAL, "OpalRegisterFailed", SWIG_From_int(static_cast< int >(OpalRegisterFailed)));
-  rb_define_const(mOPAL, "OpalRegisterRetrying", SWIG_From_int(static_cast< int >(OpalRegisterRetrying)));
-  rb_define_const(mOPAL, "OpalRegisterRestored", SWIG_From_int(static_cast< int >(OpalRegisterRestored)));
+  rb_define_const(mOpal, "OpalRegisterSuccessful", SWIG_From_int(static_cast< int >(OpalRegisterSuccessful)));
+  rb_define_const(mOpal, "OpalRegisterRemoved", SWIG_From_int(static_cast< int >(OpalRegisterRemoved)));
+  rb_define_const(mOpal, "OpalRegisterFailed", SWIG_From_int(static_cast< int >(OpalRegisterFailed)));
+  rb_define_const(mOpal, "OpalRegisterRetrying", SWIG_From_int(static_cast< int >(OpalRegisterRetrying)));
+  rb_define_const(mOpal, "OpalRegisterRestored", SWIG_From_int(static_cast< int >(OpalRegisterRestored)));
   
-  SwigClassOpalStatusRegistration.klass = rb_define_class_under(mOPAL, "OpalStatusRegistration", rb_cObject);
+  SwigClassOpalStatusRegistration.klass = rb_define_class_under(mOpal, "OpalStatusRegistration", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalStatusRegistration, (void *) &SwigClassOpalStatusRegistration);
   rb_define_alloc_func(SwigClassOpalStatusRegistration.klass, _wrap_OpalStatusRegistration_allocate);
   rb_define_method(SwigClassOpalStatusRegistration.klass, "initialize", VALUEFUNC(_wrap_new_OpalStatusRegistration), -1);
@@ -15369,7 +15455,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalStatusRegistration.destroy = (void (*)(void *)) free_OpalStatusRegistration;
   SwigClassOpalStatusRegistration.trackObjects = 0;
   
-  SwigClassOpalParamSetUpCall.klass = rb_define_class_under(mOPAL, "OpalParamSetUpCall", rb_cObject);
+  SwigClassOpalParamSetUpCall.klass = rb_define_class_under(mOpal, "OpalParamSetUpCall", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalParamSetUpCall, (void *) &SwigClassOpalParamSetUpCall);
   rb_define_alloc_func(SwigClassOpalParamSetUpCall.klass, _wrap_OpalParamSetUpCall_allocate);
   rb_define_method(SwigClassOpalParamSetUpCall.klass, "initialize", VALUEFUNC(_wrap_new_OpalParamSetUpCall), -1);
@@ -15387,7 +15473,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalParamSetUpCall.destroy = (void (*)(void *)) free_OpalParamSetUpCall;
   SwigClassOpalParamSetUpCall.trackObjects = 0;
   
-  SwigClassOpalStatusIncomingCall.klass = rb_define_class_under(mOPAL, "OpalStatusIncomingCall", rb_cObject);
+  SwigClassOpalStatusIncomingCall.klass = rb_define_class_under(mOpal, "OpalStatusIncomingCall", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalStatusIncomingCall, (void *) &SwigClassOpalStatusIncomingCall);
   rb_define_alloc_func(SwigClassOpalStatusIncomingCall.klass, _wrap_OpalStatusIncomingCall_allocate);
   rb_define_method(SwigClassOpalStatusIncomingCall.klass, "initialize", VALUEFUNC(_wrap_new_OpalStatusIncomingCall), -1);
@@ -15414,13 +15500,13 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalStatusIncomingCall.mark = 0;
   SwigClassOpalStatusIncomingCall.destroy = (void (*)(void *)) free_OpalStatusIncomingCall;
   SwigClassOpalStatusIncomingCall.trackObjects = 0;
-  rb_define_const(mOPAL, "OpalMediaStateNoChange", SWIG_From_int(static_cast< int >(OpalMediaStateNoChange)));
-  rb_define_const(mOPAL, "OpalMediaStateOpen", SWIG_From_int(static_cast< int >(OpalMediaStateOpen)));
-  rb_define_const(mOPAL, "OpalMediaStateClose", SWIG_From_int(static_cast< int >(OpalMediaStateClose)));
-  rb_define_const(mOPAL, "OpalMediaStatePause", SWIG_From_int(static_cast< int >(OpalMediaStatePause)));
-  rb_define_const(mOPAL, "OpalMediaStateResume", SWIG_From_int(static_cast< int >(OpalMediaStateResume)));
+  rb_define_const(mOpal, "OpalMediaStateNoChange", SWIG_From_int(static_cast< int >(OpalMediaStateNoChange)));
+  rb_define_const(mOpal, "OpalMediaStateOpen", SWIG_From_int(static_cast< int >(OpalMediaStateOpen)));
+  rb_define_const(mOpal, "OpalMediaStateClose", SWIG_From_int(static_cast< int >(OpalMediaStateClose)));
+  rb_define_const(mOpal, "OpalMediaStatePause", SWIG_From_int(static_cast< int >(OpalMediaStatePause)));
+  rb_define_const(mOpal, "OpalMediaStateResume", SWIG_From_int(static_cast< int >(OpalMediaStateResume)));
   
-  SwigClassOpalStatusMediaStream.klass = rb_define_class_under(mOPAL, "OpalStatusMediaStream", rb_cObject);
+  SwigClassOpalStatusMediaStream.klass = rb_define_class_under(mOpal, "OpalStatusMediaStream", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalStatusMediaStream, (void *) &SwigClassOpalStatusMediaStream);
   rb_define_alloc_func(SwigClassOpalStatusMediaStream.klass, _wrap_OpalStatusMediaStream_allocate);
   rb_define_method(SwigClassOpalStatusMediaStream.klass, "initialize", VALUEFUNC(_wrap_new_OpalStatusMediaStream), -1);
@@ -15438,7 +15524,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalStatusMediaStream.destroy = (void (*)(void *)) free_OpalStatusMediaStream;
   SwigClassOpalStatusMediaStream.trackObjects = 0;
   
-  SwigClassOpalParamSetUserData.klass = rb_define_class_under(mOPAL, "OpalParamSetUserData", rb_cObject);
+  SwigClassOpalParamSetUserData.klass = rb_define_class_under(mOpal, "OpalParamSetUserData", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalParamSetUserData, (void *) &SwigClassOpalParamSetUserData);
   rb_define_alloc_func(SwigClassOpalParamSetUserData.klass, _wrap_OpalParamSetUserData_allocate);
   rb_define_method(SwigClassOpalParamSetUserData.klass, "initialize", VALUEFUNC(_wrap_new_OpalParamSetUserData), -1);
@@ -15450,7 +15536,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalParamSetUserData.destroy = (void (*)(void *)) free_OpalParamSetUserData;
   SwigClassOpalParamSetUserData.trackObjects = 0;
   
-  SwigClassOpalStatusUserInput.klass = rb_define_class_under(mOPAL, "OpalStatusUserInput", rb_cObject);
+  SwigClassOpalStatusUserInput.klass = rb_define_class_under(mOpal, "OpalStatusUserInput", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalStatusUserInput, (void *) &SwigClassOpalStatusUserInput);
   rb_define_alloc_func(SwigClassOpalStatusUserInput.klass, _wrap_OpalStatusUserInput_allocate);
   rb_define_method(SwigClassOpalStatusUserInput.klass, "initialize", VALUEFUNC(_wrap_new_OpalStatusUserInput), -1);
@@ -15464,7 +15550,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalStatusUserInput.destroy = (void (*)(void *)) free_OpalStatusUserInput;
   SwigClassOpalStatusUserInput.trackObjects = 0;
   
-  SwigClassOpalStatusMessageWaiting.klass = rb_define_class_under(mOPAL, "OpalStatusMessageWaiting", rb_cObject);
+  SwigClassOpalStatusMessageWaiting.klass = rb_define_class_under(mOpal, "OpalStatusMessageWaiting", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalStatusMessageWaiting, (void *) &SwigClassOpalStatusMessageWaiting);
   rb_define_alloc_func(SwigClassOpalStatusMessageWaiting.klass, _wrap_OpalStatusMessageWaiting_allocate);
   rb_define_method(SwigClassOpalStatusMessageWaiting.klass, "initialize", VALUEFUNC(_wrap_new_OpalStatusMessageWaiting), -1);
@@ -15477,16 +15563,16 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalStatusMessageWaiting.mark = 0;
   SwigClassOpalStatusMessageWaiting.destroy = (void (*)(void *)) free_OpalStatusMessageWaiting;
   SwigClassOpalStatusMessageWaiting.trackObjects = 0;
-  rb_define_const(mOPAL, "OpalLineTerminated", SWIG_From_int(static_cast< int >(OpalLineTerminated)));
-  rb_define_const(mOPAL, "OpalLineTrying", SWIG_From_int(static_cast< int >(OpalLineTrying)));
-  rb_define_const(mOPAL, "OpalLineProceeding", SWIG_From_int(static_cast< int >(OpalLineProceeding)));
-  rb_define_const(mOPAL, "OpalLineRinging", SWIG_From_int(static_cast< int >(OpalLineRinging)));
-  rb_define_const(mOPAL, "OpalLineConnected", SWIG_From_int(static_cast< int >(OpalLineConnected)));
-  rb_define_const(mOPAL, "OpalLineSubcribed", SWIG_From_int(static_cast< int >(OpalLineSubcribed)));
-  rb_define_const(mOPAL, "OpalLineUnsubcribed", SWIG_From_int(static_cast< int >(OpalLineUnsubcribed)));
-  rb_define_const(mOPAL, "OpalLineIdle", SWIG_From_int(static_cast< int >(OpalLineIdle)));
+  rb_define_const(mOpal, "OpalLineTerminated", SWIG_From_int(static_cast< int >(OpalLineTerminated)));
+  rb_define_const(mOpal, "OpalLineTrying", SWIG_From_int(static_cast< int >(OpalLineTrying)));
+  rb_define_const(mOpal, "OpalLineProceeding", SWIG_From_int(static_cast< int >(OpalLineProceeding)));
+  rb_define_const(mOpal, "OpalLineRinging", SWIG_From_int(static_cast< int >(OpalLineRinging)));
+  rb_define_const(mOpal, "OpalLineConnected", SWIG_From_int(static_cast< int >(OpalLineConnected)));
+  rb_define_const(mOpal, "OpalLineSubcribed", SWIG_From_int(static_cast< int >(OpalLineSubcribed)));
+  rb_define_const(mOpal, "OpalLineUnsubcribed", SWIG_From_int(static_cast< int >(OpalLineUnsubcribed)));
+  rb_define_const(mOpal, "OpalLineIdle", SWIG_From_int(static_cast< int >(OpalLineIdle)));
   
-  SwigClassOpalStatusLineAppearance.klass = rb_define_class_under(mOPAL, "OpalStatusLineAppearance", rb_cObject);
+  SwigClassOpalStatusLineAppearance.klass = rb_define_class_under(mOpal, "OpalStatusLineAppearance", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalStatusLineAppearance, (void *) &SwigClassOpalStatusLineAppearance);
   rb_define_alloc_func(SwigClassOpalStatusLineAppearance.klass, _wrap_OpalStatusLineAppearance_allocate);
   rb_define_method(SwigClassOpalStatusLineAppearance.klass, "initialize", VALUEFUNC(_wrap_new_OpalStatusLineAppearance), -1);
@@ -15505,12 +15591,12 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalStatusLineAppearance.mark = 0;
   SwigClassOpalStatusLineAppearance.destroy = (void (*)(void *)) free_OpalStatusLineAppearance;
   SwigClassOpalStatusLineAppearance.trackObjects = 0;
-  rb_define_const(mOPAL, "OpalSideBySideLetterbox", SWIG_From_int(static_cast< int >(OpalSideBySideLetterbox)));
-  rb_define_const(mOPAL, "OpalSideBySideScaled", SWIG_From_int(static_cast< int >(OpalSideBySideScaled)));
-  rb_define_const(mOPAL, "OpalStackedPillarbox", SWIG_From_int(static_cast< int >(OpalStackedPillarbox)));
-  rb_define_const(mOPAL, "OpalStackedScaled", SWIG_From_int(static_cast< int >(OpalStackedScaled)));
+  rb_define_const(mOpal, "OpalSideBySideLetterbox", SWIG_From_int(static_cast< int >(OpalSideBySideLetterbox)));
+  rb_define_const(mOpal, "OpalSideBySideScaled", SWIG_From_int(static_cast< int >(OpalSideBySideScaled)));
+  rb_define_const(mOpal, "OpalStackedPillarbox", SWIG_From_int(static_cast< int >(OpalStackedPillarbox)));
+  rb_define_const(mOpal, "OpalStackedScaled", SWIG_From_int(static_cast< int >(OpalStackedScaled)));
   
-  SwigClassOpalParamRecording.klass = rb_define_class_under(mOPAL, "OpalParamRecording", rb_cObject);
+  SwigClassOpalParamRecording.klass = rb_define_class_under(mOpal, "OpalParamRecording", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalParamRecording, (void *) &SwigClassOpalParamRecording);
   rb_define_alloc_func(SwigClassOpalParamRecording.klass, _wrap_OpalParamRecording_allocate);
   rb_define_method(SwigClassOpalParamRecording.klass, "initialize", VALUEFUNC(_wrap_new_OpalParamRecording), -1);
@@ -15536,7 +15622,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalParamRecording.destroy = (void (*)(void *)) free_OpalParamRecording;
   SwigClassOpalParamRecording.trackObjects = 0;
   
-  SwigClassOpalStatusCallCleared.klass = rb_define_class_under(mOPAL, "OpalStatusCallCleared", rb_cObject);
+  SwigClassOpalStatusCallCleared.klass = rb_define_class_under(mOpal, "OpalStatusCallCleared", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalStatusCallCleared, (void *) &SwigClassOpalStatusCallCleared);
   rb_define_alloc_func(SwigClassOpalStatusCallCleared.klass, _wrap_OpalStatusCallCleared_allocate);
   rb_define_method(SwigClassOpalStatusCallCleared.klass, "initialize", VALUEFUNC(_wrap_new_OpalStatusCallCleared), -1);
@@ -15547,39 +15633,39 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalStatusCallCleared.mark = 0;
   SwigClassOpalStatusCallCleared.destroy = (void (*)(void *)) free_OpalStatusCallCleared;
   SwigClassOpalStatusCallCleared.trackObjects = 0;
-  rb_define_const(mOPAL, "OpalCallEndedByLocalUser", SWIG_From_int(static_cast< int >(OpalCallEndedByLocalUser)));
-  rb_define_const(mOPAL, "OpalCallEndedByNoAccept", SWIG_From_int(static_cast< int >(OpalCallEndedByNoAccept)));
-  rb_define_const(mOPAL, "OpalCallEndedByAnswerDenied", SWIG_From_int(static_cast< int >(OpalCallEndedByAnswerDenied)));
-  rb_define_const(mOPAL, "OpalCallEndedByRemoteUser", SWIG_From_int(static_cast< int >(OpalCallEndedByRemoteUser)));
-  rb_define_const(mOPAL, "OpalCallEndedByRefusal", SWIG_From_int(static_cast< int >(OpalCallEndedByRefusal)));
-  rb_define_const(mOPAL, "OpalCallEndedByNoAnswer", SWIG_From_int(static_cast< int >(OpalCallEndedByNoAnswer)));
-  rb_define_const(mOPAL, "OpalCallEndedByCallerAbort", SWIG_From_int(static_cast< int >(OpalCallEndedByCallerAbort)));
-  rb_define_const(mOPAL, "OpalCallEndedByTransportFail", SWIG_From_int(static_cast< int >(OpalCallEndedByTransportFail)));
-  rb_define_const(mOPAL, "OpalCallEndedByConnectFail", SWIG_From_int(static_cast< int >(OpalCallEndedByConnectFail)));
-  rb_define_const(mOPAL, "OpalCallEndedByGatekeeper", SWIG_From_int(static_cast< int >(OpalCallEndedByGatekeeper)));
-  rb_define_const(mOPAL, "OpalCallEndedByNoUser", SWIG_From_int(static_cast< int >(OpalCallEndedByNoUser)));
-  rb_define_const(mOPAL, "OpalCallEndedByNoBandwidth", SWIG_From_int(static_cast< int >(OpalCallEndedByNoBandwidth)));
-  rb_define_const(mOPAL, "OpalCallEndedByCapabilityExchange", SWIG_From_int(static_cast< int >(OpalCallEndedByCapabilityExchange)));
-  rb_define_const(mOPAL, "OpalCallEndedByCallForwarded", SWIG_From_int(static_cast< int >(OpalCallEndedByCallForwarded)));
-  rb_define_const(mOPAL, "OpalCallEndedBySecurityDenial", SWIG_From_int(static_cast< int >(OpalCallEndedBySecurityDenial)));
-  rb_define_const(mOPAL, "OpalCallEndedByLocalBusy", SWIG_From_int(static_cast< int >(OpalCallEndedByLocalBusy)));
-  rb_define_const(mOPAL, "OpalCallEndedByLocalCongestion", SWIG_From_int(static_cast< int >(OpalCallEndedByLocalCongestion)));
-  rb_define_const(mOPAL, "OpalCallEndedByRemoteBusy", SWIG_From_int(static_cast< int >(OpalCallEndedByRemoteBusy)));
-  rb_define_const(mOPAL, "OpalCallEndedByRemoteCongestion", SWIG_From_int(static_cast< int >(OpalCallEndedByRemoteCongestion)));
-  rb_define_const(mOPAL, "OpalCallEndedByUnreachable", SWIG_From_int(static_cast< int >(OpalCallEndedByUnreachable)));
-  rb_define_const(mOPAL, "OpalCallEndedByNoEndPoint", SWIG_From_int(static_cast< int >(OpalCallEndedByNoEndPoint)));
-  rb_define_const(mOPAL, "OpalCallEndedByHostOffline", SWIG_From_int(static_cast< int >(OpalCallEndedByHostOffline)));
-  rb_define_const(mOPAL, "OpalCallEndedByTemporaryFailure", SWIG_From_int(static_cast< int >(OpalCallEndedByTemporaryFailure)));
-  rb_define_const(mOPAL, "OpalCallEndedByQ931Cause", SWIG_From_int(static_cast< int >(OpalCallEndedByQ931Cause)));
-  rb_define_const(mOPAL, "OpalCallEndedByDurationLimit", SWIG_From_int(static_cast< int >(OpalCallEndedByDurationLimit)));
-  rb_define_const(mOPAL, "OpalCallEndedByInvalidConferenceID", SWIG_From_int(static_cast< int >(OpalCallEndedByInvalidConferenceID)));
-  rb_define_const(mOPAL, "OpalCallEndedByNoDialTone", SWIG_From_int(static_cast< int >(OpalCallEndedByNoDialTone)));
-  rb_define_const(mOPAL, "OpalCallEndedByNoRingBackTone", SWIG_From_int(static_cast< int >(OpalCallEndedByNoRingBackTone)));
-  rb_define_const(mOPAL, "OpalCallEndedByOutOfService", SWIG_From_int(static_cast< int >(OpalCallEndedByOutOfService)));
-  rb_define_const(mOPAL, "OpalCallEndedByAcceptingCallWaiting", SWIG_From_int(static_cast< int >(OpalCallEndedByAcceptingCallWaiting)));
-  rb_define_const(mOPAL, "OpalCallEndedWithQ931Code", SWIG_From_int(static_cast< int >(OpalCallEndedWithQ931Code)));
+  rb_define_const(mOpal, "OpalCallEndedByLocalUser", SWIG_From_int(static_cast< int >(OpalCallEndedByLocalUser)));
+  rb_define_const(mOpal, "OpalCallEndedByNoAccept", SWIG_From_int(static_cast< int >(OpalCallEndedByNoAccept)));
+  rb_define_const(mOpal, "OpalCallEndedByAnswerDenied", SWIG_From_int(static_cast< int >(OpalCallEndedByAnswerDenied)));
+  rb_define_const(mOpal, "OpalCallEndedByRemoteUser", SWIG_From_int(static_cast< int >(OpalCallEndedByRemoteUser)));
+  rb_define_const(mOpal, "OpalCallEndedByRefusal", SWIG_From_int(static_cast< int >(OpalCallEndedByRefusal)));
+  rb_define_const(mOpal, "OpalCallEndedByNoAnswer", SWIG_From_int(static_cast< int >(OpalCallEndedByNoAnswer)));
+  rb_define_const(mOpal, "OpalCallEndedByCallerAbort", SWIG_From_int(static_cast< int >(OpalCallEndedByCallerAbort)));
+  rb_define_const(mOpal, "OpalCallEndedByTransportFail", SWIG_From_int(static_cast< int >(OpalCallEndedByTransportFail)));
+  rb_define_const(mOpal, "OpalCallEndedByConnectFail", SWIG_From_int(static_cast< int >(OpalCallEndedByConnectFail)));
+  rb_define_const(mOpal, "OpalCallEndedByGatekeeper", SWIG_From_int(static_cast< int >(OpalCallEndedByGatekeeper)));
+  rb_define_const(mOpal, "OpalCallEndedByNoUser", SWIG_From_int(static_cast< int >(OpalCallEndedByNoUser)));
+  rb_define_const(mOpal, "OpalCallEndedByNoBandwidth", SWIG_From_int(static_cast< int >(OpalCallEndedByNoBandwidth)));
+  rb_define_const(mOpal, "OpalCallEndedByCapabilityExchange", SWIG_From_int(static_cast< int >(OpalCallEndedByCapabilityExchange)));
+  rb_define_const(mOpal, "OpalCallEndedByCallForwarded", SWIG_From_int(static_cast< int >(OpalCallEndedByCallForwarded)));
+  rb_define_const(mOpal, "OpalCallEndedBySecurityDenial", SWIG_From_int(static_cast< int >(OpalCallEndedBySecurityDenial)));
+  rb_define_const(mOpal, "OpalCallEndedByLocalBusy", SWIG_From_int(static_cast< int >(OpalCallEndedByLocalBusy)));
+  rb_define_const(mOpal, "OpalCallEndedByLocalCongestion", SWIG_From_int(static_cast< int >(OpalCallEndedByLocalCongestion)));
+  rb_define_const(mOpal, "OpalCallEndedByRemoteBusy", SWIG_From_int(static_cast< int >(OpalCallEndedByRemoteBusy)));
+  rb_define_const(mOpal, "OpalCallEndedByRemoteCongestion", SWIG_From_int(static_cast< int >(OpalCallEndedByRemoteCongestion)));
+  rb_define_const(mOpal, "OpalCallEndedByUnreachable", SWIG_From_int(static_cast< int >(OpalCallEndedByUnreachable)));
+  rb_define_const(mOpal, "OpalCallEndedByNoEndPoint", SWIG_From_int(static_cast< int >(OpalCallEndedByNoEndPoint)));
+  rb_define_const(mOpal, "OpalCallEndedByHostOffline", SWIG_From_int(static_cast< int >(OpalCallEndedByHostOffline)));
+  rb_define_const(mOpal, "OpalCallEndedByTemporaryFailure", SWIG_From_int(static_cast< int >(OpalCallEndedByTemporaryFailure)));
+  rb_define_const(mOpal, "OpalCallEndedByQ931Cause", SWIG_From_int(static_cast< int >(OpalCallEndedByQ931Cause)));
+  rb_define_const(mOpal, "OpalCallEndedByDurationLimit", SWIG_From_int(static_cast< int >(OpalCallEndedByDurationLimit)));
+  rb_define_const(mOpal, "OpalCallEndedByInvalidConferenceID", SWIG_From_int(static_cast< int >(OpalCallEndedByInvalidConferenceID)));
+  rb_define_const(mOpal, "OpalCallEndedByNoDialTone", SWIG_From_int(static_cast< int >(OpalCallEndedByNoDialTone)));
+  rb_define_const(mOpal, "OpalCallEndedByNoRingBackTone", SWIG_From_int(static_cast< int >(OpalCallEndedByNoRingBackTone)));
+  rb_define_const(mOpal, "OpalCallEndedByOutOfService", SWIG_From_int(static_cast< int >(OpalCallEndedByOutOfService)));
+  rb_define_const(mOpal, "OpalCallEndedByAcceptingCallWaiting", SWIG_From_int(static_cast< int >(OpalCallEndedByAcceptingCallWaiting)));
+  rb_define_const(mOpal, "OpalCallEndedWithQ931Code", SWIG_From_int(static_cast< int >(OpalCallEndedWithQ931Code)));
   
-  SwigClassOpalParamCallCleared.klass = rb_define_class_under(mOPAL, "OpalParamCallCleared", rb_cObject);
+  SwigClassOpalParamCallCleared.klass = rb_define_class_under(mOpal, "OpalParamCallCleared", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalParamCallCleared, (void *) &SwigClassOpalParamCallCleared);
   rb_define_alloc_func(SwigClassOpalParamCallCleared.klass, _wrap_OpalParamCallCleared_allocate);
   rb_define_method(SwigClassOpalParamCallCleared.klass, "initialize", VALUEFUNC(_wrap_new_OpalParamCallCleared), -1);
@@ -15591,7 +15677,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalParamCallCleared.destroy = (void (*)(void *)) free_OpalParamCallCleared;
   SwigClassOpalParamCallCleared.trackObjects = 0;
   
-  SwigClassOpalMessage.klass = rb_define_class_under(mOPAL, "OpalMessage", rb_cObject);
+  SwigClassOpalMessage.klass = rb_define_class_under(mOpal, "OpalMessage", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalMessage, (void *) &SwigClassOpalMessage);
   rb_define_alloc_func(SwigClassOpalMessage.klass, _wrap_OpalMessage_allocate);
   rb_define_method(SwigClassOpalMessage.klass, "initialize", VALUEFUNC(_wrap_new_OpalMessage), -1);
@@ -15602,7 +15688,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalMessage.destroy = (void (*)(void *)) free_OpalMessage;
   SwigClassOpalMessage.trackObjects = 0;
   
-  SwigClassOpalMessage_m_param.klass = rb_define_class_under(mOPAL, "OpalMessage_m_param", rb_cObject);
+  SwigClassOpalMessage_m_param.klass = rb_define_class_under(mOpal, "OpalMessage_m_param", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalMessage_m_param, (void *) &SwigClassOpalMessage_m_param);
   rb_define_alloc_func(SwigClassOpalMessage_m_param.klass, _wrap_OpalMessage_m_param_allocate);
   rb_define_method(SwigClassOpalMessage_m_param.klass, "initialize", VALUEFUNC(_wrap_new_OpalMessage_m_param), -1);
@@ -15642,7 +15728,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalMessage_m_param.destroy = (void (*)(void *)) free_OpalMessage_m_param;
   SwigClassOpalMessage_m_param.trackObjects = 0;
   
-  SwigClassOpalMessagePtr.klass = rb_define_class_under(mOPAL, "OpalMessagePtr", rb_cObject);
+  SwigClassOpalMessagePtr.klass = rb_define_class_under(mOpal, "OpalMessagePtr", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalMessagePtr, (void *) &SwigClassOpalMessagePtr);
   rb_define_alloc_func(SwigClassOpalMessagePtr.klass, _wrap_OpalMessagePtr_allocate);
   rb_define_method(SwigClassOpalMessagePtr.klass, "initialize", VALUEFUNC(_wrap_new_OpalMessagePtr), -1);
@@ -15669,7 +15755,7 @@ SWIGEXPORT void Init_OPAL(void) {
   SwigClassOpalMessagePtr.destroy = (void (*)(void *)) free_OpalMessagePtr;
   SwigClassOpalMessagePtr.trackObjects = 0;
   
-  SwigClassOpalContext.klass = rb_define_class_under(mOPAL, "OpalContext", rb_cObject);
+  SwigClassOpalContext.klass = rb_define_class_under(mOpal, "OpalContext", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalContext, (void *) &SwigClassOpalContext);
   rb_define_alloc_func(SwigClassOpalContext.klass, _wrap_OpalContext_allocate);
   rb_define_method(SwigClassOpalContext.klass, "initialize", VALUEFUNC(_wrap_new_OpalContext), -1);
