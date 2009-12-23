@@ -14,22 +14,22 @@ public class OPAL implements OPALConstants {
     return (cPtr == 0) ? null : new SWIGTYPE_p_OpalHandleStruct(cPtr, false);
   }
 
+  public static void OpalShutDown(SWIGTYPE_p_OpalHandleStruct IN) {
+    OPALJNI.OpalShutDown(SWIGTYPE_p_OpalHandleStruct.getCPtr(IN));
+  }
+
+  public static SWIGTYPE_p_OpalMessage OpalGetMessage(SWIGTYPE_p_OpalHandleStruct arg0, long arg1) {
+    long cPtr = OPALJNI.OpalGetMessage(SWIGTYPE_p_OpalHandleStruct.getCPtr(arg0), arg1);
+    return (cPtr == 0) ? null : new SWIGTYPE_p_OpalMessage(cPtr, false);
+  }
+
   public static SWIGTYPE_p_OpalMessage OpalSendMessage(SWIGTYPE_p_OpalHandleStruct arg0, SWIGTYPE_p_OpalMessage arg1) {
     long cPtr = OPALJNI.OpalSendMessage(SWIGTYPE_p_OpalHandleStruct.getCPtr(arg0), SWIGTYPE_p_OpalMessage.getCPtr(arg1));
     return (cPtr == 0) ? null : new SWIGTYPE_p_OpalMessage(cPtr, false);
   }
 
-  public static void OpalShutDown(SWIGTYPE_p_OpalHandleStruct opal) {
-    OPALJNI.OpalShutDown(SWIGTYPE_p_OpalHandleStruct.getCPtr(opal));
-  }
-
-  public static SWIGTYPE_p_OpalMessage OpalGetMessage(SWIGTYPE_p_OpalHandleStruct opal, long timeout) {
-    long cPtr = OPALJNI.OpalGetMessage(SWIGTYPE_p_OpalHandleStruct.getCPtr(opal), timeout);
-    return (cPtr == 0) ? null : new SWIGTYPE_p_OpalMessage(cPtr, false);
-  }
-
-  public static void OpalFreeMessage(SWIGTYPE_p_OpalMessage message) {
-    OPALJNI.OpalFreeMessage(SWIGTYPE_p_OpalMessage.getCPtr(message));
+  public static void OpalFreeMessage(SWIGTYPE_p_OpalMessage IN) {
+    OPALJNI.OpalFreeMessage(SWIGTYPE_p_OpalMessage.getCPtr(IN));
   }
 
 }

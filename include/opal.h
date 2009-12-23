@@ -967,7 +967,7 @@ typedef struct OpalParamSetUserData {
 } OpalParamSetUserData;
 
 
-/**User input information for the OpalIndUserInput indication.
+/**User input information for the OpalIndUserInput/OpalCmdUserInput indication.
 
    This is may be returned from the OpalGetMessage() function or
    provided to the OpalSendMessage() function.
@@ -980,7 +980,7 @@ typedef struct OpalStatusUserInput {
                                    Generally zero is passed which means the m_userInput is a
                                    single "string" input. If non-zero then m_userInput must
                                    be a single character. */
-} OpalStatusUserInput;
+} OpalStatusUserInput, OpalParamUserInput;
 
 
 /**Message Waiting information for the OpalIndMessageWaiting indication.
@@ -1148,11 +1148,11 @@ struct OpalMessage {
     OpalParamGeneral         m_general;            ///< Used by OpalCmdSetGeneralParameters
     OpalParamProtocol        m_protocol;           ///< Used by OpalCmdSetProtocolParameters
     OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
-    OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistrationStatus
+    OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistration
     OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndProceeding/OpalIndAlerting/OpalIndEstablished
-    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldcall/OpalCmdRetreiveCall/OpalCmdStopRecording/OpalCmdAlerting
+    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldcall/OpalCmdRetrieveCall/OpalCmdStopRecording/OpalCmdAlerting
     OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
-    OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput
+    OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput/OpalCmdUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
     OpalStatusLineAppearance m_lineAppearance;     ///< Used by OpalIndLineAppearance
     OpalStatusCallCleared    m_callCleared;        ///< Used by OpalIndCallCleared
@@ -1166,6 +1166,123 @@ struct OpalMessage {
 
 #ifdef __cplusplus
 };
+
+/// Wrapper around the OpalMessage structure
+class OpalMessagePtr
+{
+  public:
+    OpalMessagePtr(OpalMessageType type = OpalIndCommandError);
+    ~OpalMessagePtr();
+
+    OpalMessageType GetType() const;
+    void SetType(OpalMessageType type);
+
+    const char               * GetCallToken() const;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldCall/OpalCmdRetrieveCall/OpalCmdStopRecording/OpalCmdAlerting
+    void                       SetCallToken(const char * token);
+
+    const char               * GetCommandError() const;       ///< Used by OpalIndCommandError
+
+    OpalParamGeneral         * GetGeneralParams() const;      ///< Used by OpalCmdSetGeneralParameters
+    OpalParamProtocol        * GetProtocolParams() const;     ///< Used by OpalCmdSetProtocolParameters
+    OpalParamRegistration    * GetRegistrationInfo() const;   ///< Used by OpalCmdRegistration
+    OpalStatusRegistration   * GetRegistrationStatus() const; ///< Used by OpalIndRegistration
+    OpalParamSetUpCall       * GetCallSetUp() const;          ///< Used by OpalCmdSetUpCall/OpalIndProceeding/OpalIndAlerting/OpalIndEstablished
+    OpalStatusIncomingCall   * GetIncomingCall() const;       ///< Used by OpalIndIncomingCall
+    OpalStatusUserInput      * GetUserInput() const;          ///< Used by OpalIndUserInput/OpalCmdUserInput
+    OpalStatusMessageWaiting * GetMessageWaiting() const;     ///< Used by OpalIndMessageWaiting
+    OpalStatusLineAppearance * GetLineAppearance() const;     ///< Used by OpalIndLineAppearance
+    OpalStatusCallCleared    * GetCallCleared() const;        ///< Used by OpalIndCallCleared
+    OpalParamCallCleared     * GetClearCall() const;          ///< Used by OpalCmdClearCall
+    OpalStatusMediaStream    * GetMediaStream() const;        ///< Used by OpalIndMediaStream/OpalCmdMediaStream
+    OpalParamSetUserData     * GetSetUserData() const;        ///< Used by OpalCmdSetUserData
+    OpalParamRecording       * GetRecording() const;          ///< Used by OpalCmdStartRecording
+
+  protected:
+    OpalMessage * m_message;
+
+  private:
+    OpalMessagePtr(const OpalMessagePtr &) { }
+    void operator=(const OpalMessagePtr &) { }
+
+  friend class OpalContext;
+};
+
+
+#ifdef GetMessage
+#undef GetMessage
+#endif
+#ifdef SendMessage
+#undef SendMessage
+#endif
+
+
+/** This class is a wrapper around the "C" API.
+    It may seem odd to have a C++ wrapper around a "C" API which is itself a
+    wrapper around a C++ API, but sometimes a C++ programmer may wish to
+    access the OPAL system via this simplified API instead of the quite
+    complex one in the base OPAL library.
+  */
+class OpalContext
+{
+  public:
+    /// Construct an unintialised OPAL context.
+    OpalContext();
+
+    /// Destroy the OPAL context, calls ShutDown().
+    virtual ~OpalContext();
+
+    /// Calls OpalIntialise() to initialise the OPAL context.
+    bool Initialise(
+      unsigned & version,   ///< Returns version of API supported by library.
+      const char * options  ///< List of options to pass to OpalIntialise()
+    );
+
+    /// Calls OpalShutDown() to dispose of the OPAL context.
+    void ShutDown();
+
+    /// Calls OpalGetMessage() to get next message from the OPAL context.
+    bool GetMessage(
+      OpalMessagePtr & message,
+      unsigned timeout = 0
+    );
+
+    /// Calls OpalSendMessage() to send a message to the OPAL context.
+    bool SendMessage(
+      const OpalMessagePtr & message,  ///< Message to send to OPAL.
+      OpalMessagePtr & response        ///< Response from OPAL.
+    );
+
+
+    /// Execute OpalSendMessage() using OpalCmdSetUpCall
+    bool SetUpCall(
+      OpalMessagePtr & response,       ///< Response from OPAL context on initiating call.
+      const char * partyB,             ///< Destination address, see OpalCmdSetUpCall.
+      const char * partyA = NULL,      ///< Calling sub-system, see OpalCmdSetUpCall.
+      const char * alertingType = NULL ///< Alerting type code, see OpalCmdSetUpCall.
+    );
+
+    /// Answer a call using OpalCmdAnswerCall via OpalSendMessage()
+    bool AnswerCall(
+      const char * callToken           ///< Call token for call being answered.
+    );
+
+    /// Clear a call using OpalCmdClearCall via OpalSendMessage()
+    bool ClearCall(
+      const char * callToken,          ///< Call token for call being cleared.
+      OpalCallEndReason reason = OpalCallEndedByLocalUser  ///< Code for the call termination, see OpalCmdClearCall.
+    );
+
+    /// Send user input using OpalCmdUserInput via OpalSendMessage()
+    bool SendUserInput(
+      const char * callToken,     ///< Call token for the call, see OpalCmdUserInput.
+      const char * userInput,     ///< User input string, e.g. "#", see OpalCmdUserInput.
+      unsigned     duration = 0   ///< Duration in milliseconds for tone, see OpalCmdUserInput.
+    );
+
+  protected:
+    OpalHandle m_handle;
+};
+
 #endif
 
 #endif // OPAL_OPAL_H
