@@ -5594,30 +5594,48 @@ SWIGEXPORT void JNICALL Java_org_opalvoip_OPALJNI_delete_1OpalContext(JNIEnv *je
 }
 
 
-SWIGEXPORT jboolean JNICALL Java_org_opalvoip_OPALJNI_OpalContext_1Initialise(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jstring jarg3) {
-  jboolean jresult = 0 ;
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_OPALJNI_OpalContext_1Initialise_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jlong jarg3) {
+  jlong jresult = 0 ;
   OpalContext *arg1 = (OpalContext *) 0 ;
-  unsigned int *arg2 = 0 ;
-  char *arg3 = (char *) 0 ;
-  bool result;
+  char *arg2 = (char *) 0 ;
+  unsigned int arg3 ;
+  unsigned int result;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(OpalContext **)&jarg1; 
-  arg2 = *(unsigned int **)&jarg2;
-  if (!arg2) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "unsigned int & reference is null");
-    return 0;
-  } 
-  arg3 = 0;
-  if (jarg3) {
-    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
-    if (!arg3) return 0;
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return 0;
   }
-  result = (bool)(arg1)->Initialise(*arg2,(char const *)arg3);
-  jresult = (jboolean)result; 
-  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
+  arg3 = (unsigned int)jarg3; 
+  result = (unsigned int)(arg1)->Initialise((char const *)arg2,arg3);
+  jresult = (jlong)result; 
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+  return jresult;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_OPALJNI_OpalContext_1Initialise_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  jlong jresult = 0 ;
+  OpalContext *arg1 = (OpalContext *) 0 ;
+  char *arg2 = (char *) 0 ;
+  unsigned int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalContext **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return 0;
+  }
+  result = (unsigned int)(arg1)->Initialise((char const *)arg2);
+  jresult = (jlong)result; 
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   return jresult;
 }
 
