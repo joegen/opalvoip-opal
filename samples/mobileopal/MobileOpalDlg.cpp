@@ -710,7 +710,7 @@ void CMobileOpalDlg::SetCallButton(bool enabled, UINT strId)
   memset (&tbi, 0, sizeof (tbi));
   tbi.cbSize = sizeof (tbi);
   tbi.dwMask = TBIF_STATE;
-  if (!::SendMessage(m_dlgCommandBar.m_hCommandBar, TB_GETBUTTONINFO, ID_CALL_ANSWER, (LPARAM)&tbi)) 
+  if (!::SendMessageW(m_dlgCommandBar.m_hCommandBar, TB_GETBUTTONINFO, ID_CALL_ANSWER, (LPARAM)&tbi)) 
     return;
 
   if (enabled)
@@ -723,7 +723,7 @@ void CMobileOpalDlg::SetCallButton(bool enabled, UINT strId)
     tbi.dwMask |= TBIF_TEXT;
     tbi.pszText = (LPWSTR)(const TCHAR *)text;
   }
-  ::SendMessage(m_dlgCommandBar.m_hCommandBar, TB_SETBUTTONINFO, ID_CALL_ANSWER, (LPARAM)&tbi);
+  ::SendMessageW(m_dlgCommandBar.m_hCommandBar, TB_SETBUTTONINFO, ID_CALL_ANSWER, (LPARAM)&tbi);
 }
 
 
@@ -1066,6 +1066,6 @@ void CMobileOpalDlg::OnSpeakerphone()
   m_speakerphone = !m_speakerphone;
   SetSpeakerMode(m_speakerphone);
 
-  HMENU hMenu = (HMENU)::SendMessage(m_dlgCommandBar.m_hCommandBar, SHCMBM_GETSUBMENU, 0, IDS_OPTIONS);
+  HMENU hMenu = (HMENU)::SendMessageW(m_dlgCommandBar.m_hCommandBar, SHCMBM_GETSUBMENU, 0, IDS_OPTIONS);
   CheckMenuItem(hMenu, IDM_SPEAKERPHONE, m_speakerphone ? MF_CHECKED : MF_UNCHECKED);
 }
