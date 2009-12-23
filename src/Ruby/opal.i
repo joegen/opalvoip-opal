@@ -7,5 +7,7 @@
 
   %include "typemaps.i"
 
+  %feature("autodoc", "3");
+
   /* Parse the header file to generate wrappers */
   %include "opal.h"

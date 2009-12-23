@@ -1981,3 +1981,351 @@ extern "C" {
 
 
 ///////////////////////////////////////////////////////////////////////////////
+
+OpalContext::OpalContext()
+  : m_handle(NULL)
+{
+}
+
+
+OpalContext::~OpalContext()
+{
+  ShutDown();
+}
+
+
+bool OpalContext::Initialise(unsigned & version, const char * options)
+{
+  m_handle = OpalInitialise(&version, options);
+  return m_handle != NULL;
+}
+
+
+void OpalContext::ShutDown()
+{
+  if (m_handle != NULL) {
+    OpalShutDown(m_handle);
+    m_handle = NULL;
+  }
+}
+
+
+bool OpalContext::GetMessage(OpalMessagePtr & message, unsigned timeout)
+{
+  if (m_handle == NULL) {
+    message.SetType(OpalIndCommandError);
+    message.m_message->m_param.m_commandError = "Uninitialised OPAL context.";
+    return false;
+  }
+
+  message.m_message = OpalGetMessage(m_handle, timeout);
+  if (message.m_message != NULL)
+    return true;
+
+  message.SetType(OpalIndCommandError);
+  message.m_message->m_param.m_commandError = "Timeout getting message.";
+  return false;
+}
+
+
+bool OpalContext::SendMessage(const OpalMessagePtr & message, OpalMessagePtr & response)
+{
+  if (m_handle == NULL) {
+    response.SetType(OpalIndCommandError);
+    response.m_message->m_param.m_commandError = "Uninitialised OPAL context.";
+    return false;
+  }
+
+  response.m_message = OpalSendMessage(m_handle, message.m_message);
+  if (response.m_message != NULL)
+    return response.GetType() != OpalIndCommandError;
+
+  response.SetType(OpalIndCommandError);
+  response.m_message->m_param.m_commandError = "Invalid message.";
+  return false;
+}
+
+
+bool OpalContext::SetUpCall(OpalMessagePtr & response,
+                            const char * partyB,
+                            const char * partyA,
+                            const char * alertingType)
+{
+  OpalMessagePtr message(OpalCmdSetUpCall);
+  OpalParamSetUpCall * param = message.GetCallSetUp();
+  param->m_partyA = partyA;
+  param->m_partyB = partyB;
+  param->m_alertingType = alertingType;
+  return SendMessage(message, response);
+}
+
+
+bool OpalContext::AnswerCall(const char * callToken)
+{
+  OpalMessagePtr message(OpalCmdAnswerCall), response;
+  message.SetCallToken(callToken);
+  return SendMessage(message, response);
+}
+
+
+bool OpalContext::ClearCall(const char * callToken, OpalCallEndReason reason)
+{
+  OpalMessagePtr message(OpalCmdClearCall), response;
+  OpalParamCallCleared * param = message.GetClearCall();
+  param->m_callToken = callToken;
+  param->m_reason = reason;
+  return SendMessage(message, response);
+}
+
+
+bool OpalContext::SendUserInput(const char * callToken, const char * userInput, unsigned duration)
+{
+  OpalMessagePtr message(OpalCmdClearCall), response;
+  OpalParamUserInput * param = message.GetUserInput();
+  param->m_callToken = callToken;
+  param->m_userInput = userInput;
+  param->m_duration = duration;
+  return SendMessage(message, response);
+}
+
+
+OpalMessagePtr::OpalMessagePtr(OpalMessageType type)
+  : m_message(NULL)
+{
+  SetType(type);
+}
+
+
+OpalMessagePtr::~OpalMessagePtr()
+{
+  OpalFreeMessage(m_message);
+}
+
+
+OpalMessageType OpalMessagePtr::GetType() const
+{
+  return m_message->m_type;
+}
+
+
+void OpalMessagePtr::SetType(OpalMessageType type)
+{
+  OpalFreeMessage(m_message);
+
+  m_message = (OpalMessage *)malloc(sizeof(OpalMessage)); // Use malloc to be compatible with OpalFreeMessage
+  memset(m_message, 0, sizeof(OpalMessage));
+  m_message->m_type = type;
+}
+
+
+const char * OpalMessagePtr::GetCommandError() const
+{
+  return m_message->m_type == OpalIndCommandError ? m_message->m_param.m_commandError : NULL;
+}
+
+
+const char * OpalMessagePtr::GetCallToken() const
+{
+  switch (m_message->m_type) {
+    case OpalCmdAnswerCall :
+    case OpalCmdHoldCall :
+    case OpalCmdRetrieveCall :
+    case OpalCmdStopRecording :
+    case OpalCmdAlerting :
+      return m_message->m_param.m_callToken;
+
+    case OpalCmdSetUpCall :
+    case OpalIndProceeding :
+    case OpalIndAlerting :
+    case OpalIndEstablished :
+      return m_message->m_param.m_callSetUp.m_callToken;
+
+    case OpalIndIncomingCall :
+      return m_message->m_param.m_incomingCall.m_callToken;
+
+    case OpalIndMediaStream :
+    case OpalCmdMediaStream :
+      return m_message->m_param.m_mediaStream.m_callToken;
+
+    case OpalCmdSetUserData :
+      return m_message->m_param.m_setUserData.m_callToken;
+
+    case OpalIndUserInput :
+      return m_message->m_param.m_userInput.m_callToken;
+
+    case OpalCmdStartRecording :
+      return m_message->m_param.m_recording.m_callToken;
+
+    case OpalIndCallCleared :
+      return m_message->m_param.m_callCleared.m_callToken;
+
+    case OpalCmdClearCall :
+      return m_message->m_param.m_clearCall.m_callToken;
+
+    default :
+      return NULL;
+  }
+}
+
+
+void OpalMessagePtr::SetCallToken(const char * callToken)
+{
+  switch (m_message->m_type) {
+    case OpalCmdAnswerCall :
+    case OpalCmdHoldCall :
+    case OpalCmdRetrieveCall :
+    case OpalCmdStopRecording :
+    case OpalCmdAlerting :
+      m_message->m_param.m_callToken = callToken;
+      break;
+
+    case OpalCmdSetUpCall :
+    case OpalIndProceeding :
+    case OpalIndAlerting :
+    case OpalIndEstablished :
+      m_message->m_param.m_callSetUp.m_callToken = callToken;
+      break;
+
+    case OpalIndIncomingCall :
+      m_message->m_param.m_incomingCall.m_callToken = callToken;
+      break;
+
+    case OpalIndMediaStream :
+    case OpalCmdMediaStream :
+      m_message->m_param.m_mediaStream.m_callToken = callToken;
+      break;
+
+    case OpalCmdSetUserData :
+      m_message->m_param.m_setUserData.m_callToken = callToken;
+      break;
+
+    case OpalIndUserInput :
+      m_message->m_param.m_userInput.m_callToken = callToken;
+      break;
+
+    case OpalCmdStartRecording :
+      m_message->m_param.m_recording.m_callToken = callToken;
+      break;
+
+    case OpalIndCallCleared :
+      m_message->m_param.m_callCleared.m_callToken = callToken;
+      break;
+
+    case OpalCmdClearCall :
+      m_message->m_param.m_clearCall.m_callToken = callToken;
+      break;
+
+    default :
+      break;
+  }
+}
+
+
+OpalParamGeneral * OpalMessagePtr::GetGeneralParams() const
+{
+  return m_message->m_type == OpalCmdSetGeneralParameters ? &m_message->m_param.m_general : NULL;
+}
+
+
+OpalParamProtocol * OpalMessagePtr::GetProtocolParams() const
+{
+  return m_message->m_type == OpalCmdSetProtocolParameters ? &m_message->m_param.m_protocol : NULL;
+}
+
+
+OpalParamRegistration * OpalMessagePtr::GetRegistrationInfo() const
+{
+  return m_message->m_type == OpalCmdRegistration ? &m_message->m_param.m_registrationInfo : NULL;
+}
+
+
+OpalStatusRegistration * OpalMessagePtr::GetRegistrationStatus() const
+{
+  return m_message->m_type == OpalIndRegistration ? &m_message->m_param.m_registrationStatus : NULL;
+}
+
+
+OpalParamSetUpCall * OpalMessagePtr::GetCallSetUp() const
+{
+  switch (m_message->m_type) {
+    case OpalCmdSetUpCall :
+    case OpalIndProceeding :
+    case OpalIndAlerting :
+    case OpalIndEstablished :
+      return &m_message->m_param.m_callSetUp;
+
+    default :
+      return NULL;
+  }
+}
+
+
+OpalStatusIncomingCall * OpalMessagePtr::GetIncomingCall() const
+{
+  return m_message->m_type == OpalIndIncomingCall ? &m_message->m_param.m_incomingCall : NULL;
+}
+
+
+OpalStatusUserInput * OpalMessagePtr::GetUserInput() const
+{
+  switch (m_message->m_type) {
+    case OpalIndUserInput :
+    case OpalCmdUserInput :
+      return &m_message->m_param.m_userInput;
+
+    default :
+      return NULL;
+  }
+}
+
+
+OpalStatusMessageWaiting * OpalMessagePtr::GetMessageWaiting() const
+{
+  return m_message->m_type == OpalIndMessageWaiting ? &m_message->m_param.m_messageWaiting : NULL;
+}
+
+
+OpalStatusLineAppearance * OpalMessagePtr::GetLineAppearance() const
+{
+  return m_message->m_type == OpalIndLineAppearance ? &m_message->m_param.m_lineAppearance : NULL;
+}
+
+
+OpalStatusCallCleared * OpalMessagePtr::GetCallCleared() const
+{
+  return m_message->m_type == OpalIndCallCleared ? &m_message->m_param.m_callCleared : NULL;
+}
+
+
+OpalParamCallCleared * OpalMessagePtr::GetClearCall() const
+{
+  return m_message->m_type == OpalCmdClearCall ? &m_message->m_param.m_clearCall : NULL;
+}
+
+
+OpalStatusMediaStream * OpalMessagePtr::GetMediaStream() const
+{
+  switch (m_message->m_type) {
+    case OpalIndMediaStream :
+    case OpalCmdMediaStream :
+      return &m_message->m_param.m_mediaStream;
+
+    default :
+      return NULL;
+  }
+}
+
+
+OpalParamSetUserData * OpalMessagePtr::GetSetUserData() const
+{
+  return m_message->m_type == OpalCmdSetUserData ? &m_message->m_param.m_setUserData : NULL;
+}
+
+
+OpalParamRecording * OpalMessagePtr::GetRecording() const
+{
+  return m_message->m_type == OpalCmdStartRecording ? &m_message->m_param.m_recording : NULL;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
