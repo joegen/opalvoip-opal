@@ -17823,7 +17823,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17834,7 +17834,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17845,7 +17845,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17856,7 +17856,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17867,7 +17867,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17878,7 +17878,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17889,7 +17889,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/ruby_swig_wrapper.c&quot;+nul &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/ruby_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17900,7 +17900,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/ruby_swig_wrapper.c&quot;+nul &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/ruby_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17911,7 +17911,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/ruby_swig_wrapper.c&quot;+nul &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/ruby_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17922,7 +17922,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/ruby_swig_wrapper.c&quot;+nul &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/ruby_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17933,7 +17933,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.c&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17944,7 +17944,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/ruby_swig_wrapper.c&quot;+nul &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/ruby_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17955,7 +17955,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/ruby_swig_wrapper.c&quot;+nul &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/ruby_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17966,7 +17966,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/ruby_swig_wrapper.c&quot;+nul &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/ruby_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
@@ -17977,14 +17977,14 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Ruby files"
-						CommandLine="swig -ruby &quot;-I$(SolutionDir)/include&quot; -o &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if not errorlevel 2 exit %ERRORLEVEL%&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)/ruby_swig_wrapper.c&quot;+nul &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &gt; nul&#x0D;&#x0A;del &quot;$(InputDir)/ruby_swig_wrapper.c&quot;&#x0D;&#x0A;move &quot;$(InputDir)/ruby_swig_wrapper.c_temporary&quot; &quot;$(InputDir)/ruby_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\SVN-Trunk\opal\src\Ruby\ruby_msvc_wrapper.c"
+				RelativePath="..\..\..\SVN-Trunk\opal\src\Ruby\ruby_msvc_wrapper.cxx"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -18109,7 +18109,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\SVN-Trunk\opal\src\Ruby\ruby_swig_wrapper.c"
+				RelativePath="..\..\..\SVN-Trunk\opal\src\Ruby\ruby_swig_wrapper.cxx"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -18238,19 +18238,7 @@
 			Filter=".java"
 			>
 			<File
-				RelativePath="..\java\example.java"
-				>
-			</File>
-			<File
-				RelativePath="..\java\exampleConstants.java"
-				>
-			</File>
-			<File
-				RelativePath="..\java\exampleJNI.java"
-				>
-			</File>
-			<File
-				RelativePath="..\java\java_msvc_wrapper.c"
+				RelativePath="..\java\java_msvc_wrapper.cxx"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -18392,7 +18380,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\java\java_swig_wrapper.c"
+				RelativePath="..\java\java_swig_wrapper.cxx"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -18524,7 +18512,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
@@ -18535,9 +18523,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -18546,9 +18534,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -18557,9 +18545,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -18568,9 +18556,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -18579,7 +18567,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
@@ -18590,9 +18578,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -18601,9 +18589,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -18612,9 +18600,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -18623,9 +18611,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -18634,7 +18622,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
 						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
@@ -18645,9 +18633,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -18656,9 +18644,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -18667,9 +18655,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -18678,18 +18666,30 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating Java JNI files"
-						CommandLine="swig -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.c&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.c&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.c"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\SVN-Trunk\opal\src\java\OPAL.java"
+				>
 			</File>
 			<File
 				RelativePath="..\java\OpalCallEndReason.java"
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\SVN-Trunk\opal\src\java\OPALConstants.java"
+				>
+			</File>
+			<File
 				RelativePath="..\java\OpalEchoCancelMode.java"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\SVN-Trunk\opal\src\java\OPALJNI.java"
 				>
 			</File>
 			<File
