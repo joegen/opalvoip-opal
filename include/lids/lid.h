@@ -487,7 +487,7 @@ class OpalLineInterfaceDevice : public PObject
        ID data, or if full is true, all of the fields in the caller ID data.
 
        The full data of the caller ID string consists fields separated by tab
-       characters ('\t'), the first three are always the Calling Line Identity
+       characters ('\\t'), the first three are always the Calling Line Identity
        (CLI or calling number), the date and the Calling Line Name field. Other
        fields may follow and are the of the form name=value. The values are
        LID dependent.
@@ -506,7 +506,7 @@ class OpalLineInterfaceDevice : public PObject
        Identity.
 
        The full data of the caller ID string consists fields separated by tab
-       characters ('\t'), the first three are always the Calling Line Identity
+       characters ('\\t'), the first three are always the Calling Line Identity
        (CLI or calling number), the date and the Calling Line Name field. Other
        fields may follow and are the of the form name=value. The values are
        LID dependent.
@@ -551,7 +551,7 @@ class OpalLineInterfaceDevice : public PObject
     );
 
     /**Read a DTMF digit detected.
-       This may be characters from the set 0-9, A-D, * or #. A null ('\0')
+       This may be characters from the set 0-9, A-D, * or #. A null ('\\0')
        character indicates that there are no tones in the queue.
        Characters E through P indicate the following tones:
 
@@ -1221,7 +1221,7 @@ class OpalLine : public PObject
        ID data, or if full is true, all of the fields in the caller ID data.
 
        The full data of the caller ID string consists fields separated by tab
-       characters ('\t'), the first three are always the Calling Line Identity
+       characters ('\\t'), the first three are always the Calling Line Identity
        (CLI or calling number), the date and the Calling Line Name field. Other
        fields may follow and are the of the form name=value. The values are
        LID dependent.
@@ -1239,7 +1239,7 @@ class OpalLine : public PObject
        Identity.
 
        The full data of the caller ID string consists fields separated by tab
-       characters ('\t'), the first three are always the Calling Line Identity
+       characters ('\\t'), the first three are always the Calling Line Identity
        (CLI or calling number), the date and the Calling Line Name field. Other
        fields may follow and are the of the form name=value. The values are
        LID dependent.
@@ -1276,7 +1276,7 @@ class OpalLine : public PObject
     ) { return device.PlayDTMF(lineNumber, digits, onTime, offTime); }
 
     /**Read a DTMF digit detected.
-       This may be characters from the set 0-9, A-D, * or #. A null ('\0')
+       This may be characters from the set 0-9, A-D, * or #. A null ('\\0')
        character indicates that there are no tones in the queue.
        Characters E through P indicate the following tones:
 

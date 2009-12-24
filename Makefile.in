@@ -633,12 +633,14 @@ endif
 # A collection or random useful targets
 
 docs: FORCE
-	cat opal_cfg.dxy > /tmp/docs.dxy ; echo HAVE_DOT=NO >> /tmp/docs.dxy
-	doxygen /tmp/docs.dxy
+	rm -rf html
+	doxygen opal_cfg.dxy > doxygen.out 2>&1
 
 graphdocs: FORCE
-	cat opal_cfg.dxy > /tmp/docs.dxy ; echo HAVE_DOT=YES >> /tmp/docs.dxy
-	doxygen /tmp/docs.dxy
+	rm -rf html
+	sed "s/HAVE_DOT.*=.*/HAVE_DOT=YES/" opal_cfg.dxy > /tmp/docs.dxy
+	doxygen /tmp/docs.dxy > doxygen.out 2>&1
+	rm /tmp/docs.dxy
 
 FORCE:
 
