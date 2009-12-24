@@ -836,7 +836,7 @@ class OpalManager : public PObject
        The "pattern" string regex is compared against routing strings that are built 
        as follows:
        
-                 a_party '\t' b_party
+                 a_party '\\t' b_party
 
        where:
 
@@ -848,8 +848,8 @@ class OpalManager : public PObject
 
        Note that all "pattern" strings have an implied '^' at the beginning and
        a '$' at the end. This forces the "pattern" to match the entire source string. 
-       For convenience, the sub-expression ".*\t" is inserted immediately after
-       any ':' character if no '\t' is present.
+       For convenience, the sub-expression ".*\\t" is inserted immediately after
+       any ':' character if no '\\t' is present.
 
        Route entries are stored and searched in the route table in the order they are added. 
        
@@ -879,17 +879,17 @@ class OpalManager : public PObject
        1) A local H.323 endpoint with with name of "myname@myhost.com" that receives a 
           call with a destination h323Id of "boris" would generate:
           
-                          "h323:myname@myhost.com\tboris"
+                          "h323:myname@myhost.com\\tboris"
 
        2) A local SIP endpoint with with name of "fred@nurk.com" that receives a 
           call with a destination of "sip:fred@nurk.com" would generate:
           
-                          "sip:fred@nurk.com\tsip:fred@nurk.com"
+                          "sip:fred@nurk.com\\tsip:fred@nurk.com"
 
        3) Using line 0 of a PhoneJACK handset with a serial # of 01AB3F4 to dial
           the digits 2, 6 and # would generate:
 
-                          "pots:Quicknet:01AB3F4:0\t26"
+                          "pots:Quicknet:01AB3F4:0\\t26"
 
 
        Destination meta-strings:
@@ -898,7 +898,7 @@ class OpalManager : public PObject
        The available meta-strings are:
        
          <da>    Replaced by the "b_party" string. For example
-                 "pc:.*\t.* = sip:<da>" directs calls to the SIP protocol. In
+                 "pc:.*\\t.* = sip:<da>" directs calls to the SIP protocol. In
                  this case there is a special condition where if the original
                  destination had a valid protocol, eg h323:fred.com, then
                  the entire string is replaced not just the <da> part.

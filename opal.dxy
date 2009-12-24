@@ -11,11 +11,12 @@
 
 
 
-Last updated 20 March, 2008
+Last updated 24 December, 2009
 
 Copyright (C) 1999-2003 Equivalence Pty Ltd, All right reserved 
 
 Portions Copyright (C) 2004 Post Increment, All Rights Reserved
+Portions Copyright (C) 2009 Vox Lucida Pty. Ltd., All Rights Reserved
 
 The documentation has been separated out into smaller pages, which can be
 accessed through the "Related Pages" link at the top of every web page, or
@@ -51,15 +52,18 @@ perspective, that may aid the reader.
 */
 
 /*! \page pageOpalClasses   Opal Classes 
-Classes in the list immediately below are independent of
-protocol. 
+Classes in the list immediately below are the most important. They are the
+base classes of the protocol specific classes used:
 
+\li OpalManager 
+\li OpalEndPoint 
 \li OpalCall 
 \li OpalConnection 
-\li OpalEndPoint 
-\li OpalManager 
 \li OpalMediaFormat
-\li OpalMediaPatch 
+\li OpalMediaStream
+\li OpalTranscoder 
+\li OpalListener 
+\li OpalTransport
 
 Some of these classes (OpalConnection, OpalEndPoint) will have a descendant
 created for every protocol supported by this library. Other classes
@@ -67,114 +71,20 @@ created for every protocol supported by this library. Other classes
 supported.
 
 
-The remaining Opal classes are listed below.
+A simplified API is available via the class:
 
-\li OpalAudioFormat 
-\li OpalAudioMediaStream 
-\li OpalFileMediaStream 
-\li OpalFramedTranscoder 
-\li Opal_G711_ALaw_PCM 
-\li Opal_G711_uLaw_PCM 
-\li Opal_G726_16_PCM 
-\li Opal_G726_24_PCM 
-\li Opal_G726_32_PCM 
-\li Opal_G726_40_PCM 
-\li Opal_G726_Transcoder 
-\li Opal_G729_PCM 
-\li OpalGloballyUniqueID 
-\li Opal_GSM0610 
-\li Opal_GSM0610_PCM 
-\li Opal_H261_YUV420P 
-\li Opal_iLBC_13k3_PCM 
-\li Opal_iLBC_15k2_PCM 
-\li Opal_iLBC_Encoder 
-\li OpalInternalTransport
-\li OpalIVRConnection 
-\li OpalIVREndPoint 
-\li OpalIVRMediaStream 
-\li OpalIxJDevice
-\li OpalLIDEndPoint
-\li OpalLIDRegistration
-\li OpalLine
-\li Opal_Linear16Mono_PCM 
-\li OpalLineConnection
-\li OpalLineInterfaceDevice
-\li OpalLineMediaStream
-\li OpalLineSilenceDetector
-\li OpalListener 
-\li OpalListenerIP 
-\li OpalListenerTCP 
-\li OpalListenerUDP 
-\li Opal_LPC10_PCM 
-\li OpalMediaFormatList 
-\li OpalMediaOption 
-\li OpalMediaOptionEnum 
-\li OpalMediaOptionString 
-\li OpalMediaOptionValue 
-\li OpalMediaStream
-\li Opal_MSGSM_PCM 
-\li Opal_MSIMA_PCM 
-\li OpalNullMediaStream 
-\li OpalPCM16SilenceDetector 
-\li Opal_PCM_G711_ALaw 
-\li Opal_PCM_G711_uLaw 
-\li Opal_PCM_G726_16 
-\li Opal_PCM_G726_24 
-\li Opal_PCM_G726_32 
-\li Opal_PCM_G726_40 
-\li Opal_PCM_G729 
-\li Opal_PCM_GSM0610 
-\li Opal_PCM_iLBC_13k3 
-\li Opal_PCM_iLBC_15k2 
-\li Opal_PCM_Linear16Mono 
-\li Opal_PCM_LPC10 
-\li Opal_PCM_MSGSM 
-\li Opal_PCM_MSIMA 
-\li Opal_PCM_Speex_11k 
-\li Opal_PCM_Speex_15k 
-\li Opal_PCM_Speex_18k2 
-\li Opal_PCM_Speex_5k95 
-\li Opal_PCM_Speex_8k 
-\li OpalPCSSConnection 
-\li OpalPCSSEndPoint 
-\li OpalPOTSEndPoint
-\li OpalPSTNEndPoint
-\li OpalRawMediaStream 
-\li OpalRFC2833Info 
-\li OpalRFC2833Proto
-\li Opal_RGB24_RGB24 
-\li Opal_RGB24_YUV420P 
-\li Opal_RGB32_YUV420P 
-\li OpalRTPMediaStream 
-\li OpalSilenceDetector
-\li Opal_Speex_11k_PCM 
-\li Opal_Speex_15k_PCM 
-\li Opal_Speex_18k2_PCM 
-\li Opal_Speex_5k95_PCM 
-\li Opal_Speex_8k_PCM 
-\li Opal_Speex_Decoder 
-\li Opal_Speex_Encoder 
-\li Opal_Speex_Transcoder 
-\li OpalStreamedTranscoder 
-\li OpalT120Protocol 
-\li OpalT38Protocol
-\li OpalTranscoder 
-\li OpalTranscoderRegistration 
-\li OpalTransport
+\li OpalContext
+
+Various other important Opal classes are listed below.
+
 \li OpalTransportAddress 
-\li OpalTransportIP 
-\li OpalTransportTCP 
-\li OpalTransportUDP 
-\li OpalUncompVideoTranscoder 
-\li OpalVideoMediaStream 
-\li OpalVideoTranscoder 
-\li OpalVoipBlasterDevice
-\li OpalVpbDevice
+\li OpalMediaPatch 
+\li OpalLineInterfaceDevice
+\li OpalMediaOption 
+\li OpalRFC2833Proto
+\li OpalSilenceDetector
 \li OpalVXMLSession 
 \li OpalWAVFile 
-\li Opal_YUV420P_H261 
-\li Opal_YUV420P_RGB24 
-\li Opal_YUV420P_RGB32 
 */
 
 /*! \page pageDocumentationTerms Terms used in the inline documentation

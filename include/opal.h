@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-/** /file opal.h
+/**\file opal.h
     This file contains an API for accessing the OPAL system via "C" language interface.
     A contrained set of functions are declared which allows the library to be easily
     "late bound" using Windows LoadLibrary() or Unix dlopen() at run time.
@@ -82,20 +82,20 @@ typedef struct OpalMessage OpalMessage;
     The C string options are space separated tokens indicating various options
     to be enabled, for example the protocols to be available. NULL or an empty
     string will load all available protocols. The current protocol tokens are:
-
+        <code>
         sip sips h323 h323s iax2 pc local pots pstn ivr
-
+        </code>
     The above protocols are in priority order, so if a protocol is not
     explicitly in the address, then the first one of the opposite "category"
     s used. There are two categories, network protocols (sip, h323, iax & pstn)
     and non-network protocols (pc, local, pots & ivr).
 
     Additional options are:
-
-        TraceLevel=1     Level for tracing.
-        TraceAppend      Append to the trace file.
-        TraceFile="name" Set the filename for trace output. Note quotes are
-                         required if spaces are in filename.
+        <table>
+        <tr><td>TraceLevel=1     <td>Level for tracing.
+        <tr><td>TraceAppend      <td>Append to the trace file.
+        <tr><td>TraceFile="name" <td>Set the filename for trace output. Note quotes are
+                                     required if spaces are in filename.
     It should also be noted that there must not be spaces around the '=' sign
     in the above options.
 
@@ -104,6 +104,7 @@ typedef struct OpalMessage OpalMessage;
     the library.
 
     Example:
+      <code>
       OpalHandle hOPAL;
       unsigned   version;
 
@@ -117,7 +118,7 @@ typedef struct OpalMessage OpalMessage;
         fputs("Could not initialise OPAL\n", stderr);
         return false;
       }
-
+      </code>
   */
 OpalHandle OPAL_EXPORT OpalInitialise(unsigned * version, const char * options);
 
@@ -138,7 +139,9 @@ typedef OpalHandle (OPAL_EXPORT *OpalInitialiseFunction)(unsigned * version, con
     must be the handle returned by OpalInitialise().
 
     Example:
+      <code>
       OpalShutDown(hOPAL);
+      </code>
   */
 void OPAL_EXPORT OpalShutDown(OpalHandle opal);
 
@@ -172,6 +175,7 @@ typedef void (OPAL_EXPORT *OpalShutDownFunction)(OpalHandle opal);
     will break from its block and return NULL.
 
     Example:
+      <code>
       OpalMessage * message;
         
       while ((message = OpalGetMessage(hOPAL, timeout)) != NULL) {
@@ -188,6 +192,7 @@ typedef void (OPAL_EXPORT *OpalShutDownFunction)(OpalHandle opal);
         }
         FreeMessageFunction(message);
       }
+      </code>
   */
 OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle opal, unsigned timeout);
 
@@ -227,6 +232,7 @@ typedef OpalMessage * (OPAL_EXPORT *OpalGetMessageFunction)(OpalHandle opal, uns
     The returned message must be disposed of by a call to OpalFreeMessage().
 
     Example:
+      <code>
       void SendCommand(OpalMessage * command)
       {
         OpalMessage * response;
@@ -234,13 +240,14 @@ typedef OpalMessage * (OPAL_EXPORT *OpalGetMessageFunction)(OpalHandle opal, uns
           puts("OPAL not initialised.");
         else if (response->m_type != OpalIndCommandError)
           HandleResponse(response);
-        else if (response->m_param.m_commandError == NULL || *response->m_param.m_commandError == '\0')
+        else if (response->m_param.m_commandError == NULL || *response->m_param.m_commandError == '\\0')
           puts("OPAL error.");
         else
           printf("OPAL error: %s\n", response->m_param.m_commandError);
 
         FreeMessageFunction(response);
       }
+      </code>
   */
 OpalMessage * OPAL_EXPORT OpalSendMessage(OpalHandle opal, const OpalMessage * message);
 
@@ -499,6 +506,7 @@ typedef enum OpalMediaTiming {
    This is only passed to and returned from the OpalSendMessage() function.
 
    Example:
+      <code>
       OpalMessage   command;
       OpalMessage * response;
 
@@ -507,6 +515,7 @@ typedef enum OpalMediaTiming {
       command.m_param.m_general.m_stunServer = "stun.voxgratia.org";
       command.m_param.m_general.m_mediaMask = "RFC4175*";
       response = OpalSendMessage(hOPAL, &command);
+      </code>
   */
 typedef struct OpalParamGeneral {
   const char * m_audioRecordDevice;   /**< Audio recording device name */
@@ -584,8 +593,10 @@ typedef struct OpalParamGeneral {
                                            list of entries of the form "codec:option=value". Codec is either
                                            a media type (e.g. "Audio" or "Video") or a specific media format,
                                            for example:
+                                             <code>
                                              "G.723.1:Tx Frames Per Packet=2\nH.263:Annex T=0\n"
                                              "Video:Max Rx Frame Width=176\nVideo:Max Rx Frame Height=144"
+                                             </code>
                                            */
   unsigned     m_audioBufferTime;     /**< Set the hardware sound buffers to use in milliseconds.
                                            Note the largest of m_audioBuffers and m_audioBufferTime/frametime
@@ -637,6 +648,7 @@ typedef struct OpalProductDescription {
    This is only passed to and returned from the OpalSendMessage() function.
 
    Example:
+      <code>
       OpalMessage   command;
       OpalMessage * response;
 
@@ -646,6 +658,7 @@ typedef struct OpalProductDescription {
       command.m_param.m_protocol.m_displayName = "Robert Jongbloed";
       command.m_param.m_protocol.m_interfaceAddresses = "*";
       response = OpalSendMessage(hOPAL, &command);
+      </code>
   */
 typedef struct OpalParamProtocol {
   const char * m_prefix;              /**< Protocol prefix for parameters, e.g. "h323" or "sip". If this is
@@ -672,6 +685,7 @@ typedef struct OpalParamProtocol {
    This is only passed to and returned from the OpalSendMessage() function.
 
    Example:
+      <code>
       OpalMessage   command;
       OpalMessage * response;
 
@@ -726,6 +740,7 @@ typedef struct OpalParamProtocol {
       command.m_param.m_registrationInfo.m_eventPackage = OPAL_LINE_APPEARANCE_EVENT_PACKAGE;
       command.m_param.m_registrationInfo.m_timeToLive = 0;
       response = OpalSendMessage(hOPAL, &command);
+      </code>
   */
 typedef struct OpalParamRegistration {
   const char * m_protocol;      /**< Protocol prefix for registration. Currently must be "h323" or
@@ -809,6 +824,7 @@ typedef struct OpalStatusRegistration {
    to the data for the call in progress.
 
    Example:
+      <code>
       OpalMessage   command;
       OpalMessage * response;
 
@@ -829,6 +845,7 @@ typedef struct OpalStatusRegistration {
       command.m_param.m_callSetUp.m_callToken = callToken;
       command.m_param.m_callSetUp.m_partyB = "sip:10.0.1.12";
       response = OpalSendMessage(hOPAL, &command);
+      </code>
   */
 typedef struct OpalParamSetUpCall {
   const char * m_partyA;      /**< A-Party for call.
@@ -1166,6 +1183,9 @@ struct OpalMessage {
 
 #ifdef __cplusplus
 };
+#endif
+
+#if defined(__cplusplus) || defined(DOC_PLUS_PLUS)
 
 /// Wrapper around the OpalMessage structure
 class OpalMessagePtr
@@ -1217,6 +1237,7 @@ class OpalMessagePtr
 
 
 /** This class is a wrapper around the "C" API.
+
     It may seem odd to have a C++ wrapper around a "C" API which is itself a
     wrapper around a C++ API, but sometimes a C++ programmer may wish to
     access the OPAL system via this simplified API instead of the quite

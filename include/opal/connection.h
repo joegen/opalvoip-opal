@@ -165,7 +165,6 @@ The different phases are.
  
   \li OpalConnection::AlertingPhase - the OpalConnection instance is aware the phone is ringing.
 
-
   \li OpalConnection::ConnectedPhase - both endpoints have accepted the call, there may or may
                             not be agreement on media atthis time. Note that in many systems
                             this constitutes the start of charging for a call.
@@ -1393,7 +1392,7 @@ class OpalConnection : public PSafeObject
     const PString & GetRemotePartyNumber() const { return remotePartyNumber; }
 
     /**Get the remote party address.
-       This is typically a URL like sip:user@hostname, though it may be just a host
+       This is typically a URL like sip:user\@hostname, though it may be just a host
        address. It should not be used as a "call back" address, use the
        GetRemotePartyURL() function for that purpose.
       */
