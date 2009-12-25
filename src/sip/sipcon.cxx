@@ -1901,6 +1901,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 
+  OnApplyStringOptions();
+
   // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
   // before it knows what what formats can support. 
   GetOtherPartyConnection()->PreviewPeerMediaFormats(GetMediaFormats());
