@@ -17984,7 +17984,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\SVN-Trunk\opal\src\Ruby\ruby_msvc_wrapper.cxx"
+				RelativePath="..\ruby\ruby_msvc_wrapper.cxx"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -18109,7 +18109,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\SVN-Trunk\opal\src\Ruby\ruby_swig_wrapper.cxx"
+				RelativePath="..\ruby\ruby_swig_wrapper.cxx"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
