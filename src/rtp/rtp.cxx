@@ -701,7 +701,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
                                         PINDEX packetSize)
 {
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
-    PTRACE_IF(4, m_jitterBuffer != NULL, "InfLID\tSwitching off jitter buffer.");
+    PTRACE_IF(4, m_jitterBuffer != NULL, "InfLID\tSwitching off jitter buffer " << *m_jitterBuffer);
     m_jitterBuffer.SetNULL();
   }
   else {
@@ -711,7 +711,6 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
       m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);
     else
       m_jitterBuffer = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, packetSize);
-    m_jitterBuffer->Resume();
   }
 }
 
