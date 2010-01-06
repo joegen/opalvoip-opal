@@ -197,7 +197,6 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned minJitter,
   , jitterCalcPacketCount(0)
   , m_resetJitterBufferNow(false)
   , currentFrame(NULL)
-  , shuttingDown(false)
 #ifdef NO_ANALYSER
   , analyser(NULL)
 #else
@@ -206,15 +205,12 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned minJitter,
 {
   SetDelay(minJitter, maxJitter, packetSize);
 
-  PTRACE(4, "RTP\tOpal jitter buffer created:" << *this << " obj=" << this);
-
+  PTRACE(4, "RTP\tJitter buffer created:" << *this);
 }
 
 
 OpalJitterBuffer::~OpalJitterBuffer()
 {
-  shuttingDown = true;
-
   // Free up all the memory allocated (jitterBuffer and freeFrames will self delete)
   delete currentFrame;
   currentFrame = NULL;
@@ -224,14 +220,18 @@ OpalJitterBuffer::~OpalJitterBuffer()
          << " time=" << currentJitterTime << '\n' << *analyser);
   delete analyser;
 #endif
+
+  PTRACE(4, "RTP\tJitter buffer destroyed:" << *this);
 }
 
 
 void OpalJitterBuffer::PrintOn(ostream & strm) const
 {
-  strm << " size=" << bufferSize 
-	     << " delay=" << (minJitterTime/timeUnits) << '-' << (maxJitterTime/timeUnits) << " ms  /" 
-       << currentJitterTime << " (" << (currentJitterTime/timeUnits) << "ms)";
+  strm << this
+       << " size=" << bufferSize
+       << " delay=" << (minJitterTime/timeUnits) << '-'
+                    << (currentJitterTime/timeUnits) << '-'
+                    << (maxJitterTime/timeUnits) << "ms";
 }
 
 
@@ -279,7 +279,7 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
   while (freeFrames.GetSize() > bufferSize)
     delete freeFrames.RemoveAt(0);
 
-  PTRACE(3, "RTP\tJitter buffer restarted:" << *this);
+  PTRACE(3, "RTP\tDelays set for jitter buffer " << *this);
 
   bufferMutex.Signal();
 }
@@ -386,11 +386,6 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame)
   frame.SetPayloadSize(0);
 
   PWaitAndSignal mutex(bufferMutex);
-
-  if (shuttingDown) {
-    PTRACE(2, "Jitter\tBuffer shutting down.");
-    return false;
-  }
 
   /*Free the frame just written to codec, putting it back into
     the free list and clearing the parking spot for it.
@@ -655,58 +650,65 @@ OpalJitterBufferThread::OpalJitterBufferThread(unsigned minJitterDelay,
                                                unsigned timeUnits,
                                                  PINDEX packetSize)
   : OpalJitterBuffer(minJitterDelay, maxJitterDelay, timeUnits, packetSize)
-  , jitterThread(NULL)
+  , m_jitterThread(NULL)
+  , m_running(true)
 {
 }
 
 
 OpalJitterBufferThread::~OpalJitterBufferThread()
 {
-  Stop();
+  WaitForThreadTermination(); // Failsafe, should be called from derived class dtor
 }
 
 
-void OpalJitterBufferThread::Stop()
+void OpalJitterBufferThread::StartThread()
 {
-  if (shuttingDown)
-    return;
+  bufferMutex.Wait();
 
-  shuttingDown = true;
+  if (m_jitterThread == NULL) {
+    m_jitterThread = PThread::Create(PCREATE_NOTIFIER(JitterThreadMain), "RTP Jitter");
+    m_jitterThread->Resume();
+  }
+
+  bufferMutex.Signal();
+}
+
+
+void OpalJitterBufferThread::WaitForThreadTermination()
+{
+  m_running = false;
+
+  bufferMutex.Wait();
+  PThread * jitterThread = m_jitterThread;
+  m_jitterThread = NULL;
+  bufferMutex.Signal();
 
   if (jitterThread != NULL) {
-    PTRACE(3, "RTP\tRemoving jitter buffer " << this << ' ' << jitterThread->GetThreadName());
+    PTRACE(3, "RTP\tWaiting for thread " << jitterThread->GetThreadName() << " on jitter buffer " << *this);
     PAssert(jitterThread->WaitForTermination(10000), "Jitter buffer thread did not terminate");
     delete jitterThread;
-    jitterThread = NULL;
   } 
 }
 
 
-void OpalJitterBufferThread::Resume()
+PBoolean OpalJitterBufferThread::ReadData(RTP_DataFrame & frame)
 {
-  PWaitAndSignal m(bufferMutex);
+  if (m_running)
+    return OpalJitterBuffer::ReadData(frame);
 
-  if (jitterThread != NULL) {
-    if (!shuttingDown)
-      return;
-
-    jitterThread->WaitForTermination();
-    delete jitterThread;
-  }
-
-  shuttingDown = false;
-  jitterThread = PThread::Create(PCREATE_NOTIFIER(JitterThreadMain), "RTP Jitter");
-  jitterThread->Resume();
+  PTRACE(3, "Jitter\tShutting down " << *this);
+  return false;
 }
 
 
 void OpalJitterBufferThread::JitterThreadMain(PThread &, INT)
 {
-  PTRACE(4, "RTP\tJitter RTP receive thread started: " << this);
+  PTRACE(4, "RTP\tJitter receive thread started: " << *this);
 
   bufferMutex.Wait();
 
-  while (!shuttingDown) {
+  while (m_running) {
     OpalJitterBuffer::Entry * availableEntry = GetAvailableEntry();
 
     do {
@@ -715,9 +717,8 @@ void OpalJitterBufferThread::JitterThreadMain(PThread &, INT)
       // Keep reading from the RTP transport frames
       if (!OnReadPacket(*availableEntry, true)) {
         delete availableEntry;  // Destructor won't delete this one, so do it here.
-        shuttingDown = true; // Flag to stop the reading side thread
-        PTRACE(3, "RTP\tJitter RTP receive thread ended");
-        return;
+        m_running = false; // Flag to stop the reading side thread
+        goto exitThread;
       }
     } while (availableEntry->GetSize() == 0);
 
@@ -727,7 +728,8 @@ void OpalJitterBufferThread::JitterThreadMain(PThread &, INT)
 
   bufferMutex.Signal();
 
-  PTRACE(4, "RTP\tJitter RTP receive thread finished: " << this);
+exitThread:
+  PTRACE(4, "RTP\tJitter receive thread finished: " << *this);
 }
 
 
@@ -741,23 +743,17 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
   : OpalJitterBufferThread(minJitterDelay, maxJitterDelay, time, packetSize),
     session(sess)
 {
-    PTRACE(6, "RTP_JitterBuffer\tConstructor" << *this);
+  StartThread();
 }
+
 
 RTP_JitterBuffer::~RTP_JitterBuffer()
 {
-  shuttingDown = true;
-  Stop();
-}
+  PTRACE(4, "RTP\tDestroying jitter buffer " << *this);
 
-
-void RTP_JitterBuffer::Stop()
-{
-  if (shuttingDown)
-    return;
-
+  m_running = false;
   session.Close(true);
-  OpalJitterBufferThread::Stop();
+  WaitForThreadTermination();
   session.Reopen(true);
 }
 
