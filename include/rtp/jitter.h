@@ -179,7 +179,6 @@ class OpalJitterBuffer : public PSafeObject
     Entry * currentFrame;    // storage of current frame
 
     PMutex bufferMutex;
-    bool   shuttingDown;
     bool   preBuffering;
     bool   firstReadData;
 
@@ -202,15 +201,36 @@ class OpalJitterBufferThread : public OpalJitterBuffer
     );
     ~OpalJitterBufferThread();
 
-    virtual void Resume();
-    virtual void Stop();
+    /**Read a data frame from the jitter buffer.
+       This function never blocks. If no data is available, an RTP packet
+       with zero payload size is returned.
 
-    virtual PBoolean OnReadPacket(RTP_DataFrame & frame, PBoolean loop) = 0;
+       Override of base class so can terminate caller when shutting down.
+      */
+    virtual PBoolean ReadData(
+      RTP_DataFrame & frame   ///<  Frame to extract from jitter buffer
+    );
+
+    /**This class instance collects data from the outside world in this
+       method.
+
+       @return true on successful read, false on faulty read. */
+    virtual PBoolean OnReadPacket(
+      RTP_DataFrame & frame,  ///<  Frame read from the RTP session
+      PBoolean loop           ///<  If true, loop as long as data is available, if false, only process once
+    ) = 0;
 
   protected:
     PDECLARE_NOTIFIER(PThread, OpalJitterBufferThread, JitterThreadMain);
 
-    PThread * jitterThread;
+    /// Internal function to be called from derived class constructor
+    void StartThread();
+
+    /// Internal function to be called from derived class destructor
+    void WaitForThreadTermination();
+
+    PThread * m_jitterThread;
+    bool      m_running;
 };
 
 
@@ -231,15 +251,13 @@ class RTP_JitterBuffer : public OpalJitterBufferThread
     );
     ~RTP_JitterBuffer();
 
-    virtual void Stop();
-
     /**This class instance collects data from the outside world in this
        method.
 
-    @return PTrue on successful read, PFalse on faulty read. */
+       @return true on successful read, false on faulty read. */
     virtual PBoolean OnReadPacket(
       RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-      PBoolean loop           ///<  If PTrue, loop as long as data is available, if PFalse, only process once
+      PBoolean loop           ///<  If true, loop as long as data is available, if false, only process once
     );
 
  protected:
