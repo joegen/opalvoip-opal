@@ -452,7 +452,7 @@ void OpalFaxConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats, O
   // Remove everything but G.711 or fax stuff
   OpalMediaFormatList::iterator i = mediaFormats.begin();
   while (i != mediaFormats.end()) {
-    if ((m_awaitingSwitchToT38 && *i == OpalPCM16) ||
+    if ((m_awaitingSwitchToT38 && i->GetMediaType() == OpalMediaType::Audio()) ||
         (*i == OpalG711_ULAW_64K || *i == OpalG711_ALAW_64K || *i == OpalRFC2833 || *i == OpalCiscoNSE))
       ++i;
     else if (i->GetMediaType() != OpalMediaType::Fax() || (m_disableT38 && *i == OpalT38))
