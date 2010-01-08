@@ -409,6 +409,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   }
 
   connection.AdjustMediaFormats(commonFormats, NULL);
+  commonFormats.Reorder(GetManager().GetMediaFormatOrder());
 
   PTRACE(4, "Call\tGetMediaFormats for " << connection << '\n'
          << setfill('\n') << commonFormats << setfill(' '));
