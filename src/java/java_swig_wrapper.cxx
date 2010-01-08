@@ -5640,6 +5640,21 @@ SWIGEXPORT jlong JNICALL Java_org_opalvoip_OPALJNI_OpalContext_1Initialise_1_1SW
 }
 
 
+SWIGEXPORT jboolean JNICALL Java_org_opalvoip_OPALJNI_OpalContext_1IsInitialised(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jboolean jresult = 0 ;
+  OpalContext *arg1 = (OpalContext *) 0 ;
+  bool result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalContext **)&jarg1; 
+  result = (bool)((OpalContext const *)arg1)->IsInitialised();
+  jresult = (jboolean)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void JNICALL Java_org_opalvoip_OPALJNI_OpalContext_1ShutDown(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   OpalContext *arg1 = (OpalContext *) 0 ;
   
