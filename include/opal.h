@@ -1259,6 +1259,9 @@ class OpalContext
       unsigned version = OPAL_C_API_VERSION ///< Version expected by application
     );
 
+    /// Indicate if the OPAL context has been initialised.
+    bool IsInitialised() const { return m_handle != 0; }
+
     /// Calls OpalShutDown() to dispose of the OPAL context.
     void ShutDown();
 
@@ -1279,8 +1282,8 @@ class OpalContext
     bool SetUpCall(
       OpalMessagePtr & response,       ///< Response from OPAL context on initiating call.
       const char * partyB,             ///< Destination address, see OpalCmdSetUpCall.
-      const char * partyA = NULL,      ///< Calling sub-system, see OpalCmdSetUpCall.
-      const char * alertingType = NULL ///< Alerting type code, see OpalCmdSetUpCall.
+      const char * partyA = 0,         ///< Calling sub-system, see OpalCmdSetUpCall.
+      const char * alertingType = 0    ///< Alerting type code, see OpalCmdSetUpCall.
     );
 
     /// Answer a call using OpalCmdAnswerCall via OpalSendMessage()

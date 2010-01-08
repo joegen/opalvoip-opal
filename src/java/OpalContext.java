@@ -47,6 +47,10 @@ public class OpalContext {
     return OPALJNI.OpalContext_Initialise__SWIG_1(swigCPtr, this, options);
   }
 
+  public boolean IsInitialised() {
+    return OPALJNI.OpalContext_IsInitialised(swigCPtr, this);
+  }
+
   public void ShutDown() {
     OPALJNI.OpalContext_ShutDown(swigCPtr, this);
   }
