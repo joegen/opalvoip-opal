@@ -755,7 +755,6 @@ void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
                                      OpalMediaFormatList & mediaFormats) const
 {
   mediaFormats.Remove(mediaFormatMask);
-  mediaFormats.Reorder(mediaFormatOrder);
 }
 
 
