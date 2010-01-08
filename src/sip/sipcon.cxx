@@ -2934,6 +2934,7 @@ class VFUXML : public QDXML
         { 2, "vc_primitive",         3 },
         { 3, "to_encoder",           4 },
         { 4, "picture_fast_update",  5 },
+        { 4, "picture_fast_update/", 6 },
         { 5, "/picture_fast_update", 6 },
         { 6, "/to_encoder",          7 },
         { 7, "/vc_primitive",        8 },
@@ -2945,7 +2946,7 @@ class VFUXML : public QDXML
 
     bool OnMatch(const std::string &)
     {
-      if (state == 5)
+      if (state == 6)
         vfu = true;
       return true;
     }
