@@ -13956,6 +13956,40 @@ fail:
 
 
 /*
+  Document-method: Opal::OpalContext.IsInitialised
+
+  call-seq:
+    IsInitialised -> bool
+
+An instance method.
+
+*/
+SWIGINTERN VALUE
+_wrap_OpalContext_IsInitialised(int argc, VALUE *argv, VALUE self) {
+  OpalContext *arg1 = (OpalContext *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalContext, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalContext const *","IsInitialised", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalContext * >(argp1);
+  result = (bool)((OpalContext const *)arg1)->IsInitialised();
+  vresult = SWIG_From_bool(static_cast< bool >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+
+/*
   Document-method: Opal::OpalContext.ShutDown
 
   call-seq:
@@ -15760,6 +15794,7 @@ SWIGEXPORT void Init_opal(void) {
   rb_define_alloc_func(SwigClassOpalContext.klass, _wrap_OpalContext_allocate);
   rb_define_method(SwigClassOpalContext.klass, "initialize", VALUEFUNC(_wrap_new_OpalContext), -1);
   rb_define_method(SwigClassOpalContext.klass, "Initialise", VALUEFUNC(_wrap_OpalContext_Initialise), -1);
+  rb_define_method(SwigClassOpalContext.klass, "IsInitialised", VALUEFUNC(_wrap_OpalContext_IsInitialised), -1);
   rb_define_method(SwigClassOpalContext.klass, "ShutDown", VALUEFUNC(_wrap_OpalContext_ShutDown), -1);
   rb_define_method(SwigClassOpalContext.klass, "GetMessage", VALUEFUNC(_wrap_OpalContext_GetMessage), -1);
   rb_define_method(SwigClassOpalContext.klass, "SendMessage", VALUEFUNC(_wrap_OpalContext_SendMessage), -1);

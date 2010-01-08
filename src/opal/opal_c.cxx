@@ -1996,6 +1996,8 @@ OpalContext::~OpalContext()
 
 unsigned OpalContext::Initialise(const char * options, unsigned version)
 {
+  ShutDown();
+
   m_handle = OpalInitialise(&version, options);
   return m_handle != NULL ? version : 0;
 }
