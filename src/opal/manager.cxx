@@ -996,9 +996,9 @@ PBoolean OpalManager::AddRouteEntry(const PString & spec)
   }
 
   PTRACE(4, "OpalMan\tAdded route \"" << *entry << '"');
-  routeTableMutex.Wait();
-  routeTable.Append(entry);
-  routeTableMutex.Signal();
+  m_routeMutex.Wait();
+  m_routeTable.Append(entry);
+  m_routeMutex.Signal();
   return true;
 }
 
@@ -1007,15 +1007,15 @@ PBoolean OpalManager::SetRouteTable(const PStringArray & specs)
 {
   PBoolean ok = false;
 
-  routeTableMutex.Wait();
-  routeTable.RemoveAll();
+  m_routeMutex.Wait();
+  m_routeTable.RemoveAll();
 
   for (PINDEX i = 0; i < specs.GetSize(); i++) {
     if (AddRouteEntry(specs[i].Trim()))
       ok = true;
   }
 
-  routeTableMutex.Signal();
+  m_routeMutex.Signal();
 
   return ok;
 }
@@ -1023,10 +1023,10 @@ PBoolean OpalManager::SetRouteTable(const PStringArray & specs)
 
 void OpalManager::SetRouteTable(const RouteTable & table)
 {
-  routeTableMutex.Wait();
-  routeTable = table;
-  routeTable.MakeUnique();
-  routeTableMutex.Signal();
+  m_routeMutex.Wait();
+  m_routeTable = table;
+  m_routeTable.MakeUnique();
+  m_routeMutex.Signal();
 }
 
 
@@ -1046,9 +1046,9 @@ static void ReplaceNDU(PString & destination, const PString & subst)
 
 PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_party, PINDEX & routeIndex)
 {
-  PWaitAndSignal mutex(routeTableMutex);
+  PWaitAndSignal mutex(m_routeMutex);
 
-  if (routeTable.IsEmpty())
+  if (m_routeTable.IsEmpty())
     return routeIndex++ == 0 ? b_party : PString::Empty();
 
   PString search = a_party + '\t' + b_party;
@@ -1076,8 +1076,8 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
    */
 
   PString destination;
-  while (routeIndex < routeTable.GetSize()) {
-    RouteEntry & entry = routeTable[routeIndex++];
+  while (routeIndex < m_routeTable.GetSize()) {
+    RouteEntry & entry = m_routeTable[routeIndex++];
     PINDEX pos;
     if (entry.regex.Execute(search, pos)) {
       PTRACE(4, "OpalMan\tMatched regex \"" << entry.pattern << '"');
