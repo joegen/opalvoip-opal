@@ -956,7 +956,7 @@ class OpalManager : public PObject
 
     /**Get the active route table for the manager.
       */
-    const RouteTable & GetRouteTable() const { return routeTable; }
+    const RouteTable & GetRouteTable() const { return m_routeTable; }
 
     /**Route the source address to a destination using the route table.
        The source parameter may be something like pots:vpb:1/2 or
@@ -1470,8 +1470,8 @@ class OpalManager : public PObject
     PSTUNClient      * stun;
     InterfaceMonitor * interfaceMonitor;
 
-    RouteTable routeTable;
-    PMutex     routeTableMutex;
+    RouteTable m_routeTable;
+    PMutex     m_routeMutex;
 
     // Dynamic variables
     PReadWriteMutex     endpointsMutex;
