@@ -346,7 +346,24 @@ OpalMediaFormat & SDPMediaFormat::GetWritableMediaFormat()
 }
 
 
-void SDPMediaFormat::InitialiseMediaFormat()
+OpalMediaFormatList SDPMediaFormat::GetMediaFormats() const
+{
+  OpalMediaFormatList adjustedFormats;
+
+  OpalMediaFormatList masterFormats = OpalMediaFormat::GetMatchingRegisteredMediaFormats(payloadType, clockRate, encodingName, "sip");
+  for (OpalMediaFormatList::iterator iterFormat = masterFormats.begin(); iterFormat != masterFormats.end(); ++iterFormat) {
+    PTRACE(3, "SIP\tRTP payload type " << encodingName << " matched to codec " << *iterFormat);
+
+    OpalMediaFormat adjustedFormat = *iterFormat;
+    InitialiseMediaFormat(adjustedFormat);
+    adjustedFormats += adjustedFormat;
+  }
+
+  return adjustedFormats;
+}
+
+
+void SDPMediaFormat::InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const
 {
   mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
   if (mediaFormat.IsEmpty())
@@ -790,18 +807,12 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
   OpalMediaFormatList list;
 
   for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
-    OpalMediaFormat opalFormat = format->GetMediaFormat();
-    if (opalFormat.IsEmpty())
+    OpalMediaFormatList formats = format->GetMediaFormats();
+    if (formats.IsEmpty())
       PTRACE(2, "SIP\tRTP payload type " << format->GetPayloadType() 
              << ", name=" << format->GetEncodingName() << ", not matched to supported codecs");
-    else {
-      if (opalFormat.GetMediaType() == mediaType && 
-          opalFormat.IsValidForProtocol("sip") &&
-          opalFormat.GetEncodingName() != NULL) {
-        PTRACE(3, "SIP\tRTP payload type " << format->GetPayloadType() << " matched to codec " << opalFormat);
-        list += opalFormat;
-      }
-    }
+    else 
+      list += formats;
   }
 
   return list;

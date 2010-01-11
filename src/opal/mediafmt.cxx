@@ -819,6 +819,25 @@ bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
 }
 
 
+OpalMediaFormatList OpalMediaFormat::GetMatchingRegisteredMediaFormats(RTP_DataFrame::PayloadTypes rtpPayloadType,
+                                                                       const unsigned clockRate,
+                                                                       const char * rtpEncodingName,
+                                                                       const char * protocol)
+{
+  OpalMediaFormatList matches;
+
+  PWaitAndSignal mutex(GetMediaFormatsListMutex());
+
+  const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
+  for (OpalMediaFormatList::const_iterator format = registeredFormats.FindFormat(rtpPayloadType, clockRate, rtpEncodingName, protocol);
+       format != registeredFormats.end();
+       format = registeredFormats.FindFormat(rtpPayloadType, clockRate, rtpEncodingName, protocol, ++format))
+    matches += *format;
+
+  return matches;
+}
+
+
 OpalMediaFormatList OpalMediaFormat::GetAllRegisteredMediaFormats()
 {
   OpalMediaFormatList copy;
@@ -1594,13 +1613,12 @@ void OpalMediaFormatList::Remove(const PStringArray & maskList)
 }
 
 
-OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol) const
+OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol, const_iterator iter) const
 {
-  OpalMediaFormatList::const_iterator format;
-
   // First look for a matching encoding name
   if (name != NULL && *name != '\0') {
-    for (format = begin(); format != end(); ++format) {
+    OpalMediaFormatList::const_iterator format ((iter == const_iterator()) ? begin() : iter);
+    for (; format != end(); ++format) {
       // If encoding name matches exactly, then use it regardless of payload code.
       const char * otherName = format->GetEncodingName();
       if (otherName != NULL && strcasecmp(otherName, name) == 0 &&
@@ -1615,7 +1633,8 @@ OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFram
   // someone to override a standard payload type with another encoding name, so
   // have to search all formats by name before trying by number.
   if (pt < RTP_DataFrame::DynamicBase) {
-    for (format = begin(); format != end(); ++format) {
+    OpalMediaFormatList::const_iterator format ((iter == const_iterator()) ? begin() : iter);
+    for (; format != end(); ++format) {
       if (format->GetPayloadType() == pt &&
           (clockRate == 0    || clockRate == format->GetClockRate()) && // if have clock rate, clock rate must match
           (protocol  == NULL || format->IsValidForProtocol(protocol))) // if protocol is specified, must be valid for the protocol
