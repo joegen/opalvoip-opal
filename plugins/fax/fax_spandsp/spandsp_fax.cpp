@@ -976,6 +976,7 @@ class TIFF_T38 : public FaxTIFF, public FaxT38
     ~TIFF_T38()
     {
       if (m_t38State != NULL) {
+        t30_terminate(t38_terminal_get_t30_state(m_t38State)); //call PhaseE
         t38_terminal_release(m_t38State);
         t38_terminal_free(m_t38State);
         PTRACE(3, m_tag << " Closed TIFF_T38/SpanDSP");
