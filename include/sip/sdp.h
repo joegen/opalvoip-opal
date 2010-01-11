@@ -96,11 +96,16 @@ class SDPMediaFormat : public PObject
     const OpalMediaFormat & GetMediaFormat() const;
     OpalMediaFormat & GetWritableMediaFormat();
 
+	/**Return all registered media formats that match information 
+	 */
+    OpalMediaFormatList GetMediaFormats() const;
+
     bool PreEncode();
     bool PostDecode(unsigned bandwidth);
 
   protected:
-    void InitialiseMediaFormat();
+    void InitialiseMediaFormat() { InitialiseMediaFormat(mediaFormat); }
+    void InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const;
 
     OpalMediaFormat mediaFormat;
 
