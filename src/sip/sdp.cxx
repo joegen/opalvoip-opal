@@ -365,7 +365,8 @@ OpalMediaFormatList SDPMediaFormat::GetMediaFormats() const
 
 void SDPMediaFormat::InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const
 {
-  mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+  if (mediaFormat.IsEmpty()) {
+    mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
   if (mediaFormat.IsEmpty())
     mediaFormat = OpalMediaFormat(encodingName);
   if (mediaFormat.IsEmpty()) {
