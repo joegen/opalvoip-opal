@@ -688,25 +688,26 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   SIPHandler::OnReceivedOK(transaction, response);
 
-  std::list<SIPURL> requestContacts, replyContacts;
+  std::set<SIPURL> requestContacts, replyContacts;
   transaction.GetMIME().GetContacts(requestContacts);
   response.GetMIME().GetContacts(replyContacts);
 
   m_parameters.m_contactAddress.MakeEmpty();
 
-  for (std::list<SIPURL>::iterator request = requestContacts.begin(); request != requestContacts.end(); ++request) {
-    for (std::list<SIPURL>::iterator reply = replyContacts.begin(); reply != replyContacts.end(); ++reply) {
-      if (*request == *reply) {
-        PString expires = SIPMIMEInfo::ExtractFieldParameter(reply->GetFieldParameters(), "expires");
-        if (expires.IsEmpty())
-          SetExpire(response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds()));
-        else
-          SetExpire(expires.AsUnsigned());
+  for (std::set<SIPURL>::iterator reply = replyContacts.begin(); reply != replyContacts.end(); ++reply) {
+    // RFC3261 does say the registrar must send back ALL registrations, however
+    // we only deal with replies from the registrar that we actually requested.
+    std::set<SIPURL>::iterator request = requestContacts.find(*reply);
+    if (request != requestContacts.end()) {
+      PString expires = SIPMIMEInfo::ExtractFieldParameter(reply->GetFieldParameters(), "expires");
+      if (expires.IsEmpty())
+        SetExpire(response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds()));
+      else
+        SetExpire(expires.AsUnsigned());
 
-        if (!m_parameters.m_contactAddress.IsEmpty())
-          m_parameters.m_contactAddress += ", ";
-        m_parameters.m_contactAddress += request->AsString();
-      }
+      if (!m_parameters.m_contactAddress.IsEmpty())
+        m_parameters.m_contactAddress += ", ";
+      m_parameters.m_contactAddress += request->AsQuotedString();
     }
   }
 
