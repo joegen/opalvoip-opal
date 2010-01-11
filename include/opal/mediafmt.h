@@ -120,15 +120,17 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       const OpalMediaFormatList & formats    ///<  Formats to remove
     );
 
-    /**Get a format position in the list matching the payload type.
+    /**Get a format iterator in the list matching the payload type.
 
-       Returns P_MAX_INDEX if not in list.
+
+       Returns end() if not in list.
       */
     const_iterator FindFormat(
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const unsigned clockRate,                   ///<  clock rate
       const char * rtpEncodingName = NULL,        ///<  RTP payload type name
-      const char * protocol = NULL                ///<  protocol to be valid for (if NULL, then all)
+      const char * protocol = NULL,               ///<  protocol to be valid for (if NULL, then all)
+      const_iterator start = const_iterator()     ///<  location to start search
     ) const;
 
     /**Get a position in the list of the first entry matching the wildcard.
@@ -999,6 +1001,16 @@ class OpalMediaFormat : public PContainer
       const BYTE * data,          ///<  Octets in option
       PINDEX length               ///<  Number of octets
     ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionOctets(name, data, length); }
+
+    /**Create a media format list containing all of the registered media 
+	   formats matching the encoding name and clock rate, or the payload type.
+      */
+    static OpalMediaFormatList GetMatchingRegisteredMediaFormats(
+      RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
+      const unsigned clockRate,                   ///<  clock rate
+      const char * rtpEncodingName = NULL,        ///<  RTP payload type name
+      const char * protocol = NULL                ///<  protocol to be valid for (if NULL, then all)
+    );
 
     /**Get a copy of the list of media formats that have been registered.
       */
