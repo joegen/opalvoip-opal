@@ -282,7 +282,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetCallID(const PString & v);
 
     PString GetContact() const;
-    bool GetContacts(std::list<SIPURL> & contacts) const;
+    bool GetContacts(std::set<SIPURL> & contacts) const;
     void SetContact(const PString & v);
     void SetContact(const SIPURL & url);
 
