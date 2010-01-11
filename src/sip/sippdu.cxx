@@ -740,13 +740,38 @@ PString SIPMIMEInfo::GetContact() const
 }
 
 
-bool SIPMIMEInfo::GetContacts(std::list<SIPURL> & contacts) const
+bool SIPMIMEInfo::GetContacts(std::set<SIPURL> & contacts) const
 {
   PStringArray lines = GetString("Contact").Lines();
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
-    PStringArray items = lines[i].Tokenise(',');
-    for (PINDEX j = 0; j < items.GetSize(); j++)
-      contacts.push_back(items[j]);
+    PString line = lines[0];
+
+    PINDEX previousPos = (PINDEX)-1;
+    PINDEX comma = previousPos;
+    do {
+      PINDEX pos = line.FindOneOf(",\"<", previousPos+1);
+      if (pos != P_MAX_INDEX && line[pos] != ',') {
+        if (line[pos] == '<')
+          previousPos = line.Find('>', pos);
+        else {
+          PINDEX lastQuote = pos;
+          do { 
+            lastQuote = line.Find('"', lastQuote+1);
+          } while (lastQuote != P_MAX_INDEX && line[lastQuote-1] == '\\');
+          previousPos = lastQuote;
+        }
+        if (previousPos != P_MAX_INDEX)
+          continue;
+        pos = previousPos;
+      }
+
+      SIPURL uri = line(comma+1, pos-1);
+      if (!uri.GetPortSupplied())
+        uri.SetPort(uri.GetScheme() == "sips" ? 5061 : 5060);
+      contacts.insert(uri);
+
+      comma = previousPos = pos;
+    } while (comma != P_MAX_INDEX);
   }
 
   return !contacts.empty();
