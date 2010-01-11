@@ -408,6 +408,12 @@ PObject::Comparison SIPURL::Compare(const PObject & obj) const
   COMPARE_COMPONENT(paramVars("ttl"));
   COMPARE_COMPONENT(paramVars("method"));
 
+  /* While RFC3261/19.1.4 does not mention transport explicitly in the same
+     sectionas the above, the "not equivalent" examples do state that the
+     absence of a transport is not the same as using the default. While this
+     is not normative, the logic is impeccable so we add it in. */
+  COMPARE_COMPONENT(paramVars("transport"));
+
   return EqualTo;
 }
 
