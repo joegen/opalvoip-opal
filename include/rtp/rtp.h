@@ -514,7 +514,7 @@ class RTP_Session : public PObject
 
     /**Close down the RTP session.
       */
-    virtual void Close(
+    virtual bool Close(
       PBoolean reading    ///<  Closing the read side of the session
     ) = 0;
 
@@ -986,7 +986,7 @@ class RTP_UDP : public RTP_Session
 
     /**Close down the RTP session.
       */
-    virtual void Close(
+    virtual bool Close(
       PBoolean reading    ///<  Closing the read side of the session
     );
 

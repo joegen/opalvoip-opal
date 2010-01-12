@@ -752,9 +752,12 @@ RTP_JitterBuffer::~RTP_JitterBuffer()
   PTRACE(4, "RTP\tDestroying jitter buffer " << *this);
 
   m_running = false;
-  session.Close(true);
+  bool reopen = session.Close(true);
+
   WaitForThreadTermination();
-  session.Reopen(true);
+
+  if (reopen)
+    session.Reopen(true);
 }
 
 

@@ -1709,16 +1709,24 @@ void RTP_UDP::Reopen(PBoolean reading)
 }
 
 
-void RTP_UDP::Close(PBoolean reading)
+bool RTP_UDP::Close(PBoolean reading)
 {
   //SendBYE();
 
   if (reading) {
-    dataMutex.Wait();
-    if (!shutdownRead) {
+    {
+      PWaitAndSignal mutex(dataMutex);
+
+      if (shutdownRead) {
+        PTRACE(4, "RTP_UDP\tSession " << sessionID << ", read already shut down .");
+        return false;
+      }
+
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down read.");
+
       syncSourceIn = 0;
       shutdownRead = true;
+
       if (dataSocket != NULL && controlSocket != NULL) {
         PIPSocket::Address addr;
         controlSocket->GetLocalAddress(addr);
@@ -1727,13 +1735,20 @@ void RTP_UDP::Close(PBoolean reading)
         dataSocket->WriteTo("", 1, addr, controlSocket->GetPort());
       }
     }
-    dataMutex.Signal();
-    SetJitterBufferSize(0, 0); // Kill jitter buffer too
+
+    SetJitterBufferSize(0, 0); // Kill jitter buffer too, but outside mutex
   }
   else {
-    PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down write.");
+    if (shutdownWrite) {
+      PTRACE(4, "RTP_UDP\tSession " << sessionID << ", write already shut down .");
+      return false;
+    }
+
+    PTRACE(3, "RTP_UDP\tSession " << sessionID << ", shutting down write.");
     shutdownWrite = true;
   }
+
+  return true;
 }
 
 
