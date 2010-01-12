@@ -1407,12 +1407,7 @@ unsigned H323SignalPDU::GetDistinctiveRing() const
 }
 
 
-void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
-                                  PBoolean insertPartyNumbers,
-                                  unsigned plan,
-                                  unsigned type,
-                                  int presentation,
-                                  int screening)
+void H323SignalPDU::SetQ931Fields(const H323Connection & connection, bool insertPartyNumbers)
 {
   const PStringList & aliases = connection.GetLocalAliasNames();
 
@@ -1457,6 +1452,11 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
       if (IsE164(otherName))
         otherNumber = otherName;
     }
+
+    int plan = 1; // ISDN/Telephony numbering system
+    int type = 0; // Unknown number type
+    int presentation = connection.IsPresentationBlocked() ? 1 : -1; // Presentation Blocked, or no octet3a
+    int screening = presentation == -1 ? -1 : 0; // User-provided, not screened
 
     if (connection.HadAnsweredCall()) {
       if (!number)

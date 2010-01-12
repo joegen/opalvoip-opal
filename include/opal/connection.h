@@ -71,6 +71,7 @@ class PURL;
 #define OPAL_OPT_CALLING_PARTY_NAME   "Calling-Party-Name"    ///< String option to set outgoing local name
 #define OPAL_OPT_CALLING_PARTY_DOMAIN "Calling-Party-Domain"  ///< String option to set outgoing local host/address/domain
 #define OPAL_OPT_CALLING_DISPLAY_NAME "Calling-Display-Name"  ///< String option to set outgoing display name
+#define OPAL_OPT_PRESENTATION_BLOCK   "Presentation-Block"    ///< String option to block outgoing calling number presentation
 #define OPAL_OPT_ORIGINATOR_ADDRESS   "Originator-Address"    ///< String option for originator address used by IVR
 #define OPAL_OPT_INTERFACE            "Interface"             ///< String option to set the interface used for outgoing call
 #define OPAL_OPT_ENABLE_INBAND_DTMF   "EnableInbandDTMF"      ///< String option to enable in band DTMF detection
@@ -1372,6 +1373,13 @@ class OpalConnection : public PSafeObject
     /**Set the local display name.
       */
     void SetDisplayName(const PString & name) { displayName = name; }
+
+    /**Determine if remote presentation of Caller-ID is to be blocked.
+       Applies to an outgoing call to a "network" based endpoint type.
+       Corresponds to Q.931 Calling-Party-Number Information Elementin H.323.
+       Will remove display name for SIP.
+      */
+    virtual bool IsPresentationBlocked() const;
 
     /**Get the remote party display name.
       */
