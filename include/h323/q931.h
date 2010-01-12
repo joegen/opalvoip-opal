@@ -316,10 +316,10 @@ class Q931 : public PObject
 
     void SetCallingPartyNumber(
       const PString & number, ///<  Number string
-      unsigned plan = 1,      ///<  1 = ISDN/Telephony numbering system
+      unsigned plan = 1,      ///<  1 = ISDN/Telephony numbering system, see Q.931 Table 4-11 for more
       unsigned type = 0,      ///<  0 = Unknown number type
-      int presentation = -1,  ///<  0 = presentation allowed, -1 = no octet3a
-      int screening = -1      ///<   0 = user provided, not screened
+      int presentation = -1,  ///<  0 = presentation allowed, 1 = presentation restricted, -1 = no octet3a
+      int screening = -1      ///<  0 = user provided, not screened, -1 = no octet3a
     );
     PBoolean GetCallingPartyNumber(
       PString & number,               ///<  Number string

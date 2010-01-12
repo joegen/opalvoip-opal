@@ -1295,6 +1295,12 @@ PString OpalConnection::GetLocalPartyURL() const
 }
 
 
+bool OpalConnection::IsPresentationBlocked() const
+{
+  return m_connStringOptions(OPAL_OPT_PRESENTATION_BLOCK) *= "true";
+}
+
+
 static PString MakeURL(const PString & prefix, const PString & partyName)
 {
   if (partyName.IsEmpty())

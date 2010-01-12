@@ -1913,7 +1913,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     return;
   }
 
-  AnsweringCall(OnAnswerCall(remotePartyAddress));
+  AnsweringCall(OnAnswerCall(GetRemotePartyURL()));
 }
 
 
@@ -2535,6 +2535,14 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
 
   if (m_needReINVITE)
     ++m_sdpVersion;
+
+  if (IsPresentationBlocked()) {
+    // Should do more as per RFC3323, but this is all for now
+    SIPURL from = mime.GetFrom();
+    if (!from.GetDisplayName(false).IsEmpty())
+      from.SetDisplayName("Anonymous");
+    mime.SetFrom(from.AsQuotedString());
+  }
 
   SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
   if (OnSendSDP(false, request.GetSessionManager(), *sdp) && !sdp->GetMediaDescriptions().IsEmpty())

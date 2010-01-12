@@ -244,11 +244,7 @@ class H323SignalPDU : public H225_H323_UserInformation
       */
     void SetQ931Fields(
       const H323Connection & connection,
-      PBoolean insertPartyNumbers = PFalse,
-      unsigned plan = 1,
-      unsigned type = 0,
-      int presentation = -1,
-      int screening = -1
+      bool insertPartyNumbers = false
     );
 
 #ifdef OPAL_H460
