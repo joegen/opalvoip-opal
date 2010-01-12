@@ -146,10 +146,13 @@
                     <label>H&amp;old</label>
                     <name>MenuHold</name>
                 </item>
-                <item>
-                    <label>Retrieve</label>
-                    <name>SubMenuRetrieve</name>
-                </item>
+                <menu name="SubMenuRetrieve" label="&amp;Retrieve">
+                  <item>
+                    <label>---</label>
+                    <id>---</id>
+                    <name>---</name>
+                  </item>
+                </menu>
                 <menu name="SubMenuTransfer" label="&amp;Transfer">
                     <item>
                         <label>Other ...</label>
