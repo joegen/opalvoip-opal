@@ -1031,6 +1031,9 @@ class OpalConnection : public PSafeObject
        Locates a stream given a media type. The source flag may be used to
        distinguish which stream durection to return.
 
+       If mediaType is empty (i.e. OpalMediaType()), then the first
+       source/sink stream of any type, session or id is returned.
+
        The previous parameter may be used to enumerate multiple stream of the
        same type and direction. If NULL then the first stream is returned.
       */
