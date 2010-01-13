@@ -411,8 +411,7 @@ void CallGen::Main()
     cout << "Total calls: " << totalAttempts
          << " attempted, " << totalEstablished << " established\n";
 
-  manager.ShutdownEndPoints();
-cout << "!!\n";
+  manager.ShutDownEndpoints();
 }
 
 
