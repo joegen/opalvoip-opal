@@ -891,6 +891,7 @@ class OpalConnection : public PSafeObject
        The default behaviour calls the OpalEndPoint function of the same name.
       */
     virtual void AdjustMediaFormats(
+      bool local,                          ///<  Media formats a local ones to be presented to remote
       OpalMediaFormatList & mediaFormats,  ///<  Media formats to use
       OpalConnection * otherConnection     ///<  Other connection we are adjusting media for
     ) const;
@@ -1744,6 +1745,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL_VOID(OnMediaPatchStart(unsigned, bool));
     P_REMOVE_VIRTUAL_VOID(OnMediaPatchStop(unsigned, bool));
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(OpalMediaFormatList &) const);
+    P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(OpalMediaFormatList, OpalConnection *) const);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H
