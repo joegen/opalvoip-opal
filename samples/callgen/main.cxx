@@ -54,12 +54,12 @@ void CallGen::Main()
              "D-disable:"
              "f-fast-disable."
              "g-gatekeeper:"
+             "G-discover-gatekeeper."
              "I-in-dir:"
              "-h323-interface:"
              "-sip-interface:"
              "l-listen."
              "m-max:"
-             "n-no-gatekeeper."
              "O-out-msg:"
              "o-output:"
              "P-prefer:"
@@ -99,8 +99,8 @@ void CallGen::Main()
             "  -S --stun server      Specify Host/addres of STUN server\n"
             "  --sip-interface addr  Specify IP address and port listen on for SIP [*:5060]\n"
             "  --h323-interface addr Specify IP address and port listen on for H.323 [*:1720]\n"
-            "  -g --gatekeeper host  Specify gatekeeper host [auto-discover]\n"
-            "  -n --no-gatekeeper    Disable gatekeeper discovery [false]\n"
+            "  -g --gatekeeper host  Specify gatekeeper host [no gatekeeper]\n"
+            "  -G --discover-gk      Discover gatekeeper automatically [false]\n"
             "  --require-gatekeeper  Exit if gatekeeper discovery fails [false]\n"
             "  -u --user username    Specify local username [login name]\n"
             "  -p --password pwd     Specify gatekeeper H.235 password [none]\n"
@@ -144,15 +144,15 @@ void CallGen::Main()
 
   quietMode = args.HasOption('q');
 
-  outgoingMessageFile = args.GetOptionString('O', "ogm.wav");
-  if (outgoingMessageFile.IsEmpty())
+  m_outgoingMessageFile.Parse(args.GetOptionString('O', "ogm.wav"), "file");
+  if (m_outgoingMessageFile.IsEmpty())
     cout << "Not using outgoing message file." << endl;
-  else if (PFile::Exists(outgoingMessageFile))
-    cout << "Using outgoing message file: " << outgoingMessageFile << endl;
+  else if (PFile::Exists(m_outgoingMessageFile.AsFilePath()))
+    cout << "Using outgoing message file: " << m_outgoingMessageFile << endl;
   else {
-    cout << "Outgoing message file  \"" << outgoingMessageFile << "\" does not exist!" << endl;
-    PTRACE(1, "CallGen\tOutgoing message file \"" << outgoingMessageFile << "\" does not exist");
-    outgoingMessageFile = PString::Empty();
+    cout << "Outgoing message file  \"" << m_outgoingMessageFile << "\" does not exist!" << endl;
+    PTRACE(1, "CallGen\tOutgoing message file \"" << m_outgoingMessageFile << "\" does not exist");
+    m_outgoingMessageFile = PString::Empty();
   }
 
   incomingAudioDirectory = args.GetOptionString('I');
@@ -199,31 +199,7 @@ void CallGen::Main()
 
 #if OPAL_IVR
   OpalIVREndPoint * ivr = new OpalIVREndPoint(manager);
-#if 0
-  PStringStream vxml;
-  vxml << "<?xml version=\"1.0\"?>"
-          "<vxml version=\"1.0\">"
-            "<form id=\"root\">"
-              "<break msecs=\"1500\"/>"
-              "<audio src=\"" + outgoingMessageFile + "\">"
-                "This is the OPAL call generator";
-
-  if (incomingAudioDirectory.IsEmpty())
-    vxml <<     "."
-              "</audio>"
-              "<break msecs=\"1000\"/>";
-  else
-    vxml <<     ", please speak after the tone."
-              "</audio>"
-              "<record name=\"msg\" beep=\"true\" dtmfterm=\"true\" dest=\"" + incomingAudioDirectory + "msg%05u.wav\" maxtime=\"10s\"/>";
-
-  vxml <<   "</form>"
-          "</vxml>";
-
-  ivr->SetDefaultVXML(vxml);
-#else
-  ivr->SetDefaultVXML("file://" + outgoingMessageFile);
-#endif
+  ivr->SetDefaultVXML("repeat=1000;"+m_outgoingMessageFile.AsString());
 #endif // OPAL_IVR
 
 
@@ -317,7 +293,7 @@ void CallGen::Main()
       return;
     }
   }
-  else if (!args.HasOption('n')) {
+  else if (args.HasOption('G')) {
     cout << "Searching for gatekeeper ..." << flush;
     if (!h323->UseGatekeeper()) {
       cout << "\nNo gatekeeper found." << endl;
@@ -377,12 +353,15 @@ void CallGen::Main()
       return;
     }
 
-    cout << "Endpoint starting " << simultaneous << " simultaneous call";
+    cout << "Maximum time between calls: " << params.tmin_wait << '-' << params.tmax_wait << "\n"
+            "Maximum total call duration: " << params.tmin_call << '-' << params.tmax_call << "\n"
+            "Maximum wait for establish: " << params.tmax_est << "\n"
+            "Endpoint starting " << simultaneous << " simultaneous call";
     if (simultaneous > 1)
       cout << 's';
     cout << ' ';
 
-    params.repeat = args.GetOptionString('r', "10").AsUnsigned();
+    params.repeat = args.GetOptionString('r', "1").AsUnsigned();
     if (params.repeat != 0)
       cout << params.repeat;
     else
@@ -431,6 +410,9 @@ void CallGen::Main()
   if (totalAttempts > 0)
     cout << "Total calls: " << totalAttempts
          << " attempted, " << totalEstablished << " established\n";
+
+  manager.ShutdownEndPoints();
+cout << "!!\n";
 }
 
 

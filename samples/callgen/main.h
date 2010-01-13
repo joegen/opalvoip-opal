@@ -122,7 +122,7 @@ class CallGen : public PProcess
     static CallGen & Current() { return (CallGen&)PProcess::Current(); }
 
     MyManager  manager;
-    PString    outgoingMessageFile;
+    PURL       m_outgoingMessageFile;
     PString    incomingAudioDirectory;
     PTextFile  cdrFile;
 
