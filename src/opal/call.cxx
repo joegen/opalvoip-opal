@@ -392,7 +392,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   PSafePtr<OpalConnection> otherConnection;
   while (EnumerateConnections(otherConnection, PSafeReadOnly, includeSpecifiedConnection ? NULL : &connection)) {
     OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(otherConnection->GetMediaFormats());
-    otherConnection->AdjustMediaFormats(possibleFormats, otherConnection);
+    connection.AdjustMediaFormats(true, possibleFormats, otherConnection);
     if (first) {
       commonFormats = possibleFormats;
       first = PFalse;
@@ -408,8 +408,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
     }
   }
 
-  commonFormats.Reorder(GetManager().GetMediaFormatOrder());
-  connection.AdjustMediaFormats(commonFormats, NULL);
+  connection.AdjustMediaFormats(true, commonFormats, NULL);
 
   PTRACE(4, "Call\tGetMediaFormats for " << connection << '\n'
          << setfill('\n') << commonFormats << setfill(' '));
@@ -487,8 +486,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     order += '@' + mediaType;        // And media of the same type
 
     OpalMediaFormatList sinkMediaFormats = otherConnection->GetMediaFormats();
-    otherConnection->AdjustMediaFormats(sinkMediaFormats, NULL);
-    connection.AdjustMediaFormats(sinkMediaFormats, otherConnection);
+    connection.AdjustMediaFormats(false, sinkMediaFormats, otherConnection);
     if (sinkMediaFormats.IsEmpty()) {
       PTRACE(2, "Call\tOpenSourceMediaStreams failed with no sink formats" << traceText);
       return false;
@@ -504,8 +502,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       sourceMediaFormats = sourceFormat; // Use the source format already established
     else {
       sourceMediaFormats = connection.GetMediaFormats();
-      connection.AdjustMediaFormats(sourceMediaFormats, NULL);
-      otherConnection->AdjustMediaFormats(sourceMediaFormats, &connection);
+      otherConnection->AdjustMediaFormats(false, sourceMediaFormats, &connection);
       if (sourceMediaFormats.IsEmpty()) {
         PTRACE(2, "Call\tOpenSourceMediaStreams failed with no source formats" << traceText);
         return false;

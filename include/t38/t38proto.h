@@ -207,7 +207,7 @@ class OpalFaxConnection : public OpalConnection
 
     virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
     virtual OpalMediaFormatList GetMediaFormats() const;
-    virtual void AdjustMediaFormats(OpalMediaFormatList & mediaFormats, OpalConnection * otherConnection) const;
+    virtual void AdjustMediaFormats(bool local, OpalMediaFormatList & mediaFormats, OpalConnection * otherConnection) const;
 
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for

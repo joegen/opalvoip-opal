@@ -751,10 +751,13 @@ OpalMediaFormatList OpalManager::GetCommonMediaFormats(bool transportable, bool 
 }
 
 
-void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
+void OpalManager::AdjustMediaFormats(bool local,
+                                     const OpalConnection & /*connection*/,
                                      OpalMediaFormatList & mediaFormats) const
 {
   mediaFormats.Remove(mediaFormatMask);
+  if (local)
+    mediaFormats.Reorder(mediaFormatOrder);
 }
 
 

@@ -613,6 +613,7 @@ class OpalManager : public PObject
        member variables to adjust the mediaFormats list.
       */
     virtual void AdjustMediaFormats(
+      bool local,                         ///<  Media formats a local ones to be presented to remote
       const OpalConnection & connection,  ///<  Connection that is about to use formats
       OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
@@ -1511,6 +1512,7 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
     P_REMOVE_VIRTUAL(PBoolean, OnStartMediaPatch(const OpalMediaPatch &), false);
+    P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(const OpalConnection &, OpalMediaFormatList &) const);
 };
 
 
