@@ -503,10 +503,11 @@ void OpalEndPoint::ClearAllCalls(OpalConnection::CallEndReason reason, PBoolean 
 }
 
 
-void OpalEndPoint::AdjustMediaFormats(const OpalConnection & connection,
+void OpalEndPoint::AdjustMediaFormats(bool local,
+                                      const OpalConnection & connection,
                                       OpalMediaFormatList & mediaFormats) const
 {
-  manager.AdjustMediaFormats(connection, mediaFormats);
+  manager.AdjustMediaFormats(local, connection, mediaFormats);
 }
 
 

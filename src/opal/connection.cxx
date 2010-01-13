@@ -603,11 +603,13 @@ void OpalConnection::OnEstablished()
 }
 
 
-void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats, OpalConnection * otherConnection) const
+void OpalConnection::AdjustMediaFormats(bool local, OpalMediaFormatList & mediaFormats, OpalConnection * otherConnection) const
 {
-  if (otherConnection == NULL) {
+  if (otherConnection != NULL && otherConnection != this)
+    otherConnection->AdjustMediaFormats(local, mediaFormats, NULL);
+  else {
     mediaFormats.Remove(m_connStringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
-    endpoint.AdjustMediaFormats(*this, mediaFormats);
+    endpoint.AdjustMediaFormats(local, *this, mediaFormats);
   }
 }
 
