@@ -394,8 +394,14 @@ PBoolean OpalMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX &
 
 PBoolean OpalMediaStream::PushPacket(RTP_DataFrame & packet)
 {
-  PSafeLockReadOnly safeLock(*this);
-  return safeLock.IsLocked() && mediaPatch != NULL && mediaPatch->PushFrame(packet);
+  OpalMediaPatch * patch = NULL;
+  if (LockReadOnly()) {
+    patch = mediaPatch;
+    UnlockReadOnly();
+  }
+
+  // OpalMediaPatch::PushFrame() might block, do outside of mutex
+  return patch != NULL && patch->PushFrame(packet);
 }
 
 
@@ -719,6 +725,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   if (paused || packet.GetPayloadSize() == 0)
     return true;
 
+  packet.SetPayloadType(mediaFormat.GetPayloadType());
   return rtpSession.WriteData(packet);
 }
 

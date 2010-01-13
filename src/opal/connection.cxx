@@ -1025,7 +1025,7 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(const OpalMediaType & mediaTyp
     ++mediaStream;
 
   while (mediaStream != NULL) {
-    if (mediaStream->GetMediaFormat().GetMediaType() == mediaType && mediaStream->IsSource() == source)
+    if ((mediaType.empty() || mediaStream->GetMediaFormat().GetMediaType() == mediaType) && mediaStream->IsSource() == source)
       return mediaStream;
     ++mediaStream;
   }

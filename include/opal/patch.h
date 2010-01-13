@@ -198,7 +198,34 @@ class OpalMediaPatch : public PObject
       PBoolean fromSink                 ///<  Flag for source or sink
     );
 
-    virtual PBoolean PushFrame(RTP_DataFrame & /*frame*/) { return PFalse; };
+    /**Push a frame out to all the sink streams, transcoding as necessary.
+      */
+    virtual PBoolean PushFrame(
+      RTP_DataFrame & frame   ///< Frame to push
+    );
+
+    /**Set bypass patch instance.
+
+       This can be useful for back to back calls that happen to be the same
+       media format and you wish to avoid double decoding and encoding of
+       media. Note this scenario is not the same as two OpalConnections within
+       the same OpalCall, but two completely independent OpalCall where one
+       connection is to be bypassed. For example, two OpalCall instances might
+       have two SIPConnection instances and two OpalMixerConnection instances
+       connected via a single OpalMixerNode. Now while there are ONLY two
+       calls in the node, it is a waste to decode the audio, add to mixer and
+       re-encode it again. In practice this is identical to just bypassing the
+       mixer node completely, until a third party is added, then we need to
+       switch back to normal (non-bypassed) operation.
+
+       Note it is up to the caller to assure the patch instance lifetimes are
+       correct for the bypass.
+
+       @return true if bypass was set, false if conflict with another bypass.
+      */
+    bool SetBypassPatch(
+      OpalMediaPatch * patch
+    );
 
     /**Get the transcoder used within a sink stream
       */
@@ -255,7 +282,11 @@ class OpalMediaPatch : public PObject
         OpalMediaFormat stage;
     };
     PList<Filter> filters;
-        
+
+    OpalMediaPatch * m_bypassToPatch;
+    OpalMediaPatch * m_bypassFromPatch;
+    PSyncPoint       m_bypassEnded;
+
     class Thread : public PThread {
         PCLASSINFO(Thread, PThread);
       public:
@@ -289,7 +320,6 @@ class OpalPassiveMediaPatch : public OpalMediaPatch
     );
 
     virtual void Start();
-    virtual PBoolean PushFrame(RTP_DataFrame & frame);
 };
 
 

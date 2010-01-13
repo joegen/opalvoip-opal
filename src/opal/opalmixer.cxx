@@ -917,6 +917,13 @@ OpalMediaStream * OpalMixerConnection::CreateMediaStream(const OpalMediaFormat &
 }
 
 
+void OpalMixerConnection::OnStartMediaPatch(OpalMediaPatch & patch)
+{
+  OpalLocalConnection::OnStartMediaPatch(patch);
+  m_node->UseMediaBypass(patch.GetSource().GetSessionID());
+}
+
+
 void OpalMixerConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
 {
   if (stringOptions.Contains(ListenOnlyStringOption))
@@ -1130,13 +1137,22 @@ void OpalMixerNode::RemoveName(const PString & name)
 
 void OpalMixerNode::AttachConnection(OpalConnection * connection)
 {
+  if (PAssertNULL(connection) == NULL)
+    return;
+
   m_connections.Append(connection);
+
+  UseMediaBypass(0);
 }
 
 
 void OpalMixerNode::DetachConnection(OpalConnection * connection)
 {
-  m_connections.Remove(connection);
+  if (PAssertNULL(connection) == NULL)
+    return;
+
+  if (m_connections.Remove(connection))
+    UseMediaBypass(0, connection);
 }
 
 
@@ -1187,6 +1203,40 @@ void OpalMixerNode::DetachStream(OpalMixerMediaStream * stream)
     m_audioMixer.m_outputStreams.Remove(stream);
   else
     m_audioMixer.RemoveStream(stream->GetID());
+}
+
+
+void OpalMixerNode::UseMediaBypass(unsigned sessionID, OpalConnection * connection)
+{
+  if (m_info->m_noMediaBypass)
+    return;
+
+  PSafePtr<OpalConnection> other2;
+
+  if (connection != NULL && m_connections.GetSize() == 1)
+    other2 = connection->GetOtherPartyConnection();
+  else {
+    if (m_connections.GetSize() < 2)
+      return;
+
+    PSafePtr<OpalConnection> connection2 = m_connections.GetAt(1);
+    if (connection2 == NULL)
+      return;
+
+    other2 = connection2->GetOtherPartyConnection();
+  }
+  if (other2 == NULL)
+    return;
+
+  PSafePtr<OpalConnection> connection1 = m_connections.GetAt(0);
+  if (connection1 == NULL)
+    return;
+
+  PSafePtr<OpalConnection> other1 = connection1->GetOtherPartyConnection();
+  if (other1 == NULL)
+    return;
+
+  OpalManager::SetMediaBypass(*other1, *other2, m_connections.GetSize() == 2, sessionID);
 }
 
 

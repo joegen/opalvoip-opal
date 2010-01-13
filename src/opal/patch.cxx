@@ -52,10 +52,12 @@
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
-: source(src)
+  : source(src)
+  , m_bypassToPatch(NULL)
+  , m_bypassFromPatch(NULL)
+  , patchThread(NULL)
 {
   src.SetPatch(this);
-  patchThread = NULL;
   PTRACE(5, "Patch\tCreated media patch " << this);
 }
 
@@ -75,7 +77,7 @@ OpalMediaPatch::~OpalMediaPatch()
 
 void OpalMediaPatch::PrintOn(ostream & strm) const
 {
-  strm << "Patch " << source;
+  strm << "Patch[" << this << "] " << source;
 
   inUse.StartRead();
 
@@ -115,6 +117,12 @@ void OpalMediaPatch::Close()
   PTRACE(3, "Patch\tClosing media patch " << *this);
 
   inUse.StartWrite();
+
+  if (m_bypassFromPatch != NULL)
+    m_bypassFromPatch->SetBypassPatch(NULL);
+  else
+    SetBypassPatch(NULL);
+
   filters.RemoveAll();
   if (source.GetPatch() == this)
     source.Close();
@@ -140,7 +148,7 @@ void OpalMediaPatch::Close()
       return;
     }
   }
-  
+
   inUse.EndWrite();
 }
 
@@ -261,6 +269,9 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
       break;
     }
   }
+
+  if (m_bypassFromPatch != NULL && sinks.IsEmpty())
+    m_bypassFromPatch->SetBypassPatch(NULL);
 
   inUse.EndWrite();
 }
@@ -516,7 +527,7 @@ void OpalMediaPatch::Main()
     inUse.EndRead();
 
     if (!written) {
-      PTRACE(4, "Patch\tThread ended because all sink writes failed failed");
+      PTRACE(4, "Patch\tThread ended because all sink writes failed");
       break;
     }
  
@@ -540,16 +551,69 @@ void OpalMediaPatch::Main()
 }
 
 
+bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
+{
+  PTRACE(4, "Patch\tSetting media patch bypass to " << patch << " on " << *this);
+
+  PWriteWaitAndSignal mutex(inUse);
+
+  if (!PAssert(m_bypassFromPatch == NULL, PLogicError))
+    return false; // Can't be both!
+
+  if (m_bypassToPatch == patch)
+    return true; // Already set
+
+  if (m_bypassToPatch != NULL) {
+    if (!PAssert(m_bypassToPatch->m_bypassFromPatch == this, PLogicError))
+      return false;
+
+    m_bypassToPatch->m_bypassFromPatch = NULL;
+    m_bypassToPatch->m_bypassEnded.Signal();
+  }
+
+  if (patch != NULL) {
+    if (!PAssert(patch->m_bypassFromPatch == NULL, PLogicError))
+      return false;
+
+    patch->m_bypassFromPatch = this;
+  }
+
+  m_bypassToPatch = patch;
+  return true;
+}
+
+
+PBoolean OpalMediaPatch::PushFrame(RTP_DataFrame & frame)
+{
+  PReadWaitAndSignal mutex(inUse);
+  return DispatchFrame(frame);
+}
+
+
 bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 {
+  if (m_bypassFromPatch != NULL) {
+    PTRACE(3, "Patch\tMedia patch bypass started by " << m_bypassFromPatch << " on " << *this);
+    inUse.EndRead();
+    m_bypassEnded.Wait();
+    PTRACE(4, "Patch\tMedia patch bypass ended on " << *this);
+    inUse.StartRead();
+    return true;
+  }
+
   FilterFrame(frame, source.GetMediaFormat());    
 
   bool written = false;
-  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
-    if (s->WriteFrame(frame))
-      written = true;
-    else {
-      PTRACE(2, "Patch\tWriteFrame failed");
+  if (m_bypassToPatch != NULL) {
+    for (PList<Sink>::iterator s = m_bypassToPatch->sinks.begin(); s != m_bypassToPatch->sinks.end(); ++s) {
+      if (s->stream->WritePacket(frame))
+        written = true;
+    }
+  }
+  else {
+    for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
+      if (s->WriteFrame(frame))
+        written = true;
     }
   }
 
@@ -796,12 +860,4 @@ void OpalPassiveMediaPatch::Start()
 {
   OnStartMediaPatch();
 }
-
-
-PBoolean OpalPassiveMediaPatch::PushFrame(RTP_DataFrame & frame)
-{
-  PReadWaitAndSignal mutex(inUse);
-  return DispatchFrame(frame);
-}
-
 
