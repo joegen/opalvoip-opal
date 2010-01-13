@@ -802,6 +802,89 @@ bool OpalManager::OnLocalRTP(OpalConnection & PTRACE_PARAM(connection1),
 }
 
 
+static bool BypassOne(OpalMediaStreamPtr source,
+                      OpalMediaStreamPtr sink,
+                      bool bypass)
+{
+  OpalMediaPatch * sourcePatch = source != NULL ? source->GetPatch() : NULL;
+  OpalMediaPatch * sinkPatch = sink != NULL ? sink->GetPatch() : NULL;
+  if (sourcePatch == NULL || sinkPatch == NULL) {
+    PTRACE(2, "OpalMan\tSetMediaBypass could not complete as one patch does not exist");
+    return false;
+  }
+
+  if (source->GetMediaFormat() != sink->GetMediaFormat()) {
+    PTRACE(3, "OpalMan\tSetMediaBypass could not complete as different formats: "
+           << source->GetMediaFormat() << "!=" << sink->GetMediaFormat());
+    return false;
+  }
+
+  // Note SetBypassPatch() will do PTRACE() on status.
+  return sourcePatch->SetBypassPatch(bypass ? sinkPatch : NULL);
+}
+
+
+bool OpalManager::SetMediaBypass(OpalConnection & connection1,
+                                 OpalConnection & connection2,
+                                 bool bypass,
+                                 unsigned sessionID)
+{
+  bool gotOne = false;
+
+  if (sessionID != 0) {
+    // Do not use || as McCarthy will not execute the second bypass
+    if (BypassOne(connection1.GetMediaStream(sessionID, true), connection2.GetMediaStream(sessionID, false), bypass))
+      gotOne = true;
+    if (BypassOne(connection2.GetMediaStream(sessionID, true), connection1.GetMediaStream(sessionID, false), bypass))
+      gotOne = true;
+  }
+  else {
+    OpalMediaStreamPtr stream;
+    while ((stream = connection1.GetMediaStream(OpalMediaType(), true , stream)) != NULL) {
+      if (BypassOne(stream, connection2.GetMediaStream(stream->GetSessionID(), false), bypass))
+        gotOne = true;
+    }
+    while ((stream = connection2.GetMediaStream(OpalMediaType(), true, stream)) != NULL) {
+      if (BypassOne(stream, connection1.GetMediaStream(stream->GetSessionID(), false), bypass))
+        gotOne = true;
+    }
+  }
+
+  return gotOne;
+}
+
+
+bool OpalManager::SetMediaBypass(const PString & token1,
+                                 const PString & token2,
+                                 bool bypass,
+                                 unsigned sessionID,
+                                 bool network)
+{
+  PSafePtr<OpalCall> call1 = FindCallWithLock(token1);
+  PSafePtr<OpalCall> call2 = FindCallWithLock(token2);
+
+  if (call1 == NULL || call2 == NULL) {
+    PTRACE(2, "OpalMan\tSetMediaBypass could not complete as one call does not exist");
+    return false;
+  }
+
+  PSafePtr<OpalConnection> connection1 = call1->GetConnection(0, PSafeReadOnly);
+  while (connection1 != NULL && connection1->IsNetworkConnection() == network)
+    ++connection1;
+
+  PSafePtr<OpalConnection> connection2 = call2->GetConnection(0, PSafeReadOnly);
+  while (connection2 != NULL && connection2->IsNetworkConnection() == network)
+    ++connection2;
+
+  if (connection1 == NULL || connection2 == NULL) {
+    PTRACE(2, "OpalMan\tSetMediaBypass could not complete as network connection not present in calls");
+    return false;
+  }
+
+  return OpalManager::SetMediaBypass(*connection1, *connection2, sessionID, bypass);
+}
+
+
 void OpalManager::OnClosedMediaStream(const OpalMediaStream & /*channel*/)
 {
 }

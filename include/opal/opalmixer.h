@@ -367,6 +367,10 @@ class OpalVideoMixer : public OpalBaseMixer
 ///////////////////////////////////////////////////////////////////////////////
 
 
+/**Base class for OpalMixerNode options.
+   The user may derive from this class, making sure they implement the Clone()
+   funciton, to add extra options for use by their OpalMixerNode derived class.
+  */
 struct OpalMixerNodeInfo
 {
   OpalMixerNodeInfo()
@@ -379,22 +383,25 @@ struct OpalMixerNodeInfo
     , m_height(PVideoFrameInfo::CIFHeight)
     , m_rate(15)
 #endif
+    , m_noMediaBypass(false)
   { }
 
   virtual ~OpalMixerNodeInfo() { }
 
   virtual OpalMixerNodeInfo * Clone() const { return new OpalMixerNodeInfo(*this); }
 
-  PString  m_name;
-  bool     m_listenOnly;
-  unsigned m_sampleRate;
+  PString  m_name;                ///< Name for mixer node.
+  bool     m_listenOnly;          ///< Mixer only transmits data to "listeners"
+  unsigned m_sampleRate;          ///< Audio sample rate, usually 8000
 #if OPAL_VIDEO
-  bool     m_audioOnly;
-  OpalVideoMixer::Styles m_style;
-  unsigned m_width;
-  unsigned m_height;
-  unsigned m_rate;
+  bool     m_audioOnly;           ///< No video is to be allowed.
+  OpalVideoMixer::Styles m_style; ///< Method for mixing video
+  unsigned m_width;               ///< Width of mixed video
+  unsigned m_height;              ///< Height of mixed video
+  unsigned m_rate;                ///< Frame rate of mixed video
 #endif
+  bool     m_noMediaBypass;       /**< Disable media bypass to optimise mixer node
+                                       with precisely two attached connections. */
 };
 
 
@@ -778,6 +785,12 @@ class OpalMixerConnection : public OpalLocalConnection
       PBoolean isSource                    ///<  Is a source stream
     );
 
+    /**Call back when media stream patch thread starts.
+      */
+    virtual void OnStartMediaPatch(
+      OpalMediaPatch & patch    ///< Patch being started
+    );
+
     virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
   //@}
 
@@ -946,6 +959,13 @@ class OpalMixerNode : public PSafeObject
       OpalMixerMediaStream * stream     ///< Stream to detach
     );
 
+    /**Use media bypass if applicable.
+      */
+    void UseMediaBypass(
+      unsigned sessionID,                 ///< Session ID to bypass, 0 indicates all
+      OpalConnection * connection = NULL  ///< Just deleted connection
+    );
+
     /**Write data to mixer.
       */
     bool WriteAudio(
@@ -1009,10 +1029,10 @@ class OpalMixerNode : public PSafeObject
 
   protected:
     OpalMixerNodeManager & m_manager;
-    PGloballyUniqueID   m_guid;
-    PStringList         m_names;
-    OpalMixerNodeInfo * m_info;
-    PTime               m_creationTime;
+    PGloballyUniqueID      m_guid;
+    PStringList            m_names;
+    OpalMixerNodeInfo    * m_info;
+    PTime                  m_creationTime;
 
     PSafeList<OpalConnection> m_connections;
 

@@ -673,12 +673,16 @@ class OpalManager : public PObject
        detected that media will be flowing between two RTP sessions within the
        same process. An application could take advantage of this by optimising
        the transfer in some way, rather than the full media path of codecs and
-       sockets whcih might not be necessary.
+       sockets which might not be necessary.
 
-       The return value is true if teh application is going to execute some
-       form of bypass, and the media patch threads should not be started.
+       Note this is the complement to SetMediaBypass() as this function stops
+       RTP data from being sent/received, while SetMediaBypass() transfers
+       RTP data between the two endpoints.
 
        The default behaviour returns false.
+
+       @return true if the application is going to execute some form of
+               bypass, and the media patch threads should not be started.
       */
     virtual bool OnLocalRTP(
       OpalConnection & connection1, ///< First connection
@@ -686,6 +690,45 @@ class OpalManager : public PObject
       unsigned sessionID,           ///< Session ID of RTP session
       bool opened                   ///< Media streams are opened/closed
     ) const;
+
+    /**Set bypass mode for media.
+
+       Bypass the internal media handling, passing RTP data directly from
+       one call/connection to another.
+
+       This can be useful for back to back calls that happen to be the same
+       media format and you wish to avoid double decoding and encoding of
+       media. Note this scenario is not the same as two OpalConnections within
+       the same OpalCall, but two completely independent OpalCall where one
+       connection is to be bypassed. For example, two OpalCall instances might
+       have two SIPConnection instances and two OpalMixerConnection instances
+       connected via a single OpalMixerNode. Now while there are ONLY two
+       calls in the node, it is a waste to decode the audio, add to mixer and
+       re-encode it again. In practice this is identical to just bypassing the
+       mixer node completely, until a third party is added, then we need to
+       switch back to normal (non-bypassed) operation.
+
+       Note this is the complement to OnLocalRTP() as this function transfers
+       RTP data directly between the two endpoints, while OnLocalRTP() stops
+       the RTP data from being sent/received.
+
+       @return true if bypass is started/stopped, false if there was no such
+               call/connection/stream, the streams are incompatible formats
+               or a conflicting bypass is already in place.
+      */
+    bool SetMediaBypass(
+      const PString & token1, ///< First calls token
+      const PString & token2, ///< Second calls token
+      bool bypass,            ///< Bypass the media
+      unsigned sessionID = 0, ///< Session ID of media stream, 0 indicates all
+      bool network  = true    ///< Bypass the network connections of the calls
+    );
+    static bool SetMediaBypass(
+      OpalConnection & connection1, ///< First connection
+      OpalConnection & connection2, ///< Second connection
+      bool bypass,                  ///< Bypass the media
+      unsigned sessionID = 0        ///< Session ID of media stream, 0 indicates all
+    );
 
     /**Call back for closed a media stream.
 
