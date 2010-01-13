@@ -529,7 +529,8 @@ void SIPURL::Sanitise(UsageContext context)
 
     case ToURI :
     case FromURI :
-      port = (scheme *= "sips") ? 5061 : 5060;
+      if (!GetPortSupplied())
+        port = (scheme *= "sips") ? 5061 : 5060;
       break;
 
     case RegisterURI :
