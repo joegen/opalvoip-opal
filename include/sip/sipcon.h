@@ -342,6 +342,13 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual void OnReceivedNOTIFY(SIP_PDU & pdu);
 
+    /**Callback function on receipt of an allowed NOTIFY message.
+       Allowed events are determined by the m_allowedEvents member variable.
+      */
+    virtual void OnAllowedEventNotify(
+      const PString & eventName  ///< Name of event
+    );
+
     /**Handle an incoming REFER PDU
       */
     virtual void OnReceivedREFER(SIP_PDU & pdu);
@@ -480,6 +487,7 @@ class SIPConnection : public OpalRTPConnection
     PString GetLocalPartyURL() const;
 
   protected:
+    PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);
 
@@ -539,6 +547,7 @@ class SIPConnection : public OpalRTPConnection
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
     bool                  deleteTransport;
+    PStringList           m_allowedEvents;
 
     enum HoldState {
       eHoldOff,
@@ -565,6 +574,7 @@ class SIPConnection : public OpalRTPConnection
     PString               m_alertInfo;
     SIPAuthentication   * m_authentication;
     unsigned              m_authenticatedCseq;
+    PTimer                sessionTimer;
 
     std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
 
@@ -590,14 +600,6 @@ class SIPConnection : public OpalRTPConnection
 
     OpalMediaFormatList m_remoteFormatList;
     void SetRemoteMediaFormats(SDPSessionDescription & sdp);
-
-  protected:
-    PTimer sessionTimer;
-    PStringList m_allowedEvents;
-
-  public:
-    void OnAllowedEventNotify(const PString & eventName);
-    PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
 
   private:
     P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));
