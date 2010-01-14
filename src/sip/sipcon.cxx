@@ -1958,12 +1958,17 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
       OnHold(true, false);
     }
   }
-  
+
+  OpalMediaFormatList oldRemoteFormatList = m_remoteFormatList;
+  m_remoteFormatList.RemoveAll();
+
   // send the 200 OK response
   if (OnSendSDP(true, m_rtpSessions, sdpOut))
     SendInviteOK(sdpOut);
   else
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
+
+  m_remoteFormatList = oldRemoteFormatList;
 }
 
 
