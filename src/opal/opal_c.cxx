@@ -988,23 +988,39 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (!IsNullString(command.m_param.m_general.m_mediaMask))
     SetMediaFormatMask(PString(command.m_param.m_general.m_mediaMask).Lines());
 
-  strm = "audio";
-#if OPAL_VIDEO
-  if (CanAutoStartReceiveVideo())
-    strm << " video";
-  if (!IsNullString(command.m_param.m_general.m_autoRxMedia))
-    SetAutoStartReceiveVideo(strstr(command.m_param.m_general.m_autoRxMedia, "video") != NULL);
-#endif
-  SET_MESSAGE_STRING(response, m_param.m_general.m_autoRxMedia, strm);
+  OpalMediaTypeFactory::KeyList_T allMediaTypes = OpalMediaType::GetList();
 
-  strm = "audio";
-#if OPAL_VIDEO
-  if (CanAutoStartTransmitVideo())
-    strm << " video";
-  if (!IsNullString(command.m_param.m_general.m_autoTxMedia))
-    SetAutoStartTransmitVideo(strstr(command.m_param.m_general.m_autoTxMedia, "video") != NULL);
-#endif
-  SET_MESSAGE_STRING(response, m_param.m_general.m_autoTxMedia, strm);
+  for (OpalMediaType::AutoStartMode autoStart = OpalMediaType::Receive; autoStart < OpalMediaType::ReceiveTransmit; ++autoStart) {
+    strm.MakeEmpty();
+
+    OpalMediaTypeFactory::KeyList_T::iterator iterMediaType;
+    for (iterMediaType = allMediaTypes.begin(); iterMediaType != allMediaTypes.end(); ++iterMediaType) {
+      OpalMediaTypeDefinition * definition = OpalMediaType::GetDefinition(*iterMediaType);
+      if ((definition->GetAutoStart()&autoStart) != 0) {
+        if (!strm.IsEmpty())
+          strm << ' ';
+        strm << *iterMediaType;
+        definition->SetAutoStart(autoStart, false);
+      }
+    }
+
+    PString autoXxMedia;
+    if (autoStart == OpalMediaType::Receive) {
+      SET_MESSAGE_STRING(response, m_param.m_general.m_autoRxMedia, strm);
+      autoXxMedia = command.m_param.m_general.m_autoRxMedia;
+    }
+    else {
+      SET_MESSAGE_STRING(response, m_param.m_general.m_autoTxMedia, strm);
+      autoXxMedia = command.m_param.m_general.m_autoTxMedia;
+    }
+
+    PStringArray enabledMediaTypes = autoXxMedia.Tokenise(" \t\n", false);
+    for (PINDEX i = 0; i < enabledMediaTypes.GetSize(); ++i) {
+      OpalMediaTypeDefinition * definition = OpalMediaType::GetDefinition(enabledMediaTypes[0]);
+      if (definition != NULL)
+        definition->SetAutoStart(autoStart, true);
+    }
+  }
 
   SET_MESSAGE_STRING(response, m_param.m_general.m_natRouter, GetTranslationHost());
   if (!IsNullString(command.m_param.m_general.m_natRouter)) {
