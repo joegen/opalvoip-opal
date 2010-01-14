@@ -2638,7 +2638,7 @@ H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
   requireH235 = PFalse;
   disengageOnHearbeatFail = PTrue;
 
-  identifierBase = time(NULL);
+  identifierBase = PTime().GetTimeInSeconds();
   nextIdentifier = 1;
 
   peakRegistrations = 0;

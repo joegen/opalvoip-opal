@@ -1419,7 +1419,7 @@ static int PlugInLogFunction(unsigned level,
 
 
 bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
-                                            time_t timeNow,
+                                            const PTime & timeNow,
                                             const PluginCodec_Definition * codecDefn,
                                             const char * fmtName)
 {
@@ -1428,8 +1428,8 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
 
   // deal with codec having no info, or timestamp in future
   time_t timeStamp;
-  if (codecDefn->info == NULL || (timeStamp = codecDefn->info->timestamp) > timeNow)
-    timeStamp = timeNow;
+  if (codecDefn->info == NULL || (timeStamp = codecDefn->info->timestamp) > timeNow.GetTimeInSeconds())
+    timeStamp = timeNow.GetTimeInSeconds();
 
   if (existingFormat.IsTransportable() && existingFormat.GetCodecVersionTime() > timeStamp) {
     PTRACE(2, "OpalPlugin\tNewer media format " << existingFormat << " already exists");
@@ -1520,7 +1520,7 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
 void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const PluginCodec_Definition * codecDefn, OpalPluginCodecHandler * handler)
 {
   // make sure all non-timestamped codecs have the same concept of "now"
-  static time_t timeNow = ::time(NULL);
+  static PTime timeNow;
 
   // Make sure raw codecs are instantiated
   GetOpalPCM16();
