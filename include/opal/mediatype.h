@@ -88,13 +88,21 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
 #endif  // OPAL_SIP
 
     enum AutoStartMode {
-      DontOffer = -1, // Do not change order of enum as useful for bitmasking rx/tx
+      // Do not change order of enum as useful for bitmasking rx/tx
       OfferInactive,
       Receive,
       Transmit,
       ReceiveTransmit,
+      DontOffer,
+
       TransmitReceive = ReceiveTransmit
     };
+
+    __inline friend AutoStartMode operator++(AutoStartMode & mode)                 { return (mode = (AutoStartMode)(mode+1)); }
+    __inline friend AutoStartMode operator--(AutoStartMode & mode)                 { return (mode = (AutoStartMode)(mode-1)); }
+    __inline friend AutoStartMode operator|=(AutoStartMode & m1, AutoStartMode m2) { return (m1 = (AutoStartMode)((m1 & ~DontOffer) | m2)); }
+    __inline friend AutoStartMode operator-=(AutoStartMode & m1, AutoStartMode m2) { return (m1 = (AutoStartMode)((int)m1 & ~((int)m2|DontOffer))); }
+
     AutoStartMode GetAutoStart() const;
 };
 
@@ -143,6 +151,7 @@ class OpalMediaTypeDefinition
     /** Set flag for media type can auto-start receive on call initiation.
       */
     void SetAutoStart(OpalMediaType::AutoStartMode v) { m_autoStart = v; }
+    void SetAutoStart(OpalMediaType::AutoStartMode v, bool on) { if (on) m_autoStart |= v; else m_autoStart -= v; }
 
     /** Indicate type uses RTP for transport.
         If false, then it uses a generic OpaMediaSession
