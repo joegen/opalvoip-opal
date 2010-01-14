@@ -367,7 +367,7 @@ H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken()
   clearToken.m_password = GetUCS2plusNULL(password);
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_timeStamp);
-  clearToken.m_timeStamp = (int)time(NULL);
+  clearToken.m_timeStamp = (int)PTime().GetTimeInSeconds();
 
   // Encode it into PER
   PPER_Stream strm;
@@ -523,7 +523,7 @@ H235_ClearToken * H235AuthCAT::CreateClearToken()
   clearToken->m_generalID = GetUCS2plusNULL(localId);
 
   clearToken->IncludeOptionalField(H235_ClearToken::e_timeStamp);
-  clearToken->m_timeStamp = (int)time(NULL);
+  clearToken->m_timeStamp = (int)PTime().GetTimeInSeconds();
   PUInt32b timeStamp = (DWORD)clearToken->m_timeStamp;
 
   clearToken->IncludeOptionalField(H235_ClearToken::e_random);

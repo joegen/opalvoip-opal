@@ -141,7 +141,7 @@ class OpalPluginCodecManager : public PPluginModuleManager
     void RegisterCodecPlugins  (unsigned int count, const PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
     void UnregisterCodecPlugins(unsigned int count, const PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
 
-    bool AddMediaFormat(OpalPluginCodecHandler * handler, time_t timeNow, const PluginCodec_Definition * codecDefn, const char * fmtName);
+    bool AddMediaFormat(OpalPluginCodecHandler * handler, const PTime & timeNow, const PluginCodec_Definition * codecDefn, const char * fmtName);
 #if OPAL_H323
     void RegisterCapability(const PluginCodec_Definition * codecDefn);
 #endif
