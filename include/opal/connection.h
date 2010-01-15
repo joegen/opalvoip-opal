@@ -1748,7 +1748,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL_VOID(OnMediaPatchStart(unsigned, bool));
     P_REMOVE_VIRTUAL_VOID(OnMediaPatchStop(unsigned, bool));
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(OpalMediaFormatList &) const);
-    P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(OpalMediaFormatList, OpalConnection *) const);
+    P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(OpalMediaFormatList &, OpalConnection *) const);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H
