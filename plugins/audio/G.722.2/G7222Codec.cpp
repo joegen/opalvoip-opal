@@ -379,8 +379,16 @@ static int AMRWBDecode (const struct PluginCodec_Definition * codec,
 // H.245 generic parameters; see G.722.2
 enum
 {
-  AMRWB_MAXAL_SDUFRAMES = 0 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC,
-  AMRWB_OCTETALIGN      = 2 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC
+    H245_G7222_MAXAL_SDUFRAMES_RX = 0 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS,
+    H245_G7222_MAXAL_SDUFRAMES_TX = 0 | PluginCodec_H245_Collapsing   | PluginCodec_H245_OLC,
+    H245_G7222_REQUEST_MODE       = 1 | PluginCodec_H245_NonCollapsing| PluginCodec_H245_ReqMode,
+    H245_G7222_OCTET_ALIGNED      = 2 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    H245_G7222_MODE_SET           = 3 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    H245_G7222_MODE_CHANGE_PERIOD = 4 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    H245_G7222_MODE_CHANGE_NEIGHBOUR=5| PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    H245_G7222_CRC                = 6 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    H245_G7222_ROBUST_SORTING     = 7 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    H245_G7222_INTERLEAVING       = 8 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
 };
 
 // limit frames per packet to 1
@@ -389,39 +397,153 @@ static struct PluginCodec_Option const AMRWBOptionRxFramesPerPacket =
 {
   PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
   PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET,     // Generic (human readable) option name
-  0,                          // Read Only flag
-  PluginCodec_MinMerge,       // Merge mode
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
   "1",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
-  AMRWB_MAXAL_SDUFRAMES,      // H.245 Generic Capability number and scope bits
-  "1",                        // Minimum value
+  H245_G7222_MAXAL_SDUFRAMES_RX,      // H.245 generic capability code and bit mask
+  "1",                                // Minimum value
   "1"                         // Maximum value    // Do not change!! See above.
 };
 
+static struct PluginCodec_Option const AMRWBOptionTxFramesPerPacket =
+{
+  PluginCodec_IntegerOption,          // Option type
+  PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET, // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "1",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H245_G7222_MAXAL_SDUFRAMES_TX,      // H.245 generic capability code and bit mask
+  "1",                                // Minimum value
+  "1"                                 // Maximum value
+};
 
 // this is here so FMTP always adds 'octet-align=1'
 // this option is indicated in fmtp by its presence
 
 static struct PluginCodec_Option const AMRWBOptionOctetAlign =
 {
-  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
-  "Octet alignment",          // Generic (human readable) option name
-  true,                       // Read Only flag
-  PluginCodec_MinMerge,       // Merge mode
-  "1",                        // Initial value
-  "octet-align",              // SIP/SDP FMTP name
-  "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
-  AMRWB_OCTETALIGN,           // H.245 Generic Capability number and scope bits
-  "1",                        // Minimum value
-  "1"                         // Maximum value
+  PluginCodec_BoolOption,             // Option type
+  "Octet Aligned",                    // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_EqualMerge,             // Merge mode
+  "1",                                // Initial value
+  "octet-align",                      // FMTP option name
+  NULL,                               // FMTP default value
+  H245_G7222_OCTET_ALIGNED            // H.245 generic capability code and bit mask
 };
 
-
-static struct PluginCodec_Option const * const AMRWBOptionTable[] =
+static struct PluginCodec_Option const ModeSetG7222 =
 {
+  PluginCodec_IntegerOption,          // Option type
+  "Mode Set",                         // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_EqualMerge,             // Merge mode
+  "0x1ff",                            // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H245_G7222_MODE_SET                 // H.245 generic capability code and bit mask
+};
+
+static struct PluginCodec_Option const ModeChangePeriodG7222 =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "Mode Change Period",               // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H245_G7222_MODE_CHANGE_PERIOD,      // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "1000"                              // Maximum value
+};
+
+static struct PluginCodec_Option const ModeChangeNeighbourG7222 =
+{
+  PluginCodec_BoolOption,             // Option type
+  "Mode Change Neighbour",            // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_AndMerge,               // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H245_G7222_MODE_CHANGE_NEIGHBOUR    // H.245 generic capability code and bit mask
+};
+
+static struct PluginCodec_Option const CRC_G7222 =
+{
+  PluginCodec_BoolOption,             // Option type
+  "CRC",                              // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_AndMerge,               // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H245_G7222_CRC                      // H.245 generic capability code and bit mask
+};
+
+static struct PluginCodec_Option const RobustSortingG7222 =
+{
+  PluginCodec_BoolOption,             // Option type
+  "Robust Sorting",                   // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_AndMerge,               // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H245_G7222_ROBUST_SORTING           // H.245 generic capability code and bit mask
+};
+
+static struct PluginCodec_Option const InterleavingG7222 =
+{
+  PluginCodec_BoolOption,             // Option type
+  "Interleaving",                     // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_AndMerge,               // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H245_G7222_INTERLEAVING             // H.245 generic capability code and bit mask
+};
+
+static struct PluginCodec_Option const MediaPacketizationRFC3267 =
+{
+  PluginCodec_StringOption,           // Option type
+  PLUGINCODEC_MEDIA_PACKETIZATION,    // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_NoMerge,                // Merge mode
+  "RFC3267"                           // Initial value
+};
+
+#ifdef PLUGINCODEC_MEDIA_PACKETIZATIONS
+static struct PluginCodec_Option const MediaPacketizationsRFC3267 =
+{
+  PluginCodec_StringOption,           // Option type
+  PLUGINCODEC_MEDIA_PACKETIZATIONS,   // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_NoMerge,                // Merge mode
+  "RFC3267,RFC4867"                   // Initial value
+};
+#endif
+
+static struct PluginCodec_Option const * const AMRWBOptionTable[] = {
   &AMRWBOptionRxFramesPerPacket,
+  &AMRWBOptionTxFramesPerPacket,
+  &MediaPacketizationRFC3267,
+#ifdef PLUGINCODEC_MEDIA_PACKETIZATIONS
+  &MediaPacketizationsRFC3267,
+#endif
   &AMRWBOptionOctetAlign,
+  //&ModeSetG7222,
+  &ModeChangePeriodG7222,
+  &ModeChangeNeighbourG7222,
+  &CRC_G7222,
+  &RobustSortingG7222,
+  &InterleavingG7222,
   NULL
 };
 
@@ -449,56 +571,10 @@ static struct PluginCodec_ControlDefn AMRWBEncoderControlDefn[] =
 
 /////////////////////////////////////////////////////////////////////////////
 
-/* H.245(v13) capability (NOT USED)
-// Ref. Table R.3/H.245(v13)
-static const struct PluginCodec_H323GenericParameterDefinition AMRWBH245Parms [] =
-{
-  {                                     // octetAlign
-    1,                                  // collapsing
-    0,                                  // ID
-    PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_BooleanArray,
-    0                                   // only presence of the parameter is required
-                                        // Bit 8 (value 1) – If set, CRC will be computed.
-                                        // Bit 7 (value 2) – If set, robust sorting will be performed.
-  }
-};
-
-// Ref. Table R.1/H.245(v13)
-static const struct PluginCodec_H323GenericCodecData AMRWBH245Capability =
-{
-  OpalPluginCodec_Identifer_AMR_WB,     // capability identifier
-  0,                                    // maxBitRate: use value from OpalMediaFormat
-  1,                                    // number of parameters
-  AMRWBH245Parms                        // parameter definition array
-};
-
-
-// G.722.2 capability
-// Ref. Table F.4/G.722.2
-static const struct PluginCodec_H323GenericParameterDefinition AMRWBG7222Parms [] =
-{
-  {                                     // maxAl-sduFrames
-    1,                                  // collapsing
-    0,                                  // ID
-    PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_UnsignedMin,
-    1                                   // value
-  },
-  {                                     // octetAlign
-    1,                                  // collapsing
-    2,                                  // ID
-    PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_Logical,
-    1                                   // value
-  }
-};
-*/
-
 // Ref. Table F.1/G.722.2
 static const struct PluginCodec_H323GenericCodecData AMRWBG7222Capability =
 {
   OpalPluginCodec_Identifer_G7222,      // capability identifier
-  239,                                  // maxBitRate
-  0,//2,                                    // number of parameters
-  NULL//AMRWBG7222Parms                       // parameter definition array
 };
 // Note: because these parameters are defined in options, they're not needed here
 
