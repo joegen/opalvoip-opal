@@ -1859,10 +1859,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     replacedConnection->synchronousOnRelease = true;
     replacedConnection->Release(OpalConnection::EndedByCallForwarded);
 
-    // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
-    // before it knows what what formats can support. 
-    GetOtherPartyConnection()->PreviewPeerMediaFormats(GetMediaFormats());
-
     SetConnected();
     return;
   }
@@ -1877,10 +1873,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 
   OnApplyStringOptions();
-
-  // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
-  // before it knows what what formats can support. 
-  GetOtherPartyConnection()->PreviewPeerMediaFormats(GetMediaFormats());
 
   if (!ownerCall.OnSetUp(*this)) {
     PTRACE(1, "SIP\tOnSetUp failed for INVITE from " << request.GetURI() << " for " << *this);
