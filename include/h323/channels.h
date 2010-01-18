@@ -195,7 +195,7 @@ class H323Channel : public PObject
 
     /**Indicate if has been opened.
      */
-    PBoolean IsOpen() const { return opened && !terminating; }
+    PBoolean IsOpen() const { return opened && m_terminating == 0; }
 
     /**Get the media stream associated with this logical channel.
 
@@ -333,14 +333,16 @@ class H323Channel : public PObject
     virtual void OnMediaCommand(OpalMediaCommand &) { }
 
   protected:
+    virtual void InternalClose();
+
     H323EndPoint         & endpoint;
     H323Connection       & connection;
     H323Capability       * capability;
     H323ChannelNumber      number;
     H323ChannelNumber      reverseChannel;
-    PBoolean                   opened;
-    PBoolean                   paused;
-    PBoolean                   terminating;
+    bool                   opened;
+    bool                   paused;
+    PAtomicInteger         m_terminating;
 
   private:
     unsigned bandwidthUsed;
@@ -404,10 +406,6 @@ class H323UnidirectionalChannel : public H323Channel
      */
     virtual PBoolean Start();
 
-    /**This is called to clean up any threads on connection termination.
-     */
-    virtual void Close();
-
     /**Process a miscellaneous command on the logical channel.
        The default behaviour passes this on to the codec if not NULL.
      */
@@ -427,6 +425,8 @@ class H323UnidirectionalChannel : public H323Channel
     void OnMediaCommand(OpalMediaCommand & command);
 
   protected:
+    virtual void InternalClose();
+
     bool               receiver;
     OpalMediaStreamPtr mediaStream;
 };
@@ -840,10 +840,6 @@ class H323DataChannel : public H323UnidirectionalChannel
 
   /**@name Overrides from class H323Channel */
   //@{
-    /**This is called to clean up any threads on connection termination.
-     */
-    virtual void Close();
-
     /**Indicate the session number of the channel.
        Return session for channel. This returns the session ID of the
        RTP_Session member variable.
@@ -909,6 +905,8 @@ class H323DataChannel : public H323UnidirectionalChannel
   //@}
 
   protected:
+    virtual void InternalClose();
+
     unsigned        sessionID;
     H323Listener  * listener;
     PBoolean            autoDeleteListener;

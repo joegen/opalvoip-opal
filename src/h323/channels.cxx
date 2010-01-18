@@ -145,7 +145,6 @@ H323Channel::H323Channel(H323Connection & conn, const H323Capability & cap)
 {
   capability = (H323Capability *)cap.Clone();
   bandwidthUsed = 0;
-  terminating = PFalse;
   opened = PFalse;
   paused = PTrue;
 }
@@ -186,11 +185,13 @@ PBoolean H323Channel::GetMediaTransportAddress(OpalTransportAddress & /*data*/,
 
 void H323Channel::Close()
 {
-  if (!opened || terminating)
-    return;
+  if (IsOpen())
+    InternalClose();
+}
 
-  terminating = PTrue;
 
+void H323Channel::InternalClose()
+{
   // Signal to the connection that this channel is on the way out
   connection.OnClosedLogicalChannel(*this);
 
@@ -381,11 +382,8 @@ PBoolean H323UnidirectionalChannel::Start()
 }
 
 
-void H323UnidirectionalChannel::Close()
+void H323UnidirectionalChannel::InternalClose()
 {
-  if (terminating)
-    return;
-
   PTRACE(4, "H323RTP\tCleaning up media stream on " << number);
 
   // If we have source media stream close it
@@ -395,7 +393,7 @@ void H323UnidirectionalChannel::Close()
     mediaStream.SetNULL();
   }
 
-  H323Channel::Close();
+  H323Channel::InternalClose();
 }
 
 
@@ -1063,11 +1061,8 @@ H323DataChannel::~H323DataChannel()
 }
 
 
-void H323DataChannel::Close()
+void H323DataChannel::InternalClose()
 {
-  if (terminating)
-    return;
-
   PTRACE(4, "LogChan\tCleaning up data channel " << number);
 
   // Break any I/O blocks and wait for the thread that uses this object to
@@ -1077,7 +1072,7 @@ void H323DataChannel::Close()
   if (transport != NULL)
     transport->Close();
 
-  H323UnidirectionalChannel::Close();
+  H323UnidirectionalChannel::InternalClose();
 }
 
 
