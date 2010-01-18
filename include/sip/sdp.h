@@ -319,6 +319,8 @@ class SDPSessionDescription : public PObject
     unsigned GetBandwidth(const PString & type) const { return bandwidth[type]; }
     void SetBandwidth(const PString & type, unsigned value) { bandwidth[type] = value; }
 
+    OpalMediaFormatList GetMediaFormats() const;
+
     static const PString & ConferenceTotalBandwidthType();
     static const PString & ApplicationSpecificBandwidthType();
     static const PString & TransportIndependentBandwidthType(); // RFC3890
