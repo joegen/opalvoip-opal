@@ -1176,9 +1176,6 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
         }
       }
     }
-
-    if (previewFormats.GetSize() != 0) 
-      GetOtherPartyConnection()->PreviewPeerMediaFormats(previewFormats);
   }
 
   // Check that it has the H.245 channel connection info

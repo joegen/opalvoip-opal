@@ -1567,8 +1567,6 @@ class OpalConnection : public PSafeObject
     virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
     virtual void OnApplyStringOptions();
 
-    virtual void PreviewPeerMediaFormats(const OpalMediaFormatList & fmts);
-
 #if OPAL_HAS_MIXER
 
     virtual void EnableRecording();
@@ -1749,6 +1747,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL_VOID(OnMediaPatchStop(unsigned, bool));
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(OpalMediaFormatList &) const);
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(OpalMediaFormatList &, OpalConnection *) const);
+    P_REMOVE_VIRTUAL_VOID(PreviewPeerMediaFormats(const OpalMediaFormatList &));
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

@@ -1456,11 +1456,6 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
 }
 
 
-void OpalConnection::PreviewPeerMediaFormats(const OpalMediaFormatList & /*fmts*/)
-{
-}
-
-
 OpalMediaFormatList OpalConnection::GetMediaFormats() const
 {
   return endpoint.GetMediaFormats();
