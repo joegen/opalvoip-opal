@@ -599,7 +599,8 @@ class SIPConnection : public OpalRTPConnection
     } releaseMethod;
 
     OpalMediaFormatList m_remoteFormatList;
-    void SetRemoteMediaFormats(SDPSessionDescription & sdp);
+    OpalMediaFormatList m_answerFormatList;
+    void SetRemoteMediaFormats(SDPSessionDescription * sdp);
 
   private:
     P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));
