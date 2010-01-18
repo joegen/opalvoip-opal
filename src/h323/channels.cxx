@@ -185,7 +185,7 @@ PBoolean H323Channel::GetMediaTransportAddress(OpalTransportAddress & /*data*/,
 
 void H323Channel::Close()
 {
-  if (IsOpen())
+  if (opened && m_terminating++ == 0)
     InternalClose();
 }
 
