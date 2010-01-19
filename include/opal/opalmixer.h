@@ -652,13 +652,20 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
       OpalMixerNodeInfo * info ///< Initial info for node
     );
 
+    /**Get the first node.
+       The active nodes may be enumerated by the ++ operator on the PSafePtr.
+      */
+    PSafePtr<OpalMixerNode> GetFirstNode(
+      PSafetyMode mode = PSafeReference ///< Lock mode for returned pointer
+    ) const { return m_nodeManager.GetFirstNode(mode); }
+
     /**Find an existing node.
        This will search for the mixer node using GUID and then name.
       */
     PSafePtr<OpalMixerNode> FindNode(
       const PString & name,             ///< GUID or alias name for node
       PSafetyMode mode = PSafeReference ///< Lock mode for returned pointer
-    );
+    ) { return m_nodeManager.FindNode(name, mode); }
 
     /**Remove a node.
        Shut down all active connections with node, remove its name 
@@ -666,7 +673,7 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
       */
     void RemoveNode(
       OpalMixerNode & node ///< Initial info for node
-    );
+    ) { m_nodeManager.RemoveNode(node); }
   //@}
 
   /**@name Member variable access */
@@ -702,10 +709,15 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
        Default bahaviour returns member variable m_adHocNodeInfo.
       */
     OpalMixerNodeInfo * GetAdHocNodeInfo() { return m_adHocNodeInfo; }
+
+    /**Get the Node Manager for this endpoint.
+      */
+    const OpalMixerNodeManager & GetNodeManager() const { return m_nodeManager; }
+          OpalMixerNodeManager & GetNodeManager()       { return m_nodeManager; }
   //@}
 
   protected:
-    OpalMixerNodeInfo * m_adHocNodeInfo;
+    OpalMixerNodeInfo  * m_adHocNodeInfo;
     OpalMixerNodeManager m_nodeManager;
 };
 
@@ -910,6 +922,10 @@ class OpalMixerNode : public PSafeObject
       OpalMixerNodeManager & manager, ///< Manager for this node
       OpalMixerNodeInfo * info        ///< Configuration information
     );
+    OpalMixerNode(
+      OpalMixerEndPoint & endpoint,   ///< Endpoint for this node
+      OpalMixerNodeInfo * info        ///< Configuration information
+    );
 
     /**Destroy node.
      */
@@ -1012,11 +1028,18 @@ class OpalMixerNode : public PSafeObject
       */
     PINDEX GetConnectionCount() const { return m_connections.GetSize(); }
 
+    /**Get first connection in the connections list as type.
+      */
+    template <class Subclass>
+    PSafePtr<Subclass> GetFirstConnectionAs(
+      PSafetyMode mode = PSafeReference
+    ) const { return PSafePtr<Subclass>(m_connections, mode); }
+
     /**Get first connection in the connections list.
       */
     PSafePtr<OpalConnection> GetFirstConnection(
       PSafetyMode mode = PSafeReference
-    ) const { return PSafePtr<OpalConnection>(m_connections, mode); }
+    ) const { return GetFirstConnectionAs<OpalConnection>(mode); }
 
     /**Get the raw audio accumulation buffer.
      */
@@ -1028,6 +1051,8 @@ class OpalMixerNode : public PSafeObject
   //@}
 
   protected:
+    void Construct(OpalMixerNodeInfo * info);
+
     OpalMixerNodeManager & m_manager;
     PGloballyUniqueID      m_guid;
     PStringList            m_names;
