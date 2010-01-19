@@ -833,18 +833,6 @@ OpalMixerNode * OpalMixerEndPoint::CreateNode(OpalMixerNodeInfo * info)
 }
 
 
-PSafePtr<OpalMixerNode> OpalMixerEndPoint::FindNode(const PString & name, PSafetyMode mode)
-{
-  return m_nodeManager.FindNode(name, mode);
-}
-
-
-void OpalMixerEndPoint::RemoveNode(OpalMixerNode & node)
-{
-  m_nodeManager.RemoveNode(node);
-}
-
-
 void OpalMixerEndPoint::SetAdHocNodeInfo(const OpalMixerNodeInfo & info)
 {
   SetAdHocNodeInfo(info.Clone());
@@ -1055,12 +1043,30 @@ PBoolean OpalMixerMediaStream::RequiresPatchThread() const
 OpalMixerNode::OpalMixerNode(OpalMixerNodeManager & manager,
                                 OpalMixerNodeInfo * info)
   : m_manager(manager)
-  , m_info(info != NULL ? info : new OpalMixerNodeInfo)
   , m_audioMixer(*m_info)
 #if OPAL_VIDEO
   , m_videoMixer(*m_info)
 #endif
 {
+  Construct(info);
+}
+
+
+OpalMixerNode::OpalMixerNode(OpalMixerEndPoint & endpoint, OpalMixerNodeInfo * info)
+  : m_manager(endpoint.GetNodeManager())
+  , m_audioMixer(*m_info)
+#if OPAL_VIDEO
+  , m_videoMixer(*m_info)
+#endif
+{
+  Construct(info);
+}
+
+
+void OpalMixerNode::Construct(OpalMixerNodeInfo * info)
+{
+  m_info = info != NULL ? info : new OpalMixerNodeInfo;
+
   m_connections.DisallowDeleteObjects();
 
   AddName(m_info->m_name);
