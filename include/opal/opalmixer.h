@@ -1051,7 +1051,7 @@ class OpalMixerNode : public PSafeObject
   //@}
 
   protected:
-    void Construct(OpalMixerNodeInfo * info);
+    void Construct();
 
     OpalMixerNodeManager & m_manager;
     PGloballyUniqueID      m_guid;
