@@ -458,6 +458,24 @@ class OpalConnection : public PSafeObject
           return PStringToString::SetAt(key, data);
         }
 
+        bool GetBoolean(
+          const char * key,
+          bool dflt = false
+        ) const;
+        bool GetBoolean(
+          const PString & key,
+          bool dflt = false
+        ) const { return GetBoolean((const char *)key, dflt); }
+
+        long GetInteger(
+          const char * key,
+          long dflt = 0
+        ) const;
+        long GetInteger(
+          const PString & key,
+          long dflt = 0
+        ) const { return GetInteger((const char *)key, dflt); }
+
         /** Extract the parameters that start with "OPAL-XXX" from the URL and
             insert into the string options dictionary. The parameters are
             removed from the URL.

@@ -45,9 +45,6 @@
 #define DETAIL_LOG_LEVEL 6
 
 
-const char ListenOnlyStringOption[] = "Listen-Only";
-
-
 #if OPAL_MIXER_AUDIO_DEBUG
 class PAudioMixerDebug
 {
@@ -914,9 +911,7 @@ void OpalMixerConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 
 void OpalMixerConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
 {
-  if (stringOptions.Contains(ListenOnlyStringOption))
-    SetListenOnly(stringOptions[ListenOnlyStringOption].AsUnsigned() != 0);
-
+  SetListenOnly(stringOptions.GetBoolean(OPAL_OPT_LISTEN_ONLY, GetListenOnly()));
   OpalLocalConnection::ApplyStringOptions(stringOptions);
 }
 
