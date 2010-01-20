@@ -1616,7 +1616,7 @@ bool OpalConnection::StringOptions::GetBoolean(const char * key, bool dflt) cons
   if (value == NULL)
     return dflt;
 
-  return value->AsInteger() != 0 || (*value *= "true") || (*value *= "yes");
+  return value->IsEmpty() || (*value *= "true") || (*value *= "yes") || value->AsInteger() != 0;
 }
 
 
