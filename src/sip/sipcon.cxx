@@ -1917,6 +1917,9 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
         OnHold(true, false);
       }
     }
+
+    m_answerFormatList = sdpIn->GetMediaFormats();
+    m_answerFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
   }
   else {
     if (m_holdFromRemote) {
@@ -1931,6 +1934,8 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
     SendInviteOK(sdpOut);
   else
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
+
+  m_answerFormatList.RemoveAll();
 }
 
 
