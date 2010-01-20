@@ -1043,30 +1043,30 @@ PBoolean OpalMixerMediaStream::RequiresPatchThread() const
 OpalMixerNode::OpalMixerNode(OpalMixerNodeManager & manager,
                                 OpalMixerNodeInfo * info)
   : m_manager(manager)
+  , m_info(info != NULL ? info : new OpalMixerNodeInfo)
   , m_audioMixer(*m_info)
 #if OPAL_VIDEO
   , m_videoMixer(*m_info)
 #endif
 {
-  Construct(info);
+  Construct();
 }
 
 
 OpalMixerNode::OpalMixerNode(OpalMixerEndPoint & endpoint, OpalMixerNodeInfo * info)
   : m_manager(endpoint.GetNodeManager())
+  , m_info(info != NULL ? info : new OpalMixerNodeInfo)
   , m_audioMixer(*m_info)
 #if OPAL_VIDEO
   , m_videoMixer(*m_info)
 #endif
 {
-  Construct(info);
+  Construct();
 }
 
 
-void OpalMixerNode::Construct(OpalMixerNodeInfo * info)
+void OpalMixerNode::Construct()
 {
-  m_info = info != NULL ? info : new OpalMixerNodeInfo;
-
   m_connections.DisallowDeleteObjects();
 
   AddName(m_info->m_name);
