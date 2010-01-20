@@ -1292,7 +1292,7 @@ PString OpalConnection::GetLocalPartyURL() const
 
 bool OpalConnection::IsPresentationBlocked() const
 {
-  return m_connStringOptions(OPAL_OPT_PRESENTATION_BLOCK) *= "true";
+  return m_connStringOptions.GetBoolean(OPAL_OPT_PRESENTATION_BLOCK);
 }
 
 
@@ -1410,37 +1410,22 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
     m_connStringOptions = stringOptions;
 
 #if OPAL_PTLIB_DTMF
-    str = stringOptions(OPAL_OPT_ENABLE_INBAND_DTMF);
-    if (!str.IsEmpty())
-      m_sendInBandDTMF = m_detectInBandDTMF = str == "true";
+    m_sendInBandDTMF   = stringOptions.GetBoolean(OPAL_OPT_ENABLE_INBAND_DTMF, m_sendInBandDTMF);
+    m_detectInBandDTMF = stringOptions.GetBoolean(OPAL_OPT_DETECT_INBAND_DTMF, m_detectInBandDTMF);
+    m_sendInBandDTMF   = stringOptions.GetBoolean(OPAL_OPT_SEND_INBAND_DTMF,   m_sendInBandDTMF);
 
-    str = stringOptions(OPAL_OPT_DETECT_INBAND_DTMF);
-    if (!str.IsEmpty())
-      m_detectInBandDTMF = str == "true";
-
-    str = stringOptions(OPAL_OPT_SEND_INBAND_DTMF);
-    if (!str.IsEmpty())
-      m_sendInBandDTMF = str == "true";
-
-    str = stringOptions(OPAL_OPT_DTMF_MULT);
-    if (!str.IsEmpty())
-      m_dtmfScaleMultiplier = str.AsInteger();
-
-    str = stringOptions(OPAL_OPT_DTMF_DIV);
-    if (!str.IsEmpty())
-      m_dtmfScaleDivisor = str.AsInteger();
+    m_dtmfScaleMultiplier = stringOptions.GetInteger(OPAL_OPT_DTMF_MULT, m_dtmfScaleMultiplier);
+    m_dtmfScaleDivisor    = stringOptions.GetInteger(OPAL_OPT_DTMF_DIV,  m_dtmfScaleDivisor);
 #endif
 
     m_autoStartInfo.Initialise(stringOptions);
 
-    if (stringOptions.Contains(OPAL_OPT_DISABLE_JITTER))
+    if (stringOptions.GetBoolean(OPAL_OPT_DISABLE_JITTER))
       maxAudioJitterDelay = minAudioJitterDelay = 0;
-    str = stringOptions(OPAL_OPT_MAX_JITTER);
-    if (!str.IsEmpty())
-      maxAudioJitterDelay = str.AsUnsigned();
-    str = stringOptions(OPAL_OPT_MIN_JITTER);
-    if (!str.IsEmpty())
-      minAudioJitterDelay = str.AsUnsigned();
+    else {
+      maxAudioJitterDelay = stringOptions.GetInteger(OPAL_OPT_MAX_JITTER, maxAudioJitterDelay);
+      minAudioJitterDelay = stringOptions.GetInteger(OPAL_OPT_MIN_JITTER, minAudioJitterDelay);
+    }
 
 #if OPAL_HAS_MIXER
     if (stringOptions.Contains(OPAL_OPT_RECORD_AUDIO))
@@ -1623,6 +1608,26 @@ bool OpalConnection::OnReceiveExternalIM(const OpalMediaFormat & format, RTP_IMF
 }
 
 #endif
+
+
+bool OpalConnection::StringOptions::GetBoolean(const char * key, bool dflt) const
+{
+  PString * value = GetAt(key);
+  if (value == NULL)
+    return dflt;
+
+  return value->AsInteger() != 0 || (*value *= "true") || (*value *= "yes");
+}
+
+
+long OpalConnection::StringOptions::GetInteger(const char * key, long dflt) const
+{
+  PString * value = GetAt(key);
+  if (value == NULL)
+    return dflt;
+
+  return value->AsInteger();
+}
 
 
 void OpalConnection::StringOptions::ExtractFromURL(PURL & url)

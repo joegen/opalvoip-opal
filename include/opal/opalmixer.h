@@ -53,6 +53,9 @@ class OpalJitterBuffer;
 //#define OPAL_MIXER_AUDIO_DEBUG 1
 
 
+#define OPAL_OPT_LISTEN_ONLY "Listen-Only" ///< String option for listen only mixer connection
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /** Class base for a media mixer.
