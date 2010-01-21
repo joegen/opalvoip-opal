@@ -45,11 +45,13 @@ SUBDIRS += samples/simple \
            samples/codectest \
            samples/callgen \
            samples/opalecho \
-           samples/opalmcu \
-           samples/ivropal \
            samples/faxopal \
-           samples/c_api \
+           samples/c_api
+ifeq ($(OPAL_IVR),yes)
+SUBDIRS += samples/opalmcu \
+           samples/ivropal \
            samples/testpresent
+endif
 endif
 
 
