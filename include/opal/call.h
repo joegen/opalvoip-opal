@@ -549,6 +549,8 @@ class OpalCall : public PSafeObject
 #endif
 #endif // OPAL_HAS_MIXER
 
+    void InternalOnClear();
+
   protected:
     void SetPartyNames();
 

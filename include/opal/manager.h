@@ -1548,7 +1548,7 @@ class OpalManager : public PObject
 #endif
 
     friend OpalCall::OpalCall(OpalManager & mgr);
-    friend void OpalCall::OnReleased(OpalConnection & connection);
+    friend void OpalCall::InternalOnClear();
 
   private:
     P_REMOVE_VIRTUAL(OpalCall *,CreateCall(), 0);
