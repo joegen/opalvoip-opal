@@ -751,11 +751,17 @@ PBoolean OpalRTPMediaStream::RequiresPatchThread() const
 
 void OpalRTPMediaStream::EnableJitterBuffer() const
 {
-  if (mediaFormat.NeedsJitterBuffer())
-    rtpSession.SetJitterBufferSize(minAudioJitterDelay*mediaFormat.GetTimeUnits(),
-                                   maxAudioJitterDelay*mediaFormat.GetTimeUnits(),
-                                   mediaFormat.GetTimeUnits(),
-                                   connection.GetEndPoint().GetManager().GetMaxRtpPacketSize());
+  unsigned minJitter, maxJitter;
+  if (mediaFormat.NeedsJitterBuffer()) {
+    minJitter = minAudioJitterDelay*mediaFormat.GetTimeUnits();
+    maxJitter = maxAudioJitterDelay*mediaFormat.GetTimeUnits();
+  }
+  else
+    minJitter = maxJitter = 0;
+
+  rtpSession.SetJitterBufferSize(minJitter, maxJitter,
+                                 mediaFormat.GetTimeUnits(),
+                                 connection.GetEndPoint().GetManager().GetMaxRtpPacketSize());
 }
 
 
