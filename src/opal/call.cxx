@@ -129,6 +129,8 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 
   UnlockReadWrite();
 
+  InternalOnClear();
+
   PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadWrite))
     connection->Release(reason);
@@ -686,6 +688,13 @@ void OpalCall::OnReleased(OpalConnection & connection)
     if (last != NULL)
       last->Release(connection.GetCallEndReason());
   }
+
+  InternalOnClear();
+}
+
+
+void OpalCall::InternalOnClear()
+{
   if (connectionsActive.IsEmpty() && manager.activeCalls.Contains(GetToken())) {
     OnCleared();
     manager.activeCalls.RemoveAt(GetToken());
