@@ -241,7 +241,10 @@ void CallGen::Main()
   if (args.HasOption('P'))
     manager.SetMediaFormatOrder(args.GetOptionString('P').Lines());
 
-  OpalMediaFormatList allMediaFormats = OpalTranscoder::GetPossibleFormats(ivr->GetMediaFormats()); // Get transcoders
+  OpalMediaFormatList allMediaFormats;
+#if OPAL_IVR
+  allMediaFormats = OpalTranscoder::GetPossibleFormats(ivr->GetMediaFormats()); // Get transcoders
+#endif
 
 #if PTRACING
   ostream & traceStream = PTrace::Begin(3, __FILE__, __LINE__);
