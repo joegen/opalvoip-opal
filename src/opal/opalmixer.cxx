@@ -886,6 +886,11 @@ void OpalMixerConnection::OnReleased()
 OpalMediaFormatList OpalMixerConnection::GetMediaFormats() const
 {
   OpalMediaFormatList list = OpalTranscoder::GetPossibleFormats(OpalPCM16);
+  list += OpalRFC2833;
+#if OPAL_T38_CAPABILITY
+  list += OpalCiscoNSE;
+#endif
+
 #if OPAL_VIDEO
   if (!m_node->GetNodeInfo().m_audioOnly)
     list += OpalTranscoder::GetPossibleFormats(OpalYUV420P);

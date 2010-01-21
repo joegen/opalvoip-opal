@@ -61,6 +61,10 @@ OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
                 "</vxml>\n")
 {
   defaultMediaFormats += OpalPCM16;
+  defaultMediaFormats += OpalRFC2833;
+#if OPAL_T38_CAPABILITY
+  defaultMediaFormats += OpalCiscoNSE;
+#endif
 
   PTRACE(4, "IVR\tCreated endpoint.");
 }
