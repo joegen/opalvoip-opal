@@ -450,8 +450,8 @@ class RTP_Session : public PObject
     void SetJitterBufferSize(
       unsigned minJitterDelay, ///<  Minimum jitter buffer delay in RTP timestamp units
       unsigned maxJitterDelay, ///<  Maximum jitter buffer delay in RTP timestamp units
-      unsigned timeUnits = 8,  ///<  Time Units
-      PINDEX packetSize = 2048 ///<  Rcceive RTP packet size
+      unsigned timeUnits = 0,  ///<  Time Units, zero uses default
+      PINDEX packetSize = 2048 ///<  Receive RTP packet size
     );
 
     /**Get current size of the jitter buffer.
@@ -463,7 +463,7 @@ class RTP_Session : public PObject
     
     /**Get current time units of the jitter buffer.
      */
-    unsigned GetJitterTimeUnits() const;
+    unsigned GetJitterTimeUnits() const { return m_timeUnits; }
 
     /**Modifies the QOS specifications for this RTP session*/
     virtual PBoolean ModifyQOS(RTP_QOS * )
@@ -581,6 +581,7 @@ class RTP_Session : public PObject
                                   const ReceiverReportArray & reports);
     virtual void OnRxReceiverReport(DWORD src,
                                     const ReceiverReportArray & reports);
+    virtual void OnReceiverReports(const ReceiverReportArray & reports);
 
     class SourceDescription : public PObject  {
         PCLASSINFO(SourceDescription, PObject);
@@ -737,6 +738,11 @@ class RTP_Session : public PObject
       */
     DWORD GetPacketsLost() const { return packetsLost; }
 
+    /**Get total number transmitted packets lost by remote in session.
+       Determined via RTCP.
+      */
+    DWORD GetPacketsLostByRemote() const { return packetsLostByRemote; }
+
     /**Get total number of packets received out of order in session.
       */
     DWORD GetPacketsOutOfOrder() const { return packetsOutOfOrder; }
@@ -797,16 +803,23 @@ class RTP_Session : public PObject
       */
     DWORD GetMinimumReceiveTime() const { return minimumReceiveTime; }
 
+    enum { JitterRoundingGuardBits = 4 };
     /**Get averaged jitter time for received packets.
        This is the calculated statistical variance of the interarrival
        time of received packets in milliseconds.
       */
-    DWORD GetAvgJitterTime() const { return jitterLevel>>7; }
+    DWORD GetAvgJitterTime() const { return (jitterLevel>>JitterRoundingGuardBits)/GetJitterTimeUnits(); }
 
     /**Get averaged jitter time for received packets.
        This is the maximum value of jitterLevel for the session.
       */
-    DWORD GetMaxJitterTime() const { return maximumJitterLevel>>7; }
+    DWORD GetMaxJitterTime() const { return (maximumJitterLevel>>JitterRoundingGuardBits)/GetJitterTimeUnits(); }
+
+    /**Get jitter time for received packets on remote.
+       This is the calculated statistical variance of the interarrival
+       time of received packets in milliseconds.
+      */
+    DWORD GetJitterTimeOnRemote() const { return jitterLevelOnRemote/GetJitterTimeUnits(); }
   //@}
 
     virtual void SetCloseOnBYE(PBoolean v)  { closeOnBye = v; }
@@ -858,6 +871,7 @@ class RTP_Session : public PObject
 
     unsigned           sessionID;
     bool               isAudio;
+    unsigned           m_timeUnits;
     PString            canonicalName;
     PString            toolName;
     RTP_UserData     * userData;
@@ -897,6 +911,7 @@ class RTP_Session : public PObject
     DWORD packetsReceived;
     DWORD octetsReceived;
     DWORD packetsLost;
+    DWORD packetsLostByRemote;
     DWORD packetsOutOfOrder;
     DWORD averageSendTime;
     DWORD maximumSendTime;
@@ -905,6 +920,7 @@ class RTP_Session : public PObject
     DWORD maximumReceiveTime;
     DWORD minimumReceiveTime;
     DWORD jitterLevel;
+    DWORD jitterLevelOnRemote;
     DWORD maximumJitterLevel;
 
     DWORD markerSendCount;
