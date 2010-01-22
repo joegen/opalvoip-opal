@@ -531,6 +531,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuStopVideo"),       MyManager::OnStopVideo)
   EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnVFU)
   EVT_MENU(XRCID("MenuVideoControl"),    MyManager::OnVideoControl)
+  EVT_MENU(XRCID("MenuDefVidWinPos"),    MyManager::OnDefVidWinPos)
 
   EVT_MENU(XRCID("MenuPresence"),        MyManager::OnMyPresence)
   EVT_MENU(XRCID("MenuStartMessage"),    MyManager::OnStartMessage)
@@ -1606,6 +1607,7 @@ void MyManager::OnStartMessage(wxCommandEvent & /*event*/)
   }
 }
 
+
 void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
 {
 #if 0
@@ -2619,6 +2621,49 @@ void MyManager::OnVideoControl(wxCommandEvent& /*event*/)
 {
   VideoControlDialog dlg(this);
   dlg.ShowModal();
+}
+
+
+void MyManager::OnDefVidWinPos(wxCommandEvent & /*event*/)
+{
+  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadOnly);
+  if (connection == NULL)
+    return;
+
+  PVideoOutputDevice * preview = NULL;
+  {
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
+    if (stream != NULL)
+      preview = dynamic_cast<const OpalVideoMediaStream *>(&*stream)->GetVideoOutputDevice();
+  }
+
+  PVideoOutputDevice * remote = NULL;
+  {
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), false);
+    if (stream != NULL)
+      remote = dynamic_cast<const OpalVideoMediaStream *>(&*stream)->GetVideoOutputDevice();
+  }
+
+  wxRect rect(GetPosition(), GetSize());
+
+  m_remoteVideoFrameX = rect.GetLeft();
+  m_remoteVideoFrameY = rect.GetBottom();
+  if (remote != NULL)
+    remote->SetPosition(m_remoteVideoFrameX, m_remoteVideoFrameY);
+
+  m_localVideoFrameX = rect.GetLeft();
+  m_localVideoFrameY = rect.GetBottom();
+  if (remote != NULL)
+    m_localVideoFrameX += remote->GetFrameWidth();
+  if (preview != NULL)
+    preview->SetPosition(m_localVideoFrameX, m_localVideoFrameY);
+
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(VideoGroup);
+  config->Write(LocalVideoFrameXKey, m_localVideoFrameX);
+  config->Write(LocalVideoFrameYKey, m_localVideoFrameY);
+  config->Write(RemoteVideoFrameXKey, m_remoteVideoFrameX);
+  config->Write(RemoteVideoFrameYKey, m_remoteVideoFrameY);
 }
 
 
