@@ -291,7 +291,7 @@ bool OpalTranscoder::SelectFormats(const OpalMediaType & mediaType,
   // directly from the given format to a possible one with no transcoders.
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
     for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
-      if (*s == *d && MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
+      if (*s == *d && s->GetMediaType() == mediaType && MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
         return true;
     }
   }
