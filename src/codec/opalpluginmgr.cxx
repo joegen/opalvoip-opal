@@ -959,6 +959,8 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
       m_bufferRTP = (RTP_DataFrame *)dstList.RemoveAt(0);
       dstList.AllowDeleteObjects();
     }
+
+    lastFrameWasIFrame = false;
   }
 
   dstList.RemoveAll();
@@ -1002,7 +1004,8 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
     }
   }
 
-  lastFrameWasIFrame = false;
+  if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
+    lastFrameWasIFrame = true;
 
   if (toLen > RTP_DataFrame::MinHeaderSize && (flags & PluginCodec_ReturnCoderLastFrame) != 0) {
     // Do sanity check on returned data.
@@ -1026,7 +1029,6 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
 
         if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
           m_keyFrames++;
-          lastFrameWasIFrame = true;
           PTRACE(5, "OpalPlugin\tVideo decoder returned I-frame");
         }
       }
