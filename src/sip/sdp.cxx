@@ -180,121 +180,43 @@ SDPMediaFormat::SDPMediaFormat(SDPMediaDescription & parent, const OpalMediaForm
 
 void SDPMediaFormat::SetFMTP(const PString & str)
 {
-  if (str.IsEmpty())
-    return;
-
-  fmtp = str;
-  if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
-    return;
-
-  mediaFormat.AddOption(new OpalMediaOptionString("RawFMTP", false, str), PTrue); // Save the 'fmtp=' line so it is available at the application level.
-
-  // See if standard format OPT=VAL;OPT=VAL
-  if (str.FindOneOf(";=") == P_MAX_INDEX) {
-    // Nope, just save the whole string as is
-    mediaFormat.SetOptionString("FMTP", str);
-    return;
-  }
-
-  // guess at the seperator
-  char sep = ';';
-  if (str.Find(sep) == P_MAX_INDEX)
-    sep = ' ';
-
-  // Parse the string for option names and values OPT=VAL;OPT=VAL
-  PINDEX sep1prev = 0;
-  do {
-    // find the next separator (' ' or ';')
-    PINDEX sep1next = str.Find(sep, sep1prev);
-    if (sep1next == P_MAX_INDEX)
-      sep1next--; // Implicit assumption string is not a couple of gigabytes long ...
-
-    // find the next '='. If past the next separator, then ignore it
-    PINDEX sep2pos = str.Find('=', sep1prev);
-    if (sep2pos > sep1next)
-      sep2pos = sep1next;
-
-    PCaselessString key = str(sep1prev, sep2pos-1).Trim();
-    if (key.IsEmpty()) {
-      PTRACE(2, "SDP\tBadly formed FMTP parameter \"" << str << '"');
-      break;
-    }
-
-    OpalMediaOption * option = mediaFormat.FindOption(key);
-    if (option == NULL || key != option->GetFMTPName()) {
-      for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
-        if (key == mediaFormat.GetOption(i).GetFMTPName()) {
-          option = const_cast<OpalMediaOption *>(&mediaFormat.GetOption(i));
-          break;
-        }
-      }
-    }
-    if (option != NULL) {
-      PString value = str(sep2pos+1, sep1next-1);
-
-      if (dynamic_cast< OpalMediaOptionOctets * >(option) != NULL) {
-        if (str.GetLength() % 2 != 0)
-          value = value.Trim();
-      }
-      else {
-        // for non-octet string parameters, check for mixed separators
-        PINDEX brokenSep = str.Find(' ', sep2pos);
-        if (brokenSep < sep1next) {
-          sep1next = brokenSep;
-          value = str(sep2pos+1, sep1next-1);
-        }
-        value = value.Trim();
-        if (value.IsEmpty())
-          value = "1"; // Assume it is a boolean
-      }
-
-      if (dynamic_cast< OpalMediaOptionString * >(option) != NULL) {
-        PString previous = option->AsString();
-        if (!previous.IsEmpty())
-          value = previous + ';' + value;
-      }
-
-      if (!option->FromString(value)) {
-        PTRACE(2, "SDP\tCould not set FMTP parameter \"" << key << "\" to value \"" << value << '"');
-      }
-    }
-
-    sep1prev = sep1next+1;
-  } while (sep1prev != P_MAX_INDEX);
+  m_fmtp = str;
+  InitialiseMediaFormat(mediaFormat); // Initialise all the OpalMediaOptions from m_fmtp
 }
 
 
 PString SDPMediaFormat::GetFMTP() const
 {
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
+    return m_fmtp;
+
+  PString fmtp = mediaFormat.GetOptionString("FMTP");
+  if (!fmtp.IsEmpty())
     return fmtp;
 
-  PString str = mediaFormat.GetOptionString("FMTP");
-  if (!str.IsEmpty())
-    return str;
-
+  PStringStream strm;
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     const OpalMediaOption & option = mediaFormat.GetOption(i);
     const PString & name = option.GetFMTPName();
     if (!name.IsEmpty()) {
       PString value = option.AsString();
       if (value.IsEmpty() && value != option.GetFMTPDefault())
-        str += name;
+        strm << name;
       else {
         PStringArray values = value.Tokenise(';', false);
         for (PINDEX v = 0; v < values.GetSize(); ++v) {
           value = values[v];
           if (value != option.GetFMTPDefault()) {
-            if (!str.IsEmpty())
-              str += ';';
-            str += name + '=' + value;
+            if (!strm.IsEmpty())
+              strm << ';';
+            strm << name << '=' << value;
           }
         }
       }
     }
   }
 
-  return !str ? str : fmtp;
+  return strm.IsEmpty() ? m_fmtp : strm;
 }
 
 
@@ -333,7 +255,7 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
 const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 {
   if (mediaFormat.IsEmpty())
-    const_cast<SDPMediaFormat *>(this)->InitialiseMediaFormat();
+    InitialiseMediaFormat(const_cast<SDPMediaFormat *>(this)->mediaFormat);
   return mediaFormat;
 }
 
@@ -341,22 +263,25 @@ const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 OpalMediaFormat & SDPMediaFormat::GetWritableMediaFormat()
 {
   if (mediaFormat.IsEmpty())
-    InitialiseMediaFormat();
+    InitialiseMediaFormat(mediaFormat);
   return mediaFormat;
 }
 
 
 OpalMediaFormatList SDPMediaFormat::GetMediaFormats() const
 {
-  OpalMediaFormatList adjustedFormats;
+  OpalMediaFormatList adjustedFormats = GetMediaFormat();
 
+  // Look for any other media formats that match the encoding name
   OpalMediaFormatList masterFormats = OpalMediaFormat::GetMatchingRegisteredMediaFormats(payloadType, clockRate, encodingName, "sip");
-  for (OpalMediaFormatList::iterator iterFormat = masterFormats.begin(); iterFormat != masterFormats.end(); ++iterFormat) {
-    PTRACE(3, "SIP\tRTP payload type " << encodingName << " matched to codec " << *iterFormat);
+  if (masterFormats.GetSize() > 1) {
+    for (OpalMediaFormatList::iterator iterFormat = masterFormats.begin(); iterFormat != masterFormats.end(); ++iterFormat) {
+      PTRACE(3, "SIP\tRTP payload type " << encodingName << " matched to codec " << *iterFormat);
 
-    OpalMediaFormat adjustedFormat = *iterFormat;
-    InitialiseMediaFormat(adjustedFormat);
-    adjustedFormats += adjustedFormat;
+      OpalMediaFormat adjustedFormat = *iterFormat;
+      InitialiseMediaFormat(adjustedFormat);
+      adjustedFormats += adjustedFormat;
+    }
   }
 
   return adjustedFormats;
@@ -377,11 +302,7 @@ void SDPMediaFormat::InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const
 
   mediaFormat.MakeUnique();
   mediaFormat.SetPayloadType(payloadType);
-
-  if (!parameters.IsEmpty() && (mediaFormat.GetMediaType() == OpalMediaType::Audio())) 
-    mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), parameters.AsUnsigned());
-  else
-    mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), 1);
+  mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), parameters.IsEmpty() ? 1 : parameters.AsUnsigned());
 
   // Fill in the default values for (possibly) missing FMTP options
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
@@ -394,6 +315,86 @@ void SDPMediaFormat::InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const
     if (r->second > 0)
       mediaFormat.AddOption(new OpalMediaOptionString(SDPBandwidthPrefix + r->first, false, r->second), true);
   }
+
+  // Now FMTP yet, or ever
+  if (m_fmtp.IsEmpty())
+    return;
+
+  // Save the raw 'fmtp=' line so it is available at the application level.
+  mediaFormat.AddOption(new OpalMediaOptionString("RawFMTP", false, m_fmtp), true);
+
+  // See if standard format OPT=VAL;OPT=VAL
+  if (m_fmtp.FindOneOf(";=") == P_MAX_INDEX) {
+    // Nope, just save the whole string as is
+    mediaFormat.SetOptionString("FMTP", m_fmtp);
+    return;
+  }
+
+  // guess at the seperator
+  char sep = ';';
+  if (m_fmtp.Find(sep) == P_MAX_INDEX)
+    sep = ' ';
+
+  // Parse the string for option names and values OPT=VAL;OPT=VAL
+  PINDEX sep1prev = 0;
+  do {
+    // find the next separator (' ' or ';')
+    PINDEX sep1next = m_fmtp.Find(sep, sep1prev);
+    if (sep1next == P_MAX_INDEX)
+      sep1next--; // Implicit assumption string is not a couple of gigabytes long ...
+
+    // find the next '='. If past the next separator, then ignore it
+    PINDEX sep2pos = m_fmtp.Find('=', sep1prev);
+    if (sep2pos > sep1next)
+      sep2pos = sep1next;
+
+    PCaselessString key = m_fmtp(sep1prev, sep2pos-1).Trim();
+    if (key.IsEmpty()) {
+      PTRACE(2, "SDP\tBadly formed FMTP parameter \"" << m_fmtp << '"');
+      break;
+    }
+
+    OpalMediaOption * option = mediaFormat.FindOption(key);
+    if (option == NULL || key != option->GetFMTPName()) {
+      for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
+        if (key == mediaFormat.GetOption(i).GetFMTPName()) {
+          option = const_cast<OpalMediaOption *>(&mediaFormat.GetOption(i));
+          break;
+        }
+      }
+    }
+    if (option != NULL) {
+      PString value = m_fmtp(sep2pos+1, sep1next-1);
+
+      if (dynamic_cast< OpalMediaOptionOctets * >(option) != NULL) {
+        if (m_fmtp.GetLength() % 2 != 0)
+          value = value.Trim();
+      }
+      else {
+        // for non-octet string parameters, check for mixed separators
+        PINDEX brokenSep = m_fmtp.Find(' ', sep2pos);
+        if (brokenSep < sep1next) {
+          sep1next = brokenSep;
+          value = m_fmtp(sep2pos+1, sep1next-1);
+        }
+        value = value.Trim();
+        if (value.IsEmpty())
+          value = "1"; // Assume it is a boolean
+      }
+
+      if (dynamic_cast< OpalMediaOptionString * >(option) != NULL) {
+        PString previous = option->AsString();
+        if (!previous.IsEmpty())
+          value = previous + ';' + value;
+      }
+
+      if (!option->FromString(value)) {
+        PTRACE(2, "SDP\tCould not set FMTP parameter \"" << key << "\" to value \"" << value << '"');
+      }
+    }
+
+    sep1prev = sep1next+1;
+  } while (sep1prev != P_MAX_INDEX);
 }
 
 
