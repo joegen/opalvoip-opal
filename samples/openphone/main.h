@@ -809,14 +809,10 @@ class MyMedia
 {
 public:
   MyMedia();
-  MyMedia(
-    const char * source,
-    const PString & format
-  );
+  MyMedia(const OpalMediaFormat & format);
 
   bool operator<(const MyMedia & other) { return preferenceOrder < other.preferenceOrder; }
 
-  PString         sourceProtocol;
   OpalMediaFormat mediaFormat;
   const wxChar  * validProtocols;
   int             preferenceOrder;
@@ -1092,7 +1088,7 @@ class MyManager : public wxFrame, public OpalManager
     } m_ExtendedVideoRoles;
 
     MyMediaList m_mediaInfo;
-    void InitMediaInfo(const char * source, const OpalMediaFormatList & formats);
+    void InitMediaInfo(const OpalMediaFormatList & formats);
     void ApplyMediaInfo();
 
 #if PTRACING

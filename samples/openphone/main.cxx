@@ -903,22 +903,23 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Codec fields
-  InitMediaInfo(pcssEP->GetPrefixName(), pcssEP->GetMediaFormats());
-  InitMediaInfo(potsEP->GetPrefixName(), potsEP->GetMediaFormats());
+  {
+    OpalMediaFormatList mediaFormats;
+    mediaFormats += pcssEP->GetMediaFormats();
+    mediaFormats += potsEP->GetMediaFormats();
 #if OPAL_IVR
-  InitMediaInfo(ivrEP->GetPrefixName(), ivrEP->GetMediaFormats());
-#endif
-
-  OpalMediaFormatList mediaFormats;
-  mediaFormats += pcssEP->GetMediaFormats();
-  mediaFormats += potsEP->GetMediaFormats();
-#if OPAL_IVR
-  mediaFormats += ivrEP->GetMediaFormats();
+    mediaFormats += ivrEP->GetMediaFormats();
 #endif
 #if OPAL_FAX
-  mediaFormats += m_faxEP->GetMediaFormats();
+    mediaFormats += m_faxEP->GetMediaFormats();
 #endif
-  InitMediaInfo("sw", OpalTranscoder::GetPossibleFormats(mediaFormats));
+
+    OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(mediaFormats);
+    for (OpalMediaFormatList::iterator format = possibleFormats.begin(); format != possibleFormats.end(); ++format) {
+      if (format->IsTransportable())
+        m_mediaInfo.push_back(MyMedia(*format));
+    }
+  }
 
   config->SetPath(CodecsGroup);
   int codecIndex = 0;
@@ -976,12 +977,14 @@ bool MyManager::Initialise()
   }
 
 #if PTRACING
-  mediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-  ostream & traceStream = PTrace::Begin(3, __FILE__, __LINE__);
-  traceStream << "OpenPhone\tRegistered media formats:\n";
-  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
-    mediaFormats[i].PrintOptions(traceStream);
-  traceStream << PTrace::End;
+  {
+    OpalMediaFormatList mediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+    ostream & traceStream = PTrace::Begin(3, __FILE__, __LINE__);
+    traceStream << "OpenPhone\tRegistered media formats:\n";
+    for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
+      mediaFormats[i].PrintOptions(traceStream);
+    traceStream << PTrace::End;
+  }
 #endif
 
   ////////////////////////////////////////
@@ -1430,14 +1433,8 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
       hasRxVideo = stream->Open();
     }
 
-    // Determine if video is startable, or is already started
-    OpalMediaFormatList availableFormats = connection->GetMediaFormats();
-    for (PINDEX idx = 0; idx < availableFormats.GetSize(); idx++) {
-      if (availableFormats[idx].GetMediaType() == OpalMediaType::Video()) {
-        hasStartVideo = !hasStopVideo;
-        break;
-      }
-    }
+    // Determine if video is startable
+    hasStartVideo = connection->GetMediaFormats().HasType(OpalMediaType::Video());
   }
 
   menubar->Enable(XRCID("SubMenuAudio"), m_callState == InCallState);
@@ -1454,9 +1451,11 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
       item->Check(item->GetLabel() == videoFormat);
   }
 
+  menubar->Enable(XRCID("MenuStartVideo"), hasStartVideo);
   menubar->Enable(XRCID("MenuStopVideo"), hasStopVideo);
   menubar->Enable(XRCID("MenuSendVFU"), hasRxVideo);
   menubar->Enable(XRCID("MenuVideoControl"), hasStopVideo);
+  menubar->Enable(XRCID("MenuDefVidWinPos"), hasRxVideo || hasStopVideo);
 
   menubar->Enable(XRCID("SubMenuRetrieve"), !m_callsOnHold.empty());
 }
@@ -3230,16 +3229,6 @@ void MyManager::UpdateAudioDevices()
 }
 
 
-void MyManager::InitMediaInfo(const char * source, const OpalMediaFormatList & mediaFormats)
-{
-  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
-    const OpalMediaFormat & mediaFormat = mediaFormats[i];
-    if (mediaFormat.IsTransportable())
-      m_mediaInfo.push_back(MyMedia(source, mediaFormat));
-  }
-}
-
-
 void MyManager::ApplyMediaInfo()
 {
   PStringList mediaFormatOrder, mediaFormatMask;
@@ -3467,9 +3456,8 @@ MyMedia::MyMedia()
 }
 
 
-MyMedia::MyMedia(const char * source, const PString & format)
-  : sourceProtocol(source)
-  , mediaFormat(format)
+MyMedia::MyMedia(const OpalMediaFormat & format)
+  : mediaFormat(format)
   , preferenceOrder(-1) // -1 indicates disabled
   , dirty(false)
 {
@@ -3859,13 +3847,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_allCodecs = FindWindowByNameAs<wxListBox>(this, wxT("AllCodecs"));
   m_selectedCodecs = FindWindowByNameAs<wxListBox>(this, wxT("SelectedCodecs"));
   for (MyMediaList::iterator mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
-    PwxString str(mm->sourceProtocol);
-    str += wxT(": ");
-    str += PwxString(mm->mediaFormat);
-    str += mm->validProtocols;
-    m_allCodecs->Append(str, &*mm);
+    PwxString str(mm->mediaFormat);
 
-    str = PwxString(mm->mediaFormat);
+    m_allCodecs->Append(str + mm->validProtocols, &*mm);
+
     if (mm->preferenceOrder >= 0 && m_selectedCodecs->FindString(str) < 0)
       m_selectedCodecs->Append(str, &*mm);
   }
