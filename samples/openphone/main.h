@@ -959,6 +959,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnStopVideo(wxCommandEvent& event);
     void OnVFU(wxCommandEvent& event);
     void OnVideoControl(wxCommandEvent& event);
+    void OnDefVidWinPos(wxCommandEvent& event);
     void OnSashPositioned(wxSplitterEvent& event);
     void OnSpeedDialActivated(wxListEvent& event);
     void OnSpeedDialColumnResize(wxListEvent& event);
