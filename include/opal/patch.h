@@ -283,6 +283,8 @@ class OpalMediaPatch : public PObject
     };
     PList<Filter> filters;
 
+    bool             m_videoDecoder;
+    bool             m_bypassActive;
     OpalMediaPatch * m_bypassToPatch;
     OpalMediaPatch * m_bypassFromPatch;
     PSyncPoint       m_bypassEnded;
