@@ -104,7 +104,6 @@ class SDPMediaFormat : public PObject
     bool PostDecode(unsigned bandwidth);
 
   protected:
-    void InitialiseMediaFormat() { InitialiseMediaFormat(mediaFormat); }
     void InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const;
 
     OpalMediaFormat mediaFormat;
@@ -114,7 +113,7 @@ class SDPMediaFormat : public PObject
     unsigned clockRate;
     PString encodingName;
     PString parameters;
-    PString fmtp;
+    PString m_fmtp;
 };
 
 PLIST(SDPMediaFormatList, SDPMediaFormat);
