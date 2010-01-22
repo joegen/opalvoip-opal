@@ -291,9 +291,7 @@ bool OpalTranscoder::SelectFormats(const OpalMediaType & mediaType,
   // directly from the given format to a possible one with no transcoders.
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
     for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
-      if (*s == *d &&
-          (s->GetMediaType() == mediaType || d->GetMediaType() == mediaType) &&
-          MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
+      if (*s == *d && MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
         return true;
     }
   }
@@ -301,13 +299,13 @@ bool OpalTranscoder::SelectFormats(const OpalMediaType & mediaType,
   // Search for a single transcoder to get from a to b
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
     for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
-      OpalTranscoderKey search(*s, *d);
-      OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
-      for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-        if (search == *i &&
-            (s->GetMediaType() == mediaType || d->GetMediaType() == mediaType) &&
-            MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
-          return true;
+      if (s->GetMediaType() == mediaType || d->GetMediaType() == mediaType) {
+        OpalTranscoderKey search(*s, *d);
+        OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
+        for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
+          if (search == *i && MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
+            return true;
+        }
       }
     }
   }
@@ -315,11 +313,12 @@ bool OpalTranscoder::SelectFormats(const OpalMediaType & mediaType,
   // Last gasp search for a double transcoder to get from a to b
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
     for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
-      OpalMediaFormat intermediateFormat;
-      if (FindIntermediateFormat(*s, *d, intermediateFormat) &&
-          (s->GetMediaType() == mediaType || d->GetMediaType() == mediaType) &&
-          MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
-        return true;
+      if (s->GetMediaType() == mediaType || d->GetMediaType() == mediaType) {
+        OpalMediaFormat intermediateFormat;
+        if (FindIntermediateFormat(*s, *d, intermediateFormat) &&
+            MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
+          return true;
+      }
     }
   }
 
