@@ -53,6 +53,8 @@
 
 OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
   : source(src)
+  , m_videoDecoder(src.GetMediaFormat().IsTransportable() && src.GetMediaFormat().GetMediaType() == OpalMediaType::Video())
+  , m_bypassActive(false)
   , m_bypassToPatch(NULL)
   , m_bypassFromPatch(NULL)
   , patchThread(NULL)
@@ -579,6 +581,7 @@ bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
   }
 
   m_bypassToPatch = patch;
+  m_bypassActive = m_bypassToPatch != NULL && !m_videoDecoder;
   return true;
 }
 
@@ -601,18 +604,22 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
     return true;
   }
 
-  FilterFrame(frame, source.GetMediaFormat());    
+  FilterFrame(frame, source.GetMediaFormat());
 
   bool written = false;
-  if (m_bypassToPatch != NULL) {
-    for (PList<Sink>::iterator s = m_bypassToPatch->sinks.begin(); s != m_bypassToPatch->sinks.end(); ++s) {
-      if (s->stream->WritePacket(frame))
+
+  // This is not an if/else as WriteFrame can change the state of m_bypassActive
+  if (!m_bypassActive) {
+    for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
+      if (s->WriteFrame(frame))
         written = true;
     }
   }
-  else {
-    for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
-      if (s->WriteFrame(frame))
+
+  if (m_bypassActive) {
+    written = false;
+    for (PList<Sink>::iterator s = m_bypassToPatch->sinks.begin(); s != m_bypassToPatch->sinks.end(); ++s) {
+      if (s->stream->WritePacket(frame))
         written = true;
     }
   }
@@ -778,6 +785,12 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
     PTRACE(1, "Patch\tMedia conversion (primary) failed");
     return false;
+  }
+
+  if (!patch.m_bypassActive && patch.m_videoDecoder && patch.m_bypassToPatch != NULL &&
+                dynamic_cast<OpalVideoTranscoder *>(primaryCodec)->WasLastFrameIFrame()) {
+    PTRACE(3, "Patch\tActivating video patch bypass to " << patch.m_bypassToPatch << " on " << patch);
+    patch.m_bypassActive = true;
   }
 
 #if OPAL_VIDEO
