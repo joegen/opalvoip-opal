@@ -990,7 +990,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
 
-  if (newDirection == SDPMediaDescription::SendRecv) {
+  if (newDirection == SDPMediaDescription::SendRecv && recvStream->GetMediaFormat().GetPayloadType() != sendStream->GetMediaFormat().GetPayloadType()) {
     // If we are sendrecv we will receive the same payload type as we transmit.
     OpalMediaFormat adjustedMediaFormat = recvStream->GetMediaFormat();
     adjustedMediaFormat.SetPayloadType(sendStream->GetMediaFormat().GetPayloadType());
