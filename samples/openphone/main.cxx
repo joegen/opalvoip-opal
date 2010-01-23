@@ -90,6 +90,11 @@
 
 #endif
 
+#if wxUSE_UNICODE
+typedef wstringstream tstringstream;
+#else
+typedef  stringstream tstringstream;
+#endif
 
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
@@ -1469,12 +1474,7 @@ void MyManager::OnMenuQuit(wxCommandEvent& WXUNUSED(event))
 
 void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 {
-#if wxUSE_UNICODE
-  wstringstream text;
-#else
-  stringstream text;
-#endif
-
+  tstringstream text;
   text  << PRODUCT_NAME_TEXT " Version " << PProcess::Current().GetVersion() << "\n"
            "\n"
            "Copyright © 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
@@ -3847,10 +3847,13 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_allCodecs = FindWindowByNameAs<wxListBox>(this, wxT("AllCodecs"));
   m_selectedCodecs = FindWindowByNameAs<wxListBox>(this, wxT("SelectedCodecs"));
   for (MyMediaList::iterator mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
+    tstringstream details;
+    details << mm->mediaFormat.GetMediaType() << ": " << mm->mediaFormat;
+    if (mm->validProtocols != NULL)
+      details << mm->validProtocols;
+    m_allCodecs->Append(details.str(), &*mm);
+
     PwxString str(mm->mediaFormat);
-
-    m_allCodecs->Append(str + mm->validProtocols, &*mm);
-
     if (mm->preferenceOrder >= 0 && m_selectedCodecs->FindString(str) < 0)
       m_selectedCodecs->Append(str, &*mm);
   }
