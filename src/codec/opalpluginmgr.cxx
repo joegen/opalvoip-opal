@@ -851,10 +851,10 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
 bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
-  if (src.GetPayloadSize() == 0) {
-    dstList.RemoveAll();
+  dstList.RemoveAll();
+
+  if (src.GetPayloadSize() == 0)
     return true;
-  }
 
   // get the size of the output buffer
   int outputDataSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
@@ -867,22 +867,10 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     outputDataSize = maxEncoderSize;
 
   unsigned flags;
-  PINDEX packetCount = 0;
 
   do {
-    // While we set the payload size to that indicated, some badly behaved plug ins
-    // use more memory that indicated, so make sure the output RTP data frame is
-    // at least 2k of actual memory.
-    RTP_DataFrame * dst;
-    if (packetCount < dstList.GetSize()) {
-      dst = &dstList[packetCount];
-      dst->SetPayloadSize(outputDataSize);
-    }
-    else {
-      dst = new RTP_DataFrame(outputDataSize, 2048);
-      dstList.Append(dst);
-    }
-
+    // Some plug ins a very rude and use more memory than we say they can, so add an extra 1k
+    RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize, outputDataSize+1024);
     dst->SetPayloadType(GetPayloadType(false));
     dst->SetTimestamp(src.GetTimestamp());
 
@@ -898,16 +886,15 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 
     lastFrameWasIFrame = (flags & PluginCodec_ReturnCoderIFrame) != 0;
 
-    if ((toLen >= RTP_DataFrame::MinHeaderSize) && ((PINDEX)toLen >= dst->GetHeaderSize())) {
+    if (toLen < RTP_DataFrame::MinHeaderSize || (PINDEX)toLen < dst->GetHeaderSize())
+      delete dst;
+    else {
       dst->SetPayloadSize(toLen - dst->GetHeaderSize());
-      ++packetCount;
+      dstList.Append(dst);
     }
+
   } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
   PTRACE(5, "OpalPlugin\tEncoded video frame into " << dstList.GetSize() << " packets.");
-
-  // Clear out extra packets
-  while (dstList.GetSize() > packetCount)
-    dstList.RemoveAt(packetCount);
 
   m_totalFrames++;
   if (lastFrameWasIFrame)
