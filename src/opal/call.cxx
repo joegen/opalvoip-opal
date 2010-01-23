@@ -546,10 +546,12 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     }
 #endif
 
+    OpalMediaFormatList localMediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+    otherConnection->AdjustMediaFormats(true, localMediaFormats, &connection);
     if (!SelectMediaFormats(mediaType,
                             sourceMediaFormats,
                             sinkMediaFormats,
-                            connection.GetLocalMediaFormats(),
+                            localMediaFormats,
                             sourceFormat,
                             sinkFormat))
       return false;
