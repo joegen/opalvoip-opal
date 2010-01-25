@@ -195,7 +195,7 @@ bool OpalWAVRecordManager::Mixer::OnMixed(RTP_DataFrame * & output)
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if P_VFW_CAPTURE
+#if OPAL_VIDEO && P_VFW_CAPTURE
 
 #include <ptlib/vconvert.h>
 

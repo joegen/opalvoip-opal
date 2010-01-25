@@ -283,7 +283,9 @@ class OpalMediaPatch : public PObject
     };
     PList<Filter> filters;
 
+#if OPAL_VIDEO
     bool             m_videoDecoder;
+#endif
     bool             m_bypassActive;
     OpalMediaPatch * m_bypassToPatch;
     OpalMediaPatch * m_bypassFromPatch;
