@@ -24,6 +24,8 @@ here. The currently available pages are:
 
 \li \ref pageOpalClasses lists the classes available to the application.
 
+\li A simplified API is available via the opal.h file.
+
 \li \ref pageOpalConnections describes the working of the OpalConnection
 class, and the different stages used in call setup/teardown.
 
