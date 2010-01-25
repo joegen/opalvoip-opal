@@ -53,7 +53,9 @@
 
 OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
   : source(src)
+#if OPAL_VIDEO
   , m_videoDecoder(src.GetMediaFormat().IsTransportable() && src.GetMediaFormat().GetMediaType() == OpalMediaType::Video())
+#endif
   , m_bypassActive(false)
   , m_bypassToPatch(NULL)
   , m_bypassFromPatch(NULL)
@@ -581,7 +583,13 @@ bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
   }
 
   m_bypassToPatch = patch;
+
+#if OPAL_VIDEO
   m_bypassActive = m_bypassToPatch != NULL && !m_videoDecoder;
+#else
+  m_bypassActive = m_bypassToPatch != NULL;
+#endif
+
   return true;
 }
 
@@ -787,13 +795,13 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     return false;
   }
 
+#if OPAL_VIDEO
   if (!patch.m_bypassActive && patch.m_videoDecoder && patch.m_bypassToPatch != NULL &&
                 dynamic_cast<OpalVideoTranscoder *>(primaryCodec)->WasLastFrameIFrame()) {
     PTRACE(3, "Patch\tActivating video patch bypass to " << patch.m_bypassToPatch << " on " << patch);
     patch.m_bypassActive = true;
   }
 
-#if OPAL_VIDEO
   if (secondaryCodec == NULL && rateController != NULL) {
     PTRACE(4, "Patch\tPushing " << intermediateFrames.GetSize() << " packet into RC");
     rateController->Push(intermediateFrames, ((OpalVideoTranscoder *)primaryCodec)->WasLastFrameIFrame());
