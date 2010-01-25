@@ -250,7 +250,7 @@ PBoolean OpalIVRConnection::StartVXML()
       if (!voice.IsEmpty())
         fn = fn.GetDirectory() + voice + PDIR_SEPARATOR + fn.GetFileName();
 
-      PTRACE(3, "IVR\tPlaying file " << fn);
+      PTRACE(3, "IVR\tPlaying file " << fn << ' ' << repeat << " times, " << delay << "ms");
       vxmlSession.PlayFile(fn, repeat, delay);
       continue;
     }
