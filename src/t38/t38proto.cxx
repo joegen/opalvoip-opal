@@ -529,7 +529,7 @@ void OpalFaxConnection::OnEstablished()
   // If switched and we don't need to do CNG/CED any more, or T.38 is disabled
   // in which case the SpanDSP will deal with CNG/CED stuff.
   if (m_awaitingSwitchToT38) {
-    m_faxTimer.SetInterval(0, m_receiving ? 5 : 1);
+    m_faxTimer.SetInterval(1000);
     PTRACE(3, "T38\tStarting timer for CNG/CED tone");
   }
 }
@@ -594,9 +594,9 @@ PBoolean OpalFaxConnection::SendUserInputTone(char tone, unsigned duration)
 
 void OpalFaxConnection::OnUserInputTone(char tone, unsigned /*duration*/)
 {
-  // Not yet switched and got a CNG/CED from the remote system, start switch
-  if (m_awaitingSwitchToT38 && toupper(tone) == (m_receiving ? 'X' : 'Y')) {
-    PTRACE(3, "T38\tRequesting mode change in response to " << (m_receiving ? "CNG" : "CED"));
+  // Not yet switched and got a CED from the remote system, start switch
+  if (m_awaitingSwitchToT38 && !m_receiving && toupper(tone) == 'Y') {
+    PTRACE(3, "T38\tRequesting mode change in response to CED");
     PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
   }
 }
@@ -644,14 +644,14 @@ void OpalFaxConnection::OnSendCNGCED(PTimer &, INT)
       PTRACE(2, "T38\tDid not switch to T.38 mode, releasing connection");
       Release(OpalConnection::EndedByCapabilityExchange);
     }
+    else if (m_receiving) {
+      PTRACE(2, "T38\tSwitching to T.38 mode");
+      PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
+    }
+    else
     if (m_switchTimeout > 0 && elapsed > m_switchTimeout) {
       PTRACE(2, "T38\tDid not switch to T.38 mode, forcing switch");
       PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
-    }
-    else if (m_receiving) {
-      // Cadence for CED is single tone, but we repeat just in case
-      OpalConnection::OnUserInputTone('Y', 3600);
-      m_faxTimer = 5000;
     }
     else {
       // Cadence for CNG is 500ms on 3 seconds off
