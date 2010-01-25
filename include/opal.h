@@ -42,12 +42,17 @@ extern "C" {
 #endif
 
 /**\file opal.h
-    This file contains an API for accessing the OPAL system via "C" language interface.
-    A contrained set of functions are declared which allows the library to be easily
-    "late bound" using Windows LoadLibrary() or Unix dlopen() at run time.
+   \brief This file contains a simplified API to the OPAL system. It provides a
+    pure "C" language interface as will as a very simple C++ class and a
+    contrained set of functions for "late binding".
 
-    You may look at the sample code in opal/samples/c_api/main.c for an example of how
-    to do late binding.
+    It should be noted that the simplified API, is sill not very simple. There are
+    complexities invoved that cannot be avoided. However, this API does remove
+    some issues with the full API such as multi-threading and advanced C++ concepts.
+
+    The other major feature of this API is the ability to be  easily "late bound"
+    using Windows LoadLibrary() or Unix dlopen() at run time. You may look at the
+    sample code in opal/samples/c_api/main.c for an example of how to do late binding.
 
     Late binding also allows for easier integration of OPAL fucntionality to
     interpreted languages such as Java, Perl etc. Systems like "swig" may be used to
@@ -56,6 +61,10 @@ extern "C" {
     To make the above easier, there are only four functions: OpalInitialise(),
     OpalShutDown(), OpalGetMessage() and OpalSendMessage(). All commands to OPAL and
     indications back from OPAL are done through the latter two functions.
+
+    This API also provides a basic C++ class OpalContext, which may be used for C++
+    programmers that do not wish to learn the large number of classes in the full
+    API. At the cost of minimal extensibility and control.
   */
 
 #ifdef _WIN32
@@ -64,11 +73,13 @@ extern "C" {
   #define OPAL_EXPORT
 #endif
 
+/// Handle to initialised OPAL instance.
 typedef struct OpalHandleStruct * OpalHandle;
+
 
 typedef struct OpalMessage OpalMessage;
 
-
+/// Current API version
 #define OPAL_C_API_VERSION 21
 
 
@@ -94,11 +105,12 @@ typedef struct OpalMessage OpalMessage;
     and non-network protocols (pc, local, pots & ivr).
 
     Additional options are:
-        <table>
+        <table border=0>
         <tr><td>TraceLevel=1     <td>Level for tracing.
         <tr><td>TraceAppend      <td>Append to the trace file.
         <tr><td>TraceFile="name" <td>Set the filename for trace output. Note quotes are
                                      required if spaces are in filename.
+        </table>
     It should also be noted that there must not be spaces around the '=' sign
     in the above options.
 
@@ -285,14 +297,14 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 
 ///////////////////////////////////////
 
-#define OPAL_PREFIX_H323  "h323"
-#define OPAL_PREFIX_SIP   "sip"
-#define OPAL_PREFIX_IAX2  "iax2"
-#define OPAL_PREFIX_PCSS  "pc"
-#define OPAL_PREFIX_LOCAL "local"
-#define OPAL_PREFIX_POTS  "pots"
-#define OPAL_PREFIX_PSTN  "pstn"
-#define OPAL_PREFIX_IVR   "ivr"
+#define OPAL_PREFIX_H323  "h323"    ///< H.323 Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_SIP   "sip"     ///< SIP Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_IAX2  "iax2"    ///< IAX2 Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_PCSS  "pc"      ///< PC sound system supported string for OpalInitialise()
+#define OPAL_PREFIX_LOCAL "local"   ///< Local endpoint supported string for OpalInitialise()
+#define OPAL_PREFIX_POTS  "pots"    ///< Plain Old Telephone System supported string for OpalInitialise()
+#define OPAL_PREFIX_PSTN  "pstn"    ///< Public Switched Network supported string for OpalInitialise()
+#define OPAL_PREFIX_IVR   "ivr"     ///< Interactive Voice Response supported string for OpalInitialise()
 
 #define OPAL_PREFIX_ALL OPAL_PREFIX_H323  " " \
                         OPAL_PREFIX_SIP   " " \
@@ -681,7 +693,10 @@ typedef struct OpalParamProtocol {
 } OpalParamProtocol;
 
 
+/// Name of SIP event package for Message Waiting events.
 #define OPAL_MWI_EVENT_PACKAGE             "message-summary"
+
+/// Name of SIP even package fo rmonitoring call status
 #define OPAL_LINE_APPEARANCE_EVENT_PACKAGE "dialog;sla;ma"
 
 /**Registration parameters for the OpalCmdRegistration command.
