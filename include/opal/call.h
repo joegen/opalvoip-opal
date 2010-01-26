@@ -331,26 +331,36 @@ class OpalCall : public PSafeObject
     bool IsOnHold() const;
 
     /**Transfer connection.
-       There are several scenarios for this function. If 'connection' is not
-       NULL and the protocol type for 'address' is the same, or the protocol
-       type is "*", then this simply calls TransferConnection() on the
-       'connection' variable, e.g. connection="sip:fred@bloggs.com" and
-       address="*:1234", then connection->TransferConnection("sip:1234") is
-       called, which sends a REFER command to the remote. The connection and
-       call are subsequently released in this case.
+       There are several scenarios for this function.
 
-       If connection="pc:Speakers" and address="pc:Headset", then the sound
-       device in the 'connection' instance is changed and the call and media
-       is continued unchanged.
+       If 'connection' is not NULL and the protocol type for 'address' is
+       the same, or the protocol type is "*", or the address is a valid and
+       current call token, then this simply calls TransferConnection() on the
+       'connection' variable.
+       
+       e.g. connection="sip:fred@bloggs.com" and address="*:1234", then
+       connection->TransferConnection("sip:1234") is called, which sends a
+       REFER command to the remote. The connection and call are subsequently
+       released in this case.
 
-       If there is a protocol change, e.g. "pc" to "t38", then the 'connection'
-       is completely releasd, all links to the second conection in the call (if
-       any) severed and a new connection establshed and new streams started.
+       Another example, if connection="pc:Speakers" and address="pc:Headset",
+       then the sound device in the 'connection' instance is changed and the
+       call and media is continued unchanged. The connection and call are
+       <b>not</b> released in this case.
+
+       If there is a protocol change, e.g. "pc:" to "t38:", then 'connection'
+       is completely released, all media streams to the second conection in
+       the call (if any) are severed and a new connection established and new
+       media streams started.
 
        If 'connection' is NULL, it will choose the first connection in the call
-       of the same protocol type. For example in a call from "pc:Speakers" to
-       "sip:fred@bloggs.com", the previous examples would operate identically
-       even if 'connection' is NULL.
+       of the same protocol type. For example, in the previous example above
+       where address="pc:Headset", and the call is from "pc:Speakers" to
+       "sip:fred@bloggs.com", the function would operate the same even if
+       'connection' is NULL.
+
+       If there are no connections of the same protocol type, then nothing is
+       done and false is returned.
       */
     bool Transfer(
       const PString & address,           ///< New address to transfer to
