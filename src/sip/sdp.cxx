@@ -270,16 +270,15 @@ OpalMediaFormat & SDPMediaFormat::GetWritableMediaFormat()
 
 OpalMediaFormatList SDPMediaFormat::GetMediaFormats() const
 {
-  OpalMediaFormatList adjustedFormats = GetMediaFormat();
+  OpalMediaFormatList adjustedFormats;
 
   // Look for any other media formats that match the encoding name
   OpalMediaFormatList masterFormats = OpalMediaFormat::GetMatchingRegisteredMediaFormats(payloadType, clockRate, encodingName, "sip");
-  if (masterFormats.GetSize() > 1) {
-    for (OpalMediaFormatList::iterator iterFormat = masterFormats.begin(); iterFormat != masterFormats.end(); ++iterFormat) {
+  for (OpalMediaFormatList::iterator iterFormat = masterFormats.begin(); iterFormat != masterFormats.end(); ++iterFormat) {
+    OpalMediaFormat adjustedFormat = *iterFormat;
+    InitialiseMediaFormat(adjustedFormat);
+    if (adjustedFormat.Merge(*iterFormat)) {
       PTRACE(3, "SIP\tRTP payload type " << encodingName << " matched to codec " << *iterFormat);
-
-      OpalMediaFormat adjustedFormat = *iterFormat;
-      InitialiseMediaFormat(adjustedFormat);
       adjustedFormats += adjustedFormat;
     }
   }
@@ -304,6 +303,12 @@ void SDPMediaFormat::InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const
   mediaFormat.SetPayloadType(payloadType);
   mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), parameters.IsEmpty() ? 1 : parameters.AsUnsigned());
 
+  // Set bandwidth limits, if present
+  for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) {
+    if (r->second > 0)
+      mediaFormat.AddOption(new OpalMediaOptionString(SDPBandwidthPrefix + r->first, false, r->second), true);
+  }
+
   // Fill in the default values for (possibly) missing FMTP options
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     OpalMediaOption & option = const_cast<OpalMediaOption &>(mediaFormat.GetOption(i));
@@ -311,24 +316,16 @@ void SDPMediaFormat::InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const
       option.FromString(option.GetFMTPDefault());
   }
 
-  for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) {
-    if (r->second > 0)
-      mediaFormat.AddOption(new OpalMediaOptionString(SDPBandwidthPrefix + r->first, false, r->second), true);
-  }
+  // If format has an explicit FMTP option then we only use that, no high level parsing
+  if (mediaFormat.SetOptionString("FMTP", m_fmtp))
+    return;
 
-  // Now FMTP yet, or ever
+  // No FMTP to parse, may as well stop here
   if (m_fmtp.IsEmpty())
     return;
 
-  // Save the raw 'fmtp=' line so it is available at the application level.
+  // Save the raw 'fmtp=' line so it is available for information purposes.
   mediaFormat.AddOption(new OpalMediaOptionString("RawFMTP", false, m_fmtp), true);
-
-  // See if standard format OPT=VAL;OPT=VAL
-  if (m_fmtp.FindOneOf(";=") == P_MAX_INDEX) {
-    // Nope, just save the whole string as is
-    mediaFormat.SetOptionString("FMTP", m_fmtp);
-    return;
-  }
 
   // guess at the seperator
   char sep = ';';
