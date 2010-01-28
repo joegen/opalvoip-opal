@@ -264,7 +264,7 @@ static struct PluginCodec_Option BitRateOption24k =
   PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
   BitRateOptionName,          // Generic (human readable) option name
   1,                          // Read Only flag
-  PluginCodec_AlwaysMerge,    // Merge mode
+  PluginCodec_EqualMerge,     // Merge mode
   "24000",                    // Initial value
   "bitrate",                  // SIP/SDP FMTP name
   "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
@@ -278,7 +278,7 @@ static struct PluginCodec_Option BitRateOption32k =
   PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
   BitRateOptionName,          // Generic (human readable) option name
   1,                          // Read Only flag
-  PluginCodec_AlwaysMerge,    // Merge mode
+  PluginCodec_EqualMerge,     // Merge mode
   "32000",                    // Initial value
   "bitrate",                  // SIP/SDP FMTP name
   "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
