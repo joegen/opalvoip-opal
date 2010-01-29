@@ -383,7 +383,8 @@ PBoolean SIPEndPoint::MakeConnection(OpalCall & call,
 
 void SIPEndPoint::OnReleased(OpalConnection & connection)
 {
-  m_receivedConnectionTokens.RemoveAt(connection.GetIdentifier());
+  if (m_receivedConnectionTokens(connection.GetIdentifier()) == connection.GetToken())
+    m_receivedConnectionTokens.RemoveAt(connection.GetIdentifier());
   OpalEndPoint::OnReleased(connection);
 }
 
