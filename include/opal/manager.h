@@ -1320,10 +1320,16 @@ class OpalManager : public PObject
     );
 
     /**Get the default media format mask.
+       The is the default list of media format names to be removed from media
+       format lists bfeore use by a connection.
+       See OpalMediaFormatList::Remove() for more information.
      */
     const PStringArray & GetMediaFormatMask() const { return mediaFormatMask; }
 
     /**Set the default media format mask.
+       The is the default list of media format names to be removed from media
+       format lists bfeore use by a connection.
+       See OpalMediaFormatList::Remove() for more information.
      */
     void SetMediaFormatMask(
       const PStringArray & mask   //< New mask
