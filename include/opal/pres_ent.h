@@ -287,7 +287,7 @@ class OpalPresentity : public PSafeObject
       */
     virtual bool SendCommand(
       OpalPresentityCommand * cmd   ///< Command to be processed
-    ) = 0;
+    );
   //@}
 
   /**@name Indications (callbacks) */
