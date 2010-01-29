@@ -336,6 +336,18 @@ bool OpalPresentity::UnsubscribeBuddyList()
   return SubscribeBuddyList(false);
 }
 
+
+bool OpalPresentity::SendCommand(OpalPresentityCommand * cmd)
+{
+  if (cmd == NULL)
+    return false;
+
+  cmd->Process(*this);
+  delete cmd;
+  return true;
+}
+
+
 OpalPresentityCommand * OpalPresentity::InternalCreateCommand(const char * cmdName)
 {
   PDefaultPFactoryKey partialKey(cmdName);
@@ -351,12 +363,14 @@ OpalPresentityCommand * OpalPresentity::InternalCreateCommand(const char * cmdNa
   return NULL;
 }
 
+
 PString OpalPresentity::GetID() const 
 { 
   PStringStream strm;
   strm << "id" << (unsigned)m_idNumber;
   return strm;
 }
+
 
 /////////////////////////////////////////////////////////////////////////////
 
