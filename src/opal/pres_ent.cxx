@@ -164,7 +164,7 @@ OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PURL & url,
 }
 
 
-bool OpalPresentity::SubscribeToPresence(const PString & presentity, bool subscribe)
+bool OpalPresentity::SubscribeToPresence(const PURL & presentity, bool subscribe)
 {
   OpalSubscribeToPresenceCommand * cmd = CreateCommand<OpalSubscribeToPresenceCommand>();
   if (cmd == NULL)
@@ -177,13 +177,13 @@ bool OpalPresentity::SubscribeToPresence(const PString & presentity, bool subscr
 }
 
 
-bool OpalPresentity::UnsubscribeFromPresence(const PString & presentity)
+bool OpalPresentity::UnsubscribeFromPresence(const PURL & presentity)
 {
   return SubscribeToPresence(presentity, false);
 }
 
 
-bool OpalPresentity::SetPresenceAuthorisation(const PString & presentity, Authorisation authorisation)
+bool OpalPresentity::SetPresenceAuthorisation(const PURL & presentity, Authorisation authorisation)
 {
   OpalAuthorisationRequestCommand * cmd = CreateCommand<OpalAuthorisationRequestCommand>();
   if (cmd == NULL)
@@ -209,7 +209,7 @@ bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PStri
 }
 
 
-void OpalPresentity::OnAuthorisationRequest(const PString & presentity)
+void OpalPresentity::OnAuthorisationRequest(const PURL & presentity)
 {
   PWaitAndSignal mutex(m_notificationMutex);
 
@@ -297,7 +297,7 @@ bool OpalPresentity::SetBuddy(const BuddyInfo & buddy)
 }
 
 
-bool OpalPresentity::DeleteBuddy(const PString & presentity)
+bool OpalPresentity::DeleteBuddy(const PURL & presentity)
 {
   if (presentity.IsEmpty())
     return false;

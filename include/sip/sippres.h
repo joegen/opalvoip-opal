@@ -157,9 +157,9 @@ class XCAPClient : public PHTTPClient
 
 
     void SetRoot(
-      const PString & server
+      const PURL & server
     ) { m_root = server; }
-    const PString & GetRoot() const { return m_root; }
+    const PURL & GetRoot() const { return m_root; }
 
     void SetApplicationUniqueID(
       const PString & id
@@ -191,7 +191,7 @@ class XCAPClient : public PHTTPClient
     const PString & GetContentType() const { return m_contentType; }
 
   protected:
-    PString      m_root;
+    PURL         m_root;
     PString      m_auid;
     bool         m_global;
     PString      m_xui;
@@ -276,7 +276,7 @@ class SIPXCAP_Presentity : public SIP_Presentity
     virtual bool DeleteBuddyList();
     virtual bool GetBuddy(BuddyInfo & buddy);
     virtual bool SetBuddy(const BuddyInfo & buddy);
-    virtual bool DeleteBuddy(const PString & presentity);
+    virtual bool DeleteBuddy(const PURL & presentity);
     virtual bool SubscribeBuddyList(bool subscribe = true);
   //@}
 
