@@ -407,7 +407,7 @@ void SIPXCAP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
 {
   PString id       = watcher->GetAttribute("id");
   PString status   = watcher->GetAttribute("status");
-  PString otherAOR = watcher->GetData().Trim();
+  PURL otherAOR    = watcher->GetData().Trim();
 
   StringMap::iterator existingAOR = m_watcherAorById.find(id);
 
@@ -990,7 +990,7 @@ bool SIPXCAP_Presentity::SetBuddy(const BuddyInfo & buddy)
 }
 
 
-bool SIPXCAP_Presentity::DeleteBuddy(const PString & presentity)
+bool SIPXCAP_Presentity::DeleteBuddy(const PURL & presentity)
 {
   XCAPClient xcap;
   InitBuddyXcap(xcap, presentity);

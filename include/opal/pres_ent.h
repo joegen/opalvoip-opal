@@ -98,8 +98,8 @@ class OpalPresenceInfo
 
     State   m_state;    ///< New state for presentity
     PString m_note;     ///< Additional information about state change
-    PString m_entity;   ///< The presentity whose state had changed
-    PString m_target;   ///< The presentity that is being informed about the state change
+    PURL    m_entity;   ///< The presentity whose state had changed
+    PURL    m_target;   ///< The presentity that is being informed about the state change
 
     OpalPresenceInfo(State state = Unchanged) : m_state(state) { }
 
@@ -211,7 +211,7 @@ class OpalPresentity : public PSafeObject
         capabable of the action.
       */
     virtual bool SubscribeToPresence(
-      const PString & presentity,   ///< Other presentity to monitor
+      const PURL & presentity,      ///< Other presentity to monitor
       bool subscribe = true         ///< true if to subscribe, else unsubscribe
     );
 
@@ -224,7 +224,7 @@ class OpalPresentity : public PSafeObject
         capabable of the action.
       */
     virtual bool UnsubscribeFromPresence(
-      const PString & presentity    ///< Other presentity to monitor
+      const PURL & presentity    ///< Other presentity to monitor
     );
 
     /// Authorisation modes for SetPresenceAuthorisation()
@@ -248,7 +248,7 @@ class OpalPresentity : public PSafeObject
         capabable of the action.
       */
     virtual bool SetPresenceAuthorisation(
-      const PString & presentity,     ///< Remote presentity to be authorised
+      const PURL & presentity,        ///< Remote presentity to be authorised
       Authorisation authorisation     ///< Authorisation mode
     );
 
@@ -300,12 +300,12 @@ class OpalPresentity : public PSafeObject
         otherwise will authorise the request.
       */
     virtual void OnAuthorisationRequest(
-      const PString & presentity    ///< Other presentity requesting our presence
+      const PURL & presentity    ///< Other presentity requesting our presence
     );
 
-    typedef PNotifierTemplate<const PString &> AuthorisationRequestNotifier;
-    #define PDECLARE_AuthorisationRequestNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const PString &)
-    #define PCREATE_AuthorisationRequestNotifier(fn) PCREATE_NOTIFIER2(fn, const PString &)
+    typedef PNotifierTemplate<const PURL &> AuthorisationRequestNotifier;
+    #define PDECLARE_AuthorisationRequestNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const PURL &)
+    #define PCREATE_AuthorisationRequestNotifier(fn) PCREATE_NOTIFIER2(fn, const PURL &)
 
     /// Set the notifier for the OnAuthorisationRequest() function.
     void SetAuthorisationRequestNotifier(
@@ -342,13 +342,13 @@ class OpalPresentity : public PSafeObject
       */
     struct BuddyInfo {
       BuddyInfo(
-        const PString & presentity = PString::Empty(),
+        const PURL & presentity = PString::Empty(),
         const PString & displayName = PString::Empty()
       ) : m_presentity(presentity)
         , m_displayName(displayName)
       { }
 
-      PString m_presentity;   ///< Typicall URI address-of-record
+      PURL    m_presentity;   ///< Typicall URI address-of-record
       PString m_displayName;  ///< Human readable name
 
       PString m_contentType;  ///< MIME type code for XML
@@ -390,7 +390,7 @@ class OpalPresentity : public PSafeObject
     /**Delete a buddy to the buddy list.
       */
     virtual bool DeleteBuddy(
-      const PString & presentity
+      const PURL & presentity
     );
 
     /**Subscribe to buddy list.
@@ -518,7 +518,7 @@ class OpalPresentityCommand {
     typedef PAtomicInteger::IntegerType CmdSeqType;
     CmdSeqType m_sequence;
     bool       m_responseNeeded;
-    PString    m_presentity;
+    PURL       m_presentity;
 };
 
 /** Macro to define the factory that creates a concrete command class.
