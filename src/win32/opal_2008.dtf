@@ -4801,7 +4801,7 @@ EXPORTS
     ??0SDPMediaFormat@@QAE@ABV0@@Z @48955 NONAME
     ??0SDPRTPAVPMediaDescription@@QAE@ABVOpalTransportAddress@@@Z @51507 NONAME
     ??0SDPSessionDescription@@QAE@ABV0@@Z @4043 NONAME
-    ??0SDPSessionDescription@@QAE@ABVOpalTransportAddress@@@Z @4044 NONAME
+    ??0SDPSessionDescription@@QAE@_JIABVOpalTransportAddress@@@Z @58344 NONAME
     ??0SDPSIPIMMediaDescription@@QAE@ABVOpalTransportAddress@@0ABVPString@@@Z @55076 NONAME
     ??0SDPSIPIMMediaDescription@@QAE@ABVOpalTransportAddress@@@Z @55077 NONAME
     ??0SDPT140MediaDescription@@QAE@ABVOpalTransportAddress@@@Z @55078 NONAME
@@ -7262,7 +7262,7 @@ EXPORTS
     ??1SIPEndPoint_C@@UAE@XZ @49173 NONAME
     ??1SIPEventPackageHandler@@UAE@XZ @55229 NONAME
     ??1SIPHandler@@UAE@XZ @42024 NONAME
-    ??1SIPHandlersList@@UAE@XZ @42025 NONAME
+    ??1SIPHandlersList@@QAE@XZ @58345 NONAME
     ??1SIPInvite@@UAE@XZ @6160 NONAME
     ??1SIPMessage@@UAE@XZ @6161 NONAME
     ??1SIPMessageHandler@@UAE@XZ @42026 NONAME
@@ -9930,7 +9930,6 @@ EXPORTS
     ??R?$less@W4Methods@SIP_PDU@@@std@@QBE_NABW4Methods@SIP_PDU@@0@Z @51947 NONAME
     ??RH460_Feature@@QAEAAVH460_FeatureParameter@@ABVH460_FeatureID@@@Z @8722 NONAME
     ??RH460_Feature@@QAEAAVH460_FeatureParameter@@H@Z @8723 NONAME
-    ??XAddress@PIPSocket@@QBE_NABV01@@Z @58333 NONAME
     ??XIAX2FullFrame@@QAE_NAAV0@@Z @43720 NONAME
     ??XIAX2Remote@@QAE_NAAV0@@Z @43721 NONAME
     ??Y?$PSet@VPOrdinalKey@@@@QAEAAV0@ABVPOrdinalKey@@@Z @8726 NONAME
@@ -11976,7 +11975,6 @@ EXPORTS
     ??_7SIPEndPoint_C@@6B@ @49506 NONAME
     ??_7SIPEventPackageHandler@@6B@ @55448 NONAME
     ??_7SIPHandler@@6B@ @42094 NONAME
-    ??_7SIPHandlersList@@6B@ @42095 NONAME
     ??_7SIPInvite@@6B@ @10715 NONAME
     ??_7SIPMessage@@6B@ @10716 NONAME
     ??_7SIPMessageHandler@@6B@ @42096 NONAME
@@ -14086,7 +14084,6 @@ EXPORTS
     ??_R0?AVSIPEndPoint_C@@@8 @49576 NONAME
     ??_R0?AVSIPEventPackageHandler@@@8 @55540 NONAME
     ??_R0?AVSIPHandler@@@8 @42133 NONAME
-    ??_R0?AVSIPHandlersList@@@8 @42134 NONAME
     ??_R0?AVSIPInvite@@@8 @12763 NONAME
     ??_R0?AVSIPMessage@@@8 @12764 NONAME
     ??_R0?AVSIPMessageHandler@@@8 @42135 NONAME
@@ -16181,7 +16178,6 @@ EXPORTS
     ??_R1A@?0A@EA@SIPEndPoint_C@@8 @49637 NONAME
     ??_R1A@?0A@EA@SIPEventPackageHandler@@8 @55632 NONAME
     ??_R1A@?0A@EA@SIPHandler@@8 @42172 NONAME
-    ??_R1A@?0A@EA@SIPHandlersList@@8 @42173 NONAME
     ??_R1A@?0A@EA@SIPInvite@@8 @14793 NONAME
     ??_R1A@?0A@EA@SIPMessage@@8 @14794 NONAME
     ??_R1A@?0A@EA@SIPMessageHandler@@8 @42174 NONAME
@@ -18295,7 +18291,6 @@ EXPORTS
     ??_R2SIPEndPoint_C@@8 @49706 NONAME
     ??_R2SIPEventPackageHandler@@8 @55727 NONAME
     ??_R2SIPHandler@@8 @42211 NONAME
-    ??_R2SIPHandlersList@@8 @42212 NONAME
     ??_R2SIPInvite@@8 @16834 NONAME
     ??_R2SIPMessage@@8 @16835 NONAME
     ??_R2SIPMessageHandler@@8 @42213 NONAME
@@ -20386,7 +20381,6 @@ EXPORTS
     ??_R3SIPEndPoint_C@@8 @49767 NONAME
     ??_R3SIPEventPackageHandler@@8 @55819 NONAME
     ??_R3SIPHandler@@8 @42250 NONAME
-    ??_R3SIPHandlersList@@8 @42251 NONAME
     ??_R3SIPInvite@@8 @18864 NONAME
     ??_R3SIPMessage@@8 @18865 NONAME
     ??_R3SIPMessageHandler@@8 @42252 NONAME
@@ -22499,7 +22493,6 @@ EXPORTS
     ??_R4SIPEndPoint_C@@6B@ @49826 NONAME
     ??_R4SIPEventPackageHandler@@6B@ @55919 NONAME
     ??_R4SIPHandler@@6B@ @42289 NONAME
-    ??_R4SIPHandlersList@@6B@ @42290 NONAME
     ??_R4SIPInvite@@6B@ @20913 NONAME
     ??_R4SIPMessage@@6B@ @20914 NONAME
     ??_R4SIPMessageHandler@@6B@ @42291 NONAME
@@ -22612,6 +22605,7 @@ EXPORTS
     ?AccessRequest@H323PeerElement@@QAE_NABVPString@@AAVPStringArray@@AAVH323TransportAddress@@I@Z @43794 NONAME
     ?Activate@IAX2Processor@@QAEXXZ @20993 NONAME
     ?ActivatePreset@OpalH281Handler@@QAEXE@Z @20994 NONAME
+    ?ActivateState@SIPHandler@@QAE_NW4State@1@I@Z @58346 NONAME
     ?Add@H245NegLogicalChannels@@UAEXAAVH323Channel@@@Z @20996 NONAME
     ?Add@H323Capabilities@@QAEXPAVH323Capability@@@Z @20997 NONAME
     ?Add@H323PresenceIdentifiers@@QAEXABVPGloballyUniqueID@@@Z @52880 NONAME
@@ -22698,7 +22692,6 @@ EXPORTS
     ?AddVideoMediaFormats@OpalEndPoint@@UBEXAAVOpalMediaFormatList@@PBVOpalConnection@@@Z @21060 NONAME
     ?AddVideoMediaFormats@OpalManager@@UBEXAAVOpalMediaFormatList@@PBVOpalConnection@@@Z @21061 NONAME
     ?AddWork@?$PThreadPool@USIP_PDU_Work@SIPEndPoint@@@@QAE_NPAUSIP_PDU_Work@SIPEndPoint@@PBD@Z @58007 NONAME
-    ?AddWork@SIPEndPoint@@MAEXPAUSIP_PDU_Work@1@@Z @58008 NONAME
     ?AddWork@SIP_PDU_Thread@SIPEndPoint@@UAEXPAUSIP_PDU_Work@2@@Z @58009 NONAME
     ?AdjustInterfaceTable@OpalRTPEndPoint@@UAE_NAAVAddress@PIPSocket@@AAV?$PArray@VInterfaceEntry@PIPSocket@@@@@Z @52904 NONAME
     ?AdjustMediaFormats@OpalConnection@@UBEXAAVOpalMediaFormatList@@@Z @21063 NONAME
@@ -22773,6 +22766,7 @@ EXPORTS
     ?Append@?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@UAE?AV?$PSafePtr@VH323PeerElementServiceRelationship@@VPSafePtrBase@@@@PAVH323PeerElementServiceRelationship@@W4PSafetyMode@@@Z @58023 NONAME
     ?Append@OpalMediaFormatList@@EAEHPAVPObject@@@Z @21096 NONAME
     ?Append@PASN_Array@@QAEXPAVPASN_Object@@@Z @21097 NONAME
+    ?Append@SIPHandlersList@@QAEXPAVSIPHandler@@@Z @58347 NONAME
     ?AppendAddress@H323TransportAddressArray@@QAEXABVH323TransportAddress@@@Z @21098 NONAME
     ?AppendAddress@OpalTransportAddressArray@@QAEXABVOpalTransportAddress@@@Z @21099 NONAME
     ?AppendIe@IAX2FullFrameProtocol@@QAEXPAVIAX2Ie@@@Z @21100 NONAME
@@ -23185,6 +23179,7 @@ EXPORTS
     ?CheckForResponse@H323Transactor@@IAE_NIIPBVPASN_Choice@@@Z @43875 NONAME
     ?CheckFrameRate@OpalStandardVideoRateController@@IAE_N_N@Z @58033 NONAME
     ?CheckGatekeeperIdentifier@H323GatekeeperRequest@@QAE_NXZ @43876 NONAME
+    ?CheckINVITE@SIPConnection@@QBE?AW4TypeOfINVITE@1@ABVSIP_PDU@@@Z @58348 NONAME
     ?CheckResponse@Request@H323Transactor@@QAEXIPBVPASN_Choice@@@Z @21395 NONAME
     ?CheckSignalAddressPolicy@H323GatekeeperServer@@UAE_NABVH323RegisteredEndPoint@@ABVH225_AdmissionRequest@@ABVH323TransportAddress@@@Z @43877 NONAME
     ?ChooseCodec@IAX2Connection@@QAEIXZ @21397 NONAME
@@ -26467,7 +26462,6 @@ EXPORTS
     ?CloseWait@OpalListener@@QAEXXZ @24955 NONAME
     ?CloseWait@OpalTransport@@QAEXXZ @24956 NONAME
     ?CloseWhileLocked@H245NegLogicalChannel@@MAE_NXZ @43913 NONAME
-    ?CollapseFork@SIPHandler@@IAEXAAVSIPTransaction@@@Z @49968 NONAME
     ?CollectAverage@OpalRawMediaStream@@IAEXPBEH@Z @39774 NONAME
     ?Compare@?$H235_ENCRYPTED@VH235_EncodedGeneralToken@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @24958 NONAME
     ?Compare@?$H235_ENCRYPTED@VH235_EncodedKeySyncMaterial@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @24959 NONAME
@@ -30508,6 +30502,7 @@ EXPORTS
     ?DeleteMatchingSendFrame@IAX2FrameList@@QAEXPAVIAX2FullFrame@@@Z @29217 NONAME
     ?DeleteObject@CallDict@OpalManager@@UBEXPAVPObject@@@Z @29218 NONAME
     ?DeleteObject@ConnectionDict@OpalEndPoint@@EBEXPAVPObject@@@Z @29219 NONAME
+    ?DeleteObjectsToBeRemoved@SIPHandlersList@@QAE_NXZ @58349 NONAME
     ?DeletePDU@H323RasPDU@@UAEXXZ @29220 NONAME
     ?DeletePDU@H501PDU@@UAEXXZ @29221 NONAME
     ?DeriveNewFeatureSet@H460_FeatureSet@@QAEPAV1@XZ @53326 NONAME
@@ -31597,7 +31592,6 @@ EXPORTS
     ?GetAlertingType@H323Connection@@UBE?AVPString@@XZ @56203 NONAME
     ?GetAlertingType@OpalConnection@@UBE?AVPString@@XZ @56204 NONAME
     ?GetAlertingType@SIPConnection@@UBE?AVPString@@XZ @56205 NONAME
-    ?GetAlgorithm@SIPDigestAuthentication@@QBE?AW4Algorithm@1@XZ @56206 NONAME
     ?GetAlias@H323PresenceInstruction@@QAE?AVPString@@XZ @53440 NONAME
     ?GetAlias@H323PresenceNotification@@QAE?AVPString@@XZ @53441 NONAME
     ?GetAlias@H323RegisteredEndPoint@@QBE?AVPString@@H@Z @30182 NONAME
@@ -33530,12 +33524,12 @@ EXPORTS
     ?GetContact@SIPMIMEInfo@@QBE?AVPString@@XZ @32220 NONAME
     ?GetContacts@SIPMIMEInfo@@QBE_NAAV?$list@VSIPURL@@V?$allocator@VSIPURL@@@std@@@std@@@Z @56238 NONAME
     ?GetContactURL@SIPEndPoint@@QAE?AVSIPURL@@ABVOpalTransport@@ABV2@@Z @58135 NONAME
-    ?GetContentEncoding@SIPMIMEInfo@@QBE?AVPString@@XZ @32221 NONAME
+    ?GetContentEncoding@SIPMIMEInfo@@QBE?AVPCaselessString@@XZ @58350 NONAME
     ?GetContentLength@SIPMIMEInfo@@QBEHXZ @32222 NONAME
-    ?GetContentType@SIPDialogEventPackageHandler@@UBE?AVPString@@XZ @56239 NONAME
-    ?GetContentType@SIPMIMEInfo@@QBE?AVPString@@XZ @32223 NONAME
-    ?GetContentType@SIPMwiEventPackageHandler@@EBE?AVPString@@XZ @56240 NONAME
-    ?GetContentType@SIPPresenceEventPackageHandler@@EBE?AVPString@@XZ @56241 NONAME
+    ?GetContentType@SIPDialogEventPackageHandler@@UBE?AVPCaselessString@@XZ @58351 NONAME
+    ?GetContentType@SIPMIMEInfo@@QBE?AVPCaselessString@@_N@Z @58352 NONAME
+    ?GetContentType@SIPMwiEventPackageHandler@@EBE?AVPCaselessString@@XZ @58353 NONAME
+    ?GetContentType@SIPPresenceEventPackageHandler@@EBE?AVPCaselessString@@XZ @58354 NONAME
     ?GetContribSource@RTP_DataFrame@@QBEKH@Z @32224 NONAME
     ?GetContribSrcCount@RTP_DataFrame@@QBEHXZ @32225 NONAME
     ?GetControlChannel@H323Connection@@QBEABVOpalTransport@@XZ @32226 NONAME
@@ -34330,6 +34324,7 @@ EXPORTS
     ?GetEntityBody@SIP_PDU@@QAEAAVPString@@XZ @33113 NONAME
     ?GetEntityBody@SIP_PDU@@QBEABVPString@@XZ @56252 NONAME
     ?GetEntries@IAX2FrameList@@MAEHXZ @33114 NONAME
+    ?GetEnumerations@OpalMediaOptionEnum@@QBEABVPStringArray@@XZ @58355 NONAME
     ?GetErrorNumber@OpalLineInterfaceDevice@@QBEHXZ @33115 NONAME
     ?GetErrorText@OpalLineInterfaceDevice@@QBE?AVPString@@XZ @33116 NONAME
     ?GetES@H224_Frame@@QBE_NXZ @45219 NONAME
@@ -34370,6 +34365,7 @@ EXPORTS
     ?GetFirstDescriptor@H323PeerElement@@QAE?AV?$PSafePtr@VH323PeerElementDescriptor@@VPSafePtrBase@@@@W4PSafetyMode@@@Z @58138 NONAME
     ?GetFirstEndPoint@H323GatekeeperServer@@QAE?AV?$PSafePtr@VH323RegisteredEndPoint@@VPSafePtrBase@@@@W4PSafetyMode@@@Z @58139 NONAME
     ?GetFirstGOB@OpalVideoUpdatePicture@@QBEHXZ @33141 NONAME
+    ?GetFirstHandler@SIPHandlersList@@QBE?AV?$PSafePtr@VSIPHandler@@VPSafePtrBase@@@@W4PSafetyMode@@@Z @58356 NONAME
     ?GetFirstLocalServiceRelationship@H323PeerElement@@QAE?AV?$PSafePtr@VH323PeerElementServiceRelationship@@VPSafePtrBase@@@@W4PSafetyMode@@@Z @58140 NONAME
     ?GetFirstMB@OpalVideoUpdatePicture@@QBEHXZ @33143 NONAME
     ?GetFirstRemoteServiceRelationship@H323PeerElement@@QAE?AV?$PSafePtr@VH323PeerElementServiceRelationship@@VPSafePtrBase@@@@W4PSafetyMode@@@Z @58141 NONAME
@@ -34628,7 +34624,7 @@ EXPORTS
     ?GetLocalPartyName@OpalConnection@@QBEABVPString@@XZ @33342 NONAME
     ?GetLocalPartyURL@OpalConnection@@UBE?AVPString@@XZ @50350 NONAME
     ?GetLocalPartyURL@OpalIVRConnection@@UBE?AVPString@@XZ @56297 NONAME
-    ?GetLocalPartyURL@SIPConnection@@MBE?AVPString@@XZ @56298 NONAME
+    ?GetLocalPartyURL@SIPConnection@@UBE?AVPString@@XZ @58357 NONAME
     ?GetLocalTag@SIPDialogContext@@QBEABVPString@@XZ @56299 NONAME
     ?GetLocalURI@SIPDialogContext@@QBEABVSIPURL@@XZ @56300 NONAME
     ?GetLocalURL@SIPEndPoint@@UAE?AVSIPURL@@ABVOpalTransport@@ABVPString@@@Z @43598 NONAME
@@ -34762,7 +34758,7 @@ EXPORTS
     ?GetNext@PortInfo@OpalManager@@QAEGI@Z @33436 NONAME
     ?GetNextCallToken@OpalManager@@QAE?AVPString@@XZ @33437 NONAME
     ?GetNextChannelNumber@H245NegLogicalChannels@@QAE?AVH323ChannelNumber@@XZ @33438 NONAME
-    ?GetNextCSeq@SIPDialogContext@@QAEIXZ @56312 NONAME
+    ?GetNextCSeq@SIPDialogContext@@QAEII@Z @58358 NONAME
     ?GetNextCSeq@SIPEndPoint@@QAEIXZ @33440 NONAME
     ?GetNextH450CallIdentityValue@H323EndPoint@@QBEIXZ @33441 NONAME
     ?GetNextInvokeId@H450xDispatcher@@QBEIXZ @33442 NONAME
@@ -34922,7 +34918,7 @@ EXPORTS
     ?GetProductInfo@OpalConnection@@QBEABVOpalProductInfo@@XZ @42825 NONAME
     ?GetProductInfo@OpalEndPoint@@QBEABVOpalProductInfo@@XZ @42826 NONAME
     ?GetProductInfo@OpalManager@@QBEABVOpalProductInfo@@XZ @42827 NONAME
-    ?GetProductInfo@SIPMIMEInfo@@QAEXAAVOpalProductInfo@@@Z @42828 NONAME
+    ?GetProductInfo@SIPMIMEInfo@@QBEXAAVOpalProductInfo@@@Z @58359 NONAME
     ?GetProgressIndicator@Q931@@QBE_NAAIPAI1@Z @45262 NONAME
     ?GetProto@OpalTransportAddress@@QBE?AVPCaselessString@@XZ @56329 NONAME
     ?GetProtocolList@H323PeerElementDescriptor@@SAIABVH501_ArrayOf_SupportedProtocols@@@Z @33536 NONAME
@@ -35095,7 +35091,7 @@ EXPORTS
     ?GetSessionID@OpalMediaStream@@QBEIXZ @33675 NONAME
     ?GetSessionID@RTP_Session@@QBEIXZ @33676 NONAME
     ?GetSessionIDToMediaTypeMap@OpalMediaTypeDefinition@@KAAAV?$map@IVOpalMediaType@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIVOpalMediaType@@@std@@@3@@std@@XZ @53674 NONAME
-    ?GetSessionManager@SIPInvite@@QBEABVOpalRTPSessionManager@@XZ @56348 NONAME
+    ?GetSessionManager@SIPInvite@@QAEAAVOpalRTPSessionManager@@XZ @58360 NONAME
     ?GetSessionVars@PVXMLSession@@QAEAAVPStringToString@@XZ @43318 NONAME
     ?GetSignalAddress@H323RegisteredEndPoint@@QBE?AVH323TransportAddress@@H@Z @33678 NONAME
     ?GetSignalAddressCount@H323RegisteredEndPoint@@QBEHXZ @33679 NONAME
@@ -35177,7 +35173,7 @@ EXPORTS
     ?GetSubscriber@H323PresenceNotification@@QAE?AVPGloballyUniqueID@@H@Z @53688 NONAME
     ?GetSubscriberDetails@H323PresenceSubscription@@QAEXAAVPStringList@@@Z @53689 NONAME
     ?GetSubscription@H323PresenceSubscription@@QAE?AVPGloballyUniqueID@@XZ @53690 NONAME
-    ?GetSubscriptionState@SIPMIMEInfo@@QBE?AVPString@@XZ @33724 NONAME
+    ?GetSubscriptionState@SIPMIMEInfo@@QBE?AVPCaselessString@@XZ @58361 NONAME
     ?GetSubType@?$H323_G729CapabilityTemplate@$00@@UBEIXZ @56353 NONAME
     ?GetSubType@?$H323_G729CapabilityTemplate@$01@@UBEIXZ @56354 NONAME
     ?GetSubType@?$H323_G729CapabilityTemplate@$02@@UBEIXZ @56355 NONAME
@@ -35230,6 +35226,7 @@ EXPORTS
     ?GetTotalTime@OpalBitRateCalculator@@QBE_JXZ @58167 NONAME
     ?GetTransaction@SIPEndPoint@@QAE?AV?$PSafePtr@VSIPTransaction@@VPSafePtrBase@@@@ABVPString@@W4PSafetyMode@@@Z @58168 NONAME
     ?GetTransactionID@SIP_PDU@@QBE?AVPString@@XZ @33763 NONAME
+    ?GetTranslationAddress@OpalManager@@QBEABVAddress@PIPSocket@@XZ @58362 NONAME
     ?GetTranslationHost@OpalManager@@QBEABVPString@@XZ @50386 NONAME
     ?GetTransmitMutex@OpalH224Handler@@QAEAAVPCriticalSection@@XZ @56364 NONAME
     ?GetTransport@H323Connection@@UBEAAVOpalTransport@@XZ @33766 NONAME
@@ -37354,6 +37351,7 @@ EXPORTS
     ?IsCompatibleTransport@OpalTransportTCP@@UBE_NABVOpalTransportAddress@@@Z @47349 NONAME
     ?IsCompatibleTransport@OpalTransportTCPS@@UBE_NABVOpalTransportAddress@@@Z @47350 NONAME
     ?IsCompatibleTransport@OpalTransportUDP@@UBE_NABVOpalTransportAddress@@@Z @47351 NONAME
+    ?IsCompleted@SIPTransaction@@QBE_NXZ @58363 NONAME
     ?IsConnected@OpalLine@@UAE_NXZ @53842 NONAME
     ?IsConnectionEstablished@H323EndPoint@@UAE_NABVPString@@@Z @47352 NONAME
     ?IsConnectionOnHold@H323Connection@@UAE_NXZ @47353 NONAME
@@ -37822,7 +37820,8 @@ EXPORTS
     ?OnCreateFaxFormat@OpalPluginCodecHandler@@UAEPAVOpalMediaFormatInternal@@AAVOpalPluginCodecManager@@PBUPluginCodec_Definition@@PBDII_J@Z @47559 NONAME
     ?OnCreateLogicalChannel@H323Connection@@UAE_NABVH323Capability@@W4Directions@H323Channel@@AAI@Z @47560 NONAME
     ?OnCreateVideoFormat@OpalPluginCodecHandler@@UAEPAVOpalMediaFormatInternal@@AAVOpalPluginCodecManager@@PBUPluginCodec_Definition@@PBD_J@Z @47561 NONAME
-    ?OnCreatingINVITE@SIPConnection@@UAEXAAVSIP_PDU@@@Z @36235 NONAME
+    ?OnCreatingINVITE@SIPConnection@@EAEXAAVSIP_PDU@@@Z @58364 NONAME
+    ?OnCreatingINVITE@SIPConnection@@UAEXAAVSIPInvite@@@Z @58365 NONAME
     ?OnDescriptorUpdate@H323PeerElement@@UAE?AW4Response@H323Transaction@@AAVH501DescriptorUpdate@@@Z @36237 NONAME
     ?OnDialogInfoReceived@SIPEndPoint@@UAEXABUSIPDialogNotification@@@Z @56476 NONAME
     ?OnDialogInfoReceived@SIPEndPoint_C@@UAEXABUSIPDialogNotification@@@Z @56477 NONAME
@@ -38039,7 +38038,7 @@ EXPORTS
     ?OnReceiveData@RTP_Encoding@@UAE?AW4SendReceiveStatus@RTP_Session@@AAVRTP_DataFrame@@@Z @53966 NONAME
     ?OnReceiveData@RTP_Session@@UAE?AW4SendReceiveStatus@1@AAVRTP_DataFrame@@@Z @40157 NONAME
     ?OnReceivedAuthenticationRequired@SIPConnection@@UAE_NAAVSIPTransaction@@AAVSIP_PDU@@@Z @47655 NONAME
-    ?OnReceivedAuthenticationRequired@SIPEndPoint@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @36380 NONAME
+    ?OnReceivedAuthenticationRequired@SIPEndPoint@@MAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @58366 NONAME
     ?OnReceivedAuthenticationRequired@SIPHandler@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @50600 NONAME
     ?OnReceivedBYE@SIPConnection@@UAEXAAVSIP_PDU@@@Z @36381 NONAME
     ?OnReceivedCallIntrusionForcedRelease@H45011Handler@@UAE_NHPAVPASN_OctetString@@@Z @47656 NONAME
@@ -38092,7 +38091,8 @@ EXPORTS
     ?OnReceivedInitiateReturnError@H323EndPoint@@UAEXXZ @36427 NONAME
     ?OnReceivedInitiateReturnError@H4502Handler@@QAEX_N@Z @36428 NONAME
     ?OnReceivedInitiateReturnResult@H4502Handler@@QAEXXZ @36429 NONAME
-    ?OnReceivedIntervalTooBrief@SIPEndPoint@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @47678 NONAME
+    ?OnReceivedIntervalTooBrief@SIPEndPoint@@MAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @58367 NONAME
+    ?OnReceivedIntervalTooBrief@SIPHandler@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @58368 NONAME
     ?OnReceivedINVITE@SIPConnection@@UAEXAAVSIP_PDU@@@Z @36430 NONAME
     ?OnReceivedINVITE@SIPEndPoint@@UAE_NAAVOpalTransport@@PAVSIP_PDU@@@Z @47679 NONAME
     ?OnReceivedInvoke@H45011Handler@@UAE_NHHHPAVPASN_OctetString@@@Z @47680 NONAME
@@ -38130,7 +38130,7 @@ EXPORTS
     ?OnReceivedNOTIFY@SIPPresenceEventPackageHandler@@EAE_NAAVSIPHandler@@AAVSIP_PDU@@@Z @56505 NONAME
     ?OnReceivedNOTIFY@SIPSubscribeHandler@@UAE_NAAVSIP_PDU@@@Z @47701 NONAME
     ?OnReceivedOK@SIPConnection@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @36457 NONAME
-    ?OnReceivedOK@SIPEndPoint@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @36458 NONAME
+    ?OnReceivedOK@SIPEndPoint@@MAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @58369 NONAME
     ?OnReceivedOK@SIPHandler@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @50602 NONAME
     ?OnReceivedOK@SIPPublishHandler@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @50603 NONAME
     ?OnReceivedOK@SIPRegisterHandler@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @50604 NONAME
@@ -38201,6 +38201,7 @@ EXPORTS
     ?OnReceivedRemoteUserAlerting@H45011Handler@@UAEXHPAVPASN_OctetString@@@Z @36513 NONAME
     ?OnReceivedResponse@SIPConnection@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @36514 NONAME
     ?OnReceivedResponse@SIPEndPoint@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @36515 NONAME
+    ?OnReceivedResponse@SIPHandler@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @58370 NONAME
     ?OnReceivedResponse@SIPInvite@@UAE_NAAVSIP_PDU@@@Z @47749 NONAME
     ?OnReceivedResponse@SIPTransaction@@UAE_NAAVSIP_PDU@@@Z @47750 NONAME
     ?OnReceivedResponseToINVITE@SIPConnection@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @53972 NONAME
@@ -38227,7 +38228,9 @@ EXPORTS
     ?OnReceivedStatusEnquiry@H323Connection@@UAE_NABVH323SignalPDU@@@Z @47766 NONAME
     ?OnReceivedSubaddressTransfer@H4502Handler@@UAEXHPAVPASN_OctetString@@@Z @36539 NONAME
     ?OnReceivedSUBSCRIBE@SIPEndPoint@@UAE_NAAVOpalTransport@@AAVSIP_PDU@@@Z @47767 NONAME
-    ?OnReceivedTrying@SIPConnection@@UAEXAAVSIP_PDU@@@Z @36540 NONAME
+    ?OnReceivedTemporarilyUnavailable@SIPHandler@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @58371 NONAME
+    ?OnReceivedTrying@SIPConnection@@EAEXAAVSIP_PDU@@@Z @58372 NONAME
+    ?OnReceivedTrying@SIPConnection@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @58373 NONAME
     ?OnReceivedUnAllocatedPDU@H460_Feature@@UAEXABVH225_FeatureDescriptor@@@Z @36541 NONAME
     ?OnReceiveEndpoint@H460_Feature@@UAEXABVH225_FeatureDescriptor@@@Z @36542 NONAME
     ?OnReceiveFacility_UUIE@H460_Feature@@UAEXABVH225_FeatureDescriptor@@@Z @36543 NONAME
@@ -38595,6 +38598,7 @@ EXPORTS
     ?OnServiceControlSessions@H323Gatekeeper@@UAEXABVH225_ArrayOf_ServiceControlSession@@PAVH323Connection@@@Z @36870 NONAME
     ?OnServiceRequest@H323PeerElement@@UAE?AW4Response@H323Transaction@@AAVH501ServiceRequest@@@Z @36871 NONAME
     ?OnSessionTimeout@SIPConnection@@UAEXAAVPTimer@@H@Z @53996 NONAME
+    ?OnSetGatewayPrefixes@H323EndPoint@@UBE_NAAVPStringList@@@Z @58374 NONAME
     ?OnSetLocalCapabilities@H323Connection@@UAEXXZ @36872 NONAME
     ?OnSetUp@IAX2Connection@@QAEXXZ @53997 NONAME
     ?OnSetUp@OpalCall@@UAE_NAAVOpalConnection@@@Z @47961 NONAME
@@ -38656,7 +38660,6 @@ EXPORTS
     ?OnUserInputTone@OpalEndPoint@@UAEXAAVOpalConnection@@DH@Z @36916 NONAME
     ?OnUserInputTone@OpalManager@@UAEXAAVOpalConnection@@DH@Z @36917 NONAME
     ?OnUserInputTone@OpalManager_C@@UAEXAAVOpalConnection@@DH@Z @50617 NONAME
-    ?OnUseRTPSession@SIPConnection@@MAEPAVRTP_UDP@@IABVOpalMediaType@@ABVOpalTransportAddress@@AAV4@@Z @54009 NONAME
     ?OnWriteAudio@Mixer_T@OpalWAVRecordManager@@UAE_NABVMixerFrame@OpalAudioMixer@@@Z @56528 NONAME
     ?OnWriteAudio@OpalAudioMixer@@UAE_NABVMixerFrame@1@@Z @47976 NONAME
     ?OnWriteMediaData@OpalLocalEndPoint@@UAE_NABVOpalLocalConnection@@ABVOpalMediaStream@@PBXHAAH@Z @54010 NONAME
@@ -39850,6 +39853,7 @@ EXPORTS
     ?Remove@H460_FeatureOID@@QAEXABVPString@@@Z @38068 NONAME
     ?Remove@H460_FeatureStd@@QAEXI@Z @38069 NONAME
     ?Remove@OpalMediaFormatList@@QAEXABVPStringArray@@@Z @38070 NONAME
+    ?Remove@SIPHandlersList@@QAEXPAVSIPHandler@@@Z @58375 NONAME
     ?RemoveAlias@H323GatekeeperServer@@QAEXAAVH323RegisteredEndPoint@@ABVPString@@@Z @38071 NONAME
     ?RemoveAlias@H323RegisteredEndPoint@@QAEXABVPString@@@Z @38072 NONAME
     ?RemoveAliasName@H323EndPoint@@QAE_NABVPString@@@Z @48101 NONAME
@@ -40023,11 +40027,12 @@ EXPORTS
     ?SendNotifyDialogInfo@SIPEndPoint@@QAEXABUSIPDialogNotification@@@Z @56590 NONAME
     ?SendPDU@SIPTransaction@@IAE_NAAVSIP_PDU@@@Z @50739 NONAME
     ?SendQuelchMessage@IAX2CallProcessor@@IAEXXZ @39351 NONAME
+    ?SendReINVITE@SIPConnection@@IAE_NPBD@Z @58376 NONAME
     ?SendReport@RTP_Session@@UAE_NXZ @48157 NONAME
-    ?SendRequest@SIPHandler@@UAE_NW4State@1@@Z @48158 NONAME
-    ?SendRequest@SIPNotifyHandler@@UAE_NW4State@SIPHandler@@@Z @56591 NONAME
-    ?SendRequest@SIPRegisterHandler@@UAE_NW4State@SIPHandler@@@Z @54146 NONAME
-    ?SendRequest@SIPSubscribeHandler@@UAE_NW4State@SIPHandler@@@Z @54147 NONAME
+    ?SendRequest@SIPHandler@@MAE_NW4State@1@@Z @58377 NONAME
+    ?SendRequest@SIPNotifyHandler@@MAE_NW4State@SIPHandler@@@Z @58378 NONAME
+    ?SendRequest@SIPRegisterHandler@@MAE_NW4State@SIPHandler@@@Z @58379 NONAME
+    ?SendRequest@SIPSubscribeHandler@@MAE_NW4State@SIPHandler@@@Z @58380 NONAME
     ?SendResponse@SIP_PDU@@QAE_NAAVOpalTransport@@AAV1@PAVSIPEndPoint@@@Z @56592 NONAME
     ?SendResponse@SIP_PDU@@QAE_NAAVOpalTransport@@W4StatusCodes@1@PAVSIPEndPoint@@PBD3@Z @56593 NONAME
     ?SendReturnError@H450xDispatcher@@QAEXHH@Z @38212 NONAME
@@ -40040,8 +40045,8 @@ EXPORTS
     ?SendServiceControlSession@H323RegisteredEndPoint@@UAE_NABVH323ServiceControlSession@@@Z @48161 NONAME
     ?SendSignalSetup@H323Connection@@UAE?AW4CallEndReason@OpalConnection@@ABVPString@@ABVH323TransportAddress@@@Z @38220 NONAME
     ?SendSoundMessage@IAX2CallProcessor@@IAEXPAVPBYTEArray@@@Z @39352 NONAME
-    ?SendStatus@SIPRegisterHandler@@AAEXW4StatusCodes@SIP_PDU@@W4State@SIPHandler@@@Z @56594 NONAME
-    ?SendStatus@SIPSubscribeHandler@@AAEXW4StatusCodes@SIP_PDU@@W4State@SIPHandler@@@Z @56595 NONAME
+    ?SendStatus@SIPRegisterHandler@@IAEXW4StatusCodes@SIP_PDU@@W4State@SIPHandler@@@Z @58381 NONAME
+    ?SendStatus@SIPSubscribeHandler@@IAEXW4StatusCodes@SIP_PDU@@W4State@SIPHandler@@@Z @58382 NONAME
     ?SendText@IAX2CallProcessor@@QAEXABVPString@@@Z @39353 NONAME
     ?SendTextMessage@IAX2CallProcessor@@IAEXAAVPString@@@Z @39354 NONAME
     ?SendToneAsync@OpalRFC2833Proto@@UAE_NDI@Z @48162 NONAME
@@ -40240,11 +40245,11 @@ EXPORTS
     ?SetData@IAX2IeString@@QAEXPBD@Z @38384 NONAME
     ?SetData@IAX2IeUInt@@QAEXAAI@Z @38385 NONAME
     ?SetData@IAX2IeUShort@@QAEXG@Z @38386 NONAME
-    ?SetDataSize@OpalAudioMediaStream@@UAE_NH@Z @48251 NONAME
-    ?SetDataSize@OpalLineMediaStream@@UAE_NH@Z @48252 NONAME
-    ?SetDataSize@OpalMediaStream@@UAE_NH@Z @48253 NONAME
-    ?SetDataSize@OpalRTPMediaStream@@UAE_NH@Z @48254 NONAME
-    ?SetDataSize@OpalVideoMediaStream@@UAE_NH@Z @48255 NONAME
+    ?SetDataSize@OpalAudioMediaStream@@UAE_NHH@Z @58383 NONAME
+    ?SetDataSize@OpalLineMediaStream@@UAE_NHH@Z @58384 NONAME
+    ?SetDataSize@OpalMediaStream@@UAE_NHH@Z @58385 NONAME
+    ?SetDataSize@OpalRTPMediaStream@@UAE_NHH@Z @58386 NONAME
+    ?SetDataSize@OpalVideoMediaStream@@UAE_NHH@Z @58387 NONAME
     ?SetDate@SIPMIMEInfo@@QAEXABVPString@@@Z @38390 NONAME
     ?SetDate@SIPMIMEInfo@@QAEXABVPTime@@@Z @38391 NONAME
     ?SetDate@SIPMIMEInfo@@QAEXXZ @38392 NONAME
@@ -40302,6 +40307,7 @@ EXPORTS
     ?SetGatekeeperPassword@H323EndPoint@@UAEXABVPString@@0@Z @38433 NONAME
     ?SetGatekeeperRAS@H323PresenceSubscription@@QAEXABVH323TransportAddress@@@Z @54178 NONAME
     ?SetGatekeeperZone@H323EndPoint@@QAE_NABVPString@@0PAVOpalTransport@@@Z @48266 NONAME
+    ?SetGatewaySupportedProtocol@H323EndPoint@@UBE_NAAVH225_ArrayOf_SupportedProtocols@@@Z @58388 NONAME
     ?SetGenericState@H323PresenceNotification@@QAEXABVPString@@@Z @54179 NONAME
     ?SetH221NonStandardInfo@H323EndPoint@@UBEXAAVH225_H221NonStandard@@@Z @38435 NONAME
     ?SetH224Handler@OpalH224Client@@QAEXPAVOpalH224Handler@@@Z @56615 NONAME
@@ -40506,6 +40512,7 @@ EXPORTS
     ?SetRtpIpTypeofService@OpalManager@@QAEXI@Z @50791 NONAME
     ?SetRxCapability@OpalRFC2833Proto@@QAEXABVPString@@@Z @56635 NONAME
     ?SetRxStatisticsInterval@RTP_Session@@QAEXI@Z @38595 NONAME
+    ?SetSDP@SIP_PDU@@QAEXPAVSDPSessionDescription@@@Z @58389 NONAME
     ?SetSecurityMode@SecureRTP_UDP@@UAEXPAVOpalSecurityMode@@@Z @41431 NONAME
     ?SetSegmentNumber@H224_Frame@@QAEXE@Z @38597 NONAME
     ?SetSendUserInputMode@OpalConnection@@UAEXW4SendUserInputModes@1@@Z @38598 NONAME
@@ -40571,6 +40578,7 @@ EXPORTS
     ?SetUpConnection@OpalPCSSConnection@@UAE_NXZ @48347 NONAME
     ?SetUpConnection@SIPConnection@@UAE_NXZ @48348 NONAME
     ?SetupGatekeeperRequest@H323Gatekeeper@@IAEIAAVH323RasPDU@@@Z @38642 NONAME
+    ?SetUpMediaSession@SIPConnection@@MAEPAVOpalMediaSession@@IABVOpalMediaType@@PAVSDPMediaDescription@@AAVOpalTransportAddress@@AA_N@Z @58390 NONAME
     ?SetupTransfer@H323EndPoint@@UAE_NABVPString@@00PAX@Z @48349 NONAME
     ?SetupTransfer@SIPEndPoint@@UAE_NABVPString@@00PAX@Z @48350 NONAME
     ?SetUsageInfo@H323GatekeeperCall@@IAEXABVH225_RasUsageInformation@@@Z @38645 NONAME
@@ -40687,6 +40695,7 @@ EXPORTS
     ?StartNoResponseTimer@IAX2Processor@@IAEXH@Z @38722 NONAME
     ?StartOperation@IAX2Connection@@QAEXXZ @56651 NONAME
     ?StartOutgoing@H323Connection@@MAEXAAVPThread@@H@Z @38723 NONAME
+    ?StartPendingReINVITE@SIPConnection@@IAEXXZ @58391 NONAME
     ?StartRecording@OpalCall@@QAE_NABVPFilePath@@_N@Z @56652 NONAME
     ?StartRecording@OpalManager@@UAE_NABVPString@@ABVPFilePath@@_N@Z @56653 NONAME
     ?StartRequest@H245NegRequestMode@@UAE_NABVH245_ArrayOf_ModeDescription@@@Z @48385 NONAME
@@ -40832,6 +40841,7 @@ EXPORTS
     ?TransmitPacket@IAX2Frame@@UAE_NAAVPUDPSocket@@@Z @48421 NONAME
     ?TransmitPacket@IAX2FullFrame@@UAE_NAAVPUDPSocket@@@Z @48422 NONAME
     ?TransportIndependentBandwidthType@SDPSessionDescription@@SAABVPString@@XZ @58230 NONAME
+    ?TransportReadLoop@SIPEndPoint@@IAEXPAVOpalTransport@@@Z @58392 NONAME
     ?TransportThreadMain@SIPEndPoint@@MAEXAAVPThread@@H@Z @38852 NONAME
     ?TxFramesPerPacketOption@OpalAudioFormat@@SAABVPString@@XZ @41849 NONAME
     ?TxKeyFramePeriodOption@OpalVideoFormat@@SAABVPString@@XZ @48423 NONAME
