@@ -1650,23 +1650,24 @@ PString SIPPresenceInfo::AsXML() const
     return PString::Empty();
   }
 
-  PCaselessString entity = m_entity;
-  if (entity.NumCompare("sip:") != PObject::EqualTo && entity.NumCompare("pres:") != PObject::EqualTo)
-    entity.Splice("pres:", 0);
-
   PStringStream xml;
 
   xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
          "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" "
                   " xmlns:dm=\"urn:ietf:params:xml:ns:pidf:data-model\""
                   " xmlns:rpid=\"urn:ietf:params:xml:ns:pidf:rpid\""
-                  " entity=\"" << entity << "\">\r\n"
+                  " entity=\"" << m_entity << "\">\r\n"
          "  <tuple id=\"" << m_tupleId << "\">\r\n"
          "    <status>\r\n";
   if (m_state != Unchanged)
     xml << "      <basic>" << (m_state != NoPresence ? "open" : "closed") << "</basic>\r\n";
   xml << "    </status>\r\n"
-         "    <contact priority=\"1\">" << (m_contact.IsEmpty() ? entity : m_contact) << "</contact>\r\n";
+         "    <contact priority=\"1\">";
+  if (m_contact.IsEmpty())
+    xml << m_entity;
+  else
+    xml << m_contact;
+  xml << "</contact>\r\n";
 
   if (!m_note.IsEmpty()) {
     //xml << "    <note xml:lang=\"en\">" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";

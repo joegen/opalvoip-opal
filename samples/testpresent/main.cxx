@@ -390,7 +390,7 @@ void TestPresEnt::CmdQuit(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, const PString & aor)
+void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, const PURL & aor)
 {
   cout << aor << " requesting access to presence for " << presentity.GetAOR() << endl;
 }
