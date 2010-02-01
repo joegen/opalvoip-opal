@@ -4,6 +4,7 @@
 	Version="9.00"
 	Name="H.263-1998 (FFMPEG) Video Codec"
 	ProjectGUID="{E75AF717-C8A6-40E7-82CB-80D67CE01611}"
+	RootNamespace="H.263-1998 (FFMPEG) Video Codec"
 	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
@@ -74,7 +75,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="avcodec-52.lib avutil-49.lib"
-				OutputFile="$(OutDir)/gsm0610_ptplugin.dll"
+				OutputFile="$(OutDir)/h263-1998_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=".\ffmpeg\lib"
